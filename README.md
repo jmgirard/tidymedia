@@ -9,7 +9,8 @@
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
 <!-- badges: end -->
 
-The goal of tidymedia is to …
+The goal of tidymedia is to provide tools for easily working with media
+(e.g., image, audio, and video) files within R and the tidyverse.
 
 ## Installation
 

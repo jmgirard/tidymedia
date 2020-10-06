@@ -1,5 +1,5 @@
 Package: tidymedia
-Title: What the Package Does (One Line, Title Case)
+Title: Tools for workign with media files within R and the tidyverse
 Version: 0.0.0.9000
 Authors@R: 
     person(given = "Jeffrey",
@@ -7,7 +7,7 @@ Authors@R:
            role = c("aut", "cre"),
            email = "me@jmgirard.com",
            comment = c(ORCID = "0000-0002-7359-3746"))
-Description: What the package does (one paragraph).
+Description: The goal of tidymedia is to provide tools for easily working with media (e.g., image, audio, and video) files within R and the tidyverse.
 License: GPL-3
 Imports: 
     tibble (>= 3.0.3),

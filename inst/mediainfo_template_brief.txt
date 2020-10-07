@@ -1,0 +1,3 @@
+General;%CompleteName% & %Format% & %FileSize% & %Duration% & 
+Video;%Width% & %Height% & %FrameRate% & %BitRate% & 
+Audio;%Channel(s)% & %SamplingRate% & %BitRate%

@@ -1,5 +1,6 @@
 Package: tidymedia
-Title: Tools for working with media files within R and the tidyverse
+Title: Tools for working with media files within R and the
+    tidyverse
 Version: 0.0.0.9001
 Authors@R: 
     person(given = "Jeffrey",
@@ -15,6 +16,7 @@ Imports:
     assertthat (>= 0.2.1),
     furrr (>= 0.1.0),
     glue (>= 1.4.2),
+    rappdirs (>= 0.3.1),
     readr (>= 1.4.0),
     rlang (>= 0.4.7),
     tibble (>= 3.0.3),

@@ -1,64 +1,4 @@
 
-# find_mediainfo() --------------------------------------------------------
-
-#Look for the MediaInfo CLI program in path and then in environmental variables
-#If not found, prompt the user to install and save an environmental variable '
-
-#' Get the location of MediaInfo
-#'
-#' Returns the location of the MediaInfo CLI program as a string. On Linux, this
-#' will be "mediainfo" if installed properly. On Windows, this will be the full
-#' path to the mediainfo.exe file.
-#' 
-#' @return A string indicating the location of the MediaInfo CLI program.
-#' @export
-find_mediainfo <- function() {
-  mediainfo <- Sys.which("mediainfo")
-  if (mediainfo == "") {
-    mediainfo <- 
-      readRDS(
-        system.file(
-          "extdata/mediainfo.rds", 
-          package = "tidymedia"
-        )
-      )
-    assert_that(
-      rlang::is_null(mediainfo) == FALSE, 
-      msg = paste0(
-        "MediaInfo CLI not found. On Linux, check that it is installed. ",
-        "On Windows/Mac, check that it is installed and use set_mediainfo()."
-      )
-    )
-  }
-  mediainfo
-}
-
-# set_mediainfo() ---------------------------------------------------------
-
-#' Set the MediaInfo location
-#'
-#' Save the location of the MediaInfo CLI to options, which will persist across
-#' sessions. This is currently necessary on Windows (and Mac?) but not on Linux
-#' platforms.
-#'
-#' @param path *Required.* A string indicating the location of the MediaInfo CLI
-#'   program.
-#' @export
-set_mediainfo <- function(path) {
-  assert_that(rlang::is_character(path, n = 1))
-  assert_that(
-    Sys.which(path) != "", 
-    msg = "Could not find path, try again."
-  )
-  saveRDS(
-    path,         
-    system.file(
-      "extdata/mediainfo.rds", 
-      package = "tidymedia"
-    )
-  )
-}
-
 # info_query() ------------------------------------------------------------
 
 #' Query information from MediaInfo
@@ -210,7 +150,7 @@ info_summary <- function(file,
   info_query(
     file = file,
     template = system.file(
-      glue("mediainfo_template_{style}.txt"), 
+      glue("extdata/mediainfo_template_{style}.txt"), 
       package = "tidymedia"
     ),
     names = names,

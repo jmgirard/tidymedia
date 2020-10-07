@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
 <!-- badges: end -->
 
-The goal of tidymedia is to provide tools for easily working with media (e.g., image, audio, and video) files within R and the tidyverse.
+The goal of **tidymedia** is to provide tools for easily working with media (e.g., image, audio, and video) files within R and the tidyverse.
 
 ## Installation
 
@@ -32,7 +32,7 @@ devtools::install_github("jmgirard/tidymedia")
 
 ### Dependencies
 
-{tidymedia} uses [MediaInfo](https://mediaarea.net/en/MediaInfo) to query information about media files. If you would like to use these functions, you will need to install the command line interface (CLI) version of this program. Links and instructions for doing so are available [here](https://mediaarea.net/en/MediaInfo/Download). Below are instructions for several popular platforms.
+**tidymedia** uses [MediaInfo](https://mediaarea.net/en/MediaInfo) to query information about media files. If you would like to use these functions, you will need to install the command line interface (CLI) version of this program. Links and instructions for doing so are available [here](https://mediaarea.net/en/MediaInfo/Download). Below are instructions for several popular platforms.
 
 **Debian/Ubuntu**
 
@@ -51,8 +51,26 @@ Coming soon...
 
 ## Example
 
-Coming soon...
+```{r, echo=FALSE}
+library(tidymedia)
+```
+
+```{r}
+info_query(
+  file = "D:/example.mp4", 
+  section = "Video", 
+  parameters = c("Width", "Height", "DisplayAspectRatio")
+)
+```
+
+```{r}
+info_summary(file = "D:/example.mp4", style = "brief")
+```
+
+```{r}
+info_summary(file = "D:/example.mp4", style = "full")
+```
 
 ## Code of Conduct
 
-Please note that the {tidymedia} project is released with a [Contributor Code of Conduct](https://contributor-covenant.org/version/2/0/CODE_OF_CONDUCT.html). By contributing to this project, you agree to abide by its terms.
+Please note that the **tidymedia** project is released with a [Contributor Code of Conduct](https://contributor-covenant.org/version/2/0/CODE_OF_CONDUCT.html). By contributing to this project, you agree to abide by its terms.

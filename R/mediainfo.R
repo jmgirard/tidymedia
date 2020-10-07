@@ -1,17 +1,32 @@
 
 # find_mediainfo() --------------------------------------------------------
 
-# Look for the MediaInfo CLI program in path and then in environmental variables
-# If not found, prompt the user to install and save an environmental variable
+#Look for the MediaInfo CLI program in path and then in environmental variables
+#If not found, prompt the user to install and save an environmental variable '
+
+#' Get the location of MediaInfo
+#'
+#' Returns the location of the MediaInfo CLI program as a string. On Linux, this
+#' will be "mediainfo" if installed properly. On Windows, this will be the full
+#' path to the mediainfo.exe file.
+#' 
+#' @return A string indicating the location of the MediaInfo CLI program.
+#' @export
 find_mediainfo <- function() {
   mediainfo <- Sys.which("mediainfo")
   if (mediainfo == "") {
-    mediainfo <- Sys.getenv("TIDYMEDIA_MEDIAINFO")
+    mediainfo <- 
+      readRDS(
+        system.file(
+          "extdata/mediainfo.rds", 
+          package = "tidymedia"
+        )
+      )
     assert_that(
-      mediainfo != "", 
+      rlang::is_null(mediainfo) == FALSE, 
       msg = paste0(
         "MediaInfo CLI not found. On Linux, check that it is installed. ",
-        "On Windows, check that it is installed and then use set_mediainfo()."
+        "On Windows/Mac, check that it is installed and use set_mediainfo()."
       )
     )
   }
@@ -22,9 +37,9 @@ find_mediainfo <- function() {
 
 #' Set the MediaInfo location
 #'
-#' Save the location of the MediaInfo CLI to an environmental variable, which
-#' will persist across sessions. This is currently necessary on Windows (and
-#' Mac?) but not on Linux platforms.
+#' Save the location of the MediaInfo CLI to options, which will persist across
+#' sessions. This is currently necessary on Windows (and Mac?) but not on Linux
+#' platforms.
 #'
 #' @param path *Required.* A string indicating the location of the MediaInfo CLI
 #'   program.
@@ -33,9 +48,15 @@ set_mediainfo <- function(path) {
   assert_that(rlang::is_character(path, n = 1))
   assert_that(
     Sys.which(path) != "", 
-    msg = "Could not find path try again"
+    msg = "Could not find path, try again."
   )
-  Sys.setenv(TIDYMEDIA_MEDIAINFO = path)
+  saveRDS(
+    path,         
+    system.file(
+      "extdata/mediainfo.rds", 
+      package = "tidymedia"
+    )
+  )
 }
 
 # info_query() ------------------------------------------------------------
@@ -46,8 +67,7 @@ set_mediainfo <- function(path) {
 #' information to be extracted can be either provided as a \code{section} and
 #' multiple \code{paramaters} or as a \code{template} file.
 #'
-#' @param filename *Required.* A string indicating the file path of a media
-#'   file.
+#' @param file *Required.* A string indicating the path to a media file.
 #' @param section *Optional.* Either a string indicating the MediaInfo section
 #'   from which to query the \code{parameters} or \code{NULL} to use a
 #'   \code{template} file instead (default = \code{NULL}). Note that querying
@@ -64,12 +84,12 @@ set_mediainfo <- function(path) {
 #'   \code{parameters} or the number of parameters requested in the
 #'   \code{template} file (default = the names of the strings in
 #'   \code{parameters}).
-#' @param mediainfo *Optional.* A string indicating the location of the MediaInfo CLI
-#'   program (default = will use \code{find_mediainfo()}).
+#' @param mediainfo *Optional.* A string indicating the location of the
+#'   MediaInfo CLI program (default = will use \code{find_mediainfo()}).
 #' @param ... Currently ignored.
 #' @return A row tibble containing each parameter as a separate variable.
 #' @export
-info_query <- function(filename, 
+info_query <- function(file, 
                        section = NULL, 
                        parameters = NULL,
                        template = NULL,
@@ -78,13 +98,15 @@ info_query <- function(filename,
                        ...) {
   
   # Validate arguments
-  assert_that(rlang::is_character(filename, n = 1))
+  assert_that(rlang::is_character(file, n = 1))
   assert_that(rlang::is_character(section, n = 1) || rlang::is_null(section))
   assert_that(rlang::is_character(parameters) || rlang::is_null(parameters))
   assert_that(length(parameters) >= 1 || rlang::is_null(parameters))
   assert_that(rlang::is_character(template, n = 1) || rlang::is_null(template))
   assert_that(rlang::is_character(mediainfo, n = 1))
   assert_that(Sys.which(mediainfo) != "")
+  assert_that(file.exists(file), 
+              msg = "Cannot find or access the file")
   
   # Query information from mediainfo into a string
   if (rlang::is_null(template)) {
@@ -93,14 +115,14 @@ info_query <- function(filename,
         glue(
           '"{mediainfo}" "--Inform={section};',
           '{paste0(sprintf("%%%s%%", parameters), collapse = " & ")}"',
-          ' "{filename}"'
+          ' "{file}"'
         ),
         intern = TRUE
       ) 
   } else {
     output_str <- 
       system(
-        glue('"{mediainfo}" "--Inform=file://{template}" "{filename}"'),
+        glue('"{mediainfo}" "--Inform=file://{template}" "{file}"'),
         intern = TRUE
       )
   }
@@ -116,14 +138,14 @@ info_query <- function(filename,
       remove = TRUE
     )
   
-  #TODO: Update below once where() is exported by tidyselect
-  where <- utils::globalVariables("where")
-  
   # Replace empty strings with NA
   df <- dplyr::mutate(
     df,
+    File = file, 
+    .before = 1,
     dplyr::across(
-      .cols = where(rlang::is_character), 
+      #TODO: Update the next line whenever tidyselect exports where()
+      .cols = tidyselect::vars_select_helpers$where(rlang::is_character), 
       .fns = ~dplyr::na_if(., "")
     )
   )
@@ -139,7 +161,7 @@ info_query <- function(filename,
 #' it in a row tibble. This is a convenience wrapper to call \code{info_query}
 #' with several built-in templates.
 #'
-#' @param filename *Required.* A string containing the path to a media file.
+#' @param file *Required.* A string containing the path to a media file.
 #' @param style *Required.* Either \code{"full"} or \code{"brief"}, which
 #'   determines which built-in template to use, i.e., which parameters to query
 #'   and how to name them (default = "full"). The "full" style includes a long
@@ -152,7 +174,7 @@ info_query <- function(filename,
 #' @param ... Other arguments to be passed on to \code{info_query()}
 #' @return A row tibble containing many variables summarizing the
 #' @export
-info_summary <- function(filename, 
+info_summary <- function(file, 
                          style = c("full", "brief"),
                          mediainfo = find_mediainfo(), 
                          ...) {
@@ -161,7 +183,7 @@ info_summary <- function(filename,
   
   if (style == "full") {
     names <- c(
-      "General_CompleteName", "General_Format", "General_FileSizeString", 
+      "General_Format", "General_FileSizeString", 
       "General_FileSize", "General_DurationString", "General_Duration", 
       "Video_Format", "Video_FormatVersion", "Video_FormatProfile", 
       "Video_CodecID", "Video_DurationString", "Video_Duration", 
@@ -179,14 +201,14 @@ info_summary <- function(filename,
     )
   } else if (style == "brief") {
     names <- c(
-      "Path", "Format", "FileSize", "Duration",
+      "Format", "FileSize", "Duration",
       "Width", "Height", "FrameRate", "VideoBitRate",
       "Channels", "SamplingRate", "AudioBitRate"
     )
   }
   
   info_query(
-    filename = filename,
+    file = file,
     template = system.file(
       glue("mediainfo_template_{style}.txt"), 
       package = "tidymedia"

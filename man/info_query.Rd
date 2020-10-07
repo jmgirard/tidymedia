@@ -5,7 +5,7 @@
 \title{Query information from MediaInfo}
 \usage{
 info_query(
-  filename,
+  file,
   section = NULL,
   parameters = NULL,
   template = NULL,
@@ -15,8 +15,7 @@ info_query(
 )
 }
 \arguments{
-\item{filename}{\emph{Required.} A string indicating the file path of a media
-file.}
+\item{file}{\emph{Required.} A string indicating the path to a media file.}
 
 \item{section}{\emph{Optional.} Either a string indicating the MediaInfo section
 from which to query the \code{parameters} or \code{NULL} to use a
@@ -38,8 +37,8 @@ of the variables in the returned tibble; must be the same length as
 \code{template} file (default = the names of the strings in
 \code{parameters}).}
 
-\item{mediainfo}{\emph{Optional.} A string indicating the location of the MediaInfo CLI
-program (default = will use \code{find_mediainfo()}).}
+\item{mediainfo}{\emph{Optional.} A string indicating the location of the
+MediaInfo CLI program (default = will use \code{find_mediainfo()}).}
 
 \item{...}{Currently ignored.}
 }

@@ -11,7 +11,7 @@ set_mediainfo(path)
 program.}
 }
 \description{
-Save the location of the MediaInfo CLI to an environmental variable, which
-will persist across sessions. This is currently necessary on Windows (and
-Mac?) but not on Linux platforms.
+Save the location of the MediaInfo CLI to options, which will persist across
+sessions. This is currently necessary on Windows (and Mac?) but not on Linux
+platforms.
 }

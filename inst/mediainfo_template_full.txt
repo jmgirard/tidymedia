@@ -1,3 +1,3 @@
-General;%CompleteName% & %Format% & %FileSize/String% & %FileSize% & %Duration/String% & %Duration% & 
+General;%Format% & %FileSize/String% & %FileSize% & %Duration/String% & %Duration% & 
 Video;%Format% & %Format_Version% & %Format_Profile% & %CodecID% & %Duration/String% & %Duration% & %BitRate_Mode% & %BitRate/String% & %BitRate% & %Width% & %Height% & %DisplayAspectRatio/String% & %DisplayAspectRatio% & %FrameRate_Mode% & %FrameRate/String% & %FrameRate% & %FrameCount% & %Standard% & %ScanType% & %StreamSize/String% & %StreamSize% & 
 Audio;%Format% & %Format_Version% & %Format_Profile% & %CodecID% & %Duration/String% & %Duration% & %BitRate_Mode% & %BitRate/String% & %BitRate% & %Channel(s)% & %ChannelPositions% & %SamplingRate/String% & %SamplingRate% & %StreamSize/String% & %StreamSize%

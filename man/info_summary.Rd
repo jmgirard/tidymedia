@@ -5,14 +5,14 @@
 \title{MediaInfo Summary}
 \usage{
 info_summary(
-  filename,
+  file,
   style = c("full", "brief"),
   mediainfo = find_mediainfo(),
   ...
 )
 }
 \arguments{
-\item{filename}{\emph{Required.} A string containing the path to a media file.}
+\item{file}{\emph{Required.} A string containing the path to a media file.}
 
 \item{style}{\emph{Required.} Either \code{"full"} or \code{"brief"}, which
 determines which built-in template to use, i.e., which parameters to query

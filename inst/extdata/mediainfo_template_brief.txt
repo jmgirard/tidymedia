@@ -1,3 +1,3 @@
-General;%Format% & %FileSize% & %Duration% & 
-Video;%Width% & %Height% & %FrameRate% & %BitRate% & 
-Audio;%Channel(s)% & %SamplingRate% & %BitRate%
+General;Path, Format, FileSize, Duration, Width, Height, FrameRate, VideoBitRate, Channels, SamplingRate, AudioBitRate\n%CompleteName%, %Format%, %FileSize%, %Duration%, 
+Video;%Width%, %Height%, %FrameRate%, %BitRate%, 
+Audio;%Channel(s)%, %SamplingRate%, %BitRate%

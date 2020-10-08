@@ -14,17 +14,14 @@ Description: The goal of tidymedia is to provide tools for
 License: GPL-3
 Imports: 
     assertthat (>= 0.2.1),
-    furrr (>= 0.1.0),
     glue (>= 1.4.2),
     rappdirs (>= 0.3.1),
-    readr (>= 1.4.0),
     rlang (>= 0.4.7),
-    tibble (>= 3.0.3),
-    tidyr (>= 1.1.2),
-    tidyselect (>= 1.1.0)
+    tibble (>= 3.0.3)
 Suggests: 
     roxygen2 (>= 7.1.1),
-    spelling (>= 2.1)
+    spelling (>= 2.1),
+    furrr
 Encoding: UTF-8
 Language: en-US
 LazyData: true

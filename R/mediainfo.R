@@ -1,160 +1,267 @@
 
-# info_query() ------------------------------------------------------------
+# mediainfo() -------------------------------------------------------------
 
-#' Query information from MediaInfo
+#' Run MediaInfo CLI
 #'
-#' Create a new row tibble that contains information about a media file. The
-#' information to be extracted can be either provided as a \code{section} and
-#' multiple \code{paramaters} or as a \code{template} file.
-#'
-#' @param file *Required.* A string indicating the path to a media file.
-#' @param section *Optional.* Either a string indicating the MediaInfo section
-#'   from which to query the \code{parameters} or \code{NULL} to use a
-#'   \code{template} file instead (default = \code{NULL}). Note that querying
-#'   from multiple sections at once requires using a \code{template} file.
-#' @param parameters *Optional.* Either a vector of one or more strings
-#'   indicating the MediaInfo parameters to query from \code{section} or
-#'   \code{NULL} to use a \code{template} file instead (default = \code{NULL}).
-#' @param template *Optional.* Either a string indicating the file path of a
-#'   MediaInfo template file or \code{NULL} to query by section and parameters
-#'   instead (default = \code{NULL}). Note that parameters in the template file
-#'   should be separated by \code{ & }.
-#' @param names *Optional.* A vector of one or more strings indicating the names
-#'   of the variables in the returned tibble; must be the same length as
-#'   \code{parameters} or the number of parameters requested in the
-#'   \code{template} file (default = the names of the strings in
-#'   \code{parameters}).
-#' @param mediainfo *Optional.* A string indicating the location of the
-#'   MediaInfo CLI program (default = will use \code{find_mediainfo()}).
-#' @param ... Currently ignored.
-#' @return A row tibble containing each parameter as a separate variable.
+#' Run the command through the MediaInfo command line interface (CLI) and return
+#' its output as a string.
+#' 
+#' @param command A string containing a mediainfo command.
+#' @return A string containing the command line output from mediainfo.
+#' 
+#' @family mediainfo functions
+#' @family cli functions
 #' @export
-info_query <- function(file, 
-                       section = NULL, 
-                       parameters = NULL,
-                       template = NULL,
-                       names = parameters,
-                       mediainfo = find_mediainfo(),
-                       ...) {
-  
+mediainfo <- function(command) {
   # Validate arguments
-  assert_that(rlang::is_character(file, n = 1))
-  assert_that(rlang::is_character(section, n = 1) || rlang::is_null(section))
-  assert_that(rlang::is_character(parameters) || rlang::is_null(parameters))
-  assert_that(length(parameters) >= 1 || rlang::is_null(parameters))
-  assert_that(rlang::is_character(template, n = 1) || rlang::is_null(template))
-  assert_that(rlang::is_character(mediainfo, n = 1))
-  assert_that(Sys.which(mediainfo) != "")
-  assert_that(file.exists(file), 
-              msg = "Cannot find or access the file")
-  
-  # Query information from mediainfo into a string
-  if (rlang::is_null(template)) {
-    output_str <- 
-      system(
-        glue(
-          '"{mediainfo}" "--Inform={section};',
-          '{paste0(sprintf("%%%s%%", parameters), collapse = " & ")}"',
-          ' "{file}"'
-        ),
-        intern = TRUE
-      ) 
-  } else {
-    output_str <- 
-      system(
-        glue('"{mediainfo}" "--Inform=file://{template}" "{file}"'),
-        intern = TRUE
-      )
-  }
-  
-  # Tidy the returned string into a tibble
-  df <- 
-    tidyr::separate(
-      tibble::tibble(value = output_str),
-      col = value, 
-      into = names, 
-      sep = " & ",
-      convert = TRUE,
-      remove = TRUE
-    )
-  
-  # Replace empty strings with NA
-  df <- dplyr::mutate(
-    df,
-    File = file, 
-    .before = 1,
-    dplyr::across(
-      #TODO: Update the next line whenever tidyselect exports where()
-      .cols = tidyselect::vars_select_helpers$where(rlang::is_character), 
-      .fns = ~dplyr::na_if(., "")
-    )
-  )
-  
-  df
+  assert_that(rlang::is_character(command, n = 1))
+  # Look up mediainfo location and run it with command
+  system(glue('"{find_mediainfo()}" {command}'), intern = TRUE)
 }
 
-# info_summary() ----------------------------------------------------------
+# mediainfo_parameter() ---------------------------------------------------
 
-#' MediaInfo Summary
+#' Query a single parameter from a single MediaInfo section
 #'
-#' Query common summary information about a media file from MediaInfo and store
-#' it in a row tibble. This is a convenience wrapper to call \code{info_query}
-#' with several built-in templates.
+#' Query a single parameter in a single section from MediaInfo and return it as
+#' an atomic object (not a tibble).
 #'
-#' @param file *Required.* A string containing the path to a media file.
-#' @param style *Required.* Either \code{"full"} or \code{"brief"}, which
-#'   determines which built-in template to use, i.e., which parameters to query
-#'   and how to name them (default = "full"). The "full" style includes a long
-#'   list of parameters from the General, Video, and Audio sections; variables
-#'   are named as {Section}_{Parameter} using the parameter names from MediaInfo
-#'   (with the exception that symbol characters are removed). The "brief" style
-#'   includes a handful of common parameters with shorter names.
-#' @param mediainfo *Optional.* A string pointing to the MediaInfo CLI program.
-#'   By default, it will be looked up using \code{find_mediainfo()}.
-#' @param ... Other arguments to be passed on to \code{info_query()}
-#' @return A row tibble containing many variables summarizing the
+#' @param file A string containing the path to a media file.
+#' @param section A string containing the name of the mediainfo
+#'   section from which to query \code{parameter}.
+#' @param parameter A string containing the name of the mediainfo
+#'   parameter to query from \code{section}.
+#' @return A string or double containing the requested parameter's value or
+#'   \code{NA} in the cases that the value was empty or the section-parameter
+#'   combination could not be found.
+#'   
+#' @family mediainfo functions
 #' @export
-info_summary <- function(file, 
-                         style = c("full", "brief"),
-                         mediainfo = find_mediainfo(), 
-                         ...) {
+mediainfo_parameter <- function(file, section, parameter) {
   
-  style <- match.arg(style)
+  assert_that(rlang::is_character(file, n = 1))
+  assert_that(rlang::is_character(section, n = 1))
+  assert_that(rlang::is_character(parameter, n = 1))
   
-  if (style == "full") {
-    names <- c(
-      "General_Format", "General_FileSizeString", 
-      "General_FileSize", "General_DurationString", "General_Duration", 
-      "Video_Format", "Video_FormatVersion", "Video_FormatProfile", 
-      "Video_CodecID", "Video_DurationString", "Video_Duration", 
-      "Video_BitRateMode", "Video_BitRateString", "Video_BitRate",
-      "Video_Width", "Video_Height", "Video_DisplayAspectRatioString",
-      "Video_DisplayAspectRatio", "Video_FrameRateMode", 
-      "Video_FrameRateString", "Video_FrameRate", "Video_FrameCount", 
-      "Video_Standard", "Video_ScanType", "Video_StreamSizeString", 
-      "Video_StreamSize", "Audio_Format", "Audio_FormatVersion", 
-      "Audio_FormatProfile", "Audio_CodecID", "Audio_DurationString", 
-      "Audio_Duration", "Audio_BitRateMode", "Audio_BitRateString", 
-      "Audio_BitRate", "Audio_Channels", "Audio_ChannelPositions", 
-      "Audio_SamplingRateString", "Audio_SamplingRate", 
-      "Audio_StreamSizeString", "Audio_SteamSize"
-    )
-  } else if (style == "brief") {
-    names <- c(
-      "Format", "FileSize", "Duration",
-      "Width", "Height", "FrameRate", "VideoBitRate",
-      "Channels", "SamplingRate", "AudioBitRate"
-    )
-  }
-  
-  info_query(
-    file = file,
-    template = system.file(
-      glue("extdata/mediainfo_template_{style}.txt"), 
-      package = "tidymedia"
-    ),
-    names = names,
-    mediainfo = mediainfo,
-    ...    
+  command <- glue('--Inform={section};%{parameter}% "{file}"')
+  output <- mediainfo(command)
+  # If section is not found, it outputs a long factor
+  if (length(output) != 1) output <- NA_character_
+  output <- utils::type.convert(output)
+  output
+}
+
+# mediainfo_query() -------------------------------------------------------
+
+#' Query multiple parameters from a single MediaInfo section
+#'
+#' Create a new row tibble that contains multiple parameters from a single
+#' MediaInfo section. To query parameters from multiple sections at the same
+#' time, use either \code{mediainfo_summary()} or \code{mediainfo_template()}.
+#'
+#' @param file A string indicating the path to a media file.
+#' @param section A string indicating the MediaInfo section from which to query
+#'   the \code{parameters}. Note that querying from multiple sections at once
+#'   requires using \code{mediainfo_template()}.
+#' @param parameters A vector of one or more strings indicating the MediaInfo
+#'   parameters to query from \code{section}.
+#' @param names A vector of one or more strings indicating the names of the
+#'   variables in the returned tibble; must be the same length as
+#'   \code{parameters} (default = the names of the strings in
+#'   \code{parameters}).
+#' @return A row tibble containing each parameter as a separate variable.
+#' 
+#' @family mediainfo functions
+#' @export
+mediainfo_query <- function(file, section, parameters, names = parameters) {
+  # Validate arguments
+  assert_that(rlang::is_character(file, n = 1))
+  assert_that(rlang::is_character(section, n = 1))
+  assert_that(rlang::is_character(parameters))
+  assert_that(length(parameters) >= 1)
+  assert_that(rlang::is_character(names))
+  assert_that(length(parameters) == length(names),
+              msg = "parameters and names did not have the same length.")
+  assert_that(file.exists(file), msg = "Could find or access file.")
+  # Create mediainfo command
+  command <- glue(
+    '"--Inform={section};{paste0(names, collapse = ", ")}\\n',
+    '{paste(paste0("%", parameters, "%"), collapse = ", ")}" "{file}"'
   )
+  # Run mediainfo command
+  output <- mediainfo(command)
+  # Format the mediainfo output
+  output <- read.csv(text = output)
+  output <- tibble::as_tibble(output)
+  output <- tibble::add_column(output, File = file, .before = 1)
+  output
+}
+
+# mediainfo_template() ----------------------------------------------------
+
+#' Describe a media file by applying a MediaInfo template
+#'
+#' Create a new row tibble that contains information about a media file. This
+#' information is gathered by applying a MediaInfo template, which can include
+#' multiple parameters from multiple sections. This package include several
+#' built-in templates that can be applied or a custom template file can be
+#' created and used.
+#'
+#' @param file A string containing the file path to a media file.
+#' @param template A string containing the template to be applied. Two templates
+#'   are built into the package: \code{"brief"} and \code{"extended"}.
+#'   Alternatively, \code{"custom"} can be used to apply a new template file
+#'   specified in \code{templatefile}.
+#' @param templatefile Either a string containing the file path to a MediaInfo
+#'   template (.txt) file formatted to output comma-separated values (requires
+#'   \code{template} to be set to \code{"custom"}) or \code{NULL} (default =
+#'   \code{NULL}).
+#' @return A row [tibble][tibble::tibble-package] containing variables
+#'   describing \code{file}. The specific variables included and their
+#'   ordering/naming is determined by the template.
+#'   
+#' @family mediainfo functions
+#' @export
+mediainfo_template <- function(file, 
+                               template = c("brief", "extended", "custom"), 
+                               templatefile = NULL) {
+  # Validate arguments
+  template <- match.arg(template)
+  assert_that(rlang::is_character(file, n = 1))
+  assert_that(file.exists(file))
+  assert_that(is.null(templatefile) || rlang::is_character(templatefile, n = 1))
+  assert_that(is.null(templatefile) || file.exists(templatefile))
+  assert_that((template == "custom" && !is.null(templatefile)) || 
+                (template != "custom" && is.null(templatefile)))
+  # If using a built-in template, build its file path
+  if (template != "custom") {
+    templatefile <- system.file(
+      glue("extdata/mediainfo_template_{template}.txt"), 
+      package = "tidymedia"
+    )  
+  }
+  # Create the mediainfo command
+  command <- glue('"--Inform=file://{templatefile}" "{file}"')
+  # Run the MediaInfo command and capture output as string
+  output <- mediainfo(command)
+  # Turn the output string into a tibble
+  output <- read.csv(text = output)
+  output <- tibble::as_tibble(output)
+  # Return the formatted tibble
+  output
+}
+
+#' @inherit mediainfo_template
+#' @export
+mediainfo_summary <- mediainfo_template
+
+# get_duration() ----------------------------------------------------------
+
+#' Get the duration of a media file
+#'
+#' Use MediaInfo to quickly look up the duration of different sections of a
+#' media file in various units.
+#'
+#' @param file A string containing the file path of a media file.
+#' @param section A string indicating the MediaInfo section from which to query
+#'   the duration value. Can be either \code{"General"}, \code{"Video"}, or
+#'   \code{"Audio"} (default = \code{"General"}).
+#' @param unit A string indicating whether the duration should be returned in
+#'   milliseconds (\code{"ms"}), seconds (\code{"sec"}), minutes (\code{"min"}),
+#'   or hours (\code{"hour"}) (default = \code{"ms"}).
+#' @return A double indicating the duration of the specified section of the file
+#'   (in the specified units).
+#'   
+#' @family mediainfo functions
+#' @family convenience functions
+#' @export
+get_duration <- function(file, 
+                         section = c("General", "Video", "Audio"), 
+                         unit = c("ms", "sec", "min", "hour")) {
+  
+  section <- match.arg(section)
+  unit <- match.arg(unit)
+  duration <- mediainfo_parameter(
+    file = file, 
+    section = section, 
+    parameter = "Duration"
+  )
+  if (unit == "ms") {
+    output <- duration
+  } else if (unit == "sec") {
+    output <- duration / 1000
+  } else if (unit == "min") {
+    output <- duration / 1000 / 60
+  } else if (unit == "hour") {
+    output <- duration / 1000 / 60 / 60
+  }
+  output
+}
+
+# get_framerate() ---------------------------------------------------------
+
+#' Get the video frame rate of a media file
+#'
+#' Use MediaInfo to quickly look up the video frame rate of a media file in
+#' frames per second (fps).
+#'
+#' @param file A string containing the file path of a media file.
+#' @return A double indicating the video frame rate of \code{file} (in fps).
+#' 
+#' @family mediainfo functions
+#' @family convenience functions
+#' @export
+get_framerate <- function(file) {
+  mediainfo_parameter(file = file, section = "Video", parameter = "FrameRate")
+}
+
+# get_width() -------------------------------------------------------------
+
+#' Get the video width of a media file
+#'
+#' Use MediaInfo to quickly look up the video width of a media file in
+#' pixels (px).
+#'
+#' @param file A string containing the file path of a media file.
+#' @return A double indicating the video width of \code{file} (in px).
+#' 
+#' @family mediainfo functions
+#' @family convenience functions
+#' @export
+get_width <- function(file) {
+  mediainfo_parameter(file = file, section = "Video", parameter = "Width")
+}
+
+# get_height() -------------------------------------------------------------
+
+#' Get the video height of a media file
+#'
+#' Use MediaInfo to quickly look up the video height of a media file in
+#' pixels (px).
+#'
+#' @param file A string containing the file path of a media file.
+#' @return A double indicating the video height of \code{file} (in px).
+#' 
+#' @family mediainfo functions
+#' @family convenience functions
+#' @export
+get_height <- function(file) {
+  mediainfo_parameter(file = file, section = "Video", parameter = "Height")
+}
+
+# get_samplingrate() ------------------------------------------------------
+
+#' Get the audio sampling rate of a media file
+#'
+#' Use MediaInfo to quickly look up the audio sampling rate of a media file in
+#' hertz (Hz).
+#'
+#' @param file A string containing the file path of a media file.
+#' @return A double indicating the audio sampling rate of \code{file} (in Hz).
+#' 
+#' @family mediainfo functions
+#' @family convenience functions
+#' @export
+get_samplingrate <- function(file) {
+  mediainfo_parameter(file = file, section = "Audio", parameter = "SamplingRate")
 }

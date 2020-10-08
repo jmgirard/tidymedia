@@ -55,20 +55,37 @@ Coming soon...
 library(tidymedia)
 ```
 
-```{r}
-info_query(
+```{r, eval=FALSE}
+# Create a row tibble using a built-in template
+mediainfo_template(file = "D:/example.mp4", template = "brief")
+```
+
+```{r, echo=FALSE}
+knitr::kable(mediainfo_template(file = "D:/example.mp4", template = "brief"))
+```
+
+```{r, eval=FALSE}
+# Create a row tibble from specific parameters
+mediainfo_query(
   file = "D:/example.mp4", 
   section = "Video", 
   parameters = c("Width", "Height", "DisplayAspectRatio")
 )
 ```
-
-```{r}
-info_summary(file = "D:/example.mp4", style = "brief")
+```{r, echo=FALSE}
+knitr::kable(mediainfo_query(
+  file = "D:/example.mp4", 
+  section = "Video", 
+  parameters = c("Width", "Height", "DisplayAspectRatio")
+))
 ```
 
 ```{r}
-info_summary(file = "D:/example.mp4", style = "full")
+get_duration(file = "D:/example.mp4", unit = "sec")
+```
+
+```{r}
+get_height(file = "D:/example.mp4")
 ```
 
 ## Code of Conduct

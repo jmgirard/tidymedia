@@ -53,46 +53,35 @@ Coming soon…
 ## Example
 
 ``` r
-info_query(
+# Create a row tibble using a built-in template
+mediainfo_template(file = "D:/example.mp4", template = "brief")
+```
+
+| Path           | Format | FileSize | Duration | Width | Height | FrameRate | VideoBitRate | Channels | SamplingRate | AudioBitRate |
+| :------------- | :----- | -------: | -------: | ----: | -----: | --------: | -----------: | -------: | -----------: | -----------: |
+| D:/example.mp4 | MPEG-4 |  7570203 |   180084 |   480 |    360 |        30 |       199653 |        2 |        44100 |       128007 |
+
+``` r
+# Create a row tibble from specific parameters
+mediainfo_query(
   file = "D:/example.mp4", 
   section = "Video", 
   parameters = c("Width", "Height", "DisplayAspectRatio")
 )
-#> # A tibble: 1 x 4
-#>   File           Width Height DisplayAspectRatio
-#>   <chr>          <int>  <int>              <dbl>
-#> 1 D:/example.mp4   480    360               1.33
+```
+
+| File           | Width | Height | DisplayAspectRatio |
+| :------------- | ----: | -----: | -----------------: |
+| D:/example.mp4 |   480 |    360 |              1.333 |
+
+``` r
+get_duration(file = "D:/example.mp4", unit = "sec")
+#> [1] 180.084
 ```
 
 ``` r
-info_summary(file = "D:/example.mp4", style = "brief")
-#> # A tibble: 1 x 11
-#>   File  Format FileSize Duration Width Height FrameRate VideoBitRate Channels
-#>   <chr> <chr>     <int>    <int> <int>  <int>     <dbl>        <int>    <int>
-#> 1 D:/e~ MPEG-4  7570203   180084   480    360        30       199653        2
-#> # ... with 2 more variables: SamplingRate <int>, AudioBitRate <int>
-```
-
-``` r
-info_summary(file = "D:/example.mp4", style = "full")
-#> # A tibble: 1 x 42
-#>   File  General_Format General_FileSiz~ General_FileSize General_Duratio~
-#>   <chr> <chr>          <chr>                       <int> <chr>           
-#> 1 D:/e~ MPEG-4         7.22 MiB                  7570203 3 min 0 s       
-#> # ... with 37 more variables: General_Duration <int>, Video_Format <chr>,
-#> #   Video_FormatVersion <lgl>, Video_FormatProfile <chr>, Video_CodecID <chr>,
-#> #   Video_DurationString <chr>, Video_Duration <int>, Video_BitRateMode <lgl>,
-#> #   Video_BitRateString <chr>, Video_BitRate <int>, Video_Width <int>,
-#> #   Video_Height <int>, Video_DisplayAspectRatioString <chr>,
-#> #   Video_DisplayAspectRatio <dbl>, Video_FrameRateMode <chr>,
-#> #   Video_FrameRateString <chr>, Video_FrameRate <dbl>, Video_FrameCount <int>,
-#> #   Video_Standard <lgl>, Video_ScanType <chr>, Video_StreamSizeString <chr>,
-#> #   Video_StreamSize <int>, Audio_Format <chr>, Audio_FormatVersion <lgl>,
-#> #   Audio_FormatProfile <lgl>, Audio_CodecID <chr>, Audio_DurationString <chr>,
-#> #   Audio_Duration <int>, Audio_BitRateMode <chr>, Audio_BitRateString <chr>,
-#> #   Audio_BitRate <int>, Audio_Channels <int>, Audio_ChannelPositions <chr>,
-#> #   Audio_SamplingRateString <chr>, Audio_SamplingRate <int>,
-#> #   Audio_StreamSizeString <chr>, Audio_SteamSize <int>
+get_height(file = "D:/example.mp4")
+#> [1] 360
 ```
 
 ## Code of Conduct

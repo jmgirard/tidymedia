@@ -85,6 +85,7 @@ do_ffmpeg <- function(input, output, pre, post, ffmpeg = find_ffmpeg()) {
 
 # extract_frames() --------------------------------------------------------
 
+#' @export
 extract_frames <- function(input, output, timestamp, ffmpeg = find_ffmpeg()) {
   pre <- glue('-ss {timestamp}')
   post <- glue('-qmin 1 -q:v 1 -qscale:v 2 -frames:v 1 -huffman optimal')

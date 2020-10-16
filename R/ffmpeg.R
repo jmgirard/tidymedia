@@ -4,7 +4,8 @@
 #' @export
 ffmpeg <- function(command) {
   assert_that(rlang::is_character(command, n = 1))
-  system(glue('"{find_ffmpeg()}" {command}'), intern = TRUE)
+  out <- system(paste0('"', find_ffmpeg(), '" ', command), intern = TRUE)
+  out
 }
 
 # extract_frames() --------------------------------------------------------
@@ -41,4 +42,47 @@ extract_audio <- function(infile, outfile, options = "-acodec copy") {
   
   command <- glue('-i "{infile}" {options} -vn "{outfile}"')
   ffmpeg(command)
+}
+
+# crop_video() ------------------------------------------------------------
+
+#' @export
+crop_video <- function(infile, outfile, width, height, x, y, arg) {
+  
+  assert_that(rlang::is_character(infile, n = 1))
+  assert_that(file.exists(infile))
+  assert_that(rlang::is_character(outfile))
+  assert_that(rlang::is_integerish(width, n = 1))
+  assert_that(rlang::is_integerish(height, n = 1))
+  assert_that(rlang::is_integerish(x, n = 1))
+  assert_that(rlang::is_integerish(y, n = 1))
+  
+  command <- glue(
+    '-i "{infile}" -filter:v "crop={width}:{height}:{x}:{y}" {arg} "{outfile}"'
+  )
+  
+  ffmpeg(command)
+}
+
+
+# format_for_web() --------------------------------------------------------
+
+#' @export
+format_for_web <- function(infile, outfile, preview = FALSE) {
+  
+  assert_that(rlang::is_character(infile, n = 1))
+  assert_that(file.exists(infile))
+  assert_that(rlang::is_character(outfile, n = 1))
+  
+  command <- glue(
+    '-i "{infile}" -pix_fmt yuv420p -c:v libx264 -movflags +faststart ',
+    '-filter:v crop="floor(in_w/2)*2:floor(in_h/2)*2" -c:a aac "{outfile}"'
+  )
+  
+  if(preview == TRUE) {
+    cat(command)
+  } else {
+    ffmpeg(command)
+  }
+  
 }

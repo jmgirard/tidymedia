@@ -15,13 +15,14 @@ License: GPL-3
 Imports: 
     assertthat (>= 0.2.1),
     glue (>= 1.4.2),
+    magrittr (>= 1.5),
     rappdirs (>= 0.3.1),
-    rlang (>= 0.4.7),
-    tibble (>= 3.0.3)
+    rlang (>= 0.4.8),
+    tibble (>= 3.0.4)
 Suggests: 
+    furrr (>= 0.2.0),
     roxygen2 (>= 7.1.1),
-    spelling (>= 2.1),
-    furrr
+    spelling (>= 2.1)
 Encoding: UTF-8
 Language: en-US
 LazyData: true

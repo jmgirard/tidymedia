@@ -49,10 +49,17 @@ devtools::install_github("jmgirard/tidymedia")
 
 Coming soon...
 
-## Example
+## Examples
 
 ```{r, echo=FALSE}
 library(tidymedia)
+```
+
+### MediaInfo
+
+```{r}
+# Interface with the mediainfo CLI
+mediainfo("--Version")
 ```
 
 ```{r, eval=FALSE}
@@ -81,11 +88,35 @@ knitr::kable(mediainfo_query(
 ```
 
 ```{r}
+# Lookup common parameters
 get_duration(file = "D:/example.mp4", unit = "sec")
+get_height(file = "D:/example.mp4")
 ```
 
+### FFmpeg
+
 ```{r}
-get_height(file = "D:/example.mp4")
+# Interface with the mediainfo CLI
+ffmpeg("-version")
+```
+```{r}
+# Create ffmpeg commands by pipeline
+set_files("D:/example.mp4", "D:/example2.mp4") %>% 
+  trim_duration(start_at = 1, stop_at = 5) %>% 
+  set_codec("video", "libx264") %>%
+  drop_streams("audio") %>% 
+  apply_autocrop() %>% 
+  compile_command()
+```
+
+```{r, eval=FALSE}
+# Run ffmpeg commands by pipeline
+set_files("D:/example.mp4", "D:/example2.mp4") %>% 
+  trim_duration(start_at = 1, stop_at = 5) %>% 
+  set_codec("video", "libx264") %>%
+  drop_streams("audio") %>% 
+  apply_autocrop() %>% 
+  run_ffmpeg()
 ```
 
 ## Code of Conduct

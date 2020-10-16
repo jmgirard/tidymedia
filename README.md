@@ -50,7 +50,15 @@ instructions for several popular platforms.
 
 Coming soon…
 
-## Example
+## Examples
+
+### MediaInfo
+
+``` r
+# Interface with the mediainfo CLI
+mediainfo("--Version")
+#> [1] "MediaInfo Command line, " "MediaInfoLib - v20.08"
+```
 
 ``` r
 # Create a row tibble using a built-in template
@@ -75,13 +83,50 @@ mediainfo_query(
 | D:/example.mp4 |   480 |    360 |              1.333 |
 
 ``` r
+# Lookup common parameters
 get_duration(file = "D:/example.mp4", unit = "sec")
 #> [1] 180.084
+get_height(file = "D:/example.mp4")
+#> [1] 360
+```
+
+### FFmpeg
+
+``` r
+# Interface with the mediainfo CLI
+ffmpeg("-version")
+#>  [1] "ffmpeg version 4.3.1-2020-10-01-full_build-www.gyan.dev Copyright (c) 2000-2020 the FFmpeg developers"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+#>  [2] "built with gcc 10.2.0 (Rev3, Built by MSYS2 project)"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+#>  [3] "configuration: --enable-gpl --enable-version3 --enable-static --disable-w32threads --disable-autodetect --enable-fontconfig --enable-iconv --enable-gnutls --enable-libxml2 --enable-gmp --enable-lzma --enable-libsnappy --enable-zlib --enable-libsrt --enable-libssh --enable-libzmq --enable-avisynth --enable-libbluray --enable-libcaca --enable-sdl2 --enable-libdav1d --enable-libzvbi --enable-librav1e --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxvid --enable-libaom --enable-libopenjpeg --enable-libvpx --enable-libass --enable-frei0r --enable-libfreetype --enable-libfribidi --enable-libvidstab --enable-libvmaf --enable-libzimg --enable-amf --enable-cuda-llvm --enable-cuvid --enable-ffnvcodec --enable-nvdec --enable-nvenc --enable-d3d11va --enable-dxva2 --enable-libmfx --enable-libcdio --enable-libgme --enable-libmodplug --enable-libopenmpt --enable-libopencore-amrwb --enable-libmp3lame --enable-libshine --enable-libtheora --enable-libtwolame --enable-libvo-amrwbenc --enable-libilbc --enable-libgsm --enable-libopencore-amrnb --enable-libopus --enable-libspeex --enable-libvorbis --enable-ladspa --enable-libbs2b --enable-libflite --enable-libmysofa --enable-librubberband --enable-libsoxr --enable-chromaprint"
+#>  [4] "libavutil      56. 51.100 / 56. 51.100"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+#>  [5] "libavcodec     58. 91.100 / 58. 91.100"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+#>  [6] "libavformat    58. 45.100 / 58. 45.100"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+#>  [7] "libavdevice    58. 10.100 / 58. 10.100"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+#>  [8] "libavfilter     7. 85.100 /  7. 85.100"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+#>  [9] "libswscale      5.  7.100 /  5.  7.100"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+#> [10] "libswresample   3.  7.100 /  3.  7.100"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+#> [11] "libpostproc    55.  7.100 / 55.  7.100"
 ```
 
 ``` r
-get_height(file = "D:/example.mp4")
-#> [1] 360
+# Create ffmpeg commands by pipeline
+set_files("D:/example.mp4", "D:/example2.mp4") %>% 
+  trim_duration(start_at = 1, stop_at = 5) %>% 
+  set_codec("video", "libx264") %>%
+  drop_streams("audio") %>% 
+  apply_autocrop() %>% 
+  compile_command()
+#> [1] "-ss 1 -to 5 -an -i \"D:/example.mp4\" -y -codec:v libx264 -filter:v \"cropdetect=limit=24:round=16:reset=0\" \"D:/example2.mp4\""
+```
+
+``` r
+# Run ffmpeg commands by pipeline
+set_files("D:/example.mp4", "D:/example2.mp4") %>% 
+  trim_duration(start_at = 1, stop_at = 5) %>% 
+  set_codec("video", "libx264") %>%
+  drop_streams("audio") %>% 
+  apply_autocrop() %>% 
+  run_ffmpeg()
 ```
 
 ## Code of Conduct

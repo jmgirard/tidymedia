@@ -24,6 +24,8 @@ devtools::install_github("jmgirard/tidymedia")
 
 ### Dependencies
 
+#### MediaInfo
+
 **tidymedia** uses [MediaInfo](https://mediaarea.net/en/MediaInfo) to
 query information about media files. If you would like to use these
 functions, you will need to install the command line interface (CLI)
@@ -38,13 +40,41 @@ instructions for several popular platforms.
 
 **Windows**
 
-1.  Download the appropriate CLI .zip file from this
-    [webpage](https://mediaarea.net/en/MediaInfo/Download/Windows)
+1.  Download the appropriate CLI .zip file
+    from:<br /><https://mediaarea.net/en/MediaInfo/Download/Windows>
 2.  Extract (or copy) the contents of this .zip file to a folder on your
-    computer such as:<br /> `C:/Program Files/MediaInfo`
+    computer such as:<br />`C:/Program Files/MediaInfo`
 3.  Run the following code in R (changing the path to match Step
     2):<br /> `tidymedia::set_mediainfo("C:/Program
     Files/MediaInfo/mediainfo.exe")`
+
+**Mac**
+
+Coming soon…
+
+#### FFmpeg
+
+**tidymedia** uses [FFmpeg](https://ffmpeg.org/) to encode media files.
+If you would like to use these functions, you will need to install the
+command line interface (CLI) version of this program. Links and
+instructions for doing so are available
+[here](https://ffmpeg.org/download.html). Below are instructions for
+several popular platforms.
+
+**Debian/Ubuntu**
+
+1.  Enter this code into your terminal:<br />`sudo apt-get install
+    ffmpeg`
+
+**Windows**
+
+1.  Download the latest git version (full or essentials build)
+    from:<br /> <https://www.gyan.dev/ffmpeg/builds/>
+2.  Extract the contents of this [.7z](https://www.7-zip.org/) file to a
+    folder on your computer such as:<br />`C:/Program Files/ffmpeg`
+3.  Run the following code in R (changing the path to match Step
+    2):<br />`tidymedia::set_ffmpeg("C:/Program
+    Files/ffmpeg/bin/ffmpeg.exe")`
 
 **Mac**
 

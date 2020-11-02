@@ -50,7 +50,10 @@ instructions for several popular platforms.
 
 **Mac**
 
-Coming soon…
+1.  Download the appropriate CLI .dmg file
+    from:<br /><https://mediaarea.net/en/MediaInfo/Download/Mac_OS>
+2.  Open the .dmg file and drag the program icon to the Applications
+    folder
 
 #### FFmpeg
 
@@ -70,15 +73,28 @@ several popular platforms.
 
 1.  Download the latest git version (full or essentials build)
     from:<br /> <https://www.gyan.dev/ffmpeg/builds/>
-2.  Extract the contents of this [.7z](https://www.7-zip.org/) file to a
-    folder on your computer such as:<br />`C:/Program Files/ffmpeg`
+2.  Extract the contents of the downloaded [.7z](https://www.7-zip.org/)
+    file to a folder on your computer such as:<br />`C:/Program
+    Files/ffmpeg`
 3.  Run the following code in R (changing the path to match Step
     2):<br />`tidymedia::set_ffmpeg("C:/Program
     Files/ffmpeg/bin/ffmpeg.exe")`
 
-**Mac**
+**macOS Homebrew Install**
 
-Coming soon…
+1.  Open the macOS Terminal or Linux shell prompt.
+2.  Install [Homebrew](https://brew.sh/) by entering this code into your
+    terminal:<br />`/bin/bash -c "$(curl -fsSL
+    https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"`
+3.  Enter this code into your terminal:<br />`brew install ffmpeg`
+
+**macOS Manual Install**
+
+1.  Download the latest snapshot version
+    from:<br /><https://evermeet.cx/ffmpeg/get>
+2.  Extract the contents of the downloaded [.7z](https://www.7-zip.org/)
+    file
+3.  Drag the extracted contents to the Applications folder
 
 ## Examples
 

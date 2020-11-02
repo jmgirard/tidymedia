@@ -24,7 +24,7 @@ devtools::install_github("jmgirard/tidymedia")
 
 ### Dependencies
 
-#### MediaInfo
+#### 1\. MediaInfo
 
 **tidymedia** uses [MediaInfo](https://mediaarea.net/en/MediaInfo) to
 query information about media files. If you would like to use these
@@ -55,7 +55,7 @@ instructions for several popular platforms.
 2.  Open the .dmg file and drag the program icon to the Applications
     folder
 
-#### FFmpeg
+#### 2\. FFmpeg
 
 **tidymedia** uses [FFmpeg](https://ffmpeg.org/) to encode media files.
 If you would like to use these functions, you will need to install the

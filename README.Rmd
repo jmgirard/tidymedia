@@ -32,7 +32,7 @@ devtools::install_github("jmgirard/tidymedia")
 
 ### Dependencies
 
-#### MediaInfo
+#### 1. MediaInfo
 
 **tidymedia** uses [MediaInfo](https://mediaarea.net/en/MediaInfo) to query information about media files. If you would like to use these functions, you will need to install the command line interface (CLI) version of this program. Links and instructions for doing so are available [here](https://mediaarea.net/en/MediaInfo/Download). Below are instructions for several popular platforms.
 
@@ -52,7 +52,7 @@ devtools::install_github("jmgirard/tidymedia")
 1. Download the appropriate CLI .dmg file from:<br /><https://mediaarea.net/en/MediaInfo/Download/Mac_OS>
 2. Open the .dmg file and drag the program icon to the Applications folder
 
-#### FFmpeg
+#### 2. FFmpeg
 **tidymedia** uses [FFmpeg](https://ffmpeg.org/) to encode media files. If you would like to use these functions, you will need to install the command line interface (CLI) version of this program. Links and instructions for doing so are available [here](https://ffmpeg.org/download.html). Below are instructions for several popular platforms.
 
 **Debian/Ubuntu**

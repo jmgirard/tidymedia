@@ -156,22 +156,22 @@ ffmpeg("-version")
 
 ``` r
 # Create ffmpeg commands by pipeline
-set_files("D:/example.mp4", "D:/example2.mp4") %>% 
+tidymedia(input = "D:/example.mp4", output = "D:/example2.mp4") %>% 
   trim_duration(start_at = 1, stop_at = 5) %>% 
+  crop_frames(width = 640, height = 480) %>% 
   set_codec("video", "libx264") %>%
   drop_streams("audio") %>% 
-  apply_autocrop() %>% 
   compile_command()
-#> [1] "-ss 1 -to 5 -an -i \"D:/example.mp4\" -y -codec:v libx264 -filter:v \"cropdetect=limit=24:round=16:reset=0\" \"D:/example2.mp4\""
+#> [1] "-ss 1 -to 5 -an -i \"D:/example.mp4\" -y -codec:v libx264 -filter:v \"crop=w=640:h=480:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" \"D:/example2.mp4\""
 ```
 
 ``` r
 # Run ffmpeg commands by pipeline
-set_files("D:/example.mp4", "D:/example2.mp4") %>% 
+tidymedia(input = "D:/example.mp4", "D:/example2.mp4") %>% 
   trim_duration(start_at = 1, stop_at = 5) %>% 
+  crop_frames(width = 640, height = 480) %>% 
   set_codec("video", "libx264") %>%
   drop_streams("audio") %>% 
-  apply_autocrop() %>% 
   run_ffmpeg()
 ```
 

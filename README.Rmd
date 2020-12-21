@@ -129,21 +129,21 @@ ffmpeg("-version")
 ```
 ```{r}
 # Create ffmpeg commands by pipeline
-set_files("D:/example.mp4", "D:/example2.mp4") %>% 
+tidymedia(input = "D:/example.mp4", output = "D:/example2.mp4") %>% 
   trim_duration(start_at = 1, stop_at = 5) %>% 
+  crop_frames(width = 640, height = 480) %>% 
   set_codec("video", "libx264") %>%
   drop_streams("audio") %>% 
-  apply_autocrop() %>% 
   compile_command()
 ```
 
 ```{r, eval=FALSE}
 # Run ffmpeg commands by pipeline
-set_files("D:/example.mp4", "D:/example2.mp4") %>% 
+tidymedia(input = "D:/example.mp4", "D:/example2.mp4") %>% 
   trim_duration(start_at = 1, stop_at = 5) %>% 
+  crop_frames(width = 640, height = 480) %>% 
   set_codec("video", "libx264") %>%
   drop_streams("audio") %>% 
-  apply_autocrop() %>% 
   run_ffmpeg()
 ```
 

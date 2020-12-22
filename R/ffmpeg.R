@@ -86,3 +86,54 @@ format_for_web <- function(infile, outfile, preview = FALSE) {
   }
   
 }
+
+
+# get_codecs() ------------------------------------------------------------
+
+#' @export
+get_codecs <- function(encoding = FALSE) {
+  output <- ffmpeg("-codecs")
+  output2 <- output[-(1:which(output == " -------"))]
+  types <- regmatches(
+    output2, 
+    regexpr("(?<=\\s)\\S+(?=\\s)", output2, perl = TRUE)
+  )
+  
+  decoding <- substr(types, 1, 1) == "D"
+  encoding <- substr(types, 2, 2) == "E"
+  video <- substr(types, 3, 3) == "V"
+  audio <- substr(types, 3, 3) == "A"
+  subtitle <- substr(types, 3, 3) == "S"
+  intraframe <- substr(types, 4, 4) == "I"
+  lossy <- substr(types, 5, 5) == "L"
+  lossless <- substr(types, 6, 6) == "S"
+  
+  abbrev <- regmatches(
+    output2,
+    regexpr("(?<=\\s\\S{6}\\s)\\S+(?=\\s+)", output2, perl = TRUE)
+  )
+  
+  description <- regmatches(
+    output2,
+    regexpr("(?<=\\s{2})\\S[[:print:]]+$", output2, perl = TRUE)
+  )
+  
+  out <- 
+    tibble::tibble(
+      codec = abbrev,
+      description,
+      decoding,
+      encoding,
+      video,
+      audio,
+      subtitle,
+      intraframe,
+      lossy,
+      lossless
+    )
+  
+  # Sort by codec 
+  out <- out[order(out$codec), ]
+  
+  out
+}

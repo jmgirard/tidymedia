@@ -262,16 +262,39 @@ scale_frames <- function(object, width, height, silent = FALSE) {
 
 # set_codec() -------------------------------------------------------------
 
+#' Set codec for the output file
+#'
+#' Set the audio or video codec for the output file. Note that you can use the
+#' command \code{get_codecs()} to see a list of the codecs included in your
+#' FFMPEG version.
+#'
+#' @param object A \code{tidymedia} object
+#' @param stream A string indicating which stream to specify the codec for.
+#'   Either \code{"audio"} or \code{"video"}.
+#' @param codec A string indicating the codec to use to encode the specified
+#'   stream in the output file.
+#' @param silent A logical indicating whether to suppress messages to the
+#'   console when overwriting a previously specified instruction. (default =
+#'   \code{FALSE})
+#' @return \code{object} but with the added instruction to change the codec.
+#' @references
 #' @export
-set_codec <- function(object, stream = c("audio", "video"), codec) {
-  #TODO: Validate arguments
+set_codec <- function(object, 
+                      stream = c("audio", "video"), 
+                      codec,
+                      silent = FALSE) {
   
-  stream <- match.arg(stream)
+  #TODO: Assert that object is of class tidymedia
+  stream <- match.arg(stream, several.ok = FALSE)
+  assert_that(rlang::is_character(codec, n = 1))
+  #TODO: Check codec against the list from get_codecs()?
   
   if (stream == "audio") {
-    object$codec_audio <- paste0('-codec:a ', codec, ' ')
+    if (!silent && length(object$codec_audio)) print("Overwriting audio codec")
+    object$codec_audio <- glue('-codec:a {codec} ')
   } else if (stream == "video") {
-    object$codec_video <- paste0('-codec:v ', codec, ' ')
+    if (!silent && length(object$codec_video)) print("Overwriting video codec")
+    object$codec_video <- glue('-codec:v {codec} ')
   }
 
   object

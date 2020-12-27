@@ -155,24 +155,62 @@ ffmpeg("-version")
 ```
 
 ``` r
+# Query information about codecs from FFmpeg
+get_codecs()
+#> # A tibble: 472 x 8
+#>    name   details              type  decoding encoding intraframe lossy lossless
+#>    <chr>  <chr>                <fct> <lgl>    <lgl>    <lgl>      <lgl> <lgl>   
+#>  1 012v   Uncompressed 4:2:2 ~ Video TRUE     FALSE    TRUE       FALSE TRUE    
+#>  2 4xm    4X Movie             Video TRUE     FALSE    FALSE      TRUE  FALSE   
+#>  3 8bps   QuickTime 8BPS video Video TRUE     FALSE    TRUE       FALSE TRUE    
+#>  4 a64_m~ Multicolor charset ~ Video FALSE    TRUE     TRUE       TRUE  FALSE   
+#>  5 a64_m~ Multicolor charset ~ Video FALSE    TRUE     TRUE       TRUE  FALSE   
+#>  6 aasc   Autodesk RLE         Video TRUE     FALSE    FALSE      FALSE TRUE    
+#>  7 agm    Amuse Graphics Movie Video TRUE     FALSE    FALSE      TRUE  FALSE   
+#>  8 aic    Apple Intermediate ~ Video TRUE     FALSE    TRUE       TRUE  FALSE   
+#>  9 alias~ Alias/Wavefront PIX~ Video TRUE     TRUE     TRUE       FALSE TRUE    
+#> 10 amv    AMV Video            Video TRUE     TRUE     TRUE       TRUE  FALSE   
+#> # ... with 462 more rows
+```
+
+``` r
+# Query information about encoders from FFmpeg
+get_encoders()
+#> # A tibble: 191 x 8
+#>    name   details  type  frame_mt slice_mt experimental horiz_band direct_render
+#>    <chr>  <chr>    <fct> <lgl>    <lgl>    <lgl>        <lgl>      <lgl>        
+#>  1 a64mu~ Multico~ Video FALSE    FALSE    FALSE        FALSE      FALSE        
+#>  2 a64mu~ Multico~ Video FALSE    FALSE    FALSE        FALSE      FALSE        
+#>  3 alias~ Alias/W~ Video FALSE    FALSE    FALSE        FALSE      FALSE        
+#>  4 amv    AMV Vid~ Video FALSE    FALSE    FALSE        FALSE      FALSE        
+#>  5 apng   APNG (A~ Video FALSE    FALSE    FALSE        FALSE      FALSE        
+#>  6 asv1   ASUS V1  Video FALSE    FALSE    FALSE        FALSE      FALSE        
+#>  7 asv2   ASUS V2  Video FALSE    FALSE    FALSE        FALSE      FALSE        
+#>  8 avrp   Avid 1:~ Video FALSE    FALSE    FALSE        FALSE      FALSE        
+#>  9 avui   Avid Me~ Video FALSE    FALSE    TRUE         FALSE      FALSE        
+#> 10 ayuv   Uncompr~ Video FALSE    FALSE    FALSE        FALSE      FALSE        
+#> # ... with 181 more rows
+```
+
+``` r
 # Create ffmpeg commands by pipeline
-tidymedia(input = "D:/example.mp4", output = "D:/example2.mp4") %>% 
-  trim_duration(start_at = 1, stop_at = 5) %>% 
-  crop_frames(width = 640, height = 480) %>% 
-  set_codec("video", "libx264") %>%
-  drop_streams("audio") %>% 
-  compile_command()
+tmp(input = "D:/example.mp4", output = "D:/example2.mp4") %>% 
+  tmp_trim_duration(start_at = 1, stop_at = 5) %>% 
+  tmp_crop_frames(width = 640, height = 480) %>% 
+  tmp_set_codec("video", "libx264") %>%
+  tmp_drop_streams("audio") %>% 
+  tmp_compile()
 #> [1] "-ss 1 -to 5 -an -i \"D:/example.mp4\" -y -codec:v libx264 -filter:v \"crop=w=640:h=480:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" \"D:/example2.mp4\""
 ```
 
 ``` r
 # Run ffmpeg commands by pipeline
-tidymedia(input = "D:/example.mp4", "D:/example2.mp4") %>% 
-  trim_duration(start_at = 1, stop_at = 5) %>% 
-  crop_frames(width = 640, height = 480) %>% 
-  set_codec("video", "libx264") %>%
-  drop_streams("audio") %>% 
-  run_ffmpeg()
+tmp(input = "D:/example.mp4", "D:/example2.mp4") %>% 
+  tmp_trim_duration(start_at = 1, stop_at = 5) %>% 
+  tmp_crop_frames(width = 640, height = 480) %>% 
+  tmp_set_codec("video", "libx264") %>%
+  tmp_drop_streams("audio") %>% 
+  tmp_run_ffmpeg()
 ```
 
 ## Code of Conduct

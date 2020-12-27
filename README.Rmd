@@ -127,24 +127,35 @@ get_height(file = "D:/example.mp4")
 # Interface with the mediainfo CLI
 ffmpeg("-version")
 ```
+
+```{r}
+# Query information about codecs from FFmpeg
+get_codecs()
+```
+
+```{r}
+# Query information about encoders from FFmpeg
+get_encoders()
+```
+
 ```{r}
 # Create ffmpeg commands by pipeline
-tidymedia(input = "D:/example.mp4", output = "D:/example2.mp4") %>% 
-  trim_duration(start_at = 1, stop_at = 5) %>% 
-  crop_frames(width = 640, height = 480) %>% 
-  set_codec("video", "libx264") %>%
-  drop_streams("audio") %>% 
-  compile_command()
+tmp(input = "D:/example.mp4", output = "D:/example2.mp4") %>% 
+  tmp_trim_duration(start_at = 1, stop_at = 5) %>% 
+  tmp_crop_frames(width = 640, height = 480) %>% 
+  tmp_set_codec("video", "libx264") %>%
+  tmp_drop_streams("audio") %>% 
+  tmp_compile()
 ```
 
 ```{r, eval=FALSE}
 # Run ffmpeg commands by pipeline
-tidymedia(input = "D:/example.mp4", "D:/example2.mp4") %>% 
-  trim_duration(start_at = 1, stop_at = 5) %>% 
-  crop_frames(width = 640, height = 480) %>% 
-  set_codec("video", "libx264") %>%
-  drop_streams("audio") %>% 
-  run_ffmpeg()
+tmp(input = "D:/example.mp4", "D:/example2.mp4") %>% 
+  tmp_trim_duration(start_at = 1, stop_at = 5) %>% 
+  tmp_crop_frames(width = 640, height = 480) %>% 
+  tmp_set_codec("video", "libx264") %>%
+  tmp_drop_streams("audio") %>% 
+  tmp_run_ffmpeg()
 ```
 
 ## Code of Conduct

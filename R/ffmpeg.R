@@ -68,7 +68,7 @@ crop_video <- function(infile, outfile, width, height, x, y, arg) {
 # format_for_web() --------------------------------------------------------
 
 #' @export
-format_for_web <- function(infile, outfile, preview = FALSE) {
+format_for_web <- function(infile, outfile) {
   
   assert_that(rlang::is_character(infile, n = 1))
   assert_that(file.exists(infile))
@@ -79,12 +79,8 @@ format_for_web <- function(infile, outfile, preview = FALSE) {
     '-filter:v crop="floor(in_w/2)*2:floor(in_h/2)*2" -c:a aac "{outfile}"'
   )
   
-  if(preview == TRUE) {
-    cat(command)
-  } else {
-    ffmpeg(command)
-  }
-  
+  ffmpeg(command)
+
 }
 
 

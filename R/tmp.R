@@ -5,7 +5,8 @@
 #' Start a tidymedia pipeline (\code{tmp} object) by configuring its input and
 #' output files.
 #'
-#' @param input A string indicating the input media file for the pipeline.
+#' @param input A character vector containing strings that indicate the input
+#'   media file for the pipeline (provide more than one for stacking).
 #' @param output A string indicating the output media file for the pipeline.
 #' @param overwrite A logical indicating whether the output media file should be
 #'   overwritten if it already exists. (default = \code{TRUE})
@@ -15,9 +16,9 @@
 tmp_start_pipeline <- function(input, output, overwrite = TRUE) {
   
   #TODO: Update to allow multiple inputs?
-  assert_that(rlang::is_character(input, n = 1))
+  assert_that(rlang::is_character(input), length(input) > 0)
   assert_that(rlang::is_character(output, n = 1))
-  assert_that(file.access(input, mode = 4) == 0)
+  assert_that(all(file.access(input, mode = 4) == 0))
   assert_that(rlang::is_logical(overwrite, n = 1))
   
   new_tmp(
@@ -333,6 +334,38 @@ tmp_set_pixel_format <- function(object, format) {
 }
 
 
+# tmp_stack_videos() -------------------------------------------------------
+
+tmp_stack_videos <- function(object, 
+                             direction = c("horizontal", "vertical"), 
+                             shortest = FALSE, 
+                             silent = FALSE) {
+  
+  shortest_int <- as.integer(shortest)
+  inputs_n <- length(object$input)
+  
+  # TODO: Validate arguments
+  direction <- match.arg(direction)
+  assert_that(inherits(object, "tidymedia_tmp"))
+  assert_that(rlang::is_logical(shortest, n = 1))
+  assert_that(rlang::is_logical(silent, n = 1))
+  assert_that(inputs_n > 1)
+  
+  filter <- ifelse(direction == "horizontal", yes = "hstack", no = "vstack")
+  
+  idx <- substr(object$filter_video, 1, 6) == filter
+  cmd <- glue('{filter}=inputs={inputs_n}:shortest={shortest_int}')
+  if (sum(idx) > 0) {
+    object$filter_video[[idx]] <- cmd
+    if (!silent) print("Overwriting 'stack_videos' instructions")
+  } else {
+    object$filter_video <- c(object$filter_video, cmd)
+  }
+  
+  object
+}
+
+
 # tmp_compile() -----------------------------------------------------------
 
 #' Compile the tidymedia pipeline into FFmpeg command
@@ -350,7 +383,7 @@ tmp_compile <- function(object) {
   
   if (length(object$filter_video)) {
     vf <- paste0(
-      '-filter:v "', 
+      '-filter_complex:v "', 
       paste(object$filter_video, collapse = ','), 
       '" '
     )
@@ -360,7 +393,7 @@ tmp_compile <- function(object) {
   
   if (length(object$filter_audio)) {
     va <- paste0(
-      '-filter:a "', 
+      '-filter_complex:a "', 
       paste(object$filter_audio, collapse = ','), 
       '" '
     )
@@ -368,12 +401,14 @@ tmp_compile <- function(object) {
     va <- ''
   }
   
+  input_string <- paste0(glue('-i "{object$input}"', sep = ""), collapse = " ")
+  
   command <- paste0(
     object$trim_start, 
     object$input_offset, 
     object$trim_end, 
     object$drop_streams,
-    '-i "', object$input, '" ', 
+    input_string, " ", 
     object$overwrite,
     object$codec_video, 
     object$codec_audio, 

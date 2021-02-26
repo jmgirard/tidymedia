@@ -7,7 +7,8 @@
 tmp(input, output, overwrite = TRUE)
 }
 \arguments{
-\item{input}{A string indicating the input media file for the pipeline.}
+\item{input}{A character vector containing strings that indicate the input
+media file for the pipeline (provide more than one for stacking).}
 
 \item{output}{A string indicating the output media file for the pipeline.}
 

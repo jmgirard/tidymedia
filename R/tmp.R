@@ -336,6 +336,24 @@ tmp_set_pixel_format <- function(object, format) {
 
 # tmp_stack_videos() -------------------------------------------------------
 
+#' Stack multiple videos side-by-side or above-and-below
+#'
+#' Add a complex video filter to combine two or more video streams into one
+#' video stream by stacking the frames either horizontally (left-to-right) or
+#' vertically (top-to-bottom).
+#'
+#' @param object A tidymedia pipeline (\code{tmp}) object containing two or more
+#'   inputs that share either the same height (for horizontal stacking) or the
+#'   same width (for vertical stacking)
+#' @param direction A string indicating whether to stack the videos
+#'   left-to-right ("horizontal") or top-to-bottom ("vertical")
+#' @param shortest A logical indicating whether to trim the duration of all
+#'   videos to that of the shortest video videos (default = \code{FALSE})
+#' @param silent A logical indicating whether to suppress messages to the
+#'   console when overwriting a previously specified instruction. (default =
+#'   \code{FALSE})
+#' @return \code{object} but with the added instruction to apply stacking.
+#' @export
 tmp_stack_videos <- function(object, 
                              direction = c("horizontal", "vertical"), 
                              shortest = FALSE, 

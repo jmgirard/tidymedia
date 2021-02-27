@@ -61,7 +61,7 @@ devtools::install_github("jmgirard/tidymedia")
 
 **Windows**
 
-1. Download the latest git version (full or essentials build) from:<br /> <https://www.gyan.dev/ffmpeg/builds/>
+1. Download the latest git version (full or essentials build) from:<br /> <https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-full.7z>
 2. Extract the contents of the downloaded [.7z](https://www.7-zip.org/) file to a folder on your computer such as:<br />`C:/Program Files/ffmpeg`
 3. Run the following code in R (changing the path to match Step 2):<br />`tidymedia::set_ffmpeg("C:/Program Files/ffmpeg/bin/ffmpeg.exe")`
 
@@ -107,6 +107,7 @@ mediainfo_query(
   parameters = c("Width", "Height", "DisplayAspectRatio")
 )
 ```
+
 ```{r, echo=FALSE}
 knitr::kable(mediainfo_query(
   file = "D:/example.mp4", 
@@ -140,22 +141,22 @@ get_encoders()
 
 ```{r}
 # Create ffmpeg commands by pipeline
-tmp(input = "D:/example.mp4", output = "D:/example2.mp4") %>% 
-  tmp_trim_duration(start_at = 1, stop_at = 5) %>% 
-  tmp_crop_frames(width = 640, height = 480) %>% 
-  tmp_set_codec("video", "libx264") %>%
-  tmp_drop_streams("audio") %>% 
-  tmp_compile()
+ffm(input = "D:/example.mp4", output = "D:/example2.mp4") %>% 
+  ffm_trim(start_at = 1, stop_at = 5) %>% 
+  ffm_crop(width = 640, height = 480) %>% 
+  ffm_codec(video = "libx264") %>%
+  ffm_drop(streams = "audio") %>% 
+  ffm_compile()
 ```
 
 ```{r, eval=FALSE}
 # Run ffmpeg commands by pipeline
-tmp(input = "D:/example.mp4", "D:/example2.mp4") %>% 
-  tmp_trim_duration(start_at = 1, stop_at = 5) %>% 
-  tmp_crop_frames(width = 640, height = 480) %>% 
-  tmp_set_codec("video", "libx264") %>%
-  tmp_drop_streams("audio") %>% 
-  tmp_run_ffmpeg()
+ffm(input = "D:/example.mp4", output = "D:/example2.mp4") %>% 
+  ffm_trim(start_at = 1, stop_at = 5) %>% 
+  ffm_crop(width = 640, height = 480) %>% 
+  ffm_codec(video = "libx264") %>%
+  ffm_drop(streams = "audio") %>% 
+  ffm_run()
 ```
 
 ## Code of Conduct

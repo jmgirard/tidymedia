@@ -24,7 +24,7 @@ devtools::install_github("jmgirard/tidymedia")
 
 ### Dependencies
 
-#### 1\. MediaInfo
+#### 1. MediaInfo
 
 **tidymedia** uses [MediaInfo](https://mediaarea.net/en/MediaInfo) to
 query information about media files. If you would like to use these
@@ -35,8 +35,8 @@ instructions for several popular platforms.
 
 **Debian/Ubuntu**
 
-1.  Enter this code into your terminal:<br />`sudo apt-get install
-    mediainfo`
+1.  Enter this code into your
+    terminal:<br />`sudo apt-get install mediainfo`
 
 **Windows**
 
@@ -45,8 +45,8 @@ instructions for several popular platforms.
 2.  Extract (or copy) the contents of this .zip file to a folder on your
     computer such as:<br />`C:/Program Files/MediaInfo`
 3.  Run the following code in R (changing the path to match Step
-    2):<br /> `tidymedia::set_mediainfo("C:/Program
-    Files/MediaInfo/mediainfo.exe")`
+    2):<br />
+    `tidymedia::set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")`
 
 **Mac**
 
@@ -55,7 +55,7 @@ instructions for several popular platforms.
 2.  Open the .dmg file and drag the program icon to the Applications
     folder
 
-#### 2\. FFmpeg
+#### 2. FFmpeg
 
 **tidymedia** uses [FFmpeg](https://ffmpeg.org/) to encode media files.
 If you would like to use these functions, you will need to install the
@@ -66,26 +66,24 @@ several popular platforms.
 
 **Debian/Ubuntu**
 
-1.  Enter this code into your terminal:<br />`sudo apt-get install
-    ffmpeg`
+1.  Enter this code into your
+    terminal:<br />`sudo apt-get install ffmpeg`
 
 **Windows**
 
 1.  Download the latest git version (full or essentials build)
-    from:<br /> <https://www.gyan.dev/ffmpeg/builds/>
+    from:<br /> <https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-full.7z>
 2.  Extract the contents of the downloaded [.7z](https://www.7-zip.org/)
-    file to a folder on your computer such as:<br />`C:/Program
-    Files/ffmpeg`
+    file to a folder on your computer such
+    as:<br />`C:/Program Files/ffmpeg`
 3.  Run the following code in R (changing the path to match Step
-    2):<br />`tidymedia::set_ffmpeg("C:/Program
-    Files/ffmpeg/bin/ffmpeg.exe")`
+    2):<br />`tidymedia::set_ffmpeg("C:/Program Files/ffmpeg/bin/ffmpeg.exe")`
 
 **macOS Homebrew Install**
 
 1.  Open the macOS Terminal or Linux shell prompt.
 2.  Install [Homebrew](https://brew.sh/) by entering this code into your
-    terminal:<br />`/bin/bash -c "$(curl -fsSL
-    https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"`
+    terminal:<br />`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"`
 3.  Enter this code into your terminal:<br />`brew install ffmpeg`
 
 **macOS Manual Install**
@@ -112,7 +110,7 @@ mediainfo_template(file = "D:/example.mp4", template = "brief")
 ```
 
 | Path           | Format | FileSize | Duration | Width | Height | FrameRate | VideoBitRate | Channels | SamplingRate | AudioBitRate |
-| :------------- | :----- | -------: | -------: | ----: | -----: | --------: | -----------: | -------: | -----------: | -----------: |
+|:---------------|:-------|---------:|---------:|------:|-------:|----------:|-------------:|---------:|-------------:|-------------:|
 | D:/example.mp4 | MPEG-4 |  7570203 |   180084 |   480 |    360 |        30 |       199653 |        2 |        44100 |       128007 |
 
 ``` r
@@ -125,7 +123,7 @@ mediainfo_query(
 ```
 
 | File           | Width | Height | DisplayAspectRatio |
-| :------------- | ----: | -----: | -----------------: |
+|:---------------|------:|-------:|-------------------:|
 | D:/example.mp4 |   480 |    360 |              1.333 |
 
 ``` r
@@ -194,23 +192,23 @@ get_encoders()
 
 ``` r
 # Create ffmpeg commands by pipeline
-tmp(input = "D:/example.mp4", output = "D:/example2.mp4") %>% 
-  tmp_trim_duration(start_at = 1, stop_at = 5) %>% 
-  tmp_crop_frames(width = 640, height = 480) %>% 
-  tmp_set_codec("video", "libx264") %>%
-  tmp_drop_streams("audio") %>% 
-  tmp_compile()
-#> [1] "-ss 1 -to 5 -an -i \"D:/example.mp4\" -y -codec:v libx264 -filter:v \"crop=w=640:h=480:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" \"D:/example2.mp4\""
+ffm(input = "D:/example.mp4", output = "D:/example2.mp4") %>% 
+  ffm_trim(start_at = 1, stop_at = 5) %>% 
+  ffm_crop(width = 640, height = 480) %>% 
+  ffm_codec(video = "libx264") %>%
+  ffm_drop(streams = "audio") %>% 
+  ffm_compile()
+#> [1] "-ss 1 -to 5 -an -i \"D:/example.mp4\" -y -codec:v libx264 -filter_complex:v \"crop=w=640:h=480:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" \"D:/example2.mp4\""
 ```
 
 ``` r
 # Run ffmpeg commands by pipeline
-tmp(input = "D:/example.mp4", "D:/example2.mp4") %>% 
-  tmp_trim_duration(start_at = 1, stop_at = 5) %>% 
-  tmp_crop_frames(width = 640, height = 480) %>% 
-  tmp_set_codec("video", "libx264") %>%
-  tmp_drop_streams("audio") %>% 
-  tmp_run_ffmpeg()
+ffm(input = "D:/example.mp4", output = "D:/example2.mp4") %>% 
+  ffm_trim(start_at = 1, stop_at = 5) %>% 
+  ffm_crop(width = 640, height = 480) %>% 
+  ffm_codec(video = "libx264") %>%
+  ffm_drop(streams = "audio") %>% 
+  ffm_run()
 ```
 
 ## Code of Conduct

@@ -321,7 +321,7 @@ ffm_hstack <- function(object,
   assert_that(rlang::is_logical(resize, n = 1))
   assert_that(resize == FALSE || (resize == TRUE && inputs_n == 2))
   
-  idx <- substr(object$filter_video, 1, 6) == filter
+  idx <- substr(object$filter_video, 1, 6) == "hstack"
   if (resize == TRUE) {
     cmd <- glue("[0][1]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[0s][1s];
         [1s][0s]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[1s][0s];

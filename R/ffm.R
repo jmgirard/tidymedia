@@ -14,14 +14,13 @@
 #' @export
 ffm_files <- function(input, output, overwrite = TRUE) {
   
-  #TODO: Update to allow multiple inputs?
   assert_that(rlang::is_character(input), length(input) > 0)
   assert_that(rlang::is_character(output, n = 1))
   assert_that(all(file.access(input, mode = 4) == 0),
-              msg = "One or more input files was not found or readable")
+              msg = "One or more input files was not found or not readable")
   assert_that(rlang::is_logical(overwrite, n = 1))
   
-  new_tmp(
+  new_ffm(
     trim_start = vector("character", 0),
     trim_end = vector("character", 0),
     drop_streams = vector("character", 0),
@@ -48,7 +47,8 @@ ffm <- ffm_files
 #'
 #' Make the duration of a media file shorter by selecting a segment to keep.
 #'
-#' @param object A \code{tmp} (tidymedia pipeline) object.
+#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'   \code{ffm_files()}.
 #' @param start_at A timestamp indicating where in the media file to start
 #'   trimming. Either (1) a nonnegative real number indicating the timestamp in
 #'   seconds or (2) a string containing an FFMPEG timestamp. (default = 0)
@@ -71,7 +71,7 @@ ffm_trim <- function(object,
                      duration = NULL) {
   
   # Validate arguments
-  assert_that(inherits(object, "tidymedia_tmp"))
+  assert_that(inherits(object, "tidymedia_ffm"))
   assert_that(
     rlang::is_character(start_at, n = 1) ||
     (rlang::is_double(start_at, n = 1) && start_at >= 0)
@@ -100,25 +100,6 @@ ffm_trim <- function(object,
   object
 }
 
-# set_input_offset() -----------------------------------------------------------
-# 
-# set_input_offset <- function(object, offset, silent = FALSE) {
-#   
-#   #TODO: Assert that object is of class tidymedia
-#   assert_that(rlang::is_bare_double(offset, n = 1))
-#   assert_that(rlang::is_logical(silent, n = 1))
-#   
-#   # Issue overwriting warning
-#   if (!silent && length(object$input_offset)) {
-#     print("Overwriting input_offset information.")
-#   }
-#   
-#   # Update object
-#   object$input_offset <- paste0('-itsoffset ', offset, ' ')
-#   
-#   object
-# }
-
 # ffm_drop() -------------------------------------------------------------------
 
 #' Drop Steams from an FFmpeg Pipeline
@@ -126,7 +107,8 @@ ffm_trim <- function(object,
 #' Remove one or more specified streams from the media file. For example, remove
 #' the video, audio, subtitles, or data stream from a media file.
 #'
-#' @param object A tidymedia pipeline (\code{tmp}) object.
+#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'   \code{ffm_files()}.
 #' @param streams A character vector containing one or more of the following
 #'   strings: \code{"video"}, \code{"audio"}, \code{"subtitles"}, \code{"data"}
 #' @return \code{object} but with the added instruction to drop one or more
@@ -135,7 +117,7 @@ ffm_trim <- function(object,
 ffm_drop <- function(object,
                      streams = c("video", "audio", "subtitles", "data")) {
   
-  assert_that(inherits(object, "tidymedia_tmp"))
+  assert_that(inherits(object, "tidymedia_ffm"))
   streams <- match.arg(streams, several.ok = TRUE)
 
   # Update object
@@ -154,7 +136,8 @@ ffm_drop <- function(object,
 #'
 #' Decrease the size of the video's frames by cropping it.
 #'
-#' @param object A tidymedia pipeline (\code{tmp}) object.
+#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'   \code{ffm_files()}.
 #' @param width The width of the output video (in pixels). Either a positive
 #'   real number or a string that contains an FFMPEG expression.
 #' @param height The height of the output video (in pixels). Either a positive
@@ -174,7 +157,7 @@ ffm_crop <- function(object,
                      x = "(in_w-out_w)/2",
                      y = "(in_h-out_h)/2") {
   
-  assert_that(inherits(object, "tidymedia_tmp"))
+  assert_that(inherits(object, "tidymedia_ffm"))
   assert_that(
     rlang::is_character(width, n = 1) || 
       (rlang::is_double(width, n = 1) && width > 0)
@@ -210,7 +193,8 @@ ffm_crop <- function(object,
 #' Scale (resize) the input video's frames to either a specific width and height
 #' (in pixels) or using an FFmpeg expression.
 #'
-#' @param object A tidymedia pipeline (\code{tmp}) object.
+#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'   \code{ffm_files()}.
 #' @param width The width of the output video (in pixels). Either (1) a positive
 #'   real number or (2) a string that contains an FFmpeg expression.
 #' @param height The height of the output video (in pixels). Either (1) a
@@ -219,7 +203,7 @@ ffm_crop <- function(object,
 #' @export
 ffm_scale <- function(object, width, height) {
 
-  assert_that(inherits(object, "tidymedia_tmp"))
+  assert_that(inherits(object, "tidymedia_ffm"))
   assert_that(
     rlang::is_character(width, n = 1) ||
       (rlang::is_double(width, n = 1) && width > 0)
@@ -248,9 +232,12 @@ ffm_scale <- function(object, width, height) {
 #' the command \code{get_codecs()} to see a list of the codecs included in your
 #' FFmpeg version.
 #'
-#' @param object A tidymedia pipeline (\code{tmp}) object
-#' @param audio A string indicating which audio codec to use.
-#' @param codec A string indicating which video codec to use.
+#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'   \code{ffm_files()}.
+#' @param audio A string indicating which audio codec to use or \code{NULL} to
+#'   only set the video codec. default = \code{NULL}
+#' @param video A string indicating which video codec to use or \code{NULL} to
+#'   only set the audio codec. default = \code{NULL}
 #' @return \code{object} but with the added instruction to change the codec(s).
 #' @references
 #' @export
@@ -258,7 +245,7 @@ ffm_codec <- function(object,
                       audio = NULL,
                       video = NULL) {
   
-  assert_that(inherits(object, "tidymedia_tmp"))
+  assert_that(inherits(object, "tidymedia_ffm"))
   assert_that(is.null(audio) || rlang::is_character(audio, n = 1))
   assert_that(is.null(video) || rlang::is_character(video, n = 1))
   # TODO: Check codec against the list from get_codecs() and get_encoders()?
@@ -278,16 +265,17 @@ ffm_codec <- function(object,
 #' Set the Pixel Format in an FFmpeg Pipeline
 #' 
 #' 
-#' @param object A tidymedia pipeline object.
+#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'   \code{ffm_files()}.
 #' @param format A string indicating the pixel format for the output file.
 #' @export
 ffm_pixel_format <- function(object, format) {
   
-  assert_that(inherits(object, "tidymedia_tmp"))
+  assert_that(inherits(object, "tidymedia_ffm"))
   assert_that(rlang::is_character(format, n = 1))
   # TODO: Validate format argument
   
-  object$pixel_format <- paste0('-pix_fmt ', format)
+  object$pixel_format <- glue('-pix_fmt {format}')
   
   object
 }
@@ -300,10 +288,12 @@ ffm_pixel_format <- function(object, format) {
 #' Add a complex video filter to stack multiple videos horizontally
 #' (side-by-side) and, optionally, resize them to have the same height.
 #'
-#' @param object A tidymedia pipeline (\code{tmp}) object containing two or more
-#'   inputs with the same height (or two inputs with different heights)
+#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'   \code{ffm_files()}.
 #' @param shortest A logical indicating whether to trim the duration of all
 #'   videos to that of the shortest video (default = \code{FALSE})
+#' @param resize A logical indicating whether to resize the height of the input
+#'   videos to match (takes longer and currently only works with two inputs)
 #' @return \code{object} but with the added instruction to apply horizontal
 #'   stacking.
 #' @export
@@ -315,7 +305,7 @@ ffm_hstack <- function(object,
   inputs_n <- length(object$input)
   
   # TODO: Validate arguments
-  assert_that(inherits(object, "tidymedia_tmp"))
+  assert_that(inherits(object, "tidymedia_ffm"))
   assert_that(rlang::is_logical(shortest, n = 1))
   assert_that(inputs_n > 1)
   assert_that(rlang::is_logical(resize, n = 1))
@@ -338,7 +328,6 @@ ffm_hstack <- function(object,
   object
 }
 
-
 # ffm_compile() ----------------------------------------------------------------
 
 #' Compile the tidymedia pipeline into FFmpeg command
@@ -346,13 +335,14 @@ ffm_hstack <- function(object,
 #' Compile all the instructions into a string representing the FFmpeg command
 #' needed to run it.
 #'
-#' @param object A tidymedia pipeline (\code{tmp}) object.
+#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'   \code{ffm_files()}.
 #' @return A string containing the FFmpeg command needed to execute all the
 #'   instructions provided to the tidymedia pipeline.
 #' @export
 ffm_compile <- function(object) {
   
-  assert_that(inherits(object, "tidymedia_tmp"))
+  assert_that(inherits(object, "tidymedia_ffm"))
   
   if (length(object$filter_video)) {
     vf <- paste0(
@@ -396,9 +386,15 @@ ffm_compile <- function(object) {
 
 # ffm_run() --------------------------------------------------------------------
 
+#' Run the FFmpeg Pipeline
+#' 
+#' Compile the instructions in the pipeline and run them all through FFmpeg.
+#' 
+#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'   \code{ffm_files()}.
 #' @export
 ffm_run <- function(object) {
-  assert_that(inherits(object, "tidymedia_tmp"))
+  assert_that(inherits(object, "tidymedia_ffm"))
   command <- ffm_compile(object)
   ffmpeg(command)
 }

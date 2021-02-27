@@ -1,7 +1,7 @@
-# new_tmp() ---------------------------------------------------------------
+# new_ffm() --------------------------------------------------------------------
 
-# S3 Constructor for tmp class
-new_tmp <- function(trim_start = character(),
+# S3 Constructor for ffm class
+new_ffm <- function(trim_start = character(),
                     trim_end = character(),
                     drop_streams = character(),
                     input = character(), 
@@ -39,15 +39,15 @@ new_tmp <- function(trim_start = character(),
       filter_audio = filter_audio,
       output = output
     ),
-    class = "tidymedia_tmp"
+    class = "tidymedia_ffm"
   )
 }
 
 
-# print.tidymedia_tmp() ---------------------------------------------------
+# print.tidymedia_ffm() ---------------------------------------------------
 
-#' @method print tidymedia_tmp
+#' @method print tidymedia_ffm
 #' @export
-print.tidymedia_tmp <- function(x, ...) {
-  cat('tidymedia pipeline:\n\n', tmp_compile(x), '\n')
+print.tidymedia_ffm <- function(x, ...) {
+  cat('tidymedia ffmpeg pipeline:\n\n', ffm_compile(x), '\n')
 }

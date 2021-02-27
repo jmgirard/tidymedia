@@ -4,7 +4,7 @@
 #' @export
 ffmpeg <- function(command) {
   assert_that(rlang::is_character(command, n = 1))
-  out <- system(paste0('"', find_ffmpeg(), '" ', command), intern = TRUE)
+  out <- system(glue('"{find_ffmpeg()}" {command}'), intern = TRUE)
   out
 }
 

@@ -217,7 +217,7 @@ ffm_crop <- function(object,
 #'   positive real number or (2) a string that contains an FFmpeg expression.
 #' @return \code{object} but with the added instruction to crop the image(s).
 #' @export
-ffm_scale <- function(object, width, height, silent = FALSE) {
+ffm_scale <- function(object, width, height) {
 
   assert_that(inherits(object, "tidymedia_tmp"))
   assert_that(
@@ -317,7 +317,6 @@ ffm_hstack <- function(object,
   # TODO: Validate arguments
   assert_that(inherits(object, "tidymedia_tmp"))
   assert_that(rlang::is_logical(shortest, n = 1))
-  assert_that(rlang::is_logical(silent, n = 1))
   assert_that(inputs_n > 1)
   assert_that(rlang::is_logical(resize, n = 1))
   assert_that(resize == FALSE || (resize == TRUE && inputs_n == 2))

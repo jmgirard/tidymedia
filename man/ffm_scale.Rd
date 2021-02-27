@@ -4,7 +4,7 @@
 \alias{ffm_scale}
 \title{Scale (Resize) Frames in a FFmpeg Pipeline}
 \usage{
-ffm_scale(object, width, height, silent = FALSE)
+ffm_scale(object, width, height)
 }
 \arguments{
 \item{object}{A tidymedia pipeline (\code{tmp}) object.}

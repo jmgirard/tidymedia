@@ -247,3 +247,67 @@ get_encoders <- function(sort_by_type = TRUE) {
   
   out
 }
+
+# segment_video() ---------------------------------------------------------
+
+#' Segment Video
+#'
+#' Use FFmpeg to quickly break a single video file into multiple smaller video
+#' files (with the same encoding) based on pairs of start and stop timestamps.
+#' Segment video files will be named by taking the name of \code{infile} and
+#' appending a suffix of an underscore (_) and an integer indicating which
+#' segment (based on the order provided in \code{ts_start} and \code{ts_stop}).
+#'
+#' @param infile A string containing the path to a video file.
+#' @param ts_start A vector containing one or more timestamps indicating the
+#'   start of each segment to create. Can be either a numeric vector indicating
+#'   seconds or a character vector with time duration syntax. Must have the same
+#'   length as \code{ts_stop}.
+#' @param ts_stop A vector containing one or more timestamps indicating the stop
+#'   of each segment to create. Can be either a numeric vector indicating
+#'   seconds or a character vector with time duration syntax. Must have the same
+#'   length as \code{ts_start}.
+#' @param outdir A string containing the path to an existing directory in which
+#'   to create the segmented video files.
+#' @param padding The number of digits to zero-pad the segment filename to. For
+#'   example, if \code{infile} was "x.mp4", then setting this to 3 would result
+#'   in the first segment file being named "x_001.mp4" and setting this to 2
+#'   would result in the first segment file being named "x_01.mp4".
+#' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
+segment_video <- function(infile, 
+                          ts_start, 
+                          ts_stop, 
+                          outdir = NULL, 
+                          padding = 3,
+                          ...) {
+  
+  assert_that(is.character(infile))
+  assert_that(is.numeric(ts_start) || is.character(ts_start))
+  assert_that(is.numeric(ts_stop) || is.character(ts_stop))
+  assert_that(length(ts_start) == length(ts_stop))
+  assert_that(is.null(outdir) || is.character(outdir))
+  
+  outpaths <- paste0(
+    tools::file_path_sans_ext(infile), 
+    '_', 
+    sprintf(paste0('%0', padding, 'd.'), seq_along(ts_start)),
+    tools::file_ext(infile)
+  )
+  
+  if (!is.null(outdir)) outpaths <- file.path(outdir, outpaths)
+  
+  command <- glue(
+    '-y -i {infile} -vcodec copy -acodec copy ',
+    paste0(
+      '-ss ', 
+      ts_start, 
+      ' -t ', 
+      ts_stop, 
+      ' -sn ',
+      outpaths,
+      collapse = ' '
+    )
+  )
+  
+  ffmpeg(command)
+}

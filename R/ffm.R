@@ -21,8 +21,6 @@ ffm_files <- function(input, output, overwrite = TRUE) {
   assert_that(rlang::is_logical(overwrite, n = 1))
   
   new_ffm(
-    trim_start = vector("character", 0),
-    trim_end = vector("character", 0),
     drop_streams = vector("character", 0),
     input = input, 
     overwrite = ifelse(overwrite, '-y ', '-n '),
@@ -41,61 +39,109 @@ ffm_files <- function(input, output, overwrite = TRUE) {
 #' @export
 ffm <- ffm_files
 
-# ffm_trim() -------------------------------------------------------------------
+# ffm_trim <- function(object, 
+#                      start_at = 0,
+#                      stop_at = NULL, 
+#                      duration = NULL) {
+#   
+#   # Validate arguments
+#   assert_that(inherits(object, "tidymedia_ffm"))
+#   assert_that(
+#     rlang::is_character(start_at, n = 1) ||
+#     (rlang::is_double(start_at, n = 1) && start_at >= 0)
+#   )
+#   assert_that(
+#     is.null(stop_at) || 
+#       rlang::is_character(stop_at, n = 1) ||
+#       (rlang::is_double(stop_at, n = 1) && stop_at > start_at)
+#   )
+#   assert_that(
+#     is.null(duration) || 
+#       rlang::is_character(duration, n = 1) ||
+#       (rlang::is_double(duration, n = 1) && duration > 0)
+#   )
+#   assert_that(is.null(stop_at) + is.null(duration) == 1,
+#               msg = "Please enter either 'stop_at' or 'duration' but not both.")
+#   
+#   # Update object
+#   object$trim_start <- glue('-ss {start_at} ')
+#   if (!is.null(stop_at)) {
+#     object$trim_end <- glue('-to {stop_at} ')
+#   } else if (!is.null(duration)) {
+#     object$trim_end <- glue('-t {duration} ')
+#   }
+#   
+#   object
+# }
 
-#' Trim Duration in an FFmpeg Pipeline
+
+# ffm_trim() --------------------------------------------------------------
+
+#' Trim the Duration of the FFmpeg Pipeline
 #'
-#' Make the duration of a media file shorter by selecting a segment to keep.
+#' Trim the input so that the output contains one continuous subpart of the
+#' input. Note that, if \code{start=NULL}, then the kept section will start at
+#' the beginning of the input. If both \code{end=NULL} and \code{duration=NULL},
+#' the kept section will end at the end of the input.
 #'
 #' @param object An ffmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param start_at A timestamp indicating where in the media file to start
-#'   trimming. Either (1) a nonnegative real number indicating the timestamp in
-#'   seconds or (2) a string containing an FFMPEG timestamp. (default = 0)
-#' @param stop_at A timestamp indicating where in the media file to stop
-#'   trimming. Either (1) a positive real number indicating the timestamp in
-#'   seconds, (2) a string containing an FFMPEG timestamp, or (3) \code{NULL} to
-#'   use \code{duration} instead. (default = \code{NULL})
-#' @param duration The duration of the output file. Either (1) a positive real
-#'   number indicating the duration in seconds, (2) a string containing an
-#'   FFMPEG timestamp, or (3) \code{NULL} to use \code{stop_at} instead.
-#'   (default = \code{NULL})
-#' @return \code{object} but with the added instructions to trim the duration of
-#'   the output file when run.
-#' @references https://ffmpeg.org/ffmpeg.html
+#' @param start The time of the start of the kept section (i.e., this will be
+#'   the first frame in the output) given in \code{units}.
+#' @param end The time of the first frame that will be dropped (i.e., the frame
+#'   immediately preceding this will be the last frame in the output), given in
+#'   \code{units}.
+#' @param duration The maximum duration of the output given in time duration
+#'   syntax.
+#' @param units A string indicating whether the \code{start} and/or \code{end}
+#'   are given time duration syntax ("tds"), timebase units ("pts"), or frame
+#'   number ("frame"). default = \code{"tds"}
+#' @param setpts A logical indicating whether the output timestamps should be
+#'   modified to start at zero. If TRUE, will add a setpts filter after trim.
+#' @return \code{object} but will added instructions to trim the duration.
+#' @references https://ffmpeg.org/ffmpeg-filters.html#trim
 #' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 #' @export
 ffm_trim <- function(object, 
-                     start_at = 0,
-                     stop_at = NULL, 
-                     duration = NULL) {
+                     start = NULL,
+                     end = NULL,
+                     duration = NULL,
+                     units = c("tds", "pts", "frame"),
+                     setpts = TRUE) {
   
   # Validate arguments
   assert_that(inherits(object, "tidymedia_ffm"))
-  assert_that(
-    rlang::is_character(start_at, n = 1) ||
-    (rlang::is_double(start_at, n = 1) && start_at >= 0)
-  )
-  assert_that(
-    is.null(stop_at) || 
-      rlang::is_character(stop_at, n = 1) ||
-      (rlang::is_double(stop_at, n = 1) && stop_at > start_at)
-  )
-  assert_that(
-    is.null(duration) || 
-      rlang::is_character(duration, n = 1) ||
-      (rlang::is_double(duration, n = 1) && duration > 0)
-  )
-  assert_that(is.null(stop_at) + is.null(duration) == 1,
-              msg = "Please enter either 'stop_at' or 'duration' but not both.")
+  assert_that(is.null(start) || length(start) == 1)
+  assert_that(is.null(end) || length(end) == 1)
+  assert_that(is.null(duration) || length(duration) == 1)
+  units <- match.arg(units)
+  assert_that(rlang::is_logical(setpts, n = 1))
   
-  # Update object
-  object$trim_start <- glue('-ss {start_at} ')
-  if (!is.null(stop_at)) {
-    object$trim_end <- glue('-to {stop_at} ')
-  } else if (!is.null(duration)) {
-    object$trim_end <- glue('-t {duration} ')
+  # select arguments based on units
+  if (units == "tds") {
+    s_arg <- "start"
+    e_arg <- "end"
+  } else if (units == "pts") {
+    s_arg <- "start_pts"
+    e_arg <- "end_pts"
+  } else if (units == "frame") {
+    s_arg <- "start_frame"
+    e_arg <- "end_frame"
   }
+  
+  # create filter command
+  trim_args <- c(
+    glue('{s_arg}={start}'),
+    glue('{e_arg}={end}'),
+    glue('duration={duration}')
+  )
+  cmd <- paste0("trim=", paste(trim_args, collapse = ":"))
+  
+  # append filter command
+  object$filter_video <- c(object$filter_video, cmd)
+
+  # add setpts if requested
+  object$filter_video <- c(object$filter_video, "setpts=PTS-STARTPTS")
   
   object
 }
@@ -175,13 +221,8 @@ ffm_crop <- function(object,
       (rlang::is_double(y, n = 1) && y > 0)
   )
 
-  idx <- substr(object$filter_video, 1, 4) == "crop"
   cmd <- glue('crop=w={width}:h={height}:x={x}:y={y}')
-  if (sum(idx) > 0) {
-    object$filter_video[[idx]] <- cmd
-  } else {
-    object$filter_video <- c(object$filter_video, cmd)
-  }
+  object$filter_video <- c(object$filter_video, cmd)
 
   object
 }
@@ -213,14 +254,9 @@ ffm_scale <- function(object, width, height) {
       (rlang::is_double(height, n = 1) && height > 0)
   )
 
-  idx <- substr(object$filter_video, 1, 5) == "scale"
   cmd <- glue('scale=w={width}:h={height}')
-  if (sum(idx) > 0) {
-    object$filter_video[[idx]] <- cmd
-  } else {
-    object$filter_video <- c(object$filter_video, cmd)
-  }
-  
+  object$filter_video <- c(object$filter_video, cmd)
+
   object
 }
 
@@ -311,7 +347,6 @@ ffm_hstack <- function(object,
   assert_that(rlang::is_logical(resize, n = 1))
   assert_that(resize == FALSE || (resize == TRUE && inputs_n == 2))
   
-  idx <- substr(object$filter_video, 1, 6) == "hstack"
   if (resize == TRUE) {
     cmd <- glue("[0][1]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[0s][1s];
         [1s][0s]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[1s][0s];
@@ -319,12 +354,9 @@ ffm_hstack <- function(object,
   } else {
     cmd <- glue('hstack=inputs={inputs_n}:shortest={shortest_int}')
   }
-  if (sum(idx) > 0) {
-    object$filter_video[[idx]] <- cmd
-  } else {
-    object$filter_video <- c(object$filter_video, cmd)
-  }
-  
+
+  object$filter_video <- c(object$filter_video, cmd)
+
   object
 }
 
@@ -367,9 +399,6 @@ ffm_compile <- function(object) {
   input_string <- paste0(glue('-i "{object$input}"', sep = ""), collapse = " ")
   
   command <- paste0(
-    object$trim_start, 
-    object$input_offset, 
-    object$trim_end, 
     object$drop_streams,
     input_string, " ", 
     object$overwrite,

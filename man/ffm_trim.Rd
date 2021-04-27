@@ -2,37 +2,49 @@
 % Please edit documentation in R/ffm.R
 \name{ffm_trim}
 \alias{ffm_trim}
-\title{Trim Duration in an FFmpeg Pipeline}
+\title{Trim the Duration of the FFmpeg Pipeline}
 \usage{
-ffm_trim(object, start_at = 0, stop_at = NULL, duration = NULL)
+ffm_trim(
+  object,
+  start = NULL,
+  end = NULL,
+  duration = NULL,
+  units = c("tds", "pts", "frame"),
+  setpts = TRUE
+)
 }
 \arguments{
 \item{object}{An ffmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
-\item{start_at}{A timestamp indicating where in the media file to start
-trimming. Either (1) a nonnegative real number indicating the timestamp in
-seconds or (2) a string containing an FFMPEG timestamp. (default = 0)}
+\item{start}{The time of the start of the kept section (i.e., this will be
+the first frame in the output) given in \code{units}.}
 
-\item{stop_at}{A timestamp indicating where in the media file to stop
-trimming. Either (1) a positive real number indicating the timestamp in
-seconds, (2) a string containing an FFMPEG timestamp, or (3) \code{NULL} to
-use \code{duration} instead. (default = \code{NULL})}
+\item{end}{The time of the first frame that will be dropped (i.e., the frame
+immediately preceding this will be the last frame in the output), given in
+\code{units}.}
 
-\item{duration}{The duration of the output file. Either (1) a positive real
-number indicating the duration in seconds, (2) a string containing an
-FFMPEG timestamp, or (3) \code{NULL} to use \code{stop_at} instead.
-(default = \code{NULL})}
+\item{duration}{The maximum duration of the output given in time duration
+syntax.}
+
+\item{units}{A string indicating whether the \code{start} and/or \code{end}
+are given time duration syntax ("tds"), timebase units ("pts"), or frame
+number ("frame"). default = \code{"tds"}}
+
+\item{setpts}{A logical indicating whether the output timestamps should be
+modified to start at zero. If TRUE, will add a setpts filter after trim.}
 }
 \value{
-\code{object} but with the added instructions to trim the duration of
-the output file when run.
+\code{object} but will added instructions to trim the duration.
 }
 \description{
-Make the duration of a media file shorter by selecting a segment to keep.
+Trim the input so that the output contains one continuous subpart of the
+input. Note that, if \code{start=NULL}, then the kept section will start at
+the beginning of the input. If both \code{end=NULL} and \code{duration=NULL},
+the kept section will end at the end of the input.
 }
 \references{
-https://ffmpeg.org/ffmpeg.html
+https://ffmpeg.org/ffmpeg-filters.html#trim
 
 https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 }

@@ -301,7 +301,7 @@ segment_video <- function(infile,
     paste0(
       '-ss ', 
       ts_start, 
-      ' -t ', 
+      ' -to ', 
       ts_stop, 
       ' -sn ',
       outpaths,

@@ -16,7 +16,7 @@
 pad_integers <- function(x, width = NULL, flag = "0") {
   assert_that(rlang::is_integerish(x))
   assert_that(is.null(width) || rlang::is_integerish(width, n = 1))
-  assert_that(rlang::is_character(padding, n = 1))
+  assert_that(rlang::is_character(flag, n = 1))
   if (is.null(width)) width <- floor(log10(max(x))) + 1
   formatC(x, width = width, flag = flag)
 }

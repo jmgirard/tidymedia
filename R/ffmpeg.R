@@ -293,16 +293,18 @@ segment_video <- function(infile,
   
   # If no names are provided, add zero-padded integers to infile name
   if (is.null(outnames)) {
-    outnames <- paste0(
+    outpaths <- paste0(
       tools::file_path_sans_ext(infile),
       '_',
       pad_integers(seq_along(ts_start)),
       tools::file_ext(infile)
     )
+  } else {
+    outpaths <- outnames
   }
   
   # If outdir is provided, add it to the outpath
-  if (!is.null(outdir)) outpaths <- file.path(outdir, outnames)
+  if (!is.null(outdir)) outpaths <- file.path(outdir, outpaths)
   
   # Build command
   command <- glue(

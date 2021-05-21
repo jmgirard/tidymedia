@@ -4,7 +4,7 @@
 \alias{segment_video}
 \title{Segment Video}
 \usage{
-segment_video(infile, ts_start, ts_stop, outdir = NULL, padding = 3, ...)
+segment_video(infile, ts_start, ts_stop, outdir = NULL, outnames = NULL, ...)
 }
 \arguments{
 \item{infile}{A string containing the path to a video file.}
@@ -19,13 +19,16 @@ of each segment to create. Can be either a numeric vector indicating
 seconds or a character vector with time duration syntax. Must have the same
 length as \code{ts_start}.}
 
-\item{outdir}{A string containing the path to an existing directory in which
-to create the segmented video files.}
+\item{outdir}{Either NULL or a string containing the path to an existing
+directory in which to create the segmented video files. If NULL, the
+segmented video files are created in the same directory as \code{infile}.}
 
-\item{padding}{The number of digits to zero-pad the segment filename to. For
-example, if \code{infile} was "x.mp4", then setting this to 3 would result
-in the first segment file being named "x_001.mp4" and setting this to 2
-would result in the first segment file being named "x_01.mp4".}
+\item{outnames}{Either NULL or a character vector indicating the filename
+(with extension) for each segment to create. If NULL, will append a
+zero-padded integer to \code{infile}. If not NULL, must have the same
+length as \code{ts_start}.}
+
+\item{...}{Not currently used}
 }
 \description{
 Use FFmpeg to quickly break a single video file into multiple smaller video

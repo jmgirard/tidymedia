@@ -267,18 +267,21 @@ get_encoders <- function(sort_by_type = TRUE) {
 #'   of each segment to create. Can be either a numeric vector indicating
 #'   seconds or a character vector with time duration syntax. Must have the same
 #'   length as \code{ts_start}.
-#' @param outdir A string containing the path to an existing directory in which
-#'   to create the segmented video files.
-#' @param padding The number of digits to zero-pad the segment filename to. For
-#'   example, if \code{infile} was "x.mp4", then setting this to 3 would result
-#'   in the first segment file being named "x_001.mp4" and setting this to 2
-#'   would result in the first segment file being named "x_01.mp4".
+#' @param outdir Either NULL or a string containing the path to an existing
+#'   directory in which to create the segmented video files. If NULL, the
+#'   segmented video files are created in the same directory as \code{infile}.
+#' @param outnames Either NULL or a character vector indicating the filename
+#'   (with extension) for each segment to create. If NULL, will append a
+#'   zero-padded integer to \code{infile}. If not NULL, must have the same
+#'   length as \code{ts_start}.
+#' @param ... Not currently used
 #' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
+#' @export
 segment_video <- function(infile, 
                           ts_start, 
                           ts_stop, 
                           outdir = NULL, 
-                          padding = 3,
+                          outnames = NULL,
                           ...) {
   
   assert_that(is.character(infile))
@@ -286,16 +289,22 @@ segment_video <- function(infile,
   assert_that(is.numeric(ts_stop) || is.character(ts_stop))
   assert_that(length(ts_start) == length(ts_stop))
   assert_that(is.null(outdir) || is.character(outdir))
+  assert_that(is.null(outnames) || length(outnames) == length(ts_start))
   
-  outpaths <- paste0(
-    tools::file_path_sans_ext(infile), 
-    '_', 
-    sprintf(paste0('%0', padding, 'd.'), seq_along(ts_start)),
-    tools::file_ext(infile)
-  )
+  # If no names are provided, add zero-padded integers to infile name
+  if (is.null(outnames)) {
+    outnames <- paste0(
+      tools::file_path_sans_ext(infile),
+      '_',
+      pad_integers(seq_along(ts_start)),
+      tools::file_ext(infile)
+    )
+  }
   
-  if (!is.null(outdir)) outpaths <- file.path(outdir, outpaths)
+  # If outdir is provided, add it to the outpath
+  if (!is.null(outdir)) outpaths <- file.path(outdir, outnames)
   
+  # Build command
   command <- glue(
     '-y -i {infile} -vcodec copy -acodec copy ',
     paste0(
@@ -309,5 +318,6 @@ segment_video <- function(infile,
     )
   )
   
+  # Run command
   ffmpeg(command)
 }

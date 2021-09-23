@@ -360,6 +360,63 @@ ffm_hstack <- function(object,
   object
 }
 
+# ffm_drawbox() -----------------------------------------------------------
+
+#' Draw a Colored Box on the Videos in an FFmpeg Pipeline
+#'
+#' Add a video filter to draw a colored rectangle on the input video.
+#'
+#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'   \code{ffm_files()}.
+#' @param x The horizontal position, in the input video, of the left edge of the
+#'   box (in pixels). Either a nonnegative real number or a string that contains
+#'   an FFMPEG expression. (default = 0)
+#' @param y The vertical position, in the input video, of the top edge of the
+#'   box (in pixels). Either a nonnegative real number or a string that contains
+#'   an FFMPEG expression. (default = 0)
+#' @param width The width of the box (in pixels). Either a positive real number
+#'   or a string that contains an FFmpeg expression. (default = \code{"in_w"})
+#' @param height The height of the box (in pixels). Either a positive real
+#'   number or a string that contains an FFmpeg expression. (default =
+#'   \code{"in_h"})
+#' @param color A string containing the color of the box in FFmpeg color syntax,
+#'   see reference link below for more details. If the special value
+#'   \code{"invert"} is used, the box color is teh same as tehv ideo with
+#'   inverted luma. (default = \code{"black"})
+#' @param thickness A thickness of the box edge (in pixels). A value of
+#'   \code{"fill"} will create a filled box. (default = \code{"fill"})
+#' @return \code{object} but with the added instruction to apply the drawbox
+#'   filter.
+#' @references https://ffmpeg.org/ffmpeg-filters.html#drawbox
+#' @references https://ffmpeg.org/ffmpeg-utils.html#color-syntax
+#' @export
+ffm_drawbox <- function(object,
+                       x = 0,
+                       y = 0,
+                       width = "in_w",
+                       height = "in_h",
+                       color = "black",
+                       thickness = "fill") {
+  
+  assert_that(inherits(object, "tidymedia_ffm"))
+  assert_that(rlang::is_character(x, n = 1) || 
+                (rlang::is_double(x, n = 1) && x >= 0))
+  assert_that(rlang::is_character(y, n = 1) || 
+                (rlang::is_double(y, n = 1) && y >= 0))
+  assert_that(rlang::is_character(width, n = 1) || 
+                (rlang::is_double(width, n = 1) && width > 0))
+  assert_that(rlang::is_character(height, n = 1) || 
+                (rlang::is_double(height, n = 1) && height > 0))
+  assert_that(rlang::is_character(color, n = 1))
+  assert_that(rlang::is_character(thickness, n = 1) ||
+                (rlang::is_double(thickness, n = 1) && thickness > 0))
+  
+  cmd <- glue('drawbox=x={x}:y={y}:w={width}:h={height}:c={color}:t={thickness}')
+  object$filter_video <- c(object$filter_video, cmd)
+  
+  object
+}
+
 # ffm_compile() ----------------------------------------------------------------
 
 #' Compile the tidymedia pipeline into FFmpeg command

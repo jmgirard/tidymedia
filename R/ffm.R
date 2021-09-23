@@ -214,11 +214,11 @@ ffm_crop <- function(object,
   )
   assert_that(
     rlang::is_character(x, n = 1) ||
-      (rlang::is_double(x, n = 1) && x > 0)
+      (rlang::is_double(x, n = 1) && x >= 0)
   )
   assert_that(
     rlang::is_character(y, n = 1) ||
-      (rlang::is_double(y, n = 1) && y > 0)
+      (rlang::is_double(y, n = 1) && y >= 0)
   )
 
   cmd <- glue('crop=w={width}:h={height}:x={x}:y={y}')

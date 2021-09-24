@@ -11,6 +11,7 @@ new_ffm <- function(trim_start = character(),
                     pixel_format = character(),
                     filter_video = character(),
                     filter_audio = character(),
+                    map = character(),
                     output = character()) {
   
   stopifnot(is.character(trim_start))
@@ -23,6 +24,7 @@ new_ffm <- function(trim_start = character(),
   stopifnot(is.character(pixel_format))
   stopifnot(is.character(filter_video))
   stopifnot(is.character(filter_audio))
+  stopifnot(is.character(map))
   stopifnot(is.character(output))
   
   structure(
@@ -37,6 +39,7 @@ new_ffm <- function(trim_start = character(),
       pixel_format = pixel_format,
       filter_video = filter_video,
       filter_audio = filter_audio,
+      map = map,
       output = output
     ),
     class = "tidymedia_ffm"

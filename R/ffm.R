@@ -29,6 +29,7 @@ ffm_files <- function(input, output, overwrite = TRUE) {
     pixel_format = vector("character", 0),
     filter_video = vector("character", 0),
     filter_audio = vector("character", 0),
+    map = vector("character", 0),
     output = output
   )
 }
@@ -296,6 +297,55 @@ ffm_codec <- function(object,
   object
 }
 
+
+# ffm_map() ---------------------------------------------------------------
+
+#' Set the Stream Mapping in an FFmpeg Pipeline
+#' 
+#' Description
+#' 
+#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'   \code{ffm_files()}.
+#' @param mapping A string determining the stream mapping.
+#' @export
+ffm_map <- function(object, mapping = "0") {
+  assert_that(inherits(object, "tidymedia_ffm"))
+  assert_that(rlang::is_character(mapping, n = 1))
+  
+  object$map <- mapping
+  
+  object
+}
+
+
+# ffm_copy() --------------------------------------------------------------
+
+#' Copy the codecs and map all streams
+#' 
+#' Description
+#' 
+#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'   \code{ffm_files()}.
+#' @export
+ffm_copy <- function(object, audio = TRUE, video = TRUE, streams = TRUE) {
+  
+  assert_that(inherits(object, "tidymedia_ffm"))
+  assert_that(rlang::is_logical(audio))
+  assert_that(rlang::is_logical(video))
+  assert_that(rlang::is_logical(streams))
+  if (audio) {
+    object <- ffm_codec(object, audio = "copy")
+  }
+  if (video) {
+    object <- ffm_codec(object, video = "copy")
+  }
+  if (streams) {
+    object <- ffm_map(object, mapping = "0")
+  }
+  
+  object
+}
+
 # ffm_pixel_format() ------------------------------------------------------
 
 #' Set the Pixel Format in an FFmpeg Pipeline
@@ -453,6 +503,12 @@ ffm_compile <- function(object) {
     va <- ''
   }
   
+  if (length(object$map)) {
+    map <- paste0('-map ', object$map, ' ')
+  } else {
+    map <- ''
+  }
+  
   input_string <- paste0(glue('-i "{object$input}"', sep = ""), collapse = " ")
   
   command <- paste0(
@@ -464,6 +520,7 @@ ffm_compile <- function(object) {
     object$pixel_format,
     vf, 
     va, 
+    map,
     '"', object$output, '"'
   )
   

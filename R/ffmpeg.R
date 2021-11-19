@@ -378,10 +378,19 @@ concatenate_videos <- function(infiles, outfile) {
     warning("Not all infiles have the same extension.")
   }
   
+  # Create a temporary text file to store the paths of the files to concatenate
   tempfn <- tempfile("file", fileext = ".txt")
+  
+  # Write the paths of the files to concatenate to the temporary text file
   fileConn <- file(tempfn)
   writeLines(paste(paste0("file '", infiles, "'"), collapse = "\n"), fileConn)
-  command <- glue::glue('-f concat -safe 0 -i "{tempfn}" -c copy "{outfile}"')
+  
+  # Build the FFmpeg command to perform the concatenation
+  command <- glue::glue('-f concat -safe 0 -i "{tempfn}" -map 0 -c copy "{outfile}"')
+  
+  # Run the FFmpeg command to perform the concatenation
   ffmpeg(command)  
+  
+  # Close and remove the temporary text file
   close(fileConn)
 }

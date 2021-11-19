@@ -44,6 +44,35 @@ extract_audio <- function(infile, outfile, options = "-acodec copy") {
   ffmpeg(command)
 }
 
+
+# separate_audio_video() --------------------------------------------------
+
+#' @export
+separate_audio_video <- function(infile, audiofile, videofile) {
+  
+  assert_that(rlang::is_character(infile, n = 1))
+  assert_that(file.exists(infile))
+  assert_that(rlang::is_character(audiofile, n = 1))
+  assert_that(rlang::is_character(videofile, n = 1))
+  
+  command <- glue('-i "{infile}" -map 0:a "{audiofile}" -map 0:v "{videofile}"')
+  ffmpeg(command)
+}
+
+
+# audio_as_mp3() ----------------------------------------------------------
+
+#' @export
+audio_as_mp3 <- function(infile, outfile) {
+  
+  assert_that(rlang::is_character(infile, n = 1))
+  assert_that(file.exists(infile))
+  assert_that(rlang::is_character(outfile, n = 1))
+  
+  command <- glue('-i "{infile}" -q:a 0 -map a "{outfile}"')
+  ffmpeg(command)
+}
+
 # crop_video() ------------------------------------------------------------
 
 #' @export
@@ -322,4 +351,37 @@ segment_video <- function(infile,
   
   # Run command
   ffmpeg(command)
+}
+
+
+# concatenate_videos() ----------------------------------------------------
+
+#' Combine video files using the concat demuxer
+#'
+#' Combine multiple video files one after another without needing to re-encode
+#' them by using the [concat
+#' demuxer](https://ffmpeg.org/ffmpeg-formats.html#concat-1). This will be much
+#' faster than re-encoding but requires that the files have the same parameters
+#' (width, height, etc.) and formats/codecs. To concatenate videos using
+#' re-encoding, see the [concat video
+#' filter](https://ffmpeg.org/ffmpeg-filters.html#concat)
+#'
+#' @param infiles A character vector containing the file paths to video files.
+#' @param outfile A string containing the desired file path to write the new,
+#'   concatenated video file to.
+#' @export
+concatenate_videos <- function(infiles, outfile) {
+  
+  assert_that(is.character(infiles), rlang::is_string(outfile))
+  
+  if (length(unique(tools::file_ext(infiles))) != 1) {
+    warning("Not all infiles have the same extension.")
+  }
+  
+  tempfn <- tempfile("file", fileext = ".txt")
+  fileConn <- file(tempfn)
+  writeLines(paste(paste0("file '", infiles, "'"), collapse = "\n"), fileConn)
+  command <- glue::glue('-f concat -safe 0 -i "{tempfn}" -c copy "{outfile}"')
+  ffmpeg(command)  
+  close(fileConn)
 }

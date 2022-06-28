@@ -61,9 +61,8 @@ devtools::install_github("jmgirard/tidymedia")
 
 **Windows**
 
-1. Download the latest git version (full or essentials build) from:<br /> <https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-full.7z>
-2. Extract the contents of the downloaded [.7z](https://www.7-zip.org/) file to a folder on your computer such as:<br />`C:/Program Files/ffmpeg`
-3. Run the following code in R (changing the path to match Step 2):<br />`tidymedia::set_ffmpeg("C:/Program Files/ffmpeg/bin/ffmpeg.exe")`
+1. Install the `tidymedia` package in R.
+2. Run `tidymedia::install_on_win()` in R.
 
 **macOS Homebrew Install**
 
@@ -92,17 +91,17 @@ mediainfo("--Version")
 
 ```{r, eval=FALSE}
 # Create a row tibble using a built-in template
-mediainfo_template(file = "D:/example.mp4", template = "brief")
+mediainfo_template(file = "C:/example.m4v", template = "brief")
 ```
 
 ```{r, echo=FALSE}
-knitr::kable(mediainfo_template(file = "D:/example.mp4", template = "brief"))
+knitr::kable(mediainfo_template(file = "C:/example.m4v", template = "brief"))
 ```
 
 ```{r, eval=FALSE}
 # Create a row tibble from specific parameters
 mediainfo_query(
-  file = "D:/example.mp4", 
+  file = "C:/example.m4v", 
   section = "Video", 
   parameters = c("Width", "Height", "DisplayAspectRatio")
 )
@@ -110,7 +109,7 @@ mediainfo_query(
 
 ```{r, echo=FALSE}
 knitr::kable(mediainfo_query(
-  file = "D:/example.mp4", 
+  file = "C:/example.m4v", 
   section = "Video", 
   parameters = c("Width", "Height", "DisplayAspectRatio")
 ))
@@ -118,8 +117,8 @@ knitr::kable(mediainfo_query(
 
 ```{r}
 # Lookup common parameters
-get_duration(file = "D:/example.mp4", unit = "sec")
-get_height(file = "D:/example.mp4")
+get_duration(file = "C:/example.m4v", unit = "sec")
+get_height(file = "C:/example.m4v")
 ```
 
 ### FFmpeg
@@ -141,21 +140,21 @@ get_encoders()
 
 ```{r}
 # Create ffmpeg commands by pipeline
-ffm(input = "D:/example.mp4", output = "D:/example2.mp4") %>% 
-  ffm_trim(start_at = 1, stop_at = 5) %>% 
-  ffm_crop(width = 640, height = 480) %>% 
-  ffm_codec(video = "libx264") %>%
-  ffm_drop(streams = "audio") %>% 
+ffm(input = "C:/example.m4v", output = "C:/example2.m4v") |>
+  ffm_trim(start = 1, end = 5) |> 
+  ffm_crop(width = 640, height = 480) |>  
+  ffm_codec(video = "libx264") |>
+  ffm_drop(streams = "audio") |> 
   ffm_compile()
 ```
 
 ```{r, eval=FALSE}
 # Run ffmpeg commands by pipeline
-ffm(input = "D:/example.mp4", output = "D:/example2.mp4") %>% 
-  ffm_trim(start_at = 1, stop_at = 5) %>% 
-  ffm_crop(width = 640, height = 480) %>% 
-  ffm_codec(video = "libx264") %>%
-  ffm_drop(streams = "audio") %>% 
+ffm(input = "C:/example.m4v", output = "C:/example2.m4v") |> 
+  ffm_trim(start = 1, end = 5) |> 
+  ffm_crop(width = 640, height = 480) |> 
+  ffm_codec(video = "libx264") |>
+  ffm_drop(streams = "audio") |> 
   ffm_run()
 ```
 

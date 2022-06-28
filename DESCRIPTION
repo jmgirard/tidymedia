@@ -13,18 +13,18 @@ Description: The goal of tidymedia is to provide tools for
     R and the tidyverse.
 License: GPL-3
 Imports: 
+    archive (>= 1.1.1),
     assertthat (>= 0.2.1),
-    glue (>= 1.4.2),
-    magrittr (>= 1.5),
-    rappdirs (>= 0.3.1),
-    rlang (>= 0.4.8),
-    tibble (>= 3.0.4)
+    glue (>= 1.6.2),
+    rappdirs (>= 0.3.3),
+    rlang (>= 1.0.0),
+    tibble (>= 3.1.4)
 Suggests: 
-    furrr (>= 0.2.0),
-    roxygen2 (>= 7.1.1),
-    spelling (>= 2.1)
+    furrr (>= 0.3.0),
+    roxygen2 (>= 7.2.0),
+    spelling (>= 2.2)
 Encoding: UTF-8
 Language: en-US
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.0

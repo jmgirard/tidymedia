@@ -276,7 +276,7 @@ ffm_scale <- function(object, width, height) {
 #' @param video A string indicating which video codec to use or \code{NULL} to
 #'   only set the audio codec. default = \code{NULL}
 #' @return \code{object} but with the added instruction to change the codec(s).
-#' @references
+#' @references https://ffmpeg.org/ffmpeg-codecs.html
 #' @export
 ffm_codec <- function(object,
                       audio = NULL,

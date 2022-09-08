@@ -24,3 +24,6 @@ Set the audio and/or video codecs for the output file. Note that you can use
 the command \code{get_codecs()} to see a list of the codecs included in your
 FFmpeg version.
 }
+\references{
+https://ffmpeg.org/ffmpeg-codecs.html
+}

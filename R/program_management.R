@@ -148,6 +148,7 @@ set_ffplay <- function(location) {
 #' @param install_dir A string indicating a directory to install FFmpeg to. If
 #'   `NULL`, will default to installing to the user data directory.
 #' @return A logical indicating whether the installation was successful.
+#' @export
 install_on_win <- function(download_url = NULL,
                            install_dir = NULL) {
   

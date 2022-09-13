@@ -16,7 +16,8 @@ extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL) {
   assert_that(file.exists(infile))
   assert_that(rlang::is_character(outfile, n = 1))
   assert_that(rlang::is_null(timestamp) || 
-                rlang::is_double(timestamp, n = 1, finite = TRUE))
+                rlang::is_double(timestamp, n = 1, finite = TRUE) ||
+                rlang::is_string(timestamp))
   assert_that(rlang::is_null(frame) || 
                 rlang::is_integerish(frame, n = 1, finite = TRUE))
   assert_that(sum(rlang::is_null(timestamp), rlang::is_null(frame)) == 1,
@@ -26,7 +27,7 @@ extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL) {
   
   pre <- glue('-ss {timestamp}')
   post <- glue('-qmin 1 -q:v 1 -qscale:v 2 -frames:v 1 -huffman optimal')
-  command <- glue('{pre} -i "{input}" {post} "{output}"')
+  command <- glue('{pre} -i "{infile}" {post} "{outfile}"')
   ffmpeg(command)
 }
 
@@ -337,7 +338,7 @@ segment_video <- function(infile,
   
   # Build command
   command <- glue(
-    '-y -i {infile} -vcodec copy -acodec copy ',
+    '-y -i "{infile}" -vcodec copy -acodec copy ',
     paste0(
       '-ss ', 
       ts_start, 
@@ -393,4 +394,30 @@ concatenate_videos <- function(infiles, outfile) {
   
   # Close and remove the temporary text file
   close(fileConn)
+}
+
+
+
+# Get volume levels -------------------------------------------------------
+
+get_volume <- function(infile) {
+  assert_that(rlang::is_string(infile))
+  
+  command <- glue::glue('-i {infile} -af "volumedetect" -vn -sn -dn -f null NUL')
+  
+  output <- ffmpeg(command)
+  
+  #TODO: Clean up output
+  
+  mean_volumes <- regmatches(
+    output, 
+    regexpr("^\\[Parsed_volumedetect.*mean_volume.*", out, perl=TRUE)
+  )
+  
+  max_volumes <- regmatches(
+    output, 
+    regexpr("^\\[Parsed_volumedetect.*max_volume.*", out, perl=TRUE)
+  )
+  
+  output
 }

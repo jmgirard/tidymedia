@@ -77,7 +77,7 @@ audio_as_mp3 <- function(infile, outfile) {
 # crop_video() ------------------------------------------------------------
 
 #' @export
-crop_video <- function(infile, outfile, width, height, x, y, arg) {
+crop_video <- function(infile, outfile, width, height, x, y, arg = "") {
   
   assert_that(rlang::is_character(infile, n = 1))
   assert_that(file.exists(infile))
@@ -86,9 +86,10 @@ crop_video <- function(infile, outfile, width, height, x, y, arg) {
   assert_that(rlang::is_integerish(height, n = 1))
   assert_that(rlang::is_integerish(x, n = 1))
   assert_that(rlang::is_integerish(y, n = 1))
+  assert_that(rlang::is_string(arg))
   
   command <- glue(
-    '-i "{infile}" -filter:v "crop={width}:{height}:{x}:{y}" {arg} "{outfile}"'
+    '-i "{infile}" -map 0 -filter:v "crop={width}:{height}:{x}:{y}" {arg} "{outfile}"'
   )
   
   ffmpeg(command)

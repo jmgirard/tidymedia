@@ -298,10 +298,7 @@ get_encoders <- function(sort_by_type = TRUE) {
 #'   of each segment to create. Can be either a numeric vector indicating
 #'   seconds or a character vector with time duration syntax. Must have the same
 #'   length as \code{ts_start}.
-#' @param outdir Either NULL or a string containing the path to an existing
-#'   directory in which to create the segmented video files. If NULL, the
-#'   segmented video files are created in the same directory as \code{infile}.
-#' @param outnames Either NULL or a character vector indicating the filename
+#' @param outfiles Either NULL or a character vector indicating the filename
 #'   (with extension) for each segment to create. If NULL, will append a
 #'   zero-padded integer to \code{infile}. If not NULL, must have the same
 #'   length as \code{ts_start}.
@@ -312,8 +309,7 @@ get_encoders <- function(sort_by_type = TRUE) {
 segment_video <- function(infile, 
                           ts_start, 
                           ts_stop, 
-                          outdir = NULL, 
-                          outnames = NULL,
+                          outfiles = NULL,
                           run = TRUE,
                           ...) {
   
@@ -321,24 +317,18 @@ segment_video <- function(infile,
   assert_that(is.numeric(ts_start) || is.character(ts_start))
   assert_that(is.numeric(ts_stop) || is.character(ts_stop))
   assert_that(length(ts_start) == length(ts_stop))
-  assert_that(is.null(outdir) || is.character(outdir))
   assert_that(is.null(outnames) || length(outnames) == length(ts_start))
   
   # If no names are provided, add zero-padded integers to infile name
-  if (is.null(outnames)) {
-    outpaths <- paste0(
+  if (is.null(outfiles)) {
+    outfiles <- paste0(
       tools::file_path_sans_ext(infile),
       '_',
       pad_integers(seq_along(ts_start)),
       '.',
       tools::file_ext(infile)
     )
-  } else {
-    outpaths <- outnames
   }
-  
-  # If outdir is provided, add it to the outpath
-  if (!is.null(outdir)) outpaths <- file.path(outdir, outpaths)
   
   # Build command
   command <- glue(
@@ -349,7 +339,7 @@ segment_video <- function(infile,
       ' -to ', 
       ts_stop, 
       ' -sn "',
-      outpaths,
+      outfiles,
       '"',
       collapse = ' '
     )

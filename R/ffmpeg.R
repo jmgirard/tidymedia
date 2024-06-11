@@ -4,7 +4,7 @@
 #' @export
 ffmpeg <- function(command) {
   assert_that(rlang::is_character(command, n = 1))
-  out <- system(glue('"{find_ffmpeg()}" {command}'), intern = TRUE)
+  out <- system(glue('{find_ffmpeg()} {command}'), intern = TRUE)
   out
 }
 
@@ -305,6 +305,7 @@ get_encoders <- function(sort_by_type = TRUE) {
 #'   (with extension) for each segment to create. If NULL, will append a
 #'   zero-padded integer to \code{infile}. If not NULL, must have the same
 #'   length as \code{ts_start}.
+#' @param run A logical indicating whether to run the command or just create it.
 #' @param ... Not currently used
 #' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 #' @export
@@ -313,6 +314,7 @@ segment_video <- function(infile,
                           ts_stop, 
                           outdir = NULL, 
                           outnames = NULL,
+                          run = TRUE,
                           ...) {
   
   assert_that(is.character(infile))
@@ -346,14 +348,20 @@ segment_video <- function(infile,
       ts_start, 
       ' -to ', 
       ts_stop, 
-      ' -sn ',
+      ' -sn "',
       outpaths,
+      '"',
       collapse = ' '
     )
   )
   
   # Run command
-  ffmpeg(command)
+  if (run == TRUE) {
+    ffmpeg(command)
+  } else {
+    command
+  }
+  
 }
 
 

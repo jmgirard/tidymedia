@@ -317,7 +317,7 @@ segment_video <- function(infile,
   assert_that(is.numeric(ts_start) || is.character(ts_start))
   assert_that(is.numeric(ts_stop) || is.character(ts_stop))
   assert_that(length(ts_start) == length(ts_stop))
-  assert_that(is.null(outnames) || length(outnames) == length(ts_start))
+  assert_that(is.null(outfiles) || length(outfiles) == length(ts_start))
   
   # If no names are provided, add zero-padded integers to infile name
   if (is.null(outfiles)) {

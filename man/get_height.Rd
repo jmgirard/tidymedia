@@ -22,10 +22,10 @@ Other mediainfo functions:
 \code{\link{get_framerate}()},
 \code{\link{get_samplingrate}()},
 \code{\link{get_width}()},
+\code{\link{mediainfo}()},
 \code{\link{mediainfo_parameter}()},
 \code{\link{mediainfo_query}()},
-\code{\link{mediainfo_template}()},
-\code{\link{mediainfo}()}
+\code{\link{mediainfo_template}()}
 
 Other convenience functions: 
 \code{\link{get_duration}()},

@@ -42,8 +42,8 @@ Other mediainfo functions:
 \code{\link{get_height}()},
 \code{\link{get_samplingrate}()},
 \code{\link{get_width}()},
+\code{\link{mediainfo}()},
 \code{\link{mediainfo_parameter}()},
-\code{\link{mediainfo_query}()},
-\code{\link{mediainfo}()}
+\code{\link{mediainfo_query}()}
 }
 \concept{mediainfo functions}

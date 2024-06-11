@@ -328,6 +328,7 @@ segment_video <- function(infile,
       tools::file_path_sans_ext(infile),
       '_',
       pad_integers(seq_along(ts_start)),
+      '.',
       tools::file_ext(infile)
     )
   } else {

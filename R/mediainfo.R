@@ -43,7 +43,7 @@ mediainfo_parameter <- function(file, section, parameter) {
   rlang::check_string(section)
   rlang::check_string(parameter)
 
-  command <- glue('--Inform={section};%{parameter}% "{file}"')
+  command <- glue('"--Inform={section};%{parameter}%" "{file}"')
   output <- mediainfo(command)
   # If section is not found, it outputs a long factor
   if (length(output) != 1) output <- NA_character_

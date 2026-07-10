@@ -16,6 +16,13 @@
   `program`) are now matched exactly via `rlang::arg_match()` instead of the
   partial matching of `match.arg()`; pass the full value.
 
+## Bug fixes
+
+* `mediainfo_parameter()` (and the helpers built on it: `get_duration()`,
+  `get_framerate()`, `get_width()`, `get_height()`, `get_samplingrate()`) now
+  shell-quote the `--Inform` argument, so they work on POSIX shells where the
+  `;` was previously parsed as a command separator.
+
 # tidymedia 0.0.0.9000
 
 * Added a `NEWS.md` file to track changes to the package.

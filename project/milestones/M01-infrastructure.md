@@ -89,6 +89,10 @@ Append-only; newest last. One line per session: date, what happened, next.
 - 2026-07-10: Review — draft PR #1 opened; fresh check 0/0/0, tests 70 pass /
   4 skip. Opus review: no blockers, 4 nits fixed inline. Awaiting CI + user
   approval to merge.
+- 2026-07-10: CI red — mediainfo tests ran on Linux (mediainfo present) and
+  surfaced a pre-existing bug: mediainfo_parameter() didn't shell-quote
+  --Inform, breaking it (and get_*) on POSIX. Per user, fixed in M01 (quoted
+  line 46 to match sibling functions); NEWS bug-fix note added. Re-pushing.
 
 ## Decisions
 

@@ -4,7 +4,7 @@
 \alias{extract_frame}
 \title{Extract a single frame from a video}
 \usage{
-extract_frame(infile, outfile, timestamp = NULL, frame = NULL)
+extract_frame(infile, outfile, timestamp = NULL, frame = NULL, run = TRUE)
 }
 \arguments{
 \item{infile}{A string containing the path to a video file.}
@@ -16,9 +16,12 @@ or \code{NULL}. Provide exactly one of \code{timestamp} or \code{frame}.}
 
 \item{frame}{Either an integerish frame number or \code{NULL}. Provide
 exactly one of \code{timestamp} or \code{frame}.}
+
+\item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
+or return the compiled command without running it (\code{FALSE}).}
 }
 \value{
-The character output from FFmpeg.
+The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 }
 \description{
 Save one frame of a video to an image file, selected either by timestamp or

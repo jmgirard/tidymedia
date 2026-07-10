@@ -762,6 +762,22 @@ ffm_run <- function(object) {
   ffmpeg(command)
 }
 
+# ffm_finish() -----------------------------------------------------------------
+
+# Shared tail of the Layer 2 task verbs: compile the pipeline and, when
+# run = TRUE, execute it. Returns the compiled command (invisibly after
+# running) so every verb yields its reproducible command (M03 D-M03-6).
+ffm_finish <- function(object, run) {
+  rlang::check_bool(run)
+  command <- ffm_compile(object)
+  if (run) {
+    ffmpeg(command)
+    invisible(command)
+  } else {
+    command
+  }
+}
+
 # https://ffmpeg.org/ffmpeg-filters.html#toc-drawbox
 # https://ffmpeg.org/ffmpeg-filters.html#toc-drawgrid
 # https://ffmpeg.org/ffmpeg-filters.html#toc-drawtext-1

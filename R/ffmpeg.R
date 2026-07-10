@@ -29,9 +29,12 @@ ffmpeg <- function(command) {
 #'   or \code{NULL}. Provide exactly one of \code{timestamp} or \code{frame}.
 #' @param frame Either an integerish frame number or \code{NULL}. Provide
 #'   exactly one of \code{timestamp} or \code{frame}.
-#' @return The character output from FFmpeg.
+#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
+#'   or return the compiled command without running it (\code{FALSE}).
+#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @export
-extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL) {
+extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL,
+                          run = TRUE) {
   check_file_exists(infile)
   rlang::check_string(outfile)
   if (!is.null(timestamp) &&
@@ -43,13 +46,16 @@ extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL) {
   if (is.null(timestamp) == is.null(frame)) {
     cli::cli_abort("Provide exactly one of {.arg timestamp} or {.arg frame}.")
   }
-  
+
   if (rlang::is_null(timestamp)) timestamp <- frame / get_framerate(infile)
-  
-  pre <- glue('-ss {timestamp}')
-  post <- glue('-qmin 1 -q:v 1 -qscale:v 2 -frames:v 1 -huffman optimal')
-  command <- glue('{pre} -i "{infile}" {post} "{outfile}"')
-  ffmpeg(command)
+
+  # A single-frame grab: fast input seek plus the quality flags, one frame out.
+  p <- ffm_files(infile, outfile)
+  p <- ffm_seek(p, start = timestamp, reencode = FALSE)
+  p <- ffm_output_options(
+    p, "-qmin 1", "-q:v 1", "-qscale:v 2", "-frames:v 1", "-huffman optimal"
+  )
+  ffm_finish(p, run)
 }
 
 # extract_audio() ---------------------------------------------------------
@@ -58,18 +64,22 @@ extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL) {
 #'
 #' @param infile A string containing the path to a media file.
 #' @param outfile A string containing the path of the audio file to write.
-#' @param options A string of FFmpeg output options for the audio stream.
-#'   (default = \code{"-acodec copy"})
-#' @return The character output from FFmpeg.
+#' @param acodec A string naming the audio codec for the output stream.
+#'   (default = \code{"copy"}, i.e. remux without re-encoding)
+#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
+#'   or return the compiled command without running it (\code{FALSE}).
+#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @export
-extract_audio <- function(infile, outfile, options = "-acodec copy") {
-  
+extract_audio <- function(infile, outfile, acodec = "copy", run = TRUE) {
+
   check_file_exists(infile)
   rlang::check_string(outfile)
-  rlang::check_string(options)
+  rlang::check_string(acodec)
 
-  command <- glue('-i "{infile}" {options} -vn "{outfile}"')
-  ffmpeg(command)
+  p <- ffm_files(infile, outfile)
+  p <- ffm_codec(p, audio = acodec)
+  p <- ffm_drop(p, "video")
+  ffm_finish(p, run)
 }
 
 
@@ -99,15 +109,19 @@ separate_audio_video <- function(infile, audiofile, videofile) {
 #'
 #' @param infile A string containing the path to a media file.
 #' @param outfile A string containing the path of the MP3 file to write.
-#' @return The character output from FFmpeg.
+#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
+#'   or return the compiled command without running it (\code{FALSE}).
+#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @export
-audio_as_mp3 <- function(infile, outfile) {
-  
+audio_as_mp3 <- function(infile, outfile, run = TRUE) {
+
   check_file_exists(infile)
   rlang::check_string(outfile)
 
-  command <- glue('-i "{infile}" -q:a 0 -map a "{outfile}"')
-  ffmpeg(command)
+  p <- ffm_files(infile, outfile)
+  p <- ffm_map(p, "a")
+  p <- ffm_output_options(p, "-q:a 0")
+  ffm_finish(p, run)
 }
 
 # crop_video() ------------------------------------------------------------
@@ -119,26 +133,24 @@ audio_as_mp3 <- function(infile, outfile) {
 #' @param width The width of the output video, in pixels.
 #' @param height The height of the output video, in pixels.
 #' @param x The horizontal offset, in pixels, of the left edge of the crop.
+#'   (default = centered)
 #' @param y The vertical offset, in pixels, of the top edge of the crop.
-#' @param arg An optional string of additional FFmpeg output options.
-#'   (default = \code{""})
-#' @return The character output from FFmpeg.
+#'   (default = centered)
+#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
+#'   or return the compiled command without running it (\code{FALSE}).
+#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @export
-crop_video <- function(infile, outfile, width, height, x, y, arg = "") {
-  
+crop_video <- function(infile, outfile, width, height,
+                       x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
+                       run = TRUE) {
+
   check_file_exists(infile)
   rlang::check_string(outfile)
-  rlang::check_number_whole(width)
-  rlang::check_number_whole(height)
-  rlang::check_number_whole(x)
-  rlang::check_number_whole(y)
-  rlang::check_string(arg)
-  
-  command <- glue(
-    '-i "{infile}" -map 0 -filter:v "crop={width}:{height}:{x}:{y}" {arg} "{outfile}"'
-  )
-  
-  ffmpeg(command)
+
+  p <- ffm_files(infile, outfile)
+  p <- ffm_crop(p, width = width, height = height, x = x, y = y)
+  p <- ffm_map(p, "0")
+  ffm_finish(p, run)
 }
 
 
@@ -152,20 +164,21 @@ crop_video <- function(infile, outfile, width, height, x, y, arg = "") {
 #'
 #' @param infile A string containing the path to a video file.
 #' @param outfile A string containing the path of the video file to write.
-#' @return The character output from FFmpeg.
+#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
+#'   or return the compiled command without running it (\code{FALSE}).
+#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @export
-format_for_web <- function(infile, outfile) {
-  
+format_for_web <- function(infile, outfile, run = TRUE) {
+
   check_file_exists(infile)
   rlang::check_string(outfile)
 
-  command <- glue(
-    '-i "{infile}" -pix_fmt yuv420p -c:v libx264 -movflags +faststart ',
-    '-filter:v crop="floor(in_w/2)*2:floor(in_h/2)*2" -c:a aac "{outfile}"'
-  )
-  
-  ffmpeg(command)
-
+  p <- ffm_files(infile, outfile)
+  p <- ffm_crop(p, width = "floor(in_w/2)*2", height = "floor(in_h/2)*2")
+  p <- ffm_codec(p, video = "libx264", audio = "aac")
+  p <- ffm_pixel_format(p, "yuv420p")
+  p <- ffm_output_options(p, "-movflags +faststart")
+  ffm_finish(p, run)
 }
 
 

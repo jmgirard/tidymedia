@@ -71,7 +71,7 @@ Tasks sized to one working session or less, ordered by dependency.
 - [x] T2: Engine — copy-safe seek (`-ss`/`-to` options) + tests.
 - [x] T3: Engine — `ffm_concat()` (concat demuxer) + compile support + tests.
 - [x] T4: `ffm_batch()` runner (tibble in/out, `furrr` opt-in, dry-run) + tests.
-- [ ] T5: Migrate single-output verbs (`extract_audio`, `audio_as_mp3`,
+- [x] T5: Migrate single-output verbs (`extract_audio`, `audio_as_mp3`,
       `crop_video`, `format_for_web`, `extract_frame`) with consistent `run`
       + tests.
 - [ ] T6: Rebuild fan-out/concat verbs (`segment_video` via batch+seek,

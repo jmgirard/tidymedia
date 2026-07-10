@@ -4,7 +4,15 @@
 \alias{crop_video}
 \title{Crop a video to a rectangular region}
 \usage{
-crop_video(infile, outfile, width, height, x, y, arg = "")
+crop_video(
+  infile,
+  outfile,
+  width,
+  height,
+  x = "(in_w-out_w)/2",
+  y = "(in_h-out_h)/2",
+  run = TRUE
+)
 }
 \arguments{
 \item{infile}{A string containing the path to a video file.}
@@ -15,15 +23,17 @@ crop_video(infile, outfile, width, height, x, y, arg = "")
 
 \item{height}{The height of the output video, in pixels.}
 
-\item{x}{The horizontal offset, in pixels, of the left edge of the crop.}
+\item{x}{The horizontal offset, in pixels, of the left edge of the crop.
+(default = centered)}
 
-\item{y}{The vertical offset, in pixels, of the top edge of the crop.}
+\item{y}{The vertical offset, in pixels, of the top edge of the crop.
+(default = centered)}
 
-\item{arg}{An optional string of additional FFmpeg output options.
-(default = \code{""})}
+\item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
+or return the compiled command without running it (\code{FALSE}).}
 }
 \value{
-The character output from FFmpeg.
+The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 }
 \description{
 Crop a video to a rectangular region

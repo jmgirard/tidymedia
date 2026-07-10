@@ -4,15 +4,18 @@
 \alias{audio_as_mp3}
 \title{Extract a media file's audio as an MP3}
 \usage{
-audio_as_mp3(infile, outfile)
+audio_as_mp3(infile, outfile, run = TRUE)
 }
 \arguments{
 \item{infile}{A string containing the path to a media file.}
 
 \item{outfile}{A string containing the path of the MP3 file to write.}
+
+\item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
+or return the compiled command without running it (\code{FALSE}).}
 }
 \value{
-The character output from FFmpeg.
+The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 }
 \description{
 Extract a media file's audio as an MP3

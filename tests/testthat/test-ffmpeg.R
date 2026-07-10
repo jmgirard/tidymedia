@@ -85,6 +85,49 @@ test_that("extract_frame() requires exactly one of timestamp/frame", {
   expect_error(extract_frame(infile, outfile))
 })
 
+# Migrated single-output verbs: pure command tests (run = FALSE, no binary) ----
+
+test_that("extract_audio() compiles to a copy + drop-video command", {
+  f <- make_input()
+  cmd <- extract_audio(f, "out.aac", run = FALSE)
+  expect_match(cmd, "-codec:a copy -vn", fixed = TRUE)
+  expect_match(cmd, '"out.aac"', fixed = TRUE)
+})
+
+test_that("extract_audio(acodec=) sets the audio codec", {
+  f <- make_input()
+  cmd <- extract_audio(f, "out.m4a", acodec = "aac", run = FALSE)
+  expect_match(cmd, "-codec:a aac -vn", fixed = TRUE)
+})
+
+test_that("audio_as_mp3() compiles to -q:a 0 -map a", {
+  f <- make_input()
+  cmd <- audio_as_mp3(f, "out.mp3", run = FALSE)
+  expect_match(cmd, "-q:a 0 -map a", fixed = TRUE)
+})
+
+test_that("crop_video() compiles to a crop filter mapping all streams", {
+  f <- make_input()
+  cmd <- crop_video(f, "out.mp4", width = 100, height = 50, x = 0, y = 0, run = FALSE)
+  expect_match(cmd, '-vf "crop=w=100:h=50:x=0:y=0" -map 0', fixed = TRUE)
+})
+
+test_that("format_for_web() compiles to the web-friendly re-encode", {
+  f <- make_input()
+  cmd <- format_for_web(f, "out.mp4", run = FALSE)
+  expect_match(cmd, "-codec:v libx264 -codec:a aac", fixed = TRUE)
+  expect_match(cmd, "-pix_fmt yuv420p", fixed = TRUE)
+  expect_match(cmd, "-movflags +faststart", fixed = TRUE)
+  expect_match(cmd, "crop=w=floor(in_w/2)*2", fixed = TRUE)
+})
+
+test_that("extract_frame() compiles to a fast input-seek single-frame grab", {
+  f <- make_input()
+  cmd <- extract_frame(f, "out.png", timestamp = 1.5, run = FALSE)
+  expect_match(cmd, "-ss 1.5 -i", fixed = TRUE)
+  expect_match(cmd, "-frames:v 1", fixed = TRUE)
+})
+
 test_that("task verbs reject a missing input file (no binary needed)", {
   missing <- withr::local_tempfile(fileext = ".mp4")  # not created
   expect_error(extract_audio(missing, "out.aac"))

@@ -4,18 +4,21 @@
 \alias{extract_audio}
 \title{Extract the audio stream from a media file}
 \usage{
-extract_audio(infile, outfile, options = "-acodec copy")
+extract_audio(infile, outfile, acodec = "copy", run = TRUE)
 }
 \arguments{
 \item{infile}{A string containing the path to a media file.}
 
 \item{outfile}{A string containing the path of the audio file to write.}
 
-\item{options}{A string of FFmpeg output options for the audio stream.
-(default = \code{"-acodec copy"})}
+\item{acodec}{A string naming the audio codec for the output stream.
+(default = \code{"copy"}, i.e. remux without re-encoding)}
+
+\item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
+or return the compiled command without running it (\code{FALSE}).}
 }
 \value{
-The character output from FFmpeg.
+The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 }
 \description{
 Extract the audio stream from a media file

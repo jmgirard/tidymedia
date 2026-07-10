@@ -14,7 +14,7 @@ lines; all detail lives in `milestones/`, never here.
 | M01 | Infrastructure modernization (testthat, CI, cli)   | done    | archive/M01-infrastructure.md     |
 | M02 | ffm builder engine rework (real command model)     | done    | archive/M02-ffm-engine.md         |
 | M03 | Task verbs rebuilt on the builder + batch support  | done    | archive/M03-task-verbs.md         |
-| M04 | Metadata layer polish (mediainfo/ffprobe tibbles)  | idea    | —                                 |
+| M04 | Metadata layer polish (mediainfo/ffprobe tibbles)  | planned | milestones/M04-metadata-layer.md  |
 | M05 | Docs, vignettes, pkgdown, release prep             | idea    | —                                 |
 
 Last hygiene check: 2026-07-10 (M03 merged as PR #3 / 9d7a72e, archived)

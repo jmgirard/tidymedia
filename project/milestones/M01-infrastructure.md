@@ -44,7 +44,7 @@ Tasks sized to one working session or less.
       and `ffm_compile()` output strings (no binaries needed).
 - [x] T2: Tests for `get_codecs()`, `get_encoders()`, and task functions,
       gated on binary availability via a `skip_if_no_ffmpeg()` helper.
-- [ ] T3: `usethis::use_github_action("check-standard")` and
+- [x] T3: `usethis::use_github_action("check-standard")` and
       `use_github_action("test-coverage")`; install ffmpeg in the workflow
       (ubuntu) so execution tests run on at least one platform.
 - [ ] T4: Migrate `R/ffm.R`, `R/ffm_oop.R`, `R/ffmpeg.R` off assertthat to
@@ -66,6 +66,9 @@ Append-only; newest last. One line per session: date, what happened, next.
   get_encoders, mediainfo, ffprobe) + skip/media helpers. Namespace-qualified
   bare dplyr/tidyr calls in ffprobe.R (deps declared in T5). 59 pass, 5 skip
   (mediainfo absent locally). Next: T3 GHA workflows.
+- 2026-07-10: T3 done — R-CMD-check.yaml (5 configs) + test-coverage.yaml;
+  both install ffmpeg+mediainfo on Linux so execution tests run there. YAML
+  valid. Green-CI verified at review (needs push). Next: T4 assertthat->cli.
 
 ## Decisions
 

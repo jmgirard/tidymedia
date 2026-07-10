@@ -58,3 +58,24 @@ concat/overlay to come) sets the pipeline `complex` and compiles to
 `-map "[vout]"`; such verbs manage their own labels (D003) and must precede
 other video filters. Rules out emitting the invalid `-filter_complex:v`, and
 rules out `-filter_complex` for the single-input common case.
+
+## D007 — Batch model (2026-07-10, from M03)
+
+Batch processing is a single tibble-in/tibble-out runner, `ffm_batch(jobs, .f,
+…)`: `.f` builds one `ffm` pipeline per row (job-table columns passed by name,
+pmap-style); the runner compiles one reproducible command per job and returns
+the jobs tibble plus `command` (and `success` when run). Scalar task verbs
+stay scalar; fan-out task verbs (one input → many outputs, e.g.
+`segment_video`, `separate_audio_video`) are Layer 2 wrappers that emit
+multiple single-output pipelines. Rules out vectorizing individual verbs and
+reaffirms D003 — the engine never grows a multi-output model.
+
+## D008 — Cutting and seeking (2026-07-10, from M03)
+
+Seeking (`ffm_seek()`, `-ss`/`-to` options) is distinct from the `trim`
+*filter* (`ffm_trim()`), because only seeking can stream-copy. Cutting is
+frame-accurate by default (`reencode = TRUE`: output-seek + re-encode). The
+fast path (`reencode = FALSE`) input-seeks (`-ss` before `-i`) with
+`-avoid_negative_ts make_zero` and is lossless but snaps cuts to keyframes, so
+the output duration is approximate. Rules out the old output-seek-copy path,
+which produced wrong-duration, timestamp-shifted output.

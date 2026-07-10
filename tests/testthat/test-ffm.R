@@ -81,6 +81,121 @@ test_that("ffm_trim(setpts = TRUE) keeps the setpts filter", {
   expect_true(any(p$filter_video == "setpts=PTS-STARTPTS"))
 })
 
+# ffm_seek() -------------------------------------------------------------------
+
+test_that("ffm_seek() defaults to accurate: -ss/-to are output options after -i", {
+  f <- make_input()
+  p <- ffm_seek(ffm_files(f, "out.mp4"), start = 3, end = 7)
+  expect_equal(p$seek_start, "3")
+  expect_equal(p$seek_end, "7")
+  expect_true(p$seek_reencode)
+  # Output seeking: -ss/-to appear after -i, no -avoid_negative_ts.
+  expect_equal(
+    ffm_compile(p),
+    sprintf('-y -i "%s" -ss 3 -to 7 "out.mp4"', f)
+  )
+})
+
+test_that("ffm_seek(reencode = FALSE) input-seeks before -i with avoid_negative_ts", {
+  f <- make_input()
+  p <- ffm_seek(ffm_files(f, "out.mp4"), start = 3, end = 7, reencode = FALSE)
+  expect_false(p$seek_reencode)
+  expect_equal(
+    ffm_compile(p),
+    sprintf(
+      '-y -ss 3 -to 7 -i "%s" -avoid_negative_ts make_zero "out.mp4"', f
+    )
+  )
+})
+
+test_that("ffm_seek() accepts an open start or end and tds strings", {
+  f <- make_input()
+  p1 <- ffm_seek(ffm_files(f, "out.mp4"), end = "00:00:05")
+  expect_equal(p1$seek_end, "00:00:05")
+  expect_no_match(ffm_compile(p1), "-ss ", fixed = TRUE)
+  p2 <- ffm_seek(ffm_files(f, "out.mp4"), start = 2)
+  expect_no_match(ffm_compile(p2), "-to ", fixed = TRUE)
+})
+
+test_that("ffm_seek() requires at least one bound", {
+  f <- make_input()
+  expect_error(ffm_seek(ffm_files(f, "out.mp4")), "at least one")
+})
+
+test_that("an accurate seek on a copied video stream is refused at compile", {
+  f <- make_input()
+  p <- ffm_seek(ffm_copy(ffm_files(f, "out.mp4")), start = 1, end = 2)
+  expect_error(ffm_compile(p), "frame-accurate")
+})
+
+test_that("a fast copy seek coexists with codec copy (the intended fast path)", {
+  f <- make_input()
+  p <- ffm_copy(ffm_seek(ffm_files(f, "out.mp4"), start = 1, end = 2, reencode = FALSE))
+  cmd <- ffm_compile(p)
+  expect_match(cmd, "-ss 1 -to 2 -i", fixed = TRUE)
+  expect_match(cmd, "-codec:v copy -codec:a copy", fixed = TRUE)
+})
+
+# ffm_output_options() ---------------------------------------------------------
+
+test_that("ffm_output_options() appends raw output options in order", {
+  f <- make_input()
+  p <- ffm_output_options(ffm_files(f, "out.mp4"), "-q:v 1", "-frames:v 1")
+  expect_equal(p$output_opts, c("-q:v 1", "-frames:v 1"))
+  expect_equal(
+    ffm_compile(p),
+    sprintf('-y -i "%s" -q:v 1 -frames:v 1 "out.mp4"', f)
+  )
+})
+
+test_that("ffm_output_options() rejects an empty call", {
+  f <- make_input()
+  expect_error(ffm_output_options(ffm_files(f, "out.mp4")), "at least one")
+})
+
+# ffm_concat() -----------------------------------------------------------------
+
+test_that("ffm_concat() flags concat, copies codecs, and maps all streams", {
+  f1 <- make_input()
+  f2 <- make_input()
+  p <- ffm_concat(ffm_files(c(f1, f2), "out.mp4"))
+  expect_true(p$concat)
+  expect_true(file.exists(p$concat_list))
+  expect_equal(p$codec_video, "copy")
+  expect_equal(p$codec_audio, "copy")
+  expect_equal(p$map, "0")
+})
+
+test_that("ffm_concat() compiles to the concat demuxer input form", {
+  f1 <- make_input()
+  f2 <- make_input()
+  p <- ffm_concat(ffm_files(c(f1, f2), "out.mp4"))
+  cmd <- ffm_compile(p)
+  expect_match(cmd, "-f concat -safe 0 -i ", fixed = TRUE)
+  expect_no_match(cmd, sprintf('-i "%s"', f1), fixed = TRUE)
+  expect_match(cmd, "-codec:v copy -codec:a copy -map 0", fixed = TRUE)
+})
+
+test_that("ffm_concat() writes a list file naming each input", {
+  f1 <- make_input()
+  f2 <- make_input()
+  p <- ffm_concat(ffm_files(c(f1, f2), "out.mp4"))
+  lines <- readLines(p$concat_list)
+  expect_equal(lines, c(sprintf("file '%s'", f1), sprintf("file '%s'", f2)))
+})
+
+test_that("ffm_concat() requires more than one input", {
+  f <- make_input()
+  expect_error(ffm_concat(ffm_files(f, "out.mp4")), "more than one")
+})
+
+test_that("ffm_concat() refuses to follow a filter", {
+  f1 <- make_input()
+  f2 <- make_input()
+  p <- ffm_scale(ffm_files(c(f1, f2), "out.mp4"), 640, 480)
+  expect_error(ffm_concat(p), "before other filters")
+})
+
 # ffm_drop() -------------------------------------------------------------------
 
 test_that("ffm_drop() stores stream names and compiles them as output options", {
@@ -296,6 +411,10 @@ test_that("compiled commands match snapshots", {
     writeLines(compile_scrubbed(ffm_hstack(ffm_files(c(f1, f2), "out.mp4"))))
     writeLines(compile_scrubbed(ffm_crop(ffm_hstack(ffm_files(c(f1, f2), "out.mp4")), width = 100, height = 50)))
     writeLines(compile_scrubbed(ffm_hstack(ffm_files(c(f1, f2), "out.mp4"), resize = TRUE)))
+    writeLines(compile_scrubbed(ffm_seek(ffm_files(f1, "out.mp4"), start = 3, end = 7)))
+    writeLines(compile_scrubbed(ffm_copy(ffm_seek(ffm_files(f1, "out.mp4"), start = 3, end = 7, reencode = FALSE))))
+    writeLines(compile_scrubbed(ffm_output_options(ffm_files(f1, "out.mp4"), "-q:v 1", "-frames:v 1")))
+    writeLines(compile_scrubbed(ffm_concat(ffm_files(c(f1, f2), "out.mp4"))))
   })
 })
 
@@ -334,4 +453,46 @@ test_that("an hstack(resize = TRUE) pipeline runs through ffmpeg", {
   ffm_run(p)
   expect_true(file.exists(out))
   expect_gt(file.size(out), 0)
+})
+
+test_that("ffm_seek() default (accurate) produces a frame-exact duration", {
+  skip_if_no_ffmpeg()
+  skip_if_no_ffprobe()
+  # Keyframes every 2s; request 3.0->7.0 (both non-keyframe). Accurate mode must
+  # land on 4.0s, unlike a keyframe-snapped copy (M03 D-M03-5 evidence).
+  input <- make_keyframed_video()
+  out <- withr::local_tempfile(fileext = ".mp4")
+  ffm_run(ffm_seek(ffm_files(input, out), start = 3, end = 7))
+  expect_true(file.exists(out))
+  expect_equal(probe_duration(out), 4.0, tolerance = 0.15)
+})
+
+test_that("ffm_seek(reencode = FALSE) copy cut is clean and starts at zero", {
+  skip_if_no_ffmpeg()
+  skip_if_no_ffprobe()
+  input <- make_keyframed_video()
+  out <- withr::local_tempfile(fileext = ".mp4")
+  p <- ffm_copy(ffm_seek(ffm_files(input, out), start = 3, end = 7, reencode = FALSE))
+  ffm_run(p)
+  expect_true(file.exists(out))
+  expect_gt(file.size(out), 0)
+  # The old broken output-seek-copy path shifted the start pts; the input-seek +
+  # avoid_negative_ts path must start the segment at (or very near) zero.
+  start_pts <- as.numeric(ffprobe(sprintf(
+    paste0('-v error -select_streams v -show_entries frame=pts_time',
+           ' -of csv=p=0 -read_intervals "%%+#1" "%s"'), out
+  ))[[1]])
+  expect_lt(start_pts, 0.1)
+})
+
+test_that("ffm_concat() joins inputs end to end through ffmpeg", {
+  skip_if_no_ffmpeg()
+  skip_if_no_ffprobe()
+  a <- make_test_video()
+  b <- make_test_video()
+  out <- withr::local_tempfile(fileext = ".mp4")
+  ffm_run(ffm_concat(ffm_files(c(a, b), out)))
+  expect_true(file.exists(out))
+  # Roughly the sum of the two ~2s inputs.
+  expect_gt(probe_duration(out), 3.5)
 })

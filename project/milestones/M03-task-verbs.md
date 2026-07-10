@@ -66,10 +66,10 @@ Each verifiable with evidence at review time.
 
 Tasks sized to one working session or less, ordered by dependency.
 
-- [ ] T1: Engine — controlled output-options passthrough slot + `ffm_compile()`
+- [x] T1: Engine — controlled output-options passthrough slot + `ffm_compile()`
       positioning + tests.
-- [ ] T2: Engine — copy-safe seek (`-ss`/`-to` options) + tests.
-- [ ] T3: Engine — `ffm_concat()` (concat demuxer) + compile support + tests.
+- [x] T2: Engine — copy-safe seek (`-ss`/`-to` options) + tests.
+- [x] T3: Engine — `ffm_concat()` (concat demuxer) + compile support + tests.
 - [ ] T4: `ffm_batch()` runner (tibble in/out, `furrr` opt-in, dry-run) + tests.
 - [ ] T5: Migrate single-output verbs (`extract_audio`, `audio_as_mp3`,
       `crop_video`, `format_for_web`, `extract_frame`) with consistent `run`
@@ -88,6 +88,9 @@ Append-only; newest last. One line per session: date, what happened, next.
   batch+seek; ffm_concat added; breaking changes allowed).
 - 2026-07-10: Implementation started; branched milestone/M03-task-verbs. Open
   gate item raised by user: copy-cut keyframe accuracy must not corrupt output.
+- 2026-07-10: T1-T3 engine primitives done (ffm_output_options, ffm_seek
+  accurate/copy modes, ffm_concat demuxer). Tests + snapshots green; E2E
+  confirms accurate seek hits 4.0s and copy seek starts at pts 0. Next: T4 batch.
 
 ## Decisions
 
@@ -99,6 +102,16 @@ Milestone-local decisions; promote cross-cutting ones to ../DECISIONS.md.
   multiple single-output pipelines; the engine stays single-output (D003).
 - D-M03-3: Seek (`-ss`/`-to` options) is separate from the trim *filter* so
   copy-based cuts avoid the D-M02-5 copy+filter guard (no forced re-encode).
+- D-M03-4: Seek is a new `ffm_seek(start, end, reencode)` verb, not a mode on
+  `ffm_trim` (implement-gate pick).
+- D-M03-5: Cutting defaults to `reencode = TRUE` (frame-exact). `reencode =
+  FALSE` is a documented, correctly-built fast/lossless copy path (input-seek
+  `-ss` before `-i` + `-avoid_negative_ts make_zero`), which snaps to
+  keyframes. Empirically the old output-seek-copy path returned a 3.08s clip
+  for a requested 4.00s and shifted pts to 1.0 — that broken path is removed.
+- D-M03-6: `ffm_batch(.f=)` receives each job row pmap-style (columns as named
+  args) and returns an ffm pipeline. Task verbs gain `run = TRUE` and return
+  the compiled command (invisibly, after executing, when run).
 
 ## Review
 

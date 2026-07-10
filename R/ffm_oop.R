@@ -20,6 +20,16 @@
 #   map          character() of explicit -map targets
 #   complex      length-1 logical: TRUE once a multi-input verb (e.g. hstack)
 #                has been applied, forcing the -filter_complex + labels path
+#   output_opts  character() of raw output-option tokens (e.g. "-q:v 1"),
+#                positioned by ffm_compile() among the other output options
+#   seek_start   length-0/1 start position for a seek-based cut (-ss)
+#   seek_end     length-0/1 end position for a seek-based cut (-to)
+#   seek_reencode length-0/1 logical: TRUE -> accurate (output seek, re-encode);
+#                FALSE -> fast copy-safe (input seek + -avoid_negative_ts)
+#   concat       length-1 logical: TRUE once ffm_concat() has been applied,
+#                switching the input section to the concat demuxer
+#   concat_list  length-0/1 path to the concat-demuxer list file (written by
+#                ffm_concat() at verb time, referenced by ffm_compile())
 new_ffm <- function(input = character(),
                     output = character(),
                     overwrite = logical(),
@@ -30,7 +40,13 @@ new_ffm <- function(input = character(),
                     filter_video = character(),
                     filter_audio = character(),
                     map = character(),
-                    complex = FALSE) {
+                    complex = FALSE,
+                    output_opts = character(),
+                    seek_start = character(),
+                    seek_end = character(),
+                    seek_reencode = logical(),
+                    concat = FALSE,
+                    concat_list = character()) {
 
   stopifnot(is.character(input))
   stopifnot(is.character(output))
@@ -43,6 +59,12 @@ new_ffm <- function(input = character(),
   stopifnot(is.character(filter_audio))
   stopifnot(is.character(map))
   stopifnot(is.logical(complex), length(complex) == 1)
+  stopifnot(is.character(output_opts))
+  stopifnot(is.character(seek_start), length(seek_start) <= 1)
+  stopifnot(is.character(seek_end), length(seek_end) <= 1)
+  stopifnot(is.logical(seek_reencode), length(seek_reencode) <= 1)
+  stopifnot(is.logical(concat), length(concat) == 1)
+  stopifnot(is.character(concat_list), length(concat_list) <= 1)
 
   structure(
     list(
@@ -56,7 +78,13 @@ new_ffm <- function(input = character(),
       filter_video = filter_video,
       filter_audio = filter_audio,
       map = map,
-      complex = complex
+      complex = complex,
+      output_opts = output_opts,
+      seek_start = seek_start,
+      seek_end = seek_end,
+      seek_reencode = seek_reencode,
+      concat = concat,
+      concat_list = concat_list
     ),
     class = "tidymedia_ffm"
   )

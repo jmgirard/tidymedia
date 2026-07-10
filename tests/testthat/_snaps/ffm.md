@@ -53,4 +53,22 @@
       writeLines(compile_scrubbed(ffm_hstack(ffm_files(c(f1, f2), "out.mp4"), resize = TRUE)))
     Output
       -y -i "<in1>" -i "<in2>" -filter_complex "[0:v][1:v]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[0s][1s];[1s][0s]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[1s][0s];[0s][1s]hstack,setsar=1[vout]" -map "[vout]" "out.mp4"
+    Code
+      writeLines(compile_scrubbed(ffm_seek(ffm_files(f1, "out.mp4"), start = 3, end = 7)))
+    Output
+      -y -i "<in1>" -ss 3 -to 7 "out.mp4"
+    Code
+      writeLines(compile_scrubbed(ffm_copy(ffm_seek(ffm_files(f1, "out.mp4"), start = 3,
+      end = 7, reencode = FALSE))))
+    Output
+      -y -ss 3 -to 7 -i "<in1>" -codec:v copy -codec:a copy -avoid_negative_ts make_zero -map 0 "out.mp4"
+    Code
+      writeLines(compile_scrubbed(ffm_output_options(ffm_files(f1, "out.mp4"),
+      "-q:v 1", "-frames:v 1")))
+    Output
+      -y -i "<in1>" -q:v 1 -frames:v 1 "out.mp4"
+    Code
+      writeLines(compile_scrubbed(ffm_concat(ffm_files(c(f1, f2), "out.mp4"))))
+    Output
+      -y -f concat -safe 0 -i "<concatlist>" -codec:v copy -codec:a copy -map 0 "out.mp4"
 

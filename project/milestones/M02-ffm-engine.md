@@ -1,6 +1,6 @@
 # M02: ffm builder engine rework (real command model)
 
-- **Status:** in-progress <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
+- **Status:** review <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
 - **Created:** 2026-07-10
 - **Completed:** —
 

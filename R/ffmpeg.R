@@ -29,9 +29,12 @@ ffmpeg <- function(command) {
 #'   or \code{NULL}. Provide exactly one of \code{timestamp} or \code{frame}.
 #' @param frame Either an integerish frame number or \code{NULL}. Provide
 #'   exactly one of \code{timestamp} or \code{frame}.
-#' @return The character output from FFmpeg.
+#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
+#'   or return the compiled command without running it (\code{FALSE}).
+#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @export
-extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL) {
+extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL,
+                          run = TRUE) {
   check_file_exists(infile)
   rlang::check_string(outfile)
   if (!is.null(timestamp) &&
@@ -43,13 +46,16 @@ extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL) {
   if (is.null(timestamp) == is.null(frame)) {
     cli::cli_abort("Provide exactly one of {.arg timestamp} or {.arg frame}.")
   }
-  
+
   if (rlang::is_null(timestamp)) timestamp <- frame / get_framerate(infile)
-  
-  pre <- glue('-ss {timestamp}')
-  post <- glue('-qmin 1 -q:v 1 -qscale:v 2 -frames:v 1 -huffman optimal')
-  command <- glue('{pre} -i "{infile}" {post} "{outfile}"')
-  ffmpeg(command)
+
+  # A single-frame grab: fast input seek plus the quality flags, one frame out.
+  p <- ffm_files(infile, outfile)
+  p <- ffm_seek(p, start = timestamp, reencode = FALSE)
+  p <- ffm_output_options(
+    p, "-qmin 1", "-q:v 1", "-qscale:v 2", "-frames:v 1", "-huffman optimal"
+  )
+  ffm_finish(p, run)
 }
 
 # extract_audio() ---------------------------------------------------------
@@ -58,18 +64,22 @@ extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL) {
 #'
 #' @param infile A string containing the path to a media file.
 #' @param outfile A string containing the path of the audio file to write.
-#' @param options A string of FFmpeg output options for the audio stream.
-#'   (default = \code{"-acodec copy"})
-#' @return The character output from FFmpeg.
+#' @param acodec A string naming the audio codec for the output stream.
+#'   (default = \code{"copy"}, i.e. remux without re-encoding)
+#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
+#'   or return the compiled command without running it (\code{FALSE}).
+#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @export
-extract_audio <- function(infile, outfile, options = "-acodec copy") {
-  
+extract_audio <- function(infile, outfile, acodec = "copy", run = TRUE) {
+
   check_file_exists(infile)
   rlang::check_string(outfile)
-  rlang::check_string(options)
+  rlang::check_string(acodec)
 
-  command <- glue('-i "{infile}" {options} -vn "{outfile}"')
-  ffmpeg(command)
+  p <- ffm_files(infile, outfile)
+  p <- ffm_codec(p, audio = acodec)
+  p <- ffm_drop(p, "video")
+  ffm_finish(p, run)
 }
 
 
@@ -80,16 +90,30 @@ extract_audio <- function(infile, outfile, options = "-acodec copy") {
 #' @param infile A string containing the path to a media file.
 #' @param audiofile A string containing the path of the audio file to write.
 #' @param videofile A string containing the path of the video file to write.
-#' @return The character output from FFmpeg.
+#' @param run A logical: run the commands through FFmpeg (\code{TRUE}, default)
+#'   or return the compiled commands without running them (\code{FALSE}).
+#' @return A named character vector of the two compiled commands
+#'   (\code{audio}, \code{video}); invisible when \code{run = TRUE}.
 #' @export
-separate_audio_video <- function(infile, audiofile, videofile) {
-  
+separate_audio_video <- function(infile, audiofile, videofile, run = TRUE) {
+
   check_file_exists(infile)
   rlang::check_string(audiofile)
   rlang::check_string(videofile)
 
-  command <- glue('-i "{infile}" -map 0:a "{audiofile}" -map 0:v "{videofile}"')
-  ffmpeg(command)
+  # One input -> two outputs is a fan-out: emit two single-output pipelines
+  # (D-M03-2) rather than a dual-`-map` command the linear engine can't model.
+  audio <- ffm_map(ffm_files(infile, audiofile), "0:a")
+  video <- ffm_map(ffm_files(infile, videofile), "0:v")
+  commands <- c(audio = ffm_compile(audio), video = ffm_compile(video))
+
+  if (run) {
+    ffmpeg(commands[["audio"]])
+    ffmpeg(commands[["video"]])
+    invisible(commands)
+  } else {
+    commands
+  }
 }
 
 
@@ -99,15 +123,19 @@ separate_audio_video <- function(infile, audiofile, videofile) {
 #'
 #' @param infile A string containing the path to a media file.
 #' @param outfile A string containing the path of the MP3 file to write.
-#' @return The character output from FFmpeg.
+#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
+#'   or return the compiled command without running it (\code{FALSE}).
+#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @export
-audio_as_mp3 <- function(infile, outfile) {
-  
+audio_as_mp3 <- function(infile, outfile, run = TRUE) {
+
   check_file_exists(infile)
   rlang::check_string(outfile)
 
-  command <- glue('-i "{infile}" -q:a 0 -map a "{outfile}"')
-  ffmpeg(command)
+  p <- ffm_files(infile, outfile)
+  p <- ffm_map(p, "a")
+  p <- ffm_output_options(p, "-q:a 0")
+  ffm_finish(p, run)
 }
 
 # crop_video() ------------------------------------------------------------
@@ -119,26 +147,24 @@ audio_as_mp3 <- function(infile, outfile) {
 #' @param width The width of the output video, in pixels.
 #' @param height The height of the output video, in pixels.
 #' @param x The horizontal offset, in pixels, of the left edge of the crop.
+#'   (default = centered)
 #' @param y The vertical offset, in pixels, of the top edge of the crop.
-#' @param arg An optional string of additional FFmpeg output options.
-#'   (default = \code{""})
-#' @return The character output from FFmpeg.
+#'   (default = centered)
+#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
+#'   or return the compiled command without running it (\code{FALSE}).
+#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @export
-crop_video <- function(infile, outfile, width, height, x, y, arg = "") {
-  
+crop_video <- function(infile, outfile, width, height,
+                       x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
+                       run = TRUE) {
+
   check_file_exists(infile)
   rlang::check_string(outfile)
-  rlang::check_number_whole(width)
-  rlang::check_number_whole(height)
-  rlang::check_number_whole(x)
-  rlang::check_number_whole(y)
-  rlang::check_string(arg)
-  
-  command <- glue(
-    '-i "{infile}" -map 0 -filter:v "crop={width}:{height}:{x}:{y}" {arg} "{outfile}"'
-  )
-  
-  ffmpeg(command)
+
+  p <- ffm_files(infile, outfile)
+  p <- ffm_crop(p, width = width, height = height, x = x, y = y)
+  p <- ffm_map(p, "0")
+  ffm_finish(p, run)
 }
 
 
@@ -152,20 +178,21 @@ crop_video <- function(infile, outfile, width, height, x, y, arg = "") {
 #'
 #' @param infile A string containing the path to a video file.
 #' @param outfile A string containing the path of the video file to write.
-#' @return The character output from FFmpeg.
+#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
+#'   or return the compiled command without running it (\code{FALSE}).
+#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @export
-format_for_web <- function(infile, outfile) {
-  
+format_for_web <- function(infile, outfile, run = TRUE) {
+
   check_file_exists(infile)
   rlang::check_string(outfile)
 
-  command <- glue(
-    '-i "{infile}" -pix_fmt yuv420p -c:v libx264 -movflags +faststart ',
-    '-filter:v crop="floor(in_w/2)*2:floor(in_h/2)*2" -c:a aac "{outfile}"'
-  )
-  
-  ffmpeg(command)
-
+  p <- ffm_files(infile, outfile)
+  p <- ffm_crop(p, width = "floor(in_w/2)*2", height = "floor(in_h/2)*2")
+  p <- ffm_codec(p, video = "libx264", audio = "aac")
+  p <- ffm_pixel_format(p, "yuv420p")
+  p <- ffm_output_options(p, "-movflags +faststart")
+  ffm_finish(p, run)
 }
 
 
@@ -356,18 +383,30 @@ get_encoders <- function(sort_by_type = TRUE) {
 #'   (with extension) for each segment to create. If NULL, will append a
 #'   zero-padded integer to \code{infile}. If not NULL, must have the same
 #'   length as \code{ts_start}.
-#' @param run A logical indicating whether to run the command or just create it.
-#' @param ... Not currently used
+#' @param reencode A logical passed to \code{\link{ffm_seek}}: cut each segment
+#'   frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
+#'   lossless copy that snaps to keyframes (\code{FALSE}). See \code{ffm_seek}
+#'   for the trade-off.
+#' @param run A logical: run each segment's command (\code{TRUE}, default) or
+#'   only compile them (\code{FALSE}).
+#' @param parallel A logical passed to \code{\link{ffm_batch}}: cut segments in
+#'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
+#'   default).
+#' @return The [tibble][tibble::tibble-package] returned by
+#'   \code{\link{ffm_batch}}: one row per segment with its \code{command} (and,
+#'   when \code{run = TRUE}, \code{success}).
+#' @seealso \code{\link{ffm_batch}}, \code{\link{ffm_seek}}
 #' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 #' @export
-segment_video <- function(infile, 
-                          ts_start, 
-                          ts_stop, 
+segment_video <- function(infile,
+                          ts_start,
+                          ts_stop,
                           outfiles = NULL,
+                          reencode = TRUE,
                           run = TRUE,
-                          ...) {
-  
-  rlang::check_string(infile)
+                          parallel = FALSE) {
+
+  check_file_exists(infile)
   if (!(is.numeric(ts_start) || is.character(ts_start))) {
     cli::cli_abort("{.arg ts_start} must be a numeric or character vector.")
   }
@@ -380,7 +419,8 @@ segment_video <- function(infile,
   if (!is.null(outfiles) && length(outfiles) != length(ts_start)) {
     cli::cli_abort("{.arg outfiles} must have the same length as {.arg ts_start}.")
   }
-  
+  rlang::check_bool(reencode)
+
   # If no names are provided, add zero-padded integers to infile name
   if (is.null(outfiles)) {
     outfiles <- paste0(
@@ -391,29 +431,24 @@ segment_video <- function(infile,
       tools::file_ext(infile)
     )
   }
-  
-  # Build command
-  command <- glue(
-    '-y -i "{infile}" -vcodec copy -acodec copy ',
-    paste0(
-      '-ss ', 
-      ts_start, 
-      ' -to ', 
-      ts_stop, 
-      ' -sn "',
-      outfiles,
-      '"',
-      collapse = ' '
-    )
+
+  # Fan-out (one input -> many outputs) is a Layer 2 concern: build one
+  # single-output seek pipeline per segment and run them through ffm_batch
+  # (D-M03-2). The engine stays single-output (D003).
+  jobs <- tibble::tibble(
+    input = infile, output = outfiles, start = ts_start, end = ts_stop
   )
-  
-  # Run command
-  if (run == TRUE) {
-    ffmpeg(command)
-  } else {
-    command
-  }
-  
+  ffm_batch(
+    jobs,
+    function(input, output, start, end, ...) {
+      p <- ffm_seek(ffm_files(input, output), start = start, end = end,
+                    reencode = reencode)
+      if (!reencode) p <- ffm_copy(p)
+      p
+    },
+    run = run,
+    parallel = parallel
+  )
 }
 
 
@@ -432,9 +467,12 @@ segment_video <- function(infile,
 #' @param infiles A character vector containing the file paths to video files.
 #' @param outfile A string containing the desired file path to write the new,
 #'   concatenated video file to.
+#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
+#'   or return the compiled command without running it (\code{FALSE}).
+#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @export
-concatenate_videos <- function(infiles, outfile) {
-  
+concatenate_videos <- function(infiles, outfile, run = TRUE) {
+
   if (!rlang::is_character(infiles)) {
     cli::cli_abort("{.arg infiles} must be a character vector of file paths.")
   }
@@ -443,22 +481,10 @@ concatenate_videos <- function(infiles, outfile) {
   if (length(unique(tools::file_ext(infiles))) != 1) {
     cli::cli_warn("Not all {.arg infiles} have the same extension.")
   }
-  
-  # Create a temporary text file to store the paths of the files to concatenate
-  tempfn <- tempfile("file", fileext = ".txt")
-  
-  # Write the paths of the files to concatenate to the temporary text file
-  fileConn <- file(tempfn)
-  writeLines(paste(paste0("file '", infiles, "'"), collapse = "\n"), fileConn)
-  
-  # Build the FFmpeg command to perform the concatenation
-  command <- glue::glue('-f concat -safe 0 -i "{tempfn}" -map 0 -c copy "{outfile}"')
-  
-  # Run the FFmpeg command to perform the concatenation
-  ffmpeg(command)  
-  
-  # Close and remove the temporary text file
-  close(fileConn)
+
+  # ffm_concat() writes the demuxer list file and sets copy + map 0.
+  p <- ffm_concat(ffm_files(infiles, outfile))
+  ffm_finish(p, run)
 }
 
 

@@ -4,15 +4,18 @@
 \alias{format_for_web}
 \title{Re-encode a video for web playback}
 \usage{
-format_for_web(infile, outfile)
+format_for_web(infile, outfile, run = TRUE)
 }
 \arguments{
 \item{infile}{A string containing the path to a video file.}
 
 \item{outfile}{A string containing the path of the video file to write.}
+
+\item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
+or return the compiled command without running it (\code{FALSE}).}
 }
 \value{
-The character output from FFmpeg.
+The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 }
 \description{
 Re-encode a video into a widely compatible, web-friendly form (H.264 video

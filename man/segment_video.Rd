@@ -4,7 +4,15 @@
 \alias{segment_video}
 \title{Segment Video}
 \usage{
-segment_video(infile, ts_start, ts_stop, outfiles = NULL, run = TRUE, ...)
+segment_video(
+  infile,
+  ts_start,
+  ts_stop,
+  outfiles = NULL,
+  reencode = TRUE,
+  run = TRUE,
+  parallel = FALSE
+)
 }
 \arguments{
 \item{infile}{A string containing the path to a video file.}
@@ -24,9 +32,22 @@ length as \code{ts_start}.}
 zero-padded integer to \code{infile}. If not NULL, must have the same
 length as \code{ts_start}.}
 
-\item{run}{A logical indicating whether to run the command or just create it.}
+\item{reencode}{A logical passed to \code{\link{ffm_seek}}: cut each segment
+frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
+lossless copy that snaps to keyframes (\code{FALSE}). See \code{ffm_seek}
+for the trade-off.}
 
-\item{...}{Not currently used}
+\item{run}{A logical: run each segment's command (\code{TRUE}, default) or
+only compile them (\code{FALSE}).}
+
+\item{parallel}{A logical passed to \code{\link{ffm_batch}}: cut segments in
+parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
+default).}
+}
+\value{
+The \link[tibble:tibble-package]{tibble} returned by
+\code{\link{ffm_batch}}: one row per segment with its \code{command} (and,
+when \code{run = TRUE}, \code{success}).
 }
 \description{
 Use FFmpeg to quickly break a single video file into multiple smaller video
@@ -37,4 +58,7 @@ segment (based on the order provided in \code{ts_start} and \code{ts_stop}).
 }
 \references{
 https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
+}
+\seealso{
+\code{\link{ffm_batch}}, \code{\link{ffm_seek}}
 }

@@ -13,7 +13,7 @@ lines; all detail lives in `milestones/`, never here.
 |-----|----------------------------------------------------|---------|-----------------------------------|
 | M01 | Infrastructure modernization (testthat, CI, cli)   | done    | archive/M01-infrastructure.md     |
 | M02 | ffm builder engine rework (real command model)     | done    | archive/M02-ffm-engine.md         |
-| M03 | Task verbs rebuilt on the builder + batch support  | idea    | —                                 |
+| M03 | Task verbs rebuilt on the builder + batch support  | review  | milestones/M03-task-verbs.md      |
 | M04 | Metadata layer polish (mediainfo/ffprobe tibbles)  | idea    | —                                 |
 | M05 | Docs, vignettes, pkgdown, release prep             | idea    | —                                 |
 

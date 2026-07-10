@@ -128,6 +128,58 @@ ffm_trim <- function(object,
   object
 }
 
+# ffm_seek() -------------------------------------------------------------------
+
+#' Cut a Continuous Section from an FFmpeg Pipeline by Seeking
+#'
+#' Keep one continuous section of the input using FFmpeg's fast \code{-ss}/
+#' \code{-to} seek options, rather than the \code{trim} *filter* (see
+#' \code{\link{ffm_trim}}). Unlike the filter, seeking can stream-copy, so it is
+#' the tool for fast, lossless cutting.
+#'
+#' The \code{reencode} argument trades accuracy against speed:
+#' \itemize{
+#'   \item \code{reencode = TRUE} (default) is \strong{frame-accurate}: the
+#'     section is re-encoded so it begins and ends on the exact requested
+#'     frames. This is the safe default.
+#'   \item \code{reencode = FALSE} is a \strong{fast, lossless copy}, but the cut
+#'     points snap to the nearest keyframes, so the output duration can differ
+#'     from the request by up to one group-of-pictures. Pair it with
+#'     \code{\link{ffm_copy}} for the fastest path.
+#' }
+#'
+#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'   \code{ffm_files()}.
+#' @param start The start of the kept section, in seconds or FFmpeg time
+#'   duration syntax. \code{NULL} keeps from the beginning.
+#' @param end The end of the kept section, in seconds or FFmpeg time duration
+#'   syntax. \code{NULL} keeps to the end.
+#' @param reencode A logical: re-encode for a frame-accurate cut (\code{TRUE},
+#'   default) or fast copy-safe seek that snaps to keyframes (\code{FALSE}).
+#' @return \code{object} with the added instruction to seek-cut the input.
+#' @references https://ffmpeg.org/ffmpeg.html#Main-options
+#' @export
+ffm_seek <- function(object, start = NULL, end = NULL, reencode = TRUE) {
+
+  check_ffm(object)
+  if (!is.null(start) && length(start) != 1) {
+    cli::cli_abort("{.arg start} must be a single value or {.code NULL}.")
+  }
+  if (!is.null(end) && length(end) != 1) {
+    cli::cli_abort("{.arg end} must be a single value or {.code NULL}.")
+  }
+  if (is.null(start) && is.null(end)) {
+    cli::cli_abort("Provide at least one of {.arg start} or {.arg end}.")
+  }
+  rlang::check_bool(reencode)
+
+  if (!is.null(start)) object$seek_start <- as.character(start)
+  if (!is.null(end)) object$seek_end <- as.character(end)
+  object$seek_reencode <- reencode
+
+  object
+}
+
 # ffm_drop() -------------------------------------------------------------------
 
 #' Drop Steams from an FFmpeg Pipeline
@@ -397,6 +449,54 @@ ffm_hstack <- function(object,
   object
 }
 
+# ffm_concat() -----------------------------------------------------------------
+
+#' Concatenate Multiple Inputs in an FFmpeg Pipeline
+#'
+#' Join the pipeline's input files one after another using FFmpeg's
+#' [concat demuxer](https://ffmpeg.org/ffmpeg-formats.html#concat-1). This is a
+#' blessed multi-input verb (like \code{\link{ffm_hstack}}): it stream-copies,
+#' so it is fast and lossless but requires that every input share the same
+#' parameters (codec, resolution, frame rate, ...). To concatenate inputs with
+#' differing parameters you must re-encode via the concat filter (not yet
+#' wrapped; use the Layer 0 escape hatch).
+#'
+#' The demuxer needs a list file naming the inputs; \code{ffm_concat()} writes
+#' one to a temporary path immediately and stores it in the pipeline, so the
+#' compiled command can reference it. It also copies codecs and maps all
+#' streams (as \code{\link{ffm_copy}} would).
+#'
+#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'   \code{ffm_files()} with more than one input file.
+#' @return \code{object} with the added instruction to concatenate the inputs.
+#' @export
+ffm_concat <- function(object) {
+
+  check_ffm(object)
+  if (length(object$input) <= 1) {
+    cli::cli_abort("Concatenation requires more than one input file.")
+  }
+  if (length(object$filter_video) || length(object$filter_audio)) {
+    cli::cli_abort(c(
+      "Concatenation must come before other filters.",
+      "i" = "The concat demuxer copies whole files; filter the result after."
+    ))
+  }
+
+  # The demuxer reads a list file of `file '<path>'` lines. Write it now so the
+  # compiled command is self-contained; -safe 0 permits absolute paths, and the
+  # single quotes are escaped per the concat format's rules.
+  listfile <- tempfile("ffm-concat", fileext = ".txt")
+  lines <- paste0("file '", gsub("'", "'\\\\''", object$input), "'")
+  writeLines(lines, listfile)
+
+  object$concat <- TRUE
+  object$concat_list <- listfile
+  object <- ffm_copy(object)
+
+  object
+}
+
 # ffm_drawbox() -----------------------------------------------------------
 
 #' Draw a Colored Box on the Videos in an FFmpeg Pipeline
@@ -449,6 +549,35 @@ ffm_drawbox <- function(object,
   object
 }
 
+# ffm_output_options() ---------------------------------------------------------
+
+#' Add Raw Output Options to an FFmpeg Pipeline
+#'
+#' Append one or more raw FFmpeg output options (the flags that sit after the
+#' input and before the output file) to the pipeline. This is a controlled
+#' escape hatch for options that lack a dedicated verb: \code{ffm_compile()}
+#' still owns where they are placed and how the rest of the command is quoted,
+#' so this is not the same as gluing a command string yourself.
+#'
+#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'   \code{ffm_files()}.
+#' @param ... One or more strings, each a whitespace-separated option group
+#'   (e.g. \code{"-q:v 1"}, \code{"-frames:v 1"}). Added in the order given.
+#' @return \code{object} with the added output options.
+#' @export
+ffm_output_options <- function(object, ...) {
+
+  check_ffm(object)
+  opts <- c(...)
+  if (!rlang::is_character(opts) || length(opts) == 0) {
+    cli::cli_abort("Provide at least one output option as a string.")
+  }
+
+  object$output_opts <- c(object$output_opts, opts)
+
+  object
+}
+
 # ffm_compile() ----------------------------------------------------------------
 
 #' Compile the tidymedia pipeline into FFmpeg command
@@ -485,11 +614,55 @@ ffm_compile <- function(object) {
     ))
   }
 
+  # Guard: the concat demuxer stream-copies whole files, so it cannot also run
+  # a filtergraph (that path is the concat *filter*, deferred).
+  if (isTRUE(object$concat) &&
+      (length(object$filter_video) || length(object$filter_audio))) {
+    cli::cli_abort(c(
+      "Can't apply a filter while concatenating with the concat demuxer.",
+      "i" = "The demuxer copies whole files; filter the result in a second pass."
+    ))
+  }
+
+  # Seek-based cut (distinct from the trim *filter*): a frame-accurate seek
+  # re-encodes, so it cannot ride a copied stream.
+  seek_reencode <- length(object$seek_reencode) && isTRUE(object$seek_reencode)
+  if (seek_reencode && length(object$codec_video) &&
+      object$codec_video == "copy") {
+    cli::cli_abort(c(
+      "Can't make a frame-accurate seek while the video codec is {.val copy}.",
+      "x" = "Accurate seeking must re-encode to cut on an exact frame.",
+      "i" = "Use {.code reencode = FALSE} for a fast copy cut (snaps to a keyframe)."
+    ))
+  }
+
   # Global options (before the inputs).
   overwrite <- if (isTRUE(object$overwrite)) "-y" else "-n"
 
-  # Inputs.
-  inputs <- paste0('-i "', object$input, '"')
+  # Seek options. A frame-accurate seek is placed *after* -i (output seeking,
+  # re-encoded). A fast copy-safe seek is placed *before* -i (input seeking)
+  # with -avoid_negative_ts so the copied segment starts cleanly at a keyframe
+  # instead of the broken output-seek-copy path (see M03 D-M03-5).
+  seek_pre <- character()
+  seek_post <- character()
+  if (length(object$seek_start) || length(object$seek_end)) {
+    ss <- if (length(object$seek_start)) paste("-ss", object$seek_start)
+    to <- if (length(object$seek_end)) paste("-to", object$seek_end)
+    if (seek_reencode) {
+      seek_post <- c(ss, to)
+    } else {
+      seek_pre <- c(ss, to)
+      seek_post <- "-avoid_negative_ts make_zero"
+    }
+  }
+
+  # Inputs. The concat demuxer replaces the per-file -i list with a single -i
+  # pointing at the list file that ffm_concat() wrote.
+  inputs <- if (isTRUE(object$concat)) {
+    paste0('-f concat -safe 0 -i "', object$concat_list, '"')
+  } else {
+    paste0('-i "', object$input, '"')
+  }
 
   # Filters and stream mapping. Single-input sequential chains compile to
   # -vf/-af; any multi-input (blessed) verb sets `complex` and compiles to
@@ -547,13 +720,25 @@ ffm_compile <- function(object) {
     if ("data" %in% object$drop) "-dn"
   )
 
+  # Raw output-option passthrough (e.g. "-q:v 1"): positioned here so verbs can
+  # add specific flags without owning command layout (ffm_compile still quotes
+  # and orders everything else).
+  output_opts <- if (length(object$output_opts)) {
+    paste(object$output_opts, collapse = " ")
+  } else {
+    character()
+  }
+
   tokens <- c(
     overwrite,
+    seek_pre,
     inputs,
     filters,
     codec_video,
     codec_audio,
     pixel_format,
+    seek_post,
+    output_opts,
     drop_flags,
     map,
     paste0('"', object$output, '"')
@@ -575,6 +760,22 @@ ffm_run <- function(object) {
   check_ffm(object)
   command <- ffm_compile(object)
   ffmpeg(command)
+}
+
+# ffm_finish() -----------------------------------------------------------------
+
+# Shared tail of the Layer 2 task verbs: compile the pipeline and, when
+# run = TRUE, execute it. Returns the compiled command (invisibly after
+# running) so every verb yields its reproducible command (M03 D-M03-6).
+ffm_finish <- function(object, run) {
+  rlang::check_bool(run)
+  command <- ffm_compile(object)
+  if (run) {
+    ffmpeg(command)
+    invisible(command)
+  } else {
+    command
+  }
 }
 
 # https://ffmpeg.org/ffmpeg-filters.html#toc-drawbox

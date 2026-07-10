@@ -4,7 +4,7 @@
 \alias{separate_audio_video}
 \title{Split a media file into separate audio and video files}
 \usage{
-separate_audio_video(infile, audiofile, videofile)
+separate_audio_video(infile, audiofile, videofile, run = TRUE)
 }
 \arguments{
 \item{infile}{A string containing the path to a media file.}
@@ -12,9 +12,13 @@ separate_audio_video(infile, audiofile, videofile)
 \item{audiofile}{A string containing the path of the audio file to write.}
 
 \item{videofile}{A string containing the path of the video file to write.}
+
+\item{run}{A logical: run the commands through FFmpeg (\code{TRUE}, default)
+or return the compiled commands without running them (\code{FALSE}).}
 }
 \value{
-The character output from FFmpeg.
+A named character vector of the two compiled commands
+(\code{audio}, \code{video}); invisible when \code{run = TRUE}.
 }
 \description{
 Split a media file into separate audio and video files

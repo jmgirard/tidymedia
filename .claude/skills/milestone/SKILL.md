@@ -121,8 +121,16 @@ for an open brief, run **brief ingestion** (below) before anything else.
 7. When all tasks are checked and `devtools::check()` is clean: set status
    `review`, then **stop with a recap**: what changed (file-level summary of
    the branch diff), test/check results, deviations from the plan, and open
-   concerns. Invite the user to discuss/adjust or advance to
-   `/milestone review`. Do not push or open a PR yet.
+   concerns. Do not push or open a PR yet. End the turn by calling
+   **`AskUserQuestion`** (not a prose "you can discuss or I can proceed…"
+   invitation) so the user gets a selector. Ask a single question — e.g.
+   "How should I proceed with M<NN>?" — with these options, recommended first:
+   - **Proceed to review** — advance to `/milestone review <id>` (push branch,
+     open draft PR, verify criteria, Opus review).
+   - **Adjust first** — make changes on the branch before review.
+   - **Pause here** — stop; leave the milestone at `review`.
+   Honor "Other" free-text as adjustment instructions. Only advance to review
+   when the user selects it — the selector is a stop, not an auto-proceed.
 
 ## /milestone review <id>
 

@@ -73,15 +73,15 @@ Tasks sized to one working session or less, ordered by dependency.
 - [x] T1: Internal safe runner — `system2`-based arg-vector shell-out helper for
       the readers; keep `mediainfo()`/`ffprobe()` string escape hatches intact.
       Quoting tests (space/quote/`$` in path).
-- [ ] T2: ffprobe rework — fix `probe_*(infile=)`; robust key/value parse
-      (`separate_wider_delim`, `too_many="merge"`); 0-stream guard; safe
-      `convert_fractions()`; typed-by-default with opt-out; leading `file`
-      column. Tests.
-- [ ] T3: mediainfo rework — `check_file_exists` in `mediainfo_parameter()`;
-      `type.convert(as.is=TRUE)`; typed-by-default with opt-out; leading `file`
-      column. Tests.
-- [ ] T4: Multi-file vectorization for both backends (stack row/rows per file)
-      + shared schema-unification helper. Tests assert names + `nrow`.
+- [x] T2: ffprobe rework — fix `probe_*(infile=)`; first-`=` key/value split
+      (no `tidyr::separate`); 0-stream guard; safe `convert_fractions()`;
+      `typed=` default; leading `file`; multi-file vectorize + resilience.
+      Shared `type_columns()` helper landed here (utils.R). Tests.
+- [ ] T3: mediainfo rework — `check_file_exists`; `typed=` default via shared
+      `type_columns()`; leading `file`; multi-file vectorize + resilience;
+      route through `run_program()`. Tests.
+- [ ] T4: Cross-backend schema unification — snake_case both built-in
+      templates; consistency tests asserting `file`-led names across backends.
 - [ ] T5: roxygen updates + `devtools::document()`; NEWS under dev version;
       `devtools::check()` 0/0/0.
 
@@ -92,6 +92,10 @@ Append-only; newest last. One line per session: date, what happened, next.
 - 2026-07-10: Milestone planned (4 scope decisions taken at plan gate).
 - 2026-07-10: Impl gate (3 decisions: typed=, casing, resilience); T1 safe
   `run_program()` runner + quoting tests done. Next: T2 ffprobe rework.
+- 2026-07-10: T2 ffprobe rework done — vectorized/typed/resilient readers,
+  fixed the NULL `probe_*(infile=)` bug, safe parsing; shared `type_columns()`
+  (hex-guarded). Dropped `-pretty` (typed=FALSE now = raw strings). 199 pass.
+  Next: T3 mediainfo (mediainfo binary unavailable locally → CI-gated).
 
 ## Decisions
 

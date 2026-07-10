@@ -48,3 +48,13 @@ Milestone-driven development tracked in `project/`, orchestrated by Opus via
 the `/milestone` skill. Subagents: Sonnet for well-specified parallel work,
 Opus for design-sensitive work, never Haiku. Fable is consulted only through
 the brief protocol (user-run clean session), never as a subagent.
+
+## D006 — Filter emission: simple vs complex (2026-07-10, from M02)
+
+`ffm_compile()` chooses the filter flag by input arity. Single-input
+sequential chains compile to `-vf`/`-af`. Any blessed multi-input verb (hstack;
+concat/overlay to come) sets the pipeline `complex` and compiles to
+`-filter_complex` with explicit `[0:v][1:v]…` input labels and an automatic
+`-map "[vout]"`; such verbs manage their own labels (D003) and must precede
+other video filters. Rules out emitting the invalid `-filter_complex:v`, and
+rules out `-filter_complex` for the single-input common case.

@@ -96,6 +96,9 @@ Append-only; newest last. One line per session: date, what happened, next.
   builder (no command gluing); segment_video via batch+seek, separate/concat
   rebuilt. NEWS + version bump to 9002. test 190 pass; check 0/0/0. Status
   -> review (branch not yet pushed).
+- 2026-07-10: Review. PR #3 (draft) opened; Opus diff review clean (no critical
+  bugs/drift). Applied F1 (copy-seek duration test) + F3 (batch single compile);
+  rejected F2, deferred F4 (shell quoting). Awaiting final approval + green CI.
 
 ## Decisions
 
@@ -120,8 +123,23 @@ Milestone-local decisions; promote cross-cutting ones to ../DECISIONS.md.
 
 ## Review
 
-Filled in by `/milestone review`.
-
-- Criteria verification:
-- check()/test()/coverage results:
-- Follow-ups spawned:
+- Criteria verification (2026-07-10, fresh): all six acceptance criteria met.
+  No task-verb command gluing (grep); primitives + batch + fan-out/concat verbs
+  compile correctly (snapshots) and run (gated E2E, incl. accurate seek = 4.0s,
+  copy seek starts pts 0 + duration-bounded, concat sums durations).
+- test()/check() results: `devtools::test()` 190 pass / 4 skip (mediainfo
+  binary absent) / 0 fail. `devtools::check()` 0 errors / 0 warnings / 0 notes.
+  PR #3 (draft) opened; CI running.
+- Opus diff review: no critical bugs, no D002/D003/D006 drift; batch success
+  detection and concat list-file escaping confirmed correct. Triage of 4 minor
+  findings:
+  - F1 copy-seek duration untested -> FIXED (added keyframe-tolerant duration
+    bounds to the copy E2E test).
+  - F3 ffm_batch compiled each pipeline twice -> FIXED (compile once, run the
+    command string).
+  - F2 concat temp list-file not cleaned up -> REJECTED (by design: keeps the
+    compiled command self-contained; pre-existing, not a regression).
+  - F4 shell-quoting of paths with embedded `"`/`` ` ``/`$` -> DEFERRED
+    (pre-existing engine issue = M02's deferred F6; tracked follow-up).
+- Follow-ups: shell-quoting of paths (M02 F6 / M03 F4) remains open for a
+  future engine milestone.

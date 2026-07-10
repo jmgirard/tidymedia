@@ -72,17 +72,20 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE) {
   }
 
   out <- tibble::as_tibble(jobs)
-  out$command <- vapply(pipelines, ffm_compile, character(1))
+  commands <- vapply(pipelines, ffm_compile, character(1))
+  out$command <- commands
 
   if (run) {
-    run_one <- function(p) {
-      res <- tryCatch(ffm_run(p), error = function(e) e)
+    # Run the already-compiled command (no second compile). system(intern=TRUE)
+    # attaches a "status" attribute on a non-zero exit; a hard failure throws.
+    run_one <- function(command) {
+      res <- tryCatch(ffmpeg(command), error = function(e) e)
       !inherits(res, "error") && is.null(attr(res, "status"))
     }
     out$success <- if (parallel) {
-      unlist(furrr::future_map(pipelines, run_one))
+      unlist(furrr::future_map(commands, run_one))
     } else {
-      vapply(pipelines, run_one, logical(1))
+      vapply(commands, run_one, logical(1))
     }
   }
 

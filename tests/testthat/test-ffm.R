@@ -483,6 +483,12 @@ test_that("ffm_seek(reencode = FALSE) copy cut is clean and starts at zero", {
            ' -of csv=p=0 -read_intervals "%%+#1" "%s"'), out
   ))[[1]])
   expect_lt(start_pts, 0.1)
+  # Copy cuts snap to keyframes (every 2s here), so the duration is approximate
+  # rather than exactly 4.0s -- but it must stay near the request, not run away
+  # (e.g. a version that mis-read input -to could copy to the end at ~10s).
+  dur <- probe_duration(out)
+  expect_gt(dur, 3.5)
+  expect_lt(dur, 6.5)
 })
 
 test_that("ffm_concat() joins inputs end to end through ffmpeg", {

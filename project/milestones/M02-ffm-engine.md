@@ -78,22 +78,22 @@ Each criterion must be verifiable with evidence at review time.
 
 Tasks sized to one working session or less, ordered by dependency.
 
-- [ ] T1: Design + implement the structured `ffm` S3 model in `R/ffm_oop.R`
+- [x] T1: Design + implement the structured `ffm` S3 model in `R/ffm_oop.R`
       (fields for global/input/filter-chain/output opts; drop dead
       `trim_start`/`trim_end`; keep `new_ffm()` `stopifnot` invariants).
-- [ ] T2: Rewrite `ffm_compile()` in `R/ffm.R` to assemble from the structured
+- [x] T2: Rewrite `ffm_compile()` in `R/ffm.R` to assemble from the structured
       model with correct option positioning and quoting; single source of the
       `-vf`/`-af` vs `-filter_complex` decision + label/map plumbing.
-- [ ] T3: Update the verbs to write structured fields instead of pre-baked
+- [x] T3: Update the verbs to write structured fields instead of pre-baked
       strings — `ffm_trim` (honour `setpts`), `ffm_drop` (output-opt
       position), `ffm_pixel_format` (spacing), `ffm_codec`, `ffm_map`,
       `ffm_copy`, `ffm_crop`, `ffm_scale`, `ffm_drawbox`.
-- [ ] T4: Fix `ffm_hstack()` onto the `-filter_complex` + labels + map path so
+- [x] T4: Fix `ffm_hstack()` onto the `-filter_complex` + labels + map path so
       multi-input actually compiles to a runnable command.
-- [ ] T5: Rewrite `test-ffm.R` — replace KNOWN-BUG assertions with correct
+- [x] T5: Rewrite `test-ffm.R` — replace KNOWN-BUG assertions with correct
       expectations; add full-command snapshot tests for every verb.
-- [ ] T6: Add binary-gated end-to-end execution test (real trim+crop, hstack).
-- [ ] T7: `devtools::document()` if roxygen changed; `devtools::test()` +
+- [x] T6: Add binary-gated end-to-end execution test (real trim+crop, hstack).
+- [x] T7: `devtools::document()` (no roxygen change); `devtools::test()` +
       `devtools::check()` clean; NEWS entry at review.
 
 ## Work log
@@ -102,6 +102,10 @@ Append-only; newest last. One line per session: date, what happened, next.
 
 - 2026-07-10: Milestone planned (structured model, vf/af split, keep S3,
   gated E2E acceptance). Next: `/milestone implement M02`.
+- 2026-07-10: Implemented T1–T7 on branch. Structured S3 model + rewritten
+  `ffm_compile()`; all 4 bugs fixed; hstack on filter_complex path; copy+filter
+  guard; `-y` global. test 88 pass/0 fail (E2E ran, ffmpeg local); check clean
+  (0/0/0). Next: review recap gate.
 
 ## Decisions
 
@@ -115,6 +119,12 @@ Milestone-local decisions; promote cross-cutting ones to ../DECISIONS.md.
   promotion to DECISIONS.md at review if it holds up in implementation.
 - D-M02-3 (2026-07-10): Acceptance requires a binary-gated end-to-end ffmpeg
   execution test, not string assertions alone — the command must run.
+- D-M02-4 (2026-07-10): `ffm_hstack()` output is video-only for now — auto-map
+  the stacked `[vout]` only, no audio. Audio passthrough deferred as a feature.
+- D-M02-5 (2026-07-10): `ffm_compile()` aborts (cli) when a stream is set to
+  codec `copy` while a filter targets that same stream — validation, not
+  inference.
+- D-M02-6 (2026-07-10): `-y`/`-n` emitted as a global option before `-i`.
 
 ## Review
 

@@ -93,6 +93,10 @@ Append-only; newest last. One line per session: date, what happened, next.
   surfaced a pre-existing bug: mediainfo_parameter() didn't shell-quote
   --Inform, breaking it (and get_*) on POSIX. Per user, fixed in M01 (quoted
   line 46 to match sibling functions); NEWS bug-fix note added. Re-pushing.
+- 2026-07-10: CI green on Linux/macOS/coverage after mediainfo fix, but
+  Windows failed on a test bug: ffm_drop test embedded the temp path in a
+  regex (Windows backslashes are regex metachars). Fixed to assert the
+  prefix via startsWith(). Re-pushing for final CI.
 
 ## Decisions
 

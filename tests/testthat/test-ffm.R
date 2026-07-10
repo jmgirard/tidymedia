@@ -95,8 +95,10 @@ test_that("ffm_drop() drops the requested streams", {
   f <- make_input()
   p <- ffm_drop(ffm_files(f, "out.mp4"), c("audio", "subtitles"))
   expect_equal(p$drop_streams, "-an -sn ")
-  # KNOWN BUG (fix in M02): drop flags are prepended before -i.
-  expect_match(ffm_compile(p), sprintf('^-an -sn -i "%s"', f))
+  # KNOWN BUG (fix in M02): drop flags are prepended before -i. Assert the
+  # prefix directly (don't embed the temp path in a regex — Windows paths
+  # contain backslashes that are regex metacharacters).
+  expect_true(startsWith(ffm_compile(p), '-an -sn -i "'))
 })
 
 test_that("ffm_map() sets the stream mapping", {

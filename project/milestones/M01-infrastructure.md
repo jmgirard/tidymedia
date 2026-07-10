@@ -40,7 +40,7 @@ Each must be verified with evidence at review.
 
 Tasks sized to one working session or less.
 
-- [ ] T1: `usethis::use_testthat(3)`; write pure tests for `ffm_*` builders
+- [x] T1: `usethis::use_testthat(3)`; write pure tests for `ffm_*` builders
       and `ffm_compile()` output strings (no binaries needed).
 - [ ] T2: Tests for `get_codecs()`, `get_encoders()`, and task functions,
       gated on binary availability via a `skip_if_no_ffmpeg()` helper.
@@ -59,12 +59,22 @@ Append-only; newest last. One line per session: date, what happened, next.
 
 - 2026-07-10: Milestone planned.
 - 2026-07-10: Started implementation; branched milestone/M01-infrastructure.
+- 2026-07-10: T1 done — testthat 3e set up; pure builder/compile tests
+  (test-ffm.R, test-utils.R, helper-skip.R) incl. characterization of known
+  bugs. 36 tests pass. Next: T2 binary-gated tests.
 
 ## Decisions
 
 Milestone-local decisions; promote cross-cutting ones to ../DECISIONS.md.
 
-- (none yet)
+- 2026-07-10: Error idiom = rlang standalone `check_*` helpers for standard
+  type checks + `cli::cli_abort()` for custom conditions (mutually-exclusive
+  args, file existence). Matches CLAUDE.md.
+- 2026-07-10: Target a NOTE-free `devtools::check()`. Add dplyr/tidyr/purrr to
+  Imports and namespace-qualify the bare calls in ffprobe.R/mediainfo.R.
+  Deeper probe_* logic bugs stay deferred to M04.
+- 2026-07-10: CI installs both ffmpeg and mediainfo on the ubuntu runner so
+  binary-gated tests execute rather than skip.
 
 ## Review
 

@@ -1,46 +1,62 @@
 # new_ffm() --------------------------------------------------------------------
 
-# S3 Constructor for ffm class
-new_ffm <- function(trim_start = character(),
-                    trim_end = character(),
-                    drop_streams = character(),
-                    input = character(), 
-                    overwrite = character(),
+# S3 constructor for the ffm class.
+#
+# The object stores *unformatted values*, never pre-rendered flags or spaces:
+# `ffm_compile()` is the single place that turns these into a command string.
+# This keeps option positioning, quoting, and the simple-vs-complex filter
+# decision in one place (M02 / DECISIONS D002).
+#
+# Fields:
+#   input        character() of input file paths (>1 for stacking)
+#   output       length-1 output file path
+#   overwrite    length-1 logical: TRUE -> -y, FALSE -> -n (global option)
+#   drop         character() subset of video/audio/subtitles/data to drop
+#   codec_video  length-0/1 codec name (e.g. "libx264", "copy")
+#   codec_audio  length-0/1 codec name
+#   pixel_format length-0/1 pixel format name
+#   filter_video character() of video filter tokens, in application order
+#   filter_audio character() of audio filter tokens, in application order
+#   map          character() of explicit -map targets
+#   complex      length-1 logical: TRUE once a multi-input verb (e.g. hstack)
+#                has been applied, forcing the -filter_complex + labels path
+new_ffm <- function(input = character(),
+                    output = character(),
+                    overwrite = logical(),
+                    drop = character(),
                     codec_video = character(),
                     codec_audio = character(),
                     pixel_format = character(),
                     filter_video = character(),
                     filter_audio = character(),
                     map = character(),
-                    output = character()) {
-  
-  stopifnot(is.character(trim_start))
-  stopifnot(is.character(trim_end))
-  stopifnot(is.character(drop_streams))
+                    complex = FALSE) {
+
   stopifnot(is.character(input))
-  stopifnot(is.character(overwrite))
+  stopifnot(is.character(output))
+  stopifnot(is.logical(overwrite))
+  stopifnot(is.character(drop))
   stopifnot(is.character(codec_video))
   stopifnot(is.character(codec_audio))
   stopifnot(is.character(pixel_format))
   stopifnot(is.character(filter_video))
   stopifnot(is.character(filter_audio))
   stopifnot(is.character(map))
-  stopifnot(is.character(output))
-  
+  stopifnot(is.logical(complex), length(complex) == 1)
+
   structure(
     list(
-      trim_start = trim_start,
-      trim_end = trim_end,
-      drop_streams = drop_streams,
       input = input,
+      output = output,
       overwrite = overwrite,
+      drop = drop,
       codec_video = codec_video,
       codec_audio = codec_audio,
       pixel_format = pixel_format,
       filter_video = filter_video,
       filter_audio = filter_audio,
       map = map,
-      output = output
+      complex = complex
     ),
     class = "tidymedia_ffm"
   )

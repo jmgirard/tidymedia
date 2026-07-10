@@ -29,16 +29,17 @@ ffm_files <- function(input, output, overwrite = TRUE) {
   }
 
   new_ffm(
-    drop_streams = vector("character", 0),
-    input = input, 
-    overwrite = ifelse(overwrite, '-y ', '-n '),
+    input = input,
+    output = output,
+    overwrite = overwrite,
+    drop = vector("character", 0),
     codec_video = vector("character", 0),
     codec_audio = vector("character", 0),
     pixel_format = vector("character", 0),
     filter_video = vector("character", 0),
     filter_audio = vector("character", 0),
     map = vector("character", 0),
-    output = output
+    complex = FALSE
   )
 }
 
@@ -119,9 +120,11 @@ ffm_trim <- function(object,
   # append filter command
   object$filter_video <- c(object$filter_video, cmd)
 
-  # add setpts if requested
-  object$filter_video <- c(object$filter_video, "setpts=PTS-STARTPTS")
-  
+  # add setpts only when requested (resets output timestamps to start at zero)
+  if (setpts) {
+    object$filter_video <- c(object$filter_video, "setpts=PTS-STARTPTS")
+  }
+
   object
 }
 
@@ -145,13 +148,10 @@ ffm_drop <- function(object,
   check_ffm(object)
   streams <- rlang::arg_match(streams, multiple = TRUE)
 
-  # Update object
-  vn <- ifelse("video" %in% streams, "-vn ", "")
-  an <- ifelse("audio" %in% streams, "-an ", "")
-  sn <- ifelse("subtitles" %in% streams, "-sn ", "")
-  dn <- ifelse("data" %in% streams, "-dn ", "")
-  object$drop_streams <- paste0(vn, an, sn, dn)
-  
+  # Store the stream names; ffm_compile() renders the -vn/-an/-sn/-dn output
+  # options in the correct position (after -i, before the output file).
+  object$drop <- streams
+
   object
 }
 
@@ -248,10 +248,10 @@ ffm_codec <- function(object,
   # TODO: Check codec against the list from get_codecs() and get_encoders()?
   
   if (is.null(audio) == FALSE) {
-    object$codec_audio <- glue('-codec:a {audio} ')
-  } 
+    object$codec_audio <- audio
+  }
   if (is.null(video) == FALSE) {
-    object$codec_video <- glue('-codec:v {video} ')
+    object$codec_video <- video
   }
 
   object
@@ -329,8 +329,8 @@ ffm_pixel_format <- function(object, format) {
   rlang::check_string(format)
   # TODO: Validate format argument
   
-  object$pixel_format <- glue('-pix_fmt {format}')
-  
+  object$pixel_format <- format
+
   object
 }
 
@@ -355,28 +355,44 @@ ffm_hstack <- function(object,
                        shortest = FALSE,
                        resize = FALSE) {
   
-  shortest_int <- as.integer(shortest)
-  inputs_n <- length(object$input)
-  
   check_ffm(object)
   rlang::check_bool(shortest)
   rlang::check_bool(resize)
+  inputs_n <- length(object$input)
+  shortest_int <- as.integer(shortest)
   if (inputs_n <= 1) {
     cli::cli_abort("Stacking requires more than one input file.")
   }
   if (resize && inputs_n != 2) {
     cli::cli_abort("{.arg resize} currently only works with exactly two inputs.")
   }
-  
+  # Stacking is a whole-frame operation that consumes the raw input pads, so it
+  # must precede any single-input video filter — otherwise ffm_compile() would
+  # feed two pads to a one-input filter and produce an invalid graph.
+  if (length(object$filter_video) > 0) {
+    cli::cli_abort(c(
+      "Stacking must come before other video filters.",
+      "i" = "Apply {.fn ffm_hstack} first, then filter the stacked result."
+    ))
+  }
+
+  # hstack is a blessed multi-input verb: it forces the -filter_complex path
+  # (see ffm_compile()). The resize graph manages its own stream labels (it
+  # starts with "[..]"), so ffm_compile() emits it verbatim; the plain hstack
+  # token is label-free and ffm_compile() prepends the input labels. The graph
+  # must be a single line (embedded newlines would leak into the command).
   if (resize == TRUE) {
-    cmd <- glue("[0][1]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[0s][1s];
-        [1s][0s]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[1s][0s];
-        [0s][1s]hstack,setsar=1")
+    cmd <- paste0(
+      "[0:v][1:v]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[0s][1s];",
+      "[1s][0s]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[1s][0s];",
+      "[0s][1s]hstack,setsar=1"
+    )
   } else {
     cmd <- glue('hstack=inputs={inputs_n}:shortest={shortest_int}')
   }
 
   object$filter_video <- c(object$filter_video, cmd)
+  object$complex <- TRUE
 
   object
 }
@@ -446,51 +462,104 @@ ffm_drawbox <- function(object,
 #'   instructions provided to the tidymedia pipeline.
 #' @export
 ffm_compile <- function(object) {
-  
+
   check_ffm(object)
-  
-  if (length(object$filter_video)) {
-    vf <- paste0(
-      '-filter_complex:v "', 
-      paste(object$filter_video, collapse = ','), 
-      '" '
-    )
-  } else {
-    vf <- ''
+
+  # Guard: a copied stream is passed through untouched, so it cannot also be
+  # filtered. Catch it here with a clear error instead of a cryptic ffmpeg
+  # failure at run time (M02 D-M02-5).
+  if (length(object$codec_video) && object$codec_video == "copy" &&
+      length(object$filter_video)) {
+    cli::cli_abort(c(
+      "Can't apply a video filter while the video codec is set to {.val copy}.",
+      "x" = "{.code copy} passes the stream through without re-encoding.",
+      "i" = "Re-encode with a real codec via {.fn ffm_codec}, or drop the filter."
+    ))
   }
-  
-  if (length(object$filter_audio)) {
-    va <- paste0(
-      '-filter_complex:a "', 
-      paste(object$filter_audio, collapse = ','), 
-      '" '
-    )
-  } else {
-    va <- ''
+  if (length(object$codec_audio) && object$codec_audio == "copy" &&
+      length(object$filter_audio)) {
+    cli::cli_abort(c(
+      "Can't apply an audio filter while the audio codec is set to {.val copy}.",
+      "x" = "{.code copy} passes the stream through without re-encoding.",
+      "i" = "Re-encode with a real codec via {.fn ffm_codec}, or drop the filter."
+    ))
   }
-  
-  if (length(object$map)) {
-    map <- paste0('-map ', object$map, ' ')
+
+  # Global options (before the inputs).
+  overwrite <- if (isTRUE(object$overwrite)) "-y" else "-n"
+
+  # Inputs.
+  inputs <- paste0('-i "', object$input, '"')
+
+  # Filters and stream mapping. Single-input sequential chains compile to
+  # -vf/-af; any multi-input (blessed) verb sets `complex` and compiles to
+  # -filter_complex with explicit labels plus an auto -map (M02 D-M02-2).
+  filters <- character()
+  map <- character()
+  if (isTRUE(object$complex)) {
+    body <- paste(object$filter_video, collapse = ",")
+    # A verb that manages its own stream labels starts the graph with "[..]";
+    # otherwise prepend one video pad per input.
+    if (!startsWith(body, "[")) {
+      labels <- paste0("[", seq_along(object$input) - 1L, ":v]", collapse = "")
+      body <- paste0(labels, body)
+    }
+    filters <- paste0('-filter_complex "', body, '[vout]"')
+    map <- '-map "[vout]"'
   } else {
-    map <- ''
+    if (length(object$filter_video)) {
+      filters <- c(
+        filters,
+        paste0('-vf "', paste(object$filter_video, collapse = ","), '"')
+      )
+    }
+    if (length(object$filter_audio)) {
+      filters <- c(
+        filters,
+        paste0('-af "', paste(object$filter_audio, collapse = ","), '"')
+      )
+    }
+    if (length(object$map)) {
+      map <- paste0("-map ", object$map)
+    }
   }
-  
-  input_string <- paste0(glue('-i "{object$input}"', sep = ""), collapse = " ")
-  
-  command <- paste0(
-    object$drop_streams,
-    input_string, " ", 
-    object$overwrite,
-    object$codec_video, 
-    object$codec_audio, 
-    object$pixel_format,
-    vf, 
-    va, 
-    map,
-    '"', object$output, '"'
+
+  # Output options (after the inputs, before the output file).
+  codec_video <- if (length(object$codec_video)) {
+    paste0("-codec:v ", object$codec_video)
+  } else {
+    character()
+  }
+  codec_audio <- if (length(object$codec_audio)) {
+    paste0("-codec:a ", object$codec_audio)
+  } else {
+    character()
+  }
+  pixel_format <- if (length(object$pixel_format)) {
+    paste0("-pix_fmt ", object$pixel_format)
+  } else {
+    character()
+  }
+  drop_flags <- c(
+    if ("video" %in% object$drop) "-vn",
+    if ("audio" %in% object$drop) "-an",
+    if ("subtitles" %in% object$drop) "-sn",
+    if ("data" %in% object$drop) "-dn"
   )
-  
-  command
+
+  tokens <- c(
+    overwrite,
+    inputs,
+    filters,
+    codec_video,
+    codec_audio,
+    pixel_format,
+    drop_flags,
+    map,
+    paste0('"', object$output, '"')
+  )
+
+  paste(tokens, collapse = " ")
 }
 
 # ffm_run() --------------------------------------------------------------------

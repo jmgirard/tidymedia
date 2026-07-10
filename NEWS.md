@@ -1,5 +1,21 @@
 # tidymedia 0.0.0.9001 (development version)
 
+## Pipeline engine
+
+* Reworked the Layer 1 `ffm_*` builder onto a structured command model:
+  `ffm_compile()` is now the single place that assembles, positions, and quotes
+  every option. Single-input filter chains compile to `-vf`/`-af`; multi-input
+  stacking compiles to a valid `-filter_complex` graph with explicit stream
+  labels and an automatic `-map`.
+* Fixed four builder bugs: `ffm_trim(setpts = FALSE)` no longer forces a
+  `setpts` filter; `ffm_drop()` flags are now output options placed after the
+  input (not before `-i`); `ffm_pixel_format()` no longer runs into the output
+  filename; and the previously invalid `-filter_complex:v` output is gone.
+* `ffm_compile()` now errors early when a stream is set to codec `copy` while a
+  filter targets that same stream, instead of failing cryptically in ffmpeg.
+* `ffm_hstack()` must be applied before other video filters and now produces a
+  runnable command (verified end-to-end against ffmpeg).
+
 ## Infrastructure
 
 * Added a testthat (3rd edition) test suite covering the `ffm_*` pipeline

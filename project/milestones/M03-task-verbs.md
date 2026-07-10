@@ -1,6 +1,6 @@
 # M03: Task verbs rebuilt on the builder + batch support
 
-- **Status:** planned <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
+- **Status:** in-progress <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
 - **Created:** 2026-07-10
 - **Completed:** —
 
@@ -86,6 +86,8 @@ Append-only; newest last. One line per session: date, what happened, next.
 
 - 2026-07-10: Milestone planned (batch = tibble runner; segment_video via
   batch+seek; ffm_concat added; breaking changes allowed).
+- 2026-07-10: Implementation started; branched milestone/M03-task-verbs. Open
+  gate item raised by user: copy-cut keyframe accuracy must not corrupt output.
 
 ## Decisions
 

@@ -47,6 +47,23 @@ new_ffm <- function(trim_start = character(),
 }
 
 
+# check_ffm() -------------------------------------------------------------
+
+# Validate that `object` is a tidymedia ffm pipeline. Internal helper used by
+# every ffm_* verb; aborts with a classed cli condition otherwise.
+check_ffm <- function(object,
+                      arg = rlang::caller_arg(object),
+                      call = rlang::caller_env()) {
+  if (!inherits(object, "tidymedia_ffm")) {
+    cli::cli_abort(
+      "{.arg {arg}} must be an ffm pipeline created by {.fn ffm_files}.",
+      call = call
+    )
+  }
+  invisible(object)
+}
+
+
 # print.tidymedia_ffm() ---------------------------------------------------
 
 #' @method print tidymedia_ffm

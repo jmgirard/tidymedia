@@ -47,7 +47,7 @@ Tasks sized to one working session or less.
 - [x] T3: `usethis::use_github_action("check-standard")` and
       `use_github_action("test-coverage")`; install ffmpeg in the workflow
       (ubuntu) so execution tests run on at least one platform.
-- [ ] T4: Migrate `R/ffm.R`, `R/ffm_oop.R`, `R/ffmpeg.R` off assertthat to
+- [x] T4: Migrate `R/ffm.R`, `R/ffm_oop.R`, `R/ffmpeg.R` off assertthat to
       rlang/cli checks.
 - [ ] T5: Migrate remaining files (`mediainfo.R`, `ffprobe.R`,
       `program_management.R`, `utils.R`); drop assertthat from Imports;
@@ -69,6 +69,12 @@ Append-only; newest last. One line per session: date, what happened, next.
 - 2026-07-10: T3 done — R-CMD-check.yaml (5 configs) + test-coverage.yaml;
   both install ffmpeg+mediainfo on Linux so execution tests run there. YAML
   valid. Green-CI verified at review (needs push). Next: T4 assertthat->cli.
+- 2026-07-10: T4 done — ffm.R/ffm_oop.R/ffmpeg.R off assertthat. Added
+  internal check_ffm()/check_dim()/check_file_exists() helpers; rlang
+  check_string/check_bool/check_number_whole + cli_abort for custom cases;
+  match.arg->arg_match. Removed dead commented ffm_trim. Note: rlang doesn't
+  export check_character/check_logical (used is_character()+cli_abort).
+  new_ffm() keeps stopifnot (internal invariants, not user-facing). 63 pass.
 
 ## Decisions
 
@@ -82,6 +88,9 @@ Milestone-local decisions; promote cross-cutting ones to ../DECISIONS.md.
   Deeper probe_* logic bugs stay deferred to M04.
 - 2026-07-10: CI installs both ffmpeg and mediainfo on the ubuntu runner so
   binary-gated tests execute rather than skip.
+- 2026-07-10: `new_ffm()` (internal constructor) keeps `stopifnot` for its
+  internal-invariant checks; the "user-facing errors use cli" criterion
+  targets exported/user-reachable validation, which is fully migrated.
 
 ## Review
 

@@ -14,9 +14,47 @@
 #'   added with the specifying width and flag.
 #' @export
 pad_integers <- function(x, width = NULL, flag = "0") {
-  assert_that(rlang::is_integerish(x))
-  assert_that(is.null(width) || rlang::is_integerish(width, n = 1))
-  assert_that(rlang::is_character(flag, n = 1))
+  if (!rlang::is_integerish(x)) {
+    cli::cli_abort("{.arg x} must be a vector of integerish values.")
+  }
+  if (!is.null(width)) rlang::check_number_whole(width)
+  rlang::check_string(flag)
   if (is.null(width)) width <- floor(log10(max(x))) + 1
   formatC(x, width = width, flag = flag)
+}
+
+# check_file_exists() -----------------------------------------------------
+
+# Validate that `x` is a single string naming an existing file. Replaces the
+# recurring `is_character(x, n = 1)` + `file.exists(x)` assertthat pair.
+check_file_exists <- function(x, arg = rlang::caller_arg(x),
+                              call = rlang::caller_env()) {
+  rlang::check_string(x, arg = arg, call = call)
+  if (!file.exists(x)) {
+    cli::cli_abort("{.arg {arg}} does not exist: {.file {x}}.", call = call)
+  }
+  invisible(x)
+}
+
+# check_dim() -------------------------------------------------------------
+
+# Validate a dimension/position argument that may be either an FFmpeg
+# expression (a length-1 character) or a single number. `inclusive = TRUE`
+# permits zero (positions); otherwise the number must be strictly positive
+# (sizes). Internal helper for the crop/scale/drawbox verbs.
+check_dim <- function(x, inclusive = FALSE,
+                      arg = rlang::caller_arg(x),
+                      call = rlang::caller_env()) {
+  ok <- rlang::is_character(x, n = 1) ||
+    (rlang::is_double(x, n = 1) && (if (inclusive) x >= 0 else x > 0))
+  if (!ok) {
+    cli::cli_abort(
+      c(
+        "{.arg {arg}} must be a single FFmpeg expression or number.",
+        "i" = "Numbers must be {if (inclusive) 'non-negative' else 'positive'}."
+      ),
+      call = call
+    )
+  }
+  invisible(x)
 }

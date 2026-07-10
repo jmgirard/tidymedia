@@ -147,6 +147,24 @@ test_that("ffm_compile() chains multiple video filters with commas", {
   )
 })
 
+test_that("ffm verbs reject a non-pipeline object", {
+  expect_error(ffm_crop(list(), width = 10, height = 10), "ffm pipeline")
+  expect_error(ffm_compile("not a pipeline"), "ffm pipeline")
+})
+
+test_that("ffm_crop() rejects a non-positive size", {
+  f <- make_input()
+  p <- ffm_files(f, "out.mp4")
+  expect_error(ffm_crop(p, width = 0, height = 10))
+  expect_error(ffm_crop(p, width = -5, height = 10))
+})
+
+test_that("ffm_crop() accepts FFmpeg expressions as strings", {
+  f <- make_input()
+  p <- ffm_crop(ffm_files(f, "out.mp4"), width = "in_w/2", height = "in_h")
+  expect_match(p$filter_video, "crop=w=in_w/2:h=in_h", fixed = TRUE)
+})
+
 test_that("print.tidymedia_ffm() shows the compiled command", {
   f <- make_input()
   p <- ffm_files(f, "out.mp4")

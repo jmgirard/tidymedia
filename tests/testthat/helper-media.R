@@ -46,6 +46,12 @@ make_keyframed_video <- function(duration = 12, rate = 24, gop = 48,
   path
 }
 
+# Build an ffm pipeline WITHOUT ffm_files()'s file-readability check, so pure
+# (binary-free) tests can assert compiled commands for named-but-absent files.
+ffm_dry <- function(input, output) {
+  new_ffm(input = input, output = output, overwrite = TRUE)
+}
+
 # Probe a media file's container duration (seconds) via ffprobe. Skips if
 # ffprobe is unavailable. Returns a numeric scalar.
 probe_duration <- function(path) {

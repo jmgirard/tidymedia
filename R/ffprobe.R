@@ -39,8 +39,8 @@ probe_all <- function(infile, convert = FALSE) {
     container <- 
       container |> 
       dplyr::mutate(
-        across(c(nb_streams, nb_programs), as.integer),
-        across(c(start_time, duration, size, bit_rate), as.double)
+        dplyr::across(c(nb_streams, nb_programs), as.integer),
+        dplyr::across(c(start_time, duration, size, bit_rate), as.double)
       )
   }
   # Probe streams
@@ -64,7 +64,7 @@ probe_all <- function(infile, convert = FALSE) {
             sample_rate, channels, bits_per_sample), 
           as.integer
         ),
-        across(c(start_time, duration, bit_rate, max_bit_rate), as.double)
+        dplyr::across(c(start_time, duration, bit_rate, max_bit_rate), as.double)
       )
   }
   # Combine into list and return
@@ -113,7 +113,7 @@ probe_streams <- function(probe = NULL, infile = NULL) {
 probe_video <- function(probe = NULL, infile = NULL) {
   assert_that(is.null(probe) + is.null(infile) == 1)
   if (!is.null(infile)) df <- probe_all(infile)
-  probe$streams |> filter(codec_type == "video")
+  probe$streams |> dplyr::filter(codec_type == "video")
 }
 
 # probe_audio() -----------------------------------------------------------
@@ -123,16 +123,16 @@ probe_video <- function(probe = NULL, infile = NULL) {
 probe_audio <- function(probe = NULL, infile = NULL) {
   assert_that(is.null(probe) + is.null(infile) == 1)
   if (!is.null(infile)) df <- probe_all(infile)
-  probe$streams |> filter(codec_type == "audio")
+  probe$streams |> dplyr::filter(codec_type == "audio")
 }
 
 # format_probe() ----------------------------------------------------------
 
 # Turn the text output from FFprobe into a named dataframe
 format_probe <- function(x) {
-  tibble(x) |> 
-    separate(x, into = c("key", "value"), sep = "=") |> 
-    pivot_wider(names_from = "key", values_from = "value")
+  tibble::tibble(x) |>
+    tidyr::separate(x, into = c("key", "value"), sep = "=") |>
+    tidyr::pivot_wider(names_from = "key", values_from = "value")
 }
 
 

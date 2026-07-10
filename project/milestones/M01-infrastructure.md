@@ -42,7 +42,7 @@ Tasks sized to one working session or less.
 
 - [x] T1: `usethis::use_testthat(3)`; write pure tests for `ffm_*` builders
       and `ffm_compile()` output strings (no binaries needed).
-- [ ] T2: Tests for `get_codecs()`, `get_encoders()`, and task functions,
+- [x] T2: Tests for `get_codecs()`, `get_encoders()`, and task functions,
       gated on binary availability via a `skip_if_no_ffmpeg()` helper.
 - [ ] T3: `usethis::use_github_action("check-standard")` and
       `use_github_action("test-coverage")`; install ffmpeg in the workflow
@@ -62,6 +62,10 @@ Append-only; newest last. One line per session: date, what happened, next.
 - 2026-07-10: T1 done — testthat 3e set up; pure builder/compile tests
   (test-ffm.R, test-utils.R, helper-skip.R) incl. characterization of known
   bugs. 36 tests pass. Next: T2 binary-gated tests.
+- 2026-07-10: T2 done — binary-gated tests (ffmpeg task verbs, get_codecs/
+  get_encoders, mediainfo, ffprobe) + skip/media helpers. Namespace-qualified
+  bare dplyr/tidyr calls in ffprobe.R (deps declared in T5). 59 pass, 5 skip
+  (mediainfo absent locally). Next: T3 GHA workflows.
 
 ## Decisions
 

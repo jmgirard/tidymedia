@@ -2,38 +2,40 @@
 % Please edit documentation in R/mediainfo.R
 \name{mediainfo_template}
 \alias{mediainfo_template}
-\title{Describe a media file by applying a MediaInfo template}
+\title{Describe media files by applying a MediaInfo template}
 \usage{
 mediainfo_template(
   file,
   template = c("brief", "extended", "custom"),
-  templatefile = NULL
+  templatefile = NULL,
+  typed = TRUE
 )
 }
 \arguments{
-\item{file}{A string containing the file path to a media file.}
+\item{file}{A character vector of one or more media-file paths.}
 
-\item{template}{A string containing the template to be applied. Two templates
-are built into the package: \code{"brief"} and \code{"extended"}.
-Alternatively, \code{"custom"} can be used to apply a new template file
-specified in \code{templatefile}.}
+\item{template}{A string naming the template to apply: a built-in
+(\code{"brief"} or \code{"extended"}) or \code{"custom"} to apply the file
+given in \code{templatefile}.}
 
-\item{templatefile}{Either a string containing the file path to a MediaInfo
-template (.txt) file formatted to output comma-separated values (requires
-\code{template} to be set to \code{"custom"}) or \code{NULL} (default =
-\code{NULL}).}
+\item{templatefile}{Either the path to a MediaInfo template (.txt) file
+formatted to output comma-separated values (required when \code{template}
+is \code{"custom"}) or \code{NULL} (default).}
+
+\item{typed}{A logical. When \code{TRUE} (default) numeric columns are typed
+and empty values become \code{NA}; when \code{FALSE} columns stay strings.}
 }
 \value{
-A row \link[tibble:tibble-package]{tibble} containing variables
-describing \code{file}. The specific variables included and their
-ordering/naming is determined by the template.
+A tibble with one row per input file. The columns (and their
+names/order) are determined by the template; custom-template column names
+are used verbatim.
 }
 \description{
-Create a new row tibble that contains information about a media file. This
-information is gathered by applying a MediaInfo template, which can include
-multiple parameters from multiple sections. This package include several
-built-in templates that can be applied or a custom template file can be
-created and used.
+Create a tibble describing one or more media files by applying a MediaInfo
+template, which can pull multiple parameters from multiple sections. Two
+templates ship with the package (\code{"brief"} and \code{"extended"}); a
+custom template file can also be supplied. \code{file} may be a vector of several
+files; results are stacked with a leading \code{file} column.
 }
 \seealso{
 Other mediainfo functions:

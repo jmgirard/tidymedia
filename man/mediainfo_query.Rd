@@ -4,30 +4,34 @@
 \alias{mediainfo_query}
 \title{Query multiple parameters from a single MediaInfo section}
 \usage{
-mediainfo_query(file, section, parameters, names = parameters)
+mediainfo_query(file, section, parameters, names = parameters, typed = TRUE)
 }
 \arguments{
-\item{file}{A string indicating the path to a media file.}
+\item{file}{A character vector of one or more media-file paths.}
 
 \item{section}{A string indicating the MediaInfo section from which to query
-the \code{parameters}. Note that querying from multiple sections at once
-requires using \code{mediainfo_template()}.}
+the \code{parameters}.}
 
-\item{parameters}{A vector of one or more strings indicating the MediaInfo
-parameters to query from \code{section}.}
+\item{parameters}{A character vector of one or more MediaInfo parameters to
+query from \code{section}.}
 
-\item{names}{A vector of one or more strings indicating the names of the
-variables in the returned tibble; must be the same length as
-\code{parameters} (default = the names of the strings in
-\code{parameters}).}
+\item{names}{A character vector naming the returned columns; must be the same
+length as \code{parameters} (default = \code{parameters}). Supplied names
+are used verbatim.}
+
+\item{typed}{A logical. When \code{TRUE} (default) numeric columns are typed
+and empty values become \code{NA}; when \code{FALSE} columns stay strings.}
 }
 \value{
-A row tibble containing each parameter as a separate variable.
+A tibble with one row per input file, leading with a \code{file}
+column and one column per requested parameter.
 }
 \description{
-Create a new row tibble that contains multiple parameters from a single
-MediaInfo section. To query parameters from multiple sections at the same
-time, use either \code{mediainfo_summary()} or \code{mediainfo_template()}.
+Create a tibble containing multiple parameters from a single MediaInfo
+section. To query parameters from multiple sections at once, use
+\code{mediainfo_summary()} or \code{mediainfo_template()}. \code{file} may be a
+vector of several files; results are stacked with a leading \code{file}
+column.
 }
 \seealso{
 Other mediainfo functions:

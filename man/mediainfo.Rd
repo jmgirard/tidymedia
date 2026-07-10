@@ -14,7 +14,10 @@ A string containing the command line output from mediainfo.
 }
 \description{
 Run the command through the MediaInfo command line interface (CLI) and return
-its output as a string.
+its output as a string. This is the Layer 0 escape hatch: \code{command} is passed
+to MediaInfo verbatim, so you are responsible for quoting it. For structured,
+tibble-returning output use \code{\link[=mediainfo_template]{mediainfo_template()}}, \code{\link[=mediainfo_query]{mediainfo_query()}}, or
+\code{\link[=mediainfo_parameter]{mediainfo_parameter()}}, which quote their arguments safely.
 }
 \seealso{
 Other mediainfo functions:

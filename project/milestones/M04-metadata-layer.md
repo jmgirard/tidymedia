@@ -1,6 +1,6 @@
 # M04: Metadata layer polish (mediainfo/ffprobe tibbles)
 
-- **Status:** in-progress <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
+- **Status:** review <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
 - **Created:** 2026-07-10
 - **Completed:** —
 
@@ -81,10 +81,11 @@ Tasks sized to one working session or less, ordered by dependency.
       leading `file`; multi-file vectorize + resilience; route through
       `run_program()`; user-supplied names kept verbatim. Tests (mocked runner
       covers CSV parsing without the binary).
-- [ ] T4: Cross-backend schema unification — snake_case both built-in
-      templates; consistency tests asserting `file`-led names across backends.
-- [ ] T5: roxygen updates + `devtools::document()`; NEWS under dev version;
-      `devtools::check()` 0/0/0.
+- [x] T4: Cross-backend schema unification — snake_case both built-in templates
+      (typo `SteamSize`→`stream_size` fixed); header/value-count regression test;
+      `file`-led names asserted for both backends.
+- [x] T5: roxygen updates + `devtools::document()`; NEWS 0.0.0.9003; removed now
+      -unused `tidyr` from Imports; `devtools::check()` 0/0/0.
 
 ## Work log
 
@@ -101,6 +102,9 @@ Append-only; newest last. One line per session: date, what happened, next.
   `run_program()`, leading `file` col, verbatim names. mediainfo binary absent
   locally (brew blocked); CSV parsing covered by a mocked-runner test. 220 pass.
   Next: T4 snake_case built-in templates + cross-backend name assertions.
+- 2026-07-10: T4 templates snake_cased + count regression test; T5 docs/NEWS
+  (9003), dropped unused `tidyr`. All tasks done: 224 pass / 4 skip (mediainfo
+  binary), check 0/0/0. Status → review. Next: review gate (CI + Opus review).
 
 ## Decisions
 

@@ -37,6 +37,29 @@ test_that("mediainfo readers are resilient to unreadable files", {
   expect_identical(t$file, missing)
 })
 
+test_that("built-in templates use snake_case headers matching their value counts", {
+  for (tmpl in c("brief", "extended")) {
+    path <- system.file(
+      sprintf("extdata/mediainfo_template_%s.txt", tmpl), package = "tidymedia"
+    )
+    lines <- readLines(path, warn = FALSE)
+    lines <- lines[nzchar(lines)]
+    # Line 1 is "General;<header>\n<values...>"; later lines are "Section;<values>".
+    parts <- strsplit(lines[[1]], "\\n", fixed = TRUE)[[1]]
+    header <- sub("^General;", "", parts[[1]])
+    cols <- trimws(strsplit(header, ",")[[1]])
+    expect_true(
+      all(grepl("^[a-z][a-z0-9_]*$", cols)),
+      info = paste(tmpl, "->", paste(cols, collapse = ", "))
+    )
+    # Header column count must equal the number of %value% tokens across sections.
+    values <- paste(c(parts[[2]], sub("^[^;]*;", "", lines[-1])), collapse = "")
+    tokens <- trimws(strsplit(values, ",")[[1]])
+    tokens <- tokens[nzchar(tokens)]
+    expect_equal(length(tokens), length(cols), info = tmpl)
+  }
+})
+
 # Parsing of MediaInfo's CSV output is verified without the binary by mocking
 # the internal runner, so the read.csv/typing/file-column logic is covered even
 # on images where mediainfo is absent.

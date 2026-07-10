@@ -7,12 +7,13 @@
 convert_fractions(x)
 }
 \arguments{
-\item{x}{A character vector containing fractions to evaluate.}
+\item{x}{A character vector containing fractions (\code{"a/b"}) or plain numbers
+to evaluate. Surrounding whitespace is ignored; \code{NA} passes through.}
 }
 \value{
 A numeric vector with each fraction evaluated to a double.
 }
 \description{
 This is useful for columns such as frame rates, which FFprobe often lists as
-fractions such as "30000 / 1001" (this would convert to 29.97003).
+fractions such as \code{"30000/1001"} (this converts to 29.97003).
 }

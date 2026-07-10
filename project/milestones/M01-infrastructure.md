@@ -1,6 +1,6 @@
 # M01: Infrastructure modernization
 
-- **Status:** planned <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
+- **Status:** in-progress <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
 - **Created:** 2026-07-10
 - **Completed:** —
 
@@ -58,6 +58,7 @@ Tasks sized to one working session or less.
 Append-only; newest last. One line per session: date, what happened, next.
 
 - 2026-07-10: Milestone planned.
+- 2026-07-10: Started implementation; branched milestone/M01-infrastructure.
 
 ## Decisions
 

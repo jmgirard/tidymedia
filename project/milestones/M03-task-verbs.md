@@ -1,0 +1,107 @@
+# M03: Task verbs rebuilt on the builder + batch support
+
+- **Status:** planned <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
+- **Created:** 2026-07-10
+- **Completed:** —
+
+## Goal
+
+Make Layer 2 real: every task verb becomes a thin wrapper over the Layer 1
+`ffm_*` builder (D002) instead of gluing its own command string, and add the
+D001 headline feature — batch processing over many files. Delivers the
+package's reason to exist: reproducible, inspectable compiled commands run
+tidily across a whole folder of media.
+
+## Scope
+
+**In:**
+
+- Small, reused engine primitives that unblock the migration:
+  - `ffm_concat()` — blessed concat-demuxer verb (D006 anticipated it).
+  - Copy-safe **seek** (`-ss`/`-to` as options, distinct from the trim
+    *filter*) so trims/segments can stream-copy without re-encoding.
+  - Controlled output-options passthrough so a verb can add specific flags
+    (e.g. `extract_frame` quality flags) while `ffm_compile()` still owns
+    positioning/quoting — not full-command gluing.
+- `ffm_batch(jobs, .f, ..., run, parallel)`: tibble-in/tibble-out runner;
+  `.f` builds an ffm pipeline per row; returns the original columns plus the
+  compiled `command` and (when run) a status column; opt-in `furrr`
+  parallelism; dry-run returns commands without executing.
+- Migrate single-output verbs onto the builder with a consistent `run`
+  (dry-run) arg returning the compiled command: `extract_audio`,
+  `audio_as_mp3`, `crop_video`, `format_for_web`, `extract_frame`.
+- Rebuild fan-out verbs as batch/multi-pipeline wrappers (single-output per
+  job, D003 intact): `segment_video` (jobs tibble -> `ffm_batch` + seek/copy),
+  `separate_audio_video` (two single-output pipelines).
+- Rebuild `concatenate_videos()` on `ffm_concat()`.
+
+**Out:**
+
+- overlay / vstack and any other new engine verbs — later milestone.
+- `get_volume()` and all audio-analysis / metadata work — M04.
+- `get_codecs()` / `get_encoders()` introspection — stay Layer 0 helpers,
+  unchanged.
+- Multi-output *engine* model — D003 stands; fan-out lives in Layer 2.
+- New user-facing filters beyond those above.
+
+## Acceptance criteria
+
+Each verifiable with evidence at review time.
+
+- [ ] No task verb in `R/ffmpeg.R` assembles an ffmpeg command by string glue:
+      each delegates to the builder / `ffm_compile()` (grep shows no `glue(...`
+      command assembly in the migrated verbs; review confirms).
+- [ ] `ffm_concat()` and seek/passthrough primitives compile to correct
+      commands — pure snapshot tests (CI-safe, no binaries).
+- [ ] `ffm_batch()` maps a pipeline over a jobs tibble and returns a tibble
+      with `command` (+ status when run); dry-run returns commands without
+      executing — covered by CI-safe tests.
+- [ ] `segment_video`, `separate_audio_video`, `concatenate_videos` produce
+      runnable commands — compile snapshots + binary-gated E2E.
+- [ ] `devtools::test()` clean; `devtools::check()` 0 errors / 0 warnings /
+      0 notes; CI green on all platforms.
+- [ ] `NEWS.md` updated under the development version.
+
+## Plan
+
+Tasks sized to one working session or less, ordered by dependency.
+
+- [ ] T1: Engine — controlled output-options passthrough slot + `ffm_compile()`
+      positioning + tests.
+- [ ] T2: Engine — copy-safe seek (`-ss`/`-to` options) + tests.
+- [ ] T3: Engine — `ffm_concat()` (concat demuxer) + compile support + tests.
+- [ ] T4: `ffm_batch()` runner (tibble in/out, `furrr` opt-in, dry-run) + tests.
+- [ ] T5: Migrate single-output verbs (`extract_audio`, `audio_as_mp3`,
+      `crop_video`, `format_for_web`, `extract_frame`) with consistent `run`
+      + tests.
+- [ ] T6: Rebuild fan-out/concat verbs (`segment_video` via batch+seek,
+      `separate_audio_video` as two pipelines, `concatenate_videos` via
+      `ffm_concat`) + binary-gated E2E.
+- [ ] T7: `devtools::document()`, `NEWS.md`, README check, final
+      `devtools::check()`.
+
+## Work log
+
+Append-only; newest last. One line per session: date, what happened, next.
+
+- 2026-07-10: Milestone planned (batch = tibble runner; segment_video via
+  batch+seek; ffm_concat added; breaking changes allowed).
+
+## Decisions
+
+Milestone-local decisions; promote cross-cutting ones to ../DECISIONS.md.
+
+- D-M03-1: Batch is a tibble-in/tibble-out runner (`ffm_batch`), not verb
+  vectorization; scalar verbs stay scalar (user pick).
+- D-M03-2: Fan-out (segment/separate) is a Layer 2 concern implemented via
+  multiple single-output pipelines; the engine stays single-output (D003).
+- D-M03-3: Seek (`-ss`/`-to` options) is separate from the trim *filter* so
+  copy-based cuts avoid the D-M02-5 copy+filter guard (no forced re-encode).
+
+## Review
+
+Filled in by `/milestone review`.
+
+- Criteria verification:
+- check()/test()/coverage results:
+- Follow-ups spawned:

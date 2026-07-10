@@ -77,9 +77,10 @@ Tasks sized to one working session or less, ordered by dependency.
       (no `tidyr::separate`); 0-stream guard; safe `convert_fractions()`;
       `typed=` default; leading `file`; multi-file vectorize + resilience.
       Shared `type_columns()` helper landed here (utils.R). Tests.
-- [ ] T3: mediainfo rework — `check_file_exists`; `typed=` default via shared
-      `type_columns()`; leading `file`; multi-file vectorize + resilience;
-      route through `run_program()`. Tests.
+- [x] T3: mediainfo rework — `typed=` default via shared `type_columns()`;
+      leading `file`; multi-file vectorize + resilience; route through
+      `run_program()`; user-supplied names kept verbatim. Tests (mocked runner
+      covers CSV parsing without the binary).
 - [ ] T4: Cross-backend schema unification — snake_case both built-in
       templates; consistency tests asserting `file`-led names across backends.
 - [ ] T5: roxygen updates + `devtools::document()`; NEWS under dev version;
@@ -96,6 +97,10 @@ Append-only; newest last. One line per session: date, what happened, next.
   fixed the NULL `probe_*(infile=)` bug, safe parsing; shared `type_columns()`
   (hex-guarded). Dropped `-pretty` (typed=FALSE now = raw strings). 199 pass.
   Next: T3 mediainfo (mediainfo binary unavailable locally → CI-gated).
+- 2026-07-10: T3 mediainfo rework done — vectorized/typed/resilient readers via
+  `run_program()`, leading `file` col, verbatim names. mediainfo binary absent
+  locally (brew blocked); CSV parsing covered by a mocked-runner test. 220 pass.
+  Next: T4 snake_case built-in templates + cross-backend name assertions.
 
 ## Decisions
 

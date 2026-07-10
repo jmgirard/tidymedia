@@ -10,16 +10,24 @@
 #' @param overwrite A logical indicating whether the output media file should be
 #'   overwritten if it already exists. (default = \code{TRUE})
 #' @return An FFmpeg pipeline object.
-#' @aliases ffm
 #' @export
 ffm_files <- function(input, output, overwrite = TRUE) {
   
-  assert_that(rlang::is_character(input), length(input) > 0)
-  assert_that(rlang::is_character(output, n = 1))
-  assert_that(all(file.access(input, mode = 4) == 0),
-              msg = "One or more input files was not found or not readable")
-  assert_that(rlang::is_logical(overwrite, n = 1))
-  
+  if (!rlang::is_character(input) || length(input) == 0) {
+    cli::cli_abort(
+      "{.arg input} must be a character vector naming at least one input file."
+    )
+  }
+  rlang::check_string(output)
+  rlang::check_bool(overwrite)
+  unreadable <- input[file.access(input, mode = 4) != 0]
+  if (length(unreadable) > 0) {
+    cli::cli_abort(c(
+      "Can't find or read {length(unreadable)} input file{?s}.",
+      "x" = "Not readable: {.file {unreadable}}."
+    ))
+  }
+
   new_ffm(
     drop_streams = vector("character", 0),
     input = input, 
@@ -39,42 +47,6 @@ ffm_files <- function(input, output, overwrite = TRUE) {
 #' @inherit ffm_files
 #' @export
 ffm <- ffm_files
-
-# ffm_trim <- function(object, 
-#                      start_at = 0,
-#                      stop_at = NULL, 
-#                      duration = NULL) {
-#   
-#   # Validate arguments
-#   assert_that(inherits(object, "tidymedia_ffm"))
-#   assert_that(
-#     rlang::is_character(start_at, n = 1) ||
-#     (rlang::is_double(start_at, n = 1) && start_at >= 0)
-#   )
-#   assert_that(
-#     is.null(stop_at) || 
-#       rlang::is_character(stop_at, n = 1) ||
-#       (rlang::is_double(stop_at, n = 1) && stop_at > start_at)
-#   )
-#   assert_that(
-#     is.null(duration) || 
-#       rlang::is_character(duration, n = 1) ||
-#       (rlang::is_double(duration, n = 1) && duration > 0)
-#   )
-#   assert_that(is.null(stop_at) + is.null(duration) == 1,
-#               msg = "Please enter either 'stop_at' or 'duration' but not both.")
-#   
-#   # Update object
-#   object$trim_start <- glue('-ss {start_at} ')
-#   if (!is.null(stop_at)) {
-#     object$trim_end <- glue('-to {stop_at} ')
-#   } else if (!is.null(duration)) {
-#     object$trim_end <- glue('-t {duration} ')
-#   }
-#   
-#   object
-# }
-
 
 # ffm_trim() --------------------------------------------------------------
 
@@ -111,12 +83,18 @@ ffm_trim <- function(object,
                      setpts = TRUE) {
   
   # Validate arguments
-  assert_that(inherits(object, "tidymedia_ffm"))
-  assert_that(is.null(start) || length(start) == 1)
-  assert_that(is.null(end) || length(end) == 1)
-  assert_that(is.null(duration) || length(duration) == 1)
-  units <- match.arg(units)
-  assert_that(rlang::is_logical(setpts, n = 1))
+  check_ffm(object)
+  if (!is.null(start) && length(start) != 1) {
+    cli::cli_abort("{.arg start} must be a single value or {.code NULL}.")
+  }
+  if (!is.null(end) && length(end) != 1) {
+    cli::cli_abort("{.arg end} must be a single value or {.code NULL}.")
+  }
+  if (!is.null(duration) && length(duration) != 1) {
+    cli::cli_abort("{.arg duration} must be a single value or {.code NULL}.")
+  }
+  units <- rlang::arg_match(units)
+  rlang::check_bool(setpts)
   
   # select arguments based on units
   if (units == "tds") {
@@ -164,8 +142,8 @@ ffm_trim <- function(object,
 ffm_drop <- function(object,
                      streams = c("video", "audio", "subtitles", "data")) {
   
-  assert_that(inherits(object, "tidymedia_ffm"))
-  streams <- match.arg(streams, several.ok = TRUE)
+  check_ffm(object)
+  streams <- rlang::arg_match(streams, multiple = TRUE)
 
   # Update object
   vn <- ifelse("video" %in% streams, "-vn ", "")
@@ -204,23 +182,11 @@ ffm_crop <- function(object,
                      x = "(in_w-out_w)/2",
                      y = "(in_h-out_h)/2") {
   
-  assert_that(inherits(object, "tidymedia_ffm"))
-  assert_that(
-    rlang::is_character(width, n = 1) || 
-      (rlang::is_double(width, n = 1) && width > 0)
-  )
-  assert_that(
-    rlang::is_character(height, n = 1) ||
-      (rlang::is_double(height, n = 1) && height > 0)
-  )
-  assert_that(
-    rlang::is_character(x, n = 1) ||
-      (rlang::is_double(x, n = 1) && x >= 0)
-  )
-  assert_that(
-    rlang::is_character(y, n = 1) ||
-      (rlang::is_double(y, n = 1) && y >= 0)
-  )
+  check_ffm(object)
+  check_dim(width)
+  check_dim(height)
+  check_dim(x, inclusive = TRUE)
+  check_dim(y, inclusive = TRUE)
 
   cmd <- glue('crop=w={width}:h={height}:x={x}:y={y}')
   object$filter_video <- c(object$filter_video, cmd)
@@ -245,15 +211,9 @@ ffm_crop <- function(object,
 #' @export
 ffm_scale <- function(object, width, height) {
 
-  assert_that(inherits(object, "tidymedia_ffm"))
-  assert_that(
-    rlang::is_character(width, n = 1) ||
-      (rlang::is_double(width, n = 1) && width > 0)
-  )
-  assert_that(
-    rlang::is_character(height, n = 1) ||
-      (rlang::is_double(height, n = 1) && height > 0)
-  )
+  check_ffm(object)
+  check_dim(width)
+  check_dim(height)
 
   cmd <- glue('scale=w={width}:h={height}')
   object$filter_video <- c(object$filter_video, cmd)
@@ -282,9 +242,9 @@ ffm_codec <- function(object,
                       audio = NULL,
                       video = NULL) {
   
-  assert_that(inherits(object, "tidymedia_ffm"))
-  assert_that(is.null(audio) || rlang::is_character(audio, n = 1))
-  assert_that(is.null(video) || rlang::is_character(video, n = 1))
+  check_ffm(object)
+  if (!is.null(audio)) rlang::check_string(audio)
+  if (!is.null(video)) rlang::check_string(video)
   # TODO: Check codec against the list from get_codecs() and get_encoders()?
   
   if (is.null(audio) == FALSE) {
@@ -309,9 +269,9 @@ ffm_codec <- function(object,
 #' @param mapping A string determining the stream mapping.
 #' @export
 ffm_map <- function(object, mapping = "0") {
-  assert_that(inherits(object, "tidymedia_ffm"))
-  assert_that(rlang::is_character(mapping, n = 1))
-  
+  check_ffm(object)
+  rlang::check_string(mapping)
+
   object$map <- mapping
   
   object
@@ -326,13 +286,21 @@ ffm_map <- function(object, mapping = "0") {
 #' 
 #' @param object An ffmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
+#' @param audio A logical indicating whether to copy the audio codec.
+#'   (default = \code{TRUE})
+#' @param video A logical indicating whether to copy the video codec.
+#'   (default = \code{TRUE})
+#' @param streams A logical indicating whether to map all streams from the
+#'   input (via \code{ffm_map(mapping = "0")}). (default = \code{TRUE})
+#' @return \code{object} with the added instruction to copy codecs and/or map
+#'   all streams.
 #' @export
 ffm_copy <- function(object, audio = TRUE, video = TRUE, streams = TRUE) {
   
-  assert_that(inherits(object, "tidymedia_ffm"))
-  assert_that(rlang::is_logical(audio))
-  assert_that(rlang::is_logical(video))
-  assert_that(rlang::is_logical(streams))
+  check_ffm(object)
+  rlang::check_bool(audio)
+  rlang::check_bool(video)
+  rlang::check_bool(streams)
   if (audio) {
     object <- ffm_codec(object, audio = "copy")
   }
@@ -357,8 +325,8 @@ ffm_copy <- function(object, audio = TRUE, video = TRUE, streams = TRUE) {
 #' @export
 ffm_pixel_format <- function(object, format) {
   
-  assert_that(inherits(object, "tidymedia_ffm"))
-  assert_that(rlang::is_character(format, n = 1))
+  check_ffm(object)
+  rlang::check_string(format)
   # TODO: Validate format argument
   
   object$pixel_format <- glue('-pix_fmt {format}')
@@ -390,12 +358,15 @@ ffm_hstack <- function(object,
   shortest_int <- as.integer(shortest)
   inputs_n <- length(object$input)
   
-  # TODO: Validate arguments
-  assert_that(inherits(object, "tidymedia_ffm"))
-  assert_that(rlang::is_logical(shortest, n = 1))
-  assert_that(inputs_n > 1)
-  assert_that(rlang::is_logical(resize, n = 1))
-  assert_that(resize == FALSE || (resize == TRUE && inputs_n == 2))
+  check_ffm(object)
+  rlang::check_bool(shortest)
+  rlang::check_bool(resize)
+  if (inputs_n <= 1) {
+    cli::cli_abort("Stacking requires more than one input file.")
+  }
+  if (resize && inputs_n != 2) {
+    cli::cli_abort("{.arg resize} currently only works with exactly two inputs.")
+  }
   
   if (resize == TRUE) {
     cmd <- glue("[0][1]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[0s][1s];
@@ -448,19 +419,14 @@ ffm_drawbox <- function(object,
                        color = "black",
                        thickness = "fill") {
   
-  assert_that(inherits(object, "tidymedia_ffm"))
-  assert_that(rlang::is_character(x, n = 1) || 
-                (rlang::is_double(x, n = 1) && x >= 0))
-  assert_that(rlang::is_character(y, n = 1) || 
-                (rlang::is_double(y, n = 1) && y >= 0))
-  assert_that(rlang::is_character(width, n = 1) || 
-                (rlang::is_double(width, n = 1) && width > 0))
-  assert_that(rlang::is_character(height, n = 1) || 
-                (rlang::is_double(height, n = 1) && height > 0))
-  assert_that(rlang::is_character(color, n = 1))
-  assert_that(rlang::is_character(thickness, n = 1) ||
-                (rlang::is_double(thickness, n = 1) && thickness > 0))
-  
+  check_ffm(object)
+  check_dim(x, inclusive = TRUE)
+  check_dim(y, inclusive = TRUE)
+  check_dim(width)
+  check_dim(height)
+  rlang::check_string(color)
+  check_dim(thickness)
+
   cmd <- glue('drawbox=x={x}:y={y}:w={width}:h={height}:c={color}:t={thickness}')
   object$filter_video <- c(object$filter_video, cmd)
   
@@ -481,7 +447,7 @@ ffm_drawbox <- function(object,
 #' @export
 ffm_compile <- function(object) {
   
-  assert_that(inherits(object, "tidymedia_ffm"))
+  check_ffm(object)
   
   if (length(object$filter_video)) {
     vf <- paste0(
@@ -537,7 +503,7 @@ ffm_compile <- function(object) {
 #'   \code{ffm_files()}.
 #' @export
 ffm_run <- function(object) {
-  assert_that(inherits(object, "tidymedia_ffm"))
+  check_ffm(object)
   command <- ffm_compile(object)
   ffmpeg(command)
 }

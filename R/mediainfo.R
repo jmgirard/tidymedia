@@ -14,7 +14,7 @@
 #' @export
 mediainfo <- function(command) {
   # Validate arguments
-  assert_that(rlang::is_character(command, n = 1))
+  rlang::check_string(command)
   # Look up mediainfo location and run it with command
   system(glue('"{find_mediainfo()}" {command}'), intern = TRUE)
 }
@@ -39,11 +39,11 @@ mediainfo <- function(command) {
 #' @export
 mediainfo_parameter <- function(file, section, parameter) {
   
-  assert_that(rlang::is_character(file, n = 1))
-  assert_that(rlang::is_character(section, n = 1))
-  assert_that(rlang::is_character(parameter, n = 1))
-  
-  command <- glue('--Inform={section};%{parameter}% "{file}"')
+  rlang::check_string(file)
+  rlang::check_string(section)
+  rlang::check_string(parameter)
+
+  command <- glue('"--Inform={section};%{parameter}%" "{file}"')
   output <- mediainfo(command)
   # If section is not found, it outputs a long factor
   if (length(output) != 1) output <- NA_character_
@@ -75,14 +75,19 @@ mediainfo_parameter <- function(file, section, parameter) {
 #' @export
 mediainfo_query <- function(file, section, parameters, names = parameters) {
   # Validate arguments
-  assert_that(rlang::is_character(file, n = 1))
-  assert_that(rlang::is_character(section, n = 1))
-  assert_that(rlang::is_character(parameters))
-  assert_that(length(parameters) >= 1)
-  assert_that(rlang::is_character(names))
-  assert_that(length(parameters) == length(names),
-              msg = "parameters and names did not have the same length.")
-  assert_that(file.exists(file), msg = "Could find or access file.")
+  check_file_exists(file)
+  rlang::check_string(section)
+  if (!rlang::is_character(parameters) || length(parameters) == 0) {
+    cli::cli_abort(
+      "{.arg parameters} must be a character vector with at least one element."
+    )
+  }
+  if (!rlang::is_character(names)) {
+    cli::cli_abort("{.arg names} must be a character vector.")
+  }
+  if (length(parameters) != length(names)) {
+    cli::cli_abort("{.arg parameters} and {.arg names} must have the same length.")
+  }
   # Create mediainfo command
   command <- glue(
     '"--Inform={section};{paste0(names, collapse = ", ")}\\n',
@@ -91,7 +96,7 @@ mediainfo_query <- function(file, section, parameters, names = parameters) {
   # Run mediainfo command
   output <- mediainfo(command)
   # Format the mediainfo output
-  output <- read.csv(text = output)
+  output <- utils::read.csv(text = output)
   output <- tibble::as_tibble(output)
   output <- tibble::add_column(output, File = file, .before = 1)
   output
@@ -126,13 +131,16 @@ mediainfo_template <- function(file,
                                template = c("brief", "extended", "custom"), 
                                templatefile = NULL) {
   # Validate arguments
-  template <- match.arg(template)
-  assert_that(rlang::is_character(file, n = 1))
-  assert_that(file.exists(file))
-  assert_that(is.null(templatefile) || rlang::is_character(templatefile, n = 1))
-  assert_that(is.null(templatefile) || file.exists(templatefile))
-  assert_that((template == "custom" && !is.null(templatefile)) || 
-                (template != "custom" && is.null(templatefile)))
+  template <- rlang::arg_match(template)
+  check_file_exists(file)
+  if (!is.null(templatefile)) check_file_exists(templatefile)
+  if ((template == "custom") != !is.null(templatefile)) {
+    cli::cli_abort(c(
+      "A {.arg templatefile} is required exactly when {.arg template} is {.val custom}.",
+      "i" = 'Pass template = "custom" together with a templatefile, or a \\
+             built-in template on its own.'
+    ))
+  }
   # If using a built-in template, build its file path
   if (template != "custom") {
     templatefile <- system.file(
@@ -145,7 +153,7 @@ mediainfo_template <- function(file,
   # Run the MediaInfo command and capture output as string
   output <- mediainfo(command)
   # Turn the output string into a tibble
-  output <- read.csv(text = output)
+  output <- utils::read.csv(text = output)
   output <- tibble::as_tibble(output)
   # Return the formatted tibble
   output
@@ -179,8 +187,8 @@ get_duration <- function(file,
                          section = c("General", "Video", "Audio"), 
                          unit = c("ms", "sec", "min", "hour")) {
   
-  section <- match.arg(section)
-  unit <- match.arg(unit)
+  section <- rlang::arg_match(section)
+  unit <- rlang::arg_match(unit)
   duration <- mediainfo_parameter(
     file = file, 
     section = section, 

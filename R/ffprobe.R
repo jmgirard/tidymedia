@@ -9,7 +9,7 @@
 #' @return A string containing the text output by FFprobe.
 #' @export
 ffprobe <- function(command) {
-  assert_that(rlang::is_character(command, n = 1))
+  rlang::check_string(command)
   out <- system(glue('"{find_ffprobe()}" {command}'), intern = TRUE)
   out
 }
@@ -39,8 +39,11 @@ probe_all <- function(infile, convert = FALSE) {
     container <- 
       container |> 
       dplyr::mutate(
-        across(c(nb_streams, nb_programs), as.integer),
-        across(c(start_time, duration, size, bit_rate), as.double)
+        dplyr::across(dplyr::all_of(c("nb_streams", "nb_programs")), as.integer),
+        dplyr::across(
+          dplyr::all_of(c("start_time", "duration", "size", "bit_rate")),
+          as.double
+        )
       )
   }
   # Probe streams
@@ -59,12 +62,18 @@ probe_all <- function(infile, convert = FALSE) {
       dplyr::mutate(
         dplyr::across(dplyr::everything(), dplyr::na_if, y = "N/A"),
         dplyr::across(
-          c(index, width, height, coded_width, coded_height, duration_ts,
-            bits_per_raw_sample, nb_frames, nb_read_frames, nb_read_packets, 
-            sample_rate, channels, bits_per_sample), 
+          dplyr::all_of(c(
+            "index", "width", "height", "coded_width", "coded_height",
+            "duration_ts", "bits_per_raw_sample", "nb_frames",
+            "nb_read_frames", "nb_read_packets", "sample_rate", "channels",
+            "bits_per_sample"
+          )),
           as.integer
         ),
-        across(c(start_time, duration, bit_rate, max_bit_rate), as.double)
+        dplyr::across(
+          dplyr::all_of(c("start_time", "duration", "bit_rate", "max_bit_rate")),
+          as.double
+        )
       )
   }
   # Combine into list and return
@@ -91,7 +100,9 @@ probe_all <- function(infile, convert = FALSE) {
 #' @return A data frame containing only the requested information.
 #' @export
 probe_container <- function(probe = NULL, infile = NULL) {
-  assert_that(is.null(probe) + is.null(infile) == 1)
+  if (is.null(probe) + is.null(infile) != 1) {
+    cli::cli_abort("Provide exactly one of {.arg probe} or {.arg infile}.")
+  }
   if (!is.null(infile)) df <- probe_all(infile)
   probe$container
 }
@@ -101,7 +112,9 @@ probe_container <- function(probe = NULL, infile = NULL) {
 #' @rdname probe_container
 #' @export
 probe_streams <- function(probe = NULL, infile = NULL) {
-  assert_that(is.null(probe) + is.null(infile) == 1)
+  if (is.null(probe) + is.null(infile) != 1) {
+    cli::cli_abort("Provide exactly one of {.arg probe} or {.arg infile}.")
+  }
   if (!is.null(infile)) df <- probe_all(infile)
   probe$streams
 }
@@ -111,9 +124,11 @@ probe_streams <- function(probe = NULL, infile = NULL) {
 #' @rdname probe_container
 #' @export
 probe_video <- function(probe = NULL, infile = NULL) {
-  assert_that(is.null(probe) + is.null(infile) == 1)
+  if (is.null(probe) + is.null(infile) != 1) {
+    cli::cli_abort("Provide exactly one of {.arg probe} or {.arg infile}.")
+  }
   if (!is.null(infile)) df <- probe_all(infile)
-  probe$streams |> filter(codec_type == "video")
+  probe$streams |> dplyr::filter(.data$codec_type == "video")
 }
 
 # probe_audio() -----------------------------------------------------------
@@ -121,18 +136,20 @@ probe_video <- function(probe = NULL, infile = NULL) {
 #' @rdname probe_container
 #' @export
 probe_audio <- function(probe = NULL, infile = NULL) {
-  assert_that(is.null(probe) + is.null(infile) == 1)
+  if (is.null(probe) + is.null(infile) != 1) {
+    cli::cli_abort("Provide exactly one of {.arg probe} or {.arg infile}.")
+  }
   if (!is.null(infile)) df <- probe_all(infile)
-  probe$streams |> filter(codec_type == "audio")
+  probe$streams |> dplyr::filter(.data$codec_type == "audio")
 }
 
 # format_probe() ----------------------------------------------------------
 
 # Turn the text output from FFprobe into a named dataframe
 format_probe <- function(x) {
-  tibble(x) |> 
-    separate(x, into = c("key", "value"), sep = "=") |> 
-    pivot_wider(names_from = "key", values_from = "value")
+  tibble::tibble(x) |>
+    tidyr::separate(x, into = c("key", "value"), sep = "=") |>
+    tidyr::pivot_wider(names_from = "key", values_from = "value")
 }
 
 

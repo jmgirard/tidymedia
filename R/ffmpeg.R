@@ -1,27 +1,48 @@
 
 # ffmpeg() ----------------------------------------------------------------
 
+#' Run a raw FFmpeg command
+#'
+#' Send a raw argument string to the FFmpeg command-line program. This is the
+#' Layer 0 escape hatch: the string is passed to FFmpeg verbatim (after the
+#' executable path), so the caller is responsible for quoting and option order.
+#'
+#' @param command A string containing the arguments to pass to FFmpeg.
+#' @return A character vector containing the text output by FFmpeg.
 #' @export
 ffmpeg <- function(command) {
-  assert_that(rlang::is_character(command, n = 1))
+  rlang::check_string(command)
   out <- system(glue('{find_ffmpeg()} {command}'), intern = TRUE)
   out
 }
 
 # extract_frames() --------------------------------------------------------
 
+#' Extract a single frame from a video
+#'
+#' Save one frame of a video to an image file, selected either by timestamp or
+#' by frame number. Provide exactly one of \code{timestamp} or \code{frame}.
+#'
+#' @param infile A string containing the path to a video file.
+#' @param outfile A string containing the path of the image file to write.
+#' @param timestamp Either a number of seconds, a time-duration-syntax string,
+#'   or \code{NULL}. Provide exactly one of \code{timestamp} or \code{frame}.
+#' @param frame Either an integerish frame number or \code{NULL}. Provide
+#'   exactly one of \code{timestamp} or \code{frame}.
+#' @return The character output from FFmpeg.
 #' @export
 extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL) {
-  assert_that(rlang::is_character(infile, n = 1))
-  assert_that(file.exists(infile))
-  assert_that(rlang::is_character(outfile, n = 1))
-  assert_that(rlang::is_null(timestamp) || 
-                rlang::is_double(timestamp, n = 1, finite = TRUE) ||
-                rlang::is_string(timestamp))
-  assert_that(rlang::is_null(frame) || 
-                rlang::is_integerish(frame, n = 1, finite = TRUE))
-  assert_that(sum(rlang::is_null(timestamp), rlang::is_null(frame)) == 1,
-              msg = "Please provide either timestamp or frame.")
+  check_file_exists(infile)
+  rlang::check_string(outfile)
+  if (!is.null(timestamp) &&
+      !(rlang::is_double(timestamp, n = 1, finite = TRUE) ||
+        rlang::is_string(timestamp))) {
+    cli::cli_abort("{.arg timestamp} must be a single number, a string, or {.code NULL}.")
+  }
+  if (!is.null(frame)) rlang::check_number_whole(frame)
+  if (is.null(timestamp) == is.null(frame)) {
+    cli::cli_abort("Provide exactly one of {.arg timestamp} or {.arg frame}.")
+  }
   
   if (rlang::is_null(timestamp)) timestamp <- frame / get_framerate(infile)
   
@@ -33,14 +54,20 @@ extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL) {
 
 # extract_audio() ---------------------------------------------------------
 
+#' Extract the audio stream from a media file
+#'
+#' @param infile A string containing the path to a media file.
+#' @param outfile A string containing the path of the audio file to write.
+#' @param options A string of FFmpeg output options for the audio stream.
+#'   (default = \code{"-acodec copy"})
+#' @return The character output from FFmpeg.
 #' @export
 extract_audio <- function(infile, outfile, options = "-acodec copy") {
   
-  assert_that(rlang::is_character(infile, n = 1))
-  assert_that(file.exists(infile))
-  assert_that(rlang::is_character(outfile, n = 1))
-  assert_that(rlang::is_character(options, n = 1))
-  
+  check_file_exists(infile)
+  rlang::check_string(outfile)
+  rlang::check_string(options)
+
   command <- glue('-i "{infile}" {options} -vn "{outfile}"')
   ffmpeg(command)
 }
@@ -48,14 +75,19 @@ extract_audio <- function(infile, outfile, options = "-acodec copy") {
 
 # separate_audio_video() --------------------------------------------------
 
+#' Split a media file into separate audio and video files
+#'
+#' @param infile A string containing the path to a media file.
+#' @param audiofile A string containing the path of the audio file to write.
+#' @param videofile A string containing the path of the video file to write.
+#' @return The character output from FFmpeg.
 #' @export
 separate_audio_video <- function(infile, audiofile, videofile) {
   
-  assert_that(rlang::is_character(infile, n = 1))
-  assert_that(file.exists(infile))
-  assert_that(rlang::is_character(audiofile, n = 1))
-  assert_that(rlang::is_character(videofile, n = 1))
-  
+  check_file_exists(infile)
+  rlang::check_string(audiofile)
+  rlang::check_string(videofile)
+
   command <- glue('-i "{infile}" -map 0:a "{audiofile}" -map 0:v "{videofile}"')
   ffmpeg(command)
 }
@@ -63,30 +95,44 @@ separate_audio_video <- function(infile, audiofile, videofile) {
 
 # audio_as_mp3() ----------------------------------------------------------
 
+#' Extract a media file's audio as an MP3
+#'
+#' @param infile A string containing the path to a media file.
+#' @param outfile A string containing the path of the MP3 file to write.
+#' @return The character output from FFmpeg.
 #' @export
 audio_as_mp3 <- function(infile, outfile) {
   
-  assert_that(rlang::is_character(infile, n = 1))
-  assert_that(file.exists(infile))
-  assert_that(rlang::is_character(outfile, n = 1))
-  
+  check_file_exists(infile)
+  rlang::check_string(outfile)
+
   command <- glue('-i "{infile}" -q:a 0 -map a "{outfile}"')
   ffmpeg(command)
 }
 
 # crop_video() ------------------------------------------------------------
 
+#' Crop a video to a rectangular region
+#'
+#' @param infile A string containing the path to a video file.
+#' @param outfile A string containing the path of the video file to write.
+#' @param width The width of the output video, in pixels.
+#' @param height The height of the output video, in pixels.
+#' @param x The horizontal offset, in pixels, of the left edge of the crop.
+#' @param y The vertical offset, in pixels, of the top edge of the crop.
+#' @param arg An optional string of additional FFmpeg output options.
+#'   (default = \code{""})
+#' @return The character output from FFmpeg.
 #' @export
 crop_video <- function(infile, outfile, width, height, x, y, arg = "") {
   
-  assert_that(rlang::is_character(infile, n = 1))
-  assert_that(file.exists(infile))
-  assert_that(rlang::is_character(outfile))
-  assert_that(rlang::is_integerish(width, n = 1))
-  assert_that(rlang::is_integerish(height, n = 1))
-  assert_that(rlang::is_integerish(x, n = 1))
-  assert_that(rlang::is_integerish(y, n = 1))
-  assert_that(rlang::is_string(arg))
+  check_file_exists(infile)
+  rlang::check_string(outfile)
+  rlang::check_number_whole(width)
+  rlang::check_number_whole(height)
+  rlang::check_number_whole(x)
+  rlang::check_number_whole(y)
+  rlang::check_string(arg)
   
   command <- glue(
     '-i "{infile}" -map 0 -filter:v "crop={width}:{height}:{x}:{y}" {arg} "{outfile}"'
@@ -98,13 +144,21 @@ crop_video <- function(infile, outfile, width, height, x, y, arg = "") {
 
 # format_for_web() --------------------------------------------------------
 
+#' Re-encode a video for web playback
+#'
+#' Re-encode a video into a widely compatible, web-friendly form (H.264 video
+#' with \code{yuv420p} and \code{+faststart}, AAC audio), padding odd
+#' dimensions down to even values as required by the codec.
+#'
+#' @param infile A string containing the path to a video file.
+#' @param outfile A string containing the path of the video file to write.
+#' @return The character output from FFmpeg.
 #' @export
 format_for_web <- function(infile, outfile) {
   
-  assert_that(rlang::is_character(infile, n = 1))
-  assert_that(file.exists(infile))
-  assert_that(rlang::is_character(outfile, n = 1))
-  
+  check_file_exists(infile)
+  rlang::check_string(outfile)
+
   command <- glue(
     '-i "{infile}" -pix_fmt yuv420p -c:v libx264 -movflags +faststart ',
     '-filter:v crop="floor(in_w/2)*2:floor(in_h/2)*2" -c:a aac "{outfile}"'
@@ -226,9 +280,9 @@ get_codecs <- function(sort_by_type = TRUE) {
 #' get_encoders(sort_by_type = FALSE)
 #' }
 get_encoders <- function(sort_by_type = TRUE) {
-  
-  assert_that(rlang::is_logical(sort_by_type, n = 1))
-  
+
+  rlang::check_bool(sort_by_type)
+
   output <- ffmpeg("-encoders")
   output2 <- output[-(1:which(output == " ------"))]
   key <- regmatches(
@@ -313,11 +367,19 @@ segment_video <- function(infile,
                           run = TRUE,
                           ...) {
   
-  assert_that(is.character(infile))
-  assert_that(is.numeric(ts_start) || is.character(ts_start))
-  assert_that(is.numeric(ts_stop) || is.character(ts_stop))
-  assert_that(length(ts_start) == length(ts_stop))
-  assert_that(is.null(outfiles) || length(outfiles) == length(ts_start))
+  rlang::check_string(infile)
+  if (!(is.numeric(ts_start) || is.character(ts_start))) {
+    cli::cli_abort("{.arg ts_start} must be a numeric or character vector.")
+  }
+  if (!(is.numeric(ts_stop) || is.character(ts_stop))) {
+    cli::cli_abort("{.arg ts_stop} must be a numeric or character vector.")
+  }
+  if (length(ts_start) != length(ts_stop)) {
+    cli::cli_abort("{.arg ts_start} and {.arg ts_stop} must have the same length.")
+  }
+  if (!is.null(outfiles) && length(outfiles) != length(ts_start)) {
+    cli::cli_abort("{.arg outfiles} must have the same length as {.arg ts_start}.")
+  }
   
   # If no names are provided, add zero-padded integers to infile name
   if (is.null(outfiles)) {
@@ -373,10 +435,13 @@ segment_video <- function(infile,
 #' @export
 concatenate_videos <- function(infiles, outfile) {
   
-  assert_that(is.character(infiles), rlang::is_string(outfile))
-  
+  if (!rlang::is_character(infiles)) {
+    cli::cli_abort("{.arg infiles} must be a character vector of file paths.")
+  }
+  rlang::check_string(outfile)
+
   if (length(unique(tools::file_ext(infiles))) != 1) {
-    warning("Not all infiles have the same extension.")
+    cli::cli_warn("Not all {.arg infiles} have the same extension.")
   }
   
   # Create a temporary text file to store the paths of the files to concatenate
@@ -401,7 +466,7 @@ concatenate_videos <- function(infiles, outfile) {
 # Get volume levels -------------------------------------------------------
 
 get_volume <- function(infile) {
-  assert_that(rlang::is_string(infile))
+  rlang::check_string(infile)
   
   command <- glue::glue('-i {infile} -af "volumedetect" -vn -sn -dn -f null NUL')
   
@@ -410,13 +475,13 @@ get_volume <- function(infile) {
   #TODO: Clean up output
   
   mean_volumes <- regmatches(
-    output, 
-    regexpr("^\\[Parsed_volumedetect.*mean_volume.*", out, perl=TRUE)
+    output,
+    regexpr("^\\[Parsed_volumedetect.*mean_volume.*", output, perl=TRUE)
   )
-  
+
   max_volumes <- regmatches(
-    output, 
-    regexpr("^\\[Parsed_volumedetect.*max_volume.*", out, perl=TRUE)
+    output,
+    regexpr("^\\[Parsed_volumedetect.*max_volume.*", output, perl=TRUE)
   )
   
   output

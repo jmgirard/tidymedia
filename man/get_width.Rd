@@ -17,21 +17,21 @@ Use MediaInfo to quickly look up the video width of a media file in
 pixels (px).
 }
 \seealso{
-Other mediainfo functions: 
-\code{\link{get_duration}()},
-\code{\link{get_framerate}()},
-\code{\link{get_height}()},
-\code{\link{get_samplingrate}()},
-\code{\link{mediainfo}()},
-\code{\link{mediainfo_parameter}()},
-\code{\link{mediainfo_query}()},
-\code{\link{mediainfo_template}()}
+Other mediainfo functions:
+\code{\link[=get_duration]{get_duration()}},
+\code{\link[=get_framerate]{get_framerate()}},
+\code{\link[=get_height]{get_height()}},
+\code{\link[=get_samplingrate]{get_samplingrate()}},
+\code{\link[=mediainfo]{mediainfo()}},
+\code{\link[=mediainfo_parameter]{mediainfo_parameter()}},
+\code{\link[=mediainfo_query]{mediainfo_query()}},
+\code{\link[=mediainfo_template]{mediainfo_template()}}
 
-Other convenience functions: 
-\code{\link{get_duration}()},
-\code{\link{get_framerate}()},
-\code{\link{get_height}()},
-\code{\link{get_samplingrate}()}
+Other convenience functions:
+\code{\link[=get_duration]{get_duration()}},
+\code{\link[=get_framerate]{get_framerate()}},
+\code{\link[=get_height]{get_height()}},
+\code{\link[=get_samplingrate]{get_samplingrate()}}
 }
 \concept{convenience functions}
 \concept{mediainfo functions}

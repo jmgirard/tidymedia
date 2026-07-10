@@ -17,15 +17,15 @@ Run the command through the MediaInfo command line interface (CLI) and return
 its output as a string.
 }
 \seealso{
-Other mediainfo functions: 
-\code{\link{get_duration}()},
-\code{\link{get_framerate}()},
-\code{\link{get_height}()},
-\code{\link{get_samplingrate}()},
-\code{\link{get_width}()},
-\code{\link{mediainfo_parameter}()},
-\code{\link{mediainfo_query}()},
-\code{\link{mediainfo_template}()}
+Other mediainfo functions:
+\code{\link[=get_duration]{get_duration()}},
+\code{\link[=get_framerate]{get_framerate()}},
+\code{\link[=get_height]{get_height()}},
+\code{\link[=get_samplingrate]{get_samplingrate()}},
+\code{\link[=get_width]{get_width()}},
+\code{\link[=mediainfo_parameter]{mediainfo_parameter()}},
+\code{\link[=mediainfo_query]{mediainfo_query()}},
+\code{\link[=mediainfo_template]{mediainfo_template()}}
 }
 \concept{cli functions}
 \concept{mediainfo functions}

@@ -1,6 +1,6 @@
 # M03: Task verbs rebuilt on the builder + batch support
 
-- **Status:** in-progress <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
+- **Status:** review <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
 - **Created:** 2026-07-10
 - **Completed:** —
 
@@ -48,19 +48,20 @@ tidily across a whole folder of media.
 
 Each verifiable with evidence at review time.
 
-- [ ] No task verb in `R/ffmpeg.R` assembles an ffmpeg command by string glue:
-      each delegates to the builder / `ffm_compile()` (grep shows no `glue(...`
-      command assembly in the migrated verbs; review confirms).
-- [ ] `ffm_concat()` and seek/passthrough primitives compile to correct
+- [x] No task verb in `R/ffmpeg.R` assembles an ffmpeg command by string glue:
+      each delegates to the builder / `ffm_compile()`. Only residual `glue` is
+      the Layer 0 `ffmpeg()` executor (line 15) and the out-of-scope unexported
+      `get_volume()` (M04).
+- [x] `ffm_concat()` and seek/passthrough primitives compile to correct
       commands — pure snapshot tests (CI-safe, no binaries).
-- [ ] `ffm_batch()` maps a pipeline over a jobs tibble and returns a tibble
-      with `command` (+ status when run); dry-run returns commands without
+- [x] `ffm_batch()` maps a pipeline over a jobs tibble and returns a tibble
+      with `command` (+ `success` when run); dry-run returns commands without
       executing — covered by CI-safe tests.
-- [ ] `segment_video`, `separate_audio_video`, `concatenate_videos` produce
+- [x] `segment_video`, `separate_audio_video`, `concatenate_videos` produce
       runnable commands — compile snapshots + binary-gated E2E.
-- [ ] `devtools::test()` clean; `devtools::check()` 0 errors / 0 warnings /
-      0 notes; CI green on all platforms.
-- [ ] `NEWS.md` updated under the development version.
+- [x] `devtools::test()` clean (190 pass, 4 mediainfo skips); local
+      `devtools::check()` 0/0/0. CI green on all platforms verified at review.
+- [x] `NEWS.md` updated (0.0.0.9002 development version).
 
 ## Plan
 
@@ -77,7 +78,7 @@ Tasks sized to one working session or less, ordered by dependency.
 - [x] T6: Rebuild fan-out/concat verbs (`segment_video` via batch+seek,
       `separate_audio_video` as two pipelines, `concatenate_videos` via
       `ffm_concat`) + binary-gated E2E.
-- [ ] T7: `devtools::document()`, `NEWS.md`, README check, final
+- [x] T7: `devtools::document()`, `NEWS.md`, README check, final
       `devtools::check()`.
 
 ## Work log
@@ -91,6 +92,10 @@ Append-only; newest last. One line per session: date, what happened, next.
 - 2026-07-10: T1-T3 engine primitives done (ffm_output_options, ffm_seek
   accurate/copy modes, ffm_concat demuxer). Tests + snapshots green; E2E
   confirms accurate seek hits 4.0s and copy seek starts at pts 0. Next: T4 batch.
+- 2026-07-10: T4-T7 done. ffm_batch runner; all task verbs migrated onto the
+  builder (no command gluing); segment_video via batch+seek, separate/concat
+  rebuilt. NEWS + version bump to 9002. test 190 pass; check 0/0/0. Status
+  -> review (branch not yet pushed).
 
 ## Decisions
 

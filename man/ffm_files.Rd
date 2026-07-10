@@ -2,7 +2,6 @@
 % Please edit documentation in R/ffm.R
 \name{ffm_files}
 \alias{ffm_files}
-\alias{ffm}
 \title{Specify Files in an FFmpeg Pipeline}
 \usage{
 ffm_files(input, output, overwrite = TRUE)

@@ -1,6 +1,14 @@
 
 # ffmpeg() ----------------------------------------------------------------
 
+#' Run a raw FFmpeg command
+#'
+#' Send a raw argument string to the FFmpeg command-line program. This is the
+#' Layer 0 escape hatch: the string is passed to FFmpeg verbatim (after the
+#' executable path), so the caller is responsible for quoting and option order.
+#'
+#' @param command A string containing the arguments to pass to FFmpeg.
+#' @return A character vector containing the text output by FFmpeg.
 #' @export
 ffmpeg <- function(command) {
   rlang::check_string(command)
@@ -10,6 +18,18 @@ ffmpeg <- function(command) {
 
 # extract_frames() --------------------------------------------------------
 
+#' Extract a single frame from a video
+#'
+#' Save one frame of a video to an image file, selected either by timestamp or
+#' by frame number. Provide exactly one of \code{timestamp} or \code{frame}.
+#'
+#' @param infile A string containing the path to a video file.
+#' @param outfile A string containing the path of the image file to write.
+#' @param timestamp Either a number of seconds, a time-duration-syntax string,
+#'   or \code{NULL}. Provide exactly one of \code{timestamp} or \code{frame}.
+#' @param frame Either an integerish frame number or \code{NULL}. Provide
+#'   exactly one of \code{timestamp} or \code{frame}.
+#' @return The character output from FFmpeg.
 #' @export
 extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL) {
   check_file_exists(infile)
@@ -34,6 +54,13 @@ extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL) {
 
 # extract_audio() ---------------------------------------------------------
 
+#' Extract the audio stream from a media file
+#'
+#' @param infile A string containing the path to a media file.
+#' @param outfile A string containing the path of the audio file to write.
+#' @param options A string of FFmpeg output options for the audio stream.
+#'   (default = \code{"-acodec copy"})
+#' @return The character output from FFmpeg.
 #' @export
 extract_audio <- function(infile, outfile, options = "-acodec copy") {
   
@@ -48,6 +75,12 @@ extract_audio <- function(infile, outfile, options = "-acodec copy") {
 
 # separate_audio_video() --------------------------------------------------
 
+#' Split a media file into separate audio and video files
+#'
+#' @param infile A string containing the path to a media file.
+#' @param audiofile A string containing the path of the audio file to write.
+#' @param videofile A string containing the path of the video file to write.
+#' @return The character output from FFmpeg.
 #' @export
 separate_audio_video <- function(infile, audiofile, videofile) {
   
@@ -62,6 +95,11 @@ separate_audio_video <- function(infile, audiofile, videofile) {
 
 # audio_as_mp3() ----------------------------------------------------------
 
+#' Extract a media file's audio as an MP3
+#'
+#' @param infile A string containing the path to a media file.
+#' @param outfile A string containing the path of the MP3 file to write.
+#' @return The character output from FFmpeg.
 #' @export
 audio_as_mp3 <- function(infile, outfile) {
   
@@ -74,6 +112,17 @@ audio_as_mp3 <- function(infile, outfile) {
 
 # crop_video() ------------------------------------------------------------
 
+#' Crop a video to a rectangular region
+#'
+#' @param infile A string containing the path to a video file.
+#' @param outfile A string containing the path of the video file to write.
+#' @param width The width of the output video, in pixels.
+#' @param height The height of the output video, in pixels.
+#' @param x The horizontal offset, in pixels, of the left edge of the crop.
+#' @param y The vertical offset, in pixels, of the top edge of the crop.
+#' @param arg An optional string of additional FFmpeg output options.
+#'   (default = \code{""})
+#' @return The character output from FFmpeg.
 #' @export
 crop_video <- function(infile, outfile, width, height, x, y, arg = "") {
   
@@ -95,6 +144,15 @@ crop_video <- function(infile, outfile, width, height, x, y, arg = "") {
 
 # format_for_web() --------------------------------------------------------
 
+#' Re-encode a video for web playback
+#'
+#' Re-encode a video into a widely compatible, web-friendly form (H.264 video
+#' with \code{yuv420p} and \code{+faststart}, AAC audio), padding odd
+#' dimensions down to even values as required by the codec.
+#'
+#' @param infile A string containing the path to a video file.
+#' @param outfile A string containing the path of the video file to write.
+#' @return The character output from FFmpeg.
 #' @export
 format_for_web <- function(infile, outfile) {
   
@@ -383,7 +441,7 @@ concatenate_videos <- function(infiles, outfile) {
   rlang::check_string(outfile)
 
   if (length(unique(tools::file_ext(infiles))) != 1) {
-    warning("Not all infiles have the same extension.")
+    cli::cli_warn("Not all {.arg infiles} have the same extension.")
   }
   
   # Create a temporary text file to store the paths of the files to concatenate
@@ -417,13 +475,13 @@ get_volume <- function(infile) {
   #TODO: Clean up output
   
   mean_volumes <- regmatches(
-    output, 
-    regexpr("^\\[Parsed_volumedetect.*mean_volume.*", out, perl=TRUE)
+    output,
+    regexpr("^\\[Parsed_volumedetect.*mean_volume.*", output, perl=TRUE)
   )
-  
+
   max_volumes <- regmatches(
-    output, 
-    regexpr("^\\[Parsed_volumedetect.*max_volume.*", out, perl=TRUE)
+    output,
+    regexpr("^\\[Parsed_volumedetect.*max_volume.*", output, perl=TRUE)
   )
   
   output

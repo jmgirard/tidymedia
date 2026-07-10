@@ -9,6 +9,19 @@ ffm_copy(object, audio = TRUE, video = TRUE, streams = TRUE)
 \arguments{
 \item{object}{An ffmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
+
+\item{audio}{A logical indicating whether to copy the audio codec.
+(default = \code{TRUE})}
+
+\item{video}{A logical indicating whether to copy the video codec.
+(default = \code{TRUE})}
+
+\item{streams}{A logical indicating whether to map all streams from the
+input (via \code{ffm_map(mapping = "0")}). (default = \code{TRUE})}
+}
+\value{
+\code{object} with the added instruction to copy codecs and/or map
+all streams.
 }
 \description{
 Description

@@ -26,7 +26,7 @@ pad_integers <- function(x, width = NULL, flag = "0") {
 # check_file_exists() -----------------------------------------------------
 
 # Validate that `x` is a single string naming an existing file. Replaces the
-# recurring `is_character(x, n = 1)` + `file.exists(x)` assertthat pair.
+# recurring `is_character(x, n = 1)` + `file.exists(x)` validation pair.
 check_file_exists <- function(x, arg = rlang::caller_arg(x),
                               call = rlang::caller_env()) {
   rlang::check_string(x, arg = arg, call = call)

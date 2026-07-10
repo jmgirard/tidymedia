@@ -11,8 +11,8 @@
 find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")) {
   
   # Validate arguments
-  program <- match.arg(program)
-  
+  program <- rlang::arg_match(program)
+
   # First, look for program in path
   location <- Sys.which(program)
   
@@ -27,15 +27,21 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
       location <- readLines(config)
       # Verify that the location in the user config file is valid
       if (Sys.which(location) == "") {
-        warning(glue("{program} was set as being at {location} but ",
-                     "this file does not seem to exist anymore."))
+        cli::cli_warn(c(
+          "{program} was configured at {.file {location}} but that file no \\
+           longer seems to exist.",
+          "i" = "Use {.fn set_{program}} to point tidymedia at it again."
+        ))
         location <- NULL
       }
     } else {
       # If config file not found, return NULL value and warning
       location <- NULL
-      warning(glue("Failed to find {program}. Check that it is installed ",
-                   "and, if necessary, use the set_{program}() function."))
+      cli::cli_warn(c(
+        "Failed to find {program}.",
+        "i" = "Check that it is installed and, if necessary, use \\
+               {.fn set_{program}}."
+      ))
     }
   }
   
@@ -86,14 +92,12 @@ find_ffplay <- function() {
 set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"), 
                          location) {
   
-  # Validate arguments 
-  program <- match.arg(program)
-  assert_that(rlang::is_character(location, n = 1))
-  assert_that(
-    # Check that the location is valid
-    Sys.which(location) != "", 
-    msg = "Failed to find location."
-  )
+  # Validate arguments
+  program <- rlang::arg_match(program)
+  rlang::check_string(location)
+  if (Sys.which(location) == "") {
+    cli::cli_abort("Can't find an executable at {.file {location}}.")
+  }
   
   # Find where to save user configuration data
   config_dir <- rappdirs::user_config_dir("tidymedia", "R")
@@ -171,7 +175,7 @@ install_on_win <- function(download_url = NULL,
       mode = "wb"
     )
   if (status != 0) {
-    warning("File download failed")
+    cli::cli_warn("File download failed.")
     return(FALSE)
   }
   # Extract the archive from the temporary file to the install directory

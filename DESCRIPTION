@@ -12,21 +12,25 @@ Description: The goal of tidymedia is to provide tools for
     easily working with media (e.g., image, audio, and video) files within
     R and the tidyverse.
 License: GPL-3
-Imports: 
+Imports:
     archive (>= 1.1.1),
-    assertthat (>= 0.2.1),
+    cli (>= 3.4.0),
+    dplyr (>= 1.1.0),
     glue (>= 1.6.2),
+    purrr (>= 1.0.0),
     rappdirs (>= 0.3.3),
-    rlang (>= 1.0.0),
-    tibble (>= 3.1.4)
-Suggests: 
+    rlang (>= 1.1.0),
+    tibble (>= 3.1.4),
+    tidyr (>= 1.3.0)
+Suggests:
     furrr (>= 0.3.0),
     roxygen2 (>= 7.2.0),
     spelling (>= 2.2),
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    withr (>= 2.5.0)
 Encoding: UTF-8
 Language: en-US
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.1
 Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0

@@ -49,7 +49,7 @@ Tasks sized to one working session or less.
       (ubuntu) so execution tests run on at least one platform.
 - [x] T4: Migrate `R/ffm.R`, `R/ffm_oop.R`, `R/ffmpeg.R` off assertthat to
       rlang/cli checks.
-- [ ] T5: Migrate remaining files (`mediainfo.R`, `ffprobe.R`,
+- [x] T5: Migrate remaining files (`mediainfo.R`, `ffprobe.R`,
       `program_management.R`, `utils.R`); drop assertthat from Imports;
       update DESCRIPTION and NEWS.md.
 
@@ -75,6 +75,16 @@ Append-only; newest last. One line per session: date, what happened, next.
   match.arg->arg_match. Removed dead commented ffm_trim. Note: rlang doesn't
   export check_character/check_logical (used is_character()+cli_abort).
   new_ffm() keeps stopifnot (internal invariants, not user-facing). 63 pass.
+- 2026-07-10: T5 done — migrated mediainfo/ffprobe/program_management/utils
+  off assertthat; warnings->cli_warn; dropped assertthat, added
+  cli/dplyr/tidyr/purrr to Imports (+withr Suggests). Also cleaned every
+  R CMD check warning/NOTE (documented 7 undocumented exports + ffm_copy
+  args, removed dup ffm alias, utils::read.csv, .data/all_of in ffprobe,
+  get_volume out->output typo). devtools::check() = 0 errors / 0 warnings /
+  0 notes. 64 tests pass, 5 skip (mediainfo). README badges added.
+- 2026-07-10: Coverage NOT measurable locally — covr 3.6.5 on R 4.6.1 is
+  broken here (function_coverage yields NaN; env issue, not the package).
+  Baseline % to be captured from the first CI test-coverage run at review.
 
 ## Decisions
 

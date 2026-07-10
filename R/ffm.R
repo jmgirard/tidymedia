@@ -10,7 +10,6 @@
 #' @param overwrite A logical indicating whether the output media file should be
 #'   overwritten if it already exists. (default = \code{TRUE})
 #' @return An FFmpeg pipeline object.
-#' @aliases ffm
 #' @export
 ffm_files <- function(input, output, overwrite = TRUE) {
   
@@ -287,6 +286,14 @@ ffm_map <- function(object, mapping = "0") {
 #' 
 #' @param object An ffmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
+#' @param audio A logical indicating whether to copy the audio codec.
+#'   (default = \code{TRUE})
+#' @param video A logical indicating whether to copy the video codec.
+#'   (default = \code{TRUE})
+#' @param streams A logical indicating whether to map all streams from the
+#'   input (via \code{ffm_map(mapping = "0")}). (default = \code{TRUE})
+#' @return \code{object} with the added instruction to copy codecs and/or map
+#'   all streams.
 #' @export
 ffm_copy <- function(object, audio = TRUE, video = TRUE, streams = TRUE) {
   

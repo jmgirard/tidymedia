@@ -11,10 +11,10 @@ lines; all detail lives in `milestones/`, never here.
 
 | ID  | Milestone                                          | Status  | File                              |
 |-----|----------------------------------------------------|---------|-----------------------------------|
-| M01 | Infrastructure modernization (testthat, CI, cli)   | review  | milestones/M01-infrastructure.md  |
+| M01 | Infrastructure modernization (testthat, CI, cli)   | done    | archive/M01-infrastructure.md     |
 | M02 | ffm builder engine rework (real command model)     | idea    | —                                 |
 | M03 | Task verbs rebuilt on the builder + batch support  | idea    | —                                 |
 | M04 | Metadata layer polish (mediainfo/ffprobe tibbles)  | idea    | —                                 |
 | M05 | Docs, vignettes, pkgdown, release prep             | idea    | —                                 |
 
-Last hygiene check: 2026-07-10
+Last hygiene check: 2026-07-10 (M01 merged as PR #1 / b768c18, archived)

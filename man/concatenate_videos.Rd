@@ -4,13 +4,19 @@
 \alias{concatenate_videos}
 \title{Combine video files using the concat demuxer}
 \usage{
-concatenate_videos(infiles, outfile)
+concatenate_videos(infiles, outfile, run = TRUE)
 }
 \arguments{
 \item{infiles}{A character vector containing the file paths to video files.}
 
 \item{outfile}{A string containing the desired file path to write the new,
 concatenated video file to.}
+
+\item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
+or return the compiled command without running it (\code{FALSE}).}
+}
+\value{
+The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 }
 \description{
 Combine multiple video files one after another without needing to re-encode

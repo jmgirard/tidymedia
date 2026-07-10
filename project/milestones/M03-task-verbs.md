@@ -74,7 +74,7 @@ Tasks sized to one working session or less, ordered by dependency.
 - [x] T5: Migrate single-output verbs (`extract_audio`, `audio_as_mp3`,
       `crop_video`, `format_for_web`, `extract_frame`) with consistent `run`
       + tests.
-- [ ] T6: Rebuild fan-out/concat verbs (`segment_video` via batch+seek,
+- [x] T6: Rebuild fan-out/concat verbs (`segment_video` via batch+seek,
       `separate_audio_video` as two pipelines, `concatenate_videos` via
       `ffm_concat`) + binary-gated E2E.
 - [ ] T7: `devtools::document()`, `NEWS.md`, README check, final

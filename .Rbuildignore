@@ -3,3 +3,7 @@
 ^LICENSE\.md$
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^project$
+^\.claude$
+^CLAUDE\.md$
+^\.DS_Store$

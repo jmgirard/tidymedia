@@ -205,6 +205,25 @@ test_that("ffm_hstack() requires more than one input", {
   expect_error(ffm_hstack(ffm_files(f, "out.mp4")))
 })
 
+test_that("ffm_hstack() refuses to follow a single-input video filter", {
+  f1 <- make_input()
+  f2 <- make_input()
+  p <- ffm_scale(ffm_files(c(f1, f2), "out.mp4"), 640, 480)
+  expect_error(ffm_hstack(p), "before other video filters")
+})
+
+test_that("ffm_hstack(resize = TRUE) emits a single-line self-labelled graph", {
+  f1 <- make_input()
+  f2 <- make_input()
+  p <- ffm_hstack(ffm_files(c(f1, f2), "out.mp4"), resize = TRUE)
+  expect_true(p$complex)
+  # No embedded newlines may leak into the filtergraph token.
+  expect_no_match(p$filter_video, "\n", fixed = TRUE)
+  cmd <- ffm_compile(p)
+  expect_match(cmd, "scale2ref", fixed = TRUE)
+  expect_match(cmd, 'hstack,setsar=1[vout]" -map "[vout]"', fixed = TRUE)
+})
+
 # Filter emission (no invalid -filter_complex:v anywhere) ----------------------
 
 test_that("single-input filter chains compile to -vf, never -filter_complex:v", {
@@ -230,6 +249,19 @@ test_that("ffm_compile() aborts on a video codec copy + video filter", {
   f <- make_input()
   p <- ffm_scale(ffm_copy(ffm_files(f, "out.mp4")), 640, 480)
   expect_error(ffm_compile(p), "copy")
+})
+
+test_that("audio filters compile to -af and hit the audio copy guard", {
+  # No public verb writes filter_audio yet (audio verbs are a later milestone),
+  # so poke the field directly to exercise the -af branch and audio guard.
+  f <- make_input()
+  p <- ffm_files(f, "out.mp4")
+  p$filter_audio <- "volume=2.0"
+  expect_match(ffm_compile(p), '-af "volume=2.0"', fixed = TRUE)
+
+  p2 <- ffm_codec(ffm_files(f, "out.mp4"), audio = "copy")
+  p2$filter_audio <- "volume=2.0"
+  expect_error(ffm_compile(p2), "audio filter")
 })
 
 # Validation / print -----------------------------------------------------------
@@ -263,6 +295,7 @@ test_that("compiled commands match snapshots", {
     writeLines(compile_scrubbed(ffm_drawbox(ffm_files(f1, "out.mp4"), color = "red")))
     writeLines(compile_scrubbed(ffm_hstack(ffm_files(c(f1, f2), "out.mp4"))))
     writeLines(compile_scrubbed(ffm_crop(ffm_hstack(ffm_files(c(f1, f2), "out.mp4")), width = 100, height = 50)))
+    writeLines(compile_scrubbed(ffm_hstack(ffm_files(c(f1, f2), "out.mp4"), resize = TRUE)))
   })
 })
 
@@ -287,6 +320,17 @@ test_that("an hstack pipeline runs through ffmpeg and writes output", {
   b <- make_test_video()
   out <- withr::local_tempfile(fileext = ".mp4")
   p <- ffm_hstack(ffm_files(c(a, b), out))
+  ffm_run(p)
+  expect_true(file.exists(out))
+  expect_gt(file.size(out), 0)
+})
+
+test_that("an hstack(resize = TRUE) pipeline runs through ffmpeg", {
+  skip_if_no_ffmpeg()
+  a <- make_test_video()
+  b <- make_test_video()
+  out <- withr::local_tempfile(fileext = ".mp4")
+  p <- ffm_hstack(ffm_files(c(a, b), out), resize = TRUE)
   ffm_run(p)
   expect_true(file.exists(out))
   expect_gt(file.size(out), 0)

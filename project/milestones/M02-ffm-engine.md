@@ -106,6 +106,9 @@ Append-only; newest last. One line per session: date, what happened, next.
   `ffm_compile()`; all 4 bugs fixed; hstack on filter_complex path; copy+filter
   guard; `-y` global. test 88 pass/0 fail (E2E ran, ffmpeg local); check clean
   (0/0/0). Next: review recap gate.
+- 2026-07-10: Review — pushed branch, draft PR #2. Opus review: no blockers;
+  applied F1/F2/F4/F5, deferred F3/F6 with reason. test 87 pass/0 fail/0 skip;
+  check 0/0/0; NEWS updated. Awaiting final merge approval.
 
 ## Decisions
 
@@ -128,8 +131,21 @@ Milestone-local decisions; promote cross-cutting ones to ../DECISIONS.md.
 
 ## Review
 
-Filled in by `/milestone review`.
-
-- Criteria verification:
-- check()/test()/coverage results:
-- Follow-ups spawned:
+- Criteria verification: all 8 acceptance criteria met with fresh evidence —
+  setpts omitted when FALSE; drop flags after `-i`; pixel_format spacing; no
+  `-filter_complex:v` (vf/af vs labelled filter_complex); dead fields gone;
+  full-command snapshots; gated E2E ran real ffmpeg (trim+crop, hstack,
+  hstack-resize); check 0/0/0.
+- check()/test()/coverage results: `devtools::test()` 87 pass / 0 fail / 0 skip
+  (ffmpeg present locally, all E2E ran); `devtools::check()` 0 errors / 0
+  warnings / 0 notes (24.2s). PR #2 (draft).
+- Opus review: no blockers; fixed F1 (resize graph newlines → single line,
+  now snapshot + gated E2E), F2 (guard: stacking before other video filters),
+  F4 (test exercises `-af` + audio copy guard), F5 (check_ffm before field
+  reads). Deferred with reason: F3 (complex path overrides a user `ffm_map()`
+  — documented limitation, hstack is video-only/terminal), F6 (shQuote paths —
+  platform-dependent, breaks snapshot determinism; low risk).
+- Known limitation: an explicit `ffm_map()` set before a stacking verb is
+  superseded by the auto `-map "[vout]"`. Follow-up candidate: robust path
+  quoting (F6) if untrusted filenames become a concern.
+- Follow-ups spawned: none (all in-scope fixes applied on branch).

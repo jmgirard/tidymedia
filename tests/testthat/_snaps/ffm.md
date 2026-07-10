@@ -49,4 +49,8 @@
       width = 100, height = 50)))
     Output
       -y -i "<in1>" -i "<in2>" -filter_complex "[0:v][1:v]hstack=inputs=2:shortest=0,crop=w=100:h=50:x=(in_w-out_w)/2:y=(in_h-out_h)/2[vout]" -map "[vout]" "out.mp4"
+    Code
+      writeLines(compile_scrubbed(ffm_hstack(ffm_files(c(f1, f2), "out.mp4"), resize = TRUE)))
+    Output
+      -y -i "<in1>" -i "<in2>" -filter_complex "[0:v][1:v]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[0s][1s];[1s][0s]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[1s][0s];[0s][1s]hstack,setsar=1[vout]" -map "[vout]" "out.mp4"
 

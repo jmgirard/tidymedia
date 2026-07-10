@@ -355,27 +355,38 @@ ffm_hstack <- function(object,
                        shortest = FALSE,
                        resize = FALSE) {
   
-  shortest_int <- as.integer(shortest)
-  inputs_n <- length(object$input)
-  
   check_ffm(object)
   rlang::check_bool(shortest)
   rlang::check_bool(resize)
+  inputs_n <- length(object$input)
+  shortest_int <- as.integer(shortest)
   if (inputs_n <= 1) {
     cli::cli_abort("Stacking requires more than one input file.")
   }
   if (resize && inputs_n != 2) {
     cli::cli_abort("{.arg resize} currently only works with exactly two inputs.")
   }
-  
+  # Stacking is a whole-frame operation that consumes the raw input pads, so it
+  # must precede any single-input video filter — otherwise ffm_compile() would
+  # feed two pads to a one-input filter and produce an invalid graph.
+  if (length(object$filter_video) > 0) {
+    cli::cli_abort(c(
+      "Stacking must come before other video filters.",
+      "i" = "Apply {.fn ffm_hstack} first, then filter the stacked result."
+    ))
+  }
+
   # hstack is a blessed multi-input verb: it forces the -filter_complex path
   # (see ffm_compile()). The resize graph manages its own stream labels (it
   # starts with "[..]"), so ffm_compile() emits it verbatim; the plain hstack
-  # token is label-free and ffm_compile() prepends the input labels.
+  # token is label-free and ffm_compile() prepends the input labels. The graph
+  # must be a single line (embedded newlines would leak into the command).
   if (resize == TRUE) {
-    cmd <- glue("[0:v][1:v]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[0s][1s];
-        [1s][0s]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[1s][0s];
-        [0s][1s]hstack,setsar=1")
+    cmd <- paste0(
+      "[0:v][1:v]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[0s][1s];",
+      "[1s][0s]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[1s][0s];",
+      "[0s][1s]hstack,setsar=1"
+    )
   } else {
     cmd <- glue('hstack=inputs={inputs_n}:shortest={shortest_int}')
   }

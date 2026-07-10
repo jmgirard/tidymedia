@@ -12,6 +12,9 @@
   helpers and cli (`cli::cli_abort()` / `cli::cli_warn()`); the assertthat
   dependency has been removed. Added `dplyr`, `tidyr`, `purrr`, and `cli` to
   Imports (the first three were already used but undeclared).
+* Enumerated arguments (e.g. `units`, `unit`, `section`, `template`,
+  `program`) are now matched exactly via `rlang::arg_match()` instead of the
+  partial matching of `match.arg()`; pass the full value.
 
 # tidymedia 0.0.0.9000
 

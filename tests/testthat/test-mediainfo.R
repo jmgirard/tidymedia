@@ -34,8 +34,9 @@ test_that("mediainfo_query() returns a one-row tibble", {
 })
 
 test_that("mediainfo_query() rejects mismatched names length", {
-  skip_if_no_mediainfo()
-  infile <- make_test_video()
+  # Validation aborts before any binary is invoked, so this needs no mediainfo.
+  infile <- withr::local_tempfile(fileext = ".mp4")
+  file.create(infile)
   expect_error(
     mediainfo_query(infile, "General", c("Format", "Duration"), names = "one")
   )

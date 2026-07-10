@@ -86,6 +86,9 @@ Append-only; newest last. One line per session: date, what happened, next.
   broken here (function_coverage yields NaN; env issue, not the package).
   Baseline % to be captured from the first CI test-coverage run at review.
 - 2026-07-10: All tasks complete; check clean. Status -> review (recap given).
+- 2026-07-10: Review — draft PR #1 opened; fresh check 0/0/0, tests 70 pass /
+  4 skip. Opus review: no blockers, 4 nits fixed inline. Awaiting CI + user
+  approval to merge.
 
 ## Decisions
 
@@ -105,8 +108,21 @@ Milestone-local decisions; promote cross-cutting ones to ../DECISIONS.md.
 
 ## Review
 
-Filled in by `/milestone review M01`.
-
-- Criteria verification:
-- check()/test()/coverage results:
-- Follow-ups spawned:
+- PR: https://github.com/jmgirard/tidymedia/pull/1 (draft)
+- Criteria verification (2026-07-10, fresh):
+  - check() 0/0/0: **PASS** — `devtools::check()` 0 errors, 0 warnings, 0 notes.
+  - R-CMD-check GHA green (ubuntu/macOS/windows): **pending CI** (confirm before merge).
+  - testthat 3e active, exported builders tested, exec tests skip w/o binaries:
+    **PASS** — 70 pass / 0 fail / 4 skip (mediainfo absent locally).
+  - Coverage workflow + baseline %: **pending** — from PR test-coverage run
+    (local covr broken on R 4.6.1).
+  - Zero assertthat calls; user-facing errors use cli: **PASS** — `grep`
+    confirms none; validation via rlang check_* + cli_abort/cli_warn.
+  - NEWS.md documents changes: **PASS**.
+- check()/test() results: check 0/0/0; tests 70 pass / 4 skip.
+- Opus review: mergeable, no blockers. 4 nits, all fixed inline —
+  (1) documented exact arg_match tightening in NEWS; (2) declared tools/utils
+  in Imports; (3) un-gated the mediainfo names-length validation test;
+  (4) added binary-free error tests for crop_video/format_for_web/
+  audio_as_mp3/separate_audio_video.
+- Follow-ups spawned: none.

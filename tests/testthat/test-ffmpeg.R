@@ -84,3 +84,12 @@ test_that("extract_frame() requires exactly one of timestamp/frame", {
   outfile <- withr::local_tempfile(fileext = ".png")
   expect_error(extract_frame(infile, outfile))
 })
+
+test_that("task verbs reject a missing input file (no binary needed)", {
+  missing <- withr::local_tempfile(fileext = ".mp4")  # not created
+  expect_error(extract_audio(missing, "out.aac"))
+  expect_error(audio_as_mp3(missing, "out.mp3"))
+  expect_error(separate_audio_video(missing, "a.aac", "v.mp4"))
+  expect_error(crop_video(missing, "out.mp4", 10, 10, 0, 0))
+  expect_error(format_for_web(missing, "out.mp4"))
+})

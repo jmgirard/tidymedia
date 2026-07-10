@@ -80,6 +80,29 @@ find_ffplay <- function() {
   find_program("ffplay")
 }
 
+# run_program() -----------------------------------------------------------
+
+# Run a resolved program with an argument vector and return its stdout as a
+# character vector. Every token in `args` is passed through `shQuote()` so the
+# CLI receives arguments verbatim without shell interpolation: file paths and
+# MediaInfo `--Inform` strings containing spaces, quotes, `;`, `%`, or `$` are
+# safe. This is the internal counterpart to the Layer 0 escape hatches
+# `mediainfo()` / `ffprobe()`, which stay raw-string by design (D002); the
+# structured readers build clean token vectors and route them through here.
+#
+# Callers pass tokens unquoted (one vector element per CLI argument); do not
+# pre-quote. `location` is the output of a `find_*()` call; a missing binary
+# aborts rather than shelling out to nothing.
+run_program <- function(location, args, program = "the program",
+                        call = rlang::caller_env()) {
+  if (is.null(location) || is.na(location) || !nzchar(location)) {
+    cli::cli_abort("Could not locate {program}.", call = call)
+  }
+  suppressWarnings(
+    system2(location, args = shQuote(args), stdout = TRUE, stderr = FALSE)
+  )
+}
+
 # set_program() ------------------------------------------------------------
 
 #' Set the location of a dependency program

@@ -49,15 +49,19 @@ Each verifiable with evidence at review time.
       accept a vector of files and stack results (test).
 - [ ] `probe_container(infile = f)` (and `_streams/_video/_audio`) return the
       correct non-`NULL` tibble — regression test for the fixed bug.
-- [ ] Default reader output is typed: a numeric column returns double/integer
-      and `"N/A"`→`NA`; a `raw`/opt-out path returns character (test asserts
-      column types both ways).
-- [ ] Every reader's tibble leads with a `file` column; casing consistent
-      across mediainfo + ffprobe (test asserts names).
+- [ ] `typed = TRUE` (default) returns typed columns (numeric→double/integer,
+      `"N/A"`→`NA`); `typed = FALSE` returns character (test asserts both ways).
+- [ ] Every reader's tibble leads with a `file` column; all package-authored
+      columns (incl. both built-in templates) are snake_case, while
+      user-supplied names (`mediainfo_query(names=)`, custom templates,
+      `parameter=`) are returned verbatim (test asserts names).
 - [ ] `convert_fractions("30000/1001")` ≈ 29.97 without `eval(parse())`, and
       malformed input errors via `cli::cli_abort` (test).
 - [ ] Readers handle a file path containing a space and a quote without
       breaking (binary-gated test).
+- [ ] Multi-file resilience: a missing file among several yields a warning +
+      NA-filled row(s) (every input represented), not an abort; malformed
+      *arguments* still abort (test).
 - [ ] `devtools::test()` clean; no `type.convert`/`separate` deprecation
       warnings; `devtools::check()` 0 errors / 0 warnings / 0 notes; NEWS
       updated under the development version.
@@ -66,7 +70,7 @@ Each verifiable with evidence at review time.
 
 Tasks sized to one working session or less, ordered by dependency.
 
-- [ ] T1: Internal safe runner — `system2`-based arg-vector shell-out helper for
+- [x] T1: Internal safe runner — `system2`-based arg-vector shell-out helper for
       the readers; keep `mediainfo()`/`ffprobe()` string escape hatches intact.
       Quoting tests (space/quote/`$` in path).
 - [ ] T2: ffprobe rework — fix `probe_*(infile=)`; robust key/value parse
@@ -86,6 +90,8 @@ Tasks sized to one working session or less, ordered by dependency.
 Append-only; newest last. One line per session: date, what happened, next.
 
 - 2026-07-10: Milestone planned (4 scope decisions taken at plan gate).
+- 2026-07-10: Impl gate (3 decisions: typed=, casing, resilience); T1 safe
+  `run_program()` runner + quoting tests done. Next: T2 ffprobe rework.
 
 ## Decisions
 
@@ -101,6 +107,13 @@ Milestone-local; promote cross-cutting ones to ../DECISIONS.md at review.
   deferred F6/F4; whole-layer quoting still deferred.
 - D-M04-4 (plan gate): Unify output schema — leading `file` column, consistent
   casing across both backends.
+- D-M04-5 (impl gate): Opt-out argument is `typed = TRUE` (replaces `convert`).
+- D-M04-6 (impl gate): Casing = author every column *we* control in snake_case
+  (ffprobe, `file`, both built-in templates); never rewrite user-supplied names
+  (`mediainfo_query(names=)`, custom template headers, `parameter=`).
+- D-M04-7 (impl gate): Multi-file resilience — malformed arguments abort; a
+  bad/missing file warns + emits NA row(s) (every input represented), never
+  aborts. Uniform for 1 or N files; consistent with D007's batch resilience.
 
 ## Review
 

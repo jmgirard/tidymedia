@@ -11,7 +11,7 @@ lines; all detail lives in `milestones/`, never here.
 
 | ID  | Milestone                                          | Status  | File                              |
 |-----|----------------------------------------------------|---------|-----------------------------------|
-| M01 | Infrastructure modernization (testthat, CI, cli)   | in-progress | milestones/M01-infrastructure.md  |
+| M01 | Infrastructure modernization (testthat, CI, cli)   | review  | milestones/M01-infrastructure.md  |
 | M02 | ffm builder engine rework (real command model)     | idea    | —                                 |
 | M03 | Task verbs rebuilt on the builder + batch support  | idea    | —                                 |
 | M04 | Metadata layer polish (mediainfo/ffprobe tibbles)  | idea    | —                                 |

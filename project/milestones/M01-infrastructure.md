@@ -1,6 +1,6 @@
 # M01: Infrastructure modernization
 
-- **Status:** in-progress <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
+- **Status:** review <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
 - **Created:** 2026-07-10
 - **Completed:** —
 
@@ -85,6 +85,7 @@ Append-only; newest last. One line per session: date, what happened, next.
 - 2026-07-10: Coverage NOT measurable locally — covr 3.6.5 on R 4.6.1 is
   broken here (function_coverage yields NaN; env issue, not the package).
   Baseline % to be captured from the first CI test-coverage run at review.
+- 2026-07-10: All tasks complete; check clean. Status -> review (recap given).
 
 ## Decisions
 

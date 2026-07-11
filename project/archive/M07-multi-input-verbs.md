@@ -20,7 +20,5 @@ verbs research-facing Layer-2 front doors.
 
 **Key decisions:** D009 (promoted) — blessed set completed video-only;
 `xstack`/`amix` deferred (`amix` needs an `[aout]` engine generalization);
-filtergraph assembly stays in Layer 1 (D002).
-
-**Follow-up:** `check_dim()` accepts any length-1 expression for `x`/`y`
-(consistent across dim-taking verbs, not a regression) — candidate hardening.
+filtergraph assembly stays in Layer 1 (D002). Follow-up: `check_dim()` accepts
+any `x`/`y` expression string (all dim verbs, not a regression) — future hardening.

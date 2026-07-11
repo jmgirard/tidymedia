@@ -57,7 +57,7 @@ picture-in-picture) — common needs in behavioral/annotation workflows.
 - [x] T2: `ffm_overlay()` + tests (uses shared ordering guard) + snapshot.
 - [x] T3: Extract shared blessed-video-verb ordering guard
       (`check_multi_input_ordering()`); hstack/vstack use it (overlay in T2).
-- [ ] T4: `compare_videos()` Layer-2 verb + tests (incl. execution skip_if).
+- [x] T4: `compare_videos()` Layer-2 verb + tests (incl. execution skip_if).
 - [ ] T5: `picture_in_picture()` Layer-2 verb + tests (incl. execution skip_if).
 - [ ] T6: `document()`; update multi-input vignette section if present; add
       DECISIONS.md entry; (NEWS.md at review).
@@ -74,6 +74,8 @@ Append-only; newest last. One line per session: date, what happened, next.
   Next: T2 `ffm_overlay()`.
 - 2026-07-10: T2 — `ffm_overlay()` (raw x/y expr, exactly-two-input guard);
   tests green (150 pass). Next: T4 `compare_videos()`.
+- 2026-07-10: T4 — `compare_videos()` (horizontal/vertical, resize default for
+  2 inputs, `audio` index drops by default); tests green. Next: T5 PiP.
 
 ## Decisions
 

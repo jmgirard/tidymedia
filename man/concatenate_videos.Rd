@@ -32,6 +32,7 @@ concatenate_videos(c(video, video), "joined.mp4", run = FALSE)
 \seealso{
 Other task verb functions:
 \code{\link[=audio_as_mp3]{audio_as_mp3()}},
+\code{\link[=compare_videos]{compare_videos()}},
 \code{\link[=crop_video]{crop_video()}},
 \code{\link[=extract_audio]{extract_audio()}},
 \code{\link[=extract_frame]{extract_frame()}},

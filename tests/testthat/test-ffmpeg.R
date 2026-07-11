@@ -180,6 +180,69 @@ test_that("task verbs reject a missing input file (no binary needed)", {
   expect_error(format_for_web(missing, "out.mp4"))
 })
 
+# compare_videos() (Layer-2 on hstack/vstack) ----------------------------------
+
+test_that("compare_videos() defaults to a horizontal resized stack", {
+  f1 <- make_input()
+  f2 <- make_input()
+  cmd <- compare_videos(c(f1, f2), "out.mp4", run = FALSE)
+  expect_match(cmd, "scale2ref", fixed = TRUE)
+  expect_match(cmd, 'hstack,setsar=1[vout]" -map "[vout]"', fixed = TRUE)
+})
+
+test_that("compare_videos(direction = 'vertical') stacks with vstack", {
+  f1 <- make_input()
+  f2 <- make_input()
+  cmd <- compare_videos(c(f1, f2), "out.mp4", direction = "vertical",
+                        run = FALSE)
+  expect_match(cmd, 'vstack,setsar=1[vout]" -map "[vout]"', fixed = TRUE)
+})
+
+test_that("compare_videos(resize = FALSE) accepts more than two inputs", {
+  f1 <- make_input()
+  f2 <- make_input()
+  f3 <- make_input()
+  cmd <- compare_videos(c(f1, f2, f3), "out.mp4", resize = FALSE, run = FALSE)
+  expect_match(cmd, "hstack=inputs=3:shortest=0[vout]", fixed = TRUE)
+})
+
+test_that("compare_videos(audio = ) carries that input's audio via -map", {
+  f1 <- make_input()
+  f2 <- make_input()
+  cmd <- compare_videos(c(f1, f2), "out.mp4", audio = 1, run = FALSE)
+  expect_match(cmd, '-map "[vout]" -map 1:a', fixed = TRUE)
+})
+
+test_that("compare_videos() drops audio by default (no extra -map)", {
+  f1 <- make_input()
+  f2 <- make_input()
+  cmd <- compare_videos(c(f1, f2), "out.mp4", run = FALSE)
+  expect_no_match(cmd, ":a", fixed = TRUE)
+})
+
+test_that("compare_videos() validates inputs, resize arity, and audio index", {
+  f1 <- make_input()
+  f2 <- make_input()
+  expect_error(compare_videos(f1, "out.mp4", run = FALSE), "two")
+  expect_error(
+    compare_videos(c(f1, f2, f1), "out.mp4", run = FALSE),
+    "exactly two"
+  )
+  expect_error(
+    compare_videos(c(f1, f2), "out.mp4", audio = 5, run = FALSE)
+  )
+})
+
+test_that("compare_videos() runs through ffmpeg (binary-gated)", {
+  skip_if_no_ffmpeg()
+  a <- make_test_video()
+  b <- make_test_video()
+  out <- withr::local_tempfile(fileext = ".mp4")
+  compare_videos(c(a, b), out, audio = 0)
+  expect_true(file.exists(out))
+  expect_gt(file.size(out), 0)
+})
+
 # M06: separate_audio_video() stream-copy default (D-M06-4) ----------------------
 
 test_that("separate_audio_video() stream-copies by default", {

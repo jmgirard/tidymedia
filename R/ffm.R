@@ -591,6 +591,68 @@ ffm_vstack <- function(object,
   object
 }
 
+# ffm_overlay() ----------------------------------------------------------------
+
+#' Overlay One Video on Another in an FFmpeg Pipeline
+#'
+#' Composite the second input (the overlay) on top of the first (the main
+#' video) at position \code{x}/\code{y}. This is a blessed multi-input verb (like
+#' \code{\link{ffm_hstack}}): it forces the \code{-filter_complex} path and
+#' manages its own stream labels internally. Exactly two inputs are required —
+#' the first is the background, the second is drawn over it.
+#'
+#' \code{x} and \code{y} accept plain numbers (pixels from the top-left of the
+#' main video) or FFmpeg overlay expressions, where \code{main_w}/\code{main_h}
+#' are the main video's dimensions and \code{overlay_w}/\code{overlay_h} are the
+#' overlay's. For example, \code{x = "main_w-overlay_w-16"} pins the overlay 16
+#' pixels from the right edge. To resize the overlay first, apply a single-input
+#' filter to it before overlaying via a separate pipeline, or use the Layer-2
+#' \code{\link{picture_in_picture}} verb.
+#'
+#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'   \code{ffm_files()} with exactly two input files.
+#' @param x The horizontal position of the overlay's left edge, as a number of
+#'   pixels or an FFmpeg expression. (default = \code{0})
+#' @param y The vertical position of the overlay's top edge, as a number of
+#'   pixels or an FFmpeg expression. (default = \code{0})
+#' @param shortest A logical indicating whether to end the output when the
+#'   shorter input ends (default = \code{FALSE}).
+#' @return \code{object} with the added instruction to overlay the second input
+#'   on the first.
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' # Draw the second input over the first, 16px in from the top-right corner
+#' ffm(c(video, video), "output.mp4") |>
+#'   ffm_overlay(x = "main_w-overlay_w-16", y = 16) |>
+#'   ffm_compile()
+#' @export
+ffm_overlay <- function(object,
+                        x = 0,
+                        y = 0,
+                        shortest = FALSE) {
+
+  check_ffm(object)
+  check_dim(x, inclusive = TRUE)
+  check_dim(y, inclusive = TRUE)
+  rlang::check_bool(shortest)
+  if (length(object$input) != 2) {
+    cli::cli_abort("Overlaying requires exactly two input files.")
+  }
+  check_multi_input_ordering(object, "Overlaying")
+
+  # overlay is a blessed multi-input verb: the label-free token below is
+  # completed by ffm_compile(), which prepends the two input pads ([0:v][1:v],
+  # main then overlay) and appends [vout].
+  shortest_int <- as.integer(shortest)
+  cmd <- glue('overlay=x={x}:y={y}:shortest={shortest_int}')
+
+  object$filter_video <- c(object$filter_video, cmd)
+  object$complex <- TRUE
+
+  object
+}
+
 # ffm_concat() -----------------------------------------------------------------
 
 #' Concatenate Multiple Inputs in an FFmpeg Pipeline

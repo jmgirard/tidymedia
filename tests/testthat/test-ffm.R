@@ -389,6 +389,62 @@ test_that("ffm_vstack(resize = TRUE) emits a single-line self-labelled graph", {
   expect_match(cmd, 'vstack,setsar=1[vout]" -map "[vout]"', fixed = TRUE)
 })
 
+# ffm_overlay() (multi-input, filter_complex path) -----------------------------
+
+test_that("ffm_overlay() flags complex and stores a label-free token", {
+  f1 <- make_input()
+  f2 <- make_input()
+  p <- ffm_overlay(ffm_files(c(f1, f2), "out.mp4"))
+  expect_true(p$complex)
+  expect_equal(p$filter_video, "overlay=x=0:y=0:shortest=0")
+})
+
+test_that("ffm_overlay() compiles to -filter_complex with labels and auto -map", {
+  f1 <- make_input()
+  f2 <- make_input()
+  p <- ffm_overlay(ffm_files(c(f1, f2), "out.mp4"),
+                   x = "main_w-overlay_w-16", y = 16)
+  expect_equal(
+    ffm_compile(p),
+    sprintf(
+      paste0(
+        '-y -i "%s" -i "%s" ',
+        '-filter_complex "[0:v][1:v]overlay=x=main_w-overlay_w-16:y=16:shortest=0[vout]" ',
+        '-map "[vout]" "out.mp4"'
+      ),
+      f1, f2
+    )
+  )
+})
+
+test_that("ffm_overlay() requires exactly two inputs", {
+  f <- make_input()
+  expect_error(ffm_overlay(ffm_files(f, "out.mp4")), "exactly two")
+  expect_error(
+    ffm_overlay(ffm_files(c(f, f, f), "out.mp4")),
+    "exactly two"
+  )
+})
+
+test_that("ffm_overlay() refuses to follow a single-input video filter", {
+  f1 <- make_input()
+  f2 <- make_input()
+  p <- ffm_scale(ffm_files(c(f1, f2), "out.mp4"), 640, 480)
+  expect_error(ffm_overlay(p), "before other video filters")
+})
+
+test_that("ffm_overlay() args parity with ffm_compile()", {
+  f1 <- make_input()
+  f2 <- make_input()
+  p <- ffm_overlay(ffm_files(c(f1, f2), "out.mp4"))
+  expect_identical(
+    tidymedia:::ffm_args(p),
+    c("-y", "-i", f1, "-i", f2,
+      "-filter_complex", "[0:v][1:v]overlay=x=0:y=0:shortest=0[vout]",
+      "-map", "[vout]", "out.mp4")
+  )
+})
+
 # Filter emission (no invalid -filter_complex:v anywhere) ----------------------
 
 test_that("single-input filter chains compile to -vf, never -filter_complex:v", {
@@ -522,6 +578,17 @@ test_that("a vstack(resize = TRUE) pipeline runs through ffmpeg", {
   b <- make_test_video()
   out <- withr::local_tempfile(fileext = ".mp4")
   p <- ffm_vstack(ffm_files(c(a, b), out), resize = TRUE)
+  ffm_run(p)
+  expect_true(file.exists(out))
+  expect_gt(file.size(out), 0)
+})
+
+test_that("an overlay pipeline runs through ffmpeg and writes output", {
+  skip_if_no_ffmpeg()
+  a <- make_test_video()
+  b <- make_test_video()
+  out <- withr::local_tempfile(fileext = ".mp4")
+  p <- ffm_overlay(ffm_files(c(a, b), out), x = 8, y = 8)
   ffm_run(p)
   expect_true(file.exists(out))
   expect_gt(file.size(out), 0)

@@ -62,7 +62,7 @@ beyond what the shared assembly path requires.
       re-encode); snapshot + E2E tests.
 - [x] T5: Resolve R/ffm.R:350 (codec validation) and R/ffm.R:458 (format
       validation) — implement or reject with logged decision.
-- [ ] T6: Diagnose covr 0% (likely instrumentation/srcref issue); fix and
+- [x] T6: Diagnose covr 0% (likely instrumentation/srcref issue); fix and
       verify a real percentage on CI.
 - [ ] T7: `devtools::document()`, NEWS entry (0.1.0.9000+), final check.
 
@@ -73,6 +73,10 @@ beyond what the shared assembly path requires.
   ffm_run/ffm_batch/ffm_finish execute arg vectors via run_program(); map
   combine (D-M06-1); separate_audio_video copy default; check_token
   validation. Tests 280 pass / 0 fail (snapshots unchanged). Next: T6 covr.
+- 2026-07-10: T6 root-caused: the empty R/zzz.R (alphabetically last R file)
+  hits a covr split_on_line_directives bug (reversed range → NA chunk →
+  parse-data crash → silent 0%). Deleted zzz.R; local coverage now 87.7%
+  (615 traced expressions, was 7). Upstream covr bug worth reporting.
 
 ## Decisions
 

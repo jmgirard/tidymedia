@@ -1,0 +1,112 @@
+---
+title: "Media metadata as tibbles"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Media metadata as tibbles}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+# Metadata readers shell out to FFprobe / MediaInfo. Chunks that need a binary
+# are evaluated only when it is available, so this vignette builds cleanly on
+# machines (and CI images) that lack the command-line tools.
+has_ffprobe <- nzchar(Sys.which("ffprobe"))
+has_mediainfo <- nzchar(Sys.which("mediainfo"))
+```
+
+```{r setup}
+library(tidymedia)
+```
+
+tidymedia reads media metadata as **tibbles**, so a whole folder of files
+becomes a data frame you can filter, join, and summarize with the tidyverse.
+Two engines back these readers:
+
+- **FFprobe** (`probe_*()`) returns container- and stream-level metadata.
+- **MediaInfo** (`mediainfo_*()`, `get_*()`) returns a broader, differently
+  organized set of fields.
+
+Both require the corresponding command-line tool to be installed (see the
+[README](https://github.com/jmgirard/tidymedia) for setup). We use the sample
+clip that ships with the package:
+
+```{r}
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+```
+
+## Probing with FFprobe
+
+`probe_all()` returns a list of two tibbles: `container` (one row per file) and
+`streams` (one row per stream). Both lead with a `file` column, so results
+stack cleanly when you pass several files.
+
+```{r, eval = has_ffprobe}
+info <- probe_all(video)
+info$container
+```
+
+```{r, eval = has_ffprobe}
+info$streams
+```
+
+The `probe_*()` shortcuts pull out just what you need. They accept **either** a
+`probe` object (to avoid re-reading the file) or a file location via `infile`:
+
+```{r, eval = has_ffprobe}
+# Reuse the probe object rather than reprobing
+probe_video(info)
+```
+
+Numeric columns are typed by default (`typed = TRUE`); pass `typed = FALSE` to
+keep everything as strings. Frame rates arrive as fractions, which
+`convert_fractions()` evaluates:
+
+```{r}
+convert_fractions(c("30000/1001", "25"))
+```
+
+## Querying with MediaInfo
+
+MediaInfo organizes metadata into sections (`General`, `Video`, `Audio`, ...).
+`mediainfo_query()` pulls several parameters from one section into a tibble:
+
+```{r, eval = has_mediainfo}
+mediainfo_query(
+  video,
+  section = "Video",
+  parameters = c("Width", "Height", "FrameRate")
+)
+```
+
+`mediainfo_template()` applies a whole template at once; two ship with the
+package (`"brief"` and `"extended"`):
+
+```{r, eval = has_mediainfo}
+mediainfo_template(video, template = "brief")
+```
+
+For single values, the `get_*()` helpers are the quickest path:
+
+```{r, eval = has_mediainfo}
+get_duration(video, unit = "sec")
+get_width(video)
+get_height(video)
+```
+
+## Batching over many files
+
+Because every reader accepts a vector of files and keys its output by `file`,
+describing a whole directory is a one-liner:
+
+```{r, eval = FALSE}
+files <- list.files("my/videos", pattern = "\\.mp4$", full.names = TRUE)
+probe_all(files)$container
+```
+
+Files that cannot be read yield an all-`NA` row plus a warning, rather than
+aborting the whole call — so one bad file never sinks a batch.

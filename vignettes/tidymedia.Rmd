@@ -1,0 +1,121 @@
+---
+title: "Get started with tidymedia"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Get started with tidymedia}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(tidymedia)
+```
+
+tidymedia helps you build **reproducible media-preprocessing pipelines** on top
+of [FFmpeg](https://ffmpeg.org/) and [MediaInfo](https://mediaarea.net/en/MediaInfo).
+It is deliberately *not* "all of FFmpeg in R": the focus is batch trimming,
+cropping, format standardization, and metadata extraction for research and
+data-science work.
+
+## The three layers
+
+tidymedia is organized into three layers, from lowest to highest level:
+
+- **Layer 0 — the escape hatch.** `ffmpeg()`, `ffprobe()`, and `mediainfo()`
+  pass a raw argument string straight to the corresponding command-line tool.
+  Use these when you need something tidymedia does not wrap.
+- **Layer 1 — the pipeline builder.** The `ffm_*` functions assemble an FFmpeg
+  command step by step. All of the quoting, option ordering, and
+  copy-vs-re-encode logic lives here.
+- **Layer 2 — the task verbs.** Functions like `extract_audio()` and
+  `segment_video()` are thin wrappers over the builder for common jobs. See
+  `vignette("batch")` for processing many files at once.
+
+This vignette focuses on Layer 1, the builder, which is the heart of the
+package.
+
+## Building a pipeline
+
+Every pipeline starts with `ffm()` (an alias of `ffm_files()`), which names the
+input and output files. Throughout this vignette we use a tiny sample clip that
+ships with the package:
+
+```{r}
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+```
+
+You then add steps with `|>`. Each `ffm_*` verb records an instruction; nothing
+runs until you ask it to. Calling `ffm_compile()` turns the pipeline into the
+exact FFmpeg command it represents — a reproducible string you can inspect,
+log, or run:
+
+```{r}
+ffm(video, "output.mp4") |>
+  ffm_trim(start = 1, end = 5) |>
+  ffm_crop(width = 160, height = 120) |>
+  ffm_codec(video = "libx264") |>
+  ffm_compile()
+```
+
+Printing a pipeline shows the same compiled command, so you can eyeball a
+pipeline at any point:
+
+```{r}
+ffm(video, "output.mp4") |>
+  ffm_scale(width = 320, height = 240) |>
+  ffm_pixel_format("yuv420p")
+```
+
+When you are ready, swap `ffm_compile()` for `ffm_run()` to execute the command
+through FFmpeg and write the output file.
+
+## Copy versus re-encode
+
+Cutting a clip can be **frame-accurate** (re-encoded, slower) or **fast and
+lossless** (a stream copy that snaps to keyframes). `ffm_seek()` exposes both
+via its `reencode` argument, and pairs naturally with `ffm_copy()` for the fast
+path:
+
+```{r}
+# Fast, lossless cut
+ffm(video, "output.mp4") |>
+  ffm_seek(start = 1, end = 5, reencode = FALSE) |>
+  ffm_copy() |>
+  ffm_compile()
+```
+
+Note that `ffm_seek()` (which uses FFmpeg's `-ss`/`-to` options) is distinct
+from `ffm_trim()` (the `trim` *filter*): only seeking can stream-copy.
+
+## Combining multiple inputs
+
+A few "blessed" verbs take more than one input. Pass a vector of files to
+`ffm()`, then stack them side by side with `ffm_hstack()` or join them
+end-to-end with `ffm_concat()`:
+
+```{r}
+ffm(c(video, video), "side_by_side.mp4") |>
+  ffm_hstack() |>
+  ffm_compile()
+```
+
+The builder stays deliberately linear — one input chain, sequential filters,
+one output — so full FFmpeg filtergraphs are out of scope. When you need one,
+reach for the Layer 0 escape hatch:
+
+```{r, eval = nzchar(Sys.which("ffmpeg"))}
+# Layer 0: raw arguments passed straight to FFmpeg
+ffmpeg("-version")[1]
+```
+
+## Where to next
+
+- `vignette("metadata")` — reading container and stream metadata as tibbles.
+- `vignette("batch")` — running a pipeline over many files at once.

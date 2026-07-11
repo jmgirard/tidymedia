@@ -56,11 +56,12 @@ Tasks sized to one working session or less, ordered by dependency.
 - [x] T3: Roxygen — raw wrappers, task verbs, `probe_*`/`get_*`/`mediainfo_*`,
       program-mgmt, utils. Verbs use `run = FALSE` (binary-free); raw/query verbs
       `@examplesIf`; families reconciled to the layer taxonomy. (2026-07-10)
-- [ ] T4: Vignette "Building ffmpeg pipelines" — builder + compile, binary-free
-      so it renders on CI.
-- [ ] T5: Vignette "Media metadata as tibbles" — `probe_*`/`mediainfo_*`,
-      binary-gated content `eval=FALSE`/pre-rendered.
-- [ ] T6: Vignette "Batch processing" — `ffm_batch` + fan-out verbs.
+- [x] T4: Vignette `tidymedia.Rmd` (Get started / builder) — binary-free, is the
+      package index vignette. (2026-07-10)
+- [x] T5: Vignette `metadata.Rmd` — `probe_*`/`mediainfo_*`, per-chunk
+      `eval = nzchar(Sys.which(...))` guards. (2026-07-10)
+- [x] T6: Vignette `batch.Rmd` — `ffm_batch` + fan-out verbs, `run = FALSE`
+      (binary-free). All three render clean. (2026-07-10)
 - [ ] T7: pkgdown — `_pkgdown.yml` reference index grouped by the three layers +
       articles; `use_pkgdown_github_pages()` deploy workflow.
 - [ ] T8: Release prep — regenerate README (`build_readme()`), `cran-comments.md`,
@@ -77,6 +78,8 @@ Append-only; newest last. One line per session: date, what happened, next.
 - 2026-07-10: T2+T3 done — @family + @examples across all ~48 exported topics
   (verbs demoed with run = FALSE; binary queries @examplesIf). test() 234 pass /
   0 fail, examples run clean. Next: T4 vignettes.
+- 2026-07-10: T4-T6 done — three vignettes (get-started/metadata/batch); all
+  render clean; binary chunks eval-guarded. Next: T7 pkgdown.
 
 ## Decisions
 

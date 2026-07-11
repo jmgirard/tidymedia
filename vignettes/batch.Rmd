@@ -1,0 +1,97 @@
+---
+title: "Batch processing"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Batch processing}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(tidymedia)
+```
+
+Batch processing over many files is what tidymedia is built for. The examples
+below use `run = FALSE`, which **compiles** each FFmpeg command without
+executing it — so you can inspect exactly what would run. Drop that argument (or
+set `run = TRUE`) to actually process the files.
+
+```{r}
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+```
+
+## The batch runner
+
+`ffm_batch()` is the general-purpose engine: it takes a **jobs tibble** (one row
+per output) and a function that turns a row into a pipeline. Each column is
+passed to the function by name, `purrr::pmap()`-style, and the runner returns
+your jobs tibble with a `command` column added (and a `success` column when
+`run = TRUE`).
+
+```{r}
+jobs <- tibble::tibble(
+  input  = c(video, video),
+  output = c("clip1.mp3", "clip2.mp3")
+)
+
+ffm_batch(jobs, run = FALSE, .f = function(input, output, ...) {
+  ffm_files(input, output) |>
+    ffm_drop("video") |>
+    ffm_codec(audio = "libmp3lame")
+})
+```
+
+Because you build the pipeline yourself, any combination of builder verbs is
+available per job. Give `.f` a `...` argument so it tolerates extra job columns
+it does not use.
+
+## Fan-out verbs
+
+Some tasks turn one input into *many* outputs. These fan-out verbs are Layer 2
+wrappers built on `ffm_batch()`.
+
+`segment_video()` cuts a file into pieces given start/stop timestamps, returning
+one row per segment:
+
+```{r}
+segment_video(
+  video,
+  ts_start = c(0, 0.5),
+  ts_stop  = c(0.5, 1),
+  run = FALSE
+)
+```
+
+`separate_audio_video()` splits a file into its audio and video streams,
+returning the two compiled commands:
+
+```{r}
+separate_audio_video(video, "audio.aac", "video.mp4", run = FALSE)
+```
+
+## Running in parallel
+
+Both `ffm_batch()` and the fan-out verbs accept `parallel = TRUE`, which maps
+over jobs with [furrr](https://furrr.futureverse.org/). Parallelism follows
+whatever [future](https://future.futureverse.org/) plan you have set, so you opt
+in explicitly:
+
+```{r, eval = FALSE}
+library(future)
+plan(multisession)
+
+ffm_batch(jobs, parallel = TRUE, .f = function(input, output, ...) {
+  ffm_files(input, output) |> ffm_drop("video") |> ffm_codec(audio = "libmp3lame")
+})
+```
+
+Every job carries its own compiled command in the returned tibble, so a batch
+run is fully reproducible: save that column and you have an exact record of the
+FFmpeg commands that produced your outputs.

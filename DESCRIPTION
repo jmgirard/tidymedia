@@ -1,7 +1,7 @@
 Package: tidymedia
 Title: Tools for working with media files within R and the
     tidyverse
-Version: 0.1.0
+Version: 0.1.0.9000
 Authors@R: 
     person(given = "Jeffrey",
            family = "Girard",

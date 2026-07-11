@@ -61,3 +61,24 @@ test_that("ffm_batch() runs each job and reports success (binary-gated)", {
   expect_true(all(res$success))
   expect_true(all(file.exists(res$output)))
 })
+
+# M06: safe execution with hostile paths (binary-gated) --------------------------
+
+test_that("ffm_batch() runs jobs whose paths contain hostile characters", {
+  skip_if_no_ffmpeg()
+  src <- make_test_video()
+  dir <- withr::local_tempdir()
+  hostile_in <- file.path(dir, "job one's $x `a`.mp4")
+  expect_true(file.copy(src, hostile_in))
+  jobs <- tibble::tibble(
+    input  = hostile_in,
+    output = file.path(dir, "out one's $y `b`.mp3")
+  )
+  res <- ffm_batch(jobs, .f = function(input, output, ...) {
+    ffm_files(input, output) |>
+      ffm_drop("video") |>
+      ffm_codec(audio = "libmp3lame")
+  })
+  expect_true(all(res$success))
+  expect_true(file.exists(jobs$output))
+})

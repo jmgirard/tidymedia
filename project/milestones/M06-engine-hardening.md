@@ -1,6 +1,6 @@
 # M06: Engine hardening & safe execution
 
-- **Status:** planned <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
+- **Status:** review <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
 - **Created:** 2026-07-10
 - **Completed:** —
 
@@ -50,34 +50,63 @@ beyond what the shared assembly path requires.
 
 ## Plan
 
-- [ ] T1: Shared assembly: refactor `ffm_compile()` internals so one ordered
+- [x] T1: Shared assembly: refactor `ffm_compile()` internals so one ordered
       argument model renders both the display string and an argument vector
       (e.g. internal `ffm_args()`); pure tests for both renderings.
-- [ ] T2: Execution: route `ffm_run()` (and thus `ffm_batch(run = TRUE)`)
+- [x] T2: Execution: route `ffm_run()` (and thus `ffm_batch(run = TRUE)`)
       through `run_program()` with the arg vector; keep the `command` string
       column; add hostile-path E2E tests (binary-gated).
-- [ ] T3: F3 fix: decide override-vs-abort for explicit `ffm_map()` in
+- [x] T3: F3 fix: decide override-vs-abort for explicit `ffm_map()` in
       complex mode; implement + tests + roxygen.
-- [ ] T4: `separate_audio_video()` copy fast path (default copy, opt-out
+- [x] T4: `separate_audio_video()` copy fast path (default copy, opt-out
       re-encode); snapshot + E2E tests.
-- [ ] T5: Resolve R/ffm.R:350 (codec validation) and R/ffm.R:458 (format
+- [x] T5: Resolve R/ffm.R:350 (codec validation) and R/ffm.R:458 (format
       validation) — implement or reject with logged decision.
-- [ ] T6: Diagnose covr 0% (likely instrumentation/srcref issue); fix and
+- [x] T6: Diagnose covr 0% (likely instrumentation/srcref issue); fix and
       verify a real percentage on CI.
-- [ ] T7: `devtools::document()`, NEWS entry (0.1.0.9000+), final check.
+- [x] T7: `devtools::document()`, NEWS entry (0.1.0.9000+), final check.
 
 ## Work log
 
 - 2026-07-10: Milestone planned (with M07–M10 queued as ideas).
+- 2026-07-10: T1–T5 done: ffm_groups() shared assembly + internal ffm_args();
+  ffm_run/ffm_batch/ffm_finish execute arg vectors via run_program(); map
+  combine (D-M06-1); separate_audio_video copy default; check_token
+  validation. Tests 280 pass / 0 fail (snapshots unchanged). Next: T6 covr.
+- 2026-07-10: T6 root-caused: the empty R/zzz.R (alphabetically last R file)
+  hits a covr split_on_line_directives bug (reversed range → NA chunk →
+  parse-data crash → silent 0%). Deleted zzz.R; local coverage now 87.7%
+  (615 traced expressions, was 7). Upstream covr bug worth reporting.
+- 2026-07-10: T7 done: NEWS (dev version 0.1.0.9000), WORDLIST, check()
+  0/0/0, tests 280/0, spelling clean. All tasks complete → status review.
+- 2026-07-10: Review: PR #6 draft, CI 7/7 green (coverage 87.67% on CI).
+  Opus review: 5 findings; fixed F1 (ffm_run aborts on FFmpeg failure),
+  F2 (Windows cmd-style shQuote), F3 (reject quoted output options),
+  F4 (no leading dash in check_token); rejected F5 (double compile —
+  cosmetic, compile is pure/cheap). Tests 286/0 after fixes.
 
 ## Decisions
 
-- (none yet — T3 and T5 will produce D-M06-1..n)
+- D-M06-1 (2026-07-10): Complex mode **combines** auto `-map "[vout]"` with
+  explicit `ffm_map()` maps (enables stack-video + source-audio); nothing is
+  silently dropped.
+- D-M06-2 (2026-07-10): Arg-vector representation is **internal-only**
+  (`ffm_args()`); `ffm_compile()` keeps returning the display string.
+- D-M06-3 (2026-07-10): Codec/format validation is **cheap sanity checks**
+  (single clean token, no whitespace/shell metacharacters); ffmpeg stays
+  authoritative on existence.
+- D-M06-4 (2026-07-10): `separate_audio_video()` **stream-copies by default**
+  (lossless); re-encode is opt-in. Breaking post-0.1.0, logged in NEWS.
 
 ## Review
 
-Filled in by `/milestone review`.
-
-- Criteria verification:
-- check()/test()/coverage results:
-- Follow-ups spawned:
+- Criteria verification (2026-07-10, PR #6):
+  - Hostile-path E2E (ffm_run + ffm_batch): pass (in 280-test suite).
+  - Pure arg-vector tests pass; command-string snapshots byte-identical.
+  - ffm_map combine in complex mode: pinned by test (D-M06-1).
+  - separate_audio_video copy default: snapshot + E2E pass (D-M06-4).
+  - Both R/ffm.R TODOs resolved via check_token() (D-M06-3).
+  - Coverage real again: 87.67% on CI test-coverage job (was 0%).
+- check()/test()/coverage results: check 0/0/0 (fresh, 2026-07-10);
+  test 280 pass / 0 fail / 0 skip; coverage 87.67% local + CI.
+- Follow-ups spawned: (pending Opus review triage)

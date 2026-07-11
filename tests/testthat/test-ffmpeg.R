@@ -179,3 +179,33 @@ test_that("task verbs reject a missing input file (no binary needed)", {
   expect_error(crop_video(missing, "out.mp4", 10, 10, 0, 0))
   expect_error(format_for_web(missing, "out.mp4"))
 })
+
+# M06: separate_audio_video() stream-copy default (D-M06-4) ----------------------
+
+test_that("separate_audio_video() stream-copies by default", {
+  f <- make_input()
+  cmds <- separate_audio_video(f, "a.aac", "v.mp4", run = FALSE)
+  expect_match(cmds[["audio"]], "-codec:a copy", fixed = TRUE)
+  expect_match(cmds[["video"]], "-codec:v copy", fixed = TRUE)
+})
+
+test_that("separate_audio_video(reencode = TRUE) omits the stream copy", {
+  f <- make_input()
+  cmds <- separate_audio_video(f, "a.aac", "v.mp4", reencode = TRUE,
+                               run = FALSE)
+  expect_no_match(cmds[["audio"]], "copy", fixed = TRUE)
+  expect_no_match(cmds[["video"]], "copy", fixed = TRUE)
+})
+
+test_that("separate_audio_video() copy outputs exist and are nonempty", {
+  skip_if_no_ffmpeg()
+  src <- make_test_video()
+  dir <- withr::local_tempdir()
+  audiofile <- file.path(dir, "a.aac")
+  videofile <- file.path(dir, "v.mp4")
+  separate_audio_video(src, audiofile, videofile)
+  expect_true(file.exists(audiofile))
+  expect_gt(file.size(audiofile), 0)
+  expect_true(file.exists(videofile))
+  expect_gt(file.size(videofile), 0)
+})

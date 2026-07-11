@@ -18,7 +18,11 @@ ffm_map(object, mapping = "0")
 \description{
 Select which input streams are included in the output via FFmpeg's
 \code{-map} option. The default (\code{"0"}) maps every stream from the first
-input.
+input. When the pipeline uses a multi-input verb (e.g.
+\code{\link{ffm_hstack}}), the explicit mapping is added \emph{alongside}
+the automatic \code{-map "[vout]"} of the filtered stream — for example,
+\code{ffm_map(object, "0:a")} keeps the first input's audio next to the
+stacked video.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

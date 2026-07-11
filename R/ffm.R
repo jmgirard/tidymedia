@@ -345,10 +345,11 @@ ffm_codec <- function(object,
                       video = NULL) {
   
   check_ffm(object)
-  if (!is.null(audio)) rlang::check_string(audio)
-  if (!is.null(video)) rlang::check_string(video)
-  # TODO: Check codec against the list from get_codecs() and get_encoders()?
-  
+  # Cheap sanity check only (D-M06-3): whether the token names a real codec
+  # stays FFmpeg's call, so compile behavior never depends on the binary.
+  if (!is.null(audio)) check_token(audio)
+  if (!is.null(video)) check_token(video)
+
   if (is.null(audio) == FALSE) {
     object$codec_audio <- audio
   }
@@ -366,7 +367,11 @@ ffm_codec <- function(object,
 #'
 #' Select which input streams are included in the output via FFmpeg's
 #' \code{-map} option. The default (\code{"0"}) maps every stream from the first
-#' input.
+#' input. When the pipeline uses a multi-input verb (e.g.
+#' \code{\link{ffm_hstack}}), the explicit mapping is added \emph{alongside}
+#' the automatic \code{-map "[vout]"} of the filtered stream — for example,
+#' \code{ffm_map(object, "0:a")} keeps the first input's audio next to the
+#' stacked video.
 #'
 #' @param object An ffmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
@@ -454,9 +459,8 @@ ffm_copy <- function(object, audio = TRUE, video = TRUE, streams = TRUE) {
 ffm_pixel_format <- function(object, format) {
   
   check_ffm(object)
-  rlang::check_string(format)
-  # TODO: Validate format argument
-  
+  check_token(format)
+
   object$pixel_format <- format
 
   object
@@ -660,6 +664,8 @@ ffm_drawbox <- function(object,
 #'   \code{ffm_files()}.
 #' @param ... One or more strings, each a whitespace-separated option group
 #'   (e.g. \code{"-q:v 1"}, \code{"-frames:v 1"}). Added in the order given.
+#'   At execution time each whitespace-separated token becomes one FFmpeg
+#'   argument, so option values themselves must not contain spaces.
 #' @return \code{object} with the added output options.
 #' @family builder functions
 #' @examples
@@ -675,6 +681,17 @@ ffm_output_options <- function(object, ...) {
   opts <- c(...)
   if (!rlang::is_character(opts) || length(opts) == 0) {
     cli::cli_abort("Provide at least one output option as a string.")
+  }
+  # Each whitespace-separated token becomes one FFmpeg argument at execution
+  # (no shell parsing), so quoted values with spaces cannot work — reject them
+  # loudly rather than emit a command that means something else than printed.
+  if (any(grepl("[\"']", opts))) {
+    cli::cli_abort(c(
+      "Output options can't contain quote characters.",
+      "x" = "Options are split on whitespace into FFmpeg arguments verbatim;
+             quoting does not group tokens.",
+      "i" = "Use values without spaces, or the {.fn ffmpeg} escape hatch."
+    ))
   }
 
   object$output_opts <- c(object$output_opts, opts)
@@ -704,6 +721,42 @@ ffm_output_options <- function(object, ...) {
 #'   ffm_compile()
 #' @export
 ffm_compile <- function(object) {
+  groups <- ffm_groups(object)
+  paste(vapply(groups, `[[`, character(1), "display"), collapse = " ")
+}
+
+# ffm_args() ---------------------------------------------------------------
+
+# Render the pipeline as an argument vector: one element per CLI argument,
+# never shell-quoted. This is what actually gets executed (via run_program()'s
+# system2 call), so paths containing spaces, quotes, `$`, or backticks reach
+# FFmpeg verbatim. Internal by decision (D-M06-2): the exported surface stays
+# `ffm_compile()`'s display string.
+ffm_args <- function(object) {
+  groups <- ffm_groups(object)
+  unlist(lapply(groups, `[[`, "args"), use.names = FALSE)
+}
+
+# ffm_groups() -------------------------------------------------------------
+
+# Shared assembly for the two renderings of a pipeline: the display string
+# (`ffm_compile()`, the reproducibility artifact) and the argument vector
+# (`ffm_args()`, what gets executed). Each group holds `args` (one element per
+# CLI argument, unquoted) and `display` (the string fragment, with `quote`d
+# elements wrapped in double quotes). Deriving both renderings from one
+# structure is what keeps the printed command and the executed command from
+# drifting apart (M06).
+ffm_group <- function(args, quote = integer(), display = NULL) {
+  args <- as.character(args)
+  if (is.null(display)) {
+    shown <- args
+    shown[quote] <- paste0('"', shown[quote], '"')
+    display <- paste(shown, collapse = " ")
+  }
+  list(args = args, display = display)
+}
+
+ffm_groups <- function(object) {
 
   check_ffm(object)
 
@@ -750,38 +803,43 @@ ffm_compile <- function(object) {
   }
 
   # Global options (before the inputs).
-  overwrite <- if (isTRUE(object$overwrite)) "-y" else "-n"
+  overwrite <- list(ffm_group(if (isTRUE(object$overwrite)) "-y" else "-n"))
 
   # Seek options. A frame-accurate seek is placed *after* -i (output seeking,
   # re-encoded). A fast copy-safe seek is placed *before* -i (input seeking)
   # with -avoid_negative_ts so the copied segment starts cleanly at a keyframe
   # instead of the broken output-seek-copy path (see M03 D-M03-5).
-  seek_pre <- character()
-  seek_post <- character()
+  seek_pre <- list()
+  seek_post <- list()
   if (length(object$seek_start) || length(object$seek_end)) {
-    ss <- if (length(object$seek_start)) paste("-ss", object$seek_start)
-    to <- if (length(object$seek_end)) paste("-to", object$seek_end)
+    seeks <- c(
+      if (length(object$seek_start)) list(ffm_group(c("-ss", object$seek_start))),
+      if (length(object$seek_end)) list(ffm_group(c("-to", object$seek_end)))
+    )
     if (seek_reencode) {
-      seek_post <- c(ss, to)
+      seek_post <- seeks
     } else {
-      seek_pre <- c(ss, to)
-      seek_post <- "-avoid_negative_ts make_zero"
+      seek_pre <- seeks
+      seek_post <- list(ffm_group(c("-avoid_negative_ts", "make_zero")))
     }
   }
 
   # Inputs. The concat demuxer replaces the per-file -i list with a single -i
   # pointing at the list file that ffm_concat() wrote.
   inputs <- if (isTRUE(object$concat)) {
-    paste0('-f concat -safe 0 -i "', object$concat_list, '"')
+    list(ffm_group(
+      c("-f", "concat", "-safe", "0", "-i", object$concat_list),
+      quote = 6L
+    ))
   } else {
-    paste0('-i "', object$input, '"')
+    lapply(object$input, function(inp) ffm_group(c("-i", inp), quote = 2L))
   }
 
   # Filters and stream mapping. Single-input sequential chains compile to
   # -vf/-af; any multi-input (blessed) verb sets `complex` and compiles to
   # -filter_complex with explicit labels plus an auto -map (M02 D-M02-2).
-  filters <- character()
-  map <- character()
+  filters <- list()
+  map <- list()
   if (isTRUE(object$complex)) {
     body <- paste(object$filter_video, collapse = ",")
     # A verb that manages its own stream labels starts the graph with "[..]";
@@ -790,74 +848,72 @@ ffm_compile <- function(object) {
       labels <- paste0("[", seq_along(object$input) - 1L, ":v]", collapse = "")
       body <- paste0(labels, body)
     }
-    filters <- paste0('-filter_complex "', body, '[vout]"')
-    map <- '-map "[vout]"'
+    filters <- list(ffm_group(
+      c("-filter_complex", paste0(body, "[vout]")),
+      quote = 2L
+    ))
+    # D-M06-1: explicit ffm_map() maps ride alongside the auto [vout] map
+    # (e.g. keep 0:a audio next to stacked video) instead of being dropped.
+    map <- c(
+      list(ffm_group(c("-map", "[vout]"), quote = 2L)),
+      lapply(object$map, function(m) ffm_group(c("-map", m)))
+    )
   } else {
     if (length(object$filter_video)) {
-      filters <- c(
-        filters,
-        paste0('-vf "', paste(object$filter_video, collapse = ","), '"')
-      )
+      filters <- c(filters, list(ffm_group(
+        c("-vf", paste(object$filter_video, collapse = ",")),
+        quote = 2L
+      )))
     }
     if (length(object$filter_audio)) {
-      filters <- c(
-        filters,
-        paste0('-af "', paste(object$filter_audio, collapse = ","), '"')
-      )
+      filters <- c(filters, list(ffm_group(
+        c("-af", paste(object$filter_audio, collapse = ",")),
+        quote = 2L
+      )))
     }
-    if (length(object$map)) {
-      map <- paste0("-map ", object$map)
-    }
+    map <- lapply(object$map, function(m) ffm_group(c("-map", m)))
   }
 
   # Output options (after the inputs, before the output file).
-  codec_video <- if (length(object$codec_video)) {
-    paste0("-codec:v ", object$codec_video)
-  } else {
-    character()
-  }
-  codec_audio <- if (length(object$codec_audio)) {
-    paste0("-codec:a ", object$codec_audio)
-  } else {
-    character()
-  }
-  pixel_format <- if (length(object$pixel_format)) {
-    paste0("-pix_fmt ", object$pixel_format)
-  } else {
-    character()
-  }
+  codecs <- c(
+    if (length(object$codec_video)) {
+      list(ffm_group(c("-codec:v", object$codec_video)))
+    },
+    if (length(object$codec_audio)) {
+      list(ffm_group(c("-codec:a", object$codec_audio)))
+    },
+    if (length(object$pixel_format)) {
+      list(ffm_group(c("-pix_fmt", object$pixel_format)))
+    }
+  )
   drop_flags <- c(
     if ("video" %in% object$drop) "-vn",
     if ("audio" %in% object$drop) "-an",
     if ("subtitles" %in% object$drop) "-sn",
     if ("data" %in% object$drop) "-dn"
   )
+  drops <- if (length(drop_flags)) list(ffm_group(drop_flags)) else list()
 
   # Raw output-option passthrough (e.g. "-q:v 1"): positioned here so verbs can
-  # add specific flags without owning command layout (ffm_compile still quotes
-  # and orders everything else).
-  output_opts <- if (length(object$output_opts)) {
-    paste(object$output_opts, collapse = " ")
-  } else {
-    character()
-  }
+  # add specific flags without owning command layout. Each whitespace-separated
+  # token within a group becomes one CLI argument; the display keeps the group
+  # verbatim.
+  output_opts <- lapply(object$output_opts, function(opt) {
+    ffm_group(strsplit(trimws(opt), "[[:space:]]+")[[1]], display = opt)
+  })
 
-  tokens <- c(
+  c(
     overwrite,
     seek_pre,
     inputs,
     filters,
-    codec_video,
-    codec_audio,
-    pixel_format,
+    codecs,
     seek_post,
     output_opts,
-    drop_flags,
+    drops,
     map,
-    paste0('"', object$output, '"')
+    list(ffm_group(object$output, quote = 1L))
   )
-
-  paste(tokens, collapse = " ")
 }
 
 # ffm_run() --------------------------------------------------------------------
@@ -868,8 +924,11 @@ ffm_compile <- function(object) {
 #' 
 #' @param object An ffmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @return The FFmpeg exit status (invisibly), called for its side effect of
-#'   writing the output file.
+#' @return A character vector of FFmpeg's standard output (with a
+#'   \code{status} attribute on a non-zero exit), invisibly; called for its
+#'   side effect of writing the output file. The pipeline is executed as an
+#'   argument vector (never through a shell), so paths containing spaces or
+#'   special characters are safe.
 #' @family builder functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -881,8 +940,22 @@ ffm_compile <- function(object) {
 #' @export
 ffm_run <- function(object) {
   check_ffm(object)
-  command <- ffm_compile(object)
-  ffmpeg(command)
+  # Execute the argument vector directly (one shell-free token per argument),
+  # so paths containing spaces, quotes, `$`, or backticks reach FFmpeg
+  # verbatim (M06). stdin is redirected from an empty input so FFmpeg cannot
+  # drain the parent process's stdin (see ffmpeg()); stderr streams to the
+  # console as before.
+  out <- run_program(find_ffmpeg(), ffm_args(object), program = "FFmpeg",
+                     input = "", stderr = "")
+  status <- attr(out, "status")
+  if (!is.null(status)) {
+    cli::cli_abort(c(
+      "FFmpeg exited with status {status}.",
+      "i" = "FFmpeg's error output is printed above.",
+      "i" = "The failing command was: {.code ffmpeg {ffm_compile(object)}}"
+    ))
+  }
+  invisible(out)
 }
 
 # ffm_finish() -----------------------------------------------------------------
@@ -894,7 +967,7 @@ ffm_finish <- function(object, run) {
   rlang::check_bool(run)
   command <- ffm_compile(object)
   if (run) {
-    ffmpeg(command)
+    ffm_run(object)
     invisible(command)
   } else {
     command

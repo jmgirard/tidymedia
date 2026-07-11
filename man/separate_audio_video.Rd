@@ -4,7 +4,13 @@
 \alias{separate_audio_video}
 \title{Split a media file into separate audio and video files}
 \usage{
-separate_audio_video(infile, audiofile, videofile, run = TRUE)
+separate_audio_video(
+  infile,
+  audiofile,
+  videofile,
+  reencode = FALSE,
+  run = TRUE
+)
 }
 \arguments{
 \item{infile}{A string containing the path to a media file.}
@@ -12,6 +18,10 @@ separate_audio_video(infile, audiofile, videofile, run = TRUE)
 \item{audiofile}{A string containing the path of the audio file to write.}
 
 \item{videofile}{A string containing the path of the video file to write.}
+
+\item{reencode}{A logical: stream-copy the audio and video losslessly
+(\code{FALSE}, default) or re-encode them to match the output extensions
+(\code{TRUE}).}
 
 \item{run}{A logical: run the commands through FFmpeg (\code{TRUE}, default)
 or return the compiled commands without running them (\code{FALSE}).}
@@ -21,7 +31,11 @@ A named character vector of the two compiled commands
 (\code{audio}, \code{video}); invisible when \code{run = TRUE}.
 }
 \description{
-Split a media file into separate audio and video files
+By default the streams are copied, not re-encoded (\code{reencode =
+FALSE}): separation is lossless and fast, but each output container must
+support the source codec (e.g. write AAC audio from an MP4 to \code{.aac}
+or \code{.m4a}, not \code{.mp3}). Set \code{reencode = TRUE} to let FFmpeg
+re-encode each stream to whatever the output extension implies.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

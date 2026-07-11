@@ -106,9 +106,18 @@ extract_audio <- function(infile, outfile, acodec = "copy", run = TRUE) {
 
 #' Split a media file into separate audio and video files
 #'
+#' By default the streams are copied, not re-encoded (\code{reencode =
+#' FALSE}): separation is lossless and fast, but each output container must
+#' support the source codec (e.g. write AAC audio from an MP4 to \code{.aac}
+#' or \code{.m4a}, not \code{.mp3}). Set \code{reencode = TRUE} to let FFmpeg
+#' re-encode each stream to whatever the output extension implies.
+#'
 #' @param infile A string containing the path to a media file.
 #' @param audiofile A string containing the path of the audio file to write.
 #' @param videofile A string containing the path of the video file to write.
+#' @param reencode A logical: stream-copy the audio and video losslessly
+#'   (\code{FALSE}, default) or re-encode them to match the output extensions
+#'   (\code{TRUE}).
 #' @param run A logical: run the commands through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled commands without running them (\code{FALSE}).
 #' @return A named character vector of the two compiled commands
@@ -118,21 +127,28 @@ extract_audio <- function(infile, outfile, acodec = "copy", run = TRUE) {
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' separate_audio_video(video, "audio.aac", "video.mp4", run = FALSE)
 #' @export
-separate_audio_video <- function(infile, audiofile, videofile, run = TRUE) {
+separate_audio_video <- function(infile, audiofile, videofile,
+                                 reencode = FALSE, run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(audiofile)
   rlang::check_string(videofile)
+  rlang::check_bool(reencode)
 
   # One input -> two outputs is a fan-out: emit two single-output pipelines
   # (D-M03-2) rather than a dual-`-map` command the linear engine can't model.
   audio <- ffm_map(ffm_files(infile, audiofile), "0:a")
   video <- ffm_map(ffm_files(infile, videofile), "0:v")
+  if (!reencode) {
+    # D-M06-4: lossless stream copy by default.
+    audio <- ffm_codec(audio, audio = "copy")
+    video <- ffm_codec(video, video = "copy")
+  }
   commands <- c(audio = ffm_compile(audio), video = ffm_compile(video))
 
   if (run) {
-    ffmpeg(commands[["audio"]])
-    ffmpeg(commands[["video"]])
+    ffm_run(audio)
+    ffm_run(video)
     invisible(commands)
   } else {
     commands

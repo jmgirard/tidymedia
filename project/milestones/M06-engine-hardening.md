@@ -50,17 +50,17 @@ beyond what the shared assembly path requires.
 
 ## Plan
 
-- [ ] T1: Shared assembly: refactor `ffm_compile()` internals so one ordered
+- [x] T1: Shared assembly: refactor `ffm_compile()` internals so one ordered
       argument model renders both the display string and an argument vector
       (e.g. internal `ffm_args()`); pure tests for both renderings.
-- [ ] T2: Execution: route `ffm_run()` (and thus `ffm_batch(run = TRUE)`)
+- [x] T2: Execution: route `ffm_run()` (and thus `ffm_batch(run = TRUE)`)
       through `run_program()` with the arg vector; keep the `command` string
       column; add hostile-path E2E tests (binary-gated).
-- [ ] T3: F3 fix: decide override-vs-abort for explicit `ffm_map()` in
+- [x] T3: F3 fix: decide override-vs-abort for explicit `ffm_map()` in
       complex mode; implement + tests + roxygen.
-- [ ] T4: `separate_audio_video()` copy fast path (default copy, opt-out
+- [x] T4: `separate_audio_video()` copy fast path (default copy, opt-out
       re-encode); snapshot + E2E tests.
-- [ ] T5: Resolve R/ffm.R:350 (codec validation) and R/ffm.R:458 (format
+- [x] T5: Resolve R/ffm.R:350 (codec validation) and R/ffm.R:458 (format
       validation) — implement or reject with logged decision.
 - [ ] T6: Diagnose covr 0% (likely instrumentation/srcref issue); fix and
       verify a real percentage on CI.
@@ -69,10 +69,23 @@ beyond what the shared assembly path requires.
 ## Work log
 
 - 2026-07-10: Milestone planned (with M07–M10 queued as ideas).
+- 2026-07-10: T1–T5 done: ffm_groups() shared assembly + internal ffm_args();
+  ffm_run/ffm_batch/ffm_finish execute arg vectors via run_program(); map
+  combine (D-M06-1); separate_audio_video copy default; check_token
+  validation. Tests 280 pass / 0 fail (snapshots unchanged). Next: T6 covr.
 
 ## Decisions
 
-- (none yet — T3 and T5 will produce D-M06-1..n)
+- D-M06-1 (2026-07-10): Complex mode **combines** auto `-map "[vout]"` with
+  explicit `ffm_map()` maps (enables stack-video + source-audio); nothing is
+  silently dropped.
+- D-M06-2 (2026-07-10): Arg-vector representation is **internal-only**
+  (`ffm_args()`); `ffm_compile()` keeps returning the display string.
+- D-M06-3 (2026-07-10): Codec/format validation is **cheap sanity checks**
+  (single clean token, no whitespace/shell metacharacters); ffmpeg stays
+  authoritative on existence.
+- D-M06-4 (2026-07-10): `separate_audio_video()` **stream-copies by default**
+  (lossless); re-encode is opt-in. Breaking post-0.1.0, logged in NEWS.
 
 ## Review
 

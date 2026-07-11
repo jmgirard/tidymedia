@@ -11,8 +11,11 @@ ffm_run(object)
 \code{ffm_files()}.}
 }
 \value{
-The FFmpeg exit status (invisibly), called for its side effect of
-writing the output file.
+A character vector of FFmpeg's standard output (with a
+\code{status} attribute on a non-zero exit), invisibly; called for its
+side effect of writing the output file. The pipeline is executed as an
+argument vector (never through a shell), so paths containing spaces or
+special characters are safe.
 }
 \description{
 Compile the instructions in the pipeline and run them all through FFmpeg.

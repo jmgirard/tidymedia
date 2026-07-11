@@ -98,13 +98,20 @@ find_ffplay <- function() {
 # Callers pass tokens unquoted (one vector element per CLI argument); do not
 # pre-quote. `location` is the output of a `find_*()` call; a missing binary
 # aborts rather than shelling out to nothing.
+#
+# `input` and `stderr` pass through to system2(): ffm_run() sets `input = ""`
+# so FFmpeg cannot drain the parent's stdin (see ffmpeg()) and `stderr = ""`
+# so encode progress/errors stream to the console; the metadata readers keep
+# the quiet defaults (stderr discarded).
 run_program <- function(location, args, program = "the program",
+                        input = NULL, stderr = FALSE,
                         call = rlang::caller_env()) {
   if (is.null(location) || is.na(location) || !nzchar(location)) {
     cli::cli_abort("Could not locate {program}.", call = call)
   }
   suppressWarnings(
-    system2(location, args = shQuote(args), stdout = TRUE, stderr = FALSE)
+    system2(location, args = shQuote(args), stdout = TRUE, stderr = stderr,
+            input = input)
   )
 }
 

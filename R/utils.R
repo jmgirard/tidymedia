@@ -42,6 +42,27 @@ check_file_exists <- function(x, arg = rlang::caller_arg(x),
   invisible(x)
 }
 
+# check_token() -----------------------------------------------------------
+
+# Validate that `x` is a single clean CLI token: a codec, pixel-format, or
+# similar name made of letters, digits, and `_ + . -`. Cheap sanity check only
+# (D-M06-3) — whether the token names a real codec/format stays FFmpeg's call.
+check_token <- function(x, arg = rlang::caller_arg(x),
+                        call = rlang::caller_env()) {
+  rlang::check_string(x, arg = arg, call = call)
+  if (!grepl("^[A-Za-z0-9_+.-]+$", x)) {
+    cli::cli_abort(
+      c(
+        "{.arg {arg}} must be a single clean token.",
+        "x" = "{.val {x}} contains whitespace or shell characters.",
+        "i" = "Allowed: letters, digits, and {.code _ + . -}."
+      ),
+      call = call
+    )
+  }
+  invisible(x)
+}
+
 # type_columns() ----------------------------------------------------------
 
 # Coerce every column of a character metadata tibble to its natural R type,

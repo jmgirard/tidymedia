@@ -11,7 +11,9 @@ ffm_output_options(object, ...)
 \code{ffm_files()}.}
 
 \item{...}{One or more strings, each a whitespace-separated option group
-(e.g. \code{"-q:v 1"}, \code{"-frames:v 1"}). Added in the order given.}
+(e.g. \code{"-q:v 1"}, \code{"-frames:v 1"}). Added in the order given.
+At execution time each whitespace-separated token becomes one FFmpeg
+argument, so option values themselves must not contain spaces.}
 }
 \value{
 \code{object} with the added output options.

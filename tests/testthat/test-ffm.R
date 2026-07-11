@@ -502,3 +502,123 @@ test_that("ffm_concat() joins inputs end to end through ffmpeg", {
   # Roughly the sum of the two ~2s inputs.
   expect_gt(probe_duration(out), 3.5)
 })
+
+# M06: ffm_args() shared assembly (pure) ----------------------------------------
+
+test_that("ffm_args() yields one element per CLI argument, unquoted", {
+  f <- make_input()
+  p <- ffm_files(f, "out file.mp4") |>
+    ffm_trim(start = 1, end = 2) |>
+    ffm_codec(video = "libx264")
+  expect_identical(
+    tidymedia:::ffm_args(p),
+    c("-y", "-i", f, "-vf", "trim=start=1:end=2,setpts=PTS-STARTPTS",
+      "-codec:v", "libx264", "out file.mp4")
+  )
+})
+
+test_that("ffm_args() matches ffm_compile() ordering for a complex pipeline", {
+  f1 <- make_input()
+  f2 <- make_input()
+  p <- ffm_hstack(ffm_files(c(f1, f2), "out.mp4"))
+  expect_identical(
+    tidymedia:::ffm_args(p),
+    c("-y", "-i", f1, "-i", f2,
+      "-filter_complex", "[0:v][1:v]hstack=inputs=2:shortest=0[vout]",
+      "-map", "[vout]", "out.mp4")
+  )
+})
+
+test_that("ffm_args() renders both seek modes", {
+  f <- make_input()
+  fast <- ffm_seek(ffm_files(f, "out.mp4"), start = 3, end = 7,
+                   reencode = FALSE)
+  expect_identical(
+    tidymedia:::ffm_args(fast),
+    c("-y", "-ss", "3", "-to", "7", "-i", f,
+      "-avoid_negative_ts", "make_zero", "out.mp4")
+  )
+  slow <- ffm_seek(ffm_files(f, "out.mp4"), start = 3, end = 7)
+  expect_identical(
+    tidymedia:::ffm_args(slow),
+    c("-y", "-i", f, "-ss", "3", "-to", "7", "out.mp4")
+  )
+})
+
+test_that("ffm_args() splits raw output option groups into tokens", {
+  f <- make_input()
+  p <- ffm_output_options(ffm_files(f, "out.png"), "-frames:v 1", "-q:v 2")
+  expect_identical(
+    tidymedia:::ffm_args(p),
+    c("-y", "-i", f, "-frames:v", "1", "-q:v", "2", "out.png")
+  )
+  # ...while the display string keeps each group verbatim
+  expect_match(ffm_compile(p), "-frames:v 1 -q:v 2", fixed = TRUE)
+})
+
+test_that("ffm_args() elements carry no shell quoting", {
+  f <- make_input()
+  p <- ffm_scale(ffm_files(f, "out dir/out.mp4"), 640, 480)
+  expect_false(any(grepl('"', tidymedia:::ffm_args(p), fixed = TRUE)))
+})
+
+test_that("ffm_args() and ffm_compile() agree on the concat demuxer", {
+  f1 <- make_input()
+  f2 <- make_input()
+  p <- ffm_copy(ffm_concat(ffm_files(c(f1, f2), "out.mp4")))
+  args <- tidymedia:::ffm_args(p)
+  expect_identical(
+    args[1:5],
+    c("-y", "-f", "concat", "-safe", "0")
+  )
+  expect_identical(args[[6]], "-i")
+  expect_match(ffm_compile(p), '-f concat -safe 0 -i "', fixed = TRUE)
+})
+
+# M06: explicit ffm_map() in complex mode (D-M06-1) ------------------------------
+
+test_that("complex mode combines the auto [vout] map with an explicit map", {
+  f1 <- make_input()
+  f2 <- make_input()
+  p <- ffm_map(ffm_hstack(ffm_files(c(f1, f2), "out.mp4")), "0:a")
+  expect_match(ffm_compile(p), '-map "[vout]" -map 0:a', fixed = TRUE)
+  args <- tidymedia:::ffm_args(p)
+  expect_identical(sum(args == "-map"), 2L)
+  expect_identical(args[which(args == "-map") + 1L], c("[vout]", "0:a"))
+})
+
+# M06: cheap token validation (D-M06-3) ------------------------------------------
+
+test_that("ffm_codec() rejects unclean codec tokens", {
+  f <- make_input()
+  p <- ffm_files(f, "out.mp4")
+  expect_error(ffm_codec(p, video = "libx264 -evil"), "single clean token")
+  expect_error(ffm_codec(p, audio = "aac; rm -rf ~"), "single clean token")
+  expect_no_error(ffm_codec(p, video = "libx264", audio = "copy"))
+})
+
+test_that("ffm_pixel_format() rejects unclean format tokens", {
+  f <- make_input()
+  p <- ffm_files(f, "out.mp4")
+  expect_error(ffm_pixel_format(p, "yuv 420p"), "single clean token")
+  expect_error(ffm_pixel_format(p, 'yuv420p"'), "single clean token")
+  expect_no_error(ffm_pixel_format(p, "yuv420p10le"))
+})
+
+# M06: safe execution with hostile paths (binary-gated) --------------------------
+
+test_that("ffm_run() handles paths with spaces, quotes, $, and backticks", {
+  skip_if_no_ffmpeg()
+  src <- make_test_video()
+  dir <- withr::local_tempdir()
+  hostile_in <- file.path(dir, "in put's $HOME `x`.mp4")
+  expect_true(file.copy(src, hostile_in))
+  hostile_out <- file.path(dir, "out put's $HOME `y`.mp4")
+  res <- ffm_files(hostile_in, hostile_out) |>
+    ffm_scale(width = 32, height = 32) |>
+    ffm_codec(video = "libx264") |>
+    ffm_run()
+  expect_null(attr(res, "status"))
+  expect_true(file.exists(hostile_out))
+  expect_gt(file.size(hostile_out), 0)
+})

@@ -1,0 +1,88 @@
+url: https://jmgirard.github.io/tidymedia/
+
+template:
+  bootstrap: 5
+
+reference:
+- title: "Layer 0: escape hatches"
+  desc: >
+    Pass a raw argument string straight to the command-line tools. Use these
+    when you need something tidymedia does not wrap.
+  contents:
+  - ffmpeg
+  - ffprobe
+  - mediainfo
+- title: "Layer 1: the pipeline builder"
+  desc: >
+    Assemble a reproducible FFmpeg command step by step, then compile or run it.
+  contents:
+  - ffm
+  - ffm_files
+  - ffm_trim
+  - ffm_seek
+  - ffm_drop
+  - ffm_crop
+  - ffm_scale
+  - ffm_codec
+  - ffm_map
+  - ffm_copy
+  - ffm_pixel_format
+  - ffm_hstack
+  - ffm_concat
+  - ffm_drawbox
+  - ffm_output_options
+  - ffm_compile
+  - ffm_run
+  - ffm_batch
+  - print.tidymedia_ffm
+- title: "Layer 2: task verbs"
+  desc: >
+    Thin wrappers over the builder for common preprocessing jobs.
+  contents:
+  - extract_frame
+  - extract_audio
+  - separate_audio_video
+  - audio_as_mp3
+  - crop_video
+  - format_for_web
+  - segment_video
+  - concatenate_videos
+- title: "Media metadata"
+  desc: >
+    Read container and stream metadata as tibbles, ready for the tidyverse.
+  contents:
+  - probe_all
+  - probe_container
+  - mediainfo_parameter
+  - mediainfo_query
+  - mediainfo_template
+  - mediainfo_summary
+  - get_duration
+  - get_framerate
+  - get_width
+  - get_height
+  - get_samplingrate
+  - convert_fractions
+- title: "FFmpeg capabilities"
+  desc: >
+    Discover the codecs and encoders available in your FFmpeg build.
+  contents:
+  - get_codecs
+  - get_encoders
+- title: "Program management"
+  desc: >
+    Locate, configure, and install the FFmpeg and MediaInfo binaries.
+  contents:
+  - find_ffmpeg
+  - set_ffmpeg
+  - install_on_win
+- title: "Utilities"
+  contents:
+  - pad_integers
+
+articles:
+- title: Articles
+  navbar: ~
+  contents:
+  - metadata
+  - batch

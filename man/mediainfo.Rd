@@ -19,16 +19,14 @@ to MediaInfo verbatim, so you are responsible for quoting it. For structured,
 tibble-returning output use \code{\link[=mediainfo_template]{mediainfo_template()}}, \code{\link[=mediainfo_query]{mediainfo_query()}}, or
 \code{\link[=mediainfo_parameter]{mediainfo_parameter()}}, which quote their arguments safely.
 }
-\seealso{
-Other mediainfo functions:
-\code{\link[=get_duration]{get_duration()}},
-\code{\link[=get_framerate]{get_framerate()}},
-\code{\link[=get_height]{get_height()}},
-\code{\link[=get_samplingrate]{get_samplingrate()}},
-\code{\link[=get_width]{get_width()}},
-\code{\link[=mediainfo_parameter]{mediainfo_parameter()}},
-\code{\link[=mediainfo_query]{mediainfo_query()}},
-\code{\link[=mediainfo_template]{mediainfo_template()}}
+\examples{
+\dontshow{if (nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}
+mediainfo("--Version")
+\dontshow{\}) # examplesIf}
 }
-\concept{cli functions}
-\concept{mediainfo functions}
+\seealso{
+Other escape hatch functions:
+\code{\link[=ffmpeg]{ffmpeg()}},
+\code{\link[=ffprobe]{ffprobe()}}
+}
+\concept{escape hatch functions}

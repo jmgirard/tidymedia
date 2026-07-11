@@ -28,16 +28,19 @@
 #'   \code{command} column (the compiled FFmpeg command for each job) and, when
 #'   \code{run = TRUE}, a logical \code{success} column.
 #' @seealso \code{\link{segment_video}}, which is built on \code{ffm_batch()}.
+#' @family builder functions
 #' @examples
-#' \dontrun{
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' jobs <- tibble::tibble(
-#'   input  = c("a.mp4", "b.mp4"),
+#'   input  = c(video, video),
 #'   output = c("a.mp3", "b.mp3")
 #' )
-#' ffm_batch(jobs, function(input, output, ...) {
-#'   ffm_files(input, output) |> ffm_drop("video") |> ffm_codec(audio = "libmp3lame")
+#' # run = FALSE compiles one reproducible command per job without calling FFmpeg
+#' ffm_batch(jobs, run = FALSE, .f = function(input, output, ...) {
+#'   ffm_files(input, output) |>
+#'     ffm_drop("video") |>
+#'     ffm_codec(audio = "libmp3lame")
 #' })
-#' }
 #' @export
 ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE) {
 

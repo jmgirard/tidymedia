@@ -1,5 +1,6 @@
 ^\.github$
 ^README\.Rmd$
+^README\.html$
 ^LICENSE\.md$
 ^.*\.Rproj$
 ^\.Rproj\.user$
@@ -7,3 +8,7 @@
 ^\.claude$
 ^CLAUDE\.md$
 ^\.DS_Store$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^cran-comments\.md$

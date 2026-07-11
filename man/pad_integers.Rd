@@ -25,3 +25,14 @@ Takes in a numeric vector of integerish values and returns a character vector
 of the same length with padding. The width of padding can be specified or
 intuited from the maximum value. The padding flag can be configured.
 }
+\examples{
+# Width is intuited from the largest value by default
+pad_integers(c(1, 22, 333))
+# ... or set it explicitly
+pad_integers(1:3, width = 4)
+}
+\seealso{
+Other utility functions:
+\code{\link[=convert_fractions]{convert_fractions()}}
+}
+\concept{utility functions}

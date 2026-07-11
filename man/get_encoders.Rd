@@ -30,9 +30,13 @@ Query a list of installed encoders from FFmpeg and construct a tidy data
 frame containing information about these encoders.
 }
 \examples{
-\dontrun{
-
-get_encoders()
+\dontshow{if (nzchar(Sys.which("ffmpeg"))) withAutoprint(\{ # examplesIf}
+head(get_encoders())
 get_encoders(sort_by_type = FALSE)
+\dontshow{\}) # examplesIf}
 }
+\seealso{
+Other capability functions:
+\code{\link[=get_codecs]{get_codecs()}}
 }
+\concept{capability functions}

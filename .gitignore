@@ -3,3 +3,8 @@
 .RData
 .Ruserdata
 .DS_Store
+README.html
+/doc/
+/Meta/
+inst/doc
+docs

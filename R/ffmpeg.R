@@ -9,10 +9,20 @@
 #'
 #' @param command A string containing the arguments to pass to FFmpeg.
 #' @return A character vector containing the text output by FFmpeg.
+#' @family escape hatch functions
+#' @examplesIf nzchar(Sys.which("ffmpeg"))
+#' # Layer 0 escape hatch: the string is passed to FFmpeg verbatim
+#' ffmpeg("-version")
 #' @export
 ffmpeg <- function(command) {
   rlang::check_string(command)
-  out <- system(glue('{find_ffmpeg()} {command}'), intern = TRUE)
+  # Redirect FFmpeg's stdin from an empty input (the `input = ""` temp file) so
+  # it cannot drain the parent process's stdin. FFmpeg reads stdin for
+  # interactive control while encoding; without this it would swallow whatever
+  # is feeding R's stdin (e.g. the example stream during R CMD check). This is
+  # the equivalent of FFmpeg's -nostdin flag, applied without touching the
+  # verbatim `command` string.
+  out <- system(glue('{find_ffmpeg()} {command}'), intern = TRUE, input = "")
   out
 }
 
@@ -32,6 +42,11 @@ ffmpeg <- function(command) {
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' # run = FALSE returns the reproducible command instead of executing it
+#' extract_frame(video, "frame.png", timestamp = 0.5, run = FALSE)
 #' @export
 extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL,
                           run = TRUE) {
@@ -69,6 +84,10 @@ extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL,
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' extract_audio(video, "audio.aac", run = FALSE)
 #' @export
 extract_audio <- function(infile, outfile, acodec = "copy", run = TRUE) {
 
@@ -94,6 +113,10 @@ extract_audio <- function(infile, outfile, acodec = "copy", run = TRUE) {
 #'   or return the compiled commands without running them (\code{FALSE}).
 #' @return A named character vector of the two compiled commands
 #'   (\code{audio}, \code{video}); invisible when \code{run = TRUE}.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' separate_audio_video(video, "audio.aac", "video.mp4", run = FALSE)
 #' @export
 separate_audio_video <- function(infile, audiofile, videofile, run = TRUE) {
 
@@ -126,6 +149,10 @@ separate_audio_video <- function(infile, audiofile, videofile, run = TRUE) {
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' audio_as_mp3(video, "audio.mp3", run = FALSE)
 #' @export
 audio_as_mp3 <- function(infile, outfile, run = TRUE) {
 
@@ -153,6 +180,10 @@ audio_as_mp3 <- function(infile, outfile, run = TRUE) {
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' crop_video(video, "cropped.mp4", width = 160, height = 120, run = FALSE)
 #' @export
 crop_video <- function(infile, outfile, width, height,
                        x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
@@ -181,6 +212,10 @@ crop_video <- function(infile, outfile, width, height,
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' format_for_web(video, "web.mp4", run = FALSE)
 #' @export
 format_for_web <- function(infile, outfile, run = TRUE) {
 
@@ -217,13 +252,10 @@ format_for_web <- function(infile, outfile, run = TRUE) {
 #'   is an intra-frame-only codec} \item{lossy}{A logical vector indicating
 #'   whether each codec supports lossy compression} \item{lossless}{A logical
 #'   vector indicating whether each codec supports lossless compression}
-#' @export
-#' @examples
-#' \dontrun{
-#'
-#' get_codecs()
+#' @family capability functions
+#' @examplesIf nzchar(Sys.which("ffmpeg"))
+#' head(get_codecs())
 #' get_codecs(sort_by_type = FALSE)
-#' }
 #' @export
 get_codecs <- function(sort_by_type = TRUE) {
   output <- ffmpeg("-codecs")
@@ -299,13 +331,11 @@ get_codecs <- function(sort_by_type = TRUE) {
 #'   logical vector indicating whether each encoder supports draw_horiz_band}
 #'   \item{direct_render}{A logical vector indicating whether each encoders
 #'   supports direct rending method 1}
-#' @export
-#' @examples 
-#' \dontrun{
-#' 
-#' get_encoders()
+#' @family capability functions
+#' @examplesIf nzchar(Sys.which("ffmpeg"))
+#' head(get_encoders())
 #' get_encoders(sort_by_type = FALSE)
-#' }
+#' @export
 get_encoders <- function(sort_by_type = TRUE) {
 
   rlang::check_bool(sort_by_type)
@@ -397,6 +427,11 @@ get_encoders <- function(sort_by_type = TRUE) {
 #'   when \code{run = TRUE}, \code{success}).
 #' @seealso \code{\link{ffm_batch}}, \code{\link{ffm_seek}}
 #' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' # Two segments; run = FALSE compiles one command per segment
+#' segment_video(video, ts_start = c(0, 0.5), ts_stop = c(0.5, 1), run = FALSE)
 #' @export
 segment_video <- function(infile,
                           ts_start,
@@ -470,6 +505,10 @@ segment_video <- function(infile,
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' concatenate_videos(c(video, video), "joined.mp4", run = FALSE)
 #' @export
 concatenate_videos <- function(infiles, outfile, run = TRUE) {
 

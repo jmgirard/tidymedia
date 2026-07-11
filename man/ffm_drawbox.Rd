@@ -35,7 +35,7 @@ number or a string that contains an FFmpeg expression. (default =
 
 \item{color}{A string containing the color of the box in FFmpeg color syntax,
 see reference link below for more details. If the special value
-\code{"invert"} is used, the box color is teh same as tehv ideo with
+\code{"invert"} is used, the box color is the same as the video with
 inverted luma. (default = \code{"black"})}
 
 \item{thickness}{A thickness of the box edge (in pixels). A value of
@@ -48,8 +48,37 @@ filter.
 \description{
 Add a video filter to draw a colored rectangle on the input video.
 }
+\examples{
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+# Draw a filled red box covering the top-left quarter of the frame
+ffm(video, "output.mp4") |>
+  ffm_drawbox(width = "in_w/2", height = "in_h/2", color = "red") |>
+  ffm_compile()
+}
 \references{
 https://ffmpeg.org/ffmpeg-filters.html#drawbox
 
 https://ffmpeg.org/ffmpeg-utils.html#color-syntax
 }
+\seealso{
+Other builder functions:
+\code{\link[=ffm]{ffm()}},
+\code{\link[=ffm_batch]{ffm_batch()}},
+\code{\link[=ffm_codec]{ffm_codec()}},
+\code{\link[=ffm_compile]{ffm_compile()}},
+\code{\link[=ffm_concat]{ffm_concat()}},
+\code{\link[=ffm_copy]{ffm_copy()}},
+\code{\link[=ffm_crop]{ffm_crop()}},
+\code{\link[=ffm_drop]{ffm_drop()}},
+\code{\link[=ffm_files]{ffm_files()}},
+\code{\link[=ffm_hstack]{ffm_hstack()}},
+\code{\link[=ffm_map]{ffm_map()}},
+\code{\link[=ffm_output_options]{ffm_output_options()}},
+\code{\link[=ffm_pixel_format]{ffm_pixel_format()}},
+\code{\link[=ffm_run]{ffm_run()}},
+\code{\link[=ffm_scale]{ffm_scale()}},
+\code{\link[=ffm_seek]{ffm_seek()}},
+\code{\link[=ffm_trim]{ffm_trim()}},
+\code{\link[=print.tidymedia_ffm]{print.tidymedia_ffm()}}
+}
+\concept{builder functions}

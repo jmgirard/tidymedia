@@ -10,6 +10,11 @@
 #' @param overwrite A logical indicating whether the output media file should be
 #'   overwritten if it already exists. (default = \code{TRUE})
 #' @return An FFmpeg pipeline object.
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' ffm(video, "output.mp4") |>
+#'   ffm_compile()
 #' @export
 ffm_files <- function(input, output, overwrite = TRUE) {
   
@@ -46,6 +51,11 @@ ffm_files <- function(input, output, overwrite = TRUE) {
 # ffm() ------------------------------------------------------------------------
 
 #' @inherit ffm_files
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' ffm(video, "output.mp4") |>
+#'   ffm_compile()
 #' @export
 ffm <- ffm_files
 
@@ -75,8 +85,14 @@ ffm <- ffm_files
 #' @return \code{object} but will added instructions to trim the duration.
 #' @references https://ffmpeg.org/ffmpeg-filters.html#trim
 #' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' ffm(video, "output.mp4") |>
+#'   ffm_trim(start = 1, end = 5) |>
+#'   ffm_compile()
 #' @export
-ffm_trim <- function(object, 
+ffm_trim <- function(object,
                      start = NULL,
                      end = NULL,
                      duration = NULL,
@@ -158,6 +174,14 @@ ffm_trim <- function(object,
 #'   default) or fast copy-safe seek that snaps to keyframes (\code{FALSE}).
 #' @return \code{object} with the added instruction to seek-cut the input.
 #' @references https://ffmpeg.org/ffmpeg.html#Main-options
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' # Fast, lossless copy cut (snaps to keyframes)
+#' ffm(video, "output.mp4") |>
+#'   ffm_seek(start = 1, end = 5, reencode = FALSE) |>
+#'   ffm_copy() |>
+#'   ffm_compile()
 #' @export
 ffm_seek <- function(object, start = NULL, end = NULL, reencode = TRUE) {
 
@@ -193,6 +217,13 @@ ffm_seek <- function(object, start = NULL, end = NULL, reencode = TRUE) {
 #'   strings: \code{"video"}, \code{"audio"}, \code{"subtitles"}, \code{"data"}
 #' @return \code{object} but with the added instruction to drop one or more
 #'   streams from the output file when run.
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' # Drop the audio stream (keep video only)
+#' ffm(video, "output.mp4") |>
+#'   ffm_drop(streams = "audio") |>
+#'   ffm_compile()
 #' @export
 ffm_drop <- function(object,
                      streams = c("video", "audio", "subtitles", "data")) {
@@ -227,6 +258,13 @@ ffm_drop <- function(object,
 #'   contains an FFMPEG expression. (default = \code{"(in_h-out_h)/2"})
 #' @return \code{object} but with the added instruction to crop the image(s).
 #' @references https://ffmpeg.org/ffmpeg-filters.html#toc-crop
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' # Crop to a centered 160x120 region
+#' ffm(video, "output.mp4") |>
+#'   ffm_crop(width = 160, height = 120) |>
+#'   ffm_compile()
 #' @export
 ffm_crop <- function(object,
                      width,
@@ -260,6 +298,12 @@ ffm_crop <- function(object,
 #' @param height The height of the output video (in pixels). Either (1) a
 #'   positive real number or (2) a string that contains an FFmpeg expression.
 #' @return \code{object} but with the added instruction to crop the image(s).
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' ffm(video, "output.mp4") |>
+#'   ffm_scale(width = 160, height = 120) |>
+#'   ffm_compile()
 #' @export
 ffm_scale <- function(object, width, height) {
 
@@ -289,6 +333,12 @@ ffm_scale <- function(object, width, height) {
 #'   only set the audio codec. default = \code{NULL}
 #' @return \code{object} but with the added instruction to change the codec(s).
 #' @references https://ffmpeg.org/ffmpeg-codecs.html
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' ffm(video, "output.mp4") |>
+#'   ffm_codec(video = "libx264", audio = "aac") |>
+#'   ffm_compile()
 #' @export
 ffm_codec <- function(object,
                       audio = NULL,
@@ -313,12 +363,21 @@ ffm_codec <- function(object,
 # ffm_map() ---------------------------------------------------------------
 
 #' Set the Stream Mapping in an FFmpeg Pipeline
-#' 
-#' Description
-#' 
+#'
+#' Select which input streams are included in the output via FFmpeg's
+#' \code{-map} option. The default (\code{"0"}) maps every stream from the first
+#' input.
+#'
 #' @param object An ffmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
 #' @param mapping A string determining the stream mapping.
+#' @return \code{object} with the added stream mapping instruction.
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' ffm(video, "output.mp4") |>
+#'   ffm_map(mapping = "0") |>
+#'   ffm_compile()
 #' @export
 ffm_map <- function(object, mapping = "0") {
   check_ffm(object)
@@ -333,9 +392,11 @@ ffm_map <- function(object, mapping = "0") {
 # ffm_copy() --------------------------------------------------------------
 
 #' Copy the codecs and map all streams
-#' 
-#' Description
-#' 
+#'
+#' Stream-copy the audio and/or video (no re-encoding) and, optionally, map all
+#' streams from the input. This is the fast, lossless path when you only need to
+#' remux or cut on keyframes.
+#'
 #' @param object An ffmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
 #' @param audio A logical indicating whether to copy the audio codec.
@@ -346,6 +407,12 @@ ffm_map <- function(object, mapping = "0") {
 #'   input (via \code{ffm_map(mapping = "0")}). (default = \code{TRUE})
 #' @return \code{object} with the added instruction to copy codecs and/or map
 #'   all streams.
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' ffm(video, "output.mp4") |>
+#'   ffm_copy() |>
+#'   ffm_compile()
 #' @export
 ffm_copy <- function(object, audio = TRUE, video = TRUE, streams = TRUE) {
   
@@ -369,11 +436,20 @@ ffm_copy <- function(object, audio = TRUE, video = TRUE, streams = TRUE) {
 # ffm_pixel_format() ------------------------------------------------------
 
 #' Set the Pixel Format in an FFmpeg Pipeline
-#' 
-#' 
+#'
+#' Set the output pixel format via FFmpeg's \code{-pix_fmt} option (for example
+#' \code{"yuv420p"} for broad player compatibility).
+#'
 #' @param object An ffmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
 #' @param format A string indicating the pixel format for the output file.
+#' @return \code{object} with the added pixel-format instruction.
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' ffm(video, "output.mp4") |>
+#'   ffm_pixel_format("yuv420p") |>
+#'   ffm_compile()
 #' @export
 ffm_pixel_format <- function(object, format) {
   
@@ -402,6 +478,13 @@ ffm_pixel_format <- function(object, format) {
 #'   videos to match (takes longer and currently only works with two inputs)
 #' @return \code{object} but with the added instruction to apply horizontal
 #'   stacking.
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' # Stack two inputs side-by-side (pass more than one input to ffm())
+#' ffm(c(video, video), "output.mp4") |>
+#'   ffm_hstack() |>
+#'   ffm_compile()
 #' @export
 ffm_hstack <- function(object,
                        shortest = FALSE,
@@ -469,6 +552,13 @@ ffm_hstack <- function(object,
 #' @param object An ffmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()} with more than one input file.
 #' @return \code{object} with the added instruction to concatenate the inputs.
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' # Join two inputs end-to-end (they must share codec/resolution/frame rate)
+#' ffm(c(video, video), "output.mp4") |>
+#'   ffm_concat() |>
+#'   ffm_compile()
 #' @export
 ffm_concat <- function(object) {
 
@@ -518,7 +608,7 @@ ffm_concat <- function(object) {
 #'   \code{"in_h"})
 #' @param color A string containing the color of the box in FFmpeg color syntax,
 #'   see reference link below for more details. If the special value
-#'   \code{"invert"} is used, the box color is teh same as tehv ideo with
+#'   \code{"invert"} is used, the box color is the same as the video with
 #'   inverted luma. (default = \code{"black"})
 #' @param thickness A thickness of the box edge (in pixels). A value of
 #'   \code{"fill"} will create a filled box. (default = \code{"fill"})
@@ -526,6 +616,13 @@ ffm_concat <- function(object) {
 #'   filter.
 #' @references https://ffmpeg.org/ffmpeg-filters.html#drawbox
 #' @references https://ffmpeg.org/ffmpeg-utils.html#color-syntax
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' # Draw a filled red box covering the top-left quarter of the frame
+#' ffm(video, "output.mp4") |>
+#'   ffm_drawbox(width = "in_w/2", height = "in_h/2", color = "red") |>
+#'   ffm_compile()
 #' @export
 ffm_drawbox <- function(object,
                        x = 0,
@@ -564,6 +661,13 @@ ffm_drawbox <- function(object,
 #' @param ... One or more strings, each a whitespace-separated option group
 #'   (e.g. \code{"-q:v 1"}, \code{"-frames:v 1"}). Added in the order given.
 #' @return \code{object} with the added output options.
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' # Extract a single frame by adding a raw output option
+#' ffm(video, "frame.png") |>
+#'   ffm_output_options("-frames:v 1") |>
+#'   ffm_compile()
 #' @export
 ffm_output_options <- function(object, ...) {
 
@@ -589,6 +693,15 @@ ffm_output_options <- function(object, ...) {
 #'   \code{ffm_files()}.
 #' @return A string containing the FFmpeg command needed to execute all the
 #'   instructions provided to the tidymedia pipeline.
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' # ffm_compile() returns the reproducible FFmpeg command as a string
+#' ffm(video, "output.mp4") |>
+#'   ffm_trim(start = 1, end = 5) |>
+#'   ffm_crop(width = 160, height = 120) |>
+#'   ffm_codec(video = "libx264") |>
+#'   ffm_compile()
 #' @export
 ffm_compile <- function(object) {
 
@@ -755,6 +868,16 @@ ffm_compile <- function(object) {
 #' 
 #' @param object An ffmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
+#' @return The FFmpeg exit status (invisibly), called for its side effect of
+#'   writing the output file.
+#' @family builder functions
+#' @examplesIf nzchar(Sys.which("ffmpeg"))
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' out <- tempfile(fileext = ".mp4")
+#' ffm(video, out) |>
+#'   ffm_scale(width = 160, height = 120) |>
+#'   ffm_codec(video = "libx264") |>
+#'   ffm_run()
 #' @export
 ffm_run <- function(object) {
   check_ffm(object)

@@ -8,6 +8,11 @@
 #' @param program A string indicating which program to find
 #' @return Either a string indicating whether the requested program was found or
 #'   `NULL` if the program could not be found.
+#' @family program management functions
+#' @examples
+#' # Returns the path to the binary, or NULL with a warning if it is not found
+#' find_ffmpeg()
+#' find_mediainfo()
 find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")) {
   
   # Validate arguments
@@ -111,8 +116,14 @@ run_program <- function(location, args, program = "the program",
 #' @param location A string containing the location of the program.
 #' @return A logical indicating whether the program location was set properly.
 #'
+#' @family program management functions
+#' @examples
+#' \dontrun{
+#' # Point tidymedia at a binary in a non-standard location
+#' set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")
+#' }
 #' @export
-set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"), 
+set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"),
                          location) {
   
   # Validate arguments
@@ -175,6 +186,12 @@ set_ffplay <- function(location) {
 #' @param install_dir A string indicating a directory to install FFmpeg to. If
 #'   `NULL`, will default to installing to the user data directory.
 #' @return A logical indicating whether the installation was successful.
+#' @family program management functions
+#' @examples
+#' \dontrun{
+#' # Download and install a static FFmpeg build (Windows)
+#' install_on_win()
+#' }
 #' @export
 install_on_win <- function(download_url = NULL,
                            install_dir = NULL) {

@@ -33,15 +33,23 @@ section. To query parameters from multiple sections at once, use
 vector of several files; results are stacked with a leading \code{file}
 column.
 }
+\examples{
+\dontshow{if (nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+mediainfo_query(video, section = "Video", parameters = c("Width", "Height"))
+\dontshow{\}) # examplesIf}
+}
 \seealso{
-Other mediainfo functions:
+Other metadata functions:
 \code{\link[=get_duration]{get_duration()}},
 \code{\link[=get_framerate]{get_framerate()}},
 \code{\link[=get_height]{get_height()}},
 \code{\link[=get_samplingrate]{get_samplingrate()}},
 \code{\link[=get_width]{get_width()}},
-\code{\link[=mediainfo]{mediainfo()}},
 \code{\link[=mediainfo_parameter]{mediainfo_parameter()}},
-\code{\link[=mediainfo_template]{mediainfo_template()}}
+\code{\link[=mediainfo_summary]{mediainfo_summary()}},
+\code{\link[=mediainfo_template]{mediainfo_template()}},
+\code{\link[=probe_all]{probe_all()}},
+\code{\link[=probe_container]{probe_container()}}
 }
-\concept{mediainfo functions}
+\concept{metadata functions}

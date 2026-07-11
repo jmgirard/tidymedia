@@ -42,16 +42,39 @@ and \code{start} calls \code{.f(input = ..., output = ..., start = ...)}.
 use.
 }
 \examples{
-\dontrun{
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 jobs <- tibble::tibble(
-  input  = c("a.mp4", "b.mp4"),
+  input  = c(video, video),
   output = c("a.mp3", "b.mp3")
 )
-ffm_batch(jobs, function(input, output, ...) {
-  ffm_files(input, output) |> ffm_drop("video") |> ffm_codec(audio = "libmp3lame")
+# run = FALSE compiles one reproducible command per job without calling FFmpeg
+ffm_batch(jobs, run = FALSE, .f = function(input, output, ...) {
+  ffm_files(input, output) |>
+    ffm_drop("video") |>
+    ffm_codec(audio = "libmp3lame")
 })
-}
 }
 \seealso{
 \code{\link{segment_video}}, which is built on \code{ffm_batch()}.
+
+Other builder functions:
+\code{\link[=ffm]{ffm()}},
+\code{\link[=ffm_codec]{ffm_codec()}},
+\code{\link[=ffm_compile]{ffm_compile()}},
+\code{\link[=ffm_concat]{ffm_concat()}},
+\code{\link[=ffm_copy]{ffm_copy()}},
+\code{\link[=ffm_crop]{ffm_crop()}},
+\code{\link[=ffm_drawbox]{ffm_drawbox()}},
+\code{\link[=ffm_drop]{ffm_drop()}},
+\code{\link[=ffm_files]{ffm_files()}},
+\code{\link[=ffm_hstack]{ffm_hstack()}},
+\code{\link[=ffm_map]{ffm_map()}},
+\code{\link[=ffm_output_options]{ffm_output_options()}},
+\code{\link[=ffm_pixel_format]{ffm_pixel_format()}},
+\code{\link[=ffm_run]{ffm_run()}},
+\code{\link[=ffm_scale]{ffm_scale()}},
+\code{\link[=ffm_seek]{ffm_seek()}},
+\code{\link[=ffm_trim]{ffm_trim()}},
+\code{\link[=print.tidymedia_ffm]{print.tidymedia_ffm()}}
 }
+\concept{builder functions}

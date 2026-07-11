@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 [![Codecov test coverage](https://codecov.io/gh/jmgirard/tidymedia/graph/badge.svg)](https://app.codecov.io/gh/jmgirard/tidymedia)
 <!-- badges: end -->
 
-The goal of **tidymedia** is to provide tools for easily working with media (e.g., image, audio, and video) files within R and the tidyverse.
+The goal of **tidymedia** is to provide tools for easily working with media (e.g., image, audio, and video) files within R and the tidyverse. It wraps [FFmpeg](https://ffmpeg.org/) and [MediaInfo](https://mediaarea.net/en/MediaInfo) for **reproducible media preprocessing** — batch trimming, cropping, format standardization, and metadata extraction as tibbles.
 
 ## Installation
 
@@ -80,84 +80,54 @@ devtools::install_github("jmgirard/tidymedia")
 
 ## Examples
 
-```{r, echo=FALSE}
+```{r}
 library(tidymedia)
 ```
 
-### MediaInfo
+The examples below use a tiny sample clip that ships with the package:
 
 ```{r}
-# Interface with the mediainfo CLI
-mediainfo("--Version")
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 ```
 
-```{r, eval=FALSE}
-# Create a row tibble using a built-in template
-mediainfo_template(file = "C:/example.m4v", template = "brief")
-```
+### Build reproducible FFmpeg commands
 
-```{r, echo=FALSE}
-knitr::kable(mediainfo_template(file = "C:/example.m4v", template = "brief"))
-```
-
-```{r, eval=FALSE}
-# Create a row tibble from specific parameters
-mediainfo_query(
-  file = "C:/example.m4v", 
-  section = "Video", 
-  parameters = c("Width", "Height", "DisplayAspectRatio")
-)
-```
-
-```{r, echo=FALSE}
-knitr::kable(mediainfo_query(
-  file = "C:/example.m4v", 
-  section = "Video", 
-  parameters = c("Width", "Height", "DisplayAspectRatio")
-))
-```
+The `ffm_*` builder assembles a command step by step. Nothing runs until you ask it to: `ffm_compile()` returns the exact FFmpeg command as a string, and `ffm_run()` executes it. See `vignette("tidymedia")` for the full tour.
 
 ```{r}
-# Lookup common parameters
-get_duration(file = "C:/example.m4v", unit = "sec")
-get_height(file = "C:/example.m4v")
-```
-
-### FFmpeg
-
-```{r}
-# Interface with the mediainfo CLI
-ffmpeg("-version")
-```
-
-```{r}
-# Query information about codecs from FFmpeg
-get_codecs()
-```
-
-```{r}
-# Query information about encoders from FFmpeg
-get_encoders()
-```
-
-```{r}
-# Create ffmpeg commands by pipeline
-ffm(input = "C:/example.m4v", output = "C:/example2.m4v") |>
-  ffm_trim(start = 1, end = 5) |> 
-  ffm_crop(width = 640, height = 480) |>  
+ffm(video, "output.mp4") |>
+  ffm_trim(start = 1, end = 5) |>
+  ffm_crop(width = 160, height = 120) |>
   ffm_codec(video = "libx264") |>
-  ffm_drop(streams = "audio") |> 
+  ffm_drop(streams = "audio") |>
   ffm_compile()
 ```
 
-```{r, eval=FALSE}
-# Run ffmpeg commands by pipeline
-ffm(input = "C:/example.m4v", output = "C:/example2.m4v") |> 
-  ffm_trim(start = 1, end = 5) |> 
-  ffm_crop(width = 640, height = 480) |> 
-  ffm_codec(video = "libx264") |>
-  ffm_drop(streams = "audio") |> 
-  ffm_run()
+Common tasks have their own verbs (Layer 2). Pass `run = FALSE` to see the command without executing it:
+
+```{r}
+extract_audio(video, "audio.aac", run = FALSE)
+```
+
+### Read metadata as tibbles
+
+`probe_all()` returns container- and stream-level metadata from FFprobe as tibbles, keyed by a leading `file` column so a whole batch stacks cleanly:
+
+```{r}
+probe_all(video)$streams
+```
+
+MediaInfo is available too, via `mediainfo_query()`, `mediainfo_template()`, and the `get_*()` shortcuts (see `vignette("metadata")`):
+
+```{r}
+get_duration(video, unit = "sec")
+get_width(video)
+```
+
+### Query FFmpeg's capabilities
+
+```{r}
+head(get_codecs())
 ```
 
 ## Code of Conduct

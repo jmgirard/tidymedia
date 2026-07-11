@@ -22,3 +22,18 @@ Re-encode a video into a widely compatible, web-friendly form (H.264 video
 with \code{yuv420p} and \code{+faststart}, AAC audio), padding odd
 dimensions down to even values as required by the codec.
 }
+\examples{
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+format_for_web(video, "web.mp4", run = FALSE)
+}
+\seealso{
+Other task verb functions:
+\code{\link[=audio_as_mp3]{audio_as_mp3()}},
+\code{\link[=concatenate_videos]{concatenate_videos()}},
+\code{\link[=crop_video]{crop_video()}},
+\code{\link[=extract_audio]{extract_audio()}},
+\code{\link[=extract_frame]{extract_frame()}},
+\code{\link[=segment_video]{segment_video()}},
+\code{\link[=separate_audio_video]{separate_audio_video()}}
+}
+\concept{task verb functions}

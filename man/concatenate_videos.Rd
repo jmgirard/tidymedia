@@ -25,3 +25,18 @@ faster than re-encoding but requires that the files have the same parameters
 (width, height, etc.) and formats/codecs. To concatenate videos using
 re-encoding, see the \href{https://ffmpeg.org/ffmpeg-filters.html#concat}{concat video filter}
 }
+\examples{
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+concatenate_videos(c(video, video), "joined.mp4", run = FALSE)
+}
+\seealso{
+Other task verb functions:
+\code{\link[=audio_as_mp3]{audio_as_mp3()}},
+\code{\link[=crop_video]{crop_video()}},
+\code{\link[=extract_audio]{extract_audio()}},
+\code{\link[=extract_frame]{extract_frame()}},
+\code{\link[=format_for_web]{format_for_web()}},
+\code{\link[=segment_video]{segment_video()}},
+\code{\link[=separate_audio_video]{separate_audio_video()}}
+}
+\concept{task verb functions}

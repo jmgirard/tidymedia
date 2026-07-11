@@ -17,3 +17,12 @@ A numeric vector with each fraction evaluated to a double.
 This is useful for columns such as frame rates, which FFprobe often lists as
 fractions such as \code{"30000/1001"} (this converts to 29.97003).
 }
+\examples{
+# FFprobe often reports frame rates as fractions
+convert_fractions(c("30000/1001", "25", NA))
+}
+\seealso{
+Other utility functions:
+\code{\link[=pad_integers]{pad_integers()}}
+}
+\concept{utility functions}

@@ -10,6 +10,9 @@
 #'
 #' @param command A string containing the command to send to FFprobe.
 #' @return A string containing the text output by FFprobe.
+#' @family escape hatch functions
+#' @examplesIf nzchar(Sys.which("ffprobe"))
+#' ffprobe("-version")
 #' @export
 ffprobe <- function(command) {
   rlang::check_string(command)
@@ -38,6 +41,12 @@ ffprobe <- function(command) {
 #'   readable streams). Both lead with a `file` column identifying the input.
 #'   Files that cannot be probed yield an all-`NA` row and a warning rather than
 #'   aborting the call.
+#' @family metadata functions
+#' @examplesIf nzchar(Sys.which("ffprobe"))
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' info <- probe_all(video)
+#' info$container
+#' info$streams
 #' @export
 probe_all <- function(infile, typed = TRUE) {
   if (!rlang::is_character(infile) || length(infile) == 0) {
@@ -133,6 +142,15 @@ probe_one <- function(file) {
 #' @param typed A logical passed to [probe_all()] when `infile` is used (default
 #'   `TRUE`); ignored when `probe` is supplied.
 #' @return A tibble containing only the requested information.
+#' @family metadata functions
+#' @examplesIf nzchar(Sys.which("ffprobe"))
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' # Probe directly from a file location ...
+#' probe_container(infile = video)
+#' # ... or reuse a probe object to avoid reprobing large files
+#' info <- probe_all(video)
+#' probe_video(info)
+#' probe_audio(info)
 #' @export
 probe_container <- function(probe = NULL, infile = NULL, typed = TRUE) {
   resolve_probe(probe, infile, typed)$container
@@ -210,6 +228,10 @@ format_probe <- function(x) {
 #' @param x A character vector containing fractions (`"a/b"`) or plain numbers
 #'   to evaluate. Surrounding whitespace is ignored; `NA` passes through.
 #' @return A numeric vector with each fraction evaluated to a double.
+#' @family utility functions
+#' @examples
+#' # FFprobe often reports frame rates as fractions
+#' convert_fractions(c("30000/1001", "25", NA))
 #' @export
 convert_fractions <- function(x) {
   if (!rlang::is_character(x)) {

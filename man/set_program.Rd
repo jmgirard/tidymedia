@@ -29,3 +29,15 @@ A logical indicating whether the program location was set properly.
 \description{
 Set the location of a dependency program
 }
+\examples{
+\dontrun{
+# Point tidymedia at a binary in a non-standard location
+set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")
+}
+}
+\seealso{
+Other program management functions:
+\code{\link[=find_program]{find_program()}},
+\code{\link[=install_on_win]{install_on_win()}}
+}
+\concept{program management functions}

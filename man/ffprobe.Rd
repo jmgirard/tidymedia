@@ -18,3 +18,14 @@ Probe a media file for information. This is the Layer 0 escape hatch: the
 quoting it. For structured, tibble-returning output use \code{\link[=probe_all]{probe_all()}} and the
 \verb{probe_*()} shortcuts, which quote their arguments safely.
 }
+\examples{
+\dontshow{if (nzchar(Sys.which("ffprobe"))) withAutoprint(\{ # examplesIf}
+ffprobe("-version")
+\dontshow{\}) # examplesIf}
+}
+\seealso{
+Other escape hatch functions:
+\code{\link[=ffmpeg]{ffmpeg()}},
+\code{\link[=mediainfo]{mediainfo()}}
+}
+\concept{escape hatch functions}

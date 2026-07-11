@@ -28,3 +28,25 @@ metadata as tibbles. \code{infile} may be a vector of several files: the results
 are stacked and keyed by a leading \code{file} column, so the output is ready for
 \code{dplyr} joins and filters over a whole batch.
 }
+\examples{
+\dontshow{if (nzchar(Sys.which("ffprobe"))) withAutoprint(\{ # examplesIf}
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+info <- probe_all(video)
+info$container
+info$streams
+\dontshow{\}) # examplesIf}
+}
+\seealso{
+Other metadata functions:
+\code{\link[=get_duration]{get_duration()}},
+\code{\link[=get_framerate]{get_framerate()}},
+\code{\link[=get_height]{get_height()}},
+\code{\link[=get_samplingrate]{get_samplingrate()}},
+\code{\link[=get_width]{get_width()}},
+\code{\link[=mediainfo_parameter]{mediainfo_parameter()}},
+\code{\link[=mediainfo_query]{mediainfo_query()}},
+\code{\link[=mediainfo_summary]{mediainfo_summary()}},
+\code{\link[=mediainfo_template]{mediainfo_template()}},
+\code{\link[=probe_container]{probe_container()}}
+}
+\concept{metadata functions}

@@ -36,3 +36,28 @@ via \code{probe_video()} / \code{probe_audio()}. Each takes \strong{either} the 
 passing \code{infile} reprobes, so reuse a \code{probe} object when working with large
 files.
 }
+\examples{
+\dontshow{if (nzchar(Sys.which("ffprobe"))) withAutoprint(\{ # examplesIf}
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+# Probe directly from a file location ...
+probe_container(infile = video)
+# ... or reuse a probe object to avoid reprobing large files
+info <- probe_all(video)
+probe_video(info)
+probe_audio(info)
+\dontshow{\}) # examplesIf}
+}
+\seealso{
+Other metadata functions:
+\code{\link[=get_duration]{get_duration()}},
+\code{\link[=get_framerate]{get_framerate()}},
+\code{\link[=get_height]{get_height()}},
+\code{\link[=get_samplingrate]{get_samplingrate()}},
+\code{\link[=get_width]{get_width()}},
+\code{\link[=mediainfo_parameter]{mediainfo_parameter()}},
+\code{\link[=mediainfo_query]{mediainfo_query()}},
+\code{\link[=mediainfo_summary]{mediainfo_summary()}},
+\code{\link[=mediainfo_template]{mediainfo_template()}},
+\code{\link[=probe_all]{probe_all()}}
+}
+\concept{metadata functions}

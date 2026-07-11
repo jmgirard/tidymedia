@@ -30,15 +30,23 @@ Query a single parameter in a single section from MediaInfo. \code{file} may be 
 vector of several files, in which case a vector of values (one per file) is
 returned.
 }
+\examples{
+\dontshow{if (nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+mediainfo_parameter(video, section = "Video", parameter = "Width")
+\dontshow{\}) # examplesIf}
+}
 \seealso{
-Other mediainfo functions:
+Other metadata functions:
 \code{\link[=get_duration]{get_duration()}},
 \code{\link[=get_framerate]{get_framerate()}},
 \code{\link[=get_height]{get_height()}},
 \code{\link[=get_samplingrate]{get_samplingrate()}},
 \code{\link[=get_width]{get_width()}},
-\code{\link[=mediainfo]{mediainfo()}},
 \code{\link[=mediainfo_query]{mediainfo_query()}},
-\code{\link[=mediainfo_template]{mediainfo_template()}}
+\code{\link[=mediainfo_summary]{mediainfo_summary()}},
+\code{\link[=mediainfo_template]{mediainfo_template()}},
+\code{\link[=probe_all]{probe_all()}},
+\code{\link[=probe_container]{probe_container()}}
 }
-\concept{mediainfo functions}
+\concept{metadata functions}

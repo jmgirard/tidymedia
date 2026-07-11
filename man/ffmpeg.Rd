@@ -17,3 +17,15 @@ Send a raw argument string to the FFmpeg command-line program. This is the
 Layer 0 escape hatch: the string is passed to FFmpeg verbatim (after the
 executable path), so the caller is responsible for quoting and option order.
 }
+\examples{
+\dontshow{if (nzchar(Sys.which("ffmpeg"))) withAutoprint(\{ # examplesIf}
+# Layer 0 escape hatch: the string is passed to FFmpeg verbatim
+ffmpeg("-version")
+\dontshow{\}) # examplesIf}
+}
+\seealso{
+Other escape hatch functions:
+\code{\link[=ffprobe]{ffprobe()}},
+\code{\link[=mediainfo]{mediainfo()}}
+}
+\concept{escape hatch functions}

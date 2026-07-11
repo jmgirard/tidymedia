@@ -12,8 +12,9 @@
 #' @param command A string containing a mediainfo command.
 #' @return A string containing the command line output from mediainfo.
 #'
-#' @family mediainfo functions
-#' @family cli functions
+#' @family escape hatch functions
+#' @examplesIf nzchar(Sys.which("mediainfo"))
+#' mediainfo("--Version")
 #' @export
 mediainfo <- function(command) {
   # Validate arguments
@@ -43,7 +44,10 @@ mediainfo <- function(command) {
 #'   was not found, or the file could not be read (a warning is issued for
 #'   unreadable files rather than aborting).
 #'
-#' @family mediainfo functions
+#' @family metadata functions
+#' @examplesIf nzchar(Sys.which("mediainfo"))
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' mediainfo_parameter(video, section = "Video", parameter = "Width")
 #' @export
 mediainfo_parameter <- function(file, section, parameter, typed = TRUE) {
   if (!rlang::is_character(file) || length(file) == 0) {
@@ -98,7 +102,10 @@ mediainfo_parameter <- function(file, section, parameter, typed = TRUE) {
 #' @return A tibble with one row per input file, leading with a \code{file}
 #'   column and one column per requested parameter.
 #'
-#' @family mediainfo functions
+#' @family metadata functions
+#' @examplesIf nzchar(Sys.which("mediainfo"))
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' mediainfo_query(video, section = "Video", parameters = c("Width", "Height"))
 #' @export
 mediainfo_query <- function(file, section, parameters, names = parameters,
                             typed = TRUE) {
@@ -156,7 +163,10 @@ mediainfo_query <- function(file, section, parameters, names = parameters,
 #'   names/order) are determined by the template; custom-template column names
 #'   are used verbatim.
 #'
-#' @family mediainfo functions
+#' @family metadata functions
+#' @examplesIf nzchar(Sys.which("mediainfo"))
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' mediainfo_template(video, template = "brief")
 #' @export
 mediainfo_template <- function(file,
                                template = c("brief", "extended", "custom"),
@@ -190,6 +200,10 @@ mediainfo_template <- function(file,
 }
 
 #' @inherit mediainfo_template
+#' @family metadata functions
+#' @examplesIf nzchar(Sys.which("mediainfo"))
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' mediainfo_summary(video, template = "brief")
 #' @export
 mediainfo_summary <- mediainfo_template
 
@@ -263,8 +277,10 @@ warn_unreadable <- function(failed) {
 #' @return A double vector (one per file) giving the duration of the specified
 #'   section in the specified units.
 #'
-#' @family mediainfo functions
-#' @family convenience functions
+#' @family metadata functions
+#' @examplesIf nzchar(Sys.which("mediainfo"))
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' get_duration(video, unit = "sec")
 #' @export
 get_duration <- function(file,
                          section = c("General", "Video", "Audio"),
@@ -292,8 +308,10 @@ get_duration <- function(file,
 #' @param file A character vector of one or more media-file paths.
 #' @return A double vector (one per file) giving the video frame rate in fps.
 #'
-#' @family mediainfo functions
-#' @family convenience functions
+#' @family metadata functions
+#' @examplesIf nzchar(Sys.which("mediainfo"))
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' get_framerate(video)
 #' @export
 get_framerate <- function(file) {
   mediainfo_parameter(file = file, section = "Video", parameter = "FrameRate")
@@ -309,8 +327,10 @@ get_framerate <- function(file) {
 #' @param file A character vector of one or more media-file paths.
 #' @return A double vector (one per file) giving the video width in px.
 #'
-#' @family mediainfo functions
-#' @family convenience functions
+#' @family metadata functions
+#' @examplesIf nzchar(Sys.which("mediainfo"))
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' get_width(video)
 #' @export
 get_width <- function(file) {
   mediainfo_parameter(file = file, section = "Video", parameter = "Width")
@@ -326,8 +346,10 @@ get_width <- function(file) {
 #' @param file A character vector of one or more media-file paths.
 #' @return A double vector (one per file) giving the video height in px.
 #'
-#' @family mediainfo functions
-#' @family convenience functions
+#' @family metadata functions
+#' @examplesIf nzchar(Sys.which("mediainfo"))
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' get_height(video)
 #' @export
 get_height <- function(file) {
   mediainfo_parameter(file = file, section = "Video", parameter = "Height")
@@ -343,8 +365,10 @@ get_height <- function(file) {
 #' @param file A character vector of one or more media-file paths.
 #' @return A double vector (one per file) giving the audio sampling rate in Hz.
 #'
-#' @family mediainfo functions
-#' @family convenience functions
+#' @family metadata functions
+#' @examplesIf nzchar(Sys.which("mediainfo"))
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' get_samplingrate(video)
 #' @export
 get_samplingrate <- function(file) {
   mediainfo_parameter(file = file, section = "Audio", parameter = "SamplingRate")

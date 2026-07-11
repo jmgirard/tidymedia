@@ -28,3 +28,14 @@ Either a string indicating whether the requested program was found or
 \description{
 Returns the location of the requested program as a string.
 }
+\examples{
+# Returns the path to the binary, or NULL with a warning if it is not found
+find_ffmpeg()
+find_mediainfo()
+}
+\seealso{
+Other program management functions:
+\code{\link[=install_on_win]{install_on_win()}},
+\code{\link[=set_program]{set_program()}}
+}
+\concept{program management functions}

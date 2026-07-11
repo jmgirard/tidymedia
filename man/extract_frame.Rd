@@ -27,3 +27,19 @@ The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 Save one frame of a video to an image file, selected either by timestamp or
 by frame number. Provide exactly one of \code{timestamp} or \code{frame}.
 }
+\examples{
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+# run = FALSE returns the reproducible command instead of executing it
+extract_frame(video, "frame.png", timestamp = 0.5, run = FALSE)
+}
+\seealso{
+Other task verb functions:
+\code{\link[=audio_as_mp3]{audio_as_mp3()}},
+\code{\link[=concatenate_videos]{concatenate_videos()}},
+\code{\link[=crop_video]{crop_video()}},
+\code{\link[=extract_audio]{extract_audio()}},
+\code{\link[=format_for_web]{format_for_web()}},
+\code{\link[=segment_video]{segment_video()}},
+\code{\link[=separate_audio_video]{separate_audio_video()}}
+}
+\concept{task verb functions}

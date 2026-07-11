@@ -29,9 +29,13 @@ Query a list of installed codecs from FFmpeg and construct a tidy data frame
 containing information about these codecs.
 }
 \examples{
-\dontrun{
-
-get_codecs()
+\dontshow{if (nzchar(Sys.which("ffmpeg"))) withAutoprint(\{ # examplesIf}
+head(get_codecs())
 get_codecs(sort_by_type = FALSE)
+\dontshow{\}) # examplesIf}
 }
+\seealso{
+Other capability functions:
+\code{\link[=get_encoders]{get_encoders()}}
 }
+\concept{capability functions}

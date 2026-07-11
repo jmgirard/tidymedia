@@ -21,3 +21,15 @@ A logical indicating whether the installation was successful.
 Downloads an FFmpeg zip installer, extracts it, and updates the package's
 user config files to point to the component executable files.
 }
+\examples{
+\dontrun{
+# Download and install a static FFmpeg build (Windows)
+install_on_win()
+}
+}
+\seealso{
+Other program management functions:
+\code{\link[=find_program]{find_program()}},
+\code{\link[=set_program]{set_program()}}
+}
+\concept{program management functions}

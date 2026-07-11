@@ -56,9 +56,24 @@ Segment video files will be named by taking the name of \code{infile} and
 appending a suffix of an underscore (_) and an integer indicating which
 segment (based on the order provided in \code{ts_start} and \code{ts_stop}).
 }
+\examples{
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+# Two segments; run = FALSE compiles one command per segment
+segment_video(video, ts_start = c(0, 0.5), ts_stop = c(0.5, 1), run = FALSE)
+}
 \references{
 https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 }
 \seealso{
 \code{\link{ffm_batch}}, \code{\link{ffm_seek}}
+
+Other task verb functions:
+\code{\link[=audio_as_mp3]{audio_as_mp3()}},
+\code{\link[=concatenate_videos]{concatenate_videos()}},
+\code{\link[=crop_video]{crop_video()}},
+\code{\link[=extract_audio]{extract_audio()}},
+\code{\link[=extract_frame]{extract_frame()}},
+\code{\link[=format_for_web]{format_for_web()}},
+\code{\link[=separate_audio_video]{separate_audio_video()}}
 }
+\concept{task verb functions}

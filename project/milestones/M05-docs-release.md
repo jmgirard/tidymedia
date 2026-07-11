@@ -51,12 +51,11 @@ Tasks sized to one working session or less, ordered by dependency.
 - [x] T1: DESCRIPTION + infra — `URL`/`BugReports`/`VignetteBuilder`; Suggests
       knitr/rmarkdown; `Config/Needs/website: pkgdown`; drop stray `LazyData`;
       bump to `0.1.0`; add `inst/extdata/sample.mp4` fixture. (2026-07-10)
-- [ ] T2: Roxygen pass A (Layer 0/1) — `@family` + worked `@examples` for
-      `ffmpeg`/`ffprobe`/`mediainfo` raw wrappers and the `ffm_*` builder
-      (builder examples runnable via `ffm_compile()`, no binaries). `document()`.
-- [ ] T3: Roxygen pass B (Layer 2 + helpers) — `@family` + `@examples` for task
-      verbs, `probe_*`/`get_*`/`mediainfo_*`, program-management, and utils;
-      `@examplesIf` for binary-gated calls. `document()`; examples check clean.
+- [x] T2: Roxygen — builder (`ffm.R`/`ffm_batch`/`print`): `@family builder` +
+      runnable binary-free `@examples`; `ffm_run` gated. (2026-07-10)
+- [x] T3: Roxygen — raw wrappers, task verbs, `probe_*`/`get_*`/`mediainfo_*`,
+      program-mgmt, utils. Verbs use `run = FALSE` (binary-free); raw/query verbs
+      `@examplesIf`; families reconciled to the layer taxonomy. (2026-07-10)
 - [ ] T4: Vignette "Building ffmpeg pipelines" — builder + compile, binary-free
       so it renders on CI.
 - [ ] T5: Vignette "Media metadata as tibbles" — `probe_*`/`mediainfo_*`,
@@ -75,6 +74,9 @@ Append-only; newest last. One line per session: date, what happened, next.
   pkgdown auto-deploy; full example coverage). Next: `/milestone implement M05`.
 - 2026-07-10: T1 done — DESCRIPTION metadata + 0.1.0, dropped LazyData (no
   data/), added sample.mp4 fixture. Next: T2 roxygen examples (Layer 0/1).
+- 2026-07-10: T2+T3 done — @family + @examples across all ~48 exported topics
+  (verbs demoed with run = FALSE; binary queries @examplesIf). test() 234 pass /
+  0 fail, examples run clean. Next: T4 vignettes.
 
 ## Decisions
 

@@ -12,6 +12,12 @@
 #' @param flag A string specifying what to pad \code{x} with. (default = "0")
 #' @return A character vector the same length as \code{x} but with padding
 #'   added with the specifying width and flag.
+#' @family utility functions
+#' @examples
+#' # Width is intuited from the largest value by default
+#' pad_integers(c(1, 22, 333))
+#' # ... or set it explicitly
+#' pad_integers(1:3, width = 4)
 #' @export
 pad_integers <- function(x, width = NULL, flag = "0") {
   if (!rlang::is_integerish(x)) {

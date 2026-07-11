@@ -23,3 +23,18 @@ The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 \description{
 Extract the audio stream from a media file
 }
+\examples{
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+extract_audio(video, "audio.aac", run = FALSE)
+}
+\seealso{
+Other task verb functions:
+\code{\link[=audio_as_mp3]{audio_as_mp3()}},
+\code{\link[=concatenate_videos]{concatenate_videos()}},
+\code{\link[=crop_video]{crop_video()}},
+\code{\link[=extract_frame]{extract_frame()}},
+\code{\link[=format_for_web]{format_for_web()}},
+\code{\link[=segment_video]{segment_video()}},
+\code{\link[=separate_audio_video]{separate_audio_video()}}
+}
+\concept{task verb functions}

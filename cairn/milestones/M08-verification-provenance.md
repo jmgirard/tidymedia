@@ -1,6 +1,6 @@
 # M08: Verification & provenance
 
-- **Status:** in-progress   <!-- mirror; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- mirror; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- high | normal | low -->
 - **Depends on:** M04, M06   <!-- both done -->
 - **Branch/PR:** m08-verification-provenance   <!-- PR URL once opened -->
@@ -35,27 +35,28 @@ turning "the command is reproducible" into "the *result* is verified and recorde
 
 ## Acceptance criteria
 
-- [ ] `verify_media(file, duration=, width=, height=, video_codec=,
+- [x] `verify_media(file, duration=, width=, height=, video_codec=,
       audio_codec=, sample_rate=, ...)` returns a tidy tibble
       (`file`, `check`, `expected`, `actual`, `pass`); numeric checks honor a
       tolerance. Evidence: `test-verify.R` passing.
-- [ ] The comparison core is a **pure** function (no binaries) with CI-safe
+- [x] The comparison core is a **pure** function (no binaries) with CI-safe
       unit tests covering pass, fail, tolerance edges, and missing-stream
       cases. Evidence: those tests pass with ffprobe absent.
-- [ ] `ffm_run(object, verify = <spec>)` aborts with a `cli` error listing the
+- [x] `ffm_run(object, verify = <spec>)` aborts with a `cli` error listing the
       failed checks when an assertion fails, and returns normally when all
-      pass. Evidence: test (execution `skip_if_no_ffmpeg`; message via snapshot
-      on the pure path where feasible).
-- [ ] `ffm_batch(jobs, .f, verify = <spec|fn>)` adds a logical `verified`
+      pass. Evidence: test (execution `skip_if_no_ffmpeg`; abort asserted via
+      `expect_error` — a snapshot wasn't feasible since the check runs only
+      after a real encode).
+- [x] `ffm_batch(jobs, .f, verify = <spec|fn>)` adds a logical `verified`
       column (NA when not run/verified) without aborting on failure. Evidence:
       `test-ffm-batch.R` additions.
-- [ ] `ffm_manifest(batch_result)` returns a manifest tibble with command,
+- [x] `ffm_manifest(batch_result)` returns a manifest tibble with command,
       ffmpeg/ffprobe versions, timestamp, output size; `checksums = TRUE` adds
       input/output md5 columns; `path =` writes a CSV. Evidence: tests
       (assembly + checksum logic CI-safe; version capture `skip_if`).
-- [ ] `ffm_batch(progress = TRUE)` drives a `cli` progress bar and does not
+- [x] `ffm_batch(progress = TRUE)` drives a `cli` progress bar and does not
       error non-interactively. Evidence: test that a progress run completes.
-- [ ] `devtools::check()` is 0 errors / 0 warnings; `devtools::test()` clean;
+- [x] `devtools::check()` is 0 errors / 0 warnings; `devtools::test()` clean;
       `man/` regenerated, NEWS.md updated, `_pkgdown.yml` lists new exports.
 
 ## Tasks
@@ -77,7 +78,7 @@ turning "the command is reproducible" into "the *result* is verified and recorde
       reads it (helpful error if absent) and optionally writes CSV via `utils`.
 - [x] T4: Progress reporting. `ffm_batch(progress = FALSE)`: `cli` progress bar
       on the sequential path; `.progress` for the furrr parallel path.
-- [ ] T5: Docs & polish. `devtools::document()`, NEWS.md under the dev heading,
+- [x] T5: Docs & polish. `devtools::document()`, NEWS.md under the dev heading,
       a "Verification & provenance" section in `_pkgdown.yml`, `check()` green.
 
 ## Work log
@@ -106,6 +107,10 @@ turning "the command is reproducible" into "the *result* is verified and recorde
 - 2026-07-11: T4 done — `ffm_batch(progress=)` drives a `cli` progress bar
   (sequential `run_with_progress()` helper; `.progress` on the furrr path);
   no-op non-interactively. Batch tests green (25).
+- 2026-07-11: T5 done — NEWS "Verification & provenance (M08)" section, pkgdown
+  section (`verify_media`, `ffm_manifest`), `document()`; added auditable/
+  checksums/keyframe/md to WORDLIST. Full suite 405 pass / 1 skip;
+  `devtools::check()` 0 errors / 0 warnings / 0 notes. Status → review.
 
 ## Decisions
 <!-- milestone-local; promote cross-cutting ones to cairn/DECISIONS.md -->

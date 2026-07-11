@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tidymedia</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -59,8 +59,11 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The FFmpeg exit status (invisibly), called for its side effect of
-writing the output file.</p>
+    <p>A character vector of FFmpeg's standard output (with a
+<code>status</code> attribute on a non-zero exit), invisibly; called for its
+side effect of writing the output file. The pipeline is executed as an
+argument vector (never through a shell), so paths containing spaces or
+special characters are safe.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -93,7 +96,6 @@ writing the output file.</p>
 <span class="r-in"><span>  <span class="fu"><a href="ffm_scale.html">ffm_scale</a></span><span class="op">(</span>width <span class="op">=</span> <span class="fl">160</span>, height <span class="op">=</span> <span class="fl">120</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="ffm_codec.html">ffm_codec</a></span><span class="op">(</span>video <span class="op">=</span> <span class="st">"libx264"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">ffm_run</span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> character(0)</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

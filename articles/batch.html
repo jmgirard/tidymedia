@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tidymedia</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -128,10 +128,10 @@ timestamps, returning one row per segment:</p>
 video streams, returning the two compiled commands:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/separate_audio_video.html">separate_audio_video</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"audio.aac"</span>, <span class="st">"video.mp4"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                                                                                           audio </span></span>
-<span><span class="co">#&gt; "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -map 0:a \"audio.aac\"" </span></span>
-<span><span class="co">#&gt;                                                                                           video </span></span>
-<span><span class="co">#&gt; "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -map 0:v \"video.mp4\""</span></span></code></pre></div>
+<span><span class="co">#&gt;                                                                                                         audio </span></span>
+<span><span class="co">#&gt; "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -map 0:a \"audio.aac\"" </span></span>
+<span><span class="co">#&gt;                                                                                                         video </span></span>
+<span><span class="co">#&gt; "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -map 0:v \"video.mp4\""</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="running-in-parallel">Running in parallel<a class="anchor" aria-label="anchor" href="#running-in-parallel"></a>

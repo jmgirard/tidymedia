@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tidymedia</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,6 +38,30 @@
       <small>Source: <a href="https://github.com/jmgirard/tidymedia/blob/master/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="tidymedia-development-version">tidymedia (development version)<a class="anchor" aria-label="anchor" href="#tidymedia-development-version"></a></h2>
+<div class="section level3">
+<h3 id="safe-execution-m06-development-version">Safe execution (M06)<a class="anchor" aria-label="anchor" href="#safe-execution-m06-development-version"></a></h3>
+<ul><li>Pipelines are now executed as argument vectors (via <code><a href="https://rdrr.io/r/base/system2.html" class="external-link">system2()</a></code>), never through a shell string, so input and output paths containing spaces, quotes, <code>$</code>, or backticks are handled correctly. This applies to <code><a href="../reference/ffm_run.html">ffm_run()</a></code>, <code><a href="../reference/ffm_batch.html">ffm_batch()</a></code>, and every task verb; <code><a href="../reference/ffm_compile.html">ffm_compile()</a></code> still returns the same reproducible command string. The Layer 0 escape hatches (<code><a href="../reference/ffmpeg.html">ffmpeg()</a></code>, <code><a href="../reference/ffprobe.html">ffprobe()</a></code>, <code><a href="../reference/mediainfo.html">mediainfo()</a></code>) keep their raw-string interface.</li>
+<li>Raw output options added with <code><a href="../reference/ffm_output_options.html">ffm_output_options()</a></code> are tokenized on whitespace at execution time; option values themselves must not contain spaces (they never worked reliably before).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="breaking-changes-development-version">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-development-version"></a></h3>
+<ul><li>
+<code><a href="../reference/separate_audio_video.html">separate_audio_video()</a></code> now stream-copies by default — separation is lossless and fast, but each output container must support the source codec. Use the new <code>reencode = TRUE</code> argument for the previous re-encoding behavior.</li>
+<li>
+<code><a href="../reference/ffm_codec.html">ffm_codec()</a></code> and <code><a href="../reference/ffm_pixel_format.html">ffm_pixel_format()</a></code> now reject values that are not a single clean token (no whitespace or shell metacharacters, and starting with a letter or digit).</li>
+<li>
+<code><a href="../reference/ffm_run.html">ffm_run()</a></code> — and every task verb built on it — now aborts with FFmpeg’s exit status when an encode fails, instead of returning silently (the old shell path only emitted a warning). <code><a href="../reference/ffm_batch.html">ffm_batch()</a></code> still records failures in its <code>success</code> column without aborting.</li>
+<li>
+<code><a href="../reference/ffm_output_options.html">ffm_output_options()</a></code> now rejects option groups containing quote characters: options are split on whitespace into arguments at execution, so quoting cannot group tokens (previously such commands executed with a different meaning than printed).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-development-version">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-development-version"></a></h3>
+<ul><li>An explicit <code><a href="../reference/ffm_map.html">ffm_map()</a></code> on a multi-input pipeline (e.g. <code><a href="../reference/ffm_hstack.html">ffm_hstack()</a></code>) is now emitted alongside the automatic <code>-map "[vout]"</code> instead of being silently ignored, so e.g. <code>ffm_map(p, "0:a")</code> keeps the first input’s audio next to the stacked video.</li>
+<li>Test coverage is measured again: an empty <code>R/zzz.R</code> triggered a <code>covr</code> bug that silently reported 0% package coverage.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="tidymedia-010">tidymedia 0.1.0<a class="anchor" aria-label="anchor" href="#tidymedia-010"></a></h2>
 <p>First tagged release, bringing the metadata, builder, and task-verb work of the 0.0.0.900x development series to a documented, release-ready state.</p>

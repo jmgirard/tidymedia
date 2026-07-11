@@ -23,7 +23,9 @@ ffm_output_options(object, ...)
 - ...:
 
   One or more strings, each a whitespace-separated option group (e.g.
-  `"-q:v 1"`, `"-frames:v 1"`). Added in the order given.
+  `"-q:v 1"`, `"-frames:v 1"`). Added in the order given. At execution
+  time each whitespace-separated token becomes one FFmpeg argument, so
+  option values themselves must not contain spaces.
 
 ## Value
 

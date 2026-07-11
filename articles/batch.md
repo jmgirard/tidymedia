@@ -80,10 +80,10 @@ compiled commands:
 ``` r
 
 separate_audio_video(video, "audio.aac", "video.mp4", run = FALSE)
-#>                                                                                           audio 
-#> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -map 0:a \"audio.aac\"" 
-#>                                                                                           video 
-#> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -map 0:v \"video.mp4\""
+#>                                                                                                         audio 
+#> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -map 0:a \"audio.aac\"" 
+#>                                                                                                         video 
+#> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -map 0:v \"video.mp4\""
 ```
 
 ## Running in parallel

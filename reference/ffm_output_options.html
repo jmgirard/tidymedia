@@ -15,7 +15,7 @@ so this is not the same as gluing a command string yourself."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">tidymedia</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -71,7 +71,9 @@ so this is not the same as gluing a command string yourself.</p>
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>One or more strings, each a whitespace-separated option group
-(e.g. <code>"-q:v 1"</code>, <code>"-frames:v 1"</code>). Added in the order given.</p></dd>
+(e.g. <code>"-q:v 1"</code>, <code>"-frames:v 1"</code>). Added in the order given.
+At execution time each whitespace-separated token becomes one FFmpeg
+argument, so option values themselves must not contain spaces.</p></dd>
 
 </dl></div>
     <div class="section level2">

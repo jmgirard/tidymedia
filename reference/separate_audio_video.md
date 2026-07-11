@@ -1,11 +1,21 @@
 # Split a media file into separate audio and video files
 
-Split a media file into separate audio and video files
+By default the streams are copied, not re-encoded (`reencode = FALSE`):
+separation is lossless and fast, but each output container must support
+the source codec (e.g. write AAC audio from an MP4 to `.aac` or `.m4a`,
+not `.mp3`). Set `reencode = TRUE` to let FFmpeg re-encode each stream
+to whatever the output extension implies.
 
 ## Usage
 
 ``` r
-separate_audio_video(infile, audiofile, videofile, run = TRUE)
+separate_audio_video(
+  infile,
+  audiofile,
+  videofile,
+  reencode = FALSE,
+  run = TRUE
+)
 ```
 
 ## Arguments
@@ -21,6 +31,11 @@ separate_audio_video(infile, audiofile, videofile, run = TRUE)
 - videofile:
 
   A string containing the path of the video file to write.
+
+- reencode:
+
+  A logical: stream-copy the audio and video losslessly (`FALSE`,
+  default) or re-encode them to match the output extensions (`TRUE`).
 
 - run:
 
@@ -48,8 +63,8 @@ Other task verb functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 separate_audio_video(video, "audio.aac", "video.mp4", run = FALSE)
-#>                                                                                           audio 
-#> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -map 0:a \"audio.aac\"" 
-#>                                                                                           video 
-#> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -map 0:v \"video.mp4\"" 
+#>                                                                                                         audio 
+#> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -map 0:a \"audio.aac\"" 
+#>                                                                                                         video 
+#> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -map 0:v \"video.mp4\"" 
 ```

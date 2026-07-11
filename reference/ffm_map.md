@@ -2,7 +2,11 @@
 
 Select which input streams are included in the output via FFmpeg's
 `-map` option. The default (`"0"`) maps every stream from the first
-input.
+input. When the pipeline uses a multi-input verb (e.g.
+[`ffm_hstack`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md)),
+the explicit mapping is added *alongside* the automatic `-map "[vout]"`
+of the filtered stream — for example, `ffm_map(object, "0:a")` keeps the
+first input's audio next to the stacked video.
 
 ## Usage
 

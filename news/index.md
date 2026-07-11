@@ -1,5 +1,64 @@
 # Changelog
 
+## tidymedia (development version)
+
+### Safe execution (M06)
+
+- Pipelines are now executed as argument vectors (via
+  [`system2()`](https://rdrr.io/r/base/system2.html)), never through a
+  shell string, so input and output paths containing spaces, quotes,
+  `$`, or backticks are handled correctly. This applies to
+  [`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md),
+  [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
+  and every task verb;
+  [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md)
+  still returns the same reproducible command string. The Layer 0 escape
+  hatches
+  ([`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md),
+  [`ffprobe()`](https://jmgirard.github.io/tidymedia/reference/ffprobe.md),
+  [`mediainfo()`](https://jmgirard.github.io/tidymedia/reference/mediainfo.md))
+  keep their raw-string interface.
+- Raw output options added with
+  [`ffm_output_options()`](https://jmgirard.github.io/tidymedia/reference/ffm_output_options.md)
+  are tokenized on whitespace at execution time; option values
+  themselves must not contain spaces (they never worked reliably
+  before).
+
+### Breaking changes
+
+- [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+  now stream-copies by default — separation is lossless and fast, but
+  each output container must support the source codec. Use the new
+  `reencode = TRUE` argument for the previous re-encoding behavior.
+- [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md)
+  and
+  [`ffm_pixel_format()`](https://jmgirard.github.io/tidymedia/reference/ffm_pixel_format.md)
+  now reject values that are not a single clean token (no whitespace or
+  shell metacharacters, and starting with a letter or digit).
+- [`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md)
+  — and every task verb built on it — now aborts with FFmpeg’s exit
+  status when an encode fails, instead of returning silently (the old
+  shell path only emitted a warning).
+  [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+  still records failures in its `success` column without aborting.
+- [`ffm_output_options()`](https://jmgirard.github.io/tidymedia/reference/ffm_output_options.md)
+  now rejects option groups containing quote characters: options are
+  split on whitespace into arguments at execution, so quoting cannot
+  group tokens (previously such commands executed with a different
+  meaning than printed).
+
+### Bug fixes
+
+- An explicit
+  [`ffm_map()`](https://jmgirard.github.io/tidymedia/reference/ffm_map.md)
+  on a multi-input pipeline
+  (e.g. [`ffm_hstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md))
+  is now emitted alongside the automatic `-map "[vout]"` instead of
+  being silently ignored, so e.g. `ffm_map(p, "0:a")` keeps the first
+  input’s audio next to the stacked video.
+- Test coverage is measured again: an empty `R/zzz.R` triggered a `covr`
+  bug that silently reported 0% package coverage.
+
 ## tidymedia 0.1.0
 
 First tagged release, bringing the metadata, builder, and task-verb work

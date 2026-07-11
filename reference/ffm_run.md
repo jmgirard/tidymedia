@@ -18,8 +18,11 @@ ffm_run(object)
 
 ## Value
 
-The FFmpeg exit status (invisibly), called for its side effect of
-writing the output file.
+A character vector of FFmpeg's standard output (with a `status`
+attribute on a non-zero exit), invisibly; called for its side effect of
+writing the output file. The pipeline is executed as an argument vector
+(never through a shell), so paths containing spaces or special
+characters are safe.
 
 ## See also
 
@@ -52,5 +55,4 @@ ffm(video, out) |>
   ffm_scale(width = 160, height = 120) |>
   ffm_codec(video = "libx264") |>
   ffm_run()
-#> character(0)
 ```

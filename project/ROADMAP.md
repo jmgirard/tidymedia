@@ -18,7 +18,7 @@ lines; all detail lives in `milestones/`, never here.
 | M05 | Docs, vignettes, pkgdown, release prep             | done    | archive/M05-docs-release.md       |
 | M06 | Engine hardening & safe execution                  | done    | archive/M06-engine-hardening.md   |
 | M07 | Complete the blessed multi-input verbs             | done    | archive/M07-multi-input-verbs.md  |
-| M08 | Verification & provenance                          | idea    | milestones/M08-verification-provenance.md |
+| M08 | Verification & provenance                          | planned | milestones/M08-verification-provenance.md |
 | M09 | Research-workflow task verbs                       | idea    | milestones/M09-research-verbs.md  |
 | M10 | CRAN readiness (prep, hold submission)             | idea    | milestones/M10-cran-readiness.md  |
 

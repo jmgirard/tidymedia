@@ -20,7 +20,6 @@ files*) for the metadata layer and fix its live bugs.
   dropped unused `tidyr`. NEWS → 0.0.0.9003.
 - Evidence: test 234 pass / 4 skip, check 0/0/0; mediainfo execution on CI
   (absent locally) + mocked-runner tests.
-
 **Key decisions:** D-M04-1..7 — vectorize readers, typed default, safe
 shell-out, `file`-led snake_case schema (verbatim user names), multi-file
 resilience (D007-consistent). None promoted to DECISIONS.md (all layer-local).

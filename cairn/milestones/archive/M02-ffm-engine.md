@@ -20,7 +20,6 @@ filter selection live. Foundation for M03.
 **Key decisions:** D-M02-1 stay S3; D-M02-2 vf/af-vs-filter_complex split →
 **promoted to DECISIONS D006**; D-M02-3 gated E2E; D-M02-4 hstack video-only;
 D-M02-5 copy+filter guard; D-M02-6 `-y` global.
-
 **Deferred (Opus review):** F3 explicit `ffm_map()` overridden by auto-map in
 complex mode (documented); F6 `shQuote` path quoting (platform-dependent, breaks
 snapshot determinism). Possible follow-up: assert output dims via ffprobe (M04).

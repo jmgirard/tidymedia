@@ -20,7 +20,6 @@ processing over many files.
 
 **Key decisions:** D-M03-1..6 → promoted cross-cutting ones to **DECISIONS D007**
 (batch model) and **D008** (cutting/seeking, accurate default).
-
 **Deferred (Opus review):** F2 concat tempfile not cleaned (by design); F4
 shell-quoting of paths with `"`/`` ` ``/`$` (= M02 F6); `separate_audio_video`
 `-c copy` fast path — all tracked engine/verb follow-ups.

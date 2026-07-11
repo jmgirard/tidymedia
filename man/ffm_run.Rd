@@ -4,11 +4,17 @@
 \alias{ffm_run}
 \title{Run the FFmpeg Pipeline}
 \usage{
-ffm_run(object)
+ffm_run(object, verify = NULL)
 }
 \arguments{
 \item{object}{An ffmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
+
+\item{verify}{An optional named list of expected output properties, passed to
+\code{\link{verify_media}} (e.g. \code{list(width = 1920, video_codec =
+"h264")}). After a successful run the output is probed and, if any check
+fails, \code{ffm_run()} aborts with the failed checks (mirroring how it
+aborts on a non-zero FFmpeg exit). \code{NULL} (default) skips verification.}
 }
 \value{
 A character vector of FFmpeg's standard output (with a
@@ -27,7 +33,7 @@ out <- tempfile(fileext = ".mp4")
 ffm(video, out) |>
   ffm_scale(width = 160, height = 120) |>
   ffm_codec(video = "libx264") |>
-  ffm_run()
+  ffm_run(verify = list(width = 160, height = 120))
 \dontshow{\}) # examplesIf}
 }
 \seealso{

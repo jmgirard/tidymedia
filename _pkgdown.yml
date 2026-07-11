@@ -51,6 +51,13 @@ reference:
   - concatenate_videos
   - compare_videos
   - picture_in_picture
+- title: "Verification & provenance"
+  desc: >
+    Check that an output really has the properties you asked for, and record a
+    reproducibility manifest for a batch run.
+  contents:
+  - verify_media
+  - ffm_manifest
 - title: "Media metadata"
   desc: >
     Read container and stream metadata as tibbles, ready for the tidyverse.

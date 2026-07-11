@@ -73,6 +73,7 @@ Other builder functions:
 \code{\link[=ffm_run]{ffm_run()}},
 \code{\link[=ffm_scale]{ffm_scale()}},
 \code{\link[=ffm_seek]{ffm_seek()}},
+\code{\link[=ffm_vstack]{ffm_vstack()}},
 \code{\link[=print.tidymedia_ffm]{print.tidymedia_ffm()}}
 }
 \concept{builder functions}

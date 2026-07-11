@@ -43,6 +43,7 @@ Other builder functions:
 \code{\link[=ffm_run]{ffm_run()}},
 \code{\link[=ffm_scale]{ffm_scale()}},
 \code{\link[=ffm_seek]{ffm_seek()}},
-\code{\link[=ffm_trim]{ffm_trim()}}
+\code{\link[=ffm_trim]{ffm_trim()}},
+\code{\link[=ffm_vstack]{ffm_vstack()}}
 }
 \concept{builder functions}

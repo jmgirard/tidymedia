@@ -53,10 +53,10 @@ picture-in-picture) — common needs in behavioral/annotation workflows.
 
 ## Plan
 
-- [ ] T1: `ffm_vstack()` + tests (compile, guards, args parity) + snapshot.
+- [x] T1: `ffm_vstack()` + tests (compile, guards, args parity) + snapshot.
 - [ ] T2: `ffm_overlay()` + tests + snapshot.
-- [ ] T3: Extract shared blessed-video-verb guard helper; hstack/vstack/overlay
-      use it; existing tests stay green.
+- [x] T3: Extract shared blessed-video-verb ordering guard
+      (`check_multi_input_ordering()`); hstack/vstack use it (overlay in T2).
 - [ ] T4: `compare_videos()` Layer-2 verb + tests (incl. execution skip_if).
 - [ ] T5: `picture_in_picture()` Layer-2 verb + tests (incl. execution skip_if).
 - [ ] T6: `document()`; update multi-input vignette section if present; add
@@ -69,6 +69,9 @@ Append-only; newest last. One line per session: date, what happened, next.
 
 - 2026-07-10: Milestone planned (vstack+overlay blessed; xstack/amix deferred;
   audio explicit-map-only; two Layer-2 verbs). Next: `/milestone implement M07`.
+- 2026-07-10: T1/T3 — `ffm_vstack()` (width-matching resize) + shared
+  `check_multi_input_ordering()` guard (hstack routed through it); tests green.
+  Next: T2 `ffm_overlay()`.
 
 ## Decisions
 

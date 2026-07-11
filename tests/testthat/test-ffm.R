@@ -339,6 +339,56 @@ test_that("ffm_hstack(resize = TRUE) emits a single-line self-labelled graph", {
   expect_match(cmd, 'hstack,setsar=1[vout]" -map "[vout]"', fixed = TRUE)
 })
 
+# ffm_vstack() (multi-input, filter_complex path) ------------------------------
+
+test_that("ffm_vstack() flags the pipeline complex and stores a label-free token", {
+  f1 <- make_input()
+  f2 <- make_input()
+  p <- ffm_vstack(ffm_files(c(f1, f2), "out.mp4"))
+  expect_true(p$complex)
+  expect_equal(p$filter_video, "vstack=inputs=2:shortest=0")
+})
+
+test_that("ffm_vstack() compiles to -filter_complex with labels and auto -map", {
+  f1 <- make_input()
+  f2 <- make_input()
+  p <- ffm_vstack(ffm_files(c(f1, f2), "out.mp4"))
+  expect_equal(
+    ffm_compile(p),
+    sprintf(
+      paste0(
+        '-y -i "%s" -i "%s" ',
+        '-filter_complex "[0:v][1:v]vstack=inputs=2:shortest=0[vout]" ',
+        '-map "[vout]" "out.mp4"'
+      ),
+      f1, f2
+    )
+  )
+})
+
+test_that("ffm_vstack() requires more than one input", {
+  f <- make_input()
+  expect_error(ffm_vstack(ffm_files(f, "out.mp4")), "more than one")
+})
+
+test_that("ffm_vstack() refuses to follow a single-input video filter", {
+  f1 <- make_input()
+  f2 <- make_input()
+  p <- ffm_scale(ffm_files(c(f1, f2), "out.mp4"), 640, 480)
+  expect_error(ffm_vstack(p), "before other video filters")
+})
+
+test_that("ffm_vstack(resize = TRUE) emits a single-line self-labelled graph", {
+  f1 <- make_input()
+  f2 <- make_input()
+  p <- ffm_vstack(ffm_files(c(f1, f2), "out.mp4"), resize = TRUE)
+  expect_true(p$complex)
+  expect_no_match(p$filter_video, "\n", fixed = TRUE)
+  cmd <- ffm_compile(p)
+  expect_match(cmd, "scale2ref", fixed = TRUE)
+  expect_match(cmd, 'vstack,setsar=1[vout]" -map "[vout]"', fixed = TRUE)
+})
+
 # Filter emission (no invalid -filter_complex:v anywhere) ----------------------
 
 test_that("single-input filter chains compile to -vf, never -filter_complex:v", {
@@ -450,6 +500,28 @@ test_that("an hstack(resize = TRUE) pipeline runs through ffmpeg", {
   b <- make_test_video()
   out <- withr::local_tempfile(fileext = ".mp4")
   p <- ffm_hstack(ffm_files(c(a, b), out), resize = TRUE)
+  ffm_run(p)
+  expect_true(file.exists(out))
+  expect_gt(file.size(out), 0)
+})
+
+test_that("a vstack pipeline runs through ffmpeg and writes output", {
+  skip_if_no_ffmpeg()
+  a <- make_test_video()
+  b <- make_test_video()
+  out <- withr::local_tempfile(fileext = ".mp4")
+  p <- ffm_vstack(ffm_files(c(a, b), out))
+  ffm_run(p)
+  expect_true(file.exists(out))
+  expect_gt(file.size(out), 0)
+})
+
+test_that("a vstack(resize = TRUE) pipeline runs through ffmpeg", {
+  skip_if_no_ffmpeg()
+  a <- make_test_video()
+  b <- make_test_video()
+  out <- withr::local_tempfile(fileext = ".mp4")
+  p <- ffm_vstack(ffm_files(c(a, b), out), resize = TRUE)
   ffm_run(p)
   expect_true(file.exists(out))
   expect_gt(file.size(out), 0)

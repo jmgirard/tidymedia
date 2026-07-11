@@ -505,15 +505,7 @@ ffm_hstack <- function(object,
   if (resize && inputs_n != 2) {
     cli::cli_abort("{.arg resize} currently only works with exactly two inputs.")
   }
-  # Stacking is a whole-frame operation that consumes the raw input pads, so it
-  # must precede any single-input video filter — otherwise ffm_compile() would
-  # feed two pads to a one-input filter and produce an invalid graph.
-  if (length(object$filter_video) > 0) {
-    cli::cli_abort(c(
-      "Stacking must come before other video filters.",
-      "i" = "Apply {.fn ffm_hstack} first, then filter the stacked result."
-    ))
-  }
+  check_multi_input_ordering(object, "Stacking")
 
   # hstack is a blessed multi-input verb: it forces the -filter_complex path
   # (see ffm_compile()). The resize graph manages its own stream labels (it
@@ -528,6 +520,69 @@ ffm_hstack <- function(object,
     )
   } else {
     cmd <- glue('hstack=inputs={inputs_n}:shortest={shortest_int}')
+  }
+
+  object$filter_video <- c(object$filter_video, cmd)
+  object$complex <- TRUE
+
+  object
+}
+
+# ffm_vstack() -----------------------------------------------------------------
+
+#' Vertically Stack Multiple Videos in an FFmpeg Pipeline
+#'
+#' Add a complex video filter to stack multiple videos vertically (one above the
+#' other) and, optionally, resize them to have the same width. This is the
+#' vertical companion to \code{\link{ffm_hstack}}; both are blessed multi-input
+#' verbs that force the \code{-filter_complex} path and manage their own stream
+#' labels internally.
+#'
+#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'   \code{ffm_files()}.
+#' @param shortest A logical indicating whether to trim the duration of all
+#'   videos to that of the shortest video (default = \code{FALSE})
+#' @param resize A logical indicating whether to resize the width of the input
+#'   videos to match (takes longer and currently only works with two inputs)
+#' @return \code{object} but with the added instruction to apply vertical
+#'   stacking.
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' # Stack two inputs one above the other (pass more than one input to ffm())
+#' ffm(c(video, video), "output.mp4") |>
+#'   ffm_vstack() |>
+#'   ffm_compile()
+#' @export
+ffm_vstack <- function(object,
+                       shortest = FALSE,
+                       resize = FALSE) {
+
+  check_ffm(object)
+  rlang::check_bool(shortest)
+  rlang::check_bool(resize)
+  inputs_n <- length(object$input)
+  shortest_int <- as.integer(shortest)
+  if (inputs_n <= 1) {
+    cli::cli_abort("Stacking requires more than one input file.")
+  }
+  if (resize && inputs_n != 2) {
+    cli::cli_abort("{.arg resize} currently only works with exactly two inputs.")
+  }
+  check_multi_input_ordering(object, "Stacking")
+
+  # vstack mirrors hstack (see ffm_hstack()) but equalises *widths* instead of
+  # heights: the scale2ref graph grows each input to the larger of the two
+  # widths, preserving aspect via ow/mdar, then vertically stacks. Label-free
+  # plain-vstack token is completed by ffm_compile() with input labels + [vout].
+  if (resize == TRUE) {
+    cmd <- paste0(
+      "[0:v][1:v]scale2ref='if(lt(main_w,iw),iw,main_w)':'ow/mdar'[0s][1s];",
+      "[1s][0s]scale2ref='if(lt(main_w,iw),iw,main_w)':'ow/mdar'[1s][0s];",
+      "[0s][1s]vstack,setsar=1"
+    )
+  } else {
+    cmd <- glue('vstack=inputs={inputs_n}:shortest={shortest_int}')
   }
 
   object$filter_video <- c(object$filter_video, cmd)

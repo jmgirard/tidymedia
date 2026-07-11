@@ -28,6 +28,8 @@ reference:
   - ffm_copy
   - ffm_pixel_format
   - ffm_hstack
+  - ffm_vstack
+  - ffm_overlay
   - ffm_concat
   - ffm_drawbox
   - ffm_output_options
@@ -47,6 +49,8 @@ reference:
   - format_for_web
   - segment_video
   - concatenate_videos
+  - compare_videos
+  - picture_in_picture
 - title: "Media metadata"
   desc: >
     Read container and stream metadata as tibbles, ready for the tidyverse.

@@ -2,23 +2,29 @@
 % Please edit documentation in R/ffprobe.R
 \name{probe_all}
 \alias{probe_all}
-\title{Look up all information about a media file using FFprobe}
+\title{Look up information about media files using FFprobe}
 \usage{
-probe_all(infile, convert = FALSE)
+probe_all(infile, typed = TRUE)
 }
 \arguments{
-\item{infile}{A string indicating the location (file path or web link) of a
-media file to probe.}
+\item{infile}{A character vector of one or more media-file locations (file
+paths or web links) to probe.}
 
-\item{convert}{A logical indicating whether to convert purely numerical
-values to integers or doubles.}
+\item{typed}{A logical. When \code{TRUE} (default) numeric columns are converted
+to integers/doubles and FFprobe's \code{"N/A"} becomes \code{NA}; fractions, ratios,
+hex identifiers, and text stay as strings. When \code{FALSE} every value is
+returned as an unconverted string.}
 }
 \value{
-A list object containing two inner objects: \code{container} which is a
-data frame describing the media file's container and \code{streams} which is a
-data frame describing the media file's video and audio streams.
+A list of two tibbles: \code{container} (one row per input file) and
+\code{streams} (one row per stream, or a single \code{NA} row for a file with no
+readable streams). Both lead with a \code{file} column identifying the input.
+Files that cannot be probed yield an all-\code{NA} row and a warning rather than
+aborting the call.
 }
 \description{
-Create a list object containing information about a media file's container
-and streams.
+Probe one or more media files and return their container- and stream-level
+metadata as tibbles. \code{infile} may be a vector of several files: the results
+are stacked and keyed by a leading \code{file} column, so the output is ready for
+\code{dplyr} joins and filters over a whole batch.
 }

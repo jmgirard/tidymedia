@@ -13,5 +13,8 @@ ffprobe(command)
 A string containing the text output by FFprobe.
 }
 \description{
-Probe a media file for information.
+Probe a media file for information. This is the Layer 0 escape hatch: the
+\code{command} string is passed to FFprobe verbatim, so you are responsible for
+quoting it. For structured, tibble-returning output use \code{\link[=probe_all]{probe_all()}} and the
+\verb{probe_*()} shortcuts, which quote their arguments safely.
 }

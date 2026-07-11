@@ -4,25 +4,31 @@
 \alias{mediainfo_parameter}
 \title{Query a single parameter from a single MediaInfo section}
 \usage{
-mediainfo_parameter(file, section, parameter)
+mediainfo_parameter(file, section, parameter, typed = TRUE)
 }
 \arguments{
-\item{file}{A string containing the path to a media file.}
+\item{file}{A character vector of one or more media-file paths.}
 
-\item{section}{A string containing the name of the mediainfo
-section from which to query \code{parameter}.}
+\item{section}{A string containing the name of the mediainfo section from
+which to query \code{parameter}.}
 
-\item{parameter}{A string containing the name of the mediainfo
-parameter to query from \code{section}.}
+\item{parameter}{A string containing the name of the mediainfo parameter to
+query from \code{section}.}
+
+\item{typed}{A logical. When \code{TRUE} (default) the value is converted to
+its natural type (e.g. a number); when \code{FALSE} it is returned as a
+string.}
 }
 \value{
-A string or double containing the requested parameter's value or
-\code{NA} in the cases that the value was empty or the section-parameter
-combination could not be found.
+A vector the same length as \code{file} holding each requested value,
+or \code{NA} where the value was empty, the section-parameter combination
+was not found, or the file could not be read (a warning is issued for
+unreadable files rather than aborting).
 }
 \description{
-Query a single parameter in a single section from MediaInfo and return it as
-an atomic object (not a tibble).
+Query a single parameter in a single section from MediaInfo. \code{file} may be a
+vector of several files, in which case a vector of values (one per file) is
+returned.
 }
 \seealso{
 Other mediainfo functions:

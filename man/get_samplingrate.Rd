@@ -7,10 +7,10 @@
 get_samplingrate(file)
 }
 \arguments{
-\item{file}{A string containing the file path of a media file.}
+\item{file}{A character vector of one or more media-file paths.}
 }
 \value{
-A double indicating the audio sampling rate of \code{file} (in Hz).
+A double vector (one per file) giving the audio sampling rate in Hz.
 }
 \description{
 Use MediaInfo to quickly look up the audio sampling rate of a media file in

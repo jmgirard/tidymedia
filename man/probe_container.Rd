@@ -7,31 +7,32 @@
 \alias{probe_audio}
 \title{Shortcut functions for probing specific information}
 \usage{
-probe_container(probe = NULL, infile = NULL)
+probe_container(probe = NULL, infile = NULL, typed = TRUE)
 
-probe_streams(probe = NULL, infile = NULL)
+probe_streams(probe = NULL, infile = NULL, typed = TRUE)
 
-probe_video(probe = NULL, infile = NULL)
+probe_video(probe = NULL, infile = NULL, typed = TRUE)
 
-probe_audio(probe = NULL, infile = NULL)
+probe_audio(probe = NULL, infile = NULL, typed = TRUE)
 }
 \arguments{
-\item{probe}{A list object created by \code{probe_all()}. Must be \code{NULL} if
-\code{infile} is not \code{NULL}.}
+\item{probe}{A list object created by \code{\link[=probe_all]{probe_all()}}. Must be \code{NULL} if
+\code{infile} is supplied.}
 
-\item{infile}{A string indicating the location (file path or web link) to a
-media file. Must be \code{NULL} if \code{probe} is \code{NULL}.}
+\item{infile}{A character vector of one or more media-file locations. Must be
+\code{NULL} if \code{probe} is supplied.}
+
+\item{typed}{A logical passed to \code{\link[=probe_all]{probe_all()}} when \code{infile} is used (default
+\code{TRUE}); ignored when \code{probe} is supplied.}
 }
 \value{
-A data frame containing only the requested information.
+A tibble containing only the requested information.
 }
 \description{
-Return just the data frame describing the media file's container via
-\code{probe_container()}. Return just the data frame describing the media file's
-streams via \code{probe_streams()}. Return just the rows of the data frame
-describing the media file's video streams via \code{probe_video()}. Return just
-the rows of the data frame describing the media file's audio streams via
-\code{probe_audio()}. Each of these functions must be given either the output of
-\code{probe_all()} or the location of a media file; note that the former approach
-can save time when working with larger files.
+Return just the \code{container} tibble via \code{probe_container()}, just the
+\code{streams} tibble via \code{probe_streams()}, or just the video/audio stream rows
+via \code{probe_video()} / \code{probe_audio()}. Each takes \strong{either} the output of
+\code{\link[=probe_all]{probe_all()}} (via \code{probe}) \strong{or} one or more file locations (via \code{infile});
+passing \code{infile} reprobes, so reuse a \code{probe} object when working with large
+files.
 }

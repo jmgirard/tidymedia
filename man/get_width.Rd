@@ -7,10 +7,10 @@
 get_width(file)
 }
 \arguments{
-\item{file}{A string containing the file path of a media file.}
+\item{file}{A character vector of one or more media-file paths.}
 }
 \value{
-A double indicating the video width of \code{file} (in px).
+A double vector (one per file) giving the video width in px.
 }
 \description{
 Use MediaInfo to quickly look up the video width of a media file in

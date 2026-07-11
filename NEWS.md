@@ -1,4 +1,45 @@
-# tidymedia 0.0.0.9002 (development version)
+# tidymedia 0.0.0.9003 (development version)
+
+## Metadata layer
+
+* The MediaInfo and FFprobe readers now **accept a vector of files** and return
+  one stacked tibble keyed by a leading `file` column, so metadata for a whole
+  batch is ready for `dplyr` joins and filters. This covers `probe_all()`, the
+  `probe_*()` shortcuts, `mediainfo_query()`, `mediainfo_template()`,
+  `mediainfo_parameter()`, and the `get_*()` convenience helpers.
+* **Typed output is now the default.** Every reader gains a `typed` argument
+  (default `TRUE`) that converts numeric columns to integers/doubles and turns
+  missing markers (FFprobe's `"N/A"`, MediaInfo's empty values) into `NA`;
+  fractions, ratios, hex identifiers, and text stay as strings. Pass
+  `typed = FALSE` for the previous all-character behavior. This replaces
+  `probe_all()`'s `convert` argument.
+* Readers are **resilient to unreadable files**: a missing file, or one that
+  cannot be probed, among several yields an all-`NA` row (or `NA` value) plus a
+  warning, instead of aborting the whole call. Malformed *arguments* still
+  abort.
+* Arguments are now passed to the CLIs through argument vectors (`system2()`)
+  rather than interpolated into a shell string, so file paths and MediaInfo
+  `--Inform` templates containing spaces, quotes, `;`, `%`, or `$` work
+  correctly. The Layer 0 escape hatches `mediainfo()` / `ffprobe()` keep their
+  raw-string signatures.
+* Output column schemas are unified: readers lead with a `file` column and the
+  two built-in MediaInfo templates now emit snake_case column names.
+  User-supplied names (`mediainfo_query(names =)`, custom template headers) are
+  kept verbatim.
+
+## Bug fixes
+
+* `probe_container()`, `probe_streams()`, `probe_video()`, and `probe_audio()`
+  now return the requested tibble when called with `infile =`; they previously
+  returned `NULL`.
+* `convert_fractions()` parses fractions directly instead of via
+  `eval(parse())`, passes `NA` through, and errors on values that are neither a
+  number nor a fraction.
+* FFprobe's `key=value` output is split on the first `=` only, so values that
+  contain `=` are no longer truncated; the superseded `tidyr::separate()` call
+  is gone. Files with zero streams no longer trip the stream loop.
+
+# tidymedia 0.0.0.9002
 
 ## Batch processing
 

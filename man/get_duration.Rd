@@ -11,7 +11,7 @@ get_duration(
 )
 }
 \arguments{
-\item{file}{A string containing the file path of a media file.}
+\item{file}{A character vector of one or more media-file paths.}
 
 \item{section}{A string indicating the MediaInfo section from which to query
 the duration value. Can be either \code{"General"}, \code{"Video"}, or
@@ -22,8 +22,8 @@ milliseconds (\code{"ms"}), seconds (\code{"sec"}), minutes (\code{"min"}),
 or hours (\code{"hour"}) (default = \code{"ms"}).}
 }
 \value{
-A double indicating the duration of the specified section of the file
-(in the specified units).
+A double vector (one per file) giving the duration of the specified
+section in the specified units.
 }
 \description{
 Use MediaInfo to quickly look up the duration of different sections of a

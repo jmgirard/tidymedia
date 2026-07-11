@@ -1,6 +1,6 @@
 # M07: Complete the blessed multi-input verbs
 
-- **Status:** in-progress <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
+- **Status:** review <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
 - **Created:** 2026-07-10
 - **Completed:** —
 
@@ -61,7 +61,7 @@ picture-in-picture) — common needs in behavioral/annotation workflows.
 - [x] T5: `picture_in_picture()` Layer-2 verb (+ `ffm_overlay(scale=)`) + tests.
 - [x] T6: `document()`; snapshots; vignette multi-input section; DECISIONS D009
       (NEWS.md at review).
-- [ ] T7: Full `devtools::test()` + `devtools::check()` clean; finalize.
+- [x] T7: Full `devtools::test()` (337 pass) + `devtools::check()` (0/0/0).
 
 ## Work log
 
@@ -81,6 +81,9 @@ Append-only; newest last. One line per session: date, what happened, next.
   Next: T6 snapshots/docs/DECISIONS.
 - 2026-07-10: T6 — snapshots regenerated (vstack/overlay/scale), vignette
   multi-input section expanded, DECISIONS D009 recorded. Next: T7 full check.
+- 2026-07-10: T7 — `check()` clean (0/0/0), 337 tests pass; fixed "centre"→
+  "center" spelling note; removed stray testthat `_problems/` dump. Status
+  → review; awaiting proceed/adjust/pause.
 
 ## Decisions
 

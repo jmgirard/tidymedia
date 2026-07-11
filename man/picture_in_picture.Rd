@@ -43,7 +43,7 @@ The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 }
 \description{
 Composite a smaller \code{overlay} video onto a \code{main} video in one
-corner (or the centre) — the classic picture-in-picture layout for pairing a
+corner (or the center) — the classic picture-in-picture layout for pairing a
 speaker with a screen recording, or a stimulus with a webcam. Built on the
 blessed \code{\link{ffm_overlay}} verb, which resizes the overlay to a
 fraction of the main video's width and positions it.

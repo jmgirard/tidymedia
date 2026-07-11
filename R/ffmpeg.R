@@ -613,7 +613,7 @@ compare_videos <- function(infiles, outfile,
 #' Inset one video over another (picture-in-picture)
 #'
 #' Composite a smaller \code{overlay} video onto a \code{main} video in one
-#' corner (or the centre) — the classic picture-in-picture layout for pairing a
+#' corner (or the center) — the classic picture-in-picture layout for pairing a
 #' speaker with a screen recording, or a stimulus with a webcam. Built on the
 #' blessed \code{\link{ffm_overlay}} verb, which resizes the overlay to a
 #' fraction of the main video's width and positions it.
@@ -657,7 +657,7 @@ picture_in_picture <- function(main, overlay, outfile,
   rlang::check_number_whole(audio, min = 0, max = 1, allow_null = TRUE)
   m <- as.integer(margin)
 
-  # Translate the corner/centre choice into overlay x/y expressions, where
+  # Translate the corner/center choice into overlay x/y expressions, where
   # overlay_w/overlay_h are the (already scaled) inset's dimensions.
   pos <- switch(
     position,

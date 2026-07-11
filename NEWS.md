@@ -19,7 +19,16 @@
   Use the new `reencode = TRUE` argument for the previous re-encoding
   behavior.
 * `ffm_codec()` and `ffm_pixel_format()` now reject values that are not a
-  single clean token (no whitespace or shell metacharacters).
+  single clean token (no whitespace or shell metacharacters, and starting
+  with a letter or digit).
+* `ffm_run()` — and every task verb built on it — now aborts with FFmpeg's
+  exit status when an encode fails, instead of returning silently (the old
+  shell path only emitted a warning). `ffm_batch()` still records failures
+  in its `success` column without aborting.
+* `ffm_output_options()` now rejects option groups containing quote
+  characters: options are split on whitespace into arguments at execution,
+  so quoting cannot group tokens (previously such commands executed with a
+  different meaning than printed).
 
 ## Bug fixes
 

@@ -622,3 +622,31 @@ test_that("ffm_run() handles paths with spaces, quotes, $, and backticks", {
   expect_true(file.exists(hostile_out))
   expect_gt(file.size(hostile_out), 0)
 })
+
+# M06 review fixes (Opus F1, F3, F4) ---------------------------------------------
+
+test_that("ffm_run() aborts loudly when FFmpeg fails", {
+  skip_if_no_ffmpeg()
+  f <- make_input() # empty file, not decodable
+  out <- withr::local_tempfile(fileext = ".mp4")
+  p <- ffm_codec(ffm_files(f, out), video = "libx264")
+  expect_error(ffm_run(p), "exited with status")
+})
+
+test_that("ffm_output_options() rejects quoted option groups", {
+  f <- make_input()
+  p <- ffm_files(f, "out.mp4")
+  expect_error(
+    ffm_output_options(p, '-metadata title="My Title"'),
+    "quote characters"
+  )
+  expect_error(ffm_output_options(p, "-metadata title='x y'"), "quote characters")
+})
+
+test_that("check_token() rejects tokens with a leading dash", {
+  f <- make_input()
+  p <- ffm_files(f, "out.mp4")
+  expect_error(ffm_codec(p, video = "-vn"), "single clean token")
+  expect_error(ffm_pixel_format(p, "-f"), "single clean token")
+  expect_no_error(ffm_codec(p, video = "libvpx-vp9"))
+})

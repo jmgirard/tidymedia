@@ -109,9 +109,13 @@ run_program <- function(location, args, program = "the program",
   if (is.null(location) || is.na(location) || !nzchar(location)) {
     cli::cli_abort("Could not locate {program}.", call = call)
   }
+  # shQuote()'s default is sh-style quoting on every OS; on Windows the child
+  # process parses its command line with cmd-style (double-quote) rules, so
+  # the type must follow the platform or spaced paths break there.
+  quote_type <- if (.Platform$OS.type == "windows") "cmd" else "sh"
   suppressWarnings(
-    system2(location, args = shQuote(args), stdout = TRUE, stderr = stderr,
-            input = input)
+    system2(location, args = shQuote(args, type = quote_type), stdout = TRUE,
+            stderr = stderr, input = input)
   )
 }
 

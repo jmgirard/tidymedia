@@ -79,6 +79,11 @@ beyond what the shared assembly path requires.
   (615 traced expressions, was 7). Upstream covr bug worth reporting.
 - 2026-07-10: T7 done: NEWS (dev version 0.1.0.9000), WORDLIST, check()
   0/0/0, tests 280/0, spelling clean. All tasks complete → status review.
+- 2026-07-10: Review: PR #6 draft, CI 7/7 green (coverage 87.67% on CI).
+  Opus review: 5 findings; fixed F1 (ffm_run aborts on FFmpeg failure),
+  F2 (Windows cmd-style shQuote), F3 (reject quoted output options),
+  F4 (no leading dash in check_token); rejected F5 (double compile —
+  cosmetic, compile is pure/cheap). Tests 286/0 after fixes.
 
 ## Decisions
 
@@ -95,8 +100,13 @@ beyond what the shared assembly path requires.
 
 ## Review
 
-Filled in by `/milestone review`.
-
-- Criteria verification:
-- check()/test()/coverage results:
-- Follow-ups spawned:
+- Criteria verification (2026-07-10, PR #6):
+  - Hostile-path E2E (ffm_run + ffm_batch): pass (in 280-test suite).
+  - Pure arg-vector tests pass; command-string snapshots byte-identical.
+  - ffm_map combine in complex mode: pinned by test (D-M06-1).
+  - separate_audio_video copy default: snapshot + E2E pass (D-M06-4).
+  - Both R/ffm.R TODOs resolved via check_token() (D-M06-3).
+  - Coverage real again: 87.67% on CI test-coverage job (was 0%).
+- check()/test()/coverage results: check 0/0/0 (fresh, 2026-07-10);
+  test 280 pass / 0 fail / 0 skip; coverage 87.67% local + CI.
+- Follow-ups spawned: (pending Opus review triage)

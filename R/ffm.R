@@ -682,6 +682,17 @@ ffm_output_options <- function(object, ...) {
   if (!rlang::is_character(opts) || length(opts) == 0) {
     cli::cli_abort("Provide at least one output option as a string.")
   }
+  # Each whitespace-separated token becomes one FFmpeg argument at execution
+  # (no shell parsing), so quoted values with spaces cannot work — reject them
+  # loudly rather than emit a command that means something else than printed.
+  if (any(grepl("[\"']", opts))) {
+    cli::cli_abort(c(
+      "Output options can't contain quote characters.",
+      "x" = "Options are split on whitespace into FFmpeg arguments verbatim;
+             quoting does not group tokens.",
+      "i" = "Use values without spaces, or the {.fn ffmpeg} escape hatch."
+    ))
+  }
 
   object$output_opts <- c(object$output_opts, opts)
 
@@ -934,10 +945,17 @@ ffm_run <- function(object) {
   # verbatim (M06). stdin is redirected from an empty input so FFmpeg cannot
   # drain the parent process's stdin (see ffmpeg()); stderr streams to the
   # console as before.
-  invisible(
-    run_program(find_ffmpeg(), ffm_args(object), program = "FFmpeg",
-                input = "", stderr = "")
-  )
+  out <- run_program(find_ffmpeg(), ffm_args(object), program = "FFmpeg",
+                     input = "", stderr = "")
+  status <- attr(out, "status")
+  if (!is.null(status)) {
+    cli::cli_abort(c(
+      "FFmpeg exited with status {status}.",
+      "i" = "FFmpeg's error output is printed above.",
+      "i" = "The failing command was: {.code ffmpeg {ffm_compile(object)}}"
+    ))
+  }
+  invisible(out)
 }
 
 # ffm_finish() -----------------------------------------------------------------

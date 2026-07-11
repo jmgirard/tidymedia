@@ -50,11 +50,12 @@ check_file_exists <- function(x, arg = rlang::caller_arg(x),
 check_token <- function(x, arg = rlang::caller_arg(x),
                         call = rlang::caller_env()) {
   rlang::check_string(x, arg = arg, call = call)
-  if (!grepl("^[A-Za-z0-9_+.-]+$", x)) {
+  if (!grepl("^[A-Za-z0-9][A-Za-z0-9_+.-]*$", x)) {
     cli::cli_abort(
       c(
         "{.arg {arg}} must be a single clean token.",
-        "x" = "{.val {x}} contains whitespace or shell characters.",
+        "x" = "{.val {x}} contains whitespace or shell characters,
+               or does not start with a letter or digit.",
         "i" = "Allowed: letters, digits, and {.code _ + . -}."
       ),
       call = call

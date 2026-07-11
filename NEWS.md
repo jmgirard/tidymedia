@@ -1,3 +1,35 @@
+# tidymedia (development version)
+
+## Safe execution (M06)
+
+* Pipelines are now executed as argument vectors (via `system2()`), never
+  through a shell string, so input and output paths containing spaces,
+  quotes, `$`, or backticks are handled correctly. This applies to
+  `ffm_run()`, `ffm_batch()`, and every task verb; `ffm_compile()` still
+  returns the same reproducible command string. The Layer 0 escape hatches
+  (`ffmpeg()`, `ffprobe()`, `mediainfo()`) keep their raw-string interface.
+* Raw output options added with `ffm_output_options()` are tokenized on
+  whitespace at execution time; option values themselves must not contain
+  spaces (they never worked reliably before).
+
+## Breaking changes
+
+* `separate_audio_video()` now stream-copies by default — separation is
+  lossless and fast, but each output container must support the source codec.
+  Use the new `reencode = TRUE` argument for the previous re-encoding
+  behavior.
+* `ffm_codec()` and `ffm_pixel_format()` now reject values that are not a
+  single clean token (no whitespace or shell metacharacters).
+
+## Bug fixes
+
+* An explicit `ffm_map()` on a multi-input pipeline (e.g. `ffm_hstack()`) is
+  now emitted alongside the automatic `-map "[vout]"` instead of being
+  silently ignored, so e.g. `ffm_map(p, "0:a")` keeps the first input's audio
+  next to the stacked video.
+* Test coverage is measured again: an empty `R/zzz.R` triggered a `covr` bug
+  that silently reported 0% package coverage.
+
 # tidymedia 0.1.0
 
 First tagged release, bringing the metadata, builder, and task-verb work of the

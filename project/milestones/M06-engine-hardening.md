@@ -1,6 +1,6 @@
 # M06: Engine hardening & safe execution
 
-- **Status:** in-progress <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
+- **Status:** review <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
 - **Created:** 2026-07-10
 - **Completed:** —
 
@@ -64,7 +64,7 @@ beyond what the shared assembly path requires.
       validation) — implement or reject with logged decision.
 - [x] T6: Diagnose covr 0% (likely instrumentation/srcref issue); fix and
       verify a real percentage on CI.
-- [ ] T7: `devtools::document()`, NEWS entry (0.1.0.9000+), final check.
+- [x] T7: `devtools::document()`, NEWS entry (0.1.0.9000+), final check.
 
 ## Work log
 
@@ -77,6 +77,8 @@ beyond what the shared assembly path requires.
   hits a covr split_on_line_directives bug (reversed range → NA chunk →
   parse-data crash → silent 0%). Deleted zzz.R; local coverage now 87.7%
   (615 traced expressions, was 7). Upstream covr bug worth reporting.
+- 2026-07-10: T7 done: NEWS (dev version 0.1.0.9000), WORDLIST, check()
+  0/0/0, tests 280/0, spelling clean. All tasks complete → status review.
 
 ## Decisions
 

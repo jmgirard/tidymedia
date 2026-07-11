@@ -16,7 +16,7 @@ lines; all detail lives in `milestones/`, never here.
 | M03 | Task verbs rebuilt on the builder + batch support  | done    | archive/M03-task-verbs.md         |
 | M04 | Metadata layer polish (mediainfo/ffprobe tibbles)  | done    | archive/M04-metadata-layer.md     |
 | M05 | Docs, vignettes, pkgdown, release prep             | done    | archive/M05-docs-release.md       |
-| M06 | Engine hardening & safe execution                  | in-progress | milestones/M06-engine-hardening.md |
+| M06 | Engine hardening & safe execution                  | review  | milestones/M06-engine-hardening.md |
 | M07 | Complete the blessed multi-input verbs             | idea    | milestones/M07-multi-input-verbs.md |
 | M08 | Verification & provenance                          | idea    | milestones/M08-verification-provenance.md |
 | M09 | Research-workflow task verbs                       | idea    | milestones/M09-research-verbs.md  |

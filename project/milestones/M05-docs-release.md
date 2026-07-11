@@ -62,8 +62,9 @@ Tasks sized to one working session or less, ordered by dependency.
       `eval = nzchar(Sys.which(...))` guards. (2026-07-10)
 - [x] T6: Vignette `batch.Rmd` — `ffm_batch` + fan-out verbs, `run = FALSE`
       (binary-free). All three render clean. (2026-07-10)
-- [ ] T7: pkgdown — `_pkgdown.yml` reference index grouped by the three layers +
-      articles; `use_pkgdown_github_pages()` deploy workflow.
+- [x] T7: pkgdown — `_pkgdown.yml` reference grouped by layer; deploy workflow
+      (installs binaries so the metadata article renders). `check_pkgdown()` and
+      `build_site()` clean; workflow strips the internal CLAUDE.md page. (2026-07-10)
 - [ ] T8: Release prep — regenerate README (`build_readme()`), `cran-comments.md`,
       spelling check, NEWS `0.1.0` heading, final `check(cran = TRUE)`.
 
@@ -80,6 +81,8 @@ Append-only; newest last. One line per session: date, what happened, next.
   0 fail, examples run clean. Next: T4 vignettes.
 - 2026-07-10: T4-T6 done — three vignettes (get-started/metadata/batch); all
   render clean; binary chunks eval-guarded. Next: T7 pkgdown.
+- 2026-07-10: T7 done — _pkgdown.yml (layer-grouped reference) + Pages deploy
+  workflow; check_pkgdown/build_site clean. Next: T8 release prep.
 
 ## Decisions
 

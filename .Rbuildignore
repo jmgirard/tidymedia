@@ -7,3 +7,8 @@
 ^\.claude$
 ^CLAUDE\.md$
 ^\.DS_Store$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^cran-comments\.md$
+^\.github/workflows/pkgdown\.yaml$

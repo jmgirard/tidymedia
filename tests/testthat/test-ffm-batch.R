@@ -51,6 +51,37 @@ test_that("ffm_batch() rejects an invalid verify spec type", {
   )
 })
 
+test_that("resolve_batch_verify() replicates a list and maps a function", {
+  jobs <- tibble::tibble(input = c("a", "b"), output = c("x", "y"),
+                         w = c(10, 20))
+  s1 <- resolve_batch_verify(list(width = 320), jobs)
+  expect_length(s1, 2)
+  expect_equal(s1[[1]], list(width = 320))
+  s2 <- resolve_batch_verify(function(w, ...) list(width = w), jobs)
+  expect_equal(s2[[1]], list(width = 10))
+  expect_equal(s2[[2]], list(width = 20))
+})
+
+test_that("resolve_batch_verify() rejects an empty or unnamed spec", {
+  jobs <- tibble::tibble(input = "a", output = "x")
+  expect_error(
+    resolve_batch_verify(function(...) list(), jobs), "non-empty named list"
+  )
+  expect_error(
+    resolve_batch_verify(function(...) list(1, 2), jobs), "non-empty named list"
+  )
+})
+
+test_that("ffm_batch() rejects an empty verify spec before running", {
+  # resolved before any encode, so this aborts without needing ffmpeg
+  jobs <- tibble::tibble(input = "a.mp4", output = "a.mp4")
+  expect_error(
+    ffm_batch(jobs, function(input, output, ...) ffm_dry(input, output),
+              verify = function(...) list()),
+    "non-empty named list"
+  )
+})
+
 test_that("ffm_batch() rejects a non-logical progress flag", {
   jobs <- tibble::tibble(input = "a.mp4", output = "a.mp4")
   expect_error(

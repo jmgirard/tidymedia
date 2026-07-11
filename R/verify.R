@@ -146,9 +146,12 @@ compare_expectations <- function(expected, actual, tolerance = 0.1) {
 # format_check_value() ----------------------------------------------------
 
 # Render a scalar expectation/actual value as a single display string for the
-# report tibble. A length-0 or NA value becomes NA_character_.
+# report tibble. A length-0 or NA value becomes NA_character_. Numerics are
+# formatted without scientific notation so large values (e.g. bit rates) read
+# as plain integers rather than "1e+06".
 format_check_value <- function(x) {
   if (length(x) == 0 || (length(x) == 1 && is.na(x))) return(NA_character_)
+  if (is.numeric(x)) return(format(x, scientific = FALSE, trim = TRUE))
   paste0(as.character(x), collapse = ", ")
 }
 

@@ -3,7 +3,7 @@
 - **Status:** review   <!-- mirror; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- high | normal | low -->
 - **Depends on:** M04, M06   <!-- both done -->
-- **Branch/PR:** m08-verification-provenance   <!-- PR URL once opened -->
+- **Branch/PR:** m08-verification-provenance · https://github.com/jmgirard/tidymedia/pull/9
 
 ## Goal
 
@@ -111,6 +111,10 @@ turning "the command is reproducible" into "the *result* is verified and recorde
   section (`verify_media`, `ffm_manifest`), `document()`; added auditable/
   checksums/keyframe/md to WORDLIST. Full suite 405 pass / 1 skip;
   `devtools::check()` 0 errors / 0 warnings / 0 notes. Status → review.
+- 2026-07-11: Review — draft PR #9; fresh evidence gathered (suite green,
+  check 0/0/0, consistency gate clean). Independent Opus review: no blockers;
+  1 should-fix + 3 nits all fixed on branch (empty-spec batch abort, throwing
+  verify → NA, sci-notation display, resolve_batch_verify CI-safe tests).
 
 ## Decisions
 <!-- milestone-local; promote cross-cutting ones to cairn/DECISIONS.md -->
@@ -125,5 +129,33 @@ turning "the command is reproducible" into "the *result* is verified and recorde
 - Probing is impure; the comparison core is pure and CI-safe (D004). (plan gate)
 
 ## Review
-<!-- filled by /milestone-review: evidence per criterion; consistency-gate
-     results; independent-review findings and their triage -->
+
+_Reviewed 2026-07-11; PR [#9](https://github.com/jmgirard/tidymedia/pull/9)._
+
+**Acceptance criteria (fresh evidence).** All 7 met.
+1. `verify_media()` tidy tibble + tolerance — `test-verify.R` green.
+2. Pure `compare_expectations()` core, CI-safe (pass/fail/tolerance/missing) —
+   green with ffprobe not required.
+3. `ffm_run(verify=)` aborts / returns normally — green (execution gated).
+4. `ffm_batch(verify=)` `verified` column, never aborts — green.
+5. `ffm_manifest()` (+ checksums, CSV) — green (assembly CI-safe, capture gated).
+6. `ffm_batch(progress=)` completes non-interactively — green.
+7. Full suite 405+ pass / 1 pre-existing skip; `devtools::check()` 0/0/0;
+   `man/` regenerated; NEWS + `_pkgdown.yml` updated.
+
+**Consistency gate.** `document()` no diff; README.Rmd untouched (in sync);
+`pkgdown::check_pkgdown()` clean; NEWS entry present; no new top-level files
+(check() 0 notes). NEWS heading keeps the `(M08)` tag to match the existing
+dev-NEWS sections (M01–M07) — user-facing milestone tags are consolidated out
+at release (M10), per repo precedent.
+
+**Independent review (fresh-context Opus).** No blockers; all criteria met.
+Findings triaged — all fixed on the branch:
+- (should-fix) empty `verify` spec from a *function* aborted the batch,
+  breaking the never-abort contract → specs now resolved before running and an
+  empty/unnamed spec is rejected fast with a clear message.
+- (nit) a throwing per-job verify aborted the batch → wrapped in `tryCatch`,
+  recorded as `NA`.
+- (nit) large numbers rendered as `1e+06` in the report → `format_check_value()`
+  now formats numerics without scientific notation.
+- (nit) `resolve_batch_verify` lacked direct CI-safe tests → added.

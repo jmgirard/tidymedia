@@ -67,6 +67,13 @@ test_that("compare_expectations() renders expected/actual as character columns",
   expect_equal(res$actual, "321")
 })
 
+test_that("compare_expectations() renders large numbers without sci notation", {
+  res <- compare_expectations(list(bit_rate = 1000000), list(bit_rate = 1000000))
+  expect_equal(res$expected, "1000000")
+  expect_equal(res$actual, "1000000")
+  expect_true(res$pass)
+})
+
 # verify_media() — validation (CI-safe) -----------------------------------------
 
 test_that("verify_media() errors when no properties are checked", {

@@ -113,6 +113,9 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
   out$command <- commands
 
   if (run) {
+    # Resolve the per-job verify specs up front (before any encode runs) so an
+    # invalid or empty spec fails fast rather than after wasting the batch.
+    specs <- if (!is.null(verify)) resolve_batch_verify(verify, jobs, ...)
     # Execute each pipeline's argument vector (shell-free, hostile-path-safe;
     # M06) rather than the display string. ffm_run()'s result carries a
     # "status" attribute on a non-zero exit; a hard failure throws.
@@ -129,17 +132,18 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
       vapply(pipelines, run_one, logical(1))
     }
 
-    # Verification records outcomes (never aborts): resolve one spec per job
-    # (a shared named list, or .f-style from the job columns) and collapse each
-    # job's checks to a single logical, NA for jobs that did not run cleanly.
-    if (!is.null(verify)) {
-      specs <- resolve_batch_verify(verify, jobs, ...)
+    # Verification records outcomes (never aborts): collapse each job's checks
+    # to a single logical, NA for jobs that did not run cleanly. A verify error
+    # (e.g. an output that vanished) is recorded as NA rather than aborting.
+    if (!is.null(specs)) {
       out$verified <- vapply(seq_along(pipelines), function(i) {
         if (!isTRUE(out$success[[i]])) return(NA)
-        report <- do.call(
-          verify_media, c(list(file = pipelines[[i]]$output), specs[[i]])
+        tryCatch(
+          all(do.call(
+            verify_media, c(list(file = pipelines[[i]]$output), specs[[i]])
+          )$pass),
+          error = function(e) NA
         )
-        all(report$pass)
       }, logical(1))
     }
 
@@ -185,13 +189,19 @@ resolve_batch_verify <- function(verify, jobs, ...) {
   } else {
     rep(list(verify), nrow(jobs))
   }
+  # Each spec must be a non-empty named list; an empty spec verifies nothing and
+  # would otherwise abort inside verify_media(), breaking the never-abort
+  # contract, so reject it here (before running) with a clear message.
   ok <- vapply(
     specs,
-    function(s) rlang::is_list(s) && (length(s) == 0 || rlang::is_named(s)),
+    function(s) rlang::is_list(s) && length(s) > 0 && rlang::is_named(s),
     logical(1)
   )
   if (!all(ok)) {
-    cli::cli_abort("Each {.arg verify} spec must be a named list.")
+    cli::cli_abort(c(
+      "Each {.arg verify} spec must be a non-empty named list of properties.",
+      "x" = "Job{?s} {.val {which(!ok)}} produced an invalid spec."
+    ))
   }
   specs
 }

@@ -1,0 +1,348 @@
+# tidymedia
+
+The goal of **tidymedia** is to provide tools for easily working with
+media (e.g., image, audio, and video) files within R and the tidyverse.
+It wraps [FFmpeg](https://ffmpeg.org/) and
+[MediaInfo](https://mediaarea.net/en/MediaInfo) for **reproducible media
+preprocessing** — batch trimming, cropping, format standardization, and
+metadata extraction as tibbles.
+
+## Installation
+
+You can install the development version from
+[GitHub](https://github.com/) with:
+
+``` r
+
+# install.packages("devtools")
+devtools::install_github("jmgirard/tidymedia")
+```
+
+### Dependencies
+
+#### 1. MediaInfo
+
+**tidymedia** uses [MediaInfo](https://mediaarea.net/en/MediaInfo) to
+query information about media files. If you would like to use these
+functions, you will need to install the command line interface (CLI)
+version of this program. Links and instructions for doing so are
+available [here](https://mediaarea.net/en/MediaInfo/Download). Below are
+instructions for several popular platforms.
+
+**Debian/Ubuntu**
+
+1.  Enter this code into your terminal:  
+    `sudo apt-get install mediainfo`
+
+**Windows**
+
+1.  Download the appropriate CLI .zip file from:  
+    <https://mediaarea.net/en/MediaInfo/Download/Windows>
+2.  Extract (or copy) the contents of this .zip file to a folder on your
+    computer such as:  
+    `C:/Program Files/MediaInfo`
+3.  Run the following code in R (changing the path to match Step 2):  
+    `tidymedia::set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")`
+
+**Mac**
+
+1.  Download the appropriate CLI .dmg file from:  
+    <https://mediaarea.net/en/MediaInfo/Download/Mac_OS>
+2.  Open the .dmg file and drag the program icon to the Applications
+    folder
+
+#### 2. FFmpeg
+
+**tidymedia** uses [FFmpeg](https://ffmpeg.org/) to encode media files.
+If you would like to use these functions, you will need to install the
+command line interface (CLI) version of this program. Links and
+instructions for doing so are available
+[here](https://ffmpeg.org/download.html). Below are instructions for
+several popular platforms.
+
+**Debian/Ubuntu**
+
+1.  Enter this code into your terminal:  
+    `sudo apt-get install ffmpeg`
+
+**Windows**
+
+1.  Install the `tidymedia` package in R.
+2.  Run
+    [`tidymedia::install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
+    in R.
+
+**macOS Homebrew Install**
+
+1.  Open the macOS Terminal or Linux shell prompt.
+2.  Install [Homebrew](https://brew.sh/) by entering this code into your
+    terminal:  
+    `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"`
+3.  Enter this code into your terminal:  
+    `brew install ffmpeg`
+
+**macOS Manual Install**
+
+1.  Download the latest snapshot version from:  
+    <https://evermeet.cx/ffmpeg/get>
+2.  Extract the contents of the downloaded [.7z](https://www.7-zip.org/)
+    file
+3.  Drag the extracted contents to the Applications folder
+
+## Examples
+
+``` r
+
+library(tidymedia)
+```
+
+The examples below use a tiny sample clip that ships with the package:
+
+``` r
+
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+```
+
+### Build reproducible FFmpeg commands
+
+The `ffm_*` builder assembles a command step by step. Nothing runs until
+you ask it to:
+[`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md)
+returns the exact FFmpeg command as a string, and
+[`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md)
+executes it. See
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+for the full tour.
+
+``` r
+
+ffm(video, "output.mp4") |>
+  ffm_trim(start = 1, end = 5) |>
+  ffm_crop(width = 160, height = 120) |>
+  ffm_codec(video = "libx264") |>
+  ffm_drop(streams = "audio") |>
+  ffm_compile()
+#> [1] "-y -i \"/opt/homebrew/lib/R/4.6/site-library/tidymedia/extdata/sample.mp4\" -vf \"trim=start=1:end=5,setpts=PTS-STARTPTS,crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -an \"output.mp4\""
+```
+
+Common tasks have their own verbs (Layer 2). Pass `run = FALSE` to see
+the command without executing it:
+
+``` r
+
+extract_audio(video, "audio.aac", run = FALSE)
+#> [1] "-y -i \"/opt/homebrew/lib/R/4.6/site-library/tidymedia/extdata/sample.mp4\" -codec:a copy -vn \"audio.aac\""
+```
+
+### Read metadata as tibbles
+
+[`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
+returns container- and stream-level metadata from FFprobe as tibbles,
+keyed by a leading `file` column so a whole batch stacks cleanly:
+
+``` r
+
+probe_all(video)$streams
+#> # A tibble: 2 × 69
+#>   file      index codec_name codec_long_name profile codec_type codec_tag_string
+#>   <chr>     <int> <chr>      <chr>           <chr>   <chr>      <chr>           
+#> 1 /opt/hom…     0 h264       H.264 / AVC / … High    video      avc1            
+#> 2 /opt/hom…     1 aac        AAC (Advanced … LC      audio      mp4a            
+#> # ℹ 62 more variables: codec_tag <chr>, mime_codec_string <chr>, width <int>,
+#> #   height <int>, coded_width <int>, coded_height <int>, has_b_frames <int>,
+#> #   sample_aspect_ratio <chr>, display_aspect_ratio <chr>, pix_fmt <chr>,
+#> #   level <int>, color_range <chr>, color_space <chr>, color_transfer <chr>,
+#> #   color_primaries <chr>, chroma_location <chr>, field_order <chr>,
+#> #   is_avc <chr>, nal_length_size <int>, id <chr>, r_frame_rate <chr>,
+#> #   avg_frame_rate <chr>, time_base <chr>, start_pts <int>, start_time <dbl>, …
+```
+
+MediaInfo is available too, via
+[`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md),
+[`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md),
+and the `get_*()` shortcuts (see
+[`vignette("metadata")`](https://jmgirard.github.io/tidymedia/articles/metadata.md)):
+
+``` r
+
+get_duration(video, unit = "sec")
+#> [1] 1
+get_width(video)
+#> [1] 320
+```
+
+### Query FFmpeg’s capabilities
+
+``` r
+
+head(get_codecs())
+#> # A tibble: 6 × 8
+#>   name       details           type  decoding encoding intraframe lossy lossless
+#>   <chr>      <chr>             <fct> <lgl>    <lgl>    <lgl>      <lgl> <lgl>   
+#> 1 012v       Uncompressed 4:2… Video TRUE     FALSE    TRUE       FALSE TRUE    
+#> 2 4xm        4X Movie          Video TRUE     FALSE    FALSE      TRUE  FALSE   
+#> 3 8bps       QuickTime 8BPS v… Video TRUE     FALSE    TRUE       FALSE TRUE    
+#> 4 a64_multi  Multicolor chars… Video FALSE    TRUE     TRUE       TRUE  FALSE   
+#> 5 a64_multi5 Multicolor chars… Video FALSE    TRUE     TRUE       TRUE  FALSE   
+#> 6 aasc       Autodesk RLE      Video TRUE     FALSE    FALSE      FALSE TRUE
+```
+
+## Code of Conduct
+
+Please note that the **tidymedia** project is released with a
+[Contributor Code of
+Conduct](https://contributor-covenant.org/version/2/0/CODE_OF_CONDUCT.html).
+By contributing to this project, you agree to abide by its terms.
+
+# Package index
+
+## Layer 0: escape hatches
+
+Pass a raw argument string straight to the command-line tools. Use these
+when you need something tidymedia does not wrap.
+
+- [`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)
+  : Run a raw FFmpeg command
+- [`ffprobe()`](https://jmgirard.github.io/tidymedia/reference/ffprobe.md)
+  : Send a command to the FFprobe program
+- [`mediainfo()`](https://jmgirard.github.io/tidymedia/reference/mediainfo.md)
+  : Run MediaInfo CLI
+
+## Layer 1: the pipeline builder
+
+Assemble a reproducible FFmpeg command step by step, then compile or run
+it.
+
+- [`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md) :
+  Specify Files in an FFmpeg Pipeline
+- [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md)
+  : Specify Files in an FFmpeg Pipeline
+- [`ffm_trim()`](https://jmgirard.github.io/tidymedia/reference/ffm_trim.md)
+  : Trim the Duration of the FFmpeg Pipeline
+- [`ffm_seek()`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md)
+  : Cut a Continuous Section from an FFmpeg Pipeline by Seeking
+- [`ffm_drop()`](https://jmgirard.github.io/tidymedia/reference/ffm_drop.md)
+  : Drop Steams from an FFmpeg Pipeline
+- [`ffm_crop()`](https://jmgirard.github.io/tidymedia/reference/ffm_crop.md)
+  : Crop Frames in an FFmpeg Pipeline
+- [`ffm_scale()`](https://jmgirard.github.io/tidymedia/reference/ffm_scale.md)
+  : Scale (Resize) Frames in a FFmpeg Pipeline
+- [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md)
+  : Set Codecs in an FFmpeg Pipeline
+- [`ffm_map()`](https://jmgirard.github.io/tidymedia/reference/ffm_map.md)
+  : Set the Stream Mapping in an FFmpeg Pipeline
+- [`ffm_copy()`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md)
+  : Copy the codecs and map all streams
+- [`ffm_pixel_format()`](https://jmgirard.github.io/tidymedia/reference/ffm_pixel_format.md)
+  : Set the Pixel Format in an FFmpeg Pipeline
+- [`ffm_hstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md)
+  : Horizontally Stack Multiple Videos in an FFmpeg Pipeline
+- [`ffm_concat()`](https://jmgirard.github.io/tidymedia/reference/ffm_concat.md)
+  : Concatenate Multiple Inputs in an FFmpeg Pipeline
+- [`ffm_drawbox()`](https://jmgirard.github.io/tidymedia/reference/ffm_drawbox.md)
+  : Draw a Colored Box on the Videos in an FFmpeg Pipeline
+- [`ffm_output_options()`](https://jmgirard.github.io/tidymedia/reference/ffm_output_options.md)
+  : Add Raw Output Options to an FFmpeg Pipeline
+- [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md)
+  : Compile the tidymedia pipeline into FFmpeg command
+- [`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md)
+  : Run the FFmpeg Pipeline
+- [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+  : Run an FFmpeg Pipeline Over Many Files
+- [`print(`*`<tidymedia_ffm>`*`)`](https://jmgirard.github.io/tidymedia/reference/print.tidymedia_ffm.md)
+  : Print an FFmpeg pipeline
+
+## Layer 2: task verbs
+
+Thin wrappers over the builder for common preprocessing jobs.
+
+- [`extract_frame()`](https://jmgirard.github.io/tidymedia/reference/extract_frame.md)
+  : Extract a single frame from a video
+- [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
+  : Extract the audio stream from a media file
+- [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+  : Split a media file into separate audio and video files
+- [`audio_as_mp3()`](https://jmgirard.github.io/tidymedia/reference/audio_as_mp3.md)
+  : Extract a media file's audio as an MP3
+- [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md)
+  : Crop a video to a rectangular region
+- [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
+  : Re-encode a video for web playback
+- [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
+  : Segment Video
+- [`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md)
+  : Combine video files using the concat demuxer
+
+## Media metadata
+
+Read container and stream metadata as tibbles, ready for the tidyverse.
+
+- [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
+  : Look up information about media files using FFprobe
+- [`probe_container()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md)
+  [`probe_streams()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md)
+  [`probe_video()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md)
+  [`probe_audio()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md)
+  : Shortcut functions for probing specific information
+- [`mediainfo_parameter()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_parameter.md)
+  : Query a single parameter from a single MediaInfo section
+- [`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md)
+  : Query multiple parameters from a single MediaInfo section
+- [`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md)
+  : Describe media files by applying a MediaInfo template
+- [`mediainfo_summary()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_summary.md)
+  : Describe media files by applying a MediaInfo template
+- [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md)
+  : Get the duration of a media file
+- [`get_framerate()`](https://jmgirard.github.io/tidymedia/reference/get_framerate.md)
+  : Get the video frame rate of a media file
+- [`get_width()`](https://jmgirard.github.io/tidymedia/reference/get_width.md)
+  : Get the video width of a media file
+- [`get_height()`](https://jmgirard.github.io/tidymedia/reference/get_height.md)
+  : Get the video height of a media file
+- [`get_samplingrate()`](https://jmgirard.github.io/tidymedia/reference/get_samplingrate.md)
+  : Get the audio sampling rate of a media file
+- [`convert_fractions()`](https://jmgirard.github.io/tidymedia/reference/convert_fractions.md)
+  : Convert string fractions to doubles
+
+## FFmpeg capabilities
+
+Discover the codecs and encoders available in your FFmpeg build.
+
+- [`get_codecs()`](https://jmgirard.github.io/tidymedia/reference/get_codecs.md)
+  : Get a data frame of all installed codecs
+- [`get_encoders()`](https://jmgirard.github.io/tidymedia/reference/get_encoders.md)
+  : Get a data frame of all installed encoders
+
+## Program management
+
+Locate, configure, and install the FFmpeg and MediaInfo binaries.
+
+- [`find_program()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
+  [`find_mediainfo()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
+  [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
+  [`find_ffprobe()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
+  [`find_ffplay()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
+  : Find the location of a dependency program
+- [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+  [`set_mediainfo()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+  [`set_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+  [`set_ffprobe()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+  [`set_ffplay()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+  : Set the location of a dependency program
+- [`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
+  : Install FFmpeg on Windows
+
+## Utilities
+
+- [`pad_integers()`](https://jmgirard.github.io/tidymedia/reference/pad_integers.md)
+  : Pad Integers
+
+# Articles
+
+### Articles
+
+- [Media metadata as
+  tibbles](https://jmgirard.github.io/tidymedia/articles/metadata.md):
+- [Batch
+  processing](https://jmgirard.github.io/tidymedia/articles/batch.md):

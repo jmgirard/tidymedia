@@ -8,7 +8,7 @@ _Last hygiene check: 2026-07-11_
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M08 | Verification & provenance | planned | M04, M06 | normal | milestones/M08-verification-provenance.md |
+| M08 | Verification & provenance | in-progress | M04, M06 | normal | milestones/M08-verification-provenance.md |
 | M01 | Infrastructure modernization (testthat, CI, cli) | done | — | — | milestones/archive/M01-infrastructure.md |
 | M02 | ffm builder engine rework (real command model) | done | M01 | — | milestones/archive/M02-ffm-engine.md |
 | M03 | Task verbs rebuilt on the builder + batch support | done | M02 | — | milestones/archive/M03-task-verbs.md |

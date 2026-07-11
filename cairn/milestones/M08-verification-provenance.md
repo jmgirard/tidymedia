@@ -1,9 +1,9 @@
 # M08: Verification & provenance
 
-- **Status:** planned   <!-- mirror; cairn/ROADMAP.md is the authority -->
+- **Status:** in-progress   <!-- mirror; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- high | normal | low -->
 - **Depends on:** M04, M06   <!-- both done -->
-- **Branch/PR:** —   <!-- m08-verification-provenance; PR URL once opened -->
+- **Branch/PR:** m08-verification-provenance   <!-- PR URL once opened -->
 
 ## Goal
 

@@ -4,7 +4,7 @@
 \alias{ffm_batch}
 \title{Run an FFmpeg Pipeline Over Many Files}
 \usage{
-ffm_batch(jobs, .f, ..., run = TRUE, parallel = FALSE)
+ffm_batch(jobs, .f, ..., run = TRUE, parallel = FALSE, verify = NULL)
 }
 \arguments{
 \item{jobs}{A data frame with one row per job. Its column names are the
@@ -21,11 +21,21 @@ default) or only compile them for inspection (\code{FALSE}, a dry run).}
 \item{parallel}{A logical: map over jobs in parallel with \pkg{furrr}
 (\code{TRUE}) or sequentially (\code{FALSE}, default). Parallelism follows
 the \code{\link[future:plan]{future}} plan the caller has set.}
+
+\item{verify}{An optional output check applied to each job (only when
+\code{run = TRUE}). Either a named list of expected properties (the same
+spec for every job, e.g. \code{list(width = 1920)}) or a function of the
+job columns (called \code{\link[purrr:pmap]{pmap}}-style, like \code{.f})
+that returns such a list per job. Each job's output is passed to
+\code{\link{verify_media}}; unlike \code{\link{ffm_run}}, a failed check is
+\emph{recorded}, not aborted. Adds a logical \code{verified} column (all
+checks passed), \code{NA} for jobs that did not run successfully.}
 }
 \value{
 \code{jobs} as a \link[tibble:tibble-package]{tibble} with an added
 \code{command} column (the compiled FFmpeg command for each job) and, when
-\code{run = TRUE}, a logical \code{success} column.
+\code{run = TRUE}, a logical \code{success} column (plus a \code{verified}
+column when \code{verify} is supplied).
 }
 \description{
 Apply a pipeline-building function to every row of a jobs table and compile
@@ -55,7 +65,8 @@ ffm_batch(jobs, run = FALSE, .f = function(input, output, ...) {
 })
 }
 \seealso{
-\code{\link{segment_video}}, which is built on \code{ffm_batch()}.
+\code{\link{segment_video}}, which is built on \code{ffm_batch()};
+\code{\link{verify_media}} for the verification spec.
 
 Other builder functions:
 \code{\link[=ffm]{ffm()}},

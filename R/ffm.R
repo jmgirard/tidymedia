@@ -1066,6 +1066,11 @@ ffm_groups <- function(object) {
 #' 
 #' @param object An ffmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
+#' @param verify An optional named list of expected output properties, passed to
+#'   \code{\link{verify_media}} (e.g. \code{list(width = 1920, video_codec =
+#'   "h264")}). After a successful run the output is probed and, if any check
+#'   fails, \code{ffm_run()} aborts with the failed checks (mirroring how it
+#'   aborts on a non-zero FFmpeg exit). \code{NULL} (default) skips verification.
 #' @return A character vector of FFmpeg's standard output (with a
 #'   \code{status} attribute on a non-zero exit), invisibly; called for its
 #'   side effect of writing the output file. The pipeline is executed as an
@@ -1078,10 +1083,13 @@ ffm_groups <- function(object) {
 #' ffm(video, out) |>
 #'   ffm_scale(width = 160, height = 120) |>
 #'   ffm_codec(video = "libx264") |>
-#'   ffm_run()
+#'   ffm_run(verify = list(width = 160, height = 120))
 #' @export
-ffm_run <- function(object) {
+ffm_run <- function(object, verify = NULL) {
   check_ffm(object)
+  if (!is.null(verify) && !(rlang::is_list(verify) && rlang::is_named(verify))) {
+    cli::cli_abort("{.arg verify} must be a named list of expected properties.")
+  }
   # Execute the argument vector directly (one shell-free token per argument),
   # so paths containing spaces, quotes, `$`, or backticks reach FFmpeg
   # verbatim (M06). stdin is redirected from an empty input so FFmpeg cannot
@@ -1097,7 +1105,31 @@ ffm_run <- function(object) {
       "i" = "The failing command was: {.code ffmpeg {ffm_compile(object)}}"
     ))
   }
+  if (!is.null(verify)) verify_output(object$output, verify)
   invisible(out)
+}
+
+# verify_output() ---------------------------------------------------------
+
+# Probe a just-written output against a `verify` spec (named list) and abort
+# with the failing checks if any do not pass. Shared by ffm_run(verify=); the
+# batch path records outcomes instead of aborting (see ffm_batch()).
+verify_output <- function(file, verify, call = rlang::caller_env()) {
+  report <- do.call(verify_media, c(list(file = file), verify))
+  failed <- report[!report$pass, , drop = FALSE]
+  if (nrow(failed) == 0) return(invisible(report))
+  bullets <- rlang::set_names(
+    sprintf(
+      "%s: expected %s, got %s",
+      failed$check, failed$expected,
+      ifelse(is.na(failed$actual), "NA", failed$actual)
+    ),
+    rep("x", nrow(failed))
+  )
+  cli::cli_abort(
+    c("Output failed {nrow(failed)} verification check{?s}.", bullets),
+    call = call
+  )
 }
 
 # ffm_finish() -----------------------------------------------------------------

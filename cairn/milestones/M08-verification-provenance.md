@@ -65,7 +65,7 @@ turning "the command is reproducible" into "the *result* is verified and recorde
       `verify_media()`, which probes the output via the M04 layer
       (`probe_container`/`probe_video`/`probe_audio`) and assembles the tibble.
       New `@family verification functions`.
-- [ ] T2: Wire verification in. `ffm_run(verify = NULL)`: after a successful
+- [x] T2: Wire verification in. `ffm_run(verify = NULL)`: after a successful
       run, resolve the spec against `object$output` and abort on any failed
       check. `ffm_batch(verify = NULL)`: `verify` is a named list (all jobs) or
       a function of the job columns (pmap-style, mirroring `.f`); collapse each
@@ -96,6 +96,9 @@ turning "the command is reproducible" into "the *result* is verified and recorde
 - 2026-07-11: T1 done — `R/verify.R` with pure `compare_expectations()` core +
   `verify_media()`; `test-verify.R` (28 tests, pure ones CI-safe); pkgdown
   "Verification & provenance" section added.
+- 2026-07-11: T2 done — `ffm_run(verify=)` aborts on a failed check via shared
+  `verify_output()`; `ffm_batch(verify=)` records a `verified` column (list or
+  job-column function spec) without aborting. Tests green (verify 31, batch 22).
 
 ## Decisions
 <!-- milestone-local; promote cross-cutting ones to cairn/DECISIONS.md -->

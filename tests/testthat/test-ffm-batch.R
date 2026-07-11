@@ -32,6 +32,25 @@ test_that("ffm_batch() passes columns to .f by name and forwards ...", {
   expect_match(res$command[[1]], "-ss 1 -to 2", fixed = TRUE)
 })
 
+test_that("ffm_batch() adds no verified column on a dry run", {
+  jobs <- tibble::tibble(input = "a.mp4", output = "a.mp4")
+  res <- ffm_batch(
+    jobs,
+    function(input, output, ...) ffm_codec(ffm_dry(input, output), audio = "copy"),
+    run = FALSE, verify = list(width = 320)
+  )
+  expect_false("verified" %in% names(res))
+})
+
+test_that("ffm_batch() rejects an invalid verify spec type", {
+  jobs <- tibble::tibble(input = "a.mp4", output = "a.mp4")
+  expect_error(
+    ffm_batch(jobs, function(input, output, ...) ffm_dry(input, output),
+              run = FALSE, verify = "width"),
+    "named list or a function"
+  )
+})
+
 test_that("ffm_batch() rejects a non-data-frame or empty jobs table", {
   expect_error(ffm_batch(list(a = 1), function(...) NULL), "data frame")
   expect_error(
@@ -60,6 +79,52 @@ test_that("ffm_batch() runs each job and reports success (binary-gated)", {
   })
   expect_true(all(res$success))
   expect_true(all(file.exists(res$output)))
+})
+
+# M08: verification wired into the batch (binary-gated) --------------------------
+
+test_that("ffm_batch(verify =) adds a verified column without aborting", {
+  skip_if_no_ffmpeg()
+  a <- make_test_video()
+  b <- make_test_video()
+  out_a <- withr::local_tempfile(fileext = ".mp4")
+  out_b <- withr::local_tempfile(fileext = ".mp4")
+  jobs <- tibble::tibble(input = c(a, b), output = c(out_a, out_b))
+  res <- ffm_batch(jobs, function(input, output, ...) {
+    ffm_files(input, output) |>
+      ffm_scale(width = 32, height = 32) |>
+      ffm_codec(video = "libx264")
+  }, verify = list(width = 32, height = 32))
+  expect_true("verified" %in% names(res))
+  expect_true(all(res$verified))
+  expect_true(all(res$success))
+})
+
+test_that("ffm_batch(verify =) records FALSE for a mismatch, no abort", {
+  skip_if_no_ffmpeg()
+  a <- make_test_video()
+  out_a <- withr::local_tempfile(fileext = ".mp4")
+  jobs <- tibble::tibble(input = a, output = out_a)
+  res <- ffm_batch(jobs, function(input, output, ...) {
+    ffm_files(input, output) |>
+      ffm_scale(width = 32, height = 32) |>
+      ffm_codec(video = "libx264")
+  }, verify = list(width = 999))
+  expect_true(res$success[[1]])
+  expect_false(res$verified[[1]])
+})
+
+test_that("ffm_batch(verify =) accepts a function of the job columns", {
+  skip_if_no_ffmpeg()
+  a <- make_test_video()
+  out_a <- withr::local_tempfile(fileext = ".mp4")
+  jobs <- tibble::tibble(input = a, output = out_a, w = 32)
+  res <- ffm_batch(jobs, function(input, output, w, ...) {
+    ffm_files(input, output) |>
+      ffm_scale(width = w, height = w) |>
+      ffm_codec(video = "libx264")
+  }, verify = function(w, ...) list(width = w, height = w))
+  expect_true(res$verified[[1]])
 })
 
 # M06: safe execution with hostile paths (binary-gated) --------------------------

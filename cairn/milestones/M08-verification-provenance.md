@@ -70,7 +70,7 @@ turning "the command is reproducible" into "the *result* is verified and recorde
       check. `ffm_batch(verify = NULL)`: `verify` is a named list (all jobs) or
       a function of the job columns (pmap-style, mirroring `.f`); collapse each
       job's checks to a `verified` logical, recorded like `success`.
-- [ ] T3: Provenance manifest. Internal `tool_versions()` (parse `-version`),
+- [x] T3: Provenance manifest. Internal `tool_versions()` (parse `-version`),
       per-job capture from the pipeline objects (paths from `$input`/`$output`),
       optional `tools::md5sum()` checksums. `ffm_batch(manifest = FALSE,
       checksums = FALSE)` attaches the manifest; `ffm_manifest(x, path = NULL)`
@@ -99,6 +99,10 @@ turning "the command is reproducible" into "the *result* is verified and recorde
 - 2026-07-11: T2 done — `ffm_run(verify=)` aborts on a failed check via shared
   `verify_output()`; `ffm_batch(verify=)` records a `verified` column (list or
   job-column function spec) without aborting. Tests green (verify 31, batch 22).
+- 2026-07-11: T3 done — `R/ffm_manifest.R` (`ffm_manifest()` + internal
+  `build_manifest`/`tool_versions`/`parse_version_line`); `ffm_batch(manifest=,
+  checksums=)` attaches an opt-in manifest. Assembly/checksum/parse tests
+  CI-safe, version capture gated. `test-ffm-manifest.R` (24 tests).
 
 ## Decisions
 <!-- milestone-local; promote cross-cutting ones to cairn/DECISIONS.md -->

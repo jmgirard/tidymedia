@@ -68,5 +68,8 @@ verify_media(video, width = 320, height = 240, video_codec = "h264")
 }
 \seealso{
 \code{\link[=ffm_run]{ffm_run()}} and \code{\link[=ffm_batch]{ffm_batch()}}, which accept a \verb{verify =} spec.
+
+Other verification functions:
+\code{\link[=ffm_manifest]{ffm_manifest()}}
 }
 \concept{verification functions}

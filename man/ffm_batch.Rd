@@ -4,7 +4,16 @@
 \alias{ffm_batch}
 \title{Run an FFmpeg Pipeline Over Many Files}
 \usage{
-ffm_batch(jobs, .f, ..., run = TRUE, parallel = FALSE, verify = NULL)
+ffm_batch(
+  jobs,
+  .f,
+  ...,
+  run = TRUE,
+  parallel = FALSE,
+  verify = NULL,
+  manifest = FALSE,
+  checksums = FALSE
+)
 }
 \arguments{
 \item{jobs}{A data frame with one row per job. Its column names are the
@@ -30,12 +39,23 @@ that returns such a list per job. Each job's output is passed to
 \code{\link{verify_media}}; unlike \code{\link{ffm_run}}, a failed check is
 \emph{recorded}, not aborted. Adds a logical \code{verified} column (all
 checks passed), \code{NA} for jobs that did not run successfully.}
+
+\item{manifest}{A logical: when \code{TRUE} (and \code{run = TRUE}), record a
+provenance manifest (per-job command, FFmpeg/FFprobe versions, timestamp,
+output size) and attach it to the result, readable with
+\code{\link{ffm_manifest}}. (default = \code{FALSE})}
+
+\item{checksums}{A logical: when \code{TRUE}, the manifest also captures md5
+checksums of each job's input(s) and output. Ignored unless
+\code{manifest = TRUE}. (default = \code{FALSE})}
 }
 \value{
 \code{jobs} as a \link[tibble:tibble-package]{tibble} with an added
 \code{command} column (the compiled FFmpeg command for each job) and, when
 \code{run = TRUE}, a logical \code{success} column (plus a \code{verified}
-column when \code{verify} is supplied).
+column when \code{verify} is supplied). When \code{manifest = TRUE} a
+provenance manifest is attached as an attribute; read it with
+\code{\link{ffm_manifest}}.
 }
 \description{
 Apply a pipeline-building function to every row of a jobs table and compile
@@ -66,7 +86,8 @@ ffm_batch(jobs, run = FALSE, .f = function(input, output, ...) {
 }
 \seealso{
 \code{\link{segment_video}}, which is built on \code{ffm_batch()};
-\code{\link{verify_media}} for the verification spec.
+\code{\link{verify_media}} for the verification spec and
+\code{\link{ffm_manifest}} for the provenance manifest.
 
 Other builder functions:
 \code{\link[=ffm]{ffm()}},

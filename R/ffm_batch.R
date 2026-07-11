@@ -32,12 +32,22 @@
 #'   \code{\link{verify_media}}; unlike \code{\link{ffm_run}}, a failed check is
 #'   \emph{recorded}, not aborted. Adds a logical \code{verified} column (all
 #'   checks passed), \code{NA} for jobs that did not run successfully.
+#' @param manifest A logical: when \code{TRUE} (and \code{run = TRUE}), record a
+#'   provenance manifest (per-job command, FFmpeg/FFprobe versions, timestamp,
+#'   output size) and attach it to the result, readable with
+#'   \code{\link{ffm_manifest}}. (default = \code{FALSE})
+#' @param checksums A logical: when \code{TRUE}, the manifest also captures md5
+#'   checksums of each job's input(s) and output. Ignored unless
+#'   \code{manifest = TRUE}. (default = \code{FALSE})
 #' @return \code{jobs} as a [tibble][tibble::tibble-package] with an added
 #'   \code{command} column (the compiled FFmpeg command for each job) and, when
 #'   \code{run = TRUE}, a logical \code{success} column (plus a \code{verified}
-#'   column when \code{verify} is supplied).
+#'   column when \code{verify} is supplied). When \code{manifest = TRUE} a
+#'   provenance manifest is attached as an attribute; read it with
+#'   \code{\link{ffm_manifest}}.
 #' @seealso \code{\link{segment_video}}, which is built on \code{ffm_batch()};
-#'   \code{\link{verify_media}} for the verification spec.
+#'   \code{\link{verify_media}} for the verification spec and
+#'   \code{\link{ffm_manifest}} for the provenance manifest.
 #' @family builder functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -53,7 +63,7 @@
 #' })
 #' @export
 ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
-                      verify = NULL) {
+                      verify = NULL, manifest = FALSE, checksums = FALSE) {
 
   if (!is.data.frame(jobs)) {
     cli::cli_abort("{.arg jobs} must be a data frame with one row per job.")
@@ -66,6 +76,8 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
   }
   rlang::check_bool(run)
   rlang::check_bool(parallel)
+  rlang::check_bool(manifest)
+  rlang::check_bool(checksums)
   if (!is.null(verify) && !is.function(verify) &&
       !(rlang::is_list(verify) && rlang::is_named(verify))) {
     cli::cli_abort(
@@ -121,6 +133,14 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
         )
         all(report$pass)
       }, logical(1))
+    }
+
+    # Provenance manifest (opt-in): capture tool versions once and assemble a
+    # per-job record, attached to the result for ffm_manifest() to read.
+    if (manifest) {
+      attr(out, "manifest") <- build_manifest(
+        pipelines, out$command, tool_versions(), checksums
+      )
     }
   }
 

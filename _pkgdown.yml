@@ -57,6 +57,7 @@ reference:
     reproducibility manifest for a batch run.
   contents:
   - verify_media
+  - ffm_manifest
 - title: "Media metadata"
   desc: >
     Read container and stream metadata as tibbles, ready for the tidyverse.

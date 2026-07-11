@@ -17,9 +17,9 @@ lines; all detail lives in `milestones/`, never here.
 | M04 | Metadata layer polish (mediainfo/ffprobe tibbles)  | done    | archive/M04-metadata-layer.md     |
 | M05 | Docs, vignettes, pkgdown, release prep             | done    | archive/M05-docs-release.md       |
 | M06 | Engine hardening & safe execution                  | done    | archive/M06-engine-hardening.md   |
-| M07 | Complete the blessed multi-input verbs             | idea    | milestones/M07-multi-input-verbs.md |
+| M07 | Complete the blessed multi-input verbs             | review  | milestones/M07-multi-input-verbs.md |
 | M08 | Verification & provenance                          | idea    | milestones/M08-verification-provenance.md |
 | M09 | Research-workflow task verbs                       | idea    | milestones/M09-research-verbs.md  |
 | M10 | CRAN readiness (prep, hold submission)             | idea    | milestones/M10-cran-readiness.md  |
 
-Last hygiene check: 2026-07-10 (M06 merged as PR #6 / 1a7dcdf, archived; M07–M10 remain ideas)
+Last hygiene check: 2026-07-10 (M06 merged as PR #6 / 1a7dcdf, archived; M07 planned; M08–M10 remain ideas)

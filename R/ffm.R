@@ -479,7 +479,9 @@ ffm_pixel_format <- function(object, format) {
 #' @param shortest A logical indicating whether to trim the duration of all
 #'   videos to that of the shortest video (default = \code{FALSE})
 #' @param resize A logical indicating whether to resize the height of the input
-#'   videos to match (takes longer and currently only works with two inputs)
+#'   videos to match (takes longer and currently only works with two inputs).
+#'   Resizing conforms both inputs to the same aspect ratio, so it assumes the
+#'   inputs share one.
 #' @return \code{object} but with the added instruction to apply horizontal
 #'   stacking.
 #' @family builder functions
@@ -505,15 +507,7 @@ ffm_hstack <- function(object,
   if (resize && inputs_n != 2) {
     cli::cli_abort("{.arg resize} currently only works with exactly two inputs.")
   }
-  # Stacking is a whole-frame operation that consumes the raw input pads, so it
-  # must precede any single-input video filter — otherwise ffm_compile() would
-  # feed two pads to a one-input filter and produce an invalid graph.
-  if (length(object$filter_video) > 0) {
-    cli::cli_abort(c(
-      "Stacking must come before other video filters.",
-      "i" = "Apply {.fn ffm_hstack} first, then filter the stacked result."
-    ))
-  }
+  check_multi_input_ordering(object, "Stacking")
 
   # hstack is a blessed multi-input verb: it forces the -filter_complex path
   # (see ffm_compile()). The resize graph manages its own stream labels (it
@@ -528,6 +522,154 @@ ffm_hstack <- function(object,
     )
   } else {
     cmd <- glue('hstack=inputs={inputs_n}:shortest={shortest_int}')
+  }
+
+  object$filter_video <- c(object$filter_video, cmd)
+  object$complex <- TRUE
+
+  object
+}
+
+# ffm_vstack() -----------------------------------------------------------------
+
+#' Vertically Stack Multiple Videos in an FFmpeg Pipeline
+#'
+#' Add a complex video filter to stack multiple videos vertically (one above the
+#' other) and, optionally, resize them to have the same width. This is the
+#' vertical companion to \code{\link{ffm_hstack}}; both are blessed multi-input
+#' verbs that force the \code{-filter_complex} path and manage their own stream
+#' labels internally.
+#'
+#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'   \code{ffm_files()}.
+#' @param shortest A logical indicating whether to trim the duration of all
+#'   videos to that of the shortest video (default = \code{FALSE})
+#' @param resize A logical indicating whether to resize the width of the input
+#'   videos to match (takes longer and currently only works with two inputs).
+#'   Resizing conforms both inputs to the same aspect ratio, so it assumes the
+#'   inputs share one.
+#' @return \code{object} but with the added instruction to apply vertical
+#'   stacking.
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' # Stack two inputs one above the other (pass more than one input to ffm())
+#' ffm(c(video, video), "output.mp4") |>
+#'   ffm_vstack() |>
+#'   ffm_compile()
+#' @export
+ffm_vstack <- function(object,
+                       shortest = FALSE,
+                       resize = FALSE) {
+
+  check_ffm(object)
+  rlang::check_bool(shortest)
+  rlang::check_bool(resize)
+  inputs_n <- length(object$input)
+  shortest_int <- as.integer(shortest)
+  if (inputs_n <= 1) {
+    cli::cli_abort("Stacking requires more than one input file.")
+  }
+  if (resize && inputs_n != 2) {
+    cli::cli_abort("{.arg resize} currently only works with exactly two inputs.")
+  }
+  check_multi_input_ordering(object, "Stacking")
+
+  # vstack mirrors hstack (see ffm_hstack()) but equalises *widths* instead of
+  # heights: the scale2ref graph grows each input to the larger of the two
+  # widths, preserving aspect via ow/mdar, then vertically stacks. Label-free
+  # plain-vstack token is completed by ffm_compile() with input labels + [vout].
+  if (resize == TRUE) {
+    cmd <- paste0(
+      "[0:v][1:v]scale2ref='if(lt(main_w,iw),iw,main_w)':'ow/mdar'[0s][1s];",
+      "[1s][0s]scale2ref='if(lt(main_w,iw),iw,main_w)':'ow/mdar'[1s][0s];",
+      "[0s][1s]vstack,setsar=1"
+    )
+  } else {
+    cmd <- glue('vstack=inputs={inputs_n}:shortest={shortest_int}')
+  }
+
+  object$filter_video <- c(object$filter_video, cmd)
+  object$complex <- TRUE
+
+  object
+}
+
+# ffm_overlay() ----------------------------------------------------------------
+
+#' Overlay One Video on Another in an FFmpeg Pipeline
+#'
+#' Composite the second input (the overlay) on top of the first (the main
+#' video) at position \code{x}/\code{y}. This is a blessed multi-input verb (like
+#' \code{\link{ffm_hstack}}): it forces the \code{-filter_complex} path and
+#' manages its own stream labels internally. Exactly two inputs are required —
+#' the first is the background, the second is drawn over it.
+#'
+#' \code{x} and \code{y} accept plain numbers (pixels from the top-left of the
+#' main video) or FFmpeg overlay expressions, where \code{main_w}/\code{main_h}
+#' are the main video's dimensions and \code{overlay_w}/\code{overlay_h} are the
+#' overlay's. For example, \code{x = "main_w-overlay_w-16"} pins the overlay 16
+#' pixels from the right edge. When \code{scale} is set, the overlay is first
+#' resized to a fraction of the main video's width (aspect preserved), which is
+#' what the Layer-2 \code{\link{picture_in_picture}} verb uses. Otherwise, to
+#' resize the overlay yourself, filter it in a separate pipeline first.
+#'
+#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'   \code{ffm_files()} with exactly two input files.
+#' @param x The horizontal position of the overlay's left edge, as a number of
+#'   pixels or an FFmpeg expression. (default = \code{0})
+#' @param y The vertical position of the overlay's top edge, as a number of
+#'   pixels or an FFmpeg expression. (default = \code{0})
+#' @param shortest A logical indicating whether to end the output when the
+#'   shorter input ends (default = \code{FALSE}).
+#' @param scale An optional fraction (\code{0 < scale <= 1}) to resize the
+#'   overlay to \code{scale} times the main video's width before compositing
+#'   (aspect preserved); \code{NULL} (default) overlays at native size. When set,
+#'   \code{overlay_w}/\code{overlay_h} in \code{x}/\code{y} refer to the resized
+#'   overlay.
+#' @return \code{object} with the added instruction to overlay the second input
+#'   on the first.
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' # Draw the second input over the first, 16px in from the top-right corner
+#' ffm(c(video, video), "output.mp4") |>
+#'   ffm_overlay(x = "main_w-overlay_w-16", y = 16) |>
+#'   ffm_compile()
+#' @export
+ffm_overlay <- function(object,
+                        x = 0,
+                        y = 0,
+                        shortest = FALSE,
+                        scale = NULL) {
+
+  check_ffm(object)
+  check_dim(x, inclusive = TRUE)
+  check_dim(y, inclusive = TRUE)
+  rlang::check_bool(shortest)
+  rlang::check_number_decimal(scale, allow_null = TRUE)
+  if (!is.null(scale) && (scale <= 0 || scale > 1)) {
+    cli::cli_abort("{.arg scale} must be greater than 0 and at most 1.")
+  }
+  if (length(object$input) != 2) {
+    cli::cli_abort("Overlaying requires exactly two input files.")
+  }
+  check_multi_input_ordering(object, "Overlaying")
+
+  shortest_int <- as.integer(shortest)
+  if (is.null(scale)) {
+    # Label-free token: ffm_compile() prepends the two input pads ([0:v][1:v],
+    # main then overlay) and appends [vout].
+    cmd <- glue('overlay=x={x}:y={y}:shortest={shortest_int}')
+  } else {
+    # Self-labelled graph (starts with "["), so ffm_compile() emits it verbatim
+    # and only appends [vout]. scale2ref resizes the overlay ([1:v]) using the
+    # main ([0:v]) as reference: width = main_w*scale, height preserves the
+    # overlay's own aspect (ih/iw). Must stay a single line (no newlines).
+    cmd <- glue(
+      "[1:v][0:v]scale2ref=w='main_w*{scale}':h='main_w*{scale}*ih/iw'",
+      "[pip][bg];[bg][pip]overlay=x={x}:y={y}:shortest={shortest_int}"
+    )
   }
 
   object$filter_video <- c(object$filter_video, cmd)

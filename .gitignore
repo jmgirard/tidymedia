@@ -8,3 +8,6 @@ README.html
 /Meta/
 inst/doc
 docs
+
+# testthat scratch dumps from snapshot runs
+tests/testthat/_problems/

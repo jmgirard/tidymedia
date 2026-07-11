@@ -45,10 +45,12 @@ crop_video(video, "cropped.mp4", width = 160, height = 120, run = FALSE)
 \seealso{
 Other task verb functions:
 \code{\link[=audio_as_mp3]{audio_as_mp3()}},
+\code{\link[=compare_videos]{compare_videos()}},
 \code{\link[=concatenate_videos]{concatenate_videos()}},
 \code{\link[=extract_audio]{extract_audio()}},
 \code{\link[=extract_frame]{extract_frame()}},
 \code{\link[=format_for_web]{format_for_web()}},
+\code{\link[=picture_in_picture]{picture_in_picture()}},
 \code{\link[=segment_video]{segment_video()}},
 \code{\link[=separate_audio_video]{separate_audio_video()}}
 }

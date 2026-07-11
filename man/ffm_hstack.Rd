@@ -14,7 +14,9 @@ ffm_hstack(object, shortest = FALSE, resize = FALSE)
 videos to that of the shortest video (default = \code{FALSE})}
 
 \item{resize}{A logical indicating whether to resize the height of the input
-videos to match (takes longer and currently only works with two inputs)}
+videos to match (takes longer and currently only works with two inputs).
+Resizing conforms both inputs to the same aspect ratio, so it assumes the
+inputs share one.}
 }
 \value{
 \code{object} but with the added instruction to apply horizontal
@@ -45,11 +47,13 @@ Other builder functions:
 \code{\link[=ffm_files]{ffm_files()}},
 \code{\link[=ffm_map]{ffm_map()}},
 \code{\link[=ffm_output_options]{ffm_output_options()}},
+\code{\link[=ffm_overlay]{ffm_overlay()}},
 \code{\link[=ffm_pixel_format]{ffm_pixel_format()}},
 \code{\link[=ffm_run]{ffm_run()}},
 \code{\link[=ffm_scale]{ffm_scale()}},
 \code{\link[=ffm_seek]{ffm_seek()}},
 \code{\link[=ffm_trim]{ffm_trim()}},
+\code{\link[=ffm_vstack]{ffm_vstack()}},
 \code{\link[=print.tidymedia_ffm]{print.tidymedia_ffm()}}
 }
 \concept{builder functions}

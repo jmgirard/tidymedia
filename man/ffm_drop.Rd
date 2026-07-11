@@ -42,11 +42,13 @@ Other builder functions:
 \code{\link[=ffm_hstack]{ffm_hstack()}},
 \code{\link[=ffm_map]{ffm_map()}},
 \code{\link[=ffm_output_options]{ffm_output_options()}},
+\code{\link[=ffm_overlay]{ffm_overlay()}},
 \code{\link[=ffm_pixel_format]{ffm_pixel_format()}},
 \code{\link[=ffm_run]{ffm_run()}},
 \code{\link[=ffm_scale]{ffm_scale()}},
 \code{\link[=ffm_seek]{ffm_seek()}},
 \code{\link[=ffm_trim]{ffm_trim()}},
+\code{\link[=ffm_vstack]{ffm_vstack()}},
 \code{\link[=print.tidymedia_ffm]{print.tidymedia_ffm()}}
 }
 \concept{builder functions}

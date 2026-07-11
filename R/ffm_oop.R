@@ -108,6 +108,28 @@ check_ffm <- function(object,
 }
 
 
+# check_multi_input_ordering() --------------------------------------------
+
+# Shared guard for the blessed multi-input video verbs (hstack, vstack,
+# overlay). Each consumes the raw input pads to make a single stacked/composited
+# frame, so it must come *before* any single-input video filter; otherwise
+# ffm_compile() would feed several pads to a one-input filter and emit an invalid
+# graph. `verb` names the operation for the message (e.g. "Stacking").
+check_multi_input_ordering <- function(object, verb,
+                                       call = rlang::caller_env()) {
+  if (length(object$filter_video) > 0) {
+    cli::cli_abort(
+      c(
+        "{verb} must come before other video filters.",
+        "i" = "Apply the multi-input verb first, then filter the combined result."
+      ),
+      call = call
+    )
+  }
+  invisible(object)
+}
+
+
 # print.tidymedia_ffm() ---------------------------------------------------
 
 #' Print an FFmpeg pipeline

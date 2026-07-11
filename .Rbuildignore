@@ -12,4 +12,3 @@
 ^docs$
 ^pkgdown$
 ^cran-comments\.md$
-^\.github/workflows/pkgdown\.yaml$

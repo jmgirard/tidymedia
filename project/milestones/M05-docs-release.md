@@ -107,8 +107,16 @@ Milestone-local decisions; promote cross-cutting ones to ../DECISIONS.md.
 
 ## Review
 
-Filled in by `/milestone review`.
-
-- Criteria verification:
-- check()/test()/coverage results:
-- Follow-ups spawned:
+- Criteria verification (2026-07-10, fresh):
+  - `check(cran = TRUE)`: 0 errors / 0 warnings / 0 notes; vignettes re-build OK.
+  - Example coverage: 0 non-internal man topics missing `@examples`.
+  - `@family` on 48 topics; `pkgdown::check_pkgdown()` clean (no missing/dupe).
+  - `spelling::spell_check_package()`: clean. `build_site()` clean.
+  - Version 0.1.0; NEWS 0.1.0 heading; cran-comments + deploy workflow present.
+- check()/test() results: check 0/0/0; `test()` 246 pass / 0 fail / 0 skip.
+- PR: https://github.com/jmgirard/tidymedia/pull/5 (draft).
+- Opus diff review: no blocking findings. 4 minor items triaged — fixed the
+  redundant `.Rbuildignore` pkgdown-workflow line; rejected 3 (concat writes to
+  tempdir not the check dir; `find_*` example correctly shows the NULL+warning
+  return; single pkgdown alias per shared topic is correct usage).
+- Follow-ups spawned: none.

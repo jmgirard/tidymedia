@@ -243,6 +243,68 @@ test_that("compare_videos() runs through ffmpeg (binary-gated)", {
   expect_gt(file.size(out), 0)
 })
 
+# picture_in_picture() (Layer-2 on overlay) ------------------------------------
+
+test_that("picture_in_picture() insets a scaled overlay top-right by default", {
+  m <- make_input()
+  o <- make_input()
+  cmd <- picture_in_picture(m, o, "out.mp4", run = FALSE)
+  expect_match(cmd, "scale2ref=w='main_w*0.25'", fixed = TRUE)
+  expect_match(cmd, "overlay=x=main_w-overlay_w-16:y=16", fixed = TRUE)
+})
+
+test_that("picture_in_picture(position = ) places the inset per corner/center", {
+  m <- make_input()
+  o <- make_input()
+  expect_match(
+    picture_in_picture(m, o, "out.mp4", position = "topleft", run = FALSE),
+    "overlay=x=16:y=16", fixed = TRUE
+  )
+  expect_match(
+    picture_in_picture(m, o, "out.mp4", position = "bottomright", run = FALSE),
+    "overlay=x=main_w-overlay_w-16:y=main_h-overlay_h-16", fixed = TRUE
+  )
+  expect_match(
+    picture_in_picture(m, o, "out.mp4", position = "center", run = FALSE),
+    "overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2", fixed = TRUE
+  )
+})
+
+test_that("picture_in_picture() honours scale and margin", {
+  m <- make_input()
+  o <- make_input()
+  cmd <- picture_in_picture(m, o, "out.mp4", scale = 0.4, margin = 8,
+                            run = FALSE)
+  expect_match(cmd, "scale2ref=w='main_w*0.4'", fixed = TRUE)
+  expect_match(cmd, "overlay=x=main_w-overlay_w-8:y=8", fixed = TRUE)
+})
+
+test_that("picture_in_picture(audio = ) carries that input's audio", {
+  m <- make_input()
+  o <- make_input()
+  cmd <- picture_in_picture(m, o, "out.mp4", audio = 0, run = FALSE)
+  expect_match(cmd, '-map "[vout]" -map 0:a', fixed = TRUE)
+})
+
+test_that("picture_in_picture() validates scale, margin, and audio", {
+  m <- make_input()
+  o <- make_input()
+  expect_error(picture_in_picture(m, o, "out.mp4", scale = 2, run = FALSE))
+  expect_error(picture_in_picture(m, o, "out.mp4", audio = 2, run = FALSE))
+  missing <- withr::local_tempfile(fileext = ".mp4")
+  expect_error(picture_in_picture(missing, o, "out.mp4", run = FALSE))
+})
+
+test_that("picture_in_picture() runs through ffmpeg (binary-gated)", {
+  skip_if_no_ffmpeg()
+  a <- make_test_video()
+  b <- make_test_video()
+  out <- withr::local_tempfile(fileext = ".mp4")
+  picture_in_picture(a, b, out, audio = 0)
+  expect_true(file.exists(out))
+  expect_gt(file.size(out), 0)
+})
+
 # M06: separate_audio_video() stream-copy default (D-M06-4) ----------------------
 
 test_that("separate_audio_video() stream-copies by default", {

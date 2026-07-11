@@ -4,7 +4,7 @@
 \alias{ffm_overlay}
 \title{Overlay One Video on Another in an FFmpeg Pipeline}
 \usage{
-ffm_overlay(object, x = 0, y = 0, shortest = FALSE)
+ffm_overlay(object, x = 0, y = 0, shortest = FALSE, scale = NULL)
 }
 \arguments{
 \item{object}{An ffmpeg pipeline (\code{ffm}) object created by
@@ -18,6 +18,12 @@ pixels or an FFmpeg expression. (default = \code{0})}
 
 \item{shortest}{A logical indicating whether to end the output when the
 shorter input ends (default = \code{FALSE}).}
+
+\item{scale}{An optional fraction (\code{0 < scale <= 1}) to resize the
+overlay to \code{scale} times the main video's width before compositing
+(aspect preserved); \code{NULL} (default) overlays at native size. When set,
+\code{overlay_w}/\code{overlay_h} in \code{x}/\code{y} refer to the resized
+overlay.}
 }
 \value{
 \code{object} with the added instruction to overlay the second input
@@ -35,9 +41,10 @@ the first is the background, the second is drawn over it.
 main video) or FFmpeg overlay expressions, where \code{main_w}/\code{main_h}
 are the main video's dimensions and \code{overlay_w}/\code{overlay_h} are the
 overlay's. For example, \code{x = "main_w-overlay_w-16"} pins the overlay 16
-pixels from the right edge. To resize the overlay first, apply a single-input
-filter to it before overlaying via a separate pipeline, or use the Layer-2
-\code{\link{picture_in_picture}} verb.
+pixels from the right edge. When \code{scale} is set, the overlay is first
+resized to a fraction of the main video's width (aspect preserved), which is
+what the Layer-2 \code{\link{picture_in_picture}} verb uses. Otherwise, to
+resize the overlay yourself, filter it in a separate pipeline first.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

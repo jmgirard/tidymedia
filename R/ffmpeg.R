@@ -608,6 +608,79 @@ compare_videos <- function(infiles, outfile,
 }
 
 
+# picture_in_picture() ----------------------------------------------------
+
+#' Inset one video over another (picture-in-picture)
+#'
+#' Composite a smaller \code{overlay} video onto a \code{main} video in one
+#' corner (or the centre) — the classic picture-in-picture layout for pairing a
+#' speaker with a screen recording, or a stimulus with a webcam. Built on the
+#' blessed \code{\link{ffm_overlay}} verb, which resizes the overlay to a
+#' fraction of the main video's width and positions it.
+#'
+#' Audio is dropped unless \code{audio} names an input to carry (\code{0} = the
+#' main video, \code{1} = the overlay).
+#'
+#' @param main A string giving the path to the background (full-size) video.
+#' @param overlay A string giving the path to the inset video.
+#' @param outfile A string giving the path to write the result to.
+#' @param position Where to place the inset: one of \code{"topright"} (default),
+#'   \code{"topleft"}, \code{"bottomright"}, \code{"bottomleft"}, or
+#'   \code{"center"}.
+#' @param scale The inset's width as a fraction of the main video's width, aspect
+#'   preserved (\code{0 < scale <= 1}). (default = \code{0.25})
+#' @param margin The gap in pixels between the inset and the video edges (ignored
+#'   for \code{position = "center"}). (default = \code{16})
+#' @param audio The 0-based index of the input whose audio to keep, or
+#'   \code{NULL} to drop audio. (default = \code{NULL})
+#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
+#'   or return the compiled command without running it (\code{FALSE}).
+#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' picture_in_picture(video, video, "pip.mp4", run = FALSE)
+#' @export
+picture_in_picture <- function(main, overlay, outfile,
+                               position = c("topright", "topleft",
+                                            "bottomright", "bottomleft",
+                                            "center"),
+                               scale = 0.25, margin = 16, audio = NULL,
+                               run = TRUE) {
+
+  check_file_exists(main)
+  check_file_exists(overlay)
+  rlang::check_string(outfile)
+  position <- rlang::arg_match(position)
+  rlang::check_number_decimal(scale)
+  rlang::check_number_whole(margin, min = 0)
+  rlang::check_number_whole(audio, min = 0, max = 1, allow_null = TRUE)
+  m <- as.integer(margin)
+
+  # Translate the corner/centre choice into overlay x/y expressions, where
+  # overlay_w/overlay_h are the (already scaled) inset's dimensions.
+  pos <- switch(
+    position,
+    topleft     = list(x = as.character(m), y = as.character(m)),
+    topright    = list(x = sprintf("main_w-overlay_w-%d", m),
+                       y = as.character(m)),
+    bottomleft  = list(x = as.character(m),
+                       y = sprintf("main_h-overlay_h-%d", m)),
+    bottomright = list(x = sprintf("main_w-overlay_w-%d", m),
+                       y = sprintf("main_h-overlay_h-%d", m)),
+    center      = list(x = "(main_w-overlay_w)/2",
+                       y = "(main_h-overlay_h)/2")
+  )
+
+  p <- ffm_files(c(main, overlay), outfile)
+  p <- ffm_overlay(p, x = pos$x, y = pos$y, scale = scale)
+  if (!is.null(audio)) {
+    p <- ffm_map(p, paste0(audio, ":a"))
+  }
+  ffm_finish(p, run)
+}
+
+
 # Get volume levels -------------------------------------------------------
 
 get_volume <- function(infile) {

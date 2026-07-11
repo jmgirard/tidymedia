@@ -50,6 +50,7 @@ Other task verb functions:
 \code{\link[=extract_audio]{extract_audio()}},
 \code{\link[=extract_frame]{extract_frame()}},
 \code{\link[=format_for_web]{format_for_web()}},
+\code{\link[=picture_in_picture]{picture_in_picture()}},
 \code{\link[=segment_video]{segment_video()}}
 }
 \concept{task verb functions}

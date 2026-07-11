@@ -433,6 +433,33 @@ test_that("ffm_overlay() refuses to follow a single-input video filter", {
   expect_error(ffm_overlay(p), "before other video filters")
 })
 
+test_that("ffm_overlay(scale = ) emits a self-labelled scale2ref graph", {
+  f1 <- make_input()
+  f2 <- make_input()
+  p <- ffm_overlay(ffm_files(c(f1, f2), "out.mp4"),
+                   x = "main_w-overlay_w-16", y = 16, scale = 0.25)
+  expect_true(p$complex)
+  expect_no_match(p$filter_video, "\n", fixed = TRUE)
+  cmd <- ffm_compile(p)
+  expect_match(cmd, "[1:v][0:v]scale2ref=w='main_w*0.25'", fixed = TRUE)
+  expect_match(
+    cmd,
+    'overlay=x=main_w-overlay_w-16:y=16:shortest=0[vout]" -map "[vout]"',
+    fixed = TRUE
+  )
+})
+
+test_that("ffm_overlay() rejects an out-of-range scale", {
+  f1 <- make_input()
+  f2 <- make_input()
+  expect_error(
+    ffm_overlay(ffm_files(c(f1, f2), "out.mp4"), scale = 0), "at most 1"
+  )
+  expect_error(
+    ffm_overlay(ffm_files(c(f1, f2), "out.mp4"), scale = 2), "at most 1"
+  )
+})
+
 test_that("ffm_overlay() args parity with ffm_compile()", {
   f1 <- make_input()
   f2 <- make_input()

@@ -605,9 +605,10 @@ ffm_vstack <- function(object,
 #' main video) or FFmpeg overlay expressions, where \code{main_w}/\code{main_h}
 #' are the main video's dimensions and \code{overlay_w}/\code{overlay_h} are the
 #' overlay's. For example, \code{x = "main_w-overlay_w-16"} pins the overlay 16
-#' pixels from the right edge. To resize the overlay first, apply a single-input
-#' filter to it before overlaying via a separate pipeline, or use the Layer-2
-#' \code{\link{picture_in_picture}} verb.
+#' pixels from the right edge. When \code{scale} is set, the overlay is first
+#' resized to a fraction of the main video's width (aspect preserved), which is
+#' what the Layer-2 \code{\link{picture_in_picture}} verb uses. Otherwise, to
+#' resize the overlay yourself, filter it in a separate pipeline first.
 #'
 #' @param object An ffmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()} with exactly two input files.
@@ -617,6 +618,11 @@ ffm_vstack <- function(object,
 #'   pixels or an FFmpeg expression. (default = \code{0})
 #' @param shortest A logical indicating whether to end the output when the
 #'   shorter input ends (default = \code{FALSE}).
+#' @param scale An optional fraction (\code{0 < scale <= 1}) to resize the
+#'   overlay to \code{scale} times the main video's width before compositing
+#'   (aspect preserved); \code{NULL} (default) overlays at native size. When set,
+#'   \code{overlay_w}/\code{overlay_h} in \code{x}/\code{y} refer to the resized
+#'   overlay.
 #' @return \code{object} with the added instruction to overlay the second input
 #'   on the first.
 #' @family builder functions
@@ -630,22 +636,37 @@ ffm_vstack <- function(object,
 ffm_overlay <- function(object,
                         x = 0,
                         y = 0,
-                        shortest = FALSE) {
+                        shortest = FALSE,
+                        scale = NULL) {
 
   check_ffm(object)
   check_dim(x, inclusive = TRUE)
   check_dim(y, inclusive = TRUE)
   rlang::check_bool(shortest)
+  rlang::check_number_decimal(scale, allow_null = TRUE)
+  if (!is.null(scale) && (scale <= 0 || scale > 1)) {
+    cli::cli_abort("{.arg scale} must be greater than 0 and at most 1.")
+  }
   if (length(object$input) != 2) {
     cli::cli_abort("Overlaying requires exactly two input files.")
   }
   check_multi_input_ordering(object, "Overlaying")
 
-  # overlay is a blessed multi-input verb: the label-free token below is
-  # completed by ffm_compile(), which prepends the two input pads ([0:v][1:v],
-  # main then overlay) and appends [vout].
   shortest_int <- as.integer(shortest)
-  cmd <- glue('overlay=x={x}:y={y}:shortest={shortest_int}')
+  if (is.null(scale)) {
+    # Label-free token: ffm_compile() prepends the two input pads ([0:v][1:v],
+    # main then overlay) and appends [vout].
+    cmd <- glue('overlay=x={x}:y={y}:shortest={shortest_int}')
+  } else {
+    # Self-labelled graph (starts with "["), so ffm_compile() emits it verbatim
+    # and only appends [vout]. scale2ref resizes the overlay ([1:v]) using the
+    # main ([0:v]) as reference: width = main_w*scale, height preserves the
+    # overlay's own aspect (ih/iw). Must stay a single line (no newlines).
+    cmd <- glue(
+      "[1:v][0:v]scale2ref=w='main_w*{scale}':h='main_w*{scale}*ih/iw'",
+      "[pip][bg];[bg][pip]overlay=x={x}:y={y}:shortest={shortest_int}"
+    )
+  }
 
   object$filter_video <- c(object$filter_video, cmd)
   object$complex <- TRUE

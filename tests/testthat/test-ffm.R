@@ -366,6 +366,14 @@ test_that("ffm_vstack() compiles to -filter_complex with labels and auto -map", 
   )
 })
 
+test_that("ffm_vstack() carries the input count into the token", {
+  f1 <- make_input()
+  f2 <- make_input()
+  f3 <- make_input()
+  p <- ffm_vstack(ffm_files(c(f1, f2, f3), "out.mp4"))
+  expect_equal(p$filter_video, "vstack=inputs=3:shortest=0")
+})
+
 test_that("ffm_vstack() requires more than one input", {
   f <- make_input()
   expect_error(ffm_vstack(ffm_files(f, "out.mp4")), "more than one")
@@ -431,6 +439,13 @@ test_that("ffm_overlay() refuses to follow a single-input video filter", {
   f2 <- make_input()
   p <- ffm_scale(ffm_files(c(f1, f2), "out.mp4"), 640, 480)
   expect_error(ffm_overlay(p), "before other video filters")
+})
+
+test_that("ffm_overlay(shortest = TRUE) sets the shortest flag in the token", {
+  f1 <- make_input()
+  f2 <- make_input()
+  p <- ffm_overlay(ffm_files(c(f1, f2), "out.mp4"), shortest = TRUE)
+  expect_equal(p$filter_video, "overlay=x=0:y=0:shortest=1")
 })
 
 test_that("ffm_overlay(scale = ) emits a self-labelled scale2ref graph", {

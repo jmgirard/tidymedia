@@ -14,7 +14,9 @@ ffm_hstack(object, shortest = FALSE, resize = FALSE)
 videos to that of the shortest video (default = \code{FALSE})}
 
 \item{resize}{A logical indicating whether to resize the height of the input
-videos to match (takes longer and currently only works with two inputs)}
+videos to match (takes longer and currently only works with two inputs).
+Resizing conforms both inputs to the same aspect ratio, so it assumes the
+inputs share one.}
 }
 \value{
 \code{object} but with the added instruction to apply horizontal

@@ -97,8 +97,27 @@ Milestone-local decisions; promote cross-cutting ones to ../DECISIONS.md.
 
 ## Review
 
-Filled in by `/milestone review`.
-
-- Criteria verification:
-- check()/test()/coverage results:
-- Follow-ups spawned:
+- Criteria verification (fresh evidence, 2026-07-10):
+  - vstack/overlay exported + documented; `document()` clean, `man/` regenerated
+    (family "See also" lists updated, `ffm_vstack.Rd`/`ffm_overlay.Rd`/
+    `picture_in_picture.Rd` added). ✓
+  - Snapshots (`_snaps/ffm.md`) show `…[vout]" -map "[vout]"` for vstack, overlay,
+    and overlay+scale; no `-filter_complex:` invalid form. ✓
+  - Unit tests: arity guards (>1 / exactly-two), ordering guard, `ffm_args()`↔
+    `ffm_compile()` parity for the new complex pipelines. ✓
+  - Execution tests (skip_if binaries absent) ran locally through ffmpeg for
+    vstack, vstack+resize, overlay, compare_videos, picture_in_picture. ✓
+  - Layer-2 verbs assemble via Layer 1 only; `audio =` passthrough verified in the
+    compiled `-map` (D002 upheld — PiP's scale2ref lives in `ffm_overlay(scale=)`). ✓
+  - DECISIONS D009 recorded. ✓
+- check()/test() results: `devtools::check()` 0 errors / 0 warnings / 0 notes;
+  `devtools::test()` 337 pass / 0 fail / 1 skip (CRAN-gated snapshot). PR #7 (draft),
+  CI running.
+- Opus review (2026-07-10): 0 blocker / 0 important; verdict "mergeable as-is".
+  Fixed the two coverage nits (vstack 3-input token; overlay `shortest=TRUE`) and
+  added the `resize` aspect-ratio doc caveat (hstack + vstack). No-change nits:
+  `check_dim()` accepts any length-1 expression for `x`/`y` (consistent with
+  `ffm_crop`/`ffm_drawbox`, not a regression) — candidate future hardening across
+  all dim-taking verbs; PiP's corner→`overlay_w` expressions are arguments only
+  (within D002).
+- Follow-ups: none spawned.

@@ -479,7 +479,9 @@ ffm_pixel_format <- function(object, format) {
 #' @param shortest A logical indicating whether to trim the duration of all
 #'   videos to that of the shortest video (default = \code{FALSE})
 #' @param resize A logical indicating whether to resize the height of the input
-#'   videos to match (takes longer and currently only works with two inputs)
+#'   videos to match (takes longer and currently only works with two inputs).
+#'   Resizing conforms both inputs to the same aspect ratio, so it assumes the
+#'   inputs share one.
 #' @return \code{object} but with the added instruction to apply horizontal
 #'   stacking.
 #' @family builder functions
@@ -543,7 +545,9 @@ ffm_hstack <- function(object,
 #' @param shortest A logical indicating whether to trim the duration of all
 #'   videos to that of the shortest video (default = \code{FALSE})
 #' @param resize A logical indicating whether to resize the width of the input
-#'   videos to match (takes longer and currently only works with two inputs)
+#'   videos to match (takes longer and currently only works with two inputs).
+#'   Resizing conforms both inputs to the same aspect ratio, so it assumes the
+#'   inputs share one.
 #' @return \code{object} but with the added instruction to apply vertical
 #'   stacking.
 #' @family builder functions

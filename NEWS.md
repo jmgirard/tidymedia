@@ -1,5 +1,17 @@
 # tidymedia (development version)
 
+## Multi-input verbs (M07)
+
+* Completed the blessed multi-input builder set with `ffm_vstack()` (stack
+  videos top to bottom, the vertical companion to `ffm_hstack()`) and
+  `ffm_overlay()` (composite one video over another at an `x`/`y` position given
+  as pixels or an FFmpeg expression). `ffm_overlay()` also takes an optional
+  `scale` to resize the overlay to a fraction of the main video's width.
+* Added two research task verbs built on these: `compare_videos()` for a
+  side-by-side or stacked comparison video, and `picture_in_picture()` for an
+  inset overlay (corner or center `position`, `scale`, `margin`). Both drop
+  audio by default; pass `audio =` an input index to carry that track.
+
 ## Safe execution (M06)
 
 * Pipelines are now executed as argument vectors (via `system2()`), never

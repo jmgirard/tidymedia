@@ -213,6 +213,14 @@ mediainfo_read <- function(file, inform) {
     }
     if (is.null(loc)) loc <- find_mediainfo()
     res <- run_program(loc, c(inform, f), program = "mediainfo")
+    # Valid output is a header line plus a values line; anything shorter means
+    # MediaInfo could not read the file (empty or header-only). Treat it like a
+    # missing file: warn + NA row rather than letting read.csv abort (D-M04-7).
+    if (length(res) < 2) {
+      failed <- c(failed, f)
+      rows[[i]] <- tibble::tibble(file = f)
+      next
+    }
     df <- utils::read.csv(
       text = res, check.names = FALSE, strip.white = TRUE,
       colClasses = "character"

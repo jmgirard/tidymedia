@@ -80,6 +80,20 @@ test_that("mediainfo_query() parses CSV output: file column, typing, opt-out", {
   expect_type(raw$Duration, "character")
 })
 
+test_that("mediainfo readers are resilient to empty CLI output (existing file)", {
+  tmp <- withr::local_tempfile(fileext = ".mp4")
+  file.create(tmp)
+  local_mocked_bindings(
+    find_mediainfo = function() "mediainfo",
+    run_program = function(location, args, ...) character(0)
+  )
+  expect_warning(q <- mediainfo_query(tmp, "General", "Format"))
+  expect_s3_class(q, "tbl_df")
+  expect_identical(q$file, tmp)
+  expect_warning(t <- mediainfo_template(tmp, "brief"))
+  expect_identical(t$file, tmp)
+})
+
 test_that("mediainfo_query() keeps user-supplied names verbatim", {
   tmp <- withr::local_tempfile(fileext = ".mp4")
   file.create(tmp)

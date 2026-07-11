@@ -130,8 +130,19 @@ Milestone-local; promote cross-cutting ones to ../DECISIONS.md at review.
 
 ## Review
 
-Filled in by `/milestone review`.
-
-- Criteria verification:
-- check()/test()/coverage results:
-- Follow-ups spawned:
+- Criteria verification (2026-07-10, local): all met. Vectorized file-keyed
+  readers, `probe_*(infile=)` regression, typed default + opt-out, `file`-led +
+  snake_case templates + verbatim user names, safe `convert_fractions()`,
+  quoting (space/quote/`$`), and multi-file resilience each covered by passing
+  tests. mediainfo execution criteria run on CI (binary absent locally); CSV
+  parsing covered locally via a mocked runner.
+- check()/test() results (2026-07-10): `devtools::test()` 224 pass / 0 fail /
+  0 warn / 4 skip (mediainfo binary); `devtools::check()` 0 errors / 0 warnings
+  / 0 notes. PR #4 (draft); CI running.
+- Opus review (2026-07-10): 2 should-fix resilience gaps + hardening. Fixed all
+  in-branch: (F1) `probe_video/audio` aborted when streams lacked `codec_type`
+  on wholly-unreadable input → `filter_streams()` guard; (F2) `mediainfo_read`
+  aborted on empty/header-only CLI output → `length(res) < 2` warn+NA row;
+  (F3) `nb_streams` length guard. Regression tests added. Windows quoting note
+  left as deferred scope. 234 pass; check 0/0/0.
+- Follow-ups spawned: none.

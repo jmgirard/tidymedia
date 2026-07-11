@@ -70,6 +70,17 @@ test_that("probe_all() is resilient to an unprobeable file", {
   expect_true(any(!is.na(p$container$format_name)))
 })
 
+test_that("probe_video()/probe_audio() stay resilient on a wholly-unreadable input", {
+  skip_if_no_ffprobe()
+  missing <- file.path(tempdir(), "tm-does-not-exist-xyz.mp4")
+  # streams carries only a `file` column (no codec_type); must not abort.
+  expect_warning(v <- probe_video(infile = missing))
+  expect_s3_class(v, "tbl_df")
+  expect_equal(nrow(v), 0)
+  expect_warning(a <- probe_audio(infile = missing))
+  expect_equal(nrow(a), 0)
+})
+
 test_that("probe_all() aborts on malformed arguments", {
   expect_error(probe_all(123))
   expect_error(probe_all(character(0)))

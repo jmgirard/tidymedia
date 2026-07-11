@@ -99,7 +99,7 @@ probe_one <- function(file) {
   container <- format_probe(fmt)
 
   n <- suppressWarnings(as.integer(container[["nb_streams"]]))
-  if (is.na(n) || n < 1) {
+  if (length(n) != 1 || is.na(n) || n < 1) {
     return(list(container = container, streams = tibble::tibble()))
   }
   rows <- vector("list", n)
@@ -151,8 +151,7 @@ probe_streams <- function(probe = NULL, infile = NULL, typed = TRUE) {
 #' @rdname probe_container
 #' @export
 probe_video <- function(probe = NULL, infile = NULL, typed = TRUE) {
-  streams <- resolve_probe(probe, infile, typed)$streams
-  dplyr::filter(streams, .data$codec_type == "video")
+  filter_streams(resolve_probe(probe, infile, typed)$streams, "video")
 }
 
 # probe_audio() -----------------------------------------------------------
@@ -160,8 +159,18 @@ probe_video <- function(probe = NULL, infile = NULL, typed = TRUE) {
 #' @rdname probe_container
 #' @export
 probe_audio <- function(probe = NULL, infile = NULL, typed = TRUE) {
-  streams <- resolve_probe(probe, infile, typed)$streams
-  dplyr::filter(streams, .data$codec_type == "audio")
+  filter_streams(resolve_probe(probe, infile, typed)$streams, "audio")
+}
+
+# filter_streams() --------------------------------------------------------
+
+# Select stream rows of a given codec type. When every input file failed to
+# probe the streams tibble carries only a `file` column (no `codec_type`), so
+# guard against the missing column and return an empty result rather than
+# aborting (keeps the D-M04-7 resilience contract on wholly-unreadable input).
+filter_streams <- function(streams, type) {
+  if (!"codec_type" %in% names(streams)) return(streams[0, , drop = FALSE])
+  dplyr::filter(streams, .data$codec_type %in% type)
 }
 
 # resolve_probe() ---------------------------------------------------------

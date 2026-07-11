@@ -608,7 +608,7 @@ ffm_concat <- function(object) {
 #'   \code{"in_h"})
 #' @param color A string containing the color of the box in FFmpeg color syntax,
 #'   see reference link below for more details. If the special value
-#'   \code{"invert"} is used, the box color is teh same as tehv ideo with
+#'   \code{"invert"} is used, the box color is the same as the video with
 #'   inverted luma. (default = \code{"black"})
 #' @param thickness A thickness of the box edge (in pixels). A value of
 #'   \code{"fill"} will create a filled box. (default = \code{"fill"})

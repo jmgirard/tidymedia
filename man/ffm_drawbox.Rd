@@ -35,7 +35,7 @@ number or a string that contains an FFmpeg expression. (default =
 
 \item{color}{A string containing the color of the box in FFmpeg color syntax,
 see reference link below for more details. If the special value
-\code{"invert"} is used, the box color is teh same as tehv ideo with
+\code{"invert"} is used, the box color is the same as the video with
 inverted luma. (default = \code{"black"})}
 
 \item{thickness}{A thickness of the box edge (in pixels). A value of

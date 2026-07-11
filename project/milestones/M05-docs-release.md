@@ -1,6 +1,6 @@
 # M05: Docs, vignettes, pkgdown, release prep
 
-- **Status:** in-progress <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
+- **Status:** review <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
 - **Created:** 2026-07-10
 - **Completed:** —
 
@@ -65,8 +65,9 @@ Tasks sized to one working session or less, ordered by dependency.
 - [x] T7: pkgdown — `_pkgdown.yml` reference grouped by layer; deploy workflow
       (installs binaries so the metadata article renders). `check_pkgdown()` and
       `build_site()` clean; workflow strips the internal CLAUDE.md page. (2026-07-10)
-- [ ] T8: Release prep — regenerate README (`build_readme()`), `cran-comments.md`,
-      spelling check, NEWS `0.1.0` heading, final `check(cran = TRUE)`.
+- [x] T8: Release prep — README modernized to the current API + fixture (real
+      output), `cran-comments.md`, WORDLIST + spelling clean, NEWS `0.1.0`
+      heading, drawbox typo fixed. `check(cran = TRUE)`: 0/0/0. (2026-07-10)
 
 ## Work log
 
@@ -83,6 +84,8 @@ Append-only; newest last. One line per session: date, what happened, next.
   render clean; binary chunks eval-guarded. Next: T7 pkgdown.
 - 2026-07-10: T7 done — _pkgdown.yml (layer-grouped reference) + Pages deploy
   workflow; check_pkgdown/build_site clean. Next: T8 release prep.
+- 2026-07-10: T8 done — README modernized, cran-comments, WORDLIST, NEWS 0.1.0.
+  `check(cran = TRUE)` 0/0/0; test() 246 pass. All tasks complete → review.
 
 ## Decisions
 

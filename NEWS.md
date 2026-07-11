@@ -1,4 +1,19 @@
-# tidymedia 0.0.0.9003 (development version)
+# tidymedia 0.1.0
+
+First tagged release, bringing the metadata, builder, and task-verb work of the
+0.0.0.900x development series to a documented, release-ready state.
+
+## Documentation
+
+* Every exported function now carries a worked example and an architecture-layer
+  `@family` tag, and there is a [pkgdown site](https://jmgirard.github.io/tidymedia/)
+  whose reference index is grouped by the three layers (escape hatch, builder,
+  task verbs).
+* Added three vignettes: *Get started* (building pipelines, `vignette("tidymedia")`),
+  *Media metadata as tibbles* (`vignette("metadata")`), and *Batch processing*
+  (`vignette("batch")`).
+* A small sample clip now ships in `inst/extdata/sample.mp4` so examples and
+  vignettes are runnable.
 
 ## Metadata layer
 

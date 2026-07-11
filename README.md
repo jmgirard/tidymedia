@@ -8,11 +8,16 @@
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
 [![R-CMD-check](https://github.com/jmgirard/tidymedia/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/jmgirard/tidymedia/actions/workflows/R-CMD-check.yaml)
-[![Codecov test coverage](https://codecov.io/gh/jmgirard/tidymedia/graph/badge.svg)](https://app.codecov.io/gh/jmgirard/tidymedia)
+[![Codecov test
+coverage](https://codecov.io/gh/jmgirard/tidymedia/graph/badge.svg)](https://app.codecov.io/gh/jmgirard/tidymedia)
 <!-- badges: end -->
 
 The goal of **tidymedia** is to provide tools for easily working with
 media (e.g., image, audio, and video) files within R and the tidyverse.
+It wraps [FFmpeg](https://ffmpeg.org/) and
+[MediaInfo](https://mediaarea.net/en/MediaInfo) for **reproducible media
+preprocessing** — batch trimming, cropping, format standardization, and
+metadata extraction as tibbles.
 
 ## Installation
 
@@ -93,123 +98,87 @@ several popular platforms.
 
 ## Examples
 
-### MediaInfo
-
 ``` r
-# Interface with the mediainfo CLI
-mediainfo("--Version")
-#> [1] "MediaInfo Command line, " "MediaInfoLib - v20.09"
+library(tidymedia)
 ```
 
+The examples below use a tiny sample clip that ships with the package:
+
 ``` r
-# Create a row tibble using a built-in template
-mediainfo_template(file = "C:/example.m4v", template = "brief")
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 ```
 
-| Path           | Format | FileSize | Duration | Width | Height | FrameRate | VideoBitRate | Channels | SamplingRate | AudioBitRate |
-|:---------------|:-------|---------:|---------:|------:|-------:|----------:|-------------:|---------:|-------------:|-------------:|
-| C:/example.m4v | MPEG-4 |  5301159 |    60064 |   720 |    480 |     29.97 |       571972 |        2 |        32000 |       128117 |
+### Build reproducible FFmpeg commands
+
+The `ffm_*` builder assembles a command step by step. Nothing runs until
+you ask it to: `ffm_compile()` returns the exact FFmpeg command as a
+string, and `ffm_run()` executes it. See `vignette("tidymedia")` for the
+full tour.
 
 ``` r
-# Create a row tibble from specific parameters
-mediainfo_query(
-  file = "C:/example.m4v", 
-  section = "Video", 
-  parameters = c("Width", "Height", "DisplayAspectRatio")
-)
-```
-
-| File           | Width | Height | DisplayAspectRatio |
-|:---------------|------:|-------:|-------------------:|
-| C:/example.m4v |   720 |    480 |              1.333 |
-
-``` r
-# Lookup common parameters
-get_duration(file = "C:/example.m4v", unit = "sec")
-#> Warning in type.convert.default(output): 'as.is' should be specified by the
-#> caller; using TRUE
-#> [1] 60.064
-get_height(file = "C:/example.m4v")
-#> Warning in type.convert.default(output): 'as.is' should be specified by the
-#> caller; using TRUE
-#> [1] 480
-```
-
-### FFmpeg
-
-``` r
-# Interface with the mediainfo CLI
-ffmpeg("-version")
-#>  [1] "ffmpeg version 5.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2022 the FFmpeg developers"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-#>  [2] "built with gcc 11.2.0 (Rev7, Built by MSYS2 project)"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
-#>  [3] "configuration: --enable-gpl --enable-version3 --enable-static --disable-w32threads --disable-autodetect --enable-fontconfig --enable-iconv --enable-gnutls --enable-libxml2 --enable-gmp --enable-lzma --enable-zlib --enable-libsrt --enable-libssh --enable-libzmq --enable-avisynth --enable-sdl2 --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxvid --enable-libaom --enable-libopenjpeg --enable-libvpx --enable-libass --enable-libfreetype --enable-libfribidi --enable-libvidstab --enable-libvmaf --enable-libzimg --enable-amf --enable-cuda-llvm --enable-cuvid --enable-ffnvcodec --enable-nvdec --enable-nvenc --enable-d3d11va --enable-dxva2 --enable-libmfx --enable-libgme --enable-libopenmpt --enable-libopencore-amrwb --enable-libmp3lame --enable-libtheora --enable-libvo-amrwbenc --enable-libgsm --enable-libopencore-amrnb --enable-libopus --enable-libspeex --enable-libvorbis --enable-librubberband"
-#>  [4] "libavutil      57. 17.100 / 57. 17.100"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
-#>  [5] "libavcodec     59. 18.100 / 59. 18.100"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
-#>  [6] "libavformat    59. 16.100 / 59. 16.100"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
-#>  [7] "libavdevice    59.  4.100 / 59.  4.100"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
-#>  [8] "libavfilter     8. 24.100 /  8. 24.100"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
-#>  [9] "libswscale      6.  4.100 /  6.  4.100"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
-#> [10] "libswresample   4.  3.100 /  4.  3.100"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
-#> [11] "libpostproc    56.  3.100 / 56.  3.100"
-```
-
-``` r
-# Query information about codecs from FFmpeg
-get_codecs()
-#> # A tibble: 490 × 8
-#>    name       details          type  decoding encoding intraframe lossy lossless
-#>    <chr>      <chr>            <fct> <lgl>    <lgl>    <lgl>      <lgl> <lgl>   
-#>  1 012v       Uncompressed 4:… Video TRUE     FALSE    TRUE       FALSE TRUE    
-#>  2 4xm        4X Movie         Video TRUE     FALSE    FALSE      TRUE  FALSE   
-#>  3 8bps       QuickTime 8BPS … Video TRUE     FALSE    TRUE       FALSE TRUE    
-#>  4 a64_multi  Multicolor char… Video FALSE    TRUE     TRUE       TRUE  FALSE   
-#>  5 a64_multi5 Multicolor char… Video FALSE    TRUE     TRUE       TRUE  FALSE   
-#>  6 aasc       Autodesk RLE     Video TRUE     FALSE    FALSE      FALSE TRUE    
-#>  7 agm        Amuse Graphics … Video TRUE     FALSE    FALSE      TRUE  FALSE   
-#>  8 aic        Apple Intermedi… Video TRUE     FALSE    TRUE       TRUE  FALSE   
-#>  9 alias_pix  Alias/Wavefront… Video TRUE     TRUE     TRUE       FALSE TRUE    
-#> 10 amv        AMV Video        Video TRUE     TRUE     TRUE       TRUE  FALSE   
-#> # … with 480 more rows
-```
-
-``` r
-# Query information about encoders from FFmpeg
-get_encoders()
-#> # A tibble: 196 × 8
-#>    name    details type  frame_mt slice_mt experimental horiz_band direct_render
-#>    <chr>   <chr>   <fct> <lgl>    <lgl>    <lgl>        <lgl>      <lgl>        
-#>  1 a64mul… Multic… Video FALSE    FALSE    FALSE        FALSE      TRUE         
-#>  2 a64mul… Multic… Video FALSE    FALSE    FALSE        FALSE      TRUE         
-#>  3 alias_… Alias/… Video FALSE    FALSE    FALSE        FALSE      FALSE        
-#>  4 amv     AMV Vi… Video FALSE    FALSE    FALSE        FALSE      FALSE        
-#>  5 apng    APNG (… Video FALSE    FALSE    FALSE        FALSE      TRUE         
-#>  6 asv1    ASUS V1 Video FALSE    FALSE    FALSE        FALSE      FALSE        
-#>  7 asv2    ASUS V2 Video FALSE    FALSE    FALSE        FALSE      FALSE        
-#>  8 avrp    Avid 1… Video FALSE    FALSE    FALSE        FALSE      TRUE         
-#>  9 avui    Avid M… Video FALSE    FALSE    TRUE         FALSE      TRUE         
-#> 10 ayuv    Uncomp… Video FALSE    FALSE    FALSE        FALSE      TRUE         
-#> # … with 186 more rows
-```
-
-``` r
-# Create ffmpeg commands by pipeline
-ffm(input = "C:/example.m4v", output = "C:/example2.m4v") |>
-  ffm_trim(start = 1, end = 5) |> 
-  ffm_crop(width = 640, height = 480) |>  
+ffm(video, "output.mp4") |>
+  ffm_trim(start = 1, end = 5) |>
+  ffm_crop(width = 160, height = 120) |>
   ffm_codec(video = "libx264") |>
-  ffm_drop(streams = "audio") |> 
+  ffm_drop(streams = "audio") |>
   ffm_compile()
-#> [1] "-an -i \"C:/example.m4v\" -y -codec:v libx264 -filter_complex:v \"trim=start=1:end=5,setpts=PTS-STARTPTS,crop=w=640:h=480:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" \"C:/example2.m4v\""
+#> [1] "-y -i \"/opt/homebrew/lib/R/4.6/site-library/tidymedia/extdata/sample.mp4\" -vf \"trim=start=1:end=5,setpts=PTS-STARTPTS,crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -an \"output.mp4\""
 ```
 
+Common tasks have their own verbs (Layer 2). Pass `run = FALSE` to see
+the command without executing it:
+
 ``` r
-# Run ffmpeg commands by pipeline
-ffm(input = "C:/example.m4v", output = "C:/example2.m4v") |> 
-  ffm_trim(start = 1, end = 5) |> 
-  ffm_crop(width = 640, height = 480) |> 
-  ffm_codec(video = "libx264") |>
-  ffm_drop(streams = "audio") |> 
-  ffm_run()
+extract_audio(video, "audio.aac", run = FALSE)
+#> [1] "-y -i \"/opt/homebrew/lib/R/4.6/site-library/tidymedia/extdata/sample.mp4\" -codec:a copy -vn \"audio.aac\""
+```
+
+### Read metadata as tibbles
+
+`probe_all()` returns container- and stream-level metadata from FFprobe
+as tibbles, keyed by a leading `file` column so a whole batch stacks
+cleanly:
+
+``` r
+probe_all(video)$streams
+#> # A tibble: 2 × 69
+#>   file      index codec_name codec_long_name profile codec_type codec_tag_string
+#>   <chr>     <int> <chr>      <chr>           <chr>   <chr>      <chr>           
+#> 1 /opt/hom…     0 h264       H.264 / AVC / … High    video      avc1            
+#> 2 /opt/hom…     1 aac        AAC (Advanced … LC      audio      mp4a            
+#> # ℹ 62 more variables: codec_tag <chr>, mime_codec_string <chr>, width <int>,
+#> #   height <int>, coded_width <int>, coded_height <int>, has_b_frames <int>,
+#> #   sample_aspect_ratio <chr>, display_aspect_ratio <chr>, pix_fmt <chr>,
+#> #   level <int>, color_range <chr>, color_space <chr>, color_transfer <chr>,
+#> #   color_primaries <chr>, chroma_location <chr>, field_order <chr>,
+#> #   is_avc <chr>, nal_length_size <int>, id <chr>, r_frame_rate <chr>,
+#> #   avg_frame_rate <chr>, time_base <chr>, start_pts <int>, start_time <dbl>, …
+```
+
+MediaInfo is available too, via `mediainfo_query()`,
+`mediainfo_template()`, and the `get_*()` shortcuts (see
+`vignette("metadata")`):
+
+``` r
+get_duration(video, unit = "sec")
+#> [1] 1
+get_width(video)
+#> [1] 320
+```
+
+### Query FFmpeg’s capabilities
+
+``` r
+head(get_codecs())
+#> # A tibble: 6 × 8
+#>   name       details           type  decoding encoding intraframe lossy lossless
+#>   <chr>      <chr>             <fct> <lgl>    <lgl>    <lgl>      <lgl> <lgl>   
+#> 1 012v       Uncompressed 4:2… Video TRUE     FALSE    TRUE       FALSE TRUE    
+#> 2 4xm        4X Movie          Video TRUE     FALSE    FALSE      TRUE  FALSE   
+#> 3 8bps       QuickTime 8BPS v… Video TRUE     FALSE    TRUE       FALSE TRUE    
+#> 4 a64_multi  Multicolor chars… Video FALSE    TRUE     TRUE       TRUE  FALSE   
+#> 5 a64_multi5 Multicolor chars… Video FALSE    TRUE     TRUE       TRUE  FALSE   
+#> 6 aasc       Autodesk RLE      Video TRUE     FALSE    FALSE      FALSE TRUE
 ```
 
 ## Code of Conduct

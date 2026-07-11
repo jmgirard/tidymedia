@@ -97,13 +97,23 @@ from `ffm_trim()` (the `trim` *filter*): only seeking can stream-copy.
 ## Combining multiple inputs
 
 A few "blessed" verbs take more than one input. Pass a vector of files to
-`ffm()`, then stack them side by side with `ffm_hstack()` or join them
-end-to-end with `ffm_concat()`:
+`ffm()`, then combine them: stack side by side with `ffm_hstack()` or top to
+bottom with `ffm_vstack()`, composite one over another with `ffm_overlay()`, or
+join them end-to-end with `ffm_concat()`:
 
 ```{r}
 ffm(c(video, video), "side_by_side.mp4") |>
   ffm_hstack() |>
   ffm_compile()
+```
+
+Each manages its own stream labels internally, so audio is dropped unless you
+map it back with `ffm_map("0:a")`. The task-verb layer wraps the common cases:
+`compare_videos()` for a side-by-side (or stacked) comparison and
+`picture_in_picture()` for an inset overlay.
+
+```{r}
+compare_videos(c(video, video), "compare.mp4", audio = 0, run = FALSE)
 ```
 
 The builder stays deliberately linear — one input chain, sequential filters,

@@ -54,6 +54,24 @@
     Output
       -y -i "<in1>" -i "<in2>" -filter_complex "[0:v][1:v]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[0s][1s];[1s][0s]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[1s][0s];[0s][1s]hstack,setsar=1[vout]" -map "[vout]" "out.mp4"
     Code
+      writeLines(compile_scrubbed(ffm_vstack(ffm_files(c(f1, f2), "out.mp4"))))
+    Output
+      -y -i "<in1>" -i "<in2>" -filter_complex "[0:v][1:v]vstack=inputs=2:shortest=0[vout]" -map "[vout]" "out.mp4"
+    Code
+      writeLines(compile_scrubbed(ffm_vstack(ffm_files(c(f1, f2), "out.mp4"), resize = TRUE)))
+    Output
+      -y -i "<in1>" -i "<in2>" -filter_complex "[0:v][1:v]scale2ref='if(lt(main_w,iw),iw,main_w)':'ow/mdar'[0s][1s];[1s][0s]scale2ref='if(lt(main_w,iw),iw,main_w)':'ow/mdar'[1s][0s];[0s][1s]vstack,setsar=1[vout]" -map "[vout]" "out.mp4"
+    Code
+      writeLines(compile_scrubbed(ffm_overlay(ffm_files(c(f1, f2), "out.mp4"), x = "main_w-overlay_w-16",
+      y = 16)))
+    Output
+      -y -i "<in1>" -i "<in2>" -filter_complex "[0:v][1:v]overlay=x=main_w-overlay_w-16:y=16:shortest=0[vout]" -map "[vout]" "out.mp4"
+    Code
+      writeLines(compile_scrubbed(ffm_overlay(ffm_files(c(f1, f2), "out.mp4"), x = "main_w-overlay_w-16",
+      y = 16, scale = 0.25)))
+    Output
+      -y -i "<in1>" -i "<in2>" -filter_complex "[1:v][0:v]scale2ref=w='main_w*0.25':h='main_w*0.25*ih/iw'[pip][bg];[bg][pip]overlay=x=main_w-overlay_w-16:y=16:shortest=0[vout]" -map "[vout]" "out.mp4"
+    Code
       writeLines(compile_scrubbed(ffm_seek(ffm_files(f1, "out.mp4"), start = 3, end = 7)))
     Output
       -y -i "<in1>" -ss 3 -to 7 "out.mp4"

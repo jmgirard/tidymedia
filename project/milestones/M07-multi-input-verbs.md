@@ -59,8 +59,8 @@ picture-in-picture) — common needs in behavioral/annotation workflows.
       (`check_multi_input_ordering()`); hstack/vstack use it (overlay in T2).
 - [x] T4: `compare_videos()` Layer-2 verb + tests (incl. execution skip_if).
 - [x] T5: `picture_in_picture()` Layer-2 verb (+ `ffm_overlay(scale=)`) + tests.
-- [ ] T6: `document()`; update multi-input vignette section if present; add
-      DECISIONS.md entry; (NEWS.md at review).
+- [x] T6: `document()`; snapshots; vignette multi-input section; DECISIONS D009
+      (NEWS.md at review).
 - [ ] T7: Full `devtools::test()` + `devtools::check()` clean; finalize.
 
 ## Work log
@@ -79,6 +79,8 @@ Append-only; newest last. One line per session: date, what happened, next.
 - 2026-07-10: T5 — `picture_in_picture()` + `ffm_overlay(scale=)` (scale2ref
   inset kept in Layer 1); corner/center positions, margin; execution tests pass.
   Next: T6 snapshots/docs/DECISIONS.
+- 2026-07-10: T6 — snapshots regenerated (vstack/overlay/scale), vignette
+  multi-input section expanded, DECISIONS D009 recorded. Next: T7 full check.
 
 ## Decisions
 

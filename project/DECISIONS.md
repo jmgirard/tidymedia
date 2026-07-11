@@ -79,3 +79,18 @@ fast path (`reencode = FALSE`) input-seeks (`-ss` before `-i`) with
 `-avoid_negative_ts make_zero` and is lossless but snaps cuts to keyframes, so
 the output duration is approximate. Rules out the old output-seek-copy path,
 which produced wrong-duration, timestamp-shifted output.
+
+## D009 — Blessed multi-input set completed, video-only (2026-07-10, from M07)
+
+The D003 blessed set is now `hstack`, `vstack`, `overlay`, `concat` — all
+**single video output** verbs riding the existing `-filter_complex … [vout]`
+path (D006). `xstack` (grid) and `amix` (audio mix) stay Layer 0: `amix`
+specifically is deferred because an audio output would require generalizing the
+`[vout]`-only complex-compile path to an `[aout]` output — a distinct future
+milestone, not a bolt-on. Audio in stacked/overlaid output stays
+explicit-map-only (D-M06-1); Layer-2 verbs (`compare_videos`,
+`picture_in_picture`) expose an `audio =` index that resolves to `ffm_map()`.
+Filtergraph assembly (including `ffm_overlay(scale=)`'s scale2ref inset) stays
+in Layer 1 (D002); Layer-2 verbs only compute arguments. Rules out per-verb
+hand-glued filtergraphs at Layer 2 and any multi-/audio-output engine model
+for now.

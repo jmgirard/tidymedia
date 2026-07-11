@@ -51,11 +51,13 @@ Other builder functions:
 [`ffm_hstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md),
 [`ffm_map()`](https://jmgirard.github.io/tidymedia/reference/ffm_map.md),
 [`ffm_output_options()`](https://jmgirard.github.io/tidymedia/reference/ffm_output_options.md),
+[`ffm_overlay()`](https://jmgirard.github.io/tidymedia/reference/ffm_overlay.md),
 [`ffm_pixel_format()`](https://jmgirard.github.io/tidymedia/reference/ffm_pixel_format.md),
 [`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md),
 [`ffm_scale()`](https://jmgirard.github.io/tidymedia/reference/ffm_scale.md),
 [`ffm_seek()`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md),
 [`ffm_trim()`](https://jmgirard.github.io/tidymedia/reference/ffm_trim.md),
+[`ffm_vstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_vstack.md),
 [`print.tidymedia_ffm()`](https://jmgirard.github.io/tidymedia/reference/print.tidymedia_ffm.md)
 
 ## Examples
@@ -66,5 +68,5 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 ffm(c(video, video), "output.mp4") |>
   ffm_concat() |>
   ffm_compile()
-#> [1] "-y -f concat -safe 0 -i \"/tmp/RtmpZiLzRV/ffm-concat1fc4346daed.txt\" -codec:v copy -codec:a copy -map 0 \"output.mp4\""
+#> [1] "-y -f concat -safe 0 -i \"/tmp/RtmpCcNjhZ/ffm-concat1fd318aaa5fb.txt\" -codec:v copy -codec:a copy -map 0 \"output.mp4\""
 ```

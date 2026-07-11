@@ -33,10 +33,12 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 
 Other task verb functions:
 [`audio_as_mp3()`](https://jmgirard.github.io/tidymedia/reference/audio_as_mp3.md),
+[`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
 [`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md),
 [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
 [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
 [`extract_frame()`](https://jmgirard.github.io/tidymedia/reference/extract_frame.md),
+[`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
 [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
 

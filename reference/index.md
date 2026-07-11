@@ -41,6 +41,10 @@ it.
   : Set the Pixel Format in an FFmpeg Pipeline
 - [`ffm_hstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md)
   : Horizontally Stack Multiple Videos in an FFmpeg Pipeline
+- [`ffm_vstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_vstack.md)
+  : Vertically Stack Multiple Videos in an FFmpeg Pipeline
+- [`ffm_overlay()`](https://jmgirard.github.io/tidymedia/reference/ffm_overlay.md)
+  : Overlay One Video on Another in an FFmpeg Pipeline
 - [`ffm_concat()`](https://jmgirard.github.io/tidymedia/reference/ffm_concat.md)
   : Concatenate Multiple Inputs in an FFmpeg Pipeline
 - [`ffm_drawbox()`](https://jmgirard.github.io/tidymedia/reference/ffm_drawbox.md)
@@ -76,6 +80,10 @@ Thin wrappers over the builder for common preprocessing jobs.
   : Segment Video
 - [`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md)
   : Combine video files using the concat demuxer
+- [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
+  : Build a side-by-side comparison video
+- [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
+  : Inset one video over another (picture-in-picture)
 
 ## Media metadata
 

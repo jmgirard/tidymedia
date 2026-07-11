@@ -13,6 +13,7 @@
 <url><loc>https://jmgirard.github.io/tidymedia/index.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/news/index.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/audio_as_mp3.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/compare_videos.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/concatenate_videos.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/convert_fractions.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/crop_video.html</loc></url>
@@ -31,11 +32,13 @@
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_hstack.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_map.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_output_options.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_overlay.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_pixel_format.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_run.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_scale.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_seek.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_trim.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_vstack.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffmpeg.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffprobe.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/find_program.html</loc></url>
@@ -55,6 +58,7 @@
 <url><loc>https://jmgirard.github.io/tidymedia/reference/mediainfo_summary.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/mediainfo_template.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/pad_integers.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/picture_in_picture.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/print.tidymedia_ffm.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/probe_all.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/probe_container.html</loc></url>

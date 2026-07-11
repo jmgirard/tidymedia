@@ -115,8 +115,12 @@ Note that
 
 A few “blessed” verbs take more than one input. Pass a vector of files
 to [`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
-then stack them side by side with
+then combine them: stack side by side with
 [`ffm_hstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md)
+or top to bottom with
+[`ffm_vstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_vstack.md),
+composite one over another with
+[`ffm_overlay()`](https://jmgirard.github.io/tidymedia/reference/ffm_overlay.md),
 or join them end-to-end with
 [`ffm_concat()`](https://jmgirard.github.io/tidymedia/reference/ffm_concat.md):
 
@@ -126,6 +130,20 @@ ffm(c(video, video), "side_by_side.mp4") |>
   ffm_hstack() |>
   ffm_compile()
 #> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -filter_complex \"[0:v][1:v]hstack=inputs=2:shortest=0[vout]\" -map \"[vout]\" \"side_by_side.mp4\""
+```
+
+Each manages its own stream labels internally, so audio is dropped
+unless you map it back with `ffm_map("0:a")`. The task-verb layer wraps
+the common cases:
+[`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
+for a side-by-side (or stacked) comparison and
+[`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
+for an inset overlay.
+
+``` r
+
+compare_videos(c(video, video), "compare.mp4", audio = 0, run = FALSE)
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -filter_complex \"[0:v][1:v]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[0s][1s];[1s][0s]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[1s][0s];[0s][1s]hstack,setsar=1[vout]\" -map \"[vout]\" -map 0:a \"compare.mp4\""
 ```
 
 The builder stays deliberately linear — one input chain, sequential

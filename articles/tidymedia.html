@@ -158,18 +158,28 @@ seeking can stream-copy.</p>
 <h2 id="combining-multiple-inputs">Combining multiple inputs<a class="anchor" aria-label="anchor" href="#combining-multiple-inputs"></a>
 </h2>
 <p>A few “blessed” verbs take more than one input. Pass a vector of
-files to <code><a href="../reference/ffm.html">ffm()</a></code>, then stack them side by side with
-<code><a href="../reference/ffm_hstack.html">ffm_hstack()</a></code> or join them end-to-end with
+files to <code><a href="../reference/ffm.html">ffm()</a></code>, then combine them: stack side by side with
+<code><a href="../reference/ffm_hstack.html">ffm_hstack()</a></code> or top to bottom with
+<code><a href="../reference/ffm_vstack.html">ffm_vstack()</a></code>, composite one over another with
+<code><a href="../reference/ffm_overlay.html">ffm_overlay()</a></code>, or join them end-to-end with
 <code><a href="../reference/ffm_concat.html">ffm_concat()</a></code>:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ffm.html">ffm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">video</span>, <span class="va">video</span><span class="op">)</span>, <span class="st">"side_by_side.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_hstack.html">ffm_hstack</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_compile.html">ffm_compile</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -filter_complex \"[0:v][1:v]hstack=inputs=2:shortest=0[vout]\" -map \"[vout]\" \"side_by_side.mp4\""</span></span></code></pre></div>
+<p>Each manages its own stream labels internally, so audio is dropped
+unless you map it back with <code>ffm_map("0:a")</code>. The task-verb
+layer wraps the common cases: <code><a href="../reference/compare_videos.html">compare_videos()</a></code> for a
+side-by-side (or stacked) comparison and
+<code><a href="../reference/picture_in_picture.html">picture_in_picture()</a></code> for an inset overlay.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/compare_videos.html">compare_videos</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">video</span>, <span class="va">video</span><span class="op">)</span>, <span class="st">"compare.mp4"</span>, audio <span class="op">=</span> <span class="fl">0</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -filter_complex \"[0:v][1:v]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[0s][1s];[1s][0s]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[1s][0s];[0s][1s]hstack,setsar=1[vout]\" -map \"[vout]\" -map 0:a \"compare.mp4\""</span></span></code></pre></div>
 <p>The builder stays deliberately linear — one input chain, sequential
 filters, one output — so full FFmpeg filtergraphs are out of scope. When
 you need one, reach for the Layer 0 escape hatch:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Layer 0: raw arguments passed straight to FFmpeg</span></span>
 <span><span class="fu"><a href="../reference/ffmpeg.html">ffmpeg</a></span><span class="op">(</span><span class="st">"-version"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span></span>
 <span><span class="co">#&gt; [1] "ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers"</span></span></code></pre></div>

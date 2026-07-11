@@ -16,7 +16,13 @@
 #' @export
 ffmpeg <- function(command) {
   rlang::check_string(command)
-  out <- system(glue('{find_ffmpeg()} {command}'), intern = TRUE)
+  # Redirect FFmpeg's stdin from an empty input (the `input = ""` temp file) so
+  # it cannot drain the parent process's stdin. FFmpeg reads stdin for
+  # interactive control while encoding; without this it would swallow whatever
+  # is feeding R's stdin (e.g. the example stream during R CMD check). This is
+  # the equivalent of FFmpeg's -nostdin flag, applied without touching the
+  # verbatim `command` string.
+  out <- system(glue('{find_ffmpeg()} {command}'), intern = TRUE, input = "")
   out
 }
 

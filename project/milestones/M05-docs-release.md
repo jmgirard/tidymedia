@@ -120,3 +120,7 @@ Milestone-local decisions; promote cross-cutting ones to ../DECISIONS.md.
   tempdir not the check dir; `find_*` example correctly shows the NULL+warning
   return; single pkgdown alias per shared topic is correct usage).
 - Follow-ups spawned: none.
+- 2026-07-10: CI caught a Linux-only `checking examples` ERROR — the `ffm_run`
+  example's real encode let FFmpeg drain R CMD check's stdin (examples fed via
+  stdin), desyncing the parser. Fixed `ffmpeg()` with `input = ""` (≈ -nostdin);
+  local check still 0/0/0. Re-pushed for CI.

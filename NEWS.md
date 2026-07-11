@@ -44,6 +44,10 @@ First tagged release, bringing the metadata, builder, and task-verb work of the
 
 ## Bug fixes
 
+* `ffmpeg()` no longer lets FFmpeg read the calling process's standard input, so
+  running a pipeline (e.g. via `ffm_run()`) inside a script that is itself fed
+  through `stdin` no longer swallows the rest of that input. Equivalent to
+  FFmpeg's `-nostdin`.
 * `probe_container()`, `probe_streams()`, `probe_video()`, and `probe_audio()`
   now return the requested tibble when called with `infile =`; they previously
   returned `NULL`.

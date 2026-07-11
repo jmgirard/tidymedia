@@ -109,3 +109,15 @@ the eight cairn skills (`/milestone*`, `/hotfix`, `/cairn-release`,
 `/cairn-init`) are now the sanctioned way to change project state. Supersedes
 D005's `project/`-path reference (the milestone-driven workflow itself stands);
 architecture rationale now lives in `cairn/DESIGN.md`.
+
+## D011 — Verification & provenance layer outside the engine (2026-07-11, from M08)
+
+Output verification and batch provenance are a layer *over* the engine, never a
+change to the `ffm` object (D003). `verify_media()` is a standalone probe-backed
+primitive wired into execution via `ffm_run(verify=)` (aborts on failure, like
+its FFmpeg-exit abort) and `ffm_batch(verify=)` (records a `verified` column,
+never aborts) — there is no `ffm_expect()` verb, so the pipeline object stays
+command-only. The batch provenance manifest (`ffm_manifest()` /
+`ffm_batch(manifest=, checksums=)`) is opt-in and attached as an attribute; md5
+checksums opt-in; CSV output only (no JSON/hash dependency). Rules out an
+assertion-carrying engine object and any always-on provenance overhead.

@@ -54,7 +54,17 @@ per job, collected back into a tibble.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ffm_batch</span><span class="op">(</span><span class="va">jobs</span>, <span class="va">.f</span>, <span class="va">...</span>, run <span class="op">=</span> <span class="cn">TRUE</span>, parallel <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ffm_batch</span><span class="op">(</span></span>
+<span>  <span class="va">jobs</span>,</span>
+<span>  <span class="va">.f</span>,</span>
+<span>  <span class="va">...</span>,</span>
+<span>  run <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  verify <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  progress <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  manifest <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  checksums <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -85,12 +95,45 @@ default) or only compile them for inspection (<code>FALSE</code>, a dry run).</p
 (<code>TRUE</code>) or sequentially (<code>FALSE</code>, default). Parallelism follows
 the <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future</a></code> plan the caller has set.</p></dd>
 
+
+<dt id="arg-verify">verify<a class="anchor" aria-label="anchor" href="#arg-verify"></a></dt>
+<dd><p>An optional output check applied to each job (only when
+<code>run = TRUE</code>). Either a named list of expected properties (the same
+spec for every job, e.g. <code>list(width = 1920)</code>) or a function of the
+job columns (called <code><a href="https://purrr.tidyverse.org/reference/pmap.html" class="external-link">pmap</a></code>-style, like <code>.f</code>)
+that returns such a list per job. Each job's output is passed to
+<code><a href="verify_media.html">verify_media</a></code>; unlike <code><a href="ffm_run.html">ffm_run</a></code>, a failed check is
+<em>recorded</em>, not aborted. Adds a logical <code>verified</code> column (all
+checks passed), <code>NA</code> for jobs that did not run successfully.</p></dd>
+
+
+<dt id="arg-progress">progress<a class="anchor" aria-label="anchor" href="#arg-progress"></a></dt>
+<dd><p>A logical: display a <span class="pkg">cli</span> progress bar as the jobs run
+(<code>TRUE</code>) or run quietly (<code>FALSE</code>, default). Only applies when
+<code>run = TRUE</code>; safe (a no-op animation) in non-interactive sessions.</p></dd>
+
+
+<dt id="arg-manifest">manifest<a class="anchor" aria-label="anchor" href="#arg-manifest"></a></dt>
+<dd><p>A logical: when <code>TRUE</code> (and <code>run = TRUE</code>), record a
+provenance manifest (per-job command, FFmpeg/FFprobe versions, timestamp,
+output size) and attach it to the result, readable with
+<code><a href="ffm_manifest.html">ffm_manifest</a></code>. (default = <code>FALSE</code>)</p></dd>
+
+
+<dt id="arg-checksums">checksums<a class="anchor" aria-label="anchor" href="#arg-checksums"></a></dt>
+<dd><p>A logical: when <code>TRUE</code>, the manifest also captures md5
+checksums of each job's input(s) and output. Ignored unless
+<code>manifest = TRUE</code>. (default = <code>FALSE</code>)</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code>jobs</code> as a <a href="https://tibble.tidyverse.org/reference/tibble-package.html" class="external-link">tibble</a> with an added
 <code>command</code> column (the compiled FFmpeg command for each job) and, when
-<code>run = TRUE</code>, a logical <code>success</code> column.</p>
+<code>run = TRUE</code>, a logical <code>success</code> column (plus a <code>verified</code>
+column when <code>verify</code> is supplied). When <code>manifest = TRUE</code> a
+provenance manifest is attached as an attribute; read it with
+<code><a href="ffm_manifest.html">ffm_manifest</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -103,7 +146,9 @@ use.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="segment_video.html">segment_video</a></code>, which is built on <code>ffm_batch()</code>.</p>
+    <div class="dont-index"><p><code><a href="segment_video.html">segment_video</a></code>, which is built on <code>ffm_batch()</code>;
+<code><a href="verify_media.html">verify_media</a></code> for the verification spec and
+<code><a href="ffm_manifest.html">ffm_manifest</a></code> for the provenance manifest.</p>
 <p>Other builder functions:
 <code><a href="ffm.html">ffm()</a></code>,
 <code><a href="ffm_codec.html">ffm_codec()</a></code>,

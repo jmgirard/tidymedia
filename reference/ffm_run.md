@@ -6,7 +6,7 @@ FFmpeg.
 ## Usage
 
 ``` r
-ffm_run(object)
+ffm_run(object, verify = NULL)
 ```
 
 ## Arguments
@@ -15,6 +15,15 @@ ffm_run(object)
 
   An ffmpeg pipeline (`ffm`) object created by
   [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md).
+
+- verify:
+
+  An optional named list of expected output properties, passed to
+  [`verify_media`](https://jmgirard.github.io/tidymedia/reference/verify_media.md)
+  (e.g. `list(width = 1920, video_codec = "h264")`). After a successful
+  run the output is probed and, if any check fails, `ffm_run()` aborts
+  with the failed checks (mirroring how it aborts on a non-zero FFmpeg
+  exit). `NULL` (default) skips verification.
 
 ## Value
 
@@ -56,5 +65,5 @@ out <- tempfile(fileext = ".mp4")
 ffm(video, out) |>
   ffm_scale(width = 160, height = 120) |>
   ffm_codec(video = "libx264") |>
-  ffm_run()
+  ffm_run(verify = list(width = 160, height = 120))
 ```

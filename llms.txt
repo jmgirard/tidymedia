@@ -281,6 +281,16 @@ Thin wrappers over the builder for common preprocessing jobs.
 - [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
   : Inset one video over another (picture-in-picture)
 
+## Verification & provenance
+
+Check that an output really has the properties you asked for, and record
+a reproducibility manifest for a batch run.
+
+- [`verify_media()`](https://jmgirard.github.io/tidymedia/reference/verify_media.md)
+  : Verify a Media File Against Expected Properties
+- [`ffm_manifest()`](https://jmgirard.github.io/tidymedia/reference/ffm_manifest.md)
+  : Read a Batch Provenance Manifest
+
 ## Media metadata
 
 Read container and stream metadata as tibbles, ready for the tidyverse.

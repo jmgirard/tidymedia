@@ -2,6 +2,33 @@
 
 ## tidymedia (development version)
 
+### Verification & provenance (M08)
+
+- Added
+  [`verify_media()`](https://jmgirard.github.io/tidymedia/reference/verify_media.md),
+  a probe-backed checker that confirms an output really has the
+  properties you asked for. It returns a tidy tibble with one row per
+  check (`file`, `check`, `expected`, `actual`, `pass`) covering
+  `duration`, `width`, `height`, `video_codec`, `audio_codec`, and
+  `sample_rate`, plus any other FFprobe field passed by name through
+  `...`. Numeric checks use an absolute `tolerance` (default `0.1`, so
+  integer dimensions match exactly while duration gets a little slack);
+  codec checks match exactly.
+- Verification is wired into execution. `ffm_run(verify = <named list>)`
+  probes the output after a successful run and aborts, listing the
+  failed checks, if any assertion fails.
+  `ffm_batch(verify = <list or function>)` instead records the outcome
+  in a logical `verified` column (one spec for all jobs, or a
+  `pmap`-style function of the job columns) without aborting.
+- Added a batch provenance manifest. `ffm_batch(manifest = TRUE)`
+  attaches a per-job record — command, FFmpeg/FFprobe versions,
+  timestamp, and output size — read back with
+  [`ffm_manifest()`](https://jmgirard.github.io/tidymedia/reference/ffm_manifest.md),
+  which can also write it to CSV via `path =`. `checksums = TRUE`
+  additionally records input/output md5 checksums.
+- `ffm_batch(progress = TRUE)` shows a `cli` progress bar as the jobs
+  run (following the `future` plan on the parallel path).
+
 ### Multi-input verbs (M07)
 
 - Completed the blessed multi-input builder set with

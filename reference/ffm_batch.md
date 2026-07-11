@@ -8,7 +8,17 @@ command per job, collected back into a tibble.
 ## Usage
 
 ``` r
-ffm_batch(jobs, .f, ..., run = TRUE, parallel = FALSE)
+ffm_batch(
+  jobs,
+  .f,
+  ...,
+  run = TRUE,
+  parallel = FALSE,
+  verify = NULL,
+  progress = FALSE,
+  manifest = FALSE,
+  checksums = FALSE
+)
 ```
 
 ## Arguments
@@ -39,12 +49,50 @@ ffm_batch(jobs, .f, ..., run = TRUE, parallel = FALSE)
   [`future`](https://future.futureverse.org/reference/plan.html) plan
   the caller has set.
 
+- verify:
+
+  An optional output check applied to each job (only when `run = TRUE`).
+  Either a named list of expected properties (the same spec for every
+  job, e.g. `list(width = 1920)`) or a function of the job columns
+  (called
+  [`pmap`](https://purrr.tidyverse.org/reference/pmap.html)-style, like
+  `.f`) that returns such a list per job. Each job's output is passed to
+  [`verify_media`](https://jmgirard.github.io/tidymedia/reference/verify_media.md);
+  unlike
+  [`ffm_run`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md),
+  a failed check is *recorded*, not aborted. Adds a logical `verified`
+  column (all checks passed), `NA` for jobs that did not run
+  successfully.
+
+- progress:
+
+  A logical: display a cli progress bar as the jobs run (`TRUE`) or run
+  quietly (`FALSE`, default). Only applies when `run = TRUE`; safe (a
+  no-op animation) in non-interactive sessions.
+
+- manifest:
+
+  A logical: when `TRUE` (and `run = TRUE`), record a provenance
+  manifest (per-job command, FFmpeg/FFprobe versions, timestamp, output
+  size) and attach it to the result, readable with
+  [`ffm_manifest`](https://jmgirard.github.io/tidymedia/reference/ffm_manifest.md).
+  (default = `FALSE`)
+
+- checksums:
+
+  A logical: when `TRUE`, the manifest also captures md5 checksums of
+  each job's input(s) and output. Ignored unless `manifest = TRUE`.
+  (default = `FALSE`)
+
 ## Value
 
 `jobs` as a
 [tibble](https://tibble.tidyverse.org/reference/tibble-package.html)
 with an added `command` column (the compiled FFmpeg command for each
-job) and, when `run = TRUE`, a logical `success` column.
+job) and, when `run = TRUE`, a logical `success` column (plus a
+`verified` column when `verify` is supplied). When `manifest = TRUE` a
+provenance manifest is attached as an attribute; read it with
+[`ffm_manifest`](https://jmgirard.github.io/tidymedia/reference/ffm_manifest.md).
 
 ## Details
 
@@ -59,7 +107,11 @@ Give `.f` a `...` argument if `jobs` carries columns it does not use.
 ## See also
 
 [`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
-which is built on `ffm_batch()`.
+which is built on `ffm_batch()`;
+[`verify_media`](https://jmgirard.github.io/tidymedia/reference/verify_media.md)
+for the verification spec and
+[`ffm_manifest`](https://jmgirard.github.io/tidymedia/reference/ffm_manifest.md)
+for the provenance manifest.
 
 Other builder functions:
 [`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),

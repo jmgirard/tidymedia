@@ -30,6 +30,7 @@
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_drop.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_files.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_hstack.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_manifest.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_map.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_output_options.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_overlay.html</loc></url>
@@ -66,5 +67,6 @@
 <url><loc>https://jmgirard.github.io/tidymedia/reference/separate_audio_video.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/set_program.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/tidyeval.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/verify_media.html</loc></url>
 </urlset>
 

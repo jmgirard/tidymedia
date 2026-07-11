@@ -60,7 +60,7 @@ turning "the command is reproducible" into "the *result* is verified and recorde
 
 ## Tasks
 
-- [ ] T1: Pure comparison core + `verify_media()`. Factor a binary-free
+- [x] T1: Pure comparison core + `verify_media()`. Factor a binary-free
       `compare_expectations(expected, actual)` (CI-safe tests) under
       `verify_media()`, which probes the output via the M04 layer
       (`probe_container`/`probe_video`/`probe_audio`) and assembles the tibble.
@@ -87,6 +87,15 @@ turning "the command is reproducible" into "the *result* is verified and recorde
   settled at the plan question gate); ready to implement.
 - 2026-07-11: Migrated from `project/milestones/` into cairn (adopt-in-place,
   reformatted to cairn template); status and content unchanged.
+- 2026-07-11: Implement started; branch `m08-verification-provenance` cut from
+  pushed master.
+- 2026-07-11: Pre-impl gate settled — tolerance is uniform absolute (default
+  `0.1`, `abs(actual-expected) <= tolerance`, so integer dims match exactly and
+  duration gets slack); `...` extras resolve container→video→audio, first match
+  wins; manifest opt-in (`manifest = FALSE`).
+- 2026-07-11: T1 done — `R/verify.R` with pure `compare_expectations()` core +
+  `verify_media()`; `test-verify.R` (28 tests, pure ones CI-safe); pkgdown
+  "Verification & provenance" section added.
 
 ## Decisions
 <!-- milestone-local; promote cross-cutting ones to cairn/DECISIONS.md -->

@@ -1,6 +1,6 @@
 # M07: Complete the blessed multi-input verbs
 
-- **Status:** planned <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
+- **Status:** in-progress <!-- mirror of ROADMAP.md; ROADMAP wins on conflict -->
 - **Created:** 2026-07-10
 - **Completed:** —
 

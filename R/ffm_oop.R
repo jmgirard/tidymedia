@@ -110,8 +110,23 @@ check_ffm <- function(object,
 
 # print.tidymedia_ffm() ---------------------------------------------------
 
+#' Print an FFmpeg pipeline
+#'
+#' Print a tidymedia \code{ffm} pipeline by showing the FFmpeg command it
+#' currently compiles to (via \code{\link{ffm_compile}}).
+#'
+#' @param x A tidymedia \code{ffm} pipeline object created by
+#'   \code{\link{ffm_files}}.
+#' @param ... Ignored.
+#' @return \code{x}, invisibly.
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' ffm(video, "output.mp4") |>
+#'   ffm_trim(start = 1, end = 5)
 #' @method print tidymedia_ffm
 #' @export
 print.tidymedia_ffm <- function(x, ...) {
   cat('tidymedia ffmpeg pipeline:\n\n', ffm_compile(x), '\n')
+  invisible(x)
 }

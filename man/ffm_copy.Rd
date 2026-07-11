@@ -24,5 +24,35 @@ input (via \code{ffm_map(mapping = "0")}). (default = \code{TRUE})}
 all streams.
 }
 \description{
-Description
+Stream-copy the audio and/or video (no re-encoding) and, optionally, map all
+streams from the input. This is the fast, lossless path when you only need to
+remux or cut on keyframes.
 }
+\examples{
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+ffm(video, "output.mp4") |>
+  ffm_copy() |>
+  ffm_compile()
+}
+\seealso{
+Other builder functions:
+\code{\link[=ffm]{ffm()}},
+\code{\link[=ffm_batch]{ffm_batch()}},
+\code{\link[=ffm_codec]{ffm_codec()}},
+\code{\link[=ffm_compile]{ffm_compile()}},
+\code{\link[=ffm_concat]{ffm_concat()}},
+\code{\link[=ffm_crop]{ffm_crop()}},
+\code{\link[=ffm_drawbox]{ffm_drawbox()}},
+\code{\link[=ffm_drop]{ffm_drop()}},
+\code{\link[=ffm_files]{ffm_files()}},
+\code{\link[=ffm_hstack]{ffm_hstack()}},
+\code{\link[=ffm_map]{ffm_map()}},
+\code{\link[=ffm_output_options]{ffm_output_options()}},
+\code{\link[=ffm_pixel_format]{ffm_pixel_format()}},
+\code{\link[=ffm_run]{ffm_run()}},
+\code{\link[=ffm_scale]{ffm_scale()}},
+\code{\link[=ffm_seek]{ffm_seek()}},
+\code{\link[=ffm_trim]{ffm_trim()}},
+\code{\link[=print.tidymedia_ffm]{print.tidymedia_ffm()}}
+}
+\concept{builder functions}

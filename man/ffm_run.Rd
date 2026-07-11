@@ -10,6 +10,42 @@ ffm_run(object)
 \item{object}{An ffmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 }
+\value{
+The FFmpeg exit status (invisibly), called for its side effect of
+writing the output file.
+}
 \description{
 Compile the instructions in the pipeline and run them all through FFmpeg.
 }
+\examples{
+\dontshow{if (nzchar(Sys.which("ffmpeg"))) withAutoprint(\{ # examplesIf}
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+out <- tempfile(fileext = ".mp4")
+ffm(video, out) |>
+  ffm_scale(width = 160, height = 120) |>
+  ffm_codec(video = "libx264") |>
+  ffm_run()
+\dontshow{\}) # examplesIf}
+}
+\seealso{
+Other builder functions:
+\code{\link[=ffm]{ffm()}},
+\code{\link[=ffm_batch]{ffm_batch()}},
+\code{\link[=ffm_codec]{ffm_codec()}},
+\code{\link[=ffm_compile]{ffm_compile()}},
+\code{\link[=ffm_concat]{ffm_concat()}},
+\code{\link[=ffm_copy]{ffm_copy()}},
+\code{\link[=ffm_crop]{ffm_crop()}},
+\code{\link[=ffm_drawbox]{ffm_drawbox()}},
+\code{\link[=ffm_drop]{ffm_drop()}},
+\code{\link[=ffm_files]{ffm_files()}},
+\code{\link[=ffm_hstack]{ffm_hstack()}},
+\code{\link[=ffm_map]{ffm_map()}},
+\code{\link[=ffm_output_options]{ffm_output_options()}},
+\code{\link[=ffm_pixel_format]{ffm_pixel_format()}},
+\code{\link[=ffm_scale]{ffm_scale()}},
+\code{\link[=ffm_seek]{ffm_seek()}},
+\code{\link[=ffm_trim]{ffm_trim()}},
+\code{\link[=print.tidymedia_ffm]{print.tidymedia_ffm()}}
+}
+\concept{builder functions}

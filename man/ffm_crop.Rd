@@ -30,6 +30,35 @@ contains an FFMPEG expression. (default = \code{"(in_h-out_h)/2"})}
 \description{
 Decrease the size of the video's frames by cropping it.
 }
+\examples{
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+# Crop to a centered 160x120 region
+ffm(video, "output.mp4") |>
+  ffm_crop(width = 160, height = 120) |>
+  ffm_compile()
+}
 \references{
 https://ffmpeg.org/ffmpeg-filters.html#toc-crop
 }
+\seealso{
+Other builder functions:
+\code{\link[=ffm]{ffm()}},
+\code{\link[=ffm_batch]{ffm_batch()}},
+\code{\link[=ffm_codec]{ffm_codec()}},
+\code{\link[=ffm_compile]{ffm_compile()}},
+\code{\link[=ffm_concat]{ffm_concat()}},
+\code{\link[=ffm_copy]{ffm_copy()}},
+\code{\link[=ffm_drawbox]{ffm_drawbox()}},
+\code{\link[=ffm_drop]{ffm_drop()}},
+\code{\link[=ffm_files]{ffm_files()}},
+\code{\link[=ffm_hstack]{ffm_hstack()}},
+\code{\link[=ffm_map]{ffm_map()}},
+\code{\link[=ffm_output_options]{ffm_output_options()}},
+\code{\link[=ffm_pixel_format]{ffm_pixel_format()}},
+\code{\link[=ffm_run]{ffm_run()}},
+\code{\link[=ffm_scale]{ffm_scale()}},
+\code{\link[=ffm_seek]{ffm_seek()}},
+\code{\link[=ffm_trim]{ffm_trim()}},
+\code{\link[=print.tidymedia_ffm]{print.tidymedia_ffm()}}
+}
+\concept{builder functions}

@@ -3,7 +3,7 @@
 R interface to FFmpeg and MediaInfo for **reproducible media preprocessing in
 research/data-science pipelines** — batch trimming, cropping, format
 standardization, and metadata extraction as tibbles. It is deliberately not
-"all of ffmpeg in R" (see project/DECISIONS.md D001).
+"all of ffmpeg in R" (see cairn/DECISIONS.md D001).
 
 ## Architecture: three layers (DECISIONS.md D002–D003)
 
@@ -16,18 +16,27 @@ standardization, and metadata extraction as tibbles. It is deliberately not
 - **Layer 2 — front door:** task verbs (`extract_audio()`, `segment_video()`,
   …) as thin wrappers over Layer 1. Must not glue their own command strings.
 
-## Project management
+## Project tracking (cairn)
 
-All planning and tracking lives in `project/`, driven by the `/milestone`
-skill (plan → implement → review, plus Fable review briefs):
+This repo uses the cairn plugin. All project state lives in markdown
+under `cairn/`. Boundary rule: **Architecture → DESIGN · Status → ROADMAP ·
+Tasks → milestone files · Decisions → DECISIONS · History → archive + git.**
 
-- `project/ROADMAP.md` — milestone status (single source of truth)
-- `project/milestones/` — one file per planned milestone
-- `project/DECISIONS.md` — append-only design decisions
-- `project/briefs/` — Fable brief/review artifacts
-
-**Never record status, progress, or TODOs in this file** — it rots here.
-Start any development work with `/milestone`.
+- Start with `/milestone` — status snapshot, health audit, suggested next
+  action. Never record status or TODOs in this file; anything time-varying
+  rots here.
+- All eight skills: `/milestone`, `/milestone-plan`, `/milestone-implement`,
+  `/milestone-review`, `/milestone-brief` (Fable escalation), `/hotfix`,
+  `/cairn-release`, `/cairn-init`.
+- Work tiers: trivial edits (no runtime surface) commit directly to main;
+  user-visible bugs go through `/hotfix`; everything else is a milestone
+  (`/milestone-plan` → `/milestone-implement` → `/milestone-review`).
+- Ideas: "add X to the candidates" appends a ROADMAP row — no ceremony.
+- Nothing merges to main without the user's explicit approval at review.
+- Claude's persistent memory never holds project state; `cairn/` files win
+  any conflict.
+- All skills read the plugin's `skills/shared/tracking-rules.md` first and
+  obey it.
 
 ## Development conventions
 

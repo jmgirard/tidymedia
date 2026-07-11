@@ -11,3 +11,6 @@ docs
 
 # testthat scratch dumps from snapshot runs
 tests/testthat/_problems/
+
+# cairn: local-only reference PDFs
+cairn/references/pdf/

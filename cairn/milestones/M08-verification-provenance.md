@@ -75,7 +75,7 @@ turning "the command is reproducible" into "the *result* is verified and recorde
       optional `tools::md5sum()` checksums. `ffm_batch(manifest = FALSE,
       checksums = FALSE)` attaches the manifest; `ffm_manifest(x, path = NULL)`
       reads it (helpful error if absent) and optionally writes CSV via `utils`.
-- [ ] T4: Progress reporting. `ffm_batch(progress = FALSE)`: `cli` progress bar
+- [x] T4: Progress reporting. `ffm_batch(progress = FALSE)`: `cli` progress bar
       on the sequential path; `.progress` for the furrr parallel path.
 - [ ] T5: Docs & polish. `devtools::document()`, NEWS.md under the dev heading,
       a "Verification & provenance" section in `_pkgdown.yml`, `check()` green.
@@ -103,6 +103,9 @@ turning "the command is reproducible" into "the *result* is verified and recorde
   `build_manifest`/`tool_versions`/`parse_version_line`); `ffm_batch(manifest=,
   checksums=)` attaches an opt-in manifest. Assembly/checksum/parse tests
   CI-safe, version capture gated. `test-ffm-manifest.R` (24 tests).
+- 2026-07-11: T4 done — `ffm_batch(progress=)` drives a `cli` progress bar
+  (sequential `run_with_progress()` helper; `.progress` on the furrr path);
+  no-op non-interactively. Batch tests green (25).
 
 ## Decisions
 <!-- milestone-local; promote cross-cutting ones to cairn/DECISIONS.md -->

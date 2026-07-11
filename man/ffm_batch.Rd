@@ -11,6 +11,7 @@ ffm_batch(
   run = TRUE,
   parallel = FALSE,
   verify = NULL,
+  progress = FALSE,
   manifest = FALSE,
   checksums = FALSE
 )
@@ -39,6 +40,10 @@ that returns such a list per job. Each job's output is passed to
 \code{\link{verify_media}}; unlike \code{\link{ffm_run}}, a failed check is
 \emph{recorded}, not aborted. Adds a logical \code{verified} column (all
 checks passed), \code{NA} for jobs that did not run successfully.}
+
+\item{progress}{A logical: display a \pkg{cli} progress bar as the jobs run
+(\code{TRUE}) or run quietly (\code{FALSE}, default). Only applies when
+\code{run = TRUE}; safe (a no-op animation) in non-interactive sessions.}
 
 \item{manifest}{A logical: when \code{TRUE} (and \code{run = TRUE}), record a
 provenance manifest (per-job command, FFmpeg/FFprobe versions, timestamp,

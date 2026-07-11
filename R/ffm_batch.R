@@ -32,6 +32,9 @@
 #'   \code{\link{verify_media}}; unlike \code{\link{ffm_run}}, a failed check is
 #'   \emph{recorded}, not aborted. Adds a logical \code{verified} column (all
 #'   checks passed), \code{NA} for jobs that did not run successfully.
+#' @param progress A logical: display a \pkg{cli} progress bar as the jobs run
+#'   (\code{TRUE}) or run quietly (\code{FALSE}, default). Only applies when
+#'   \code{run = TRUE}; safe (a no-op animation) in non-interactive sessions.
 #' @param manifest A logical: when \code{TRUE} (and \code{run = TRUE}), record a
 #'   provenance manifest (per-job command, FFmpeg/FFprobe versions, timestamp,
 #'   output size) and attach it to the result, readable with
@@ -63,7 +66,8 @@
 #' })
 #' @export
 ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
-                      verify = NULL, manifest = FALSE, checksums = FALSE) {
+                      verify = NULL, progress = FALSE, manifest = FALSE,
+                      checksums = FALSE) {
 
   if (!is.data.frame(jobs)) {
     cli::cli_abort("{.arg jobs} must be a data frame with one row per job.")
@@ -76,6 +80,7 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
   }
   rlang::check_bool(run)
   rlang::check_bool(parallel)
+  rlang::check_bool(progress)
   rlang::check_bool(manifest)
   rlang::check_bool(checksums)
   if (!is.null(verify) && !is.function(verify) &&
@@ -116,7 +121,10 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
       !inherits(res, "error") && is.null(attr(res, "status"))
     }
     out$success <- if (parallel) {
-      unlist(furrr::future_map(pipelines, run_one))
+      # furrr drives its own progress reporting over the parallel workers.
+      unlist(furrr::future_map(pipelines, run_one, .progress = progress))
+    } else if (progress) {
+      run_with_progress(pipelines, run_one)
     } else {
       vapply(pipelines, run_one, logical(1))
     }
@@ -145,6 +153,24 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
   }
 
   out
+}
+
+# run_with_progress() -----------------------------------------------------
+
+# Run the pipelines sequentially behind a cli progress bar, returning the
+# per-job success logical (same contract as the plain vapply path). The bar is
+# owned by this function's frame, so it is cleaned up on return; cli renders a
+# no-op in non-interactive sessions, so this never errors under `R CMD check`.
+run_with_progress <- function(pipelines, run_one) {
+  n <- length(pipelines)
+  successes <- logical(n)
+  cli::cli_progress_bar("Running FFmpeg jobs", total = n)
+  for (i in seq_len(n)) {
+    successes[[i]] <- run_one(pipelines[[i]])
+    cli::cli_progress_update()
+  }
+  cli::cli_progress_done()
+  successes
 }
 
 # resolve_batch_verify() --------------------------------------------------

@@ -51,6 +51,15 @@ test_that("ffm_batch() rejects an invalid verify spec type", {
   )
 })
 
+test_that("ffm_batch() rejects a non-logical progress flag", {
+  jobs <- tibble::tibble(input = "a.mp4", output = "a.mp4")
+  expect_error(
+    ffm_batch(jobs, function(input, output, ...) ffm_dry(input, output),
+              run = FALSE, progress = "yes"),
+    "progress"
+  )
+})
+
 test_that("ffm_batch() rejects a non-data-frame or empty jobs table", {
   expect_error(ffm_batch(list(a = 1), function(...) NULL), "data frame")
   expect_error(
@@ -125,6 +134,21 @@ test_that("ffm_batch(verify =) accepts a function of the job columns", {
       ffm_codec(video = "libx264")
   }, verify = function(w, ...) list(width = w, height = w))
   expect_true(res$verified[[1]])
+})
+
+test_that("ffm_batch(progress = TRUE) completes without erroring", {
+  skip_if_no_ffmpeg()
+  a <- make_test_video()
+  b <- make_test_video()
+  out_a <- withr::local_tempfile(fileext = ".mp4")
+  out_b <- withr::local_tempfile(fileext = ".mp4")
+  jobs <- tibble::tibble(input = c(a, b), output = c(out_a, out_b))
+  expect_no_error(
+    res <- ffm_batch(jobs, function(input, output, ...) {
+      ffm_files(input, output) |> ffm_scale(32, 32) |> ffm_codec(video = "libx264")
+    }, progress = TRUE)
+  )
+  expect_true(all(res$success))
 })
 
 # M06: safe execution with hostile paths (binary-gated) --------------------------

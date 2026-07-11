@@ -48,15 +48,15 @@ Each criterion verifiable with evidence at review time.
 
 Tasks sized to one working session or less, ordered by dependency.
 
-- [ ] T1: DESCRIPTION + infra — add `URL`, `BugReports`, `VignetteBuilder:
-      knitr`; add `knitr`/`rmarkdown`/`pkgdown` to Suggests; bump to `0.1.0`;
-      scaffold `usethis::use_pkgdown()`. `check()` still clean.
+- [x] T1: DESCRIPTION + infra — `URL`/`BugReports`/`VignetteBuilder`; Suggests
+      knitr/rmarkdown; `Config/Needs/website: pkgdown`; drop stray `LazyData`;
+      bump to `0.1.0`; add `inst/extdata/sample.mp4` fixture. (2026-07-10)
 - [ ] T2: Roxygen pass A (Layer 0/1) — `@family` + worked `@examples` for
       `ffmpeg`/`ffprobe`/`mediainfo` raw wrappers and the `ffm_*` builder
       (builder examples runnable via `ffm_compile()`, no binaries). `document()`.
 - [ ] T3: Roxygen pass B (Layer 2 + helpers) — `@family` + `@examples` for task
       verbs, `probe_*`/`get_*`/`mediainfo_*`, program-management, and utils;
-      `\dontrun{}` for binary-gated calls. `document()`; examples check clean.
+      `@examplesIf` for binary-gated calls. `document()`; examples check clean.
 - [ ] T4: Vignette "Building ffmpeg pipelines" — builder + compile, binary-free
       so it renders on CI.
 - [ ] T5: Vignette "Media metadata as tibbles" — `probe_*`/`mediainfo_*`,
@@ -73,6 +73,8 @@ Append-only; newest last. One line per session: date, what happened, next.
 
 - 2026-07-10: Milestone planned (release-ready not CRAN-submit; 3 vignettes;
   pkgdown auto-deploy; full example coverage). Next: `/milestone implement M05`.
+- 2026-07-10: T1 done — DESCRIPTION metadata + 0.1.0, dropped LazyData (no
+  data/), added sample.mp4 fixture. Next: T2 roxygen examples (Layer 0/1).
 
 ## Decisions
 
@@ -84,6 +86,13 @@ Milestone-local decisions; promote cross-cutting ones to ../DECISIONS.md.
 - 2026-07-10: Vignettes must not require binaries on CI: builder vignette uses
   binary-free `ffm_compile()`; metadata/batch vignettes gate binary output with
   `eval=FALSE` or pre-rendered chunks.
+- 2026-07-10 (gate): Reference index & `@family` tags organized by architecture
+  layer per D002 (escape-hatch / builder / task-verbs / metadata /
+  program-management / utils); user deferred, Opus chose to match the design.
+- 2026-07-10 (gate): Examples use committed fixture `inst/extdata/sample.mp4`
+  (video+audio) as input; binary-free builder/`ffm_compile()` examples run
+  everywhere; binary-invoking examples gate with
+  `@examplesIf nzchar(Sys.which("<bin>"))` (skip-not-fail when CLI absent).
 
 ## Review
 

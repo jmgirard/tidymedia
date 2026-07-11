@@ -6,6 +6,10 @@ milestone file; promote them here only if they constrain future work.
 Newest entries at the bottom. Never edit old entries; supersede them with a
 new entry that references the old ID.
 
+_D001–D009 predate the cairn migration (2026-07-11) and keep their original
+IDs; existing citations across the codebase and CLAUDE.md stay valid. New
+decisions continue at D010._
+
 ---
 
 ## D001 — Package scope (2026-07-10)
@@ -94,3 +98,14 @@ Filtergraph assembly (including `ffm_overlay(scale=)`'s scale2ref inset) stays
 in Layer 1 (D002); Layer-2 verbs only compute arguments. Rules out per-verb
 hand-glued filtergraphs at Layer 2 and any multi-/audio-output engine model
 for now.
+
+## D010 — Tracking moved to cairn (2026-07-11)
+
+Project tracking migrated from the bespoke `project/` layout to the **cairn**
+plugin, adopt-in-place: `project/` content moved into canonical `cairn/` files
+(ROADMAP regrouped by status; DESIGN.md added; live/done milestones relocated),
+the repo-local `.claude/skills/milestone` skill retired to `cairn/legacy/`, and
+the eight cairn skills (`/milestone*`, `/hotfix`, `/cairn-release`,
+`/cairn-init`) are now the sanctioned way to change project state. Supersedes
+D005's `project/`-path reference (the milestone-driven workflow itself stands);
+architecture rationale now lives in `cairn/DESIGN.md`.

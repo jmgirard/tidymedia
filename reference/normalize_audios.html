@@ -176,7 +176,12 @@ forwarded arguments add, e.g. <code>verified</code>). Under <code>two_pass = TRU
 the result also carries the five measured columns (<code>measured_I</code> etc.)
 and a logical <code>silent</code> column, and the <code>command</code> column holds the
 linear correction commands (<code>NA</code> for silent rows, which carry <code>NA</code>
-measurements and are not normalized).</p>
+measurements and are not normalized). The two-pass result's schema is
+independent of how many rows are silent: the opt-in <code>verified</code> column
+(under <code>verify</code>) and provenance manifest (under <code>manifest</code>, read
+with <code><a href="ffm_manifest.html">ffm_manifest</a></code>) are present whenever requested, even when
+<em>every</em> row is silent – silent rows simply carry <code>NA</code> for those
+outputs.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

@@ -125,7 +125,13 @@ plus any columns the forwarded arguments add, e.g. `verified`). Under
 `two_pass = TRUE` the result also carries the five measured columns
 (`measured_I` etc.) and a logical `silent` column, and the `command`
 column holds the linear correction commands (`NA` for silent rows, which
-carry `NA` measurements and are not normalized).
+carry `NA` measurements and are not normalized). The two-pass result's
+schema is independent of how many rows are silent: the opt-in `verified`
+column (under `verify`) and provenance manifest (under `manifest`, read
+with
+[`ffm_manifest`](https://jmgirard.github.io/tidymedia/reference/ffm_manifest.md))
+are present whenever requested, even when *every* row is silent – silent
+rows simply carry `NA` for those outputs.
 
 ## References
 

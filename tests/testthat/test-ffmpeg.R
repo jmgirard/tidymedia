@@ -214,7 +214,7 @@ test_that("standardize_video() writes an output with the requested fps and width
   standardize_video(infile, outfile, width = 48, height = 32, fps = 5)
   expect_true(file.exists(outfile))
   expect_equal(get_width(outfile), 48)
-  expect_equal(get_framerate(outfile), 5)
+  expect_equal(get_frame_rate(outfile), 5)
 })
 
 test_that("standardize_video() default path encodes an odd-dimensioned source", {

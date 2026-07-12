@@ -130,7 +130,7 @@ test_that("get_*() query the video/audio streams and vectorize over files", {
   infile <- make_test_video()
   expect_equal(get_width(infile), 64)
   expect_equal(get_height(infile), 64)
-  expect_gt(get_framerate(infile), 0)
+  expect_gt(get_frame_rate(infile), 0)
   expect_length(get_duration(c(infile, infile)), 2)
 })
 

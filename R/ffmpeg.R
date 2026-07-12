@@ -62,7 +62,7 @@ extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL,
     cli::cli_abort("Provide exactly one of {.arg timestamp} or {.arg frame}.")
   }
 
-  if (rlang::is_null(timestamp)) timestamp <- frame / get_framerate(infile)
+  if (rlang::is_null(timestamp)) timestamp <- frame / get_frame_rate(infile)
 
   ffm_finish(frame_pipeline(infile, outfile, timestamp), run)
 }
@@ -1406,7 +1406,7 @@ extract_frame_batch <- function(jobs, format = "png", run = TRUE,
       timestamp <- if (!is.null(dots$timestamp)) {
         dots$timestamp
       } else {
-        dots$frame / get_framerate(input)
+        dots$frame / get_frame_rate(input)
       }
       frame_pipeline(input, output, timestamp)
     },

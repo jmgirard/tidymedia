@@ -190,9 +190,9 @@ test_that("standardize_video_batch() writes standardized outputs (binary-gated)"
   expect_true(all(file.exists(res$output)))
   # Each row encodes to its own requested spec.
   expect_equal(get_width(out_a), 48)
-  expect_equal(get_framerate(out_a), 5)
+  expect_equal(get_frame_rate(out_a), 5)
   expect_equal(get_width(out_b), 32)
-  expect_equal(get_framerate(out_b), 10)
+  expect_equal(get_frame_rate(out_b), 10)
 })
 
 test_that("standardize_video_batch() forwards verify (binary-gated)", {

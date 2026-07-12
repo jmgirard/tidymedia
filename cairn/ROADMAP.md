@@ -8,7 +8,7 @@ _Last hygiene check: 2026-07-12 (M11–M12 planned)_
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M11 | Tibble-driven batch frame extraction | planned | — | normal | milestones/M11-batch-frame-extraction.md |
+| M11 | Tibble-driven batch frame extraction | in-progress | — | normal | milestones/M11-batch-frame-extraction.md |
 | M12 | Video standardization verb | planned | — | normal | milestones/M12-standardization-presets.md |
 | M06 | Engine hardening & safe execution | done | M02 | — | milestones/archive/M06-engine-hardening.md |
 | M07 | Complete the blessed multi-input verbs | done | M06 | — | milestones/archive/M07-multi-input-verbs.md |

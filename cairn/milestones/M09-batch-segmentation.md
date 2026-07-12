@@ -88,14 +88,14 @@ files from one jobs tibble, sharing its cut logic with `segment_video()`.
       (`R/ffmpeg.R:492-502`) into an internal helper `segment_pipeline(input,
       output, start, end, reencode)`; rewrite `segment_video()` to call it.
       (tests-first: existing `segment_video()` tests must stay green.)
-- [ ] T2: Write failing tests for `segment_videos()` — multi-file dry-run
+- [x] T2: Write failing tests for `segment_videos()` — multi-file dry-run
       command construction, both `reencode` paths per row, and each validation
       branch (non-df / empty / missing column) — in
       `tests/testthat/test-ffmpeg.R` (or a new `test-segment-videos.R`).
-- [ ] T3: Implement `segment_videos()` in `R/ffmpeg.R`: validate the four-column
+- [x] T3: Implement `segment_videos()` in `R/ffmpeg.R`: validate the four-column
       contract, build the jobs tibble, and call `ffm_batch(jobs, .f =
       segment_pipeline-wrapper, run=, parallel=, ...)`, forwarding `...`.
-- [ ] T4: Add a binary-gated execution test proving `verify`/`manifest`
+- [x] T4: Add a binary-gated execution test proving `verify`/`manifest`
       forwarding (`verified` column present; `ffm_manifest()` reads the
       attached manifest) and that segments are written.
 - [ ] T5: Roxygen docs for `segment_videos()` with a runnable `run = FALSE`
@@ -113,6 +113,10 @@ files from one jobs tibble, sharing its cut logic with `segment_video()`.
   with D007.
 - 2026-07-12: T1 — extracted `segment_pipeline()` helper; `segment_video()`
   now wraps it. Existing test-ffmpeg.R suite green (80 pass, 0 fail).
+- 2026-07-12: T2–T4 — `segment_videos()` implemented in `R/ffmpeg.R` (new
+  `test-segment-videos.R`, 25 pass incl. binary-gated verify/manifest
+  forwarding). Column contract validated with `cli::cli_abort()`; `...`
+  forwards to `ffm_batch()`. Roxygen written (document() in T5).
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local; promote

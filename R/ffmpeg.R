@@ -514,6 +514,86 @@ segment_pipeline <- function(input, output, start, end, reencode) {
 }
 
 
+# segment_videos() --------------------------------------------------------
+
+#' Segment Many Videos From a Jobs Table
+#'
+#' Cut segments across many input files from a single jobs tibble — a
+#' table-driven sibling of \code{\link{segment_video}} for when your segments
+#' span more than one input. Each row is one segment; the four required columns
+#' name its source, destination, and cut points. This is a thin wrapper over
+#' \code{\link{ffm_batch}}: one reproducible compiled command per segment.
+#'
+#' @param jobs A data frame with one row per segment and (at least) the columns
+#'   \code{input} (source path), \code{output} (destination path), \code{start}
+#'   and \code{end} (cut points; a numeric column of seconds or a character
+#'   column with time-duration syntax). Any other columns are ignored.
+#' @param reencode A logical passed to \code{\link{ffm_seek}}: cut each segment
+#'   frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
+#'   lossless copy that snaps to keyframes (\code{FALSE}). See \code{ffm_seek}
+#'   for the trade-off. Applies to every row.
+#' @param run A logical: run each segment's command through FFmpeg
+#'   (\code{TRUE}, default) or only compile them for inspection (\code{FALSE}).
+#' @param parallel A logical passed to \code{\link{ffm_batch}}: cut segments in
+#'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
+#'   default).
+#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}}, such as
+#'   \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.
+#' @return The [tibble][tibble::tibble-package] returned by
+#'   \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column
+#'   (and, when \code{run = TRUE}, a \code{success} column, plus any columns the
+#'   forwarded arguments add, e.g. \code{verified}).
+#' @seealso \code{\link{segment_video}} for the single-input, parallel-vector
+#'   form; \code{\link{ffm_batch}} for the batch runner and the arguments
+#'   forwarded through \code{...}; \code{\link{ffm_seek}} for the cut trade-off.
+#' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' jobs <- tibble::tibble(
+#'   input  = c(video, video),
+#'   output = c("a.mp4", "b.mp4"),
+#'   start  = c(0, 0.5),
+#'   end    = c(0.5, 1)
+#' )
+#' # run = FALSE compiles one command per segment without calling FFmpeg
+#' segment_videos(jobs, run = FALSE)
+#' @export
+segment_videos <- function(jobs, reencode = TRUE, run = TRUE,
+                           parallel = FALSE, ...) {
+
+  if (!is.data.frame(jobs)) {
+    cli::cli_abort("{.arg jobs} must be a data frame with one row per segment.")
+  }
+  if (nrow(jobs) == 0) {
+    cli::cli_abort("{.arg jobs} must have at least one row.")
+  }
+  required <- c("input", "output", "start", "end")
+  missing <- setdiff(required, names(jobs))
+  if (length(missing) > 0) {
+    cli::cli_abort(c(
+      "{.arg jobs} must have columns {.val {required}}.",
+      "x" = "Missing column{?s}: {.val {missing}}."
+    ))
+  }
+  rlang::check_bool(reencode)
+
+  # Thin Layer-2 fan-out over ffm_batch (D007): one single-output seek pipeline
+  # per row, sharing segment_pipeline() with segment_video(). The closure
+  # captures the scalar `reencode`; `...` forwards ffm_batch options
+  # (verify/manifest/...) to the runner, never to the pipeline builder.
+  ffm_batch(
+    jobs,
+    function(input, output, start, end, ...) {
+      segment_pipeline(input, output, start, end, reencode)
+    },
+    run = run,
+    parallel = parallel,
+    ...
+  )
+}
+
+
 # concatenate_videos() ----------------------------------------------------
 
 #' Combine video files using the concat demuxer

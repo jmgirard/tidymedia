@@ -96,18 +96,18 @@ implements against.
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [ ] T1 — Inventory all NAMESPACE exports into a family map (Layer 0 / Layer 1
+- [x] T1 — Inventory all NAMESPACE exports into a family map (Layer 0 / Layer 1
       `ffm_*` / Layer 2 verbs / metadata / program management / tidy-eval &
       utils), each with its defining `file:line`.
-- [ ] T2 — Function-name consistency analysis: flag each inconsistent export
+- [x] T2 — Function-name consistency analysis: flag each inconsistent export
       with a keep/rename recommendation and rationale (cover the AC1 known
       tensions plus anything the sweep surfaces).
-- [ ] T3 — Argument-name consistency analysis: derive the canonical arg
+- [x] T3 — Argument-name consistency analysis: derive the canonical arg
       vocabulary and build the deviation → target table across Layer-2 verbs and
       metadata families.
-- [ ] T4 — Docs gap inventory: grep the roxygen for missing `@examples`/`@return`
+- [x] T4 — Docs gap inventory: grep the roxygen for missing `@examples`/`@return`
       and thin `@seealso`; produce the per-function gap checklist (targeted scope).
-- [ ] T5 — Write `cairn/references/naming-docs-audit-M22.md` consolidating
+- [x] T5 — Write `cairn/references/naming-docs-audit-M22.md` consolidating
       T1–T4 with a ranked recommendation list; register it in
       `cairn/references/INDEX.md`.
 - [ ] T6 — Draft the `DECISIONS.md` entry (target naming scheme + clean-break
@@ -119,6 +119,10 @@ implements against.
 <!-- owner: any skill · append-only; one line per entry; absolute dates -->
 
 - 2026-07-12: created by /milestone-plan.
+- 2026-07-12: T1–T5 — wrote cairn/references/naming-docs-audit-M22.md (80-export
+  inventory, 10 function-name findings incl. overloaded `get_*` prefix, arg
+  vocabulary table, `@seealso` gap checklist, ranked recs, proposed scheme);
+  indexed it. No R/ changes.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

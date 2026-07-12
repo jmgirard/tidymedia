@@ -112,6 +112,36 @@ test_that("normalize_audio() rejects non-positive channels or sample_rate", {
   expect_error(normalize_audio(f, "out.mp4", sample_rate = -1, run = FALSE))
 })
 
+test_that("normalize_audio(two_pass = FALSE) is identical to the single-pass default", {
+  f <- make_input()
+  # The new default arg must not perturb the single-pass command at all (AC1).
+  expect_equal(
+    normalize_audio(f, "out.mp4", two_pass = FALSE, run = FALSE),
+    normalize_audio(f, "out.mp4", run = FALSE)
+  )
+})
+
+test_that("normalize_audio() rejects a non-logical two_pass", {
+  f <- make_input()
+  expect_error(normalize_audio(f, "out.mp4", two_pass = "yes", run = FALSE))
+})
+
+# Two-pass execution (binary-gated) ---------------------------------------
+
+test_that("normalize_audio(two_pass, run = FALSE) runs analysis, returns correction cmd", {
+  skip_if_no_ffmpeg()
+  src <- system.file("extdata", "sample.mp4", package = "tidymedia")
+  out <- withr::local_tempfile(fileext = ".mp4")
+  cmd <- normalize_audio(src, out, two_pass = TRUE, run = FALSE)
+  # The returned value is the correction command, carrying the measured values
+  # and linear=true ...
+  expect_type(cmd, "character")
+  expect_match(cmd, "measured_I=", fixed = TRUE)
+  expect_match(cmd, "linear=true", fixed = TRUE)
+  # ... and run = FALSE means the correction pass did not run: no output file.
+  expect_false(file.exists(out))
+})
+
 # Execution (binary-gated) ------------------------------------------------
 
 test_that("normalize_audio() writes a non-empty, audio-decodable output", {

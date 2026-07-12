@@ -56,3 +56,32 @@ parse_loudnorm_measurements <- function(output, call = rlang::caller_env()) {
   list(i = num[["i"]], tp = num[["tp"]], lra = num[["lra"]],
        thresh = num[["thresh"]], offset = num[["offset"]])
 }
+
+# run_loudnorm_analysis() ------------------------------------------------------
+
+# Execute the analysis pass and return the parsed measured values. This is the
+# analyze step of the analyze-then-build orchestrator: it always touches the
+# binary (unlike ffm_compile(), which stays pure), so it lives here beside
+# ffm_run() rather than inside compilation. stderr is captured (merged into the
+# returned vector by run_program(stderr = TRUE)); a non-zero FFmpeg exit aborts
+# before any correction is attempted.
+run_loudnorm_analysis <- function(input,
+                                  target_loudness = -23,
+                                  true_peak = -1,
+                                  loudness_range = 7,
+                                  call = rlang::caller_env()) {
+  p <- loudnorm_analysis_pipeline(input, target_loudness, true_peak,
+                                  loudness_range)
+  out <- run_program(find_ffmpeg(), ffm_args(p), program = "FFmpeg",
+                     input = "", stderr = TRUE, call = call)
+  status <- attr(out, "status")
+  if (!is.null(status)) {
+    cli::cli_abort(c(
+      "The {.code loudnorm} analysis pass failed \\
+       (FFmpeg exited with status {status}).",
+      "i" = "The failing command was: \\
+             {.code ffmpeg {ffm_compile(p)}}"
+    ), call = call)
+  }
+  parse_loudnorm_measurements(out, call = call)
+}

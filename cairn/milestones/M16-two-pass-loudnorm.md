@@ -99,7 +99,7 @@ analyze-then-build execution pattern.
 - [x] T4 — Add the internal stderr parser: extract the five measured values from a
       loudnorm JSON block via regex, with a clean abort when absent/malformed.
       Test over a recorded-stderr fixture, including a malformed case (AC3).
-- [ ] T5 — Add `two_pass = FALSE` to `normalize_audio()`
+- [x] T5 — Add `two_pass = FALSE` to `normalize_audio()`
       ([R/ffmpeg.R:413](R/ffmpeg.R)) and the analyze-then-build orchestrator
       (analysis-run capturing stderr via `run_program(stderr = TRUE)` →
       parse → correction-build → `ffm_finish()`), wiring the `run = FALSE`
@@ -133,6 +133,9 @@ analyze-then-build execution pattern.
   loudnorm + print_format=json + -f null -) and stderr parser (regex, no JSON
   dep) with clean abort on absent/partial/non-finite. Recorded real FFmpeg
   fixture at tests/testthat/fixtures/loudnorm-analysis.txt.
+- 2026-07-12: T5 done — normalize_audio() gained two_pass=FALSE + orchestrator
+  run_loudnorm_analysis(); run=FALSE returns the correction command unexecuted
+  (analysis still runs). Verified end-to-end on the packaged sample. man/ updated.
 
 ## Decisions
 

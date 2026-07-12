@@ -396,9 +396,23 @@ standardize_pipeline <- function(input, output, width, height, fps, vcodec,
 #'   whole number), or \code{NULL} (default) to let \code{loudnorm} choose (it
 #'   resamples, up to 192 kHz encoder-capped -- not the source rate). Set this to
 #'   pin the output rate.
-#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
-#'   or return the compiled command without running it (\code{FALSE}).
-#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @param two_pass A logical: when \code{TRUE}, use accurate two-pass
+#'   (measured/linear) normalization instead of the default single-pass
+#'   (\code{FALSE}). A first \emph{analysis pass} measures the input's loudness,
+#'   and a second \emph{correction pass} feeds those measurements back with
+#'   \code{linear=true} so the output hits the EBU R128 target precisely.
+#'   Two-pass therefore \strong{always runs the analysis pass through FFmpeg}
+#'   (it needs the binary and readable input), even when \code{run = FALSE}: in
+#'   that case the analysis still runs and the returned value is the exact
+#'   correction command, left unexecuted. The single-pass default touches no
+#'   binary under \code{run = FALSE}.
+#' @param run A logical: run the (correction) command through FFmpeg
+#'   (\code{TRUE}, default) or return the compiled command without running it
+#'   (\code{FALSE}). Under \code{two_pass = TRUE} this gates only the correction
+#'   pass; the analysis pass runs regardless (see \code{two_pass}).
+#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}). Under
+#'   \code{two_pass = TRUE} this is the correction command built from the
+#'   measured values.
 #' @references
 #' EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
 #' maximum level of audio signals}; ITU-R BS.1770-4.
@@ -416,14 +430,30 @@ normalize_audio <- function(infile, outfile,
                             loudness_range = 7,
                             channels = NULL,
                             sample_rate = NULL,
+                            two_pass = FALSE,
                             run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
+  rlang::check_bool(two_pass)
+
+  # Two-pass: measure the input first, then build a linear correction from the
+  # measurements. Validate the shaping knobs up front so a bad channels/
+  # sample_rate fails before the analysis pass runs, not after wasting it
+  # (targets are validated when the analysis pipeline builds). Single-pass keeps
+  # its pure, binary-free run = FALSE compile.
+  measured <- NULL
+  if (two_pass) {
+    rlang::check_number_whole(channels, min = 1, allow_null = TRUE)
+    rlang::check_number_whole(sample_rate, min = 1, allow_null = TRUE)
+    measured <- run_loudnorm_analysis(infile, target_loudness, true_peak,
+                                      loudness_range)
+  }
 
   ffm_finish(
     normalize_audio_pipeline(infile, outfile, target_loudness, true_peak,
-                             loudness_range, channels, sample_rate),
+                             loudness_range, channels, sample_rate,
+                             measured = measured),
     run
   )
 }

@@ -8,7 +8,7 @@ _Last hygiene check: 2026-07-12 (M19 planned)_
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M19 | Consistent schema for an all-silent two-pass batch | planned | M18 | normal | milestones/M19-all-silent-schema-consistency.md |
+| M19 | Consistent schema for an all-silent two-pass batch | in-progress | M18 | normal | milestones/M19-all-silent-schema-consistency.md |
 | M18 | Graceful silent-input handling for two-pass loudnorm | done | M16, M17 | normal | milestones/archive/M18-silent-input-loudnorm.md |
 | M17 | Batch two-pass (measured/linear) loudnorm | done | M15, M16 | normal | milestones/archive/M17-batch-two-pass-loudnorm.md |
 | M16 | Two-pass (measured/linear) EBU R128 loudnorm | done | M14 | normal | milestones/archive/M16-two-pass-loudnorm.md |

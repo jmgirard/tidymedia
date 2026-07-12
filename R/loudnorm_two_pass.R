@@ -86,6 +86,66 @@ run_loudnorm_analysis <- function(input,
   parse_loudnorm_measurements(out, call = call)
 }
 
+# run_loudnorm_analysis_batch() ------------------------------------------------
+
+# Phase 1 of normalize_audios(two_pass = TRUE): run M16's analysis pass once per
+# input row, honoring per-row loudness targets, and return the list of captured
+# stderr outputs (one character vector per row, carrying run_program()'s `status`
+# attr on a non-zero FFmpeg exit). Parsing and row-level fail-fast are deferred
+# to assemble_measured(), which can name the offending row; running and parsing
+# are split here so a bad row is reported by index rather than aborting anonymously
+# mid-fan-out. Parallelism follows the active future plan; the sequential-plan
+# warning is left to the Phase 2 ffm_batch() call so it fires exactly once.
+run_loudnorm_analysis_batch <- function(inputs, target_loudness, true_peak,
+                                        loudness_range, parallel) {
+  analyze_one <- function(input, target_loudness, true_peak, loudness_range) {
+    p <- loudnorm_analysis_pipeline(input, target_loudness, true_peak,
+                                    loudness_range)
+    run_program(find_ffmpeg(), ffm_args(p), program = "FFmpeg", input = "",
+                stderr = TRUE)
+  }
+  args <- list(input = inputs, target_loudness = target_loudness,
+               true_peak = true_peak, loudness_range = loudness_range)
+  if (parallel) {
+    furrr::future_pmap(args, analyze_one)
+  } else {
+    purrr::pmap(args, analyze_one)
+  }
+}
+
+# assemble_measured() ----------------------------------------------------------
+
+# Map Phase 1's per-row analysis outputs to the five measured columns, reusing
+# M16's parser per row. Returns a tibble with one row per input and columns
+# measured_I/measured_TP/measured_LRA/measured_thresh/offset (FFmpeg-arg
+# spellings) ready to bind onto the jobs table. Fail-fast: a row whose analysis
+# pass exited non-zero (`status` attr) or whose stderr holds no parseable finite
+# measurement block is collected, and the function aborts naming every offending
+# row before any correction command is built.
+assemble_measured <- function(outputs, call = rlang::caller_env()) {
+  parsed <- lapply(outputs, function(out) {
+    if (!is.null(attr(out, "status"))) return(NULL)
+    tryCatch(parse_loudnorm_measurements(out), error = function(e) NULL)
+  })
+  bad <- which(vapply(parsed, is.null, logical(1)))
+  if (length(bad) > 0) {
+    cli::cli_abort(c(
+      "The {.code loudnorm} analysis pass did not yield usable measurements.",
+      "x" = "Job{cli::qty(bad)}{?s} {.val {bad}} failed to run or printed no \\
+             parseable measurement block.",
+      "i" = "Every row must produce a finite JSON measurement block before the \\
+             correction pass can be built."
+    ), call = call)
+  }
+  tibble::tibble(
+    measured_I = vapply(parsed, `[[`, numeric(1), "i"),
+    measured_TP = vapply(parsed, `[[`, numeric(1), "tp"),
+    measured_LRA = vapply(parsed, `[[`, numeric(1), "lra"),
+    measured_thresh = vapply(parsed, `[[`, numeric(1), "thresh"),
+    offset = vapply(parsed, `[[`, numeric(1), "offset")
+  )
+}
+
 # run_normalize_correction() ---------------------------------------------------
 
 # Phase 2 of normalize_audios(two_pass = TRUE): build (and optionally run) one

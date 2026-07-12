@@ -88,7 +88,7 @@ M14→M15 scalar→batch split applied to the correction pipeline.
       ([R/ffmpeg.R:438](R/ffmpeg.R)) reusing M16's measured-value threading, so
       channels/`sample_rate`/`-c:v copy`/knob parity is inherited. Tests-first
       with a fixed jobs+measured fixture (AC2).
-- [ ] T3 — Add the analysis fan-out + `assemble_measured()`: run M16's analysis
+- [x] T3 — Add the analysis fan-out + `assemble_measured()`: run M16's analysis
       pass per row (honoring `parallel`), parse via M16's parser, and a pure
       `assemble_measured()` that maps per-row parse results to the five measured
       columns, aborting with the offending row index on an absent/malformed
@@ -123,6 +123,10 @@ M14→M15 scalar→batch split applied to the correction pipeline.
 - 2026-07-12: T2 done — added `run_normalize_correction()` (Phase 2 fan-out over
   `ffm_batch()`/`normalize_audio_pipeline()`, threading measured columns +
   `linear=true`); pure AC2 test over a fixed jobs+measured fixture.
+- 2026-07-12: T3 done — added `run_loudnorm_analysis_batch()` (Phase 1 per-row
+  analysis honoring `parallel`) and `assemble_measured()` (parse each via M16's
+  parser → five measured columns, fail-fast naming offending rows); pure AC3
+  tests over the recorded fixture incl. malformed + non-zero-exit rows.
 
 ## Decisions
 

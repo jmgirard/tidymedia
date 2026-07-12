@@ -18,5 +18,6 @@ _Last hygiene check: 2026-07-12 (M15 done)_
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->
+- Graceful silent-input handling for `normalize_audio(two_pass = TRUE)`: FFmpeg's loudnorm reports `input_i = -inf` for silence, which the parser rejects as "could not parse"; give silence its own clear message (or skip the correction). — added 2026-07-12, from M16 review (scored 68)
 - Fixed-region anonymization verb (no face tracking): box fill via `ffm_drawbox`; region blur (split→crop→boxblur→overlay) needs an IP2 filtergraph design call. — added 2026-07-10, split 2026-07-12 — research-verbs family 4
 - CRAN readiness (prep, hold submission until API soaks): API-surface cleanup (tidy-eval reexports, stray utils), win-builder + R-hub, examples/vignette policy pass, bump toward 0.2.0. Deliberately last. — added 2026-07-10

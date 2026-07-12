@@ -119,18 +119,11 @@ analyze-then-build execution pattern.
 - 2026-07-12: created by /milestone-plan (promoted from candidate, split from M14).
 - 2026-07-12: implement start; branch m16-two-pass-loudnorm cut from master.
 - 2026-07-12: gate — numeric measured params; analysis pass bare targets (canonical recipe); parser via recorded+malformed fixture. No Fable escalation.
-- 2026-07-12: T1 — single-pass characterization baseline pinned.
-- 2026-07-12: T2 — ffm_loudnorm() gained measured_i/tp/lra/thresh, offset, linear, print_format (all-or-none set); single-pass string unchanged.
-- 2026-07-12: T3 — normalize_audio_pipeline() `measured=` routes into a linear correction; shaping parity preserved.
-- 2026-07-12: T4 — R/loudnorm_two_pass.R analysis builder + stderr parser (regex, no JSON dep); recorded real FFmpeg fixture.
-- 2026-07-12: T5 — normalize_audio() two_pass + orchestrator; run=FALSE returns correction cmd unexecuted (analysis still runs).
-- 2026-07-12: T6 — execution test on high-LRA tremolo source (make_dynamic_audio); two-pass ~0.01 LU vs single ~2.2 LU.
-- 2026-07-12: T7 — roxygen + NEWS; check 0/0/0; 667 pass / 0 fail. Status → review.
+- 2026-07-12: T1–T7 — characterization baseline; ffm_loudnorm() measured/linear/print_format; normalize_audio_pipeline() `measured=` linear correction; R/loudnorm_two_pass.R analysis builder + stderr parser (regex, no JSON dep, recorded fixture); normalize_audio() two_pass + orchestrator (run=FALSE returns correction cmd unexecuted); execution test on high-LRA source (~0.01 LU vs single ~2.2 LU); roxygen + NEWS. check 0/0/0; 667 pass. Status → review.
 
 ## Decisions
 
-- Analyze-then-build pattern (candidate D-entry, promote at review): first verb that runs a binary to *build* a later command; compilation stays pure, orchestrator beside `ffm_run()`. Consequence: `run = FALSE` is no longer binary-free under `two_pass = TRUE` (analysis always runs; `run` gates only the correction). Single-pass unchanged.
-- Analysis pass measures the input as-is (bare targets + `print_format=json`, `-f null -`); downmix/resample belong to the output stage, not measurement.
+- Analyze-then-build pattern → promoted to **D013** at review (`run = FALSE` no longer binary-free under `two_pass`; compilation stays pure; single-pass unchanged). Analysis pass measures the input as-is (bare targets + `print_format=json`, `-f null -`); downmix/resample belong to the output stage, not measurement.
 
 ## Review
 
@@ -145,4 +138,12 @@ Fresh evidence (2026-07-12, PR #18; test-normalize-audio.R 31 pass, test-ffm.R
 - AC6 ✓ check() 0/0/0; 667 pass / 0 fail; document() no diff; pkgdown clean.
 
 Consistency gate PASS: cairn_validate clean; document() no diff; pkgdown clean;
-NEWS entry present; no new top-level files.
+NEWS present; coverage complete; no new top-level files.
+
+Independent review — [O] diff-bug + [S] blame-history + [S] scorer. No
+correctness bug survived. F4 (85, actioned): analyze-then-build decision → D013
+authored. Below threshold (logged): F2 (68) parser aborts on silent input
+(`-inf`) with a misleading message → candidate row added; F1 (55) two_pass
+branch duplicates the shared channels/sample_rate check (deliberate fail-fast);
+F3 (30) `linear=TRUE` not cross-validated vs measured set (unreachable, FFmpeg
+tolerates).

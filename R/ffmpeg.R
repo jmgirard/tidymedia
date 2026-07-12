@@ -1457,7 +1457,16 @@ normalize_audios <- function(jobs, target_loudness = -23, true_peak = -1,
     } else {
       NULL
     }
-    return(bind_two_pass_result(jobs, silent, ok_res, run))
+    # Thread the opt-in intent (verify/manifest/checksums, forwarded via `...`)
+    # so an all-silent batch synthesizes the same schema a mixed one produces
+    # (D011); a mixed batch reads those from ok_res and ignores these.
+    dots <- list(...)
+    return(bind_two_pass_result(
+      jobs, silent, ok_res, run,
+      verify = !is.null(dots$verify),
+      manifest = isTRUE(dots$manifest),
+      checksums = isTRUE(dots$checksums)
+    ))
   }
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output loudnorm

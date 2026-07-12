@@ -95,13 +95,13 @@ inconsistency the M18 review surfaced.
       `output_size`, `ffmpeg_version`, `ffprobe_version`, `timestamp`, plus
       `input_md5`/`output_md5` when `checksums`); refactor `build_manifest()`
       so its column set derives from the same source (no drift).
-- [ ] T2 — Extend [`bind_two_pass_result()`](../../R/loudnorm_two_pass.R:245)
+- [x] T2 — Extend [`bind_two_pass_result()`](../../R/loudnorm_two_pass.R:245)
       to take the `verify`/`manifest`/`checksums` intent and, in the all-silent
       (`ok_res` `NULL`) branch under `run = TRUE`, add an all-`NA` logical
       `verified` column (when verify requested) and attach a padded manifest
       via `expand_manifest_rows()` over the empty schema from T1 (when manifest
       requested).
-- [ ] T3 — Thread `verify`/`manifest`/`checksums` presence from the two-pass
+- [x] T3 — Thread `verify`/`manifest`/`checksums` presence from the two-pass
       block of `normalize_audios()`
       ([R/ffmpeg.R:1460](../../R/ffmpeg.R)) into the
       `bind_two_pass_result()` call (extract from `...`); update the existing
@@ -122,6 +122,7 @@ inconsistency the M18 review surfaced.
 
 - 2026-07-12: created by /milestone-plan (promoted from the M18-review candidate, scored 78).
 - 2026-07-12: T1 — added `manifest_schema()` as the canonical column template; `build_manifest()` now derives its column set from it (drift guard test passes).
+- 2026-07-12: T2/T3 — all-silent branch of `bind_two_pass_result()` now synthesizes the `verified` column and padded manifest (via `expand_manifest_rows()` over the empty schema); `normalize_audios()` threads verify/manifest/checksums intent from `...`. Existing M18 unit tests unchanged (new params default off); 5 new pure unit tests pass.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local; promote

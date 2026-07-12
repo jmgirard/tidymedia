@@ -8,10 +8,6 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   bare `is.logical()` type-guard admits `NA` where `rlang::check_bool()`
   (scalar path) rejects it — pair it with `!anyNA()` when validating a logical
   column, or the `NA` leaks downstream to an internal check with a worse error.
-- 2026-07-12 (M11): gathering fresh test evidence, `testthat::test_file()` under
-  `library(tidymedia)` loads the *installed* package and misses new dev exports
-  ("could not find function") — use `devtools::test(filter=)` / `load_all()`,
-  which source the working tree.
 - 2026-07-12 (M11): a table-driven sibling must mirror the scalar verb's
   *per-element* validation (wholeness, finiteness), not just column type — a
   column-type-only check silently admits values the scalar verb rejects and
@@ -47,3 +43,7 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
 - 2026-07-12 (M16): `ffmpeg()` runs via `system()` (a shell), so a filter value
   with commas (e.g. `volume='if(lt(t,3),..)'`) needs the value double-quoted so
   ffmpeg's own quotes survive the shell; prefer a comma-free filter to avoid it.
+- 2026-07-12 (M17): `devtools::check()` can print "0 notes" while raw `R CMD
+  check` shows `Status: 1 NOTE` — the `tests/spelling.Rout` comparison NOTE for
+  new technical terms is masked by the devtools summary. Run
+  `spelling::update_wordlist()` and confirm `Status: OK` in `00check.log`.

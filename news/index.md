@@ -2,6 +2,23 @@
 
 ## tidymedia (development version)
 
+### Frame extraction across files
+
+- Added
+  [`extract_frames()`](https://jmgirard.github.io/tidymedia/reference/extract_frames.md),
+  a table-driven companion to
+  [`extract_frame()`](https://jmgirard.github.io/tidymedia/reference/extract_frame.md).
+  Pass a jobs tibble with an `input` column and exactly one of a
+  `timestamp` or `frame` column — one row per frame — to grab still
+  images spanning many input files in one call. It is a thin wrapper
+  over
+  [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
+  so `...` forwards batch options such as `verify`, `manifest`,
+  `checksums`, and `progress`. The `output` column is optional: when
+  absent, names are derived per input file as `<basename>_<n>.<format>`
+  (default `format = "png"`), the frame number restarting for each
+  input.
+
 ### Bug fixes
 
 - [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)

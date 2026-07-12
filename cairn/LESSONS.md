@@ -8,10 +8,6 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   bare `is.logical()` type-guard admits `NA` where `rlang::check_bool()`
   (scalar path) rejects it — pair it with `!anyNA()` when validating a logical
   column, or the `NA` leaks downstream to an internal check with a worse error.
-- 2026-07-12 (M11): a table-driven sibling must mirror the scalar verb's
-  *per-element* validation (wholeness, finiteness), not just column type — a
-  column-type-only check silently admits values the scalar verb rejects and
-  diverges from the sibling's own documented contract (review finding, score 82).
 - 2026-07-12 (M12): a Layer-2 verb that re-encodes video (sets `-c:v`) will
   silently transcode audio and *reject odd dimensions* under libx264/yuv420p
   (0-byte output) unless it also stream-copies audio (`-c:a copy`) and
@@ -47,3 +43,7 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   check` shows `Status: 1 NOTE` — the `tests/spelling.Rout` comparison NOTE for
   new technical terms is masked by the devtools summary. Run
   `spelling::update_wordlist()` and confirm `Status: OK` in `00check.log`.
+- 2026-07-12 (M18): a cli `{?s}` governed by a `{.val {vector}}`/`{cli::qty(vec)}`
+  throws `length(object) == 1` with 2+ items in a multi-line `cli_warn`/`abort`.
+  Drive plurals off a scalar `{length(x)}` and list the vector without `{?s}`.
+  Test cli count messages with 2+ items — a 1-item test hides the crash.

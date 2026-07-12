@@ -11,7 +11,6 @@ _Last hygiene check: 2026-07-12 (M13 done)_
 | M13 | Batch video standardization verb | done | — | normal | milestones/archive/M13-batch-standardization.md |
 | M12 | Video standardization verb | done | — | normal | milestones/archive/M12-standardization-presets.md |
 | M11 | Tibble-driven batch frame extraction | done | — | normal | milestones/archive/M11-batch-frame-extraction.md |
-| M08 | Verification & provenance | done | M04, M06 | normal | milestones/archive/M08-verification-provenance.md |
 | M09 | Dataframe-driven batch segmentation | done | — | normal | milestones/archive/M09-batch-segmentation.md |
 | M10 | segment_videos() parity polish | done | — | normal | milestones/archive/M10-segment-videos-polish.md |
 

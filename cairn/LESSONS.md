@@ -26,9 +26,6 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   the packaged `sample.mp4` is a steady tone (LRA 0) where single- and two-pass
   land identically, so a "closer than single-pass" assertion ties and fails.
   Generate loudness variation (e.g. `tremolo=f=0.2:d=0.9`) to expose the gap.
-- 2026-07-12 (M16): `ffmpeg()` runs via `system()` (a shell), so a filter value
-  with commas (e.g. `volume='if(lt(t,3),..)'`) needs the value double-quoted so
-  ffmpeg's own quotes survive the shell; prefer a comma-free filter to avoid it.
 - 2026-07-12 (M17): `devtools::check()` can print "0 notes" while raw `R CMD
   check` shows `Status: 1 NOTE` — the `tests/spelling.Rout` comparison NOTE for
   new technical terms is masked by the devtools summary. Run
@@ -47,3 +44,6 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   bare integers — it accepts `is_double(n=1)` or a string, not `integer`. A
   Layer-2 verb passing table columns (e.g. a tibble's `1:2`) must coerce them to
   double first, or valid pixel coordinates abort as a bad FFmpeg expression.
+- 2026-07-12 (M22): grepping for `.data` usage with double-quoted `"\.data\$"`
+  anchors `$` to end-of-line, so `.data$field` never matches and the reexport
+  looks unused (a false audit claim caught only at review). Use `grep -F '.data$'`.

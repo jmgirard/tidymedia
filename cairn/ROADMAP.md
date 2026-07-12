@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-07-12_
+_Last hygiene check: 2026-07-12 (M09 done)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M04 | Metadata layer polish (mediainfo/ffprobe tibbles) | done | M02 | — | milestones/archive/M04-metadata-layer.md |
 | M05 | Docs, vignettes, pkgdown, release prep | done | M03, M04 | — | milestones/archive/M05-docs-release.md |
 | M06 | Engine hardening & safe execution | done | M02 | — | milestones/archive/M06-engine-hardening.md |
 | M07 | Complete the blessed multi-input verbs | done | M06 | — | milestones/archive/M07-multi-input-verbs.md |
 | M08 | Verification & provenance | done | M04, M06 | normal | milestones/archive/M08-verification-provenance.md |
-| M09 | Dataframe-driven batch segmentation | review | — | normal | milestones/M09-batch-segmentation.md |
+| M09 | Dataframe-driven batch segmentation | done | — | normal | milestones/archive/M09-batch-segmentation.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

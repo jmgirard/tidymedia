@@ -175,5 +175,32 @@ Reviewed 2026-07-12 on branch `m19-all-silent-schema-consistency` (PR #21).
 
 ### Independent review
 
-_Pending — two fresh-context reviewers (diff-bug [O], blame-history [S]) running;
-scorer + triage to follow._
+Two fresh-context reviewers, distinct evidence bases; both returned **zero
+actionable findings**.
+
+- **[O] diff-bug reviewer (Opus)** — full diff vs ACs/DESIGN/DECISIONS. No
+  surviving defects: all-silent branch appends `command, success, verified` in
+  the same order `ffm_batch()` produces; `verified <- NA` is logical NA matching
+  the mixed fill; `expand_manifest_rows()` over the empty schema yields the same
+  type-matched NA padding (with real `input` paths); the
+  `tibble(!!!cols[names(manifest_schema(checksums))])` splice reorders/gates
+  safely and recycles scalars; `run = FALSE` synthesizes nothing (mixed parity).
+- **[S] blame-history reviewer (Sonnet)** — `git log`/`blame` vs the intent of
+  the touched code. No findings: the M18 one-row-per-job manifest fix and both
+  cli-pluralization fixes are outside the diff and still pass; silent-row marking
+  and D011 opt-in/D013 run-gating unchanged; `build_manifest()` refactor
+  behavior-preserving vs `master`.
+
+**Below-threshold, logged (not actioned) — IP3 surfacing:**
+- An invalid `verify=` argument (e.g. `verify = 42`) aborts a *mixed* two-pass
+  batch (via `ffm_batch()`'s guard) but an *all-silent* batch returns a
+  `verified = NA` column without validating, because the all-silent path never
+  enters `ffm_batch()`. **Pre-existing** (the all-silent path never called
+  `ffm_batch` before M19 either — it dropped the column rather than synthesizing
+  it), out of M19's scope, and low value (malformed arg is a programming error).
+  Self-scored ~60 (plausible but arguable). Not spawned as a candidate.
+
+### Verdict
+
+All six acceptance criteria verified against fresh evidence; consistency gate
+green; independent review clean. Ready for merge pending CI + user approval.

@@ -26,12 +26,6 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   `-ar` silently resamples; document that and let a `sample_rate` arg pin `-ar`.
   A "preserves the source rate" claim is a review trap — verify output rate by
   probing (`ffprobe … stream=sample_rate`), don't assume `-af`-only is a no-op.
-- 2026-07-12 (M15): a new exported verb needs a `_pkgdown.yml` reference entry or
-  `pkgdown::check_pkgdown()` fails ("topic missing"), but the DESIGN.md Layer-2
-  verb list enumerates *scalar* verbs only — batch siblings (`*_videos`,
-  `*_frames`, `normalize_audios`) are not listed there (covered by the D007
-  batch-runner line). So: add the pkgdown entry, skip the DESIGN.md list; the
-  `@family` roxygen tag is the machine-checkable family membership.
 - 2026-07-12 (M16): a two-pass-loudnorm accuracy test needs a high-LRA source —
   the packaged `sample.mp4` is a steady tone (LRA 0) where single- and two-pass
   land identically, so a "closer than single-pass" assertion ties and fails.
@@ -47,3 +41,9 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   throws `length(object) == 1` with 2+ items in a multi-line `cli_warn`/`abort`.
   Drive plurals off a scalar `{length(x)}` and list the vector without `{?s}`.
   Test cli count messages with 2+ items — a 1-item test hides the crash.
+- 2026-07-12 (M19): a fast-path branch that skips the shared batch runner
+  (`ffm_batch`) must re-synthesize that runner's *opt-in* outputs (`verified`
+  column, manifest attr) or the return schema silently diverges from the normal
+  path across calls. Trick: subsetting a canonical 0-row schema tibble pads to N
+  all-NA rows for free (`col[rep(NA_integer_, n)]` gives n type-matched NAs).
+  Test parity by comparing `names()`/types of the fast vs the normal path.

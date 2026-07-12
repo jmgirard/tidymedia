@@ -128,3 +128,18 @@ outputs (M19 parity lesson).
 - cairn_validate.py exit 0 (all 12 checks pass, incl. coverage complete).
 - document() → no diff; README.Rmd/DESIGN.md untouched (no principle change →
   cairn_impact skipped); pkgdown ✔; NEWS entry present; no new top-level files.
+
+### Independent fresh-context review (2026-07-12)
+
+Three lenses, all zero actionable findings; nothing reached the scorer.
+- [O] diff-bug (Opus): verified list-column pmap flow, pick() override
+  precedence, front-door guard ordering, edge cases, `...` forwarding — pass.
+- [S] blame-history (Sonnet): M12/M13/M19/M20 intents + D007 preserved;
+  standardize_videos() parity matched line-for-line.
+- [S] prior-PR-comments (Sonnet): no human prior-PR evidence (Codecov only) —
+  clean no-op.
+- Non-findings logged, not actioned: factor `input`/`output` coercion lacks a
+  dedicated test — explicitly pre-existing parity with standardize_videos(),
+  not introduced by this diff (excluded per the false-positive taxonomy).
+- CI on PR #23: green across all 7 jobs (macOS, Ubuntu devel/oldrel/release,
+  Windows, pkgdown, coverage).

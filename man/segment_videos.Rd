@@ -10,7 +10,7 @@ segment_videos(jobs, reencode = TRUE, run = TRUE, parallel = FALSE, ...)
 \item{jobs}{A data frame with one row per segment and (at least) the columns
 \code{input} (source path), \code{start} and \code{end} (cut points; a
 numeric column of seconds or a character column with time-duration syntax).
-Two optional columns are recognised: \code{output} (destination path) and
+Two optional columns are recognized: \code{output} (destination path) and
 \code{reencode} (a logical; see the \code{reencode} argument). If
 \code{output} is absent, one is derived per row by appending
 \code{_<n>.<ext>} to each input's basename, with the segment number

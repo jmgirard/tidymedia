@@ -3,7 +3,7 @@
      Per-section owners are tagged below. -->
 # M10: segment_videos() parity polish
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Branch/PR:** m10-segment-videos-polish   <!-- owner: implement (branch) / review (PR URL) · create -->
@@ -102,7 +102,7 @@ Bring `segment_videos()` to parity with `segment_video()` by making the
 - [x] T5 — Docs: update `segment_videos()` roxygen (`jobs` param: optional
       `output` + naming rule; `reencode` column + precedence), run
       `devtools::document()`, and add a `NEWS.md` entry.
-- [ ] T6 — `devtools::test()` green, then `devtools::check()` clean; record
+- [x] T6 — `devtools::test()` green, then `devtools::check()` clean; record
       evidence at review.
 
 ## Work log
@@ -110,6 +110,7 @@ Bring `segment_videos()` to parity with `segment_video()` by making the
 
 - 2026-07-12: created by /milestone-plan (absorbs the three M09 `segment_videos()` deferral candidates).
 - 2026-07-12: T1–T5 done — tests-first (8 new cases), extracted `derive_segment_names()` (shared with `segment_video()`), optional `output` + per-row `reencode` column + start/end/reencode validation in `segment_videos()`, roxygen + NEWS; full suite green.
+- 2026-07-12: T6 done — `devtools::check()` clean (0 errors/0 warnings/0 notes) after fixing a spelling NOTE; status → review.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local; promote

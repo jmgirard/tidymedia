@@ -124,3 +124,22 @@ normalizing DESIGN.md principle-definition lines to the validator-parseable
 `- IPn: …` form (format only; principle substance unchanged, no D-entry).
 `devtools::document()` no further diff. `pkgdown::check_pkgdown()` clean. NEWS
 entry added. No new top-level files (WORDLIST in inst/, test in tests/).
+
+**Independent review (3 lenses, fresh context).** Zero actionable findings;
+scorer no-op (no findings to score).
+- [O] diff-bug (Opus): no defects — factor-column rejection, integer→double
+  coercion, non-positive-size deferral to `check_dim`, color-column alignment,
+  even-dim guard vs. region coordinates, audio-copy, and IP1/IP2 all verified
+  clean.
+- [S] blame-history: faithful to intent/history; honors M12 (even-dim +
+  audio-copy) and M13 (extract-first) lessons; no D-entry contradicted;
+  confirmed the DESIGN.md principle reformat aligns with cairn's canonical
+  `- IPn:` style and loses no information.
+- [S] prior-PR-comments: no prior-PR evidence (merged PRs on `ffmpeg.R` carry
+  only Codecov bot comments).
+- Considered and dropped (logged, not actioned): (1) character region values
+  pass through `check_dim` unsanitized — pre-existing shared behavior of every
+  dimension verb, not introduced here; (2) no `ffm_map("0")`, so a
+  multi-audio-track source keeps only the default-selected audio — the
+  deliberate `standardize_pipeline()` pattern M20 mirrors, and AC3 asks only
+  for `-c:a copy`.

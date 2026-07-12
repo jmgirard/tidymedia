@@ -108,7 +108,7 @@ public surface with no compatibility shims.
 - [x] **T5** Arg harmonization: `acodec`/`vcodec` → `audio_codec`/`video_codec`
       and `ts_start`/`ts_stop` → `start`/`end` across `R/ffmpeg.R` (defs,
       defaults, `@param`, job-table column reads) and every test/vignette site.
-- [ ] **T6** N6/N7: in `R/utils-tidy-eval.R` drop the `@export` reexports of
+- [x] **T6** N6/N7: in `R/utils-tidy-eval.R` drop the `@export` reexports of
       `enquo`/`enquos`/`as_label`/`as_name`/`:=` (keep `.data`); drop `@export`
       on `pad_integers` (`R/utils.R`) and `convert_fractions` (`R/ffprobe.R`),
       leaving both as internal helpers.
@@ -125,6 +125,7 @@ public surface with no compatibility shims.
 - 2026-07-12: T3 — `audio_as_mp3` → `convert_audio(format = NULL)`; NULL keeps `-q:a 0`/map-a byte-for-byte, non-NULL emits `-codec:a <format>` (drops `-q:a`); added parity + format tests; tests 0F/0W.
 - 2026-07-12: T4 — `get_samplingrate`/`get_framerate` → `get_sample_rate`/`get_frame_rate` (R/mediainfo.R + internal callers in R/ffmpeg.R + tests); tests 0F/0W.
 - 2026-07-12: T5 — arg harmonization: `acodec`/`vcodec` → `audio_codec`/`video_codec` (args, `@param`, job-table columns `pick()`/`str_cols`, error strings), `ts_start`/`ts_stop` → `start`/`end` (segment_video scalar now matches the batch's `start`/`end` columns). Left the unrelated local `acodec()` ffprobe helper in test-ffmpeg.R untouched. Full suite 0F/0W.
+- 2026-07-12: T6 — reexports trimmed to `.data` only (dropped `enquo`/`enquos`/`as_label`/`as_name`/`:=`); `pad_integers` + `convert_fractions` un-exported via `@noRd` (stale man pages removed, still callable internally). Full suite 0F/0W.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

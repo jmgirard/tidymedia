@@ -1,5 +1,19 @@
 # tidymedia (development version)
 
+## Audio loudness normalization
+
+* Added `normalize_audio()`, a task verb that normalizes a file's perceived
+  loudness to an EBU R128 target using FFmpeg's single-pass `loudnorm` filter.
+  By default it targets -23 LUFS integrated loudness with a -1 dBTP true-peak
+  ceiling (EBU R128, measured per ITU-R BS.1770-4), copies the video stream
+  unchanged, and preserves the source channel layout and sample rate, so the
+  same input always yields one reproducible command. Supply `target_loudness`,
+  `true_peak`, and `loudness_range` to retarget, and `channels`/`sample_rate`
+  to downmix or resample the audio.
+* Added `ffm_loudnorm()`, a builder that appends FFmpeg's EBU R128 `loudnorm`
+  audio filter to a pipeline — the first builder to write the audio filter
+  chain (`-af`).
+
 ## Video standardization
 
 * Added `standardize_video()`, a task verb that re-encodes a video to a

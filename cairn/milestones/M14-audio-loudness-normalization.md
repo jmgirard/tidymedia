@@ -3,7 +3,7 @@
 - **Status:** review
 - **Priority:** normal
 - **Depends on:** —
-- **Branch/PR:** m14-audio-loudness-normalization
+- **Branch/PR:** m14-audio-loudness-normalization · https://github.com/jmgirard/tidymedia/pull/16
 
 ## Goal
 
@@ -119,3 +119,47 @@ engine's until-now-unused `filter_audio`/`-af` slot.
   and `normalize_audio()`, not the terse FFmpeg `I`/`TP`/`LRA` (irreversible-api).
 
 ## Review
+
+**Reviewed:** 2026-07-12 · PR #16 · branch `m14-audio-loudness-normalization`.
+
+### Acceptance-criteria evidence (fresh)
+
+- [x] AC1 — `test-ffm.R` "ffm_loudnorm()" block (5 tests) pass: appends
+      `loudnorm=…` to `filter_audio`, compiles to `-af "loudnorm=I=-23:TP=-1:LRA=7"`,
+      pure (no binary). Coexists with `-vf`; chains after an existing audio filter.
+- [x] AC2 — `test-normalize-audio.R` "compiles the default EBU R128 command"
+      asserts the exact `run = FALSE` string `-y -i "<f>" -af "loudnorm=…" -codec:v
+      copy "out.mp4"`; no binary invoked. Pass.
+- [x] AC3 — defaults `target_loudness=-23`, `true_peak=-1`, `loudness_range=7`
+      cited to EBU Rec. R 128 (2014) + ITU-R BS.1770-4 in the `ffm_loudnorm()` and
+      `normalize_audio()` roxygen `@references` and the milestone Decisions;
+      compile tests confirm the emitted defaults equal the cited values.
+- [x] AC4 — "adds downmix and resample when requested" (emits `-ac 1 -ar 48000`)
+      and "omits downmix/resample by default" (no `-ac`/`-ar`) both pass.
+- [x] AC5 — validation tests pass: missing infile ("exist"), out-of-range
+      `I`/`TP`/`LRA` (3), non-positive/fractional `channels`/`sample_rate` (3);
+      all cli/rlang, no assertthat.
+- [x] AC6 — binary-gated exec test ran (ffprobe present, SKIP 0): wrote a
+      non-empty output carrying a decodable `audio` stream on a synthesized
+      source with a sine track.
+- [x] AC7 — `devtools::check()` clean: 0 errors / 0 warnings / 0 notes.
+
+Full suite under `load_all()`: 279 pass / 0 fail / 1 skip (mediainfo-gated).
+Note: running the suite via a bare `test_dir()` *after* `check()` in one session
+loads the installed package and spuriously fails the new tests (M11 lesson) —
+use `load_all()`.
+
+### Consistency gate
+
+- `cairn_validate.py` — exit 0, all 10 checks PASS.
+- Coverage completeness — AC1→T1, AC2→T3, AC3→T2/T3, AC4→T3, AC5→T3, AC6→T4,
+  AC7→T5; every criterion maps to an existing task. Pass.
+- `devtools::document()` — no diff.
+- DESIGN principles — none changed (verb is consistent with IP1/IP2); impact
+  report skipped.
+- README.Rmd — in sync with README.md (untouched; it uses one verb only as an
+  illustrative example).
+- NEWS.md — added an "Audio loudness normalization" entry (no milestone numbers).
+- `_pkgdown.yml` — added `ffm_loudnorm` (Layer 1) and `normalize_audio`
+  (Layer 2); `pkgdown::check_pkgdown()` — no problems found.
+- No new top-level files.

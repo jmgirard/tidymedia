@@ -11,7 +11,7 @@ Line citations are to the definition site.
 
 ## Method
 
-- Inventoried all 80 `NAMESPACE` exports, grouped by architectural family.
+- Inventoried all 79 `NAMESPACE` exports, grouped by architectural family.
 - Checked every function name against the package's implicit conventions
   (`verb_object` for task verbs; `ffm_*` layer prefix; singular scalar / plural
   batch).
@@ -25,7 +25,7 @@ Line citations are to the definition site.
 
 Docs are in **good** shape: every exported function reaches an `@examples` and
 `@return` (directly or via a shared `@rdname`/`@inherit` page), and `@family` is
-universal. The main doc gap is **`@seealso` cross-linking** (present on only 11
+universal. The main doc gap is **`@seealso` cross-linking** (present on only 10
 of ~50 doc pages). The higher-value target is **naming consistency**: a handful
 of function names break the conventions, the `get_*` prefix carries two
 unrelated meanings, argument vocabulary splits three ways for the same concept,
@@ -39,7 +39,8 @@ and several exports look like unintended public API.
 `ffmpeg` (ffmpeg.R:17) · `ffprobe` (ffprobe.R:17) · `mediainfo` (mediainfo.R:19)
 
 ### Layer 1 — engine `ffm_*` (23)
-- Construction / compile / run / batch: `ffm` = `ffm_files` (ffm.R:60) ·
+- Construction / compile / run / batch: `ffm_files` (ffm.R:19), aliased `ffm`
+  (ffm.R:60) ·
   `ffm_compile` (ffm.R:1013) · `ffm_run` · `ffm_batch` (ffm_batch.R) ·
   `ffm_manifest` (ffm_manifest.R)
 - Input / output: `ffm_copy` · `ffm_seek` · `ffm_map` · `ffm_drop` (ffm.R:228) ·
@@ -58,7 +59,7 @@ and several exports look like unintended public API.
 `standardize_videos` · `normalize_audio` · `normalize_audios` · `audio_as_mp3` ·
 `compare_videos` · `picture_in_picture` · `anonymize_video` · `anonymize_videos`
 
-### Metadata (16)
+### Metadata (15)
 - ffprobe → tibbles: `probe_all` · `probe_container` · `probe_streams` ·
   `probe_video` · `probe_audio` (ffprobe.R)
 - MediaInfo → tibbles/values: `mediainfo_parameter` · `mediainfo_query` ·
@@ -68,7 +69,7 @@ and several exports look like unintended public API.
   `get_samplingrate` (373)
 - Output verification: `verify_media` (verify.R:43)
 
-### Program management (11)
+### Program management (12, incl. the 2 ffmpeg capability queries)
 `find_ffmpeg` · `find_ffprobe` · `find_ffplay` · `find_mediainfo` · `set_ffmpeg`
 · `set_ffprobe` · `set_ffplay` · `set_mediainfo` · `set_program` ·
 `install_on_win` (program_management.R); plus ffmpeg **capability** queries
@@ -93,7 +94,7 @@ Severity: **H** = breaks a convention / actively misleads · **M** = friction ·
 | N3 | M | `get_samplingrate`, `get_framerate` | No-separator compounds, and `samplingrate` disagrees with the `sample_rate` **argument** used everywhere else (35 occurrences vs 3). | `get_sample_rate()` / `get_frame_rate()` — align name to the arg vocabulary (see A-item on rates). |
 | N4 | M | `normalize_audios` | The plural-of-a-mass-noun reads awkwardly ("audios"); the batch-plural convention (`_videos`) doesn't transfer cleanly to "audio". | Either accept it for convention-consistency, or switch the batch convention for this pair (e.g. `normalize_audio_batch()`). Cross-cuts N-item below. |
 | N5 | M | `probe_*` vs `get_*` vs `mediainfo_*` | Three metadata families, two backends (ffprobe vs MediaInfo), overlapping outputs (`probe_video` and `get_width` both yield width). Vignettes advertise all three. Boundary is real but **undocumented**, so users can't tell which to reach for. | Keep all three (they differ by backend + return shape) but **document the boundary explicitly** (family `@description` + a vignette table). Consider renaming `get_*` file-getters to signal the MediaInfo backend (e.g. `mi_duration()`), pending the N1 `get_*` cleanup. |
-| N6 | M | `enquo` `enquos` `as_label` `as_name` `:=` `.data` | Standard tidy-eval reexports, but **no internal use** in `R/` and no exported data-masking API relies on them. Likely unintended surface. | Confirm no user-facing NSE contract, then **drop the reexports** (keep `.data`/`:=` only if a documented tidyselect/pmap pattern needs them). |
+| N6 | M | `enquo` `enquos` `as_label` `as_name` `:=` (`.data` — see note) | Standard tidy-eval reexports, but the four quoting helpers + `:=` have **no internal use** and no exported data-masking API relies on them. Likely unintended surface. **`.data` is an exception — it IS used internally** (`filter_streams()`, `R/ffprobe.R:191`, behind `probe_streams`/`video`/`audio`). | Drop `enquo`/`enquos`/`as_label`/`as_name` (no user-facing NSE contract). **Keep `.data`** (internal use + tidyselect convention); keep `:=` only if a documented pmap/tidyselect pattern needs it, else drop. |
 | N7 | M | `pad_integers`, `convert_fractions` | General-purpose helpers exported as public API; `convert_fractions` is an ffprobe-internal frac-string parser. | Un-export both (make internal), or move to a clearly-scoped util page if genuinely useful to users. Matches the DESIGN "candidates for cleanup" note. |
 | N8 | L | `extract_frame` / `extract_frames` | Reads like "one frame / many frames from one video", but `extract_frames` is actually the **batch** (jobs-table) sibling. Technically consistent with the plural=batch rule, but the collision with "many frames" is a documentation trap. | Keep the names; **disambiguate in the docs** (title + first line must say "batch"). Revisit only if the N-item changes the batch-suffix convention. |
 | N9 | L | `install_on_win` | `_on_win` platform suffix is unlike any other verb; fine but lonely. | Leave as-is (accurately scoped); note for consistency review only. |
@@ -176,7 +177,7 @@ re-verify `@param` coverage for any renamed argument.
 4. **(M) N3 + rate args** — `get_samplingrate`/`get_framerate` →
    `get_sample_rate`/`get_frame_rate`.
 5. **(M) Time-bound args** — `ts_start`/`ts_stop` → `start`/`end`.
-6. **(M) N6** — drop the unused tidy-eval reexports.
+6. **(M) N6** — drop the 4 unused tidy-eval quoting reexports (keep `.data`).
 7. **(M) N7** — un-export `pad_integers`, `convert_fractions`.
 8. **(M) N5 + docs** — document the metadata-family boundary; optionally signal
    the MediaInfo backend in `get_*` names.

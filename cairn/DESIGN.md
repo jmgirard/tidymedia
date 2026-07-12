@@ -38,7 +38,8 @@ realtime/streaming, and full filtergraph DAGs.
   `get_encoders`, `install_on_win`.
 - **Tidy-eval reexports & utils:** `enquo`/`enquos`/`as_label`/`as_name`/`:=`/
   `.data`; `pad_integers`, `convert_fractions` (flagged for cleanup by the M22
-  naming/docs audit — the reexports have no internal use).
+  naming/docs audit — the four quoting reexports + `:=` have no internal use;
+  `.data` is used internally and stays).
 
 ## Conventions
 

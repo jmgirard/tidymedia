@@ -3,7 +3,7 @@
      Per-section owners are tagged below. -->
 # M18: Graceful silent-input handling for two-pass loudnorm
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** M16, M17   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Branch/PR:** m18-silent-input-loudnorm · https://github.com/jmgirard/tidymedia/pull/20   <!-- owner: implement (branch) / review (PR URL) · create -->
@@ -43,28 +43,28 @@ clear silence-specific error for the scalar verb, and continue-and-mark
 ## Acceptance criteria
 <!-- owner: plan · create/amend-via-gate; review reads, never reinterprets -->
 
-- [ ] AC1 — `normalize_audio(two_pass = TRUE)` on silent input aborts with a
+- [x] AC1 — `normalize_audio(two_pass = TRUE)` on silent input aborts with a
       silence-specific error that names silence as the cause and is textually
       distinct from the generic "Could not parse" message. Verified by a pure
       (binary-free) test against a recorded real-FFmpeg silence fixture, and
       by a live `skip_if`-guarded execution test running `anullsrc` silence
       end-to-end.
-- [ ] AC2 — No regression on genuinely unparseable / missing / non-finite
+- [x] AC2 — No regression on genuinely unparseable / missing / non-finite
       (non-silence) measurement blocks: the existing generic "Could not parse"
       abort still fires. Verified by pure tests against the existing bad-input
       cases (missing block, non-numeric values).
-- [ ] AC3 — `normalize_audios(two_pass = TRUE)` on a mixed jobs table (≥1
+- [x] AC3 — `normalize_audios(two_pass = TRUE)` on a mixed jobs table (≥1
       silent, ≥1 non-silent) completes without aborting: non-silent rows are
       normalized (output files exist, `success = TRUE`); silent rows carry
       `silent = TRUE`, `success = FALSE`, and no output file; a single warning
       names the silent rows. Verified by a live `skip_if`-guarded mixed-batch
       execution test.
-- [ ] AC4 — A genuine batch analysis failure (non-zero FFmpeg exit, or a
+- [x] AC4 — A genuine batch analysis failure (non-zero FFmpeg exit, or a
       non-silence unparseable block) still aborts fail-fast naming the
       offending rows — silence handling does not weaken real-error detection.
       Verified by a pure test feeding simulated bad analysis outputs to the
       batch assembly path.
-- [ ] AC5 — Silent-input behavior (scalar error; batch `silent` column and
+- [x] AC5 — Silent-input behavior (scalar error; batch `silent` column and
       continue-and-mark) is documented in the `normalize_audio` /
       `normalize_audios` roxygen, `NEWS.md` records the change, and
       `devtools::check()` is clean (0 errors / 0 warnings / 0 notes) with
@@ -105,44 +105,32 @@ clear silence-specific error for the scalar verb, and continue-and-mark
 ## Work log
 <!-- owner: any skill · append-only; one line per entry; absolute dates -->
 
-- 2026-07-12: created by /milestone-plan (promoted from the M16-review
-  silent-input candidate, scored 68).
-- 2026-07-12: set in-progress; branch m18-silent-input-loudnorm.
-- 2026-07-12: T1/T2 done. Recorded silence fixture
-  (`loudnorm-analysis-silent.txt`); added shared `classify_loudnorm_output()`
-  (silent / unparseable / ok) keyed on `input_i = -Inf`; routed
-  `parse_loudnorm_measurements()` so silence aborts with its own message and
-  other bad blocks keep the generic parse abort. 16 parser tests pass.
-- 2026-07-12: T3 done. `assemble_measured()` now returns `list(measured,
-  silent)`, setting silent rows aside (measured NA) instead of aborting;
-  genuine failures still abort. Added `bind_two_pass_result()` (pure row-order
-  reassembly). `normalize_audios(two_pass=TRUE)` corrects only non-silent rows,
-  warns naming silent ones, and always returns a `silent` column. Full suite
-  725 pass.
-- 2026-07-12: T4 done. Added `make_silent_audio()` helper + live tests (scalar
-  silence errors; mixed batch marks silent row, normalizes the real one, no
-  abort). Documented silent behavior in both verbs' roxygen + `silent` column
-  in `@return`; NEWS entry; `document()`; added `loudnorm` to WORDLIST.
-  `devtools::check()` 0/0/0, `Status: OK` in 00check.log. All tasks complete.
-- 2026-07-12: review found 3 real defects (back to in-progress). (a) silent-row
-  warning crashes with 2+ silent rows — cli `{?s}` governed by a `{.val
-  {vector}}` across message elements throws `length(object) == 1`; (b) the
-  `assemble_measured()` genuine-failure abort has the same `{cli::qty(bad)}`
-  crash with 2+ bad rows (my T3 rewrite); (c) manifest row mismatch (scored 92)
-  — `manifest = TRUE` with silent rows attaches a manifest covering only
-  non-silent rows to the full-row result, breaking ffm_manifest()'s one-row-
-  per-job contract (D011/M08). Live tests used a single silent/bad row so (a)/(b)
-  slipped through. Excluded (scored 78, logged): all-silent + `verify=` omits the
-  `verified` column while a mixed batch includes it.
-- 2026-07-12: fixed all three defects. (a)+(b) rewrote both cli messages to
-  drive pluralization off a scalar `{length()}` and list rows without a
-  vector-governed `{?s}`; (c) added `expand_manifest_rows()` to pad the manifest
-  back to full row order in `bind_two_pass_result()`. Added regression tests
-  (2-bad-row clean abort; manifest one-row-per-job; live 2-silent-row batch with
-  manifest). Full suite 752 pass. Back to review.
+- 2026-07-12: created by /milestone-plan (promoted from M16-review candidate, scored 68); set in-progress; branch m18-silent-input-loudnorm.
+- 2026-07-12: T1/T2 — silence fixture + shared `classify_loudnorm_output()` (silent/unparseable/ok, keyed on `input_i = -Inf`); scalar silence gets its own abort.
+- 2026-07-12: T3 — `assemble_measured()` returns `list(measured, silent)`, sets silent rows aside; new `bind_two_pass_result()`; `normalize_audios` corrects non-silent rows, warns, adds `silent` column; genuine failures still abort.
+- 2026-07-12: T4 — `make_silent_audio()` helper + live scalar/mixed-batch tests; roxygen + `silent` column docs; NEWS; `loudnorm` → WORDLIST; check 0/0/0.
+- 2026-07-12: review found 3 defects → in-progress. (a) silent-row warning + (b) `assemble_measured` abort both crash with 2+ rows (cli `{?s}` governed by a `{.val {vector}}` throws `length(object) == 1`); (c) manifest row mismatch (scored 92) — silent-row batch attached a non-silent-only manifest to the full result, breaking ffm_manifest's one-row-per-job contract (D011). Single-row live tests hid (a)/(b). Logged, not actioned (scored 78): all-silent + `verify=` omits `verified`.
+- 2026-07-12: fixed all three — both cli messages driven off scalar `{length()}`; `expand_manifest_rows()` pads the manifest to full row order. Regression tests added; suite 752 pass. Back to review.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
 
 ## Review
 <!-- owner: review · exclusive -->
+
+Reviewed 2026-07-12 on branch m18-silent-input-loudnorm (PR #20).
+
+**Acceptance-criterion evidence** (fresh; full suite 752 pass, `devtools::check()` 0/0/0, `Status: OK`):
+- AC1 — `parse_loudnorm_measurements()` on the recorded silence fixture aborts with "The input appears to be silent." (no "parse"); garbage input still says "Could not parse". Live: `test-normalize-audio.R` "errors clearly on silent input". ✓
+- AC2 — pure parser tests (missing block / non-numeric / one-key-missing) still hit the generic parse abort. ✓
+- AC3 — live mixed-batch tests: non-silent rows normalized (`success = TRUE`, output written), silent rows `silent = TRUE`/`success = FALSE`/no output, one warning naming them; passes for 1 and 2 silent rows. ✓
+- AC4 — `assemble_measured()` aborts fail-fast on genuine failure (exit / unparseable) even alongside silence, naming rows; clean (non-crashing) for 2+ bad rows. ✓
+- AC5 — roxygen (both verbs' `two_pass` + `@return`/`silent` column), NEWS entry, check clean, WORDLIST updated. ✓
+
+**Consistency gate:** cairn_validate PASS (all checks); `document()` no diff; pkgdown clean (no new exports); README untouched; NEWS present.
+
+**Independent review** — two lenses (Opus diff-bug, Sonnet blame-history) + Sonnet scorer:
+- **F1 manifest row mismatch (score 92) — FIXED.** `normalize_audios(two_pass, manifest=TRUE)` with silent rows attached a non-silent-only manifest to the full-row result, breaking ffm_manifest's one-row-per-job contract (D011). Added `expand_manifest_rows()` to pad it to full row order.
+- **F2 silent-row warning crash with 2+ rows (surfaced by scorer during repro) — FIXED.** cli `{?s}` governed by a `{.val {vector}}` across message elements throws `length(object) == 1`. Rewrote to drive plural off a scalar `{length()}`; same fix applied to the `assemble_measured` abort (same latent crash). Regression tests added.
+- **F3 all-silent batch + `verify=` omits the `verified` column (score 78) — excluded (below 80), logged as candidate.** Same edge affects `manifest=` on an all-silent batch (nothing runs, no attribute). Filed to ROADMAP candidates.
+- Both reviewers confirmed: the `assemble_measured` return-shape change, the abort/continue-and-mark boundary, single-pass byte-for-byte preservation (D013), and the additive `silent` column are all sound.

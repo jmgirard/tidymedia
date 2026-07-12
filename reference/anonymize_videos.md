@@ -1,22 +1,21 @@
-# Standardize Many Videos From a Jobs Table
+# Anonymize Many Videos From a Jobs Table
 
-Re-encode many input files to a reproducible format from a single jobs
-tibble — a table-driven sibling of
-[`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
-for when you have more than one video to standardize. Each row is one
-input; the only required column names its source. This is a thin wrapper
-over
+Cover fixed rectangular regions of many input videos with opaque filled
+boxes from a single jobs tibble — a table-driven sibling of
+[`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
+for when you have more than one video to redact. Each row is one input
+with its own regions; the required columns name the source (`input`) and
+the boxes to cover (`regions`). This is a thin wrapper over
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-one reproducible compiled command per input.
+one reproducible compiled command per input, sharing the same box-fill
+pipeline (and per-region validation) as the scalar verb.
 
 ## Usage
 
 ``` r
-standardize_videos(
+anonymize_videos(
   jobs,
-  width = NULL,
-  height = NULL,
-  fps = NULL,
+  color = "black",
   vcodec = "libx264",
   pixel_format = "yuv420p",
   run = TRUE,
@@ -30,40 +29,36 @@ standardize_videos(
 - jobs:
 
   A data frame with one row per input and (at least) an `input` column
-  (source path). An optional `output` column names the destination; when
-  absent, one is derived per row by appending `_standardized` to each
-  input's basename, keeping the input's extension (e.g. `clip.mkv`
-  becomes `clip_standardized.mkv`). Because standardization is
+  (source path) and a `regions` list-column. Each `regions` cell is
+  itself a data frame of boxes for that input — the same
+  `x`/`y`/`width`/`height` (and optional per-box `color`) shape
+  [`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
+  takes. An optional `output` column names the destination; when absent,
+  one is derived per row by appending `_anonymized` to each input's
+  basename, keeping the input's extension (e.g. `clip.mkv` becomes
+  `clip_anonymized.mkv`). Because anonymization is
   one-input-to-one-output, a duplicated `input` with no `output` column
-  would collide and is rejected. Each of the five standardization knobs
-  — `width`, `height`, `fps`, `vcodec`, `pixel_format` — may also appear
-  as a column to override the corresponding argument on a per-row basis;
-  rows (or knobs) that omit the column fall back to the argument's
-  value. Any other columns are ignored.
+  would collide and is rejected. Each of the three encode knobs —
+  `color`, `vcodec`, `pixel_format` — may also appear as a column to
+  override the corresponding argument on a per-row basis; rows (or
+  knobs) that omit the column fall back to the argument's value. Any
+  other columns are ignored.
 
-- width, height:
+- color:
 
-  Optional target dimensions applied to every row, unless `jobs` carries
-  a column of the same name (see `jobs`). When only one is given the
-  other is derived to preserve aspect ratio; when neither is given the
-  frame is floor-cropped to even dimensions so odd-sized sources encode.
-  (default = `NULL`)
-
-- fps:
-
-  Optional target frame rate applied to every row, unless `jobs` carries
-  an `fps` column. (default = `NULL`, i.e. leave the frame rate
-  unchanged)
+  A string naming the default fill color (FFmpeg color syntax) applied
+  to every row, unless `jobs` carries a `color` column or a box supplies
+  its own `color`. (default = `"black"`)
 
 - vcodec:
 
-  A string naming the video codec applied to every row, unless `jobs`
-  carries a `vcodec` column. (default = `"libx264"`)
+  A string naming the output video codec applied to every row, unless
+  `jobs` carries a `vcodec` column. (default = `"libx264"`)
 
 - pixel_format:
 
-  A string naming the pixel format applied to every row, unless `jobs`
-  carries a `pixel_format` column. (default = `"yuv420p"`)
+  A string naming the output pixel format applied to every row, unless
+  `jobs` carries a `pixel_format` column. (default = `"yuv420p"`)
 
 - run:
 
@@ -74,7 +69,7 @@ standardize_videos(
 
   A logical passed to
   [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-  standardize in parallel with furrr (`TRUE`) or sequentially (`FALSE`,
+  anonymize in parallel with furrr (`TRUE`) or sequentially (`FALSE`,
   default). Parallelism follows the active
   [`future`](https://future.futureverse.org/reference/plan.html) plan;
   `TRUE` under the default sequential plan runs one input at a time and
@@ -97,18 +92,17 @@ plus any columns the forwarded arguments add, e.g. `verified`).
 
 ## See also
 
-[`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+[`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
 for the single-input form;
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
 for the batch runner and the arguments forwarded through `...`;
-[`segment_videos`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md)
+[`standardize_videos`](https://jmgirard.github.io/tidymedia/reference/standardize_videos.md)
 and
-[`extract_frames`](https://jmgirard.github.io/tidymedia/reference/extract_frames.md)
+[`segment_videos`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md)
 for the other table-driven siblings.
 
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
-[`anonymize_videos()`](https://jmgirard.github.io/tidymedia/reference/anonymize_videos.md),
 [`audio_as_mp3()`](https://jmgirard.github.io/tidymedia/reference/audio_as_mp3.md),
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
 [`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md),
@@ -123,22 +117,26 @@ Other task verb functions:
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
 [`segment_videos()`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md),
 [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
-[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
+[`standardize_videos()`](https://jmgirard.github.io/tidymedia/reference/standardize_videos.md)
 
 ## Examples
 
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 jobs <- tibble::tibble(
-  input  = c(video, video),
-  output = c("a.mp4", "b.mp4"),
-  width  = c(640, 320)
+  input   = c(video, video),
+  output  = c("a.mp4", "b.mp4"),
+  regions = list(
+    data.frame(x = 10, y = 10, width = 120, height = 90),
+    data.frame(x = 200, y = 150, width = 80, height = 60)
+  )
 )
 # run = FALSE compiles one command per input without calling FFmpeg
-standardize_videos(jobs, run = FALSE)
+anonymize_videos(jobs, run = FALSE)
 #> # A tibble: 2 × 4
-#>   input                                                     output width command
-#>   <chr>                                                     <chr>  <dbl> <chr>  
-#> 1 /home/runner/work/_temp/Library/tidymedia/extdata/sample… a.mp4    640 "-y -i…
-#> 2 /home/runner/work/_temp/Library/tidymedia/extdata/sample… b.mp4    320 "-y -i…
+#>   input                                                   output regions command
+#>   <chr>                                                   <chr>  <list>  <chr>  
+#> 1 /home/runner/work/_temp/Library/tidymedia/extdata/samp… a.mp4  <df>    "-y -i…
+#> 2 /home/runner/work/_temp/Library/tidymedia/extdata/samp… b.mp4  <df>    "-y -i…
 ```

@@ -86,6 +86,8 @@ Thin wrappers over the builder for common preprocessing jobs.
   : Crop a video to a rectangular region
 - [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
   : Cover fixed regions of a video with opaque boxes
+- [`anonymize_videos()`](https://jmgirard.github.io/tidymedia/reference/anonymize_videos.md)
+  : Anonymize Many Videos From a Jobs Table
 - [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
   : Re-encode a video for web playback
 - [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)

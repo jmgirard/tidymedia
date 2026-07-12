@@ -38,6 +38,7 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
+[`anonymize_videos()`](https://jmgirard.github.io/tidymedia/reference/anonymize_videos.md),
 [`audio_as_mp3()`](https://jmgirard.github.io/tidymedia/reference/audio_as_mp3.md),
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
 [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
@@ -59,5 +60,5 @@ Other task verb functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 concatenate_videos(c(video, video), "joined.mp4", run = FALSE)
-#> [1] "-y -f concat -safe 0 -i \"/tmp/Rtmp0nD5H9/ffm-concat1fae4d36b5b8.txt\" -codec:v copy -codec:a copy -map 0 \"joined.mp4\""
+#> [1] "-y -f concat -safe 0 -i \"/tmp/RtmpYaUU2B/ffm-concat1fb17a87e533.txt\" -codec:v copy -codec:a copy -map 0 \"joined.mp4\""
 ```

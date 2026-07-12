@@ -31,6 +31,7 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
+[`anonymize_videos()`](https://jmgirard.github.io/tidymedia/reference/anonymize_videos.md),
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
 [`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md),
 [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),

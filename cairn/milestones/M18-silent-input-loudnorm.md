@@ -96,7 +96,7 @@ clear silence-specific error for the scalar verb, and continue-and-mark
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [ ] T1 — (tests-first, pure) Record a real-FFmpeg silence measurement
+- [x] T1 — (tests-first, pure) Record a real-FFmpeg silence measurement
       fixture at `tests/testthat/fixtures/loudnorm-analysis-silent.txt`
       (`ffmpeg -f lavfi -i anullsrc=r=44100:cl=mono -t 1 -af
       loudnorm=...:print_format=json -f null -`). Add failing unit tests in
@@ -105,7 +105,7 @@ clear silence-specific error for the scalar verb, and continue-and-mark
       aborts with a silence-specific message on it; the existing generic
       "Could not parse" abort still fires on missing/non-numeric blocks (AC1,
       AC2).
-- [ ] T2 — (impl) Add an internal silence detector in
+- [x] T2 — (impl) Add an internal silence detector in
       `R/loudnorm_two_pass.R` keyed on `input_i` being `-Inf` (via
       `is.infinite() && < 0`, distinguishing silence from `NaN`/missing).
       Route `parse_loudnorm_measurements()` so silence raises the
@@ -134,6 +134,12 @@ clear silence-specific error for the scalar verb, and continue-and-mark
 
 - 2026-07-12: created by /milestone-plan (promoted from the M16-review
   silent-input candidate, scored 68).
+- 2026-07-12: set in-progress; branch m18-silent-input-loudnorm.
+- 2026-07-12: T1/T2 done. Recorded silence fixture
+  (`loudnorm-analysis-silent.txt`); added shared `classify_loudnorm_output()`
+  (silent / unparseable / ok) keyed on `input_i = -Inf`; routed
+  `parse_loudnorm_measurements()` so silence aborts with its own message and
+  other bad blocks keep the generic parse abort. 16 parser tests pass.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

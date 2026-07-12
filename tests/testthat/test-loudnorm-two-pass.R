@@ -59,3 +59,48 @@ test_that("parse_loudnorm_measurements() aborts when one key is missing", {
   )
   expect_error(parse_loudnorm_measurements(partial), "parse")
 })
+
+# Silence classification (M18) -------------------------------------------
+
+test_that("classify_loudnorm_output() flags real silence as silent", {
+  # anullsrc silence: FFmpeg reports input_i = "-inf" and target_offset = "inf".
+  fixture <- readLines(test_path("fixtures", "loudnorm-analysis-silent.txt"))
+  cls <- classify_loudnorm_output(fixture)
+  expect_equal(cls$status, "silent")
+})
+
+test_that("classify_loudnorm_output() returns ok with measured values on a real block", {
+  fixture <- readLines(test_path("fixtures", "loudnorm-analysis.txt"))
+  cls <- classify_loudnorm_output(fixture)
+  expect_equal(cls$status, "ok")
+  expect_equal(cls$measured, list(i = -21.85, tp = -17.71, lra = 0.00,
+                                  thresh = -31.85, offset = -0.02))
+})
+
+test_that("classify_loudnorm_output() marks a missing/garbled block unparseable", {
+  noise <- c("ffmpeg version 8.1.2", "Input #0, mov,mp4", "frame=  15 fps=0.0")
+  expect_equal(classify_loudnorm_output(noise)$status, "unparseable")
+})
+
+test_that("classify_loudnorm_output() does not treat near-silence as silent", {
+  # A very quiet but finite integrated loudness is a legitimate measurement.
+  quiet <- c(
+    '\t"input_i" : "-70.00",',
+    '\t"input_tp" : "-65.00",',
+    '\t"input_lra" : "0.00",',
+    '\t"input_thresh" : "-80.00",',
+    '\t"target_offset" : "0.00"'
+  )
+  cls <- classify_loudnorm_output(quiet)
+  expect_equal(cls$status, "ok")
+  expect_equal(cls$measured$i, -70.00)
+})
+
+test_that("parse_loudnorm_measurements() gives silence its own error, not the parse error", {
+  fixture <- readLines(test_path("fixtures", "loudnorm-analysis-silent.txt"))
+  expect_error(parse_loudnorm_measurements(fixture), "silent")
+  # The silence message is textually distinct from the generic parse error.
+  msg <- tryCatch(parse_loudnorm_measurements(fixture),
+                  error = function(e) conditionMessage(e))
+  expect_no_match(msg, "parse", ignore.case = TRUE)
+})

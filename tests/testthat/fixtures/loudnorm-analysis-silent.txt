@@ -1,0 +1,27 @@
+Input #0, lavfi, from 'anullsrc=r=44100:cl=mono':
+  Duration: N/A, start: 0.000000, bitrate: 352 kb/s
+  Stream #0:0: Audio: pcm_u8, 44100 Hz, mono, u8, 352 kb/s
+Stream mapping:
+  Stream #0:0 -> #0:0 (pcm_u8 (native) -> pcm_s16le (native))
+Press [q] to stop, [?] for help
+Output #0, null, to 'pipe:':
+  Metadata:
+    encoder         : Lavf62.12.102
+  Stream #0:0: Audio: pcm_s16le, 192000 Hz, mono, s16, 3072 kb/s
+    Metadata:
+      encoder         : Lavc62.28.102 pcm_s16le
+[Parsed_loudnorm_0 @ 0xc33014c00] 
+{
+	"input_i" : "-inf",
+	"input_tp" : "-inf",
+	"input_lra" : "0.00",
+	"input_thresh" : "-70.00",
+	"output_i" : "-inf",
+	"output_tp" : "-inf",
+	"output_lra" : "0.00",
+	"output_thresh" : "-70.00",
+	"normalization_type" : "dynamic",
+	"target_offset" : "inf"
+}
+[out#0/null @ 0xc33014480] video:0KiB audio:375KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown
+size=N/A time=00:00:01.00 bitrate=N/A speed=23.9x elapsed=0:00:00.04    

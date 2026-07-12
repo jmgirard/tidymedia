@@ -23,16 +23,22 @@ loudnorm_analysis_pipeline <- function(input,
   ffm_output_options(p, "-f null")
 }
 
-# parse_loudnorm_measurements() ------------------------------------------------
+# classify_loudnorm_output() ---------------------------------------------------
 
-# Extract the five measured values from a loudnorm `print_format=json` block in
-# FFmpeg's captured stderr (a character vector, one line per element). A small
-# regex per key avoids a JSON dependency (D011 spirit); each key sits on its own
-# line in the block. Maps FFmpeg's analysis keys onto the correction params:
-# input_i/tp/lra/thresh -> measured_I/TP/LRA/thresh and target_offset -> offset.
-# Aborts cleanly when the block is absent, incomplete, or non-numeric -- there is
-# no correction to build without a full, finite measurement.
-parse_loudnorm_measurements <- function(output, call = rlang::caller_env()) {
+# Classify an analysis-pass stderr capture (a character vector, one line per
+# element) into one of three outcomes:
+#   "ok"          -- a full, finite JSON measurement block; the five measured
+#                    values are returned in `measured`.
+#   "silent"      -- digital silence: FFmpeg reports `input_i = "-inf"`. This is
+#                    a recognized outcome, not a parse failure (M18).
+#   "unparseable" -- the block is absent, incomplete, or non-finite for a
+#                    non-silence reason; the offending keys are in `bad`.
+# A small regex per key avoids a JSON dependency (D011 spirit); each key sits on
+# its own line. Shared by parse_loudnorm_measurements() (scalar) and
+# assemble_measured() (batch) so silence detection lives once. Maps FFmpeg's
+# analysis keys onto the correction params: input_i/tp/lra/thresh ->
+# measured_I/TP/LRA/thresh and target_offset -> offset.
+classify_loudnorm_output <- function(output) {
   keys <- c(i = "input_i", tp = "input_tp", lra = "input_lra",
             thresh = "input_thresh", offset = "target_offset")
   extract_one <- function(json_key) {
@@ -44,17 +50,48 @@ parse_loudnorm_measurements <- function(output, call = rlang::caller_env()) {
   raw <- vapply(keys, extract_one, character(1))
   num <- suppressWarnings(as.numeric(raw))
   names(num) <- names(keys)
+  # Digital silence: integrated loudness measured as -inf (input_i = "-inf").
+  # Keyed on input_i alone -- the canonical silence marker. Near-silence yields
+  # a finite (if very negative) input_i and is handled as a normal measurement.
+  # is.infinite(NA) is FALSE, so a missing input_i falls through to unparseable.
+  if (isTRUE(is.infinite(num[["i"]]) && num[["i"]] < 0)) {
+    return(list(status = "silent"))
+  }
   bad <- is.na(num) | !is.finite(num)
   if (any(bad)) {
+    return(list(status = "unparseable", bad = names(keys)[bad]))
+  }
+  list(status = "ok",
+       measured = list(i = num[["i"]], tp = num[["tp"]], lra = num[["lra"]],
+                       thresh = num[["thresh"]], offset = num[["offset"]]))
+}
+
+# parse_loudnorm_measurements() ------------------------------------------------
+
+# Scalar-facing wrapper over classify_loudnorm_output(): return the five measured
+# values, or abort. Silence gets its own clear message (distinct from the generic
+# parse failure); any other missing/non-finite block keeps the "could not parse"
+# abort -- there is no correction to build without a full, finite measurement.
+parse_loudnorm_measurements <- function(output, call = rlang::caller_env()) {
+  cls <- classify_loudnorm_output(output)
+  if (identical(cls$status, "silent")) {
+    cli::cli_abort(c(
+      "The input appears to be silent.",
+      "x" = "FFmpeg's {.code loudnorm} analysis measured the integrated \\
+             loudness as {.val -inf} (digital silence).",
+      "i" = "Loudness normalization to a target is undefined for silent \\
+             audio; check the input."
+    ), call = call)
+  }
+  if (identical(cls$status, "unparseable")) {
     cli::cli_abort(c(
       "Could not parse the {.code loudnorm} measurement from FFmpeg's output.",
-      "x" = "Missing or non-finite value{?s}: {.field {names(keys)[bad]}}.",
+      "x" = "Missing or non-finite value{?s}: {.field {cls$bad}}.",
       "i" = "The analysis pass must print a JSON measurement block \\
              ({.code print_format=json})."
     ), call = call)
   }
-  list(i = num[["i"]], tp = num[["tp"]], lra = num[["lra"]],
-       thresh = num[["thresh"]], offset = num[["offset"]])
+  cls$measured
 }
 
 # run_loudnorm_analysis() ------------------------------------------------------

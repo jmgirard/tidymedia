@@ -3,7 +3,7 @@
      Per-section owners are tagged below. -->
 # M22: Naming & docs audit + target-scheme decisions
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Principles touched:** —   <!-- owner: plan · create/amend-via-gate; the naming D-entry references IP1's layer-prefix convention but does not change any principle -->
@@ -110,10 +110,12 @@ implements against.
 - [x] T5 — Write `cairn/references/naming-docs-audit-M22.md` consolidating
       T1–T4 with a ranked recommendation list; register it in
       `cairn/references/INDEX.md`.
-- [ ] T6 — Draft the `DECISIONS.md` entry (target naming scheme + clean-break
-      policy); hold application until review/user sign-off.
-- [ ] T7 — Reconcile DESIGN.md: fix the stale "M10" references and update the
-      Conventions/Function-families prose to the decided naming scheme.
+- [x] T6 — Draft the `DECISIONS.md` entry (target naming scheme + clean-break
+      policy); hold application until review/user sign-off. (Drafted as DRAFT D014
+      in the Decisions section below.)
+- [x] T7 — Reconcile DESIGN.md: fix the stale "M10" references (Function families
+      + Known issues) and point them at M22/D014. Conventions prose asserting the
+      *ratified* scheme is deferred to review, promoted with D014 (see work log).
 
 ## Work log
 <!-- owner: any skill · append-only; one line per entry; absolute dates -->
@@ -123,9 +125,47 @@ implements against.
   inventory, 10 function-name findings incl. overloaded `get_*` prefix, arg
   vocabulary table, `@seealso` gap checklist, ranked recs, proposed scheme);
   indexed it. No R/ changes.
+- 2026-07-12: T6 — drafted DRAFT D014 (naming scheme + clean-break policy) in the
+  Decisions section; held DECISIONS.md append for review sign-off (AC4).
+- 2026-07-12: T7 — fixed DESIGN.md's two stale "M10" references to point at M22.
+  Minor amendment: the AC5 "Conventions prose reflects the decided scheme" clause
+  is deferred to review — asserting unratified conventions now would be premature;
+  it is promoted alongside D014 once the user signs off the audit.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
+
+**DRAFT D014 — pending M22 review sign-off; promote to cairn/DECISIONS.md at
+review (AC4).** Text below is the proposed entry; the ranked recommendations it
+codifies live in `cairn/references/naming-docs-audit-M22.md §5–6`.
+
+> ## D014 — API naming scheme + clean-break rename policy (2026-07-12, from M22)
+>
+> Canonical naming conventions for the public surface, to be implemented by the
+> M22 execution follow-up:
+> - **Task verbs** are `verb_object`; no verb hard-codes a fixed format/codec in
+>   its name (retires `audio_as_mp3`).
+> - **`ffm_*`** marks Layer-1 engine surface only; nothing outside Layer 1 uses
+>   it (references IP1's three-layer separation; does not change IP1).
+> - **`get_*` is reserved for per-file metadata scalars.** ffmpeg **capability**
+>   queries are not `get_*` (retires the `get_codecs`/`get_encoders` overload).
+> - **Metadata prefixes carry backend meaning:** `probe_*` = ffprobe→tibble,
+>   `mediainfo_*` = MediaInfo→tibble/value, file-metadata scalars a distinct
+>   getter prefix; the boundary is documented, not merged.
+> - **Argument vocabulary:** `infile`/`outfile`/`infiles` for transforms, `file`
+>   for read-only metadata; full-word compound args (`audio_codec`,
+>   `video_codec`, `pixel_format`, `sample_rate`) — retires `acodec`/`vcodec`;
+>   time bounds `start`/`end` (+ `duration`, `timestamp` where distinct) —
+>   retires `ts_start`/`ts_stop`; `run`/`reencode`/`parallel` keep current
+>   spellings.
+> - **Batch-sibling rule:** _[decision point — confirm at review]_ plural-noun
+>   suffix (`*_videos`, accepting `normalize_audios`) vs a `*_batch` suffix.
+> - **Rename policy: clean break** — no `lifecycle` shims; the API is pre-0.2.0
+>   and still soaking (D001). Old names are removed, not deprecated.
+>
+> Rules out silent per-verb naming drift and `lifecycle`-shim compatibility for
+> this cleanup. Does not itself rename anything (M22 is audit-only); the
+> execution follow-up applies it (RB tripwire: irreversible-api).
 
 ## Review
 <!-- owner: review · exclusive -->

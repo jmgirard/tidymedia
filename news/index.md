@@ -2,6 +2,20 @@
 
 ## tidymedia (development version)
 
+### Graceful handling of silent input in two-pass loudnorm
+
+- Two-pass normalization now handles digitally silent input honestly.
+  Silence measures as `-inf` loudness, which cannot be normalized to a
+  target. Previously this surfaced as a misleading “could not parse the
+  loudnorm measurement” error. Now `normalize_audio(two_pass = TRUE)`
+  aborts with a clear message that names silence as the cause, and
+  `normalize_audios(two_pass = TRUE)` no longer lets one silent row
+  abort the whole batch: the non-silent rows are normalized, the silent
+  rows are marked in a new logical `silent` column (with
+  `success = FALSE` and no output written), and a warning names them.
+  Genuine analysis failures still abort fail-fast. (Near-silent but
+  non-empty audio is unaffected.)
+
 ### Accurate two-pass loudness normalization
 
 - [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)

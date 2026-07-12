@@ -136,8 +136,13 @@ five measured values are surfaced on the result as columns <code>measured_I</cod
 <strong>always runs the analysis pass through FFmpeg</strong> (it needs the binary
 and readable inputs), even when <code>run = FALSE</code>. If any row's analysis
 fails or yields no parseable measurement, the call aborts — naming the
-offending row(s) — before any correction command is built. The single-pass
-default touches no binary under <code>run = FALSE</code>.</p></dd>
+offending row(s) — before any correction command is built. <strong>Silent</strong>
+rows are the exception: a silent input (analysis loudness <code>-inf</code>)
+cannot be normalized to a target, but one silent row does not abort the
+batch — the non-silent rows are normalized, the silent rows are marked in a
+logical <code>silent</code> column (with <code>success = FALSE</code> and no output
+written), and a warning names them. The single-pass default touches no
+binary under <code>run = FALSE</code>.</p></dd>
 
 
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>
@@ -169,7 +174,9 @@ and warns. Set a plan first, e.g.
 when <code>run = TRUE</code>, a <code>success</code> column, plus any columns the
 forwarded arguments add, e.g. <code>verified</code>). Under <code>two_pass = TRUE</code>
 the result also carries the five measured columns (<code>measured_I</code> etc.)
-and the <code>command</code> column holds the linear correction commands.</p>
+and a logical <code>silent</code> column, and the <code>command</code> column holds the
+linear correction commands (<code>NA</code> for silent rows, which carry <code>NA</code>
+measurements and are not normalized).</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

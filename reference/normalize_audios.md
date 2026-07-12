@@ -84,7 +84,12 @@ normalize_audios(
   the binary and readable inputs), even when `run = FALSE`. If any row's
   analysis fails or yields no parseable measurement, the call aborts —
   naming the offending row(s) — before any correction command is built.
-  The single-pass default touches no binary under `run = FALSE`.
+  **Silent** rows are the exception: a silent input (analysis loudness
+  `-inf`) cannot be normalized to a target, but one silent row does not
+  abort the batch — the non-silent rows are normalized, the silent rows
+  are marked in a logical `silent` column (with `success = FALSE` and no
+  output written), and a warning names them. The single-pass default
+  touches no binary under `run = FALSE`.
 
 - run:
 
@@ -118,8 +123,9 @@ returned by
 the resolved `output` column; when `run = TRUE`, a `success` column,
 plus any columns the forwarded arguments add, e.g. `verified`). Under
 `two_pass = TRUE` the result also carries the five measured columns
-(`measured_I` etc.) and the `command` column holds the linear correction
-commands.
+(`measured_I` etc.) and a logical `silent` column, and the `command`
+column holds the linear correction commands (`NA` for silent rows, which
+carry `NA` measurements and are not normalized).
 
 ## References
 

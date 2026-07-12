@@ -119,7 +119,10 @@ Two-pass therefore <strong>always runs the analysis pass through FFmpeg</strong>
 (it needs the binary and readable input), even when <code>run = FALSE</code>: in
 that case the analysis still runs and the returned value is the exact
 correction command, left unexecuted. The single-pass default touches no
-binary under <code>run = FALSE</code>.</p></dd>
+binary under <code>run = FALSE</code>. If the input is <strong>silent</strong>, the
+analysis pass measures its loudness as <code>-inf</code>; normalizing silence to
+a target is undefined, so two-pass aborts with a clear error (the
+single-pass default leaves silence untouched).</p></dd>
 
 
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>

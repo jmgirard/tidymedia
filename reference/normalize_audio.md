@@ -71,7 +71,10 @@ normalize_audio(
   and readable input), even when `run = FALSE`: in that case the
   analysis still runs and the returned value is the exact correction
   command, left unexecuted. The single-pass default touches no binary
-  under `run = FALSE`.
+  under `run = FALSE`. If the input is **silent**, the analysis pass
+  measures its loudness as `-inf`; normalizing silence to a target is
+  undefined, so two-pass aborts with a clear error (the single-pass
+  default leaves silence untouched).
 
 - run:
 

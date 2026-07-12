@@ -847,7 +847,7 @@ normalize_audio_pipeline <- function(input, output,
 }
 
 
-# get_codecs() ------------------------------------------------------------
+# ffmpeg_codecs() ------------------------------------------------------------
 
 #' Get a data frame of all installed codecs
 #'
@@ -870,10 +870,10 @@ normalize_audio_pipeline <- function(input, output,
 #'   vector indicating whether each codec supports lossless compression}
 #' @family capability functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
-#' head(get_codecs())
-#' get_codecs(sort_by_type = FALSE)
+#' head(ffmpeg_codecs())
+#' ffmpeg_codecs(sort_by_type = FALSE)
 #' @export
-get_codecs <- function(sort_by_type = TRUE) {
+ffmpeg_codecs <- function(sort_by_type = TRUE) {
   output <- ffmpeg("-codecs")
   output2 <- output[-(1:which(output == " -------"))]
   key <- regmatches(
@@ -925,7 +925,7 @@ get_codecs <- function(sort_by_type = TRUE) {
   out
 }
 
-# get_encoders() ------------------------------------------------------------
+# ffmpeg_encoders() ------------------------------------------------------------
 
 #' Get a data frame of all installed encoders
 #'
@@ -949,10 +949,10 @@ get_codecs <- function(sort_by_type = TRUE) {
 #'   supports direct rending method 1}
 #' @family capability functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
-#' head(get_encoders())
-#' get_encoders(sort_by_type = FALSE)
+#' head(ffmpeg_encoders())
+#' ffmpeg_encoders(sort_by_type = FALSE)
 #' @export
-get_encoders <- function(sort_by_type = TRUE) {
+ffmpeg_encoders <- function(sort_by_type = TRUE) {
 
   rlang::check_bool(sort_by_type)
 

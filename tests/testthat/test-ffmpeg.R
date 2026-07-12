@@ -31,9 +31,9 @@ test_that("segment_video() rejects mismatched timestamp lengths", {
   expect_error(segment_video(f, c(0, 5), c(5)), "same length")
 })
 
-test_that("get_codecs() returns a tidy tibble", {
+test_that("ffmpeg_codecs() returns a tidy tibble", {
   skip_if_no_ffmpeg()
-  cc <- get_codecs()
+  cc <- ffmpeg_codecs()
   expect_s3_class(cc, "tbl_df")
   expect_setequal(
     names(cc),
@@ -45,15 +45,15 @@ test_that("get_codecs() returns a tidy tibble", {
   expect_gt(nrow(cc), 0)
 })
 
-test_that("get_codecs() sort_by_type toggles ordering", {
+test_that("ffmpeg_codecs() sort_by_type toggles ordering", {
   skip_if_no_ffmpeg()
-  by_name <- get_codecs(sort_by_type = FALSE)
+  by_name <- ffmpeg_codecs(sort_by_type = FALSE)
   expect_false(is.unsorted(by_name$name))
 })
 
-test_that("get_encoders() returns a tidy tibble", {
+test_that("ffmpeg_encoders() returns a tidy tibble", {
   skip_if_no_ffmpeg()
-  ee <- get_encoders()
+  ee <- ffmpeg_encoders()
   expect_s3_class(ee, "tbl_df")
   expect_setequal(
     names(ee),

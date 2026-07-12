@@ -97,7 +97,7 @@ public surface with no compatibility shims.
       (`R/ffmpeg.R:614/1206/1316/1485/1691` + `R/loudnorm_two_pass.R`): update
       defs, roxygen, all call sites in `tests/`, `vignettes/batch.Rmd`,
       `README.Rmd`, and rename the matching `tests/testthat/test-*.R` files.
-- [ ] **T2** N1: rename `get_codecs`/`get_encoders` → `ffmpeg_codecs`/
+- [x] **T2** N1: rename `get_codecs`/`get_encoders` → `ffmpeg_codecs`/
       `ffmpeg_encoders` (`R/ffmpeg.R`) + roxygen `@family`/title + tests.
 - [ ] **T3** N2: replace `audio_as_mp3` (`R/ffmpeg.R:182`) with
       `convert_audio(infile, outfile, format = NULL, run = TRUE)` — `NULL`
@@ -121,6 +121,7 @@ public surface with no compatibility shims.
 
 - 2026-07-12: created by /milestone-plan (executes M22 audit §5–6 / D014).
 - 2026-07-12: T1 — renamed 5 batch siblings to `*_batch` across R/, tests (incl. test files), vignettes, README; document() regen; tests 0F/0W.
+- 2026-07-12: T2 — `get_codecs`/`get_encoders` → `ffmpeg_codecs`/`ffmpeg_encoders` (R/, test-ffmpeg.R, README, ffm.R prose); tests 0F/0W.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

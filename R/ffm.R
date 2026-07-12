@@ -470,7 +470,7 @@ ffm_loudnorm <- function(object,
 #' Set Codecs in an FFmpeg Pipeline
 #'
 #' Set the audio and/or video codecs for the output file. Note that you can use
-#' the command \code{get_codecs()} to see a list of the codecs included in your
+#' the command \code{ffmpeg_codecs()} to see a list of the codecs included in your
 #' FFmpeg version.
 #'
 #' @param object An ffmpeg pipeline (\code{ffm}) object created by

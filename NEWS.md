@@ -1,5 +1,15 @@
 # tidymedia (development version)
 
+## Batch segmentation across files
+
+* Added `segment_videos()`, a table-driven companion to `segment_video()`. Pass
+  a jobs tibble with `input`, `output`, `start`, and `end` columns — one row per
+  segment — to cut segments spanning many input files in one call. It is a thin
+  wrapper over `ffm_batch()`, so `...` forwards batch options such as `verify`,
+  `manifest`, `checksums`, and `progress`; `reencode` selects accurate
+  re-encoding (default) or the fast keyframe-snapping copy path, as in
+  `segment_video()`.
+
 ## Verification & provenance (M08)
 
 * Added `verify_media()`, a probe-backed checker that confirms an output really

@@ -157,3 +157,20 @@ argument set is the one documented standard (see the API tripwire on T4).
   (present on origin/master, outside M12's diff). M12's own file is
   validator-clean (reworded to "0 errors, 0 warnings, 0 notes"). Flagged as a
   cairn plugin defect at the approval gate; not patched review-side.
+- Independent fresh-context review (2 lenses + scorer). Two findings, both
+  reproduced with real ffmpeg:
+  - **Finding 2 — audio doc mismatch (scorer 90, actioned).** Roxygen
+    `@details` claims "Audio is left untouched," but the composed command sets
+    no `-c:a copy`; re-encoding the video makes ffmpeg transcode audio to the
+    container default (verified: mp3 → aac). Package convention for truly
+    leaving audio alone is `audio = "copy"` (extract_audio, separate_audio_video).
+  - **Finding 1 — odd-dimension default crash (scorer 76, logged/surfaced,
+    not auto-actioned).** The default path (no width/height) emits no
+    scale/crop, so an odd-dimensioned source fails libx264/yuv420p encoding
+    ("width not divisible by 2") and writes a 0-byte output (verified: 641×481
+    → 0 bytes). `format_for_web()` guards this with an even-dimension crop, and
+    M12's Decisions claim codec parity with it. Below threshold because AC3 as
+    written blesses "neither dimension → resolution untouched (no filter)" — a
+    fix requires an AC3/AC4 amendment, not a review-side patch.
+  - Triage deferred to the approval-gate decision (fix-both-now + gated
+    amendment, vs. merge-minimal with doc correction + follow-up candidate).

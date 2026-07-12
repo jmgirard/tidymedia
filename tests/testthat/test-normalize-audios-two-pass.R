@@ -178,6 +178,73 @@ test_that("bind_two_pass_result() marks an all-silent batch with no correction (
   expect_equal(res$silent, c(TRUE, TRUE))
   expect_equal(res$command, c(NA_character_, NA_character_))
   expect_equal(res$success, c(FALSE, FALSE))
+  # No verify/manifest requested: neither opt-in output is synthesized.
+  expect_false("verified" %in% names(res))
+  expect_null(attr(res, "manifest"))
+})
+
+test_that("bind_two_pass_result() adds an all-NA verified column for an all-silent verify batch (AC1)", {
+  jobs <- tibble::tibble(
+    input      = c("a.mp4", "b.mp4"),
+    output     = c("a.out", "b.out"),
+    measured_I = c(NA_real_, NA_real_)
+  )
+  res <- bind_two_pass_result(
+    jobs, c(TRUE, TRUE), ok_res = NULL, run = TRUE, verify = TRUE
+  )
+  # Same shape a mixed batch gives silent rows: a logical `verified`, all NA,
+  # ordered after `success`.
+  expect_true(is.logical(res$verified))
+  expect_true(all(is.na(res$verified)))
+  expect_equal(
+    tail(names(res), 3), c("command", "success", "verified")
+  )
+})
+
+test_that("bind_two_pass_result() attaches a padded manifest for an all-silent manifest batch (AC2)", {
+  jobs <- tibble::tibble(
+    input      = c("a.mp4", "b.mp4"),
+    output     = c("a.out", "b.out"),
+    measured_I = c(NA_real_, NA_real_)
+  )
+  res <- bind_two_pass_result(
+    jobs, c(TRUE, TRUE), ok_res = NULL, run = TRUE, manifest = TRUE
+  )
+  man <- attr(res, "manifest")
+  # One row per job, input paths recorded, every other column NA (matching how a
+  # mixed batch pads its silent rows), no md5 columns without checksums.
+  expect_identical(names(man), names(manifest_schema(FALSE)))
+  expect_equal(nrow(man), 2L)
+  expect_equal(man$input, c("a.mp4", "b.mp4"))
+  expect_true(all(is.na(man$command)))
+  expect_true(all(is.na(man$output_size)))
+})
+
+test_that("bind_two_pass_result() manifest carries md5 columns under checksums (AC2)", {
+  jobs <- tibble::tibble(
+    input      = "a.mp4",
+    output     = "a.out",
+    measured_I = NA_real_
+  )
+  res <- bind_two_pass_result(
+    jobs, TRUE, ok_res = NULL, run = TRUE, manifest = TRUE, checksums = TRUE
+  )
+  man <- attr(res, "manifest")
+  expect_identical(names(man), names(manifest_schema(TRUE)))
+  expect_true(all(c("input_md5", "output_md5") %in% names(man)))
+  expect_equal(man$input, "a.mp4")
+  expect_true(is.na(man$output_md5))
+})
+
+test_that("bind_two_pass_result() synthesizes no opt-in schema under run = FALSE (AC1/AC2)", {
+  jobs <- tibble::tibble(input = "a.mp4", output = "a.out", measured_I = NA_real_)
+  res <- bind_two_pass_result(
+    jobs, TRUE, ok_res = NULL, run = FALSE, verify = TRUE, manifest = TRUE
+  )
+  # A mixed batch adds no verified/manifest under run = FALSE either; stay parallel.
+  expect_false("verified" %in% names(res))
+  expect_false("success" %in% names(res))
+  expect_null(attr(res, "manifest"))
 })
 
 test_that("assemble_measured() aborts naming the offending row on a malformed block (AC3)", {

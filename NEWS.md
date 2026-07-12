@@ -11,6 +11,11 @@
   silent rows are marked in a new logical `silent` column (with `success = FALSE`
   and no output written), and a warning names them. Genuine analysis failures
   still abort fail-fast. (Near-silent but non-empty audio is unaffected.)
+* The two-pass batch's result schema no longer depends on how many rows are
+  silent: when `verify` or `manifest` is requested, the `verified` column and
+  the provenance manifest are now returned even when *every* row is silent
+  (silent rows carry `NA` for those outputs), matching a batch with some
+  non-silent rows.
 
 ## Accurate two-pass loudness normalization
 

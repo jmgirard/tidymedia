@@ -1317,7 +1317,12 @@ derive_normalized_names <- function(input) {
 #'   the result also carries the five measured columns (\code{measured_I} etc.)
 #'   and a logical \code{silent} column, and the \code{command} column holds the
 #'   linear correction commands (\code{NA} for silent rows, which carry \code{NA}
-#'   measurements and are not normalized).
+#'   measurements and are not normalized). The two-pass result's schema is
+#'   independent of how many rows are silent: the opt-in \code{verified} column
+#'   (under \code{verify}) and provenance manifest (under \code{manifest}, read
+#'   with \code{\link{ffm_manifest}}) are present whenever requested, even when
+#'   \emph{every} row is silent -- silent rows simply carry \code{NA} for those
+#'   outputs.
 #' @references
 #' EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
 #' maximum level of audio signals}; ITU-R BS.1770-4.
@@ -1457,7 +1462,16 @@ normalize_audios <- function(jobs, target_loudness = -23, true_peak = -1,
     } else {
       NULL
     }
-    return(bind_two_pass_result(jobs, silent, ok_res, run))
+    # Thread the opt-in intent (verify/manifest/checksums, forwarded via `...`)
+    # so an all-silent batch synthesizes the same schema a mixed one produces
+    # (D011); a mixed batch reads those from ok_res and ignores these.
+    dots <- list(...)
+    return(bind_two_pass_result(
+      jobs, silent, ok_res, run,
+      verify = !is.null(dots$verify),
+      manifest = isTRUE(dots$manifest),
+      checksums = isTRUE(dots$checksums)
+    ))
   }
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output loudnorm

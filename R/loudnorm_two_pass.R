@@ -242,13 +242,35 @@ expand_manifest_rows <- function(man, silent, inputs) {
 # so the interleaving is unit-testable independent of ffmpeg. A manifest
 # attribute on ok_res (opt-in provenance for the rows that ran) is expanded to
 # full row order so it stays one-row-per-job (D011).
-bind_two_pass_result <- function(jobs, silent, ok_res, run) {
+#
+# `verify`/`manifest`/`checksums` carry the opt-in intent from normalize_audios()
+# so the all-silent case (no fan-out ran) still returns the SAME schema a mixed
+# batch would: an all-NA `verified` column and a padded manifest. Without this,
+# an all-silent batch silently dropped those outputs while a mixed batch kept
+# them -- the D011 inconsistency this closes. They only matter on the all-silent
+# path under run = TRUE; a mixed batch reads verified/manifest from ok_res, and
+# run = FALSE adds neither (parity with ffm_batch(), which builds both inside
+# its own `if (run)`).
+bind_two_pass_result <- function(jobs, silent, ok_res, run, verify = FALSE,
+                                 manifest = FALSE, checksums = FALSE) {
   result <- tibble::as_tibble(jobs)
   result$silent <- silent
   if (is.null(ok_res)) {
-    # Every row silent: no correction fan-out ran.
+    # Every row silent: no correction fan-out ran. Synthesize the opt-in schema
+    # a mixed batch produces so the result shape is call-invariant (D011).
     result$command <- NA_character_
-    if (run) result$success <- FALSE
+    if (run) {
+      result$success <- FALSE
+      # Silent rows are NA in a mixed batch's `verified`; all-silent -> all NA.
+      if (verify) result$verified <- NA
+      if (manifest) {
+        # Pad the empty canonical manifest to one row per job (input paths kept,
+        # everything else NA), exactly as expand_manifest_rows() pads a mixed
+        # batch's silent rows.
+        attr(result, "manifest") <-
+          expand_manifest_rows(manifest_schema(checksums), silent, result$input)
+      }
+    }
     return(result)
   }
   # ok_res's columns beyond the jobs table are the run outputs to thread back;

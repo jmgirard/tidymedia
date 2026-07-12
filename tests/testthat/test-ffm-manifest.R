@@ -14,6 +14,28 @@ test_that("parse_version_line() returns NA for empty or missing input", {
   expect_true(is.na(parse_version_line(character(0))))
 })
 
+# manifest_schema() — canonical column set (CI-safe) --------------------------
+
+test_that("manifest_schema() is the empty template build_manifest() fills (drift guard)", {
+  out <- withr::local_tempfile(fileext = ".mp4")
+  writeBin(as.raw(rep(1, 4)), out)
+  pipelines <- list(ffm_dry("in.mp4", out))
+  for (checksums in c(FALSE, TRUE)) {
+    schema <- manifest_schema(checksums)
+    man <- build_manifest(
+      pipelines, commands = "cmd",
+      versions = list(ffmpeg = "8.1", ffprobe = "8.1"), checksums = checksums
+    )
+    expect_equal(nrow(schema), 0L)
+    # Same columns, same order, same types as a populated manifest.
+    expect_identical(names(schema), names(man))
+    expect_identical(
+      vapply(schema, function(col) class(col)[[1]], character(1)),
+      vapply(man, function(col) class(col)[[1]], character(1))
+    )
+  }
+})
+
 # build_manifest() — assembly + checksums (CI-safe) ----------------------------
 
 test_that("build_manifest() assembles one row per job with sizes and versions", {

@@ -3,10 +3,10 @@
      Per-section owners are tagged below. -->
 # M18: Graceful silent-input handling for two-pass loudnorm
 
-- **Status:** planned   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** M16, M17   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
-- **Branch/PR:** —   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** m18-silent-input-loudnorm   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 

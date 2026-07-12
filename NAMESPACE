@@ -3,6 +3,7 @@
 S3method(print,tidymedia_ffm)
 export(":=")
 export(.data)
+export(anonymize_video)
 export(as_label)
 export(as_name)
 export(audio_as_mp3)

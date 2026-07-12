@@ -52,21 +52,21 @@ realtime/streaming, and full filtergraph DAGs.
 
 ## Design principles
 
-- **IP1 — Three-layer separation (D002).** Layer 2 task verbs are thin
+- IP1: **Three-layer separation (D002).** Layer 2 task verbs are thin
   wrappers that never glue their own command strings; all assembly, quoting,
   and copy-vs-re-encode logic lives once in Layer 1.
-- **IP2 — The builder stays linear (D003).** Layer 1 models a single input
+- IP2: **The builder stays linear (D003).** Layer 1 models a single input
   chain with sequential filters and one output, plus only the blessed
   multi-input verbs (hstack, vstack, overlay, concat). No filtergraph DAGs;
   those users get the Layer 0 escape hatch.
-- **IP3 — Blessed multi-input set is single-video-output (D006, D009).**
+- IP3: **Blessed multi-input set is single-video-output (D006, D009).**
   Multi-input verbs ride the `-filter_complex … [vout]` path and manage their
   own stream labels; audio in stacked/overlaid output is explicit-map-only.
   `xstack` and `amix` stay Layer 0 (`amix` would require an `[aout]` engine
   generalization — a future milestone, not a bolt-on).
-- **GP1 — Scope discipline (D001).** Prefer refusing an ffmpeg feature over
+- GP1: **Scope discipline (D001).** Prefer refusing an ffmpeg feature over
   growing toward full coverage; tradeable only with an explicit decision.
-- **GP2 — Frame-accurate by default (D008).** Cutting re-encodes for
+- GP2: **Frame-accurate by default (D008).** Cutting re-encodes for
   frame accuracy by default; the lossless stream-copy fast path snaps to
   keyframes and is opt-in.
 

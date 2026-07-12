@@ -91,6 +91,7 @@ through \code{...}; \code{\link{segment_videos}} and
 \code{\link{extract_frames}} for the other table-driven siblings.
 
 Other task verb functions:
+\code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=audio_as_mp3]{audio_as_mp3()}},
 \code{\link[=compare_videos]{compare_videos()}},
 \code{\link[=concatenate_videos]{concatenate_videos()}},

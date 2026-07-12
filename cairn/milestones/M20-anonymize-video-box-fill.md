@@ -65,23 +65,23 @@ so the deferred M21 batch sibling inherits it (M13 extract-first lesson).
 
 ## Tasks
 
-- [ ] T1: Write internal `anonymize_pipeline(object, regions, color, vcodec,
+- [x] T1: Write internal `anonymize_pipeline(object, regions, color, vcodec,
       pixel_format)` (place beside the other Layer-2 helpers): validate the
       regions data frame and its columns, apply the even-dimension floor crop
       (mirror `standardize_video()` R/ffmpeg.R:310), chain one `ffm_drawbox(…,
       thickness = "fill")` per row (per-row `color` column overrides the arg),
       set `ffm_codec`/`ffm_pixel_format`, and `ffm_output_options("-c:a copy")`.
       Extract-first so M21 reuses it (M13 lesson).
-- [ ] T2: Front door `anonymize_video(infile, outfile, regions, color = "black",
+- [x] T2: Front door `anonymize_video(infile, outfile, regions, color = "black",
       vcodec = "libx264", pixel_format = "yuv420p", run = TRUE)` over
       `ffm_files` → `anonymize_pipeline` → `ffm_map("0")` → `ffm_finish`
       (mirror `crop_video()` R/ffmpeg.R:213). Roxygen `@family task verb
       functions`; add the `_pkgdown.yml` Layer-2 row; `devtools::document()`.
-- [ ] T3: Compilation tests (pure, CI-safe): single region; N regions chain
+- [x] T3: Compilation tests (pure, CI-safe): single region; N regions chain
       into one `-vf`; per-row + default color; `-c:a copy` and codec/pixfmt
       present; even-dim guard present; byte-identical recompile; plus every
       validation abort branch from AC5 (assert on the `cli` messages).
-- [ ] T4: Execution test (`skip_if` ffmpeg absent): run on `sample.mp4`, assert
+- [x] T4: Execution test (`skip_if` ffmpeg absent): run on `sample.mp4`, assert
       the output exists and is a valid video (probe or `verify_media`).
 - [ ] T5: `devtools::document()`, `devtools::test()`, then `devtools::check()`
       to OK (0/0/0); `spelling::update_wordlist()` if new terms; confirm
@@ -91,6 +91,9 @@ so the deferred M21 batch sibling inherits it (M13 extract-first lesson).
 
 - 2026-07-12: created by /milestone-plan (box-fill scope chosen at gate;
   region blur deferred to candidate, batch sibling to M21).
+- 2026-07-12: T1–T4 done — anonymize_video() + shared anonymize_pipeline() +
+  check_regions() in R/ffmpeg.R; 25 tests pass (compile + validation +
+  execution). pkgdown row + docs regenerated.
 
 ## Decisions
 

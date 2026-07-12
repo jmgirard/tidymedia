@@ -359,6 +359,174 @@ standardize_pipeline <- function(input, output, width, height, fps, vcodec,
 }
 
 
+# anonymize_video() -------------------------------------------------------
+
+#' Cover fixed regions of a video with opaque boxes
+#'
+#' De-identify a video by covering one or more fixed rectangular regions with
+#' opaque filled boxes -- for example, to redact a face, a name badge, or a
+#' screen that stays in one place for the whole clip. The regions are fixed
+#' (there is no face or object tracking), so this suits footage where the areas
+#' to cover do not move.
+#'
+#' @details
+#' \code{regions} is a data frame with one row per box and the columns
+#' \code{x}, \code{y}, \code{width}, and \code{height} (each a pixel number or an
+#' FFmpeg expression such as \code{"in_w/2"}); \code{x}/\code{y} give the
+#' top-left corner and \code{width}/\code{height} the size. An optional
+#' \code{color} column overrides the \code{color} argument for that row. Every
+#' box is a solid fill (FFmpeg's \code{drawbox} with \code{t=fill}); hollow
+#' outlines are intentionally not offered.
+#'
+#' Because a filter is applied, the video is re-encoded (\code{vcodec} /
+#' \code{pixel_format}, defaulting to H.264 / \code{yuv420p}); odd source
+#' dimensions are floored to even so the output always encodes (a
+#' \code{yuv420p}/\code{libx264} requirement, and a no-op for already-even
+#' input). Audio is stream-copied unchanged (\code{-c:a copy}). The same input
+#' and regions therefore always compile to a byte-identical command.
+#'
+#' @param infile A string containing the path to a video file.
+#' @param outfile A string containing the path of the video file to write.
+#' @param regions A data frame with one row per box and columns \code{x},
+#'   \code{y}, \code{width}, \code{height} (and optionally \code{color}); see
+#'   Details.
+#' @param color A string naming the default fill color in FFmpeg color syntax,
+#'   used for any row without its own \code{color} (default \code{"black"}).
+#' @param vcodec A string naming the output video codec (default
+#'   \code{"libx264"}).
+#' @param pixel_format A string naming the output pixel format (default
+#'   \code{"yuv420p"}).
+#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
+#'   or return the compiled command without running it (\code{FALSE}).
+#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @seealso \code{\link{ffm_drawbox}} for the underlying builder filter.
+#' @references https://ffmpeg.org/ffmpeg-filters.html#drawbox
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' # Cover two fixed regions with black boxes
+#' regions <- data.frame(
+#'   x = c(10, 200), y = c(10, 150),
+#'   width = c(120, 80), height = c(90, 60)
+#' )
+#' anonymize_video(video, "anon.mp4", regions, run = FALSE)
+#' @export
+anonymize_video <- function(infile, outfile, regions,
+                            color = "black",
+                            vcodec = "libx264", pixel_format = "yuv420p",
+                            run = TRUE) {
+
+  check_file_exists(infile)
+  rlang::check_string(outfile)
+
+  ffm_finish(
+    anonymize_pipeline(infile, outfile, regions, color, vcodec, pixel_format),
+    run
+  )
+}
+
+
+# anonymize_pipeline() ----------------------------------------------------
+
+# Shared anonymization pipeline for anonymize_video() and (M21) the batch
+# sibling: build one single-output box-fill pipeline for a single input. Both
+# verbs compile identical commands from this helper, so region-table validation
+# and the encode guards (even-dimension safeguard, audio stream-copy) live here
+# once -- the batch sibling inherits them by construction (D002, D003, D007;
+# M13 extract-first lesson).
+anonymize_pipeline <- function(input, output, regions, color, vcodec,
+                               pixel_format, call = rlang::caller_env()) {
+  check_regions(regions, call = call)
+  rlang::check_string(color, call = call)
+  check_token(vcodec, call = call)
+  check_token(pixel_format, call = call)
+
+  # Integer coordinates are natural pixel values, but ffm_drawbox()'s check_dim()
+  # accepts only doubles or expression strings; coerce numeric columns so an
+  # integer/integerish table is not rejected.
+  for (col in c("x", "y", "width", "height")) {
+    if (is.numeric(regions[[col]])) regions[[col]] <- as.double(regions[[col]])
+  }
+
+  p <- ffm_files(input, output)
+  # Force even output dimensions so yuv420p/libx264 can encode odd-dimensioned
+  # sources (M12 guard); a no-op for already-even input. drawbox coordinates use
+  # a top-left origin, so the <=1px floor never shifts a region's x/y.
+  p <- ffm_crop(p, width = "floor(in_w/2)*2", height = "floor(in_h/2)*2")
+
+  colors <- if ("color" %in% names(regions)) {
+    regions$color
+  } else {
+    rep(color, nrow(regions))
+  }
+  # One filled drawbox per region; ffm_drawbox() validates each x/y/w/h.
+  for (i in seq_len(nrow(regions))) {
+    p <- ffm_drawbox(
+      p,
+      x = regions$x[i], y = regions$y[i],
+      width = regions$width[i], height = regions$height[i],
+      color = colors[i], thickness = "fill"
+    )
+  }
+  # Re-encode video (a filter is applied), stream-copy audio untouched -- the
+  # same encode profile as standardize_video().
+  p <- ffm_codec(p, video = vcodec, audio = "copy")
+  ffm_pixel_format(p, pixel_format)
+}
+
+
+# check_regions() ---------------------------------------------------------
+
+# Validate the `regions` data frame for anonymize_video()/its batch sibling:
+# structure and column type/NA only. Per-value dimension checks (positive size,
+# valid expression) are inherited per row from ffm_drawbox()'s check_dim().
+check_regions <- function(regions, call = rlang::caller_env()) {
+  if (!is.data.frame(regions)) {
+    cli::cli_abort("{.arg regions} must be a data frame with one row per box.",
+                   call = call)
+  }
+  if (nrow(regions) == 0) {
+    cli::cli_abort("{.arg regions} must have at least one row.", call = call)
+  }
+  required <- c("x", "y", "width", "height")
+  missing <- setdiff(required, names(regions))
+  if (length(missing)) {
+    cli::cli_abort(
+      c(
+        "{.arg regions} is missing {length(missing)} required column{?s}: {.field {missing}}.",
+        "i" = "Each row needs {.field x}, {.field y}, {.field width}, and {.field height}."
+      ),
+      call = call
+    )
+  }
+  for (col in required) {
+    v <- regions[[col]]
+    if (!(is.numeric(v) || is.character(v))) {
+      cli::cli_abort(
+        "The {.field {col}} column of {.arg regions} must be numeric or character.",
+        call = call
+      )
+    }
+    if (anyNA(v)) {
+      cli::cli_abort(
+        "The {.field {col}} column of {.arg regions} must not contain {.val {NA}}.",
+        call = call
+      )
+    }
+  }
+  if ("color" %in% names(regions)) {
+    v <- regions$color
+    if (!is.character(v) || anyNA(v)) {
+      cli::cli_abort(
+        "The {.field color} column of {.arg regions} must be character (no {.val {NA}}).",
+        call = call
+      )
+    }
+  }
+  invisible(regions)
+}
+
+
 # normalize_audio() -------------------------------------------------------
 
 #' Normalize a file's audio loudness (EBU R128)

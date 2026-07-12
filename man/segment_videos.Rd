@@ -70,6 +70,7 @@ form; \code{\link{ffm_batch}} for the batch runner and the arguments
 forwarded through \code{...}; \code{\link{ffm_seek}} for the cut trade-off.
 
 Other task verb functions:
+\code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=audio_as_mp3]{audio_as_mp3()}},
 \code{\link[=compare_videos]{compare_videos()}},
 \code{\link[=concatenate_videos]{concatenate_videos()}},

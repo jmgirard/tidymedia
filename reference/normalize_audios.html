@@ -4,14 +4,16 @@ jobs tibble — a table-driven sibling of normalize_audio for
 when you have more than one file to normalize. Each row is one input; the
 only required column names its source. This is a thin wrapper over
 ffm_batch: one reproducible compiled command per input, sharing
-the same single-pass loudnorm pipeline (and per-value validation) as
-the scalar verb."><meta property="og:description" content="Loudness-normalize the audio of many input files (EBU R128) from a single
+the same loudnorm pipeline (and per-value validation) as the scalar
+verb. Set two_pass = TRUE for accurate measured/linear normalization
+across the whole table (see two_pass)."><meta property="og:description" content="Loudness-normalize the audio of many input files (EBU R128) from a single
 jobs tibble — a table-driven sibling of normalize_audio for
 when you have more than one file to normalize. Each row is one input; the
 only required column names its source. This is a thin wrapper over
 ffm_batch: one reproducible compiled command per input, sharing
-the same single-pass loudnorm pipeline (and per-value validation) as
-the scalar verb."></head><body>
+the same loudnorm pipeline (and per-value validation) as the scalar
+verb. Set two_pass = TRUE for accurate measured/linear normalization
+across the whole table (see two_pass)."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -57,8 +59,9 @@ jobs tibble — a table-driven sibling of <code><a href="normalize_audio.html">n
 when you have more than one file to normalize. Each row is one input; the
 only required column names its source. This is a thin wrapper over
 <code><a href="ffm_batch.html">ffm_batch</a></code>: one reproducible compiled command per input, sharing
-the same single-pass <code>loudnorm</code> pipeline (and per-value validation) as
-the scalar verb.</p>
+the same <code>loudnorm</code> pipeline (and per-value validation) as the scalar
+verb. Set <code>two_pass = TRUE</code> for accurate measured/linear normalization
+across the whole table (see <code>two_pass</code>).</p>
     </div>
 
     <div class="section level2">
@@ -70,6 +73,7 @@ the scalar verb.</p>
 <span>  loudness_range <span class="op">=</span> <span class="fl">7</span>,</span>
 <span>  channels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sample_rate <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  two_pass <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span></span>
@@ -116,9 +120,31 @@ mono. <code>NULL</code> (default) keeps each source's channel layout.</p></dd>
 source rate); set this to pin the output rate.</p></dd>
 
 
+<dt id="arg-two-pass">two_pass<a class="anchor" aria-label="anchor" href="#arg-two-pass"></a></dt>
+<dd><p>A logical selecting the batch normalization mode for
+<em>every</em> row (<code>two_pass</code> is a whole-table switch, not a per-row
+column). <code>FALSE</code> (default) keeps the single-pass <code>loudnorm</code>
+pipeline. <code>TRUE</code> runs the accurate two-pass (measured/linear) path as a
+two-phase fan-out: an <em>analysis pass</em> first measures every input's
+loudness (honoring <code>parallel</code> and each row's targets), and a
+<em>correction pass</em> then feeds those measurements back with
+<code>linear=true</code> so each output hits its EBU R128 target precisely — the
+table-wide sibling of <code><a href="normalize_audio.html">normalize_audio</a></code>'s <code>two_pass</code>. The
+five measured values are surfaced on the result as columns <code>measured_I</code>,
+<code>measured_TP</code>, <code>measured_LRA</code>, <code>measured_thresh</code>, and
+<code>offset</code>. Because it must measure each input, two-pass
+<strong>always runs the analysis pass through FFmpeg</strong> (it needs the binary
+and readable inputs), even when <code>run = FALSE</code>. If any row's analysis
+fails or yields no parseable measurement, the call aborts — naming the
+offending row(s) — before any correction command is built. The single-pass
+default touches no binary under <code>run = FALSE</code>.</p></dd>
+
+
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>
 <dd><p>A logical: run each input's command through FFmpeg (<code>TRUE</code>,
-default) or only compile them for inspection (<code>FALSE</code>).</p></dd>
+default) or only compile them for inspection (<code>FALSE</code>). Under
+<code>two_pass = TRUE</code> this gates only the correction pass; the analysis
+pass runs regardless (see <code>two_pass</code>).</p></dd>
 
 
 <dt id="arg-parallel">parallel<a class="anchor" aria-label="anchor" href="#arg-parallel"></a></dt>
@@ -141,7 +167,9 @@ and warns. Set a plan first, e.g.
 <code><a href="ffm_batch.html">ffm_batch</a></code>: <code>jobs</code> with an added <code>command</code> column
 (and, when <code>output</code> was derived, the resolved <code>output</code> column;
 when <code>run = TRUE</code>, a <code>success</code> column, plus any columns the
-forwarded arguments add, e.g. <code>verified</code>).</p>
+forwarded arguments add, e.g. <code>verified</code>). Under <code>two_pass = TRUE</code>
+the result also carries the five measured columns (<code>measured_I</code> etc.)
+and the <code>command</code> column holds the linear correction commands.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -187,6 +215,11 @@ table-driven sibling.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> /home/runner/work/_temp/Library/tidymedia/extd… a.mp4              -<span style="color: #BB0000;">23</span> <span style="color: #949494;">"</span>-y -i…</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> /home/runner/work/_temp/Library/tidymedia/extd… b.mp4              -<span style="color: #BB0000;">16</span> <span style="color: #949494;">"</span>-y -i…</span>
+<span class="r-in"><span><span class="co"># Accurate two-pass (measured/linear) normalization across the whole table</span></span></span>
+<span class="r-in"><span><span class="co"># (runs FFmpeg to measure each input, so needs the binary):</span></span></span>
+<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="fu">normalize_audios</span><span class="op">(</span><span class="va">jobs</span>, two_pass <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

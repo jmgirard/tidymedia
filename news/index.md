@@ -14,6 +14,18 @@
   and the returned value is the exact correction command, left
   unexecuted. The single-pass default is unchanged and stays binary-free
   under `run = FALSE`.
+- [`normalize_audios()`](https://jmgirard.github.io/tidymedia/reference/normalize_audios.md)
+  gained `two_pass` too, applying the same accurate measured/linear
+  normalization across a whole jobs table. With `two_pass = TRUE` it
+  measures every input (honoring `parallel` and each row’s targets),
+  then builds and runs one linear correction per row, surfacing the five
+  measured values as `measured_I`/`measured_TP`/`measured_LRA`/
+  `measured_thresh`/`offset` columns. As with the scalar verb the
+  analysis pass always runs — even under `run = FALSE`, which then gates
+  only the correction pass — and a row whose analysis yields no usable
+  measurement aborts the call, naming the offending row. `two_pass` is a
+  whole-table switch, not a per-row column. The single-pass default is
+  unchanged.
 
 ### Audio loudness normalization
 

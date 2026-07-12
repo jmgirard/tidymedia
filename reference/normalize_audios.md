@@ -7,9 +7,10 @@ for when you have more than one file to normalize. Each row is one
 input; the only required column names its source. This is a thin wrapper
 over
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-one reproducible compiled command per input, sharing the same
-single-pass `loudnorm` pipeline (and per-value validation) as the scalar
-verb.
+one reproducible compiled command per input, sharing the same `loudnorm`
+pipeline (and per-value validation) as the scalar verb. Set
+`two_pass = TRUE` for accurate measured/linear normalization across the
+whole table (see `two_pass`).
 
 ## Usage
 
@@ -21,6 +22,7 @@ normalize_audios(
   loudness_range = 7,
   channels = NULL,
   sample_rate = NULL,
+  two_pass = FALSE,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -64,10 +66,32 @@ normalize_audios(
   choose (it resamples, up to 192 kHz encoder-capped — not the source
   rate); set this to pin the output rate.
 
+- two_pass:
+
+  A logical selecting the batch normalization mode for *every* row
+  (`two_pass` is a whole-table switch, not a per-row column). `FALSE`
+  (default) keeps the single-pass `loudnorm` pipeline. `TRUE` runs the
+  accurate two-pass (measured/linear) path as a two-phase fan-out: an
+  *analysis pass* first measures every input's loudness (honoring
+  `parallel` and each row's targets), and a *correction pass* then feeds
+  those measurements back with `linear=true` so each output hits its EBU
+  R128 target precisely — the table-wide sibling of
+  [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)'s
+  `two_pass`. The five measured values are surfaced on the result as
+  columns `measured_I`, `measured_TP`, `measured_LRA`,
+  `measured_thresh`, and `offset`. Because it must measure each input,
+  two-pass **always runs the analysis pass through FFmpeg** (it needs
+  the binary and readable inputs), even when `run = FALSE`. If any row's
+  analysis fails or yields no parseable measurement, the call aborts —
+  naming the offending row(s) — before any correction command is built.
+  The single-pass default touches no binary under `run = FALSE`.
+
 - run:
 
   A logical: run each input's command through FFmpeg (`TRUE`, default)
-  or only compile them for inspection (`FALSE`).
+  or only compile them for inspection (`FALSE`). Under `two_pass = TRUE`
+  this gates only the correction pass; the analysis pass runs regardless
+  (see `two_pass`).
 
 - parallel:
 
@@ -92,7 +116,10 @@ returned by
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
 `jobs` with an added `command` column (and, when `output` was derived,
 the resolved `output` column; when `run = TRUE`, a `success` column,
-plus any columns the forwarded arguments add, e.g. `verified`).
+plus any columns the forwarded arguments add, e.g. `verified`). Under
+`two_pass = TRUE` the result also carries the five measured columns
+(`measured_I` etc.) and the `command` column holds the linear correction
+commands.
 
 ## References
 
@@ -141,4 +168,9 @@ normalize_audios(jobs, run = FALSE)
 #>   <chr>                                           <chr>            <dbl> <chr>  
 #> 1 /home/runner/work/_temp/Library/tidymedia/extd… a.mp4              -23 "-y -i…
 #> 2 /home/runner/work/_temp/Library/tidymedia/extd… b.mp4              -16 "-y -i…
+# Accurate two-pass (measured/linear) normalization across the whole table
+# (runs FFmpeg to measure each input, so needs the binary):
+if (FALSE) { # \dontrun{
+normalize_audios(jobs, two_pass = TRUE)
+} # }
 ```

@@ -22,7 +22,10 @@ for the trade-off. Applies to every row.}
 
 \item{parallel}{A logical passed to \code{\link{ffm_batch}}: cut segments in
 parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
-default).}
+default). Parallelism follows the active \code{\link[future:plan]{future}}
+plan; \code{TRUE} under the default sequential plan runs one segment at a
+time and warns. Set a plan first, e.g.
+\code{future::plan(future::multisession)}.}
 
 \item{...}{Additional arguments forwarded to \code{\link{ffm_batch}}, such as
 \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.}

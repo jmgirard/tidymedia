@@ -303,6 +303,59 @@ test_that("ffm_loudnorm() rejects out-of-range or non-numeric targets", {
   expect_error(ffm_loudnorm(p, target_loudness = "x"))   # not a number
 })
 
+# ffm_loudnorm() two-pass params (M16) ------------------------------------
+
+test_that("ffm_loudnorm() appends print_format for the analysis pass", {
+  f <- make_input()
+  p <- ffm_loudnorm(ffm_files(f, "out.mp4"), print_format = "json")
+  expect_equal(p$filter_audio, "loudnorm=I=-23:TP=-1:LRA=7:print_format=json")
+})
+
+test_that("ffm_loudnorm() builds the correction filter from measured values", {
+  f <- make_input()
+  p <- ffm_loudnorm(
+    ffm_files(f, "out.mp4"),
+    measured_i = -27.61, measured_tp = -9.32, measured_lra = 5.90,
+    measured_thresh = -38.06, offset = 0.30, linear = TRUE
+  )
+  expect_equal(
+    p$filter_audio,
+    paste0("loudnorm=I=-23:TP=-1:LRA=7:measured_I=-27.61:measured_TP=-9.32:",
+           "measured_LRA=5.9:measured_thresh=-38.06:offset=0.3:linear=true")
+  )
+})
+
+test_that("ffm_loudnorm() omits linear=false and never emits it by default", {
+  f <- make_input()
+  # Default single-pass call must stay byte-for-byte (no linear/measured keys).
+  p <- ffm_loudnorm(ffm_files(f, "out.mp4"))
+  expect_no_match(p$filter_audio, "linear", fixed = TRUE)
+  expect_no_match(p$filter_audio, "measured", fixed = TRUE)
+})
+
+test_that("ffm_loudnorm() requires the measured set to be supplied together", {
+  f <- make_input()
+  p <- ffm_files(f, "out.mp4")
+  # Partial measured set is a usage error (all five or none).
+  expect_error(ffm_loudnorm(p, measured_i = -27.61), "together")
+  expect_error(
+    ffm_loudnorm(p, measured_i = -27.61, measured_tp = -9.32,
+                 measured_lra = 5.9, measured_thresh = -38.06),  # offset missing
+    "together"
+  )
+})
+
+test_that("ffm_loudnorm() validates the new params", {
+  f <- make_input()
+  p <- ffm_files(f, "out.mp4")
+  expect_error(ffm_loudnorm(p, print_format = "xml"))       # not a known format
+  expect_error(ffm_loudnorm(p, linear = "yes"))             # not a bool
+  expect_error(                                             # non-finite measured
+    ffm_loudnorm(p, measured_i = Inf, measured_tp = -9.32, measured_lra = 5.9,
+                 measured_thresh = -38.06, offset = 0.3)
+  )
+})
+
 test_that("ffm_fps() rejects a non-positive or non-numeric/non-string fps", {
   f <- make_input()
   p <- ffm_files(f, "out.mp4")

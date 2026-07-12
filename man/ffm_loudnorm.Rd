@@ -4,7 +4,19 @@
 \alias{ffm_loudnorm}
 \title{Normalize Loudness in an FFmpeg Pipeline}
 \usage{
-ffm_loudnorm(object, target_loudness = -23, true_peak = -1, loudness_range = 7)
+ffm_loudnorm(
+  object,
+  target_loudness = -23,
+  true_peak = -1,
+  loudness_range = 7,
+  measured_i = NULL,
+  measured_tp = NULL,
+  measured_lra = NULL,
+  measured_thresh = NULL,
+  offset = NULL,
+  linear = FALSE,
+  print_format = NULL
+)
 }
 \arguments{
 \item{object}{An ffmpeg pipeline (\code{ffm}) object created by
@@ -18,6 +30,27 @@ default \code{-1}, the EBU R128 ceiling).}
 
 \item{loudness_range}{The target loudness range, in LU (a number in
 \code{1}..\code{50}; default \code{7}).}
+
+\item{measured_i, measured_tp, measured_lra, measured_thresh}{Measured input
+values from a prior \code{loudnorm} analysis pass (integrated loudness,
+true peak, loudness range, and threshold). Supplied together to drive an
+accurate two-pass (linear) correction; all five of these plus \code{offset}
+must be given as a set, or none (\code{NULL}, default, for single-pass
+dynamic normalization). These map to FFmpeg's \code{measured_I},
+\code{measured_TP}, \code{measured_LRA}, and \code{measured_thresh} options.}
+
+\item{offset}{The \code{target_offset} (offset gain) reported by the analysis
+pass, part of the measured set (see \code{measured_i}). \code{NULL} by
+default.}
+
+\item{linear}{A logical: when \code{TRUE}, request linear normalization
+(\code{linear=true}), which needs the measured values to hit the target
+precisely. \code{FALSE} (default) omits the option entirely, leaving
+single-pass dynamic behavior untouched.}
+
+\item{print_format}{The measurement report format for an analysis pass, one
+of \code{"json"}, \code{"summary"}, or \code{"none"}. \code{NULL} (default)
+omits the option. Use \code{"json"} for a machine-parseable analysis pass.}
 }
 \value{
 \code{object} but with the added instruction to normalize loudness.

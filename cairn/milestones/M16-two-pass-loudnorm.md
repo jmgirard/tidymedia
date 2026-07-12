@@ -87,7 +87,7 @@ analyze-then-build execution pattern.
 - [x] T1 — Characterization test first: pin today's single-pass compiled command
       for `normalize_audio(run = FALSE)` so the `two_pass = FALSE` default is
       provably unchanged before touching anything.
-- [ ] T2 — Extend `ffm_loudnorm()` ([R/ffm.R:390](R/ffm.R)) to optionally take
+- [x] T2 — Extend `ffm_loudnorm()` ([R/ffm.R:390](R/ffm.R)) to optionally take
       `measured_i/tp/lra/thresh`, `offset`, `linear`, and `print_format`, appending
       them to the `loudnorm=…` string; all validation for the new params lives
       here. Tests-first for both the analysis variant (`print_format=json`) and the
@@ -124,6 +124,9 @@ analyze-then-build execution pattern.
   parser confidence via recorded stderr fixture + malformed case. No Fable
   escalation (both tripwires judged well-grounded).
 - 2026-07-12: T1 done — added byte-for-byte single-pass characterization baseline.
+- 2026-07-12: T2 done — ffm_loudnorm() gained measured_i/tp/lra/thresh, offset,
+  linear, print_format (numeric, all-or-none measured set); default single-pass
+  string unchanged. man/ffm_loudnorm.Rd regenerated.
 
 ## Decisions
 

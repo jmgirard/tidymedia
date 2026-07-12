@@ -375,6 +375,23 @@ ffm_fps <- function(object, fps) {
 #'   default \code{-1}, the EBU R128 ceiling).
 #' @param loudness_range The target loudness range, in LU (a number in
 #'   \code{1}..\code{50}; default \code{7}).
+#' @param measured_i,measured_tp,measured_lra,measured_thresh Measured input
+#'   values from a prior \code{loudnorm} analysis pass (integrated loudness,
+#'   true peak, loudness range, and threshold). Supplied together to drive an
+#'   accurate two-pass (linear) correction; all five of these plus \code{offset}
+#'   must be given as a set, or none (\code{NULL}, default, for single-pass
+#'   dynamic normalization). These map to FFmpeg's \code{measured_I},
+#'   \code{measured_TP}, \code{measured_LRA}, and \code{measured_thresh} options.
+#' @param offset The \code{target_offset} (offset gain) reported by the analysis
+#'   pass, part of the measured set (see \code{measured_i}). \code{NULL} by
+#'   default.
+#' @param linear A logical: when \code{TRUE}, request linear normalization
+#'   (\code{linear=true}), which needs the measured values to hit the target
+#'   precisely. \code{FALSE} (default) omits the option entirely, leaving
+#'   single-pass dynamic behavior untouched.
+#' @param print_format The measurement report format for an analysis pass, one
+#'   of \code{"json"}, \code{"summary"}, or \code{"none"}. \code{NULL} (default)
+#'   omits the option. Use \code{"json"} for a machine-parseable analysis pass.
 #' @return \code{object} but with the added instruction to normalize loudness.
 #' @references
 #' EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
@@ -390,14 +407,59 @@ ffm_fps <- function(object, fps) {
 ffm_loudnorm <- function(object,
                          target_loudness = -23,
                          true_peak = -1,
-                         loudness_range = 7) {
+                         loudness_range = 7,
+                         measured_i = NULL,
+                         measured_tp = NULL,
+                         measured_lra = NULL,
+                         measured_thresh = NULL,
+                         offset = NULL,
+                         linear = FALSE,
+                         print_format = NULL) {
 
   check_ffm(object)
   rlang::check_number_decimal(target_loudness, min = -70, max = -5)
   rlang::check_number_decimal(true_peak, min = -9, max = 0)
   rlang::check_number_decimal(loudness_range, min = 1, max = 50)
+  # Measured values are observed (not user targets), so they are range-free but
+  # must be finite real numbers.
+  rlang::check_number_decimal(measured_i, allow_null = TRUE, allow_infinite = FALSE)
+  rlang::check_number_decimal(measured_tp, allow_null = TRUE, allow_infinite = FALSE)
+  rlang::check_number_decimal(measured_lra, allow_null = TRUE, allow_infinite = FALSE)
+  rlang::check_number_decimal(measured_thresh, allow_null = TRUE, allow_infinite = FALSE)
+  rlang::check_number_decimal(offset, allow_null = TRUE, allow_infinite = FALSE)
+  rlang::check_bool(linear)
+  if (!is.null(print_format)) {
+    rlang::arg_match(print_format, c("json", "summary", "none"))
+  }
+
+  # The four measured values plus offset are one coherent set from a single
+  # analysis pass: require all or none, so a half-specified correction can't
+  # silently produce a wrong filter (FFmpeg would ignore the orphans).
+  measured <- list(measured_I = measured_i, measured_TP = measured_tp,
+                   measured_LRA = measured_lra, measured_thresh = measured_thresh,
+                   offset = offset)
+  present <- !vapply(measured, is.null, logical(1))
+  if (any(present) && !all(present)) {
+    cli::cli_abort(c(
+      "The measured {.code loudnorm} values must be supplied together.",
+      "x" = "Missing: {.field {names(measured)[!present]}}.",
+      "i" = "Provide all of {.field measured_i/tp/lra/thresh} and {.field offset}, or none."
+    ))
+  }
 
   cmd <- glue("loudnorm=I={target_loudness}:TP={true_peak}:LRA={loudness_range}")
+  if (all(present)) {
+    cmd <- paste0(
+      cmd,
+      ":measured_I=", measured_i, ":measured_TP=", measured_tp,
+      ":measured_LRA=", measured_lra, ":measured_thresh=", measured_thresh,
+      ":offset=", offset
+    )
+  }
+  # Emit `linear=true` only when requested; the default omits it so single-pass
+  # commands stay byte-for-byte unchanged.
+  if (linear) cmd <- paste0(cmd, ":linear=true")
+  if (!is.null(print_format)) cmd <- paste0(cmd, ":print_format=", print_format)
   object$filter_audio <- c(object$filter_audio, cmd)
 
   object

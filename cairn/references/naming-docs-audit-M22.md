@@ -92,11 +92,11 @@ Severity: **H** = breaks a convention / actively misleads · **M** = friction ·
 | N1 | H | `get_codecs`, `get_encoders` | Share the `get_*` prefix with the file-metadata getters (`get_duration`…) but are **ffmpeg capability** queries — one prefix, two unrelated meanings. | Rename to a capability namespace, e.g. `ffmpeg_codecs()` / `ffmpeg_encoders()` (or `list_codecs()` / `list_encoders()`). Reserve `get_*` for per-file metadata. |
 | N2 | H | `audio_as_mp3` | Breaks `verb_object`; every Layer-2 sibling is `verb_object` (`extract_audio`, `crop_video`). Also hard-codes one output format in the name. | Rename to a verb form with a format arg, e.g. `convert_audio(format = "mp3")` or `transcode_audio()`. Decide whether it stays mp3-only. |
 | N3 | M | `get_samplingrate`, `get_framerate` | No-separator compounds, and `samplingrate` disagrees with the `sample_rate` **argument** used everywhere else (35 occurrences vs 3). | `get_sample_rate()` / `get_frame_rate()` — align name to the arg vocabulary (see A-item on rates). |
-| N4 | M | `normalize_audios` | The plural-of-a-mass-noun reads awkwardly ("audios"); the batch-plural convention (`_videos`) doesn't transfer cleanly to "audio". | Either accept it for convention-consistency, or switch the batch convention for this pair (e.g. `normalize_audio_batch()`). Cross-cuts N-item below. |
+| N4 | M | `normalize_audios` | The plural-of-a-mass-noun reads awkwardly ("audios"); the batch-plural convention (`_videos`) doesn't transfer cleanly to "audio". | **Ratified (D014):** adopt the `<scalar_verb>_batch` suffix for all batch siblings → `normalize_audio_batch`. |
 | N5 | M | `probe_*` vs `get_*` vs `mediainfo_*` | Three metadata families, two backends (ffprobe vs MediaInfo), overlapping outputs (`probe_video` and `get_width` both yield width). Vignettes advertise all three. Boundary is real but **undocumented**, so users can't tell which to reach for. | Keep all three (they differ by backend + return shape) but **document the boundary explicitly** (family `@description` + a vignette table). Consider renaming `get_*` file-getters to signal the MediaInfo backend (e.g. `mi_duration()`), pending the N1 `get_*` cleanup. |
 | N6 | M | `enquo` `enquos` `as_label` `as_name` `:=` (`.data` — see note) | Standard tidy-eval reexports, but the four quoting helpers + `:=` have **no internal use** and no exported data-masking API relies on them. Likely unintended surface. **`.data` is an exception — it IS used internally** (`filter_streams()`, `R/ffprobe.R:191`, behind `probe_streams`/`video`/`audio`). | Drop `enquo`/`enquos`/`as_label`/`as_name` (no user-facing NSE contract). **Keep `.data`** (internal use + tidyselect convention); keep `:=` only if a documented pmap/tidyselect pattern needs it, else drop. |
 | N7 | M | `pad_integers`, `convert_fractions` | General-purpose helpers exported as public API; `convert_fractions` is an ffprobe-internal frac-string parser. | Un-export both (make internal), or move to a clearly-scoped util page if genuinely useful to users. Matches the DESIGN "candidates for cleanup" note. |
-| N8 | L | `extract_frame` / `extract_frames` | Reads like "one frame / many frames from one video", but `extract_frames` is actually the **batch** (jobs-table) sibling. Technically consistent with the plural=batch rule, but the collision with "many frames" is a documentation trap. | Keep the names; **disambiguate in the docs** (title + first line must say "batch"). Revisit only if the N-item changes the batch-suffix convention. |
+| N8 | L | `extract_frame` / `extract_frames` | Reads like "one frame / many frames from one video", but `extract_frames` is actually the **batch** (jobs-table) sibling. The collision with "many frames" is a documentation trap. | **Ratified (D014):** `extract_frames` → `extract_frame_batch` (the `_batch` suffix removes the ambiguity). |
 | N9 | L | `install_on_win` | `_on_win` platform suffix is unlike any other verb; fine but lonely. | Leave as-is (accurately scoped); note for consistency review only. |
 | N10 | L | `separate_audio_video` | Long, but descriptive and unambiguous. | Keep. |
 
@@ -195,10 +195,10 @@ Recommended conventions to codify (subject to review sign-off):
 - **Layer prefix** `ffm_*` marks Layer-1 engine surface; nothing outside Layer 1
   uses it (reinforces IP1's three-layer separation — this D-entry *references*
   IP1, it does not change it).
-- **Batch sibling** convention: pick **one** — recommended is the plural-noun
-  suffix (`*_videos`), accepting `normalize_audios`; the alternative
-  (`*_batch`) is cleaner for mass nouns. State the chosen rule so future batch
-  verbs are predictable (fixes N4/N-cross-cutting).
+- **Batch sibling** convention: **`<scalar_verb>_batch`** (ratified D014) —
+  `segment_video_batch`, `standardize_video_batch`, `normalize_audio_batch`,
+  `anonymize_video_batch`, `extract_frame_batch`. Retires the `*_videos`/`_audios`
+  plural (fixes N4) and disambiguates the old `extract_frames` (fixes N8).
 - **Metadata prefixes** carry backend meaning: `probe_*` = ffprobe→tibble,
   `mediainfo_*` = MediaInfo→tibble/value, file-metadata scalars stay a distinct
   prefix (fixes N1/N5). `get_*` is **not** used for capability queries.

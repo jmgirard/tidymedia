@@ -120,15 +120,14 @@ implements against.
 
 ## Decisions
 
-**DRAFT D014 — pending M22 sign-off; promote to cairn/DECISIONS.md at review
-(AC4).** Target scheme stated in full in
-`cairn/references/naming-docs-audit-M22.md §6` (verb_object; `ffm_*` = Layer 1
-only; `get_*` = file-metadata scalars not capability queries; backend-carrying
-metadata prefixes; full-word args retiring `acodec`/`vcodec` and
-`ts_start`/`ts_stop`); **rename policy: clean break** (no `lifecycle` shims —
-API pre-0.2.0, D001). **Open decision point for review:** batch-sibling rule —
-plural-noun `*_videos` (accepting `normalize_audios`) vs `*_batch`. On sign-off
-the D-entry (audit §6 + this policy) is appended; execution carries
+**D014 — RATIFIED 2026-07-12, promoted to cairn/DECISIONS.md (AC4).** Target
+scheme in `cairn/references/naming-docs-audit-M22.md §6` (verb_object; `ffm_*` =
+Layer 1 only; `get_*` = file-metadata scalars not capability queries;
+backend-carrying metadata prefixes; full-word args retiring `acodec`/`vcodec`
+and `ts_start`/`ts_stop`; drop unused quoting reexports, keep `.data`).
+**Batch-sibling rule: `<scalar_verb>_batch`** (user decision — retires
+`*_videos`/`_audios`, disambiguates `extract_frames`). **Rename policy: clean
+break** (no `lifecycle` shims, API pre-0.2.0, D001). Execution carries
 `RB tripwire: irreversible-api`.
 
 ## Review

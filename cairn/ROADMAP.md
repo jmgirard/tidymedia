@@ -8,6 +8,7 @@ _Last hygiene check: 2026-07-12 (M12 done)_
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
+| M13 | Batch video standardization verb | planned | — | normal | milestones/M13-batch-standardization.md |
 | M12 | Video standardization verb | done | — | normal | milestones/archive/M12-standardization-presets.md |
 | M11 | Tibble-driven batch frame extraction | done | — | normal | milestones/archive/M11-batch-frame-extraction.md |
 | M08 | Verification & provenance | done | M04, M06 | normal | milestones/archive/M08-verification-provenance.md |
@@ -19,5 +20,5 @@ _Last hygiene check: 2026-07-12 (M12 done)_
 - Audio normalization verb: EBU R128 loudnorm (two-pass), downmix + resample, via a new Layer-1 audio-filter primitive (fills the engine's existing `filter_audio`/`-af` slot; no verb writes it yet). Distinct from D009-deferred `amix`. Needs EBU R128 / ITU-R BS.1770 primary source (no-oracle RB tripwire). — added 2026-07-10, split 2026-07-12 — research-verbs family 3
 - Fixed-region anonymization verb (no face tracking): box fill via `ffm_drawbox`; region blur (split→crop→boxblur→overlay) needs an IP2 filtergraph design call. — added 2026-07-10, split 2026-07-12 — research-verbs family 4
 - CRAN readiness (prep, hold submission until API soaks): API-surface cleanup (tidy-eval reexports, stray utils), win-builder + R-hub, examples/vignette policy pass, bump toward 0.2.0. Deliberately last. — added 2026-07-10
-- Batch sibling `standardize_videos()`: tibble-driven fan-out over `standardize_video()` via `ffm_batch()` (D007), mirroring `segment_videos()`/`extract_frames()`. Composable meanwhile via `ffm_batch()` directly. — added 2026-07-12 — from M12 scope
+<!-- "Batch sibling standardize_videos()" promoted to M13 (planned) on 2026-07-12. -->
 <!-- The three segment_videos() deferrals (auto-naming, per-row reencode, start/end validation) were absorbed into M10 on 2026-07-12. -->

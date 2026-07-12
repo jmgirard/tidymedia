@@ -95,7 +95,7 @@ via `ffm_batch()` (D007), mirroring `segment_videos()`/`extract_frames()`.
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [ ] T1: Extract `standardize_pipeline(input, output, width, height, fps, vcodec,
+- [x] T1: Extract `standardize_pipeline(input, output, width, height, fps, vcodec,
       pixel_format)` from `standardize_video()`'s body (`R/ffmpeg.R:318-341`); refactor
       `standardize_video()` to `ffm_finish(standardize_pipeline(...), run)`. Confirm the
       existing scalar tests (`tests/testthat/test-ffmpeg.R`) still pass (AC7).
@@ -119,6 +119,9 @@ via `ffm_batch()` (D007), mirroring `segment_videos()`/`extract_frames()`.
 ## Work log
 <!-- owner: any skill · append-only; one line per entry; absolute dates -->
 
+- 2026-07-12: T1 — extracted `standardize_pipeline()` from `standardize_video()`;
+  scalar verb now composes it. Existing `test-ffmpeg.R` green (99 pass, 0 fail),
+  confirming no behavior change (AC7).
 - 2026-07-12: created by /milestone-plan. Absorbs the "Batch sibling
   standardize_videos()" candidate (from M12 scope). Auto-naming scheme
   (`_standardized` suffix + collision abort) and all-five-knobs per-row overrides

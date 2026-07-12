@@ -315,7 +315,25 @@ standardize_video <- function(infile, outfile,
   check_file_exists(infile)
   rlang::check_string(outfile)
 
-  p <- ffm_files(infile, outfile)
+  ffm_finish(
+    standardize_pipeline(infile, outfile, width, height, fps, vcodec,
+                         pixel_format),
+    run
+  )
+}
+
+
+# standardize_pipeline() --------------------------------------------------
+
+# Shared standardization pipeline for standardize_video() and
+# standardize_videos(): build one single-output re-encode pipeline for a single
+# input. Both verbs compile identical commands from this helper, so per-value
+# validation (dimensions via check_dim, codec/pixfmt via check_token) and M12's
+# guards (audio stream-copy, even-dimension safeguard, +faststart) live here
+# once -- the batch sibling inherits them by construction (D002, D003, D007).
+standardize_pipeline <- function(input, output, width, height, fps, vcodec,
+                                 pixel_format) {
+  p <- ffm_files(input, output)
   # Resolution: exact when both given; aspect-preserving with an even output
   # dimension (FFmpeg's -2) when only one. ffm_scale() validates each dimension
   # via check_dim(). When neither is given, still force even dimensions so
@@ -337,8 +355,7 @@ standardize_video <- function(infile, outfile,
   # "leave audio untouched" means copy the bytes (matching extract_audio()).
   p <- ffm_codec(p, video = vcodec, audio = "copy")
   p <- ffm_pixel_format(p, pixel_format)
-  p <- ffm_output_options(p, "-movflags +faststart")
-  ffm_finish(p, run)
+  ffm_output_options(p, "-movflags +faststart")
 }
 
 

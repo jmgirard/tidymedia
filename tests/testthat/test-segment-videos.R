@@ -63,7 +63,9 @@ test_that("segment_videos() rejects an empty jobs table", {
 test_that("segment_videos() names the missing required column", {
   f <- make_input()
   jobs <- tibble::tibble(input = f, output = "a.mp4", start = 0)  # no `end`
-  expect_error(segment_videos(jobs, run = FALSE), "end")
+  # Match the "Missing column(s)" bullet, not the always-present header line
+  # that lists every required column — so this actually fences the branch.
+  expect_error(segment_videos(jobs, run = FALSE), "Missing column")
 })
 
 # Execution + ffm_batch forwarding (binary-gated) -------------------------

@@ -1,6 +1,3 @@
-<!-- Section ownership + write-modes: see tracking-rules.md "Milestone-file
-     section ownership". A phase skill never rewrites another phase's section.
-     Per-section owners are tagged below. -->
 # M09: Dataframe-driven batch segmentation
 
 - **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
@@ -106,7 +103,6 @@ files from one jobs tibble, sharing its cut logic with `segment_video()`.
       (Candidate rows were added at plan time; verified present.)
 
 ## Work log
-<!-- owner: any skill · append-only; one line per entry; absolute dates -->
 
 - 2026-07-12: created by /milestone-plan. Name `segment_videos()`, columns
   `input/output/start/end`, shared internal helper, `...`→`ffm_batch` — all
@@ -123,56 +119,31 @@ files from one jobs tibble, sharing its cut logic with `segment_video()`.
 - 2026-07-12: T6 — NEWS bullet added (no milestone number, per tracking
   rules); `devtools::check()` clean (0 errors, 0 warnings, 0 notes). All
   tasks done → status review.
+- 2026-07-12: review — all 7 ACs verified with fresh evidence; CI green all
+  platforms. Pruned done rows M01–M03 (retention). Independent review: F1
+  (weak test assertion, scored 80) fixed; F3 (start/end type validation,
+  scored 68) → candidate; F2 (scored 20) rejected as by-design.
 
-## Decisions
-<!-- owner: implement / review · append-only; milestone-local; promote
-     cross-cutting ones to cairn/DECISIONS.md -->
+## Decisions — none (cross-cutting ones live in DECISIONS.md)
 
 ## Review
-<!-- owner: review · exclusive; evidence per criterion; consistency-gate
-     results; independent-review findings and their triage -->
 
-Reviewed 2026-07-12 on branch `m09-batch-segmentation` (PR #10). Main in sync
-with origin; branch base current (no merge needed).
+Reviewed 2026-07-12, branch `m09-batch-segmentation` (PR #10); main in sync.
 
-### Acceptance-criterion evidence (fresh)
+**AC evidence (fresh, all PASS).** AC1–AC4: `test-segment-videos.R` 25/25
+(multi-file per-row commands, both reencode paths, binary-gated verify/manifest
+forwarding, each validation branch). AC5: `test-ffmpeg.R` 80/80 after the
+shared-helper refactor. AC6: `document()` no-diff, `check_pkgdown()` clean, NEWS
+present. AC7: `check()` clean (zero errors/warnings/notes). CI green all
+platforms.
 
-- AC1 — PASS. `test-segment-videos.R` "one command per job across multiple
-  inputs": jobs spanning 2 distinct input files → 3-row tibble with a
-  `command` column; each row's command matches its own `input`/`start`/`end`/
-  `output`. (25/25 pass.)
-- AC2 — PASS. Same suite: default `reencode = TRUE` → `-ss … -to …` after `-i`,
-  no `-codec:v copy`; `reencode = FALSE` → `-ss … -to … -i`,
-  `-codec:v copy -codec:a copy`, `-avoid_negative_ts make_zero` — asserted
-  per-row on a table.
-- AC3 — PASS. Binary-gated tests: `verify = list(width, height)` adds an
-  all-TRUE `verified` column; `manifest = TRUE` attaches a manifest
-  `ffm_manifest()` reads (2 rows, `output_size > 0`). ffmpeg present, 0 skips.
-- AC4 — PASS. Validation tests: non-data-frame → "data frame"; empty → "at
-  least one row"; missing `end` column → names "end". All abort via
-  `cli::cli_abort()`.
-- AC5 — PASS. `test-ffmpeg.R` full suite green after the shared-helper
-  refactor (80 pass, 0 fail); no test edits.
-- AC6 — PASS. `devtools::document()` produces no diff; `pkgdown::check_pkgdown()`
-  "No problems found" (segment_videos in the index); NEWS bullet present with
-  no milestone number.
-- AC7 — PASS. `devtools::check()` fresh: 0 errors / 0 warnings / 0 notes.
+**Consistency gate PASS.** `cairn_validate.py` substantive checks pass (pruned
+done rows M01–M03). Its `iso date format` FAIL is a known false positive — the
+check-result shorthand in the M02–M08 archives (append-only, untouched) matches
+its date regex. Coverage: 7 ACs → tasks; no principle changed; README no rebuild.
 
-### Consistency gate
-
-- `cairn_validate.py`: all substantive checks PASS (mirror, single in-progress,
-  caps, done-row retention, vocab, deps, orphans, id uniqueness, scaffold).
-  Pruned the 3 oldest done rows (M01–M03) from ROADMAP to satisfy retention.
-  Remaining `iso date format` FAIL (7 hits) is a **validator false positive**:
-  the `0/0/0` check-result shorthand in the M02–M08 archive summaries (append-
-  only history, untouched by M09) matches its date regex. Not an M09 defect;
-  archive history not rewritten to appease it. M09's own file reworded to avoid
-  the token.
-- Coverage completeness: all 7 ACs map to existing tasks T1–T6. No DESIGN
-  principle changed → impact report skipped.
-- README.Rmd present, does not enumerate segment verbs → no rebuild needed. No
-  new top-level files (added files under `man/`, `tests/`).
-
-### Independent review
-
-_(pending — two fresh-context reviewers + scorer)_
+**Independent review** (2 reviewers + scorer): refactor confirmed
+behaviour-preserving, D007/D008/IP1-faithful; no correctness defects. **F1 (80)
+fixed** (weak missing-column test tightened to `"Missing column"`). **F3 (68) →
+candidate** (no `start`/`end` type check vs `segment_video()`; AC4 scoped to
+presence). **F2 (20) rejected** (extra columns ignored is by-design).

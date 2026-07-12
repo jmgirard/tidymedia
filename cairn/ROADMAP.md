@@ -21,3 +21,4 @@ _Last hygiene check: 2026-07-12_
 - CRAN readiness (prep, hold submission until API soaks): API-surface cleanup (tidy-eval reexports, stray utils), win-builder + R-hub, examples/vignette policy pass, bump toward 0.2.0. Deliberately last. — added 2026-07-10
 - `segment_videos()` auto-naming: derive `output` paths when the column is absent (per-input-file segment numbering across a multi-file table). Deferred from M09 (there, `output` is required). — added 2026-07-12 — links M09
 - `segment_videos()` per-row `reencode`: accept a `reencode` column in the jobs table (per-segment fast-copy vs accurate cut) instead of the scalar arg. Deferred from M09. — added 2026-07-12 — links M09
+- `segment_videos()` start/end type validation: reject non-numeric/character `start`/`end` columns up front (parity with `segment_video()`), avoiding opaque FFmpeg errors from `as.character()` coercion. M09 review finding F3. — added 2026-07-12 — links M09

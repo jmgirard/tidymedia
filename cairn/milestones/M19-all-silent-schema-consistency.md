@@ -52,25 +52,25 @@ inconsistency the M18 review surfaced.
 ## Acceptance criteria
 <!-- owner: plan · create/amend-via-gate; review reads, never reinterprets -->
 
-- [ ] AC1 — Under `two_pass = TRUE, run = TRUE, verify = <spec>` with every row
+- [x] AC1 — Under `two_pass = TRUE, run = TRUE, verify = <spec>` with every row
       silent, the result carries a logical `verified` column that is all `NA`,
       and its full column set equals that of a mixed silent/non-silent batch
       run with the same `verify=`.
-- [ ] AC2 — Under `two_pass = TRUE, run = TRUE, manifest = TRUE` with every row
+- [x] AC2 — Under `two_pass = TRUE, run = TRUE, manifest = TRUE` with every row
       silent, `ffm_manifest(result)` returns a one-row-per-job tibble whose
       column names/types match a mixed batch's manifest: `input` holds each
       job's input path, every other column is `NA`. With `checksums = TRUE` the
       `input_md5`/`output_md5` columns are present (and `NA`).
-- [ ] AC3 — The synthesized all-silent manifest's column names and types are
+- [x] AC3 — The synthesized all-silent manifest's column names and types are
       identical to `build_manifest()`'s output for the same `checksums` flag
       (drift guard), because both derive from one shared schema constructor.
-- [ ] AC4 — Single-pass, scalar, and mixed-batch results are unchanged: the
+- [x] AC4 — Single-pass, scalar, and mixed-batch results are unchanged: the
       existing `normalize_audios`/`normalize_audio`/two-pass characterization
       and M18 mixed-batch tests still pass unmodified in behavior.
-- [ ] AC5 — `normalize_audios()`'s `@return` states that the two-pass batch
+- [x] AC5 — `normalize_audios()`'s `@return` states that the two-pass batch
       returns the same columns and (when requested) manifest regardless of how
       many rows are silent; `man/` regenerated via `devtools::document()`.
-- [ ] AC6 — `devtools::check()` is clean (0 errors / 0 warnings / 0 notes) and
+- [x] AC6 — `devtools::check()` is clean (0 errors / 0 warnings / 0 notes) and
       `devtools::test()` passes.
 
 ## Coverage
@@ -134,3 +134,46 @@ inconsistency the M18 review surfaced.
 ## Review
 <!-- owner: review · exclusive; evidence per criterion; consistency-gate
      results; independent-review findings and their triage -->
+
+Reviewed 2026-07-12 on branch `m19-all-silent-schema-consistency` (PR #21).
+
+### Acceptance-criterion evidence (fresh)
+
+- **AC1** ✓ — `test-normalize-audios-two-pass.R` "adds an all-NA verified column
+  for an all-silent verify batch" (unit) asserts `verified` is logical + all NA,
+  ordered after `success`; `test-normalize-audios.R` "keeps the verify/manifest
+  schema when every row is silent" (ffmpeg-gated) asserts `names(res)` equals a
+  mixed batch's `names(ref)`. Both pass.
+- **AC2** ✓ — unit tests "attaches a padded manifest…" and "manifest carries md5
+  columns under checksums" plus the execution test's manifest assertions:
+  one-row-per-job, `input` = each job's path, other columns NA, `input_md5`/
+  `output_md5` present under `checksums=TRUE`, manifest column set == mixed
+  batch's. Pass.
+- **AC3** ✓ — `test-ffm-manifest.R` "manifest_schema() is the empty template
+  build_manifest() fills (drift guard)" asserts identical names + column classes
+  for `checksums` FALSE and TRUE. Pass.
+- **AC4** ✓ — the M18 mixed-batch tests and single-pass characterization tests
+  are unchanged and pass; full suite green (see AC6). New `bind_two_pass_result`
+  params default off, so existing call sites are behavior-identical.
+- **AC5** ✓ — `normalize_audios()` `@return` now states the two-pass schema is
+  independent of the silent-row count; `man/normalize_audios.Rd` regenerated;
+  `devtools::document()` produces no further diff.
+- **AC6** ✓ — `devtools::check()` = 0 errors / 0 warnings / 0 notes; raw
+  `00check.log` `Status: OK` (M17-lesson double-check). Targeted files:
+  `test-ffm-manifest.R` 30 pass, `test-normalize-audios-two-pass.R` 59 pass,
+  `test-normalize-audios.R` 89 pass — 0 fail / 0 skip.
+
+### Consistency gate
+
+- `cairn_validate.py` → exit 0, all checks pass (incl. coverage complete,
+  principles slot valid).
+- `devtools::document()` → no diff. `pkgdown::check_pkgdown()` → no problems.
+- No `DESIGN.md` principle changed (`Principles touched: —`) → impact report skipped.
+- NEWS.md → entry added under the development version's silent-input section
+  (no milestone numbers in user-facing text).
+- No new top-level files → no `.Rbuildignore` change.
+
+### Independent review
+
+_Pending — two fresh-context reviewers (diff-bug [O], blame-history [S]) running;
+scorer + triage to follow._

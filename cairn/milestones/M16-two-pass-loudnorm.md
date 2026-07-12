@@ -105,7 +105,7 @@ analyze-then-build execution pattern.
       parse → correction-build → `ffm_finish()`), wiring the `run = FALSE`
       return-correction-command-unexecuted contract. Skip-guarded return-shape
       test (AC4).
-- [ ] T6 — Execution test (`skip_if` ffmpeg absent): full two-pass on
+- [x] T6 — Execution test (`skip_if` ffmpeg absent): full two-pass on
       `inst/extdata/sample.mp4`, re-probe integrated loudness (`ffprobe`/`loudnorm`
       analysis), assert within ±1 LU of target and closer than single-pass (AC5).
 - [ ] T7 — Roxygen for the new arg + measured params (document the analyze-then-
@@ -136,6 +136,11 @@ analyze-then-build execution pattern.
 - 2026-07-12: T5 done — normalize_audio() gained two_pass=FALSE + orchestrator
   run_loudnorm_analysis(); run=FALSE returns the correction command unexecuted
   (analysis still runs). Verified end-to-end on the packaged sample. man/ updated.
+- 2026-07-12: T6 done — execution test on a high-LRA tremolo source (new
+  make_dynamic_audio() helper): two-pass lands within ±1 LU of target and beats
+  single-pass. Measured empirically: single err ~2.2 LU, two-pass ~0.01 LU. The
+  packaged sample is a steady tone (LRA 0) where both tie, so a dynamic source
+  is required to show the gap.
 
 ## Decisions
 

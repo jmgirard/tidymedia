@@ -128,6 +128,28 @@ test_that("normalize_audio() rejects a non-logical two_pass", {
 
 # Two-pass execution (binary-gated) ---------------------------------------
 
+test_that("normalize_audio(two_pass = TRUE) hits the target and beats single-pass", {
+  skip_if_no_ffprobe()
+  src <- make_dynamic_audio()  # skips if ffmpeg absent; high-LRA source
+  target <- -23
+
+  single <- withr::local_tempfile(fileext = ".mp4")
+  normalize_audio(src, single, target_loudness = target)
+  two <- withr::local_tempfile(fileext = ".mp4")
+  normalize_audio(src, two, target_loudness = target, two_pass = TRUE)
+
+  # Re-probe each output's integrated loudness with a fresh analysis pass
+  # (its input_i is the output's measured loudness). Source: EBU R 128 (2014).
+  loud_single <- run_loudnorm_analysis(single, target_loudness = target)$i
+  loud_two <- run_loudnorm_analysis(two, target_loudness = target)$i
+
+  # Two-pass lands within +/-1 LU of the target ...
+  expect_lt(abs(loud_two - target), 1)
+  # ... and is at least as close to target as single-pass (strictly closer on
+  # this high-LRA material, where dynamic single-pass drifts).
+  expect_lt(abs(loud_two - target), abs(loud_single - target))
+})
+
 test_that("normalize_audio(two_pass, run = FALSE) runs analysis, returns correction cmd", {
   skip_if_no_ffmpeg()
   src <- system.file("extdata", "sample.mp4", package = "tidymedia")

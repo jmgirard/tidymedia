@@ -221,6 +221,36 @@ test_that("normalize_audios() forwards batch params after ... without leaking in
   expect_true("command" %in% names(res))
 })
 
+# Two-pass front door (binary-gated) --------------------------------------
+
+test_that("normalize_audios(two_pass, run = FALSE) runs analysis, returns correction cmds, writes nothing (AC4)", {
+  skip_if_no_ffmpeg()
+  src <- system.file("extdata", "sample.mp4", package = "tidymedia")
+  out_a <- withr::local_tempfile(fileext = ".mp4")
+  out_b <- withr::local_tempfile(fileext = ".mp4")
+  jobs <- tibble::tibble(
+    input           = c(src, src),
+    output          = c(out_a, out_b),
+    target_loudness = c(-23, -16)
+  )
+  res <- normalize_audios(jobs, two_pass = TRUE, run = FALSE)
+  # Phase 1 ran: the five measured columns are populated (FFmpeg-arg names) and
+  # the correction commands carry the measured values + linear=true.
+  measured_cols <- c("measured_I", "measured_TP", "measured_LRA",
+                     "measured_thresh", "offset")
+  expect_true(all(measured_cols %in% names(res)))
+  expect_false(anyNA(res$measured_I))
+  expect_match(res$command[[1]], "measured_I=", fixed = TRUE)
+  expect_match(res$command[[1]], "linear=true", fixed = TRUE)
+  expect_match(res$command[[1]], "loudnorm=I=-23:", fixed = TRUE)
+  expect_match(res$command[[2]], "loudnorm=I=-16:", fixed = TRUE)
+  # run = FALSE gates only Phase 2: no correction executed, so no `success`
+  # column and no output files written.
+  expect_false("success" %in% names(res))
+  expect_false(file.exists(out_a))
+  expect_false(file.exists(out_b))
+})
+
 # Execution + ffm_batch forwarding (binary-gated) -------------------------
 
 test_that("normalize_audios() writes non-empty, audio-decodable outputs (binary-gated)", {

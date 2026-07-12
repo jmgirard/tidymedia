@@ -94,7 +94,7 @@ M14→M15 scalar→batch split applied to the correction pipeline.
       columns, aborting with the offending row index on an absent/malformed
       block. Pure test of `assemble_measured()` over fixture results incl. a
       malformed row (AC3).
-- [ ] T4 — Add `two_pass = FALSE` to `normalize_audios()`
+- [x] T4 — Add `two_pass = FALSE` to `normalize_audios()`
       ([R/ffmpeg.R:1266](R/ffmpeg.R)) wiring Phase 1 (analysis fan-out → measured
       columns) → Phase 2 (`ffm_batch()` over the T2 builder), forwarding
       `run`/`parallel`/`verify`/`manifest`/`progress`; `run = FALSE` runs analysis
@@ -127,6 +127,10 @@ M14→M15 scalar→batch split applied to the correction pipeline.
   analysis honoring `parallel`) and `assemble_measured()` (parse each via M16's
   parser → five measured columns, fail-fast naming offending rows); pure AC3
   tests over the recorded fixture incl. malformed + non-zero-exit rows.
+- 2026-07-12: T4 done — wired `two_pass = FALSE` into `normalize_audios()`:
+  Phase 1 fan-out → measured columns → Phase 2 correction, forwarding
+  `run`/`parallel`/`...`; `run = FALSE` runs analysis only. Skip-guarded AC4 test
+  asserts return shape and no outputs written.
 
 ## Decisions
 

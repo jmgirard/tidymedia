@@ -1306,9 +1306,10 @@ derive_normalized_names <- function(input) {
 #' @export
 normalize_audios <- function(jobs, target_loudness = -23, true_peak = -1,
                              loudness_range = 7, channels = NULL,
-                             sample_rate = NULL, run = TRUE, parallel = FALSE,
-                             ...) {
+                             sample_rate = NULL, two_pass = FALSE, run = TRUE,
+                             parallel = FALSE, ...) {
 
+  rlang::check_bool(two_pass)
   if (!is.data.frame(jobs)) {
     cli::cli_abort("{.arg jobs} must be a data frame with one row per input.")
   }
@@ -1355,6 +1356,32 @@ normalize_audios <- function(jobs, target_loudness = -23, true_peak = -1,
       ))
     }
     jobs$output <- derive_normalized_names(jobs$input)
+  }
+
+  # Two-pass (measured/linear): the audio-side M16 analyze-then-build path fanned
+  # across the jobs table (D013). Phase 1 measures every input (honoring
+  # `parallel`) and appends the five measured columns; Phase 2 builds & runs one
+  # linear correction per row from them. Fail-fast before Phase 2 if any row's
+  # analysis did not yield a usable measurement (assemble_measured names the
+  # row). Like the scalar verb, `run = FALSE` still runs Phase 1 (it needs the
+  # binary and readable inputs) and gates only the Phase 2 correction commands.
+  if (two_pass) {
+    col_or <- function(nm, default) {
+      if (nm %in% names(jobs)) jobs[[nm]] else rep(default, nrow(jobs))
+    }
+    outputs <- run_loudnorm_analysis_batch(
+      jobs$input,
+      col_or("target_loudness", target_loudness),
+      col_or("true_peak", true_peak),
+      col_or("loudness_range", loudness_range),
+      parallel
+    )
+    measured <- assemble_measured(outputs)
+    for (nm in names(measured)) jobs[[nm]] <- measured[[nm]]
+    return(run_normalize_correction(
+      jobs, target_loudness, true_peak, loudness_range, channels, sample_rate,
+      run = run, parallel = parallel, ...
+    ))
   }
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output loudnorm

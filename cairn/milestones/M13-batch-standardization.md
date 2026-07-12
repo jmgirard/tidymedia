@@ -3,7 +3,7 @@
      Per-section owners are tagged below. -->
 # M13: Batch video standardization verb
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Branch/PR:** m13-batch-standardization   <!-- owner: implement (branch) / review (PR URL) · create -->
@@ -113,12 +113,14 @@ via `ffm_batch()` (D007), mirroring `segment_videos()`/`extract_frames()`.
       (M11 lesson), not `test_file()` under `library()`.
 - [x] T5: Add the binary-gated E2E write test (AC6): 2-row real jobs table, `run = TRUE`,
       assert outputs exist and probe to spec; `skip_if` ffmpeg absent.
-- [ ] T6: `devtools::document()` (roxygen → `man/` + `NAMESPACE`); `devtools::test()`;
+- [x] T6: `devtools::document()` (roxygen → `man/` + `NAMESPACE`); `devtools::test()`;
       `devtools::check()` to zero errors/warnings/notes (AC8).
 
 ## Work log
 <!-- owner: any skill · append-only; one line per entry; absolute dates -->
 
+- 2026-07-12: T6 — full suite 563 pass / 0 fail / 0 skip / 0 warn;
+  `devtools::check()` zero errors/warnings/notes. All tasks done → status review.
 - 2026-07-12: T2–T5 — added `standardize_videos()` + `derive_standardized_names()`
   (`R/ffmpeg.R`), roxygen/`document()`, and `test-standardize-videos.R` (20 tests,
   all pass; gated E2E/verify/manifest ran locally with ffmpeg present). Compile-parity

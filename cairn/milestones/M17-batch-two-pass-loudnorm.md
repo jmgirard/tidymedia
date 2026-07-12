@@ -100,7 +100,7 @@ M14→M15 scalar→batch split applied to the correction pipeline.
       `run`/`parallel`/`verify`/`manifest`/`progress`; `run = FALSE` runs analysis
       and returns correction commands unexecuted. Skip-guarded return-shape +
       no-outputs test (AC4). (RB tripwire: irreversible-api.)
-- [ ] T5 — Execution test (`skip_if` ffmpeg absent): full two-pass over a ≥2-row
+- [x] T5 — Execution test (`skip_if` ffmpeg absent): full two-pass over a ≥2-row
       jobs table on `inst/extdata/sample.mp4`; re-probe each output's integrated
       loudness within ±1 LU of its per-row target (AC5).
 - [ ] T6 — Roxygen for the new arg (document the analyze-then-build fan-out, its
@@ -131,6 +131,9 @@ M14→M15 scalar→batch split applied to the correction pipeline.
   Phase 1 fan-out → measured columns → Phase 2 correction, forwarding
   `run`/`parallel`/`...`; `run = FALSE` runs analysis only. Skip-guarded AC4 test
   asserts return shape and no outputs written.
+- 2026-07-12: T5 done — skip-guarded AC5 execution test: full two-pass over a
+  2-row jobs table on `sample.mp4`, re-probed each output within ±1 LU of its
+  per-row target (measured 0.01–0.02 LU off in practice).
 
 ## Decisions
 

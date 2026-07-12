@@ -251,6 +251,32 @@ test_that("normalize_audios(two_pass, run = FALSE) runs analysis, returns correc
   expect_false(file.exists(out_b))
 })
 
+test_that("normalize_audios(two_pass = TRUE) hits each per-row target within +/-1 LU (AC5)", {
+  skip_if_no_ffprobe()
+  src <- system.file("extdata", "sample.mp4", package = "tidymedia")
+  out_a <- withr::local_tempfile(fileext = ".mp4")
+  out_b <- withr::local_tempfile(fileext = ".mp4")
+  # Two rows, two different per-row targets: the full two-phase fan-out measures
+  # each input, then builds and runs a linear correction per row.
+  jobs <- tibble::tibble(
+    input           = c(src, src),
+    output          = c(out_a, out_b),
+    target_loudness = c(-23, -16)
+  )
+  res <- normalize_audios(jobs, two_pass = TRUE)
+  expect_true(all(res$success))
+  expect_true(all(file.exists(res$output)))
+  # Re-probe each output's integrated loudness with a fresh analysis pass (its
+  # input_i is the output's measured loudness) and assert it lands within +/-1 LU
+  # of that row's target. Source: EBU R 128 (2014); ITU-R BS.1770-4.
+  for (i in seq_len(nrow(res))) {
+    loud <- run_loudnorm_analysis(
+      res$output[[i]], target_loudness = jobs$target_loudness[[i]]
+    )$i
+    expect_lt(abs(loud - jobs$target_loudness[[i]]), 1)
+  }
+})
+
 # Execution + ffm_batch forwarding (binary-gated) -------------------------
 
 test_that("normalize_audios() writes non-empty, audio-decodable outputs (binary-gated)", {

@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-07-12 (M13 done)_
+_Last hygiene check: 2026-07-12 (M14 done)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M15 | Batch audio normalization verb | planned | M14 | normal | milestones/M15-batch-audio-normalization.md |
-| M14 | Audio loudness normalization verb | review | — | normal | milestones/M14-audio-loudness-normalization.md |
+| M14 | Audio loudness normalization verb | done | — | normal | milestones/archive/M14-audio-loudness-normalization.md |
 | M13 | Batch video standardization verb | done | — | normal | milestones/archive/M13-batch-standardization.md |
 | M12 | Video standardization verb | done | — | normal | milestones/archive/M12-standardization-presets.md |
 | M11 | Tibble-driven batch frame extraction | done | — | normal | milestones/archive/M11-batch-frame-extraction.md |
-| M09 | Dataframe-driven batch segmentation | done | — | normal | milestones/archive/M09-batch-segmentation.md |
 | M10 | segment_videos() parity polish | done | — | normal | milestones/archive/M10-segment-videos-polish.md |
 
 ## Candidates

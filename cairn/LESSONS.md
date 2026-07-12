@@ -35,3 +35,9 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   checks. Contrast M11's `extract_frames()`, which had to duplicate finite/whole
   checks because `frame_pipeline()` did *not* contain them. So: extract the
   scalar body into a shared pipeline before writing the batch sibling.
+- 2026-07-12 (M14): FFmpeg's single-pass `loudnorm` filter forces its output
+  sample rate (advertises 192 kHz; the encoder then caps it, e.g. 96 kHz for
+  AAC) — it never preserves the source rate. Any audio-filtering verb that omits
+  `-ar` silently resamples; document that and let a `sample_rate` arg pin `-ar`.
+  A "preserves the source rate" claim is a review trap — verify output rate by
+  probing (`ffprobe … stream=sample_rate`), don't assume `-af`-only is a no-op.

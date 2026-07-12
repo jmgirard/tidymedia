@@ -141,7 +141,7 @@ test_that("standardize_video() compiles the full standardization command", {
     sprintf(
       paste(
         '-y -i "%s" -vf "scale=w=1280:h=720,fps=30"',
-        "-codec:v libx264 -pix_fmt yuv420p -movflags +faststart",
+        "-codec:v libx264 -codec:a copy -pix_fmt yuv420p -movflags +faststart",
         '"out.mp4"'
       ),
       f
@@ -163,11 +163,12 @@ test_that("standardize_video() forces exact dimensions when both are given", {
   expect_match(cmd, "scale=w=640:h=480", fixed = TRUE)
 })
 
-test_that("standardize_video() omits the scale filter when no dimension is given", {
+test_that("standardize_video() applies the even-dimension safeguard, not scale, when no dimension is given", {
   f <- make_input()
   cmd <- standardize_video(f, "out.mp4", fps = 25, run = FALSE)
   expect_no_match(cmd, "scale=", fixed = TRUE)
-  expect_match(cmd, '-vf "fps=25"', fixed = TRUE)
+  expect_match(cmd, '-vf "crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2', fixed = TRUE)
+  expect_match(cmd, ',fps=25"', fixed = TRUE)
 })
 
 test_that("standardize_video() defaults are deterministic and documented", {
@@ -178,7 +179,12 @@ test_that("standardize_video() defaults are deterministic and documented", {
   expect_equal(
     cmd1,
     sprintf(
-      '-y -i "%s" -codec:v libx264 -pix_fmt yuv420p -movflags +faststart "out.mp4"',
+      paste(
+        '-y -i "%s"',
+        '-vf "crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2"',
+        "-codec:v libx264 -codec:a copy -pix_fmt yuv420p -movflags +faststart",
+        '"out.mp4"'
+      ),
       f
     )
   )
@@ -201,6 +207,42 @@ test_that("standardize_video() writes an output with the requested fps and width
   expect_true(file.exists(outfile))
   expect_equal(get_width(outfile), 48)
   expect_equal(get_framerate(outfile), 5)
+})
+
+test_that("standardize_video() default path encodes an odd-dimensioned source", {
+  # Regression: without the even-dimension safeguard the default libx264 /
+  # yuv420p re-encode rejects odd dimensions and writes a 0-byte file.
+  skip_if_no_ffmpeg()
+  infile <- withr::local_tempfile(fileext = ".mp4")
+  ffmpeg(sprintf(
+    "-y -f lavfi -i testsrc=duration=1:size=65x49:rate=10 -pix_fmt yuv444p \"%s\"",
+    infile
+  ))
+  skip_if_not(file.exists(infile), "odd-dimensioned test video could not be generated")
+  outfile <- withr::local_tempfile(fileext = ".mp4")
+  standardize_video(infile, outfile)
+  expect_true(file.exists(outfile))
+  expect_gt(file.size(outfile), 0)
+})
+
+test_that("standardize_video() stream-copies audio unchanged", {
+  # Regression: a bare video re-encode transcodes audio to the container
+  # default; -c:a copy must preserve the source audio codec.
+  skip_if_no_ffprobe()
+  infile <- withr::local_tempfile(fileext = ".mp4")
+  ffmpeg(sprintf(paste(
+    "-y -f lavfi -i testsrc=duration=1:size=64x64:rate=10",
+    "-f lavfi -i sine=frequency=440:duration=1",
+    "-c:a libmp3lame -shortest -pix_fmt yuv420p \"%s\""
+  ), infile))
+  skip_if_not(file.exists(infile), "test video could not be generated")
+  outfile <- withr::local_tempfile(fileext = ".mp4")
+  standardize_video(infile, outfile)
+  acodec <- function(path) ffprobe(sprintf(
+    "-v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 \"%s\"",
+    path
+  ))
+  expect_equal(acodec(outfile), acodec(infile))
 })
 
 test_that("extract_frame() compiles to a fast input-seek single-frame grab", {

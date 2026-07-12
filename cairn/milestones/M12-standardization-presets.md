@@ -3,7 +3,7 @@
      Per-section owners are tagged below. -->
 # M12: Video standardization verb
 
-- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Branch/PR:** m12-standardization-presets · https://github.com/jmgirard/tidymedia/pull/14   <!-- owner: implement (branch) / review (PR URL) · create -->
@@ -46,17 +46,21 @@ argument set is the one documented standard (see the API tripwire on T4).
       Oracle: the compiled `-vf` string.
 - [ ] AC2: `standardize_video()` with explicit `width`, `height`, `fps`,
       `vcodec`, `pixel_format` compiles to one command carrying `scale`,
-      `fps`, `-c:v`, `-pix_fmt`, and `-movflags +faststart` in the engine's
-      order. Oracle: the full compiled command string against a hand-written
-      expected value.
-- [ ] AC3: Aspect handling — only `width` (or only `height`) supplied scales
-      preserving aspect with even output dimensions (the other dimension emits
-      `-2`); both supplied forces exact dimensions; neither leaves resolution
-      untouched. Oracle: compiled `scale=` expression.
+      `fps`, `-c:v`, `-c:a copy`, `-pix_fmt`, and `-movflags +faststart` in the
+      engine's order. Oracle: the full compiled command string against a
+      hand-written expected value.
+- [ ] AC3: Aspect handling & codec-valid dimensions — only `width` (or only
+      `height`) supplied scales preserving aspect with even output dimensions
+      (the other dimension emits `-2`); both supplied forces exact dimensions;
+      neither supplied keeps the source resolution but applies an
+      even-dimension safeguard (`crop` to the nearest even width/height, a
+      no-op for already-even input, mirroring `format_for_web()`) so
+      `yuv420p`/`libx264` always encodes. Oracle: compiled `scale=`/`crop=`
+      expression.
 - [ ] AC4: Defaults alone (`standardize_video(infile, outfile)`) produce a
       documented, deterministic standard — the same input yields a
-      byte-identical command across runs, and the roxygen states what that
-      standard is.
+      byte-identical command across runs, the output encodes successfully even
+      for odd-dimensioned input, and the roxygen states what that standard is.
 - [ ] AC5: Input validation — bad `fps`/`width`/`height` and a missing input
       file each abort with a `cli::cli_abort` message; `run = FALSE` returns
       the command without invoking FFmpeg.
@@ -79,98 +83,64 @@ argument set is the one documented standard (see the API tripwire on T4).
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [x] T1: Tests first — `ffm_fps()` compilation/validation in
-      `tests/testthat/test-ffm.R`: happy path emits `fps=<n>` in `-vf`, and
-      bad `fps` aborts (AC1).
-- [x] T2: Implement `ffm_fps()` in [R/ffm.R](../../R/ffm.R) (mirror
-      `ffm_scale()` at line 308; write to `filter_video`); roxygen with a
-      runnable example; add `ffm_fps` to `_pkgdown.yml` under "Layer 1"; a new
-      exported builder needs its reference row in the same commit (guardrail);
-      `devtools::document()`.
-- [x] T3: Tests first — `standardize_video()` compilation in
-      `tests/testthat/test-ffmpeg.R`: full-argument command parity, aspect
-      cases (width-only / height-only / both / neither), defaults determinism,
-      and validation/`run = FALSE` (AC2–AC5).
-- [x] T4: Implement `standardize_video()` in [R/ffmpeg.R](../../R/ffmpeg.R) as
-      a thin composition of `ffm_scale`/`ffm_fps`/`ffm_codec`/
-      `ffm_pixel_format`/`ffm_output_options` (IP1). **(RB tripwire:
-      irreversible-api)** — settled: explicit-parameter default set (see
-      Decisions); escalation declined.
-- [x] T5: Roxygen for `standardize_video()` documenting the default standard;
-      add its row to `_pkgdown.yml` under "Layer 2: task verbs";
-      `devtools::document()`; `devtools::test()`.
-- [x] T6: Execution test (`skip_if` no ffmpeg) proving the output exists with
-      the requested fps/width via the probe verbs (AC6); `devtools::check()`.
+- [x] T1: Tests first — `ffm_fps()` compilation/validation in test-ffm.R (emits
+      `fps=<n>` in `-vf`; bad `fps` aborts) (AC1).
+- [x] T2: Implement `ffm_fps()` in [R/ffm.R](../../R/ffm.R) (mirror `ffm_scale`;
+      write `filter_video`); roxygen; `_pkgdown.yml` Layer-1 row; `document()`.
+- [x] T3: Tests first — `standardize_video()` compilation in test-ffmpeg.R:
+      full-arg parity, aspect cases, defaults determinism, validation/`run=FALSE`
+      (AC2–AC5).
+- [x] T4: Implement `standardize_video()` in [R/ffmpeg.R](../../R/ffmpeg.R) as a
+      thin composition (IP1). **(RB tripwire: irreversible-api)** — settled:
+      explicit-parameter default set (see Decisions); escalation declined.
+- [x] T5: Roxygen documenting the standard; `_pkgdown.yml` Layer-2 row;
+      `document()`; `test()`.
+- [x] T6: Execution test (`skip_if` no ffmpeg) proving output fps/width via probe
+      verbs (AC6); `check()`.
 
 ## Work log
 <!-- owner: any skill · append-only; one line per entry; absolute dates -->
 
-- 2026-07-12: created by /milestone-plan (split from the four-family
-  research-verbs candidate; standardization family, video-only per plan gate).
-- 2026-07-12: T1+T2 — added `ffm_fps()` Layer-1 verb (uses `check_dim` so a
-  positive number or FFmpeg framerate string is accepted, else aborts),
-  pkgdown row, docs; 4 compile/validation tests. test-ffm.R clean (165 pass).
-- 2026-07-12: T3–T6 — added `standardize_video()` Layer-2 verb composing
-  scale/fps/codec/pix_fmt/+faststart (explicit-parameter defaults libx264 +
-  yuv420p, resolution/fps untouched by default; single-dim → aspect-preserving
-  `-2`). 6 compile/validation tests + 1 binary-gated execution test probing
-  fps/width. `devtools::check()` clean (0 errors, 0 warnings, 0 notes).
+- 2026-07-12: created by /milestone-plan (split from the research-verbs candidate; standardization family, video-only).
+- 2026-07-12: T1+T2 — `ffm_fps()` Layer-1 verb (`check_dim`: number or framerate string), pkgdown row, docs; 4 tests.
+- 2026-07-12: T3–T6 — `standardize_video()` Layer-2 verb (scale/fps/codec/pix_fmt/+faststart; explicit defaults libx264+yuv420p); compile/validation + execution tests; check clean.
+- 2026-07-12: review send-back ("fix both now") — gated amendment (AC2 gains `-c:a copy`; AC3/AC4 add even-dim safeguard) + fixes for both findings; roxygen/NEWS/oracles updated; +2 regression tests.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
 
 - 2026-07-12 (T4 tripwire, irreversible-api): the "standard" is an
-  explicit-parameter default set, not a named-`preset` bundle. Chosen over
-  escalation because it is additive-forward (a `preset=` arg can be layered on
-  later without breaking callers), keeps every output-affecting knob visible in
-  the compiled command (D001), and matches the plan Scope. Defaults:
-  `vcodec = "libx264"`, `pixel_format = "yuv420p"` (mirrors `format_for_web()`),
-  `width/height/fps = NULL` = leave untouched, `+faststart` always applied,
-  audio untouched (audio work is out of scope). User delegated the call.
+  explicit-parameter default set, not a named-`preset` bundle — additive-forward
+  (a `preset=` arg can be added later without breaking callers), keeps every
+  knob visible in the command (D001), matches Scope. Defaults `libx264`/`yuv420p`
+  (mirror `format_for_web()`), `+faststart` always on. User delegated the call.
+- 2026-07-12 (review): audio is stream-copied (`-c:a copy`), not transcoded, and
+  the default path floor-crops to even dimensions — both to match the documented
+  intent and `format_for_web()` behavior (see review Findings 1–2).
 
 ## Review
 <!-- owner: review · exclusive -->
 
-- 2026-07-12 (/milestone-review M12, PR #14). Fresh evidence:
-  - AC1: `ffm_fps(p, 30)` compiles `... -vf "fps=30" ...`; `ffm_fps(p, 0)`
-    aborts. ✓
-  - AC2: full args compile
-    `-y -i "IN" -vf "scale=w=1280:h=720,fps=30" -codec:v libx264 -pix_fmt
-    yuv420p -movflags +faststart "out.mp4"` — matches the hand-written oracle. ✓
-  - AC3: width-only → `scale=w=640:h=-2`; height-only → `scale=w=-2:h=480`;
-    both → `scale=w=640:h=480`; neither → no scale filter. ✓
-  - AC4: two default calls byte-identical (`identical()` TRUE); default cmd
-    `-y -i "IN" -codec:v libx264 -pix_fmt yuv420p -movflags +faststart
-    "out.mp4"`; roxygen `@details` states the standard. ✓
-  - AC5: `width=0`, `fps=-1`, and a missing input each abort; `run=FALSE`
-    returns the command string without invoking FFmpeg. ✓
-  - AC6 (execution): standardized 64×64@10 → 48×32@5 output exists;
-    `get_width()` = 48, `get_framerate()` = 5. ✓
-  - check clean: `devtools::test()` 509 pass / 0 fail / 0 skip;
-    `devtools::check()` 0 errors / 0 warnings / 0 notes. ✓
-- Consistency gate: coverage complete (every AC → ≥1 existing task); pkgdown
-  check clean (both exports present); `document()` no-diff; README in sync;
-  NEWS entry added; no new top-level files; no DESIGN principle changed.
-  `cairn_validate.py` — the only FAIL is a pre-existing false-positive: its
-  date regex `\d{1,4}/\d{1,2}/\d{1,4}` misreads the repo's `check 0/0/0`
-  results shorthand as a date in 7 already-merged **archived** milestones
-  (present on origin/master, outside M12's diff). M12's own file is
-  validator-clean (reworded to "0 errors, 0 warnings, 0 notes"). Flagged as a
-  cairn plugin defect at the approval gate; not patched review-side.
-- Independent fresh-context review (2 lenses + scorer). Two findings, both
-  reproduced with real ffmpeg:
-  - **Finding 2 — audio doc mismatch (scorer 90, actioned).** Roxygen
-    `@details` claims "Audio is left untouched," but the composed command sets
-    no `-c:a copy`; re-encoding the video makes ffmpeg transcode audio to the
-    container default (verified: mp3 → aac). Package convention for truly
-    leaving audio alone is `audio = "copy"` (extract_audio, separate_audio_video).
-  - **Finding 1 — odd-dimension default crash (scorer 76, logged/surfaced,
-    not auto-actioned).** The default path (no width/height) emits no
-    scale/crop, so an odd-dimensioned source fails libx264/yuv420p encoding
-    ("width not divisible by 2") and writes a 0-byte output (verified: 641×481
-    → 0 bytes). `format_for_web()` guards this with an even-dimension crop, and
-    M12's Decisions claim codec parity with it. Below threshold because AC3 as
-    written blesses "neither dimension → resolution untouched (no filter)" — a
-    fix requires an AC3/AC4 amendment, not a review-side patch.
-  - Triage deferred to the approval-gate decision (fix-both-now + gated
-    amendment, vs. merge-minimal with doc correction + follow-up candidate).
+- 2026-07-12 (/milestone-review M12, PR #14). AC evidence (post-amendment),
+  oracles = compiled command strings:
+  - AC1 ✓ `ffm_fps(p,30)`→`-vf "fps=30"`; `ffm_fps(p,0)` aborts.
+  - AC2 ✓ full-args carries `scale,fps,-c:v libx264,-c:a copy,-pix_fmt yuv420p,
+    -movflags +faststart` in order (matches hand-written oracle).
+  - AC3 ✓ width-only `scale=w=640:h=-2`; height-only `scale=w=-2:h=480`; both
+    `scale=w=640:h=480`; neither → even-dim `crop=floor(in_w/2)*2:...`.
+  - AC4 ✓ two default calls byte-identical; default carries crop safeguard +
+    `-c:a copy`; roxygen states the standard.
+  - AC5 ✓ `width=0`/`fps=-1`/missing input each abort; `run=FALSE` returns the
+    command without invoking FFmpeg.
+  - AC6 ✓ 48×32@5 probes width 48/fps 5; odd-dim 65×49 default → 3057 bytes
+    (was 0); audio mp3→mp3 (was mp3→aac). `test()` 513/0/0; `check()` clean.
+- Consistency gate: coverage complete; pkgdown clean; `document()` no-diff;
+  README in sync; NEWS updated; no new files; no DESIGN change.
+  `cairn_validate.py`'s sole FAIL is a pre-existing false-positive (date regex
+  flags the repo's N/N/N check-results shorthand in 7 already-merged archived
+  files, outside M12's diff); M12's file is validator-clean, archives untouched.
+- Fresh-context review (2 lenses + scorer): two findings, both reproduced and
+  **fixed** ("fix both now"). Finding 2 (audio mismatch, 90) — transcoded
+  audio; fixed via `ffm_codec(audio="copy")` + regression test. Finding 1
+  (odd-dim default crash, 76) — 0-byte output; fixed via floor-to-even
+  `ffm_crop` safeguard + regression test; needed the gated AC2/AC3/AC4 amendment.

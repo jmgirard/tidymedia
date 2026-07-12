@@ -270,14 +270,17 @@ format_for_web <- function(infile, outfile, run = TRUE) {
 #' @details
 #' The default standard \code{standardize_video(infile, outfile)} re-encodes to
 #' H.264 video (\code{vcodec = "libx264"}) with \code{pixel_format = "yuv420p"}
-#' and \code{-movflags +faststart}, leaving resolution and frame rate untouched.
-#' The same input therefore always compiles to a byte-identical command.
-#' Audio is left untouched (audio standardization is out of scope).
+#' and \code{-movflags +faststart}, keeping the source resolution and frame
+#' rate. Audio is stream-copied unchanged (\code{-c:a copy}); audio
+#' standardization is out of scope. The same input therefore always compiles to
+#' a byte-identical command.
 #'
 #' Resolution follows \code{width}/\code{height}: supplying both forces exact
 #' output dimensions; supplying only one preserves the aspect ratio and rounds
 #' the other to the nearest even number (FFmpeg's \code{-2}); supplying neither
-#' leaves the resolution unchanged.
+#' keeps the source resolution but rounds odd dimensions down to the nearest
+#' even value (a \code{yuv420p}/\code{libx264} requirement, and a no-op for
+#' already-even input) so the output always encodes.
 #'
 #' @param infile A string containing the path to a video file.
 #' @param outfile A string containing the path of the video file to write.
@@ -314,19 +317,25 @@ standardize_video <- function(infile, outfile,
 
   p <- ffm_files(infile, outfile)
   # Resolution: exact when both given; aspect-preserving with an even output
-  # dimension (FFmpeg's -2) when only one; untouched when neither. ffm_scale()
-  # validates each dimension via check_dim().
+  # dimension (FFmpeg's -2) when only one. ffm_scale() validates each dimension
+  # via check_dim(). When neither is given, still force even dimensions so
+  # yuv420p/libx264 can encode odd-dimensioned sources -- floor-to-even is a
+  # no-op for already-even input, mirroring format_for_web()'s guard.
   if (!is.null(width) || !is.null(height)) {
     p <- ffm_scale(
       p,
       width = if (is.null(width)) "-2" else width,
       height = if (is.null(height)) "-2" else height
     )
+  } else {
+    p <- ffm_crop(p, width = "floor(in_w/2)*2", height = "floor(in_h/2)*2")
   }
   if (!is.null(fps)) {
     p <- ffm_fps(p, fps)
   }
-  p <- ffm_codec(p, video = vcodec)
+  # Audio is stream-copied, not re-encoded: standardization is video-only, so
+  # "leave audio untouched" means copy the bytes (matching extract_audio()).
+  p <- ffm_codec(p, video = vcodec, audio = "copy")
   p <- ffm_pixel_format(p, pixel_format)
   p <- ffm_output_options(p, "-movflags +faststart")
   ffm_finish(p, run)

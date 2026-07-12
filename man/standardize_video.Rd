@@ -53,14 +53,17 @@ it across a dataset.
 \details{
 The default standard \code{standardize_video(infile, outfile)} re-encodes to
 H.264 video (\code{vcodec = "libx264"}) with \code{pixel_format = "yuv420p"}
-and \code{-movflags +faststart}, leaving resolution and frame rate untouched.
-The same input therefore always compiles to a byte-identical command.
-Audio is left untouched (audio standardization is out of scope).
+and \code{-movflags +faststart}, keeping the source resolution and frame
+rate. Audio is stream-copied unchanged (\code{-c:a copy}); audio
+standardization is out of scope. The same input therefore always compiles to
+a byte-identical command.
 
 Resolution follows \code{width}/\code{height}: supplying both forces exact
 output dimensions; supplying only one preserves the aspect ratio and rounds
 the other to the nearest even number (FFmpeg's \code{-2}); supplying neither
-leaves the resolution unchanged.
+keeps the source resolution but rounds odd dimensions down to the nearest
+even value (a \code{yuv420p}/\code{libx264} requirement, and a no-op for
+already-even input) so the output always encodes.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

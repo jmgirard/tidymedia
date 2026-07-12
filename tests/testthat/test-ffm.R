@@ -257,6 +257,52 @@ test_that("ffm_fps() accepts an FFmpeg framerate expression as a string", {
   expect_equal(p$filter_video, "fps=30000/1001")
 })
 
+# ffm_loudnorm() ---------------------------------------------------------------
+
+test_that("ffm_loudnorm() appends a loudnorm filter compiling into -af", {
+  f <- make_input()
+  p <- ffm_loudnorm(ffm_files(f, "out.mp4"))
+  expect_equal(p$filter_audio, "loudnorm=I=-23:TP=-1:LRA=7")
+  expect_match(
+    ffm_compile(p), '-af "loudnorm=I=-23:TP=-1:LRA=7"', fixed = TRUE
+  )
+})
+
+test_that("ffm_loudnorm() accepts custom EBU R128 targets", {
+  f <- make_input()
+  p <- ffm_loudnorm(
+    ffm_files(f, "out.mp4"),
+    target_loudness = -16, true_peak = -1.5, loudness_range = 11
+  )
+  expect_equal(p$filter_audio, "loudnorm=I=-16:TP=-1.5:LRA=11")
+})
+
+test_that("ffm_loudnorm() coexists with a video filter (both -vf and -af)", {
+  f <- make_input()
+  p <- ffm_loudnorm(ffm_scale(ffm_files(f, "out.mp4"), 640, 480))
+  cmd <- ffm_compile(p)
+  expect_match(cmd, '-vf "scale=w=640:h=480"', fixed = TRUE)
+  expect_match(cmd, '-af "loudnorm=I=-23:TP=-1:LRA=7"', fixed = TRUE)
+})
+
+test_that("ffm_loudnorm() appends after an existing audio filter", {
+  f <- make_input()
+  p <- ffm_loudnorm(ffm_loudnorm(ffm_files(f, "out.mp4")), target_loudness = -16)
+  expect_equal(
+    p$filter_audio,
+    c("loudnorm=I=-23:TP=-1:LRA=7", "loudnorm=I=-16:TP=-1:LRA=7")
+  )
+})
+
+test_that("ffm_loudnorm() rejects out-of-range or non-numeric targets", {
+  f <- make_input()
+  p <- ffm_files(f, "out.mp4")
+  expect_error(ffm_loudnorm(p, target_loudness = -3))   # above -5
+  expect_error(ffm_loudnorm(p, true_peak = 1))          # above 0
+  expect_error(ffm_loudnorm(p, loudness_range = 0))      # below 1
+  expect_error(ffm_loudnorm(p, target_loudness = "x"))   # not a number
+})
+
 test_that("ffm_fps() rejects a non-positive or non-numeric/non-string fps", {
   f <- make_input()
   p <- ffm_files(f, "out.mp4")

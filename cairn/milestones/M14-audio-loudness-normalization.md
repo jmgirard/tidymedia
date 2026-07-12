@@ -70,7 +70,7 @@ engine's until-now-unused `filter_audio`/`-af` slot.
 
 ## Tasks
 
-- [ ] T1 — Add `ffm_loudnorm()` Layer-1 audio-filter primitive to `R/ffm.R`
+- [x] T1 — Add `ffm_loudnorm()` Layer-1 audio-filter primitive to `R/ffm.R`
       (mirror the `ffm_scale()` pattern near R/ffm.R:308, but append to
       `object$filter_audio`). Tests-first for the compiled `-af "loudnorm=…"`
       output and pure compilation.
@@ -94,7 +94,17 @@ engine's until-now-unused `filter_audio`/`-af` slot.
 ## Work log
 
 - 2026-07-12: created by /milestone-plan.
+- 2026-07-12: T1 — `ffm_loudnorm()` primitive added (first verb to write the
+  `-af` slot); EBU R128 defaults, range-validated; 5 compile/validation tests pass.
 
 ## Decisions
+
+- 2026-07-12 (gate): default targets are EBU R128 — `target_loudness = -23`
+  LUFS, `true_peak = -1` dBTP, `loudness_range = 7` — cited to EBU Rec. R 128
+  (2014) with loudness measured per ITU-R BS.1770-4 (`loudness_range = 7` is
+  FFmpeg `loudnorm`'s own default, EBU R128 not prescribing a single value).
+- 2026-07-12 (gate): loudness knobs use descriptive R-idiomatic names
+  (`target_loudness` / `true_peak` / `loudness_range`) on both `ffm_loudnorm()`
+  and `normalize_audio()`, not the terse FFmpeg `I`/`TP`/`LRA` (irreversible-api).
 
 ## Review

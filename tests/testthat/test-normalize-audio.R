@@ -14,6 +14,24 @@ test_that("normalize_audio() compiles the default EBU R128 command", {
   )
 })
 
+# Characterization: pin the full command for a fully-specified single-pass call
+# so the `two_pass = FALSE` default (added in M16) stays byte-for-byte identical
+# to today's behavior. This baseline must not drift when two-pass lands.
+test_that("normalize_audio() single-pass command is byte-for-byte stable (M16 baseline)", {
+  f <- make_input()
+  cmd <- normalize_audio(f, "out.mp4", target_loudness = -16, true_peak = -1.5,
+                         loudness_range = 11, channels = 1, sample_rate = 48000,
+                         run = FALSE)
+  expect_equal(
+    cmd,
+    sprintf(
+      paste0('-y -i "%s" -af "loudnorm=I=-16:TP=-1.5:LRA=11" ',
+             '-codec:v copy -ac 1 -ar 48000 "out.mp4"'),
+      f
+    )
+  )
+})
+
 test_that("normalize_audio() honors custom loudness targets", {
   f <- make_input()
   cmd <- normalize_audio(

@@ -84,7 +84,7 @@ analyze-then-build execution pattern.
 
 ## Tasks
 
-- [ ] T1 — Characterization test first: pin today's single-pass compiled command
+- [x] T1 — Characterization test first: pin today's single-pass compiled command
       for `normalize_audio(run = FALSE)` so the `two_pass = FALSE` default is
       provably unchanged before touching anything.
 - [ ] T2 — Extend `ffm_loudnorm()` ([R/ffm.R:390](R/ffm.R)) to optionally take
@@ -119,6 +119,11 @@ analyze-then-build execution pattern.
 - 2026-07-12: created by /milestone-plan (promoted from ROADMAP candidate, split
   from M14 on 2026-07-12).
 - 2026-07-12: implement start; branch m16-two-pass-loudnorm cut from master.
+- 2026-07-12: gate decided — numeric measured params on ffm_loudnorm(); analysis
+  pass applies bare loudnorm targets (FFmpeg canonical recipe, no downmix);
+  parser confidence via recorded stderr fixture + malformed case. No Fable
+  escalation (both tripwires judged well-grounded).
+- 2026-07-12: T1 done — added byte-for-byte single-pass characterization baseline.
 
 ## Decisions
 

@@ -112,3 +112,23 @@ complete (AC1→T2, AC2→T1/T2, AC3→T2, AC4→T3, AC5→T4, all tasks exist);
 found" after adding `normalize_audios` to `_pkgdown.yml`; NEWS.md entry added
 ("Batch audio normalization across files"); no new top-level files; no DESIGN
 principle changed.
+
+**Independent fresh-context review (two lenses):**
+
+- [O] diff-bug reviewer (Opus) — **no findings.** Verified per-row knob override,
+  validation parity (front-door type/NA + inherited per-element checks), `...`
+  batch-param forwarding without leaking into `.f`, auto-naming/collision, and
+  edge cases (factor input, NULL defaults).
+- [S] blame-history reviewer (Sonnet) — **no findings.** Change does not undo
+  prior-milestone work or contradict D002/D007 or the M09/M10/M11/M13 lessons;
+  NEWS/pkgdown treatment matches the `standardize_videos()` precedent.
+
+Zero surviving findings → scorer not required. Two candidates the Opus reviewer
+raised and dropped as pre-existing (not introduced by this diff), logged here for
+transparency (IP3), no action:
+1. No compile-time file-existence check on `input` — inherited
+   `standardize_videos()` convention; surfaces at run time.
+2. `as.character()` scientific-notation risk in `-ar <sample_rate>` for round
+   values (e.g. `100000` → `"1e+05"`) — lives in the unmodified M14
+   `normalize_audio_pipeline()`, not triggered by real audio rates
+   (44100/48000/96000/192000 stringify plainly).

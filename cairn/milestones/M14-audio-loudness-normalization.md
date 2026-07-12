@@ -1,6 +1,6 @@
 # M14: Audio loudness normalization verb
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Branch/PR:** m14-audio-loudness-normalization
@@ -88,7 +88,7 @@ engine's until-now-unused `filter_audio`/`-af` slot.
       — the exported signature soaks toward CRAN)
 - [x] T4 — Add an execution test in `tests/testthat/` (`skip_if` binary absent)
       verifying non-empty, audio-decodable output on the sample.
-- [ ] T5 — Roxygen + `devtools::document()`; add to the `@family` lists and to
+- [x] T5 — Roxygen + `devtools::document()`; add to the `@family` lists and to
       DESIGN.md function families; `devtools::check()` clean.
 
 ## Work log
@@ -104,6 +104,9 @@ engine's until-now-unused `filter_audio`/`-af` slot.
   downmix/resample via `-ac`/`-ar`); descriptive param names. 9 tests incl. a
   binary-gated exec test that produced audio-decodable output; full suite 279
   pass / 0 fail / 1 skip.
+- 2026-07-12: T5 — DESIGN.md function families updated (`ffm_loudnorm`,
+  `normalize_audio`); `devtools::check()` clean (0 errors / 0 warnings / 0
+  notes). All tasks done → status review.
 
 ## Decisions
 

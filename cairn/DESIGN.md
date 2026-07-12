@@ -24,12 +24,13 @@ realtime/streaming, and full filtergraph DAGs.
   `ffm_compile`, `ffm_run`, `ffm_batch`), input/output (`ffm_copy`, `ffm_seek`,
   `ffm_map`, `ffm_drop`, `ffm_files`, `ffm_codec`, `ffm_pixel_format`,
   `ffm_output_options`), filters (`ffm_trim`, `ffm_crop`, `ffm_scale`,
-  `ffm_drawbox`), and blessed multi-input verbs (`ffm_hstack`, `ffm_vstack`,
-  `ffm_overlay`, `ffm_concat`).
+  `ffm_fps`, `ffm_drawbox`, and the first audio filter `ffm_loudnorm`), and
+  blessed multi-input verbs (`ffm_hstack`, `ffm_vstack`, `ffm_overlay`,
+  `ffm_concat`).
 - **Layer 2 — task verbs:** `extract_audio`, `extract_frame`, `crop_video`,
   `segment_video`, `separate_audio_video`, `concatenate_videos`,
-  `format_for_web`, `audio_as_mp3`, `compare_videos`, `picture_in_picture` —
-  thin wrappers over Layer 1.
+  `format_for_web`, `standardize_video`, `normalize_audio`, `audio_as_mp3`,
+  `compare_videos`, `picture_in_picture` — thin wrappers over Layer 1.
 - **Metadata:** `probe_all/container/streams/video/audio` (ffprobe → tibbles),
   the `mediainfo_*` family, and `get_duration/framerate/height/width/samplingrate`.
 - **Program management (`R/program_management.R`):** `find_*`/`set_*` locators

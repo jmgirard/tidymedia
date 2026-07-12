@@ -58,7 +58,8 @@ Other task verb functions:
 [`extract_frame()`](https://jmgirard.github.io/tidymedia/reference/extract_frame.md),
 [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
 [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
-[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
+[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
+[`segment_videos()`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md)
 
 ## Examples
 

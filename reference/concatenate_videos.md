@@ -45,6 +45,7 @@ Other task verb functions:
 [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
 [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
+[`segment_videos()`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md),
 [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
 
 ## Examples
@@ -52,5 +53,5 @@ Other task verb functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 concatenate_videos(c(video, video), "joined.mp4", run = FALSE)
-#> [1] "-y -f concat -safe 0 -i \"/tmp/Rtmpg7mREn/ffm-concat20011f9a71d7.txt\" -codec:v copy -codec:a copy -map 0 \"joined.mp4\""
+#> [1] "-y -f concat -safe 0 -i \"/tmp/RtmpZ0bTiC/ffm-concat206873158793.txt\" -codec:v copy -codec:a copy -map 0 \"joined.mp4\""
 ```

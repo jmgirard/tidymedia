@@ -78,6 +78,8 @@ Thin wrappers over the builder for common preprocessing jobs.
   : Re-encode a video for web playback
 - [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
   : Segment Video
+- [`segment_videos()`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md)
+  : Segment Many Videos From a Jobs Table
 - [`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md)
   : Combine video files using the concat demuxer
 - [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)

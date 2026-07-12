@@ -2,6 +2,21 @@
 
 ## tidymedia (development version)
 
+### Batch segmentation across files
+
+- Added
+  [`segment_videos()`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md),
+  a table-driven companion to
+  [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md).
+  Pass a jobs tibble with `input`, `output`, `start`, and `end` columns
+  — one row per segment — to cut segments spanning many input files in
+  one call. It is a thin wrapper over
+  [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
+  so `...` forwards batch options such as `verify`, `manifest`,
+  `checksums`, and `progress`; `reencode` selects accurate re-encoding
+  (default) or the fast keyframe-snapping copy path, as in
+  [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md).
+
 ### Verification & provenance (M08)
 
 - Added

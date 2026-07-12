@@ -1,9 +1,9 @@
 # M16: Two-pass (measured/linear) EBU R128 loudnorm
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M14
-- **Branch/PR:** —
+- **Branch/PR:** m16-two-pass-loudnorm
 
 ## Goal
 
@@ -118,6 +118,7 @@ analyze-then-build execution pattern.
 
 - 2026-07-12: created by /milestone-plan (promoted from ROADMAP candidate, split
   from M14 on 2026-07-12).
+- 2026-07-12: implement start; branch m16-two-pass-loudnorm cut from master.
 
 ## Decisions
 

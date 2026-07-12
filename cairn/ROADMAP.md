@@ -9,7 +9,7 @@ _Last hygiene check: 2026-07-12 (M16 planned)_
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M16 | Two-pass (measured/linear) EBU R128 loudnorm | planned | M14 | normal | milestones/M16-two-pass-loudnorm.md |
-| M15 | Batch audio normalization verb | planned | M14 | normal | milestones/M15-batch-audio-normalization.md |
+| M15 | Batch audio normalization verb | review | M14 | normal | milestones/M15-batch-audio-normalization.md |
 | M14 | Audio loudness normalization verb | done | — | normal | milestones/archive/M14-audio-loudness-normalization.md |
 | M13 | Batch video standardization verb | done | — | normal | milestones/archive/M13-batch-standardization.md |
 | M12 | Video standardization verb | done | — | normal | milestones/archive/M12-standardization-presets.md |

@@ -1179,6 +1179,170 @@ standardize_videos <- function(jobs, width = NULL, height = NULL, fps = NULL,
 }
 
 
+# derive_normalized_names() -----------------------------------------------
+
+# Derive one output path per input for normalize_audios() when the `output`
+# column is absent: `<base>_normalized.<input-ext>` (loudness normalization
+# keeps the source container). One input -> one output, so a duplicated input
+# with no explicit `output` would collide; the caller (normalize_audios)
+# rejects that up front, so this helper assumes unique inputs and stays a pure
+# name map (parity with derive_standardized_names()).
+derive_normalized_names <- function(input) {
+  paste0(
+    tools::file_path_sans_ext(input), "_normalized.", tools::file_ext(input)
+  )
+}
+
+
+# normalize_audios() ------------------------------------------------------
+
+#' Normalize Many Files' Audio Loudness From a Jobs Table
+#'
+#' Loudness-normalize the audio of many input files (EBU R128) from a single
+#' jobs tibble — a table-driven sibling of \code{\link{normalize_audio}} for
+#' when you have more than one file to normalize. Each row is one input; the
+#' only required column names its source. This is a thin wrapper over
+#' \code{\link{ffm_batch}}: one reproducible compiled command per input, sharing
+#' the same single-pass \code{loudnorm} pipeline (and per-value validation) as
+#' the scalar verb.
+#'
+#' @param jobs A data frame with one row per input and (at least) an
+#'   \code{input} column (source path). An optional \code{output} column names
+#'   the destination; when absent, one is derived per row by appending
+#'   \code{_normalized} to each input's basename, keeping the input's extension
+#'   (e.g. \code{clip.mkv} becomes \code{clip_normalized.mkv}). Because
+#'   normalization is one-input-to-one-output, a duplicated \code{input} with no
+#'   \code{output} column would collide and is rejected. Each of the five
+#'   loudness knobs — \code{target_loudness}, \code{true_peak},
+#'   \code{loudness_range}, \code{channels}, \code{sample_rate} — may also appear
+#'   as a column to override the corresponding argument on a per-row basis; rows
+#'   (or knobs) that omit the column fall back to the argument's value. Any other
+#'   columns are ignored.
+#' @param target_loudness,true_peak,loudness_range The EBU R128 loudness targets
+#'   applied to every row, unless \code{jobs} carries a column of the same name
+#'   (see \code{jobs}). Defaults follow EBU Recommendation R 128 (2014):
+#'   \code{target_loudness = -23} LUFS, \code{true_peak = -1} dBTP,
+#'   \code{loudness_range = 7} LU.
+#' @param channels The output channel count applied to every row, unless
+#'   \code{jobs} carries a \code{channels} column, e.g. \code{1} to downmix to
+#'   mono. \code{NULL} (default) keeps each source's channel layout.
+#' @param sample_rate The output sample rate in Hz applied to every row, unless
+#'   \code{jobs} carries a \code{sample_rate} column. \code{NULL} (default) lets
+#'   \code{loudnorm} choose (it resamples, up to 192 kHz encoder-capped — not the
+#'   source rate); set this to pin the output rate.
+#' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
+#'   default) or only compile them for inspection (\code{FALSE}).
+#' @param parallel A logical passed to \code{\link{ffm_batch}}: normalize in
+#'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
+#'   default). Parallelism follows the active \code{\link[future:plan]{future}}
+#'   plan; \code{TRUE} under the default sequential plan runs one input at a time
+#'   and warns. Set a plan first, e.g.
+#'   \code{future::plan(future::multisession)}.
+#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}}, such as
+#'   \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.
+#' @return The [tibble][tibble::tibble-package] returned by
+#'   \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column
+#'   (and, when \code{output} was derived, the resolved \code{output} column;
+#'   when \code{run = TRUE}, a \code{success} column, plus any columns the
+#'   forwarded arguments add, e.g. \code{verified}).
+#' @references
+#' EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
+#' maximum level of audio signals}; ITU-R BS.1770-4.
+#' @seealso \code{\link{normalize_audio}} for the single-input form;
+#'   \code{\link{ffm_batch}} for the batch runner and the arguments forwarded
+#'   through \code{...}; \code{\link{standardize_videos}} for the video-side
+#'   table-driven sibling.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' jobs <- tibble::tibble(
+#'   input           = c(video, video),
+#'   output          = c("a.mp4", "b.mp4"),
+#'   target_loudness = c(-23, -16)
+#' )
+#' # run = FALSE compiles one command per input without calling FFmpeg
+#' normalize_audios(jobs, run = FALSE)
+#' @export
+normalize_audios <- function(jobs, target_loudness = -23, true_peak = -1,
+                             loudness_range = 7, channels = NULL,
+                             sample_rate = NULL, run = TRUE, parallel = FALSE,
+                             ...) {
+
+  if (!is.data.frame(jobs)) {
+    cli::cli_abort("{.arg jobs} must be a data frame with one row per input.")
+  }
+  if (nrow(jobs) == 0) {
+    cli::cli_abort("{.arg jobs} must have at least one row.")
+  }
+  if (!"input" %in% names(jobs)) {
+    cli::cli_abort(c(
+      "{.arg jobs} must have an {.field input} column.",
+      "x" = "Missing column: {.val input}."
+    ))
+  }
+
+  # A factor input column carries paths as levels; treat them as strings
+  # (parity with standardize_videos()).
+  jobs$input <- as.character(jobs$input)
+
+  # Validate present override columns up front so a bad column fails clearly
+  # here rather than as an opaque FFmpeg error mid-batch (M11 parity lesson).
+  # Value-level checks (loudness ranges, whole channels/sample_rate) are
+  # inherited per row from normalize_audio_pipeline()'s ffm_loudnorm() and
+  # check_number_whole() guards.
+  knob_cols <- c("target_loudness", "true_peak", "loudness_range",
+                 "channels", "sample_rate")
+  for (col in intersect(knob_cols, names(jobs))) {
+    if (!is.numeric(jobs[[col]])) {
+      cli::cli_abort("The {.field {col}} column of {.arg jobs} must be numeric.")
+    }
+    if (anyNA(jobs[[col]])) {
+      cli::cli_abort("The {.field {col}} column of {.arg jobs} must not contain {.val {NA}}.")
+    }
+  }
+
+  # Auto-name outputs when the column is absent. One input -> one output, so a
+  # duplicated input with no explicit output would map to the same file; reject
+  # that rather than silently overwrite (parity with standardize_videos()).
+  if (!"output" %in% names(jobs)) {
+    dupes <- unique(jobs$input[duplicated(jobs$input)])
+    if (length(dupes) > 0) {
+      cli::cli_abort(c(
+        "{.arg jobs} has duplicated {.field input} paths but no {.field output} column.",
+        "x" = "Duplicated input{?s}: {.val {dupes}}.",
+        "i" = "Add an {.field output} column to name each row's destination."
+      ))
+    }
+    jobs$output <- derive_normalized_names(jobs$input)
+  }
+
+  # Thin Layer-2 fan-out over ffm_batch (D007): one single-output loudnorm
+  # pipeline per row, sharing normalize_audio_pipeline() with normalize_audio().
+  # A per-row knob column (arriving via `...` from pmap) overrides the scalar
+  # arg of the same name; `...` also forwards ffm_batch options
+  # (verify/manifest/...) to the runner, never to the pipeline builder (the
+  # runner's params sit after `...` and bind by name — M09 lesson).
+  ffm_batch(
+    jobs,
+    function(input, output, ...) {
+      dots <- list(...)
+      pick <- function(nm, default) if (nm %in% names(dots)) dots[[nm]] else default
+      normalize_audio_pipeline(
+        input, output,
+        target_loudness = pick("target_loudness", target_loudness),
+        true_peak = pick("true_peak", true_peak),
+        loudness_range = pick("loudness_range", loudness_range),
+        channels = pick("channels", channels),
+        sample_rate = pick("sample_rate", sample_rate)
+      )
+    },
+    run = run,
+    parallel = parallel,
+    ...
+  )
+}
+
+
 # concatenate_videos() ----------------------------------------------------
 
 #' Combine video files using the concat demuxer

@@ -49,6 +49,7 @@ reference:
   - separate_audio_video
   - audio_as_mp3
   - normalize_audio
+  - normalize_audios
   - crop_video
   - format_for_web
   - standardize_video

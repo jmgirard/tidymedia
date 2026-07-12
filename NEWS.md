@@ -15,6 +15,18 @@
   audio filter to a pipeline — the first builder to write the audio filter
   chain (`-af`).
 
+## Batch audio normalization across files
+
+* Added `normalize_audios()`, a table-driven companion to `normalize_audio()`.
+  Pass a jobs tibble with one row per input (only an `input` column is required)
+  to loudness-normalize many files in one call, each to an EBU R128 target. It
+  returns the tibble plus one reproducible `command` per row. The five loudness
+  knobs — `target_loudness`, `true_peak`, `loudness_range`, `channels`, and
+  `sample_rate` — may each appear as a column to vary per row, and outputs are
+  auto-named `<base>_normalized.<ext>` when no `output` column is given. It is a
+  thin wrapper over `ffm_batch()`, so `...` forwards batch options such as
+  `verify`, `manifest`, `checksums`, `progress`, and `parallel`.
+
 ## Video standardization
 
 * Added `standardize_video()`, a task verb that re-encodes a video to a

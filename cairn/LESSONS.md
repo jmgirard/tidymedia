@@ -11,3 +11,7 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
 - 2026-07-12 (M09): a thin Layer-2 wrapper can forward `...` to `ffm_batch()`
   safely — its `verify`/`manifest`/`checksums`/`progress` params sit after `...`
   in the signature, so they bind by name and never leak into the per-row `.f`.
+- 2026-07-12 (M10): `is.logical(x)` accepts vectors containing `NA`, so a
+  bare `is.logical()` type-guard admits `NA` where `rlang::check_bool()`
+  (scalar path) rejects it — pair it with `!anyNA()` when validating a logical
+  column, or the `NA` leaks downstream to an internal check with a worse error.

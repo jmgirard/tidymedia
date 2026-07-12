@@ -6,7 +6,7 @@
 - **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
-- **Branch/PR:** m10-segment-videos-polish   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** m10-segment-videos-polish · https://github.com/jmgirard/tidymedia/pull/12   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 <!-- owner: plan · create; a wrong goal returns to plan, never edited in place -->
@@ -40,26 +40,26 @@ Bring `segment_videos()` to parity with `segment_video()` by making the
 ## Acceptance criteria
 <!-- owner: plan · create/amend-via-gate; review reads, never reinterprets -->
 
-- [ ] AC1 — Auto-naming: with a `jobs` table that has **no** `output` column,
+- [x] AC1 — Auto-naming: with a `jobs` table that has **no** `output` column,
       `segment_videos()` returns derived outputs — `<input-basename>_NN.<ext>`
       numbered within each input file (single-input multi-segment and
       multi-input tables both correct); with an `output` column present the
       outputs are used unchanged. Verified by `run = FALSE` tests asserting the
       returned `output`/`command` values.
-- [ ] AC2 — Per-row `reencode`: a logical `reencode` column controls the cut
+- [x] AC2 — Per-row `reencode`: a logical `reencode` column controls the cut
       path per row — a mixed `c(TRUE, FALSE)` table yields one re-encode command
       and one fast-copy command (`-codec:v copy … -avoid_negative_ts`) — while a
       table without the column follows the scalar `reencode` arg. Verified by
       `run = FALSE` tests.
-- [ ] AC3 — Validation parity: a non-numeric/non-character `start` or `end`
+- [x] AC3 — Validation parity: a non-numeric/non-character `start` or `end`
       column, and a non-logical `reencode` column, each abort via
       `cli::cli_abort()` naming the offending column, before any FFmpeg call.
       Each branch fired by a test.
-- [ ] AC4 — Docs: `segment_videos()` roxygen documents optional `output` (with
+- [x] AC4 — Docs: `segment_videos()` roxygen documents optional `output` (with
       the naming rule) and the per-row `reencode` column and its precedence
       over the scalar arg; a `NEWS.md` entry is added; `devtools::document()`
       regenerates `man/` with no diff churn beyond these changes.
-- [ ] AC5 — `devtools::check()` clean: zero errors, zero warnings (any note
+- [x] AC5 — `devtools::check()` clean: zero errors, zero warnings (any note
       pre-existing and explained in the Review section).
 
 ## Coverage
@@ -121,5 +121,33 @@ Bring `segment_videos()` to parity with `segment_video()` by making the
   the column. Additive and backward-compatible — not an irreversible-API change.
 
 ## Review
-<!-- owner: review · exclusive; evidence per criterion; consistency-gate
-     results; independent-review findings and their triage -->
+
+_Reviewed 2026-07-12 (same session). PR #12._
+
+**Acceptance-criteria evidence** (fresh run):
+- AC1 — `test-segment-videos.R` cases "auto-names outputs when the column is
+  absent" (single input → `_1`,`_2`), "restarts numbering per input file" (f1
+  → `_1`,`_2`; f2 → `_1`,`_2`,`_3`), and "uses an explicit output column
+  unchanged" all pass.
+- AC2 — cases "honors a per-row reencode column" and "reencode column overrides
+  the scalar arg" pass: mixed `c(TRUE, FALSE)` yields one re-encode command and
+  one `-codec:v copy … -avoid_negative_ts` command; scalar applies when no
+  column present (existing cases).
+- AC3 — three rejection cases pass: non-numeric/character `start`, non-…`end`,
+  and non-logical `reencode` column each abort naming the offending column,
+  before FFmpeg. Whole file: 38 checks, 0 failed, 0 warnings.
+- AC4 — roxygen documents optional `output` + per-input naming and the per-row
+  `reencode` precedence; `NEWS.md` entry added; `devtools::document()` produces
+  no diff (verified at review).
+- AC5 — `devtools::check()` → **Status: OK** (0 errors / 0 warnings / 0 notes).
+
+**Consistency gate:**
+- `cairn_validate.py`: all checks PASS except the known benign ISO-date
+  false-positive (LESSONS.md 2026-07-12) — 7 hits, all in `archive/M02–M08`
+  `0/0/0` check shorthand, none in M10; not introduced here.
+- Coverage completeness: AC1–AC5 each map to existing tasks T1–T6. PASS.
+- No DESIGN principle (IP/GP) changed → impact report skipped.
+- `document()` no diff; pkgdown `check_pkgdown()` "No problems found";
+  README.Rmd untouched (in sync); NEWS.md entry present; no new top-level files.
+
+**Independent review:** (findings + triage recorded below)

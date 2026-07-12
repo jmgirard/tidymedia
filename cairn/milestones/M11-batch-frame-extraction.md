@@ -6,7 +6,7 @@
 - **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
-- **Branch/PR:** m11-batch-frame-extraction   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** m11-batch-frame-extraction · https://github.com/jmgirard/tidymedia/pull/13   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 <!-- owner: plan · create; a wrong goal returns to plan, never edited in place -->
@@ -35,34 +35,34 @@ this is a Layer-2 fan-out only (D007).
 ## Acceptance criteria
 <!-- owner: plan · create/amend-via-gate; review reads, never reinterprets -->
 
-- [ ] AC1: `extract_frames(jobs)` with columns `input` + `timestamp` returns
+- [x] AC1: `extract_frames(jobs)` with columns `input` + `timestamp` returns
       the `jobs` tibble plus a `command` column (and a derived `output` column
       when absent; a `success` column when `run = TRUE`) — one command per
       row, each **byte-identical** to the `extract_frame()` command for that
       row's arguments. Oracle: per-row parity against `extract_frame(..., run
       = FALSE)`.
-- [ ] AC2: Table-level column exclusivity — exactly one of `timestamp` /
+- [x] AC2: Table-level column exclusivity — exactly one of `timestamp` /
       `frame` present. Both columns, or neither, aborts with a `cli::cli_abort`
       message naming the offending columns; a missing `input` column aborts;
       a non-data-frame or zero-row `jobs` aborts.
-- [ ] AC3: A `frame` column converts per row to a timestamp via that row's
+- [x] AC3: A `frame` column converts per row to a timestamp via that row's
       input framerate (`get_framerate()`), matching `extract_frame()`'s
       `frame`-path result.
-- [ ] AC4: When `output` is absent, names are derived per row as
+- [x] AC4: When `output` is absent, names are derived per row as
       `<input_sans_ext>_<n>.<img>` with numbering restarting per input file
       (parity with `derive_segment_names()`) and a configurable image
       extension (default `"png"`); the resolved column is carried on the
       returned tibble.
-- [ ] AC5: `...` forwards `ffm_batch()` options to the runner without leaking
+- [x] AC5: `...` forwards `ffm_batch()` options to the runner without leaking
       into the per-row builder — a `manifest`/`verify`/`parallel` argument
       reaches `ffm_batch()`, and a stray `jobs` column does not break `.f`
       (guards the 2026-07-12 M09 `...`-forwarding lesson).
-- [ ] AC6: R edge cases fire cleanly — `NA` in the `timestamp`/`frame` column
+- [x] AC6: R edge cases fire cleanly — `NA` in the `timestamp`/`frame` column
       is rejected with a clear message; a factor `input` column works as
       character; length-one `jobs` (single row) works.
-- [ ] AC7 (execution; `skip_if` no ffmpeg): running a two-row `jobs` writes
+- [x] AC7 (execution; `skip_if` no ffmpeg): running a two-row `jobs` writes
       two image files that exist on disk.
-- [ ] `devtools::check()` clean (zero errors/warnings/notes).
+- [x] `devtools::check()` clean (zero errors/warnings/notes).
 
 ## Coverage
 <!-- owner: plan · create/amend-via-gate -->
@@ -117,3 +117,46 @@ this is a Layer-2 fan-out only (D007).
 
 ## Review
 <!-- owner: review · exclusive -->
+
+**Reviewed 2026-07-12 · PR #13 · branch 3 commits ahead of a synced master.**
+
+### Acceptance-criterion evidence (fresh)
+
+All from `devtools::test(filter = "extract-frames")` (27 pass / 0 fail / 0 skip;
+ffmpeg + mediainfo present, so execution + framerate paths ran) unless noted.
+
+- AC1 — parity: `test-extract-frames.R` "timestamp path matches extract_frame()
+  per row" asserts each row's command `expect_identical` to
+  `extract_frame(..., run = FALSE)`; return tibble carries `command`, derived
+  `output`, and (run) `success`. PASS.
+- AC2 — validation: non-data-frame, zero-row, missing-`input`, and
+  both/neither `timestamp`/`frame` cases each abort with the expected message.
+  PASS.
+- AC3 — frame path: "frame column converts via framerate like extract_frame()"
+  (binary-gated) asserts identical command to the scalar `frame`-path. PASS.
+- AC4 — auto-naming: per-input restart with image extension, `format=` override,
+  and explicit-`output` passthrough all asserted. PASS.
+- AC5 — forwarding: "ignores extra jobs columns (no leak into .f)" + manifest
+  option reaches `ffm_batch()` (`ffm_manifest(res)` non-null). PASS.
+- AC6 — edge cases: NA-rejection, factor `input`, single-row all pass. PASS.
+- AC7 — execution: "writes one image per row" confirms two files exist +
+  `success`. PASS.
+- check clean: fresh `devtools::check(document = FALSE)` → 0 errors / 0 warnings
+  / 0 notes. PASS.
+
+### Consistency gate
+
+- `cairn_validate.py`: all structural checks PASS; the lone non-zero exit is the
+  7 pre-existing `0/0/0` ISO-date false-positives in M02–M08 archive summaries
+  (documented benign, LESSONS 2026-07-12) — M11 touches none of them and its own
+  file avoids the shorthand.
+- `devtools::document()`: no diff. `pkgdown::check_pkgdown()`: no problems.
+- Coverage completeness: every AC maps to existing tasks (T1–T6). Holds.
+- README.Rmd does not enumerate functions → no rebuild needed.
+- NEWS.md: added a "Frame extraction across files" entry for `extract_frames()`
+  (no milestone numbers).
+- No DESIGN principle changed → impact report skipped.
+
+### Independent review
+
+_(pending — two reviewers + scorer)_

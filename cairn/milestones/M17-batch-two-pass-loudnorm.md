@@ -113,8 +113,7 @@ M14→M15 scalar→batch split applied to the correction pipeline.
 
 ## Work log
 
-- 2026-07-12: created by /milestone-plan (split from M16); tasks referenced M16's
-  planned analysis builder/parser/`ffm_loudnorm()` measured params.
+- 2026-07-12: created by /milestone-plan (split from M16).
 - 2026-07-12: T1 done — characterization test pins single-pass `run = FALSE` command column.
 - 2026-07-12: T2 done — `run_normalize_correction()` (Phase 2 fan-out threading measured cols + `linear=true`); pure AC2 test.
 - 2026-07-12: T3 done — `run_loudnorm_analysis_batch()` (Phase 1) + `assemble_measured()` (parse→5 cols, fail-fast naming rows); pure AC3 tests.
@@ -132,15 +131,19 @@ M14→M15 scalar→batch split applied to the correction pipeline.
 
 ## Review
 
-_2026-07-12, same-session; evidence by command. Test tallies (ffmpeg present, 0 skips):
-`test-normalize-audios.R` 61, `-two-pass.R` 18, `normalize-audio.R` 31, `loudnorm-two-pass.R` 8 — all pass._
+_2026-07-12, same-session; evidence by command. After review fixes: `check()` 0/0/0
+(raw Status: OK); all normalize/loudnorm test files pass (0 skips, ffmpeg present)._
 
 - AC1 — PASS. Characterization pins both single-pass `run = FALSE` commands (5 knobs) byte-for-byte.
-- AC2 — PASS. Correction fan-out: per-row measured/target/knobs + `linear=true` + `-codec:v copy` over a fixed fixture.
-- AC3 — PASS. `assemble_measured()`: 5 cols on good rows; aborts naming row 2 on malformed + on non-zero-exit.
+- AC2 — PASS. Correction fan-out: per-row measured/target/knobs + `linear=true` + `-codec:v copy` (fixed fixture).
+- AC3 — PASS. `assemble_measured()`: 5 cols on good rows; aborts naming row 2 on malformed + non-zero-exit.
 - AC4 — PASS. two_pass `run = FALSE`: measured cols set, cmds carry `measured_I=`/`linear=true`, no `success`, no outputs.
 - AC5 — PASS. Full two-pass on `sample.mp4` (2 rows), re-probed within ±1 LU of each target.
-- AC6 — PASS. `check()` 0/0/0 (raw Status: OK); `document()` no diff; `@family` unchanged; NEWS present.
+- AC6 — PASS. `check()` 0/0/0; `document()` no diff; `@family` unchanged; NEWS present.
 
-Consistency gate: `cairn_validate.py` PASS; coverage complete (AC1–6 → T1–6); pkgdown OK;
-no DESIGN principle changed; no new top-level files.
+Consistency gate: `cairn_validate.py` PASS; coverage complete (AC1–6 → T1–6); pkgdown OK; no DESIGN change.
+
+Independent review (2 lenses + scorer): 3 findings, all ≥80, all fixed on-branch + re-checked.
+- F1 (88) — two_pass skipped M16's up-front `channels`/`sample_rate` whole-number check (wasted a Phase-1 pass per row). Fixed: validate before Phase 1; +2 regression tests.
+- F2 (82) — Phase 1 called `furrr::future_pmap` without `check_installed("furrr")`. Fixed: guard added.
+- F3 (85) — AC5 test guarded on ffprobe but flow needs ffmpeg. Fixed → `skip_if_no_ffmpeg()`.

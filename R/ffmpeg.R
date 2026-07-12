@@ -1393,6 +1393,19 @@ normalize_audios <- function(jobs, target_loudness = -23, true_peak = -1,
   # row). Like the scalar verb, `run = FALSE` still runs Phase 1 (it needs the
   # binary and readable inputs) and gates only the Phase 2 correction commands.
   if (two_pass) {
+    # Validate the shaping knobs up front (parity with the scalar two-pass verb)
+    # so a bad channels/sample_rate fails before Phase 1 wastes an analysis pass
+    # per row; per-value target checks stay per-row in the Phase 2 pipeline.
+    rlang::check_number_whole(channels, min = 1, allow_null = TRUE)
+    rlang::check_number_whole(sample_rate, min = 1, allow_null = TRUE)
+    for (col in intersect(c("channels", "sample_rate"), names(jobs))) {
+      if (any(jobs[[col]] %% 1 != 0) || any(jobs[[col]] < 1)) {
+        cli::cli_abort(
+          "The {.field {col}} column of {.arg jobs} must be whole numbers \\
+           ({.val {1}} or greater) for two-pass normalization."
+        )
+      }
+    }
     col_or <- function(nm, default) {
       if (nm %in% names(jobs)) jobs[[nm]] else rep(default, nrow(jobs))
     }

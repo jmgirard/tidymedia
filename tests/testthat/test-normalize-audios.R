@@ -221,6 +221,27 @@ test_that("normalize_audios() forwards batch params after ... without leaking in
   expect_true("command" %in% names(res))
 })
 
+# Two-pass fail-fast validation (pure: aborts before any analysis pass) ----
+
+test_that("normalize_audios(two_pass) rejects a fractional scalar channels before running FFmpeg", {
+  f <- make_input()
+  # A bad scalar channels must fail up front (before Phase 1 wastes an analysis
+  # pass per row), so this needs no ffmpeg binary.
+  jobs <- tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"))
+  expect_error(
+    normalize_audios(jobs, two_pass = TRUE, channels = 1.5),
+    "channels|whole"
+  )
+})
+
+test_that("normalize_audios(two_pass) rejects a fractional channels column before running FFmpeg", {
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input = c(f, f), output = c("a.mp4", "b.mp4"), channels = c(1, 1.5)
+  )
+  expect_error(normalize_audios(jobs, two_pass = TRUE), "channels|whole")
+})
+
 # Two-pass front door (binary-gated) --------------------------------------
 
 test_that("normalize_audios(two_pass, run = FALSE) runs analysis, returns correction cmds, writes nothing (AC4)", {
@@ -252,7 +273,9 @@ test_that("normalize_audios(two_pass, run = FALSE) runs analysis, returns correc
 })
 
 test_that("normalize_audios(two_pass = TRUE) hits each per-row target within +/-1 LU (AC5)", {
-  skip_if_no_ffprobe()
+  # The whole flow (Phase 1 analysis, correction pass, and the re-probe via
+  # run_loudnorm_analysis) needs ffmpeg, not ffprobe.
+  skip_if_no_ffmpeg()
   src <- system.file("extdata", "sample.mp4", package = "tidymedia")
   out_a <- withr::local_tempfile(fileext = ".mp4")
   out_b <- withr::local_tempfile(fileext = ".mp4")

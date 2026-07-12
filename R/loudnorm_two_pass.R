@@ -98,6 +98,13 @@ run_loudnorm_analysis <- function(input,
 # warning is left to the Phase 2 ffm_batch() call so it fires exactly once.
 run_loudnorm_analysis_batch <- function(inputs, target_loudness, true_peak,
                                         loudness_range, parallel) {
+  # Phase 1 runs before Phase 2's ffm_batch() furrr guard, so guard furrr here
+  # too -- otherwise a furrr-less machine crashes with a raw "future_pmap not
+  # found" instead of the package's friendly install prompt. The sequential-plan
+  # warning stays with the Phase 2 ffm_batch() call so it still fires once.
+  if (parallel) {
+    rlang::check_installed("furrr", reason = "for parallel batch processing.")
+  }
   analyze_one <- function(input, target_loudness, true_peak, loudness_range) {
     p <- loudnorm_analysis_pipeline(input, target_loudness, true_peak,
                                     loudness_range)

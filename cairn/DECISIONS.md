@@ -130,3 +130,18 @@ the sequential-plan guard added in this hotfix references `future::plan()`
 directly, so the dependency is declared to satisfy `R CMD check`'s undeclared-
 `::` check. No new install footprint (`furrr`, itself in `Suggests`, imports
 `future`). Rules out reaching into `future` internals; only `plan()` is used.
+
+## D013 — Analyze-then-build execution pattern (2026-07-12, from M16)
+
+`normalize_audio(two_pass = TRUE)` is tidymedia's first verb that must **run a
+binary to build a later command**: an analysis pass
+(`loudnorm=…:print_format=json -f null -`) is executed, its stderr parsed (a
+small regex, no JSON dependency — D011 spirit), and the measured values drive a
+linear correction pass built on the shared `normalize_audio_pipeline()`. The
+orchestrator lives beside `ffm_run()`; `ffm_compile()` stays pure (D002). New
+consequence: `run = FALSE` **no longer guarantees a binary-free call** — under
+`two_pass = TRUE` the analysis pass always runs (it needs the binary and a
+readable input) and `run` gates only the correction pass. Single-pass behavior
+is byte-for-byte unchanged and stays binary-free under `run = FALSE`. Rules out
+folding analysis into `ffm_compile()` and rules out a two-pass path that skips
+the binary under `run = FALSE`.

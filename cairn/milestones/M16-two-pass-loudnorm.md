@@ -1,9 +1,9 @@
 # M16: Two-pass (measured/linear) EBU R128 loudnorm
 
-- **Status:** planned
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M14
-- **Branch/PR:** —
+- **Branch/PR:** m16-two-pass-loudnorm · https://github.com/jmgirard/tidymedia/pull/18
 
 ## Goal
 
@@ -44,33 +44,33 @@ analyze-then-build execution pattern.
 
 ## Acceptance criteria
 
-- [ ] AC1 — With `two_pass = FALSE` (default), `normalize_audio()` compiles and
+- [x] AC1 — With `two_pass = FALSE` (default), `normalize_audio()` compiles and
       runs byte-for-byte identically to today, including pure `run = FALSE`
       (no binary touched). Evidence: passing test asserting the compiled command
       is unchanged from the current single-pass string.
-- [ ] AC2 — The correction-command builder, given a fixed measured-values fixture
+- [x] AC2 — The correction-command builder, given a fixed measured-values fixture
       (no binary), emits a `loudnorm` filter carrying `measured_I`, `measured_TP`,
       `measured_LRA`, `measured_thresh`, `offset`, and `linear=true` with the
       values mapped correctly from the analysis keys, while preserving
       `channels`/`sample_rate`/`-c:v copy` from the shared pipeline. Evidence:
       passing pure test. (RB tripwire: irreversible-api — new builder params +
       new execution contract.)
-- [ ] AC3 — The analysis-pass command compiles with `print_format=json` and
+- [x] AC3 — The analysis-pass command compiles with `print_format=json` and
       `-f null` and no output file. The stderr parser extracts the five measured
       values from a captured loudnorm JSON fixture and rejects/aborts cleanly when
       the block is absent or malformed. Evidence: passing pure test over a
       recorded-stderr fixture. (RB tripwire: no-oracle — parser correctness has no
       runtime oracle in CI.)
-- [ ] AC4 — With `two_pass = TRUE, run = FALSE`, the analysis pass runs and the
+- [x] AC4 — With `two_pass = TRUE, run = FALSE`, the analysis pass runs and the
       returned value is the correction command string (unexecuted; output file not
       written). Evidence: passing skip-guarded test (`skip_if` ffmpeg absent)
       asserting the return shape and that no output was produced.
-- [ ] AC5 — An execution test (`skip_if` ffmpeg absent) runs full two-pass on a
+- [x] AC5 — An execution test (`skip_if` ffmpeg absent) runs full two-pass on a
       sample, then re-probes the output's integrated loudness and asserts it lands
       within ±1 LU of the target, and is closer to target than the single-pass
       output on the same input. Evidence: passing skip-guarded test. Source: EBU
       R 128 (2014); ITU-R BS.1770-4.
-- [ ] AC6 — `devtools::check()` clean (zero errors/warnings/notes); roxygen
+- [x] AC6 — `devtools::check()` clean (zero errors/warnings/notes); roxygen
       updated, `@family` and DESIGN.md function families reflect the new arg.
 
 ## Coverage
@@ -84,31 +84,31 @@ analyze-then-build execution pattern.
 
 ## Tasks
 
-- [ ] T1 — Characterization test first: pin today's single-pass compiled command
+- [x] T1 — Characterization test first: pin today's single-pass compiled command
       for `normalize_audio(run = FALSE)` so the `two_pass = FALSE` default is
       provably unchanged before touching anything.
-- [ ] T2 — Extend `ffm_loudnorm()` ([R/ffm.R:390](R/ffm.R)) to optionally take
+- [x] T2 — Extend `ffm_loudnorm()` ([R/ffm.R:390](R/ffm.R)) to optionally take
       `measured_i/tp/lra/thresh`, `offset`, `linear`, and `print_format`, appending
       them to the `loudnorm=…` string; all validation for the new params lives
       here. Tests-first for both the analysis variant (`print_format=json`) and the
       correction variant (measured + `linear=true`).
-- [ ] T3 — Add the correction-pass builder path: thread measured values +
+- [x] T3 — Add the correction-pass builder path: thread measured values +
       `linear` through `normalize_audio_pipeline()`
       ([R/ffmpeg.R:438](R/ffmpeg.R)) so it reuses channels/`sample_rate`/`-c:v copy`
       parity. Pure test with a fixed measured-values fixture (AC2).
-- [ ] T4 — Add the internal stderr parser: extract the five measured values from a
+- [x] T4 — Add the internal stderr parser: extract the five measured values from a
       loudnorm JSON block via regex, with a clean abort when absent/malformed.
       Test over a recorded-stderr fixture, including a malformed case (AC3).
-- [ ] T5 — Add `two_pass = FALSE` to `normalize_audio()`
+- [x] T5 — Add `two_pass = FALSE` to `normalize_audio()`
       ([R/ffmpeg.R:413](R/ffmpeg.R)) and the analyze-then-build orchestrator
       (analysis-run capturing stderr via `run_program(stderr = TRUE)` →
       parse → correction-build → `ffm_finish()`), wiring the `run = FALSE`
       return-correction-command-unexecuted contract. Skip-guarded return-shape
       test (AC4).
-- [ ] T6 — Execution test (`skip_if` ffmpeg absent): full two-pass on
+- [x] T6 — Execution test (`skip_if` ffmpeg absent): full two-pass on
       `inst/extdata/sample.mp4`, re-probe integrated loudness (`ffprobe`/`loudnorm`
       analysis), assert within ±1 LU of target and closer than single-pass (AC5).
-- [ ] T7 — Roxygen for the new arg + measured params (document the analyze-then-
+- [x] T7 — Roxygen for the new arg + measured params (document the analyze-then-
       build behavior and the `run = FALSE` semantics explicitly); `@family`;
       DESIGN.md families; `devtools::document()`; `devtools::check()` clean. Author
       the cross-cutting D-entry (analyze-then-build pattern; `run = FALSE` no longer
@@ -116,9 +116,34 @@ analyze-then-build execution pattern.
 
 ## Work log
 
-- 2026-07-12: created by /milestone-plan (promoted from ROADMAP candidate, split
-  from M14 on 2026-07-12).
+- 2026-07-12: created by /milestone-plan (promoted from candidate, split from M14).
+- 2026-07-12: implement start; branch m16-two-pass-loudnorm cut from master.
+- 2026-07-12: gate — numeric measured params; analysis pass bare targets (canonical recipe); parser via recorded+malformed fixture. No Fable escalation.
+- 2026-07-12: T1–T7 — characterization baseline; ffm_loudnorm() measured/linear/print_format; normalize_audio_pipeline() `measured=` linear correction; R/loudnorm_two_pass.R analysis builder + stderr parser (regex, no JSON dep, recorded fixture); normalize_audio() two_pass + orchestrator (run=FALSE returns correction cmd unexecuted); execution test on high-LRA source (~0.01 LU vs single ~2.2 LU); roxygen + NEWS. check 0/0/0; 667 pass. Status → review.
 
 ## Decisions
 
+- Analyze-then-build pattern → promoted to **D013** at review (`run = FALSE` no longer binary-free under `two_pass`; compilation stays pure; single-pass unchanged). Analysis pass measures the input as-is (bare targets + `print_format=json`, `-f null -`); downmix/resample belong to the output stage, not measurement.
+
 ## Review
+
+Fresh evidence (2026-07-12, PR #18; test-normalize-audio.R 31 pass, test-ffm.R
+184 pass, test-loudnorm-two-pass.R 8 pass, all 0 fail):
+
+- AC1 ✓ "single-pass byte-for-byte stable" + "two_pass=FALSE identical to default"; default compile touches no binary.
+- AC2 ✓ "builds correction filter from measured values" + "threads measured into linear correction" (measured_* + linear=true; -codec:v copy -ac -ar preserved). Pure.
+- AC3 ✓ analysis compiles print_format=json + `-f null "-"`; parser reads 5 values from the recorded real-FFmpeg fixture, aborts on absent/non-numeric/missing-key.
+- AC4 ✓ two_pass+run=FALSE returns the correction string (measured_I/linear=true), no output written. Skip-guarded.
+- AC5 ✓ two_pass within ±1 LU and strictly closer than single-pass on the high-LRA source. Source: EBU R 128 (2014); ITU-R BS.1770-4.
+- AC6 ✓ check() 0/0/0; 667 pass / 0 fail; document() no diff; pkgdown clean.
+
+Consistency gate PASS: cairn_validate clean; document() no diff; pkgdown clean;
+NEWS present; coverage complete; no new top-level files.
+
+Independent review — [O] diff-bug + [S] blame-history + [S] scorer. No
+correctness bug survived. F4 (85, actioned): analyze-then-build decision → D013
+authored. Below threshold (logged): F2 (68) parser aborts on silent input
+(`-inf`) with a misleading message → candidate row added; F1 (55) two_pass
+branch duplicates the shared channels/sample_rate check (deliberate fail-fast);
+F3 (30) `linear=TRUE` not cross-validated vs measured set (unreachable, FFmpeg
+tolerates).

@@ -12,6 +12,7 @@ normalize_audio(
   loudness_range = 7,
   channels = NULL,
   sample_rate = NULL,
+  two_pass = FALSE,
   run = TRUE
 )
 }
@@ -37,11 +38,26 @@ whole number), or \code{NULL} (default) to let \code{loudnorm} choose (it
 resamples, up to 192 kHz encoder-capped -- not the source rate). Set this to
 pin the output rate.}
 
-\item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
-or return the compiled command without running it (\code{FALSE}).}
+\item{two_pass}{A logical: when \code{TRUE}, use accurate two-pass
+(measured/linear) normalization instead of the default single-pass
+(\code{FALSE}). A first \emph{analysis pass} measures the input's loudness,
+and a second \emph{correction pass} feeds those measurements back with
+\code{linear=true} so the output hits the EBU R128 target precisely.
+Two-pass therefore \strong{always runs the analysis pass through FFmpeg}
+(it needs the binary and readable input), even when \code{run = FALSE}: in
+that case the analysis still runs and the returned value is the exact
+correction command, left unexecuted. The single-pass default touches no
+binary under \code{run = FALSE}.}
+
+\item{run}{A logical: run the (correction) command through FFmpeg
+(\code{TRUE}, default) or return the compiled command without running it
+(\code{FALSE}). Under \code{two_pass = TRUE} this gates only the correction
+pass; the analysis pass runs regardless (see \code{two_pass}).}
 }
 \value{
-The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+The compiled FFmpeg command (invisibly when \code{run = TRUE}). Under
+\code{two_pass = TRUE} this is the correction command built from the
+measured values.
 }
 \description{
 Normalize the perceived loudness of a file's audio toward an EBU R128 target

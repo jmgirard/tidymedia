@@ -46,6 +46,26 @@ make_keyframed_video <- function(duration = 12, rate = 24, gop = 48,
   path
 }
 
+# Generate an audio clip with real loudness variation: a 440 Hz sine under a
+# slow, deep tremolo (amplitude modulation), so its loudness swells and dips.
+# Single-pass (dynamic) loudnorm drifts well off the target on such material
+# while two-pass (linear) hits it, so the accuracy gap is observable (M16 AC5).
+# tremolo takes no comma-bearing expression, so it survives the shell verbatim.
+# Skips the calling test if ffmpeg is unavailable. Returns the file path.
+make_dynamic_audio <- function(env = parent.frame()) {
+  skip_if_no_ffmpeg()
+  path <- withr::local_tempfile(fileext = ".mp4", .local_envir = env)
+  command <- paste(
+    "-y -f lavfi -i sine=frequency=440:duration=6:sample_rate=48000",
+    "-af tremolo=f=0.2:d=0.9",
+    sprintf('-c:a aac "%s"', path)
+  )
+  ffmpeg(command)
+  testthat::skip_if_not(file.exists(path),
+                        "dynamic test audio could not be generated")
+  path
+}
+
 # Build an ffm pipeline WITHOUT ffm_files()'s file-readability check, so pure
 # (binary-free) tests can assert compiled commands for named-but-absent files.
 ffm_dry <- function(input, output) {

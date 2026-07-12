@@ -39,7 +39,7 @@ or return the compiled command without running it (\code{FALSE}).}
 The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 }
 \description{
-De-identify a video by covering one or more fixed rectangular regions with
+Anonymize a video by covering one or more fixed rectangular regions with
 opaque filled boxes -- for example, to redact a face, a name badge, or a
 screen that stays in one place for the whole clip. The regions are fixed
 (there is no face or object tracking), so this suits footage where the areas

@@ -3,7 +3,7 @@
      Per-section owners are tagged below. -->
 # M20: Fixed-region box-fill anonymization verb
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Principles touched:** IP1, IP2
@@ -83,7 +83,7 @@ so the deferred M21 batch sibling inherits it (M13 extract-first lesson).
       validation abort branch from AC5 (assert on the `cli` messages).
 - [x] T4: Execution test (`skip_if` ffmpeg absent): run on `sample.mp4`, assert
       the output exists and is a valid video (probe or `verify_media`).
-- [ ] T5: `devtools::document()`, `devtools::test()`, then `devtools::check()`
+- [x] T5: `devtools::document()`, `devtools::test()`, then `devtools::check()`
       to OK (0/0/0); `spelling::update_wordlist()` if new terms; confirm
       `Status: OK` in `00check.log` (M17 masked-NOTE lesson).
 
@@ -94,6 +94,8 @@ so the deferred M21 batch sibling inherits it (M13 extract-first lesson).
 - 2026-07-12: T1–T4 done — anonymize_video() + shared anonymize_pipeline() +
   check_regions() in R/ffmpeg.R; 25 tests pass (compile + validation +
   execution). pkgdown row + docs regenerated.
+- 2026-07-12: T5 done — `devtools::check()` Status: OK (0/0/0); "Anonymize"
+  added to WORDLIST (M17 masked-NOTE lesson). Status → review.
 
 ## Decisions
 

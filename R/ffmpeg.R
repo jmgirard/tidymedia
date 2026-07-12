@@ -363,7 +363,7 @@ standardize_pipeline <- function(input, output, width, height, fps, vcodec,
 
 #' Cover fixed regions of a video with opaque boxes
 #'
-#' De-identify a video by covering one or more fixed rectangular regions with
+#' Anonymize a video by covering one or more fixed rectangular regions with
 #' opaque filled boxes -- for example, to redact a face, a name badge, or a
 #' screen that stays in one place for the whole clip. The regions are fixed
 #' (there is no face or object tracking), so this suits footage where the areas

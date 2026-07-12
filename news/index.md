@@ -2,6 +2,19 @@
 
 ## tidymedia (development version)
 
+### Accurate two-pass loudness normalization
+
+- [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
+  gained `two_pass`. With `two_pass = TRUE` it runs an analysis pass to
+  measure the input’s loudness, then a linear correction pass that feeds
+  those measurements back, hitting the EBU R128 target far more
+  precisely than the single-pass default on material with a wide
+  loudness range. Because it must measure the input, two-pass always
+  calls FFmpeg — even under `run = FALSE`, where the analysis still runs
+  and the returned value is the exact correction command, left
+  unexecuted. The single-pass default is unchanged and stays binary-free
+  under `run = FALSE`.
+
 ### Audio loudness normalization
 
 - Added

@@ -9,7 +9,19 @@ function to write the pipeline's audio filter chain, so it compiles to
 ## Usage
 
 ``` r
-ffm_loudnorm(object, target_loudness = -23, true_peak = -1, loudness_range = 7)
+ffm_loudnorm(
+  object,
+  target_loudness = -23,
+  true_peak = -1,
+  loudness_range = 7,
+  measured_i = NULL,
+  measured_tp = NULL,
+  measured_lra = NULL,
+  measured_thresh = NULL,
+  offset = NULL,
+  linear = FALSE,
+  print_format = NULL
+)
 ```
 
 ## Arguments
@@ -32,6 +44,34 @@ ffm_loudnorm(object, target_loudness = -23, true_peak = -1, loudness_range = 7)
 - loudness_range:
 
   The target loudness range, in LU (a number in `1`..`50`; default `7`).
+
+- measured_i, measured_tp, measured_lra, measured_thresh:
+
+  Measured input values from a prior `loudnorm` analysis pass
+  (integrated loudness, true peak, loudness range, and threshold).
+  Supplied together to drive an accurate two-pass (linear) correction;
+  all five of these plus `offset` must be given as a set, or none
+  (`NULL`, default, for single-pass dynamic normalization). These map to
+  FFmpeg's `measured_I`, `measured_TP`, `measured_LRA`, and
+  `measured_thresh` options.
+
+- offset:
+
+  The `target_offset` (offset gain) reported by the analysis pass, part
+  of the measured set (see `measured_i`). `NULL` by default.
+
+- linear:
+
+  A logical: when `TRUE`, request linear normalization (`linear=true`),
+  which needs the measured values to hit the target precisely. `FALSE`
+  (default) omits the option entirely, leaving single-pass dynamic
+  behavior untouched.
+
+- print_format:
+
+  The measurement report format for an analysis pass, one of `"json"`,
+  `"summary"`, or `"none"`. `NULL` (default) omits the option. Use
+  `"json"` for a machine-parseable analysis pass.
 
 ## Value
 

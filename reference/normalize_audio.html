@@ -65,6 +65,7 @@ to <code><a href="standardize_video.html">standardize_video</a></code>, which le
 <span>  loudness_range <span class="op">=</span> <span class="fl">7</span>,</span>
 <span>  channels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sample_rate <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  two_pass <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -108,14 +109,31 @@ resamples, up to 192 kHz encoder-capped – not the source rate). Set this to
 pin the output rate.</p></dd>
 
 
+<dt id="arg-two-pass">two_pass<a class="anchor" aria-label="anchor" href="#arg-two-pass"></a></dt>
+<dd><p>A logical: when <code>TRUE</code>, use accurate two-pass
+(measured/linear) normalization instead of the default single-pass
+(<code>FALSE</code>). A first <em>analysis pass</em> measures the input's loudness,
+and a second <em>correction pass</em> feeds those measurements back with
+<code>linear=true</code> so the output hits the EBU R128 target precisely.
+Two-pass therefore <strong>always runs the analysis pass through FFmpeg</strong>
+(it needs the binary and readable input), even when <code>run = FALSE</code>: in
+that case the analysis still runs and the returned value is the exact
+correction command, left unexecuted. The single-pass default touches no
+binary under <code>run = FALSE</code>.</p></dd>
+
+
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>
-<dd><p>A logical: run the command through FFmpeg (<code>TRUE</code>, default)
-or return the compiled command without running it (<code>FALSE</code>).</p></dd>
+<dd><p>A logical: run the (correction) command through FFmpeg
+(<code>TRUE</code>, default) or return the compiled command without running it
+(<code>FALSE</code>). Under <code>two_pass = TRUE</code> this gates only the correction
+pass; the analysis pass runs regardless (see <code>two_pass</code>).</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The compiled FFmpeg command (invisibly when <code>run = TRUE</code>).</p>
+    <p>The compiled FFmpeg command (invisibly when <code>run = TRUE</code>). Under
+<code>two_pass = TRUE</code> this is the correction command built from the
+measured values.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

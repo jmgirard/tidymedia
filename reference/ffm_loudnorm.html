@@ -57,7 +57,19 @@ existing audio filter chain in application order).</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ffm_loudnorm</span><span class="op">(</span><span class="va">object</span>, target_loudness <span class="op">=</span> <span class="op">-</span><span class="fl">23</span>, true_peak <span class="op">=</span> <span class="op">-</span><span class="fl">1</span>, loudness_range <span class="op">=</span> <span class="fl">7</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ffm_loudnorm</span><span class="op">(</span></span>
+<span>  <span class="va">object</span>,</span>
+<span>  target_loudness <span class="op">=</span> <span class="op">-</span><span class="fl">23</span>,</span>
+<span>  true_peak <span class="op">=</span> <span class="op">-</span><span class="fl">1</span>,</span>
+<span>  loudness_range <span class="op">=</span> <span class="fl">7</span>,</span>
+<span>  measured_i <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  measured_tp <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  measured_lra <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  measured_thresh <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  offset <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  linear <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  print_format <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -82,6 +94,35 @@ default <code>-1</code>, the EBU R128 ceiling).</p></dd>
 <dt id="arg-loudness-range">loudness_range<a class="anchor" aria-label="anchor" href="#arg-loudness-range"></a></dt>
 <dd><p>The target loudness range, in LU (a number in
 <code>1</code>..<code>50</code>; default <code>7</code>).</p></dd>
+
+
+<dt id="arg-measured-i-measured-tp-measured-lra-measured-thresh">measured_i, measured_tp, measured_lra, measured_thresh<a class="anchor" aria-label="anchor" href="#arg-measured-i-measured-tp-measured-lra-measured-thresh"></a></dt>
+<dd><p>Measured input
+values from a prior <code>loudnorm</code> analysis pass (integrated loudness,
+true peak, loudness range, and threshold). Supplied together to drive an
+accurate two-pass (linear) correction; all five of these plus <code>offset</code>
+must be given as a set, or none (<code>NULL</code>, default, for single-pass
+dynamic normalization). These map to FFmpeg's <code>measured_I</code>,
+<code>measured_TP</code>, <code>measured_LRA</code>, and <code>measured_thresh</code> options.</p></dd>
+
+
+<dt id="arg-offset">offset<a class="anchor" aria-label="anchor" href="#arg-offset"></a></dt>
+<dd><p>The <code>target_offset</code> (offset gain) reported by the analysis
+pass, part of the measured set (see <code>measured_i</code>). <code>NULL</code> by
+default.</p></dd>
+
+
+<dt id="arg-linear">linear<a class="anchor" aria-label="anchor" href="#arg-linear"></a></dt>
+<dd><p>A logical: when <code>TRUE</code>, request linear normalization
+(<code>linear=true</code>), which needs the measured values to hit the target
+precisely. <code>FALSE</code> (default) omits the option entirely, leaving
+single-pass dynamic behavior untouched.</p></dd>
+
+
+<dt id="arg-print-format">print_format<a class="anchor" aria-label="anchor" href="#arg-print-format"></a></dt>
+<dd><p>The measurement report format for an analysis pass, one
+of <code>"json"</code>, <code>"summary"</code>, or <code>"none"</code>. <code>NULL</code> (default)
+omits the option. Use <code>"json"</code> for a machine-parseable analysis pass.</p></dd>
 
 </dl></div>
     <div class="section level2">

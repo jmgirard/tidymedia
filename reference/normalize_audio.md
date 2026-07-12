@@ -19,6 +19,7 @@ normalize_audio(
   loudness_range = 7,
   channels = NULL,
   sample_rate = NULL,
+  two_pass = FALSE,
   run = TRUE
 )
 ```
@@ -59,14 +60,31 @@ normalize_audio(
   kHz encoder-capped – not the source rate). Set this to pin the output
   rate.
 
+- two_pass:
+
+  A logical: when `TRUE`, use accurate two-pass (measured/linear)
+  normalization instead of the default single-pass (`FALSE`). A first
+  *analysis pass* measures the input's loudness, and a second
+  *correction pass* feeds those measurements back with `linear=true` so
+  the output hits the EBU R128 target precisely. Two-pass therefore
+  **always runs the analysis pass through FFmpeg** (it needs the binary
+  and readable input), even when `run = FALSE`: in that case the
+  analysis still runs and the returned value is the exact correction
+  command, left unexecuted. The single-pass default touches no binary
+  under `run = FALSE`.
+
 - run:
 
-  A logical: run the command through FFmpeg (`TRUE`, default) or return
-  the compiled command without running it (`FALSE`).
+  A logical: run the (correction) command through FFmpeg (`TRUE`,
+  default) or return the compiled command without running it (`FALSE`).
+  Under `two_pass = TRUE` this gates only the correction pass; the
+  analysis pass runs regardless (see `two_pass`).
 
 ## Value
 
-The compiled FFmpeg command (invisibly when `run = TRUE`).
+The compiled FFmpeg command (invisibly when `run = TRUE`). Under
+`two_pass = TRUE` this is the correction command built from the measured
+values.
 
 ## Details
 

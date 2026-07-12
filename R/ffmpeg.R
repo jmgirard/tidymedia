@@ -527,6 +527,180 @@ check_regions <- function(regions, call = rlang::caller_env()) {
 }
 
 
+# derive_anonymized_names() -----------------------------------------------
+
+# Derive one output path per input for anonymize_videos() when the `output`
+# column is absent: `<base>_anonymized.<input-ext>` (box-fill re-encodes but
+# keeps the source container). One input -> one output, so a duplicated input
+# with no explicit `output` would collide; the caller (anonymize_videos)
+# rejects that up front, so this helper assumes unique inputs and stays a pure
+# name map (parity with derive_standardized_names()).
+derive_anonymized_names <- function(input) {
+  paste0(
+    tools::file_path_sans_ext(input), "_anonymized.", tools::file_ext(input)
+  )
+}
+
+
+# anonymize_videos() ------------------------------------------------------
+
+#' Anonymize Many Videos From a Jobs Table
+#'
+#' Cover fixed rectangular regions of many input videos with opaque filled boxes
+#' from a single jobs tibble — a table-driven sibling of
+#' \code{\link{anonymize_video}} for when you have more than one video to
+#' redact. Each row is one input with its own regions; the required columns name
+#' the source (\code{input}) and the boxes to cover (\code{regions}). This is a
+#' thin wrapper over \code{\link{ffm_batch}}: one reproducible compiled command
+#' per input, sharing the same box-fill pipeline (and per-region validation) as
+#' the scalar verb.
+#'
+#' @param jobs A data frame with one row per input and (at least) an
+#'   \code{input} column (source path) and a \code{regions} list-column. Each
+#'   \code{regions} cell is itself a data frame of boxes for that input — the
+#'   same \code{x}/\code{y}/\code{width}/\code{height} (and optional per-box
+#'   \code{color}) shape \code{\link{anonymize_video}} takes. An optional
+#'   \code{output} column names the destination; when absent, one is derived per
+#'   row by appending \code{_anonymized} to each input's basename, keeping the
+#'   input's extension (e.g. \code{clip.mkv} becomes \code{clip_anonymized.mkv}).
+#'   Because anonymization is one-input-to-one-output, a duplicated \code{input}
+#'   with no \code{output} column would collide and is rejected. Each of the
+#'   three encode knobs — \code{color}, \code{vcodec}, \code{pixel_format} — may
+#'   also appear as a column to override the corresponding argument on a per-row
+#'   basis; rows (or knobs) that omit the column fall back to the argument's
+#'   value. Any other columns are ignored.
+#' @param color A string naming the default fill color (FFmpeg color syntax)
+#'   applied to every row, unless \code{jobs} carries a \code{color} column or a
+#'   box supplies its own \code{color}. (default = \code{"black"})
+#' @param vcodec A string naming the output video codec applied to every row,
+#'   unless \code{jobs} carries a \code{vcodec} column. (default =
+#'   \code{"libx264"})
+#' @param pixel_format A string naming the output pixel format applied to every
+#'   row, unless \code{jobs} carries a \code{pixel_format} column.
+#'   (default = \code{"yuv420p"})
+#' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
+#'   default) or only compile them for inspection (\code{FALSE}).
+#' @param parallel A logical passed to \code{\link{ffm_batch}}: anonymize in
+#'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
+#'   default). Parallelism follows the active \code{\link[future:plan]{future}}
+#'   plan; \code{TRUE} under the default sequential plan runs one input at a
+#'   time and warns. Set a plan first, e.g.
+#'   \code{future::plan(future::multisession)}.
+#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}}, such as
+#'   \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.
+#' @return The [tibble][tibble::tibble-package] returned by
+#'   \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column
+#'   (and, when \code{output} was derived, the resolved \code{output} column;
+#'   when \code{run = TRUE}, a \code{success} column, plus any columns the
+#'   forwarded arguments add, e.g. \code{verified}).
+#' @seealso \code{\link{anonymize_video}} for the single-input form;
+#'   \code{\link{ffm_batch}} for the batch runner and the arguments forwarded
+#'   through \code{...}; \code{\link{standardize_videos}} and
+#'   \code{\link{segment_videos}} for the other table-driven siblings.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' jobs <- tibble::tibble(
+#'   input   = c(video, video),
+#'   output  = c("a.mp4", "b.mp4"),
+#'   regions = list(
+#'     data.frame(x = 10, y = 10, width = 120, height = 90),
+#'     data.frame(x = 200, y = 150, width = 80, height = 60)
+#'   )
+#' )
+#' # run = FALSE compiles one command per input without calling FFmpeg
+#' anonymize_videos(jobs, run = FALSE)
+#' @export
+anonymize_videos <- function(jobs, color = "black", vcodec = "libx264",
+                             pixel_format = "yuv420p", run = TRUE,
+                             parallel = FALSE, ...) {
+
+  if (!is.data.frame(jobs)) {
+    cli::cli_abort("{.arg jobs} must be a data frame with one row per input.")
+  }
+  if (nrow(jobs) == 0) {
+    cli::cli_abort("{.arg jobs} must have at least one row.")
+  }
+  if (!"input" %in% names(jobs)) {
+    cli::cli_abort(c(
+      "{.arg jobs} must have an {.field input} column.",
+      "x" = "Missing column: {.val input}."
+    ))
+  }
+  if (!"regions" %in% names(jobs)) {
+    cli::cli_abort(c(
+      "{.arg jobs} must have a {.field regions} column.",
+      "x" = "Missing column: {.val regions}.",
+      "i" = "Make it a list-column: one boxes data frame per input row."
+    ))
+  }
+  # The regions column is a list-column (one boxes data frame per row); a flat
+  # column can't hold per-row tables, so reject it here with a clear message
+  # rather than as an opaque per-row abort. Each cell's structure is validated
+  # per row by check_regions() inside anonymize_pipeline() (inherited, reported
+  # by row index via purrr; M13 extract-first lesson).
+  if (!is.list(jobs$regions) || is.data.frame(jobs$regions)) {
+    cli::cli_abort(c(
+      "The {.field regions} column of {.arg jobs} must be a list-column.",
+      "i" = "Each element is a boxes data frame, one per input row."
+    ))
+  }
+
+  # A factor input column carries paths as levels; treat them as strings
+  # (parity with standardize_videos()).
+  jobs$input <- as.character(jobs$input)
+
+  # Validate present override columns up front so a bad column fails clearly
+  # here rather than as an opaque FFmpeg error mid-batch (M11 parity lesson).
+  # Value-level checks (valid color/codec/pixfmt tokens) are inherited per row
+  # from anonymize_pipeline()'s guards.
+  str_cols <- c("color", "vcodec", "pixel_format")
+  for (col in intersect(str_cols, names(jobs))) {
+    if (!is.character(jobs[[col]]) || anyNA(jobs[[col]])) {
+      cli::cli_abort("The {.field {col}} column of {.arg jobs} must be character (no {.val {NA}}).")
+    }
+  }
+
+  # Auto-name outputs when the column is absent. One input -> one output, so a
+  # duplicated input with no explicit output would map to the same file; reject
+  # that rather than silently overwrite (parity with standardize_videos()).
+  if (!"output" %in% names(jobs)) {
+    dupes <- unique(jobs$input[duplicated(jobs$input)])
+    if (length(dupes) > 0) {
+      cli::cli_abort(c(
+        "{.arg jobs} has duplicated {.field input} paths but no {.field output} column.",
+        "x" = "Duplicated input{?s}: {.val {dupes}}.",
+        "i" = "Add an {.field output} column to name each row's destination."
+      ))
+    }
+    jobs$output <- derive_anonymized_names(jobs$input)
+  }
+
+  # Thin Layer-2 fan-out over ffm_batch (D007): one single-output box-fill
+  # pipeline per row, sharing anonymize_pipeline() with anonymize_video(). A
+  # per-row knob column (arriving via `...` from pmap) overrides the scalar arg
+  # of the same name; `...` also forwards ffm_batch options (verify/manifest/...)
+  # to the runner, never to the pipeline builder. The `regions` list-column
+  # arrives unwrapped per row (pmap passes each cell's data frame by name).
+  ffm_batch(
+    jobs,
+    function(input, output, regions, ...) {
+      dots <- list(...)
+      pick <- function(nm, default) if (nm %in% names(dots)) dots[[nm]] else default
+      anonymize_pipeline(
+        input, output, regions,
+        color = pick("color", color),
+        vcodec = pick("vcodec", vcodec),
+        pixel_format = pick("pixel_format", pixel_format)
+      )
+    },
+    run = run,
+    parallel = parallel,
+    ...
+  )
+}
+
+
 # normalize_audio() -------------------------------------------------------
 
 #' Normalize a file's audio loudness (EBU R128)

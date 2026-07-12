@@ -16,7 +16,7 @@ _Last hygiene check: 2026-07-12_
 | M06 | Engine hardening & safe execution | done | M02 | — | milestones/archive/M06-engine-hardening.md |
 | M07 | Complete the blessed multi-input verbs | done | M06 | — | milestones/archive/M07-multi-input-verbs.md |
 | M08 | Verification & provenance | done | M04, M06 | normal | milestones/archive/M08-verification-provenance.md |
-| M09 | Dataframe-driven batch segmentation | in-progress | — | normal | milestones/M09-batch-segmentation.md |
+| M09 | Dataframe-driven batch segmentation | review | — | normal | milestones/M09-batch-segmentation.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

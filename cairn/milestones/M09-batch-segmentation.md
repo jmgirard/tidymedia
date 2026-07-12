@@ -3,7 +3,7 @@
      Per-section owners are tagged below. -->
 # M09: Dataframe-driven batch segmentation
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Branch/PR:** m09-batch-segmentation   <!-- owner: implement (branch) / review (PR URL) · create -->
@@ -101,8 +101,9 @@ files from one jobs tibble, sharing its cut logic with `segment_video()`.
 - [x] T5: Roxygen docs for `segment_videos()` with a runnable `run = FALSE`
       example and `@seealso segment_video`/`ffm_batch`; run
       `devtools::document()`; add the `_pkgdown.yml` reference row.
-- [ ] T6: Add the NEWS bullet; run `devtools::check()` to green; add the two
+- [x] T6: Add the NEWS bullet; run `devtools::check()` to green; add the two
       deferred candidate rows (auto-naming, per-row reencode) to ROADMAP.
+      (Candidate rows were added at plan time; verified present.)
 
 ## Work log
 <!-- owner: any skill · append-only; one line per entry; absolute dates -->
@@ -119,6 +120,8 @@ files from one jobs tibble, sharing its cut logic with `segment_video()`.
   forwards to `ffm_batch()`. Roxygen written (document() in T5).
 - 2026-07-12: T5 — `document()` (export + `segment_videos.Rd`, family
   cross-links refreshed); added `_pkgdown.yml` reference row.
+- 2026-07-12: T6 — NEWS bullet added (no milestone number, per tracking
+  rules); `devtools::check()` clean (0/0/0). All tasks done → status review.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local; promote

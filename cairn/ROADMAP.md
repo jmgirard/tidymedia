@@ -8,9 +8,6 @@ _Last hygiene check: 2026-07-12_
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M01 | Infrastructure modernization (testthat, CI, cli) | done | — | — | milestones/archive/M01-infrastructure.md |
-| M02 | ffm builder engine rework (real command model) | done | M01 | — | milestones/archive/M02-ffm-engine.md |
-| M03 | Task verbs rebuilt on the builder + batch support | done | M02 | — | milestones/archive/M03-task-verbs.md |
 | M04 | Metadata layer polish (mediainfo/ffprobe tibbles) | done | M02 | — | milestones/archive/M04-metadata-layer.md |
 | M05 | Docs, vignettes, pkgdown, release prep | done | M03, M04 | — | milestones/archive/M05-docs-release.md |
 | M06 | Engine hardening & safe execution | done | M02 | — | milestones/archive/M06-engine-hardening.md |

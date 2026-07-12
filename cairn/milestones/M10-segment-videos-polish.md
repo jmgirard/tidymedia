@@ -111,6 +111,7 @@ Bring `segment_videos()` to parity with `segment_video()` by making the
 - 2026-07-12: created by /milestone-plan (absorbs the three M09 `segment_videos()` deferral candidates).
 - 2026-07-12: T1–T5 done — tests-first (8 new cases), extracted `derive_segment_names()` (shared with `segment_video()`), optional `output` + per-row `reencode` column + start/end/reencode validation in `segment_videos()`, roxygen + NEWS; full suite green.
 - 2026-07-12: T6 done — `devtools::check()` clean (0 errors/0 warnings/0 notes) after fixing a spelling NOTE; status → review.
+- 2026-07-12: review — AC1–AC5 verified, consistency gate clean; independent review fixed F1 (reencode-column NA parity, score 85) + regression test; check Status OK.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local; promote
@@ -150,4 +151,21 @@ _Reviewed 2026-07-12 (same session). PR #12._
 - `document()` no diff; pkgdown `check_pkgdown()` "No problems found";
   README.Rmd untouched (in sync); NEWS.md entry present; no new top-level files.
 
-**Independent review:** (findings + triage recorded below)
+**Independent review** (two fresh-context lenses + scorer):
+- [O] diff-bug (Opus): no correctness/contract/convention defects; one minor
+  note (below).
+- [S] blame-history (Sonnet): no findings — `derive_segment_names()` is
+  byte-identical to the old inline naming for `segment_video()`; optional
+  `output` and per-row `reencode` are the planned M09 deferrals, no guard
+  weakened, consistent with D007/D008.
+- Finding F1 (scored 85, actioned — fixed in this review): the `reencode`
+  column check used `is.logical()`, which admits `NA`, so `reencode = c(TRUE,
+  NA)` slipped the front-door check and aborted later inside `ffm_seek()`
+  without naming the column (AC3 parity gap). Fixed at `R/ffmpeg.R` — condition
+  now `!is.logical() || anyNA()`, message names the column; added regression
+  test "rejects an NA in the reencode column at the front door". Re-ran:
+  39 checks 0 failed; `devtools::check()` Status OK.
+- Below-threshold findings: none.
+- Non-findings noted by both reviewers (pre-existing, not introduced by M10): a
+  jobs column named the same as an `ffm_batch` option (e.g. `verify`) would
+  collide through `pmap`'s `...` forwarding — a pre-M10 pattern, out of scope.

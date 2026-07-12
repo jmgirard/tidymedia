@@ -611,8 +611,11 @@ segment_videos <- function(jobs, reencode = TRUE, run = TRUE,
   if (!(is.numeric(jobs$end) || is.character(jobs$end))) {
     cli::cli_abort("The {.field end} column of {.arg jobs} must be numeric or character.")
   }
-  if ("reencode" %in% names(jobs) && !is.logical(jobs$reencode)) {
-    cli::cli_abort("The {.field reencode} column of {.arg jobs} must be logical.")
+  if ("reencode" %in% names(jobs) &&
+      (!is.logical(jobs$reencode) || anyNA(jobs$reencode))) {
+    cli::cli_abort(
+      "The {.field reencode} column of {.arg jobs} must be {.val {TRUE}} or {.val {FALSE}} (no {.val {NA}})."
+    )
   }
   rlang::check_bool(reencode)
 

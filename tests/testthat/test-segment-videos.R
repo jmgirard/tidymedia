@@ -199,3 +199,14 @@ test_that("segment_videos() rejects a non-logical reencode column", {
   )
   expect_error(segment_videos(jobs, run = FALSE), "reencode")
 })
+
+test_that("segment_videos() rejects an NA in the reencode column at the front door", {
+  # is.logical(c(TRUE, NA)) is TRUE, so name the column here rather than let it
+  # leak into ffm_seek()'s check_bool() downstream (parity with start/end).
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input = c(f, f), output = c("a.mp4", "b.mp4"),
+    start = c(0, 1), end = c(1, 2), reencode = c(TRUE, NA)
+  )
+  expect_error(segment_videos(jobs, run = FALSE), "reencode")
+})

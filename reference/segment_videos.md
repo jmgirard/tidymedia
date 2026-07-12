@@ -42,7 +42,11 @@ segment_videos(jobs, reencode = TRUE, run = TRUE, parallel = FALSE, ...)
   A logical passed to
   [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
   cut segments in parallel with furrr (`TRUE`) or sequentially (`FALSE`,
-  default).
+  default). Parallelism follows the active
+  [`future`](https://future.futureverse.org/reference/plan.html) plan;
+  `TRUE` under the default sequential plan runs one segment at a time
+  and warns. Set a plan first, e.g.
+  `future::plan(future::multisession)`.
 
 - ...:
 

@@ -112,7 +112,10 @@ only compile them (<code>FALSE</code>).</p></dd>
 <dt id="arg-parallel">parallel<a class="anchor" aria-label="anchor" href="#arg-parallel"></a></dt>
 <dd><p>A logical passed to <code><a href="ffm_batch.html">ffm_batch</a></code>: cut segments in
 parallel with <span class="pkg">furrr</span> (<code>TRUE</code>) or sequentially (<code>FALSE</code>,
-default).</p></dd>
+default). Parallelism follows the active <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future</a></code>
+plan; <code>TRUE</code> under the default sequential plan runs one segment at a
+time and warns. Set a plan first, e.g.
+<code>future::plan(future::multisession)</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

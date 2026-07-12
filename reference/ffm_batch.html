@@ -93,7 +93,10 @@ default) or only compile them for inspection (<code>FALSE</code>, a dry run).</p
 <dt id="arg-parallel">parallel<a class="anchor" aria-label="anchor" href="#arg-parallel"></a></dt>
 <dd><p>A logical: map over jobs in parallel with <span class="pkg">furrr</span>
 (<code>TRUE</code>) or sequentially (<code>FALSE</code>, default). Parallelism follows
-the <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future</a></code> plan the caller has set.</p></dd>
+the <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future</a></code> plan the caller has set; with
+<code>TRUE</code> but the default sequential plan, jobs still run one at a time
+and a warning is issued. Set a plan first, e.g.
+<code>future::plan(future::multisession)</code>.</p></dd>
 
 
 <dt id="arg-verify">verify<a class="anchor" aria-label="anchor" href="#arg-verify"></a></dt>

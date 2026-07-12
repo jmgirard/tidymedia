@@ -41,6 +41,11 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="tidymedia-development-version">tidymedia (development version)<a class="anchor" aria-label="anchor" href="#tidymedia-development-version"></a></h2>
 <div class="section level3">
+<h3 id="bug-fixes-development-version">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-development-version"></a></h3>
+<ul><li>
+<code><a href="../reference/ffm_batch.html">ffm_batch()</a></code> (and the <code>parallel = TRUE</code> path of <code><a href="../reference/segment_video.html">segment_video()</a></code> / <code><a href="../reference/segment_videos.html">segment_videos()</a></code>) now warns when parallel processing is requested but no parallel <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code> is active. Previously such calls ran one job at a time with no speedup and no indication; the warning points to <code>future::plan(future::multisession)</code>.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="batch-segmentation-across-files-development-version">Batch segmentation across files<a class="anchor" aria-label="anchor" href="#batch-segmentation-across-files-development-version"></a></h3>
 <ul><li>Added <code><a href="../reference/segment_videos.html">segment_videos()</a></code>, a table-driven companion to <code><a href="../reference/segment_video.html">segment_video()</a></code>. Pass a jobs tibble with <code>input</code>, <code>output</code>, <code>start</code>, and <code>end</code> columns — one row per segment — to cut segments spanning many input files in one call. It is a thin wrapper over <code><a href="../reference/ffm_batch.html">ffm_batch()</a></code>, so <code>...</code> forwards batch options such as <code>verify</code>, <code>manifest</code>, <code>checksums</code>, and <code>progress</code>; <code>reencode</code> selects accurate re-encoding (default) or the fast keyframe-snapping copy path, as in <code><a href="../reference/segment_video.html">segment_video()</a></code>.</li>
 </ul></div>
@@ -74,7 +79,7 @@
 <code><a href="../reference/ffm_output_options.html">ffm_output_options()</a></code> now rejects option groups containing quote characters: options are split on whitespace into arguments at execution, so quoting cannot group tokens (previously such commands executed with a different meaning than printed).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="bug-fixes-development-version">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-development-version"></a></h3>
+<h3 id="bug-fixes-development-version-1">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-development-version-1"></a></h3>
 <ul><li>An explicit <code><a href="../reference/ffm_map.html">ffm_map()</a></code> on a multi-input pipeline (e.g. <code><a href="../reference/ffm_hstack.html">ffm_hstack()</a></code>) is now emitted alongside the automatic <code>-map "[vout]"</code> instead of being silently ignored, so e.g. <code>ffm_map(p, "0:a")</code> keeps the first input’s audio next to the stacked video.</li>
 <li>Test coverage is measured again: an empty <code>R/zzz.R</code> triggered a <code>covr</code> bug that silently reported 0% package coverage.</li>
 </ul></div>

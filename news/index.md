@@ -2,6 +2,19 @@
 
 ## tidymedia (development version)
 
+### Bug fixes
+
+- [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+  (and the `parallel = TRUE` path of
+  [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
+  /
+  [`segment_videos()`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md))
+  now warns when parallel processing is requested but no parallel
+  [`future::plan()`](https://future.futureverse.org/reference/plan.html)
+  is active. Previously such calls ran one job at a time with no speedup
+  and no indication; the warning points to
+  `future::plan(future::multisession)`.
+
 ### Batch segmentation across files
 
 - Added

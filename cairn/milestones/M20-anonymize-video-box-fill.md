@@ -3,11 +3,11 @@
      Per-section owners are tagged below. -->
 # M20: Fixed-region box-fill anonymization verb
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Principles touched:** IP1, IP2
-- **Branch/PR:** —
+- **Branch/PR:** m20-anonymize-video-box-fill
 
 ## Goal
 

@@ -59,5 +59,5 @@ Other task verb functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 concatenate_videos(c(video, video), "joined.mp4", run = FALSE)
-#> [1] "-y -f concat -safe 0 -i \"/tmp/RtmpjSRlIR/ffm-concat1f6756691eef.txt\" -codec:v copy -codec:a copy -map 0 \"joined.mp4\""
+#> [1] "-y -f concat -safe 0 -i \"/tmp/Rtmp0nD5H9/ffm-concat1fae4d36b5b8.txt\" -codec:v copy -codec:a copy -map 0 \"joined.mp4\""
 ```

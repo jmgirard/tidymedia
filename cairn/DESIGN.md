@@ -37,7 +37,9 @@ realtime/streaming, and full filtergraph DAGs.
   for ffmpeg/ffprobe/ffplay/mediainfo, `set_program`, `get_codecs`,
   `get_encoders`, `install_on_win`.
 - **Tidy-eval reexports & utils:** `enquo`/`enquos`/`as_label`/`as_name`/`:=`/
-  `.data`; `pad_integers`, `convert_fractions` (candidates for cleanup in M10).
+  `.data`; `pad_integers`, `convert_fractions` (flagged for cleanup by the M22
+  naming/docs audit — the four quoting reexports + `:=` have no internal use;
+  `.data` is used internally and stays).
 
 ## Conventions
 
@@ -87,5 +89,9 @@ over a jobs tibble; scalar verbs stay scalar and fan-out verbs (e.g.
 
 - `check_dim()` accepts any `x`/`y` expression string across all dim verbs
   (noted as future hardening in the M07 review) — not a regression.
-- API-surface cleanup pending (tidy-eval reexports, `pad_integers`,
-  `convert_fractions`) — tracked as candidate M10.
+- API naming & docs assessed by M22 (`cairn/references/naming-docs-audit-M22.md`):
+  overloaded `get_*` prefix, `acodec`/`vcodec` and `ts_start`/`ts_stop` arg drift,
+  unused tidy-eval reexports, and thin `@seealso` cross-linking. The target scheme
+  is proposed as draft D014; renames + gap-fill land in the M22 execution
+  follow-up under a clean-break policy. Naming conventions will be added here when
+  D014 is ratified.

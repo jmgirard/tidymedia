@@ -145,3 +145,37 @@ readable input) and `run` gates only the correction pass. Single-pass behavior
 is byte-for-byte unchanged and stays binary-free under `run = FALSE`. Rules out
 folding analysis into `ffm_compile()` and rules out a two-pass path that skips
 the binary under `run = FALSE`.
+
+## D014 — API naming scheme + clean-break rename policy (2026-07-12, from M22)
+
+Canonical naming conventions for the public surface, from the M22 audit
+(`cairn/references/naming-docs-audit-M22.md §5–6`), to be applied by the M22
+execution follow-up:
+
+- **Task verbs** are `verb_object`; no verb hard-codes a fixed format/codec in
+  its name (retires `audio_as_mp3`).
+- **`ffm_*`** marks Layer-1 engine surface only; nothing outside Layer 1 uses it
+  (references IP1's three-layer separation; does not change IP1).
+- **`get_*` is reserved for per-file metadata scalars.** ffmpeg **capability**
+  queries are not `get_*` (retires the `get_codecs`/`get_encoders` overload).
+- **Metadata prefixes carry backend meaning:** `probe_*` = ffprobe→tibble,
+  `mediainfo_*` = MediaInfo→tibble/value, file-metadata scalars a distinct
+  getter prefix; the boundary is documented, not merged.
+- **Batch siblings use a `<scalar_verb>_batch` suffix**, not a plural noun:
+  `segment_video_batch`, `standardize_video_batch`, `normalize_audio_batch`,
+  `anonymize_video_batch`, `extract_frame_batch` (retires `*_videos`/`_audios`;
+  also disambiguates the old `extract_frames`).
+- **Argument vocabulary:** `infile`/`outfile`/`infiles` for transforms, `file`
+  for read-only metadata; full-word compound args (`audio_codec`, `video_codec`,
+  `pixel_format`, `sample_rate`) — retires `acodec`/`vcodec`; time bounds
+  `start`/`end` (+ `duration`, `timestamp` where distinct) — retires
+  `ts_start`/`ts_stop`; `run`/`reencode`/`parallel` keep current spellings.
+- **Reexports:** drop the unused tidy-eval quoting helpers
+  (`enquo`/`enquos`/`as_label`/`as_name`, and `:=` unless a documented pattern
+  needs it); **keep `.data`** (used internally in `filter_streams()`).
+- **Rename policy: clean break** — no `lifecycle` shims; the API is pre-0.2.0
+  and still soaking (D001). Old names are removed, not deprecated.
+
+Rules out silent per-verb naming drift and `lifecycle`-shim compatibility for
+this cleanup. The renames themselves are an irreversible-API change carried by
+the execution follow-up, not by M22 (which is audit-only).

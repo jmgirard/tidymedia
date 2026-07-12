@@ -1,13 +1,10 @@
-<!-- Section ownership + write-modes: see tracking-rules.md "Milestone-file
-     section ownership". A phase skill never rewrites another phase's section.
-     Per-section owners are tagged below. -->
 # M22: Naming & docs audit + target-scheme decisions
 
-- **Status:** planned   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Principles touched:** —   <!-- owner: plan · create/amend-via-gate; the naming D-entry references IP1's layer-prefix convention but does not change any principle -->
-- **Branch/PR:** —   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** m22-naming-docs-audit · https://github.com/jmgirard/tidymedia/pull/24   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 
@@ -51,9 +48,8 @@ implements against.
   trimmed CRAN candidate.
 
 ## Acceptance criteria
-<!-- owner: plan · create/amend-via-gate; review reads, never reinterprets -->
 
-- [ ] AC1 — `cairn/references/naming-docs-audit-M22.md` exists and inventories
+- [x] AC1 — `cairn/references/naming-docs-audit-M22.md` exists and inventories
       every NAMESPACE export grouped by family, with each flagged naming
       inconsistency carrying a specific recommendation and a `file:line`
       citation. At minimum it dispositions the known tensions: `audio_as_mp3`
@@ -62,66 +58,91 @@ implements against.
       `normalize_audios`/`standardize_videos` plurals, the three metadata
       families (`probe_*`/`get_*`/`mediainfo_*`), and the tidy-eval reexports +
       `pad_integers`/`convert_fractions` stray-util exports.
-- [ ] AC2 — The audit contains an argument-name consistency table naming the
+- [x] AC2 — The audit contains an argument-name consistency table naming the
       canonical arg vocabulary and listing every deviation across Layer-2 verbs
       and metadata families (at minimum `picture_in_picture(main, overlay)` and
       `separate_audio_video(audiofile, videofile)`), each with a target.
-- [ ] AC3 — The audit contains a docs gap-fill checklist: every export lacking
+- [x] AC3 — The audit contains a docs gap-fill checklist: every export lacking
       `@examples` or `@return`, plus the `@seealso` cross-link gaps, enumerated
       by function name (verified against the actual roxygen, not guessed).
-- [ ] AC4 — A new `DECISIONS.md` entry records the approved target naming scheme
+- [x] AC4 — A new `DECISIONS.md` entry records the approved target naming scheme
       and the clean-break rename policy, written so the execution milestone has a
       standing rule to implement against. (Applied at review, after user sign-off
       on the audit.)
-- [ ] AC5 — `cairn/DESIGN.md` is reconciled with reality: the stale "M10"
+- [x] AC5 — `cairn/DESIGN.md` is reconciled with reality: the stale "M10"
       references (Function families note + Known issues) are corrected to point
       at this effort, and the "Conventions"/"Function families" prose reflects
       the decided naming scheme. (ROADMAP rows — M22 + execution candidate +
       trimmed CRAN candidate — are handled at plan time, not counted here.)
-- [ ] AC6 — No net change to `R/`, `man/`, `NAMESPACE`, or `tests/`
+- [x] AC6 — No net change to `R/`, `man/`, `NAMESPACE`, or `tests/`
       (docs/decision milestone; verified by `git diff --stat` touching only
       `cairn/`). No automated tests — there is no runtime surface; verification
       is document review + user approval at review.
 
 ## Coverage
-<!-- owner: plan · each acceptance criterion → task(s) by positional number -->
 
 - AC1 → T1, T2, T5
 - AC2 → T3, T5
 - AC3 → T4, T5
-- AC4 → T6
-- AC5 → T7
+- AC4 → T6 · AC5 → T7
 - AC6 → T1–T7 (no-code discipline held across every task)
 
 ## Tasks
-<!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [ ] T1 — Inventory all NAMESPACE exports into a family map (Layer 0 / Layer 1
+- [x] T1 — Inventory all NAMESPACE exports into a family map (Layer 0 / Layer 1
       `ffm_*` / Layer 2 verbs / metadata / program management / tidy-eval &
       utils), each with its defining `file:line`.
-- [ ] T2 — Function-name consistency analysis: flag each inconsistent export
+- [x] T2 — Function-name consistency analysis: flag each inconsistent export
       with a keep/rename recommendation and rationale (cover the AC1 known
       tensions plus anything the sweep surfaces).
-- [ ] T3 — Argument-name consistency analysis: derive the canonical arg
+- [x] T3 — Argument-name consistency analysis: derive the canonical arg
       vocabulary and build the deviation → target table across Layer-2 verbs and
       metadata families.
-- [ ] T4 — Docs gap inventory: grep the roxygen for missing `@examples`/`@return`
+- [x] T4 — Docs gap inventory: grep the roxygen for missing `@examples`/`@return`
       and thin `@seealso`; produce the per-function gap checklist (targeted scope).
-- [ ] T5 — Write `cairn/references/naming-docs-audit-M22.md` consolidating
+- [x] T5 — Write `cairn/references/naming-docs-audit-M22.md` consolidating
       T1–T4 with a ranked recommendation list; register it in
       `cairn/references/INDEX.md`.
-- [ ] T6 — Draft the `DECISIONS.md` entry (target naming scheme + clean-break
-      policy); hold application until review/user sign-off.
-- [ ] T7 — Reconcile DESIGN.md: fix the stale "M10" references and update the
-      Conventions/Function-families prose to the decided naming scheme.
+- [x] T6 — Draft the `DECISIONS.md` entry (target naming scheme + clean-break
+      policy); hold application until review/user sign-off. (Drafted as DRAFT D014
+      in the Decisions section below.)
+- [x] T7 — Reconcile DESIGN.md: fix the stale "M10" references (Function families
+      + Known issues) and point them at M22/D014. Conventions prose asserting the
+      *ratified* scheme is deferred to review, promoted with D014 (see work log).
 
 ## Work log
-<!-- owner: any skill · append-only; one line per entry; absolute dates -->
 
 - 2026-07-12: created by /milestone-plan.
+- 2026-07-12: T1–T7 — wrote the audit (79-export inventory, 10 name findings,
+  arg table, `@seealso` gaps, ranked recs); drafted DRAFT D014 (held for
+  sign-off, AC4); fixed DESIGN.md's two "M10" refs. Minor amendment: AC5
+  ratified-conventions prose deferred to review, promoted with D014.
 
 ## Decisions
-<!-- owner: implement / review · append-only; milestone-local -->
+
+**D014 — RATIFIED 2026-07-12, promoted to cairn/DECISIONS.md (AC4).** Target
+scheme in `cairn/references/naming-docs-audit-M22.md §6` (verb_object; `ffm_*` =
+Layer 1 only; `get_*` = file-metadata scalars not capability queries;
+backend-carrying metadata prefixes; full-word args retiring `acodec`/`vcodec`
+and `ts_start`/`ts_stop`; drop unused quoting reexports, keep `.data`).
+**Batch-sibling rule: `<scalar_verb>_batch`** (user decision — retires
+`*_videos`/`_audios`, disambiguates `extract_frames`). **Rename policy: clean
+break** (no `lifecycle` shims, API pre-0.2.0, D001). Execution carries
+`RB tripwire: irreversible-api`.
 
 ## Review
-<!-- owner: review · exclusive -->
+
+**2026-07-12 — reviewed.** Evidence: AC1 audit exists, 79 exports by family
+(3+23+18+15+12+8), 8 citations spot-checked exact, all tensions N1–N10
+dispositioned; AC2 arg table with verified deviations (`acodec`/`vcodec`,
+`ts_start`/`ts_stop`, `samplingrate`↔`sample_rate` 3v35, `picture_in_picture`,
+`separate_audio_video`); AC3 `@seealso` gap list, count = 10 pages verified;
+AC4 DRAFT D014 complete, promoted to DECISIONS.md on approval; AC5 DESIGN.md
+M10 refs removed; AC6 `git diff` = cairn/ only, `cairn/` is `.Rbuildignore`d.
+Consistency gate: `cairn_validate.py` exit 0 (12 checks incl. coverage);
+document/README/NEWS/pkgdown N/A (no R/man/NAMESPACE/export change).
+Independent review (1 Opus diff-bug lens; blame/prior-PR lenses no-op on a
+new tracking-markdown diff): 2 findings, both ≥80, both fixed — (1) score 92:
+"no internal use" was false for `.data` (used `ffprobe.R:191`) → corrected in
+audit N6 + DESIGN.md (drop 4 quoting helpers, keep `.data`); (2) score 80:
+`ffm_files` cited to alias line not definition → corrected. None below 80.

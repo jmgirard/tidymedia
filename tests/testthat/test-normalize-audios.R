@@ -300,6 +300,35 @@ test_that("normalize_audios(two_pass = TRUE) hits each per-row target within +/-
   }
 })
 
+test_that("normalize_audios(two_pass = TRUE) marks silent rows and normalizes the rest (M18)", {
+  skip_if_no_ffmpeg()
+  real <- make_dynamic_audio()   # a real, non-silent clip
+  silent <- make_silent_audio()  # digital silence (input_i = -inf)
+  out_real <- withr::local_tempfile(fileext = ".mp4")
+  out_silent <- withr::local_tempfile(fileext = ".mp4")
+  jobs <- tibble::tibble(
+    input  = c(real, silent),
+    output = c(out_real, out_silent)
+  )
+  # The silent row must not abort the batch; it is marked and the real row is
+  # still normalized. A single warning names the silent row.
+  expect_warning(
+    res <- normalize_audios(jobs, two_pass = TRUE),
+    "silent"
+  )
+  # A silent column marks row 2; row 1 succeeded, row 2 did not.
+  expect_equal(res$silent, c(FALSE, TRUE))
+  expect_equal(res$success, c(TRUE, FALSE))
+  # The non-silent row wrote a real output; the silent row wrote none.
+  expect_true(file.exists(out_real))
+  expect_gt(file.info(out_real)$size, 0)
+  expect_false(file.exists(out_silent))
+  # The silent row carries no correction command and NA measurements.
+  expect_true(is.na(res$command[[2]]))
+  expect_true(is.na(res$measured_I[[2]]))
+  expect_false(is.na(res$measured_I[[1]]))
+})
+
 # Execution + ffm_batch forwarding (binary-gated) -------------------------
 
 test_that("normalize_audios() writes non-empty, audio-decodable outputs (binary-gated)", {

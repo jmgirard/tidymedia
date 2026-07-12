@@ -2,13 +2,13 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-07-12 (M18 in-progress)_
+_Last hygiene check: 2026-07-12 (M18 review)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M18 | Graceful silent-input handling for two-pass loudnorm | in-progress | M16, M17 | normal | milestones/M18-silent-input-loudnorm.md |
+| M18 | Graceful silent-input handling for two-pass loudnorm | review | M16, M17 | normal | milestones/M18-silent-input-loudnorm.md |
 | M17 | Batch two-pass (measured/linear) loudnorm | done | M15, M16 | normal | milestones/archive/M17-batch-two-pass-loudnorm.md |
 | M16 | Two-pass (measured/linear) EBU R128 loudnorm | done | M14 | normal | milestones/archive/M16-two-pass-loudnorm.md |
 | M15 | Batch audio normalization verb | done | M14 | normal | milestones/archive/M15-batch-audio-normalization.md |

@@ -405,7 +405,10 @@ standardize_pipeline <- function(input, output, width, height, fps, vcodec,
 #'   (it needs the binary and readable input), even when \code{run = FALSE}: in
 #'   that case the analysis still runs and the returned value is the exact
 #'   correction command, left unexecuted. The single-pass default touches no
-#'   binary under \code{run = FALSE}.
+#'   binary under \code{run = FALSE}. If the input is \strong{silent}, the
+#'   analysis pass measures its loudness as \code{-inf}; normalizing silence to
+#'   a target is undefined, so two-pass aborts with a clear error (the
+#'   single-pass default leaves silence untouched).
 #' @param run A logical: run the (correction) command through FFmpeg
 #'   (\code{TRUE}, default) or return the compiled command without running it
 #'   (\code{FALSE}). Under \code{two_pass = TRUE} this gates only the correction
@@ -1287,8 +1290,13 @@ derive_normalized_names <- function(input) {
 #'   \strong{always runs the analysis pass through FFmpeg} (it needs the binary
 #'   and readable inputs), even when \code{run = FALSE}. If any row's analysis
 #'   fails or yields no parseable measurement, the call aborts — naming the
-#'   offending row(s) — before any correction command is built. The single-pass
-#'   default touches no binary under \code{run = FALSE}.
+#'   offending row(s) — before any correction command is built. \strong{Silent}
+#'   rows are the exception: a silent input (analysis loudness \code{-inf})
+#'   cannot be normalized to a target, but one silent row does not abort the
+#'   batch — the non-silent rows are normalized, the silent rows are marked in a
+#'   logical \code{silent} column (with \code{success = FALSE} and no output
+#'   written), and a warning names them. The single-pass default touches no
+#'   binary under \code{run = FALSE}.
 #' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
 #'   default) or only compile them for inspection (\code{FALSE}). Under
 #'   \code{two_pass = TRUE} this gates only the correction pass; the analysis
@@ -1307,7 +1315,9 @@ derive_normalized_names <- function(input) {
 #'   when \code{run = TRUE}, a \code{success} column, plus any columns the
 #'   forwarded arguments add, e.g. \code{verified}). Under \code{two_pass = TRUE}
 #'   the result also carries the five measured columns (\code{measured_I} etc.)
-#'   and the \code{command} column holds the linear correction commands.
+#'   and a logical \code{silent} column, and the \code{command} column holds the
+#'   linear correction commands (\code{NA} for silent rows, which carry \code{NA}
+#'   measurements and are not normalized).
 #' @references
 #' EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
 #' maximum level of audio signals}; ITU-R BS.1770-4.

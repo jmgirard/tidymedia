@@ -164,6 +164,18 @@ test_that("normalize_audio(two_pass, run = FALSE) runs analysis, returns correct
   expect_false(file.exists(out))
 })
 
+test_that("normalize_audio(two_pass = TRUE) errors clearly on silent input (M18)", {
+  src <- make_silent_audio()  # anullsrc silence; skips if ffmpeg absent
+  out <- withr::local_tempfile(fileext = ".mp4")
+  # The analysis pass measures input_i = -inf; the abort must name silence, not
+  # the misleading "could not parse" measurement error.
+  expect_error(
+    normalize_audio(src, out, two_pass = TRUE),
+    "silent"
+  )
+  expect_false(file.exists(out))
+})
+
 # Execution (binary-gated) ------------------------------------------------
 
 test_that("normalize_audio() writes a non-empty, audio-decodable output", {

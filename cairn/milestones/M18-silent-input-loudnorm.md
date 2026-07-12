@@ -3,7 +3,7 @@
      Per-section owners are tagged below. -->
 # M18: Graceful silent-input handling for two-pass loudnorm
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** M16, M17   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Branch/PR:** m18-silent-input-loudnorm   <!-- owner: implement (branch) / review (PR URL) · create -->
@@ -121,7 +121,7 @@ clear silence-specific error for the scalar verb, and continue-and-mark
       genuine (non-silence) failures still abort fail-fast. Tests-first: a
       mixed-batch assembly test and a simulated genuine-failure test (AC3,
       AC4).
-- [ ] T4 — (live tests + docs) Add `skip_if`-guarded execution tests: scalar
+- [x] T4 — (live tests + docs) Add `skip_if`-guarded execution tests: scalar
       silence → silence error; mixed batch → non-silent row normalized +
       silent row marked, no abort. Document the silent-input behavior and the
       `silent` result column in the `normalize_audio` / `normalize_audios`
@@ -146,6 +146,11 @@ clear silence-specific error for the scalar verb, and continue-and-mark
   reassembly). `normalize_audios(two_pass=TRUE)` corrects only non-silent rows,
   warns naming silent ones, and always returns a `silent` column. Full suite
   725 pass.
+- 2026-07-12: T4 done. Added `make_silent_audio()` helper + live tests (scalar
+  silence errors; mixed batch marks silent row, normalizes the real one, no
+  abort). Documented silent behavior in both verbs' roxygen + `silent` column
+  in `@return`; NEWS entry; `document()`; added `loudnorm` to WORDLIST.
+  `devtools::check()` 0/0/0, `Status: OK` in 00check.log. All tasks complete.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

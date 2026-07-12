@@ -61,8 +61,13 @@ five measured values are surfaced on the result as columns \code{measured_I},
 \strong{always runs the analysis pass through FFmpeg} (it needs the binary
 and readable inputs), even when \code{run = FALSE}. If any row's analysis
 fails or yields no parseable measurement, the call aborts — naming the
-offending row(s) — before any correction command is built. The single-pass
-default touches no binary under \code{run = FALSE}.}
+offending row(s) — before any correction command is built. \strong{Silent}
+rows are the exception: a silent input (analysis loudness \code{-inf})
+cannot be normalized to a target, but one silent row does not abort the
+batch — the non-silent rows are normalized, the silent rows are marked in a
+logical \code{silent} column (with \code{success = FALSE} and no output
+written), and a warning names them. The single-pass default touches no
+binary under \code{run = FALSE}.}
 
 \item{run}{A logical: run each input's command through FFmpeg (\code{TRUE},
 default) or only compile them for inspection (\code{FALSE}). Under
@@ -86,7 +91,9 @@ The \link[tibble:tibble-package]{tibble} returned by
 when \code{run = TRUE}, a \code{success} column, plus any columns the
 forwarded arguments add, e.g. \code{verified}). Under \code{two_pass = TRUE}
 the result also carries the five measured columns (\code{measured_I} etc.)
-and the \code{command} column holds the linear correction commands.
+and a logical \code{silent} column, and the \code{command} column holds the
+linear correction commands (\code{NA} for silent rows, which carry \code{NA}
+measurements and are not normalized).
 }
 \description{
 Loudness-normalize the audio of many input files (EBU R128) from a single

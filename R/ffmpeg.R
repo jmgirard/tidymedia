@@ -405,7 +405,10 @@ standardize_pipeline <- function(input, output, width, height, fps, vcodec,
 #'   (it needs the binary and readable input), even when \code{run = FALSE}: in
 #'   that case the analysis still runs and the returned value is the exact
 #'   correction command, left unexecuted. The single-pass default touches no
-#'   binary under \code{run = FALSE}.
+#'   binary under \code{run = FALSE}. If the input is \strong{silent}, the
+#'   analysis pass measures its loudness as \code{-inf}; normalizing silence to
+#'   a target is undefined, so two-pass aborts with a clear error (the
+#'   single-pass default leaves silence untouched).
 #' @param run A logical: run the (correction) command through FFmpeg
 #'   (\code{TRUE}, default) or return the compiled command without running it
 #'   (\code{FALSE}). Under \code{two_pass = TRUE} this gates only the correction
@@ -1287,8 +1290,13 @@ derive_normalized_names <- function(input) {
 #'   \strong{always runs the analysis pass through FFmpeg} (it needs the binary
 #'   and readable inputs), even when \code{run = FALSE}. If any row's analysis
 #'   fails or yields no parseable measurement, the call aborts — naming the
-#'   offending row(s) — before any correction command is built. The single-pass
-#'   default touches no binary under \code{run = FALSE}.
+#'   offending row(s) — before any correction command is built. \strong{Silent}
+#'   rows are the exception: a silent input (analysis loudness \code{-inf})
+#'   cannot be normalized to a target, but one silent row does not abort the
+#'   batch — the non-silent rows are normalized, the silent rows are marked in a
+#'   logical \code{silent} column (with \code{success = FALSE} and no output
+#'   written), and a warning names them. The single-pass default touches no
+#'   binary under \code{run = FALSE}.
 #' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
 #'   default) or only compile them for inspection (\code{FALSE}). Under
 #'   \code{two_pass = TRUE} this gates only the correction pass; the analysis
@@ -1307,7 +1315,9 @@ derive_normalized_names <- function(input) {
 #'   when \code{run = TRUE}, a \code{success} column, plus any columns the
 #'   forwarded arguments add, e.g. \code{verified}). Under \code{two_pass = TRUE}
 #'   the result also carries the five measured columns (\code{measured_I} etc.)
-#'   and the \code{command} column holds the linear correction commands.
+#'   and a logical \code{silent} column, and the \code{command} column holds the
+#'   linear correction commands (\code{NA} for silent rows, which carry \code{NA}
+#'   measurements and are not normalized).
 #' @references
 #' EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
 #' maximum level of audio signals}; ITU-R BS.1770-4.
@@ -1416,12 +1426,38 @@ normalize_audios <- function(jobs, target_loudness = -23, true_peak = -1,
       col_or("loudness_range", loudness_range),
       parallel
     )
+    # Continue-and-mark on silence (M18): a silent input (input_i = -inf) cannot
+    # be normalized to a loudness target, but one silent row must not abort the
+    # whole batch. assemble_measured() sets silent rows aside (measured cols NA)
+    # and flags them; genuine failures still abort. Correct only the non-silent
+    # rows, warn about the silent ones, and reassemble in original row order.
     measured <- assemble_measured(outputs)
-    for (nm in names(measured)) jobs[[nm]] <- measured[[nm]]
-    return(run_normalize_correction(
-      jobs, target_loudness, true_peak, loudness_range, channels, sample_rate,
-      run = run, parallel = parallel, ...
-    ))
+    silent <- measured$silent
+    for (nm in names(measured$measured)) jobs[[nm]] <- measured$measured[[nm]]
+    if (any(silent)) {
+      # Drive pluralization off the scalar {length(rows)} and list the row
+      # indices without a `{?s}` marker: a `{?s}` governed by a `{.val
+      # {vector}}` across cli_warn() message elements throws
+      # `length(object) == 1` (M18 review).
+      rows <- which(silent)
+      cli::cli_warn(c(
+        "Found {length(rows)} silent input{?s} that cannot be normalized to a \\
+         loudness target.",
+        "!" = "Affected rows (1-indexed): {.val {rows}}.",
+        "i" = "Silent rows are marked in the {.field silent} column \\
+               ({.field success} = {.val {FALSE}}, no output written)."
+      ))
+    }
+    ok_res <- if (any(!silent)) {
+      run_normalize_correction(
+        jobs[!silent, , drop = FALSE], target_loudness, true_peak,
+        loudness_range, channels, sample_rate, run = run, parallel = parallel,
+        ...
+      )
+    } else {
+      NULL
+    }
+    return(bind_two_pass_result(jobs, silent, ok_res, run))
   }
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output loudnorm

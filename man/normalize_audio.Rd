@@ -47,7 +47,10 @@ Two-pass therefore \strong{always runs the analysis pass through FFmpeg}
 (it needs the binary and readable input), even when \code{run = FALSE}: in
 that case the analysis still runs and the returned value is the exact
 correction command, left unexecuted. The single-pass default touches no
-binary under \code{run = FALSE}.}
+binary under \code{run = FALSE}. If the input is \strong{silent}, the
+analysis pass measures its loudness as \code{-inf}; normalizing silence to
+a target is undefined, so two-pass aborts with a clear error (the
+single-pass default leaves silence untouched).}
 
 \item{run}{A logical: run the (correction) command through FFmpeg
 (\code{TRUE}, default) or return the compiled command without running it

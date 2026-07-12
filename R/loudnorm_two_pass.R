@@ -23,16 +23,22 @@ loudnorm_analysis_pipeline <- function(input,
   ffm_output_options(p, "-f null")
 }
 
-# parse_loudnorm_measurements() ------------------------------------------------
+# classify_loudnorm_output() ---------------------------------------------------
 
-# Extract the five measured values from a loudnorm `print_format=json` block in
-# FFmpeg's captured stderr (a character vector, one line per element). A small
-# regex per key avoids a JSON dependency (D011 spirit); each key sits on its own
-# line in the block. Maps FFmpeg's analysis keys onto the correction params:
-# input_i/tp/lra/thresh -> measured_I/TP/LRA/thresh and target_offset -> offset.
-# Aborts cleanly when the block is absent, incomplete, or non-numeric -- there is
-# no correction to build without a full, finite measurement.
-parse_loudnorm_measurements <- function(output, call = rlang::caller_env()) {
+# Classify an analysis-pass stderr capture (a character vector, one line per
+# element) into one of three outcomes:
+#   "ok"          -- a full, finite JSON measurement block; the five measured
+#                    values are returned in `measured`.
+#   "silent"      -- digital silence: FFmpeg reports `input_i = "-inf"`. This is
+#                    a recognized outcome, not a parse failure (M18).
+#   "unparseable" -- the block is absent, incomplete, or non-finite for a
+#                    non-silence reason; the offending keys are in `bad`.
+# A small regex per key avoids a JSON dependency (D011 spirit); each key sits on
+# its own line. Shared by parse_loudnorm_measurements() (scalar) and
+# assemble_measured() (batch) so silence detection lives once. Maps FFmpeg's
+# analysis keys onto the correction params: input_i/tp/lra/thresh ->
+# measured_I/TP/LRA/thresh and target_offset -> offset.
+classify_loudnorm_output <- function(output) {
   keys <- c(i = "input_i", tp = "input_tp", lra = "input_lra",
             thresh = "input_thresh", offset = "target_offset")
   extract_one <- function(json_key) {
@@ -44,17 +50,48 @@ parse_loudnorm_measurements <- function(output, call = rlang::caller_env()) {
   raw <- vapply(keys, extract_one, character(1))
   num <- suppressWarnings(as.numeric(raw))
   names(num) <- names(keys)
+  # Digital silence: integrated loudness measured as -inf (input_i = "-inf").
+  # Keyed on input_i alone -- the canonical silence marker. Near-silence yields
+  # a finite (if very negative) input_i and is handled as a normal measurement.
+  # is.infinite(NA) is FALSE, so a missing input_i falls through to unparseable.
+  if (isTRUE(is.infinite(num[["i"]]) && num[["i"]] < 0)) {
+    return(list(status = "silent"))
+  }
   bad <- is.na(num) | !is.finite(num)
   if (any(bad)) {
+    return(list(status = "unparseable", bad = names(keys)[bad]))
+  }
+  list(status = "ok",
+       measured = list(i = num[["i"]], tp = num[["tp"]], lra = num[["lra"]],
+                       thresh = num[["thresh"]], offset = num[["offset"]]))
+}
+
+# parse_loudnorm_measurements() ------------------------------------------------
+
+# Scalar-facing wrapper over classify_loudnorm_output(): return the five measured
+# values, or abort. Silence gets its own clear message (distinct from the generic
+# parse failure); any other missing/non-finite block keeps the "could not parse"
+# abort -- there is no correction to build without a full, finite measurement.
+parse_loudnorm_measurements <- function(output, call = rlang::caller_env()) {
+  cls <- classify_loudnorm_output(output)
+  if (identical(cls$status, "silent")) {
+    cli::cli_abort(c(
+      "The input appears to be silent.",
+      "x" = "FFmpeg's {.code loudnorm} analysis measured the integrated \\
+             loudness as {.val -inf} (digital silence).",
+      "i" = "Loudness normalization to a target is undefined for silent \\
+             audio; check the input."
+    ), call = call)
+  }
+  if (identical(cls$status, "unparseable")) {
     cli::cli_abort(c(
       "Could not parse the {.code loudnorm} measurement from FFmpeg's output.",
-      "x" = "Missing or non-finite value{?s}: {.field {names(keys)[bad]}}.",
+      "x" = "Missing or non-finite value{?s}: {.field {cls$bad}}.",
       "i" = "The analysis pass must print a JSON measurement block \\
              ({.code print_format=json})."
     ), call = call)
   }
-  list(i = num[["i"]], tp = num[["tp"]], lra = num[["lra"]],
-       thresh = num[["thresh"]], offset = num[["offset"]])
+  cls$measured
 }
 
 # run_loudnorm_analysis() ------------------------------------------------------
@@ -123,34 +160,117 @@ run_loudnorm_analysis_batch <- function(inputs, target_loudness, true_peak,
 # assemble_measured() ----------------------------------------------------------
 
 # Map Phase 1's per-row analysis outputs to the five measured columns, reusing
-# M16's parser per row. Returns a tibble with one row per input and columns
-# measured_I/measured_TP/measured_LRA/measured_thresh/offset (FFmpeg-arg
-# spellings) ready to bind onto the jobs table. Fail-fast: a row whose analysis
-# pass exited non-zero (`status` attr) or whose stderr holds no parseable finite
-# measurement block is collected, and the function aborts naming every offending
-# row before any correction command is built.
+# M16's classifier per row. Returns a list of `measured` (a tibble with one row
+# per input and columns measured_I/measured_TP/measured_LRA/measured_thresh/
+# offset -- FFmpeg-arg spellings -- ready to bind onto the jobs table) and
+# `silent` (a per-row logical). Silent rows (input_i = -inf, M18) are set aside,
+# not corrected: their measured columns are NA and `silent` marks them, so the
+# batch can continue-and-mark rather than abort (D011 idiom). Fail-fast is
+# reserved for genuine failures: a row whose analysis pass exited non-zero
+# (`status` attr) or whose stderr holds no parseable finite measurement block
+# (for a non-silence reason) is collected, and the function aborts naming every
+# offending row before any correction command is built.
 assemble_measured <- function(outputs, call = rlang::caller_env()) {
-  parsed <- lapply(outputs, function(out) {
-    if (!is.null(attr(out, "status"))) return(NULL)
-    tryCatch(parse_loudnorm_measurements(out), error = function(e) NULL)
+  cls <- lapply(outputs, function(out) {
+    if (!is.null(attr(out, "status"))) return(list(status = "error"))
+    classify_loudnorm_output(out)
   })
-  bad <- which(vapply(parsed, is.null, logical(1)))
+  status <- vapply(cls, `[[`, character(1), "status")
+  bad <- which(status %in% c("error", "unparseable"))
   if (length(bad) > 0) {
+    # Pluralize off the scalar {length(bad)} and list the rows without a `{?s}`
+    # marker on the vector: `{cli::qty(bad)}{?s}` throws with 2+ bad rows in this
+    # cli build, and a `{?s}` governed by `{.val {bad}}` hits the same crash
+    # (M18 review).
     cli::cli_abort(c(
       "The {.code loudnorm} analysis pass did not yield usable measurements.",
-      "x" = "Job{cli::qty(bad)}{?s} {.val {bad}} failed to run or printed no \\
-             parseable measurement block.",
-      "i" = "Every row must produce a finite JSON measurement block before the \\
-             correction pass can be built."
+      "x" = "{length(bad)} job{?s} failed to run or printed no parseable \\
+             measurement block.",
+      "i" = "Offending rows (1-indexed): {.val {bad}}.",
+      "i" = "Every row must produce a finite JSON measurement block (or be \\
+             silent) before the correction pass can be built."
     ), call = call)
   }
-  tibble::tibble(
-    measured_I = vapply(parsed, `[[`, numeric(1), "i"),
-    measured_TP = vapply(parsed, `[[`, numeric(1), "tp"),
-    measured_LRA = vapply(parsed, `[[`, numeric(1), "lra"),
-    measured_thresh = vapply(parsed, `[[`, numeric(1), "thresh"),
-    offset = vapply(parsed, `[[`, numeric(1), "offset")
+  silent <- status == "silent"
+  # Silent rows have no measured values; pull them from the classifier's
+  # `measured` list for the rest and leave NA where silent.
+  pick <- function(field) {
+    vapply(seq_along(cls), function(i) {
+      if (silent[[i]]) NA_real_ else cls[[i]]$measured[[field]]
+    }, numeric(1))
+  }
+  list(
+    silent = silent,
+    measured = tibble::tibble(
+      measured_I = pick("i"), measured_TP = pick("tp"),
+      measured_LRA = pick("lra"), measured_thresh = pick("thresh"),
+      offset = pick("offset")
+    )
   )
+}
+
+# bind_two_pass_result() -------------------------------------------------------
+
+# expand_manifest_rows() -------------------------------------------------------
+
+# Expand a provenance manifest built over the non-silent rows back to full row
+# order, so it keeps ffm_batch()'s one-row-per-job contract (D011) after silent
+# rows are set aside. Non-silent rows keep their manifest values; silent rows get
+# a type-matched NA in every column except `input` (the skipped input path is
+# still recorded), so nrow(manifest) == nrow(result) and rows align positionally.
+expand_manifest_rows <- function(man, silent, inputs) {
+  n <- length(silent)
+  cols <- lapply(man, function(col) {
+    out <- col[rep(NA_integer_, n)]   # n type-matched NAs
+    out[!silent] <- col
+    out
+  })
+  full <- tibble::as_tibble(cols)
+  full$input <- inputs
+  full
+}
+
+# bind_two_pass_result() -------------------------------------------------------
+
+# Reassemble the batch two-pass result in original row order. `jobs` is the full
+# jobs table already augmented with the five measured columns (NA for silent
+# rows); `ok_res` is the correction fan-out's result over the non-silent rows
+# (its added columns -- command, success, and any verified -- in the same order
+# as jobs[!silent]), or NULL when every row is silent. Silent rows are marked
+# (silent = TRUE, success = FALSE, no command/output); non-silent rows carry
+# ok_res's added columns threaded back into their positions. Pure (no binary),
+# so the interleaving is unit-testable independent of ffmpeg. A manifest
+# attribute on ok_res (opt-in provenance for the rows that ran) is expanded to
+# full row order so it stays one-row-per-job (D011).
+bind_two_pass_result <- function(jobs, silent, ok_res, run) {
+  result <- tibble::as_tibble(jobs)
+  result$silent <- silent
+  if (is.null(ok_res)) {
+    # Every row silent: no correction fan-out ran.
+    result$command <- NA_character_
+    if (run) result$success <- FALSE
+    return(result)
+  }
+  # ok_res's columns beyond the jobs table are the run outputs to thread back;
+  # silent rows get a type-matched fill (no command, not a success).
+  added <- setdiff(names(ok_res), names(jobs))
+  for (nm in added) {
+    fill <- switch(nm, command = NA_character_, success = FALSE, NA)
+    col <- rep(fill, nrow(result))
+    col[!silent] <- ok_res[[nm]]
+    result[[nm]] <- col
+  }
+  man <- attr(ok_res, "manifest")
+  if (!is.null(man)) {
+    # ffm_batch() built the manifest over only the non-silent rows; pad it back
+    # to full row order so ffm_manifest(result) stays one-row-per-job (D011).
+    attr(result, "manifest") <- if (any(silent)) {
+      expand_manifest_rows(man, silent, result$input)
+    } else {
+      man
+    }
+  }
+  result
 }
 
 # run_normalize_correction() ---------------------------------------------------

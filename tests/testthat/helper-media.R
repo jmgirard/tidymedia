@@ -66,6 +66,23 @@ make_dynamic_audio <- function(env = parent.frame()) {
   path
 }
 
+# Generate a digitally silent audio clip (anullsrc). FFmpeg's loudnorm analysis
+# measures its integrated loudness as -inf, so two-pass normalization must treat
+# it as silence (M18) rather than a parse failure. Skips the calling test if
+# ffmpeg is unavailable. Returns the file path.
+make_silent_audio <- function(env = parent.frame()) {
+  skip_if_no_ffmpeg()
+  path <- withr::local_tempfile(fileext = ".mp4", .local_envir = env)
+  command <- paste(
+    "-y -f lavfi -i anullsrc=r=44100:cl=mono -t 1",
+    sprintf('-c:a aac "%s"', path)
+  )
+  ffmpeg(command)
+  testthat::skip_if_not(file.exists(path),
+                        "silent test audio could not be generated")
+  path
+}
+
 # Build an ffm pipeline WITHOUT ffm_files()'s file-readability check, so pure
 # (binary-free) tests can assert compiled commands for named-but-absent files.
 ffm_dry <- function(input, output) {

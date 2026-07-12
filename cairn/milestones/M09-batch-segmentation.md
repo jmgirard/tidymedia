@@ -84,7 +84,7 @@ files from one jobs tibble, sharing its cut logic with `segment_video()`.
 <!-- owner: plan (create) / implement (check-off, minor edits); substantive
      change is amend-via-gate -->
 
-- [ ] T1: Extract the shared cut logic from `segment_video()`'s inline `.f`
+- [x] T1: Extract the shared cut logic from `segment_video()`'s inline `.f`
       (`R/ffmpeg.R:492-502`) into an internal helper `segment_pipeline(input,
       output, start, end, reencode)`; rewrite `segment_video()` to call it.
       (tests-first: existing `segment_video()` tests must stay green.)
@@ -111,6 +111,8 @@ files from one jobs tibble, sharing its cut logic with `segment_video()`.
   `input/output/start/end`, shared internal helper, `...`→`ffm_batch` — all
   user-decided at the plan gate. Extends M03 (`segment_video`); consistent
   with D007.
+- 2026-07-12: T1 — extracted `segment_pipeline()` helper; `segment_video()`
+  now wraps it. Existing test-ffmpeg.R suite green (80 pass, 0 fail).
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local; promote

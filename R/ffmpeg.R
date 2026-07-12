@@ -492,14 +492,25 @@ segment_video <- function(infile,
   ffm_batch(
     jobs,
     function(input, output, start, end, ...) {
-      p <- ffm_seek(ffm_files(input, output), start = start, end = end,
-                    reencode = reencode)
-      if (!reencode) p <- ffm_copy(p)
-      p
+      segment_pipeline(input, output, start, end, reencode)
     },
     run = run,
     parallel = parallel
   )
+}
+
+
+# segment_pipeline() ------------------------------------------------------
+
+# Shared cut logic for segment_video() and segment_videos(): build one
+# single-output seek pipeline for a single segment, stream-copying on the fast
+# (non-reencode) path. Fan-out verbs stay single-output per job (D003, D007);
+# both verbs wrap this in a closure that captures the scalar `reencode`.
+segment_pipeline <- function(input, output, start, end, reencode) {
+  p <- ffm_seek(ffm_files(input, output), start = start, end = end,
+                reencode = reencode)
+  if (!reencode) p <- ffm_copy(p)
+  p
 }
 
 

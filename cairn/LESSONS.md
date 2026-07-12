@@ -4,10 +4,6 @@ _Durable, append-only repo lessons (build quirks, testing tricks) — captured a
 milestone end, surfaced at plan time. Capped at 50 lines (D-015); prune the
 least-useful when full. Not status, not decisions (a choice is a D-entry)._
 
-- 2026-07-12 (M10): `is.logical(x)` accepts vectors containing `NA`, so a
-  bare `is.logical()` type-guard admits `NA` where `rlang::check_bool()`
-  (scalar path) rejects it — pair it with `!anyNA()` when validating a logical
-  column, or the `NA` leaks downstream to an internal check with a worse error.
 - 2026-07-12 (M12): a Layer-2 verb that re-encodes video (sets `-c:v`) will
   silently transcode audio and *reject odd dimensions* under libx264/yuv420p
   (0-byte output) unless it also stream-copies audio (`-c:a copy`) and
@@ -47,3 +43,7 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   path across calls. Trick: subsetting a canonical 0-row schema tibble pads to N
   all-NA rows for free (`col[rep(NA_integer_, n)]` gives n type-matched NAs).
   Test parity by comparing `names()`/types of the fast vs the normal path.
+- 2026-07-12 (M20): `check_dim()` (`ffm_drawbox`/`ffm_crop`/`ffm_scale`) rejects
+  bare integers — it accepts `is_double(n=1)` or a string, not `integer`. A
+  Layer-2 verb passing table columns (e.g. a tibble's `1:2`) must coerce them to
+  double first, or valid pixel coordinates abort as a bad FFmpeg expression.

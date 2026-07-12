@@ -3,7 +3,7 @@
 - **Status:** review
 - **Priority:** normal
 - **Depends on:** M14
-- **Branch/PR:** m16-two-pass-loudnorm
+- **Branch/PR:** m16-two-pass-loudnorm · https://github.com/jmgirard/tidymedia/pull/18
 
 ## Goal
 
@@ -44,33 +44,33 @@ analyze-then-build execution pattern.
 
 ## Acceptance criteria
 
-- [ ] AC1 — With `two_pass = FALSE` (default), `normalize_audio()` compiles and
+- [x] AC1 — With `two_pass = FALSE` (default), `normalize_audio()` compiles and
       runs byte-for-byte identically to today, including pure `run = FALSE`
       (no binary touched). Evidence: passing test asserting the compiled command
       is unchanged from the current single-pass string.
-- [ ] AC2 — The correction-command builder, given a fixed measured-values fixture
+- [x] AC2 — The correction-command builder, given a fixed measured-values fixture
       (no binary), emits a `loudnorm` filter carrying `measured_I`, `measured_TP`,
       `measured_LRA`, `measured_thresh`, `offset`, and `linear=true` with the
       values mapped correctly from the analysis keys, while preserving
       `channels`/`sample_rate`/`-c:v copy` from the shared pipeline. Evidence:
       passing pure test. (RB tripwire: irreversible-api — new builder params +
       new execution contract.)
-- [ ] AC3 — The analysis-pass command compiles with `print_format=json` and
+- [x] AC3 — The analysis-pass command compiles with `print_format=json` and
       `-f null` and no output file. The stderr parser extracts the five measured
       values from a captured loudnorm JSON fixture and rejects/aborts cleanly when
       the block is absent or malformed. Evidence: passing pure test over a
       recorded-stderr fixture. (RB tripwire: no-oracle — parser correctness has no
       runtime oracle in CI.)
-- [ ] AC4 — With `two_pass = TRUE, run = FALSE`, the analysis pass runs and the
+- [x] AC4 — With `two_pass = TRUE, run = FALSE`, the analysis pass runs and the
       returned value is the correction command string (unexecuted; output file not
       written). Evidence: passing skip-guarded test (`skip_if` ffmpeg absent)
       asserting the return shape and that no output was produced.
-- [ ] AC5 — An execution test (`skip_if` ffmpeg absent) runs full two-pass on a
+- [x] AC5 — An execution test (`skip_if` ffmpeg absent) runs full two-pass on a
       sample, then re-probes the output's integrated loudness and asserts it lands
       within ±1 LU of the target, and is closer to target than the single-pass
       output on the same input. Evidence: passing skip-guarded test. Source: EBU
       R 128 (2014); ITU-R BS.1770-4.
-- [ ] AC6 — `devtools::check()` clean (zero errors/warnings/notes); roxygen
+- [x] AC6 — `devtools::check()` clean (zero errors/warnings/notes); roxygen
       updated, `@family` and DESIGN.md function families reflect the new arg.
 
 ## Coverage
@@ -116,48 +116,33 @@ analyze-then-build execution pattern.
 
 ## Work log
 
-- 2026-07-12: created by /milestone-plan (promoted from ROADMAP candidate, split
-  from M14 on 2026-07-12).
+- 2026-07-12: created by /milestone-plan (promoted from candidate, split from M14).
 - 2026-07-12: implement start; branch m16-two-pass-loudnorm cut from master.
-- 2026-07-12: gate decided — numeric measured params on ffm_loudnorm(); analysis
-  pass applies bare loudnorm targets (FFmpeg canonical recipe, no downmix);
-  parser confidence via recorded stderr fixture + malformed case. No Fable
-  escalation (both tripwires judged well-grounded).
-- 2026-07-12: T1 done — added byte-for-byte single-pass characterization baseline.
-- 2026-07-12: T2 done — ffm_loudnorm() gained measured_i/tp/lra/thresh, offset,
-  linear, print_format (numeric, all-or-none measured set); default single-pass
-  string unchanged. man/ffm_loudnorm.Rd regenerated.
-- 2026-07-12: T3 done — normalize_audio_pipeline() gained `measured=` that routes
-  into a linear correction; shaping (copy/downmix/resample) parity preserved.
-- 2026-07-12: T4 done — R/loudnorm_two_pass.R: analysis-pass builder (bare
-  loudnorm + print_format=json + -f null -) and stderr parser (regex, no JSON
-  dep) with clean abort on absent/partial/non-finite. Recorded real FFmpeg
-  fixture at tests/testthat/fixtures/loudnorm-analysis.txt.
-- 2026-07-12: T5 done — normalize_audio() gained two_pass=FALSE + orchestrator
-  run_loudnorm_analysis(); run=FALSE returns the correction command unexecuted
-  (analysis still runs). Verified end-to-end on the packaged sample. man/ updated.
-- 2026-07-12: T6 done — execution test on a high-LRA tremolo source (new
-  make_dynamic_audio() helper): two-pass lands within ±1 LU of target and beats
-  single-pass. Measured empirically: single err ~2.2 LU, two-pass ~0.01 LU. The
-  packaged sample is a steady tone (LRA 0) where both tie, so a dynamic source
-  is required to show the gap.
-- 2026-07-12: T7 done — roxygen for two_pass/measured params documented; NEWS
-  entry added; DESIGN families unchanged (no new exported fn). All tasks done.
-  devtools::check() 0/0/0; full suite 667 pass / 0 fail / 0 skip. Status → review.
+- 2026-07-12: gate — numeric measured params; analysis pass bare targets (canonical recipe); parser via recorded+malformed fixture. No Fable escalation.
+- 2026-07-12: T1 — single-pass characterization baseline pinned.
+- 2026-07-12: T2 — ffm_loudnorm() gained measured_i/tp/lra/thresh, offset, linear, print_format (all-or-none set); single-pass string unchanged.
+- 2026-07-12: T3 — normalize_audio_pipeline() `measured=` routes into a linear correction; shaping parity preserved.
+- 2026-07-12: T4 — R/loudnorm_two_pass.R analysis builder + stderr parser (regex, no JSON dep); recorded real FFmpeg fixture.
+- 2026-07-12: T5 — normalize_audio() two_pass + orchestrator; run=FALSE returns correction cmd unexecuted (analysis still runs).
+- 2026-07-12: T6 — execution test on high-LRA tremolo source (make_dynamic_audio); two-pass ~0.01 LU vs single ~2.2 LU.
+- 2026-07-12: T7 — roxygen + NEWS; check 0/0/0; 667 pass / 0 fail. Status → review.
 
 ## Decisions
 
-- Analyze-then-build execution pattern (candidate D-entry, promote at review):
-  tidymedia's first verb that must run a binary to *build* a later command. The
-  analysis pass runs through FFmpeg (`run_loudnorm_analysis()`), its stderr is
-  parsed (regex, no JSON dep — D011 spirit), and the measured values drive a
-  linear correction built on the shared `normalize_audio_pipeline()`. Compilation
-  (`ffm_compile()`) stays pure; the orchestrator lives beside `ffm_run()`.
-  Consequence: `run = FALSE` no longer guarantees a binary-free call — under
-  `two_pass = TRUE` the analysis pass always runs; `run` gates only the
-  correction pass. Single-pass defaults are byte-for-byte unchanged.
-- The analysis pass measures the input as-is (bare `loudnorm` targets +
-  `print_format=json`, `-f null -`), the FFmpeg canonical recipe; downmix/
-  resample belong to the correction/output stage, not the measurement.
+- Analyze-then-build pattern (candidate D-entry, promote at review): first verb that runs a binary to *build* a later command; compilation stays pure, orchestrator beside `ffm_run()`. Consequence: `run = FALSE` is no longer binary-free under `two_pass = TRUE` (analysis always runs; `run` gates only the correction). Single-pass unchanged.
+- Analysis pass measures the input as-is (bare targets + `print_format=json`, `-f null -`); downmix/resample belong to the output stage, not measurement.
 
 ## Review
+
+Fresh evidence (2026-07-12, PR #18; test-normalize-audio.R 31 pass, test-ffm.R
+184 pass, test-loudnorm-two-pass.R 8 pass, all 0 fail):
+
+- AC1 ✓ "single-pass byte-for-byte stable" + "two_pass=FALSE identical to default"; default compile touches no binary.
+- AC2 ✓ "builds correction filter from measured values" + "threads measured into linear correction" (measured_* + linear=true; -codec:v copy -ac -ar preserved). Pure.
+- AC3 ✓ analysis compiles print_format=json + `-f null "-"`; parser reads 5 values from the recorded real-FFmpeg fixture, aborts on absent/non-numeric/missing-key.
+- AC4 ✓ two_pass+run=FALSE returns the correction string (measured_I/linear=true), no output written. Skip-guarded.
+- AC5 ✓ two_pass within ±1 LU and strictly closer than single-pass on the high-LRA source. Source: EBU R 128 (2014); ITU-R BS.1770-4.
+- AC6 ✓ check() 0/0/0; 667 pass / 0 fail; document() no diff; pkgdown clean.
+
+Consistency gate PASS: cairn_validate clean; document() no diff; pkgdown clean;
+NEWS entry present; no new top-level files.

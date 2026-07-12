@@ -99,19 +99,19 @@ via `ffm_batch()` (D007), mirroring `segment_videos()`/`extract_frames()`.
       pixel_format)` from `standardize_video()`'s body (`R/ffmpeg.R:318-341`); refactor
       `standardize_video()` to `ffm_finish(standardize_pipeline(...), run)`. Confirm the
       existing scalar tests (`tests/testthat/test-ffmpeg.R`) still pass (AC7).
-- [ ] T2: Write `standardize_videos()`: jobs validation (data.frame, non-empty, `input`
+- [x] T2: Write `standardize_videos()`: jobs validation (data.frame, non-empty, `input`
       present), per-row override-column recognition + light front-door type/NA guards for
       present override columns, and the `ffm_batch()` fan-out closure sharing
       `standardize_pipeline()` (per-row values from `...`/pmap override scalar args;
       `...` forwarded to `ffm_batch`). Mirror `segment_videos()` structure (`R/ffmpeg.R:701`).
-- [ ] T3: Add `derive_standardized_names(input)` (`<base>_standardized.<ext>`), and the
+- [x] T3: Add `derive_standardized_names(input)` (`<base>_standardized.<ext>`), and the
       duplicate-input-without-`output` collision abort; wire into `standardize_videos()`.
-- [ ] T4: Tests in `tests/testthat/test-standardize-videos.R` (new file), modeled on
+- [x] T4: Tests in `tests/testthat/test-standardize-videos.R` (new file), modeled on
       `test-segment-videos.R`: compile-parity vs scalar, per-row overrides, auto-naming +
       collision abort, the four front-door rejections, and verify/manifest forwarding
       (binary-gated). Use `devtools::test(filter=)` / `load_all()` for fresh exports
       (M11 lesson), not `test_file()` under `library()`.
-- [ ] T5: Add the binary-gated E2E write test (AC6): 2-row real jobs table, `run = TRUE`,
+- [x] T5: Add the binary-gated E2E write test (AC6): 2-row real jobs table, `run = TRUE`,
       assert outputs exist and probe to spec; `skip_if` ffmpeg absent.
 - [ ] T6: `devtools::document()` (roxygen → `man/` + `NAMESPACE`); `devtools::test()`;
       `devtools::check()` to zero errors/warnings/notes (AC8).
@@ -119,6 +119,11 @@ via `ffm_batch()` (D007), mirroring `segment_videos()`/`extract_frames()`.
 ## Work log
 <!-- owner: any skill · append-only; one line per entry; absolute dates -->
 
+- 2026-07-12: T2–T5 — added `standardize_videos()` + `derive_standardized_names()`
+  (`R/ffmpeg.R`), roxygen/`document()`, and `test-standardize-videos.R` (20 tests,
+  all pass; gated E2E/verify/manifest ran locally with ffmpeg present). Compile-parity
+  with the scalar verb confirmed byte-identical; per-row overrides for all five knobs;
+  `_standardized` auto-naming with duplicate-input collision abort.
 - 2026-07-12: T1 — extracted `standardize_pipeline()` from `standardize_video()`;
   scalar verb now composes it. Existing `test-ffmpeg.R` green (99 pass, 0 fail),
   confirming no behavior change (AC7).

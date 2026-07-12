@@ -913,6 +913,170 @@ extract_frames <- function(jobs, format = "png", run = TRUE,
 }
 
 
+# derive_standardized_names() ---------------------------------------------
+
+# Derive one output path per input for standardize_videos() when the `output`
+# column is absent: `<base>_standardized.<input-ext>` (standardization keeps the
+# source container, unlike a frame which becomes an image). Standardization is
+# one-input -> one-output, so -- unlike the per-input-numbering siblings -- a
+# duplicated input with no explicit `output` would collide; the caller
+# (standardize_videos) rejects that up front, so this helper assumes unique
+# inputs and stays a pure name map.
+derive_standardized_names <- function(input) {
+  paste0(
+    tools::file_path_sans_ext(input), "_standardized.", tools::file_ext(input)
+  )
+}
+
+
+# standardize_videos() ----------------------------------------------------
+
+#' Standardize Many Videos From a Jobs Table
+#'
+#' Re-encode many input files to a reproducible format from a single jobs tibble
+#' — a table-driven sibling of \code{\link{standardize_video}} for when you have
+#' more than one video to standardize. Each row is one input; the only required
+#' column names its source. This is a thin wrapper over \code{\link{ffm_batch}}:
+#' one reproducible compiled command per input.
+#'
+#' @param jobs A data frame with one row per input and (at least) an
+#'   \code{input} column (source path). An optional \code{output} column names
+#'   the destination; when absent, one is derived per row by appending
+#'   \code{_standardized} to each input's basename, keeping the input's
+#'   extension (e.g. \code{clip.mkv} becomes \code{clip_standardized.mkv}).
+#'   Because standardization is one-input-to-one-output, a duplicated
+#'   \code{input} with no \code{output} column would collide and is rejected.
+#'   Each of the five standardization knobs — \code{width}, \code{height},
+#'   \code{fps}, \code{vcodec}, \code{pixel_format} — may also appear as a
+#'   column to override the corresponding argument on a per-row basis; rows (or
+#'   knobs) that omit the column fall back to the argument's value. Any other
+#'   columns are ignored.
+#' @param width,height Optional target dimensions applied to every row, unless
+#'   \code{jobs} carries a column of the same name (see \code{jobs}). When only
+#'   one is given the other is derived to preserve aspect ratio; when neither is
+#'   given the frame is floor-cropped to even dimensions so odd-sized sources
+#'   encode. (default = \code{NULL})
+#' @param fps Optional target frame rate applied to every row, unless
+#'   \code{jobs} carries an \code{fps} column. (default = \code{NULL}, i.e.
+#'   leave the frame rate unchanged)
+#' @param vcodec A string naming the video codec applied to every row, unless
+#'   \code{jobs} carries a \code{vcodec} column. (default = \code{"libx264"})
+#' @param pixel_format A string naming the pixel format applied to every row,
+#'   unless \code{jobs} carries a \code{pixel_format} column.
+#'   (default = \code{"yuv420p"})
+#' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
+#'   default) or only compile them for inspection (\code{FALSE}).
+#' @param parallel A logical passed to \code{\link{ffm_batch}}: standardize in
+#'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
+#'   default). Parallelism follows the active \code{\link[future:plan]{future}}
+#'   plan; \code{TRUE} under the default sequential plan runs one input at a
+#'   time and warns. Set a plan first, e.g.
+#'   \code{future::plan(future::multisession)}.
+#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}}, such as
+#'   \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.
+#' @return The [tibble][tibble::tibble-package] returned by
+#'   \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column
+#'   (and, when \code{output} was derived, the resolved \code{output} column;
+#'   when \code{run = TRUE}, a \code{success} column, plus any columns the
+#'   forwarded arguments add, e.g. \code{verified}).
+#' @seealso \code{\link{standardize_video}} for the single-input form;
+#'   \code{\link{ffm_batch}} for the batch runner and the arguments forwarded
+#'   through \code{...}; \code{\link{segment_videos}} and
+#'   \code{\link{extract_frames}} for the other table-driven siblings.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' jobs <- tibble::tibble(
+#'   input  = c(video, video),
+#'   output = c("a.mp4", "b.mp4"),
+#'   width  = c(640, 320)
+#' )
+#' # run = FALSE compiles one command per input without calling FFmpeg
+#' standardize_videos(jobs, run = FALSE)
+#' @export
+standardize_videos <- function(jobs, width = NULL, height = NULL, fps = NULL,
+                               vcodec = "libx264", pixel_format = "yuv420p",
+                               run = TRUE, parallel = FALSE, ...) {
+
+  if (!is.data.frame(jobs)) {
+    cli::cli_abort("{.arg jobs} must be a data frame with one row per input.")
+  }
+  if (nrow(jobs) == 0) {
+    cli::cli_abort("{.arg jobs} must have at least one row.")
+  }
+  if (!"input" %in% names(jobs)) {
+    cli::cli_abort(c(
+      "{.arg jobs} must have an {.field input} column.",
+      "x" = "Missing column: {.val input}."
+    ))
+  }
+
+  # A factor input column carries paths as levels; treat them as strings
+  # (parity with extract_frames()).
+  jobs$input <- as.character(jobs$input)
+
+  # Validate present override columns up front so a bad column fails clearly
+  # here rather than as an opaque FFmpeg error mid-batch (M11 parity lesson).
+  # Value-level checks (positive dimensions, known codec/pixfmt) are inherited
+  # per row from standardize_pipeline()'s check_dim/check_token guards.
+  dim_cols <- c("width", "height", "fps")
+  for (col in intersect(dim_cols, names(jobs))) {
+    if (!(is.numeric(jobs[[col]]) || is.character(jobs[[col]]))) {
+      cli::cli_abort("The {.field {col}} column of {.arg jobs} must be numeric or character.")
+    }
+    if (anyNA(jobs[[col]])) {
+      cli::cli_abort("The {.field {col}} column of {.arg jobs} must not contain {.val {NA}}.")
+    }
+  }
+  str_cols <- c("vcodec", "pixel_format")
+  for (col in intersect(str_cols, names(jobs))) {
+    if (!is.character(jobs[[col]]) || anyNA(jobs[[col]])) {
+      cli::cli_abort("The {.field {col}} column of {.arg jobs} must be character (no {.val {NA}}).")
+    }
+  }
+
+  # Auto-name outputs when the column is absent. One input -> one output, so a
+  # duplicated input with no explicit output would map to the same file; reject
+  # that rather than silently overwrite (the deliberate trade-off for readable
+  # `_standardized` names over sibling-style per-input numbering).
+  if (!"output" %in% names(jobs)) {
+    dupes <- unique(jobs$input[duplicated(jobs$input)])
+    if (length(dupes) > 0) {
+      cli::cli_abort(c(
+        "{.arg jobs} has duplicated {.field input} paths but no {.field output} column.",
+        "x" = "Duplicated input{?s}: {.val {dupes}}.",
+        "i" = "Add an {.field output} column to name each row's destination."
+      ))
+    }
+    jobs$output <- derive_standardized_names(jobs$input)
+  }
+
+  # Thin Layer-2 fan-out over ffm_batch (D007): one single-output re-encode
+  # pipeline per row, sharing standardize_pipeline() with standardize_video().
+  # A per-row knob column (arriving via `...` from pmap) overrides the scalar
+  # arg of the same name; `...` also forwards ffm_batch options
+  # (verify/manifest/...) to the runner, never to the pipeline builder.
+  ffm_batch(
+    jobs,
+    function(input, output, ...) {
+      dots <- list(...)
+      pick <- function(nm, default) if (nm %in% names(dots)) dots[[nm]] else default
+      standardize_pipeline(
+        input, output,
+        width = pick("width", width),
+        height = pick("height", height),
+        fps = pick("fps", fps),
+        vcodec = pick("vcodec", vcodec),
+        pixel_format = pick("pixel_format", pixel_format)
+      )
+    },
+    run = run,
+    parallel = parallel,
+    ...
+  )
+}
+
+
 # concatenate_videos() ----------------------------------------------------
 
 #' Combine video files using the concat demuxer

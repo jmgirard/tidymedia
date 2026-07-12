@@ -79,10 +79,10 @@ argument set is the one documented standard (see the API tripwire on T4).
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [ ] T1: Tests first — `ffm_fps()` compilation/validation in
+- [x] T1: Tests first — `ffm_fps()` compilation/validation in
       `tests/testthat/test-ffm.R`: happy path emits `fps=<n>` in `-vf`, and
       bad `fps` aborts (AC1).
-- [ ] T2: Implement `ffm_fps()` in [R/ffm.R](../../R/ffm.R) (mirror
+- [x] T2: Implement `ffm_fps()` in [R/ffm.R](../../R/ffm.R) (mirror
       `ffm_scale()` at line 308; write to `filter_video`); roxygen with a
       runnable example; add `ffm_fps` to `_pkgdown.yml` under "Layer 1"; a new
       exported builder needs its reference row in the same commit (guardrail);
@@ -108,9 +108,21 @@ argument set is the one documented standard (see the API tripwire on T4).
 
 - 2026-07-12: created by /milestone-plan (split from the four-family
   research-verbs candidate; standardization family, video-only per plan gate).
+- 2026-07-12: T1+T2 — added `ffm_fps()` Layer-1 verb (uses `check_dim` so a
+  positive number or FFmpeg framerate string is accepted, else aborts),
+  pkgdown row, docs; 4 compile/validation tests. test-ffm.R clean (165 pass).
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
+
+- 2026-07-12 (T4 tripwire, irreversible-api): the "standard" is an
+  explicit-parameter default set, not a named-`preset` bundle. Chosen over
+  escalation because it is additive-forward (a `preset=` arg can be layered on
+  later without breaking callers), keeps every output-affecting knob visible in
+  the compiled command (D001), and matches the plan Scope. Defaults:
+  `vcodec = "libx264"`, `pixel_format = "yuv420p"` (mirrors `format_for_web()`),
+  `width/height/fps = NULL` = leave untouched, `+faststart` always applied,
+  audio untouched (audio work is out of scope). User delegated the call.
 
 ## Review
 <!-- owner: review · exclusive -->

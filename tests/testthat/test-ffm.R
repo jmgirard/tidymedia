@@ -236,6 +236,35 @@ test_that("ffm_crop() accepts FFmpeg expressions as strings", {
   expect_match(p$filter_video, "crop=w=in_w/2:h=in_h", fixed = TRUE)
 })
 
+# ffm_fps() --------------------------------------------------------------------
+
+test_that("ffm_fps() appends an fps filter compiling into -vf", {
+  f <- make_input()
+  p <- ffm_fps(ffm_files(f, "out.mp4"), 30)
+  expect_equal(p$filter_video, "fps=30")
+  expect_match(ffm_compile(p), '-vf "fps=30"', fixed = TRUE)
+})
+
+test_that("ffm_fps() appends after existing video filters", {
+  f <- make_input()
+  p <- ffm_fps(ffm_scale(ffm_files(f, "out.mp4"), 640, 480), 24)
+  expect_equal(p$filter_video, c("scale=w=640:h=480", "fps=24"))
+})
+
+test_that("ffm_fps() accepts an FFmpeg framerate expression as a string", {
+  f <- make_input()
+  p <- ffm_fps(ffm_files(f, "out.mp4"), "30000/1001")
+  expect_equal(p$filter_video, "fps=30000/1001")
+})
+
+test_that("ffm_fps() rejects a non-positive or non-numeric/non-string fps", {
+  f <- make_input()
+  p <- ffm_files(f, "out.mp4")
+  expect_error(ffm_fps(p, 0))
+  expect_error(ffm_fps(p, -5))
+  expect_error(ffm_fps(p, c(24, 30)))
+})
+
 # ffm_codec() / ffm_copy() -----------------------------------------------------
 
 test_that("ffm_codec() stores bare codec names, video rendered first", {

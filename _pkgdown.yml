@@ -23,6 +23,7 @@ reference:
   - ffm_drop
   - ffm_crop
   - ffm_scale
+  - ffm_fps
   - ffm_codec
   - ffm_map
   - ffm_copy

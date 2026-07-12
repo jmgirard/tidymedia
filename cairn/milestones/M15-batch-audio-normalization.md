@@ -3,7 +3,7 @@
 - **Status:** review
 - **Priority:** normal
 - **Depends on:** M14
-- **Branch/PR:** m15-batch-audio-normalization
+- **Branch/PR:** m15-batch-audio-normalization / https://github.com/jmgirard/tidymedia/pull/17
 
 ## Goal
 

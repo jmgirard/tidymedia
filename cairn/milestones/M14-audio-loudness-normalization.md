@@ -74,10 +74,10 @@ engine's until-now-unused `filter_audio`/`-af` slot.
       (mirror the `ffm_scale()` pattern near R/ffm.R:308, but append to
       `object$filter_audio`). Tests-first for the compiled `-af "loudnorm=…"`
       output and pure compilation.
-- [ ] T2 — Determine and record the EBU R128 / ITU-R BS.1770 default targets
+- [x] T2 — Determine and record the EBU R128 / ITU-R BS.1770 default targets
       (`I`, `TP`, `LRA`) with a primary-source citation; capture the source and
       the numbers for the roxygen and this milestone. (RB tripwire: no-oracle)
-- [ ] T3 — Add `normalize_audio(infile, outfile, channels = NULL,
+- [x] T3 — Add `normalize_audio(infile, outfile, channels = NULL,
       sample_rate = NULL, …targets…, run = TRUE)` Layer-2 verb to `R/ffmpeg.R`
       composing `ffm_loudnorm()` + `-c:v copy` + optional downmix/resample; a
       thin wrapper (IP1) that glues no strings of its own. Structure the body via
@@ -86,7 +86,7 @@ engine's until-now-unused `filter_audio`/`-af` slot.
       validation via cli/rlang. Tests-first for compile + validation, covering
       both the with- and without-option branches. (RB tripwire: irreversible-api
       — the exported signature soaks toward CRAN)
-- [ ] T4 — Add an execution test in `tests/testthat/` (`skip_if` binary absent)
+- [x] T4 — Add an execution test in `tests/testthat/` (`skip_if` binary absent)
       verifying non-empty, audio-decodable output on the sample.
 - [ ] T5 — Roxygen + `devtools::document()`; add to the `@family` lists and to
       DESIGN.md function families; `devtools::check()` clean.
@@ -96,6 +96,14 @@ engine's until-now-unused `filter_audio`/`-af` slot.
 - 2026-07-12: created by /milestone-plan.
 - 2026-07-12: T1 — `ffm_loudnorm()` primitive added (first verb to write the
   `-af` slot); EBU R128 defaults, range-validated; 5 compile/validation tests pass.
+- 2026-07-12: T2 — no-oracle tripwire resolved at the implement gate (user chose
+  EBU R128 over escalation); targets I=-23/TP=-1/LRA=7 cited to EBU Rec. R 128
+  (2014) + ITU-R BS.1770-4 in the `ffm_loudnorm()` `@references` and Decisions.
+- 2026-07-12: T3+T4 — `normalize_audio()` verb + shared
+  `normalize_audio_pipeline()` helper (video stream-copied, optional
+  downmix/resample via `-ac`/`-ar`); descriptive param names. 9 tests incl. a
+  binary-gated exec test that produced audio-decodable output; full suite 279
+  pass / 0 fail / 1 skip.
 
 ## Decisions
 

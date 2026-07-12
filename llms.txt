@@ -227,6 +227,8 @@ it.
   : Crop Frames in an FFmpeg Pipeline
 - [`ffm_scale()`](https://jmgirard.github.io/tidymedia/reference/ffm_scale.md)
   : Scale (Resize) Frames in a FFmpeg Pipeline
+- [`ffm_fps()`](https://jmgirard.github.io/tidymedia/reference/ffm_fps.md)
+  : Set the Frame Rate in an FFmpeg Pipeline
 - [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md)
   : Set Codecs in an FFmpeg Pipeline
 - [`ffm_map()`](https://jmgirard.github.io/tidymedia/reference/ffm_map.md)
@@ -274,6 +276,8 @@ Thin wrappers over the builder for common preprocessing jobs.
   : Crop a video to a rectangular region
 - [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
   : Re-encode a video for web playback
+- [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+  : Standardize a video to a reproducible format
 - [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
   : Segment Video
 - [`segment_videos()`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md)

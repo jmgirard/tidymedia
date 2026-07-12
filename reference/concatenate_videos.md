@@ -47,12 +47,13 @@ Other task verb functions:
 [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
 [`segment_videos()`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md),
-[`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+[`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
+[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
 
 ## Examples
 
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 concatenate_videos(c(video, video), "joined.mp4", run = FALSE)
-#> [1] "-y -f concat -safe 0 -i \"/tmp/RtmpI3sMFj/ffm-concat1fbc27d27715.txt\" -codec:v copy -codec:a copy -map 0 \"joined.mp4\""
+#> [1] "-y -f concat -safe 0 -i \"/tmp/RtmpUYAWCD/ffm-concat1f7137f7ff76.txt\" -codec:v copy -codec:a copy -map 0 \"joined.mp4\""
 ```

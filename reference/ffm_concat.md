@@ -48,6 +48,7 @@ Other builder functions:
 [`ffm_drawbox()`](https://jmgirard.github.io/tidymedia/reference/ffm_drawbox.md),
 [`ffm_drop()`](https://jmgirard.github.io/tidymedia/reference/ffm_drop.md),
 [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md),
+[`ffm_fps()`](https://jmgirard.github.io/tidymedia/reference/ffm_fps.md),
 [`ffm_hstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md),
 [`ffm_map()`](https://jmgirard.github.io/tidymedia/reference/ffm_map.md),
 [`ffm_output_options()`](https://jmgirard.github.io/tidymedia/reference/ffm_output_options.md),
@@ -68,5 +69,5 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 ffm(c(video, video), "output.mp4") |>
   ffm_concat() |>
   ffm_compile()
-#> [1] "-y -f concat -safe 0 -i \"/tmp/RtmpI3sMFj/ffm-concat1fbcc909025.txt\" -codec:v copy -codec:a copy -map 0 \"output.mp4\""
+#> [1] "-y -f concat -safe 0 -i \"/tmp/RtmpUYAWCD/ffm-concat1f714682fb0e.txt\" -codec:v copy -codec:a copy -map 0 \"output.mp4\""
 ```

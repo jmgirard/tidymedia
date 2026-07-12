@@ -30,6 +30,7 @@
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_drawbox.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_drop.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_files.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_fps.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_hstack.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_manifest.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_map.html</loc></url>
@@ -68,6 +69,7 @@
 <url><loc>https://jmgirard.github.io/tidymedia/reference/segment_videos.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/separate_audio_video.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/set_program.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/standardize_video.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/tidyeval.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/verify_media.html</loc></url>
 </urlset>

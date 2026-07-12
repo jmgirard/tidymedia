@@ -1,30 +1,31 @@
-# Print an FFmpeg pipeline
+# Set the Frame Rate in an FFmpeg Pipeline
 
-Print a tidymedia `ffm` pipeline by showing the FFmpeg command it
-currently compiles to (via
-[`ffm_compile`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md)).
+Resample the video to a constant frame rate via FFmpeg's `fps` filter,
+duplicating or dropping frames as needed. Appended to the video filter
+chain like the other single-input sequential filters.
 
 ## Usage
 
 ``` r
-# S3 method for class 'tidymedia_ffm'
-print(x, ...)
+ffm_fps(object, fps)
 ```
 
 ## Arguments
 
-- x:
+- object:
 
-  A tidymedia `ffm` pipeline object created by
-  [`ffm_files`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md).
+  An ffmpeg pipeline (`ffm`) object created by
+  [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md).
 
-- ...:
+- fps:
 
-  Ignored.
+  The target frame rate. Either (1) a positive real number of frames per
+  second or (2) a string that contains an FFmpeg framerate expression
+  (for example `"30000/1001"` for NTSC).
 
 ## Value
 
-`x`, invisibly.
+`object` but with the added instruction to resample the frame rate.
 
 ## See also
 
@@ -39,7 +40,6 @@ Other builder functions:
 [`ffm_drawbox()`](https://jmgirard.github.io/tidymedia/reference/ffm_drawbox.md),
 [`ffm_drop()`](https://jmgirard.github.io/tidymedia/reference/ffm_drop.md),
 [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md),
-[`ffm_fps()`](https://jmgirard.github.io/tidymedia/reference/ffm_fps.md),
 [`ffm_hstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md),
 [`ffm_map()`](https://jmgirard.github.io/tidymedia/reference/ffm_map.md),
 [`ffm_output_options()`](https://jmgirard.github.io/tidymedia/reference/ffm_output_options.md),
@@ -49,15 +49,15 @@ Other builder functions:
 [`ffm_scale()`](https://jmgirard.github.io/tidymedia/reference/ffm_scale.md),
 [`ffm_seek()`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md),
 [`ffm_trim()`](https://jmgirard.github.io/tidymedia/reference/ffm_trim.md),
-[`ffm_vstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_vstack.md)
+[`ffm_vstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_vstack.md),
+[`print.tidymedia_ffm()`](https://jmgirard.github.io/tidymedia/reference/print.tidymedia_ffm.md)
 
 ## Examples
 
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 ffm(video, "output.mp4") |>
-  ffm_trim(start = 1, end = 5)
-#> tidymedia ffmpeg pipeline:
-#> 
-#>  -y -i "/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4" -vf "trim=start=1:end=5,setpts=PTS-STARTPTS" "output.mp4" 
+  ffm_fps(fps = 30) |>
+  ffm_compile()
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"fps=30\" \"output.mp4\""
 ```

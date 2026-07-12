@@ -1,0 +1,112 @@
+# Standardize a video to a reproducible format
+
+Re-encode a video to a consistent, reproducible format for analysis
+pipelines: a single video codec, pixel format, and (optionally)
+resolution and frame rate, with `+faststart` for smooth playback. Unlike
+[`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
+(a fixed web-delivery recipe), every part of the standard is a
+parameter, so a lab can pin its own house format once and apply it
+across a dataset.
+
+## Usage
+
+``` r
+standardize_video(
+  infile,
+  outfile,
+  width = NULL,
+  height = NULL,
+  fps = NULL,
+  vcodec = "libx264",
+  pixel_format = "yuv420p",
+  run = TRUE
+)
+```
+
+## Arguments
+
+- infile:
+
+  A string containing the path to a video file.
+
+- outfile:
+
+  A string containing the path of the video file to write.
+
+- width:
+
+  The output width in pixels (a positive number), or `NULL` (default) to
+  leave the width unconstrained.
+
+- height:
+
+  The output height in pixels (a positive number), or `NULL` (default)
+  to leave the height unconstrained.
+
+- fps:
+
+  The output frame rate (a positive number or FFmpeg framerate
+  expression such as `"30000/1001"`), or `NULL` (default) to keep the
+  input frame rate.
+
+- vcodec:
+
+  A string naming the output video codec (default `"libx264"`).
+
+- pixel_format:
+
+  A string naming the output pixel format (default `"yuv420p"`).
+
+- run:
+
+  A logical: run the command through FFmpeg (`TRUE`, default) or return
+  the compiled command without running it (`FALSE`).
+
+## Value
+
+The compiled FFmpeg command (invisibly when `run = TRUE`).
+
+## Details
+
+The default standard `standardize_video(infile, outfile)` re-encodes to
+H.264 video (`vcodec = "libx264"`) with `pixel_format = "yuv420p"` and
+`-movflags +faststart`, keeping the source resolution and frame rate.
+Audio is stream-copied unchanged (`-c:a copy`); audio standardization is
+out of scope. The same input therefore always compiles to a
+byte-identical command.
+
+Resolution follows `width`/`height`: supplying both forces exact output
+dimensions; supplying only one preserves the aspect ratio and rounds the
+other to the nearest even number (FFmpeg's `-2`); supplying neither
+keeps the source resolution but rounds odd dimensions down to the
+nearest even value (a `yuv420p`/`libx264` requirement, and a no-op for
+already-even input) so the output always encodes.
+
+## See also
+
+Other task verb functions:
+[`audio_as_mp3()`](https://jmgirard.github.io/tidymedia/reference/audio_as_mp3.md),
+[`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
+[`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md),
+[`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
+[`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
+[`extract_frame()`](https://jmgirard.github.io/tidymedia/reference/extract_frame.md),
+[`extract_frames()`](https://jmgirard.github.io/tidymedia/reference/extract_frames.md),
+[`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
+[`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
+[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
+[`segment_videos()`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md),
+[`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+
+## Examples
+
+``` r
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+# The documented default standard (H.264 / yuv420p / +faststart)
+standardize_video(video, "std.mp4", run = FALSE)
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -movflags +faststart \"std.mp4\""
+# Pin resolution and frame rate too
+standardize_video(video, "std.mp4", width = 1280, height = 720, fps = 30,
+                  run = FALSE)
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"scale=w=1280:h=720,fps=30\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -movflags +faststart \"std.mp4\""
+```

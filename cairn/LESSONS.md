@@ -28,3 +28,10 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   (0-byte output) unless it also stream-copies audio (`-c:a copy`) and
   floor-crops to even dimensions — mirror `format_for_web()`'s guards. Test
   re-encode verbs against an odd-dimensioned source and a non-target audio codec.
+- 2026-07-12 (M13): when a scalar verb keeps its per-value validation *inside* a
+  shared `*_pipeline()` helper (via `check_dim`/`check_token`/`ffm_files`), a
+  batch sibling that reuses the helper inherits per-element parity for free —
+  its front door only needs column type/NA guards, not re-implemented value
+  checks. Contrast M11's `extract_frames()`, which had to duplicate finite/whole
+  checks because `frame_pipeline()` did *not* contain them. So: extract the
+  scalar body into a shared pipeline before writing the batch sibling.

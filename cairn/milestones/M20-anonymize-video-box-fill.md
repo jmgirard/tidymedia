@@ -7,7 +7,7 @@
 - **Priority:** normal
 - **Depends on:** —
 - **Principles touched:** IP1, IP2
-- **Branch/PR:** m20-anonymize-video-box-fill
+- **Branch/PR:** m20-anonymize-video-box-fill · https://github.com/jmgirard/tidymedia/pull/22
 
 ## Goal
 
@@ -35,22 +35,22 @@ so the deferred M21 batch sibling inherits it (M13 extract-first lesson).
 
 ## Acceptance criteria
 
-- [ ] `anonymize_video()` is exported (NAMESPACE + `_pkgdown.yml` Layer-2 row)
+- [x] `anonymize_video()` is exported (NAMESPACE + `_pkgdown.yml` Layer-2 row)
       with roxygen docs and a runnable `run = FALSE` example.
-- [ ] Compiling with an N-row regions data frame emits exactly N filled
+- [x] Compiling with an N-row regions data frame emits exactly N filled
       `drawbox=…:t=fill` filters with the row's `x`/`y`/`w`/`h`, joined into a
       single `-vf` chain (no `-filter_complex`) — IP2-clean. (compilation test)
-- [ ] Audio is stream-copied (`-c:a copy`) and video re-encoded reproducibly
+- [x] Audio is stream-copied (`-c:a copy`) and video re-encoded reproducibly
       (libx264/yuv420p defaults; odd source dimensions floored to even); the
       same input + regions compiles to a byte-identical command. (compilation test)
-- [ ] A per-row `color` column overrides the `color` argument; the default fill
+- [x] A per-row `color` column overrides the `color` argument; the default fill
       is opaque black. (compilation test)
-- [ ] Input validation aborts via `cli::cli_abort()` on each of: `regions` not a
+- [x] Input validation aborts via `cli::cli_abort()` on each of: `regions` not a
       data frame, zero rows, a missing `x`/`y`/`width`/`height` column, `NA` in a
       region column, and non-positive `width`/`height` — every branch fired. (tests)
-- [ ] Executes end-to-end on the packaged `sample.mp4` producing a valid video
+- [x] Executes end-to-end on the packaged `sample.mp4` producing a valid video
       output. (execution test, `skip_if` ffmpeg absent)
-- [ ] `devtools::check()` is clean: 0 errors / 0 warnings / 0 notes (spelling
+- [x] `devtools::check()` is clean: 0 errors / 0 warnings / 0 notes (spelling
       wordlist updated for any new terms).
 
 ## Coverage
@@ -100,3 +100,27 @@ so the deferred M21 batch sibling inherits it (M13 extract-first lesson).
 ## Decisions
 
 ## Review
+
+**Evidence (2026-07-12, PR #22, fresh run on branch @ HEAD).**
+
+- AC1: `export(anonymize_video)` in NAMESPACE; `_pkgdown.yml` Layer-2 row;
+  `man/anonymize_video.Rd` generated with a `run = FALSE` example;
+  `pkgdown::check_pkgdown()` → "No problems found."
+- AC2: test `chains N regions into a single -vf (no filter_complex)` passes —
+  two filled `drawbox=…:t=fill` present, `-vf` yes, `-filter_complex` absent.
+- AC3: test `re-encodes reproducibly and copies audio` passes — even-dim crop
+  guard, `-codec:v libx264 -codec:a copy`, `-pix_fmt yuv420p`, byte-identical
+  recompile.
+- AC4: test `honors color argument, per-row color, and expressions` passes.
+- AC5: test `rejects a malformed regions table` passes — all five abort
+  branches (non-df, zero rows, missing column, NA, non-positive size) fired.
+- AC6: test `runs end-to-end and writes a valid video` passes (ffmpeg present)
+  — output exists, non-zero size, duration ≈ 2s.
+- AC7: `devtools::check()` → Status: OK, 0 errors / 0 warnings / 0 notes.
+  Full suite: 810 pass / 0 fail / 0 skip.
+
+**Consistency gate.** `cairn_validate` exit 0 (all checks PASS) after
+normalizing DESIGN.md principle-definition lines to the validator-parseable
+`- IPn: …` form (format only; principle substance unchanged, no D-entry).
+`devtools::document()` no further diff. `pkgdown::check_pkgdown()` clean. NEWS
+entry added. No new top-level files (WORDLIST in inst/, test in tests/).

@@ -8,6 +8,7 @@ _Last hygiene check: 2026-07-12 (M15 done)_
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
+| M17 | Batch two-pass (measured/linear) loudnorm | planned | M15, M16 | normal | milestones/M17-batch-two-pass-loudnorm.md |
 | M16 | Two-pass (measured/linear) EBU R128 loudnorm | planned | M14 | normal | milestones/M16-two-pass-loudnorm.md |
 | M15 | Batch audio normalization verb | done | M14 | normal | milestones/archive/M15-batch-audio-normalization.md |
 | M14 | Audio loudness normalization verb | done | — | normal | milestones/archive/M14-audio-loudness-normalization.md |
@@ -17,6 +18,5 @@ _Last hygiene check: 2026-07-12 (M15 done)_
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->
-- Batch two-pass loudnorm (`normalize_audios(two_pass = TRUE)`): fan the M16 analyze-then-build path across a jobs tibble via `ffm_batch()`, mirroring the M14→M15 scalar→batch split. — added 2026-07-12, split from M16 — depends on M15, M16; research-verbs family 3
 - Fixed-region anonymization verb (no face tracking): box fill via `ffm_drawbox`; region blur (split→crop→boxblur→overlay) needs an IP2 filtergraph design call. — added 2026-07-10, split 2026-07-12 — research-verbs family 4
 - CRAN readiness (prep, hold submission until API soaks): API-surface cleanup (tidy-eval reexports, stray utils), win-builder + R-hub, examples/vignette policy pass, bump toward 0.2.0. Deliberately last. — added 2026-07-10

@@ -759,12 +759,22 @@ extract_frames <- function(jobs, format = "png", run = TRUE,
     if (anyNA(jobs$timestamp)) {
       cli::cli_abort("The {.field timestamp} column of {.arg jobs} must not contain {.val {NA}}.")
     }
+    # A numeric timestamp must be finite (parity with extract_frame()'s
+    # finite = TRUE check); anyNA() above already caught NA/NaN, so this is Inf.
+    if (is.numeric(jobs$timestamp) && any(!is.finite(jobs$timestamp))) {
+      cli::cli_abort("The {.field timestamp} column of {.arg jobs} must be finite.")
+    }
   } else {
     if (!is.numeric(jobs$frame)) {
       cli::cli_abort("The {.field frame} column of {.arg jobs} must be numeric.")
     }
     if (anyNA(jobs$frame)) {
       cli::cli_abort("The {.field frame} column of {.arg jobs} must not contain {.val {NA}}.")
+    }
+    # Whole numbers only (parity with extract_frame()'s check_number_whole() and
+    # this verb's documented "whole frame numbers" contract).
+    if (any(jobs$frame %% 1 != 0)) {
+      cli::cli_abort("The {.field frame} column of {.arg jobs} must contain whole numbers.")
     }
   }
 

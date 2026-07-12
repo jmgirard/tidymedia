@@ -102,6 +102,22 @@ test_that("extract_frames() rejects NA in the selection column", {
   )
 })
 
+test_that("extract_frames() rejects a non-whole frame (parity with extract_frame)", {
+  f <- make_input()
+  expect_error(
+    extract_frames(tibble::tibble(input = f, frame = 2.5), run = FALSE),
+    "whole"
+  )
+})
+
+test_that("extract_frames() rejects a non-finite numeric timestamp", {
+  f <- make_input()
+  expect_error(
+    extract_frames(tibble::tibble(input = f, timestamp = Inf), run = FALSE),
+    "finite"
+  )
+})
+
 test_that("extract_frames() accepts a factor input column", {
   f <- make_input()
   jobs <- tibble::tibble(input = factor(f), output = "a.png", timestamp = 0.5)

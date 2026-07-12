@@ -115,6 +115,11 @@ this is a Layer-2 fan-out only (D007).
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
 
+- 2026-07-12 (review): `extract_frames()` enforces per-column parity with
+  `extract_frame()`'s scalar validation — `frame` must be whole, numeric
+  `timestamp` must be finite. Table-level validation matches the scalar
+  contract rather than being deliberately coarser.
+
 ## Review
 <!-- owner: review · exclusive -->
 
@@ -159,4 +164,31 @@ ffmpeg + mediainfo present, so execution + framerate paths ran) unless noted.
 
 ### Independent review
 
-_(pending — two reviewers + scorer)_
+Two fresh-context reviewers (distinct evidence bases) + a fresh scorer.
+
+- **[O] diff-bug reviewer:** one finding (below). Confirmed IP1/D007/IP2 hold,
+  `...` forwarding safe, per-row commands byte-identical for valid input.
+- **[S] blame-history reviewer:** no findings — refactor preserves
+  `extract_frame()`'s exact prior command (seek + five quality flags, order
+  intact); no D007 contradiction; M09/M10 lessons respected.
+
+Findings + scores (scorer, 0–100; <80 excluded from the actioned list):
+
+1. **(82) frame-column validation looser than `extract_frame()`** — the `frame`
+   column was checked only `is.numeric` + no-NA, so a non-whole `2.5` silently
+   sought a fractional-frame timestamp, contradicting `extract_frame()`'s
+   `check_number_whole()` and this verb's own "whole frame numbers" roxygen.
+   **Triage: fixed** — added a per-column wholeness check + regression test.
+2. **(66, below threshold — logged)** numeric `timestamp` not checked for
+   finiteness, so `Inf` passed where `extract_frame()` rejects it. Not
+   auto-actioned; **fixed opportunistically** in the same numeric-validation
+   block (completes the identical scalar-parity story) with a regression test.
+
+Both fixes: `test-extract-frames.R` now 29 pass / 0 fail / 0 skip; fresh
+`devtools::check()` still 0 / 0 / 0.
+
+### Verdict
+
+All acceptance criteria verified with fresh evidence; consistency gate clean
+(modulo the documented pre-existing archive date false-positive); one 82-scored
+parity finding fixed, one 66-scored finding logged and fixed. Ready to merge.

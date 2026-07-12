@@ -9,7 +9,7 @@ _Last hygiene check: 2026-07-12 (M13 done)_
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M15 | Batch audio normalization verb | planned | M14 | normal | milestones/M15-batch-audio-normalization.md |
-| M14 | Audio loudness normalization verb | planned | — | normal | milestones/M14-audio-loudness-normalization.md |
+| M14 | Audio loudness normalization verb | review | — | normal | milestones/M14-audio-loudness-normalization.md |
 | M13 | Batch video standardization verb | done | — | normal | milestones/archive/M13-batch-standardization.md |
 | M12 | Video standardization verb | done | — | normal | milestones/archive/M12-standardization-presets.md |
 | M11 | Tibble-driven batch frame extraction | done | — | normal | milestones/archive/M11-batch-frame-extraction.md |

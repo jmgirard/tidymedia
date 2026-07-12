@@ -33,6 +33,7 @@ reference:
   - ffm_overlay
   - ffm_concat
   - ffm_drawbox
+  - ffm_loudnorm
   - ffm_output_options
   - ffm_compile
   - ffm_run
@@ -47,6 +48,7 @@ reference:
   - extract_audio
   - separate_audio_video
   - audio_as_mp3
+  - normalize_audio
   - crop_video
   - format_for_web
   - standardize_video

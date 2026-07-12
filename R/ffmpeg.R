@@ -359,6 +359,108 @@ standardize_pipeline <- function(input, output, width, height, fps, vcodec,
 }
 
 
+# normalize_audio() -------------------------------------------------------
+
+#' Normalize a file's audio loudness (EBU R128)
+#'
+#' Normalize the perceived loudness of a file's audio toward an EBU R128 target
+#' using FFmpeg's single-pass \code{loudnorm} filter, optionally downmixing the
+#' channel count and resampling. The video stream is copied unchanged
+#' (\code{-c:v copy}), so only the audio is touched -- the audio-side complement
+#' to \code{\link{standardize_video}}, which leaves audio alone.
+#'
+#' @details
+#' The default targets follow EBU Recommendation R 128 (2014) --
+#' \code{target_loudness = -23} LUFS and \code{true_peak = -1} dBTP, loudness
+#' measured per ITU-R BS.1770-4 -- with \code{loudness_range = 7}. This is
+#' single-pass (dynamic) \code{loudnorm}: the same input and arguments always
+#' compile to one reproducible command, with no separate measurement pass.
+#' Because the audio is filtered it is re-encoded (the container's default audio
+#' encoder). Leaving \code{channels} at \code{NULL} preserves the source channel
+#' layout. Note that FFmpeg's \code{loudnorm} filter resamples its output (up to
+#' 192 kHz, capped by the encoder), so the output sample rate is \emph{not} the
+#' source rate unless you pin it: set \code{sample_rate} to control the output
+#' rate.
+#'
+#' @param infile A string containing the path to a media file (with audio).
+#' @param outfile A string containing the path of the file to write.
+#' @param target_loudness The target integrated loudness, in LUFS (a number in
+#'   \code{-70}..\code{-5}; default \code{-23}, the EBU R128 target).
+#' @param true_peak The maximum true peak, in dBTP (a number in \code{-9}..\code{0};
+#'   default \code{-1}, the EBU R128 ceiling).
+#' @param loudness_range The target loudness range, in LU (a number in
+#'   \code{1}..\code{50}; default \code{7}).
+#' @param channels The output channel count, e.g. \code{1} to downmix to mono (a
+#'   positive whole number), or \code{NULL} (default) to keep the source layout.
+#' @param sample_rate The output sample rate in Hz, e.g. \code{48000} (a positive
+#'   whole number), or \code{NULL} (default) to let \code{loudnorm} choose (it
+#'   resamples, up to 192 kHz encoder-capped -- not the source rate). Set this to
+#'   pin the output rate.
+#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
+#'   or return the compiled command without running it (\code{FALSE}).
+#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @references
+#' EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
+#' maximum level of audio signals}; ITU-R BS.1770-4.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' normalize_audio(video, "normalized.mp4", run = FALSE)
+#' # Normalize to a streaming target and downmix to mono
+#' normalize_audio(video, "mono.mp4", target_loudness = -16, channels = 1,
+#'                 run = FALSE)
+#' @export
+normalize_audio <- function(infile, outfile,
+                            target_loudness = -23,
+                            true_peak = -1,
+                            loudness_range = 7,
+                            channels = NULL,
+                            sample_rate = NULL,
+                            run = TRUE) {
+
+  check_file_exists(infile)
+  rlang::check_string(outfile)
+
+  ffm_finish(
+    normalize_audio_pipeline(infile, outfile, target_loudness, true_peak,
+                             loudness_range, channels, sample_rate),
+    run
+  )
+}
+
+# normalize_audio_pipeline() ----------------------------------------------
+
+# Shared loudness-normalization pipeline for normalize_audio() and (M15)
+# normalize_audios(): build one single-output pipeline for a single input. Both
+# verbs compile identical commands from this helper, so per-value validation
+# (loudness targets via ffm_loudnorm(), channels/sample_rate here) lives once --
+# the batch sibling inherits it by construction (D002, D007; M13 lesson).
+normalize_audio_pipeline <- function(input, output,
+                                     target_loudness = -23,
+                                     true_peak = -1,
+                                     loudness_range = 7,
+                                     channels = NULL,
+                                     sample_rate = NULL) {
+  rlang::check_number_whole(channels, min = 1, allow_null = TRUE)
+  rlang::check_number_whole(sample_rate, min = 1, allow_null = TRUE)
+
+  p <- ffm_files(input, output)
+  # Loudness: EBU R128 loudnorm; ffm_loudnorm() validates the target ranges.
+  p <- ffm_loudnorm(p, target_loudness = target_loudness,
+                    true_peak = true_peak, loudness_range = loudness_range)
+  # Touch audio only: stream-copy the video bytes unchanged (the inverse of
+  # standardize_video()'s audio copy).
+  p <- ffm_codec(p, video = "copy")
+  if (!is.null(channels)) {
+    p <- ffm_output_options(p, paste0("-ac ", channels))
+  }
+  if (!is.null(sample_rate)) {
+    p <- ffm_output_options(p, paste0("-ar ", sample_rate))
+  }
+  p
+}
+
+
 # get_codecs() ------------------------------------------------------------
 
 #' Get a data frame of all installed codecs

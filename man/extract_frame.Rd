@@ -41,6 +41,7 @@ Other task verb functions:
 \code{\link[=extract_audio]{extract_audio()}},
 \code{\link[=extract_frames]{extract_frames()}},
 \code{\link[=format_for_web]{format_for_web()}},
+\code{\link[=normalize_audio]{normalize_audio()}},
 \code{\link[=picture_in_picture]{picture_in_picture()}},
 \code{\link[=segment_video]{segment_video()}},
 \code{\link[=segment_videos]{segment_videos()}},

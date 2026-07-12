@@ -350,6 +350,59 @@ ffm_fps <- function(object, fps) {
   object
 }
 
+# ffm_loudnorm() ---------------------------------------------------------------
+
+#' Normalize Loudness in an FFmpeg Pipeline
+#'
+#' Append FFmpeg's \code{loudnorm} (EBU R128) audio filter, normalizing the
+#' input's perceived loudness toward a target integrated loudness, true-peak
+#' ceiling, and loudness range. This is the first builder function to write the
+#' pipeline's audio filter chain, so it compiles to \code{-af} (or joins an
+#' existing audio filter chain in application order).
+#'
+#' @details
+#' This is single-pass (dynamic) \code{loudnorm}: one reproducible command, no
+#' measurement pass. The defaults follow EBU Recommendation R 128 (2014) —
+#' \code{target_loudness = -23} LUFS and \code{true_peak = -1} dBTP, loudness
+#' measured per ITU-R BS.1770-4 — with \code{loudness_range = 7} (FFmpeg's own
+#' \code{loudnorm} default, EBU R128 not prescribing a single value).
+#'
+#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'   \code{ffm_files()}.
+#' @param target_loudness The target integrated loudness, in LUFS (a number in
+#'   \code{-70}..\code{-5}; default \code{-23}, the EBU R128 target).
+#' @param true_peak The maximum true peak, in dBTP (a number in \code{-9}..\code{0};
+#'   default \code{-1}, the EBU R128 ceiling).
+#' @param loudness_range The target loudness range, in LU (a number in
+#'   \code{1}..\code{50}; default \code{7}).
+#' @return \code{object} but with the added instruction to normalize loudness.
+#' @references
+#' EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
+#' maximum level of audio signals}; ITU-R BS.1770-4.
+#' \url{https://ffmpeg.org/ffmpeg-filters.html#loudnorm}
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' ffm(video, "output.mp4") |>
+#'   ffm_loudnorm() |>
+#'   ffm_compile()
+#' @export
+ffm_loudnorm <- function(object,
+                         target_loudness = -23,
+                         true_peak = -1,
+                         loudness_range = 7) {
+
+  check_ffm(object)
+  rlang::check_number_decimal(target_loudness, min = -70, max = -5)
+  rlang::check_number_decimal(true_peak, min = -9, max = 0)
+  rlang::check_number_decimal(loudness_range, min = 1, max = 50)
+
+  cmd <- glue("loudnorm=I={target_loudness}:TP={true_peak}:LRA={loudness_range}")
+  object$filter_audio <- c(object$filter_audio, cmd)
+
+  object
+}
+
 # ffm_codec() ------------------------------------------------------------------
 
 #' Set Codecs in an FFmpeg Pipeline

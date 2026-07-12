@@ -14,3 +14,6 @@ tests/testthat/_problems/
 
 # cairn: local-only reference PDFs
 cairn/references/pdf/
+
+# cairn: single-use merge-approval marker (never committed)
+cairn/.merge-approved

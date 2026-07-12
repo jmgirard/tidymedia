@@ -8,7 +8,7 @@ _Last hygiene check: 2026-07-12 (M11 done)_
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M12 | Video standardization verb | in-progress | — | normal | milestones/M12-standardization-presets.md |
+| M12 | Video standardization verb | review | — | normal | milestones/M12-standardization-presets.md |
 | M11 | Tibble-driven batch frame extraction | done | — | normal | milestones/archive/M11-batch-frame-extraction.md |
 | M07 | Complete the blessed multi-input verbs | done | M06 | — | milestones/archive/M07-multi-input-verbs.md |
 | M08 | Verification & provenance | done | M04, M06 | normal | milestones/archive/M08-verification-provenance.md |

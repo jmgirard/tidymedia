@@ -107,10 +107,18 @@ test_that("extract_audio(acodec=) sets the audio codec", {
   expect_match(cmd, "-codec:a aac -vn", fixed = TRUE)
 })
 
-test_that("audio_as_mp3() compiles to -q:a 0 -map a", {
+test_that("convert_audio() default (format = NULL) compiles to -q:a 0 -map a", {
   f <- make_input()
-  cmd <- audio_as_mp3(f, "out.mp3", run = FALSE)
+  cmd <- convert_audio(f, "out.mp3", run = FALSE)
   expect_match(cmd, "-q:a 0 -map a", fixed = TRUE)
+})
+
+test_that("convert_audio(format=) pins -codec:a and drops -q:a", {
+  f <- make_input()
+  cmd <- convert_audio(f, "out.m4a", format = "aac", run = FALSE)
+  expect_match(cmd, "-codec:a aac", fixed = TRUE)
+  expect_match(cmd, "-map a", fixed = TRUE)
+  expect_no_match(cmd, "-q:a", fixed = TRUE)
 })
 
 test_that("crop_video() compiles to a crop filter mapping all streams", {
@@ -291,7 +299,7 @@ test_that("concatenate_videos() joins inputs end to end (binary-gated)", {
 test_that("task verbs reject a missing input file (no binary needed)", {
   missing <- withr::local_tempfile(fileext = ".mp4")  # not created
   expect_error(extract_audio(missing, "out.aac"))
-  expect_error(audio_as_mp3(missing, "out.mp3"))
+  expect_error(convert_audio(missing, "out.mp3"))
   expect_error(separate_audio_video(missing, "a.aac", "v.mp4"))
   expect_error(crop_video(missing, "out.mp4", 10, 10, 0, 0))
   expect_error(format_for_web(missing, "out.mp4"))

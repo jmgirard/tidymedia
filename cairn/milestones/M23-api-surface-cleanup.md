@@ -99,7 +99,7 @@ public surface with no compatibility shims.
       `README.Rmd`, and rename the matching `tests/testthat/test-*.R` files.
 - [x] **T2** N1: rename `get_codecs`/`get_encoders` → `ffmpeg_codecs`/
       `ffmpeg_encoders` (`R/ffmpeg.R`) + roxygen `@family`/title + tests.
-- [ ] **T3** N2: replace `audio_as_mp3` (`R/ffmpeg.R:182`) with
+- [x] **T3** N2: replace `audio_as_mp3` (`R/ffmpeg.R:182`) with
       `convert_audio(infile, outfile, format = NULL, run = TRUE)` — `NULL`
       reproduces the old command, non-`NULL` pins format; add the compile-level
       parity + format test.
@@ -122,6 +122,7 @@ public surface with no compatibility shims.
 - 2026-07-12: created by /milestone-plan (executes M22 audit §5–6 / D014).
 - 2026-07-12: T1 — renamed 5 batch siblings to `*_batch` across R/, tests (incl. test files), vignettes, README; document() regen; tests 0F/0W.
 - 2026-07-12: T2 — `get_codecs`/`get_encoders` → `ffmpeg_codecs`/`ffmpeg_encoders` (R/, test-ffmpeg.R, README, ffm.R prose); tests 0F/0W.
+- 2026-07-12: T3 — `audio_as_mp3` → `convert_audio(format = NULL)`; NULL keeps `-q:a 0`/map-a byte-for-byte, non-NULL emits `-codec:a <format>` (drops `-q:a`); added parity + format tests; tests 0F/0W.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

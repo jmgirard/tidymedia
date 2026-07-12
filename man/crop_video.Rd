@@ -46,9 +46,9 @@ crop_video(video, "cropped.mp4", width = 160, height = 120, run = FALSE)
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
-\code{\link[=audio_as_mp3]{audio_as_mp3()}},
 \code{\link[=compare_videos]{compare_videos()}},
 \code{\link[=concatenate_videos]{concatenate_videos()}},
+\code{\link[=convert_audio]{convert_audio()}},
 \code{\link[=extract_audio]{extract_audio()}},
 \code{\link[=extract_frame]{extract_frame()}},
 \code{\link[=extract_frame_batch]{extract_frame_batch()}},

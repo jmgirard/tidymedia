@@ -165,28 +165,44 @@ separate_audio_video <- function(infile, audiofile, videofile,
 }
 
 
-# audio_as_mp3() ----------------------------------------------------------
+# convert_audio() ---------------------------------------------------------
 
-#' Extract a media file's audio as an MP3
+#' Extract or convert a media file's audio track
+#'
+#' Maps the audio stream of \code{infile} into \code{outfile}. By default
+#' (\code{format = NULL}) the output format follows the \code{outfile} file
+#' extension at highest VBR quality (\code{-q:a 0}) — e.g. an \code{.mp3}
+#' extension yields an MP3. Pass \code{format} to pin the output audio codec
+#' explicitly, regardless of the extension.
 #'
 #' @param infile A string containing the path to a media file.
-#' @param outfile A string containing the path of the MP3 file to write.
+#' @param outfile A string containing the path of the audio file to write.
+#' @param format An optional string naming the output audio codec (e.g.
+#'   \code{"libmp3lame"}, \code{"aac"}, \code{"flac"}), passed to FFmpeg's
+#'   \code{-c:a}. When \code{NULL} (default), the format is inferred from the
+#'   \code{outfile} extension.
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' audio_as_mp3(video, "audio.mp3", run = FALSE)
+#' convert_audio(video, "audio.mp3", run = FALSE)
+#' convert_audio(video, "audio.m4a", format = "aac", run = FALSE)
 #' @export
-audio_as_mp3 <- function(infile, outfile, run = TRUE) {
+convert_audio <- function(infile, outfile, format = NULL, run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
 
   p <- ffm_files(infile, outfile)
   p <- ffm_map(p, "a")
-  p <- ffm_output_options(p, "-q:a 0")
+  if (is.null(format)) {
+    p <- ffm_output_options(p, "-q:a 0")
+  } else {
+    rlang::check_string(format)
+    p <- ffm_codec(p, audio = format)
+  }
   ffm_finish(p, run)
 }
 

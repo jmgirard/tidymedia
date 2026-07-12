@@ -36,9 +36,9 @@ extract_frame(video, "frame.png", timestamp = 0.5, run = FALSE)
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
-\code{\link[=audio_as_mp3]{audio_as_mp3()}},
 \code{\link[=compare_videos]{compare_videos()}},
 \code{\link[=concatenate_videos]{concatenate_videos()}},
+\code{\link[=convert_audio]{convert_audio()}},
 \code{\link[=crop_video]{crop_video()}},
 \code{\link[=extract_audio]{extract_audio()}},
 \code{\link[=extract_frame_batch]{extract_frame_batch()}},

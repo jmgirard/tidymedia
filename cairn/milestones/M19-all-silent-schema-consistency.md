@@ -89,7 +89,7 @@ inconsistency the M18 review surfaced.
 <!-- owner: plan (create) / implement (check-off, minor edits); substantive
      change is amend-via-gate -->
 
-- [ ] T1 — In [R/ffm_manifest.R](../../R/ffm_manifest.R:52) add a shared
+- [x] T1 — In [R/ffm_manifest.R](../../R/ffm_manifest.R:52) add a shared
       manifest schema constructor (e.g. `manifest_schema(checksums)`) returning
       a 0-row tibble with the canonical columns (`command`, `input`, `output`,
       `output_size`, `ffmpeg_version`, `ffprobe_version`, `timestamp`, plus
@@ -121,6 +121,7 @@ inconsistency the M18 review surfaced.
 <!-- owner: any skill · append-only; one line per entry; absolute dates -->
 
 - 2026-07-12: created by /milestone-plan (promoted from the M18-review candidate, scored 78).
+- 2026-07-12: T1 — added `manifest_schema()` as the canonical column template; `build_manifest()` now derives its column set from it (drift guard test passes).
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local; promote

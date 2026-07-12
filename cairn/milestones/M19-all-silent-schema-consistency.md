@@ -3,7 +3,7 @@
      Per-section owners are tagged below. -->
 # M19: Consistent schema for an all-silent two-pass batch
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** M18   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Principles touched:** —   <!-- owner: plan · create/amend-via-gate; comma-separated IPn/GPn ids this milestone touches, or — -->
@@ -125,6 +125,7 @@ inconsistency the M18 review surfaced.
 - 2026-07-12: T2/T3 — all-silent branch of `bind_two_pass_result()` now synthesizes the `verified` column and padded manifest (via `expand_manifest_rows()` over the empty schema); `normalize_audios()` threads verify/manifest/checksums intent from `...`. Existing M18 unit tests unchanged (new params default off); 5 new pure unit tests pass.
 - 2026-07-12: T4 — documented the schema-consistency guarantee in `normalize_audios()`'s `@return`; regenerated `man/normalize_audios.Rd`.
 - 2026-07-12: T5 — added an ffmpeg-gated execution test comparing an all-silent batch's columns + manifest schema against a mixed batch (verify + manifest + checksums). Full test files green (no skips locally).
+- 2026-07-12: all tasks complete; `devtools::check()` 0/0/0, raw `00check.log` `Status: OK`. Status → review.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local; promote

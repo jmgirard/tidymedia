@@ -1435,10 +1435,15 @@ normalize_audios <- function(jobs, target_loudness = -23, true_peak = -1,
     silent <- measured$silent
     for (nm in names(measured$measured)) jobs[[nm]] <- measured$measured[[nm]]
     if (any(silent)) {
+      # Drive pluralization off the scalar {length(rows)} and list the row
+      # indices without a `{?s}` marker: a `{?s}` governed by a `{.val
+      # {vector}}` across cli_warn() message elements throws
+      # `length(object) == 1` (M18 review).
+      rows <- which(silent)
       cli::cli_warn(c(
-        "{sum(silent)} input{?s} {?is/are} silent and cannot be normalized \\
-         to a loudness target.",
-        "!" = "Silent row{?s}: {.val {which(silent)}}.",
+        "Found {length(rows)} silent input{?s} that cannot be normalized to a \\
+         loudness target.",
+        "!" = "Affected rows (1-indexed): {.val {rows}}.",
         "i" = "Silent rows are marked in the {.field silent} column \\
                ({.field success} = {.val {FALSE}}, no output written)."
       ))

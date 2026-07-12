@@ -97,6 +97,47 @@ test_that("assemble_measured() still aborts when a genuine failure accompanies s
   expect_error(assemble_measured(list(silent, malformed)), "2")
 })
 
+test_that("assemble_measured() aborts cleanly (no cli crash) with 2+ failing rows (AC4)", {
+  # Regression: the failure abort mixed a scalar count with a vector in one cli
+  # message, which threw `length(object) == 1` for 2+ bad rows (M18 review).
+  failed <- structure("some ffmpeg error", status = 1L)
+  err <- tryCatch(assemble_measured(list(failed, failed)),
+                  error = function(e) conditionMessage(e))
+  expect_no_match(err, "length\\(object\\)")
+  expect_no_match(err, "Could not evaluate")
+  expect_match(err, "1")   # both offending rows are named
+  expect_match(err, "2")
+})
+
+test_that("bind_two_pass_result() expands the manifest to one row per job (M18)", {
+  # Regression: a manifest built over only the non-silent rows was attached to
+  # the full-row result, breaking ffm_manifest()'s one-row-per-job contract
+  # (D011). It must be padded back to full row order (M18 review).
+  jobs <- tibble::tibble(
+    input  = c("a.mp4", "b.mp4", "c.mp4"),
+    output = c("a.out", "b.out", "c.out")
+  )
+  silent <- c(FALSE, TRUE, FALSE)
+  ok_res <- tibble::tibble(
+    input   = c("a.mp4", "c.mp4"),
+    output  = c("a.out", "c.out"),
+    command = c("cmd-a", "cmd-c"),
+    success = c(TRUE, TRUE)
+  )
+  attr(ok_res, "manifest") <- tibble::tibble(
+    command = c("cmd-a", "cmd-c"),
+    input = c("a.mp4", "c.mp4"), output_size = c(10, 20)
+  )
+  res <- bind_two_pass_result(jobs, silent, ok_res, run = TRUE)
+  man <- attr(res, "manifest")
+  # One row per job, aligned to the result, with the silent input recorded.
+  expect_equal(nrow(man), nrow(res))
+  expect_equal(man$input, c("a.mp4", "b.mp4", "c.mp4"))
+  expect_true(is.na(man$command[[2]]))
+  expect_true(is.na(man$output_size[[2]]))
+  expect_equal(man$command[c(1, 3)], c("cmd-a", "cmd-c"))
+})
+
 # Result reassembly in original row order (M18) --------------------------------
 
 test_that("bind_two_pass_result() interleaves silent rows back in order (AC3)", {

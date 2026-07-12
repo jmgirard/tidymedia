@@ -178,10 +178,15 @@ assemble_measured <- function(outputs, call = rlang::caller_env()) {
   status <- vapply(cls, `[[`, character(1), "status")
   bad <- which(status %in% c("error", "unparseable"))
   if (length(bad) > 0) {
+    # Pluralize off the scalar {length(bad)} and list the rows without a `{?s}`
+    # marker on the vector: `{cli::qty(bad)}{?s}` throws with 2+ bad rows in this
+    # cli build, and a `{?s}` governed by `{.val {bad}}` hits the same crash
+    # (M18 review).
     cli::cli_abort(c(
       "The {.code loudnorm} analysis pass did not yield usable measurements.",
-      "x" = "Job{cli::qty(bad)}{?s} {.val {bad}} failed to run or printed no \\
-             parseable measurement block.",
+      "x" = "{length(bad)} job{?s} failed to run or printed no parseable \\
+             measurement block.",
+      "i" = "Offending rows (1-indexed): {.val {bad}}.",
       "i" = "Every row must produce a finite JSON measurement block (or be \\
              silent) before the correction pass can be built."
     ), call = call)
@@ -206,6 +211,27 @@ assemble_measured <- function(outputs, call = rlang::caller_env()) {
 
 # bind_two_pass_result() -------------------------------------------------------
 
+# expand_manifest_rows() -------------------------------------------------------
+
+# Expand a provenance manifest built over the non-silent rows back to full row
+# order, so it keeps ffm_batch()'s one-row-per-job contract (D011) after silent
+# rows are set aside. Non-silent rows keep their manifest values; silent rows get
+# a type-matched NA in every column except `input` (the skipped input path is
+# still recorded), so nrow(manifest) == nrow(result) and rows align positionally.
+expand_manifest_rows <- function(man, silent, inputs) {
+  n <- length(silent)
+  cols <- lapply(man, function(col) {
+    out <- col[rep(NA_integer_, n)]   # n type-matched NAs
+    out[!silent] <- col
+    out
+  })
+  full <- tibble::as_tibble(cols)
+  full$input <- inputs
+  full
+}
+
+# bind_two_pass_result() -------------------------------------------------------
+
 # Reassemble the batch two-pass result in original row order. `jobs` is the full
 # jobs table already augmented with the five measured columns (NA for silent
 # rows); `ok_res` is the correction fan-out's result over the non-silent rows
@@ -214,7 +240,8 @@ assemble_measured <- function(outputs, call = rlang::caller_env()) {
 # (silent = TRUE, success = FALSE, no command/output); non-silent rows carry
 # ok_res's added columns threaded back into their positions. Pure (no binary),
 # so the interleaving is unit-testable independent of ffmpeg. A manifest
-# attribute on ok_res (opt-in provenance for the rows that ran) is carried over.
+# attribute on ok_res (opt-in provenance for the rows that ran) is expanded to
+# full row order so it stays one-row-per-job (D011).
 bind_two_pass_result <- function(jobs, silent, ok_res, run) {
   result <- tibble::as_tibble(jobs)
   result$silent <- silent
@@ -233,8 +260,15 @@ bind_two_pass_result <- function(jobs, silent, ok_res, run) {
     col[!silent] <- ok_res[[nm]]
     result[[nm]] <- col
   }
-  if (!is.null(attr(ok_res, "manifest"))) {
-    attr(result, "manifest") <- attr(ok_res, "manifest")
+  man <- attr(ok_res, "manifest")
+  if (!is.null(man)) {
+    # ffm_batch() built the manifest over only the non-silent rows; pad it back
+    # to full row order so ffm_manifest(result) stays one-row-per-job (D011).
+    attr(result, "manifest") <- if (any(silent)) {
+      expand_manifest_rows(man, silent, result$input)
+    } else {
+      man
+    }
   }
   result
 }

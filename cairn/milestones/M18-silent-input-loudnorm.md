@@ -3,10 +3,10 @@
      Per-section owners are tagged below. -->
 # M18: Graceful silent-input handling for two-pass loudnorm
 
-- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** M16, M17   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
-- **Branch/PR:** m18-silent-input-loudnorm   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** m18-silent-input-loudnorm · https://github.com/jmgirard/tidymedia/pull/20   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 
@@ -17,40 +17,28 @@ clear silence-specific error for the scalar verb, and continue-and-mark
 ## Scope
 
 **In:**
-- Detect the digital-silence signature in a `loudnorm` analysis-pass
-  measurement (`input_i = "-inf"`, i.e. `input_i` parses to `-Inf`; FFmpeg
-  also emits `target_offset = "inf"`, `normalization_type = "dynamic"`) and
-  treat it as a distinct, recognized outcome — not a generic parse failure.
-- `normalize_audio(two_pass = TRUE)` on a silent input: abort with a
-  silence-specific message ("the input appears to be silent; loudness
-  normalization to a target is undefined for silence"), replacing the current
-  misleading "Could not parse the `loudnorm` measurement" abort
-  (`R/loudnorm_two_pass.R:48-55`, reached via `run_loudnorm_analysis`).
-- `normalize_audios(two_pass = TRUE)` on a jobs table containing silent
-  rows: do **not** abort the whole run. Normalize the non-silent rows
-  (outputs written, `success = TRUE`), set silent rows aside (marked in a
-  new `silent` logical column, `success = FALSE`, no output written), and
-  emit a single warning naming the silent rows. Mirrors `ffm_batch`'s
-  record-and-continue idiom (D011).
-- Share the silence detector between scalar and batch (one internal helper
-  in `R/loudnorm_two_pass.R`; no duplicated regex — D011 spirit).
-- Preserve fail-fast for *genuine* analysis failures (non-zero FFmpeg exit,
-  or a non-silence measurement block that is missing/non-finite): those
-  still abort naming the offending rows (`assemble_measured`,
-  `R/loudnorm_two_pass.R:132-154`). Silence is the only condition promoted
-  from "abort" to "continue-and-mark".
+- Detect the digital-silence signature (`input_i = "-inf"`) as a distinct,
+  recognized outcome — not a generic parse failure — via one internal helper
+  shared by scalar and batch (no duplicated regex; D011 spirit).
+- `normalize_audio(two_pass = TRUE)` on silent input: abort with a
+  silence-specific message, replacing the misleading "Could not parse the
+  `loudnorm` measurement" abort.
+- `normalize_audios(two_pass = TRUE)` with silent rows: do **not** abort.
+  Normalize the non-silent rows (`success = TRUE`), set silent rows aside
+  (new `silent` logical column, `success = FALSE`, no output), and warn
+  naming them. Mirrors `ffm_batch`'s record-and-continue idiom (D011).
+- Preserve fail-fast for *genuine* failures (non-zero FFmpeg exit, or a
+  non-silence missing/non-finite block): silence is the only condition
+  promoted from "abort" to "continue-and-mark".
 
 **Out:**
-- Single-pass silence handling — the single-pass filter never runs an
-  analysis pass, so it produces silent output without any parse step;
-  detecting silence there would require adding an analysis pass, defeating
-  the purpose. Single-pass on silence stays as-is (unchanged behavior).
-- Passthrough/stream-copy semantics for silent input — considered and
-  rejected at the plan gate in favor of a clear error (a "normalized"
-  output that is actually untouched silence weakens the reproducibility
-  guarantee). Not deferred; a decided design choice.
-- Near-silence / very-quiet inputs — these yield a legitimate finite
-  `input_i` (e.g. `-70`) and are normalized normally; no special handling.
+- Single-pass silence handling — single-pass never runs an analysis pass, so
+  detecting silence there means adding one, defeating the purpose; stays as-is.
+- Passthrough/stream-copy for silent input — rejected at the plan gate for a
+  clear error (untouched-silence output weakens reproducibility). A decided
+  design choice, not deferred.
+- Near-silence / very-quiet inputs — legitimate finite `input_i`; normalized
+  normally, no special handling.
 
 ## Acceptance criteria
 <!-- owner: plan · create/amend-via-gate; review reads, never reinterprets -->
@@ -96,38 +84,23 @@ clear silence-specific error for the scalar verb, and continue-and-mark
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [x] T1 — (tests-first, pure) Record a real-FFmpeg silence measurement
-      fixture at `tests/testthat/fixtures/loudnorm-analysis-silent.txt`
-      (`ffmpeg -f lavfi -i anullsrc=r=44100:cl=mono -t 1 -af
-      loudnorm=...:print_format=json -f null -`). Add failing unit tests in
-      `tests/testthat/test-loudnorm-two-pass.R`: the new silence detector
-      classifies the fixture as silent; `parse_loudnorm_measurements()`
-      aborts with a silence-specific message on it; the existing generic
-      "Could not parse" abort still fires on missing/non-numeric blocks (AC1,
-      AC2).
-- [x] T2 — (impl) Add an internal silence detector in
-      `R/loudnorm_two_pass.R` keyed on `input_i` being `-Inf` (via
-      `is.infinite() && < 0`, distinguishing silence from `NaN`/missing).
-      Route `parse_loudnorm_measurements()` so silence raises the
-      silence-specific error and all other non-finite/missing cases keep the
-      existing generic abort. Turns T1 green; scalar `normalize_audio(
-      two_pass = TRUE)` now errors clearly on silence (AC1, AC2).
-- [x] T3 — (tests-first + impl, batch) Extend the batch two-pass assembly
-      (`assemble_measured()` and the `normalize_audios` two-pass block,
-      `R/ffmpeg.R:1395-1425`) so silent rows are set aside rather than
-      aborting: run the correction only on non-silent rows, re-bind results
-      into the full jobs table with a `silent` logical column, `success =
-      FALSE` and no output for silent rows, and a single warning naming them;
-      genuine (non-silence) failures still abort fail-fast. Tests-first: a
-      mixed-batch assembly test and a simulated genuine-failure test (AC3,
-      AC4).
-- [x] T4 — (live tests + docs) Add `skip_if`-guarded execution tests: scalar
-      silence → silence error; mixed batch → non-silent row normalized +
-      silent row marked, no abort. Document the silent-input behavior and the
-      `silent` result column in the `normalize_audio` / `normalize_audios`
-      roxygen (`@param two_pass`, `@return`); add a `NEWS.md` entry;
-      `devtools::document()`; run `spelling::update_wordlist()` if needed;
-      confirm `devtools::check()` clean and `Status: OK` (AC1, AC3, AC5).
+- [x] T1 — (tests-first, pure) Record silence fixture
+      `tests/testthat/fixtures/loudnorm-analysis-silent.txt`; add failing tests
+      in `test-loudnorm-two-pass.R` for the silence detector + silence-specific
+      abort, keeping the existing generic-parse abort (AC1, AC2).
+- [x] T2 — (impl) Add `classify_loudnorm_output()` in `R/loudnorm_two_pass.R`
+      keyed on `input_i = -Inf`; route `parse_loudnorm_measurements()` so
+      silence raises its own error and other bad blocks keep the generic abort
+      (AC1, AC2).
+- [x] T3 — (tests-first + impl, batch) Set silent rows aside in
+      `assemble_measured()` (returns `list(measured, silent)`); add pure
+      `bind_two_pass_result()`; rewire the `normalize_audios` two-pass block to
+      correct non-silent rows, warn, and emit a `silent` column; genuine
+      failures still abort (AC3, AC4).
+- [x] T4 — (live tests + docs) Add `make_silent_audio()` helper +
+      `skip_if`-guarded scalar and mixed-batch execution tests; document silent
+      behavior + `silent` column in both verbs' roxygen; `NEWS.md`;
+      `document()`; wordlist; `devtools::check()` clean (AC1, AC3, AC5).
 
 ## Work log
 <!-- owner: any skill · append-only; one line per entry; absolute dates -->
@@ -151,6 +124,22 @@ clear silence-specific error for the scalar verb, and continue-and-mark
   abort). Documented silent behavior in both verbs' roxygen + `silent` column
   in `@return`; NEWS entry; `document()`; added `loudnorm` to WORDLIST.
   `devtools::check()` 0/0/0, `Status: OK` in 00check.log. All tasks complete.
+- 2026-07-12: review found 3 real defects (back to in-progress). (a) silent-row
+  warning crashes with 2+ silent rows — cli `{?s}` governed by a `{.val
+  {vector}}` across message elements throws `length(object) == 1`; (b) the
+  `assemble_measured()` genuine-failure abort has the same `{cli::qty(bad)}`
+  crash with 2+ bad rows (my T3 rewrite); (c) manifest row mismatch (scored 92)
+  — `manifest = TRUE` with silent rows attaches a manifest covering only
+  non-silent rows to the full-row result, breaking ffm_manifest()'s one-row-
+  per-job contract (D011/M08). Live tests used a single silent/bad row so (a)/(b)
+  slipped through. Excluded (scored 78, logged): all-silent + `verify=` omits the
+  `verified` column while a mixed batch includes it.
+- 2026-07-12: fixed all three defects. (a)+(b) rewrote both cli messages to
+  drive pluralization off a scalar `{length()}` and list rows without a
+  vector-governed `{?s}`; (c) added `expand_manifest_rows()` to pad the manifest
+  back to full row order in `bind_two_pass_result()`. Added regression tests
+  (2-bad-row clean abort; manifest one-row-per-job; live 2-silent-row batch with
+  manifest). Full suite 752 pass. Back to review.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

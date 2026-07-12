@@ -329,6 +329,35 @@ test_that("normalize_audios(two_pass = TRUE) marks silent rows and normalizes th
   expect_false(is.na(res$measured_I[[1]]))
 })
 
+test_that("normalize_audios(two_pass = TRUE) survives 2+ silent rows and keeps manifest one-per-job (M18)", {
+  skip_if_no_ffmpeg()
+  real <- make_dynamic_audio()
+  s1 <- make_silent_audio()
+  s2 <- make_silent_audio()
+  out_real <- withr::local_tempfile(fileext = ".mp4")
+  out_s1 <- withr::local_tempfile(fileext = ".mp4")
+  out_s2 <- withr::local_tempfile(fileext = ".mp4")
+  jobs <- tibble::tibble(
+    input  = c(s1, real, s2),
+    output = c(out_s1, out_real, out_s2)
+  )
+  # Two silent rows must not crash the warning (regression: a scalar/vector cli
+  # pluralization mix threw `length(object) == 1`), and the manifest must stay
+  # one-row-per-job across the skipped rows.
+  expect_warning(
+    res <- normalize_audios(jobs, two_pass = TRUE, manifest = TRUE),
+    "silent"
+  )
+  expect_equal(res$silent, c(TRUE, FALSE, TRUE))
+  expect_equal(res$success, c(FALSE, TRUE, FALSE))
+  # Manifest: one row per job, aligned, silent inputs recorded with NA command.
+  man <- ffm_manifest(res)
+  expect_equal(nrow(man), nrow(res))
+  expect_equal(man$input, jobs$input)
+  expect_true(all(is.na(man$command[c(1, 3)])))
+  expect_false(is.na(man$command[[2]]))
+})
+
 # Execution + ffm_batch forwarding (binary-gated) -------------------------
 
 test_that("normalize_audios() writes non-empty, audio-decodable outputs (binary-gated)", {

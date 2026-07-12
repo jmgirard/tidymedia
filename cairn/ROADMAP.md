@@ -19,6 +19,6 @@ _Last hygiene check: 2026-07-11_
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->
-- M09 — Research-workflow Layer-2 verbs: standardization presets, EBU R128 loudnorm/downmix/resample, tibble-driven batch frame extraction, fixed-region box/blur anonymization (no face tracking). Four families user-confirmed. — added 2026-07-10
-- M10 — CRAN readiness (prep, hold submission until API soaks): API-surface cleanup (tidy-eval reexports, stray utils), win-builder + R-hub, examples/vignette policy pass, bump toward 0.2.0. Deliberately last. — added 2026-07-10
-- M11 — Dataframe-driven batch segmentation: a Layer-2 verb accepting a tibble of segment jobs (columns `inpath`, `start`, `stop`, `outpath`; one row per segment) rather than `segment_video()`'s single-infile + parallel-vector shape. Lets users cut across many files from one table; thin wrapper over `ffm_batch()`. — added 2026-07-12
+- Research-workflow Layer-2 verbs: standardization presets, EBU R128 loudnorm/downmix/resample, tibble-driven batch frame extraction, fixed-region box/blur anonymization (no face tracking). Four families user-confirmed. — added 2026-07-10
+- CRAN readiness (prep, hold submission until API soaks): API-surface cleanup (tidy-eval reexports, stray utils), win-builder + R-hub, examples/vignette policy pass, bump toward 0.2.0. Deliberately last. — added 2026-07-10
+- Dataframe-driven batch segmentation: a Layer-2 verb accepting a tibble of segment jobs (columns `inpath`, `start`, `stop`, `outpath`; one row per segment) rather than `segment_video()`'s single-infile + parallel-vector shape. Lets users cut across many files from one table; thin wrapper over `ffm_batch()`. — added 2026-07-12

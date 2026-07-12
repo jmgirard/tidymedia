@@ -128,6 +128,81 @@ test_that("format_for_web() compiles to the web-friendly re-encode", {
   expect_match(cmd, "crop=w=floor(in_w/2)*2", fixed = TRUE)
 })
 
+test_that("standardize_video() compiles the full standardization command", {
+  f <- make_input()
+  cmd <- standardize_video(
+    f, "out.mp4",
+    width = 1280, height = 720, fps = 30,
+    vcodec = "libx264", pixel_format = "yuv420p",
+    run = FALSE
+  )
+  expect_equal(
+    cmd,
+    sprintf(
+      paste(
+        '-y -i "%s" -vf "scale=w=1280:h=720,fps=30"',
+        "-codec:v libx264 -pix_fmt yuv420p -movflags +faststart",
+        '"out.mp4"'
+      ),
+      f
+    )
+  )
+})
+
+test_that("standardize_video() preserves aspect when only one dimension is given", {
+  f <- make_input()
+  w_only <- standardize_video(f, "out.mp4", width = 640, run = FALSE)
+  expect_match(w_only, '-vf "scale=w=640:h=-2', fixed = TRUE)
+  h_only <- standardize_video(f, "out.mp4", height = 480, run = FALSE)
+  expect_match(h_only, '-vf "scale=w=-2:h=480', fixed = TRUE)
+})
+
+test_that("standardize_video() forces exact dimensions when both are given", {
+  f <- make_input()
+  cmd <- standardize_video(f, "out.mp4", width = 640, height = 480, run = FALSE)
+  expect_match(cmd, "scale=w=640:h=480", fixed = TRUE)
+})
+
+test_that("standardize_video() omits the scale filter when no dimension is given", {
+  f <- make_input()
+  cmd <- standardize_video(f, "out.mp4", fps = 25, run = FALSE)
+  expect_no_match(cmd, "scale=", fixed = TRUE)
+  expect_match(cmd, '-vf "fps=25"', fixed = TRUE)
+})
+
+test_that("standardize_video() defaults are deterministic and documented", {
+  f <- make_input()
+  cmd1 <- standardize_video(f, "out.mp4", run = FALSE)
+  cmd2 <- standardize_video(f, "out.mp4", run = FALSE)
+  expect_identical(cmd1, cmd2)
+  expect_equal(
+    cmd1,
+    sprintf(
+      '-y -i "%s" -codec:v libx264 -pix_fmt yuv420p -movflags +faststart "out.mp4"',
+      f
+    )
+  )
+})
+
+test_that("standardize_video() validates dimensions, fps, and the input file", {
+  f <- make_input()
+  expect_error(standardize_video(f, "out.mp4", width = 0, run = FALSE))
+  expect_error(standardize_video(f, "out.mp4", height = -10, run = FALSE))
+  expect_error(standardize_video(f, "out.mp4", fps = 0, run = FALSE))
+  missing <- file.path(tempdir(), "tidymedia-does-not-exist.mp4")
+  expect_error(standardize_video(missing, "out.mp4", run = FALSE))
+})
+
+test_that("standardize_video() writes an output with the requested fps and width", {
+  skip_if_no_mediainfo()
+  infile <- make_test_video()
+  outfile <- withr::local_tempfile(fileext = ".mp4")
+  standardize_video(infile, outfile, width = 48, height = 32, fps = 5)
+  expect_true(file.exists(outfile))
+  expect_equal(get_width(outfile), 48)
+  expect_equal(get_framerate(outfile), 5)
+})
+
 test_that("extract_frame() compiles to a fast input-seek single-frame grab", {
   f <- make_input()
   cmd <- extract_frame(f, "out.png", timestamp = 1.5, run = FALSE)

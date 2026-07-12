@@ -49,6 +49,7 @@ reference:
   - audio_as_mp3
   - crop_video
   - format_for_web
+  - standardize_video
   - segment_video
   - segment_videos
   - concatenate_videos

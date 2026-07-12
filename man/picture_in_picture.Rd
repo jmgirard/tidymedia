@@ -68,6 +68,7 @@ Other task verb functions:
 \code{\link[=format_for_web]{format_for_web()}},
 \code{\link[=segment_video]{segment_video()}},
 \code{\link[=segment_videos]{segment_videos()}},
-\code{\link[=separate_audio_video]{separate_audio_video()}}
+\code{\link[=separate_audio_video]{separate_audio_video()}},
+\code{\link[=standardize_video]{standardize_video()}}
 }
 \concept{task verb functions}

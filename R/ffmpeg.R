@@ -256,6 +256,83 @@ format_for_web <- function(infile, outfile, run = TRUE) {
 }
 
 
+# standardize_video() -----------------------------------------------------
+
+#' Standardize a video to a reproducible format
+#'
+#' Re-encode a video to a consistent, reproducible format for analysis
+#' pipelines: a single video codec, pixel format, and (optionally) resolution
+#' and frame rate, with \code{+faststart} for smooth playback. Unlike
+#' \code{\link{format_for_web}} (a fixed web-delivery recipe), every part of the
+#' standard is a parameter, so a lab can pin its own house format once and apply
+#' it across a dataset.
+#'
+#' @details
+#' The default standard \code{standardize_video(infile, outfile)} re-encodes to
+#' H.264 video (\code{vcodec = "libx264"}) with \code{pixel_format = "yuv420p"}
+#' and \code{-movflags +faststart}, leaving resolution and frame rate untouched.
+#' The same input therefore always compiles to a byte-identical command.
+#' Audio is left untouched (audio standardization is out of scope).
+#'
+#' Resolution follows \code{width}/\code{height}: supplying both forces exact
+#' output dimensions; supplying only one preserves the aspect ratio and rounds
+#' the other to the nearest even number (FFmpeg's \code{-2}); supplying neither
+#' leaves the resolution unchanged.
+#'
+#' @param infile A string containing the path to a video file.
+#' @param outfile A string containing the path of the video file to write.
+#' @param width The output width in pixels (a positive number), or \code{NULL}
+#'   (default) to leave the width unconstrained.
+#' @param height The output height in pixels (a positive number), or \code{NULL}
+#'   (default) to leave the height unconstrained.
+#' @param fps The output frame rate (a positive number or FFmpeg framerate
+#'   expression such as \code{"30000/1001"}), or \code{NULL} (default) to keep
+#'   the input frame rate.
+#' @param vcodec A string naming the output video codec (default
+#'   \code{"libx264"}).
+#' @param pixel_format A string naming the output pixel format (default
+#'   \code{"yuv420p"}).
+#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
+#'   or return the compiled command without running it (\code{FALSE}).
+#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' # The documented default standard (H.264 / yuv420p / +faststart)
+#' standardize_video(video, "std.mp4", run = FALSE)
+#' # Pin resolution and frame rate too
+#' standardize_video(video, "std.mp4", width = 1280, height = 720, fps = 30,
+#'                   run = FALSE)
+#' @export
+standardize_video <- function(infile, outfile,
+                              width = NULL, height = NULL, fps = NULL,
+                              vcodec = "libx264", pixel_format = "yuv420p",
+                              run = TRUE) {
+
+  check_file_exists(infile)
+  rlang::check_string(outfile)
+
+  p <- ffm_files(infile, outfile)
+  # Resolution: exact when both given; aspect-preserving with an even output
+  # dimension (FFmpeg's -2) when only one; untouched when neither. ffm_scale()
+  # validates each dimension via check_dim().
+  if (!is.null(width) || !is.null(height)) {
+    p <- ffm_scale(
+      p,
+      width = if (is.null(width)) "-2" else width,
+      height = if (is.null(height)) "-2" else height
+    )
+  }
+  if (!is.null(fps)) {
+    p <- ffm_fps(p, fps)
+  }
+  p <- ffm_codec(p, video = vcodec)
+  p <- ffm_pixel_format(p, pixel_format)
+  p <- ffm_output_options(p, "-movflags +faststart")
+  ffm_finish(p, run)
+}
+
+
 # get_codecs() ------------------------------------------------------------
 
 #' Get a data frame of all installed codecs

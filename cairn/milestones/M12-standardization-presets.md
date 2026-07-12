@@ -3,7 +3,7 @@
      Per-section owners are tagged below. -->
 # M12: Video standardization verb
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Branch/PR:** m12-standardization-presets   <!-- owner: implement (branch) / review (PR URL) · create -->
@@ -87,20 +87,19 @@ argument set is the one documented standard (see the API tripwire on T4).
       runnable example; add `ffm_fps` to `_pkgdown.yml` under "Layer 1"; a new
       exported builder needs its reference row in the same commit (guardrail);
       `devtools::document()`.
-- [ ] T3: Tests first — `standardize_video()` compilation in
+- [x] T3: Tests first — `standardize_video()` compilation in
       `tests/testthat/test-ffmpeg.R`: full-argument command parity, aspect
       cases (width-only / height-only / both / neither), defaults determinism,
       and validation/`run = FALSE` (AC2–AC5).
-- [ ] T4: Implement `standardize_video()` in [R/ffmpeg.R](../../R/ffmpeg.R) as
+- [x] T4: Implement `standardize_video()` in [R/ffmpeg.R](../../R/ffmpeg.R) as
       a thin composition of `ffm_scale`/`ffm_fps`/`ffm_codec`/
       `ffm_pixel_format`/`ffm_output_options` (IP1). **(RB tripwire:
-      irreversible-api)** — settle the exported signature and whether the
-      "standard" is an explicit-parameter default set or a named-`preset`
-      bundle before finalizing; the exported API is hard to change later.
-- [ ] T5: Roxygen for `standardize_video()` documenting the default standard;
+      irreversible-api)** — settled: explicit-parameter default set (see
+      Decisions); escalation declined.
+- [x] T5: Roxygen for `standardize_video()` documenting the default standard;
       add its row to `_pkgdown.yml` under "Layer 2: task verbs";
       `devtools::document()`; `devtools::test()`.
-- [ ] T6: Execution test (`skip_if` no ffmpeg) proving the output exists with
+- [x] T6: Execution test (`skip_if` no ffmpeg) proving the output exists with
       the requested fps/width via the probe verbs (AC6); `devtools::check()`.
 
 ## Work log
@@ -111,6 +110,11 @@ argument set is the one documented standard (see the API tripwire on T4).
 - 2026-07-12: T1+T2 — added `ffm_fps()` Layer-1 verb (uses `check_dim` so a
   positive number or FFmpeg framerate string is accepted, else aborts),
   pkgdown row, docs; 4 compile/validation tests. test-ffm.R clean (165 pass).
+- 2026-07-12: T3–T6 — added `standardize_video()` Layer-2 verb composing
+  scale/fps/codec/pix_fmt/+faststart (explicit-parameter defaults libx264 +
+  yuv420p, resolution/fps untouched by default; single-dim → aspect-preserving
+  `-2`). 6 compile/validation tests + 1 binary-gated execution test probing
+  fps/width. `devtools::check()` clean (0/0/0).
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

@@ -47,9 +47,13 @@ engine's until-now-unused `filter_audio`/`-af` slot.
       Evidence: citation present; default values equal the cited targets.
       (RB tripwire: no-oracle)
 - [ ] AC4 — Supplying `channels` and/or `sample_rate` adds the corresponding
-      downmix/resample instruction to the compiled command; leaving them `NULL`
-      (default) omits them and preserves the source layout/rate. Evidence: test
-      covering both the supplied and omitted branches.
+      downmix/resample instruction to the compiled command, and a set
+      `sample_rate` is honored in the output; leaving them `NULL` (default) omits
+      both flags, preserving the source channel layout. (The output sample rate
+      is *not* the source rate under `NULL`: single-pass `loudnorm` resamples,
+      up to 192 kHz encoder-capped — documented, and pinned via `sample_rate`;
+      amended 2026-07-12 after review.) Evidence: compile tests for both branches
+      plus an exec assertion that a set `sample_rate` reaches the output.
 - [ ] AC5 — Invalid arguments (missing `infile`, non-scalar or out-of-range
       `I`/`TP`/`LRA`, non-positive `channels`/`sample_rate`) raise cli/rlang
       errors; no new assertthat (D004). Evidence: passing validation tests.
@@ -107,6 +111,15 @@ engine's until-now-unused `filter_audio`/`-af` slot.
 - 2026-07-12: T5 — DESIGN.md function families updated (`ffm_loudnorm`,
   `normalize_audio`); `devtools::check()` clean (0 errors / 0 warnings / 0
   notes). All tasks done → status review.
+- 2026-07-12: review — independent review found (score 95) that AC4's "leaving
+  them NULL … preserves the source layout/rate" is false for the sample rate:
+  single-pass `loudnorm` outputs 192 kHz (encoder-capped), empirically 44100→96000
+  Hz under defaults. Criterion fails as written → status back to in-progress for
+  a gated amendment. (Finding 2, downmix-after-loudnorm loudness drift, scored 72
+  — below threshold, logged not actioned.)
+- 2026-07-12: review amendment applied — AC4 reworded (gated), docs/NEWS
+  corrected, exec test strengthened to assert a pinned `sample_rate`; suite +
+  check re-run clean → status review.
 
 ## Decisions
 
@@ -117,6 +130,11 @@ engine's until-now-unused `filter_audio`/`-af` slot.
 - 2026-07-12 (gate): loudness knobs use descriptive R-idiomatic names
   (`target_loudness` / `true_peak` / `loudness_range`) on both `ffm_loudnorm()`
   and `normalize_audio()`, not the terse FFmpeg `I`/`TP`/`LRA` (irreversible-api).
+- 2026-07-12 (review amendment): single-pass `loudnorm` resamples output (up to
+  192 kHz, encoder-capped), so `sample_rate = NULL` does not preserve the source
+  rate. Chosen fix (user gate): document the behavior and let `sample_rate` pin
+  the rate — not a runtime probe, which would break the pure-compile/`run=FALSE`
+  invariant (the same tension that deferred two-pass). AC4 amended accordingly.
 
 ## Review
 
@@ -134,8 +152,11 @@ engine's until-now-unused `filter_audio`/`-af` slot.
       cited to EBU Rec. R 128 (2014) + ITU-R BS.1770-4 in the `ffm_loudnorm()` and
       `normalize_audio()` roxygen `@references` and the milestone Decisions;
       compile tests confirm the emitted defaults equal the cited values.
-- [x] AC4 — "adds downmix and resample when requested" (emits `-ac 1 -ar 48000`)
-      and "omits downmix/resample by default" (no `-ac`/`-ar`) both pass.
+- [x] AC4 (amended) — compile tests pass: "adds downmix and resample when
+      requested" (emits `-ac 1 -ar 48000`) and "omits downmix/resample by default"
+      (no `-ac`/`-ar`); the strengthened exec test pins `sample_rate = 22050` and
+      probes the output at 22050 Hz (honored). Source-rate non-preservation under
+      `NULL` is now documented, not claimed as preserved.
 - [x] AC5 — validation tests pass: missing infile ("exist"), out-of-range
       `I`/`TP`/`LRA` (3), non-positive/fractional `channels`/`sample_rate` (3);
       all cli/rlang, no assertthat.
@@ -163,3 +184,27 @@ use `load_all()`.
 - `_pkgdown.yml` — added `ffm_loudnorm` (Layer 1) and `normalize_audio`
   (Layer 2); `pkgdown::check_pkgdown()` — no problems found.
 - No new top-level files.
+
+### Independent review (two lenses + scorer)
+
+- [O] diff-bug (Opus): 2 findings. [S] blame-history (Sonnet): no findings —
+  confirmed no undoing of the `-af` slot, no M12-lesson resurrection (video is
+  copied here), no D009/D007/D002 contradiction, M13 shared-helper pattern
+  honored.
+- **Finding 1 (score 95) — ACTIONED (fixed).** Docs/NEWS/AC4 claimed
+  `sample_rate = NULL` preserves the source rate; single-pass `loudnorm` outputs
+  up to 192 kHz (encoder-capped), empirically 44100→96000 Hz. Fixed by honest
+  documentation + AC4 amendment (user gate: document, not runtime-probe, to keep
+  pure-compile); exec test strengthened to assert a pinned rate is honored.
+- **Finding 2 (score 72) — LOGGED, not actioned** (below the 80 threshold):
+  `-ac` downmix is applied after `loudnorm`, so loudness is normalized pre-downmix
+  and the final integrated loudness can drift slightly from `target_loudness`.
+  Reviewer notes the effect is usually small (~-3 dB default downmix ≈ level-
+  preserving) and fixing conflicts with the single-pass/no-DAG scope. Candidate
+  for the deferred two-pass/measured work if precision downmixing is wanted.
+
+### Re-verification after amendment
+
+- normalize-audio tests: 9 pass / 0 fail / 0 skip (incl. strengthened exec).
+- `devtools::check()`: 0 errors / 0 warnings / 0 notes. `document()`: no diff
+  beyond `man/normalize_audio.Rd`.

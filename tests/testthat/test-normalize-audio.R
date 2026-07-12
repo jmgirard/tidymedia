@@ -72,13 +72,17 @@ test_that("normalize_audio() writes a non-empty, audio-decodable output", {
   skip_if_no_ffprobe()
   src <- make_test_video()  # skips if ffmpeg absent; has a 440 Hz sine track
   out <- withr::local_tempfile(fileext = ".mp4")
-  normalize_audio(src, out, channels = 1, sample_rate = 44100)
+  normalize_audio(src, out, channels = 1, sample_rate = 22050)
   expect_true(file.exists(out))
   expect_gt(file.info(out)$size, 0)
-  # The output carries a decodable audio stream at the requested rate.
-  codec <- ffprobe(sprintf(
-    '-v error -select_streams a:0 -show_entries stream=codec_type -of csv=p=0 "%s"',
+  # The output carries a decodable audio stream ...
+  probe <- ffprobe(sprintf(
+    paste('-v error -select_streams a:0',
+          '-show_entries stream=codec_type,sample_rate -of csv=p=0 "%s"'),
     out
   ))
-  expect_match(codec[[1]], "audio")
+  expect_match(probe[[1]], "audio")
+  # ... and an explicit sample_rate is honored (loudnorm otherwise resamples to
+  # an encoder-capped rate, never the source rate -- so pinning it is the point).
+  expect_match(probe[[1]], "22050")
 })

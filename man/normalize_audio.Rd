@@ -33,7 +33,9 @@ default \code{-1}, the EBU R128 ceiling).}
 positive whole number), or \code{NULL} (default) to keep the source layout.}
 
 \item{sample_rate}{The output sample rate in Hz, e.g. \code{48000} (a positive
-whole number), or \code{NULL} (default) to keep the source sample rate.}
+whole number), or \code{NULL} (default) to let \code{loudnorm} choose (it
+resamples, up to 192 kHz encoder-capped -- not the source rate). Set this to
+pin the output rate.}
 
 \item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
 or return the compiled command without running it (\code{FALSE}).}
@@ -55,8 +57,11 @@ measured per ITU-R BS.1770-4 -- with \code{loudness_range = 7}. This is
 single-pass (dynamic) \code{loudnorm}: the same input and arguments always
 compile to one reproducible command, with no separate measurement pass.
 Because the audio is filtered it is re-encoded (the container's default audio
-encoder); leaving \code{channels}/\code{sample_rate} at \code{NULL} preserves
-the source layout and sample rate.
+encoder). Leaving \code{channels} at \code{NULL} preserves the source channel
+layout. Note that FFmpeg's \code{loudnorm} filter resamples its output (up to
+192 kHz, capped by the encoder), so the output sample rate is \emph{not} the
+source rate unless you pin it: set \code{sample_rate} to control the output
+rate.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

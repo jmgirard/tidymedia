@@ -125,7 +125,7 @@ run_loudnorm_analysis <- function(input,
 
 # run_loudnorm_analysis_batch() ------------------------------------------------
 
-# Phase 1 of normalize_audios(two_pass = TRUE): run M16's analysis pass once per
+# Phase 1 of normalize_audio_batch(two_pass = TRUE): run M16's analysis pass once per
 # input row, honoring per-row loudness targets, and return the list of captured
 # stderr outputs (one character vector per row, carrying run_program()'s `status`
 # attr on a non-zero FFmpeg exit). Parsing and row-level fail-fast are deferred
@@ -243,7 +243,7 @@ expand_manifest_rows <- function(man, silent, inputs) {
 # attribute on ok_res (opt-in provenance for the rows that ran) is expanded to
 # full row order so it stays one-row-per-job (D011).
 #
-# `verify`/`manifest`/`checksums` carry the opt-in intent from normalize_audios()
+# `verify`/`manifest`/`checksums` carry the opt-in intent from normalize_audio_batch()
 # so the all-silent case (no fan-out ran) still returns the SAME schema a mixed
 # batch would: an all-NA `verified` column and a padded manifest. Without this,
 # an all-silent batch silently dropped those outputs while a mixed batch kept
@@ -297,7 +297,7 @@ bind_two_pass_result <- function(jobs, silent, ok_res, run, verify = FALSE,
 
 # run_normalize_correction() ---------------------------------------------------
 
-# Phase 2 of normalize_audios(two_pass = TRUE): build (and optionally run) one
+# Phase 2 of normalize_audio_batch(two_pass = TRUE): build (and optionally run) one
 # linear correction command per row of a jobs table already augmented with the
 # five measured columns (measured_I/TP/LRA/thresh/offset) by Phase 1. A thin
 # fan-out over ffm_batch() (D007) sharing normalize_audio_pipeline() with the

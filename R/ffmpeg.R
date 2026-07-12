@@ -26,7 +26,7 @@ ffmpeg <- function(command) {
   out
 }
 
-# extract_frames() --------------------------------------------------------
+# extract_frame_batch() --------------------------------------------------------
 
 #' Extract a single frame from a video
 #'
@@ -70,7 +70,7 @@ extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL,
 
 # frame_pipeline() --------------------------------------------------------
 
-# Shared single-frame grab for extract_frame() and extract_frames(): a fast
+# Shared single-frame grab for extract_frame() and extract_frame_batch(): a fast
 # input seek to the (already resolved) timestamp plus the still-image quality
 # flags, one frame out. Both verbs build identical commands from this helper;
 # frame->timestamp resolution stays in the verb layer (scalar vs. per-row).
@@ -326,7 +326,7 @@ standardize_video <- function(infile, outfile,
 # standardize_pipeline() --------------------------------------------------
 
 # Shared standardization pipeline for standardize_video() and
-# standardize_videos(): build one single-output re-encode pipeline for a single
+# standardize_video_batch(): build one single-output re-encode pipeline for a single
 # input. Both verbs compile identical commands from this helper, so per-value
 # validation (dimensions via check_dim, codec/pixfmt via check_token) and M12's
 # guards (audio stream-copy, even-dimension safeguard, +faststart) live here
@@ -529,10 +529,10 @@ check_regions <- function(regions, call = rlang::caller_env()) {
 
 # derive_anonymized_names() -----------------------------------------------
 
-# Derive one output path per input for anonymize_videos() when the `output`
+# Derive one output path per input for anonymize_video_batch() when the `output`
 # column is absent: `<base>_anonymized.<input-ext>` (box-fill re-encodes but
 # keeps the source container). One input -> one output, so a duplicated input
-# with no explicit `output` would collide; the caller (anonymize_videos)
+# with no explicit `output` would collide; the caller (anonymize_video_batch)
 # rejects that up front, so this helper assumes unique inputs and stays a pure
 # name map (parity with derive_standardized_names()).
 derive_anonymized_names <- function(input) {
@@ -542,7 +542,7 @@ derive_anonymized_names <- function(input) {
 }
 
 
-# anonymize_videos() ------------------------------------------------------
+# anonymize_video_batch() ------------------------------------------------------
 
 #' Anonymize Many Videos From a Jobs Table
 #'
@@ -595,8 +595,8 @@ derive_anonymized_names <- function(input) {
 #'   forwarded arguments add, e.g. \code{verified}).
 #' @seealso \code{\link{anonymize_video}} for the single-input form;
 #'   \code{\link{ffm_batch}} for the batch runner and the arguments forwarded
-#'   through \code{...}; \code{\link{standardize_videos}} and
-#'   \code{\link{segment_videos}} for the other table-driven siblings.
+#'   through \code{...}; \code{\link{standardize_video_batch}} and
+#'   \code{\link{segment_video_batch}} for the other table-driven siblings.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -609,9 +609,9 @@ derive_anonymized_names <- function(input) {
 #'   )
 #' )
 #' # run = FALSE compiles one command per input without calling FFmpeg
-#' anonymize_videos(jobs, run = FALSE)
+#' anonymize_video_batch(jobs, run = FALSE)
 #' @export
-anonymize_videos <- function(jobs, color = "black", vcodec = "libx264",
+anonymize_video_batch <- function(jobs, color = "black", vcodec = "libx264",
                              pixel_format = "yuv420p", run = TRUE,
                              parallel = FALSE, ...) {
 
@@ -647,7 +647,7 @@ anonymize_videos <- function(jobs, color = "black", vcodec = "libx264",
   }
 
   # A factor input column carries paths as levels; treat them as strings
-  # (parity with standardize_videos()).
+  # (parity with standardize_video_batch()).
   jobs$input <- as.character(jobs$input)
 
   # Validate present override columns up front so a bad column fails clearly
@@ -663,7 +663,7 @@ anonymize_videos <- function(jobs, color = "black", vcodec = "libx264",
 
   # Auto-name outputs when the column is absent. One input -> one output, so a
   # duplicated input with no explicit output would map to the same file; reject
-  # that rather than silently overwrite (parity with standardize_videos()).
+  # that rather than silently overwrite (parity with standardize_video_batch()).
   if (!"output" %in% names(jobs)) {
     dupes <- unique(jobs$input[duplicated(jobs$input)])
     if (length(dupes) > 0) {
@@ -806,7 +806,7 @@ normalize_audio <- function(infile, outfile,
 # normalize_audio_pipeline() ----------------------------------------------
 
 # Shared loudness-normalization pipeline for normalize_audio() and (M15)
-# normalize_audios(): build one single-output pipeline for a single input. Both
+# normalize_audio_batch(): build one single-output pipeline for a single input. Both
 # verbs compile identical commands from this helper, so per-value validation
 # (loudness targets via ffm_loudnorm(), channels/sample_rate here) lives once --
 # the batch sibling inherits it by construction (D002, D007; M13 lesson).
@@ -1103,7 +1103,7 @@ segment_video <- function(infile,
 # `_<n>.<ext>` to each input's basename. Numbering restarts per input file (in
 # row order) and is zero-padded to that input's own segment count, so the
 # single-input case (segment_video) and the multi-input jobs table
-# (segment_videos with no `output` column) share one naming rule.
+# (segment_video_batch with no `output` column) share one naming rule.
 derive_segment_names <- function(input) {
   out <- character(length(input))
   for (f in unique(input)) {
@@ -1136,7 +1136,7 @@ derive_frame_names <- function(input, format = "png") {
 
 # segment_pipeline() ------------------------------------------------------
 
-# Shared cut logic for segment_video() and segment_videos(): build one
+# Shared cut logic for segment_video() and segment_video_batch(): build one
 # single-output seek pipeline for a single segment, stream-copying on the fast
 # (non-reencode) path. Fan-out verbs stay single-output per job (D003, D007);
 # both verbs wrap this in a closure that captures the scalar `reencode`.
@@ -1148,7 +1148,7 @@ segment_pipeline <- function(input, output, start, end, reencode) {
 }
 
 
-# segment_videos() --------------------------------------------------------
+# segment_video_batch() --------------------------------------------------------
 
 #' Segment Many Videos From a Jobs Table
 #'
@@ -1201,9 +1201,9 @@ segment_pipeline <- function(input, output, start, end, reencode) {
 #'   end    = c(0.5, 1)
 #' )
 #' # run = FALSE compiles one command per segment without calling FFmpeg
-#' segment_videos(jobs, run = FALSE)
+#' segment_video_batch(jobs, run = FALSE)
 #' @export
-segment_videos <- function(jobs, reencode = TRUE, run = TRUE,
+segment_video_batch <- function(jobs, reencode = TRUE, run = TRUE,
                            parallel = FALSE, ...) {
 
   if (!is.data.frame(jobs)) {
@@ -1261,7 +1261,7 @@ segment_videos <- function(jobs, reencode = TRUE, run = TRUE,
 }
 
 
-# extract_frames() --------------------------------------------------------
+# extract_frame_batch() --------------------------------------------------------
 
 #' Extract Still Frames From Many Videos From a Jobs Table
 #'
@@ -1299,7 +1299,7 @@ segment_videos <- function(jobs, reencode = TRUE, run = TRUE,
 #'   forwarded arguments add, e.g. \code{verified}).
 #' @seealso \code{\link{extract_frame}} for the single-frame form;
 #'   \code{\link{ffm_batch}} for the batch runner and the arguments forwarded
-#'   through \code{...}; \code{\link{segment_videos}} for the segment-cutting
+#'   through \code{...}; \code{\link{segment_video_batch}} for the segment-cutting
 #'   sibling.
 #' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 #' @family task verb functions
@@ -1311,9 +1311,9 @@ segment_videos <- function(jobs, reencode = TRUE, run = TRUE,
 #'   timestamp = c(0.25, 0.75)
 #' )
 #' # run = FALSE compiles one command per frame without calling FFmpeg
-#' extract_frames(jobs, run = FALSE)
+#' extract_frame_batch(jobs, run = FALSE)
 #' @export
-extract_frames <- function(jobs, format = "png", run = TRUE,
+extract_frame_batch <- function(jobs, format = "png", run = TRUE,
                            parallel = FALSE, ...) {
 
   if (!is.data.frame(jobs)) {
@@ -1403,12 +1403,12 @@ extract_frames <- function(jobs, format = "png", run = TRUE,
 
 # derive_standardized_names() ---------------------------------------------
 
-# Derive one output path per input for standardize_videos() when the `output`
+# Derive one output path per input for standardize_video_batch() when the `output`
 # column is absent: `<base>_standardized.<input-ext>` (standardization keeps the
 # source container, unlike a frame which becomes an image). Standardization is
 # one-input -> one-output, so -- unlike the per-input-numbering siblings -- a
 # duplicated input with no explicit `output` would collide; the caller
-# (standardize_videos) rejects that up front, so this helper assumes unique
+# (standardize_video_batch) rejects that up front, so this helper assumes unique
 # inputs and stays a pure name map.
 derive_standardized_names <- function(input) {
   paste0(
@@ -1417,7 +1417,7 @@ derive_standardized_names <- function(input) {
 }
 
 
-# standardize_videos() ----------------------------------------------------
+# standardize_video_batch() ----------------------------------------------------
 
 #' Standardize Many Videos From a Jobs Table
 #'
@@ -1469,8 +1469,8 @@ derive_standardized_names <- function(input) {
 #'   forwarded arguments add, e.g. \code{verified}).
 #' @seealso \code{\link{standardize_video}} for the single-input form;
 #'   \code{\link{ffm_batch}} for the batch runner and the arguments forwarded
-#'   through \code{...}; \code{\link{segment_videos}} and
-#'   \code{\link{extract_frames}} for the other table-driven siblings.
+#'   through \code{...}; \code{\link{segment_video_batch}} and
+#'   \code{\link{extract_frame_batch}} for the other table-driven siblings.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -1480,9 +1480,9 @@ derive_standardized_names <- function(input) {
 #'   width  = c(640, 320)
 #' )
 #' # run = FALSE compiles one command per input without calling FFmpeg
-#' standardize_videos(jobs, run = FALSE)
+#' standardize_video_batch(jobs, run = FALSE)
 #' @export
-standardize_videos <- function(jobs, width = NULL, height = NULL, fps = NULL,
+standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NULL,
                                vcodec = "libx264", pixel_format = "yuv420p",
                                run = TRUE, parallel = FALSE, ...) {
 
@@ -1500,7 +1500,7 @@ standardize_videos <- function(jobs, width = NULL, height = NULL, fps = NULL,
   }
 
   # A factor input column carries paths as levels; treat them as strings
-  # (parity with extract_frames()).
+  # (parity with extract_frame_batch()).
   jobs$input <- as.character(jobs$input)
 
   # Validate present override columns up front so a bad column fails clearly
@@ -1567,10 +1567,10 @@ standardize_videos <- function(jobs, width = NULL, height = NULL, fps = NULL,
 
 # derive_normalized_names() -----------------------------------------------
 
-# Derive one output path per input for normalize_audios() when the `output`
+# Derive one output path per input for normalize_audio_batch() when the `output`
 # column is absent: `<base>_normalized.<input-ext>` (loudness normalization
 # keeps the source container). One input -> one output, so a duplicated input
-# with no explicit `output` would collide; the caller (normalize_audios)
+# with no explicit `output` would collide; the caller (normalize_audio_batch)
 # rejects that up front, so this helper assumes unique inputs and stays a pure
 # name map (parity with derive_standardized_names()).
 derive_normalized_names <- function(input) {
@@ -1580,7 +1580,7 @@ derive_normalized_names <- function(input) {
 }
 
 
-# normalize_audios() ------------------------------------------------------
+# normalize_audio_batch() ------------------------------------------------------
 
 #' Normalize Many Files' Audio Loudness From a Jobs Table
 #'
@@ -1670,7 +1670,7 @@ derive_normalized_names <- function(input) {
 #' maximum level of audio signals}; ITU-R BS.1770-4.
 #' @seealso \code{\link{normalize_audio}} for the single-input form;
 #'   \code{\link{ffm_batch}} for the batch runner and the arguments forwarded
-#'   through \code{...}; \code{\link{standardize_videos}} for the video-side
+#'   through \code{...}; \code{\link{standardize_video_batch}} for the video-side
 #'   table-driven sibling.
 #' @family task verb functions
 #' @examples
@@ -1681,14 +1681,14 @@ derive_normalized_names <- function(input) {
 #'   target_loudness = c(-23, -16)
 #' )
 #' # run = FALSE compiles one command per input without calling FFmpeg
-#' normalize_audios(jobs, run = FALSE)
+#' normalize_audio_batch(jobs, run = FALSE)
 #' # Accurate two-pass (measured/linear) normalization across the whole table
 #' # (runs FFmpeg to measure each input, so needs the binary):
 #' \dontrun{
-#' normalize_audios(jobs, two_pass = TRUE)
+#' normalize_audio_batch(jobs, two_pass = TRUE)
 #' }
 #' @export
-normalize_audios <- function(jobs, target_loudness = -23, true_peak = -1,
+normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
                              loudness_range = 7, channels = NULL,
                              sample_rate = NULL, two_pass = FALSE, run = TRUE,
                              parallel = FALSE, ...) {
@@ -1708,7 +1708,7 @@ normalize_audios <- function(jobs, target_loudness = -23, true_peak = -1,
   }
 
   # A factor input column carries paths as levels; treat them as strings
-  # (parity with standardize_videos()).
+  # (parity with standardize_video_batch()).
   jobs$input <- as.character(jobs$input)
 
   # Validate present override columns up front so a bad column fails clearly
@@ -1729,7 +1729,7 @@ normalize_audios <- function(jobs, target_loudness = -23, true_peak = -1,
 
   # Auto-name outputs when the column is absent. One input -> one output, so a
   # duplicated input with no explicit output would map to the same file; reject
-  # that rather than silently overwrite (parity with standardize_videos()).
+  # that rather than silently overwrite (parity with standardize_video_batch()).
   if (!"output" %in% names(jobs)) {
     dupes <- unique(jobs$input[duplicated(jobs$input)])
     if (length(dupes) > 0) {

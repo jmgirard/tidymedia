@@ -93,7 +93,7 @@ public surface with no compatibility shims.
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [ ] **T1** Rename the 5 batch siblings to `<scalar_verb>_batch`
+- [x] **T1** Rename the 5 batch siblings to `<scalar_verb>_batch`
       (`R/ffmpeg.R:614/1206/1316/1485/1691` + `R/loudnorm_two_pass.R`): update
       defs, roxygen, all call sites in `tests/`, `vignettes/batch.Rmd`,
       `README.Rmd`, and rename the matching `tests/testthat/test-*.R` files.
@@ -120,6 +120,7 @@ public surface with no compatibility shims.
 <!-- owner: any skill · append-only; one line per entry; absolute dates -->
 
 - 2026-07-12: created by /milestone-plan (executes M22 audit §5–6 / D014).
+- 2026-07-12: T1 — renamed 5 batch siblings to `*_batch` across R/, tests (incl. test files), vignettes, README; document() regen; tests 0F/0W.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

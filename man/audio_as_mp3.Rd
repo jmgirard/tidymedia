@@ -27,21 +27,21 @@ audio_as_mp3(video, "audio.mp3", run = FALSE)
 \seealso{
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
-\code{\link[=anonymize_videos]{anonymize_videos()}},
+\code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos]{compare_videos()}},
 \code{\link[=concatenate_videos]{concatenate_videos()}},
 \code{\link[=crop_video]{crop_video()}},
 \code{\link[=extract_audio]{extract_audio()}},
 \code{\link[=extract_frame]{extract_frame()}},
-\code{\link[=extract_frames]{extract_frames()}},
+\code{\link[=extract_frame_batch]{extract_frame_batch()}},
 \code{\link[=format_for_web]{format_for_web()}},
 \code{\link[=normalize_audio]{normalize_audio()}},
-\code{\link[=normalize_audios]{normalize_audios()}},
+\code{\link[=normalize_audio_batch]{normalize_audio_batch()}},
 \code{\link[=picture_in_picture]{picture_in_picture()}},
 \code{\link[=segment_video]{segment_video()}},
-\code{\link[=segment_videos]{segment_videos()}},
+\code{\link[=segment_video_batch]{segment_video_batch()}},
 \code{\link[=separate_audio_video]{separate_audio_video()}},
 \code{\link[=standardize_video]{standardize_video()}},
-\code{\link[=standardize_videos]{standardize_videos()}}
+\code{\link[=standardize_video_batch]{standardize_video_batch()}}
 }
 \concept{task verb functions}

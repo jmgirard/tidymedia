@@ -8,7 +8,7 @@ _Last hygiene check: 2026-07-12 (M16 done)_
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M17 | Batch two-pass (measured/linear) loudnorm | in-progress | M15, M16 | normal | milestones/M17-batch-two-pass-loudnorm.md |
+| M17 | Batch two-pass (measured/linear) loudnorm | review | M15, M16 | normal | milestones/M17-batch-two-pass-loudnorm.md |
 | M16 | Two-pass (measured/linear) EBU R128 loudnorm | done | M14 | normal | milestones/archive/M16-two-pass-loudnorm.md |
 | M15 | Batch audio normalization verb | done | M14 | normal | milestones/archive/M15-batch-audio-normalization.md |
 | M14 | Audio loudness normalization verb | done | — | normal | milestones/archive/M14-audio-loudness-normalization.md |

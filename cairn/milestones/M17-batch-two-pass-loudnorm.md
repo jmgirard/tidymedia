@@ -1,6 +1,6 @@
 # M17: Batch two-pass (measured/linear) loudnorm
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M15, M16
 - **Branch/PR:** m17-batch-two-pass-loudnorm
@@ -103,7 +103,7 @@ M14→M15 scalar→batch split applied to the correction pipeline.
 - [x] T5 — Execution test (`skip_if` ffmpeg absent): full two-pass over a ≥2-row
       jobs table on `inst/extdata/sample.mp4`; re-probe each output's integrated
       loudness within ±1 LU of its per-row target (AC5).
-- [ ] T6 — Roxygen for the new arg (document the analyze-then-build fan-out, its
+- [x] T6 — Roxygen for the new arg (document the analyze-then-build fan-out, its
       per-row nature, and the `run = FALSE`-not-binary-free semantics); NEWS
       entry; `devtools::document()`; `devtools::check()` clean. Record the
       milestone-local decisions (fail-fast on a bad analysis row; `two_pass`
@@ -134,6 +134,11 @@ M14→M15 scalar→batch split applied to the correction pipeline.
 - 2026-07-12: T5 done — skip-guarded AC5 execution test: full two-pass over a
   2-row jobs table on `sample.mp4`, re-probed each output within ±1 LU of its
   per-row target (measured 0.01–0.02 LU off in practice).
+- 2026-07-12: T6 done — roxygen `two_pass` arg + `run`/`@return` updates, NEWS
+  entry, `document()`. `devtools::check()` 0/0/0 and raw `R CMD check` Status:
+  OK. Minor amendment: ran `spelling::update_wordlist()` (added 12 valid
+  technical terms incl. pre-existing EBU/LUFS/dBTP and new `parseable`), clearing
+  a latent spelling-comparison NOTE that `devtools::check()` had masked.
 
 ## Decisions
 
@@ -143,5 +148,14 @@ M14→M15 scalar→batch split applied to the correction pipeline.
 - 2026-07-12: `run = FALSE`-not-binary-free batch contract is a faithful
   fan-out of M16's scalar contract (D013) — proceeded without Fable escalation
   despite the `irreversible-api` tripwire (question gate).
+- 2026-07-12: Fail-fast on a bad analysis row — `assemble_measured()` aborts
+  before any correction is built, naming every row whose analysis exited
+  non-zero or produced no parseable measurement (parity with ffm_batch's
+  resolve-verify-specs-up-front pattern). Milestone-local.
+- 2026-07-12: `two_pass` is a whole-table switch, not a per-row column (mixed
+  single/two-pass batches deliberately not built; ROADMAP candidate if wanted).
+  Milestone-local.
+- 2026-07-12: No new D-entry — D013 (analyze-then-build; `run = FALSE` no longer
+  binary-free) already covers the batch extension; M17 only fans it across rows.
 
 ## Review

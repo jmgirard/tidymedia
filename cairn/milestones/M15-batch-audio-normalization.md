@@ -1,6 +1,6 @@
 # M15: Batch audio normalization verb
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M14
 - **Branch/PR:** m15-batch-audio-normalization

@@ -112,7 +112,7 @@ clear silence-specific error for the scalar verb, and continue-and-mark
       silence-specific error and all other non-finite/missing cases keep the
       existing generic abort. Turns T1 green; scalar `normalize_audio(
       two_pass = TRUE)` now errors clearly on silence (AC1, AC2).
-- [ ] T3 — (tests-first + impl, batch) Extend the batch two-pass assembly
+- [x] T3 — (tests-first + impl, batch) Extend the batch two-pass assembly
       (`assemble_measured()` and the `normalize_audios` two-pass block,
       `R/ffmpeg.R:1395-1425`) so silent rows are set aside rather than
       aborting: run the correction only on non-silent rows, re-bind results
@@ -140,6 +140,12 @@ clear silence-specific error for the scalar verb, and continue-and-mark
   (silent / unparseable / ok) keyed on `input_i = -Inf`; routed
   `parse_loudnorm_measurements()` so silence aborts with its own message and
   other bad blocks keep the generic parse abort. 16 parser tests pass.
+- 2026-07-12: T3 done. `assemble_measured()` now returns `list(measured,
+  silent)`, setting silent rows aside (measured NA) instead of aborting;
+  genuine failures still abort. Added `bind_two_pass_result()` (pure row-order
+  reassembly). `normalize_audios(two_pass=TRUE)` corrects only non-silent rows,
+  warns naming silent ones, and always returns a `silent` column. Full suite
+  725 pass.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

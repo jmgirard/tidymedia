@@ -1416,12 +1416,33 @@ normalize_audios <- function(jobs, target_loudness = -23, true_peak = -1,
       col_or("loudness_range", loudness_range),
       parallel
     )
+    # Continue-and-mark on silence (M18): a silent input (input_i = -inf) cannot
+    # be normalized to a loudness target, but one silent row must not abort the
+    # whole batch. assemble_measured() sets silent rows aside (measured cols NA)
+    # and flags them; genuine failures still abort. Correct only the non-silent
+    # rows, warn about the silent ones, and reassemble in original row order.
     measured <- assemble_measured(outputs)
-    for (nm in names(measured)) jobs[[nm]] <- measured[[nm]]
-    return(run_normalize_correction(
-      jobs, target_loudness, true_peak, loudness_range, channels, sample_rate,
-      run = run, parallel = parallel, ...
-    ))
+    silent <- measured$silent
+    for (nm in names(measured$measured)) jobs[[nm]] <- measured$measured[[nm]]
+    if (any(silent)) {
+      cli::cli_warn(c(
+        "{sum(silent)} input{?s} {?is/are} silent and cannot be normalized \\
+         to a loudness target.",
+        "!" = "Silent row{?s}: {.val {which(silent)}}.",
+        "i" = "Silent rows are marked in the {.field silent} column \\
+               ({.field success} = {.val {FALSE}}, no output written)."
+      ))
+    }
+    ok_res <- if (any(!silent)) {
+      run_normalize_correction(
+        jobs[!silent, , drop = FALSE], target_loudness, true_peak,
+        loudness_range, channels, sample_rate, run = run, parallel = parallel,
+        ...
+      )
+    } else {
+      NULL
+    }
+    return(bind_two_pass_result(jobs, silent, ok_res, run))
   }
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output loudnorm

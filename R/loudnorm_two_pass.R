@@ -160,34 +160,83 @@ run_loudnorm_analysis_batch <- function(inputs, target_loudness, true_peak,
 # assemble_measured() ----------------------------------------------------------
 
 # Map Phase 1's per-row analysis outputs to the five measured columns, reusing
-# M16's parser per row. Returns a tibble with one row per input and columns
-# measured_I/measured_TP/measured_LRA/measured_thresh/offset (FFmpeg-arg
-# spellings) ready to bind onto the jobs table. Fail-fast: a row whose analysis
-# pass exited non-zero (`status` attr) or whose stderr holds no parseable finite
-# measurement block is collected, and the function aborts naming every offending
-# row before any correction command is built.
+# M16's classifier per row. Returns a list of `measured` (a tibble with one row
+# per input and columns measured_I/measured_TP/measured_LRA/measured_thresh/
+# offset -- FFmpeg-arg spellings -- ready to bind onto the jobs table) and
+# `silent` (a per-row logical). Silent rows (input_i = -inf, M18) are set aside,
+# not corrected: their measured columns are NA and `silent` marks them, so the
+# batch can continue-and-mark rather than abort (D011 idiom). Fail-fast is
+# reserved for genuine failures: a row whose analysis pass exited non-zero
+# (`status` attr) or whose stderr holds no parseable finite measurement block
+# (for a non-silence reason) is collected, and the function aborts naming every
+# offending row before any correction command is built.
 assemble_measured <- function(outputs, call = rlang::caller_env()) {
-  parsed <- lapply(outputs, function(out) {
-    if (!is.null(attr(out, "status"))) return(NULL)
-    tryCatch(parse_loudnorm_measurements(out), error = function(e) NULL)
+  cls <- lapply(outputs, function(out) {
+    if (!is.null(attr(out, "status"))) return(list(status = "error"))
+    classify_loudnorm_output(out)
   })
-  bad <- which(vapply(parsed, is.null, logical(1)))
+  status <- vapply(cls, `[[`, character(1), "status")
+  bad <- which(status %in% c("error", "unparseable"))
   if (length(bad) > 0) {
     cli::cli_abort(c(
       "The {.code loudnorm} analysis pass did not yield usable measurements.",
       "x" = "Job{cli::qty(bad)}{?s} {.val {bad}} failed to run or printed no \\
              parseable measurement block.",
-      "i" = "Every row must produce a finite JSON measurement block before the \\
-             correction pass can be built."
+      "i" = "Every row must produce a finite JSON measurement block (or be \\
+             silent) before the correction pass can be built."
     ), call = call)
   }
-  tibble::tibble(
-    measured_I = vapply(parsed, `[[`, numeric(1), "i"),
-    measured_TP = vapply(parsed, `[[`, numeric(1), "tp"),
-    measured_LRA = vapply(parsed, `[[`, numeric(1), "lra"),
-    measured_thresh = vapply(parsed, `[[`, numeric(1), "thresh"),
-    offset = vapply(parsed, `[[`, numeric(1), "offset")
+  silent <- status == "silent"
+  # Silent rows have no measured values; pull them from the classifier's
+  # `measured` list for the rest and leave NA where silent.
+  pick <- function(field) {
+    vapply(seq_along(cls), function(i) {
+      if (silent[[i]]) NA_real_ else cls[[i]]$measured[[field]]
+    }, numeric(1))
+  }
+  list(
+    silent = silent,
+    measured = tibble::tibble(
+      measured_I = pick("i"), measured_TP = pick("tp"),
+      measured_LRA = pick("lra"), measured_thresh = pick("thresh"),
+      offset = pick("offset")
+    )
   )
+}
+
+# bind_two_pass_result() -------------------------------------------------------
+
+# Reassemble the batch two-pass result in original row order. `jobs` is the full
+# jobs table already augmented with the five measured columns (NA for silent
+# rows); `ok_res` is the correction fan-out's result over the non-silent rows
+# (its added columns -- command, success, and any verified -- in the same order
+# as jobs[!silent]), or NULL when every row is silent. Silent rows are marked
+# (silent = TRUE, success = FALSE, no command/output); non-silent rows carry
+# ok_res's added columns threaded back into their positions. Pure (no binary),
+# so the interleaving is unit-testable independent of ffmpeg. A manifest
+# attribute on ok_res (opt-in provenance for the rows that ran) is carried over.
+bind_two_pass_result <- function(jobs, silent, ok_res, run) {
+  result <- tibble::as_tibble(jobs)
+  result$silent <- silent
+  if (is.null(ok_res)) {
+    # Every row silent: no correction fan-out ran.
+    result$command <- NA_character_
+    if (run) result$success <- FALSE
+    return(result)
+  }
+  # ok_res's columns beyond the jobs table are the run outputs to thread back;
+  # silent rows get a type-matched fill (no command, not a success).
+  added <- setdiff(names(ok_res), names(jobs))
+  for (nm in added) {
+    fill <- switch(nm, command = NA_character_, success = FALSE, NA)
+    col <- rep(fill, nrow(result))
+    col[!silent] <- ok_res[[nm]]
+    result[[nm]] <- col
+  }
+  if (!is.null(attr(ok_res, "manifest"))) {
+    attr(result, "manifest") <- attr(ok_res, "manifest")
+  }
+  result
 }
 
 # run_normalize_correction() ---------------------------------------------------

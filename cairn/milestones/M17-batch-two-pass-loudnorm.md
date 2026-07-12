@@ -3,7 +3,7 @@
 - **Status:** review
 - **Priority:** normal
 - **Depends on:** M15, M16
-- **Branch/PR:** m17-batch-two-pass-loudnorm
+- **Branch/PR:** m17-batch-two-pass-loudnorm · [PR #19](https://github.com/jmgirard/tidymedia/pull/19)
 
 ## Goal
 
@@ -40,33 +40,33 @@ M14→M15 scalar→batch split applied to the correction pipeline.
 
 ## Acceptance criteria
 
-- [ ] AC1 — With `two_pass = FALSE` (default), `normalize_audios()` compiles
+- [x] AC1 — With `two_pass = FALSE` (default), `normalize_audios()` compiles
       byte-for-byte identically to today, including pure `run = FALSE` (no binary
       touched). Evidence: characterization test pinning the `command` column
       unchanged from the current single-pass batch.
-- [ ] AC2 — Given a jobs table pre-augmented with fixed measured-value columns
+- [x] AC2 — Given a jobs table pre-augmented with fixed measured-value columns
       (no binary), the correction fan-out builds one command per row carrying
       `measured_I/TP/LRA/thresh`, `offset`, and `linear=true`, with per-row knob
       columns (`target_loudness` etc.) and `channels`/`sample_rate`/`-c:v copy`
       preserved from the shared pipeline. Evidence: passing pure test over a
       fixed jobs+measured fixture.
-- [ ] AC3 — The measured-table assembly (`assemble_measured()`), given per-row
+- [x] AC3 — The measured-table assembly (`assemble_measured()`), given per-row
       parse results (reusing M16's parser), populates the five measured columns
       per row and aborts naming the offending row when a row's block is
       absent/malformed. Evidence: passing pure test over fixture parse results
       including a malformed row.
-- [ ] AC4 — With `two_pass = TRUE, run = FALSE`, the analysis passes run and the
+- [x] AC4 — With `two_pass = TRUE, run = FALSE`, the analysis passes run and the
       `command` column holds the correction commands unexecuted (no `success`
       column, no output files written). Evidence: passing skip-guarded test
       (`skip_if` ffmpeg absent) asserting return shape and that no outputs exist.
       (RB tripwire: irreversible-api — new exported arg + batch execution
       contract where `run = FALSE` no longer implies binary-free.)
-- [ ] AC5 — An execution test (`skip_if` ffmpeg absent) runs full two-pass over a
+- [x] AC5 — An execution test (`skip_if` ffmpeg absent) runs full two-pass over a
       ≥2-row jobs table on the sample, then re-probes each output's integrated
       loudness and asserts each lands within ±1 LU of its per-row target.
       Evidence: passing skip-guarded test. Source: EBU R 128 (2014); ITU-R
       BS.1770-4.
-- [ ] AC6 — `devtools::check()` clean (zero errors/warnings/notes); roxygen for
+- [x] AC6 — `devtools::check()` clean (zero errors/warnings/notes); roxygen for
       the new arg updated; `@family` unchanged-correct; NEWS entry added.
 
 ## Coverage
@@ -113,49 +113,34 @@ M14→M15 scalar→batch split applied to the correction pipeline.
 
 ## Work log
 
-- 2026-07-12: created by /milestone-plan (promoted from ROADMAP candidate, split
-  from M16 on 2026-07-12). Planned ahead of M16 implementation; tasks reference
-  M16's planned analysis-pass builder, stderr parser, and `ffm_loudnorm()`
-  measured params, so may shift if M16's shape changes at implementation.
-- 2026-07-12: T1 done — characterization test pins the single-pass
-  `normalize_audios(run = FALSE)` command column (all five knobs) before the
-  two-pass path is added.
-- 2026-07-12: T2 done — added `run_normalize_correction()` (Phase 2 fan-out over
-  `ffm_batch()`/`normalize_audio_pipeline()`, threading measured columns +
-  `linear=true`); pure AC2 test over a fixed jobs+measured fixture.
-- 2026-07-12: T3 done — added `run_loudnorm_analysis_batch()` (Phase 1 per-row
-  analysis honoring `parallel`) and `assemble_measured()` (parse each via M16's
-  parser → five measured columns, fail-fast naming offending rows); pure AC3
-  tests over the recorded fixture incl. malformed + non-zero-exit rows.
-- 2026-07-12: T4 done — wired `two_pass = FALSE` into `normalize_audios()`:
-  Phase 1 fan-out → measured columns → Phase 2 correction, forwarding
-  `run`/`parallel`/`...`; `run = FALSE` runs analysis only. Skip-guarded AC4 test
-  asserts return shape and no outputs written.
-- 2026-07-12: T5 done — skip-guarded AC5 execution test: full two-pass over a
-  2-row jobs table on `sample.mp4`, re-probed each output within ±1 LU of its
-  per-row target (measured 0.01–0.02 LU off in practice).
-- 2026-07-12: T6 done — roxygen `two_pass` arg + `run`/`@return` updates, NEWS
-  entry, `document()`. `devtools::check()` 0/0/0 and raw `R CMD check` Status:
-  OK. Minor amendment: ran `spelling::update_wordlist()` (added 12 valid
-  technical terms incl. pre-existing EBU/LUFS/dBTP and new `parseable`), clearing
-  a latent spelling-comparison NOTE that `devtools::check()` had masked.
+- 2026-07-12: created by /milestone-plan (split from M16); tasks referenced M16's
+  planned analysis builder/parser/`ffm_loudnorm()` measured params.
+- 2026-07-12: T1 done — characterization test pins single-pass `run = FALSE` command column.
+- 2026-07-12: T2 done — `run_normalize_correction()` (Phase 2 fan-out threading measured cols + `linear=true`); pure AC2 test.
+- 2026-07-12: T3 done — `run_loudnorm_analysis_batch()` (Phase 1) + `assemble_measured()` (parse→5 cols, fail-fast naming rows); pure AC3 tests.
+- 2026-07-12: T4 done — wired `two_pass` into `normalize_audios()` (Phase 1→Phase 2); `run = FALSE` runs analysis only; skip-guarded AC4 test.
+- 2026-07-12: T5 done — skip-guarded AC5 test: full two-pass on `sample.mp4`, each output within ±1 LU (0.01–0.02 LU in practice).
+- 2026-07-12: T6 done — roxygen/NEWS/`document()`; `check()` 0/0/0. Amendment: `spelling::update_wordlist()` (+12 valid terms) cleared a latent spelling NOTE.
 
 ## Decisions
 
-- 2026-07-12: Measured values surface on the two-pass result as columns
-  `measured_I/measured_TP/measured_LRA/measured_thresh/offset` (FFmpeg-arg
-  spellings), for per-row provenance (question gate).
-- 2026-07-12: `run = FALSE`-not-binary-free batch contract is a faithful
-  fan-out of M16's scalar contract (D013) — proceeded without Fable escalation
-  despite the `irreversible-api` tripwire (question gate).
-- 2026-07-12: Fail-fast on a bad analysis row — `assemble_measured()` aborts
-  before any correction is built, naming every row whose analysis exited
-  non-zero or produced no parseable measurement (parity with ffm_batch's
-  resolve-verify-specs-up-front pattern). Milestone-local.
-- 2026-07-12: `two_pass` is a whole-table switch, not a per-row column (mixed
-  single/two-pass batches deliberately not built; ROADMAP candidate if wanted).
-  Milestone-local.
-- 2026-07-12: No new D-entry — D013 (analyze-then-build; `run = FALSE` no longer
-  binary-free) already covers the batch extension; M17 only fans it across rows.
+- 2026-07-12: Measured values surface as columns `measured_I/TP/LRA/thresh` + `offset` (FFmpeg-arg spellings) for provenance (gate).
+- 2026-07-12: `run = FALSE`-not-binary-free batch contract is a faithful fan-out of M16 (D013) — no Fable escalation despite `irreversible-api` tripwire (gate).
+- 2026-07-12: Fail-fast on a bad analysis row — `assemble_measured()` aborts naming the row before Phase 2. Milestone-local.
+- 2026-07-12: `two_pass` is a whole-table switch, not a per-row column. Milestone-local.
+- 2026-07-12: No new D-entry — D013 already covers the batch extension.
 
 ## Review
+
+_2026-07-12, same-session; evidence by command. Test tallies (ffmpeg present, 0 skips):
+`test-normalize-audios.R` 61, `-two-pass.R` 18, `normalize-audio.R` 31, `loudnorm-two-pass.R` 8 — all pass._
+
+- AC1 — PASS. Characterization pins both single-pass `run = FALSE` commands (5 knobs) byte-for-byte.
+- AC2 — PASS. Correction fan-out: per-row measured/target/knobs + `linear=true` + `-codec:v copy` over a fixed fixture.
+- AC3 — PASS. `assemble_measured()`: 5 cols on good rows; aborts naming row 2 on malformed + on non-zero-exit.
+- AC4 — PASS. two_pass `run = FALSE`: measured cols set, cmds carry `measured_I=`/`linear=true`, no `success`, no outputs.
+- AC5 — PASS. Full two-pass on `sample.mp4` (2 rows), re-probed within ±1 LU of each target.
+- AC6 — PASS. `check()` 0/0/0 (raw Status: OK); `document()` no diff; `@family` unchanged; NEWS present.
+
+Consistency gate: `cairn_validate.py` PASS; coverage complete (AC1–6 → T1–6); pkgdown OK;
+no DESIGN principle changed; no new top-level files.

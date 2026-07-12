@@ -28,19 +28,19 @@ built over `ffm_batch()` (D007) — mirroring the M12 → M13 (scalar → batch)
 
 ## Acceptance criteria
 
-- [ ] AC1 — `normalize_audios(jobs, …)` fans out over the jobs tibble via
+- [x] AC1 — `normalize_audios(jobs, …)` fans out over the jobs tibble via
       `ffm_batch()`, emitting one reproducible command per row and returning the
       jobs tibble + `command` (+ `success` when run). Evidence: passing test.
-- [ ] AC2 — Per-row validation rejects the same invalid values the scalar verb
+- [x] AC2 — Per-row validation rejects the same invalid values the scalar verb
       rejects (via the shared pipeline helper + column/NA guards), per the
       M11/M13 parity lesson. Evidence: passing parity test.
-- [ ] AC3 — `verify`/`manifest`/`checksums`/`progress`/`parallel` forward to
+- [x] AC3 — `verify`/`manifest`/`checksums`/`progress`/`parallel` forward to
       `ffm_batch()` and never leak into the per-row `.f` (M09 lesson — batch
       params sit after `...` and bind by name). Evidence: passing test.
-- [ ] AC4 — An execution test (`skip_if` ffmpeg absent) runs a 2-row jobs tibble
+- [x] AC4 — An execution test (`skip_if` ffmpeg absent) runs a 2-row jobs tibble
       and verifies non-empty, audio-decodable outputs. Evidence: passing
       skip-guarded test.
-- [ ] AC5 — `devtools::check()` clean (zero errors/warnings/notes).
+- [x] AC5 — `devtools::check()` clean (zero errors/warnings/notes).
 
 ## Coverage
 
@@ -88,3 +88,27 @@ built over `ffm_batch()` (D007) — mirroring the M12 → M13 (scalar → batch)
 ## Decisions
 
 ## Review
+
+**Fresh evidence (2026-07-12, PR #17, branch cut from unchanged master):**
+
+- AC1 — `test-normalize-audios.R` "returns one command per job across multiple
+  inputs" + "command is byte-identical to the scalar verb" + "default knobs match
+  the scalar defaults" pass: fan-out returns a tibble with a `command` per row.
+- AC2 — parity tests "rejects an out-of-range loudness value per row" and
+  "rejects a non-whole channels value per row" (inherited from
+  `normalize_audio_pipeline()`), plus front-door type/NA guard tests, all pass.
+- AC3 — "forwards batch params after ... without leaking into .f" (`progress`)
+  and the binary-gated "forwards verify" test pass; batch params bind by name
+  after `...`.
+- AC4 — binary-gated "writes non-empty, audio-decodable outputs" ran (ffmpeg
+  present, 0 skips): both outputs exist, decode as audio, honor pinned
+  `sample_rate`.
+- AC5 — `devtools::check()` clean: 0 errors / 0 warnings / 0 notes.
+- Whole file: `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 46 ]`.
+
+**Consistency gate:** `cairn_validate.py` exit 0 (all checks pass); Coverage
+complete (AC1→T2, AC2→T1/T2, AC3→T2, AC4→T3, AC5→T4, all tasks exist);
+`document()` no diff; README.md in sync; `pkgdown::check_pkgdown()` — "No problems
+found" after adding `normalize_audios` to `_pkgdown.yml`; NEWS.md entry added
+("Batch audio normalization across files"); no new top-level files; no DESIGN
+principle changed.

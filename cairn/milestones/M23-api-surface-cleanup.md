@@ -3,7 +3,7 @@
      Per-section owners are tagged below. -->
 # M23: API surface cleanup (clean-break renames, arg harmonization, un-exports)
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Principles touched:** IP1   <!-- owner: plan · create/amend-via-gate; comma-separated IPn/GPn ids this milestone touches, or — -->
@@ -112,7 +112,7 @@ public surface with no compatibility shims.
       `enquo`/`enquos`/`as_label`/`as_name`/`:=` (keep `.data`); drop `@export`
       on `pad_integers` (`R/utils.R`) and `convert_fractions` (`R/ffprobe.R`),
       leaving both as internal helpers.
-- [ ] **T7** `devtools::document()`; `spelling::update_wordlist()`; sync any
+- [x] **T7** `devtools::document()`; `spelling::update_wordlist()`; sync any
       remaining `vignettes/*.Rmd` + `README.Rmd` and `devtools::build_readme()`;
       run `devtools::check()` and confirm `Status: OK` in `00check.log`.
 
@@ -126,6 +126,7 @@ public surface with no compatibility shims.
 - 2026-07-12: T4 — `get_samplingrate`/`get_framerate` → `get_sample_rate`/`get_frame_rate` (R/mediainfo.R + internal callers in R/ffmpeg.R + tests); tests 0F/0W.
 - 2026-07-12: T5 — arg harmonization: `acodec`/`vcodec` → `audio_codec`/`video_codec` (args, `@param`, job-table columns `pick()`/`str_cols`, error strings), `ts_start`/`ts_stop` → `start`/`end` (segment_video scalar now matches the batch's `start`/`end` columns). Left the unrelated local `acodec()` ffprobe helper in test-ffmpeg.R untouched. Full suite 0F/0W.
 - 2026-07-12: T6 — reexports trimmed to `.data` only (dropped `enquo`/`enquos`/`as_label`/`as_name`/`:=`); `pad_integers` + `convert_fractions` un-exported via `@noRd` (stale man pages removed, still callable internally). Full suite 0F/0W.
+- 2026-07-12: T7 — document() + build_readme(); reframed `metadata.Rmd` to drop the now-internal `convert_fractions()` chunk; `spelling::update_wordlist()` (+VBR, −5 tidy-eval prose words). `devtools::check()` → **Status: OK** (0E/0W/0N), spelling.Rout comparison OK. All 6 ACs met → status review.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

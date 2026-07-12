@@ -122,7 +122,7 @@ ffm(video, "output.mp4") |>
   ffm_codec(video = "libx264") |>
   ffm_drop(streams = "audio") |>
   ffm_compile()
-#> [1] "-y -i \"/opt/homebrew/lib/R/4.6/site-library/tidymedia/extdata/sample.mp4\" -vf \"trim=start=1:end=5,setpts=PTS-STARTPTS,crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -an \"output.mp4\""
+#> [1] "-y -i \"/private/var/folders/kr/tx86v16n5bx_djz_z2cpvfkc0000gq/T/RtmpdjtTVC/temp_libpathdea11ba1723/tidymedia/extdata/sample.mp4\" -vf \"trim=start=1:end=5,setpts=PTS-STARTPTS,crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -an \"output.mp4\""
 ```
 
 Common tasks have their own verbs (Layer 2). Pass `run = FALSE` to see
@@ -130,7 +130,7 @@ the command without executing it:
 
 ``` r
 extract_audio(video, "audio.aac", run = FALSE)
-#> [1] "-y -i \"/opt/homebrew/lib/R/4.6/site-library/tidymedia/extdata/sample.mp4\" -codec:a copy -vn \"audio.aac\""
+#> [1] "-y -i \"/private/var/folders/kr/tx86v16n5bx_djz_z2cpvfkc0000gq/T/RtmpdjtTVC/temp_libpathdea11ba1723/tidymedia/extdata/sample.mp4\" -codec:a copy -vn \"audio.aac\""
 ```
 
 ### Read metadata as tibbles
@@ -144,8 +144,8 @@ probe_all(video)$streams
 #> # A tibble: 2 × 69
 #>   file      index codec_name codec_long_name profile codec_type codec_tag_string
 #>   <chr>     <int> <chr>      <chr>           <chr>   <chr>      <chr>           
-#> 1 /opt/hom…     0 h264       H.264 / AVC / … High    video      avc1            
-#> 2 /opt/hom…     1 aac        AAC (Advanced … LC      audio      mp4a            
+#> 1 /private…     0 h264       H.264 / AVC / … High    video      avc1            
+#> 2 /private…     1 aac        AAC (Advanced … LC      audio      mp4a            
 #> # ℹ 62 more variables: codec_tag <chr>, mime_codec_string <chr>, width <int>,
 #> #   height <int>, coded_width <int>, coded_height <int>, has_b_frames <int>,
 #> #   sample_aspect_ratio <chr>, display_aspect_ratio <chr>, pix_fmt <chr>,
@@ -169,7 +169,7 @@ get_width(video)
 ### Query FFmpeg’s capabilities
 
 ``` r
-head(get_codecs())
+head(ffmpeg_codecs())
 #> # A tibble: 6 × 8
 #>   name       details           type  decoding encoding intraframe lossy lossless
 #>   <chr>      <chr>             <fct> <lgl>    <lgl>    <lgl>      <lgl> <lgl>   

@@ -18,9 +18,9 @@ LUFS
 Lifecycle
 MediaInfo
 MediaInfo's
-Metaprogramming
 NTSC
 README
+VBR
 anonymization
 anonymize
 assertthat
@@ -36,7 +36,6 @@ dev
 dmg
 downmix
 downmixing
-dplyr
 drawbox
 ffm
 ffmpeg
@@ -44,7 +43,6 @@ ffprobe
 filtergraphs
 framerate
 furrr
-ggplot
 gyan
 horiz
 https
@@ -83,6 +81,4 @@ tidyverse
 timebase
 toc
 tokenized
-tunnelled
-tunnelling
 unexecuted

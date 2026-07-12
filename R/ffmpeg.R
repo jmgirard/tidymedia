@@ -1244,8 +1244,9 @@ derive_normalized_names <- function(input) {
 #' when you have more than one file to normalize. Each row is one input; the
 #' only required column names its source. This is a thin wrapper over
 #' \code{\link{ffm_batch}}: one reproducible compiled command per input, sharing
-#' the same single-pass \code{loudnorm} pipeline (and per-value validation) as
-#' the scalar verb.
+#' the same \code{loudnorm} pipeline (and per-value validation) as the scalar
+#' verb. Set \code{two_pass = TRUE} for accurate measured/linear normalization
+#' across the whole table (see \code{two_pass}).
 #'
 #' @param jobs A data frame with one row per input and (at least) an
 #'   \code{input} column (source path). An optional \code{output} column names
@@ -1271,8 +1272,27 @@ derive_normalized_names <- function(input) {
 #'   \code{jobs} carries a \code{sample_rate} column. \code{NULL} (default) lets
 #'   \code{loudnorm} choose (it resamples, up to 192 kHz encoder-capped — not the
 #'   source rate); set this to pin the output rate.
+#' @param two_pass A logical selecting the batch normalization mode for
+#'   \emph{every} row (\code{two_pass} is a whole-table switch, not a per-row
+#'   column). \code{FALSE} (default) keeps the single-pass \code{loudnorm}
+#'   pipeline. \code{TRUE} runs the accurate two-pass (measured/linear) path as a
+#'   two-phase fan-out: an \emph{analysis pass} first measures every input's
+#'   loudness (honoring \code{parallel} and each row's targets), and a
+#'   \emph{correction pass} then feeds those measurements back with
+#'   \code{linear=true} so each output hits its EBU R128 target precisely — the
+#'   table-wide sibling of \code{\link{normalize_audio}}'s \code{two_pass}. The
+#'   five measured values are surfaced on the result as columns \code{measured_I},
+#'   \code{measured_TP}, \code{measured_LRA}, \code{measured_thresh}, and
+#'   \code{offset}. Because it must measure each input, two-pass
+#'   \strong{always runs the analysis pass through FFmpeg} (it needs the binary
+#'   and readable inputs), even when \code{run = FALSE}. If any row's analysis
+#'   fails or yields no parseable measurement, the call aborts — naming the
+#'   offending row(s) — before any correction command is built. The single-pass
+#'   default touches no binary under \code{run = FALSE}.
 #' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
-#'   default) or only compile them for inspection (\code{FALSE}).
+#'   default) or only compile them for inspection (\code{FALSE}). Under
+#'   \code{two_pass = TRUE} this gates only the correction pass; the analysis
+#'   pass runs regardless (see \code{two_pass}).
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: normalize in
 #'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
 #'   default). Parallelism follows the active \code{\link[future:plan]{future}}
@@ -1285,7 +1305,9 @@ derive_normalized_names <- function(input) {
 #'   \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column
 #'   (and, when \code{output} was derived, the resolved \code{output} column;
 #'   when \code{run = TRUE}, a \code{success} column, plus any columns the
-#'   forwarded arguments add, e.g. \code{verified}).
+#'   forwarded arguments add, e.g. \code{verified}). Under \code{two_pass = TRUE}
+#'   the result also carries the five measured columns (\code{measured_I} etc.)
+#'   and the \code{command} column holds the linear correction commands.
 #' @references
 #' EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
 #' maximum level of audio signals}; ITU-R BS.1770-4.
@@ -1303,12 +1325,18 @@ derive_normalized_names <- function(input) {
 #' )
 #' # run = FALSE compiles one command per input without calling FFmpeg
 #' normalize_audios(jobs, run = FALSE)
+#' # Accurate two-pass (measured/linear) normalization across the whole table
+#' # (runs FFmpeg to measure each input, so needs the binary):
+#' \dontrun{
+#' normalize_audios(jobs, two_pass = TRUE)
+#' }
 #' @export
 normalize_audios <- function(jobs, target_loudness = -23, true_peak = -1,
                              loudness_range = 7, channels = NULL,
-                             sample_rate = NULL, run = TRUE, parallel = FALSE,
-                             ...) {
+                             sample_rate = NULL, two_pass = FALSE, run = TRUE,
+                             parallel = FALSE, ...) {
 
+  rlang::check_bool(two_pass)
   if (!is.data.frame(jobs)) {
     cli::cli_abort("{.arg jobs} must be a data frame with one row per input.")
   }
@@ -1355,6 +1383,45 @@ normalize_audios <- function(jobs, target_loudness = -23, true_peak = -1,
       ))
     }
     jobs$output <- derive_normalized_names(jobs$input)
+  }
+
+  # Two-pass (measured/linear): the audio-side M16 analyze-then-build path fanned
+  # across the jobs table (D013). Phase 1 measures every input (honoring
+  # `parallel`) and appends the five measured columns; Phase 2 builds & runs one
+  # linear correction per row from them. Fail-fast before Phase 2 if any row's
+  # analysis did not yield a usable measurement (assemble_measured names the
+  # row). Like the scalar verb, `run = FALSE` still runs Phase 1 (it needs the
+  # binary and readable inputs) and gates only the Phase 2 correction commands.
+  if (two_pass) {
+    # Validate the shaping knobs up front (parity with the scalar two-pass verb)
+    # so a bad channels/sample_rate fails before Phase 1 wastes an analysis pass
+    # per row; per-value target checks stay per-row in the Phase 2 pipeline.
+    rlang::check_number_whole(channels, min = 1, allow_null = TRUE)
+    rlang::check_number_whole(sample_rate, min = 1, allow_null = TRUE)
+    for (col in intersect(c("channels", "sample_rate"), names(jobs))) {
+      if (any(jobs[[col]] %% 1 != 0) || any(jobs[[col]] < 1)) {
+        cli::cli_abort(
+          "The {.field {col}} column of {.arg jobs} must be whole numbers \\
+           ({.val {1}} or greater) for two-pass normalization."
+        )
+      }
+    }
+    col_or <- function(nm, default) {
+      if (nm %in% names(jobs)) jobs[[nm]] else rep(default, nrow(jobs))
+    }
+    outputs <- run_loudnorm_analysis_batch(
+      jobs$input,
+      col_or("target_loudness", target_loudness),
+      col_or("true_peak", true_peak),
+      col_or("loudness_range", loudness_range),
+      parallel
+    )
+    measured <- assemble_measured(outputs)
+    for (nm in names(measured)) jobs[[nm]] <- measured[[nm]]
+    return(run_normalize_correction(
+      jobs, target_loudness, true_peak, loudness_range, channels, sample_rate,
+      run = run, parallel = parallel, ...
+    ))
   }
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output loudnorm

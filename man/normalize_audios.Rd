@@ -11,6 +11,7 @@ normalize_audios(
   loudness_range = 7,
   channels = NULL,
   sample_rate = NULL,
+  two_pass = FALSE,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -45,8 +46,28 @@ mono. \code{NULL} (default) keeps each source's channel layout.}
 \code{loudnorm} choose (it resamples, up to 192 kHz encoder-capped — not the
 source rate); set this to pin the output rate.}
 
+\item{two_pass}{A logical selecting the batch normalization mode for
+\emph{every} row (\code{two_pass} is a whole-table switch, not a per-row
+column). \code{FALSE} (default) keeps the single-pass \code{loudnorm}
+pipeline. \code{TRUE} runs the accurate two-pass (measured/linear) path as a
+two-phase fan-out: an \emph{analysis pass} first measures every input's
+loudness (honoring \code{parallel} and each row's targets), and a
+\emph{correction pass} then feeds those measurements back with
+\code{linear=true} so each output hits its EBU R128 target precisely — the
+table-wide sibling of \code{\link{normalize_audio}}'s \code{two_pass}. The
+five measured values are surfaced on the result as columns \code{measured_I},
+\code{measured_TP}, \code{measured_LRA}, \code{measured_thresh}, and
+\code{offset}. Because it must measure each input, two-pass
+\strong{always runs the analysis pass through FFmpeg} (it needs the binary
+and readable inputs), even when \code{run = FALSE}. If any row's analysis
+fails or yields no parseable measurement, the call aborts — naming the
+offending row(s) — before any correction command is built. The single-pass
+default touches no binary under \code{run = FALSE}.}
+
 \item{run}{A logical: run each input's command through FFmpeg (\code{TRUE},
-default) or only compile them for inspection (\code{FALSE}).}
+default) or only compile them for inspection (\code{FALSE}). Under
+\code{two_pass = TRUE} this gates only the correction pass; the analysis
+pass runs regardless (see \code{two_pass}).}
 
 \item{parallel}{A logical passed to \code{\link{ffm_batch}}: normalize in
 parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
@@ -63,7 +84,9 @@ The \link[tibble:tibble-package]{tibble} returned by
 \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column
 (and, when \code{output} was derived, the resolved \code{output} column;
 when \code{run = TRUE}, a \code{success} column, plus any columns the
-forwarded arguments add, e.g. \code{verified}).
+forwarded arguments add, e.g. \code{verified}). Under \code{two_pass = TRUE}
+the result also carries the five measured columns (\code{measured_I} etc.)
+and the \code{command} column holds the linear correction commands.
 }
 \description{
 Loudness-normalize the audio of many input files (EBU R128) from a single
@@ -71,8 +94,9 @@ jobs tibble — a table-driven sibling of \code{\link{normalize_audio}} for
 when you have more than one file to normalize. Each row is one input; the
 only required column names its source. This is a thin wrapper over
 \code{\link{ffm_batch}}: one reproducible compiled command per input, sharing
-the same single-pass \code{loudnorm} pipeline (and per-value validation) as
-the scalar verb.
+the same \code{loudnorm} pipeline (and per-value validation) as the scalar
+verb. Set \code{two_pass = TRUE} for accurate measured/linear normalization
+across the whole table (see \code{two_pass}).
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -83,6 +107,11 @@ jobs <- tibble::tibble(
 )
 # run = FALSE compiles one command per input without calling FFmpeg
 normalize_audios(jobs, run = FALSE)
+# Accurate two-pass (measured/linear) normalization across the whole table
+# (runs FFmpeg to measure each input, so needs the binary):
+\dontrun{
+normalize_audios(jobs, two_pass = TRUE)
+}
 }
 \references{
 EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted

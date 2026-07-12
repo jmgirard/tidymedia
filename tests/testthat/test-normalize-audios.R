@@ -42,6 +42,36 @@ test_that("normalize_audios() default knobs match the scalar defaults", {
   expect_match(res$command[[1]], "-codec:v copy", fixed = TRUE)
 })
 
+# Single-pass characterization (guards the two_pass = FALSE default) -------
+
+test_that("normalize_audios(run = FALSE) single-pass command column is unchanged (characterization)", {
+  # Pin the exact single-pass command for every knob so the two_pass = FALSE
+  # default is provably byte-for-byte unchanged as the two-pass path is added
+  # (AC1). Scrub the temp input path to a stable token for a deterministic pin.
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input           = c(f, f),
+    output          = c("a.mp4", "b.mp4"),
+    target_loudness = c(-23, -16),
+    true_peak       = c(-1, -1.5),
+    loudness_range  = c(7, 11),
+    channels        = c(2, 1),
+    sample_rate     = c(48000, 44100)
+  )
+  res <- normalize_audios(jobs, run = FALSE)
+  scrub <- function(cmd) gsub(f, "<in>", cmd, fixed = TRUE)
+  expect_equal(
+    scrub(res$command[[1]]),
+    paste0('-y -i "<in>" -af "loudnorm=I=-23:TP=-1:LRA=7" ',
+           '-codec:v copy -ac 2 -ar 48000 "a.mp4"')
+  )
+  expect_equal(
+    scrub(res$command[[2]]),
+    paste0('-y -i "<in>" -af "loudnorm=I=-16:TP=-1.5:LRA=11" ',
+           '-codec:v copy -ac 1 -ar 44100 "b.mp4"')
+  )
+})
+
 # Per-row override columns ------------------------------------------------
 
 test_that("normalize_audios() honors per-row knob columns", {
@@ -189,6 +219,85 @@ test_that("normalize_audios() forwards batch params after ... without leaking in
   res <- normalize_audios(jobs, run = FALSE, progress = FALSE)
   expect_equal(nrow(res), 2)
   expect_true("command" %in% names(res))
+})
+
+# Two-pass fail-fast validation (pure: aborts before any analysis pass) ----
+
+test_that("normalize_audios(two_pass) rejects a fractional scalar channels before running FFmpeg", {
+  f <- make_input()
+  # A bad scalar channels must fail up front (before Phase 1 wastes an analysis
+  # pass per row), so this needs no ffmpeg binary.
+  jobs <- tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"))
+  expect_error(
+    normalize_audios(jobs, two_pass = TRUE, channels = 1.5),
+    "channels|whole"
+  )
+})
+
+test_that("normalize_audios(two_pass) rejects a fractional channels column before running FFmpeg", {
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input = c(f, f), output = c("a.mp4", "b.mp4"), channels = c(1, 1.5)
+  )
+  expect_error(normalize_audios(jobs, two_pass = TRUE), "channels|whole")
+})
+
+# Two-pass front door (binary-gated) --------------------------------------
+
+test_that("normalize_audios(two_pass, run = FALSE) runs analysis, returns correction cmds, writes nothing (AC4)", {
+  skip_if_no_ffmpeg()
+  src <- system.file("extdata", "sample.mp4", package = "tidymedia")
+  out_a <- withr::local_tempfile(fileext = ".mp4")
+  out_b <- withr::local_tempfile(fileext = ".mp4")
+  jobs <- tibble::tibble(
+    input           = c(src, src),
+    output          = c(out_a, out_b),
+    target_loudness = c(-23, -16)
+  )
+  res <- normalize_audios(jobs, two_pass = TRUE, run = FALSE)
+  # Phase 1 ran: the five measured columns are populated (FFmpeg-arg names) and
+  # the correction commands carry the measured values + linear=true.
+  measured_cols <- c("measured_I", "measured_TP", "measured_LRA",
+                     "measured_thresh", "offset")
+  expect_true(all(measured_cols %in% names(res)))
+  expect_false(anyNA(res$measured_I))
+  expect_match(res$command[[1]], "measured_I=", fixed = TRUE)
+  expect_match(res$command[[1]], "linear=true", fixed = TRUE)
+  expect_match(res$command[[1]], "loudnorm=I=-23:", fixed = TRUE)
+  expect_match(res$command[[2]], "loudnorm=I=-16:", fixed = TRUE)
+  # run = FALSE gates only Phase 2: no correction executed, so no `success`
+  # column and no output files written.
+  expect_false("success" %in% names(res))
+  expect_false(file.exists(out_a))
+  expect_false(file.exists(out_b))
+})
+
+test_that("normalize_audios(two_pass = TRUE) hits each per-row target within +/-1 LU (AC5)", {
+  # The whole flow (Phase 1 analysis, correction pass, and the re-probe via
+  # run_loudnorm_analysis) needs ffmpeg, not ffprobe.
+  skip_if_no_ffmpeg()
+  src <- system.file("extdata", "sample.mp4", package = "tidymedia")
+  out_a <- withr::local_tempfile(fileext = ".mp4")
+  out_b <- withr::local_tempfile(fileext = ".mp4")
+  # Two rows, two different per-row targets: the full two-phase fan-out measures
+  # each input, then builds and runs a linear correction per row.
+  jobs <- tibble::tibble(
+    input           = c(src, src),
+    output          = c(out_a, out_b),
+    target_loudness = c(-23, -16)
+  )
+  res <- normalize_audios(jobs, two_pass = TRUE)
+  expect_true(all(res$success))
+  expect_true(all(file.exists(res$output)))
+  # Re-probe each output's integrated loudness with a fresh analysis pass (its
+  # input_i is the output's measured loudness) and assert it lands within +/-1 LU
+  # of that row's target. Source: EBU R 128 (2014); ITU-R BS.1770-4.
+  for (i in seq_len(nrow(res))) {
+    loud <- run_loudnorm_analysis(
+      res$output[[i]], target_loudness = jobs$target_loudness[[i]]
+    )$i
+    expect_lt(abs(loud - jobs$target_loudness[[i]]), 1)
+  }
 })
 
 # Execution + ffm_batch forwarding (binary-gated) -------------------------

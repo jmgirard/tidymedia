@@ -3,7 +3,7 @@
      Per-section owners are tagged below. -->
 # M11: Tibble-driven batch frame extraction
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Branch/PR:** m11-batch-frame-extraction   <!-- owner: implement (branch) / review (PR URL) · create -->
@@ -98,7 +98,7 @@ this is a Layer-2 fan-out only (D007).
       wrapping `frame_pipeline()` (the `segment_videos()` shape); roxygen with
       runnable `run = FALSE` example; add an `extract_frames` row to
       `_pkgdown.yml` under "Layer 2: task verbs"; `devtools::document()`.
-- [ ] T6: Execution test (`skip_if` no ffmpeg) proving two frame files are
+- [x] T6: Execution test (`skip_if` no ffmpeg) proving two frame files are
       written (AC7); run `devtools::test()` then `devtools::check()`.
 
 ## Work log
@@ -109,6 +109,8 @@ this is a Layer-2 fan-out only (D007).
 - 2026-07-12: T1–T5 — added `extract_frames()` (thin `ffm_batch()` fan-out) +
   `derive_frame_names()`; refactored `extract_frame()` onto a shared
   `frame_pipeline()`; pkgdown row + docs. Full suite 485 pass / 0 fail / 0 skip.
+- 2026-07-12: T6 — `devtools::check()` clean (0 errors / 0 warnings / 0 notes);
+  status → review.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

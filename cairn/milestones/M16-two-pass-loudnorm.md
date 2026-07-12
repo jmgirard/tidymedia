@@ -1,6 +1,6 @@
 # M16: Two-pass (measured/linear) EBU R128 loudnorm
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M14
 - **Branch/PR:** m16-two-pass-loudnorm
@@ -108,7 +108,7 @@ analyze-then-build execution pattern.
 - [x] T6 — Execution test (`skip_if` ffmpeg absent): full two-pass on
       `inst/extdata/sample.mp4`, re-probe integrated loudness (`ffprobe`/`loudnorm`
       analysis), assert within ±1 LU of target and closer than single-pass (AC5).
-- [ ] T7 — Roxygen for the new arg + measured params (document the analyze-then-
+- [x] T7 — Roxygen for the new arg + measured params (document the analyze-then-
       build behavior and the `run = FALSE` semantics explicitly); `@family`;
       DESIGN.md families; `devtools::document()`; `devtools::check()` clean. Author
       the cross-cutting D-entry (analyze-then-build pattern; `run = FALSE` no longer
@@ -141,7 +141,23 @@ analyze-then-build execution pattern.
   single-pass. Measured empirically: single err ~2.2 LU, two-pass ~0.01 LU. The
   packaged sample is a steady tone (LRA 0) where both tie, so a dynamic source
   is required to show the gap.
+- 2026-07-12: T7 done — roxygen for two_pass/measured params documented; NEWS
+  entry added; DESIGN families unchanged (no new exported fn). All tasks done.
+  devtools::check() 0/0/0; full suite 667 pass / 0 fail / 0 skip. Status → review.
 
 ## Decisions
+
+- Analyze-then-build execution pattern (candidate D-entry, promote at review):
+  tidymedia's first verb that must run a binary to *build* a later command. The
+  analysis pass runs through FFmpeg (`run_loudnorm_analysis()`), its stderr is
+  parsed (regex, no JSON dep — D011 spirit), and the measured values drive a
+  linear correction built on the shared `normalize_audio_pipeline()`. Compilation
+  (`ffm_compile()`) stays pure; the orchestrator lives beside `ffm_run()`.
+  Consequence: `run = FALSE` no longer guarantees a binary-free call — under
+  `two_pass = TRUE` the analysis pass always runs; `run` gates only the
+  correction pass. Single-pass defaults are byte-for-byte unchanged.
+- The analysis pass measures the input as-is (bare `loudnorm` targets +
+  `print_format=json`, `-f null -`), the FFmpeg canonical recipe; downmix/
+  resample belong to the correction/output stage, not the measurement.
 
 ## Review

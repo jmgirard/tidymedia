@@ -79,22 +79,22 @@ this is a Layer-2 fan-out only (D007).
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [ ] T1: Tests first — compilation/validation suite in
+- [x] T1: Tests first — compilation/validation suite in
       `tests/testthat/test-extract-frames.R`: required-column and exclusivity
       checks (AC2), `NA`/factor/single-row edge cases (AC6), and `...`
       forwarding (AC5). No binaries; CI-safe (D004).
-- [ ] T2: Tests first — parity + auto-naming: per-row command equals
+- [x] T2: Tests first — parity + auto-naming: per-row command equals
       `extract_frame()` for both the `timestamp` and `frame` paths (AC1, AC3),
       and derived output names follow the per-input-restart rule with an image
       extension (AC4).
-- [ ] T3: Refactor `extract_frame()`'s single-frame body
+- [x] T3: Refactor `extract_frame()`'s single-frame body
       ([R/ffmpeg.R:51](../../R/ffmpeg.R)) into an internal `frame_pipeline()`
       helper (mirrors `segment_pipeline()`); re-point `extract_frame()` at it
       so existing tests still pass.
-- [ ] T4: Add `derive_frame_names(input, format = "png")` (mirrors
+- [x] T4: Add `derive_frame_names(input, format = "png")` (mirrors
       `derive_segment_names()` at [R/ffmpeg.R:507](../../R/ffmpeg.R) but with a
       configurable image extension).
-- [ ] T5: Implement `extract_frames()` as a thin `ffm_batch()` fan-out
+- [x] T5: Implement `extract_frames()` as a thin `ffm_batch()` fan-out
       wrapping `frame_pipeline()` (the `segment_videos()` shape); roxygen with
       runnable `run = FALSE` example; add an `extract_frames` row to
       `_pkgdown.yml` under "Layer 2: task verbs"; `devtools::document()`.
@@ -106,6 +106,9 @@ this is a Layer-2 fan-out only (D007).
 
 - 2026-07-12: created by /milestone-plan (split from the four-family
   research-verbs candidate; frame-extraction family).
+- 2026-07-12: T1–T5 — added `extract_frames()` (thin `ffm_batch()` fan-out) +
+  `derive_frame_names()`; refactored `extract_frame()` onto a shared
+  `frame_pipeline()`; pkgdown row + docs. Full suite 485 pass / 0 fail / 0 skip.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

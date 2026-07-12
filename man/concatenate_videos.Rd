@@ -36,6 +36,7 @@ Other task verb functions:
 \code{\link[=crop_video]{crop_video()}},
 \code{\link[=extract_audio]{extract_audio()}},
 \code{\link[=extract_frame]{extract_frame()}},
+\code{\link[=extract_frames]{extract_frames()}},
 \code{\link[=format_for_web]{format_for_web()}},
 \code{\link[=picture_in_picture]{picture_in_picture()}},
 \code{\link[=segment_video]{segment_video()}},

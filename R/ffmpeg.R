@@ -64,13 +64,22 @@ extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL,
 
   if (rlang::is_null(timestamp)) timestamp <- frame / get_framerate(infile)
 
-  # A single-frame grab: fast input seek plus the quality flags, one frame out.
-  p <- ffm_files(infile, outfile)
+  ffm_finish(frame_pipeline(infile, outfile, timestamp), run)
+}
+
+
+# frame_pipeline() --------------------------------------------------------
+
+# Shared single-frame grab for extract_frame() and extract_frames(): a fast
+# input seek to the (already resolved) timestamp plus the still-image quality
+# flags, one frame out. Both verbs build identical commands from this helper;
+# frame->timestamp resolution stays in the verb layer (scalar vs. per-row).
+frame_pipeline <- function(input, output, timestamp) {
+  p <- ffm_files(input, output)
   p <- ffm_seek(p, start = timestamp, reencode = FALSE)
-  p <- ffm_output_options(
+  ffm_output_options(
     p, "-qmin 1", "-q:v 1", "-qscale:v 2", "-frames:v 1", "-huffman optimal"
   )
-  ffm_finish(p, run)
 }
 
 # extract_audio() ---------------------------------------------------------
@@ -517,6 +526,23 @@ derive_segment_names <- function(input) {
 }
 
 
+# derive_frame_names() ----------------------------------------------------
+
+# Derive one image path per frame from its input path, appending `_<n>.<format>`
+# to each input's basename. Same per-input-restart, zero-padded rule as
+# derive_segment_names(), but the extension is the image `format` (a frame is an
+# image, not a copy of the source container) rather than the input's extension.
+derive_frame_names <- function(input, format = "png") {
+  out <- character(length(input))
+  for (f in unique(input)) {
+    sel <- input == f
+    padded <- pad_integers(seq_len(sum(sel)))
+    out[sel] <- paste0(tools::file_path_sans_ext(f), "_", padded, ".", format)
+  }
+  out
+}
+
+
 # segment_pipeline() ------------------------------------------------------
 
 # Shared cut logic for segment_video() and segment_videos(): build one
@@ -636,6 +662,136 @@ segment_videos <- function(jobs, reencode = TRUE, run = TRUE,
       dots <- list(...)
       re <- if ("reencode" %in% names(dots)) dots$reencode else reencode
       segment_pipeline(input, output, start, end, re)
+    },
+    run = run,
+    parallel = parallel,
+    ...
+  )
+}
+
+
+# extract_frames() --------------------------------------------------------
+
+#' Extract Still Frames From Many Videos From a Jobs Table
+#'
+#' Grab one still image per row across many input files from a single jobs
+#' tibble — a table-driven sibling of \code{\link{extract_frame}} for when your
+#' frames span more than one input. Each row is one frame; the required columns
+#' name its source and the moment to capture. This is a thin wrapper over
+#' \code{\link{ffm_batch}}: one reproducible compiled command per frame.
+#'
+#' @param jobs A data frame with one row per frame and (at least) an
+#'   \code{input} column (source path) plus \strong{exactly one} of a
+#'   \code{timestamp} column (seconds, or \pkg{FFmpeg} time-duration strings) or
+#'   a \code{frame} column (whole frame numbers, converted per row to a
+#'   timestamp via the input's frame rate, as \code{\link{extract_frame}} does).
+#'   An optional \code{output} column names the destination image; when absent,
+#'   one is derived per row by appending \code{_<n>.<format>} to each input's
+#'   basename, with the frame number restarting at 1 for each input file. Any
+#'   other columns are ignored.
+#' @param format A string giving the image file extension used when \code{output}
+#'   is derived (ignored when \code{jobs} carries an \code{output} column).
+#'   (default = \code{"png"})
+#' @param run A logical: run each frame's command through FFmpeg (\code{TRUE},
+#'   default) or only compile them for inspection (\code{FALSE}).
+#' @param parallel A logical passed to \code{\link{ffm_batch}}: grab frames in
+#'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
+#'   default). Parallelism follows the active \code{\link[future:plan]{future}}
+#'   plan; \code{TRUE} under the default sequential plan runs one frame at a time
+#'   and warns.
+#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}}, such as
+#'   \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.
+#' @return The [tibble][tibble::tibble-package] returned by
+#'   \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column
+#'   (and, when \code{output} was derived, the resolved \code{output} column;
+#'   when \code{run = TRUE}, a \code{success} column, plus any columns the
+#'   forwarded arguments add, e.g. \code{verified}).
+#' @seealso \code{\link{extract_frame}} for the single-frame form;
+#'   \code{\link{ffm_batch}} for the batch runner and the arguments forwarded
+#'   through \code{...}; \code{\link{segment_videos}} for the segment-cutting
+#'   sibling.
+#' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' jobs <- tibble::tibble(
+#'   input     = c(video, video),
+#'   output    = c("a.png", "b.png"),
+#'   timestamp = c(0.25, 0.75)
+#' )
+#' # run = FALSE compiles one command per frame without calling FFmpeg
+#' extract_frames(jobs, run = FALSE)
+#' @export
+extract_frames <- function(jobs, format = "png", run = TRUE,
+                           parallel = FALSE, ...) {
+
+  if (!is.data.frame(jobs)) {
+    cli::cli_abort("{.arg jobs} must be a data frame with one row per frame.")
+  }
+  if (nrow(jobs) == 0) {
+    cli::cli_abort("{.arg jobs} must have at least one row.")
+  }
+  if (!"input" %in% names(jobs)) {
+    cli::cli_abort(c(
+      "{.arg jobs} must have an {.field input} column.",
+      "x" = "Missing column: {.val input}."
+    ))
+  }
+  rlang::check_string(format)
+
+  # Table-level exclusivity: exactly one of the selection columns, mirroring
+  # extract_frame()'s scalar timestamp/frame exclusive-or.
+  has_ts <- "timestamp" %in% names(jobs)
+  has_fr <- "frame" %in% names(jobs)
+  if (has_ts == has_fr) {
+    cli::cli_abort(c(
+      "{.arg jobs} must have exactly one of a {.field timestamp} or {.field frame} column.",
+      "x" = if (has_ts) "Both columns are present." else "Neither column is present."
+    ))
+  }
+
+  # Validate the selection column's type + reject NA up front, so a bad column
+  # fails clearly here rather than as an opaque FFmpeg (or framerate) error.
+  if (has_ts) {
+    if (!(is.numeric(jobs$timestamp) || is.character(jobs$timestamp))) {
+      cli::cli_abort("The {.field timestamp} column of {.arg jobs} must be numeric or character.")
+    }
+    if (anyNA(jobs$timestamp)) {
+      cli::cli_abort("The {.field timestamp} column of {.arg jobs} must not contain {.val {NA}}.")
+    }
+  } else {
+    if (!is.numeric(jobs$frame)) {
+      cli::cli_abort("The {.field frame} column of {.arg jobs} must be numeric.")
+    }
+    if (anyNA(jobs$frame)) {
+      cli::cli_abort("The {.field frame} column of {.arg jobs} must not contain {.val {NA}}.")
+    }
+  }
+
+  # A factor input column carries paths as levels; treat them as the strings
+  # they are (parity with the character case).
+  jobs$input <- as.character(jobs$input)
+
+  # Auto-name outputs when the column is absent: per-input frame names with the
+  # image extension, carried on the returned tibble.
+  if (!"output" %in% names(jobs)) {
+    jobs$output <- derive_frame_names(jobs$input, format = format)
+  }
+
+  # Thin Layer-2 fan-out over ffm_batch (D007): one single-frame pipeline per
+  # row, sharing frame_pipeline() with extract_frame(). frame->timestamp
+  # resolution happens per row (via the input's frame rate); `...` forwards
+  # ffm_batch options (verify/manifest/...) to the runner, never to the builder.
+  ffm_batch(
+    jobs,
+    function(input, output, ...) {
+      dots <- list(...)
+      timestamp <- if (!is.null(dots$timestamp)) {
+        dots$timestamp
+      } else {
+        dots$frame / get_framerate(input)
+      }
+      frame_pipeline(input, output, timestamp)
     },
     run = run,
     parallel = parallel,

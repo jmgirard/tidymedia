@@ -41,3 +41,9 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   `-ar` silently resamples; document that and let a `sample_rate` arg pin `-ar`.
   A "preserves the source rate" claim is a review trap — verify output rate by
   probing (`ffprobe … stream=sample_rate`), don't assume `-af`-only is a no-op.
+- 2026-07-12 (M15): a new exported verb needs a `_pkgdown.yml` reference entry or
+  `pkgdown::check_pkgdown()` fails ("topic missing"), but the DESIGN.md Layer-2
+  verb list enumerates *scalar* verbs only — batch siblings (`*_videos`,
+  `*_frames`, `normalize_audios`) are not listed there (covered by the D007
+  batch-runner line). So: add the pkgdown entry, skip the DESIGN.md list; the
+  `@family` roxygen tag is the machine-checkable family membership.

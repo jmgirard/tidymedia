@@ -7,7 +7,7 @@
 - **Priority:** normal
 - **Depends on:** M20
 - **Principles touched:** IP1, IP2
-- **Branch/PR:** m21-anonymize-videos-batch
+- **Branch/PR:** m21-anonymize-videos-batch · https://github.com/jmgirard/tidymedia/pull/23
 
 ## Goal
 
@@ -32,23 +32,23 @@ outputs (M19 parity lesson).
 
 ## Acceptance criteria
 
-- [ ] `anonymize_videos()` is exported (NAMESPACE + `_pkgdown.yml` Layer-2 row)
+- [x] `anonymize_videos()` is exported (NAMESPACE + `_pkgdown.yml` Layer-2 row)
       with roxygen docs and a runnable `run = FALSE` example.
-- [ ] A jobs data frame of N inputs compiles to N single-output commands, each
+- [x] A jobs data frame of N inputs compiles to N single-output commands, each
       with its own regions box-filled (per-input regions resolved from the
       jobs table — see open question below). (compilation test)
-- [ ] Front-door validation aborts via `cli::cli_abort()` on: `jobs` not a data
+- [x] Front-door validation aborts via `cli::cli_abort()` on: `jobs` not a data
       frame, zero rows, and missing `input` column — parity with
       `standardize_videos()`. (tests)
-- [ ] Per-row region validation is inherited from `anonymize_pipeline()` (a bad
+- [x] Per-row region validation is inherited from `anonymize_pipeline()` (a bad
       region in any job is reported by row index, not re-implemented in the
       front door). (test)
-- [ ] Return schema (`names()` and types) matches the scalar/`ffm_batch` path,
+- [x] Return schema (`names()` and types) matches the scalar/`ffm_batch` path,
       including opt-in `verified` column and manifest attribute when requested.
       (parity test, M19 lesson)
-- [ ] Executes end-to-end on a small multi-input jobs table built from
+- [x] Executes end-to-end on a small multi-input jobs table built from
       `sample.mp4` (`skip_if` ffmpeg absent). (execution test)
-- [ ] `devtools::check()` is clean: 0 errors / 0 warnings / 0 notes.
+- [x] `devtools::check()` is clean: 0 errors / 0 warnings / 0 notes.
 
 ## Coverage
 
@@ -100,3 +100,31 @@ outputs (M19 parity lesson).
 ## Decisions
 
 ## Review
+
+### Acceptance-criteria evidence (2026-07-12, fresh)
+
+- AC1 — `anonymize_videos` in NAMESPACE (`export()`) and `_pkgdown.yml` Layer-2
+  row (pkgdown::check_pkgdown() ✔ no problems); roxygen `@family task verb
+  functions` + runnable `run = FALSE` example in `man/anonymize_videos.Rd`.
+- AC2 — test-anonymize-videos.R: "returns one command per job with its own
+  regions" (2 inputs → 2 commands, each its own drawbox) and "draws every box
+  for a multi-region row" pass.
+- AC3 — front-door abort tests (non-data-frame, empty table, missing `input`)
+  pass; messages via `cli::cli_abort`, parity with standardize_videos().
+- AC4 — "inherits per-region validation, reported by row": a row-2 malformed
+  regions cell aborts with "missing" **and** purrr's "index: 2"; front door
+  adds no region re-check. Size check inherited from ffm_drawbox likewise.
+- AC5 — "return schema matches a direct ffm_batch call": `names()` and per-col
+  `class()` identical to a raw ffm_batch run; regions list-column preserved;
+  verify/manifest forwarding tests confirm `verified` col + manifest attr.
+- AC6 — "writes anonymized outputs (binary-gated)": multi-input jobs table runs
+  end-to-end, both outputs exist, non-empty, duration preserved. Ran (not
+  skipped — ffmpeg present): 23 test blocks, 0 failed, 0 skipped.
+- AC7 — `devtools::check()` **Status: OK**, 0 errors / 0 warnings / 0 notes
+  (raw 00check.log, M17 masked-NOTE check applied).
+
+### Consistency gate (2026-07-12)
+
+- cairn_validate.py exit 0 (all 12 checks pass, incl. coverage complete).
+- document() → no diff; README.Rmd/DESIGN.md untouched (no principle change →
+  cairn_impact skipped); pkgdown ✔; NEWS entry present; no new top-level files.

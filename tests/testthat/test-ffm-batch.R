@@ -107,6 +107,47 @@ test_that("ffm_batch() errors when .f does not return an ffm pipeline", {
   )
 })
 
+test_that("ffm_batch(parallel = TRUE) warns when the future plan is sequential", {
+  skip_if_not_installed("furrr")
+  old <- future::plan(future::sequential)
+  withr::defer(future::plan(old))
+  jobs <- tibble::tibble(input = "a.mp4", output = "a.mp3")
+  # run = FALSE (no execution) still warns: the guard fires before the run
+  # branch, so the warning is independent of `run`. Muffle the benign furrr
+  # global-export warning that only appears under devtools::load_all().
+  withCallingHandlers(
+    expect_warning(
+      ffm_batch(jobs, function(input, output, ...) ffm_dry(input, output),
+                run = FALSE, parallel = TRUE),
+      class = "tidymedia_sequential_plan"
+    ),
+    warning = function(w) {
+      if (grepl("may not be available", conditionMessage(w))) {
+        invokeRestart("muffleWarning")
+      }
+    }
+  )
+})
+
+test_that("warn_if_sequential_plan() is silent under a non-sequential plan", {
+  # Detection keys off the plan's class, not merely `parallel`. Stub
+  # future::plan() to report a parallel strategy without spinning workers
+  # (a real parallel plan would then need furrr to actually run jobs).
+  local_mocked_bindings(
+    plan = function(...) structure(function() NULL, class = "multisession"),
+    .package = "future"
+  )
+  expect_no_warning(warn_if_sequential_plan())
+})
+
+test_that("ffm_batch(parallel = FALSE) never warns about the plan", {
+  jobs <- tibble::tibble(input = "a.mp4", output = "a.mp3")
+  expect_no_warning(
+    ffm_batch(jobs, function(input, output, ...) ffm_dry(input, output),
+              run = FALSE, parallel = FALSE)
+  )
+})
+
 test_that("ffm_batch() runs each job and reports success (binary-gated)", {
   skip_if_no_ffmpeg()
   a <- make_test_video()

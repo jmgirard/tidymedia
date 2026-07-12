@@ -1,5 +1,13 @@
 # tidymedia (development version)
 
+## Bug fixes
+
+* `ffm_batch()` (and the `parallel = TRUE` path of `segment_video()` /
+  `segment_videos()`) now warns when parallel processing is requested but no
+  parallel `future::plan()` is active. Previously such calls ran one job at a
+  time with no speedup and no indication; the warning points to
+  `future::plan(future::multisession)`.
+
 ## Batch segmentation across files
 
 * Added `segment_videos()`, a table-driven companion to `segment_video()`. Pass

@@ -23,7 +23,10 @@
 #'   default) or only compile them for inspection (\code{FALSE}, a dry run).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
 #'   (\code{TRUE}) or sequentially (\code{FALSE}, default). Parallelism follows
-#'   the \code{\link[future:plan]{future}} plan the caller has set.
+#'   the \code{\link[future:plan]{future}} plan the caller has set; with
+#'   \code{TRUE} but the default sequential plan, jobs still run one at a time
+#'   and a warning is issued. Set a plan first, e.g.
+#'   \code{future::plan(future::multisession)}.
 #' @param verify An optional output check applied to each job (only when
 #'   \code{run = TRUE}). Either a named list of expected properties (the same
 #'   spec for every job, e.g. \code{list(width = 1920)}) or a function of the
@@ -91,6 +94,7 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
   }
   if (parallel) {
     rlang::check_installed("furrr", reason = "for parallel batch processing.")
+    warn_if_sequential_plan()
   }
 
   # Build one pipeline per row (columns passed to .f by name, pmap-style).
@@ -157,6 +161,26 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
   }
 
   out
+}
+
+# warn_if_sequential_plan() -----------------------------------------------
+
+# furrr honors the active future plan silently: with the default sequential
+# plan, `parallel = TRUE` runs one job at a time with no speedup. Warn loudly
+# (regardless of `run`) rather than let that misconfiguration pass unnoticed.
+# Called only after check_installed("furrr"), which imports future, so
+# future::plan() is available here. Isolated for direct testing without
+# driving furrr.
+warn_if_sequential_plan <- function() {
+  if (inherits(future::plan(), "sequential")) {
+    cli::cli_warn(c(
+      "{.arg parallel} is {.val {TRUE}} but the active {.pkg future} plan \\
+       is {.val sequential}.",
+      "!" = "Jobs will run one at a time with no speedup.",
+      "i" = "Set a parallel plan first, e.g. \\
+             {.run future::plan(future::multisession)}."
+    ), class = "tidymedia_sequential_plan")
+  }
 }
 
 # run_with_progress() -----------------------------------------------------

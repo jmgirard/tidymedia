@@ -437,7 +437,10 @@ get_encoders <- function(sort_by_type = TRUE) {
 #'   only compile them (\code{FALSE}).
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: cut segments in
 #'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
-#'   default).
+#'   default). Parallelism follows the active \code{\link[future:plan]{future}}
+#'   plan; \code{TRUE} under the default sequential plan runs one segment at a
+#'   time and warns. Set a plan first, e.g.
+#'   \code{future::plan(future::multisession)}.
 #' @return The [tibble][tibble::tibble-package] returned by
 #'   \code{\link{ffm_batch}}: one row per segment with its \code{command} (and,
 #'   when \code{run = TRUE}, \code{success}).
@@ -536,7 +539,10 @@ segment_pipeline <- function(input, output, start, end, reencode) {
 #'   (\code{TRUE}, default) or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: cut segments in
 #'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
-#'   default).
+#'   default). Parallelism follows the active \code{\link[future:plan]{future}}
+#'   plan; \code{TRUE} under the default sequential plan runs one segment at a
+#'   time and warns. Set a plan first, e.g.
+#'   \code{future::plan(future::multisession)}.
 #' @param ... Additional arguments forwarded to \code{\link{ffm_batch}}, such as
 #'   \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.
 #' @return The [tibble][tibble::tibble-package] returned by

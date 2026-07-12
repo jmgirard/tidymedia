@@ -121,3 +121,12 @@ command-only. The batch provenance manifest (`ffm_manifest()` /
 `ffm_batch(manifest=, checksums=)`) is opt-in and attached as an attribute; md5
 checksums opt-in; CSV output only (no JSON/hash dependency). Rules out an
 assertion-carrying engine object and any always-on provenance overhead.
+
+## D012 — `future` declared in Suggests (2026-07-12, from hotfix)
+
+`future` is now an explicit `Suggests` dependency. The parallel batch path
+(`ffm_batch(parallel = TRUE)`) already relied on it transitively via `furrr`;
+the sequential-plan guard added in this hotfix references `future::plan()`
+directly, so the dependency is declared to satisfy `R CMD check`'s undeclared-
+`::` check. No new install footprint (`furrr`, itself in `Suggests`, imports
+`future`). Rules out reaching into `future` internals; only `plan()` is used.

@@ -28,6 +28,7 @@ Imports:
     utils
 Suggests:
     furrr (>= 0.3.0),
+    future (>= 1.30.0),
     knitr (>= 1.40),
     rmarkdown (>= 2.16),
     roxygen2 (>= 7.2.0),

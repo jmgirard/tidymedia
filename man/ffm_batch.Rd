@@ -30,7 +30,10 @@ default) or only compile them for inspection (\code{FALSE}, a dry run).}
 
 \item{parallel}{A logical: map over jobs in parallel with \pkg{furrr}
 (\code{TRUE}) or sequentially (\code{FALSE}, default). Parallelism follows
-the \code{\link[future:plan]{future}} plan the caller has set.}
+the \code{\link[future:plan]{future}} plan the caller has set; with
+\code{TRUE} but the default sequential plan, jobs still run one at a time
+and a warning is issued. Set a plan first, e.g.
+\code{future::plan(future::multisession)}.}
 
 \item{verify}{An optional output check applied to each job (only when
 \code{run = TRUE}). Either a named list of expected properties (the same

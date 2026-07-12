@@ -83,7 +83,7 @@ M14→M15 scalar→batch split applied to the correction pipeline.
 - [x] T1 — Characterization test first: pin today's single-pass
       `normalize_audios(run = FALSE)` `command` column so the `two_pass = FALSE`
       default is provably unchanged before touching anything.
-- [ ] T2 — Add the correction-phase builder (`.f`): thread per-row measured
+- [x] T2 — Add the correction-phase builder (`.f`): thread per-row measured
       columns + `linear = TRUE` through `normalize_audio_pipeline()`
       ([R/ffmpeg.R:438](R/ffmpeg.R)) reusing M16's measured-value threading, so
       channels/`sample_rate`/`-c:v copy`/knob parity is inherited. Tests-first
@@ -120,6 +120,9 @@ M14→M15 scalar→batch split applied to the correction pipeline.
 - 2026-07-12: T1 done — characterization test pins the single-pass
   `normalize_audios(run = FALSE)` command column (all five knobs) before the
   two-pass path is added.
+- 2026-07-12: T2 done — added `run_normalize_correction()` (Phase 2 fan-out over
+  `ffm_batch()`/`normalize_audio_pipeline()`, threading measured columns +
+  `linear=true`); pure AC2 test over a fixed jobs+measured fixture.
 
 ## Decisions
 

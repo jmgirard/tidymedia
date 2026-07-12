@@ -85,3 +85,43 @@ run_loudnorm_analysis <- function(input,
   }
   parse_loudnorm_measurements(out, call = call)
 }
+
+# run_normalize_correction() ---------------------------------------------------
+
+# Phase 2 of normalize_audios(two_pass = TRUE): build (and optionally run) one
+# linear correction command per row of a jobs table already augmented with the
+# five measured columns (measured_I/TP/LRA/thresh/offset) by Phase 1. A thin
+# fan-out over ffm_batch() (D007) sharing normalize_audio_pipeline() with the
+# scalar/single-pass paths, so channels/sample_rate/-codec:v copy and the
+# per-value validation are inherited by construction. The measured columns arrive
+# via `...` (pmap-style) and thread back as the `measured` list, switching each
+# row to linear normalization; a per-row knob column overrides the scalar arg of
+# the same name, exactly as the single-pass builder does. `...` also forwards
+# ffm_batch options (verify/manifest/...) to the runner.
+run_normalize_correction <- function(jobs, target_loudness, true_peak,
+                                     loudness_range, channels, sample_rate,
+                                     run, parallel, ...) {
+  ffm_batch(
+    jobs,
+    function(input, output, ...) {
+      dots <- list(...)
+      pick <- function(nm, default) if (nm %in% names(dots)) dots[[nm]] else default
+      normalize_audio_pipeline(
+        input, output,
+        target_loudness = pick("target_loudness", target_loudness),
+        true_peak = pick("true_peak", true_peak),
+        loudness_range = pick("loudness_range", loudness_range),
+        channels = pick("channels", channels),
+        sample_rate = pick("sample_rate", sample_rate),
+        measured = list(
+          i = dots[["measured_I"]], tp = dots[["measured_TP"]],
+          lra = dots[["measured_LRA"]], thresh = dots[["measured_thresh"]],
+          offset = dots[["offset"]]
+        )
+      )
+    },
+    run = run,
+    parallel = parallel,
+    ...
+  )
+}

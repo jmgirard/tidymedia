@@ -3,11 +3,11 @@
      Per-section owners are tagged below. -->
 # M21: Batch fixed-region anonymization verb
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M20
 - **Principles touched:** IP1, IP2
-- **Branch/PR:** —
+- **Branch/PR:** m21-anonymize-videos-batch
 
 ## Goal
 

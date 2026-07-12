@@ -8,7 +8,7 @@ _Last hygiene check: 2026-07-12 (M20 done)_
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M21 | Batch fixed-region anonymization verb | planned | M20 | normal | milestones/M21-anonymize-videos-batch.md |
+| M21 | Batch fixed-region anonymization verb | in-progress | M20 | normal | milestones/M21-anonymize-videos-batch.md |
 | M20 | Fixed-region box-fill anonymization verb | done | — | normal | milestones/archive/M20-anonymize-video-box-fill.md |
 | M19 | Consistent schema for an all-silent two-pass batch | done | M18 | normal | milestones/archive/M19-all-silent-schema-consistency.md |
 | M18 | Graceful silent-input handling for two-pass loudnorm | done | M16, M17 | normal | milestones/archive/M18-silent-input-loudnorm.md |

@@ -1,9 +1,9 @@
 # M14: Audio loudness normalization verb
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
-- **Branch/PR:** —
+- **Branch/PR:** m14-audio-loudness-normalization
 
 ## Goal
 

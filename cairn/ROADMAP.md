@@ -2,15 +2,14 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-07-12 (M11–M12 planned)_
+_Last hygiene check: 2026-07-12 (M11 done)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M11 | Tibble-driven batch frame extraction | review | — | normal | milestones/M11-batch-frame-extraction.md |
 | M12 | Video standardization verb | planned | — | normal | milestones/M12-standardization-presets.md |
-| M06 | Engine hardening & safe execution | done | M02 | — | milestones/archive/M06-engine-hardening.md |
+| M11 | Tibble-driven batch frame extraction | done | — | normal | milestones/archive/M11-batch-frame-extraction.md |
 | M07 | Complete the blessed multi-input verbs | done | M06 | — | milestones/archive/M07-multi-input-verbs.md |
 | M08 | Verification & provenance | done | M04, M06 | normal | milestones/archive/M08-verification-provenance.md |
 | M09 | Dataframe-driven batch segmentation | done | — | normal | milestones/archive/M09-batch-segmentation.md |

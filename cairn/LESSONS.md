@@ -4,13 +4,6 @@ _Durable, append-only repo lessons (build quirks, testing tricks) — captured a
 milestone end, surfaced at plan time. Capped at 50 lines (D-015); prune the
 least-useful when full. Not status, not decisions (a choice is a D-entry)._
 
-- 2026-07-12 (M09): `cairn_validate.py`'s ISO-date check false-positives on the
-  `devtools::check()` result shorthand written as three slash-joined numbers
-  (it reads them as `M/D/Y`). Several archive summaries (M02–M08) trip it; it's
-  benign. In new tracking files spell it "zero errors/warnings/notes" instead.
-- 2026-07-12 (M09): a thin Layer-2 wrapper can forward `...` to `ffm_batch()`
-  safely — its `verify`/`manifest`/`checksums`/`progress` params sit after `...`
-  in the signature, so they bind by name and never leak into the per-row `.f`.
 - 2026-07-12 (M10): `is.logical(x)` accepts vectors containing `NA`, so a
   bare `is.logical()` type-guard admits `NA` where `rlang::check_bool()`
   (scalar path) rejects it — pair it with `!anyNA()` when validating a logical
@@ -47,3 +40,10 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   `*_frames`, `normalize_audios`) are not listed there (covered by the D007
   batch-runner line). So: add the pkgdown entry, skip the DESIGN.md list; the
   `@family` roxygen tag is the machine-checkable family membership.
+- 2026-07-12 (M16): a two-pass-loudnorm accuracy test needs a high-LRA source —
+  the packaged `sample.mp4` is a steady tone (LRA 0) where single- and two-pass
+  land identically, so a "closer than single-pass" assertion ties and fails.
+  Generate loudness variation (e.g. `tremolo=f=0.2:d=0.9`) to expose the gap.
+- 2026-07-12 (M16): `ffmpeg()` runs via `system()` (a shell), so a filter value
+  with commas (e.g. `volume='if(lt(t,3),..)'`) needs the value double-quoted so
+  ffmpeg's own quotes survive the shell; prefer a comma-free filter to avoid it.

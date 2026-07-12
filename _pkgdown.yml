@@ -23,6 +23,7 @@ reference:
   - ffm_drop
   - ffm_crop
   - ffm_scale
+  - ffm_fps
   - ffm_codec
   - ffm_map
   - ffm_copy
@@ -48,6 +49,7 @@ reference:
   - audio_as_mp3
   - crop_video
   - format_for_web
+  - standardize_video
   - segment_video
   - segment_videos
   - concatenate_videos

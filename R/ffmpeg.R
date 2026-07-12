@@ -256,6 +256,92 @@ format_for_web <- function(infile, outfile, run = TRUE) {
 }
 
 
+# standardize_video() -----------------------------------------------------
+
+#' Standardize a video to a reproducible format
+#'
+#' Re-encode a video to a consistent, reproducible format for analysis
+#' pipelines: a single video codec, pixel format, and (optionally) resolution
+#' and frame rate, with \code{+faststart} for smooth playback. Unlike
+#' \code{\link{format_for_web}} (a fixed web-delivery recipe), every part of the
+#' standard is a parameter, so a lab can pin its own house format once and apply
+#' it across a dataset.
+#'
+#' @details
+#' The default standard \code{standardize_video(infile, outfile)} re-encodes to
+#' H.264 video (\code{vcodec = "libx264"}) with \code{pixel_format = "yuv420p"}
+#' and \code{-movflags +faststart}, keeping the source resolution and frame
+#' rate. Audio is stream-copied unchanged (\code{-c:a copy}); audio
+#' standardization is out of scope. The same input therefore always compiles to
+#' a byte-identical command.
+#'
+#' Resolution follows \code{width}/\code{height}: supplying both forces exact
+#' output dimensions; supplying only one preserves the aspect ratio and rounds
+#' the other to the nearest even number (FFmpeg's \code{-2}); supplying neither
+#' keeps the source resolution but rounds odd dimensions down to the nearest
+#' even value (a \code{yuv420p}/\code{libx264} requirement, and a no-op for
+#' already-even input) so the output always encodes.
+#'
+#' @param infile A string containing the path to a video file.
+#' @param outfile A string containing the path of the video file to write.
+#' @param width The output width in pixels (a positive number), or \code{NULL}
+#'   (default) to leave the width unconstrained.
+#' @param height The output height in pixels (a positive number), or \code{NULL}
+#'   (default) to leave the height unconstrained.
+#' @param fps The output frame rate (a positive number or FFmpeg framerate
+#'   expression such as \code{"30000/1001"}), or \code{NULL} (default) to keep
+#'   the input frame rate.
+#' @param vcodec A string naming the output video codec (default
+#'   \code{"libx264"}).
+#' @param pixel_format A string naming the output pixel format (default
+#'   \code{"yuv420p"}).
+#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
+#'   or return the compiled command without running it (\code{FALSE}).
+#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' # The documented default standard (H.264 / yuv420p / +faststart)
+#' standardize_video(video, "std.mp4", run = FALSE)
+#' # Pin resolution and frame rate too
+#' standardize_video(video, "std.mp4", width = 1280, height = 720, fps = 30,
+#'                   run = FALSE)
+#' @export
+standardize_video <- function(infile, outfile,
+                              width = NULL, height = NULL, fps = NULL,
+                              vcodec = "libx264", pixel_format = "yuv420p",
+                              run = TRUE) {
+
+  check_file_exists(infile)
+  rlang::check_string(outfile)
+
+  p <- ffm_files(infile, outfile)
+  # Resolution: exact when both given; aspect-preserving with an even output
+  # dimension (FFmpeg's -2) when only one. ffm_scale() validates each dimension
+  # via check_dim(). When neither is given, still force even dimensions so
+  # yuv420p/libx264 can encode odd-dimensioned sources -- floor-to-even is a
+  # no-op for already-even input, mirroring format_for_web()'s guard.
+  if (!is.null(width) || !is.null(height)) {
+    p <- ffm_scale(
+      p,
+      width = if (is.null(width)) "-2" else width,
+      height = if (is.null(height)) "-2" else height
+    )
+  } else {
+    p <- ffm_crop(p, width = "floor(in_w/2)*2", height = "floor(in_h/2)*2")
+  }
+  if (!is.null(fps)) {
+    p <- ffm_fps(p, fps)
+  }
+  # Audio is stream-copied, not re-encoded: standardization is video-only, so
+  # "leave audio untouched" means copy the bytes (matching extract_audio()).
+  p <- ffm_codec(p, video = vcodec, audio = "copy")
+  p <- ffm_pixel_format(p, pixel_format)
+  p <- ffm_output_options(p, "-movflags +faststart")
+  ffm_finish(p, run)
+}
+
+
 # get_codecs() ------------------------------------------------------------
 
 #' Get a data frame of all installed codecs

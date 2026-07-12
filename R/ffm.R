@@ -317,6 +317,39 @@ ffm_scale <- function(object, width, height) {
   object
 }
 
+# ffm_fps() --------------------------------------------------------------------
+
+#' Set the Frame Rate in an FFmpeg Pipeline
+#'
+#' Resample the video to a constant frame rate via FFmpeg's \code{fps} filter,
+#' duplicating or dropping frames as needed. Appended to the video filter chain
+#' like the other single-input sequential filters.
+#'
+#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'   \code{ffm_files()}.
+#' @param fps The target frame rate. Either (1) a positive real number of
+#'   frames per second or (2) a string that contains an FFmpeg framerate
+#'   expression (for example \code{"30000/1001"} for NTSC).
+#' @return \code{object} but with the added instruction to resample the frame
+#'   rate.
+#' @family builder functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' ffm(video, "output.mp4") |>
+#'   ffm_fps(fps = 30) |>
+#'   ffm_compile()
+#' @export
+ffm_fps <- function(object, fps) {
+
+  check_ffm(object)
+  check_dim(fps)
+
+  cmd <- glue('fps={fps}')
+  object$filter_video <- c(object$filter_video, cmd)
+
+  object
+}
+
 # ffm_codec() ------------------------------------------------------------------
 
 #' Set Codecs in an FFmpeg Pipeline

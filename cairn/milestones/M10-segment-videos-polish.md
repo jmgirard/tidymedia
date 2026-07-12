@@ -77,29 +77,29 @@ Bring `segment_videos()` to parity with `segment_video()` by making the
 <!-- owner: plan (create) / implement (check-off, minor edits); substantive
      change is amend-via-gate -->
 
-- [ ] T1 — Test-first: add failing cases to
+- [x] T1 — Test-first: add failing cases to
       `tests/testthat/test-segment-videos.R` (all `run = FALSE`, CI-safe) for:
       auto-naming with no `output` column (single input → `_01`, `_02`;
       multi-input → numbering restarts per input file); `output` present ⇒
       unchanged; a mixed `reencode` column (one copy, one re-encode); scalar
       `reencode` still applies when no column; non-numeric `start`/`end`
       rejected; non-logical `reencode` column rejected.
-- [ ] T2 — Validation: in `segment_videos()` (`R/ffmpeg.R:571`) add `start`/`end`
+- [x] T2 — Validation: in `segment_videos()` (`R/ffmpeg.R:571`) add `start`/`end`
       numeric-or-character checks (mirror `R/ffmpeg.R:464-469`) and, when a
       `reencode` column is present, an `is.logical()` check — all before the
       `ffm_batch()` call. Make `output` no longer a hard-required column
       (`R/ffmpeg.R:577`).
-- [ ] T3 — Auto-naming: when `jobs` has no `output` column, derive it —
+- [x] T3 — Auto-naming: when `jobs` has no `output` column, derive it —
       per-input group index, zero-padded within each input, appended to the
       input basename + original extension — and inject it into `jobs` before
       `ffm_batch()` so the result carries the names. Reuse/extract the
       `segment_video()` naming logic (`R/ffmpeg.R:479-487`, `pad_integers`) into
       a shared internal helper if it stays clean.
-- [ ] T4 — Per-row `reencode`: have the batch closure
+- [x] T4 — Per-row `reencode`: have the batch closure
       (`R/ffmpeg.R:593`) prefer a per-row `reencode` value (arriving via `...`
       from the column) over the captured scalar, passing the resolved value to
       `segment_pipeline()`.
-- [ ] T5 — Docs: update `segment_videos()` roxygen (`jobs` param: optional
+- [x] T5 — Docs: update `segment_videos()` roxygen (`jobs` param: optional
       `output` + naming rule; `reencode` column + precedence), run
       `devtools::document()`, and add a `NEWS.md` entry.
 - [ ] T6 — `devtools::test()` green, then `devtools::check()` clean; record
@@ -109,6 +109,7 @@ Bring `segment_videos()` to parity with `segment_video()` by making the
 <!-- owner: any skill · append-only; one line per entry; absolute dates -->
 
 - 2026-07-12: created by /milestone-plan (absorbs the three M09 `segment_videos()` deferral candidates).
+- 2026-07-12: T1–T5 done — tests-first (8 new cases), extracted `derive_segment_names()` (shared with `segment_video()`), optional `output` + per-row `reencode` column + start/end/reencode validation in `segment_videos()`, roxygen + NEWS; full suite green.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local; promote

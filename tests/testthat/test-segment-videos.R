@@ -107,3 +107,95 @@ test_that("segment_videos() forwards manifest, read by ffm_manifest (binary-gate
   expect_equal(nrow(man), 2)
   expect_true(all(man$output_size > 0))
 })
+
+# Optional `output`: per-input auto-naming (M10) --------------------------
+
+test_that("segment_videos() auto-names outputs when the column is absent", {
+  f <- make_input()
+  base <- tools::file_path_sans_ext(f)
+  jobs <- tibble::tibble(input = f, start = c(0, 5), end = c(5, 10))
+  res <- segment_videos(jobs, run = FALSE)
+  # Parity with segment_video(): <input-basename>_<n>.<ext>, n intuited-width
+  # padded (two segments -> width 1), and carried on the returned tibble.
+  expect_equal(res$output, paste0(base, c("_1", "_2"), ".mp4"))
+  expect_match(res$command[[1]], paste0('"', base, '_1.mp4"'), fixed = TRUE)
+})
+
+test_that("segment_videos() auto-naming restarts numbering per input file", {
+  f1 <- make_input()
+  f2 <- make_input()
+  b1 <- tools::file_path_sans_ext(f1)
+  b2 <- tools::file_path_sans_ext(f2)
+  jobs <- tibble::tibble(
+    input = c(f1, f1, f2, f2, f2),
+    start = c(0, 5, 0, 2, 4),
+    end   = c(5, 10, 2, 4, 6)
+  )
+  res <- segment_videos(jobs, run = FALSE)
+  expect_equal(
+    res$output,
+    c(paste0(b1, c("_1", "_2"), ".mp4"),
+      paste0(b2, c("_1", "_2", "_3"), ".mp4"))
+  )
+})
+
+test_that("segment_videos() uses an explicit output column unchanged", {
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input = c(f, f), output = c("keep_a.mp4", "keep_b.mp4"),
+    start = c(0, 5), end = c(5, 10)
+  )
+  res <- segment_videos(jobs, run = FALSE)
+  expect_equal(res$output, c("keep_a.mp4", "keep_b.mp4"))
+})
+
+# Per-row `reencode` column (M10) -----------------------------------------
+
+test_that("segment_videos() honors a per-row reencode column", {
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input = c(f, f), output = c("a.mp4", "b.mp4"),
+    start = c(0, 2), end = c(5, 7), reencode = c(TRUE, FALSE)
+  )
+  res <- segment_videos(jobs, run = FALSE)
+  # Row 1 re-encodes (accurate output-seek, no stream copy)...
+  expect_no_match(res$command[[1]], "-codec:v copy", fixed = TRUE)
+  expect_match(res$command[[1]], '-ss 0 -to 5 "a.mp4"', fixed = TRUE)
+  # ...row 2 takes the fast copy path.
+  expect_match(res$command[[2]], "-codec:v copy -codec:a copy", fixed = TRUE)
+  expect_match(res$command[[2]], "-avoid_negative_ts make_zero", fixed = TRUE)
+})
+
+test_that("segment_videos() reencode column overrides the scalar arg", {
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input = c(f, f), output = c("a.mp4", "b.mp4"),
+    start = c(0, 2), end = c(5, 7), reencode = c(TRUE, FALSE)
+  )
+  # Scalar says FALSE, but the column wins per row.
+  res <- segment_videos(jobs, reencode = FALSE, run = FALSE)
+  expect_no_match(res$command[[1]], "-codec:v copy", fixed = TRUE)
+  expect_match(res$command[[2]], "-codec:v copy -codec:a copy", fixed = TRUE)
+})
+
+# Validation parity with segment_video() (M10) ----------------------------
+
+test_that("segment_videos() rejects a non-numeric/character start column", {
+  f <- make_input()
+  jobs <- tibble::tibble(input = f, output = "a.mp4", start = TRUE, end = 5)
+  expect_error(segment_videos(jobs, run = FALSE), "start")
+})
+
+test_that("segment_videos() rejects a non-numeric/character end column", {
+  f <- make_input()
+  jobs <- tibble::tibble(input = f, output = "a.mp4", start = 0, end = TRUE)
+  expect_error(segment_videos(jobs, run = FALSE), "end")
+})
+
+test_that("segment_videos() rejects a non-logical reencode column", {
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input = f, output = "a.mp4", start = 0, end = 5, reencode = "yes"
+  )
+  expect_error(segment_videos(jobs, run = FALSE), "reencode")
+})

@@ -8,14 +8,20 @@ segment_videos(jobs, reencode = TRUE, run = TRUE, parallel = FALSE, ...)
 }
 \arguments{
 \item{jobs}{A data frame with one row per segment and (at least) the columns
-\code{input} (source path), \code{output} (destination path), \code{start}
-and \code{end} (cut points; a numeric column of seconds or a character
-column with time-duration syntax). Any other columns are ignored.}
+\code{input} (source path), \code{start} and \code{end} (cut points; a
+numeric column of seconds or a character column with time-duration syntax).
+Two optional columns are recognised: \code{output} (destination path) and
+\code{reencode} (a logical; see the \code{reencode} argument). If
+\code{output} is absent, one is derived per row by appending
+\code{_<n>.<ext>} to each input's basename, with the segment number
+restarting at 1 for each input file (the same rule as
+\code{\link{segment_video}}). Any other columns are ignored.}
 
 \item{reencode}{A logical passed to \code{\link{ffm_seek}}: cut each segment
 frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
 lossless copy that snaps to keyframes (\code{FALSE}). See \code{ffm_seek}
-for the trade-off. Applies to every row.}
+for the trade-off. Applies to every row, unless \code{jobs} carries a
+\code{reencode} column, which overrides this argument on a per-row basis.}
 
 \item{run}{A logical: run each segment's command through FFmpeg
 (\code{TRUE}, default) or only compile them for inspection (\code{FALSE}).}
@@ -33,7 +39,8 @@ time and warns. Set a plan first, e.g.
 \value{
 The \link[tibble:tibble-package]{tibble} returned by
 \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column
-(and, when \code{run = TRUE}, a \code{success} column, plus any columns the
+(and, when \code{output} was derived, the resolved \code{output} column;
+when \code{run = TRUE}, a \code{success} column, plus any columns the
 forwarded arguments add, e.g. \code{verified}).
 }
 \description{

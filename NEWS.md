@@ -17,6 +17,12 @@
   `manifest`, `checksums`, and `progress`; `reencode` selects accurate
   re-encoding (default) or the fast keyframe-snapping copy path, as in
   `segment_video()`.
+* `segment_videos()` now reaches full parity with `segment_video()`: the
+  `output` column is optional (when absent, names are derived per input file as
+  `<basename>_<n>.<ext>`, numbering restarting for each input), a per-row
+  `reencode` column overrides the scalar `reencode` argument, and
+  non-numeric/character `start`/`end` (or a non-logical `reencode`) columns are
+  rejected with a clear error instead of an opaque FFmpeg failure.
 
 ## Verification & provenance (M08)
 

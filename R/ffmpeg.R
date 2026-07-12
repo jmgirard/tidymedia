@@ -475,15 +475,9 @@ segment_video <- function(infile,
   }
   rlang::check_bool(reencode)
 
-  # If no names are provided, add zero-padded integers to infile name
+  # If no names are provided, derive per-segment names from the input file.
   if (is.null(outfiles)) {
-    outfiles <- paste0(
-      tools::file_path_sans_ext(infile),
-      '_',
-      pad_integers(seq_along(ts_start)),
-      '.',
-      tools::file_ext(infile)
-    )
+    outfiles <- derive_segment_names(rep(infile, length(ts_start)))
   }
 
   # Fan-out (one input -> many outputs) is a Layer 2 concern: build one
@@ -500,6 +494,26 @@ segment_video <- function(infile,
     run = run,
     parallel = parallel
   )
+}
+
+
+# derive_segment_names() --------------------------------------------------
+
+# Derive one output path per segment from its input path, appending
+# `_<n>.<ext>` to each input's basename. Numbering restarts per input file (in
+# row order) and is zero-padded to that input's own segment count, so the
+# single-input case (segment_video) and the multi-input jobs table
+# (segment_videos with no `output` column) share one naming rule.
+derive_segment_names <- function(input) {
+  out <- character(length(input))
+  for (f in unique(input)) {
+    sel <- input == f
+    padded <- pad_integers(seq_len(sum(sel)))
+    out[sel] <- paste0(
+      tools::file_path_sans_ext(f), "_", padded, ".", tools::file_ext(f)
+    )
+  }
+  out
 }
 
 
@@ -528,13 +542,19 @@ segment_pipeline <- function(input, output, start, end, reencode) {
 #' \code{\link{ffm_batch}}: one reproducible compiled command per segment.
 #'
 #' @param jobs A data frame with one row per segment and (at least) the columns
-#'   \code{input} (source path), \code{output} (destination path), \code{start}
-#'   and \code{end} (cut points; a numeric column of seconds or a character
-#'   column with time-duration syntax). Any other columns are ignored.
+#'   \code{input} (source path), \code{start} and \code{end} (cut points; a
+#'   numeric column of seconds or a character column with time-duration syntax).
+#'   Two optional columns are recognised: \code{output} (destination path) and
+#'   \code{reencode} (a logical; see the \code{reencode} argument). If
+#'   \code{output} is absent, one is derived per row by appending
+#'   \code{_<n>.<ext>} to each input's basename, with the segment number
+#'   restarting at 1 for each input file (the same rule as
+#'   \code{\link{segment_video}}). Any other columns are ignored.
 #' @param reencode A logical passed to \code{\link{ffm_seek}}: cut each segment
 #'   frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
 #'   lossless copy that snaps to keyframes (\code{FALSE}). See \code{ffm_seek}
-#'   for the trade-off. Applies to every row.
+#'   for the trade-off. Applies to every row, unless \code{jobs} carries a
+#'   \code{reencode} column, which overrides this argument on a per-row basis.
 #' @param run A logical: run each segment's command through FFmpeg
 #'   (\code{TRUE}, default) or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: cut segments in
@@ -547,7 +567,8 @@ segment_pipeline <- function(input, output, start, end, reencode) {
 #'   \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.
 #' @return The [tibble][tibble::tibble-package] returned by
 #'   \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column
-#'   (and, when \code{run = TRUE}, a \code{success} column, plus any columns the
+#'   (and, when \code{output} was derived, the resolved \code{output} column;
+#'   when \code{run = TRUE}, a \code{success} column, plus any columns the
 #'   forwarded arguments add, e.g. \code{verified}).
 #' @seealso \code{\link{segment_video}} for the single-input, parallel-vector
 #'   form; \code{\link{ffm_batch}} for the batch runner and the arguments
@@ -574,7 +595,7 @@ segment_videos <- function(jobs, reencode = TRUE, run = TRUE,
   if (nrow(jobs) == 0) {
     cli::cli_abort("{.arg jobs} must have at least one row.")
   }
-  required <- c("input", "output", "start", "end")
+  required <- c("input", "start", "end")
   missing <- setdiff(required, names(jobs))
   if (length(missing) > 0) {
     cli::cli_abort(c(
@@ -582,16 +603,36 @@ segment_videos <- function(jobs, reencode = TRUE, run = TRUE,
       "x" = "Missing column{?s}: {.val {missing}}."
     ))
   }
+  # Validate cut-point column types up front (parity with segment_video()), so a
+  # bad column fails clearly here rather than as an opaque FFmpeg error.
+  if (!(is.numeric(jobs$start) || is.character(jobs$start))) {
+    cli::cli_abort("The {.field start} column of {.arg jobs} must be numeric or character.")
+  }
+  if (!(is.numeric(jobs$end) || is.character(jobs$end))) {
+    cli::cli_abort("The {.field end} column of {.arg jobs} must be numeric or character.")
+  }
+  if ("reencode" %in% names(jobs) && !is.logical(jobs$reencode)) {
+    cli::cli_abort("The {.field reencode} column of {.arg jobs} must be logical.")
+  }
   rlang::check_bool(reencode)
 
+  # Auto-name outputs when the column is absent: derive per-input segment names
+  # (numbering restarts per input file) and carry them on the returned tibble.
+  if (!"output" %in% names(jobs)) {
+    jobs$output <- derive_segment_names(jobs$input)
+  }
+
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output seek pipeline
-  # per row, sharing segment_pipeline() with segment_video(). The closure
-  # captures the scalar `reencode`; `...` forwards ffm_batch options
-  # (verify/manifest/...) to the runner, never to the pipeline builder.
+  # per row, sharing segment_pipeline() with segment_video(). A per-row
+  # `reencode` column (arriving via `...` from pmap) overrides the scalar arg;
+  # `...` also forwards ffm_batch options (verify/manifest/...) to the runner,
+  # never to the pipeline builder.
   ffm_batch(
     jobs,
     function(input, output, start, end, ...) {
-      segment_pipeline(input, output, start, end, reencode)
+      dots <- list(...)
+      re <- if ("reencode" %in% names(dots)) dots$reencode else reencode
+      segment_pipeline(input, output, start, end, re)
     },
     run = run,
     parallel = parallel,

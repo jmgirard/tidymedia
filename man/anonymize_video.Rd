@@ -77,6 +77,7 @@ https://ffmpeg.org/ffmpeg-filters.html#drawbox
 \code{\link{ffm_drawbox}} for the underlying builder filter.
 
 Other task verb functions:
+\code{\link[=anonymize_videos]{anonymize_videos()}},
 \code{\link[=audio_as_mp3]{audio_as_mp3()}},
 \code{\link[=compare_videos]{compare_videos()}},
 \code{\link[=concatenate_videos]{concatenate_videos()}},

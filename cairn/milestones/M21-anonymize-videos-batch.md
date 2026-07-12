@@ -3,11 +3,11 @@
      Per-section owners are tagged below. -->
 # M21: Batch fixed-region anonymization verb
 
-- **Status:** planned
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M20
 - **Principles touched:** IP1, IP2
-- **Branch/PR:** —
+- **Branch/PR:** m21-anonymize-videos-batch · https://github.com/jmgirard/tidymedia/pull/23
 
 ## Goal
 
@@ -32,23 +32,23 @@ outputs (M19 parity lesson).
 
 ## Acceptance criteria
 
-- [ ] `anonymize_videos()` is exported (NAMESPACE + `_pkgdown.yml` Layer-2 row)
+- [x] `anonymize_videos()` is exported (NAMESPACE + `_pkgdown.yml` Layer-2 row)
       with roxygen docs and a runnable `run = FALSE` example.
-- [ ] A jobs data frame of N inputs compiles to N single-output commands, each
+- [x] A jobs data frame of N inputs compiles to N single-output commands, each
       with its own regions box-filled (per-input regions resolved from the
       jobs table — see open question below). (compilation test)
-- [ ] Front-door validation aborts via `cli::cli_abort()` on: `jobs` not a data
+- [x] Front-door validation aborts via `cli::cli_abort()` on: `jobs` not a data
       frame, zero rows, and missing `input` column — parity with
       `standardize_videos()`. (tests)
-- [ ] Per-row region validation is inherited from `anonymize_pipeline()` (a bad
+- [x] Per-row region validation is inherited from `anonymize_pipeline()` (a bad
       region in any job is reported by row index, not re-implemented in the
       front door). (test)
-- [ ] Return schema (`names()` and types) matches the scalar/`ffm_batch` path,
+- [x] Return schema (`names()` and types) matches the scalar/`ffm_batch` path,
       including opt-in `verified` column and manifest attribute when requested.
       (parity test, M19 lesson)
-- [ ] Executes end-to-end on a small multi-input jobs table built from
+- [x] Executes end-to-end on a small multi-input jobs table built from
       `sample.mp4` (`skip_if` ffmpeg absent). (execution test)
-- [ ] `devtools::check()` is clean: 0 errors / 0 warnings / 0 notes.
+- [x] `devtools::check()` is clean: 0 errors / 0 warnings / 0 notes.
 
 ## Coverage
 
@@ -62,28 +62,84 @@ outputs (M19 parity lesson).
 
 ## Tasks
 
-- [ ] T1: Resolve the per-input regions interface (open question — decide at the
+- [x] T1: Resolve the per-input regions interface (open question — decide at the
       implement gate): a list-column of region data frames on `jobs` is the
       likely tidy answer; confirm against the `ffm_batch` pmap-by-name contract
       (D007) before coding.
-- [ ] T2: Front door `anonymize_videos(jobs, …)` over `ffm_batch`, reusing M20's
+- [x] T2: Front door `anonymize_videos(jobs, …)` over `ffm_batch`, reusing M20's
       `anonymize_pipeline()`; jobs-table column type/NA guards only (mirror
       `standardize_videos()` R/ffmpeg.R:1143); output-path derivation for jobs
       lacking `output`. Roxygen `@family task verb functions`; `_pkgdown.yml`
       row; `devtools::document()`.
-- [ ] T3: Compilation + validation tests: N-input fan-out; per-input distinct
+- [x] T3: Compilation + validation tests: N-input fan-out; per-input distinct
       regions; front-door abort branches; inherited per-region abort by index;
       schema-parity test vs the scalar path (M19 trick).
-- [ ] T4: Execution test (`skip_if` ffmpeg absent): multi-input jobs table from
+- [x] T4: Execution test (`skip_if` ffmpeg absent): multi-input jobs table from
       `sample.mp4`; assert each output exists and is valid.
-- [ ] T5: `devtools::document()`, `devtools::test()`, `devtools::check()` to OK
+- [x] T5: `devtools::document()`, `devtools::test()`, `devtools::check()` to OK
       (0/0/0); wordlist if needed; confirm `Status: OK` in `00check.log`.
 
 ## Work log
 
 - 2026-07-12: created by /milestone-plan alongside M20 (batch sibling split off
   per the M14→M15 precedent; depends on M20's shared pipeline).
+- 2026-07-12: T1 resolved at implement gate — regions is a required list-column
+  (pmap unwraps each cell's data frame by name; purrr adds `In index: N` so a
+  bad region reports by row for free). Per-row color/vcodec/pixel_format
+  override columns (user-confirmed, parity with standardize_videos()).
+- 2026-07-12: T2 — anonymize_videos() front door + derive_anonymized_names();
+  reuses anonymize_pipeline(); NEWS, _pkgdown.yml row, document().
+- 2026-07-12: T3/T4 — test-anonymize-videos.R (26 tests): fan-out, per-row +
+  per-box color, knob overrides, auto-naming/collision, front-door aborts,
+  inherited per-region validation reported by `In index: N`, schema parity vs
+  a direct ffm_batch call, and binary-gated execution/verify/manifest. 60 pass.
+- 2026-07-12: T5 — full suite 870 pass / 0 fail; `devtools::check()` Status: OK
+  (0/0/0) after `spelling::update_wordlist()` added anonymization/anonymize/
+  reproducibly (M17 masked-NOTE lesson). Status → review.
 
 ## Decisions
 
 ## Review
+
+### Acceptance-criteria evidence (2026-07-12, fresh)
+
+- AC1 — `anonymize_videos` in NAMESPACE (`export()`) and `_pkgdown.yml` Layer-2
+  row (pkgdown::check_pkgdown() ✔ no problems); roxygen `@family task verb
+  functions` + runnable `run = FALSE` example in `man/anonymize_videos.Rd`.
+- AC2 — test-anonymize-videos.R: "returns one command per job with its own
+  regions" (2 inputs → 2 commands, each its own drawbox) and "draws every box
+  for a multi-region row" pass.
+- AC3 — front-door abort tests (non-data-frame, empty table, missing `input`)
+  pass; messages via `cli::cli_abort`, parity with standardize_videos().
+- AC4 — "inherits per-region validation, reported by row": a row-2 malformed
+  regions cell aborts with "missing" **and** purrr's "index: 2"; front door
+  adds no region re-check. Size check inherited from ffm_drawbox likewise.
+- AC5 — "return schema matches a direct ffm_batch call": `names()` and per-col
+  `class()` identical to a raw ffm_batch run; regions list-column preserved;
+  verify/manifest forwarding tests confirm `verified` col + manifest attr.
+- AC6 — "writes anonymized outputs (binary-gated)": multi-input jobs table runs
+  end-to-end, both outputs exist, non-empty, duration preserved. Ran (not
+  skipped — ffmpeg present): 23 test blocks, 0 failed, 0 skipped.
+- AC7 — `devtools::check()` **Status: OK**, 0 errors / 0 warnings / 0 notes
+  (raw 00check.log, M17 masked-NOTE check applied).
+
+### Consistency gate (2026-07-12)
+
+- cairn_validate.py exit 0 (all 12 checks pass, incl. coverage complete).
+- document() → no diff; README.Rmd/DESIGN.md untouched (no principle change →
+  cairn_impact skipped); pkgdown ✔; NEWS entry present; no new top-level files.
+
+### Independent fresh-context review (2026-07-12)
+
+Three lenses, all zero actionable findings; nothing reached the scorer.
+- [O] diff-bug (Opus): verified list-column pmap flow, pick() override
+  precedence, front-door guard ordering, edge cases, `...` forwarding — pass.
+- [S] blame-history (Sonnet): M12/M13/M19/M20 intents + D007 preserved;
+  standardize_videos() parity matched line-for-line.
+- [S] prior-PR-comments (Sonnet): no human prior-PR evidence (Codecov only) —
+  clean no-op.
+- Non-findings logged, not actioned: factor `input`/`output` coercion lacks a
+  dedicated test — explicitly pre-existing parity with standardize_videos(),
+  not introduced by this diff (excluded per the false-positive taxonomy).
+- CI on PR #23: green across all 7 jobs (macOS, Ubuntu devel/oldrel/release,
+  Windows, pkgdown, coverage).

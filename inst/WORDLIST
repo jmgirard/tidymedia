@@ -21,6 +21,8 @@ MediaInfo's
 Metaprogramming
 NTSC
 README
+anonymization
+anonymize
 assertthat
 auditable
 checksums
@@ -65,6 +67,7 @@ pts
 px
 remux
 reprobes
+reproducibly
 retarget
 rlang
 rlang's

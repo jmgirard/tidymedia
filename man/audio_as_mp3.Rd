@@ -27,6 +27,7 @@ audio_as_mp3(video, "audio.mp3", run = FALSE)
 \seealso{
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
+\code{\link[=anonymize_videos]{anonymize_videos()}},
 \code{\link[=compare_videos]{compare_videos()}},
 \code{\link[=concatenate_videos]{concatenate_videos()}},
 \code{\link[=crop_video]{crop_video()}},

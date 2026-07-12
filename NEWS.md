@@ -9,6 +9,13 @@
   (numbers or FFmpeg expressions), with an optional per-row `color`. The video
   is re-encoded reproducibly (H.264 / `yuv420p` by default) and audio is
   stream-copied unchanged.
+* New `anonymize_videos()` applies the same box-fill redaction across many
+  videos from one jobs tibble — each row names an `input` and carries its own
+  `regions` (a list-column of boxes data frames), with optional per-row
+  `output`, `color`, `vcodec`, and `pixel_format` columns. Like the other
+  table-driven verbs it is a thin wrapper over `ffm_batch()`, returning one
+  reproducible command per input and supporting `verify`, `manifest`, and
+  parallel execution.
 
 ## Graceful handling of silent input in two-pass loudnorm
 

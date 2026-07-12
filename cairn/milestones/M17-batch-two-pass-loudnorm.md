@@ -1,9 +1,9 @@
 # M17: Batch two-pass (measured/linear) loudnorm
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M15, M16
-- **Branch/PR:** —
+- **Branch/PR:** m17-batch-two-pass-loudnorm
 
 ## Goal
 

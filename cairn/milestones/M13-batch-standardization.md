@@ -191,5 +191,20 @@ sync with `origin/master` (0/0), 4 commits ahead — not stale.
 
 ### Independent review
 
-<!-- filled after two-lens review + scorer -->
+Two fresh-context reviewers, distinct evidence bases, both **zero findings**:
+- **[O] diff-bug reviewer (Opus)** — full `master..HEAD` diff vs ACs, DESIGN,
+  DECISIONS. No correctness bugs, contract violations, AC deviations, or
+  DESIGN/DECISIONS violations. Confirmed: behavior-preserving `standardize_pipeline()`
+  extraction; correct per-row override resolution and `...`-forwarding (M09);
+  sound auto-naming + collision keying; front-door validation mirrors siblings
+  (M11). Explicitly dismissed two non-findings (no `check_file_exists` in the
+  batch verb — the established sibling pattern; E2E gating covered via
+  `make_test_video()`'s own `skip_if_no_ffmpeg()`).
+- **[S] blame-history reviewer (Sonnet)** — `git log`/`blame` on modified lines
+  vs prior intent. Confirmed M12's two review fixes (audio `copy`, even-dimension
+  floor-crop) and `+faststart` preserved intact; D007 batch model respected; M11
+  per-element-parity satisfied by construction (value checks live inside the
+  shared pipeline every row runs).
+
+No findings to score or triage. CI on PR #15: all 7 checks pass.
 

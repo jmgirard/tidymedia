@@ -9,7 +9,7 @@ standardize_video_batch(
   width = NULL,
   height = NULL,
   fps = NULL,
-  vcodec = "libx264",
+  video_codec = "libx264",
   pixel_format = "yuv420p",
   run = TRUE,
   parallel = FALSE,
@@ -25,7 +25,7 @@ extension (e.g. \code{clip.mkv} becomes \code{clip_standardized.mkv}).
 Because standardization is one-input-to-one-output, a duplicated
 \code{input} with no \code{output} column would collide and is rejected.
 Each of the five standardization knobs — \code{width}, \code{height},
-\code{fps}, \code{vcodec}, \code{pixel_format} — may also appear as a
+\code{fps}, \code{video_codec}, \code{pixel_format} — may also appear as a
 column to override the corresponding argument on a per-row basis; rows (or
 knobs) that omit the column fall back to the argument's value. Any other
 columns are ignored.}
@@ -40,8 +40,8 @@ encode. (default = \code{NULL})}
 \code{jobs} carries an \code{fps} column. (default = \code{NULL}, i.e.
 leave the frame rate unchanged)}
 
-\item{vcodec}{A string naming the video codec applied to every row, unless
-\code{jobs} carries a \code{vcodec} column. (default = \code{"libx264"})}
+\item{video_codec}{A string naming the video codec applied to every row, unless
+\code{jobs} carries a \code{video_codec} column. (default = \code{"libx264"})}
 
 \item{pixel_format}{A string naming the pixel format applied to every row,
 unless \code{jobs} carries a \code{pixel_format} column.

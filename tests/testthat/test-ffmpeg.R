@@ -101,9 +101,9 @@ test_that("extract_audio() compiles to a copy + drop-video command", {
   expect_match(cmd, '"out.aac"', fixed = TRUE)
 })
 
-test_that("extract_audio(acodec=) sets the audio codec", {
+test_that("extract_audio(audio_codec=) sets the audio codec", {
   f <- make_input()
-  cmd <- extract_audio(f, "out.m4a", acodec = "aac", run = FALSE)
+  cmd <- extract_audio(f, "out.m4a", audio_codec = "aac", run = FALSE)
   expect_match(cmd, "-codec:a aac -vn", fixed = TRUE)
 })
 
@@ -141,7 +141,7 @@ test_that("standardize_video() compiles the full standardization command", {
   cmd <- standardize_video(
     f, "out.mp4",
     width = 1280, height = 720, fps = 30,
-    vcodec = "libx264", pixel_format = "yuv420p",
+    video_codec = "libx264", pixel_format = "yuv420p",
     run = FALSE
   )
   expect_equal(

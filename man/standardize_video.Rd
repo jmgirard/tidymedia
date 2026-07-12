@@ -10,7 +10,7 @@ standardize_video(
   width = NULL,
   height = NULL,
   fps = NULL,
-  vcodec = "libx264",
+  video_codec = "libx264",
   pixel_format = "yuv420p",
   run = TRUE
 )
@@ -30,7 +30,7 @@ standardize_video(
 expression such as \code{"30000/1001"}), or \code{NULL} (default) to keep
 the input frame rate.}
 
-\item{vcodec}{A string naming the output video codec (default
+\item{video_codec}{A string naming the output video codec (default
 \code{"libx264"}).}
 
 \item{pixel_format}{A string naming the output pixel format (default
@@ -52,7 +52,7 @@ it across a dataset.
 }
 \details{
 The default standard \code{standardize_video(infile, outfile)} re-encodes to
-H.264 video (\code{vcodec = "libx264"}) with \code{pixel_format = "yuv420p"}
+H.264 video (\code{video_codec = "libx264"}) with \code{pixel_format = "yuv420p"}
 and \code{-movflags +faststart}, keeping the source resolution and frame
 rate. Audio is stream-copied unchanged (\code{-c:a copy}); audio
 standardization is out of scope. The same input therefore always compiles to

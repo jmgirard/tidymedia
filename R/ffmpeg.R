@@ -88,7 +88,7 @@ frame_pipeline <- function(input, output, timestamp) {
 #'
 #' @param infile A string containing the path to a media file.
 #' @param outfile A string containing the path of the audio file to write.
-#' @param acodec A string naming the audio codec for the output stream.
+#' @param audio_codec A string naming the audio codec for the output stream.
 #'   (default = \code{"copy"}, i.e. remux without re-encoding)
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
@@ -98,14 +98,14 @@ frame_pipeline <- function(input, output, timestamp) {
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' extract_audio(video, "audio.aac", run = FALSE)
 #' @export
-extract_audio <- function(infile, outfile, acodec = "copy", run = TRUE) {
+extract_audio <- function(infile, outfile, audio_codec = "copy", run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
-  rlang::check_string(acodec)
+  rlang::check_string(audio_codec)
 
   p <- ffm_files(infile, outfile)
-  p <- ffm_codec(p, audio = acodec)
+  p <- ffm_codec(p, audio = audio_codec)
   p <- ffm_drop(p, "video")
   ffm_finish(p, run)
 }
@@ -285,7 +285,7 @@ format_for_web <- function(infile, outfile, run = TRUE) {
 #'
 #' @details
 #' The default standard \code{standardize_video(infile, outfile)} re-encodes to
-#' H.264 video (\code{vcodec = "libx264"}) with \code{pixel_format = "yuv420p"}
+#' H.264 video (\code{video_codec = "libx264"}) with \code{pixel_format = "yuv420p"}
 #' and \code{-movflags +faststart}, keeping the source resolution and frame
 #' rate. Audio is stream-copied unchanged (\code{-c:a copy}); audio
 #' standardization is out of scope. The same input therefore always compiles to
@@ -307,7 +307,7 @@ format_for_web <- function(infile, outfile, run = TRUE) {
 #' @param fps The output frame rate (a positive number or FFmpeg framerate
 #'   expression such as \code{"30000/1001"}), or \code{NULL} (default) to keep
 #'   the input frame rate.
-#' @param vcodec A string naming the output video codec (default
+#' @param video_codec A string naming the output video codec (default
 #'   \code{"libx264"}).
 #' @param pixel_format A string naming the output pixel format (default
 #'   \code{"yuv420p"}).
@@ -325,14 +325,14 @@ format_for_web <- function(infile, outfile, run = TRUE) {
 #' @export
 standardize_video <- function(infile, outfile,
                               width = NULL, height = NULL, fps = NULL,
-                              vcodec = "libx264", pixel_format = "yuv420p",
+                              video_codec = "libx264", pixel_format = "yuv420p",
                               run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
 
   ffm_finish(
-    standardize_pipeline(infile, outfile, width, height, fps, vcodec,
+    standardize_pipeline(infile, outfile, width, height, fps, video_codec,
                          pixel_format),
     run
   )
@@ -347,7 +347,7 @@ standardize_video <- function(infile, outfile,
 # validation (dimensions via check_dim, codec/pixfmt via check_token) and M12's
 # guards (audio stream-copy, even-dimension safeguard, +faststart) live here
 # once -- the batch sibling inherits them by construction (D002, D003, D007).
-standardize_pipeline <- function(input, output, width, height, fps, vcodec,
+standardize_pipeline <- function(input, output, width, height, fps, video_codec,
                                  pixel_format) {
   p <- ffm_files(input, output)
   # Resolution: exact when both given; aspect-preserving with an even output
@@ -369,7 +369,7 @@ standardize_pipeline <- function(input, output, width, height, fps, vcodec,
   }
   # Audio is stream-copied, not re-encoded: standardization is video-only, so
   # "leave audio untouched" means copy the bytes (matching extract_audio()).
-  p <- ffm_codec(p, video = vcodec, audio = "copy")
+  p <- ffm_codec(p, video = video_codec, audio = "copy")
   p <- ffm_pixel_format(p, pixel_format)
   ffm_output_options(p, "-movflags +faststart")
 }
@@ -394,7 +394,7 @@ standardize_pipeline <- function(input, output, width, height, fps, vcodec,
 #' box is a solid fill (FFmpeg's \code{drawbox} with \code{t=fill}); hollow
 #' outlines are intentionally not offered.
 #'
-#' Because a filter is applied, the video is re-encoded (\code{vcodec} /
+#' Because a filter is applied, the video is re-encoded (\code{video_codec} /
 #' \code{pixel_format}, defaulting to H.264 / \code{yuv420p}); odd source
 #' dimensions are floored to even so the output always encodes (a
 #' \code{yuv420p}/\code{libx264} requirement, and a no-op for already-even
@@ -408,7 +408,7 @@ standardize_pipeline <- function(input, output, width, height, fps, vcodec,
 #'   Details.
 #' @param color A string naming the default fill color in FFmpeg color syntax,
 #'   used for any row without its own \code{color} (default \code{"black"}).
-#' @param vcodec A string naming the output video codec (default
+#' @param video_codec A string naming the output video codec (default
 #'   \code{"libx264"}).
 #' @param pixel_format A string naming the output pixel format (default
 #'   \code{"yuv420p"}).
@@ -429,14 +429,14 @@ standardize_pipeline <- function(input, output, width, height, fps, vcodec,
 #' @export
 anonymize_video <- function(infile, outfile, regions,
                             color = "black",
-                            vcodec = "libx264", pixel_format = "yuv420p",
+                            video_codec = "libx264", pixel_format = "yuv420p",
                             run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
 
   ffm_finish(
-    anonymize_pipeline(infile, outfile, regions, color, vcodec, pixel_format),
+    anonymize_pipeline(infile, outfile, regions, color, video_codec, pixel_format),
     run
   )
 }
@@ -450,11 +450,11 @@ anonymize_video <- function(infile, outfile, regions,
 # and the encode guards (even-dimension safeguard, audio stream-copy) live here
 # once -- the batch sibling inherits them by construction (D002, D003, D007;
 # M13 extract-first lesson).
-anonymize_pipeline <- function(input, output, regions, color, vcodec,
+anonymize_pipeline <- function(input, output, regions, color, video_codec,
                                pixel_format, call = rlang::caller_env()) {
   check_regions(regions, call = call)
   rlang::check_string(color, call = call)
-  check_token(vcodec, call = call)
+  check_token(video_codec, call = call)
   check_token(pixel_format, call = call)
 
   # Integer coordinates are natural pixel values, but ffm_drawbox()'s check_dim()
@@ -486,7 +486,7 @@ anonymize_pipeline <- function(input, output, regions, color, vcodec,
   }
   # Re-encode video (a filter is applied), stream-copy audio untouched -- the
   # same encode profile as standardize_video().
-  p <- ffm_codec(p, video = vcodec, audio = "copy")
+  p <- ffm_codec(p, video = video_codec, audio = "copy")
   ffm_pixel_format(p, pixel_format)
 }
 
@@ -581,15 +581,15 @@ derive_anonymized_names <- function(input) {
 #'   input's extension (e.g. \code{clip.mkv} becomes \code{clip_anonymized.mkv}).
 #'   Because anonymization is one-input-to-one-output, a duplicated \code{input}
 #'   with no \code{output} column would collide and is rejected. Each of the
-#'   three encode knobs — \code{color}, \code{vcodec}, \code{pixel_format} — may
+#'   three encode knobs — \code{color}, \code{video_codec}, \code{pixel_format} — may
 #'   also appear as a column to override the corresponding argument on a per-row
 #'   basis; rows (or knobs) that omit the column fall back to the argument's
 #'   value. Any other columns are ignored.
 #' @param color A string naming the default fill color (FFmpeg color syntax)
 #'   applied to every row, unless \code{jobs} carries a \code{color} column or a
 #'   box supplies its own \code{color}. (default = \code{"black"})
-#' @param vcodec A string naming the output video codec applied to every row,
-#'   unless \code{jobs} carries a \code{vcodec} column. (default =
+#' @param video_codec A string naming the output video codec applied to every row,
+#'   unless \code{jobs} carries a \code{video_codec} column. (default =
 #'   \code{"libx264"})
 #' @param pixel_format A string naming the output pixel format applied to every
 #'   row, unless \code{jobs} carries a \code{pixel_format} column.
@@ -627,7 +627,7 @@ derive_anonymized_names <- function(input) {
 #' # run = FALSE compiles one command per input without calling FFmpeg
 #' anonymize_video_batch(jobs, run = FALSE)
 #' @export
-anonymize_video_batch <- function(jobs, color = "black", vcodec = "libx264",
+anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264",
                              pixel_format = "yuv420p", run = TRUE,
                              parallel = FALSE, ...) {
 
@@ -670,7 +670,7 @@ anonymize_video_batch <- function(jobs, color = "black", vcodec = "libx264",
   # here rather than as an opaque FFmpeg error mid-batch (M11 parity lesson).
   # Value-level checks (valid color/codec/pixfmt tokens) are inherited per row
   # from anonymize_pipeline()'s guards.
-  str_cols <- c("color", "vcodec", "pixel_format")
+  str_cols <- c("color", "video_codec", "pixel_format")
   for (col in intersect(str_cols, names(jobs))) {
     if (!is.character(jobs[[col]]) || anyNA(jobs[[col]])) {
       cli::cli_abort("The {.field {col}} column of {.arg jobs} must be character (no {.val {NA}}).")
@@ -706,7 +706,7 @@ anonymize_video_batch <- function(jobs, color = "black", vcodec = "libx264",
       anonymize_pipeline(
         input, output, regions,
         color = pick("color", color),
-        vcodec = pick("vcodec", vcodec),
+        video_codec = pick("video_codec", video_codec),
         pixel_format = pick("pixel_format", pixel_format)
       )
     },
@@ -1030,21 +1030,21 @@ ffmpeg_encoders <- function(sort_by_type = TRUE) {
 #' files (with the same encoding) based on pairs of start and stop timestamps.
 #' Segment video files will be named by taking the name of \code{infile} and
 #' appending a suffix of an underscore (_) and an integer indicating which
-#' segment (based on the order provided in \code{ts_start} and \code{ts_stop}).
+#' segment (based on the order provided in \code{start} and \code{end}).
 #'
 #' @param infile A string containing the path to a video file.
-#' @param ts_start A vector containing one or more timestamps indicating the
+#' @param start A vector containing one or more timestamps indicating the
 #'   start of each segment to create. Can be either a numeric vector indicating
 #'   seconds or a character vector with time duration syntax. Must have the same
-#'   length as \code{ts_stop}.
-#' @param ts_stop A vector containing one or more timestamps indicating the stop
+#'   length as \code{end}.
+#' @param end A vector containing one or more timestamps indicating the stop
 #'   of each segment to create. Can be either a numeric vector indicating
 #'   seconds or a character vector with time duration syntax. Must have the same
-#'   length as \code{ts_start}.
+#'   length as \code{start}.
 #' @param outfiles Either NULL or a character vector indicating the filename
 #'   (with extension) for each segment to create. If NULL, will append a
 #'   zero-padded integer to \code{infile}. If not NULL, must have the same
-#'   length as \code{ts_start}.
+#'   length as \code{start}.
 #' @param reencode A logical passed to \code{\link{ffm_seek}}: cut each segment
 #'   frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
 #'   lossless copy that snaps to keyframes (\code{FALSE}). See \code{ffm_seek}
@@ -1066,41 +1066,41 @@ ffmpeg_encoders <- function(sort_by_type = TRUE) {
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # Two segments; run = FALSE compiles one command per segment
-#' segment_video(video, ts_start = c(0, 0.5), ts_stop = c(0.5, 1), run = FALSE)
+#' segment_video(video, start = c(0, 0.5), end = c(0.5, 1), run = FALSE)
 #' @export
 segment_video <- function(infile,
-                          ts_start,
-                          ts_stop,
+                          start,
+                          end,
                           outfiles = NULL,
                           reencode = TRUE,
                           run = TRUE,
                           parallel = FALSE) {
 
   check_file_exists(infile)
-  if (!(is.numeric(ts_start) || is.character(ts_start))) {
-    cli::cli_abort("{.arg ts_start} must be a numeric or character vector.")
+  if (!(is.numeric(start) || is.character(start))) {
+    cli::cli_abort("{.arg start} must be a numeric or character vector.")
   }
-  if (!(is.numeric(ts_stop) || is.character(ts_stop))) {
-    cli::cli_abort("{.arg ts_stop} must be a numeric or character vector.")
+  if (!(is.numeric(end) || is.character(end))) {
+    cli::cli_abort("{.arg end} must be a numeric or character vector.")
   }
-  if (length(ts_start) != length(ts_stop)) {
-    cli::cli_abort("{.arg ts_start} and {.arg ts_stop} must have the same length.")
+  if (length(start) != length(end)) {
+    cli::cli_abort("{.arg start} and {.arg end} must have the same length.")
   }
-  if (!is.null(outfiles) && length(outfiles) != length(ts_start)) {
-    cli::cli_abort("{.arg outfiles} must have the same length as {.arg ts_start}.")
+  if (!is.null(outfiles) && length(outfiles) != length(start)) {
+    cli::cli_abort("{.arg outfiles} must have the same length as {.arg start}.")
   }
   rlang::check_bool(reencode)
 
   # If no names are provided, derive per-segment names from the input file.
   if (is.null(outfiles)) {
-    outfiles <- derive_segment_names(rep(infile, length(ts_start)))
+    outfiles <- derive_segment_names(rep(infile, length(start)))
   }
 
   # Fan-out (one input -> many outputs) is a Layer 2 concern: build one
   # single-output seek pipeline per segment and run them through ffm_batch
   # (D-M03-2). The engine stays single-output (D003).
   jobs <- tibble::tibble(
-    input = infile, output = outfiles, start = ts_start, end = ts_stop
+    input = infile, output = outfiles, start = start, end = end
   )
   ffm_batch(
     jobs,
@@ -1451,7 +1451,7 @@ derive_standardized_names <- function(input) {
 #'   Because standardization is one-input-to-one-output, a duplicated
 #'   \code{input} with no \code{output} column would collide and is rejected.
 #'   Each of the five standardization knobs — \code{width}, \code{height},
-#'   \code{fps}, \code{vcodec}, \code{pixel_format} — may also appear as a
+#'   \code{fps}, \code{video_codec}, \code{pixel_format} — may also appear as a
 #'   column to override the corresponding argument on a per-row basis; rows (or
 #'   knobs) that omit the column fall back to the argument's value. Any other
 #'   columns are ignored.
@@ -1463,8 +1463,8 @@ derive_standardized_names <- function(input) {
 #' @param fps Optional target frame rate applied to every row, unless
 #'   \code{jobs} carries an \code{fps} column. (default = \code{NULL}, i.e.
 #'   leave the frame rate unchanged)
-#' @param vcodec A string naming the video codec applied to every row, unless
-#'   \code{jobs} carries a \code{vcodec} column. (default = \code{"libx264"})
+#' @param video_codec A string naming the video codec applied to every row, unless
+#'   \code{jobs} carries a \code{video_codec} column. (default = \code{"libx264"})
 #' @param pixel_format A string naming the pixel format applied to every row,
 #'   unless \code{jobs} carries a \code{pixel_format} column.
 #'   (default = \code{"yuv420p"})
@@ -1499,7 +1499,7 @@ derive_standardized_names <- function(input) {
 #' standardize_video_batch(jobs, run = FALSE)
 #' @export
 standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NULL,
-                               vcodec = "libx264", pixel_format = "yuv420p",
+                               video_codec = "libx264", pixel_format = "yuv420p",
                                run = TRUE, parallel = FALSE, ...) {
 
   if (!is.data.frame(jobs)) {
@@ -1532,7 +1532,7 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
       cli::cli_abort("The {.field {col}} column of {.arg jobs} must not contain {.val {NA}}.")
     }
   }
-  str_cols <- c("vcodec", "pixel_format")
+  str_cols <- c("video_codec", "pixel_format")
   for (col in intersect(str_cols, names(jobs))) {
     if (!is.character(jobs[[col]]) || anyNA(jobs[[col]])) {
       cli::cli_abort("The {.field {col}} column of {.arg jobs} must be character (no {.val {NA}}).")
@@ -1570,7 +1570,7 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
         width = pick("width", width),
         height = pick("height", height),
         fps = pick("fps", fps),
-        vcodec = pick("vcodec", vcodec),
+        video_codec = pick("video_codec", video_codec),
         pixel_format = pick("pixel_format", pixel_format)
       )
     },

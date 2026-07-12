@@ -9,7 +9,7 @@ anonymize_video(
   outfile,
   regions,
   color = "black",
-  vcodec = "libx264",
+  video_codec = "libx264",
   pixel_format = "yuv420p",
   run = TRUE
 )
@@ -26,7 +26,7 @@ Details.}
 \item{color}{A string naming the default fill color in FFmpeg color syntax,
 used for any row without its own \code{color} (default \code{"black"}).}
 
-\item{vcodec}{A string naming the output video codec (default
+\item{video_codec}{A string naming the output video codec (default
 \code{"libx264"}).}
 
 \item{pixel_format}{A string naming the output pixel format (default
@@ -54,7 +54,7 @@ top-left corner and \code{width}/\code{height} the size. An optional
 box is a solid fill (FFmpeg's \code{drawbox} with \code{t=fill}); hollow
 outlines are intentionally not offered.
 
-Because a filter is applied, the video is re-encoded (\code{vcodec} /
+Because a filter is applied, the video is re-encoded (\code{video_codec} /
 \code{pixel_format}, defaulting to H.264 / \code{yuv420p}); odd source
 dimensions are floored to even so the output always encodes (a
 \code{yuv420p}/\code{libx264} requirement, and a no-op for already-even

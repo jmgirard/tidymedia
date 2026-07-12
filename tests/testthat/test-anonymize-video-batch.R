@@ -74,7 +74,7 @@ test_that("anonymize_video_batch() honors per-row knob columns", {
       data.frame(x = 0, y = 0, width = 10, height = 10)
     ),
     color        = c("red", "white"),
-    vcodec       = c("libx264", "libx265"),
+    video_codec       = c("libx264", "libx265"),
     pixel_format = c("yuv420p", "yuv422p")
   )
   res <- anonymize_video_batch(jobs, run = FALSE)
@@ -113,7 +113,7 @@ test_that("anonymize_video_batch() scalar arg applies to every row without a col
       data.frame(x = 0, y = 0, width = 10, height = 10)
     )
   )
-  res <- anonymize_video_batch(jobs, color = "red", vcodec = "libx265", run = FALSE)
+  res <- anonymize_video_batch(jobs, color = "red", video_codec = "libx265", run = FALSE)
   for (cmd in res$command) {
     expect_match(cmd, "c=red:t=fill", fixed = TRUE)
     expect_match(cmd, "-codec:v libx265", fixed = TRUE)

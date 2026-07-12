@@ -7,7 +7,7 @@
 anonymize_video_batch(
   jobs,
   color = "black",
-  vcodec = "libx264",
+  video_codec = "libx264",
   pixel_format = "yuv420p",
   run = TRUE,
   parallel = FALSE,
@@ -25,7 +25,7 @@ row by appending \code{_anonymized} to each input's basename, keeping the
 input's extension (e.g. \code{clip.mkv} becomes \code{clip_anonymized.mkv}).
 Because anonymization is one-input-to-one-output, a duplicated \code{input}
 with no \code{output} column would collide and is rejected. Each of the
-three encode knobs — \code{color}, \code{vcodec}, \code{pixel_format} — may
+three encode knobs — \code{color}, \code{video_codec}, \code{pixel_format} — may
 also appear as a column to override the corresponding argument on a per-row
 basis; rows (or knobs) that omit the column fall back to the argument's
 value. Any other columns are ignored.}
@@ -34,8 +34,8 @@ value. Any other columns are ignored.}
 applied to every row, unless \code{jobs} carries a \code{color} column or a
 box supplies its own \code{color}. (default = \code{"black"})}
 
-\item{vcodec}{A string naming the output video codec applied to every row,
-unless \code{jobs} carries a \code{vcodec} column. (default =
+\item{video_codec}{A string naming the output video codec applied to every row,
+unless \code{jobs} carries a \code{video_codec} column. (default =
 \code{"libx264"})}
 
 \item{pixel_format}{A string naming the output pixel format applied to every

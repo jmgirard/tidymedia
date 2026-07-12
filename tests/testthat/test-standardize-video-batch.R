@@ -54,7 +54,7 @@ test_that("standardize_video_batch() honors per-row knob columns", {
     output       = c("a.mp4", "b.mp4", "c.mp4"),
     width        = c(640, 320, 1280),
     fps          = c(24, 25, 30),
-    vcodec       = c("libx264", "libx265", "libx264"),
+    video_codec       = c("libx264", "libx265", "libx264"),
     pixel_format = c("yuv420p", "yuv422p", "yuv444p")
   )
   res <- standardize_video_batch(jobs, run = FALSE)
@@ -83,7 +83,7 @@ test_that("standardize_video_batch() knob column overrides the scalar arg per ro
 test_that("standardize_video_batch() scalar arg applies to every row without a column", {
   f <- make_input()
   jobs <- tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"))
-  res <- standardize_video_batch(jobs, width = 512, vcodec = "libx265", run = FALSE)
+  res <- standardize_video_batch(jobs, width = 512, video_codec = "libx265", run = FALSE)
   for (cmd in res$command) {
     expect_match(cmd, "scale=w=512:h=-2", fixed = TRUE)
     expect_match(cmd, "-codec:v libx265", fixed = TRUE)
@@ -164,10 +164,10 @@ test_that("standardize_video_batch() rejects an NA in a dimension column at the 
   expect_error(standardize_video_batch(jobs, run = FALSE), "fps")
 })
 
-test_that("standardize_video_batch() rejects a non-character vcodec column", {
+test_that("standardize_video_batch() rejects a non-character video_codec column", {
   f <- make_input()
-  jobs <- tibble::tibble(input = f, output = "a.mp4", vcodec = 5)
-  expect_error(standardize_video_batch(jobs, run = FALSE), "vcodec")
+  jobs <- tibble::tibble(input = f, output = "a.mp4", video_codec = 5)
+  expect_error(standardize_video_batch(jobs, run = FALSE), "video_codec")
 })
 
 # Execution + ffm_batch forwarding (binary-gated) -------------------------

@@ -13,7 +13,7 @@ _Last hygiene check: 2026-07-12 (M10 planned)_
 | M07 | Complete the blessed multi-input verbs | done | M06 | — | milestones/archive/M07-multi-input-verbs.md |
 | M08 | Verification & provenance | done | M04, M06 | normal | milestones/archive/M08-verification-provenance.md |
 | M09 | Dataframe-driven batch segmentation | done | — | normal | milestones/archive/M09-batch-segmentation.md |
-| M10 | segment_videos() parity polish | planned | — | normal | milestones/M10-segment-videos-polish.md |
+| M10 | segment_videos() parity polish | review | — | normal | milestones/M10-segment-videos-polish.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

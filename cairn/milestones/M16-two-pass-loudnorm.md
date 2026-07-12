@@ -96,7 +96,7 @@ analyze-then-build execution pattern.
       `linear` through `normalize_audio_pipeline()`
       ([R/ffmpeg.R:438](R/ffmpeg.R)) so it reuses channels/`sample_rate`/`-c:v copy`
       parity. Pure test with a fixed measured-values fixture (AC2).
-- [ ] T4 — Add the internal stderr parser: extract the five measured values from a
+- [x] T4 — Add the internal stderr parser: extract the five measured values from a
       loudnorm JSON block via regex, with a clean abort when absent/malformed.
       Test over a recorded-stderr fixture, including a malformed case (AC3).
 - [ ] T5 — Add `two_pass = FALSE` to `normalize_audio()`
@@ -129,6 +129,10 @@ analyze-then-build execution pattern.
   string unchanged. man/ffm_loudnorm.Rd regenerated.
 - 2026-07-12: T3 done — normalize_audio_pipeline() gained `measured=` that routes
   into a linear correction; shaping (copy/downmix/resample) parity preserved.
+- 2026-07-12: T4 done — R/loudnorm_two_pass.R: analysis-pass builder (bare
+  loudnorm + print_format=json + -f null -) and stderr parser (regex, no JSON
+  dep) with clean abort on absent/partial/non-finite. Recorded real FFmpeg
+  fixture at tests/testthat/fixtures/loudnorm-analysis.txt.
 
 ## Decisions
 

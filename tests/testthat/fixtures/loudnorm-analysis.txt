@@ -1,0 +1,46 @@
+Input #0, mov,mp4,m4a,3gp,3g2,mj2, from 'inst/extdata/sample.mp4':
+  Metadata:
+    major_brand     : isom
+    minor_version   : 512
+    compatible_brands: isomiso2avc1mp41
+    encoder         : Lavf62.12.102
+  Duration: 00:00:01.00, start: 0.000000, bitrate: 141 kb/s
+  Stream #0:0[0x1](und): Video: h264 (High) (avc1 / 0x31637661), yuv420p(progressive), 320x240 [SAR 1:1 DAR 4:3], 54 kb/s, 15 fps, 15 tbr, 15360 tbn (default)
+    Metadata:
+      handler_name    : VideoHandler
+      encoder         : Lavc62.28.102 libx264
+  Stream #0:1[0x2](und): Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, mono, fltp, 70 kb/s (default)
+    Metadata:
+      handler_name    : SoundHandler
+Stream mapping:
+  Stream #0:0 -> #0:0 (h264 (native) -> wrapped_avframe (native))
+  Stream #0:1 -> #0:1 (aac (native) -> pcm_s16le (native))
+Output #0, null, to 'pipe:':
+  Metadata:
+    major_brand     : isom
+    minor_version   : 512
+    compatible_brands: isomiso2avc1mp41
+    encoder         : Lavf62.12.102
+  Stream #0:0(und): Video: wrapped_avframe, yuv420p(progressive), 320x240 [SAR 1:1 DAR 4:3], q=2-31, 200 kb/s, 15 fps, 15 tbn (default)
+    Metadata:
+      encoder         : Lavc62.28.102 wrapped_avframe
+      handler_name    : VideoHandler
+  Stream #0:1(und): Audio: pcm_s16le, 192000 Hz, mono, s16, 3072 kb/s (default)
+    Metadata:
+      encoder         : Lavc62.28.102 pcm_s16le
+      handler_name    : SoundHandler
+[Parsed_loudnorm_0 @ 0xa90c45980] 
+{
+	"input_i" : "-21.85",
+	"input_tp" : "-17.71",
+	"input_lra" : "0.00",
+	"input_thresh" : "-31.85",
+	"output_i" : "-22.98",
+	"output_tp" : "-18.86",
+	"output_lra" : "0.00",
+	"output_thresh" : "-32.98",
+	"normalization_type" : "linear",
+	"target_offset" : "-0.02"
+}
+[out#0/null @ 0xa90c44300] video:6KiB audio:383KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown
+frame=   15 fps=0.0 q=-0.0 Lsize=N/A time=00:00:01.00 bitrate=N/A speed= 126x elapsed=0:00:00.00    

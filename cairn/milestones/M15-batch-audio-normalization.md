@@ -52,20 +52,38 @@ built over `ffm_batch()` (D007) — mirroring the M12 → M13 (scalar → batch)
 
 ## Tasks
 
-- [ ] T1 — Confirm/extract the shared `normalize_audio_pipeline()` helper (from
+- [x] T1 — Confirm/extract the shared `normalize_audio_pipeline()` helper (from
       M14 T3) carrying per-value validation, so the batch front door needs only
       column type/NA guards, not re-implemented value checks (M13 lesson).
-- [ ] T2 — Add `normalize_audios(jobs, run = TRUE, …)` batch sibling over
+- [x] T2 — Add `normalize_audios(jobs, run = TRUE, …)` batch sibling over
       `ffm_batch()`, forwarding batch params after `...` (M09 lesson);
       tests-first for compile + per-row validation parity.
-- [ ] T3 — Add an execution test (`skip_if` binary absent) on a 2-row jobs
+- [x] T3 — Add an execution test (`skip_if` binary absent) on a 2-row jobs
       tibble producing non-empty, audio-decodable outputs.
-- [ ] T4 — Roxygen + `devtools::document()`; add to the `@family` lists and to
+- [x] T4 — Roxygen + `devtools::document()`; add to the `@family` lists and to
       DESIGN.md function families; `devtools::check()` clean.
 
 ## Work log
 
 - 2026-07-12: created by /milestone-plan.
+- 2026-07-12: T1 — verified `normalize_audio_pipeline()` (R/ffmpeg.R:438) already
+  carries per-value validation (loudness via `ffm_loudnorm()`, whole
+  channels/sample_rate via `check_number_whole()`); no extraction needed, batch
+  front door only adds column type/NA guards.
+- 2026-07-12: T2/T3 — added `normalize_audios()` + `derive_normalized_names()`
+  (R/ffmpeg.R) as a thin `ffm_batch()` fan-out over the shared pipeline,
+  modelled on `standardize_videos()`; tests in
+  tests/testthat/test-normalize-audios.R (compile-parity, per-row knob
+  overrides, auto-naming/collision, front-door + inherited per-element value
+  parity, `...` forwarding, binary-gated decodable-output + verify). 64 pass,
+  0 fail (ffmpeg present).
+- 2026-07-12: T4 — `document()` regenerated NAMESPACE + man/normalize_audios.Rd;
+  `devtools::check()` clean (zero errors/warnings/notes). Minor deviation: the
+  DESIGN.md Layer-2 list enumerates scalar verbs only (the batch siblings
+  `standardize_videos`/`extract_frames`/`segment_videos` are not individually
+  listed — they're covered by the D007 batch-runner line), so `normalize_audios`
+  was not added there to preserve that convention; the `@family task verb
+  functions` roxygen tag is set.
 
 ## Decisions
 

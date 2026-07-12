@@ -3,7 +3,7 @@
      Per-section owners are tagged below. -->
 # M21: Batch fixed-region anonymization verb
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M20
 - **Principles touched:** IP1, IP2
@@ -76,7 +76,7 @@ outputs (M19 parity lesson).
       schema-parity test vs the scalar path (M19 trick).
 - [x] T4: Execution test (`skip_if` ffmpeg absent): multi-input jobs table from
       `sample.mp4`; assert each output exists and is valid.
-- [ ] T5: `devtools::document()`, `devtools::test()`, `devtools::check()` to OK
+- [x] T5: `devtools::document()`, `devtools::test()`, `devtools::check()` to OK
       (0/0/0); wordlist if needed; confirm `Status: OK` in `00check.log`.
 
 ## Work log
@@ -93,6 +93,9 @@ outputs (M19 parity lesson).
   per-box color, knob overrides, auto-naming/collision, front-door aborts,
   inherited per-region validation reported by `In index: N`, schema parity vs
   a direct ffm_batch call, and binary-gated execution/verify/manifest. 60 pass.
+- 2026-07-12: T5 — full suite 870 pass / 0 fail; `devtools::check()` Status: OK
+  (0/0/0) after `spelling::update_wordlist()` added anonymization/anonymize/
+  reproducibly (M17 masked-NOTE lesson). Status → review.
 
 ## Decisions
 

@@ -23,3 +23,8 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   *per-element* validation (wholeness, finiteness), not just column type — a
   column-type-only check silently admits values the scalar verb rejects and
   diverges from the sibling's own documented contract (review finding, score 82).
+- 2026-07-12 (M12): a Layer-2 verb that re-encodes video (sets `-c:v`) will
+  silently transcode audio and *reject odd dimensions* under libx264/yuv420p
+  (0-byte output) unless it also stream-copies audio (`-c:a copy`) and
+  floor-crops to even dimensions — mirror `format_for_web()`'s guards. Test
+  re-encode verbs against an odd-dimensioned source and a non-target audio codec.

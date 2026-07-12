@@ -48,6 +48,7 @@ reference:
   - crop_video
   - format_for_web
   - segment_video
+  - segment_videos
   - concatenate_videos
   - compare_videos
   - picture_in_picture

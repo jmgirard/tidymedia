@@ -98,7 +98,7 @@ files from one jobs tibble, sharing its cut logic with `segment_video()`.
 - [x] T4: Add a binary-gated execution test proving `verify`/`manifest`
       forwarding (`verified` column present; `ffm_manifest()` reads the
       attached manifest) and that segments are written.
-- [ ] T5: Roxygen docs for `segment_videos()` with a runnable `run = FALSE`
+- [x] T5: Roxygen docs for `segment_videos()` with a runnable `run = FALSE`
       example and `@seealso segment_video`/`ffm_batch`; run
       `devtools::document()`; add the `_pkgdown.yml` reference row.
 - [ ] T6: Add the NEWS bullet; run `devtools::check()` to green; add the two
@@ -117,6 +117,8 @@ files from one jobs tibble, sharing its cut logic with `segment_video()`.
   `test-segment-videos.R`, 25 pass incl. binary-gated verify/manifest
   forwarding). Column contract validated with `cli::cli_abort()`; `...`
   forwards to `ffm_batch()`. Roxygen written (document() in T5).
+- 2026-07-12: T5 — `document()` (export + `segment_videos.Rd`, family
+  cross-links refreshed); added `_pkgdown.yml` reference row.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local; promote

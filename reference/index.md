@@ -82,6 +82,8 @@ Thin wrappers over the builder for common preprocessing jobs.
   : Re-encode a video for web playback
 - [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
   : Standardize a video to a reproducible format
+- [`standardize_videos()`](https://jmgirard.github.io/tidymedia/reference/standardize_videos.md)
+  : Standardize Many Videos From a Jobs Table
 - [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
   : Segment Video
 - [`segment_videos()`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md)

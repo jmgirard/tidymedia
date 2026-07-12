@@ -90,7 +90,8 @@ Other task verb functions:
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
 [`segment_videos()`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md),
 [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
-[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
+[`standardize_videos()`](https://jmgirard.github.io/tidymedia/reference/standardize_videos.md)
 
 ## Examples
 

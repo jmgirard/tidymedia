@@ -22,6 +22,28 @@
   a number of frames per second or an FFmpeg framerate expression such
   as `"30000/1001"`.
 
+### Batch standardization across files
+
+- Added
+  [`standardize_videos()`](https://jmgirard.github.io/tidymedia/reference/standardize_videos.md),
+  a table-driven companion to
+  [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md).
+  Pass a jobs tibble with an `input` column — one row per video — to
+  re-encode many files to a reproducible format in one call. It is a
+  thin wrapper over
+  [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
+  so `...` forwards batch options such as `verify`, `manifest`,
+  `checksums`, and `progress`, and each row compiles to a command
+  byte-identical to the equivalent
+  [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+  call. Any of `width`, `height`, `fps`, `vcodec`, and `pixel_format`
+  may appear as a column to override that setting per row, otherwise the
+  function argument applies to every row. The `output` column is
+  optional: when absent, names are derived per input as
+  `<basename>_standardized.<ext>` (keeping the source extension), and a
+  duplicated `input` with no `output` column is rejected rather than
+  silently overwritten.
+
 ### Frame extraction across files
 
 - Added

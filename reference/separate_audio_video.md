@@ -61,7 +61,8 @@ Other task verb functions:
 [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
 [`segment_videos()`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md),
-[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
+[`standardize_videos()`](https://jmgirard.github.io/tidymedia/reference/standardize_videos.md)
 
 ## Examples
 

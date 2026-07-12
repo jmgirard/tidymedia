@@ -92,7 +92,7 @@ analyze-then-build execution pattern.
       them to the `loudnorm=…` string; all validation for the new params lives
       here. Tests-first for both the analysis variant (`print_format=json`) and the
       correction variant (measured + `linear=true`).
-- [ ] T3 — Add the correction-pass builder path: thread measured values +
+- [x] T3 — Add the correction-pass builder path: thread measured values +
       `linear` through `normalize_audio_pipeline()`
       ([R/ffmpeg.R:438](R/ffmpeg.R)) so it reuses channels/`sample_rate`/`-c:v copy`
       parity. Pure test with a fixed measured-values fixture (AC2).
@@ -127,6 +127,8 @@ analyze-then-build execution pattern.
 - 2026-07-12: T2 done — ffm_loudnorm() gained measured_i/tp/lra/thresh, offset,
   linear, print_format (numeric, all-or-none measured set); default single-pass
   string unchanged. man/ffm_loudnorm.Rd regenerated.
+- 2026-07-12: T3 done — normalize_audio_pipeline() gained `measured=` that routes
+  into a linear correction; shaping (copy/downmix/resample) parity preserved.
 
 ## Decisions
 

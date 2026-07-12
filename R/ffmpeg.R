@@ -440,14 +440,25 @@ normalize_audio_pipeline <- function(input, output,
                                      true_peak = -1,
                                      loudness_range = 7,
                                      channels = NULL,
-                                     sample_rate = NULL) {
+                                     sample_rate = NULL,
+                                     measured = NULL) {
   rlang::check_number_whole(channels, min = 1, allow_null = TRUE)
   rlang::check_number_whole(sample_rate, min = 1, allow_null = TRUE)
 
   p <- ffm_files(input, output)
-  # Loudness: EBU R128 loudnorm; ffm_loudnorm() validates the target ranges.
-  p <- ffm_loudnorm(p, target_loudness = target_loudness,
-                    true_peak = true_peak, loudness_range = loudness_range)
+  # Loudness: EBU R128 loudnorm; ffm_loudnorm() validates the target ranges. With
+  # `measured` (the two-pass correction path), feed the analysis-pass values back
+  # and switch to linear normalization so the target is hit precisely (M16).
+  if (is.null(measured)) {
+    p <- ffm_loudnorm(p, target_loudness = target_loudness,
+                      true_peak = true_peak, loudness_range = loudness_range)
+  } else {
+    p <- ffm_loudnorm(p, target_loudness = target_loudness,
+                      true_peak = true_peak, loudness_range = loudness_range,
+                      measured_i = measured$i, measured_tp = measured$tp,
+                      measured_lra = measured$lra, measured_thresh = measured$thresh,
+                      offset = measured$offset, linear = TRUE)
+  }
   # Touch audio only: stream-copy the video bytes unchanged (the inverse of
   # standardize_video()'s audio copy).
   p <- ffm_codec(p, video = "copy")

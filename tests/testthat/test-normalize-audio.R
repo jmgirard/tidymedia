@@ -63,6 +63,34 @@ test_that("normalize_audio() stream-copies video (touches audio only)", {
   expect_no_match(cmd, "-codec:v libx264", fixed = TRUE)
 })
 
+# Two-pass correction builder (M16) ---------------------------------------
+
+test_that("normalize_audio_pipeline() threads measured values into a linear correction", {
+  f <- make_input()
+  measured <- list(i = -27.61, tp = -9.32, lra = 5.90,
+                   thresh = -38.06, offset = 0.30)
+  p <- normalize_audio_pipeline(f, "out.mp4", channels = 1, sample_rate = 48000,
+                                measured = measured)
+  cmd <- ffm_compile(p)
+  expect_match(
+    cmd,
+    paste0("loudnorm=I=-23:TP=-1:LRA=7:measured_I=-27.61:measured_TP=-9.32:",
+           "measured_LRA=5.9:measured_thresh=-38.06:offset=0.3:linear=true"),
+    fixed = TRUE
+  )
+  # The correction pass still rides the shared pipeline's shaping: copy video,
+  # downmix, resample.
+  expect_match(cmd, "-codec:v copy -ac 1 -ar 48000", fixed = TRUE)
+})
+
+test_that("normalize_audio_pipeline() without measured is single-pass (no linear)", {
+  f <- make_input()
+  p <- normalize_audio_pipeline(f, "out.mp4")
+  cmd <- ffm_compile(p)
+  expect_match(cmd, '-af "loudnorm=I=-23:TP=-1:LRA=7"', fixed = TRUE)
+  expect_no_match(cmd, "linear", fixed = TRUE)
+})
+
 # Front-door validation ---------------------------------------------------
 
 test_that("normalize_audio() rejects a missing input file", {

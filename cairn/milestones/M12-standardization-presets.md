@@ -6,7 +6,7 @@
 - **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
-- **Branch/PR:** m12-standardization-presets   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** m12-standardization-presets · https://github.com/jmgirard/tidymedia/pull/14   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 <!-- owner: plan · create; a wrong goal returns to plan, never edited in place -->
@@ -114,7 +114,7 @@ argument set is the one documented standard (see the API tripwire on T4).
   scale/fps/codec/pix_fmt/+faststart (explicit-parameter defaults libx264 +
   yuv420p, resolution/fps untouched by default; single-dim → aspect-preserving
   `-2`). 6 compile/validation tests + 1 binary-gated execution test probing
-  fps/width. `devtools::check()` clean (0/0/0).
+  fps/width. `devtools::check()` clean (0 errors, 0 warnings, 0 notes).
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
@@ -130,3 +130,30 @@ argument set is the one documented standard (see the API tripwire on T4).
 
 ## Review
 <!-- owner: review · exclusive -->
+
+- 2026-07-12 (/milestone-review M12, PR #14). Fresh evidence:
+  - AC1: `ffm_fps(p, 30)` compiles `... -vf "fps=30" ...`; `ffm_fps(p, 0)`
+    aborts. ✓
+  - AC2: full args compile
+    `-y -i "IN" -vf "scale=w=1280:h=720,fps=30" -codec:v libx264 -pix_fmt
+    yuv420p -movflags +faststart "out.mp4"` — matches the hand-written oracle. ✓
+  - AC3: width-only → `scale=w=640:h=-2`; height-only → `scale=w=-2:h=480`;
+    both → `scale=w=640:h=480`; neither → no scale filter. ✓
+  - AC4: two default calls byte-identical (`identical()` TRUE); default cmd
+    `-y -i "IN" -codec:v libx264 -pix_fmt yuv420p -movflags +faststart
+    "out.mp4"`; roxygen `@details` states the standard. ✓
+  - AC5: `width=0`, `fps=-1`, and a missing input each abort; `run=FALSE`
+    returns the command string without invoking FFmpeg. ✓
+  - AC6 (execution): standardized 64×64@10 → 48×32@5 output exists;
+    `get_width()` = 48, `get_framerate()` = 5. ✓
+  - check clean: `devtools::test()` 509 pass / 0 fail / 0 skip;
+    `devtools::check()` 0 errors / 0 warnings / 0 notes. ✓
+- Consistency gate: coverage complete (every AC → ≥1 existing task); pkgdown
+  check clean (both exports present); `document()` no-diff; README in sync;
+  NEWS entry added; no new top-level files; no DESIGN principle changed.
+  `cairn_validate.py` — the only FAIL is a pre-existing false-positive: its
+  date regex `\d{1,4}/\d{1,2}/\d{1,4}` misreads the repo's `check 0/0/0`
+  results shorthand as a date in 7 already-merged **archived** milestones
+  (present on origin/master, outside M12's diff). M12's own file is
+  validator-clean (reworded to "0 errors, 0 warnings, 0 notes"). Flagged as a
+  cairn plugin defect at the approval gate; not patched review-side.

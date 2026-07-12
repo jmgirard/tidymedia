@@ -1,5 +1,18 @@
 # tidymedia (development version)
 
+## Video standardization
+
+* Added `standardize_video()`, a task verb that re-encodes a video to a
+  reproducible, analysis-friendly format in one call. By default it produces
+  H.264 video with `yuv420p` and `+faststart`, leaving resolution and frame
+  rate untouched, so the same input always yields a byte-identical command.
+  Supply `width`/`height` to set the output size (giving only one preserves the
+  aspect ratio with an even output dimension), `fps` to resample the frame
+  rate, and `vcodec`/`pixel_format` to override the codec or pixel format.
+* Added `ffm_fps()`, a builder that appends an `fps` filter to a pipeline,
+  accepting either a number of frames per second or an FFmpeg framerate
+  expression such as `"30000/1001"`.
+
 ## Frame extraction across files
 
 * Added `extract_frames()`, a table-driven companion to `extract_frame()`. Pass

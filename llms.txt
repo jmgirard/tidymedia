@@ -276,6 +276,8 @@ Thin wrappers over the builder for common preprocessing jobs.
   : Extract a media file's audio as an MP3
 - [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
   : Normalize a file's audio loudness (EBU R128)
+- [`normalize_audios()`](https://jmgirard.github.io/tidymedia/reference/normalize_audios.md)
+  : Normalize Many Files' Audio Loudness From a Jobs Table
 - [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md)
   : Crop a video to a rectangular region
 - [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)

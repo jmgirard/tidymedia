@@ -1,24 +1,26 @@
-# Standardize Many Videos From a Jobs Table
+# Normalize Many Files' Audio Loudness From a Jobs Table
 
-Re-encode many input files to a reproducible format from a single jobs
-tibble — a table-driven sibling of
-[`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
-for when you have more than one video to standardize. Each row is one
+Loudness-normalize the audio of many input files (EBU R128) from a
+single jobs tibble — a table-driven sibling of
+[`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
+for when you have more than one file to normalize. Each row is one
 input; the only required column names its source. This is a thin wrapper
 over
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-one reproducible compiled command per input.
+one reproducible compiled command per input, sharing the same
+single-pass `loudnorm` pipeline (and per-value validation) as the scalar
+verb.
 
 ## Usage
 
 ``` r
-standardize_videos(
+normalize_audios(
   jobs,
-  width = NULL,
-  height = NULL,
-  fps = NULL,
-  vcodec = "libx264",
-  pixel_format = "yuv420p",
+  target_loudness = -23,
+  true_peak = -1,
+  loudness_range = 7,
+  channels = NULL,
+  sample_rate = NULL,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -31,39 +33,36 @@ standardize_videos(
 
   A data frame with one row per input and (at least) an `input` column
   (source path). An optional `output` column names the destination; when
-  absent, one is derived per row by appending `_standardized` to each
+  absent, one is derived per row by appending `_normalized` to each
   input's basename, keeping the input's extension (e.g. `clip.mkv`
-  becomes `clip_standardized.mkv`). Because standardization is
+  becomes `clip_normalized.mkv`). Because normalization is
   one-input-to-one-output, a duplicated `input` with no `output` column
-  would collide and is rejected. Each of the five standardization knobs
-  — `width`, `height`, `fps`, `vcodec`, `pixel_format` — may also appear
-  as a column to override the corresponding argument on a per-row basis;
-  rows (or knobs) that omit the column fall back to the argument's
-  value. Any other columns are ignored.
+  would collide and is rejected. Each of the five loudness knobs —
+  `target_loudness`, `true_peak`, `loudness_range`, `channels`,
+  `sample_rate` — may also appear as a column to override the
+  corresponding argument on a per-row basis; rows (or knobs) that omit
+  the column fall back to the argument's value. Any other columns are
+  ignored.
 
-- width, height:
+- target_loudness, true_peak, loudness_range:
 
-  Optional target dimensions applied to every row, unless `jobs` carries
-  a column of the same name (see `jobs`). When only one is given the
-  other is derived to preserve aspect ratio; when neither is given the
-  frame is floor-cropped to even dimensions so odd-sized sources encode.
-  (default = `NULL`)
+  The EBU R128 loudness targets applied to every row, unless `jobs`
+  carries a column of the same name (see `jobs`). Defaults follow EBU
+  Recommendation R 128 (2014): `target_loudness = -23` LUFS,
+  `true_peak = -1` dBTP, `loudness_range = 7` LU.
 
-- fps:
+- channels:
 
-  Optional target frame rate applied to every row, unless `jobs` carries
-  an `fps` column. (default = `NULL`, i.e. leave the frame rate
-  unchanged)
+  The output channel count applied to every row, unless `jobs` carries a
+  `channels` column, e.g. `1` to downmix to mono. `NULL` (default) keeps
+  each source's channel layout.
 
-- vcodec:
+- sample_rate:
 
-  A string naming the video codec applied to every row, unless `jobs`
-  carries a `vcodec` column. (default = `"libx264"`)
-
-- pixel_format:
-
-  A string naming the pixel format applied to every row, unless `jobs`
-  carries a `pixel_format` column. (default = `"yuv420p"`)
+  The output sample rate in Hz applied to every row, unless `jobs`
+  carries a `sample_rate` column. `NULL` (default) lets `loudnorm`
+  choose (it resamples, up to 192 kHz encoder-capped — not the source
+  rate); set this to pin the output rate.
 
 - run:
 
@@ -74,7 +73,7 @@ standardize_videos(
 
   A logical passed to
   [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-  standardize in parallel with furrr (`TRUE`) or sequentially (`FALSE`,
+  normalize in parallel with furrr (`TRUE`) or sequentially (`FALSE`,
   default). Parallelism follows the active
   [`future`](https://future.futureverse.org/reference/plan.html) plan;
   `TRUE` under the default sequential plan runs one input at a time and
@@ -95,16 +94,19 @@ returned by
 the resolved `output` column; when `run = TRUE`, a `success` column,
 plus any columns the forwarded arguments add, e.g. `verified`).
 
+## References
+
+EBU Recommendation R 128 (2014), *Loudness normalisation and permitted
+maximum level of audio signals*; ITU-R BS.1770-4.
+
 ## See also
 
-[`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+[`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
 for the single-input form;
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
 for the batch runner and the arguments forwarded through `...`;
-[`segment_videos`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md)
-and
-[`extract_frames`](https://jmgirard.github.io/tidymedia/reference/extract_frames.md)
-for the other table-driven siblings.
+[`standardize_videos`](https://jmgirard.github.io/tidymedia/reference/standardize_videos.md)
+for the video-side table-driven sibling.
 
 Other task verb functions:
 [`audio_as_mp3()`](https://jmgirard.github.io/tidymedia/reference/audio_as_mp3.md),
@@ -116,27 +118,27 @@ Other task verb functions:
 [`extract_frames()`](https://jmgirard.github.io/tidymedia/reference/extract_frames.md),
 [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
 [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
-[`normalize_audios()`](https://jmgirard.github.io/tidymedia/reference/normalize_audios.md),
 [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
 [`segment_videos()`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md),
 [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
-[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
+[`standardize_videos()`](https://jmgirard.github.io/tidymedia/reference/standardize_videos.md)
 
 ## Examples
 
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 jobs <- tibble::tibble(
-  input  = c(video, video),
-  output = c("a.mp4", "b.mp4"),
-  width  = c(640, 320)
+  input           = c(video, video),
+  output          = c("a.mp4", "b.mp4"),
+  target_loudness = c(-23, -16)
 )
 # run = FALSE compiles one command per input without calling FFmpeg
-standardize_videos(jobs, run = FALSE)
+normalize_audios(jobs, run = FALSE)
 #> # A tibble: 2 × 4
-#>   input                                                     output width command
-#>   <chr>                                                     <chr>  <dbl> <chr>  
-#> 1 /home/runner/work/_temp/Library/tidymedia/extdata/sample… a.mp4    640 "-y -i…
-#> 2 /home/runner/work/_temp/Library/tidymedia/extdata/sample… b.mp4    320 "-y -i…
+#>   input                                           output target_loudness command
+#>   <chr>                                           <chr>            <dbl> <chr>  
+#> 1 /home/runner/work/_temp/Library/tidymedia/extd… a.mp4              -23 "-y -i…
+#> 2 /home/runner/work/_temp/Library/tidymedia/extd… b.mp4              -16 "-y -i…
 ```

@@ -45,6 +45,7 @@ Other task verb functions:
 [`extract_frames()`](https://jmgirard.github.io/tidymedia/reference/extract_frames.md),
 [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
 [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
+[`normalize_audios()`](https://jmgirard.github.io/tidymedia/reference/normalize_audios.md),
 [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
 [`segment_videos()`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md),
@@ -57,5 +58,5 @@ Other task verb functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 concatenate_videos(c(video, video), "joined.mp4", run = FALSE)
-#> [1] "-y -f concat -safe 0 -i \"/tmp/RtmpWInKF0/ffm-concat1fbe1f485ed4.txt\" -codec:v copy -codec:a copy -map 0 \"joined.mp4\""
+#> [1] "-y -f concat -safe 0 -i \"/tmp/RtmpRRIZxQ/ffm-concat1fb566fdd64d.txt\" -codec:v copy -codec:a copy -map 0 \"joined.mp4\""
 ```

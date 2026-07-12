@@ -66,16 +66,22 @@ name its source, destination, and cut points. This is a thin wrapper over
 
 <dl><dt id="arg-jobs">jobs<a class="anchor" aria-label="anchor" href="#arg-jobs"></a></dt>
 <dd><p>A data frame with one row per segment and (at least) the columns
-<code>input</code> (source path), <code>output</code> (destination path), <code>start</code>
-and <code>end</code> (cut points; a numeric column of seconds or a character
-column with time-duration syntax). Any other columns are ignored.</p></dd>
+<code>input</code> (source path), <code>start</code> and <code>end</code> (cut points; a
+numeric column of seconds or a character column with time-duration syntax).
+Two optional columns are recognized: <code>output</code> (destination path) and
+<code>reencode</code> (a logical; see the <code>reencode</code> argument). If
+<code>output</code> is absent, one is derived per row by appending
+<code>_&lt;n&gt;.&lt;ext&gt;</code> to each input's basename, with the segment number
+restarting at 1 for each input file (the same rule as
+<code><a href="segment_video.html">segment_video</a></code>). Any other columns are ignored.</p></dd>
 
 
 <dt id="arg-reencode">reencode<a class="anchor" aria-label="anchor" href="#arg-reencode"></a></dt>
 <dd><p>A logical passed to <code><a href="ffm_seek.html">ffm_seek</a></code>: cut each segment
 frame-accurately by re-encoding (<code>TRUE</code>, default) or with a fast,
 lossless copy that snaps to keyframes (<code>FALSE</code>). See <code>ffm_seek</code>
-for the trade-off. Applies to every row.</p></dd>
+for the trade-off. Applies to every row, unless <code>jobs</code> carries a
+<code>reencode</code> column, which overrides this argument on a per-row basis.</p></dd>
 
 
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>
@@ -101,7 +107,8 @@ time and warns. Set a plan first, e.g.
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The <a href="https://tibble.tidyverse.org/reference/tibble-package.html" class="external-link">tibble</a> returned by
 <code><a href="ffm_batch.html">ffm_batch</a></code>: <code>jobs</code> with an added <code>command</code> column
-(and, when <code>run = TRUE</code>, a <code>success</code> column, plus any columns the
+(and, when <code>output</code> was derived, the resolved <code>output</code> column;
+when <code>run = TRUE</code>, a <code>success</code> column, plus any columns the
 forwarded arguments add, e.g. <code>verified</code>).</p>
     </div>
     <div class="section level2">

@@ -20,9 +20,15 @@ segment_videos(jobs, reencode = TRUE, run = TRUE, parallel = FALSE, ...)
 - jobs:
 
   A data frame with one row per segment and (at least) the columns
-  `input` (source path), `output` (destination path), `start` and `end`
-  (cut points; a numeric column of seconds or a character column with
-  time-duration syntax). Any other columns are ignored.
+  `input` (source path), `start` and `end` (cut points; a numeric column
+  of seconds or a character column with time-duration syntax). Two
+  optional columns are recognized: `output` (destination path) and
+  `reencode` (a logical; see the `reencode` argument). If `output` is
+  absent, one is derived per row by appending `_<n>.<ext>` to each
+  input's basename, with the segment number restarting at 1 for each
+  input file (the same rule as
+  [`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)).
+  Any other columns are ignored.
 
 - reencode:
 
@@ -30,7 +36,9 @@ segment_videos(jobs, reencode = TRUE, run = TRUE, parallel = FALSE, ...)
   [`ffm_seek`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md):
   cut each segment frame-accurately by re-encoding (`TRUE`, default) or
   with a fast, lossless copy that snaps to keyframes (`FALSE`). See
-  `ffm_seek` for the trade-off. Applies to every row.
+  `ffm_seek` for the trade-off. Applies to every row, unless `jobs`
+  carries a `reencode` column, which overrides this argument on a
+  per-row basis.
 
 - run:
 
@@ -59,9 +67,9 @@ segment_videos(jobs, reencode = TRUE, run = TRUE, parallel = FALSE, ...)
 The [tibble](https://tibble.tidyverse.org/reference/tibble-package.html)
 returned by
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-`jobs` with an added `command` column (and, when `run = TRUE`, a
-`success` column, plus any columns the forwarded arguments add, e.g.
-`verified`).
+`jobs` with an added `command` column (and, when `output` was derived,
+the resolved `output` column; when `run = TRUE`, a `success` column,
+plus any columns the forwarded arguments add, e.g. `verified`).
 
 ## References
 

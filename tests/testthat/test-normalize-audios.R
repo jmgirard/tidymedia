@@ -42,6 +42,36 @@ test_that("normalize_audios() default knobs match the scalar defaults", {
   expect_match(res$command[[1]], "-codec:v copy", fixed = TRUE)
 })
 
+# Single-pass characterization (guards the two_pass = FALSE default) -------
+
+test_that("normalize_audios(run = FALSE) single-pass command column is unchanged (characterization)", {
+  # Pin the exact single-pass command for every knob so the two_pass = FALSE
+  # default is provably byte-for-byte unchanged as the two-pass path is added
+  # (AC1). Scrub the temp input path to a stable token for a deterministic pin.
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input           = c(f, f),
+    output          = c("a.mp4", "b.mp4"),
+    target_loudness = c(-23, -16),
+    true_peak       = c(-1, -1.5),
+    loudness_range  = c(7, 11),
+    channels        = c(2, 1),
+    sample_rate     = c(48000, 44100)
+  )
+  res <- normalize_audios(jobs, run = FALSE)
+  scrub <- function(cmd) gsub(f, "<in>", cmd, fixed = TRUE)
+  expect_equal(
+    scrub(res$command[[1]]),
+    paste0('-y -i "<in>" -af "loudnorm=I=-23:TP=-1:LRA=7" ',
+           '-codec:v copy -ac 2 -ar 48000 "a.mp4"')
+  )
+  expect_equal(
+    scrub(res$command[[2]]),
+    paste0('-y -i "<in>" -af "loudnorm=I=-16:TP=-1.5:LRA=11" ',
+           '-codec:v copy -ac 1 -ar 44100 "b.mp4"')
+  )
+})
+
 # Per-row override columns ------------------------------------------------
 
 test_that("normalize_audios() honors per-row knob columns", {

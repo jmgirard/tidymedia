@@ -80,7 +80,7 @@ M14→M15 scalar→batch split applied to the correction pipeline.
 
 ## Tasks
 
-- [ ] T1 — Characterization test first: pin today's single-pass
+- [x] T1 — Characterization test first: pin today's single-pass
       `normalize_audios(run = FALSE)` `command` column so the `two_pass = FALSE`
       default is provably unchanged before touching anything.
 - [ ] T2 — Add the correction-phase builder (`.f`): thread per-row measured
@@ -117,7 +117,17 @@ M14→M15 scalar→batch split applied to the correction pipeline.
   from M16 on 2026-07-12). Planned ahead of M16 implementation; tasks reference
   M16's planned analysis-pass builder, stderr parser, and `ffm_loudnorm()`
   measured params, so may shift if M16's shape changes at implementation.
+- 2026-07-12: T1 done — characterization test pins the single-pass
+  `normalize_audios(run = FALSE)` command column (all five knobs) before the
+  two-pass path is added.
 
 ## Decisions
+
+- 2026-07-12: Measured values surface on the two-pass result as columns
+  `measured_I/measured_TP/measured_LRA/measured_thresh/offset` (FFmpeg-arg
+  spellings), for per-row provenance (question gate).
+- 2026-07-12: `run = FALSE`-not-binary-free batch contract is a faithful
+  fan-out of M16's scalar contract (D013) — proceeded without Fable escalation
+  despite the `irreversible-api` tripwire (question gate).
 
 ## Review

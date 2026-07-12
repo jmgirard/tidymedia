@@ -51,6 +51,8 @@ it.
   : Concatenate Multiple Inputs in an FFmpeg Pipeline
 - [`ffm_drawbox()`](https://jmgirard.github.io/tidymedia/reference/ffm_drawbox.md)
   : Draw a Colored Box on the Videos in an FFmpeg Pipeline
+- [`ffm_loudnorm()`](https://jmgirard.github.io/tidymedia/reference/ffm_loudnorm.md)
+  : Normalize Loudness in an FFmpeg Pipeline
 - [`ffm_output_options()`](https://jmgirard.github.io/tidymedia/reference/ffm_output_options.md)
   : Add Raw Output Options to an FFmpeg Pipeline
 - [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md)
@@ -76,6 +78,8 @@ Thin wrappers over the builder for common preprocessing jobs.
   : Split a media file into separate audio and video files
 - [`audio_as_mp3()`](https://jmgirard.github.io/tidymedia/reference/audio_as_mp3.md)
   : Extract a media file's audio as an MP3
+- [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
+  : Normalize a file's audio loudness (EBU R128)
 - [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md)
   : Crop a video to a rectangular region
 - [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)

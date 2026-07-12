@@ -32,6 +32,7 @@
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_files.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_fps.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_hstack.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_loudnorm.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_manifest.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_map.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm_output_options.html</loc></url>
@@ -60,6 +61,7 @@
 <url><loc>https://jmgirard.github.io/tidymedia/reference/mediainfo_query.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/mediainfo_summary.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/mediainfo_template.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/normalize_audio.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/pad_integers.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/picture_in_picture.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/print.tidymedia_ffm.html</loc></url>

@@ -46,6 +46,7 @@ Other builder functions:
 [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md),
 [`ffm_fps()`](https://jmgirard.github.io/tidymedia/reference/ffm_fps.md),
 [`ffm_hstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md),
+[`ffm_loudnorm()`](https://jmgirard.github.io/tidymedia/reference/ffm_loudnorm.md),
 [`ffm_map()`](https://jmgirard.github.io/tidymedia/reference/ffm_map.md),
 [`ffm_overlay()`](https://jmgirard.github.io/tidymedia/reference/ffm_overlay.md),
 [`ffm_pixel_format()`](https://jmgirard.github.io/tidymedia/reference/ffm_pixel_format.md),

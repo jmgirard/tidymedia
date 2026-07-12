@@ -50,6 +50,7 @@ reference:
   - crop_video
   - format_for_web
   - standardize_video
+  - standardize_videos
   - segment_video
   - segment_videos
   - concatenate_videos

@@ -84,6 +84,8 @@ Thin wrappers over the builder for common preprocessing jobs.
   : Normalize Many Files' Audio Loudness From a Jobs Table
 - [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md)
   : Crop a video to a rectangular region
+- [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
+  : Cover fixed regions of a video with opaque boxes
 - [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
   : Re-encode a video for web playback
 - [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)

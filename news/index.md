@@ -2,6 +2,18 @@
 
 ## tidymedia (development version)
 
+### Fixed-region anonymization
+
+- New
+  [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
+  covers one or more fixed rectangular regions of a video with opaque
+  filled boxes — for redacting a face, a name badge, or any area that
+  stays in one place for the whole clip (there is no motion tracking).
+  Regions are given as a data frame of `x`, `y`, `width`, `height`
+  (numbers or FFmpeg expressions), with an optional per-row `color`. The
+  video is re-encoded reproducibly (H.264 / `yuv420p` by default) and
+  audio is stream-copied unchanged.
+
 ### Graceful handling of silent input in two-pass loudnorm
 
 - Two-pass normalization now handles digitally silent input honestly.

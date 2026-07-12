@@ -358,6 +358,52 @@ test_that("normalize_audios(two_pass = TRUE) survives 2+ silent rows and keeps m
   expect_false(is.na(man$command[[2]]))
 })
 
+test_that("normalize_audios(two_pass = TRUE) keeps the verify/manifest schema when every row is silent (M19)", {
+  skip_if_no_ffmpeg()
+  real <- make_dynamic_audio()   # a real, non-silent clip for the mixed baseline
+  s1 <- make_silent_audio()
+  s2 <- make_silent_audio()
+
+  o1 <- withr::local_tempfile(fileext = ".mp4")
+  o2 <- withr::local_tempfile(fileext = ".mp4")
+  o3 <- withr::local_tempfile(fileext = ".mp4")
+  o4 <- withr::local_tempfile(fileext = ".mp4")
+  spec <- list(audio_codec = "aac")
+
+  # All-silent batch with both opt-ins requested.
+  all_silent <- tibble::tibble(input = c(s1, s2), output = c(o1, o2))
+  expect_warning(
+    res <- normalize_audios(
+      all_silent, two_pass = TRUE, verify = spec, manifest = TRUE,
+      checksums = TRUE
+    ),
+    "silent"
+  )
+  # Mixed batch (same opt-ins) as the schema baseline.
+  mixed <- tibble::tibble(input = c(real, s1), output = c(o3, o4))
+  expect_warning(
+    ref <- normalize_audios(
+      mixed, two_pass = TRUE, verify = spec, manifest = TRUE, checksums = TRUE
+    ),
+    "silent"
+  )
+
+  # AC1: the all-silent result carries the same columns as the mixed one, with a
+  # logical `verified` that is all NA (nothing ran to verify).
+  expect_identical(names(res), names(ref))
+  expect_true(is.logical(res$verified))
+  expect_true(all(is.na(res$verified)))
+
+  # AC2/AC3: a manifest is still attached, one row per job, same columns as the
+  # mixed batch's manifest (including the checksum columns), inputs recorded.
+  man <- ffm_manifest(res)
+  expect_identical(names(man), names(ffm_manifest(ref)))
+  expect_equal(nrow(man), 2L)
+  expect_equal(man$input, all_silent$input)
+  expect_true(all(is.na(man$command)))
+  expect_true(all(c("input_md5", "output_md5") %in% names(man)))
+})
+
 # Execution + ffm_batch forwarding (binary-gated) -------------------------
 
 test_that("normalize_audios() writes non-empty, audio-decodable outputs (binary-gated)", {

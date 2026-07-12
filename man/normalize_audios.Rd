@@ -93,7 +93,12 @@ forwarded arguments add, e.g. \code{verified}). Under \code{two_pass = TRUE}
 the result also carries the five measured columns (\code{measured_I} etc.)
 and a logical \code{silent} column, and the \code{command} column holds the
 linear correction commands (\code{NA} for silent rows, which carry \code{NA}
-measurements and are not normalized).
+measurements and are not normalized). The two-pass result's schema is
+independent of how many rows are silent: the opt-in \code{verified} column
+(under \code{verify}) and provenance manifest (under \code{manifest}, read
+with \code{\link{ffm_manifest}}) are present whenever requested, even when
+\emph{every} row is silent -- silent rows simply carry \code{NA} for those
+outputs.
 }
 \description{
 Loudness-normalize the audio of many input files (EBU R128) from a single

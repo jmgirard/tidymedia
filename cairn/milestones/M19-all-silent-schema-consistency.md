@@ -106,10 +106,10 @@ inconsistency the M18 review surfaced.
       ([R/ffmpeg.R:1460](../../R/ffmpeg.R)) into the
       `bind_two_pass_result()` call (extract from `...`); update the existing
       M18 `bind_two_pass_result()` unit tests for the new signature.
-- [ ] T4 — Document the schema-consistency guarantee in `normalize_audios()`'s
+- [x] T4 — Document the schema-consistency guarantee in `normalize_audios()`'s
       `@return` ([R/ffmpeg.R:1316](../../R/ffmpeg.R)); run
       `devtools::document()`.
-- [ ] T5 — Tests: pure unit tests of the all-silent synthesized schema
+- [x] T5 — Tests: pure unit tests of the all-silent synthesized schema
       (verify / manifest / manifest+checksums flags, no binary) in
       `tests/testthat/test-normalize-audios-two-pass.R`; an ffmpeg-gated
       execution test of a real all-silent batch with `verify=` and
@@ -123,6 +123,8 @@ inconsistency the M18 review surfaced.
 - 2026-07-12: created by /milestone-plan (promoted from the M18-review candidate, scored 78).
 - 2026-07-12: T1 — added `manifest_schema()` as the canonical column template; `build_manifest()` now derives its column set from it (drift guard test passes).
 - 2026-07-12: T2/T3 — all-silent branch of `bind_two_pass_result()` now synthesizes the `verified` column and padded manifest (via `expand_manifest_rows()` over the empty schema); `normalize_audios()` threads verify/manifest/checksums intent from `...`. Existing M18 unit tests unchanged (new params default off); 5 new pure unit tests pass.
+- 2026-07-12: T4 — documented the schema-consistency guarantee in `normalize_audios()`'s `@return`; regenerated `man/normalize_audios.Rd`.
+- 2026-07-12: T5 — added an ffmpeg-gated execution test comparing an all-silent batch's columns + manifest schema against a mixed batch (verify + manifest + checksums). Full test files green (no skips locally).
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local; promote

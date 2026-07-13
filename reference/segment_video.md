@@ -4,16 +4,16 @@ Use FFmpeg to quickly break a single video file into multiple smaller
 video files (with the same encoding) based on pairs of start and stop
 timestamps. Segment video files will be named by taking the name of
 `infile` and appending a suffix of an underscore (\_) and an integer
-indicating which segment (based on the order provided in `ts_start` and
-`ts_stop`).
+indicating which segment (based on the order provided in `start` and
+`end`).
 
 ## Usage
 
 ``` r
 segment_video(
   infile,
-  ts_start,
-  ts_stop,
+  start,
+  end,
   outfiles = NULL,
   reencode = TRUE,
   run = TRUE,
@@ -27,26 +27,26 @@ segment_video(
 
   A string containing the path to a video file.
 
-- ts_start:
+- start:
 
   A vector containing one or more timestamps indicating the start of
   each segment to create. Can be either a numeric vector indicating
   seconds or a character vector with time duration syntax. Must have the
-  same length as `ts_stop`.
+  same length as `end`.
 
-- ts_stop:
+- end:
 
   A vector containing one or more timestamps indicating the stop of each
   segment to create. Can be either a numeric vector indicating seconds
   or a character vector with time duration syntax. Must have the same
-  length as `ts_start`.
+  length as `start`.
 
 - outfiles:
 
   Either NULL or a character vector indicating the filename (with
   extension) for each segment to create. If NULL, will append a
   zero-padded integer to `infile`. If not NULL, must have the same
-  length as `ts_start`.
+  length as `start`.
 
 - reencode:
 
@@ -91,29 +91,29 @@ https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
-[`anonymize_videos()`](https://jmgirard.github.io/tidymedia/reference/anonymize_videos.md),
-[`audio_as_mp3()`](https://jmgirard.github.io/tidymedia/reference/audio_as_mp3.md),
+[`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
 [`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md),
+[`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
 [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
 [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
 [`extract_frame()`](https://jmgirard.github.io/tidymedia/reference/extract_frame.md),
-[`extract_frames()`](https://jmgirard.github.io/tidymedia/reference/extract_frames.md),
+[`extract_frame_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_frame_batch.md),
 [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
 [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
-[`normalize_audios()`](https://jmgirard.github.io/tidymedia/reference/normalize_audios.md),
+[`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md),
 [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
-[`segment_videos()`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md),
+[`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md),
 [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
 [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
-[`standardize_videos()`](https://jmgirard.github.io/tidymedia/reference/standardize_videos.md)
+[`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
 
 ## Examples
 
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 # Two segments; run = FALSE compiles one command per segment
-segment_video(video, ts_start = c(0, 0.5), ts_stop = c(0.5, 1), run = FALSE)
+segment_video(video, start = c(0, 0.5), end = c(0.5, 1), run = FALSE)
 #> # A tibble: 2 × 5
 #>   input                                               output start   end command
 #>   <chr>                                               <chr>  <dbl> <dbl> <chr>  

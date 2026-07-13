@@ -2,7 +2,7 @@
 
 Set the audio and/or video codecs for the output file. Note that you can
 use the command
-[`get_codecs()`](https://jmgirard.github.io/tidymedia/reference/get_codecs.md)
+[`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md)
 to see a list of the codecs included in your FFmpeg version.
 
 ## Usage

@@ -62,8 +62,8 @@ per segment:
 
 segment_video(
   video,
-  ts_start = c(0, 0.5),
-  ts_stop  = c(0.5, 1),
+  start = c(0, 0.5),
+  end  = c(0.5, 1),
   run = FALSE
 )
 #> # A tibble: 2 × 5

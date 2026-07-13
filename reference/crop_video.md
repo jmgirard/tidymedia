@@ -57,22 +57,22 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
-[`anonymize_videos()`](https://jmgirard.github.io/tidymedia/reference/anonymize_videos.md),
-[`audio_as_mp3()`](https://jmgirard.github.io/tidymedia/reference/audio_as_mp3.md),
+[`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
 [`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md),
+[`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
 [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
 [`extract_frame()`](https://jmgirard.github.io/tidymedia/reference/extract_frame.md),
-[`extract_frames()`](https://jmgirard.github.io/tidymedia/reference/extract_frames.md),
+[`extract_frame_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_frame_batch.md),
 [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
 [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
-[`normalize_audios()`](https://jmgirard.github.io/tidymedia/reference/normalize_audios.md),
+[`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md),
 [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
-[`segment_videos()`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md),
+[`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md),
 [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
 [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
-[`standardize_videos()`](https://jmgirard.github.io/tidymedia/reference/standardize_videos.md)
+[`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
 
 ## Examples
 

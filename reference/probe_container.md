@@ -49,9 +49,9 @@ A tibble containing only the requested information.
 
 Other metadata functions:
 [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md),
-[`get_framerate()`](https://jmgirard.github.io/tidymedia/reference/get_framerate.md),
+[`get_frame_rate()`](https://jmgirard.github.io/tidymedia/reference/get_frame_rate.md),
 [`get_height()`](https://jmgirard.github.io/tidymedia/reference/get_height.md),
-[`get_samplingrate()`](https://jmgirard.github.io/tidymedia/reference/get_samplingrate.md),
+[`get_sample_rate()`](https://jmgirard.github.io/tidymedia/reference/get_sample_rate.md),
 [`get_width()`](https://jmgirard.github.io/tidymedia/reference/get_width.md),
 [`mediainfo_parameter()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_parameter.md),
 [`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md),

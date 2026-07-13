@@ -70,33 +70,33 @@ Thin wrappers over the builder for common preprocessing jobs.
 
 - [`extract_frame()`](https://jmgirard.github.io/tidymedia/reference/extract_frame.md)
   : Extract a single frame from a video
-- [`extract_frames()`](https://jmgirard.github.io/tidymedia/reference/extract_frames.md)
+- [`extract_frame_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_frame_batch.md)
   : Extract Still Frames From Many Videos From a Jobs Table
 - [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
   : Extract the audio stream from a media file
 - [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
   : Split a media file into separate audio and video files
-- [`audio_as_mp3()`](https://jmgirard.github.io/tidymedia/reference/audio_as_mp3.md)
-  : Extract a media file's audio as an MP3
+- [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
+  : Extract or convert a media file's audio track
 - [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
   : Normalize a file's audio loudness (EBU R128)
-- [`normalize_audios()`](https://jmgirard.github.io/tidymedia/reference/normalize_audios.md)
+- [`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md)
   : Normalize Many Files' Audio Loudness From a Jobs Table
 - [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md)
   : Crop a video to a rectangular region
 - [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
   : Cover fixed regions of a video with opaque boxes
-- [`anonymize_videos()`](https://jmgirard.github.io/tidymedia/reference/anonymize_videos.md)
+- [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md)
   : Anonymize Many Videos From a Jobs Table
 - [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
   : Re-encode a video for web playback
 - [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
   : Standardize a video to a reproducible format
-- [`standardize_videos()`](https://jmgirard.github.io/tidymedia/reference/standardize_videos.md)
+- [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
   : Standardize Many Videos From a Jobs Table
 - [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
   : Segment Video
-- [`segment_videos()`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md)
+- [`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md)
   : Segment Many Videos From a Jobs Table
 - [`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md)
   : Combine video files using the concat demuxer
@@ -136,24 +136,22 @@ Read container and stream metadata as tibbles, ready for the tidyverse.
   : Describe media files by applying a MediaInfo template
 - [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md)
   : Get the duration of a media file
-- [`get_framerate()`](https://jmgirard.github.io/tidymedia/reference/get_framerate.md)
+- [`get_frame_rate()`](https://jmgirard.github.io/tidymedia/reference/get_frame_rate.md)
   : Get the video frame rate of a media file
 - [`get_width()`](https://jmgirard.github.io/tidymedia/reference/get_width.md)
   : Get the video width of a media file
 - [`get_height()`](https://jmgirard.github.io/tidymedia/reference/get_height.md)
   : Get the video height of a media file
-- [`get_samplingrate()`](https://jmgirard.github.io/tidymedia/reference/get_samplingrate.md)
+- [`get_sample_rate()`](https://jmgirard.github.io/tidymedia/reference/get_sample_rate.md)
   : Get the audio sampling rate of a media file
-- [`convert_fractions()`](https://jmgirard.github.io/tidymedia/reference/convert_fractions.md)
-  : Convert string fractions to doubles
 
 ## FFmpeg capabilities
 
 Discover the codecs and encoders available in your FFmpeg build.
 
-- [`get_codecs()`](https://jmgirard.github.io/tidymedia/reference/get_codecs.md)
+- [`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md)
   : Get a data frame of all installed codecs
-- [`get_encoders()`](https://jmgirard.github.io/tidymedia/reference/get_encoders.md)
+- [`ffmpeg_encoders()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md)
   : Get a data frame of all installed encoders
 
 ## Program management
@@ -174,8 +172,3 @@ Locate, configure, and install the FFmpeg and MediaInfo binaries.
   : Set the location of a dependency program
 - [`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
   : Install FFmpeg on Windows
-
-## Utilities
-
-- [`pad_integers()`](https://jmgirard.github.io/tidymedia/reference/pad_integers.md)
-  : Pad Integers

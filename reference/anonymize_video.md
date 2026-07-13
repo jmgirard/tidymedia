@@ -14,7 +14,7 @@ anonymize_video(
   outfile,
   regions,
   color = "black",
-  vcodec = "libx264",
+  video_codec = "libx264",
   pixel_format = "yuv420p",
   run = TRUE
 )
@@ -40,7 +40,7 @@ anonymize_video(
   A string naming the default fill color in FFmpeg color syntax, used
   for any row without its own `color` (default `"black"`).
 
-- vcodec:
+- video_codec:
 
   A string naming the output video codec (default `"libx264"`).
 
@@ -66,7 +66,7 @@ the size. An optional `color` column overrides the `color` argument for
 that row. Every box is a solid fill (FFmpeg's `drawbox` with `t=fill`);
 hollow outlines are intentionally not offered.
 
-Because a filter is applied, the video is re-encoded (`vcodec` /
+Because a filter is applied, the video is re-encoded (`video_codec` /
 `pixel_format`, defaulting to H.264 / `yuv420p`); odd source dimensions
 are floored to even so the output always encodes (a `yuv420p`/`libx264`
 requirement, and a no-op for already-even input). Audio is stream-copied
@@ -83,23 +83,23 @@ https://ffmpeg.org/ffmpeg-filters.html#drawbox
 for the underlying builder filter.
 
 Other task verb functions:
-[`anonymize_videos()`](https://jmgirard.github.io/tidymedia/reference/anonymize_videos.md),
-[`audio_as_mp3()`](https://jmgirard.github.io/tidymedia/reference/audio_as_mp3.md),
+[`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
 [`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md),
+[`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
 [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
 [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
 [`extract_frame()`](https://jmgirard.github.io/tidymedia/reference/extract_frame.md),
-[`extract_frames()`](https://jmgirard.github.io/tidymedia/reference/extract_frames.md),
+[`extract_frame_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_frame_batch.md),
 [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
 [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
-[`normalize_audios()`](https://jmgirard.github.io/tidymedia/reference/normalize_audios.md),
+[`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md),
 [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
-[`segment_videos()`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md),
+[`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md),
 [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
 [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
-[`standardize_videos()`](https://jmgirard.github.io/tidymedia/reference/standardize_videos.md)
+[`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
 
 ## Examples
 

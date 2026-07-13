@@ -3,11 +3,11 @@
 files (with the same encoding) based on pairs of start and stop timestamps.
 Segment video files will be named by taking the name of infile and
 appending a suffix of an underscore (_) and an integer indicating which
-segment (based on the order provided in ts_start and ts_stop)."><meta property="og:description" content="Use FFmpeg to quickly break a single video file into multiple smaller video
+segment (based on the order provided in start and end)."><meta property="og:description" content="Use FFmpeg to quickly break a single video file into multiple smaller video
 files (with the same encoding) based on pairs of start and stop timestamps.
 Segment video files will be named by taking the name of infile and
 appending a suffix of an underscore (_) and an integer indicating which
-segment (based on the order provided in ts_start and ts_stop)."></head><body>
+segment (based on the order provided in start and end)."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -52,15 +52,15 @@ segment (based on the order provided in ts_start and ts_stop)."></head><body>
 files (with the same encoding) based on pairs of start and stop timestamps.
 Segment video files will be named by taking the name of <code>infile</code> and
 appending a suffix of an underscore (_) and an integer indicating which
-segment (based on the order provided in <code>ts_start</code> and <code>ts_stop</code>).</p>
+segment (based on the order provided in <code>start</code> and <code>end</code>).</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">segment_video</span><span class="op">(</span></span>
 <span>  <span class="va">infile</span>,</span>
-<span>  <span class="va">ts_start</span>,</span>
-<span>  <span class="va">ts_stop</span>,</span>
+<span>  <span class="va">start</span>,</span>
+<span>  <span class="va">end</span>,</span>
 <span>  outfiles <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  reencode <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -76,25 +76,25 @@ segment (based on the order provided in <code>ts_start</code> and <code>ts_stop<
 <dd><p>A string containing the path to a video file.</p></dd>
 
 
-<dt id="arg-ts-start">ts_start<a class="anchor" aria-label="anchor" href="#arg-ts-start"></a></dt>
+<dt id="arg-start">start<a class="anchor" aria-label="anchor" href="#arg-start"></a></dt>
 <dd><p>A vector containing one or more timestamps indicating the
 start of each segment to create. Can be either a numeric vector indicating
 seconds or a character vector with time duration syntax. Must have the same
-length as <code>ts_stop</code>.</p></dd>
+length as <code>end</code>.</p></dd>
 
 
-<dt id="arg-ts-stop">ts_stop<a class="anchor" aria-label="anchor" href="#arg-ts-stop"></a></dt>
+<dt id="arg-end">end<a class="anchor" aria-label="anchor" href="#arg-end"></a></dt>
 <dd><p>A vector containing one or more timestamps indicating the stop
 of each segment to create. Can be either a numeric vector indicating
 seconds or a character vector with time duration syntax. Must have the same
-length as <code>ts_start</code>.</p></dd>
+length as <code>start</code>.</p></dd>
 
 
 <dt id="arg-outfiles">outfiles<a class="anchor" aria-label="anchor" href="#arg-outfiles"></a></dt>
 <dd><p>Either NULL or a character vector indicating the filename
 (with extension) for each segment to create. If NULL, will append a
 zero-padded integer to <code>infile</code>. If not NULL, must have the same
-length as <code>ts_start</code>.</p></dd>
+length as <code>start</code>.</p></dd>
 
 
 <dt id="arg-reencode">reencode<a class="anchor" aria-label="anchor" href="#arg-reencode"></a></dt>
@@ -133,29 +133,29 @@ when <code>run = TRUE</code>, <code>success</code>).</p>
     <div class="dont-index"><p><code><a href="ffm_batch.html">ffm_batch</a></code>, <code><a href="ffm_seek.html">ffm_seek</a></code></p>
 <p>Other task verb functions:
 <code><a href="anonymize_video.html">anonymize_video()</a></code>,
-<code><a href="anonymize_videos.html">anonymize_videos()</a></code>,
-<code><a href="audio_as_mp3.html">audio_as_mp3()</a></code>,
+<code><a href="anonymize_video_batch.html">anonymize_video_batch()</a></code>,
 <code><a href="compare_videos.html">compare_videos()</a></code>,
 <code><a href="concatenate_videos.html">concatenate_videos()</a></code>,
+<code><a href="convert_audio.html">convert_audio()</a></code>,
 <code><a href="crop_video.html">crop_video()</a></code>,
 <code><a href="extract_audio.html">extract_audio()</a></code>,
 <code><a href="extract_frame.html">extract_frame()</a></code>,
-<code><a href="extract_frames.html">extract_frames()</a></code>,
+<code><a href="extract_frame_batch.html">extract_frame_batch()</a></code>,
 <code><a href="format_for_web.html">format_for_web()</a></code>,
 <code><a href="normalize_audio.html">normalize_audio()</a></code>,
-<code><a href="normalize_audios.html">normalize_audios()</a></code>,
+<code><a href="normalize_audio_batch.html">normalize_audio_batch()</a></code>,
 <code><a href="picture_in_picture.html">picture_in_picture()</a></code>,
-<code><a href="segment_videos.html">segment_videos()</a></code>,
+<code><a href="segment_video_batch.html">segment_video_batch()</a></code>,
 <code><a href="separate_audio_video.html">separate_audio_video()</a></code>,
 <code><a href="standardize_video.html">standardize_video()</a></code>,
-<code><a href="standardize_videos.html">standardize_videos()</a></code></p></div>
+<code><a href="standardize_video_batch.html">standardize_video_batch()</a></code></p></div>
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">video</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sample.mp4"</span>, package <span class="op">=</span> <span class="st">"tidymedia"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># Two segments; run = FALSE compiles one command per segment</span></span></span>
-<span class="r-in"><span><span class="fu">segment_video</span><span class="op">(</span><span class="va">video</span>, ts_start <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.5</span><span class="op">)</span>, ts_stop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">segment_video</span><span class="op">(</span><span class="va">video</span>, start <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.5</span><span class="op">)</span>, end <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 2 × 5</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   input                                               output start   end command</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                               <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span>

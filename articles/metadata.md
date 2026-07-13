@@ -82,16 +82,9 @@ probe_video(info)
 ```
 
 Numeric columns are typed by default (`typed = TRUE`); pass
-`typed = FALSE` to keep everything as strings. Frame rates arrive as
-fractions, which
-[`convert_fractions()`](https://jmgirard.github.io/tidymedia/reference/convert_fractions.md)
-evaluates:
-
-``` r
-
-convert_fractions(c("30000/1001", "25"))
-#> [1] 29.97003 25.00000
-```
+`typed = FALSE` to keep everything as strings. Frame rates that FFprobe
+reports as fractions (e.g. `"30000/1001"`) are evaluated to doubles
+automatically when the columns are typed.
 
 ## Querying with MediaInfo
 

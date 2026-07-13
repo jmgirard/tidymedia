@@ -2,6 +2,52 @@
 
 ## tidymedia (development version)
 
+### Standardized function and argument names
+
+The public API was renamed to a single, predictable scheme. These are
+breaking changes with no deprecation shims (the package is still pre-1.0
+and soaking).
+
+- **Batch verbs now use a `_batch` suffix** instead of a plural noun:
+  `segment_videos()` →
+  [`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md),
+  `standardize_videos()` →
+  [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md),
+  `normalize_audios()` →
+  [`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md),
+  `anonymize_videos()` →
+  [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),
+  and `extract_frames()` →
+  [`extract_frame_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_frame_batch.md)
+  (which also removes the confusion with grabbing “many frames” from one
+  video).
+- **FFmpeg capability queries moved out of the `get_*` namespace:**
+  `get_codecs()` →
+  [`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md)
+  and `get_encoders()` →
+  [`ffmpeg_encoders()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md).
+  `get_*` is now reserved for per-file metadata getters.
+- **`audio_as_mp3()` is now
+  [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)**,
+  with a new `format` argument. The default (`format = NULL`) reproduces
+  the old behavior exactly (the output format follows the file
+  extension); pass `format` to pin the audio codec.
+- **Metadata getters renamed** to match the argument vocabulary:
+  `get_samplingrate()` →
+  [`get_sample_rate()`](https://jmgirard.github.io/tidymedia/reference/get_sample_rate.md)
+  and `get_framerate()` →
+  [`get_frame_rate()`](https://jmgirard.github.io/tidymedia/reference/get_frame_rate.md).
+- **Codec and time-bound arguments harmonized:** `acodec`/`vcodec` (and
+  the matching jobs-table columns) are now `audio_codec`/`video_codec`,
+  and
+  [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)’s
+  `ts_start`/`ts_stop` are now `start`/`end` (matching the batch
+  columns).
+- **Removed unintended exports:** the unused tidy-eval reexports
+  (`enquo()`, `enquos()`, `as_label()`, `as_name()`, `:=`) and two
+  internal helpers (`pad_integers()`, `convert_fractions()`) are no
+  longer exported. `.data` remains reexported.
+
 ### Fixed-region anonymization
 
 - New
@@ -13,13 +59,11 @@
   (numbers or FFmpeg expressions), with an optional per-row `color`. The
   video is re-encoded reproducibly (H.264 / `yuv420p` by default) and
   audio is stream-copied unchanged.
-- New
-  [`anonymize_videos()`](https://jmgirard.github.io/tidymedia/reference/anonymize_videos.md)
-  applies the same box-fill redaction across many videos from one jobs
-  tibble — each row names an `input` and carries its own `regions` (a
-  list-column of boxes data frames), with optional per-row `output`,
-  `color`, `vcodec`, and `pixel_format` columns. Like the other
-  table-driven verbs it is a thin wrapper over
+- New `anonymize_videos()` applies the same box-fill redaction across
+  many videos from one jobs tibble — each row names an `input` and
+  carries its own `regions` (a list-column of boxes data frames), with
+  optional per-row `output`, `color`, `vcodec`, and `pixel_format`
+  columns. Like the other table-driven verbs it is a thin wrapper over
   [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
   returning one reproducible command per input and supporting `verify`,
   `manifest`, and parallel execution.
@@ -55,18 +99,17 @@
   and the returned value is the exact correction command, left
   unexecuted. The single-pass default is unchanged and stays binary-free
   under `run = FALSE`.
-- [`normalize_audios()`](https://jmgirard.github.io/tidymedia/reference/normalize_audios.md)
-  gained `two_pass` too, applying the same accurate measured/linear
-  normalization across a whole jobs table. With `two_pass = TRUE` it
-  measures every input (honoring `parallel` and each row’s targets),
-  then builds and runs one linear correction per row, surfacing the five
-  measured values as `measured_I`/`measured_TP`/`measured_LRA`/
-  `measured_thresh`/`offset` columns. As with the scalar verb the
-  analysis pass always runs — even under `run = FALSE`, which then gates
-  only the correction pass — and a row whose analysis yields no usable
-  measurement aborts the call, naming the offending row. `two_pass` is a
-  whole-table switch, not a per-row column. The single-pass default is
-  unchanged.
+- `normalize_audios()` gained `two_pass` too, applying the same accurate
+  measured/linear normalization across a whole jobs table. With
+  `two_pass = TRUE` it measures every input (honoring `parallel` and
+  each row’s targets), then builds and runs one linear correction per
+  row, surfacing the five measured values as
+  `measured_I`/`measured_TP`/`measured_LRA`/ `measured_thresh`/`offset`
+  columns. As with the scalar verb the analysis pass always runs — even
+  under `run = FALSE`, which then gates only the correction pass — and a
+  row whose analysis yields no usable measurement aborts the call,
+  naming the offending row. `two_pass` is a whole-table switch, not a
+  per-row column. The single-pass default is unchanged.
 
 ### Audio loudness normalization
 
@@ -89,9 +132,7 @@
 
 ### Batch audio normalization across files
 
-- Added
-  [`normalize_audios()`](https://jmgirard.github.io/tidymedia/reference/normalize_audios.md),
-  a table-driven companion to
+- Added `normalize_audios()`, a table-driven companion to
   [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md).
   Pass a jobs tibble with one row per input (only an `input` column is
   required) to loudness-normalize many files in one call, each to an EBU
@@ -127,9 +168,7 @@
 
 ### Batch standardization across files
 
-- Added
-  [`standardize_videos()`](https://jmgirard.github.io/tidymedia/reference/standardize_videos.md),
-  a table-driven companion to
+- Added `standardize_videos()`, a table-driven companion to
   [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md).
   Pass a jobs tibble with an `input` column — one row per video — to
   re-encode many files to a reproducible format in one call. It is a
@@ -149,9 +188,7 @@
 
 ### Frame extraction across files
 
-- Added
-  [`extract_frames()`](https://jmgirard.github.io/tidymedia/reference/extract_frames.md),
-  a table-driven companion to
+- Added `extract_frames()`, a table-driven companion to
   [`extract_frame()`](https://jmgirard.github.io/tidymedia/reference/extract_frame.md).
   Pass a jobs tibble with an `input` column and exactly one of a
   `timestamp` or `frame` column — one row per frame — to grab still
@@ -169,9 +206,8 @@
 - [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
   (and the `parallel = TRUE` path of
   [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
-  /
-  [`segment_videos()`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md))
-  now warns when parallel processing is requested but no parallel
+  / `segment_videos()`) now warns when parallel processing is requested
+  but no parallel
   [`future::plan()`](https://future.futureverse.org/reference/plan.html)
   is active. Previously such calls ran one job at a time with no speedup
   and no indication; the warning points to
@@ -179,9 +215,7 @@
 
 ### Batch segmentation across files
 
-- Added
-  [`segment_videos()`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md),
-  a table-driven companion to
+- Added `segment_videos()`, a table-driven companion to
   [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md).
   Pass a jobs tibble with `input`, `output`, `start`, and `end` columns
   — one row per segment — to cut segments spanning many input files in
@@ -191,8 +225,7 @@
   `checksums`, and `progress`; `reencode` selects accurate re-encoding
   (default) or the fast keyframe-snapping copy path, as in
   [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md).
-- [`segment_videos()`](https://jmgirard.github.io/tidymedia/reference/segment_videos.md)
-  now reaches full parity with
+- `segment_videos()` now reaches full parity with
   [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md):
   the `output` column is optional (when absent, names are derived per
   input file as `<basename>_<n>.<ext>`, numbering restarting for each
@@ -380,10 +413,9 @@ state.
   [`probe_audio()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md)
   now return the requested tibble when called with `infile =`; they
   previously returned `NULL`.
-- [`convert_fractions()`](https://jmgirard.github.io/tidymedia/reference/convert_fractions.md)
-  parses fractions directly instead of via `eval(parse())`, passes `NA`
-  through, and errors on values that are neither a number nor a
-  fraction.
+- `convert_fractions()` parses fractions directly instead of via
+  `eval(parse())`, passes `NA` through, and errors on values that are
+  neither a number nor a fraction.
 - FFprobe’s `key=value` output is split on the first `=` only, so values
   that contain `=` are no longer truncated; the superseded
   [`tidyr::separate()`](https://tidyr.tidyverse.org/reference/separate.html)
@@ -411,7 +443,7 @@ state.
   `run` argument and returns its compiled, reproducible command
   (invisibly when run):
   [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
-  [`audio_as_mp3()`](https://jmgirard.github.io/tidymedia/reference/audio_as_mp3.md),
+  `audio_as_mp3()`,
   [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
   [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
   [`extract_frame()`](https://jmgirard.github.io/tidymedia/reference/extract_frame.md),
@@ -516,12 +548,12 @@ state.
 - [`mediainfo_parameter()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_parameter.md)
   (and the helpers built on it:
   [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md),
-  [`get_framerate()`](https://jmgirard.github.io/tidymedia/reference/get_framerate.md),
+  `get_framerate()`,
   [`get_width()`](https://jmgirard.github.io/tidymedia/reference/get_width.md),
   [`get_height()`](https://jmgirard.github.io/tidymedia/reference/get_height.md),
-  [`get_samplingrate()`](https://jmgirard.github.io/tidymedia/reference/get_samplingrate.md))
-  now shell-quote the `--Inform` argument, so they work on POSIX shells
-  where the `;` was previously parsed as a command separator.
+  `get_samplingrate()`) now shell-quote the `--Inform` argument, so they
+  work on POSIX shells where the `;` was previously parsed as a command
+  separator.
 
 ## tidymedia 0.0.0.9000
 

@@ -116,7 +116,8 @@ mediainfo_parameter <- function(file, section, parameter, typed = TRUE) {
 #'   column and one column per requested parameter.
 #'
 #' @seealso [mediainfo_parameter()] for a single value, [mediainfo_template()]
-#'   for a whole template, and [probe_all()] for the FFprobe backend.
+#'   for a whole template, [probe_all()] for the FFprobe backend, and
+#'   [get_duration()] and friends for single scalar values.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -182,7 +183,8 @@ mediainfo_query <- function(file, section, parameters, names = parameters,
 #'   are used verbatim.
 #'
 #' @seealso [mediainfo_query()] for a single section, [mediainfo_parameter()]
-#'   for a single value, and [probe_all()] for the FFprobe backend.
+#'   for a single value, [probe_all()] for the FFprobe backend, and
+#'   [get_duration()] and friends for single scalar values.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")

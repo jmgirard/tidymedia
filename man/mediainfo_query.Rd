@@ -45,7 +45,8 @@ mediainfo_query(video, section = "Video", parameters = c("Width", "Height"))
 }
 \seealso{
 \code{\link[=mediainfo_parameter]{mediainfo_parameter()}} for a single value, \code{\link[=mediainfo_template]{mediainfo_template()}}
-for a whole template, and \code{\link[=probe_all]{probe_all()}} for the FFprobe backend.
+for a whole template, \code{\link[=probe_all]{probe_all()}} for the FFprobe backend, and
+\code{\link[=get_duration]{get_duration()}} and friends for single scalar values.
 
 Other metadata functions:
 \code{\link[=get_duration]{get_duration()}},

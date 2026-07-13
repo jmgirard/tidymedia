@@ -108,11 +108,11 @@ Give `.f` a `...` argument if `jobs` carries columns it does not use.
 
 ## See also
 
-[`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
+[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
 which is built on `ffm_batch()`;
-[`verify_media`](https://jmgirard.github.io/tidymedia/reference/verify_media.md)
+[`verify_media()`](https://jmgirard.github.io/tidymedia/reference/verify_media.md)
 for the verification spec and
-[`ffm_manifest`](https://jmgirard.github.io/tidymedia/reference/ffm_manifest.md)
+[`ffm_manifest()`](https://jmgirard.github.io/tidymedia/reference/ffm_manifest.md)
 for the provenance manifest.
 
 Other builder functions:

@@ -1,8 +1,8 @@
 # Normalize Many Files' Audio Loudness From a Jobs Table
 
 Loudness-normalize the audio of many input files (EBU R128) from a
-single jobs tibble — a table-driven sibling of
-[`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
+single jobs tibble — the **batch** (table-driven) sibling of
+[`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
 for when you have more than one file to normalize. Each row is one
 input; the only required column names its source. This is a thin wrapper
 over
@@ -140,11 +140,11 @@ maximum level of audio signals*; ITU-R BS.1770-4.
 
 ## See also
 
-[`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
+[`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
 for the single-input form;
-[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+[`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
 for the batch runner and the arguments forwarded through `...`;
-[`standardize_video_batch`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
+[`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
 for the video-side table-driven sibling.
 
 Other task verb functions:

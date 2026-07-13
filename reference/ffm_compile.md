@@ -23,6 +23,11 @@ instructions provided to the tidymedia pipeline.
 
 ## See also
 
+[`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md)
+to compile and execute in one step, and
+[`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+to compile over many files.
+
 Other builder functions:
 [`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

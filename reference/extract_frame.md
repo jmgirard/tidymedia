@@ -40,6 +40,11 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 
 ## See also
 
+[`ffm_seek()`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md),
+the builder it uses to grab the frame;
+[`extract_frame_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_frame_batch.md)
+for the many-file (batch) form.
+
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),

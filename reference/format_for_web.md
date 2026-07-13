@@ -31,6 +31,13 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 
 ## See also
 
+[`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md)
+and
+[`ffm_pixel_format()`](https://jmgirard.github.io/tidymedia/reference/ffm_pixel_format.md),
+among the builders it wraps;
+[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+for a configurable re-encode.
+
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),

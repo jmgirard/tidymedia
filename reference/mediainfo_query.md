@@ -46,7 +46,21 @@ mediainfo_query(file, section, parameters, names = parameters, typed = TRUE)
 A tibble with one row per input file, leading with a `file` column and
 one column per requested parameter.
 
+## Details
+
+This **MediaInfo**-backed reader returns a **tibble**; the FFprobe
+counterpart is the `probe_*()` family.
+
 ## See also
+
+[`mediainfo_parameter()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_parameter.md)
+for a single value,
+[`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md)
+for a whole template,
+[`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
+for the FFprobe backend, and
+[`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md)
+and friends for single scalar values.
 
 Other metadata functions:
 [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md),

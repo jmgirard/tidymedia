@@ -63,6 +63,9 @@ separate pipeline first.
 
 ## See also
 
+[`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
+the task verb built on this verb.
+
 Other builder functions:
 [`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

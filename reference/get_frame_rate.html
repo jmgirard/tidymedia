@@ -64,8 +64,16 @@ frames per second (fps).</p>
     <p>A double vector (one per file) giving the video frame rate in fps.</p>
     </div>
     <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>This <strong>MediaInfo</strong>-backed helper returns a <strong>single value per file</strong> (a
+numeric scalar), unlike the tibble-returning <code>probe_*()</code>, <code><a href="mediainfo_query.html">mediainfo_query()</a></code>,
+and <code><a href="mediainfo_template.html">mediainfo_template()</a></code> readers.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p>Other metadata functions:
+    <div class="dont-index"><p><code><a href="mediainfo_parameter.html">mediainfo_parameter()</a></code> for arbitrary MediaInfo fields, and
+<code><a href="probe_all.html">probe_all()</a></code> for the FFprobe backend.</p>
+<p>Other metadata functions:
 <code><a href="get_duration.html">get_duration()</a></code>,
 <code><a href="get_height.html">get_height()</a></code>,
 <code><a href="get_sample_rate.html">get_sample_rate()</a></code>,

@@ -32,6 +32,11 @@ A logical indicating whether the program location was set properly.
 
 ## See also
 
+[`find_program()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
+to locate a configured binary, and
+[`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
+to download FFmpeg on Windows.
+
 Other program management functions:
 [`find_program()`](https://jmgirard.github.io/tidymedia/reference/find_program.md),
 [`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)

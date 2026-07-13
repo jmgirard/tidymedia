@@ -55,6 +55,9 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 
 ## See also
 
+[`ffm_crop()`](https://jmgirard.github.io/tidymedia/reference/ffm_crop.md),
+the builder it wraps.
+
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),

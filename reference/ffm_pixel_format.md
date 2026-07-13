@@ -26,6 +26,11 @@ ffm_pixel_format(object, format)
 
 ## See also
 
+[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+and
+[`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
+the task verbs that set the pixel format via this builder.
+
 Other builder functions:
 [`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

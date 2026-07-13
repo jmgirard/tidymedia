@@ -39,6 +39,13 @@ streams.
 
 ## See also
 
+[`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md)
+and
+[`ffm_map()`](https://jmgirard.github.io/tidymedia/reference/ffm_map.md),
+which it wraps;
+[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
+uses it for fast copy cuts.
+
 Other builder functions:
 [`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

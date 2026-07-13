@@ -86,8 +86,12 @@ https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 
 ## See also
 
-[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
-[`ffm_seek`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md)
+[`ffm_seek()`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md),
+the builder it uses to cut;
+[`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
+the runner;
+[`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md)
+for the many-file form.
 
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),

@@ -60,6 +60,13 @@ with the following variables:
 
 ## See also
 
+[`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md)
+for the codec list,
+[`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md)
+to set a codec in a pipeline, and
+[`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)
+for the Layer 0 escape hatch.
+
 Other capability functions:
 [`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md)
 

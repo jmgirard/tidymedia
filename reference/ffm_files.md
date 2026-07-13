@@ -30,6 +30,14 @@ An FFmpeg pipeline object.
 
 ## See also
 
+[`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md)
+to render the pipeline and
+[`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md)
+to execute it; the Layer-2 task verbs (e.g.
+[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
+[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md))
+wrap this engine.
+
 Other builder functions:
 [`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

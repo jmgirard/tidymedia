@@ -47,6 +47,13 @@ https://ffmpeg.org/ffmpeg-filters.html#toc-crop
 
 ## See also
 
+[`ffm_scale()`](https://jmgirard.github.io/tidymedia/reference/ffm_scale.md)
+to resize instead of crop;
+[`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md)
+and
+[`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
+are the task verbs built on it.
+
 Other builder functions:
 [`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

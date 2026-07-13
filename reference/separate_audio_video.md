@@ -49,6 +49,13 @@ A named character vector of the two compiled commands (`audio`,
 
 ## See also
 
+[`ffm_map()`](https://jmgirard.github.io/tidymedia/reference/ffm_map.md)
+and
+[`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
+the builders it wraps;
+[`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
+to pull out just the audio.
+
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),

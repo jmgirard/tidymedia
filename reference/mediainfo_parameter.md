@@ -38,7 +38,22 @@ where the value was empty, the section-parameter combination was not
 found, or the file could not be read (a warning is issued for unreadable
 files rather than aborting).
 
+## Details
+
+This **MediaInfo**-backed reader returns a **value** (or a vector of
+values, one per file), not a tibble; the FFprobe counterpart is the
+`probe_*()` family.
+
 ## See also
+
+[`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md)
+to pull several parameters at once,
+[`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md)
+for a whole template,
+[`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
+for the FFprobe backend, and
+[`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md)
+and friends for common single values.
 
 Other metadata functions:
 [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md),

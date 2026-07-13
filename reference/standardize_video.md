@@ -84,6 +84,14 @@ already-even input) so the output always encodes.
 
 ## See also
 
+[`ffm_scale()`](https://jmgirard.github.io/tidymedia/reference/ffm_scale.md),
+[`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
+and
+[`ffm_pixel_format()`](https://jmgirard.github.io/tidymedia/reference/ffm_pixel_format.md),
+among the builders it wraps;
+[`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
+for the many-file form.
+
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),

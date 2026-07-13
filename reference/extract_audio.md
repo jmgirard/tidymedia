@@ -34,6 +34,13 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 
 ## See also
 
+[`ffm_drop()`](https://jmgirard.github.io/tidymedia/reference/ffm_drop.md)
+and
+[`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
+the builders it wraps;
+[`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
+to re-encode the extracted audio.
+
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),

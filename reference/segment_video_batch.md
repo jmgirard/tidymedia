@@ -1,8 +1,8 @@
 # Segment Many Videos From a Jobs Table
 
-Cut segments across many input files from a single jobs tibble — a
-table-driven sibling of
-[`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
+Cut segments across many input files from a single jobs tibble — the
+**batch** (table-driven) sibling of
+[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
 for when your segments span more than one input. Each row is one
 segment; the four required columns name its source, destination, and cut
 points. This is a thin wrapper over
@@ -77,11 +77,11 @@ https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 
 ## See also
 
-[`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
+[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
 for the single-input, parallel-vector form;
-[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+[`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
 for the batch runner and the arguments forwarded through `...`;
-[`ffm_seek`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md)
+[`ffm_seek()`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md)
 for the cut trade-off.
 
 Other task verb functions:

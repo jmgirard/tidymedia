@@ -64,6 +64,13 @@ compare more. Audio is dropped unless `audio` names an input to carry.
 
 ## See also
 
+[`ffm_hstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md)
+and
+[`ffm_vstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_vstack.md),
+the builders it wraps;
+[`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
+for insetting instead of stacking.
+
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),

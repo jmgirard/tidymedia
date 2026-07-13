@@ -34,6 +34,11 @@ ffm_hstack(object, shortest = FALSE, resize = FALSE)
 
 ## See also
 
+[`ffm_vstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_vstack.md)
+for vertical stacking and
+[`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
+the task verb built on both.
+
 Other builder functions:
 [`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

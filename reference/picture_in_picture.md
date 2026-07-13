@@ -73,6 +73,11 @@ video, `1` = the overlay).
 
 ## See also
 
+[`ffm_overlay()`](https://jmgirard.github.io/tidymedia/reference/ffm_overlay.md),
+the builder it wraps;
+[`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
+for side-by-side stacking.
+
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),

@@ -35,6 +35,13 @@ characters are safe.
 
 ## See also
 
+[`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md)
+to get the command without running it,
+[`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+for the many-file runner, and
+[`verify_media()`](https://jmgirard.github.io/tidymedia/reference/verify_media.md)
+for the `verify =` spec.
+
 Other builder functions:
 [`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

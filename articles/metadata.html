@@ -87,6 +87,70 @@ setup). We use the sample clip that ships with the package:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">video</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sample.mp4"</span>, package <span class="op">=</span> <span class="st">"tidymedia"</span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
+<h2 id="which-reader">Which reader?<a class="anchor" aria-label="anchor" href="#which-reader"></a>
+</h2>
+<p>The reader families differ by <strong>backend</strong> (FFprobe
+vs. MediaInfo) and by <strong>return shape</strong> (a tibble vs. a
+single value). Pick by what you need back:</p>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th>Reader family</th>
+<th>Backend</th>
+<th>Returns</th>
+<th>Reach for it when</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>
+<code><a href="../reference/probe_all.html">probe_all()</a></code>, <code><a href="../reference/probe_container.html">probe_container()</a></code>,
+<code><a href="../reference/probe_container.html">probe_streams()</a></code>, <code><a href="../reference/probe_container.html">probe_video()</a></code>,
+<code><a href="../reference/probe_container.html">probe_audio()</a></code>
+</td>
+<td>FFprobe</td>
+<td>tibbles (container + per-stream rows)</td>
+<td>you want container/stream metadata as a data frame</td>
+</tr>
+<tr class="even">
+<td>
+<code><a href="../reference/mediainfo_query.html">mediainfo_query()</a></code>, <code><a href="../reference/mediainfo_template.html">mediainfo_template()</a></code>,
+<code><a href="../reference/mediainfo_summary.html">mediainfo_summary()</a></code>
+</td>
+<td>MediaInfo</td>
+<td>a tibble (one row per file)</td>
+<td>you want MediaInfo’s broader field set as a data frame</td>
+</tr>
+<tr class="odd">
+<td><code><a href="../reference/mediainfo_parameter.html">mediainfo_parameter()</a></code></td>
+<td>MediaInfo</td>
+<td>a value (one per file)</td>
+<td>you want a single MediaInfo parameter across files</td>
+</tr>
+<tr class="even">
+<td>
+<code><a href="../reference/get_duration.html">get_duration()</a></code>, <code><a href="../reference/get_frame_rate.html">get_frame_rate()</a></code>,
+<code><a href="../reference/get_width.html">get_width()</a></code>, <code><a href="../reference/get_height.html">get_height()</a></code>,
+<code><a href="../reference/get_sample_rate.html">get_sample_rate()</a></code>
+</td>
+<td>MediaInfo</td>
+<td>a scalar (numeric, one per file)</td>
+<td>you want one common field without naming MediaInfo sections</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>probe_*()</code> family needs FFprobe installed; the
+<code>mediainfo_*()</code> and <code>get_*()</code> families need
+MediaInfo. Because <code><a href="../reference/probe_container.html">probe_video()</a></code> and
+<code><a href="../reference/get_width.html">get_width()</a></code> can report the same underlying fact (here, the
+frame width), the choice usually comes down to the shape you want back
+and which tool you have installed.</p>
+</div>
+<div class="section level2">
 <h2 id="probing-with-ffprobe">Probing with FFprobe<a class="anchor" aria-label="anchor" href="#probing-with-ffprobe"></a>
 </h2>
 <p><code><a href="../reference/probe_all.html">probe_all()</a></code> returns a list of two tibbles:

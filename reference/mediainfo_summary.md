@@ -46,6 +46,11 @@ A tibble with one row per input file. The columns (and their
 names/order) are determined by the template; custom-template column
 names are used verbatim.
 
+## Details
+
+This **MediaInfo**-backed reader returns a **tibble**; the FFprobe
+counterpart is the `probe_*()` family.
+
 ## See also
 
 Other metadata functions:

@@ -88,7 +88,8 @@ streams (as <code><a href="ffm_copy.html">ffm_copy</a></code> would).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p>Other builder functions:
+    <div class="dont-index"><p><code><a href="concatenate_videos.html">concatenate_videos()</a></code>, the task verb built on this verb.</p>
+<p>Other builder functions:
 <code><a href="ffm.html">ffm()</a></code>,
 <code><a href="ffm_batch.html">ffm_batch()</a></code>,
 <code><a href="ffm_codec.html">ffm_codec()</a></code>,
@@ -120,7 +121,7 @@ streams (as <code><a href="ffm_copy.html">ffm_copy</a></code> would).</p>
 <span class="r-in"><span><span class="fu"><a href="ffm.html">ffm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">video</span>, <span class="va">video</span><span class="op">)</span>, <span class="st">"output.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">ffm_concat</span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="ffm_compile.html">ffm_compile</a></span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -f concat -safe 0 -i \"/tmp/Rtmp82s9rF/ffm-concat1fcd3ddc0f87.txt\" -codec:v copy -codec:a copy -map 0 \"output.mp4\""</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -f concat -safe 0 -i \"/tmp/RtmpWjoG75/ffm-concat1fc51679751c.txt\" -codec:v copy -codec:a copy -map 0 \"output.mp4\""</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

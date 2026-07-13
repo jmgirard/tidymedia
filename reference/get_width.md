@@ -19,7 +19,21 @@ get_width(file)
 
 A double vector (one per file) giving the video width in px.
 
+## Details
+
+This **MediaInfo**-backed helper returns a **single value per file** (a
+numeric scalar), unlike the tibble-returning `probe_*()`,
+[`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md),
+and
+[`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md)
+readers.
+
 ## See also
+
+[`mediainfo_parameter()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_parameter.md)
+for arbitrary MediaInfo fields, and
+[`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
+for the FFprobe backend.
 
 Other metadata functions:
 [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md),

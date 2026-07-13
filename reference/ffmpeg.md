@@ -23,6 +23,14 @@ A character vector containing the text output by FFmpeg.
 
 ## See also
 
+[`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md)
+and
+[`ffmpeg_encoders()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md)
+for structured capability queries, and the `ffm_*` pipeline builders
+(e.g.
+[`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md))
+for a safer command layer.
+
 Other escape hatch functions:
 [`ffprobe()`](https://jmgirard.github.io/tidymedia/reference/ffprobe.md),
 [`mediainfo()`](https://jmgirard.github.io/tidymedia/reference/mediainfo.md)

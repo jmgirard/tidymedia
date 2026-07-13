@@ -58,6 +58,13 @@ https://ffmpeg.org/ffmpeg.html#Main-options
 
 ## See also
 
+[`ffm_trim()`](https://jmgirard.github.io/tidymedia/reference/ffm_trim.md)
+for the filter-based alternative,
+[`ffm_copy()`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md)
+for the fast copy path, and
+[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
+the task verb built on it.
+
 Other builder functions:
 [`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

@@ -28,6 +28,11 @@ A logical indicating whether the installation was successful.
 
 ## See also
 
+[`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+to register an existing binary, and
+[`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
+to check what is currently configured.
+
 Other program management functions:
 [`find_program()`](https://jmgirard.github.io/tidymedia/reference/find_program.md),
 [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)

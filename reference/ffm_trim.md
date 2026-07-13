@@ -63,6 +63,10 @@ https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 
 ## See also
 
+[`ffm_seek()`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md),
+the faster seek-based cut that can stream-copy (this is the frame-exact
+*filter*).
+
 Other builder functions:
 [`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

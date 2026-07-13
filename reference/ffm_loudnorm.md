@@ -93,6 +93,9 @@ maximum level of audio signals*; ITU-R BS.1770-4.
 
 ## See also
 
+[`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
+the task verb built on this filter.
+
 Other builder functions:
 [`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

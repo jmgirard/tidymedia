@@ -1,8 +1,8 @@
 # Standardize Many Videos From a Jobs Table
 
 Re-encode many input files to a reproducible format from a single jobs
-tibble — a table-driven sibling of
-[`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+tibble — the **batch** (table-driven) sibling of
+[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
 for when you have more than one video to standardize. Each row is one
 input; the only required column names its source. This is a thin wrapper
 over
@@ -97,13 +97,13 @@ plus any columns the forwarded arguments add, e.g. `verified`).
 
 ## See also
 
-[`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
 for the single-input form;
-[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+[`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
 for the batch runner and the arguments forwarded through `...`;
-[`segment_video_batch`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md)
+[`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md)
 and
-[`extract_frame_batch`](https://jmgirard.github.io/tidymedia/reference/extract_frame_batch.md)
+[`extract_frame_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_frame_batch.md)
 for the other table-driven siblings.
 
 Other task verb functions:

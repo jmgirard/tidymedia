@@ -23,6 +23,28 @@ the sample clip that ships with the package:
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 ```
 
+## Which reader?
+
+The reader families differ by **backend** (FFprobe vs. MediaInfo) and by
+**return shape** (a tibble vs. a single value). Pick by what you need
+back:
+
+| Reader family | Backend | Returns | Reach for it when |
+|----|----|----|----|
+| [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md), [`probe_container()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md), [`probe_streams()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md), [`probe_video()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md), [`probe_audio()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md) | FFprobe | tibbles (container + per-stream rows) | you want container/stream metadata as a data frame |
+| [`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md), [`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md), [`mediainfo_summary()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_summary.md) | MediaInfo | a tibble (one row per file) | you want MediaInfo’s broader field set as a data frame |
+| [`mediainfo_parameter()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_parameter.md) | MediaInfo | a value (one per file) | you want a single MediaInfo parameter across files |
+| [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md), [`get_frame_rate()`](https://jmgirard.github.io/tidymedia/reference/get_frame_rate.md), [`get_width()`](https://jmgirard.github.io/tidymedia/reference/get_width.md), [`get_height()`](https://jmgirard.github.io/tidymedia/reference/get_height.md), [`get_sample_rate()`](https://jmgirard.github.io/tidymedia/reference/get_sample_rate.md) | MediaInfo | a scalar (numeric, one per file) | you want one common field without naming MediaInfo sections |
+
+The `probe_*()` family needs FFprobe installed; the `mediainfo_*()` and
+`get_*()` families need MediaInfo. Because
+[`probe_video()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md)
+and
+[`get_width()`](https://jmgirard.github.io/tidymedia/reference/get_width.md)
+can report the same underlying fact (here, the frame width), the choice
+usually comes down to the shape you want back and which tool you have
+installed.
+
 ## Probing with FFprobe
 
 [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)

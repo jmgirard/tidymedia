@@ -1,8 +1,9 @@
 # Anonymize Many Videos From a Jobs Table
 
 Cover fixed rectangular regions of many input videos with opaque filled
-boxes from a single jobs tibble — a table-driven sibling of
-[`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
+boxes from a single jobs tibble — the **batch** (table-driven) sibling
+of
+[`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
 for when you have more than one video to redact. Each row is one input
 with its own regions; the required columns name the source (`input`) and
 the boxes to cover (`regions`). This is a thin wrapper over
@@ -92,13 +93,13 @@ plus any columns the forwarded arguments add, e.g. `verified`).
 
 ## See also
 
-[`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
+[`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
 for the single-input form;
-[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+[`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
 for the batch runner and the arguments forwarded through `...`;
-[`standardize_video_batch`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
+[`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
 and
-[`segment_video_batch`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md)
+[`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md)
 for the other table-driven siblings.
 
 Other task verb functions:

@@ -28,9 +28,14 @@ ffm_scale(object, width, height)
 
 ## Value
 
-`object` but with the added instruction to crop the image(s).
+`object` but with the added instruction to resize the image(s).
 
 ## See also
+
+[`ffm_crop()`](https://jmgirard.github.io/tidymedia/reference/ffm_crop.md)
+to crop instead of resize;
+[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+is the task verb built on it.
 
 Other builder functions:
 [`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),

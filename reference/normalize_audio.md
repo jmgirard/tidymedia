@@ -110,6 +110,13 @@ maximum level of audio signals*; ITU-R BS.1770-4.
 
 ## See also
 
+[`ffm_loudnorm()`](https://jmgirard.github.io/tidymedia/reference/ffm_loudnorm.md),
+the builder it wraps;
+[`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md)
+for the many-file form;
+[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
+its video-side complement.
+
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),

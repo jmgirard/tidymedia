@@ -38,6 +38,13 @@ https://ffmpeg.org/ffmpeg-codecs.html
 
 ## See also
 
+[`ffm_copy()`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md)
+for the stream-copy shortcut,
+[`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md)
+to list available codecs, and
+[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
+a task verb built on it.
+
 Other builder functions:
 [`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

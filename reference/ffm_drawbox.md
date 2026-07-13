@@ -69,6 +69,9 @@ https://ffmpeg.org/ffmpeg-utils.html#color-syntax
 
 ## See also
 
+[`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
+the task verb that fills regions via this builder.
+
 Other builder functions:
 [`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

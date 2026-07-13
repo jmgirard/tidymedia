@@ -24,6 +24,9 @@ A string containing the text output by FFprobe.
 
 ## See also
 
+[`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
+and the `probe_*()` shortcuts for structured, tibble-returning output.
+
 Other escape hatch functions:
 [`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md),
 [`mediainfo()`](https://jmgirard.github.io/tidymedia/reference/mediainfo.md)

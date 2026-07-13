@@ -45,7 +45,20 @@ probe_audio(probe = NULL, infile = NULL, typed = TRUE)
 
 A tibble containing only the requested information.
 
+## Details
+
+These **FFprobe**-backed shortcuts return **tibbles**; the **MediaInfo**
+readers (`mediainfo_*()`) and the scalar `get_*()` helpers are the
+alternatives.
+
 ## See also
+
+[`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
+for the full probe;
+[`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md)
+for the MediaInfo backend;
+[`get_width()`](https://jmgirard.github.io/tidymedia/reference/get_width.md)
+and friends for single scalar values.
 
 Other metadata functions:
 [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md),

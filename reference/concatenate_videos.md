@@ -36,6 +36,9 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 
 ## See also
 
+[`ffm_concat()`](https://jmgirard.github.io/tidymedia/reference/ffm_concat.md),
+the builder it wraps.
+
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),
@@ -60,5 +63,5 @@ Other task verb functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 concatenate_videos(c(video, video), "joined.mp4", run = FALSE)
-#> [1] "-y -f concat -safe 0 -i \"/tmp/Rtmp82s9rF/ffm-concat1fcd39dd589d.txt\" -codec:v copy -codec:a copy -map 0 \"joined.mp4\""
+#> [1] "-y -f concat -safe 0 -i \"/tmp/RtmpWjoG75/ffm-concat1fc53d7defa7.txt\" -codec:v copy -codec:a copy -map 0 \"joined.mp4\""
 ```

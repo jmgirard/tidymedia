@@ -79,8 +79,10 @@ https://ffmpeg.org/ffmpeg-filters.html#drawbox
 
 ## See also
 
-[`ffm_drawbox`](https://jmgirard.github.io/tidymedia/reference/ffm_drawbox.md)
-for the underlying builder filter.
+[`ffm_drawbox()`](https://jmgirard.github.io/tidymedia/reference/ffm_drawbox.md),
+the builder filter it wraps;
+[`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md)
+for the many-file (batch) form.
 
 Other task verb functions:
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),

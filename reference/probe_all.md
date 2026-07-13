@@ -33,7 +33,21 @@ readable streams). Both lead with a `file` column identifying the input.
 Files that cannot be probed yield an all-`NA` row and a warning rather
 than aborting the call.
 
+## Details
+
+This is tidymedia's **FFprobe** metadata reader, returning **tibbles**
+(one row per file or per stream) — distinct from the **MediaInfo**
+readers (`mediainfo_*()`, which return tibbles or values) and the scalar
+`get_*()` helpers (which return a single value per file).
+
 ## See also
+
+[`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md)
+and
+[`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md)
+for the MediaInfo backend, and
+[`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md)
+and friends for single scalar values.
 
 Other metadata functions:
 [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md),

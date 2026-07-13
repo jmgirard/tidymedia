@@ -46,7 +46,21 @@ A tibble with one row per input file. The columns (and their
 names/order) are determined by the template; custom-template column
 names are used verbatim.
 
+## Details
+
+This **MediaInfo**-backed reader returns a **tibble**; the FFprobe
+counterpart is the `probe_*()` family.
+
 ## See also
+
+[`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md)
+for a single section,
+[`mediainfo_parameter()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_parameter.md)
+for a single value,
+[`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
+for the FFprobe backend, and
+[`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md)
+and friends for single scalar values.
 
 Other metadata functions:
 [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md),

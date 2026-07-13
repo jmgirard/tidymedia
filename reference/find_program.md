@@ -29,6 +29,11 @@ Either a string indicating whether the requested program was found or
 
 ## See also
 
+[`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+to point tidymedia at a binary in a non-standard location, and
+[`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
+to download FFmpeg on Windows.
+
 Other program management functions:
 [`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md),
 [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)

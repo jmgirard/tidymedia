@@ -265,16 +265,23 @@ ensure_dir <- function(dir, arg = rlang::caller_arg(dir),
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' extract_audio(video, "audio.aac", run = FALSE)
 #' @export
+# Shared recipe behind extract_audio() and extract_audio_batch(): map the audio
+# stream out (dropping video), applying `audio_codec` (default "copy" =
+# stream-copy, lossless). Holding it here gives the batch sibling per-row parity
+# for free (M13); command assembly stays in Layer 1 (IP1/D002).
+extract_audio_pipeline <- function(input, output, audio_codec = "copy") {
+  p <- ffm_files(input, output)
+  p <- ffm_codec(p, audio = audio_codec)
+  ffm_drop(p, "video")
+}
+
 extract_audio <- function(infile, outfile, audio_codec = "copy", run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
   rlang::check_string(audio_codec)
 
-  p <- ffm_files(infile, outfile)
-  p <- ffm_codec(p, audio = audio_codec)
-  p <- ffm_drop(p, "video")
-  ffm_finish(p, run)
+  ffm_finish(extract_audio_pipeline(infile, outfile, audio_codec), run)
 }
 
 
@@ -361,12 +368,13 @@ separate_audio_video <- function(infile, audiofile, videofile,
 #' convert_audio(video, "audio.mp3", run = FALSE)
 #' convert_audio(video, "audio.m4a", format = "aac", run = FALSE)
 #' @export
-convert_audio <- function(infile, outfile, format = NULL, run = TRUE) {
-
-  check_file_exists(infile)
-  rlang::check_string(outfile)
-
-  p <- ffm_files(infile, outfile)
+# Shared recipe behind convert_audio() and convert_audio_batch(): map the audio
+# stream out and either encode at highest VBR quality (`format = NULL`, the
+# extension picks the codec) or pin `-c:a` to `format`. The per-value
+# check_string(format) lives here so the batch sibling inherits it per row
+# (M13); command assembly stays in Layer 1 (IP1/D002).
+convert_audio_pipeline <- function(input, output, format = NULL) {
+  p <- ffm_files(input, output)
   p <- ffm_map(p, "a")
   if (is.null(format)) {
     p <- ffm_output_options(p, "-q:a 0")
@@ -374,7 +382,15 @@ convert_audio <- function(infile, outfile, format = NULL, run = TRUE) {
     rlang::check_string(format)
     p <- ffm_codec(p, audio = format)
   }
-  ffm_finish(p, run)
+  p
+}
+
+convert_audio <- function(infile, outfile, format = NULL, run = TRUE) {
+
+  check_file_exists(infile)
+  rlang::check_string(outfile)
+
+  ffm_finish(convert_audio_pipeline(infile, outfile, format), run)
 }
 
 # crop_video() ------------------------------------------------------------
@@ -398,6 +414,17 @@ convert_audio <- function(infile, outfile, format = NULL, run = TRUE) {
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' crop_video(video, "cropped.mp4", width = 160, height = 120, run = FALSE)
 #' @export
+# Shared recipe behind crop_video() and crop_video_batch(): a crop filter to the
+# requested rectangle mapping every stream through. ffm_crop() carries the
+# per-value dimension guards, so the batch sibling inherits them per row (M13);
+# command assembly stays in Layer 1 (IP1/D002).
+crop_video_pipeline <- function(input, output, width, height,
+                                x = "(in_w-out_w)/2", y = "(in_h-out_h)/2") {
+  p <- ffm_files(input, output)
+  p <- ffm_crop(p, width = width, height = height, x = x, y = y)
+  ffm_map(p, "0")
+}
+
 crop_video <- function(infile, outfile, width, height,
                        x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
                        run = TRUE) {
@@ -405,10 +432,7 @@ crop_video <- function(infile, outfile, width, height,
   check_file_exists(infile)
   rlang::check_string(outfile)
 
-  p <- ffm_files(infile, outfile)
-  p <- ffm_crop(p, width = width, height = height, x = x, y = y)
-  p <- ffm_map(p, "0")
-  ffm_finish(p, run)
+  ffm_finish(crop_video_pipeline(infile, outfile, width, height, x, y), run)
 }
 
 
@@ -432,17 +456,24 @@ crop_video <- function(infile, outfile, width, height,
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' format_for_web(video, "web.mp4", run = FALSE)
 #' @export
+# Shared recipe behind format_for_web() and format_for_web_batch(): the fixed
+# web-delivery re-encode (H.264 + yuv420p + AAC + faststart), padding odd
+# dimensions down to even as the codec requires. No per-row knobs — every input
+# gets the same recipe. Command assembly stays in Layer 1 (IP1/D002).
+format_for_web_pipeline <- function(input, output) {
+  p <- ffm_files(input, output)
+  p <- ffm_crop(p, width = "floor(in_w/2)*2", height = "floor(in_h/2)*2")
+  p <- ffm_codec(p, video = "libx264", audio = "aac")
+  p <- ffm_pixel_format(p, "yuv420p")
+  ffm_output_options(p, "-movflags +faststart")
+}
+
 format_for_web <- function(infile, outfile, run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
 
-  p <- ffm_files(infile, outfile)
-  p <- ffm_crop(p, width = "floor(in_w/2)*2", height = "floor(in_h/2)*2")
-  p <- ffm_codec(p, video = "libx264", audio = "aac")
-  p <- ffm_pixel_format(p, "yuv420p")
-  p <- ffm_output_options(p, "-movflags +faststart")
-  ffm_finish(p, run)
+  ffm_finish(format_for_web_pipeline(infile, outfile), run)
 }
 
 

@@ -89,7 +89,7 @@ and full doc/housekeeping sync.
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [ ] T1 — Extract a shared `*_pipeline()` helper from each of the four scalar
+- [x] T1 — Extract a shared `*_pipeline()` helper from each of the four scalar
       verbs (`R/ffmpeg.R`: `extract_audio` 268, `convert_audio` 364,
       `crop_video` 401, `format_for_web` 435), following the
       `strip_metadata_pipeline()` model (R/ffmpeg.R:457). The scalar verb becomes
@@ -119,6 +119,7 @@ and full doc/housekeeping sync.
 <!-- owner: any skill · append-only; one line per entry; absolute dates -->
 
 - 2026-07-12: created by /milestone-plan (batch-coverage gap analysis — Tier 1).
+- 2026-07-12: T1 — extracted extract_audio/convert_audio/crop_video/format_for_web `_pipeline()` helpers; scalar verbs delegate; all 119 test-ffmpeg.R tests green (compile-preserving).
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

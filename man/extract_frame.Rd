@@ -33,6 +33,9 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 extract_frame(video, "frame.png", timestamp = 0.5, run = FALSE)
 }
 \seealso{
+\code{\link[=ffm_seek]{ffm_seek()}}, the builder it uses to grab the frame;
+\code{\link[=extract_frame_batch]{extract_frame_batch()}} for the many-file (batch) form.
+
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},

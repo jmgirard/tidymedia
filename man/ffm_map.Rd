@@ -31,6 +31,9 @@ ffm(video, "output.mp4") |>
   ffm_compile()
 }
 \seealso{
+\code{\link[=ffm_copy]{ffm_copy()}}, which maps all streams; \code{\link[=separate_audio_video]{separate_audio_video()}} is a
+task verb built on it.
+
 Other builder functions:
 \code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},

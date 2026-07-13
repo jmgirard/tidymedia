@@ -30,6 +30,8 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 concatenate_videos(c(video, video), "joined.mp4", run = FALSE)
 }
 \seealso{
+\code{\link[=ffm_concat]{ffm_concat()}}, the builder it wraps.
+
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},

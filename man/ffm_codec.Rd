@@ -34,6 +34,9 @@ ffm(video, "output.mp4") |>
 https://ffmpeg.org/ffmpeg-codecs.html
 }
 \seealso{
+\code{\link[=ffm_copy]{ffm_copy()}} for the stream-copy shortcut, \code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}} to list
+available codecs, and \code{\link[=standardize_video]{standardize_video()}}, a task verb built on it.
+
 Other builder functions:
 \code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},

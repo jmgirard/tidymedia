@@ -28,6 +28,9 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 extract_audio(video, "audio.aac", run = FALSE)
 }
 \seealso{
+\code{\link[=ffm_drop]{ffm_drop()}} and \code{\link[=ffm_codec]{ffm_codec()}}, the builders it wraps;
+\code{\link[=convert_audio]{convert_audio()}} to re-encode the extracted audio.
+
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},

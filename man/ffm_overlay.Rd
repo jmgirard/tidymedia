@@ -54,6 +54,8 @@ ffm(c(video, video), "output.mp4") |>
   ffm_compile()
 }
 \seealso{
+\code{\link[=picture_in_picture]{picture_in_picture()}}, the task verb built on this verb.
+
 Other builder functions:
 \code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},

@@ -57,6 +57,9 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 picture_in_picture(video, video, "pip.mp4", run = FALSE)
 }
 \seealso{
+\code{\link[=ffm_overlay]{ffm_overlay()}}, the builder it wraps; \code{\link[=compare_videos]{compare_videos()}} for
+side-by-side stacking.
+
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},

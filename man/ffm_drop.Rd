@@ -29,6 +29,9 @@ ffm(video, "output.mp4") |>
   ffm_compile()
 }
 \seealso{
+\code{\link[=extract_audio]{extract_audio()}}, the task verb that drops the video stream via
+this builder.
+
 Other builder functions:
 \code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},

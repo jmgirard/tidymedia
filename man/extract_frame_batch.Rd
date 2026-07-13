@@ -61,10 +61,9 @@ extract_frame_batch(jobs, run = FALSE)
 https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 }
 \seealso{
-\code{\link{extract_frame}} for the single-frame form;
-\code{\link{ffm_batch}} for the batch runner and the arguments forwarded
-through \code{...}; \code{\link{segment_video_batch}} for the segment-cutting
-sibling.
+\code{\link[=extract_frame]{extract_frame()}} for the single-frame form; \code{\link[=ffm_batch]{ffm_batch()}} for the
+batch runner and the arguments forwarded through \code{...};
+\code{\link[=segment_video_batch]{segment_video_batch()}} for the segment-cutting sibling.
 
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

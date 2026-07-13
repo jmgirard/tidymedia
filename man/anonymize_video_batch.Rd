@@ -86,10 +86,10 @@ jobs <- tibble::tibble(
 anonymize_video_batch(jobs, run = FALSE)
 }
 \seealso{
-\code{\link{anonymize_video}} for the single-input form;
-\code{\link{ffm_batch}} for the batch runner and the arguments forwarded
-through \code{...}; \code{\link{standardize_video_batch}} and
-\code{\link{segment_video_batch}} for the other table-driven siblings.
+\code{\link[=anonymize_video]{anonymize_video()}} for the single-input form; \code{\link[=ffm_batch]{ffm_batch()}} for the
+batch runner and the arguments forwarded through \code{...};
+\code{\link[=standardize_video_batch]{standardize_video_batch()}} and \code{\link[=segment_video_batch]{segment_video_batch()}} for the other
+table-driven siblings.
 
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

@@ -43,6 +43,8 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 crop_video(video, "cropped.mp4", width = 160, height = 120, run = FALSE)
 }
 \seealso{
+\code{\link[=ffm_crop]{ffm_crop()}}, the builder it wraps.
+
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},

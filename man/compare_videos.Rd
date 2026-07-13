@@ -51,6 +51,9 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 compare_videos(c(video, video), "compare.mp4", run = FALSE)
 }
 \seealso{
+\code{\link[=ffm_hstack]{ffm_hstack()}} and \code{\link[=ffm_vstack]{ffm_vstack()}}, the builders it wraps;
+\code{\link[=picture_in_picture]{picture_in_picture()}} for insetting instead of stacking.
+
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},

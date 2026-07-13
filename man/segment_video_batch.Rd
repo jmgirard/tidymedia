@@ -65,9 +65,9 @@ segment_video_batch(jobs, run = FALSE)
 https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 }
 \seealso{
-\code{\link{segment_video}} for the single-input, parallel-vector
-form; \code{\link{ffm_batch}} for the batch runner and the arguments
-forwarded through \code{...}; \code{\link{ffm_seek}} for the cut trade-off.
+\code{\link[=segment_video]{segment_video()}} for the single-input, parallel-vector form;
+\code{\link[=ffm_batch]{ffm_batch()}} for the batch runner and the arguments forwarded through
+\code{...}; \code{\link[=ffm_seek]{ffm_seek()}} for the cut trade-off.
 
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

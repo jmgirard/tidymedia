@@ -27,6 +27,10 @@ ffm(video, "output.mp4") |>
   ffm_compile()
 }
 \seealso{
+\code{\link[=ffm_compile]{ffm_compile()}} to render the pipeline and \code{\link[=ffm_run]{ffm_run()}} to execute
+it; the Layer-2 task verbs (e.g. \code{\link[=standardize_video]{standardize_video()}}, \code{\link[=segment_video]{segment_video()}})
+wrap this engine.
+
 Other builder functions:
 \code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},

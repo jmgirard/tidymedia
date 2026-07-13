@@ -26,6 +26,9 @@ ffm(video, "output.mp4") |>
   ffm_compile()
 }
 \seealso{
+\code{\link[=standardize_video]{standardize_video()}} and \code{\link[=format_for_web]{format_for_web()}}, the task verbs that
+set the pixel format via this builder.
+
 Other builder functions:
 \code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},

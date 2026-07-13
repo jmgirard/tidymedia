@@ -27,6 +27,9 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 format_for_web(video, "web.mp4", run = FALSE)
 }
 \seealso{
+\code{\link[=ffm_codec]{ffm_codec()}} and \code{\link[=ffm_pixel_format]{ffm_pixel_format()}}, among the builders it wraps;
+\code{\link[=standardize_video]{standardize_video()}} for a configurable re-encode.
+
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},

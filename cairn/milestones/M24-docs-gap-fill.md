@@ -65,7 +65,7 @@ the final (M23) names.
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [ ] **T1** Add `@seealso` to the Layer-1 `ffm_*` filter/IO pages and each
+- [x] **T1** Add `@seealso` to the Layer-1 `ffm_*` filter/IO pages and each
       Layer-2 verb (bridge each verb to the `ffm_*` verb[s] it wraps), per §4.
 - [ ] **T2** Add `@seealso` across the metadata triad (`probe_*` ↔ `get_*` ↔
       `mediainfo_*`) and program-management pages.
@@ -80,9 +80,25 @@ the final (M23) names.
 <!-- owner: any skill · append-only; one line per entry; absolute dates -->
 
 - 2026-07-12: created by /milestone-plan (executes M22 audit §4; depends on M23).
+- 2026-07-13: implement started; branch m24-docs-gap-fill cut from master.
+- 2026-07-13: gate — new @seealso use roxygen markdown `[fn()]`; normalize the 7
+  legacy `\code{\link{}}` @seealso in ffmpeg.R to markdown too; @seealso on
+  high-fan-out `ffm_*` pages stays curated (representative consumer + related
+  builders), not exhaustive.
+- 2026-07-13: T1 — added curated cross-family `@seealso` to all 20 Layer-1
+  `ffm_*` builder/IO/compile/run pages (+ print method) and every Layer-2 verb;
+  normalized the 8 legacy `\code{\link{}}` @seealso (7 in ffmpeg.R + ffm_batch)
+  to markdown; fixed a copy-paste in `ffm_scale`'s `@return` ("crop"→"resize").
+  `document()` clean, 873 tests pass.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
+
+- 2026-07-13: `@seealso` link syntax = roxygen markdown `[fn()]` across the whole
+  package (existing legacy `\code{\link{}}` blocks in `ffmpeg.R` normalized in
+  passing). Cross-family `@seealso` on `ffm_*` builder pages is **curated**
+  (bridge to the representative wrapping verb + closely-related builders), not an
+  exhaustive consumer list, to keep pages readable. Docs-only; no D-entry.
 
 ## Review
 <!-- owner: review · exclusive -->

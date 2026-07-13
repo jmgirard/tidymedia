@@ -61,6 +61,9 @@ https://ffmpeg.org/ffmpeg-filters.html#drawbox
 https://ffmpeg.org/ffmpeg-utils.html#color-syntax
 }
 \seealso{
+\code{\link[=anonymize_video]{anonymize_video()}}, the task verb that fills regions via this
+builder.
+
 Other builder functions:
 \code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},

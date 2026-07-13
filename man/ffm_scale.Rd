@@ -17,7 +17,7 @@ real number or (2) a string that contains an FFmpeg expression.}
 positive real number or (2) a string that contains an FFmpeg expression.}
 }
 \value{
-\code{object} but with the added instruction to crop the image(s).
+\code{object} but with the added instruction to resize the image(s).
 }
 \description{
 Scale (resize) the input video's frames to either a specific width and height
@@ -30,6 +30,9 @@ ffm(video, "output.mp4") |>
   ffm_compile()
 }
 \seealso{
+\code{\link[=ffm_crop]{ffm_crop()}} to crop instead of resize; \code{\link[=standardize_video]{standardize_video()}} is the
+task verb built on it.
+
 Other builder functions:
 \code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},

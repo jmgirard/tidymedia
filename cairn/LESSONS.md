@@ -40,10 +40,10 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   bare integers — it accepts `is_double(n=1)` or a string, not `integer`. A
   Layer-2 verb passing table columns (e.g. a tibble's `1:2`) must coerce them to
   double first, or valid pixel coordinates abort as a bad FFmpeg expression.
-- 2026-07-12 (M22): grepping for `.data` usage with double-quoted `"\.data\$"`
-  anchors `$` to end-of-line, so `.data$field` never matches and the reexport
-  looks unused (a false audit claim caught only at review). Use `grep -F '.data$'`.
 - 2026-07-13 (M23): a public-API rename/un-export must also sync `_pkgdown.yml`
   and live vignette/example chunks — neither is caught by `devtools::check()`
   (use `pkgdown::check_pkgdown()`; a chunk calling a now-internal fn fails only at
   vignette-build). Grep `vignettes/` + roxygen `@examples` before dropping `@export`.
+- 2026-07-13 (M24): `devtools::build_readme()` always emits a spurious diff — README.Rmd
+  examples print `system.file()` paths embedding the per-session temp libpath, which
+  changes every build. Path-only churn, not a doc change; revert unless content changed.

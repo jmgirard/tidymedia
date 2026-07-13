@@ -1,5 +1,34 @@
 # tidymedia (development version)
 
+## Standardized function and argument names
+
+The public API was renamed to a single, predictable scheme. These are breaking
+changes with no deprecation shims (the package is still pre-1.0 and soaking).
+
+* **Batch verbs now use a `_batch` suffix** instead of a plural noun:
+  `segment_videos()` → `segment_video_batch()`, `standardize_videos()` →
+  `standardize_video_batch()`, `normalize_audios()` → `normalize_audio_batch()`,
+  `anonymize_videos()` → `anonymize_video_batch()`, and `extract_frames()` →
+  `extract_frame_batch()` (which also removes the confusion with grabbing "many
+  frames" from one video).
+* **FFmpeg capability queries moved out of the `get_*` namespace:**
+  `get_codecs()` → `ffmpeg_codecs()` and `get_encoders()` → `ffmpeg_encoders()`.
+  `get_*` is now reserved for per-file metadata getters.
+* **`audio_as_mp3()` is now `convert_audio()`**, with a new `format` argument.
+  The default (`format = NULL`) reproduces the old behavior exactly (the output
+  format follows the file extension); pass `format` to pin the audio codec.
+* **Metadata getters renamed** to match the argument vocabulary:
+  `get_samplingrate()` → `get_sample_rate()` and `get_framerate()` →
+  `get_frame_rate()`.
+* **Codec and time-bound arguments harmonized:** `acodec`/`vcodec` (and the
+  matching jobs-table columns) are now `audio_codec`/`video_codec`, and
+  `segment_video()`'s `ts_start`/`ts_stop` are now `start`/`end` (matching the
+  batch columns).
+* **Removed unintended exports:** the unused tidy-eval reexports (`enquo()`,
+  `enquos()`, `as_label()`, `as_name()`, `:=`) and two internal helpers
+  (`pad_integers()`, `convert_fractions()`) are no longer exported. `.data`
+  remains reexported.
+
 ## Fixed-region anonymization
 
 * New `anonymize_video()` covers one or more fixed rectangular regions of a

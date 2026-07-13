@@ -7,7 +7,7 @@
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Principles touched:** IP1   <!-- owner: plan · create/amend-via-gate; comma-separated IPn/GPn ids this milestone touches, or — -->
-- **Branch/PR:** m23-api-surface-cleanup   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** m23-api-surface-cleanup · https://github.com/jmgirard/tidymedia/pull/25   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 

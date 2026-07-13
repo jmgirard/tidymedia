@@ -7,7 +7,7 @@
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Principles touched:** GP1   <!-- owner: plan · create/amend-via-gate; comma-separated IPn/GPn ids this milestone touches, or — -->
-- **Branch/PR:** m25-verb-coverage-survey   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** m25-verb-coverage-survey · https://github.com/jmgirard/tidymedia/pull/27   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 <!-- owner: plan · create; a wrong goal returns to plan, never edited in place -->
@@ -47,20 +47,20 @@ prioritized candidate rows, not new code.
 ## Acceptance criteria
 <!-- owner: plan · create/amend-via-gate; review reads, never reinterprets -->
 
-- [ ] AC1: A survey doc exists at `cairn/references/verb-coverage-survey-M25.md`
+- [x] AC1: A survey doc exists at `cairn/references/verb-coverage-survey-M25.md`
       and is listed under "Working artifacts" in `cairn/references/INDEX.md`.
-- [ ] AC2: The doc's "have" inventory lists every exported Layer 2 task verb, and
+- [x] AC2: The doc's "have" inventory lists every exported Layer 2 task verb, and
       that set matches the task verbs in `NAMESPACE` exactly (no verb missing, none
       invented) — verifiable by diffing the doc's list against `grep '^export'
       NAMESPACE` filtered to task verbs.
-- [ ] AC3: The doc names the stages of a behavioral/affective-science media-
+- [x] AC3: The doc names the stages of a behavioral/affective-science media-
       preprocessing pipeline and, for each stage, lists the verbs a researcher
       needs, marking each as covered or absent.
-- [ ] AC4: Every absent verb carries an explicit `keep | refuse | defer`
+- [x] AC4: Every absent verb carries an explicit `keep | refuse | defer`
       disposition with a one-line rationale; each `refuse` cites GP1 or D001.
-- [ ] AC5: Every `keep`/`defer` gap appears as a prioritized candidate row in
+- [x] AC5: Every `keep`/`defer` gap appears as a prioritized candidate row in
       `cairn/ROADMAP.md`; no `refuse` verb is added as a candidate.
-- [ ] AC6: The existing region-blur candidate row is reconciled (absorbed into or
+- [x] AC6: The existing region-blur candidate row is reconciled (absorbed into or
       cross-referenced from this survey), not duplicated — at most one region-blur
       candidate exists after this milestone.
 
@@ -113,6 +113,9 @@ its content and the ROADMAP diff.)
   dispositions); indexed it; added K1/K2/D2/D3 candidate rows + reconciled the
   region-blur row (no duplicate). Have-table verified an exact match to NAMESPACE
   task verbs; ROADMAP 25 lines (<60).
+- 2026-07-13: review send-back (AC4): R3 (xstack/amix) cited only D009, but AC4
+  requires each refuse to cite GP1 or D001; added the GP1 citation to R3 (accurate
+  — it is a scope-discipline refusal, D009 being where it was recorded). Re-verified.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local; promote
@@ -121,3 +124,33 @@ its content and the ROADMAP diff.)
 ## Review
 <!-- owner: review · exclusive; evidence per criterion; consistency-gate
      results; independent-review findings and their triage -->
+
+_Reviewed 2026-07-13. PR #27. Docs-only milestone (branch diff touches only
+`cairn/`; no package source), so `devtools::check()`/`document()`/pkgdown/NEWS
+are N/A and `cairn_impact` is skipped (GP1 worked-under, not changed)._
+
+**Acceptance-criteria evidence (fresh):**
+
+- AC1 — PASS. `cairn/references/verb-coverage-survey-M25.md` exists and is listed
+  under "Working artifacts" in `cairn/references/INDEX.md`.
+- AC2 — PASS. Have-table verbs == NAMESPACE task verbs exactly, 18/18
+  (`grep '^export' NAMESPACE` minus `ffm`/`ffm_*`/metadata/prog-mgmt/escape/verify/
+  `.data`, diffed against the table — empty diff).
+- AC3 — PASS. Nine stages A–I named; per-stage verbs marked covered/absent
+  (10 `✓`, 4 `△`, 9 `✗`).
+- AC4 — PASS (after one send-back). 2 keep / 3 defer (K/D entries) / 5 refuse
+  entries, each with a one-line rationale; all 5 refuse entries cite GP1 or D001
+  (R3 fixed mid-review — see work log).
+- AC5 — PASS. All five keep/defer gaps appear as ROADMAP candidate rows
+  (`sample_frames`, `strip_metadata`, region blur, `burn_timecode`, grouped minor
+  verbs); no refuse item (xstack/amix, face-tracking, etc.) was added as a candidate.
+- AC6 — PASS. Exactly one region-blur candidate row; reconciled in place
+  (`grep -c 'region blur' == 1`).
+
+**Consistency gate:** `cairn_validate` exit 0 (all 15 checks pass); coverage
+completeness PASS (AC1–6 each map to ≥1 existing task).
+
+**Independent review:** adapted for a zero-code milestone — the three-lens code
+fan-out is N/A (no code contract; blame/prior-PR lenses no-op), replaced by an
+inline scope-consistency check of every disposition against DECISIONS.md/DESIGN.
+One finding (R3 missing GP1/D001 citation, AC4) — fixed. No follow-ups spawned.

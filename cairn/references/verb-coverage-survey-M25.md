@@ -140,9 +140,9 @@ the Layer 0 escape hatch.
 - **R2 · Content-based auto-segmentation** (scene-cut / silence / speech split) —
   requires content detection. **D001** / **GP1**. Time-based cutting
   (`segment_video`) is the in-scope half.
-- **R3 · Grid/mosaic (`xstack`) and audio mixing (`amix`)** — **D009** already
-  keeps these at Layer 0 (`amix` needs an `[aout]` engine generalization). Not
-  reopened here.
+- **R3 · Grid/mosaic (`xstack`) and audio mixing (`amix`)** — **GP1** scope
+  discipline, already recorded as **D009**, which keeps these at Layer 0 (`amix`
+  needs an `[aout]` engine generalization). Not reopened here.
 - **R4 · Bare one-filter passthrough verbs** (speed/retime `setpts`, deinterlace,
   arbitrary single filters) — **GP1**: wrapping each thin filter as a task verb
   chases full coverage. These belong to the `ffm_*` builder / Layer 0 escape

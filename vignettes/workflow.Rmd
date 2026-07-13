@@ -1,0 +1,170 @@
+---
+title: "A research preprocessing workflow"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{A research preprocessing workflow}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(tidymedia)
+```
+
+This vignette walks a realistic end-to-end pipeline: preparing a set of recorded
+**dyadic-interaction sessions** — two people in conversation, one camera each —
+for behavioral coding and acoustic analysis. It is the kind of job tidymedia is
+built for: the same handful of steps applied identically to every file, with a
+saved command for each so the whole pipeline is reproducible.
+
+Every step below uses `run = FALSE`, which **compiles** the FFmpeg command
+without executing it, so you can read exactly what each verb would do. Drop that
+argument to actually process the files. Chunks that describe operating over a
+whole folder are shown but not evaluated; where a step *is* evaluated we use the
+tiny sample clip that ships with the package:
+
+```{r}
+session <- system.file("extdata", "sample.mp4", package = "tidymedia")
+```
+
+Picture a study folder with one file per camera per session:
+
+```{r, eval = FALSE}
+recordings <- list.files("study/raw", pattern = "\\.mp4$", full.names = TRUE)
+recordings
+#> [1] "study/raw/session01_camA.mp4" "study/raw/session01_camB.mp4"
+#> [2] "study/raw/session02_camA.mp4" "study/raw/session02_camB.mp4"
+#> ...
+```
+
+## 1. Standardize the recordings
+
+Cameras rarely agree on resolution, frame rate, or codec, and inconsistent
+inputs make everything downstream harder. `standardize_video()` re-encodes a
+file to a common target:
+
+```{r}
+standardize_video(
+  session, "session01_camA_std.mp4",
+  width = 1280, height = 720, fps = 30,
+  run = FALSE
+)
+```
+
+Because this runs the same way for every file, reach for the batch sibling to do
+the whole folder from a jobs tibble (see `vignette("batch")` for the batch
+model). Every task verb has a `*_batch()` companion like this one:
+
+```{r, eval = FALSE}
+jobs <- tibble::tibble(
+  input  = recordings,
+  output = sub("/raw/", "/std/", recordings)
+)
+standardize_video_batch(jobs, width = 1280, height = 720, fps = 30)
+```
+
+## 2. Prepare the audio
+
+Acoustic and transcription tools want clean, consistently loud audio.
+`normalize_audio()` brings a file to a target integrated loudness (here −23 LUFS,
+the EBU R128 broadcast reference):
+
+```{r}
+normalize_audio(session, "session01_camA_norm.mp4",
+                target_loudness = -23, run = FALSE)
+```
+
+To hand the speech to a transcription or acoustic-analysis tool, pull the audio
+into a standalone file. `convert_audio()` transcodes to whatever the output
+extension implies — a `.wav` for an automatic-speech-recognition pipeline:
+
+```{r}
+convert_audio(session, "session01_camA.wav", run = FALSE)
+```
+
+(If you only need the audio *without* re-encoding, `extract_audio()` stream-copies
+it instead — see `vignette("tidymedia")`.)
+
+## 3. Frames for visual coding
+
+Frame-by-frame coding of facial behavior or gesture needs stills. `extract_frame()`
+grabs a single frame at a timestamp — handy for a coding-manual illustration:
+
+```{r}
+extract_frame(session, "session01_camA_t30.png", timestamp = 30, run = FALSE)
+```
+
+`sample_frames()` samples at a fixed rate into a numbered image sequence — one
+frame per second here, ready for a manual or computer-vision coding pass:
+
+```{r, eval = FALSE}
+sample_frames("session01_camA_std.mp4", outdir = "frames/session01_camA",
+              fps = 1)
+```
+
+## 4. De-identify before sharing
+
+Sharing recordings with remote coders usually means removing identifying
+information first. Two verbs cover the common cases.
+
+`strip_metadata()` removes container-level metadata — camera model, GPS
+coordinates, recording timestamps — without touching the audio or video streams:
+
+```{r}
+strip_metadata(session, "session01_camA_clean.mp4", run = FALSE)
+```
+
+`anonymize_video()` box-fills one or more **fixed rectangles** you specify. This
+is not face tracking — you give it the coordinates of a region that stays put,
+such as an on-screen name caption or a fixed nameplate, and it paints a solid box
+over it. Regions are a data frame, one row per box:
+
+```{r}
+regions <- tibble::tibble(
+  x = 16, y = 640, width = 360, height = 64  # lower-left name caption
+)
+anonymize_video(session, "session01_camA_deid.mp4", regions = regions,
+                run = FALSE)
+```
+
+## 5. Assemble and share
+
+If a session was recorded in parts, `concatenate_videos()` joins them back into
+one file (the parts must share a codec and container — they do here, since step 1
+standardized them):
+
+```{r, eval = FALSE}
+concatenate_videos(
+  c("session01_camA_part1.mp4", "session01_camA_part2.mp4"),
+  "session01_camA_full.mp4"
+)
+```
+
+Finally, `format_for_web()` produces a lightweight, broadly compatible H.264 file
+with fast-start enabled, so coders can stream it in a browser without a large
+download:
+
+```{r}
+format_for_web(session, "session01_camA_share.mp4", run = FALSE)
+```
+
+## Reproducibility
+
+Every verb returns the exact FFmpeg command it compiled. Capturing those strings
+— or running the pipeline through the batch runner, which collects them in a
+`command` column — gives you a complete, re-runnable record of how each processed
+file was produced. That record is the point: the pipeline above is not a
+one-off, but a specification you can re-apply to the next cohort of recordings.
+
+## Where to next
+
+- `vignette("batch")` — the jobs-tibble batch runner in depth.
+- `vignette("metadata")` — reading each file's metadata as a tibble.
+- `vignette("tidymedia")` — the task verbs and the builder beneath them.

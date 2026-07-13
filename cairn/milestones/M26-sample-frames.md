@@ -3,7 +3,7 @@
      Per-section owners are tagged below. -->
 # M26: Fixed-rate frame sampling (`sample_frames` + `_batch`)
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** high   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Principles touched:** IP1, IP2, GP1   <!-- works under; none changed -->
@@ -116,7 +116,7 @@ front door to per-frame coding and CV feature pipelines (M25 survey §3 K1).
       mapping + XOR error (AC2); execution test counting numbered files at the
       requested rate (`skip_if` no ffmpeg, AC3); batch compile + schema-parity
       (AC4); all error branches + bare-integer acceptance (AC5).
-- [ ] **T5 — Docs, wiring & check.** Roxygen for both verbs; `document()`; add
+- [x] **T5 — Docs, wiring & check.** Roxygen for both verbs; `document()`; add
       both to `_pkgdown.yml`; update the spelling wordlist; NEWS entry; run
       `devtools::check()` to `Status: OK` and `pkgdown::check_pkgdown()`.
 
@@ -136,6 +136,9 @@ front door to per-frame coding and CV feature pipelines (M25 survey §3 K1).
   frame count) + new test-sample-frames-batch.R (per-row parity, auto/scalar
   outdir, column overrides, ffm_batch schema parity, guards, manifest). Full
   suite green (149 pass, 0 fail).
+- 2026-07-13: T5 — both verbs added to `_pkgdown.yml`; NEWS "New features"
+  entry; wordlist gains `muxer`/`printf` (M17). `devtools::check()` 0/0/0,
+  `spell_check_package()` clean, `pkgdown::check_pkgdown()` clean. Status → review.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

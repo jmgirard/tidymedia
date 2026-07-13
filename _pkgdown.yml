@@ -45,6 +45,8 @@ reference:
   contents:
   - extract_frame
   - extract_frame_batch
+  - sample_frames
+  - sample_frames_batch
   - extract_audio
   - separate_audio_video
   - convert_audio

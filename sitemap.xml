@@ -17,8 +17,11 @@
 <url><loc>https://jmgirard.github.io/tidymedia/reference/compare_videos.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/concatenate_videos.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/convert_audio.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/convert_audio_batch.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/crop_video.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/crop_video_batch.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/extract_audio.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/extract_frame.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/extract_frame_batch.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffm.html</loc></url>
@@ -50,6 +53,7 @@
 <url><loc>https://jmgirard.github.io/tidymedia/reference/ffprobe.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/find_program.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/format_for_web.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/format_for_web_batch.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/get_duration.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/get_frame_rate.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/get_height.html</loc></url>

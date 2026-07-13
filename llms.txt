@@ -274,16 +274,22 @@ Thin wrappers over the builder for common preprocessing jobs.
   : Sample frames from many videos at a fixed rate from a jobs table
 - [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
   : Extract the audio stream from a media file
+- [`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md)
+  : Extract Audio From Many Files From a Jobs Table
 - [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
   : Split a media file into separate audio and video files
 - [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
   : Extract or convert a media file's audio track
+- [`convert_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/convert_audio_batch.md)
+  : Convert the Audio of Many Files From a Jobs Table
 - [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
   : Normalize a file's audio loudness (EBU R128)
 - [`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md)
   : Normalize Many Files' Audio Loudness From a Jobs Table
 - [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md)
   : Crop a video to a rectangular region
+- [`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md)
+  : Crop Many Videos From a Jobs Table
 - [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
   : Cover fixed regions of a video with opaque boxes
 - [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md)
@@ -294,6 +300,8 @@ Thin wrappers over the builder for common preprocessing jobs.
   : Strip Metadata From Many Files From a Jobs Table
 - [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
   : Re-encode a video for web playback
+- [`format_for_web_batch()`](https://jmgirard.github.io/tidymedia/reference/format_for_web_batch.md)
+  : Re-encode Many Videos for the Web From a Jobs Table
 - [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
   : Standardize a video to a reproducible format
 - [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)

@@ -11,6 +11,19 @@
   [`sample_frames_batch()`](https://jmgirard.github.io/tidymedia/reference/sample_frames_batch.md)
   does the same across many videos from a jobs table.
 
+- Batch (`_batch`) siblings for the remaining single-input transform
+  verbs:
+  [`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md),
+  [`convert_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/convert_audio_batch.md),
+  [`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md),
+  and
+  [`format_for_web_batch()`](https://jmgirard.github.io/tidymedia/reference/format_for_web_batch.md)
+  process many files from one jobs table, each a thin wrapper over
+  [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
+  The audio verbs require an `output` column; the video verbs auto-name
+  outputs (`_cropped`, `_web.mp4`) when it is absent, and all four
+  reject two rows that resolve to the same output path.
+
 ### Standardized function and argument names
 
 The public API was renamed to a single, predictable scheme. These are

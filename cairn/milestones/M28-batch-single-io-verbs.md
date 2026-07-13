@@ -7,7 +7,7 @@
 - **Priority:** high   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Principles touched:** IP1   <!-- owner: plan · create/amend-via-gate; comma-separated IPn/GPn ids this milestone touches, or — -->
-- **Branch/PR:** m28-batch-single-io-verbs   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** m28-batch-single-io-verbs · https://github.com/jmgirard/tidymedia/pull/30   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 
@@ -38,40 +38,40 @@ and full doc/housekeeping sync.
 ## Acceptance criteria
 <!-- owner: plan · create/amend-via-gate; review reads, never reinterprets -->
 
-- [ ] AC1 — Four new verbs are exported (`NAMESPACE`) and each is a thin
+- [x] AC1 — Four new verbs are exported (`NAMESPACE`) and each is a thin
       `ffm_batch()` wrapper that glues no command strings of its own (IP1): the
       per-row work is delegated to a shared `*_pipeline()` helper. Evidence:
       `grep '^export' NAMESPACE` shows all four; each body contains an
       `ffm_batch(` call and no direct string assembly.
-- [ ] AC2 — Each scalar verb's recipe is extracted into a shared `*_pipeline()`
+- [x] AC2 — Each scalar verb's recipe is extracted into a shared `*_pipeline()`
       helper that both the scalar verb and its batch sibling call, and the
       scalar verb's compiled output is unchanged for a fixed call (byte-for-byte).
       Evidence: a test asserting `<verb>(…, run = FALSE)` returns the exact
       command string it did before the refactor (golden string per verb).
-- [ ] AC3 — Every batch verb rejects, with a `cli` error: a non-data-frame
+- [x] AC3 — Every batch verb rejects, with a `cli` error: a non-data-frame
       `jobs`, a zero-row `jobs`, a missing `input` column, an `NA` in `input`,
       and any two rows whose **resolved** output paths collide (M26 — guard at
       the resolved-path level, not just duplicated inputs). Evidence: one test
       per guard, per verb (duplicate-path test uses a repeated explicit output).
-- [ ] AC4 — Per-row override columns are honored where the scalar verb has knobs
+- [x] AC4 — Per-row override columns are honored where the scalar verb has knobs
       and fall back to the argument default when the column is absent:
       `crop_video_batch` reads `width`/`height`/`x`/`y`; `convert_audio_batch`
       reads `format`; `extract_audio_batch` reads `audio_codec`;
       `format_for_web_batch` has no knobs (input/output only). Evidence: a test
       per knobbed verb showing a per-row column changes that row's command while
       a column-less row uses the default (parity with `normalize_audio_batch`).
-- [ ] AC5 — Return-schema parity: each batch verb's output tibble carries the
+- [x] AC5 — Return-schema parity: each batch verb's output tibble carries the
       same `ffm_batch()` columns (`command`, and the opt-in `verified` column /
       manifest attribute) as the existing `_batch` verbs, with identical
       names/types (M19). Evidence: a test comparing `names()`/types of a new
       batch verb's result against `strip_metadata_batch`'s on a matched call.
-- [ ] AC6 — Docs & housekeeping synced: each new verb has roxygen with
+- [x] AC6 — Docs & housekeeping synced: each new verb has roxygen with
       `@family task verb functions`, `@seealso` to its scalar sibling and
       `ffm_batch`, and batch-disambiguation prose (M24); `man/` regenerated,
       `NAMESPACE` updated, `_pkgdown.yml` synced, spelling wordlist updated for
       any new terms (M23/M17). Evidence: `pkgdown::check_pkgdown()` clean; `man/`
       pages exist for all four.
-- [ ] AC7 — `devtools::check()` reports 0 errors / 0 warnings and raw
+- [x] AC7 — `devtools::check()` reports 0 errors / 0 warnings and raw
       `00check.log` shows `Status: OK` (M17 — confirm in the log, not just the
       devtools summary).
 
@@ -129,3 +129,45 @@ and full doc/housekeeping sync.
 
 ## Review
 <!-- owner: review · exclusive -->
+
+**Reviewed 2026-07-12 · PR #30 · branch cut from master (in sync, no merge needed).**
+
+### Acceptance-criteria evidence (fresh)
+
+- AC1 — `grep '^export'` NAMESPACE shows all four (`extract_audio_batch`,
+  `convert_audio_batch`, `crop_video_batch`, `format_for_web_batch`); each body
+  delegates to `ffm_batch(...)` and a shared `*_pipeline()` helper, no hand-glued
+  strings (IP1). **PASS**
+- AC2 — Pipeline helpers extracted; per-verb compile-parity golden-string tests
+  (`res$command[[1]] == <scalar>(…, run = FALSE)`) pass for all four; the 119
+  `test-ffmpeg.R` scalar tests stay green (extraction is byte-preserving). **PASS**
+- AC3 — Guard tests pass per verb: non-data-frame, zero-row, missing `input`,
+  `NA` input, and duplicated **resolved** output (M26) all abort with a `cli`
+  error. **PASS**
+- AC4 — Per-row override-column tests pass: `crop_video_batch` reads
+  `width`/`height`/`x`/`y`; `convert_audio_batch` reads `format`;
+  `extract_audio_batch` reads `audio_codec`; a column-less row uses the argument
+  default (parity with `standardize_video_batch`). **PASS**
+- AC5 — Schema-parity tests pass: `setdiff(names(res), names(jobs)) == "command"`
+  under `run = FALSE`, matching another `_batch` verb's added-column schema
+  (M19). **PASS**
+- AC6 — `document()` produces no diff; four new `man/*.Rd` exist;
+  `pkgdown::check_pkgdown()` clean; `_pkgdown.yml` rows added; NEWS entry present;
+  wordlist `+transcode`. **PASS**
+- AC7 — `devtools::check()` **Status: OK** — 0 errors / 0 warnings / 0 notes. **PASS**
+
+Test totals (fresh, ffmpeg present): 201 pass / 0 fail / 0 warn / 0 skip across
+the four new files (82) + `test-ffmpeg.R` (119).
+
+### Consistency gate
+
+- `cairn_validate.py` — all checks PASS (exit 0), incl. coverage completeness,
+  mirror agreement, single in-progress, weight caps, principles slot.
+- Toolchain (`r-package` consistency-gate): `document()` no-diff PASS; generated
+  files (NAMESPACE/man) regenerate clean; `pkgdown::check_pkgdown()` PASS; NEWS
+  entry present; `devtools::check()` Status: OK. No `DESIGN.md` principle changed
+  (IP1 worked under, not modified) → `cairn_impact` skipped.
+
+### Independent review
+
+_(three fresh-context reviewers + scorer — pending)_

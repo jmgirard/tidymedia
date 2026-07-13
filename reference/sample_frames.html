@@ -160,7 +160,7 @@ caller-enumerated set; <code><a href="sample_frames_batch.html">sample_frames_ba
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">video</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sample.mp4"</span>, package <span class="op">=</span> <span class="st">"tidymedia"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># run = FALSE returns the reproducible command instead of executing it</span></span></span>
 <span class="r-in"><span><span class="fu">sample_frames</span><span class="op">(</span><span class="va">video</span>, <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, fps <span class="op">=</span> <span class="fl">2</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"fps=2\" -qscale:v 2 \"/tmp/RtmpOL1Ozj/sample_%06d.png\""</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"fps=2\" -qscale:v 2 \"/tmp/RtmpVCFvJz/sample_%06d.png\""</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

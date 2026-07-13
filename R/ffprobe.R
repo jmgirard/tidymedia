@@ -10,6 +10,8 @@
 #'
 #' @param command A string containing the command to send to FFprobe.
 #' @return A string containing the text output by FFprobe.
+#' @seealso [probe_all()] and the `probe_*()` shortcuts for structured,
+#'   tibble-returning output.
 #' @family escape hatch functions
 #' @examplesIf nzchar(Sys.which("ffprobe"))
 #' ffprobe("-version")
@@ -30,6 +32,11 @@ ffprobe <- function(command) {
 #' are stacked and keyed by a leading `file` column, so the output is ready for
 #' `dplyr` joins and filters over a whole batch.
 #'
+#' This is tidymedia's **FFprobe** metadata reader, returning **tibbles** (one
+#' row per file or per stream) — distinct from the **MediaInfo** readers
+#' (`mediainfo_*()`, which return tibbles or values) and the scalar `get_*()`
+#' helpers (which return a single value per file).
+#'
 #' @param infile A character vector of one or more media-file locations (file
 #'   paths or web links) to probe.
 #' @param typed A logical. When `TRUE` (default) numeric columns are converted
@@ -41,6 +48,8 @@ ffprobe <- function(command) {
 #'   readable streams). Both lead with a `file` column identifying the input.
 #'   Files that cannot be probed yield an all-`NA` row and a warning rather than
 #'   aborting the call.
+#' @seealso [mediainfo_template()] and [mediainfo_query()] for the MediaInfo
+#'   backend, and [get_duration()] and friends for single scalar values.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("ffprobe"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -135,6 +144,10 @@ probe_one <- function(file) {
 #' passing `infile` reprobes, so reuse a `probe` object when working with large
 #' files.
 #'
+#' These **FFprobe**-backed shortcuts return **tibbles**; the **MediaInfo**
+#' readers (`mediainfo_*()`) and the scalar `get_*()` helpers are the
+#' alternatives.
+#'
 #' @param probe A list object created by [probe_all()]. Must be `NULL` if
 #'   `infile` is supplied.
 #' @param infile A character vector of one or more media-file locations. Must be
@@ -142,6 +155,8 @@ probe_one <- function(file) {
 #' @param typed A logical passed to [probe_all()] when `infile` is used (default
 #'   `TRUE`); ignored when `probe` is supplied.
 #' @return A tibble containing only the requested information.
+#' @seealso [probe_all()] for the full probe; [mediainfo_query()] for the
+#'   MediaInfo backend; [get_width()] and friends for single scalar values.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("ffprobe"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")

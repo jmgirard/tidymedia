@@ -51,9 +51,9 @@
 #'   column when \code{verify} is supplied). When \code{manifest = TRUE} a
 #'   provenance manifest is attached as an attribute; read it with
 #'   \code{\link{ffm_manifest}}.
-#' @seealso \code{\link{segment_video}}, which is built on \code{ffm_batch()};
-#'   \code{\link{verify_media}} for the verification spec and
-#'   \code{\link{ffm_manifest}} for the provenance manifest.
+#' @seealso [segment_video()], which is built on \code{ffm_batch()};
+#'   [verify_media()] for the verification spec and [ffm_manifest()] for the
+#'   provenance manifest.
 #' @family builder functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")

@@ -52,6 +52,9 @@ ffm(video, "output.mp4") |>
 https://ffmpeg.org/ffmpeg.html#Main-options
 }
 \seealso{
+\code{\link[=ffm_trim]{ffm_trim()}} for the filter-based alternative, \code{\link[=ffm_copy]{ffm_copy()}} for the
+fast copy path, and \code{\link[=segment_video]{segment_video()}}, the task verb built on it.
+
 Other builder functions:
 \code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},

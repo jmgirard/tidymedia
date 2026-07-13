@@ -33,6 +33,9 @@ ffm(video, "frame.png") |>
   ffm_compile()
 }
 \seealso{
+\code{\link[=ffmpeg]{ffmpeg()}} for the full Layer 0 escape hatch, and \code{\link[=ffm_compile]{ffm_compile()}},
+which places these options.
+
 Other builder functions:
 \code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},

@@ -55,6 +55,9 @@ https://ffmpeg.org/ffmpeg-filters.html#trim
 https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 }
 \seealso{
+\code{\link[=ffm_seek]{ffm_seek()}}, the faster seek-based cut that can stream-copy (this
+is the frame-exact \emph{filter}).
+
 Other builder functions:
 \code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},

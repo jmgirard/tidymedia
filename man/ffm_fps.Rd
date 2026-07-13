@@ -30,6 +30,9 @@ ffm(video, "output.mp4") |>
   ffm_compile()
 }
 \seealso{
+\code{\link[=standardize_video]{standardize_video()}}, the task verb that sets frame rate via this
+builder.
+
 Other builder functions:
 \code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},

@@ -28,6 +28,9 @@ ffm(video, "output.mp4") |>
   ffm_compile()
 }
 \seealso{
+\code{\link[=ffm_run]{ffm_run()}} to compile and execute in one step, and \code{\link[=ffm_batch]{ffm_batch()}} to
+compile over many files.
+
 Other builder functions:
 \code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},

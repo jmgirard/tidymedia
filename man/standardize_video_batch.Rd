@@ -69,7 +69,8 @@ forwarded arguments add, e.g. \code{verified}).
 }
 \description{
 Re-encode many input files to a reproducible format from a single jobs tibble
-— a table-driven sibling of \code{\link{standardize_video}} for when you have
+— the \strong{batch} (table-driven) sibling of \code{\link[=standardize_video]{standardize_video()}} for when you
+have
 more than one video to standardize. Each row is one input; the only required
 column names its source. This is a thin wrapper over \code{\link{ffm_batch}}:
 one reproducible compiled command per input.
@@ -85,10 +86,10 @@ jobs <- tibble::tibble(
 standardize_video_batch(jobs, run = FALSE)
 }
 \seealso{
-\code{\link{standardize_video}} for the single-input form;
-\code{\link{ffm_batch}} for the batch runner and the arguments forwarded
-through \code{...}; \code{\link{segment_video_batch}} and
-\code{\link{extract_frame_batch}} for the other table-driven siblings.
+\code{\link[=standardize_video]{standardize_video()}} for the single-input form; \code{\link[=ffm_batch]{ffm_batch()}} for
+the batch runner and the arguments forwarded through \code{...};
+\code{\link[=segment_video_batch]{segment_video_batch()}} and \code{\link[=extract_frame_batch]{extract_frame_batch()}} for the other
+table-driven siblings.
 
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

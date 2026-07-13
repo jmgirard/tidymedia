@@ -36,6 +36,11 @@ via \code{probe_video()} / \code{probe_audio()}. Each takes \strong{either} the 
 passing \code{infile} reprobes, so reuse a \code{probe} object when working with large
 files.
 }
+\details{
+These \strong{FFprobe}-backed shortcuts return \strong{tibbles}; the \strong{MediaInfo}
+readers (\verb{mediainfo_*()}) and the scalar \verb{get_*()} helpers are the
+alternatives.
+}
 \examples{
 \dontshow{if (nzchar(Sys.which("ffprobe"))) withAutoprint(\{ # examplesIf}
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -48,6 +53,9 @@ probe_audio(info)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
+\code{\link[=probe_all]{probe_all()}} for the full probe; \code{\link[=mediainfo_query]{mediainfo_query()}} for the
+MediaInfo backend; \code{\link[=get_width]{get_width()}} and friends for single scalar values.
+
 Other metadata functions:
 \code{\link[=get_duration]{get_duration()}},
 \code{\link[=get_frame_rate]{get_frame_rate()}},

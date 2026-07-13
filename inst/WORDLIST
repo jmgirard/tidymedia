@@ -3,6 +3,7 @@ Anonymize
 CLI
 CLIs
 CMD
+Codec
 Codecov
 Codecs
 EBU
@@ -43,6 +44,7 @@ ffprobe
 filtergraphs
 framerate
 furrr
+getters
 gyan
 horiz
 https
@@ -61,6 +63,7 @@ normalisation
 parseable
 passthrough
 pkgdown
+pre
 pts
 px
 remux

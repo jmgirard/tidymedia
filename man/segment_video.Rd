@@ -68,7 +68,8 @@ segment_video(video, start = c(0, 0.5), end = c(0.5, 1), run = FALSE)
 https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 }
 \seealso{
-\code{\link{ffm_batch}}, \code{\link{ffm_seek}}
+\code{\link[=ffm_seek]{ffm_seek()}}, the builder it uses to cut; \code{\link[=ffm_batch]{ffm_batch()}}, the runner;
+\code{\link[=segment_video_batch]{segment_video_batch()}} for the many-file form.
 
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

@@ -25,6 +25,10 @@ mediainfo("--Version")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
+\code{\link[=mediainfo_template]{mediainfo_template()}}, \code{\link[=mediainfo_query]{mediainfo_query()}}, and
+\code{\link[=mediainfo_parameter]{mediainfo_parameter()}} for structured output, and \code{\link[=get_duration]{get_duration()}} and
+friends for common scalars.
+
 Other escape hatch functions:
 \code{\link[=ffmpeg]{ffmpeg()}},
 \code{\link[=ffprobe]{ffprobe()}}

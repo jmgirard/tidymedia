@@ -41,6 +41,9 @@ ffm(video, "output.mp4") |>
 https://ffmpeg.org/ffmpeg-filters.html#toc-crop
 }
 \seealso{
+\code{\link[=ffm_scale]{ffm_scale()}} to resize instead of crop; \code{\link[=crop_video]{crop_video()}} and
+\code{\link[=format_for_web]{format_for_web()}} are the task verbs built on it.
+
 Other builder functions:
 \code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},

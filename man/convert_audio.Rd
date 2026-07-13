@@ -35,6 +35,9 @@ convert_audio(video, "audio.mp3", run = FALSE)
 convert_audio(video, "audio.m4a", format = "aac", run = FALSE)
 }
 \seealso{
+\code{\link[=ffm_codec]{ffm_codec()}} and \code{\link[=ffm_map]{ffm_map()}}, the builders it wraps;
+\code{\link[=extract_audio]{extract_audio()}} to copy audio without re-encoding.
+
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},

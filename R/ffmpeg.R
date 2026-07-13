@@ -9,6 +9,9 @@
 #'
 #' @param command A string containing the arguments to pass to FFmpeg.
 #' @return A character vector containing the text output by FFmpeg.
+#' @seealso [ffmpeg_codecs()] and [ffmpeg_encoders()] for structured capability
+#'   queries, and the `ffm_*` pipeline builders (e.g. [ffm_run()]) for a safer
+#'   command layer.
 #' @family escape hatch functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
 #' # Layer 0 escape hatch: the string is passed to FFmpeg verbatim
@@ -42,6 +45,8 @@ ffmpeg <- function(command) {
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @seealso [ffm_seek()], the builder it uses to grab the frame;
+#'   [extract_frame_batch()] for the many-file (batch) form.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -93,6 +98,8 @@ frame_pipeline <- function(input, output, timestamp) {
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @seealso [ffm_drop()] and [ffm_codec()], the builders it wraps;
+#'   [convert_audio()] to re-encode the extracted audio.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -131,6 +138,8 @@ extract_audio <- function(infile, outfile, audio_codec = "copy", run = TRUE) {
 #'   or return the compiled commands without running them (\code{FALSE}).
 #' @return A named character vector of the two compiled commands
 #'   (\code{audio}, \code{video}); invisible when \code{run = TRUE}.
+#' @seealso [ffm_map()] and [ffm_codec()], the builders it wraps;
+#'   [extract_audio()] to pull out just the audio.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -184,6 +193,8 @@ separate_audio_video <- function(infile, audiofile, videofile,
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @seealso [ffm_codec()] and [ffm_map()], the builders it wraps;
+#'   [extract_audio()] to copy audio without re-encoding.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -221,6 +232,7 @@ convert_audio <- function(infile, outfile, format = NULL, run = TRUE) {
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @seealso [ffm_crop()], the builder it wraps.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -253,6 +265,8 @@ crop_video <- function(infile, outfile, width, height,
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @seealso [ffm_codec()] and [ffm_pixel_format()], among the builders it wraps;
+#'   [standardize_video()] for a configurable re-encode.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -314,6 +328,8 @@ format_for_web <- function(infile, outfile, run = TRUE) {
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @seealso [ffm_scale()], [ffm_codec()], and [ffm_pixel_format()], among the
+#'   builders it wraps; [standardize_video_batch()] for the many-file form.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -415,7 +431,8 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
-#' @seealso \code{\link{ffm_drawbox}} for the underlying builder filter.
+#' @seealso [ffm_drawbox()], the builder filter it wraps; [anonymize_video_batch()]
+#'   for the many-file (batch) form.
 #' @references https://ffmpeg.org/ffmpeg-filters.html#drawbox
 #' @family task verb functions
 #' @examples
@@ -563,8 +580,8 @@ derive_anonymized_names <- function(input) {
 #' Anonymize Many Videos From a Jobs Table
 #'
 #' Cover fixed rectangular regions of many input videos with opaque filled boxes
-#' from a single jobs tibble — a table-driven sibling of
-#' \code{\link{anonymize_video}} for when you have more than one video to
+#' from a single jobs tibble — the **batch** (table-driven) sibling of
+#' [anonymize_video()] for when you have more than one video to
 #' redact. Each row is one input with its own regions; the required columns name
 #' the source (\code{input}) and the boxes to cover (\code{regions}). This is a
 #' thin wrapper over \code{\link{ffm_batch}}: one reproducible compiled command
@@ -609,10 +626,10 @@ derive_anonymized_names <- function(input) {
 #'   (and, when \code{output} was derived, the resolved \code{output} column;
 #'   when \code{run = TRUE}, a \code{success} column, plus any columns the
 #'   forwarded arguments add, e.g. \code{verified}).
-#' @seealso \code{\link{anonymize_video}} for the single-input form;
-#'   \code{\link{ffm_batch}} for the batch runner and the arguments forwarded
-#'   through \code{...}; \code{\link{standardize_video_batch}} and
-#'   \code{\link{segment_video_batch}} for the other table-driven siblings.
+#' @seealso [anonymize_video()] for the single-input form; [ffm_batch()] for the
+#'   batch runner and the arguments forwarded through \code{...};
+#'   [standardize_video_batch()] and [segment_video_batch()] for the other
+#'   table-driven siblings.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -774,6 +791,8 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}). Under
 #'   \code{two_pass = TRUE} this is the correction command built from the
 #'   measured values.
+#' @seealso [ffm_loudnorm()], the builder it wraps; [normalize_audio_batch()]
+#'   for the many-file form; [standardize_video()], its video-side complement.
 #' @references
 #' EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
 #' maximum level of audio signals}; ITU-R BS.1770-4.
@@ -884,6 +903,8 @@ normalize_audio_pipeline <- function(input, output,
 #'   is an intra-frame-only codec} \item{lossy}{A logical vector indicating
 #'   whether each codec supports lossy compression} \item{lossless}{A logical
 #'   vector indicating whether each codec supports lossless compression}
+#' @seealso [ffmpeg_encoders()] for the encoder list, [ffm_codec()] to set a
+#'   codec in a pipeline, and [ffmpeg()] for the Layer 0 escape hatch.
 #' @family capability functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
 #' head(ffmpeg_codecs())
@@ -963,6 +984,8 @@ ffmpeg_codecs <- function(sort_by_type = TRUE) {
 #'   logical vector indicating whether each encoder supports draw_horiz_band}
 #'   \item{direct_render}{A logical vector indicating whether each encoders
 #'   supports direct rending method 1}
+#' @seealso [ffmpeg_codecs()] for the codec list, [ffm_codec()] to set a codec
+#'   in a pipeline, and [ffmpeg()] for the Layer 0 escape hatch.
 #' @family capability functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
 #' head(ffmpeg_encoders())
@@ -1060,7 +1083,8 @@ ffmpeg_encoders <- function(sort_by_type = TRUE) {
 #' @return The [tibble][tibble::tibble-package] returned by
 #'   \code{\link{ffm_batch}}: one row per segment with its \code{command} (and,
 #'   when \code{run = TRUE}, \code{success}).
-#' @seealso \code{\link{ffm_batch}}, \code{\link{ffm_seek}}
+#' @seealso [ffm_seek()], the builder it uses to cut; [ffm_batch()], the runner;
+#'   [segment_video_batch()] for the many-file form.
 #' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 #' @family task verb functions
 #' @examples
@@ -1168,8 +1192,8 @@ segment_pipeline <- function(input, output, start, end, reencode) {
 
 #' Segment Many Videos From a Jobs Table
 #'
-#' Cut segments across many input files from a single jobs tibble — a
-#' table-driven sibling of \code{\link{segment_video}} for when your segments
+#' Cut segments across many input files from a single jobs tibble — the
+#' **batch** (table-driven) sibling of [segment_video()] for when your segments
 #' span more than one input. Each row is one segment; the four required columns
 #' name its source, destination, and cut points. This is a thin wrapper over
 #' \code{\link{ffm_batch}}: one reproducible compiled command per segment.
@@ -1203,9 +1227,9 @@ segment_pipeline <- function(input, output, start, end, reencode) {
 #'   (and, when \code{output} was derived, the resolved \code{output} column;
 #'   when \code{run = TRUE}, a \code{success} column, plus any columns the
 #'   forwarded arguments add, e.g. \code{verified}).
-#' @seealso \code{\link{segment_video}} for the single-input, parallel-vector
-#'   form; \code{\link{ffm_batch}} for the batch runner and the arguments
-#'   forwarded through \code{...}; \code{\link{ffm_seek}} for the cut trade-off.
+#' @seealso [segment_video()] for the single-input, parallel-vector form;
+#'   [ffm_batch()] for the batch runner and the arguments forwarded through
+#'   \code{...}; [ffm_seek()] for the cut trade-off.
 #' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 #' @family task verb functions
 #' @examples
@@ -1282,7 +1306,8 @@ segment_video_batch <- function(jobs, reencode = TRUE, run = TRUE,
 #' Extract Still Frames From Many Videos From a Jobs Table
 #'
 #' Grab one still image per row across many input files from a single jobs
-#' tibble — a table-driven sibling of \code{\link{extract_frame}} for when your
+#' tibble — the **batch** (table-driven) sibling of [extract_frame()] for when
+#' your
 #' frames span more than one input. Each row is one frame; the required columns
 #' name its source and the moment to capture. This is a thin wrapper over
 #' \code{\link{ffm_batch}}: one reproducible compiled command per frame.
@@ -1313,10 +1338,9 @@ segment_video_batch <- function(jobs, reencode = TRUE, run = TRUE,
 #'   (and, when \code{output} was derived, the resolved \code{output} column;
 #'   when \code{run = TRUE}, a \code{success} column, plus any columns the
 #'   forwarded arguments add, e.g. \code{verified}).
-#' @seealso \code{\link{extract_frame}} for the single-frame form;
-#'   \code{\link{ffm_batch}} for the batch runner and the arguments forwarded
-#'   through \code{...}; \code{\link{segment_video_batch}} for the segment-cutting
-#'   sibling.
+#' @seealso [extract_frame()] for the single-frame form; [ffm_batch()] for the
+#'   batch runner and the arguments forwarded through \code{...};
+#'   [segment_video_batch()] for the segment-cutting sibling.
 #' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 #' @family task verb functions
 #' @examples
@@ -1438,7 +1462,8 @@ derive_standardized_names <- function(input) {
 #' Standardize Many Videos From a Jobs Table
 #'
 #' Re-encode many input files to a reproducible format from a single jobs tibble
-#' — a table-driven sibling of \code{\link{standardize_video}} for when you have
+#' — the **batch** (table-driven) sibling of [standardize_video()] for when you
+#' have
 #' more than one video to standardize. Each row is one input; the only required
 #' column names its source. This is a thin wrapper over \code{\link{ffm_batch}}:
 #' one reproducible compiled command per input.
@@ -1483,10 +1508,10 @@ derive_standardized_names <- function(input) {
 #'   (and, when \code{output} was derived, the resolved \code{output} column;
 #'   when \code{run = TRUE}, a \code{success} column, plus any columns the
 #'   forwarded arguments add, e.g. \code{verified}).
-#' @seealso \code{\link{standardize_video}} for the single-input form;
-#'   \code{\link{ffm_batch}} for the batch runner and the arguments forwarded
-#'   through \code{...}; \code{\link{segment_video_batch}} and
-#'   \code{\link{extract_frame_batch}} for the other table-driven siblings.
+#' @seealso [standardize_video()] for the single-input form; [ffm_batch()] for
+#'   the batch runner and the arguments forwarded through \code{...};
+#'   [segment_video_batch()] and [extract_frame_batch()] for the other
+#'   table-driven siblings.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -1601,7 +1626,7 @@ derive_normalized_names <- function(input) {
 #' Normalize Many Files' Audio Loudness From a Jobs Table
 #'
 #' Loudness-normalize the audio of many input files (EBU R128) from a single
-#' jobs tibble — a table-driven sibling of \code{\link{normalize_audio}} for
+#' jobs tibble — the **batch** (table-driven) sibling of [normalize_audio()] for
 #' when you have more than one file to normalize. Each row is one input; the
 #' only required column names its source. This is a thin wrapper over
 #' \code{\link{ffm_batch}}: one reproducible compiled command per input, sharing
@@ -1684,10 +1709,9 @@ derive_normalized_names <- function(input) {
 #' @references
 #' EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
 #' maximum level of audio signals}; ITU-R BS.1770-4.
-#' @seealso \code{\link{normalize_audio}} for the single-input form;
-#'   \code{\link{ffm_batch}} for the batch runner and the arguments forwarded
-#'   through \code{...}; \code{\link{standardize_video_batch}} for the video-side
-#'   table-driven sibling.
+#' @seealso [normalize_audio()] for the single-input form; [ffm_batch()] for the
+#'   batch runner and the arguments forwarded through \code{...};
+#'   [standardize_video_batch()] for the video-side table-driven sibling.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -1877,6 +1901,7 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @seealso [ffm_concat()], the builder it wraps.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -1926,6 +1951,8 @@ concatenate_videos <- function(infiles, outfile, run = TRUE) {
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @seealso [ffm_hstack()] and [ffm_vstack()], the builders it wraps;
+#'   [picture_in_picture()] for insetting instead of stacking.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -1992,6 +2019,8 @@ compare_videos <- function(infiles, outfile,
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @seealso [ffm_overlay()], the builder it wraps; [compare_videos()] for
+#'   side-by-side stacking.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")

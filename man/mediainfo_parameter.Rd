@@ -30,6 +30,11 @@ Query a single parameter in a single section from MediaInfo. \code{file} may be 
 vector of several files, in which case a vector of values (one per file) is
 returned.
 }
+\details{
+This \strong{MediaInfo}-backed reader returns a \strong{value} (or a vector of values,
+one per file), not a tibble; the FFprobe counterpart is the \verb{probe_*()}
+family.
+}
 \examples{
 \dontshow{if (nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -37,6 +42,10 @@ mediainfo_parameter(video, section = "Video", parameter = "Width")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
+\code{\link[=mediainfo_query]{mediainfo_query()}} to pull several parameters at once,
+\code{\link[=mediainfo_template]{mediainfo_template()}} for a whole template, \code{\link[=probe_all]{probe_all()}} for the FFprobe
+backend, and \code{\link[=get_duration]{get_duration()}} and friends for common single values.
+
 Other metadata functions:
 \code{\link[=get_duration]{get_duration()}},
 \code{\link[=get_frame_rate]{get_frame_rate()}},

@@ -44,8 +44,8 @@ when \code{run = TRUE}, a \code{success} column, plus any columns the
 forwarded arguments add, e.g. \code{verified}).
 }
 \description{
-Cut segments across many input files from a single jobs tibble — a
-table-driven sibling of \code{\link{segment_video}} for when your segments
+Cut segments across many input files from a single jobs tibble — the
+\strong{batch} (table-driven) sibling of \code{\link[=segment_video]{segment_video()}} for when your segments
 span more than one input. Each row is one segment; the four required columns
 name its source, destination, and cut points. This is a thin wrapper over
 \code{\link{ffm_batch}}: one reproducible compiled command per segment.
@@ -65,9 +65,9 @@ segment_video_batch(jobs, run = FALSE)
 https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 }
 \seealso{
-\code{\link{segment_video}} for the single-input, parallel-vector
-form; \code{\link{ffm_batch}} for the batch runner and the arguments
-forwarded through \code{...}; \code{\link{ffm_seek}} for the cut trade-off.
+\code{\link[=segment_video]{segment_video()}} for the single-input, parallel-vector form;
+\code{\link[=ffm_batch]{ffm_batch()}} for the batch runner and the arguments forwarded through
+\code{...}; \code{\link[=ffm_seek]{ffm_seek()}} for the cut trade-off.
 
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

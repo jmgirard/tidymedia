@@ -33,6 +33,10 @@ section. To query parameters from multiple sections at once, use
 vector of several files; results are stacked with a leading \code{file}
 column.
 }
+\details{
+This \strong{MediaInfo}-backed reader returns a \strong{tibble}; the FFprobe
+counterpart is the \verb{probe_*()} family.
+}
 \examples{
 \dontshow{if (nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -40,6 +44,10 @@ mediainfo_query(video, section = "Video", parameters = c("Width", "Height"))
 \dontshow{\}) # examplesIf}
 }
 \seealso{
+\code{\link[=mediainfo_parameter]{mediainfo_parameter()}} for a single value, \code{\link[=mediainfo_template]{mediainfo_template()}}
+for a whole template, \code{\link[=probe_all]{probe_all()}} for the FFprobe backend, and
+\code{\link[=get_duration]{get_duration()}} and friends for single scalar values.
+
 Other metadata functions:
 \code{\link[=get_duration]{get_duration()}},
 \code{\link[=get_frame_rate]{get_frame_rate()}},

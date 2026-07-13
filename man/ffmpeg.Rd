@@ -24,6 +24,10 @@ ffmpeg("-version")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
+\code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}} and \code{\link[=ffmpeg_encoders]{ffmpeg_encoders()}} for structured capability
+queries, and the \verb{ffm_*} pipeline builders (e.g. \code{\link[=ffm_run]{ffm_run()}}) for a safer
+command layer.
+
 Other escape hatch functions:
 \code{\link[=ffprobe]{ffprobe()}},
 \code{\link[=mediainfo]{mediainfo()}}

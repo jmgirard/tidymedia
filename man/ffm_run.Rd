@@ -37,6 +37,9 @@ ffm(video, out) |>
 \dontshow{\}) # examplesIf}
 }
 \seealso{
+\code{\link[=ffm_compile]{ffm_compile()}} to get the command without running it, \code{\link[=ffm_batch]{ffm_batch()}}
+for the many-file runner, and \code{\link[=verify_media]{verify_media()}} for the \code{verify =} spec.
+
 Other builder functions:
 \code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},

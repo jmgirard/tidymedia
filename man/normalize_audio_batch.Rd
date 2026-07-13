@@ -102,7 +102,7 @@ outputs.
 }
 \description{
 Loudness-normalize the audio of many input files (EBU R128) from a single
-jobs tibble — a table-driven sibling of \code{\link{normalize_audio}} for
+jobs tibble — the \strong{batch} (table-driven) sibling of \code{\link[=normalize_audio]{normalize_audio()}} for
 when you have more than one file to normalize. Each row is one input; the
 only required column names its source. This is a thin wrapper over
 \code{\link{ffm_batch}}: one reproducible compiled command per input, sharing
@@ -130,10 +130,9 @@ EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
 maximum level of audio signals}; ITU-R BS.1770-4.
 }
 \seealso{
-\code{\link{normalize_audio}} for the single-input form;
-\code{\link{ffm_batch}} for the batch runner and the arguments forwarded
-through \code{...}; \code{\link{standardize_video_batch}} for the video-side
-table-driven sibling.
+\code{\link[=normalize_audio]{normalize_audio()}} for the single-input form; \code{\link[=ffm_batch]{ffm_batch()}} for the
+batch runner and the arguments forwarded through \code{...};
+\code{\link[=standardize_video_batch]{standardize_video_batch()}} for the video-side table-driven sibling.
 
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

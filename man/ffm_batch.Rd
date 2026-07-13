@@ -93,9 +93,9 @@ ffm_batch(jobs, run = FALSE, .f = function(input, output, ...) {
 })
 }
 \seealso{
-\code{\link{segment_video}}, which is built on \code{ffm_batch()};
-\code{\link{verify_media}} for the verification spec and
-\code{\link{ffm_manifest}} for the provenance manifest.
+\code{\link[=segment_video]{segment_video()}}, which is built on \code{ffm_batch()};
+\code{\link[=verify_media]{verify_media()}} for the verification spec and \code{\link[=ffm_manifest]{ffm_manifest()}} for the
+provenance manifest.
 
 Other builder functions:
 \code{\link[=ffm]{ffm()}},

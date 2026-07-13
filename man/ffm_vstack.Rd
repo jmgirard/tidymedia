@@ -37,6 +37,9 @@ ffm(c(video, video), "output.mp4") |>
   ffm_compile()
 }
 \seealso{
+\code{\link[=ffm_hstack]{ffm_hstack()}} for horizontal stacking and \code{\link[=compare_videos]{compare_videos()}}, the
+task verb built on both.
+
 Other builder functions:
 \code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},

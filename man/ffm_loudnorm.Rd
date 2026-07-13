@@ -81,6 +81,8 @@ maximum level of audio signals}; ITU-R BS.1770-4.
 \url{https://ffmpeg.org/ffmpeg-filters.html#loudnorm}
 }
 \seealso{
+\code{\link[=normalize_audio]{normalize_audio()}}, the task verb built on this filter.
+
 Other builder functions:
 \code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},

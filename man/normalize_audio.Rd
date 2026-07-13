@@ -94,6 +94,9 @@ EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
 maximum level of audio signals}; ITU-R BS.1770-4.
 }
 \seealso{
+\code{\link[=ffm_loudnorm]{ffm_loudnorm()}}, the builder it wraps; \code{\link[=normalize_audio_batch]{normalize_audio_batch()}}
+for the many-file form; \code{\link[=standardize_video]{standardize_video()}}, its video-side complement.
+
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},

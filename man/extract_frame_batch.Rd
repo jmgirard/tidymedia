@@ -42,7 +42,8 @@ forwarded arguments add, e.g. \code{verified}).
 }
 \description{
 Grab one still image per row across many input files from a single jobs
-tibble — a table-driven sibling of \code{\link{extract_frame}} for when your
+tibble — the \strong{batch} (table-driven) sibling of \code{\link[=extract_frame]{extract_frame()}} for when
+your
 frames span more than one input. Each row is one frame; the required columns
 name its source and the moment to capture. This is a thin wrapper over
 \code{\link{ffm_batch}}: one reproducible compiled command per frame.
@@ -61,10 +62,9 @@ extract_frame_batch(jobs, run = FALSE)
 https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 }
 \seealso{
-\code{\link{extract_frame}} for the single-frame form;
-\code{\link{ffm_batch}} for the batch runner and the arguments forwarded
-through \code{...}; \code{\link{segment_video_batch}} for the segment-cutting
-sibling.
+\code{\link[=extract_frame]{extract_frame()}} for the single-frame form; \code{\link[=ffm_batch]{ffm_batch()}} for the
+batch runner and the arguments forwarded through \code{...};
+\code{\link[=segment_video_batch]{segment_video_batch()}} for the segment-cutting sibling.
 
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

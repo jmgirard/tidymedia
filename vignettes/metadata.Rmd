@@ -39,6 +39,23 @@ clip that ships with the package:
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 ```
 
+## Which reader?
+
+The reader families differ by **backend** (FFprobe vs. MediaInfo) and by
+**return shape** (a tibble vs. a single value). Pick by what you need back:
+
+| Reader family | Backend | Returns | Reach for it when |
+|---|---|---|---|
+| `probe_all()`, `probe_container()`, `probe_streams()`, `probe_video()`, `probe_audio()` | FFprobe | tibbles (container + per-stream rows) | you want container/stream metadata as a data frame |
+| `mediainfo_query()`, `mediainfo_template()`, `mediainfo_summary()` | MediaInfo | a tibble (one row per file) | you want MediaInfo's broader field set as a data frame |
+| `mediainfo_parameter()` | MediaInfo | a value (one per file) | you want a single MediaInfo parameter across files |
+| `get_duration()`, `get_frame_rate()`, `get_width()`, `get_height()`, `get_sample_rate()` | MediaInfo | a scalar (numeric, one per file) | you want one common field without naming MediaInfo sections |
+
+The `probe_*()` family needs FFprobe installed; the `mediainfo_*()` and
+`get_*()` families need MediaInfo. Because `probe_video()` and `get_width()` can
+report the same underlying fact (here, the frame width), the choice usually
+comes down to the shape you want back and which tool you have installed.
+
 ## Probing with FFprobe
 
 `probe_all()` returns a list of two tibbles: `container` (one row per file) and

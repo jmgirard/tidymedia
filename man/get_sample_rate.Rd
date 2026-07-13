@@ -16,6 +16,11 @@ A double vector (one per file) giving the audio sampling rate in Hz.
 Use MediaInfo to quickly look up the audio sampling rate of a media file in
 hertz (Hz).
 }
+\details{
+This \strong{MediaInfo}-backed helper returns a \strong{single value per file} (a
+numeric scalar), unlike the tibble-returning \verb{probe_*()}, \code{mediainfo_query()},
+and \code{mediainfo_template()} readers.
+}
 \examples{
 \dontshow{if (nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -23,6 +28,9 @@ get_sample_rate(video)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
+\code{\link[=mediainfo_parameter]{mediainfo_parameter()}} for arbitrary MediaInfo fields, and
+\code{\link[=probe_all]{probe_all()}} for the FFprobe backend.
+
 Other metadata functions:
 \code{\link[=get_duration]{get_duration()}},
 \code{\link[=get_frame_rate]{get_frame_rate()}},

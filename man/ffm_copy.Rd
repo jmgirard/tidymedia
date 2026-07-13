@@ -35,6 +35,9 @@ ffm(video, "output.mp4") |>
   ffm_compile()
 }
 \seealso{
+\code{\link[=ffm_codec]{ffm_codec()}} and \code{\link[=ffm_map]{ffm_map()}}, which it wraps; \code{\link[=segment_video]{segment_video()}}
+uses it for fast copy cuts.
+
 Other builder functions:
 \code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},

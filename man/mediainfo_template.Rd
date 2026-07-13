@@ -37,6 +37,10 @@ templates ship with the package (\code{"brief"} and \code{"extended"}); a
 custom template file can also be supplied. \code{file} may be a vector of several
 files; results are stacked with a leading \code{file} column.
 }
+\details{
+This \strong{MediaInfo}-backed reader returns a \strong{tibble}; the FFprobe
+counterpart is the \verb{probe_*()} family.
+}
 \examples{
 \dontshow{if (nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -44,6 +48,10 @@ mediainfo_template(video, template = "brief")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
+\code{\link[=mediainfo_query]{mediainfo_query()}} for a single section, \code{\link[=mediainfo_parameter]{mediainfo_parameter()}}
+for a single value, \code{\link[=probe_all]{probe_all()}} for the FFprobe backend, and
+\code{\link[=get_duration]{get_duration()}} and friends for single scalar values.
+
 Other metadata functions:
 \code{\link[=get_duration]{get_duration()}},
 \code{\link[=get_frame_rate]{get_frame_rate()}},

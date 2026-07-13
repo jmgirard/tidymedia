@@ -42,6 +42,9 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 separate_audio_video(video, "audio.aac", "video.mp4", run = FALSE)
 }
 \seealso{
+\code{\link[=ffm_map]{ffm_map()}} and \code{\link[=ffm_codec]{ffm_codec()}}, the builders it wraps;
+\code{\link[=extract_audio]{extract_audio()}} to pull out just the audio.
+
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},

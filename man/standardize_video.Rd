@@ -74,6 +74,9 @@ standardize_video(video, "std.mp4", width = 1280, height = 720, fps = 30,
                   run = FALSE)
 }
 \seealso{
+\code{\link[=ffm_scale]{ffm_scale()}}, \code{\link[=ffm_codec]{ffm_codec()}}, and \code{\link[=ffm_pixel_format]{ffm_pixel_format()}}, among the
+builders it wraps; \code{\link[=standardize_video_batch]{standardize_video_batch()}} for the many-file form.
+
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},

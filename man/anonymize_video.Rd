@@ -74,7 +74,8 @@ anonymize_video(video, "anon.mp4", regions, run = FALSE)
 https://ffmpeg.org/ffmpeg-filters.html#drawbox
 }
 \seealso{
-\code{\link{ffm_drawbox}} for the underlying builder filter.
+\code{\link[=ffm_drawbox]{ffm_drawbox()}}, the builder filter it wraps; \code{\link[=anonymize_video_batch]{anonymize_video_batch()}}
+for the many-file (batch) form.
 
 Other task verb functions:
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},

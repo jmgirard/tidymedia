@@ -8,7 +8,7 @@ _Last hygiene check: 2026-07-13 (M25 planned)_
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M25 | Verb coverage survey (research-domain gap analysis) | planned | — | normal | milestones/M25-verb-coverage-survey.md |
+| M25 | Verb coverage survey (research-domain gap analysis) | in-progress | — | normal | milestones/M25-verb-coverage-survey.md |
 | M23 | API surface cleanup (clean-break renames, arg harmonization, un-exports) | done | M22 | normal | milestones/archive/M23-api-surface-cleanup.md |
 | M24 | Docs gap-fill (@seealso web, metadata-boundary prose, batch disambiguation) | done | M23 | normal | milestones/archive/M24-docs-gap-fill.md |
 | M22 | Naming & docs audit + target-scheme decisions | done | — | normal | milestones/archive/M22-naming-docs-audit.md |

@@ -96,7 +96,7 @@ and full doc/housekeeping sync.
       a thin front door (arg checks → `*_pipeline()` → `ffm_finish`); preserve
       each verb's conditional branches (`convert_audio`'s `format = NULL` vs. set;
       `crop_video`'s `x`/`y` defaults). Confirm compile output unchanged (AC2).
-- [ ] T2 — Write the four `_batch` front doors as thin `ffm_batch()` wrappers
+- [x] T2 — Write the four `_batch` front doors as thin `ffm_batch()` wrappers
       modeled on `strip_metadata_batch` (R/ffmpeg.R:2073): jobs guards +
       resolved-output duplicate-path guard, per-row override columns forwarded
       pmap-style to the shared pipeline (AC4), and output derivation when the
@@ -120,6 +120,7 @@ and full doc/housekeeping sync.
 
 - 2026-07-12: created by /milestone-plan (batch-coverage gap analysis — Tier 1).
 - 2026-07-12: T1 — extracted extract_audio/convert_audio/crop_video/format_for_web `_pipeline()` helpers; scalar verbs delegate; all 119 test-ffmpeg.R tests green (compile-preserving).
+- 2026-07-12: T2 — added the four `_batch` front doors + shared jobs guards (`check_batch_jobs`/`reject_duplicate_outputs`/`check_batch_string_col`). Audio verbs require explicit `output`; crop derives `_cropped`, web derives `_web.mp4`. Smoke-tested: compile parity holds for all four; per-row override columns work.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

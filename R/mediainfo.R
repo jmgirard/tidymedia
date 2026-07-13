@@ -290,8 +290,8 @@ warn_unreadable <- function(failed) {
 #' media file in various units.
 #'
 #' This **MediaInfo**-backed helper returns a **single value per file** (a
-#' numeric scalar), unlike the tibble-returning `probe_*()` and `mediainfo_*()`
-#' readers.
+#' numeric scalar), unlike the tibble-returning `probe_*()`, `mediainfo_query()`,
+#' and `mediainfo_template()` readers.
 #'
 #' @param file A character vector of one or more media-file paths.
 #' @param section A string indicating the MediaInfo section from which to query
@@ -334,8 +334,8 @@ get_duration <- function(file,
 #' frames per second (fps).
 #'
 #' This **MediaInfo**-backed helper returns a **single value per file** (a
-#' numeric scalar), unlike the tibble-returning `probe_*()` and `mediainfo_*()`
-#' readers.
+#' numeric scalar), unlike the tibble-returning `probe_*()`, `mediainfo_query()`,
+#' and `mediainfo_template()` readers.
 #'
 #' @param file A character vector of one or more media-file paths.
 #' @return A double vector (one per file) giving the video frame rate in fps.
@@ -359,8 +359,8 @@ get_frame_rate <- function(file) {
 #' pixels (px).
 #'
 #' This **MediaInfo**-backed helper returns a **single value per file** (a
-#' numeric scalar), unlike the tibble-returning `probe_*()` and `mediainfo_*()`
-#' readers.
+#' numeric scalar), unlike the tibble-returning `probe_*()`, `mediainfo_query()`,
+#' and `mediainfo_template()` readers.
 #'
 #' @param file A character vector of one or more media-file paths.
 #' @return A double vector (one per file) giving the video width in px.
@@ -384,8 +384,8 @@ get_width <- function(file) {
 #' pixels (px).
 #'
 #' This **MediaInfo**-backed helper returns a **single value per file** (a
-#' numeric scalar), unlike the tibble-returning `probe_*()` and `mediainfo_*()`
-#' readers.
+#' numeric scalar), unlike the tibble-returning `probe_*()`, `mediainfo_query()`,
+#' and `mediainfo_template()` readers.
 #'
 #' @param file A character vector of one or more media-file paths.
 #' @return A double vector (one per file) giving the video height in px.
@@ -409,8 +409,8 @@ get_height <- function(file) {
 #' hertz (Hz).
 #'
 #' This **MediaInfo**-backed helper returns a **single value per file** (a
-#' numeric scalar), unlike the tibble-returning `probe_*()` and `mediainfo_*()`
-#' readers.
+#' numeric scalar), unlike the tibble-returning `probe_*()`, `mediainfo_query()`,
+#' and `mediainfo_template()` readers.
 #'
 #' @param file A character vector of one or more media-file paths.
 #' @return A double vector (one per file) giving the audio sampling rate in Hz.

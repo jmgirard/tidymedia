@@ -161,3 +161,29 @@ review commit) vs master.**
   milestone numbers). No new top-level files.
 
 ### Independent fresh-context review
+
+Three fresh-context reviewers (distinct evidence bases), then confidence triage:
+
+- **[S] blame-history — no findings.** Confirmed the `ffm_scale` `@return`
+  "crop"→"resize" change fixes a genuine 2020 copy-paste bug (blame: text
+  originated in commit b4ef80c5, copied from `ffm_crop`; `ffm_scale` builds a
+  `scale=` filter, never crops). No prior `@seealso` target dropped by the
+  normalizations; no retired M23 name (`get_codecs`, `audio_as_mp3`,
+  `*_videos`, `acodec`/`vcodec`, `ts_start`, …) reintroduced.
+- **[S] prior-PR-comments — no prior-PR evidence.** All 25 merged PRs carry
+  zero human review comments (only Codecov bot); review history lives in
+  `cairn/`, so nothing to regress. Clean no-op.
+- **[O] diff-bug — 1 finding, CONFIRMED, fixed now.** The `get_*` `@details`
+  contrast clause described the whole `mediainfo_*()` family as
+  "tibble-returning," but `mediainfo_parameter()` returns a value/vector — a
+  false generalization, internally inconsistent with the adjacent `@seealso`
+  line and with `probe_all`'s wording. Verified against `mediainfo_parameter()`'s
+  body/return. In-scope for AC2 (accurate return-shape prose). **Fixed**
+  (all five `get_*` pages) → "unlike the tibble-returning `probe_*()`,
+  `mediainfo_query()`, and `mediainfo_template()` readers"; re-`document()`,
+  spelling clean, `devtools::check()` re-run → **Status: OK (0/0/0)**.
+  (Reviewer self-score 72; actioned rather than logged because it is a
+  confirmed accuracy defect and the fix is a two-name correction.)
+
+No sub-threshold findings logged (only the one finding, which was actioned).
+Merge-ready pending user approval.

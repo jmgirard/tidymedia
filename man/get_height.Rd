@@ -18,8 +18,8 @@ pixels (px).
 }
 \details{
 This \strong{MediaInfo}-backed helper returns a \strong{single value per file} (a
-numeric scalar), unlike the tibble-returning \verb{probe_*()} and \verb{mediainfo_*()}
-readers.
+numeric scalar), unlike the tibble-returning \verb{probe_*()}, \code{mediainfo_query()},
+and \code{mediainfo_template()} readers.
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}

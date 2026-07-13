@@ -108,6 +108,9 @@ the final (M23) names.
   `build_readme()` (no content diff; reverted ephemeral temp-path churn) +
   `devtools::check()` → **Status: OK** (0 errors / 0 warnings / 0 notes).
   Status → review.
+- 2026-07-13: post-verify polish — `mediainfo_query`/`mediainfo_template`
+  `@seealso` now also bridge to the `get_*` scalar family, so every metadata
+  family's annotated `@seealso` reaches the other two (AC1 triad symmetric).
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

@@ -170,4 +170,31 @@ the four new files (82) + `test-ffmpeg.R` (119).
 
 ### Independent review
 
-_(three fresh-context reviewers + scorer — pending)_
+Three fresh-context reviewers (ref-based git, shared tree):
+- **[O] diff-bug (Opus):** no correctness/contract defects. Verified compile
+  preservation (incl. the default-centered crop x/y case, byte-identical across
+  scalar/pipeline/batch), the `pick()` override mechanism, and empirically that
+  the duplicate-output `cli` message renders safely with 2+ colliding paths (no
+  M18 pluralization crash).
+- **[S] blame-history (Sonnet):** no findings. Confirmed each `*_pipeline()`
+  helper reproduces its scalar verb's builder sequence verbatim vs `master:R/ffmpeg.R`;
+  `reject_duplicate_outputs()` is the corrected post-M26 pattern (supersedes the
+  older input-level style), not a regression.
+- **[S] prior-PR-comments (Sonnet):** no prior-PR evidence — all 24 merged PRs
+  carry only Codecov bot comments; clean no-op.
+
+No finding scored ≥80 (no actionable defects). Two sub-threshold observations,
+both surfaced here:
+1. `extract_audio_pipeline` keeps `check_string(audio_codec)` in the scalar
+   front door (vs. `convert_audio_pipeline` holding `check_string(format)`
+   inside the helper) — a slight asymmetry from the M13 ideal. **Rejected (no
+   action):** no observable consequence — the batch path already guarantees
+   character/non-NA per row via `check_batch_string_col`; moving it would be a
+   gratuitous behavior-neutral edit.
+2. `crop_video_batch` lacked an explicit `run = FALSE` return-schema test
+   (AC5 was already met by `extract_audio_batch`'s comparison). **Fixed now:**
+   added the schema-parity test to `test-crop-video-batch.R` (vs
+   `strip_metadata_batch`); crop file 19 → 22 passing.
+
+CI (PR #30): green on all platforms — macOS, Ubuntu devel/release/oldrel-1,
+Windows, pkgdown, test-coverage.

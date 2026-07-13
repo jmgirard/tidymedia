@@ -56,6 +56,21 @@ test_that("crop_video_batch() auto-names outputs when the column is absent", {
   expect_equal(res$output, c(paste0(b1, "_cropped.mp4"), paste0(b2, "_cropped.mkv")))
 })
 
+# Return schema -------------------------------------------------------------
+
+test_that("crop_video_batch() adds only a command column under run = FALSE", {
+  f <- make_input()
+  jobs <- tibble::tibble(input = f, output = "a.mp4", width = 100, height = 50)
+  res <- crop_video_batch(jobs, run = FALSE)
+  expect_s3_class(res, "tbl_df")
+  expect_identical(setdiff(names(res), names(jobs)), "command")
+  # Same added-column schema as another batch verb (M19 parity).
+  strip <- strip_metadata_batch(tibble::tibble(input = f, output = "a.mp4"),
+                                run = FALSE)
+  expect_identical(setdiff(names(res), names(jobs)),
+                   setdiff(names(strip), c("input", "output")))
+})
+
 # Front-door validation -----------------------------------------------------
 
 test_that("crop_video_batch() rejects a non-data-frame jobs", {

@@ -108,6 +108,7 @@ Other task verb functions:
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
 [`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md),
 [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
+[`separate_audio_video_batch()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video_batch.md),
 [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
 [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md),
 [`strip_metadata()`](https://jmgirard.github.io/tidymedia/reference/strip_metadata.md),
@@ -119,5 +120,5 @@ Other task verb functions:
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 # run = FALSE returns the reproducible command instead of executing it
 sample_frames(video, tempdir(), fps = 2, run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"fps=2\" -qscale:v 2 \"/tmp/RtmppyTNS8/sample_%06d.png\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"fps=2\" -qscale:v 2 \"/tmp/RtmpZ4pxU5/sample_%06d.png\""
 ```

@@ -1,18 +1,27 @@
-# Convert the Audio of Many Files From a Jobs Table
+# Separate Audio and Video for Many Files From a Jobs Table
 
-Extract or transcode the audio track of many input files from a single
-jobs tibble — the **batch** (table-driven) sibling of
-[`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
-for when you have more than one file. Each row is one input; `input` and
-`output` columns are required. This is a thin wrapper over
+Split the audio and video streams of many input files from a single jobs
+tibble — the **batch** (table-driven) sibling of
+[`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+for when you have more than one file. Each row is one input that fans
+out into **two** outputs; `input`, `audiofile`, and `videofile` columns
+are all required. This is a thin wrapper over
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-one reproducible compiled command per input, sharing the same audio-map
-pipeline (and per-value `format` validation) as the scalar verb.
+every input row is reshaped into two single-output jobs (one per
+stream), so a jobs table of `N` rows returns `2N` rows — one
+reproducible compiled command per stream — sharing the same per-stream
+map/stream-copy pipeline as the scalar verb.
 
 ## Usage
 
 ``` r
-convert_audio_batch(jobs, format = NULL, run = TRUE, parallel = FALSE, ...)
+separate_audio_video_batch(
+  jobs,
+  reencode = FALSE,
+  run = TRUE,
+  parallel = FALSE,
+  ...
+)
 ```
 
 ## Arguments
@@ -20,18 +29,22 @@ convert_audio_batch(jobs, format = NULL, run = TRUE, parallel = FALSE, ...)
 - jobs:
 
   A data frame with one row per input and (at least) an `input` column
-  (source path) and an `output` column (destination path). An `output`
-  column is **required** — an audio destination cannot be auto-named
-  because its extension picks the output format. An optional `format`
-  column overrides the `format` argument per row; rows omitting it fall
-  back to the argument. Any other columns are ignored.
+  (source path) plus `audiofile` and `videofile` columns naming the two
+  destinations. All three are **required** — like
+  [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
+  this verb derives no output paths, because a copied stream's container
+  extension is the instruction (it must match the source codec). An
+  optional `reencode` column (logical) overrides the `reencode` argument
+  per row; rows omitting it fall back to the argument. Any other columns
+  are ignored.
 
-- format:
+- reencode:
 
-  The output audio codec applied to every row unless `jobs` carries a
-  `format` column. `NULL` (default) infers the format from each `output`
-  extension at highest VBR quality; name a codec (e.g. `"aac"`,
-  `"flac"`) to pin `-c:a`.
+  A logical applied to every row unless `jobs` carries a `reencode`
+  column: stream-copy each output losslessly (`FALSE`, default) or
+  re-encode it to match the output extension (`TRUE`). See
+  [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+  for the trade-off.
 
 - run:
 
@@ -53,19 +66,23 @@ convert_audio_batch(jobs, format = NULL, run = TRUE, parallel = FALSE, ...)
 
 ## Value
 
-The `jobs` tibble with an added `command` column and, when `run = TRUE`,
-a `success` column (plus `verified` / provenance manifest when requested
-via `...`). See
+A [tibble](https://tibble.tidyverse.org/reference/tibble-package.html)
+with **two rows per input** (one per stream): the reshaped `input`, a
+single `output` path, a `stream` marker (`"audio"` or `"video"`), and an
+added `command` column — plus, when `run = TRUE`, a `success` column
+(and `verified` / provenance manifest when requested via `...`). The
+columns match the other `_batch` verbs' output plus the `stream` marker.
+See
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
 
 ## See also
 
-[`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
+[`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
 the scalar verb it wraps;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 the batch runner;
-[`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md)
-to stream-copy audio in batch.
+[`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md)
+for the other fan-out batch verb.
 
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
@@ -73,6 +90,7 @@ Other task verb functions:
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
 [`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md),
 [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
+[`convert_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/convert_audio_batch.md),
 [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
 [`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md),
 [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
@@ -89,7 +107,6 @@ Other task verb functions:
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
 [`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md),
 [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
-[`separate_audio_video_batch()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video_batch.md),
 [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
 [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md),
 [`strip_metadata()`](https://jmgirard.github.io/tidymedia/reference/strip_metadata.md),
@@ -99,11 +116,18 @@ Other task verb functions:
 
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-jobs <- tibble::tibble(input = c(video, video), output = c("a.mp3", "b.mp3"))
-convert_audio_batch(jobs, run = FALSE)
-#> # A tibble: 2 × 3
-#>   input                                                        output command   
-#>   <chr>                                                        <chr>  <chr>     
-#> 1 /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 a.mp3  "-y -i \"…
-#> 2 /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 b.mp3  "-y -i \"…
+jobs <- tibble::tibble(
+  input     = c(video, video),
+  audiofile = c("a1.aac", "a2.aac"),
+  videofile = c("v1.mp4", "v2.mp4")
+)
+# run = FALSE compiles two commands per input without calling FFmpeg
+separate_audio_video_batch(jobs, run = FALSE)
+#> # A tibble: 4 × 4
+#>   input                                                    output stream command
+#>   <chr>                                                    <chr>  <chr>  <chr>  
+#> 1 /home/runner/work/_temp/Library/tidymedia/extdata/sampl… a1.aac audio  "-y -i…
+#> 2 /home/runner/work/_temp/Library/tidymedia/extdata/sampl… v1.mp4 video  "-y -i…
+#> 3 /home/runner/work/_temp/Library/tidymedia/extdata/sampl… a2.aac audio  "-y -i…
+#> 4 /home/runner/work/_temp/Library/tidymedia/extdata/sampl… v2.mp4 video  "-y -i…
 ```

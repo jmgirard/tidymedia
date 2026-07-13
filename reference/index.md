@@ -82,6 +82,8 @@ Thin wrappers over the builder for common preprocessing jobs.
   : Extract Audio From Many Files From a Jobs Table
 - [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
   : Split a media file into separate audio and video files
+- [`separate_audio_video_batch()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video_batch.md)
+  : Separate Audio and Video for Many Files From a Jobs Table
 - [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
   : Extract or convert a media file's audio track
 - [`convert_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/convert_audio_batch.md)

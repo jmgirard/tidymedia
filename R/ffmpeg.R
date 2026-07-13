@@ -249,6 +249,16 @@ ensure_dir <- function(dir, arg = rlang::caller_arg(dir),
 
 # extract_audio() ---------------------------------------------------------
 
+# Shared recipe behind extract_audio() and extract_audio_batch(): map the audio
+# stream out (dropping video), applying `audio_codec` (default "copy" =
+# stream-copy, lossless). Holding it here gives the batch sibling per-row parity
+# for free (M13); command assembly stays in Layer 1 (IP1/D002).
+extract_audio_pipeline <- function(input, output, audio_codec = "copy") {
+  p <- ffm_files(input, output)
+  p <- ffm_codec(p, audio = audio_codec)
+  ffm_drop(p, "video")
+}
+
 #' Extract the audio stream from a media file
 #'
 #' @param infile A string containing the path to a media file.
@@ -259,7 +269,8 @@ ensure_dir <- function(dir, arg = rlang::caller_arg(dir),
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @seealso [ffm_drop()] and [ffm_codec()], the builders it wraps;
-#'   [convert_audio()] to re-encode the extracted audio.
+#'   [convert_audio()] to re-encode the extracted audio;
+#'   [extract_audio_batch()] for the many-file form.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -271,10 +282,7 @@ extract_audio <- function(infile, outfile, audio_codec = "copy", run = TRUE) {
   rlang::check_string(outfile)
   rlang::check_string(audio_codec)
 
-  p <- ffm_files(infile, outfile)
-  p <- ffm_codec(p, audio = audio_codec)
-  p <- ffm_drop(p, "video")
-  ffm_finish(p, run)
+  ffm_finish(extract_audio_pipeline(infile, outfile, audio_codec), run)
 }
 
 
@@ -336,6 +344,23 @@ separate_audio_video <- function(infile, audiofile, videofile,
 
 # convert_audio() ---------------------------------------------------------
 
+# Shared recipe behind convert_audio() and convert_audio_batch(): map the audio
+# stream out and either encode at highest VBR quality (`format = NULL`, the
+# extension picks the codec) or pin `-c:a` to `format`. The per-value
+# check_string(format) lives here so the batch sibling inherits it per row
+# (M13); command assembly stays in Layer 1 (IP1/D002).
+convert_audio_pipeline <- function(input, output, format = NULL) {
+  p <- ffm_files(input, output)
+  p <- ffm_map(p, "a")
+  if (is.null(format)) {
+    p <- ffm_output_options(p, "-q:a 0")
+  } else {
+    rlang::check_string(format)
+    p <- ffm_codec(p, audio = format)
+  }
+  p
+}
+
 #' Extract or convert a media file's audio track
 #'
 #' Maps the audio stream of \code{infile} into \code{outfile}. By default
@@ -354,7 +379,8 @@ separate_audio_video <- function(infile, audiofile, videofile,
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @seealso [ffm_codec()] and [ffm_map()], the builders it wraps;
-#'   [extract_audio()] to copy audio without re-encoding.
+#'   [extract_audio()] to copy audio without re-encoding;
+#'   [convert_audio_batch()] for the many-file form.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -366,18 +392,21 @@ convert_audio <- function(infile, outfile, format = NULL, run = TRUE) {
   check_file_exists(infile)
   rlang::check_string(outfile)
 
-  p <- ffm_files(infile, outfile)
-  p <- ffm_map(p, "a")
-  if (is.null(format)) {
-    p <- ffm_output_options(p, "-q:a 0")
-  } else {
-    rlang::check_string(format)
-    p <- ffm_codec(p, audio = format)
-  }
-  ffm_finish(p, run)
+  ffm_finish(convert_audio_pipeline(infile, outfile, format), run)
 }
 
 # crop_video() ------------------------------------------------------------
+
+# Shared recipe behind crop_video() and crop_video_batch(): a crop filter to the
+# requested rectangle mapping every stream through. ffm_crop() carries the
+# per-value dimension guards, so the batch sibling inherits them per row (M13);
+# command assembly stays in Layer 1 (IP1/D002).
+crop_video_pipeline <- function(input, output, width, height,
+                                x = "(in_w-out_w)/2", y = "(in_h-out_h)/2") {
+  p <- ffm_files(input, output)
+  p <- ffm_crop(p, width = width, height = height, x = x, y = y)
+  ffm_map(p, "0")
+}
 
 #' Crop a video to a rectangular region
 #'
@@ -392,7 +421,8 @@ convert_audio <- function(infile, outfile, format = NULL, run = TRUE) {
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
-#' @seealso [ffm_crop()], the builder it wraps.
+#' @seealso [ffm_crop()], the builder it wraps;
+#'   [crop_video_batch()] for the many-file form.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -405,14 +435,23 @@ crop_video <- function(infile, outfile, width, height,
   check_file_exists(infile)
   rlang::check_string(outfile)
 
-  p <- ffm_files(infile, outfile)
-  p <- ffm_crop(p, width = width, height = height, x = x, y = y)
-  p <- ffm_map(p, "0")
-  ffm_finish(p, run)
+  ffm_finish(crop_video_pipeline(infile, outfile, width, height, x, y), run)
 }
 
 
 # format_for_web() --------------------------------------------------------
+
+# Shared recipe behind format_for_web() and format_for_web_batch(): the fixed
+# web-delivery re-encode (H.264 + yuv420p + AAC + faststart), padding odd
+# dimensions down to even as the codec requires. No per-row knobs — every input
+# gets the same recipe. Command assembly stays in Layer 1 (IP1/D002).
+format_for_web_pipeline <- function(input, output) {
+  p <- ffm_files(input, output)
+  p <- ffm_crop(p, width = "floor(in_w/2)*2", height = "floor(in_h/2)*2")
+  p <- ffm_codec(p, video = "libx264", audio = "aac")
+  p <- ffm_pixel_format(p, "yuv420p")
+  ffm_output_options(p, "-movflags +faststart")
+}
 
 #' Re-encode a video for web playback
 #'
@@ -426,7 +465,8 @@ crop_video <- function(infile, outfile, width, height,
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @seealso [ffm_codec()] and [ffm_pixel_format()], among the builders it wraps;
-#'   [standardize_video()] for a configurable re-encode.
+#'   [standardize_video()] for a configurable re-encode;
+#'   [format_for_web_batch()] for the many-file form.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -437,12 +477,7 @@ format_for_web <- function(infile, outfile, run = TRUE) {
   check_file_exists(infile)
   rlang::check_string(outfile)
 
-  p <- ffm_files(infile, outfile)
-  p <- ffm_crop(p, width = "floor(in_w/2)*2", height = "floor(in_h/2)*2")
-  p <- ffm_codec(p, video = "libx264", audio = "aac")
-  p <- ffm_pixel_format(p, "yuv420p")
-  p <- ffm_output_options(p, "-movflags +faststart")
-  ffm_finish(p, run)
+  ffm_finish(format_for_web_pipeline(infile, outfile), run)
 }
 
 
@@ -2396,6 +2431,384 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
         sample_rate = pick("sample_rate", sample_rate)
       )
     },
+    run = run,
+    parallel = parallel,
+    ...
+  )
+}
+
+
+# Batch jobs-table guards (shared by the M28 single-in/out batch verbs) --------
+
+# Validate the common jobs-table contract and return `jobs` with `input` (and,
+# when present, `output`) coerced to character. `require_output = TRUE` demands
+# an explicit `output` column (audio verbs, whose extension is the instruction
+# and cannot be auto-named); `verb` names the operation in that error. A factor
+# path column carries paths as levels, so coerce to character (parity with the
+# other *_batch verbs). Value-level per-row checks stay in the shared pipelines.
+check_batch_jobs <- function(jobs, require_output = FALSE, verb = NULL,
+                             call = rlang::caller_env()) {
+  if (!is.data.frame(jobs)) {
+    cli::cli_abort("{.arg jobs} must be a data frame with one row per input.", call = call)
+  }
+  if (nrow(jobs) == 0) {
+    cli::cli_abort("{.arg jobs} must have at least one row.", call = call)
+  }
+  if (!"input" %in% names(jobs)) {
+    cli::cli_abort(c(
+      "{.arg jobs} must have an {.field input} column.",
+      "x" = "Missing column: {.val input}."
+    ), call = call)
+  }
+  jobs$input <- as.character(jobs$input)
+  if (anyNA(jobs$input)) {
+    cli::cli_abort("The {.field input} column of {.arg jobs} must not contain {.val {NA}}.", call = call)
+  }
+
+  if (require_output && !"output" %in% names(jobs)) {
+    cli::cli_abort(c(
+      "{.arg jobs} must have an {.field output} column.",
+      "x" = "Missing column: {.val output}.",
+      "i" = "{verb} can't derive an output container; name each destination."
+    ), call = call)
+  }
+  if ("output" %in% names(jobs)) {
+    jobs$output <- as.character(jobs$output)
+    if (anyNA(jobs$output)) {
+      cli::cli_abort("The {.field output} column of {.arg jobs} must not contain {.val {NA}}.", call = call)
+    }
+  }
+  jobs
+}
+
+# Reject any two rows that resolve to the same output path — not just duplicated
+# inputs — so an explicit `output` repeated across rows can't silently overwrite
+# either (M26). Assumes `jobs$output` is resolved (present or derived).
+reject_duplicate_outputs <- function(jobs, call = rlang::caller_env()) {
+  dupes <- unique(jobs$output[duplicated(jobs$output)])
+  if (length(dupes) > 0) {
+    cli::cli_abort(c(
+      "{.arg jobs} has rows that resolve to the same output path.",
+      "x" = "Colliding output{?s}: {.val {dupes}}.",
+      "i" = "Give each row a distinct {.field output}, or de-duplicate the inputs."
+    ), call = call)
+  }
+  jobs
+}
+
+# Guard an optional string override column: present -> character, no NA.
+check_batch_string_col <- function(jobs, col, call = rlang::caller_env()) {
+  if (col %in% names(jobs)) {
+    if (!is.character(jobs[[col]]) || anyNA(jobs[[col]])) {
+      cli::cli_abort(
+        "The {.field {col}} column of {.arg jobs} must be character (no {.val {NA}}).",
+        call = call
+      )
+    }
+  }
+  invisible(jobs)
+}
+
+
+# extract_audio_batch() ---------------------------------------------------
+
+#' Extract Audio From Many Files From a Jobs Table
+#'
+#' Pull the audio track out of many input files from a single jobs tibble — the
+#' **batch** (table-driven) sibling of [extract_audio()] for when you have more
+#' than one file. Each row is one input; \code{input} and \code{output} columns
+#' are required. This is a thin wrapper over \code{\link{ffm_batch}}: one
+#' reproducible compiled command per input, sharing the same map/drop-video
+#' pipeline as the scalar verb.
+#'
+#' @param jobs A data frame with one row per input and (at least) an
+#'   \code{input} column (source path) and an \code{output} column (destination
+#'   path). An \code{output} column is **required** — unlike the video batch
+#'   verbs, an audio destination cannot be auto-named because its extension is
+#'   the instruction (it picks the container, and with \code{audio_codec =
+#'   "copy"} must match the source codec). An optional \code{audio_codec} column
+#'   overrides the \code{audio_codec} argument per row; rows omitting it fall
+#'   back to the argument. Any other columns are ignored.
+#' @param audio_codec The audio codec applied to every row unless \code{jobs}
+#'   carries an \code{audio_codec} column. \code{"copy"} (default) stream-copies
+#'   the audio losslessly; name an encoder (e.g. \code{"aac"}) to transcode.
+#' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
+#'   or only compile them for inspection (\code{FALSE}).
+#' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
+#'   (\code{TRUE}) or sequentially (\code{FALSE}, default). See
+#'   \code{\link{ffm_batch}} for the \pkg{future} plan requirement.
+#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
+#'   \code{verify}, \code{manifest}, \code{progress}).
+#' @return The \code{jobs} tibble with an added \code{command} column and, when
+#'   \code{run = TRUE}, a \code{success} column (plus \code{verified} /
+#'   provenance manifest when requested via \code{...}). See
+#'   \code{\link{ffm_batch}}.
+#' @seealso [extract_audio()], the scalar verb it wraps; [ffm_batch()], the batch
+#'   runner; [convert_audio_batch()] to transcode audio in batch.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' jobs <- tibble::tibble(input = c(video, video), output = c("a.aac", "b.aac"))
+#' extract_audio_batch(jobs, run = FALSE)
+#' @export
+extract_audio_batch <- function(jobs, audio_codec = "copy", run = TRUE,
+                                parallel = FALSE, ...) {
+
+  jobs <- check_batch_jobs(jobs, require_output = TRUE, verb = "Audio extraction")
+  jobs <- reject_duplicate_outputs(jobs)
+  check_batch_string_col(jobs, "audio_codec")
+
+  # Thin Layer-2 fan-out over ffm_batch (D007): one map/drop-video pipeline per
+  # row, sharing extract_audio_pipeline() with extract_audio(). A per-row
+  # `audio_codec` column (via `...` from pmap) overrides the scalar arg; `...`
+  # also forwards ffm_batch options to the runner.
+  ffm_batch(
+    jobs,
+    function(input, output, ...) {
+      dots <- list(...)
+      pick <- function(nm, default) if (nm %in% names(dots)) dots[[nm]] else default
+      extract_audio_pipeline(input, output, audio_codec = pick("audio_codec", audio_codec))
+    },
+    run = run,
+    parallel = parallel,
+    ...
+  )
+}
+
+
+# convert_audio_batch() ---------------------------------------------------
+
+#' Convert the Audio of Many Files From a Jobs Table
+#'
+#' Extract or transcode the audio track of many input files from a single jobs
+#' tibble — the **batch** (table-driven) sibling of [convert_audio()] for when
+#' you have more than one file. Each row is one input; \code{input} and
+#' \code{output} columns are required. This is a thin wrapper over
+#' \code{\link{ffm_batch}}: one reproducible compiled command per input, sharing
+#' the same audio-map pipeline (and per-value \code{format} validation) as the
+#' scalar verb.
+#'
+#' @param jobs A data frame with one row per input and (at least) an
+#'   \code{input} column (source path) and an \code{output} column (destination
+#'   path). An \code{output} column is **required** — an audio destination
+#'   cannot be auto-named because its extension picks the output format. An
+#'   optional \code{format} column overrides the \code{format} argument per row;
+#'   rows omitting it fall back to the argument. Any other columns are ignored.
+#' @param format The output audio codec applied to every row unless \code{jobs}
+#'   carries a \code{format} column. \code{NULL} (default) infers the format
+#'   from each \code{output} extension at highest VBR quality; name a codec
+#'   (e.g. \code{"aac"}, \code{"flac"}) to pin \code{-c:a}.
+#' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
+#'   or only compile them for inspection (\code{FALSE}).
+#' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
+#'   (\code{TRUE}) or sequentially (\code{FALSE}, default). See
+#'   \code{\link{ffm_batch}} for the \pkg{future} plan requirement.
+#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
+#'   \code{verify}, \code{manifest}, \code{progress}).
+#' @return The \code{jobs} tibble with an added \code{command} column and, when
+#'   \code{run = TRUE}, a \code{success} column (plus \code{verified} /
+#'   provenance manifest when requested via \code{...}). See
+#'   \code{\link{ffm_batch}}.
+#' @seealso [convert_audio()], the scalar verb it wraps; [ffm_batch()], the batch
+#'   runner; [extract_audio_batch()] to stream-copy audio in batch.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' jobs <- tibble::tibble(input = c(video, video), output = c("a.mp3", "b.mp3"))
+#' convert_audio_batch(jobs, run = FALSE)
+#' @export
+convert_audio_batch <- function(jobs, format = NULL, run = TRUE,
+                                parallel = FALSE, ...) {
+
+  jobs <- check_batch_jobs(jobs, require_output = TRUE, verb = "Audio conversion")
+  jobs <- reject_duplicate_outputs(jobs)
+  check_batch_string_col(jobs, "format")
+
+  # Thin Layer-2 fan-out over ffm_batch (D007): one audio-map pipeline per row,
+  # sharing convert_audio_pipeline() with convert_audio(). A per-row `format`
+  # column overrides the scalar arg; the per-value check_string(format) is
+  # inherited from the shared pipeline.
+  ffm_batch(
+    jobs,
+    function(input, output, ...) {
+      dots <- list(...)
+      pick <- function(nm, default) if (nm %in% names(dots)) dots[[nm]] else default
+      convert_audio_pipeline(input, output, format = pick("format", format))
+    },
+    run = run,
+    parallel = parallel,
+    ...
+  )
+}
+
+
+# derive_cropped_names() / derive_web_names() -----------------------------
+
+# Derive one output path per input for the video batch verbs when the `output`
+# column is absent. crop keeps the source container (`<base>_cropped.<ext>`);
+# the web re-encode always writes H.264/mp4 (`<base>_web.mp4`). The base keeps
+# the input's directory, so inputs in different folders never collide; the batch
+# verbs reject any duplicated *resolved* output up front (M26), so these stay
+# pure name maps.
+derive_cropped_names <- function(input) {
+  paste0(tools::file_path_sans_ext(input), "_cropped.", tools::file_ext(input))
+}
+
+derive_web_names <- function(input) {
+  paste0(tools::file_path_sans_ext(input), "_web.mp4")
+}
+
+
+# crop_video_batch() ------------------------------------------------------
+
+#' Crop Many Videos From a Jobs Table
+#'
+#' Crop many input videos to a rectangular region from a single jobs tibble —
+#' the **batch** (table-driven) sibling of [crop_video()] for when you have more
+#' than one file. Each row is one input. This is a thin wrapper over
+#' \code{\link{ffm_batch}}: one reproducible compiled command per input, sharing
+#' the same crop pipeline (and its per-value dimension guards) as the scalar
+#' verb.
+#'
+#' @param jobs A data frame with one row per input and (at least) an
+#'   \code{input} column (source path). An optional \code{output} column names
+#'   the destination; when absent, one is derived per row by appending
+#'   \code{_cropped} to each input's basename, keeping the input's extension
+#'   (e.g. \code{clip.mp4} becomes \code{clip_cropped.mp4}). Each crop dimension
+#'   — \code{width}, \code{height}, \code{x}, \code{y} — may also appear as a
+#'   column to override the corresponding argument per row; rows (or dimensions)
+#'   omitting the column fall back to the argument. Any two rows that resolve to
+#'   the same output path are rejected. Any other columns are ignored.
+#' @param width,height The output crop size in pixels, applied to every row
+#'   unless \code{jobs} carries a column of the same name. Required: pass each as
+#'   an argument or supply the column (there is no default crop size).
+#' @param x,y The offset in pixels of the crop's left/top edge, applied to every
+#'   row unless \code{jobs} carries a column of the same name. Default: centered.
+#' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
+#'   or only compile them for inspection (\code{FALSE}).
+#' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
+#'   (\code{TRUE}) or sequentially (\code{FALSE}, default). See
+#'   \code{\link{ffm_batch}} for the \pkg{future} plan requirement.
+#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
+#'   \code{verify}, \code{manifest}, \code{progress}).
+#' @return The \code{jobs} tibble with an added \code{command} column and, when
+#'   \code{run = TRUE}, a \code{success} column (plus \code{verified} /
+#'   provenance manifest when requested via \code{...}). See
+#'   \code{\link{ffm_batch}}.
+#' @seealso [crop_video()], the scalar verb it wraps; [ffm_batch()], the batch
+#'   runner; [standardize_video_batch()] to re-encode in batch.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' jobs <- tibble::tibble(input = c(video, video), output = c("a.mp4", "b.mp4"),
+#'                        width = c(160, 80), height = c(120, 60))
+#' crop_video_batch(jobs, run = FALSE)
+#' @export
+crop_video_batch <- function(jobs, width = NULL, height = NULL,
+                             x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
+                             run = TRUE, parallel = FALSE, ...) {
+
+  jobs <- check_batch_jobs(jobs, require_output = FALSE)
+
+  # width/height have no default: each must be resolvable as an argument (applied
+  # to every row) or a per-row column, else fail here rather than as an opaque
+  # FFmpeg error mid-batch.
+  for (dim in c("width", "height")) {
+    if (is.null(get(dim)) && !dim %in% names(jobs)) {
+      cli::cli_abort(c(
+        "{.arg {dim}} is required.",
+        "i" = "Pass {.arg {dim}} (applied to every row) or add a {.field {dim}} column."
+      ))
+    }
+  }
+  # Validate present override columns up front; per-value checks (positive
+  # dimensions / valid expressions) are inherited per row from ffm_crop().
+  for (col in intersect(c("width", "height", "x", "y"), names(jobs))) {
+    if (!(is.numeric(jobs[[col]]) || is.character(jobs[[col]]))) {
+      cli::cli_abort("The {.field {col}} column of {.arg jobs} must be numeric or character.")
+    }
+    if (anyNA(jobs[[col]])) {
+      cli::cli_abort("The {.field {col}} column of {.arg jobs} must not contain {.val {NA}}.")
+    }
+  }
+
+  if (!"output" %in% names(jobs)) {
+    jobs$output <- derive_cropped_names(jobs$input)
+  }
+  jobs <- reject_duplicate_outputs(jobs)
+
+  ffm_batch(
+    jobs,
+    function(input, output, ...) {
+      dots <- list(...)
+      pick <- function(nm, default) if (nm %in% names(dots)) dots[[nm]] else default
+      crop_video_pipeline(
+        input, output,
+        width = pick("width", width),
+        height = pick("height", height),
+        x = pick("x", x),
+        y = pick("y", y)
+      )
+    },
+    run = run,
+    parallel = parallel,
+    ...
+  )
+}
+
+
+# format_for_web_batch() --------------------------------------------------
+
+#' Re-encode Many Videos for the Web From a Jobs Table
+#'
+#' Re-encode many input videos into a widely compatible, web-friendly form from
+#' a single jobs tibble — the **batch** (table-driven) sibling of
+#' [format_for_web()] for when you have more than one file. Each row is one
+#' input. This is a thin wrapper over \code{\link{ffm_batch}}: one reproducible
+#' compiled command per input, sharing the same fixed H.264/AAC/\code{+faststart}
+#' pipeline as the scalar verb (no per-row knobs).
+#'
+#' @param jobs A data frame with one row per input and (at least) an
+#'   \code{input} column (source path). An optional \code{output} column names
+#'   the destination; when absent, one is derived per row by appending
+#'   \code{_web} to each input's basename with an \code{.mp4} extension (the web
+#'   re-encode always writes H.264/mp4), e.g. \code{clip.mkv} becomes
+#'   \code{clip_web.mp4}. Any two rows that resolve to the same output path are
+#'   rejected. Any other columns are ignored.
+#' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
+#'   or only compile them for inspection (\code{FALSE}).
+#' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
+#'   (\code{TRUE}) or sequentially (\code{FALSE}, default). See
+#'   \code{\link{ffm_batch}} for the \pkg{future} plan requirement.
+#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
+#'   \code{verify}, \code{manifest}, \code{progress}).
+#' @return The \code{jobs} tibble with an added \code{command} column and, when
+#'   \code{run = TRUE}, a \code{success} column (plus \code{verified} /
+#'   provenance manifest when requested via \code{...}). See
+#'   \code{\link{ffm_batch}}.
+#' @seealso [format_for_web()], the scalar verb it wraps; [ffm_batch()], the
+#'   batch runner; [standardize_video_batch()] for a configurable re-encode.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' jobs <- tibble::tibble(input = c(video, video), output = c("a.mp4", "b.mp4"))
+#' format_for_web_batch(jobs, run = FALSE)
+#' @export
+format_for_web_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
+
+  jobs <- check_batch_jobs(jobs, require_output = FALSE)
+
+  if (!"output" %in% names(jobs)) {
+    jobs$output <- derive_web_names(jobs$input)
+  }
+  jobs <- reject_duplicate_outputs(jobs)
+
+  # Thin Layer-2 fan-out over ffm_batch (D007): one web re-encode pipeline per
+  # row, sharing format_for_web_pipeline() with format_for_web(). No per-row
+  # knobs, so extra job columns are ignored.
+  ffm_batch(
+    jobs,
+    function(input, output, ...) format_for_web_pipeline(input, output),
     run = run,
     parallel = parallel,
     ...

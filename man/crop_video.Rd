@@ -43,7 +43,8 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 crop_video(video, "cropped.mp4", width = 160, height = 120, run = FALSE)
 }
 \seealso{
-\code{\link[=ffm_crop]{ffm_crop()}}, the builder it wraps.
+\code{\link[=ffm_crop]{ffm_crop()}}, the builder it wraps;
+\code{\link[=crop_video_batch]{crop_video_batch()}} for the many-file form.
 
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
@@ -51,10 +52,14 @@ Other task verb functions:
 \code{\link[=compare_videos]{compare_videos()}},
 \code{\link[=concatenate_videos]{concatenate_videos()}},
 \code{\link[=convert_audio]{convert_audio()}},
+\code{\link[=convert_audio_batch]{convert_audio_batch()}},
+\code{\link[=crop_video_batch]{crop_video_batch()}},
 \code{\link[=extract_audio]{extract_audio()}},
+\code{\link[=extract_audio_batch]{extract_audio_batch()}},
 \code{\link[=extract_frame]{extract_frame()}},
 \code{\link[=extract_frame_batch]{extract_frame_batch()}},
 \code{\link[=format_for_web]{format_for_web()}},
+\code{\link[=format_for_web_batch]{format_for_web_batch()}},
 \code{\link[=normalize_audio]{normalize_audio()}},
 \code{\link[=normalize_audio_batch]{normalize_audio_batch()}},
 \code{\link[=picture_in_picture]{picture_in_picture()}},

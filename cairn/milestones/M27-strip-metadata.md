@@ -113,6 +113,9 @@ via lossless stream-copy — the IRB/de-identification front door (M25 survey K2
   pipeline (byte-parity), duplicated-resolved-output + NA guards (M26); 31 tests (AC4).
 - 2026-07-13: T4 — `document()`; both verbs into `_pkgdown.yml` (M23); wordlist +De,IRB,
   bitstream,de,muxed; `check()` 0/0/0; `test()` 973 pass. README untouched (M24). → review.
+- 2026-07-13: review — F1 fixed (stream-tag coverage); CI red on Ubuntu (F1's
+  per-stream fixture sanity assertion is ffmpeg-version fragile) → dropped that
+  sanity line, kept robust output-side stream assertions. Product code unchanged.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

@@ -119,5 +119,5 @@ Other task verb functions:
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 # run = FALSE returns the reproducible command instead of executing it
 sample_frames(video, tempdir(), fps = 2, run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"fps=2\" -qscale:v 2 \"/tmp/Rtmpp9fum9/sample_%06d.png\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"fps=2\" -qscale:v 2 \"/tmp/RtmppyTNS8/sample_%06d.png\""
 ```

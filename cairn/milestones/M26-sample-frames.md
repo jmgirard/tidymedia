@@ -3,11 +3,11 @@
      Per-section owners are tagged below. -->
 # M26: Fixed-rate frame sampling (`sample_frames` + `_batch`)
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** high   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Principles touched:** IP1, IP2, GP1   <!-- works under; none changed -->
-- **Branch/PR:** —   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** `m26-sample-frames` · https://github.com/jmgirard/tidymedia/pull/28   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 
@@ -48,32 +48,32 @@ front door to per-frame coding and CV feature pipelines (M25 survey §3 K1).
 ## Acceptance criteria
 <!-- owner: plan · create/amend-via-gate; review reads, never reinterprets -->
 
-- [ ] **AC1 — Compiles pure & linear.** `sample_frames(run = FALSE)` returns a
+- [x] **AC1 — Compiles pure & linear.** `sample_frames(run = FALSE)` returns a
       single reproducible FFmpeg command, binary-free, built from Layer-1
       builders only (`ffm_files` + fps filter + image output options) with the
       `image2` printf pattern as its output — no hand-glued command strings
       (IP1). Evidence: a compile test asserting the command string shape.
-- [ ] **AC2 — Rate mapping & exclusivity.** `fps = R` compiles the `fps=R`
+- [x] **AC2 — Rate mapping & exclusivity.** `fps = R` compiles the `fps=R`
       filter; `interval = N` compiles `fps=1/N`; supplying both or neither
       errors with a cli message. Evidence: compile tests for each mapping +
       error-branch tests.
-- [ ] **AC3 — Numbered output on disk.** Executing on the bundled sample video
+- [x] **AC3 — Numbered output on disk.** Executing on the bundled sample video
       writes zero-padded, sequentially numbered image files (chosen `format`
       extension) into `outdir`, and the file count matches the requested rate ×
       duration (±1). Evidence: execution test (`skip_if` ffmpeg absent) that
       counts output files and checks the numbering.
-- [ ] **AC4 — Batch fan-out & schema parity.** `sample_frames_batch(jobs)` runs
+- [x] **AC4 — Batch fan-out & schema parity.** `sample_frames_batch(jobs)` runs
       one sequence per input row through the shared pipeline helper and returns
       the jobs tibble plus `command` (and the opt-in `success`/`verified`/
       manifest outputs with the same schema as the normal `ffm_batch` path).
       Evidence: batch compile test + a `names()`/types parity test vs. the
       canonical path.
-- [ ] **AC5 — Front-door guards.** Missing/unreadable input, a non-image
+- [x] **AC5 — Front-door guards.** Missing/unreadable input, a non-image
       `format`, an uncreatable `outdir`, and NA/wrong-type batch columns each
       abort with a cli message; a bare-integer `fps`/`interval` is accepted
       (coerced to double, M20). Evidence: one test per error branch + a
       bare-integer acceptance test.
-- [ ] **AC6 — Documented, wired, clean.** Both verbs carry roxygen
+- [x] **AC6 — Documented, wired, clean.** Both verbs carry roxygen
       (`@family task verb functions`, `@seealso` to `extract_frame`/
       `extract_frame_batch`, `@examples` with `run = FALSE`), are added to
       `_pkgdown.yml` (M23 lesson), the spelling wordlist covers any new terms
@@ -93,30 +93,30 @@ front door to per-frame coding and CV feature pipelines (M25 survey §3 K1).
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [ ] **T1 — Shared `sample_frames_pipeline()` helper.** Build one `ffm`
+- [x] **T1 — Shared `sample_frames_pipeline()` helper.** Build one `ffm`
       pipeline from an already-resolved output **pattern** and rate string:
       `ffm_files(infile, pattern)` → fps filter (via `ffm_fps()`, rate coerced
       to double) → still-image output options (mirror `frame_pipeline()`'s
       quality flags where they apply to the image encoder). All per-value
       validation lives here so the batch sibling inherits it (M13). Add beside
       `frame_pipeline()` in `R/ffmpeg.R:82`.
-- [ ] **T2 — Scalar `sample_frames()`.** Args
+- [x] **T2 — Scalar `sample_frames()`.** Args
       `(infile, outdir, fps = NULL, interval = NULL, format = "png",
       prefix = NULL, run = TRUE)`. Validate: input readable, exactly one of
       `fps`/`interval`, `format` in the image whitelist; create `outdir` if
       absent; synthesize `<outdir>/<prefix>_%0Nd.<format>` (fixed generous pad
       width, `start_number` 1); resolve `interval → 1/N`; call the helper;
       `ffm_finish(..., run)`. Return the resolved pattern with the command.
-- [ ] **T3 — Batch `sample_frames_batch(jobs, ...)`.** Per-row closure over the
+- [x] **T3 — Batch `sample_frames_batch(jobs, ...)`.** Per-row closure over the
       helper (column type/NA guards only — value checks come from the helper,
       M13); route through `ffm_batch` so `success`/`verified`/manifest outputs
       match the normal schema (M19). Follow the shape of
       `extract_frame_batch()` (`R/ffmpeg.R:1356`).
-- [ ] **T4 — Tests.** Compile purity & command shape (AC1); fps/interval
+- [x] **T4 — Tests.** Compile purity & command shape (AC1); fps/interval
       mapping + XOR error (AC2); execution test counting numbered files at the
       requested rate (`skip_if` no ffmpeg, AC3); batch compile + schema-parity
       (AC4); all error branches + bare-integer acceptance (AC5).
-- [ ] **T5 — Docs, wiring & check.** Roxygen for both verbs; `document()`; add
+- [x] **T5 — Docs, wiring & check.** Roxygen for both verbs; `document()`; add
       both to `_pkgdown.yml`; update the spelling wordlist; NEWS entry; run
       `devtools::check()` to `Status: OK` and `pkgdown::check_pkgdown()`.
 
@@ -126,9 +126,88 @@ front door to per-frame coding and CV feature pipelines (M25 survey §3 K1).
 - 2026-07-13: created by /milestone-plan (promotes candidate K1 from the M25
   survey; scope + design calls settled at the plan gate — output-dir+auto-pattern
   naming, dual fps/interval rate arg, batch sibling included).
+- 2026-07-13: T1–T3 — added `sample_frames()`/`sample_frames_batch()` + shared
+  `sample_frames_pipeline()` and `resolve_sample_fps`/`derive_frame_pattern`/
+  `check_image_format`/`ensure_dir`/`derive_frames_dir` helpers in R/ffmpeg.R;
+  documented. Verified execution frame counts (fps=2→4, fps=5→10, interval=1→2
+  over a 2 s clip) and interval→fps reciprocal mapping.
+- 2026-07-13: T4 — scalar tests in test-ffmpeg.R (compile shape, fps/interval
+  mapping + XOR, bare-integer coercion, format/outdir/input guards, execution
+  frame count) + new test-sample-frames-batch.R (per-row parity, auto/scalar
+  outdir, column overrides, ffm_batch schema parity, guards, manifest). Full
+  suite green (149 pass, 0 fail).
+- 2026-07-13: T5 — both verbs added to `_pkgdown.yml`; NEWS "New features"
+  entry; wordlist gains `muxer`/`printf` (M17). `devtools::check()` 0/0/0,
+  `spell_check_package()` clean, `pkgdown::check_pkgdown()` clean. Status → review.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
 
 ## Review
 <!-- owner: review · exclusive -->
+
+**Reviewed 2026-07-13 · PR #28 · branch `m26-sample-frames` (3 commits, master unmoved since cut).**
+
+### Acceptance-criteria evidence (fresh)
+
+- **AC1** — `sample_frames(f, d, fps = 2, run = FALSE)` compiles, binary-free, to
+  `… -i "<in>" -vf "fps=2" -qscale:v 2 "<outdir>/sample_%06d.png"` — Layer-1
+  builders only (`ffm_files`/`ffm_fps`/`ffm_output_options`), image2 printf
+  pattern as the one output (IP1/IP2). ✓
+- **AC2** — `fps = 2` → `-vf "fps=2"`; `interval = 0.5` compiles byte-identical
+  to `fps = 2` (reciprocal); `interval = 4` → `fps=0.25`; neither and both each
+  abort with "exactly one". ✓
+- **AC3** — On a 2 s @ 10 fps clip, `fps = 2` wrote 4 files
+  `s_000001.png … s_000004.png` (zero-padded, sequential from 1); fps=5→10,
+  interval=1→2 in the suite. ✓
+- **AC4** — `sample_frames_batch(jobs, fps = 2, run = FALSE)` returns
+  `input, outdir, command`, identical `names()`/classes to a hand-rolled
+  `ffm_batch` over the same pipeline; per-row commands byte-match the scalar
+  verb. ✓
+- **AC5** — Errors fire for missing input, non-image `format`, uncreatable
+  `outdir`, non-positive/`NA` rates, and bad batch columns; a bare-integer
+  `fps = 2L` is accepted (coerced, M20). ✓
+- **AC6** — `devtools::check()` 0 errors / 0 warnings / 0 notes (fresh);
+  `pkgdown::check_pkgdown()` clean (both verbs in `_pkgdown.yml`);
+  `spell_check_package()` clean (`muxer`/`printf` added); NEWS entry present. ✓
+
+### Consistency gate
+
+- `cairn_validate` — all 14 checks PASS + sizing OK (exit 0), incl. coverage
+  completeness and principles slot.
+- Full test suite (`devtools::test`) — **920 pass / 0 fail / 0 skip**.
+- r-package profile (inferred; no `PROFILE.md`): `devtools::check()` 0/0/0.
+- No `DESIGN.md` principle changed (works under IP1/IP2/GP1) → `cairn_impact` skipped.
+
+### Independent review
+
+Three fresh-context lenses + a Sonnet scorer (findings <80 logged, not actioned):
+
+- **[S] prior-PR-comments** — no prior-PR evidence (PRs #1–#27 carry only
+  automated Codecov comments; no human review points to regress). Clean no-op.
+- **[S] blame-history** — CLEAN. Verified the diff respects every relevant
+  lesson (M13 shared pipeline, M19 no fast-path trap, M20 integer coercion, M17
+  wordlist, M23 pkgdown) and D-entry (D002/D003/D007/D014). No findings.
+- **[O] diff-bug** — 3 findings, scored 80 / 62 / 74:
+  - **F1 (80, FIXED)** — `sample_frames_batch()` had no guard against colliding
+    auto-derived output patterns: a duplicated input, or same-basename inputs
+    under one shared `outdir`, would silently overwrite each other's frames
+    (sibling verbs guard duplicated inputs). Added a pattern-level collision
+    abort before running + a regression test (both collision modes); corrected
+    the false "per-input prefixes prevent collision" comment.
+  - **F3 (74, FIXED opportunistically)** — the batch column check accepted a
+    character `interval` (invalid; only `fps` may be a rate-expression string),
+    so it slipped the up-front guard and aborted mid-resolve. Now typed
+    numeric-only (parity with `extract_frame_batch`'s per-column typing) + a
+    regression test. Fixed because it sat in the exact block edited for F1 and
+    is unambiguous, though below the 80 action bar.
+  - **F2 (62, LOGGED, not fixed)** — `ensure_dir()` creates the output
+    directory even on `run = FALSE`. Accepted: the behavior is documented in the
+    `outdir` roxygen, and the repo already does not hold `run = FALSE` strictly
+    side-effect-free (D013's two-pass runs a binary under `run = FALSE`).
+    Creating a directory is far milder; not worth breaking the early
+    uncreatable-`outdir` guard (AC5) to defer it.
+
+**Post-fix evidence:** full suite **923 pass / 0 fail / 0 skip** (+3 regression
+tests); `devtools::check()` 0/0/0. CI on PR #28: all 7 jobs green
+(macOS, Ubuntu devel/oldrel/release, Windows, pkgdown, test-coverage).

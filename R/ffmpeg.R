@@ -87,6 +87,166 @@ frame_pipeline <- function(input, output, timestamp) {
   )
 }
 
+
+# sample_frames() ---------------------------------------------------------
+
+#' Sample frames from a video at a fixed rate
+#'
+#' Sample a video at a fixed rate (\code{fps}) or interval (\code{interval},
+#' seconds between frames) into a numbered image sequence — the front door to
+#' per-frame coding and computer-vision feature pipelines. Provide exactly one
+#' of \code{fps} or \code{interval}.
+#'
+#' Unlike \code{\link{extract_frame}} (one frame) and
+#' \code{\link{extract_frame_batch}} (a caller-enumerated set of frames), this
+#' verb emits a \emph{single} FFmpeg command whose output is a printf-style
+#' pattern that FFmpeg's \code{image2} muxer fills — the frame count is decided
+#' at decode time, not enumerated by the caller. Frames are written to
+#' \code{outdir} as \code{<prefix>_<n>.<format>}, where \code{<n>} is a
+#' zero-padded integer starting at 1.
+#'
+#' @param infile A string containing the path to a video file.
+#' @param outdir A string naming the directory to write the image sequence to.
+#'   It is created (recursively) if it does not exist.
+#' @param fps The sampling rate, in frames per second: either a positive number
+#'   or an FFmpeg framerate expression string (for example \code{"30000/1001"}).
+#'   Provide exactly one of \code{fps} or \code{interval}.
+#' @param interval The number of seconds between sampled frames (a positive
+#'   number); the reciprocal is used as the frame rate. Provide exactly one of
+#'   \code{fps} or \code{interval}.
+#' @param format A string giving the output image file extension (one of
+#'   \code{"png"}, \code{"jpg"}, \code{"jpeg"}, \code{"bmp"}, \code{"tif"},
+#'   \code{"tiff"}, \code{"webp"}). (default = \code{"png"})
+#' @param prefix A string used as the basename stem of each image, or
+#'   \code{NULL} to derive it from \code{infile}'s basename. (default =
+#'   \code{NULL})
+#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
+#'   or return the compiled command without running it (\code{FALSE}).
+#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @seealso [ffm_fps()], the builder it uses to set the sampling rate;
+#'   [extract_frame()] for a single frame and [extract_frame_batch()] for a
+#'   caller-enumerated set; [sample_frames_batch()] for the many-file form.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' # run = FALSE returns the reproducible command instead of executing it
+#' sample_frames(video, tempdir(), fps = 2, run = FALSE)
+#' @export
+sample_frames <- function(infile, outdir, fps = NULL, interval = NULL,
+                          format = "png", prefix = NULL, run = TRUE) {
+  check_file_exists(infile)
+  rlang::check_string(outdir)
+  if (!is.null(prefix)) rlang::check_string(prefix)
+  format <- check_image_format(format)
+  fps <- resolve_sample_fps(fps, interval)
+  outdir <- ensure_dir(outdir)
+
+  pattern <- derive_frame_pattern(infile, outdir, prefix, format)
+  ffm_finish(sample_frames_pipeline(infile, pattern, fps), run)
+}
+
+
+# sample_frames_pipeline() ------------------------------------------------
+
+# Shared fixed-rate sampling pipeline for sample_frames() and
+# sample_frames_batch(): a constant-rate fps filter into an image2 printf
+# pattern, with a quality flag for the still encoder. Both verbs build identical
+# commands from this helper; the fps filter's own value check (check_dim() via
+# ffm_fps()) is inherited here, so the batch sibling gets per-row parity for
+# free (M13). `output` is a %0Nd pattern, so the single command fans out to many
+# image files (D003: still one input chain, one output target).
+sample_frames_pipeline <- function(input, output, fps) {
+  p <- ffm_files(input, output)
+  p <- ffm_fps(p, fps = fps)
+  ffm_output_options(p, "-qscale:v 2")
+}
+
+
+# resolve_sample_fps() ----------------------------------------------------
+
+# Resolve the exclusive fps/interval pair to a single frame-rate value for
+# ffm_fps(): `fps` passes through (a positive number, coerced to double so it
+# clears check_dim()'s integer rejection, M20; or an FFmpeg rate-expression
+# string), while `interval` (seconds/frame) becomes its reciprocal. Enforces the
+# exactly-one contract, mirroring extract_frame()'s timestamp/frame XOR.
+resolve_sample_fps <- function(fps, interval,
+                               call = rlang::caller_env()) {
+  if (is.null(fps) == is.null(interval)) {
+    cli::cli_abort("Provide exactly one of {.arg fps} or {.arg interval}.",
+                   call = call)
+  }
+  if (!is.null(fps)) {
+    if (rlang::is_string(fps)) return(fps)
+    if (!(rlang::is_bare_numeric(fps, n = 1) && is.finite(fps) && fps > 0)) {
+      cli::cli_abort(
+        "{.arg fps} must be a single positive number or a string.", call = call
+      )
+    }
+    return(as.double(fps))
+  }
+  if (!(rlang::is_bare_numeric(interval, n = 1) && is.finite(interval) &&
+        interval > 0)) {
+    cli::cli_abort("{.arg interval} must be a single positive number.",
+                   call = call)
+  }
+  1 / as.double(interval)
+}
+
+
+# derive_frame_pattern() --------------------------------------------------
+
+# Build the image2 output pattern for one input: `<outdir>/<prefix>_%0Nd.<fmt>`,
+# with `prefix` defaulting to the input's basename (sans extension). A fixed pad
+# width keeps the numbering zero-padded and lexically sortable; FFmpeg widens it
+# automatically past the cap. Basename prefixes distinguish most batch sequences
+# sharing one `outdir`, but same-basename inputs still collide — the batch verb
+# guards that at the pattern level before running.
+derive_frame_pattern <- function(input, outdir, prefix, format, digits = 6L) {
+  if (is.null(prefix)) prefix <- tools::file_path_sans_ext(basename(input))
+  file.path(outdir, paste0(prefix, "_%0", digits, "d.", format))
+}
+
+
+# check_image_format() ----------------------------------------------------
+
+# Validate `format` as a supported still-image extension, returning it
+# lower-cased. Keeps a non-image container (e.g. "mp4") from silently producing
+# a broken sequence, and a clean token from reaching the output pattern.
+check_image_format <- function(format, arg = rlang::caller_arg(format),
+                               call = rlang::caller_env()) {
+  rlang::check_string(format, arg = arg, call = call)
+  allowed <- c("png", "jpg", "jpeg", "bmp", "tif", "tiff", "webp")
+  format <- tolower(format)
+  if (!format %in% allowed) {
+    cli::cli_abort(
+      c("{.arg {arg}} must be a supported image format.",
+        "x" = "{.val {format}} is not one of {.val {allowed}}."),
+      call = call
+    )
+  }
+  format
+}
+
+
+# ensure_dir() ------------------------------------------------------------
+
+# Create `dir` (recursively) if it is absent, then confirm it exists — so an
+# uncreatable path (e.g. under an existing file) aborts here with a clear
+# message rather than as an opaque FFmpeg write error.
+ensure_dir <- function(dir, arg = rlang::caller_arg(dir),
+                       call = rlang::caller_env()) {
+  if (!dir.exists(dir)) {
+    dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+    if (!dir.exists(dir)) {
+      cli::cli_abort(
+        c("Can't create {.arg {arg}}.", "x" = "Not a creatable directory: {.file {dir}}."),
+        call = call
+      )
+    }
+  }
+  dir
+}
+
 # extract_audio() ---------------------------------------------------------
 
 #' Extract the audio stream from a media file
@@ -1433,6 +1593,180 @@ extract_frame_batch <- function(jobs, format = "png", run = TRUE,
         dots$frame / get_frame_rate(input)
       }
       frame_pipeline(input, output, timestamp)
+    },
+    run = run,
+    parallel = parallel,
+    ...
+  )
+}
+
+
+# derive_frames_dir() -----------------------------------------------------
+
+# Derive one output directory per input for sample_frames_batch() when neither
+# an `outdir` column nor a scalar `outdir` is given: `<input-base>_frames` beside
+# each input. Per-input directories keep each recording's sequence separate, so
+# the batch never collides even when many inputs sample at once.
+derive_frames_dir <- function(input) {
+  file.path(
+    dirname(input),
+    paste0(tools::file_path_sans_ext(basename(input)), "_frames")
+  )
+}
+
+
+# sample_frames_batch() ---------------------------------------------------
+
+#' Sample frames from many videos at a fixed rate from a jobs table
+#'
+#' Sample many videos into numbered image sequences from a single jobs tibble —
+#' the **batch** (table-driven) sibling of [sample_frames()]. Each row is one
+#' input video sampled at a fixed rate into its own image sequence. This is a
+#' thin wrapper over \code{\link{ffm_batch}}: one reproducible compiled command
+#' per input.
+#'
+#' Supply the sampling rate once as the scalar \code{fps} or \code{interval}
+#' argument (applied to every row), or per row as an \code{fps} or
+#' \code{interval} column that overrides the scalar of the same name. Exactly one
+#' of the two — fps \emph{or} interval — may be supplied across arguments and
+#' columns.
+#'
+#' @param jobs A data frame with one row per input and (at least) an
+#'   \code{input} column (source path). Optional columns: \code{outdir} (the
+#'   output directory for that row's sequence; when absent, one is derived as
+#'   \code{<input-base>_frames} beside each input), and \code{fps} /
+#'   \code{interval} (per-row rate overrides). Any other columns are ignored.
+#' @param fps,interval The sampling rate applied to every row, as in
+#'   [sample_frames()]; a per-row column of the same name overrides it. Supply
+#'   exactly one of the two (as an argument or a column). (default = \code{NULL})
+#' @param outdir An optional single output directory for all rows (overridden by
+#'   an \code{outdir} column); when both are absent, per-input directories are
+#'   derived. (default = \code{NULL})
+#' @param format A string giving the output image file extension, as in
+#'   [sample_frames()]. (default = \code{"png"})
+#' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
+#'   default) or only compile them for inspection (\code{FALSE}).
+#' @param parallel A logical passed to \code{\link{ffm_batch}}: sample in
+#'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
+#'   default). Parallelism follows the active \code{\link[future:plan]{future}}
+#'   plan; \code{TRUE} under the default sequential plan runs one at a time and
+#'   warns.
+#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}}, such as
+#'   \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.
+#' @return The [tibble][tibble::tibble-package] returned by
+#'   \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column
+#'   (and the resolved \code{outdir} column when it was derived; when
+#'   \code{run = TRUE}, a \code{success} column, plus any columns the forwarded
+#'   arguments add, e.g. \code{verified}).
+#' @seealso [sample_frames()] for the single-video form; [ffm_batch()] for the
+#'   batch runner and the arguments forwarded through \code{...};
+#'   [extract_frame_batch()] for the enumerated-frame sibling.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' jobs <- tibble::tibble(
+#'   input  = c(video, video),
+#'   outdir = c(file.path(tempdir(), "a"), file.path(tempdir(), "b"))
+#' )
+#' # run = FALSE compiles one command per input without calling FFmpeg
+#' sample_frames_batch(jobs, fps = 2, run = FALSE)
+#' @export
+sample_frames_batch <- function(jobs, fps = NULL, interval = NULL,
+                                outdir = NULL, format = "png", run = TRUE,
+                                parallel = FALSE, ...) {
+
+  if (!is.data.frame(jobs)) {
+    cli::cli_abort("{.arg jobs} must be a data frame with one row per input.")
+  }
+  if (nrow(jobs) == 0) {
+    cli::cli_abort("{.arg jobs} must have at least one row.")
+  }
+  if (!"input" %in% names(jobs)) {
+    cli::cli_abort(c(
+      "{.arg jobs} must have an {.field input} column.",
+      "x" = "Missing column: {.val input}."
+    ))
+  }
+  format <- check_image_format(format)
+
+  # Table-level rate exclusivity: exactly one of an fps source or an interval
+  # source (argument or column), mirroring sample_frames()' scalar XOR. The
+  # per-row value checks are inherited from resolve_sample_fps() in the closure.
+  fps_src <- !is.null(fps) || "fps" %in% names(jobs)
+  interval_src <- !is.null(interval) || "interval" %in% names(jobs)
+  if (fps_src == interval_src) {
+    cli::cli_abort(c(
+      "Provide exactly one of {.arg fps} or {.arg interval} (argument or column).",
+      "x" = if (fps_src) "Both are present." else "Neither is present."
+    ))
+  }
+
+  # Validate present override columns up front so a bad column fails clearly here
+  # rather than as an opaque FFmpeg error mid-batch (M11 parity lesson). An `fps`
+  # column may be character (an FFmpeg rate expression) but `interval` may not —
+  # resolve_sample_fps() rejects a character interval, so type it numeric-only
+  # here (parity with extract_frame_batch()'s per-column typing).
+  if ("fps" %in% names(jobs) &&
+      !(is.numeric(jobs$fps) || is.character(jobs$fps))) {
+    cli::cli_abort("The {.field fps} column of {.arg jobs} must be numeric or character.")
+  }
+  if ("interval" %in% names(jobs) && !is.numeric(jobs$interval)) {
+    cli::cli_abort("The {.field interval} column of {.arg jobs} must be numeric.")
+  }
+  for (col in intersect(c("fps", "interval"), names(jobs))) {
+    if (anyNA(jobs[[col]])) {
+      cli::cli_abort("The {.field {col}} column of {.arg jobs} must not contain {.val {NA}}.")
+    }
+  }
+
+  # A factor input column carries paths as levels; treat them as strings
+  # (parity with extract_frame_batch()).
+  jobs$input <- as.character(jobs$input)
+
+  # Resolve the per-row output directory: an explicit `outdir` column wins; else
+  # the scalar `outdir` (one directory for every row); else one derived per
+  # input. Carried on the returned tibble.
+  if ("outdir" %in% names(jobs)) {
+    if (!is.character(jobs$outdir) || anyNA(jobs$outdir)) {
+      cli::cli_abort("The {.field outdir} column of {.arg jobs} must be character (no {.val {NA}}).")
+    }
+  } else if (!is.null(outdir)) {
+    rlang::check_string(outdir)
+    jobs$outdir <- outdir
+  } else {
+    jobs$outdir <- derive_frames_dir(jobs$input)
+  }
+
+  # Reject colliding output patterns before running: each row's pattern is
+  # `<outdir>/<input-base>_%0Nd.<fmt>`, so two rows sharing a directory whose
+  # inputs also share a basename (e.g. a duplicated input, or `cam1/rec.mp4` +
+  # `cam2/rec.mp4` under one `outdir`) would silently overwrite each other's
+  # frames. Fail clearly here rather than lose data mid-batch (the sibling
+  # dup-input guard, adapted to the pattern level).
+  patterns <- derive_frame_pattern(jobs$input, jobs$outdir, NULL, format)
+  collisions <- unique(patterns[duplicated(patterns)])
+  if (length(collisions) > 0) {
+    cli::cli_abort(c(
+      "Two or more jobs would write to the same image sequence.",
+      "x" = "Colliding output pattern{?s}: {.file {collisions}}.",
+      "i" = "Give colliding inputs distinct {.field outdir}s or rename them."
+    ))
+  }
+
+  # Thin Layer-2 fan-out over ffm_batch (D007): one image2-pattern sampling
+  # pipeline per input, sharing sample_frames_pipeline() with sample_frames().
+  # A per-row rate column (arriving via `...` from pmap) overrides the scalar
+  # arg of the same name; `...` also forwards ffm_batch options
+  # (verify/manifest/...) to the runner, never to the pipeline builder.
+  ffm_batch(
+    jobs,
+    function(input, outdir, ...) {
+      dots <- list(...)
+      pick <- function(nm, default) if (nm %in% names(dots)) dots[[nm]] else default
+      rate <- resolve_sample_fps(pick("fps", fps), pick("interval", interval))
+      dir_i <- ensure_dir(outdir)
+      pattern <- derive_frame_pattern(input, dir_i, NULL, format)
+      sample_frames_pipeline(input, pattern, rate)
     },
     run = run,
     parallel = parallel,

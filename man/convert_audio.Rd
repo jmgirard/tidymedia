@@ -51,6 +51,8 @@ Other task verb functions:
 \code{\link[=normalize_audio]{normalize_audio()}},
 \code{\link[=normalize_audio_batch]{normalize_audio_batch()}},
 \code{\link[=picture_in_picture]{picture_in_picture()}},
+\code{\link[=sample_frames]{sample_frames()}},
+\code{\link[=sample_frames_batch]{sample_frames_batch()}},
 \code{\link[=segment_video]{segment_video()}},
 \code{\link[=segment_video_batch]{segment_video_batch()}},
 \code{\link[=separate_audio_video]{separate_audio_video()}},

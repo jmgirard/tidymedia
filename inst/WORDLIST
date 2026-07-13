@@ -59,11 +59,13 @@ luma
 md
 mediainfo
 multithreading
+muxer
 normalisation
 parseable
 passthrough
 pkgdown
 pre
+printf
 pts
 px
 remux

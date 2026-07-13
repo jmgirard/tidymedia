@@ -7,7 +7,7 @@
 - **Priority:** high   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Principles touched:** IP1, GP1   <!-- owner: plan · works under; adds no principle -->
-- **Branch/PR:** `m27-strip-metadata`   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** `m27-strip-metadata` · https://github.com/jmgirard/tidymedia/pull/29   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 <!-- owner: plan · create; a wrong goal returns to plan, never edited in place -->
@@ -125,28 +125,60 @@ via lossless stream-copy — the IRB/de-identification front door (M25 survey K2
 ## Work log
 <!-- owner: any skill · append-only; one line per entry; absolute dates -->
 
-- 2026-07-13: created by /milestone-plan (target chosen from ROADMAP K2 candidate;
-  gate calls — global+chapters+`-fflags +bitexact` scrub depth, batch sibling
-  included, zero-config strip-all surface; per-stream stripping ruled out to keep
-  compile binary-free).
-- 2026-07-13: T1 — added `strip_metadata_pipeline()` + `strip_metadata()`
-  (`R/ffmpeg.R`) and the pure compile test (AC1). Recipe: `ffm_copy` +
-  `ffm_output_options("-map_metadata -1", "-map_chapters -1", "-fflags +bitexact")`.
-- 2026-07-13: T2 — added `make_tagged_video()`/`probe_format_tags()`/
-  `probe_rotation()` helpers and the execution guard tests (AC2, AC3). Empirically
-  confirmed: identifying tags + chapters + FFmpeg's re-added encoder/creation_time
-  all clear; A/V streams + rotation display matrix survive the copy.
-- 2026-07-13: T3 — added `derive_stripped_names()` + `strip_metadata_batch()`
-  (`R/ffmpeg.R`) reusing the shared pipeline (byte-parity with the scalar), with a
-  duplicated-*resolved*-output guard (M26 — catches repeated explicit outputs too)
-  and NA guards. 31 batch tests incl. execution + `verify` forwarding (AC4).
-- 2026-07-13: T4 — `document()`; added both verbs to `_pkgdown.yml` reference
-  (M23); `pkgdown::check_pkgdown()` clean; `spelling::update_wordlist()` (+De, IRB,
-  bitstream, de, muxed); `devtools::check()` 0/0/0; full `devtools::test()` 973
-  pass / 0 fail. README unchanged (no example touched — M24). Status → review.
+- 2026-07-13: created by /milestone-plan (gate: global+chapters+`-fflags +bitexact`
+  scrub, batch sibling in, zero-config surface; per-stream stripping ruled out to
+  keep compile binary-free).
+- 2026-07-13: T1 — `strip_metadata_pipeline()` + `strip_metadata()` (`R/ffmpeg.R`)
+  = `ffm_copy` + `ffm_output_options("-map_metadata -1","-map_chapters -1","-fflags +bitexact")`; compile test (AC1).
+- 2026-07-13: T2 — `make_tagged_video()`/`probe_format_tags()`/`probe_rotation()`
+  helpers + execution guard (AC2/AC3); confirmed tags+chapters+encoder clear, A/V+rotation survive.
+- 2026-07-13: T3 — `derive_stripped_names()` + `strip_metadata_batch()` reusing the
+  pipeline (byte-parity), duplicated-resolved-output + NA guards (M26); 31 tests (AC4).
+- 2026-07-13: T4 — `document()`; both verbs into `_pkgdown.yml` (M23); wordlist +De,IRB,
+  bitstream,de,muxed; `check()` 0/0/0; `test()` 973 pass. README untouched (M24). → review.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
 
 ## Review
-<!-- owner: review · exclusive -->
+
+_Reviewed 2026-07-13 on branch `m27-strip-metadata` (PR #29), cut from
+`master`@590b32a (up to date, no merge needed)._
+
+### Acceptance criteria — fresh evidence
+
+- [x] **AC1** — `strip_metadata(f, "clean.mp4", run = FALSE)` compiles to
+  `-y -i "<in>" -codec:v copy -codec:a copy -map_metadata -1 -map_chapters -1 -fflags +bitexact -map 0 "clean.mp4"`;
+  test runs with no ffmpeg call.
+- [x] **AC2** — on the tagged+chaptered fixture, stripped output's `format_tags`
+  are only ISO brand fields (`major_brand`/`minor_version`/`compatible_brands`);
+  `title`/`comment`/`location`/`creation_time`/`encoder` all absent (bitexact
+  stops re-add); no chapters. Fresh probe + `test-strip-metadata.R`.
+- [x] **AC3** — stripped output codecs `h264,aac` unchanged, duration identical,
+  rotation display matrix preserved (`rotation=90`). Fresh probe + test.
+- [x] **AC4** — `strip_metadata_batch(jobs, run = FALSE)` returns
+  `input,output,command`; auto-names `<base>_stripped.<ext>`; colliding resolved
+  outputs (duplicated input *or* repeated explicit output — M26) abort with
+  "resolve to the same output path"; NA guards. `test-strip-metadata-batch.R`.
+- [x] **AC5** — `devtools::check()` **0 errors / 0 warnings / 0 notes** (fresh);
+  full suite **972 pass / 0 fail / 1 skip** (mediainfo-gated); wordlist updated
+  (M17: no masked spelling note).
+- [x] **AC6** — both verbs exported + documented (boundary prose, `@seealso` web,
+  `@family`); `devtools::document()` clean; `pkgdown::check_pkgdown()` clean (M23);
+  README untouched (no example changed — M24).
+
+### Consistency gate
+
+- `cairn_validate.py`: PASS (mirror, single in-progress, weight caps, coverage
+  complete, vocab, deps, orphans, IDs, ISO dates, scaffold, principles slot).
+- Coverage completeness: all six ACs map to existing tasks (AC1→T1, AC2→T1/T2,
+  AC3→T2, AC4→T3, AC5→T2/T3/T4, AC6→T4).
+- Toolchain (R-package profile): `check()` 0/0/0, full `test()` green, pkgdown
+  clean — recorded above.
+- No DESIGN principle changed (works under IP1/GP1, adds none) → `cairn_impact`
+  skipped.
+
+### Independent review (three lenses + scorer)
+
+_pending — reviewers running._
+

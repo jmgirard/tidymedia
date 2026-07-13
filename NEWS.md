@@ -29,6 +29,18 @@ changes with no deprecation shims (the package is still pre-1.0 and soaking).
   (`pad_integers()`, `convert_fractions()`) are no longer exported. `.data`
   remains reexported.
 
+## Documentation
+
+* Help pages now cross-reference each other: every task verb links to the
+  `ffm_*` pipeline builders it is built on (and each builder back to the verbs
+  that use it), and the three metadata reader families (`probe_*()`,
+  `mediainfo_*()`, `get_*()`) link to one another so you can find the
+  alternative backend.
+* Each metadata help page now states its backend (FFprobe or MediaInfo) and
+  what it returns (a tibble, a value, or a single scalar per file), and the
+  "Media metadata as tibbles" vignette gains a table comparing the reader
+  families at a glance.
+
 ## Fixed-region anonymization
 
 * New `anonymize_video()` covers one or more fixed rectangular regions of a

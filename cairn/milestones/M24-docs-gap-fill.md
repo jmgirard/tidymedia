@@ -7,7 +7,7 @@
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** M23   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Principles touched:** —   <!-- owner: plan · create/amend-via-gate; comma-separated IPn/GPn ids this milestone touches, or — -->
-- **Branch/PR:** m24-docs-gap-fill   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** m24-docs-gap-fill · https://github.com/jmgirard/tidymedia/pull/26   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 
@@ -39,18 +39,18 @@ the final (M23) names.
 ## Acceptance criteria
 <!-- owner: plan · create/amend-via-gate; review reads, never reinterprets -->
 
-- [ ] **AC1** `@seealso` cross-links added on the pages enumerated in audit §4:
+- [x] **AC1** `@seealso` cross-links added on the pages enumerated in audit §4:
       every Layer-2 verb links to the `ffm_*` verb(s) it wraps, and each of
       `probe_*` / `get_*` / `mediainfo_*` links to the other two backends.
       Verified by grepping the rendered `man/*.Rd` for `\seealso` on the named
       pages (bridges exist, not just `@family`).
-- [ ] **AC2** Each metadata family doc page states its backend (ffprobe /
+- [x] **AC2** Each metadata family doc page states its backend (ffprobe /
       MediaInfo) and return shape (tibble / scalar) in `@description`/`@details`,
       and `vignettes/metadata.Rmd` gains a family-vs-backend comparison table.
-- [ ] **AC3** Each `*_batch` doc page (`segment_video_batch`,
+- [x] **AC3** Each `*_batch` doc page (`segment_video_batch`,
       `standardize_video_batch`, `normalize_audio_batch`, `anonymize_video_batch`,
       `extract_frame_batch`) says "batch" in its title or first sentence.
-- [ ] **AC4** `devtools::document()` + `devtools::build_readme()` run;
+- [x] **AC4** `devtools::document()` + `devtools::build_readme()` run;
       `devtools::check()` clean — confirm `Status: OK` in `00check.log`
       (`spelling::update_wordlist()` run first — LESSONS M17).
 
@@ -123,3 +123,41 @@ the final (M23) names.
 
 ## Review
 <!-- owner: review · exclusive -->
+
+**Reviewed 2026-07-13 · PR #26 · branch m24-docs-gap-fill (8 commits, +NEWS/PR
+review commit) vs master.**
+
+### Acceptance-criteria evidence (fresh)
+
+- **AC1 — PASS.** Grepped rendered `man/*.Rd`. All 18 Layer-2 verbs carry a
+  manual `\seealso` bridge to an `ffm_*` builder (e.g. `extract_audio`→`ffm_drop`,
+  `crop_video`→`ffm_crop`, `normalize_audio`→`ffm_loudnorm`, batch verbs→`ffm_batch`
+  + scalar sibling). Metadata triad: each family's manual `@seealso` (above the
+  `@family` auto-list) reaches the other two — `probe_all`→`mediainfo_*`+`get_*`;
+  `mediainfo_query`/`template`→`probe_all`+`get_duration`; each `get_*`→
+  `mediainfo_parameter`+`probe_all`. Bridges are the annotated manual block, not
+  just `@family`.
+- **AC2 — PASS.** Backend + return-shape statement present on every metadata
+  page: `probe_all`/`probe_container` ("**FFprobe** … **tibbles**"),
+  `mediainfo_parameter` ("**MediaInfo** … a **value**"), `mediainfo_query`/
+  `template` ("**MediaInfo** … a **tibble**"), all five `get_*` ("**MediaInfo** …
+  a **single value per file** (a numeric scalar)", rendered into `\details`).
+  `vignettes/metadata.Rmd` has the "Which reader?" section with a 4-row
+  family-vs-backend comparison table.
+- **AC3 — PASS.** First `\description` sentence of all five `*_batch` pages reads
+  "the **batch** (table-driven) sibling of …" — "batch" confirmed in each
+  rendered description.
+- **AC4 — PASS.** `devtools::document()` produces no `man/`/`NAMESPACE` diff;
+  fresh `devtools::check(--no-manual)` → **Status: OK, 0 errors / 0 warnings /
+  0 notes** (873 tests pass; spelling test OK). `build_readme()` yields no content
+  change (only ephemeral temp-path churn, reverted).
+
+### Consistency gate
+
+- `cairn_validate.py` → all checks PASS (incl. mirror, single in-progress, caps,
+  coverage complete, ISO dates, scaffold). `document()` no diff. README content
+  in sync. `pkgdown::check_pkgdown()` → no problems. No `DESIGN.md` principle
+  changed → impact scan skipped. NEWS.md: added a "Documentation" entry (no
+  milestone numbers). No new top-level files.
+
+### Independent fresh-context review

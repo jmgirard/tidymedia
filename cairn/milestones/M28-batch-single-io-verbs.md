@@ -104,7 +104,7 @@ and full doc/housekeeping sync.
       `<base>_web.mp4` where the container is implied, and require an explicit
       `output` for the audio verbs whose extension is the instruction (decide per
       verb and document it).
-- [ ] T3 — Tests (`tests/testthat/`): per verb — compile-parity golden string
+- [x] T3 — Tests (`tests/testthat/`): per verb — compile-parity golden string
       (AC2), the five jobs guards incl. duplicate resolved-path (AC3), per-row
       override column vs. default fallback for knobbed verbs (AC4), and
       fast/normal schema parity against an existing `_batch` verb (AC5).
@@ -121,6 +121,7 @@ and full doc/housekeeping sync.
 - 2026-07-12: created by /milestone-plan (batch-coverage gap analysis — Tier 1).
 - 2026-07-12: T1 — extracted extract_audio/convert_audio/crop_video/format_for_web `_pipeline()` helpers; scalar verbs delegate; all 119 test-ffmpeg.R tests green (compile-preserving).
 - 2026-07-12: T2 — added the four `_batch` front doors + shared jobs guards (`check_batch_jobs`/`reject_duplicate_outputs`/`check_batch_string_col`). Audio verbs require explicit `output`; crop derives `_cropped`, web derives `_web.mp4`. Smoke-tested: compile parity holds for all four; per-row override columns work.
+- 2026-07-12: T3 — four test files (82 tests): compile-parity golden strings, 5 jobs guards each incl. M26 duplicate-output, per-row override columns, schema parity, binary-gated execution+verify. All green (0 fail/warn/skip locally).
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

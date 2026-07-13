@@ -94,7 +94,7 @@ column) **plus** the `stream` marker column (M19).
       `0:v` + optional `-c:v copy` when `stream == "video"`. The scalar calls it
       twice (compile-preserved); place the helper **above** the scalar's roxygen
       block, not between block and function (M28 lesson).
-- [ ] T2 — Write `separate_audio_video_batch`, modeling the fan-out on the
+- [x] T2 — Write `separate_audio_video_batch`, modeling the fan-out on the
       `segment_video` **scalar**'s reshape-to-rows (R/ffmpeg.R:1391), not
       `segment_video_batch` (which is 1-row→1-command): jobs guards (non-df,
       zero-row, required `input`/`audiofile`/`videofile`, NA checks, per-row
@@ -103,7 +103,7 @@ column) **plus** the `stream` marker column (M19).
       marker); a single `anyDuplicated()` guard on the reshaped `output`; then
       `ffm_batch()` calling `separate_stream_pipeline()` per row, forwarding `...`
       (incl. per-row `reencode`) to the runner.
-- [ ] T3 — Tests (`tests/testthat/`): N input rows → 2N result rows / 2N commands
+- [x] T3 — Tests (`tests/testthat/`): N input rows → 2N result rows / 2N commands
       (AC1), the jobs guards + `reencode` column override (AC2), duplicate
       rejection for a cross-column collision and for within-row
       `audiofile == videofile` (AC3), schema parity against `segment_video_batch`
@@ -126,6 +126,11 @@ column) **plus** the `stream` marker column (M19).
 - 2026-07-12: T1 — extracted `separate_stream_pipeline(input, output, stream,
   reencode)` above the scalar's roxygen block; scalar now calls it twice.
   Compile-preserving (test-ffmpeg.R: 119 pass, 0 fail).
+- 2026-07-12: T2+T3 — wrote `separate_audio_video_batch`; reuses M28's
+  `check_batch_jobs`/`reject_duplicate_outputs`. Reshape N→2N via
+  `rbind(audiofile, videofile)` + `stream` marker; the single dup guard on the
+  melted `output` pools cross-column and catches within-row equality. 41 tests
+  (AC1–AC4 + binary-gated end-to-end); full suite green.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

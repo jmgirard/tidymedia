@@ -67,6 +67,7 @@ Other task verb functions:
 \code{\link[=sample_frames_batch]{sample_frames_batch()}},
 \code{\link[=segment_video]{segment_video()}},
 \code{\link[=segment_video_batch]{segment_video_batch()}},
+\code{\link[=separate_audio_video_batch]{separate_audio_video_batch()}},
 \code{\link[=standardize_video]{standardize_video()}},
 \code{\link[=standardize_video_batch]{standardize_video_batch()}},
 \code{\link[=strip_metadata]{strip_metadata()}},

@@ -54,6 +54,12 @@ changes with no deprecation shims (the package is still pre-1.0 and soaking).
   what it returns (a tibble, a value, or a single scalar per file), and the
   "Media metadata as tibbles" vignette gains a table comparing the reader
   families at a glance.
+* New "A research preprocessing workflow" vignette walks an end-to-end pipeline
+  — standardizing recordings, normalizing and extracting audio, sampling frames,
+  de-identifying, and packaging for sharing — demonstrating the task verbs on a
+  realistic dyadic-interaction study. The "Get started" vignette now leads with
+  the task verbs (the front door most users need) before descending to the
+  builder, and every vignette cross-links to the others.
 
 ## Fixed-region anonymization
 

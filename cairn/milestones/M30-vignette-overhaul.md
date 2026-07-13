@@ -3,11 +3,11 @@
      Per-section owners are tagged below. -->
 # M30: Vignette overhaul — quality, clarity, realism + fuller verb coverage
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate -->
 - **Principles touched:** IP1, GP1   <!-- worked under (docs restate them faithfully; add/change none) -->
-- **Branch/PR:** m30-vignette-overhaul   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** m30-vignette-overhaul · https://github.com/jmgirard/tidymedia/pull/32   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 
@@ -48,9 +48,9 @@ preprocessing pipeline.
 ## Acceptance criteria
 <!-- owner: plan · create/amend-via-gate; review reads, never reinterprets -->
 
-- [ ] AC1 — `vignettes/workflow.Rmd` exists as a registered article, framed as a
+- [x] AC1 — `vignettes/workflow.Rmd` exists as a registered article, framed as a
       dyadic-interaction preprocessing pipeline, and builds cleanly.
-- [ ] AC2 — Every exported Layer-2 task-verb family appears in ≥1 vignette,
+- [x] AC2 — Every exported Layer-2 task-verb family appears in ≥1 vignette,
       each inside a plausible research example (no contrived one-liners).
       Evidence: a grep of `vignettes/` for each family name in the NAMESPACE
       task-verb list, plus inspection confirming the context. Families:
@@ -59,17 +59,17 @@ preprocessing pipeline.
       `strip_metadata`, `normalize_audio`, `standardize_video`,
       `anonymize_video`, `compare_videos`, `concatenate_videos`,
       `picture_in_picture`.
-- [ ] AC3 — `vignettes/tidymedia.Rmd` opens on a Layer-2 task verb before any
+- [x] AC3 — `vignettes/tidymedia.Rmd` opens on a Layer-2 task verb before any
       `ffm_*` builder call (front-door-first altitude; IP1/D002).
-- [ ] AC4 — All vignettes build with **no** ffmpeg/ffprobe/mediainfo binary on
+- [x] AC4 — All vignettes build with **no** ffmpeg/ffprobe/mediainfo binary on
       PATH: every evaluated chunk is binary-free (compile-only `run = FALSE`) or
       guarded (`eval = has_*`/`eval = FALSE`). Evidence: build vignettes with the
       binaries masked off PATH; clean build. (Note: `normalize_audio(two_pass =
       TRUE)` runs a binary even under `run = FALSE` — D013 — so any evaluated
       chunk must use `two_pass = FALSE` or a guard.)
-- [ ] AC5 — `workflow.Rmd` is listed in `_pkgdown.yml` and
+- [x] AC5 — `workflow.Rmd` is listed in `_pkgdown.yml` and
       `pkgdown::check_pkgdown()` passes; all four vignettes cross-link.
-- [ ] AC6 — `devtools::check()` is 0 errors / 0 warnings / 0 notes, existing
+- [x] AC6 — `devtools::check()` is 0 errors / 0 warnings / 0 notes, existing
       tests unaffected, and NEWS.md gains a Documentation entry.
 
 ## Coverage
@@ -85,23 +85,23 @@ preprocessing pipeline.
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [ ] T1 — Reframe `vignettes/tidymedia.Rmd`: open with a task verb
+- [x] T1 — Reframe `vignettes/tidymedia.Rmd`: open with a task verb
       (`extract_audio` on the shipped `sample.mp4`), state that task verbs are
       thin front-door wrappers (IP1), then descend to the builder as it reads
       now; add `crop_video` in context; tighten toy examples. Keep Layer-0 note.
-- [ ] T2 — Author `vignettes/workflow.Rmd`: a numbered dyadic-interaction
+- [x] T2 — Author `vignettes/workflow.Rmd`: a numbered dyadic-interaction
       pipeline (standardize → normalize/convert audio → sample/extract frames →
       de-identify via strip_metadata + fixed-region anonymize_video → concatenate
       session parts → format_for_web for coder sharing), with ≥1 `_batch` step.
       Directory-scan chunks `eval = FALSE`; evaluated chunks compile-only and
       binary-free (mind D013 for normalize_audio). Describe `anonymize_video`
       honestly as fixed-region box-fill (GP1).
-- [ ] T3 — Polish `vignettes/batch.Rmd` and `vignettes/metadata.Rmd` for realism
+- [x] T3 — Polish `vignettes/batch.Rmd` and `vignettes/metadata.Rmd` for realism
       and consistency; add "Where to next" cross-links tying all four vignettes
       together. No structural rewrite.
-- [ ] T4 — Register `workflow.Rmd` in `_pkgdown.yml` (articles / index); add a
+- [x] T4 — Register `workflow.Rmd` in `_pkgdown.yml` (articles / index); add a
       NEWS.md Documentation entry describing the vignette overhaul.
-- [ ] T5 — Verify: build vignettes with binaries masked off PATH (AC4);
+- [x] T5 — Verify: build vignettes with binaries masked off PATH (AC4);
       `pkgdown::check_pkgdown()`; grep-audit every task-verb family across
       `vignettes/` (AC2); `devtools::check()` 0/0/0.
 
@@ -111,9 +111,62 @@ preprocessing pipeline.
 - 2026-07-12: created by /milestone-plan. Fulfills the "examples/vignette pass"
   portion of the CRAN candidate (release mechanics stay on that row); the M24
   docs gap-fill covered roxygen @seealso + the metadata reader table only.
+- 2026-07-12: T1 reframed tidymedia.Rmd front-door-first (opens on
+  `extract_audio`, adds `crop_video`); descends to the builder unchanged.
+- 2026-07-12: T2 authored workflow.Rmd (dyadic-interaction pipeline) — homes the
+  9 previously-unshown task verbs + `standardize_video_batch`; `anonymize_video`
+  described honestly as fixed-region box-fill (GP1).
+- 2026-07-12: T3 added "Where to next" cross-links to batch/metadata + a
+  per-verb `*_batch` siblings section in batch.Rmd. Fixed jobs-tibble columns to
+  `input`/`output` (not `infile`/`outfile`) after a masked-render error.
+- 2026-07-12: T4 registered workflow.Rmd in `_pkgdown.yml` articles; NEWS
+  Documentation entry.
+- 2026-07-12: T5 verified — all 4 vignettes build with ffmpeg/ffprobe/mediainfo
+  masked off PATH (AC4); grep-audit shows all 15 task-verb families present
+  (AC2); `pkgdown::check_pkgdown()` clean; `devtools::check()` 0/0/0.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
 
 ## Review
 <!-- owner: review · exclusive -->
+
+**Reviewed 2026-07-12 · PR #32 · branch in sync with `master` (1 ahead, 0 behind).**
+
+### Acceptance-criteria evidence (fresh)
+- **AC1** — `vignettes/workflow.Rmd` present; listed under `_pkgdown.yml`
+  `articles`; renders clean in the masked-binary build (below). ✓
+- **AC2** — grep-audit of `vignettes/` for all 15 NAMESPACE task-verb families:
+  0 missing ("all 15 families present"). Each sits in a research-framed example
+  (confirmed by both the diff-bug reviewer and inspection). ✓
+- **AC3** — first verb call in `tidymedia.Rmd` is `extract_audio()` at line 40;
+  first `ffm_*` mention is prose at line 72, first `ffm()` call later — task
+  verb precedes any builder call. ✓
+- **AC4** — rendered all four vignettes with `Sys.which()` returning `""` for
+  ffmpeg/ffprobe/mediainfo (PATH masked to `/usr/bin:/bin`, pandoc via
+  `RSTUDIO_PANDOC`): all four `OK`. ✓
+- **AC5** — `workflow` in `_pkgdown.yml` articles; `pkgdown::check_pkgdown()` →
+  "No problems found"; "Where to next" cross-links present in all four. ✓
+- **AC6** — `devtools::check()` → 0 errors / 0 warnings / 0 notes;
+  `devtools::document()` no-diff; tests pass within check; NEWS Documentation
+  entry added. ✓
+
+### Consistency gate
+- `cairn_validate.py` → all checks PASS (incl. coverage complete, caps, mirror).
+- Toolchain (r-package): `document()` no-diff ✓; `pkgdown::check_pkgdown()` clean ✓;
+  NEWS entry ✓; README in sync (untouched) ✓; `check()` 0/0/0 ✓.
+- No DESIGN principle changed (IP1/GP1 worked-under only) → `cairn_impact` skipped.
+
+### Independent fresh-context review (3 lenses + scorer)
+- **[O] diff-bug (Opus):** no defects. Verified every chunk's arg names/shapes
+  against `R/ffmpeg.R`/`R/ffm.R`, CI-safety of every evaluated chunk (the
+  `extract_frame` timestamp/`normalize_audio` two_pass/`concatenate` eval traps
+  all avoided), and the `anonymize_video` box-fill honesty claim (GP1).
+- **[S] blame-history (Sonnet):** clean. No retired name reintroduced; M24
+  metadata table + @seealso intact; `concatenate_videos` is a legit multi-input
+  verb, not a D014-retired `*_videos` batch plural; no D001–D014 contradiction.
+- **[S] prior-PR-comments (Sonnet):** no GitHub PR review comments on these files
+  (bot-only); checked the cairn review records for M23/M24 that touched them —
+  no regressions.
+- **Scorer:** no findings to score (all three lenses returned zero). Actioned
+  list empty; nothing excluded, nothing deferred.

@@ -110,5 +110,6 @@ articles:
 - title: Articles
   navbar: ~
   contents:
-  - metadata
+  - workflow
   - batch
+  - metadata

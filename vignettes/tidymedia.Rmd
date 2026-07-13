@@ -24,37 +24,68 @@ It is deliberately *not* "all of FFmpeg in R": the focus is batch trimming,
 cropping, format standardization, and metadata extraction for research and
 data-science work.
 
-## The three layers
-
-tidymedia is organized into three layers, from lowest to highest level:
-
-- **Layer 0 — the escape hatch.** `ffmpeg()`, `ffprobe()`, and `mediainfo()`
-  pass a raw argument string straight to the corresponding command-line tool.
-  Use these when you need something tidymedia does not wrap.
-- **Layer 1 — the pipeline builder.** The `ffm_*` functions assemble an FFmpeg
-  command step by step. All of the quoting, option ordering, and
-  copy-vs-re-encode logic lives here.
-- **Layer 2 — the task verbs.** Functions like `extract_audio()` and
-  `segment_video()` are thin wrappers over the builder for common jobs. See
-  `vignette("batch")` for processing many files at once.
-
-This vignette focuses on Layer 1, the builder, which is the heart of the
-package.
-
-## Building a pipeline
-
-Every pipeline starts with `ffm()` (an alias of `ffm_files()`), which names the
-input and output files. Throughout this vignette we use a tiny sample clip that
-ships with the package:
+Throughout this vignette we use a tiny sample clip that ships with the package:
 
 ```{r}
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 ```
 
-You then add steps with `|>`. Each `ffm_*` verb records an instruction; nothing
-runs until you ask it to. Calling `ffm_compile()` turns the pipeline into the
-exact FFmpeg command it represents — a reproducible string you can inspect,
-log, or run:
+## Start with a task verb
+
+Most preprocessing jobs are a single call to a **task verb**. Say you need the
+audio track of a recording — to hand to a transcription tool, for example.
+`extract_audio()` does exactly that:
+
+```{r, eval = nzchar(Sys.which("ffmpeg"))}
+extract_audio(video, "audio.m4a")
+```
+
+Every task verb runs FFmpeg immediately and returns the path it wrote. To see
+the command *without* running anything, pass `run = FALSE`; the verb compiles
+the exact FFmpeg invocation and returns it as a string you can inspect, log, or
+save:
+
+```{r}
+extract_audio(video, "audio.m4a", run = FALSE)
+```
+
+That reproducible command is the thread running through the whole package: a
+pipeline is a value you can examine before you commit to it. Cropping works the
+same way — describe the job, inspect the command, then run it:
+
+```{r}
+crop_video(video, "cropped.mp4", width = 160, height = 120, run = FALSE)
+```
+
+For preprocessing a whole folder of files at once, every task verb has a batch
+sibling (`extract_audio_batch()`, `crop_video_batch()`, …); see
+`vignette("batch")`. For an end-to-end research pipeline that chains many verbs
+together, see `vignette("workflow")`.
+
+## The three layers
+
+Task verbs are the top of three layers, from highest level to lowest:
+
+- **Layer 2 — the task verbs.** Functions like `extract_audio()` and
+  `crop_video()` are thin wrappers for common jobs. This is where most work
+  happens; you may never need to look below it.
+- **Layer 1 — the pipeline builder.** The `ffm_*` functions assemble an FFmpeg
+  command step by step. Every task verb is built from these, and all of the
+  quoting, option ordering, and copy-vs-re-encode logic lives here. Reach for
+  the builder when no single task verb fits.
+- **Layer 0 — the escape hatch.** `ffmpeg()`, `ffprobe()`, and `mediainfo()`
+  pass a raw argument string straight to the corresponding command-line tool,
+  for anything tidymedia does not wrap.
+
+The rest of this vignette drops down to Layer 1, the builder that every task
+verb is made of.
+
+## Building a pipeline
+
+Every pipeline starts with `ffm()` (an alias of `ffm_files()`), which names the
+input and output files. You then add steps with `|>`. Each `ffm_*` verb records
+an instruction; nothing runs until you ask it to. Calling `ffm_compile()` turns
+the pipeline into the exact FFmpeg command it represents:
 
 ```{r}
 ffm(video, "output.mp4") |>
@@ -127,5 +158,6 @@ ffmpeg("-version")[1]
 
 ## Where to next
 
+- `vignette("workflow")` — an end-to-end research preprocessing pipeline.
+- `vignette("batch")` — running a verb over many files at once.
 - `vignette("metadata")` — reading container and stream metadata as tibbles.
-- `vignette("batch")` — running a pipeline over many files at once.

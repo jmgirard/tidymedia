@@ -52,6 +52,28 @@ Because you build the pipeline yourself, any combination of builder verbs is
 available per job. Give `.f` a `...` argument so it tolerates extra job columns
 it does not use.
 
+## Per-verb batch siblings
+
+You do not have to write `.f` by hand for the common jobs. Every task verb ships
+a `*_batch()` companion — `extract_audio_batch()`, `convert_audio_batch()`,
+`crop_video_batch()`, `standardize_video_batch()`, `normalize_audio_batch()`,
+and the rest — that takes a jobs tibble directly and applies the verb to each
+row:
+
+```{r}
+jobs <- tibble::tibble(
+  input  = c(video, video),
+  output = c("session01_cropped.mp4", "session02_cropped.mp4")
+)
+
+crop_video_batch(jobs, width = 160, height = 120, run = FALSE)
+```
+
+When the jobs tibble has no `output` column, the transform verbs auto-name each
+output from its input (e.g. `_cropped`); either way they reject two rows that
+would resolve to the same output path. `vignette("workflow")` chains several of
+these across a study folder.
+
 ## Fan-out verbs
 
 Some tasks turn one input into *many* outputs. These fan-out verbs are Layer 2
@@ -95,3 +117,10 @@ ffm_batch(jobs, parallel = TRUE, .f = function(input, output, ...) {
 Every job carries its own compiled command in the returned tibble, so a batch
 run is fully reproducible: save that column and you have an exact record of the
 FFmpeg commands that produced your outputs.
+
+## Where to next
+
+- `vignette("workflow")` — an end-to-end research pipeline that applies these
+  batch tools across a study folder.
+- `vignette("tidymedia")` — the task verbs and the builder they are made of.
+- `vignette("metadata")` — reading each file's metadata as a tibble.

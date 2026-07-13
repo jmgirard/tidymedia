@@ -119,6 +119,10 @@ make_tagged_video <- function(env = parent.frame()) {
     '-metadata title="Secret Study" -metadata comment="participant 007"',
     '-metadata location="+40.7128-074.0060/"',
     '-metadata creation_time="2020-01-02T03:04:05.000000Z"',
+    # A per-stream (video) identifying tag too, so tests can confirm the scrub
+    # clears stream-level tags, not just container-level ones. FFmpeg's mov muxer
+    # surfaces a per-stream title as a `name` stream tag.
+    '-metadata:s:v:0 title="CAM-OPERATOR-JANE"',
     sprintf('"%s"', path)
   ))
   testthat::skip_if_not(file.exists(path),
@@ -133,6 +137,19 @@ probe_format_tags <- function(path) {
   skip_if_no_ffprobe()
   out <- ffprobe(sprintf(
     '-v error -show_entries format_tags -of default=noprint_wrappers=1 "%s"',
+    path
+  ))
+  sub("^TAG:", "", out[nzchar(out)])
+}
+
+# Probe every video/audio stream's metadata tags via ffprobe, returning a
+# character vector of "key=value" lines across all streams (empty if none).
+# Used to assert a scrub clears stream-level tags, not just container-level ones.
+# Skips if ffprobe is unavailable.
+probe_stream_tags <- function(path) {
+  skip_if_no_ffprobe()
+  out <- ffprobe(sprintf(
+    '-v error -show_entries stream_tags -of default=noprint_wrappers=1 "%s"',
     path
   ))
   sub("^TAG:", "", out[nzchar(out)])

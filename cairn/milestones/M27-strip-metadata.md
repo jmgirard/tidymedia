@@ -180,5 +180,30 @@ _Reviewed 2026-07-13 on branch `m27-strip-metadata` (PR #29), cut from
 
 ### Independent review (three lenses + scorer)
 
-_pending — reviewers running._
+Three fresh-context reviewers ran in parallel; findings scored by a separate agent.
+
+- **Diff-bug [O]** — 1 finding + 1 low-confidence note. Product code clean (genuine
+  Layer-2 wrappers, correct flag semantics, byte-parity holds, batch guard
+  *stronger* than the sibling).
+- **Blame-history [S]** — no regressions; M27 correctly follows M13 (shared
+  pipeline), M26 (resolved-output guard), D014, D007, D002, M23.
+- **Prior-PR-comments [S]** — no prior-PR evidence (repo has only Codecov bot
+  comments); clean no-op.
+
+Triage:
+
+- **F1 (score 88) — FIXED.** AC2 execution test probed only container `format_tags`,
+  never stream `tags`, leaving half of AC2's wording unverified (a future
+  stream-tag-clearing regression would pass green). Empirically the verb *is*
+  correct — an injected per-stream identifying tag is cleared — so this was a
+  test-coverage/AC-fencing gap, not a product bug. Fixed: `make_tagged_video()`
+  now injects a per-stream `title` (→ `name` stream tag), added
+  `probe_stream_tags()` helper, and the AC2 test now asserts stream-level tags
+  (`name`/`title`/`creation_time`/`encoder`/`comment`) are cleared. Suite now
+  979 pass / 0 fail (was 972).
+- **F2 (score 35) — LOGGED, not actioned** (below 80). Rotation test pins exact
+  `== 90`; ffprobe's `stream_side_data=rotation` sign has varied across FFmpeg
+  versions, so this exact-value assertion could be cross-version brittle. The
+  reviewer flagged it as low-confidence and not a defect; behavior is correct on
+  the tested build.
 

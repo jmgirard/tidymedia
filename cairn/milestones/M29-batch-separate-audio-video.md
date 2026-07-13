@@ -11,21 +11,33 @@
 
 ## Goal
 
-Give `separate_audio_video` a table-driven `_batch` sibling: one jobs row →
-two single-output pipelines (audio + video), mirroring `segment_video_batch`'s
-fan-out handling (D007) and completing batch coverage of the fan-out verbs.
+Give `separate_audio_video` a table-driven `_batch` sibling: **N** input rows
+reshape into **2N** single-output pipelines (one audio + one video per row),
+following the `segment_video` scalar's reshape-to-rows fan-out (D007) — because
+`ffm_batch()` is strictly one-row→one-command — and completing batch coverage of
+the fan-out verbs.
 
 ## Scope
 
 **In:** a new exported `separate_audio_video_batch` — a thin Layer-2 fan-out
-over `ffm_batch()` (D007) where each row carries one input and produces two named
-outputs (`audiofile`, `videofile`), sharing the scalar verb's recipe. Optional
-per-row `reencode` column; duplicate-path guard pooled across **both** output
-columns (M26); return-schema parity with the existing `_batch` verbs (M19).
+over `ffm_batch()` (D007). Each input row carries one `input` plus two **required**
+output columns, `audiofile` and `videofile` (matching the scalar's parameter
+names; no derivation — parity with the scalar, which requires both). The verb
+**reshapes** the N-row jobs table into a 2N-row internal table (melting
+`audiofile`/`videofile` into one `output` column plus a `stream` marker ∈
+{`audio`,`video`}), then fans out over `ffm_batch()` sharing a per-stream recipe
+with the scalar. Optional per-row `reencode` column; a single duplicate-path
+guard on the reshaped `output` column (M26) — which pools across both output
+columns and catches within-row `audiofile == videofile` in one check.
+Return-schema parity with `segment_video_batch` (single `output`/`command`
+column) **plus** the `stream` marker column (M19).
 
 **Out:**
 - Batch for the composite/fan-in verbs (`concatenate_videos`, `compare_videos`,
   `picture_in_picture`) → ROADMAP candidate (jobs-tibble input-shape design call).
+- Per-row output-path derivation — both output columns are required (a
+  derivation design call, e.g. copy-safe audio containers, was rejected at the
+  M29 plan gate for scalar parity).
 - Any change to `separate_audio_video`'s scalar behavior — the shared-recipe
   extraction must be compile-preserving.
 
@@ -33,26 +45,31 @@ columns (M26); return-schema parity with the existing `_batch` verbs (M19).
 <!-- owner: plan · create/amend-via-gate; review reads, never reinterprets -->
 
 - [ ] AC1 — `separate_audio_video_batch` is exported and is a thin fan-out over
-      `ffm_batch()`: each jobs row emits **two** single-output pipelines (one
-      `0:a` → audiofile, one `0:v` → videofile) sharing the scalar verb's recipe,
+      `ffm_batch()`: it reshapes each of N input rows into **two** single-output
+      pipelines (one `0:a` → audiofile, one `0:v` → videofile) and returns a
+      **2N-row** result, sharing a per-stream recipe with the scalar verb and
       gluing no command strings of its own (IP1/D007). Evidence:
-      `grep '^export' NAMESPACE`; a compile test showing N rows → 2N commands.
+      `grep '^export' NAMESPACE`; a compile test showing N input rows → 2N result
+      rows / 2N commands.
 - [ ] AC2 — Jobs guards with `cli` errors: non-data-frame `jobs`, zero-row
-      `jobs`, missing `input`, `NA` in `input`. An optional per-row `reencode`
-      column overrides the `reencode` argument, falling back when absent.
-      Evidence: one test per guard; a test showing a `reencode` column flips one
-      row's copy-vs-re-encode while a column-less row uses the default.
-- [ ] AC3 — Duplicate-path guard is pooled across both output columns: no two
-      resolved output paths collide across the whole table (any audiofile ↔ any
-      videofile, any row), and `audiofile` ≠ `videofile` within a row (M26).
-      Outputs derive when a column is absent (`<base>_audio.<ext>` /
-      `<base>_video.<ext>`, documented). Evidence: a test where a cross-column
-      path collision is rejected.
-- [ ] AC4 — Return-schema parity: the fan-out result carries the same
-      `ffm_batch()` columns (`command`, opt-in `verified`/manifest) as the other
-      `_batch` verbs, with the fan-out row shape defined and consistent (model on
-      `segment_video_batch`'s return). Evidence: a test comparing `names()`/types
-      against `segment_video_batch` on a matched call.
+      `jobs`, missing `input`/`audiofile`/`videofile` column, `NA` in `input`,
+      `audiofile`, or `videofile`. An optional per-row `reencode` column
+      overrides the `reencode` argument, falling back when absent. Evidence: one
+      test per guard; a test showing a `reencode` column flips one row's
+      copy-vs-re-encode while a column-less row uses the default.
+- [ ] AC3 — Single duplicate-path guard on the reshaped `output` column rejects
+      any collision: no two resolved output paths collide across the whole 2N-row
+      table (any audiofile ↔ any videofile, any row), which subsumes within-row
+      `audiofile == videofile` (both melt to identical `output` entries) (M26).
+      Evidence: a test where a cross-column path collision is rejected and a test
+      where within-row `audiofile == videofile` is rejected.
+- [ ] AC4 — Return-schema parity: the 2N-row result carries the same
+      `ffm_batch()` columns as `segment_video_batch` (single `output`, `command`,
+      opt-in `verified`/manifest) **plus** a `stream` marker column (`audio`/
+      `video`) identifying each row's stream; row shape is one row per output
+      stream (model on the `segment_video` scalar's reshape). Evidence: a test
+      comparing `names()`/types against `segment_video_batch` on a matched call
+      and asserting the added `stream` column and its values.
 - [ ] AC5 — Docs & housekeeping synced (roxygen `@family`/`@seealso` scalar +
       `ffm_batch` + batch-disambiguation prose per M24; `man/`, `NAMESPACE`,
       `_pkgdown.yml`, spelling wordlist) and `devtools::check()` shows
@@ -71,18 +88,27 @@ columns (M26); return-schema parity with the existing `_batch` verbs (M19).
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [ ] T1 — Extract a shared recipe from `separate_audio_video` (R/ffmpeg.R:308)
-      so the scalar verb and the batch sibling build the two pipelines identically
-      (the audio `0:a` map + optional `-c:a copy`, the video `0:v` map + optional
-      `-c:v copy`); scalar behavior compile-preserved.
-- [ ] T2 — Write `separate_audio_video_batch` as a fan-out over `ffm_batch()`,
-      modeled on `segment_video_batch` (R/ffmpeg.R:1476) for the one-input →
-      many-output return shape: jobs guards, per-row `reencode` column, pooled
-      cross-column duplicate-path guard, and two-column output derivation.
-- [ ] T3 — Tests (`tests/testthat/`): N rows → 2N commands (AC1), the jobs
-      guards + `reencode` column override (AC2), pooled cross-column duplicate
-      rejection and within-row equality rejection (AC3), schema parity against
-      `segment_video_batch` (AC4). Execution tests `skip_if` ffmpeg absent (D004).
+- [ ] T1 — Extract a **per-stream** shared recipe from `separate_audio_video`
+      (R/ffmpeg.R:316), e.g. `separate_stream_pipeline(input, output, stream,
+      reencode)`: map `0:a` + optional `-c:a copy` when `stream == "audio"`, map
+      `0:v` + optional `-c:v copy` when `stream == "video"`. The scalar calls it
+      twice (compile-preserved); place the helper **above** the scalar's roxygen
+      block, not between block and function (M28 lesson).
+- [ ] T2 — Write `separate_audio_video_batch`, modeling the fan-out on the
+      `segment_video` **scalar**'s reshape-to-rows (R/ffmpeg.R:1391), not
+      `segment_video_batch` (which is 1-row→1-command): jobs guards (non-df,
+      zero-row, required `input`/`audiofile`/`videofile`, NA checks, per-row
+      `reencode` column type); **reshape** the N-row jobs table into a 2N-row
+      table (melt `audiofile`/`videofile` → one `output` column + a `stream`
+      marker); a single `anyDuplicated()` guard on the reshaped `output`; then
+      `ffm_batch()` calling `separate_stream_pipeline()` per row, forwarding `...`
+      (incl. per-row `reencode`) to the runner.
+- [ ] T3 — Tests (`tests/testthat/`): N input rows → 2N result rows / 2N commands
+      (AC1), the jobs guards + `reencode` column override (AC2), duplicate
+      rejection for a cross-column collision and for within-row
+      `audiofile == videofile` (AC3), schema parity against `segment_video_batch`
+      plus the added `stream` column (AC4). Execution tests `skip_if` ffmpeg
+      absent (D004).
 - [ ] T4 — Docs & housekeeping: roxygen (`@family`, `@seealso`, batch
       disambiguation), `document()`, `NAMESPACE`, `_pkgdown.yml` sync, spelling
       wordlist, `devtools::check()` → `Status: OK` (AC5).
@@ -91,6 +117,12 @@ columns (M26); return-schema parity with the existing `_batch` verbs (M19).
 <!-- owner: any skill · append-only; one line per entry; absolute dates -->
 
 - 2026-07-12: created by /milestone-plan (batch-coverage gap analysis — Tier 2, fan-out).
+- 2026-07-12: /milestone-plan refresh (M28 now done). Re-investigated vs current
+  code; `ffm_batch` confirmed 1-row→1-command, so the fan-out models the
+  `segment_video` scalar's reshape, not `segment_video_batch`. Gate decisions:
+  2N-row return + `stream` marker; `audiofile`/`videofile` required columns (no
+  derivation); single `anyDuplicated()` guard on the reshaped `output`. Amended
+  Goal/Scope/AC1–AC4/T1–T3 (amend-via-gate); T1 recipe made per-stream.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

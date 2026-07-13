@@ -228,11 +228,7 @@ format_probe <- function(x) {
 #' @param x A character vector containing fractions (`"a/b"`) or plain numbers
 #'   to evaluate. Surrounding whitespace is ignored; `NA` passes through.
 #' @return A numeric vector with each fraction evaluated to a double.
-#' @family utility functions
-#' @examples
-#' # FFprobe often reports frame rates as fractions
-#' convert_fractions(c("30000/1001", "25", NA))
-#' @export
+#' @noRd
 convert_fractions <- function(x) {
   if (!rlang::is_character(x)) {
     cli::cli_abort("{.arg x} must be a character vector.")

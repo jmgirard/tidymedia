@@ -3,11 +3,11 @@
      Per-section owners are tagged below. -->
 # M23: API surface cleanup (clean-break renames, arg harmonization, un-exports)
 
-- **Status:** planned   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Principles touched:** IP1   <!-- owner: plan · create/amend-via-gate; comma-separated IPn/GPn ids this milestone touches, or — -->
-- **Branch/PR:** —   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** m23-api-surface-cleanup · https://github.com/jmgirard/tidymedia/pull/25   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 
@@ -51,33 +51,33 @@ public surface with no compatibility shims.
 ## Acceptance criteria
 <!-- owner: plan · create/amend-via-gate; review reads, never reinterprets -->
 
-- [ ] **AC1** All 11 renames applied: `NAMESPACE` exports the new names
+- [x] **AC1** All 11 renames applied: `NAMESPACE` exports the new names
       (`ffmpeg_codecs`, `ffmpeg_encoders`, `convert_audio`, `get_sample_rate`,
       `get_frame_rate`, `segment_video_batch`, `standardize_video_batch`,
       `normalize_audio_batch`, `anonymize_video_batch`, `extract_frame_batch`)
       and a repo-wide grep finds **zero** occurrences of every old name in
       `R/`, `tests/`, `vignettes/`, `README.Rmd`. `(RB tripwire: irreversible-api)`
-- [ ] **AC2** `convert_audio(infile, outfile, format = NULL, run = TRUE)`: with
+- [x] **AC2** `convert_audio(infile, outfile, format = NULL, run = TRUE)`: with
       `format = NULL` the compiled command is byte-for-byte identical to the old
       `audio_as_mp3` (map `a`, `-q:a 0`, container from the outfile extension); a
       non-`NULL` `format` pins the output format/codec. Verified by a
       compile-level test covering both branches.
-- [ ] **AC3** Argument harmonization complete: `audio_codec`/`video_codec`
+- [x] **AC3** Argument harmonization complete: `audio_codec`/`video_codec`
       replace `acodec`/`vcodec` (`extract_audio`, `standardize_video[_batch]`,
       `anonymize_video[_batch]`), and `start`/`end` replace `ts_start`/`ts_stop`
       (`segment_video[_batch]`), including `@param` docs, defaults, and job-table
       column names; no old arg name remains. Verified by signature checks +
       updated tests. `(RB tripwire: irreversible-api)`
-- [ ] **AC4** Reexport/un-export cleanup done: `NAMESPACE` no longer exports
+- [x] **AC4** Reexport/un-export cleanup done: `NAMESPACE` no longer exports
       `enquo`, `enquos`, `as_label`, `as_name`, `:=`, `pad_integers`,
       `convert_fractions`; it still exports `.data`; `pad_integers` and
       `convert_fractions` remain callable internally (their internal call sites
       still resolve). `(RB tripwire: irreversible-api)`
-- [ ] **AC5** `devtools::document()` regenerates `man/` + `NAMESPACE`; the full
+- [x] **AC5** `devtools::document()` regenerates `man/` + `NAMESPACE`; the full
       test suite passes with the renamed identifiers; `devtools::check()` is
       clean — confirm `Status: OK` in `00check.log` (not just the devtools
       summary; `spelling::update_wordlist()` run first — LESSONS M17).
-- [ ] **AC6** `vignettes/*.Rmd` (esp. `batch.Rmd`) and `README.Rmd` reference
+- [x] **AC6** `vignettes/*.Rmd` (esp. `batch.Rmd`) and `README.Rmd` reference
       only the new names/args; `devtools::build_readme()` regenerates `README.md`.
 
 ## Coverage
@@ -93,26 +93,26 @@ public surface with no compatibility shims.
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [ ] **T1** Rename the 5 batch siblings to `<scalar_verb>_batch`
+- [x] **T1** Rename the 5 batch siblings to `<scalar_verb>_batch`
       (`R/ffmpeg.R:614/1206/1316/1485/1691` + `R/loudnorm_two_pass.R`): update
       defs, roxygen, all call sites in `tests/`, `vignettes/batch.Rmd`,
       `README.Rmd`, and rename the matching `tests/testthat/test-*.R` files.
-- [ ] **T2** N1: rename `get_codecs`/`get_encoders` → `ffmpeg_codecs`/
+- [x] **T2** N1: rename `get_codecs`/`get_encoders` → `ffmpeg_codecs`/
       `ffmpeg_encoders` (`R/ffmpeg.R`) + roxygen `@family`/title + tests.
-- [ ] **T3** N2: replace `audio_as_mp3` (`R/ffmpeg.R:182`) with
+- [x] **T3** N2: replace `audio_as_mp3` (`R/ffmpeg.R:182`) with
       `convert_audio(infile, outfile, format = NULL, run = TRUE)` — `NULL`
       reproduces the old command, non-`NULL` pins format; add the compile-level
       parity + format test.
-- [ ] **T4** N3: rename `get_samplingrate`/`get_framerate` →
+- [x] **T4** N3: rename `get_samplingrate`/`get_framerate` →
       `get_sample_rate`/`get_frame_rate` (`R/mediainfo.R:373/316`) + tests.
-- [ ] **T5** Arg harmonization: `acodec`/`vcodec` → `audio_codec`/`video_codec`
+- [x] **T5** Arg harmonization: `acodec`/`vcodec` → `audio_codec`/`video_codec`
       and `ts_start`/`ts_stop` → `start`/`end` across `R/ffmpeg.R` (defs,
       defaults, `@param`, job-table column reads) and every test/vignette site.
-- [ ] **T6** N6/N7: in `R/utils-tidy-eval.R` drop the `@export` reexports of
+- [x] **T6** N6/N7: in `R/utils-tidy-eval.R` drop the `@export` reexports of
       `enquo`/`enquos`/`as_label`/`as_name`/`:=` (keep `.data`); drop `@export`
       on `pad_integers` (`R/utils.R`) and `convert_fractions` (`R/ffprobe.R`),
       leaving both as internal helpers.
-- [ ] **T7** `devtools::document()`; `spelling::update_wordlist()`; sync any
+- [x] **T7** `devtools::document()`; `spelling::update_wordlist()`; sync any
       remaining `vignettes/*.Rmd` + `README.Rmd` and `devtools::build_readme()`;
       run `devtools::check()` and confirm `Status: OK` in `00check.log`.
 
@@ -120,6 +120,13 @@ public surface with no compatibility shims.
 <!-- owner: any skill · append-only; one line per entry; absolute dates -->
 
 - 2026-07-12: created by /milestone-plan (executes M22 audit §5–6 / D014).
+- 2026-07-12: T1 — renamed 5 batch siblings to `*_batch` across R/, tests (incl. test files), vignettes, README; document() regen; tests 0F/0W.
+- 2026-07-12: T2 — `get_codecs`/`get_encoders` → `ffmpeg_codecs`/`ffmpeg_encoders` (R/, test-ffmpeg.R, README, ffm.R prose); tests 0F/0W.
+- 2026-07-12: T3 — `audio_as_mp3` → `convert_audio(format = NULL)`; NULL keeps `-q:a 0`/map-a byte-for-byte, non-NULL emits `-codec:a <format>` (drops `-q:a`); added parity + format tests; tests 0F/0W.
+- 2026-07-12: T4 — `get_samplingrate`/`get_framerate` → `get_sample_rate`/`get_frame_rate` (R/mediainfo.R + internal callers in R/ffmpeg.R + tests); tests 0F/0W.
+- 2026-07-12: T5 — arg harmonization: `acodec`/`vcodec` → `audio_codec`/`video_codec` (args, `@param`, job-table columns `pick()`/`str_cols`, error strings), `ts_start`/`ts_stop` → `start`/`end` (segment_video scalar now matches the batch's `start`/`end` columns). Left the unrelated local `acodec()` ffprobe helper in test-ffmpeg.R untouched. Full suite 0F/0W.
+- 2026-07-12: T6 — reexports trimmed to `.data` only (dropped `enquo`/`enquos`/`as_label`/`as_name`/`:=`); `pad_integers` + `convert_fractions` un-exported via `@noRd` (stale man pages removed, still callable internally). Full suite 0F/0W.
+- 2026-07-12: T7 — document() + build_readme(); reframed `metadata.Rmd` to drop the now-internal `convert_fractions()` chunk; `spelling::update_wordlist()` (+VBR, −5 tidy-eval prose words). `devtools::check()` → **Status: OK** (0E/0W/0N), spelling.Rout comparison OK. All 6 ACs met → status review.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->
@@ -130,3 +137,69 @@ public surface with no compatibility shims.
 
 ## Review
 <!-- owner: review · exclusive -->
+
+**Reviewed 2026-07-12 · PR #25 · branch `m23-api-surface-cleanup` @ master (no drift; master had not moved since branch cut).**
+
+### Acceptance-criterion evidence (fresh)
+
+- **AC1 ✓** — `NAMESPACE` exports all 10 new names (`ffmpeg_codecs`, `ffmpeg_encoders`,
+  `convert_audio`, `get_sample_rate`, `get_frame_rate`, `segment_video_batch`,
+  `standardize_video_batch`, `normalize_audio_batch`, `anonymize_video_batch`,
+  `extract_frame_batch`); repo-wide `git grep` over `R/ tests/ vignettes/ README.Rmd`
+  finds zero old names (the only `acodec` hits are the unrelated local ffprobe
+  helper in test-ffmpeg.R:249/253, not the renamed arg).
+- **AC2 ✓** — compiled: `format = NULL` → `… -q:a 0 -map a "a.mp3"` (byte-identical to
+  old `audio_as_mp3`); `format = "aac"` → `… -codec:a aac -map a "a.m4a"` (no `-q:a`).
+  Covered by two new tests in test-ffmpeg.R.
+- **AC3 ✓** — signatures/params/columns use `audio_codec`/`video_codec` and `start`/`end`;
+  no `acodec`/`vcodec`/`ts_start`/`ts_stop` remain; jobs-table column reads
+  (`pick()`, `str_cols`) and cli error strings updated. Verified by grep + full suite.
+- **AC4 ✓** — `NAMESPACE` no longer exports `enquo`/`enquos`/`as_label`/`as_name`/`:=`/
+  `pad_integers`/`convert_fractions`; still exports `.data` (and `importFrom(rlang,.data)`).
+  Internal callers of `pad_integers` (ffmpeg.R) and `convert_fractions` resolve —
+  full suite passes.
+- **AC5 ✓** — fresh `devtools::check()` → **Status: OK (0 errors / 0 warnings / 0 notes)**;
+  spelling.Rout comparison OK; `devtools::test()` → 873 tests, 0 fail / 0 warn / 0 skip
+  (ffmpeg present, execution tests ran).
+- **AC6 ✓** — `vignettes/*.Rmd` + `README.Rmd` reference only new names; `metadata.Rmd`
+  reframed to drop the now-internal `convert_fractions()` chunk; `build_readme()` run
+  (the only working-tree README delta on rebuild is a volatile tempdir path in embedded
+  output — reverted, not a content change).
+
+### Consistency gate
+
+- `cairn_validate.py` → all checks pass (exit 0).
+- Coverage completeness: AC1–AC6 all map to existing tasks T1–T7. ✓
+- `devtools::document()` → no diff. ✓
+- Principle impact: DESIGN.md unchanged on branch; "Principles touched: IP1" reflects
+  *working under / reinforcing* IP1 (the `ffm_*` layer prefix), not a text change → no
+  `cairn_impact` sweep needed.
+- pkgdown: `_pkgdown.yml` reference index synced to the renamed topics (dropped the two
+  now-internal helpers, removed the emptied Utilities section); `pkgdown::check_pkgdown()`
+  → "No problems found."
+- NEWS.md: added a "Standardized function and argument names" breaking-changes entry
+  under the development version (no milestone numbers).
+
+### Independent review
+
+Three fresh-context lenses, run in parallel, each with a distinct evidence base:
+
+- **[O] diff-bug reviewer (Opus)** — full `master...HEAD` diff vs ACs/DESIGN/DECISIONS.
+  **Zero findings.** Verified: no missed rename call sites (internal callers, jobs-table
+  column keys `pick()`/`str_cols`, cli `{.field}` strings all track); `convert_audio`
+  `format=NULL` byte-for-byte parity + non-NULL `-codec:a` path; un-exported helpers still
+  resolve; only `.data` retained in reexports.
+- **[S] blame-history reviewer (Sonnet)** — `git log`/`blame` on modified lines vs prior
+  intent. **Zero findings.** Confirmed no regression of M12/M13 encode guards
+  (even-dimension floor-crop, `-c:a copy`, `+faststart`, per-value validation), D008
+  seek/cut semantics, or D013 two-pass schema (loudnorm_two_pass.R changes comment-only).
+- **[S] prior-PR-comments reviewer (Sonnet)** — reviewed all 24 merged PRs. **No prior-PR
+  evidence** (repo has zero human inline/review comments; only Codecov bot). Lens no-ops.
+
+**Total surviving findings: 0** → no scorer pass or triage needed.
+
+### Outcome
+
+All 6 acceptance criteria verified with fresh evidence; consistency gate green
+(validate, coverage, document no-diff, pkgdown, NEWS); independent review clean.
+Recommend merge.

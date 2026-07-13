@@ -31,9 +31,9 @@ test_that("segment_video() rejects mismatched timestamp lengths", {
   expect_error(segment_video(f, c(0, 5), c(5)), "same length")
 })
 
-test_that("get_codecs() returns a tidy tibble", {
+test_that("ffmpeg_codecs() returns a tidy tibble", {
   skip_if_no_ffmpeg()
-  cc <- get_codecs()
+  cc <- ffmpeg_codecs()
   expect_s3_class(cc, "tbl_df")
   expect_setequal(
     names(cc),
@@ -45,15 +45,15 @@ test_that("get_codecs() returns a tidy tibble", {
   expect_gt(nrow(cc), 0)
 })
 
-test_that("get_codecs() sort_by_type toggles ordering", {
+test_that("ffmpeg_codecs() sort_by_type toggles ordering", {
   skip_if_no_ffmpeg()
-  by_name <- get_codecs(sort_by_type = FALSE)
+  by_name <- ffmpeg_codecs(sort_by_type = FALSE)
   expect_false(is.unsorted(by_name$name))
 })
 
-test_that("get_encoders() returns a tidy tibble", {
+test_that("ffmpeg_encoders() returns a tidy tibble", {
   skip_if_no_ffmpeg()
-  ee <- get_encoders()
+  ee <- ffmpeg_encoders()
   expect_s3_class(ee, "tbl_df")
   expect_setequal(
     names(ee),
@@ -101,16 +101,24 @@ test_that("extract_audio() compiles to a copy + drop-video command", {
   expect_match(cmd, '"out.aac"', fixed = TRUE)
 })
 
-test_that("extract_audio(acodec=) sets the audio codec", {
+test_that("extract_audio(audio_codec=) sets the audio codec", {
   f <- make_input()
-  cmd <- extract_audio(f, "out.m4a", acodec = "aac", run = FALSE)
+  cmd <- extract_audio(f, "out.m4a", audio_codec = "aac", run = FALSE)
   expect_match(cmd, "-codec:a aac -vn", fixed = TRUE)
 })
 
-test_that("audio_as_mp3() compiles to -q:a 0 -map a", {
+test_that("convert_audio() default (format = NULL) compiles to -q:a 0 -map a", {
   f <- make_input()
-  cmd <- audio_as_mp3(f, "out.mp3", run = FALSE)
+  cmd <- convert_audio(f, "out.mp3", run = FALSE)
   expect_match(cmd, "-q:a 0 -map a", fixed = TRUE)
+})
+
+test_that("convert_audio(format=) pins -codec:a and drops -q:a", {
+  f <- make_input()
+  cmd <- convert_audio(f, "out.m4a", format = "aac", run = FALSE)
+  expect_match(cmd, "-codec:a aac", fixed = TRUE)
+  expect_match(cmd, "-map a", fixed = TRUE)
+  expect_no_match(cmd, "-q:a", fixed = TRUE)
 })
 
 test_that("crop_video() compiles to a crop filter mapping all streams", {
@@ -133,7 +141,7 @@ test_that("standardize_video() compiles the full standardization command", {
   cmd <- standardize_video(
     f, "out.mp4",
     width = 1280, height = 720, fps = 30,
-    vcodec = "libx264", pixel_format = "yuv420p",
+    video_codec = "libx264", pixel_format = "yuv420p",
     run = FALSE
   )
   expect_equal(
@@ -206,7 +214,7 @@ test_that("standardize_video() writes an output with the requested fps and width
   standardize_video(infile, outfile, width = 48, height = 32, fps = 5)
   expect_true(file.exists(outfile))
   expect_equal(get_width(outfile), 48)
-  expect_equal(get_framerate(outfile), 5)
+  expect_equal(get_frame_rate(outfile), 5)
 })
 
 test_that("standardize_video() default path encodes an odd-dimensioned source", {
@@ -291,7 +299,7 @@ test_that("concatenate_videos() joins inputs end to end (binary-gated)", {
 test_that("task verbs reject a missing input file (no binary needed)", {
   missing <- withr::local_tempfile(fileext = ".mp4")  # not created
   expect_error(extract_audio(missing, "out.aac"))
-  expect_error(audio_as_mp3(missing, "out.mp3"))
+  expect_error(convert_audio(missing, "out.mp3"))
   expect_error(separate_audio_video(missing, "a.aac", "v.mp4"))
   expect_error(crop_video(missing, "out.mp4", 10, 10, 0, 0))
   expect_error(format_for_web(missing, "out.mp4"))

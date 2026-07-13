@@ -298,7 +298,7 @@ get_duration <- function(file,
   duration / divisor
 }
 
-# get_framerate() ---------------------------------------------------------
+# get_frame_rate() ---------------------------------------------------------
 
 #' Get the video frame rate of a media file
 #'
@@ -311,9 +311,9 @@ get_duration <- function(file,
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' get_framerate(video)
+#' get_frame_rate(video)
 #' @export
-get_framerate <- function(file) {
+get_frame_rate <- function(file) {
   mediainfo_parameter(file = file, section = "Video", parameter = "FrameRate")
 }
 
@@ -355,7 +355,7 @@ get_height <- function(file) {
   mediainfo_parameter(file = file, section = "Video", parameter = "Height")
 }
 
-# get_samplingrate() ------------------------------------------------------
+# get_sample_rate() ------------------------------------------------------
 
 #' Get the audio sampling rate of a media file
 #'
@@ -368,8 +368,8 @@ get_height <- function(file) {
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' get_samplingrate(video)
+#' get_sample_rate(video)
 #' @export
-get_samplingrate <- function(file) {
+get_sample_rate <- function(file) {
   mediainfo_parameter(file = file, section = "Audio", parameter = "SamplingRate")
 }

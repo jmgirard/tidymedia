@@ -10,7 +10,7 @@ standardize_video(
   width = NULL,
   height = NULL,
   fps = NULL,
-  vcodec = "libx264",
+  video_codec = "libx264",
   pixel_format = "yuv420p",
   run = TRUE
 )
@@ -30,7 +30,7 @@ standardize_video(
 expression such as \code{"30000/1001"}), or \code{NULL} (default) to keep
 the input frame rate.}
 
-\item{vcodec}{A string naming the output video codec (default
+\item{video_codec}{A string naming the output video codec (default
 \code{"libx264"}).}
 
 \item{pixel_format}{A string naming the output pixel format (default
@@ -52,7 +52,7 @@ it across a dataset.
 }
 \details{
 The default standard \code{standardize_video(infile, outfile)} re-encodes to
-H.264 video (\code{vcodec = "libx264"}) with \code{pixel_format = "yuv420p"}
+H.264 video (\code{video_codec = "libx264"}) with \code{pixel_format = "yuv420p"}
 and \code{-movflags +faststart}, keeping the source resolution and frame
 rate. Audio is stream-copied unchanged (\code{-c:a copy}); audio
 standardization is out of scope. The same input therefore always compiles to
@@ -76,21 +76,21 @@ standardize_video(video, "std.mp4", width = 1280, height = 720, fps = 30,
 \seealso{
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
-\code{\link[=anonymize_videos]{anonymize_videos()}},
-\code{\link[=audio_as_mp3]{audio_as_mp3()}},
+\code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos]{compare_videos()}},
 \code{\link[=concatenate_videos]{concatenate_videos()}},
+\code{\link[=convert_audio]{convert_audio()}},
 \code{\link[=crop_video]{crop_video()}},
 \code{\link[=extract_audio]{extract_audio()}},
 \code{\link[=extract_frame]{extract_frame()}},
-\code{\link[=extract_frames]{extract_frames()}},
+\code{\link[=extract_frame_batch]{extract_frame_batch()}},
 \code{\link[=format_for_web]{format_for_web()}},
 \code{\link[=normalize_audio]{normalize_audio()}},
-\code{\link[=normalize_audios]{normalize_audios()}},
+\code{\link[=normalize_audio_batch]{normalize_audio_batch()}},
 \code{\link[=picture_in_picture]{picture_in_picture()}},
 \code{\link[=segment_video]{segment_video()}},
-\code{\link[=segment_videos]{segment_videos()}},
+\code{\link[=segment_video_batch]{segment_video_batch()}},
 \code{\link[=separate_audio_video]{separate_audio_video()}},
-\code{\link[=standardize_videos]{standardize_videos()}}
+\code{\link[=standardize_video_batch]{standardize_video_batch()}}
 }
 \concept{task verb functions}

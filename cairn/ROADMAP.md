@@ -8,7 +8,7 @@ _Last hygiene check: 2026-07-12 (M22 done)_
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M23 | API surface cleanup (clean-break renames, arg harmonization, un-exports) | planned | M22 | normal | milestones/M23-api-surface-cleanup.md |
+| M23 | API surface cleanup (clean-break renames, arg harmonization, un-exports) | review | M22 | normal | milestones/M23-api-surface-cleanup.md |
 | M24 | Docs gap-fill (@seealso web, metadata-boundary prose, batch disambiguation) | planned | M23 | normal | milestones/M24-docs-gap-fill.md |
 | M22 | Naming & docs audit + target-scheme decisions | done | — | normal | milestones/archive/M22-naming-docs-audit.md |
 | M21 | Batch fixed-region anonymization verb | done | M20 | normal | milestones/archive/M21-anonymize-videos-batch.md |

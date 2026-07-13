@@ -1,16 +1,16 @@
-# Tests for normalize_audios(): a table-driven sibling of normalize_audio() that
+# Tests for normalize_audio_batch(): a table-driven sibling of normalize_audio() that
 # loudness-normalizes many input files from one jobs tibble. Command
 # construction is tested purely (run = FALSE); execution and the ffm_batch
 # forwarding paths (verify/manifest) are gated on the ffmpeg binary.
 
-test_that("normalize_audios() returns one command per job across multiple inputs", {
+test_that("normalize_audio_batch() returns one command per job across multiple inputs", {
   f1 <- make_input()
   f2 <- make_input()
   jobs <- tibble::tibble(
     input  = c(f1, f1, f2),
     output = c("a.mp4", "b.mp4", "c.mp4")
   )
-  res <- normalize_audios(jobs, run = FALSE)
+  res <- normalize_audio_batch(jobs, run = FALSE)
   expect_s3_class(res, "tbl_df")
   expect_equal(nrow(res), 3)
   expect_true("command" %in% names(res))
@@ -20,19 +20,19 @@ test_that("normalize_audios() returns one command per job across multiple inputs
   expect_match(res$command[[3]], '"c.mp4"', fixed = TRUE)
 })
 
-test_that("normalize_audios() command is byte-identical to the scalar verb", {
+test_that("normalize_audio_batch() command is byte-identical to the scalar verb", {
   f <- make_input()
   jobs <- tibble::tibble(input = f, output = "out.mp4", target_loudness = -16)
-  res <- normalize_audios(jobs, run = FALSE)
+  res <- normalize_audio_batch(jobs, run = FALSE)
   scalar <- normalize_audio(f, "out.mp4", target_loudness = -16, run = FALSE)
   # Compile-parity: the shared normalize_audio_pipeline() makes the batch row's
   # command identical to the scalar call with the same parameters.
   expect_identical(res$command[[1]], scalar)
 })
 
-test_that("normalize_audios() default knobs match the scalar defaults", {
+test_that("normalize_audio_batch() default knobs match the scalar defaults", {
   f <- make_input()
-  res <- normalize_audios(tibble::tibble(input = f, output = "out.mp4"),
+  res <- normalize_audio_batch(tibble::tibble(input = f, output = "out.mp4"),
                           run = FALSE)
   scalar <- normalize_audio(f, "out.mp4", run = FALSE)
   expect_identical(res$command[[1]], scalar)
@@ -44,7 +44,7 @@ test_that("normalize_audios() default knobs match the scalar defaults", {
 
 # Single-pass characterization (guards the two_pass = FALSE default) -------
 
-test_that("normalize_audios(run = FALSE) single-pass command column is unchanged (characterization)", {
+test_that("normalize_audio_batch(run = FALSE) single-pass command column is unchanged (characterization)", {
   # Pin the exact single-pass command for every knob so the two_pass = FALSE
   # default is provably byte-for-byte unchanged as the two-pass path is added
   # (AC1). Scrub the temp input path to a stable token for a deterministic pin.
@@ -58,7 +58,7 @@ test_that("normalize_audios(run = FALSE) single-pass command column is unchanged
     channels        = c(2, 1),
     sample_rate     = c(48000, 44100)
   )
-  res <- normalize_audios(jobs, run = FALSE)
+  res <- normalize_audio_batch(jobs, run = FALSE)
   scrub <- function(cmd) gsub(f, "<in>", cmd, fixed = TRUE)
   expect_equal(
     scrub(res$command[[1]]),
@@ -74,7 +74,7 @@ test_that("normalize_audios(run = FALSE) single-pass command column is unchanged
 
 # Per-row override columns ------------------------------------------------
 
-test_that("normalize_audios() honors per-row knob columns", {
+test_that("normalize_audio_batch() honors per-row knob columns", {
   f <- make_input()
   jobs <- tibble::tibble(
     input          = c(f, f, f),
@@ -85,7 +85,7 @@ test_that("normalize_audios() honors per-row knob columns", {
     channels       = c(1, 2, 1),
     sample_rate    = c(44100, 48000, 22050)
   )
-  res <- normalize_audios(jobs, run = FALSE)
+  res <- normalize_audio_batch(jobs, run = FALSE)
   expect_match(res$command[[1]], "loudnorm=I=-23:TP=-1:LRA=7", fixed = TRUE)
   expect_match(res$command[[1]], "-ac 1 -ar 44100", fixed = TRUE)
   expect_match(res$command[[2]], "loudnorm=I=-16:TP=-1.5:LRA=11", fixed = TRUE)
@@ -94,7 +94,7 @@ test_that("normalize_audios() honors per-row knob columns", {
   expect_match(res$command[[3]], "-ac 1 -ar 22050", fixed = TRUE)
 })
 
-test_that("normalize_audios() knob column overrides the scalar arg per row", {
+test_that("normalize_audio_batch() knob column overrides the scalar arg per row", {
   f <- make_input()
   # A target_loudness column is present for both rows; the scalar
   # target_loudness = -14 applies only to rows lacking the column (none here),
@@ -103,16 +103,16 @@ test_that("normalize_audios() knob column overrides the scalar arg per row", {
     input = c(f, f), output = c("a.mp4", "b.mp4"),
     target_loudness = c(-23, -16)
   )
-  res <- normalize_audios(jobs, target_loudness = -14, run = FALSE)
+  res <- normalize_audio_batch(jobs, target_loudness = -14, run = FALSE)
   expect_match(res$command[[1]], "loudnorm=I=-23:", fixed = TRUE)
   expect_match(res$command[[2]], "loudnorm=I=-16:", fixed = TRUE)
   expect_no_match(res$command[[1]], "loudnorm=I=-14:", fixed = TRUE)
 })
 
-test_that("normalize_audios() scalar arg applies to every row without a column", {
+test_that("normalize_audio_batch() scalar arg applies to every row without a column", {
   f <- make_input()
   jobs <- tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"))
-  res <- normalize_audios(jobs, target_loudness = -16, channels = 1,
+  res <- normalize_audio_batch(jobs, target_loudness = -16, channels = 1,
                           run = FALSE)
   for (cmd in res$command) {
     expect_match(cmd, "loudnorm=I=-16:", fixed = TRUE)
@@ -122,13 +122,13 @@ test_that("normalize_audios() scalar arg applies to every row without a column",
 
 # Optional `output`: auto-naming + collision ------------------------------
 
-test_that("normalize_audios() auto-names outputs when the column is absent", {
+test_that("normalize_audio_batch() auto-names outputs when the column is absent", {
   f1 <- make_input()
   f2 <- make_input()
   b1 <- tools::file_path_sans_ext(f1)
   b2 <- tools::file_path_sans_ext(f2)
   jobs <- tibble::tibble(input = c(f1, f2))
-  res <- normalize_audios(jobs, run = FALSE)
+  res <- normalize_audio_batch(jobs, run = FALSE)
   # One-input -> one-output: <base>_normalized.<input-ext>, carried on the
   # returned tibble and used in the command.
   expect_equal(res$output, c(paste0(b1, "_normalized.mp4"),
@@ -137,59 +137,59 @@ test_that("normalize_audios() auto-names outputs when the column is absent", {
                fixed = TRUE)
 })
 
-test_that("normalize_audios() keeps the input extension when auto-naming", {
+test_that("normalize_audio_batch() keeps the input extension when auto-naming", {
   f <- make_input(ext = "mkv")
   base <- tools::file_path_sans_ext(f)
-  res <- normalize_audios(tibble::tibble(input = f), run = FALSE)
+  res <- normalize_audio_batch(tibble::tibble(input = f), run = FALSE)
   expect_equal(res$output, paste0(base, "_normalized.mkv"))
 })
 
-test_that("normalize_audios() aborts on a duplicated input with no output column", {
+test_that("normalize_audio_batch() aborts on a duplicated input with no output column", {
   f <- make_input()
   jobs <- tibble::tibble(input = c(f, f))  # same input twice, would collide
-  expect_error(normalize_audios(jobs, run = FALSE), "[Dd]uplicated")
+  expect_error(normalize_audio_batch(jobs, run = FALSE), "[Dd]uplicated")
 })
 
-test_that("normalize_audios() allows a duplicated input with an explicit output column", {
+test_that("normalize_audio_batch() allows a duplicated input with an explicit output column", {
   f <- make_input()
   jobs <- tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"))
-  res <- normalize_audios(jobs, run = FALSE)
+  res <- normalize_audio_batch(jobs, run = FALSE)
   expect_equal(res$output, c("a.mp4", "b.mp4"))
 })
 
 # Front-door validation ---------------------------------------------------
 
-test_that("normalize_audios() rejects a non-data-frame jobs", {
-  expect_error(normalize_audios(list(input = "a"), run = FALSE), "data frame")
+test_that("normalize_audio_batch() rejects a non-data-frame jobs", {
+  expect_error(normalize_audio_batch(list(input = "a"), run = FALSE), "data frame")
 })
 
-test_that("normalize_audios() rejects an empty jobs table", {
+test_that("normalize_audio_batch() rejects an empty jobs table", {
   jobs <- tibble::tibble(input = character())
-  expect_error(normalize_audios(jobs, run = FALSE), "at least one row")
+  expect_error(normalize_audio_batch(jobs, run = FALSE), "at least one row")
 })
 
-test_that("normalize_audios() names the missing input column", {
+test_that("normalize_audio_batch() names the missing input column", {
   jobs <- tibble::tibble(output = "a.mp4")
-  expect_error(normalize_audios(jobs, run = FALSE), "input")
+  expect_error(normalize_audio_batch(jobs, run = FALSE), "input")
 })
 
-test_that("normalize_audios() rejects a non-numeric knob column", {
+test_that("normalize_audio_batch() rejects a non-numeric knob column", {
   f <- make_input()
   jobs <- tibble::tibble(input = f, output = "a.mp4", target_loudness = "loud")
-  expect_error(normalize_audios(jobs, run = FALSE), "target_loudness")
+  expect_error(normalize_audio_batch(jobs, run = FALSE), "target_loudness")
 })
 
-test_that("normalize_audios() rejects an NA in a knob column at the front door", {
+test_that("normalize_audio_batch() rejects an NA in a knob column at the front door", {
   f <- make_input()
   jobs <- tibble::tibble(
     input = c(f, f), output = c("a.mp4", "b.mp4"), channels = c(1, NA)
   )
-  expect_error(normalize_audios(jobs, run = FALSE), "channels")
+  expect_error(normalize_audio_batch(jobs, run = FALSE), "channels")
 })
 
 # Per-element value validation parity (inherited from the shared pipeline) -
 
-test_that("normalize_audios() rejects an out-of-range loudness value per row (parity)", {
+test_that("normalize_audio_batch() rejects an out-of-range loudness value per row (parity)", {
   f <- make_input()
   # -3 LUFS is outside the scalar verb's -70..-5 range; the shared pipeline's
   # ffm_loudnorm() guard must reject it for the batch sibling too (M11 parity).
@@ -197,54 +197,54 @@ test_that("normalize_audios() rejects an out-of-range loudness value per row (pa
     input = c(f, f), output = c("a.mp4", "b.mp4"),
     target_loudness = c(-23, -3)
   )
-  expect_error(normalize_audios(jobs, run = FALSE))
+  expect_error(normalize_audio_batch(jobs, run = FALSE))
 })
 
-test_that("normalize_audios() rejects a non-whole channels value per row (parity)", {
+test_that("normalize_audio_batch() rejects a non-whole channels value per row (parity)", {
   f <- make_input()
   jobs <- tibble::tibble(
     input = c(f, f), output = c("a.mp4", "b.mp4"), channels = c(1, 1.5)
   )
-  expect_error(normalize_audios(jobs, run = FALSE))
+  expect_error(normalize_audio_batch(jobs, run = FALSE))
 })
 
 # ffm_batch forwarding ----------------------------------------------------
 
-test_that("normalize_audios() forwards batch params after ... without leaking into .f", {
+test_that("normalize_audio_batch() forwards batch params after ... without leaking into .f", {
   f <- make_input()
   jobs <- tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"))
   # `progress` is a named ffm_batch argument reached only via `...`; it must not
   # reach normalize_audio_pipeline() (which has no such parameter). A clean
   # compile proves the forwarding boundary holds (M09 lesson).
-  res <- normalize_audios(jobs, run = FALSE, progress = FALSE)
+  res <- normalize_audio_batch(jobs, run = FALSE, progress = FALSE)
   expect_equal(nrow(res), 2)
   expect_true("command" %in% names(res))
 })
 
 # Two-pass fail-fast validation (pure: aborts before any analysis pass) ----
 
-test_that("normalize_audios(two_pass) rejects a fractional scalar channels before running FFmpeg", {
+test_that("normalize_audio_batch(two_pass) rejects a fractional scalar channels before running FFmpeg", {
   f <- make_input()
   # A bad scalar channels must fail up front (before Phase 1 wastes an analysis
   # pass per row), so this needs no ffmpeg binary.
   jobs <- tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"))
   expect_error(
-    normalize_audios(jobs, two_pass = TRUE, channels = 1.5),
+    normalize_audio_batch(jobs, two_pass = TRUE, channels = 1.5),
     "channels|whole"
   )
 })
 
-test_that("normalize_audios(two_pass) rejects a fractional channels column before running FFmpeg", {
+test_that("normalize_audio_batch(two_pass) rejects a fractional channels column before running FFmpeg", {
   f <- make_input()
   jobs <- tibble::tibble(
     input = c(f, f), output = c("a.mp4", "b.mp4"), channels = c(1, 1.5)
   )
-  expect_error(normalize_audios(jobs, two_pass = TRUE), "channels|whole")
+  expect_error(normalize_audio_batch(jobs, two_pass = TRUE), "channels|whole")
 })
 
 # Two-pass front door (binary-gated) --------------------------------------
 
-test_that("normalize_audios(two_pass, run = FALSE) runs analysis, returns correction cmds, writes nothing (AC4)", {
+test_that("normalize_audio_batch(two_pass, run = FALSE) runs analysis, returns correction cmds, writes nothing (AC4)", {
   skip_if_no_ffmpeg()
   src <- system.file("extdata", "sample.mp4", package = "tidymedia")
   out_a <- withr::local_tempfile(fileext = ".mp4")
@@ -254,7 +254,7 @@ test_that("normalize_audios(two_pass, run = FALSE) runs analysis, returns correc
     output          = c(out_a, out_b),
     target_loudness = c(-23, -16)
   )
-  res <- normalize_audios(jobs, two_pass = TRUE, run = FALSE)
+  res <- normalize_audio_batch(jobs, two_pass = TRUE, run = FALSE)
   # Phase 1 ran: the five measured columns are populated (FFmpeg-arg names) and
   # the correction commands carry the measured values + linear=true.
   measured_cols <- c("measured_I", "measured_TP", "measured_LRA",
@@ -272,7 +272,7 @@ test_that("normalize_audios(two_pass, run = FALSE) runs analysis, returns correc
   expect_false(file.exists(out_b))
 })
 
-test_that("normalize_audios(two_pass = TRUE) hits each per-row target within +/-1 LU (AC5)", {
+test_that("normalize_audio_batch(two_pass = TRUE) hits each per-row target within +/-1 LU (AC5)", {
   # The whole flow (Phase 1 analysis, correction pass, and the re-probe via
   # run_loudnorm_analysis) needs ffmpeg, not ffprobe.
   skip_if_no_ffmpeg()
@@ -286,7 +286,7 @@ test_that("normalize_audios(two_pass = TRUE) hits each per-row target within +/-
     output          = c(out_a, out_b),
     target_loudness = c(-23, -16)
   )
-  res <- normalize_audios(jobs, two_pass = TRUE)
+  res <- normalize_audio_batch(jobs, two_pass = TRUE)
   expect_true(all(res$success))
   expect_true(all(file.exists(res$output)))
   # Re-probe each output's integrated loudness with a fresh analysis pass (its
@@ -300,7 +300,7 @@ test_that("normalize_audios(two_pass = TRUE) hits each per-row target within +/-
   }
 })
 
-test_that("normalize_audios(two_pass = TRUE) marks silent rows and normalizes the rest (M18)", {
+test_that("normalize_audio_batch(two_pass = TRUE) marks silent rows and normalizes the rest (M18)", {
   skip_if_no_ffmpeg()
   real <- make_dynamic_audio()   # a real, non-silent clip
   silent <- make_silent_audio()  # digital silence (input_i = -inf)
@@ -313,7 +313,7 @@ test_that("normalize_audios(two_pass = TRUE) marks silent rows and normalizes th
   # The silent row must not abort the batch; it is marked and the real row is
   # still normalized. A single warning names the silent row.
   expect_warning(
-    res <- normalize_audios(jobs, two_pass = TRUE),
+    res <- normalize_audio_batch(jobs, two_pass = TRUE),
     "silent"
   )
   # A silent column marks row 2; row 1 succeeded, row 2 did not.
@@ -329,7 +329,7 @@ test_that("normalize_audios(two_pass = TRUE) marks silent rows and normalizes th
   expect_false(is.na(res$measured_I[[1]]))
 })
 
-test_that("normalize_audios(two_pass = TRUE) survives 2+ silent rows and keeps manifest one-per-job (M18)", {
+test_that("normalize_audio_batch(two_pass = TRUE) survives 2+ silent rows and keeps manifest one-per-job (M18)", {
   skip_if_no_ffmpeg()
   real <- make_dynamic_audio()
   s1 <- make_silent_audio()
@@ -345,7 +345,7 @@ test_that("normalize_audios(two_pass = TRUE) survives 2+ silent rows and keeps m
   # pluralization mix threw `length(object) == 1`), and the manifest must stay
   # one-row-per-job across the skipped rows.
   expect_warning(
-    res <- normalize_audios(jobs, two_pass = TRUE, manifest = TRUE),
+    res <- normalize_audio_batch(jobs, two_pass = TRUE, manifest = TRUE),
     "silent"
   )
   expect_equal(res$silent, c(TRUE, FALSE, TRUE))
@@ -358,7 +358,7 @@ test_that("normalize_audios(two_pass = TRUE) survives 2+ silent rows and keeps m
   expect_false(is.na(man$command[[2]]))
 })
 
-test_that("normalize_audios(two_pass = TRUE) keeps the verify/manifest schema when every row is silent (M19)", {
+test_that("normalize_audio_batch(two_pass = TRUE) keeps the verify/manifest schema when every row is silent (M19)", {
   skip_if_no_ffmpeg()
   real <- make_dynamic_audio()   # a real, non-silent clip for the mixed baseline
   s1 <- make_silent_audio()
@@ -373,7 +373,7 @@ test_that("normalize_audios(two_pass = TRUE) keeps the verify/manifest schema wh
   # All-silent batch with both opt-ins requested.
   all_silent <- tibble::tibble(input = c(s1, s2), output = c(o1, o2))
   expect_warning(
-    res <- normalize_audios(
+    res <- normalize_audio_batch(
       all_silent, two_pass = TRUE, verify = spec, manifest = TRUE,
       checksums = TRUE
     ),
@@ -382,7 +382,7 @@ test_that("normalize_audios(two_pass = TRUE) keeps the verify/manifest schema wh
   # Mixed batch (same opt-ins) as the schema baseline.
   mixed <- tibble::tibble(input = c(real, s1), output = c(o3, o4))
   expect_warning(
-    ref <- normalize_audios(
+    ref <- normalize_audio_batch(
       mixed, two_pass = TRUE, verify = spec, manifest = TRUE, checksums = TRUE
     ),
     "silent"
@@ -406,7 +406,7 @@ test_that("normalize_audios(two_pass = TRUE) keeps the verify/manifest schema wh
 
 # Execution + ffm_batch forwarding (binary-gated) -------------------------
 
-test_that("normalize_audios() writes non-empty, audio-decodable outputs (binary-gated)", {
+test_that("normalize_audio_batch() writes non-empty, audio-decodable outputs (binary-gated)", {
   skip_if_no_ffprobe()
   a <- make_test_video()  # skips if ffmpeg absent; has a 440 Hz sine track
   b <- make_test_video()
@@ -418,7 +418,7 @@ test_that("normalize_audios() writes non-empty, audio-decodable outputs (binary-
     channels    = c(1, 1),
     sample_rate = c(22050, 44100)
   )
-  res <- normalize_audios(jobs)
+  res <- normalize_audio_batch(jobs)
   expect_true(all(res$success))
   expect_true(all(file.exists(res$output)))
   # Each output carries a decodable audio stream at its pinned sample rate.
@@ -436,7 +436,7 @@ test_that("normalize_audios() writes non-empty, audio-decodable outputs (binary-
   ))[[1]], "22050")
 })
 
-test_that("normalize_audios() forwards verify (binary-gated)", {
+test_that("normalize_audio_batch() forwards verify (binary-gated)", {
   skip_if_no_ffprobe()
   a <- make_test_video()
   b <- make_test_video()
@@ -448,7 +448,7 @@ test_that("normalize_audios() forwards verify (binary-gated)", {
     sample_rate = c(48000, 48000)
   )
   # `verify` is a named ffm_batch argument reached only via `...`.
-  res <- normalize_audios(jobs, verify = list(sample_rate = 48000))
+  res <- normalize_audio_batch(jobs, verify = list(sample_rate = 48000))
   expect_true(all(res$success))
   expect_true("verified" %in% names(res))
   expect_true(all(res$verified))

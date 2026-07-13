@@ -9,7 +9,7 @@ anonymize_video(
   outfile,
   regions,
   color = "black",
-  vcodec = "libx264",
+  video_codec = "libx264",
   pixel_format = "yuv420p",
   run = TRUE
 )
@@ -26,7 +26,7 @@ Details.}
 \item{color}{A string naming the default fill color in FFmpeg color syntax,
 used for any row without its own \code{color} (default \code{"black"}).}
 
-\item{vcodec}{A string naming the output video codec (default
+\item{video_codec}{A string naming the output video codec (default
 \code{"libx264"}).}
 
 \item{pixel_format}{A string naming the output pixel format (default
@@ -54,7 +54,7 @@ top-left corner and \code{width}/\code{height} the size. An optional
 box is a solid fill (FFmpeg's \code{drawbox} with \code{t=fill}); hollow
 outlines are intentionally not offered.
 
-Because a filter is applied, the video is re-encoded (\code{vcodec} /
+Because a filter is applied, the video is re-encoded (\code{video_codec} /
 \code{pixel_format}, defaulting to H.264 / \code{yuv420p}); odd source
 dimensions are floored to even so the output always encodes (a
 \code{yuv420p}/\code{libx264} requirement, and a no-op for already-even
@@ -77,22 +77,22 @@ https://ffmpeg.org/ffmpeg-filters.html#drawbox
 \code{\link{ffm_drawbox}} for the underlying builder filter.
 
 Other task verb functions:
-\code{\link[=anonymize_videos]{anonymize_videos()}},
-\code{\link[=audio_as_mp3]{audio_as_mp3()}},
+\code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos]{compare_videos()}},
 \code{\link[=concatenate_videos]{concatenate_videos()}},
+\code{\link[=convert_audio]{convert_audio()}},
 \code{\link[=crop_video]{crop_video()}},
 \code{\link[=extract_audio]{extract_audio()}},
 \code{\link[=extract_frame]{extract_frame()}},
-\code{\link[=extract_frames]{extract_frames()}},
+\code{\link[=extract_frame_batch]{extract_frame_batch()}},
 \code{\link[=format_for_web]{format_for_web()}},
 \code{\link[=normalize_audio]{normalize_audio()}},
-\code{\link[=normalize_audios]{normalize_audios()}},
+\code{\link[=normalize_audio_batch]{normalize_audio_batch()}},
 \code{\link[=picture_in_picture]{picture_in_picture()}},
 \code{\link[=segment_video]{segment_video()}},
-\code{\link[=segment_videos]{segment_videos()}},
+\code{\link[=segment_video_batch]{segment_video_batch()}},
 \code{\link[=separate_audio_video]{separate_audio_video()}},
 \code{\link[=standardize_video]{standardize_video()}},
-\code{\link[=standardize_videos]{standardize_videos()}}
+\code{\link[=standardize_video_batch]{standardize_video_batch()}}
 }
 \concept{task verb functions}

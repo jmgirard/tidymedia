@@ -44,20 +44,20 @@ reference:
     Thin wrappers over the builder for common preprocessing jobs.
   contents:
   - extract_frame
-  - extract_frames
+  - extract_frame_batch
   - extract_audio
   - separate_audio_video
-  - audio_as_mp3
+  - convert_audio
   - normalize_audio
-  - normalize_audios
+  - normalize_audio_batch
   - crop_video
   - anonymize_video
-  - anonymize_videos
+  - anonymize_video_batch
   - format_for_web
   - standardize_video
-  - standardize_videos
+  - standardize_video_batch
   - segment_video
-  - segment_videos
+  - segment_video_batch
   - concatenate_videos
   - compare_videos
   - picture_in_picture
@@ -79,17 +79,16 @@ reference:
   - mediainfo_template
   - mediainfo_summary
   - get_duration
-  - get_framerate
+  - get_frame_rate
   - get_width
   - get_height
-  - get_samplingrate
-  - convert_fractions
+  - get_sample_rate
 - title: "FFmpeg capabilities"
   desc: >
     Discover the codecs and encoders available in your FFmpeg build.
   contents:
-  - get_codecs
-  - get_encoders
+  - ffmpeg_codecs
+  - ffmpeg_encoders
 - title: "Program management"
   desc: >
     Locate, configure, and install the FFmpeg and MediaInfo binaries.
@@ -97,9 +96,6 @@ reference:
   - find_ffmpeg
   - set_ffmpeg
   - install_on_win
-- title: "Utilities"
-  contents:
-  - pad_integers
 
 articles:
 - title: Articles

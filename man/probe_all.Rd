@@ -39,9 +39,9 @@ info$streams
 \seealso{
 Other metadata functions:
 \code{\link[=get_duration]{get_duration()}},
-\code{\link[=get_framerate]{get_framerate()}},
+\code{\link[=get_frame_rate]{get_frame_rate()}},
 \code{\link[=get_height]{get_height()}},
-\code{\link[=get_samplingrate]{get_samplingrate()}},
+\code{\link[=get_sample_rate]{get_sample_rate()}},
 \code{\link[=get_width]{get_width()}},
 \code{\link[=mediainfo_parameter]{mediainfo_parameter()}},
 \code{\link[=mediainfo_query]{mediainfo_query()}},

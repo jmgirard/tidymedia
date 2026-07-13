@@ -6,8 +6,8 @@
 \usage{
 segment_video(
   infile,
-  ts_start,
-  ts_stop,
+  start,
+  end,
   outfiles = NULL,
   reencode = TRUE,
   run = TRUE,
@@ -17,20 +17,20 @@ segment_video(
 \arguments{
 \item{infile}{A string containing the path to a video file.}
 
-\item{ts_start}{A vector containing one or more timestamps indicating the
+\item{start}{A vector containing one or more timestamps indicating the
 start of each segment to create. Can be either a numeric vector indicating
 seconds or a character vector with time duration syntax. Must have the same
-length as \code{ts_stop}.}
+length as \code{end}.}
 
-\item{ts_stop}{A vector containing one or more timestamps indicating the stop
+\item{end}{A vector containing one or more timestamps indicating the stop
 of each segment to create. Can be either a numeric vector indicating
 seconds or a character vector with time duration syntax. Must have the same
-length as \code{ts_start}.}
+length as \code{start}.}
 
 \item{outfiles}{Either NULL or a character vector indicating the filename
 (with extension) for each segment to create. If NULL, will append a
 zero-padded integer to \code{infile}. If not NULL, must have the same
-length as \code{ts_start}.}
+length as \code{start}.}
 
 \item{reencode}{A logical passed to \code{\link{ffm_seek}}: cut each segment
 frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
@@ -57,12 +57,12 @@ Use FFmpeg to quickly break a single video file into multiple smaller video
 files (with the same encoding) based on pairs of start and stop timestamps.
 Segment video files will be named by taking the name of \code{infile} and
 appending a suffix of an underscore (_) and an integer indicating which
-segment (based on the order provided in \code{ts_start} and \code{ts_stop}).
+segment (based on the order provided in \code{start} and \code{end}).
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 # Two segments; run = FALSE compiles one command per segment
-segment_video(video, ts_start = c(0, 0.5), ts_stop = c(0.5, 1), run = FALSE)
+segment_video(video, start = c(0, 0.5), end = c(0.5, 1), run = FALSE)
 }
 \references{
 https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
@@ -72,21 +72,21 @@ https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
-\code{\link[=anonymize_videos]{anonymize_videos()}},
-\code{\link[=audio_as_mp3]{audio_as_mp3()}},
+\code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos]{compare_videos()}},
 \code{\link[=concatenate_videos]{concatenate_videos()}},
+\code{\link[=convert_audio]{convert_audio()}},
 \code{\link[=crop_video]{crop_video()}},
 \code{\link[=extract_audio]{extract_audio()}},
 \code{\link[=extract_frame]{extract_frame()}},
-\code{\link[=extract_frames]{extract_frames()}},
+\code{\link[=extract_frame_batch]{extract_frame_batch()}},
 \code{\link[=format_for_web]{format_for_web()}},
 \code{\link[=normalize_audio]{normalize_audio()}},
-\code{\link[=normalize_audios]{normalize_audios()}},
+\code{\link[=normalize_audio_batch]{normalize_audio_batch()}},
 \code{\link[=picture_in_picture]{picture_in_picture()}},
-\code{\link[=segment_videos]{segment_videos()}},
+\code{\link[=segment_video_batch]{segment_video_batch()}},
 \code{\link[=separate_audio_video]{separate_audio_video()}},
 \code{\link[=standardize_video]{standardize_video()}},
-\code{\link[=standardize_videos]{standardize_videos()}}
+\code{\link[=standardize_video_batch]{standardize_video_batch()}}
 }
 \concept{task verb functions}

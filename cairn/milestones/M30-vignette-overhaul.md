@@ -7,7 +7,7 @@
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate -->
 - **Principles touched:** IP1, GP1   <!-- worked under (docs restate them faithfully; add/change none) -->
-- **Branch/PR:** m30-vignette-overhaul   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** m30-vignette-overhaul · https://github.com/jmgirard/tidymedia/pull/32   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 

@@ -109,7 +109,7 @@ column) **plus** the `stream` marker column (M19).
       `audiofile == videofile` (AC3), schema parity against `segment_video_batch`
       plus the added `stream` column (AC4). Execution tests `skip_if` ffmpeg
       absent (D004).
-- [ ] T4 — Docs & housekeeping: roxygen (`@family`, `@seealso`, batch
+- [x] T4 — Docs & housekeeping: roxygen (`@family`, `@seealso`, batch
       disambiguation), `document()`, `NAMESPACE`, `_pkgdown.yml` sync, spelling
       wordlist, `devtools::check()` → `Status: OK` (AC5).
 
@@ -131,6 +131,9 @@ column) **plus** the `stream` marker column (M19).
   `rbind(audiofile, videofile)` + `stream` marker; the single dup guard on the
   melted `output` pools cross-column and catches within-row equality. 41 tests
   (AC1–AC4 + binary-gated end-to-end); full suite green.
+- 2026-07-12: T4 — `document()` (new `@family` entry propagated to sibling
+  `.Rd`s), `_pkgdown.yml` synced, wordlist needs no new terms.
+  `pkgdown::check_pkgdown()` clean; `devtools::check()` `Status: OK` (0/0/0).
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

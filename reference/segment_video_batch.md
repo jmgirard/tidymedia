@@ -98,6 +98,8 @@ Other task verb functions:
 [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
 [`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md),
 [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
+[`sample_frames()`](https://jmgirard.github.io/tidymedia/reference/sample_frames.md),
+[`sample_frames_batch()`](https://jmgirard.github.io/tidymedia/reference/sample_frames_batch.md),
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
 [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
 [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),

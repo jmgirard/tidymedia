@@ -41,6 +41,11 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="tidymedia-development-version">tidymedia (development version)<a class="anchor" aria-label="anchor" href="#tidymedia-development-version"></a></h2>
 <div class="section level3">
+<h3 id="new-features-development-version">New features<a class="anchor" aria-label="anchor" href="#new-features-development-version"></a></h3>
+<ul><li>
+<code><a href="../reference/sample_frames.html">sample_frames()</a></code> samples a video at a fixed rate (<code>fps</code>) or interval (<code>interval</code>, seconds between frames) into a numbered image sequence — the front door to per-frame coding and computer-vision feature pipelines. <code><a href="../reference/sample_frames_batch.html">sample_frames_batch()</a></code> does the same across many videos from a jobs table.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="standardized-function-and-argument-names-development-version">Standardized function and argument names<a class="anchor" aria-label="anchor" href="#standardized-function-and-argument-names-development-version"></a></h3>
 <p>The public API was renamed to a single, predictable scheme. These are breaking changes with no deprecation shims (the package is still pre-1.0 and soaking).</p>
 <ul><li>

@@ -2,6 +2,15 @@
 
 ## tidymedia (development version)
 
+### New features
+
+- [`sample_frames()`](https://jmgirard.github.io/tidymedia/reference/sample_frames.md)
+  samples a video at a fixed rate (`fps`) or interval (`interval`,
+  seconds between frames) into a numbered image sequence — the front
+  door to per-frame coding and computer-vision feature pipelines.
+  [`sample_frames_batch()`](https://jmgirard.github.io/tidymedia/reference/sample_frames_batch.md)
+  does the same across many videos from a jobs table.
+
 ### Standardized function and argument names
 
 The public API was renamed to a single, predictable scheme. These are

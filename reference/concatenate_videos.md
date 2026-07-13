@@ -52,6 +52,8 @@ Other task verb functions:
 [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
 [`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md),
 [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
+[`sample_frames()`](https://jmgirard.github.io/tidymedia/reference/sample_frames.md),
+[`sample_frames_batch()`](https://jmgirard.github.io/tidymedia/reference/sample_frames_batch.md),
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
 [`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md),
 [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
@@ -63,5 +65,5 @@ Other task verb functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 concatenate_videos(c(video, video), "joined.mp4", run = FALSE)
-#> [1] "-y -f concat -safe 0 -i \"/tmp/RtmpEuffM2/ffm-concat1fb045f76221.txt\" -codec:v copy -codec:a copy -map 0 \"joined.mp4\""
+#> [1] "-y -f concat -safe 0 -i \"/tmp/Rtmpqaqu0w/ffm-concat1fa67064a1db.txt\" -codec:v copy -codec:a copy -map 0 \"joined.mp4\""
 ```

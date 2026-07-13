@@ -91,6 +91,8 @@ Other task verb functions:
 [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
 [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
 [`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md),
+[`sample_frames()`](https://jmgirard.github.io/tidymedia/reference/sample_frames.md),
+[`sample_frames_batch()`](https://jmgirard.github.io/tidymedia/reference/sample_frames_batch.md),
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
 [`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md),
 [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),

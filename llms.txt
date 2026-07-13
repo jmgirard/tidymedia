@@ -268,6 +268,10 @@ Thin wrappers over the builder for common preprocessing jobs.
   : Extract a single frame from a video
 - [`extract_frame_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_frame_batch.md)
   : Extract Still Frames From Many Videos From a Jobs Table
+- [`sample_frames()`](https://jmgirard.github.io/tidymedia/reference/sample_frames.md)
+  : Sample frames from a video at a fixed rate
+- [`sample_frames_batch()`](https://jmgirard.github.io/tidymedia/reference/sample_frames_batch.md)
+  : Sample frames from many videos at a fixed rate from a jobs table
 - [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
   : Extract the audio stream from a media file
 - [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)

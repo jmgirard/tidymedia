@@ -102,7 +102,7 @@ outputs.
 }
 \description{
 Loudness-normalize the audio of many input files (EBU R128) from a single
-jobs tibble — a table-driven sibling of \code{\link{normalize_audio}} for
+jobs tibble — the \strong{batch} (table-driven) sibling of \code{\link[=normalize_audio]{normalize_audio()}} for
 when you have more than one file to normalize. Each row is one input; the
 only required column names its source. This is a thin wrapper over
 \code{\link{ffm_batch}}: one reproducible compiled command per input, sharing

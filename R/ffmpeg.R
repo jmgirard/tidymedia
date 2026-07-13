@@ -580,8 +580,8 @@ derive_anonymized_names <- function(input) {
 #' Anonymize Many Videos From a Jobs Table
 #'
 #' Cover fixed rectangular regions of many input videos with opaque filled boxes
-#' from a single jobs tibble — a table-driven sibling of
-#' \code{\link{anonymize_video}} for when you have more than one video to
+#' from a single jobs tibble — the **batch** (table-driven) sibling of
+#' [anonymize_video()] for when you have more than one video to
 #' redact. Each row is one input with its own regions; the required columns name
 #' the source (\code{input}) and the boxes to cover (\code{regions}). This is a
 #' thin wrapper over \code{\link{ffm_batch}}: one reproducible compiled command
@@ -1192,8 +1192,8 @@ segment_pipeline <- function(input, output, start, end, reencode) {
 
 #' Segment Many Videos From a Jobs Table
 #'
-#' Cut segments across many input files from a single jobs tibble — a
-#' table-driven sibling of \code{\link{segment_video}} for when your segments
+#' Cut segments across many input files from a single jobs tibble — the
+#' **batch** (table-driven) sibling of [segment_video()] for when your segments
 #' span more than one input. Each row is one segment; the four required columns
 #' name its source, destination, and cut points. This is a thin wrapper over
 #' \code{\link{ffm_batch}}: one reproducible compiled command per segment.
@@ -1306,7 +1306,8 @@ segment_video_batch <- function(jobs, reencode = TRUE, run = TRUE,
 #' Extract Still Frames From Many Videos From a Jobs Table
 #'
 #' Grab one still image per row across many input files from a single jobs
-#' tibble — a table-driven sibling of \code{\link{extract_frame}} for when your
+#' tibble — the **batch** (table-driven) sibling of [extract_frame()] for when
+#' your
 #' frames span more than one input. Each row is one frame; the required columns
 #' name its source and the moment to capture. This is a thin wrapper over
 #' \code{\link{ffm_batch}}: one reproducible compiled command per frame.
@@ -1461,7 +1462,8 @@ derive_standardized_names <- function(input) {
 #' Standardize Many Videos From a Jobs Table
 #'
 #' Re-encode many input files to a reproducible format from a single jobs tibble
-#' — a table-driven sibling of \code{\link{standardize_video}} for when you have
+#' — the **batch** (table-driven) sibling of [standardize_video()] for when you
+#' have
 #' more than one video to standardize. Each row is one input; the only required
 #' column names its source. This is a thin wrapper over \code{\link{ffm_batch}}:
 #' one reproducible compiled command per input.
@@ -1624,7 +1626,7 @@ derive_normalized_names <- function(input) {
 #' Normalize Many Files' Audio Loudness From a Jobs Table
 #'
 #' Loudness-normalize the audio of many input files (EBU R128) from a single
-#' jobs tibble — a table-driven sibling of \code{\link{normalize_audio}} for
+#' jobs tibble — the **batch** (table-driven) sibling of [normalize_audio()] for
 #' when you have more than one file to normalize. Each row is one input; the
 #' only required column names its source. This is a thin wrapper over
 #' \code{\link{ffm_batch}}: one reproducible compiled command per input, sharing

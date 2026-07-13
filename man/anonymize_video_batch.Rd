@@ -64,8 +64,8 @@ forwarded arguments add, e.g. \code{verified}).
 }
 \description{
 Cover fixed rectangular regions of many input videos with opaque filled boxes
-from a single jobs tibble — a table-driven sibling of
-\code{\link{anonymize_video}} for when you have more than one video to
+from a single jobs tibble — the \strong{batch} (table-driven) sibling of
+\code{\link[=anonymize_video]{anonymize_video()}} for when you have more than one video to
 redact. Each row is one input with its own regions; the required columns name
 the source (\code{input}) and the boxes to cover (\code{regions}). This is a
 thin wrapper over \code{\link{ffm_batch}}: one reproducible compiled command

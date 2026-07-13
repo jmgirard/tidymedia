@@ -42,7 +42,8 @@ forwarded arguments add, e.g. \code{verified}).
 }
 \description{
 Grab one still image per row across many input files from a single jobs
-tibble — a table-driven sibling of \code{\link{extract_frame}} for when your
+tibble — the \strong{batch} (table-driven) sibling of \code{\link[=extract_frame]{extract_frame()}} for when
+your
 frames span more than one input. Each row is one frame; the required columns
 name its source and the moment to capture. This is a thin wrapper over
 \code{\link{ffm_batch}}: one reproducible compiled command per frame.

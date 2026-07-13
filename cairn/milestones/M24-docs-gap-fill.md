@@ -72,7 +72,7 @@ the final (M23) names.
 - [x] **T3** Add backend + return-shape prose to each metadata family
       `@description`/`@details`; add the comparison table to
       `vignettes/metadata.Rmd`.
-- [ ] **T4** Add "batch" to the title/first line of each `*_batch` doc page.
+- [x] **T4** Add "batch" to the title/first line of each `*_batch` doc page.
 - [ ] **T5** `devtools::document()`; `spelling::update_wordlist()`;
       `devtools::build_readme()`; `devtools::check()` → confirm `Status: OK`.
 
@@ -99,6 +99,10 @@ the final (M23) names.
   family page (`probe_all`, `probe_container`, `mediainfo_parameter/query/
   template`, all five `get_*`); added a "Which reader?" family-vs-backend
   comparison table to `vignettes/metadata.Rmd`. `document()` clean, 873 pass.
+- 2026-07-13: T4 — first sentence of all five `*_batch` pages now reads "the
+  **batch** (table-driven) sibling of ...", so each says "batch" in its opening
+  line (verified in the rendered `\description`); normalized the inline
+  scalar-sibling `\code{\link{}}` in those clauses to markdown. 873 pass.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

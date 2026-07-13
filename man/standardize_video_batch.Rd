@@ -69,7 +69,8 @@ forwarded arguments add, e.g. \code{verified}).
 }
 \description{
 Re-encode many input files to a reproducible format from a single jobs tibble
-— a table-driven sibling of \code{\link{standardize_video}} for when you have
+— the \strong{batch} (table-driven) sibling of \code{\link[=standardize_video]{standardize_video()}} for when you
+have
 more than one video to standardize. Each row is one input; the only required
 column names its source. This is a thin wrapper over \code{\link{ffm_batch}}:
 one reproducible compiled command per input.

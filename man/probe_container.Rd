@@ -36,6 +36,11 @@ via \code{probe_video()} / \code{probe_audio()}. Each takes \strong{either} the 
 passing \code{infile} reprobes, so reuse a \code{probe} object when working with large
 files.
 }
+\details{
+These \strong{FFprobe}-backed shortcuts return \strong{tibbles}; the \strong{MediaInfo}
+readers (\verb{mediainfo_*()}) and the scalar \verb{get_*()} helpers are the
+alternatives.
+}
 \examples{
 \dontshow{if (nzchar(Sys.which("ffprobe"))) withAutoprint(\{ # examplesIf}
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

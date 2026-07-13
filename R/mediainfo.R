@@ -34,6 +34,10 @@ mediainfo <- function(command) {
 #' vector of several files, in which case a vector of values (one per file) is
 #' returned.
 #'
+#' This **MediaInfo**-backed reader returns a **value** (or a vector of values,
+#' one per file), not a tibble; the FFprobe counterpart is the `probe_*()`
+#' family.
+#'
 #' @param file A character vector of one or more media-file paths.
 #' @param section A string containing the name of the mediainfo section from
 #'   which to query \code{parameter}.
@@ -94,6 +98,9 @@ mediainfo_parameter <- function(file, section, parameter, typed = TRUE) {
 #' \code{mediainfo_summary()} or \code{mediainfo_template()}. `file` may be a
 #' vector of several files; results are stacked with a leading \code{file}
 #' column.
+#'
+#' This **MediaInfo**-backed reader returns a **tibble**; the FFprobe
+#' counterpart is the `probe_*()` family.
 #'
 #' @param file A character vector of one or more media-file paths.
 #' @param section A string indicating the MediaInfo section from which to query
@@ -157,6 +164,9 @@ mediainfo_query <- function(file, section, parameters, names = parameters,
 #' templates ship with the package (\code{"brief"} and \code{"extended"}); a
 #' custom template file can also be supplied. `file` may be a vector of several
 #' files; results are stacked with a leading \code{file} column.
+#'
+#' This **MediaInfo**-backed reader returns a **tibble**; the FFprobe
+#' counterpart is the `probe_*()` family.
 #'
 #' @param file A character vector of one or more media-file paths.
 #' @param template A string naming the template to apply: a built-in
@@ -277,6 +287,10 @@ warn_unreadable <- function(failed) {
 #' Use MediaInfo to quickly look up the duration of different sections of a
 #' media file in various units.
 #'
+#' This **MediaInfo**-backed helper returns a **single value per file** (a
+#' numeric scalar), unlike the tibble-returning `probe_*()` and `mediainfo_*()`
+#' readers.
+#'
 #' @param file A character vector of one or more media-file paths.
 #' @param section A string indicating the MediaInfo section from which to query
 #'   the duration value. Can be either \code{"General"}, \code{"Video"}, or
@@ -317,6 +331,10 @@ get_duration <- function(file,
 #' Use MediaInfo to quickly look up the video frame rate of a media file in
 #' frames per second (fps).
 #'
+#' This **MediaInfo**-backed helper returns a **single value per file** (a
+#' numeric scalar), unlike the tibble-returning `probe_*()` and `mediainfo_*()`
+#' readers.
+#'
 #' @param file A character vector of one or more media-file paths.
 #' @return A double vector (one per file) giving the video frame rate in fps.
 #'
@@ -337,6 +355,10 @@ get_frame_rate <- function(file) {
 #'
 #' Use MediaInfo to quickly look up the video width of a media file in
 #' pixels (px).
+#'
+#' This **MediaInfo**-backed helper returns a **single value per file** (a
+#' numeric scalar), unlike the tibble-returning `probe_*()` and `mediainfo_*()`
+#' readers.
 #'
 #' @param file A character vector of one or more media-file paths.
 #' @return A double vector (one per file) giving the video width in px.
@@ -359,6 +381,10 @@ get_width <- function(file) {
 #' Use MediaInfo to quickly look up the video height of a media file in
 #' pixels (px).
 #'
+#' This **MediaInfo**-backed helper returns a **single value per file** (a
+#' numeric scalar), unlike the tibble-returning `probe_*()` and `mediainfo_*()`
+#' readers.
+#'
 #' @param file A character vector of one or more media-file paths.
 #' @return A double vector (one per file) giving the video height in px.
 #'
@@ -379,6 +405,10 @@ get_height <- function(file) {
 #'
 #' Use MediaInfo to quickly look up the audio sampling rate of a media file in
 #' hertz (Hz).
+#'
+#' This **MediaInfo**-backed helper returns a **single value per file** (a
+#' numeric scalar), unlike the tibble-returning `probe_*()` and `mediainfo_*()`
+#' readers.
 #'
 #' @param file A character vector of one or more media-file paths.
 #' @return A double vector (one per file) giving the audio sampling rate in Hz.

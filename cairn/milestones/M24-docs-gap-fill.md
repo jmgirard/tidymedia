@@ -69,7 +69,7 @@ the final (M23) names.
       Layer-2 verb (bridge each verb to the `ffm_*` verb[s] it wraps), per §4.
 - [x] **T2** Add `@seealso` across the metadata triad (`probe_*` ↔ `get_*` ↔
       `mediainfo_*`) and program-management pages.
-- [ ] **T3** Add backend + return-shape prose to each metadata family
+- [x] **T3** Add backend + return-shape prose to each metadata family
       `@description`/`@details`; add the comparison table to
       `vignettes/metadata.Rmd`.
 - [ ] **T4** Add "batch" to the title/first line of each `*_batch` doc page.
@@ -95,6 +95,10 @@ the final (M23) names.
   to the other two; plus program-management (`find_*`/`set_*`/`install_on_win`),
   capability (`ffmpeg_codecs`/`ffmpeg_encoders`), and the three Layer-0 escape
   hatches. `document()` clean, 873 tests pass.
+- 2026-07-13: T3 — backend + return-shape boundary sentence on every metadata
+  family page (`probe_all`, `probe_container`, `mediainfo_parameter/query/
+  template`, all five `get_*`); added a "Which reader?" family-vs-backend
+  comparison table to `vignettes/metadata.Rmd`. `document()` clean, 873 pass.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

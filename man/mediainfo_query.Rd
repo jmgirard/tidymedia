@@ -33,6 +33,10 @@ section. To query parameters from multiple sections at once, use
 vector of several files; results are stacked with a leading \code{file}
 column.
 }
+\details{
+This \strong{MediaInfo}-backed reader returns a \strong{tibble}; the FFprobe
+counterpart is the \verb{probe_*()} family.
+}
 \examples{
 \dontshow{if (nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

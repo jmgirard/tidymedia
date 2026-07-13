@@ -28,6 +28,12 @@ metadata as tibbles. \code{infile} may be a vector of several files: the results
 are stacked and keyed by a leading \code{file} column, so the output is ready for
 \code{dplyr} joins and filters over a whole batch.
 }
+\details{
+This is tidymedia's \strong{FFprobe} metadata reader, returning \strong{tibbles} (one
+row per file or per stream) — distinct from the \strong{MediaInfo} readers
+(\verb{mediainfo_*()}, which return tibbles or values) and the scalar \verb{get_*()}
+helpers (which return a single value per file).
+}
 \examples{
 \dontshow{if (nzchar(Sys.which("ffprobe"))) withAutoprint(\{ # examplesIf}
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

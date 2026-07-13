@@ -29,6 +29,11 @@ section in the specified units.
 Use MediaInfo to quickly look up the duration of different sections of a
 media file in various units.
 }
+\details{
+This \strong{MediaInfo}-backed helper returns a \strong{single value per file} (a
+numeric scalar), unlike the tibble-returning \verb{probe_*()} and \verb{mediainfo_*()}
+readers.
+}
 \examples{
 \dontshow{if (nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

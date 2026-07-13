@@ -32,6 +32,11 @@ ffprobe <- function(command) {
 #' are stacked and keyed by a leading `file` column, so the output is ready for
 #' `dplyr` joins and filters over a whole batch.
 #'
+#' This is tidymedia's **FFprobe** metadata reader, returning **tibbles** (one
+#' row per file or per stream) — distinct from the **MediaInfo** readers
+#' (`mediainfo_*()`, which return tibbles or values) and the scalar `get_*()`
+#' helpers (which return a single value per file).
+#'
 #' @param infile A character vector of one or more media-file locations (file
 #'   paths or web links) to probe.
 #' @param typed A logical. When `TRUE` (default) numeric columns are converted
@@ -138,6 +143,10 @@ probe_one <- function(file) {
 #' [probe_all()] (via `probe`) **or** one or more file locations (via `infile`);
 #' passing `infile` reprobes, so reuse a `probe` object when working with large
 #' files.
+#'
+#' These **FFprobe**-backed shortcuts return **tibbles**; the **MediaInfo**
+#' readers (`mediainfo_*()`) and the scalar `get_*()` helpers are the
+#' alternatives.
 #'
 #' @param probe A list object created by [probe_all()]. Must be `NULL` if
 #'   `infile` is supplied.

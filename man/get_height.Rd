@@ -16,6 +16,11 @@ A double vector (one per file) giving the video height in px.
 Use MediaInfo to quickly look up the video height of a media file in
 pixels (px).
 }
+\details{
+This \strong{MediaInfo}-backed helper returns a \strong{single value per file} (a
+numeric scalar), unlike the tibble-returning \verb{probe_*()} and \verb{mediainfo_*()}
+readers.
+}
 \examples{
 \dontshow{if (nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

@@ -30,6 +30,11 @@ Query a single parameter in a single section from MediaInfo. \code{file} may be 
 vector of several files, in which case a vector of values (one per file) is
 returned.
 }
+\details{
+This \strong{MediaInfo}-backed reader returns a \strong{value} (or a vector of values,
+one per file), not a tibble; the FFprobe counterpart is the \verb{probe_*()}
+family.
+}
 \examples{
 \dontshow{if (nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

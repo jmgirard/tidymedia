@@ -7,7 +7,7 @@
 - **Priority:** high   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Principles touched:** IP1, IP2, GP1   <!-- works under; none changed -->
-- **Branch/PR:** —   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** `m26-sample-frames`   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 
@@ -93,21 +93,21 @@ front door to per-frame coding and CV feature pipelines (M25 survey §3 K1).
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [ ] **T1 — Shared `sample_frames_pipeline()` helper.** Build one `ffm`
+- [x] **T1 — Shared `sample_frames_pipeline()` helper.** Build one `ffm`
       pipeline from an already-resolved output **pattern** and rate string:
       `ffm_files(infile, pattern)` → fps filter (via `ffm_fps()`, rate coerced
       to double) → still-image output options (mirror `frame_pipeline()`'s
       quality flags where they apply to the image encoder). All per-value
       validation lives here so the batch sibling inherits it (M13). Add beside
       `frame_pipeline()` in `R/ffmpeg.R:82`.
-- [ ] **T2 — Scalar `sample_frames()`.** Args
+- [x] **T2 — Scalar `sample_frames()`.** Args
       `(infile, outdir, fps = NULL, interval = NULL, format = "png",
       prefix = NULL, run = TRUE)`. Validate: input readable, exactly one of
       `fps`/`interval`, `format` in the image whitelist; create `outdir` if
       absent; synthesize `<outdir>/<prefix>_%0Nd.<format>` (fixed generous pad
       width, `start_number` 1); resolve `interval → 1/N`; call the helper;
       `ffm_finish(..., run)`. Return the resolved pattern with the command.
-- [ ] **T3 — Batch `sample_frames_batch(jobs, ...)`.** Per-row closure over the
+- [x] **T3 — Batch `sample_frames_batch(jobs, ...)`.** Per-row closure over the
       helper (column type/NA guards only — value checks come from the helper,
       M13); route through `ffm_batch` so `success`/`verified`/manifest outputs
       match the normal schema (M19). Follow the shape of
@@ -126,6 +126,11 @@ front door to per-frame coding and CV feature pipelines (M25 survey §3 K1).
 - 2026-07-13: created by /milestone-plan (promotes candidate K1 from the M25
   survey; scope + design calls settled at the plan gate — output-dir+auto-pattern
   naming, dual fps/interval rate arg, batch sibling included).
+- 2026-07-13: T1–T3 — added `sample_frames()`/`sample_frames_batch()` + shared
+  `sample_frames_pipeline()` and `resolve_sample_fps`/`derive_frame_pattern`/
+  `check_image_format`/`ensure_dir`/`derive_frames_dir` helpers in R/ffmpeg.R;
+  documented. Verified execution frame counts (fps=2→4, fps=5→10, interval=1→2
+  over a 2 s clip) and interval→fps reciprocal mapping.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

@@ -3,7 +3,7 @@
      Per-section owners are tagged below. -->
 # M24: Docs gap-fill (@seealso web, metadata-boundary prose, batch disambiguation)
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** M23   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Principles touched:** —   <!-- owner: plan · create/amend-via-gate; comma-separated IPn/GPn ids this milestone touches, or — -->
@@ -73,7 +73,7 @@ the final (M23) names.
       `@description`/`@details`; add the comparison table to
       `vignettes/metadata.Rmd`.
 - [x] **T4** Add "batch" to the title/first line of each `*_batch` doc page.
-- [ ] **T5** `devtools::document()`; `spelling::update_wordlist()`;
+- [x] **T5** `devtools::document()`; `spelling::update_wordlist()`;
       `devtools::build_readme()`; `devtools::check()` → confirm `Status: OK`.
 
 ## Work log
@@ -103,6 +103,11 @@ the final (M23) names.
   **batch** (table-driven) sibling of ...", so each says "batch" in its opening
   line (verified in the rendered `\description`); normalized the inline
   scalar-sibling `\code{\link{}}` in those clauses to markdown. 873 pass.
+- 2026-07-13: T5 — `document()` + `spelling::update_wordlist()` (added Codec /
+  getters / pre — pre-existing NEWS.md words, no M24 typos) +
+  `build_readme()` (no content diff; reverted ephemeral temp-path churn) +
+  `devtools::check()` → **Status: OK** (0 errors / 0 warnings / 0 notes).
+  Status → review.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

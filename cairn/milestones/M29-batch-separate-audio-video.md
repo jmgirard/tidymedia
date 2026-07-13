@@ -175,3 +175,20 @@ behind `master`; master unmoved since cut — no merge needed.
 - No `DESIGN.md` principle changed (works under IP1) → `cairn_impact` skipped.
 - Full suite: 1104 pass, 0 fail, 1 skip.
 - r-package consistency-gate: `devtools::check()` Status OK; `document()` clean.
+- CI (PR #31): all 7 jobs green — macOS, Ubuntu devel/oldrel-1/release, Windows,
+  pkgdown, test-coverage.
+
+### Independent review (3 lenses + scorer)
+
+- **[O] diff-bug (Opus):** no defects — verified reshape (N→2N interleave),
+  per-row `reencode` override, byte-identical thin-wrapper commands, pooled
+  duplicate guard, guard/NA/type completeness, all empirically.
+- **[S] blame-history (Sonnet):** no findings — scalar refactor byte-preserving,
+  M26 resolved-path guard honored, M28 roxygen-placement gotcha avoided.
+- **[S] prior-PR-comments (Sonnet):** no prior-PR evidence (reviews live in
+  milestone files, not GitHub comments) → clean no-op.
+- **Scorer:** no-op (0 findings to score; nothing ≥80 or <80).
+- **Logged, not actioned (cosmetic):** `check_batch_jobs(..., verb = "Audio/video
+  separation")` passes a `verb` label only used on the `require_output = TRUE`
+  error path, which never fires here — dead but harmless (and correct if that
+  path is ever enabled). Left as-is; fixing is out of scope.

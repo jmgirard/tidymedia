@@ -16,12 +16,6 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   checks. Contrast M11's `extract_frames()`, which had to duplicate finite/whole
   checks because `frame_pipeline()` did *not* contain them. So: extract the
   scalar body into a shared pipeline before writing the batch sibling.
-- 2026-07-12 (M14): FFmpeg's single-pass `loudnorm` filter forces its output
-  sample rate (advertises 192 kHz; the encoder then caps it, e.g. 96 kHz for
-  AAC) — it never preserves the source rate. Any audio-filtering verb that omits
-  `-ar` silently resamples; document that and let a `sample_rate` arg pin `-ar`.
-  A "preserves the source rate" claim is a review trap — verify output rate by
-  probing (`ffprobe … stream=sample_rate`), don't assume `-af`-only is a no-op.
 - 2026-07-12 (M17): `devtools::check()` can print "0 notes" while raw `R CMD
   check` shows `Status: 1 NOTE` — the `tests/spelling.Rout` comparison NOTE for
   new technical terms is masked by the devtools summary. Run
@@ -47,3 +41,8 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   in mov stream tags is ffmpeg-version dependent (became `name` on 8.x macOS,
   absent on Ubuntu CI) — green locally + macOS, red on Ubuntu. Don't sanity-assert
   an injected per-stream tag's *presence*; assert only on the stripped *output*.
+- 2026-07-13 (M28): extracting a shared helper *between* a documented function's
+  `#'` roxygen block and its `fn <- function` line silently re-targets the roxygen
+  to the helper and drops the original's `.Rd` — `document()` warns "Deleting
+  <fn>.Rd". Put the extracted helper ABOVE the roxygen block, not between it and
+  the function.

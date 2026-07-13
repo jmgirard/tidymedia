@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-07-13 (M27 done)_
+_Last hygiene check: 2026-07-13 (M28 done)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M28 | Batch siblings for single-in/single-out verbs (`extract_audio`/`convert_audio`/`crop_video`/`format_for_web` `_batch`) | review | — | high | milestones/M28-batch-single-io-verbs.md |
 | M29 | Batch sibling for `separate_audio_video` (fan-out) | planned | M28 | normal | milestones/M29-batch-separate-audio-video.md |
+| M28 | Batch siblings for single-in/single-out verbs (`extract_audio`/`convert_audio`/`crop_video`/`format_for_web` `_batch`) | done | — | high | milestones/archive/M28-batch-single-io-verbs.md |
 | M27 | Metadata scrubbing for de-identification (`strip_metadata` + `_batch`) | done | — | high | milestones/archive/M27-strip-metadata.md |
 | M26 | Fixed-rate frame sampling (`sample_frames` + `_batch`) | done | — | high | milestones/archive/M26-sample-frames.md |
 | M25 | Verb coverage survey (research-domain gap analysis) | done | — | normal | milestones/archive/M25-verb-coverage-survey.md |
-| M23 | API surface cleanup (clean-break renames, arg harmonization, un-exports) | done | M22 | normal | milestones/archive/M23-api-surface-cleanup.md |
 | M24 | Docs gap-fill (@seealso web, metadata-boundary prose, batch disambiguation) | done | M23 | normal | milestones/archive/M24-docs-gap-fill.md |
 
 ## Candidates

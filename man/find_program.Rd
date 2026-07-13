@@ -34,6 +34,9 @@ find_ffmpeg()
 find_mediainfo()
 }
 \seealso{
+\code{\link[=set_program]{set_program()}} to point tidymedia at a binary in a non-standard
+location, and \code{\link[=install_on_win]{install_on_win()}} to download FFmpeg on Windows.
+
 Other program management functions:
 \code{\link[=install_on_win]{install_on_win()}},
 \code{\link[=set_program]{set_program()}}

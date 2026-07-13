@@ -9,6 +9,9 @@
 #'
 #' @param command A string containing the arguments to pass to FFmpeg.
 #' @return A character vector containing the text output by FFmpeg.
+#' @seealso [ffmpeg_codecs()] and [ffmpeg_encoders()] for structured capability
+#'   queries, and the `ffm_*` pipeline builders (e.g. [ffm_run()]) for a safer
+#'   command layer.
 #' @family escape hatch functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
 #' # Layer 0 escape hatch: the string is passed to FFmpeg verbatim
@@ -900,6 +903,8 @@ normalize_audio_pipeline <- function(input, output,
 #'   is an intra-frame-only codec} \item{lossy}{A logical vector indicating
 #'   whether each codec supports lossy compression} \item{lossless}{A logical
 #'   vector indicating whether each codec supports lossless compression}
+#' @seealso [ffmpeg_encoders()] for the encoder list, [ffm_codec()] to set a
+#'   codec in a pipeline, and [ffmpeg()] for the Layer 0 escape hatch.
 #' @family capability functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
 #' head(ffmpeg_codecs())
@@ -979,6 +984,8 @@ ffmpeg_codecs <- function(sort_by_type = TRUE) {
 #'   logical vector indicating whether each encoder supports draw_horiz_band}
 #'   \item{direct_render}{A logical vector indicating whether each encoders
 #'   supports direct rending method 1}
+#' @seealso [ffmpeg_codecs()] for the codec list, [ffm_codec()] to set a codec
+#'   in a pipeline, and [ffmpeg()] for the Layer 0 escape hatch.
 #' @family capability functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
 #' head(ffmpeg_encoders())

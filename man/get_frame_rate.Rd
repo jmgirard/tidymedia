@@ -23,6 +23,9 @@ get_frame_rate(video)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
+\code{\link[=mediainfo_parameter]{mediainfo_parameter()}} for arbitrary MediaInfo fields, and
+\code{\link[=probe_all]{probe_all()}} for the FFprobe backend.
+
 Other metadata functions:
 \code{\link[=get_duration]{get_duration()}},
 \code{\link[=get_height]{get_height()}},

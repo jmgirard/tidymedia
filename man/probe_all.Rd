@@ -37,6 +37,9 @@ info$streams
 \dontshow{\}) # examplesIf}
 }
 \seealso{
+\code{\link[=mediainfo_template]{mediainfo_template()}} and \code{\link[=mediainfo_query]{mediainfo_query()}} for the MediaInfo
+backend, and \code{\link[=get_duration]{get_duration()}} and friends for single scalar values.
+
 Other metadata functions:
 \code{\link[=get_duration]{get_duration()}},
 \code{\link[=get_frame_rate]{get_frame_rate()}},

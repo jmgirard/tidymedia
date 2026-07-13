@@ -48,6 +48,9 @@ probe_audio(info)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
+\code{\link[=probe_all]{probe_all()}} for the full probe; \code{\link[=mediainfo_query]{mediainfo_query()}} for the
+MediaInfo backend; \code{\link[=get_width]{get_width()}} and friends for single scalar values.
+
 Other metadata functions:
 \code{\link[=get_duration]{get_duration()}},
 \code{\link[=get_frame_rate]{get_frame_rate()}},

@@ -44,6 +44,9 @@ mediainfo_template(video, template = "brief")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
+\code{\link[=mediainfo_query]{mediainfo_query()}} for a single section, \code{\link[=mediainfo_parameter]{mediainfo_parameter()}}
+for a single value, and \code{\link[=probe_all]{probe_all()}} for the FFprobe backend.
+
 Other metadata functions:
 \code{\link[=get_duration]{get_duration()}},
 \code{\link[=get_frame_rate]{get_frame_rate()}},

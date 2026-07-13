@@ -8,6 +8,8 @@
 #' @param program A string indicating which program to find
 #' @return Either a string indicating whether the requested program was found or
 #'   `NULL` if the program could not be found.
+#' @seealso [set_program()] to point tidymedia at a binary in a non-standard
+#'   location, and [install_on_win()] to download FFmpeg on Windows.
 #' @family program management functions
 #' @examples
 #' # Returns the path to the binary, or NULL with a warning if it is not found
@@ -127,6 +129,8 @@ run_program <- function(location, args, program = "the program",
 #' @param location A string containing the location of the program.
 #' @return A logical indicating whether the program location was set properly.
 #'
+#' @seealso [find_program()] to locate a configured binary, and
+#'   [install_on_win()] to download FFmpeg on Windows.
 #' @family program management functions
 #' @examples
 #' \dontrun{
@@ -197,6 +201,8 @@ set_ffplay <- function(location) {
 #' @param install_dir A string indicating a directory to install FFmpeg to. If
 #'   `NULL`, will default to installing to the user data directory.
 #' @return A logical indicating whether the installation was successful.
+#' @seealso [set_program()] to register an existing binary, and [find_ffmpeg()]
+#'   to check what is currently configured.
 #' @family program management functions
 #' @examples
 #' \dontrun{

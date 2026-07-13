@@ -67,7 +67,7 @@ the final (M23) names.
 
 - [x] **T1** Add `@seealso` to the Layer-1 `ffm_*` filter/IO pages and each
       Layer-2 verb (bridge each verb to the `ffm_*` verb[s] it wraps), per §4.
-- [ ] **T2** Add `@seealso` across the metadata triad (`probe_*` ↔ `get_*` ↔
+- [x] **T2** Add `@seealso` across the metadata triad (`probe_*` ↔ `get_*` ↔
       `mediainfo_*`) and program-management pages.
 - [ ] **T3** Add backend + return-shape prose to each metadata family
       `@description`/`@details`; add the comparison table to
@@ -90,6 +90,11 @@ the final (M23) names.
   normalized the 8 legacy `\code{\link{}}` @seealso (7 in ffmpeg.R + ffm_batch)
   to markdown; fixed a copy-paste in `ffm_scale`'s `@return` ("crop"→"resize").
   `document()` clean, 873 tests pass.
+- 2026-07-13: T2 — cross-backend `@seealso` on the metadata triad (`probe_all`,
+  `probe_container` page, `mediainfo_*`, all five `get_*`) so each backend links
+  to the other two; plus program-management (`find_*`/`set_*`/`install_on_win`),
+  capability (`ffmpeg_codecs`/`ffmpeg_encoders`), and the three Layer-0 escape
+  hatches. `document()` clean, 873 tests pass.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

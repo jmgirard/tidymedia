@@ -40,6 +40,9 @@ mediainfo_query(video, section = "Video", parameters = c("Width", "Height"))
 \dontshow{\}) # examplesIf}
 }
 \seealso{
+\code{\link[=mediainfo_parameter]{mediainfo_parameter()}} for a single value, \code{\link[=mediainfo_template]{mediainfo_template()}}
+for a whole template, and \code{\link[=probe_all]{probe_all()}} for the FFprobe backend.
+
 Other metadata functions:
 \code{\link[=get_duration]{get_duration()}},
 \code{\link[=get_frame_rate]{get_frame_rate()}},

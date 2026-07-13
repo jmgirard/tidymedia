@@ -36,6 +36,9 @@ get_duration(video, unit = "sec")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
+\code{\link[=mediainfo_parameter]{mediainfo_parameter()}} for arbitrary MediaInfo fields, and
+\code{\link[=probe_all]{probe_all()}} for the FFprobe backend.
+
 Other metadata functions:
 \code{\link[=get_frame_rate]{get_frame_rate()}},
 \code{\link[=get_height]{get_height()}},

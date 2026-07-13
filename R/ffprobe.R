@@ -10,6 +10,8 @@
 #'
 #' @param command A string containing the command to send to FFprobe.
 #' @return A string containing the text output by FFprobe.
+#' @seealso [probe_all()] and the `probe_*()` shortcuts for structured,
+#'   tibble-returning output.
 #' @family escape hatch functions
 #' @examplesIf nzchar(Sys.which("ffprobe"))
 #' ffprobe("-version")
@@ -41,6 +43,8 @@ ffprobe <- function(command) {
 #'   readable streams). Both lead with a `file` column identifying the input.
 #'   Files that cannot be probed yield an all-`NA` row and a warning rather than
 #'   aborting the call.
+#' @seealso [mediainfo_template()] and [mediainfo_query()] for the MediaInfo
+#'   backend, and [get_duration()] and friends for single scalar values.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("ffprobe"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -142,6 +146,8 @@ probe_one <- function(file) {
 #' @param typed A logical passed to [probe_all()] when `infile` is used (default
 #'   `TRUE`); ignored when `probe` is supplied.
 #' @return A tibble containing only the requested information.
+#' @seealso [probe_all()] for the full probe; [mediainfo_query()] for the
+#'   MediaInfo backend; [get_width()] and friends for single scalar values.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("ffprobe"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")

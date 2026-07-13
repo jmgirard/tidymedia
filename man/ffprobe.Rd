@@ -24,6 +24,9 @@ ffprobe("-version")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
+\code{\link[=probe_all]{probe_all()}} and the \verb{probe_*()} shortcuts for structured,
+tibble-returning output.
+
 Other escape hatch functions:
 \code{\link[=ffmpeg]{ffmpeg()}},
 \code{\link[=mediainfo]{mediainfo()}}

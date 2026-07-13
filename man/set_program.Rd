@@ -36,6 +36,9 @@ set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")
 }
 }
 \seealso{
+\code{\link[=find_program]{find_program()}} to locate a configured binary, and
+\code{\link[=install_on_win]{install_on_win()}} to download FFmpeg on Windows.
+
 Other program management functions:
 \code{\link[=find_program]{find_program()}},
 \code{\link[=install_on_win]{install_on_win()}}

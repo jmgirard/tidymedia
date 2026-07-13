@@ -37,6 +37,10 @@ mediainfo_parameter(video, section = "Video", parameter = "Width")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
+\code{\link[=mediainfo_query]{mediainfo_query()}} to pull several parameters at once,
+\code{\link[=mediainfo_template]{mediainfo_template()}} for a whole template, \code{\link[=probe_all]{probe_all()}} for the FFprobe
+backend, and \code{\link[=get_duration]{get_duration()}} and friends for common single values.
+
 Other metadata functions:
 \code{\link[=get_duration]{get_duration()}},
 \code{\link[=get_frame_rate]{get_frame_rate()}},

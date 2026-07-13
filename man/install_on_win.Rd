@@ -28,6 +28,9 @@ install_on_win()
 }
 }
 \seealso{
+\code{\link[=set_program]{set_program()}} to register an existing binary, and \code{\link[=find_ffmpeg]{find_ffmpeg()}}
+to check what is currently configured.
+
 Other program management functions:
 \code{\link[=find_program]{find_program()}},
 \code{\link[=set_program]{set_program()}}

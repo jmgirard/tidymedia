@@ -36,6 +36,9 @@ ffmpeg_encoders(sort_by_type = FALSE)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
+\code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}} for the codec list, \code{\link[=ffm_codec]{ffm_codec()}} to set a codec
+in a pipeline, and \code{\link[=ffmpeg]{ffmpeg()}} for the Layer 0 escape hatch.
+
 Other capability functions:
 \code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}}
 }

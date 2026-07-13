@@ -12,6 +12,9 @@
 #' @param command A string containing a mediainfo command.
 #' @return A string containing the command line output from mediainfo.
 #'
+#' @seealso [mediainfo_template()], [mediainfo_query()], and
+#'   [mediainfo_parameter()] for structured output, and [get_duration()] and
+#'   friends for common scalars.
 #' @family escape hatch functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' mediainfo("--Version")
@@ -44,6 +47,9 @@ mediainfo <- function(command) {
 #'   was not found, or the file could not be read (a warning is issued for
 #'   unreadable files rather than aborting).
 #'
+#' @seealso [mediainfo_query()] to pull several parameters at once,
+#'   [mediainfo_template()] for a whole template, [probe_all()] for the FFprobe
+#'   backend, and [get_duration()] and friends for common single values.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -102,6 +108,8 @@ mediainfo_parameter <- function(file, section, parameter, typed = TRUE) {
 #' @return A tibble with one row per input file, leading with a \code{file}
 #'   column and one column per requested parameter.
 #'
+#' @seealso [mediainfo_parameter()] for a single value, [mediainfo_template()]
+#'   for a whole template, and [probe_all()] for the FFprobe backend.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -163,6 +171,8 @@ mediainfo_query <- function(file, section, parameters, names = parameters,
 #'   names/order) are determined by the template; custom-template column names
 #'   are used verbatim.
 #'
+#' @seealso [mediainfo_query()] for a single section, [mediainfo_parameter()]
+#'   for a single value, and [probe_all()] for the FFprobe backend.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -277,6 +287,8 @@ warn_unreadable <- function(failed) {
 #' @return A double vector (one per file) giving the duration of the specified
 #'   section in the specified units.
 #'
+#' @seealso [mediainfo_parameter()] for arbitrary MediaInfo fields, and
+#'   [probe_all()] for the FFprobe backend.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -308,6 +320,8 @@ get_duration <- function(file,
 #' @param file A character vector of one or more media-file paths.
 #' @return A double vector (one per file) giving the video frame rate in fps.
 #'
+#' @seealso [mediainfo_parameter()] for arbitrary MediaInfo fields, and
+#'   [probe_all()] for the FFprobe backend.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -327,6 +341,8 @@ get_frame_rate <- function(file) {
 #' @param file A character vector of one or more media-file paths.
 #' @return A double vector (one per file) giving the video width in px.
 #'
+#' @seealso [mediainfo_parameter()] for arbitrary MediaInfo fields, and
+#'   [probe_all()] for the FFprobe backend.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -346,6 +362,8 @@ get_width <- function(file) {
 #' @param file A character vector of one or more media-file paths.
 #' @return A double vector (one per file) giving the video height in px.
 #'
+#' @seealso [mediainfo_parameter()] for arbitrary MediaInfo fields, and
+#'   [probe_all()] for the FFprobe backend.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -365,6 +383,8 @@ get_height <- function(file) {
 #' @param file A character vector of one or more media-file paths.
 #' @return A double vector (one per file) giving the audio sampling rate in Hz.
 #'
+#' @seealso [mediainfo_parameter()] for arbitrary MediaInfo fields, and
+#'   [probe_all()] for the FFprobe backend.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")

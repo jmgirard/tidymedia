@@ -288,6 +288,10 @@ Thin wrappers over the builder for common preprocessing jobs.
   : Cover fixed regions of a video with opaque boxes
 - [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md)
   : Anonymize Many Videos From a Jobs Table
+- [`strip_metadata()`](https://jmgirard.github.io/tidymedia/reference/strip_metadata.md)
+  : Strip identifying metadata from a media file
+- [`strip_metadata_batch()`](https://jmgirard.github.io/tidymedia/reference/strip_metadata_batch.md)
+  : Strip Metadata From Many Files From a Jobs Table
 - [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
   : Re-encode a video for web playback
 - [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)

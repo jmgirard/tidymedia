@@ -1,60 +1,49 @@
-# Segment Many Videos From a Jobs Table
+# Strip Metadata From Many Files From a Jobs Table
 
-Cut segments across many input files from a single jobs tibble — the
-**batch** (table-driven) sibling of
-[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
-for when your segments span more than one input. Each row is one
-segment; the four required columns name its source, destination, and cut
-points. This is a thin wrapper over
+De-identify many input files from a single jobs tibble — the **batch**
+(table-driven) sibling of
+[`strip_metadata()`](https://jmgirard.github.io/tidymedia/reference/strip_metadata.md)
+for when you have more than one file to scrub. Each row is one input;
+the only required column names its source. This is a thin wrapper over
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-one reproducible compiled command per segment.
+one reproducible stream-copy strip command per input, sharing the same
+pipeline (and its bit-exact, metadata-dropping behavior) as the scalar
+verb.
 
 ## Usage
 
 ``` r
-segment_video_batch(jobs, reencode = TRUE, run = TRUE, parallel = FALSE, ...)
+strip_metadata_batch(jobs, run = TRUE, parallel = FALSE, ...)
 ```
 
 ## Arguments
 
 - jobs:
 
-  A data frame with one row per segment and (at least) the columns
-  `input` (source path), `start` and `end` (cut points; a numeric column
-  of seconds or a character column with time-duration syntax). Two
-  optional columns are recognized: `output` (destination path) and
-  `reencode` (a logical; see the `reencode` argument). If `output` is
-  absent, one is derived per row by appending `_<n>.<ext>` to each
-  input's basename, with the segment number restarting at 1 for each
-  input file (the same rule as
-  [`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)).
-  Any other columns are ignored.
-
-- reencode:
-
-  A logical passed to
-  [`ffm_seek`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md):
-  cut each segment frame-accurately by re-encoding (`TRUE`, default) or
-  with a fast, lossless copy that snaps to keyframes (`FALSE`). See
-  `ffm_seek` for the trade-off. Applies to every row, unless `jobs`
-  carries a `reencode` column, which overrides this argument on a
-  per-row basis.
+  A data frame with one row per input and (at least) an `input` column
+  (source path). An optional `output` column names the destination; when
+  absent, one is derived per row by appending `_stripped` to each
+  input's basename, keeping the input's extension (e.g. `clip.mkv`
+  becomes `clip_stripped.mkv`). Any two rows that resolve to the
+  **same** output path — a duplicated `input` with no `output` column,
+  or a repeated explicit `output` — are rejected so one file cannot
+  silently overwrite another. Any other columns are ignored (the scrub
+  has no per-row knobs).
 
 - run:
 
-  A logical: run each segment's command through FFmpeg (`TRUE`, default)
+  A logical: run each input's command through FFmpeg (`TRUE`, default)
   or only compile them for inspection (`FALSE`).
 
 - parallel:
 
   A logical passed to
   [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-  cut segments in parallel with furrr (`TRUE`) or sequentially (`FALSE`,
+  scrub in parallel with furrr (`TRUE`) or sequentially (`FALSE`,
   default). Parallelism follows the active
   [`future`](https://future.futureverse.org/reference/plan.html) plan;
-  `TRUE` under the default sequential plan runs one segment at a time
-  and warns. Set a plan first, e.g.
-  `future::plan(future::multisession)`.
+  `TRUE` under the default sequential plan runs one input at a time and
+  warns. Set a plan first, e.g. `future::plan(future::multisession)`.
 
 - ...:
 
@@ -71,18 +60,16 @@ returned by
 the resolved `output` column; when `run = TRUE`, a `success` column,
 plus any columns the forwarded arguments add, e.g. `verified`).
 
-## References
-
-https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
-
 ## See also
 
-[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
-for the single-input, parallel-vector form;
+[`strip_metadata()`](https://jmgirard.github.io/tidymedia/reference/strip_metadata.md)
+for the single-input form;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
 for the batch runner and the arguments forwarded through `...`;
-[`ffm_seek()`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md)
-for the cut trade-off.
+[`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
+and
+[`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md)
+for the other table-driven siblings.
 
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
@@ -101,27 +88,21 @@ Other task verb functions:
 [`sample_frames()`](https://jmgirard.github.io/tidymedia/reference/sample_frames.md),
 [`sample_frames_batch()`](https://jmgirard.github.io/tidymedia/reference/sample_frames_batch.md),
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
+[`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md),
 [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
 [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
 [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md),
-[`strip_metadata()`](https://jmgirard.github.io/tidymedia/reference/strip_metadata.md),
-[`strip_metadata_batch()`](https://jmgirard.github.io/tidymedia/reference/strip_metadata_batch.md)
+[`strip_metadata()`](https://jmgirard.github.io/tidymedia/reference/strip_metadata.md)
 
 ## Examples
 
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-jobs <- tibble::tibble(
-  input  = c(video, video),
-  output = c("a.mp4", "b.mp4"),
-  start  = c(0, 0.5),
-  end    = c(0.5, 1)
-)
-# run = FALSE compiles one command per segment without calling FFmpeg
-segment_video_batch(jobs, run = FALSE)
-#> # A tibble: 2 × 5
-#>   input                                               output start   end command
-#>   <chr>                                               <chr>  <dbl> <dbl> <chr>  
-#> 1 /home/runner/work/_temp/Library/tidymedia/extdata/… a.mp4    0     0.5 "-y -i…
-#> 2 /home/runner/work/_temp/Library/tidymedia/extdata/… b.mp4    0.5   1   "-y -i…
+jobs <- tibble::tibble(input = video, output = "clean.mp4")
+# run = FALSE compiles one command per input without calling FFmpeg
+strip_metadata_batch(jobs, run = FALSE)
+#> # A tibble: 1 × 3
+#>   input                                                        output    command
+#>   <chr>                                                        <chr>     <chr>  
+#> 1 /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 clean.mp4 "-y -i…
 ```

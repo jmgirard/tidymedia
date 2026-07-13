@@ -76,6 +76,8 @@
 <url><loc>https://jmgirard.github.io/tidymedia/reference/set_program.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/standardize_video.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/strip_metadata.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/strip_metadata_batch.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/tidyeval.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/verify_media.html</loc></url>
 </urlset>

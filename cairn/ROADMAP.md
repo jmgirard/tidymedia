@@ -8,7 +8,7 @@ _Last hygiene check: 2026-07-13 (M26 planned)_
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M26 | Fixed-rate frame sampling (`sample_frames` + `_batch`) | planned | — | high | milestones/M26-sample-frames.md |
+| M26 | Fixed-rate frame sampling (`sample_frames` + `_batch`) | in-progress | — | high | milestones/M26-sample-frames.md |
 | M25 | Verb coverage survey (research-domain gap analysis) | done | — | normal | milestones/archive/M25-verb-coverage-survey.md |
 | M23 | API surface cleanup (clean-break renames, arg harmonization, un-exports) | done | M22 | normal | milestones/archive/M23-api-surface-cleanup.md |
 | M24 | Docs gap-fill (@seealso web, metadata-boundary prose, batch disambiguation) | done | M23 | normal | milestones/archive/M24-docs-gap-fill.md |

@@ -3,7 +3,7 @@
      Per-section owners are tagged below. -->
 # M26: Fixed-rate frame sampling (`sample_frames` + `_batch`)
 
-- **Status:** planned   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** high   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Principles touched:** IP1, IP2, GP1   <!-- works under; none changed -->

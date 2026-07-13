@@ -110,7 +110,7 @@ via lossless stream-copy — the IRB/de-identification front door (M25 survey K2
       `strip_metadata`, and assert with ffprobe (`-show_format`/`-show_entries`)
       that tags + chapters are gone, no `encoder`/`creation_time` re-added (AC2),
       and video+audio streams + rotation survive (AC3).
-- [ ] **T3 — batch sibling.** In `R/ffmpeg.R`, add `derive_stripped_names()` and
+- [x] **T3 — batch sibling.** In `R/ffmpeg.R`, add `derive_stripped_names()` and
       `strip_metadata_batch(jobs, run = TRUE, parallel = FALSE, ...)` reusing
       `strip_metadata_pipeline()` via `ffm_batch` (model on
       `standardize_video_batch()` at `R/ffmpeg.R:1794`), with column type/NA guards
@@ -136,6 +136,10 @@ via lossless stream-copy — the IRB/de-identification front door (M25 survey K2
   `probe_rotation()` helpers and the execution guard tests (AC2, AC3). Empirically
   confirmed: identifying tags + chapters + FFmpeg's re-added encoder/creation_time
   all clear; A/V streams + rotation display matrix survive the copy.
+- 2026-07-13: T3 — added `derive_stripped_names()` + `strip_metadata_batch()`
+  (`R/ffmpeg.R`) reusing the shared pipeline (byte-parity with the scalar), with a
+  duplicated-*resolved*-output guard (M26 — catches repeated explicit outputs too)
+  and NA guards. 31 batch tests incl. execution + `verify` forwarding (AC4).
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

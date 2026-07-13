@@ -2010,6 +2010,122 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
 }
 
 
+# derive_stripped_names() -------------------------------------------------
+
+# Derive one output path per input for strip_metadata_batch() when the `output`
+# column is absent: `<base>_stripped.<input-ext>` (a metadata scrub keeps the
+# source container). The base keeps the input's directory, so inputs in
+# different folders never collide; strip_metadata_batch() rejects any duplicated
+# *resolved* output up front (M26), so this helper stays a pure name map.
+derive_stripped_names <- function(input) {
+  paste0(
+    tools::file_path_sans_ext(input), "_stripped.", tools::file_ext(input)
+  )
+}
+
+
+# strip_metadata_batch() --------------------------------------------------------
+
+#' Strip Metadata From Many Files From a Jobs Table
+#'
+#' De-identify many input files from a single jobs tibble — the **batch**
+#' (table-driven) sibling of [strip_metadata()] for when you have more than one
+#' file to scrub. Each row is one input; the only required column names its
+#' source. This is a thin wrapper over \code{\link{ffm_batch}}: one reproducible
+#' stream-copy strip command per input, sharing the same pipeline (and its
+#' bit-exact, metadata-dropping behaviour) as the scalar verb.
+#'
+#' @param jobs A data frame with one row per input and (at least) an
+#'   \code{input} column (source path). An optional \code{output} column names
+#'   the destination; when absent, one is derived per row by appending
+#'   \code{_stripped} to each input's basename, keeping the input's extension
+#'   (e.g. \code{clip.mkv} becomes \code{clip_stripped.mkv}). Any two rows that
+#'   resolve to the **same** output path — a duplicated \code{input} with no
+#'   \code{output} column, or a repeated explicit \code{output} — are rejected
+#'   so one file cannot silently overwrite another. Any other columns are
+#'   ignored (the scrub has no per-row knobs).
+#' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
+#'   default) or only compile them for inspection (\code{FALSE}).
+#' @param parallel A logical passed to \code{\link{ffm_batch}}: scrub in
+#'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
+#'   default). Parallelism follows the active \code{\link[future:plan]{future}}
+#'   plan; \code{TRUE} under the default sequential plan runs one input at a
+#'   time and warns. Set a plan first, e.g.
+#'   \code{future::plan(future::multisession)}.
+#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}}, such as
+#'   \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.
+#' @return The [tibble][tibble::tibble-package] returned by
+#'   \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column
+#'   (and, when \code{output} was derived, the resolved \code{output} column;
+#'   when \code{run = TRUE}, a \code{success} column, plus any columns the
+#'   forwarded arguments add, e.g. \code{verified}).
+#' @seealso [strip_metadata()] for the single-input form; [ffm_batch()] for the
+#'   batch runner and the arguments forwarded through \code{...};
+#'   [standardize_video_batch()] and [anonymize_video_batch()] for the other
+#'   table-driven siblings.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' jobs <- tibble::tibble(input = video, output = "clean.mp4")
+#' # run = FALSE compiles one command per input without calling FFmpeg
+#' strip_metadata_batch(jobs, run = FALSE)
+#' @export
+strip_metadata_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
+
+  if (!is.data.frame(jobs)) {
+    cli::cli_abort("{.arg jobs} must be a data frame with one row per input.")
+  }
+  if (nrow(jobs) == 0) {
+    cli::cli_abort("{.arg jobs} must have at least one row.")
+  }
+  if (!"input" %in% names(jobs)) {
+    cli::cli_abort(c(
+      "{.arg jobs} must have an {.field input} column.",
+      "x" = "Missing column: {.val input}."
+    ))
+  }
+
+  # A factor input column carries paths as levels; treat them as strings
+  # (parity with the other *_batch verbs).
+  jobs$input <- as.character(jobs$input)
+  if (anyNA(jobs$input)) {
+    cli::cli_abort("The {.field input} column of {.arg jobs} must not contain {.val {NA}}.")
+  }
+
+  # Resolve outputs (derive when absent), then reject any collision on the
+  # *resolved* path — not just duplicated inputs — so an explicit `output`
+  # column repeated across rows can't silently overwrite either (M26).
+  if (!"output" %in% names(jobs)) {
+    jobs$output <- derive_stripped_names(jobs$input)
+  } else {
+    jobs$output <- as.character(jobs$output)
+    if (anyNA(jobs$output)) {
+      cli::cli_abort("The {.field output} column of {.arg jobs} must not contain {.val {NA}}.")
+    }
+  }
+  dupes <- unique(jobs$output[duplicated(jobs$output)])
+  if (length(dupes) > 0) {
+    cli::cli_abort(c(
+      "{.arg jobs} has rows that resolve to the same output path.",
+      "x" = "Colliding output{?s}: {.val {dupes}}.",
+      "i" = "Give each row a distinct {.field output}, or de-duplicate the inputs."
+    ))
+  }
+
+  # Thin Layer-2 fan-out over ffm_batch (D007): one single-output strip pipeline
+  # per row, sharing strip_metadata_pipeline() with strip_metadata(). `...`
+  # forwards ffm_batch options (verify/manifest/...) to the runner; the scrub
+  # itself has no per-row knobs, so extra job columns are ignored.
+  ffm_batch(
+    jobs,
+    function(input, output, ...) strip_metadata_pipeline(input, output),
+    run = run,
+    parallel = parallel,
+    ...
+  )
+}
+
+
 # derive_normalized_names() -----------------------------------------------
 
 # Derive one output path per input for normalize_audio_batch() when the `output`

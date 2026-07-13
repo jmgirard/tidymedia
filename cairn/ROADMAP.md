@@ -8,7 +8,7 @@ _Last hygiene check: 2026-07-13 (M28 done)_
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M29 | Batch sibling for `separate_audio_video` (fan-out) | in-progress | M28 | normal | milestones/M29-batch-separate-audio-video.md |
+| M29 | Batch sibling for `separate_audio_video` (fan-out) | review | M28 | normal | milestones/M29-batch-separate-audio-video.md |
 | M28 | Batch siblings for single-in/single-out verbs (`extract_audio`/`convert_audio`/`crop_video`/`format_for_web` `_batch`) | done | — | high | milestones/archive/M28-batch-single-io-verbs.md |
 | M27 | Metadata scrubbing for de-identification (`strip_metadata` + `_batch`) | done | — | high | milestones/archive/M27-strip-metadata.md |
 | M26 | Fixed-rate frame sampling (`sample_frames` + `_batch`) | done | — | high | milestones/archive/M26-sample-frames.md |

@@ -182,4 +182,24 @@ public surface with no compatibility shims.
 
 ### Independent review
 
-(three fresh-context lenses + scorer — findings recorded below)
+Three fresh-context lenses, run in parallel, each with a distinct evidence base:
+
+- **[O] diff-bug reviewer (Opus)** — full `master...HEAD` diff vs ACs/DESIGN/DECISIONS.
+  **Zero findings.** Verified: no missed rename call sites (internal callers, jobs-table
+  column keys `pick()`/`str_cols`, cli `{.field}` strings all track); `convert_audio`
+  `format=NULL` byte-for-byte parity + non-NULL `-codec:a` path; un-exported helpers still
+  resolve; only `.data` retained in reexports.
+- **[S] blame-history reviewer (Sonnet)** — `git log`/`blame` on modified lines vs prior
+  intent. **Zero findings.** Confirmed no regression of M12/M13 encode guards
+  (even-dimension floor-crop, `-c:a copy`, `+faststart`, per-value validation), D008
+  seek/cut semantics, or D013 two-pass schema (loudnorm_two_pass.R changes comment-only).
+- **[S] prior-PR-comments reviewer (Sonnet)** — reviewed all 24 merged PRs. **No prior-PR
+  evidence** (repo has zero human inline/review comments; only Codecov bot). Lens no-ops.
+
+**Total surviving findings: 0** → no scorer pass or triage needed.
+
+### Outcome
+
+All 6 acceptance criteria verified with fresh evidence; consistency gate green
+(validate, coverage, document no-diff, pkgdown, NEWS); independent review clean.
+Recommend merge.

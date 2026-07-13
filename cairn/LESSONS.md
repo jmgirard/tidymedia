@@ -4,11 +4,11 @@ _Durable, append-only repo lessons (build quirks, testing tricks) — captured a
 milestone end, surfaced at plan time. Capped at 50 lines (D-015); prune the
 least-useful when full. Not status, not decisions (a choice is a D-entry)._
 
-- 2026-07-12 (M12): a Layer-2 verb that re-encodes video (sets `-c:v`) will
-  silently transcode audio and *reject odd dimensions* under libx264/yuv420p
-  (0-byte output) unless it also stream-copies audio (`-c:a copy`) and
-  floor-crops to even dimensions — mirror `format_for_web()`'s guards. Test
-  re-encode verbs against an odd-dimensioned source and a non-target audio codec.
+- 2026-07-13 (M26): a `_batch` verb that auto-derives output paths from the
+  input *basename* silently overwrites when two rows collide — a duplicated
+  input, or same-basename inputs under one shared `outdir`. Guard at the
+  resolved-path level (`anyDuplicated(patterns)`), not just the input level; the
+  older `*_batch` verbs only rejected duplicated inputs.
 - 2026-07-12 (M13): when a scalar verb keeps its per-value validation *inside* a
   shared `*_pipeline()` helper (via `check_dim`/`check_token`/`ffm_files`), a
   batch sibling that reuses the helper inherits per-element parity for free —

@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-07-13 (M26 planned)_
+_Last hygiene check: 2026-07-13 (M26 done)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M26 | Fixed-rate frame sampling (`sample_frames` + `_batch`) | review | — | high | milestones/M26-sample-frames.md |
+| M26 | Fixed-rate frame sampling (`sample_frames` + `_batch`) | done | — | high | milestones/archive/M26-sample-frames.md |
 | M25 | Verb coverage survey (research-domain gap analysis) | done | — | normal | milestones/archive/M25-verb-coverage-survey.md |
 | M23 | API surface cleanup (clean-break renames, arg harmonization, un-exports) | done | M22 | normal | milestones/archive/M23-api-surface-cleanup.md |
 | M24 | Docs gap-fill (@seealso web, metadata-boundary prose, batch disambiguation) | done | M23 | normal | milestones/archive/M24-docs-gap-fill.md |
 | M22 | Naming & docs audit + target-scheme decisions | done | — | normal | milestones/archive/M22-naming-docs-audit.md |
-| M21 | Batch fixed-region anonymization verb | done | M20 | normal | milestones/archive/M21-anonymize-videos-batch.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

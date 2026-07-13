@@ -114,6 +114,36 @@ test_that("sample_frames_batch() rejects a bad rate column type", {
   )
 })
 
+test_that("sample_frames_batch() rejects a character interval column", {
+  f <- make_input()
+  # A character `fps` is a valid rate expression, but a character `interval` is
+  # not; it must fail up front, not mid-resolve.
+  expect_error(
+    sample_frames_batch(tibble::tibble(input = f, interval = "2"), run = FALSE),
+    "interval.*must be numeric"
+  )
+})
+
+test_that("sample_frames_batch() rejects colliding output patterns", {
+  f1 <- make_input()
+  f2 <- make_input()
+  d <- withr::local_tempdir()
+  # A duplicated input under one derived scheme collides.
+  expect_error(
+    sample_frames_batch(tibble::tibble(input = c(f1, f1)), fps = 2,
+                        outdir = d, run = FALSE),
+    "same image sequence"
+  )
+  # Distinct inputs that share a basename under a shared outdir also collide.
+  same_base <- file.path(withr::local_tempdir(), basename(f1))
+  file.create(same_base)
+  expect_error(
+    sample_frames_batch(tibble::tibble(input = c(f1, same_base)), fps = 2,
+                        outdir = d, run = FALSE),
+    "same image sequence"
+  )
+})
+
 test_that("sample_frames_batch() rejects NA in a rate column", {
   f <- make_input()
   expect_error(

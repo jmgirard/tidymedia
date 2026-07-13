@@ -181,4 +181,33 @@ front door to per-frame coding and CV feature pipelines (M25 survey §3 K1).
 
 ### Independent review
 
-_(pending — three fresh-context lenses + scorer)_
+Three fresh-context lenses + a Sonnet scorer (findings <80 logged, not actioned):
+
+- **[S] prior-PR-comments** — no prior-PR evidence (PRs #1–#27 carry only
+  automated Codecov comments; no human review points to regress). Clean no-op.
+- **[S] blame-history** — CLEAN. Verified the diff respects every relevant
+  lesson (M13 shared pipeline, M19 no fast-path trap, M20 integer coercion, M17
+  wordlist, M23 pkgdown) and D-entry (D002/D003/D007/D014). No findings.
+- **[O] diff-bug** — 3 findings, scored 80 / 62 / 74:
+  - **F1 (80, FIXED)** — `sample_frames_batch()` had no guard against colliding
+    auto-derived output patterns: a duplicated input, or same-basename inputs
+    under one shared `outdir`, would silently overwrite each other's frames
+    (sibling verbs guard duplicated inputs). Added a pattern-level collision
+    abort before running + a regression test (both collision modes); corrected
+    the false "per-input prefixes prevent collision" comment.
+  - **F3 (74, FIXED opportunistically)** — the batch column check accepted a
+    character `interval` (invalid; only `fps` may be a rate-expression string),
+    so it slipped the up-front guard and aborted mid-resolve. Now typed
+    numeric-only (parity with `extract_frame_batch`'s per-column typing) + a
+    regression test. Fixed because it sat in the exact block edited for F1 and
+    is unambiguous, though below the 80 action bar.
+  - **F2 (62, LOGGED, not fixed)** — `ensure_dir()` creates the output
+    directory even on `run = FALSE`. Accepted: the behavior is documented in the
+    `outdir` roxygen, and the repo already does not hold `run = FALSE` strictly
+    side-effect-free (D013's two-pass runs a binary under `run = FALSE`).
+    Creating a directory is far milder; not worth breaking the early
+    uncreatable-`outdir` guard (AC5) to defer it.
+
+**Post-fix evidence:** full suite **923 pass / 0 fail / 0 skip** (+3 regression
+tests); `devtools::check()` 0/0/0. CI on PR #28: all 7 jobs green
+(macOS, Ubuntu devel/oldrel/release, Windows, pkgdown, test-coverage).

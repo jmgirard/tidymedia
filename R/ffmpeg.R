@@ -198,9 +198,9 @@ resolve_sample_fps <- function(fps, interval,
 # Build the image2 output pattern for one input: `<outdir>/<prefix>_%0Nd.<fmt>`,
 # with `prefix` defaulting to the input's basename (sans extension). A fixed pad
 # width keeps the numbering zero-padded and lexically sortable; FFmpeg widens it
-# automatically past the cap. Per-input prefixes keep batch sequences from
-# colliding when several inputs share one `outdir` (parity with
-# derive_frame_names()).
+# automatically past the cap. Basename prefixes distinguish most batch sequences
+# sharing one `outdir`, but same-basename inputs still collide — the batch verb
+# guards that at the pattern level before running.
 derive_frame_pattern <- function(input, outdir, prefix, format, digits = 6L) {
   if (is.null(prefix)) prefix <- tools::file_path_sans_ext(basename(input))
   file.path(outdir, paste0(prefix, "_%0", digits, "d.", format))
@@ -1702,11 +1702,18 @@ sample_frames_batch <- function(jobs, fps = NULL, interval = NULL,
   }
 
   # Validate present override columns up front so a bad column fails clearly here
-  # rather than as an opaque FFmpeg error mid-batch (M11 parity lesson).
+  # rather than as an opaque FFmpeg error mid-batch (M11 parity lesson). An `fps`
+  # column may be character (an FFmpeg rate expression) but `interval` may not —
+  # resolve_sample_fps() rejects a character interval, so type it numeric-only
+  # here (parity with extract_frame_batch()'s per-column typing).
+  if ("fps" %in% names(jobs) &&
+      !(is.numeric(jobs$fps) || is.character(jobs$fps))) {
+    cli::cli_abort("The {.field fps} column of {.arg jobs} must be numeric or character.")
+  }
+  if ("interval" %in% names(jobs) && !is.numeric(jobs$interval)) {
+    cli::cli_abort("The {.field interval} column of {.arg jobs} must be numeric.")
+  }
   for (col in intersect(c("fps", "interval"), names(jobs))) {
-    if (!(is.numeric(jobs[[col]]) || is.character(jobs[[col]]))) {
-      cli::cli_abort("The {.field {col}} column of {.arg jobs} must be numeric or character.")
-    }
     if (anyNA(jobs[[col]])) {
       cli::cli_abort("The {.field {col}} column of {.arg jobs} must not contain {.val {NA}}.")
     }
@@ -1717,8 +1724,8 @@ sample_frames_batch <- function(jobs, fps = NULL, interval = NULL,
   jobs$input <- as.character(jobs$input)
 
   # Resolve the per-row output directory: an explicit `outdir` column wins; else
-  # the scalar `outdir` (same directory for all rows, kept distinct by per-input
-  # prefixes); else one derived per input. Carried on the returned tibble.
+  # the scalar `outdir` (one directory for every row); else one derived per
+  # input. Carried on the returned tibble.
   if ("outdir" %in% names(jobs)) {
     if (!is.character(jobs$outdir) || anyNA(jobs$outdir)) {
       cli::cli_abort("The {.field outdir} column of {.arg jobs} must be character (no {.val {NA}}).")
@@ -1728,6 +1735,22 @@ sample_frames_batch <- function(jobs, fps = NULL, interval = NULL,
     jobs$outdir <- outdir
   } else {
     jobs$outdir <- derive_frames_dir(jobs$input)
+  }
+
+  # Reject colliding output patterns before running: each row's pattern is
+  # `<outdir>/<input-base>_%0Nd.<fmt>`, so two rows sharing a directory whose
+  # inputs also share a basename (e.g. a duplicated input, or `cam1/rec.mp4` +
+  # `cam2/rec.mp4` under one `outdir`) would silently overwrite each other's
+  # frames. Fail clearly here rather than lose data mid-batch (the sibling
+  # dup-input guard, adapted to the pattern level).
+  patterns <- derive_frame_pattern(jobs$input, jobs$outdir, NULL, format)
+  collisions <- unique(patterns[duplicated(patterns)])
+  if (length(collisions) > 0) {
+    cli::cli_abort(c(
+      "Two or more jobs would write to the same image sequence.",
+      "x" = "Colliding output pattern{?s}: {.file {collisions}}.",
+      "i" = "Give colliding inputs distinct {.field outdir}s or rename them."
+    ))
   }
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one image2-pattern sampling

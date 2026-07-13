@@ -7,7 +7,7 @@
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** M28   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Principles touched:** IP1   <!-- owner: plan · create/amend-via-gate; comma-separated IPn/GPn ids this milestone touches, or — -->
-- **Branch/PR:** m29-batch-separate-audio-video   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** m29-batch-separate-audio-video · https://github.com/jmgirard/tidymedia/pull/31   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 
@@ -44,33 +44,33 @@ column) **plus** the `stream` marker column (M19).
 ## Acceptance criteria
 <!-- owner: plan · create/amend-via-gate; review reads, never reinterprets -->
 
-- [ ] AC1 — `separate_audio_video_batch` is exported and is a thin fan-out over
+- [x] AC1 — `separate_audio_video_batch` is exported and is a thin fan-out over
       `ffm_batch()`: it reshapes each of N input rows into **two** single-output
       pipelines (one `0:a` → audiofile, one `0:v` → videofile) and returns a
       **2N-row** result, sharing a per-stream recipe with the scalar verb and
       gluing no command strings of its own (IP1/D007). Evidence:
       `grep '^export' NAMESPACE`; a compile test showing N input rows → 2N result
       rows / 2N commands.
-- [ ] AC2 — Jobs guards with `cli` errors: non-data-frame `jobs`, zero-row
+- [x] AC2 — Jobs guards with `cli` errors: non-data-frame `jobs`, zero-row
       `jobs`, missing `input`/`audiofile`/`videofile` column, `NA` in `input`,
       `audiofile`, or `videofile`. An optional per-row `reencode` column
       overrides the `reencode` argument, falling back when absent. Evidence: one
       test per guard; a test showing a `reencode` column flips one row's
       copy-vs-re-encode while a column-less row uses the default.
-- [ ] AC3 — Single duplicate-path guard on the reshaped `output` column rejects
+- [x] AC3 — Single duplicate-path guard on the reshaped `output` column rejects
       any collision: no two resolved output paths collide across the whole 2N-row
       table (any audiofile ↔ any videofile, any row), which subsumes within-row
       `audiofile == videofile` (both melt to identical `output` entries) (M26).
       Evidence: a test where a cross-column path collision is rejected and a test
       where within-row `audiofile == videofile` is rejected.
-- [ ] AC4 — Return-schema parity: the 2N-row result carries the same
+- [x] AC4 — Return-schema parity: the 2N-row result carries the same
       `ffm_batch()` columns as `segment_video_batch` (single `output`, `command`,
       opt-in `verified`/manifest) **plus** a `stream` marker column (`audio`/
       `video`) identifying each row's stream; row shape is one row per output
       stream (model on the `segment_video` scalar's reshape). Evidence: a test
       comparing `names()`/types against `segment_video_batch` on a matched call
       and asserting the added `stream` column and its values.
-- [ ] AC5 — Docs & housekeeping synced (roxygen `@family`/`@seealso` scalar +
+- [x] AC5 — Docs & housekeeping synced (roxygen `@family`/`@seealso` scalar +
       `ffm_batch` + batch-disambiguation prose per M24; `man/`, `NAMESPACE`,
       `_pkgdown.yml`, spelling wordlist) and `devtools::check()` shows
       `Status: OK` in `00check.log` (M23/M24/M17). Evidence: `pkgdown::check_pkgdown()`
@@ -140,3 +140,38 @@ column) **plus** the `stream` marker column (M19).
 
 ## Review
 <!-- owner: review · exclusive -->
+
+**Reviewer:** /milestone-review, 2026-07-12. PR #31 (draft). Branch 4 ahead / 0
+behind `master`; master unmoved since cut — no merge needed.
+
+### Acceptance-criteria evidence (fresh)
+
+- AC1 — PASS. `grep '^export(separate_audio_video_batch)' NAMESPACE` matches.
+  Compile: 3 input rows → 6 result rows / 6 commands, streams `audio,video`
+  interleaved; audio rows carry `-map 0:a "aN.aac"`, video rows `-map 0:v
+  "vN.mp4"`. Thin-wrapper contract verified by a test asserting batch commands
+  are byte-identical to `separate_audio_video()`'s (glues nothing, IP1/D007).
+- AC2 — PASS. Tests fire each guard: non-df, zero-row, missing `input`, missing
+  output column (`Missing column`), NA in `input`/`audiofile`/`videofile`,
+  non-logical `reencode`, NA in `reencode`. Per-row `reencode` column overrides
+  the arg on both of an input's rows; column-absent falls back to the arg
+  (default-copy test).
+- AC3 — PASS. One `reject_duplicate_outputs()` on the melted `output` rejects a
+  cross-column collision (audiofile[1] == videofile[2]) and within-row
+  `audiofile == videofile` (both → identical `output` rows). Two tests.
+- AC4 — PASS. Return carries `input`/`output`/`command` matching
+  `segment_video_batch` (`class()` equal, `output`/`command` character) plus a
+  `stream` marker with values `{audio, video}`. Parity test green.
+- AC5 — PASS. `pkgdown::check_pkgdown()` clean; `_pkgdown.yml` lists the verb;
+  `devtools::check()` 0 errors / 0 warnings / 0 notes (fresh); wordlist needs no
+  new terms (no maskable spelling NOTE — M17).
+
+### Consistency gate
+
+- `cairn_validate.py` exit 0 — all checks pass (incl. coverage complete, mirror
+  agreement, weight caps, sizing OK).
+- Coverage completeness: every AC maps to ≥1 existing task (AC1→T1,T2;
+  AC2/3/4→T2,T3; AC5→T4).
+- No `DESIGN.md` principle changed (works under IP1) → `cairn_impact` skipped.
+- Full suite: 1104 pass, 0 fail, 1 skip.
+- r-package consistency-gate: `devtools::check()` Status OK; `document()` clean.

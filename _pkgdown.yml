@@ -50,6 +50,7 @@ reference:
   - extract_audio
   - extract_audio_batch
   - separate_audio_video
+  - separate_audio_video_batch
   - convert_audio
   - convert_audio_batch
   - normalize_audio

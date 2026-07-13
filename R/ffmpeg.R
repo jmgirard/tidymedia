@@ -286,6 +286,29 @@ extract_audio <- function(infile, outfile, audio_codec = "copy", run = TRUE) {
 }
 
 
+# separate_stream_pipeline() ----------------------------------------------
+
+# Shared recipe behind separate_audio_video() and separate_audio_video_batch():
+# build one single-output pipeline for a single stream — map `0:a` (audio) or
+# `0:v` (video) out of `input` into `output`, stream-copying (`-c:a copy` /
+# `-c:v copy`) on the default lossless path (D-M06-4). Splitting one input into
+# audio + video is a fan-out, so each stream stays its own single-output
+# pipeline (D003/D007); both verbs wrap this once per stream. Command assembly
+# stays in Layer 1 (IP1/D002). Kept ABOVE the roxygen block below so
+# document() does not re-target it (M28 lesson).
+separate_stream_pipeline <- function(input, output, stream, reencode = FALSE) {
+  p <- ffm_map(ffm_files(input, output), if (stream == "audio") "0:a" else "0:v")
+  if (!reencode) {
+    p <- if (stream == "audio") {
+      ffm_codec(p, audio = "copy")
+    } else {
+      ffm_codec(p, video = "copy")
+    }
+  }
+  p
+}
+
+
 # separate_audio_video() --------------------------------------------------
 
 #' Split a media file into separate audio and video files
@@ -323,13 +346,10 @@ separate_audio_video <- function(infile, audiofile, videofile,
 
   # One input -> two outputs is a fan-out: emit two single-output pipelines
   # (D-M03-2) rather than a dual-`-map` command the linear engine can't model.
-  audio <- ffm_map(ffm_files(infile, audiofile), "0:a")
-  video <- ffm_map(ffm_files(infile, videofile), "0:v")
-  if (!reencode) {
-    # D-M06-4: lossless stream copy by default.
-    audio <- ffm_codec(audio, audio = "copy")
-    video <- ffm_codec(video, video = "copy")
-  }
+  # separate_stream_pipeline() carries the per-stream recipe shared with
+  # separate_audio_video_batch().
+  audio <- separate_stream_pipeline(infile, audiofile, "audio", reencode)
+  video <- separate_stream_pipeline(infile, videofile, "video", reencode)
   commands <- c(audio = ffm_compile(audio), video = ffm_compile(video))
 
   if (run) {
@@ -2809,6 +2829,120 @@ format_for_web_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
   ffm_batch(
     jobs,
     function(input, output, ...) format_for_web_pipeline(input, output),
+    run = run,
+    parallel = parallel,
+    ...
+  )
+}
+
+
+# separate_audio_video_batch() --------------------------------------------
+
+#' Separate Audio and Video for Many Files From a Jobs Table
+#'
+#' Split the audio and video streams of many input files from a single jobs
+#' tibble — the **batch** (table-driven) sibling of [separate_audio_video()] for
+#' when you have more than one file. Each row is one input that fans out into
+#' **two** outputs; \code{input}, \code{audiofile}, and \code{videofile} columns
+#' are all required. This is a thin wrapper over \code{\link{ffm_batch}}: every
+#' input row is reshaped into two single-output jobs (one per stream), so a jobs
+#' table of \code{N} rows returns \code{2N} rows — one reproducible compiled
+#' command per stream — sharing the same per-stream map/stream-copy pipeline as
+#' the scalar verb.
+#'
+#' @param jobs A data frame with one row per input and (at least) an
+#'   \code{input} column (source path) plus \code{audiofile} and \code{videofile}
+#'   columns naming the two destinations. All three are **required** — like
+#'   \code{\link{separate_audio_video}}, this verb derives no output paths,
+#'   because a copied stream's container extension is the instruction (it must
+#'   match the source codec). An optional \code{reencode} column (logical)
+#'   overrides the \code{reencode} argument per row; rows omitting it fall back to
+#'   the argument. Any other columns are ignored.
+#' @param reencode A logical applied to every row unless \code{jobs} carries a
+#'   \code{reencode} column: stream-copy each output losslessly (\code{FALSE},
+#'   default) or re-encode it to match the output extension (\code{TRUE}). See
+#'   \code{\link{separate_audio_video}} for the trade-off.
+#' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
+#'   or only compile them for inspection (\code{FALSE}).
+#' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
+#'   (\code{TRUE}) or sequentially (\code{FALSE}, default). See
+#'   \code{\link{ffm_batch}} for the \pkg{future} plan requirement.
+#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
+#'   \code{verify}, \code{manifest}, \code{progress}).
+#' @return A [tibble][tibble::tibble-package] with \strong{two rows per input}
+#'   (one per stream): the reshaped \code{input}, a single \code{output} path, a
+#'   \code{stream} marker (\code{"audio"} or \code{"video"}), and an added
+#'   \code{command} column — plus, when \code{run = TRUE}, a \code{success}
+#'   column (and \code{verified} / provenance manifest when requested via
+#'   \code{...}). The columns match the other \code{_batch} verbs' output plus
+#'   the \code{stream} marker. See \code{\link{ffm_batch}}.
+#' @seealso [separate_audio_video()], the scalar verb it wraps; [ffm_batch()],
+#'   the batch runner; [segment_video_batch()] for the other fan-out batch verb.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' jobs <- tibble::tibble(
+#'   input     = c(video, video),
+#'   audiofile = c("a1.aac", "a2.aac"),
+#'   videofile = c("v1.mp4", "v2.mp4")
+#' )
+#' # run = FALSE compiles two commands per input without calling FFmpeg
+#' separate_audio_video_batch(jobs, run = FALSE)
+#' @export
+separate_audio_video_batch <- function(jobs, reencode = FALSE, run = TRUE,
+                                       parallel = FALSE, ...) {
+
+  jobs <- check_batch_jobs(jobs, verb = "Audio/video separation")
+
+  # Two required output columns; this verb derives nothing (parity with the
+  # scalar, which requires both audiofile and videofile).
+  outcols <- c("audiofile", "videofile")
+  missing <- setdiff(outcols, names(jobs))
+  if (length(missing) > 0) {
+    cli::cli_abort(c(
+      "{.arg jobs} must have {.field audiofile} and {.field videofile} columns.",
+      "x" = "Missing column{?s}: {.val {missing}}."
+    ))
+  }
+  for (col in outcols) {
+    jobs[[col]] <- as.character(jobs[[col]])
+    if (anyNA(jobs[[col]])) {
+      cli::cli_abort("The {.field {col}} column of {.arg jobs} must not contain {.val {NA}}.")
+    }
+  }
+  if ("reencode" %in% names(jobs) &&
+      (!is.logical(jobs$reencode) || anyNA(jobs$reencode))) {
+    cli::cli_abort(
+      "The {.field reencode} column of {.arg jobs} must be {.val {TRUE}} or {.val {FALSE}} (no {.val {NA}})."
+    )
+  }
+  rlang::check_bool(reencode)
+
+  # Reshape N input rows -> 2N single-output rows (D003/D007): each input fans out
+  # into an audio row (0:a -> audiofile) and a video row (0:v -> videofile),
+  # tagged by a `stream` marker; interleaved audio,video per input. Melting both
+  # output columns into one `output` lets a single duplicate-path guard pool
+  # across audio and video — and catch within-row audiofile == videofile (M26).
+  n <- nrow(jobs)
+  long <- tibble::tibble(
+    input  = rep(jobs$input, each = 2L),
+    output = as.vector(rbind(jobs$audiofile, jobs$videofile)),
+    stream = rep(c("audio", "video"), times = n)
+  )
+  if ("reencode" %in% names(jobs)) long$reencode <- rep(jobs$reencode, each = 2L)
+  long <- reject_duplicate_outputs(long)
+
+  # Thin Layer-2 fan-out over ffm_batch (D007): one single-output pipeline per
+  # reshaped row, sharing separate_stream_pipeline() with separate_audio_video().
+  # A per-row `reencode` column (via `...` from pmap) overrides the scalar arg;
+  # `...` also forwards ffm_batch options (verify/manifest/...) to the runner.
+  ffm_batch(
+    long,
+    function(input, output, stream, ...) {
+      dots <- list(...)
+      re <- if ("reencode" %in% names(dots)) dots$reencode else reencode
+      separate_stream_pipeline(input, output, stream, re)
+    },
     run = run,
     parallel = parallel,
     ...

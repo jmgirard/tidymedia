@@ -36,10 +36,6 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   path across calls. Trick: subsetting a canonical 0-row schema tibble pads to N
   all-NA rows for free (`col[rep(NA_integer_, n)]` gives n type-matched NAs).
   Test parity by comparing `names()`/types of the fast vs the normal path.
-- 2026-07-12 (M20): `check_dim()` (`ffm_drawbox`/`ffm_crop`/`ffm_scale`) rejects
-  bare integers — it accepts `is_double(n=1)` or a string, not `integer`. A
-  Layer-2 verb passing table columns (e.g. a tibble's `1:2`) must coerce them to
-  double first, or valid pixel coordinates abort as a bad FFmpeg expression.
 - 2026-07-13 (M23): a public-API rename/un-export must also sync `_pkgdown.yml`
   and live vignette/example chunks — neither is caught by `devtools::check()`
   (use `pkgdown::check_pkgdown()`; a chunk calling a now-internal fn fails only at
@@ -47,3 +43,7 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
 - 2026-07-13 (M24): `devtools::build_readme()` always emits a spurious diff — README.Rmd
   examples print `system.file()` paths embedding the per-session temp libpath, which
   changes every build. Path-only churn, not a doc change; revert unless content changed.
+- 2026-07-13 (M27): FFmpeg per-stream metadata (`-metadata:s:v:0 title=`) surfacing
+  in mov stream tags is ffmpeg-version dependent (became `name` on 8.x macOS,
+  absent on Ubuntu CI) — green locally + macOS, red on Ubuntu. Don't sanity-assert
+  an injected per-stream tag's *presence*; assert only on the stripped *output*.

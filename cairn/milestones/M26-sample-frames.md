@@ -112,7 +112,7 @@ front door to per-frame coding and CV feature pipelines (M25 survey §3 K1).
       M13); route through `ffm_batch` so `success`/`verified`/manifest outputs
       match the normal schema (M19). Follow the shape of
       `extract_frame_batch()` (`R/ffmpeg.R:1356`).
-- [ ] **T4 — Tests.** Compile purity & command shape (AC1); fps/interval
+- [x] **T4 — Tests.** Compile purity & command shape (AC1); fps/interval
       mapping + XOR error (AC2); execution test counting numbered files at the
       requested rate (`skip_if` no ffmpeg, AC3); batch compile + schema-parity
       (AC4); all error branches + bare-integer acceptance (AC5).
@@ -131,6 +131,11 @@ front door to per-frame coding and CV feature pipelines (M25 survey §3 K1).
   `check_image_format`/`ensure_dir`/`derive_frames_dir` helpers in R/ffmpeg.R;
   documented. Verified execution frame counts (fps=2→4, fps=5→10, interval=1→2
   over a 2 s clip) and interval→fps reciprocal mapping.
+- 2026-07-13: T4 — scalar tests in test-ffmpeg.R (compile shape, fps/interval
+  mapping + XOR, bare-integer coercion, format/outdir/input guards, execution
+  frame count) + new test-sample-frames-batch.R (per-row parity, auto/scalar
+  outdir, column overrides, ffm_batch schema parity, guards, manifest). Full
+  suite green (149 pass, 0 fail).
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

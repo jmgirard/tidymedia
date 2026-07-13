@@ -260,6 +260,97 @@ test_that("extract_frame() compiles to a fast input-seek single-frame grab", {
   expect_match(cmd, "-frames:v 1", fixed = TRUE)
 })
 
+# sample_frames() (fixed-rate frame sampling) --------------------------------
+
+test_that("sample_frames() compiles to an fps filter into an image2 pattern", {
+  f <- make_input()
+  d <- withr::local_tempdir()
+  cmd <- sample_frames(f, d, fps = 2, run = FALSE)
+  expect_match(cmd, '-vf "fps=2"', fixed = TRUE)
+  # Output is a zero-padded printf pattern under outdir, stem from the input.
+  expect_match(cmd, "_%06d.png", fixed = TRUE)
+  base <- tools::file_path_sans_ext(basename(f))
+  expect_match(cmd, file.path(d, paste0(base, "_%06d.png")), fixed = TRUE)
+})
+
+test_that("sample_frames() maps interval to the reciprocal frame rate", {
+  f <- make_input()
+  d <- withr::local_tempdir()
+  # interval = 0.5 s between frames -> fps = 1/0.5 = 2.
+  expect_identical(
+    sample_frames(f, d, interval = 0.5, run = FALSE),
+    sample_frames(f, d, fps = 2, run = FALSE)
+  )
+  expect_match(sample_frames(f, d, interval = 4, run = FALSE),
+               '-vf "fps=0.25"', fixed = TRUE)
+})
+
+test_that("sample_frames() requires exactly one of fps/interval", {
+  f <- make_input()
+  d <- withr::local_tempdir()
+  expect_error(sample_frames(f, d, run = FALSE), "exactly one")
+  expect_error(sample_frames(f, d, fps = 2, interval = 1, run = FALSE),
+               "exactly one")
+})
+
+test_that("sample_frames() accepts a bare-integer rate (M20 coercion)", {
+  f <- make_input()
+  d <- withr::local_tempdir()
+  # 2L must not trip ffm_fps()'s check_dim() integer rejection.
+  expect_match(sample_frames(f, d, fps = 2L, run = FALSE), '-vf "fps=2"',
+               fixed = TRUE)
+})
+
+test_that("sample_frames() honors format and prefix", {
+  f <- make_input()
+  d <- withr::local_tempdir()
+  cmd <- sample_frames(f, d, fps = 1, format = "jpg", prefix = "shot",
+                       run = FALSE)
+  expect_match(cmd, file.path(d, "shot_%06d.jpg"), fixed = TRUE)
+})
+
+test_that("sample_frames() rejects a non-image format", {
+  f <- make_input()
+  d <- withr::local_tempdir()
+  expect_error(sample_frames(f, d, fps = 1, format = "mp4", run = FALSE),
+               "image format")
+})
+
+test_that("sample_frames() rejects a non-positive rate", {
+  f <- make_input()
+  d <- withr::local_tempdir()
+  expect_error(sample_frames(f, d, fps = 0, run = FALSE), "positive")
+  expect_error(sample_frames(f, d, interval = -1, run = FALSE), "positive")
+})
+
+test_that("sample_frames() rejects a missing input file", {
+  d <- withr::local_tempdir()
+  missing <- withr::local_tempfile(fileext = ".mp4")  # not created
+  expect_error(sample_frames(missing, d, fps = 1), "exist")
+})
+
+test_that("sample_frames() aborts on an uncreatable output directory", {
+  f <- make_input()
+  # A path *under* an existing file cannot be created as a directory.
+  blocker <- make_input()
+  expect_error(sample_frames(f, file.path(blocker, "sub"), fps = 1,
+                             run = FALSE),
+               "directory")
+})
+
+test_that("sample_frames() writes a numbered sequence at the requested rate", {
+  skip_if_no_ffmpeg()
+  v <- make_test_video()  # 2 s at 10 fps
+  d <- withr::local_tempdir()
+  sample_frames(v, d, fps = 2)
+  files <- sort(list.files(d, pattern = "\\.png$"))
+  # 2 fps over 2 s -> ~4 frames (allow the boundary +/- 1).
+  expect_gte(length(files), 3)
+  expect_lte(length(files), 5)
+  # Zero-padded, sequential numbering starting at 1.
+  expect_match(files[[1]], "_000001\\.png$")
+})
+
 test_that("separate_audio_video() emits two single-output mapped commands", {
   f <- make_input()
   cmds <- separate_audio_video(f, "a.aac", "v.mp4", run = FALSE)

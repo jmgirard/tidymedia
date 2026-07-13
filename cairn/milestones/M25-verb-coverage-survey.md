@@ -3,7 +3,7 @@
      Per-section owners are tagged below. -->
 # M25: Verb coverage survey (research-domain gap analysis)
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Principles touched:** GP1   <!-- owner: plan · create/amend-via-gate; comma-separated IPn/GPn ids this milestone touches, or — -->
@@ -84,22 +84,22 @@ its content and the ROADMAP diff.)
 <!-- owner: plan (create) / implement (check-off, minor edits); substantive
      change is amend-via-gate -->
 
-- [ ] T1: Enumerate the current Layer 2 task-verb surface from `NAMESPACE`
+- [x] T1: Enumerate the current Layer 2 task-verb surface from `NAMESPACE`
       (excluding `ffm_*`, metadata, program-management, and reexports) and classify
       each verb by pipeline stage into a "have" table. Cross-check the set against
       `grep '^export' NAMESPACE`.
-- [ ] T2: Model the behavioral/affective-science media-preprocessing pipeline as
+- [x] T2: Model the behavioral/affective-science media-preprocessing pipeline as
       ordered stages (e.g. ingest/standardize → trim/segment → anonymize →
       extract frames/audio → normalize → compare/assemble) and, per stage, list the
       verbs a researcher needs — the "want" model. Analog tools may be cited as
       evidence of a need but the framing stays domain-anchored (Scope: Out).
-- [ ] T3: Diff want vs have → gap list. Assign each gap a `keep | refuse | defer`
+- [x] T3: Diff want vs have → gap list. Assign each gap a `keep | refuse | defer`
       verdict with a one-line rationale; refusals cite GP1 / D001. Reconcile the
       existing region-blur candidate into this list.
-- [ ] T4: Write `cairn/references/verb-coverage-survey-M25.md` (have table, pipeline
+- [x] T4: Write `cairn/references/verb-coverage-survey-M25.md` (have table, pipeline
       stages, gap list with dispositions) and add it to `cairn/references/INDEX.md`
       under "Working artifacts".
-- [ ] T5: Add prioritized candidate rows to `cairn/ROADMAP.md` for the keep/defer
+- [x] T5: Add prioritized candidate rows to `cairn/ROADMAP.md` for the keep/defer
       gaps; edit/replace the region-blur row so it is not duplicated; commit the doc
       + INDEX + ROADMAP together.
 
@@ -107,6 +107,12 @@ its content and the ROADMAP diff.)
 <!-- owner: any skill · append-only; one line per entry; absolute dates -->
 
 - 2026-07-13: created by /milestone-plan.
+- 2026-07-13: set in-progress; cut branch m25-verb-coverage-survey.
+- 2026-07-13: T1–T5 — wrote verb-coverage-survey-M25.md (18 task verbs in a stage
+  map; 9-stage research pipeline; gap list with 2 keep / 3 defer / 5 refuse
+  dispositions); indexed it; added K1/K2/D2/D3 candidate rows + reconciled the
+  region-blur row (no duplicate). Have-table verified an exact match to NAMESPACE
+  task verbs; ROADMAP 25 lines (<60).
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local; promote

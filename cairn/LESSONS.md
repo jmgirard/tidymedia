@@ -9,13 +9,6 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   input, or same-basename inputs under one shared `outdir`. Guard at the
   resolved-path level (`anyDuplicated(patterns)`), not just the input level; the
   older `*_batch` verbs only rejected duplicated inputs.
-- 2026-07-12 (M13): when a scalar verb keeps its per-value validation *inside* a
-  shared `*_pipeline()` helper (via `check_dim`/`check_token`/`ffm_files`), a
-  batch sibling that reuses the helper inherits per-element parity for free —
-  its front door only needs column type/NA guards, not re-implemented value
-  checks. Contrast M11's `extract_frames()`, which had to duplicate finite/whole
-  checks because `frame_pipeline()` did *not* contain them. So: extract the
-  scalar body into a shared pipeline before writing the batch sibling.
 - 2026-07-12 (M17): `devtools::check()` can print "0 notes" while raw `R CMD
   check` shows `Status: 1 NOTE` — the `tests/spelling.Rout` comparison NOTE for
   new technical terms is masked by the devtools summary. Run
@@ -46,3 +39,8 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   to the helper and drops the original's `.Rd` — `document()` warns "Deleting
   <fn>.Rd". Put the extracted helper ABOVE the roxygen block, not between it and
   the function.
+- 2026-07-12 (M30): a `*_batch` verb's jobs tibble keys on `input`/`output`
+  *columns* (via `check_batch_jobs`), NOT the scalar verb's `infile`/`outfile`
+  *argument* names — an easy mismatch in vignette/example chunks that errors only
+  at build. Render vignettes with the ffmpeg/ffprobe/mediainfo binaries masked
+  off PATH (`Sys.which()==""`) to reproduce the CI-absent build and catch it.

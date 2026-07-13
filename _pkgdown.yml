@@ -48,16 +48,20 @@ reference:
   - sample_frames
   - sample_frames_batch
   - extract_audio
+  - extract_audio_batch
   - separate_audio_video
   - convert_audio
+  - convert_audio_batch
   - normalize_audio
   - normalize_audio_batch
   - crop_video
+  - crop_video_batch
   - anonymize_video
   - anonymize_video_batch
   - strip_metadata
   - strip_metadata_batch
   - format_for_web
+  - format_for_web_batch
   - standardize_video
   - standardize_video_batch
   - segment_video

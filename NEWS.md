@@ -7,6 +7,13 @@
   front door to per-frame coding and computer-vision feature pipelines.
   `sample_frames_batch()` does the same across many videos from a jobs table.
 
+* Batch (`_batch`) siblings for the remaining single-input transform verbs:
+  `extract_audio_batch()`, `convert_audio_batch()`, `crop_video_batch()`, and
+  `format_for_web_batch()` process many files from one jobs table, each a thin
+  wrapper over `ffm_batch()`. The audio verbs require an `output` column; the
+  video verbs auto-name outputs (`_cropped`, `_web.mp4`) when it is absent, and
+  all four reject two rows that resolve to the same output path.
+
 ## Standardized function and argument names
 
 The public API was renamed to a single, predictable scheme. These are breaking

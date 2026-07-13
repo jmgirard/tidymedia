@@ -249,22 +249,6 @@ ensure_dir <- function(dir, arg = rlang::caller_arg(dir),
 
 # extract_audio() ---------------------------------------------------------
 
-#' Extract the audio stream from a media file
-#'
-#' @param infile A string containing the path to a media file.
-#' @param outfile A string containing the path of the audio file to write.
-#' @param audio_codec A string naming the audio codec for the output stream.
-#'   (default = \code{"copy"}, i.e. remux without re-encoding)
-#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
-#'   or return the compiled command without running it (\code{FALSE}).
-#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
-#' @seealso [ffm_drop()] and [ffm_codec()], the builders it wraps;
-#'   [convert_audio()] to re-encode the extracted audio.
-#' @family task verb functions
-#' @examples
-#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' extract_audio(video, "audio.aac", run = FALSE)
-#' @export
 # Shared recipe behind extract_audio() and extract_audio_batch(): map the audio
 # stream out (dropping video), applying `audio_codec` (default "copy" =
 # stream-copy, lossless). Holding it here gives the batch sibling per-row parity
@@ -275,6 +259,23 @@ extract_audio_pipeline <- function(input, output, audio_codec = "copy") {
   ffm_drop(p, "video")
 }
 
+#' Extract the audio stream from a media file
+#'
+#' @param infile A string containing the path to a media file.
+#' @param outfile A string containing the path of the audio file to write.
+#' @param audio_codec A string naming the audio codec for the output stream.
+#'   (default = \code{"copy"}, i.e. remux without re-encoding)
+#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
+#'   or return the compiled command without running it (\code{FALSE}).
+#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @seealso [ffm_drop()] and [ffm_codec()], the builders it wraps;
+#'   [convert_audio()] to re-encode the extracted audio;
+#'   [extract_audio_batch()] for the many-file form.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' extract_audio(video, "audio.aac", run = FALSE)
+#' @export
 extract_audio <- function(infile, outfile, audio_codec = "copy", run = TRUE) {
 
   check_file_exists(infile)
@@ -343,6 +344,23 @@ separate_audio_video <- function(infile, audiofile, videofile,
 
 # convert_audio() ---------------------------------------------------------
 
+# Shared recipe behind convert_audio() and convert_audio_batch(): map the audio
+# stream out and either encode at highest VBR quality (`format = NULL`, the
+# extension picks the codec) or pin `-c:a` to `format`. The per-value
+# check_string(format) lives here so the batch sibling inherits it per row
+# (M13); command assembly stays in Layer 1 (IP1/D002).
+convert_audio_pipeline <- function(input, output, format = NULL) {
+  p <- ffm_files(input, output)
+  p <- ffm_map(p, "a")
+  if (is.null(format)) {
+    p <- ffm_output_options(p, "-q:a 0")
+  } else {
+    rlang::check_string(format)
+    p <- ffm_codec(p, audio = format)
+  }
+  p
+}
+
 #' Extract or convert a media file's audio track
 #'
 #' Maps the audio stream of \code{infile} into \code{outfile}. By default
@@ -361,30 +379,14 @@ separate_audio_video <- function(infile, audiofile, videofile,
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @seealso [ffm_codec()] and [ffm_map()], the builders it wraps;
-#'   [extract_audio()] to copy audio without re-encoding.
+#'   [extract_audio()] to copy audio without re-encoding;
+#'   [convert_audio_batch()] for the many-file form.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' convert_audio(video, "audio.mp3", run = FALSE)
 #' convert_audio(video, "audio.m4a", format = "aac", run = FALSE)
 #' @export
-# Shared recipe behind convert_audio() and convert_audio_batch(): map the audio
-# stream out and either encode at highest VBR quality (`format = NULL`, the
-# extension picks the codec) or pin `-c:a` to `format`. The per-value
-# check_string(format) lives here so the batch sibling inherits it per row
-# (M13); command assembly stays in Layer 1 (IP1/D002).
-convert_audio_pipeline <- function(input, output, format = NULL) {
-  p <- ffm_files(input, output)
-  p <- ffm_map(p, "a")
-  if (is.null(format)) {
-    p <- ffm_output_options(p, "-q:a 0")
-  } else {
-    rlang::check_string(format)
-    p <- ffm_codec(p, audio = format)
-  }
-  p
-}
-
 convert_audio <- function(infile, outfile, format = NULL, run = TRUE) {
 
   check_file_exists(infile)
@@ -394,6 +396,17 @@ convert_audio <- function(infile, outfile, format = NULL, run = TRUE) {
 }
 
 # crop_video() ------------------------------------------------------------
+
+# Shared recipe behind crop_video() and crop_video_batch(): a crop filter to the
+# requested rectangle mapping every stream through. ffm_crop() carries the
+# per-value dimension guards, so the batch sibling inherits them per row (M13);
+# command assembly stays in Layer 1 (IP1/D002).
+crop_video_pipeline <- function(input, output, width, height,
+                                x = "(in_w-out_w)/2", y = "(in_h-out_h)/2") {
+  p <- ffm_files(input, output)
+  p <- ffm_crop(p, width = width, height = height, x = x, y = y)
+  ffm_map(p, "0")
+}
 
 #' Crop a video to a rectangular region
 #'
@@ -408,23 +421,13 @@ convert_audio <- function(infile, outfile, format = NULL, run = TRUE) {
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
-#' @seealso [ffm_crop()], the builder it wraps.
+#' @seealso [ffm_crop()], the builder it wraps;
+#'   [crop_video_batch()] for the many-file form.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' crop_video(video, "cropped.mp4", width = 160, height = 120, run = FALSE)
 #' @export
-# Shared recipe behind crop_video() and crop_video_batch(): a crop filter to the
-# requested rectangle mapping every stream through. ffm_crop() carries the
-# per-value dimension guards, so the batch sibling inherits them per row (M13);
-# command assembly stays in Layer 1 (IP1/D002).
-crop_video_pipeline <- function(input, output, width, height,
-                                x = "(in_w-out_w)/2", y = "(in_h-out_h)/2") {
-  p <- ffm_files(input, output)
-  p <- ffm_crop(p, width = width, height = height, x = x, y = y)
-  ffm_map(p, "0")
-}
-
 crop_video <- function(infile, outfile, width, height,
                        x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
                        run = TRUE) {
@@ -438,24 +441,6 @@ crop_video <- function(infile, outfile, width, height,
 
 # format_for_web() --------------------------------------------------------
 
-#' Re-encode a video for web playback
-#'
-#' Re-encode a video into a widely compatible, web-friendly form (H.264 video
-#' with \code{yuv420p} and \code{+faststart}, AAC audio), padding odd
-#' dimensions down to even values as required by the codec.
-#'
-#' @param infile A string containing the path to a video file.
-#' @param outfile A string containing the path of the video file to write.
-#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
-#'   or return the compiled command without running it (\code{FALSE}).
-#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
-#' @seealso [ffm_codec()] and [ffm_pixel_format()], among the builders it wraps;
-#'   [standardize_video()] for a configurable re-encode.
-#' @family task verb functions
-#' @examples
-#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' format_for_web(video, "web.mp4", run = FALSE)
-#' @export
 # Shared recipe behind format_for_web() and format_for_web_batch(): the fixed
 # web-delivery re-encode (H.264 + yuv420p + AAC + faststart), padding odd
 # dimensions down to even as the codec requires. No per-row knobs — every input
@@ -468,6 +453,25 @@ format_for_web_pipeline <- function(input, output) {
   ffm_output_options(p, "-movflags +faststart")
 }
 
+#' Re-encode a video for web playback
+#'
+#' Re-encode a video into a widely compatible, web-friendly form (H.264 video
+#' with \code{yuv420p} and \code{+faststart}, AAC audio), padding odd
+#' dimensions down to even values as required by the codec.
+#'
+#' @param infile A string containing the path to a video file.
+#' @param outfile A string containing the path of the video file to write.
+#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
+#'   or return the compiled command without running it (\code{FALSE}).
+#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @seealso [ffm_codec()] and [ffm_pixel_format()], among the builders it wraps;
+#'   [standardize_video()] for a configurable re-encode;
+#'   [format_for_web_batch()] for the many-file form.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' format_for_web(video, "web.mp4", run = FALSE)
+#' @export
 format_for_web <- function(infile, outfile, run = TRUE) {
 
   check_file_exists(infile)
@@ -2696,8 +2700,8 @@ derive_web_names <- function(input) {
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' jobs <- tibble::tibble(input = c(video, video), width = c(160, 80),
-#'                        height = c(120, 60))
+#' jobs <- tibble::tibble(input = c(video, video), output = c("a.mp4", "b.mp4"),
+#'                        width = c(160, 80), height = c(120, 60))
 #' crop_video_batch(jobs, run = FALSE)
 #' @export
 crop_video_batch <- function(jobs, width = NULL, height = NULL,

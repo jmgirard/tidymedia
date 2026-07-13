@@ -3,7 +3,7 @@
      Per-section owners are tagged below. -->
 # M28: Batch siblings for single-in/single-out verbs
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** high   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Principles touched:** IP1   <!-- owner: plan · create/amend-via-gate; comma-separated IPn/GPn ids this milestone touches, or — -->
@@ -109,7 +109,7 @@ and full doc/housekeeping sync.
       override column vs. default fallback for knobbed verbs (AC4), and
       fast/normal schema parity against an existing `_batch` verb (AC5).
       Execution tests `skip_if` ffmpeg absent (D004); compilation tests stay pure.
-- [ ] T4 — Docs & housekeeping: roxygen for all four (`@family`, `@seealso`
+- [x] T4 — Docs & housekeeping: roxygen for all four (`@family`, `@seealso`
       scalar + `ffm_batch`, batch-disambiguation prose per M24), `document()`,
       confirm `NAMESPACE`, sync `_pkgdown.yml`, `spelling::update_wordlist()`,
       `build_readme()` only if content changed (M24 path-churn caveat), then
@@ -122,6 +122,7 @@ and full doc/housekeeping sync.
 - 2026-07-12: T1 — extracted extract_audio/convert_audio/crop_video/format_for_web `_pipeline()` helpers; scalar verbs delegate; all 119 test-ffmpeg.R tests green (compile-preserving).
 - 2026-07-12: T2 — added the four `_batch` front doors + shared jobs guards (`check_batch_jobs`/`reject_duplicate_outputs`/`check_batch_string_col`). Audio verbs require explicit `output`; crop derives `_cropped`, web derives `_web.mp4`. Smoke-tested: compile parity holds for all four; per-row override columns work.
 - 2026-07-12: T3 — four test files (82 tests): compile-parity golden strings, 5 jobs guards each incl. M26 duplicate-output, per-row override columns, schema parity, binary-gated execution+verify. All green (0 fail/warn/skip locally).
+- 2026-07-12: T4 — document() (man/ + NAMESPACE, 4 new exports); `_pkgdown.yml` rows; NEWS entry; wordlist +transcode. Fixed a self-colliding crop example. `devtools::check()` Status: OK (0/0/0); `pkgdown::check_pkgdown()` clean. Status → review.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

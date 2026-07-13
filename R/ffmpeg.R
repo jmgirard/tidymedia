@@ -286,6 +286,29 @@ extract_audio <- function(infile, outfile, audio_codec = "copy", run = TRUE) {
 }
 
 
+# separate_stream_pipeline() ----------------------------------------------
+
+# Shared recipe behind separate_audio_video() and separate_audio_video_batch():
+# build one single-output pipeline for a single stream — map `0:a` (audio) or
+# `0:v` (video) out of `input` into `output`, stream-copying (`-c:a copy` /
+# `-c:v copy`) on the default lossless path (D-M06-4). Splitting one input into
+# audio + video is a fan-out, so each stream stays its own single-output
+# pipeline (D003/D007); both verbs wrap this once per stream. Command assembly
+# stays in Layer 1 (IP1/D002). Kept ABOVE the roxygen block below so
+# document() does not re-target it (M28 lesson).
+separate_stream_pipeline <- function(input, output, stream, reencode = FALSE) {
+  p <- ffm_map(ffm_files(input, output), if (stream == "audio") "0:a" else "0:v")
+  if (!reencode) {
+    p <- if (stream == "audio") {
+      ffm_codec(p, audio = "copy")
+    } else {
+      ffm_codec(p, video = "copy")
+    }
+  }
+  p
+}
+
+
 # separate_audio_video() --------------------------------------------------
 
 #' Split a media file into separate audio and video files
@@ -323,13 +346,10 @@ separate_audio_video <- function(infile, audiofile, videofile,
 
   # One input -> two outputs is a fan-out: emit two single-output pipelines
   # (D-M03-2) rather than a dual-`-map` command the linear engine can't model.
-  audio <- ffm_map(ffm_files(infile, audiofile), "0:a")
-  video <- ffm_map(ffm_files(infile, videofile), "0:v")
-  if (!reencode) {
-    # D-M06-4: lossless stream copy by default.
-    audio <- ffm_codec(audio, audio = "copy")
-    video <- ffm_codec(video, video = "copy")
-  }
+  # separate_stream_pipeline() carries the per-stream recipe shared with
+  # separate_audio_video_batch().
+  audio <- separate_stream_pipeline(infile, audiofile, "audio", reencode)
+  video <- separate_stream_pipeline(infile, videofile, "video", reencode)
   commands <- c(audio = ffm_compile(audio), video = ffm_compile(video))
 
   if (run) {

@@ -88,7 +88,7 @@ column) **plus** the `stream` marker column (M19).
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [ ] T1 — Extract a **per-stream** shared recipe from `separate_audio_video`
+- [x] T1 — Extract a **per-stream** shared recipe from `separate_audio_video`
       (R/ffmpeg.R:316), e.g. `separate_stream_pipeline(input, output, stream,
       reencode)`: map `0:a` + optional `-c:a copy` when `stream == "audio"`, map
       `0:v` + optional `-c:v copy` when `stream == "video"`. The scalar calls it
@@ -123,6 +123,9 @@ column) **plus** the `stream` marker column (M19).
   2N-row return + `stream` marker; `audiofile`/`videofile` required columns (no
   derivation); single `anyDuplicated()` guard on the reshaped `output`. Amended
   Goal/Scope/AC1–AC4/T1–T3 (amend-via-gate); T1 recipe made per-stream.
+- 2026-07-12: T1 — extracted `separate_stream_pipeline(input, output, stream,
+  reencode)` above the scalar's roxygen block; scalar now calls it twice.
+  Compile-preserving (test-ffmpeg.R: 119 pass, 0 fail).
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

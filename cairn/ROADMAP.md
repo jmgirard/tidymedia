@@ -8,7 +8,7 @@ _Last hygiene check: 2026-07-12 (M29 done)_
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M30 | Vignette overhaul (quality/clarity/realism + fuller verb coverage) | planned | — | normal | milestones/M30-vignette-overhaul.md |
+| M30 | Vignette overhaul (quality/clarity/realism + fuller verb coverage) | in-progress | — | normal | milestones/M30-vignette-overhaul.md |
 | M29 | Batch sibling for `separate_audio_video` (fan-out) | done | M28 | normal | milestones/archive/M29-batch-separate-audio-video.md |
 | M28 | Batch siblings for single-in/single-out verbs (`extract_audio`/`convert_audio`/`crop_video`/`format_for_web` `_batch`) | done | — | high | milestones/archive/M28-batch-single-io-verbs.md |
 | M27 | Metadata scrubbing for de-identification (`strip_metadata` + `_batch`) | done | — | high | milestones/archive/M27-strip-metadata.md |

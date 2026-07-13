@@ -3,11 +3,11 @@
      Per-section owners are tagged below. -->
 # M30: Vignette overhaul — quality, clarity, realism + fuller verb coverage
 
-- **Status:** planned   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate -->
 - **Principles touched:** IP1, GP1   <!-- worked under (docs restate them faithfully; add/change none) -->
-- **Branch/PR:** —   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** m30-vignette-overhaul   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 

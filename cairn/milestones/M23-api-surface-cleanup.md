@@ -51,33 +51,33 @@ public surface with no compatibility shims.
 ## Acceptance criteria
 <!-- owner: plan · create/amend-via-gate; review reads, never reinterprets -->
 
-- [ ] **AC1** All 11 renames applied: `NAMESPACE` exports the new names
+- [x] **AC1** All 11 renames applied: `NAMESPACE` exports the new names
       (`ffmpeg_codecs`, `ffmpeg_encoders`, `convert_audio`, `get_sample_rate`,
       `get_frame_rate`, `segment_video_batch`, `standardize_video_batch`,
       `normalize_audio_batch`, `anonymize_video_batch`, `extract_frame_batch`)
       and a repo-wide grep finds **zero** occurrences of every old name in
       `R/`, `tests/`, `vignettes/`, `README.Rmd`. `(RB tripwire: irreversible-api)`
-- [ ] **AC2** `convert_audio(infile, outfile, format = NULL, run = TRUE)`: with
+- [x] **AC2** `convert_audio(infile, outfile, format = NULL, run = TRUE)`: with
       `format = NULL` the compiled command is byte-for-byte identical to the old
       `audio_as_mp3` (map `a`, `-q:a 0`, container from the outfile extension); a
       non-`NULL` `format` pins the output format/codec. Verified by a
       compile-level test covering both branches.
-- [ ] **AC3** Argument harmonization complete: `audio_codec`/`video_codec`
+- [x] **AC3** Argument harmonization complete: `audio_codec`/`video_codec`
       replace `acodec`/`vcodec` (`extract_audio`, `standardize_video[_batch]`,
       `anonymize_video[_batch]`), and `start`/`end` replace `ts_start`/`ts_stop`
       (`segment_video[_batch]`), including `@param` docs, defaults, and job-table
       column names; no old arg name remains. Verified by signature checks +
       updated tests. `(RB tripwire: irreversible-api)`
-- [ ] **AC4** Reexport/un-export cleanup done: `NAMESPACE` no longer exports
+- [x] **AC4** Reexport/un-export cleanup done: `NAMESPACE` no longer exports
       `enquo`, `enquos`, `as_label`, `as_name`, `:=`, `pad_integers`,
       `convert_fractions`; it still exports `.data`; `pad_integers` and
       `convert_fractions` remain callable internally (their internal call sites
       still resolve). `(RB tripwire: irreversible-api)`
-- [ ] **AC5** `devtools::document()` regenerates `man/` + `NAMESPACE`; the full
+- [x] **AC5** `devtools::document()` regenerates `man/` + `NAMESPACE`; the full
       test suite passes with the renamed identifiers; `devtools::check()` is
       clean — confirm `Status: OK` in `00check.log` (not just the devtools
       summary; `spelling::update_wordlist()` run first — LESSONS M17).
-- [ ] **AC6** `vignettes/*.Rmd` (esp. `batch.Rmd`) and `README.Rmd` reference
+- [x] **AC6** `vignettes/*.Rmd` (esp. `batch.Rmd`) and `README.Rmd` reference
       only the new names/args; `devtools::build_readme()` regenerates `README.md`.
 
 ## Coverage
@@ -137,3 +137,49 @@ public surface with no compatibility shims.
 
 ## Review
 <!-- owner: review · exclusive -->
+
+**Reviewed 2026-07-12 · PR #25 · branch `m23-api-surface-cleanup` @ master (no drift; master had not moved since branch cut).**
+
+### Acceptance-criterion evidence (fresh)
+
+- **AC1 ✓** — `NAMESPACE` exports all 10 new names (`ffmpeg_codecs`, `ffmpeg_encoders`,
+  `convert_audio`, `get_sample_rate`, `get_frame_rate`, `segment_video_batch`,
+  `standardize_video_batch`, `normalize_audio_batch`, `anonymize_video_batch`,
+  `extract_frame_batch`); repo-wide `git grep` over `R/ tests/ vignettes/ README.Rmd`
+  finds zero old names (the only `acodec` hits are the unrelated local ffprobe
+  helper in test-ffmpeg.R:249/253, not the renamed arg).
+- **AC2 ✓** — compiled: `format = NULL` → `… -q:a 0 -map a "a.mp3"` (byte-identical to
+  old `audio_as_mp3`); `format = "aac"` → `… -codec:a aac -map a "a.m4a"` (no `-q:a`).
+  Covered by two new tests in test-ffmpeg.R.
+- **AC3 ✓** — signatures/params/columns use `audio_codec`/`video_codec` and `start`/`end`;
+  no `acodec`/`vcodec`/`ts_start`/`ts_stop` remain; jobs-table column reads
+  (`pick()`, `str_cols`) and cli error strings updated. Verified by grep + full suite.
+- **AC4 ✓** — `NAMESPACE` no longer exports `enquo`/`enquos`/`as_label`/`as_name`/`:=`/
+  `pad_integers`/`convert_fractions`; still exports `.data` (and `importFrom(rlang,.data)`).
+  Internal callers of `pad_integers` (ffmpeg.R) and `convert_fractions` resolve —
+  full suite passes.
+- **AC5 ✓** — fresh `devtools::check()` → **Status: OK (0 errors / 0 warnings / 0 notes)**;
+  spelling.Rout comparison OK; `devtools::test()` → 873 tests, 0 fail / 0 warn / 0 skip
+  (ffmpeg present, execution tests ran).
+- **AC6 ✓** — `vignettes/*.Rmd` + `README.Rmd` reference only new names; `metadata.Rmd`
+  reframed to drop the now-internal `convert_fractions()` chunk; `build_readme()` run
+  (the only working-tree README delta on rebuild is a volatile tempdir path in embedded
+  output — reverted, not a content change).
+
+### Consistency gate
+
+- `cairn_validate.py` → all checks pass (exit 0).
+- Coverage completeness: AC1–AC6 all map to existing tasks T1–T7. ✓
+- `devtools::document()` → no diff. ✓
+- Principle impact: DESIGN.md unchanged on branch; "Principles touched: IP1" reflects
+  *working under / reinforcing* IP1 (the `ffm_*` layer prefix), not a text change → no
+  `cairn_impact` sweep needed.
+- pkgdown: `_pkgdown.yml` reference index synced to the renamed topics (dropped the two
+  now-internal helpers, removed the emptied Utilities section); `pkgdown::check_pkgdown()`
+  → "No problems found."
+- NEWS.md: added a "Standardized function and argument names" breaking-changes entry
+  under the development version (no milestone numbers).
+
+### Independent review
+
+(three fresh-context lenses + scorer — findings recorded below)

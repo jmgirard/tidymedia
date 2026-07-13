@@ -12,30 +12,82 @@ on top of [FFmpeg](https://ffmpeg.org/) and
 format standardization, and metadata extraction for research and
 data-science work.
 
+Throughout this vignette we use a tiny sample clip that ships with the
+package:
+
+``` r
+
+video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+```
+
+## Start with a task verb
+
+Most preprocessing jobs are a single call to a **task verb**. Say you
+need the audio track of a recording — to hand to a transcription tool,
+for example.
+[`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
+does exactly that:
+
+``` r
+
+extract_audio(video, "audio.m4a")
+```
+
+Every task verb runs FFmpeg immediately and returns the path it wrote.
+To see the command *without* running anything, pass `run = FALSE`; the
+verb compiles the exact FFmpeg invocation and returns it as a string you
+can inspect, log, or save:
+
+``` r
+
+extract_audio(video, "audio.m4a", run = FALSE)
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -vn \"audio.m4a\""
+```
+
+That reproducible command is the thread running through the whole
+package: a pipeline is a value you can examine before you commit to it.
+Cropping works the same way — describe the job, inspect the command,
+then run it:
+
+``` r
+
+crop_video(video, "cropped.mp4", width = 160, height = 120, run = FALSE)
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -map 0 \"cropped.mp4\""
+```
+
+For preprocessing a whole folder of files at once, every task verb has a
+batch sibling
+([`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md),
+[`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md),
+…); see
+[`vignette("batch")`](https://jmgirard.github.io/tidymedia/articles/batch.md).
+For an end-to-end research pipeline that chains many verbs together, see
+[`vignette("workflow")`](https://jmgirard.github.io/tidymedia/articles/workflow.md).
+
 ## The three layers
 
-tidymedia is organized into three layers, from lowest to highest level:
+Task verbs are the top of three layers, from highest level to lowest:
 
+- **Layer 2 — the task verbs.** Functions like
+  [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
+  and
+  [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md)
+  are thin wrappers for common jobs. This is where most work happens;
+  you may never need to look below it.
+- **Layer 1 — the pipeline builder.** The `ffm_*` functions assemble an
+  FFmpeg command step by step. Every task verb is built from these, and
+  all of the quoting, option ordering, and copy-vs-re-encode logic lives
+  here. Reach for the builder when no single task verb fits.
 - **Layer 0 — the escape hatch.**
   [`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md),
   [`ffprobe()`](https://jmgirard.github.io/tidymedia/reference/ffprobe.md),
   and
   [`mediainfo()`](https://jmgirard.github.io/tidymedia/reference/mediainfo.md)
   pass a raw argument string straight to the corresponding command-line
-  tool. Use these when you need something tidymedia does not wrap.
-- **Layer 1 — the pipeline builder.** The `ffm_*` functions assemble an
-  FFmpeg command step by step. All of the quoting, option ordering, and
-  copy-vs-re-encode logic lives here.
-- **Layer 2 — the task verbs.** Functions like
-  [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
-  and
-  [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
-  are thin wrappers over the builder for common jobs. See
-  [`vignette("batch")`](https://jmgirard.github.io/tidymedia/articles/batch.md)
-  for processing many files at once.
+  tool, for anything tidymedia does not wrap.
 
-This vignette focuses on Layer 1, the builder, which is the heart of the
-package.
+The rest of this vignette drops down to Layer 1, the builder that every
+task verb is made of.
 
 ## Building a pipeline
 
@@ -43,19 +95,11 @@ Every pipeline starts with
 [`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md) (an
 alias of
 [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md)),
-which names the input and output files. Throughout this vignette we use
-a tiny sample clip that ships with the package:
-
-``` r
-
-video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-```
-
-You then add steps with `|>`. Each `ffm_*` verb records an instruction;
-nothing runs until you ask it to. Calling
+which names the input and output files. You then add steps with `|>`.
+Each `ffm_*` verb records an instruction; nothing runs until you ask it
+to. Calling
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md)
-turns the pipeline into the exact FFmpeg command it represents — a
-reproducible string you can inspect, log, or run:
+turns the pipeline into the exact FFmpeg command it represents:
 
 ``` r
 
@@ -159,7 +203,9 @@ ffmpeg("-version")[1]
 
 ## Where to next
 
+- [`vignette("workflow")`](https://jmgirard.github.io/tidymedia/articles/workflow.md)
+  — an end-to-end research preprocessing pipeline.
+- [`vignette("batch")`](https://jmgirard.github.io/tidymedia/articles/batch.md)
+  — running a verb over many files at once.
 - [`vignette("metadata")`](https://jmgirard.github.io/tidymedia/articles/metadata.md)
   — reading container and stream metadata as tibbles.
-- [`vignette("batch")`](https://jmgirard.github.io/tidymedia/articles/batch.md)
-  — running a pipeline over many files at once.

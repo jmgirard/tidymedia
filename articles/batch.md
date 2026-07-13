@@ -48,6 +48,39 @@ Because you build the pipeline yourself, any combination of builder
 verbs is available per job. Give `.f` a `...` argument so it tolerates
 extra job columns it does not use.
 
+## Per-verb batch siblings
+
+You do not have to write `.f` by hand for the common jobs. Every task
+verb ships a `*_batch()` companion —
+[`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md),
+[`convert_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/convert_audio_batch.md),
+[`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md),
+[`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md),
+[`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md),
+and the rest — that takes a jobs tibble directly and applies the verb to
+each row:
+
+``` r
+
+jobs <- tibble::tibble(
+  input  = c(video, video),
+  output = c("session01_cropped.mp4", "session02_cropped.mp4")
+)
+
+crop_video_batch(jobs, width = 160, height = 120, run = FALSE)
+#> # A tibble: 2 × 3
+#>   input                                                        output    command
+#>   <chr>                                                        <chr>     <chr>  
+#> 1 /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 session0… "-y -i…
+#> 2 /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 session0… "-y -i…
+```
+
+When the jobs tibble has no `output` column, the transform verbs
+auto-name each output from its input (e.g. `_cropped`); either way they
+reject two rows that would resolve to the same output path.
+[`vignette("workflow")`](https://jmgirard.github.io/tidymedia/articles/workflow.md)
+chains several of these across a study folder.
+
 ## Fan-out verbs
 
 Some tasks turn one input into *many* outputs. These fan-out verbs are
@@ -108,3 +141,13 @@ ffm_batch(jobs, parallel = TRUE, .f = function(input, output, ...) {
 Every job carries its own compiled command in the returned tibble, so a
 batch run is fully reproducible: save that column and you have an exact
 record of the FFmpeg commands that produced your outputs.
+
+## Where to next
+
+- [`vignette("workflow")`](https://jmgirard.github.io/tidymedia/articles/workflow.md)
+  — an end-to-end research pipeline that applies these batch tools
+  across a study folder.
+- [`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+  — the task verbs and the builder they are made of.
+- [`vignette("metadata")`](https://jmgirard.github.io/tidymedia/articles/metadata.md)
+  — reading each file’s metadata as a tibble.

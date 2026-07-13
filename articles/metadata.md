@@ -168,3 +168,12 @@ probe_all(files)$container
 
 Files that cannot be read yield an all-`NA` row plus a warning, rather
 than aborting the whole call — so one bad file never sinks a batch.
+
+## Where to next
+
+- [`vignette("workflow")`](https://jmgirard.github.io/tidymedia/articles/workflow.md)
+  — an end-to-end research preprocessing pipeline.
+- [`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+  — the task verbs and the builder beneath them.
+- [`vignette("batch")`](https://jmgirard.github.io/tidymedia/articles/batch.md)
+  — running a verb over many files at once.

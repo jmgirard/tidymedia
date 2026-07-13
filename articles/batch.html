@@ -34,8 +34,9 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/metadata.html">Media metadata as tibbles</a></li>
+<li><a class="dropdown-item" href="../articles/workflow.html">A research preprocessing workflow</a></li>
     <li><a class="dropdown-item" href="../articles/batch.html">Batch processing</a></li>
+    <li><a class="dropdown-item" href="../articles/metadata.html">Media metadata as tibbles</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -106,13 +107,40 @@ verbs is available per job. Give <code>.f</code> a <code>...</code>
 argument so it tolerates extra job columns it does not use.</p>
 </div>
 <div class="section level2">
+<h2 id="per-verb-batch-siblings">Per-verb batch siblings<a class="anchor" aria-label="anchor" href="#per-verb-batch-siblings"></a>
+</h2>
+<p>You do not have to write <code>.f</code> by hand for the common jobs.
+Every task verb ships a <code>*_batch()</code> companion —
+<code><a href="../reference/extract_audio_batch.html">extract_audio_batch()</a></code>, <code><a href="../reference/convert_audio_batch.html">convert_audio_batch()</a></code>,
+<code><a href="../reference/crop_video_batch.html">crop_video_batch()</a></code>, <code><a href="../reference/standardize_video_batch.html">standardize_video_batch()</a></code>,
+<code><a href="../reference/normalize_audio_batch.html">normalize_audio_batch()</a></code>, and the rest — that takes a jobs
+tibble directly and applies the verb to each row:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">jobs</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
+<span>  input  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">video</span>, <span class="va">video</span><span class="op">)</span>,</span>
+<span>  output <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"session01_cropped.mp4"</span>, <span class="st">"session02_cropped.mp4"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/crop_video_batch.html">crop_video_batch</a></span><span class="op">(</span><span class="va">jobs</span>, width <span class="op">=</span> <span class="fl">160</span>, height <span class="op">=</span> <span class="fl">120</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 3</span></span></span>
+<span><span class="co">#&gt;   input                                                        output    command</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                                        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 session0… <span style="color: #949494;">"</span>-y -i…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 session0… <span style="color: #949494;">"</span>-y -i…</span></span></code></pre></div>
+<p>When the jobs tibble has no <code>output</code> column, the transform
+verbs auto-name each output from its input (e.g. <code>_cropped</code>);
+either way they reject two rows that would resolve to the same output
+path. <code><a href="../articles/workflow.html">vignette("workflow")</a></code> chains several of these across a
+study folder.</p>
+</div>
+<div class="section level2">
 <h2 id="fan-out-verbs">Fan-out verbs<a class="anchor" aria-label="anchor" href="#fan-out-verbs"></a>
 </h2>
 <p>Some tasks turn one input into <em>many</em> outputs. These fan-out
 verbs are Layer 2 wrappers built on <code><a href="../reference/ffm_batch.html">ffm_batch()</a></code>.</p>
 <p><code><a href="../reference/segment_video.html">segment_video()</a></code> cuts a file into pieces given start/stop
 timestamps, returning one row per segment:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/segment_video.html">segment_video</a></span><span class="op">(</span></span>
 <span>  <span class="va">video</span>,</span>
 <span>  start <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.5</span><span class="op">)</span>,</span>
@@ -126,7 +154,7 @@ timestamps, returning one row per segment:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> /home/runner/work/_temp/Library/tidymedia/extdata/… /home…   0.5   1   <span style="color: #949494;">"</span>-y -i…</span></span></code></pre></div>
 <p><code><a href="../reference/separate_audio_video.html">separate_audio_video()</a></code> splits a file into its audio and
 video streams, returning the two compiled commands:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/separate_audio_video.html">separate_audio_video</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"audio.aac"</span>, <span class="st">"video.mp4"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                                                                                                         audio </span></span>
 <span><span class="co">#&gt; "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -map 0:a \"audio.aac\"" </span></span>
@@ -140,7 +168,7 @@ video streams, returning the two compiled commands:</p>
 <code>parallel = TRUE</code>, which maps over jobs with <a href="https://furrr.futureverse.org/" class="external-link">furrr</a>. Parallelism follows
 whatever <a href="https://future.futureverse.org/" class="external-link">future</a> plan you
 have set, so you opt in explicitly:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://future.futureverse.org" class="external-link">future</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="va">multisession</span><span class="op">)</span></span>
 <span></span>
@@ -150,6 +178,21 @@ have set, so you opt in explicitly:</p>
 <p>Every job carries its own compiled command in the returned tibble, so
 a batch run is fully reproducible: save that column and you have an
 exact record of the FFmpeg commands that produced your outputs.</p>
+</div>
+<div class="section level2">
+<h2 id="where-to-next">Where to next<a class="anchor" aria-label="anchor" href="#where-to-next"></a>
+</h2>
+<ul>
+<li>
+<code><a href="../articles/workflow.html">vignette("workflow")</a></code> — an end-to-end research pipeline
+that applies these batch tools across a study folder.</li>
+<li>
+<code><a href="../articles/tidymedia.html">vignette("tidymedia")</a></code> — the task verbs and the builder
+they are made of.</li>
+<li>
+<code><a href="../articles/metadata.html">vignette("metadata")</a></code> — reading each file’s metadata as
+a tibble.</li>
+</ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

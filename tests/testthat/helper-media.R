@@ -98,3 +98,73 @@ probe_duration <- function(path) {
   ))
   as.numeric(out[[1]])
 }
+
+# Generate a short video (with audio) carrying known global metadata tags and a
+# 90-degree rotation display matrix, so de-identification tests can assert those
+# tags clear while the streams and rotation survive a stream copy. Two passes:
+# a lavfi source cannot both synthesize and carry a rotation matrix in one
+# output, so generate a plain clip then remux it with the rotation applied as an
+# input option and the tags written on output. Skips if ffmpeg is unavailable.
+make_tagged_video <- function(env = parent.frame()) {
+  skip_if_no_ffmpeg()
+  plain <- withr::local_tempfile(fileext = ".mp4", .local_envir = env)
+  ffmpeg(paste(
+    "-y -f lavfi -i testsrc=duration=1:size=64x64:rate=10",
+    "-f lavfi -i sine=frequency=440:duration=1",
+    sprintf('-shortest -pix_fmt yuv420p "%s"', plain)
+  ))
+  path <- withr::local_tempfile(fileext = ".mp4", .local_envir = env)
+  ffmpeg(paste(
+    sprintf('-y -display_rotation:v:0 90 -i "%s" -c copy', plain),
+    '-metadata title="Secret Study" -metadata comment="participant 007"',
+    '-metadata location="+40.7128-074.0060/"',
+    '-metadata creation_time="2020-01-02T03:04:05.000000Z"',
+    # A per-stream (video) identifying tag too, so tests can confirm the scrub
+    # clears stream-level tags, not just container-level ones. FFmpeg's mov muxer
+    # surfaces a per-stream title as a `name` stream tag.
+    '-metadata:s:v:0 title="CAM-OPERATOR-JANE"',
+    sprintf('"%s"', path)
+  ))
+  testthat::skip_if_not(file.exists(path),
+                        "tagged test video could not be generated")
+  path
+}
+
+# Probe a media file's container (format-level) metadata tags via ffprobe,
+# returning a character vector of "key=value" lines (empty if none). Used to
+# assert which tags a scrub clears. Skips if ffprobe is unavailable.
+probe_format_tags <- function(path) {
+  skip_if_no_ffprobe()
+  out <- ffprobe(sprintf(
+    '-v error -show_entries format_tags -of default=noprint_wrappers=1 "%s"',
+    path
+  ))
+  sub("^TAG:", "", out[nzchar(out)])
+}
+
+# Probe every video/audio stream's metadata tags via ffprobe, returning a
+# character vector of "key=value" lines across all streams (empty if none).
+# Used to assert a scrub clears stream-level tags, not just container-level ones.
+# Skips if ffprobe is unavailable.
+probe_stream_tags <- function(path) {
+  skip_if_no_ffprobe()
+  out <- ffprobe(sprintf(
+    '-v error -show_entries stream_tags -of default=noprint_wrappers=1 "%s"',
+    path
+  ))
+  sub("^TAG:", "", out[nzchar(out)])
+}
+
+# Probe the rotation (degrees) recorded in a video stream's display matrix side
+# data, or NA if none. Skips if ffprobe is unavailable.
+probe_rotation <- function(path) {
+  skip_if_no_ffprobe()
+  out <- ffprobe(sprintf(
+    paste('-v error -select_streams v:0',
+          '-show_entries stream_side_data=rotation',
+          '-of default=noprint_wrappers=1:nokey=1 "%s"'),
+    path
+  ))
+  out <- out[nzchar(out)]
+  if (length(out) == 0) NA_real_ else as.numeric(out[[1]])
+}

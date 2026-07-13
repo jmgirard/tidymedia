@@ -6,6 +6,7 @@ CMD
 Codec
 Codecov
 Codecs
+De
 EBU
 FFMPEG
 FFmpeg
@@ -14,6 +15,7 @@ FFmpeg’s
 FFprobe
 FFprobe's
 Homebrew
+IRB
 ITU
 LUFS
 Lifecycle
@@ -26,12 +28,14 @@ anonymization
 anonymize
 assertthat
 auditable
+bitstream
 checksums
 cli
 codec
 codecs
 concat
 dBTP
+de
 demuxer
 dev
 dmg
@@ -59,6 +63,7 @@ luma
 md
 mediainfo
 multithreading
+muxed
 muxer
 normalisation
 parseable

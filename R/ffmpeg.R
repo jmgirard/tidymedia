@@ -2033,7 +2033,7 @@ derive_stripped_names <- function(input) {
 #' file to scrub. Each row is one input; the only required column names its
 #' source. This is a thin wrapper over \code{\link{ffm_batch}}: one reproducible
 #' stream-copy strip command per input, sharing the same pipeline (and its
-#' bit-exact, metadata-dropping behaviour) as the scalar verb.
+#' bit-exact, metadata-dropping behavior) as the scalar verb.
 #'
 #' @param jobs A data frame with one row per input and (at least) an
 #'   \code{input} column (source path). An optional \code{output} column names

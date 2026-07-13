@@ -90,6 +90,8 @@ Other task verb functions:
 \code{\link[=segment_video_batch]{segment_video_batch()}},
 \code{\link[=separate_audio_video]{separate_audio_video()}},
 \code{\link[=standardize_video]{standardize_video()}},
-\code{\link[=standardize_video_batch]{standardize_video_batch()}}
+\code{\link[=standardize_video_batch]{standardize_video_batch()}},
+\code{\link[=strip_metadata]{strip_metadata()}},
+\code{\link[=strip_metadata_batch]{strip_metadata_batch()}}
 }
 \concept{task verb functions}

@@ -3,7 +3,7 @@
      Per-section owners are tagged below. -->
 # M27: Metadata scrubbing for de-identification (`strip_metadata` + `_batch`)
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** high   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Principles touched:** IP1, GP1   <!-- owner: plan · works under; adds no principle -->
@@ -116,7 +116,7 @@ via lossless stream-copy — the IRB/de-identification front door (M25 survey K2
       `standardize_video_batch()` at `R/ffmpeg.R:1794`), with column type/NA guards
       and the duplicate-resolved-path guard (M26). Add
       `tests/testthat/test-strip-metadata-batch.R` compile + guard tests (AC4).
-- [ ] **T4 — docs + gate.** Roxygen for both verbs (boundary prose + `@seealso`
+- [x] **T4 — docs + gate.** Roxygen for both verbs (boundary prose + `@seealso`
       web + `@family`); `devtools::document()`; `pkgdown::check_pkgdown()`;
       `spelling::update_wordlist()`; confirm `devtools::check()` 0/0/0 via
       `00check.log` and full `devtools::test()` green (AC5, AC6); regenerate README
@@ -140,6 +140,10 @@ via lossless stream-copy — the IRB/de-identification front door (M25 survey K2
   (`R/ffmpeg.R`) reusing the shared pipeline (byte-parity with the scalar), with a
   duplicated-*resolved*-output guard (M26 — catches repeated explicit outputs too)
   and NA guards. 31 batch tests incl. execution + `verify` forwarding (AC4).
+- 2026-07-13: T4 — `document()`; added both verbs to `_pkgdown.yml` reference
+  (M23); `pkgdown::check_pkgdown()` clean; `spelling::update_wordlist()` (+De, IRB,
+  bitstream, de, muxed); `devtools::check()` 0/0/0; full `devtools::test()` 973
+  pass / 0 fail. README unchanged (no example touched — M24). Status → review.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

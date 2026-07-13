@@ -22,10 +22,6 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   `-ar` silently resamples; document that and let a `sample_rate` arg pin `-ar`.
   A "preserves the source rate" claim is a review trap — verify output rate by
   probing (`ffprobe … stream=sample_rate`), don't assume `-af`-only is a no-op.
-- 2026-07-12 (M16): a two-pass-loudnorm accuracy test needs a high-LRA source —
-  the packaged `sample.mp4` is a steady tone (LRA 0) where single- and two-pass
-  land identically, so a "closer than single-pass" assertion ties and fails.
-  Generate loudness variation (e.g. `tremolo=f=0.2:d=0.9`) to expose the gap.
 - 2026-07-12 (M17): `devtools::check()` can print "0 notes" while raw `R CMD
   check` shows `Status: 1 NOTE` — the `tests/spelling.Rout` comparison NOTE for
   new technical terms is masked by the devtools summary. Run
@@ -47,3 +43,7 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
 - 2026-07-12 (M22): grepping for `.data` usage with double-quoted `"\.data\$"`
   anchors `$` to end-of-line, so `.data$field` never matches and the reexport
   looks unused (a false audit claim caught only at review). Use `grep -F '.data$'`.
+- 2026-07-13 (M23): a public-API rename/un-export must also sync `_pkgdown.yml`
+  and live vignette/example chunks — neither is caught by `devtools::check()`
+  (use `pkgdown::check_pkgdown()`; a chunk calling a now-internal fn fails only at
+  vignette-build). Grep `vignettes/` + roxygen `@examples` before dropping `@export`.

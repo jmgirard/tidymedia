@@ -3,11 +3,11 @@
      Per-section owners are tagged below. -->
 # M27: Metadata scrubbing for de-identification (`strip_metadata` + `_batch`)
 
-- **Status:** planned   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** high   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Principles touched:** IP1, GP1   <!-- owner: plan · works under; adds no principle -->
-- **Branch/PR:** —   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** `m27-strip-metadata`   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 <!-- owner: plan · create; a wrong goal returns to plan, never edited in place -->
@@ -96,14 +96,14 @@ via lossless stream-copy — the IRB/de-identification front door (M25 survey K2
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [ ] **T1 — scalar verb + shared pipeline.** In `R/ffmpeg.R`, add
+- [x] **T1 — scalar verb + shared pipeline.** In `R/ffmpeg.R`, add
       `strip_metadata_pipeline(input, output)` (`ffm_files` → `ffm_copy` →
       `ffm_output_options` with the three flags) and `strip_metadata(infile,
       outfile, run = TRUE)` as a thin wrapper with front-door guards
       (`check_file_exists`, `rlang::check_string`, `rlang::check_bool`) closing on
       `ffm_finish`. Write the pure compile test (AC1). Model on `format_for_web()`
       at `R/ffmpeg.R:435` and `extract_audio()` at `R/ffmpeg.R:268`.
-- [ ] **T2 — execution guard + fixture.** In a new
+- [x] **T2 — execution guard + fixture.** In a new
       `tests/testthat/test-strip-metadata.R`, build a tagged+rotated temp fixture
       from `inst/extdata/sample.mp4` (inject global tags + a rotation display
       matrix via a Layer-0 `ffmpeg()`/`ffm` call, `skip_if` no ffmpeg), run
@@ -129,6 +129,13 @@ via lossless stream-copy — the IRB/de-identification front door (M25 survey K2
   gate calls — global+chapters+`-fflags +bitexact` scrub depth, batch sibling
   included, zero-config strip-all surface; per-stream stripping ruled out to keep
   compile binary-free).
+- 2026-07-13: T1 — added `strip_metadata_pipeline()` + `strip_metadata()`
+  (`R/ffmpeg.R`) and the pure compile test (AC1). Recipe: `ffm_copy` +
+  `ffm_output_options("-map_metadata -1", "-map_chapters -1", "-fflags +bitexact")`.
+- 2026-07-13: T2 — added `make_tagged_video()`/`probe_format_tags()`/
+  `probe_rotation()` helpers and the execution guard tests (AC2, AC3). Empirically
+  confirmed: identifying tags + chapters + FFmpeg's re-added encoder/creation_time
+  all clear; A/V streams + rotation display matrix survive the copy.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

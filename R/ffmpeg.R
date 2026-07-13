@@ -446,6 +446,76 @@ format_for_web <- function(infile, outfile, run = TRUE) {
 }
 
 
+# strip_metadata() --------------------------------------------------------
+
+# Shared recipe behind strip_metadata() and strip_metadata_batch(): a lossless
+# stream copy that discards all container/global metadata and chapters, and
+# muxes bit-exactly so FFmpeg does not re-stamp its own creation_time / encoder
+# tag onto the output. Holding it here gives the batch sibling per-row parity
+# for free (M13). Metadata scrubbing is pure command assembly, so compile stays
+# binary-free (IP1/D002).
+strip_metadata_pipeline <- function(input, output) {
+  p <- ffm_files(input, output)
+  # -c:v copy -c:a copy -map 0: carry every stream through untouched.
+  p <- ffm_copy(p)
+  # -map_metadata -1 drops global tags (creation_time, location/GPS, make/model,
+  # title, comment); -map_chapters -1 drops chapters; -fflags +bitexact stops the
+  # muxer writing a fresh creation_time and an encoder=Lavf... tag. Per-stream
+  # tags (handler_name, language) and codec-embedded identifiers survive a copy.
+  ffm_output_options(
+    p, "-map_metadata -1", "-map_chapters -1", "-fflags +bitexact"
+  )
+}
+
+#' Strip identifying metadata from a media file
+#'
+#' Remove a media file's container and global metadata tags (creation time,
+#' GPS/location, device make and model, title, comment, and the like) together
+#' with any chapters, writing a de-identified copy — the front door for
+#' IRB/de-identification of research recordings. The audio and video streams are
+#' **stream-copied**, not re-encoded, so the operation is lossless and fast and
+#' the picture and sound are bit-for-bit unchanged (including any rotation
+#' display matrix, which is stream side data, not a metadata tag).
+#'
+#' @details
+#' The output is muxed bit-exactly (\code{-fflags +bitexact}) so FFmpeg does not
+#' re-stamp the container with a fresh \code{creation_time} or an
+#' \code{encoder} tag naming its own version — either of which would defeat
+#' de-identification and reproducibility.
+#'
+#' Because the streams are copied rather than re-encoded, identifiers embedded
+#' **inside** the encoded bitstream, and per-stream metadata such as
+#' \code{handler_name} or \code{language}, are not removed. Removing those would
+#' require re-encoding (out of scope; use the \code{\link{ffmpeg}} escape hatch)
+#' or per-stream metadata mapping that must probe the file first.
+#'
+#' @param infile A string containing the path to a media file.
+#' @param outfile A string containing the path of the de-identified file to
+#'   write. Use the same container extension as \code{infile} so the copied
+#'   streams remux cleanly.
+#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
+#'   or return the compiled command without running it (\code{FALSE}).
+#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @seealso [anonymize_video()] to remove faces or regions from the picture (the
+#'   visual de-identification sibling); [probe_container()] and
+#'   [mediainfo_query()] to inspect a file's metadata before and after;
+#'   [ffm_copy()] and [ffm_output_options()], the builders it wraps;
+#'   [strip_metadata_batch()] for the many-file form.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' strip_metadata(video, "clean.mp4", run = FALSE)
+#' @export
+strip_metadata <- function(infile, outfile, run = TRUE) {
+
+  check_file_exists(infile)
+  rlang::check_string(outfile)
+
+  p <- strip_metadata_pipeline(infile, outfile)
+  ffm_finish(p, run)
+}
+
+
 # standardize_video() -----------------------------------------------------
 
 #' Standardize a video to a reproducible format

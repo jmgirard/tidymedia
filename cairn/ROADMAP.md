@@ -8,7 +8,7 @@ _Last hygiene check: 2026-07-13 (M26 done)_
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M27 | Metadata scrubbing for de-identification (`strip_metadata` + `_batch`) | planned | — | high | milestones/M27-strip-metadata.md |
+| M27 | Metadata scrubbing for de-identification (`strip_metadata` + `_batch`) | in-progress | — | high | milestones/M27-strip-metadata.md |
 | M26 | Fixed-rate frame sampling (`sample_frames` + `_batch`) | done | — | high | milestones/archive/M26-sample-frames.md |
 | M25 | Verb coverage survey (research-domain gap analysis) | done | — | normal | milestones/archive/M25-verb-coverage-survey.md |
 | M23 | API surface cleanup (clean-break renames, arg harmonization, un-exports) | done | M22 | normal | milestones/archive/M23-api-surface-cleanup.md |

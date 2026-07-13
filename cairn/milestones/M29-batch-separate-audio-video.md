@@ -140,55 +140,10 @@ column) **plus** the `stream` marker column (M19).
 
 ## Review
 <!-- owner: review · exclusive -->
-
-**Reviewer:** /milestone-review, 2026-07-12. PR #31 (draft). Branch 4 ahead / 0
-behind `master`; master unmoved since cut — no merge needed.
-
-### Acceptance-criteria evidence (fresh)
-
-- AC1 — PASS. `grep '^export(separate_audio_video_batch)' NAMESPACE` matches.
-  Compile: 3 input rows → 6 result rows / 6 commands, streams `audio,video`
-  interleaved; audio rows carry `-map 0:a "aN.aac"`, video rows `-map 0:v
-  "vN.mp4"`. Thin-wrapper contract verified by a test asserting batch commands
-  are byte-identical to `separate_audio_video()`'s (glues nothing, IP1/D007).
-- AC2 — PASS. Tests fire each guard: non-df, zero-row, missing `input`, missing
-  output column (`Missing column`), NA in `input`/`audiofile`/`videofile`,
-  non-logical `reencode`, NA in `reencode`. Per-row `reencode` column overrides
-  the arg on both of an input's rows; column-absent falls back to the arg
-  (default-copy test).
-- AC3 — PASS. One `reject_duplicate_outputs()` on the melted `output` rejects a
-  cross-column collision (audiofile[1] == videofile[2]) and within-row
-  `audiofile == videofile` (both → identical `output` rows). Two tests.
-- AC4 — PASS. Return carries `input`/`output`/`command` matching
-  `segment_video_batch` (`class()` equal, `output`/`command` character) plus a
-  `stream` marker with values `{audio, video}`. Parity test green.
-- AC5 — PASS. `pkgdown::check_pkgdown()` clean; `_pkgdown.yml` lists the verb;
-  `devtools::check()` 0 errors / 0 warnings / 0 notes (fresh); wordlist needs no
-  new terms (no maskable spelling NOTE — M17).
-
-### Consistency gate
-
-- `cairn_validate.py` exit 0 — all checks pass (incl. coverage complete, mirror
-  agreement, weight caps, sizing OK).
-- Coverage completeness: every AC maps to ≥1 existing task (AC1→T1,T2;
-  AC2/3/4→T2,T3; AC5→T4).
-- No `DESIGN.md` principle changed (works under IP1) → `cairn_impact` skipped.
-- Full suite: 1104 pass, 0 fail, 1 skip.
-- r-package consistency-gate: `devtools::check()` Status OK; `document()` clean.
-- CI (PR #31): all 7 jobs green — macOS, Ubuntu devel/oldrel-1/release, Windows,
-  pkgdown, test-coverage.
-
-### Independent review (3 lenses + scorer)
-
-- **[O] diff-bug (Opus):** no defects — verified reshape (N→2N interleave),
-  per-row `reencode` override, byte-identical thin-wrapper commands, pooled
-  duplicate guard, guard/NA/type completeness, all empirically.
-- **[S] blame-history (Sonnet):** no findings — scalar refactor byte-preserving,
-  M26 resolved-path guard honored, M28 roxygen-placement gotcha avoided.
-- **[S] prior-PR-comments (Sonnet):** no prior-PR evidence (reviews live in
-  milestone files, not GitHub comments) → clean no-op.
-- **Scorer:** no-op (0 findings to score; nothing ≥80 or <80).
-- **Logged, not actioned (cosmetic):** `check_batch_jobs(..., verb = "Audio/video
-  separation")` passes a `verb` label only used on the `require_output = TRUE`
-  error path, which never fires here — dead but harmless (and correct if that
-  path is ever enabled). Left as-is; fixing is out of scope.
+- Reviewed 2026-07-12, PR #31 (branch 4 ahead / 0 behind `master`, unmoved since cut). AC1 PASS: `export(separate_audio_video_batch)` present; 3 input rows → 6 result rows/commands with interleaved `stream`; batch commands byte-identical to `separate_audio_video()` (thin-wrapper, IP1/D007).
+- AC2 PASS: guard tests fire for non-df, zero-row, missing `input`/`audiofile`/`videofile`, NA in each, non-logical and NA `reencode`; per-row `reencode` overrides the arg, absent falls back to default.
+- AC3 PASS: `reject_duplicate_outputs()` on the melted `output` rejects a cross-column collision and within-row `audiofile == videofile` (two tests).
+- AC4 PASS: return matches `segment_video_batch` (`class()` equal, `output`/`command` character) plus a `stream` marker {audio, video}.
+- AC5 PASS: `pkgdown::check_pkgdown()` clean; `_pkgdown.yml` synced; `devtools::check()` 0/0/0 fresh (wordlist unchanged → no maskable spelling NOTE, M17).
+- Gate: `cairn_validate` exit 0 (coverage complete, mirror OK); suite 1104 pass / 0 fail / 1 skip; no IP changed → `cairn_impact` skipped; CI all 7 jobs green.
+- Independent review — [O] diff-bug, [S] blame-history, [S] prior-PR (no prior-PR evidence): **0 findings**, scorer no-op. Cosmetic, logged/not-actioned: dead `verb=` label on `check_batch_jobs` (only used on the unreachable `require_output` path).

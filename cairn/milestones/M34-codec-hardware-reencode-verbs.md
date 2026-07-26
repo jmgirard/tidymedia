@@ -140,6 +140,7 @@ demonstrated need). Composites' carried-audio re-encode default and the
 - 2026-07-26: T6 — docs pass: the R7 caveat (nvenc + sentinel assumes H.264; non-H.264 containers need an explicit codec) on all four scalar verbs and in the `nvenc_encoder`/`has_nvenc` block, which now lists all seven toggle-carrying verbs; NEWS.md entry added. `document()` clean; formals verified on all eight (AC1) with no `pixel_format` anywhere (AC10).
 - 2026-07-26: T7 — execution tests added (two real libx264/libx265 encodes behind `skip_if_no_ffprobe()`, two nvenc encodes behind `skip_if_no_nvenc()`) plus in-package formals guards for AC1 and AC10. AC9 evidence is a command, not a test: `git diff master...HEAD -- R/ffm.R` is empty, so the engine has zero diff (not merely doc-only). `test-video-codec.R` 117 pass / 2 skip; suite 1355 pass / 4 skip.
 - 2026-07-26: T8 — profile gate clean: `devtools::test()` 1355 pass / 4 skip / 0 fail, `devtools::document()` no diff, `devtools::check()` 0 errors / 0 warnings / 0 notes (one spelling NOTE on "HEVC" cleared via `spelling::update_wordlist()`). Status → review.
+- 2026-07-26: review — 11/11 acceptance criteria verified with fresh evidence; `cairn_validate` exit 0; toolchain gate clean; CI green on all 9 checks. Three-lens fan-out returned 3 findings, one scored >=80 and fixed on the branch (`check_batch_codec_col()` admitted an all-NA column of any type, contradicting AC8); two scored 25/58 and are logged unactioned.
 
 ## Decisions
 
@@ -212,4 +213,45 @@ clean · `pkgdown::check_pkgdown()` "No problems found" · NEWS.md entry present
 and free of milestone numbers · no new top-level files · `check()` clean.
 
 ### Independent review — three lenses + scorer
+
+Three fresh-context reviewers, distinct evidence bases, all ref-based git in the
+shared checkout.
+
+- **[O] diff-bug (Opus)** — 3 findings. It independently re-derived AC2 by
+  sourcing master's `R/ffmpeg.R` beside the branch's and diffing 16 call shapes
+  (all identical), and confirmed layer separation: `R/ffm.R`, `R/ffm_oop.R`,
+  `R/ffm_batch.R`, `R/utils.R` all zero-diff.
+- **[S] blame-history (Sonnet)** — no findings. Cleared the reworded nvenc abort
+  hint (no test pinned the old wording), the `segment_pipeline` guard against
+  D008's stream-copy intent, the codec step against M07/M13/M32 history (no
+  "no codec" omission was ever recorded as deliberate), and the NA-tolerant
+  batch column against `check_batch_string_col`'s stricter contract.
+- **[S] prior-review record (Sonnet)** — no regressions. Checked M32 F2/F3
+  (batch column bypassing a scalar guard; over-strict NA rejection), M10 F1
+  (bare `is.logical()` admitting NA), M31's `skip_if_no_nvenc()` trial-encode
+  fix, and M33 F1 (the nvenc helper docs should list every verb using the
+  toggle) — the last of which this milestone honored proactively. The GitHub
+  PR-thread probe returned `[]`, so the secondary surface was skipped.
+
+**[S] scorer (Sonnet, fresh — did not generate the findings):**
+
+- **F2 — score 80 — ACTIONED, fixed on the branch.** `check_batch_codec_col()`
+  tested `!is.character(x) && !all(is.na(x))`, so the all-NA escape hatch built
+  for the logical column also admitted an all-NA column of *any* type. The
+  function's own comment and AC8 both promise a numeric column aborts up front;
+  `jobs$video_codec <- c(NA_real_, NA_real_)` was silently accepted instead.
+  Fixed to `is.character(x) || (is.logical(x) && all(is.na(x)))`, which also
+  closes the converse hole (a non-NA `c(TRUE, FALSE)` column). Three assertions
+  added to `test-video-codec.R`; re-verified all five column shapes and re-ran
+  `devtools::test()` (1357 pass / 4 skip) and `devtools::check()` (0/0/0).
+- **F1 — score 25 — logged, not actioned.** Batch-wide `hardware = "nvenc"`
+  makes any `reencode = FALSE` row abort the whole `segment_video_batch` call.
+  Scorer: this is exactly what D016 mandates, the repair is actionable, and the
+  only real gap is that `segment_video_batch`'s `@param video_codec` names the
+  codec conflict without also naming `hardware`.
+- **F3 — score 58 — logged, not actioned.** The NEWS entry files the new formals
+  under "New features" without a breaking-change note, though inserting them
+  before `run` shifts positional-argument meaning on all eight verbs. Scorer: a
+  changelog-classification nit — every affected call fails loudly, and the
+  insertion point was a deliberate D014 clean break on a pre-1.0 package.
 

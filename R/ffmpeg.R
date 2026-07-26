@@ -2842,8 +2842,12 @@ reject_duplicate_outputs <- function(jobs, call = rlang::caller_env()) {
 # type (e.g. numeric) is rejected up front rather than mid-batch.
 check_batch_codec_col <- function(jobs, col = "video_codec",
                                   call = rlang::caller_env()) {
-  if (col %in% names(jobs) &&
-      !is.character(jobs[[col]]) && !all(is.na(jobs[[col]]))) {
+  # Legal: a character column (NA cells allowed), or the all-NA column R types
+  # as logical. Testing `all(is.na(.))` alone would also admit an all-NA numeric
+  # or an all-NA Date, which the contract above says is rejected; testing
+  # `is.logical(.)` alone would admit a c(TRUE, FALSE) column.
+  ok <- function(x) is.character(x) || (is.logical(x) && all(is.na(x)))
+  if (col %in% names(jobs) && !ok(jobs[[col]])) {
     cli::cli_abort(
       "The {.field {col}} column of {.arg jobs} must be character
        ({.val {NA}} to leave the codec unset).",

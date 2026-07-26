@@ -313,6 +313,19 @@ test_that("crop_video_batch() rejects a numeric video_codec column up front", {
     crop_video_batch(jobs, width = 100, height = 50, run = FALSE),
     "must be character"
   )
+  # An ALL-NA numeric column is still numeric, so it is rejected too: only the
+  # all-NA *logical* column is the accepted spelling of "leave every row unset".
+  jobs$video_codec <- c(NA_real_, NA_real_)
+  expect_error(
+    crop_video_batch(jobs, width = 100, height = 50, run = FALSE),
+    "must be character"
+  )
+  # A non-NA logical column is not a codec either.
+  jobs$video_codec <- c(TRUE, FALSE)
+  expect_error(
+    crop_video_batch(jobs, width = 100, height = 50, run = FALSE),
+    "must be character"
+  )
 })
 
 test_that("crop_video_batch() honors hardware only as a formal, not a column", {

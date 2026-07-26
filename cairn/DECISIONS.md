@@ -179,3 +179,18 @@ execution follow-up:
 Rules out silent per-verb naming drift and `lifecycle`-shim compatibility for
 this cleanup. The renames themselves are an irreversible-API change carried by
 the execution follow-up, not by M22 (which is audit-only).
+
+## D015 — Fan-in batch input-shape (2026-07-26, from M32)
+
+The `_batch` siblings for the fan-in (many-inputs → one-output) verbs carry
+their per-row inputs by **shape**, extending D007's single-`input`-column
+model (which covers only scalar-input jobs): the variable-arity verbs
+(`concatenate_videos_batch`, `compare_videos_batch`) take an **`inputs`
+list-column** — each row's cell a character vector — while the fixed-arity,
+distinct-role `picture_in_picture_batch` takes named **`main`/`overlay`**
+columns. `purrr::pmap` passes both shapes to `.f` row-wise, so `ffm_batch`
+needs no change, and the provenance manifest already joins multi-input with
+`";"`. These verbs stay single-output, so D007's ban on a multi-output engine
+model (and IP2) is untouched — this is an input-side extension only. Rules out
+a uniform positional list-column for PiP (roles would become order-dependent)
+and any per-verb hand-glued batch runner outside `ffm_batch`.

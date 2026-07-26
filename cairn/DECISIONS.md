@@ -228,3 +228,37 @@ IP1/IP3/D009.
   machine property). Rules out a per-row `hardware`/`fallback` column.
 - **`pixel_format` is deferred** on these verbs (no imposed-standard need;
   additive later under D014). Does not rule out a future addition.
+
+## D017 — Audio-codec API shape for the re-encode verbs (2026-07-26, from M35, extends D016)
+
+Carries D016's boundary rule across to the *audio* stream on the same four
+verbs (`crop_video`, `segment_video`, `compare_videos`, `picture_in_picture`).
+Uses D014's `audio_codec` spelling; sits under IP1/IP3/D009 and GP1.
+
+- **Default `audio_codec = "copy"`.** These verbs never need to touch audio, so
+  re-encoding it is pure loss — and until now they re-encoded it to whatever
+  the local FFmpeg build's container default was, the environment-dependence
+  D001 exists to remove. Copy is already the norm the package documents
+  (`standardize_video`, `anonymize_video`, `strip_metadata`,
+  `concatenate_videos`). Rules out a `NULL` default: byte-identical, but it
+  would leave the surprising behavior standing as the default.
+- **This is a deliberate change to existing default output** — every default
+  command gains `-codec:a copy` — taken under D014's pre-0.2.0 clean-break
+  policy, no `lifecycle` shim.
+- **The accepted trap:** copying a source codec the output container cannot
+  hold (FLAC into `.mp4`) now fails loudly where it previously re-encoded
+  silently. The remedy is naming an encoder (`audio_codec = "aac"`), and it is
+  documented. Rules out reverting to a silent re-encode, which trades a loud,
+  fixable failure for an invisible quality loss.
+- **Asymmetric with D016 on purpose.** `video_codec` defaults to the `NULL`
+  sentinel because a literal default would force a codec into an incompatible
+  container; `audio_codec` cannot hit that trap in its default state, because
+  copy preserves whatever the source already had. `NULL` is retained on
+  `audio_codec` as the escape hatch meaning "emit no `-codec:a`".
+- **Contradiction guards, per D016's precedent:** on a stream-copy path
+  (`segment_video(reencode = FALSE)`) only `"copy"` is legal, enforced per row
+  in the shared pipeline; on the composites a named encoder with no audio
+  mapped (`audio = NULL`) aborts.
+- **Batch: `audio_codec` is a per-row column** (`NA` → unset), reusing
+  `check_batch_codec_col(col =)` and `batch_codec_cell()`. Rules out reusing
+  `check_batch_string_col()`, which rejects `NA` and so cannot spell "unset".

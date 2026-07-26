@@ -2,12 +2,13 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-07-26 (M34 done — codec/hardware args on the four re-encode verbs merged, archived; M29 row aged out to archive; two candidates added from the M34 review)_
+_Last hygiene check: 2026-07-26 (M35 planned — audio_codec for the four re-encode verbs; absorbed three candidate rows, added two split-out ones; the NEWS milestone-number row shipped as a trivial commit)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
+| M35 | `audio_codec` for the four re-encode verbs (crop/segment/compare/pip + batch) — stream-copy by default | planned | — | normal | milestones/M35-audio-codec-reencode-verbs.md |
 | M33 | Wire `hardware=` nvenc into `anonymize_video` (+ batch) | done | — | normal | milestones/archive/M33-anonymize-hardware.md |
 | M34 | `video_codec` + `hardware=` for the four codec-less re-encode verbs (crop/segment/compare/pip) | done | — | normal | milestones/archive/M34-codec-hardware-reencode-verbs.md |
 | M32 | Batch siblings for the fan-in verbs (`concatenate_videos`/`compare_videos`/`picture_in_picture` `_batch`) | done | — | normal | milestones/archive/M32-batch-fan-in-verbs.md |
@@ -22,8 +23,6 @@ _Last hygiene check: 2026-07-26 (M34 done — codec/hardware args on the four re
 - Video quality / rate-control knob (CRF↔CQ, `-preset p1–p7`, bitrate) — the package has no quality abstraction today; a cross-encoder mapping is opinionated + an irreversible-API commitment. Deferred from M31. — added 2026-07-26 — M31 Q4
 - GPU *decode* / `-hwaccel cuda` input acceleration + GPU filter pipelines — needs a new engine input-options slot (none exists; only `seek_pre` goes before `-i`) + an IP2 filtergraph design call. — added 2026-07-26 — M31 Out
 - Other hardware encode backends (videotoolbox/qsv/vaapi/amf) generalizing the `hardware=` arg beyond nvenc — needs a backend-detection + arg-vocabulary design call. — added 2026-07-26 — M31 Out
-- Composite verbs re-encode carried audio to the container default (`compare_videos`/`picture_in_picture` set no `-codec:a` when mapping input audio) — an `audio_codec`/copy decision, surprising next to the package's stream-copy-audio norm. — added 2026-07-26 — RR01 Beyond-1
-- `format_for_web_batch` silently ignores a `video_codec` jobs column (its closure passes no per-row knobs) — a one-line doc cross-reference once M34 teaches the column convention on the sibling verbs. — added 2026-07-26 — RR01 Beyond-3
-- NEWS.md carries milestone numbers in three legacy section headings (`## Verification & provenance (M08)`, `(M07)`, `(M06)`) — user-facing text must not reference milestone IDs; retitle by theme. Pre-existing, surfaced at the M34 review gate. — added 2026-07-26 — M34 review
-- `picture_in_picture_batch`'s `audio` column guard uses the same `!is.numeric(x) && !all(is.na(x))` shape M34 fixed in `check_batch_codec_col()`, so it admits an all-NA column of any type — benign today, but the loose shape should be tightened for parity. — added 2026-07-26 — M34 review F2 neighborhood
+- `separate_audio_video`'s `reencode = TRUE` path re-encodes audio to the container default (the `ffm_codec(audio = "copy")` sits inside `if (!reencode)`) — needs its own arg-shape call, since `reencode` already *is* that verb's copy-vs-encode switch. Split out of M35. — added 2026-07-26 — M35 Out; D017
+- `normalize_audio` always re-encodes (it filters audio) but offers no way to name the output encoder — an `audio_codec` addition on a verb where copy is impossible, so D017's default does not transfer. Split out of M35. — added 2026-07-26 — M35 Out; D017
 - CRAN readiness (release mechanics only): win-builder + R-hub, cran-comments, bump toward 0.2.0. Deliberately last. API-surface cleanup shipped as M23; the vignette pass is M30; a roxygen `@examples` pass remains the only open docs slice under this row. — added 2026-07-10, trimmed 2026-07-12, reconciled 2026-07-12 (M30) — see M22/M23/M30

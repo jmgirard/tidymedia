@@ -39,6 +39,9 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   to the helper and drops the original's `.Rd` — `document()` warns "Deleting
   <fn>.Rd". Put the extracted helper ABOVE the roxygen block, not between it and
   the function.
+- 2026-07-26 (M31): skip a hardware-encoder execution test on run-time
+  usability, not merely that the encoder is *listed* — CI lists `h264_nvenc`
+  without a GPU, so probe a 1-frame lavfi encode and skip unless it exits 0.
 - 2026-07-12 (M30): a `*_batch` verb's jobs tibble keys on `input`/`output`
   *columns* (via `check_batch_jobs`), NOT the scalar verb's `infile`/`outfile`
   *argument* names — an easy mismatch in vignette/example chunks that errors only

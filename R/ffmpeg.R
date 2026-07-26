@@ -3368,6 +3368,64 @@ picture_in_picture <- function(main, overlay, outfile,
 }
 
 
+# concatenate_videos_batch() ----------------------------------------------
+
+#' Concatenate Many Videos From a Jobs Table
+#'
+#' Join clips end to end for many outputs from a single jobs tibble — the
+#' **batch** (table-driven) sibling of [concatenate_videos()] for when you have
+#' more than one concatenation to produce. Unlike the single-input batch verbs,
+#' each row's inputs are **many**, so \code{jobs} carries an \code{inputs}
+#' list-column (each cell a character vector of source paths) plus an
+#' \code{output} column (D015). This is a thin wrapper over
+#' \code{\link{ffm_batch}}: one reproducible concat-demuxer command per row,
+#' sharing the copy + map-0 pipeline with the scalar verb.
+#'
+#' @param jobs A data frame with one row per output and (at least) an
+#'   \code{inputs} list-column — each cell a character vector of the source
+#'   paths to join, in order — and an \code{output} column (destination path).
+#'   An \code{output} column is required; this verb derives no destination. Any
+#'   two rows resolving to the same output path are rejected. Any other columns
+#'   are ignored.
+#' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
+#'   or only compile them for inspection (\code{FALSE}).
+#' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
+#'   (\code{TRUE}) or sequentially (\code{FALSE}, default). See
+#'   \code{\link{ffm_batch}} for the \pkg{future} plan requirement.
+#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
+#'   \code{verify}, \code{manifest}, \code{progress}).
+#' @return The \code{jobs} tibble with an added \code{command} column and, when
+#'   \code{run = TRUE}, a \code{success} column (plus \code{verified} /
+#'   provenance manifest when requested via \code{...}). See
+#'   \code{\link{ffm_batch}}.
+#' @seealso [concatenate_videos()], the scalar verb it wraps; [ffm_batch()], the
+#'   batch runner; [compare_videos_batch()] and [picture_in_picture_batch()],
+#'   the other fan-in batch siblings.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' jobs <- tibble::tibble(inputs = list(c(video, video)), output = "joined.mp4")
+#' concatenate_videos_batch(jobs, run = FALSE)
+#' @export
+concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
+
+  jobs <- check_fanin_jobs(jobs, verb = "Concatenation")
+  jobs <- reject_duplicate_outputs(jobs)
+
+  # Thin Layer-2 fan-in over ffm_batch (D007/D015): one concat-demuxer pipeline
+  # per row, sharing concatenate_pipeline() with concatenate_videos(). pmap
+  # passes each `inputs` list cell as a character vector; `...` forwards
+  # ffm_batch options (verify/manifest/...) to the runner.
+  ffm_batch(
+    jobs,
+    function(inputs, output, ...) concatenate_pipeline(inputs, output),
+    run = run,
+    parallel = parallel,
+    ...
+  )
+}
+
+
 # Get volume levels -------------------------------------------------------
 
 get_volume <- function(infile) {

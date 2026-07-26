@@ -68,7 +68,7 @@ own candidates.
       `inputs` list-column + `output` shape (concat/compare) and inline
       `main`/`overlay` validation for PiP; reuse `reject_duplicate_outputs`.
       Malformed-jobs tests (AC4).
-- [ ] T3: `concatenate_videos_batch()` over `ffm_batch`; compile + parity tests.
+- [x] T3: `concatenate_videos_batch()` over `ffm_batch`; compile + parity tests.
 - [ ] T4: `compare_videos_batch()` with per-row `direction`/`resize`/`audio`
       overrides; compile + override + parity tests.
 - [ ] T5: `picture_in_picture_batch()` with per-row `position`/`scale`/`margin`/
@@ -84,6 +84,7 @@ own candidates.
 - 2026-07-26: status → in-progress; branch m32-batch-fan-in-verbs cut from master.
 - 2026-07-26: T1 done — extracted concatenate_pipeline / compare_videos_pipeline / picture_in_picture_pipeline (above roxygen); scalars refactored to call them; test-ffmpeg.R 119 pass / 0 fail.
 - 2026-07-26: T2 done — check_fanin_jobs() validates the `inputs` list-column + `output` shape (min_inputs param for compare's ≥2); PiP keeps inline main/overlay validation. Verb-level malformed-jobs tests land with T3–T5.
+- 2026-07-26: T3 done — concatenate_videos_batch() over ffm_batch; 19 tests (compile + list-path-scrubbed parity + AC4 guards + binary-gated exec) pass. Parity scrubs the concat demuxer's per-invocation temp list-file path.
 
 ## Decisions
 

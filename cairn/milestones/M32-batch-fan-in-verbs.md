@@ -64,7 +64,7 @@ own candidates.
 - [x] T1: extract pipeline helpers from the three scalar verbs (concat, compare,
       PiP), refactoring each scalar to call its helper with no behavior change;
       place helpers ABOVE the roxygen block (M28 lesson). Existing scalar tests stay green.
-- [ ] T2: add fan-in job-table validation — a shared `check_fanin_jobs()` for the
+- [x] T2: add fan-in job-table validation — a shared `check_fanin_jobs()` for the
       `inputs` list-column + `output` shape (concat/compare) and inline
       `main`/`overlay` validation for PiP; reuse `reject_duplicate_outputs`.
       Malformed-jobs tests (AC4).
@@ -83,6 +83,7 @@ own candidates.
 - 2026-07-26: created by /milestone-plan.
 - 2026-07-26: status → in-progress; branch m32-batch-fan-in-verbs cut from master.
 - 2026-07-26: T1 done — extracted concatenate_pipeline / compare_videos_pipeline / picture_in_picture_pipeline (above roxygen); scalars refactored to call them; test-ffmpeg.R 119 pass / 0 fail.
+- 2026-07-26: T2 done — check_fanin_jobs() validates the `inputs` list-column + `output` shape (min_inputs param for compare's ≥2); PiP keeps inline main/overlay validation. Verb-level malformed-jobs tests land with T3–T5.
 
 ## Decisions
 

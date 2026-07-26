@@ -2669,6 +2669,59 @@ check_batch_string_col <- function(jobs, col, call = rlang::caller_env()) {
   invisible(jobs)
 }
 
+# Validate a fan-in jobs table (D015): unlike the scalar-input `input` column of
+# check_batch_jobs(), the many-inputs -> one-output verbs carry their per-row
+# inputs in an `inputs` LIST-COLUMN (each cell a character vector of >= min_inputs
+# paths) alongside a scalar `output` column. purrr::pmap passes each list cell to
+# .f row-wise, so ffm_batch needs no change. Coerces `output` to character;
+# leaves duplicate-path rejection to reject_duplicate_outputs (called after).
+check_fanin_jobs <- function(jobs, min_inputs = 1L, verb = NULL,
+                             call = rlang::caller_env()) {
+  if (!is.data.frame(jobs)) {
+    cli::cli_abort("{.arg jobs} must be a data frame with one row per output.", call = call)
+  }
+  if (nrow(jobs) == 0) {
+    cli::cli_abort("{.arg jobs} must have at least one row.", call = call)
+  }
+  if (!"inputs" %in% names(jobs)) {
+    cli::cli_abort(c(
+      "{.arg jobs} must have an {.field inputs} list-column.",
+      "x" = "Missing column: {.val inputs}.",
+      "i" = "Each cell is a character vector of input paths for that output."
+    ), call = call)
+  }
+  if (!"output" %in% names(jobs)) {
+    cli::cli_abort(c(
+      "{.arg jobs} must have an {.field output} column.",
+      "x" = "Missing column: {.val output}.",
+      "i" = "{verb} writes one output per row; name each destination."
+    ), call = call)
+  }
+  if (!is.list(jobs$inputs) || is.data.frame(jobs$inputs)) {
+    cli::cli_abort(c(
+      "The {.field inputs} column of {.arg jobs} must be a list-column.",
+      "i" = "Build it with e.g. {.code tibble::tibble(inputs = list(c(a, b)), output = o)}."
+    ), call = call)
+  }
+  ok <- vapply(
+    jobs$inputs,
+    function(x) is.character(x) && length(x) >= min_inputs && !anyNA(x),
+    logical(1)
+  )
+  if (!all(ok)) {
+    cli::cli_abort(c(
+      "Each {.field inputs} cell must be a character vector of \\
+       {.val {min_inputs}} or more paths with no {.val {NA}}.",
+      "x" = "Invalid cell{?s} at row{?s}: {.val {which(!ok)}}."
+    ), call = call)
+  }
+  jobs$output <- as.character(jobs$output)
+  if (anyNA(jobs$output)) {
+    cli::cli_abort("The {.field output} column of {.arg jobs} must not contain {.val {NA}}.", call = call)
+  }
+  jobs
+}
+
 
 # extract_audio_batch() ---------------------------------------------------
 

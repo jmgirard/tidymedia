@@ -1,11 +1,11 @@
 # M32: Batch siblings for the fan-in verbs (`concatenate_videos`/`compare_videos`/`picture_in_picture` `_batch`)
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1, IP3
-- **Branch/PR:** —
+- **Branch/PR:** m32-batch-fan-in-verbs
 
 ## Goal
 
@@ -81,6 +81,7 @@ own candidates.
 ## Work log
 
 - 2026-07-26: created by /milestone-plan.
+- 2026-07-26: status → in-progress; branch m32-batch-fan-in-verbs cut from master.
 
 ## Decisions
 

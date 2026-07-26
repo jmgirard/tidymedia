@@ -109,7 +109,7 @@ demonstrated need). Composites' carried-audio re-encode default and the
 - [x] T3 — `compare_videos`/`picture_in_picture` + pipelines (R/ffmpeg.R:3269,
       :3355): same additions; confirm the codec composes with the
       `-filter_complex … [vout]` path (RR01 Q4).
-- [ ] T4 — `segment_video` + `segment_pipeline` (R/ffmpeg.R:1508, :1596): add
+- [x] T4 — `segment_video` + `segment_pipeline` (R/ffmpeg.R:1508, :1596): add
       formals; per-row guard in the shared pipeline aborting when
       `!reencode && (!is.null(video_codec) || hardware != "none")`, with a
       repair hint.
@@ -135,6 +135,7 @@ demonstrated need). Composites' carried-audio re-encode default and the
 - 2026-07-26: plan refinement (minor) — roxygen for each verb is written with its own task rather than batched in T6; T6 keeps the caveat-wording pass + final `document()`.
 - 2026-07-26: T2 — `crop_video`/`crop_video_pipeline` gain the three formals (before `run`); pipeline `check_token()`s the user's codec up front so nvenc and software paths reject identically. New `test-video-codec.R` pins the pre-M34 literal byte-for-byte (AC2) plus AC3–AC5 for crop; `document()` + `devtools::test()` clean.
 - 2026-07-26: T3 — `compare_videos`/`picture_in_picture` + pipelines gain the three formals; the sentinel/token/resolve logic extracted to one Layer-2 helper `apply_video_codec()` (crop refactored onto it) rather than duplicated four times. Codec composes cleanly with `-filter_complex … [vout]` (AC7 confirmed); both composites' pre-M34 literals pinned. `document()` + `devtools::test()` clean.
+- 2026-07-26: T4 — `segment_video`/`segment_pipeline` gain the three formals; the stream-copy guard aborts in the shared pipeline (so both callers inherit it per row) when `!reencode` meets a codec or `hardware != "none"`. Note: the copy path already emits `-codec:v copy` via `ffm_copy()`, so its pre-M34 literal is pinned as-is. `document()` + `devtools::test()` clean.
 
 ## Decisions
 

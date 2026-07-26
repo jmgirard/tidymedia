@@ -156,6 +156,68 @@ test_that("compare_videos() honors the nvenc abort and fallback branches", {
   expect_no_match(as.character(cmd), "-codec:v", fixed = TRUE)
 })
 
+# segment_video() -------------------------------------------------------------
+
+test_that("segment_video() default compiles the pre-M34 command byte-for-byte", {
+  f <- make_input()
+  out <- segment_video(f, 0, 1, "seg.mp4", run = FALSE)
+  # The literal below is the command master compiled before M34 existed.
+  expect_equal(
+    as.character(out$command),
+    paste0('-y -i "', f, '" -ss 0 -to 1 "seg.mp4"')
+  )
+  expect_no_match(as.character(out$command), "-codec:v", fixed = TRUE)
+})
+
+test_that("segment_video(video_codec = ) sets the codec on every segment", {
+  f <- make_input()
+  out <- segment_video(f, c(0, 1), c(1, 2), c("a.mp4", "b.mp4"),
+                       video_codec = "libx265", run = FALSE)
+  expect_true(all(grepl("-codec:v libx265", out$command, fixed = TRUE)))
+})
+
+test_that("segment_video(hardware = 'nvenc') resolves per family", {
+  f <- make_input()
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  expect_match(
+    as.character(segment_video(f, 0, 1, "seg.mp4", hardware = "nvenc",
+                               run = FALSE)$command),
+    "-codec:v h264_nvenc", fixed = TRUE
+  )
+  withr::local_options(tidymedia.nvenc_encoders = "hevc_nvenc")
+  expect_match(
+    as.character(segment_video(f, 0, 1, "seg.mp4", video_codec = "libx265",
+                               hardware = "nvenc", run = FALSE)$command),
+    "-codec:v hevc_nvenc", fixed = TRUE
+  )
+})
+
+test_that("segment_video() aborts when a codec meets a stream copy", {
+  f <- make_input()
+  expect_error(
+    segment_video(f, 0, 1, "seg.mp4", reencode = FALSE,
+                  video_codec = "libx264", run = FALSE),
+    "re-encoding cut"
+  )
+  expect_error(
+    segment_video(f, 0, 1, "seg.mp4", reencode = FALSE, hardware = "nvenc",
+                  run = FALSE),
+    "re-encoding cut"
+  )
+})
+
+test_that("segment_video(reencode = FALSE) keeps its pre-M34 stream copy", {
+  f <- make_input()
+  out <- segment_video(f, 0, 1, "seg.mp4", reencode = FALSE, run = FALSE)
+  # The literal below is the command master compiled before M34 existed: the
+  # copy path already names `-codec:v copy`, which the guard leaves untouched.
+  expect_equal(
+    as.character(out$command),
+    paste0('-y -ss 0 -to 1 -i "', f, '" -codec:v copy -codec:a copy ',
+           '-avoid_negative_ts make_zero -map 0 "seg.mp4"')
+  )
+})
+
 # picture_in_picture() --------------------------------------------------------
 
 test_that("picture_in_picture() default compiles the pre-M34 command byte-for-byte", {

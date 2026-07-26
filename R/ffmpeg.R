@@ -1589,6 +1589,24 @@ apply_video_codec <- function(object, video_codec, hardware = "none",
 #'   frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
 #'   lossless copy that snaps to keyframes (\code{FALSE}). See \code{ffm_seek}
 #'   for the trade-off.
+#' @param video_codec A string naming the output video codec, or \code{NULL}
+#'   (default) to leave it unset, so the output container's default encoder is
+#'   used and the compiled command is unchanged from one that never named a
+#'   codec. A stream copy runs no encoder, so naming a codec (or a
+#'   \code{hardware} backend) alongside \code{reencode = FALSE} is an error.
+#' @param hardware The encoder backend: \code{"none"} (default, the software
+#'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
+#'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
+#'   (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); with the default
+#'   \code{video_codec = NULL} the H.264 family is assumed, so a non-H.264
+#'   container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
+#'   \code{video_codec}. See \code{\link{has_nvenc}} for availability and its
+#'   caveats.
+#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
+#'   unavailable, encode in software with a message (\code{TRUE}) instead of
+#'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
+#'   fallback leaves the codec unset rather than picking one, so the codec never
+#'   changes silently.
 #' @param run A logical: run each segment's command (\code{TRUE}, default) or
 #'   only compile them (\code{FALSE}).
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: cut segments in
@@ -1601,6 +1619,7 @@ apply_video_codec <- function(object, video_codec, hardware = "none",
 #'   \code{\link{ffm_batch}}: one row per segment with its \code{command} (and,
 #'   when \code{run = TRUE}, \code{success}).
 #' @seealso [ffm_seek()], the builder it uses to cut; [ffm_batch()], the runner;
+#'   [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
 #'   [segment_video_batch()] for the many-file form.
 #' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 #' @family task verb functions
@@ -1614,6 +1633,9 @@ segment_video <- function(infile,
                           end,
                           outfiles = NULL,
                           reencode = TRUE,
+                          video_codec = NULL,
+                          hardware = c("none", "nvenc"),
+                          fallback = FALSE,
                           run = TRUE,
                           parallel = FALSE) {
 
@@ -1631,6 +1653,8 @@ segment_video <- function(infile,
     cli::cli_abort("{.arg outfiles} must have the same length as {.arg start}.")
   }
   rlang::check_bool(reencode)
+  rlang::check_string(video_codec, allow_null = TRUE)
+  hardware <- rlang::arg_match(hardware)
 
   # If no names are provided, derive per-segment names from the input file.
   if (is.null(outfiles)) {
@@ -1646,7 +1670,8 @@ segment_video <- function(infile,
   ffm_batch(
     jobs,
     function(input, output, start, end, ...) {
-      segment_pipeline(input, output, start, end, reencode)
+      segment_pipeline(input, output, start, end, reencode,
+                       video_codec, hardware, fallback)
     },
     run = run,
     parallel = parallel
@@ -1697,11 +1722,30 @@ derive_frame_names <- function(input, format = "png") {
 # single-output seek pipeline for a single segment, stream-copying on the fast
 # (non-reencode) path. Fan-out verbs stay single-output per job (D003, D007);
 # both verbs wrap this in a closure that captures the scalar `reencode`.
-segment_pipeline <- function(input, output, start, end, reencode) {
+segment_pipeline <- function(input, output, start, end, reencode,
+                             video_codec = NULL, hardware = "none",
+                             fallback = FALSE, call = rlang::caller_env()) {
+  # A stream copy writes the source video bytes through untouched, so naming an
+  # encoder -- in software or on the GPU -- cannot mean anything on that path
+  # (D008 keeps the copy lossless and opt-in). Abort rather than silently drop
+  # the request; the check lives here so both callers inherit it per row
+  # (M34/D016).
+  if (!reencode && (!is.null(video_codec) || !identical(hardware, "none"))) {
+    cli::cli_abort(
+      c(
+        "{.arg video_codec} and {.arg hardware} need a re-encoding cut.",
+        "x" = "{.code reencode = FALSE} stream-copies each segment, so no
+               encoder runs.",
+        "i" = "Pass {.code reencode = TRUE} to cut by re-encoding, or drop
+               {.arg video_codec} / {.arg hardware}."
+      ),
+      call = call
+    )
+  }
   p <- ffm_seek(ffm_files(input, output), start = start, end = end,
                 reencode = reencode)
   if (!reencode) p <- ffm_copy(p)
-  p
+  apply_video_codec(p, video_codec, hardware, fallback, call = call)
 }
 
 

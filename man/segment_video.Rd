@@ -10,6 +10,9 @@ segment_video(
   end,
   outfiles = NULL,
   reencode = TRUE,
+  video_codec = NULL,
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
   run = TRUE,
   parallel = FALSE
 )
@@ -36,6 +39,27 @@ length as \code{start}.}
 frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
 lossless copy that snaps to keyframes (\code{FALSE}). See \code{ffm_seek}
 for the trade-off.}
+
+\item{video_codec}{A string naming the output video codec, or \code{NULL}
+(default) to leave it unset, so the output container's default encoder is
+used and the compiled command is unchanged from one that never named a
+codec. A stream copy runs no encoder, so naming a codec (or a
+\code{hardware} backend) alongside \code{reencode = FALSE} is an error.}
+
+\item{hardware}{The encoder backend: \code{"none"} (default, the software
+\code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
+\code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
+(e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); with the default
+\code{video_codec = NULL} the H.264 family is assumed, so a non-H.264
+container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
+\code{video_codec}. See \code{\link{has_nvenc}} for availability and its
+caveats.}
+
+\item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
+unavailable, encode in software with a message (\code{TRUE}) instead of
+aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
+fallback leaves the codec unset rather than picking one, so the codec never
+changes silently.}
 
 \item{run}{A logical: run each segment's command (\code{TRUE}, default) or
 only compile them (\code{FALSE}).}
@@ -69,6 +93,7 @@ https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 }
 \seealso{
 \code{\link[=ffm_seek]{ffm_seek()}}, the builder it uses to cut; \code{\link[=ffm_batch]{ffm_batch()}}, the runner;
+\code{\link[=has_nvenc]{has_nvenc()}} for the \code{hardware = "nvenc"} toggle;
 \code{\link[=segment_video_batch]{segment_video_batch()}} for the many-file form.
 
 Other task verb functions:

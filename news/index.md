@@ -308,7 +308,7 @@ and soaking).
   `reencode`) columns are rejected with a clear error instead of an
   opaque FFmpeg failure.
 
-### Verification & provenance (M08)
+### Verification & provenance
 
 - Added
   [`verify_media()`](https://jmgirard.github.io/tidymedia/reference/verify_media.md),
@@ -335,7 +335,7 @@ and soaking).
 - `ffm_batch(progress = TRUE)` shows a `cli` progress bar as the jobs
   run (following the `future` plan on the parallel path).
 
-### Multi-input verbs (M07)
+### Multi-input verbs
 
 - Completed the blessed multi-input builder set with
   [`ffm_vstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_vstack.md)
@@ -356,7 +356,7 @@ and soaking).
   Both drop audio by default; pass `audio =` an input index to carry
   that track.
 
-### Safe execution (M06)
+### Safe execution
 
 - Pipelines are now executed as argument vectors (via
   [`system2()`](https://rdrr.io/r/base/system2.html)), never through a

@@ -22,15 +22,31 @@ skip_if_no_mediainfo <- function() {
   )
 }
 
-# Skip unless this FFmpeg build lists the h264_nvenc encoder. Guards real GPU
-# encode tests, which cannot run on CI or any machine without an nvenc-capable
-# FFmpeg + NVIDIA GPU.
+# Skip unless this FFmpeg can actually nvenc-encode at run time. has_nvenc() is
+# only a cheap "is the encoder listed" check: a CI image can list h264_nvenc yet
+# have no libcuda / GPU (the encode then dies mid-run). So probe with a tiny real
+# encode and skip unless it exits 0 -- guarding execution tests against a listed-
+# but-unusable encoder.
 skip_if_no_nvenc <- function() {
   testthat::skip_if_not(
     nzchar(Sys.which("ffmpeg")),
     message = "ffmpeg binary not available"
   )
-  testthat::skip_if_not(has_nvenc("h264"), message = "nvenc not available")
+  testthat::skip_if_not(has_nvenc("h264"), message = "nvenc encoder not listed")
+  probe <- suppressWarnings(tryCatch(
+    system2(
+      "ffmpeg",
+      c("-hide_banner", "-loglevel", "error", "-f", "lavfi",
+        "-i", "nullsrc=s=64x48:d=0.1", "-c:v", "h264_nvenc",
+        "-frames:v", "1", "-f", "null", "-"),
+      stdout = FALSE, stderr = FALSE
+    ),
+    error = function(e) 1L
+  ))
+  testthat::skip_if_not(
+    identical(as.integer(probe), 0L),
+    message = "nvenc listed but not usable at run time"
+  )
 }
 
 # Create an empty, readable temporary input file so builder functions that check

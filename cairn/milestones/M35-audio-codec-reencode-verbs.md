@@ -34,34 +34,34 @@ stays deferred (D016).
 
 ## Acceptance criteria
 
-- [ ] AC1 All eight verbs carry a formal `audio_codec = "copy"` beside
+- [x] AC1 All eight verbs carry a formal `audio_codec = "copy"` beside
       `video_codec` (exact D014 spelling; no `acodec`/`codec` alias), proven by
       a `formals()`-level test over all eight; `R/ffm.R` has no functional diff
       (IP1/IP3 — Layer 2 computes, Layer 1 unchanged).
-- [ ] AC2 The only compiled-command change is the added `-codec:a` token:
+- [x] AC2 The only compiled-command change is the added `-codec:a` token:
       pinned literals for all eight assert the pre-M35 command plus
       `-codec:a copy`. `audio_codec = "aac"` compiles `-codec:a aac`; `NULL`
       compiles no `-codec:a`; a non-token value aborts via `check_token()`.
-- [ ] AC3 `segment_video(reencode = FALSE)` aborts (cli, with a repair hint)
+- [x] AC3 `segment_video(reencode = FALSE)` aborts (cli, with a repair hint)
       for any `audio_codec` other than `"copy"`, enforced per row inside
       `segment_pipeline()` so `segment_video_batch` inherits it — tests cover
       the scalar arg and a mixed per-row `reencode` column.
-- [ ] AC4 The composites emit `-codec:a` only when `audio` maps a stream, and
+- [x] AC4 The composites emit `-codec:a` only when `audio` maps a stream, and
       abort when `audio = NULL` meets a named encoder. With `audio = 0` each
       compiles one command carrying `-filter_complex`, `[vout]`,
       `-map "[vout]"`, `-map 0:a`, and `-codec:a copy`.
-- [ ] AC5 All four `_batch` siblings accept a per-row `audio_codec` column:
+- [x] AC5 All four `_batch` siblings accept a per-row `audio_codec` column:
       character with `NA` cells (that row compiles no `-codec:a`), an all-`NA`
       logical column accepted, a numeric column aborted up front. Separately,
       `compare_videos_batch` gains an up-front `audio` column guard and
       `picture_in_picture_batch`'s is tightened to
       `is.numeric(x) || (is.logical(x) && all(is.na(x)))`; both boundaries
       tested.
-- [ ] AC6 Execution evidence: cropping a `make_test_video()` fixture with
+- [x] AC6 Execution evidence: cropping a `make_test_video()` fixture with
       default arguments yields an output whose audio stream codec, read via
       `probe_audio()`, is identical to the input's — `skip_if` the binaries are
       absent.
-- [ ] AC7 `devtools::test()` and `devtools::check()` clean (0 errors,
+- [x] AC7 `devtools::test()` and `devtools::check()` clean (0 errors,
       0 warnings; NOTEs justified), `devtools::document()` no diff; roxygen
       `@param audio_codec` on all eight plus the audio-behavior prose
       (R/ffmpeg.R:3485, 3595); a `NEWS.md` entry naming the changed default
@@ -119,3 +119,55 @@ stays deferred (D016).
 ## Decisions
 
 ## Review
+
+**PR:** https://github.com/jmgirard/tidymedia/pull/37 · reviewed 2026-07-26 on
+`m35-audio-codec-reencode-verbs` (master unmoved since the branch was cut).
+
+**AC1 — formals + Layer 1 untouched.** All eight verbs report
+`audio_codec = "copy"`, each positioned before `hardware`, none carrying an
+`acodec`/`codec` alias; `format_for_web`/`_batch` correctly did not gain it
+(D016/D017 boundary rule). `git diff master..HEAD -- R/ffm.R` is empty — zero
+Layer 1 diff, so IP1/IP3 hold.
+
+**AC2 — only the added token changed.** Compiled 15 default invocations against
+a detached master worktree and compared per line: 8 differ by exactly one
+inserted `-codec:a copy` and nothing else, 7 are byte-identical, and **0 changed
+in any other way**. The 7 unchanged are the predicted set — `segment_video`'s
+copy path (already `-codec:a copy` via `ffm_copy`), the four composite forms
+carrying no audio, `format_for_web` (fixed AAC recipe) and `standardize_video`
+(already copying). `audio_codec = "aac"`, `NULL` and a non-token value are
+covered by passing tests.
+
+**AC3 — stream-copy conflict.** `segment_video(reencode = FALSE)` aborts for
+both `"aac"` and `NULL`; the guard sits in `segment_pipeline()`, so a
+`segment_video_batch` jobs table with a mixed per-row `reencode` column aborts
+too, while the same table at the default compiles both rows with `-codec:a copy`.
+
+**AC4 — composites.** Default (`audio = NULL`) emits no `-codec:a` on both verbs;
+`audio = 0` emits `-codec:a copy` beside `-map 0:a`; one compiled command carries
+`-filter_complex`, `[vout]`, `-map "[vout]"`, `-map N:a` and both codecs
+together; a named encoder with no audio mapped aborts, `NULL` stays legal.
+
+**AC5 — batch columns and the audio guards.** Per-row `audio_codec` verified on
+all four siblings (character with `NA` → no token for that row); an all-`NA`
+logical column accepted, all-`NA` numeric and numeric rejected. Both composites
+now share `check_batch_audio_col()`: all-`NA` logical and all-`NA` numeric
+accepted, character, all-`NA` character and `c(TRUE, FALSE)` rejected —
+`compare_videos_batch` had no up-front guard at all before this.
+
+**AC6 — execution.** `make_mp3_audio_video()` fixture (MP3 in MP4, where the
+container default is AAC): the cropped output's `probe_audio()$codec_name` equals
+the input's `mp3`, and `audio_codec = NULL` yields `aac`. Binary-gated.
+
+**AC7 — gate.** `devtools::test()` 1462 pass / 0 fail / 4 skip (the M35 file
+alone: 103 pass, 0 fail, 0 skip across 30 tests). `R CMD check` **Status: OK**
+(0/0/0). `pkgdown::check_pkgdown()` clean. `devtools::document()` no diff. All
+eight `.Rd` files name `audio_codec`; `format_for_web_batch.Rd` carries the
+ignored-column cross-reference. `NEWS.md` has a Breaking changes section; no
+milestone IDs in NEWS/README/vignettes. CI green (9 checks).
+
+**Consistency gate.** `cairn_validate` exit 0, all checks passed, no advisories.
+`cairn_impact --changed`: no changed principles in `DESIGN.md`. Toolchain slot
+checks all recorded above. Returns to `in-progress` this milestone: 0.
+
+**Independent review — three lenses + scorer.**

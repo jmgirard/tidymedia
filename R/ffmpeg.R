@@ -2931,6 +2931,10 @@ check_batch_codec_col <- function(jobs, col = "video_codec",
 
 # Resolve a per-row video_codec cell to the scalar the pipelines take: NA is the
 # column form of the NULL sentinel (M34/D016).
+batch_codec_cell <- function(value) {
+  if (length(value) == 1L && is.na(value)) NULL else value
+}
+
 # check_batch_audio_col(): type-guard a composite verb's `audio` stream-index
 # column up front. Legal: a numeric column (NA cells allowed, meaning "drop
 # audio" for that row), or the all-NA column R types as logical. The same
@@ -2949,10 +2953,6 @@ check_batch_audio_col <- function(jobs, call = rlang::caller_env()) {
     )
   }
   invisible(jobs)
-}
-
-batch_codec_cell <- function(value) {
-  if (length(value) == 1L && is.na(value)) NULL else value
 }
 
 # Guard an optional string override column: present -> character, no NA.

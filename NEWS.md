@@ -2,8 +2,9 @@
 
 ## New features
 
-* Opt-in NVIDIA GPU (nvenc) video encoding. `standardize_video()` and
-  `format_for_web()` (and their `_batch` siblings) gain a `hardware` argument:
+* Opt-in NVIDIA GPU (nvenc) video encoding. `standardize_video()`,
+  `format_for_web()`, and `anonymize_video()` (and their `_batch` siblings) gain
+  a `hardware` argument:
   `hardware = "nvenc"` re-encodes on the GPU, choosing the nvenc encoder for the
   codec family (e.g. `h264_nvenc`). By default an unavailable GPU is an error
   (so output stays reproducible); `fallback = TRUE` re-encodes in software with

@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** m33-anonymize-hardware
+- **Branch/PR:** m33-anonymize-hardware · https://github.com/jmgirard/tidymedia/pull/35
 
 ## Goal
 
@@ -30,24 +30,24 @@ ROADMAP candidates (M31 Out).
 
 ## Acceptance criteria
 
-- [ ] AC1 — `anonymize_video()` and `anonymize_video_batch()` accept
+- [x] AC1 — `anonymize_video()` and `anonymize_video_batch()` accept
       `hardware = c("none","nvenc")` and `fallback = FALSE`; with the default
       `hardware="none"` each compiles a command byte-identical to the pre-M33
       verb (no behavior change), asserted by a compile-level test.
-- [ ] AC2 — `hardware="nvenc"` rewrites the video encoder to the nvenc form of
+- [x] AC2 — `hardware="nvenc"` rewrites the video encoder to the nvenc form of
       the `video_codec` family via `resolve_hw_encoder()`; unavailable nvenc
       aborts by default and re-encodes software with a message under
       `fallback=TRUE` (mirrors M31).
-- [ ] AC3 — a `video_codec` outside the h264/hevc/av1 families combined with
+- [x] AC3 — a `video_codec` outside the h264/hevc/av1 families combined with
       `hardware="nvenc"` aborts via `codec_family()` (reused, not reimplemented).
-- [ ] AC4 — `anonymize_video_batch()` threads `hardware`/`fallback` batch-wide
+- [x] AC4 — `anonymize_video_batch()` threads `hardware`/`fallback` batch-wide
       (captured scalars, **not** per-row job columns), documented as such,
       matching `standardize_video_batch`.
-- [ ] AC5 — tests cover AC1–AC4 binary-free via the `tidymedia.nvenc_encoders`
+- [x] AC5 — tests cover AC1–AC4 binary-free via the `tidymedia.nvenc_encoders`
       option seam; any execution test guards with a runtime `skip_if_no_nvenc()`
       probe (M31 lesson: CI lists `h264_nvenc` without a GPU). `devtools::test()`
       clean.
-- [ ] AC6 — profile `verify` clean: `devtools::document()` produces no diff, new
+- [x] AC6 — profile `verify` clean: `devtools::document()` produces no diff, new
       args documented in roxygen on both verbs (`@seealso has_nvenc()`), no new
       exports so `_pkgdown.yml` is unaffected.
 
@@ -88,3 +88,65 @@ ROADMAP candidates (M31 Out).
 ## Decisions
 
 ## Review
+
+Reviewed 2026-07-26 on `m33-anonymize-hardware` (PR #35). Evidence fresh, by
+command, this session.
+
+**Acceptance-criterion evidence**
+
+- AC1 — `names(formals())` shows `hardware`, `fallback` on both verbs (scalar
+  after `pixel_format`, batch after `pixel_format`). Default compile of
+  `anonymize_video(f, "out.mp4", regions, run = FALSE)` emits
+  `-codec:v libx264 -codec:a copy -pix_fmt yuv420p`, no nvenc token. The
+  diff-bug reviewer independently confirmed byte-identity by compiling master
+  and HEAD in isolated copies and diffing (default + non-default
+  color/codec/pixfmt, scalar and batch): identical.
+- AC2 — with `tidymedia.nvenc_encoders = "h264_nvenc"`, compile emits
+  `-codec:v h264_nvenc`; unavailable pool aborts "not available";
+  `fallback = TRUE` messages "falling back" and compiles `-codec:v libx264`
+  (tests in test-nvenc.R, all passing).
+- AC3 — `video_codec = "prores"` + `hardware = "nvenc"` aborts "No nvenc
+  encoder" from the reused `codec_family()`; `libx265` maps to `hevc_nvenc`.
+- AC4 — batch applies nvenc to every row; a `hardware` column in `jobs` is
+  ignored (batch-wide), asserted by a dedicated test. Reviewers confirmed
+  `hardware`/`fallback` are captured scalars outside the `pick()`/dots path.
+- AC5 — `devtools::test()`: 0 failures, 0 warnings, 1233 passing, 2 skipped
+  (both GPU execution tests, `skip_if_no_nvenc()` runtime probe, no nvenc on
+  this host). Compile tests are binary-free via the option seam.
+- AC6 — `devtools::document()` produces no `man/`/`NAMESPACE` diff;
+  `devtools::check()` 0 errors / 0 warnings / 0 notes; new args documented on
+  both verbs with `@seealso has_nvenc()`; no new exports (`_pkgdown.yml`
+  unaffected, `pkgdown::check_pkgdown()` clean).
+
+**Consistency gate** — `cairn_validate` exit 0 (its one advisory, sizing, is on
+M34, not this milestone). Profile `consistency-gate`: `document()` no diff,
+generated files untouched by hand, `check_pkgdown()` clean, `check()` clean,
+no new top-level files. CI on PR #35: all 6 jobs pass. No principle changed
+(IP1 worked under, not modified) → `cairn_impact` skipped.
+
+**Independent review** — three fresh-context lenses. Blame-history (Sonnet):
+no findings; confirmed the M12 even-dimension guard, region validation, and
+audio stream-copy keep their order, and that the M28 roxygen-placement hazard
+and M32 per-row-column lesson do not apply. Prior-review (Sonnet): no
+regressions; the M31 CI trap is not repeated (the shared runtime-probe
+`skip_if_no_nvenc()` is reused), and M31's logged F1 call-attribution finding is
+orthogonal (it concerns two pipelines this diff does not touch). Diff-bug
+(Opus): implementation correct; three documentation-staleness findings.
+
+**Findings scored** (Sonnet scorer, fresh agent, threshold 80):
+
+- F2 (90) — **actioned, fixed in this review.** `NEWS.md` had no entry for this
+  milestone and its nvenc bullet enumerated only `standardize_video()`/
+  `format_for_web()`; the profile consistency-gate requires a changelog entry
+  for user-visible changes. Extended the existing unreleased-cycle bullet to
+  name `anonymize_video()` rather than adding a redundant second bullet.
+
+Below threshold — logged, not actioned (2):
+
+- F1 (70) — `has_nvenc()`/`nvenc_encoder()` roxygen still says the toggle backs
+  only `standardize_video()`/`format_for_web()`, so the new `@seealso` link is
+  one-directional. Real but not required by AC6; the reverse link is a docs
+  polish item, not a defect in this milestone's surface.
+- F3 (45) — `vignettes/workflow.Rmd` carries the same stale enumeration. Out of
+  M33's declared scope (the vignette is untouched by this branch); the vignette
+  pass shipped as M30.

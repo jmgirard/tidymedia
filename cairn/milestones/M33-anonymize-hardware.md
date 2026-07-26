@@ -1,6 +1,6 @@
 # M33: Wire `hardware=` nvenc into `anonymize_video`
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -76,13 +76,14 @@ ROADMAP candidates (M31 Out).
 - [x] T4 — Tests (tests/testthat): default no-op byte-identity (AC1), nvenc
       resolution via option seam (AC2), family rejection (AC3), batch-wide
       threading (AC4); execution tests behind `skip_if_no_nvenc()`.
-- [ ] T5 — Run profile `verify`: `devtools::test()` clean, `devtools::document()`
+- [x] T5 — Run profile `verify`: `devtools::test()` clean, `devtools::document()`
       no diff, `devtools::check()` if anything structural was touched.
 
 ## Work log
 
 - 2026-07-26: created by /milestone-plan; split from the M31-follow-on candidate (sibling M34 covers the four codec-less verbs, API shape under a Fable RB).
 - 2026-07-26: T1–T4 — added `hardware`/`fallback` to `anonymize_video` (+pipeline, +batch, batch-wide) mirroring M31; roxygen + `document()`; nvenc tests in test-nvenc.R. `devtools::test()` clean (0 fail, 2 GPU skips, 1233 pass).
+- 2026-07-26: T5 — `devtools::check()` clean (0E/0W/0N); `document()` no diff. All tasks done → status `review`.
 
 ## Decisions
 

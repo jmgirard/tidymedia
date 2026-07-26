@@ -228,7 +228,7 @@ changes with no deprecation shims (the package is still pre-1.0 and soaking).
   non-numeric/character `start`/`end` (or a non-logical `reencode`) columns are
   rejected with a clear error instead of an opaque FFmpeg failure.
 
-## Verification & provenance (M08)
+## Verification & provenance
 
 * Added `verify_media()`, a probe-backed checker that confirms an output really
   has the properties you asked for. It returns a tidy tibble with one row per
@@ -249,7 +249,7 @@ changes with no deprecation shims (the package is still pre-1.0 and soaking).
 * `ffm_batch(progress = TRUE)` shows a `cli` progress bar as the jobs run
   (following the `future` plan on the parallel path).
 
-## Multi-input verbs (M07)
+## Multi-input verbs
 
 * Completed the blessed multi-input builder set with `ffm_vstack()` (stack
   videos top to bottom, the vertical companion to `ffm_hstack()`) and
@@ -261,7 +261,7 @@ changes with no deprecation shims (the package is still pre-1.0 and soaking).
   inset overlay (corner or center `position`, `scale`, `margin`). Both drop
   audio by default; pass `audio =` an input index to carry that track.
 
-## Safe execution (M06)
+## Safe execution
 
 * Pipelines are now executed as argument vectors (via `system2()`), never
   through a shell string, so input and output paths containing spaces,

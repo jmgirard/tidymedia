@@ -10,6 +10,9 @@ picture_in_picture_batch(
   scale = 0.25,
   margin = 16,
   audio = NULL,
+  video_codec = NULL,
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -19,14 +22,24 @@ picture_in_picture_batch(
 \item{jobs}{A data frame with one row per output and (at least) \code{main}
 (background path), \code{overlay} (inset path), and \code{output}
 (destination path) columns. Optional \code{position}, \code{scale},
-\code{margin}, and \code{audio} columns override the like-named arguments
+\code{margin}, \code{audio}, and \code{video_codec} columns override the
+like-named arguments
 per row (a row omitting one falls back to the argument). In an \code{audio}
 column, \code{NA} means "drop audio" (the column's way of writing the
-scalar's \code{NULL}). Any two rows resolving to the same output path are
+scalar's \code{NULL}); in a \code{video_codec} column it means "leave the
+codec unset". Any two rows resolving to the same output path are
 rejected; other columns are ignored.}
 
 \item{position, scale, margin, audio}{Defaults applied to every row lacking the
 corresponding column. See \code{\link[=picture_in_picture]{picture_in_picture()}} for their meaning.}
+
+\item{video_codec}{A string naming the output video codec, applied to every
+row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
+it unset so each output keeps its container's default encoder.}
+
+\item{hardware, fallback}{The encoder backend and its fallback behavior,
+applied to the whole batch (a property of the machine, not of a row, so
+neither is read as a \code{jobs} column). See \code{\link[=picture_in_picture]{picture_in_picture()}}.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}
@@ -60,7 +73,8 @@ picture_in_picture_batch(jobs, run = FALSE)
 }
 \seealso{
 \code{\link[=picture_in_picture]{picture_in_picture()}}, the scalar verb it wraps; \code{\link[=ffm_batch]{ffm_batch()}}, the
-batch runner; \code{\link[=concatenate_videos_batch]{concatenate_videos_batch()}} and \code{\link[=compare_videos_batch]{compare_videos_batch()}},
+batch runner; \code{\link[=has_nvenc]{has_nvenc()}} for the \code{hardware = "nvenc"} toggle;
+\code{\link[=concatenate_videos_batch]{concatenate_videos_batch()}} and \code{\link[=compare_videos_batch]{compare_videos_batch()}},
 the other fan-in batch siblings.
 
 Other task verb functions:

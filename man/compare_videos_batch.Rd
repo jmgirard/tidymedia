@@ -9,6 +9,9 @@ compare_videos_batch(
   direction = c("horizontal", "vertical"),
   resize = TRUE,
   audio = NULL,
+  video_codec = NULL,
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -18,15 +21,25 @@ compare_videos_batch(
 \item{jobs}{A data frame with one row per output and (at least) an
 \code{inputs} list-column — each cell a character vector of \strong{two or more}
 video paths — and an \code{output} column (destination path). Optional
-\code{direction}, \code{resize}, and \code{audio} columns override the
+\code{direction}, \code{resize}, \code{audio}, and \code{video_codec}
+columns override the
 like-named arguments per row (a row omitting one falls back to the
 argument). In an \code{audio} column, \code{NA} means "drop audio" (the
-column's way of writing the scalar's \code{NULL}). Any two rows resolving to
+column's way of writing the scalar's \code{NULL}); in a \code{video_codec}
+column it means "leave the codec unset". Any two rows resolving to
 the same output path are rejected; other columns are ignored.}
 
 \item{direction, resize, audio}{Defaults applied to every row lacking the
 corresponding column. See \code{\link[=compare_videos]{compare_videos()}} for their meaning. \code{audio}
 is validated per row against that row's input count.}
+
+\item{video_codec}{A string naming the output video codec, applied to every
+row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
+it unset so each output keeps its container's default encoder.}
+
+\item{hardware, fallback}{The encoder backend and its fallback behavior,
+applied to the whole batch (a property of the machine, not of a row, so
+neither is read as a \code{jobs} column). See \code{\link[=compare_videos]{compare_videos()}}.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}
@@ -59,7 +72,8 @@ compare_videos_batch(jobs, run = FALSE)
 }
 \seealso{
 \code{\link[=compare_videos]{compare_videos()}}, the scalar verb it wraps; \code{\link[=ffm_batch]{ffm_batch()}}, the
-batch runner; \code{\link[=concatenate_videos_batch]{concatenate_videos_batch()}} and \code{\link[=picture_in_picture_batch]{picture_in_picture_batch()}},
+batch runner; \code{\link[=has_nvenc]{has_nvenc()}} for the \code{hardware = "nvenc"} toggle;
+\code{\link[=concatenate_videos_batch]{concatenate_videos_batch()}} and \code{\link[=picture_in_picture_batch]{picture_in_picture_batch()}},
 the other fan-in batch siblings.
 
 Other task verb functions:

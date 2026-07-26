@@ -281,3 +281,149 @@ test_that("picture_in_picture() honors the nvenc abort and fallback branches", {
   )
   expect_no_match(as.character(cmd), "-codec:v", fixed = TRUE)
 })
+
+# _batch siblings: video_codec as a per-row column ----------------------------
+
+test_that("crop_video_batch() takes a per-row video_codec column, NA = unset", {
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input = c(f, f), output = c("a.mp4", "b.mp4"),
+    video_codec = c("libx265", NA_character_)
+  )
+  out <- crop_video_batch(jobs, width = 100, height = 50, run = FALSE)
+  expect_match(as.character(out$command[[1]]), "-codec:v libx265", fixed = TRUE)
+  expect_no_match(as.character(out$command[[2]]), "-codec:v", fixed = TRUE)
+})
+
+test_that("crop_video_batch() accepts an all-NA (logical) video_codec column", {
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input = c(f, f), output = c("a.mp4", "b.mp4"), video_codec = NA
+  )
+  out <- crop_video_batch(jobs, width = 100, height = 50, run = FALSE)
+  expect_false(any(grepl("-codec:v", out$command, fixed = TRUE)))
+})
+
+test_that("crop_video_batch() rejects a numeric video_codec column up front", {
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input = c(f, f), output = c("a.mp4", "b.mp4"), video_codec = c(1, 2)
+  )
+  expect_error(
+    crop_video_batch(jobs, width = 100, height = 50, run = FALSE),
+    "must be character"
+  )
+})
+
+test_that("crop_video_batch() honors hardware only as a formal, not a column", {
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  f <- make_input()
+  # A `hardware` column is an ordinary ignored column: it must not touch the
+  # compiled commands (hardware is a machine property, D016).
+  jobs <- tibble::tibble(
+    input = c(f, f), output = c("a.mp4", "b.mp4"),
+    hardware = c("nvenc", "nvenc")
+  )
+  out <- crop_video_batch(jobs, width = 100, height = 50, run = FALSE)
+  expect_false(any(grepl("nvenc", out$command, fixed = TRUE)))
+
+  out <- crop_video_batch(jobs, width = 100, height = 50, hardware = "nvenc",
+                          run = FALSE)
+  expect_true(all(grepl("-codec:v h264_nvenc", out$command, fixed = TRUE)))
+})
+
+test_that("segment_video_batch() takes a per-row video_codec column", {
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input = c(f, f), output = c("a.mp4", "b.mp4"),
+    start = c(0, 1), end = c(1, 2),
+    video_codec = c("libx265", NA_character_)
+  )
+  out <- segment_video_batch(jobs, run = FALSE)
+  expect_match(as.character(out$command[[1]]), "-codec:v libx265", fixed = TRUE)
+  expect_no_match(as.character(out$command[[2]]), "-codec:v", fixed = TRUE)
+})
+
+test_that("segment_video_batch() aborts on a stream-copy row that names a codec", {
+  f <- make_input()
+  # Per-row `reencode` column meeting a batch-wide video_codec.
+  jobs <- tibble::tibble(
+    input = c(f, f), output = c("a.mp4", "b.mp4"),
+    start = c(0, 1), end = c(1, 2), reencode = c(TRUE, FALSE)
+  )
+  expect_error(
+    segment_video_batch(jobs, video_codec = "libx264", run = FALSE),
+    "re-encoding cut"
+  )
+  # Per-row `reencode` column meeting a per-row video_codec column.
+  jobs$video_codec <- c(NA_character_, "libx264")
+  expect_error(segment_video_batch(jobs, run = FALSE), "re-encoding cut")
+  # The same table with the codec on the re-encoding row alone is fine.
+  jobs$video_codec <- c("libx264", NA_character_)
+  expect_no_error(segment_video_batch(jobs, run = FALSE))
+})
+
+test_that("compare_videos_batch() takes a per-row video_codec column", {
+  f1 <- make_input()
+  f2 <- make_input()
+  jobs <- tibble::tibble(
+    inputs = list(c(f1, f2), c(f1, f2)), output = c("a.mp4", "b.mp4"),
+    video_codec = c("libx265", NA_character_)
+  )
+  out <- compare_videos_batch(jobs, run = FALSE)
+  expect_match(as.character(out$command[[1]]), "-codec:v libx265", fixed = TRUE)
+  expect_no_match(as.character(out$command[[2]]), "-codec:v", fixed = TRUE)
+})
+
+test_that("compare_videos_batch() rejects a numeric video_codec column", {
+  f1 <- make_input()
+  f2 <- make_input()
+  jobs <- tibble::tibble(
+    inputs = list(c(f1, f2)), output = "a.mp4", video_codec = 1
+  )
+  expect_error(compare_videos_batch(jobs, run = FALSE), "must be character")
+})
+
+test_that("picture_in_picture_batch() takes a per-row video_codec column", {
+  f1 <- make_input()
+  f2 <- make_input()
+  jobs <- tibble::tibble(
+    main = c(f1, f1), overlay = c(f2, f2), output = c("a.mp4", "b.mp4"),
+    video_codec = c("libx265", NA_character_)
+  )
+  out <- picture_in_picture_batch(jobs, run = FALSE)
+  expect_match(as.character(out$command[[1]]), "-codec:v libx265", fixed = TRUE)
+  expect_no_match(as.character(out$command[[2]]), "-codec:v", fixed = TRUE)
+})
+
+test_that("picture_in_picture_batch() applies hardware batch-wide", {
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  f1 <- make_input()
+  f2 <- make_input()
+  jobs <- tibble::tibble(main = f1, overlay = f2, output = "a.mp4")
+  out <- picture_in_picture_batch(jobs, hardware = "nvenc", run = FALSE)
+  expect_match(as.character(out$command[[1]]), "-codec:v h264_nvenc",
+               fixed = TRUE)
+})
+
+test_that("the four _batch siblings default to no codec at all", {
+  f1 <- make_input()
+  f2 <- make_input()
+  crop <- crop_video_batch(
+    tibble::tibble(input = f1, output = "a.mp4"), width = 100, height = 50,
+    run = FALSE
+  )
+  seg <- segment_video_batch(
+    tibble::tibble(input = f1, output = "b.mp4", start = 0, end = 1),
+    run = FALSE
+  )
+  cmp <- compare_videos_batch(
+    tibble::tibble(inputs = list(c(f1, f2)), output = "c.mp4"), run = FALSE
+  )
+  pip <- picture_in_picture_batch(
+    tibble::tibble(main = f1, overlay = f2, output = "d.mp4"), run = FALSE
+  )
+  for (cmd in c(crop$command, seg$command, cmp$command, pip$command)) {
+    expect_no_match(as.character(cmd), "-codec:v", fixed = TRUE)
+  }
+})

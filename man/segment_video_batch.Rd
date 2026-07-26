@@ -4,7 +4,16 @@
 \alias{segment_video_batch}
 \title{Segment Many Videos From a Jobs Table}
 \usage{
-segment_video_batch(jobs, reencode = TRUE, run = TRUE, parallel = FALSE, ...)
+segment_video_batch(
+  jobs,
+  reencode = TRUE,
+  video_codec = NULL,
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
+  run = TRUE,
+  parallel = FALSE,
+  ...
+)
 }
 \arguments{
 \item{jobs}{A data frame with one row per segment and (at least) the columns
@@ -15,13 +24,26 @@ Two optional columns are recognized: \code{output} (destination path) and
 \code{output} is absent, one is derived per row by appending
 \code{_<n>.<ext>} to each input's basename, with the segment number
 restarting at 1 for each input file (the same rule as
-\code{\link{segment_video}}). Any other columns are ignored.}
+\code{\link{segment_video}}). A \code{video_codec} column overrides that
+argument per row, with \code{NA} meaning "leave the codec unset" (the
+column's way of writing the argument's \code{NULL}). Any other columns are
+ignored.}
 
 \item{reencode}{A logical passed to \code{\link{ffm_seek}}: cut each segment
 frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
 lossless copy that snaps to keyframes (\code{FALSE}). See \code{ffm_seek}
 for the trade-off. Applies to every row, unless \code{jobs} carries a
 \code{reencode} column, which overrides this argument on a per-row basis.}
+
+\item{video_codec}{A string naming the output video codec, applied to every
+row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
+it unset so each segment keeps its container's default encoder. A row that
+resolves to a codec while cutting by stream copy (\code{reencode = FALSE},
+as an argument or a column) is an error: no encoder runs on that path.}
+
+\item{hardware, fallback}{The encoder backend and its fallback behavior,
+applied to the whole batch (a property of the machine, not of a row, so
+neither is read as a \code{jobs} column). See \code{\link[=segment_video]{segment_video()}}.}
 
 \item{run}{A logical: run each segment's command through FFmpeg
 (\code{TRUE}, default) or only compile them for inspection (\code{FALSE}).}
@@ -67,7 +89,8 @@ https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 \seealso{
 \code{\link[=segment_video]{segment_video()}} for the single-input, parallel-vector form;
 \code{\link[=ffm_batch]{ffm_batch()}} for the batch runner and the arguments forwarded through
-\code{...}; \code{\link[=ffm_seek]{ffm_seek()}} for the cut trade-off.
+\code{...}; \code{\link[=has_nvenc]{has_nvenc()}} for the \code{hardware = "nvenc"} toggle;
+\code{\link[=ffm_seek]{ffm_seek()}} for the cut trade-off.
 
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

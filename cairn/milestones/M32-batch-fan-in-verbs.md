@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1, IP3
-- **Branch/PR:** m32-batch-fan-in-verbs
+- **Branch/PR:** m32-batch-fan-in-verbs · https://github.com/jmgirard/tidymedia/pull/34
 
 ## Goal
 
@@ -30,23 +30,23 @@ own candidates.
 
 ## Acceptance criteria
 
-- [ ] AC1: `concatenate_videos_batch(jobs)` compiles one concat command per row
+- [x] AC1: `concatenate_videos_batch(jobs)` compiles one concat command per row
       from an `inputs` list-column + `output`; returns jobs + `command`
       (+ `success` when run). Compile test, binary-free.
-- [ ] AC2: `compare_videos_batch(jobs)` compiles per-row hstack/vstack commands,
+- [x] AC2: `compare_videos_batch(jobs)` compiles per-row hstack/vstack commands,
       honoring optional `direction`/`resize`/`audio` columns with scalar-arg
       fallback. Compile + override test.
-- [ ] AC3: `picture_in_picture_batch(jobs)` compiles per-row overlay commands
+- [x] AC3: `picture_in_picture_batch(jobs)` compiles per-row overlay commands
       from fixed `main`/`overlay`/`output`, honoring optional
       `position`/`scale`/`margin`/`audio` columns with fallback. Compile + override test.
-- [ ] AC4: each verb aborts with a clear cli error on a malformed jobs table —
+- [x] AC4: each verb aborts with a clear cli error on a malformed jobs table —
       missing input/output column(s), NA path, or duplicate output paths.
-- [ ] AC5: each batch command is byte-identical to the scalar verb's command for
+- [x] AC5: each batch command is byte-identical to the scalar verb's command for
       the equivalent single job (shared pipeline helper). Parity test.
-- [ ] AC6: batch options forward through `...` to `ffm_batch` — `success`/
+- [x] AC6: batch options forward through `...` to `ffm_batch` — `success`/
       `verified` columns populate and a multi-input manifest records inputs
       joined with `";"`. Binary-gated execution test (`skip_if` binaries absent).
-- [ ] AC7: D015 recorded (extends D007); roxygen for the 3 verbs, `_pkgdown.yml`,
+- [x] AC7: D015 recorded (extends D007); roxygen for the 3 verbs, `_pkgdown.yml`,
       and the wordlist synced; `devtools::check()` clean (0 errors / 0 warnings).
 
 ## Coverage
@@ -94,3 +94,17 @@ own candidates.
 ## Decisions
 
 ## Review
+
+**Reviewed 2026-07-26 · PR #34 · branch cut from master @ c3f753c (master unmoved).**
+
+Acceptance-criteria evidence (fresh runs on the branch; `devtools::check()` → Status: OK, 0/0/0):
+
+- AC1 ✓ — test-concatenate-videos-batch.R (19 pass): "compiles one concat command per row" asserts `-f concat -safe 0` + per-row output; returns inputs/output/command.
+- AC2 ✓ — test-compare-videos-batch.R (21 pass): per-row hstack/vstack; direction/resize/audio override tests confirm column-wins-over-arg with fallback.
+- AC3 ✓ — test-picture-in-picture-batch.R (21 pass): per-row overlay from fixed main/overlay/output; position/scale/margin/audio override tests pass.
+- AC4 ✓ — malformed-jobs tests across all three files: missing inputs/output/main/overlay column, empty table, non-list inputs, NA path, and duplicate outputs each abort with a clear cli error.
+- AC5 ✓ — parity tests: compare & PiP byte-identical to the scalar command; concatenate identical after scrubbing the concat demuxer's per-invocation temp list-file path. test-ffmpeg.R (119 pass) confirms the scalar refactor is behavior-preserving.
+- AC6 ✓ — test-fan-in-batch-forwarding.R (11 pass): verify/manifest/checksums reach ffm_batch via `...`; success + verified columns populate; the multi-input manifest joins a row's two inputs (and md5s) with ";".
+- AC7 ✓ — D015 recorded in DECISIONS.md (extends D007); roxygen for the 3 verbs, `_pkgdown.yml` (+3, pkgdown::check_pkgdown() clean), and inst/WORDLIST synced; devtools::check() Status: OK.
+
+**Consistency gate:** cairn_validate exit 0 (all checks pass). No DESIGN principle changed (works under IP1/IP3) → cairn_impact skipped. Toolchain (r-package, inferred — PROFILE.md absent): devtools::check() 0/0/0; pkgdown clean.

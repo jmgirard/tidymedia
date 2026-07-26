@@ -459,8 +459,8 @@ state.
   neither a number nor a fraction.
 - FFprobe’s `key=value` output is split on the first `=` only, so values
   that contain `=` are no longer truncated; the superseded
-  [`tidyr::separate()`](https://tidyr.tidyverse.org/reference/separate.html)
-  call is gone. Files with zero streams no longer trip the stream loop.
+  `tidyr::separate()` call is gone. Files with zero streams no longer
+  trip the stream loop.
 
 ## tidymedia 0.0.0.9002
 

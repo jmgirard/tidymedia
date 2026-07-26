@@ -179,7 +179,7 @@
 <code><a href="../reference/probe_container.html">probe_container()</a></code>, <code><a href="../reference/probe_container.html">probe_streams()</a></code>, <code><a href="../reference/probe_container.html">probe_video()</a></code>, and <code><a href="../reference/probe_container.html">probe_audio()</a></code> now return the requested tibble when called with <code>infile =</code>; they previously returned <code>NULL</code>.</li>
 <li>
 <code>convert_fractions()</code> parses fractions directly instead of via <code>eval(parse())</code>, passes <code>NA</code> through, and errors on values that are neither a number nor a fraction.</li>
-<li>FFprobe’s <code>key=value</code> output is split on the first <code>=</code> only, so values that contain <code>=</code> are no longer truncated; the superseded <code><a href="https://tidyr.tidyverse.org/reference/separate.html" class="external-link">tidyr::separate()</a></code> call is gone. Files with zero streams no longer trip the stream loop.</li>
+<li>FFprobe’s <code>key=value</code> output is split on the first <code>=</code> only, so values that contain <code>=</code> are no longer truncated; the superseded <code>tidyr::separate()</code> call is gone. Files with zero streams no longer trip the stream loop.</li>
 </ul></div>
 </div>
     <div class="section level2">

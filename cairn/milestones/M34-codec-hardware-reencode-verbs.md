@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** RR01
 - **Principles touched:** IP1, IP2, IP3, GP1
-- **Branch/PR:** `m34-codec-hardware-reencode-verbs`
+- **Branch/PR:** `m34-codec-hardware-reencode-verbs` · https://github.com/jmgirard/tidymedia/pull/36
 
 ## Goal
 
@@ -34,51 +34,51 @@ demonstrated need). Composites' carried-audio re-encode default and the
 <!-- Driving RR: RR01 — BC1–BC10 ingested verbatim (binding-criteria check
      string-compares, whitespace-normalized). AC11 is the profile verify gate. -->
 
-- [ ] AC1 (BC1): `crop_video`, `segment_video`, `compare_videos`,
+- [x] AC1 (BC1): `crop_video`, `segment_video`, `compare_videos`,
       `picture_in_picture` and their `_batch` siblings each gain formals
       `video_codec = NULL`, `hardware = c("none", "nvenc")`, `fallback = FALSE`
       (exact D014 spellings; no `vcodec`/`codec` alias), verified by
       `formals()`-level or documented-usage evidence.
-- [ ] AC2 (BC2): With all-default arguments, each of the four verbs (and batch
+- [x] AC2 (BC2): With all-default arguments, each of the four verbs (and batch
       siblings) compiles commands **byte-identical** to pre-M34: a passing
       regression test asserts the compiled string contains no `-codec:v` token
       and matches the pre-M34 literal for at least one single-input verb
       (`crop_video`) and one multi-input verb (`compare_videos`).
-- [ ] AC3 (BC3): `crop_video(…, video_codec = "libx265", run = FALSE)` compiles
+- [x] AC3 (BC3): `crop_video(…, video_codec = "libx265", run = FALSE)` compiles
       a command containing `-codec:v libx265`; a non-token value (e.g.
       `"libx264 -evil"`) aborts via `check_token()`.
-- [ ] AC4 (BC4): Under `withr::local_options(tidymedia.nvenc_encoders =
+- [x] AC4 (BC4): Under `withr::local_options(tidymedia.nvenc_encoders =
       "h264_nvenc")`, each of the four verbs with `hardware = "nvenc"` and
       default `video_codec` compiles `-codec:v h264_nvenc`; with
       `video_codec = "libx265"` and the option set to `"hevc_nvenc"`, compiles
       `-codec:v hevc_nvenc`.
-- [ ] AC5 (BC5): Under an empty nvenc pool (`tidymedia.nvenc_encoders =
+- [x] AC5 (BC5): Under an empty nvenc pool (`tidymedia.nvenc_encoders =
       character(0)`): `hardware = "nvenc"`, `fallback = FALSE` aborts;
       `fallback = TRUE` with default `video_codec` emits a message and compiles
       with **no** `-codec:v`; `fallback = TRUE` with `video_codec = "libx264"`
       emits a message and compiles `-codec:v libx264`.
-- [ ] AC6 (BC6): `segment_video(…, reencode = FALSE, hardware = "nvenc")` and
+- [x] AC6 (BC6): `segment_video(…, reencode = FALSE, hardware = "nvenc")` and
       `segment_video(…, reencode = FALSE, video_codec = "libx264")` each abort
       with a `cli` error; in `segment_video_batch`, a jobs table whose per-row
       `reencode` column contains `FALSE` on a row with a non-NA resolved
       `video_codec` (column or batch-wide) aborts — evidenced by passing tests
       covering both the scalar and the per-row-column path.
-- [ ] AC7 (BC7): `compare_videos` and `picture_in_picture` with `video_codec`
+- [x] AC7 (BC7): `compare_videos` and `picture_in_picture` with `video_codec`
       set compile a single command containing all of `-filter_complex`, the
       `[vout]` label, `-map "[vout]"`, and `-codec:v <codec>` (compile-string
       test, no binary).
-- [ ] AC8 (BC8): The four `_batch` siblings accept a per-row `video_codec`
+- [x] AC8 (BC8): The four `_batch` siblings accept a per-row `video_codec`
       column: a character column may contain `NA` (that row compiles no
       `-codec:v`; non-NA rows compile their own codec); an **all-NA logical**
       column is accepted as all-default; a numeric `video_codec` column aborts
       up front. `hardware`/`fallback` are honored only as formals — a
       `hardware` jobs column does not alter per-row commands.
-- [ ] AC9 (BC9): M34 changes to `R/ffm.R` are documentation-only or absent:
+- [x] AC9 (BC9): M34 changes to `R/ffm.R` are documentation-only or absent:
       `ffm_codec()` and the compile path (`ffm_groups`/`ffm_compile`) have no
       functional diff on the milestone branch (IP2: no new engine capability).
-- [ ] AC10 (BC10): No `pixel_format` argument is added to any of the four verbs
+- [x] AC10 (BC10): No `pixel_format` argument is added to any of the four verbs
       or their batch siblings in M34.
-- [ ] AC11: Profile `verify`/consistency-gate clean — `devtools::test()` clean,
+- [x] AC11: Profile `verify`/consistency-gate clean — `devtools::test()` clean,
       `devtools::document()` no diff (new args documented on all eight
       functions), `devtools::check()` clean (0 errors/0 warnings).
 
@@ -146,3 +146,70 @@ demonstrated need). Composites' carried-audio re-encode default and the
 - 2026-07-26 (RR01): Q1 — Option B (user-facing `video_codec`) on all four verbs, no split; boundary rule "fixed recipes hide the codec, configurable transforms expose it". Q2 — `NULL` sentinel default (container-default preserved; literal `"libx264"` rejected for the WebM trap, `"auto"` rejected for `check_token` namespace collision). Q3 — defer `pixel_format`. Q4 — composites compose cleanly, consistent with IP3/D009. Q5 — abort on stream-copy conflicts, per-row in the shared pipeline. Q6 — per-row `video_codec` column, `hardware`/`fallback` batch-wide. Cross-cutting API convention promoted to D016.
 
 ## Review
+
+**2026-07-26 — /milestone-review M34.** PR https://github.com/jmgirard/tidymedia/pull/36
+(draft → ready). Branch cut from a synced `master`; `master` had not moved, so no
+merge-forward was needed. Every line below is fresh evidence run in the review
+session, not recalled from implementation.
+
+### Acceptance-criteria evidence
+
+- AC1 — `formals()` read live for all eight verbs: 8/8 carry `video_codec = NULL`,
+  `hardware = c("none","nvenc")`, `fallback = FALSE`; 0/8 carry a `vcodec`/`codec`
+  alias. Documented usage regenerated in `man/` for all eight.
+- AC2 — stronger than the criterion asks: master was checked out into a scratch
+  copy and both versions compiled the same 12 all-default invocations (four scalar
+  verbs incl. vertical/audio/center variants, the stream-copy cut, and all four
+  batch siblings). `diff` of the two outputs is empty — zero byte differences.
+  The in-suite regression tests additionally pin the `crop_video` and
+  `compare_videos` literals and assert no `-codec:v` token.
+- AC3 — `crop_video(video_codec = "libx265")` compiles `-codec:v libx265`;
+  `video_codec = "libx264 -evil"` aborts, under both `hardware = "none"` and
+  `"nvenc"` (the token check runs before family inference).
+- AC4 — under `tidymedia.nvenc_encoders = "h264_nvenc"`, all four verbs with
+  `hardware = "nvenc"` and the default codec compile `-codec:v h264_nvenc`; with
+  `video_codec = "libx265"` and the pool set to `"hevc_nvenc"`, `-codec:v hevc_nvenc`.
+- AC5 — under an empty pool: `fallback = FALSE` aborts; `fallback = TRUE` with the
+  default codec emits a message and compiles no `-codec:v`; `fallback = TRUE` with
+  `video_codec = "libx264"` emits a message and compiles `-codec:v libx264`.
+- AC6 — `segment_video(reencode = FALSE, hardware = "nvenc")` and
+  `(reencode = FALSE, video_codec = "libx264")` both abort with the cli error. In
+  `segment_video_batch`, a per-row `reencode` column containing `FALSE` aborts
+  against both a batch-wide `video_codec` argument and a per-row `video_codec`
+  column; the same table with the codec on the re-encoding row alone succeeds.
+- AC7 — `compare_videos` and `picture_in_picture` with `video_codec = "libx265"`
+  each compile ONE command containing all of `-filter_complex`, `[vout]`,
+  `-map "[vout]"`, and `-codec:v libx265`. Compile-level, no binary.
+- AC8 — all four batch siblings: a character `video_codec` column with `NA` gives
+  that row no `-codec:v` while non-NA rows carry their own codec; an all-NA
+  (logical) column is accepted as all-default; a numeric column aborts up front.
+  A `hardware` jobs column leaves the compiled commands untouched, while the
+  `hardware` formal changes them — confirming the batch-wide split.
+- AC9 — `git diff master..HEAD -- R/ffm.R` is empty (0 lines), and `--numstat`
+  over `R/ffm.R` + `R/ffm_oop.R` returns no rows. The engine has zero diff, not
+  merely a documentation-only one; `ffm_codec()` and the compile path are untouched.
+- AC10 — `formals()` read live: 0/8 verbs carry a `pixel_format` argument. An
+  in-suite guard test locks this.
+- AC11 — `devtools::test()` 1355 pass / 4 skip / 0 fail; `devtools::document()`
+  leaves `man/` and `NAMESPACE` clean; `devtools::check()` 0 errors / 0 warnings
+  / 0 notes.
+
+**Driving RR (RR01) projections:** RR01 records no numeric projection — its
+output is ten binding criteria and ten recommendations, all qualitative — so the
+projection-vs-outcome comparison no-ops with nothing to juxtapose.
+
+### Consistency gate
+
+`cairn_validate` exit 0 — every CHECK PASS. One advisory: `sizing (split
+tripwires)` warns that M34 has 11 acceptance criteria against a >7 tripwire.
+Not actioned: AC1–AC10 are RR01's BC1–BC10 ingested verbatim (the binding-criteria
+check string-compares them, so they cannot be merged or trimmed) and AC11 is the
+profile gate. The milestone is still one coherent reviewable PR touching one
+feature; splitting it would have split a single API addition across two PRs.
+
+Toolchain gate (`r-package` profile): `document()` no diff · generated files
+clean · `pkgdown::check_pkgdown()` "No problems found" · NEWS.md entry present
+and free of milestone numbers · no new top-level files · `check()` clean.
+
+### Independent review — three lenses + scorer
+

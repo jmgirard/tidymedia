@@ -79,6 +79,7 @@ Other task verb functions:
 \code{\link[=format_for_web_batch]{format_for_web_batch()}},
 \code{\link[=normalize_audio]{normalize_audio()}},
 \code{\link[=normalize_audio_batch]{normalize_audio_batch()}},
+\code{\link[=picture_in_picture_batch]{picture_in_picture_batch()}},
 \code{\link[=sample_frames]{sample_frames()}},
 \code{\link[=sample_frames_batch]{sample_frames_batch()}},
 \code{\link[=segment_video]{segment_video()}},

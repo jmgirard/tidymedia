@@ -71,7 +71,7 @@ own candidates.
 - [x] T3: `concatenate_videos_batch()` over `ffm_batch`; compile + parity tests.
 - [x] T4: `compare_videos_batch()` with per-row `direction`/`resize`/`audio`
       overrides; compile + override + parity tests.
-- [ ] T5: `picture_in_picture_batch()` with per-row `position`/`scale`/`margin`/
+- [x] T5: `picture_in_picture_batch()` with per-row `position`/`scale`/`margin`/
       `audio` overrides; compile + override + parity tests.
 - [ ] T6: options-forwarding + multi-input manifest execution test (binary-gated).
 - [ ] T7: docs + decision — roxygen (`@family`, `@seealso` scalar sibling +
@@ -86,6 +86,7 @@ own candidates.
 - 2026-07-26: T2 done — check_fanin_jobs() validates the `inputs` list-column + `output` shape (min_inputs param for compare's ≥2); PiP keeps inline main/overlay validation. Verb-level malformed-jobs tests land with T3–T5.
 - 2026-07-26: T3 done — concatenate_videos_batch() over ffm_batch; 19 tests (compile + list-path-scrubbed parity + AC4 guards + binary-gated exec) pass. Parity scrubs the concat demuxer's per-invocation temp list-file path.
 - 2026-07-26: T4 done — compare_videos_batch() with per-row direction/resize/audio overrides (audio NA = drop, checked per row against that row's input count); 21 tests pass. Byte-identical scalar parity.
+- 2026-07-26: T5 done — picture_in_picture_batch() with fixed main/overlay/output columns (inline validation) + per-row position/scale/margin/audio overrides; 21 tests pass. Byte-identical scalar parity.
 
 ## Decisions
 

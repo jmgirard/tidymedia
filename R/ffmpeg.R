@@ -3518,6 +3518,125 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 }
 
 
+# picture_in_picture_batch() -----------------------------------------------
+
+#' Inset One Video Over Another For Many Outputs From a Jobs Table
+#'
+#' Composite an inset (overlay) video onto a main video for many outputs from a
+#' single jobs tibble — the **batch** (table-driven) sibling of
+#' [picture_in_picture()] for when you have more than one to produce. Its two
+#' inputs have distinct roles, so \code{jobs} carries fixed \code{main} and
+#' \code{overlay} columns (not a list-column; D015) plus an \code{output} column.
+#' This is a thin wrapper over \code{\link{ffm_batch}}: one reproducible overlay
+#' command per row, sharing the pipeline with the scalar verb.
+#'
+#' @param jobs A data frame with one row per output and (at least) \code{main}
+#'   (background path), \code{overlay} (inset path), and \code{output}
+#'   (destination path) columns. Optional \code{position}, \code{scale},
+#'   \code{margin}, and \code{audio} columns override the like-named arguments
+#'   per row (a row omitting one falls back to the argument). In an \code{audio}
+#'   column, \code{NA} means "drop audio" (the column's way of writing the
+#'   scalar's \code{NULL}). Any two rows resolving to the same output path are
+#'   rejected; other columns are ignored.
+#' @param position,scale,margin,audio Defaults applied to every row lacking the
+#'   corresponding column. See [picture_in_picture()] for their meaning.
+#' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
+#'   or only compile them for inspection (\code{FALSE}).
+#' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
+#'   (\code{TRUE}) or sequentially (\code{FALSE}, default). See
+#'   \code{\link{ffm_batch}} for the \pkg{future} plan requirement.
+#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
+#'   \code{verify}, \code{manifest}, \code{progress}).
+#' @return The \code{jobs} tibble with an added \code{command} column and, when
+#'   \code{run = TRUE}, a \code{success} column (plus \code{verified} /
+#'   provenance manifest when requested via \code{...}). See
+#'   \code{\link{ffm_batch}}.
+#' @seealso [picture_in_picture()], the scalar verb it wraps; [ffm_batch()], the
+#'   batch runner; [concatenate_videos_batch()] and [compare_videos_batch()],
+#'   the other fan-in batch siblings.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' jobs <- tibble::tibble(main = video, overlay = video, output = "pip.mp4")
+#' picture_in_picture_batch(jobs, run = FALSE)
+#' @export
+picture_in_picture_batch <- function(jobs,
+                                     position = c("topright", "topleft",
+                                                  "bottomright", "bottomleft",
+                                                  "center"),
+                                     scale = 0.25, margin = 16, audio = NULL,
+                                     run = TRUE, parallel = FALSE, ...) {
+
+  position <- rlang::arg_match(position)
+  rlang::check_number_decimal(scale)
+  rlang::check_number_whole(margin, min = 0)
+  rlang::check_number_whole(audio, min = 0, max = 1, allow_null = TRUE)
+
+  # Fixed two-input shape (D015): main/overlay are distinct roles, so named
+  # columns rather than a list-column — validated inline (parity with the
+  # scalar's two required inputs), not via check_fanin_jobs().
+  if (!is.data.frame(jobs)) {
+    cli::cli_abort("{.arg jobs} must be a data frame with one row per output.")
+  }
+  if (nrow(jobs) == 0) {
+    cli::cli_abort("{.arg jobs} must have at least one row.")
+  }
+  cols <- c("main", "overlay", "output")
+  missing <- setdiff(cols, names(jobs))
+  if (length(missing) > 0) {
+    cli::cli_abort(c(
+      "{.arg jobs} must have {.field main}, {.field overlay}, and {.field output} columns.",
+      "x" = "Missing column{?s}: {.val {missing}}."
+    ))
+  }
+  for (col in cols) {
+    jobs[[col]] <- as.character(jobs[[col]])
+    if (anyNA(jobs[[col]])) {
+      cli::cli_abort("The {.field {col}} column of {.arg jobs} must not contain {.val {NA}}.")
+    }
+  }
+  jobs <- reject_duplicate_outputs(jobs)
+
+  # Validate present override columns up front. scale/margin are required values
+  # (no NA); audio may be NA (means "drop audio"). Per-value checks (position
+  # vocabulary, audio range) are inherited per row below / from the pipeline.
+  check_batch_string_col(jobs, "position")
+  for (col in intersect(c("scale", "margin"), names(jobs))) {
+    if (!is.numeric(jobs[[col]]) || anyNA(jobs[[col]])) {
+      cli::cli_abort("The {.field {col}} column of {.arg jobs} must be numeric (no {.val {NA}}).")
+    }
+  }
+  if ("audio" %in% names(jobs) && !is.numeric(jobs$audio)) {
+    cli::cli_abort("The {.field audio} column of {.arg jobs} must be numeric ({.val {NA}} to drop audio).")
+  }
+
+  # Thin Layer-2 fan-in over ffm_batch (D007/D015): one overlay pipeline per row,
+  # sharing picture_in_picture_pipeline() with picture_in_picture(). A per-row
+  # override column (via `...` from pmap) wins over the scalar arg; an `audio`
+  # cell of NA means "drop audio" (the column form of the scalar's NULL).
+  ffm_batch(
+    jobs,
+    function(main, overlay, output, ...) {
+      dots <- list(...)
+      pick <- function(nm, default) if (nm %in% names(dots)) dots[[nm]] else default
+      aud <- pick("audio", audio)
+      if (length(aud) == 1L && is.na(aud)) aud <- NULL
+      if (!is.null(aud)) rlang::check_number_whole(aud, min = 0, max = 1)
+      picture_in_picture_pipeline(
+        main, overlay, output,
+        position = pick("position", position),
+        scale = pick("scale", scale),
+        margin = pick("margin", margin),
+        audio = aud
+      )
+    },
+    run = run,
+    parallel = parallel,
+    ...
+  )
+}
+
+
 # Get volume levels -------------------------------------------------------
 
 get_volume <- function(infile) {

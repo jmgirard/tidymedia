@@ -1,6 +1,6 @@
 # M34: `video_codec` + `hardware=` for the four codec-less re-encode verbs
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** RR01
@@ -124,7 +124,7 @@ demonstrated need). Composites' carried-audio re-encode default and the
       `tidymedia.nvenc_encoders` option seam; execution tests behind
       `skip_if_no_nvenc()`; assert no functional `R/ffm.R` diff (AC9) and no
       `pixel_format` formal (AC10).
-- [ ] T8 — Run profile `verify`/consistency-gate: `devtools::test()`,
+- [x] T8 — Run profile `verify`/consistency-gate: `devtools::test()`,
       `devtools::document()` (no diff), `devtools::check()`.
 
 ## Work log
@@ -139,6 +139,7 @@ demonstrated need). Composites' carried-audio re-encode default and the
 - 2026-07-26: T5 — the four `_batch` siblings gain the three formals; `video_codec` reads as a per-row column via two new helpers (`check_batch_codec_col()` NA-tolerant guard + `batch_codec_cell()` NA→sentinel), `hardware`/`fallback` stay batch-wide captured scalars. `segment_video_batch` inherits the stream-copy abort per row (scalar arg + column paths both tested). `document()` + `devtools::test()` clean (1301 pass).
 - 2026-07-26: T6 — docs pass: the R7 caveat (nvenc + sentinel assumes H.264; non-H.264 containers need an explicit codec) on all four scalar verbs and in the `nvenc_encoder`/`has_nvenc` block, which now lists all seven toggle-carrying verbs; NEWS.md entry added. `document()` clean; formals verified on all eight (AC1) with no `pixel_format` anywhere (AC10).
 - 2026-07-26: T7 — execution tests added (two real libx264/libx265 encodes behind `skip_if_no_ffprobe()`, two nvenc encodes behind `skip_if_no_nvenc()`) plus in-package formals guards for AC1 and AC10. AC9 evidence is a command, not a test: `git diff master...HEAD -- R/ffm.R` is empty, so the engine has zero diff (not merely doc-only). `test-video-codec.R` 117 pass / 2 skip; suite 1355 pass / 4 skip.
+- 2026-07-26: T8 — profile gate clean: `devtools::test()` 1355 pass / 4 skip / 0 fail, `devtools::document()` no diff, `devtools::check()` 0 errors / 0 warnings / 0 notes (one spelling NOTE on "HEVC" cleared via `spelling::update_wordlist()`). Status → review.
 
 ## Decisions
 

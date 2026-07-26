@@ -2669,6 +2669,64 @@ check_batch_string_col <- function(jobs, col, call = rlang::caller_env()) {
   invisible(jobs)
 }
 
+# Validate a fan-in jobs table (D015): unlike the scalar-input `input` column of
+# check_batch_jobs(), the many-inputs -> one-output verbs carry their per-row
+# inputs in an `inputs` LIST-COLUMN (each cell a character vector of >= min_inputs
+# paths) alongside a scalar `output` column. purrr::pmap passes each list cell to
+# .f row-wise, so ffm_batch needs no change. Coerces `output` to character;
+# leaves duplicate-path rejection to reject_duplicate_outputs (called after).
+check_fanin_jobs <- function(jobs, min_inputs = 1L, verb = NULL,
+                             call = rlang::caller_env()) {
+  if (!is.data.frame(jobs)) {
+    cli::cli_abort("{.arg jobs} must be a data frame with one row per output.", call = call)
+  }
+  if (nrow(jobs) == 0) {
+    cli::cli_abort("{.arg jobs} must have at least one row.", call = call)
+  }
+  if (!"inputs" %in% names(jobs)) {
+    cli::cli_abort(c(
+      "{.arg jobs} must have an {.field inputs} list-column.",
+      "x" = "Missing column: {.val inputs}.",
+      "i" = "Each cell is a character vector of input paths for that output."
+    ), call = call)
+  }
+  if (!"output" %in% names(jobs)) {
+    cli::cli_abort(c(
+      "{.arg jobs} must have an {.field output} column.",
+      "x" = "Missing column: {.val output}.",
+      "i" = "{verb} writes one output per row; name each destination."
+    ), call = call)
+  }
+  if (!is.list(jobs$inputs) || is.data.frame(jobs$inputs)) {
+    cli::cli_abort(c(
+      "The {.field inputs} column of {.arg jobs} must be a list-column.",
+      "i" = "Build it with e.g. {.code tibble::tibble(inputs = list(c(a, b)), output = o)}."
+    ), call = call)
+  }
+  ok <- vapply(
+    jobs$inputs,
+    function(x) is.character(x) && length(x) >= min_inputs && !anyNA(x),
+    logical(1)
+  )
+  if (!all(ok)) {
+    # Drive pluralization off the scalar count and list the offending rows
+    # without a `{?s}` governed by the numeric `{.val {vector}}`, which cli reads
+    # as a quantity and throws `length(object) == 1` on with 2+ items (M18
+    # review; see the loudnorm silent-input guard above for the same fix).
+    bad <- which(!ok)
+    cli::cli_abort(c(
+      "Each {.field inputs} cell must be a character vector of {min_inputs} or \\
+       more paths with no {.val {NA}}.",
+      "x" = "Found {length(bad)} invalid cell{?s} at row{?s} (1-indexed): {.val {bad}}."
+    ), call = call)
+  }
+  jobs$output <- as.character(jobs$output)
+  if (anyNA(jobs$output)) {
+    cli::cli_abort("The {.field output} column of {.arg jobs} must not contain {.val {NA}}.", call = call)
+  }
+  jobs
+}
+
 
 # extract_audio_batch() ---------------------------------------------------
 
@@ -3103,6 +3161,17 @@ separate_audio_video_batch <- function(jobs, reencode = FALSE, run = TRUE,
 
 # concatenate_videos() ----------------------------------------------------
 
+# Build the concat-demuxer pipeline shared by concatenate_videos() and its
+# _batch sibling (M32): warn on mixed extensions, then ffm_concat() writes the
+# demuxer list file and sets copy + map 0. Kept ABOVE the roxygen block so
+# document() does not re-target it (M28 lesson).
+concatenate_pipeline <- function(infiles, outfile) {
+  if (length(unique(tools::file_ext(infiles))) != 1) {
+    cli::cli_warn("Not all {.arg infiles} have the same extension.")
+  }
+  ffm_concat(ffm_files(infiles, outfile))
+}
+
 #' Combine video files using the concat demuxer
 #'
 #' Combine multiple video files one after another without needing to re-encode
@@ -3132,18 +3201,39 @@ concatenate_videos <- function(infiles, outfile, run = TRUE) {
   }
   rlang::check_string(outfile)
 
-  if (length(unique(tools::file_ext(infiles))) != 1) {
-    cli::cli_warn("Not all {.arg infiles} have the same extension.")
-  }
-
-  # ffm_concat() writes the demuxer list file and sets copy + map 0.
-  p <- ffm_concat(ffm_files(infiles, outfile))
-  ffm_finish(p, run)
+  ffm_finish(concatenate_pipeline(infiles, outfile), run)
 }
 
 
 
 # compare_videos() --------------------------------------------------------
+
+# Build the side-by-side comparison pipeline shared by compare_videos() and its
+# _batch sibling (M32): resize supports exactly two inputs, so guard it here;
+# then stack (h/v) and optionally carry one input's audio. Assumes `resize`/
+# `audio` already type-checked by the caller; `direction` is arg-matched here so
+# both callers get a clean per-value error. ABOVE the roxygen block (M28 lesson).
+compare_videos_pipeline <- function(infiles, outfile,
+                                    direction = c("horizontal", "vertical"),
+                                    resize = TRUE, audio = NULL) {
+  direction <- rlang::arg_match(direction)
+  if (resize && length(infiles) != 2) {
+    cli::cli_abort(c(
+      "{.arg resize} currently supports exactly two inputs.",
+      "i" = "Pass {.code resize = FALSE} to compare more than two videos."
+    ))
+  }
+  p <- ffm_files(infiles, outfile)
+  p <- switch(
+    direction,
+    horizontal = ffm_hstack(p, resize = resize),
+    vertical = ffm_vstack(p, resize = resize)
+  )
+  if (!is.null(audio)) {
+    p <- ffm_map(p, paste0(audio, ":a"))
+  }
+  p
+}
 
 #' Build a side-by-side comparison video
 #'
@@ -3184,32 +3274,50 @@ compare_videos <- function(infiles, outfile,
     cli::cli_abort("{.arg infiles} must name two or more video files.")
   }
   rlang::check_string(outfile)
-  direction <- rlang::arg_match(direction)
   rlang::check_bool(resize)
   rlang::check_number_whole(
     audio, min = 0, max = length(infiles) - 1, allow_null = TRUE
   )
-  if (resize && length(infiles) != 2) {
-    cli::cli_abort(c(
-      "{.arg resize} currently supports exactly two inputs.",
-      "i" = "Pass {.code resize = FALSE} to compare more than two videos."
-    ))
-  }
 
-  p <- ffm_files(infiles, outfile)
-  p <- switch(
-    direction,
-    horizontal = ffm_hstack(p, resize = resize),
-    vertical = ffm_vstack(p, resize = resize)
-  )
-  if (!is.null(audio)) {
-    p <- ffm_map(p, paste0(audio, ":a"))
-  }
+  p <- compare_videos_pipeline(infiles, outfile, direction, resize, audio)
   ffm_finish(p, run)
 }
 
 
 # picture_in_picture() ----------------------------------------------------
+
+# Build the picture-in-picture overlay pipeline shared by picture_in_picture()
+# and its _batch sibling (M32): translate the corner/center choice into overlay
+# x/y expressions, scale + position the inset, optionally carry one input's
+# audio. Assumes `scale`/`margin`/`audio` already type-checked by the caller;
+# `position` is arg-matched here so both callers get a clean per-value error.
+# ABOVE the roxygen block (M28 lesson).
+picture_in_picture_pipeline <- function(main, overlay, outfile,
+                                        position = c("topright", "topleft",
+                                                     "bottomright", "bottomleft",
+                                                     "center"),
+                                        scale = 0.25, margin = 16, audio = NULL) {
+  position <- rlang::arg_match(position)
+  m <- as.integer(margin)
+  pos <- switch(
+    position,
+    topleft     = list(x = as.character(m), y = as.character(m)),
+    topright    = list(x = sprintf("main_w-overlay_w-%d", m),
+                       y = as.character(m)),
+    bottomleft  = list(x = as.character(m),
+                       y = sprintf("main_h-overlay_h-%d", m)),
+    bottomright = list(x = sprintf("main_w-overlay_w-%d", m),
+                       y = sprintf("main_h-overlay_h-%d", m)),
+    center      = list(x = "(main_w-overlay_w)/2",
+                       y = "(main_h-overlay_h)/2")
+  )
+  p <- ffm_files(c(main, overlay), outfile)
+  p <- ffm_overlay(p, x = pos$x, y = pos$y, scale = scale)
+  if (!is.null(audio)) {
+    p <- ffm_map(p, paste0(audio, ":a"))
+  }
+  p
+}
 
 #' Inset one video over another (picture-in-picture)
 #'
@@ -3254,33 +3362,291 @@ picture_in_picture <- function(main, overlay, outfile,
   check_file_exists(main)
   check_file_exists(overlay)
   rlang::check_string(outfile)
+  rlang::check_number_decimal(scale)
+  rlang::check_number_whole(margin, min = 0)
+  rlang::check_number_whole(audio, min = 0, max = 1, allow_null = TRUE)
+
+  p <- picture_in_picture_pipeline(
+    main, overlay, outfile, position, scale, margin, audio
+  )
+  ffm_finish(p, run)
+}
+
+
+# concatenate_videos_batch() ----------------------------------------------
+
+#' Concatenate Many Videos From a Jobs Table
+#'
+#' Join clips end to end for many outputs from a single jobs tibble — the
+#' **batch** (table-driven) sibling of [concatenate_videos()] for when you have
+#' more than one concatenation to produce. Unlike the single-input batch verbs,
+#' each row's inputs are **many**, so \code{jobs} carries an \code{inputs}
+#' list-column (each cell a character vector of source paths) plus an
+#' \code{output} column (D015). This is a thin wrapper over
+#' \code{\link{ffm_batch}}: one reproducible concat-demuxer command per row,
+#' sharing the copy + map-0 pipeline with the scalar verb.
+#'
+#' @param jobs A data frame with one row per output and (at least) an
+#'   \code{inputs} list-column — each cell a character vector of the source
+#'   paths to join, in order — and an \code{output} column (destination path).
+#'   An \code{output} column is required; this verb derives no destination. Any
+#'   two rows resolving to the same output path are rejected. Any other columns
+#'   are ignored.
+#' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
+#'   or only compile them for inspection (\code{FALSE}).
+#' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
+#'   (\code{TRUE}) or sequentially (\code{FALSE}, default). See
+#'   \code{\link{ffm_batch}} for the \pkg{future} plan requirement.
+#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
+#'   \code{verify}, \code{manifest}, \code{progress}).
+#' @return The \code{jobs} tibble with an added \code{command} column and, when
+#'   \code{run = TRUE}, a \code{success} column (plus \code{verified} /
+#'   provenance manifest when requested via \code{...}). See
+#'   \code{\link{ffm_batch}}.
+#' @seealso [concatenate_videos()], the scalar verb it wraps; [ffm_batch()], the
+#'   batch runner; [compare_videos_batch()] and [picture_in_picture_batch()],
+#'   the other fan-in batch siblings.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' jobs <- tibble::tibble(inputs = list(c(video, video)), output = "joined.mp4")
+#' concatenate_videos_batch(jobs, run = FALSE)
+#' @export
+concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
+
+  jobs <- check_fanin_jobs(jobs, verb = "Concatenation")
+  jobs <- reject_duplicate_outputs(jobs)
+
+  # Thin Layer-2 fan-in over ffm_batch (D007/D015): one concat-demuxer pipeline
+  # per row, sharing concatenate_pipeline() with concatenate_videos(). pmap
+  # passes each `inputs` list cell as a character vector; `...` forwards
+  # ffm_batch options (verify/manifest/...) to the runner.
+  ffm_batch(
+    jobs,
+    function(inputs, output, ...) concatenate_pipeline(inputs, output),
+    run = run,
+    parallel = parallel,
+    ...
+  )
+}
+
+
+# compare_videos_batch() ---------------------------------------------------
+
+#' Build Many Comparison Videos From a Jobs Table
+#'
+#' Stack videos side by side for many outputs from a single jobs tibble — the
+#' **batch** (table-driven) sibling of [compare_videos()] for when you have more
+#' than one comparison to produce. Each row carries an \code{inputs} list-column
+#' (each cell two or more video paths) plus an \code{output} column (D015).
+#' This is a thin wrapper over \code{\link{ffm_batch}}: one reproducible stacking
+#' command per row, sharing the pipeline with the scalar verb.
+#'
+#' @param jobs A data frame with one row per output and (at least) an
+#'   \code{inputs} list-column — each cell a character vector of **two or more**
+#'   video paths — and an \code{output} column (destination path). Optional
+#'   \code{direction}, \code{resize}, and \code{audio} columns override the
+#'   like-named arguments per row (a row omitting one falls back to the
+#'   argument). In an \code{audio} column, \code{NA} means "drop audio" (the
+#'   column's way of writing the scalar's \code{NULL}). Any two rows resolving to
+#'   the same output path are rejected; other columns are ignored.
+#' @param direction,resize,audio Defaults applied to every row lacking the
+#'   corresponding column. See [compare_videos()] for their meaning. \code{audio}
+#'   is validated per row against that row's input count.
+#' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
+#'   or only compile them for inspection (\code{FALSE}).
+#' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
+#'   (\code{TRUE}) or sequentially (\code{FALSE}, default). See
+#'   \code{\link{ffm_batch}} for the \pkg{future} plan requirement.
+#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
+#'   \code{verify}, \code{manifest}, \code{progress}).
+#' @return The \code{jobs} tibble with an added \code{command} column and, when
+#'   \code{run = TRUE}, a \code{success} column (plus \code{verified} /
+#'   provenance manifest when requested via \code{...}). See
+#'   \code{\link{ffm_batch}}.
+#' @seealso [compare_videos()], the scalar verb it wraps; [ffm_batch()], the
+#'   batch runner; [concatenate_videos_batch()] and [picture_in_picture_batch()],
+#'   the other fan-in batch siblings.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' jobs <- tibble::tibble(inputs = list(c(video, video)), output = "compare.mp4")
+#' compare_videos_batch(jobs, run = FALSE)
+#' @export
+compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
+                                 resize = TRUE, audio = NULL,
+                                 run = TRUE, parallel = FALSE, ...) {
+
+  direction <- rlang::arg_match(direction)
+  rlang::check_bool(resize)
+  rlang::check_number_whole(audio, min = 0, allow_null = TRUE)
+
+  jobs <- check_fanin_jobs(jobs, min_inputs = 2L, verb = "Comparison")
+  jobs <- reject_duplicate_outputs(jobs)
+
+  # Validate present override columns up front (types); per-value checks
+  # (direction vocabulary, resize/length compatibility, audio range) are
+  # inherited per row from compare_videos_pipeline() / the per-row audio check.
+  check_batch_string_col(jobs, "direction")
+  if ("resize" %in% names(jobs) &&
+      (!is.logical(jobs$resize) || anyNA(jobs$resize))) {
+    cli::cli_abort(
+      "The {.field resize} column of {.arg jobs} must be {.val {TRUE}} or {.val {FALSE}} (no {.val {NA}})."
+    )
+  }
+
+  # Thin Layer-2 fan-in over ffm_batch (D007/D015): one stacking pipeline per
+  # row, sharing compare_videos_pipeline() with compare_videos(). A per-row
+  # override column (via `...` from pmap) wins over the scalar arg; an `audio`
+  # cell of NA means "drop audio" (the column form of the scalar's NULL).
+  ffm_batch(
+    jobs,
+    function(inputs, output, ...) {
+      dots <- list(...)
+      pick <- function(nm, default) if (nm %in% names(dots)) dots[[nm]] else default
+      aud <- pick("audio", audio)
+      if (length(aud) == 1L && is.na(aud)) aud <- NULL
+      if (!is.null(aud)) {
+        rlang::check_number_whole(aud, min = 0, max = length(inputs) - 1)
+      }
+      compare_videos_pipeline(
+        inputs, output,
+        direction = pick("direction", direction),
+        resize = pick("resize", resize),
+        audio = aud
+      )
+    },
+    run = run,
+    parallel = parallel,
+    ...
+  )
+}
+
+
+# picture_in_picture_batch() -----------------------------------------------
+
+#' Inset One Video Over Another For Many Outputs From a Jobs Table
+#'
+#' Composite an inset (overlay) video onto a main video for many outputs from a
+#' single jobs tibble — the **batch** (table-driven) sibling of
+#' [picture_in_picture()] for when you have more than one to produce. Its two
+#' inputs have distinct roles, so \code{jobs} carries fixed \code{main} and
+#' \code{overlay} columns (not a list-column; D015) plus an \code{output} column.
+#' This is a thin wrapper over \code{\link{ffm_batch}}: one reproducible overlay
+#' command per row, sharing the pipeline with the scalar verb.
+#'
+#' @param jobs A data frame with one row per output and (at least) \code{main}
+#'   (background path), \code{overlay} (inset path), and \code{output}
+#'   (destination path) columns. Optional \code{position}, \code{scale},
+#'   \code{margin}, and \code{audio} columns override the like-named arguments
+#'   per row (a row omitting one falls back to the argument). In an \code{audio}
+#'   column, \code{NA} means "drop audio" (the column's way of writing the
+#'   scalar's \code{NULL}). Any two rows resolving to the same output path are
+#'   rejected; other columns are ignored.
+#' @param position,scale,margin,audio Defaults applied to every row lacking the
+#'   corresponding column. See [picture_in_picture()] for their meaning.
+#' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
+#'   or only compile them for inspection (\code{FALSE}).
+#' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
+#'   (\code{TRUE}) or sequentially (\code{FALSE}, default). See
+#'   \code{\link{ffm_batch}} for the \pkg{future} plan requirement.
+#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
+#'   \code{verify}, \code{manifest}, \code{progress}).
+#' @return The \code{jobs} tibble with an added \code{command} column and, when
+#'   \code{run = TRUE}, a \code{success} column (plus \code{verified} /
+#'   provenance manifest when requested via \code{...}). See
+#'   \code{\link{ffm_batch}}.
+#' @seealso [picture_in_picture()], the scalar verb it wraps; [ffm_batch()], the
+#'   batch runner; [concatenate_videos_batch()] and [compare_videos_batch()],
+#'   the other fan-in batch siblings.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' jobs <- tibble::tibble(main = video, overlay = video, output = "pip.mp4")
+#' picture_in_picture_batch(jobs, run = FALSE)
+#' @export
+picture_in_picture_batch <- function(jobs,
+                                     position = c("topright", "topleft",
+                                                  "bottomright", "bottomleft",
+                                                  "center"),
+                                     scale = 0.25, margin = 16, audio = NULL,
+                                     run = TRUE, parallel = FALSE, ...) {
+
   position <- rlang::arg_match(position)
   rlang::check_number_decimal(scale)
   rlang::check_number_whole(margin, min = 0)
   rlang::check_number_whole(audio, min = 0, max = 1, allow_null = TRUE)
-  m <- as.integer(margin)
 
-  # Translate the corner/center choice into overlay x/y expressions, where
-  # overlay_w/overlay_h are the (already scaled) inset's dimensions.
-  pos <- switch(
-    position,
-    topleft     = list(x = as.character(m), y = as.character(m)),
-    topright    = list(x = sprintf("main_w-overlay_w-%d", m),
-                       y = as.character(m)),
-    bottomleft  = list(x = as.character(m),
-                       y = sprintf("main_h-overlay_h-%d", m)),
-    bottomright = list(x = sprintf("main_w-overlay_w-%d", m),
-                       y = sprintf("main_h-overlay_h-%d", m)),
-    center      = list(x = "(main_w-overlay_w)/2",
-                       y = "(main_h-overlay_h)/2")
-  )
-
-  p <- ffm_files(c(main, overlay), outfile)
-  p <- ffm_overlay(p, x = pos$x, y = pos$y, scale = scale)
-  if (!is.null(audio)) {
-    p <- ffm_map(p, paste0(audio, ":a"))
+  # Fixed two-input shape (D015): main/overlay are distinct roles, so named
+  # columns rather than a list-column — validated inline (parity with the
+  # scalar's two required inputs), not via check_fanin_jobs().
+  if (!is.data.frame(jobs)) {
+    cli::cli_abort("{.arg jobs} must be a data frame with one row per output.")
   }
-  ffm_finish(p, run)
+  if (nrow(jobs) == 0) {
+    cli::cli_abort("{.arg jobs} must have at least one row.")
+  }
+  cols <- c("main", "overlay", "output")
+  missing <- setdiff(cols, names(jobs))
+  if (length(missing) > 0) {
+    cli::cli_abort(c(
+      "{.arg jobs} must have {.field main}, {.field overlay}, and {.field output} columns.",
+      "x" = "Missing column{?s}: {.val {missing}}."
+    ))
+  }
+  for (col in cols) {
+    jobs[[col]] <- as.character(jobs[[col]])
+    if (anyNA(jobs[[col]])) {
+      cli::cli_abort("The {.field {col}} column of {.arg jobs} must not contain {.val {NA}}.")
+    }
+  }
+  jobs <- reject_duplicate_outputs(jobs)
+
+  # Validate present override columns up front. scale/margin are required values
+  # (no NA); audio may be NA (means "drop audio"). Per-value checks (position
+  # vocabulary, audio range) are inherited per row below / from the pipeline.
+  check_batch_string_col(jobs, "position")
+  for (col in intersect(c("scale", "margin"), names(jobs))) {
+    if (!is.numeric(jobs[[col]]) || anyNA(jobs[[col]])) {
+      cli::cli_abort("The {.field {col}} column of {.arg jobs} must be numeric (no {.val {NA}}).")
+    }
+  }
+  # An all-NA `audio` column is logical, not numeric (NA means "drop audio", per
+  # the roxygen) — accept it, matching compare_videos_batch's no-guard handling;
+  # a genuinely wrong (e.g. character) column still aborts here.
+  if ("audio" %in% names(jobs) && !is.numeric(jobs$audio) &&
+      !all(is.na(jobs$audio))) {
+    cli::cli_abort("The {.field audio} column of {.arg jobs} must be numeric ({.val {NA}} to drop audio).")
+  }
+
+  # Thin Layer-2 fan-in over ffm_batch (D007/D015): one overlay pipeline per row,
+  # sharing picture_in_picture_pipeline() with picture_in_picture(). A per-row
+  # override column (via `...` from pmap) wins over the scalar arg; an `audio`
+  # cell of NA means "drop audio" (the column form of the scalar's NULL).
+  ffm_batch(
+    jobs,
+    function(main, overlay, output, ...) {
+      dots <- list(...)
+      pick <- function(nm, default) if (nm %in% names(dots)) dots[[nm]] else default
+      # Re-check the resolved margin per row: a `margin` column bypasses the
+      # scalar arg's check_number_whole(min = 0), so enforce it here (parity).
+      mrg <- pick("margin", margin)
+      rlang::check_number_whole(mrg, min = 0, arg = "margin")
+      aud <- pick("audio", audio)
+      if (length(aud) == 1L && is.na(aud)) aud <- NULL
+      if (!is.null(aud)) rlang::check_number_whole(aud, min = 0, max = 1)
+      picture_in_picture_pipeline(
+        main, overlay, output,
+        position = pick("position", position),
+        scale = pick("scale", scale),
+        margin = mrg,
+        audio = aud
+      )
+    },
+    run = run,
+    parallel = parallel,
+    ...
+  )
 }
 
 

@@ -57,7 +57,9 @@ compare_videos(c(video, video), "compare.mp4", run = FALSE)
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
+\code{\link[=compare_videos_batch]{compare_videos_batch()}},
 \code{\link[=concatenate_videos]{concatenate_videos()}},
+\code{\link[=concatenate_videos_batch]{concatenate_videos_batch()}},
 \code{\link[=convert_audio]{convert_audio()}},
 \code{\link[=convert_audio_batch]{convert_audio_batch()}},
 \code{\link[=crop_video]{crop_video()}},
@@ -71,6 +73,7 @@ Other task verb functions:
 \code{\link[=normalize_audio]{normalize_audio()}},
 \code{\link[=normalize_audio_batch]{normalize_audio_batch()}},
 \code{\link[=picture_in_picture]{picture_in_picture()}},
+\code{\link[=picture_in_picture_batch]{picture_in_picture_batch()}},
 \code{\link[=sample_frames]{sample_frames()}},
 \code{\link[=sample_frames_batch]{sample_frames_batch()}},
 \code{\link[=segment_video]{segment_video()}},

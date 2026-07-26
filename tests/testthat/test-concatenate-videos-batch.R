@@ -81,6 +81,20 @@ test_that("concatenate_videos_batch() rejects NA inside an inputs cell", {
   expect_error(concatenate_videos_batch(jobs, run = FALSE), "no")
 })
 
+test_that("concatenate_videos_batch() reports MULTIPLE invalid rows without a cli crash", {
+  # Two invalid rows: the error message pluralizes off a scalar count, never the
+  # numeric row-index vector (M18 lesson — a 1-row test hides the crash).
+  f <- make_input()
+  jobs <- tibble::tibble(
+    inputs = list(c(f, NA_character_), NA_character_),
+    output = c("a.mp4", "b.mp4")
+  )
+  expect_error(
+    concatenate_videos_batch(jobs, run = FALSE),
+    "Found 2 invalid"
+  )
+})
+
 test_that("concatenate_videos_batch() rejects duplicate output paths", {
   f <- make_input()
   jobs <- tibble::tibble(inputs = list(c(f, f), c(f, f)), output = c("same.mp4", "same.mp4"))

@@ -85,6 +85,14 @@ test_that("compare_videos_batch() requires two or more inputs per row", {
   expect_error(compare_videos_batch(jobs, run = FALSE), "or more")
 })
 
+test_that("compare_videos_batch() reports MULTIPLE under-filled rows without a cli crash", {
+  # Two rows each with a single input (min is 2): the message must pluralize off
+  # a scalar count, not the numeric row-index vector (M18 lesson).
+  f <- make_input()
+  jobs <- tibble::tibble(inputs = list(c(f), c(f)), output = c("a.mp4", "b.mp4"))
+  expect_error(compare_videos_batch(jobs, run = FALSE), "Found 2 invalid")
+})
+
 test_that("compare_videos_batch() rejects a non-logical resize column", {
   f1 <- make_input(); f2 <- make_input()
   jobs <- tibble::tibble(inputs = list(c(f1, f2)), output = "o.mp4", resize = "yes")

@@ -96,6 +96,25 @@ test_that("picture_in_picture_batch() rejects a scale column containing NA", {
   expect_error(picture_in_picture_batch(jobs, run = FALSE), "scale")
 })
 
+test_that("picture_in_picture_batch() enforces the scalar's margin contract per row", {
+  # A `margin` column bypasses the scalar arg's check; a negative or fractional
+  # value must still abort here, exactly as the scalar picture_in_picture() does.
+  m <- make_input(); o <- make_input()
+  neg  <- tibble::tibble(main = m, overlay = o, output = "o.mp4", margin = -8)
+  frac <- tibble::tibble(main = m, overlay = o, output = "o.mp4", margin = 16.5)
+  expect_error(picture_in_picture_batch(neg, run = FALSE), "margin")
+  expect_error(picture_in_picture_batch(frac, run = FALSE), "margin")
+})
+
+test_that("picture_in_picture_batch() accepts an all-NA audio column as 'drop audio'", {
+  # `audio = NA` is logical, not numeric; the roxygen documents it as "drop
+  # audio", so it must be accepted (parity with compare_videos_batch).
+  m <- make_input(); o <- make_input()
+  jobs <- tibble::tibble(main = m, overlay = o, output = "o.mp4", audio = NA)
+  res <- picture_in_picture_batch(jobs, run = FALSE)
+  expect_no_match(res$command[[1]], ":a", fixed = TRUE)   # audio dropped
+})
+
 test_that("picture_in_picture_batch() rejects duplicate output paths", {
   m <- make_input(); o <- make_input()
   jobs <- tibble::tibble(main = c(m, m), overlay = c(o, o), output = c("x.mp4", "x.mp4"))

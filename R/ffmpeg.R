@@ -2709,10 +2709,15 @@ check_fanin_jobs <- function(jobs, min_inputs = 1L, verb = NULL,
     logical(1)
   )
   if (!all(ok)) {
+    # Drive pluralization off the scalar count and list the offending rows
+    # without a `{?s}` governed by the numeric `{.val {vector}}`, which cli reads
+    # as a quantity and throws `length(object) == 1` on with 2+ items (M18
+    # review; see the loudnorm silent-input guard above for the same fix).
+    bad <- which(!ok)
     cli::cli_abort(c(
-      "Each {.field inputs} cell must be a character vector of \\
-       {.val {min_inputs}} or more paths with no {.val {NA}}.",
-      "x" = "Invalid cell{?s} at row{?s}: {.val {which(!ok)}}."
+      "Each {.field inputs} cell must be a character vector of {min_inputs} or \\
+       more paths with no {.val {NA}}.",
+      "x" = "Found {length(bad)} invalid cell{?s} at row{?s} (1-indexed): {.val {bad}}."
     ), call = call)
   }
   jobs$output <- as.character(jobs$output)
@@ -3606,7 +3611,11 @@ picture_in_picture_batch <- function(jobs,
       cli::cli_abort("The {.field {col}} column of {.arg jobs} must be numeric (no {.val {NA}}).")
     }
   }
-  if ("audio" %in% names(jobs) && !is.numeric(jobs$audio)) {
+  # An all-NA `audio` column is logical, not numeric (NA means "drop audio", per
+  # the roxygen) — accept it, matching compare_videos_batch's no-guard handling;
+  # a genuinely wrong (e.g. character) column still aborts here.
+  if ("audio" %in% names(jobs) && !is.numeric(jobs$audio) &&
+      !all(is.na(jobs$audio))) {
     cli::cli_abort("The {.field audio} column of {.arg jobs} must be numeric ({.val {NA}} to drop audio).")
   }
 
@@ -3619,6 +3628,10 @@ picture_in_picture_batch <- function(jobs,
     function(main, overlay, output, ...) {
       dots <- list(...)
       pick <- function(nm, default) if (nm %in% names(dots)) dots[[nm]] else default
+      # Re-check the resolved margin per row: a `margin` column bypasses the
+      # scalar arg's check_number_whole(min = 0), so enforce it here (parity).
+      mrg <- pick("margin", margin)
+      rlang::check_number_whole(mrg, min = 0, arg = "margin")
       aud <- pick("audio", audio)
       if (length(aud) == 1L && is.na(aud)) aud <- NULL
       if (!is.null(aud)) rlang::check_number_whole(aud, min = 0, max = 1)
@@ -3626,7 +3639,7 @@ picture_in_picture_batch <- function(jobs,
         main, overlay, output,
         position = pick("position", position),
         scale = pick("scale", scale),
-        margin = pick("margin", margin),
+        margin = mrg,
         audio = aud
       )
     },

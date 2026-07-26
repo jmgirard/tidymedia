@@ -427,3 +427,70 @@ test_that("the four _batch siblings default to no codec at all", {
     expect_no_match(as.character(cmd), "-codec:v", fixed = TRUE)
   }
 })
+
+# real encodes ----------------------------------------------------------------
+
+test_that("crop_video(video_codec = ) writes a playable file", {
+  skip_if_no_ffprobe()
+  infile <- make_test_video()
+  outfile <- withr::local_tempfile(fileext = ".mp4")
+  crop_video(infile, outfile, width = 32, height = 24, video_codec = "libx265")
+  expect_true(file.exists(outfile))
+  expect_gt(file.size(outfile), 0)
+  expect_equal(get_width(outfile), 32)
+})
+
+test_that("picture_in_picture(video_codec = ) writes a playable file", {
+  skip_if_no_ffprobe()
+  infile <- make_test_video()
+  outfile <- withr::local_tempfile(fileext = ".mp4")
+  picture_in_picture(infile, infile, outfile, video_codec = "libx264")
+  expect_true(file.exists(outfile))
+  expect_gt(file.size(outfile), 0)
+  expect_equal(get_width(outfile), 64)
+})
+
+test_that("crop_video(hardware = 'nvenc') writes a non-empty file", {
+  skip_if_no_nvenc()
+  infile <- make_test_video()
+  outfile <- withr::local_tempfile(fileext = ".mp4")
+  crop_video(infile, outfile, width = 32, height = 24, hardware = "nvenc")
+  expect_true(file.exists(outfile))
+  expect_gt(file.size(outfile), 0)
+})
+
+test_that("compare_videos(hardware = 'nvenc') writes a non-empty file", {
+  skip_if_no_nvenc()
+  infile <- make_test_video()
+  outfile <- withr::local_tempfile(fileext = ".mp4")
+  compare_videos(c(infile, infile), outfile, hardware = "nvenc")
+  expect_true(file.exists(outfile))
+  expect_gt(file.size(outfile), 0)
+})
+
+# scope guards ----------------------------------------------------------------
+
+test_that("M34 adds no pixel_format argument to any of the eight verbs", {
+  # AC10: pixel_format is deliberately deferred on these verbs (D016).
+  verbs <- c("crop_video", "segment_video", "compare_videos",
+             "picture_in_picture", "crop_video_batch", "segment_video_batch",
+             "compare_videos_batch", "picture_in_picture_batch")
+  for (verb in verbs) {
+    expect_false("pixel_format" %in% names(formals(get(verb))), label = verb)
+  }
+})
+
+test_that("all eight verbs carry the D014 argument spellings", {
+  # AC1: exact spellings, no vcodec/codec alias.
+  verbs <- c("crop_video", "segment_video", "compare_videos",
+             "picture_in_picture", "crop_video_batch", "segment_video_batch",
+             "compare_videos_batch", "picture_in_picture_batch")
+  for (verb in verbs) {
+    fo <- formals(get(verb))
+    expect_true("video_codec" %in% names(fo), label = verb)
+    expect_null(fo$video_codec)
+    expect_equal(eval(fo$hardware), c("none", "nvenc"))
+    expect_false(fo$fallback)
+    expect_false(any(c("vcodec", "codec") %in% names(fo)), label = verb)
+  }
+})

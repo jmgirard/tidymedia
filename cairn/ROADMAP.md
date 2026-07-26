@@ -2,7 +2,7 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-07-26 (M31 done)_
+_Last hygiene check: 2026-07-26 (full audit; board clean, 2 pre-existing scaffold FAILs tracked for /cairn-init repair)_
 
 ## Milestones
 

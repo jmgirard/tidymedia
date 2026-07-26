@@ -75,7 +75,8 @@ before/after processing. Built on the blessed stacking verbs
 By default the two inputs are resized to share an edge (equal heights for a
 horizontal stack, equal widths for a vertical one); resizing currently
 supports exactly two inputs, so pass \code{resize = FALSE} to compare more.
-Audio is dropped unless \code{audio} names an input to carry.
+Audio is dropped unless \code{audio} names an input to carry; a carried
+track is stream-copied unless \code{audio_codec} names an encoder.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

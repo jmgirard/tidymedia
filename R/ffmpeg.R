@@ -3318,7 +3318,10 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #'   \code{_web} to each input's basename with an \code{.mp4} extension (the web
 #'   re-encode always writes H.264/mp4), e.g. \code{clip.mkv} becomes
 #'   \code{clip_web.mp4}. Any two rows that resolve to the same output path are
-#'   rejected. Any other columns are ignored.
+#'   rejected. Any other columns are ignored — including \code{video_codec} and
+#'   \code{audio_codec}, which the sibling batch verbs read as per-row overrides
+#'   but this one does not: the web recipe fixes both codecs by identity. Use
+#'   \code{\link{standardize_video_batch}} when you need per-row codecs.
 #' @param hardware The encoder backend applied to every row: \code{"none"}
 #'   (default, software libx264) or \code{"nvenc"} for NVIDIA GPU H.264 encoding.
 #'   Batch-wide (not a per-row column). See \code{\link{has_nvenc}}.
@@ -3599,7 +3602,8 @@ compare_videos_pipeline <- function(infiles, outfile,
 #' By default the two inputs are resized to share an edge (equal heights for a
 #' horizontal stack, equal widths for a vertical one); resizing currently
 #' supports exactly two inputs, so pass \code{resize = FALSE} to compare more.
-#' Audio is dropped unless \code{audio} names an input to carry.
+#' Audio is dropped unless \code{audio} names an input to carry; a carried
+#' track is stream-copied unless \code{audio_codec} names an encoder.
 #'
 #' @param infiles A character vector of two or more video file paths.
 #' @param outfile A string giving the path to write the comparison video to.
@@ -3741,7 +3745,8 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
 #' fraction of the main video's width and positions it.
 #'
 #' Audio is dropped unless \code{audio} names an input to carry (\code{0} = the
-#' main video, \code{1} = the overlay).
+#' main video, \code{1} = the overlay). A carried track is
+#' stream-copied unless \code{audio_codec} names an encoder.
 #'
 #' @param main A string giving the path to the background (full-size) video.
 #' @param overlay A string giving the path to the inset video.

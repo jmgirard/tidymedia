@@ -81,7 +81,8 @@ fraction of the main video's width and positions it.
 }
 \details{
 Audio is dropped unless \code{audio} names an input to carry (\code{0} = the
-main video, \code{1} = the overlay).
+main video, \code{1} = the overlay). A carried track is
+stream-copied unless \code{audio_codec} names an encoder.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

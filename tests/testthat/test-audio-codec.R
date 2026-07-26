@@ -436,3 +436,33 @@ test_that("crop_video() leaves the audio stream's codec unchanged", {
   crop_video(input, unset, width = 32, height = 32, audio_codec = NULL)
   expect_equal(probe_audio(infile = unset)$codec_name, "aac")
 })
+
+# Argument spelling across all eight verbs -------------------------------------
+
+test_that("all eight verbs carry the D014 audio_codec spelling", {
+  # AC1: exact spelling, "copy" default, no acodec/audio alias.
+  verbs <- c("crop_video", "segment_video", "compare_videos",
+             "picture_in_picture", "crop_video_batch", "segment_video_batch",
+             "compare_videos_batch", "picture_in_picture_batch")
+  for (verb in verbs) {
+    fo <- formals(get(verb))
+    expect_true("audio_codec" %in% names(fo), label = verb)
+    expect_equal(fo$audio_codec, "copy", label = verb)
+    expect_false("acodec" %in% names(fo), label = verb)
+    # audio_codec sits beside video_codec, not appended after `run`.
+    expect_lt(
+      which(names(fo) == "audio_codec"),
+      which(names(fo) == "hardware"),
+      label = verb
+    )
+  }
+})
+
+test_that("audio_codec is not added to the fixed-recipe or audio verbs", {
+  # D016/D017's boundary rule: a fixed-recipe verb keeps its codecs hidden.
+  # format_for_web hard-codes AAC by identity, so it gains nothing here.
+  expect_false("audio_codec" %in% names(formals(format_for_web)))
+  expect_false("audio_codec" %in% names(formals(format_for_web_batch)))
+  # extract_audio already had the argument before M35; it is untouched.
+  expect_equal(formals(extract_audio)$audio_codec, "copy")
+})

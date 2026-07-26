@@ -20,7 +20,10 @@ the destination; when absent, one is derived per row by appending
 \code{_web} to each input's basename with an \code{.mp4} extension (the web
 re-encode always writes H.264/mp4), e.g. \code{clip.mkv} becomes
 \code{clip_web.mp4}. Any two rows that resolve to the same output path are
-rejected. Any other columns are ignored.}
+rejected. Any other columns are ignored — including \code{video_codec} and
+\code{audio_codec}, which the sibling batch verbs read as per-row overrides
+but this one does not: the web recipe fixes both codecs by identity. Use
+\code{\link{standardize_video_batch}} when you need per-row codecs.}
 
 \item{hardware}{The encoder backend applied to every row: \code{"none"}
 (default, software libx264) or \code{"nvenc"} for NVIDIA GPU H.264 encoding.

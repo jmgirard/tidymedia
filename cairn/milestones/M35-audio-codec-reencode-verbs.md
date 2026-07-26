@@ -98,7 +98,7 @@ stays deferred (D016).
       pip's to the M34 shape; test both boundaries.
 - [x] T8 Execution test: crop `make_test_video()`, `probe_audio()` input and
       output, assert the codec is unchanged.
-- [ ] T9 Docs + gate: roxygen on all eight, audio-behavior prose,
+- [x] T9 Docs + gate: roxygen on all eight, audio-behavior prose,
       `format_for_web_batch` cross-reference, `NEWS.md` entry, `document()`,
       `test()`, `check()`.
 
@@ -113,6 +113,7 @@ stays deferred (D016).
 - 2026-07-26: T6 — `crop_video_batch`, `compare_videos_batch`, `picture_in_picture_batch` gain the `audio_codec` formal plus the per-row column via `pick()`/`batch_codec_cell()`, guarded by `check_batch_codec_col(jobs, "audio_codec")` (M34's helper took a `col` argument already, so the all-NA-logical acceptance and the all-NA-numeric rejection come for free and are tested on both boundaries). test() green: 1417 pass, 0 fail.
 - 2026-07-26: T7 — extracted `check_batch_audio_col()` beside `check_batch_codec_col()` and pointed both composites at it, replacing pip's loose inline guard and giving compare the up-front guard it never had. The tightened shape rejects an all-NA character column (which the old one admitted by accident) and `c(TRUE, FALSE)`, while accepting both all-NA logical and all-NA numeric. test() green: 1424 pass, 0 fail.
 - 2026-07-26: T8 — execution test added with a new `make_mp3_audio_video()` helper. Deviation from the plan's `make_test_video()`: that fixture's AAC audio in an MP4 is *also* the container default, so copy and re-encode would be indistinguishable from the output. MP3-in-MP4 discriminates — the default keeps `mp3`, `audio_codec = NULL` yields `aac`, so the test proves both the copy and the escape hatch. Binary-gated by `skip_if_no_ffmpeg`/`skip_if_no_ffprobe`.
+- 2026-07-26: T9 — roxygen on all eight (verified: every one of the eight `.Rd` files names `audio_codec`), composite description prose updated, `format_for_web_batch`'s jobs doc now states that a `video_codec`/`audio_codec` column is ignored there and points at `standardize_video_batch` (closes RR01 Beyond-3), NEWS.md gains a Breaking changes section, vignette prose notes the carried track is stream-copied. AC1's formals test asserts the spelling, the `"copy"` default and position-before-`hardware` across all eight, plus that the fixed-recipe verbs did not gain it. `R/ffm.R` zero diff vs master (IP1/IP3). Gate: test() 1462 pass / 0 fail, `pkgdown::check_pkgdown()` clean, `document()` no diff, `R CMD check` Status: OK after `spelling::update_wordlist()` added FLAC + transcoding — the M17 lesson reproduced exactly (devtools::check() printed 0 notes while R CMD check showed 1 NOTE).
 
 ## Decisions
 

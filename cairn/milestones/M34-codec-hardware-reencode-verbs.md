@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** RR01
 - **Principles touched:** IP1, IP2, IP3, GP1
-- **Branch/PR:** —
+- **Branch/PR:** `m34-codec-hardware-reencode-verbs`
 
 ## Goal
 
@@ -98,7 +98,7 @@ demonstrated need). Composites' carried-audio re-encode default and the
 
 ## Tasks
 
-- [ ] T1 — Extend `resolve_hw_encoder()` (R/ffmpeg.R:1432) with an explicit
+- [x] T1 — Extend `resolve_hw_encoder()` (R/ffmpeg.R:1432) with an explicit
       `is.null(video_codec)` branch **before** `codec_family()` (which crashes
       on NULL, R/ffmpeg.R:1411): `hardware="none"`→`NULL`; `nvenc`+`NULL`→h264
       family; nvenc-unavailable+`fallback`+`NULL`→`NULL` with the existing
@@ -130,6 +130,8 @@ demonstrated need). Composites' carried-audio re-encode default and the
 ## Work log
 
 - 2026-07-26: created by /milestone-brief RR01 ingestion; planned from RR01 (was a candidate, not a blocked milestone — see Decisions).
+- 2026-07-26: question gate — new formals go before `run` (sibling parity, D014 clean break); sentinel fallback message names the container default rather than a codec.
+- 2026-07-26: T1 — `resolve_hw_encoder()` NULL-sentinel branch before `codec_family()`; nvenc+sentinel→h264 family, fallback+sentinel→NULL with a container-default message; abort hint reworded to be codec-agnostic. 4 new resolver tests; `devtools::test()` clean.
 
 ## Decisions
 

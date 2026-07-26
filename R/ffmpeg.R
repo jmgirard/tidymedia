@@ -1464,6 +1464,11 @@ codec_family <- function(video_codec, call = rlang::caller_env()) {
 # (fallback = FALSE) or returns the software video_codec with a message
 # (fallback = TRUE). Layer 2 only computes the argument here; Layer 1 assembles
 # the command (D009, IP1).
+#
+# video_codec = NULL is the "leave the codec alone" sentinel carried by the
+# codec-less re-encode verbs (M34/D016): no -codec:v is emitted, so the output
+# keeps its container's default encoder. It is resolved here, in the one
+# resolver seam, rather than in a second per-verb fork.
 resolve_hw_encoder <- function(video_codec, hardware = c("none", "nvenc"),
                                fallback = FALSE, call = rlang::caller_env()) {
   hardware <- rlang::arg_match(hardware)
@@ -1471,14 +1476,28 @@ resolve_hw_encoder <- function(video_codec, hardware = c("none", "nvenc"),
   if (hardware == "none") {
     return(video_codec)
   }
-  family <- codec_family(video_codec, call = call)
+  # The sentinel branch sits BEFORE codec_family(), which cannot infer a family
+  # from nothing (it errors on NULL): under nvenc the sentinel assumes H.264,
+  # the family every common container accepts.
+  family <- if (is.null(video_codec)) {
+    "h264"
+  } else {
+    codec_family(video_codec, call = call)
+  }
   if (has_nvenc(family)) {
     return(nvenc_encoder(family))
   }
   if (fallback) {
     cli::cli_inform(c(
-      "!" = "nvenc encoder {.val {nvenc_encoder(family)}} is not available;
-             falling back to {.arg video_codec} = {.val {video_codec}}."
+      "!" = if (is.null(video_codec)) {
+        # Falling back from the sentinel keeps the sentinel -- never a silently
+        # injected libx264, which would change the codec behind the user's back.
+        "nvenc encoder {.val {nvenc_encoder(family)}} is not available;
+         falling back to the output container's default video encoder."
+      } else {
+        "nvenc encoder {.val {nvenc_encoder(family)}} is not available;
+         falling back to {.arg video_codec} = {.val {video_codec}}."
+      }
     ))
     return(video_codec)
   }
@@ -1487,7 +1506,7 @@ resolve_hw_encoder <- function(video_codec, hardware = c("none", "nvenc"),
       "nvenc encoder {.val {nvenc_encoder(family)}} is not available.",
       "x" = "This FFmpeg build does not list it (see {.fn ffmpeg_encoders}).",
       "i" = "Use a machine with an nvenc-capable FFmpeg + NVIDIA GPU, or set
-             {.code fallback = TRUE} to re-encode with {.arg video_codec}."
+             {.code fallback = TRUE} to encode in software instead."
     ),
     call = call
   )

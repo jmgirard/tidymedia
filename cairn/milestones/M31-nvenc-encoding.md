@@ -1,6 +1,6 @@
 # M31: NVIDIA nvenc hardware encoding (opt-in)
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —

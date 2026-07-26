@@ -106,7 +106,7 @@ demonstrated need). Composites' carried-audio re-encode default and the
 - [x] T2 — `crop_video` + `crop_video_pipeline` (R/ffmpeg.R:451, :424): add the
       three formals; call `ffm_codec(video = resolve_hw_encoder(...))` only when
       the resolved codec is non-NULL (default path emits no `-codec:v`).
-- [ ] T3 — `compare_videos`/`picture_in_picture` + pipelines (R/ffmpeg.R:3269,
+- [x] T3 — `compare_videos`/`picture_in_picture` + pipelines (R/ffmpeg.R:3269,
       :3355): same additions; confirm the codec composes with the
       `-filter_complex … [vout]` path (RR01 Q4).
 - [ ] T4 — `segment_video` + `segment_pipeline` (R/ffmpeg.R:1508, :1596): add
@@ -134,6 +134,7 @@ demonstrated need). Composites' carried-audio re-encode default and the
 - 2026-07-26: T1 — `resolve_hw_encoder()` NULL-sentinel branch before `codec_family()`; nvenc+sentinel→h264 family, fallback+sentinel→NULL with a container-default message; abort hint reworded to be codec-agnostic. 4 new resolver tests; `devtools::test()` clean.
 - 2026-07-26: plan refinement (minor) — roxygen for each verb is written with its own task rather than batched in T6; T6 keeps the caveat-wording pass + final `document()`.
 - 2026-07-26: T2 — `crop_video`/`crop_video_pipeline` gain the three formals (before `run`); pipeline `check_token()`s the user's codec up front so nvenc and software paths reject identically. New `test-video-codec.R` pins the pre-M34 literal byte-for-byte (AC2) plus AC3–AC5 for crop; `document()` + `devtools::test()` clean.
+- 2026-07-26: T3 — `compare_videos`/`picture_in_picture` + pipelines gain the three formals; the sentinel/token/resolve logic extracted to one Layer-2 helper `apply_video_codec()` (crop refactored onto it) rather than duplicated four times. Codec composes cleanly with `-filter_complex … [vout]` (AC7 confirmed); both composites' pre-M34 literals pinned. `document()` + `devtools::test()` clean.
 
 ## Decisions
 

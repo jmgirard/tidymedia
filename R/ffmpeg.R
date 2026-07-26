@@ -425,20 +425,13 @@ crop_video_pipeline <- function(input, output, width, height,
                                 x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
                                 video_codec = NULL, hardware = "none",
                                 fallback = FALSE, call = rlang::caller_env()) {
-  # Validate the user's token before family inference so the error is the same
-  # under hardware = "none" and "nvenc" (parity with anonymize_pipeline()).
-  if (!is.null(video_codec)) check_token(video_codec, call = call)
-
   p <- ffm_files(input, output)
   p <- ffm_crop(p, width = width, height = height, x = x, y = y)
   p <- ffm_map(p, "0")
-  # video_codec = NULL (the default sentinel, M34/D016) emits no -codec:v, so
-  # the output keeps its container's default encoder and the compiled command
-  # is byte-identical to the pre-M34 one. Layer 2 only computes the encoder
-  # name; Layer 1 assembles the command (IP1, D009).
-  video_codec <- resolve_hw_encoder(video_codec, hardware, fallback, call = call)
-  if (!is.null(video_codec)) p <- ffm_codec(p, video = video_codec)
-  p
+  # The default video_codec = NULL emits no -codec:v, so the output keeps its
+  # container's default encoder and the compiled command is byte-identical to
+  # the pre-M34 one (M34/D016).
+  apply_video_codec(p, video_codec, hardware, fallback, call = call)
 }
 
 #' Crop a video to a rectangular region
@@ -1549,6 +1542,25 @@ resolve_hw_encoder <- function(video_codec, hardware = c("none", "nvenc"),
     call = call
   )
 }
+
+# apply_video_codec(): thread a verb's video_codec/hardware/fallback choice into
+# a pipeline. The NULL sentinel (M34/D016) means "leave the codec alone", so no
+# ffm_codec() call is made at all and the compiled command gains no -codec:v.
+# Shared by the four codec-less re-encode verbs' pipelines, so the sentinel and
+# the up-front token check are handled once. Not an ffm_* name: this is Layer 2
+# computing an argument, not engine surface (D014, IP1).
+apply_video_codec <- function(object, video_codec, hardware = "none",
+                              fallback = FALSE, call = rlang::caller_env()) {
+  # Validate the user's token before family inference so the error is the same
+  # under hardware = "none" and "nvenc" (parity with anonymize_pipeline()).
+  if (!is.null(video_codec)) check_token(video_codec, call = call)
+  video_codec <- resolve_hw_encoder(video_codec, hardware, fallback, call = call)
+  if (is.null(video_codec)) {
+    return(object)
+  }
+  ffm_codec(object, video = video_codec)
+}
+
 
 # segment_video() ---------------------------------------------------------
 
@@ -3307,7 +3319,10 @@ concatenate_videos <- function(infiles, outfile, run = TRUE) {
 # both callers get a clean per-value error. ABOVE the roxygen block (M28 lesson).
 compare_videos_pipeline <- function(infiles, outfile,
                                     direction = c("horizontal", "vertical"),
-                                    resize = TRUE, audio = NULL) {
+                                    resize = TRUE, audio = NULL,
+                                    video_codec = NULL, hardware = "none",
+                                    fallback = FALSE,
+                                    call = rlang::caller_env()) {
   direction <- rlang::arg_match(direction)
   if (resize && length(infiles) != 2) {
     cli::cli_abort(c(
@@ -3324,7 +3339,10 @@ compare_videos_pipeline <- function(infiles, outfile,
   if (!is.null(audio)) {
     p <- ffm_map(p, paste0(audio, ":a"))
   }
-  p
+  # The stacked video is a filtered stream, so a -codec:v rides alongside the
+  # -filter_complex … [vout] mapping the blessed stack verbs emit; the default
+  # video_codec = NULL emits none (M34/D016).
+  apply_video_codec(p, video_codec, hardware, fallback, call = call)
 }
 
 #' Build a side-by-side comparison video
@@ -3348,10 +3366,28 @@ compare_videos_pipeline <- function(infiles, outfile,
 #'   edge. Only supported for exactly two inputs. (default = \code{TRUE})
 #' @param audio The 0-based index of the input whose audio to keep in the
 #'   output, or \code{NULL} to drop audio entirely. (default = \code{NULL})
+#' @param video_codec A string naming the output video codec, or \code{NULL}
+#'   (default) to leave it unset, so the output container's default encoder is
+#'   used and the compiled command is unchanged from one that never named a
+#'   codec.
+#' @param hardware The encoder backend: \code{"none"} (default, the software
+#'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
+#'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
+#'   (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); with the default
+#'   \code{video_codec = NULL} the H.264 family is assumed, so a non-H.264
+#'   container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
+#'   \code{video_codec}. See \code{\link{has_nvenc}} for availability and its
+#'   caveats.
+#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
+#'   unavailable, encode in software with a message (\code{TRUE}) instead of
+#'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
+#'   fallback leaves the codec unset rather than picking one, so the codec never
+#'   changes silently.
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @seealso [ffm_hstack()] and [ffm_vstack()], the builders it wraps;
+#'   [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
 #'   [picture_in_picture()] for insetting instead of stacking.
 #' @family task verb functions
 #' @examples
@@ -3360,7 +3396,9 @@ compare_videos_pipeline <- function(infiles, outfile,
 #' @export
 compare_videos <- function(infiles, outfile,
                            direction = c("horizontal", "vertical"),
-                           resize = TRUE, audio = NULL, run = TRUE) {
+                           resize = TRUE, audio = NULL, video_codec = NULL,
+                           hardware = c("none", "nvenc"), fallback = FALSE,
+                           run = TRUE) {
 
   if (!rlang::is_character(infiles) || length(infiles) < 2) {
     cli::cli_abort("{.arg infiles} must name two or more video files.")
@@ -3370,8 +3408,11 @@ compare_videos <- function(infiles, outfile,
   rlang::check_number_whole(
     audio, min = 0, max = length(infiles) - 1, allow_null = TRUE
   )
+  rlang::check_string(video_codec, allow_null = TRUE)
+  hardware <- rlang::arg_match(hardware)
 
-  p <- compare_videos_pipeline(infiles, outfile, direction, resize, audio)
+  p <- compare_videos_pipeline(infiles, outfile, direction, resize, audio,
+                               video_codec, hardware, fallback)
   ffm_finish(p, run)
 }
 
@@ -3388,7 +3429,10 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
                                         position = c("topright", "topleft",
                                                      "bottomright", "bottomleft",
                                                      "center"),
-                                        scale = 0.25, margin = 16, audio = NULL) {
+                                        scale = 0.25, margin = 16, audio = NULL,
+                                        video_codec = NULL, hardware = "none",
+                                        fallback = FALSE,
+                                        call = rlang::caller_env()) {
   position <- rlang::arg_match(position)
   m <- as.integer(margin)
   pos <- switch(
@@ -3408,7 +3452,10 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
   if (!is.null(audio)) {
     p <- ffm_map(p, paste0(audio, ":a"))
   }
-  p
+  # The composited video is a filtered stream, so a -codec:v rides alongside the
+  # -filter_complex … [vout] mapping ffm_overlay() emits; the default
+  # video_codec = NULL emits none (M34/D016).
+  apply_video_codec(p, video_codec, hardware, fallback, call = call)
 }
 
 #' Inset one video over another (picture-in-picture)
@@ -3434,10 +3481,28 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
 #'   for \code{position = "center"}). (default = \code{16})
 #' @param audio The 0-based index of the input whose audio to keep, or
 #'   \code{NULL} to drop audio. (default = \code{NULL})
+#' @param video_codec A string naming the output video codec, or \code{NULL}
+#'   (default) to leave it unset, so the output container's default encoder is
+#'   used and the compiled command is unchanged from one that never named a
+#'   codec.
+#' @param hardware The encoder backend: \code{"none"} (default, the software
+#'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
+#'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
+#'   (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); with the default
+#'   \code{video_codec = NULL} the H.264 family is assumed, so a non-H.264
+#'   container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
+#'   \code{video_codec}. See \code{\link{has_nvenc}} for availability and its
+#'   caveats.
+#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
+#'   unavailable, encode in software with a message (\code{TRUE}) instead of
+#'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
+#'   fallback leaves the codec unset rather than picking one, so the codec never
+#'   changes silently.
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
-#' @seealso [ffm_overlay()], the builder it wraps; [compare_videos()] for
+#' @seealso [ffm_overlay()], the builder it wraps; [has_nvenc()] for the
+#'   \code{hardware = "nvenc"} toggle; [compare_videos()] for
 #'   side-by-side stacking.
 #' @family task verb functions
 #' @examples
@@ -3449,6 +3514,8 @@ picture_in_picture <- function(main, overlay, outfile,
                                             "bottomright", "bottomleft",
                                             "center"),
                                scale = 0.25, margin = 16, audio = NULL,
+                               video_codec = NULL,
+                               hardware = c("none", "nvenc"), fallback = FALSE,
                                run = TRUE) {
 
   check_file_exists(main)
@@ -3457,9 +3524,12 @@ picture_in_picture <- function(main, overlay, outfile,
   rlang::check_number_decimal(scale)
   rlang::check_number_whole(margin, min = 0)
   rlang::check_number_whole(audio, min = 0, max = 1, allow_null = TRUE)
+  rlang::check_string(video_codec, allow_null = TRUE)
+  hardware <- rlang::arg_match(hardware)
 
   p <- picture_in_picture_pipeline(
-    main, overlay, outfile, position, scale, margin, audio
+    main, overlay, outfile, position, scale, margin, audio,
+    video_codec, hardware, fallback
   )
   ffm_finish(p, run)
 }

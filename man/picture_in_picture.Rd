@@ -12,6 +12,9 @@ picture_in_picture(
   scale = 0.25,
   margin = 16,
   audio = NULL,
+  video_codec = NULL,
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
   run = TRUE
 )
 }
@@ -35,6 +38,26 @@ for \code{position = "center"}). (default = \code{16})}
 \item{audio}{The 0-based index of the input whose audio to keep, or
 \code{NULL} to drop audio. (default = \code{NULL})}
 
+\item{video_codec}{A string naming the output video codec, or \code{NULL}
+(default) to leave it unset, so the output container's default encoder is
+used and the compiled command is unchanged from one that never named a
+codec.}
+
+\item{hardware}{The encoder backend: \code{"none"} (default, the software
+\code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
+\code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
+(e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); with the default
+\code{video_codec = NULL} the H.264 family is assumed, so a non-H.264
+container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
+\code{video_codec}. See \code{\link{has_nvenc}} for availability and its
+caveats.}
+
+\item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
+unavailable, encode in software with a message (\code{TRUE}) instead of
+aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
+fallback leaves the codec unset rather than picking one, so the codec never
+changes silently.}
+
 \item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
 or return the compiled command without running it (\code{FALSE}).}
 }
@@ -57,7 +80,8 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 picture_in_picture(video, video, "pip.mp4", run = FALSE)
 }
 \seealso{
-\code{\link[=ffm_overlay]{ffm_overlay()}}, the builder it wraps; \code{\link[=compare_videos]{compare_videos()}} for
+\code{\link[=ffm_overlay]{ffm_overlay()}}, the builder it wraps; \code{\link[=has_nvenc]{has_nvenc()}} for the
+\code{hardware = "nvenc"} toggle; \code{\link[=compare_videos]{compare_videos()}} for
 side-by-side stacking.
 
 Other task verb functions:

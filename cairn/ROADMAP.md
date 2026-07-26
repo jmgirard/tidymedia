@@ -8,7 +8,7 @@ _Last hygiene check: 2026-07-26 (M31 planned)_
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M31 | NVIDIA nvenc hardware encoding (opt-in) | in-progress | — | normal | milestones/M31-nvenc-encoding.md |
+| M31 | NVIDIA nvenc hardware encoding (opt-in) | review | — | normal | milestones/M31-nvenc-encoding.md |
 | M30 | Vignette overhaul (quality/clarity/realism + fuller verb coverage) | done | — | normal | milestones/archive/M30-vignette-overhaul.md |
 | M29 | Batch sibling for `separate_audio_video` (fan-out) | done | M28 | normal | milestones/archive/M29-batch-separate-audio-video.md |
 | M28 | Batch siblings for single-in/single-out verbs (`extract_audio`/`convert_audio`/`crop_video`/`format_for_web` `_batch`) | done | — | high | milestones/archive/M28-batch-single-io-verbs.md |

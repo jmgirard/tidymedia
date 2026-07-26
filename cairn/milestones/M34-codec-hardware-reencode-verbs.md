@@ -117,7 +117,7 @@ demonstrated need). Composites' carried-audio re-encode default and the
       column, NA→sentinel, all-NA-logical accepted (audio-column pattern, not
       `check_batch_string_col`), numeric column rejected up front;
       `hardware`/`fallback` stay batch-wide captured scalars.
-- [ ] T6 — Roxygen for all eight functions: document `video_codec` (sentinel),
+- [x] T6 — Roxygen for all eight functions: document `video_codec` (sentinel),
       `hardware`/`fallback`, and the nvenc H.264-family assumption + non-H.264
       container caveat (RR01 R7); `devtools::document()`.
 - [ ] T7 — Tests (binary-free compile-level) covering AC2–AC8 via the
@@ -137,6 +137,7 @@ demonstrated need). Composites' carried-audio re-encode default and the
 - 2026-07-26: T3 — `compare_videos`/`picture_in_picture` + pipelines gain the three formals; the sentinel/token/resolve logic extracted to one Layer-2 helper `apply_video_codec()` (crop refactored onto it) rather than duplicated four times. Codec composes cleanly with `-filter_complex … [vout]` (AC7 confirmed); both composites' pre-M34 literals pinned. `document()` + `devtools::test()` clean.
 - 2026-07-26: T4 — `segment_video`/`segment_pipeline` gain the three formals; the stream-copy guard aborts in the shared pipeline (so both callers inherit it per row) when `!reencode` meets a codec or `hardware != "none"`. Note: the copy path already emits `-codec:v copy` via `ffm_copy()`, so its pre-M34 literal is pinned as-is. `document()` + `devtools::test()` clean.
 - 2026-07-26: T5 — the four `_batch` siblings gain the three formals; `video_codec` reads as a per-row column via two new helpers (`check_batch_codec_col()` NA-tolerant guard + `batch_codec_cell()` NA→sentinel), `hardware`/`fallback` stay batch-wide captured scalars. `segment_video_batch` inherits the stream-copy abort per row (scalar arg + column paths both tested). `document()` + `devtools::test()` clean (1301 pass).
+- 2026-07-26: T6 — docs pass: the R7 caveat (nvenc + sentinel assumes H.264; non-H.264 containers need an explicit codec) on all four scalar verbs and in the `nvenc_encoder`/`has_nvenc` block, which now lists all seven toggle-carrying verbs; NEWS.md entry added. `document()` clean; formals verified on all eight (AC1) with no `pixel_format` anywhere (AC10).
 
 ## Decisions
 

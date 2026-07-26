@@ -1,6 +1,6 @@
 # M32: Batch siblings for the fan-in verbs (`concatenate_videos`/`compare_videos`/`picture_in_picture` `_batch`)
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -74,7 +74,7 @@ own candidates.
 - [x] T5: `picture_in_picture_batch()` with per-row `position`/`scale`/`margin`/
       `audio` overrides; compile + override + parity tests.
 - [x] T6: options-forwarding + multi-input manifest execution test (binary-gated).
-- [ ] T7: docs + decision — roxygen (`@family`, `@seealso` scalar sibling +
+- [x] T7: docs + decision — roxygen (`@family`, `@seealso` scalar sibling +
       `ffm_batch`), sync `_pkgdown.yml` (M23 lesson), `spelling::update_wordlist()`
       (M17 lesson), record D015, `devtools::check()` to 0/0.
 
@@ -88,6 +88,8 @@ own candidates.
 - 2026-07-26: T4 done — compare_videos_batch() with per-row direction/resize/audio overrides (audio NA = drop, checked per row against that row's input count); 21 tests pass. Byte-identical scalar parity.
 - 2026-07-26: T5 done — picture_in_picture_batch() with fixed main/overlay/output columns (inline validation) + per-row position/scale/margin/audio overrides; 21 tests pass. Byte-identical scalar parity.
 - 2026-07-26: T6 done — AC6 forwarding test (binary-gated): verify/manifest/checksums reach ffm_batch via `...`; the multi-input manifest joins a row's two inputs (and their md5s) with ";". 11 tests pass.
+- 2026-07-26: T7 done — pkgdown reference gains the 3 batch siblings (pkgdown::check_pkgdown() clean); wordlist +scalar's; D015 already recorded at plan. devtools::check() Status: OK (0/0/0). Vignette fan-in-shape prose left out of scope (see review note).
+- 2026-07-26: all tasks done; status → review. Note: cairn/PROFILE.md is absent (repo predates profiles) — verify slot inferred as the r-package devtools::check(); flag for /cairn-init repair.
 
 ## Decisions
 

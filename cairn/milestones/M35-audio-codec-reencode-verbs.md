@@ -1,6 +1,6 @@
 # M35: `audio_codec` for the four re-encode verbs — stream-copy by default
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -105,6 +105,7 @@ stays deferred (D016).
 ## Work log
 
 - 2026-07-26: created by /milestone-plan. Absorbs three candidate rows (RR01 Beyond-1, RR01 Beyond-3, the M34 review's pip guard-parity item); the plan-time audit widened the hole from the two composites to all four M34 verbs, and split two further verbs out to candidate rows. D017 records the arg shape.
+- 2026-07-26: set in-progress; branch `m35-audio-codec-reencode-verbs` cut from master.
 
 ## Decisions
 

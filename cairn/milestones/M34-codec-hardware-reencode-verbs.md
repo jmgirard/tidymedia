@@ -141,6 +141,7 @@ demonstrated need). Composites' carried-audio re-encode default and the
 - 2026-07-26: T7 — execution tests added (two real libx264/libx265 encodes behind `skip_if_no_ffprobe()`, two nvenc encodes behind `skip_if_no_nvenc()`) plus in-package formals guards for AC1 and AC10. AC9 evidence is a command, not a test: `git diff master...HEAD -- R/ffm.R` is empty, so the engine has zero diff (not merely doc-only). `test-video-codec.R` 117 pass / 2 skip; suite 1355 pass / 4 skip.
 - 2026-07-26: T8 — profile gate clean: `devtools::test()` 1355 pass / 4 skip / 0 fail, `devtools::document()` no diff, `devtools::check()` 0 errors / 0 warnings / 0 notes (one spelling NOTE on "HEVC" cleared via `spelling::update_wordlist()`). Status → review.
 - 2026-07-26: review — 11/11 acceptance criteria verified with fresh evidence; `cairn_validate` exit 0; toolchain gate clean; CI green on all 9 checks. Three-lens fan-out returned 3 findings, one scored >=80 and fixed on the branch (`check_batch_codec_col()` admitted an all-NA column of any type, contradicting AC8); two scored 25/58 and are logged unactioned.
+- 2026-07-26: review, maintainer request at the merge gate — added the `segment_video_batch` doc note that batch-wide `hardware = "nvenc"` conflicts with a stream-copy row on its own (F1's doc residue, scored 25). Docs-only; gate re-run clean.
 
 ## Decisions
 
@@ -244,11 +245,16 @@ shared checkout.
   closes the converse hole (a non-NA `c(TRUE, FALSE)` column). Three assertions
   added to `test-video-codec.R`; re-verified all five column shapes and re-ran
   `devtools::test()` (1357 pass / 4 skip) and `devtools::check()` (0/0/0).
-- **F1 — score 25 — logged, not actioned.** Batch-wide `hardware = "nvenc"`
-  makes any `reencode = FALSE` row abort the whole `segment_video_batch` call.
-  Scorer: this is exactly what D016 mandates, the repair is actionable, and the
-  only real gap is that `segment_video_batch`'s `@param video_codec` names the
-  codec conflict without also naming `hardware`.
+- **F1 — score 25 — below threshold, but its doc residue fixed at the maintainer's
+  request.** Batch-wide `hardware = "nvenc"` makes any `reencode = FALSE` row
+  abort the whole `segment_video_batch` call. Scorer: this is exactly what D016
+  mandates and the repair is actionable, so the behavior stands; the only real
+  gap was that `segment_video_batch`'s docs named the codec conflict without
+  also naming `hardware`. Three lines added to `@param hardware,fallback`
+  stating that `hardware = "nvenc"` conflicts with a stream-copy row on its own
+  and that such a jobs table must be split. Docs-only; `document()`,
+  `devtools::test()` (1357 pass / 4 skip) and `devtools::check()` (0/0/0) re-run
+  clean.
 - **F3 — score 58 — logged, not actioned.** The NEWS entry files the new formals
   under "New features" without a breaking-change note, though inserting them
   before `run` shifts positional-argument meaning on all eight verbs. Scorer: a

@@ -43,7 +43,11 @@ as an argument or a column) is an error: no encoder runs on that path.}
 
 \item{hardware, fallback}{The encoder backend and its fallback behavior,
 applied to the whole batch (a property of the machine, not of a row, so
-neither is read as a \code{jobs} column). See \code{\link[=segment_video]{segment_video()}}.}
+neither is read as a \code{jobs} column). See \code{\link[=segment_video]{segment_video()}}.
+Because \code{hardware} is batch-wide, \code{hardware = "nvenc"} conflicts
+with a stream-copy row on its own — even one naming no codec — so a jobs
+table mixing \code{reencode = FALSE} rows with GPU encoding must be split
+into separate calls.}
 
 \item{run}{A logical: run each segment's command through FFmpeg
 (\code{TRUE}, default) or only compile them for inspection (\code{FALSE}).}

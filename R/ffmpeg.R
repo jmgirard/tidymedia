@@ -465,10 +465,14 @@ crop_video <- function(infile, outfile, width, height,
 # web-delivery re-encode (H.264 + yuv420p + AAC + faststart), padding odd
 # dimensions down to even as the codec requires. No per-row knobs — every input
 # gets the same recipe. Command assembly stays in Layer 1 (IP1/D002).
-format_for_web_pipeline <- function(input, output) {
+format_for_web_pipeline <- function(input, output, hardware = "none",
+                                    fallback = FALSE) {
+  # The recipe stays H.264 (family fixed); hardware = "nvenc" swaps libx264 for
+  # h264_nvenc when available. Layer 2 only computes the codec name (D009, IP1).
+  video_codec <- resolve_hw_encoder("libx264", hardware, fallback)
   p <- ffm_files(input, output)
   p <- ffm_crop(p, width = "floor(in_w/2)*2", height = "floor(in_h/2)*2")
-  p <- ffm_codec(p, video = "libx264", audio = "aac")
+  p <- ffm_codec(p, video = video_codec, audio = "aac")
   p <- ffm_pixel_format(p, "yuv420p")
   ffm_output_options(p, "-movflags +faststart")
 }
@@ -481,10 +485,17 @@ format_for_web_pipeline <- function(input, output) {
 #'
 #' @param infile A string containing the path to a video file.
 #' @param outfile A string containing the path of the video file to write.
+#' @param hardware The encoder backend: \code{"none"} (default, software
+#'   libx264) or \code{"nvenc"} for NVIDIA GPU H.264 encoding
+#'   (\code{"h264_nvenc"}) when available. See \code{\link{has_nvenc}}.
+#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
+#'   unavailable, re-encode with software libx264 and a message (\code{TRUE})
+#'   instead of aborting (\code{FALSE}, default).
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @seealso [ffm_codec()] and [ffm_pixel_format()], among the builders it wraps;
+#'   [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
 #'   [standardize_video()] for a configurable re-encode;
 #'   [format_for_web_batch()] for the many-file form.
 #' @family task verb functions
@@ -492,12 +503,14 @@ format_for_web_pipeline <- function(input, output) {
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' format_for_web(video, "web.mp4", run = FALSE)
 #' @export
-format_for_web <- function(infile, outfile, run = TRUE) {
+format_for_web <- function(infile, outfile, hardware = c("none", "nvenc"),
+                           fallback = FALSE, run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
+  hardware <- rlang::arg_match(hardware)
 
-  ffm_finish(format_for_web_pipeline(infile, outfile), run)
+  ffm_finish(format_for_web_pipeline(infile, outfile, hardware, fallback), run)
 }
 
 
@@ -610,11 +623,21 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #'   \code{"libx264"}).
 #' @param pixel_format A string naming the output pixel format (default
 #'   \code{"yuv420p"}).
+#' @param hardware The encoder backend: \code{"none"} (default, the software
+#'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
+#'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
+#'   (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); see
+#'   \code{\link{has_nvenc}} for availability and its caveats.
+#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
+#'   unavailable, re-encode with the software \code{video_codec} and a message
+#'   (\code{TRUE}) instead of aborting (\code{FALSE}, default). Keeps output
+#'   reproducible by never changing the codec silently.
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @seealso [ffm_scale()], [ffm_codec()], and [ffm_pixel_format()], among the
-#'   builders it wraps; [standardize_video_batch()] for the many-file form.
+#'   builders it wraps; [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
+#'   [standardize_video_batch()] for the many-file form.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -627,14 +650,16 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 standardize_video <- function(infile, outfile,
                               width = NULL, height = NULL, fps = NULL,
                               video_codec = "libx264", pixel_format = "yuv420p",
+                              hardware = c("none", "nvenc"), fallback = FALSE,
                               run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
+  hardware <- rlang::arg_match(hardware)
 
   ffm_finish(
     standardize_pipeline(infile, outfile, width, height, fps, video_codec,
-                         pixel_format),
+                         pixel_format, hardware, fallback),
     run
   )
 }
@@ -649,7 +674,9 @@ standardize_video <- function(infile, outfile,
 # guards (audio stream-copy, even-dimension safeguard, +faststart) live here
 # once -- the batch sibling inherits them by construction (D002, D003, D007).
 standardize_pipeline <- function(input, output, width, height, fps, video_codec,
-                                 pixel_format) {
+                                 pixel_format, hardware = "none",
+                                 fallback = FALSE) {
+  video_codec <- resolve_hw_encoder(video_codec, hardware, fallback)
   p <- ffm_files(input, output)
   # Resolution: exact when both given; aspect-preserving with an even output
   # dimension (FFmpeg's -2) when only one. ffm_scale() validates each dimension
@@ -1330,6 +1357,107 @@ ffmpeg_encoders <- function(sort_by_type = TRUE) {
   out
 }
 
+# nvenc_encoder() / has_nvenc() ------------------------------------------------
+
+#' NVIDIA nvenc hardware encoders
+#'
+#' Helpers for opt-in NVIDIA GPU (nvenc) video encoding. \code{nvenc_encoder()}
+#' maps a codec family to its nvenc encoder name; \code{has_nvenc()} reports
+#' whether that encoder is available in the local FFmpeg build.
+#'
+#' \code{has_nvenc()} is a \emph{cheap} check: it asks whether FFmpeg lists the
+#' encoder (via \code{\link{ffmpeg_encoders}}), which reflects how FFmpeg was
+#' built, not whether a working NVIDIA GPU and driver are present at run time. An
+#' encode can still fail at run time on a machine with no capable GPU. To
+#' override detection in a known environment (or in tests), set
+#' \code{options(tidymedia.nvenc_encoders = )} to a character vector of encoder
+#' names to treat as available.
+#'
+#' These back the \code{hardware = "nvenc"} toggle on
+#' \code{\link{standardize_video}} and \code{\link{format_for_web}}. Hardware
+#' \emph{decoding} (\code{-hwaccel}) and GPU filter pipelines are out of scope;
+#' use the \code{\link{ffmpeg}} escape hatch for those.
+#'
+#' @param codec The video codec family: one of \code{"h264"}, \code{"hevc"}, or
+#'   \code{"av1"}.
+#' @return \code{nvenc_encoder()} a single encoder-name string (e.g.
+#'   \code{"h264_nvenc"}); \code{has_nvenc()} a length-one logical.
+#' @seealso \code{\link{ffmpeg_encoders}} for the full encoder list,
+#'   \code{\link{standardize_video}} and \code{\link{format_for_web}} for the
+#'   \code{hardware = "nvenc"} toggle that uses these.
+#' @family capability functions
+#' @examplesIf nzchar(Sys.which("ffmpeg"))
+#' nvenc_encoder("h264")
+#' has_nvenc("h264")
+#' @export
+nvenc_encoder <- function(codec = c("h264", "hevc", "av1")) {
+  codec <- rlang::arg_match(codec)
+  paste0(codec, "_nvenc")
+}
+
+#' @rdname nvenc_encoder
+#' @export
+has_nvenc <- function(codec = c("h264", "hevc", "av1")) {
+  enc <- nvenc_encoder(codec)
+  pool <- getOption("tidymedia.nvenc_encoders", default = NULL)
+  if (is.null(pool)) pool <- ffmpeg_encoders()$name
+  enc %in% pool
+}
+
+# codec_family(): infer the nvenc codec family from a software codec name, so a
+# user can flip hardware = "nvenc" while keeping a familiar video_codec (e.g.
+# "libx264" -> "h264"). Aborts when no nvenc family matches.
+codec_family <- function(video_codec, call = rlang::caller_env()) {
+  if (grepl("264|avc", video_codec, ignore.case = TRUE)) return("h264")
+  if (grepl("265|hevc", video_codec, ignore.case = TRUE)) return("hevc")
+  if (grepl("av1", video_codec, ignore.case = TRUE)) return("av1")
+  cli::cli_abort(
+    c(
+      "Cannot use {.code hardware = \"nvenc\"} with
+       {.arg video_codec} = {.val {video_codec}}.",
+      "x" = "No nvenc encoder maps to that codec.",
+      "i" = "nvenc supports the h264, hevc, and av1 families (e.g.
+             {.val libx264}, {.val libx265}, {.val libaom-av1})."
+    ),
+    call = call
+  )
+}
+
+# resolve_hw_encoder(): pick the encoder name for a verb's hardware= choice.
+# hardware = "none" returns the software video_codec unchanged; "nvenc" returns
+# the nvenc encoder for video_codec's family when available, otherwise aborts
+# (fallback = FALSE) or returns the software video_codec with a message
+# (fallback = TRUE). Layer 2 only computes the argument here; Layer 1 assembles
+# the command (D009, IP1).
+resolve_hw_encoder <- function(video_codec, hardware = c("none", "nvenc"),
+                               fallback = FALSE, call = rlang::caller_env()) {
+  hardware <- rlang::arg_match(hardware)
+  rlang::check_bool(fallback, call = call)
+  if (hardware == "none") {
+    return(video_codec)
+  }
+  family <- codec_family(video_codec, call = call)
+  if (has_nvenc(family)) {
+    return(nvenc_encoder(family))
+  }
+  if (fallback) {
+    cli::cli_inform(c(
+      "!" = "nvenc encoder {.val {nvenc_encoder(family)}} is not available;
+             falling back to {.arg video_codec} = {.val {video_codec}}."
+    ))
+    return(video_codec)
+  }
+  cli::cli_abort(
+    c(
+      "nvenc encoder {.val {nvenc_encoder(family)}} is not available.",
+      "x" = "This FFmpeg build does not list it (see {.fn ffmpeg_encoders}).",
+      "i" = "Use a machine with an nvenc-capable FFmpeg + NVIDIA GPU, or set
+             {.code fallback = TRUE} to re-encode with {.arg video_codec}."
+    ),
+    call = call
+  )
+}
+
 # segment_video() ---------------------------------------------------------
 
 #' Segment Video
@@ -1952,6 +2080,13 @@ derive_standardized_names <- function(input) {
 #' @param pixel_format A string naming the pixel format applied to every row,
 #'   unless \code{jobs} carries a \code{pixel_format} column.
 #'   (default = \code{"yuv420p"})
+#' @param hardware The encoder backend applied to every row: \code{"none"}
+#'   (default) or \code{"nvenc"} for NVIDIA GPU encoding. Batch-wide (not a
+#'   per-row column). See \code{\link{standardize_video}} and
+#'   \code{\link{has_nvenc}}.
+#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
+#'   unavailable, re-encode with the software \code{video_codec} and a message
+#'   (\code{TRUE}) instead of aborting (\code{FALSE}, default).
 #' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
 #'   default) or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: standardize in
@@ -1984,7 +2119,10 @@ derive_standardized_names <- function(input) {
 #' @export
 standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NULL,
                                video_codec = "libx264", pixel_format = "yuv420p",
+                               hardware = c("none", "nvenc"), fallback = FALSE,
                                run = TRUE, parallel = FALSE, ...) {
+
+  hardware <- rlang::arg_match(hardware)
 
   if (!is.data.frame(jobs)) {
     cli::cli_abort("{.arg jobs} must be a data frame with one row per input.")
@@ -2055,7 +2193,9 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
         height = pick("height", height),
         fps = pick("fps", fps),
         video_codec = pick("video_codec", video_codec),
-        pixel_format = pick("pixel_format", pixel_format)
+        pixel_format = pick("pixel_format", pixel_format),
+        hardware = hardware,
+        fallback = fallback
       )
     },
     run = run,
@@ -2795,6 +2935,12 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #'   re-encode always writes H.264/mp4), e.g. \code{clip.mkv} becomes
 #'   \code{clip_web.mp4}. Any two rows that resolve to the same output path are
 #'   rejected. Any other columns are ignored.
+#' @param hardware The encoder backend applied to every row: \code{"none"}
+#'   (default, software libx264) or \code{"nvenc"} for NVIDIA GPU H.264 encoding.
+#'   Batch-wide (not a per-row column). See \code{\link{has_nvenc}}.
+#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
+#'   unavailable, re-encode with software libx264 and a message (\code{TRUE})
+#'   instead of aborting (\code{FALSE}, default).
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -2814,9 +2960,12 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #' jobs <- tibble::tibble(input = c(video, video), output = c("a.mp4", "b.mp4"))
 #' format_for_web_batch(jobs, run = FALSE)
 #' @export
-format_for_web_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
+format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
+                                 fallback = FALSE, run = TRUE, parallel = FALSE,
+                                 ...) {
 
   jobs <- check_batch_jobs(jobs, require_output = FALSE)
+  hardware <- rlang::arg_match(hardware)
 
   if (!"output" %in% names(jobs)) {
     jobs$output <- derive_web_names(jobs$input)
@@ -2824,11 +2973,13 @@ format_for_web_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
   jobs <- reject_duplicate_outputs(jobs)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one web re-encode pipeline per
-  # row, sharing format_for_web_pipeline() with format_for_web(). No per-row
-  # knobs, so extra job columns are ignored.
+  # row, sharing format_for_web_pipeline() with format_for_web(). hardware/
+  # fallback are batch-wide; other extra job columns are ignored.
   ffm_batch(
     jobs,
-    function(input, output, ...) format_for_web_pipeline(input, output),
+    function(input, output, ...) {
+      format_for_web_pipeline(input, output, hardware, fallback)
+    },
     run = run,
     parallel = parallel,
     ...

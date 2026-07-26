@@ -4,7 +4,14 @@
 \alias{format_for_web_batch}
 \title{Re-encode Many Videos for the Web From a Jobs Table}
 \usage{
-format_for_web_batch(jobs, run = TRUE, parallel = FALSE, ...)
+format_for_web_batch(
+  jobs,
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
+  run = TRUE,
+  parallel = FALSE,
+  ...
+)
 }
 \arguments{
 \item{jobs}{A data frame with one row per input and (at least) an
@@ -14,6 +21,14 @@ the destination; when absent, one is derived per row by appending
 re-encode always writes H.264/mp4), e.g. \code{clip.mkv} becomes
 \code{clip_web.mp4}. Any two rows that resolve to the same output path are
 rejected. Any other columns are ignored.}
+
+\item{hardware}{The encoder backend applied to every row: \code{"none"}
+(default, software libx264) or \code{"nvenc"} for NVIDIA GPU H.264 encoding.
+Batch-wide (not a per-row column). See \code{\link{has_nvenc}}.}
+
+\item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
+unavailable, re-encode with software libx264 and a message (\code{TRUE})
+instead of aborting (\code{FALSE}, default).}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}

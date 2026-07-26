@@ -11,6 +11,8 @@ standardize_video_batch(
   fps = NULL,
   video_codec = "libx264",
   pixel_format = "yuv420p",
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -46,6 +48,15 @@ leave the frame rate unchanged)}
 \item{pixel_format}{A string naming the pixel format applied to every row,
 unless \code{jobs} carries a \code{pixel_format} column.
 (default = \code{"yuv420p"})}
+
+\item{hardware}{The encoder backend applied to every row: \code{"none"}
+(default) or \code{"nvenc"} for NVIDIA GPU encoding. Batch-wide (not a
+per-row column). See \code{\link{standardize_video}} and
+\code{\link{has_nvenc}}.}
+
+\item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
+unavailable, re-encode with the software \code{video_codec} and a message
+(\code{TRUE}) instead of aborting (\code{FALSE}, default).}
 
 \item{run}{A logical: run each input's command through FFmpeg (\code{TRUE},
 default) or only compile them for inspection (\code{FALSE}).}

@@ -2,6 +2,15 @@
 
 ## New features
 
+* Opt-in NVIDIA GPU (nvenc) video encoding. `standardize_video()` and
+  `format_for_web()` (and their `_batch` siblings) gain a `hardware` argument:
+  `hardware = "nvenc"` re-encodes on the GPU, choosing the nvenc encoder for the
+  codec family (e.g. `h264_nvenc`). By default an unavailable GPU is an error
+  (so output stays reproducible); `fallback = TRUE` re-encodes in software with
+  a message instead. `has_nvenc()` reports whether an nvenc encoder is available
+  in your FFmpeg build and `nvenc_encoder()` names it. Hardware *decoding* and
+  GPU filter pipelines remain out of scope — use `ffmpeg()` for those.
+
 * `sample_frames()` samples a video at a fixed rate (`fps`) or interval
   (`interval`, seconds between frames) into a numbered image sequence — the
   front door to per-frame coding and computer-vision feature pipelines.

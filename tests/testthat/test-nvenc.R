@@ -70,6 +70,33 @@ test_that("resolve_hw_encoder() falls back to software with a message", {
   expect_equal(out, "libx264")
 })
 
+# The NULL sentinel (M34/D016): "leave the codec alone". codec_family() errors
+# on NULL, so the sentinel is resolved in its own branch before that call.
+
+test_that("resolve_hw_encoder() passes the NULL sentinel through for hardware none", {
+  expect_null(resolve_hw_encoder(NULL, "none"))
+})
+
+test_that("resolve_hw_encoder() resolves the NULL sentinel to the h264 family", {
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  expect_equal(resolve_hw_encoder(NULL, "nvenc"), "h264_nvenc")
+})
+
+test_that("resolve_hw_encoder() aborts on the NULL sentinel when nvenc is unavailable", {
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  expect_error(resolve_hw_encoder(NULL, "nvenc"), "not available")
+})
+
+test_that("resolve_hw_encoder() falls back from the NULL sentinel to the container default", {
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  expect_message(
+    out <- resolve_hw_encoder(NULL, "nvenc", fallback = TRUE),
+    "container"
+  )
+  # Never a silently injected libx264 -- the fallback keeps the sentinel.
+  expect_null(out)
+})
+
 # standardize_video() ----------------------------------------------------------
 
 test_that("standardize_video(hardware = 'nvenc') compiles to the nvenc encoder", {

@@ -10,6 +10,9 @@ compare_videos(
   direction = c("horizontal", "vertical"),
   resize = TRUE,
   audio = NULL,
+  video_codec = NULL,
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
   run = TRUE
 )
 }
@@ -26,6 +29,26 @@ edge. Only supported for exactly two inputs. (default = \code{TRUE})}
 
 \item{audio}{The 0-based index of the input whose audio to keep in the
 output, or \code{NULL} to drop audio entirely. (default = \code{NULL})}
+
+\item{video_codec}{A string naming the output video codec, or \code{NULL}
+(default) to leave it unset, so the output container's default encoder is
+used and the compiled command is unchanged from one that never named a
+codec.}
+
+\item{hardware}{The encoder backend: \code{"none"} (default, the software
+\code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
+\code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
+(e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); with the default
+\code{video_codec = NULL} the H.264 family is assumed, so a non-H.264
+container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
+\code{video_codec}. See \code{\link{has_nvenc}} for availability and its
+caveats.}
+
+\item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
+unavailable, encode in software with a message (\code{TRUE}) instead of
+aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
+fallback leaves the codec unset rather than picking one, so the codec never
+changes silently.}
 
 \item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
 or return the compiled command without running it (\code{FALSE}).}
@@ -52,6 +75,7 @@ compare_videos(c(video, video), "compare.mp4", run = FALSE)
 }
 \seealso{
 \code{\link[=ffm_hstack]{ffm_hstack()}} and \code{\link[=ffm_vstack]{ffm_vstack()}}, the builders it wraps;
+\code{\link[=has_nvenc]{has_nvenc()}} for the \code{hardware = "nvenc"} toggle;
 \code{\link[=picture_in_picture]{picture_in_picture()}} for insetting instead of stacking.
 
 Other task verb functions:

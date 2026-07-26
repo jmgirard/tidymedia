@@ -422,10 +422,16 @@ convert_audio <- function(infile, outfile, format = NULL, run = TRUE) {
 # per-value dimension guards, so the batch sibling inherits them per row (M13);
 # command assembly stays in Layer 1 (IP1/D002).
 crop_video_pipeline <- function(input, output, width, height,
-                                x = "(in_w-out_w)/2", y = "(in_h-out_h)/2") {
+                                x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
+                                video_codec = NULL, hardware = "none",
+                                fallback = FALSE, call = rlang::caller_env()) {
   p <- ffm_files(input, output)
   p <- ffm_crop(p, width = width, height = height, x = x, y = y)
-  ffm_map(p, "0")
+  p <- ffm_map(p, "0")
+  # The default video_codec = NULL emits no -codec:v, so the output keeps its
+  # container's default encoder and the compiled command is byte-identical to
+  # the pre-M34 one (M34/D016).
+  apply_video_codec(p, video_codec, hardware, fallback, call = call)
 }
 
 #' Crop a video to a rectangular region
@@ -438,10 +444,28 @@ crop_video_pipeline <- function(input, output, width, height,
 #'   (default = centered)
 #' @param y The vertical offset, in pixels, of the top edge of the crop.
 #'   (default = centered)
+#' @param video_codec A string naming the output video codec, or \code{NULL}
+#'   (default) to leave it unset, so the output container's default encoder is
+#'   used and the compiled command is unchanged from one that never named a
+#'   codec.
+#' @param hardware The encoder backend: \code{"none"} (default, the software
+#'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
+#'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
+#'   (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); with the default
+#'   \code{video_codec = NULL} the H.264 family is assumed, so a non-H.264
+#'   container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
+#'   \code{video_codec}. See \code{\link{has_nvenc}} for availability and its
+#'   caveats.
+#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
+#'   unavailable, encode in software with a message (\code{TRUE}) instead of
+#'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
+#'   fallback leaves the codec unset rather than picking one, so the codec never
+#'   changes silently.
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
-#' @seealso [ffm_crop()], the builder it wraps;
+#' @seealso [ffm_crop()], the builder it wraps; [has_nvenc()] for the
+#'   \code{hardware = "nvenc"} toggle;
 #'   [crop_video_batch()] for the many-file form.
 #' @family task verb functions
 #' @examples
@@ -450,12 +474,19 @@ crop_video_pipeline <- function(input, output, width, height,
 #' @export
 crop_video <- function(infile, outfile, width, height,
                        x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
-                       run = TRUE) {
+                       video_codec = NULL, hardware = c("none", "nvenc"),
+                       fallback = FALSE, run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
+  rlang::check_string(video_codec, allow_null = TRUE)
+  hardware <- rlang::arg_match(hardware)
 
-  ffm_finish(crop_video_pipeline(infile, outfile, width, height, x, y), run)
+  ffm_finish(
+    crop_video_pipeline(infile, outfile, width, height, x, y,
+                        video_codec, hardware, fallback),
+    run
+  )
 }
 
 
@@ -1407,8 +1438,14 @@ ffmpeg_encoders <- function(sort_by_type = TRUE) {
 #' names to treat as available.
 #'
 #' These back the \code{hardware = "nvenc"} toggle on
-#' \code{\link{standardize_video}}, \code{\link{format_for_web}}, and
-#' \code{\link{anonymize_video}} (and their \code{_batch} siblings). Hardware
+#' \code{\link{standardize_video}}, \code{\link{format_for_web}},
+#' \code{\link{anonymize_video}}, \code{\link{crop_video}},
+#' \code{\link{segment_video}}, \code{\link{compare_videos}}, and
+#' \code{\link{picture_in_picture}} (and their \code{_batch} siblings). On the
+#' verbs whose \code{video_codec} defaults to \code{NULL} (no codec named), the
+#' H.264 family is assumed under \code{hardware = "nvenc"}, so a non-H.264
+#' container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
+#' \code{video_codec}. Hardware
 #' \emph{decoding} (\code{-hwaccel}) and GPU filter pipelines are out of scope;
 #' use the \code{\link{ffmpeg}} escape hatch for those.
 #'
@@ -1417,8 +1454,10 @@ ffmpeg_encoders <- function(sort_by_type = TRUE) {
 #' @return \code{nvenc_encoder()} a single encoder-name string (e.g.
 #'   \code{"h264_nvenc"}); \code{has_nvenc()} a length-one logical.
 #' @seealso \code{\link{ffmpeg_encoders}} for the full encoder list,
-#'   \code{\link{standardize_video}}, \code{\link{format_for_web}}, and
-#'   \code{\link{anonymize_video}} for the
+#'   \code{\link{standardize_video}}, \code{\link{format_for_web}},
+#'   \code{\link{anonymize_video}}, \code{\link{crop_video}},
+#'   \code{\link{segment_video}}, \code{\link{compare_videos}}, and
+#'   \code{\link{picture_in_picture}} for the
 #'   \code{hardware = "nvenc"} toggle that uses these.
 #' @family capability functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
@@ -1464,6 +1503,11 @@ codec_family <- function(video_codec, call = rlang::caller_env()) {
 # (fallback = FALSE) or returns the software video_codec with a message
 # (fallback = TRUE). Layer 2 only computes the argument here; Layer 1 assembles
 # the command (D009, IP1).
+#
+# video_codec = NULL is the "leave the codec alone" sentinel carried by the
+# codec-less re-encode verbs (M34/D016): no -codec:v is emitted, so the output
+# keeps its container's default encoder. It is resolved here, in the one
+# resolver seam, rather than in a second per-verb fork.
 resolve_hw_encoder <- function(video_codec, hardware = c("none", "nvenc"),
                                fallback = FALSE, call = rlang::caller_env()) {
   hardware <- rlang::arg_match(hardware)
@@ -1471,14 +1515,28 @@ resolve_hw_encoder <- function(video_codec, hardware = c("none", "nvenc"),
   if (hardware == "none") {
     return(video_codec)
   }
-  family <- codec_family(video_codec, call = call)
+  # The sentinel branch sits BEFORE codec_family(), which cannot infer a family
+  # from nothing (it errors on NULL): under nvenc the sentinel assumes H.264,
+  # the family every common container accepts.
+  family <- if (is.null(video_codec)) {
+    "h264"
+  } else {
+    codec_family(video_codec, call = call)
+  }
   if (has_nvenc(family)) {
     return(nvenc_encoder(family))
   }
   if (fallback) {
     cli::cli_inform(c(
-      "!" = "nvenc encoder {.val {nvenc_encoder(family)}} is not available;
-             falling back to {.arg video_codec} = {.val {video_codec}}."
+      "!" = if (is.null(video_codec)) {
+        # Falling back from the sentinel keeps the sentinel -- never a silently
+        # injected libx264, which would change the codec behind the user's back.
+        "nvenc encoder {.val {nvenc_encoder(family)}} is not available;
+         falling back to the output container's default video encoder."
+      } else {
+        "nvenc encoder {.val {nvenc_encoder(family)}} is not available;
+         falling back to {.arg video_codec} = {.val {video_codec}}."
+      }
     ))
     return(video_codec)
   }
@@ -1487,11 +1545,30 @@ resolve_hw_encoder <- function(video_codec, hardware = c("none", "nvenc"),
       "nvenc encoder {.val {nvenc_encoder(family)}} is not available.",
       "x" = "This FFmpeg build does not list it (see {.fn ffmpeg_encoders}).",
       "i" = "Use a machine with an nvenc-capable FFmpeg + NVIDIA GPU, or set
-             {.code fallback = TRUE} to re-encode with {.arg video_codec}."
+             {.code fallback = TRUE} to encode in software instead."
     ),
     call = call
   )
 }
+
+# apply_video_codec(): thread a verb's video_codec/hardware/fallback choice into
+# a pipeline. The NULL sentinel (M34/D016) means "leave the codec alone", so no
+# ffm_codec() call is made at all and the compiled command gains no -codec:v.
+# Shared by the four codec-less re-encode verbs' pipelines, so the sentinel and
+# the up-front token check are handled once. Not an ffm_* name: this is Layer 2
+# computing an argument, not engine surface (D014, IP1).
+apply_video_codec <- function(object, video_codec, hardware = "none",
+                              fallback = FALSE, call = rlang::caller_env()) {
+  # Validate the user's token before family inference so the error is the same
+  # under hardware = "none" and "nvenc" (parity with anonymize_pipeline()).
+  if (!is.null(video_codec)) check_token(video_codec, call = call)
+  video_codec <- resolve_hw_encoder(video_codec, hardware, fallback, call = call)
+  if (is.null(video_codec)) {
+    return(object)
+  }
+  ffm_codec(object, video = video_codec)
+}
+
 
 # segment_video() ---------------------------------------------------------
 
@@ -1520,6 +1597,24 @@ resolve_hw_encoder <- function(video_codec, hardware = c("none", "nvenc"),
 #'   frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
 #'   lossless copy that snaps to keyframes (\code{FALSE}). See \code{ffm_seek}
 #'   for the trade-off.
+#' @param video_codec A string naming the output video codec, or \code{NULL}
+#'   (default) to leave it unset, so the output container's default encoder is
+#'   used and the compiled command is unchanged from one that never named a
+#'   codec. A stream copy runs no encoder, so naming a codec (or a
+#'   \code{hardware} backend) alongside \code{reencode = FALSE} is an error.
+#' @param hardware The encoder backend: \code{"none"} (default, the software
+#'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
+#'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
+#'   (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); with the default
+#'   \code{video_codec = NULL} the H.264 family is assumed, so a non-H.264
+#'   container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
+#'   \code{video_codec}. See \code{\link{has_nvenc}} for availability and its
+#'   caveats.
+#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
+#'   unavailable, encode in software with a message (\code{TRUE}) instead of
+#'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
+#'   fallback leaves the codec unset rather than picking one, so the codec never
+#'   changes silently.
 #' @param run A logical: run each segment's command (\code{TRUE}, default) or
 #'   only compile them (\code{FALSE}).
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: cut segments in
@@ -1532,6 +1627,7 @@ resolve_hw_encoder <- function(video_codec, hardware = c("none", "nvenc"),
 #'   \code{\link{ffm_batch}}: one row per segment with its \code{command} (and,
 #'   when \code{run = TRUE}, \code{success}).
 #' @seealso [ffm_seek()], the builder it uses to cut; [ffm_batch()], the runner;
+#'   [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
 #'   [segment_video_batch()] for the many-file form.
 #' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 #' @family task verb functions
@@ -1545,6 +1641,9 @@ segment_video <- function(infile,
                           end,
                           outfiles = NULL,
                           reencode = TRUE,
+                          video_codec = NULL,
+                          hardware = c("none", "nvenc"),
+                          fallback = FALSE,
                           run = TRUE,
                           parallel = FALSE) {
 
@@ -1562,6 +1661,8 @@ segment_video <- function(infile,
     cli::cli_abort("{.arg outfiles} must have the same length as {.arg start}.")
   }
   rlang::check_bool(reencode)
+  rlang::check_string(video_codec, allow_null = TRUE)
+  hardware <- rlang::arg_match(hardware)
 
   # If no names are provided, derive per-segment names from the input file.
   if (is.null(outfiles)) {
@@ -1577,7 +1678,8 @@ segment_video <- function(infile,
   ffm_batch(
     jobs,
     function(input, output, start, end, ...) {
-      segment_pipeline(input, output, start, end, reencode)
+      segment_pipeline(input, output, start, end, reencode,
+                       video_codec, hardware, fallback)
     },
     run = run,
     parallel = parallel
@@ -1628,11 +1730,30 @@ derive_frame_names <- function(input, format = "png") {
 # single-output seek pipeline for a single segment, stream-copying on the fast
 # (non-reencode) path. Fan-out verbs stay single-output per job (D003, D007);
 # both verbs wrap this in a closure that captures the scalar `reencode`.
-segment_pipeline <- function(input, output, start, end, reencode) {
+segment_pipeline <- function(input, output, start, end, reencode,
+                             video_codec = NULL, hardware = "none",
+                             fallback = FALSE, call = rlang::caller_env()) {
+  # A stream copy writes the source video bytes through untouched, so naming an
+  # encoder -- in software or on the GPU -- cannot mean anything on that path
+  # (D008 keeps the copy lossless and opt-in). Abort rather than silently drop
+  # the request; the check lives here so both callers inherit it per row
+  # (M34/D016).
+  if (!reencode && (!is.null(video_codec) || !identical(hardware, "none"))) {
+    cli::cli_abort(
+      c(
+        "{.arg video_codec} and {.arg hardware} need a re-encoding cut.",
+        "x" = "{.code reencode = FALSE} stream-copies each segment, so no
+               encoder runs.",
+        "i" = "Pass {.code reencode = TRUE} to cut by re-encoding, or drop
+               {.arg video_codec} / {.arg hardware}."
+      ),
+      call = call
+    )
+  }
   p <- ffm_seek(ffm_files(input, output), start = start, end = end,
                 reencode = reencode)
   if (!reencode) p <- ffm_copy(p)
-  p
+  apply_video_codec(p, video_codec, hardware, fallback, call = call)
 }
 
 
@@ -1654,12 +1775,27 @@ segment_pipeline <- function(input, output, start, end, reencode) {
 #'   \code{output} is absent, one is derived per row by appending
 #'   \code{_<n>.<ext>} to each input's basename, with the segment number
 #'   restarting at 1 for each input file (the same rule as
-#'   \code{\link{segment_video}}). Any other columns are ignored.
+#'   \code{\link{segment_video}}). A \code{video_codec} column overrides that
+#'   argument per row, with \code{NA} meaning "leave the codec unset" (the
+#'   column's way of writing the argument's \code{NULL}). Any other columns are
+#'   ignored.
 #' @param reencode A logical passed to \code{\link{ffm_seek}}: cut each segment
 #'   frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
 #'   lossless copy that snaps to keyframes (\code{FALSE}). See \code{ffm_seek}
 #'   for the trade-off. Applies to every row, unless \code{jobs} carries a
 #'   \code{reencode} column, which overrides this argument on a per-row basis.
+#' @param video_codec A string naming the output video codec, applied to every
+#'   row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
+#'   it unset so each segment keeps its container's default encoder. A row that
+#'   resolves to a codec while cutting by stream copy (\code{reencode = FALSE},
+#'   as an argument or a column) is an error: no encoder runs on that path.
+#' @param hardware,fallback The encoder backend and its fallback behavior,
+#'   applied to the whole batch (a property of the machine, not of a row, so
+#'   neither is read as a \code{jobs} column). See [segment_video()].
+#'   Because \code{hardware} is batch-wide, \code{hardware = "nvenc"} conflicts
+#'   with a stream-copy row on its own — even one naming no codec — so a jobs
+#'   table mixing \code{reencode = FALSE} rows with GPU encoding must be split
+#'   into separate calls.
 #' @param run A logical: run each segment's command through FFmpeg
 #'   (\code{TRUE}, default) or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: cut segments in
@@ -1677,7 +1813,8 @@ segment_pipeline <- function(input, output, start, end, reencode) {
 #'   forwarded arguments add, e.g. \code{verified}).
 #' @seealso [segment_video()] for the single-input, parallel-vector form;
 #'   [ffm_batch()] for the batch runner and the arguments forwarded through
-#'   \code{...}; [ffm_seek()] for the cut trade-off.
+#'   \code{...}; [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
+#'   [ffm_seek()] for the cut trade-off.
 #' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 #' @family task verb functions
 #' @examples
@@ -1691,8 +1828,12 @@ segment_pipeline <- function(input, output, start, end, reencode) {
 #' # run = FALSE compiles one command per segment without calling FFmpeg
 #' segment_video_batch(jobs, run = FALSE)
 #' @export
-segment_video_batch <- function(jobs, reencode = TRUE, run = TRUE,
-                           parallel = FALSE, ...) {
+segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
+                           hardware = c("none", "nvenc"), fallback = FALSE,
+                           run = TRUE, parallel = FALSE, ...) {
+
+  rlang::check_string(video_codec, allow_null = TRUE)
+  hardware <- rlang::arg_match(hardware)
 
   if (!is.data.frame(jobs)) {
     cli::cli_abort("{.arg jobs} must be a data frame with one row per segment.")
@@ -1722,6 +1863,7 @@ segment_video_batch <- function(jobs, reencode = TRUE, run = TRUE,
       "The {.field reencode} column of {.arg jobs} must be {.val {TRUE}} or {.val {FALSE}} (no {.val {NA}})."
     )
   }
+  check_batch_codec_col(jobs)
   rlang::check_bool(reencode)
 
   # Auto-name outputs when the column is absent: derive per-input segment names
@@ -1739,8 +1881,14 @@ segment_video_batch <- function(jobs, reencode = TRUE, run = TRUE,
     jobs,
     function(input, output, start, end, ...) {
       dots <- list(...)
-      re <- if ("reencode" %in% names(dots)) dots$reencode else reencode
-      segment_pipeline(input, output, start, end, re)
+      pick <- function(nm, default) if (nm %in% names(dots)) dots[[nm]] else default
+      segment_pipeline(
+        input, output, start, end,
+        reencode = pick("reencode", reencode),
+        video_codec = batch_codec_cell(pick("video_codec", video_codec)),
+        hardware = hardware,
+        fallback = fallback
+      )
     },
     run = run,
     parallel = parallel,
@@ -2691,6 +2839,34 @@ reject_duplicate_outputs <- function(jobs, call = rlang::caller_env()) {
   jobs
 }
 
+# Guard an optional per-row video_codec column (M34/D016). Unlike
+# check_batch_string_col(), NA is legal: it is the column form of
+# video_codec = NULL, the "leave the codec alone" sentinel. An all-NA column is
+# typed logical by R, so accept that too (the audio-column pattern); any other
+# type (e.g. numeric) is rejected up front rather than mid-batch.
+check_batch_codec_col <- function(jobs, col = "video_codec",
+                                  call = rlang::caller_env()) {
+  # Legal: a character column (NA cells allowed), or the all-NA column R types
+  # as logical. Testing `all(is.na(.))` alone would also admit an all-NA numeric
+  # or an all-NA Date, which the contract above says is rejected; testing
+  # `is.logical(.)` alone would admit a c(TRUE, FALSE) column.
+  ok <- function(x) is.character(x) || (is.logical(x) && all(is.na(x)))
+  if (col %in% names(jobs) && !ok(jobs[[col]])) {
+    cli::cli_abort(
+      "The {.field {col}} column of {.arg jobs} must be character
+       ({.val {NA}} to leave the codec unset).",
+      call = call
+    )
+  }
+  invisible(jobs)
+}
+
+# Resolve a per-row video_codec cell to the scalar the pipelines take: NA is the
+# column form of the NULL sentinel (M34/D016).
+batch_codec_cell <- function(value) {
+  if (length(value) == 1L && is.na(value)) NULL else value
+}
+
 # Guard an optional string override column: present -> character, no NA.
 check_batch_string_col <- function(jobs, col, call = rlang::caller_env()) {
   if (col %in% names(jobs)) {
@@ -2930,13 +3106,22 @@ derive_web_names <- function(input) {
 #'   (e.g. \code{clip.mp4} becomes \code{clip_cropped.mp4}). Each crop dimension
 #'   — \code{width}, \code{height}, \code{x}, \code{y} — may also appear as a
 #'   column to override the corresponding argument per row; rows (or dimensions)
-#'   omitting the column fall back to the argument. Any two rows that resolve to
-#'   the same output path are rejected. Any other columns are ignored.
+#'   omitting the column fall back to the argument. A \code{video_codec} column
+#'   overrides that argument per row, with \code{NA} meaning "leave the codec
+#'   unset" (the column's way of writing the argument's \code{NULL}). Any two
+#'   rows that resolve to the same output path are rejected. Any other columns
+#'   are ignored.
 #' @param width,height The output crop size in pixels, applied to every row
 #'   unless \code{jobs} carries a column of the same name. Required: pass each as
 #'   an argument or supply the column (there is no default crop size).
 #' @param x,y The offset in pixels of the crop's left/top edge, applied to every
 #'   row unless \code{jobs} carries a column of the same name. Default: centered.
+#' @param video_codec A string naming the output video codec, applied to every
+#'   row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
+#'   it unset so each output keeps its container's default encoder.
+#' @param hardware,fallback The encoder backend and its fallback behavior,
+#'   applied to the whole batch (a property of the machine, not of a row, so
+#'   neither is read as a \code{jobs} column). See [crop_video()].
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -2949,7 +3134,8 @@ derive_web_names <- function(input) {
 #'   provenance manifest when requested via \code{...}). See
 #'   \code{\link{ffm_batch}}.
 #' @seealso [crop_video()], the scalar verb it wraps; [ffm_batch()], the batch
-#'   runner; [standardize_video_batch()] to re-encode in batch.
+#'   runner; [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
+#'   [standardize_video_batch()] to re-encode in batch.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -2959,7 +3145,12 @@ derive_web_names <- function(input) {
 #' @export
 crop_video_batch <- function(jobs, width = NULL, height = NULL,
                              x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
+                             video_codec = NULL,
+                             hardware = c("none", "nvenc"), fallback = FALSE,
                              run = TRUE, parallel = FALSE, ...) {
+
+  rlang::check_string(video_codec, allow_null = TRUE)
+  hardware <- rlang::arg_match(hardware)
 
   jobs <- check_batch_jobs(jobs, require_output = FALSE)
 
@@ -2984,6 +3175,7 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
       cli::cli_abort("The {.field {col}} column of {.arg jobs} must not contain {.val {NA}}.")
     }
   }
+  check_batch_codec_col(jobs)
 
   if (!"output" %in% names(jobs)) {
     jobs$output <- derive_cropped_names(jobs$input)
@@ -3000,7 +3192,10 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
         width = pick("width", width),
         height = pick("height", height),
         x = pick("x", x),
-        y = pick("y", y)
+        y = pick("y", y),
+        video_codec = batch_codec_cell(pick("video_codec", video_codec)),
+        hardware = hardware,
+        fallback = fallback
       )
     },
     run = run,
@@ -3250,7 +3445,10 @@ concatenate_videos <- function(infiles, outfile, run = TRUE) {
 # both callers get a clean per-value error. ABOVE the roxygen block (M28 lesson).
 compare_videos_pipeline <- function(infiles, outfile,
                                     direction = c("horizontal", "vertical"),
-                                    resize = TRUE, audio = NULL) {
+                                    resize = TRUE, audio = NULL,
+                                    video_codec = NULL, hardware = "none",
+                                    fallback = FALSE,
+                                    call = rlang::caller_env()) {
   direction <- rlang::arg_match(direction)
   if (resize && length(infiles) != 2) {
     cli::cli_abort(c(
@@ -3267,7 +3465,10 @@ compare_videos_pipeline <- function(infiles, outfile,
   if (!is.null(audio)) {
     p <- ffm_map(p, paste0(audio, ":a"))
   }
-  p
+  # The stacked video is a filtered stream, so a -codec:v rides alongside the
+  # -filter_complex … [vout] mapping the blessed stack verbs emit; the default
+  # video_codec = NULL emits none (M34/D016).
+  apply_video_codec(p, video_codec, hardware, fallback, call = call)
 }
 
 #' Build a side-by-side comparison video
@@ -3291,10 +3492,28 @@ compare_videos_pipeline <- function(infiles, outfile,
 #'   edge. Only supported for exactly two inputs. (default = \code{TRUE})
 #' @param audio The 0-based index of the input whose audio to keep in the
 #'   output, or \code{NULL} to drop audio entirely. (default = \code{NULL})
+#' @param video_codec A string naming the output video codec, or \code{NULL}
+#'   (default) to leave it unset, so the output container's default encoder is
+#'   used and the compiled command is unchanged from one that never named a
+#'   codec.
+#' @param hardware The encoder backend: \code{"none"} (default, the software
+#'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
+#'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
+#'   (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); with the default
+#'   \code{video_codec = NULL} the H.264 family is assumed, so a non-H.264
+#'   container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
+#'   \code{video_codec}. See \code{\link{has_nvenc}} for availability and its
+#'   caveats.
+#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
+#'   unavailable, encode in software with a message (\code{TRUE}) instead of
+#'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
+#'   fallback leaves the codec unset rather than picking one, so the codec never
+#'   changes silently.
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @seealso [ffm_hstack()] and [ffm_vstack()], the builders it wraps;
+#'   [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
 #'   [picture_in_picture()] for insetting instead of stacking.
 #' @family task verb functions
 #' @examples
@@ -3303,7 +3522,9 @@ compare_videos_pipeline <- function(infiles, outfile,
 #' @export
 compare_videos <- function(infiles, outfile,
                            direction = c("horizontal", "vertical"),
-                           resize = TRUE, audio = NULL, run = TRUE) {
+                           resize = TRUE, audio = NULL, video_codec = NULL,
+                           hardware = c("none", "nvenc"), fallback = FALSE,
+                           run = TRUE) {
 
   if (!rlang::is_character(infiles) || length(infiles) < 2) {
     cli::cli_abort("{.arg infiles} must name two or more video files.")
@@ -3313,8 +3534,11 @@ compare_videos <- function(infiles, outfile,
   rlang::check_number_whole(
     audio, min = 0, max = length(infiles) - 1, allow_null = TRUE
   )
+  rlang::check_string(video_codec, allow_null = TRUE)
+  hardware <- rlang::arg_match(hardware)
 
-  p <- compare_videos_pipeline(infiles, outfile, direction, resize, audio)
+  p <- compare_videos_pipeline(infiles, outfile, direction, resize, audio,
+                               video_codec, hardware, fallback)
   ffm_finish(p, run)
 }
 
@@ -3331,7 +3555,10 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
                                         position = c("topright", "topleft",
                                                      "bottomright", "bottomleft",
                                                      "center"),
-                                        scale = 0.25, margin = 16, audio = NULL) {
+                                        scale = 0.25, margin = 16, audio = NULL,
+                                        video_codec = NULL, hardware = "none",
+                                        fallback = FALSE,
+                                        call = rlang::caller_env()) {
   position <- rlang::arg_match(position)
   m <- as.integer(margin)
   pos <- switch(
@@ -3351,7 +3578,10 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
   if (!is.null(audio)) {
     p <- ffm_map(p, paste0(audio, ":a"))
   }
-  p
+  # The composited video is a filtered stream, so a -codec:v rides alongside the
+  # -filter_complex … [vout] mapping ffm_overlay() emits; the default
+  # video_codec = NULL emits none (M34/D016).
+  apply_video_codec(p, video_codec, hardware, fallback, call = call)
 }
 
 #' Inset one video over another (picture-in-picture)
@@ -3377,10 +3607,28 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
 #'   for \code{position = "center"}). (default = \code{16})
 #' @param audio The 0-based index of the input whose audio to keep, or
 #'   \code{NULL} to drop audio. (default = \code{NULL})
+#' @param video_codec A string naming the output video codec, or \code{NULL}
+#'   (default) to leave it unset, so the output container's default encoder is
+#'   used and the compiled command is unchanged from one that never named a
+#'   codec.
+#' @param hardware The encoder backend: \code{"none"} (default, the software
+#'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
+#'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
+#'   (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); with the default
+#'   \code{video_codec = NULL} the H.264 family is assumed, so a non-H.264
+#'   container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
+#'   \code{video_codec}. See \code{\link{has_nvenc}} for availability and its
+#'   caveats.
+#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
+#'   unavailable, encode in software with a message (\code{TRUE}) instead of
+#'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
+#'   fallback leaves the codec unset rather than picking one, so the codec never
+#'   changes silently.
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
-#' @seealso [ffm_overlay()], the builder it wraps; [compare_videos()] for
+#' @seealso [ffm_overlay()], the builder it wraps; [has_nvenc()] for the
+#'   \code{hardware = "nvenc"} toggle; [compare_videos()] for
 #'   side-by-side stacking.
 #' @family task verb functions
 #' @examples
@@ -3392,6 +3640,8 @@ picture_in_picture <- function(main, overlay, outfile,
                                             "bottomright", "bottomleft",
                                             "center"),
                                scale = 0.25, margin = 16, audio = NULL,
+                               video_codec = NULL,
+                               hardware = c("none", "nvenc"), fallback = FALSE,
                                run = TRUE) {
 
   check_file_exists(main)
@@ -3400,9 +3650,12 @@ picture_in_picture <- function(main, overlay, outfile,
   rlang::check_number_decimal(scale)
   rlang::check_number_whole(margin, min = 0)
   rlang::check_number_whole(audio, min = 0, max = 1, allow_null = TRUE)
+  rlang::check_string(video_codec, allow_null = TRUE)
+  hardware <- rlang::arg_match(hardware)
 
   p <- picture_in_picture_pipeline(
-    main, overlay, outfile, position, scale, margin, audio
+    main, overlay, outfile, position, scale, margin, audio,
+    video_codec, hardware, fallback
   )
   ffm_finish(p, run)
 }
@@ -3480,14 +3733,22 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #' @param jobs A data frame with one row per output and (at least) an
 #'   \code{inputs} list-column — each cell a character vector of **two or more**
 #'   video paths — and an \code{output} column (destination path). Optional
-#'   \code{direction}, \code{resize}, and \code{audio} columns override the
+#'   \code{direction}, \code{resize}, \code{audio}, and \code{video_codec}
+#'   columns override the
 #'   like-named arguments per row (a row omitting one falls back to the
 #'   argument). In an \code{audio} column, \code{NA} means "drop audio" (the
-#'   column's way of writing the scalar's \code{NULL}). Any two rows resolving to
+#'   column's way of writing the scalar's \code{NULL}); in a \code{video_codec}
+#'   column it means "leave the codec unset". Any two rows resolving to
 #'   the same output path are rejected; other columns are ignored.
 #' @param direction,resize,audio Defaults applied to every row lacking the
 #'   corresponding column. See [compare_videos()] for their meaning. \code{audio}
 #'   is validated per row against that row's input count.
+#' @param video_codec A string naming the output video codec, applied to every
+#'   row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
+#'   it unset so each output keeps its container's default encoder.
+#' @param hardware,fallback The encoder backend and its fallback behavior,
+#'   applied to the whole batch (a property of the machine, not of a row, so
+#'   neither is read as a \code{jobs} column). See [compare_videos()].
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -3500,7 +3761,8 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #'   provenance manifest when requested via \code{...}). See
 #'   \code{\link{ffm_batch}}.
 #' @seealso [compare_videos()], the scalar verb it wraps; [ffm_batch()], the
-#'   batch runner; [concatenate_videos_batch()] and [picture_in_picture_batch()],
+#'   batch runner; [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
+#'   [concatenate_videos_batch()] and [picture_in_picture_batch()],
 #'   the other fan-in batch siblings.
 #' @family task verb functions
 #' @examples
@@ -3510,11 +3772,16 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #' @export
 compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
                                  resize = TRUE, audio = NULL,
+                                 video_codec = NULL,
+                                 hardware = c("none", "nvenc"),
+                                 fallback = FALSE,
                                  run = TRUE, parallel = FALSE, ...) {
 
   direction <- rlang::arg_match(direction)
   rlang::check_bool(resize)
   rlang::check_number_whole(audio, min = 0, allow_null = TRUE)
+  rlang::check_string(video_codec, allow_null = TRUE)
+  hardware <- rlang::arg_match(hardware)
 
   jobs <- check_fanin_jobs(jobs, min_inputs = 2L, verb = "Comparison")
   jobs <- reject_duplicate_outputs(jobs)
@@ -3523,6 +3790,7 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
   # (direction vocabulary, resize/length compatibility, audio range) are
   # inherited per row from compare_videos_pipeline() / the per-row audio check.
   check_batch_string_col(jobs, "direction")
+  check_batch_codec_col(jobs)
   if ("resize" %in% names(jobs) &&
       (!is.logical(jobs$resize) || anyNA(jobs$resize))) {
     cli::cli_abort(
@@ -3548,7 +3816,10 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
         inputs, output,
         direction = pick("direction", direction),
         resize = pick("resize", resize),
-        audio = aud
+        audio = aud,
+        video_codec = batch_codec_cell(pick("video_codec", video_codec)),
+        hardware = hardware,
+        fallback = fallback
       )
     },
     run = run,
@@ -3573,13 +3844,21 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #' @param jobs A data frame with one row per output and (at least) \code{main}
 #'   (background path), \code{overlay} (inset path), and \code{output}
 #'   (destination path) columns. Optional \code{position}, \code{scale},
-#'   \code{margin}, and \code{audio} columns override the like-named arguments
+#'   \code{margin}, \code{audio}, and \code{video_codec} columns override the
+#'   like-named arguments
 #'   per row (a row omitting one falls back to the argument). In an \code{audio}
 #'   column, \code{NA} means "drop audio" (the column's way of writing the
-#'   scalar's \code{NULL}). Any two rows resolving to the same output path are
+#'   scalar's \code{NULL}); in a \code{video_codec} column it means "leave the
+#'   codec unset". Any two rows resolving to the same output path are
 #'   rejected; other columns are ignored.
 #' @param position,scale,margin,audio Defaults applied to every row lacking the
 #'   corresponding column. See [picture_in_picture()] for their meaning.
+#' @param video_codec A string naming the output video codec, applied to every
+#'   row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
+#'   it unset so each output keeps its container's default encoder.
+#' @param hardware,fallback The encoder backend and its fallback behavior,
+#'   applied to the whole batch (a property of the machine, not of a row, so
+#'   neither is read as a \code{jobs} column). See [picture_in_picture()].
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -3592,7 +3871,8 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #'   provenance manifest when requested via \code{...}). See
 #'   \code{\link{ffm_batch}}.
 #' @seealso [picture_in_picture()], the scalar verb it wraps; [ffm_batch()], the
-#'   batch runner; [concatenate_videos_batch()] and [compare_videos_batch()],
+#'   batch runner; [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
+#'   [concatenate_videos_batch()] and [compare_videos_batch()],
 #'   the other fan-in batch siblings.
 #' @family task verb functions
 #' @examples
@@ -3605,12 +3885,17 @@ picture_in_picture_batch <- function(jobs,
                                                   "bottomright", "bottomleft",
                                                   "center"),
                                      scale = 0.25, margin = 16, audio = NULL,
+                                     video_codec = NULL,
+                                     hardware = c("none", "nvenc"),
+                                     fallback = FALSE,
                                      run = TRUE, parallel = FALSE, ...) {
 
   position <- rlang::arg_match(position)
   rlang::check_number_decimal(scale)
   rlang::check_number_whole(margin, min = 0)
   rlang::check_number_whole(audio, min = 0, max = 1, allow_null = TRUE)
+  rlang::check_string(video_codec, allow_null = TRUE)
+  hardware <- rlang::arg_match(hardware)
 
   # Fixed two-input shape (D015): main/overlay are distinct roles, so named
   # columns rather than a list-column — validated inline (parity with the
@@ -3653,6 +3938,7 @@ picture_in_picture_batch <- function(jobs,
       !all(is.na(jobs$audio))) {
     cli::cli_abort("The {.field audio} column of {.arg jobs} must be numeric ({.val {NA}} to drop audio).")
   }
+  check_batch_codec_col(jobs)
 
   # Thin Layer-2 fan-in over ffm_batch (D007/D015): one overlay pipeline per row,
   # sharing picture_in_picture_pipeline() with picture_in_picture(). A per-row
@@ -3675,7 +3961,10 @@ picture_in_picture_batch <- function(jobs,
         position = pick("position", position),
         scale = pick("scale", scale),
         margin = mrg,
-        audio = aud
+        audio = aud,
+        video_codec = batch_codec_cell(pick("video_codec", video_codec)),
+        hardware = hardware,
+        fallback = fallback
       )
     },
     run = run,

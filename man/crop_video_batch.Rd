@@ -10,6 +10,9 @@ crop_video_batch(
   height = NULL,
   x = "(in_w-out_w)/2",
   y = "(in_h-out_h)/2",
+  video_codec = NULL,
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -23,8 +26,11 @@ the destination; when absent, one is derived per row by appending
 (e.g. \code{clip.mp4} becomes \code{clip_cropped.mp4}). Each crop dimension
 — \code{width}, \code{height}, \code{x}, \code{y} — may also appear as a
 column to override the corresponding argument per row; rows (or dimensions)
-omitting the column fall back to the argument. Any two rows that resolve to
-the same output path are rejected. Any other columns are ignored.}
+omitting the column fall back to the argument. A \code{video_codec} column
+overrides that argument per row, with \code{NA} meaning "leave the codec
+unset" (the column's way of writing the argument's \code{NULL}). Any two
+rows that resolve to the same output path are rejected. Any other columns
+are ignored.}
 
 \item{width, height}{The output crop size in pixels, applied to every row
 unless \code{jobs} carries a column of the same name. Required: pass each as
@@ -32,6 +38,14 @@ an argument or supply the column (there is no default crop size).}
 
 \item{x, y}{The offset in pixels of the crop's left/top edge, applied to every
 row unless \code{jobs} carries a column of the same name. Default: centered.}
+
+\item{video_codec}{A string naming the output video codec, applied to every
+row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
+it unset so each output keeps its container's default encoder.}
+
+\item{hardware, fallback}{The encoder backend and its fallback behavior,
+applied to the whole batch (a property of the machine, not of a row, so
+neither is read as a \code{jobs} column). See \code{\link[=crop_video]{crop_video()}}.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}
@@ -65,7 +79,8 @@ crop_video_batch(jobs, run = FALSE)
 }
 \seealso{
 \code{\link[=crop_video]{crop_video()}}, the scalar verb it wraps; \code{\link[=ffm_batch]{ffm_batch()}}, the batch
-runner; \code{\link[=standardize_video_batch]{standardize_video_batch()}} to re-encode in batch.
+runner; \code{\link[=has_nvenc]{has_nvenc()}} for the \code{hardware = "nvenc"} toggle;
+\code{\link[=standardize_video_batch]{standardize_video_batch()}} to re-encode in batch.
 
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

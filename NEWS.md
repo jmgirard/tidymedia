@@ -2,6 +2,16 @@
 
 ## New features
 
+* `crop_video()`, `segment_video()`, `compare_videos()`, and
+  `picture_in_picture()` (and their `_batch` siblings) gain a `video_codec`
+  argument, alongside the `hardware`/`fallback` GPU toggle. The default
+  `video_codec = NULL` leaves the codec unset, so these verbs compile exactly
+  the commands they did before and each output keeps its container's default
+  encoder. In a jobs table, `video_codec` may be a per-row column (`NA` means
+  "leave it unset"); `hardware` and `fallback` apply to the whole batch. Naming
+  a codec (or a hardware backend) while cutting with
+  `segment_video(reencode = FALSE)` is an error — a stream copy runs no encoder.
+
 * Opt-in NVIDIA GPU (nvenc) video encoding. `standardize_video()`,
   `format_for_web()`, and `anonymize_video()` (and their `_batch` siblings) gain
   a `hardware` argument:

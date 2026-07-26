@@ -194,3 +194,37 @@ needs no change, and the provenance manifest already joins multi-input with
 model (and IP2) is untouched — this is an input-side extension only. Rules out
 a uniform positional list-column for PiP (roles would become order-dependent)
 and any per-verb hand-glued batch runner outside `ffm_batch`.
+
+## D016 — Codec-arg API shape for re-encode verbs (2026-07-26, from M34/RR01)
+
+Resolves how the four codec-less re-encode verbs (`crop_video`,
+`segment_video`, `compare_videos`, `picture_in_picture`) expose an output
+codec, from Fable review RR01 (`cairn/reviews/archive/RR01-codec-arg-api.md`).
+Extends D014's arg vocabulary; reuses the D-M31 nvenc machinery; sits under
+IP1/IP3/D009.
+
+- **Expose a user-facing `video_codec` arg on configurable transforms.** The
+  boundary rule: a *fixed-recipe* verb (`format_for_web` = H.264/yuv420p/AAC by
+  identity) hides the codec; a *configurable transform* (crop, cut, stack,
+  overlay) exposes it — matching `standardize_video`/`anonymize_video`. Rules
+  out the `format_for_web` hidden-codec pattern for general transforms and rules
+  out a per-verb split.
+- **Default `video_codec = NULL` is a "leave it alone" sentinel** — emit no
+  `-codec:v`, preserving the output container's default encoder byte-for-byte.
+  Rules out a literal `"libx264"` default (silently forces H.264 into non-H.264
+  containers like `.webm` — the container trap) and an `"auto"` string (collides
+  with `check_token`-valid encoder names).
+- **The sentinel is handled inside `resolve_hw_encoder()`, before family
+  inference:** `hardware="none"`→`NULL`; `hardware="nvenc"`+`NULL`→the h264
+  family; nvenc-unavailable + `fallback=TRUE` + `NULL`→`NULL` (container
+  default), never an injected libx264 — the fallback never silently changes the
+  codec. One resolver seam, not a fork (D-M31).
+- **Hardware acceleration and a real codec are meaningless on a stream-copy
+  path:** `segment_video(reencode=FALSE)` combined with `hardware!="none"` or a
+  non-NULL `video_codec` aborts, enforced per-row in the shared pipeline (D008
+  keeps stream-copy lossless and opt-in).
+- **Batch: `video_codec` is a per-row column** (a per-file property; NA→sentinel,
+  all-NA-logical accepted), while `hardware`/`fallback` stay batch-wide (a
+  machine property). Rules out a per-row `hardware`/`fallback` column.
+- **`pixel_format` is deferred** on these verbs (no imposed-standard need;
+  additive later under D014). Does not rule out a future addition.

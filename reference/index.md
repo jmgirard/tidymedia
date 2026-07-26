@@ -118,10 +118,16 @@ Thin wrappers over the builder for common preprocessing jobs.
   : Segment Many Videos From a Jobs Table
 - [`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md)
   : Combine video files using the concat demuxer
+- [`concatenate_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos_batch.md)
+  : Concatenate Many Videos From a Jobs Table
 - [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
   : Build a side-by-side comparison video
+- [`compare_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/compare_videos_batch.md)
+  : Build Many Comparison Videos From a Jobs Table
 - [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
   : Inset one video over another (picture-in-picture)
+- [`picture_in_picture_batch()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture_batch.md)
+  : Inset One Video Over Another For Many Outputs From a Jobs Table
 
 ## Verification & provenance
 

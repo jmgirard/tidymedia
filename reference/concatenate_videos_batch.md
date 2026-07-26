@@ -1,37 +1,32 @@
-# Convert the Audio of Many Files From a Jobs Table
+# Concatenate Many Videos From a Jobs Table
 
-Extract or transcode the audio track of many input files from a single
-jobs tibble — the **batch** (table-driven) sibling of
-[`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
-for when you have more than one file. Each row is one input; `input` and
-`output` columns are required. This is a thin wrapper over
+Join clips end to end for many outputs from a single jobs tibble — the
+**batch** (table-driven) sibling of
+[`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md)
+for when you have more than one concatenation to produce. Unlike the
+single-input batch verbs, each row's inputs are **many**, so `jobs`
+carries an `inputs` list-column (each cell a character vector of source
+paths) plus an `output` column (D015). This is a thin wrapper over
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-one reproducible compiled command per input, sharing the same audio-map
-pipeline (and per-value `format` validation) as the scalar verb.
+one reproducible concat-demuxer command per row, sharing the copy +
+map-0 pipeline with the scalar verb.
 
 ## Usage
 
 ``` r
-convert_audio_batch(jobs, format = NULL, run = TRUE, parallel = FALSE, ...)
+concatenate_videos_batch(jobs, run = TRUE, parallel = FALSE, ...)
 ```
 
 ## Arguments
 
 - jobs:
 
-  A data frame with one row per input and (at least) an `input` column
-  (source path) and an `output` column (destination path). An `output`
-  column is **required** — an audio destination cannot be auto-named
-  because its extension picks the output format. An optional `format`
-  column overrides the `format` argument per row; rows omitting it fall
-  back to the argument. Any other columns are ignored.
-
-- format:
-
-  The output audio codec applied to every row unless `jobs` carries a
-  `format` column. `NULL` (default) infers the format from each `output`
-  extension at highest VBR quality; name a codec (e.g. `"aac"`,
-  `"flac"`) to pin `-c:a`.
+  A data frame with one row per output and (at least) an `inputs`
+  list-column — each cell a character vector of the source paths to
+  join, in order — and an `output` column (destination path). An
+  `output` column is required; this verb derives no destination. Any two
+  rows resolving to the same output path are rejected. Any other columns
+  are ignored.
 
 - run:
 
@@ -60,12 +55,14 @@ via `...`). See
 
 ## See also
 
-[`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
+[`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md),
 the scalar verb it wraps;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 the batch runner;
-[`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md)
-to stream-copy audio in batch.
+[`compare_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/compare_videos_batch.md)
+and
+[`picture_in_picture_batch()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture_batch.md),
+the other fan-in batch siblings.
 
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
@@ -73,8 +70,8 @@ Other task verb functions:
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
 [`compare_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/compare_videos_batch.md),
 [`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md),
-[`concatenate_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos_batch.md),
 [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
+[`convert_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/convert_audio_batch.md),
 [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
 [`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md),
 [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
@@ -102,11 +99,10 @@ Other task verb functions:
 
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-jobs <- tibble::tibble(input = c(video, video), output = c("a.mp3", "b.mp3"))
-convert_audio_batch(jobs, run = FALSE)
-#> # A tibble: 2 × 3
-#>   input                                                        output command   
-#>   <chr>                                                        <chr>  <chr>     
-#> 1 /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 a.mp3  "-y -i \"…
-#> 2 /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 b.mp3  "-y -i \"…
+jobs <- tibble::tibble(inputs = list(c(video, video)), output = "joined.mp4")
+concatenate_videos_batch(jobs, run = FALSE)
+#> # A tibble: 1 × 3
+#>   inputs    output     command                                                  
+#>   <list>    <chr>      <chr>                                                    
+#> 1 <chr [2]> joined.mp4 "-y -f concat -safe 0 -i \"/tmp/RtmpKNRO8r/ffm-concat1f8…
 ```

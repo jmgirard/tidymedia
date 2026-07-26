@@ -105,7 +105,9 @@ for the other table-driven siblings.
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
+[`compare_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/compare_videos_batch.md),
 [`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md),
+[`concatenate_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos_batch.md),
 [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
 [`convert_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/convert_audio_batch.md),
 [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
@@ -119,6 +121,7 @@ Other task verb functions:
 [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
 [`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md),
 [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
+[`picture_in_picture_batch()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture_batch.md),
 [`sample_frames()`](https://jmgirard.github.io/tidymedia/reference/sample_frames.md),
 [`sample_frames_batch()`](https://jmgirard.github.io/tidymedia/reference/sample_frames_batch.md),
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),

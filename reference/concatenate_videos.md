@@ -43,6 +43,8 @@ Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
+[`compare_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/compare_videos_batch.md),
+[`concatenate_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos_batch.md),
 [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
 [`convert_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/convert_audio_batch.md),
 [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
@@ -56,6 +58,7 @@ Other task verb functions:
 [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
 [`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md),
 [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
+[`picture_in_picture_batch()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture_batch.md),
 [`sample_frames()`](https://jmgirard.github.io/tidymedia/reference/sample_frames.md),
 [`sample_frames_batch()`](https://jmgirard.github.io/tidymedia/reference/sample_frames_batch.md),
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
@@ -72,5 +75,5 @@ Other task verb functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 concatenate_videos(c(video, video), "joined.mp4", run = FALSE)
-#> [1] "-y -f concat -safe 0 -i \"/tmp/RtmpbAq0e3/ffm-concat1f79511d43c0.txt\" -codec:v copy -codec:a copy -map 0 \"joined.mp4\""
+#> [1] "-y -f concat -safe 0 -i \"/tmp/RtmpKNRO8r/ffm-concat1f8b5ac79d20.txt\" -codec:v copy -codec:a copy -map 0 \"joined.mp4\""
 ```

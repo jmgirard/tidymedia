@@ -16,7 +16,9 @@
 <url><loc>https://jmgirard.github.io/tidymedia/reference/anonymize_video.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/compare_videos.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/compare_videos_batch.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/concatenate_videos.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/concatenate_videos_batch.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/convert_audio.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/convert_audio_batch.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/crop_video.html</loc></url>
@@ -71,6 +73,7 @@
 <url><loc>https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/picture_in_picture.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/picture_in_picture_batch.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/print.tidymedia_ffm.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/probe_all.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/probe_container.html</loc></url>

@@ -147,3 +147,96 @@ test_that("segment_video_batch() takes a per-row audio_codec column", {
   expect_match(as.character(out$command[[1]]), "-codec:a aac", fixed = TRUE)
   expect_no_match(as.character(out$command[[2]]), "-codec:a", fixed = TRUE)
 })
+
+# compare_videos() -------------------------------------------------------------
+
+test_that("compare_videos() emits no -codec:a when no audio is mapped", {
+  f1 <- make_input()
+  f2 <- make_input()
+  # Default audio = NULL drops audio entirely, so there is no stream for a
+  # -codec:a to apply to and the pre-M35 command is unchanged.
+  cmd <- compare_videos(c(f1, f2), "out.mp4", run = FALSE)
+  expect_no_match(as.character(cmd), "-codec:a", fixed = TRUE)
+})
+
+test_that("compare_videos(audio = ) stream-copies the carried track", {
+  f1 <- make_input()
+  f2 <- make_input()
+  cmd <- compare_videos(c(f1, f2), "out.mp4", audio = 0, run = FALSE)
+  expect_match(as.character(cmd), "-codec:a copy", fixed = TRUE)
+  expect_match(as.character(cmd), "-map 0:a", fixed = TRUE)
+})
+
+test_that("compare_videos() carries a named audio codec into the complex path", {
+  f1 <- make_input()
+  f2 <- make_input()
+  cmd <- compare_videos(c(f1, f2), "out.mp4", audio = 1,
+                        video_codec = "libx264", audio_codec = "aac",
+                        run = FALSE)
+  # One command carrying the filtergraph, its [vout] label and map, and both
+  # codecs (D009/IP3: the codecs ride alongside the graph, never inside it).
+  cmd <- as.character(cmd)
+  expect_match(cmd, "-filter_complex", fixed = TRUE)
+  expect_match(cmd, "[vout]", fixed = TRUE)
+  expect_match(cmd, '-map "[vout]"', fixed = TRUE)
+  expect_match(cmd, "-map 1:a", fixed = TRUE)
+  expect_match(cmd, "-codec:v libx264", fixed = TRUE)
+  expect_match(cmd, "-codec:a aac", fixed = TRUE)
+})
+
+test_that("compare_videos() rejects an audio codec with no audio mapped", {
+  f1 <- make_input()
+  f2 <- make_input()
+  expect_error(
+    compare_videos(c(f1, f2), "out.mp4", audio_codec = "aac", run = FALSE),
+    "no audio"
+  )
+  # NULL is the "leave it unset" escape hatch, not a request to encode, so it
+  # stays legal with no audio mapped.
+  expect_no_error(
+    compare_videos(c(f1, f2), "out.mp4", audio_codec = NULL, run = FALSE)
+  )
+})
+
+# picture_in_picture() ---------------------------------------------------------
+
+test_that("picture_in_picture() emits no -codec:a when no audio is mapped", {
+  f1 <- make_input()
+  f2 <- make_input()
+  cmd <- picture_in_picture(f1, f2, "out.mp4", run = FALSE)
+  expect_no_match(as.character(cmd), "-codec:a", fixed = TRUE)
+})
+
+test_that("picture_in_picture(audio = ) stream-copies the carried track", {
+  f1 <- make_input()
+  f2 <- make_input()
+  cmd <- picture_in_picture(f1, f2, "out.mp4", audio = 0, run = FALSE)
+  expect_match(as.character(cmd), "-codec:a copy", fixed = TRUE)
+  expect_match(as.character(cmd), "-map 0:a", fixed = TRUE)
+})
+
+test_that("picture_in_picture() carries a named audio codec into the complex path", {
+  f1 <- make_input()
+  f2 <- make_input()
+  cmd <- as.character(
+    picture_in_picture(f1, f2, "out.mp4", audio = 1, video_codec = "libx264",
+                       audio_codec = "aac", run = FALSE)
+  )
+  expect_match(cmd, "-filter_complex", fixed = TRUE)
+  expect_match(cmd, '-map "[vout]"', fixed = TRUE)
+  expect_match(cmd, "-map 1:a", fixed = TRUE)
+  expect_match(cmd, "-codec:v libx264", fixed = TRUE)
+  expect_match(cmd, "-codec:a aac", fixed = TRUE)
+})
+
+test_that("picture_in_picture() rejects an audio codec with no audio mapped", {
+  f1 <- make_input()
+  f2 <- make_input()
+  expect_error(
+    picture_in_picture(f1, f2, "out.mp4", audio_codec = "aac", run = FALSE),
+    "no audio"
+  )
+  expect_no_error(
+    picture_in_picture(f1, f2, "out.mp4", audio_codec = NULL, run = FALSE)
+  )
+})

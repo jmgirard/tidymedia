@@ -3514,10 +3514,28 @@ concatenate_videos <- function(infiles, outfile, run = TRUE) {
 compare_videos_pipeline <- function(infiles, outfile,
                                     direction = c("horizontal", "vertical"),
                                     resize = TRUE, audio = NULL,
-                                    video_codec = NULL, hardware = "none",
+                                    video_codec = NULL, audio_codec = "copy",
+                                    hardware = "none",
                                     fallback = FALSE,
                                     call = rlang::caller_env()) {
   direction <- rlang::arg_match(direction)
+  # audio_codec configures an encode; with no audio mapped there is no stream to
+  # encode, so a named encoder is a contradiction rather than a no-op. NULL stays
+  # legal -- it only ever means "emit no -codec:a", which is already the case
+  # (M35/D017). IP3/D009 is untouched: the graph and its labels are unchanged.
+  if (is.null(audio) && !is.null(audio_codec) &&
+      !identical(audio_codec, "copy")) {
+    cli::cli_abort(
+      c(
+        "{.arg audio_codec} needs an audio stream to encode.",
+        "x" = "{.code audio = NULL} carries no audio into the output.",
+        "i" = "Pass {.arg audio} the 0-based index of the input whose audio to
+               keep, or drop {.arg audio_codec}."
+      ),
+      call = call
+    )
+  }
+
   if (resize && length(infiles) != 2) {
     cli::cli_abort(c(
       "{.arg resize} currently supports exactly two inputs.",
@@ -3532,6 +3550,9 @@ compare_videos_pipeline <- function(infiles, outfile,
   )
   if (!is.null(audio)) {
     p <- ffm_map(p, paste0(audio, ":a"))
+    # The carried track is mapped straight through, so the default audio_codec
+    # stream-copies it instead of letting the container re-encode it (M35/D017).
+    p <- apply_audio_codec(p, audio_codec, call = call)
   }
   # The stacked video is a filtered stream, so a -codec:v rides alongside the
   # -filter_complex … [vout] mapping the blessed stack verbs emit; the default
@@ -3564,6 +3585,12 @@ compare_videos_pipeline <- function(infiles, outfile,
 #'   (default) to leave it unset, so the output container's default encoder is
 #'   used and the compiled command is unchanged from one that never named a
 #'   codec.
+#' @param audio_codec A string naming the codec for the carried audio track.
+#'   \code{"copy"} (default) stream-copies it through untouched; name an encoder
+#'   (e.g. \code{"aac"}) to transcode it, or pass \code{NULL} to leave the codec
+#'   unset so the output container's default encoder is used. Nothing is emitted
+#'   when \code{audio} is \code{NULL}, since no audio reaches the output; naming
+#'   an encoder in that case is an error.
 #' @param hardware The encoder backend: \code{"none"} (default, the software
 #'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
 #'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
@@ -3591,6 +3618,7 @@ compare_videos_pipeline <- function(infiles, outfile,
 compare_videos <- function(infiles, outfile,
                            direction = c("horizontal", "vertical"),
                            resize = TRUE, audio = NULL, video_codec = NULL,
+                           audio_codec = "copy",
                            hardware = c("none", "nvenc"), fallback = FALSE,
                            run = TRUE) {
 
@@ -3603,10 +3631,13 @@ compare_videos <- function(infiles, outfile,
     audio, min = 0, max = length(infiles) - 1, allow_null = TRUE
   )
   rlang::check_string(video_codec, allow_null = TRUE)
+  rlang::check_string(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
 
   p <- compare_videos_pipeline(infiles, outfile, direction, resize, audio,
-                               video_codec, hardware, fallback)
+                               video_codec = video_codec,
+                               audio_codec = audio_codec,
+                               hardware = hardware, fallback = fallback)
   ffm_finish(p, run)
 }
 
@@ -3624,10 +3655,28 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
                                                      "bottomright", "bottomleft",
                                                      "center"),
                                         scale = 0.25, margin = 16, audio = NULL,
-                                        video_codec = NULL, hardware = "none",
+                                        video_codec = NULL,
+                                        audio_codec = "copy",
+                                        hardware = "none",
                                         fallback = FALSE,
                                         call = rlang::caller_env()) {
   position <- rlang::arg_match(position)
+  # Same contradiction as compare_videos(): no mapped audio means no stream for a
+  # named encoder to act on, while NULL only ever means "emit no -codec:a"
+  # (M35/D017). IP3/D009 untouched -- the graph and its labels are unchanged.
+  if (is.null(audio) && !is.null(audio_codec) &&
+      !identical(audio_codec, "copy")) {
+    cli::cli_abort(
+      c(
+        "{.arg audio_codec} needs an audio stream to encode.",
+        "x" = "{.code audio = NULL} carries no audio into the output.",
+        "i" = "Pass {.arg audio} {.val {0}} for the main video's audio or
+               {.val {1}} for the overlay's, or drop {.arg audio_codec}."
+      ),
+      call = call
+    )
+  }
+
   m <- as.integer(margin)
   pos <- switch(
     position,
@@ -3645,6 +3694,9 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
   p <- ffm_overlay(p, x = pos$x, y = pos$y, scale = scale)
   if (!is.null(audio)) {
     p <- ffm_map(p, paste0(audio, ":a"))
+    # The carried track is mapped straight through, so the default audio_codec
+    # stream-copies it instead of letting the container re-encode it (M35/D017).
+    p <- apply_audio_codec(p, audio_codec, call = call)
   }
   # The composited video is a filtered stream, so a -codec:v rides alongside the
   # -filter_complex … [vout] mapping ffm_overlay() emits; the default
@@ -3679,6 +3731,12 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
 #'   (default) to leave it unset, so the output container's default encoder is
 #'   used and the compiled command is unchanged from one that never named a
 #'   codec.
+#' @param audio_codec A string naming the codec for the carried audio track.
+#'   \code{"copy"} (default) stream-copies it through untouched; name an encoder
+#'   (e.g. \code{"aac"}) to transcode it, or pass \code{NULL} to leave the codec
+#'   unset so the output container's default encoder is used. Nothing is emitted
+#'   when \code{audio} is \code{NULL}, since no audio reaches the output; naming
+#'   an encoder in that case is an error.
 #' @param hardware The encoder backend: \code{"none"} (default, the software
 #'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
 #'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
@@ -3708,7 +3766,7 @@ picture_in_picture <- function(main, overlay, outfile,
                                             "bottomright", "bottomleft",
                                             "center"),
                                scale = 0.25, margin = 16, audio = NULL,
-                               video_codec = NULL,
+                               video_codec = NULL, audio_codec = "copy",
                                hardware = c("none", "nvenc"), fallback = FALSE,
                                run = TRUE) {
 
@@ -3719,11 +3777,13 @@ picture_in_picture <- function(main, overlay, outfile,
   rlang::check_number_whole(margin, min = 0)
   rlang::check_number_whole(audio, min = 0, max = 1, allow_null = TRUE)
   rlang::check_string(video_codec, allow_null = TRUE)
+  rlang::check_string(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
 
   p <- picture_in_picture_pipeline(
     main, overlay, outfile, position, scale, margin, audio,
-    video_codec, hardware, fallback
+    video_codec = video_codec, audio_codec = audio_codec,
+    hardware = hardware, fallback = fallback
   )
   ffm_finish(p, run)
 }

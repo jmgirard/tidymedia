@@ -94,7 +94,7 @@ stays deferred (D016).
 - [x] T6 Remaining three `_batch` siblings (segment's landed in T3): `audio_codec` per-row column via `pick()` +
       `batch_codec_cell()`, guarded by
       `check_batch_codec_col(jobs, "audio_codec")`.
-- [ ] T7 Batch `audio` column guards: add compare's missing check, tighten
+- [x] T7 Batch `audio` column guards: add compare's missing check, tighten
       pip's to the M34 shape; test both boundaries.
 - [ ] T8 Execution test: crop `make_test_video()`, `probe_audio()` input and
       output, assert the codec is unchanged.
@@ -111,6 +111,7 @@ stays deferred (D016).
 - 2026-07-26: T3 — `segment_video` + `segment_pipeline` gain `audio_codec`, applied after `ffm_copy()` so the copy path stays idempotent; the new per-row guard aborts when a stream copy meets anything but `"copy"` (NULL included, since `ffm_copy()` would overwrite it). Minor task refinement: `segment_video_batch`'s formal + per-row column landed here rather than in T6, because AC3's per-row evidence needs them; T6 now covers the remaining three siblings. M34's segment byte-pin narrowed like crop's. test() green: 1382 pass, 0 fail.
 - 2026-07-26: T4+T5 — both composites gain `audio_codec`, applied only inside the `if (!is.null(audio))` branch so the default (`audio = NULL`, no track carried) still compiles no `-codec:a` and M34's composite byte-pins hold untouched. A named encoder with no audio mapped aborts; NULL stays legal there since it only ever means "emit nothing". Compile test pins the full complex shape: `-filter_complex` + `[vout]` + `-map "[vout]"` + `-map N:a` + both codecs in one command. test() green: 1403 pass, 0 fail.
 - 2026-07-26: T6 — `crop_video_batch`, `compare_videos_batch`, `picture_in_picture_batch` gain the `audio_codec` formal plus the per-row column via `pick()`/`batch_codec_cell()`, guarded by `check_batch_codec_col(jobs, "audio_codec")` (M34's helper took a `col` argument already, so the all-NA-logical acceptance and the all-NA-numeric rejection come for free and are tested on both boundaries). test() green: 1417 pass, 0 fail.
+- 2026-07-26: T7 — extracted `check_batch_audio_col()` beside `check_batch_codec_col()` and pointed both composites at it, replacing pip's loose inline guard and giving compare the up-front guard it never had. The tightened shape rejects an all-NA character column (which the old one admitted by accident) and `c(TRUE, FALSE)`, while accepting both all-NA logical and all-NA numeric. test() green: 1424 pass, 0 fail.
 
 ## Decisions
 

@@ -2931,6 +2931,26 @@ check_batch_codec_col <- function(jobs, col = "video_codec",
 
 # Resolve a per-row video_codec cell to the scalar the pipelines take: NA is the
 # column form of the NULL sentinel (M34/D016).
+# check_batch_audio_col(): type-guard a composite verb's `audio` stream-index
+# column up front. Legal: a numeric column (NA cells allowed, meaning "drop
+# audio" for that row), or the all-NA column R types as logical. The same
+# spelled-out shape check_batch_codec_col() uses, and for the same reason:
+# testing `all(is.na(.))` alone would admit an all-NA character or Date column,
+# while testing `is.logical(.)` alone would admit c(TRUE, FALSE) (M35, M34
+# lesson). Shared by compare_videos_batch() and picture_in_picture_batch(), which
+# drifted apart before M35 -- compare had no up-front guard at all.
+check_batch_audio_col <- function(jobs, call = rlang::caller_env()) {
+  ok <- function(x) is.numeric(x) || (is.logical(x) && all(is.na(x)))
+  if ("audio" %in% names(jobs) && !ok(jobs$audio)) {
+    cli::cli_abort(
+      "The {.field audio} column of {.arg jobs} must be numeric
+       ({.val {NA}} to drop audio).",
+      call = call
+    )
+  }
+  invisible(jobs)
+}
+
 batch_codec_cell <- function(value) {
   if (length(value) == 1L && is.na(value)) NULL else value
 }
@@ -3932,6 +3952,7 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
   # (direction vocabulary, resize/length compatibility, audio range) are
   # inherited per row from compare_videos_pipeline() / the per-row audio check.
   check_batch_string_col(jobs, "direction")
+  check_batch_audio_col(jobs)
   check_batch_codec_col(jobs)
   check_batch_codec_col(jobs, "audio_codec")
   if ("resize" %in% names(jobs) &&
@@ -4082,13 +4103,7 @@ picture_in_picture_batch <- function(jobs,
       cli::cli_abort("The {.field {col}} column of {.arg jobs} must be numeric (no {.val {NA}}).")
     }
   }
-  # An all-NA `audio` column is logical, not numeric (NA means "drop audio", per
-  # the roxygen) — accept it, matching compare_videos_batch's no-guard handling;
-  # a genuinely wrong (e.g. character) column still aborts here.
-  if ("audio" %in% names(jobs) && !is.numeric(jobs$audio) &&
-      !all(is.na(jobs$audio))) {
-    cli::cli_abort("The {.field audio} column of {.arg jobs} must be numeric ({.val {NA}} to drop audio).")
-  }
+  check_batch_audio_col(jobs)
   check_batch_codec_col(jobs)
   check_batch_codec_col(jobs, "audio_codec")
 

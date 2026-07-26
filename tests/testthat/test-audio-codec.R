@@ -344,3 +344,71 @@ test_that("the composite batch siblings take a per-row audio_codec column", {
   expect_match(as.character(pip$command[[1]]), "-codec:a aac", fixed = TRUE)
   expect_no_match(as.character(pip$command[[2]]), "-codec:a", fixed = TRUE)
 })
+
+# The batch `audio` (stream index) column guards -------------------------------
+# Not about audio_codec, but the same all-NA typing trap on the neighbouring
+# column: both composite batch verbs now guard it up front and identically.
+
+test_that("both composite batch verbs accept an all-NA audio column", {
+  f <- make_input()
+  # R types `audio = NA` logical while the column must otherwise be numeric; the
+  # roxygen documents NA as "drop audio", so it has to be accepted (M34 lesson).
+  cmp <- compare_videos_batch(
+    tibble::tibble(inputs = list(c(f, f)), output = "a.mp4", audio = NA),
+    run = FALSE
+  )
+  expect_no_match(as.character(cmp$command[[1]]), ":a", fixed = TRUE)
+
+  pip <- picture_in_picture_batch(
+    tibble::tibble(main = f, overlay = f, output = "a.mp4", audio = NA),
+    run = FALSE
+  )
+  expect_no_match(as.character(pip$command[[1]]), ":a", fixed = TRUE)
+
+  # An all-NA *numeric* column is a well-typed "drop audio everywhere" too.
+  pip2 <- picture_in_picture_batch(
+    tibble::tibble(main = f, overlay = f, output = "a.mp4",
+                   audio = NA_real_),
+    run = FALSE
+  )
+  expect_no_match(as.character(pip2$command[[1]]), ":a", fixed = TRUE)
+})
+
+test_that("both composite batch verbs reject a wrongly typed audio column", {
+  f <- make_input()
+  # compare_videos_batch had no up-front guard at all before M35, so a bad
+  # column only failed later, per row.
+  expect_error(
+    compare_videos_batch(
+      tibble::tibble(inputs = list(c(f, f)), output = "a.mp4", audio = "0"),
+      run = FALSE
+    ),
+    "audio"
+  )
+  expect_error(
+    picture_in_picture_batch(
+      tibble::tibble(main = f, overlay = f, output = "a.mp4", audio = "0"),
+      run = FALSE
+    ),
+    "audio"
+  )
+  # An all-NA character column is not the logical one R produces, so the
+  # tightened guard rejects it rather than reading it as "drop audio".
+  expect_error(
+    picture_in_picture_batch(
+      tibble::tibble(main = f, overlay = f, output = "a.mp4",
+                     audio = NA_character_),
+      run = FALSE
+    ),
+    "audio"
+  )
+  # A real logical column is not an all-NA one either.
+  expect_error(
+    picture_in_picture_batch(
+      tibble::tibble(main = c(f, f), overlay = c(f, f),
+                     output = c("a.mp4", "b.mp4"), audio = c(TRUE, FALSE)),
+      run = FALSE
+    ),
+    "audio"
+  )
+})

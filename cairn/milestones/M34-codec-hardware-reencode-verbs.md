@@ -1,6 +1,6 @@
 # M34: `video_codec` + `hardware=` for the four codec-less re-encode verbs
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** RR01

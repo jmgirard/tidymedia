@@ -16,6 +16,9 @@ segment_video(
   end,
   outfiles = NULL,
   reencode = TRUE,
+  video_codec = NULL,
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
   run = TRUE,
   parallel = FALSE
 )
@@ -56,6 +59,32 @@ segment_video(
   with a fast, lossless copy that snaps to keyframes (`FALSE`). See
   `ffm_seek` for the trade-off.
 
+- video_codec:
+
+  A string naming the output video codec, or `NULL` (default) to leave
+  it unset, so the output container's default encoder is used and the
+  compiled command is unchanged from one that never named a codec. A
+  stream copy runs no encoder, so naming a codec (or a `hardware`
+  backend) alongside `reencode = FALSE` is an error.
+
+- hardware:
+
+  The encoder backend: `"none"` (default, the software `video_codec`) or
+  `"nvenc"` for NVIDIA GPU encoding. When `"nvenc"`, the nvenc encoder
+  for `video_codec`'s family is used (e.g. `"libx264"` becomes
+  `"h264_nvenc"`); with the default `video_codec = NULL` the H.264
+  family is assumed, so a non-H.264 container (e.g. `.webm`) needs an
+  explicit HEVC- or AV1-family `video_codec`. See
+  [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+  for availability and its caveats.
+
+- fallback:
+
+  A logical: when `hardware = "nvenc"` but nvenc is unavailable, encode
+  in software with a message (`TRUE`) instead of aborting (`FALSE`,
+  default). With `video_codec = NULL` the fallback leaves the codec
+  unset rather than picking one, so the codec never changes silently.
+
 - run:
 
   A logical: run each segment's command (`TRUE`, default) or only
@@ -90,6 +119,8 @@ https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 the builder it uses to cut;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 the runner;
+[`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+for the `hardware = "nvenc"` toggle;
 [`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md)
 for the many-file form.
 

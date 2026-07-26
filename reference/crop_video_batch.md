@@ -18,6 +18,9 @@ crop_video_batch(
   height = NULL,
   x = "(in_w-out_w)/2",
   y = "(in_h-out_h)/2",
+  video_codec = NULL,
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -35,8 +38,10 @@ crop_video_batch(
   `clip_cropped.mp4`). Each crop dimension — `width`, `height`, `x`, `y`
   — may also appear as a column to override the corresponding argument
   per row; rows (or dimensions) omitting the column fall back to the
-  argument. Any two rows that resolve to the same output path are
-  rejected. Any other columns are ignored.
+  argument. A `video_codec` column overrides that argument per row, with
+  `NA` meaning "leave the codec unset" (the column's way of writing the
+  argument's `NULL`). Any two rows that resolve to the same output path
+  are rejected. Any other columns are ignored.
 
 - width, height:
 
@@ -48,6 +53,19 @@ crop_video_batch(
 
   The offset in pixels of the crop's left/top edge, applied to every row
   unless `jobs` carries a column of the same name. Default: centered.
+
+- video_codec:
+
+  A string naming the output video codec, applied to every row lacking a
+  `video_codec` column, or `NULL` (default) to leave it unset so each
+  output keeps its container's default encoder.
+
+- hardware, fallback:
+
+  The encoder backend and its fallback behavior, applied to the whole
+  batch (a property of the machine, not of a row, so neither is read as
+  a `jobs` column). See
+  [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md).
 
 - run:
 
@@ -80,6 +98,8 @@ via `...`). See
 the scalar verb it wraps;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 the batch runner;
+[`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+for the `hardware = "nvenc"` toggle;
 [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
 to re-encode in batch.
 

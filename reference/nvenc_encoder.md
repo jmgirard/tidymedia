@@ -37,10 +37,17 @@ a character vector of encoder names to treat as available.
 These back the `hardware = "nvenc"` toggle on
 [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
 [`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
+[`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
+[`crop_video`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
+[`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
+[`compare_videos`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
 and
-[`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
-(and their `_batch` siblings). Hardware *decoding* (`-hwaccel`) and GPU
-filter pipelines are out of scope; use the
+[`picture_in_picture`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
+(and their `_batch` siblings). On the verbs whose `video_codec` defaults
+to `NULL` (no codec named), the H.264 family is assumed under
+`hardware = "nvenc"`, so a non-H.264 container (e.g. `.webm`) needs an
+explicit HEVC- or AV1-family `video_codec`. Hardware *decoding*
+(`-hwaccel`) and GPU filter pipelines are out of scope; use the
 [`ffmpeg`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)
 escape hatch for those.
 
@@ -50,8 +57,12 @@ escape hatch for those.
 for the full encoder list,
 [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
 [`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
+[`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
+[`crop_video`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
+[`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
+[`compare_videos`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
 and
-[`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
+[`picture_in_picture`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
 for the `hardware = "nvenc"` toggle that uses these.
 
 Other capability functions:

@@ -12,6 +12,9 @@ crop_video(
   height,
   x = "(in_w-out_w)/2",
   y = "(in_h-out_h)/2",
+  video_codec = NULL,
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
   run = TRUE
 )
 ```
@@ -44,6 +47,30 @@ crop_video(
   The vertical offset, in pixels, of the top edge of the crop. (default
   = centered)
 
+- video_codec:
+
+  A string naming the output video codec, or `NULL` (default) to leave
+  it unset, so the output container's default encoder is used and the
+  compiled command is unchanged from one that never named a codec.
+
+- hardware:
+
+  The encoder backend: `"none"` (default, the software `video_codec`) or
+  `"nvenc"` for NVIDIA GPU encoding. When `"nvenc"`, the nvenc encoder
+  for `video_codec`'s family is used (e.g. `"libx264"` becomes
+  `"h264_nvenc"`); with the default `video_codec = NULL` the H.264
+  family is assumed, so a non-H.264 container (e.g. `.webm`) needs an
+  explicit HEVC- or AV1-family `video_codec`. See
+  [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+  for availability and its caveats.
+
+- fallback:
+
+  A logical: when `hardware = "nvenc"` but nvenc is unavailable, encode
+  in software with a message (`TRUE`) instead of aborting (`FALSE`,
+  default). With `video_codec = NULL` the fallback leaves the codec
+  unset rather than picking one, so the codec never changes silently.
+
 - run:
 
   A logical: run the command through FFmpeg (`TRUE`, default) or return
@@ -57,6 +84,8 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 
 [`ffm_crop()`](https://jmgirard.github.io/tidymedia/reference/ffm_crop.md),
 the builder it wraps;
+[`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+for the `hardware = "nvenc"` toggle;
 [`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md)
 for the many-file form.
 

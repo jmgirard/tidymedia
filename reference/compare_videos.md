@@ -17,6 +17,9 @@ compare_videos(
   direction = c("horizontal", "vertical"),
   resize = TRUE,
   audio = NULL,
+  video_codec = NULL,
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
   run = TRUE
 )
 ```
@@ -46,6 +49,30 @@ compare_videos(
   The 0-based index of the input whose audio to keep in the output, or
   `NULL` to drop audio entirely. (default = `NULL`)
 
+- video_codec:
+
+  A string naming the output video codec, or `NULL` (default) to leave
+  it unset, so the output container's default encoder is used and the
+  compiled command is unchanged from one that never named a codec.
+
+- hardware:
+
+  The encoder backend: `"none"` (default, the software `video_codec`) or
+  `"nvenc"` for NVIDIA GPU encoding. When `"nvenc"`, the nvenc encoder
+  for `video_codec`'s family is used (e.g. `"libx264"` becomes
+  `"h264_nvenc"`); with the default `video_codec = NULL` the H.264
+  family is assumed, so a non-H.264 container (e.g. `.webm`) needs an
+  explicit HEVC- or AV1-family `video_codec`. See
+  [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+  for availability and its caveats.
+
+- fallback:
+
+  A logical: when `hardware = "nvenc"` but nvenc is unavailable, encode
+  in software with a message (`TRUE`) instead of aborting (`FALSE`,
+  default). With `video_codec = NULL` the fallback leaves the codec
+  unset rather than picking one, so the codec never changes silently.
+
 - run:
 
   A logical: run the command through FFmpeg (`TRUE`, default) or return
@@ -68,6 +95,8 @@ compare more. Audio is dropped unless `audio` names an input to carry.
 and
 [`ffm_vstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_vstack.md),
 the builders it wraps;
+[`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+for the `hardware = "nvenc"` toggle;
 [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
 for insetting instead of stacking.
 

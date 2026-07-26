@@ -12,7 +12,16 @@ one reproducible compiled command per segment.
 ## Usage
 
 ``` r
-segment_video_batch(jobs, reencode = TRUE, run = TRUE, parallel = FALSE, ...)
+segment_video_batch(
+  jobs,
+  reencode = TRUE,
+  video_codec = NULL,
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
+  run = TRUE,
+  parallel = FALSE,
+  ...
+)
 ```
 
 ## Arguments
@@ -28,7 +37,9 @@ segment_video_batch(jobs, reencode = TRUE, run = TRUE, parallel = FALSE, ...)
   input's basename, with the segment number restarting at 1 for each
   input file (the same rule as
   [`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)).
-  Any other columns are ignored.
+  A `video_codec` column overrides that argument per row, with `NA`
+  meaning "leave the codec unset" (the column's way of writing the
+  argument's `NULL`). Any other columns are ignored.
 
 - reencode:
 
@@ -39,6 +50,25 @@ segment_video_batch(jobs, reencode = TRUE, run = TRUE, parallel = FALSE, ...)
   `ffm_seek` for the trade-off. Applies to every row, unless `jobs`
   carries a `reencode` column, which overrides this argument on a
   per-row basis.
+
+- video_codec:
+
+  A string naming the output video codec, applied to every row lacking a
+  `video_codec` column, or `NULL` (default) to leave it unset so each
+  segment keeps its container's default encoder. A row that resolves to
+  a codec while cutting by stream copy (`reencode = FALSE`, as an
+  argument or a column) is an error: no encoder runs on that path.
+
+- hardware, fallback:
+
+  The encoder backend and its fallback behavior, applied to the whole
+  batch (a property of the machine, not of a row, so neither is read as
+  a `jobs` column). See
+  [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md).
+  Because `hardware` is batch-wide, `hardware = "nvenc"` conflicts with
+  a stream-copy row on its own — even one naming no codec — so a jobs
+  table mixing `reencode = FALSE` rows with GPU encoding must be split
+  into separate calls.
 
 - run:
 
@@ -81,6 +111,8 @@ https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 for the single-input, parallel-vector form;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
 for the batch runner and the arguments forwarded through `...`;
+[`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+for the `hardware = "nvenc"` toggle;
 [`ffm_seek()`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md)
 for the cut trade-off.
 

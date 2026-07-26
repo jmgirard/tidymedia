@@ -19,6 +19,9 @@ picture_in_picture_batch(
   scale = 0.25,
   margin = 16,
   audio = NULL,
+  video_codec = NULL,
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -31,11 +34,12 @@ picture_in_picture_batch(
 
   A data frame with one row per output and (at least) `main` (background
   path), `overlay` (inset path), and `output` (destination path)
-  columns. Optional `position`, `scale`, `margin`, and `audio` columns
-  override the like-named arguments per row (a row omitting one falls
-  back to the argument). In an `audio` column, `NA` means "drop audio"
-  (the column's way of writing the scalar's `NULL`). Any two rows
-  resolving to the same output path are rejected; other columns are
+  columns. Optional `position`, `scale`, `margin`, `audio`, and
+  `video_codec` columns override the like-named arguments per row (a row
+  omitting one falls back to the argument). In an `audio` column, `NA`
+  means "drop audio" (the column's way of writing the scalar's `NULL`);
+  in a `video_codec` column it means "leave the codec unset". Any two
+  rows resolving to the same output path are rejected; other columns are
   ignored.
 
 - position, scale, margin, audio:
@@ -43,6 +47,19 @@ picture_in_picture_batch(
   Defaults applied to every row lacking the corresponding column. See
   [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
   for their meaning.
+
+- video_codec:
+
+  A string naming the output video codec, applied to every row lacking a
+  `video_codec` column, or `NULL` (default) to leave it unset so each
+  output keeps its container's default encoder.
+
+- hardware, fallback:
+
+  The encoder backend and its fallback behavior, applied to the whole
+  batch (a property of the machine, not of a row, so neither is read as
+  a `jobs` column). See
+  [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md).
 
 - run:
 
@@ -75,6 +92,8 @@ via `...`). See
 the scalar verb it wraps;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 the batch runner;
+[`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+for the `hardware = "nvenc"` toggle;
 [`concatenate_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos_batch.md)
 and
 [`compare_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/compare_videos_batch.md),

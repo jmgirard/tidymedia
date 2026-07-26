@@ -1,11 +1,11 @@
 # M33: Wire `hardware=` nvenc into `anonymize_video`
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** —
+- **Branch/PR:** m33-anonymize-hardware
 
 ## Goal
 

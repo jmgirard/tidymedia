@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1, IP3, GP1
-- **Branch/PR:** —
+- **Branch/PR:** `m35-audio-codec-reencode-verbs`
 
 ## Goal
 
@@ -80,7 +80,7 @@ stays deferred (D016).
 
 ## Tasks
 
-- [ ] T1 Add `apply_audio_codec()` beside `apply_video_codec()`
+- [x] T1 Add `apply_audio_codec()` beside `apply_video_codec()`
       (R/ffmpeg.R:1560) resolving `"copy"` / named / `NULL` onto
       `ffm_codec(audio =)`; place it above any roxygen block (M28 lesson).
 - [ ] T2 `crop_video` + `crop_video_pipeline` (R/ffmpeg.R:424–478): formal,
@@ -106,6 +106,7 @@ stays deferred (D016).
 
 - 2026-07-26: created by /milestone-plan. Absorbs three candidate rows (RR01 Beyond-1, RR01 Beyond-3, the M34 review's pip guard-parity item); the plan-time audit widened the hole from the two composites to all four M34 verbs, and split two further verbs out to candidate rows. D017 records the arg shape.
 - 2026-07-26: set in-progress; branch `m35-audio-codec-reencode-verbs` cut from master.
+- 2026-07-26: T1 — `apply_audio_codec()` added beside `apply_video_codec()`; NULL returns the pipeline untouched, otherwise token-checked with the caller's `call` and threaded to `ffm_codec(audio =)`. Covered indirectly from T2 (internal helper, per the profile's test-doctrine). test() green: 1357 pass, 0 fail.
 
 ## Decisions
 

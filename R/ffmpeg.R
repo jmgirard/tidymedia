@@ -1569,6 +1569,22 @@ apply_video_codec <- function(object, video_codec, hardware = "none",
   ffm_codec(object, video = video_codec)
 }
 
+# apply_audio_codec(): thread a verb's audio_codec choice into a pipeline. The
+# default "copy" stream-copies the audio, matching the norm standardize_video()
+# and anonymize_video() already document, so these verbs stop re-encoding audio
+# to whatever the local build's container default is (M35/D017). NULL is the
+# escape hatch: no ffm_codec() call at all, so the command gains no -codec:a.
+# ffm_codec() token-checks the value too, but checking here attributes the error
+# to the user-facing verb rather than to the engine (parity with
+# apply_video_codec()).
+apply_audio_codec <- function(object, audio_codec, call = rlang::caller_env()) {
+  if (is.null(audio_codec)) {
+    return(object)
+  }
+  check_token(audio_codec, call = call)
+  ffm_codec(object, audio = audio_codec)
+}
+
 
 # segment_video() ---------------------------------------------------------
 

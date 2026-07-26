@@ -62,18 +62,18 @@ ROADMAP candidates (M31 Out).
 
 ## Tasks
 
-- [ ] T1 — Add `hardware`/`fallback` to `anonymize_video()` (R/ffmpeg.R:759):
+- [x] T1 — Add `hardware`/`fallback` to `anonymize_video()` (R/ffmpeg.R:759):
       signature after `pixel_format`, `hardware <- rlang::arg_match(hardware)`,
       pass through. In `anonymize_pipeline()` (R/ffmpeg.R:783) add
       `hardware="none", fallback=FALSE` params and insert
       `video_codec <- resolve_hw_encoder(video_codec, hardware, fallback)`
       before `ffm_codec()`; keep the existing `check_token(video_codec)`.
-- [ ] T2 — Add batch-wide `hardware`/`fallback` to `anonymize_video_batch()`
+- [x] T2 — Add batch-wide `hardware`/`fallback` to `anonymize_video_batch()`
       (R/ffmpeg.R:959), threaded to `anonymize_pipeline()` per row as captured
       scalars (no `pick()` over `...`), mirroring `standardize_video_batch`.
-- [ ] T3 — Roxygen: document `hardware`/`fallback` on both verbs (reuse M31
+- [x] T3 — Roxygen: document `hardware`/`fallback` on both verbs (reuse M31
       wording from `standardize_video`, R/ffmpeg.R:626-639); `devtools::document()`.
-- [ ] T4 — Tests (tests/testthat): default no-op byte-identity (AC1), nvenc
+- [x] T4 — Tests (tests/testthat): default no-op byte-identity (AC1), nvenc
       resolution via option seam (AC2), family rejection (AC3), batch-wide
       threading (AC4); execution tests behind `skip_if_no_nvenc()`.
 - [ ] T5 — Run profile `verify`: `devtools::test()` clean, `devtools::document()`
@@ -82,6 +82,7 @@ ROADMAP candidates (M31 Out).
 ## Work log
 
 - 2026-07-26: created by /milestone-plan; split from the M31-follow-on candidate (sibling M34 covers the four codec-less verbs, API shape under a Fable RB).
+- 2026-07-26: T1–T4 — added `hardware`/`fallback` to `anonymize_video` (+pipeline, +batch, batch-wide) mirroring M31; roxygen + `document()`; nvenc tests in test-nvenc.R. `devtools::test()` clean (0 fail, 2 GPU skips, 1233 pass).
 
 ## Decisions
 

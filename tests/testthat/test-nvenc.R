@@ -140,6 +140,76 @@ test_that("format_for_web() fallback re-encodes with libx264", {
   expect_match(cmd, "-codec:v libx264 -codec:a aac", fixed = TRUE)
 })
 
+# anonymize_video() ------------------------------------------------------------
+
+test_that("anonymize_video(hardware = 'nvenc') compiles to the nvenc encoder", {
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  f <- make_input()
+  regions <- data.frame(x = 10, y = 10, width = 20, height = 20)
+  cmd <- anonymize_video(f, "out.mp4", regions, hardware = "nvenc", run = FALSE)
+  expect_match(cmd, "-codec:v h264_nvenc", fixed = TRUE)
+  expect_no_match(cmd, "libx264", fixed = TRUE)
+})
+
+test_that("anonymize_video() default is software and free of nvenc", {
+  f <- make_input()
+  regions <- data.frame(x = 10, y = 10, width = 20, height = 20)
+  cmd <- anonymize_video(f, "out.mp4", regions, run = FALSE)
+  expect_match(cmd, "-codec:v libx264", fixed = TRUE)
+  expect_no_match(cmd, "nvenc", fixed = TRUE)
+})
+
+test_that("anonymize_video(hardware = 'nvenc') respects the video_codec family", {
+  withr::local_options(tidymedia.nvenc_encoders = c("h264_nvenc", "hevc_nvenc"))
+  f <- make_input()
+  regions <- data.frame(x = 10, y = 10, width = 20, height = 20)
+  cmd <- anonymize_video(f, "out.mp4", regions, video_codec = "libx265",
+                         hardware = "nvenc", run = FALSE)
+  expect_match(cmd, "-codec:v hevc_nvenc", fixed = TRUE)
+})
+
+test_that("anonymize_video(hardware = 'nvenc') aborts for a non-nvenc codec family", {
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  f <- make_input()
+  regions <- data.frame(x = 10, y = 10, width = 20, height = 20)
+  expect_error(
+    anonymize_video(f, "out.mp4", regions, video_codec = "prores",
+                    hardware = "nvenc", run = FALSE),
+    "No nvenc encoder"
+  )
+})
+
+test_that("anonymize_video(hardware = 'nvenc') aborts when unavailable", {
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  f <- make_input()
+  regions <- data.frame(x = 10, y = 10, width = 20, height = 20)
+  expect_error(
+    anonymize_video(f, "out.mp4", regions, hardware = "nvenc", run = FALSE),
+    "not available"
+  )
+})
+
+test_that("anonymize_video() fallback re-encodes with the software codec", {
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  f <- make_input()
+  regions <- data.frame(x = 10, y = 10, width = 20, height = 20)
+  expect_message(
+    cmd <- anonymize_video(f, "out.mp4", regions, hardware = "nvenc",
+                           fallback = TRUE, run = FALSE),
+    "falling back"
+  )
+  expect_match(cmd, "-codec:v libx264", fixed = TRUE)
+})
+
+test_that("anonymize_video() rejects an unknown hardware value", {
+  f <- make_input()
+  regions <- data.frame(x = 10, y = 10, width = 20, height = 20)
+  expect_error(
+    anonymize_video(f, "out.mp4", regions, hardware = "gpu", run = FALSE),
+    class = "rlang_error"
+  )
+})
+
 # batch siblings ---------------------------------------------------------------
 
 test_that("standardize_video_batch(hardware = 'nvenc') applies nvenc per row", {
@@ -158,6 +228,40 @@ test_that("format_for_web_batch(hardware = 'nvenc') applies nvenc per row", {
   expect_true(all(grepl("-codec:v h264_nvenc", res$command, fixed = TRUE)))
 })
 
+test_that("anonymize_video_batch(hardware = 'nvenc') applies nvenc per row", {
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input   = c(f, f),
+    output  = c("a.mp4", "b.mp4"),
+    regions = list(
+      data.frame(x = 10, y = 10, width = 20, height = 20),
+      data.frame(x = 30, y = 30, width = 20, height = 20)
+    )
+  )
+  res <- anonymize_video_batch(jobs, hardware = "nvenc", run = FALSE)
+  expect_true(all(grepl("-codec:v h264_nvenc", res$command, fixed = TRUE)))
+})
+
+test_that("anonymize_video_batch() ignores a per-row hardware column (batch-wide)", {
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input    = c(f, f),
+    output   = c("a.mp4", "b.mp4"),
+    hardware = c("nvenc", "nvenc"),
+    regions  = list(
+      data.frame(x = 10, y = 10, width = 20, height = 20),
+      data.frame(x = 30, y = 30, width = 20, height = 20)
+    )
+  )
+  # hardware is batch-wide, not a per-row column: the jobs column is ignored,
+  # so with the scalar default (hardware = "none") every row stays software.
+  res <- anonymize_video_batch(jobs, run = FALSE)
+  expect_true(all(grepl("-codec:v libx264", res$command, fixed = TRUE)))
+  expect_false(any(grepl("nvenc", res$command, fixed = TRUE)))
+})
+
 # real GPU encode --------------------------------------------------------------
 
 test_that("standardize_video(hardware = 'nvenc') writes a playable file", {
@@ -169,4 +273,14 @@ test_that("standardize_video(hardware = 'nvenc') writes a playable file", {
   expect_true(file.exists(outfile))
   expect_gt(file.size(outfile), 0)
   expect_equal(get_width(outfile), 64)
+})
+
+test_that("anonymize_video(hardware = 'nvenc') writes a non-empty file", {
+  skip_if_no_nvenc()
+  infile <- make_test_video()
+  outfile <- withr::local_tempfile(fileext = ".mp4")
+  regions <- data.frame(x = 0, y = 0, width = 16, height = 16)
+  anonymize_video(infile, outfile, regions, hardware = "nvenc")
+  expect_true(file.exists(outfile))
+  expect_gt(file.size(outfile), 0)
 })

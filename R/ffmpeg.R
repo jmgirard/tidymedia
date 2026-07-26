@@ -740,10 +740,20 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
 #'   \code{"libx264"}).
 #' @param pixel_format A string naming the output pixel format (default
 #'   \code{"yuv420p"}).
+#' @param hardware The encoder backend: \code{"none"} (default, the software
+#'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
+#'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
+#'   (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); see
+#'   \code{\link{has_nvenc}} for availability and its caveats.
+#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
+#'   unavailable, re-encode with the software \code{video_codec} and a message
+#'   (\code{TRUE}) instead of aborting (\code{FALSE}, default). Keeps output
+#'   reproducible by never changing the codec silently.
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
-#' @seealso [ffm_drawbox()], the builder filter it wraps; [anonymize_video_batch()]
+#' @seealso [ffm_drawbox()], the builder filter it wraps; [has_nvenc()] for the
+#'   \code{hardware = "nvenc"} toggle; [anonymize_video_batch()]
 #'   for the many-file (batch) form.
 #' @references https://ffmpeg.org/ffmpeg-filters.html#drawbox
 #' @family task verb functions
@@ -759,13 +769,16 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
 anonymize_video <- function(infile, outfile, regions,
                             color = "black",
                             video_codec = "libx264", pixel_format = "yuv420p",
+                            hardware = c("none", "nvenc"), fallback = FALSE,
                             run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
+  hardware <- rlang::arg_match(hardware)
 
   ffm_finish(
-    anonymize_pipeline(infile, outfile, regions, color, video_codec, pixel_format),
+    anonymize_pipeline(infile, outfile, regions, color, video_codec,
+                       pixel_format, hardware, fallback),
     run
   )
 }
@@ -780,7 +793,8 @@ anonymize_video <- function(infile, outfile, regions,
 # once -- the batch sibling inherits them by construction (D002, D003, D007;
 # M13 extract-first lesson).
 anonymize_pipeline <- function(input, output, regions, color, video_codec,
-                               pixel_format, call = rlang::caller_env()) {
+                               pixel_format, hardware = "none",
+                               fallback = FALSE, call = rlang::caller_env()) {
   check_regions(regions, call = call)
   rlang::check_string(color, call = call)
   check_token(video_codec, call = call)
@@ -814,7 +828,10 @@ anonymize_pipeline <- function(input, output, regions, color, video_codec,
     )
   }
   # Re-encode video (a filter is applied), stream-copy audio untouched -- the
-  # same encode profile as standardize_video().
+  # same encode profile as standardize_video(). hardware = "nvenc" swaps the
+  # software video_codec for its nvenc encoder; Layer 2 computes the name here,
+  # Layer 1 assembles it unchanged (IP1; D-M31).
+  video_codec <- resolve_hw_encoder(video_codec, hardware, fallback, call = call)
   p <- ffm_codec(p, video = video_codec, audio = "copy")
   ffm_pixel_format(p, pixel_format)
 }
@@ -923,6 +940,14 @@ derive_anonymized_names <- function(input) {
 #' @param pixel_format A string naming the output pixel format applied to every
 #'   row, unless \code{jobs} carries a \code{pixel_format} column.
 #'   (default = \code{"yuv420p"})
+#' @param hardware The encoder backend applied to every row: \code{"none"}
+#'   (default, the software \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU
+#'   encoding. Batch-wide (a machine property), not a per-row column; a
+#'   \code{hardware} column in \code{jobs} is ignored. See \code{\link{has_nvenc}}.
+#' @param fallback A logical applied to every row: when \code{hardware = "nvenc"}
+#'   but nvenc is unavailable, re-encode with the software \code{video_codec} and
+#'   a message (\code{TRUE}) instead of aborting (\code{FALSE}, default).
+#'   Batch-wide, not a per-row column.
 #' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
 #'   default) or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: anonymize in
@@ -938,7 +963,8 @@ derive_anonymized_names <- function(input) {
 #'   (and, when \code{output} was derived, the resolved \code{output} column;
 #'   when \code{run = TRUE}, a \code{success} column, plus any columns the
 #'   forwarded arguments add, e.g. \code{verified}).
-#' @seealso [anonymize_video()] for the single-input form; [ffm_batch()] for the
+#' @seealso [anonymize_video()] for the single-input form; [has_nvenc()] for the
+#'   \code{hardware = "nvenc"} toggle; [ffm_batch()] for the
 #'   batch runner and the arguments forwarded through \code{...};
 #'   [standardize_video_batch()] and [segment_video_batch()] for the other
 #'   table-driven siblings.
@@ -957,8 +983,11 @@ derive_anonymized_names <- function(input) {
 #' anonymize_video_batch(jobs, run = FALSE)
 #' @export
 anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264",
-                             pixel_format = "yuv420p", run = TRUE,
-                             parallel = FALSE, ...) {
+                             pixel_format = "yuv420p",
+                             hardware = c("none", "nvenc"), fallback = FALSE,
+                             run = TRUE, parallel = FALSE, ...) {
+
+  hardware <- rlang::arg_match(hardware)
 
   if (!is.data.frame(jobs)) {
     cli::cli_abort("{.arg jobs} must be a data frame with one row per input.")
@@ -1036,7 +1065,11 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
         input, output, regions,
         color = pick("color", color),
         video_codec = pick("video_codec", video_codec),
-        pixel_format = pick("pixel_format", pixel_format)
+        pixel_format = pick("pixel_format", pixel_format),
+        # hardware/fallback are batch-wide (a machine property), never per-row
+        # columns -- parity with standardize_video_batch (D-M31).
+        hardware = hardware,
+        fallback = fallback
       )
     },
     run = run,

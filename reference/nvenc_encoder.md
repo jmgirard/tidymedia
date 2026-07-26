@@ -35,11 +35,12 @@ environment (or in tests), set `options(tidymedia.nvenc_encoders = )` to
 a character vector of encoder names to treat as available.
 
 These back the `hardware = "nvenc"` toggle on
-[`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+[`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
+[`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
 and
-[`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md).
-Hardware *decoding* (`-hwaccel`) and GPU filter pipelines are out of
-scope; use the
+[`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
+(and their `_batch` siblings). Hardware *decoding* (`-hwaccel`) and GPU
+filter pipelines are out of scope; use the
 [`ffmpeg`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)
 escape hatch for those.
 
@@ -47,9 +48,10 @@ escape hatch for those.
 
 [`ffmpeg_encoders`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md)
 for the full encoder list,
-[`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+[`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
+[`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
 and
-[`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
+[`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
 for the `hardware = "nvenc"` toggle that uses these.
 
 Other capability functions:

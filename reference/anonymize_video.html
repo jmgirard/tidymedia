@@ -65,6 +65,8 @@ to cover do not move.</p>
 <span>  color <span class="op">=</span> <span class="st">"black"</span>,</span>
 <span>  video_codec <span class="op">=</span> <span class="st">"libx264"</span>,</span>
 <span>  pixel_format <span class="op">=</span> <span class="st">"yuv420p"</span>,</span>
+<span>  hardware <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"nvenc"</span><span class="op">)</span>,</span>
+<span>  fallback <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -102,6 +104,21 @@ used for any row without its own <code>color</code> (default <code>"black"</code
 <code>"yuv420p"</code>).</p></dd>
 
 
+<dt id="arg-hardware">hardware<a class="anchor" aria-label="anchor" href="#arg-hardware"></a></dt>
+<dd><p>The encoder backend: <code>"none"</code> (default, the software
+<code>video_codec</code>) or <code>"nvenc"</code> for NVIDIA GPU encoding. When
+<code>"nvenc"</code>, the nvenc encoder for <code>video_codec</code>'s family is used
+(e.g. <code>"libx264"</code> becomes <code>"h264_nvenc"</code>); see
+<code><a href="nvenc_encoder.html">has_nvenc</a></code> for availability and its caveats.</p></dd>
+
+
+<dt id="arg-fallback">fallback<a class="anchor" aria-label="anchor" href="#arg-fallback"></a></dt>
+<dd><p>A logical: when <code>hardware = "nvenc"</code> but nvenc is
+unavailable, re-encode with the software <code>video_codec</code> and a message
+(<code>TRUE</code>) instead of aborting (<code>FALSE</code>, default). Keeps output
+reproducible by never changing the codec silently.</p></dd>
+
+
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>
 <dd><p>A logical: run the command through FFmpeg (<code>TRUE</code>, default)
 or return the compiled command without running it (<code>FALSE</code>).</p></dd>
@@ -133,7 +150,8 @@ and regions therefore always compile to a byte-identical command.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="ffm_drawbox.html">ffm_drawbox()</a></code>, the builder filter it wraps; <code><a href="anonymize_video_batch.html">anonymize_video_batch()</a></code>
+    <div class="dont-index"><p><code><a href="ffm_drawbox.html">ffm_drawbox()</a></code>, the builder filter it wraps; <code><a href="nvenc_encoder.html">has_nvenc()</a></code> for the
+<code>hardware = "nvenc"</code> toggle; <code><a href="anonymize_video_batch.html">anonymize_video_batch()</a></code>
 for the many-file (batch) form.</p>
 <p>Other task verb functions:
 <code><a href="anonymize_video_batch.html">anonymize_video_batch()</a></code>,

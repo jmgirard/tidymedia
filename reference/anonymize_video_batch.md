@@ -19,6 +19,8 @@ anonymize_video_batch(
   color = "black",
   video_codec = "libx264",
   pixel_format = "yuv420p",
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -61,6 +63,21 @@ anonymize_video_batch(
   A string naming the output pixel format applied to every row, unless
   `jobs` carries a `pixel_format` column. (default = `"yuv420p"`)
 
+- hardware:
+
+  The encoder backend applied to every row: `"none"` (default, the
+  software `video_codec`) or `"nvenc"` for NVIDIA GPU encoding.
+  Batch-wide (a machine property), not a per-row column; a `hardware`
+  column in `jobs` is ignored. See
+  [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md).
+
+- fallback:
+
+  A logical applied to every row: when `hardware = "nvenc"` but nvenc is
+  unavailable, re-encode with the software `video_codec` and a message
+  (`TRUE`) instead of aborting (`FALSE`, default). Batch-wide, not a
+  per-row column.
+
 - run:
 
   A logical: run each input's command through FFmpeg (`TRUE`, default)
@@ -95,6 +112,8 @@ plus any columns the forwarded arguments add, e.g. `verified`).
 
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
 for the single-input form;
+[`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+for the `hardware = "nvenc"` toggle;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
 for the batch runner and the arguments forwarded through `...`;
 [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)

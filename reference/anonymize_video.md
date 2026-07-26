@@ -16,6 +16,8 @@ anonymize_video(
   color = "black",
   video_codec = "libx264",
   pixel_format = "yuv420p",
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
   run = TRUE
 )
 ```
@@ -47,6 +49,22 @@ anonymize_video(
 - pixel_format:
 
   A string naming the output pixel format (default `"yuv420p"`).
+
+- hardware:
+
+  The encoder backend: `"none"` (default, the software `video_codec`) or
+  `"nvenc"` for NVIDIA GPU encoding. When `"nvenc"`, the nvenc encoder
+  for `video_codec`'s family is used (e.g. `"libx264"` becomes
+  `"h264_nvenc"`); see
+  [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+  for availability and its caveats.
+
+- fallback:
+
+  A logical: when `hardware = "nvenc"` but nvenc is unavailable,
+  re-encode with the software `video_codec` and a message (`TRUE`)
+  instead of aborting (`FALSE`, default). Keeps output reproducible by
+  never changing the codec silently.
 
 - run:
 
@@ -81,6 +99,8 @@ https://ffmpeg.org/ffmpeg-filters.html#drawbox
 
 [`ffm_drawbox()`](https://jmgirard.github.io/tidymedia/reference/ffm_drawbox.md),
 the builder filter it wraps;
+[`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+for the `hardware = "nvenc"` toggle;
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md)
 for the many-file (batch) form.
 

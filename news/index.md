@@ -5,9 +5,10 @@
 ### New features
 
 - Opt-in NVIDIA GPU (nvenc) video encoding.
-  [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+  [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
+  [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
   and
-  [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
+  [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
   (and their `_batch` siblings) gain a `hardware` argument:
   `hardware = "nvenc"` re-encodes on the GPU, choosing the nvenc encoder
   for the codec family (e.g. `h264_nvenc`). By default an unavailable

@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-07-26 (M33 done — anonymize_video nvenc merged, archived; M34 planned from RR01; M28 row aged out to archive)_
+_Last hygiene check: 2026-07-26 (M34 done — codec/hardware args on the four re-encode verbs merged, archived; M29 row aged out to archive; two candidates added from the M34 review)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M33 | Wire `hardware=` nvenc into `anonymize_video` (+ batch) | done | — | normal | milestones/archive/M33-anonymize-hardware.md |
-| M34 | `video_codec` + `hardware=` for the four codec-less re-encode verbs (crop/segment/compare/pip) | review | — | normal | milestones/M34-codec-hardware-reencode-verbs.md |
+| M34 | `video_codec` + `hardware=` for the four codec-less re-encode verbs (crop/segment/compare/pip) | done | — | normal | milestones/archive/M34-codec-hardware-reencode-verbs.md |
 | M32 | Batch siblings for the fan-in verbs (`concatenate_videos`/`compare_videos`/`picture_in_picture` `_batch`) | done | — | normal | milestones/archive/M32-batch-fan-in-verbs.md |
 | M31 | NVIDIA nvenc hardware encoding (opt-in) | done | — | normal | milestones/archive/M31-nvenc-encoding.md |
 | M30 | Vignette overhaul (quality/clarity/realism + fuller verb coverage) | done | — | normal | milestones/archive/M30-vignette-overhaul.md |
-| M29 | Batch sibling for `separate_audio_video` (fan-out) | done | M28 | normal | milestones/archive/M29-batch-separate-audio-video.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->
@@ -25,4 +24,6 @@ _Last hygiene check: 2026-07-26 (M33 done — anonymize_video nvenc merged, arch
 - Other hardware encode backends (videotoolbox/qsv/vaapi/amf) generalizing the `hardware=` arg beyond nvenc — needs a backend-detection + arg-vocabulary design call. — added 2026-07-26 — M31 Out
 - Composite verbs re-encode carried audio to the container default (`compare_videos`/`picture_in_picture` set no `-codec:a` when mapping input audio) — an `audio_codec`/copy decision, surprising next to the package's stream-copy-audio norm. — added 2026-07-26 — RR01 Beyond-1
 - `format_for_web_batch` silently ignores a `video_codec` jobs column (its closure passes no per-row knobs) — a one-line doc cross-reference once M34 teaches the column convention on the sibling verbs. — added 2026-07-26 — RR01 Beyond-3
+- NEWS.md carries milestone numbers in three legacy section headings (`## Verification & provenance (M08)`, `(M07)`, `(M06)`) — user-facing text must not reference milestone IDs; retitle by theme. Pre-existing, surfaced at the M34 review gate. — added 2026-07-26 — M34 review
+- `picture_in_picture_batch`'s `audio` column guard uses the same `!is.numeric(x) && !all(is.na(x))` shape M34 fixed in `check_batch_codec_col()`, so it admits an all-NA column of any type — benign today, but the loose shape should be tightened for parity. — added 2026-07-26 — M34 review F2 neighborhood
 - CRAN readiness (release mechanics only): win-builder + R-hub, cran-comments, bump toward 0.2.0. Deliberately last. API-surface cleanup shipped as M23; the vignette pass is M30; a roxygen `@examples` pass remains the only open docs slice under this row. — added 2026-07-10, trimmed 2026-07-12, reconciled 2026-07-12 (M30) — see M22/M23/M30

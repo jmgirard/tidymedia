@@ -46,4 +46,4 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   at build. Render vignettes with the ffmpeg/ffprobe/mediainfo binaries masked
   off PATH (`Sys.which()==""`) to reproduce the CI-absent build and catch it.
 - 2026-07-26 (M32): a `_batch` per-row override *column* skips the scalar's arg guards (`check_number_whole`/range) — re-validate each override column per row.
-  An all-NA column is *logical* not numeric, so an `is.numeric` guard wrongly rejects a documented NA sentinel.
+- 2026-07-26 (M34): guarding a `_batch` override column whose documented `NA` means "unset" — R types an all-NA column *logical*, so an `is.character`/`is.numeric`-only guard wrongly rejects it, while the usual patch `!is.character(x) && !all(is.na(x))` over-corrects and admits an all-NA numeric or Date. Spell it out: `is.character(x) || (is.logical(x) && all(is.na(x)))`, and test both boundaries.

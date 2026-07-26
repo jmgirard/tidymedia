@@ -3426,6 +3426,98 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 }
 
 
+# compare_videos_batch() ---------------------------------------------------
+
+#' Build Many Comparison Videos From a Jobs Table
+#'
+#' Stack videos side by side for many outputs from a single jobs tibble — the
+#' **batch** (table-driven) sibling of [compare_videos()] for when you have more
+#' than one comparison to produce. Each row carries an \code{inputs} list-column
+#' (each cell two or more video paths) plus an \code{output} column (D015).
+#' This is a thin wrapper over \code{\link{ffm_batch}}: one reproducible stacking
+#' command per row, sharing the pipeline with the scalar verb.
+#'
+#' @param jobs A data frame with one row per output and (at least) an
+#'   \code{inputs} list-column — each cell a character vector of **two or more**
+#'   video paths — and an \code{output} column (destination path). Optional
+#'   \code{direction}, \code{resize}, and \code{audio} columns override the
+#'   like-named arguments per row (a row omitting one falls back to the
+#'   argument). In an \code{audio} column, \code{NA} means "drop audio" (the
+#'   column's way of writing the scalar's \code{NULL}). Any two rows resolving to
+#'   the same output path are rejected; other columns are ignored.
+#' @param direction,resize,audio Defaults applied to every row lacking the
+#'   corresponding column. See [compare_videos()] for their meaning. \code{audio}
+#'   is validated per row against that row's input count.
+#' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
+#'   or only compile them for inspection (\code{FALSE}).
+#' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
+#'   (\code{TRUE}) or sequentially (\code{FALSE}, default). See
+#'   \code{\link{ffm_batch}} for the \pkg{future} plan requirement.
+#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
+#'   \code{verify}, \code{manifest}, \code{progress}).
+#' @return The \code{jobs} tibble with an added \code{command} column and, when
+#'   \code{run = TRUE}, a \code{success} column (plus \code{verified} /
+#'   provenance manifest when requested via \code{...}). See
+#'   \code{\link{ffm_batch}}.
+#' @seealso [compare_videos()], the scalar verb it wraps; [ffm_batch()], the
+#'   batch runner; [concatenate_videos_batch()] and [picture_in_picture_batch()],
+#'   the other fan-in batch siblings.
+#' @family task verb functions
+#' @examples
+#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#' jobs <- tibble::tibble(inputs = list(c(video, video)), output = "compare.mp4")
+#' compare_videos_batch(jobs, run = FALSE)
+#' @export
+compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
+                                 resize = TRUE, audio = NULL,
+                                 run = TRUE, parallel = FALSE, ...) {
+
+  direction <- rlang::arg_match(direction)
+  rlang::check_bool(resize)
+  rlang::check_number_whole(audio, min = 0, allow_null = TRUE)
+
+  jobs <- check_fanin_jobs(jobs, min_inputs = 2L, verb = "Comparison")
+  jobs <- reject_duplicate_outputs(jobs)
+
+  # Validate present override columns up front (types); per-value checks
+  # (direction vocabulary, resize/length compatibility, audio range) are
+  # inherited per row from compare_videos_pipeline() / the per-row audio check.
+  check_batch_string_col(jobs, "direction")
+  if ("resize" %in% names(jobs) &&
+      (!is.logical(jobs$resize) || anyNA(jobs$resize))) {
+    cli::cli_abort(
+      "The {.field resize} column of {.arg jobs} must be {.val {TRUE}} or {.val {FALSE}} (no {.val {NA}})."
+    )
+  }
+
+  # Thin Layer-2 fan-in over ffm_batch (D007/D015): one stacking pipeline per
+  # row, sharing compare_videos_pipeline() with compare_videos(). A per-row
+  # override column (via `...` from pmap) wins over the scalar arg; an `audio`
+  # cell of NA means "drop audio" (the column form of the scalar's NULL).
+  ffm_batch(
+    jobs,
+    function(inputs, output, ...) {
+      dots <- list(...)
+      pick <- function(nm, default) if (nm %in% names(dots)) dots[[nm]] else default
+      aud <- pick("audio", audio)
+      if (length(aud) == 1L && is.na(aud)) aud <- NULL
+      if (!is.null(aud)) {
+        rlang::check_number_whole(aud, min = 0, max = length(inputs) - 1)
+      }
+      compare_videos_pipeline(
+        inputs, output,
+        direction = pick("direction", direction),
+        resize = pick("resize", resize),
+        audio = aud
+      )
+    },
+    run = run,
+    parallel = parallel,
+    ...
+  )
+}
+
+
 # Get volume levels -------------------------------------------------------
 
 get_volume <- function(infile) {

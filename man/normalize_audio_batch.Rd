@@ -138,6 +138,7 @@ Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos]{compare_videos()}},
+\code{\link[=compare_videos_batch]{compare_videos_batch()}},
 \code{\link[=concatenate_videos]{concatenate_videos()}},
 \code{\link[=concatenate_videos_batch]{concatenate_videos_batch()}},
 \code{\link[=convert_audio]{convert_audio()}},

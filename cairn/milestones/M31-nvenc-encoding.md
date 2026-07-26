@@ -40,10 +40,11 @@ row. Wiring `hardware` into the remaining re-encode verbs
 - [x] `has_nvenc(codec)` (exported) returns a length-1 logical, `TRUE` iff
       `nvenc_encoder(codec)` is in `ffmpeg_encoders()$name`; roxygen documents
       that this reflects FFmpeg build support, not a guaranteed runtime GPU.
-- [ ] With nvenc available, `standardize_video(..., hardware = "nvenc")` and
+- [x] With nvenc available, `standardize_video(..., hardware = "nvenc")` and
       `format_for_web(..., hardware = "nvenc")` (and their `_batch` siblings)
       compile to `-codec:v <family>_nvenc`; availability is forced in the test
-      via `local_mocked_bindings(has_nvenc = …)` so the check is binary-free.
+      via the `tidymedia.nvenc_encoders` option seam (`withr::local_options`)
+      so the check is binary-free (D-M31-1).
 - [x] With nvenc unavailable, `hardware = "nvenc"` aborts (`cli_abort`, message
       names the fix); `fallback = TRUE` instead compiles the software
       `video_codec` and emits a `cli_inform`/`cli_warn`.
@@ -94,6 +95,7 @@ row. Wiring `hardware` into the remaining re-encode verbs
 - 2026-07-26: created by /milestone-plan.
 - 2026-07-26: implemented T1–T6 — nvenc exports + resolver, `hardware`/`fallback` on standardize/format_for_web + batch siblings, tests, docs; check 0/0/0, test PASS 1143 (1 SKIP nvenc).
 - 2026-07-26: review — CI (#33) red on Ubuntu (listed-but-unusable nvenc, M27 trap); fixed `skip_if_no_nvenc()` to probe with a trial encode. Fan-out: F1 scored 74 (logged); blame + prior-review clean.
+- 2026-07-26: AC3 wording amended (gate-approved) to name the option seam instead of `local_mocked_bindings`, matching D-M31-1; AC3 ticked. Merge approved for PR #33.
 
 ## Decisions
 

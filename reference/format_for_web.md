@@ -7,7 +7,13 @@ dimensions down to even values as required by the codec.
 ## Usage
 
 ``` r
-format_for_web(infile, outfile, run = TRUE)
+format_for_web(
+  infile,
+  outfile,
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
+  run = TRUE
+)
 ```
 
 ## Arguments
@@ -19,6 +25,18 @@ format_for_web(infile, outfile, run = TRUE)
 - outfile:
 
   A string containing the path of the video file to write.
+
+- hardware:
+
+  The encoder backend: `"none"` (default, software libx264) or `"nvenc"`
+  for NVIDIA GPU H.264 encoding (`"h264_nvenc"`) when available. See
+  [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md).
+
+- fallback:
+
+  A logical: when `hardware = "nvenc"` but nvenc is unavailable,
+  re-encode with software libx264 and a message (`TRUE`) instead of
+  aborting (`FALSE`, default).
 
 - run:
 
@@ -35,6 +53,8 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 and
 [`ffm_pixel_format()`](https://jmgirard.github.io/tidymedia/reference/ffm_pixel_format.md),
 among the builders it wraps;
+[`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+for the `hardware = "nvenc"` toggle;
 [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
 for a configurable re-encode;
 [`format_for_web_batch()`](https://jmgirard.github.io/tidymedia/reference/format_for_web_batch.md)

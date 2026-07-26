@@ -19,6 +19,8 @@ standardize_video_batch(
   fps = NULL,
   video_codec = "libx264",
   pixel_format = "yuv420p",
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -64,6 +66,21 @@ standardize_video_batch(
 
   A string naming the pixel format applied to every row, unless `jobs`
   carries a `pixel_format` column. (default = `"yuv420p"`)
+
+- hardware:
+
+  The encoder backend applied to every row: `"none"` (default) or
+  `"nvenc"` for NVIDIA GPU encoding. Batch-wide (not a per-row column).
+  See
+  [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+  and
+  [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md).
+
+- fallback:
+
+  A logical: when `hardware = "nvenc"` but nvenc is unavailable,
+  re-encode with the software `video_codec` and a message (`TRUE`)
+  instead of aborting (`FALSE`, default).
 
 - run:
 

@@ -12,7 +12,14 @@ H.264/AAC/`+faststart` pipeline as the scalar verb (no per-row knobs).
 ## Usage
 
 ``` r
-format_for_web_batch(jobs, run = TRUE, parallel = FALSE, ...)
+format_for_web_batch(
+  jobs,
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
+  run = TRUE,
+  parallel = FALSE,
+  ...
+)
 ```
 
 ## Arguments
@@ -26,6 +33,19 @@ format_for_web_batch(jobs, run = TRUE, parallel = FALSE, ...)
   H.264/mp4), e.g. `clip.mkv` becomes `clip_web.mp4`. Any two rows that
   resolve to the same output path are rejected. Any other columns are
   ignored.
+
+- hardware:
+
+  The encoder backend applied to every row: `"none"` (default, software
+  libx264) or `"nvenc"` for NVIDIA GPU H.264 encoding. Batch-wide (not a
+  per-row column). See
+  [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md).
+
+- fallback:
+
+  A logical: when `hardware = "nvenc"` but nvenc is unavailable,
+  re-encode with software libx264 and a message (`TRUE`) instead of
+  aborting (`FALSE`, default).
 
 - run:
 

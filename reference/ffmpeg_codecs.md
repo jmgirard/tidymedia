@@ -67,7 +67,8 @@ to set a codec in a pipeline, and
 for the Layer 0 escape hatch.
 
 Other capability functions:
-[`ffmpeg_encoders()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md)
+[`ffmpeg_encoders()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md),
+[`nvenc_encoder()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
 
 ## Examples
 

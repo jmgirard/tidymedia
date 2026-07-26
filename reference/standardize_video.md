@@ -19,6 +19,8 @@ standardize_video(
   fps = NULL,
   video_codec = "libx264",
   pixel_format = "yuv420p",
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
   run = TRUE
 )
 ```
@@ -57,6 +59,22 @@ standardize_video(
 
   A string naming the output pixel format (default `"yuv420p"`).
 
+- hardware:
+
+  The encoder backend: `"none"` (default, the software `video_codec`) or
+  `"nvenc"` for NVIDIA GPU encoding. When `"nvenc"`, the nvenc encoder
+  for `video_codec`'s family is used (e.g. `"libx264"` becomes
+  `"h264_nvenc"`); see
+  [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+  for availability and its caveats.
+
+- fallback:
+
+  A logical: when `hardware = "nvenc"` but nvenc is unavailable,
+  re-encode with the software `video_codec` and a message (`TRUE`)
+  instead of aborting (`FALSE`, default). Keeps output reproducible by
+  never changing the codec silently.
+
 - run:
 
   A logical: run the command through FFmpeg (`TRUE`, default) or return
@@ -89,6 +107,8 @@ already-even input) so the output always encodes.
 and
 [`ffm_pixel_format()`](https://jmgirard.github.io/tidymedia/reference/ffm_pixel_format.md),
 among the builders it wraps;
+[`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+for the `hardware = "nvenc"` toggle;
 [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
 for the many-file form.
 

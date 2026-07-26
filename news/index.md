@@ -4,6 +4,23 @@
 
 ### New features
 
+- Opt-in NVIDIA GPU (nvenc) video encoding.
+  [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+  and
+  [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
+  (and their `_batch` siblings) gain a `hardware` argument:
+  `hardware = "nvenc"` re-encodes on the GPU, choosing the nvenc encoder
+  for the codec family (e.g. `h264_nvenc`). By default an unavailable
+  GPU is an error (so output stays reproducible); `fallback = TRUE`
+  re-encodes in software with a message instead.
+  [`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+  reports whether an nvenc encoder is available in your FFmpeg build and
+  [`nvenc_encoder()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+  names it. Hardware *decoding* and GPU filter pipelines remain out of
+  scope — use
+  [`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)
+  for those.
+
 - [`sample_frames()`](https://jmgirard.github.io/tidymedia/reference/sample_frames.md)
   samples a video at a fixed rate (`fps`) or interval (`interval`,
   seconds between frames) into a numbered image sequence — the front

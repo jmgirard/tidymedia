@@ -165,12 +165,16 @@ Read container and stream metadata as tibbles, ready for the tidyverse.
 
 ## FFmpeg capabilities
 
-Discover the codecs and encoders available in your FFmpeg build.
+Discover the codecs and encoders available in your FFmpeg build,
+including opt-in NVIDIA nvenc GPU encoding.
 
 - [`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md)
   : Get a data frame of all installed codecs
 - [`ffmpeg_encoders()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md)
   : Get a data frame of all installed encoders
+- [`nvenc_encoder()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+  [`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+  : NVIDIA nvenc hardware encoders
 
 ## Program management
 

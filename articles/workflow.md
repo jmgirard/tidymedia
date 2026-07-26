@@ -67,6 +67,31 @@ jobs <- tibble::tibble(
 standardize_video_batch(jobs, width = 1280, height = 720, fps = 30)
 ```
 
+Re-encoding a large study can be slow on the CPU. If the machine has an
+NVIDIA GPU and an nvenc-capable FFmpeg,
+[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+and
+[`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
+accept `hardware = "nvenc"` to encode on the GPU:
+
+``` r
+
+# Check availability first (reflects the FFmpeg build, not a guaranteed GPU)
+has_nvenc("h264")
+
+standardize_video_batch(
+  jobs, width = 1280, height = 720, fps = 30,
+  hardware = "nvenc"
+)
+```
+
+If nvenc is unavailable this errors by default, so a shared script never
+silently changes codec; pass `fallback = TRUE` to re-encode in software
+instead. Hardware *decoding* (`-hwaccel`) and GPU filter pipelines are
+out of scope — reach for the
+[`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)
+escape hatch there.
+
 ## 2. Prepare the audio
 
 Acoustic and transcription tools want clean, consistently loud audio.

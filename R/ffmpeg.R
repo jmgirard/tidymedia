@@ -3103,6 +3103,17 @@ separate_audio_video_batch <- function(jobs, reencode = FALSE, run = TRUE,
 
 # concatenate_videos() ----------------------------------------------------
 
+# Build the concat-demuxer pipeline shared by concatenate_videos() and its
+# _batch sibling (M32): warn on mixed extensions, then ffm_concat() writes the
+# demuxer list file and sets copy + map 0. Kept ABOVE the roxygen block so
+# document() does not re-target it (M28 lesson).
+concatenate_pipeline <- function(infiles, outfile) {
+  if (length(unique(tools::file_ext(infiles))) != 1) {
+    cli::cli_warn("Not all {.arg infiles} have the same extension.")
+  }
+  ffm_concat(ffm_files(infiles, outfile))
+}
+
 #' Combine video files using the concat demuxer
 #'
 #' Combine multiple video files one after another without needing to re-encode
@@ -3132,18 +3143,39 @@ concatenate_videos <- function(infiles, outfile, run = TRUE) {
   }
   rlang::check_string(outfile)
 
-  if (length(unique(tools::file_ext(infiles))) != 1) {
-    cli::cli_warn("Not all {.arg infiles} have the same extension.")
-  }
-
-  # ffm_concat() writes the demuxer list file and sets copy + map 0.
-  p <- ffm_concat(ffm_files(infiles, outfile))
-  ffm_finish(p, run)
+  ffm_finish(concatenate_pipeline(infiles, outfile), run)
 }
 
 
 
 # compare_videos() --------------------------------------------------------
+
+# Build the side-by-side comparison pipeline shared by compare_videos() and its
+# _batch sibling (M32): resize supports exactly two inputs, so guard it here;
+# then stack (h/v) and optionally carry one input's audio. Assumes `resize`/
+# `audio` already type-checked by the caller; `direction` is arg-matched here so
+# both callers get a clean per-value error. ABOVE the roxygen block (M28 lesson).
+compare_videos_pipeline <- function(infiles, outfile,
+                                    direction = c("horizontal", "vertical"),
+                                    resize = TRUE, audio = NULL) {
+  direction <- rlang::arg_match(direction)
+  if (resize && length(infiles) != 2) {
+    cli::cli_abort(c(
+      "{.arg resize} currently supports exactly two inputs.",
+      "i" = "Pass {.code resize = FALSE} to compare more than two videos."
+    ))
+  }
+  p <- ffm_files(infiles, outfile)
+  p <- switch(
+    direction,
+    horizontal = ffm_hstack(p, resize = resize),
+    vertical = ffm_vstack(p, resize = resize)
+  )
+  if (!is.null(audio)) {
+    p <- ffm_map(p, paste0(audio, ":a"))
+  }
+  p
+}
 
 #' Build a side-by-side comparison video
 #'
@@ -3184,32 +3216,50 @@ compare_videos <- function(infiles, outfile,
     cli::cli_abort("{.arg infiles} must name two or more video files.")
   }
   rlang::check_string(outfile)
-  direction <- rlang::arg_match(direction)
   rlang::check_bool(resize)
   rlang::check_number_whole(
     audio, min = 0, max = length(infiles) - 1, allow_null = TRUE
   )
-  if (resize && length(infiles) != 2) {
-    cli::cli_abort(c(
-      "{.arg resize} currently supports exactly two inputs.",
-      "i" = "Pass {.code resize = FALSE} to compare more than two videos."
-    ))
-  }
 
-  p <- ffm_files(infiles, outfile)
-  p <- switch(
-    direction,
-    horizontal = ffm_hstack(p, resize = resize),
-    vertical = ffm_vstack(p, resize = resize)
-  )
-  if (!is.null(audio)) {
-    p <- ffm_map(p, paste0(audio, ":a"))
-  }
+  p <- compare_videos_pipeline(infiles, outfile, direction, resize, audio)
   ffm_finish(p, run)
 }
 
 
 # picture_in_picture() ----------------------------------------------------
+
+# Build the picture-in-picture overlay pipeline shared by picture_in_picture()
+# and its _batch sibling (M32): translate the corner/center choice into overlay
+# x/y expressions, scale + position the inset, optionally carry one input's
+# audio. Assumes `scale`/`margin`/`audio` already type-checked by the caller;
+# `position` is arg-matched here so both callers get a clean per-value error.
+# ABOVE the roxygen block (M28 lesson).
+picture_in_picture_pipeline <- function(main, overlay, outfile,
+                                        position = c("topright", "topleft",
+                                                     "bottomright", "bottomleft",
+                                                     "center"),
+                                        scale = 0.25, margin = 16, audio = NULL) {
+  position <- rlang::arg_match(position)
+  m <- as.integer(margin)
+  pos <- switch(
+    position,
+    topleft     = list(x = as.character(m), y = as.character(m)),
+    topright    = list(x = sprintf("main_w-overlay_w-%d", m),
+                       y = as.character(m)),
+    bottomleft  = list(x = as.character(m),
+                       y = sprintf("main_h-overlay_h-%d", m)),
+    bottomright = list(x = sprintf("main_w-overlay_w-%d", m),
+                       y = sprintf("main_h-overlay_h-%d", m)),
+    center      = list(x = "(main_w-overlay_w)/2",
+                       y = "(main_h-overlay_h)/2")
+  )
+  p <- ffm_files(c(main, overlay), outfile)
+  p <- ffm_overlay(p, x = pos$x, y = pos$y, scale = scale)
+  if (!is.null(audio)) {
+    p <- ffm_map(p, paste0(audio, ":a"))
+  }
+  p
+}
 
 #' Inset one video over another (picture-in-picture)
 #'
@@ -3254,32 +3304,13 @@ picture_in_picture <- function(main, overlay, outfile,
   check_file_exists(main)
   check_file_exists(overlay)
   rlang::check_string(outfile)
-  position <- rlang::arg_match(position)
   rlang::check_number_decimal(scale)
   rlang::check_number_whole(margin, min = 0)
   rlang::check_number_whole(audio, min = 0, max = 1, allow_null = TRUE)
-  m <- as.integer(margin)
 
-  # Translate the corner/center choice into overlay x/y expressions, where
-  # overlay_w/overlay_h are the (already scaled) inset's dimensions.
-  pos <- switch(
-    position,
-    topleft     = list(x = as.character(m), y = as.character(m)),
-    topright    = list(x = sprintf("main_w-overlay_w-%d", m),
-                       y = as.character(m)),
-    bottomleft  = list(x = as.character(m),
-                       y = sprintf("main_h-overlay_h-%d", m)),
-    bottomright = list(x = sprintf("main_w-overlay_w-%d", m),
-                       y = sprintf("main_h-overlay_h-%d", m)),
-    center      = list(x = "(main_w-overlay_w)/2",
-                       y = "(main_h-overlay_h)/2")
+  p <- picture_in_picture_pipeline(
+    main, overlay, outfile, position, scale, margin, audio
   )
-
-  p <- ffm_files(c(main, overlay), outfile)
-  p <- ffm_overlay(p, x = pos$x, y = pos$y, scale = scale)
-  if (!is.null(audio)) {
-    p <- ffm_map(p, paste0(audio, ":a"))
-  }
   ffm_finish(p, run)
 }
 

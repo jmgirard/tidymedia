@@ -9,6 +9,8 @@ anonymize_video_batch(
   color = "black",
   video_codec = "libx264",
   pixel_format = "yuv420p",
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -41,6 +43,16 @@ unless \code{jobs} carries a \code{video_codec} column. (default =
 \item{pixel_format}{A string naming the output pixel format applied to every
 row, unless \code{jobs} carries a \code{pixel_format} column.
 (default = \code{"yuv420p"})}
+
+\item{hardware}{The encoder backend applied to every row: \code{"none"}
+(default, the software \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU
+encoding. Batch-wide (a machine property), not a per-row column; a
+\code{hardware} column in \code{jobs} is ignored. See \code{\link{has_nvenc}}.}
+
+\item{fallback}{A logical applied to every row: when \code{hardware = "nvenc"}
+but nvenc is unavailable, re-encode with the software \code{video_codec} and
+a message (\code{TRUE}) instead of aborting (\code{FALSE}, default).
+Batch-wide, not a per-row column.}
 
 \item{run}{A logical: run each input's command through FFmpeg (\code{TRUE},
 default) or only compile them for inspection (\code{FALSE}).}
@@ -86,7 +98,8 @@ jobs <- tibble::tibble(
 anonymize_video_batch(jobs, run = FALSE)
 }
 \seealso{
-\code{\link[=anonymize_video]{anonymize_video()}} for the single-input form; \code{\link[=ffm_batch]{ffm_batch()}} for the
+\code{\link[=anonymize_video]{anonymize_video()}} for the single-input form; \code{\link[=has_nvenc]{has_nvenc()}} for the
+\code{hardware = "nvenc"} toggle; \code{\link[=ffm_batch]{ffm_batch()}} for the
 batch runner and the arguments forwarded through \code{...};
 \code{\link[=standardize_video_batch]{standardize_video_batch()}} and \code{\link[=segment_video_batch]{segment_video_batch()}} for the other
 table-driven siblings.

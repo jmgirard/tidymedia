@@ -12,8 +12,9 @@ docs
 # testthat scratch dumps from snapshot runs
 tests/testthat/_problems/
 
-# cairn: local-only reference PDFs
-cairn/references/pdf/
+# cairn: local-only reference source materials
+cairn/references/sources/
 
-# cairn: single-use merge-approval marker (never committed)
+# cairn: single-use merge-approval marker (never committed) + its consumed-but-unresolved state
 cairn/.merge-approved
+cairn/.merge-approved.pending

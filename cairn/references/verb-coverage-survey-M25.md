@@ -14,6 +14,10 @@ coding, reliability rating, and per-frame CV feature extraction (e.g. OpenFace
 action units). Analog tools (av, magick, tuneR/seewave, moviepy) are cited only
 as evidence that a need is real, never as a parity target._
 
+**Provenance.** Ingested 2026-07-12 by M25 from running the M25 verb-coverage survey — a first-hand analysis diffing tidymedia's Layer 2 exports (read read-only from `NAMESPACE`, `R/*.R`) against behavioral/affective-science pipeline needs. No external source of its own; analog tools named are evidence of demand, not a parity target.
+Pagination: —.
+Extraction: a 2026-07-12 snapshot of the export surface; that surface has moved on independently since (M26–M31 added verbs) — observed 2026-07-26.
+
 ## 1. The "have" — current Layer 2 task verbs
 
 18 exported task verbs today (13 scalar + 5 `_batch` siblings), classified by

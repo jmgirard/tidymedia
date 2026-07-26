@@ -6,8 +6,9 @@ recommendations are executed by the follow-up milestone "Apply M22 naming/docs
 recommendations" under the **clean-break** rename policy (no `lifecycle`
 shims — the API is pre-0.2.0 and still soaking, D001/CRAN-candidate framing)._
 
-Generated 2026-07-12 from `NAMESPACE`, `R/*.R`, `vignettes/*.Rmd`, `README.Rmd`.
-Line citations are to the definition site.
+**Provenance.** Ingested 2026-07-12 by M22 from the repo's own public surface, read read-only — `NAMESPACE`, `R/*.R`, `vignettes/*.Rmd`, `README.Rmd`. No external source of its own; line citations are to the definition site.
+Pagination: —.
+Extraction: a 2026-07-12 snapshot of the naming/docs surface; that surface has moved on independently since (the approved renames were applied by the M23 follow-up) — observed 2026-07-26.
 
 ## Method
 

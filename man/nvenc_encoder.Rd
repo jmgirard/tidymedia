@@ -32,7 +32,8 @@ override detection in a known environment (or in tests), set
 names to treat as available.
 
 These back the \code{hardware = "nvenc"} toggle on
-\code{\link{standardize_video}} and \code{\link{format_for_web}}. Hardware
+\code{\link{standardize_video}}, \code{\link{format_for_web}}, and
+\code{\link{anonymize_video}} (and their \code{_batch} siblings). Hardware
 \emph{decoding} (\code{-hwaccel}) and GPU filter pipelines are out of scope;
 use the \code{\link{ffmpeg}} escape hatch for those.
 }
@@ -44,7 +45,8 @@ has_nvenc("h264")
 }
 \seealso{
 \code{\link{ffmpeg_encoders}} for the full encoder list,
-\code{\link{standardize_video}} and \code{\link{format_for_web}} for the
+\code{\link{standardize_video}}, \code{\link{format_for_web}}, and
+\code{\link{anonymize_video}} for the
 \code{hardware = "nvenc"} toggle that uses these.
 
 Other capability functions:

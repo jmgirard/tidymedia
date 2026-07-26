@@ -141,12 +141,14 @@ orthogonal (it concerns two pipelines this diff does not touch). Diff-bug
   for user-visible changes. Extended the existing unreleased-cycle bullet to
   name `anonymize_video()` rather than adding a redundant second bullet.
 
-Below threshold — logged, not actioned (2):
+- F1 (70) — **actioned at the user's direction at the merge gate**, though it
+  scored below the 80 threshold. `has_nvenc()`/`nvenc_encoder()` roxygen said the
+  toggle backs only `standardize_video()`/`format_for_web()`, leaving the new
+  `@seealso` one-directional. Both the description paragraph and `@seealso` now
+  name `anonymize_video()`; `man/nvenc_encoder.Rd` regenerated. Re-verified:
+  `test()` 0 fail / 1233 pass, `check()` 0E/0W/0N, `check_pkgdown()` clean.
 
-- F1 (70) — `has_nvenc()`/`nvenc_encoder()` roxygen still says the toggle backs
-  only `standardize_video()`/`format_for_web()`, so the new `@seealso` link is
-  one-directional. Real but not required by AC6; the reverse link is a docs
-  polish item, not a defect in this milestone's surface.
+Below threshold — logged, not actioned (1):
 - F3 (45) — `vignettes/workflow.Rmd` carries the same stale enumeration. Out of
   M33's declared scope (the vignette is untouched by this branch); the vignette
   pass shipped as M30.

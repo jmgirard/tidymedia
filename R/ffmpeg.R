@@ -1407,7 +1407,8 @@ ffmpeg_encoders <- function(sort_by_type = TRUE) {
 #' names to treat as available.
 #'
 #' These back the \code{hardware = "nvenc"} toggle on
-#' \code{\link{standardize_video}} and \code{\link{format_for_web}}. Hardware
+#' \code{\link{standardize_video}}, \code{\link{format_for_web}}, and
+#' \code{\link{anonymize_video}} (and their \code{_batch} siblings). Hardware
 #' \emph{decoding} (\code{-hwaccel}) and GPU filter pipelines are out of scope;
 #' use the \code{\link{ffmpeg}} escape hatch for those.
 #'
@@ -1416,7 +1417,8 @@ ffmpeg_encoders <- function(sort_by_type = TRUE) {
 #' @return \code{nvenc_encoder()} a single encoder-name string (e.g.
 #'   \code{"h264_nvenc"}); \code{has_nvenc()} a length-one logical.
 #' @seealso \code{\link{ffmpeg_encoders}} for the full encoder list,
-#'   \code{\link{standardize_video}} and \code{\link{format_for_web}} for the
+#'   \code{\link{standardize_video}}, \code{\link{format_for_web}}, and
+#'   \code{\link{anonymize_video}} for the
 #'   \code{hardware = "nvenc"} toggle that uses these.
 #' @family capability functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))

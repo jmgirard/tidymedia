@@ -64,3 +64,86 @@ test_that("crop_video() sets both codecs when both are named", {
   expect_match(as.character(cmd), "-codec:v libx265", fixed = TRUE)
   expect_match(as.character(cmd), "-codec:a aac", fixed = TRUE)
 })
+
+# segment_video() --------------------------------------------------------------
+
+test_that("segment_video() stream-copies audio on the re-encode path", {
+  f <- make_input()
+  out <- segment_video(f, start = 0, end = 1, outfiles = "seg.mp4",
+                       run = FALSE)
+  # The pre-M35 literal, plus -codec:a copy and nothing else.
+  expect_equal(
+    as.character(out$command),
+    paste0('-y -i "', f, '" -codec:a copy -ss 0 -to 1 "seg.mp4"')
+  )
+  expect_no_match(as.character(out$command), "-codec:v", fixed = TRUE)
+})
+
+test_that("segment_video(audio_codec = ) names the audio encoder", {
+  f <- make_input()
+  out <- segment_video(f, start = 0, end = 1, outfiles = "seg.mp4",
+                       audio_codec = "aac", run = FALSE)
+  expect_match(as.character(out$command), "-codec:a aac", fixed = TRUE)
+})
+
+test_that("segment_video(audio_codec = NULL) emits no -codec:a", {
+  f <- make_input()
+  out <- segment_video(f, start = 0, end = 1, outfiles = "seg.mp4",
+                       audio_codec = NULL, run = FALSE)
+  expect_no_match(as.character(out$command), "-codec:a", fixed = TRUE)
+})
+
+test_that("segment_video(reencode = FALSE) still stream-copies audio", {
+  f <- make_input()
+  # The copy path already sets -codec:a copy via ffm_copy(); the default
+  # audio_codec agrees with it, so this combination is legal.
+  out <- segment_video(f, start = 0, end = 1, outfiles = "seg.mp4",
+                       reencode = FALSE, run = FALSE)
+  expect_match(as.character(out$command), "-codec:a copy", fixed = TRUE)
+  expect_match(as.character(out$command), "-codec:v copy", fixed = TRUE)
+})
+
+test_that("segment_video() rejects a non-copy audio_codec on the copy path", {
+  f <- make_input()
+  # A stream copy runs no encoder, so naming one (or unsetting the codec, which
+  # ffm_copy() would then overwrite) is not meaningful (D017, mirroring D016).
+  expect_error(
+    segment_video(f, start = 0, end = 1, outfiles = "seg.mp4",
+                  reencode = FALSE, audio_codec = "aac", run = FALSE),
+    "re-encoding cut"
+  )
+  expect_error(
+    segment_video(f, start = 0, end = 1, outfiles = "seg.mp4",
+                  reencode = FALSE, audio_codec = NULL, run = FALSE),
+    "re-encoding cut"
+  )
+})
+
+test_that("segment_video_batch() checks audio_codec per row against reencode", {
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input = c(f, f), output = c("a.mp4", "b.mp4"), start = c(0, 1),
+    end = c(1, 2), reencode = c(TRUE, FALSE)
+  )
+  # Batch-wide audio_codec = "aac" is fine on the re-encoding row and a conflict
+  # on the stream-copy row, so the mixed table must abort.
+  expect_error(
+    segment_video_batch(jobs, audio_codec = "aac", run = FALSE),
+    "re-encoding cut"
+  )
+  # The same table with the default audio_codec compiles both rows.
+  out <- segment_video_batch(jobs, run = FALSE)
+  expect_equal(nrow(out), 2)
+  expect_true(all(grepl("-codec:a copy", out$command, fixed = TRUE)))
+})
+
+test_that("segment_video_batch() takes a per-row audio_codec column", {
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input = c(f, f), output = c("a.mp4", "b.mp4"), start = c(0, 1),
+    end = c(1, 2), audio_codec = c("aac", NA_character_)
+  )
+  out <- segment_video_batch(jobs, run = FALSE)
+  expect_match(as.character(out$command[[1]]), "-codec:a aac", fixed = TRUE)
+  expect_no_match(as.character(out$command[[2]]), "-codec:a", fixed = TRUE)
+})

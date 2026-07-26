@@ -1631,6 +1631,13 @@ apply_audio_codec <- function(object, audio_codec, call = rlang::caller_env()) {
 #'   used and the compiled command is unchanged from one that never named a
 #'   codec. A stream copy runs no encoder, so naming a codec (or a
 #'   \code{hardware} backend) alongside \code{reencode = FALSE} is an error.
+#' @param audio_codec A string naming the output audio codec. \code{"copy"}
+#'   (default) stream-copies the audio through untouched; name an encoder (e.g.
+#'   \code{"aac"}) to transcode it, or pass \code{NULL} to leave the codec unset
+#'   so the output container's default encoder is used. A stream copy
+#'   (\code{reencode = FALSE}) always copies the audio, so any other value is an
+#'   error there. Stream-copying fails if the output container cannot hold the
+#'   source audio codec (e.g. FLAC in \code{.mp4}) — name an encoder instead.
 #' @param hardware The encoder backend: \code{"none"} (default, the software
 #'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
 #'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
@@ -1671,6 +1678,7 @@ segment_video <- function(infile,
                           outfiles = NULL,
                           reencode = TRUE,
                           video_codec = NULL,
+                          audio_codec = "copy",
                           hardware = c("none", "nvenc"),
                           fallback = FALSE,
                           run = TRUE,
@@ -1691,6 +1699,7 @@ segment_video <- function(infile,
   }
   rlang::check_bool(reencode)
   rlang::check_string(video_codec, allow_null = TRUE)
+  rlang::check_string(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
 
   # If no names are provided, derive per-segment names from the input file.
@@ -1708,7 +1717,8 @@ segment_video <- function(infile,
     jobs,
     function(input, output, start, end, ...) {
       segment_pipeline(input, output, start, end, reencode,
-                       video_codec, hardware, fallback)
+                       video_codec = video_codec, audio_codec = audio_codec,
+                       hardware = hardware, fallback = fallback)
     },
     run = run,
     parallel = parallel
@@ -1760,7 +1770,8 @@ derive_frame_names <- function(input, format = "png") {
 # (non-reencode) path. Fan-out verbs stay single-output per job (D003, D007);
 # both verbs wrap this in a closure that captures the scalar `reencode`.
 segment_pipeline <- function(input, output, start, end, reencode,
-                             video_codec = NULL, hardware = "none",
+                             video_codec = NULL, audio_codec = "copy",
+                             hardware = "none",
                              fallback = FALSE, call = rlang::caller_env()) {
   # A stream copy writes the source video bytes through untouched, so naming an
   # encoder -- in software or on the GPU -- cannot mean anything on that path
@@ -1779,9 +1790,26 @@ segment_pipeline <- function(input, output, start, end, reencode,
       call = call
     )
   }
+  # Same reasoning for the audio stream, with one wrinkle: the copy path's
+  # ffm_copy() sets -codec:a copy itself, so "copy" is the one value that agrees
+  # with it. Anything else -- a named encoder, or NULL asking for no -codec:a at
+  # all -- would be silently overwritten by ffm_copy(), so it aborts (M35/D017).
+  if (!reencode && !identical(audio_codec, "copy")) {
+    cli::cli_abort(
+      c(
+        "{.arg audio_codec} needs a re-encoding cut.",
+        "x" = "{.code reencode = FALSE} stream-copies every stream, so the
+               audio is always copied.",
+        "i" = "Pass {.code reencode = TRUE} to cut by re-encoding, or leave
+               {.code audio_codec = \"copy\"}."
+      ),
+      call = call
+    )
+  }
   p <- ffm_seek(ffm_files(input, output), start = start, end = end,
                 reencode = reencode)
   if (!reencode) p <- ffm_copy(p)
+  p <- apply_audio_codec(p, audio_codec, call = call)
   apply_video_codec(p, video_codec, hardware, fallback, call = call)
 }
 
@@ -1804,10 +1832,10 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #'   \code{output} is absent, one is derived per row by appending
 #'   \code{_<n>.<ext>} to each input's basename, with the segment number
 #'   restarting at 1 for each input file (the same rule as
-#'   \code{\link{segment_video}}). A \code{video_codec} column overrides that
-#'   argument per row, with \code{NA} meaning "leave the codec unset" (the
-#'   column's way of writing the argument's \code{NULL}). Any other columns are
-#'   ignored.
+#'   \code{\link{segment_video}}). A \code{video_codec} or \code{audio_codec}
+#'   column overrides that argument per row, with \code{NA} meaning "leave the
+#'   codec unset" (the column's way of writing the argument's \code{NULL}). Any
+#'   other columns are ignored.
 #' @param reencode A logical passed to \code{\link{ffm_seek}}: cut each segment
 #'   frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
 #'   lossless copy that snaps to keyframes (\code{FALSE}). See \code{ffm_seek}
@@ -1818,6 +1846,13 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #'   it unset so each segment keeps its container's default encoder. A row that
 #'   resolves to a codec while cutting by stream copy (\code{reencode = FALSE},
 #'   as an argument or a column) is an error: no encoder runs on that path.
+#' @param audio_codec A string naming the output audio codec, applied to every
+#'   row lacking an \code{audio_codec} column. \code{"copy"} (default)
+#'   stream-copies the audio; name an encoder to transcode it, or \code{NULL} to
+#'   leave the codec unset. A row that resolves to anything but \code{"copy"}
+#'   while cutting by stream copy (\code{reencode = FALSE}, as an argument or a
+#'   column) is an error, so a jobs table mixing stream-copy rows with a
+#'   transcoding \code{audio_codec} must be split into separate calls.
 #' @param hardware,fallback The encoder backend and its fallback behavior,
 #'   applied to the whole batch (a property of the machine, not of a row, so
 #'   neither is read as a \code{jobs} column). See [segment_video()].
@@ -1858,10 +1893,12 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #' segment_video_batch(jobs, run = FALSE)
 #' @export
 segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
+                           audio_codec = "copy",
                            hardware = c("none", "nvenc"), fallback = FALSE,
                            run = TRUE, parallel = FALSE, ...) {
 
   rlang::check_string(video_codec, allow_null = TRUE)
+  rlang::check_string(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
 
   if (!is.data.frame(jobs)) {
@@ -1893,6 +1930,7 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
     )
   }
   check_batch_codec_col(jobs)
+  check_batch_codec_col(jobs, "audio_codec")
   rlang::check_bool(reencode)
 
   # Auto-name outputs when the column is absent: derive per-input segment names
@@ -1915,6 +1953,7 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
         input, output, start, end,
         reencode = pick("reencode", reencode),
         video_codec = batch_codec_cell(pick("video_codec", video_codec)),
+        audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         hardware = hardware,
         fallback = fallback
       )

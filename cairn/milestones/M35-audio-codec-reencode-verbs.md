@@ -85,13 +85,13 @@ stays deferred (D016).
       `ffm_codec(audio =)`; place it above any roxygen block (M28 lesson).
 - [x] T2 `crop_video` + `crop_video_pipeline` (R/ffmpeg.R:424–478): formal,
       thread T1, pinned compile tests.
-- [ ] T3 `segment_video` + `segment_pipeline` (R/ffmpeg.R:1639, 1733–1757):
+- [x] T3 `segment_video` + `segment_pipeline` (R/ffmpeg.R:1639, 1733–1757):
       formal, thread on the re-encode path, per-row copy-conflict abort.
 - [ ] T4 `compare_videos` + pipeline (R/ffmpeg.R:3446–3472, 3523): formal,
       emit only when audio is mapped, abort on named-encoder-with-no-audio.
 - [ ] T5 `picture_in_picture` + pipeline (R/ffmpeg.R:3554–3585, 3638): same
       shape as T4.
-- [ ] T6 Four `_batch` siblings: `audio_codec` per-row column via `pick()` +
+- [ ] T6 Remaining three `_batch` siblings (segment's landed in T3): `audio_codec` per-row column via `pick()` +
       `batch_codec_cell()`, guarded by
       `check_batch_codec_col(jobs, "audio_codec")`.
 - [ ] T7 Batch `audio` column guards: add compare's missing check, tighten
@@ -108,6 +108,7 @@ stays deferred (D016).
 - 2026-07-26: set in-progress; branch `m35-audio-codec-reencode-verbs` cut from master.
 - 2026-07-26: T1 — `apply_audio_codec()` added beside `apply_video_codec()`; NULL returns the pipeline untouched, otherwise token-checked with the caller's `call` and threaded to `ffm_codec(audio =)`. Covered indirectly from T2 (internal helper, per the profile's test-doctrine). test() green: 1357 pass, 0 fail.
 - 2026-07-26: T2 — `crop_video` gains `audio_codec = "copy"` after `video_codec`; new `tests/testthat/test-audio-codec.R` pins the default literal byte-for-byte (`-codec:a copy` lands between `-vf` and `-map 0`). Two pre-existing pins updated for the deliberate default change: `test-ffmpeg.R` no longer asserts filter/map adjacency, and M34's crop byte-pin narrows to its own claim (no `-codec:v`), pointing at the new file for the full literal. test() green: 1369 pass, 0 fail.
+- 2026-07-26: T3 — `segment_video` + `segment_pipeline` gain `audio_codec`, applied after `ffm_copy()` so the copy path stays idempotent; the new per-row guard aborts when a stream copy meets anything but `"copy"` (NULL included, since `ffm_copy()` would overwrite it). Minor task refinement: `segment_video_batch`'s formal + per-row column landed here rather than in T6, because AC3's per-row evidence needs them; T6 now covers the remaining three siblings. M34's segment byte-pin narrowed like crop's. test() green: 1382 pass, 0 fail.
 
 ## Decisions
 

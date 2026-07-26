@@ -159,14 +159,14 @@ test_that("compare_videos() honors the nvenc abort and fallback branches", {
 
 # segment_video() -------------------------------------------------------------
 
-test_that("segment_video() default compiles the pre-M34 command byte-for-byte", {
+test_that("segment_video() with the default video_codec emits no -codec:v", {
   f <- make_input()
   out <- segment_video(f, 0, 1, "seg.mp4", run = FALSE)
-  # The literal below is the command master compiled before M34 existed.
-  expect_equal(
-    as.character(out$command),
-    paste0('-y -i "', f, '" -ss 0 -to 1 "seg.mp4"')
-  )
+  # The seek half of the command is still exactly what master compiled before
+  # M34 existed. The full default literal is no longer pinned here because M35
+  # changed it (the default audio_codec adds -codec:a copy); it is pinned
+  # byte-for-byte in test-audio-codec.R instead.
+  expect_match(as.character(out$command), '-ss 0 -to 1 "seg.mp4"', fixed = TRUE)
   expect_no_match(as.character(out$command), "-codec:v", fixed = TRUE)
 })
 

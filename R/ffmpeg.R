@@ -3176,7 +3176,8 @@ derive_web_names <- function(input) {
 #'   column to override the corresponding argument per row; rows (or dimensions)
 #'   omitting the column fall back to the argument. A \code{video_codec} column
 #'   overrides that argument per row, with \code{NA} meaning "leave the codec
-#'   unset" (the column's way of writing the argument's \code{NULL}). Any two
+#'   unset" (the column's way of writing the argument's \code{NULL}); an
+#'   \code{audio_codec} column works the same way. Any two
 #'   rows that resolve to the same output path are rejected. Any other columns
 #'   are ignored.
 #' @param width,height The output crop size in pixels, applied to every row
@@ -3187,6 +3188,10 @@ derive_web_names <- function(input) {
 #' @param video_codec A string naming the output video codec, applied to every
 #'   row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
 #'   it unset so each output keeps its container's default encoder.
+#' @param audio_codec A string naming the output audio codec, applied to every
+#'   row lacking an \code{audio_codec} column. \code{"copy"} (default)
+#'   stream-copies the audio; name an encoder to transcode it, or \code{NULL} to
+#'   leave the codec unset so each output keeps its container's default encoder.
 #' @param hardware,fallback The encoder backend and its fallback behavior,
 #'   applied to the whole batch (a property of the machine, not of a row, so
 #'   neither is read as a \code{jobs} column). See [crop_video()].
@@ -3213,11 +3218,12 @@ derive_web_names <- function(input) {
 #' @export
 crop_video_batch <- function(jobs, width = NULL, height = NULL,
                              x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
-                             video_codec = NULL,
+                             video_codec = NULL, audio_codec = "copy",
                              hardware = c("none", "nvenc"), fallback = FALSE,
                              run = TRUE, parallel = FALSE, ...) {
 
   rlang::check_string(video_codec, allow_null = TRUE)
+  rlang::check_string(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
 
   jobs <- check_batch_jobs(jobs, require_output = FALSE)
@@ -3244,6 +3250,7 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
     }
   }
   check_batch_codec_col(jobs)
+  check_batch_codec_col(jobs, "audio_codec")
 
   if (!"output" %in% names(jobs)) {
     jobs$output <- derive_cropped_names(jobs$input)
@@ -3262,6 +3269,7 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
         x = pick("x", x),
         y = pick("y", y),
         video_codec = batch_codec_cell(pick("video_codec", video_codec)),
+        audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         hardware = hardware,
         fallback = fallback
       )
@@ -3861,19 +3869,24 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #' @param jobs A data frame with one row per output and (at least) an
 #'   \code{inputs} list-column — each cell a character vector of **two or more**
 #'   video paths — and an \code{output} column (destination path). Optional
-#'   \code{direction}, \code{resize}, \code{audio}, and \code{video_codec}
-#'   columns override the
+#'   \code{direction}, \code{resize}, \code{audio}, \code{video_codec}, and
+#'   \code{audio_codec} columns override the
 #'   like-named arguments per row (a row omitting one falls back to the
 #'   argument). In an \code{audio} column, \code{NA} means "drop audio" (the
 #'   column's way of writing the scalar's \code{NULL}); in a \code{video_codec}
-#'   column it means "leave the codec unset". Any two rows resolving to
-#'   the same output path are rejected; other columns are ignored.
+#'   or \code{audio_codec} column it means "leave the codec unset". Any two rows
+#'   resolving to the same output path are rejected; other columns are ignored.
 #' @param direction,resize,audio Defaults applied to every row lacking the
 #'   corresponding column. See [compare_videos()] for their meaning. \code{audio}
 #'   is validated per row against that row's input count.
 #' @param video_codec A string naming the output video codec, applied to every
 #'   row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
 #'   it unset so each output keeps its container's default encoder.
+#' @param audio_codec A string naming the codec for the carried audio track,
+#'   applied to every row lacking an \code{audio_codec} column. \code{"copy"}
+#'   (default) stream-copies it; name an encoder to transcode it, or \code{NULL}
+#'   to leave the codec unset. A row carrying no audio emits no \code{-codec:a};
+#'   naming an encoder on such a row is an error.
 #' @param hardware,fallback The encoder backend and its fallback behavior,
 #'   applied to the whole batch (a property of the machine, not of a row, so
 #'   neither is read as a \code{jobs} column). See [compare_videos()].
@@ -3900,7 +3913,7 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #' @export
 compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
                                  resize = TRUE, audio = NULL,
-                                 video_codec = NULL,
+                                 video_codec = NULL, audio_codec = "copy",
                                  hardware = c("none", "nvenc"),
                                  fallback = FALSE,
                                  run = TRUE, parallel = FALSE, ...) {
@@ -3909,6 +3922,7 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
   rlang::check_bool(resize)
   rlang::check_number_whole(audio, min = 0, allow_null = TRUE)
   rlang::check_string(video_codec, allow_null = TRUE)
+  rlang::check_string(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
 
   jobs <- check_fanin_jobs(jobs, min_inputs = 2L, verb = "Comparison")
@@ -3919,6 +3933,7 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
   # inherited per row from compare_videos_pipeline() / the per-row audio check.
   check_batch_string_col(jobs, "direction")
   check_batch_codec_col(jobs)
+  check_batch_codec_col(jobs, "audio_codec")
   if ("resize" %in% names(jobs) &&
       (!is.logical(jobs$resize) || anyNA(jobs$resize))) {
     cli::cli_abort(
@@ -3946,6 +3961,7 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
         resize = pick("resize", resize),
         audio = aud,
         video_codec = batch_codec_cell(pick("video_codec", video_codec)),
+        audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         hardware = hardware,
         fallback = fallback
       )
@@ -3972,18 +3988,24 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #' @param jobs A data frame with one row per output and (at least) \code{main}
 #'   (background path), \code{overlay} (inset path), and \code{output}
 #'   (destination path) columns. Optional \code{position}, \code{scale},
-#'   \code{margin}, \code{audio}, and \code{video_codec} columns override the
+#'   \code{margin}, \code{audio}, \code{video_codec}, and \code{audio_codec}
+#'   columns override the
 #'   like-named arguments
 #'   per row (a row omitting one falls back to the argument). In an \code{audio}
 #'   column, \code{NA} means "drop audio" (the column's way of writing the
-#'   scalar's \code{NULL}); in a \code{video_codec} column it means "leave the
-#'   codec unset". Any two rows resolving to the same output path are
-#'   rejected; other columns are ignored.
+#'   scalar's \code{NULL}); in a \code{video_codec} or \code{audio_codec} column
+#'   it means "leave the codec unset". Any two rows resolving to the same output
+#'   path are rejected; other columns are ignored.
 #' @param position,scale,margin,audio Defaults applied to every row lacking the
 #'   corresponding column. See [picture_in_picture()] for their meaning.
 #' @param video_codec A string naming the output video codec, applied to every
 #'   row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
 #'   it unset so each output keeps its container's default encoder.
+#' @param audio_codec A string naming the codec for the carried audio track,
+#'   applied to every row lacking an \code{audio_codec} column. \code{"copy"}
+#'   (default) stream-copies it; name an encoder to transcode it, or \code{NULL}
+#'   to leave the codec unset. A row carrying no audio emits no \code{-codec:a};
+#'   naming an encoder on such a row is an error.
 #' @param hardware,fallback The encoder backend and its fallback behavior,
 #'   applied to the whole batch (a property of the machine, not of a row, so
 #'   neither is read as a \code{jobs} column). See [picture_in_picture()].
@@ -4013,7 +4035,7 @@ picture_in_picture_batch <- function(jobs,
                                                   "bottomright", "bottomleft",
                                                   "center"),
                                      scale = 0.25, margin = 16, audio = NULL,
-                                     video_codec = NULL,
+                                     video_codec = NULL, audio_codec = "copy",
                                      hardware = c("none", "nvenc"),
                                      fallback = FALSE,
                                      run = TRUE, parallel = FALSE, ...) {
@@ -4023,6 +4045,7 @@ picture_in_picture_batch <- function(jobs,
   rlang::check_number_whole(margin, min = 0)
   rlang::check_number_whole(audio, min = 0, max = 1, allow_null = TRUE)
   rlang::check_string(video_codec, allow_null = TRUE)
+  rlang::check_string(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
 
   # Fixed two-input shape (D015): main/overlay are distinct roles, so named
@@ -4067,6 +4090,7 @@ picture_in_picture_batch <- function(jobs,
     cli::cli_abort("The {.field audio} column of {.arg jobs} must be numeric ({.val {NA}} to drop audio).")
   }
   check_batch_codec_col(jobs)
+  check_batch_codec_col(jobs, "audio_codec")
 
   # Thin Layer-2 fan-in over ffm_batch (D007/D015): one overlay pipeline per row,
   # sharing picture_in_picture_pipeline() with picture_in_picture(). A per-row
@@ -4091,6 +4115,7 @@ picture_in_picture_batch <- function(jobs,
         margin = mrg,
         audio = aud,
         video_codec = batch_codec_cell(pick("video_codec", video_codec)),
+        audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         hardware = hardware,
         fallback = fallback
       )

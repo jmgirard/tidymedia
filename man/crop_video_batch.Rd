@@ -11,6 +11,7 @@ crop_video_batch(
   x = "(in_w-out_w)/2",
   y = "(in_h-out_h)/2",
   video_codec = NULL,
+  audio_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
   run = TRUE,
@@ -28,7 +29,8 @@ the destination; when absent, one is derived per row by appending
 column to override the corresponding argument per row; rows (or dimensions)
 omitting the column fall back to the argument. A \code{video_codec} column
 overrides that argument per row, with \code{NA} meaning "leave the codec
-unset" (the column's way of writing the argument's \code{NULL}). Any two
+unset" (the column's way of writing the argument's \code{NULL}); an
+\code{audio_codec} column works the same way. Any two
 rows that resolve to the same output path are rejected. Any other columns
 are ignored.}
 
@@ -42,6 +44,11 @@ row unless \code{jobs} carries a column of the same name. Default: centered.}
 \item{video_codec}{A string naming the output video codec, applied to every
 row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
 it unset so each output keeps its container's default encoder.}
+
+\item{audio_codec}{A string naming the output audio codec, applied to every
+row lacking an \code{audio_codec} column. \code{"copy"} (default)
+stream-copies the audio; name an encoder to transcode it, or \code{NULL} to
+leave the codec unset so each output keeps its container's default encoder.}
 
 \item{hardware, fallback}{The encoder backend and its fallback behavior,
 applied to the whole batch (a property of the machine, not of a row, so

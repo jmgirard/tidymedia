@@ -240,3 +240,107 @@ test_that("picture_in_picture() rejects an audio codec with no audio mapped", {
     picture_in_picture(f1, f2, "out.mp4", audio_codec = NULL, run = FALSE)
   )
 })
+
+# _batch siblings: the per-row audio_codec column -----------------------------
+
+test_that("crop_video_batch() takes a per-row audio_codec column", {
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input = c(f, f), output = c("a.mp4", "b.mp4"),
+    audio_codec = c("aac", NA_character_)
+  )
+  out <- crop_video_batch(jobs, width = 100, height = 50, run = FALSE)
+  expect_match(as.character(out$command[[1]]), "-codec:a aac", fixed = TRUE)
+  # NA is the column's way of writing the argument's NULL: no -codec:a at all.
+  expect_no_match(as.character(out$command[[2]]), "-codec:a", fixed = TRUE)
+})
+
+test_that("crop_video_batch() defaults every row to a stream copy", {
+  f <- make_input()
+  jobs <- tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"))
+  out <- crop_video_batch(jobs, width = 100, height = 50, run = FALSE)
+  expect_true(all(grepl("-codec:a copy", out$command, fixed = TRUE)))
+})
+
+test_that("the batch siblings accept an all-NA (logical) audio_codec column", {
+  f <- make_input()
+  # R types an all-NA column logical, so an is.character-only guard would
+  # wrongly reject the documented "every row unset" table (M34 lesson).
+  crop <- crop_video_batch(
+    tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"),
+                   audio_codec = NA),
+    width = 100, height = 50, run = FALSE
+  )
+  expect_false(any(grepl("-codec:a", crop$command, fixed = TRUE)))
+
+  cmp <- compare_videos_batch(
+    tibble::tibble(inputs = list(c(f, f), c(f, f)),
+                   output = c("a.mp4", "b.mp4"), audio_codec = NA),
+    audio = 0, run = FALSE
+  )
+  expect_false(any(grepl("-codec:a", cmp$command, fixed = TRUE)))
+
+  pip <- picture_in_picture_batch(
+    tibble::tibble(main = c(f, f), overlay = c(f, f),
+                   output = c("a.mp4", "b.mp4"), audio_codec = NA),
+    audio = 0, run = FALSE
+  )
+  expect_false(any(grepl("-codec:a", pip$command, fixed = TRUE)))
+})
+
+test_that("the batch siblings reject a wrongly typed audio_codec column", {
+  f <- make_input()
+  expect_error(
+    crop_video_batch(
+      tibble::tibble(input = f, output = "a.mp4", audio_codec = 1),
+      width = 100, height = 50, run = FALSE
+    ),
+    "audio_codec"
+  )
+  # An all-NA numeric column is not the logical one R produces, so it is still
+  # rejected rather than read as "all default".
+  expect_error(
+    crop_video_batch(
+      tibble::tibble(input = f, output = "a.mp4", audio_codec = NA_real_),
+      width = 100, height = 50, run = FALSE
+    ),
+    "audio_codec"
+  )
+  expect_error(
+    compare_videos_batch(
+      tibble::tibble(inputs = list(c(f, f)), output = "a.mp4",
+                     audio_codec = 1),
+      run = FALSE
+    ),
+    "audio_codec"
+  )
+  expect_error(
+    picture_in_picture_batch(
+      tibble::tibble(main = f, overlay = f, output = "a.mp4",
+                     audio_codec = 1),
+      run = FALSE
+    ),
+    "audio_codec"
+  )
+})
+
+test_that("the composite batch siblings take a per-row audio_codec column", {
+  f <- make_input()
+  cmp <- compare_videos_batch(
+    tibble::tibble(inputs = list(c(f, f), c(f, f)),
+                   output = c("a.mp4", "b.mp4"),
+                   audio_codec = c("aac", NA_character_)),
+    audio = 0, run = FALSE
+  )
+  expect_match(as.character(cmp$command[[1]]), "-codec:a aac", fixed = TRUE)
+  expect_no_match(as.character(cmp$command[[2]]), "-codec:a", fixed = TRUE)
+
+  pip <- picture_in_picture_batch(
+    tibble::tibble(main = c(f, f), overlay = c(f, f),
+                   output = c("a.mp4", "b.mp4"),
+                   audio_codec = c("aac", NA_character_)),
+    audio = 1, run = FALSE
+  )
+  expect_match(as.character(pip$command[[1]]), "-codec:a aac", fixed = TRUE)
+  expect_no_match(as.character(pip$command[[2]]), "-codec:a", fixed = TRUE)
+})

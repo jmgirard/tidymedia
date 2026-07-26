@@ -10,15 +10,16 @@
 
 # crop_video() ----------------------------------------------------------------
 
-test_that("crop_video() default compiles the pre-M34 command byte-for-byte", {
+test_that("crop_video() with the default video_codec emits no -codec:v", {
   f <- make_input()
   cmd <- crop_video(f, "out.mp4", width = 100, height = 50, x = 0, y = 0,
                     run = FALSE)
-  # The literal below is the command master compiled before M34 existed.
-  expect_equal(
-    as.character(cmd),
-    paste0('-y -i "', f, '" -vf "crop=w=100:h=50:x=0:y=0" -map 0 "out.mp4"')
-  )
+  # The video half of the command is still exactly what master compiled before
+  # M34 existed. The full default literal is no longer pinned here because M35
+  # changed it (the default audio_codec adds -codec:a copy); it is pinned
+  # byte-for-byte in test-audio-codec.R instead.
+  expect_match(as.character(cmd), '-vf "crop=w=100:h=50:x=0:y=0"', fixed = TRUE)
+  expect_match(as.character(cmd), '-map 0 "out.mp4"', fixed = TRUE)
   expect_no_match(as.character(cmd), "-codec:v", fixed = TRUE)
 })
 

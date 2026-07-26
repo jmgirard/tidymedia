@@ -423,11 +423,16 @@ convert_audio <- function(infile, outfile, format = NULL, run = TRUE) {
 # command assembly stays in Layer 1 (IP1/D002).
 crop_video_pipeline <- function(input, output, width, height,
                                 x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
-                                video_codec = NULL, hardware = "none",
+                                video_codec = NULL, audio_codec = "copy",
+                                hardware = "none",
                                 fallback = FALSE, call = rlang::caller_env()) {
   p <- ffm_files(input, output)
   p <- ffm_crop(p, width = width, height = height, x = x, y = y)
   p <- ffm_map(p, "0")
+  # -map 0 carries the audio through, and the default audio_codec = "copy"
+  # stream-copies it rather than letting the container's default encoder
+  # re-encode it (M35/D017).
+  p <- apply_audio_codec(p, audio_codec, call = call)
   # The default video_codec = NULL emits no -codec:v, so the output keeps its
   # container's default encoder and the compiled command is byte-identical to
   # the pre-M34 one (M34/D016).
@@ -448,6 +453,12 @@ crop_video_pipeline <- function(input, output, width, height,
 #'   (default) to leave it unset, so the output container's default encoder is
 #'   used and the compiled command is unchanged from one that never named a
 #'   codec.
+#' @param audio_codec A string naming the output audio codec. \code{"copy"}
+#'   (default) stream-copies the audio through untouched; name an encoder (e.g.
+#'   \code{"aac"}) to transcode it, or pass \code{NULL} to leave the codec unset
+#'   so the output container's default encoder is used. Stream-copying fails if
+#'   the output container cannot hold the source audio codec (e.g. FLAC in
+#'   \code{.mp4}) — name an encoder in that case.
 #' @param hardware The encoder backend: \code{"none"} (default, the software
 #'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
 #'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
@@ -474,17 +485,19 @@ crop_video_pipeline <- function(input, output, width, height,
 #' @export
 crop_video <- function(infile, outfile, width, height,
                        x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
-                       video_codec = NULL, hardware = c("none", "nvenc"),
+                       video_codec = NULL, audio_codec = "copy",
+                       hardware = c("none", "nvenc"),
                        fallback = FALSE, run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
   rlang::check_string(video_codec, allow_null = TRUE)
+  rlang::check_string(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
 
   ffm_finish(
     crop_video_pipeline(infile, outfile, width, height, x, y,
-                        video_codec, hardware, fallback),
+                        video_codec, audio_codec, hardware, fallback),
     run
   )
 }

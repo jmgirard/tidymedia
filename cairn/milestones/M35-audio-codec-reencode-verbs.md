@@ -83,7 +83,7 @@ stays deferred (D016).
 - [x] T1 Add `apply_audio_codec()` beside `apply_video_codec()`
       (R/ffmpeg.R:1560) resolving `"copy"` / named / `NULL` onto
       `ffm_codec(audio =)`; place it above any roxygen block (M28 lesson).
-- [ ] T2 `crop_video` + `crop_video_pipeline` (R/ffmpeg.R:424–478): formal,
+- [x] T2 `crop_video` + `crop_video_pipeline` (R/ffmpeg.R:424–478): formal,
       thread T1, pinned compile tests.
 - [ ] T3 `segment_video` + `segment_pipeline` (R/ffmpeg.R:1639, 1733–1757):
       formal, thread on the re-encode path, per-row copy-conflict abort.
@@ -107,6 +107,7 @@ stays deferred (D016).
 - 2026-07-26: created by /milestone-plan. Absorbs three candidate rows (RR01 Beyond-1, RR01 Beyond-3, the M34 review's pip guard-parity item); the plan-time audit widened the hole from the two composites to all four M34 verbs, and split two further verbs out to candidate rows. D017 records the arg shape.
 - 2026-07-26: set in-progress; branch `m35-audio-codec-reencode-verbs` cut from master.
 - 2026-07-26: T1 — `apply_audio_codec()` added beside `apply_video_codec()`; NULL returns the pipeline untouched, otherwise token-checked with the caller's `call` and threaded to `ffm_codec(audio =)`. Covered indirectly from T2 (internal helper, per the profile's test-doctrine). test() green: 1357 pass, 0 fail.
+- 2026-07-26: T2 — `crop_video` gains `audio_codec = "copy"` after `video_codec`; new `tests/testthat/test-audio-codec.R` pins the default literal byte-for-byte (`-codec:a copy` lands between `-vf` and `-map 0`). Two pre-existing pins updated for the deliberate default change: `test-ffmpeg.R` no longer asserts filter/map adjacency, and M34's crop byte-pin narrows to its own claim (no `-codec:v`), pointing at the new file for the full literal. test() green: 1369 pass, 0 fail.
 
 ## Decisions
 

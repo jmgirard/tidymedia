@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-07-26 (/cairn-init repair cleared 2 scaffold/reference FAILs + 1 WARN; cairn_validate all green)_
+_Last hygiene check: 2026-07-26 (M32 done — fan-in batch verbs merged, archived; M27 row aged out to archive)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M32 | Batch siblings for the fan-in verbs (`concatenate_videos`/`compare_videos`/`picture_in_picture` `_batch`) | review | — | normal | milestones/M32-batch-fan-in-verbs.md |
+| M32 | Batch siblings for the fan-in verbs (`concatenate_videos`/`compare_videos`/`picture_in_picture` `_batch`) | done | — | normal | milestones/archive/M32-batch-fan-in-verbs.md |
 | M31 | NVIDIA nvenc hardware encoding (opt-in) | done | — | normal | milestones/archive/M31-nvenc-encoding.md |
 | M30 | Vignette overhaul (quality/clarity/realism + fuller verb coverage) | done | — | normal | milestones/archive/M30-vignette-overhaul.md |
 | M29 | Batch sibling for `separate_audio_video` (fan-out) | done | M28 | normal | milestones/archive/M29-batch-separate-audio-video.md |
 | M28 | Batch siblings for single-in/single-out verbs (`extract_audio`/`convert_audio`/`crop_video`/`format_for_web` `_batch`) | done | — | high | milestones/archive/M28-batch-single-io-verbs.md |
-| M27 | Metadata scrubbing for de-identification (`strip_metadata` + `_batch`) | done | — | high | milestones/archive/M27-strip-metadata.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

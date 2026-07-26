@@ -9,10 +9,9 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   input, or same-basename inputs under one shared `outdir`. Guard at the
   resolved-path level (`anyDuplicated(patterns)`), not just the input level; the
   older `*_batch` verbs only rejected duplicated inputs.
-- 2026-07-12 (M17): `devtools::check()` can print "0 notes" while raw `R CMD
-  check` shows `Status: 1 NOTE` — the `tests/spelling.Rout` comparison NOTE for
-  new technical terms is masked by the devtools summary. Run
-  `spelling::update_wordlist()` and confirm `Status: OK` in `00check.log`.
+- 2026-07-12 (M17): `devtools::check()` prints "0 notes" while `R CMD check`
+  shows `Status: 1 NOTE` — the `spelling.Rout` NOTE for new technical terms is
+  masked. Run `spelling::update_wordlist()`; confirm `Status: OK` in `00check.log`.
 - 2026-07-12 (M18): a cli `{?s}` governed by a `{.val {vector}}`/`{cli::qty(vec)}`
   throws `length(object) == 1` with 2+ items in a multi-line `cli_warn`/`abort`.
   Drive plurals off a scalar `{length(x)}` and list the vector without `{?s}`.
@@ -27,9 +26,8 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   and live vignette/example chunks — neither is caught by `devtools::check()`
   (use `pkgdown::check_pkgdown()`; a chunk calling a now-internal fn fails only at
   vignette-build). Grep `vignettes/` + roxygen `@examples` before dropping `@export`.
-- 2026-07-13 (M24): `devtools::build_readme()` always emits a spurious diff — README.Rmd
-  examples print `system.file()` paths embedding the per-session temp libpath, which
-  changes every build. Path-only churn, not a doc change; revert unless content changed.
+- 2026-07-13 (M24): `devtools::build_readme()` emits a spurious README.Rmd diff
+  (`system.file()` example paths embed the temp libpath); revert path-only churn.
 - 2026-07-13 (M27): FFmpeg per-stream metadata (`-metadata:s:v:0 title=`) surfacing
   in mov stream tags is ffmpeg-version dependent (became `name` on 8.x macOS,
   absent on Ubuntu CI) — green locally + macOS, red on Ubuntu. Don't sanity-assert
@@ -47,3 +45,5 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   *argument* names — an easy mismatch in vignette/example chunks that errors only
   at build. Render vignettes with the ffmpeg/ffprobe/mediainfo binaries masked
   off PATH (`Sys.which()==""`) to reproduce the CI-absent build and catch it.
+- 2026-07-26 (M32): a `_batch` per-row override *column* skips the scalar's arg guards (`check_number_whole`/range) — re-validate each override column per row.
+  An all-NA column is *logical* not numeric, so an `is.numeric` guard wrongly rejects a documented NA sentinel.

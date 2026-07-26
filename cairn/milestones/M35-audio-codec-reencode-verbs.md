@@ -96,7 +96,7 @@ stays deferred (D016).
       `check_batch_codec_col(jobs, "audio_codec")`.
 - [x] T7 Batch `audio` column guards: add compare's missing check, tighten
       pip's to the M34 shape; test both boundaries.
-- [ ] T8 Execution test: crop `make_test_video()`, `probe_audio()` input and
+- [x] T8 Execution test: crop `make_test_video()`, `probe_audio()` input and
       output, assert the codec is unchanged.
 - [ ] T9 Docs + gate: roxygen on all eight, audio-behavior prose,
       `format_for_web_batch` cross-reference, `NEWS.md` entry, `document()`,
@@ -112,6 +112,7 @@ stays deferred (D016).
 - 2026-07-26: T4+T5 — both composites gain `audio_codec`, applied only inside the `if (!is.null(audio))` branch so the default (`audio = NULL`, no track carried) still compiles no `-codec:a` and M34's composite byte-pins hold untouched. A named encoder with no audio mapped aborts; NULL stays legal there since it only ever means "emit nothing". Compile test pins the full complex shape: `-filter_complex` + `[vout]` + `-map "[vout]"` + `-map N:a` + both codecs in one command. test() green: 1403 pass, 0 fail.
 - 2026-07-26: T6 — `crop_video_batch`, `compare_videos_batch`, `picture_in_picture_batch` gain the `audio_codec` formal plus the per-row column via `pick()`/`batch_codec_cell()`, guarded by `check_batch_codec_col(jobs, "audio_codec")` (M34's helper took a `col` argument already, so the all-NA-logical acceptance and the all-NA-numeric rejection come for free and are tested on both boundaries). test() green: 1417 pass, 0 fail.
 - 2026-07-26: T7 — extracted `check_batch_audio_col()` beside `check_batch_codec_col()` and pointed both composites at it, replacing pip's loose inline guard and giving compare the up-front guard it never had. The tightened shape rejects an all-NA character column (which the old one admitted by accident) and `c(TRUE, FALSE)`, while accepting both all-NA logical and all-NA numeric. test() green: 1424 pass, 0 fail.
+- 2026-07-26: T8 — execution test added with a new `make_mp3_audio_video()` helper. Deviation from the plan's `make_test_video()`: that fixture's AAC audio in an MP4 is *also* the container default, so copy and re-encode would be indistinguishable from the output. MP3-in-MP4 discriminates — the default keeps `mp3`, `audio_codec = NULL` yields `aac`, so the test proves both the copy and the escape hatch. Binary-gated by `skip_if_no_ffmpeg`/`skip_if_no_ffprobe`.
 
 ## Decisions
 

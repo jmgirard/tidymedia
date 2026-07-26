@@ -29,6 +29,25 @@ make_test_video <- function(env = parent.frame()) {
   path
 }
 
+# Generate a test video whose audio codec is NOT the output container's default:
+# MP3 audio in an MP4, where FFmpeg would otherwise encode AAC. That makes
+# copy-vs-re-encode observable from the output alone — a stream copy keeps mp3,
+# an unset codec yields aac (M35). Skips the calling test if ffmpeg is
+# unavailable. Returns the file path.
+make_mp3_audio_video <- function(env = parent.frame()) {
+  skip_if_no_ffmpeg()
+  path <- withr::local_tempfile(fileext = ".mp4", .local_envir = env)
+  command <- paste(
+    "-y -f lavfi -i testsrc=duration=1:size=64x64:rate=10",
+    "-f lavfi -i sine=frequency=440:duration=1",
+    "-c:v libx264 -c:a libmp3lame -shortest -pix_fmt yuv420p",
+    sprintf('"%s"', path)
+  )
+  ffmpeg(command)
+  testthat::skip_if_not(file.exists(path), "test video could not be generated")
+  path
+}
+
 # Generate a longer H.264 test video with a *known* keyframe interval (a
 # keyframe every `gop` frames at `rate` fps), so cut-accuracy tests can request
 # a non-keyframe boundary and observe accurate vs keyframe-snapped behaviour.

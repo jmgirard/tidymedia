@@ -412,3 +412,27 @@ test_that("both composite batch verbs reject a wrongly typed audio column", {
     "audio"
   )
 })
+
+# Execution: the copied audio really does survive untouched -------------------
+
+test_that("crop_video() leaves the audio stream's codec unchanged", {
+  skip_if_no_ffmpeg()
+  skip_if_no_ffprobe()
+  # MP3 audio in an MP4 makes the difference observable: FFmpeg's default audio
+  # encoder for MP4 is AAC, so only a genuine stream copy can keep mp3.
+  input <- make_mp3_audio_video()
+  expect_equal(probe_audio(infile = input)$codec_name, "mp3")
+
+  copied <- withr::local_tempfile(fileext = ".mp4")
+  crop_video(input, copied, width = 32, height = 32)
+  expect_equal(
+    probe_audio(infile = copied)$codec_name,
+    probe_audio(infile = input)$codec_name
+  )
+
+  # And the escape hatch really does hand the audio back to the container,
+  # which is the pre-M35 behavior this milestone stopped defaulting to.
+  unset <- withr::local_tempfile(fileext = ".mp4")
+  crop_video(input, unset, width = 32, height = 32, audio_codec = NULL)
+  expect_equal(probe_audio(infile = unset)$codec_name, "aac")
+})

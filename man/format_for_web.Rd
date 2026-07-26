@@ -4,12 +4,26 @@
 \alias{format_for_web}
 \title{Re-encode a video for web playback}
 \usage{
-format_for_web(infile, outfile, run = TRUE)
+format_for_web(
+  infile,
+  outfile,
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
+  run = TRUE
+)
 }
 \arguments{
 \item{infile}{A string containing the path to a video file.}
 
 \item{outfile}{A string containing the path of the video file to write.}
+
+\item{hardware}{The encoder backend: \code{"none"} (default, software
+libx264) or \code{"nvenc"} for NVIDIA GPU H.264 encoding
+(\code{"h264_nvenc"}) when available. See \code{\link{has_nvenc}}.}
+
+\item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
+unavailable, re-encode with software libx264 and a message (\code{TRUE})
+instead of aborting (\code{FALSE}, default).}
 
 \item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
 or return the compiled command without running it (\code{FALSE}).}
@@ -28,6 +42,7 @@ format_for_web(video, "web.mp4", run = FALSE)
 }
 \seealso{
 \code{\link[=ffm_codec]{ffm_codec()}} and \code{\link[=ffm_pixel_format]{ffm_pixel_format()}}, among the builders it wraps;
+\code{\link[=has_nvenc]{has_nvenc()}} for the \code{hardware = "nvenc"} toggle;
 \code{\link[=standardize_video]{standardize_video()}} for a configurable re-encode;
 \code{\link[=format_for_web_batch]{format_for_web_batch()}} for the many-file form.
 

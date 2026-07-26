@@ -22,6 +22,17 @@ skip_if_no_mediainfo <- function() {
   )
 }
 
+# Skip unless this FFmpeg build lists the h264_nvenc encoder. Guards real GPU
+# encode tests, which cannot run on CI or any machine without an nvenc-capable
+# FFmpeg + NVIDIA GPU.
+skip_if_no_nvenc <- function() {
+  testthat::skip_if_not(
+    nzchar(Sys.which("ffmpeg")),
+    message = "ffmpeg binary not available"
+  )
+  testthat::skip_if_not(has_nvenc("h264"), message = "nvenc not available")
+}
+
 # Create an empty, readable temporary input file so builder functions that check
 # file readability (e.g. ffm_files()) accept it. Registers cleanup on the given
 # environment (default: the calling test).

@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1, GP1
-- **Branch/PR:** —
+- **Branch/PR:** m31-nvenc-encoding
 
 ## Goal
 
@@ -65,34 +65,48 @@ row. Wiring `hardware` into the remaining re-encode verbs
 
 ## Tasks
 
-- [ ] T1: Add `nvenc_encoder()` (pure family→name map, `cli_abort` on unknown)
+- [x] T1: Add `nvenc_encoder()` (pure family→name map, `cli_abort` on unknown)
       and `has_nvenc()` (built on `ffmpeg_encoders()`, `R/ffmpeg.R:1279`),
       exported with `@family capability functions`, roxygen noting the
       build-support-vs-runtime-GPU caveat; add both to `_pkgdown.yml`.
-- [ ] T2: Add internal resolver `resolve_hw_encoder(video_codec, hardware,
+- [x] T2: Add internal resolver `resolve_hw_encoder(video_codec, hardware,
       fallback)` — infers the codec family from `video_codec` (libx264→h264,
       libx265/hevc→hevc, av1 variants→av1), returns the nvenc name when
       available, else aborts or (fallback) returns `video_codec`; `cli_abort` on
       an unmappable family.
-- [ ] T3: Wire `hardware`/`fallback` through `standardize_video` +
+- [x] T3: Wire `hardware`/`fallback` through `standardize_video` +
       `standardize_pipeline` + `standardize_video_batch` (`R/ffmpeg.R:627/651/
       1985`); `hardware` is batch-wide scalar, default `"none"` preserves output.
-- [ ] T4: Wire `hardware`/`fallback` through `format_for_web` +
+- [x] T4: Wire `hardware`/`fallback` through `format_for_web` +
       `format_for_web_pipeline` + `format_for_web_batch` (`R/ffmpeg.R:468/495/
       2817`); family fixed to h264; default `"none"` preserves output.
-- [ ] T5: Tests — pure `nvenc_encoder` map; compile tests via
-      `local_mocked_bindings(has_nvenc=…)` for available/unavailable/`fallback`;
+- [x] T5: Tests — pure `nvenc_encoder` map; compile tests via the option seam
+      (`withr::local_options`) for available/unavailable/`fallback`;
       default-unchanged regression; structural `has_nvenc()` test
       (`skip_if_no_ffmpeg`); add `skip_if_no_nvenc()` to `helper-skip.R` + one
       execution smoke test.
-- [ ] T6: Docs — a GPU-encoding note in `vignettes/workflow.Rmd` (state decode/
+- [x] T6: Docs — a GPU-encoding note in `vignettes/workflow.Rmd` (state decode/
       GPU-filter out-of-scope), NEWS entry, `@seealso` cross-links; run
       `spelling::update_wordlist()` and confirm `pkgdown::check_pkgdown()`.
 
 ## Work log
 
 - 2026-07-26: created by /milestone-plan.
+- 2026-07-26: implemented T1–T6 — `nvenc_encoder()`/`has_nvenc()` exports,
+  internal `codec_family()`/`resolve_hw_encoder()`, `hardware`/`fallback` on
+  standardize/format_for_web + batch siblings, tests, docs. `devtools::test()`
+  clean (PASS 1143, 1 SKIP nvenc), `document()` no-diff, spelling + pkgdown OK.
 
 ## Decisions
+
+- D-M31-1 — nvenc detection via a cheap check with an option seam.
+  `has_nvenc()` consults `getOption("tidymedia.nvenc_encoders")` when set (a
+  character vector of encoder names to treat as available), else
+  `ffmpeg_encoders()$name`. Keeps every compile test binary-free and GPU-free
+  (tests inject availability with `withr::local_options()`) and doubles as a
+  user override for known environments. Chosen over
+  `testthat::local_mocked_bindings` (would tighten the `testthat` Suggests
+  floor — a dependency re-pin needing a gate + D-entry) and over a GPU-only
+  test (unrunnable on CI).
 
 ## Review

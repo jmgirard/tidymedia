@@ -40,6 +40,7 @@ ffmpeg_encoders(sort_by_type = FALSE)
 in a pipeline, and \code{\link[=ffmpeg]{ffmpeg()}} for the Layer 0 escape hatch.
 
 Other capability functions:
-\code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}}
+\code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}},
+\code{\link[=nvenc_encoder]{nvenc_encoder()}}
 }
 \concept{capability functions}

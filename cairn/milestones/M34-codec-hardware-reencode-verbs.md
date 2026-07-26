@@ -103,7 +103,7 @@ demonstrated need). Composites' carried-audio re-encode default and the
       on NULL, R/ffmpeg.R:1411): `hardware="none"`→`NULL`; `nvenc`+`NULL`→h264
       family; nvenc-unavailable+`fallback`+`NULL`→`NULL` with the existing
       message. One seam, no second resolver (D-M31).
-- [ ] T2 — `crop_video` + `crop_video_pipeline` (R/ffmpeg.R:451, :424): add the
+- [x] T2 — `crop_video` + `crop_video_pipeline` (R/ffmpeg.R:451, :424): add the
       three formals; call `ffm_codec(video = resolve_hw_encoder(...))` only when
       the resolved codec is non-NULL (default path emits no `-codec:v`).
 - [ ] T3 — `compare_videos`/`picture_in_picture` + pipelines (R/ffmpeg.R:3269,
@@ -132,6 +132,8 @@ demonstrated need). Composites' carried-audio re-encode default and the
 - 2026-07-26: created by /milestone-brief RR01 ingestion; planned from RR01 (was a candidate, not a blocked milestone — see Decisions).
 - 2026-07-26: question gate — new formals go before `run` (sibling parity, D014 clean break); sentinel fallback message names the container default rather than a codec.
 - 2026-07-26: T1 — `resolve_hw_encoder()` NULL-sentinel branch before `codec_family()`; nvenc+sentinel→h264 family, fallback+sentinel→NULL with a container-default message; abort hint reworded to be codec-agnostic. 4 new resolver tests; `devtools::test()` clean.
+- 2026-07-26: plan refinement (minor) — roxygen for each verb is written with its own task rather than batched in T6; T6 keeps the caveat-wording pass + final `document()`.
+- 2026-07-26: T2 — `crop_video`/`crop_video_pipeline` gain the three formals (before `run`); pipeline `check_token()`s the user's codec up front so nvenc and software paths reject identically. New `test-video-codec.R` pins the pre-M34 literal byte-for-byte (AC2) plus AC3–AC5 for crop; `document()` + `devtools::test()` clean.
 
 ## Decisions
 

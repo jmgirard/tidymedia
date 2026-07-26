@@ -422,10 +422,23 @@ convert_audio <- function(infile, outfile, format = NULL, run = TRUE) {
 # per-value dimension guards, so the batch sibling inherits them per row (M13);
 # command assembly stays in Layer 1 (IP1/D002).
 crop_video_pipeline <- function(input, output, width, height,
-                                x = "(in_w-out_w)/2", y = "(in_h-out_h)/2") {
+                                x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
+                                video_codec = NULL, hardware = "none",
+                                fallback = FALSE, call = rlang::caller_env()) {
+  # Validate the user's token before family inference so the error is the same
+  # under hardware = "none" and "nvenc" (parity with anonymize_pipeline()).
+  if (!is.null(video_codec)) check_token(video_codec, call = call)
+
   p <- ffm_files(input, output)
   p <- ffm_crop(p, width = width, height = height, x = x, y = y)
-  ffm_map(p, "0")
+  p <- ffm_map(p, "0")
+  # video_codec = NULL (the default sentinel, M34/D016) emits no -codec:v, so
+  # the output keeps its container's default encoder and the compiled command
+  # is byte-identical to the pre-M34 one. Layer 2 only computes the encoder
+  # name; Layer 1 assembles the command (IP1, D009).
+  video_codec <- resolve_hw_encoder(video_codec, hardware, fallback, call = call)
+  if (!is.null(video_codec)) p <- ffm_codec(p, video = video_codec)
+  p
 }
 
 #' Crop a video to a rectangular region
@@ -438,10 +451,28 @@ crop_video_pipeline <- function(input, output, width, height,
 #'   (default = centered)
 #' @param y The vertical offset, in pixels, of the top edge of the crop.
 #'   (default = centered)
+#' @param video_codec A string naming the output video codec, or \code{NULL}
+#'   (default) to leave it unset, so the output container's default encoder is
+#'   used and the compiled command is unchanged from one that never named a
+#'   codec.
+#' @param hardware The encoder backend: \code{"none"} (default, the software
+#'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
+#'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
+#'   (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); with the default
+#'   \code{video_codec = NULL} the H.264 family is assumed, so a non-H.264
+#'   container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
+#'   \code{video_codec}. See \code{\link{has_nvenc}} for availability and its
+#'   caveats.
+#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
+#'   unavailable, encode in software with a message (\code{TRUE}) instead of
+#'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
+#'   fallback leaves the codec unset rather than picking one, so the codec never
+#'   changes silently.
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
-#' @seealso [ffm_crop()], the builder it wraps;
+#' @seealso [ffm_crop()], the builder it wraps; [has_nvenc()] for the
+#'   \code{hardware = "nvenc"} toggle;
 #'   [crop_video_batch()] for the many-file form.
 #' @family task verb functions
 #' @examples
@@ -450,12 +481,19 @@ crop_video_pipeline <- function(input, output, width, height,
 #' @export
 crop_video <- function(infile, outfile, width, height,
                        x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
-                       run = TRUE) {
+                       video_codec = NULL, hardware = c("none", "nvenc"),
+                       fallback = FALSE, run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
+  rlang::check_string(video_codec, allow_null = TRUE)
+  hardware <- rlang::arg_match(hardware)
 
-  ffm_finish(crop_video_pipeline(infile, outfile, width, height, x, y), run)
+  ffm_finish(
+    crop_video_pipeline(infile, outfile, width, height, x, y,
+                        video_codec, hardware, fallback),
+    run
+  )
 }
 
 

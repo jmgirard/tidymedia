@@ -49,6 +49,21 @@
 
 ## New features
 
+* `separate_audio_video()` and `separate_audio_video_batch()` gain the
+  `hardware` and `fallback` arguments the other re-encoding verbs already carry,
+  so a video stream that is being re-encoded on the way out can be encoded on an
+  NVIDIA GPU: `hardware = "nvenc"`. Only the video output is affected — nvenc
+  encodes video, so the audio file is byte-for-byte what it would have been
+  otherwise, whatever you pass.
+
+  Because this verb copies the video by default, and a copy runs no encoder at
+  all, `hardware = "nvenc"` on its own is an error rather than a silent switch
+  from a lossless copy to a GPU re-encode. Pair it with `video_codec = NULL` to
+  let the output container pick the codec, or name one (`video_codec =
+  "libx265"`) to pin the family. As on the other verbs, `hardware` applies to a
+  whole batch rather than row by row, so a jobs table mixing copied and
+  re-encoded video must be split into separate calls.
+
 * `normalize_audio()` and `normalize_audio_batch()` gain an `audio_codec`
   argument naming the output audio encoder. Loudness normalization filters the
   audio, so it must be re-encoded — and until now it was re-encoded to whatever

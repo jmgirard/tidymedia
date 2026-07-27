@@ -74,10 +74,10 @@ rate-control knob each stay ROADMAP candidate rows.
 - [x] T4 Tests then guard: the copy+nvenc abort in the scalar, per-row in the
       batch, and on a mixed copy/re-encode jobs table; then the guard itself in
       the video branch, mirroring `segment_pipeline()` (R/ffmpeg.R:1836).
-- [ ] T5 Add the nvenc execution test gated on run-time usability — skip
+- [x] T5 Add the nvenc execution test gated on run-time usability — skip
       unless a 1-frame lavfi nvenc encode exits 0, never on the encoder merely
       being listed (M31 lesson).
-- [ ] T6 Roxygen on both verbs + `has_nvenc()`/`nvenc_encoder()` back-pointers
+- [x] T6 Roxygen on both verbs + `has_nvenc()`/`nvenc_encoder()` back-pointers
       (M33 precedent); `devtools::document()`; NEWS entry; `devtools::check()`.
 
 ## Work log
@@ -87,6 +87,8 @@ rate-control knob each stay ROADMAP candidate rows.
 - 2026-07-26: T1 tests written and committed red (8 new failures, 50 pre-existing green) — box stays unticked until T3 lands the arguments.
 - 2026-07-26: T1-T3 done — `hardware`/`fallback` threaded through `separate_stream_pipeline()` and both verbs; `arg_match` at each front door (the unresolved default vector would otherwise fire T4's guard on every call). `devtools::test()` 1573 pass / 0 fail / 4 skip; CRLF preserved (diff 29/6, not whole-file).
 - 2026-07-26: T4 done — copy+nvenc guard in `separate_stream_pipeline()`'s video branch; 4 guard tests red then green. `devtools::test()` 1583 pass / 0 fail / 4 skip.
+
+- 2026-07-26: T5-T6 done — GPU execution test (skips here, no NVIDIA hardware); roxygen on both verbs + `has_nvenc()` back-pointers; NEWS entry. `devtools::check()` Status: OK (0/0/0), `pkgdown::check_pkgdown()` clean, `devtools::test()` 1583 pass / 0 fail / 5 skip.
 
 ## Decisions
 

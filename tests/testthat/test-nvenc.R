@@ -311,3 +311,25 @@ test_that("anonymize_video(hardware = 'nvenc') writes a non-empty file", {
   expect_true(file.exists(outfile))
   expect_gt(file.size(outfile), 0)
 })
+
+test_that("separate_audio_video(hardware = 'nvenc') writes both outputs (M38)", {
+  # skip_if_no_nvenc() probes a real 1-frame encode rather than trusting the
+  # encoder list, which CI populates with no GPU behind it (M31 lesson).
+  skip_if_no_nvenc()
+  skip_if_no_ffprobe()
+  infile <- make_test_video()
+  dir <- withr::local_tempdir()
+  audiofile <- file.path(dir, "a.m4a")
+  videofile <- file.path(dir, "v.mp4")
+  # video_codec = NULL, not the "copy" default: a stream copy runs no encoder,
+  # so the sentinel is what actually hands this stream to the GPU.
+  separate_audio_video(infile, audiofile, videofile, video_codec = NULL,
+                       hardware = "nvenc")
+  expect_true(file.exists(audiofile))
+  expect_gt(file.size(videofile), 0)
+  # The video really went through nvenc (h264), and the audio kept its default
+  # copy -- the two streams stayed independent end to end.
+  expect_equal(probe_video(infile = videofile)$codec_name, "h264")
+  expect_equal(probe_audio(infile = audiofile)$codec_name,
+               probe_audio(infile = infile)$codec_name)
+})

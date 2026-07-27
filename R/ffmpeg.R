@@ -347,7 +347,9 @@ separate_stream_pipeline <- function(input, output, stream, codec = "copy",
 #' from an MP4 to \code{.aac} or \code{.m4a}, not \code{.mp3}). Name an encoder
 #' instead (\code{audio_codec = "libmp3lame"}) to transcode that stream, or pass
 #' \code{NULL} to emit no codec option at all and let the output extension pick
-#' the encoder. Each argument governs only its own output file.
+#' the encoder. Each argument governs only its own output file. Where the video
+#' is re-encoded, \code{hardware = "nvenc"} moves that encode onto an NVIDIA
+#' GPU; the audio output is never affected.
 #'
 #' @param infile A string containing the path to a media file.
 #' @param audiofile A string containing the path of the audio file to write.
@@ -362,11 +364,26 @@ separate_stream_pipeline <- function(input, output, stream, codec = "copy",
 #'   video losslessly; a codec name (e.g. \code{"libx264"}) transcodes it;
 #'   \code{NULL} emits no \code{-codec:v}, leaving the encoder to the
 #'   \code{videofile} extension.
+#' @param hardware The encoder backend for \code{videofile}: \code{"none"}
+#'   (default, the software \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU
+#'   encoding, which uses the nvenc encoder for \code{video_codec}'s family
+#'   (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}), assuming the H.264
+#'   family when \code{video_codec = NULL}. Only video is encoded on the GPU, so
+#'   this never affects \code{audiofile}. Because this verb's video default is a
+#'   stream copy, which runs no encoder at all, \code{hardware = "nvenc"}
+#'   alongside \code{video_codec = "copy"} is an error: name an encoder or pass
+#'   \code{video_codec = NULL}. See \code{\link{has_nvenc}} for availability and
+#'   its caveats.
+#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
+#'   unavailable, encode in software with a message (\code{TRUE}) instead of
+#'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
+#'   fallback leaves the codec unset rather than injecting one.
 #' @param run A logical: run the commands through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled commands without running them (\code{FALSE}).
 #' @return A named character vector of the two compiled commands
 #'   (\code{audio}, \code{video}); invisible when \code{run = TRUE}.
 #' @seealso [ffm_map()] and [ffm_codec()], the builders it wraps;
+#'   [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
 #'   [extract_audio()] to pull out just the audio.
 #' @family task verb functions
 #' @examples
@@ -1544,8 +1561,9 @@ ffmpeg_encoders <- function(sort_by_type = TRUE) {
 #' These back the \code{hardware = "nvenc"} toggle on
 #' \code{\link{standardize_video}}, \code{\link{format_for_web}},
 #' \code{\link{anonymize_video}}, \code{\link{crop_video}},
-#' \code{\link{segment_video}}, \code{\link{compare_videos}}, and
-#' \code{\link{picture_in_picture}} (and their \code{_batch} siblings). On the
+#' \code{\link{segment_video}}, \code{\link{compare_videos}},
+#' \code{\link{picture_in_picture}}, and \code{\link{separate_audio_video}}
+#' (and their \code{_batch} siblings). On the
 #' verbs whose \code{video_codec} defaults to \code{NULL} (no codec named), the
 #' H.264 family is assumed under \code{hardware = "nvenc"}, so a non-H.264
 #' container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
@@ -1560,8 +1578,9 @@ ffmpeg_encoders <- function(sort_by_type = TRUE) {
 #' @seealso \code{\link{ffmpeg_encoders}} for the full encoder list,
 #'   \code{\link{standardize_video}}, \code{\link{format_for_web}},
 #'   \code{\link{anonymize_video}}, \code{\link{crop_video}},
-#'   \code{\link{segment_video}}, \code{\link{compare_videos}}, and
-#'   \code{\link{picture_in_picture}} for the
+#'   \code{\link{segment_video}}, \code{\link{compare_videos}},
+#'   \code{\link{picture_in_picture}}, and
+#'   \code{\link{separate_audio_video}} for the
 #'   \code{hardware = "nvenc"} toggle that uses these.
 #' @family capability functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
@@ -3527,6 +3546,14 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #'   unless \code{jobs} carries a \code{video_codec} column. The default
 #'   \code{"copy"} stream-copies the video losslessly; \code{NULL} emits no
 #'   \code{-codec:v}. See \code{\link{separate_audio_video}}.
+#' @param hardware,fallback The encoder backend for every \code{videofile} and
+#'   its fallback behavior, applied to the whole batch (a property of the
+#'   machine, not of a row, so neither is read as a \code{jobs} column). See
+#'   [separate_audio_video()]. Because \code{hardware} is batch-wide, and a
+#'   stream copy runs no encoder, \code{hardware = "nvenc"} conflicts with any
+#'   row whose video codec resolves to \code{"copy"} — including the default —
+#'   so a jobs table mixing copied and re-encoded video must be split into
+#'   separate calls.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -3544,7 +3571,8 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #'   (\code{NA} where none is emitted). The columns match the other \code{_batch}
 #'   verbs' output plus the \code{stream} marker. See \code{\link{ffm_batch}}.
 #' @seealso [separate_audio_video()], the scalar verb it wraps; [ffm_batch()],
-#'   the batch runner; [segment_video_batch()] for the other fan-out batch verb.
+#'   the batch runner; [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
+#'   [segment_video_batch()] for the other fan-out batch verb.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")

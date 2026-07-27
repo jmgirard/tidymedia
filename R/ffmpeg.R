@@ -312,6 +312,26 @@ separate_stream_pipeline <- function(input, output, stream, codec = "copy",
     # the audio command is byte-identical whatever the caller asked for (M38).
     apply_audio_codec(p, codec, call = call)
   } else {
+    # A stream copy writes the source video bytes through untouched, so no
+    # encoder -- GPU or software -- runs on that path (D008 keeps the copy
+    # lossless and opt-in; D016 rules the same way for segment_video). Catch it
+    # here rather than letting codec_family("copy") abort, which blames the
+    # codec name instead of the copy. The guard sits in the shared recipe so
+    # both verbs inherit it per stream; ffm_batch builds every row's pipeline
+    # before running any (R/ffm_batch.R), so a batch fails before it encodes.
+    if (identical(codec, "copy") && !identical(hardware, "none")) {
+      cli::cli_abort(
+        c(
+          "{.arg hardware} needs a re-encoding {.arg video_codec}.",
+          "x" = "{.code video_codec = \"copy\"} stream-copies the video, so no
+                 encoder runs.",
+          "i" = "Name an encoder (e.g. {.code video_codec = \"libx264\"}), or
+                 pass {.code video_codec = NULL} to let the output container
+                 choose one."
+        ),
+        call = call
+      )
+    }
     apply_video_codec(p, codec, hardware, fallback, call = call)
   }
 }

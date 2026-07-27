@@ -71,7 +71,7 @@ rate-control knob each stay ROADMAP candidate rows.
 - [x] T3 Add both arguments to `separate_audio_video()` (R/ffmpeg.R:352) and
       `separate_audio_video_batch()` (R/ffmpeg.R:3523); the batch captures them
       as scalars in its `ffm_batch` closure (R/ffmpeg.R:3643). T1 green.
-- [ ] T4 Tests then guard: the copy+nvenc abort in the scalar, per-row in the
+- [x] T4 Tests then guard: the copy+nvenc abort in the scalar, per-row in the
       batch, and on a mixed copy/re-encode jobs table; then the guard itself in
       the video branch, mirroring `segment_pipeline()` (R/ffmpeg.R:1836).
 - [ ] T5 Add the nvenc execution test gated on run-time usability — skip
@@ -86,6 +86,7 @@ rate-control knob each stay ROADMAP candidate rows.
 - 2026-07-26: set in-progress; AC3's `irreversible-api` tripwire was offered and declined at the plan gate, so no implement gate — `ffm_batch` builds all pipelines before running any (R/ffm_batch.R:101), so the per-stream guard already fails before any encode.
 - 2026-07-26: T1 tests written and committed red (8 new failures, 50 pre-existing green) — box stays unticked until T3 lands the arguments.
 - 2026-07-26: T1-T3 done — `hardware`/`fallback` threaded through `separate_stream_pipeline()` and both verbs; `arg_match` at each front door (the unresolved default vector would otherwise fire T4's guard on every call). `devtools::test()` 1573 pass / 0 fail / 4 skip; CRLF preserved (diff 29/6, not whole-file).
+- 2026-07-26: T4 done — copy+nvenc guard in `separate_stream_pipeline()`'s video branch; 4 guard tests red then green. `devtools::test()` 1583 pass / 0 fail / 4 skip.
 
 ## Decisions
 

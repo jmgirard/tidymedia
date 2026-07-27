@@ -358,3 +358,106 @@ test_that("separate_audio_video_batch() ignores a per-row hardware column (batch
   res <- separate_audio_video_batch(jobs, run = FALSE)
   expect_false(any(grepl("nvenc", res$command, fixed = TRUE)))
 })
+
+# M38: GPU encoding conflicts with this verb's stream-copy default ----------
+#
+# video_codec defaults to "copy" here (D020), unlike the four M34 verbs whose
+# default is D016's NULL sentinel. A copy runs no encoder, so a GPU request on
+# that path cannot mean anything and aborts (D008/D016) -- rather than reaching
+# codec_family("copy"), which would blame the codec name instead of the copy.
+
+test_that("separate_audio_video(hardware = 'nvenc') aborts on the copy default", {
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  f <- make_input()
+  # The message names the cause and the fix, not codec_family()'s "No nvenc
+  # encoder maps to that codec", which points at the wrong thing entirely.
+  expect_error(
+    separate_audio_video(f, "a.aac", "v.mp4", hardware = "nvenc", run = FALSE),
+    "stream-copies"
+  )
+  expect_error(
+    separate_audio_video(f, "a.aac", "v.mp4", hardware = "nvenc", run = FALSE),
+    "video_codec"
+  )
+  expect_no_match(
+    tryCatch(
+      separate_audio_video(f, "a.aac", "v.mp4", hardware = "nvenc",
+                           run = FALSE),
+      error = conditionMessage
+    ),
+    "No nvenc encoder"
+  )
+})
+
+test_that("separate_audio_video(hardware = 'nvenc') aborts on an explicit copy", {
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  f <- make_input()
+  expect_error(
+    separate_audio_video(f, "a.aac", "v.mp4", video_codec = "copy",
+                         hardware = "nvenc", run = FALSE),
+    "stream-copies"
+  )
+})
+
+test_that("separate_audio_video() copies audio happily under nvenc", {
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  f <- make_input()
+  # Only the VIDEO copy conflicts: the audio stream is never encoded on the GPU,
+  # so the default audio_codec = "copy" stays legal alongside hardware = "nvenc".
+  expect_no_error(
+    separate_audio_video(f, "a.aac", "v.mp4", video_codec = NULL,
+                         hardware = "nvenc", run = FALSE)
+  )
+})
+
+test_that("separate_audio_video() copy is fine without a hardware request", {
+  f <- make_input()
+  # hardware = "none" is not a GPU request, so the copy default stays untouched.
+  expect_no_error(
+    separate_audio_video(f, "a.aac", "v.mp4", hardware = "none", run = FALSE)
+  )
+})
+
+test_that("separate_audio_video_batch(hardware = 'nvenc') aborts on the copy default", {
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  f <- make_input()
+  jobs <- tibble::tibble(input = f, audiofile = "a.aac", videofile = "v.mp4")
+  expect_error(
+    separate_audio_video_batch(jobs, hardware = "nvenc", run = FALSE),
+    "stream-copies"
+  )
+})
+
+test_that("separate_audio_video_batch() fires the copy guard per row", {
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  f <- make_input()
+  # hardware is batch-wide, so one stream-copy row conflicts with it on its own:
+  # a table mixing copy and re-encode rows must be split into separate calls.
+  jobs <- tibble::tibble(
+    input       = c(f, f),
+    audiofile   = c("a1.aac", "a2.aac"),
+    videofile   = c("v1.mp4", "v2.mp4"),
+    video_codec = c("libx264", "copy")
+  )
+  expect_error(
+    separate_audio_video_batch(jobs, hardware = "nvenc", run = FALSE),
+    "stream-copies"
+  )
+  # Every row re-encoding is fine -- the guard is about the copy, not the table.
+  jobs$video_codec <- c("libx264", "libx264")
+  expect_no_error(
+    separate_audio_video_batch(jobs, hardware = "nvenc", run = FALSE)
+  )
+})
+
+test_that("separate_audio_video_batch() treats an NA codec cell as the sentinel under nvenc", {
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  f <- make_input()
+  # NA is the column form of the NULL sentinel, not a copy, so it resolves to
+  # the h264 nvenc encoder rather than tripping the guard.
+  jobs <- tibble::tibble(input = f, audiofile = "a.aac", videofile = "v.mp4",
+                         video_codec = NA)
+  res <- separate_audio_video_batch(jobs, hardware = "nvenc", run = FALSE)
+  expect_match(res$command[res$stream == "video"], "-codec:v h264_nvenc",
+               fixed = TRUE)
+})

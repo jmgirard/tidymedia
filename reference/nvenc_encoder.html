@@ -83,8 +83,9 @@ names to treat as available.</p>
 <p>These back the <code>hardware = "nvenc"</code> toggle on
 <code><a href="standardize_video.html">standardize_video</a></code>, <code><a href="format_for_web.html">format_for_web</a></code>,
 <code><a href="anonymize_video.html">anonymize_video</a></code>, <code><a href="crop_video.html">crop_video</a></code>,
-<code><a href="segment_video.html">segment_video</a></code>, <code><a href="compare_videos.html">compare_videos</a></code>, and
-<code><a href="picture_in_picture.html">picture_in_picture</a></code> (and their <code>_batch</code> siblings). On the
+<code><a href="segment_video.html">segment_video</a></code>, <code><a href="compare_videos.html">compare_videos</a></code>,
+<code><a href="picture_in_picture.html">picture_in_picture</a></code>, and <code><a href="separate_audio_video.html">separate_audio_video</a></code>
+(and their <code>_batch</code> siblings). On the
 verbs whose <code>video_codec</code> defaults to <code>NULL</code> (no codec named), the
 H.264 family is assumed under <code>hardware = "nvenc"</code>, so a non-H.264
 container (e.g. <code>.webm</code>) needs an explicit HEVC- or AV1-family
@@ -97,8 +98,9 @@ use the <code><a href="ffmpeg.html">ffmpeg</a></code> escape hatch for those.</p
     <div class="dont-index"><p><code><a href="ffmpeg_encoders.html">ffmpeg_encoders</a></code> for the full encoder list,
 <code><a href="standardize_video.html">standardize_video</a></code>, <code><a href="format_for_web.html">format_for_web</a></code>,
 <code><a href="anonymize_video.html">anonymize_video</a></code>, <code><a href="crop_video.html">crop_video</a></code>,
-<code><a href="segment_video.html">segment_video</a></code>, <code><a href="compare_videos.html">compare_videos</a></code>, and
-<code><a href="picture_in_picture.html">picture_in_picture</a></code> for the
+<code><a href="segment_video.html">segment_video</a></code>, <code><a href="compare_videos.html">compare_videos</a></code>,
+<code><a href="picture_in_picture.html">picture_in_picture</a></code>, and
+<code><a href="separate_audio_video.html">separate_audio_video</a></code> for the
 <code>hardware = "nvenc"</code> toggle that uses these.</p>
 <p>Other capability functions:
 <code><a href="ffmpeg_codecs.html">ffmpeg_codecs()</a></code>,

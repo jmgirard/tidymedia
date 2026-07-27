@@ -41,8 +41,9 @@ These back the `hardware = "nvenc"` toggle on
 [`crop_video`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
 [`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
 [`compare_videos`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
+[`picture_in_picture`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
 and
-[`picture_in_picture`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
+[`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
 (and their `_batch` siblings). On the verbs whose `video_codec` defaults
 to `NULL` (no codec named), the H.264 family is assumed under
 `hardware = "nvenc"`, so a non-H.264 container (e.g. `.webm`) needs an
@@ -61,8 +62,9 @@ for the full encoder list,
 [`crop_video`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
 [`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
 [`compare_videos`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
+[`picture_in_picture`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
 and
-[`picture_in_picture`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
+[`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
 for the `hardware = "nvenc"` toggle that uses these.
 
 Other capability functions:

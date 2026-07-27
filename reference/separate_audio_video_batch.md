@@ -19,6 +19,8 @@ separate_audio_video_batch(
   jobs,
   audio_codec = "copy",
   video_codec = "copy",
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -55,6 +57,17 @@ separate_audio_video_batch(
   carries a `video_codec` column. The default `"copy"` stream-copies the
   video losslessly; `NULL` emits no `-codec:v`. See
   [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md).
+
+- hardware, fallback:
+
+  The encoder backend for every `videofile` and its fallback behavior,
+  applied to the whole batch (a property of the machine, not of a row,
+  so neither is read as a `jobs` column). See
+  [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md).
+  Because `hardware` is batch-wide, and a stream copy runs no encoder,
+  `hardware = "nvenc"` conflicts with any row whose video codec resolves
+  to `"copy"` — including the default — so a jobs table mixing copied
+  and re-encoded video must be split into separate calls.
 
 - run:
 
@@ -93,6 +106,8 @@ emitted). The columns match the other `_batch` verbs' output plus the
 the scalar verb it wraps;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 the batch runner;
+[`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+for the `hardware = "nvenc"` toggle;
 [`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md)
 for the other fan-out batch verb.
 

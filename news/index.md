@@ -69,6 +69,25 @@
 
 ### New features
 
+- [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+  and
+  [`separate_audio_video_batch()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video_batch.md)
+  gain the `hardware` and `fallback` arguments the other re-encoding
+  verbs already carry, so a video stream that is being re-encoded on the
+  way out can be encoded on an NVIDIA GPU: `hardware = "nvenc"`. Only
+  the video output is affected — nvenc encodes video, so the audio file
+  is byte-for-byte what it would have been otherwise, whatever you pass.
+
+  Because this verb copies the video by default, and a copy runs no
+  encoder at all, `hardware = "nvenc"` on its own is an error rather
+  than a silent switch from a lossless copy to a GPU re-encode. Pair it
+  with `video_codec = NULL`, which assumes the H.264 family, or name a
+  codec (`video_codec = "libx265"`) to pin a different one — a non-H.264
+  container such as `.webm` needs that explicit name. As on the other
+  verbs, `hardware` applies to a whole batch rather than row by row, so
+  a jobs table mixing copied and re-encoded video must be split into
+  separate calls.
+
 - [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
   and
   [`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md)

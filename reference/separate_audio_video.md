@@ -7,7 +7,8 @@ write AAC audio from an MP4 to `.aac` or `.m4a`, not `.mp3`). Name an
 encoder instead (`audio_codec = "libmp3lame"`) to transcode that stream,
 or pass `NULL` to emit no codec option at all and let the output
 extension pick the encoder. Each argument governs only its own output
-file.
+file. Where the video is re-encoded, `hardware = "nvenc"` moves that
+encode onto an NVIDIA GPU; the audio output is never affected.
 
 ## Usage
 
@@ -18,6 +19,8 @@ separate_audio_video(
   videofile,
   audio_codec = "copy",
   video_codec = "copy",
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
   run = TRUE
 )
 ```
@@ -50,6 +53,26 @@ separate_audio_video(
   codec name (e.g. `"libx264"`) transcodes it; `NULL` emits no
   `-codec:v`, leaving the encoder to the `videofile` extension.
 
+- hardware:
+
+  The encoder backend for `videofile`: `"none"` (default, the software
+  `video_codec`) or `"nvenc"` for NVIDIA GPU encoding, which uses the
+  nvenc encoder for `video_codec`'s family (e.g. `"libx264"` becomes
+  `"h264_nvenc"`), assuming the H.264 family when `video_codec = NULL`.
+  Only video is encoded on the GPU, so this never affects `audiofile`.
+  Because this verb's video default is a stream copy, which runs no
+  encoder at all, `hardware = "nvenc"` alongside `video_codec = "copy"`
+  is an error: name an encoder or pass `video_codec = NULL`. See
+  [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+  for availability and its caveats.
+
+- fallback:
+
+  A logical: when `hardware = "nvenc"` but nvenc is unavailable, encode
+  in software with a message (`TRUE`) instead of aborting (`FALSE`,
+  default). With `video_codec = NULL` the fallback leaves the codec
+  unset rather than injecting one.
+
 - run:
 
   A logical: run the commands through FFmpeg (`TRUE`, default) or return
@@ -66,6 +89,8 @@ A named character vector of the two compiled commands (`audio`,
 and
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
 the builders it wraps;
+[`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+for the `hardware = "nvenc"` toggle;
 [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
 to pull out just the audio.
 

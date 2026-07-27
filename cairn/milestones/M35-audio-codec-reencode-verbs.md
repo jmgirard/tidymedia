@@ -4,7 +4,7 @@
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
-- **Principles touched:** IP1, IP3, GP1
+- **Principles touched:** IP1, IP3, GP1, GP2
 - **Branch/PR:** `m35-audio-codec-reencode-verbs`
 
 ## Goal
@@ -208,14 +208,18 @@ Actioned (≥80):
   Review's own evidence line claimed all four. The recorded evidence must be
   true, so the two boundary cases were added rather than the claim narrowed.
 
-Logged, not actioned (<80):
+Logged; F4 and F6 actioned at the merge gate on the user's direction (<80):
 - **F3 (45)** — M34's unreleased NEWS bullet says these verbs "compile exactly
   the commands they did before", which the new Breaking-changes bullet contradicts
   for the audio token. Scorer judged each locally true in isolation (M34's scopes
   to `-codec:v`); a wording nit.
-- **F4 (78)** — two byte-identity claims this diff falsified but left standing: a
-  comment in `crop_video_pipeline()` and `test-video-codec.R`'s file header.
-- **F6 (55)** — GP2 (frame-accurate cutting) is arguably traded on
+- **F4 (78)** — actioned at the user's direction at the merge gate. Two byte-identity
+  claims this diff falsified but left standing: a comment in `crop_video_pipeline()`
+  and `test-video-codec.R`'s file header. Both narrowed to the video half; the
+  header now also records that the composite pins are unaffected, since those
+  verbs map no audio by default and stay byte-identical to pre-M34.
+- **F6 (55)** — actioned at the user's direction at the merge gate; see D018
+  and the GP2 addition to `Principles touched`. GP2 (frame-accurate cutting) is arguably traded on
   `segment_video`'s audio, which now snaps to a packet boundary (measured
   `start_time=0.007007` vs the old `0.000000`, under one audio frame; video
   identical). Neither the `Principles touched` slot nor D017 mentions it.

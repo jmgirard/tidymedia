@@ -2,8 +2,14 @@
 # their _batch siblings (M34, D016).
 #
 # `video_codec = NULL` is a "leave the codec alone" sentinel: no -codec:v is
-# emitted, so the output keeps its container's default encoder and the compiled
-# command is byte-identical to the pre-M34 one. nvenc availability is simulated
+# emitted, so the output keeps its container's default video encoder.
+#
+# M35 later changed the AUDIO default on these same verbs, which splits the pins
+# below in two. crop_video's and segment_video's full default commands gained
+# -codec:a copy, so their pins here assert the video half and the full literals
+# moved to test-audio-codec.R. The composite pins are untouched: those verbs map
+# no audio by default, so they emit no -codec:a either way and stay
+# byte-identical to pre-M34. nvenc availability is simulated
 # with the `tidymedia.nvenc_encoders` option seam that has_nvenc() consults, so
 # every compile test here is binary-free (no GPU); the execution tests are
 # guarded by skip_if_no_nvenc().

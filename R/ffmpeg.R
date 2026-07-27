@@ -434,8 +434,9 @@ crop_video_pipeline <- function(input, output, width, height,
   # re-encode it (M35/D017).
   p <- apply_audio_codec(p, audio_codec, call = call)
   # The default video_codec = NULL emits no -codec:v, so the output keeps its
-  # container's default encoder and the compiled command is byte-identical to
-  # the pre-M34 one (M34/D016).
+  # container's default *video* encoder. This no longer makes the whole command
+  # byte-identical to the pre-M34 one -- M35's audio default added -codec:a copy
+  # (M34/D016, M35/D017).
   apply_video_codec(p, video_codec, hardware, fallback, call = call)
 }
 

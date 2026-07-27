@@ -1,6 +1,6 @@
 # M36: `audio_codec` for `normalize_audio` (+ batch)
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -90,6 +90,7 @@ candidate row.
 - 2026-07-26: T5 done - execution test pins `libmp3lame` -> `mp3` against the MP4 default `aac`.
 - 2026-07-26: T4 follow-up - added the two-pass codec tests AC3 needs (run_normalize_correction arg + per-row column, scalar two_pass compile); T4 was ticked a step early.
 - 2026-07-26: T6 done - roxygen example, NEWS entry under New features, document(), D019 appended.
+- 2026-07-26: all tasks done; test() 1490 pass / 0 fail, document() no diff, check() Status: OK (0/0/0), check_pkgdown() clean. Status -> review.
 
 ## Decisions
 

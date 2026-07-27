@@ -712,9 +712,10 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #' The default standard \code{standardize_video(infile, outfile)} re-encodes to
 #' H.264 video (\code{video_codec = "libx264"}) with \code{pixel_format = "yuv420p"}
 #' and \code{-movflags +faststart}, keeping the source resolution and frame
-#' rate. Audio is stream-copied unchanged (\code{-c:a copy}); audio
-#' standardization is out of scope. The same input therefore always compiles to
-#' a byte-identical command.
+#' rate. Audio is stream-copied unchanged (\code{-c:a copy}) unless
+#' \code{audio_codec} names an encoder; loudness standardization stays out of
+#' scope (see \code{\link{normalize_audio}}). The same input therefore always
+#' compiles to a byte-identical command.
 #'
 #' Resolution follows \code{width}/\code{height}: supplying both forces exact
 #' output dimensions; supplying only one preserves the aspect ratio and rounds
@@ -734,13 +735,19 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #'   the input frame rate.
 #' @param video_codec A string naming the output video codec (default
 #'   \code{"libx264"}).
+#' @param audio_codec A string naming the output audio codec (default
+#'   \code{"copy"}, i.e. stream-copy the source audio unchanged). Name a real
+#'   encoder (e.g. \code{"aac"}) when the source audio codec cannot be copied
+#'   into the output container, or \code{NULL} to emit no \code{-codec:a} and
+#'   let the container's default encoder decide.
 #' @param pixel_format A string naming the output pixel format (default
 #'   \code{"yuv420p"}).
 #' @param hardware The encoder backend: \code{"none"} (default, the software
 #'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
 #'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
 #'   (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); see
-#'   \code{\link{has_nvenc}} for availability and its caveats.
+#'   \code{\link{has_nvenc}} for availability and its caveats. Applies to video
+#'   only: \code{audio_codec} is never hardware-accelerated.
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
 #'   unavailable, re-encode with the software \code{video_codec} and a message
 #'   (\code{TRUE}) instead of aborting (\code{FALSE}, default). Keeps output
@@ -762,7 +769,8 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #' @export
 standardize_video <- function(infile, outfile,
                               width = NULL, height = NULL, fps = NULL,
-                              video_codec = "libx264", pixel_format = "yuv420p",
+                              video_codec = "libx264", audio_codec = "copy",
+                              pixel_format = "yuv420p",
                               hardware = c("none", "nvenc"), fallback = FALSE,
                               run = TRUE) {
 
@@ -772,7 +780,7 @@ standardize_video <- function(infile, outfile,
 
   ffm_finish(
     standardize_pipeline(infile, outfile, width, height, fps, video_codec,
-                         pixel_format, hardware, fallback),
+                         audio_codec, pixel_format, hardware, fallback),
     run
   )
 }
@@ -787,8 +795,8 @@ standardize_video <- function(infile, outfile,
 # guards (audio stream-copy, even-dimension safeguard, +faststart) live here
 # once -- the batch sibling inherits them by construction (D002, D003, D007).
 standardize_pipeline <- function(input, output, width, height, fps, video_codec,
-                                 pixel_format, hardware = "none",
-                                 fallback = FALSE) {
+                                 audio_codec = "copy", pixel_format,
+                                 hardware = "none", fallback = FALSE) {
   video_codec <- resolve_hw_encoder(video_codec, hardware, fallback)
   p <- ffm_files(input, output)
   # Resolution: exact when both given; aspect-preserving with an even output
@@ -808,9 +816,13 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
   if (!is.null(fps)) {
     p <- ffm_fps(p, fps)
   }
-  # Audio is stream-copied, not re-encoded: standardization is video-only, so
-  # "leave audio untouched" means copy the bytes (matching extract_audio()).
-  p <- ffm_codec(p, video = video_codec, audio = "copy")
+  # Audio defaults to a stream copy, not a re-encode: standardization is
+  # video-only, so "leave audio untouched" means copy the bytes (matching
+  # extract_audio()). `audio_codec` is the escape hatch for the D017 trap --
+  # copying a source codec the output container cannot hold -- and reuses M35's
+  # apply_audio_codec() seam, so NULL emits no -codec:a (M39/D017).
+  p <- ffm_codec(p, video = video_codec)
+  p <- apply_audio_codec(p, audio_codec)
   p <- ffm_pixel_format(p, pixel_format)
   ffm_output_options(p, "-movflags +faststart")
 }
@@ -839,8 +851,9 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
 #' \code{pixel_format}, defaulting to H.264 / \code{yuv420p}); odd source
 #' dimensions are floored to even so the output always encodes (a
 #' \code{yuv420p}/\code{libx264} requirement, and a no-op for already-even
-#' input). Audio is stream-copied unchanged (\code{-c:a copy}). The same input
-#' and regions therefore always compile to a byte-identical command.
+#' input). Audio is stream-copied unchanged (\code{-c:a copy}) unless
+#' \code{audio_codec} names an encoder. The same input and regions therefore
+#' always compile to a byte-identical command.
 #'
 #' @param infile A string containing the path to a video file.
 #' @param outfile A string containing the path of the video file to write.
@@ -851,13 +864,19 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
 #'   used for any row without its own \code{color} (default \code{"black"}).
 #' @param video_codec A string naming the output video codec (default
 #'   \code{"libx264"}).
+#' @param audio_codec A string naming the output audio codec (default
+#'   \code{"copy"}, i.e. stream-copy the source audio unchanged). Name a real
+#'   encoder (e.g. \code{"aac"}) when the source audio codec cannot be copied
+#'   into the output container, or \code{NULL} to emit no \code{-codec:a} and
+#'   let the container's default encoder decide.
 #' @param pixel_format A string naming the output pixel format (default
 #'   \code{"yuv420p"}).
 #' @param hardware The encoder backend: \code{"none"} (default, the software
 #'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
 #'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
 #'   (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); see
-#'   \code{\link{has_nvenc}} for availability and its caveats.
+#'   \code{\link{has_nvenc}} for availability and its caveats. Applies to video
+#'   only: \code{audio_codec} is never hardware-accelerated.
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
 #'   unavailable, re-encode with the software \code{video_codec} and a message
 #'   (\code{TRUE}) instead of aborting (\code{FALSE}, default). Keeps output
@@ -881,7 +900,8 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
 #' @export
 anonymize_video <- function(infile, outfile, regions,
                             color = "black",
-                            video_codec = "libx264", pixel_format = "yuv420p",
+                            video_codec = "libx264", audio_codec = "copy",
+                            pixel_format = "yuv420p",
                             hardware = c("none", "nvenc"), fallback = FALSE,
                             run = TRUE) {
 
@@ -891,7 +911,7 @@ anonymize_video <- function(infile, outfile, regions,
 
   ffm_finish(
     anonymize_pipeline(infile, outfile, regions, color, video_codec,
-                       pixel_format, hardware, fallback),
+                       audio_codec, pixel_format, hardware, fallback),
     run
   )
 }
@@ -906,8 +926,9 @@ anonymize_video <- function(infile, outfile, regions,
 # once -- the batch sibling inherits them by construction (D002, D003, D007;
 # M13 extract-first lesson).
 anonymize_pipeline <- function(input, output, regions, color, video_codec,
-                               pixel_format, hardware = "none",
-                               fallback = FALSE, call = rlang::caller_env()) {
+                               audio_codec = "copy", pixel_format,
+                               hardware = "none", fallback = FALSE,
+                               call = rlang::caller_env()) {
   check_regions(regions, call = call)
   rlang::check_string(color, call = call)
   check_token(video_codec, call = call)
@@ -940,12 +961,16 @@ anonymize_pipeline <- function(input, output, regions, color, video_codec,
       color = colors[i], thickness = "fill"
     )
   }
-  # Re-encode video (a filter is applied), stream-copy audio untouched -- the
-  # same encode profile as standardize_video(). hardware = "nvenc" swaps the
-  # software video_codec for its nvenc encoder; Layer 2 computes the name here,
-  # Layer 1 assembles it unchanged (IP1; D-M31).
+  # Re-encode video (a filter is applied); audio defaults to a stream copy --
+  # the same encode profile as standardize_video(). `audio_codec` is the escape
+  # hatch for the D017 trap (a source codec the output container cannot hold),
+  # and reuses M35's apply_audio_codec() seam, so NULL emits no -codec:a
+  # (M39/D017).
+  # hardware = "nvenc" swaps the software video_codec for its nvenc encoder;
+  # Layer 2 computes the name here, Layer 1 assembles it unchanged (IP1; D-M31).
   video_codec <- resolve_hw_encoder(video_codec, hardware, fallback, call = call)
-  p <- ffm_codec(p, video = video_codec, audio = "copy")
+  p <- ffm_codec(p, video = video_codec)
+  p <- apply_audio_codec(p, audio_codec, call = call)
   ffm_pixel_format(p, pixel_format)
 }
 

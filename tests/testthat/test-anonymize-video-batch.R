@@ -276,7 +276,9 @@ test_that("anonymize_video_batch() return schema matches a direct ffm_batch call
   # is exactly ffm_batch()'s: the jobs columns (regions list-column preserved)
   # plus a character `command` column, no `success` under run = FALSE.
   ref <- ffm_batch(jobs, run = FALSE, .f = function(input, output, regions, ...) {
-    anonymize_pipeline(input, output, regions, "black", "libx264", "yuv420p")
+    anonymize_pipeline(input, output, regions,
+                       color = "black", video_codec = "libx264",
+                       audio_codec = "copy", pixel_format = "yuv420p")
   })
   expect_identical(names(res), names(ref))
   expect_identical(vapply(res, class, character(1)),

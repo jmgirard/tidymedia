@@ -1,11 +1,11 @@
 # M39: `audio_codec` for `standardize_video` and `anonymize_video` (+ batch)
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1, GP1
-- **Branch/PR:** —
+- **Branch/PR:** `m39-standardize-anonymize-audio-codec`
 
 ## Goal
 
@@ -70,7 +70,7 @@ candidate row (M31 Q4). No new exports, so `_pkgdown.yml` is untouched.
 
 ## Tasks
 
-- [ ] T1 Thread `audio_codec` through `standardize_pipeline()` and
+- [x] T1 Thread `audio_codec` through `standardize_pipeline()` and
       `anonymize_pipeline()`, replacing the hardcoded `audio = "copy"`; add the
       formal to `standardize_video()` and `anonymize_video()` before `run`.
 - [ ] T2 Compile tests for both scalars: named encoder emitted, `NULL` emits
@@ -90,6 +90,13 @@ candidate row (M31 Q4). No new exports, so `_pkgdown.yml` is untouched.
 ## Work log
 
 - 2026-07-26: created by /milestone-plan.
+- 2026-07-26: pre-implementation gate — `audio_codec` sits next to `video_codec` (codec pair adjacent, as on all six sibling verbs) rather than immediately before `hardware`; `pixel_format` therefore separates the codecs from `hardware` on these two verbs alone.
+- 2026-07-26: T1 done — both pipelines reuse M35's `apply_audio_codec()` seam rather than a second `ffm_codec(audio=)` call, so NULL handling and `check_token` call attribution come for free; Layer 1 untouched (IP1).
+- 2026-07-26: T1 minor reorder — roxygen `@param`/`@details` for the two scalars written here rather than deferred to T6, so no intermediate commit documents a signature it does not have; T6 keeps NEWS + `document()`.
+- 2026-07-26: T1 — pipeline formals default to `audio_codec = "copy"` (as `crop_video_pipeline` does) so the batch call sites keep compiling until T3 wires the real argument.
+- 2026-07-26: T1 — recorded the pre-milestone default commands for both verbs and asserted the post-change defaults are `identical()` to them (AC2 evidence gathered early, re-run at review).
+- 2026-07-26: T1 — `test-anonymize-video-batch.R:279` called `anonymize_pipeline()` positionally and broke on the new sixth formal; converted to named arguments.
+- 2026-07-26: T1 — `R/ffmpeg.R` CRLF integrity checked after editing (4440 CR / 4440 lines, diff 54/27), per the M35 lesson.
 
 ## Decisions
 

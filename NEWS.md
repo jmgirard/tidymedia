@@ -51,7 +51,7 @@
 
 * `standardize_video()` and `anonymize_video()` (and their `_batch` siblings)
   gain an `audio_codec` argument. Both verbs re-encode video and stream-copy
-  audio, but the copy was hardcoded, so there was no way to say otherwise —
+  audio, but the copy was fixed in place, so there was no way to say otherwise —
   which mattered because a stream copy fails outright when the output container
   cannot hold the source audio codec, and the documented remedy for that
   ("name an encoder") had no argument to name one. `audio_codec = "copy"` is

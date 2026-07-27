@@ -8,7 +8,7 @@ _Last hygiene check: 2026-07-26 (M39 + M40 planned — the two remaining codec-a
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M39 | `audio_codec` for `standardize_video` and `anonymize_video` (+ batch) | in-progress | — | normal | milestones/M39-standardize-anonymize-audio-codec.md |
+| M39 | `audio_codec` for `standardize_video` and `anonymize_video` (+ batch) | review | — | normal | milestones/M39-standardize-anonymize-audio-codec.md |
 | M40 | `audio_codec` subsumes `format` on `convert_audio` (+ batch), closing the codec sweep | planned | M39 | normal | milestones/M40-convert-audio-codec-arg.md |
 | M38 | `hardware=` nvenc on `separate_audio_video` (+ batch) | done | — | normal | milestones/archive/M38-separate-av-hardware.md |
 | M36 | `audio_codec` for `normalize_audio` (+ batch) — NULL sentinel, `"copy"` aborts | done | — | normal | milestones/archive/M36-normalize-audio-codec.md |

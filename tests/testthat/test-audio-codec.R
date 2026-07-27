@@ -286,6 +286,13 @@ test_that("the batch siblings accept an all-NA (logical) audio_codec column", {
     audio = 0, run = FALSE
   )
   expect_false(any(grepl("-codec:a", pip$command, fixed = TRUE)))
+
+  seg <- segment_video_batch(
+    tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"),
+                   start = c(0, 1), end = c(1, 2), audio_codec = NA),
+    run = FALSE
+  )
+  expect_false(any(grepl("-codec:a", seg$command, fixed = TRUE)))
 })
 
 test_that("the batch siblings reject a wrongly typed audio_codec column", {
@@ -318,6 +325,22 @@ test_that("the batch siblings reject a wrongly typed audio_codec column", {
     picture_in_picture_batch(
       tibble::tibble(main = f, overlay = f, output = "a.mp4",
                      audio_codec = 1),
+      run = FALSE
+    ),
+    "audio_codec"
+  )
+  expect_error(
+    segment_video_batch(
+      tibble::tibble(input = f, output = "a.mp4", start = 0, end = 1,
+                     audio_codec = 1),
+      run = FALSE
+    ),
+    "audio_codec"
+  )
+  expect_error(
+    segment_video_batch(
+      tibble::tibble(input = f, output = "a.mp4", start = 0, end = 1,
+                     audio_codec = NA_real_),
       run = FALSE
     ),
     "audio_codec"

@@ -118,6 +118,8 @@ stays deferred (D016).
 
 ## Decisions
 
+- 2026-07-26 (review): F5 was actioned although it scored 74, below the 80 bar. The score governs whether a *defect* is fixed; it does not license a Review section that claims evidence which was not gathered. AC5 says all four batch siblings, so the tests were added rather than the claim trimmed.
+
 ## Review
 
 **PR:** https://github.com/jmgirard/tidymedia/pull/37 · reviewed 2026-07-26 on
@@ -159,8 +161,8 @@ accepted, character, all-`NA` character and `c(TRUE, FALSE)` rejected —
 container default is AAC): the cropped output's `probe_audio()$codec_name` equals
 the input's `mp3`, and `audio_codec = NULL` yields `aac`. Binary-gated.
 
-**AC7 — gate.** `devtools::test()` 1462 pass / 0 fail / 4 skip (the M35 file
-alone: 103 pass, 0 fail, 0 skip across 30 tests). `R CMD check` **Status: OK**
+**AC7 — gate.** `devtools::test()` 1465 pass / 0 fail / 4 skip (the M35 file
+alone: 106 pass, 0 fail, 0 skip). `R CMD check` **Status: OK**
 (0/0/0). `pkgdown::check_pkgdown()` clean. `devtools::document()` no diff. All
 eight `.Rd` files name `audio_codec`; `format_for_web_batch.Rd` carries the
 ignored-column cross-reference. `NEWS.md` has a Breaking changes section; no
@@ -171,3 +173,49 @@ milestone IDs in NEWS/README/vignettes. CI green (9 checks).
 checks all recorded above. Returns to `in-progress` this milestone: 0.
 
 **Independent review — three lenses + scorer.**
+
+Blame-history [S] and prior-review-record [S] both no-op'd clean. The former
+traced the two modified pinned tests to their M34 commits and judged the
+coverage relocated (stricter `expect_equal` in the new file) rather than lost,
+and confirmed `picture_in_picture_batch`'s replaced guard preserves the intent
+M32's review gave it. The latter found M34's F2 lesson (all-NA typing) *applied*
+rather than repeated, RR01 Beyond-1/Beyond-3 genuinely closed, Beyond-2 open and
+uncontradicted; its GitHub review-thread probe returned empty, so that surface
+was skipped by design.
+
+Diff-bug [O] found **no functional defect** — it independently re-verified all
+ten `*_pipeline()` call sites for the inserted parameter, the sentinel
+round-trip, the per-row reality of the segment guard, and that `"copy"` is the
+only value reaching the command without a `check_token()` pass. Six
+documentation/hygiene findings, scored by a fresh [S] scorer:
+
+Actioned (≥80):
+- **F1 (92) — the branch silently converted `R/ffmpeg.R` from CRLF to LF**,
+  rewriting all 4000 lines: the diff read 4172/3999 instead of the true 209/36
+  and `git blame` on the largest source file pointed at this milestone. Caused by
+  the implementation's Python rewrites. CRLF restored; diffstat now 209/36, and
+  a sweep confirmed no other touched file changed endings.
+- **F2 (85) — the new `format_for_web_batch` cross-reference pointed users at a
+  verb that cannot solve their problem.** A reader hitting D017's FLAC-in-`.mp4`
+  trap was sent to `standardize_video_batch()`, which has no `audio_codec` at all
+  and hard-codes `audio = "copy"`. Reworded: the redirect is now scoped to
+  per-row *video* codecs, states that verb stream-copies audio, and points at a
+  verb that does take an audio codec. (The finding's claim that its `video_codec`
+  is batch-wide was wrong — R/ffmpeg.R:2446 reads it per row.)
+- **F5 (74) — actioned despite scoring below the bar, because AC fencing
+  requires it:** the all-NA-logical and wrong-type column tests covered three
+  siblings and skipped `segment_video_batch`, while AC5's wording and this
+  Review's own evidence line claimed all four. The recorded evidence must be
+  true, so the two boundary cases were added rather than the claim narrowed.
+
+Logged, not actioned (<80):
+- **F3 (45)** — M34's unreleased NEWS bullet says these verbs "compile exactly
+  the commands they did before", which the new Breaking-changes bullet contradicts
+  for the audio token. Scorer judged each locally true in isolation (M34's scopes
+  to `-codec:v`); a wording nit.
+- **F4 (78)** — two byte-identity claims this diff falsified but left standing: a
+  comment in `crop_video_pipeline()` and `test-video-codec.R`'s file header.
+- **F6 (55)** — GP2 (frame-accurate cutting) is arguably traded on
+  `segment_video`'s audio, which now snaps to a packet boundary (measured
+  `start_time=0.007007` vs the old `0.000000`, under one audio frame; video
+  identical). Neither the `Principles touched` slot nor D017 mentions it.

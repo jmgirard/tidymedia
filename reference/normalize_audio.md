@@ -19,6 +19,7 @@ normalize_audio(
   loudness_range = 7,
   channels = NULL,
   sample_rate = NULL,
+  audio_codec = NULL,
   two_pass = FALSE,
   run = TRUE
 )
@@ -60,6 +61,14 @@ normalize_audio(
   kHz encoder-capped – not the source rate). Set this to pin the output
   rate.
 
+- audio_codec:
+
+  An optional string naming the output audio encoder (e.g. `"aac"`,
+  `"libmp3lame"`, `"flac"`), passed to FFmpeg's `-codec:a`. `NULL`
+  (default) emits no `-codec:a`, leaving the output container's default
+  encoder in place. `"copy"` is an error: loudness normalization filters
+  the audio, so the stream must be re-encoded and cannot be copied.
+
 - two_pass:
 
   A logical: when `TRUE`, use accurate two-pass (measured/linear)
@@ -96,8 +105,9 @@ The default targets follow EBU Recommendation R 128 (2014) –
 measured per ITU-R BS.1770-4 – with `loudness_range = 7`. This is
 single-pass (dynamic) `loudnorm`: the same input and arguments always
 compile to one reproducible command, with no separate measurement pass.
-Because the audio is filtered it is re-encoded (the container's default
-audio encoder). Leaving `channels` at `NULL` preserves the source
+Because the audio is filtered it is re-encoded; set `audio_codec` to
+name the output encoder, or leave it `NULL` to use the output
+container's default. Leaving `channels` at `NULL` preserves the source
 channel layout. Note that FFmpeg's `loudnorm` filter resamples its
 output (up to 192 kHz, capped by the encoder), so the output sample rate
 is *not* the source rate unless you pin it: set `sample_rate` to control
@@ -158,4 +168,7 @@ normalize_audio(video, "normalized.mp4", run = FALSE)
 normalize_audio(video, "mono.mp4", target_loudness = -16, channels = 1,
                 run = FALSE)
 #> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-16:TP=-1:LRA=7\" -codec:v copy -ac 1 \"mono.mp4\""
+# Name the output audio encoder instead of taking the container's default
+normalize_audio(video, "aac.mp4", audio_codec = "aac", run = FALSE)
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -codec:v copy -codec:a aac \"aac.mp4\""
 ```

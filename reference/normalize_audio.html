@@ -66,6 +66,7 @@ to <code><a href="standardize_video.html">standardize_video</a></code>, which le
 <span>  loudness_range <span class="op">=</span> <span class="fl">7</span>,</span>
 <span>  channels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sample_rate <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  audio_codec <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  two_pass <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -110,6 +111,15 @@ resamples, up to 192 kHz encoder-capped – not the source rate). Set this to
 pin the output rate.</p></dd>
 
 
+<dt id="arg-audio-codec">audio_codec<a class="anchor" aria-label="anchor" href="#arg-audio-codec"></a></dt>
+<dd><p>An optional string naming the output audio encoder (e.g.
+<code>"aac"</code>, <code>"libmp3lame"</code>, <code>"flac"</code>), passed to FFmpeg's
+<code>-codec:a</code>. <code>NULL</code> (default) emits no <code>-codec:a</code>, leaving
+the output container's default encoder in place. <code>"copy"</code> is an error:
+loudness normalization filters the audio, so the stream must be re-encoded
+and cannot be copied.</p></dd>
+
+
 <dt id="arg-two-pass">two_pass<a class="anchor" aria-label="anchor" href="#arg-two-pass"></a></dt>
 <dd><p>A logical: when <code>TRUE</code>, use accurate two-pass
 (measured/linear) normalization instead of the default single-pass
@@ -146,9 +156,10 @@ measured values.</p>
 measured per ITU-R BS.1770-4 – with <code>loudness_range = 7</code>. This is
 single-pass (dynamic) <code>loudnorm</code>: the same input and arguments always
 compile to one reproducible command, with no separate measurement pass.
-Because the audio is filtered it is re-encoded (the container's default audio
-encoder). Leaving <code>channels</code> at <code>NULL</code> preserves the source channel
-layout. Note that FFmpeg's <code>loudnorm</code> filter resamples its output (up to
+Because the audio is filtered it is re-encoded; set <code>audio_codec</code> to
+name the output encoder, or leave it <code>NULL</code> to use the output
+container's default. Leaving <code>channels</code> at <code>NULL</code> preserves the
+source channel layout. Note that FFmpeg's <code>loudnorm</code> filter resamples its output (up to
 192 kHz, capped by the encoder), so the output sample rate is <em>not</em> the
 source rate unless you pin it: set <code>sample_rate</code> to control the output
 rate.</p>
@@ -203,6 +214,9 @@ for the many-file form; <code><a href="standardize_video.html">standardize_video
 <span class="r-in"><span><span class="fu">normalize_audio</span><span class="op">(</span><span class="va">video</span>, <span class="st">"mono.mp4"</span>, target_loudness <span class="op">=</span> <span class="op">-</span><span class="fl">16</span>, channels <span class="op">=</span> <span class="fl">1</span>,</span></span>
 <span class="r-in"><span>                run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-16:TP=-1:LRA=7\" -codec:v copy -ac 1 \"mono.mp4\""</span>
+<span class="r-in"><span><span class="co"># Name the output audio encoder instead of taking the container's default</span></span></span>
+<span class="r-in"><span><span class="fu">normalize_audio</span><span class="op">(</span><span class="va">video</span>, <span class="st">"aac.mp4"</span>, audio_codec <span class="op">=</span> <span class="st">"aac"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -codec:v copy -codec:a aac \"aac.mp4\""</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

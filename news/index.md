@@ -42,6 +42,20 @@
 
 ### New features
 
+- [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
+  and
+  [`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md)
+  gain an `audio_codec` argument naming the output audio encoder.
+  Loudness normalization filters the audio, so it must be re-encoded —
+  and until now it was re-encoded to whatever encoder your FFmpeg build
+  defaults to for the output container, which made the result depend on
+  the machine. `audio_codec = "aac"` (say) pins it. The default `NULL`
+  leaves the codec unset, so existing calls compile exactly the commands
+  they did before, and `"copy"` is an error, since a filtered stream
+  cannot be copied. In a jobs table, `audio_codec` may be a per-row
+  column (`NA` means “leave it unset”), and it applies to the two-pass
+  path as well.
+
 - [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
   [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
   [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),

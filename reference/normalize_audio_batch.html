@@ -74,6 +74,7 @@ across the whole table (see <code>two_pass</code>).</p>
 <span>  loudness_range <span class="op">=</span> <span class="fl">7</span>,</span>
 <span>  channels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sample_rate <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  audio_codec <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  two_pass <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -96,7 +97,10 @@ normalization is one-input-to-one-output, a duplicated <code>input</code> with n
 loudness knobs — <code>target_loudness</code>, <code>true_peak</code>,
 <code>loudness_range</code>, <code>channels</code>, <code>sample_rate</code> — may also appear
 as a column to override the corresponding argument on a per-row basis; rows
-(or knobs) that omit the column fall back to the argument's value. Any other
+(or knobs) that omit the column fall back to the argument's value. An
+optional <code>audio_codec</code> column (character) names each row's output
+audio encoder, with <code>NA</code> meaning "leave the encoder unset"; rows
+omitting it fall back to the <code>audio_codec</code> argument. Any other
 columns are ignored.</p></dd>
 
 
@@ -119,6 +123,15 @@ mono. <code>NULL</code> (default) keeps each source's channel layout.</p></dd>
 <code>jobs</code> carries a <code>sample_rate</code> column. <code>NULL</code> (default) lets
 <code>loudnorm</code> choose (it resamples, up to 192 kHz encoder-capped — not the
 source rate); set this to pin the output rate.</p></dd>
+
+
+<dt id="arg-audio-codec">audio_codec<a class="anchor" aria-label="anchor" href="#arg-audio-codec"></a></dt>
+<dd><p>The output audio encoder applied to every row, unless
+<code>jobs</code> carries an <code>audio_codec</code> column, e.g. <code>"aac"</code>.
+<code>NULL</code> (default) emits no <code>-codec:a</code>, leaving the output
+container's default encoder in place. <code>"copy"</code> is an error: loudness
+normalization filters the audio, so it must be re-encoded. See
+<code><a href="normalize_audio.html">normalize_audio</a></code>.</p></dd>
 
 
 <dt id="arg-two-pass">two_pass<a class="anchor" aria-label="anchor" href="#arg-two-pass"></a></dt>

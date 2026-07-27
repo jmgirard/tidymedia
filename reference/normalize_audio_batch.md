@@ -22,6 +22,7 @@ normalize_audio_batch(
   loudness_range = 7,
   channels = NULL,
   sample_rate = NULL,
+  audio_codec = NULL,
   two_pass = FALSE,
   run = TRUE,
   parallel = FALSE,
@@ -43,7 +44,10 @@ normalize_audio_batch(
   `target_loudness`, `true_peak`, `loudness_range`, `channels`,
   `sample_rate` — may also appear as a column to override the
   corresponding argument on a per-row basis; rows (or knobs) that omit
-  the column fall back to the argument's value. Any other columns are
+  the column fall back to the argument's value. An optional
+  `audio_codec` column (character) names each row's output audio
+  encoder, with `NA` meaning "leave the encoder unset"; rows omitting it
+  fall back to the `audio_codec` argument. Any other columns are
   ignored.
 
 - target_loudness, true_peak, loudness_range:
@@ -65,6 +69,15 @@ normalize_audio_batch(
   carries a `sample_rate` column. `NULL` (default) lets `loudnorm`
   choose (it resamples, up to 192 kHz encoder-capped — not the source
   rate); set this to pin the output rate.
+
+- audio_codec:
+
+  The output audio encoder applied to every row, unless `jobs` carries
+  an `audio_codec` column, e.g. `"aac"`. `NULL` (default) emits no
+  `-codec:a`, leaving the output container's default encoder in place.
+  `"copy"` is an error: loudness normalization filters the audio, so it
+  must be re-encoded. See
+  [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md).
 
 - two_pass:
 

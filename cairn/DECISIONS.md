@@ -320,3 +320,41 @@ stream copy is *impossible* rather than merely undesirable. Sits under IP1/GP1.
   to be when read from the scalar verb alone.
 - **`video_codec` stays out.** This verb's contract is "touch audio only",
   pinned by `-codec:v copy`; changing that needs its own decision.
+
+## D020 — Codec args subsume `reencode` on the demux verb (2026-07-26, from M37, extends D016/D017)
+
+Carries the codec-arg boundary rule to `separate_audio_video()` and
+`separate_audio_video_batch()` — the first verbs where a codec argument
+*replaces* an existing boolean rather than joining one. Sits under IP1/GP1.
+
+- **`audio_codec` and `video_codec` default to `"copy"`, and `reencode` is
+  removed.** `reencode` was a single boolean over two output files, so it could
+  say "copy both" or "leave both to the container" and nothing else — including
+  nothing about *which* encoder. Two per-stream args say all three: `"copy"`
+  compiles what `reencode = FALSE` compiled byte-for-byte, `NULL` (D016's
+  sentinel) compiles what `reencode = TRUE` compiled, and a name pins the
+  encoder. The default output is therefore unchanged. Rules out keeping
+  `reencode` beside the codec args, which would need a contradiction guard for
+  every combination the two spellings can disagree on.
+- **`"copy"`, not D016's `NULL` sentinel, because this verb demuxes.** D019
+  chose `NULL` for `normalize_audio` on the ground that a filtered stream is
+  re-encoded no matter what. Demuxing is the opposite case: copy is not only
+  available but is what the verb has defaulted to since D-M06-4, so `"copy"`
+  keeps the default and D017's reasoning transfers intact.
+- **A clean break with no `lifecycle` shim**, under D014's pre-0.2.0 policy, at
+  the user's explicit waiver of the deprecation cycle (2026-07-26 plan gate).
+- **The batch verb aborts on a stale `reencode`; the scalar does not need to.**
+  The scalar has no `...`, so R rejects the retired argument itself. The batch's
+  `...` forwards `ffm_batch` options and would swallow `reencode` in silence —
+  stream-copying output the caller asked to have re-encoded, a wrong result with
+  no signal. A guard naming the replacement is a diagnostic, not a shim: it
+  never makes the old spelling work. Rules out relying on `...`'s tolerance,
+  and rules out closing `...` to unknown names, which would break the
+  forwarding slot every `_batch` verb depends on.
+- **The reshape collapses the two codec columns into one.** An input row fans
+  out into an audio row and a video row (D003/D007), so the per-row
+  `audio_codec` / `video_codec` columns resolve to a single `codec` column on
+  the 2N table, routed by the existing `stream` marker — which is also what
+  makes it structurally impossible for one stream's choice to reach the other's
+  command. The column is carried only when `jobs` supplied one. Rules out
+  carrying both columns on every row, where half of each is dead weight.

@@ -9,7 +9,7 @@ _Last hygiene check: 2026-07-26 (M36 done — `audio_codec` on the loudness verb
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M36 | `audio_codec` for `normalize_audio` (+ batch) — NULL sentinel, `"copy"` aborts | done | — | normal | milestones/archive/M36-normalize-audio-codec.md |
-| M37 | Codec args subsume `reencode` on `separate_audio_video` (+ batch) | in-progress | — | normal | milestones/M37-separate-av-codec-args.md |
+| M37 | Codec args subsume `reencode` on `separate_audio_video` (+ batch) | review | — | normal | milestones/M37-separate-av-codec-args.md |
 | M35 | `audio_codec` for the four re-encode verbs (crop/segment/compare/pip + batch) — stream-copy by default | done | — | normal | milestones/archive/M35-audio-codec-reencode-verbs.md |
 | M33 | Wire `hardware=` nvenc into `anonymize_video` (+ batch) | done | — | normal | milestones/archive/M33-anonymize-hardware.md |
 | M34 | `video_codec` + `hardware=` for the four codec-less re-encode verbs (crop/segment/compare/pip) | done | — | normal | milestones/archive/M34-codec-hardware-reencode-verbs.md |

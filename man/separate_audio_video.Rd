@@ -8,7 +8,8 @@ separate_audio_video(
   infile,
   audiofile,
   videofile,
-  reencode = FALSE,
+  audio_codec = "copy",
+  video_codec = "copy",
   run = TRUE
 )
 }
@@ -19,9 +20,17 @@ separate_audio_video(
 
 \item{videofile}{A string containing the path of the video file to write.}
 
-\item{reencode}{A logical: stream-copy the audio and video losslessly
-(\code{FALSE}, default) or re-encode them to match the output extensions
-(\code{TRUE}).}
+\item{audio_codec}{A string naming the encoder for \code{audiofile}, passed
+to FFmpeg's \code{-codec:a}. The default \code{"copy"} stream-copies the
+audio losslessly; a codec name (e.g. \code{"libmp3lame"}) transcodes it;
+\code{NULL} emits no \code{-codec:a}, leaving the encoder to the
+\code{audiofile} extension.}
+
+\item{video_codec}{A string naming the encoder for \code{videofile}, passed
+to FFmpeg's \code{-codec:v}. The default \code{"copy"} stream-copies the
+video losslessly; a codec name (e.g. \code{"libx264"}) transcodes it;
+\code{NULL} emits no \code{-codec:v}, leaving the encoder to the
+\code{videofile} extension.}
 
 \item{run}{A logical: run the commands through FFmpeg (\code{TRUE}, default)
 or return the compiled commands without running them (\code{FALSE}).}
@@ -31,15 +40,20 @@ A named character vector of the two compiled commands
 (\code{audio}, \code{video}); invisible when \code{run = TRUE}.
 }
 \description{
-By default the streams are copied, not re-encoded (\code{reencode =
-FALSE}): separation is lossless and fast, but each output container must
-support the source codec (e.g. write AAC audio from an MP4 to \code{.aac}
-or \code{.m4a}, not \code{.mp3}). Set \code{reencode = TRUE} to let FFmpeg
-re-encode each stream to whatever the output extension implies.
+By default each stream is copied, not re-encoded (\code{audio_codec =
+"copy"}, \code{video_codec = "copy"}): separation is lossless and fast, but
+each output container must support the source codec (e.g. write AAC audio
+from an MP4 to \code{.aac} or \code{.m4a}, not \code{.mp3}). Name an encoder
+instead (\code{audio_codec = "libmp3lame"}) to transcode that stream, or pass
+\code{NULL} to emit no codec option at all and let the output extension pick
+the encoder. Each argument governs only its own output file.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 separate_audio_video(video, "audio.aac", "video.mp4", run = FALSE)
+# transcode the audio to MP3 while copying the video through untouched
+separate_audio_video(video, "audio.mp3", "video.mp4",
+                     audio_codec = "libmp3lame", run = FALSE)
 }
 \seealso{
 \code{\link[=ffm_map]{ffm_map()}} and \code{\link[=ffm_codec]{ffm_codec()}}, the builders it wraps;

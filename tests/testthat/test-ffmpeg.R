@@ -533,10 +533,10 @@ test_that("separate_audio_video() stream-copies by default", {
   expect_match(cmds[["video"]], "-codec:v copy", fixed = TRUE)
 })
 
-test_that("separate_audio_video(reencode = TRUE) omits the stream copy", {
+test_that("separate_audio_video() omits the stream copy when both codecs are NULL", {
   f <- make_input()
-  cmds <- separate_audio_video(f, "a.aac", "v.mp4", reencode = TRUE,
-                               run = FALSE)
+  cmds <- separate_audio_video(f, "a.aac", "v.mp4", audio_codec = NULL,
+                               video_codec = NULL, run = FALSE)
   expect_no_match(cmds[["audio"]], "copy", fixed = TRUE)
   expect_no_match(cmds[["video"]], "copy", fixed = TRUE)
 })

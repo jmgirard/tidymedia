@@ -6,7 +6,8 @@
 \usage{
 separate_audio_video_batch(
   jobs,
-  reencode = FALSE,
+  audio_codec = "copy",
+  video_codec = "copy",
   run = TRUE,
   parallel = FALSE,
   ...
@@ -18,14 +19,22 @@ separate_audio_video_batch(
 columns naming the two destinations. All three are \strong{required} — like
 \code{\link{separate_audio_video}}, this verb derives no output paths,
 because a copied stream's container extension is the instruction (it must
-match the source codec). An optional \code{reencode} column (logical)
-overrides the \code{reencode} argument per row; rows omitting it fall back to
-the argument. Any other columns are ignored.}
+match the source codec). Optional \code{audio_codec} and \code{video_codec}
+columns (character; \code{NA} to emit no codec option for that stream)
+override the arguments of the same name per row; rows omitting a column fall
+back to that argument. Any other columns are ignored — except a
+\code{reencode} column, retired with the argument of the same name, which is
+an error rather than a silent no-op.}
 
-\item{reencode}{A logical applied to every row unless \code{jobs} carries a
-\code{reencode} column: stream-copy each output losslessly (\code{FALSE},
-default) or re-encode it to match the output extension (\code{TRUE}). See
-\code{\link{separate_audio_video}} for the trade-off.}
+\item{audio_codec}{A string naming the encoder for every \code{audiofile}
+unless \code{jobs} carries an \code{audio_codec} column. The default
+\code{"copy"} stream-copies the audio losslessly; \code{NULL} emits no
+\code{-codec:a}. See \code{\link{separate_audio_video}}.}
+
+\item{video_codec}{A string naming the encoder for every \code{videofile}
+unless \code{jobs} carries a \code{video_codec} column. The default
+\code{"copy"} stream-copies the video losslessly; \code{NULL} emits no
+\code{-codec:v}. See \code{\link{separate_audio_video}}.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}
@@ -43,8 +52,10 @@ A \link[tibble:tibble-package]{tibble} with \strong{two rows per input}
 \code{stream} marker (\code{"audio"} or \code{"video"}), and an added
 \code{command} column — plus, when \code{run = TRUE}, a \code{success}
 column (and \code{verified} / provenance manifest when requested via
-\code{...}). The columns match the other \code{_batch} verbs' output plus
-the \code{stream} marker. See \code{\link{ffm_batch}}.
+\code{...}). When \code{jobs} supplies either codec column, a single
+\code{codec} column carries each row's resolved encoder for its own stream
+(\code{NA} where none is emitted). The columns match the other \code{_batch}
+verbs' output plus the \code{stream} marker. See \code{\link{ffm_batch}}.
 }
 \description{
 Split the audio and video streams of many input files from a single jobs

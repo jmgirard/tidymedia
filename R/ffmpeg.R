@@ -290,22 +290,23 @@ extract_audio <- function(infile, outfile, audio_codec = "copy", run = TRUE) {
 
 # Shared recipe behind separate_audio_video() and separate_audio_video_batch():
 # build one single-output pipeline for a single stream — map `0:a` (audio) or
-# `0:v` (video) out of `input` into `output`, stream-copying (`-c:a copy` /
-# `-c:v copy`) on the default lossless path (D-M06-4). Splitting one input into
-# audio + video is a fan-out, so each stream stays its own single-output
-# pipeline (D003/D007); both verbs wrap this once per stream. Command assembly
-# stays in Layer 1 (IP1/D002). Kept ABOVE the roxygen block below so
-# document() does not re-target it (M28 lesson).
-separate_stream_pipeline <- function(input, output, stream, reencode = FALSE) {
+# `0:v` (video) out of `input` into `output`, naming that stream's encoder via
+# `codec`. The default `"copy"` stream-copies, the lossless path this verb has
+# had since D-M06-4; `NULL` is D016's sentinel, emitting no `-codec` at all so
+# the output container's default encoder decides (M37). `codec` applies to the
+# audio or the video slot by `stream`, so a caller's audio choice can never
+# reach the video command. Splitting one input into audio + video is a fan-out,
+# so each stream stays its own single-output pipeline (D003/D007); both verbs
+# wrap this once per stream. Command assembly stays in Layer 1 (IP1/D002). Kept
+# ABOVE the roxygen block below so document() does not re-target it (M28 lesson).
+separate_stream_pipeline <- function(input, output, stream, codec = "copy",
+                                     call = rlang::caller_env()) {
   p <- ffm_map(ffm_files(input, output), if (stream == "audio") "0:a" else "0:v")
-  if (!reencode) {
-    p <- if (stream == "audio") {
-      ffm_codec(p, audio = "copy")
-    } else {
-      ffm_codec(p, video = "copy")
-    }
+  if (stream == "audio") {
+    apply_audio_codec(p, codec, call = call)
+  } else {
+    apply_video_codec(p, codec, call = call)
   }
-  p
 }
 
 
@@ -313,18 +314,27 @@ separate_stream_pipeline <- function(input, output, stream, reencode = FALSE) {
 
 #' Split a media file into separate audio and video files
 #'
-#' By default the streams are copied, not re-encoded (\code{reencode =
-#' FALSE}): separation is lossless and fast, but each output container must
-#' support the source codec (e.g. write AAC audio from an MP4 to \code{.aac}
-#' or \code{.m4a}, not \code{.mp3}). Set \code{reencode = TRUE} to let FFmpeg
-#' re-encode each stream to whatever the output extension implies.
+#' By default each stream is copied, not re-encoded (\code{audio_codec =
+#' "copy"}, \code{video_codec = "copy"}): separation is lossless and fast, but
+#' each output container must support the source codec (e.g. write AAC audio
+#' from an MP4 to \code{.aac} or \code{.m4a}, not \code{.mp3}). Name an encoder
+#' instead (\code{audio_codec = "libmp3lame"}) to transcode that stream, or pass
+#' \code{NULL} to emit no codec option at all and let the output extension pick
+#' the encoder. Each argument governs only its own output file.
 #'
 #' @param infile A string containing the path to a media file.
 #' @param audiofile A string containing the path of the audio file to write.
 #' @param videofile A string containing the path of the video file to write.
-#' @param reencode A logical: stream-copy the audio and video losslessly
-#'   (\code{FALSE}, default) or re-encode them to match the output extensions
-#'   (\code{TRUE}).
+#' @param audio_codec A string naming the encoder for \code{audiofile}, passed
+#'   to FFmpeg's \code{-codec:a}. The default \code{"copy"} stream-copies the
+#'   audio losslessly; a codec name (e.g. \code{"libmp3lame"}) transcodes it;
+#'   \code{NULL} emits no \code{-codec:a}, leaving the encoder to the
+#'   \code{audiofile} extension.
+#' @param video_codec A string naming the encoder for \code{videofile}, passed
+#'   to FFmpeg's \code{-codec:v}. The default \code{"copy"} stream-copies the
+#'   video losslessly; a codec name (e.g. \code{"libx264"}) transcodes it;
+#'   \code{NULL} emits no \code{-codec:v}, leaving the encoder to the
+#'   \code{videofile} extension.
 #' @param run A logical: run the commands through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled commands without running them (\code{FALSE}).
 #' @return A named character vector of the two compiled commands
@@ -335,21 +345,24 @@ separate_stream_pipeline <- function(input, output, stream, reencode = FALSE) {
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' separate_audio_video(video, "audio.aac", "video.mp4", run = FALSE)
+#' # transcode the audio to MP3 while copying the video through untouched
+#' separate_audio_video(video, "audio.mp3", "video.mp4",
+#'                      audio_codec = "libmp3lame", run = FALSE)
 #' @export
 separate_audio_video <- function(infile, audiofile, videofile,
-                                 reencode = FALSE, run = TRUE) {
+                                 audio_codec = "copy", video_codec = "copy",
+                                 run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(audiofile)
   rlang::check_string(videofile)
-  rlang::check_bool(reencode)
 
   # One input -> two outputs is a fan-out: emit two single-output pipelines
   # (D-M03-2) rather than a dual-`-map` command the linear engine can't model.
   # separate_stream_pipeline() carries the per-stream recipe shared with
-  # separate_audio_video_batch().
-  audio <- separate_stream_pipeline(infile, audiofile, "audio", reencode)
-  video <- separate_stream_pipeline(infile, videofile, "video", reencode)
+  # separate_audio_video_batch(), and token-checks each codec there.
+  audio <- separate_stream_pipeline(infile, audiofile, "audio", audio_codec)
+  video <- separate_stream_pipeline(infile, videofile, "video", video_codec)
   commands <- c(audio = ffm_compile(audio), video = ffm_compile(video))
 
   if (run) {
@@ -3464,13 +3477,20 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #'   columns naming the two destinations. All three are **required** — like
 #'   \code{\link{separate_audio_video}}, this verb derives no output paths,
 #'   because a copied stream's container extension is the instruction (it must
-#'   match the source codec). An optional \code{reencode} column (logical)
-#'   overrides the \code{reencode} argument per row; rows omitting it fall back to
-#'   the argument. Any other columns are ignored.
-#' @param reencode A logical applied to every row unless \code{jobs} carries a
-#'   \code{reencode} column: stream-copy each output losslessly (\code{FALSE},
-#'   default) or re-encode it to match the output extension (\code{TRUE}). See
-#'   \code{\link{separate_audio_video}} for the trade-off.
+#'   match the source codec). Optional \code{audio_codec} and \code{video_codec}
+#'   columns (character; \code{NA} to emit no codec option for that stream)
+#'   override the arguments of the same name per row; rows omitting a column fall
+#'   back to that argument. Any other columns are ignored — except a
+#'   \code{reencode} column, retired with the argument of the same name, which is
+#'   an error rather than a silent no-op.
+#' @param audio_codec A string naming the encoder for every \code{audiofile}
+#'   unless \code{jobs} carries an \code{audio_codec} column. The default
+#'   \code{"copy"} stream-copies the audio losslessly; \code{NULL} emits no
+#'   \code{-codec:a}. See \code{\link{separate_audio_video}}.
+#' @param video_codec A string naming the encoder for every \code{videofile}
+#'   unless \code{jobs} carries a \code{video_codec} column. The default
+#'   \code{"copy"} stream-copies the video losslessly; \code{NULL} emits no
+#'   \code{-codec:v}. See \code{\link{separate_audio_video}}.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -3483,8 +3503,10 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #'   \code{stream} marker (\code{"audio"} or \code{"video"}), and an added
 #'   \code{command} column — plus, when \code{run = TRUE}, a \code{success}
 #'   column (and \code{verified} / provenance manifest when requested via
-#'   \code{...}). The columns match the other \code{_batch} verbs' output plus
-#'   the \code{stream} marker. See \code{\link{ffm_batch}}.
+#'   \code{...}). When \code{jobs} supplies either codec column, a single
+#'   \code{codec} column carries each row's resolved encoder for its own stream
+#'   (\code{NA} where none is emitted). The columns match the other \code{_batch}
+#'   verbs' output plus the \code{stream} marker. See \code{\link{ffm_batch}}.
 #' @seealso [separate_audio_video()], the scalar verb it wraps; [ffm_batch()],
 #'   the batch runner; [segment_video_batch()] for the other fan-out batch verb.
 #' @family task verb functions
@@ -3498,7 +3520,8 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #' # run = FALSE compiles two commands per input without calling FFmpeg
 #' separate_audio_video_batch(jobs, run = FALSE)
 #' @export
-separate_audio_video_batch <- function(jobs, reencode = FALSE, run = TRUE,
+separate_audio_video_batch <- function(jobs, audio_codec = "copy",
+                                       video_codec = "copy", run = TRUE,
                                        parallel = FALSE, ...) {
 
   jobs <- check_batch_jobs(jobs, verb = "Audio/video separation")
@@ -3519,13 +3542,59 @@ separate_audio_video_batch <- function(jobs, reencode = FALSE, run = TRUE,
       cli::cli_abort("The {.field {col}} column of {.arg jobs} must not contain {.val {NA}}.")
     }
   }
-  if ("reencode" %in% names(jobs) &&
-      (!is.logical(jobs$reencode) || anyNA(jobs$reencode))) {
-    cli::cli_abort(
-      "The {.field reencode} column of {.arg jobs} must be {.val {TRUE}} or {.val {FALSE}} (no {.val {NA}})."
-    )
+  # M37 removed `reencode` from this verb in BOTH its spellings. The scalar
+  # sibling has no `...`, so R rejects a stale call itself; here `...` forwards
+  # ffm_batch options and would swallow a stale argument, and the reshape below
+  # builds `long` fresh and would drop a stale `jobs` column -- either way
+  # silently stream-copying output the caller asked to have re-encoded. Name the
+  # replacement instead of ignoring it -- a diagnostic, not a lifecycle shim
+  # (D014's clean break stands).
+  stale <- c(
+    if ("reencode" %in% names(list(...))) "argument",
+    if ("reencode" %in% names(jobs)) "jobs column"
+  )
+  if (length(stale) > 0) {
+    cli::cli_abort(c(
+      "The {.arg reencode} {stale} was removed from
+       {.fn separate_audio_video_batch}.",
+      "i" = "Use {.arg audio_codec} / {.arg video_codec} instead:
+             {.val copy} replaces {.code reencode = FALSE} and {.code NULL}
+             replaces {.code reencode = TRUE}.",
+      "i" = "In {.arg jobs}, name them as {.field audio_codec} /
+             {.field video_codec} columns, where {.val {NA}} leaves that
+             stream's codec unset."
+    ))
   }
-  rlang::check_bool(reencode)
+
+  # `codec` is the name the reshape below gives its resolved per-stream column,
+  # so a caller passing `codec =` would have it forwarded through `...` into the
+  # same pmap slot and applied to BOTH streams -- the cross-stream leak the
+  # per-stream split exists to make impossible. Every other _batch verb is immune
+  # because its per-row column names are also formals; this one's is not, so it
+  # is guarded here (M37 review).
+  if ("codec" %in% names(list(...))) {
+    cli::cli_abort(c(
+      "{.arg codec} is not an argument of {.fn separate_audio_video_batch}.",
+      "x" = "It names an internal per-stream column and would set the codec on
+             the audio and the video output alike.",
+      "i" = "Use {.arg audio_codec} / {.arg video_codec} to name each stream's
+             encoder separately."
+    ))
+  }
+
+  # The scalar arguments are materialized into the reshaped column below, which
+  # bypasses the per-row token check in the pipeline for their *type*: without
+  # this, `video_codec = TRUE` compiled `-codec:v TRUE` and `video_codec = NA`
+  # silently emitted nothing whenever `jobs` happened to carry a codec column
+  # (M37 review). NULL stays legal -- it is the sentinel.
+  if (!is.null(audio_codec)) rlang::check_string(audio_codec)
+  if (!is.null(video_codec)) rlang::check_string(video_codec)
+
+  # NA is legal in either codec column: it is the column form of the NULL
+  # sentinel, so these need check_batch_codec_col(), never a guard that rejects
+  # NA (M34/D016).
+  check_batch_codec_col(jobs, "audio_codec")
+  check_batch_codec_col(jobs, "video_codec")
 
   # Reshape N input rows -> 2N single-output rows (D003/D007): each input fans out
   # into an audio row (0:a -> audiofile) and a video row (0:v -> videofile),
@@ -3538,19 +3607,49 @@ separate_audio_video_batch <- function(jobs, reencode = FALSE, run = TRUE,
     output = as.vector(rbind(jobs$audiofile, jobs$videofile)),
     stream = rep(c("audio", "video"), times = n)
   )
-  if ("reencode" %in% names(jobs)) long$reencode <- rep(jobs$reencode, each = 2L)
+  # The two input-side codec columns collapse into ONE `codec` column on the
+  # reshaped table, resolved per stream: an audio row carries the audio choice, a
+  # video row the video one, so neither can reach the other's command. Each
+  # stream falls back to its own argument where `jobs` supplies no column, and
+  # the column is added only when `jobs` supplied one — a table naming no codec
+  # keeps the pre-M37 shape.
+  pick_codec <- function(col, arg) {
+    if (col %in% names(jobs)) {
+      # An all-NA column is typed logical by R (M34); as.character() carries the
+      # NA cells through as the character sentinel the reshape needs.
+      as.character(jobs[[col]])
+    } else if (is.null(arg)) {
+      rep(NA_character_, n)
+    } else {
+      rep(arg, n)
+    }
+  }
+  if (any(c("audio_codec", "video_codec") %in% names(jobs))) {
+    long$codec <- as.vector(rbind(
+      pick_codec("audio_codec", audio_codec),
+      pick_codec("video_codec", video_codec)
+    ))
+  }
   long <- reject_duplicate_outputs(long)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output pipeline per
   # reshaped row, sharing separate_stream_pipeline() with separate_audio_video().
-  # A per-row `reencode` column (via `...` from pmap) overrides the scalar arg;
-  # `...` also forwards ffm_batch options (verify/manifest/...) to the runner.
+  # The reshaped `codec` column (via `...` from pmap) already carries the
+  # column-over-argument resolution; without it each row takes its stream's
+  # argument. `...` also forwards ffm_batch options (verify/manifest/...) to the
+  # runner.
   ffm_batch(
     long,
     function(input, output, stream, ...) {
       dots <- list(...)
-      re <- if ("reencode" %in% names(dots)) dots$reencode else reencode
-      separate_stream_pipeline(input, output, stream, re)
+      codec <- if ("codec" %in% names(dots)) {
+        batch_codec_cell(dots$codec)
+      } else if (stream == "audio") {
+        audio_codec
+      } else {
+        video_codec
+      }
+      separate_stream_pipeline(input, output, stream, codec)
     },
     run = run,
     parallel = parallel,

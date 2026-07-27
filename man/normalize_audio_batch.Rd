@@ -11,6 +11,7 @@ normalize_audio_batch(
   loudness_range = 7,
   channels = NULL,
   sample_rate = NULL,
+  audio_codec = NULL,
   two_pass = FALSE,
   run = TRUE,
   parallel = FALSE,
@@ -28,7 +29,10 @@ normalization is one-input-to-one-output, a duplicated \code{input} with no
 loudness knobs — \code{target_loudness}, \code{true_peak},
 \code{loudness_range}, \code{channels}, \code{sample_rate} — may also appear
 as a column to override the corresponding argument on a per-row basis; rows
-(or knobs) that omit the column fall back to the argument's value. Any other
+(or knobs) that omit the column fall back to the argument's value. An
+optional \code{audio_codec} column (character) names each row's output
+audio encoder, with \code{NA} meaning "leave the encoder unset"; rows
+omitting it fall back to the \code{audio_codec} argument. Any other
 columns are ignored.}
 
 \item{target_loudness, true_peak, loudness_range}{The EBU R128 loudness targets
@@ -45,6 +49,13 @@ mono. \code{NULL} (default) keeps each source's channel layout.}
 \code{jobs} carries a \code{sample_rate} column. \code{NULL} (default) lets
 \code{loudnorm} choose (it resamples, up to 192 kHz encoder-capped — not the
 source rate); set this to pin the output rate.}
+
+\item{audio_codec}{The output audio encoder applied to every row, unless
+\code{jobs} carries an \code{audio_codec} column, e.g. \code{"aac"}.
+\code{NULL} (default) emits no \code{-codec:a}, leaving the output
+container's default encoder in place. \code{"copy"} is an error: loudness
+normalization filters the audio, so it must be re-encoded. See
+\code{\link{normalize_audio}}.}
 
 \item{two_pass}{A logical selecting the batch normalization mode for
 \emph{every} row (\code{two_pass} is a whole-table switch, not a per-row

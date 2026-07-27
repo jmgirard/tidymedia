@@ -8,7 +8,7 @@ _Last hygiene check: 2026-07-26 (no work since M35 close; all checks green, both
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M36 | `audio_codec` for `normalize_audio` (+ batch) — NULL sentinel, `"copy"` aborts | in-progress | — | normal | milestones/M36-normalize-audio-codec.md |
+| M36 | `audio_codec` for `normalize_audio` (+ batch) — NULL sentinel, `"copy"` aborts | review | — | normal | milestones/M36-normalize-audio-codec.md |
 | M37 | Codec args subsume `reencode` on `separate_audio_video` (+ batch) | planned | — | normal | milestones/M37-separate-av-codec-args.md |
 | M35 | `audio_codec` for the four re-encode verbs (crop/segment/compare/pip + batch) — stream-copy by default | done | — | normal | milestones/archive/M35-audio-codec-reencode-verbs.md |
 | M33 | Wire `hardware=` nvenc into `anonymize_video` (+ batch) | done | — | normal | milestones/archive/M33-anonymize-hardware.md |

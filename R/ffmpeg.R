@@ -1140,9 +1140,10 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #' measured per ITU-R BS.1770-4 -- with \code{loudness_range = 7}. This is
 #' single-pass (dynamic) \code{loudnorm}: the same input and arguments always
 #' compile to one reproducible command, with no separate measurement pass.
-#' Because the audio is filtered it is re-encoded (the container's default audio
-#' encoder). Leaving \code{channels} at \code{NULL} preserves the source channel
-#' layout. Note that FFmpeg's \code{loudnorm} filter resamples its output (up to
+#' Because the audio is filtered it is re-encoded; set \code{audio_codec} to
+#' name the output encoder, or leave it \code{NULL} to use the output
+#' container's default. Leaving \code{channels} at \code{NULL} preserves the
+#' source channel layout. Note that FFmpeg's \code{loudnorm} filter resamples its output (up to
 #' 192 kHz, capped by the encoder), so the output sample rate is \emph{not} the
 #' source rate unless you pin it: set \code{sample_rate} to control the output
 #' rate.
@@ -1161,6 +1162,12 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #'   whole number), or \code{NULL} (default) to let \code{loudnorm} choose (it
 #'   resamples, up to 192 kHz encoder-capped -- not the source rate). Set this to
 #'   pin the output rate.
+#' @param audio_codec An optional string naming the output audio encoder (e.g.
+#'   \code{"aac"}, \code{"libmp3lame"}, \code{"flac"}), passed to FFmpeg's
+#'   \code{-codec:a}. \code{NULL} (default) emits no \code{-codec:a}, leaving
+#'   the output container's default encoder in place. \code{"copy"} is an error:
+#'   loudness normalization filters the audio, so the stream must be re-encoded
+#'   and cannot be copied.
 #' @param two_pass A logical: when \code{TRUE}, use accurate two-pass
 #'   (measured/linear) normalization instead of the default single-pass
 #'   (\code{FALSE}). A first \emph{analysis pass} measures the input's loudness,
@@ -1193,6 +1200,8 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #' # Normalize to a streaming target and downmix to mono
 #' normalize_audio(video, "mono.mp4", target_loudness = -16, channels = 1,
 #'                 run = FALSE)
+#' # Name the output audio encoder instead of taking the container's default
+#' normalize_audio(video, "aac.mp4", audio_codec = "aac", run = FALSE)
 #' @export
 normalize_audio <- function(infile, outfile,
                             target_loudness = -23,
@@ -1200,6 +1209,7 @@ normalize_audio <- function(infile, outfile,
                             loudness_range = 7,
                             channels = NULL,
                             sample_rate = NULL,
+                            audio_codec = NULL,
                             two_pass = FALSE,
                             run = TRUE) {
 
@@ -1216,6 +1226,11 @@ normalize_audio <- function(infile, outfile,
   if (two_pass) {
     rlang::check_number_whole(channels, min = 1, allow_null = TRUE)
     rlang::check_number_whole(sample_rate, min = 1, allow_null = TRUE)
+    check_audio_codec_not_copy(audio_codec)
+    # Token-check here too, not only inside apply_audio_codec(): the whole point
+    # of hoisting is to fail before the analysis pass runs, and a malformed
+    # encoder name is as fatal as "copy".
+    if (!is.null(audio_codec)) check_token(audio_codec)
     measured <- run_loudnorm_analysis(infile, target_loudness, true_peak,
                                       loudness_range)
   }
@@ -1223,10 +1238,31 @@ normalize_audio <- function(infile, outfile,
   ffm_finish(
     normalize_audio_pipeline(infile, outfile, target_loudness, true_peak,
                              loudness_range, channels, sample_rate,
-                             measured = measured),
+                             audio_codec = audio_codec, measured = measured),
     run
   )
 }
+
+# check_audio_codec_not_copy(): refuse audio_codec = "copy" on the loudness
+# verbs (M36). These filter the audio, so a stream copy is impossible and
+# D017's "copy" default deliberately does not transfer. Layer 1 already refuses
+# a filtered copied stream (ffm_groups(), M02 D-M02-5) and stays the
+# enforcement point (IP1); this front door names the argument the caller
+# actually passed, and -- called before run_loudnorm_analysis() -- fails before
+# the two-pass path burns an analysis pass. One helper, three call sites
+# (pipeline, scalar two-pass pre-check, batch column guard).
+check_audio_codec_not_copy <- function(audio_codec, call = rlang::caller_env()) {
+  if (any(audio_codec == "copy", na.rm = TRUE)) {
+    cli::cli_abort(c(
+      "{.arg audio_codec} can't be {.val copy}.",
+      "x" = "Loudness normalization filters the audio, so it must be re-encoded.",
+      "i" = "Name an encoder (e.g. {.val aac}), or use {.code NULL} to leave the
+             encoder unset."
+    ), call = call)
+  }
+  invisible(audio_codec)
+}
+
 
 # normalize_audio_pipeline() ----------------------------------------------
 
@@ -1241,9 +1277,11 @@ normalize_audio_pipeline <- function(input, output,
                                      loudness_range = 7,
                                      channels = NULL,
                                      sample_rate = NULL,
+                                     audio_codec = NULL,
                                      measured = NULL) {
   rlang::check_number_whole(channels, min = 1, allow_null = TRUE)
   rlang::check_number_whole(sample_rate, min = 1, allow_null = TRUE)
+  check_audio_codec_not_copy(audio_codec)
 
   p <- ffm_files(input, output)
   # Loudness: EBU R128 loudnorm; ffm_loudnorm() validates the target ranges. With
@@ -1262,6 +1300,9 @@ normalize_audio_pipeline <- function(input, output,
   # Touch audio only: stream-copy the video bytes unchanged (the inverse of
   # standardize_video()'s audio copy).
   p <- ffm_codec(p, video = "copy")
+  # Name the audio encoder, if asked. NULL emits no -codec:a, leaving the
+  # output container's default encoder in place -- the pre-M36 behavior.
+  p <- apply_audio_codec(p, audio_codec)
   if (!is.null(channels)) {
     p <- ffm_output_options(p, paste0("-ac ", channels))
   }
@@ -2611,7 +2652,10 @@ derive_normalized_names <- function(input) {
 #'   loudness knobs — \code{target_loudness}, \code{true_peak},
 #'   \code{loudness_range}, \code{channels}, \code{sample_rate} — may also appear
 #'   as a column to override the corresponding argument on a per-row basis; rows
-#'   (or knobs) that omit the column fall back to the argument's value. Any other
+#'   (or knobs) that omit the column fall back to the argument's value. An
+#'   optional \code{audio_codec} column (character) names each row's output
+#'   audio encoder, with \code{NA} meaning "leave the encoder unset"; rows
+#'   omitting it fall back to the \code{audio_codec} argument. Any other
 #'   columns are ignored.
 #' @param target_loudness,true_peak,loudness_range The EBU R128 loudness targets
 #'   applied to every row, unless \code{jobs} carries a column of the same name
@@ -2625,6 +2669,12 @@ derive_normalized_names <- function(input) {
 #'   \code{jobs} carries a \code{sample_rate} column. \code{NULL} (default) lets
 #'   \code{loudnorm} choose (it resamples, up to 192 kHz encoder-capped — not the
 #'   source rate); set this to pin the output rate.
+#' @param audio_codec The output audio encoder applied to every row, unless
+#'   \code{jobs} carries an \code{audio_codec} column, e.g. \code{"aac"}.
+#'   \code{NULL} (default) emits no \code{-codec:a}, leaving the output
+#'   container's default encoder in place. \code{"copy"} is an error: loudness
+#'   normalization filters the audio, so it must be re-encoded. See
+#'   \code{\link{normalize_audio}}.
 #' @param two_pass A logical selecting the batch normalization mode for
 #'   \emph{every} row (\code{two_pass} is a whole-table switch, not a per-row
 #'   column). \code{FALSE} (default) keeps the single-pass \code{loudnorm}
@@ -2697,7 +2747,8 @@ derive_normalized_names <- function(input) {
 #' @export
 normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
                              loudness_range = 7, channels = NULL,
-                             sample_rate = NULL, two_pass = FALSE, run = TRUE,
+                             sample_rate = NULL, audio_codec = NULL,
+                             two_pass = FALSE, run = TRUE,
                              parallel = FALSE, ...) {
 
   rlang::check_bool(two_pass)
@@ -2733,6 +2784,13 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
       cli::cli_abort("The {.field {col}} column of {.arg jobs} must not contain {.val {NA}}.")
     }
   }
+  # audio_codec is a codec column, not a numeric knob: NA is legal and spells
+  # the NULL sentinel, so it needs check_batch_codec_col(), never the numeric
+  # guard above (M34/M35). Refuse "copy" from the argument and from any cell up
+  # front, so two-pass fails before Phase 1 wastes an analysis pass per row.
+  check_batch_codec_col(jobs, "audio_codec")
+  check_audio_codec_not_copy(audio_codec)
+  if ("audio_codec" %in% names(jobs)) check_audio_codec_not_copy(jobs$audio_codec)
 
   # Auto-name outputs when the column is absent. One input -> one output, so a
   # duplicated input with no explicit output would map to the same file; reject
@@ -2762,6 +2820,14 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
     # per row; per-value target checks stay per-row in the Phase 2 pipeline.
     rlang::check_number_whole(channels, min = 1, allow_null = TRUE)
     rlang::check_number_whole(sample_rate, min = 1, allow_null = TRUE)
+    # Same reason, for the encoder name: a malformed token would otherwise abort
+    # from apply_audio_codec() in Phase 2, after Phase 1 has already analyzed
+    # every row. The argument and every non-NA cell are checked here.
+    if (!is.null(audio_codec)) check_token(audio_codec)
+    if ("audio_codec" %in% names(jobs)) {
+      cells <- jobs$audio_codec[!is.na(jobs$audio_codec)]
+      for (cell in cells) check_token(cell)
+    }
     for (col in intersect(c("channels", "sample_rate"), names(jobs))) {
       if (any(jobs[[col]] %% 1 != 0) || any(jobs[[col]] < 1)) {
         cli::cli_abort(
@@ -2805,8 +2871,8 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
     ok_res <- if (any(!silent)) {
       run_normalize_correction(
         jobs[!silent, , drop = FALSE], target_loudness, true_peak,
-        loudness_range, channels, sample_rate, run = run, parallel = parallel,
-        ...
+        loudness_range, channels, sample_rate, audio_codec, run = run,
+        parallel = parallel, ...
       )
     } else {
       NULL
@@ -2840,7 +2906,8 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
         true_peak = pick("true_peak", true_peak),
         loudness_range = pick("loudness_range", loudness_range),
         channels = pick("channels", channels),
-        sample_rate = pick("sample_rate", sample_rate)
+        sample_rate = pick("sample_rate", sample_rate),
+        audio_codec = batch_codec_cell(pick("audio_codec", audio_codec))
       )
     },
     run = run,

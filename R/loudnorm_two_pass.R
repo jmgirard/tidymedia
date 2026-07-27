@@ -301,15 +301,17 @@ bind_two_pass_result <- function(jobs, silent, ok_res, run, verify = FALSE,
 # linear correction command per row of a jobs table already augmented with the
 # five measured columns (measured_I/TP/LRA/thresh/offset) by Phase 1. A thin
 # fan-out over ffm_batch() (D007) sharing normalize_audio_pipeline() with the
-# scalar/single-pass paths, so channels/sample_rate/-codec:v copy and the
-# per-value validation are inherited by construction. The measured columns arrive
+# scalar/single-pass paths, so channels/sample_rate/audio_codec/-codec:v copy
+# and the per-value validation are inherited by construction. A per-row
+# audio_codec column resolves through batch_codec_cell() exactly as it does on
+# the single-pass path (M36). The measured columns arrive
 # via `...` (pmap-style) and thread back as the `measured` list, switching each
 # row to linear normalization; a per-row knob column overrides the scalar arg of
 # the same name, exactly as the single-pass builder does. `...` also forwards
 # ffm_batch options (verify/manifest/...) to the runner.
 run_normalize_correction <- function(jobs, target_loudness, true_peak,
                                      loudness_range, channels, sample_rate,
-                                     run, parallel, ...) {
+                                     audio_codec = NULL, run, parallel, ...) {
   ffm_batch(
     jobs,
     function(input, output, ...) {
@@ -322,6 +324,7 @@ run_normalize_correction <- function(jobs, target_loudness, true_peak,
         loudness_range = pick("loudness_range", loudness_range),
         channels = pick("channels", channels),
         sample_rate = pick("sample_rate", sample_rate),
+        audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         measured = list(
           i = dots[["measured_I"]], tp = dots[["measured_TP"]],
           lra = dots[["measured_LRA"]], thresh = dots[["measured_thresh"]],

@@ -18,6 +18,7 @@ standardize_video(
   height = NULL,
   fps = NULL,
   video_codec = "libx264",
+  audio_codec = "copy",
   pixel_format = "yuv420p",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
@@ -55,6 +56,14 @@ standardize_video(
 
   A string naming the output video codec (default `"libx264"`).
 
+- audio_codec:
+
+  A string naming the output audio codec (default `"copy"`, i.e.
+  stream-copy the source audio unchanged). Name a real encoder (e.g.
+  `"aac"`) when the source audio codec cannot be copied into the output
+  container, or `NULL` to emit no `-codec:a` and let the container's
+  default encoder decide.
+
 - pixel_format:
 
   A string naming the output pixel format (default `"yuv420p"`).
@@ -66,7 +75,8 @@ standardize_video(
   for `video_codec`'s family is used (e.g. `"libx264"` becomes
   `"h264_nvenc"`); see
   [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
-  for availability and its caveats.
+  for availability and its caveats. Applies to video only: `audio_codec`
+  is never hardware-accelerated.
 
 - fallback:
 
@@ -89,9 +99,11 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 The default standard `standardize_video(infile, outfile)` re-encodes to
 H.264 video (`video_codec = "libx264"`) with `pixel_format = "yuv420p"`
 and `-movflags +faststart`, keeping the source resolution and frame
-rate. Audio is stream-copied unchanged (`-c:a copy`); audio
-standardization is out of scope. The same input therefore always
-compiles to a byte-identical command.
+rate. Audio is stream-copied unchanged (`-c:a copy`) unless
+`audio_codec` names an encoder; loudness standardization stays out of
+scope (see
+[`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)).
+The same input therefore always compiles to a byte-identical command.
 
 Resolution follows `width`/`height`: supplying both forces exact output
 dimensions; supplying only one preserves the aspect ratio and rounds the

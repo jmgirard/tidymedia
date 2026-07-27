@@ -15,6 +15,7 @@ anonymize_video(
   regions,
   color = "black",
   video_codec = "libx264",
+  audio_codec = "copy",
   pixel_format = "yuv420p",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
@@ -46,6 +47,14 @@ anonymize_video(
 
   A string naming the output video codec (default `"libx264"`).
 
+- audio_codec:
+
+  A string naming the output audio codec (default `"copy"`, i.e.
+  stream-copy the source audio unchanged). Name a real encoder (e.g.
+  `"aac"`) when the source audio codec cannot be copied into the output
+  container, or `NULL` to emit no `-codec:a` and let the container's
+  default encoder decide.
+
 - pixel_format:
 
   A string naming the output pixel format (default `"yuv420p"`).
@@ -57,7 +66,8 @@ anonymize_video(
   for `video_codec`'s family is used (e.g. `"libx264"` becomes
   `"h264_nvenc"`); see
   [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
-  for availability and its caveats.
+  for availability and its caveats. Applies to video only: `audio_codec`
+  is never hardware-accelerated.
 
 - fallback:
 
@@ -88,8 +98,8 @@ Because a filter is applied, the video is re-encoded (`video_codec` /
 `pixel_format`, defaulting to H.264 / `yuv420p`); odd source dimensions
 are floored to even so the output always encodes (a `yuv420p`/`libx264`
 requirement, and a no-op for already-even input). Audio is stream-copied
-unchanged (`-c:a copy`). The same input and regions therefore always
-compile to a byte-identical command.
+unchanged (`-c:a copy`) unless `audio_codec` names an encoder. The same
+input and regions therefore always compile to a byte-identical command.
 
 ## References
 

@@ -69,6 +69,35 @@
 
 ### New features
 
+- [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+  and
+  [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
+  (and their `_batch` siblings) gain an `audio_codec` argument. Both
+  verbs re-encode video and stream-copy audio, but the copy was fixed in
+  place, so there was no way to say otherwise — which mattered because a
+  stream copy fails outright when the output container cannot hold the
+  source audio codec, and the documented remedy for that (“name an
+  encoder”) had no argument to name one. `audio_codec = "copy"` is the
+  default and compiles exactly the commands these verbs compiled before,
+  so calls that name their arguments (or take the defaults) produce
+  identical output; `audio_codec = "aac"` transcodes the audio instead;
+  `audio_codec = NULL` emits no audio codec at all and lets the output
+  container choose.
+
+  The new argument sits beside `video_codec` rather than at the end, so
+  the arguments after it have all shifted one position: **calls that
+  pass `pixel_format`, `hardware`, `fallback`, or `run` by position
+  rather than by name must be updated.**
+  `standardize_video(f, out, 1280, 720, 30, "libx264", "yuv420p")` now
+  reads `"yuv420p"` as the audio codec, not the pixel format. In line
+  with this package’s pre-1.0 clean-break policy the argument is placed
+  where it belongs rather than appended for compatibility; naming your
+  arguments avoids the problem entirely.
+
+  In a jobs table, `audio_codec` may be a per-row column where `NA`
+  means “leave that row’s codec unset”. `hardware` remains batch-wide
+  and applies to video only — audio is never hardware-accelerated.
+
 - [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
   and
   [`separate_audio_video_batch()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video_batch.md)

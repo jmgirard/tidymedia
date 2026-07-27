@@ -67,6 +67,7 @@ one reproducible compiled command per input.</p>
 <span>  height <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fps <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  video_codec <span class="op">=</span> <span class="st">"libx264"</span>,</span>
+<span>  audio_codec <span class="op">=</span> <span class="st">"copy"</span>,</span>
 <span>  pixel_format <span class="op">=</span> <span class="st">"yuv420p"</span>,</span>
 <span>  hardware <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"nvenc"</span><span class="op">)</span>,</span>
 <span>  fallback <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -88,10 +89,13 @@ the destination; when absent, one is derived per row by appending
 extension (e.g. <code>clip.mkv</code> becomes <code>clip_standardized.mkv</code>).
 Because standardization is one-input-to-one-output, a duplicated
 <code>input</code> with no <code>output</code> column would collide and is rejected.
-Each of the five standardization knobs — <code>width</code>, <code>height</code>,
-<code>fps</code>, <code>video_codec</code>, <code>pixel_format</code> — may also appear as a
+Each of the six standardization knobs — <code>width</code>, <code>height</code>,
+<code>fps</code>, <code>video_codec</code>, <code>audio_codec</code>, <code>pixel_format</code> —
+may also appear as a
 column to override the corresponding argument on a per-row basis; rows (or
-knobs) that omit the column fall back to the argument's value. Any other
+knobs) that omit the column fall back to the argument's value. In an
+<code>audio_codec</code> column, <code>NA</code> leaves that row's audio codec unset
+(the column form of <code>audio_codec = NULL</code>). Any other
 columns are ignored.</p></dd>
 
 
@@ -112,6 +116,15 @@ leave the frame rate unchanged)</p></dd>
 <dt id="arg-video-codec">video_codec<a class="anchor" aria-label="anchor" href="#arg-video-codec"></a></dt>
 <dd><p>A string naming the video codec applied to every row, unless
 <code>jobs</code> carries a <code>video_codec</code> column. (default = <code>"libx264"</code>)</p></dd>
+
+
+<dt id="arg-audio-codec">audio_codec<a class="anchor" aria-label="anchor" href="#arg-audio-codec"></a></dt>
+<dd><p>A string naming the audio codec applied to every row,
+unless <code>jobs</code> carries an <code>audio_codec</code> column, in which case
+<code>NA</code> in a cell leaves that row's codec unset. <code>"copy"</code> (default)
+stream-copies the audio through untouched; name an encoder (e.g.
+<code>"aac"</code>) when the source audio cannot be copied into the output
+container.</p></dd>
 
 
 <dt id="arg-pixel-format">pixel_format<a class="anchor" aria-label="anchor" href="#arg-pixel-format"></a></dt>

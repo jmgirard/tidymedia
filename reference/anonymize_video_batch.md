@@ -18,6 +18,7 @@ anonymize_video_batch(
   jobs,
   color = "black",
   video_codec = "libx264",
+  audio_codec = "copy",
   pixel_format = "yuv420p",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
@@ -41,11 +42,13 @@ anonymize_video_batch(
   basename, keeping the input's extension (e.g. `clip.mkv` becomes
   `clip_anonymized.mkv`). Because anonymization is
   one-input-to-one-output, a duplicated `input` with no `output` column
-  would collide and is rejected. Each of the three encode knobs —
-  `color`, `video_codec`, `pixel_format` — may also appear as a column
-  to override the corresponding argument on a per-row basis; rows (or
-  knobs) that omit the column fall back to the argument's value. Any
-  other columns are ignored.
+  would collide and is rejected. Each of the four encode knobs —
+  `color`, `video_codec`, `audio_codec`, `pixel_format` — may also
+  appear as a column to override the corresponding argument on a per-row
+  basis; rows (or knobs) that omit the column fall back to the
+  argument's value. In an `audio_codec` column, `NA` leaves that row's
+  audio codec unset (the column form of `audio_codec = NULL`). Any other
+  columns are ignored.
 
 - color:
 
@@ -57,6 +60,14 @@ anonymize_video_batch(
 
   A string naming the output video codec applied to every row, unless
   `jobs` carries a `video_codec` column. (default = `"libx264"`)
+
+- audio_codec:
+
+  A string naming the output audio codec applied to every row, unless
+  `jobs` carries an `audio_codec` column, in which case `NA` in a cell
+  leaves that row's codec unset. `"copy"` (default) stream-copies the
+  audio through untouched; name an encoder (e.g. `"aac"`) when the
+  source audio cannot be copied into the output container.
 
 - pixel_format:
 

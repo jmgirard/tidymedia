@@ -34,11 +34,10 @@ format_for_web_batch(
   resolve to the same output path are rejected. Any other columns are
   ignored — including `video_codec` and `audio_codec`, which the sibling
   batch verbs read as per-row overrides but this one does not: the web
-  recipe fixes both codecs by identity (H.264 video, AAC audio). For a
-  per-row video codec use
-  [`standardize_video_batch`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md),
-  which stream-copies audio rather than exposing a codec for it; for a
-  per-row audio codec use a verb that takes one, such as
+  recipe fixes both codecs by identity (H.264 video, AAC audio). For
+  per-row codecs use a verb that exposes them, such as
+  [`standardize_video_batch`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
+  or
   [`crop_video_batch`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md).
 
 - hardware:

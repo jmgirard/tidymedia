@@ -3123,7 +3123,15 @@ reject_duplicate_outputs <- function(jobs, call = rlang::caller_env()) {
 # video_codec = NULL, the "leave the codec alone" sentinel. An all-NA column is
 # typed logical by R, so accept that too (the audio-column pattern); any other
 # type (e.g. numeric) is rejected up front rather than mid-batch.
+#
+# `na_means` states what NA spells on the CALLING verb, because the hint must be
+# true under the branch that fired the guard (M38 lesson). It is "leave the
+# codec unset" on every verb whose NULL is D016's emit-nothing sentinel, but
+# convert_audio_batch() is the one caller where NULL/NA selects `-q:a 0`
+# instead (D021), so that verb overrides the wording rather than shipping a hint
+# that contradicts its own documentation.
 check_batch_codec_col <- function(jobs, col = "video_codec",
+                                  na_means = "leave the codec unset",
                                   call = rlang::caller_env()) {
   # Legal: a character column (NA cells allowed), or the all-NA column R types
   # as logical. Testing `all(is.na(.))` alone would also admit an all-NA numeric
@@ -3133,7 +3141,7 @@ check_batch_codec_col <- function(jobs, col = "video_codec",
   if (col %in% names(jobs) && !ok(jobs[[col]])) {
     cli::cli_abort(
       "The {.field {col}} column of {.arg jobs} must be character
-       ({.val {NA}} to leave the codec unset).",
+       ({.val {NA}} to {na_means}).",
       call = call
     )
   }
@@ -3323,7 +3331,8 @@ extract_audio_batch <- function(jobs, audio_codec = "copy", run = TRUE,
 #'   optional \code{audio_codec} column overrides the \code{audio_codec}
 #'   argument per row, where \code{NA} spells "use the highest-VBR-quality
 #'   default"; rows omitting it fall back to the argument. Any other columns are
-#'   ignored.
+#'   ignored — except a \code{format} column, retired with the argument of the
+#'   same name, which is an error rather than a silent no-op.
 #' @param audio_codec The output audio codec applied to every row unless
 #'   \code{jobs} carries an \code{audio_codec} column. \code{NULL} (default)
 #'   infers the codec from each \code{output} extension at highest VBR quality;
@@ -3375,8 +3384,11 @@ convert_audio_batch <- function(jobs, audio_codec = NULL, run = TRUE,
 
   # NA is legal in the column: it is the column form of audio_codec = NULL, so
   # this needs check_batch_codec_col(), never check_batch_string_col(), which
-  # rejects NA and so cannot spell "unset" (M34/D016).
-  check_batch_codec_col(jobs, "audio_codec")
+  # rejects NA and so cannot spell "unset" (M34/D016). The hint is overridden
+  # because on THIS verb NA selects `-q:a 0` rather than leaving the codec unset
+  # (D021) -- the shared default would be false here (M38 lesson).
+  check_batch_codec_col(jobs, "audio_codec",
+                        na_means = "use the highest-VBR-quality default")
   # The scalar argument is resolved through batch_codec_cell() below, which maps
   # NA to the NULL sentinel -- so without this front-door check `audio_codec =
   # NA` would quietly compile the default instead of erroring, the M37 shape

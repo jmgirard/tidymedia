@@ -20,7 +20,8 @@ cannot be auto-named because its extension picks the output format. An
 optional \code{audio_codec} column overrides the \code{audio_codec}
 argument per row, where \code{NA} spells "use the highest-VBR-quality
 default"; rows omitting it fall back to the argument. Any other columns are
-ignored.}
+ignored — except a \code{format} column, retired with the argument of the
+same name, which is an error rather than a silent no-op.}
 
 \item{audio_codec}{The output audio codec applied to every row unless
 \code{jobs} carries an \code{audio_codec} column. \code{NULL} (default)

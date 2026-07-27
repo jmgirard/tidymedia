@@ -159,17 +159,38 @@ test_that("convert_audio_batch() rejects a numeric audio_codec column", {
   f <- make_input()
   jobs <- tibble::tibble(input = f, output = "a.mp3", audio_codec = 1)
   expect_error(convert_audio_batch(jobs, run = FALSE), "audio_codec")
+  # The hint must be true under the branch that fired it (M38 lesson): on THIS
+  # verb NA selects -q:a 0, so the shared guard's default "leave the codec
+  # unset" wording would contradict the verb's own docs.
+  msg <- conditionMessage(
+    tryCatch(convert_audio_batch(jobs, run = FALSE), error = function(e) e)
+  )
+  expect_match(msg, "highest-VBR-quality default", fixed = TRUE)
+  expect_no_match(msg, "leave the codec unset", fixed = TRUE)
 })
 
 test_that("convert_audio_batch() rejects a non-string audio_codec argument", {
-  # Resolved through batch_codec_cell() at the fan-out, which maps NA to the
-  # NULL sentinel -- so without a front-door check `audio_codec = NA` would
-  # quietly compile the default (M37 lesson).
+  # `audio_codec = NA` is the case that DISCRIMINATES: batch_codec_cell() maps
+  # it to the NULL sentinel at the fan-out, so without the front-door check it
+  # would quietly compile the default rather than erroring, and the pipeline's
+  # own check_string() never sees it. Deleting that check must turn these red.
+  # (`= 1` and `= c("aac","flac")` are caught by the pipeline's check_string()
+  # either way, so they are not asserted here -- they would pass against the
+  # pre-M40 code and so prove nothing about the new guard.)
   f <- make_input()
   jobs <- tibble::tibble(input = f, output = "a.mp3")
-  expect_error(convert_audio_batch(jobs, audio_codec = NA, run = FALSE))
-  expect_error(convert_audio_batch(jobs, audio_codec = 1, run = FALSE))
-  expect_error(convert_audio_batch(jobs, audio_codec = c("aac", "flac"), run = FALSE))
+  expect_error(
+    convert_audio_batch(jobs, audio_codec = NA, run = FALSE),
+    "must be a single string"
+  )
+  # M37's lesson prescribes the same bad value with AND without the column
+  # present: the front-door check runs unconditionally, but a guard placed after
+  # the column resolution instead would pass this second case.
+  with_col <- tibble::tibble(input = f, output = "a.mp3", audio_codec = "aac")
+  expect_error(
+    convert_audio_batch(with_col, audio_codec = NA, run = FALSE),
+    "must be a single string"
+  )
 })
 
 # Execution + ffm_batch forwarding (binary-gated) ---------------------------

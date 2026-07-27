@@ -419,6 +419,11 @@ IP1/GP1.
   choice, and it is the last inconsistency the sweep leaves behind. Noted here
   so a later milestone finds a decision rather than an oversight.
 
-The sweep is closed: every configurable transform now exposes the codec
-argument its stream needs, spelled the same way, with the same `NA`-means-unset
-column semantics.
+The sweep is closed on **spelling and shape**: every configurable transform now
+exposes the codec argument its stream needs, spelled `audio_codec` /
+`video_codec`, carried as a per-row column guarded the same way. It is
+deliberately **not** closed on semantics, and the two bullets above are what a
+later milestone should read rather than this line: `convert_audio`'s `NULL`/`NA`
+means `-q:a 0` rather than "unset", and `extract_audio` accepts neither. Anyone
+treating the family as uniform in what `NA` *means* will be wrong on two of the
+verbs.

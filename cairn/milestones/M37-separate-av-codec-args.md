@@ -75,7 +75,7 @@ configurable-transform call applied to a demux verb first).
 - [x] T2: Swap `reencode` for `audio_codec` / `video_codec` on
       `separate_audio_video()` (`R/ffmpeg.R:339`) + roxygen; assert both
       default-branch parity cases (copy default, NULL/NULL).
-- [ ] T3: Swap the arg and per-row column on `separate_audio_video_batch()`
+- [x] T3: Swap the arg and per-row column on `separate_audio_video_batch()`
       (`R/ffmpeg.R:3434`), routing each codec column to its own stream row in the
       2N reshape (`R/ffmpeg.R:3467`); reuse `check_batch_codec_col(col =)` and
       `batch_codec_cell()`; test both column-type boundaries.
@@ -95,6 +95,7 @@ configurable-transform call applied to a demux verb first).
 - 2026-07-26: implement started on `m37-separate-av-codec-args`. Question gate: the batch's reshaped table carries a single `codec` column, present only when the jobs table supplies a codec column (mirrors today's `reencode` carry-through; reads beside the existing `stream` marker).
 - 2026-07-26: T1 — `separate_stream_pipeline()` now takes a per-stream `codec` (default `"copy"`, `NULL` emits nothing), routed to the audio or video slot by `stream` via `apply_audio_codec()`/`apply_video_codec()`. Both call sites translate their still-public `reencode` at the boundary, so this task is a contract-preserving refactor pinned by the existing suite; the new behavior gets its tests at T2/T3 where it becomes publicly reachable. `devtools::test()` clean (0 failures).
 - 2026-07-26: T2 — `separate_audio_video(audio_codec = "copy", video_codec = "copy")` replaces `reencode`; roxygen rewritten (+ an MP3 example). New `tests/testthat/test-separate-av-codec.R` asserts both default-branch parity cases byte-for-byte against commands captured from `master` before the swap, per-stream routing, one-stream-only unset, and the non-string/metacharacter rejections. `devtools::document()` + `devtools::test()` clean (1510 pass).
+- 2026-07-26: T3 — `separate_audio_video_batch()` takes `audio_codec`/`video_codec` args plus per-row columns of the same names (`NA` = unset), guarded by `check_batch_codec_col(col =)`. The 2N reshape collapses the two input columns into one resolved `codec` column routed by `stream`, resolved via `batch_codec_cell()` in the runner; a jobs table naming no codec keeps the pre-M37 shape. Tests cover arg routing, per-row override, per-stream arg fallback, the carried-column shape, and both M34 column-type boundaries (all-NA logical accepted, all-NA numeric rejected). Minor plan refinement: T4's deletion half (the old per-row `reencode` guard and the tests pinning it) landed here, since leaving it would have been dead code on a removed argument; T4 keeps the arg-is-gone assertions. `devtools::test()` clean (1522 pass).
 
 ## Decisions
 

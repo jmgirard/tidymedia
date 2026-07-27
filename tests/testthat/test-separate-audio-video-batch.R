@@ -41,7 +41,7 @@ test_that("separate_audio_video_batch() glues nothing: commands equal the scalar
   expect_equal(batch$command[[2]], unname(scalar[["video"]]))
 })
 
-# AC2: jobs-table guards + reencode override ------------------------------
+# AC2: jobs-table guards + per-stream codec override ----------------------
 
 test_that("separate_audio_video_batch() rejects a non-data-frame jobs", {
   expect_error(separate_audio_video_batch(list(input = "a"), run = FALSE), "data frame")
@@ -78,7 +78,7 @@ test_that("separate_audio_video_batch() rejects NA in audiofile or videofile", {
   expect_error(separate_audio_video_batch(bad_v, run = FALSE), "videofile")
 })
 
-test_that("separate_audio_video_batch() default reencode = FALSE stream-copies each stream", {
+test_that("separate_audio_video_batch() stream-copies each stream by default", {
   f <- make_input()
   res <- separate_audio_video_batch(
     tibble::tibble(input = f, audiofile = "a.aac", videofile = "v.mp4"),
@@ -88,50 +88,104 @@ test_that("separate_audio_video_batch() default reencode = FALSE stream-copies e
   expect_match(res$command[[2]], "-codec:v copy", fixed = TRUE)   # video row
 })
 
-test_that("separate_audio_video_batch(reencode = TRUE) omits the stream copy", {
+test_that("separate_audio_video_batch() omits the stream copy when both codecs are NULL", {
   f <- make_input()
   res <- separate_audio_video_batch(
     tibble::tibble(input = f, audiofile = "a.aac", videofile = "v.mp4"),
-    reencode = TRUE, run = FALSE
+    audio_codec = NULL, video_codec = NULL, run = FALSE
   )
-  expect_no_match(res$command[[1]], "-codec:a copy", fixed = TRUE)
-  expect_no_match(res$command[[2]], "-codec:v copy", fixed = TRUE)
+  expect_no_match(res$command[[1]], "-codec", fixed = TRUE)
+  expect_no_match(res$command[[2]], "-codec", fixed = TRUE)
 })
 
-test_that("separate_audio_video_batch() reencode column overrides the arg per row", {
-  f1 <- make_input()
-  f2 <- make_input()
-  jobs <- tibble::tibble(
-    input     = c(f1, f2),
-    audiofile = c("a1.aac", "a2.aac"),
-    videofile = c("v1.mp4", "v2.mp4"),
-    reencode  = c(FALSE, TRUE)
-  )
-  # Arg says TRUE, but the column wins per input (and both of that input's rows).
-  res <- separate_audio_video_batch(jobs, reencode = TRUE, run = FALSE)
-  # Input 1 (reencode = FALSE) -> copy on its audio and video rows (1, 2)...
-  expect_match(res$command[[1]], "-codec:a copy", fixed = TRUE)
-  expect_match(res$command[[2]], "-codec:v copy", fixed = TRUE)
-  # ...input 2 (reencode = TRUE) -> no copy on its rows (3, 4).
-  expect_no_match(res$command[[3]], "-codec:a copy", fixed = TRUE)
-  expect_no_match(res$command[[4]], "-codec:v copy", fixed = TRUE)
-})
-
-test_that("separate_audio_video_batch() rejects a non-logical reencode column", {
+test_that("separate_audio_video_batch() routes each codec arg to its own stream row", {
   f <- make_input()
-  jobs <- tibble::tibble(input = f, audiofile = "a.aac", videofile = "v.mp4",
-                         reencode = "yes")
-  expect_error(separate_audio_video_batch(jobs, run = FALSE), "reencode")
+  res <- separate_audio_video_batch(
+    tibble::tibble(input = f, audiofile = "a.m4a", videofile = "v.mp4"),
+    audio_codec = "aac", video_codec = "libx264", run = FALSE
+  )
+  expect_match(res$command[[1]], "-codec:a aac", fixed = TRUE)
+  expect_match(res$command[[2]], "-codec:v libx264", fixed = TRUE)
+  # Neither choice leaks into the other stream's command.
+  expect_no_match(res$command[[1]], "libx264", fixed = TRUE)
+  expect_no_match(res$command[[2]], "aac", fixed = TRUE)
 })
 
-test_that("separate_audio_video_batch() rejects an NA in the reencode column", {
+test_that("separate_audio_video_batch() codec columns override the args per row", {
   f1 <- make_input()
   f2 <- make_input()
   jobs <- tibble::tibble(
-    input = c(f1, f2), audiofile = c("a1.aac", "a2.aac"),
-    videofile = c("v1.mp4", "v2.mp4"), reencode = c(TRUE, NA)
+    input       = c(f1, f2),
+    audiofile   = c("a1.m4a", "a2.aac"),
+    videofile   = c("v1.mp4", "v2.mp4"),
+    audio_codec = c("aac", NA),
+    video_codec = c(NA, "libx264")
   )
-  expect_error(separate_audio_video_batch(jobs, run = FALSE), "reencode")
+  # The args say copy/copy, but each column wins on the row that names a value.
+  res <- separate_audio_video_batch(jobs, run = FALSE)
+  # Input 1: audio pinned to aac, video unset by NA.
+  expect_match(res$command[[1]], "-codec:a aac", fixed = TRUE)
+  expect_no_match(res$command[[2]], "-codec:v", fixed = TRUE)
+  # Input 2: audio unset by NA, video pinned to libx264.
+  expect_no_match(res$command[[3]], "-codec:a", fixed = TRUE)
+  expect_match(res$command[[4]], "-codec:v libx264", fixed = TRUE)
+})
+
+test_that("separate_audio_video_batch() falls back to the arg for the stream with no column", {
+  f <- make_input()
+  jobs <- tibble::tibble(input = f, audiofile = "a.m4a", videofile = "v.mp4",
+                         audio_codec = "aac")
+  # Only audio_codec is supplied as a column; the video row keeps the arg.
+  res <- separate_audio_video_batch(jobs, run = FALSE)
+  expect_match(res$command[[1]], "-codec:a aac", fixed = TRUE)
+  expect_match(res$command[[2]], "-codec:v copy", fixed = TRUE)
+})
+
+test_that("separate_audio_video_batch() carries a single per-stream codec column", {
+  f <- make_input()
+  bare <- separate_audio_video_batch(
+    tibble::tibble(input = f, audiofile = "a.aac", videofile = "v.mp4"),
+    run = FALSE
+  )
+  # No codec column supplied -> none carried into the reshaped table.
+  expect_false("codec" %in% names(bare))
+
+  res <- separate_audio_video_batch(
+    tibble::tibble(input = f, audiofile = "a.m4a", videofile = "v.mp4",
+                   audio_codec = "aac"),
+    run = FALSE
+  )
+  # Supplied -> one `codec` column, resolved per stream beside the marker; the
+  # two input-side columns do not survive the reshape.
+  expect_equal(res$codec, c("aac", "copy"))
+  expect_false(any(c("audio_codec", "video_codec") %in% names(res)))
+})
+
+test_that("separate_audio_video_batch() rejects a wrong-typed codec column", {
+  f <- make_input()
+  # A numeric column is rejected at both boundaries (M34 lesson): the guard must
+  # not admit it merely because an all-NA column is legal.
+  bad_a <- tibble::tibble(input = f, audiofile = "a.aac", videofile = "v.mp4",
+                          audio_codec = 1)
+  expect_error(separate_audio_video_batch(bad_a, run = FALSE), "audio_codec")
+  bad_v <- tibble::tibble(input = f, audiofile = "a.aac", videofile = "v.mp4",
+                          video_codec = 1)
+  expect_error(separate_audio_video_batch(bad_v, run = FALSE), "video_codec")
+  # ...and an all-NA numeric column is rejected too, where all-NA logical is not.
+  bad_na <- tibble::tibble(input = f, audiofile = "a.aac", videofile = "v.mp4",
+                           audio_codec = NA_real_)
+  expect_error(separate_audio_video_batch(bad_na, run = FALSE), "audio_codec")
+})
+
+test_that("separate_audio_video_batch() accepts an all-NA codec column as unset", {
+  f <- make_input()
+  # R types an all-NA column logical; it is the column form of NULL, not a type
+  # error (M34 lesson).
+  jobs <- tibble::tibble(input = f, audiofile = "a.aac", videofile = "v.mp4",
+                         audio_codec = NA, video_codec = NA)
+  res <- separate_audio_video_batch(jobs, run = FALSE)
+  expect_no_match(res$command[[1]], "-codec", fixed = TRUE)
+  expect_no_match(res$command[[2]], "-codec", fixed = TRUE)
 })
 
 # AC3: pooled duplicate-path guard across both output columns --------------
@@ -187,7 +241,7 @@ test_that("separate_audio_video_batch() writes both streams end to end (binary-g
     audiofile = file.path(dir, c("a1.aac", "a2.aac")),
     videofile = file.path(dir, c("v1.mp4", "v2.mp4"))
   )
-  res <- separate_audio_video_batch(jobs)   # default reencode = FALSE (copy)
+  res <- separate_audio_video_batch(jobs)   # default codecs: copy both streams
   expect_equal(nrow(res), 4)                # 2 inputs -> audio + video rows each
   expect_true(all(res$success))
   expect_true(all(file.exists(res$output)))

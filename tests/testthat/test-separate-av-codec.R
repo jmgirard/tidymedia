@@ -116,3 +116,68 @@ test_that("separate_audio_video() rejects a non-string codec on either stream", 
                          run = FALSE)
   )
 })
+
+# AC6: execution — copy preserves the source codec, a name transcodes -------
+
+test_that("separate_audio_video() copy preserves each source codec (binary-gated)", {
+  skip_if_no_ffmpeg()
+  skip_if_no_ffprobe()
+  # MP3-in-MP4: the source audio codec is NOT the MP4 container's default, so a
+  # stream copy is distinguishable from a re-encode by the output alone (M35).
+  input <- make_mp3_audio_video()
+  expect_equal(probe_audio(infile = input)$codec_name, "mp3")
+
+  dir <- withr::local_tempdir()
+  audiofile <- file.path(dir, "a.mp4")
+  videofile <- file.path(dir, "v.mp4")
+  separate_audio_video(input, audiofile, videofile)   # defaults: copy both
+  expect_equal(probe_audio(infile = audiofile)$codec_name, "mp3")
+  expect_equal(probe_video(infile = videofile)$codec_name,
+               probe_video(infile = input)$codec_name)
+})
+
+test_that("separate_audio_video() transcodes the stream whose codec is named (binary-gated)", {
+  skip_if_no_ffmpeg()
+  skip_if_no_ffprobe()
+  input <- make_mp3_audio_video()
+  dir <- withr::local_tempdir()
+  audiofile <- file.path(dir, "a.m4a")
+  videofile <- file.path(dir, "v.mp4")
+  # Naming an encoder on one stream re-encodes it; the other keeps its default
+  # copy, so the two arguments are observably independent end to end.
+  separate_audio_video(input, audiofile, videofile, audio_codec = "aac")
+  expect_equal(probe_audio(infile = audiofile)$codec_name, "aac")
+  expect_equal(probe_video(infile = videofile)$codec_name,
+               probe_video(infile = input)$codec_name)
+})
+
+test_that("separate_audio_video() NULL hands the codec to the container (binary-gated)", {
+  skip_if_no_ffmpeg()
+  skip_if_no_ffprobe()
+  input <- make_mp3_audio_video()
+  dir <- withr::local_tempdir()
+  audiofile <- file.path(dir, "a.mp4")
+  videofile <- file.path(dir, "v.mp4")
+  # The pre-M37 `reencode = TRUE` behavior: no -codec:a, so MP4's default
+  # encoder decides and the source mp3 becomes aac.
+  separate_audio_video(input, audiofile, videofile, audio_codec = NULL)
+  expect_equal(probe_audio(infile = audiofile)$codec_name, "aac")
+})
+
+test_that("separate_audio_video_batch() honors a per-row codec column end to end (binary-gated)", {
+  skip_if_no_ffmpeg()
+  skip_if_no_ffprobe()
+  input <- make_mp3_audio_video()
+  dir <- withr::local_tempdir()
+  jobs <- tibble::tibble(
+    input       = c(input, input),
+    audiofile   = file.path(dir, c("a1.mp4", "a2.m4a")),
+    videofile   = file.path(dir, c("v1.mp4", "v2.mp4")),
+    audio_codec = c("copy", "aac")
+  )
+  res <- separate_audio_video_batch(jobs)
+  expect_true(all(res$success))
+  # Row 1 copied the mp3 through; row 2 transcoded it to aac.
+  expect_equal(probe_audio(infile = jobs$audiofile[[1]])$codec_name, "mp3")
+  expect_equal(probe_audio(infile = jobs$audiofile[[2]])$codec_name, "aac")
+})

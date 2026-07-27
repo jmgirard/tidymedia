@@ -86,7 +86,7 @@ configurable-transform call applied to a demux verb first).
 - [x] T5: Public-surface sweep (M23 lesson) — grep `vignettes/`, roxygen
       `@examples`, `README.Rmd`, `_pkgdown.yml` for these verbs' `reencode` and
       update every hit; confirm the other verbs' `reencode` is left alone.
-- [ ] T6: Execution tests for the copy and named-encoder paths using
+- [x] T6: Execution tests for the copy and named-encoder paths using
       `make_mp3_audio_video()`; `skip_if` binaries absent.
 - [ ] T7: `NEWS.md` breaking-change entry, `devtools::document()`; append the
       `DECISIONS.md` entry recording the subsumption and the D014 waiver.
@@ -100,6 +100,7 @@ configurable-transform call applied to a demux verb first).
 - 2026-07-26: T3 — `separate_audio_video_batch()` takes `audio_codec`/`video_codec` args plus per-row columns of the same names (`NA` = unset), guarded by `check_batch_codec_col(col =)`. The 2N reshape collapses the two input columns into one resolved `codec` column routed by `stream`, resolved via `batch_codec_cell()` in the runner; a jobs table naming no codec keeps the pre-M37 shape. Tests cover arg routing, per-row override, per-stream arg fallback, the carried-column shape, and both M34 column-type boundaries (all-NA logical accepted, all-NA numeric rejected). Minor plan refinement: T4's deletion half (the old per-row `reencode` guard and the tests pinning it) landed here, since leaving it would have been dead code on a removed argument; T4 keeps the arg-is-gone assertions. `devtools::test()` clean (1522 pass).
 - 2026-07-26: T4 — arg-is-gone assertions added. Substantive amendment (user-gated, option A): the scalar verb errors with R's own `unused argument`, but the batch verb's `...` swallowed a stale `reencode` silently and stream-copied output the caller asked to re-encode, so the batch now aborts naming `audio_codec`/`video_codec` as the replacement — a diagnostic, not a `lifecycle` shim; D014's clean break stands. AC4 amended accordingly (text shown in chat before this commit). `devtools::test()` clean (1527 pass).
 - 2026-07-26: T5 — public-surface sweep clean, no edits owed. `reencode` count is 0 in both verbs' `.Rd` files; the only surviving mention under `R/` for these verbs is the T4 migration guard. `vignettes/batch.Rmd:98` calls `separate_audio_video()` without naming `reencode`, so it still compiles; `_pkgdown.yml` lists names only; `README.Rmd` never mentions either verb. Out-of-scope `reencode` intact: `man/segment_video.Rd` (4 hits), `man/segment_video_batch.Rd` (7), `man/ffm_seek.Rd` (6), and `vignettes/tidymedia.Rmd`'s `ffm_seek()` example.
+- 2026-07-26: T6 — four binary-gated execution tests on the MP3-in-MP4 fixture: the copy default keeps `mp3` in the audio output (a re-encode into MP4 would yield `aac`) and preserves the video codec; `audio_codec = "aac"` transcodes while the video stream stays copied; `audio_codec = NULL` reproduces the pre-M37 container-default `aac`; and a per-row `audio_codec` column drives copy vs transcode across two rows of one batch. `devtools::test()` clean (1536 pass).
 
 ## Decisions
 

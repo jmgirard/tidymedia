@@ -92,6 +92,7 @@ candidate row.
 - 2026-07-26: T6 done - roxygen example, NEWS entry under New features, document(), D019 appended.
 - 2026-07-26: all tasks done; test() 1490 pass / 0 fail, document() no diff, check() Status: OK (0/0/0), check_pkgdown() clean. Status -> review.
 - 2026-07-26: review in progress - draft PR #38 open, CI 9/9 green; all six AC ticked against fresh evidence; consistency gate clean. Blame-history and prior-PR-comments lenses reported zero findings; diff-bug lens still running, findings triage not yet done.
+- 2026-07-26: diff-bug lens returned 4 findings; scorer gave F1=85, F3=82, F2=68, F4=55. Fixed F1 and F3 with regression tests; F2/F4 logged below the bar. Re-verified: test() 1494 pass, check() Status: OK, document() no diff.
 
 ## Decisions
 
@@ -132,4 +133,39 @@ candidate row.
 in sync; `pkgdown::check_pkgdown()` "No problems found"; NEWS carries a user-facing entry with
 no milestone number; no new top-level files, so no `.Rbuildignore` change owed;
 `devtools::check()` clean. CI on PR #38: 9/9 green.
+
+**Independent review — three lenses + scorer.**
+
+- [S] blame-history: zero findings. Verified M18 continue-and-mark-on-silence, M19 schema
+  parity through `bind_two_pass_result()`, the M16/M17 analyze-then-build pattern, and the
+  M13 validation-lives-once convention are all preserved; no test assertions deleted.
+- [S] prior-PR-comments: zero findings. `gh api .../pulls/comments` probe returned `[]`, so
+  the thread walk was skipped; archive `## Review` sections for M34/M35 were the evidence.
+  M35's CRLF-rewrite finding did NOT recur (master 4176 CRs -> 4243, diff proportionate at
+  +64/-9 on R/ffmpeg.R); M34's all-NA column lesson correctly reused via `check_batch_codec_col`.
+- [O] diff-bug: four findings, scored by a fresh [S] scorer. Two actioned (>=80), two logged.
+
+Actioned:
+
+- F1 (85) — the `"copy"` abort's hint used `{.val NULL}`, which cli renders as the quoted
+  string `"NULL"`; `"NULL"` is a valid `check_token`, so a user following the hint compiles
+  `-codec:a NULL` and fails again at FFmpeg run time. The only `{.val NULL}` in the package.
+  FIXED: `{.code NULL}`, plus a regression test asserting the message never offers `"NULL"`.
+- F3 (82) — the copy check was hoisted above `run_loudnorm_analysis()` so two-pass fails
+  before burning an analysis pass, but the *token* check was not, so a malformed encoder name
+  aborted only in Phase 2 — after every row had been analyzed. FIXED: `check_token()` hoisted
+  into both two-pass preludes (argument and every non-NA column cell), with two regression
+  tests using an undecodable input to discriminate hoisted-vs-not.
+
+Logged below the score bar, not actioned (surfaced per IP3):
+
+- F2 (68) — a `"copy"` cell in the jobs column reports as `` `audio_codec` `` (the argument),
+  naming neither the column nor the row index, unlike the sibling guards beside it. Real
+  inconsistency; harm limited because the column shares the argument's name.
+- F4 (55) — no end-to-end test pins `normalize_audio_batch(two_pass = TRUE, audio_codec = )`;
+  the seam is covered by direct `run_normalize_correction()` unit tests instead. Scored as a
+  hardening suggestion, not a present defect — the path was verified working by the reviewer.
+
+**Post-fix re-verification.** `devtools::test()` 1494 pass / 0 fail / 4 skip;
+`devtools::check()` `Status: OK` (0/0/0); `document()` no diff; `cairn_validate` exit 0.
 

@@ -268,3 +268,34 @@ test_that("normalize_audio(audio_codec = ) reaches the written output", {
   normalize_audio(src, unset)
   expect_equal(probe_audio(infile = unset)$codec_name, "aac")
 })
+
+
+# Review findings F1/F3 (M36) -------------------------------------------------
+
+test_that("the 'copy' abort points at NULL as code, not as a string to pass", {
+  f <- make_input()
+  msg <- tryCatch(
+    normalize_audio(f, "out.mp4", audio_codec = "copy", run = FALSE),
+    error = conditionMessage
+  )
+  # `{.val NULL}` would render "NULL" quoted, reading as a value to pass -- and
+  # "NULL" is a valid token, so following that hint compiles `-codec:a NULL`.
+  expect_no_match(msg, '"NULL"', fixed = TRUE)
+  expect_match(msg, "NULL", fixed = TRUE)
+})
+
+test_that("two_pass validates the encoder token before running the analysis pass", {
+  skip_if_no_ffmpeg()
+  # A file that exists but is not decodable: with the token check hoisted, the
+  # malformed encoder aborts before Phase 1 is attempted, so the error is about
+  # the token. Without the hoist, ffmpeg would be run first and fail on the
+  # unreadable input instead.
+  bad <- withr::local_tempfile(fileext = ".mp4")
+  writeLines("not a media file", bad)
+  msg <- tryCatch(
+    normalize_audio(bad, "out.mp4", audio_codec = "libmp3 lame",
+                    two_pass = TRUE, run = FALSE),
+    error = conditionMessage
+  )
+  expect_match(msg, "single clean token", fixed = TRUE)
+})

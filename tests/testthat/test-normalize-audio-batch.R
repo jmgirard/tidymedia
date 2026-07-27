@@ -537,3 +537,17 @@ test_that("normalize_audio_batch() rejects 'copy' from the argument and the colu
     "audio_codec"
   )
 })
+
+
+test_that("two_pass validates audio_codec cells before Phase 1 (M36 review F3)", {
+  skip_if_no_ffmpeg()
+  bad <- withr::local_tempfile(fileext = ".mp4")
+  writeLines("not a media file", bad)
+  jobs <- tibble::tibble(input = bad, output = "a.mp4",
+                         audio_codec = "libmp3 lame")
+  msg <- tryCatch(
+    normalize_audio_batch(jobs, two_pass = TRUE, run = FALSE),
+    error = conditionMessage
+  )
+  expect_match(msg, "single clean token", fixed = TRUE)
+})

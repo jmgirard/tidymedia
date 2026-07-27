@@ -1227,6 +1227,10 @@ normalize_audio <- function(infile, outfile,
     rlang::check_number_whole(channels, min = 1, allow_null = TRUE)
     rlang::check_number_whole(sample_rate, min = 1, allow_null = TRUE)
     check_audio_codec_not_copy(audio_codec)
+    # Token-check here too, not only inside apply_audio_codec(): the whole point
+    # of hoisting is to fail before the analysis pass runs, and a malformed
+    # encoder name is as fatal as "copy".
+    if (!is.null(audio_codec)) check_token(audio_codec)
     measured <- run_loudnorm_analysis(infile, target_loudness, true_peak,
                                       loudness_range)
   }
@@ -1252,7 +1256,7 @@ check_audio_codec_not_copy <- function(audio_codec, call = rlang::caller_env()) 
     cli::cli_abort(c(
       "{.arg audio_codec} can't be {.val copy}.",
       "x" = "Loudness normalization filters the audio, so it must be re-encoded.",
-      "i" = "Name an encoder (e.g. {.val aac}), or use {.val NULL} to leave the
+      "i" = "Name an encoder (e.g. {.val aac}), or use {.code NULL} to leave the
              encoder unset."
     ), call = call)
   }
@@ -2816,6 +2820,14 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
     # per row; per-value target checks stay per-row in the Phase 2 pipeline.
     rlang::check_number_whole(channels, min = 1, allow_null = TRUE)
     rlang::check_number_whole(sample_rate, min = 1, allow_null = TRUE)
+    # Same reason, for the encoder name: a malformed token would otherwise abort
+    # from apply_audio_codec() in Phase 2, after Phase 1 has already analyzed
+    # every row. The argument and every non-NA cell are checked here.
+    if (!is.null(audio_codec)) check_token(audio_codec)
+    if ("audio_codec" %in% names(jobs)) {
+      cells <- jobs$audio_codec[!is.na(jobs$audio_codec)]
+      for (cell in cells) check_token(cell)
+    }
     for (col in intersect(c("channels", "sample_rate"), names(jobs))) {
       if (any(jobs[[col]] %% 1 != 0) || any(jobs[[col]] < 1)) {
         cli::cli_abort(

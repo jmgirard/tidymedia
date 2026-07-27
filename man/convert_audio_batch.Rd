@@ -4,20 +4,28 @@
 \alias{convert_audio_batch}
 \title{Convert the Audio of Many Files From a Jobs Table}
 \usage{
-convert_audio_batch(jobs, format = NULL, run = TRUE, parallel = FALSE, ...)
+convert_audio_batch(
+  jobs,
+  audio_codec = NULL,
+  run = TRUE,
+  parallel = FALSE,
+  ...
+)
 }
 \arguments{
 \item{jobs}{A data frame with one row per input and (at least) an
 \code{input} column (source path) and an \code{output} column (destination
 path). An \code{output} column is \strong{required} — an audio destination
 cannot be auto-named because its extension picks the output format. An
-optional \code{format} column overrides the \code{format} argument per row;
-rows omitting it fall back to the argument. Any other columns are ignored.}
+optional \code{audio_codec} column overrides the \code{audio_codec}
+argument per row, where \code{NA} spells "use the highest-VBR-quality
+default"; rows omitting it fall back to the argument. Any other columns are
+ignored.}
 
-\item{format}{The output audio codec applied to every row unless \code{jobs}
-carries a \code{format} column. \code{NULL} (default) infers the format
-from each \code{output} extension at highest VBR quality; name a codec
-(e.g. \code{"aac"}, \code{"flac"}) to pin \code{-c:a}.}
+\item{audio_codec}{The output audio codec applied to every row unless
+\code{jobs} carries an \code{audio_codec} column. \code{NULL} (default)
+infers the codec from each \code{output} extension at highest VBR quality;
+name a codec (e.g. \code{"aac"}, \code{"flac"}) to pin \code{-c:a}.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}
@@ -41,8 +49,8 @@ tibble — the \strong{batch} (table-driven) sibling of \code{\link[=convert_aud
 you have more than one file. Each row is one input; \code{input} and
 \code{output} columns are required. This is a thin wrapper over
 \code{\link{ffm_batch}}: one reproducible compiled command per input, sharing
-the same audio-map pipeline (and per-value \code{format} validation) as the
-scalar verb.
+the same audio-map pipeline (and per-value \code{audio_codec} validation) as
+the scalar verb.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

@@ -4,17 +4,19 @@
 \alias{convert_audio}
 \title{Extract or convert a media file's audio track}
 \usage{
-convert_audio(infile, outfile, format = NULL, run = TRUE)
+convert_audio(infile, outfile, audio_codec = NULL, run = TRUE)
 }
 \arguments{
 \item{infile}{A string containing the path to a media file.}
 
 \item{outfile}{A string containing the path of the audio file to write.}
 
-\item{format}{An optional string naming the output audio codec (e.g.
+\item{audio_codec}{An optional string naming the output audio codec (e.g.
 \code{"libmp3lame"}, \code{"aac"}, \code{"flac"}), passed to FFmpeg's
-\code{-c:a}. When \code{NULL} (default), the format is inferred from the
-\code{outfile} extension.}
+\code{-c:a}. When \code{NULL} (default), the codec is inferred from the
+\code{outfile} extension and encoded at highest VBR quality. Unlike the
+other transform verbs, \code{NULL} here is \emph{not} the "leave the codec
+unset" sentinel — it selects \code{-q:a 0}.}
 
 \item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
 or return the compiled command without running it (\code{FALSE}).}
@@ -24,15 +26,15 @@ The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 }
 \description{
 Maps the audio stream of \code{infile} into \code{outfile}. By default
-(\code{format = NULL}) the output format follows the \code{outfile} file
+(\code{audio_codec = NULL}) the output format follows the \code{outfile} file
 extension at highest VBR quality (\code{-q:a 0}) — e.g. an \code{.mp3}
-extension yields an MP3. Pass \code{format} to pin the output audio codec
-explicitly, regardless of the extension.
+extension yields an MP3. Pass \code{audio_codec} to pin the output audio
+codec explicitly, regardless of the extension.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 convert_audio(video, "audio.mp3", run = FALSE)
-convert_audio(video, "audio.m4a", format = "aac", run = FALSE)
+convert_audio(video, "audio.m4a", audio_codec = "aac", run = FALSE)
 }
 \seealso{
 \code{\link[=ffm_codec]{ffm_codec()}} and \code{\link[=ffm_map]{ffm_map()}}, the builders it wraps;

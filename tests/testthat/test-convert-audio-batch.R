@@ -10,7 +10,7 @@ test_that("convert_audio_batch() returns one convert command per job", {
   res <- convert_audio_batch(jobs, run = FALSE)
   expect_s3_class(res, "tbl_df")
   expect_equal(nrow(res), 2)
-  # Default (format = NULL) is highest-VBR-quality, audio-only.
+  # Default (audio_codec = NULL) is highest-VBR-quality, audio-only.
   expect_match(res$command[[1]], "-q:a 0 -map a", fixed = TRUE)
   expect_match(res$command[[1]], '"a.mp3"', fixed = TRUE)
 })
@@ -23,31 +23,91 @@ test_that("convert_audio_batch() command is byte-identical to the scalar verb", 
   expect_identical(res$command[[1]], scalar)
 })
 
-test_that("convert_audio_batch() parity holds with a pinned format", {
+test_that("convert_audio_batch() parity holds with a pinned audio_codec", {
   f <- make_input()
   res <- convert_audio_batch(tibble::tibble(input = f, output = "out.m4a"),
-                             format = "aac", run = FALSE)
-  scalar <- convert_audio(f, "out.m4a", format = "aac", run = FALSE)
+                             audio_codec = "aac", run = FALSE)
+  scalar <- convert_audio(f, "out.m4a", audio_codec = "aac", run = FALSE)
   expect_identical(res$command[[1]], scalar)
 })
 
 # Per-row override column ---------------------------------------------------
 
-test_that("convert_audio_batch() honors a per-row format column", {
+test_that("convert_audio_batch() honors a per-row audio_codec column", {
   f1 <- make_input()
   f2 <- make_input()
   jobs <- tibble::tibble(input = c(f1, f2), output = c("a.m4a", "b.flac"),
-                         format = c("aac", "flac"))
+                         audio_codec = c("aac", "flac"))
   res <- convert_audio_batch(jobs, run = FALSE)
   expect_match(res$command[[1]], "-codec:a aac", fixed = TRUE)
   expect_match(res$command[[2]], "-codec:a flac", fixed = TRUE)
 })
 
-test_that("convert_audio_batch() falls back to the format argument with no column", {
+test_that("convert_audio_batch() column overrides the audio_codec argument", {
+  f1 <- make_input()
+  f2 <- make_input()
+  # The column must WIN over a non-default argument -- asserting only against a
+  # NULL argument would pass even if the column were ignored (M39 lesson,
+  # inverted): here the argument names flac and the column names aac.
+  jobs <- tibble::tibble(input = c(f1, f2), output = c("a.m4a", "b.m4a"),
+                         audio_codec = c("aac", NA))
+  res <- convert_audio_batch(jobs, audio_codec = "flac", run = FALSE)
+  expect_match(res$command[[1]], "-codec:a aac", fixed = TRUE)
+  # NA is the column form of the NULL sentinel: back to the -q:a 0 default, NOT
+  # the flac argument and NOT an emitted -codec:a.
+  expect_match(res$command[[2]], "-q:a 0", fixed = TRUE)
+  expect_no_match(res$command[[2]], "-codec:a", fixed = TRUE)
+})
+
+test_that("convert_audio_batch() accepts an all-NA (logical) audio_codec column", {
+  # R types an all-NA column logical, which an is.character-only guard would
+  # wrongly reject (M34 lesson). Every row falls back to the default.
+  f1 <- make_input()
+  f2 <- make_input()
+  jobs <- tibble::tibble(input = c(f1, f2), output = c("a.mp3", "b.mp3"),
+                         audio_codec = c(NA, NA))
+  expect_true(is.logical(jobs$audio_codec))
+  res <- convert_audio_batch(jobs, run = FALSE)
+  expect_match(res$command[[1]], "-q:a 0", fixed = TRUE)
+  expect_match(res$command[[2]], "-q:a 0", fixed = TRUE)
+})
+
+test_that("convert_audio_batch() falls back to the audio_codec argument with no column", {
   f <- make_input()
   res <- convert_audio_batch(tibble::tibble(input = f, output = "a.m4a"),
-                             format = "aac", run = FALSE)
+                             audio_codec = "aac", run = FALSE)
   expect_match(res$command[[1]], "-codec:a aac", fixed = TRUE)
+})
+
+# Retired `format` spelling (M40) -------------------------------------------
+
+test_that("convert_audio_batch() aborts on the retired format argument", {
+  # `...` forwards ffm_batch options and would otherwise swallow the retired
+  # argument in silence, ignoring the codec the caller named (M37 lesson).
+  f <- make_input()
+  jobs <- tibble::tibble(input = f, output = "a.m4a")
+  expect_error(
+    convert_audio_batch(jobs, format = "aac", run = FALSE),
+    "audio_codec"
+  )
+  expect_error(
+    convert_audio_batch(jobs, format = "aac", run = FALSE),
+    "argument"
+  )
+})
+
+test_that("convert_audio_batch() aborts on the retired format jobs column", {
+  # A stale column would otherwise fall through as one of the ignored columns.
+  f <- make_input()
+  jobs <- tibble::tibble(input = f, output = "a.m4a", format = "aac")
+  expect_error(
+    convert_audio_batch(jobs, run = FALSE),
+    "audio_codec"
+  )
+  expect_error(
+    convert_audio_batch(jobs, run = FALSE),
+    "jobs column"
+  )
 })
 
 # Return schema -------------------------------------------------------------
@@ -93,10 +153,23 @@ test_that("convert_audio_batch() rejects a duplicated explicit output (M26)", {
   expect_error(convert_audio_batch(jobs, run = FALSE), "same output path")
 })
 
-test_that("convert_audio_batch() rejects a non-character format column", {
+test_that("convert_audio_batch() rejects a numeric audio_codec column", {
+  # The other boundary of the all-NA-logical case above: a numeric column is
+  # rejected up front rather than mid-batch (M34 lesson).
   f <- make_input()
-  jobs <- tibble::tibble(input = f, output = "a.mp3", format = 1)
-  expect_error(convert_audio_batch(jobs, run = FALSE), "format")
+  jobs <- tibble::tibble(input = f, output = "a.mp3", audio_codec = 1)
+  expect_error(convert_audio_batch(jobs, run = FALSE), "audio_codec")
+})
+
+test_that("convert_audio_batch() rejects a non-string audio_codec argument", {
+  # Resolved through batch_codec_cell() at the fan-out, which maps NA to the
+  # NULL sentinel -- so without a front-door check `audio_codec = NA` would
+  # quietly compile the default (M37 lesson).
+  f <- make_input()
+  jobs <- tibble::tibble(input = f, output = "a.mp3")
+  expect_error(convert_audio_batch(jobs, audio_codec = NA, run = FALSE))
+  expect_error(convert_audio_batch(jobs, audio_codec = 1, run = FALSE))
+  expect_error(convert_audio_batch(jobs, audio_codec = c("aac", "flac"), run = FALSE))
 })
 
 # Execution + ffm_batch forwarding (binary-gated) ---------------------------
@@ -107,7 +180,7 @@ test_that("convert_audio_batch() writes converted audio outputs (binary-gated)",
   out1 <- withr::local_tempfile(fileext = ".m4a")
   out2 <- withr::local_tempfile(fileext = ".m4a")
   jobs <- tibble::tibble(input = c(v1, v2), output = c(out1, out2),
-                         format = c("aac", "aac"))
+                         audio_codec = c("aac", "aac"))
   res <- convert_audio_batch(jobs)
   expect_true(all(res$success))
   expect_true(all(file.exists(res$output)))
@@ -116,7 +189,7 @@ test_that("convert_audio_batch() writes converted audio outputs (binary-gated)",
 test_that("convert_audio_batch() forwards verify (binary-gated)", {
   v <- make_test_video()
   out <- withr::local_tempfile(fileext = ".m4a")
-  jobs <- tibble::tibble(input = v, output = out, format = "aac")
+  jobs <- tibble::tibble(input = v, output = out, audio_codec = "aac")
   res <- convert_audio_batch(jobs, verify = list(audio_codec = "aac"))
   expect_true(all(res$success))
   expect_true("verified" %in% names(res))

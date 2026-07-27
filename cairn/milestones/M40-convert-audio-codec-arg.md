@@ -73,17 +73,18 @@ changed here.
 
 ## Tasks
 
-- [ ] T1 Rename the formal in `convert_audio_pipeline()` (`R/ffmpeg.R:440`) and
+- [x] T1 Rename the formal in `convert_audio_pipeline()` (`R/ffmpeg.R:440`) and
       `convert_audio()` (`R/ffmpeg.R:478`); keep the `-q:a 0` NULL branch intact.
-- [ ] T2 Scalar tests: `NULL` → `-q:a 0`, named → `-c:a` and no `-q:a`, parity
+- [x] T2 Scalar tests: `NULL` → `-q:a 0`, named → `-c:a` and no `-q:a`, parity
       against the recorded pre-rename commands, `format =` errors.
-- [ ] T3 `convert_audio_batch()` (`R/ffmpeg.R:3275`): rename the argument, add
+- [x] T3 `convert_audio_batch()` (`R/ffmpeg.R:3275`): rename the argument, add
       the two retired-spelling guards (argument arriving via `...`, and a
       `format` jobs column), swap in `check_batch_codec_col(jobs,
-      "audio_codec")` and `batch_codec_cell()`.
-- [ ] T4 Batch tests: retired argument and retired column each abort naming the
+      "audio_codec")` and `batch_codec_cell()`. Plus a front-door
+      `check_string()` on the non-`NULL` scalar argument (2026-07-26 gate).
+- [x] T4 Batch tests: retired argument and retired column each abort naming the
       replacement; column overrides the scalar; `NA` → default; all-`NA`
-      logical accepted; numeric aborts.
+      logical accepted; numeric aborts; non-string argument aborts.
 - [ ] T5 Docs sweep: roxygen `@param`/`@examples`, grep `vignettes/`,
       `README.Rmd`, `_pkgdown.yml`; NEWS.md entry; `devtools::document()`, and
       `devtools::build_readme()` only if README.Rmd actually changed (M24: revert
@@ -95,6 +96,9 @@ changed here.
 
 - 2026-07-26: created by /milestone-plan.
 - 2026-07-26: status → in-progress; branch `m40-convert-audio-codec-arg` cut from master.
+- 2026-07-26: question gate — `audio_codec = NA` on the batch verb resolves through `batch_codec_cell()` to the NULL sentinel, so it would silently compile the default (the M37 shape). User chose: guard `convert_audio_batch()` only; the same gap on the three M36/M39 verbs gets a ROADMAP candidate row.
+- 2026-07-26: minor amendment — T1–T4 land in one checkpoint. Renaming the shared `convert_audio_pipeline()` formal breaks its batch caller by construction, so scalar-only and batch-only checkpoints cannot both leave `devtools::test()` clean. Task text and ordering otherwise unchanged. Roxygen `@param` for the scalar moved from T5 into T1 for the same reason (a stale `@examples format =` fails `check()`).
+- 2026-07-26: T1–T4 done. `format` → `audio_codec` on `convert_audio()`, `convert_audio_batch()`, and the shared pipeline; both retired-spelling guards added; column guard swapped to `check_batch_codec_col()` + `batch_codec_cell()`. Commands verified byte-identical to the pre-rename recordings on both branches. `devtools::test()` 0 failures / 1672 passing.
 
 ## Decisions
 

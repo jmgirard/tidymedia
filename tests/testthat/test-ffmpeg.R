@@ -107,18 +107,45 @@ test_that("extract_audio(audio_codec=) sets the audio codec", {
   expect_match(cmd, "-codec:a aac -vn", fixed = TRUE)
 })
 
-test_that("convert_audio() default (format = NULL) compiles to -q:a 0 -map a", {
+test_that("convert_audio() default (audio_codec = NULL) compiles to -q:a 0 -map a", {
   f <- make_input()
   cmd <- convert_audio(f, "out.mp3", run = FALSE)
   expect_match(cmd, "-q:a 0 -map a", fixed = TRUE)
 })
 
-test_that("convert_audio(format=) pins -codec:a and drops -q:a", {
+test_that("convert_audio(audio_codec=) pins -codec:a and drops -q:a", {
   f <- make_input()
-  cmd <- convert_audio(f, "out.m4a", format = "aac", run = FALSE)
+  cmd <- convert_audio(f, "out.m4a", audio_codec = "aac", run = FALSE)
   expect_match(cmd, "-codec:a aac", fixed = TRUE)
   expect_match(cmd, "-map a", fixed = TRUE)
   expect_no_match(cmd, "-q:a", fixed = TRUE)
+})
+
+test_that("convert_audio() rename is byte-identical to the pre-M40 commands", {
+  # M40 renamed `format` to `audio_codec` without touching the recipe, so both
+  # branches must still compile exactly what the pre-rename verb compiled. The
+  # expectations below are the commands recorded from master before the rename,
+  # not a re-derivation from the current code.
+  f <- make_input()
+  expect_identical(
+    convert_audio(f, "out.mp3", run = FALSE),
+    paste0('-y -i "', f, '" -q:a 0 -map a "out.mp3"')
+  )
+  expect_identical(
+    convert_audio(f, "out.m4a", audio_codec = "aac", run = FALSE),
+    paste0('-y -i "', f, '" -codec:a aac -map a "out.m4a"')
+  )
+})
+
+test_that("convert_audio() rejects the retired `format` argument", {
+  # The scalar verb has no `...`, so R's own `unused argument` is the guard --
+  # no cli_abort of ours (M37 lesson). Assert the retired spelling really is an
+  # error rather than being silently swallowed.
+  f <- make_input()
+  expect_error(
+    convert_audio(f, "out.m4a", format = "aac", run = FALSE),
+    "unused argument"
+  )
 })
 
 test_that("crop_video() compiles to a crop filter mapping all streams", {

@@ -433,18 +433,23 @@ separate_audio_video <- function(infile, audiofile, videofile,
 # convert_audio() ---------------------------------------------------------
 
 # Shared recipe behind convert_audio() and convert_audio_batch(): map the audio
-# stream out and either encode at highest VBR quality (`format = NULL`, the
-# extension picks the codec) or pin `-c:a` to `format`. The per-value
-# check_string(format) lives here so the batch sibling inherits it per row
+# stream out and either encode at highest VBR quality (`audio_codec = NULL`, the
+# extension picks the codec) or pin `-c:a` to `audio_codec`. The per-value
+# check_string(audio_codec) lives here so the batch sibling inherits it per row
 # (M13); command assembly stays in Layer 1 (IP1/D002).
-convert_audio_pipeline <- function(input, output, format = NULL) {
+#
+# The argument was spelled `format` until M40 renamed it to D014's `audio_codec`
+# vocabulary; the NULL branch is unchanged, so every default command stays
+# byte-identical. NULL here means "-q:a 0", NOT D016's emit-nothing sentinel --
+# the departure is deliberate and recorded in D021.
+convert_audio_pipeline <- function(input, output, audio_codec = NULL) {
   p <- ffm_files(input, output)
   p <- ffm_map(p, "a")
-  if (is.null(format)) {
+  if (is.null(audio_codec)) {
     p <- ffm_output_options(p, "-q:a 0")
   } else {
-    rlang::check_string(format)
-    p <- ffm_codec(p, audio = format)
+    rlang::check_string(audio_codec)
+    p <- ffm_codec(p, audio = audio_codec)
   }
   p
 }
@@ -452,17 +457,19 @@ convert_audio_pipeline <- function(input, output, format = NULL) {
 #' Extract or convert a media file's audio track
 #'
 #' Maps the audio stream of \code{infile} into \code{outfile}. By default
-#' (\code{format = NULL}) the output format follows the \code{outfile} file
+#' (\code{audio_codec = NULL}) the output format follows the \code{outfile} file
 #' extension at highest VBR quality (\code{-q:a 0}) — e.g. an \code{.mp3}
-#' extension yields an MP3. Pass \code{format} to pin the output audio codec
-#' explicitly, regardless of the extension.
+#' extension yields an MP3. Pass \code{audio_codec} to pin the output audio
+#' codec explicitly, regardless of the extension.
 #'
 #' @param infile A string containing the path to a media file.
 #' @param outfile A string containing the path of the audio file to write.
-#' @param format An optional string naming the output audio codec (e.g.
+#' @param audio_codec An optional string naming the output audio codec (e.g.
 #'   \code{"libmp3lame"}, \code{"aac"}, \code{"flac"}), passed to FFmpeg's
-#'   \code{-c:a}. When \code{NULL} (default), the format is inferred from the
-#'   \code{outfile} extension.
+#'   \code{-c:a}. When \code{NULL} (default), the codec is inferred from the
+#'   \code{outfile} extension and encoded at highest VBR quality. Unlike the
+#'   other transform verbs, \code{NULL} here is \emph{not} the "leave the codec
+#'   unset" sentinel — it selects \code{-q:a 0}.
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
@@ -473,14 +480,17 @@ convert_audio_pipeline <- function(input, output, format = NULL) {
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' convert_audio(video, "audio.mp3", run = FALSE)
-#' convert_audio(video, "audio.m4a", format = "aac", run = FALSE)
+#' convert_audio(video, "audio.m4a", audio_codec = "aac", run = FALSE)
 #' @export
-convert_audio <- function(infile, outfile, format = NULL, run = TRUE) {
+convert_audio <- function(infile, outfile, audio_codec = NULL, run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
 
-  ffm_finish(convert_audio_pipeline(infile, outfile, format), run)
+  # No `...` here, so a stale `format =` gets R's own `unused argument` error --
+  # no guard needed (M37 lesson; the batch sibling, which has `...`, does need
+  # one).
+  ffm_finish(convert_audio_pipeline(infile, outfile, audio_codec), run)
 }
 
 # crop_video() ------------------------------------------------------------
@@ -3113,7 +3123,15 @@ reject_duplicate_outputs <- function(jobs, call = rlang::caller_env()) {
 # video_codec = NULL, the "leave the codec alone" sentinel. An all-NA column is
 # typed logical by R, so accept that too (the audio-column pattern); any other
 # type (e.g. numeric) is rejected up front rather than mid-batch.
+#
+# `na_means` states what NA spells on the CALLING verb, because the hint must be
+# true under the branch that fired the guard (M38 lesson). It is "leave the
+# codec unset" on every verb whose NULL is D016's emit-nothing sentinel, but
+# convert_audio_batch() is the one caller where NULL/NA selects `-q:a 0`
+# instead (D021), so that verb overrides the wording rather than shipping a hint
+# that contradicts its own documentation.
 check_batch_codec_col <- function(jobs, col = "video_codec",
+                                  na_means = "leave the codec unset",
                                   call = rlang::caller_env()) {
   # Legal: a character column (NA cells allowed), or the all-NA column R types
   # as logical. Testing `all(is.na(.))` alone would also admit an all-NA numeric
@@ -3123,7 +3141,7 @@ check_batch_codec_col <- function(jobs, col = "video_codec",
   if (col %in% names(jobs) && !ok(jobs[[col]])) {
     cli::cli_abort(
       "The {.field {col}} column of {.arg jobs} must be character
-       ({.val {NA}} to leave the codec unset).",
+       ({.val {NA}} to {na_means}).",
       call = call
     )
   }
@@ -3303,19 +3321,22 @@ extract_audio_batch <- function(jobs, audio_codec = "copy", run = TRUE,
 #' you have more than one file. Each row is one input; \code{input} and
 #' \code{output} columns are required. This is a thin wrapper over
 #' \code{\link{ffm_batch}}: one reproducible compiled command per input, sharing
-#' the same audio-map pipeline (and per-value \code{format} validation) as the
-#' scalar verb.
+#' the same audio-map pipeline (and per-value \code{audio_codec} validation) as
+#' the scalar verb.
 #'
 #' @param jobs A data frame with one row per input and (at least) an
 #'   \code{input} column (source path) and an \code{output} column (destination
 #'   path). An \code{output} column is **required** — an audio destination
 #'   cannot be auto-named because its extension picks the output format. An
-#'   optional \code{format} column overrides the \code{format} argument per row;
-#'   rows omitting it fall back to the argument. Any other columns are ignored.
-#' @param format The output audio codec applied to every row unless \code{jobs}
-#'   carries a \code{format} column. \code{NULL} (default) infers the format
-#'   from each \code{output} extension at highest VBR quality; name a codec
-#'   (e.g. \code{"aac"}, \code{"flac"}) to pin \code{-c:a}.
+#'   optional \code{audio_codec} column overrides the \code{audio_codec}
+#'   argument per row, where \code{NA} spells "use the highest-VBR-quality
+#'   default"; rows omitting it fall back to the argument. Any other columns are
+#'   ignored — except a \code{format} column, retired with the argument of the
+#'   same name, which is an error rather than a silent no-op.
+#' @param audio_codec The output audio codec applied to every row unless
+#'   \code{jobs} carries an \code{audio_codec} column. \code{NULL} (default)
+#'   infers the codec from each \code{output} extension at highest VBR quality;
+#'   name a codec (e.g. \code{"aac"}, \code{"flac"}) to pin \code{-c:a}.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -3335,23 +3356,59 @@ extract_audio_batch <- function(jobs, audio_codec = "copy", run = TRUE,
 #' jobs <- tibble::tibble(input = c(video, video), output = c("a.mp3", "b.mp3"))
 #' convert_audio_batch(jobs, run = FALSE)
 #' @export
-convert_audio_batch <- function(jobs, format = NULL, run = TRUE,
+convert_audio_batch <- function(jobs, audio_codec = NULL, run = TRUE,
                                 parallel = FALSE, ...) {
 
   jobs <- check_batch_jobs(jobs, require_output = TRUE, verb = "Audio conversion")
   jobs <- reject_duplicate_outputs(jobs)
-  check_batch_string_col(jobs, "format")
+
+  # M40 renamed `format` to `audio_codec` in BOTH its spellings. The scalar
+  # sibling has no `...`, so R rejects a stale call itself; here `...` forwards
+  # ffm_batch options and would swallow a stale argument, while a stale `jobs`
+  # column would fall through as one of the "other columns are ignored" -- either
+  # way silently ignoring the codec the caller named. Name the replacement
+  # instead of ignoring it -- a diagnostic, not a lifecycle shim (D014's clean
+  # break stands; M37's precedent).
+  stale <- c(
+    if ("format" %in% names(list(...))) "argument",
+    if ("format" %in% names(jobs)) "jobs column"
+  )
+  if (length(stale) > 0) {
+    cli::cli_abort(c(
+      "The {.arg format} {stale} was removed from {.fn convert_audio_batch}.",
+      "i" = "Use {.arg audio_codec} instead; it takes the same encoder names.",
+      "i" = "In {.arg jobs}, name it as an {.field audio_codec} column, where
+             {.val {NA}} keeps that row on the highest-VBR-quality default."
+    ))
+  }
+
+  # NA is legal in the column: it is the column form of audio_codec = NULL, so
+  # this needs check_batch_codec_col(), never check_batch_string_col(), which
+  # rejects NA and so cannot spell "unset" (M34/D016). The hint is overridden
+  # because on THIS verb NA selects `-q:a 0` rather than leaving the codec unset
+  # (D021) -- the shared default would be false here (M38 lesson).
+  check_batch_codec_col(jobs, "audio_codec",
+                        na_means = "use the highest-VBR-quality default")
+  # The scalar argument is resolved through batch_codec_cell() below, which maps
+  # NA to the NULL sentinel -- so without this front-door check `audio_codec =
+  # NA` would quietly compile the default instead of erroring, the M37 shape
+  # where a scalar arg reaching the pipeline by the column path skips its own
+  # type check. NULL stays legal: it IS the sentinel.
+  if (!is.null(audio_codec)) rlang::check_string(audio_codec)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one audio-map pipeline per row,
-  # sharing convert_audio_pipeline() with convert_audio(). A per-row `format`
-  # column overrides the scalar arg; the per-value check_string(format) is
-  # inherited from the shared pipeline.
+  # sharing convert_audio_pipeline() with convert_audio(). A per-row
+  # `audio_codec` column overrides the scalar arg; the per-value
+  # check_string(audio_codec) is inherited from the shared pipeline.
   ffm_batch(
     jobs,
     function(input, output, ...) {
       dots <- list(...)
       pick <- function(nm, default) if (nm %in% names(dots)) dots[[nm]] else default
-      convert_audio_pipeline(input, output, format = pick("format", format))
+      convert_audio_pipeline(
+        input, output,
+        audio_codec = batch_codec_cell(pick("audio_codec", audio_codec))
+      )
     },
     run = run,
     parallel = parallel,

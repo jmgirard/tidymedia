@@ -2,6 +2,29 @@
 
 ## Breaking changes
 
+* `convert_audio()` and `convert_audio_batch()` rename the `format` argument to
+  `audio_codec`. The argument was always an audio codec — its own documentation
+  said so, and its value has only ever been passed to FFmpeg's `-c:a` — so this
+  brings the last of the codec arguments onto the package's `audio_codec` /
+  `video_codec` naming, and every codec argument in the package is now spelled
+  the same way.
+
+  Only the name changes: `audio_codec = NULL` is still the default and still
+  compiles `-q:a 0`, letting the output extension pick the codec at highest
+  VBR quality, so existing default calls produce byte-identical commands.
+  Note that `NULL` means something different here than on the other transform
+  verbs, where it leaves the codec unset — on this verb it selects `-q:a 0`.
+
+  `format` is removed rather than deprecated, in line with this package's
+  pre-1.0 clean-break policy. Calls passing it to `convert_audio()` get R's
+  usual `unused argument` error; `convert_audio_batch()`, whose `...` would
+  otherwise ignore it in silence, aborts and names the replacement, as it does
+  for a stale `format` column in a jobs table.
+
+  In a jobs table, the per-row column is likewise now `audio_codec`, and it
+  gains the ability to spell "unset": `NA` in a cell keeps that row on the
+  `-q:a 0` default, which the old `format` column could not express.
+
 * `separate_audio_video()` and `separate_audio_video_batch()` replace the
   `reencode` argument with per-stream `audio_codec` and `video_codec`
   arguments, so you can name the encoder for each output file instead of

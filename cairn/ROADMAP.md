@@ -9,7 +9,7 @@ _Last hygiene check: 2026-07-26 (M39 done — `audio_codec` on the last two conf
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M39 | `audio_codec` for `standardize_video` and `anonymize_video` (+ batch) | done | — | normal | milestones/archive/M39-standardize-anonymize-audio-codec.md |
-| M40 | `audio_codec` subsumes `format` on `convert_audio` (+ batch), closing the codec sweep | planned | M39 | normal | milestones/M40-convert-audio-codec-arg.md |
+| M40 | `audio_codec` subsumes `format` on `convert_audio` (+ batch), closing the codec sweep | review | M39 | normal | milestones/M40-convert-audio-codec-arg.md |
 | M38 | `hardware=` nvenc on `separate_audio_video` (+ batch) | done | — | normal | milestones/archive/M38-separate-av-hardware.md |
 | M36 | `audio_codec` for `normalize_audio` (+ batch) — NULL sentinel, `"copy"` aborts | done | — | normal | milestones/archive/M36-normalize-audio-codec.md |
 | M37 | Codec args subsume `reencode` on `separate_audio_video` (+ batch) | done | — | normal | milestones/archive/M37-separate-av-codec-args.md |
@@ -20,6 +20,7 @@ _Last hygiene check: 2026-07-26 (M39 done — `audio_codec` on the last two conf
 - Fixed-region *region blur* (no face tracking): split→crop→boxblur→overlay needs an IP2 filtergraph design call (new blessed composite verb vs Layer 0) plus a new `ffm_boxblur` filter; not plannable until that call. Box-fill half became M20/M21. Confirmed in-scope (defer) by M25. — added 2026-07-10, split 2026-07-12, reconciled 2026-07-13 — research-verbs family 4; M25 survey §3 D1
 - `burn_timecode` / drawtext text-and-timecode burn-in for coders & reliability raters; in-scope but needs a new `ffm_drawtext` Layer-1 filter + a surface-scope call. — added 2026-07-13 — M25 survey §3 D2 (defer)
 - Minor in-scope convenience verbs (grouped): split multi-view→per-person clips, orientation fix (rotate/flip), contact-sheet QC montage; each needs a small arg-shape design call. — added 2026-07-13 — M25 survey §3 D3 (defer-low)
+- A scalar `audio_codec = NA` on a `_batch` verb silently compiles the default instead of erroring: `batch_codec_cell()` maps the argument's `NA` to the `NULL` sentinel, so `normalize_audio_batch`, `standardize_video_batch`, and `anonymize_video_batch` accept it. M40 added the front-door `check_string()` to `convert_audio_batch` only; promote if the same shape is found on any further verb. — added 2026-07-26 — M40 gate; M37 lesson (LESSONS.md)
 - Video quality / rate-control knob (CRF↔CQ, `-preset p1–p7`, bitrate) — the package has no quality abstraction today; a cross-encoder mapping is opinionated + an irreversible-API commitment. Deferred from M31. — added 2026-07-26 — M31 Q4
 - GPU *decode* / `-hwaccel cuda` input acceleration + GPU filter pipelines — needs a new engine input-options slot (none exists; only `seek_pre` goes before `-i`) + an IP2 filtergraph design call. — added 2026-07-26 — M31 Out
 - Other hardware encode backends (videotoolbox/qsv/vaapi/amf) generalizing the `hardware=` arg beyond nvenc — needs a backend-detection + arg-vocabulary design call. — added 2026-07-26 — M31 Out

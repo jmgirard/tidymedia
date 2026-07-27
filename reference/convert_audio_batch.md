@@ -7,12 +7,18 @@ for when you have more than one file. Each row is one input; `input` and
 `output` columns are required. This is a thin wrapper over
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
 one reproducible compiled command per input, sharing the same audio-map
-pipeline (and per-value `format` validation) as the scalar verb.
+pipeline (and per-value `audio_codec` validation) as the scalar verb.
 
 ## Usage
 
 ``` r
-convert_audio_batch(jobs, format = NULL, run = TRUE, parallel = FALSE, ...)
+convert_audio_batch(
+  jobs,
+  audio_codec = NULL,
+  run = TRUE,
+  parallel = FALSE,
+  ...
+)
 ```
 
 ## Arguments
@@ -22,15 +28,18 @@ convert_audio_batch(jobs, format = NULL, run = TRUE, parallel = FALSE, ...)
   A data frame with one row per input and (at least) an `input` column
   (source path) and an `output` column (destination path). An `output`
   column is **required** — an audio destination cannot be auto-named
-  because its extension picks the output format. An optional `format`
-  column overrides the `format` argument per row; rows omitting it fall
-  back to the argument. Any other columns are ignored.
+  because its extension picks the output format. An optional
+  `audio_codec` column overrides the `audio_codec` argument per row,
+  where `NA` spells "use the highest-VBR-quality default"; rows omitting
+  it fall back to the argument. Any other columns are ignored — except a
+  `format` column, retired with the argument of the same name, which is
+  an error rather than a silent no-op.
 
-- format:
+- audio_codec:
 
-  The output audio codec applied to every row unless `jobs` carries a
-  `format` column. `NULL` (default) infers the format from each `output`
-  extension at highest VBR quality; name a codec (e.g. `"aac"`,
+  The output audio codec applied to every row unless `jobs` carries an
+  `audio_codec` column. `NULL` (default) infers the codec from each
+  `output` extension at highest VBR quality; name a codec (e.g. `"aac"`,
   `"flac"`) to pin `-c:a`.
 
 - run:

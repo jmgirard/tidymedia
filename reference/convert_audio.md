@@ -1,15 +1,15 @@
 # Extract or convert a media file's audio track
 
 Maps the audio stream of `infile` into `outfile`. By default
-(`format = NULL`) the output format follows the `outfile` file extension
-at highest VBR quality (`-q:a 0`) — e.g. an `.mp3` extension yields an
-MP3. Pass `format` to pin the output audio codec explicitly, regardless
-of the extension.
+(`audio_codec = NULL`) the output format follows the `outfile` file
+extension at highest VBR quality (`-q:a 0`) — e.g. an `.mp3` extension
+yields an MP3. Pass `audio_codec` to pin the output audio codec
+explicitly, regardless of the extension.
 
 ## Usage
 
 ``` r
-convert_audio(infile, outfile, format = NULL, run = TRUE)
+convert_audio(infile, outfile, audio_codec = NULL, run = TRUE)
 ```
 
 ## Arguments
@@ -22,11 +22,13 @@ convert_audio(infile, outfile, format = NULL, run = TRUE)
 
   A string containing the path of the audio file to write.
 
-- format:
+- audio_codec:
 
   An optional string naming the output audio codec (e.g. `"libmp3lame"`,
   `"aac"`, `"flac"`), passed to FFmpeg's `-c:a`. When `NULL` (default),
-  the format is inferred from the `outfile` extension.
+  the codec is inferred from the `outfile` extension and encoded at
+  highest VBR quality. Unlike the other transform verbs, `NULL` here is
+  *not* the "leave the codec unset" sentinel — it selects `-q:a 0`.
 
 - run:
 
@@ -85,6 +87,6 @@ Other task verb functions:
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 convert_audio(video, "audio.mp3", run = FALSE)
 #> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map a \"audio.mp3\""
-convert_audio(video, "audio.m4a", format = "aac", run = FALSE)
+convert_audio(video, "audio.m4a", audio_codec = "aac", run = FALSE)
 #> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a aac -map a \"audio.m4a\""
 ```

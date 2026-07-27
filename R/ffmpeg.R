@@ -295,17 +295,24 @@ extract_audio <- function(infile, outfile, audio_codec = "copy", run = TRUE) {
 # had since D-M06-4; `NULL` is D016's sentinel, emitting no `-codec` at all so
 # the output container's default encoder decides (M37). `codec` applies to the
 # audio or the video slot by `stream`, so a caller's audio choice can never
-# reach the video command. Splitting one input into audio + video is a fan-out,
+# reach the video command. `hardware`/`fallback` ride the same routing (M38):
+# nvenc encodes video, so only the video branch forwards them and the audio
+# command is byte-identical whatever the caller asked for -- the routing lives
+# here once rather than at each call site.
+# Splitting one input into audio + video is a fan-out,
 # so each stream stays its own single-output pipeline (D003/D007); both verbs
 # wrap this once per stream. Command assembly stays in Layer 1 (IP1/D002). Kept
 # ABOVE the roxygen block below so document() does not re-target it (M28 lesson).
 separate_stream_pipeline <- function(input, output, stream, codec = "copy",
+                                     hardware = "none", fallback = FALSE,
                                      call = rlang::caller_env()) {
   p <- ffm_map(ffm_files(input, output), if (stream == "audio") "0:a" else "0:v")
   if (stream == "audio") {
+    # nvenc encodes video, so `hardware`/`fallback` never reach this branch and
+    # the audio command is byte-identical whatever the caller asked for (M38).
     apply_audio_codec(p, codec, call = call)
   } else {
-    apply_video_codec(p, codec, call = call)
+    apply_video_codec(p, codec, hardware, fallback, call = call)
   }
 }
 
@@ -351,18 +358,27 @@ separate_stream_pipeline <- function(input, output, stream, codec = "copy",
 #' @export
 separate_audio_video <- function(infile, audiofile, videofile,
                                  audio_codec = "copy", video_codec = "copy",
+                                 hardware = c("none", "nvenc"),
+                                 fallback = FALSE,
                                  run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(audiofile)
   rlang::check_string(videofile)
+  # Resolve `hardware` at the front door: the copy guard below compares it to
+  # "none", so the unresolved default vector would fire the guard on every
+  # default call. Validating here also attributes the error to this verb (M37).
+  hardware <- rlang::arg_match(hardware)
+  rlang::check_bool(fallback)
 
   # One input -> two outputs is a fan-out: emit two single-output pipelines
   # (D-M03-2) rather than a dual-`-map` command the linear engine can't model.
   # separate_stream_pipeline() carries the per-stream recipe shared with
   # separate_audio_video_batch(), and token-checks each codec there.
-  audio <- separate_stream_pipeline(infile, audiofile, "audio", audio_codec)
-  video <- separate_stream_pipeline(infile, videofile, "video", video_codec)
+  audio <- separate_stream_pipeline(infile, audiofile, "audio", audio_codec,
+                                    hardware, fallback)
+  video <- separate_stream_pipeline(infile, videofile, "video", video_codec,
+                                    hardware, fallback)
   commands <- c(audio = ffm_compile(audio), video = ffm_compile(video))
 
   if (run) {
@@ -3521,10 +3537,17 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #' separate_audio_video_batch(jobs, run = FALSE)
 #' @export
 separate_audio_video_batch <- function(jobs, audio_codec = "copy",
-                                       video_codec = "copy", run = TRUE,
+                                       video_codec = "copy",
+                                       hardware = c("none", "nvenc"),
+                                       fallback = FALSE, run = TRUE,
                                        parallel = FALSE, ...) {
 
   jobs <- check_batch_jobs(jobs, verb = "Audio/video separation")
+  # Batch-wide, never a jobs column: nvenc availability is a property of the
+  # machine, not of a file (D016). Resolved here for the same reason as the
+  # scalar -- the copy guard compares against "none".
+  hardware <- rlang::arg_match(hardware)
+  rlang::check_bool(fallback)
 
   # Two required output columns; this verb derives nothing (parity with the
   # scalar, which requires both audiofile and videofile).
@@ -3649,7 +3672,7 @@ separate_audio_video_batch <- function(jobs, audio_codec = "copy",
       } else {
         video_codec
       }
-      separate_stream_pipeline(input, output, stream, codec)
+      separate_stream_pipeline(input, output, stream, codec, hardware, fallback)
     },
     run = run,
     parallel = parallel,

@@ -60,15 +60,15 @@ rate-control knob each stay ROADMAP candidate rows.
 
 ## Tasks
 
-- [ ] T1 Tests first: extend `test-separate-av-codec.R` with the
+- [x] T1 Tests first: extend `test-separate-av-codec.R` with the
       `hardware = "none"` byte-identical parity cases and the
       nvenc-on-video-only compile cases; extend
       `test-separate-audio-video-batch.R` with the inert-`hardware`-column
       case. Red until T2–T3.
-- [ ] T2 Thread `hardware`/`fallback` through `separate_stream_pipeline()`
+- [x] T2 Thread `hardware`/`fallback` through `separate_stream_pipeline()`
       (R/ffmpeg.R:302) into `apply_video_codec()` on the video branch only.
       Edit `R/ffmpeg.R` as bytes to preserve its CRLF endings (M35 lesson).
-- [ ] T3 Add both arguments to `separate_audio_video()` (R/ffmpeg.R:352) and
+- [x] T3 Add both arguments to `separate_audio_video()` (R/ffmpeg.R:352) and
       `separate_audio_video_batch()` (R/ffmpeg.R:3523); the batch captures them
       as scalars in its `ffm_batch` closure (R/ffmpeg.R:3643). T1 green.
 - [ ] T4 Tests then guard: the copy+nvenc abort in the scalar, per-row in the
@@ -85,6 +85,7 @@ rate-control knob each stay ROADMAP candidate rows.
 - 2026-07-26: created by /milestone-plan.
 - 2026-07-26: set in-progress; AC3's `irreversible-api` tripwire was offered and declined at the plan gate, so no implement gate — `ffm_batch` builds all pipelines before running any (R/ffm_batch.R:101), so the per-stream guard already fails before any encode.
 - 2026-07-26: T1 tests written and committed red (8 new failures, 50 pre-existing green) — box stays unticked until T3 lands the arguments.
+- 2026-07-26: T1-T3 done — `hardware`/`fallback` threaded through `separate_stream_pipeline()` and both verbs; `arg_match` at each front door (the unresolved default vector would otherwise fire T4's guard on every call). `devtools::test()` 1573 pass / 0 fail / 4 skip; CRLF preserved (diff 29/6, not whole-file).
 
 ## Decisions
 

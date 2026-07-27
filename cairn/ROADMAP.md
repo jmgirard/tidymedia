@@ -2,7 +2,7 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-07-27 (M35 done — audio_codec on the four re-encode verbs merged, archived; M30 row aged out; D018 narrows D017 on the GP2 audio-cut trade)_
+_Last hygiene check: 2026-07-26 (no work since M35 close; all checks green, both GitHub inboxes empty; corrected the prior stamp's future date)_
 
 ## Milestones
 

@@ -83,7 +83,7 @@ candidate row (M31 Q4). No new exports, so `_pkgdown.yml` is untouched.
       accepted; numeric column aborts; 2+ row abort message renders.
 - [x] T5 Execution test with the MP3-in-MP4 fixture proving copy vs re-encode
       on both verbs, skipped when the binaries are absent.
-- [ ] T6 Roxygen `@param` on all four; NEWS.md entry; `devtools::document()`.
+- [x] T6 Roxygen `@param` on all four; NEWS.md entry; `devtools::document()`.
 - [ ] T7 Full `devtools::check()`; `spelling::update_wordlist()` if new
       technical terms appear (M17 lesson — check `00check.log` for `Status: OK`).
 
@@ -105,6 +105,7 @@ candidate row (M31 Q4). No new exports, so `_pkgdown.yml` is untouched.
 - 2026-07-26: T3 — arg-spelling test now covers all twelve verbs that carry `audio_codec`.
 - 2026-07-26: T4 done — six new batch tests plus M35's two shared column-guard tests extended to the M39 verbs; the per-row token test uses two rows so a cli count message cannot pass by hiding behind a single item (M18).
 - 2026-07-26: T5 done — three execution tests on the MP3-in-MP4 fixture prove copy keeps `mp3`, a named encoder yields `aac`, and NULL hands the choice back to the container; confirmed running (not skipped) against local ffmpeg/ffprobe.
+- 2026-07-26: T6 done — NEWS entry under New features; `document()` regenerated five `.Rd` files and is idempotent on a second run. Vignettes, README.Rmd and `_pkgdown.yml` need no change (no new exports; the one vignette `audio_codec` mention is about the composite verbs).
 
 ## Decisions
 

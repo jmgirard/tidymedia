@@ -8,6 +8,7 @@ anonymize_video_batch(
   jobs,
   color = "black",
   video_codec = "libx264",
+  audio_codec = "copy",
   pixel_format = "yuv420p",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
@@ -39,6 +40,13 @@ box supplies its own \code{color}. (default = \code{"black"})}
 \item{video_codec}{A string naming the output video codec applied to every row,
 unless \code{jobs} carries a \code{video_codec} column. (default =
 \code{"libx264"})}
+
+\item{audio_codec}{A string naming the output audio codec applied to every
+row, unless \code{jobs} carries an \code{audio_codec} column, in which case
+\code{NA} in a cell leaves that row's codec unset. \code{"copy"} (default)
+stream-copies the audio through untouched; name an encoder (e.g.
+\code{"aac"}) when the source audio cannot be copied into the output
+container.}
 
 \item{pixel_format}{A string naming the output pixel format applied to every
 row, unless \code{jobs} carries a \code{pixel_format} column.

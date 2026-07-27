@@ -10,6 +10,7 @@ anonymize_video(
   regions,
   color = "black",
   video_codec = "libx264",
+  audio_codec = "copy",
   pixel_format = "yuv420p",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
@@ -31,6 +32,12 @@ used for any row without its own \code{color} (default \code{"black"}).}
 \item{video_codec}{A string naming the output video codec (default
 \code{"libx264"}).}
 
+\item{audio_codec}{A string naming the output audio codec (default
+\code{"copy"}, i.e. stream-copy the source audio unchanged). Name a real
+encoder (e.g. \code{"aac"}) when the source audio codec cannot be copied
+into the output container, or \code{NULL} to emit no \code{-codec:a} and
+let the container's default encoder decide.}
+
 \item{pixel_format}{A string naming the output pixel format (default
 \code{"yuv420p"}).}
 
@@ -38,7 +45,8 @@ used for any row without its own \code{color} (default \code{"black"}).}
 \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
 \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
 (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); see
-\code{\link{has_nvenc}} for availability and its caveats.}
+\code{\link{has_nvenc}} for availability and its caveats. Applies to video
+only: \code{audio_codec} is never hardware-accelerated.}
 
 \item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
 unavailable, re-encode with the software \code{video_codec} and a message
@@ -71,8 +79,9 @@ Because a filter is applied, the video is re-encoded (\code{video_codec} /
 \code{pixel_format}, defaulting to H.264 / \code{yuv420p}); odd source
 dimensions are floored to even so the output always encodes (a
 \code{yuv420p}/\code{libx264} requirement, and a no-op for already-even
-input). Audio is stream-copied unchanged (\code{-c:a copy}). The same input
-and regions therefore always compile to a byte-identical command.
+input). Audio is stream-copied unchanged (\code{-c:a copy}) unless
+\code{audio_codec} names an encoder. The same input and regions therefore
+always compile to a byte-identical command.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

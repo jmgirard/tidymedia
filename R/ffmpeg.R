@@ -290,22 +290,23 @@ extract_audio <- function(infile, outfile, audio_codec = "copy", run = TRUE) {
 
 # Shared recipe behind separate_audio_video() and separate_audio_video_batch():
 # build one single-output pipeline for a single stream — map `0:a` (audio) or
-# `0:v` (video) out of `input` into `output`, stream-copying (`-c:a copy` /
-# `-c:v copy`) on the default lossless path (D-M06-4). Splitting one input into
-# audio + video is a fan-out, so each stream stays its own single-output
-# pipeline (D003/D007); both verbs wrap this once per stream. Command assembly
-# stays in Layer 1 (IP1/D002). Kept ABOVE the roxygen block below so
-# document() does not re-target it (M28 lesson).
-separate_stream_pipeline <- function(input, output, stream, reencode = FALSE) {
+# `0:v` (video) out of `input` into `output`, naming that stream's encoder via
+# `codec`. The default `"copy"` stream-copies, the lossless path this verb has
+# had since D-M06-4; `NULL` is D016's sentinel, emitting no `-codec` at all so
+# the output container's default encoder decides (M37). `codec` applies to the
+# audio or the video slot by `stream`, so a caller's audio choice can never
+# reach the video command. Splitting one input into audio + video is a fan-out,
+# so each stream stays its own single-output pipeline (D003/D007); both verbs
+# wrap this once per stream. Command assembly stays in Layer 1 (IP1/D002). Kept
+# ABOVE the roxygen block below so document() does not re-target it (M28 lesson).
+separate_stream_pipeline <- function(input, output, stream, codec = "copy",
+                                     call = rlang::caller_env()) {
   p <- ffm_map(ffm_files(input, output), if (stream == "audio") "0:a" else "0:v")
-  if (!reencode) {
-    p <- if (stream == "audio") {
-      ffm_codec(p, audio = "copy")
-    } else {
-      ffm_codec(p, video = "copy")
-    }
+  if (stream == "audio") {
+    apply_audio_codec(p, codec, call = call)
+  } else {
+    apply_video_codec(p, codec, call = call)
   }
-  p
 }
 
 
@@ -348,8 +349,9 @@ separate_audio_video <- function(infile, audiofile, videofile,
   # (D-M03-2) rather than a dual-`-map` command the linear engine can't model.
   # separate_stream_pipeline() carries the per-stream recipe shared with
   # separate_audio_video_batch().
-  audio <- separate_stream_pipeline(infile, audiofile, "audio", reencode)
-  video <- separate_stream_pipeline(infile, videofile, "video", reencode)
+  codec <- if (reencode) NULL else "copy"
+  audio <- separate_stream_pipeline(infile, audiofile, "audio", codec)
+  video <- separate_stream_pipeline(infile, videofile, "video", codec)
   commands <- c(audio = ffm_compile(audio), video = ffm_compile(video))
 
   if (run) {
@@ -3550,7 +3552,7 @@ separate_audio_video_batch <- function(jobs, reencode = FALSE, run = TRUE,
     function(input, output, stream, ...) {
       dots <- list(...)
       re <- if ("reencode" %in% names(dots)) dots$reencode else reencode
-      separate_stream_pipeline(input, output, stream, re)
+      separate_stream_pipeline(input, output, stream, if (re) NULL else "copy")
     },
     run = run,
     parallel = parallel,

@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1, GP1
-- **Branch/PR:** —
+- **Branch/PR:** `m37-separate-av-codec-args`
 
 ## Goal
 
@@ -68,7 +68,7 @@ configurable-transform call applied to a demux verb first).
 
 ## Tasks
 
-- [ ] T1: Rework `separate_stream_pipeline()` (`R/ffmpeg.R:299`) to take a
+- [x] T1: Rework `separate_stream_pipeline()` (`R/ffmpeg.R:299`) to take a
       per-stream codec (default `"copy"`, `NULL` = emit nothing), applying it to
       the audio or video slot by `stream`. Tests first. Edit `R/ffmpeg.R` as
       bytes — the repo's only CRLF file (M35 lesson).
@@ -92,6 +92,8 @@ configurable-transform call applied to a demux verb first).
 ## Work log
 
 - 2026-07-26: created by /milestone-plan.
+- 2026-07-26: implement started on `m37-separate-av-codec-args`. Question gate: the batch's reshaped table carries a single `codec` column, present only when the jobs table supplies a codec column (mirrors today's `reencode` carry-through; reads beside the existing `stream` marker).
+- 2026-07-26: T1 — `separate_stream_pipeline()` now takes a per-stream `codec` (default `"copy"`, `NULL` emits nothing), routed to the audio or video slot by `stream` via `apply_audio_codec()`/`apply_video_codec()`. Both call sites translate their still-public `reencode` at the boundary, so this task is a contract-preserving refactor pinned by the existing suite; the new behavior gets its tests at T2/T3 where it becomes publicly reachable. `devtools::test()` clean (0 failures).
 
 ## Decisions
 

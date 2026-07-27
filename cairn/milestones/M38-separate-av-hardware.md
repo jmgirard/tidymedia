@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** —
+- **Branch/PR:** `m38-separate-av-hardware`
 
 ## Goal
 
@@ -84,6 +84,7 @@ rate-control knob each stay ROADMAP candidate rows.
 
 - 2026-07-26: created by /milestone-plan.
 - 2026-07-26: set in-progress; AC3's `irreversible-api` tripwire was offered and declined at the plan gate, so no implement gate — `ffm_batch` builds all pipelines before running any (R/ffm_batch.R:101), so the per-stream guard already fails before any encode.
+- 2026-07-26: T1 tests written and committed red (8 new failures, 50 pre-existing green) — box stays unticked until T3 lands the arguments.
 
 ## Decisions
 

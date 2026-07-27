@@ -658,6 +658,37 @@ test_that("the M39 batch verbs default every row to a stream copy", {
   expect_true(all(grepl("-codec:a copy", anon$command, fixed = TRUE)))
 })
 
+test_that("the M39 batch-wide audio_codec argument reaches every row", {
+  # Without a column, the argument itself must reach the pipeline. Asserting
+  # only the "copy" default would pass even if the argument were ignored, since
+  # standardize_pipeline()/anonymize_pipeline() default to "copy" too, so this
+  # names a codec that is NOT the default (M39 review F3).
+  f <- make_input()
+  boxes <- data.frame(x = 1, y = 1, width = 8, height = 8)
+
+  std <- standardize_video_batch(
+    tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4")),
+    audio_codec = "aac", run = FALSE
+  )
+  expect_true(all(grepl("-codec:a aac", std$command, fixed = TRUE)))
+  expect_false(any(grepl("-codec:a copy", std$command, fixed = TRUE)))
+
+  anon <- anonymize_video_batch(
+    tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"),
+                   regions = list(boxes, boxes)),
+    audio_codec = "aac", run = FALSE
+  )
+  expect_true(all(grepl("-codec:a aac", anon$command, fixed = TRUE)))
+  expect_false(any(grepl("-codec:a copy", anon$command, fixed = TRUE)))
+
+  # NULL as the batch-wide argument reaches every row too.
+  unset <- standardize_video_batch(
+    tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4")),
+    audio_codec = NULL, run = FALSE
+  )
+  expect_false(any(grepl("-codec:a", unset$command, fixed = TRUE)))
+})
+
 test_that("the M39 batch verbs reject a non-token audio_codec per row", {
   f <- make_input()
   # Two rows, not one: a cli count message that crashes on 2+ items renders

@@ -110,6 +110,7 @@ candidate row (M31 Q4). No new exports, so `_pkgdown.yml` is untouched.
 - 2026-07-26: all tasks done, `check()` and `check_pkgdown()` clean, `R/ffmpeg.R` CRLF intact (4467/4467, diff 110 lines) — status to review.
 - 2026-07-26: review — draft PR #41 opened; all seven criteria verified with fresh evidence; consistency gate clean; CI green on all nine checks; IP1 confirmed (Layer 1 zero diff).
 - 2026-07-26: review — blame-history and prior-PR-comments lenses both returned clean; diff-bug lens still running, triage and merge gate pending (checkpoint, not final).
+- 2026-07-26: review — diff-bug lens returned 4 findings; scorer gave 88/87/90/25. The three at or above 80 fixed on the branch, the 25 logged unactioned; gate re-run clean after the fixes.
 
 ## Decisions
 
@@ -125,4 +126,17 @@ candidate row (M31 Q4). No new exports, so `_pkgdown.yml` is untouched.
 - AC6 — the three execution tests ran against real ffmpeg/ffprobe (`skipped=FALSE`, 4+3+2 passing expectations): copy keeps `mp3`, `"aac"` yields `aac`, `NULL` yields `aac` from the container.
 - AC7 — `devtools::check()` → `Status: OK`, 0 errors / 0 warnings / 0 notes (read from the check log, not devtools' masked summary). NEWS entry present; `document()` leaves no diff.
 
-**Consistency gate.** `cairn_validate` exit 0, all checks pass. Toolchain slot: `document()` no-diff, `pkgdown::check_pkgdown()` clean, NEWS entry present with no milestone numbers in user-facing text, no new top-level files, README untouched. CI green on all nine checks (macOS, Ubuntu release/devel/oldrel-1, Windows, pkgdown, coverage).
+**Independent review — three lenses, then a scorer.**
+
+- **[S] blame-history:** clean. Traced the `audio = "copy"` literal in both pipelines to `a33f2cb4` (2026-07-12), the fix M12's review made after finding a bare re-encode was transcoding audio. M39 makes that guarantee an overridable default rather than weakening it — the same move D017 made for the four sibling verbs — and the default stays byte-identical.
+- **[S] prior-PR-comments:** clean, no regressions. The GitHub inline-comment probe returned `[]`, so archived `## Review` sections were the evidence (as M91 measured for this repo). Specifically cleared M34-F2 (the all-NA column guard is reused, not reimplemented), M38-F3/M35 (the execution tests use the MP3-in-MP4 fixture), M38-F1/F2 (no new `cli_abort` hint text), M35-F2 and M34-F1 (no doc residue), M31-F1 (no new abort call sites).
+- **[O] diff-bug:** 4 findings. It independently reproduced the byte-identity claim across 8 argument combinations × 2 verbs, both nvenc paths, 3 batch shapes.
+
+**Findings, scored by a fresh [S] scorer that did not generate them.**
+
+- **F1 (88) — fixed.** Both batch verbs' `@param jobs` still enumerated the honoured knob columns without `audio_codec` and closed with "Any other columns are ignored", which M39 made false: a user adding an `audio_codec` column believing it inert would silently change every row's encode. `normalize_audio_batch` and `extract_audio_batch` already spell the column out. Both enumerations rewritten, including the `NA`-means-unset meaning.
+- **F2 (87) — fixed.** `standardize_pipeline()` called `apply_audio_codec()` without `call =`, so a bad token reported `Error in standardize_pipeline(...)` — an internal helper — while `anonymize_pipeline()` and `crop_video_pipeline()` name the verb the user called. The tests asserted only message text and condition class, so they could not see it. Added a `call = rlang::caller_env()` formal and threaded it; `conditionCall()` now reads `standardize_video(...)`. This also removes any ambiguity in AC4's "at the front door on the scalars".
+- **F3 (90) — fixed.** The batch-wide `audio_codec` *argument* (as against the per-row column) was never tested with a non-default value on either verb; the existing default test would pass even if the argument never reached the pipeline, since the pipeline defaults to `"copy"` too. Proven by mutation in a scratch copy: hardcoding the fan-out to `"copy"` left the suite green, while the same mutation on `segment_video_batch` (covered by M35) went red. Added a test naming a non-default codec on both verbs plus the `NULL` case; re-running the mutation now fails on that test.
+- **F4 (25) — logged, not actioned.** Inserting the formal mid-signature changes what positional callers bind: `standardize_video(f, o, 1280, 720, 30, "libx264", "yuv420p")` now binds `"yuv420p"` to `audio_codec`, compiling `-codec:a yuv420p -pix_fmt yuv420p`. Real and reproduced, but the placement was a deliberate gate decision under D014's clean break, it fails loudly at FFmpeg rather than silently, and the reviewer framed it as a NEWS-wording point only. Surfaced here rather than fixed.
+
+**Consistency gate.** `cairn_validate` exit 0, all checks pass. Toolchain slot: `document()` no-diff, `pkgdown::check_pkgdown()` clean, NEWS entry present with no milestone numbers in user-facing text, no new top-level files, README untouched. CI green on all nine checks (macOS, Ubuntu release/devel/oldrel-1, Windows, pkgdown, coverage). Re-run after the F1/F2/F3 fixes: `check()` `Status: OK`, `pkgdown` clean, `cairn_validate` exit 0, suite green, AC2 byte-identity re-confirmed against master.

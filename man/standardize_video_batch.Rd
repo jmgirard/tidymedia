@@ -27,10 +27,13 @@ the destination; when absent, one is derived per row by appending
 extension (e.g. \code{clip.mkv} becomes \code{clip_standardized.mkv}).
 Because standardization is one-input-to-one-output, a duplicated
 \code{input} with no \code{output} column would collide and is rejected.
-Each of the five standardization knobs — \code{width}, \code{height},
-\code{fps}, \code{video_codec}, \code{pixel_format} — may also appear as a
+Each of the six standardization knobs — \code{width}, \code{height},
+\code{fps}, \code{video_codec}, \code{audio_codec}, \code{pixel_format} —
+may also appear as a
 column to override the corresponding argument on a per-row basis; rows (or
-knobs) that omit the column fall back to the argument's value. Any other
+knobs) that omit the column fall back to the argument's value. In an
+\code{audio_codec} column, \code{NA} leaves that row's audio codec unset
+(the column form of \code{audio_codec = NULL}). Any other
 columns are ignored.}
 
 \item{width, height}{Optional target dimensions applied to every row, unless

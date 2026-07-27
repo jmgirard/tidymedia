@@ -796,7 +796,8 @@ standardize_video <- function(infile, outfile,
 # once -- the batch sibling inherits them by construction (D002, D003, D007).
 standardize_pipeline <- function(input, output, width, height, fps, video_codec,
                                  audio_codec = "copy", pixel_format,
-                                 hardware = "none", fallback = FALSE) {
+                                 hardware = "none", fallback = FALSE,
+                                 call = rlang::caller_env()) {
   video_codec <- resolve_hw_encoder(video_codec, hardware, fallback)
   p <- ffm_files(input, output)
   # Resolution: exact when both given; aspect-preserving with an even output
@@ -820,9 +821,11 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
   # video-only, so "leave audio untouched" means copy the bytes (matching
   # extract_audio()). `audio_codec` is the escape hatch for the D017 trap --
   # copying a source codec the output container cannot hold -- and reuses M35's
-  # apply_audio_codec() seam, so NULL emits no -codec:a (M39/D017).
+  # apply_audio_codec() seam, so NULL emits no -codec:a (M39/D017). `call` is
+  # threaded so a bad token names standardize_video(), not this internal helper
+  # (parity with anonymize_pipeline(); M39 review F2).
   p <- ffm_codec(p, video = video_codec)
-  p <- apply_audio_codec(p, audio_codec)
+  p <- apply_audio_codec(p, audio_codec, call = call)
   p <- ffm_pixel_format(p, pixel_format)
   ffm_output_options(p, "-movflags +faststart")
 }
@@ -1065,10 +1068,13 @@ derive_anonymized_names <- function(input) {
 #'   input's extension (e.g. \code{clip.mkv} becomes \code{clip_anonymized.mkv}).
 #'   Because anonymization is one-input-to-one-output, a duplicated \code{input}
 #'   with no \code{output} column would collide and is rejected. Each of the
-#'   three encode knobs — \code{color}, \code{video_codec}, \code{pixel_format} — may
+#'   four encode knobs — \code{color}, \code{video_codec}, \code{audio_codec},
+#'   \code{pixel_format} — may
 #'   also appear as a column to override the corresponding argument on a per-row
 #'   basis; rows (or knobs) that omit the column fall back to the argument's
-#'   value. Any other columns are ignored.
+#'   value. In an \code{audio_codec} column, \code{NA} leaves that row's audio
+#'   codec unset (the column form of \code{audio_codec = NULL}). Any other
+#'   columns are ignored.
 #' @param color A string naming the default fill color (FFmpeg color syntax)
 #'   applied to every row, unless \code{jobs} carries a \code{color} column or a
 #'   box supplies its own \code{color}. (default = \code{"black"})
@@ -2464,10 +2470,13 @@ derive_standardized_names <- function(input) {
 #'   extension (e.g. \code{clip.mkv} becomes \code{clip_standardized.mkv}).
 #'   Because standardization is one-input-to-one-output, a duplicated
 #'   \code{input} with no \code{output} column would collide and is rejected.
-#'   Each of the five standardization knobs — \code{width}, \code{height},
-#'   \code{fps}, \code{video_codec}, \code{pixel_format} — may also appear as a
+#'   Each of the six standardization knobs — \code{width}, \code{height},
+#'   \code{fps}, \code{video_codec}, \code{audio_codec}, \code{pixel_format} —
+#'   may also appear as a
 #'   column to override the corresponding argument on a per-row basis; rows (or
-#'   knobs) that omit the column fall back to the argument's value. Any other
+#'   knobs) that omit the column fall back to the argument's value. In an
+#'   \code{audio_codec} column, \code{NA} leaves that row's audio codec unset
+#'   (the column form of \code{audio_codec = NULL}). Any other
 #'   columns are ignored.
 #' @param width,height Optional target dimensions applied to every row, unless
 #'   \code{jobs} carries a column of the same name (see \code{jobs}). When only

@@ -12,6 +12,7 @@ crop_video(
   x = "(in_w-out_w)/2",
   y = "(in_h-out_h)/2",
   video_codec = NULL,
+  audio_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
   run = TRUE
@@ -36,6 +37,13 @@ crop_video(
 (default) to leave it unset, so the output container's default encoder is
 used and the compiled command is unchanged from one that never named a
 codec.}
+
+\item{audio_codec}{A string naming the output audio codec. \code{"copy"}
+(default) stream-copies the audio through untouched; name an encoder (e.g.
+\code{"aac"}) to transcode it, or pass \code{NULL} to leave the codec unset
+so the output container's default encoder is used. Stream-copying fails if
+the output container cannot hold the source audio codec (e.g. FLAC in
+\code{.mp4}) — name an encoder in that case.}
 
 \item{hardware}{The encoder backend: \code{"none"} (default, the software
 \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When

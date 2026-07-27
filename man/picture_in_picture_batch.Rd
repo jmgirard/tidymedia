@@ -11,6 +11,7 @@ picture_in_picture_batch(
   margin = 16,
   audio = NULL,
   video_codec = NULL,
+  audio_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
   run = TRUE,
@@ -22,13 +23,14 @@ picture_in_picture_batch(
 \item{jobs}{A data frame with one row per output and (at least) \code{main}
 (background path), \code{overlay} (inset path), and \code{output}
 (destination path) columns. Optional \code{position}, \code{scale},
-\code{margin}, \code{audio}, and \code{video_codec} columns override the
+\code{margin}, \code{audio}, \code{video_codec}, and \code{audio_codec}
+columns override the
 like-named arguments
 per row (a row omitting one falls back to the argument). In an \code{audio}
 column, \code{NA} means "drop audio" (the column's way of writing the
-scalar's \code{NULL}); in a \code{video_codec} column it means "leave the
-codec unset". Any two rows resolving to the same output path are
-rejected; other columns are ignored.}
+scalar's \code{NULL}); in a \code{video_codec} or \code{audio_codec} column
+it means "leave the codec unset". Any two rows resolving to the same output
+path are rejected; other columns are ignored.}
 
 \item{position, scale, margin, audio}{Defaults applied to every row lacking the
 corresponding column. See \code{\link[=picture_in_picture]{picture_in_picture()}} for their meaning.}
@@ -36,6 +38,12 @@ corresponding column. See \code{\link[=picture_in_picture]{picture_in_picture()}
 \item{video_codec}{A string naming the output video codec, applied to every
 row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
 it unset so each output keeps its container's default encoder.}
+
+\item{audio_codec}{A string naming the codec for the carried audio track,
+applied to every row lacking an \code{audio_codec} column. \code{"copy"}
+(default) stream-copies it; name an encoder to transcode it, or \code{NULL}
+to leave the codec unset. A row carrying no audio emits no \code{-codec:a};
+naming an encoder on such a row is an error.}
 
 \item{hardware, fallback}{The encoder backend and its fallback behavior,
 applied to the whole batch (a property of the machine, not of a row, so

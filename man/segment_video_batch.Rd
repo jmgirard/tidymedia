@@ -8,6 +8,7 @@ segment_video_batch(
   jobs,
   reencode = TRUE,
   video_codec = NULL,
+  audio_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
   run = TRUE,
@@ -24,10 +25,10 @@ Two optional columns are recognized: \code{output} (destination path) and
 \code{output} is absent, one is derived per row by appending
 \code{_<n>.<ext>} to each input's basename, with the segment number
 restarting at 1 for each input file (the same rule as
-\code{\link{segment_video}}). A \code{video_codec} column overrides that
-argument per row, with \code{NA} meaning "leave the codec unset" (the
-column's way of writing the argument's \code{NULL}). Any other columns are
-ignored.}
+\code{\link{segment_video}}). A \code{video_codec} or \code{audio_codec}
+column overrides that argument per row, with \code{NA} meaning "leave the
+codec unset" (the column's way of writing the argument's \code{NULL}). Any
+other columns are ignored.}
 
 \item{reencode}{A logical passed to \code{\link{ffm_seek}}: cut each segment
 frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
@@ -40,6 +41,14 @@ row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
 it unset so each segment keeps its container's default encoder. A row that
 resolves to a codec while cutting by stream copy (\code{reencode = FALSE},
 as an argument or a column) is an error: no encoder runs on that path.}
+
+\item{audio_codec}{A string naming the output audio codec, applied to every
+row lacking an \code{audio_codec} column. \code{"copy"} (default)
+stream-copies the audio; name an encoder to transcode it, or \code{NULL} to
+leave the codec unset. A row that resolves to anything but \code{"copy"}
+while cutting by stream copy (\code{reencode = FALSE}, as an argument or a
+column) is an error, so a jobs table mixing stream-copy rows with a
+transcoding \code{audio_codec} must be split into separate calls.}
 
 \item{hardware, fallback}{The encoder backend and its fallback behavior,
 applied to the whole batch (a property of the machine, not of a row, so

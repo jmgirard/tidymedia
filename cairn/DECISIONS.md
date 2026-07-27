@@ -262,3 +262,30 @@ Uses D014's `audio_codec` spelling; sits under IP1/IP3/D009 and GP1.
 - **Batch: `audio_codec` is a per-row column** (`NA` → unset), reusing
   `check_batch_codec_col(col =)` and `batch_codec_cell()`. Rules out reusing
   `check_batch_string_col()`, which rejects `NA` and so cannot spell "unset".
+
+## D018 — GP2 is traded on `segment_video`'s audio stream (2026-07-26, from M35 review, narrows D017)
+
+D017's rationale reads "these verbs never need to touch audio, so re-encoding it
+is pure loss." That holds for three of the four verbs, and **not literally for
+`segment_video`**, which must cut the audio as well as the video. Surfaced by the
+M35 review's diff-bug lens (scored 55 — bookkeeping, not a behavioral defect);
+recorded here because GP2 is tradeable only *with stated justification*, and
+until now the trade was unstated.
+
+- **The trade.** GP2 is "Cutting re-encodes for frame accuracy by default"
+  (D008). With `reencode = TRUE` the video is still cut at the exact timestamp,
+  but a stream-copied audio track now cuts at the nearest packet boundary.
+  Measured on a 1 s output-seek cut of a 25 fps / AAC fixture: audio
+  `start_time = 0.007007`, `duration = 0.998458`, against the previous
+  re-encode's `0.000000` / `1.000000`; video identical at `0.040000` / `0.960000`
+  in both.
+- **Why the trade is accepted.** The error is bounded by one audio frame (~7 ms
+  here) and is plausibly smaller than the encoder delay the old re-encode path
+  introduced on its own. Against it: that path silently re-encoded to a
+  build-dependent codec on every cut. GP2 guards frame accuracy on the *video*
+  cut, which is what "frame" means and what is unchanged.
+- **The escape hatch is exact, not approximate.** A caller who needs the audio
+  cut sample-accurately passes `audio_codec` a real encoder, which restores the
+  pre-M35 behavior deliberately instead of by default.
+- **Scope.** Narrows D017's rationale only. D017's default, its guards, and its
+  batch column all stand unchanged, and no code changes.

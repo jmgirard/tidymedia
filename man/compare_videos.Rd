@@ -11,6 +11,7 @@ compare_videos(
   resize = TRUE,
   audio = NULL,
   video_codec = NULL,
+  audio_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
   run = TRUE
@@ -34,6 +35,13 @@ output, or \code{NULL} to drop audio entirely. (default = \code{NULL})}
 (default) to leave it unset, so the output container's default encoder is
 used and the compiled command is unchanged from one that never named a
 codec.}
+
+\item{audio_codec}{A string naming the codec for the carried audio track.
+\code{"copy"} (default) stream-copies it through untouched; name an encoder
+(e.g. \code{"aac"}) to transcode it, or pass \code{NULL} to leave the codec
+unset so the output container's default encoder is used. Nothing is emitted
+when \code{audio} is \code{NULL}, since no audio reaches the output; naming
+an encoder in that case is an error.}
 
 \item{hardware}{The encoder backend: \code{"none"} (default, the software
 \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
@@ -67,7 +75,8 @@ before/after processing. Built on the blessed stacking verbs
 By default the two inputs are resized to share an edge (equal heights for a
 horizontal stack, equal widths for a vertical one); resizing currently
 supports exactly two inputs, so pass \code{resize = FALSE} to compare more.
-Audio is dropped unless \code{audio} names an input to carry.
+Audio is dropped unless \code{audio} names an input to carry; a carried
+track is stream-copied unless \code{audio_codec} names an encoder.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

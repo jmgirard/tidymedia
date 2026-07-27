@@ -11,6 +11,7 @@ segment_video(
   outfiles = NULL,
   reencode = TRUE,
   video_codec = NULL,
+  audio_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
   run = TRUE,
@@ -45,6 +46,14 @@ for the trade-off.}
 used and the compiled command is unchanged from one that never named a
 codec. A stream copy runs no encoder, so naming a codec (or a
 \code{hardware} backend) alongside \code{reencode = FALSE} is an error.}
+
+\item{audio_codec}{A string naming the output audio codec. \code{"copy"}
+(default) stream-copies the audio through untouched; name an encoder (e.g.
+\code{"aac"}) to transcode it, or pass \code{NULL} to leave the codec unset
+so the output container's default encoder is used. A stream copy
+(\code{reencode = FALSE}) always copies the audio, so any other value is an
+error there. Stream-copying fails if the output container cannot hold the
+source audio codec (e.g. FLAC in \code{.mp4}) — name an encoder instead.}
 
 \item{hardware}{The encoder backend: \code{"none"} (default, the software
 \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When

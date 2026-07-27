@@ -124,7 +124,10 @@ test_that("convert_audio(format=) pins -codec:a and drops -q:a", {
 test_that("crop_video() compiles to a crop filter mapping all streams", {
   f <- make_input()
   cmd <- crop_video(f, "out.mp4", width = 100, height = 50, x = 0, y = 0, run = FALSE)
-  expect_match(cmd, '-vf "crop=w=100:h=50:x=0:y=0" -map 0', fixed = TRUE)
+  # The filter and the map are no longer adjacent: the default audio_codec
+  # emits -codec:a copy between them (M35/D017).
+  expect_match(cmd, '-vf "crop=w=100:h=50:x=0:y=0"', fixed = TRUE)
+  expect_match(cmd, '-map 0 "out.mp4"', fixed = TRUE)
 })
 
 test_that("format_for_web() compiles to the web-friendly re-encode", {

@@ -423,14 +423,20 @@ convert_audio <- function(infile, outfile, format = NULL, run = TRUE) {
 # command assembly stays in Layer 1 (IP1/D002).
 crop_video_pipeline <- function(input, output, width, height,
                                 x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
-                                video_codec = NULL, hardware = "none",
+                                video_codec = NULL, audio_codec = "copy",
+                                hardware = "none",
                                 fallback = FALSE, call = rlang::caller_env()) {
   p <- ffm_files(input, output)
   p <- ffm_crop(p, width = width, height = height, x = x, y = y)
   p <- ffm_map(p, "0")
+  # -map 0 carries the audio through, and the default audio_codec = "copy"
+  # stream-copies it rather than letting the container's default encoder
+  # re-encode it (M35/D017).
+  p <- apply_audio_codec(p, audio_codec, call = call)
   # The default video_codec = NULL emits no -codec:v, so the output keeps its
-  # container's default encoder and the compiled command is byte-identical to
-  # the pre-M34 one (M34/D016).
+  # container's default *video* encoder. This no longer makes the whole command
+  # byte-identical to the pre-M34 one -- M35's audio default added -codec:a copy
+  # (M34/D016, M35/D017).
   apply_video_codec(p, video_codec, hardware, fallback, call = call)
 }
 
@@ -448,6 +454,12 @@ crop_video_pipeline <- function(input, output, width, height,
 #'   (default) to leave it unset, so the output container's default encoder is
 #'   used and the compiled command is unchanged from one that never named a
 #'   codec.
+#' @param audio_codec A string naming the output audio codec. \code{"copy"}
+#'   (default) stream-copies the audio through untouched; name an encoder (e.g.
+#'   \code{"aac"}) to transcode it, or pass \code{NULL} to leave the codec unset
+#'   so the output container's default encoder is used. Stream-copying fails if
+#'   the output container cannot hold the source audio codec (e.g. FLAC in
+#'   \code{.mp4}) — name an encoder in that case.
 #' @param hardware The encoder backend: \code{"none"} (default, the software
 #'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
 #'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
@@ -474,17 +486,19 @@ crop_video_pipeline <- function(input, output, width, height,
 #' @export
 crop_video <- function(infile, outfile, width, height,
                        x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
-                       video_codec = NULL, hardware = c("none", "nvenc"),
+                       video_codec = NULL, audio_codec = "copy",
+                       hardware = c("none", "nvenc"),
                        fallback = FALSE, run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
   rlang::check_string(video_codec, allow_null = TRUE)
+  rlang::check_string(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
 
   ffm_finish(
     crop_video_pipeline(infile, outfile, width, height, x, y,
-                        video_codec, hardware, fallback),
+                        video_codec, audio_codec, hardware, fallback),
     run
   )
 }
@@ -1569,6 +1583,22 @@ apply_video_codec <- function(object, video_codec, hardware = "none",
   ffm_codec(object, video = video_codec)
 }
 
+# apply_audio_codec(): thread a verb's audio_codec choice into a pipeline. The
+# default "copy" stream-copies the audio, matching the norm standardize_video()
+# and anonymize_video() already document, so these verbs stop re-encoding audio
+# to whatever the local build's container default is (M35/D017). NULL is the
+# escape hatch: no ffm_codec() call at all, so the command gains no -codec:a.
+# ffm_codec() token-checks the value too, but checking here attributes the error
+# to the user-facing verb rather than to the engine (parity with
+# apply_video_codec()).
+apply_audio_codec <- function(object, audio_codec, call = rlang::caller_env()) {
+  if (is.null(audio_codec)) {
+    return(object)
+  }
+  check_token(audio_codec, call = call)
+  ffm_codec(object, audio = audio_codec)
+}
+
 
 # segment_video() ---------------------------------------------------------
 
@@ -1602,6 +1632,13 @@ apply_video_codec <- function(object, video_codec, hardware = "none",
 #'   used and the compiled command is unchanged from one that never named a
 #'   codec. A stream copy runs no encoder, so naming a codec (or a
 #'   \code{hardware} backend) alongside \code{reencode = FALSE} is an error.
+#' @param audio_codec A string naming the output audio codec. \code{"copy"}
+#'   (default) stream-copies the audio through untouched; name an encoder (e.g.
+#'   \code{"aac"}) to transcode it, or pass \code{NULL} to leave the codec unset
+#'   so the output container's default encoder is used. A stream copy
+#'   (\code{reencode = FALSE}) always copies the audio, so any other value is an
+#'   error there. Stream-copying fails if the output container cannot hold the
+#'   source audio codec (e.g. FLAC in \code{.mp4}) — name an encoder instead.
 #' @param hardware The encoder backend: \code{"none"} (default, the software
 #'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
 #'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
@@ -1642,6 +1679,7 @@ segment_video <- function(infile,
                           outfiles = NULL,
                           reencode = TRUE,
                           video_codec = NULL,
+                          audio_codec = "copy",
                           hardware = c("none", "nvenc"),
                           fallback = FALSE,
                           run = TRUE,
@@ -1662,6 +1700,7 @@ segment_video <- function(infile,
   }
   rlang::check_bool(reencode)
   rlang::check_string(video_codec, allow_null = TRUE)
+  rlang::check_string(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
 
   # If no names are provided, derive per-segment names from the input file.
@@ -1679,7 +1718,8 @@ segment_video <- function(infile,
     jobs,
     function(input, output, start, end, ...) {
       segment_pipeline(input, output, start, end, reencode,
-                       video_codec, hardware, fallback)
+                       video_codec = video_codec, audio_codec = audio_codec,
+                       hardware = hardware, fallback = fallback)
     },
     run = run,
     parallel = parallel
@@ -1731,7 +1771,8 @@ derive_frame_names <- function(input, format = "png") {
 # (non-reencode) path. Fan-out verbs stay single-output per job (D003, D007);
 # both verbs wrap this in a closure that captures the scalar `reencode`.
 segment_pipeline <- function(input, output, start, end, reencode,
-                             video_codec = NULL, hardware = "none",
+                             video_codec = NULL, audio_codec = "copy",
+                             hardware = "none",
                              fallback = FALSE, call = rlang::caller_env()) {
   # A stream copy writes the source video bytes through untouched, so naming an
   # encoder -- in software or on the GPU -- cannot mean anything on that path
@@ -1750,9 +1791,26 @@ segment_pipeline <- function(input, output, start, end, reencode,
       call = call
     )
   }
+  # Same reasoning for the audio stream, with one wrinkle: the copy path's
+  # ffm_copy() sets -codec:a copy itself, so "copy" is the one value that agrees
+  # with it. Anything else -- a named encoder, or NULL asking for no -codec:a at
+  # all -- would be silently overwritten by ffm_copy(), so it aborts (M35/D017).
+  if (!reencode && !identical(audio_codec, "copy")) {
+    cli::cli_abort(
+      c(
+        "{.arg audio_codec} needs a re-encoding cut.",
+        "x" = "{.code reencode = FALSE} stream-copies every stream, so the
+               audio is always copied.",
+        "i" = "Pass {.code reencode = TRUE} to cut by re-encoding, or leave
+               {.code audio_codec = \"copy\"}."
+      ),
+      call = call
+    )
+  }
   p <- ffm_seek(ffm_files(input, output), start = start, end = end,
                 reencode = reencode)
   if (!reencode) p <- ffm_copy(p)
+  p <- apply_audio_codec(p, audio_codec, call = call)
   apply_video_codec(p, video_codec, hardware, fallback, call = call)
 }
 
@@ -1775,10 +1833,10 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #'   \code{output} is absent, one is derived per row by appending
 #'   \code{_<n>.<ext>} to each input's basename, with the segment number
 #'   restarting at 1 for each input file (the same rule as
-#'   \code{\link{segment_video}}). A \code{video_codec} column overrides that
-#'   argument per row, with \code{NA} meaning "leave the codec unset" (the
-#'   column's way of writing the argument's \code{NULL}). Any other columns are
-#'   ignored.
+#'   \code{\link{segment_video}}). A \code{video_codec} or \code{audio_codec}
+#'   column overrides that argument per row, with \code{NA} meaning "leave the
+#'   codec unset" (the column's way of writing the argument's \code{NULL}). Any
+#'   other columns are ignored.
 #' @param reencode A logical passed to \code{\link{ffm_seek}}: cut each segment
 #'   frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
 #'   lossless copy that snaps to keyframes (\code{FALSE}). See \code{ffm_seek}
@@ -1789,6 +1847,13 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #'   it unset so each segment keeps its container's default encoder. A row that
 #'   resolves to a codec while cutting by stream copy (\code{reencode = FALSE},
 #'   as an argument or a column) is an error: no encoder runs on that path.
+#' @param audio_codec A string naming the output audio codec, applied to every
+#'   row lacking an \code{audio_codec} column. \code{"copy"} (default)
+#'   stream-copies the audio; name an encoder to transcode it, or \code{NULL} to
+#'   leave the codec unset. A row that resolves to anything but \code{"copy"}
+#'   while cutting by stream copy (\code{reencode = FALSE}, as an argument or a
+#'   column) is an error, so a jobs table mixing stream-copy rows with a
+#'   transcoding \code{audio_codec} must be split into separate calls.
 #' @param hardware,fallback The encoder backend and its fallback behavior,
 #'   applied to the whole batch (a property of the machine, not of a row, so
 #'   neither is read as a \code{jobs} column). See [segment_video()].
@@ -1829,10 +1894,12 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #' segment_video_batch(jobs, run = FALSE)
 #' @export
 segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
+                           audio_codec = "copy",
                            hardware = c("none", "nvenc"), fallback = FALSE,
                            run = TRUE, parallel = FALSE, ...) {
 
   rlang::check_string(video_codec, allow_null = TRUE)
+  rlang::check_string(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
 
   if (!is.data.frame(jobs)) {
@@ -1864,6 +1931,7 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
     )
   }
   check_batch_codec_col(jobs)
+  check_batch_codec_col(jobs, "audio_codec")
   rlang::check_bool(reencode)
 
   # Auto-name outputs when the column is absent: derive per-input segment names
@@ -1886,6 +1954,7 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
         input, output, start, end,
         reencode = pick("reencode", reencode),
         video_codec = batch_codec_cell(pick("video_codec", video_codec)),
+        audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         hardware = hardware,
         fallback = fallback
       )
@@ -2867,6 +2936,26 @@ batch_codec_cell <- function(value) {
   if (length(value) == 1L && is.na(value)) NULL else value
 }
 
+# check_batch_audio_col(): type-guard a composite verb's `audio` stream-index
+# column up front. Legal: a numeric column (NA cells allowed, meaning "drop
+# audio" for that row), or the all-NA column R types as logical. The same
+# spelled-out shape check_batch_codec_col() uses, and for the same reason:
+# testing `all(is.na(.))` alone would admit an all-NA character or Date column,
+# while testing `is.logical(.)` alone would admit c(TRUE, FALSE) (M35, M34
+# lesson). Shared by compare_videos_batch() and picture_in_picture_batch(), which
+# drifted apart before M35 -- compare had no up-front guard at all.
+check_batch_audio_col <- function(jobs, call = rlang::caller_env()) {
+  ok <- function(x) is.numeric(x) || (is.logical(x) && all(is.na(x)))
+  if ("audio" %in% names(jobs) && !ok(jobs$audio)) {
+    cli::cli_abort(
+      "The {.field audio} column of {.arg jobs} must be numeric
+       ({.val {NA}} to drop audio).",
+      call = call
+    )
+  }
+  invisible(jobs)
+}
+
 # Guard an optional string override column: present -> character, no NA.
 check_batch_string_col <- function(jobs, col, call = rlang::caller_env()) {
   if (col %in% names(jobs)) {
@@ -3108,7 +3197,8 @@ derive_web_names <- function(input) {
 #'   column to override the corresponding argument per row; rows (or dimensions)
 #'   omitting the column fall back to the argument. A \code{video_codec} column
 #'   overrides that argument per row, with \code{NA} meaning "leave the codec
-#'   unset" (the column's way of writing the argument's \code{NULL}). Any two
+#'   unset" (the column's way of writing the argument's \code{NULL}); an
+#'   \code{audio_codec} column works the same way. Any two
 #'   rows that resolve to the same output path are rejected. Any other columns
 #'   are ignored.
 #' @param width,height The output crop size in pixels, applied to every row
@@ -3119,6 +3209,10 @@ derive_web_names <- function(input) {
 #' @param video_codec A string naming the output video codec, applied to every
 #'   row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
 #'   it unset so each output keeps its container's default encoder.
+#' @param audio_codec A string naming the output audio codec, applied to every
+#'   row lacking an \code{audio_codec} column. \code{"copy"} (default)
+#'   stream-copies the audio; name an encoder to transcode it, or \code{NULL} to
+#'   leave the codec unset so each output keeps its container's default encoder.
 #' @param hardware,fallback The encoder backend and its fallback behavior,
 #'   applied to the whole batch (a property of the machine, not of a row, so
 #'   neither is read as a \code{jobs} column). See [crop_video()].
@@ -3145,11 +3239,12 @@ derive_web_names <- function(input) {
 #' @export
 crop_video_batch <- function(jobs, width = NULL, height = NULL,
                              x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
-                             video_codec = NULL,
+                             video_codec = NULL, audio_codec = "copy",
                              hardware = c("none", "nvenc"), fallback = FALSE,
                              run = TRUE, parallel = FALSE, ...) {
 
   rlang::check_string(video_codec, allow_null = TRUE)
+  rlang::check_string(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
 
   jobs <- check_batch_jobs(jobs, require_output = FALSE)
@@ -3176,6 +3271,7 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
     }
   }
   check_batch_codec_col(jobs)
+  check_batch_codec_col(jobs, "audio_codec")
 
   if (!"output" %in% names(jobs)) {
     jobs$output <- derive_cropped_names(jobs$input)
@@ -3194,6 +3290,7 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
         x = pick("x", x),
         y = pick("y", y),
         video_codec = batch_codec_cell(pick("video_codec", video_codec)),
+        audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         hardware = hardware,
         fallback = fallback
       )
@@ -3222,7 +3319,13 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #'   \code{_web} to each input's basename with an \code{.mp4} extension (the web
 #'   re-encode always writes H.264/mp4), e.g. \code{clip.mkv} becomes
 #'   \code{clip_web.mp4}. Any two rows that resolve to the same output path are
-#'   rejected. Any other columns are ignored.
+#'   rejected. Any other columns are ignored — including \code{video_codec} and
+#'   \code{audio_codec}, which the sibling batch verbs read as per-row overrides
+#'   but this one does not: the web recipe fixes both codecs by identity (H.264
+#'   video, AAC audio). For a per-row video codec use
+#'   \code{\link{standardize_video_batch}}, which stream-copies audio rather than
+#'   exposing a codec for it; for a per-row audio codec use a verb that takes one,
+#'   such as \code{\link{crop_video_batch}}.
 #' @param hardware The encoder backend applied to every row: \code{"none"}
 #'   (default, software libx264) or \code{"nvenc"} for NVIDIA GPU H.264 encoding.
 #'   Batch-wide (not a per-row column). See \code{\link{has_nvenc}}.
@@ -3446,10 +3549,28 @@ concatenate_videos <- function(infiles, outfile, run = TRUE) {
 compare_videos_pipeline <- function(infiles, outfile,
                                     direction = c("horizontal", "vertical"),
                                     resize = TRUE, audio = NULL,
-                                    video_codec = NULL, hardware = "none",
+                                    video_codec = NULL, audio_codec = "copy",
+                                    hardware = "none",
                                     fallback = FALSE,
                                     call = rlang::caller_env()) {
   direction <- rlang::arg_match(direction)
+  # audio_codec configures an encode; with no audio mapped there is no stream to
+  # encode, so a named encoder is a contradiction rather than a no-op. NULL stays
+  # legal -- it only ever means "emit no -codec:a", which is already the case
+  # (M35/D017). IP3/D009 is untouched: the graph and its labels are unchanged.
+  if (is.null(audio) && !is.null(audio_codec) &&
+      !identical(audio_codec, "copy")) {
+    cli::cli_abort(
+      c(
+        "{.arg audio_codec} needs an audio stream to encode.",
+        "x" = "{.code audio = NULL} carries no audio into the output.",
+        "i" = "Pass {.arg audio} the 0-based index of the input whose audio to
+               keep, or drop {.arg audio_codec}."
+      ),
+      call = call
+    )
+  }
+
   if (resize && length(infiles) != 2) {
     cli::cli_abort(c(
       "{.arg resize} currently supports exactly two inputs.",
@@ -3464,6 +3585,9 @@ compare_videos_pipeline <- function(infiles, outfile,
   )
   if (!is.null(audio)) {
     p <- ffm_map(p, paste0(audio, ":a"))
+    # The carried track is mapped straight through, so the default audio_codec
+    # stream-copies it instead of letting the container re-encode it (M35/D017).
+    p <- apply_audio_codec(p, audio_codec, call = call)
   }
   # The stacked video is a filtered stream, so a -codec:v rides alongside the
   # -filter_complex … [vout] mapping the blessed stack verbs emit; the default
@@ -3482,7 +3606,8 @@ compare_videos_pipeline <- function(infiles, outfile,
 #' By default the two inputs are resized to share an edge (equal heights for a
 #' horizontal stack, equal widths for a vertical one); resizing currently
 #' supports exactly two inputs, so pass \code{resize = FALSE} to compare more.
-#' Audio is dropped unless \code{audio} names an input to carry.
+#' Audio is dropped unless \code{audio} names an input to carry; a carried
+#' track is stream-copied unless \code{audio_codec} names an encoder.
 #'
 #' @param infiles A character vector of two or more video file paths.
 #' @param outfile A string giving the path to write the comparison video to.
@@ -3496,6 +3621,12 @@ compare_videos_pipeline <- function(infiles, outfile,
 #'   (default) to leave it unset, so the output container's default encoder is
 #'   used and the compiled command is unchanged from one that never named a
 #'   codec.
+#' @param audio_codec A string naming the codec for the carried audio track.
+#'   \code{"copy"} (default) stream-copies it through untouched; name an encoder
+#'   (e.g. \code{"aac"}) to transcode it, or pass \code{NULL} to leave the codec
+#'   unset so the output container's default encoder is used. Nothing is emitted
+#'   when \code{audio} is \code{NULL}, since no audio reaches the output; naming
+#'   an encoder in that case is an error.
 #' @param hardware The encoder backend: \code{"none"} (default, the software
 #'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
 #'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
@@ -3523,6 +3654,7 @@ compare_videos_pipeline <- function(infiles, outfile,
 compare_videos <- function(infiles, outfile,
                            direction = c("horizontal", "vertical"),
                            resize = TRUE, audio = NULL, video_codec = NULL,
+                           audio_codec = "copy",
                            hardware = c("none", "nvenc"), fallback = FALSE,
                            run = TRUE) {
 
@@ -3535,10 +3667,13 @@ compare_videos <- function(infiles, outfile,
     audio, min = 0, max = length(infiles) - 1, allow_null = TRUE
   )
   rlang::check_string(video_codec, allow_null = TRUE)
+  rlang::check_string(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
 
   p <- compare_videos_pipeline(infiles, outfile, direction, resize, audio,
-                               video_codec, hardware, fallback)
+                               video_codec = video_codec,
+                               audio_codec = audio_codec,
+                               hardware = hardware, fallback = fallback)
   ffm_finish(p, run)
 }
 
@@ -3556,10 +3691,28 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
                                                      "bottomright", "bottomleft",
                                                      "center"),
                                         scale = 0.25, margin = 16, audio = NULL,
-                                        video_codec = NULL, hardware = "none",
+                                        video_codec = NULL,
+                                        audio_codec = "copy",
+                                        hardware = "none",
                                         fallback = FALSE,
                                         call = rlang::caller_env()) {
   position <- rlang::arg_match(position)
+  # Same contradiction as compare_videos(): no mapped audio means no stream for a
+  # named encoder to act on, while NULL only ever means "emit no -codec:a"
+  # (M35/D017). IP3/D009 untouched -- the graph and its labels are unchanged.
+  if (is.null(audio) && !is.null(audio_codec) &&
+      !identical(audio_codec, "copy")) {
+    cli::cli_abort(
+      c(
+        "{.arg audio_codec} needs an audio stream to encode.",
+        "x" = "{.code audio = NULL} carries no audio into the output.",
+        "i" = "Pass {.arg audio} {.val {0}} for the main video's audio or
+               {.val {1}} for the overlay's, or drop {.arg audio_codec}."
+      ),
+      call = call
+    )
+  }
+
   m <- as.integer(margin)
   pos <- switch(
     position,
@@ -3577,6 +3730,9 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
   p <- ffm_overlay(p, x = pos$x, y = pos$y, scale = scale)
   if (!is.null(audio)) {
     p <- ffm_map(p, paste0(audio, ":a"))
+    # The carried track is mapped straight through, so the default audio_codec
+    # stream-copies it instead of letting the container re-encode it (M35/D017).
+    p <- apply_audio_codec(p, audio_codec, call = call)
   }
   # The composited video is a filtered stream, so a -codec:v rides alongside the
   # -filter_complex … [vout] mapping ffm_overlay() emits; the default
@@ -3593,7 +3749,8 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
 #' fraction of the main video's width and positions it.
 #'
 #' Audio is dropped unless \code{audio} names an input to carry (\code{0} = the
-#' main video, \code{1} = the overlay).
+#' main video, \code{1} = the overlay). A carried track is
+#' stream-copied unless \code{audio_codec} names an encoder.
 #'
 #' @param main A string giving the path to the background (full-size) video.
 #' @param overlay A string giving the path to the inset video.
@@ -3611,6 +3768,12 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
 #'   (default) to leave it unset, so the output container's default encoder is
 #'   used and the compiled command is unchanged from one that never named a
 #'   codec.
+#' @param audio_codec A string naming the codec for the carried audio track.
+#'   \code{"copy"} (default) stream-copies it through untouched; name an encoder
+#'   (e.g. \code{"aac"}) to transcode it, or pass \code{NULL} to leave the codec
+#'   unset so the output container's default encoder is used. Nothing is emitted
+#'   when \code{audio} is \code{NULL}, since no audio reaches the output; naming
+#'   an encoder in that case is an error.
 #' @param hardware The encoder backend: \code{"none"} (default, the software
 #'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
 #'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
@@ -3640,7 +3803,7 @@ picture_in_picture <- function(main, overlay, outfile,
                                             "bottomright", "bottomleft",
                                             "center"),
                                scale = 0.25, margin = 16, audio = NULL,
-                               video_codec = NULL,
+                               video_codec = NULL, audio_codec = "copy",
                                hardware = c("none", "nvenc"), fallback = FALSE,
                                run = TRUE) {
 
@@ -3651,11 +3814,13 @@ picture_in_picture <- function(main, overlay, outfile,
   rlang::check_number_whole(margin, min = 0)
   rlang::check_number_whole(audio, min = 0, max = 1, allow_null = TRUE)
   rlang::check_string(video_codec, allow_null = TRUE)
+  rlang::check_string(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
 
   p <- picture_in_picture_pipeline(
     main, overlay, outfile, position, scale, margin, audio,
-    video_codec, hardware, fallback
+    video_codec = video_codec, audio_codec = audio_codec,
+    hardware = hardware, fallback = fallback
   )
   ffm_finish(p, run)
 }
@@ -3733,19 +3898,24 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #' @param jobs A data frame with one row per output and (at least) an
 #'   \code{inputs} list-column — each cell a character vector of **two or more**
 #'   video paths — and an \code{output} column (destination path). Optional
-#'   \code{direction}, \code{resize}, \code{audio}, and \code{video_codec}
-#'   columns override the
+#'   \code{direction}, \code{resize}, \code{audio}, \code{video_codec}, and
+#'   \code{audio_codec} columns override the
 #'   like-named arguments per row (a row omitting one falls back to the
 #'   argument). In an \code{audio} column, \code{NA} means "drop audio" (the
 #'   column's way of writing the scalar's \code{NULL}); in a \code{video_codec}
-#'   column it means "leave the codec unset". Any two rows resolving to
-#'   the same output path are rejected; other columns are ignored.
+#'   or \code{audio_codec} column it means "leave the codec unset". Any two rows
+#'   resolving to the same output path are rejected; other columns are ignored.
 #' @param direction,resize,audio Defaults applied to every row lacking the
 #'   corresponding column. See [compare_videos()] for their meaning. \code{audio}
 #'   is validated per row against that row's input count.
 #' @param video_codec A string naming the output video codec, applied to every
 #'   row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
 #'   it unset so each output keeps its container's default encoder.
+#' @param audio_codec A string naming the codec for the carried audio track,
+#'   applied to every row lacking an \code{audio_codec} column. \code{"copy"}
+#'   (default) stream-copies it; name an encoder to transcode it, or \code{NULL}
+#'   to leave the codec unset. A row carrying no audio emits no \code{-codec:a};
+#'   naming an encoder on such a row is an error.
 #' @param hardware,fallback The encoder backend and its fallback behavior,
 #'   applied to the whole batch (a property of the machine, not of a row, so
 #'   neither is read as a \code{jobs} column). See [compare_videos()].
@@ -3772,7 +3942,7 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #' @export
 compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
                                  resize = TRUE, audio = NULL,
-                                 video_codec = NULL,
+                                 video_codec = NULL, audio_codec = "copy",
                                  hardware = c("none", "nvenc"),
                                  fallback = FALSE,
                                  run = TRUE, parallel = FALSE, ...) {
@@ -3781,6 +3951,7 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
   rlang::check_bool(resize)
   rlang::check_number_whole(audio, min = 0, allow_null = TRUE)
   rlang::check_string(video_codec, allow_null = TRUE)
+  rlang::check_string(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
 
   jobs <- check_fanin_jobs(jobs, min_inputs = 2L, verb = "Comparison")
@@ -3790,7 +3961,9 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
   # (direction vocabulary, resize/length compatibility, audio range) are
   # inherited per row from compare_videos_pipeline() / the per-row audio check.
   check_batch_string_col(jobs, "direction")
+  check_batch_audio_col(jobs)
   check_batch_codec_col(jobs)
+  check_batch_codec_col(jobs, "audio_codec")
   if ("resize" %in% names(jobs) &&
       (!is.logical(jobs$resize) || anyNA(jobs$resize))) {
     cli::cli_abort(
@@ -3818,6 +3991,7 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
         resize = pick("resize", resize),
         audio = aud,
         video_codec = batch_codec_cell(pick("video_codec", video_codec)),
+        audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         hardware = hardware,
         fallback = fallback
       )
@@ -3844,18 +4018,24 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #' @param jobs A data frame with one row per output and (at least) \code{main}
 #'   (background path), \code{overlay} (inset path), and \code{output}
 #'   (destination path) columns. Optional \code{position}, \code{scale},
-#'   \code{margin}, \code{audio}, and \code{video_codec} columns override the
+#'   \code{margin}, \code{audio}, \code{video_codec}, and \code{audio_codec}
+#'   columns override the
 #'   like-named arguments
 #'   per row (a row omitting one falls back to the argument). In an \code{audio}
 #'   column, \code{NA} means "drop audio" (the column's way of writing the
-#'   scalar's \code{NULL}); in a \code{video_codec} column it means "leave the
-#'   codec unset". Any two rows resolving to the same output path are
-#'   rejected; other columns are ignored.
+#'   scalar's \code{NULL}); in a \code{video_codec} or \code{audio_codec} column
+#'   it means "leave the codec unset". Any two rows resolving to the same output
+#'   path are rejected; other columns are ignored.
 #' @param position,scale,margin,audio Defaults applied to every row lacking the
 #'   corresponding column. See [picture_in_picture()] for their meaning.
 #' @param video_codec A string naming the output video codec, applied to every
 #'   row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
 #'   it unset so each output keeps its container's default encoder.
+#' @param audio_codec A string naming the codec for the carried audio track,
+#'   applied to every row lacking an \code{audio_codec} column. \code{"copy"}
+#'   (default) stream-copies it; name an encoder to transcode it, or \code{NULL}
+#'   to leave the codec unset. A row carrying no audio emits no \code{-codec:a};
+#'   naming an encoder on such a row is an error.
 #' @param hardware,fallback The encoder backend and its fallback behavior,
 #'   applied to the whole batch (a property of the machine, not of a row, so
 #'   neither is read as a \code{jobs} column). See [picture_in_picture()].
@@ -3885,7 +4065,7 @@ picture_in_picture_batch <- function(jobs,
                                                   "bottomright", "bottomleft",
                                                   "center"),
                                      scale = 0.25, margin = 16, audio = NULL,
-                                     video_codec = NULL,
+                                     video_codec = NULL, audio_codec = "copy",
                                      hardware = c("none", "nvenc"),
                                      fallback = FALSE,
                                      run = TRUE, parallel = FALSE, ...) {
@@ -3895,6 +4075,7 @@ picture_in_picture_batch <- function(jobs,
   rlang::check_number_whole(margin, min = 0)
   rlang::check_number_whole(audio, min = 0, max = 1, allow_null = TRUE)
   rlang::check_string(video_codec, allow_null = TRUE)
+  rlang::check_string(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
 
   # Fixed two-input shape (D015): main/overlay are distinct roles, so named
@@ -3931,14 +4112,9 @@ picture_in_picture_batch <- function(jobs,
       cli::cli_abort("The {.field {col}} column of {.arg jobs} must be numeric (no {.val {NA}}).")
     }
   }
-  # An all-NA `audio` column is logical, not numeric (NA means "drop audio", per
-  # the roxygen) — accept it, matching compare_videos_batch's no-guard handling;
-  # a genuinely wrong (e.g. character) column still aborts here.
-  if ("audio" %in% names(jobs) && !is.numeric(jobs$audio) &&
-      !all(is.na(jobs$audio))) {
-    cli::cli_abort("The {.field audio} column of {.arg jobs} must be numeric ({.val {NA}} to drop audio).")
-  }
+  check_batch_audio_col(jobs)
   check_batch_codec_col(jobs)
+  check_batch_codec_col(jobs, "audio_codec")
 
   # Thin Layer-2 fan-in over ffm_batch (D007/D015): one overlay pipeline per row,
   # sharing picture_in_picture_pipeline() with picture_in_picture(). A per-row
@@ -3963,6 +4139,7 @@ picture_in_picture_batch <- function(jobs,
         margin = mrg,
         audio = aud,
         video_codec = batch_codec_cell(pick("video_codec", video_codec)),
+        audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         hardware = hardware,
         fallback = fallback
       )

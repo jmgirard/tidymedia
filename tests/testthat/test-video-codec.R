@@ -2,23 +2,30 @@
 # their _batch siblings (M34, D016).
 #
 # `video_codec = NULL` is a "leave the codec alone" sentinel: no -codec:v is
-# emitted, so the output keeps its container's default encoder and the compiled
-# command is byte-identical to the pre-M34 one. nvenc availability is simulated
+# emitted, so the output keeps its container's default video encoder.
+#
+# M35 later changed the AUDIO default on these same verbs, which splits the pins
+# below in two. crop_video's and segment_video's full default commands gained
+# -codec:a copy, so their pins here assert the video half and the full literals
+# moved to test-audio-codec.R. The composite pins are untouched: those verbs map
+# no audio by default, so they emit no -codec:a either way and stay
+# byte-identical to pre-M34. nvenc availability is simulated
 # with the `tidymedia.nvenc_encoders` option seam that has_nvenc() consults, so
 # every compile test here is binary-free (no GPU); the execution tests are
 # guarded by skip_if_no_nvenc().
 
 # crop_video() ----------------------------------------------------------------
 
-test_that("crop_video() default compiles the pre-M34 command byte-for-byte", {
+test_that("crop_video() with the default video_codec emits no -codec:v", {
   f <- make_input()
   cmd <- crop_video(f, "out.mp4", width = 100, height = 50, x = 0, y = 0,
                     run = FALSE)
-  # The literal below is the command master compiled before M34 existed.
-  expect_equal(
-    as.character(cmd),
-    paste0('-y -i "', f, '" -vf "crop=w=100:h=50:x=0:y=0" -map 0 "out.mp4"')
-  )
+  # The video half of the command is still exactly what master compiled before
+  # M34 existed. The full default literal is no longer pinned here because M35
+  # changed it (the default audio_codec adds -codec:a copy); it is pinned
+  # byte-for-byte in test-audio-codec.R instead.
+  expect_match(as.character(cmd), '-vf "crop=w=100:h=50:x=0:y=0"', fixed = TRUE)
+  expect_match(as.character(cmd), '-map 0 "out.mp4"', fixed = TRUE)
   expect_no_match(as.character(cmd), "-codec:v", fixed = TRUE)
 })
 
@@ -158,14 +165,14 @@ test_that("compare_videos() honors the nvenc abort and fallback branches", {
 
 # segment_video() -------------------------------------------------------------
 
-test_that("segment_video() default compiles the pre-M34 command byte-for-byte", {
+test_that("segment_video() with the default video_codec emits no -codec:v", {
   f <- make_input()
   out <- segment_video(f, 0, 1, "seg.mp4", run = FALSE)
-  # The literal below is the command master compiled before M34 existed.
-  expect_equal(
-    as.character(out$command),
-    paste0('-y -i "', f, '" -ss 0 -to 1 "seg.mp4"')
-  )
+  # The seek half of the command is still exactly what master compiled before
+  # M34 existed. The full default literal is no longer pinned here because M35
+  # changed it (the default audio_codec adds -codec:a copy); it is pinned
+  # byte-for-byte in test-audio-codec.R instead.
+  expect_match(as.character(out$command), '-ss 0 -to 1 "seg.mp4"', fixed = TRUE)
   expect_no_match(as.character(out$command), "-codec:v", fixed = TRUE)
 })
 

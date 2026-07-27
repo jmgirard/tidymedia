@@ -10,6 +10,7 @@ compare_videos_batch(
   resize = TRUE,
   audio = NULL,
   video_codec = NULL,
+  audio_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
   run = TRUE,
@@ -21,13 +22,13 @@ compare_videos_batch(
 \item{jobs}{A data frame with one row per output and (at least) an
 \code{inputs} list-column — each cell a character vector of \strong{two or more}
 video paths — and an \code{output} column (destination path). Optional
-\code{direction}, \code{resize}, \code{audio}, and \code{video_codec}
-columns override the
+\code{direction}, \code{resize}, \code{audio}, \code{video_codec}, and
+\code{audio_codec} columns override the
 like-named arguments per row (a row omitting one falls back to the
 argument). In an \code{audio} column, \code{NA} means "drop audio" (the
 column's way of writing the scalar's \code{NULL}); in a \code{video_codec}
-column it means "leave the codec unset". Any two rows resolving to
-the same output path are rejected; other columns are ignored.}
+or \code{audio_codec} column it means "leave the codec unset". Any two rows
+resolving to the same output path are rejected; other columns are ignored.}
 
 \item{direction, resize, audio}{Defaults applied to every row lacking the
 corresponding column. See \code{\link[=compare_videos]{compare_videos()}} for their meaning. \code{audio}
@@ -36,6 +37,12 @@ is validated per row against that row's input count.}
 \item{video_codec}{A string naming the output video codec, applied to every
 row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
 it unset so each output keeps its container's default encoder.}
+
+\item{audio_codec}{A string naming the codec for the carried audio track,
+applied to every row lacking an \code{audio_codec} column. \code{"copy"}
+(default) stream-copies it; name an encoder to transcode it, or \code{NULL}
+to leave the codec unset. A row carrying no audio emits no \code{-codec:a};
+naming an encoder on such a row is an error.}
 
 \item{hardware, fallback}{The encoder backend and its fallback behavior,
 applied to the whole batch (a property of the machine, not of a row, so

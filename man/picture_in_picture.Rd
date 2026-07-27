@@ -13,6 +13,7 @@ picture_in_picture(
   margin = 16,
   audio = NULL,
   video_codec = NULL,
+  audio_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
   run = TRUE
@@ -42,6 +43,13 @@ for \code{position = "center"}). (default = \code{16})}
 (default) to leave it unset, so the output container's default encoder is
 used and the compiled command is unchanged from one that never named a
 codec.}
+
+\item{audio_codec}{A string naming the codec for the carried audio track.
+\code{"copy"} (default) stream-copies it through untouched; name an encoder
+(e.g. \code{"aac"}) to transcode it, or pass \code{NULL} to leave the codec
+unset so the output container's default encoder is used. Nothing is emitted
+when \code{audio} is \code{NULL}, since no audio reaches the output; naming
+an encoder in that case is an error.}
 
 \item{hardware}{The encoder backend: \code{"none"} (default, the software
 \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
@@ -73,7 +81,8 @@ fraction of the main video's width and positions it.
 }
 \details{
 Audio is dropped unless \code{audio} names an input to carry (\code{0} = the
-main video, \code{1} = the overlay).
+main video, \code{1} = the overlay). A carried track is
+stream-copied unless \code{audio_codec} names an encoder.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

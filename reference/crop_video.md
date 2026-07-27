@@ -13,6 +13,7 @@ crop_video(
   x = "(in_w-out_w)/2",
   y = "(in_h-out_h)/2",
   video_codec = NULL,
+  audio_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
   run = TRUE
@@ -52,6 +53,15 @@ crop_video(
   A string naming the output video codec, or `NULL` (default) to leave
   it unset, so the output container's default encoder is used and the
   compiled command is unchanged from one that never named a codec.
+
+- audio_codec:
+
+  A string naming the output audio codec. `"copy"` (default)
+  stream-copies the audio through untouched; name an encoder (e.g.
+  `"aac"`) to transcode it, or pass `NULL` to leave the codec unset so
+  the output container's default encoder is used. Stream-copying fails
+  if the output container cannot hold the source audio codec (e.g. FLAC
+  in `.mp4`) — name an encoder in that case.
 
 - hardware:
 
@@ -125,5 +135,5 @@ Other task verb functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 crop_video(video, "cropped.mp4", width = 160, height = 120, run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -map 0 \"cropped.mp4\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:a copy -map 0 \"cropped.mp4\""
 ```

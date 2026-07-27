@@ -16,6 +16,7 @@ segment_video_batch(
   jobs,
   reencode = TRUE,
   video_codec = NULL,
+  audio_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
   run = TRUE,
@@ -37,9 +38,9 @@ segment_video_batch(
   input's basename, with the segment number restarting at 1 for each
   input file (the same rule as
   [`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)).
-  A `video_codec` column overrides that argument per row, with `NA`
-  meaning "leave the codec unset" (the column's way of writing the
-  argument's `NULL`). Any other columns are ignored.
+  A `video_codec` or `audio_codec` column overrides that argument per
+  row, with `NA` meaning "leave the codec unset" (the column's way of
+  writing the argument's `NULL`). Any other columns are ignored.
 
 - reencode:
 
@@ -58,6 +59,16 @@ segment_video_batch(
   segment keeps its container's default encoder. A row that resolves to
   a codec while cutting by stream copy (`reencode = FALSE`, as an
   argument or a column) is an error: no encoder runs on that path.
+
+- audio_codec:
+
+  A string naming the output audio codec, applied to every row lacking
+  an `audio_codec` column. `"copy"` (default) stream-copies the audio;
+  name an encoder to transcode it, or `NULL` to leave the codec unset. A
+  row that resolves to anything but `"copy"` while cutting by stream
+  copy (`reencode = FALSE`, as an argument or a column) is an error, so
+  a jobs table mixing stream-copy rows with a transcoding `audio_codec`
+  must be split into separate calls.
 
 - hardware, fallback:
 

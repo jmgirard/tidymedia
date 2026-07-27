@@ -67,6 +67,7 @@ command per row, sharing the pipeline with the scalar verb.</p>
 <span>  resize <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  audio <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  video_codec <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  audio_codec <span class="op">=</span> <span class="st">"copy"</span>,</span>
 <span>  hardware <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"nvenc"</span><span class="op">)</span>,</span>
 <span>  fallback <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -83,13 +84,13 @@ command per row, sharing the pipeline with the scalar verb.</p>
 <dd><p>A data frame with one row per output and (at least) an
 <code>inputs</code> list-column — each cell a character vector of <strong>two or more</strong>
 video paths — and an <code>output</code> column (destination path). Optional
-<code>direction</code>, <code>resize</code>, <code>audio</code>, and <code>video_codec</code>
-columns override the
+<code>direction</code>, <code>resize</code>, <code>audio</code>, <code>video_codec</code>, and
+<code>audio_codec</code> columns override the
 like-named arguments per row (a row omitting one falls back to the
 argument). In an <code>audio</code> column, <code>NA</code> means "drop audio" (the
 column's way of writing the scalar's <code>NULL</code>); in a <code>video_codec</code>
-column it means "leave the codec unset". Any two rows resolving to
-the same output path are rejected; other columns are ignored.</p></dd>
+or <code>audio_codec</code> column it means "leave the codec unset". Any two rows
+resolving to the same output path are rejected; other columns are ignored.</p></dd>
 
 
 <dt id="arg-direction-resize-audio">direction, resize, audio<a class="anchor" aria-label="anchor" href="#arg-direction-resize-audio"></a></dt>
@@ -102,6 +103,14 @@ is validated per row against that row's input count.</p></dd>
 <dd><p>A string naming the output video codec, applied to every
 row lacking a <code>video_codec</code> column, or <code>NULL</code> (default) to leave
 it unset so each output keeps its container's default encoder.</p></dd>
+
+
+<dt id="arg-audio-codec">audio_codec<a class="anchor" aria-label="anchor" href="#arg-audio-codec"></a></dt>
+<dd><p>A string naming the codec for the carried audio track,
+applied to every row lacking an <code>audio_codec</code> column. <code>"copy"</code>
+(default) stream-copies it; name an encoder to transcode it, or <code>NULL</code>
+to leave the codec unset. A row carrying no audio emits no <code>-codec:a</code>;
+naming an encoder on such a row is an error.</p></dd>
 
 
 <dt id="arg-hardware-fallback">hardware, fallback<a class="anchor" aria-label="anchor" href="#arg-hardware-fallback"></a></dt>

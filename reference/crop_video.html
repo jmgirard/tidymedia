@@ -54,6 +54,7 @@
 <span>  x <span class="op">=</span> <span class="st">"(in_w-out_w)/2"</span>,</span>
 <span>  y <span class="op">=</span> <span class="st">"(in_h-out_h)/2"</span>,</span>
 <span>  video_codec <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  audio_codec <span class="op">=</span> <span class="st">"copy"</span>,</span>
 <span>  hardware <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"nvenc"</span><span class="op">)</span>,</span>
 <span>  fallback <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -95,6 +96,15 @@
 (default) to leave it unset, so the output container's default encoder is
 used and the compiled command is unchanged from one that never named a
 codec.</p></dd>
+
+
+<dt id="arg-audio-codec">audio_codec<a class="anchor" aria-label="anchor" href="#arg-audio-codec"></a></dt>
+<dd><p>A string naming the output audio codec. <code>"copy"</code>
+(default) stream-copies the audio through untouched; name an encoder (e.g.
+<code>"aac"</code>) to transcode it, or pass <code>NULL</code> to leave the codec unset
+so the output container's default encoder is used. Stream-copying fails if
+the output container cannot hold the source audio codec (e.g. FLAC in
+<code>.mp4</code>) — name an encoder in that case.</p></dd>
 
 
 <dt id="arg-hardware">hardware<a class="anchor" aria-label="anchor" href="#arg-hardware"></a></dt>
@@ -166,7 +176,7 @@ or return the compiled command without running it (<code>FALSE</code>).</p></dd>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">video</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sample.mp4"</span>, package <span class="op">=</span> <span class="st">"tidymedia"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">crop_video</span><span class="op">(</span><span class="va">video</span>, <span class="st">"cropped.mp4"</span>, width <span class="op">=</span> <span class="fl">160</span>, height <span class="op">=</span> <span class="fl">120</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -map 0 \"cropped.mp4\""</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:a copy -map 0 \"cropped.mp4\""</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

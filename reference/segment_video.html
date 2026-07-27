@@ -65,6 +65,7 @@ segment (based on the order provided in <code>start</code> and <code>end</code>)
 <span>  outfiles <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  reencode <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  video_codec <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  audio_codec <span class="op">=</span> <span class="st">"copy"</span>,</span>
 <span>  hardware <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"nvenc"</span><span class="op">)</span>,</span>
 <span>  fallback <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -114,6 +115,16 @@ for the trade-off.</p></dd>
 used and the compiled command is unchanged from one that never named a
 codec. A stream copy runs no encoder, so naming a codec (or a
 <code>hardware</code> backend) alongside <code>reencode = FALSE</code> is an error.</p></dd>
+
+
+<dt id="arg-audio-codec">audio_codec<a class="anchor" aria-label="anchor" href="#arg-audio-codec"></a></dt>
+<dd><p>A string naming the output audio codec. <code>"copy"</code>
+(default) stream-copies the audio through untouched; name an encoder (e.g.
+<code>"aac"</code>) to transcode it, or pass <code>NULL</code> to leave the codec unset
+so the output container's default encoder is used. A stream copy
+(<code>reencode = FALSE</code>) always copies the audio, so any other value is an
+error there. Stream-copying fails if the output container cannot hold the
+source audio codec (e.g. FLAC in <code>.mp4</code>) — name an encoder instead.</p></dd>
 
 
 <dt id="arg-hardware">hardware<a class="anchor" aria-label="anchor" href="#arg-hardware"></a></dt>

@@ -32,7 +32,14 @@ format_for_web_batch(
   basename with an `.mp4` extension (the web re-encode always writes
   H.264/mp4), e.g. `clip.mkv` becomes `clip_web.mp4`. Any two rows that
   resolve to the same output path are rejected. Any other columns are
-  ignored.
+  ignored — including `video_codec` and `audio_codec`, which the sibling
+  batch verbs read as per-row overrides but this one does not: the web
+  recipe fixes both codecs by identity (H.264 video, AAC audio). For a
+  per-row video codec use
+  [`standardize_video_batch`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md),
+  which stream-copies audio rather than exposing a codec for it; for a
+  per-row audio codec use a verb that takes one, such as
+  [`crop_video_batch`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md).
 
 - hardware:
 

@@ -19,6 +19,7 @@ compare_videos_batch(
   resize = TRUE,
   audio = NULL,
   video_codec = NULL,
+  audio_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
   run = TRUE,
@@ -34,12 +35,13 @@ compare_videos_batch(
   A data frame with one row per output and (at least) an `inputs`
   list-column — each cell a character vector of **two or more** video
   paths — and an `output` column (destination path). Optional
-  `direction`, `resize`, `audio`, and `video_codec` columns override the
-  like-named arguments per row (a row omitting one falls back to the
-  argument). In an `audio` column, `NA` means "drop audio" (the column's
-  way of writing the scalar's `NULL`); in a `video_codec` column it
-  means "leave the codec unset". Any two rows resolving to the same
-  output path are rejected; other columns are ignored.
+  `direction`, `resize`, `audio`, `video_codec`, and `audio_codec`
+  columns override the like-named arguments per row (a row omitting one
+  falls back to the argument). In an `audio` column, `NA` means "drop
+  audio" (the column's way of writing the scalar's `NULL`); in a
+  `video_codec` or `audio_codec` column it means "leave the codec
+  unset". Any two rows resolving to the same output path are rejected;
+  other columns are ignored.
 
 - direction, resize, audio:
 
@@ -53,6 +55,14 @@ compare_videos_batch(
   A string naming the output video codec, applied to every row lacking a
   `video_codec` column, or `NULL` (default) to leave it unset so each
   output keeps its container's default encoder.
+
+- audio_codec:
+
+  A string naming the codec for the carried audio track, applied to
+  every row lacking an `audio_codec` column. `"copy"` (default)
+  stream-copies it; name an encoder to transcode it, or `NULL` to leave
+  the codec unset. A row carrying no audio emits no `-codec:a`; naming
+  an encoder on such a row is an error.
 
 - hardware, fallback:
 

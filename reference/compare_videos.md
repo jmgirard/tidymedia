@@ -18,6 +18,7 @@ compare_videos(
   resize = TRUE,
   audio = NULL,
   video_codec = NULL,
+  audio_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
   run = TRUE
@@ -55,6 +56,15 @@ compare_videos(
   it unset, so the output container's default encoder is used and the
   compiled command is unchanged from one that never named a codec.
 
+- audio_codec:
+
+  A string naming the codec for the carried audio track. `"copy"`
+  (default) stream-copies it through untouched; name an encoder (e.g.
+  `"aac"`) to transcode it, or pass `NULL` to leave the codec unset so
+  the output container's default encoder is used. Nothing is emitted
+  when `audio` is `NULL`, since no audio reaches the output; naming an
+  encoder in that case is an error.
+
 - hardware:
 
   The encoder backend: `"none"` (default, the software `video_codec`) or
@@ -87,7 +97,8 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 By default the two inputs are resized to share an edge (equal heights
 for a horizontal stack, equal widths for a vertical one); resizing
 currently supports exactly two inputs, so pass `resize = FALSE` to
-compare more. Audio is dropped unless `audio` names an input to carry.
+compare more. Audio is dropped unless `audio` names an input to carry; a
+carried track is stream-copied unless `audio_codec` names an encoder.
 
 ## See also
 

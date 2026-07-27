@@ -52,7 +52,7 @@ then run it:
 ``` r
 
 crop_video(video, "cropped.mp4", width = 160, height = 120, run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -map 0 \"cropped.mp4\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:a copy -map 0 \"cropped.mp4\""
 ```
 
 For preprocessing a whole folder of files at once, every task verb has a
@@ -182,12 +182,14 @@ the common cases:
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
 for a side-by-side (or stacked) comparison and
 [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
-for an inset overlay.
+for an inset overlay. Both take an `audio` index naming the input whose
+track to carry, and stream-copy that track through untouched unless you
+name an encoder with `audio_codec`.
 
 ``` r
 
 compare_videos(c(video, video), "compare.mp4", audio = 0, run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -filter_complex \"[0:v][1:v]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[0s][1s];[1s][0s]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[1s][0s];[0s][1s]hstack,setsar=1[vout]\" -map \"[vout]\" -map 0:a \"compare.mp4\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -filter_complex \"[0:v][1:v]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[0s][1s];[1s][0s]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[1s][0s];[0s][1s]hstack,setsar=1[vout]\" -codec:a copy -map \"[vout]\" -map 0:a \"compare.mp4\""
 ```
 
 The builder stays deliberately linear — one input chain, sequential

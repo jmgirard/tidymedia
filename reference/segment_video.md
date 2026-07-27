@@ -17,6 +17,7 @@ segment_video(
   outfiles = NULL,
   reencode = TRUE,
   video_codec = NULL,
+  audio_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
   run = TRUE,
@@ -66,6 +67,17 @@ segment_video(
   compiled command is unchanged from one that never named a codec. A
   stream copy runs no encoder, so naming a codec (or a `hardware`
   backend) alongside `reencode = FALSE` is an error.
+
+- audio_codec:
+
+  A string naming the output audio codec. `"copy"` (default)
+  stream-copies the audio through untouched; name an encoder (e.g.
+  `"aac"`) to transcode it, or pass `NULL` to leave the codec unset so
+  the output container's default encoder is used. A stream copy
+  (`reencode = FALSE`) always copies the audio, so any other value is an
+  error there. Stream-copying fails if the output container cannot hold
+  the source audio codec (e.g. FLAC in `.mp4`) — name an encoder
+  instead.
 
 - hardware:
 

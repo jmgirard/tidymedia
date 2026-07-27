@@ -20,6 +20,7 @@ picture_in_picture(
   margin = 16,
   audio = NULL,
   video_codec = NULL,
+  audio_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
   run = TRUE
@@ -66,6 +67,15 @@ picture_in_picture(
   it unset, so the output container's default encoder is used and the
   compiled command is unchanged from one that never named a codec.
 
+- audio_codec:
+
+  A string naming the codec for the carried audio track. `"copy"`
+  (default) stream-copies it through untouched; name an encoder (e.g.
+  `"aac"`) to transcode it, or pass `NULL` to leave the codec unset so
+  the output container's default encoder is used. Nothing is emitted
+  when `audio` is `NULL`, since no audio reaches the output; naming an
+  encoder in that case is an error.
+
 - hardware:
 
   The encoder backend: `"none"` (default, the software `video_codec`) or
@@ -96,7 +106,8 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 ## Details
 
 Audio is dropped unless `audio` names an input to carry (`0` = the main
-video, `1` = the overlay).
+video, `1` = the overlay). A carried track is stream-copied unless
+`audio_codec` names an encoder.
 
 ## See also
 

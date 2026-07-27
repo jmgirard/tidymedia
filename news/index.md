@@ -2,6 +2,44 @@
 
 ## tidymedia (development version)
 
+### Breaking changes
+
+- [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
+  [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
+  [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
+  and
+  [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
+  (and their `_batch` siblings) no longer re-encode the audio they pass
+  through. They now stream-copy it, matching what
+  [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+  and
+  [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
+  have always done: previously these four left the audio codec unset, so
+  whatever encoder your FFmpeg build defaults to for the output
+  container silently re-encoded the audio — a quality loss, and a result
+  that depended on the machine. Their compiled commands therefore gain
+  `-codec:a copy`.
+
+  The new `audio_codec` argument controls this. `"copy"` is the default;
+  name an encoder (e.g. `audio_codec = "aac"`) to transcode instead, or
+  pass `audio_codec = NULL` for the old behavior of leaving the codec
+  unset. Note that a stream copy fails if the output container cannot
+  hold the source audio codec (FLAC in `.mp4`, say) — name an encoder in
+  that case. In a jobs table, `audio_codec` may be a per-row column,
+  where `NA` means “leave it unset”.
+
+  Cutting with `segment_video(reencode = FALSE)` copies every stream by
+  definition, so any `audio_codec` other than `"copy"` is an error
+  there, as is naming an audio encoder on a composite that carries no
+  audio at all.
+
+- [`compare_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/compare_videos_batch.md)
+  now rejects a wrongly typed `audio` column up front with a clear
+  message instead of failing partway through the batch, and
+  [`picture_in_picture_batch()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture_batch.md)’s
+  equivalent check no longer accepts an all-`NA` column of the wrong
+  type.
+
 ### New features
 
 - [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),

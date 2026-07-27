@@ -72,7 +72,7 @@ configurable-transform call applied to a demux verb first).
       per-stream codec (default `"copy"`, `NULL` = emit nothing), applying it to
       the audio or video slot by `stream`. Tests first. Edit `R/ffmpeg.R` as
       bytes — the repo's only CRLF file (M35 lesson).
-- [ ] T2: Swap `reencode` for `audio_codec` / `video_codec` on
+- [x] T2: Swap `reencode` for `audio_codec` / `video_codec` on
       `separate_audio_video()` (`R/ffmpeg.R:339`) + roxygen; assert both
       default-branch parity cases (copy default, NULL/NULL).
 - [ ] T3: Swap the arg and per-row column on `separate_audio_video_batch()`
@@ -94,6 +94,7 @@ configurable-transform call applied to a demux verb first).
 - 2026-07-26: created by /milestone-plan.
 - 2026-07-26: implement started on `m37-separate-av-codec-args`. Question gate: the batch's reshaped table carries a single `codec` column, present only when the jobs table supplies a codec column (mirrors today's `reencode` carry-through; reads beside the existing `stream` marker).
 - 2026-07-26: T1 — `separate_stream_pipeline()` now takes a per-stream `codec` (default `"copy"`, `NULL` emits nothing), routed to the audio or video slot by `stream` via `apply_audio_codec()`/`apply_video_codec()`. Both call sites translate their still-public `reencode` at the boundary, so this task is a contract-preserving refactor pinned by the existing suite; the new behavior gets its tests at T2/T3 where it becomes publicly reachable. `devtools::test()` clean (0 failures).
+- 2026-07-26: T2 — `separate_audio_video(audio_codec = "copy", video_codec = "copy")` replaces `reencode`; roxygen rewritten (+ an MP3 example). New `tests/testthat/test-separate-av-codec.R` asserts both default-branch parity cases byte-for-byte against commands captured from `master` before the swap, per-stream routing, one-stream-only unset, and the non-string/metacharacter rejections. `devtools::document()` + `devtools::test()` clean (1510 pass).
 
 ## Decisions
 

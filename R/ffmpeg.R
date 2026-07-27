@@ -314,18 +314,27 @@ separate_stream_pipeline <- function(input, output, stream, codec = "copy",
 
 #' Split a media file into separate audio and video files
 #'
-#' By default the streams are copied, not re-encoded (\code{reencode =
-#' FALSE}): separation is lossless and fast, but each output container must
-#' support the source codec (e.g. write AAC audio from an MP4 to \code{.aac}
-#' or \code{.m4a}, not \code{.mp3}). Set \code{reencode = TRUE} to let FFmpeg
-#' re-encode each stream to whatever the output extension implies.
+#' By default each stream is copied, not re-encoded (\code{audio_codec =
+#' "copy"}, \code{video_codec = "copy"}): separation is lossless and fast, but
+#' each output container must support the source codec (e.g. write AAC audio
+#' from an MP4 to \code{.aac} or \code{.m4a}, not \code{.mp3}). Name an encoder
+#' instead (\code{audio_codec = "libmp3lame"}) to transcode that stream, or pass
+#' \code{NULL} to emit no codec option at all and let the output extension pick
+#' the encoder. Each argument governs only its own output file.
 #'
 #' @param infile A string containing the path to a media file.
 #' @param audiofile A string containing the path of the audio file to write.
 #' @param videofile A string containing the path of the video file to write.
-#' @param reencode A logical: stream-copy the audio and video losslessly
-#'   (\code{FALSE}, default) or re-encode them to match the output extensions
-#'   (\code{TRUE}).
+#' @param audio_codec A string naming the encoder for \code{audiofile}, passed
+#'   to FFmpeg's \code{-codec:a}. The default \code{"copy"} stream-copies the
+#'   audio losslessly; a codec name (e.g. \code{"libmp3lame"}) transcodes it;
+#'   \code{NULL} emits no \code{-codec:a}, leaving the encoder to the
+#'   \code{audiofile} extension.
+#' @param video_codec A string naming the encoder for \code{videofile}, passed
+#'   to FFmpeg's \code{-codec:v}. The default \code{"copy"} stream-copies the
+#'   video losslessly; a codec name (e.g. \code{"libx264"}) transcodes it;
+#'   \code{NULL} emits no \code{-codec:v}, leaving the encoder to the
+#'   \code{videofile} extension.
 #' @param run A logical: run the commands through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled commands without running them (\code{FALSE}).
 #' @return A named character vector of the two compiled commands
@@ -336,22 +345,24 @@ separate_stream_pipeline <- function(input, output, stream, codec = "copy",
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' separate_audio_video(video, "audio.aac", "video.mp4", run = FALSE)
+#' # transcode the audio to MP3 while copying the video through untouched
+#' separate_audio_video(video, "audio.mp3", "video.mp4",
+#'                      audio_codec = "libmp3lame", run = FALSE)
 #' @export
 separate_audio_video <- function(infile, audiofile, videofile,
-                                 reencode = FALSE, run = TRUE) {
+                                 audio_codec = "copy", video_codec = "copy",
+                                 run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(audiofile)
   rlang::check_string(videofile)
-  rlang::check_bool(reencode)
 
   # One input -> two outputs is a fan-out: emit two single-output pipelines
   # (D-M03-2) rather than a dual-`-map` command the linear engine can't model.
   # separate_stream_pipeline() carries the per-stream recipe shared with
-  # separate_audio_video_batch().
-  codec <- if (reencode) NULL else "copy"
-  audio <- separate_stream_pipeline(infile, audiofile, "audio", codec)
-  video <- separate_stream_pipeline(infile, videofile, "video", codec)
+  # separate_audio_video_batch(), and token-checks each codec there.
+  audio <- separate_stream_pipeline(infile, audiofile, "audio", audio_codec)
+  video <- separate_stream_pipeline(infile, videofile, "video", video_codec)
   commands <- c(audio = ffm_compile(audio), video = ffm_compile(video))
 
   if (run) {

@@ -1075,6 +1075,12 @@ derive_anonymized_names <- function(input) {
 #' @param video_codec A string naming the output video codec applied to every row,
 #'   unless \code{jobs} carries a \code{video_codec} column. (default =
 #'   \code{"libx264"})
+#' @param audio_codec A string naming the output audio codec applied to every
+#'   row, unless \code{jobs} carries an \code{audio_codec} column, in which case
+#'   \code{NA} in a cell leaves that row's codec unset. \code{"copy"} (default)
+#'   stream-copies the audio through untouched; name an encoder (e.g.
+#'   \code{"aac"}) when the source audio cannot be copied into the output
+#'   container.
 #' @param pixel_format A string naming the output pixel format applied to every
 #'   row, unless \code{jobs} carries a \code{pixel_format} column.
 #'   (default = \code{"yuv420p"})
@@ -1121,11 +1127,13 @@ derive_anonymized_names <- function(input) {
 #' anonymize_video_batch(jobs, run = FALSE)
 #' @export
 anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264",
-                             pixel_format = "yuv420p",
+                             audio_codec = "copy", pixel_format = "yuv420p",
                              hardware = c("none", "nvenc"), fallback = FALSE,
                              run = TRUE, parallel = FALSE, ...) {
 
   hardware <- rlang::arg_match(hardware)
+  # NULL is legal (the "emit no -codec:a" escape hatch), so allow_null (M39).
+  rlang::check_string(audio_codec, allow_null = TRUE)
 
   if (!is.data.frame(jobs)) {
     cli::cli_abort("{.arg jobs} must be a data frame with one row per input.")
@@ -1172,6 +1180,11 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
       cli::cli_abort("The {.field {col}} column of {.arg jobs} must be character (no {.val {NA}}).")
     }
   }
+  # audio_codec is deliberately NOT in str_cols above: unlike video_codec (a
+  # literal "libx264" default with no sentinel), NA is meaningful here -- it is
+  # the column form of audio_codec = NULL (M39/D017), so it needs the guard that
+  # admits NA and the all-NA logical column R hands back (M34 lesson).
+  check_batch_codec_col(jobs, "audio_codec")
 
   # Auto-name outputs when the column is absent. One input -> one output, so a
   # duplicated input with no explicit output would map to the same file; reject
@@ -1203,6 +1216,7 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
         input, output, regions,
         color = pick("color", color),
         video_codec = pick("video_codec", video_codec),
+        audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         pixel_format = pick("pixel_format", pixel_format),
         # hardware/fallback are batch-wide (a machine property), never per-row
         # columns -- parity with standardize_video_batch (D-M31).
@@ -2465,6 +2479,12 @@ derive_standardized_names <- function(input) {
 #'   leave the frame rate unchanged)
 #' @param video_codec A string naming the video codec applied to every row, unless
 #'   \code{jobs} carries a \code{video_codec} column. (default = \code{"libx264"})
+#' @param audio_codec A string naming the audio codec applied to every row,
+#'   unless \code{jobs} carries an \code{audio_codec} column, in which case
+#'   \code{NA} in a cell leaves that row's codec unset. \code{"copy"} (default)
+#'   stream-copies the audio through untouched; name an encoder (e.g.
+#'   \code{"aac"}) when the source audio cannot be copied into the output
+#'   container.
 #' @param pixel_format A string naming the pixel format applied to every row,
 #'   unless \code{jobs} carries a \code{pixel_format} column.
 #'   (default = \code{"yuv420p"})
@@ -2506,11 +2526,14 @@ derive_standardized_names <- function(input) {
 #' standardize_video_batch(jobs, run = FALSE)
 #' @export
 standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NULL,
-                               video_codec = "libx264", pixel_format = "yuv420p",
+                               video_codec = "libx264", audio_codec = "copy",
+                               pixel_format = "yuv420p",
                                hardware = c("none", "nvenc"), fallback = FALSE,
                                run = TRUE, parallel = FALSE, ...) {
 
   hardware <- rlang::arg_match(hardware)
+  # NULL is legal (the "emit no -codec:a" escape hatch), so allow_null (M39).
+  rlang::check_string(audio_codec, allow_null = TRUE)
 
   if (!is.data.frame(jobs)) {
     cli::cli_abort("{.arg jobs} must be a data frame with one row per input.")
@@ -2548,6 +2571,11 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
       cli::cli_abort("The {.field {col}} column of {.arg jobs} must be character (no {.val {NA}}).")
     }
   }
+  # audio_codec is deliberately NOT in str_cols above: unlike video_codec (a
+  # literal "libx264" default with no sentinel), NA is meaningful here -- it is
+  # the column form of audio_codec = NULL (M39/D017), so it needs the guard that
+  # admits NA and the all-NA logical column R hands back (M34 lesson).
+  check_batch_codec_col(jobs, "audio_codec")
 
   # Auto-name outputs when the column is absent. One input -> one output, so a
   # duplicated input with no explicit output would map to the same file; reject
@@ -2581,6 +2609,7 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
         height = pick("height", height),
         fps = pick("fps", fps),
         video_codec = pick("video_codec", video_codec),
+        audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         pixel_format = pick("pixel_format", pixel_format),
         hardware = hardware,
         fallback = fallback
@@ -3484,10 +3513,8 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #'   rejected. Any other columns are ignored — including \code{video_codec} and
 #'   \code{audio_codec}, which the sibling batch verbs read as per-row overrides
 #'   but this one does not: the web recipe fixes both codecs by identity (H.264
-#'   video, AAC audio). For a per-row video codec use
-#'   \code{\link{standardize_video_batch}}, which stream-copies audio rather than
-#'   exposing a codec for it; for a per-row audio codec use a verb that takes one,
-#'   such as \code{\link{crop_video_batch}}.
+#'   video, AAC audio). For per-row codecs use a verb that exposes them, such as
+#'   \code{\link{standardize_video_batch}} or \code{\link{crop_video_batch}}.
 #' @param hardware The encoder backend applied to every row: \code{"none"}
 #'   (default, software libx264) or \code{"nvenc"} for NVIDIA GPU H.264 encoding.
 #'   Batch-wide (not a per-row column). See \code{\link{has_nvenc}}.

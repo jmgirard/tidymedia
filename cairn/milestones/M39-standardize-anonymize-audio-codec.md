@@ -76,7 +76,7 @@ candidate row (M31 Q4). No new exports, so `_pkgdown.yml` is untouched.
 - [x] T2 Compile tests for both scalars: named encoder emitted, `NULL` emits
       nothing, default command byte-identical to the recorded pre-milestone
       string, bad token aborts.
-- [ ] T3 Add `audio_codec` to `standardize_video_batch()` and
+- [x] T3 Add `audio_codec` to `standardize_video_batch()` and
       `anonymize_video_batch()` — batch-wide argument plus per-row column via
       `check_batch_codec_col(jobs, "audio_codec")` and `batch_codec_cell()`.
 - [ ] T4 Batch tests: column overrides the scalar; all-`NA` logical column
@@ -99,6 +99,10 @@ candidate row (M31 Q4). No new exports, so `_pkgdown.yml` is untouched.
 - 2026-07-26: T1 — `R/ffmpeg.R` CRLF integrity checked after editing (4440 CR / 4440 lines, diff 54/27), per the M35 lesson.
 - 2026-07-26: T2 done — 11 compile tests in `test-audio-codec.R`; the two default-command literals are pinned in helpers so AC2 checks against a literal, not against the code under test.
 - 2026-07-26: T2 — extended M35's arg-spelling test from eight verbs to ten (the batches join at T3); its `audio_codec` before `hardware` assertion already covers the gate's placement decision.
+- 2026-07-26: T3 done — both batches take `audio_codec` batch-wide plus a per-row column; the guard is `check_batch_codec_col`, kept out of the neighbouring `str_cols` loop (which rejects NA) with a comment saying why, since `video_codec` there has no sentinel.
+- 2026-07-26: T3 — added a front-door `check_string(audio_codec, allow_null = TRUE)` to both batch verbs, matching `crop_video_batch`; neither had one for `video_codec` (a literal default), but NULL is legal here.
+- 2026-07-26: T3 — `format_for_web_batch`'s roxygen claimed `standardize_video_batch` "stream-copies audio rather than exposing a codec for it", which M39 falsifies; rewritten.
+- 2026-07-26: T3 — arg-spelling test now covers all twelve verbs that carry `audio_codec`.
 
 ## Decisions
 

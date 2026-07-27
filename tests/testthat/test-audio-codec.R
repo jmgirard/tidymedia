@@ -589,7 +589,8 @@ test_that("every configurable transform carries the D014 audio_codec spelling", 
   verbs <- c("crop_video", "segment_video", "compare_videos",
              "picture_in_picture", "crop_video_batch", "segment_video_batch",
              "compare_videos_batch", "picture_in_picture_batch",
-             "standardize_video", "anonymize_video")
+             "standardize_video", "anonymize_video",
+             "standardize_video_batch", "anonymize_video_batch")
   for (verb in verbs) {
     fo <- formals(get(verb))
     expect_true("audio_codec" %in% names(fo), label = verb)

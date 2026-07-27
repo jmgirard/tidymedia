@@ -1,6 +1,6 @@
 # M38: `hardware=` nvenc on `separate_audio_video` (+ batch)
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -89,6 +89,9 @@ rate-control knob each stay ROADMAP candidate rows.
 - 2026-07-26: T4 done — copy+nvenc guard in `separate_stream_pipeline()`'s video branch; 4 guard tests red then green. `devtools::test()` 1583 pass / 0 fail / 4 skip.
 
 - 2026-07-26: T5-T6 done — GPU execution test (skips here, no NVIDIA hardware); roxygen on both verbs + `has_nvenc()` back-pointers; NEWS entry. `devtools::check()` Status: OK (0/0/0), `pkgdown::check_pkgdown()` clean, `devtools::test()` 1583 pass / 0 fail / 5 skip.
+
+- 2026-07-26: AC2 evidence — compiled 6 call shapes (scalar defaults/both-NULL/named/mixed, 2 batch) on master and HEAD; `identical()` TRUE. R/ffmpeg.R diff 95 lines, CRLF 4342->4413 (no whole-file rewrite).
+- 2026-07-26: all tasks done, `devtools::check()` OK (0/0/0) — status set to review.
 
 ## Decisions
 

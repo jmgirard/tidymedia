@@ -379,14 +379,16 @@ test_that("separate_audio_video(hardware = 'nvenc') aborts on the copy default",
     separate_audio_video(f, "a.aac", "v.mp4", hardware = "nvenc", run = FALSE),
     "video_codec"
   )
-  expect_no_match(
-    tryCatch(
-      separate_audio_video(f, "a.aac", "v.mp4", hardware = "nvenc",
-                           run = FALSE),
-      error = conditionMessage
-    ),
-    "No nvenc encoder"
+  msg <- tryCatch(
+    separate_audio_video(f, "a.aac", "v.mp4", hardware = "nvenc", run = FALSE),
+    error = conditionMessage
   )
+  expect_no_match(msg, "No nvenc encoder")
+  # Under hardware = "nvenc" the NULL sentinel assumes H.264 -- it does NOT hand
+  # the choice to the container, so the hint must not say so or it walks a .webm
+  # caller into an h264_nvenc-in-WebM command FFmpeg rejects (M38 review).
+  expect_match(msg, "H.264", fixed = TRUE)
+  expect_no_match(msg, "container choose", fixed = TRUE)
 })
 
 test_that("separate_audio_video(hardware = 'nvenc') aborts on an explicit copy", {

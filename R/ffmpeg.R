@@ -326,8 +326,10 @@ separate_stream_pipeline <- function(input, output, stream, codec = "copy",
           "x" = "{.code video_codec = \"copy\"} stream-copies the video, so no
                  encoder runs.",
           "i" = "Name an encoder (e.g. {.code video_codec = \"libx264\"}), or
-                 pass {.code video_codec = NULL} to let the output container
-                 choose one."
+                 pass {.code video_codec = NULL} to assume the H.264 family --
+                 a non-H.264 container then needs an explicit HEVC- or
+                 AV1-family codec.",
+          "i" = "Or drop {.arg hardware} to keep stream-copying the video."
         ),
         call = call
       )

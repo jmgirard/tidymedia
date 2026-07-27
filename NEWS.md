@@ -58,9 +58,10 @@
 
   Because this verb copies the video by default, and a copy runs no encoder at
   all, `hardware = "nvenc"` on its own is an error rather than a silent switch
-  from a lossless copy to a GPU re-encode. Pair it with `video_codec = NULL` to
-  let the output container pick the codec, or name one (`video_codec =
-  "libx265"`) to pin the family. As on the other verbs, `hardware` applies to a
+  from a lossless copy to a GPU re-encode. Pair it with `video_codec = NULL`,
+  which assumes the H.264 family, or name a codec (`video_codec = "libx265"`)
+  to pin a different one — a non-H.264 container such as `.webm` needs that
+  explicit name. As on the other verbs, `hardware` applies to a
   whole batch rather than row by row, so a jobs table mixing copied and
   re-encoded video must be split into separate calls.
 

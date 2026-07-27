@@ -317,9 +317,12 @@ test_that("separate_audio_video(hardware = 'nvenc') writes both outputs (M38)", 
   # encoder list, which CI populates with no GPU behind it (M31 lesson).
   skip_if_no_nvenc()
   skip_if_no_ffprobe()
-  infile <- make_test_video()
+  # MP3-in-MP4, not make_test_video(): the audio assertion below has to tell a
+  # stream copy from a re-encode, and an AAC-in-MP4 source cannot, because the
+  # container's own default encoder is also AAC (M35 lesson).
+  infile <- make_mp3_audio_video()
   dir <- withr::local_tempdir()
-  audiofile <- file.path(dir, "a.m4a")
+  audiofile <- file.path(dir, "a.mp3")
   videofile <- file.path(dir, "v.mp4")
   # video_codec = NULL, not the "copy" default: a stream copy runs no encoder,
   # so the sentinel is what actually hands this stream to the GPU.
@@ -330,6 +333,5 @@ test_that("separate_audio_video(hardware = 'nvenc') writes both outputs (M38)", 
   # The video really went through nvenc (h264), and the audio kept its default
   # copy -- the two streams stayed independent end to end.
   expect_equal(probe_video(infile = videofile)$codec_name, "h264")
-  expect_equal(probe_audio(infile = audiofile)$codec_name,
-               probe_audio(infile = infile)$codec_name)
+  expect_equal(probe_audio(infile = audiofile)$codec_name, "mp3")
 })

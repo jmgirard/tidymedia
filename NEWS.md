@@ -2,6 +2,26 @@
 
 ## Breaking changes
 
+* `separate_audio_video()` and `separate_audio_video_batch()` replace the
+  `reencode` argument with per-stream `audio_codec` and `video_codec`
+  arguments, so you can name the encoder for each output file instead of
+  choosing between "copy everything" and "let the container decide everything".
+  Both default to `"copy"`, which compiles exactly the commands
+  `reencode = FALSE` compiled before; `audio_codec = NULL, video_codec = NULL`
+  reproduces `reencode = TRUE`; and a codec name (`audio_codec = "libmp3lame"`)
+  transcodes that stream alone. Each argument governs only its own output file.
+
+  `reencode` is removed rather than deprecated, in line with this package's
+  pre-1.0 clean-break policy. Calls passing it to `separate_audio_video()` get
+  R's usual `unused argument` error; `separate_audio_video_batch()`, whose `...`
+  would otherwise ignore it in silence, aborts and names the replacement.
+
+  In a jobs table, `audio_codec` and `video_codec` may be per-row columns where
+  `NA` means "leave that stream's codec unset". They replace the per-row
+  `reencode` column. Because each input row fans out into an audio row and a
+  video row, the returned table collapses the two into one `codec` column
+  carrying each row's encoder for its own stream.
+
 * `crop_video()`, `segment_video()`, `compare_videos()`, and
   `picture_in_picture()` (and their `_batch` siblings) no longer re-encode the
   audio they pass through. They now stream-copy it, matching what

@@ -1,6 +1,6 @@
 # M37: codec args subsume `reencode` on `separate_audio_video` (+ batch)
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -88,7 +88,7 @@ configurable-transform call applied to a demux verb first).
       update every hit; confirm the other verbs' `reencode` is left alone.
 - [x] T6: Execution tests for the copy and named-encoder paths using
       `make_mp3_audio_video()`; `skip_if` binaries absent.
-- [ ] T7: `NEWS.md` breaking-change entry, `devtools::document()`; append the
+- [x] T7: `NEWS.md` breaking-change entry, `devtools::document()`; append the
       `DECISIONS.md` entry recording the subsumption and the D014 waiver.
 
 ## Work log
@@ -101,7 +101,10 @@ configurable-transform call applied to a demux verb first).
 - 2026-07-26: T4 — arg-is-gone assertions added. Substantive amendment (user-gated, option A): the scalar verb errors with R's own `unused argument`, but the batch verb's `...` swallowed a stale `reencode` silently and stream-copied output the caller asked to re-encode, so the batch now aborts naming `audio_codec`/`video_codec` as the replacement — a diagnostic, not a `lifecycle` shim; D014's clean break stands. AC4 amended accordingly (text shown in chat before this commit). `devtools::test()` clean (1527 pass).
 - 2026-07-26: T5 — public-surface sweep clean, no edits owed. `reencode` count is 0 in both verbs' `.Rd` files; the only surviving mention under `R/` for these verbs is the T4 migration guard. `vignettes/batch.Rmd:98` calls `separate_audio_video()` without naming `reencode`, so it still compiles; `_pkgdown.yml` lists names only; `README.Rmd` never mentions either verb. Out-of-scope `reencode` intact: `man/segment_video.Rd` (4 hits), `man/segment_video_batch.Rd` (7), `man/ffm_seek.Rd` (6), and `vignettes/tidymedia.Rmd`'s `ffm_seek()` example.
 - 2026-07-26: T6 — four binary-gated execution tests on the MP3-in-MP4 fixture: the copy default keeps `mp3` in the audio output (a re-encode into MP4 would yield `aac`) and preserves the video codec; `audio_codec = "aac"` transcodes while the video stream stays copied; `audio_codec = NULL` reproduces the pre-M37 container-default `aac`; and a per-row `audio_codec` column drives copy vs transcode across two rows of one batch. `devtools::test()` clean (1536 pass).
+- 2026-07-26: T7 — `NEWS.md` breaking-change entry and `DECISIONS.md` D020 appended (both shown verbatim in chat before this commit); `devtools::document()` no further diff. `R CMD check` `Status: OK` — 0 errors / 0 warnings / 0 notes, read from the check log rather than the devtools summary (M17 lesson). Status → review.
 
 ## Decisions
+
+- D020 (`cairn/DECISIONS.md`) records the subsumption, the `"copy"`-not-sentinel choice, the D014 waiver, the batch's stale-argument guard, and the single-`codec`-column reshape.
 
 ## Review

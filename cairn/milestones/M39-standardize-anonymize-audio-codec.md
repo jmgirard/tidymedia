@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1, GP1
-- **Branch/PR:** `m39-standardize-anonymize-audio-codec`
+- **Branch/PR:** `m39-standardize-anonymize-audio-codec` / https://github.com/jmgirard/tidymedia/pull/41
 
 ## Goal
 
@@ -38,24 +38,24 @@ candidate row (M31 Q4). No new exports, so `_pkgdown.yml` is untouched.
 
 ## Acceptance criteria
 
-- [ ] AC1 All four verbs accept `audio_codec`, default `"copy"`, formal before
+- [x] AC1 All four verbs accept `audio_codec`, default `"copy"`, formal before
       `run`; a test compiles each with a named encoder and asserts
       `-codec:a <name>` appears.
-- [ ] AC2 Default output is unchanged: a test compiles a default call of each
+- [x] AC2 Default output is unchanged: a test compiles a default call of each
       of the four verbs and compares byte-for-byte against the command the
       pre-milestone code produced.
-- [ ] AC3 `audio_codec = NULL` emits no `-codec:a` on all four; tested.
-- [ ] AC4 An invalid codec token aborts via `check_token()` — at the front door
+- [x] AC3 `audio_codec = NULL` emits no `-codec:a` on all four; tested.
+- [x] AC4 An invalid codec token aborts via `check_token()` — at the front door
       on the scalars, per row on the batches; the batch case tested with 2+
       rows (M18 lesson).
-- [ ] AC5 A per-row `audio_codec` column overrides the scalar argument; an
+- [x] AC5 A per-row `audio_codec` column overrides the scalar argument; an
       all-`NA` (logical) column is accepted and resolves to the sentinel; a
       numeric column aborts naming the column (M34 lesson). Both boundaries
       tested.
-- [ ] AC6 An execution test proves `"copy"` stream-copies and a named encoder
+- [x] AC6 An execution test proves `"copy"` stream-copies and a named encoder
       re-encodes, using a source codec that is not the container default
       (M35 lesson — the MP3-in-MP4 fixture), `skip_if` binaries absent.
-- [ ] AC7 NEWS.md entry; `devtools::document()` no diff; `devtools::test()` and
+- [x] AC7 NEWS.md entry; `devtools::document()` no diff; `devtools::test()` and
       `devtools::check()` clean (0 errors, 0 warnings; NOTEs justified).
 
 ## Coverage
@@ -108,7 +108,21 @@ candidate row (M31 Q4). No new exports, so `_pkgdown.yml` is untouched.
 - 2026-07-26: T6 done — NEWS entry under New features; `document()` regenerated five `.Rd` files and is idempotent on a second run. Vignettes, README.Rmd and `_pkgdown.yml` need no change (no new exports; the one vignette `audio_codec` mention is about the composite verbs).
 - 2026-07-26: T7 done — first `check()` hit the M17 trap exactly (devtools said 0 notes, `00check.log` said `Status: 1 NOTE`, a spelling hit on "hardcoded" in NEWS); reworded rather than growing `inst/WORDLIST` for one occurrence. Re-run is `Status: OK`; `pkgdown::check_pkgdown()` clean.
 - 2026-07-26: all tasks done, `check()` and `check_pkgdown()` clean, `R/ffmpeg.R` CRLF intact (4467/4467, diff 110 lines) — status to review.
+- 2026-07-26: review — draft PR #41 opened; all seven criteria verified with fresh evidence; consistency gate clean; CI green on all nine checks; IP1 confirmed (Layer 1 zero diff).
+- 2026-07-26: review — blame-history and prior-PR-comments lenses both returned clean; diff-bug lens still running, triage and merge gate pending (checkpoint, not final).
 
 ## Decisions
 
 ## Review
+
+**Verified 2026-07-26 on `m39-standardize-anonymize-audio-codec` @ 327d794, PR #41.** Evidence gathered by command, never recall.
+
+- AC1 — `formals()` on all four verbs: `audio_codec` present, default `"copy"`, and its index precedes `hardware` on each (7<9, 6<8, 6<8, 4<6). All four compile `-codec:a aac` when given a named encoder.
+- AC2 — master's own code was extracted with `git archive master` into a scratch tree and loaded, so the four default commands were compiled from *both* revisions on an identical input path and `diff`ed: zero bytes differ. Stronger than the planned literal comparison, which the tests also carry.
+- AC3 — `audio_codec = NULL` on all four: no `-codec:a` token, `-codec:v libx264` still emitted.
+- AC4 — `"aac -evil"` aborts on both scalars with `` `audio_codec` must be a single clean token ``; on both batches with a 2-row table it aborts at index 2.
+- AC5 — column overrides the batch-wide argument (flac/aac, no `copy` survives); all-NA logical column accepted and resolves to unset; numeric and all-NA-numeric columns both abort naming `audio_codec`, on both verbs.
+- AC6 — the three execution tests ran against real ffmpeg/ffprobe (`skipped=FALSE`, 4+3+2 passing expectations): copy keeps `mp3`, `"aac"` yields `aac`, `NULL` yields `aac` from the container.
+- AC7 — `devtools::check()` → `Status: OK`, 0 errors / 0 warnings / 0 notes (read from the check log, not devtools' masked summary). NEWS entry present; `document()` leaves no diff.
+
+**Consistency gate.** `cairn_validate` exit 0, all checks pass. Toolchain slot: `document()` no-diff, `pkgdown::check_pkgdown()` clean, NEWS entry present with no milestone numbers in user-facing text, no new top-level files, README untouched. CI green on all nine checks (macOS, Ubuntu release/devel/oldrel-1, Windows, pkgdown, coverage).

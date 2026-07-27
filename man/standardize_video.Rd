@@ -11,6 +11,7 @@ standardize_video(
   height = NULL,
   fps = NULL,
   video_codec = "libx264",
+  audio_codec = "copy",
   pixel_format = "yuv420p",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
@@ -35,6 +36,12 @@ the input frame rate.}
 \item{video_codec}{A string naming the output video codec (default
 \code{"libx264"}).}
 
+\item{audio_codec}{A string naming the output audio codec (default
+\code{"copy"}, i.e. stream-copy the source audio unchanged). Name a real
+encoder (e.g. \code{"aac"}) when the source audio codec cannot be copied
+into the output container, or \code{NULL} to emit no \code{-codec:a} and
+let the container's default encoder decide.}
+
 \item{pixel_format}{A string naming the output pixel format (default
 \code{"yuv420p"}).}
 
@@ -42,7 +49,8 @@ the input frame rate.}
 \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
 \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
 (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); see
-\code{\link{has_nvenc}} for availability and its caveats.}
+\code{\link{has_nvenc}} for availability and its caveats. Applies to video
+only: \code{audio_codec} is never hardware-accelerated.}
 
 \item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
 unavailable, re-encode with the software \code{video_codec} and a message
@@ -67,9 +75,10 @@ it across a dataset.
 The default standard \code{standardize_video(infile, outfile)} re-encodes to
 H.264 video (\code{video_codec = "libx264"}) with \code{pixel_format = "yuv420p"}
 and \code{-movflags +faststart}, keeping the source resolution and frame
-rate. Audio is stream-copied unchanged (\code{-c:a copy}); audio
-standardization is out of scope. The same input therefore always compiles to
-a byte-identical command.
+rate. Audio is stream-copied unchanged (\code{-c:a copy}) unless
+\code{audio_codec} names an encoder; loudness standardization stays out of
+scope (see \code{\link{normalize_audio}}). The same input therefore always
+compiles to a byte-identical command.
 
 Resolution follows \code{width}/\code{height}: supplying both forces exact
 output dimensions; supplying only one preserves the aspect ratio and rounds

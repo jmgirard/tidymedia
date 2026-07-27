@@ -10,6 +10,7 @@ standardize_video_batch(
   height = NULL,
   fps = NULL,
   video_codec = "libx264",
+  audio_codec = "copy",
   pixel_format = "yuv420p",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
@@ -26,10 +27,13 @@ the destination; when absent, one is derived per row by appending
 extension (e.g. \code{clip.mkv} becomes \code{clip_standardized.mkv}).
 Because standardization is one-input-to-one-output, a duplicated
 \code{input} with no \code{output} column would collide and is rejected.
-Each of the five standardization knobs — \code{width}, \code{height},
-\code{fps}, \code{video_codec}, \code{pixel_format} — may also appear as a
+Each of the six standardization knobs — \code{width}, \code{height},
+\code{fps}, \code{video_codec}, \code{audio_codec}, \code{pixel_format} —
+may also appear as a
 column to override the corresponding argument on a per-row basis; rows (or
-knobs) that omit the column fall back to the argument's value. Any other
+knobs) that omit the column fall back to the argument's value. In an
+\code{audio_codec} column, \code{NA} leaves that row's audio codec unset
+(the column form of \code{audio_codec = NULL}). Any other
 columns are ignored.}
 
 \item{width, height}{Optional target dimensions applied to every row, unless
@@ -44,6 +48,13 @@ leave the frame rate unchanged)}
 
 \item{video_codec}{A string naming the video codec applied to every row, unless
 \code{jobs} carries a \code{video_codec} column. (default = \code{"libx264"})}
+
+\item{audio_codec}{A string naming the audio codec applied to every row,
+unless \code{jobs} carries an \code{audio_codec} column, in which case
+\code{NA} in a cell leaves that row's codec unset. \code{"copy"} (default)
+stream-copies the audio through untouched; name an encoder (e.g.
+\code{"aac"}) when the source audio cannot be copied into the output
+container.}
 
 \item{pixel_format}{A string naming the pixel format applied to every row,
 unless \code{jobs} carries a \code{pixel_format} column.

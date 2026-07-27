@@ -23,10 +23,8 @@ re-encode always writes H.264/mp4), e.g. \code{clip.mkv} becomes
 rejected. Any other columns are ignored — including \code{video_codec} and
 \code{audio_codec}, which the sibling batch verbs read as per-row overrides
 but this one does not: the web recipe fixes both codecs by identity (H.264
-video, AAC audio). For a per-row video codec use
-\code{\link{standardize_video_batch}}, which stream-copies audio rather than
-exposing a codec for it; for a per-row audio codec use a verb that takes one,
-such as \code{\link{crop_video_batch}}.}
+video, AAC audio). For per-row codecs use a verb that exposes them, such as
+\code{\link{standardize_video_batch}} or \code{\link{crop_video_batch}}.}
 
 \item{hardware}{The encoder backend applied to every row: \code{"none"}
 (default, software libx264) or \code{"nvenc"} for NVIDIA GPU H.264 encoding.

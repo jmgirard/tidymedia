@@ -293,6 +293,23 @@ test_that("the batch siblings accept an all-NA (logical) audio_codec column", {
     run = FALSE
   )
   expect_false(any(grepl("-codec:a", seg$command, fixed = TRUE)))
+
+  # M39's two: their neighbouring video_codec column rejects NA, so the
+  # audio_codec column has to be guarded separately to accept it.
+  std <- standardize_video_batch(
+    tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"),
+                   audio_codec = NA),
+    run = FALSE
+  )
+  expect_false(any(grepl("-codec:a", std$command, fixed = TRUE)))
+
+  boxes <- data.frame(x = 1, y = 1, width = 8, height = 8)
+  anon <- anonymize_video_batch(
+    tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"),
+                   regions = list(boxes, boxes), audio_codec = NA),
+    run = FALSE
+  )
+  expect_false(any(grepl("-codec:a", anon$command, fixed = TRUE)))
 })
 
 test_that("the batch siblings reject a wrongly typed audio_codec column", {
@@ -340,6 +357,38 @@ test_that("the batch siblings reject a wrongly typed audio_codec column", {
   expect_error(
     segment_video_batch(
       tibble::tibble(input = f, output = "a.mp4", start = 0, end = 1,
+                     audio_codec = NA_real_),
+      run = FALSE
+    ),
+    "audio_codec"
+  )
+  # M39's two, at both boundaries: a numeric column and the all-NA numeric one.
+  boxes <- data.frame(x = 1, y = 1, width = 8, height = 8)
+  expect_error(
+    standardize_video_batch(
+      tibble::tibble(input = f, output = "a.mp4", audio_codec = 1),
+      run = FALSE
+    ),
+    "audio_codec"
+  )
+  expect_error(
+    standardize_video_batch(
+      tibble::tibble(input = f, output = "a.mp4", audio_codec = NA_real_),
+      run = FALSE
+    ),
+    "audio_codec"
+  )
+  expect_error(
+    anonymize_video_batch(
+      tibble::tibble(input = f, output = "a.mp4", regions = list(boxes),
+                     audio_codec = 1),
+      run = FALSE
+    ),
+    "audio_codec"
+  )
+  expect_error(
+    anonymize_video_batch(
+      tibble::tibble(input = f, output = "a.mp4", regions = list(boxes),
                      audio_codec = NA_real_),
       run = FALSE
     ),
@@ -436,6 +485,254 @@ test_that("both composite batch verbs reject a wrongly typed audio column", {
   )
 })
 
+# standardize_video() / anonymize_video() (M39) --------------------------------
+#
+# These two differ from the four above: they always re-encoded video and always
+# stream-copied audio, but the copy was hardcoded, so D017's documented remedy
+# for the copy-into-an-incompatible-container trap ("name an encoder") had no
+# argument to name one. audio_codec = "copy" is therefore the pre-M39 behavior
+# made reachable, and every default command must be unchanged.
+
+# The exact commands the pre-M39 code compiled, pinned so the "no default output
+# change" claim is checked against a literal rather than against the code that
+# would have to be wrong for the check to matter.
+m39_std_default <- function(f) {
+  paste0('-y -i "', f, '" -vf "crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2',
+         ':x=(in_w-out_w)/2:y=(in_h-out_h)/2" -codec:v libx264 -codec:a copy ',
+         '-pix_fmt yuv420p -movflags +faststart "out.mp4"')
+}
+
+m39_anon_default <- function(f) {
+  paste0('-y -i "', f, '" -vf "crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2',
+         ':x=(in_w-out_w)/2:y=(in_h-out_h)/2,',
+         'drawbox=x=10:y=10:w=50:h=50:c=black:t=fill" ',
+         '-codec:v libx264 -codec:a copy -pix_fmt yuv420p "out.mp4"')
+}
+
+m39_regions <- function() {
+  data.frame(x = 10, y = 10, width = 50, height = 50)
+}
+
+test_that("standardize_video() compiles its pre-M39 default byte-for-byte", {
+  f <- make_input()
+  expect_equal(
+    as.character(standardize_video(f, "out.mp4", run = FALSE)),
+    m39_std_default(f)
+  )
+})
+
+test_that("anonymize_video() compiles its pre-M39 default byte-for-byte", {
+  f <- make_input()
+  expect_equal(
+    as.character(anonymize_video(f, "out.mp4", m39_regions(), run = FALSE)),
+    m39_anon_default(f)
+  )
+})
+
+test_that("standardize_video(audio_codec = ) names the audio encoder", {
+  f <- make_input()
+  cmd <- as.character(standardize_video(f, "out.mp4", audio_codec = "aac",
+                                        run = FALSE))
+  expect_match(cmd, "-codec:a aac", fixed = TRUE)
+  expect_no_match(cmd, "-codec:a copy", fixed = TRUE)
+  # Only the audio token moved; the video codec is untouched.
+  expect_match(cmd, "-codec:v libx264", fixed = TRUE)
+})
+
+test_that("anonymize_video(audio_codec = ) names the audio encoder", {
+  f <- make_input()
+  cmd <- as.character(anonymize_video(f, "out.mp4", m39_regions(),
+                                      audio_codec = "aac", run = FALSE))
+  expect_match(cmd, "-codec:a aac", fixed = TRUE)
+  expect_no_match(cmd, "-codec:a copy", fixed = TRUE)
+  expect_match(cmd, "-codec:v libx264", fixed = TRUE)
+})
+
+test_that("standardize_video(audio_codec = NULL) emits no -codec:a", {
+  f <- make_input()
+  cmd <- as.character(standardize_video(f, "out.mp4", audio_codec = NULL,
+                                        run = FALSE))
+  expect_no_match(cmd, "-codec:a", fixed = TRUE)
+  # The escape hatch removes that one token and nothing else.
+  expect_equal(cmd, sub(" -codec:a copy", "", m39_std_default(f), fixed = TRUE))
+})
+
+test_that("anonymize_video(audio_codec = NULL) emits no -codec:a", {
+  f <- make_input()
+  cmd <- as.character(anonymize_video(f, "out.mp4", m39_regions(),
+                                      audio_codec = NULL, run = FALSE))
+  expect_no_match(cmd, "-codec:a", fixed = TRUE)
+  expect_equal(cmd, sub(" -codec:a copy", "", m39_anon_default(f), fixed = TRUE))
+})
+
+test_that("standardize_video() rejects a non-token audio_codec", {
+  f <- make_input()
+  expect_error(
+    standardize_video(f, "out.mp4", audio_codec = "aac -evil", run = FALSE),
+    "clean token"
+  )
+  expect_error(
+    standardize_video(f, "out.mp4", audio_codec = 1, run = FALSE),
+    class = "rlang_error"
+  )
+})
+
+test_that("anonymize_video() rejects a non-token audio_codec", {
+  f <- make_input()
+  expect_error(
+    anonymize_video(f, "out.mp4", m39_regions(), audio_codec = "aac -evil",
+                    run = FALSE),
+    "clean token"
+  )
+  expect_error(
+    anonymize_video(f, "out.mp4", m39_regions(), audio_codec = 1, run = FALSE),
+    class = "rlang_error"
+  )
+})
+
+test_that("audio_codec is independent of the hardware toggle on both verbs", {
+  f <- make_input()
+  # hardware = "nvenc" swaps the *video* encoder only; the audio token is the
+  # caller's regardless (M39 scope: audio is never hardware-accelerated).
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  std <- as.character(standardize_video(f, "out.mp4", audio_codec = "aac",
+                                        hardware = "nvenc", run = FALSE))
+  expect_match(std, "-codec:v h264_nvenc", fixed = TRUE)
+  expect_match(std, "-codec:a aac", fixed = TRUE)
+  anon <- as.character(anonymize_video(f, "out.mp4", m39_regions(),
+                                       audio_codec = NULL, hardware = "nvenc",
+                                       run = FALSE))
+  expect_match(anon, "-codec:v h264_nvenc", fixed = TRUE)
+  expect_no_match(anon, "-codec:a", fixed = TRUE)
+})
+
+# M39's batch siblings: column, batch-wide argument, per-row token ------------
+
+test_that("standardize_video_batch() takes a per-row audio_codec column", {
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input = c(f, f), output = c("a.mp4", "b.mp4"),
+    audio_codec = c("aac", NA_character_)
+  )
+  out <- standardize_video_batch(jobs, run = FALSE)
+  expect_match(as.character(out$command[[1]]), "-codec:a aac", fixed = TRUE)
+  expect_no_match(as.character(out$command[[2]]), "-codec:a", fixed = TRUE)
+})
+
+test_that("anonymize_video_batch() takes a per-row audio_codec column", {
+  f <- make_input()
+  boxes <- data.frame(x = 1, y = 1, width = 8, height = 8)
+  jobs <- tibble::tibble(
+    input = c(f, f), output = c("a.mp4", "b.mp4"),
+    regions = list(boxes, boxes),
+    audio_codec = c("aac", NA_character_)
+  )
+  out <- anonymize_video_batch(jobs, run = FALSE)
+  expect_match(as.character(out$command[[1]]), "-codec:a aac", fixed = TRUE)
+  expect_no_match(as.character(out$command[[2]]), "-codec:a", fixed = TRUE)
+})
+
+test_that("the M39 batch column overrides the batch-wide argument", {
+  f <- make_input()
+  jobs <- tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"),
+                         audio_codec = c("flac", "aac"))
+  out <- standardize_video_batch(jobs, audio_codec = "copy", run = FALSE)
+  expect_match(as.character(out$command[[1]]), "-codec:a flac", fixed = TRUE)
+  expect_match(as.character(out$command[[2]]), "-codec:a aac", fixed = TRUE)
+  expect_false(any(grepl("-codec:a copy", out$command, fixed = TRUE)))
+})
+
+test_that("the M39 batch verbs default every row to a stream copy", {
+  f <- make_input()
+  boxes <- data.frame(x = 1, y = 1, width = 8, height = 8)
+  std <- standardize_video_batch(
+    tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4")),
+    run = FALSE
+  )
+  expect_true(all(grepl("-codec:a copy", std$command, fixed = TRUE)))
+  anon <- anonymize_video_batch(
+    tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"),
+                   regions = list(boxes, boxes)),
+    run = FALSE
+  )
+  expect_true(all(grepl("-codec:a copy", anon$command, fixed = TRUE)))
+})
+
+test_that("the M39 batch-wide audio_codec argument reaches every row", {
+  # Without a column, the argument itself must reach the pipeline. Asserting
+  # only the "copy" default would pass even if the argument were ignored, since
+  # standardize_pipeline()/anonymize_pipeline() default to "copy" too, so this
+  # names a codec that is NOT the default (M39 review F3).
+  f <- make_input()
+  boxes <- data.frame(x = 1, y = 1, width = 8, height = 8)
+
+  std <- standardize_video_batch(
+    tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4")),
+    audio_codec = "aac", run = FALSE
+  )
+  expect_true(all(grepl("-codec:a aac", std$command, fixed = TRUE)))
+  expect_false(any(grepl("-codec:a copy", std$command, fixed = TRUE)))
+
+  anon <- anonymize_video_batch(
+    tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"),
+                   regions = list(boxes, boxes)),
+    audio_codec = "aac", run = FALSE
+  )
+  expect_true(all(grepl("-codec:a aac", anon$command, fixed = TRUE)))
+  expect_false(any(grepl("-codec:a copy", anon$command, fixed = TRUE)))
+
+  # NULL as the batch-wide argument reaches every row too.
+  unset <- standardize_video_batch(
+    tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4")),
+    audio_codec = NULL, run = FALSE
+  )
+  expect_false(any(grepl("-codec:a", unset$command, fixed = TRUE)))
+})
+
+test_that("the M39 batch verbs reject a non-token audio_codec per row", {
+  f <- make_input()
+  # Two rows, not one: a cli count message that crashes on 2+ items renders
+  # fine with a single row (M18 lesson).
+  expect_error(
+    standardize_video_batch(
+      tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"),
+                     audio_codec = c("aac", "aac -evil")),
+      run = FALSE
+    ),
+    "clean token"
+  )
+  boxes <- data.frame(x = 1, y = 1, width = 8, height = 8)
+  expect_error(
+    anonymize_video_batch(
+      tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"),
+                     regions = list(boxes, boxes),
+                     audio_codec = c("aac", "aac -evil")),
+      run = FALSE
+    ),
+    "clean token"
+  )
+  # And the batch-wide argument is type-checked at the front door.
+  expect_error(
+    standardize_video_batch(
+      tibble::tibble(input = f, output = "a.mp4"), audio_codec = 1,
+      run = FALSE
+    ),
+    class = "rlang_error"
+  )
+})
+
+test_that("hardware stays batch-wide and never reads an audio_codec row", {
+  f <- make_input()
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  jobs <- tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"),
+                         audio_codec = c("aac", NA_character_))
+  out <- standardize_video_batch(jobs, hardware = "nvenc", run = FALSE)
+  # Every row gets the GPU *video* encoder; audio follows its own column.
+  expect_true(all(grepl("-codec:v h264_nvenc", out$command, fixed = TRUE)))
+  expect_match(as.character(out$command[[1]]), "-codec:a aac", fixed = TRUE)
+  expect_no_match(as.character(out$command[[2]]), "-codec:a", fixed = TRUE)
+})
+
 # Execution: the copied audio really does survive untouched -------------------
 
 test_that("crop_video() leaves the audio stream's codec unchanged", {
@@ -460,13 +757,74 @@ test_that("crop_video() leaves the audio stream's codec unchanged", {
   expect_equal(probe_audio(infile = unset)$codec_name, "aac")
 })
 
-# Argument spelling across all eight verbs -------------------------------------
+test_that("standardize_video() leaves the audio stream's codec unchanged", {
+  skip_if_no_ffmpeg()
+  skip_if_no_ffprobe()
+  # MP3 audio in an MP4: FFmpeg's default audio encoder for MP4 is AAC, so an
+  # AAC fixture could not tell a copy from a re-encode (M35 lesson).
+  input <- make_mp3_audio_video()
+  expect_equal(probe_audio(infile = input)$codec_name, "mp3")
 
-test_that("all eight verbs carry the D014 audio_codec spelling", {
-  # AC1: exact spelling, "copy" default, no acodec/audio alias.
+  copied <- withr::local_tempfile(fileext = ".mp4")
+  standardize_video(input, copied)
+  expect_equal(probe_audio(infile = copied)$codec_name, "mp3")
+
+  # A named encoder really does transcode ...
+  named <- withr::local_tempfile(fileext = ".mp4")
+  standardize_video(input, named, audio_codec = "aac")
+  expect_equal(probe_audio(infile = named)$codec_name, "aac")
+
+  # ... and the NULL escape hatch hands the choice back to the container,
+  # which is the behavior the hardcoded copy used to make unreachable.
+  unset <- withr::local_tempfile(fileext = ".mp4")
+  standardize_video(input, unset, audio_codec = NULL)
+  expect_equal(probe_audio(infile = unset)$codec_name, "aac")
+})
+
+test_that("anonymize_video() leaves the audio stream's codec unchanged", {
+  skip_if_no_ffmpeg()
+  skip_if_no_ffprobe()
+  input <- make_mp3_audio_video()
+  boxes <- data.frame(x = 4, y = 4, width = 16, height = 16)
+
+  copied <- withr::local_tempfile(fileext = ".mp4")
+  anonymize_video(input, copied, boxes)
+  expect_equal(probe_audio(infile = copied)$codec_name, "mp3")
+
+  named <- withr::local_tempfile(fileext = ".mp4")
+  anonymize_video(input, named, boxes, audio_codec = "aac")
+  expect_equal(probe_audio(infile = named)$codec_name, "aac")
+
+  unset <- withr::local_tempfile(fileext = ".mp4")
+  anonymize_video(input, unset, boxes, audio_codec = NULL)
+  expect_equal(probe_audio(infile = unset)$codec_name, "aac")
+})
+
+test_that("the M39 batch verbs stream-copy audio per row on disk", {
+  skip_if_no_ffmpeg()
+  skip_if_no_ffprobe()
+  input <- make_mp3_audio_video()
+  copied <- withr::local_tempfile(fileext = ".mp4")
+  named <- withr::local_tempfile(fileext = ".mp4")
+  jobs <- tibble::tibble(
+    input = c(input, input), output = c(copied, named),
+    audio_codec = c("copy", "aac")
+  )
+  standardize_video_batch(jobs)
+  expect_equal(probe_audio(infile = copied)$codec_name, "mp3")
+  expect_equal(probe_audio(infile = named)$codec_name, "aac")
+})
+
+# Argument spelling across every verb that carries audio_codec -----------------
+
+test_that("every configurable transform carries the D014 audio_codec spelling", {
+  # AC1: exact spelling, "copy" default, no acodec/audio alias. M35's original
+  # eight plus M39's standardize_video/anonymize_video and their batches.
   verbs <- c("crop_video", "segment_video", "compare_videos",
              "picture_in_picture", "crop_video_batch", "segment_video_batch",
-             "compare_videos_batch", "picture_in_picture_batch")
+             "compare_videos_batch", "picture_in_picture_batch",
+             "standardize_video", "anonymize_video",
+             "standardize_video_batch", "anonymize_video_batch")
   for (verb in verbs) {
     fo <- formals(get(verb))
     expect_true("audio_codec" %in% names(fo), label = verb)

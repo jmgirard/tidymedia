@@ -436,6 +436,127 @@ test_that("both composite batch verbs reject a wrongly typed audio column", {
   )
 })
 
+# standardize_video() / anonymize_video() (M39) --------------------------------
+#
+# These two differ from the four above: they always re-encoded video and always
+# stream-copied audio, but the copy was hardcoded, so D017's documented remedy
+# for the copy-into-an-incompatible-container trap ("name an encoder") had no
+# argument to name one. audio_codec = "copy" is therefore the pre-M39 behavior
+# made reachable, and every default command must be unchanged.
+
+# The exact commands the pre-M39 code compiled, pinned so the "no default output
+# change" claim is checked against a literal rather than against the code that
+# would have to be wrong for the check to matter.
+m39_std_default <- function(f) {
+  paste0('-y -i "', f, '" -vf "crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2',
+         ':x=(in_w-out_w)/2:y=(in_h-out_h)/2" -codec:v libx264 -codec:a copy ',
+         '-pix_fmt yuv420p -movflags +faststart "out.mp4"')
+}
+
+m39_anon_default <- function(f) {
+  paste0('-y -i "', f, '" -vf "crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2',
+         ':x=(in_w-out_w)/2:y=(in_h-out_h)/2,',
+         'drawbox=x=10:y=10:w=50:h=50:c=black:t=fill" ',
+         '-codec:v libx264 -codec:a copy -pix_fmt yuv420p "out.mp4"')
+}
+
+m39_regions <- function() {
+  data.frame(x = 10, y = 10, width = 50, height = 50)
+}
+
+test_that("standardize_video() compiles its pre-M39 default byte-for-byte", {
+  f <- make_input()
+  expect_equal(
+    as.character(standardize_video(f, "out.mp4", run = FALSE)),
+    m39_std_default(f)
+  )
+})
+
+test_that("anonymize_video() compiles its pre-M39 default byte-for-byte", {
+  f <- make_input()
+  expect_equal(
+    as.character(anonymize_video(f, "out.mp4", m39_regions(), run = FALSE)),
+    m39_anon_default(f)
+  )
+})
+
+test_that("standardize_video(audio_codec = ) names the audio encoder", {
+  f <- make_input()
+  cmd <- as.character(standardize_video(f, "out.mp4", audio_codec = "aac",
+                                        run = FALSE))
+  expect_match(cmd, "-codec:a aac", fixed = TRUE)
+  expect_no_match(cmd, "-codec:a copy", fixed = TRUE)
+  # Only the audio token moved; the video codec is untouched.
+  expect_match(cmd, "-codec:v libx264", fixed = TRUE)
+})
+
+test_that("anonymize_video(audio_codec = ) names the audio encoder", {
+  f <- make_input()
+  cmd <- as.character(anonymize_video(f, "out.mp4", m39_regions(),
+                                      audio_codec = "aac", run = FALSE))
+  expect_match(cmd, "-codec:a aac", fixed = TRUE)
+  expect_no_match(cmd, "-codec:a copy", fixed = TRUE)
+  expect_match(cmd, "-codec:v libx264", fixed = TRUE)
+})
+
+test_that("standardize_video(audio_codec = NULL) emits no -codec:a", {
+  f <- make_input()
+  cmd <- as.character(standardize_video(f, "out.mp4", audio_codec = NULL,
+                                        run = FALSE))
+  expect_no_match(cmd, "-codec:a", fixed = TRUE)
+  # The escape hatch removes that one token and nothing else.
+  expect_equal(cmd, sub(" -codec:a copy", "", m39_std_default(f), fixed = TRUE))
+})
+
+test_that("anonymize_video(audio_codec = NULL) emits no -codec:a", {
+  f <- make_input()
+  cmd <- as.character(anonymize_video(f, "out.mp4", m39_regions(),
+                                      audio_codec = NULL, run = FALSE))
+  expect_no_match(cmd, "-codec:a", fixed = TRUE)
+  expect_equal(cmd, sub(" -codec:a copy", "", m39_anon_default(f), fixed = TRUE))
+})
+
+test_that("standardize_video() rejects a non-token audio_codec", {
+  f <- make_input()
+  expect_error(
+    standardize_video(f, "out.mp4", audio_codec = "aac -evil", run = FALSE),
+    "clean token"
+  )
+  expect_error(
+    standardize_video(f, "out.mp4", audio_codec = 1, run = FALSE),
+    class = "rlang_error"
+  )
+})
+
+test_that("anonymize_video() rejects a non-token audio_codec", {
+  f <- make_input()
+  expect_error(
+    anonymize_video(f, "out.mp4", m39_regions(), audio_codec = "aac -evil",
+                    run = FALSE),
+    "clean token"
+  )
+  expect_error(
+    anonymize_video(f, "out.mp4", m39_regions(), audio_codec = 1, run = FALSE),
+    class = "rlang_error"
+  )
+})
+
+test_that("audio_codec is independent of the hardware toggle on both verbs", {
+  f <- make_input()
+  # hardware = "nvenc" swaps the *video* encoder only; the audio token is the
+  # caller's regardless (M39 scope: audio is never hardware-accelerated).
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  std <- as.character(standardize_video(f, "out.mp4", audio_codec = "aac",
+                                        hardware = "nvenc", run = FALSE))
+  expect_match(std, "-codec:v h264_nvenc", fixed = TRUE)
+  expect_match(std, "-codec:a aac", fixed = TRUE)
+  anon <- as.character(anonymize_video(f, "out.mp4", m39_regions(),
+                                       audio_codec = NULL, hardware = "nvenc",
+                                       run = FALSE))
+  expect_match(anon, "-codec:v h264_nvenc", fixed = TRUE)
+  expect_no_match(anon, "-codec:a", fixed = TRUE)
+})
+
 # Execution: the copied audio really does survive untouched -------------------
 
 test_that("crop_video() leaves the audio stream's codec unchanged", {
@@ -462,11 +583,13 @@ test_that("crop_video() leaves the audio stream's codec unchanged", {
 
 # Argument spelling across all eight verbs -------------------------------------
 
-test_that("all eight verbs carry the D014 audio_codec spelling", {
-  # AC1: exact spelling, "copy" default, no acodec/audio alias.
+test_that("every configurable transform carries the D014 audio_codec spelling", {
+  # AC1: exact spelling, "copy" default, no acodec/audio alias. M35's original
+  # eight plus M39's standardize_video/anonymize_video and their batches.
   verbs <- c("crop_video", "segment_video", "compare_videos",
              "picture_in_picture", "crop_video_batch", "segment_video_batch",
-             "compare_videos_batch", "picture_in_picture_batch")
+             "compare_videos_batch", "picture_in_picture_batch",
+             "standardize_video", "anonymize_video")
   for (verb in verbs) {
     fo <- formals(get(verb))
     expect_true("audio_codec" %in% names(fo), label = verb)

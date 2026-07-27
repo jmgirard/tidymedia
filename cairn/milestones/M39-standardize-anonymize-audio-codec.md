@@ -73,7 +73,7 @@ candidate row (M31 Q4). No new exports, so `_pkgdown.yml` is untouched.
 - [x] T1 Thread `audio_codec` through `standardize_pipeline()` and
       `anonymize_pipeline()`, replacing the hardcoded `audio = "copy"`; add the
       formal to `standardize_video()` and `anonymize_video()` before `run`.
-- [ ] T2 Compile tests for both scalars: named encoder emitted, `NULL` emits
+- [x] T2 Compile tests for both scalars: named encoder emitted, `NULL` emits
       nothing, default command byte-identical to the recorded pre-milestone
       string, bad token aborts.
 - [ ] T3 Add `audio_codec` to `standardize_video_batch()` and
@@ -97,6 +97,8 @@ candidate row (M31 Q4). No new exports, so `_pkgdown.yml` is untouched.
 - 2026-07-26: T1 — recorded the pre-milestone default commands for both verbs and asserted the post-change defaults are `identical()` to them (AC2 evidence gathered early, re-run at review).
 - 2026-07-26: T1 — `test-anonymize-video-batch.R:279` called `anonymize_pipeline()` positionally and broke on the new sixth formal; converted to named arguments.
 - 2026-07-26: T1 — `R/ffmpeg.R` CRLF integrity checked after editing (4440 CR / 4440 lines, diff 54/27), per the M35 lesson.
+- 2026-07-26: T2 done — 11 compile tests in `test-audio-codec.R`; the two default-command literals are pinned in helpers so AC2 checks against a literal, not against the code under test.
+- 2026-07-26: T2 — extended M35's arg-spelling test from eight verbs to ten (the batches join at T3); its `audio_codec` before `hardware` assertion already covers the gate's placement decision.
 
 ## Decisions
 

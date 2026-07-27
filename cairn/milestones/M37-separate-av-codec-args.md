@@ -35,26 +35,26 @@ configurable-transform call applied to a demux verb first).
 
 ## Acceptance criteria
 
-- [ ] AC1: the default call compiles the same two commands as `reencode = FALSE`
+- [x] AC1: the default call compiles the same two commands as `reencode = FALSE`
       on the default branch — `-codec:a copy` and `-codec:v copy`, byte-identical.
-- [ ] AC2: `audio_codec = NULL, video_codec = NULL` compiles what
+- [x] AC2: `audio_codec = NULL, video_codec = NULL` compiles what
       `reencode = TRUE` compiled on the default branch (no `-codec` emitted).
-- [ ] AC3: a named encoder per stream appears in that stream's command and only
+- [x] AC3: a named encoder per stream appears in that stream's command and only
       that one — an `audio_codec` never reaches the video command, nor the reverse.
-- [ ] AC4: `reencode` is gone from both verbs — the scalar errors with R's
+- [x] AC4: `reencode` is gone from both verbs — the scalar errors with R's
       `unused argument`, and the batch (whose `...` would otherwise swallow it
       silently) aborts naming `audio_codec` / `video_codec` as the replacement
       — and no reference to it survives under `R/`, `man/`, `vignettes/`, or
       `_pkgdown.yml` *for these two verbs* beyond that guard, while
       `segment_video`'s and `ffm_seek`'s own `reencode` are untouched.
-- [ ] AC5: the batch honors per-row `audio_codec` / `video_codec` columns with
+- [x] AC5: the batch honors per-row `audio_codec` / `video_codec` columns with
       `NA` → unset, routes each column to its own reshaped stream row, and
       rejects a wrong-typed column at both boundaries (M34 lesson).
-- [ ] AC6: execution tests — the copy path preserves the source codec using the
+- [x] AC6: execution tests — the copy path preserves the source codec using the
       MP3-in-MP4 fixture `make_mp3_audio_video()`
       (`tests/testthat/helper-media.R:37`; an AAC fixture cannot discriminate,
       M35 lesson), and a named encoder transcodes. `skip_if` binaries absent.
-- [ ] AC7: `NEWS.md` records the breaking change in user-facing terms, and the
+- [x] AC7: `NEWS.md` records the breaking change in user-facing terms, and the
       profile `verify` slot is clean — `devtools::test()` passes,
       `devtools::document()` no diff, `devtools::check()` 0 errors / 0 warnings.
 
@@ -101,6 +101,7 @@ configurable-transform call applied to a demux verb first).
 - 2026-07-26: T4 — arg-is-gone assertions added. Substantive amendment (user-gated, option A): the scalar verb errors with R's own `unused argument`, but the batch verb's `...` swallowed a stale `reencode` silently and stream-copied output the caller asked to re-encode, so the batch now aborts naming `audio_codec`/`video_codec` as the replacement — a diagnostic, not a `lifecycle` shim; D014's clean break stands. AC4 amended accordingly (text shown in chat before this commit). `devtools::test()` clean (1527 pass).
 - 2026-07-26: T5 — public-surface sweep clean, no edits owed. `reencode` count is 0 in both verbs' `.Rd` files; the only surviving mention under `R/` for these verbs is the T4 migration guard. `vignettes/batch.Rmd:98` calls `separate_audio_video()` without naming `reencode`, so it still compiles; `_pkgdown.yml` lists names only; `README.Rmd` never mentions either verb. Out-of-scope `reencode` intact: `man/segment_video.Rd` (4 hits), `man/segment_video_batch.Rd` (7), `man/ffm_seek.Rd` (6), and `vignettes/tidymedia.Rmd`'s `ffm_seek()` example.
 - 2026-07-26: T6 — four binary-gated execution tests on the MP3-in-MP4 fixture: the copy default keeps `mp3` in the audio output (a re-encode into MP4 would yield `aac`) and preserves the video codec; `audio_codec = "aac"` transcodes while the video stream stays copied; `audio_codec = NULL` reproduces the pre-M37 container-default `aac`; and a per-row `audio_codec` column drives copy vs transcode across two rows of one batch. `devtools::test()` clean (1536 pass).
+- 2026-07-26: review — draft PR #39 opened; AC1-AC7 verified with fresh evidence (AC1/AC2 byte-compared against a pristine `git archive master` tree, not the tests' hardcoded reference strings); consistency gate clean.
 - 2026-07-26: T7 — `NEWS.md` breaking-change entry and `DECISIONS.md` D020 appended (both shown verbatim in chat before this commit); `devtools::document()` no further diff. `R CMD check` `Status: OK` — 0 errors / 0 warnings / 0 notes, read from the check log rather than the devtools summary (M17 lesson). Status → review.
 
 ## Decisions
@@ -108,3 +109,63 @@ configurable-transform call applied to a demux verb first).
 - D020 (`cairn/DECISIONS.md`) records the subsumption, the `"copy"`-not-sentinel choice, the D014 waiver, the batch's stale-argument guard, and the single-`codec`-column reshape.
 
 ## Review
+
+**PR:** https://github.com/jmgirard/tidymedia/pull/39 · reviewed 2026-07-26.
+
+### Acceptance-criteria evidence
+
+- **AC1 — PASS.** A pristine `master` tree was extracted with `git archive master`
+  and loaded separately, and its `reencode = FALSE` commands compared to the
+  branch's default call: `identical()` TRUE on both the audio and the video
+  command. Byte-for-byte, not by substring, and against the default branch's own
+  code rather than the reference strings hardcoded in the tests.
+- **AC2 — PASS.** Same pristine-`master` comparison for `audio_codec = NULL,
+  video_codec = NULL` against `reencode = TRUE`: `identical()` TRUE on both
+  commands; neither carries a `-codec` option.
+- **AC3 — PASS.** `audio_codec = "aac", video_codec = "libx264"` puts
+  `-codec:a aac` in the audio command and `-codec:v libx264` in the video one;
+  the audio command is free of `libx264` and the video command free of `aac`,
+  so neither stream's choice reaches the other.
+- **AC4 — PASS.** `reencode` count is 0 in both verbs' `.Rd` files, 0 in
+  `_pkgdown.yml`, and 0 in the vignettes for these verbs. The scalar call errors
+  `unused argument (reencode = TRUE)`; the batch call errors
+  "`reencode` was removed from `separate_audio_video_batch()`". Formals are
+  `infile, audiofile, videofile, audio_codec, video_codec, run` and
+  `jobs, audio_codec, video_codec, run, parallel, ...`. The only surviving `R/`
+  mentions for these verbs are the migration guard and its comment
+  (`R/ffmpeg.R:3543-3553`), which the amended criterion permits. Out-of-scope
+  `reencode` intact: `man/ffm_seek.Rd` 6 hits, `man/segment_video_batch.Rd` 7,
+  `man/segment_video.Rd` 4.
+
+- **AC5 — PASS.** A two-row table with `audio_codec = c("aac", NA)` and
+  `video_codec = c(NA, "libx264")` resolves to a `codec` column of
+  `aac | NA | NA | libx264` against a `stream` column of
+  `audio | video | audio | video`: each column reaches its own stream's row,
+  `NA` emits no `-codec`, and the named encoders land on rows 1 and 4. Both
+  type boundaries hold — a numeric column aborts naming the column
+  ("The audio_codec column of `jobs` must be character"), an all-NA numeric
+  column also aborts, while the all-NA *logical* column R produces is accepted
+  as "unset" (M34 lesson).
+- **AC6 — PASS.** `devtools::test(filter = "separate")` 83 pass / 0 fail /
+  0 skip with the binaries present. The MP3-in-MP4 fixture discriminates: the
+  copy default writes `mp3` audio (an MP4 re-encode would yield `aac`) and
+  preserves the video codec; `audio_codec = "aac"` writes `aac` while the video
+  stays copied; `audio_codec = NULL` yields the container default `aac`; a
+  per-row column drives copy vs transcode across two rows of one batch. All
+  four `skip_if` on the binaries.
+- **AC7 — PASS.** `NEWS.md` carries the breaking-change entry in user-facing
+  terms with no milestone numbers. Profile `verify` slot clean:
+  `devtools::test()` 1536 pass / 0 fail / 4 skip (nvenc absent);
+  `devtools::document()` no diff; `devtools::check()` `Status: OK` —
+  0 errors / 0 warnings / 0 notes, read from the check log rather than the
+  devtools summary (M17 lesson).
+
+### Independent fresh-context review
+
+### Consistency gate
+
+- `cairn_validate` — exit 0, all 16 checks PASS, 7 advisories OK.
+- `cairn_impact` — skipped, no `DESIGN.md` principle changed.
+- Profile `consistency-gate` (r-package): `devtools::document()` no diff;
+  `pkgdown::check_pkgdown()` "No problems found"; `NEWS.md` carries the
+  user-visible entry with no milestone numbers; no new top-level files.

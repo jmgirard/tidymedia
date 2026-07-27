@@ -1,11 +1,11 @@
 # M40: `audio_codec` subsumes `format` on `convert_audio` (+ batch), closing the codec sweep
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M39
 - **Driving RR:** —
 - **Principles touched:** IP1, GP1
-- **Branch/PR:** —
+- **Branch/PR:** `m40-convert-audio-codec-arg`
 
 ## Goal
 
@@ -94,6 +94,7 @@ changed here.
 ## Work log
 
 - 2026-07-26: created by /milestone-plan.
+- 2026-07-26: status → in-progress; branch `m40-convert-audio-codec-arg` cut from master.
 
 ## Decisions
 

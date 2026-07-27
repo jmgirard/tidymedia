@@ -17,7 +17,8 @@ map/stream-copy pipeline as the scalar verb.
 ``` r
 separate_audio_video_batch(
   jobs,
-  reencode = FALSE,
+  audio_codec = "copy",
+  video_codec = "copy",
   run = TRUE,
   parallel = FALSE,
   ...
@@ -33,18 +34,27 @@ separate_audio_video_batch(
   destinations. All three are **required** — like
   [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
   this verb derives no output paths, because a copied stream's container
-  extension is the instruction (it must match the source codec). An
-  optional `reencode` column (logical) overrides the `reencode` argument
-  per row; rows omitting it fall back to the argument. Any other columns
-  are ignored.
+  extension is the instruction (it must match the source codec).
+  Optional `audio_codec` and `video_codec` columns (character; `NA` to
+  emit no codec option for that stream) override the arguments of the
+  same name per row; rows omitting a column fall back to that argument.
+  Any other columns are ignored — except a `reencode` column, retired
+  with the argument of the same name, which is an error rather than a
+  silent no-op.
 
-- reencode:
+- audio_codec:
 
-  A logical applied to every row unless `jobs` carries a `reencode`
-  column: stream-copy each output losslessly (`FALSE`, default) or
-  re-encode it to match the output extension (`TRUE`). See
-  [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
-  for the trade-off.
+  A string naming the encoder for every `audiofile` unless `jobs`
+  carries an `audio_codec` column. The default `"copy"` stream-copies
+  the audio losslessly; `NULL` emits no `-codec:a`. See
+  [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md).
+
+- video_codec:
+
+  A string naming the encoder for every `videofile` unless `jobs`
+  carries a `video_codec` column. The default `"copy"` stream-copies the
+  video losslessly; `NULL` emits no `-codec:v`. See
+  [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md).
 
 - run:
 
@@ -70,9 +80,11 @@ A [tibble](https://tibble.tidyverse.org/reference/tibble-package.html)
 with **two rows per input** (one per stream): the reshaped `input`, a
 single `output` path, a `stream` marker (`"audio"` or `"video"`), and an
 added `command` column — plus, when `run = TRUE`, a `success` column
-(and `verified` / provenance manifest when requested via `...`). The
-columns match the other `_batch` verbs' output plus the `stream` marker.
-See
+(and `verified` / provenance manifest when requested via `...`). When
+`jobs` supplies either codec column, a single `codec` column carries
+each row's resolved encoder for its own stream (`NA` where none is
+emitted). The columns match the other `_batch` verbs' output plus the
+`stream` marker. See
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
 
 ## See also

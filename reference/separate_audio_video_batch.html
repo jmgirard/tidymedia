@@ -72,7 +72,8 @@ the scalar verb.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">separate_audio_video_batch</span><span class="op">(</span></span>
 <span>  <span class="va">jobs</span>,</span>
-<span>  reencode <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  audio_codec <span class="op">=</span> <span class="st">"copy"</span>,</span>
+<span>  video_codec <span class="op">=</span> <span class="st">"copy"</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span></span>
@@ -89,16 +90,26 @@ the scalar verb.</p>
 columns naming the two destinations. All three are <strong>required</strong> — like
 <code><a href="separate_audio_video.html">separate_audio_video</a></code>, this verb derives no output paths,
 because a copied stream's container extension is the instruction (it must
-match the source codec). An optional <code>reencode</code> column (logical)
-overrides the <code>reencode</code> argument per row; rows omitting it fall back to
-the argument. Any other columns are ignored.</p></dd>
+match the source codec). Optional <code>audio_codec</code> and <code>video_codec</code>
+columns (character; <code>NA</code> to emit no codec option for that stream)
+override the arguments of the same name per row; rows omitting a column fall
+back to that argument. Any other columns are ignored — except a
+<code>reencode</code> column, retired with the argument of the same name, which is
+an error rather than a silent no-op.</p></dd>
 
 
-<dt id="arg-reencode">reencode<a class="anchor" aria-label="anchor" href="#arg-reencode"></a></dt>
-<dd><p>A logical applied to every row unless <code>jobs</code> carries a
-<code>reencode</code> column: stream-copy each output losslessly (<code>FALSE</code>,
-default) or re-encode it to match the output extension (<code>TRUE</code>). See
-<code><a href="separate_audio_video.html">separate_audio_video</a></code> for the trade-off.</p></dd>
+<dt id="arg-audio-codec">audio_codec<a class="anchor" aria-label="anchor" href="#arg-audio-codec"></a></dt>
+<dd><p>A string naming the encoder for every <code>audiofile</code>
+unless <code>jobs</code> carries an <code>audio_codec</code> column. The default
+<code>"copy"</code> stream-copies the audio losslessly; <code>NULL</code> emits no
+<code>-codec:a</code>. See <code><a href="separate_audio_video.html">separate_audio_video</a></code>.</p></dd>
+
+
+<dt id="arg-video-codec">video_codec<a class="anchor" aria-label="anchor" href="#arg-video-codec"></a></dt>
+<dd><p>A string naming the encoder for every <code>videofile</code>
+unless <code>jobs</code> carries a <code>video_codec</code> column. The default
+<code>"copy"</code> stream-copies the video losslessly; <code>NULL</code> emits no
+<code>-codec:v</code>. See <code><a href="separate_audio_video.html">separate_audio_video</a></code>.</p></dd>
 
 
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>
@@ -124,8 +135,10 @@ or only compile them for inspection (<code>FALSE</code>).</p></dd>
 <code>stream</code> marker (<code>"audio"</code> or <code>"video"</code>), and an added
 <code>command</code> column — plus, when <code>run = TRUE</code>, a <code>success</code>
 column (and <code>verified</code> / provenance manifest when requested via
-<code>...</code>). The columns match the other <code>_batch</code> verbs' output plus
-the <code>stream</code> marker. See <code><a href="ffm_batch.html">ffm_batch</a></code>.</p>
+<code>...</code>). When <code>jobs</code> supplies either codec column, a single
+<code>codec</code> column carries each row's resolved encoder for its own stream
+(<code>NA</code> where none is emitted). The columns match the other <code>_batch</code>
+verbs' output plus the <code>stream</code> marker. See <code><a href="ffm_batch.html">ffm_batch</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

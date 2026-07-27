@@ -1,10 +1,13 @@
 # Split a media file into separate audio and video files
 
-By default the streams are copied, not re-encoded (`reencode = FALSE`):
-separation is lossless and fast, but each output container must support
-the source codec (e.g. write AAC audio from an MP4 to `.aac` or `.m4a`,
-not `.mp3`). Set `reencode = TRUE` to let FFmpeg re-encode each stream
-to whatever the output extension implies.
+By default each stream is copied, not re-encoded
+(`audio_codec = "copy"`, `video_codec = "copy"`): separation is lossless
+and fast, but each output container must support the source codec (e.g.
+write AAC audio from an MP4 to `.aac` or `.m4a`, not `.mp3`). Name an
+encoder instead (`audio_codec = "libmp3lame"`) to transcode that stream,
+or pass `NULL` to emit no codec option at all and let the output
+extension pick the encoder. Each argument governs only its own output
+file.
 
 ## Usage
 
@@ -13,7 +16,8 @@ separate_audio_video(
   infile,
   audiofile,
   videofile,
-  reencode = FALSE,
+  audio_codec = "copy",
+  video_codec = "copy",
   run = TRUE
 )
 ```
@@ -32,10 +36,19 @@ separate_audio_video(
 
   A string containing the path of the video file to write.
 
-- reencode:
+- audio_codec:
 
-  A logical: stream-copy the audio and video losslessly (`FALSE`,
-  default) or re-encode them to match the output extensions (`TRUE`).
+  A string naming the encoder for `audiofile`, passed to FFmpeg's
+  `-codec:a`. The default `"copy"` stream-copies the audio losslessly; a
+  codec name (e.g. `"libmp3lame"`) transcodes it; `NULL` emits no
+  `-codec:a`, leaving the encoder to the `audiofile` extension.
+
+- video_codec:
+
+  A string naming the encoder for `videofile`, passed to FFmpeg's
+  `-codec:v`. The default `"copy"` stream-copies the video losslessly; a
+  codec name (e.g. `"libx264"`) transcodes it; `NULL` emits no
+  `-codec:v`, leaving the encoder to the `videofile` extension.
 
 - run:
 
@@ -96,4 +109,11 @@ separate_audio_video(video, "audio.aac", "video.mp4", run = FALSE)
 #> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -map 0:a \"audio.aac\"" 
 #>                                                                                                         video 
 #> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -map 0:v \"video.mp4\"" 
+# transcode the audio to MP3 while copying the video through untouched
+separate_audio_video(video, "audio.mp3", "video.mp4",
+                     audio_codec = "libmp3lame", run = FALSE)
+#>                                                                                                               audio 
+#> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a libmp3lame -map 0:a \"audio.mp3\"" 
+#>                                                                                                               video 
+#>       "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -map 0:v \"video.mp4\"" 
 ```

@@ -1,6 +1,6 @@
 # M37: codec args subsume `reencode` on `separate_audio_video` (+ batch)
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —

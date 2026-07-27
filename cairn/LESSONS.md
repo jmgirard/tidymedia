@@ -16,8 +16,7 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   and live vignette/example chunks — neither is caught by `devtools::check()`
   (use `pkgdown::check_pkgdown()`; a chunk calling a now-internal fn fails only at
   vignette-build). Grep `vignettes/` + roxygen `@examples` before dropping `@export`.
-- 2026-07-13 (M24): `devtools::build_readme()` emits a spurious README.Rmd diff
-  (`system.file()` example paths embed the temp libpath); revert path-only churn.
+- 2026-07-13 (M24): `devtools::build_readme()` emits a spurious README.Rmd diff (`system.file()` example paths embed the temp libpath); revert path-only churn.
 - 2026-07-13 (M27): FFmpeg per-stream metadata (`-metadata:s:v:0 title=`) surfacing
   in mov stream tags is ffmpeg-version dependent (became `name` on 8.x macOS,
   absent on Ubuntu CI) — green locally + macOS, red on Ubuntu. Don't sanity-assert
@@ -46,4 +45,5 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
 - 2026-07-26 (M38): an `arg_match()` argument compared before it is resolved silently misreads its own default — `hardware = c("none","nvenc")` against `identical(hardware, "none")` is FALSE, firing a guard on every default call. Resolve at the front door, before any guard or pipeline reads the value.
 - 2026-07-26 (M38): a `cli_abort()` remediation hint must be true under the condition that FIRED the guard, not in general — the M38 guard only fires under `hardware = "nvenc"`, where the `NULL` codec sentinel assumes H.264 rather than deferring to the container, so the general-case hint walked a `.webm` caller into an `h264_nvenc`-in-WebM command. Check a hint against the branch that reaches it.
 - 2026-07-26 (M39): a `_batch` verb's batch-wide argument needs a test naming a NON-default value — asserting only the default passes even when the argument never reaches the fan-out, because the shared pipeline carries the same default. Prove the test discriminates by mutating the fan-out to ignore the argument: it must go red.
+- 2026-07-27 (M40): moving a verb onto a SHARED column guard imports that guard's remediation hint, which can be false for the new caller even though it was true for every existing one — `check_batch_codec_col()` says "`NA` to leave the codec unset", but on `convert_audio_batch` `NA` selects `-q:a 0`. M38's rule is about the branch you wrote; this is the hint going stale because a caller was ADDED. Parameterize the wording (`na_means =`) and assert both the true string and the absence of the default one.
 - 2026-07-26 (M39): adding an override column to a `_batch` verb also falsifies its `@param jobs` prose, which enumerates the honoured columns and closes "Any other columns are ignored" — a reader who believes that adds the column as a note-to-self and silently re-encodes every row. Update the enumeration, not just the new `@param`.

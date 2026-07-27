@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-07-26 (M39 done — `audio_codec` on the last two configurable transforms, merged and archived; three review findings fixed plus a fourth at the user's election; M34 row aged out; M40 now workable)_
+_Last hygiene check: 2026-07-27 (M40 done — the codec-argument sweep closes; `format` renamed to `audio_codec` on `convert_audio` (+ batch), D021 recorded; four review findings fixed; M35 row aged out; one lesson captured, no milestone now in flight)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M39 | `audio_codec` for `standardize_video` and `anonymize_video` (+ batch) | done | — | normal | milestones/archive/M39-standardize-anonymize-audio-codec.md |
-| M40 | `audio_codec` subsumes `format` on `convert_audio` (+ batch), closing the codec sweep | review | M39 | normal | milestones/M40-convert-audio-codec-arg.md |
+| M40 | `audio_codec` subsumes `format` on `convert_audio` (+ batch), closing the codec sweep | done | M39 | normal | milestones/archive/M40-convert-audio-codec-arg.md |
 | M38 | `hardware=` nvenc on `separate_audio_video` (+ batch) | done | — | normal | milestones/archive/M38-separate-av-hardware.md |
 | M36 | `audio_codec` for `normalize_audio` (+ batch) — NULL sentinel, `"copy"` aborts | done | — | normal | milestones/archive/M36-normalize-audio-codec.md |
 | M37 | Codec args subsume `reencode` on `separate_audio_video` (+ batch) | done | — | normal | milestones/archive/M37-separate-av-codec-args.md |
-| M35 | `audio_codec` for the four re-encode verbs (crop/segment/compare/pip + batch) — stream-copy by default | done | — | normal | milestones/archive/M35-audio-codec-reencode-verbs.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

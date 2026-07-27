@@ -3540,6 +3540,20 @@ separate_audio_video_batch <- function(jobs, audio_codec = "copy",
       cli::cli_abort("The {.field {col}} column of {.arg jobs} must not contain {.val {NA}}.")
     }
   }
+  # M37 removed `reencode` from this verb. The scalar sibling has no `...`, so R
+  # rejects a stale call itself; here `...` forwards ffm_batch options and would
+  # swallow `reencode` silently, stream-copying output the caller asked to have
+  # re-encoded. Name the replacement instead of ignoring it -- a diagnostic, not
+  # a lifecycle shim (D014's clean break stands).
+  if ("reencode" %in% names(list(...))) {
+    cli::cli_abort(c(
+      "{.arg reencode} was removed from {.fn separate_audio_video_batch}.",
+      "i" = "Use {.arg audio_codec} / {.arg video_codec} instead:
+             {.val copy} replaces {.code reencode = FALSE} and {.code NULL}
+             replaces {.code reencode = TRUE}."
+    ))
+  }
+
   # NA is legal in either codec column: it is the column form of the NULL
   # sentinel, so these need check_batch_codec_col(), never a guard that rejects
   # NA (M34/D016).

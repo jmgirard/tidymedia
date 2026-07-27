@@ -73,6 +73,35 @@ test_that("separate_audio_video() routes each codec to its own stream's command"
   expect_no_match(cmds[["video"]], "-codec:a", fixed = TRUE)
 })
 
+# AC4: `reencode` is gone from both verbs ---------------------------------
+
+test_that("separate_audio_video() has no reencode argument", {
+  f <- make_input()
+  # No `...` on the scalar verb, so R rejects the retired argument itself.
+  expect_error(
+    separate_audio_video(f, "a.aac", "v.mp4", reencode = TRUE, run = FALSE),
+    "unused argument"
+  )
+  expect_false("reencode" %in% names(formals(separate_audio_video)))
+})
+
+test_that("separate_audio_video_batch() aborts on the retired reencode argument", {
+  f <- make_input()
+  jobs <- tibble::tibble(input = f, audiofile = "a.aac", videofile = "v.mp4")
+  # The batch verb's `...` forwards ffm_batch options, so R would swallow
+  # `reencode` silently and stream-copy output the caller asked to re-encode.
+  # The guard names the replacement instead (M37).
+  expect_error(
+    separate_audio_video_batch(jobs, reencode = TRUE, run = FALSE),
+    "audio_codec"
+  )
+  expect_error(
+    separate_audio_video_batch(jobs, reencode = FALSE, run = FALSE),
+    "was removed"
+  )
+  expect_false("reencode" %in% names(formals(separate_audio_video_batch)))
+})
+
 test_that("separate_audio_video() rejects a non-string codec on either stream", {
   f <- make_input()
   expect_error(

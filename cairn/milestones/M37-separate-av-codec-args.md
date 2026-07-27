@@ -41,10 +41,12 @@ configurable-transform call applied to a demux verb first).
       `reencode = TRUE` compiled on the default branch (no `-codec` emitted).
 - [ ] AC3: a named encoder per stream appears in that stream's command and only
       that one — an `audio_codec` never reaches the video command, nor the reverse.
-- [ ] AC4: `reencode` is gone from both verbs (an `unused argument` error), and
-      no reference to it survives under `R/`, `man/`, `vignettes/`, or
-      `_pkgdown.yml` *for these two verbs*, while `segment_video`'s and
-      `ffm_seek`'s own `reencode` are untouched.
+- [ ] AC4: `reencode` is gone from both verbs — the scalar errors with R's
+      `unused argument`, and the batch (whose `...` would otherwise swallow it
+      silently) aborts naming `audio_codec` / `video_codec` as the replacement
+      — and no reference to it survives under `R/`, `man/`, `vignettes/`, or
+      `_pkgdown.yml` *for these two verbs* beyond that guard, while
+      `segment_video`'s and `ffm_seek`'s own `reencode` are untouched.
 - [ ] AC5: the batch honors per-row `audio_codec` / `video_codec` columns with
       `NA` → unset, routes each column to its own reshaped stream row, and
       rejects a wrong-typed column at both boundaries (M34 lesson).
@@ -79,7 +81,7 @@ configurable-transform call applied to a demux verb first).
       (`R/ffmpeg.R:3434`), routing each codec column to its own stream row in the
       2N reshape (`R/ffmpeg.R:3467`); reuse `check_batch_codec_col(col =)` and
       `batch_codec_cell()`; test both column-type boundaries.
-- [ ] T4: Delete the old per-row `reencode` column guard (`R/ffmpeg.R:3455`) and
+- [x] T4: Delete the old per-row `reencode` column guard (`R/ffmpeg.R:3455`) and
       the tests that pin it; add the arg-is-gone assertions.
 - [ ] T5: Public-surface sweep (M23 lesson) — grep `vignettes/`, roxygen
       `@examples`, `README.Rmd`, `_pkgdown.yml` for these verbs' `reencode` and
@@ -96,6 +98,7 @@ configurable-transform call applied to a demux verb first).
 - 2026-07-26: T1 — `separate_stream_pipeline()` now takes a per-stream `codec` (default `"copy"`, `NULL` emits nothing), routed to the audio or video slot by `stream` via `apply_audio_codec()`/`apply_video_codec()`. Both call sites translate their still-public `reencode` at the boundary, so this task is a contract-preserving refactor pinned by the existing suite; the new behavior gets its tests at T2/T3 where it becomes publicly reachable. `devtools::test()` clean (0 failures).
 - 2026-07-26: T2 — `separate_audio_video(audio_codec = "copy", video_codec = "copy")` replaces `reencode`; roxygen rewritten (+ an MP3 example). New `tests/testthat/test-separate-av-codec.R` asserts both default-branch parity cases byte-for-byte against commands captured from `master` before the swap, per-stream routing, one-stream-only unset, and the non-string/metacharacter rejections. `devtools::document()` + `devtools::test()` clean (1510 pass).
 - 2026-07-26: T3 — `separate_audio_video_batch()` takes `audio_codec`/`video_codec` args plus per-row columns of the same names (`NA` = unset), guarded by `check_batch_codec_col(col =)`. The 2N reshape collapses the two input columns into one resolved `codec` column routed by `stream`, resolved via `batch_codec_cell()` in the runner; a jobs table naming no codec keeps the pre-M37 shape. Tests cover arg routing, per-row override, per-stream arg fallback, the carried-column shape, and both M34 column-type boundaries (all-NA logical accepted, all-NA numeric rejected). Minor plan refinement: T4's deletion half (the old per-row `reencode` guard and the tests pinning it) landed here, since leaving it would have been dead code on a removed argument; T4 keeps the arg-is-gone assertions. `devtools::test()` clean (1522 pass).
+- 2026-07-26: T4 — arg-is-gone assertions added. Substantive amendment (user-gated, option A): the scalar verb errors with R's own `unused argument`, but the batch verb's `...` swallowed a stale `reencode` silently and stream-copied output the caller asked to re-encode, so the batch now aborts naming `audio_codec`/`video_codec` as the replacement — a diagnostic, not a `lifecycle` shim; D014's clean break stands. AC4 amended accordingly (text shown in chat before this commit). `devtools::test()` clean (1527 pass).
 
 ## Decisions
 

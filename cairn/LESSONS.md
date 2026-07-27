@@ -3,12 +3,7 @@
 _Durable, append-only repo lessons (build quirks, testing tricks) — captured at
 milestone end, surfaced at plan time. Capped at 50 lines (D-015); prune the
 least-useful when full. Not status, not decisions (a choice is a D-entry)._
-
-- 2026-07-13 (M26): a `_batch` verb that auto-derives output paths from the
-  input *basename* silently overwrites when two rows collide — a duplicated
-  input, or same-basename inputs under one shared `outdir`. Guard at the
-  resolved-path level (`anyDuplicated(patterns)`), not just the input level; the
-  older `*_batch` verbs only rejected duplicated inputs.
+- 2026-07-13 (M26): a `_batch` verb that auto-derives output paths from the input *basename* silently overwrites when two rows collide — a duplicated input, or same-basename inputs under one shared `outdir`. Guard at the resolved-path level (`anyDuplicated(patterns)`), not just the input level; the older `*_batch` verbs only rejected duplicated inputs.
 - 2026-07-12 (M17): `devtools::check()` prints "0 notes" while `R CMD check`
   shows `Status: 1 NOTE` — the `spelling.Rout` NOTE for new technical terms is
   masked. Run `spelling::update_wordlist()`; confirm `Status: OK` in `00check.log`.
@@ -16,12 +11,7 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   throws `length(object) == 1` with 2+ items in a multi-line `cli_warn`/`abort`.
   Drive plurals off a scalar `{length(x)}` and list the vector without `{?s}`.
   Test cli count messages with 2+ items — a 1-item test hides the crash.
-- 2026-07-12 (M19): a fast-path branch that skips the shared batch runner
-  (`ffm_batch`) must re-synthesize that runner's *opt-in* outputs (`verified`
-  column, manifest attr) or the return schema silently diverges from the normal
-  path across calls. Trick: subsetting a canonical 0-row schema tibble pads to N
-  all-NA rows for free (`col[rep(NA_integer_, n)]` gives n type-matched NAs).
-  Test parity by comparing `names()`/types of the fast vs the normal path.
+- 2026-07-12 (M19): a fast-path branch that skips the shared batch runner (`ffm_batch`) must re-synthesize that runner's *opt-in* outputs (`verified` column, manifest attr) or the return schema silently diverges from the normal path across calls. Trick: subsetting a canonical 0-row schema tibble pads to N all-NA rows for free (`col[rep(NA_integer_, n)]` gives n type-matched NAs). Test parity by comparing `names()`/types of the fast vs the normal path.
 - 2026-07-13 (M23): a public-API rename/un-export must also sync `_pkgdown.yml`
   and live vignette/example chunks — neither is caught by `devtools::check()`
   (use `pkgdown::check_pkgdown()`; a chunk calling a now-internal fn fails only at
@@ -47,3 +37,5 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   off PATH (`Sys.which()==""`) to reproduce the CI-absent build and catch it.
 - 2026-07-26 (M32): a `_batch` per-row override *column* skips the scalar's arg guards (`check_number_whole`/range) — re-validate each override column per row.
 - 2026-07-26 (M34): guarding a `_batch` override column whose documented `NA` means "unset" — R types an all-NA column *logical*, so an `is.character`/`is.numeric`-only guard wrongly rejects it, while the usual patch `!is.character(x) && !all(is.na(x))` over-corrects and admits an all-NA numeric or Date. Spell it out: `is.character(x) || (is.logical(x) && all(is.na(x)))`, and test both boundaries.
+- 2026-07-27 (M35): `R/ffmpeg.R` is the repo's only CRLF file, so editing it with anything that normalizes line endings (a Python `open(p, "w").write()` round-trip) silently rewrites all ~4000 lines — the diff reads 4172/3999 instead of the true 209/36 and `git blame` repoints the whole file at your milestone. Read and write it as bytes, restoring `\r\n`, and compare `grep -c $'\r'` against `git show <default-branch>:<file>` before committing.
+- 2026-07-27 (M35): an execution test proving a stream copy survived must use a source codec that is NOT the output container's default, or copy and re-encode yield the same `codec_name` and the test passes either way. MP3-in-MP4 discriminates (copy keeps `mp3`, an unset codec yields `aac`); the AAC-in-MP4 `make_test_video()` fixture cannot.

@@ -358,3 +358,67 @@ Carries the codec-arg boundary rule to `separate_audio_video()` and
   makes it structurally impossible for one stream's choice to reach the other's
   command. The column is carried only when `jobs` supplied one. Rules out
   carrying both columns on every row, where half of each is dead weight.
+
+## D021 — The codec-argument sweep closes (2026-07-26, from M40, extends D016/D017/D019/D020)
+
+Renames `convert_audio()`/`convert_audio_batch()`'s `format` argument to
+`audio_codec` and declares the codec-argument sweep (M34–M40) complete. Uses
+D014's `audio_codec` spelling and its pre-0.2.0 clean-break policy; sits under
+IP1/GP1.
+
+- **`format` was an audio codec in all but name.** Its own documentation said
+  "naming the output audio codec … passed to FFmpeg's `-c:a`", so this is a
+  spelling correction, not a behavior change — M22's naming audit simply missed
+  it while retiring `acodec`/`vcodec`. A clean break with no `lifecycle` shim,
+  under D014. Rules out keeping a second spelling for the one argument in the
+  package that named a codec something other than `audio_codec`.
+
+- **`NULL` keeps meaning `-q:a 0`, and that departs from D016's sentinel on
+  purpose.** Everywhere else `audio_codec = NULL` emits nothing and defers to
+  the container; here it selects highest-VBR-quality encoding, which is what
+  `format = NULL` has always compiled. Transferring D016's sentinel would have
+  changed every existing default call's output to win a consistency the rename
+  does not need — the argument's *name* is what was wrong, not its default.
+  Settled at the 2026-07-26 plan gate. The asymmetry is documented on the
+  `@param` rather than left for a reader to discover. Rules out both a silent
+  behavior change and an `"auto"`-style third spelling.
+
+- **The per-row column gains what the argument already had.** `format` was
+  guarded by `check_batch_string_col()`, which rejects `NA`, so a jobs table
+  could not say "leave this row on the default" — the one thing the scalar
+  could say. `check_batch_codec_col()` + `batch_codec_cell()` fix that, matching
+  every other codec column (D016/D017/D019).
+
+- **Both retired spellings abort naming the replacement.** The batch verb's
+  `...` would swallow a stale `format` argument, and a stale `format` column
+  would fall through as one of the ignored columns — either way silently
+  ignoring the codec the caller named. The scalar sibling needs no guard: with
+  no `...`, R's own `unused argument` covers it (M37's precedent, same
+  reasoning).
+
+- **Three verbs stay deliberately codec-less, all on D016's hidden-codec side.**
+  `format_for_web()` is D016's own exemplar: a fixed recipe (H.264 / `yuv420p` /
+  `+faststart` / AAC) whose identity *is* the codec choice, so exposing one
+  would let a caller contradict the verb's name. `strip_metadata()` copies every
+  stream by identity — it edits the container, never the picture or the sound,
+  and a codec argument would turn a metadata edit into a transcode. And
+  `concatenate_videos()` uses the concat *demuxer*, which requires that the
+  inputs already share a codec and joins them without decoding; a codec argument
+  there would be inert at best and would misrepresent the verb at worst (the
+  re-encoding route is the concat *filter*, a separate design call under IP2's
+  linear-builder limits). Rules out a blanket "every verb gets a codec arg"
+  reading of the sweep: D016's boundary rule is configurable-transform vs.
+  fixed-recipe, and these three are the fixed-recipe side.
+
+- **`extract_audio()`'s asymmetry is left standing, recorded not fixed.** It
+  takes `audio_codec = "copy"` but validates with `check_string()` scalar-side
+  and `check_batch_string_col()` column-side, so unlike every other
+  `audio_codec` it accepts neither `NULL` nor `NA` — it cannot spell "unset".
+  That is defensible (a `NULL` codec on a pure extraction hands the container's
+  default encoder a stream the verb exists to copy) but it is undocumented as a
+  choice, and it is the last inconsistency the sweep leaves behind. Noted here
+  so a later milestone finds a decision rather than an oversight.
+
+The sweep is closed: every configurable transform now exposes the codec
+argument its stream needs, spelled the same way, with the same `NA`-means-unset
+column semantics.

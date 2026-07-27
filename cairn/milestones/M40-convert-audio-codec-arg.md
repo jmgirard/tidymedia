@@ -89,7 +89,7 @@ changed here.
       `README.Rmd`, `_pkgdown.yml`; NEWS.md entry; `devtools::document()`, and
       `devtools::build_readme()` only if README.Rmd actually changed (M24: revert
       path-only churn).
-- [ ] T6 Author the sweep-closing entry in `cairn/DECISIONS.md`.
+- [x] T6 Author the sweep-closing entry in `cairn/DECISIONS.md`.
 - [ ] T7 Full `devtools::check()` plus `pkgdown::check_pkgdown()`.
 
 ## Work log
@@ -98,6 +98,7 @@ changed here.
 - 2026-07-26: status → in-progress; branch `m40-convert-audio-codec-arg` cut from master.
 - 2026-07-26: question gate — `audio_codec = NA` on the batch verb resolves through `batch_codec_cell()` to the NULL sentinel, so it would silently compile the default (the M37 shape). User chose: guard `convert_audio_batch()` only; the same gap on the three M36/M39 verbs gets a ROADMAP candidate row.
 - 2026-07-26: minor amendment — T1–T4 land in one checkpoint. Renaming the shared `convert_audio_pipeline()` formal breaks its batch caller by construction, so scalar-only and batch-only checkpoints cannot both leave `devtools::test()` clean. Task text and ordering otherwise unchanged. Roxygen `@param` for the scalar moved from T5 into T1 for the same reason (a stale `@examples format =` fails `check()`).
+- 2026-07-26: T6 done. D021 appended to `cairn/DECISIONS.md` (the rename, the deliberate `NULL` departure from D016's sentinel, the three fixed-recipe verbs that stay codec-less, `extract_audio`'s recorded asymmetry). ROADMAP candidate row added for the family-wide `NA`-scalar gap, per the question gate; search-first sweep of candidates + archive + DECISIONS found no existing row covering it.
 - 2026-07-26: T5 done. NEWS.md breaking-change entry added. Grep over `vignettes/`, `README.Rmd`, `_pkgdown.yml`, `inst/`, and roxygen `@examples` found no surviving `format =` reference to this verb (the remaining `format` args belong to `extract_frame*` and ffprobe's `print_format`). `document()` no diff; README.Rmd unchanged so `build_readme()` deliberately not run (M24).
 - 2026-07-26: T1–T4 done. `format` → `audio_codec` on `convert_audio()`, `convert_audio_batch()`, and the shared pipeline; both retired-spelling guards added; column guard swapped to `check_batch_codec_col()` + `batch_codec_cell()`. Commands verified byte-identical to the pre-rename recordings on both branches. `devtools::test()` 0 failures / 1672 passing.
 

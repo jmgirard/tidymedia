@@ -12,6 +12,7 @@ normalize_audio(
   loudness_range = 7,
   channels = NULL,
   sample_rate = NULL,
+  audio_codec = NULL,
   two_pass = FALSE,
   run = TRUE
 )
@@ -37,6 +38,13 @@ positive whole number), or \code{NULL} (default) to keep the source layout.}
 whole number), or \code{NULL} (default) to let \code{loudnorm} choose (it
 resamples, up to 192 kHz encoder-capped -- not the source rate). Set this to
 pin the output rate.}
+
+\item{audio_codec}{An optional string naming the output audio encoder (e.g.
+\code{"aac"}, \code{"libmp3lame"}, \code{"flac"}), passed to FFmpeg's
+\code{-codec:a}. \code{NULL} (default) emits no \code{-codec:a}, leaving
+the output container's default encoder in place. \code{"copy"} is an error:
+loudness normalization filters the audio, so the stream must be re-encoded
+and cannot be copied.}
 
 \item{two_pass}{A logical: when \code{TRUE}, use accurate two-pass
 (measured/linear) normalization instead of the default single-pass
@@ -75,9 +83,10 @@ The default targets follow EBU Recommendation R 128 (2014) --
 measured per ITU-R BS.1770-4 -- with \code{loudness_range = 7}. This is
 single-pass (dynamic) \code{loudnorm}: the same input and arguments always
 compile to one reproducible command, with no separate measurement pass.
-Because the audio is filtered it is re-encoded (the container's default audio
-encoder). Leaving \code{channels} at \code{NULL} preserves the source channel
-layout. Note that FFmpeg's \code{loudnorm} filter resamples its output (up to
+Because the audio is filtered it is re-encoded; set \code{audio_codec} to
+name the output encoder, or leave it \code{NULL} to use the output
+container's default. Leaving \code{channels} at \code{NULL} preserves the
+source channel layout. Note that FFmpeg's \code{loudnorm} filter resamples its output (up to
 192 kHz, capped by the encoder), so the output sample rate is \emph{not} the
 source rate unless you pin it: set \code{sample_rate} to control the output
 rate.
@@ -88,6 +97,8 @@ normalize_audio(video, "normalized.mp4", run = FALSE)
 # Normalize to a streaming target and downmix to mono
 normalize_audio(video, "mono.mp4", target_loudness = -16, channels = 1,
                 run = FALSE)
+# Name the output audio encoder instead of taking the container's default
+normalize_audio(video, "aac.mp4", audio_codec = "aac", run = FALSE)
 }
 \references{
 EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted

@@ -76,7 +76,7 @@ candidate row.
       confirm it inherits the codec through the shared pipeline, no second seam.
 - [x] T5: Execution test verifying the output's actual audio codec; `skip_if`
       binaries absent.
-- [ ] T6: Roxygen `@examples`, `NEWS.md` entry, `devtools::document()`; append
+- [x] T6: Roxygen `@examples`, `NEWS.md` entry, `devtools::document()`; append
       the `DECISIONS.md` entry extending D016/D017 to a verb where the filter
       forces a re-encode.
 
@@ -88,6 +88,8 @@ candidate row.
 - 2026-07-26: T3 done - batch arg + per-row `audio_codec` column via `check_batch_codec_col(col=)`/`batch_codec_cell()`, `"copy"` refused up front from arg and column.
 - 2026-07-26: T4 done - found a second seam the plan missed: batch two-pass detours through `run_normalize_correction()` (R/loudnorm_two_pass.R), now threaded; minor task refinement, no scope change.
 - 2026-07-26: T5 done - execution test pins `libmp3lame` -> `mp3` against the MP4 default `aac`.
+- 2026-07-26: T4 follow-up - added the two-pass codec tests AC3 needs (run_normalize_correction arg + per-row column, scalar two_pass compile); T4 was ticked a step early.
+- 2026-07-26: T6 done - roxygen example, NEWS entry under New features, document(), D019 appended.
 
 ## Decisions
 

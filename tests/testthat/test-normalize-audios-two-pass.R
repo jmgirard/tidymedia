@@ -290,3 +290,54 @@ test_that("run_normalize_correction() falls back to scalar knobs without columns
                fixed = TRUE)
   expect_match(res$command[[1]], "-ac 1", fixed = TRUE)
 })
+
+
+# audio_codec through the two-pass correction (M36) ---------------------------
+#
+# The batch two-pass path does NOT go through normalize_audio_batch()'s own
+# ffm_batch() call -- it detours through run_normalize_correction(), so the
+# codec has to reach this seam too or two-pass silently keeps the container
+# default. Binary-free: the measured columns are supplied as Phase 1 would.
+
+test_that("run_normalize_correction() honors audio_codec and a per-row column", {
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input           = c(f, f),
+    output          = c("a.mp4", "b.mp4"),
+    measured_I      = c(-27.61, -19.4),
+    measured_TP     = c(-9.32, -3.1),
+    measured_LRA    = c(5.90, 8.0),
+    measured_thresh = c(-38.06, -29.0),
+    offset          = c(0.30, -0.10)
+  )
+  res <- run_normalize_correction(
+    jobs, target_loudness = -23, true_peak = -1, loudness_range = 7,
+    channels = NULL, sample_rate = NULL, audio_codec = "aac",
+    run = FALSE, parallel = FALSE
+  )
+  expect_match(as.character(res$command[[1]]), "-codec:a aac", fixed = TRUE)
+  expect_match(as.character(res$command[[2]]), "-codec:a aac", fixed = TRUE)
+  # Still linear correction, not the single-pass filter.
+  expect_match(as.character(res$command[[1]]), "linear=true", fixed = TRUE)
+
+  # A per-row column overrides the argument; NA is the column form of NULL.
+  jobs$audio_codec <- c("flac", NA_character_)
+  res2 <- run_normalize_correction(
+    jobs, target_loudness = -23, true_peak = -1, loudness_range = 7,
+    channels = NULL, sample_rate = NULL, audio_codec = "aac",
+    run = FALSE, parallel = FALSE
+  )
+  expect_match(as.character(res2$command[[1]]), "-codec:a flac", fixed = TRUE)
+  expect_no_match(as.character(res2$command[[2]]), "-codec:a", fixed = TRUE)
+})
+
+test_that("normalize_audio(two_pass = TRUE) carries audio_codec into the correction", {
+  # two_pass always runs the analysis pass, so this needs the binary even at
+  # run = FALSE.
+  skip_if_no_ffmpeg()
+  src <- make_test_video()
+  cmd <- normalize_audio(src, "out.mp4", audio_codec = "aac",
+                         two_pass = TRUE, run = FALSE)
+  expect_match(cmd, "-codec:a aac", fixed = TRUE)
+  expect_match(cmd, "linear=true", fixed = TRUE)
+})

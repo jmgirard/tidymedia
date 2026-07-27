@@ -1200,6 +1200,8 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #' # Normalize to a streaming target and downmix to mono
 #' normalize_audio(video, "mono.mp4", target_loudness = -16, channels = 1,
 #'                 run = FALSE)
+#' # Name the output audio encoder instead of taking the container's default
+#' normalize_audio(video, "aac.mp4", audio_codec = "aac", run = FALSE)
 #' @export
 normalize_audio <- function(infile, outfile,
                             target_loudness = -23,

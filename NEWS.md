@@ -29,6 +29,16 @@
 
 ## New features
 
+* `normalize_audio()` and `normalize_audio_batch()` gain an `audio_codec`
+  argument naming the output audio encoder. Loudness normalization filters the
+  audio, so it must be re-encoded — and until now it was re-encoded to whatever
+  encoder your FFmpeg build defaults to for the output container, which made the
+  result depend on the machine. `audio_codec = "aac"` (say) pins it. The default
+  `NULL` leaves the codec unset, so existing calls compile exactly the commands
+  they did before, and `"copy"` is an error, since a filtered stream cannot be
+  copied. In a jobs table, `audio_codec` may be a per-row column (`NA` means
+  "leave it unset"), and it applies to the two-pass path as well.
+
 * `crop_video()`, `segment_video()`, `compare_videos()`, and
   `picture_in_picture()` (and their `_batch` siblings) gain a `video_codec`
   argument, alongside the `hardware`/`fallback` GPU toggle. The default

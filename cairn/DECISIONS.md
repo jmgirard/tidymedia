@@ -289,3 +289,34 @@ until now the trade was unstated.
   pre-M35 behavior deliberately instead of by default.
 - **Scope.** Narrows D017's rationale only. D017's default, its guards, and its
   batch column all stand unchanged, and no code changes.
+
+## D019 — `audio_codec` where the filter forces a re-encode (2026-07-26, from M36, extends D016/D017)
+
+Carries the codec-arg boundary rule to `normalize_audio()` and
+`normalize_audio_batch()` — the first verbs to take an `audio_codec` where a
+stream copy is *impossible* rather than merely undesirable. Sits under IP1/GP1.
+
+- **Default `audio_codec = NULL`, D016's sentinel — not D017's `"copy"`.** D017's
+  default rests on "these verbs never need to touch audio, so re-encoding it is
+  pure loss." Loudness normalization is the opposite case: it filters the audio,
+  so the stream is re-encoded no matter what and copy is not an available
+  behavior. The sentinel preserves every pre-existing command byte-for-byte, so
+  this milestone changes no default output. Rules out transferring D017's
+  `"copy"` default by analogy to any verb that merely handles audio.
+- **`"copy"` is refused at the verb, not only at the engine.** Layer 1 already
+  aborts a filtered stream carrying `codec_audio = "copy"` (`ffm_groups()`, M02
+  D-M02-5) and remains the enforcement point, so IP1 holds. The Layer-2 helper
+  `check_audio_codec_not_copy()` adds what Layer 1 cannot: it names
+  `audio_codec` rather than `ffm_codec()`, and it runs *before*
+  `run_loudnorm_analysis()`, so a two-pass call fails without first burning an
+  analysis pass per row. Rules out relying on the engine's message alone.
+- **Batch: `audio_codec` is a per-row column** (`NA` → sentinel), reusing
+  `check_batch_codec_col(col =)` and `batch_codec_cell()` — never the numeric
+  knob-column guard beside it, which rejects `NA` and so cannot spell "unset".
+- **The two-pass correction is a second seam, and it is threaded.**
+  `normalize_audio_batch(two_pass = TRUE)` bypasses its own `ffm_batch()` call
+  and fans out through `run_normalize_correction()`; the codec reaches both.
+  Rules out treating `normalize_audio_pipeline()` as the single seam it appears
+  to be when read from the scalar verb alone.
+- **`video_codec` stays out.** This verb's contract is "touch audio only",
+  pinned by `-codec:v copy`; changing that needs its own decision.

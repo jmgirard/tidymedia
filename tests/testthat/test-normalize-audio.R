@@ -196,3 +196,75 @@ test_that("normalize_audio() writes a non-empty, audio-decodable output", {
   # an encoder-capped rate, never the source rate -- so pinning it is the point).
   expect_match(probe[[1]], "22050")
 })
+
+
+# audio_codec (M36) -------------------------------------------------------
+#
+# normalize_audio() filters the audio (loudnorm), so it MUST re-encode it --
+# until M36 it re-encoded to whatever the local FFmpeg build's container default
+# was, the environment-dependence D001 exists to remove. audio_codec names that
+# encoder. D017's "copy" default deliberately does NOT transfer here (a filtered
+# stream cannot be copied), so the default is D016's NULL sentinel and every
+# pre-M36 command is unchanged.
+
+test_that("normalize_audio() emits no -codec:a by default (NULL sentinel)", {
+  f <- make_input()
+  cmd <- normalize_audio(f, "out.mp4", run = FALSE)
+  expect_no_match(cmd, "-codec:a", fixed = TRUE)
+  # Byte-identical to the pre-M36 default command.
+  expect_equal(
+    cmd,
+    sprintf(
+      '-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" -codec:v copy "out.mp4"',
+      f
+    )
+  )
+})
+
+test_that("normalize_audio(audio_codec = ) names the output audio encoder", {
+  f <- make_input()
+  cmd <- normalize_audio(f, "out.mp4", audio_codec = "aac", run = FALSE)
+  # -codec:v is emitted before -codec:a (ffm_groups()); the loudnorm filter and
+  # the video stream copy are untouched by the new argument.
+  expect_equal(
+    cmd,
+    sprintf(
+      paste0('-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" ',
+             '-codec:v copy -codec:a aac "out.mp4"'),
+      f
+    )
+  )
+})
+
+test_that("normalize_audio(audio_codec = 'copy') aborts in the verb's vocabulary", {
+  f <- make_input()
+  # Layer 1 already refuses a copied stream that is also filtered (R/ffm.R,
+  # M02 D-M02-5); this front-door check fails earlier and names `audio_codec`
+  # rather than ffm_codec(), and spares two-pass a wasted analysis run.
+  expect_error(
+    normalize_audio(f, "out.mp4", audio_codec = "copy", run = FALSE),
+    "audio_codec"
+  )
+})
+
+test_that("normalize_audio() rejects a non-string audio_codec", {
+  f <- make_input()
+  expect_error(normalize_audio(f, "out.mp4", audio_codec = 1, run = FALSE))
+})
+
+test_that("normalize_audio(audio_codec = ) reaches the written output", {
+  skip_if_no_ffprobe()
+  src <- make_test_video()  # skips if ffmpeg absent; AAC audio in MP4
+  named <- withr::local_tempfile(fileext = ".mp4")
+  unset <- withr::local_tempfile(fileext = ".mp4")
+
+  # Pin an encoder that is NOT the MP4 container default, so the argument's
+  # effect is observable from the output alone (the M35 discrimination lesson,
+  # applied in reverse: here the *named* codec must differ from the default).
+  normalize_audio(src, named, audio_codec = "libmp3lame")
+  expect_equal(probe_audio(infile = named)$codec_name, "mp3")
+
+  # The NULL sentinel leaves the container default in place.
+  normalize_audio(src, unset)
+  expect_equal(probe_audio(infile = unset)$codec_name, "aac")
+})

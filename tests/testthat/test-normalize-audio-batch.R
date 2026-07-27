@@ -453,3 +453,87 @@ test_that("normalize_audio_batch() forwards verify (binary-gated)", {
   expect_true("verified" %in% names(res))
   expect_true(all(res$verified))
 })
+
+
+# audio_codec (M36) -----------------------------------------------------------
+#
+# The per-row column form of normalize_audio()'s audio_codec: NA means "leave
+# the encoder unset" (D016's sentinel), reusing check_batch_codec_col(col =)
+# and batch_codec_cell() from M34/M35. "copy" is rejected here as it is on the
+# scalar verb -- loudness normalization filters the audio.
+
+test_that("normalize_audio_batch() takes a per-row audio_codec column", {
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input = c(f, f), output = c("a.mp4", "b.mp4"),
+    audio_codec = c("aac", NA_character_)
+  )
+  out <- normalize_audio_batch(jobs, run = FALSE)
+  expect_match(as.character(out$command[[1]]), "-codec:a aac", fixed = TRUE)
+  expect_no_match(as.character(out$command[[2]]), "-codec:a", fixed = TRUE)
+})
+
+test_that("normalize_audio_batch(audio_codec = ) applies to every row", {
+  f <- make_input()
+  jobs <- tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"))
+  out <- normalize_audio_batch(jobs, audio_codec = "aac", run = FALSE)
+  expect_match(as.character(out$command[[1]]), "-codec:a aac", fixed = TRUE)
+  expect_match(as.character(out$command[[2]]), "-codec:a aac", fixed = TRUE)
+})
+
+test_that("normalize_audio_batch() column overrides the scalar argument", {
+  f <- make_input()
+  jobs <- tibble::tibble(
+    input = c(f, f), output = c("a.mp4", "b.mp4"),
+    audio_codec = c("flac", NA_character_)
+  )
+  out <- normalize_audio_batch(jobs, audio_codec = "aac", run = FALSE)
+  expect_match(as.character(out$command[[1]]), "-codec:a flac", fixed = TRUE)
+  # NA is the column form of NULL, so it overrides the argument too.
+  expect_no_match(as.character(out$command[[2]]), "-codec:a", fixed = TRUE)
+})
+
+test_that("normalize_audio_batch() accepts an all-NA (logical) audio_codec column", {
+  f <- make_input()
+  # R types an all-NA column logical; the guard must not mistake it for a
+  # wrongly typed column (M34 lesson).
+  jobs <- tibble::tibble(input = f, output = "a.mp4", audio_codec = NA)
+  out <- normalize_audio_batch(jobs, run = FALSE)
+  expect_no_match(as.character(out$command[[1]]), "-codec:a", fixed = TRUE)
+})
+
+test_that("normalize_audio_batch() rejects a wrongly typed audio_codec column", {
+  f <- make_input()
+  # The other boundary: an all-NA column that is NOT logical must still fail.
+  expect_error(
+    normalize_audio_batch(
+      tibble::tibble(input = f, output = "a.mp4", audio_codec = 1),
+      run = FALSE
+    ),
+    "audio_codec"
+  )
+  expect_error(
+    normalize_audio_batch(
+      tibble::tibble(input = f, output = "a.mp4", audio_codec = NA_real_),
+      run = FALSE
+    ),
+    "audio_codec"
+  )
+})
+
+test_that("normalize_audio_batch() rejects 'copy' from the argument and the column", {
+  f <- make_input()
+  jobs <- tibble::tibble(input = f, output = "a.mp4")
+  expect_error(
+    normalize_audio_batch(jobs, audio_codec = "copy", run = FALSE),
+    "audio_codec"
+  )
+  expect_error(
+    normalize_audio_batch(
+      tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"),
+                     audio_codec = c("aac", "copy")),
+      run = FALSE
+    ),
+    "audio_codec"
+  )
+})

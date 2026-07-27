@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1, GP1
-- **Branch/PR:** —
+- **Branch/PR:** `m36-normalize-audio-codec`
 
 ## Goal
 
@@ -63,18 +63,18 @@ candidate row.
 
 ## Tasks
 
-- [ ] T1: Thread an `audio_codec` parameter through
+- [x] T1: Thread an `audio_codec` parameter through
       `normalize_audio_pipeline()` (`R/ffmpeg.R:1238`) via `apply_audio_codec()`
       (`R/ffmpeg.R:1594`), adding the `"copy"` abort ahead of it. Tests first.
       Edit `R/ffmpeg.R` as bytes — it is the repo's only CRLF file (M35 lesson).
-- [ ] T2: Add the arg + roxygen to `normalize_audio()` (`R/ffmpeg.R:1197`);
+- [x] T2: Add the arg + roxygen to `normalize_audio()` (`R/ffmpeg.R:1197`);
       assert default-command parity against the default branch.
-- [ ] T3: Add the arg and per-row column to `normalize_audio_batch()`
+- [x] T3: Add the arg and per-row column to `normalize_audio_batch()`
       (`R/ffmpeg.R:2698`), reusing `check_batch_codec_col(col = "audio_codec")`
       and `batch_codec_cell()`; test both column-type boundaries.
-- [ ] T4: Cover the two-pass correction path (`R/loudnorm_two_pass.R:318`) —
+- [x] T4: Cover the two-pass correction path (`R/loudnorm_two_pass.R:318`) —
       confirm it inherits the codec through the shared pipeline, no second seam.
-- [ ] T5: Execution test verifying the output's actual audio codec; `skip_if`
+- [x] T5: Execution test verifying the output's actual audio codec; `skip_if`
       binaries absent.
 - [ ] T6: Roxygen `@examples`, `NEWS.md` entry, `devtools::document()`; append
       the `DECISIONS.md` entry extending D016/D017 to a verb where the filter
@@ -83,7 +83,20 @@ candidate row.
 ## Work log
 
 - 2026-07-26: created by /milestone-plan.
+- 2026-07-26: branch `m36-normalize-audio-codec` cut from master at 1281b0d.
+- 2026-07-26: T1-T2 done - `audio_codec` threaded through `normalize_audio_pipeline()` via `apply_audio_codec()`, refusal extracted to `check_audio_codec_not_copy()`; scalar arg + roxygen.
+- 2026-07-26: T3 done - batch arg + per-row `audio_codec` column via `check_batch_codec_col(col=)`/`batch_codec_cell()`, `"copy"` refused up front from arg and column.
+- 2026-07-26: T4 done - found a second seam the plan missed: batch two-pass detours through `run_normalize_correction()` (R/loudnorm_two_pass.R), now threaded; minor task refinement, no scope change.
+- 2026-07-26: T5 done - execution test pins `libmp3lame` -> `mp3` against the MP4 default `aac`.
 
 ## Decisions
+
+- M36-D1: the `"copy"` refusal is a front door, not a second implementation. Layer 1
+  already aborts when a filtered stream carries `codec_audio = "copy"` (`ffm_groups()`,
+  `R/ffm.R:1100`, M02 D-M02-5) and remains the enforcement point, so IP1's "logic lives
+  once" holds. The Layer-2 helper `check_audio_codec_not_copy()` earns its place on two
+  counts Layer 1 cannot serve: it names `audio_codec` rather than `ffm_codec()`, and it is
+  callable *before* `run_loudnorm_analysis()`, so a two-pass call fails without first
+  burning an analysis pass per row. One helper, three call sites.
 
 ## Review

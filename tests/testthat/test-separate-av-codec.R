@@ -66,10 +66,12 @@ test_that("separate_audio_video() routes each codec to its own stream's command"
   expect_match(cmds[["audio"]], "-codec:a aac", fixed = TRUE)
   expect_match(cmds[["video"]], "-codec:v libx264", fixed = TRUE)
   # The audio choice never reaches the video command, nor the reverse: neither
-  # the other stream's encoder name nor a cross-slot -codec flag appears.
+  # the other stream's encoder name nor a cross-slot -codec flag appears. Assert
+  # on the codec slot, not the bare encoder name — the command embeds a random
+  # hex tempfile path, and "aac" is three hex digits (M37 review).
   expect_no_match(cmds[["audio"]], "libx264", fixed = TRUE)
   expect_no_match(cmds[["audio"]], "-codec:v", fixed = TRUE)
-  expect_no_match(cmds[["video"]], "aac", fixed = TRUE)
+  expect_no_match(cmds[["video"]], "-codec:v aac", fixed = TRUE)
   expect_no_match(cmds[["video"]], "-codec:a", fixed = TRUE)
 })
 
@@ -180,4 +182,63 @@ test_that("separate_audio_video_batch() honors a per-row codec column end to end
   # Row 1 copied the mp3 through; row 2 transcoded it to aac.
   expect_equal(probe_audio(infile = jobs$audiofile[[1]])$codec_name, "mp3")
   expect_equal(probe_audio(infile = jobs$audiofile[[2]])$codec_name, "aac")
+})
+
+# M37 review findings: stale spellings and argument validation -------------
+
+test_that("separate_audio_video_batch() aborts on a stale reencode column", {
+  f <- make_input()
+  # The reshape builds its own table and would drop an unknown `jobs` column, so
+  # a jobs table migrated from the pre-M37 API would stream-copy silently where
+  # it asked to re-encode. The column form is guarded like the argument form.
+  jobs <- tibble::tibble(input = f, audiofile = "a.aac", videofile = "v.mp4",
+                         reencode = TRUE)
+  expect_error(separate_audio_video_batch(jobs, run = FALSE), "jobs column")
+  expect_error(separate_audio_video_batch(jobs, run = FALSE), "audio_codec")
+})
+
+test_that("separate_audio_video_batch() names both stale reencode spellings at once", {
+  f <- make_input()
+  jobs <- tibble::tibble(input = f, audiofile = "a.aac", videofile = "v.mp4",
+                         reencode = TRUE)
+  # Argument and column together: one message, both spellings named (a 2+ item
+  # cli interpolation, which is where the M18 plural crash used to surface).
+  expect_error(
+    separate_audio_video_batch(jobs, reencode = TRUE, run = FALSE),
+    "argument and jobs column"
+  )
+})
+
+test_that("separate_audio_video_batch() rejects a codec argument through the dots", {
+  f <- make_input()
+  jobs <- tibble::tibble(input = f, audiofile = "a.aac", videofile = "v.mp4")
+  # `codec` names the internal per-stream column; forwarded through `...` it
+  # would reach pmap and set both streams' codec at once.
+  expect_error(
+    separate_audio_video_batch(jobs, codec = "libmp3lame", run = FALSE),
+    "not an argument"
+  )
+})
+
+test_that("separate_audio_video_batch() validates its codec args whether or not a column is present", {
+  f <- make_input()
+  bare <- tibble::tibble(input = f, audiofile = "a.aac", videofile = "v.mp4")
+  withcol <- bare
+  withcol$audio_codec <- "copy"
+  # The same bad argument must be caught in both shapes: before the fix, a
+  # present codec column materialized the argument straight into the reshaped
+  # column and skipped the type check entirely.
+  for (jobs in list(bare, withcol)) {
+    expect_error(separate_audio_video_batch(jobs, video_codec = TRUE, run = FALSE))
+    expect_error(separate_audio_video_batch(jobs, video_codec = 1, run = FALSE))
+    expect_error(separate_audio_video_batch(jobs, video_codec = NA, run = FALSE))
+    expect_error(
+      separate_audio_video_batch(jobs, video_codec = c("a", "b"), run = FALSE)
+    )
+    expect_error(separate_audio_video_batch(jobs, audio_codec = TRUE, run = FALSE))
+  }
+  # NULL stays legal on both: it is the sentinel, not a bad value.
+  expect_no_error(
+    separate_audio_video_batch(withcol, video_codec = NULL, run = FALSE)
+  )
 })

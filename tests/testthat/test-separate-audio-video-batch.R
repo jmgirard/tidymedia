@@ -106,9 +106,11 @@ test_that("separate_audio_video_batch() routes each codec arg to its own stream 
   )
   expect_match(res$command[[1]], "-codec:a aac", fixed = TRUE)
   expect_match(res$command[[2]], "-codec:v libx264", fixed = TRUE)
-  # Neither choice leaks into the other stream's command.
+  # Neither choice leaks into the other stream's command. Assert on the codec
+  # slot, not the bare encoder name — the command embeds a random hex tempfile
+  # path, and "aac" is three hex digits (M37 review).
   expect_no_match(res$command[[1]], "libx264", fixed = TRUE)
-  expect_no_match(res$command[[2]], "aac", fixed = TRUE)
+  expect_no_match(res$command[[2]], "-codec:v aac", fixed = TRUE)
 })
 
 test_that("separate_audio_video_batch() codec columns override the args per row", {

@@ -3480,7 +3480,9 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #'   match the source codec). Optional \code{audio_codec} and \code{video_codec}
 #'   columns (character; \code{NA} to emit no codec option for that stream)
 #'   override the arguments of the same name per row; rows omitting a column fall
-#'   back to that argument. Any other columns are ignored.
+#'   back to that argument. Any other columns are ignored — except a
+#'   \code{reencode} column, retired with the argument of the same name, which is
+#'   an error rather than a silent no-op.
 #' @param audio_codec A string naming the encoder for every \code{audiofile}
 #'   unless \code{jobs} carries an \code{audio_codec} column. The default
 #'   \code{"copy"} stream-copies the audio losslessly; \code{NULL} emits no
@@ -3540,19 +3542,53 @@ separate_audio_video_batch <- function(jobs, audio_codec = "copy",
       cli::cli_abort("The {.field {col}} column of {.arg jobs} must not contain {.val {NA}}.")
     }
   }
-  # M37 removed `reencode` from this verb. The scalar sibling has no `...`, so R
-  # rejects a stale call itself; here `...` forwards ffm_batch options and would
-  # swallow `reencode` silently, stream-copying output the caller asked to have
-  # re-encoded. Name the replacement instead of ignoring it -- a diagnostic, not
-  # a lifecycle shim (D014's clean break stands).
-  if ("reencode" %in% names(list(...))) {
+  # M37 removed `reencode` from this verb in BOTH its spellings. The scalar
+  # sibling has no `...`, so R rejects a stale call itself; here `...` forwards
+  # ffm_batch options and would swallow a stale argument, and the reshape below
+  # builds `long` fresh and would drop a stale `jobs` column -- either way
+  # silently stream-copying output the caller asked to have re-encoded. Name the
+  # replacement instead of ignoring it -- a diagnostic, not a lifecycle shim
+  # (D014's clean break stands).
+  stale <- c(
+    if ("reencode" %in% names(list(...))) "argument",
+    if ("reencode" %in% names(jobs)) "jobs column"
+  )
+  if (length(stale) > 0) {
     cli::cli_abort(c(
-      "{.arg reencode} was removed from {.fn separate_audio_video_batch}.",
+      "The {.arg reencode} {stale} was removed from
+       {.fn separate_audio_video_batch}.",
       "i" = "Use {.arg audio_codec} / {.arg video_codec} instead:
              {.val copy} replaces {.code reencode = FALSE} and {.code NULL}
-             replaces {.code reencode = TRUE}."
+             replaces {.code reencode = TRUE}.",
+      "i" = "In {.arg jobs}, name them as {.field audio_codec} /
+             {.field video_codec} columns, where {.val {NA}} leaves that
+             stream's codec unset."
     ))
   }
+
+  # `codec` is the name the reshape below gives its resolved per-stream column,
+  # so a caller passing `codec =` would have it forwarded through `...` into the
+  # same pmap slot and applied to BOTH streams -- the cross-stream leak the
+  # per-stream split exists to make impossible. Every other _batch verb is immune
+  # because its per-row column names are also formals; this one's is not, so it
+  # is guarded here (M37 review).
+  if ("codec" %in% names(list(...))) {
+    cli::cli_abort(c(
+      "{.arg codec} is not an argument of {.fn separate_audio_video_batch}.",
+      "x" = "It names an internal per-stream column and would set the codec on
+             the audio and the video output alike.",
+      "i" = "Use {.arg audio_codec} / {.arg video_codec} to name each stream's
+             encoder separately."
+    ))
+  }
+
+  # The scalar arguments are materialized into the reshaped column below, which
+  # bypasses the per-row token check in the pipeline for their *type*: without
+  # this, `video_codec = TRUE` compiled `-codec:v TRUE` and `video_codec = NA`
+  # silently emitted nothing whenever `jobs` happened to carry a codec column
+  # (M37 review). NULL stays legal -- it is the sentinel.
+  if (!is.null(audio_codec)) rlang::check_string(audio_codec)
+  if (!is.null(video_codec)) rlang::check_string(video_codec)
 
   # NA is legal in either codec column: it is the column form of the NULL
   # sentinel, so these need check_batch_codec_col(), never a guard that rejects

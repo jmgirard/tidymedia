@@ -22,7 +22,9 @@ because a copied stream's container extension is the instruction (it must
 match the source codec). Optional \code{audio_codec} and \code{video_codec}
 columns (character; \code{NA} to emit no codec option for that stream)
 override the arguments of the same name per row; rows omitting a column fall
-back to that argument. Any other columns are ignored.}
+back to that argument. Any other columns are ignored — except a
+\code{reencode} column, retired with the argument of the same name, which is
+an error rather than a silent no-op.}
 
 \item{audio_codec}{A string naming the encoder for every \code{audiofile}
 unless \code{jobs} carries an \code{audio_codec} column. The default

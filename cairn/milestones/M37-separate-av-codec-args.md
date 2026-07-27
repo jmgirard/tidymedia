@@ -102,6 +102,7 @@ configurable-transform call applied to a demux verb first).
 - 2026-07-26: T5 — public-surface sweep clean, no edits owed. `reencode` count is 0 in both verbs' `.Rd` files; the only surviving mention under `R/` for these verbs is the T4 migration guard. `vignettes/batch.Rmd:98` calls `separate_audio_video()` without naming `reencode`, so it still compiles; `_pkgdown.yml` lists names only; `README.Rmd` never mentions either verb. Out-of-scope `reencode` intact: `man/segment_video.Rd` (4 hits), `man/segment_video_batch.Rd` (7), `man/ffm_seek.Rd` (6), and `vignettes/tidymedia.Rmd`'s `ffm_seek()` example.
 - 2026-07-26: T6 — four binary-gated execution tests on the MP3-in-MP4 fixture: the copy default keeps `mp3` in the audio output (a re-encode into MP4 would yield `aac`) and preserves the video codec; `audio_codec = "aac"` transcodes while the video stream stays copied; `audio_codec = NULL` reproduces the pre-M37 container-default `aac`; and a per-row `audio_codec` column drives copy vs transcode across two rows of one batch. `devtools::test()` clean (1536 pass).
 - 2026-07-26: review — draft PR #39 opened; AC1-AC7 verified with fresh evidence (AC1/AC2 byte-compared against a pristine `git archive master` tree, not the tests' hardcoded reference strings); consistency gate clean.
+- 2026-07-26: review — four diff-bug findings actioned on the branch (scores 90/92/80, plus one at 75 actioned deliberately because it falsified D020 text shipping in this PR); regression tests added for each; gate re-run clean.
 - 2026-07-26: T7 — `NEWS.md` breaking-change entry and `DECISIONS.md` D020 appended (both shown verbatim in chat before this commit); `devtools::document()` no further diff. `R CMD check` `Status: OK` — 0 errors / 0 warnings / 0 notes, read from the check log rather than the devtools summary (M17 lesson). Status → review.
 
 ## Decisions
@@ -161,6 +162,64 @@ configurable-transform call applied to a demux verb first).
   devtools summary (M17 lesson).
 
 ### Independent fresh-context review
+
+Three fresh-context lenses in parallel, then a Sonnet scorer that did not
+generate the findings.
+
+- **[S] blame-history — 0 findings.** Confirmed M26's pooled duplicate-output
+  guard intact, M28's roxygen positioning preserved, and the M10/M29 `reencode`
+  NA-rejection deliberately superseded (not weakened) by `check_batch_codec_col`.
+- **[S] prior-PR-comments — 0 findings.** Primary evidence: archived `## Review`
+  sections for M34/M35/M36 plus RB01/RR01. The `pulls/comments` probe returned
+  `[]`, so the per-PR walk was correctly skipped. Confirmed M35's CRLF lesson and
+  M36's `{.code NULL}` lesson both applied, not regressed.
+- **[O] diff-bug — 4 findings**, all reproduced at the console before triage.
+
+**Actioned (fixed on the branch, with regression tests):**
+
+- **F1, score 90 — a stale per-row `reencode` *column* was silently ignored.**
+  The argument guard covered only `...`; the reshape builds `long` fresh and
+  dropped an unknown `jobs` column, so a jobs table migrated from the pre-M37
+  API stream-copied where it asked to re-encode. Verified: the call ran and
+  produced `-codec:a copy` / `-codec:v copy`. Fix: the guard now names both
+  spellings, together in one message when both are present.
+- **F3, score 92 — the scalar codec arguments escaped type validation whenever
+  `jobs` supplied a codec column.** `pick_codec()` materialized the argument
+  straight into the reshaped column, bypassing `rlang::check_string()`. Verified:
+  `video_codec = TRUE` compiled `-codec:v TRUE` and `video_codec = NA` silently
+  emitted nothing — while the identical call without the column errored
+  correctly. Fix: both arguments are `check_string()`-validated at the front
+  door, `NULL` still legal as the sentinel.
+- **F4, score 80 — two flaky `expect_no_match` assertions.** They asserted the
+  video command contained no `"aac"`, but the command embeds a random hex
+  tempfile path and `aac` is three hex digits (~0.3% spurious failure per run).
+  Fix: assert on the `-codec:v aac` slot rather than the bare encoder name.
+- **F2, score 75 — below the 80 threshold, actioned anyway, deliberately.**
+  Finding verbatim: a `codec` value passed through `...` reached `pmap` and set
+  **both** streams — verified, `separate_audio_video_batch(jobs, codec =
+  "libmp3lame")` compiled `-codec:a libmp3lame` *and* `-codec:v libmp3lame`,
+  because `codec` is the reshape's internal column name but not a formal, so
+  `...` can carry it (every other `_batch` verb is immune because its column
+  names are formals). Actioned despite the score because it falsifies D020's own
+  sentence — "structurally impossible for one stream's choice to reach the
+  other's command" — which ships in this same PR; leaving it would land a false
+  durable record. Fix: `codec` in `...` aborts, pointing at
+  `audio_codec`/`video_codec`.
+
+The diff-bug lens proposed a different root-cause fix — reshaping to two columns
+named `audio_codec`/`video_codec` (both formals, hence uncarryable by `...`).
+Rejected: it would reverse the implement-gate decision that the reshaped table
+carries one `codec` column beside its `stream` marker. The guards close F2 and
+F3 without touching that shape.
+
+Nothing else survived: `reject_duplicate_outputs()` neither drops nor reorders
+rows, so the `codec` column cannot desynchronize; the 2N interleave is correct
+at n = 0, 1, 2; `apply_video_codec(hardware = "none")` is a true no-op that
+still token-checks; a `jobs` column literally named `codec` is correctly ignored.
+
+Post-fix: `devtools::test()` 1551 pass / 0 fail / 4 skip; `devtools::document()`
+no diff; `devtools::check()` `Status: OK` — 0 errors / 0 warnings / 0 notes.
+`R/ffmpeg.R` still CRLF.
 
 ### Consistency gate
 

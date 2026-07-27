@@ -2,7 +2,7 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-07-26 (M37 done — per-stream codec args replace `reencode` on the demux verb, merged and archived; D020 extends D016/D017; M32 row aged out; no milestone active)_
+_Last hygiene check: 2026-07-26 (M36 and M37 shipped and archived since the previous check; all validate checks green; nothing active, nothing planned — codec/hardware family is at a natural stopping point)_
 
 ## Milestones
 

@@ -311,3 +311,27 @@ test_that("anonymize_video(hardware = 'nvenc') writes a non-empty file", {
   expect_true(file.exists(outfile))
   expect_gt(file.size(outfile), 0)
 })
+
+test_that("separate_audio_video(hardware = 'nvenc') writes both outputs (M38)", {
+  # skip_if_no_nvenc() probes a real 1-frame encode rather than trusting the
+  # encoder list, which CI populates with no GPU behind it (M31 lesson).
+  skip_if_no_nvenc()
+  skip_if_no_ffprobe()
+  # MP3-in-MP4, not make_test_video(): the audio assertion below has to tell a
+  # stream copy from a re-encode, and an AAC-in-MP4 source cannot, because the
+  # container's own default encoder is also AAC (M35 lesson).
+  infile <- make_mp3_audio_video()
+  dir <- withr::local_tempdir()
+  audiofile <- file.path(dir, "a.mp3")
+  videofile <- file.path(dir, "v.mp4")
+  # video_codec = NULL, not the "copy" default: a stream copy runs no encoder,
+  # so the sentinel is what actually hands this stream to the GPU.
+  separate_audio_video(infile, audiofile, videofile, video_codec = NULL,
+                       hardware = "nvenc")
+  expect_true(file.exists(audiofile))
+  expect_gt(file.size(videofile), 0)
+  # The video really went through nvenc (h264), and the audio kept its default
+  # copy -- the two streams stayed independent end to end.
+  expect_equal(probe_video(infile = videofile)$codec_name, "h264")
+  expect_equal(probe_audio(infile = audiofile)$codec_name, "mp3")
+})

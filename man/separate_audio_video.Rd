@@ -10,6 +10,8 @@ separate_audio_video(
   videofile,
   audio_codec = "copy",
   video_codec = "copy",
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
   run = TRUE
 )
 }
@@ -32,6 +34,22 @@ video losslessly; a codec name (e.g. \code{"libx264"}) transcodes it;
 \code{NULL} emits no \code{-codec:v}, leaving the encoder to the
 \code{videofile} extension.}
 
+\item{hardware}{The encoder backend for \code{videofile}: \code{"none"}
+(default, the software \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU
+encoding, which uses the nvenc encoder for \code{video_codec}'s family
+(e.g. \code{"libx264"} becomes \code{"h264_nvenc"}), assuming the H.264
+family when \code{video_codec = NULL}. Only video is encoded on the GPU, so
+this never affects \code{audiofile}. Because this verb's video default is a
+stream copy, which runs no encoder at all, \code{hardware = "nvenc"}
+alongside \code{video_codec = "copy"} is an error: name an encoder or pass
+\code{video_codec = NULL}. See \code{\link{has_nvenc}} for availability and
+its caveats.}
+
+\item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
+unavailable, encode in software with a message (\code{TRUE}) instead of
+aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
+fallback leaves the codec unset rather than injecting one.}
+
 \item{run}{A logical: run the commands through FFmpeg (\code{TRUE}, default)
 or return the compiled commands without running them (\code{FALSE}).}
 }
@@ -46,7 +64,9 @@ each output container must support the source codec (e.g. write AAC audio
 from an MP4 to \code{.aac} or \code{.m4a}, not \code{.mp3}). Name an encoder
 instead (\code{audio_codec = "libmp3lame"}) to transcode that stream, or pass
 \code{NULL} to emit no codec option at all and let the output extension pick
-the encoder. Each argument governs only its own output file.
+the encoder. Each argument governs only its own output file. Where the video
+is re-encoded, \code{hardware = "nvenc"} moves that encode onto an NVIDIA
+GPU; the audio output is never affected.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -57,6 +77,7 @@ separate_audio_video(video, "audio.mp3", "video.mp4",
 }
 \seealso{
 \code{\link[=ffm_map]{ffm_map()}} and \code{\link[=ffm_codec]{ffm_codec()}}, the builders it wraps;
+\code{\link[=has_nvenc]{has_nvenc()}} for the \code{hardware = "nvenc"} toggle;
 \code{\link[=extract_audio]{extract_audio()}} to pull out just the audio.
 
 Other task verb functions:

@@ -8,6 +8,8 @@ separate_audio_video_batch(
   jobs,
   audio_codec = "copy",
   video_codec = "copy",
+  hardware = c("none", "nvenc"),
+  fallback = FALSE,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -35,6 +37,15 @@ unless \code{jobs} carries an \code{audio_codec} column. The default
 unless \code{jobs} carries a \code{video_codec} column. The default
 \code{"copy"} stream-copies the video losslessly; \code{NULL} emits no
 \code{-codec:v}. See \code{\link{separate_audio_video}}.}
+
+\item{hardware, fallback}{The encoder backend for every \code{videofile} and
+its fallback behavior, applied to the whole batch (a property of the
+machine, not of a row, so neither is read as a \code{jobs} column). See
+\code{\link[=separate_audio_video]{separate_audio_video()}}. Because \code{hardware} is batch-wide, and a
+stream copy runs no encoder, \code{hardware = "nvenc"} conflicts with any
+row whose video codec resolves to \code{"copy"} — including the default —
+so a jobs table mixing copied and re-encoded video must be split into
+separate calls.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}
@@ -80,7 +91,8 @@ separate_audio_video_batch(jobs, run = FALSE)
 }
 \seealso{
 \code{\link[=separate_audio_video]{separate_audio_video()}}, the scalar verb it wraps; \code{\link[=ffm_batch]{ffm_batch()}},
-the batch runner; \code{\link[=segment_video_batch]{segment_video_batch()}} for the other fan-out batch verb.
+the batch runner; \code{\link[=has_nvenc]{has_nvenc()}} for the \code{hardware = "nvenc"} toggle;
+\code{\link[=segment_video_batch]{segment_video_batch()}} for the other fan-out batch verb.
 
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

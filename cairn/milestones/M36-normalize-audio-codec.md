@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1, GP1
-- **Branch/PR:** `m36-normalize-audio-codec`
+- **Branch/PR:** `m36-normalize-audio-codec` · https://github.com/jmgirard/tidymedia/pull/38
 
 ## Goal
 
@@ -36,19 +36,19 @@ candidate row.
 
 ## Acceptance criteria
 
-- [ ] AC1: `normalize_audio(f, out, audio_codec = "aac", run = FALSE)` compiles a
+- [x] AC1: `normalize_audio(f, out, audio_codec = "aac", run = FALSE)` compiles a
       command containing `-codec:a aac`; with the default the compiled command is
       byte-identical to the same call on the default branch.
-- [ ] AC2: `audio_codec = "copy"` aborts from both the scalar verb and a batch
+- [x] AC2: `audio_codec = "copy"` aborts from both the scalar verb and a batch
       column cell, with an error naming why a filtered stream cannot be copied.
-- [ ] AC3: under `two_pass = TRUE` the returned correction command carries the
+- [x] AC3: under `two_pass = TRUE` the returned correction command carries the
       same `-codec:a`, proving the shared-seam threading reaches both phases.
-- [ ] AC4: `normalize_audio_batch()` honors a per-row `audio_codec` column with
+- [x] AC4: `normalize_audio_batch()` honors a per-row `audio_codec` column with
       `NA` → unset, and rejects a wrong-typed column at both boundaries — a
       numeric column and an all-`NA` non-character column (M34 lesson).
-- [ ] AC5: an execution test confirms the named encoder reaches the output
+- [x] AC5: an execution test confirms the named encoder reaches the output
       (`probe_audio()` `codec_name`), `skip_if` the binaries are absent.
-- [ ] AC6: profile `verify` clean — `devtools::test()` passes,
+- [x] AC6: profile `verify` clean — `devtools::test()` passes,
       `devtools::document()` produces no diff, `devtools::check()` reports 0
       errors / 0 warnings.
 
@@ -91,6 +91,7 @@ candidate row.
 - 2026-07-26: T4 follow-up - added the two-pass codec tests AC3 needs (run_normalize_correction arg + per-row column, scalar two_pass compile); T4 was ticked a step early.
 - 2026-07-26: T6 done - roxygen example, NEWS entry under New features, document(), D019 appended.
 - 2026-07-26: all tasks done; test() 1490 pass / 0 fail, document() no diff, check() Status: OK (0/0/0), check_pkgdown() clean. Status -> review.
+- 2026-07-26: review in progress - draft PR #38 open, CI 9/9 green; all six AC ticked against fresh evidence; consistency gate clean. Blame-history and prior-PR-comments lenses reported zero findings; diff-bug lens still running, findings triage not yet done.
 
 ## Decisions
 
@@ -103,3 +104,32 @@ candidate row.
   burning an analysis pass per row. One helper, three call sites.
 
 ## Review
+
+**Evidence (gathered fresh 2026-07-26 on `m36-normalize-audio-codec`).**
+
+- AC1: `normalize_audio(f, "out.mp4", audio_codec = "aac", run = FALSE)` compiled
+  `... -af "loudnorm=I=-23:TP=-1:LRA=7" -codec:v copy -codec:a aac "out.mp4"`. Default-parity
+  oracle: master's own pre-M36 byte-string test ("compiles the default EBU R128 command")
+  is unmodified on this branch (`git diff master..HEAD` on that test file shows zero deleted
+  lines) and still passes, so the default command is byte-identical by master's own assertion.
+- AC2: `audio_codec = "copy"` aborted from the scalar verb and from a batch column cell, both
+  with `` `audio_codec` can't be "copy". x Loudness normalization filters the audio, so it
+  must be re-encoded. `` 5 matched tests, 0 failures.
+- AC3: two-pass tests pass (2 matched, 0 failures) — `run_normalize_correction()` honors the
+  argument and a per-row column (with `linear=true` still present), and scalar
+  `two_pass = TRUE` carries `-codec:a aac` into the correction command.
+- AC4: batch column tests pass (4 matched, 0 failures) — per-row column honored, `NA` unsets,
+  all-NA logical accepted, and both wrong-typed boundaries (numeric, `NA_real_`) rejected.
+- AC5: execution test passes — `audio_codec = "libmp3lame"` yields `probe_audio()$codec_name`
+  `"mp3"`, the `NULL` sentinel yields the MP4 default `"aac"`.
+- AC6: `devtools::test()` 1490 pass / 0 fail / 0 warn / 4 skip (binary-gated);
+  `devtools::document()` no diff; `devtools::check()` `Status: OK` — 0 errors, 0 warnings,
+  0 notes.
+
+**Consistency gate.** `cairn_validate` exit 0, all checks passed. `cairn_impact` skipped —
+`DESIGN.md` is untouched, no principle changed. Profile `consistency-gate` slot:
+`document()` no diff; generated files not hand-edited; `README.Rmd` untouched so README stays
+in sync; `pkgdown::check_pkgdown()` "No problems found"; NEWS carries a user-facing entry with
+no milestone number; no new top-level files, so no `.Rbuildignore` change owed;
+`devtools::check()` clean. CI on PR #38: 9/9 green.
+

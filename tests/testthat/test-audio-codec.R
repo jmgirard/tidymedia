@@ -726,7 +726,65 @@ test_that("crop_video() leaves the audio stream's codec unchanged", {
   expect_equal(probe_audio(infile = unset)$codec_name, "aac")
 })
 
-# Argument spelling across all eight verbs -------------------------------------
+test_that("standardize_video() leaves the audio stream's codec unchanged", {
+  skip_if_no_ffmpeg()
+  skip_if_no_ffprobe()
+  # MP3 audio in an MP4: FFmpeg's default audio encoder for MP4 is AAC, so an
+  # AAC fixture could not tell a copy from a re-encode (M35 lesson).
+  input <- make_mp3_audio_video()
+  expect_equal(probe_audio(infile = input)$codec_name, "mp3")
+
+  copied <- withr::local_tempfile(fileext = ".mp4")
+  standardize_video(input, copied)
+  expect_equal(probe_audio(infile = copied)$codec_name, "mp3")
+
+  # A named encoder really does transcode ...
+  named <- withr::local_tempfile(fileext = ".mp4")
+  standardize_video(input, named, audio_codec = "aac")
+  expect_equal(probe_audio(infile = named)$codec_name, "aac")
+
+  # ... and the NULL escape hatch hands the choice back to the container,
+  # which is the behavior the hardcoded copy used to make unreachable.
+  unset <- withr::local_tempfile(fileext = ".mp4")
+  standardize_video(input, unset, audio_codec = NULL)
+  expect_equal(probe_audio(infile = unset)$codec_name, "aac")
+})
+
+test_that("anonymize_video() leaves the audio stream's codec unchanged", {
+  skip_if_no_ffmpeg()
+  skip_if_no_ffprobe()
+  input <- make_mp3_audio_video()
+  boxes <- data.frame(x = 4, y = 4, width = 16, height = 16)
+
+  copied <- withr::local_tempfile(fileext = ".mp4")
+  anonymize_video(input, copied, boxes)
+  expect_equal(probe_audio(infile = copied)$codec_name, "mp3")
+
+  named <- withr::local_tempfile(fileext = ".mp4")
+  anonymize_video(input, named, boxes, audio_codec = "aac")
+  expect_equal(probe_audio(infile = named)$codec_name, "aac")
+
+  unset <- withr::local_tempfile(fileext = ".mp4")
+  anonymize_video(input, unset, boxes, audio_codec = NULL)
+  expect_equal(probe_audio(infile = unset)$codec_name, "aac")
+})
+
+test_that("the M39 batch verbs stream-copy audio per row on disk", {
+  skip_if_no_ffmpeg()
+  skip_if_no_ffprobe()
+  input <- make_mp3_audio_video()
+  copied <- withr::local_tempfile(fileext = ".mp4")
+  named <- withr::local_tempfile(fileext = ".mp4")
+  jobs <- tibble::tibble(
+    input = c(input, input), output = c(copied, named),
+    audio_codec = c("copy", "aac")
+  )
+  standardize_video_batch(jobs)
+  expect_equal(probe_audio(infile = copied)$codec_name, "mp3")
+  expect_equal(probe_audio(infile = named)$codec_name, "aac")
+})
+
+# Argument spelling across every verb that carries audio_codec -----------------
 
 test_that("every configurable transform carries the D014 audio_codec spelling", {
   # AC1: exact spelling, "copy" default, no acodec/audio alias. M35's original

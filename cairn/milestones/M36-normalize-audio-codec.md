@@ -1,6 +1,6 @@
 # M36: `audio_codec` for `normalize_audio` (+ batch)
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —

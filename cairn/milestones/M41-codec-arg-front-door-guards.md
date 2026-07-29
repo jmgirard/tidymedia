@@ -207,8 +207,7 @@ against `origin/master` and the branch in one session: 34 verb/argument pairs ×
 ### Acceptance criteria
 
 - **AC1 — measured.** On the branch, `normalize_audio_batch(jobs, audio_codec = NA)`
-  at default `two_pass = FALSE` aborts with ``​`audio_codec` must be a single
-  string or `NULL`, not `NA`.`` — names `audio_codec`, carries no `In index:`.
+  at default `two_pass = FALSE` aborts with "`audio_codec` must be a single string or `NULL`, not `NA`." — names `audio_codec`, carries no `In index:`.
   Against the pre-fix tree the script reconstructs from `origin/master`, the same
   call **compiled** `-y -i "<in>" -af "loudnorm=I=-23:TP=-1:LRA=7" -codec:v copy
   "<out>"`, byte-identical to the `audio_codec = NULL` call (`identical()` TRUE)
@@ -217,7 +216,7 @@ against `origin/master` and the branch in one session: 34 verb/argument pairs ×
 - **AC2 — measured, 0 violations.** Over all 34 pairs × the three non-string
   shapes (`NA`, `1`, `c("aac","mp3")`) = 102 observations: every one aborts, every
   message names that verb's own `video_codec`/`audio_codec`, none matches
-  ``​`video` must be`` or ``​`audio` must be`` (the Layer-1 leak), and every
+  "`video` must be" or "`audio` must be" (the Layer-1 leak), and every
   `conditionCall()` deparses to the Layer-2 verb. `verify_media()` excluded per
   the criterion.
 - **AC3 — measured, 0 violations.** No abort in those same 102 observations

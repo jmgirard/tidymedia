@@ -124,6 +124,9 @@ value does.
 
 ## Work log
 
+- 2026-07-29: T2 script bug found and fixed before it could mislead T8: `base[[arg]] <- NULL` *deletes* a list element in R, so the `null` scenario was re-running `default` and every null row matched its default row for that reason alone. `base[arg] <- list(NULL)` stores the NULL. Also scrubbed `tempdir()` (per-session random suffix) out of compiled commands so two runs are comparable.
+- 2026-07-29: with the null scenario actually exercised, AC4's and AC5's stated NULL outcomes are confirmed by measurement: `anonymize_video_batch` `video_codec` and `extract_audio` `audio_codec` abort on NULL; `extract_audio_batch` compiles `-vn` with no `-codec:a`; `standardize_video`/`_batch` drop `-codec:v libx264`; `convert_audio` gives `-q:a 0` (D021); `normalize_audio`/`_batch` emit no `-codec:a` (D019). The plan was right and the first probe was wrong.
+- 2026-07-29: `anonymize_video_batch(video_codec = NULL)` aborts *inside* `purrr::pmap()` carrying `In index: 1`, and AC4 requires that be preserved -- so T7 asserts In-index absence only for AC2's non-string scenarios, never for NULL.
 - 2026-07-29: T4 regression test written first and shown red on the pre-fix tree for the right reason -- `Expected normalize_audio_batch(jobs, audio_codec = NA, run = FALSE) to throw a error`, it returned a tibble carrying the silently compiled command; green after the front-door `check_string(audio_codec, allow_null = TRUE)`. Full suite 0 FAIL / 1646 PASS.
 - 2026-07-29: T1 done as a verification, not an install — `spelling` is already present at 2.3.2 in the R 4.6.1 library and `inst/WORDLIST` carries 102 entries.
 - 2026-07-29: minor amendment — T2 ran before T3, reversing the plan's order, because T3's enumeration is an *output* of T2's script rather than an input to it; no task content changed.

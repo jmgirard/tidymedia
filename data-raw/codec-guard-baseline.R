@@ -264,7 +264,11 @@ codec_guard_baseline <- function(ref = NULL, root = ".", sample = NULL) {
         # so the probe states it rather than inheriting it.
         if ("parallel" %in% names(formals(f))) base$parallel <- FALSE
         if (sc != "default") {
-          base[[arg]] <- eval(codec_guard_scenarios[[sc]])
+          # `base[[arg]] <- NULL` DELETES the element, silently turning the
+          # `null` scenario back into `default` -- and the null column is what
+          # AC4's before/after comparison rests on. Single-bracket assignment
+          # of `list(NULL)` stores a NULL element instead.
+          base[arg] <- list(eval(codec_guard_scenarios[[sc]]))
         }
 
         obs <- tryCatch(
@@ -273,9 +277,16 @@ codec_guard_baseline <- function(ref = NULL, root = ".", sample = NULL) {
             # `(function(infile, ...) ...)(...)` as the condition call, which
             # hides the very blame target AC2 constrains.
             out <- do.call(verb, base, envir = env)
+            # Scrub the input path AND the session tempdir: `tempdir()` carries a
+            # per-session random suffix, so leaving it in would make two runs
+            # differ on every row for no reason that concerns this milestone.
+            txt <- as.character(out)
+            txt <- gsub(sample, "<in>", txt, fixed = TRUE)
+            txt <- gsub(tempdir(), "<tmp>", txt, fixed = TRUE)
+            txt <- gsub(normalizePath(tempdir(), winslash = "/"), "<tmp>", txt,
+                        fixed = TRUE)
             list(kind = "compiled",
-                 outcome = paste(gsub(sample, "<in>", as.character(out),
-                                      fixed = TRUE), collapse = " ||| "),
+                 outcome = paste(txt, collapse = " ||| "),
                  call = NA_character_, in_index = FALSE)
           },
           condition = function(cnd) {

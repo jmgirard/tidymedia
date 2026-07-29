@@ -124,6 +124,11 @@ value does.
 
 ## Work log
 
+- 2026-07-29: CHECKPOINT, T8 INCOMPLETE — everything T8 asks for is done and committed except the final `devtools::check()` confirmation, which was still in its testthat stage when this checkpoint was made. The first check run returned 0 errors / 0 warnings / 2 NOTEs, both self-inflicted (the `typo'd` spelling hit and the two committed `.rds` scratch files); both causes are fixed here and the re-run had already cleared those two stages. T8 stays unchecked and the milestone stays `in-progress` until a check run is seen clean end to end.
+- 2026-07-29: T8 `devtools::check()` also caught scratch debris I had committed myself: `baseline-origin-master.rds` and `baseline-worktree.rds`, RDS dumps my probe wrappers wrote into the repo root (cwd is the package root when running them), swept into commit 7df5216 by a `git add -A` I ran without checking `git status` first — the exact 'never sweep strangers into a checkpoint commit' rule. Removed from the index and from disk, and the `saveRDS()` calls deleted from the scratch wrappers so a re-run cannot recreate them. `data-raw/codec-guard-baseline.R` itself never wrote files; only my throwaway wrappers did.
+- 2026-07-29: T8 — no `@param` needed updating: nothing in the roxygen documented an error for a non-string codec value (zero matches for that prose), so the guards changed no *documented* behaviour, and `devtools::document()` produced no diff. Deliberately did NOT document `NULL`'s per-verb meaning on `standardize_video` or `extract_audio_batch`, though both accept it: describing what an accepted value does is a contract statement, which this milestone's Scope reserves for M42.
+- 2026-07-29: T8 NEWS entry added under the development version's Bug fixes — one bullet for the silent `NA` compile, one for the message/blame/timing repair naming the six affected verbs and stating that which values are accepted is unchanged.
+- 2026-07-29: T8 `devtools::check()` first run failed the spelling comparison on `typo'd` in my own NEWS prose — the exact NOTE T1 exists to keep visible. Reworded rather than added to `inst/WORDLIST`, since informal contraction was not worth a wordlist entry.
 - 2026-07-29: T7 added `tests/testthat/test-codec-arg-front-door.R`: the 34-pair list held as data, each pair asserted for abort + own-argument name + no Layer-1 `video`/`audio` name + `conditionCall()` being the verb + no `In index:` at `parallel = FALSE`; plus a completeness test that fails if a verb gains a codec argument without joining the sweep (`verify_media`'s two excluded on the record), plus a NULL-meaning test pinning the four per-verb NULL contracts M41 leaves alone. Suite 0 FAIL / 0 WARN / 2162 PASS.
 - 2026-07-29: T7 mutation-verified rather than eyeballed (M39 lesson): blanking each of the 7 guards M41 added (ffmpeg.R lines 495, 802, 1171, 1368, 2587, 2973, 3347) turns the new test file RED every time, so none is false coverage.
 - 2026-07-29: the same mutation sweep found 6 PRE-EXISTING scalar guards whose removal leaves the suite green -- `crop_video`, `compare_videos`, `picture_in_picture` `video_codec`/`audio_codec`. Not a defect and deliberately not touched: those verbs meet the front-door contract twice over, because `apply_video_codec()`/`apply_audio_codec()` already thread `call` and name the caller's argument. The test asserts the contract, not one mechanism for it, so it cannot distinguish which of two satisfies it -- and deleting both would still redden it. No candidate row filed.
@@ -160,5 +165,31 @@ value does.
 - 2026-07-29: R is 4.6.1 via winget (the R-4.4.1 directory is a stale leftover, not a second install). `archive` was absent from the 4.6 library during investigation — probes sourced `R/*.R` directly to work around it — and is now installed at 1.1.13, so `load_all()` succeeds; `spelling` remains absent and T1 installs it.
 
 ## Decisions
+
+### M41-D1 — A duplicate front-door check, not a threaded `call` (2026-07-29)
+
+`convert_audio()` and `normalize_audio()` validated their `audio_codec` inside a
+`*_pipeline()` helper, so the abort blamed the helper — a name no caller typed.
+Two ways to fix it, and the milestone took the first:
+
+- **Chosen: hoist a second `check_string()` into the verb**, leaving the
+  helper's check exactly as it was. The cost is that the value is checked twice
+  on the scalar path.
+- **Rejected: thread a `call` argument through the helper.** No duplication, but
+  both helpers are shared with the `_batch` sibling for per-row validation, so
+  threading also rewrites the batch verbs' per-row messages — the very outcomes
+  AC4 asks be proven unchanged. It buys tidiness at the price of widening a
+  contract-neutral milestone's blast radius.
+
+Hoisting also makes all seven of M41's guards one shape, which is what let the
+mutation sweep certify them uniformly.
+
+**Falsified by:** a third caller of either `*_pipeline()` helper needing the
+verb-accurate blame that only threading provides — at which point the duplicate
+front doors become the redundant copies and threading is the cheaper fix.
+
+**Not a D-entry:** M41 changes which values are refused, never what an accepted
+value does, so nothing cross-cutting was decided. The `NULL`/`NA` semantics this
+deliberately leaves alone are M42's, per D021's closing note.
 
 ## Review

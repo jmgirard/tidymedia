@@ -415,6 +415,22 @@ changes with no deprecation shims (the package is still pre-1.0 and soaking).
 
 ## Bug fixes
 
+* `normalize_audio_batch(audio_codec = NA)` now aborts instead of quietly
+  compiling the default command. A scalar `NA` was resolved the same way as an
+  `NA` cell in a jobs-table column — where it legitimately means "leave this
+  row's codec unset" — so an accidental `NA` argument produced a command with
+  no `-codec:a` and no indication that anything had been ignored.
+* Every `video_codec` and `audio_codec` argument now reports a bad value
+  against the argument and the verb you actually called. Several previously
+  blamed an internal helper, named FFmpeg's own `video` / `audio` parameter
+  instead of the argument you passed, or — on the `_batch` verbs — surfaced the
+  complaint from inside the row loop with an `In index: 1` prefix, as though one
+  row's data were at fault rather than a whole-table argument. Affected
+  `standardize_video()`, `standardize_video_batch()`, `anonymize_video_batch()`,
+  `extract_audio_batch()`, `convert_audio()`, and `normalize_audio()`. Which
+  values are accepted is unchanged: only the wording and the timing of the
+  refusal differ.
+
 * An explicit `ffm_map()` on a multi-input pipeline (e.g. `ffm_hstack()`) is
   now emitted alongside the automatic `-map "[vout]"` instead of being
   silently ignored, so e.g. `ffm_map(p, "0:a")` keeps the first input's audio

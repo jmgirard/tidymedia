@@ -67,7 +67,7 @@ value does.
       `allow_null = TRUE`, so `extract_audio_batch(audio_codec = NULL)` still
       compiles (`-vn`, no `-codec:a`) while `extract_audio(audio_codec = NULL)`
       still aborts; a code comment names that disagreement and points at M42.
-- [ ] AC6: `devtools::test()` and `devtools::check()` clean — 0 errors, 0
+- [x] AC6: `devtools::test()` and `devtools::check()` clean — 0 errors, 0
       warnings.
 
 ## Coverage
@@ -234,7 +234,10 @@ against `origin/master` and the branch in one session: 34 verb/argument pairs ×
   still aborts. The guard at [ffmpeg.R:3347](../../R/ffmpeg.R#L3347) passes
   `allow_null = TRUE` and its comment states the scalar/batch disagreement
   explicitly and routes it to M42 and D021.
-- **AC6 — pending final re-run at review; see below.**
+- **AC6 — measured.** `devtools::check()` re-run at review on the exact review
+  tree: `Status: OK`, **0 errors / 0 warnings / 0 notes** (3m 4s). `devtools::test()`
+  0 FAIL / 0 WARN / 15 SKIP / 2162 PASS; `check()` runs the same suite via
+  `testthat.R` and it passed inside the clean check.
 
 ### Consistency gate
 

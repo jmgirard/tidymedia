@@ -1,11 +1,11 @@
 # M41: Front-door validation parity for the codec arguments
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** —
+- **Branch/PR:** `m41-codec-arg-front-door-guards`
 
 ## Goal
 
@@ -124,6 +124,7 @@ value does.
 - 2026-07-29: plan gate chose a committed ref-based regeneration script over a testthat snapshot fixture and over an implementation-time transcript because it re-derives the baseline as fresh evidence at review without adding a churn-prone second snapshot file; falsified by the script failing to reconstruct a sourceable pre-milestone tree from a ref.
 - 2026-07-29: plan gate chose preserving `extract_audio_batch(audio_codec = NULL)`'s current acceptance over fixing the scalar/batch split here, because it keeps M41 contract-neutral; falsified by a report that the batch verb's `NULL` acceptance is itself the user-visible bug.
 - 2026-07-29: plan chose splitting guards (M41) from semantics (M42) over one milestone because the guard work needs no D-entry and the semantics work does; falsified by the semantics fix landing on the same code sites, making two PRs redundant.
+- 2026-07-29: implement session start — branch cut from `master` @ 0a0ad90; `spelling` is present at 2.3.2 in the R 4.6.1 library, so T1 is a verification rather than an install. `Rscript` is not on the shell PATH; it lives at `C:\Program Files\R\R-4.6.1\bin\Rscript.exe`.
 - 2026-07-29: R is 4.6.1 via winget (the R-4.4.1 directory is a stale leftover, not a second install). `archive` was absent from the 4.6 library during investigation — probes sourced `R/*.R` directly to work around it — and is now installed at 1.1.13, so `load_all()` succeeds; `spelling` remains absent and T1 installs it.
 
 ## Decisions

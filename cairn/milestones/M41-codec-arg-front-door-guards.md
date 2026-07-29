@@ -1,6 +1,6 @@
 # M41: Front-door validation parity for the codec arguments
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -117,13 +117,14 @@ value does.
       `skip_if_no_ffprobe()`, so they fail rather than skip wherever the
       mediainfo CLI is absent, against the convention CLAUDE.md states and the
       existing `skip_if_no_mediainfo()` helper serves. Blocks AC6, so fixed here.
-- [ ] T8: Re-run T2's script against the pre-milestone ref and the branch;
+- [x] T8: Re-run T2's script against the pre-milestone ref and the branch;
       confirm every `NULL`/default outcome matches. Update `@param` prose where a
       guard changes the documented error, `devtools::document()`, NEWS entry,
       `devtools::test()` + `devtools::check()` clean.
 
 ## Work log
 
+- 2026-07-29: T8 COMPLETE — `devtools::check()` `Status: OK`, **0 errors / 0 warnings / 0 notes** (3m 3s), so AC6 is met and the checkpoint above is superseded. Both NOTEs from the first run were self-inflicted and are gone: the `typo'd` spelling hit and the two committed `.rds` scratch files. Status moved to `review`.
 - 2026-07-29: CHECKPOINT, T8 INCOMPLETE — everything T8 asks for is done and committed except the final `devtools::check()` confirmation, which was still in its testthat stage when this checkpoint was made. The first check run returned 0 errors / 0 warnings / 2 NOTEs, both self-inflicted (the `typo'd` spelling hit and the two committed `.rds` scratch files); both causes are fixed here and the re-run had already cleared those two stages. T8 stays unchecked and the milestone stays `in-progress` until a check run is seen clean end to end.
 - 2026-07-29: T8 `devtools::check()` also caught scratch debris I had committed myself: `baseline-origin-master.rds` and `baseline-worktree.rds`, RDS dumps my probe wrappers wrote into the repo root (cwd is the package root when running them), swept into commit 7df5216 by a `git add -A` I ran without checking `git status` first — the exact 'never sweep strangers into a checkpoint commit' rule. Removed from the index and from disk, and the `saveRDS()` calls deleted from the scratch wrappers so a re-run cannot recreate them. `data-raw/codec-guard-baseline.R` itself never wrote files; only my throwaway wrappers did.
 - 2026-07-29: T8 — no `@param` needed updating: nothing in the roxygen documented an error for a non-string codec value (zero matches for that prose), so the guards changed no *documented* behaviour, and `devtools::document()` produced no diff. Deliberately did NOT document `NULL`'s per-verb meaning on `standardize_video` or `extract_audio_batch`, though both accept it: describing what an accepted value does is a contract statement, which this milestone's Scope reserves for M42.

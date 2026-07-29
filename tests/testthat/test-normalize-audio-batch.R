@@ -521,6 +521,26 @@ test_that("normalize_audio_batch() rejects a wrongly typed audio_codec column", 
   )
 })
 
+test_that("normalize_audio_batch() rejects a scalar audio_codec = NA (M41 AC1)", {
+  f <- make_input()
+  jobs <- tibble::tibble(input = f, output = "a.mp4")
+  # The regression: batch_codec_cell() maps a *scalar* NA to the NULL sentinel
+  # exactly as it maps an NA *cell*, so before M41 this compiled the default
+  # command -- `-af "loudnorm=..." -codec:v copy` with no -codec:a, byte-identical
+  # to audio_codec = NULL -- instead of erroring. two_pass = TRUE already aborted
+  # via its hoisted check_token(); the silent compile was default-path-only.
+  expect_error(
+    normalize_audio_batch(jobs, audio_codec = NA, run = FALSE),
+    "audio_codec"
+  )
+  # And it is refused at the front door, not per row inside purrr::pmap() (AC3).
+  msg <- tryCatch(
+    normalize_audio_batch(jobs, audio_codec = NA, run = FALSE, parallel = FALSE),
+    error = conditionMessage
+  )
+  expect_no_match(msg, "In index:", fixed = TRUE)
+})
+
 test_that("normalize_audio_batch() rejects 'copy' from the argument and the column", {
   f <- make_input()
   jobs <- tibble::tibble(input = f, output = "a.mp4")

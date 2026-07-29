@@ -2932,6 +2932,13 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
   # guard above (M34/M35). Refuse "copy" from the argument and from any cell up
   # front, so two-pass fails before Phase 1 wastes an analysis pass per row.
   check_batch_codec_col(jobs, "audio_codec")
+  # The scalar argument needs its own front-door check, and the column guard
+  # above cannot stand in for it: batch_codec_cell() maps a scalar NA to the
+  # NULL sentinel exactly as it maps an NA cell, so `audio_codec = NA` used to
+  # compile the default command in silence rather than erroring -- the one
+  # codec argument in the package that did (M41). allow_null because NULL is
+  # this verb's documented sentinel (D019).
+  rlang::check_string(audio_codec, allow_null = TRUE)
   check_audio_codec_not_copy(audio_codec)
   if ("audio_codec" %in% names(jobs)) check_audio_codec_not_copy(jobs$audio_codec)
 

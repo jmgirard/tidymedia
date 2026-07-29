@@ -94,7 +94,7 @@ value does.
 - [x] T3: Enumerate the AC2 verb/argument set from source into this file's work
       log — the eight non-compliant pairs and the compliant ones — so T7's test
       runs over a fixed list, not a re-derivation.
-- [ ] T4: Regression test first, shown red against T2's reconstructed pre-fix
+- [x] T4: Regression test first, shown red against T2's reconstructed pre-fix
       tree, then the fix: front-door
       `rlang::check_string(audio_codec, allow_null = TRUE)` in
       `normalize_audio_batch` ([ffmpeg.R:2891](../../R/ffmpeg.R#L2891)).
@@ -124,6 +124,7 @@ value does.
 
 ## Work log
 
+- 2026-07-29: T4 regression test written first and shown red on the pre-fix tree for the right reason -- `Expected normalize_audio_batch(jobs, audio_codec = NA, run = FALSE) to throw a error`, it returned a tibble carrying the silently compiled command; green after the front-door `check_string(audio_codec, allow_null = TRUE)`. Full suite 0 FAIL / 1646 PASS.
 - 2026-07-29: T1 done as a verification, not an install — `spelling` is already present at 2.3.2 in the R 4.6.1 library and `inst/WORDLIST` carries 102 entries.
 - 2026-07-29: minor amendment — T2 ran before T3, reversing the plan's order, because T3's enumeration is an *output* of T2's script rather than an input to it; no task content changed.
 - 2026-07-29: implement gate chose hoisting a duplicate front-door `check_string()` into `convert_audio`/`normalize_audio` over threading `call` into their shared `*_pipeline()` helpers, because the helpers are shared with the `_batch` siblings and threading would also change the batch verbs' per-row messages that AC4 asks be proven unchanged; falsified by a third caller of either helper needing the verb-accurate blame that only threading gives.

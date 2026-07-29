@@ -1,0 +1,214 @@
+# Front-door validation parity for the codec arguments (M41).
+#
+# Every task verb and `_batch` sibling whose `video_codec` or `audio_codec`
+# argument *sets* a codec must refuse a non-string value at its own front door:
+# naming its own argument (never Layer-1's `video`/`audio`), blaming itself
+# (never a `*_pipeline()` helper or `purrr::pmap()`), and firing before the
+# fan-out (no `In index: <n>` at parallel = FALSE).
+#
+# `verify_media()` is excluded by design: its same-named arguments are expected
+# probe values, not codec settings.
+#
+# The pair list is fixed here rather than derived at run time, so a verb that
+# gains a codec argument without a guard fails the completeness test below
+# instead of silently dropping out of the sweep.
+
+codec_front_door_pairs <- function() {
+  v <- c("video_codec", "audio_codec")
+  a <- "audio_codec"
+  list(
+    list(verb = "anonymize_video",            args = v),
+    list(verb = "anonymize_video_batch",      args = v),
+    list(verb = "compare_videos",             args = v),
+    list(verb = "compare_videos_batch",       args = v),
+    list(verb = "convert_audio",              args = a),
+    list(verb = "convert_audio_batch",        args = a),
+    list(verb = "crop_video",                 args = v),
+    list(verb = "crop_video_batch",           args = v),
+    list(verb = "extract_audio",              args = a),
+    list(verb = "extract_audio_batch",        args = a),
+    list(verb = "normalize_audio",            args = a),
+    list(verb = "normalize_audio_batch",      args = a),
+    list(verb = "picture_in_picture",         args = v),
+    list(verb = "picture_in_picture_batch",   args = v),
+    list(verb = "segment_video",              args = v),
+    list(verb = "segment_video_batch",        args = v),
+    list(verb = "separate_audio_video",       args = v),
+    list(verb = "separate_audio_video_batch", args = v),
+    list(verb = "standardize_video",          args = v),
+    list(verb = "standardize_video_batch",    args = v)
+  )
+}
+
+# Arguments each verb needs besides the codec under test, using `input` as the
+# input path and `out` as an output stem. Mirrors data-raw/codec-guard-baseline.R,
+# which measures the same grid against a git ref.
+codec_front_door_call <- function(verb, input, out) {
+  regions <- data.frame(x = 0, y = 0, width = 32, height = 32)
+  switch(
+    verb,
+    anonymize_video            = list(infile = input, outfile = out,
+                                      regions = regions),
+    anonymize_video_batch      = list(jobs = tibble::tibble(
+                                        input = input, output = out,
+                                        regions = list(regions))),
+    compare_videos             = list(infiles = c(input, input), outfile = out),
+    compare_videos_batch       = list(jobs = tibble::tibble(
+                                        inputs = list(c(input, input)),
+                                        output = out)),
+    convert_audio              = list(infile = input, outfile = "a.mp3"),
+    convert_audio_batch        = list(jobs = tibble::tibble(
+                                        input = input, output = "a.mp3")),
+    crop_video                 = list(infile = input, outfile = out,
+                                      width = 32, height = 32),
+    crop_video_batch           = list(jobs = tibble::tibble(
+                                        input = input, output = out),
+                                      width = 32, height = 32),
+    extract_audio              = list(infile = input, outfile = "a.aac"),
+    extract_audio_batch        = list(jobs = tibble::tibble(
+                                        input = input, output = "a.aac")),
+    normalize_audio            = list(infile = input, outfile = out),
+    normalize_audio_batch      = list(jobs = tibble::tibble(
+                                        input = input, output = out)),
+    picture_in_picture         = list(main = input, overlay = input,
+                                      outfile = out),
+    picture_in_picture_batch   = list(jobs = tibble::tibble(
+                                        inputs = list(c(input, input)),
+                                        output = out)),
+    segment_video              = list(infile = input, start = 0, end = 1,
+                                      outfiles = out),
+    segment_video_batch        = list(jobs = tibble::tibble(
+                                        input = input, start = 0, end = 1,
+                                        output = out)),
+    separate_audio_video       = list(infile = input, audiofile = "a.aac",
+                                      videofile = out),
+    separate_audio_video_batch = list(jobs = tibble::tibble(
+                                        input = input, audiofile = "a.aac",
+                                        videofile = out)),
+    standardize_video          = list(infile = input, outfile = out),
+    standardize_video_batch    = list(jobs = tibble::tibble(
+                                        input = input, output = out)),
+    stop("no call template for ", verb)
+  )
+}
+
+# Call `verb` with `arg` set to `value`, returning the condition it throws (or
+# NULL if it did not throw). `parallel = FALSE` is passed explicitly where the
+# verb accepts it, because AC3 is a claim about exactly that path.
+codec_front_door_catch <- function(verb, arg, value, input, out = "out.mp4") {
+  f <- get(verb, envir = asNamespace("tidymedia"))
+  args <- codec_front_door_call(verb, input, out)
+  args$run <- FALSE
+  if ("parallel" %in% names(formals(f))) args$parallel <- FALSE
+  # Single-bracket assignment of list(value) so a NULL value would be STORED
+  # rather than deleting the element (`args[[arg]] <- NULL` removes it).
+  args[arg] <- list(value)
+  tryCatch({
+    do.call(verb, args, envir = asNamespace("tidymedia"))
+    NULL
+  }, condition = function(cnd) cnd)
+}
+
+# The three non-string shapes AC2 names.
+codec_front_door_bad <- list(
+  `NA` = NA,
+  number = 1,
+  `length-2 vector` = c("aac", "mp3")
+)
+
+test_that("every codec argument refuses a non-string at its own front door", {
+  input <- make_input()
+  for (pair in codec_front_door_pairs()) {
+    verb <- pair$verb
+    for (arg in pair$args) {
+      for (shape in names(codec_front_door_bad)) {
+        label <- paste0(verb, "(", arg, " = ", shape, ")")
+        cnd <- codec_front_door_catch(verb, arg, codec_front_door_bad[[shape]],
+                                      input)
+
+        # It must abort at all -- the M41 regression was a silent compile.
+        expect_true(inherits(cnd, "error"), label = paste(label, "aborts"))
+        msg <- cli::ansi_strip(conditionMessage(cnd))
+
+        # AC2: the message names the caller's own argument ...
+        expect_match(msg, arg, fixed = TRUE, label = paste(label, "names arg"))
+        # ... and never Layer-1's parameter name.
+        engine <- if (arg == "video_codec") "`video` must be" else "`audio` must be"
+        expect_no_match(msg, engine, fixed = TRUE,
+                        label = paste(label, "hides engine arg"))
+
+        # AC2: the condition blames the Layer-2 verb, not a helper or pmap.
+        call_txt <- paste(deparse(conditionCall(cnd)), collapse = " ")
+        expect_match(call_txt, paste0("^", verb, "\\("),
+                     label = paste(label, "blames the verb"))
+
+        # AC3: it fired before the fan-out, not inside purrr::pmap().
+        expect_no_match(msg, "In index:", fixed = TRUE,
+                        label = paste(label, "is not mid-fan-out"))
+      }
+    }
+  }
+})
+
+test_that("the front-door sweep covers every codec argument the package exports", {
+  # Completeness: a verb that gains a video_codec/audio_codec argument later must
+  # either join the list above or be excluded on the record, rather than quietly
+  # escaping the sweep.
+  exported <- getNamespaceExports(asNamespace("tidymedia"))
+  found <- list()
+  for (nm in sort(exported)) {
+    f <- get(nm, envir = asNamespace("tidymedia"))
+    if (!is.function(f)) next
+    for (a in intersect(c("video_codec", "audio_codec"), names(formals(f)))) {
+      found[[length(found) + 1]] <- paste(nm, a)
+    }
+  }
+  found <- sort(unlist(found))
+
+  covered <- sort(unlist(lapply(codec_front_door_pairs(), function(p) {
+    paste(p$verb, p$args)
+  })))
+  # verify_media()'s same-named arguments are expected probe VALUES, not codec
+  # settings, so guarding them would change the contract rather than validate it.
+  excluded <- c("verify_media video_codec", "verify_media audio_codec")
+
+  expect_setequal(found, c(covered, excluded))
+})
+
+test_that("NULL keeps its existing per-verb meaning (M41 is contract-neutral)", {
+  input <- make_input()
+  # M41 changed only which values are REFUSED. Every guard takes
+  # allow_null = TRUE, so NULL reaches exactly the path it reached before, and
+  # these verbs still disagree about what it means there -- deliberately, with
+  # the reconciliation left to M42.
+
+  # Compiles, dropping the codec flag entirely.
+  expect_no_match(
+    as.character(extract_audio_batch(
+      tibble::tibble(input = input, output = "a.aac"),
+      audio_codec = NULL, run = FALSE)$command[[1]]),
+    "-codec:a", fixed = TRUE
+  )
+  # ... while the scalar sibling refuses NULL outright.
+  expect_error(
+    extract_audio(input, "a.aac", audio_codec = NULL, run = FALSE),
+    "audio_codec"
+  )
+  # convert_audio's NULL selects -q:a 0 rather than emitting nothing (D021).
+  expect_match(
+    as.character(convert_audio(input, "a.mp3", audio_codec = NULL, run = FALSE)),
+    "-q:a 0", fixed = TRUE
+  )
+  # standardize_video's NULL drops -codec:v and keeps everything else.
+  expect_no_match(
+    as.character(standardize_video(input, "out.mp4", video_codec = NULL,
+                                   run = FALSE)),
+    "-codec:v", fixed = TRUE
+  )
+  # normalize_audio's NULL is D019's emit-nothing sentinel.
+  expect_no_match(
+    as.character(normalize_audio(input, "out.mp4", audio_codec = NULL,
+                                 run = FALSE)),
+    "-codec:a", fixed = TRUE
+  )
+})

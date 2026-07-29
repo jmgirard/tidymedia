@@ -108,7 +108,7 @@ value does.
 - [x] T6: Make `normalize_audio` ([ffmpeg.R:1329](../../R/ffmpeg.R#L1329)) and
       `convert_audio` ([ffmpeg.R:485](../../R/ffmpeg.R#L485)) blame the verb
       rather than their `*_pipeline()` helper — thread `call` or hoist the check.
-- [ ] T7: Parameterized test over T3's list: message and `call` for `NA`, a
+- [x] T7: Parameterized test over T3's list: message and `call` for `NA`, a
       number, and a length-2 vector on every pair, plus AC3's `In index:`
       absence at `parallel = FALSE`. Prove it discriminates by reverting one
       guard and confirming it goes red (M39 lesson).
@@ -124,6 +124,9 @@ value does.
 
 ## Work log
 
+- 2026-07-29: T7 added `tests/testthat/test-codec-arg-front-door.R`: the 34-pair list held as data, each pair asserted for abort + own-argument name + no Layer-1 `video`/`audio` name + `conditionCall()` being the verb + no `In index:` at `parallel = FALSE`; plus a completeness test that fails if a verb gains a codec argument without joining the sweep (`verify_media`'s two excluded on the record), plus a NULL-meaning test pinning the four per-verb NULL contracts M41 leaves alone. Suite 0 FAIL / 0 WARN / 2162 PASS.
+- 2026-07-29: T7 mutation-verified rather than eyeballed (M39 lesson): blanking each of the 7 guards M41 added (ffmpeg.R lines 495, 802, 1171, 1368, 2587, 2973, 3347) turns the new test file RED every time, so none is false coverage.
+- 2026-07-29: the same mutation sweep found 6 PRE-EXISTING scalar guards whose removal leaves the suite green -- `crop_video`, `compare_videos`, `picture_in_picture` `video_codec`/`audio_codec`. Not a defect and deliberately not touched: those verbs meet the front-door contract twice over, because `apply_video_codec()`/`apply_audio_codec()` already thread `call` and name the caller's argument. The test asserts the contract, not one mechanism for it, so it cannot distinguish which of two satisfies it -- and deleting both would still redden it. No candidate row filed.
 - 2026-07-29: T5 added `check_string(<arg>, allow_null = TRUE)` front doors to `anonymize_video_batch` `video_codec`, `standardize_video_batch` `video_codec`, `standardize_video` `video_codec`, and `extract_audio_batch` `audio_codec` (the last carrying AC5's comment on the scalar/batch NULL disagreement and its M42 pointer). `anonymize_video_batch` and `standardize_video_batch` had byte-identical guard blocks but differ on what NULL does, so each got its own comment rather than a shared one.
 - 2026-07-29: T6 hoisted duplicate front-door checks into `convert_audio` and `normalize_audio` per the implement-gate choice; both previously blamed their shared `*_pipeline()` helper, and both helpers keep their existing checks so the `_batch` siblings' per-row validation is untouched.
 - 2026-07-29: T5/T6 measured green against the pre-milestone ref — non-compliant pairs 7 -> 0, and the diff is exactly 21 rows (7 pairs x na/number/vec2) with **zero** `default` or `null` rows changed, so AC4's contract-neutrality holds by measurement rather than by argument. `devtools::test()` 0 FAIL / 0 WARN / 1646 PASS.

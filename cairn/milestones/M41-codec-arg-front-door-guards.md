@@ -98,14 +98,14 @@ value does.
       tree, then the fix: front-door
       `rlang::check_string(audio_codec, allow_null = TRUE)` in
       `normalize_audio_batch` ([ffmpeg.R:2891](../../R/ffmpeg.R#L2891)).
-- [ ] T5: Front-door guards for the remaining sites: `standardize_video_batch`
+- [x] T5: Front-door guards for the remaining sites: `standardize_video_batch`
       `video_codec` ([ffmpeg.R:2547](../../R/ffmpeg.R#L2547)),
       `anonymize_video_batch` `video_codec`
       ([ffmpeg.R:1145](../../R/ffmpeg.R#L1145)), `extract_audio_batch`
       `audio_codec` with `allow_null = TRUE` plus the AC5 comment
       ([ffmpeg.R:3290](../../R/ffmpeg.R#L3290)), and `standardize_video`
       `video_codec` ([ffmpeg.R:780](../../R/ffmpeg.R#L780)).
-- [ ] T6: Make `normalize_audio` ([ffmpeg.R:1329](../../R/ffmpeg.R#L1329)) and
+- [x] T6: Make `normalize_audio` ([ffmpeg.R:1329](../../R/ffmpeg.R#L1329)) and
       `convert_audio` ([ffmpeg.R:485](../../R/ffmpeg.R#L485)) blame the verb
       rather than their `*_pipeline()` helper — thread `call` or hoist the check.
 - [ ] T7: Parameterized test over T3's list: message and `call` for `NA`, a
@@ -124,6 +124,9 @@ value does.
 
 ## Work log
 
+- 2026-07-29: T5 added `check_string(<arg>, allow_null = TRUE)` front doors to `anonymize_video_batch` `video_codec`, `standardize_video_batch` `video_codec`, `standardize_video` `video_codec`, and `extract_audio_batch` `audio_codec` (the last carrying AC5's comment on the scalar/batch NULL disagreement and its M42 pointer). `anonymize_video_batch` and `standardize_video_batch` had byte-identical guard blocks but differ on what NULL does, so each got its own comment rather than a shared one.
+- 2026-07-29: T6 hoisted duplicate front-door checks into `convert_audio` and `normalize_audio` per the implement-gate choice; both previously blamed their shared `*_pipeline()` helper, and both helpers keep their existing checks so the `_batch` siblings' per-row validation is untouched.
+- 2026-07-29: T5/T6 measured green against the pre-milestone ref — non-compliant pairs 7 -> 0, and the diff is exactly 21 rows (7 pairs x na/number/vec2) with **zero** `default` or `null` rows changed, so AC4's contract-neutrality holds by measurement rather than by argument. `devtools::test()` 0 FAIL / 0 WARN / 1646 PASS.
 - 2026-07-29: T2 script bug found and fixed before it could mislead T8: `base[[arg]] <- NULL` *deletes* a list element in R, so the `null` scenario was re-running `default` and every null row matched its default row for that reason alone. `base[arg] <- list(NULL)` stores the NULL. Also scrubbed `tempdir()` (per-session random suffix) out of compiled commands so two runs are comparable.
 - 2026-07-29: with the null scenario actually exercised, AC4's and AC5's stated NULL outcomes are confirmed by measurement: `anonymize_video_batch` `video_codec` and `extract_audio` `audio_codec` abort on NULL; `extract_audio_batch` compiles `-vn` with no `-codec:a`; `standardize_video`/`_batch` drop `-codec:v libx264`; `convert_audio` gives `-q:a 0` (D021); `normalize_audio`/`_batch` emit no `-codec:a` (D019). The plan was right and the first probe was wrong.
 - 2026-07-29: `anonymize_video_batch(video_codec = NULL)` aborts *inside* `purrr::pmap()` carrying `In index: 1`, and AC4 requires that be preserved -- so T7 asserts In-index absence only for AC2's non-string scenarios, never for NULL.

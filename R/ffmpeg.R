@@ -486,6 +486,13 @@ convert_audio <- function(infile, outfile, audio_codec = NULL, run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
+  # Duplicates the check inside convert_audio_pipeline() on purpose. That helper
+  # is shared with convert_audio_batch(), which relies on it for per-row
+  # validation, so threading a `call` through it would also rewrite the batch
+  # verb's per-row messages; checking here instead blames this verb and leaves
+  # the batch path untouched (M41). allow_null because NULL is not the
+  # emit-nothing sentinel here -- it selects `-q:a 0` (D021).
+  rlang::check_string(audio_codec, allow_null = TRUE)
 
   # No `...` here, so a stale `format =` gets R's own `unused argument` error --
   # no guard needed (M37 lesson; the batch sibling, which has `...`, does need
@@ -787,6 +794,12 @@ standardize_video <- function(infile, outfile,
   check_file_exists(infile)
   rlang::check_string(outfile)
   hardware <- rlang::arg_match(hardware)
+  # Without this, a non-string video_codec reached ffm_codec() and aborted naming
+  # Layer-1's `video` instead of the argument the caller actually passed (M41).
+  # allow_null keeps NULL compiling as it does today: no -codec:v emitted.
+  # audio_codec is already checked inside standardize_pipeline(), which blames
+  # this verb because the pipeline is called from here.
+  rlang::check_string(video_codec, allow_null = TRUE)
 
   ffm_finish(
     standardize_pipeline(infile, outfile, width, height, fps, video_codec,
@@ -1150,6 +1163,12 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   hardware <- rlang::arg_match(hardware)
   # NULL is legal (the "emit no -codec:a" escape hatch), so allow_null (M39).
   rlang::check_string(audio_codec, allow_null = TRUE)
+  # video_codec had no front-door check, so a non-string reached the per-row
+  # pipeline and aborted inside purrr::pmap(), carrying `In index: <n>` and
+  # blaming pmap rather than this verb (M41). allow_null deliberately waves NULL
+  # through to the per-row path it already takes -- here that path aborts, and
+  # whether it should is M42's question, not this milestone's.
+  rlang::check_string(video_codec, allow_null = TRUE)
 
   if (!is.data.frame(jobs)) {
     cli::cli_abort("{.arg jobs} must be a data frame with one row per input.")
@@ -1339,6 +1358,14 @@ normalize_audio <- function(infile, outfile,
   check_file_exists(infile)
   rlang::check_string(outfile)
   rlang::check_bool(two_pass)
+  # Duplicates the check apply_audio_codec() makes inside
+  # normalize_audio_pipeline(). That pipeline is shared with
+  # normalize_audio_batch() for per-row validation, so threading a `call` through
+  # it would also rewrite the batch verb's per-row messages; checking here
+  # instead blames this verb on the default two_pass = FALSE path, which
+  # previously blamed normalize_audio_pipeline() (M41). allow_null because NULL
+  # is this verb's documented sentinel (D019).
+  rlang::check_string(audio_codec, allow_null = TRUE)
 
   # Two-pass: measure the input first, then build a linear correction from the
   # measurements. Validate the shaping knobs up front so a bad channels/
@@ -2553,6 +2580,11 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
   hardware <- rlang::arg_match(hardware)
   # NULL is legal (the "emit no -codec:a" escape hatch), so allow_null (M39).
   rlang::check_string(audio_codec, allow_null = TRUE)
+  # video_codec had no front-door check, so a non-string reached ffm_codec() per
+  # row and aborted inside purrr::pmap() naming Layer-1's `video` -- the caller's
+  # own argument name never appeared (M41). allow_null keeps NULL compiling
+  # exactly as it does today: no -codec:v, the container's default encoder.
+  rlang::check_string(video_codec, allow_null = TRUE)
 
   if (!is.data.frame(jobs)) {
     cli::cli_abort("{.arg jobs} must be a data frame with one row per input.")
@@ -3300,6 +3332,19 @@ extract_audio_batch <- function(jobs, audio_codec = "copy", run = TRUE,
   jobs <- check_batch_jobs(jobs, require_output = TRUE, verb = "Audio extraction")
   jobs <- reject_duplicate_outputs(jobs)
   check_batch_string_col(jobs, "audio_codec")
+  # Without this, a non-string audio_codec reached ffm_codec() per row and
+  # aborted inside purrr::pmap() naming Layer-1's `audio` -- the only pair in the
+  # package that leaked the engine's name, fired mid-fan-out, AND blamed pmap all
+  # at once (M41).
+  #
+  # allow_null = TRUE here while extract_audio() next door uses a bare
+  # check_string() that REJECTS NULL, so the scalar verb and its batch sibling
+  # disagree about what `audio_codec = NULL` means: the batch form compiles `-vn`
+  # with no -codec:a, the scalar form aborts. That split predates this milestone
+  # and is preserved here on purpose -- M41 changes only which values are
+  # refused, never what an accepted value does. Reconciling the two is M42's
+  # job (and D021 records the asymmetry).
+  rlang::check_string(audio_codec, allow_null = TRUE)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one map/drop-video pipeline per
   # row, sharing extract_audio_pipeline() with extract_audio(). A per-row

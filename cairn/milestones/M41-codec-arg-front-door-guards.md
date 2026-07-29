@@ -17,10 +17,10 @@ door, naming its own argument and its own verb.
 **In:** the one silent-default bug — `normalize_audio_batch(audio_codec = NA)`
 compiles the default command instead of erroring, because `batch_codec_cell()`
 ([ffmpeg.R:3153](../../R/ffmpeg.R#L3153)) maps a *scalar* `NA` to the `NULL`
-sentinel and no front-door guard stops it. Plus the seven remaining verb/argument
+sentinel and no front-door guard stops it. Plus the six remaining verb/argument
 pairs whose abort either leaks Layer-1's `video`/`audio` parameter name, blames a
 `*_pipeline()` helper, or fires inside `purrr::pmap()` rather than at the front
-door. Plus a committed script that regenerates the pre-milestone compiled
+door — seven non-compliant pairs in all, measured by T2's script (T3). Plus a committed script that regenerates the pre-milestone compiled
 commands from a git ref, so "this guard rejects nothing that worked before" is
 re-verifiable at review rather than a transcript.
 
@@ -81,17 +81,17 @@ value does.
 
 ## Tasks
 
-- [ ] T1: Install `spelling` into the active R 4.6 library — a declared
+- [x] T1: Install `spelling` into the active R 4.6 library — a declared
       `Suggests`, absent after the 4.6 upgrade, and the package M17's lesson
       needs (`spelling::update_wordlist()`; `devtools::check()` masks the
       `spelling.Rout` NOTE). Environment repair, not a dependency change (no
       D-entry).
-- [ ] T2: Commit the baseline regeneration script under `data-raw/`: reconstruct
+- [x] T2: Commit the baseline regeneration script under `data-raw/`: reconstruct
       `R/*.R` from a named git ref via `git show` into a temp dir, source them,
       and print the compiled command *or* the abort message for every AC2
       verb/argument pair at its default and `NULL` call. Capture the
       pre-milestone baseline from the default branch.
-- [ ] T3: Enumerate the AC2 verb/argument set from source into this file's work
+- [x] T3: Enumerate the AC2 verb/argument set from source into this file's work
       log — the eight non-compliant pairs and the compliant ones — so T7's test
       runs over a fixed list, not a re-derivation.
 - [ ] T4: Regression test first, shown red against T2's reconstructed pre-fix
@@ -112,6 +112,11 @@ value does.
       number, and a length-2 vector on every pair, plus AC3's `In index:`
       absence at `parallel = FALSE`. Prove it discriminates by reverting one
       guard and confirming it goes red (M39 lesson).
+- [x] T9 (discovered): Two `test-video-codec.R` execution tests call `get_width()`
+      — which shells out to *mediainfo* — while guarding only on
+      `skip_if_no_ffprobe()`, so they fail rather than skip wherever the
+      mediainfo CLI is absent, against the convention CLAUDE.md states and the
+      existing `skip_if_no_mediainfo()` helper serves. Blocks AC6, so fixed here.
 - [ ] T8: Re-run T2's script against the pre-milestone ref and the branch;
       confirm every `NULL`/default outcome matches. Update `@param` prose where a
       guard changes the documented error, `devtools::document()`, NEWS entry,
@@ -119,6 +124,23 @@ value does.
 
 ## Work log
 
+- 2026-07-29: T1 done as a verification, not an install — `spelling` is already present at 2.3.2 in the R 4.6.1 library and `inst/WORDLIST` carries 102 entries.
+- 2026-07-29: minor amendment — T2 ran before T3, reversing the plan's order, because T3's enumeration is an *output* of T2's script rather than an input to it; no task content changed.
+- 2026-07-29: implement gate chose hoisting a duplicate front-door `check_string()` into `convert_audio`/`normalize_audio` over threading `call` into their shared `*_pipeline()` helpers, because the helpers are shared with the `_batch` siblings and threading would also change the batch verbs' per-row messages that AC4 asks be proven unchanged; falsified by a third caller of either helper needing the verb-accurate blame that only threading gives.
+- 2026-07-29: every new guard takes `allow_null = TRUE` — the only setting that cannot add a `NULL` rejection and so cannot violate AC4; `extract_audio`'s existing NULL-rejecting `check_string()` is deliberately left alone (AC5).
+- 2026-07-29: T2 committed `data-raw/codec-guard-baseline.R` (+ `^data-raw$` in `.Rbuildignore`); it reconstructs `R/*.R` and `NAMESPACE` from a git ref, sources them under a rebuilt imports env, and probes 34 verb/argument pairs × 5 scenarios (default/null/na/number/vec2) at `run = FALSE`, recording compiled command or abort message, `conditionCall()`, and `In index:` presence.
+- 2026-07-29: T2 self-test — `origin/master` reconstructed against the working tree gives a 170-row baseline and a **zero-row** diff, so the ref path is sound; building the imports env from NAMESPACE was required, since bare `glue()`/`tibble()` otherwise abort as "could not find function" and masquerade as codec aborts.
+- 2026-07-29: T3 measured the AC2 set at 34 pairs (36 minus `verify_media`'s 2), of which **7** are non-compliant — the plan's Scope said six-plus-one as "seven remaining", corrected in place to six remaining / seven total.
+- 2026-07-29: T3 non-compliant 1/7 — `normalize_audio_batch` `audio_codec`: `NA` **silently compiles** `-af "loudnorm=I=-23:TP=-1:LRA=7" -codec:v copy` with no `-codec:a`, identical to `NULL` (AC1 confirmed).
+- 2026-07-29: T3 non-compliant 2/7 — `standardize_video` `video_codec`: blames `ffm_codec(p, video = video_codec)` and leaks Layer-1's name `video`.
+- 2026-07-29: T3 non-compliant 3/7 — `standardize_video_batch` `video_codec`: `In index: 1`, blames `purrr::pmap()`, leaks `video`.
+- 2026-07-29: T3 non-compliant 4/7 — `extract_audio_batch` `audio_codec`: `In index: 1`, blames `purrr::pmap()`, leaks `audio` — the only pair failing all three AC2/AC3 counts.
+- 2026-07-29: T3 non-compliant 5/7 — `anonymize_video_batch` `video_codec`: `In index: 1`, blames `purrr::pmap()`; names `video_codec` correctly but fires mid-fan-out.
+- 2026-07-29: T3 non-compliant 6/7 — `convert_audio` `audio_codec`: blames `convert_audio_pipeline()`; `NULL` short-circuits to `-q:a 0` before the check, so the hoisted guard must allow NULL (D021).
+- 2026-07-29: T3 non-compliant 7/7 — `normalize_audio` `audio_codec`: blames `normalize_audio_pipeline()` on the default `two_pass = FALSE` path.
+- 2026-07-29: T3 compliant (27 pairs, T7 asserts these stay put) — `anonymize_video` both, `anonymize_video_batch` `audio_codec`, `compare_videos`/`_batch` both, `convert_audio_batch`, `crop_video`/`_batch` both, `extract_audio`, `picture_in_picture`/`_batch` both, `segment_video`/`_batch` both, `separate_audio_video`/`_batch` both, `standardize_video`/`_batch` `audio_codec`.
+- 2026-07-29: minor amendment — added discovered task T9: `devtools::test()` was 2 FAIL / 2 WARN on a clean checkout of `master` before any M41 code change, both from `test-video-codec.R` execution tests calling `get_width()` (mediainfo) under only an ffprobe skip guard. Adding `skip_if_no_mediainfo()` to both leaves the suite 0 FAIL / 0 WARN / 15 SKIP / 1644 PASS. Pre-existing defect, not introduced here.
+- 2026-07-29: this machine has the MediaInfo *GUI* (26.05) but not the CLI (`MediaArea.MediaInfo`), so `Sys.which("mediainfo")` is empty and the two T9 tests now skip locally; they still run wherever the CLI is installed, which is the behaviour the helper exists for.
 - 2026-07-29: created by /milestone-plan.
 - 2026-07-29: plan gate chose a front-door duplicate check over threading `arg`/`call` through `ffm_codec()` because the passthrough still runs inside `purrr::pmap()` and so cannot satisfy AC3; falsified by an engine-side seam that reports the caller's argument *before* the fan-out.
 - 2026-07-29: plan gate chose a committed ref-based regeneration script over a testthat snapshot fixture and over an implementation-time transcript because it re-derives the baseline as fresh evidence at review without adding a churn-prone second snapshot file; falsified by the script failing to reconstruct a sourceable pre-milestone tree from a ref.

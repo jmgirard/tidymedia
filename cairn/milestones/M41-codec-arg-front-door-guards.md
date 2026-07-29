@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** `m41-codec-arg-front-door-guards`
+- **Branch/PR:** `m41-codec-arg-front-door-guards` / [#43](https://github.com/jmgirard/tidymedia/pull/43)
 
 ## Goal
 
@@ -33,7 +33,7 @@ value does.
 
 ## Acceptance criteria
 
-- [ ] AC1: `normalize_audio_batch(jobs, audio_codec = NA)` at the default
+- [x] AC1: `normalize_audio_batch(jobs, audio_codec = NA)` at the default
       `two_pass = FALSE` aborts with a message naming `audio_codec`. Before the
       fix that call compiles the default command (`-af "loudnorm=..." -codec:v
       copy`, no `-codec:a`), identical to `audio_codec = NULL`; the regression
@@ -41,7 +41,7 @@ value does.
       reconstructs. (`two_pass = TRUE` already aborts via
       [ffmpeg.R:2969](../../R/ffmpeg.R#L2969) — the silent compile is
       default-path-only.)
-- [ ] AC2: For every task verb and `_batch` sibling whose `video_codec` or
+- [x] AC2: For every task verb and `_batch` sibling whose `video_codec` or
       `audio_codec` argument *sets* a codec — `verify_media()` excluded, its
       same-named arguments being expected probe values, not settings — passing a
       non-string scalar (`NA`, a number, a length-2 character vector) aborts with
@@ -52,18 +52,18 @@ value does.
       ([ffmpeg.R:438](../../R/ffmpeg.R#L438),
       [ffmpeg.R:3392](../../R/ffmpeg.R#L3392)); only the scalar-argument abort's
       `call` is constrained.
-- [ ] AC3: At `parallel = FALSE`, each abort AC2 inspects carries no
+- [x] AC3: At `parallel = FALSE`, each abort AC2 inspects carries no
       `In index: <n>` in its message, on the same condition AC2 inspects —
       showing the scalar check ran before the fan-out, not inside
       `purrr::pmap()`.
-- [ ] AC4: The guards add no new rejection and no new acceptance of `NULL`: for
+- [x] AC4: The guards add no new rejection and no new acceptance of `NULL`: for
       every argument in AC2, a `NULL` call and a default call produce the same
       outcome after the milestone as before it — the same compiled command where
       one compiles today, or the same abort where `NULL` aborts today
       (`anonymize_video`/`_batch` `video_codec`, `extract_audio` `audio_codec`).
       Compared against the baseline the T2 script regenerates from the
       pre-milestone ref.
-- [ ] AC5: `extract_audio_batch`'s new `audio_codec` guard passes
+- [x] AC5: `extract_audio_batch`'s new `audio_codec` guard passes
       `allow_null = TRUE`, so `extract_audio_batch(audio_codec = NULL)` still
       compiles (`-vn`, no `-codec:a`) while `extract_audio(audio_codec = NULL)`
       still aborts; a code comment names that disagreement and points at M42.
@@ -194,3 +194,64 @@ value does, so nothing cross-cutting was decided. The `NULL`/`NA` semantics this
 deliberately leaves alone are M42's, per D021's closing note.
 
 ## Review
+
+Reviewed 2026-07-29 on branch `m41-codec-arg-front-door-guards`, PR
+[#43](https://github.com/jmgirard/tidymedia/pull/43). `origin/master` had not
+moved since the branch was cut (`git merge-base --is-ancestor` confirms), so no
+merge was needed and all evidence below is fresh against the merge base.
+
+All AC1–AC5 evidence comes from re-running `data-raw/codec-guard-baseline.R`
+against `origin/master` and the branch in one session: 34 verb/argument pairs ×
+5 scenarios = 170 observations per side.
+
+### Acceptance criteria
+
+- **AC1 — measured.** On the branch, `normalize_audio_batch(jobs, audio_codec = NA)`
+  at default `two_pass = FALSE` aborts with ``​`audio_codec` must be a single
+  string or `NULL`, not `NA`.`` — names `audio_codec`, carries no `In index:`.
+  Against the pre-fix tree the script reconstructs from `origin/master`, the same
+  call **compiled** `-y -i "<in>" -af "loudnorm=I=-23:TP=-1:LRA=7" -codec:v copy
+  "<out>"`, byte-identical to the `audio_codec = NULL` call (`identical()` TRUE)
+  and carrying no `-codec:a`. The regression test was also shown red on the
+  pre-fix tree during implementation, failing as `Expected ... to throw a error`.
+- **AC2 — measured, 0 violations.** Over all 34 pairs × the three non-string
+  shapes (`NA`, `1`, `c("aac","mp3")`) = 102 observations: every one aborts, every
+  message names that verb's own `video_codec`/`audio_codec`, none matches
+  ``​`video` must be`` or ``​`audio` must be`` (the Layer-1 leak), and every
+  `conditionCall()` deparses to the Layer-2 verb. `verify_media()` excluded per
+  the criterion.
+- **AC3 — measured, 0 violations.** No abort in those same 102 observations
+  carries `In index:` at explicit `parallel = FALSE`, on the same conditions AC2
+  inspects.
+- **AC4 — measured, 0 changed rows.** Comparing the two baselines, **zero**
+  `default` or `null` rows differ. Exactly 21 rows changed in total, all on the
+  three non-string scenarios (7 each), across exactly the 7 repaired pairs. The
+  two pairs the criterion names as NULL-aborting today —
+  `anonymize_video_batch` `video_codec` and `extract_audio` `audio_codec` — abort
+  before and after with byte-identical messages.
+- **AC5 — measured.** `extract_audio_batch(audio_codec = NULL)` compiles
+  `-y -i "<in>" -vn "<out>"`: `-vn` present, no `-codec:a`. `extract_audio(audio_codec = NULL)`
+  still aborts. The guard at [ffmpeg.R:3347](../../R/ffmpeg.R#L3347) passes
+  `allow_null = TRUE` and its comment states the scalar/batch disagreement
+  explicitly and routes it to M42 and D021.
+- **AC6 — pending final re-run at review; see below.**
+
+### Consistency gate
+
+`cairn_validate` exit 0 — all 16 CHECKs PASS (including `coverage complete`,
+`weight caps`, `mirror agreement`) and all 8 advisories OK. No `DESIGN.md`
+principle changed, so `cairn_impact` was skipped as a clean no-op.
+
+Toolchain gate (r-package profile): `devtools::document()` no diff ·
+`pkgdown::check_pkgdown()` "No problems found" · `NAMESPACE`, `man/`, `data/`,
+`_pkgdown.yml` untouched (0 files, so no generated-file drift and no new export
+owing a reference-index row) · `README.Rmd`/`README.md` untouched · `NEWS.md`
+carries the entry · new top-level `data-raw/` has its `^data-raw$`
+`.Rbuildignore` entry.
+
+Returns to `in-progress` for this milestone: **0**. No thrash trigger.
+
+### Diffstat
+
+9 files, +753/−13. `R/ffmpeg.R` +52/−0 — pure additions, which is
+contract-neutrality visible in the diff shape.

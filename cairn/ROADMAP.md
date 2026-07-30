@@ -2,7 +2,7 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-07-29 (M41 merged and archived after three review rounds; AC4 needed a gated amendment to an enumerated changed-set before it could pass. Two lessons captured on guard placement and before/after-grid blind spots, room made by reflowing two legacy hard-wrapped entries. Terminal rows pruned 6 -> 5, dropping M36.)_
+_Last hygiene check: 2026-07-29 (full audit after the M41 merge: every check and advisory green, tree clean, git reconciled, both GitHub inboxes empty. Nothing in flight; M42 is the only workable planned milestone. No fixes needed.)_
 
 ## Milestones
 

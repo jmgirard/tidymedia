@@ -106,7 +106,7 @@ rule and answering the question D025's fifth bullet left open. NEWS.
       names `regions` explicitly (`:1774`), so the new column arrives via `dots`.
 - [x] T7 Roxygen on all four, the `@param jobs` column enumerations (M39), and
       the D025 cross-references; `devtools::document()`.
-- [ ] T8 Execution tests on the multi-track fixture; the D-entry; NEWS.
+- [x] T8 Execution tests on the multi-track fixture; the D-entry; NEWS.
 
 ## Work log
 
@@ -132,6 +132,11 @@ rule and answering the question D025's fifth bullet left open. NEWS.
 - 2026-07-30: T7 — both new batch verbs' `@param jobs` enumerations gained the `audio_stream` column; each closes "Any other columns are ignored", which a reader believes (M39).
 - 2026-07-30: T7 — `devtools::document()` is idempotent (second run touches nothing) and `run_examples()` is clean.
 
+- 2026-07-30: T8 — the `test-ffm.R:438` invariant was pinned as `all(maps) <= 1L`, which M47 falsifies; rewritten as an exact per-verb count table rather than a looser bound, so a wrong count fails in either direction. Writing it revealed `segment_video(reencode = TRUE)` emits ZERO maps, which the old bound had hidden and which M48 must handle.
+- 2026-07-30: T8 — D026 appended, answering D025's fifth bullet with M45's every-track reading and recording the `?` asymmetry, the rejected `-map 0`, and the subtitle-carriage change. NEWS carries the breaking change (bigger outputs on multi-track inputs; subtitles no longer carried into `.mkv`) and the new argument.
+
 ## Decisions
+
+- 2026-07-30 (M47-D1): `standardize_video()`/`anonymize_video()` adopt no diagnostic probe. M44's dropped-audio-track warning covers the extraction verbs because their default silently narrows; after D026 these two carry every track by default, so there is nothing implicit to warn about, and on the named path the caller chose the track — the same gate `extract_audio()` uses (`R/ffmpeg.R:476`). Nothing here touches D024's licence, and no FFprobe call was added to either verb.
 
 ## Review

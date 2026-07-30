@@ -435,29 +435,51 @@ test_that("ffm_map() rejects a non-character, empty, or NA mapping", {
   expect_error(ffm_map(p, "0:v", replace = NA), "`replace`")
 })
 
-test_that("no in-package pipeline emits more than one -map", {
-  # Appending is only safe because no internal pipeline maps twice; a pipeline
-  # that gains a second map without meaning to now duplicates the output stream
-  # rather than overwriting, so pin the invariant across every call site.
+test_that("every in-package pipeline emits the maps its verb's contract says", {
+  # ffm_map() appends, so a pipeline that gains a map without meaning to
+  # duplicates the output stream rather than overwriting it. This pinned the
+  # invariant as "<= 1" until M47, when the pass-through verbs began stating
+  # both halves of their selection and started emitting exactly two. A bound no
+  # longer says anything useful, so pin the exact count per verb: a wrong count
+  # is the failure mode, in either direction.
   f <- make_input()
   maps <- function(cmd) {
     vapply(cmd, function(x) {
       sum(gregexpr("-map ", x, fixed = TRUE)[[1]] > 0)
     }, integer(1), USE.NAMES = FALSE)
   }
+  regions <- data.frame(x = 0, y = 0, width = 10, height = 10)
+  expected <- c(
+    # One map: these name a single audio stream, or copy every stream with the
+    # all-streams specifier.
+    "extract_audio" = 1L,
+    "convert_audio" = 1L,
+    "crop_video" = 1L,
+    "strip_metadata" = 1L,
+    # Both segment_video() branches: the re-encode path and the ffm_copy() path,
+    # which is the one that sets a map of its own.
+    "segment_video(reencode = TRUE)" = 0L,
+    "segment_video(reencode = FALSE)" = 1L,
+    # A fan-out: one map on each of the two commands.
+    "separate_audio_video(audio)" = 1L,
+    "separate_audio_video(video)" = 1L,
+    # Two maps: the pass-through verbs state video AND audio (M47).
+    "standardize_video" = 2L,
+    "anonymize_video" = 2L
+  )
   cmds <- c(
     extract_audio(f, "out.aac", run = FALSE),
     convert_audio(f, "out.mp3", run = FALSE),
     crop_video(f, "out.mp4", 32, 32, run = FALSE),
     strip_metadata(f, "out.mp4", run = FALSE),
-    # Both segment_video() branches: the re-encode path and the ffm_copy() path,
-    # which is the one that sets a map of its own.
     segment_video(f, 0, 1, outfiles = "seg.mp4", run = FALSE)$command,
     segment_video(f, 0, 1, outfiles = "seg.mp4", reencode = FALSE,
                   run = FALSE)$command,
-    unlist(separate_audio_video(f, "out.m4a", "out.mp4", run = FALSE))
+    unlist(separate_audio_video(f, "out.m4a", "out.mp4", run = FALSE)),
+    standardize_video(f, "out.mp4", run = FALSE),
+    anonymize_video(f, "out.mp4", regions, run = FALSE)
   )
-  expect_true(all(maps(cmds) <= 1L))
+  expect_identical(setNames(maps(cmds), names(expected)), expected)
 })
 
 # ffm_pixel_format() -----------------------------------------------------------

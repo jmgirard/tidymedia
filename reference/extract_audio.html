@@ -85,7 +85,10 @@ you asked for.</p></dd>
 <dd><p>The 0-based index of the audio track to take, counted
 <em>among the input's audio streams</em> — <code>0</code> is the first audio track,
 <code>1</code> the second, whatever their positions among the file's streams.
-<code>NULL</code> (default) takes the first audio track. Naming a track the input
+<code>NULL</code> (default) takes the first audio track – unlike
+<code><a href="separate_audio_video.html">separate_audio_video</a></code>, <code><a href="standardize_video.html">standardize_video</a></code> and
+<code><a href="anonymize_video.html">anonymize_video</a></code>, whose <code>NULL</code> keeps every track.
+Naming a track the input
 does not have is an FFmpeg error, not an R one.</p></dd>
 
 

@@ -146,7 +146,9 @@ verb has always done: a container that holds several (<code>.mka</code>,
 (<code>.aac</code>, <code>.mp3</code>, <code>.wav</code>) makes FFmpeg fail — name a track to
 write one of those. This differs from <code><a href="extract_audio.html">extract_audio</a></code> and
 <code><a href="convert_audio.html">convert_audio</a></code>, whose <code>NULL</code> takes the first track only.
-<code>videofile</code> is never affected.</p></dd>
+The pass-through verbs <code><a href="standardize_video.html">standardize_video</a></code> and
+<code><a href="anonymize_video.html">anonymize_video</a></code> read <code>NULL</code> the same way this one
+does. <code>videofile</code> is never affected.</p></dd>
 
 
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>

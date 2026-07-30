@@ -78,9 +78,17 @@ separate_audio_video_batch(
   unless `jobs` carries an `audio_stream` column. `NULL` (default) keeps
   **every** audio track, as
   [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
-  does; an `NA` cell in the column says the same for that row. Only
-  `audiofile` is affected — a `videofile` always takes the input's video
-  streams.
+  does, and as the pass-through verbs
+  [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+  and
+  [`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
+  do;
+  [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
+  and
+  [`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
+  read it the other way, as the first track only. An `NA` cell in the
+  column says the same for that row. Only `audiofile` is affected — a
+  `videofile` always takes the input's video streams.
 
 - run:
 

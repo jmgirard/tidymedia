@@ -49,7 +49,7 @@ standardize_video(
   width = 1280, height = 720, fps = 30,
   run = FALSE
 )
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"scale=w=1280:h=720,fps=30\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -movflags +faststart \"session01_camA_std.mp4\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"scale=w=1280:h=720,fps=30\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -movflags +faststart -map 0:v? -map 0:a? \"session01_camA_std.mp4\""
 ```
 
 Because this runs the same way for every file, reach for the batch
@@ -174,7 +174,7 @@ regions <- tibble::tibble(
 )
 anonymize_video(session, "session01_camA_deid.mp4", regions = regions,
                 run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2,drawbox=x=16:y=640:w=360:h=64:c=black:t=fill\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p \"session01_camA_deid.mp4\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2,drawbox=x=16:y=640:w=360:h=64:c=black:t=fill\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -map 0:v? -map 0:a? \"session01_camA_deid.mp4\""
 ```
 
 ## 5. Assemble and share

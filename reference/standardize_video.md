@@ -22,6 +22,7 @@ standardize_video(
   pixel_format = "yuv420p",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
+  audio_stream = NULL,
   run = TRUE
 )
 ```
@@ -89,6 +90,21 @@ standardize_video(
   re-encode with the software `video_codec` and a message (`TRUE`)
   instead of aborting (`FALSE`, default). Keeps output reproducible by
   never changing the codec silently.
+
+- audio_stream:
+
+  The 0-based index of the audio track to carry into the output, counted
+  *among the input's audio streams* – `0` is the first audio track, `1`
+  the second, whatever their positions among the file's streams. `NULL`
+  (default) carries **every** audio track, which is also what
+  [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+  does, and differs from
+  [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
+  and
+  [`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
+  whose `NULL` takes the first track only. Naming a track the input does
+  not have is an FFmpeg error, not an R one. Subtitle and data streams
+  are not carried either way. (default = `NULL`)
 
 - run:
 
@@ -166,9 +182,12 @@ Other task verb functions:
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 # The documented default standard (H.264 / yuv420p / +faststart)
 standardize_video(video, "std.mp4", run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -movflags +faststart \"std.mp4\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -movflags +faststart -map 0:v? -map 0:a? \"std.mp4\""
 # Pin resolution and frame rate too
 standardize_video(video, "std.mp4", width = 1280, height = 720, fps = 30,
                   run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"scale=w=1280:h=720,fps=30\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -movflags +faststart \"std.mp4\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"scale=w=1280:h=720,fps=30\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -movflags +faststart -map 0:v? -map 0:a? \"std.mp4\""
+# Carry only the second audio track instead of all of them
+standardize_video(video, "std.mp4", audio_stream = 1, run = FALSE)
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -movflags +faststart -map 0:v? -map 0:a:1 \"std.mp4\""
 ```

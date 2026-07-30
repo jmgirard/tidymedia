@@ -22,6 +22,7 @@ anonymize_video_batch(
   pixel_format = "yuv420p",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
+  audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -49,8 +50,9 @@ anonymize_video_batch(
   argument's value. In either codec column, `NA` leaves that row's codec
   unset (the column form of `video_codec = NULL` /
   `audio_codec = NULL`); in a `color` or `pixel_format` column it is an
-  error, because those have no unset state. Any other columns are
-  ignored.
+  error, because those have no unset state. An `audio_stream` column
+  overrides the `audio_stream` argument per row, where `NA` keeps that
+  row on every audio track. Any other columns are ignored.
 
 - color:
 
@@ -94,6 +96,17 @@ anonymize_video_batch(
   unavailable, re-encode with the software `video_codec` and a message
   (`TRUE`) instead of aborting (`FALSE`, default). Batch-wide, not a
   per-row column.
+
+- audio_stream:
+
+  The 0-based index of the audio track to carry, applied to every row
+  unless `jobs` carries an `audio_stream` column, in which case `NA` in
+  a cell keeps that row on **every** audio track. The index counts
+  *among each input's audio streams*. `NULL` (default) carries every
+  audio track. See
+  [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+  for how this differs from the extraction verbs' `NULL`. (default =
+  `NULL`)
 
 - run:
 

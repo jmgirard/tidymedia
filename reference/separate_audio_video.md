@@ -88,8 +88,11 @@ separate_audio_video(
   [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
   and
   [`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
-  whose `NULL` takes the first track only. `videofile` is never
-  affected.
+  whose `NULL` takes the first track only. The pass-through verbs
+  [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+  and
+  [`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
+  read `NULL` the same way this one does. `videofile` is never affected.
 
 - run:
 

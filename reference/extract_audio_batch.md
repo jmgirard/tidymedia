@@ -53,7 +53,9 @@ extract_audio_batch(
   unless `jobs` carries an `audio_stream` column, in which case `NA` in
   a cell keeps that row on the first audio track. The index counts
   *among each input's audio streams*. `NULL` (default) takes the first
-  audio track.
+  audio track. See
+  [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
+  for the verb families whose `NULL` keeps every track instead.
 
 - run:
 

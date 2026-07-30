@@ -132,7 +132,10 @@ separate calls.</p></dd>
 <dd><p>The 0-based index of the audio track to write to every
 <code>audiofile</code>, unless <code>jobs</code> carries an <code>audio_stream</code> column.
 <code>NULL</code> (default) keeps <strong>every</strong> audio track, as
-<code><a href="separate_audio_video.html">separate_audio_video</a></code> does; an <code>NA</code> cell in the column
+<code><a href="separate_audio_video.html">separate_audio_video</a></code> does, and as the pass-through verbs
+<code><a href="standardize_video.html">standardize_video</a></code> and <code><a href="anonymize_video.html">anonymize_video</a></code> do;
+<code><a href="extract_audio.html">extract_audio</a></code> and <code><a href="convert_audio.html">convert_audio</a></code> read it the
+other way, as the first track only. An <code>NA</code> cell in the column
 says the same for that row. Only <code>audiofile</code> is affected — a
 <code>videofile</code> always takes the input's video streams.</p></dd>
 

@@ -22,6 +22,7 @@ standardize_video_batch(
   pixel_format = "yuv420p",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
+  audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -47,7 +48,9 @@ standardize_video_batch(
   `audio_codec = NULL`); in a `width`, `height`, `fps` or `pixel_format`
   column it is an error. `pixel_format` has no unset state to express;
   `width`, `height` and `fps` do accept `NULL` as arguments, but their
-  columns have no `NA` spelling for it. Any other columns are ignored.
+  columns have no `NA` spelling for it. An `audio_stream` column
+  overrides the `audio_stream` argument per row, where `NA` keeps that
+  row on every audio track. Any other columns are ignored.
 
 - width, height:
 
@@ -99,6 +102,17 @@ standardize_video_batch(
   A logical: when `hardware = "nvenc"` but nvenc is unavailable,
   re-encode with the software `video_codec` and a message (`TRUE`)
   instead of aborting (`FALSE`, default).
+
+- audio_stream:
+
+  The 0-based index of the audio track to carry, applied to every row
+  unless `jobs` carries an `audio_stream` column, in which case `NA` in
+  a cell keeps that row on **every** audio track. The index counts
+  *among each input's audio streams*. `NULL` (default) carries every
+  audio track. See
+  [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+  for how this differs from the extraction verbs' `NULL`. (default =
+  `NULL`)
 
 - run:
 

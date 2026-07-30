@@ -19,6 +19,7 @@ anonymize_video(
   pixel_format = "yuv420p",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
+  audio_stream = NULL,
   run = TRUE
 )
 ```
@@ -80,6 +81,21 @@ anonymize_video(
   re-encode with the software `video_codec` and a message (`TRUE`)
   instead of aborting (`FALSE`, default). Keeps output reproducible by
   never changing the codec silently.
+
+- audio_stream:
+
+  The 0-based index of the audio track to carry into the output, counted
+  *among the input's audio streams* – `0` is the first audio track, `1`
+  the second, whatever their positions among the file's streams. `NULL`
+  (default) carries **every** audio track, which is also what
+  [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+  does, and differs from
+  [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
+  and
+  [`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
+  whose `NULL` takes the first track only. Naming a track the input does
+  not have is an FFmpeg error, not an R one. Subtitle and data streams
+  are not carried either way. (default = `NULL`)
 
 - run:
 
@@ -160,5 +176,8 @@ regions <- data.frame(
   width = c(120, 80), height = c(90, 60)
 )
 anonymize_video(video, "anon.mp4", regions, run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2,drawbox=x=10:y=10:w=120:h=90:c=black:t=fill,drawbox=x=200:y=150:w=80:h=60:c=black:t=fill\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p \"anon.mp4\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2,drawbox=x=10:y=10:w=120:h=90:c=black:t=fill,drawbox=x=200:y=150:w=80:h=60:c=black:t=fill\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -map 0:v? -map 0:a? \"anon.mp4\""
+# Carry only the second audio track instead of all of them
+anonymize_video(video, "anon.mp4", regions, audio_stream = 1, run = FALSE)
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2,drawbox=x=10:y=10:w=120:h=90:c=black:t=fill,drawbox=x=200:y=150:w=80:h=60:c=black:t=fill\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -map 0:v? -map 0:a:1 \"anon.mp4\""
 ```

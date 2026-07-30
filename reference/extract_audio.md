@@ -39,8 +39,13 @@ extract_audio(
   The 0-based index of the audio track to take, counted *among the
   input's audio streams* — `0` is the first audio track, `1` the second,
   whatever their positions among the file's streams. `NULL` (default)
-  takes the first audio track. Naming a track the input does not have is
-  an FFmpeg error, not an R one.
+  takes the first audio track – unlike
+  [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
+  [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+  and
+  [`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
+  whose `NULL` keeps every track. Naming a track the input does not have
+  is an FFmpeg error, not an R one.
 
 - run:
 

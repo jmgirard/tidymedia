@@ -118,9 +118,12 @@ probe_all <- function(infile, typed = TRUE) {
 #   - find_ffprobe() WARNS when the binary is missing, so the call is wrapped.
 #     suppressWarnings() rather than a bare Sys.which() keeps find_program()'s
 #     user-config fallback, so a machine where ffprobe was registered with
-#     set_ffprobe() is still found.
-#   - run_program() ABORTS on a NULL/empty location, so that is short-circuited
-#     before it rather than caught after.
+#     set_ffprobe() is still found. This one IS load-bearing: nothing else here
+#     catches a warning.
+#   - run_program() ABORTS on a NULL/empty location. The tryCatch() below is what
+#     makes that silent; the explicit short-circuit is belt-and-braces, kept to
+#     avoid building a call that can only abort. Measured at M44: deleting it
+#     leaves every test green, so do not read it as the guarantee.
 #   - a non-zero ffprobe exit arrives as a `status` attribute (system2 with
 #     stdout = TRUE), which is not an R condition and would otherwise read as a
 #     count of however many lines came back before the failure.

@@ -117,17 +117,17 @@ here: a multi-track input is legal, and the selector is how a caller resolves it
       question gate before any probe lands; update DESIGN.md's Conventions line
       if the qualification belongs there too.
       *(RB tripwire: ip-touching)*
-- [ ] T2: The scalar path — one stream-count helper in `R/ffprobe.R` beside
+- [x] T2: The scalar path — one stream-count helper in `R/ffprobe.R` beside
       `probe_one()`, reached through a quiet locator that trips neither
       `find_program()`'s warning nor `run_program()`'s abort, plus one shared
       warning-builder emitting a classed `cli_warn()` carrying the count,
       `audio_stream`, and the `probe_audio()` index offset. Skip silently when
       ffprobe is absent or the probe fails; roxygen says best-effort.
-- [ ] T3: The batch path — probe up front in the Layer-2 verb before
+- [x] T3: The batch path — probe up front in the Layer-2 verb before
       `ffm_batch()`, gated on `run`, skipping rows that name `audio_stream` by
       argument or column and probing each unique input once; one aggregated
       warning naming every affected row. `ffm_batch()` itself is not touched.
-- [ ] T4: Tests: the warning fires once on M43's three-track fixture and not at
+- [x] T4: Tests: the warning fires once on M43's three-track fixture and not at
       all when `audio_stream` is given; the `PATH`-masked compile test for AC2;
       the FFprobe-absent case via `local_mocked_bindings()` on the quiet locator,
       not PATH masking, which cannot make ffprobe absent while ffmpeg is present;
@@ -150,6 +150,11 @@ here: a multi-track input is legal, and the selector is how a caller resolves it
 - 2026-07-30: fresh-context [O] audit of BC1–BC6 before ingestion found BC4 false on arrival (its grep returns 9 test-side hits today) and BC1's clauses (i)/(ii) contradicted by `R/ffm.R:1299` and `R/ffmpeg.R:3217`; both ingested verbatim with three rows in the Deviations from RR02 table rather than softened.
 - 2026-07-30: RB02/RR02 archived; M44 back to in-progress with 12 acceptance criteria — past the >~7 split tripwire, flagged to the user at the gate and left as one milestone by their choice.
 - 2026-07-30: T1 done — D024 written as a clarification per AC7/AC8: the pure surface is compilation plus `run = FALSE` (D013's two-pass path the sole exception, batch sibling included), the licence is effect-based with four named out-of-licence probe shapes each needing its own entry, and scope is stated by four conditions with the audio verbs as first instances. DESIGN.md's Conventions line now names that boundary. `cairn_validate` green.
+
+- 2026-07-30: T2/T3 done — `count_audio_streams()` in `R/ffprobe.R` (one narrow ffprobe call, NA on every failure path), a shared `warn_dropped_audio()` builder carrying the count, `audio_stream` and the `probe_audio()` index offset under class `tidymedia_dropped_audio`, wired into both scalar verbs behind `isTRUE(run) && is.null(audio_stream)` and into both batch verbs up front before `ffm_batch()`, whose formals are untouched.
+- 2026-07-30: a mid-task `git checkout R/ffmpeg.R` during the first mutation probe reverted T2/T3's then-uncommitted work, making that probe's four identical "red" results meaningless — they only showed the feature was absent; reapplied, committed, and re-probed against a committed baseline.
+- 2026-07-30: T4 done — 15 tests, all passing. The M39 discrimination probe mutated four gates and each went red: unconditional count (4 tests), dropping the `audio_stream` gate (1), dropping the `run` gate (1), dropping the unique-input dedup (1). Two probe findings fixed in place — the first AC2 test was vacuous because `count_audio_streams()`'s `tryCatch` swallows a `stop()`ing mock, so it now counts invocations instead; and the absent-ffprobe short-circuit proved redundant against that `tryCatch`, so its comment now records that rather than claiming to be the guarantee.
+- 2026-07-30: full `devtools::test()` clean (exit 0, no failures); `devtools::document()` regenerated the four verbs' `.Rd` files; NEWS entry written.
 
 ## Decisions
 

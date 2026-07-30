@@ -64,17 +64,27 @@ test_that("run = FALSE invokes no binary on any of the four verbs", {
   # The strong form of AC2, and machine-independent: any shell-out at all fails
   # the test, rather than relying on a bare PATH mask that a user config file
   # could still resolve around (find_program() falls back to one).
+  #
+  # It RECORDS the invocation rather than raising from the mock. A mock that
+  # stop()s proves nothing here: count_audio_streams() wraps run_program() in a
+  # tryCatch() -- deliberately, so a broken probe stays silent -- which swallows
+  # the mock's error and lets a probe on the compile path pass unseen. Measured:
+  # with the stop() spelling, deleting the `run` gate left this test green.
   infile <- make_input("mkv")
-  jobs <- tibble::tibble(input = infile, output = "a.mka")
+  called <- 0L
   local_mocked_bindings(
-    run_program = function(...) stop("a binary was invoked under run = FALSE")
+    run_program = function(...) {
+      called <<- called + 1L
+      character(0)
+    }
   )
-  expect_no_error(extract_audio(infile, "a.mka", run = FALSE))
-  expect_no_error(convert_audio(infile, "a.mp3", run = FALSE))
-  expect_no_error(extract_audio_batch(jobs, run = FALSE))
-  expect_no_error(convert_audio_batch(
-    tibble::tibble(input = infile, output = "a.mp3"), run = FALSE
-  ))
+  extract_audio(infile, "a.mka", run = FALSE)
+  convert_audio(infile, "a.mp3", run = FALSE)
+  extract_audio_batch(tibble::tibble(input = infile, output = "a.mka"),
+                      run = FALSE)
+  convert_audio_batch(tibble::tibble(input = infile, output = "a.mp3"),
+                      run = FALSE)
+  expect_identical(called, 0L)
 })
 
 test_that("run = FALSE compiles cleanly with ffmpeg and ffprobe masked off PATH", {

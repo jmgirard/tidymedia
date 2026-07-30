@@ -1,6 +1,6 @@
 # M41: Front-door validation parity for the codec arguments
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -129,17 +129,23 @@ refused, completing the M37 review's repair of `separate_audio_video_batch`.
       confirm every `NULL`/default outcome matches. Update `@param` prose where a
       guard changes the documented error, `devtools::document()`, NEWS entry,
       `devtools::test()` + `devtools::check()` clean.
-- [ ] T10: Extend T2's grid with the codec-column dimension — each `_batch`
+- [x] T10: Extend T2's grid with the codec-column dimension — each `_batch`
       verb probed with a matching codec column absent and present — and re-run
       both refs, confirming AC4's amended two halves.
 - [x] T11: The four actioned review findings: F8 fail-soft the sweep, F3 the
       `anonymize_video_batch` guard shape, F13 the unchecked `git show`, F19 the
       comment's false D021 citation.
-- [ ] T12: Correct the NEWS entry's "which values are accepted is unchanged",
+- [x] T12: Correct the NEWS entry's "which values are accepted is unchanged",
       then `devtools::test()` + `devtools::check()` clean.
 
 ## Work log
 
+- 2026-07-29: status -> review (round 2). All tasks checked, `devtools::test()` 0 FAIL / 0 WARN / 15 SKIP / 2162 PASS, `devtools::check()` `Status: OK` 0 errors / 0 warnings / 0 notes. M41 authored no prose-guard (its tests assert runtime condition messages, not doc wording), so the guard-doctrine §8 fresh-reader step does not apply.
+- 2026-07-29: NOTE FOR REVIEW — AC1/AC2/AC3/AC5/AC6 were ticked in round 1 against a tree that has since moved: F3 changes `anonymize_video_batch`'s message wording, F8 the sweep's control flow, F13/F19 the instrument and a comment. Those ticks stand as round 1's record, but every criterion needs fresh evidence this round, AC2 most of all since a guard's message text changed.
+- 2026-07-29: T12 `devtools::check()` first run flagged `Relatedly` in my own new NEWS prose — the same self-inflicted spelling NOTE T8 hit. Reworded rather than added to `inst/WORDLIST`, on T8's precedent; re-run came back `Status: OK` with 0 notes.
+- 2026-07-29: T12 NEWS corrected — the false "which values are accepted is unchanged" clause dropped from the message/blame bullet, and a third bullet added for the newly-refused case, naming the four verbs, citing `separate_audio_video_batch` as the existing precedent, and stating that accepted values are untouched. Also moved all three M41 bullets from the file's OLDEST `## Bug fixes` section to the newest one (review F4 — logged sub-80, but free to fix inside prose T12 had to rewrite anyway).
+- 2026-07-29: T10 measured AC4's amended halves green: 255 rows per side (was 170; 85 of them `col = present`), 33 rows changed vs `origin/master`, and **zero** `default` or `null` rows changed at EITHER `col` setting. Of the 33, 21 sit at `col = absent` (the 7 originally-repaired pairs × 3 non-string shapes) and 12 at `col = present`, every one `compiled -> abort`, falling on exactly the four pairs M41-D2 names and on no other.
+- 2026-07-29: T10 found review finding F11 (non-injective diff key, scored 30) does NOT hold — the key was already joined by a literal `\037` byte, which the review read as an empty separator. `col` was added to that key and to `codec_guard_report()`'s grouping, without which the two halves of each batch pair collapse onto one key and `match()` silently pairs `absent` against `present`.
 - 2026-07-29: T11 F8 fixed and MEASURED, not eyeballed: the sweep now `next`s past a pair that did not abort. Blanking `normalize_audio_batch`'s guard (the only mutation that makes `cnd` NULL) gives FAIL 5 / PASS 507 with the `next` and FAIL 2 / PASS 261 without it, dying on `conditionMessage()` applied to NULL — so the pre-F8 sweep silently lost 246 assertions, which is the coverage claim F8 made. Both mutated files restored byte-identical.
 - 2026-07-29: T11 F3 — `anonymize_video_batch`'s `video_codec` guard moved from `check_string(allow_null = TRUE)` to `if (!is.null(x)) check_string(x)`: behaviourally identical (NULL reaches the same per-row abort either way) but the message no longer offers `NULL` as legal when `anonymize_pipeline()` refuses it a few lines later, and it now matches both the scalar sibling's wording and `separate_audio_video_batch`'s guard shape.
 - 2026-07-29: T11 F13 — the NAMESPACE `git show` in the baseline script's imports bootstrap now checks `attr(, "status")` like every other git call in the file; unchecked, a failed fetch yielded an empty imports env and the "could not find function" masquerade the file's own header warns about, arriving as a fake codec abort on every row.

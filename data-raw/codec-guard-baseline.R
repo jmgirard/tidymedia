@@ -14,6 +14,21 @@
 #   number   the argument passed 1              -> an abort (AC2)
 #   vec2     the argument passed c("aac","mp3") -> an abort (AC2)
 #
+# Each scenario is probed twice on a `_batch` verb, once per value of a second
+# dimension -- whether `jobs` carries a column of the same name as the argument
+# under test:
+#
+#   col = absent   the jobs table has no such column
+#   col = present  the jobs table carries a valid codec in that column
+#
+# The `present` half exists because `pick()` prefers the column over the scalar
+# argument, so the scalar is never read there: a bad value in it used to be
+# ignored outright rather than refused. A grid probing only `absent` is
+# structurally blind to that path, which is how the first pass at this script
+# measured AC4 as clean while the contract had in fact moved on four verbs
+# (review F2/F7 -> M41-D2). Scalar verbs have no jobs table and are recorded as
+# `absent`.
+#
 # `verify_media()` is excluded by design: its same-named arguments are *expected
 # probe values*, not codec settings, so a guard there would be a contract change
 # rather than validation parity (AC2).
@@ -35,7 +50,9 @@
 #   codec_guard_diff(before, after)
 #
 # `codec_guard_diff()` returns the rows whose outcome changed. AC4 asks that no
-# `default` or `null` row appear in that diff.
+# `default` or `null` row appear in that diff at either `col` setting, and that
+# the `col = present` rows that do appear are confined to the four `_batch` verbs
+# M41-D2 names.
 
 # -- loading a ref's sources -------------------------------------------------
 
@@ -228,6 +245,21 @@ codec_guard_scenarios <- list(
   vec2    = quote(c("aac", "mp3"))
 )
 
+# A valid codec for the `col = present` half of the grid. It must be a value the
+# per-row column guards accept, so that the column genuinely wins the `pick()`
+# and the scalar argument is the only thing under test: "copy" is refused
+# outright by several verbs and NA is the column form of the NULL sentinel, so
+# neither would isolate the scalar.
+codec_guard_col_value <- function(arg) {
+  if (arg == "video_codec") "libx264" else "aac"
+}
+
+# Which `col` settings apply to a verb: a scalar verb has no jobs table, so
+# `present` is not a state it can be in.
+codec_guard_cols <- function(base) {
+  if ("jobs" %in% names(base)) c("absent", "present") else "absent"
+}
+
 # -- running the grid --------------------------------------------------------
 
 # Run every scenario for every verb/argument pair against `env`, returning a
@@ -248,26 +280,31 @@ codec_guard_baseline <- function(ref = NULL, root = ".", sample = NULL) {
     if (!is.function(f)) {
       # A ref predating the verb (or its rename) has nothing to compare.
       for (arg in spec$args) for (sc in names(codec_guard_scenarios)) {
-        rows[[length(rows) + 1]] <- data.frame(
-          verb = verb, arg = arg, scenario = sc, kind = "absent",
-          outcome = NA_character_, call = NA_character_,
-          in_index = NA, stringsAsFactors = FALSE)
+        for (cl in codec_guard_cols(spec$call(sample, outfile))) {
+          rows[[length(rows) + 1]] <- data.frame(
+            verb = verb, arg = arg, scenario = sc, col = cl, kind = "absent",
+            outcome = NA_character_, call = NA_character_,
+            in_index = NA, stringsAsFactors = FALSE)
+        }
       }
       next
     }
     if (!all(spec$args %in% names(formals(f)))) {
       for (arg in setdiff(spec$args, names(formals(f)))) {
         for (sc in names(codec_guard_scenarios)) {
-          rows[[length(rows) + 1]] <- data.frame(
-            verb = verb, arg = arg, scenario = sc, kind = "absent",
-            outcome = NA_character_, call = NA_character_,
-            in_index = NA, stringsAsFactors = FALSE)
+          for (cl in codec_guard_cols(spec$call(sample, outfile))) {
+            rows[[length(rows) + 1]] <- data.frame(
+              verb = verb, arg = arg, scenario = sc, col = cl, kind = "absent",
+              outcome = NA_character_, call = NA_character_,
+              in_index = NA, stringsAsFactors = FALSE)
+          }
         }
       }
     }
 
     for (arg in intersect(spec$args, names(formals(f)))) {
       for (sc in names(codec_guard_scenarios)) {
+       for (cl in codec_guard_cols(spec$call(sample, outfile))) {
         base <- spec$call(sample, outfile)
         base$run <- FALSE
         # `parallel = FALSE` is the default, but AC3 is about this exact path,
@@ -279,6 +316,12 @@ codec_guard_baseline <- function(ref = NULL, root = ".", sample = NULL) {
           # AC4's before/after comparison rests on. Single-bracket assignment
           # of `list(NULL)` stores a NULL element instead.
           base[arg] <- list(eval(codec_guard_scenarios[[sc]]))
+        }
+        # The `col = present` half: give `jobs` a column of the same name, which
+        # `pick()` prefers over the scalar argument. This is the path where a bad
+        # scalar used to be ignored rather than refused (M41-D2).
+        if (identical(cl, "present")) {
+          base$jobs[[arg]] <- codec_guard_col_value(arg)
         }
 
         obs <- tryCatch(
@@ -313,9 +356,10 @@ codec_guard_baseline <- function(ref = NULL, root = ".", sample = NULL) {
         )
 
         rows[[length(rows) + 1]] <- data.frame(
-          verb = verb, arg = arg, scenario = sc, kind = obs$kind,
+          verb = verb, arg = arg, scenario = sc, col = cl, kind = obs$kind,
           outcome = obs$outcome, call = obs$call, in_index = obs$in_index,
           stringsAsFactors = FALSE)
+       }
       }
     }
   }
@@ -329,10 +373,14 @@ codec_guard_baseline <- function(ref = NULL, root = ".", sample = NULL) {
 
 # Rows whose kind, outcome, call or In-index status differs between two
 # baselines. AC4 asks that `scenario %in% c("default", "null")` never appear
-# here; AC2/AC3 expect the `na`/`number`/`vec2` rows to appear, with the `call`
-# column moving to the Layer-2 verb and `in_index` moving to FALSE.
+# here at either `col` setting; AC2/AC3 expect the `na`/`number`/`vec2` rows to
+# appear, with the `call` column moving to the Layer-2 verb and `in_index` moving
+# to FALSE.
+#
+# `col` is part of the row key below: without it the two halves of a batch pair
+# collapse onto one key and match() pairs `absent` against `present`.
 codec_guard_diff <- function(before, after) {
-  key <- function(d) paste(d$verb, d$arg, d$scenario, sep = "")
+  key <- function(d) paste(d$verb, d$arg, d$scenario, d$col, sep = "")
   b <- before[match(key(after), key(before)), , drop = FALSE]
   changed <- !identical(nrow(b), 0L) & (
     b$kind != after$kind |
@@ -346,7 +394,7 @@ codec_guard_diff <- function(before, after) {
   changed[is.na(changed)] <- TRUE
   data.frame(
     verb = after$verb[changed], arg = after$arg[changed],
-    scenario = after$scenario[changed],
+    scenario = after$scenario[changed], col = after$col[changed],
     before_kind = b$kind[changed], after_kind = after$kind[changed],
     before_call = b$call[changed], after_call = after$call[changed],
     before_in_index = b$in_index[changed],
@@ -358,19 +406,21 @@ codec_guard_diff <- function(before, after) {
 
 # -- a compact report --------------------------------------------------------
 
-# Print one line per verb/argument pair summarizing AC2/AC3 compliance: which
-# function the non-string aborts blame, and whether any carries `In index:`.
+# Print one line per verb/argument/col cell summarizing AC2/AC3 compliance: which
+# function the non-string aborts blame, and whether any carries `In index:`. A
+# `kinds=compiled` cell is a pair that did NOT refuse the bad value.
 codec_guard_report <- function(baseline) {
   bad <- baseline[baseline$scenario %in% c("na", "number", "vec2"), ]
-  pairs <- unique(bad[c("verb", "arg")])
+  pairs <- unique(bad[c("verb", "arg", "col")])
   for (i in seq_len(nrow(pairs))) {
     v <- pairs$verb[[i]]
     a <- pairs$arg[[i]]
-    sub <- bad[bad$verb == v & bad$arg == a, ]
+    cl <- pairs$col[[i]]
+    sub <- bad[bad$verb == v & bad$arg == a & bad$col == cl, ]
     calls <- unique(stats::na.omit(sub$call))
     kinds <- unique(sub$kind)
-    cat(sprintf("%-28s %-12s kinds=%-20s in_index=%-5s call=%s\n",
-                v, a, paste(kinds, collapse = ","),
+    cat(sprintf("%-28s %-12s col=%-8s kinds=%-20s in_index=%-5s call=%s\n",
+                v, a, cl, paste(kinds, collapse = ","),
                 any(sub$in_index, na.rm = TRUE),
                 paste(calls, collapse = " | ")))
   }

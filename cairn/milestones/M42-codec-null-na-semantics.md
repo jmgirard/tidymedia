@@ -5,7 +5,7 @@
 - **Depends on:** M41
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m42-codec-null-na-semantics`
+- **Branch/PR:** `m42-codec-null-na-semantics` · PR #45 https://github.com/jmgirard/tidymedia/pull/45
 
 ## Goal
 
@@ -41,18 +41,18 @@ Front-door type guards → M41 (this milestone assumes them).
 
 ## Acceptance criteria
 
-- [ ] AC1: A `cairn/DECISIONS.md` entry extending D016/D017/D019/D021 records,
+- [x] AC1: A `cairn/DECISIONS.md` entry extending D016/D017/D019/D021 records,
       for each codec argument on each task verb and `_batch` sibling, what `NULL`
       means (emit nothing / abort / a specific encoding) and what a column `NA`
       means, plus the rationale for every verb that departs from the family
       default. It resolves splits 1–3 in Scope by name.
-- [ ] AC2: `standardize_video`/`_batch` and `anonymize_video`/`_batch` agree on
+- [x] AC2: `standardize_video`/`_batch` and `anonymize_video`/`_batch` agree on
       `video_codec = NULL` — all four compile the same way, or all four abort
       with the same message shape. Which, and why, is AC1's entry.
-- [ ] AC3: `extract_audio` and `extract_audio_batch` agree on
+- [x] AC3: `extract_audio` and `extract_audio_batch` agree on
       `audio_codec = NULL`, replacing the split M41 preserved on purpose; M41's
       code comment pointing here is removed in the same commit.
-- [ ] AC4: Every `_batch` codec column and its matching argument agree on
+- [x] AC4: Every `_batch` codec column and its matching argument agree on
       whether "unset" is expressible. The three columns that reject `NA`
       (`standardize_video_batch`/`video_codec`,
       `anonymize_video_batch`/`video_codec`,
@@ -60,12 +60,12 @@ Front-door type guards → M41 (this milestone assumes them).
       `check_batch_codec_col()` + `batch_codec_cell()` like every other codec
       column, or their arguments stop accepting `NULL`, per AC1's entry. The
       falsified `str_cols` comments are corrected either way.
-- [ ] AC5: A test table asserts the resolved meaning of `NULL` and of a column
+- [x] AC5: A test table asserts the resolved meaning of `NULL` and of a column
       `NA` for every codec argument AC1's entry covers, so uniformity — and each
       recorded departure, `convert_audio`'s `-q:a 0` included — is enforced
       rather than only documented. A departure appears in the table as an
       expected departure, never as a skipped case.
-- [ ] AC6: Every behavior change has a NEWS entry naming the verb and the old
+- [x] AC6: Every behavior change has a NEWS entry naming the verb and the old
       and new outcome; `@param` prose and each `@param jobs` column enumeration
       updated (M39 lesson); `devtools::document()` no-diff, `devtools::test()`
       and `devtools::check()` clean — 0 errors, 0 warnings.
@@ -145,3 +145,92 @@ the `NULL` path M41's guards deliberately waved through.
 ## Decisions
 
 ## Review
+
+_2026-07-29, PR #45. Every line below is a command run in this session against
+the branch tip, never recall._
+
+### Acceptance-criteria evidence
+
+- **AC1** — `cairn/DECISIONS.md` gains D022, heading naming what it closes and
+  supersedes. It states the rule universally (`NULL` = emit no `-codec:v` /
+  `-codec:a`; a column `NA` is the column form of that `NULL`), so it records a
+  meaning for all 34 pairs by construction, then names the one departure with
+  its rationale (`convert_audio`/`_batch`, `-q:a 0`, D021 reaffirmed). Splits
+  1–3 are resolved by name — grepping the entry for the verbs each split names:
+  `anonymize_video` ×3, `anonymize_pipeline`, `standardize_pipeline`,
+  `extract_audio` ×5, `extract_audio_batch` ×2, `standardize_video_batch`,
+  `anonymize_video_batch`, `check_batch_string_col` ×2, `check_batch_codec_col`
+  ×2, all present.
+- **AC2** — all four compile, and identically. Compiled each at `run = FALSE`
+  with `video_codec = NULL`: no `-codec:v` in any of the four; the
+  `standardize_video` scalar command is string-identical to
+  `standardize_video_batch`'s, and `anonymize_video`'s to
+  `anonymize_video_batch`'s. Both batch verbs' column `NA` compiles
+  string-identically to the matching scalar `NULL`. AC2's alternative branch
+  ("or all four abort with the same message shape") is not the branch taken.
+- **AC3** — `extract_audio(audio_codec = NULL)` and
+  `extract_audio_batch(audio_codec = NULL)` compile string-identical commands
+  (no `-codec:a`, `-vn` retained), and the batch verb's column `NA` matches
+  both. M41's pointer comment is gone: grepping `R/` for its text
+  ("Reconciling the two is M42's job", "is M42's question") returns nothing, and
+  `git log -S` over the branch places its removal in `0be559f` — the same commit
+  that added `allow_null = TRUE` to `extract_audio()`.
+- **AC4** — the resolution took the first branch: all three columns moved to
+  `check_batch_codec_col()` + `batch_codec_cell()`, no argument stopped
+  accepting `NULL`. Each column's `NA` cell now compiles (AC2/AC3 lines above),
+  and a mixed column compiles per row. The widening did not reach the argument:
+  a *scalar* `NA` still aborts on all three
+  (`standardize_video_batch`, `anonymize_video_batch`, `extract_audio_batch`),
+  and the non-codec columns still reject `NA` — `pixel_format` and `color` both
+  abort with the `str_cols` message. Both falsified `str_cols` comments are
+  corrected: neither now asserts "a literal `libx264` default with no
+  sentinel" — each quotes the old wording and marks it false when written
+  ([ffmpeg.R:1259](../../R/ffmpeg.R#L1259),
+  [ffmpeg.R:2699](../../R/ffmpeg.R#L2699)). `str_cols` itself is now
+  `c("color", "pixel_format")` and `c("pixel_format")`, with no codec column
+  left in either.
+- **AC5** — `tests/testthat/test-codec-null-na-semantics.R` sweeps
+  `codec_family_pairs()`: **34** verb × argument pairs, against **36** codec
+  arguments the package exports; the two-pair gap is `verify_media`'s expected
+  probe values, excluded on the record. Uncovered set and covered-but-
+  nonexistent set are both empty. Each pair gets a non-vacuity assertion (a
+  named encoder must reach the command) before its absence assertion, so no
+  cell can pass by measuring nothing. `convert_audio`/`_batch` appear in
+  `codec_family_unset_meaning()` as `"q0"` — asserted to compile `-q:a 0`, not
+  skipped — and a second test fails if that table ever names a pair that no
+  longer exists. Falsifiability checked by running the file against
+  `origin/master`'s `R/ffmpeg.R`: 7 of its 10 blocks fail, the table among
+  them.
+- **AC6** — NEWS.md gains an entry under New features naming each changed verb
+  with its old and new outcome ("refused `video_codec = NULL` … Both now accept
+  it"; "rejected `NA` … All three now accept it"), plus the unchanged-command
+  claim and the `convert_audio` exception. `@param` prose updated on all six
+  changed verbs and both `@param jobs` column enumerations rewritten to
+  distinguish codec columns (`NA` legal) from `width`/`height`/`fps`/
+  `pixel_format`/`color` (`NA` an error) — the M39 lesson.
+  `devtools::document()` rewrites nothing on a second run (`git status` clean
+  for `man/` and `NAMESPACE`). `devtools::test()`: 0 failures, 0 warnings, 15
+  skips, 2568 passing. `devtools::check()`: **0 errors, 0 warnings, 0 notes**.
+
+### Consistency gate
+
+`cairn_validate`: all 16 checks PASS, all 8 advisories OK. Profile
+`r-package` `consistency-gate`: `document()` no-diff ✓ · generated files
+unedited (no `man/`/`NAMESPACE` drift) ✓ · `pkgdown::check_pkgdown()` "No
+problems found" ✓ · NEWS entry present ✓ · no new top-level files (both new
+files sit under `tests/testthat/`, already covered) ✓ · `check()` 0/0/0 ✓.
+README.Rmd and the vignettes make no claim about codec `NULL`/`NA` semantics
+(grepped), so neither needed resyncing. No `DESIGN.md` principle changed, so
+`cairn_impact` does not apply. First review round — no prior returns.
+
+CI on PR #45: all five `R CMD check` platform jobs, `pkgdown` and
+`test-coverage` pass. `codecov/patch` passes; `codecov/project` fails on a
+94.75% → 94.60% total-coverage move (+5 lines, +4 misses). The active profile
+declares coverage diagnostic-only and never a merge gate, so this is reported,
+not treated as a red gate — but the miss it points at is real and is in the
+findings below.
+
+### Independent review (in progress)
+
+Three fresh-context reviewers spawned against `master..HEAD`; the diff-bug
+[O] lens has not yet reported, so triage and scoring are not yet done.

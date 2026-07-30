@@ -1,0 +1,159 @@
+# M48: `audio_stream` on crop_video() / segment_video() (+ _batch), under the
+# same rule M47 gave standardize_video() and anonymize_video() (D026).
+#
+# These two verbs did NOT have M47's defect: they emit `-map 0` and so already
+# carried every audio track. What they carried was too much and too little at
+# once -- `-map 0` also carries subtitles and data, which fails outright into
+# .mp4 on a subtitle-bearing input (exit 8, no default mp4 subtitle encoder),
+# and it offered no way to name one track. Both now compile
+# `-map 0:v? -map 0:a?` when no track is named and `-map 0:v? -map 0:a:<n>`
+# when one is.
+#
+# The `?` on the unselected specifiers is load-bearing: a bare `-map 0:a`
+# aborts FFmpeg on a silent video and a bare `-map 0:v` aborts on an audio-only
+# file, both exit 234, where `-map 0` handled either. The named specifier keeps
+# no `?`, so naming a track the input lacks stays an FFmpeg error (D023/D026).
+#
+# On the `reencode = FALSE` branch the map has to REPLACE ffm_copy()'s `-map 0`
+# rather than append beside it, because ffm_map() appends (D023). That is
+# ffm_map(replace = TRUE)'s first in-package caller.
+
+# The pre-M48 commands, recorded from master at 0b9985a and committed here as
+# templates taking the map arguments. Templates rather than fixed strings
+# because the input path is a per-test tempfile; templates rather than a
+# comparison against "what master returns today" because that stops being
+# checkable the moment this branch merges (M47's lesson, same shape).
+#
+#   crop:            -y -i "<f>" -vf "crop=..." -codec:a copy -map 0 "out.mp4"
+#   segment(TRUE):   -y -i "<f>" -codec:a copy -ss 0 -to 1 "seg.mp4"
+#   segment(FALSE):  -y -ss 0 -to 1 -i "<f>" -codec:v copy -codec:a copy \
+#                       -avoid_negative_ts make_zero -map 0 "seg.mp4"
+#
+# Note segment(reencode = TRUE) carried NO map at all, so its `maps` default is
+# the empty string: the re-encode branch is the one place in this milestone
+# where a map appears where none stood before.
+
+crop_command <- function(infile, maps = "-map 0 ", outfile = "out.mp4") {
+  paste0(
+    '-y -i "', infile, '"',
+    ' -vf "crop=w=32:h=32:x=(in_w-out_w)/2:y=(in_h-out_h)/2"',
+    " -codec:a copy ", maps, '"', outfile, '"'
+  )
+}
+
+segment_reencode_command <- function(infile, maps = "", outfile = "seg.mp4") {
+  paste0(
+    '-y -i "', infile, '" -codec:a copy -ss 0 -to 1 ', maps, '"', outfile, '"'
+  )
+}
+
+segment_copy_command <- function(infile, maps = "-map 0 ", outfile = "seg.mp4") {
+  paste0(
+    '-y -ss 0 -to 1 -i "', infile, '"',
+    " -codec:v copy -codec:a copy -avoid_negative_ts make_zero ",
+    maps, '"', outfile, '"'
+  )
+}
+
+# Count -map arguments. A containment assertion cannot see a duplicate, and
+# ffm_map() appends since M43, so the count is the discriminator (M43/M45/M47).
+map_count <- function(cmd) {
+  vapply(cmd, function(x) {
+    sum(gregexpr("-map ", x, fixed = TRUE)[[1]] > 0)
+  }, integer(1), USE.NAMES = FALSE)
+}
+
+crop_of <- function(f, ...) crop_video(f, "out.mp4", 32, 32, ..., run = FALSE)
+
+segment_of <- function(f, ...) {
+  segment_video(f, 0, 1, outfiles = "seg.mp4", ..., run = FALSE)$command
+}
+
+
+# AC1: the unset selector ------------------------------------------------------
+
+test_that("an unset audio_stream compiles every video and every audio stream", {
+  f <- make_input()
+  expect_identical(crop_of(f), crop_command(f, "-map 0:v? -map 0:a? "))
+  expect_identical(
+    segment_of(f),
+    segment_reencode_command(f, "-map 0:v? -map 0:a? ")
+  )
+  expect_identical(
+    segment_of(f, reencode = FALSE),
+    segment_copy_command(f, "-map 0:v? -map 0:a? ")
+  )
+})
+
+test_that("an explicit NULL audio_stream compiles what the absent argument does", {
+  f <- make_input()
+  expect_identical(crop_of(f, audio_stream = NULL), crop_of(f))
+  expect_identical(
+    segment_of(f, audio_stream = NULL),
+    segment_of(f)
+  )
+  expect_identical(
+    segment_of(f, reencode = FALSE, audio_stream = NULL),
+    segment_of(f, reencode = FALSE)
+  )
+})
+
+test_that("each verb compiles exactly two -map arguments, never more", {
+  # The count, not containment: appending is what M43 made possible and what a
+  # `grepl("-map 0:a?")` assertion cannot see going wrong.
+  f <- make_input()
+  expect_identical(map_count(crop_of(f)), 2L)
+  expect_identical(map_count(segment_of(f)), 2L)
+  expect_identical(map_count(segment_of(f, reencode = FALSE)), 2L)
+})
+
+
+# AC2: a named track -----------------------------------------------------------
+
+test_that("audio_stream narrows the audio map and leaves the video map alone", {
+  f <- make_input()
+  expect_identical(
+    crop_of(f, audio_stream = 2),
+    crop_command(f, "-map 0:v? -map 0:a:2 ")
+  )
+  expect_identical(
+    segment_of(f, audio_stream = 2),
+    segment_reencode_command(f, "-map 0:v? -map 0:a:2 ")
+  )
+  expect_identical(
+    segment_of(f, reencode = FALSE, audio_stream = 2),
+    segment_copy_command(f, "-map 0:v? -map 0:a:2 ")
+  )
+})
+
+test_that("the named specifier carries no `?`, so a missing track stays an error", {
+  # D026's third bullet: `0:a:9` on a 3-track input must reach FFmpeg as an
+  # error rather than compile to a silently audio-less output.
+  f <- make_input()
+  expect_false(grepl("0:a:2?", crop_of(f, audio_stream = 2), fixed = TRUE))
+  expect_false(
+    grepl("0:a:2?", segment_of(f, reencode = FALSE, audio_stream = 2),
+          fixed = TRUE)
+  )
+})
+
+test_that("the copy branch narrows ffm_copy()'s map rather than appending to it", {
+  # ffm_copy() sets `-map 0`; appending the selection beside it would compile
+  # THREE maps and duplicate every stream. The discriminator is that no bare
+  # `-map 0` survives -- exactly what ffm_map(replace = TRUE) buys.
+  f <- make_input()
+  for (cmd in c(segment_of(f, reencode = FALSE),
+                segment_of(f, reencode = FALSE, audio_stream = 2))) {
+    expect_identical(map_count(cmd), 2L)
+    expect_false(grepl("-map 0 ", cmd, fixed = TRUE))
+  }
+})
+
+test_that("audio_stream = 0 is a selection, not the unset sentinel", {
+  # The two compile DIFFERENTLY on these verbs, unlike on the extraction verbs
+  # where NULL resolves to the first track: here NULL keeps every track (D026).
+  f <- make_input()
+  expect_identical(crop_of(f, audio_stream = 0),
+                   crop_command(f, "-map 0:v? -map 0:a:0 "))
+  expect_false(identical(crop_of(f, audio_stream = 0), crop_of(f)))
+})

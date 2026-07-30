@@ -115,7 +115,7 @@ replaces `ffm_copy()`'s `-map 0` rather than appending beside it, which gives
 
 ## Tasks
 
-- [ ] T1 Record the three current commands as committed literals (the
+- [x] T1 Record the three current commands as committed literals (the
       `baseline_pair()` pattern, `test-separate-av-multitrack.R:32-37`) and add
       the failing-first compile tests.
 - [ ] T2 Restore `ffm_copy()`/`ffm_concat()` idempotence per RR03: `ffm_copy()`
@@ -158,6 +158,7 @@ replaces `ffm_copy()`'s `-map 0` rather than appending beside it, which gives
 - 2026-07-30: blocked on RB03 (`cairn/reviews/RB03-ffm-copy-idempotence.md`) — seven questions on which spelling restores `ffm_copy()`/`ffm_concat()` idempotence, carrying options A (`ffm_copy()` uses `replace = TRUE`), B (`unique()` in `ffm_map()`) and C (`ffm_copy()` appends `"0"` only when absent), plus whether the fix should signal rather than stay silent.
 - 2026-07-30: ingest audit of RR03's BC1–BC8 by a fresh-context [O] reader — verified every line reference and reproduced all three doubling compositions; found BC6 unsatisfiable as written and four criteria weaker than the report's own recommendations, plus an unstated ordering constraint on `segment_pipeline()`. Findings recorded in M48-D2 and raised at the ingest gate; none softened.
 - 2026-07-30: ingested RR03 — `Driving RR: RR03`, BC1–BC8 as AC-9…AC-16 verbatim with Coverage lines, one Deviations row for BC6 agreed at the gate, `ffm_copy()` contract promoted to D027, T2/T4 amended, status back to in-progress. AC1–AC8 compressed in one pass to hold the 150-line cap (148/149), which also retired three stale `R/ffmpeg.R` line references in T3/T4/T5 and the `test-ffm.R:438` reference in AC8/T6.
+- 2026-07-30: T1 — `test-audio-stream-crop-segment.R` records the three pre-M48 commands as committed templates (from master at 0b9985a) and adds the AC1/AC2 compile tests. Red as intended: 10 failures, all `unused argument (audio_stream = …)` or the old `-map 0`; T3/T4 turn them green.
 
 ## Decisions
 

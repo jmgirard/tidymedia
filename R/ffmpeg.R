@@ -549,6 +549,77 @@ separate_stream_pipeline <- function(input, output, stream, codec = "copy",
 }
 
 
+# run_separation_audio() --------------------------------------------------
+
+# Run separate_audio_video()'s AUDIO command and, when FFmpeg refuses it on a
+# multi-track input, re-raise with the way out. Lives in Layer 2, never in
+# ffm_run(): the message names `audio_stream`, a Layer-2 argument the engine has
+# no business knowing (IP1/D002), and an engine hook for one verb's diagnostic is
+# the same inversion D024/RR02 Q3 rejected for ffm_batch().
+#
+# Enrichment is deliberately NARROW -- it fires only when the caller named NO
+# track. With `0:a:<n>` mapped the command carried exactly one stream, so a
+# failure is something else (a codec the container will not hold, a bad path) and
+# "take one track with audio_stream" would be false under the branch that fired
+# it -- M38's lesson, which this repo has now paid for twice.
+#
+# The probe is D024's diagnostic licence at its narrowest: it runs only after
+# FFmpeg has ALREADY failed, so the call aborts under every outcome and the probe
+# decides only WHICH abort is signalled -- never whether execution proceeds
+# (D024's third exclusion), never what was compiled, never a default, never a
+# pipeline. It fails open to ffm_run()'s own abort, unchanged in text and class.
+run_separation_audio <- function(pipeline, infile, outfile, audio_stream,
+                                 call = rlang::caller_env()) {
+  if (!is.null(audio_stream)) return(invisible(ffm_run(pipeline)))
+  tryCatch(
+    ffm_run(pipeline),
+    error = function(cnd) {
+      # Parsing the status out of ffm_run()'s own message is also what tells a
+      # non-zero EXIT apart from every other way the run can fail: a missing
+      # ffmpeg binary aborts in run_program() with no status at all, and a track
+      # count would be a nonsense answer to that. NA therefore means "not the
+      # failure this diagnostic is about" as well as "no status", and both fall
+      # through. A test pins the coupling to that wording, so rewording
+      # ffm_run()'s abort fails loudly instead of silently killing this branch.
+      status <- ffmpeg_exit_status(cnd)
+      n <- if (is.na(status)) NA_integer_ else count_audio_streams(infile)
+      # Fail open: no status, no probe answer, or a single-track input all
+      # re-raise the ORIGINAL condition object, so its message, class and trace
+      # are the ones ffm_run() raises today (D024's fail-open consequence).
+      if (is.na(status) || is.na(n) || n <= 1L) stop(cnd)
+      cli::cli_abort(
+        c(
+          "Can't write {.file {outfile}}: FFmpeg exited with status {status}.",
+          "x" = "{.file {infile}} carries {n} audio tracks and no
+                 {.arg audio_stream} was named, so all {n} were mapped into one
+                 output.",
+          "i" = "Most audio containers hold exactly one stream ({.file .aac},
+                 {.file .mp3}, {.file .wav}) and FFmpeg fails when asked to
+                 write more.",
+          "i" = "Take one track with {.arg audio_stream}: {.val {0}} is the
+                 first audio track, {.val {1}} the second.",
+          "i" = "Or keep all {n} by writing a container that holds several --
+                 Matroska ({.file .mka}) or {.file .m4a}."
+        ),
+        class = "tidymedia_multitrack_separation",
+        parent = cnd,
+        call = call
+      )
+    }
+  )
+}
+
+# Pull FFmpeg's exit status out of the abort ffm_run() raises on a non-zero exit
+# ("FFmpeg exited with status 234."), or NA when the condition is not that abort.
+# cli styles the message, so strip the ANSI first.
+ffmpeg_exit_status <- function(cnd) {
+  msg <- cli::ansi_strip(conditionMessage(cnd))
+  hit <- regmatches(msg, regexpr("exited with status -?[0-9]+", msg))
+  if (length(hit) == 0L) return(NA_integer_)
+  as.integer(sub("^exited with status ", "", hit[[1]]))
+}
+
+
 # separate_audio_video() --------------------------------------------------
 
 #' Split a media file into separate audio and video files
@@ -655,7 +726,10 @@ separate_audio_video <- function(infile, audiofile, videofile,
   commands <- c(audio = ffm_compile(audio), video = ffm_compile(video))
 
   if (run) {
-    ffm_run(audio)
+    # The audio command runs first and aborts the verb when it fails, so the
+    # video file is not written either -- unchanged behavior, and a ROADMAP
+    # candidate rather than this milestone's business (M45 Out).
+    run_separation_audio(audio, infile, audiofile, audio_stream)
     ffm_run(video)
     invisible(commands)
   } else {

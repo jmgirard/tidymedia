@@ -92,6 +92,107 @@ test_that("a non-whole or out-of-range audio_stream is rejected by name", {
   )
 })
 
+# AC2: the enriched abort on the executing path -----------------------------
+
+test_that("ffm_run() still words its non-zero exit as the enrichment reads it", {
+  # The coupling pin. run_separation_audio() tells a non-zero EXIT apart from
+  # every other failure (a missing binary, an unreadable path) by parsing
+  # ffm_run()'s own message, so a reword there would silently retire the
+  # enrichment. This fails loudly instead.
+  skip_if_no_ffmpeg()
+  infile <- make_test_video()
+  out <- withr::local_tempfile(fileext = ".mp3")
+  # Copying AAC into an MP3 container is a guaranteed non-zero exit; leaving the
+  # codec unset would simply re-encode and succeed.
+  p <- ffm_codec(ffm_map(ffm_files(infile, out), "0:a"), audio = "copy")
+  cnd <- tryCatch(ffm_run(p), error = function(e) e)
+  expect_match(cli::ansi_strip(conditionMessage(cnd)), "exited with status -?[0-9]+")
+  expect_false(is.na(ffmpeg_exit_status(cnd)))
+})
+
+test_that("a multi-track input into a single-stream container names the way out", {
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  audio <- withr::local_tempfile(fileext = ".aac")
+  video <- withr::local_tempfile(fileext = ".mp4")
+  cnd <- tryCatch(separate_audio_video(infile, audio, video),
+                  error = function(e) e)
+  expect_s3_class(cnd, "tidymedia_multitrack_separation")
+  msg <- cli::ansi_strip(conditionMessage(cnd))
+  expect_match(msg, "exited with status")     # AC2: carries FFmpeg's status
+  expect_match(msg, "3 audio tracks")         # AC2: states the count
+  expect_match(msg, "audio_stream")           # AC2: names the way to take one
+  expect_match(msg, ".mka", fixed = TRUE)     # AC2: names a container for several
+})
+
+test_that("naming a track falls through to ffm_run()'s own abort", {
+  # AC2's narrowing: with `0:a:1` mapped, exactly one stream was carried, so the
+  # failure is the AAC-into-MP3 copy and "take one track" would be false advice.
+  skip_if_no_ffmpeg()
+  infile <- make_multitrack_video()
+  audio <- withr::local_tempfile(fileext = ".mp3")
+  video <- withr::local_tempfile(fileext = ".mp4")
+  cnd <- tryCatch(
+    separate_audio_video(infile, audio, video, audio_stream = 1),
+    error = function(e) e
+  )
+  expect_s3_class(cnd, "error")
+  expect_false(inherits(cnd, "tidymedia_multitrack_separation"))
+  expect_match(cli::ansi_strip(conditionMessage(cnd)), "exited with status")
+})
+
+test_that("a single-track input falls through to ffm_run()'s own abort", {
+  skip_if_no_ffprobe()
+  infile <- make_test_video()
+  audio <- withr::local_tempfile(fileext = ".mp3")
+  video <- withr::local_tempfile(fileext = ".mp4")
+  cnd <- tryCatch(separate_audio_video(infile, audio, video),
+                  error = function(e) e)
+  expect_s3_class(cnd, "error")
+  expect_false(inherits(cnd, "tidymedia_multitrack_separation"))
+})
+
+test_that("an unavailable ffprobe falls through to ffm_run()'s own abort", {
+  # D024's fail-open consequence: "could not check" must look exactly like
+  # "nothing to add", never like a second failure mode.
+  skip_if_no_ffmpeg()
+  infile <- make_multitrack_video()
+  audio <- withr::local_tempfile(fileext = ".aac")
+  video <- withr::local_tempfile(fileext = ".mp4")
+  local_mocked_bindings(find_ffprobe = function() NULL)
+  cnd <- tryCatch(separate_audio_video(infile, audio, video),
+                  error = function(e) e)
+  expect_false(inherits(cnd, "tidymedia_multitrack_separation"))
+  expect_match(cli::ansi_strip(conditionMessage(cnd)), "exited with status")
+})
+
+test_that("a successful multi-track separation into .mka raises nothing", {
+  # The other side of the enrichment: Matroska holds all three tracks, which is
+  # exactly why this verb's NULL default was left meaning every track.
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  audio <- withr::local_tempfile(fileext = ".mka")
+  video <- withr::local_tempfile(fileext = ".mkv")
+  expect_no_error(separate_audio_video(infile, audio, video))
+  expect_equal(count_audio_streams(audio), 3L)
+})
+
+test_that("a brace-bearing output path does not execute in the abort", {
+  # M44 review F1: cli glue-interpolates every bullet in the calling frame, so
+  # user data must go through a cli field. `{n}` names a local of the message
+  # builder, which would print a filename that does not exist; a stray `{` aborts
+  # with "could not evaluate cli expression" instead of the diagnostic.
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  dir <- withr::local_tempdir()
+  audio <- file.path(dir, "my{n}.aac")
+  video <- file.path(dir, "v.mp4")
+  cnd <- tryCatch(separate_audio_video(infile, audio, video),
+                  error = function(e) e)
+  expect_s3_class(cnd, "tidymedia_multitrack_separation")
+  expect_match(cli::ansi_strip(conditionMessage(cnd)), "my{n}.aac", fixed = TRUE)
+})
+
 test_that("the extraction verbs' NULL still means the first track", {
   # The other half of the split this milestone records: parameterizing
   # audio_stream_map()'s NULL resolution must not have moved D023's callers.

@@ -91,7 +91,7 @@ failed → one grouped candidate row.
       `check_number_whole(min = 0, allow_null = TRUE)`, threaded through
       `separate_stream_pipeline()` (`R/ffmpeg.R:379`) to the audio branch only;
       `NULL` keeps `0:a`, `n` compiles `0:a:<n>`. *(RB tripwire: irreversible-api)*
-- [ ] T2: The enriched abort in the verb, not in `ffm_run()` — keeping the
+- [x] T2: The enriched abort in the verb, not in `ffm_run()` — keeping the
       Layer-2 argument name out of the engine (IP1). Wrap the audio `ffm_run()`
       (`R/ffmpeg.R:495`); on a non-zero exit probe `infile`'s audio-stream count
       and re-raise. Fall through to today's abort when the caller named a track,
@@ -124,7 +124,35 @@ failed → one grouped candidate row.
 - 2026-07-30: implement gate kept the plan's `audio_stream` name with its every-track `NULL` (over a D023-uniform first-track default, which would silently narrow the `.mka`/`.m4a` callers who receive all tracks today, and over a second argument name for the same counting base); irreversible-api tripwire offered escalation and it was declined.
 - 2026-07-30: AMENDMENT (substantive, gated) — AC2 and T2 now fall through to today's plain `ffm_run()` abort when the caller NAMED a track: with `0:a:<n>` mapped the failure is not a multi-track refusal, so "name a track with `audio_stream`" would be false under the branch that fired it (M38's twice-learned lesson). AC4/T3 amended from "warns once per failed audio row" to ONE aggregated warning naming every failed no-track audio row, matching M44's aggregation so R's 50-warning collapse cannot bury a large batch's message.
 - 2026-07-30: T1 done — `audio_stream` on `separate_audio_video()`, threaded to the audio branch of `separate_stream_pipeline()` only (the video call is never passed the value, so the video map cannot narrow by mistake). `audio_stream_map()` gained a `null_map` parameter rather than a second helper: one guard site keeps the `check_number_whole` wording identical across verb families, and `null_map = "0:a"` is what makes this verb's `NULL` mean every track (the `check_batch_audio_col(na_means=)` shape from M43/M40). AC1's baseline recorded verbatim in the new test file's header, provenance `b548902`, with `git diff b548902 HEAD -- R/ffmpeg.R` confirming no separation code moved in between. Minor refinement: AC1's compile tests were written here with the code rather than deferred to T5 (tests-first), so T5 now carries AC2–AC4 only. `document()` clean, `test()` 0 failures / 2751 passing (the 4 warnings are M44's drop diagnostic in pre-existing tests, unchanged).
+- 2026-07-30: T2 done — `run_separation_audio()` wraps the audio `ffm_run()`; on a non-zero exit it probes the input's audio-stream count and re-raises with the count, `audio_stream`, and `.mka`/`.m4a` as the two ways out, chaining the original as `parent` so FFmpeg's status and failing command survive. A non-zero EXIT is told apart from every other failure (missing binary, unreadable path) by parsing ffm_run()'s own status wording, with a test pinning that coupling so a reword there fails loudly instead of silently retiring the branch. Mutation probe (M39): deleting the named-track early return reddens the fall-through test; deleting the fail-open line reddens the single-track and ffprobe-absent tests — two distinct failure sets, not the identical one M44 flagged as the tell for a bad probe. Baseline was copied aside rather than restored with `git checkout` (M44's trap). D024 adoption recorded as M45-D1. `test()` 0 failures / 2769 passing.
 
 ## Decisions
+
+### M45-D1 — The failed-separation probe adopts D024's licence rather than stretching it (2026-07-30)
+
+D024 asks a verb adopting its diagnostic probe to record the adoption in its own
+milestone's decision log, and a probe stretching any of its four conditions to
+take a new D-entry. `run_separation_audio()` adopts; it stretches nothing.
+
+- (i) The outcome affects nothing but which condition is signalled. The probe
+  runs only after FFmpeg has already exited non-zero, so the call aborts under
+  every outcome — ran, skipped, succeeded, failed. What moves is the abort's
+  wording and class, never whether there is one.
+- (ii) It fails open. No parsed exit status, no probe answer, or a single-track
+  input all re-raise the original condition object, so `ffm_run()`'s message,
+  class and trace stay the ones today's caller sees.
+- (iii) It never runs on the `run = FALSE` path: it sits inside `if (run)`,
+  behind a failure that cannot occur without a run.
+- (iv) It never runs from `ffm_compile()` or any builder it walks.
+
+D024's third exclusion — "a probe that decides whether execution proceeds" — is
+the one worth naming, because this probe reads close to it. It is not one: an
+abort gate probes to decide *whether* to stop, and this probe runs when the stop
+is already certain. Execution has ended under either branch.
+
+D024 also anticipated this verb by name, ruling out "a predicate about narrowing
+a multi-track input" as its licence condition precisely so that M45 — where
+`NULL` means every track and nothing narrows by default — would not read itself
+as excluded from diagnostics. This entry is that reading applied.
 
 ## Review

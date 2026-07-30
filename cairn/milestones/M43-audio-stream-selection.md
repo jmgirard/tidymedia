@@ -1,11 +1,11 @@
 # M43: Pick which audio track the extraction verbs take
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M41, M42
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** —
+- **Branch/PR:** `m43-audio-stream-selection`
 
 ## Goal
 

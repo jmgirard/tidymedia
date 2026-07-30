@@ -306,3 +306,14 @@ One logged finding earned a ROADMAP candidate row (search-first: no existing
 row, archive entry or D-entry covers it): F5's observation that a bad codec
 *token* still reports Layer-1's argument name on the verbs whose pipelines
 call `ffm_codec()` directly. M41 fixed that class for non-string values only.
+
+**Final CI on PR #45 (ready for review):** all five `R CMD check` platform jobs,
+`pkgdown` and `test-coverage` pass; `codecov/patch` passes. `codecov/project`
+still reports failure on a 94.75% → 94.61% total-coverage move (+7 lines, +3
+hits, +4 misses) — non-gating per the profile's "coverage never gates the
+merge". The four lines were not localized: `covr` is not installed on this
+machine and Codecov's line-level API returned nothing usable, so the Codecov UI
+is the place to see them. Worth recording that coverage could not have found
+this milestone's one real test gap either — F4's guard line *executed* on every
+existing test and only its abort branch was unreached, which is why the
+reviewer's mutation caught it and the percentage did not.

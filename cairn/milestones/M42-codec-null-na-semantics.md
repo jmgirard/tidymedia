@@ -112,7 +112,7 @@ the `NULL` path M41's guards deliberately waved through.
 - [x] T2: From T1's table, choose the family default and each departure; draft
       the D-entry and surface it at the implement question gate before any code
       lands. *(RB tripwire: irreversible-api)*
-- [ ] T3: Land the `video_codec = NULL` resolution across `standardize_video`,
+- [x] T3: Land the `video_codec = NULL` resolution across `standardize_video`,
       `standardize_video_batch` ([ffmpeg.R:2547](../../R/ffmpeg.R#L2547)),
       `anonymize_video`, and `anonymize_video_batch`
       ([ffmpeg.R:1145](../../R/ffmpeg.R#L1145)).
@@ -137,6 +137,7 @@ the `NULL` path M41's guards deliberately waved through.
 - 2026-07-29: T1 measurement falsifies Scope 3's "unlike every other codec column" — three codec columns reject `NA` (`standardize_video_batch`/`video_codec`, `anonymize_video_batch`/`video_codec`, `extract_audio_batch`/`audio_codec`) — and finds `anonymize_video_batch(video_codec = NULL)` aborting inside `purrr::pmap()`. Both go to the T2 gate.
 - 2026-07-29: T2 gate — user chose "`NULL` = unset everywhere" over a verb-class split and over resolving toward abort (the escalation option was offered on the `irreversible-api` tripwire and declined), kept `convert_audio`'s `-q:a 0` departure, and accepted the scope amendment. Landed as D022.
 - 2026-07-29: amendment (substantive, gated above) — Scope 3, AC4 and T5 now name all three no-`NA` codec columns instead of `standardize_video_batch`'s alone, because the T1 probe found three where the plan asserted one.
+- 2026-07-29: T3 — one line: `anonymize_pipeline()`'s unconditional `check_token(video_codec)` was the sole cause of split 1, and skipping it for `NULL` fixes both anonymize verbs (the batch one's `In index:` abort included). Check left at its original position so it keeps reporting before `pixel_format`/drawbox. New `test-codec-null-na-semantics.R`; every absence assertion paired with a named-encoder non-vacuity assertion. Suite 2461 passing.
 
 ## Decisions
 

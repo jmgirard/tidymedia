@@ -976,7 +976,16 @@ anonymize_pipeline <- function(input, output, regions, color, video_codec,
                                call = rlang::caller_env()) {
   check_regions(regions, call = call)
   rlang::check_string(color, call = call)
-  check_token(video_codec, call = call)
+  # NULL is D016's "leave the codec alone" sentinel, and D022 makes it the
+  # family-wide spelling of "unset": emit no -codec:v and let the output
+  # container's default encoder decide. It has to be skipped here rather than
+  # handled downstream, because check_token() -> check_string() refuses NULL
+  # outright -- which is the whole reason anonymize_video() aborted on a call
+  # standardize_video() has always compiled (measured at M42 T1). The check stays
+  # at this position rather than moving into apply_video_codec() below so it
+  # keeps reporting before pixel_format and the drawbox dimensions, exactly as it
+  # did (the precedence M41's review twice caught moving).
+  if (!is.null(video_codec)) check_token(video_codec, call = call)
   check_token(pixel_format, call = call)
 
   # Integer coordinates are natural pixel values, but ffm_drawbox()'s check_dim()
@@ -1254,13 +1263,11 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   # pipeline and aborted inside purrr::pmap(), carrying `In index: <n>` and
   # blaming pmap rather than this verb (M41).
   #
-  # Deliberately NOT check_string(allow_null = TRUE): that spelling's message
-  # offers `NULL` as legal, and it is not -- anonymize_pipeline() refuses it a
-  # few lines below, and the scalar sibling anonymize_video() says plain "must be
-  # a single string" (review F3). This shape waves NULL through to the per-row
-  # path it already takes, exactly as allow_null would, without advertising it;
-  # whether that path SHOULD refuse NULL is M42's question, not this milestone's.
-  # Same shape as separate_audio_video_batch()'s scalar guards (M37 review).
+  # M42 answered the question M41 left here: `NULL` IS legal, the family-wide
+  # sentinel for "emit no -codec:v" (D022). The `if (!is.null(...))` shape is
+  # kept over check_string(allow_null = TRUE) only because it is what
+  # separate_audio_video_batch()'s scalar guards use (M37 review); the two now
+  # accept the same values, so the choice is spelling, not contract.
   #
   # Placed at the END of this verb's front-door validation, not beside the
   # other scalar checks: before M41 this argument was only read per row

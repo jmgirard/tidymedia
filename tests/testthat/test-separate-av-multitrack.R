@@ -14,6 +14,17 @@
 #   video: -y -i "<...>/sample.mp4" -codec:v copy -map 0:v "video.mp4"
 #
 # The tests pin that form as a template so they do not depend on a temp path.
+#
+# PORTABILITY, learned the hard way at review (M27's lesson on a new surface):
+# WHICH container refuses several audio streams is FFmpeg-version dependent. The
+# adts muxer on ffmpeg 8.1.2 rejects a multi-stream `.aac` ("adts muxer does not
+# support more than one stream of type audio"); ffmpeg 6.1.1, which ubuntu-latest
+# ships, writes that file happily and exits 0, so seven tests triggering the
+# enrichment through `.aac` saw no condition at all and went red on CI while
+# passing on macOS. The enrichment tests below therefore trigger the failure with
+# an AAC-to-MP3 STREAM COPY, which no FFmpeg build can do whatever its muxer
+# limits, and the container-refusal occasion gets its own test that probes this
+# FFmpeg first and skips when it does not refuse.
 
 
 # AC1: what each spelling compiles ------------------------------------------
@@ -94,6 +105,26 @@ test_that("a non-whole or out-of-range audio_stream is rejected by name", {
 
 # AC2: the enriched abort on the executing path -----------------------------
 
+# Skip unless THIS FFmpeg's single-stream audio muxer actually refuses several
+# audio streams. Assert the environment's own property before trusting a result
+# that depends on it (M43's fixture lesson), rather than assuming the local
+# build's behavior is universal.
+skip_unless_adts_refuses_multistream <- function(infile) {
+  skip_if_no_ffmpeg()
+  out <- withr::local_tempfile(fileext = ".aac")
+  st <- suppressWarnings(tryCatch(
+    system2("ffmpeg",
+            c("-y", "-loglevel", "error", "-i", infile, "-map", "0:a",
+              "-c:a", "copy", out),
+            stdout = FALSE, stderr = FALSE),
+    error = function(e) 1L
+  ))
+  testthat::skip_if_not(
+    !identical(as.integer(st), 0L),
+    message = "this FFmpeg writes several audio streams to .aac without refusing"
+  )
+}
+
 test_that("ffm_run() still words its non-zero exit as the enrichment reads it", {
   # The coupling pin. run_separation_audio() tells a non-zero EXIT apart from
   # every other failure (a missing binary, an unreadable path) by parsing
@@ -110,10 +141,14 @@ test_that("ffm_run() still words its non-zero exit as the enrichment reads it", 
   expect_false(is.na(ffmpeg_exit_status(cnd)))
 })
 
-test_that("a multi-track input into a single-stream container names the way out", {
+test_that("a failed audio command on a multi-track input names the way out", {
+  # Triggered by an AAC-to-MP3 stream copy, which fails on every FFmpeg build --
+  # NOT by the .aac stream-count refusal, which only ffmpeg >= 8 performs. AC2
+  # requires each clause to hold on *any* non-zero exit, so the trigger being an
+  # invalid copy rather than a muxer refusal is the criterion's own case.
   skip_if_no_ffprobe()
   infile <- make_multitrack_video()
-  audio <- withr::local_tempfile(fileext = ".aac")
+  audio <- withr::local_tempfile(fileext = ".mp3")
   video <- withr::local_tempfile(fileext = ".mp4")
   cnd <- tryCatch(separate_audio_video(infile, audio, video),
                   error = function(e) e)
@@ -123,6 +158,21 @@ test_that("a multi-track input into a single-stream container names the way out"
   expect_match(msg, "3 audio tracks")         # AC2: states the count
   expect_match(msg, "audio_stream")           # AC2: names the way to take one
   expect_match(msg, ".mka", fixed = TRUE)     # AC2: names a container for several
+})
+
+test_that("the container-refusal occasion is covered where FFmpeg refuses", {
+  # The real-world case the milestone exists for: the audio codec is fine and the
+  # container simply will not hold three streams. Only ffmpeg >= 8's adts muxer
+  # refuses, so this skips on older builds rather than pretending to be portable.
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  skip_unless_adts_refuses_multistream(infile)
+  audio <- withr::local_tempfile(fileext = ".aac")
+  video <- withr::local_tempfile(fileext = ".mp4")
+  cnd <- tryCatch(separate_audio_video(infile, audio, video),
+                  error = function(e) e)
+  expect_s3_class(cnd, "tidymedia_multitrack_separation")
+  expect_match(cli::ansi_strip(conditionMessage(cnd)), "3 audio tracks")
 })
 
 test_that("naming a track falls through to ffm_run()'s own abort", {
@@ -157,7 +207,9 @@ test_that("an unavailable ffprobe falls through to ffm_run()'s own abort", {
   # "nothing to add", never like a second failure mode.
   skip_if_no_ffmpeg()
   infile <- make_multitrack_video()
-  audio <- withr::local_tempfile(fileext = ".aac")
+  # .mp3 rather than .aac: the trigger must be a failure on every FFmpeg build,
+  # or on ffmpeg 6.x this test asserts a fall-through from a run that succeeded.
+  audio <- withr::local_tempfile(fileext = ".mp3")
   video <- withr::local_tempfile(fileext = ".mp4")
   local_mocked_bindings(find_ffprobe = function() NULL)
   cnd <- tryCatch(separate_audio_video(infile, audio, video),
@@ -185,12 +237,12 @@ test_that("a brace-bearing output path does not execute in the abort", {
   skip_if_no_ffprobe()
   infile <- make_multitrack_video()
   dir <- withr::local_tempdir()
-  audio <- file.path(dir, "my{n}.aac")
+  audio <- file.path(dir, "my{n}.mp3")
   video <- file.path(dir, "v.mp4")
   cnd <- tryCatch(separate_audio_video(infile, audio, video),
                   error = function(e) e)
   expect_s3_class(cnd, "tidymedia_multitrack_separation")
-  expect_match(cli::ansi_strip(conditionMessage(cnd)), "my{n}.aac", fixed = TRUE)
+  expect_match(cli::ansi_strip(conditionMessage(cnd)), "my{n}.mp3", fixed = TRUE)
 })
 
 # AC4: the batch sibling -----------------------------------------------------
@@ -283,7 +335,9 @@ test_that("a failed audio row records success = FALSE and warns once", {
   dir <- withr::local_tempdir()
   jobs <- tibble::tibble(
     input     = c(multi, multi, single),
-    audiofile = file.path(dir, c("bad.aac", "named.aac", "ok.aac")),
+    # Row 1's .mp3 fails in every build (AAC cannot be copied into MP3); rows 2
+    # and 3 write one AAC track to .aac, which succeeds in every build.
+    audiofile = file.path(dir, c("bad.mp3", "named.aac", "ok.aac")),
     videofile = file.path(dir, c("v1.mkv", "v2.mkv", "v3.mkv")),
     # Row 2 names a track, so its audio output succeeds; row 3 is single-track.
     audio_stream = c(NA, 1, NA)

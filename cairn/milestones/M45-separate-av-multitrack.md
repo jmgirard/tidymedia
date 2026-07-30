@@ -109,7 +109,7 @@ failed → one grouped candidate row.
       argument/column/`NA` matrix and the per-row warning. Prove the AC2 test
       discriminates by making the enrichment unconditional — it must go red
       (M39's lesson).
-- [ ] T7: Make the enrichment tests FFmpeg-version-independent — trigger the
+- [x] T7: Make the enrichment tests FFmpeg-version-independent — trigger the
       failure with AAC-copy-into-`.mp3` on the multi-track input (invalid in every
       build) rather than the `.aac` stream-count refusal (ffmpeg >= 8 only), and
       cover the container-refusal occasion in a test that probes this FFmpeg's
@@ -139,6 +139,7 @@ failed → one grouped candidate row.
 - 2026-07-30: all tasks done; status review. No prose-guard was authored or edited (the milestone's substring assertions are over runtime condition messages, not over doc wording), so guard-doctrine §8's fresh-context description reader does not apply.
 - 2026-07-30: REVIEW FAILURE (return 1 of the thrash count) — PR #48 CI red on all three ubuntu-latest jobs and test-coverage; macOS and Windows green. 7 failures, all in `test-separate-av-multitrack.R` (lines 120/121, 166, 192/193, 292/293). Cause: ubuntu-latest ships ffmpeg 6.1.1-3ubuntu5, whose adts muxer WRITES three audio streams to `.aac` successfully (log shows `Output #0, adts` and `audio:17kB`, exit 0), where macOS ffmpeg 8.1.2 refuses with "adts muxer does not support more than one stream of type audio". The multi-stream refusal arrived in a later FFmpeg, so every test that triggered the enrichment via `.aac` got no condition at all and `tryCatch` returned the verb's value (a character vector, or a tibble on the batch path). The feature itself is not implicated — it reacts to whatever FFmpeg does — and the AC2 fall-through tests, which fail via AAC-copy-into-`.mp3`, passed on every platform. This is M27's lesson recurring on a new surface: the plan's Scope measurement "`.aac`/`.mp3`/`.wav` fail (measured ffmpeg 8.1.2)" is true of 8.1.2 and false of 6.1.1 for `.aac`.
 - 2026-07-30: added T7 (discovered sub-task, minor amendment) to make the enrichment tests FFmpeg-version-independent.
+- 2026-07-30: T7 done — the four enrichment tests now trigger the failure with an AAC-to-MP3 stream copy on the multi-track input, invalid in every FFmpeg build whatever its muxer stream limits, and the container-refusal occasion has its own test gated by `skip_unless_adts_refuses_multistream()`, which probes this FFmpeg and skips rather than assuming the local build's behavior (M43's fixture-property lesson). The test file's header records the platform finding. Local: 65 assertions, 0 failures, 0 skips.
 
 ## Decisions
 

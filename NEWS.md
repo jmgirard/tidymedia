@@ -350,6 +350,12 @@ changes with no deprecation shims (the package is still pre-1.0 and soaking).
   `separate_audio_video_batch()`, which already refused it. Values these verbs *accept*
   are unchanged — a codec string, and `NULL` where it was already legal, behave
   exactly as before.
+* One knock-on for `standardize_video()`: a call that passes both a bad
+  `video_codec` and an invalid `width` / `height` / `fps` now reports the
+  codec problem first, where it previously reported the dimension problem.
+  Both complaints are real and fixing the codec argument reveals the other;
+  no value that was accepted before is refused now. The other verbs keep
+  their previous ordering.
 
 * `ffm_batch()` (and the `parallel = TRUE` path of `segment_video()` /
   `segment_videos()`) now warns when parallel processing is requested but no

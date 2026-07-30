@@ -281,6 +281,59 @@ test_that("a bad codec argument does not change which error an invalid jobs gets
   expect_identical(observed[names(expected)], expected)
 })
 
+test_that("a codec guard does not preempt a verb's other front-door checks", {
+  # The jobs-shape probe above covers only the FIRST tier of jobs validation.
+  # Each batch verb has a second tier -- override-column types, the "copy"
+  # refusal, the derived-output duplicate check -- and the new guards sat above
+  # all of it, so a call wrong about the jobs CONTENTS reported the codec
+  # instead (review A1r3). The same held for normalize_audio's two_pass block,
+  # which type-checks this argument itself (A3r3). Every guard now sits at the
+  # end of its verb's front-door validation, and these pin it there: each call
+  # is wrong about two things, and must still report the non-codec one.
+  input <- make_input()
+  r <- data.frame(x = 0, y = 0, width = 32, height = 32)
+  cases <- list(
+    list(lbl = "standardize_video_batch / duplicate input",
+         f = function() standardize_video_batch(
+           tibble::tibble(input = c(input, input)), video_codec = NA,
+           run = FALSE, parallel = FALSE),
+         want = "duplicated"),
+    list(lbl = "standardize_video_batch / bad pixel_format column",
+         f = function() standardize_video_batch(
+           tibble::tibble(input = input, output = "o.mp4", pixel_format = 1),
+           video_codec = NA, run = FALSE, parallel = FALSE),
+         want = "pixel_format"),
+    list(lbl = "anonymize_video_batch / duplicate input",
+         f = function() anonymize_video_batch(
+           tibble::tibble(input = c(input, input), regions = list(r, r)),
+           video_codec = NA, run = FALSE, parallel = FALSE),
+         want = "duplicated"),
+    list(lbl = "normalize_audio_batch / duplicate input",
+         f = function() normalize_audio_batch(
+           tibble::tibble(input = c(input, input)), audio_codec = NA,
+           run = FALSE, parallel = FALSE),
+         want = "duplicated"),
+    list(lbl = "normalize_audio_batch / copy in the column",
+         f = function() normalize_audio_batch(
+           tibble::tibble(input = input, output = "o.mp4", audio_codec = "copy"),
+           audio_codec = NA, run = FALSE, parallel = FALSE),
+         want = "copy"),
+    list(lbl = "normalize_audio / two_pass channels",
+         f = function() normalize_audio(
+           input, "o.mp3", audio_codec = NA, channels = 0, two_pass = TRUE,
+           run = FALSE),
+         want = "channels")
+  )
+  for (case in cases) {
+    cnd <- tryCatch({ case$f(); NULL }, error = function(e) e)
+    expect_true(inherits(cnd, "error"), label = paste(case$lbl, "aborts"))
+    if (!inherits(cnd, "error")) next
+    msg <- cli::ansi_strip(conditionMessage(cnd))
+    expect_match(msg, case$want, fixed = TRUE,
+                 label = paste0(case$lbl, " reports the non-codec problem"))
+  }
+})
+
 test_that("the front-door sweep covers every codec argument the package exports", {
   # Completeness: a verb that gains a video_codec/audio_codec argument later must
   # either join the list above or be excluded on the record, rather than quietly

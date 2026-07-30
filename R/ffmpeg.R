@@ -1204,22 +1204,6 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
     ))
   }
 
-  # video_codec had no front-door check, so a non-string reached the per-row
-  # pipeline and aborted inside purrr::pmap(), carrying `In index: <n>` and
-  # blaming pmap rather than this verb (M41).
-  #
-  # Deliberately NOT check_string(allow_null = TRUE): that spelling's message
-  # offers `NULL` as legal, and it is not -- anonymize_pipeline() refuses it a
-  # few lines below, and the scalar sibling anonymize_video() says plain "must be
-  # a single string" (review F3). This shape waves NULL through to the per-row
-  # path it already takes, exactly as allow_null would, without advertising it;
-  # whether that path SHOULD refuse NULL is M42's question, not this milestone's.
-  # Same shape as separate_audio_video_batch()'s scalar guards (M37 review).
-  #
-  # Placed AFTER the jobs-shape block for the reason standardize_video_batch()'s
-  # matching guard states: this milestone does not get to change which complaint
-  # a doubly-invalid call reports (review A6).
-  if (!is.null(video_codec)) rlang::check_string(video_codec)
 
   # A factor input column carries paths as levels; treat them as strings
   # (parity with standardize_video_batch()).
@@ -1255,6 +1239,27 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
     }
     jobs$output <- derive_anonymized_names(jobs$input)
   }
+
+  # video_codec had no front-door check, so a non-string reached the per-row
+  # pipeline and aborted inside purrr::pmap(), carrying `In index: <n>` and
+  # blaming pmap rather than this verb (M41).
+  #
+  # Deliberately NOT check_string(allow_null = TRUE): that spelling's message
+  # offers `NULL` as legal, and it is not -- anonymize_pipeline() refuses it a
+  # few lines below, and the scalar sibling anonymize_video() says plain "must be
+  # a single string" (review F3). This shape waves NULL through to the per-row
+  # path it already takes, exactly as allow_null would, without advertising it;
+  # whether that path SHOULD refuse NULL is M42's question, not this milestone's.
+  # Same shape as separate_audio_video_batch()'s scalar guards (M37 review).
+  #
+  # Placed at the END of this verb's front-door validation, not beside the
+  # other scalar checks: before M41 this argument was only read per row
+  # inside the fan-out, so EVERY check above it reported first on a call
+  # that was wrong about two things at once. Moving the guard up the
+  # function silently reassigned that precedence -- first past the jobs
+  # SHAPE block (review A6), then past its content checks too (review
+  # A1r3). Here it changes nothing but the message a bad codec gets.
+  if (!is.null(video_codec)) rlang::check_string(video_codec)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output box-fill
   # pipeline per row, sharing anonymize_pipeline() with anonymize_video(). A
@@ -1378,14 +1383,6 @@ normalize_audio <- function(infile, outfile,
   check_file_exists(infile)
   rlang::check_string(outfile)
   rlang::check_bool(two_pass)
-  # Duplicates the check apply_audio_codec() makes inside
-  # normalize_audio_pipeline(). That pipeline is shared with
-  # normalize_audio_batch() for per-row validation, so threading a `call` through
-  # it would also rewrite the batch verb's per-row messages; checking here
-  # instead blames this verb on the default two_pass = FALSE path, which
-  # previously blamed normalize_audio_pipeline() (M41). allow_null because NULL
-  # is this verb's documented sentinel (D019).
-  rlang::check_string(audio_codec, allow_null = TRUE)
 
   # Two-pass: measure the input first, then build a linear correction from the
   # measurements. Validate the shaping knobs up front so a bad channels/
@@ -1404,6 +1401,19 @@ normalize_audio <- function(infile, outfile,
     measured <- run_loudnorm_analysis(infile, target_loudness, true_peak,
                                       loudness_range)
   }
+
+  # Duplicates the check apply_audio_codec() makes inside
+  # normalize_audio_pipeline(); that pipeline is shared with the batch sibling
+  # for per-row validation, so threading a `call` through it would rewrite the
+  # batch verb's per-row messages instead (M41). allow_null because NULL is
+  # this verb's documented sentinel (D019).
+  #
+  # Below the two_pass block on purpose: that block already type-checks this
+  # argument via check_token(), and validates channels/sample_rate. Guarding
+  # above it changed which complaint a two-pass call wrong about both gets
+  # (review A3r3). Here the two-pass path is exactly as it was, and the
+  # default path -- the one M41 is about -- is still fixed.
+  rlang::check_string(audio_codec, allow_null = TRUE)
 
   ffm_finish(
     normalize_audio_pipeline(infile, outfile, target_loudness, true_peak,
@@ -2614,19 +2624,6 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
     ))
   }
 
-  # video_codec had no front-door check, so a non-string reached ffm_codec() per
-  # row and aborted inside purrr::pmap() naming Layer-1's `video` -- the caller's
-  # own argument name never appeared (M41). allow_null keeps NULL compiling
-  # exactly as it does today: no -codec:v, the container's default encoder.
-  #
-  # Placed AFTER the jobs-shape block, not beside its audio_codec sibling above:
-  # a call that is wrong about BOTH jobs and the codec reported the jobs problem
-  # before this milestone, and a guard added for message parity has no business
-  # changing which of two complaints a caller sees (review A6). This also puts
-  # all of M41's batch guards in one position. The audio_codec guard above keeps
-  # its M39 placement -- moving it would be the same unasked-for change in the
-  # opposite direction.
-  rlang::check_string(video_codec, allow_null = TRUE)
 
   # A factor input column carries paths as levels; treat them as strings
   # (parity with extract_frame_batch()).
@@ -2672,6 +2669,20 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
     }
     jobs$output <- derive_standardized_names(jobs$input)
   }
+
+  # video_codec had no front-door check, so a non-string reached ffm_codec() per
+  # row and aborted inside purrr::pmap() naming Layer-1's `video` -- the caller's
+  # own argument name never appeared (M41). allow_null keeps NULL compiling
+  # exactly as it does today: no -codec:v, the container's default encoder.
+  #
+  # Placed at the END of this verb's front-door validation, not beside the
+  # other scalar checks: before M41 this argument was only read per row
+  # inside the fan-out, so EVERY check above it reported first on a call
+  # that was wrong about two things at once. Moving the guard up the
+  # function silently reassigned that precedence -- first past the jobs
+  # SHAPE block (review A6), then past its content checks too (review
+  # A1r3). Here it changes nothing but the message a bad codec gets.
+  rlang::check_string(video_codec, allow_null = TRUE)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output re-encode
   # pipeline per row, sharing standardize_pipeline() with standardize_video().
@@ -2993,13 +3004,6 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
   # guard above (M34/M35). Refuse "copy" from the argument and from any cell up
   # front, so two-pass fails before Phase 1 wastes an analysis pass per row.
   check_batch_codec_col(jobs, "audio_codec")
-  # The scalar argument needs its own front-door check, and the column guard
-  # above cannot stand in for it: batch_codec_cell() maps a scalar NA to the
-  # NULL sentinel exactly as it maps an NA cell, so `audio_codec = NA` used to
-  # compile the default command in silence rather than erroring -- the one
-  # codec argument in the package that did (M41). allow_null because NULL is
-  # this verb's documented sentinel (D019).
-  rlang::check_string(audio_codec, allow_null = TRUE)
   check_audio_codec_not_copy(audio_codec)
   if ("audio_codec" %in% names(jobs)) check_audio_codec_not_copy(jobs$audio_codec)
 
@@ -3099,6 +3103,22 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
       checksums = isTRUE(dots$checksums)
     ))
   }
+
+  # The scalar argument needs its own front-door check, and the column guard
+  # above cannot stand in for it: batch_codec_cell() maps a scalar NA to the
+  # NULL sentinel exactly as it maps an NA cell, so `audio_codec = NA` used to
+  # compile the default command in silence rather than erroring -- the one
+  # codec argument in the package that did (M41). allow_null because NULL is
+  # this verb's documented sentinel (D019).
+  #
+  # Placed at the END of this verb's front-door validation, not beside the
+  # other scalar checks: before M41 this argument was only read per row
+  # inside the fan-out, so EVERY check above it reported first on a call
+  # that was wrong about two things at once. Moving the guard up the
+  # function silently reassigned that precedence -- first past the jobs
+  # SHAPE block (review A6), then past its content checks too (review
+  # A1r3). Here it changes nothing but the message a bad codec gets.
+  rlang::check_string(audio_codec, allow_null = TRUE)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output loudnorm
   # pipeline per row, sharing normalize_audio_pipeline() with normalize_audio().

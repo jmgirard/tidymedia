@@ -145,6 +145,8 @@ refused, completing the M37 review's repair of `separate_audio_video_batch`.
 
 ## Work log
 
+- 2026-07-29: review-time FIX for A1r3/A3r3 (88/80), at the maintainer's direction at the round-3 gate. All four new guards moved to the end of their verb's front-door validation — `standardize_video_batch`, `anonymize_video_batch` and `normalize_audio_batch` to just before `ffm_batch()`, `normalize_audio` to below the `two_pass` block. 8 of the 9 measured cases are now byte-identical on both refs; AC4's enumerated set still matches (33 rows, 21/12, 0 vacuous). New regression test pins all six doubly-invalid calls, mutation-verified by hoisting one guard back (reddens two test blocks). A2r3 accepted and declared in NEWS instead — `standardize_video`'s dimension checks sit inside its pipeline, so restoring that precedence would mean duplicating `check_dim()` at the front door.
+- 2026-07-29: LESSON for the log — `git checkout -- <file>` to undo a mutation experiment also discarded four uncommitted guard relocations, because the relocations had not been committed first. Redone and verified identical. Commit before mutating, always.
 - 2026-07-29: SUPERSEDES the T14 line below that says "**11** of the 17 batch verb/argument pairs" are codec-before-`jobs` on `origin/master`. The measured split is **10 codec / 7 jobs**, on both refs. The miscount omitted `anonymize_video_batch audio_codec` (codec-first on `origin/master` under M39's placement) and counted M41's own two guards as codec-first on a ref where no such guard exists. Round-3 finding A7r3 (63); the code comment carrying the same number is corrected in place, this line supersedes the history. The 17-entry map itself was re-verified pair by pair and is correct.
 - 2026-07-29: round-3 review found ONE actioned defect class (3 findings, 80/85/88), confirmed by my own before/after measurement rather than on report: M41's new front-door guards preempt validation that used to run first, so a call wrong about two things now reports a different one. Nine measured cases across `standardize_video_batch`, `anonymize_video_batch`, `normalize_audio_batch`, `standardize_video` and `normalize_audio`. `extract_audio_batch` is the control and is unaffected. AC4 as written still passes — it is scoped to the T2 grid, and the grid does not reach these calls.
 - 2026-07-29: status -> review (round 3). All 16 tasks checked, `devtools::test()` 0 FAIL / 0 WARN / 15 SKIP / 2429 PASS, `devtools::check()` `Status: OK` 0 errors / 0 warnings / 0 notes (3m 6s), `devtools::document()` no diff. M41 authored no prose-guard — its tests assert runtime condition messages, not doc wording — so guard-doctrine §8's fresh-reader step does not apply.
@@ -385,6 +387,24 @@ reports a different one of them. Nine measured cases:
   "must be a single string" to "must be a single string or `NULL`"; and with
   `channels = 0` added it flips from the `channels` abort to the `audio_codec`
   abort. Round-1 finding F7 (68) named this dimension gap and was not actioned.
+
+**Triage — FIXED IN THIS ROUND at the maintainer's direction (2026-07-29 gate).**
+All four new guards moved to the END of their verb's front-door validation, which
+is where the pre-milestone code effectively checked them (per row, inside the
+fan-out). Re-measured against `origin/master`: **8 of the 9 cases are now
+byte-identical on both refs** — every A1r3 case and both A3r3 cases. AC4's
+enumerated set still matches exactly (33 rows, 21/12, 0 vacuous cells) and
+`extract_audio_batch` stays the unchanged control. A regression test pins all six
+doubly-invalid calls, and mutation-verified: hoisting `standardize_video_batch`'s
+guard back above the jobs checks reddens both it and the precedence test.
+
+**A2r3 accepted and declared, not fixed.** `standardize_video`'s dimension checks
+live inside `standardize_pipeline()`, so restoring that one precedence would mean
+duplicating `check_dim()` at the front door — scope this milestone does not have.
+`standardize_video(f, o, width = 0, video_codec = NA)` therefore still reports the
+codec problem where it once reported `width`. Declared in NEWS as a knock-on, in
+plain words, naming the verb and stating that no previously-accepted value is now
+refused.
 
 **Note on AC4.** AC4 as amended is scoped by its own wording to the T2 grid
 ("Measured as the diff between the baseline the T2 script regenerates … and the

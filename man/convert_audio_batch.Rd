@@ -63,6 +63,16 @@ you have more than one file. Each row is one input; \code{input} and
 the same audio-map pipeline (and per-value \code{audio_codec} validation) as
 the scalar verb.
 }
+\details{
+When a row names no \code{audio_stream} and its input turns out to carry
+tracks the output will not, the verb warns \strong{once} for the whole batch,
+naming every affected row. That check is \strong{best-effort}: it runs
+FFprobe, so it is emitted when FFprobe is available and the input can be
+probed, and is skipped silently otherwise. It never runs under \code{run =
+FALSE}, never changes any compiled command, and is skipped entirely when
+every row names a track. Suppress it by class with
+\code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
+}
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 jobs <- tibble::tibble(input = c(video, video), output = c("a.mp3", "b.mp3"))

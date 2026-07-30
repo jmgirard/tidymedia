@@ -102,6 +102,45 @@ probe_all <- function(infile, typed = TRUE) {
   list(container = container, streams = streams)
 }
 
+# count_audio_streams() ---------------------------------------------------
+
+# Count one input's audio streams, or return NA when the count cannot be had.
+# This is the ONLY place the audio verbs' track-drop diagnostic assembles an
+# FFprobe token vector -- it lives here beside probe_one(), the package's other
+# FFprobe token builder, rather than in a Layer-2 verb body (D024/RR02 Q4). One
+# narrow invocation rather than probe_all(), which runs FFprobe once per stream
+# plus once for the container and warns on an unreadable file: this needs a
+# single number and must stay silent.
+#
+# NA is "no answer", never "no audio". D024 licenses this probe only while its
+# outcome changes nothing but whether a warning is signalled, so every failure
+# path has to reach the caller as NA rather than as a condition:
+#   - find_ffprobe() WARNS when the binary is missing, so the call is wrapped.
+#     suppressWarnings() rather than a bare Sys.which() keeps find_program()'s
+#     user-config fallback, so a machine where ffprobe was registered with
+#     set_ffprobe() is still found.
+#   - run_program() ABORTS on a NULL/empty location, so that is short-circuited
+#     before it rather than caught after.
+#   - a non-zero ffprobe exit arrives as a `status` attribute (system2 with
+#     stdout = TRUE), which is not an R condition and would otherwise read as a
+#     count of however many lines came back before the failure.
+count_audio_streams <- function(file) {
+  loc <- suppressWarnings(find_ffprobe())
+  if (is.null(loc) || is.na(loc) || !nzchar(loc)) return(NA_integer_)
+  out <- tryCatch(
+    run_program(
+      loc,
+      c("-i", file, "-v", "error", "-select_streams", "a",
+        "-show_entries", "stream=index", "-of", "csv=p=0"),
+      program = "ffprobe"
+    ),
+    error = function(e) NULL,
+    warning = function(w) NULL
+  )
+  if (is.null(out) || !is.null(attr(out, "status"))) return(NA_integer_)
+  sum(nzchar(trimws(out)))
+}
+
 # probe_one() -------------------------------------------------------------
 
 # Probe a single file. Returns list(container, streams) of raw-character tibbles

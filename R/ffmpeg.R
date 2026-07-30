@@ -263,8 +263,11 @@ extract_audio_pipeline <- function(input, output, audio_codec = "copy") {
 #'
 #' @param infile A string containing the path to a media file.
 #' @param outfile A string containing the path of the audio file to write.
-#' @param audio_codec A string naming the audio codec for the output stream.
-#'   (default = \code{"copy"}, i.e. remux without re-encoding)
+#' @param audio_codec A string naming the audio codec for the output stream
+#'   (default \code{"copy"}, i.e. remux without re-encoding), or \code{NULL} to
+#'   emit no \code{-codec:a} and let the output container's default encoder
+#'   decide — useful when the source codec cannot be copied into the extension
+#'   you asked for.
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
@@ -280,7 +283,10 @@ extract_audio <- function(infile, outfile, audio_codec = "copy", run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
-  rlang::check_string(audio_codec)
+  # allow_null is D022's family rule: NULL emits no -codec:a and lets the output
+  # container's default encoder decide. This verb refused it until M42 while
+  # extract_audio_batch() next door had always compiled the same call.
+  rlang::check_string(audio_codec, allow_null = TRUE)
 
   ffm_finish(extract_audio_pipeline(infile, outfile, audio_codec), run)
 }
@@ -770,7 +776,12 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #'   expression such as \code{"30000/1001"}), or \code{NULL} (default) to keep
 #'   the input frame rate.
 #' @param video_codec A string naming the output video codec (default
-#'   \code{"libx264"}).
+#'   \code{"libx264"}), or \code{NULL} to emit no \code{-codec:v} and let the
+#'   output container's default encoder decide. \code{NULL} is how you opt out
+#'   of the H.264 default for a container that does not hold it — for a
+#'   \code{.webm} output, pass \code{video_codec = NULL} \emph{and}
+#'   \code{audio_codec = NULL}, since the default \code{audio_codec = "copy"}
+#'   would otherwise carry a codec WebM cannot hold.
 #' @param audio_codec A string naming the output audio codec (default
 #'   \code{"copy"}, i.e. stream-copy the source audio unchanged). Name a real
 #'   encoder (e.g. \code{"aac"}) when the source audio codec cannot be copied
@@ -908,7 +919,12 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
 #' @param color A string naming the default fill color in FFmpeg color syntax,
 #'   used for any row without its own \code{color} (default \code{"black"}).
 #' @param video_codec A string naming the output video codec (default
-#'   \code{"libx264"}).
+#'   \code{"libx264"}), or \code{NULL} to emit no \code{-codec:v} and let the
+#'   output container's default encoder decide. \code{NULL} is how you opt out
+#'   of the H.264 default for a container that does not hold it — for a
+#'   \code{.webm} output, pass \code{video_codec = NULL} \emph{and}
+#'   \code{audio_codec = NULL}, since the default \code{audio_codec = "copy"}
+#'   would otherwise carry a codec WebM cannot hold.
 #' @param audio_codec A string naming the output audio codec (default
 #'   \code{"copy"}, i.e. stream-copy the source audio unchanged). Name a real
 #'   encoder (e.g. \code{"aac"}) when the source audio codec cannot be copied
@@ -976,7 +992,22 @@ anonymize_pipeline <- function(input, output, regions, color, video_codec,
                                call = rlang::caller_env()) {
   check_regions(regions, call = call)
   rlang::check_string(color, call = call)
-  check_token(video_codec, call = call)
+  # NULL is D016's "leave the codec alone" sentinel, and D022 makes it the
+  # family-wide spelling of "unset": emit no -codec:v and let the output
+  # container's default encoder decide. Refusing it here is the whole reason
+  # anonymize_video() aborted on a call standardize_video() has always compiled
+  # (measured at M42 T1).
+  #
+  # `allow_null = TRUE` rather than `if (!is.null(video_codec)) check_token(...)`:
+  # the two accept identical values, but only this spelling makes the refusal
+  # message say "must be a single string or `NULL`". The other one keeps
+  # advertising NULL as illegal on the argument where it is now the documented
+  # escape hatch (M42 review F1).
+  #
+  # The check stays at this position rather than moving into apply_video_codec()
+  # below so it keeps reporting before pixel_format and the drawbox dimensions,
+  # exactly as it did (the precedence M41's review twice caught moving).
+  check_token(video_codec, allow_null = TRUE, call = call)
   check_token(pixel_format, call = call)
 
   # Integer coordinates are natural pixel values, but ffm_drawbox()'s check_dim()
@@ -1114,15 +1145,20 @@ derive_anonymized_names <- function(input) {
 #'   \code{pixel_format} — may
 #'   also appear as a column to override the corresponding argument on a per-row
 #'   basis; rows (or knobs) that omit the column fall back to the argument's
-#'   value. In an \code{audio_codec} column, \code{NA} leaves that row's audio
-#'   codec unset (the column form of \code{audio_codec = NULL}). Any other
-#'   columns are ignored.
+#'   value. In either codec column, \code{NA} leaves that row's codec unset (the
+#'   column form of \code{video_codec = NULL} / \code{audio_codec = NULL}); in a
+#'   \code{color} or \code{pixel_format} column it is an error, because those
+#'   have no unset state. Any other columns are ignored.
 #' @param color A string naming the default fill color (FFmpeg color syntax)
 #'   applied to every row, unless \code{jobs} carries a \code{color} column or a
 #'   box supplies its own \code{color}. (default = \code{"black"})
-#' @param video_codec A string naming the output video codec applied to every row,
-#'   unless \code{jobs} carries a \code{video_codec} column. (default =
-#'   \code{"libx264"})
+#' @param video_codec A string naming the output video codec applied to every
+#'   row, unless \code{jobs} carries a \code{video_codec} column, in which case
+#'   \code{NA} in a cell leaves that row's codec unset. Default
+#'   \code{"libx264"}; \code{NULL} emits no \code{-codec:v} and lets the output
+#'   container's default encoder decide (for a \code{.webm} output, pass
+#'   \code{audio_codec = NULL} too — the default \code{"copy"} would otherwise
+#'   carry a codec WebM cannot hold).
 #' @param audio_codec A string naming the output audio codec applied to every
 #'   row, unless \code{jobs} carries an \code{audio_codec} column, in which case
 #'   \code{NA} in a cell leaves that row's codec unset. \code{"copy"} (default)
@@ -1223,16 +1259,25 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   # here rather than as an opaque FFmpeg error mid-batch (M11 parity lesson).
   # Value-level checks (valid color/codec/pixfmt tokens) are inherited per row
   # from anonymize_pipeline()'s guards.
-  str_cols <- c("color", "video_codec", "pixel_format")
+  str_cols <- c("color", "pixel_format")
   for (col in intersect(str_cols, names(jobs))) {
     if (!is.character(jobs[[col]]) || anyNA(jobs[[col]])) {
       cli::cli_abort("The {.field {col}} column of {.arg jobs} must be character (no {.val {NA}}).")
     }
   }
-  # audio_codec is deliberately NOT in str_cols above: unlike video_codec (a
-  # literal "libx264" default with no sentinel), NA is meaningful here -- it is
-  # the column form of audio_codec = NULL (M39/D017), so it needs the guard that
-  # admits NA and the all-NA logical column R hands back (M34 lesson).
+  # Both codec columns take the codec guard, which admits NA and the all-NA
+  # logical column R hands back (M34 lesson). `video_codec` sat in str_cols
+  # above until M42, justified by a comment calling it "a literal libx264
+  # default with no sentinel" -- false when written, since the argument accepts
+  # NULL, and now the family rule: NA is the column form of that NULL (D022).
+  # `color` and `pixel_format` stay in str_cols: not codec arguments, no
+  # sentinel, so an NA cell there spells nothing.
+  #
+  # Checking video_codec here rather than in the loop's slot moves it after
+  # `color` and `pixel_format` in the reporting order for a jobs table with two
+  # bad columns. Named because M41's review twice caught a guard reassigning
+  # precedence unremarked; the two codec columns now report together.
+  check_batch_codec_col(jobs, "video_codec")
   check_batch_codec_col(jobs, "audio_codec")
 
   # Auto-name outputs when the column is absent. One input -> one output, so a
@@ -1254,13 +1299,13 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   # pipeline and aborted inside purrr::pmap(), carrying `In index: <n>` and
   # blaming pmap rather than this verb (M41).
   #
-  # Deliberately NOT check_string(allow_null = TRUE): that spelling's message
-  # offers `NULL` as legal, and it is not -- anonymize_pipeline() refuses it a
-  # few lines below, and the scalar sibling anonymize_video() says plain "must be
-  # a single string" (review F3). This shape waves NULL through to the per-row
-  # path it already takes, exactly as allow_null would, without advertising it;
-  # whether that path SHOULD refuse NULL is M42's question, not this milestone's.
-  # Same shape as separate_audio_video_batch()'s scalar guards (M37 review).
+  # M42 answered the question M41 left here: `NULL` IS legal, the family-wide
+  # sentinel for "emit no -codec:v" (D022). So this takes allow_null = TRUE,
+  # not the `if (!is.null(...))` shape M41 chose to avoid advertising NULL --
+  # that shape accepts the same values but keeps saying NULL is illegal, which
+  # is now false (M42 review F1). separate_audio_video_batch() still carries the
+  # older spelling; its arguments' NULL semantics are D020's, not this
+  # milestone's, so it is left alone rather than swept.
   #
   # Placed at the END of this verb's front-door validation, not beside the
   # other scalar checks: before M41 this argument was only read per row
@@ -1269,7 +1314,7 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   # function silently reassigned that precedence -- first past the jobs
   # SHAPE block (review A6), then past its content checks too (review
   # A1r3). Here it changes nothing but the message a bad codec gets.
-  if (!is.null(video_codec)) rlang::check_string(video_codec)
+  rlang::check_string(video_codec, allow_null = TRUE)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output box-fill
   # pipeline per row, sharing anonymize_pipeline() with anonymize_video(). A
@@ -1285,7 +1330,7 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
       anonymize_pipeline(
         input, output, regions,
         color = pick("color", color),
-        video_codec = pick("video_codec", video_codec),
+        video_codec = batch_codec_cell(pick("video_codec", video_codec)),
         audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         pixel_format = pick("pixel_format", pixel_format),
         # hardware/fallback are batch-wide (a machine property), never per-row
@@ -2551,10 +2596,13 @@ derive_standardized_names <- function(input) {
 #'   \code{fps}, \code{video_codec}, \code{audio_codec}, \code{pixel_format} —
 #'   may also appear as a
 #'   column to override the corresponding argument on a per-row basis; rows (or
-#'   knobs) that omit the column fall back to the argument's value. In an
-#'   \code{audio_codec} column, \code{NA} leaves that row's audio codec unset
-#'   (the column form of \code{audio_codec = NULL}). Any other
-#'   columns are ignored.
+#'   knobs) that omit the column fall back to the argument's value. In either
+#'   codec column, \code{NA} leaves that row's codec unset (the column form of
+#'   \code{video_codec = NULL} / \code{audio_codec = NULL}); in a \code{width},
+#'   \code{height}, \code{fps} or \code{pixel_format} column it is an error.
+#'   \code{pixel_format} has no unset state to express; \code{width},
+#'   \code{height} and \code{fps} do accept \code{NULL} as arguments, but their
+#'   columns have no \code{NA} spelling for it. Any other columns are ignored.
 #' @param width,height Optional target dimensions applied to every row, unless
 #'   \code{jobs} carries a column of the same name (see \code{jobs}). When only
 #'   one is given the other is derived to preserve aspect ratio; when neither is
@@ -2563,8 +2611,13 @@ derive_standardized_names <- function(input) {
 #' @param fps Optional target frame rate applied to every row, unless
 #'   \code{jobs} carries an \code{fps} column. (default = \code{NULL}, i.e.
 #'   leave the frame rate unchanged)
-#' @param video_codec A string naming the video codec applied to every row, unless
-#'   \code{jobs} carries a \code{video_codec} column. (default = \code{"libx264"})
+#' @param video_codec A string naming the video codec applied to every row,
+#'   unless \code{jobs} carries a \code{video_codec} column, in which case
+#'   \code{NA} in a cell leaves that row's codec unset. Default
+#'   \code{"libx264"}; \code{NULL} emits no \code{-codec:v} and lets the output
+#'   container's default encoder decide (for a \code{.webm} output, pass
+#'   \code{audio_codec = NULL} too — the default \code{"copy"} would otherwise
+#'   carry a codec WebM cannot hold).
 #' @param audio_codec A string naming the audio codec applied to every row,
 #'   unless \code{jobs} carries an \code{audio_codec} column, in which case
 #'   \code{NA} in a cell leaves that row's codec unset. \code{"copy"} (default)
@@ -2652,16 +2705,25 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
       cli::cli_abort("The {.field {col}} column of {.arg jobs} must not contain {.val {NA}}.")
     }
   }
-  str_cols <- c("video_codec", "pixel_format")
+  str_cols <- c("pixel_format")
   for (col in intersect(str_cols, names(jobs))) {
     if (!is.character(jobs[[col]]) || anyNA(jobs[[col]])) {
       cli::cli_abort("The {.field {col}} column of {.arg jobs} must be character (no {.val {NA}}).")
     }
   }
-  # audio_codec is deliberately NOT in str_cols above: unlike video_codec (a
-  # literal "libx264" default with no sentinel), NA is meaningful here -- it is
-  # the column form of audio_codec = NULL (M39/D017), so it needs the guard that
-  # admits NA and the all-NA logical column R hands back (M34 lesson).
+  # Both codec columns take the codec guard, which admits NA and the all-NA
+  # logical column R hands back (M34 lesson). `video_codec` sat in str_cols
+  # above until M42, justified by a comment calling it "a literal libx264
+  # default with no sentinel" -- false when written, since the argument accepts
+  # NULL, and now the family rule: NA is the column form of that NULL (D022).
+  # `pixel_format` stays in str_cols: not a codec argument, no sentinel, so an
+  # NA cell there spells nothing.
+  #
+  # Checking video_codec here rather than in the loop's slot moves it after
+  # `pixel_format` in the reporting order for a jobs table with two bad columns.
+  # Named because M41's review twice caught a guard reassigning precedence
+  # unremarked; the two codec columns now report together.
+  check_batch_codec_col(jobs, "video_codec")
   check_batch_codec_col(jobs, "audio_codec")
 
   # Auto-name outputs when the column is absent. One input -> one output, so a
@@ -2709,7 +2771,7 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
         width = pick("width", width),
         height = pick("height", height),
         fps = pick("fps", fps),
-        video_codec = pick("video_codec", video_codec),
+        video_codec = batch_codec_cell(pick("video_codec", video_codec)),
         audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         pixel_format = pick("pixel_format", pixel_format),
         hardware = hardware,
@@ -3362,10 +3424,15 @@ check_fanin_jobs <- function(jobs, min_inputs = 1L, verb = NULL,
 #'   the instruction (it picks the container, and with \code{audio_codec =
 #'   "copy"} must match the source codec). An optional \code{audio_codec} column
 #'   overrides the \code{audio_codec} argument per row; rows omitting it fall
-#'   back to the argument. Any other columns are ignored.
+#'   back to the argument, and \code{NA} in a cell leaves that row's codec unset
+#'   (the column form of \code{audio_codec = NULL}). Any other columns are
+#'   ignored.
 #' @param audio_codec The audio codec applied to every row unless \code{jobs}
-#'   carries an \code{audio_codec} column. \code{"copy"} (default) stream-copies
-#'   the audio losslessly; name an encoder (e.g. \code{"aac"}) to transcode.
+#'   carries an \code{audio_codec} column, in which case \code{NA} in a cell
+#'   leaves that row's codec unset. \code{"copy"} (default) stream-copies the
+#'   audio losslessly; name an encoder (e.g. \code{"aac"}) to transcode; or pass
+#'   \code{NULL} to emit no \code{-codec:a} and let the output container's
+#'   default encoder decide.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -3390,27 +3457,20 @@ extract_audio_batch <- function(jobs, audio_codec = "copy", run = TRUE,
 
   jobs <- check_batch_jobs(jobs, require_output = TRUE, verb = "Audio extraction")
   jobs <- reject_duplicate_outputs(jobs)
-  check_batch_string_col(jobs, "audio_codec")
+  # check_batch_codec_col(), never check_batch_string_col(), which rejects NA
+  # and so leaves the column unable to spell the "unset" its own argument can
+  # say with NULL (D022). This was the third and last codec column on the wrong
+  # guard.
+  check_batch_codec_col(jobs, "audio_codec")
   # Without this, a non-string audio_codec reached ffm_codec() per row and
   # aborted inside purrr::pmap() naming Layer-1's `audio` -- the only pair in the
   # package that leaked the engine's name, fired mid-fan-out, AND blamed pmap all
   # at once (M41).
   #
-  # allow_null = TRUE here while extract_audio() next door uses a bare
-  # check_string() that REJECTS NULL, so the scalar verb and its batch sibling
-  # disagree about what `audio_codec = NULL` means: the batch form compiles `-vn`
-  # with no -codec:a, the scalar form aborts. That split predates this milestone
-  # and is preserved here on purpose -- M41 changes only which values are
-  # refused, never what an accepted value does. Reconciling the two is M42's job.
-  #
-  # D021 does NOT record this split, and an earlier version of this comment
-  # wrongly cited it as doing so (review F19). D021 instead asserts that
-  # extract_audio() "accepts neither `NULL` nor `NA`" and never mentions this
-  # batch verb at all -- a claim measurement contradicts, since
-  # extract_audio_batch(audio_codec = NULL) compiled before this milestone and
-  # still compiles. DECISIONS.md is append-only history, so the repair is a
-  # superseding entry from M42, which owns these semantics -- not an edit there
-  # and not a citation here.
+  # allow_null carries D022's family rule: NULL emits no -codec:a. The scalar
+  # sibling now agrees; until M42 it aborted on this same call, which is the
+  # split D021 recorded from the wrong side (it called extract_audio() the verb
+  # that "accepts neither NULL nor NA" without noticing this one always had).
   rlang::check_string(audio_codec, allow_null = TRUE)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one map/drop-video pipeline per
@@ -3422,7 +3482,10 @@ extract_audio_batch <- function(jobs, audio_codec = "copy", run = TRUE,
     function(input, output, ...) {
       dots <- list(...)
       pick <- function(nm, default) if (nm %in% names(dots)) dots[[nm]] else default
-      extract_audio_pipeline(input, output, audio_codec = pick("audio_codec", audio_codec))
+      extract_audio_pipeline(
+        input, output,
+        audio_codec = batch_codec_cell(pick("audio_codec", audio_codec))
+      )
     },
     run = run,
     parallel = parallel,

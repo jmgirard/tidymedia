@@ -20,11 +20,16 @@ verbs, an audio destination cannot be auto-named because its extension is
 the instruction (it picks the container, and with \code{audio_codec =
 "copy"} must match the source codec). An optional \code{audio_codec} column
 overrides the \code{audio_codec} argument per row; rows omitting it fall
-back to the argument. Any other columns are ignored.}
+back to the argument, and \code{NA} in a cell leaves that row's codec unset
+(the column form of \code{audio_codec = NULL}). Any other columns are
+ignored.}
 
 \item{audio_codec}{The audio codec applied to every row unless \code{jobs}
-carries an \code{audio_codec} column. \code{"copy"} (default) stream-copies
-the audio losslessly; name an encoder (e.g. \code{"aac"}) to transcode.}
+carries an \code{audio_codec} column, in which case \code{NA} in a cell
+leaves that row's codec unset. \code{"copy"} (default) stream-copies the
+audio losslessly; name an encoder (e.g. \code{"aac"}) to transcode; or pass
+\code{NULL} to emit no \code{-codec:a} and let the output container's
+default encoder decide.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}

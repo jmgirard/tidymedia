@@ -8,7 +8,7 @@ _Last hygiene check: 2026-07-29 (four milestones planned: M41/M42 from the corre
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M41 | Front-door validation parity for the codec arguments | planned | — | normal | milestones/M41-codec-arg-front-door-guards.md |
+| M41 | Front-door validation parity for the codec arguments | review | — | normal | milestones/M41-codec-arg-front-door-guards.md |
 | M42 | What `NULL` and column `NA` mean, settled across the codec family | planned | M41 | normal | milestones/M42-codec-null-na-semantics.md |
 | M43 | Pick which audio track the extraction verbs take (`audio_stream`) | planned | M41, M42 | normal | milestones/M43-audio-stream-selection.md |
 | M44 | Say something when audio tracks are dropped | planned | M43 | normal | milestones/M44-implicit-track-drop-warning.md |

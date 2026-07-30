@@ -328,6 +328,35 @@ changes with no deprecation shims (the package is still pre-1.0 and soaking).
 
 ## Bug fixes
 
+* `normalize_audio_batch(audio_codec = NA)` now aborts instead of quietly
+  compiling the default command. A scalar `NA` was resolved the same way as an
+  `NA` cell in a jobs-table column — where it legitimately means "leave this
+  row's codec unset" — so an accidental `NA` argument produced a command with
+  no `-codec:a` and no indication that anything had been ignored.
+* Every `video_codec` and `audio_codec` argument now reports a bad value
+  against the argument and the verb you actually called. Several previously
+  blamed an internal helper, named FFmpeg's own `video` / `audio` parameter
+  instead of the argument you passed, or — on the `_batch` verbs — surfaced the
+  complaint from inside the row loop with an `In index: 1` prefix, as though one
+  row's data were at fault rather than a whole-table argument. Affected
+  `standardize_video()`, `standardize_video_batch()`, `anonymize_video_batch()`,
+  `extract_audio_batch()`, `convert_audio()`, and `normalize_audio()`.
+* A bad `video_codec` / `audio_codec` **argument** on a `_batch` verb is now
+  refused even when `jobs` carries a column of the same name. The column
+  takes precedence over the argument, so a non-string value passed as the
+  argument used to be discarded in silence; `standardize_video_batch()`,
+  `anonymize_video_batch()`, `extract_audio_batch()` and
+  `normalize_audio_batch()` now report it, matching
+  `separate_audio_video_batch()`, which already refused it. Values these verbs *accept*
+  are unchanged — a codec string, and `NULL` where it was already legal, behave
+  exactly as before.
+* One knock-on for `standardize_video()`: a call that passes both a bad
+  `video_codec` and an invalid `width` / `height` / `fps` now reports the
+  codec problem first, where it previously reported the dimension problem.
+  Both complaints are real and fixing the codec argument reveals the other;
+  no value that was accepted before is refused now. The other verbs keep
+  their previous ordering.
+
 * `ffm_batch()` (and the `parallel = TRUE` path of `segment_video()` /
   `segment_videos()`) now warns when parallel processing is requested but no
   parallel `future::plan()` is active. Previously such calls ran one job at a

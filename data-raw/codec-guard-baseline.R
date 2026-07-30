@@ -29,6 +29,14 @@
 # (review F2/F7 -> M41-D2). Scalar verbs have no jobs table and are recorded as
 # `absent`.
 #
+# A third dimension covers the three non-string scenarios on a `_batch` verb:
+#
+#   jobs = valid    the call is wrong only about the codec argument
+#   jobs = invalid  `jobs` is not a table either, so two things are wrong
+#
+# The `invalid` half records WHICH complaint a doubly-invalid call gets, which
+# is a behaviour a guard's placement silently decides (review A6).
+#
 # `verify_media()` is excluded by design: its same-named arguments are *expected
 # probe values*, not codec settings, so a guard there would be a contract change
 # rather than validation parity (AC2).
@@ -47,12 +55,13 @@
 #   source("data-raw/codec-guard-baseline.R")
 #   before <- codec_guard_baseline("origin/master")  # a git ref
 #   after  <- codec_guard_baseline()                 # the working tree
+#   codec_guard_vacuous(before); codec_guard_vacuous(after)   # both empty
 #   codec_guard_diff(before, after)
 #
-# `codec_guard_diff()` returns the rows whose outcome changed. AC4 asks that no
-# `default` or `null` row appear in that diff at either `col` setting, and that
-# the `col = present` rows that do appear are confined to the four `_batch` verbs
-# M41-D2 names.
+# `codec_guard_diff()` returns the rows whose outcome changed, and AC4 names the
+# exact set it may contain. Run `codec_guard_vacuous()` on both sides first: it
+# lists cells whose `default` call did not compile, and such a cell satisfies
+# AC4's before/after comparison while measuring nothing.
 
 # -- loading a ref's sources -------------------------------------------------
 
@@ -168,10 +177,18 @@ codec_guard_verbs <- function() {
     compare_videos = list(
       args = c("video_codec", "audio_codec"),
       call = function(s, o) list(infiles = c(s, s), outfile = o)),
+    # col_extra: what else the call needs before a `col = present` run measures
+    # anything. An audio_codec COLUMN on a fan-in verb whose `audio` is NULL is
+    # refused by D017 ("needs an audio stream to encode") before the scalar
+    # argument is reached, so the cell records that unrelated abort at every
+    # scenario -- including `default`, which is what makes it vacuous rather
+    # than merely noisy (review A2). Naming an input to carry audio puts the
+    # cell back on the codec argument, as it is on every other verb.
     compare_videos_batch = list(
       args = c("video_codec", "audio_codec"),
       call = function(s, o) list(jobs = tibble::tibble(
-        inputs = list(c(s, s)), output = o))),
+        inputs = list(c(s, s)), output = o)),
+      col_extra = list(audio_codec = list(audio = 0))),
     convert_audio = list(
       args = "audio_codec",
       call = function(s, o) list(infile = s, outfile = sub("\\.mp4$", ".mp3", o))),
@@ -203,10 +220,17 @@ codec_guard_verbs <- function() {
     picture_in_picture = list(
       args = c("video_codec", "audio_codec"),
       call = function(s, o) list(main = s, overlay = s, outfile = o)),
+    # Fixed two-input shape (D015): named main/overlay columns, NOT the
+    # `inputs` list-column the other fan-in verb takes. With the wrong shape
+    # every cell here aborted on "Missing columns", so the default/null cells
+    # never compiled -- AC4's "no default/null row changed" was vacuous on this
+    # verb -- and the `col = present` half merely duplicated `absent` (review
+    # A1, the same structural blindness class as round 1's F2/F7).
     picture_in_picture_batch = list(
       args = c("video_codec", "audio_codec"),
       call = function(s, o) list(jobs = tibble::tibble(
-        inputs = list(c(s, s)), output = o))),
+        main = s, overlay = s, output = o)),
+      col_extra = list(audio_codec = list(audio = 0))),
     segment_video = list(
       args = c("video_codec", "audio_codec"),
       call = function(s, o) list(infile = s, start = 0, end = 1,
@@ -254,10 +278,28 @@ codec_guard_col_value <- function(arg) {
   if (arg == "video_codec") "libx264" else "aac"
 }
 
-# Which `col` settings apply to a verb: a scalar verb has no jobs table, so
-# `present` is not a state it can be in.
-codec_guard_cols <- function(base) {
-  if ("jobs" %in% names(base)) c("absent", "present") else "absent"
+# The cells a verb/scenario is probed in. Two dimensions, both meaningful only
+# on a `_batch` verb, which is why a scalar verb gets the single default cell:
+#
+#   col   whether `jobs` carries a column of the same name as the argument
+#   jobs  whether `jobs` itself is a valid table at all
+#
+# The `jobs = "invalid"` cell exists to pin PRECEDENCE: when a call is wrong
+# about both the table and the codec argument, which complaint does it get? Two
+# verbs' new guards changed that answer as a side effect (review A6), and no
+# template here passes an invalid table, so the grid could not see it. It is
+# probed only for the non-string scenarios, since `default`/`null` give the
+# guard nothing to complain about and the answer would be the jobs error either
+# way.
+codec_guard_cells <- function(base, scenario) {
+  cells <- list(list(col = "absent", jobs = "valid"))
+  if ("jobs" %in% names(base)) {
+    cells <- c(cells, list(list(col = "present", jobs = "valid")))
+    if (!scenario %in% c("default", "null")) {
+      cells <- c(cells, list(list(col = "absent", jobs = "invalid")))
+    }
+  }
+  cells
 }
 
 # -- running the grid --------------------------------------------------------
@@ -280,9 +322,10 @@ codec_guard_baseline <- function(ref = NULL, root = ".", sample = NULL) {
     if (!is.function(f)) {
       # A ref predating the verb (or its rename) has nothing to compare.
       for (arg in spec$args) for (sc in names(codec_guard_scenarios)) {
-        for (cl in codec_guard_cols(spec$call(sample, outfile))) {
+        for (cell in codec_guard_cells(spec$call(sample, outfile), sc)) {
           rows[[length(rows) + 1]] <- data.frame(
-            verb = verb, arg = arg, scenario = sc, col = cl, kind = "absent",
+            verb = verb, arg = arg, scenario = sc, col = cell$col,
+            jobs = cell$jobs, kind = "absent",
             outcome = NA_character_, call = NA_character_,
             in_index = NA, stringsAsFactors = FALSE)
         }
@@ -292,9 +335,10 @@ codec_guard_baseline <- function(ref = NULL, root = ".", sample = NULL) {
     if (!all(spec$args %in% names(formals(f)))) {
       for (arg in setdiff(spec$args, names(formals(f)))) {
         for (sc in names(codec_guard_scenarios)) {
-          for (cl in codec_guard_cols(spec$call(sample, outfile))) {
+          for (cell in codec_guard_cells(spec$call(sample, outfile), sc)) {
             rows[[length(rows) + 1]] <- data.frame(
-              verb = verb, arg = arg, scenario = sc, col = cl, kind = "absent",
+              verb = verb, arg = arg, scenario = sc, col = cell$col,
+              jobs = cell$jobs, kind = "absent",
               outcome = NA_character_, call = NA_character_,
               in_index = NA, stringsAsFactors = FALSE)
           }
@@ -304,7 +348,8 @@ codec_guard_baseline <- function(ref = NULL, root = ".", sample = NULL) {
 
     for (arg in intersect(spec$args, names(formals(f)))) {
       for (sc in names(codec_guard_scenarios)) {
-       for (cl in codec_guard_cols(spec$call(sample, outfile))) {
+       for (cell in codec_guard_cells(spec$call(sample, outfile), sc)) {
+        cl <- cell$col
         base <- spec$call(sample, outfile)
         base$run <- FALSE
         # `parallel = FALSE` is the default, but AC3 is about this exact path,
@@ -322,6 +367,15 @@ codec_guard_baseline <- function(ref = NULL, root = ".", sample = NULL) {
         # scalar used to be ignored rather than refused (M41-D2).
         if (identical(cl, "present")) {
           base$jobs[[arg]] <- codec_guard_col_value(arg)
+          for (nm in names(spec$col_extra[[arg]])) {
+            base[[nm]] <- spec$col_extra[[arg]][[nm]]
+          }
+        }
+        # The precedence cell: `jobs` is not a table at all, so the call is
+        # wrong about two things at once and the recorded outcome says which
+        # one the verb reports first (review A6).
+        if (identical(cell$jobs, "invalid")) {
+          base$jobs <- "oops"
         }
 
         obs <- tryCatch(
@@ -356,7 +410,8 @@ codec_guard_baseline <- function(ref = NULL, root = ".", sample = NULL) {
         )
 
         rows[[length(rows) + 1]] <- data.frame(
-          verb = verb, arg = arg, scenario = sc, col = cl, kind = obs$kind,
+          verb = verb, arg = arg, scenario = sc, col = cl, jobs = cell$jobs,
+          kind = obs$kind,
           outcome = obs$outcome, call = obs$call, in_index = obs$in_index,
           stringsAsFactors = FALSE)
        }
@@ -377,12 +432,28 @@ codec_guard_baseline <- function(ref = NULL, root = ".", sample = NULL) {
 # appear, with the `call` column moving to the Layer-2 verb and `in_index` moving
 # to FALSE.
 #
-# `col` is part of the row key below: without it the two halves of a batch pair
-# collapse onto one key and match() pairs `absent` against `present`.
+# `col` and `jobs` are part of the row key below: without them the cells of a
+# batch pair collapse onto one key and match() pairs `absent` against `present`.
+# The separator is a literal \037 (unit separator) so no combination of field
+# values can spell another row's key.
+#
+# The two baselines are required to cover the SAME cells. Matching runs over
+# `after`'s keys, so a row present only in `before` would be dropped silently --
+# and AC4's claim is that the changed set is exactly an enumerated list, which a
+# silently dropped row would falsify without appearing (review A17). Compare the
+# key sets and refuse to report a diff over mismatched grids.
 codec_guard_diff <- function(before, after) {
-  key <- function(d) paste(d$verb, d$arg, d$scenario, d$col, sep = "")
+  key <- function(d) paste(d$verb, d$arg, d$scenario, d$col, d$jobs, sep ="")
+  only_before <- setdiff(key(before), key(after))
+  only_after <- setdiff(key(after), key(before))
+  if (length(only_before) > 0 || length(only_after) > 0) {
+    stop("the two baselines cover different cells; ",
+         length(only_before), " only in `before`, ",
+         length(only_after), " only in `after`. ",
+         "Re-run both sides with the same version of this script.")
+  }
   b <- before[match(key(after), key(before)), , drop = FALSE]
-  changed <- !identical(nrow(b), 0L) & (
+  changed <- (
     b$kind != after$kind |
       xor(is.na(b$outcome), is.na(after$outcome)) |
       (!is.na(b$outcome) & !is.na(after$outcome) & b$outcome != after$outcome) |
@@ -395,6 +466,7 @@ codec_guard_diff <- function(before, after) {
   data.frame(
     verb = after$verb[changed], arg = after$arg[changed],
     scenario = after$scenario[changed], col = after$col[changed],
+    jobs = after$jobs[changed],
     before_kind = b$kind[changed], after_kind = after$kind[changed],
     before_call = b$call[changed], after_call = after$call[changed],
     before_in_index = b$in_index[changed],
@@ -410,7 +482,8 @@ codec_guard_diff <- function(before, after) {
 # function the non-string aborts blame, and whether any carries `In index:`. A
 # `kinds=compiled` cell is a pair that did NOT refuse the bad value.
 codec_guard_report <- function(baseline) {
-  bad <- baseline[baseline$scenario %in% c("na", "number", "vec2"), ]
+  bad <- baseline[baseline$scenario %in% c("na", "number", "vec2") &
+                    baseline$jobs == "valid", ]
   pairs <- unique(bad[c("verb", "arg", "col")])
   for (i in seq_len(nrow(pairs))) {
     v <- pairs$verb[[i]]
@@ -425,4 +498,18 @@ codec_guard_report <- function(baseline) {
                 paste(calls, collapse = " | ")))
   }
   invisible(baseline)
+}
+
+# The anti-vacuity check. AC4's force comes from `default` and `null` rows
+# COMPILING on both refs and being identical: a cell where the default call
+# aborts contributes a matching pair of aborts and so passes the comparison
+# while measuring nothing. That is not hypothetical -- picture_in_picture_batch
+# sat in this grid with a `jobs` shape it does not accept, so its default and
+# null cells aborted on the missing columns and its whole verb was dead weight
+# in the evidence (review A1). Run this on any baseline before trusting a diff
+# over it: every returned row is a cell whose default call did not compile, and
+# a healthy grid returns none.
+codec_guard_vacuous <- function(baseline) {
+  d <- baseline[baseline$scenario == "default" & baseline$jobs == "valid", ]
+  d[d$kind != "compiled", c("verb", "arg", "col", "kind", "outcome")]
 }

@@ -490,9 +490,18 @@ convert_audio <- function(infile, outfile, audio_codec = NULL, run = TRUE) {
   # is shared with convert_audio_batch(), which relies on it for per-row
   # validation, so threading a `call` through it would also rewrite the batch
   # verb's per-row messages; checking here instead blames this verb and leaves
-  # the batch path untouched (M41). allow_null because NULL is not the
-  # emit-nothing sentinel here -- it selects `-q:a 0` (D021).
-  rlang::check_string(audio_codec, allow_null = TRUE)
+  # the batch path untouched (M41). NULL passes straight through: it is not the
+  # emit-nothing sentinel here, it selects `-q:a 0` (D021).
+  #
+  # Spelled this way rather than check_string(allow_null = TRUE) so the message
+  # matches convert_audio_batch()'s, which is the identical guard on the
+  # identical value. The allow_null spelling said "must be a single string or
+  # `NULL`" while the batch sibling said "must be a single string" -- a
+  # divergence this milestone introduced, and one M41 has no business
+  # introducing when it exists to make these messages agree (review A7).
+  # Neither message mentions the `NULL` both verbs accept; that is a
+  # pre-existing habit across the codec family (review A8) and M42's to settle.
+  if (!is.null(audio_codec)) rlang::check_string(audio_codec)
 
   # No `...` here, so a stale `format =` gets R's own `unused argument` error --
   # no guard needed (M37 lesson; the batch sibling, which has `...`, does need
@@ -1163,18 +1172,6 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   hardware <- rlang::arg_match(hardware)
   # NULL is legal (the "emit no -codec:a" escape hatch), so allow_null (M39).
   rlang::check_string(audio_codec, allow_null = TRUE)
-  # video_codec had no front-door check, so a non-string reached the per-row
-  # pipeline and aborted inside purrr::pmap(), carrying `In index: <n>` and
-  # blaming pmap rather than this verb (M41).
-  #
-  # Deliberately NOT check_string(allow_null = TRUE): that spelling's message
-  # offers `NULL` as legal, and it is not -- anonymize_pipeline() refuses it a
-  # few lines below, and the scalar sibling anonymize_video() says plain "must be
-  # a single string" (review F3). This shape waves NULL through to the per-row
-  # path it already takes, exactly as allow_null would, without advertising it;
-  # whether that path SHOULD refuse NULL is M42's question, not this milestone's.
-  # Same shape as separate_audio_video_batch()'s scalar guards (M37 review).
-  if (!is.null(video_codec)) rlang::check_string(video_codec)
 
   if (!is.data.frame(jobs)) {
     cli::cli_abort("{.arg jobs} must be a data frame with one row per input.")
@@ -1206,6 +1203,23 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
       "i" = "Each element is a boxes data frame, one per input row."
     ))
   }
+
+  # video_codec had no front-door check, so a non-string reached the per-row
+  # pipeline and aborted inside purrr::pmap(), carrying `In index: <n>` and
+  # blaming pmap rather than this verb (M41).
+  #
+  # Deliberately NOT check_string(allow_null = TRUE): that spelling's message
+  # offers `NULL` as legal, and it is not -- anonymize_pipeline() refuses it a
+  # few lines below, and the scalar sibling anonymize_video() says plain "must be
+  # a single string" (review F3). This shape waves NULL through to the per-row
+  # path it already takes, exactly as allow_null would, without advertising it;
+  # whether that path SHOULD refuse NULL is M42's question, not this milestone's.
+  # Same shape as separate_audio_video_batch()'s scalar guards (M37 review).
+  #
+  # Placed AFTER the jobs-shape block for the reason standardize_video_batch()'s
+  # matching guard states: this milestone does not get to change which complaint
+  # a doubly-invalid call reports (review A6).
+  if (!is.null(video_codec)) rlang::check_string(video_codec)
 
   # A factor input column carries paths as levels; treat them as strings
   # (parity with standardize_video_batch()).
@@ -2586,11 +2600,6 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
   hardware <- rlang::arg_match(hardware)
   # NULL is legal (the "emit no -codec:a" escape hatch), so allow_null (M39).
   rlang::check_string(audio_codec, allow_null = TRUE)
-  # video_codec had no front-door check, so a non-string reached ffm_codec() per
-  # row and aborted inside purrr::pmap() naming Layer-1's `video` -- the caller's
-  # own argument name never appeared (M41). allow_null keeps NULL compiling
-  # exactly as it does today: no -codec:v, the container's default encoder.
-  rlang::check_string(video_codec, allow_null = TRUE)
 
   if (!is.data.frame(jobs)) {
     cli::cli_abort("{.arg jobs} must be a data frame with one row per input.")
@@ -2604,6 +2613,20 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
       "x" = "Missing column: {.val input}."
     ))
   }
+
+  # video_codec had no front-door check, so a non-string reached ffm_codec() per
+  # row and aborted inside purrr::pmap() naming Layer-1's `video` -- the caller's
+  # own argument name never appeared (M41). allow_null keeps NULL compiling
+  # exactly as it does today: no -codec:v, the container's default encoder.
+  #
+  # Placed AFTER the jobs-shape block, not beside its audio_codec sibling above:
+  # a call that is wrong about BOTH jobs and the codec reported the jobs problem
+  # before this milestone, and a guard added for message parity has no business
+  # changing which of two complaints a caller sees (review A6). This also puts
+  # all of M41's batch guards in one position. The audio_codec guard above keeps
+  # its M39 placement -- moving it would be the same unasked-for change in the
+  # opposite direction.
+  rlang::check_string(video_codec, allow_null = TRUE)
 
   # A factor input column carries paths as levels; treat them as strings
   # (parity with extract_frame_batch()).

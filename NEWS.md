@@ -346,8 +346,8 @@ changes with no deprecation shims (the package is still pre-1.0 and soaking).
   takes precedence over the argument, so a non-string value passed as the
   argument used to be discarded in silence; `standardize_video_batch()`,
   `anonymize_video_batch()`, `extract_audio_batch()` and
-  `normalize_audio_batch()` now report it, which is what
-  `separate_audio_video_batch()` has always done. Values these verbs *accept*
+  `normalize_audio_batch()` now report it, matching
+  `separate_audio_video_batch()`, which already refused it. Values these verbs *accept*
   are unchanged — a codec string, and `NULL` where it was already legal, behave
   exactly as before.
 

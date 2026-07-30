@@ -127,16 +127,16 @@ refused, completing the M37 review's repair of `separate_audio_video_batch`.
       comment's false D021 citation.
 - [x] T12: Correct the NEWS entry's "which values are accepted is unchanged",
       then `test()` + `check()` clean.
-- [ ] T13 (round 2, A1): Repoint the `picture_in_picture_batch` call template in
+- [x] T13 (round 2, A1): Repoint the `picture_in_picture_batch` call template in
       both the instrument and the test at D015's `main`/`overlay`/`output`
       columns, so its `default`/`null` cells compile instead of aborting on
       missing columns and its `col = present` half stops duplicating `absent`.
-- [ ] T14 (round 2, A6): Move `standardize_video_batch`'s and
+- [x] T14 (round 2, A6): Move `standardize_video_batch`'s and
       `anonymize_video_batch`'s new codec guards after the jobs-shape check, so
       an invalid `jobs` keeps reporting first as it did pre-milestone; add an
       invalid-`jobs` dimension to the instrument, and a test, proving no verb
       changed which error it reports.
-- [ ] T15 (round 2, A7/A5): Give `convert_audio`'s hoisted guard the
+- [x] T15 (round 2, A7/A5): Give `convert_audio`'s hoisted guard the
       `if (!is.null(x)) check_string(x)` shape, so it stops advertising a `NULL`
       its own batch sibling's message denies; and correct NEWS's false
       "has always done" history for `separate_audio_video_batch`.
@@ -145,6 +145,17 @@ refused, completing the M37 review's repair of `separate_audio_video_batch`.
 
 ## Work log
 
+- 2026-07-29: T13/T14/T15 in one checkpoint — the three fixes interleave in `R/ffmpeg.R`, the instrument and the test file, and were verified together; each has its own log line below.
+- 2026-07-29: T14 found A6 UNDERSTATED the split. Measured on `origin/master`, codec-before-`jobs` precedence holds on **11** of the 17 batch verb/argument pairs, not two: `compare_videos_batch` both, `crop_video_batch` both, `picture_in_picture_batch` both, `segment_video_batch` both, `standardize_video_batch` `audio_codec` (M39), plus M41's two. So the majority position is codec-first and the inconsistency is inherited, not M41's. Only the two M41 moved are moved back; normalizing the rest would change error text on verbs this milestone never touched — the exact fault being repaired.
+- 2026-07-29: T14 pins that map as data in the test file rather than asserting a rule the package does not follow. A first draft asserted `jobs`-first universally and went red on 5 pre-existing pairs — a useful failure, since it is what measured the 11-vs-6 split.
+- 2026-07-29: T14 — `standardize_video_batch`'s and `anonymize_video_batch`'s `video_codec` guards moved below the jobs-shape block; both now report the `jobs` error on a doubly-invalid call exactly as they did pre-milestone. Their `audio_codec` guards keep M39's placement: moving those would be the same unasked-for change pointing the other way.
+- 2026-07-29: T14 added a `jobs = valid/invalid` dimension to the instrument (306 rows/side, was 255), so precedence is measured rather than argued; zero `jobs = invalid` rows differ between the refs.
+- 2026-07-29: T13 — the `picture_in_picture_batch` template in the instrument AND the test used an `inputs` list-column; D015 requires named `main`/`overlay`/`output`, so every cell aborted on the missing columns and the verb contributed nothing to AC4's evidence. Both repointed.
+- 2026-07-29: T13 added `codec_guard_vacuous()` to the instrument and a CI test that each batch template's `jobs` shape is one its own verb accepts — A1's *class*, not just its instance. The instrument check is what catches a cell measuring nothing; the test is what fails in CI when a template drifts.
+- 2026-07-29: T13 also closed review A2 (logged sub-80) since the vacuity check surfaced it: an `audio_codec` column on `compare_videos_batch`/`picture_in_picture_batch` with `audio = NULL` hits D017's "needs an audio stream" before the scalar argument, so those two `col = present` cells measured nothing. A `col_extra` slot names an audio input for them; vacuous cells now 0 on both refs, was 2.
+- 2026-07-29: T15 A7 — `convert_audio`'s hoisted guard changed to `if (!is.null(x)) check_string(x)`, so it and `convert_audio_batch` now give byte-identical messages for the same bad value; `NULL` still compiles `-q:a 0` (D021). Chose this over giving the batch sibling `allow_null`, which would have been more accurate about NULL but changes a message M41 never touched and would add rows to AC4's enumerated set.
+- 2026-07-29: T15 A5 — NEWS's "which is what `separate_audio_video_batch()` has always done" replaced; that verb arrived without codec arguments and gained these guards later, so "already refused it" is the true claim.
+- 2026-07-29: also strengthened `codec_guard_diff()` for the enumerated AC4: it now refuses to report over two baselines covering different cells, since matching runs over `after`'s keys and a `before`-only row would vanish silently (review A17's live half).
 - 2026-07-29: AMENDMENT (substantive, gated) — AC4 restated as an **enumerated changed-set** criterion per the thrash-trigger-(b) remedy: the diff against the pre-milestone ref contains exactly 21 `col = absent` rows and 12 `col = present` rows, and no others. The two prior wordings were global negatives about new rejections ("adds no new rejection", then "exactly one class"), each falsified by a class nobody had named; an enumeration cannot be, since an unnamed class arrives as an extra row and fails visibly. Rejected at the gate: a third re-cut adding an AC1 carve-out to the same predicate shape. Coverage gains AC4 → T13/T14/T16, AC2 → T15, AC6 → T16; tasks T13–T16 added.
 - 2026-07-29: implement gate chose restoring the pre-milestone `jobs`-before-codec error precedence on `standardize_video_batch`/`anonymize_video_batch` (A6) over keeping the new guards beside their sibling and enumerating the flip, because guard *placement* is not what AC2/AC3 constrain and the milestone's repeated failure mode is unenumerated behaviour change; falsified by a caller for whom the codec complaint is the more useful first error on a doubly-invalid call.
 - 2026-07-29: over-cap remedy — the amendment pushed the plan-owned body to 151/149, so the heaviest section (Tasks) was compressed in one pass; completed T1–T12 keep their identity and shed detail the work log already holds. Now 145/149.

@@ -72,8 +72,11 @@ codec_front_door_call <- function(verb, input, out) {
                                         input = input, output = out)),
     picture_in_picture         = list(main = input, overlay = input,
                                       outfile = out),
+    # Named main/overlay columns (D015), not an `inputs` list-column: with the
+    # wrong shape every call aborts on the missing columns before reaching the
+    # codec argument this file exists to test (review A1).
     picture_in_picture_batch   = list(jobs = tibble::tibble(
-                                        inputs = list(c(input, input)),
+                                        main = input, overlay = input,
                                         output = out)),
     segment_video              = list(infile = input, start = 0, end = 1,
                                       outfiles = out),
@@ -184,6 +187,98 @@ test_that("every codec argument refuses a non-string at its own front door", {
       }
     }
   }
+})
+
+test_that("every batch template is a jobs shape its own verb accepts", {
+  # A template whose `jobs` has the wrong columns aborts on the SHAPE before the
+  # codec argument is ever read. The sweep above still passes -- the verb did
+  # refuse the value -- but it refused it for an unrelated reason, and the
+  # matching cell in data-raw/codec-guard-baseline.R goes vacuous the same way.
+  # That is exactly how picture_in_picture_batch sat in both files with an
+  # `inputs` list-column it does not accept (review A1), which made AC4's
+  # "no default/null row changed" a claim about nothing on that verb.
+  #
+  # Checked cheaply and without media: call each batch verb with no codec
+  # argument and require that whatever it says next is not a jobs-shape
+  # complaint. A later failure for want of a real input file is fine, and is why
+  # this asserts the absence of one message rather than success.
+  input <- make_input()
+  for (pair in codec_front_door_pairs()) {
+    verb <- pair$verb
+    args <- codec_front_door_call(verb, input, "out.mp4")
+    if (!"jobs" %in% names(args)) next
+    args$run <- FALSE
+    args$parallel <- FALSE
+    cnd <- tryCatch({
+      do.call(verb, args, envir = asNamespace("tidymedia"))
+      NULL
+    }, condition = function(cnd) cnd)
+    msg <- if (is.null(cnd)) "" else cli::ansi_strip(conditionMessage(cnd))
+    shape <- grepl("Missing column", msg, fixed = TRUE) ||
+      grepl("`jobs` must", msg, fixed = TRUE)
+    expect_false(
+      shape,
+      label = paste0(verb, " accepts its template's jobs shape",
+                     if (shape) paste0(" [got: ", msg, "]"))
+    )
+  }
+})
+
+# Which complaint a batch verb makes when a call is wrong about BOTH `jobs` and
+# the codec argument. Measured against the pre-M41 tree, not chosen: the split
+# below is inherited, and eleven of these seventeen pairs answered "codec" long
+# before this milestone existed. Deliberately NOT normalized here -- making them
+# agree would change error text on verbs M41 never touched, which is precisely
+# the unasked-for behaviour change this table exists to catch.
+#
+# The table's job is to freeze the answers so a guard cannot silently move
+# across the `jobs` check again. Two of M41's did, flipping
+# standardize_video_batch and anonymize_video_batch from "jobs" to "codec"
+# (review A6); both are back where they were, and this is what says so.
+codec_front_door_precedence <- function() {
+  c(
+    "anonymize_video_batch video_codec"       = "jobs",
+    "anonymize_video_batch audio_codec"       = "codec",
+    "compare_videos_batch video_codec"        = "codec",
+    "compare_videos_batch audio_codec"        = "codec",
+    "convert_audio_batch audio_codec"         = "jobs",
+    "crop_video_batch video_codec"            = "codec",
+    "crop_video_batch audio_codec"            = "codec",
+    "extract_audio_batch audio_codec"         = "jobs",
+    "normalize_audio_batch audio_codec"       = "jobs",
+    "picture_in_picture_batch video_codec"    = "codec",
+    "picture_in_picture_batch audio_codec"    = "codec",
+    "segment_video_batch video_codec"         = "codec",
+    "segment_video_batch audio_codec"         = "codec",
+    "separate_audio_video_batch video_codec"  = "jobs",
+    "separate_audio_video_batch audio_codec"  = "jobs",
+    "standardize_video_batch video_codec"     = "jobs",
+    "standardize_video_batch audio_codec"     = "codec"
+  )
+}
+
+test_that("a bad codec argument does not change which error an invalid jobs gets", {
+  expected <- codec_front_door_precedence()
+  observed <- character()
+  for (pair in codec_front_door_pairs()) {
+    verb <- pair$verb
+    if (!"jobs" %in% names(codec_front_door_call(verb, "in.mp4", "out.mp4"))) next
+    for (arg in pair$args) {
+      args <- list(jobs = "oops", run = FALSE, parallel = FALSE)
+      args[arg] <- list(NA)
+      cnd <- tryCatch({
+        do.call(verb, args, envir = asNamespace("tidymedia"))
+        NULL
+      }, condition = function(cnd) cnd)
+      msg <- if (is.null(cnd)) "" else cli::ansi_strip(conditionMessage(cnd))
+      observed[paste(verb, arg)] <-
+        if (grepl("`jobs`", msg, fixed = TRUE)) "jobs" else "codec"
+    }
+  }
+  # setequal on names first, so a verb added or dropped reports as that rather
+  # than as a confusing value mismatch.
+  expect_setequal(names(observed), names(expected))
+  expect_identical(observed[names(expected)], expected)
 })
 
 test_that("the front-door sweep covers every codec argument the package exports", {

@@ -40,6 +40,15 @@ Pulls one audio track out of \code{infile}, dropping the video. When the
 input carries more than one audio track, \code{audio_stream} names which one
 to take; with no selector the \strong{first} audio track is taken.
 }
+\details{
+When no \code{audio_stream} is named and the input turns out to carry tracks
+the output will not, the verb warns. That check is \strong{best-effort}: it
+runs FFprobe, so it is emitted when FFprobe is available and the input can be
+probed, and is skipped silently otherwise. It never runs under \code{run =
+FALSE}, and never changes the compiled command. Suppress it by naming a track
+with \code{audio_stream}, or by class with
+\code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
+}
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 extract_audio(video, "audio.aac", run = FALSE)

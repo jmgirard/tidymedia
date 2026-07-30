@@ -267,6 +267,102 @@ audio_stream_map <- function(audio_stream = NULL, call = rlang::caller_env()) {
   sprintf("0:a:%d", n)
 }
 
+# warn_dropped_audio() ----------------------------------------------------
+
+# Emit the single classed warning for inputs carrying audio tracks the output
+# does not receive. `inputs` and `n` are parallel vectors (`n` = that input's
+# audio-stream count from count_audio_streams(), NA where it could not be had);
+# `rows` is the jobs-table row index per element, or NULL on the scalar path.
+#
+# ONE warning whatever the length. The batch form names every affected row
+# instead of warning per row, so a large jobs table cannot bury the message
+# under R's "There were 50 or more warnings" collapse (M44 gate). Scalar and
+# batch share this builder so their wording cannot drift -- the divergence this
+# repo has already fixed twice (M19, M35).
+#
+# NA `n` means the probe could not answer, and is skipped silently: D024 licenses
+# this probe only while its outcome changes nothing but whether a diagnostic is
+# signalled, so "could not check" must look exactly like "nothing to report".
+# Callers gate on `run` and on audio_stream being NULL before they get here; this
+# builder decides only whether there is anything to say.
+warn_dropped_audio <- function(inputs, n, rows = NULL,
+                               call = rlang::caller_env()) {
+  keep <- !is.na(n) & n > 1
+  if (!any(keep)) return(invisible(NULL))
+  inputs <- inputs[keep]
+  n <- as.integer(n[keep])
+  dropped <- n - 1L
+  bullets <- if (is.null(rows)) {
+    sprintf("%s carries %d audio tracks; the output takes 1 and drops %d.",
+            inputs, n, dropped)
+  } else {
+    sprintf("Row %d (%s) carries %d audio tracks; the output takes 1 and drops %d.",
+            rows[keep], basename(inputs), n, dropped)
+  }
+  # cli_warn() glue-interpolates every bullet in this function's own frame, so a
+  # file path carrying a brace is executed rather than printed: `my{video}.mkv`
+  # ABORTS the verb ("could not evaluate cli expression"), and `{n}.mkv` --
+  # naming a local of this very function -- silently prints a filename that does
+  # not exist. Either one turns a diagnostic into something observable beyond the
+  # diagnostic, which is exactly what D024 licenses this probe on NOT doing.
+  # sprintf() has already built the line, so escape rather than route through a
+  # cli field: doubling is what glue reads as a literal brace. Braces are legal
+  # in filenames on every platform this package supports (M44 review F1).
+  bullets <- gsub("}", "}}", gsub("{", "{{", bullets, fixed = TRUE), fixed = TRUE)
+  cli::cli_warn(
+    c(
+      "Dropping {sum(dropped)} audio track{?s} from {length(dropped)} input{?s}.",
+      rlang::set_names(bullets, rep("x", length(bullets))),
+      "i" = "Name the track you want with {.arg audio_stream}: {.val {0}} is \\
+             the first audio track, {.val {1}} the second.",
+      "i" = "{.fn probe_audio} lists the tracks, but its {.field index} column \\
+             counts ALL streams while {.arg audio_stream} counts audio streams \\
+             from {.val {0}} -- on a video file with three audio tracks those \\
+             read 1, 2, 3 there and 0, 1, 2 here."
+    ),
+    class = "tidymedia_dropped_audio",
+    call = call
+  )
+  invisible(NULL)
+}
+
+# warn_dropped_audio_batch() ----------------------------------------------
+
+# The batch form of the D024 diagnostic: probe the rows that named no track and
+# emit ONE aggregated warning naming every affected row.
+#
+# Runs in the Layer-2 verb BEFORE ffm_batch(), never inside it. ffm_batch()'s
+# contract is generic -- any verb, any pipeline -- and a track-drop diagnostic is
+# these two verbs' semantics, so it does not belong in the runner (D011 settled
+# that verb-agnostic verification may live there and verb-specific meaning may
+# not, and an engine-signature change for one diagnostic inverts the thin-verb
+# economy of IP1). Up front is also the better diagnostic: the warning lands
+# before the fan-out spends its time encoding, while the caller can still stop
+# and add audio_stream, and before FFmpeg's console output buries it.
+#
+# `audio_stream` is the scalar argument; an `audio_stream` column overrides it
+# per row, where an NA cell is the column form of the NULL sentinel -- "leave
+# this row on the first track" (D023) -- so an NA cell is a row that named NO
+# track and is probed. A batch whose every row names one probes nothing at all.
+# Unique inputs are probed once: a jobs table legitimately repeats an input (the
+# package's own examples do) and the answer is per file, not per row.
+warn_dropped_audio_batch <- function(jobs, audio_stream = NULL,
+                                     call = rlang::caller_env()) {
+  sel <- if ("audio_stream" %in% names(jobs)) {
+    jobs$audio_stream
+  } else {
+    rep(if (is.null(audio_stream)) NA_real_ else as.numeric(audio_stream),
+        nrow(jobs))
+  }
+  rows <- which(is.na(sel))
+  if (length(rows) == 0) return(invisible(NULL))
+  inputs <- jobs$input[rows]
+  uniq <- unique(inputs)
+  counts <- vapply(uniq, count_audio_streams, integer(1), USE.NAMES = FALSE)
+  warn_dropped_audio(inputs, counts[match(inputs, uniq)], rows = rows,
+                     call = call)
+}
+
 # extract_audio() ---------------------------------------------------------
 
 # Shared recipe behind extract_audio() and extract_audio_batch(): map the audio
@@ -307,6 +403,14 @@ extract_audio_pipeline <- function(input, output, audio_codec = "copy",
 #' Pulls one audio track out of \code{infile}, dropping the video. When the
 #' input carries more than one audio track, \code{audio_stream} names which one
 #' to take; with no selector the \strong{first} audio track is taken.
+#'
+#' When no \code{audio_stream} is named and the input turns out to carry tracks
+#' the output will not, the verb warns. That check is \strong{best-effort}: it
+#' runs FFprobe, so it is emitted when FFprobe is available and the input can be
+#' probed, and is skipped silently otherwise. It never runs under \code{run =
+#' FALSE}, and never changes the compiled command. Suppress it by naming a track
+#' with \code{audio_stream}, or by class with
+#' \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
 #'
 #' @param infile A string containing the path to a media file.
 #' @param outfile A string containing the path of the audio file to write.
@@ -350,6 +454,17 @@ extract_audio <- function(infile, outfile, audio_codec = "copy",
   # because it currently changes any message -- the earlier comment here claimed
   # it did, which the M42 delete-and-run probe disproved at review.
   rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
+
+  # D024's diagnostic probe. Gated on `run` because compilation and every
+  # run = FALSE call stay binary-free, and on a NULL audio_stream because that
+  # is the only case where the drop is implicit -- a caller who named a track
+  # chose it. The probe changes nothing but this warning: the compiled command
+  # below is byte-identical whether it runs, succeeds, or fails. isTRUE() rather
+  # than a bare `run` so a non-logical value still gets ffm_finish()'s own
+  # check_bool() message.
+  if (isTRUE(run) && is.null(audio_stream)) {
+    warn_dropped_audio(infile, count_audio_streams(infile))
+  }
 
   ffm_finish(
     extract_audio_pipeline(infile, outfile, audio_codec, audio_stream),
@@ -547,6 +662,14 @@ convert_audio_pipeline <- function(input, output, audio_codec = NULL,
 #' When \code{infile} carries more than one audio track, \code{audio_stream}
 #' names which one to take; with no selector the \strong{first} one is taken.
 #'
+#' When no \code{audio_stream} is named and the input turns out to carry tracks
+#' the output will not, the verb warns. That check is \strong{best-effort}: it
+#' runs FFprobe, so it is emitted when FFprobe is available and the input can be
+#' probed, and is skipped silently otherwise. It never runs under \code{run =
+#' FALSE}, and never changes the compiled command. Suppress it by naming a track
+#' with \code{audio_stream}, or by class with
+#' \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
+#'
 #' @param infile A string containing the path to a media file.
 #' @param outfile A string containing the path of the audio file to write.
 #' @param audio_codec An optional string naming the output audio codec (e.g.
@@ -603,6 +726,12 @@ convert_audio <- function(infile, outfile, audio_codec = NULL,
   # because it currently changes any message -- the earlier comment here claimed
   # it did, which the M42 delete-and-run probe disproved at review.
   rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
+
+  # D024's diagnostic probe; see extract_audio() for why it is gated on `run`
+  # and on a NULL audio_stream.
+  if (isTRUE(run) && is.null(audio_stream)) {
+    warn_dropped_audio(infile, count_audio_streams(infile))
+  }
 
   # No `...` here, so a stale `format =` gets R's own `unused argument` error --
   # no guard needed (M37 lesson; the batch sibling, which has `...`, does need
@@ -3522,6 +3651,15 @@ check_fanin_jobs <- function(jobs, min_inputs = 1L, verb = NULL,
 #' reproducible compiled command per input, sharing the same map/drop-video
 #' pipeline as the scalar verb.
 #'
+#' When a row names no \code{audio_stream} and its input turns out to carry
+#' tracks the output will not, the verb warns \strong{once} for the whole batch,
+#' naming every affected row. That check is \strong{best-effort}: it runs
+#' FFprobe, so it is emitted when FFprobe is available and the input can be
+#' probed, and is skipped silently otherwise. It never runs under \code{run =
+#' FALSE}, never changes any compiled command, and is skipped entirely when
+#' every row names a track. Suppress it by class with
+#' \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
+#'
 #' @param jobs A data frame with one row per input and (at least) an
 #'   \code{input} column (source path) and an \code{output} column (destination
 #'   path). An \code{output} column is **required** — unlike the video batch
@@ -3596,6 +3734,12 @@ extract_audio_batch <- function(jobs, audio_codec = "copy",
   # again inside audio_stream_map(), which every row's pipeline calls (M32).
   rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
 
+
+  # D024's diagnostic probe, up front so it lands before the fan-out encodes;
+  # ffm_batch() itself is untouched. isTRUE() rather than a bare `run` so a
+  # non-logical value still gets ffm_batch()'s own check_bool() message.
+  if (isTRUE(run)) warn_dropped_audio_batch(jobs, audio_stream)
+
   # Thin Layer-2 fan-out over ffm_batch (D007): one map/drop-video pipeline per
   # row, sharing extract_audio_pipeline() with extract_audio(). A per-row
   # `audio_codec` or `audio_stream` column (via `...` from pmap) overrides the
@@ -3629,6 +3773,15 @@ extract_audio_batch <- function(jobs, audio_codec = "copy",
 #' \code{\link{ffm_batch}}: one reproducible compiled command per input, sharing
 #' the same audio-map pipeline (and per-value \code{audio_codec} validation) as
 #' the scalar verb.
+#'
+#' When a row names no \code{audio_stream} and its input turns out to carry
+#' tracks the output will not, the verb warns \strong{once} for the whole batch,
+#' naming every affected row. That check is \strong{best-effort}: it runs
+#' FFprobe, so it is emitted when FFprobe is available and the input can be
+#' probed, and is skipped silently otherwise. It never runs under \code{run =
+#' FALSE}, never changes any compiled command, and is skipped entirely when
+#' every row names a track. Suppress it by class with
+#' \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
 #'
 #' @param jobs A data frame with one row per input and (at least) an
 #'   \code{input} column (source path) and an \code{output} column (destination
@@ -3720,6 +3873,12 @@ convert_audio_batch <- function(jobs, audio_codec = NULL,
   # track 0 instead of erroring (the M37/M41 shape). Per-row VALUES are checked
   # again inside audio_stream_map(), which every row's pipeline calls (M32).
   rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
+
+
+  # D024's diagnostic probe, up front so it lands before the fan-out encodes;
+  # ffm_batch() itself is untouched. isTRUE() rather than a bare `run` so a
+  # non-logical value still gets ffm_batch()'s own check_bool() message.
+  if (isTRUE(run)) warn_dropped_audio_batch(jobs, audio_stream)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one audio-map pipeline per row,
   # sharing convert_audio_pipeline() with convert_audio(). A per-row

@@ -102,6 +102,57 @@ probe_all <- function(infile, typed = TRUE) {
   list(container = container, streams = streams)
 }
 
+# count_audio_streams() ---------------------------------------------------
+
+# Count one input's audio streams, or return NA when the count cannot be had.
+# This is the ONLY place the audio verbs' track-drop diagnostic assembles an
+# FFprobe token vector -- it lives here beside probe_one(), the package's other
+# FFprobe token builder, rather than in a Layer-2 verb body (D024/RR02 Q4). One
+# narrow invocation rather than probe_all(), which runs FFprobe once per stream
+# plus once for the container and warns on an unreadable file: this needs a
+# single number and must stay silent.
+#
+# NA is "no answer", never "no audio". D024 licenses this probe only while its
+# outcome changes nothing but whether a warning is signalled, so every failure
+# path has to reach the caller as NA rather than as a condition:
+#   - find_ffprobe() WARNS when the binary is missing and can also ERROR on a
+#     corrupt user config, so it gets both a suppressWarnings() and a tryCatch()
+#     of its own. suppressWarnings() rather than a bare Sys.which() keeps
+#     find_program()'s user-config fallback, so a machine where ffprobe was
+#     registered with set_ffprobe() is still found. Both are load-bearing:
+#     nothing else here catches either channel.
+#   - run_program() ABORTS on a NULL/empty location. Its own tryCatch() below is
+#     what makes that silent; the explicit length/NA/nzchar short-circuit is
+#     belt-and-braces, kept to avoid building a call that can only abort.
+#     Measured at M44: deleting it leaves every test green, so do not read it as
+#     the guarantee.
+#   - a non-zero ffprobe exit arrives as a `status` attribute (system2 with
+#     stdout = TRUE), which is not an R condition and would otherwise read as a
+#     count of however many lines came back before the failure.
+count_audio_streams <- function(file) {
+  # find_ffprobe() can ERROR as well as warn, and the tryCatch() below does not
+  # reach it: find_program() readLines() a user config written by set_ffprobe()
+  # and then tests `if (Sys.which(location) == "")`, so an empty config gives
+  # `if (logical(0))` and a two-line one gives a length-2 condition -- both
+  # aborting the verb on a machine where it used to just run (M44 review F2).
+  # length(loc) != 1L rather than is.null() first: `character(0)` would make
+  # is.na(loc) return logical(0) and `if` throw on that too.
+  loc <- tryCatch(suppressWarnings(find_ffprobe()), error = function(e) NULL)
+  if (length(loc) != 1L || is.na(loc) || !nzchar(loc)) return(NA_integer_)
+  out <- tryCatch(
+    run_program(
+      loc,
+      c("-i", file, "-v", "error", "-select_streams", "a",
+        "-show_entries", "stream=index", "-of", "csv=p=0"),
+      program = "ffprobe"
+    ),
+    error = function(e) NULL,
+    warning = function(w) NULL
+  )
+  if (is.null(out) || !is.null(attr(out, "status"))) return(NA_integer_)
+  sum(nzchar(trimws(out)))
+}
+
 # probe_one() -------------------------------------------------------------
 
 # Probe a single file. Returns list(container, streams) of raw-character tibbles

@@ -551,3 +551,82 @@ carries it. Sits under IP1/D002; uses D014's pre-0.2.0 clean-break policy.
   fixes the argument's shape. `separate_audio_video()`'s multi-track abort is a
   separate candidate — that one is about how many tracks an output holds, not
   which one it takes.
+
+## D024 — The pure surface is compilation and `run = FALSE`; diagnostics may probe the executing path (2026-07-30, from M44/RR02, clarifies D013)
+
+DESIGN.md's Conventions section says: "Command **compilation** is pure and
+CI-safe (no binaries); command **execution** tests `skip_if` the
+ffmpeg/mediainfo binaries are absent (D004)." M44 needed to count an input's
+audio streams — an FFprobe call — so it could warn a caller whose extra audio
+tracks the output silently drops, and read that line as forbidding it. RR02
+found the reading wrong: the convention constrains *compilation*, and the
+executing path has never been binary-pure. D011's `verify=` has run FFprobe on
+these very verbs' executing path since it shipped
+(`extract_audio_batch(..., verify = ...)` reaches it today) and nobody wrote a
+carve-out for it. So this entry is a **clarification** of a line that was read
+too broadly, not a second exception beside D013. Writing it as an exception
+would ratify the wrong reading and guarantee a third entry the next time
+anything probes anything.
+
+**The pure surface, stated exactly.**
+
+- `ffm_compile()` and every builder it walks run no binary from any path. That
+  is a property of those functions, not of a window of time during a verb call.
+  (`ffm_run()` and `ffm_batch()` carry the same `@family builder functions` doc
+  tag and do run binaries; the purity claim is about the pipeline builders
+  `ffm_compile()` walks, never about that documentation family.)
+- Every verb's `run = FALSE` call runs no binary — with **the two-pass
+  normalization path the sole exception**: `normalize_audio(two_pass = TRUE)`
+  and `normalize_audio_batch(two_pass = TRUE)` both run D013's analysis pass
+  before `run` is consulted. D013 recorded that consequence and it stands; this
+  entry adds no second exception to `run = FALSE` and narrows none.
+- A `run = TRUE` call may run a binary before or after compilation, provided
+  the conditions below hold. "Before or after" is deliberate: compilation is
+  pure, so nothing can observe the ordering, and a rule hanging on it would
+  protect nothing. **"Executing path" means the call has `run = TRUE`** — it is
+  not a claim about what has already run.
+
+**The operative rule is about effect, not about where the bytes go.** A probe
+may run on a `run = TRUE` path when its outcome — ran, skipped, succeeded,
+failed — changes nothing observable except whether a diagnostic condition is
+signalled. The compiled command, every resolved default, whether execution
+proceeds, and which pipeline executes must be identical under all four
+outcomes.
+
+Four things are therefore outside the licence, and each needs its own decision
+entry before it is built:
+
+- a probe whose result enters the compiled command — this is D013's shape;
+- a probe that resolves a default the caller did not set, which D023
+  independently forbids ("a heuristic consulted only sometimes is still a
+  heuristic");
+- a probe that decides whether execution proceeds — an abort gate is not a
+  diagnostic, and an abort gate that fails open silently stops gating;
+- a probe that selects between pipelines, which also breaks `run = FALSE`,
+  there being no single command a dry run could return.
+
+The narrower test "its result is not in the compiled command" is a corollary,
+not the rule: an abort gate passes that test and is still outside the licence.
+
+**Fail-open is a consequence, not a policy.** A probe whose only permitted
+effect is a diagnostic must fail open, because failing closed — aborting on an
+absent binary or an unreadable input — would give it a second effect and put it
+outside the licence by its own terms. Two implementation consequences follow,
+neither obvious: `find_program()` warns and `run_program()` aborts on a missing
+binary, so silence has to be built rather than inherited; and a diagnostic that
+can silently not run must say so in its documentation, because a contract
+promising more than the code delivers is exactly the reliance a warning invites.
+
+**Scope: conditions, not a verb list.** A verb may run a binary on its
+`run = TRUE` path when (i) the outcome affects nothing but a diagnostic
+condition, (ii) it fails open, (iii) it never runs on the `run = FALSE` path,
+and (iv) it never runs from `ffm_compile()` or any builder it walks. First
+instances: the dropped-audio-track warning on `extract_audio()`,
+`convert_audio()`, and their `_batch` siblings. A verb adopting a probe under
+these same conditions records the adoption in its own milestone's decision log;
+a probe that stretches any condition needs a new D-entry. Rules out both a verb
+enumeration — which would force a content-free entry the moment the warning
+reaches another verb — and a predicate about narrowing a multi-track input,
+which states this warning's *occasion* and would be misread as the licence
+*condition*: M45, where `NULL` means every track and nothing narrows by
+default, would wrongly read itself as excluded from diagnostics entirely.

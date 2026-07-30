@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** m47-audio-stream-standardize-anonymize
+- **Branch/PR:** m47-audio-stream-standardize-anonymize · https://github.com/jmgirard/tidymedia/pull/50
 
 ## Goal
 
@@ -38,33 +38,33 @@ rule and answering the question D025's fifth bullet left open. NEWS.
 
 ## Acceptance criteria
 
-- [ ] AC1 With `audio_stream` unset, each verb compiles exactly two `-map`
+- [x] AC1 With `audio_stream` unset, each verb compiles exactly two `-map`
       arguments, `-map 0:v?` then `-map 0:a?`, asserted as a committed literal
       command string; the invariant test at `tests/testthat/test-ffm.R:438`
       is restated to the rule these verbs follow and gains both of them.
-- [ ] AC2 With `audio_stream = 2`, each verb compiles exactly two `-map`
+- [x] AC2 With `audio_stream = 2`, each verb compiles exactly two `-map`
       arguments, `-map 0:v?` then `-map 0:a:2` — the named track carries no
       `?`, so naming a track the input lacks stays an FFmpeg error rather than
       silently producing no audio (D023).
-- [ ] AC3 On both verbs a value that is non-numeric, non-whole, negative, `NA`,
+- [x] AC3 On both verbs a value that is non-numeric, non-whole, negative, `NA`,
       or longer than one aborts naming `audio_stream`, and `conditionCall()`
       resolves to the verb the caller wrote, not to a Layer-1 helper.
-- [ ] AC4 Both `_batch` siblings take an `audio_stream` argument and an
+- [x] AC4 Both `_batch` siblings take an `audio_stream` argument and an
       `audio_stream` jobs column that overrides it per row, where a cell of `NA`
       is the column form of `NULL`; a one-row batch call compiles a command
       byte-identical to the scalar call with the same arguments.
-- [ ] AC5 A wrongly typed `audio_stream` column aborts before any row runs,
+- [x] AC5 A wrongly typed `audio_stream` column aborts before any row runs,
       naming the column and saying `NA` keeps every audio track; the message
       does not carry the extraction family's "keep the first audio track".
-- [ ] AC6 With ffmpeg present, on a 3-audio-track `.mkv` whose DEFAULT
+- [x] AC6 With ffmpeg present, on a 3-audio-track `.mkv` whose DEFAULT
       disposition sits on track 1, `standardize_video(audio_stream = 2)` writes
       exactly one audio stream and it is `fra`; the same call with `audio_stream`
       unset writes all three (master writes one, `spa`). A video-only input and
       an audio-only input both still succeed, as they do on master.
-- [ ] AC7 At the default `hardware`, no entry point runs a binary when
+- [x] AC7 At the default `hardware`, no entry point runs a binary when
       `run = FALSE`: a counting mock over `run_program()`, `find_ffmpeg()` and
       `find_ffprobe()` records zero invocations across all four.
-- [ ] AC8 `cairn/DECISIONS.md` gains an entry recording the pass-through rule and
+- [x] AC8 `cairn/DECISIONS.md` gains an entry recording the pass-through rule and
       why it diverges from D023's first-track `NULL`; each `@param audio_stream`
       names the other two families' `NULL` (D025's stated cost); `NEWS.md`
       records the argument and both breaking changes; `devtools::document()`
@@ -142,3 +142,69 @@ rule and answering the question D025's fifth bullet left open. NEWS.
 - 2026-07-30 (M47-D1): `standardize_video()`/`anonymize_video()` adopt no diagnostic probe. M44's dropped-audio-track warning covers the extraction verbs because their default silently narrows; after D026 these two carry every track by default, so there is nothing implicit to warn about, and on the named path the caller chose the track — the same gate `extract_audio()` uses (`R/ffmpeg.R:476`). Nothing here touches D024's licence, and no FFprobe call was added to either verb.
 
 ## Review
+
+**Reviewed 2026-07-30. PR #50. Evidence gathered fresh on this branch, by
+running the verbs directly rather than by re-reading the tests.**
+
+### Acceptance criteria
+
+- **AC1 ✓** `standardize_video(f, "out.mp4", run = FALSE)` compiles
+  `… -movflags +faststart -map 0:v? -map 0:a? "out.mp4"`; `anonymize_video()`
+  the same without `+faststart`. Two `-map` arguments each, counted. The
+  `test-ffm.R` invariant was rewritten from `all(maps) <= 1L` to an exact
+  per-verb count table and now covers both verbs (2 each); it passes, and
+  writing it surfaced that `segment_video(reencode = TRUE)` emits 0 maps.
+- **AC2 ✓** `audio_stream = 2` compiles `-map 0:v? -map 0:a:2` on both verbs,
+  two maps each. The named specifier carries no `?` — asserted directly.
+- **AC3 ✓** `"1"`, `1.5`, `-1`, `NA`, `NA_integer_` and `c(0, 1)` each abort on
+  both verbs; every message names `audio_stream` and `conditionCall()` resolves
+  to `standardize_video` / `anonymize_video`, never a Layer-1 helper.
+- **AC4 ✓** A jobs table with `audio_stream = c(1, NA)` under
+  `audio_stream = 2` compiles `-map 0:a:1` on row 1 and `-map 0:a?` on row 2 —
+  the column overrides the argument and `NA` is the column form of `NULL`. A
+  one-row batch call is byte-identical to the scalar call (`identical()` TRUE).
+- **AC5 ✓** A character `audio_stream` column aborts before any row runs with
+  "The audio_stream column of `jobs` must be numeric (NA to keep every audio
+  track)." Tests assert the extraction family's "first audio track" and the
+  composite verbs' "drop audio" are both ABSENT.
+- **AC6 ✓** On a 3-track `.mkv` whose DEFAULT disposition sits on track 1
+  (fixture flags verified `0 0 1 0` before use): unset writes
+  `video audio audio audio` / `eng spa fra`, where master writes one track
+  (`spa`); `audio_stream = 2` writes `video audio` / `fra` — a track that is
+  neither the first nor the DEFAULT one, so no implicit selection produces it.
+  A video-only input and an audio-only input both exit 0 and pass their stream
+  through, as on master. `audio_stream = 9` still errors.
+- **AC7 ✓** A counting mock over `run_program()`, `find_ffmpeg()` and
+  `find_ffprobe()` records **0** invocations across six `run = FALSE` calls
+  (both scalars and both batches, named and unset). Scoped to the default
+  `hardware` by AC wording: `hardware = "nvenc"` does shell out, which is the
+  candidate row this milestone opened.
+
+- **AC8 ✓** `cairn/DECISIONS.md` gains D026, answering D025's fifth bullet with
+  M45's every-track reading and recording the `?` asymmetry, the rejected
+  `-map 0`, and the subtitle-carriage change. All ten `@param audio_stream`
+  blocks now name the families reading `NULL` the other way (attributed one by
+  one to their verbs; an eleventh grep hit is a prose comment quoting the
+  phrase, not a block). `NEWS.md` carries both the breaking change and the new
+  argument, with no milestone numbers in user-facing text.
+  `devtools::document()` no diff · `devtools::test()` **2911 pass / 0 fail**
+  (4 warnings, 5 skips — both unchanged from master) · `devtools::check()`
+  **Status: OK, 0 errors / 0 warnings / 0 notes**, with `spelling.Rout`
+  matching, so M17's masked-NOTE trap did not fire.
+
+### Consistency gate
+
+- `cairn_validate.py` — all checks passed; 2 advisory warnings (8 criteria on
+  M47 and M48, tripwire 7), not gate failures.
+- `cairn_impact.py` — skipped: `cairn/DESIGN.md` is untouched, no principle
+  changed.
+- `devtools::document()` — no diff (`man/`, `NAMESPACE` clean after a re-run).
+- `pkgdown::check_pkgdown()` — no problems found.
+- `NEWS.md` — breaking-change and new-feature entries present, no milestone
+  numbers in user-facing text.
+- No new top-level files, so no `.Rbuildignore` entry needed. README untouched.
+- CI on PR #50: all 7 checks green — macOS release, Windows release, Ubuntu
+  release/devel/oldrel-1, pkgdown, test-coverage. The three Ubuntu runners are
+  the ffmpeg-6.1.1 platform M45's lesson warns about (macOS brew ships 8.x);
+  the new disposition fixture and the `?` map suffix behave identically there.
+

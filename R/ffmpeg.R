@@ -299,6 +299,16 @@ warn_dropped_audio <- function(inputs, n, rows = NULL,
     sprintf("Row %d (%s) carries %d audio tracks; the output takes 1 and drops %d.",
             rows[keep], basename(inputs), n, dropped)
   }
+  # cli_warn() glue-interpolates every bullet in this function's own frame, so a
+  # file path carrying a brace is executed rather than printed: `my{video}.mkv`
+  # ABORTS the verb ("could not evaluate cli expression"), and `{n}.mkv` --
+  # naming a local of this very function -- silently prints a filename that does
+  # not exist. Either one turns a diagnostic into something observable beyond the
+  # diagnostic, which is exactly what D024 licenses this probe on NOT doing.
+  # sprintf() has already built the line, so escape rather than route through a
+  # cli field: doubling is what glue reads as a literal brace. Braces are legal
+  # in filenames on every platform this package supports (M44 review F1).
+  bullets <- gsub("}", "}}", gsub("{", "{{", bullets, fixed = TRUE), fixed = TRUE)
   cli::cli_warn(
     c(
       "Dropping {sum(dropped)} audio track{?s} from {length(dropped)} input{?s}.",

@@ -146,6 +146,51 @@ test_that("an unanswered count warns about nothing", {
   expect_no_warning(warn_dropped_audio("x.mkv", 1L))
 })
 
+test_that("a locator that throws is as silent as one that returns NULL", {
+  # find_ffprobe() has TWO failure channels, not one: find_program() reads a
+  # user config written by set_ffprobe() and then tests it, so an empty or
+  # multi-line config makes it abort rather than warn. Without a tryCatch around
+  # the locator itself that abort escapes and takes the verb with it (M44 review
+  # F2), which the NULL-returning mock cannot detect.
+  local_mocked_bindings(
+    find_ffprobe = function() stop("argument is of length zero")
+  )
+  expect_no_warning(
+    expect_identical(count_audio_streams("anything.mp4"), NA_integer_)
+  )
+})
+
+test_that("a locator returning character(0) does not throw on the guard", {
+  local_mocked_bindings(find_ffprobe = function() character(0))
+  expect_no_warning(
+    expect_identical(count_audio_streams("anything.mp4"), NA_integer_)
+  )
+})
+
+
+# The message survives hostile input (AC1, AC3) ----------------------------
+
+test_that("a file path containing braces neither aborts nor misreports", {
+  # cli_warn() glue-interpolates every bullet, so an unescaped path is executed
+  # rather than printed: `my{video}.mkv` aborted the verb outright and `{n}.mkv`
+  # -- naming a local of warn_dropped_audio() -- silently printed a filename
+  # that does not exist. Either one gives the probe an effect beyond its
+  # diagnostic, which is what D024 licenses it on not having (M44 review F1).
+  hostile <- c("my{video}.mkv", "{n}.mkv", "{inputs}.mkv", "a}b{c.mkv")
+  for (path in hostile) {
+    w <- tryCatch(warn_dropped_audio(path, 3L), warning = function(w) w)
+    expect_s3_class(w, "tidymedia_dropped_audio")
+    expect_match(cli::ansi_strip(conditionMessage(w)), path, fixed = TRUE)
+  }
+  # And through the batch builder, whose bullets go through basename().
+  jobs <- tibble::tibble(input = c("{n}.mkv", "plain.mkv"),
+                         output = c("x", "y"))
+  local_mocked_bindings(count_audio_streams = function(file) 3L)
+  w <- tryCatch(warn_dropped_audio_batch(jobs), warning = function(w) w)
+  expect_s3_class(w, "tidymedia_dropped_audio")
+  expect_match(cli::ansi_strip(conditionMessage(w)), "{n}.mkv", fixed = TRUE)
+})
+
 
 # The batch form (AC4) ------------------------------------------------------
 

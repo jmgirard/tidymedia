@@ -115,21 +115,30 @@ probe_all <- function(infile, typed = TRUE) {
 # NA is "no answer", never "no audio". D024 licenses this probe only while its
 # outcome changes nothing but whether a warning is signalled, so every failure
 # path has to reach the caller as NA rather than as a condition:
-#   - find_ffprobe() WARNS when the binary is missing, so the call is wrapped.
-#     suppressWarnings() rather than a bare Sys.which() keeps find_program()'s
-#     user-config fallback, so a machine where ffprobe was registered with
-#     set_ffprobe() is still found. This one IS load-bearing: nothing else here
-#     catches a warning.
-#   - run_program() ABORTS on a NULL/empty location. The tryCatch() below is what
-#     makes that silent; the explicit short-circuit is belt-and-braces, kept to
-#     avoid building a call that can only abort. Measured at M44: deleting it
-#     leaves every test green, so do not read it as the guarantee.
+#   - find_ffprobe() WARNS when the binary is missing and can also ERROR on a
+#     corrupt user config, so it gets both a suppressWarnings() and a tryCatch()
+#     of its own. suppressWarnings() rather than a bare Sys.which() keeps
+#     find_program()'s user-config fallback, so a machine where ffprobe was
+#     registered with set_ffprobe() is still found. Both are load-bearing:
+#     nothing else here catches either channel.
+#   - run_program() ABORTS on a NULL/empty location. Its own tryCatch() below is
+#     what makes that silent; the explicit length/NA/nzchar short-circuit is
+#     belt-and-braces, kept to avoid building a call that can only abort.
+#     Measured at M44: deleting it leaves every test green, so do not read it as
+#     the guarantee.
 #   - a non-zero ffprobe exit arrives as a `status` attribute (system2 with
 #     stdout = TRUE), which is not an R condition and would otherwise read as a
 #     count of however many lines came back before the failure.
 count_audio_streams <- function(file) {
-  loc <- suppressWarnings(find_ffprobe())
-  if (is.null(loc) || is.na(loc) || !nzchar(loc)) return(NA_integer_)
+  # find_ffprobe() can ERROR as well as warn, and the tryCatch() below does not
+  # reach it: find_program() readLines() a user config written by set_ffprobe()
+  # and then tests `if (Sys.which(location) == "")`, so an empty config gives
+  # `if (logical(0))` and a two-line one gives a length-2 condition -- both
+  # aborting the verb on a machine where it used to just run (M44 review F2).
+  # length(loc) != 1L rather than is.null() first: `character(0)` would make
+  # is.na(loc) return logical(0) and `if` throw on that too.
+  loc <- tryCatch(suppressWarnings(find_ffprobe()), error = function(e) NULL)
+  if (length(loc) != 1L || is.na(loc) || !nzchar(loc)) return(NA_integer_)
   out <- tryCatch(
     run_program(
       loc,

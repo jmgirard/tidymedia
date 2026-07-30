@@ -34,7 +34,10 @@ expression such as \code{"30000/1001"}), or \code{NULL} (default) to keep
 the input frame rate.}
 
 \item{video_codec}{A string naming the output video codec (default
-\code{"libx264"}).}
+\code{"libx264"}), or \code{NULL} to emit no \code{-codec:v} and let the
+output container's default encoder decide. \code{NULL} is how you opt out
+of the H.264 default for a container that does not hold it (e.g.
+\code{.webm}).}
 
 \item{audio_codec}{A string naming the output audio codec (default
 \code{"copy"}, i.e. stream-copy the source audio unchanged). Name a real

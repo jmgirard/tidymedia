@@ -9,98 +9,12 @@
 # `verify_media()` is excluded by design: its same-named arguments are expected
 # probe values, not codec settings.
 #
-# The pair list is fixed here rather than derived at run time, so a verb that
-# gains a codec argument without a guard fails the completeness test below
-# instead of silently dropping out of the sweep.
-
-codec_front_door_pairs <- function() {
-  v <- c("video_codec", "audio_codec")
-  a <- "audio_codec"
-  list(
-    list(verb = "anonymize_video",            args = v),
-    list(verb = "anonymize_video_batch",      args = v),
-    list(verb = "compare_videos",             args = v),
-    list(verb = "compare_videos_batch",       args = v),
-    list(verb = "convert_audio",              args = a),
-    list(verb = "convert_audio_batch",        args = a),
-    list(verb = "crop_video",                 args = v),
-    list(verb = "crop_video_batch",           args = v),
-    list(verb = "extract_audio",              args = a),
-    list(verb = "extract_audio_batch",        args = a),
-    list(verb = "normalize_audio",            args = a),
-    list(verb = "normalize_audio_batch",      args = a),
-    list(verb = "picture_in_picture",         args = v),
-    list(verb = "picture_in_picture_batch",   args = v),
-    list(verb = "segment_video",              args = v),
-    list(verb = "segment_video_batch",        args = v),
-    list(verb = "separate_audio_video",       args = v),
-    list(verb = "separate_audio_video_batch", args = v),
-    list(verb = "standardize_video",          args = v),
-    list(verb = "standardize_video_batch",    args = v)
-  )
-}
-
-# Arguments each verb needs besides the codec under test, using `input` as the
-# input path and `out` as an output stem. Mirrors data-raw/codec-guard-baseline.R,
-# which measures the same grid against a git ref.
-codec_front_door_call <- function(verb, input, out) {
-  regions <- data.frame(x = 0, y = 0, width = 32, height = 32)
-  switch(
-    verb,
-    anonymize_video            = list(infile = input, outfile = out,
-                                      regions = regions),
-    anonymize_video_batch      = list(jobs = tibble::tibble(
-                                        input = input, output = out,
-                                        regions = list(regions))),
-    compare_videos             = list(infiles = c(input, input), outfile = out),
-    compare_videos_batch       = list(jobs = tibble::tibble(
-                                        inputs = list(c(input, input)),
-                                        output = out)),
-    convert_audio              = list(infile = input, outfile = "a.mp3"),
-    convert_audio_batch        = list(jobs = tibble::tibble(
-                                        input = input, output = "a.mp3")),
-    crop_video                 = list(infile = input, outfile = out,
-                                      width = 32, height = 32),
-    crop_video_batch           = list(jobs = tibble::tibble(
-                                        input = input, output = out),
-                                      width = 32, height = 32),
-    extract_audio              = list(infile = input, outfile = "a.aac"),
-    extract_audio_batch        = list(jobs = tibble::tibble(
-                                        input = input, output = "a.aac")),
-    normalize_audio            = list(infile = input, outfile = out),
-    normalize_audio_batch      = list(jobs = tibble::tibble(
-                                        input = input, output = out)),
-    picture_in_picture         = list(main = input, overlay = input,
-                                      outfile = out),
-    # Named main/overlay columns (D015), not an `inputs` list-column: with the
-    # wrong shape every call aborts on the missing columns before reaching the
-    # codec argument this file exists to test (review A1).
-    picture_in_picture_batch   = list(jobs = tibble::tibble(
-                                        main = input, overlay = input,
-                                        output = out)),
-    segment_video              = list(infile = input, start = 0, end = 1,
-                                      outfiles = out),
-    segment_video_batch        = list(jobs = tibble::tibble(
-                                        input = input, start = 0, end = 1,
-                                        output = out)),
-    separate_audio_video       = list(infile = input, audiofile = "a.aac",
-                                      videofile = out),
-    separate_audio_video_batch = list(jobs = tibble::tibble(
-                                        input = input, audiofile = "a.aac",
-                                        videofile = out)),
-    standardize_video          = list(infile = input, outfile = out),
-    standardize_video_batch    = list(jobs = tibble::tibble(
-                                        input = input, output = out)),
-    stop("no call template for ", verb)
-  )
-}
-
-# A valid codec for the `col = "present"` runs below. It must be a value the
-# per-row column guards accept, so the column genuinely wins the internal
-# `pick()` and the scalar argument is the only thing under test.
-codec_front_door_col_value <- function(arg) {
-  if (arg == "video_codec") "libx264" else "aac"
-}
+# The verb/argument list and the call templates live in
+# helper-codec-family.R, shared with test-codec-null-na-semantics.R: two files
+# sweep this family, and a copy in each is how the two lists drift apart. The
+# list is fixed rather than derived at run time, so a verb that gains a codec
+# argument without a guard fails the completeness test below instead of
+# silently dropping out of the sweep.
 
 # Which column states a verb can be in: a scalar verb has no `jobs` table, so
 # "present" is not a state it can reach.
@@ -122,14 +36,14 @@ codec_front_door_cols <- function(args) {
 codec_front_door_catch <- function(verb, arg, value, input, out = "out.mp4",
                                    col = "absent") {
   f <- get(verb, envir = asNamespace("tidymedia"))
-  args <- codec_front_door_call(verb, input, out)
+  args <- codec_family_call(verb, input, out)
   args$run <- FALSE
   if ("parallel" %in% names(formals(f))) args$parallel <- FALSE
   # Single-bracket assignment of list(value) so a NULL value would be STORED
   # rather than deleting the element (`args[[arg]] <- NULL` removes it).
   args[arg] <- list(value)
   if (identical(col, "present")) {
-    args$jobs[[arg]] <- codec_front_door_col_value(arg)
+    args$jobs[[arg]] <- codec_family_col_value(arg)
   }
   tryCatch({
     do.call(verb, args, envir = asNamespace("tidymedia"))
@@ -146,10 +60,10 @@ codec_front_door_bad <- list(
 
 test_that("every codec argument refuses a non-string at its own front door", {
   input <- make_input()
-  for (pair in codec_front_door_pairs()) {
+  for (pair in codec_family_pairs()) {
     verb <- pair$verb
     for (arg in pair$args) {
-      cols <- codec_front_door_cols(codec_front_door_call(verb, input, "out.mp4"))
+      cols <- codec_front_door_cols(codec_family_call(verb, input, "out.mp4"))
       for (col in cols) {
       for (shape in names(codec_front_door_bad)) {
         label <- paste0(verb, "(", arg, " = ", shape, ", col = ", col, ")")
@@ -203,9 +117,9 @@ test_that("every batch template is a jobs shape its own verb accepts", {
   # complaint. A later failure for want of a real input file is fine, and is why
   # this asserts the absence of one message rather than success.
   input <- make_input()
-  for (pair in codec_front_door_pairs()) {
+  for (pair in codec_family_pairs()) {
     verb <- pair$verb
-    args <- codec_front_door_call(verb, input, "out.mp4")
+    args <- codec_family_call(verb, input, "out.mp4")
     if (!"jobs" %in% names(args)) next
     args$run <- FALSE
     args$parallel <- FALSE
@@ -260,9 +174,9 @@ codec_front_door_precedence <- function() {
 test_that("a bad codec argument does not change which error an invalid jobs gets", {
   expected <- codec_front_door_precedence()
   observed <- character()
-  for (pair in codec_front_door_pairs()) {
+  for (pair in codec_family_pairs()) {
     verb <- pair$verb
-    if (!"jobs" %in% names(codec_front_door_call(verb, "in.mp4", "out.mp4"))) next
+    if (!"jobs" %in% names(codec_family_call(verb, "in.mp4", "out.mp4"))) next
     for (arg in pair$args) {
       args <- list(jobs = "oops", run = FALSE, parallel = FALSE)
       args[arg] <- list(NA)
@@ -349,7 +263,7 @@ test_that("the front-door sweep covers every codec argument the package exports"
   }
   found <- sort(unlist(found))
 
-  covered <- sort(unlist(lapply(codec_front_door_pairs(), function(p) {
+  covered <- sort(unlist(lapply(codec_family_pairs(), function(p) {
     paste(p$verb, p$args)
   })))
   # verify_media()'s same-named arguments are expected probe VALUES, not codec

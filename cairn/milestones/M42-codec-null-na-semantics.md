@@ -124,7 +124,7 @@ the `NULL` path M41's guards deliberately waved through.
       `video_codec` (`str_cols`), `extract_audio_batch`'s `audio_codec`
       (`check_batch_string_col`) — and correct the falsified `str_cols`
       comments.
-- [ ] T6: Write the AC5 table test; update `@param` prose and every `@param
+- [x] T6: Write the AC5 table test; update `@param` prose and every `@param
       jobs` column enumeration for the changed verbs; NEWS entries;
       `devtools::document()`, `devtools::test()`, `devtools::check()`.
 
@@ -140,6 +140,7 @@ the `NULL` path M41's guards deliberately waved through.
 - 2026-07-29: T3 — one line: `anonymize_pipeline()`'s unconditional `check_token(video_codec)` was the sole cause of split 1, and skipping it for `NULL` fixes both anonymize verbs (the batch one's `In index:` abort included). Check left at its original position so it keeps reporting before `pixel_format`/drawbox. New `test-codec-null-na-semantics.R`; every absence assertion paired with a named-encoder non-vacuity assertion. Suite 2461 passing.
 - 2026-07-29: T4 — `extract_audio()` takes `allow_null = TRUE`; M41's 14-line pointer comment replaced by a 4-line statement of the settled rule. M41's "NULL keeps its existing per-verb meaning" test moved whole into the new file rather than edited in place, because two files asserting NULL semantics is how they drift; what stayed behind is the NA-still-aborts half, which is that file's own concern. Suite 2466 passing.
 - 2026-07-29: T5 — all three columns moved to `check_batch_codec_col()` + `batch_codec_cell()`; `color`/`pixel_format` stay in `str_cols` (no sentinel). `codec_guard_diff(origin/master, HEAD)`: 21 changed cells, 8 abort→compiled (the widening) and 13 abort→abort where only the message moved; `codec_guard_semantics()` now shows `convert_audio`/`_batch` as the sole departure. Re-probed the newly reachable `col = na` aborts: each still names its own argument, blames the verb, carries no `In index:` (M41's contract). Suite 2482 passing.
+- 2026-07-29: T6 — AC5 table over all 34 pairs, each with a per-pair non-vacuity assertion; the `convert_audio` departure is a table entry, and a second test rejects a departure naming a pair that no longer exists. Verb list + call templates extracted to `helper-codec-family.R` so the front-door sweep and the semantics sweep cannot drift; M41's completeness test now fences both. Falsifiability checked by running the new file against `origin/master`'s `R/ffmpeg.R`: 7 of 10 blocks fail. `@param`s and both `@param jobs` enumerations updated; NEWS entry under New features. `document()` idempotent; `check()` 0/0/0; suite 2568 passing.
 
 ## Decisions
 

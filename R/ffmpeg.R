@@ -263,8 +263,11 @@ extract_audio_pipeline <- function(input, output, audio_codec = "copy") {
 #'
 #' @param infile A string containing the path to a media file.
 #' @param outfile A string containing the path of the audio file to write.
-#' @param audio_codec A string naming the audio codec for the output stream.
-#'   (default = \code{"copy"}, i.e. remux without re-encoding)
+#' @param audio_codec A string naming the audio codec for the output stream
+#'   (default \code{"copy"}, i.e. remux without re-encoding), or \code{NULL} to
+#'   emit no \code{-codec:a} and let the output container's default encoder
+#'   decide — useful when the source codec cannot be copied into the extension
+#'   you asked for.
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
@@ -773,7 +776,10 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #'   expression such as \code{"30000/1001"}), or \code{NULL} (default) to keep
 #'   the input frame rate.
 #' @param video_codec A string naming the output video codec (default
-#'   \code{"libx264"}).
+#'   \code{"libx264"}), or \code{NULL} to emit no \code{-codec:v} and let the
+#'   output container's default encoder decide. \code{NULL} is how you opt out
+#'   of the H.264 default for a container that does not hold it (e.g.
+#'   \code{.webm}).
 #' @param audio_codec A string naming the output audio codec (default
 #'   \code{"copy"}, i.e. stream-copy the source audio unchanged). Name a real
 #'   encoder (e.g. \code{"aac"}) when the source audio codec cannot be copied
@@ -911,7 +917,10 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
 #' @param color A string naming the default fill color in FFmpeg color syntax,
 #'   used for any row without its own \code{color} (default \code{"black"}).
 #' @param video_codec A string naming the output video codec (default
-#'   \code{"libx264"}).
+#'   \code{"libx264"}), or \code{NULL} to emit no \code{-codec:v} and let the
+#'   output container's default encoder decide. \code{NULL} is how you opt out
+#'   of the H.264 default for a container that does not hold it (e.g.
+#'   \code{.webm}).
 #' @param audio_codec A string naming the output audio codec (default
 #'   \code{"copy"}, i.e. stream-copy the source audio unchanged). Name a real
 #'   encoder (e.g. \code{"aac"}) when the source audio codec cannot be copied
@@ -1126,15 +1135,18 @@ derive_anonymized_names <- function(input) {
 #'   \code{pixel_format} — may
 #'   also appear as a column to override the corresponding argument on a per-row
 #'   basis; rows (or knobs) that omit the column fall back to the argument's
-#'   value. In an \code{audio_codec} column, \code{NA} leaves that row's audio
-#'   codec unset (the column form of \code{audio_codec = NULL}). Any other
-#'   columns are ignored.
+#'   value. In either codec column, \code{NA} leaves that row's codec unset (the
+#'   column form of \code{video_codec = NULL} / \code{audio_codec = NULL}); in a
+#'   \code{color} or \code{pixel_format} column it is an error, because those
+#'   have no unset state. Any other columns are ignored.
 #' @param color A string naming the default fill color (FFmpeg color syntax)
 #'   applied to every row, unless \code{jobs} carries a \code{color} column or a
 #'   box supplies its own \code{color}. (default = \code{"black"})
-#' @param video_codec A string naming the output video codec applied to every row,
-#'   unless \code{jobs} carries a \code{video_codec} column. (default =
-#'   \code{"libx264"})
+#' @param video_codec A string naming the output video codec applied to every
+#'   row, unless \code{jobs} carries a \code{video_codec} column, in which case
+#'   \code{NA} in a cell leaves that row's codec unset. Default
+#'   \code{"libx264"}; \code{NULL} emits no \code{-codec:v} and lets the output
+#'   container's default encoder decide.
 #' @param audio_codec A string naming the output audio codec applied to every
 #'   row, unless \code{jobs} carries an \code{audio_codec} column, in which case
 #'   \code{NA} in a cell leaves that row's codec unset. \code{"copy"} (default)
@@ -2570,10 +2582,11 @@ derive_standardized_names <- function(input) {
 #'   \code{fps}, \code{video_codec}, \code{audio_codec}, \code{pixel_format} —
 #'   may also appear as a
 #'   column to override the corresponding argument on a per-row basis; rows (or
-#'   knobs) that omit the column fall back to the argument's value. In an
-#'   \code{audio_codec} column, \code{NA} leaves that row's audio codec unset
-#'   (the column form of \code{audio_codec = NULL}). Any other
-#'   columns are ignored.
+#'   knobs) that omit the column fall back to the argument's value. In either
+#'   codec column, \code{NA} leaves that row's codec unset (the column form of
+#'   \code{video_codec = NULL} / \code{audio_codec = NULL}); in a \code{width},
+#'   \code{height}, \code{fps} or \code{pixel_format} column it is an error,
+#'   because those have no unset state. Any other columns are ignored.
 #' @param width,height Optional target dimensions applied to every row, unless
 #'   \code{jobs} carries a column of the same name (see \code{jobs}). When only
 #'   one is given the other is derived to preserve aspect ratio; when neither is
@@ -2582,8 +2595,11 @@ derive_standardized_names <- function(input) {
 #' @param fps Optional target frame rate applied to every row, unless
 #'   \code{jobs} carries an \code{fps} column. (default = \code{NULL}, i.e.
 #'   leave the frame rate unchanged)
-#' @param video_codec A string naming the video codec applied to every row, unless
-#'   \code{jobs} carries a \code{video_codec} column. (default = \code{"libx264"})
+#' @param video_codec A string naming the video codec applied to every row,
+#'   unless \code{jobs} carries a \code{video_codec} column, in which case
+#'   \code{NA} in a cell leaves that row's codec unset. Default
+#'   \code{"libx264"}; \code{NULL} emits no \code{-codec:v} and lets the output
+#'   container's default encoder decide.
 #' @param audio_codec A string naming the audio codec applied to every row,
 #'   unless \code{jobs} carries an \code{audio_codec} column, in which case
 #'   \code{NA} in a cell leaves that row's codec unset. \code{"copy"} (default)
@@ -3390,10 +3406,15 @@ check_fanin_jobs <- function(jobs, min_inputs = 1L, verb = NULL,
 #'   the instruction (it picks the container, and with \code{audio_codec =
 #'   "copy"} must match the source codec). An optional \code{audio_codec} column
 #'   overrides the \code{audio_codec} argument per row; rows omitting it fall
-#'   back to the argument. Any other columns are ignored.
+#'   back to the argument, and \code{NA} in a cell leaves that row's codec unset
+#'   (the column form of \code{audio_codec = NULL}). Any other columns are
+#'   ignored.
 #' @param audio_codec The audio codec applied to every row unless \code{jobs}
-#'   carries an \code{audio_codec} column. \code{"copy"} (default) stream-copies
-#'   the audio losslessly; name an encoder (e.g. \code{"aac"}) to transcode.
+#'   carries an \code{audio_codec} column, in which case \code{NA} in a cell
+#'   leaves that row's codec unset. \code{"copy"} (default) stream-copies the
+#'   audio losslessly; name an encoder (e.g. \code{"aac"}) to transcode; or pass
+#'   \code{NULL} to emit no \code{-codec:a} and let the output container's
+#'   default encoder decide.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}

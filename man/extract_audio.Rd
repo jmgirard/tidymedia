@@ -11,8 +11,11 @@ extract_audio(infile, outfile, audio_codec = "copy", run = TRUE)
 
 \item{outfile}{A string containing the path of the audio file to write.}
 
-\item{audio_codec}{A string naming the audio codec for the output stream.
-(default = \code{"copy"}, i.e. remux without re-encoding)}
+\item{audio_codec}{A string naming the audio codec for the output stream
+(default \code{"copy"}, i.e. remux without re-encoding), or \code{NULL} to
+emit no \code{-codec:a} and let the output container's default encoder
+decide — useful when the source codec cannot be copied into the extension
+you asked for.}
 
 \item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
 or return the compiled command without running it (\code{FALSE}).}

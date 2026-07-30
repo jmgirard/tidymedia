@@ -34,6 +34,85 @@ codec_compiled <- function(verb, args) {
   paste(as.character(out), collapse = " ||| ")
 }
 
+# The resolved meaning of "unset" per verb x argument (D022). The family rule is
+# "none" -- emit no -codec:v / -codec:a at all -- and only departures are listed.
+# A departure appears here as an EXPECTED outcome rather than a skipped case, so
+# it stays a recorded choice instead of decaying back into the accident this
+# milestone found three of.
+#
+#   q0  NULL and a column NA select `-q:a 0`, highest-quality VBR (D021,
+#       reaffirmed at M42's gate: the rename corrected the argument's name, and
+#       transferring the sentinel would silently change every existing default
+#       call's output).
+codec_family_unset_meaning <- function() {
+  c(
+    "convert_audio audio_codec"       = "q0",
+    "convert_audio_batch audio_codec" = "q0"
+  )
+}
+
+# Assert one compiled command against the meaning the table records for it.
+codec_expect_unset <- function(cmd, arg, want, label) {
+  flag <- if (arg == "video_codec") "-codec:v" else "-codec:a"
+  if (identical(want, "q0")) {
+    expect_match(cmd, "-q:a 0", fixed = TRUE,
+                 label = paste(label, "selects -q:a 0"))
+  } else {
+    expect_no_match(cmd, flag, fixed = TRUE,
+                    label = paste(label, "emits no", flag))
+  }
+}
+
+test_that("NULL and a column NA mean the same thing on every codec argument (D022)", {
+  # The family table. Completeness against the package's exports is asserted by
+  # test-codec-arg-front-door.R, which sweeps the same codec_family_pairs()
+  # list, so a verb that gains a codec argument cannot escape this table either.
+  input <- make_input()
+  departures <- codec_family_unset_meaning()
+  flag <- c(video_codec = "-codec:v", audio_codec = "-codec:a")
+
+  for (pair in codec_family_pairs()) {
+    verb <- pair$verb
+    for (arg in pair$args) {
+      key <- paste(verb, arg)
+      want <- if (key %in% names(departures)) departures[[key]] else "none"
+      base <- c(codec_family_call(verb, input, "out.mp4"),
+                codec_family_extra(verb, arg))
+      lbl <- paste0(key, " [", want, "]")
+
+      # Non-vacuity, per pair: a named encoder reaches the compiled command, so
+      # an absent flag below is the sentinel's doing and not a verb that emits
+      # no such flag under any setting at all.
+      named <- codec_family_col_value(arg)
+      expect_match(
+        codec_compiled(verb, codec_with(base, arg, named)),
+        paste(flag[[arg]], named), fixed = TRUE,
+        label = paste(lbl, "emits the flag for a named encoder")
+      )
+
+      codec_expect_unset(codec_compiled(verb, codec_with(base, arg, NULL)),
+                         arg, want, paste(lbl, "scalar NULL"))
+
+      # The column form, wherever there is a column to carry it.
+      if ("jobs" %in% names(base)) {
+        na_args <- base
+        na_args$jobs[[arg]] <- NA
+        codec_expect_unset(codec_compiled(verb, na_args), arg, want,
+                           paste(lbl, "column NA"))
+      }
+    }
+  }
+})
+
+test_that("the departure table names only pairs that exist", {
+  # A departure left behind for a renamed or retired verb would sit here reading
+  # as a live exception while asserting nothing, which is how a table of
+  # exceptions rots.
+  keys <- unlist(lapply(codec_family_pairs(),
+                        function(p) paste(p$verb, p$args)))
+  expect_true(all(names(codec_family_unset_meaning()) %in% keys))
+})
+
 test_that("the four standardize/anonymize verbs agree on video_codec = NULL (D022)", {
   input <- make_input()
   regions <- data.frame(x = 0, y = 0, width = 32, height = 32)

@@ -31,10 +31,11 @@ Each of the six standardization knobs — \code{width}, \code{height},
 \code{fps}, \code{video_codec}, \code{audio_codec}, \code{pixel_format} —
 may also appear as a
 column to override the corresponding argument on a per-row basis; rows (or
-knobs) that omit the column fall back to the argument's value. In an
-\code{audio_codec} column, \code{NA} leaves that row's audio codec unset
-(the column form of \code{audio_codec = NULL}). Any other
-columns are ignored.}
+knobs) that omit the column fall back to the argument's value. In either
+codec column, \code{NA} leaves that row's codec unset (the column form of
+\code{video_codec = NULL} / \code{audio_codec = NULL}); in a \code{width},
+\code{height}, \code{fps} or \code{pixel_format} column it is an error,
+because those have no unset state. Any other columns are ignored.}
 
 \item{width, height}{Optional target dimensions applied to every row, unless
 \code{jobs} carries a column of the same name (see \code{jobs}). When only
@@ -46,8 +47,11 @@ encode. (default = \code{NULL})}
 \code{jobs} carries an \code{fps} column. (default = \code{NULL}, i.e.
 leave the frame rate unchanged)}
 
-\item{video_codec}{A string naming the video codec applied to every row, unless
-\code{jobs} carries a \code{video_codec} column. (default = \code{"libx264"})}
+\item{video_codec}{A string naming the video codec applied to every row,
+unless \code{jobs} carries a \code{video_codec} column, in which case
+\code{NA} in a cell leaves that row's codec unset. Default
+\code{"libx264"}; \code{NULL} emits no \code{-codec:v} and lets the output
+container's default encoder decide.}
 
 \item{audio_codec}{A string naming the audio codec applied to every row,
 unless \code{jobs} carries an \code{audio_codec} column, in which case

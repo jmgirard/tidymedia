@@ -77,9 +77,11 @@ column (and \code{verified} / provenance manifest when requested via
 \code{codec} column carries each row's resolved encoder for its own stream
 (\code{NA} where none is emitted). When \code{audio_stream} is supplied as
 either the argument or a \code{jobs} column, an \code{audio_stream} column
-likewise carries each row's resolved track — the selected index on an audio
-row, \code{NA} on a video row, which takes no audio. The columns match the
-other \code{_batch} verbs' output plus the \code{stream} marker. See
+likewise carries each row's resolved track: the selected index on an audio
+row, and \code{NA} both on every video row (which takes no audio) and on an
+audio row that named no track — so \code{NA} does not by itself mark a video
+row; read the \code{stream} column for that. The columns match the other
+\code{_batch} verbs' output plus the \code{stream} marker. See
 \code{\link{ffm_batch}}.
 }
 \description{

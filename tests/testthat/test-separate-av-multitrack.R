@@ -307,14 +307,40 @@ test_that("a non-numeric audio_stream column and an NA argument are rejected", {
   infile <- make_input("mkv")
   jobs <- sep_jobs(c(infile, infile))
   jobs$audio_stream <- c("0", "1")
-  expect_error(separate_audio_video_batch(jobs, run = FALSE),
-               "keep every audio track")
+  err <- tryCatch(separate_audio_video_batch(jobs, run = FALSE),
+                  error = function(e) cli::ansi_strip(conditionMessage(e)))
+  expect_match(err, "keep every audio track")
+  # And the inherited default must be ABSENT, not merely outvoted: dropping the
+  # `na_means =` argument would fall back to "drop audio", which is false here,
+  # and a presence-only assertion would stay green (M40's lesson).
+  expect_no_match(err, "drop audio")
   # The argument's front-door check: NA resolves to the NULL sentinel in the
   # reshape, so without it this would silently keep every track (M37/M41).
   expect_error(
     separate_audio_video_batch(sep_jobs(infile), audio_stream = NA, run = FALSE),
     "audio_stream"
   )
+})
+
+test_that("a bad audio_stream CELL is blamed by the caller's row number", {
+  # The reshape turns N input rows into 2N, so the per-row check inside the
+  # pipeline reports an index of the RESHAPED table -- "In index: 3" for a
+  # two-row jobs table, a row the caller cannot find, and it names Layer-1's
+  # pmap (M45 review F4; M32 + M41).
+  infile <- make_input("mkv")
+  jobs <- sep_jobs(c(infile, infile))
+  jobs$audio_stream <- c(0, -1)
+  err <- tryCatch(separate_audio_video_batch(jobs, run = FALSE),
+                  error = function(e) cli::ansi_strip(conditionMessage(e)))
+  expect_match(err, "row 2", fixed = TRUE)
+  expect_no_match(err, "index", fixed = TRUE)
+  expect_no_match(err, "pmap", fixed = TRUE)
+  # Two bad cells must not crash the message: a plural governed by a vector
+  # throws `length(object) == 1` (M18), so this needs 2+ items to be a real test.
+  jobs$audio_stream <- c(-1, 1.5)
+  err2 <- tryCatch(separate_audio_video_batch(jobs, run = FALSE),
+                   error = function(e) cli::ansi_strip(conditionMessage(e)))
+  expect_match(err2, "row 1 and 2", fixed = TRUE)
 })
 
 test_that("the result carries the resolved audio_stream, and only when asked", {
@@ -356,6 +382,43 @@ test_that("a failed audio row records success = FALSE and warns once", {
   expect_false(res$success[[1]])          # row 1's audio: refused
   expect_true(res$success[[3]])           # row 2's audio: one track named
   expect_true(res$success[[5]])           # row 3's audio: single-track input
+})
+
+test_that("the batch warning names two failed rows without crashing", {
+  # A one-row warning cannot see M18's plural crash, and cannot show that the
+  # aggregation names EVERY affected row rather than the first.
+  skip_if_no_ffprobe()
+  multi <- make_multitrack_video()
+  single <- make_test_video()
+  dir <- withr::local_tempdir()
+  jobs <- tibble::tibble(
+    input     = c(multi, single, multi),
+    audiofile = file.path(dir, c("f1.mp3", "ok.aac", "f3.mp3")),
+    videofile = file.path(dir, c("v1.mkv", "v2.mkv", "v3.mkv"))
+  )
+  w <- tryCatch(separate_audio_video_batch(jobs), warning = function(w) w)
+  expect_s3_class(w, "tidymedia_multitrack_separation")
+  msg <- cli::ansi_strip(conditionMessage(w))
+  expect_match(msg, "2 audio outputs failed")
+  expect_match(msg, "Input row 1")
+  expect_match(msg, "Input row 3")
+  expect_false(grepl("Input row 2", msg))
+})
+
+test_that("a brace-bearing path does not execute in the batch warning either", {
+  # The scalar abort and the batch warning escape braces independently, so the
+  # scalar's test does not cover this one (M44 review F1).
+  skip_if_no_ffprobe()
+  multi <- make_multitrack_video()
+  dir <- withr::local_tempdir()
+  jobs <- tibble::tibble(
+    input     = multi,
+    audiofile = file.path(dir, "my{n}.mp3"),
+    videofile = file.path(dir, "v.mkv")
+  )
+  w <- tryCatch(separate_audio_video_batch(jobs), warning = function(w) w)
+  expect_s3_class(w, "tidymedia_multitrack_separation")
+  expect_match(cli::ansi_strip(conditionMessage(w)), "my{n}.mp3", fixed = TRUE)
 })
 
 test_that("a batch where every row names a track probes nothing", {

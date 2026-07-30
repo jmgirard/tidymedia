@@ -81,13 +81,33 @@ the encoder. Each argument governs only its own output file. Where the video
 is re-encoded, \code{hardware = "nvenc"} moves that encode onto an NVIDIA
 GPU; the audio output is never affected.
 }
+\section{When the audio output fails}{
+
+Because the default keeps every audio track, writing a multi-track input to a
+container that holds only one (\code{.aac}, \code{.mp3}, \code{.wav}) makes
+FFmpeg fail. When that happens and no \code{audio_stream} was named, the error
+additionally reports how many audio tracks \code{infile} carries and names the
+two ways out — \code{audio_stream} to write one track, or a container such as
+\code{.mka} or \code{.m4a} to keep them all. FFmpeg's own error and exit status
+are still reported beneath it, and remain the authority on why the command
+failed: the extra report is attached to \emph{any} failing audio command on a
+multi-track input, not only to a container refusal.
+
+Counting the tracks means running FFprobe, so this is \strong{best-effort}: it
+is added when FFprobe is available and \code{infile} can be probed, and
+omitted silently otherwise, leaving FFmpeg's own error alone. It never runs
+under \code{run = FALSE}, never changes the compiled commands, and is skipped
+entirely when \code{audio_stream} names a track — with one track mapped, the
+track count cannot be what FFmpeg objected to.
+}
+
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 separate_audio_video(video, "audio.aac", "video.mp4", run = FALSE)
 # transcode the audio to MP3 while copying the video through untouched
 separate_audio_video(video, "audio.mp3", "video.mp4",
                      audio_codec = "libmp3lame", run = FALSE)
-# write only the second audio track of a multi-track input
+# write only the second audio track (this sample has one, so compile only)
 separate_audio_video(video, "audio.aac", "video.mp4",
                      audio_stream = 1, run = FALSE)
 }

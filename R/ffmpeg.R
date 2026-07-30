@@ -634,8 +634,13 @@ warn_failed_separation <- function(rows, inputs, outputs, n,
   inputs <- inputs[keep]
   outputs <- outputs[keep]
   n <- as.integer(n[keep])
+  # Stated as fact about the CALL, never about the cause. "FFmpeg would not write
+  # all 3 to a.mka" was false whenever the row failed for an unrelated reason -- a
+  # missing output directory, an unknown encoder -- and .mka would have held all
+  # three (M45 review F2). What is always true is the count and the mapping; why
+  # FFmpeg refused is in its own output, not in this bullet.
   bullets <- sprintf(
-    "Input row %d (%s) carries %d audio tracks; FFmpeg would not write all %d to %s.",
+    "Input row %d (%s) carries %d audio tracks, all %d mapped into %s, which failed.",
     rows, basename(inputs), n, n, basename(outputs)
   )
   # Double every brace sprintf() has already interpolated: cli glue-evaluates
@@ -768,6 +773,23 @@ ffmpeg_exit_status <- function(cnd) {
 #'   [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
 #'   [extract_audio()] to pull out just the audio;
 #'   [probe_audio()] to list an input's audio tracks.
+#' @section When the audio output fails:
+#' Because the default keeps every audio track, writing a multi-track input to a
+#' container that holds only one (\code{.aac}, \code{.mp3}, \code{.wav}) makes
+#' FFmpeg fail. When that happens and no \code{audio_stream} was named, the error
+#' additionally reports how many audio tracks \code{infile} carries and names the
+#' two ways out — \code{audio_stream} to write one track, or a container such as
+#' \code{.mka} or \code{.m4a} to keep them all. FFmpeg's own error and exit status
+#' are still reported beneath it, and remain the authority on why the command
+#' failed: the extra report is attached to \emph{any} failing audio command on a
+#' multi-track input, not only to a container refusal.
+#'
+#' Counting the tracks means running FFprobe, so this is \strong{best-effort}: it
+#' is added when FFprobe is available and \code{infile} can be probed, and
+#' omitted silently otherwise, leaving FFmpeg's own error alone. It never runs
+#' under \code{run = FALSE}, never changes the compiled commands, and is skipped
+#' entirely when \code{audio_stream} names a track — with one track mapped, the
+#' track count cannot be what FFmpeg objected to.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -775,7 +797,7 @@ ffmpeg_exit_status <- function(cnd) {
 #' # transcode the audio to MP3 while copying the video through untouched
 #' separate_audio_video(video, "audio.mp3", "video.mp4",
 #'                      audio_codec = "libmp3lame", run = FALSE)
-#' # write only the second audio track of a multi-track input
+#' # write only the second audio track (this sample has one, so compile only)
 #' separate_audio_video(video, "audio.aac", "video.mp4",
 #'                      audio_stream = 1, run = FALSE)
 #' @export
@@ -3768,6 +3790,38 @@ check_batch_audio_col <- function(jobs, col = "audio",
   invisible(jobs)
 }
 
+# Validate every non-NA cell of a numeric stream-index column, blaming the row of
+# the CALLER's jobs table. check_batch_audio_col() above covers the column's
+# type; this covers each value. Needed wherever a verb reshapes its jobs table
+# before the fan-out, because then the per-row check inside the pipeline reports
+# an index of the reshaped table instead of the caller's (M45 review F4).
+#
+# No `{?s}` anywhere in the message: a plural governed by a `{.val {vector}}`
+# throws `length(object) == 1` once there are 2+ items (M18), and this message
+# names a vector of rows by construction.
+check_batch_stream_values <- function(jobs, col, call = rlang::caller_env()) {
+  if (!col %in% names(jobs)) return(invisible(jobs))
+  vals <- jobs[[col]]
+  bad <- which(vapply(seq_along(vals), function(i) {
+    if (is.na(vals[[i]])) return(FALSE)
+    !isTRUE(tryCatch({
+      rlang::check_number_whole(vals[[i]], min = 0)
+      TRUE
+    }, error = function(e) FALSE))
+  }, logical(1)))
+  if (length(bad) > 0) {
+    cli::cli_abort(
+      c(
+        "Every {.field {col}} cell of {.arg jobs} must be a whole number
+         {.val {0}} or greater, or {.val {NA}}.",
+        "x" = "Bad at row {.val {bad}}, value {.val {vals[bad]}}."
+      ),
+      call = call
+    )
+  }
+  invisible(jobs)
+}
+
 # Resolve a per-row `audio_stream` cell to the scalar the pipelines take: NA is
 # the column form of the NULL sentinel, i.e. "leave this row on the first audio
 # track" -- NOT "fall back to the argument", which is what an ABSENT column
@@ -4393,9 +4447,11 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #'   \code{codec} column carries each row's resolved encoder for its own stream
 #'   (\code{NA} where none is emitted). When \code{audio_stream} is supplied as
 #'   either the argument or a \code{jobs} column, an \code{audio_stream} column
-#'   likewise carries each row's resolved track — the selected index on an audio
-#'   row, \code{NA} on a video row, which takes no audio. The columns match the
-#'   other \code{_batch} verbs' output plus the \code{stream} marker. See
+#'   likewise carries each row's resolved track: the selected index on an audio
+#'   row, and \code{NA} both on every video row (which takes no audio) and on an
+#'   audio row that named no track — so \code{NA} does not by itself mark a video
+#'   row; read the \code{stream} column for that. The columns match the other
+#'   \code{_batch} verbs' output plus the \code{stream} marker. See
 #'   \code{\link{ffm_batch}}.
 #' @seealso [separate_audio_video()], the scalar verb it wraps; [ffm_batch()],
 #'   the batch runner; [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
@@ -4510,6 +4566,14 @@ separate_audio_video_batch <- function(jobs, audio_codec = "copy",
   # wording is a parameter).
   check_batch_audio_col(jobs, "audio_stream",
                         na_means = "keep every audio track")
+  # Each CELL's value too, not only the column's type. The range check inside
+  # audio_stream_map() does run per row, but under purrr::pmap over the RESHAPED
+  # 2N table -- so on this verb a bad cell aborted mid-fan-out reporting
+  # "In index: 3" for a two-row jobs table, a row number the caller cannot find,
+  # and naming Layer-1's pmap (M45 review F4; M32's per-row revalidation rule and
+  # M41's don't-abort-mid-fan-out rule, which every other _batch verb satisfies
+  # for free because its index IS the caller's row).
+  check_batch_stream_values(jobs, "audio_stream")
   # And the argument's front-door check. Load-bearing here, unlike on the scalar
   # sibling: the reshape below materializes this argument into a column whose NA
   # cells mean the NULL sentinel, so without it `audio_stream = NA` would quietly

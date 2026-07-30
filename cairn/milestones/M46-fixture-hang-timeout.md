@@ -1,6 +1,6 @@
 # M46: Stop the subtitle fixture hanging, and bound every fixture command
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -98,7 +98,7 @@ row, `audio_stream`-carry included.
       red by re-adding `-shortest` to the generator — commit the baseline first,
       since `git checkout` restores from the index and would otherwise revert
       the fix itself (M44) — and restore.
-- [ ] T7 Run the 25-run before/after probe (AC2); `devtools::test()` and
+- [x] T7 Run the 25-run before/after probe (AC2); `devtools::test()` and
       `devtools::check()` (AC7); confirm CI green on both platforms, ubuntu's
       ffmpeg 6.1.1 included (M45). No `NEWS.md` entry — test-only, nothing
       user-visible.
@@ -114,6 +114,9 @@ row, `audio_stream`-carry included.
 - 2026-07-30: [O] criteria audit ran on the step-2 criteria and returned six findings — a false premise under AC3 (no test exercises `ffmpeg()` as its subject, so routing all twelve sites would strip the exported function of all coverage; AC4 added), the AC1/AC5 fixture-location split, strict-vs-diagnostic and ordered-vs-set ambiguities in AC2, an under-specified timeout message, a missing binary-absent skip, and a decorative assertion in the repeat test (the guard is completion-within-limit, not subtitle presence). Five fixed in the wording; the sixth went to the gate as Q2.
 
 - 2026-07-30: T1 done — `run_ffmpeg_fixture(command, timeout = 120)` in `helper-media.R`; it errors rather than skipping (a skip would go green on CI, which is the failure this milestone closes) and names only the binary and the limit. Probed with a 3-second limit against an unbounded encode: returned at 3.0 s with "ffmpeg fixture generation timed out after 3 seconds.", and `pgrep ffmpeg` found no survivor, so R's kill reaps the child.
+- 2026-07-30: T7 done — 25-run probes at a 20 s limit: post-fix 25/25 completed, 0 timeouts, every output exactly `video,audio,subtitle`; pre-fix (`-shortest` restored) 7 timeouts in 25. `devtools::check()` Status OK, 0 errors / 0 warnings / 0 notes, 1m38s. Full suite FAIL 0, PASS 2837. No `NEWS.md` entry — test-only, no user-visible surface.
+- 2026-07-30: branch pushed and PR #49 opened (review owns the header slot); CI green on all five R-CMD-check platforms — macOS, Windows, ubuntu release/devel/oldrel-1 — plus pkgdown and test-coverage. Ubuntu's ffmpeg 6.1.1 passes the rerouted fixtures, which is the M45 version-straddle risk cleared.
+- 2026-07-30: no prose-guard was authored or edited by this milestone, so step 8's fresh-context guard-description read does not apply.
 - 2026-07-30: T6 done — mutation probe against the committed baseline: `-shortest` re-added to `make_subtitle_video()`, `test-audio-stream.R` run three times, ALL THREE red (AC6 allows up to three, needing one). Runs 1 and 2 failed in the 10-run regression test at `:325`, run 3 in the original subtitle test at `:305`; every failure read `Error: ffmpeg fixture generation timed out after 120 seconds.` — an error, never a hang, which is the whole point. Restored with `git checkout` (clean vs HEAD) and the file re-ran green.
 - 2026-07-30: T5 done — `test-fixture-helpers.R`: a 1080p60 unbounded encode under a 3-second limit errors in under 8 s naming `ffmpeg` and "timed out after 3 seconds" while naming neither the command nor `tempdir()`, plus a finishing command returning FFmpeg's output. Recorded in the file what the test cannot catch: a mutation that stops passing the limit through makes it HANG rather than go red, since non-termination is the failure under test. Full suite FAIL 0, PASS 2837.
 - 2026-07-30: T4 done — two tests in `test-ffmpeg.R`: `ffmpeg("-version")` returns a character vector whose first line matches `^ffmpeg version`, and the `check_string()` branch fires on a length-2 vector, a number, and `NULL`. That branch had never been fired. Full suite FAIL 0, PASS 2829.

@@ -76,9 +76,33 @@ Front-door type guards → M41 (this milestone assumes them).
 - AC5 → T6
 - AC6 → T6
 
+## Measurement (T1)
+
+`codec_guard_semantics(codec_guard_baseline())` over all 34 codec
+verb × argument pairs, working tree at b15f949. Regenerate rather than re-read.
+
+**Family default, 27 of 34 pairs:** `NULL` emits no `-codec:v` / `-codec:a` at
+all (D016's sentinel); a column `NA` resolves to `NULL` via `batch_codec_cell()`.
+
+| verb | arg | `NULL` | column `NA` |
+|---|---|---|---|
+| `convert_audio` | `audio_codec` | `-q:a 0` | — scalar |
+| `convert_audio_batch` | `audio_codec` | `-q:a 0` | `-q:a 0` |
+| `extract_audio` | `audio_codec` | **abort** | — scalar |
+| `extract_audio_batch` | `audio_codec` | emits nothing | **abort**, no `NA` |
+| `anonymize_video` | `video_codec` | **abort** | — scalar |
+| `anonymize_video_batch` | `video_codec` | **abort**, `In index: 1` | **abort**, no `NA` |
+| `standardize_video_batch` | `video_codec` | emits nothing | **abort**, no `NA` |
+
+Two findings the plan did not have. **Three** codec columns reject `NA`, not the
+one Scope 3 names — `anonymize_video_batch` and `extract_audio_batch` carry the
+same split. And `anonymize_video_batch(video_codec = NULL)` aborts *inside*
+`purrr::pmap()` (`In index: 1`, blaming pmap): M41's defect shape, surviving on
+the `NULL` path M41's guards deliberately waved through.
+
 ## Tasks
 
-- [ ] T1: Extend M41's `data-raw/` baseline script to also emit each codec
+- [x] T1: Extend M41's `data-raw/` baseline script to also emit each codec
       argument's current column-`NA` outcome, and record the resulting
       argument × {`NULL`, column `NA`} table in this file — measured, not
       re-derived by hand.
@@ -103,6 +127,8 @@ Front-door type guards → M41 (this milestone assumes them).
 - 2026-07-29: created by /milestone-plan.
 - 2026-07-29: plan gate chose planning this now as its own milestone over a ROADMAP candidate row, because the probe evidence is fresh and a second deferral would leave the family non-uniform in what `NA` means — the exact reading D021 warns against; falsified by the three splits turning out to need one decision each with no shared code, which would make three hotfixes cheaper than a milestone.
 - 2026-07-29: plan chose criteria that fix *agreement* between each verb pair rather than naming which way each split resolves, because the direction is T2's gated decision; falsified by a split whose two directions need materially different tasks, which would force the decision back into planning.
+- 2026-07-29: T1 — added a `col = "na"` cell to the M41 probe grid plus `codec_guard_semantics()`/`codec_guard_flag()`; `codec_guard_vacuous()` deliberately excludes the new cell (there a non-compiling default is M42's finding, not M41's broken instrumentation). Minor amendment: new `## Measurement (T1)` section holds the 34-pair result.
+- 2026-07-29: T1 measurement falsifies Scope 3's "unlike every other codec column" — three codec columns reject `NA` (`standardize_video_batch`/`video_codec`, `anonymize_video_batch`/`video_codec`, `extract_audio_batch`/`audio_codec`) — and finds `anonymize_video_batch(video_codec = NULL)` aborting inside `purrr::pmap()`. Both go to the T2 gate.
 
 ## Decisions
 

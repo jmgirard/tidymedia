@@ -20,6 +20,7 @@
 #
 #   col = absent   the jobs table has no such column
 #   col = present  the jobs table carries a valid codec in that column
+#   col = na       the jobs table carries NA in that column
 #
 # The `present` half exists because `pick()` prefers the column over the scalar
 # argument, so the scalar is never read there: a bad value in it used to be
@@ -28,6 +29,15 @@
 # measured AC4 as clean while the contract had in fact moved on four verbs
 # (review F2/F7 -> M41-D2). Scalar verbs have no jobs table and are recorded as
 # `absent`.
+#
+# The `na` half was added by M42 (T1), which asks what a column NA *means* on
+# each codec column rather than whether a bad scalar is refused. Every other
+# codec column spells "unset" as NA via `check_batch_codec_col()` +
+# `batch_codec_cell()`; the point of probing it is that two columns do not
+# (`standardize_video_batch`'s `video_codec`, guarded inline against NA) and one
+# resolves NA to something other than "unset" (`convert_audio`'s `-q:a 0`,
+# D021). Read this half at `scenario = "default"`, where the scalar argument is
+# absent and the column is the only thing speaking.
 #
 # A third dimension covers the three non-string scenarios on a `_batch` verb:
 #
@@ -57,6 +67,7 @@
 #   after  <- codec_guard_baseline()                 # the working tree
 #   codec_guard_vacuous(before); codec_guard_vacuous(after)   # both empty
 #   codec_guard_diff(before, after)
+#   codec_guard_semantics(after)                     # the M42 NULL/column-NA table
 #
 # `codec_guard_diff()` returns the rows whose outcome changed, and AC4 names the
 # exact set it may contain. Run `codec_guard_vacuous()` on both sides first: it
@@ -269,19 +280,25 @@ codec_guard_scenarios <- list(
   vec2    = quote(c("aac", "mp3"))
 )
 
-# A valid codec for the `col = present` half of the grid. It must be a value the
-# per-row column guards accept, so that the column genuinely wins the `pick()`
-# and the scalar argument is the only thing under test: "copy" is refused
-# outright by several verbs and NA is the column form of the NULL sentinel, so
-# neither would isolate the scalar.
-codec_guard_col_value <- function(arg) {
+# The value the jobs column carries, per `col` setting. For `present` it must be
+# a value the per-row column guards accept, so that the column genuinely wins the
+# `pick()` and the scalar argument is the only thing under test: "copy" is
+# refused outright by several verbs and NA is the column form of the NULL
+# sentinel, so neither would isolate the scalar. For `na` the NA *is* the
+# subject (M42 T1), and it is a logical NA rather than `NA_character_` because
+# that is what a jobs table written by hand carries -- `tibble(video_codec = NA)`
+# is logical, and `batch_codec_cell()`'s all-NA-logical acceptance (D016) exists
+# for exactly that column.
+codec_guard_col_value <- function(arg, col = "present") {
+  if (identical(col, "na")) return(NA)
   if (arg == "video_codec") "libx264" else "aac"
 }
 
 # The cells a verb/scenario is probed in. Two dimensions, both meaningful only
 # on a `_batch` verb, which is why a scalar verb gets the single default cell:
 #
-#   col   whether `jobs` carries a column of the same name as the argument
+#   col   whether `jobs` carries a column of the same name as the argument, and
+#         if so whether it carries a valid codec (`present`) or NA (`na`)
 #   jobs  whether `jobs` itself is a valid table at all
 #
 # The `jobs = "invalid"` cell exists to pin PRECEDENCE: when a call is wrong
@@ -294,7 +311,8 @@ codec_guard_col_value <- function(arg) {
 codec_guard_cells <- function(base, scenario) {
   cells <- list(list(col = "absent", jobs = "valid"))
   if ("jobs" %in% names(base)) {
-    cells <- c(cells, list(list(col = "present", jobs = "valid")))
+    cells <- c(cells, list(list(col = "present", jobs = "valid")),
+               list(list(col = "na", jobs = "valid")))
     if (!scenario %in% c("default", "null")) {
       cells <- c(cells, list(list(col = "absent", jobs = "invalid")))
     }
@@ -362,11 +380,15 @@ codec_guard_baseline <- function(ref = NULL, root = ".", sample = NULL) {
           # of `list(NULL)` stores a NULL element instead.
           base[arg] <- list(eval(codec_guard_scenarios[[sc]]))
         }
-        # The `col = present` half: give `jobs` a column of the same name, which
-        # `pick()` prefers over the scalar argument. This is the path where a bad
-        # scalar used to be ignored rather than refused (M41-D2).
-        if (identical(cl, "present")) {
-          base$jobs[[arg]] <- codec_guard_col_value(arg)
+        # The `col = present` / `col = na` halves: give `jobs` a column of the
+        # same name, which `pick()` prefers over the scalar argument. `present`
+        # is the path where a bad scalar used to be ignored rather than refused
+        # (M41-D2); `na` is what a column NA compiles to (M42 T1). `col_extra`
+        # applies to both, since it exists to keep the cell on the codec
+        # argument rather than on an unrelated abort, and an NA column trips the
+        # same unrelated abort a valid one does.
+        if (cl %in% c("present", "na")) {
+          base$jobs[[arg]] <- codec_guard_col_value(arg, cl)
           for (nm in names(spec$col_extra[[arg]])) {
             base[[nm]] <- spec$col_extra[[arg]][[nm]]
           }
@@ -509,7 +531,72 @@ codec_guard_report <- function(baseline) {
 # in the evidence (review A1). Run this on any baseline before trusting a diff
 # over it: every returned row is a cell whose default call did not compile, and
 # a healthy grid returns none.
+#
+# `col = "na"` is deliberately excluded. This function answers "did the grid
+# measure anything here", and it does so by treating a non-compiling default as
+# a broken cell. On the `na` half a non-compiling default is the OPPOSITE of a
+# broken cell -- it is the finding, a codec column that refuses to spell "unset"
+# (M42). Folding the two together would report M42's subject matter as M41's
+# instrumentation failure.
 codec_guard_vacuous <- function(baseline) {
-  d <- baseline[baseline$scenario == "default" & baseline$jobs == "valid", ]
+  d <- baseline[baseline$scenario == "default" & baseline$jobs == "valid" &
+                  baseline$col %in% c("absent", "present"), ]
   d[d$kind != "compiled", c("verb", "arg", "col", "kind", "outcome")]
+}
+
+# -- the M42 semantics table -------------------------------------------------
+
+# Pull the codec flag a compiled command actually carries for `arg`, so a row of
+# the semantics table says what the outcome MEANS rather than repeating a
+# 300-character command. Returns the flag's value, or "-" when the command emits
+# no such flag at all (D016's sentinel behaviour), or the several values joined
+# by "/" when a fan-out verb compiled more than one command and they disagree.
+codec_guard_flag <- function(command, arg) {
+  flag <- if (arg == "video_codec") "-codec:v" else "-codec:a"
+  hits <- regmatches(command, gregexpr(
+    paste0(flag, "\\s+\\S+"), command, perl = TRUE))[[1]]
+  if (length(hits) == 0) {
+    # convert_audio's NULL means `-q:a 0`, not "emit nothing" (D021), and a row
+    # reading "-" would hide the one departure the table exists to record.
+    q <- regmatches(command, gregexpr("-q:a\\s+\\S+", command, perl = TRUE))[[1]]
+    if (length(q) > 0) return(paste(unique(trimws(q)), collapse = "/"))
+    return("-")
+  }
+  vals <- unique(sub(paste0("^", flag, "\\s+"), "", trimws(hits)))
+  paste(vals, collapse = "/")
+}
+
+# One row per verb/argument pair: what `NULL` compiles to and what a column `NA`
+# compiles to, as of `baseline`. This is M42 T1's deliverable -- the measured
+# argument x {NULL, column NA} table the D-entry is chosen from, rather than a
+# reading of the source.
+#
+# `null` is read at `col = "absent"` (the scalar argument is the only thing
+# speaking) and `column_na` at `scenario = "default"`, `col = "na"` (the column
+# is the only thing speaking). A scalar verb has no column, so its `column_na`
+# reads "n/a"; the `_batch` row beside it is where the column lives.
+codec_guard_semantics <- function(baseline) {
+  cell <- function(verb, arg, scenario, col) {
+    r <- baseline[baseline$verb == verb & baseline$arg == arg &
+                    baseline$scenario == scenario & baseline$col == col &
+                    baseline$jobs == "valid", ]
+    if (nrow(r) == 0) return(NA_character_)
+    if (r$kind[[1]] == "compiled") codec_guard_flag(r$outcome[[1]], arg)
+    else paste0("ABORT: ", sub("\n.*$", "", r$outcome[[1]]))
+  }
+  pairs <- unique(baseline[c("verb", "arg")])
+  pairs <- pairs[order(pairs$arg, pairs$verb), , drop = FALSE]
+  data.frame(
+    verb = pairs$verb,
+    arg = pairs$arg,
+    default = vapply(seq_len(nrow(pairs)), function(i)
+      cell(pairs$verb[[i]], pairs$arg[[i]], "default", "absent"), ""),
+    null = vapply(seq_len(nrow(pairs)), function(i)
+      cell(pairs$verb[[i]], pairs$arg[[i]], "null", "absent"), ""),
+    column_na = vapply(seq_len(nrow(pairs)), function(i) {
+      v <- cell(pairs$verb[[i]], pairs$arg[[i]], "default", "na")
+      if (is.na(v)) "n/a (scalar verb)" else v
+    }, ""),
+    stringsAsFactors = FALSE, row.names = NULL
+  )
 }

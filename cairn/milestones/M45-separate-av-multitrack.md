@@ -42,12 +42,13 @@ failed → one grouped candidate row.
       `audio_stream` absent or `NULL`, both compiled strings equal the pre-change
       baseline T1 records from commit b548902 — the every-track `-map 0:a` form
       is unchanged.
-- [ ] AC2: On the executing path, when the audio command exits non-zero and
-      ffprobe counts more than one audio track in `infile`, `separate_audio_video()`
-      aborts with a message stating that count, naming `audio_stream` as the way
-      to take one track, and naming Matroska (`.mka`) as a container that accepts
-      several — each clause true of *any* non-zero exit, not only a muxer refusal
-      (M38's lesson). The abort carries FFmpeg's exit status. With one audio
+- [ ] AC2: On the executing path, when the caller named no `audio_stream`, the
+      audio command exits non-zero, and ffprobe counts more than one audio track
+      in `infile`, `separate_audio_video()` aborts with a message stating that
+      count, naming `audio_stream` as the way to take one track, and naming
+      Matroska (`.mka`) as a container that accepts several — each clause true of
+      *any* non-zero exit, not only a muxer refusal (M38's lesson). The abort
+      carries FFmpeg's exit status. When the caller named a track, with one audio
       track, with ffprobe absent, or when the probe fails, the abort is the one
       `ffm_run()` raises today, unchanged in text and condition class.
 - [ ] AC3: Under `run = FALSE` neither verb invokes a binary. Evidence: a test
@@ -59,8 +60,9 @@ failed → one grouped candidate row.
       row's audio command and to no row's video command; an `audio_stream`
       column overrides the argument per row, and an `NA` cell keeps that row on
       every audio track. A failing row still records `success = FALSE` without
-      aborting the batch, and the batch warns once per failed audio row with
-      AC2's text.
+      aborting the batch, and the batch emits ONE warning naming every failed
+      audio row that named no track, carrying AC2's text (M44's aggregation, so
+      a large jobs table cannot bury it under R's warning collapse).
 - [ ] AC5: A `cairn/DECISIONS.md` entry extends D023, recording that
       `audio_stream = NULL` means every audio track on this verb against the
       first audio track on `extract_audio()`/`convert_audio()`. It quotes the
@@ -92,12 +94,13 @@ failed → one grouped candidate row.
 - [ ] T2: The enriched abort in the verb, not in `ffm_run()` — keeping the
       Layer-2 argument name out of the engine (IP1). Wrap the audio `ffm_run()`
       (`R/ffmpeg.R:495`); on a non-zero exit probe `infile`'s audio-stream count
-      and re-raise. Fall through to today's abort when the count is 1, ffprobe is
-      absent, or the probe fails.
+      and re-raise. Fall through to today's abort when the caller named a track,
+      when the count is 1, when ffprobe is absent, or when the probe fails.
 - [ ] T3: The batch sibling — `audio_stream` argument plus per-row column
       through the 2N reshape, audio rows only, `NA` meaning every track via a
       parameterized `check_batch_audio_col(na_means = )`. After `ffm_batch()`
-      returns, warn once per failed audio row with T2's text.
+      returns, emit one aggregated warning naming every failed audio row that
+      named no track, carrying T2's text.
 - [ ] T4: The D-entry extending D023; surface it at the implement question gate
       before code lands.
 - [ ] T5: Tests for AC1–AC4 — the compile pins for both `audio_stream`
@@ -118,6 +121,8 @@ failed → one grouped candidate row.
 - 2026-07-30: plan gate chose the enriched abort in the verb with a post-`ffm_batch()` per-row warning over placing it in `ffm_run()`, because the Layer-1 abort would carry the Layer-2 name `audio_stream` (IP1), and over a scalar-only message, because scalar/batch divergence is a defect this repo has fixed twice (M19, M35); falsified by the per-row probe cost making a large failed batch slow to report.
 - 2026-07-30: criteria audit ([O], fresh context, authored none of the criteria) returned findings on all six. Fixed before the gate: AC1's "byte-identical to master's" pinned to literal tokens and a recorded baseline; AC2's "FFmpeg's error text stays visible" dropped as unverifiable (`run_program(stderr = "")` streams to console, never into the condition) and its hint reworded to hold on any non-zero exit; AC3 scoped to these two verbs (package-wide it contradicts D013), its already-gated vignette clause dropped, and `PATH`-masking replaced by stubbing the finders past `find_program()`'s `rappdirs` fallback; AC6 changed to no-diff *after* documenting; AC6 now requires the binaries present so AC2/AC4 evidence cannot come from skipped tests. Routed to the gate: AC4's argument-plus-column ambiguity, AC2's enrichment site, and D023's split of selector from abort.
 - 2026-07-30: implement started; branch `m45-separate-av-multitrack` cut from master at e885859.
+- 2026-07-30: implement gate kept the plan's `audio_stream` name with its every-track `NULL` (over a D023-uniform first-track default, which would silently narrow the `.mka`/`.m4a` callers who receive all tracks today, and over a second argument name for the same counting base); irreversible-api tripwire offered escalation and it was declined.
+- 2026-07-30: AMENDMENT (substantive, gated) — AC2 and T2 now fall through to today's plain `ffm_run()` abort when the caller NAMED a track: with `0:a:<n>` mapped the failure is not a multi-track refusal, so "name a track with `audio_stream`" would be false under the branch that fired it (M38's twice-learned lesson). AC4/T3 amended from "warns once per failed audio row" to ONE aggregated warning naming every failed no-track audio row, matching M44's aggregation so R's 50-warning collapse cannot bury a large batch's message.
 
 ## Decisions
 

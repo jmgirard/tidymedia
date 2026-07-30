@@ -34,6 +34,27 @@ codec_compiled <- function(verb, args) {
   paste(as.character(out), collapse = " ||| ")
 }
 
+# Fail-soft form for the parameterized sweeps below: register a failure naming
+# the pair and return NULL, rather than letting the error propagate.
+#
+# This mirrors the `if (!aborted) next` in test-codec-arg-front-door.R, which
+# M41's review added as its finding F8: a sweep whose body throws inside
+# expect_match()'s argument evaluation takes the whole test_that() down with it,
+# so ONE unexpectedly-broken verb hides the state of every pair after it in the
+# loop. A mutation harness that breaks one guard at a time never produces the
+# two-failure case that exposes this, which is how it survived M41 round 1.
+codec_compiled_soft <- function(verb, args, label) {
+  out <- tryCatch(codec_compiled(verb, args), error = function(e) e)
+  if (inherits(out, "error")) {
+    testthat::fail(paste0(
+      label, " — expected this to compile, got an error: ",
+      sub("\n.*", "", cli::ansi_strip(conditionMessage(out)))
+    ))
+    return(NULL)
+  }
+  out
+}
+
 # The resolved meaning of "unset" per verb x argument (D022). The family rule is
 # "none" -- emit no -codec:v / -codec:a at all -- and only departures are listed.
 # A departure appears here as an EXPECTED outcome rather than a skipped case, so
@@ -84,21 +105,26 @@ test_that("NULL and a column NA mean the same thing on every codec argument (D02
       # an absent flag below is the sentinel's doing and not a verb that emits
       # no such flag under any setting at all.
       named <- codec_family_col_value(arg)
+      got <- codec_compiled_soft(verb, codec_with(base, arg, named),
+                                 paste(lbl, "named encoder"))
+      if (is.null(got)) next
       expect_match(
-        codec_compiled(verb, codec_with(base, arg, named)),
-        paste(flag[[arg]], named), fixed = TRUE,
+        got, paste(flag[[arg]], named), fixed = TRUE,
         label = paste(lbl, "emits the flag for a named encoder")
       )
 
-      codec_expect_unset(codec_compiled(verb, codec_with(base, arg, NULL)),
-                         arg, want, paste(lbl, "scalar NULL"))
+      got <- codec_compiled_soft(verb, codec_with(base, arg, NULL),
+                                 paste(lbl, "scalar NULL"))
+      if (is.null(got)) next
+      codec_expect_unset(got, arg, want, paste(lbl, "scalar NULL"))
 
       # The column form, wherever there is a column to carry it.
       if ("jobs" %in% names(base)) {
         na_args <- base
         na_args$jobs[[arg]] <- NA
-        codec_expect_unset(codec_compiled(verb, na_args), arg, want,
-                           paste(lbl, "column NA"))
+        got <- codec_compiled_soft(verb, na_args, paste(lbl, "column NA"))
+        if (is.null(got)) next
+        codec_expect_unset(got, arg, want, paste(lbl, "column NA"))
       }
     }
   }
@@ -253,18 +279,22 @@ test_that("a codec column NA is the column form of NULL (D022)", {
     # absence asserted next is the NA cell's doing.
     named <- case$jobs
     named[[case$arg]] <- if (case$arg == "video_codec") "libx265" else "aac"
+    got <- codec_compiled_soft(case$verb, list(jobs = named),
+                               paste(lbl, "named encoder in the column"))
+    if (is.null(got)) next
     expect_match(
-      codec_compiled(case$verb, list(jobs = named)),
-      paste(flag[[case$arg]], named[[case$arg]]), fixed = TRUE,
+      got, paste(flag[[case$arg]], named[[case$arg]]), fixed = TRUE,
       label = paste(lbl, "carries a named encoder from the column")
     )
 
     # An NA cell compiles and drops the flag, exactly as the scalar NULL does.
     na_jobs <- case$jobs
     na_jobs[[case$arg]] <- NA
+    got <- codec_compiled_soft(case$verb, list(jobs = na_jobs),
+                               paste(lbl, "column NA"))
+    if (is.null(got)) next
     expect_no_match(
-      codec_compiled(case$verb, list(jobs = na_jobs)),
-      flag[[case$arg]], fixed = TRUE,
+      got, flag[[case$arg]], fixed = TRUE,
       label = paste(lbl, "reads an NA cell as unset")
     )
 

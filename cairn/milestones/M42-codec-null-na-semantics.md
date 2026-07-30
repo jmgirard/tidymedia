@@ -143,6 +143,7 @@ the `NULL` path M41's guards deliberately waved through.
 - 2026-07-29: T6 — AC5 table over all 34 pairs, each with a per-pair non-vacuity assertion; the `convert_audio` departure is a table entry, and a second test rejects a departure naming a pair that no longer exists. Verb list + call templates extracted to `helper-codec-family.R` so the front-door sweep and the semantics sweep cannot drift; M41's completeness test now fences both. Falsifiability checked by running the new file against `origin/master`'s `R/ffmpeg.R`: 7 of 10 blocks fail. `@param`s and both `@param jobs` enumerations updated; NEWS entry under New features. `document()` idempotent; `check()` 0/0/0; suite 2568 passing.
 - 2026-07-30: correction to the T5 line above (history, so superseded not edited): the changed-cell split was 9 abort→compiled / 12 abort→abort, not 8/13. The total, 21, was right. Re-measured at review; after the review fixes it is 30 cells, 9/21.
 - 2026-07-30: review round 1 — 16 deduped findings from three lenses, 5 scored ≥80 and fixed on the branch (F12 work-log split, F6 broken `.webm` doc example, F1 refusal message denying `NULL`, F4 untested guard on `anonymize_video_batch`, F3 NEWS gaps + unpinned precedence flip), 10 logged below threshold. `check_token()` gained `allow_null` (default `FALSE`) so a sentinel-taking caller's message can name `NULL`. Suite 2583 passing.
+- 2026-07-30: at the merge gate the user directed F8 (78) and F2 (68) be fixed too, below the 80 threshold; both landed and F8's wrapper was verified by injecting a throw mid-sweep (2 failures, 0 errors, 134/140 assertions still run).
 
 ## Decisions
 
@@ -273,8 +274,23 @@ text via `git show` of its pre-archive path.
   flip is pinned by a test — including the `color`-before-`video_codec` pair,
   which M42 did *not* change, so a later reader cannot over-read the flip.
 
-**Logged, below threshold (not actioned):** F8 (78) the new sweeps lack M41's
-F8 fail-soft `next`; F5 (76) D022 names `apply_video_codec()`/
+**Actioned at the merge gate, on the user's instruction (below threshold, fixed
+anyway):**
+
+- **F8 (78) — the new sweeps had no fail-soft guard.** Both now route through
+  `codec_compiled_soft()`, which registers a failure naming the pair and
+  returns `NULL` so the loop continues. Verified by injecting a throw into
+  `crop_video_batch` mid-sweep: **2 failures, 0 errors, 134 of 140 assertions
+  still run**, against 1 error and the rest of the sweep dropped before the fix.
+- **F2 (68) — the new `@param jobs` prose stated a false reason.** It said an
+  `NA` in a `width`/`height`/`fps`/`pixel_format` column errors "because those
+  have no unset state", but those three arguments do accept `NULL`. Reworded to
+  separate the two cases: `pixel_format` has no unset state; the dimension
+  columns have no `NA` spelling for one their arguments do have. Fixing this
+  mattered beyond its score — a milestone whose purpose was removing a falsified
+  comment had introduced one.
+
+**Logged, below threshold (not actioned):** F5 (76) D022 names `apply_video_codec()`/
 `apply_audio_codec()` as the seam though the three touched pipelines call
 `ffm_codec()` directly, and `extract_audio()`'s bad-token message still leaks
 Layer-1's `audio` (pre-existing) → ROADMAP candidate; F14 (74) D022's "three

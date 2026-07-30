@@ -2599,8 +2599,10 @@ derive_standardized_names <- function(input) {
 #'   knobs) that omit the column fall back to the argument's value. In either
 #'   codec column, \code{NA} leaves that row's codec unset (the column form of
 #'   \code{video_codec = NULL} / \code{audio_codec = NULL}); in a \code{width},
-#'   \code{height}, \code{fps} or \code{pixel_format} column it is an error,
-#'   because those have no unset state. Any other columns are ignored.
+#'   \code{height}, \code{fps} or \code{pixel_format} column it is an error.
+#'   \code{pixel_format} has no unset state to express; \code{width},
+#'   \code{height} and \code{fps} do accept \code{NULL} as arguments, but their
+#'   columns have no \code{NA} spelling for it. Any other columns are ignored.
 #' @param width,height Optional target dimensions applied to every row, unless
 #'   \code{jobs} carries a column of the same name (see \code{jobs}). When only
 #'   one is given the other is derived to preserve aspect ratio; when neither is

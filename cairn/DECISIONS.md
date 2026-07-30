@@ -427,3 +427,72 @@ later milestone should read rather than this line: `convert_audio`'s `NULL`/`NA`
 means `-q:a 0` rather than "unset", and `extract_audio` accepts neither. Anyone
 treating the family as uniform in what `NA` *means* will be wrong on two of the
 verbs.
+
+## D022 — What `NULL` and a column `NA` mean across the codec family (2026-07-29, from M42, closes the semantics D021 left open; supersedes D021's `extract_audio` bullet; extends D016/D017/D019/D020)
+
+D021 closed the codec-argument sweep on **spelling and shape** and left semantics
+open, warning that "anyone treating the family as uniform in what `NA` *means*
+will be wrong on two of the verbs." Measured over all 34 codec verb × argument
+pairs (`data-raw/codec-guard-baseline.R`, `codec_guard_semantics()`), the count
+was seven, not two. This entry sets the rule and names the one departure that
+survives it. Sits under IP1/GP1; uses D014's pre-0.2.0 clean-break policy.
+
+- **The rule: `NULL` means "emit no `-codec:v` / `-codec:a` at all", and a
+  column `NA` is the column form of `NULL`.** D016 introduced the sentinel for
+  one verb family; it is now the family-wide spelling of "unset", carried by
+  `apply_video_codec()` / `apply_audio_codec()` scalar-side and by
+  `check_batch_codec_col()` + `batch_codec_cell()` column-side. Rules out a
+  per-verb answer to what "unset" means — the reading D021 warns against.
+
+- **The three aborts were accidents of placement, not choices, and are
+  removed.** `anonymize_video()` aborted only because `anonymize_pipeline()`
+  called `check_token()` unconditionally, while its twin
+  `standardize_pipeline()` routes through the sentinel-aware path and compiles
+  the identical call; `extract_audio()` aborted while `extract_audio_batch()`
+  has always compiled `audio_codec = NULL`. D021 read the `extract_audio` case
+  as "defensible … a `NULL` codec on a pure extraction hands the container's
+  default encoder a stream the verb exists to copy" and recorded it as an open
+  question rather than a settled choice. The measured disagreement with its own
+  batch sibling settles it the other way, and **supersedes that bullet of
+  D021** — including its claim that `extract_audio` "accepts neither `NULL` nor
+  `NA`" read as a statement about the pair, which was never true of the batch
+  verb.
+
+- **`NULL` is the only exit from the container trap on the two verbs shipping a
+  literal codec default.** `standardize_video()` and `anonymize_video()` default
+  to `video_codec = "libx264"` — precisely what D016 rejected as a *general*
+  default because it forces H.264 into a `.webm`. Those two keep the literal
+  default, since a documented standard profile is their contract, so `NULL` is
+  how a caller opts out of it. Refusing `NULL` there would leave D016's named
+  trap with no exit at all.
+
+- **Every codec column takes `check_batch_codec_col()` + `batch_codec_cell()`.**
+  Three did not: `standardize_video_batch` and `anonymize_video_batch`'s
+  `video_codec` (an inline `str_cols` no-`NA` loop) and `extract_audio_batch`'s
+  `audio_codec` (`check_batch_string_col()`). Both `str_cols` comments justified
+  the guard by calling `video_codec` "a literal `libx264` default with no
+  sentinel"; the argument accepts `NULL`, so the premise was false when written.
+  Rules out `check_batch_string_col()` on any codec column — it cannot spell
+  "unset", which is this entry's whole content. `pixel_format` and `color` stay
+  in `str_cols`: not codec arguments, no sentinel.
+
+- **A *scalar* `NA` still aborts, and that is not an exception.** `NA` spells
+  "unset" only as a column cell, where a per-row table has no other way to leave
+  one row alone; passed as the scalar argument it is a type error, refused at
+  the front door by M41's guards before `batch_codec_cell()` is ever reached
+  (M41-D2). Rules out reading "a column `NA` means `NULL`" as licence to accept
+  `NA` wherever the family expects a string.
+
+- **`convert_audio()` / `convert_audio_batch()` are the one surviving
+  departure: `NULL` and a column `NA` select `-q:a 0`.** D021's reasoning stands
+  unchanged — the rename corrected the argument's *name*, and transferring the
+  sentinel would silently change the output of every existing default call.
+  Reaffirmed at M42's 2026-07-29 implement gate. It is documented on the
+  `@param` and asserted in the family test table as an expected departure rather
+  than skipped, so the exception cannot decay back into an accident.
+
+- **No existing command changes.** Every call that passes neither `NULL` nor a
+  column `NA` compiles byte-for-byte what it compiled before; the change is
+  strictly widening — calls that aborted now compile. Rules out reading this
+  entry as a behavior change to existing pipelines, and is why it ships without
+  a deprecation cycle beyond D014's standing policy.

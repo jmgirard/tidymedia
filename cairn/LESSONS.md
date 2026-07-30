@@ -16,10 +16,8 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   and live vignette/example chunks — neither is caught by `devtools::check()`
   (use `pkgdown::check_pkgdown()`; a chunk calling a now-internal fn fails only at
   vignette-build). Grep `vignettes/` + roxygen `@examples` before dropping `@export`.
-- 2026-07-13 (M27): FFmpeg per-stream metadata (`-metadata:s:v:0 title=`) surfacing
-  in mov stream tags is ffmpeg-version dependent (became `name` on 8.x macOS,
-  absent on Ubuntu CI) — green locally + macOS, red on Ubuntu. Don't sanity-assert
-  an injected per-stream tag's *presence*; assert only on the stripped *output*.
+- 2026-07-30 (M45, consolidating M27): FFmpeg behavior differs by version and the two CI platforms straddle those differences — macOS brew ships 8.x, ubuntu-latest ships 6.1.1 — so "green locally, red on Ubuntu" is the signature. Two instances paid for: per-stream metadata (`-metadata:s:v:0 title=`) became `name` on 8.x macOS and was absent on Ubuntu, so assert only on the stripped *output*, never an injected tag's *presence*; and the adts muxer rejects a multi-stream `.aac` on 8.1.2 but writes it and exits 0 on 6.1.1, so seven M45 tests that provoked an error through `.aac` caught no condition at all there. When a test needs "the command failed", trigger it with something no build can do (an AAC-to-MP3 stream copy); where the refusal itself IS the subject, probe this ffmpeg and skip.
+- 2026-07-30 (M45): on a `_batch` verb that RESHAPES its jobs table before the fan-out (N input rows to 2N stream rows), a per-row check left to the pipeline reports `purrr::pmap`'s index of the RESHAPED table — a 2-row jobs table blamed "In index: 3" and named Layer-1's pmap. Every other `_batch` verb satisfies M41 for free because its index IS the caller's row; a reshaping verb must validate cells at the front door to blame a row the caller can find.
 - 2026-07-13 (M28): extracting a shared helper *between* a documented function's `#'` roxygen block and its `fn <- function` line silently re-targets the roxygen to the helper and drops the original's `.Rd` — `document()` warns "Deleting <fn>.Rd". Put the extracted helper ABOVE the roxygen block, not between it and the function.
 - 2026-07-26 (M31): skip a hardware-encoder execution test on run-time
   usability, not merely that the encoder is *listed* — CI lists `h264_nvenc`

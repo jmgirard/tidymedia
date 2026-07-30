@@ -2,7 +2,7 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-07-30 (M44 merged and archived; F4 graduated to a candidate row; M39/M40 rows pruned to hold the 5-row terminal cap; LESSONS gained two M44 lines and shed M24's build_readme note under D-015 to stay under cap. 32 lines, 4 terminal rows.)_
+_Last hygiene check: 2026-07-30 (M45 merged and archived; 2 candidate rows added from its review — the cause-blind separation abort, and a pre-existing intermittent hang in M43's subtitle fixture; 5 terminal rows, exactly at the retention cap, so none pruned; LESSONS gained 2 M45 lines and folded M27's version-dependence note into the first of them, net 49 to 47 lines. 34 lines.)_
 
 ## Milestones
 
@@ -12,7 +12,7 @@ _Last hygiene check: 2026-07-30 (M44 merged and archived; F4 graduated to a cand
 | M42 | What `NULL` and column `NA` mean, settled across the codec family | done | M41 | normal | milestones/archive/M42-codec-null-na-semantics.md |
 | M43 | Pick which audio track the extraction verbs take (`audio_stream`) | done | M41, M42 | normal | milestones/archive/M43-audio-stream-selection.md |
 | M44 | Say something when audio tracks are dropped | done | M43 | normal | milestones/archive/M44-implicit-track-drop-warning.md |
-| M45 | Give a multi-track `separate_audio_video()` caller a way out | review | M43 | normal | milestones/M45-separate-av-multitrack.md |
+| M45 | Give a multi-track `separate_audio_video()` caller a way out | done | M43 | normal | milestones/archive/M45-separate-av-multitrack.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

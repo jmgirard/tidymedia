@@ -1,11 +1,11 @@
 # M45: Give a multi-track `separate_audio_video()` caller a way out
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M43
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** `m45-separate-av-multitrack`
+- **Branch/PR:** `m45-separate-av-multitrack` · https://github.com/jmgirard/tidymedia/pull/48
 
 ## Goal
 
@@ -36,13 +36,13 @@ failed → one grouped candidate row.
 
 ## Acceptance criteria
 
-- [ ] AC1: `separate_audio_video(audio_stream = 1)` compiles the audio command
+- [x] AC1: `separate_audio_video(audio_stream = 1)` compiles the audio command
       containing the literal `-map 0:a:1` and the video command containing the
       literal `-map 0:v`; `audio_stream = 1L` compiles the identical pair. With
       `audio_stream` absent or `NULL`, both compiled strings equal the pre-change
       baseline T1 records from commit b548902 — the every-track `-map 0:a` form
       is unchanged.
-- [ ] AC2: On the executing path, when the caller named no `audio_stream`, the
+- [x] AC2: On the executing path, when the caller named no `audio_stream`, the
       audio command exits non-zero, and ffprobe counts more than one audio track
       in `infile`, `separate_audio_video()` aborts with a message stating that
       count, naming `audio_stream` as the way to take one track, and naming
@@ -51,25 +51,25 @@ failed → one grouped candidate row.
       carries FFmpeg's exit status. When the caller named a track, with one audio
       track, with ffprobe absent, or when the probe fails, the abort is the one
       `ffm_run()` raises today, unchanged in text and condition class.
-- [ ] AC3: Under `run = FALSE` neither verb invokes a binary. Evidence: a test
+- [x] AC3: Under `run = FALSE` neither verb invokes a binary. Evidence: a test
       stubbing `find_ffmpeg()` and `find_ffprobe()` to abort — masking `PATH` is
       not enough, since `find_program()` falls back to a stored `rappdirs`
       config location — which compiles every documented call of both verbs,
       including each ungated roxygen `@examples` line, without error.
-- [ ] AC4: `separate_audio_video_batch(audio_stream = n)` applies `n` to every
+- [x] AC4: `separate_audio_video_batch(audio_stream = n)` applies `n` to every
       row's audio command and to no row's video command; an `audio_stream`
       column overrides the argument per row, and an `NA` cell keeps that row on
       every audio track. A failing row still records `success = FALSE` without
       aborting the batch, and the batch emits ONE warning naming every failed
       audio row that named no track, carrying AC2's text (M44's aggregation, so
       a large jobs table cannot bury it under R's warning collapse).
-- [ ] AC5: A `cairn/DECISIONS.md` entry extends D023, recording that
+- [x] AC5: A `cairn/DECISIONS.md` entry extends D023, recording that
       `audio_stream = NULL` means every audio track on this verb against the
       first audio track on `extract_audio()`/`convert_audio()`. It quotes the
       D023 bullet it departs from, states why `0:a` and `0:a:<n>` are different
       questions, and records that this milestone absorbed `separate_audio_video`
       from the pass-through-selector candidate.
-- [ ] AC6: `devtools::document()` leaves no diff once the milestone's roxygen
+- [x] AC6: `devtools::document()` leaves no diff once the milestone's roxygen
       changes are documented; `devtools::test()` and `devtools::check()` report
       0 errors and 0 warnings on a machine carrying ffmpeg and ffprobe, so AC2's
       and AC4's execution tests run rather than skip. NEWS records the argument,
@@ -109,6 +109,12 @@ failed → one grouped candidate row.
       argument/column/`NA` matrix and the per-row warning. Prove the AC2 test
       discriminates by making the enrichment unconditional — it must go red
       (M39's lesson).
+- [ ] T7: Make the enrichment tests FFmpeg-version-independent — trigger the
+      failure with AAC-copy-into-`.mp3` on the multi-track input (invalid in every
+      build) rather than the `.aac` stream-count refusal (ffmpeg >= 8 only), and
+      cover the container-refusal occasion in a test that probes this FFmpeg's
+      muxer first and skips when it does not refuse (M43's fixture-property
+      lesson). Re-run CI on all platforms.
 - [x] T6: Docs — `@param audio_stream` on both verbs and the batch
       `@param jobs` column enumeration (M39's lesson); NEWS; `document()`,
       `test()`, `check()` with the binaries present.
@@ -131,6 +137,8 @@ failed → one grouped candidate row.
 - 2026-07-30: T6 done — NEWS gained one Breaking-changes bullet (the positional shift of `run`/`parallel` behind the new argument, matching the one M43 wrote for the four audio verbs) and two New-features bullets (the argument with its deliberately different default spelled out, and the enriched abort plus the batch's aggregated warning with its best-effort caveat). `document()` produces no diff. `devtools::check()` printed 0 notes while `R CMD check` sat at `Status: 1 NOTE` — M17's masked spelling NOTE, new word "Matroska"; `spelling::update_wordlist()` then `Status: OK`, 0 errors / 0 warnings / 0 notes with ffmpeg and ffprobe present, so the AC2/AC4 execution tests ran rather than skipped. The only vignette mention of the verb names its arguments, so the positional shift reaches no in-repo caller.
 - 2026-07-30: T6 follow-up — the batch `@return` now documents the `audio_stream` column the result gains when the argument or a column is supplied (the selected index on audio rows, `NA` on video rows), with a test pinning both that shape and the unchanged pre-change shape when neither is given (M19's return-schema lesson). `test()` 0 failures / 2800 passing; `R CMD check` `Status: OK`, 0/0/0.
 - 2026-07-30: all tasks done; status review. No prose-guard was authored or edited (the milestone's substring assertions are over runtime condition messages, not over doc wording), so guard-doctrine §8's fresh-context description reader does not apply.
+- 2026-07-30: REVIEW FAILURE (return 1 of the thrash count) — PR #48 CI red on all three ubuntu-latest jobs and test-coverage; macOS and Windows green. 7 failures, all in `test-separate-av-multitrack.R` (lines 120/121, 166, 192/193, 292/293). Cause: ubuntu-latest ships ffmpeg 6.1.1-3ubuntu5, whose adts muxer WRITES three audio streams to `.aac` successfully (log shows `Output #0, adts` and `audio:17kB`, exit 0), where macOS ffmpeg 8.1.2 refuses with "adts muxer does not support more than one stream of type audio". The multi-stream refusal arrived in a later FFmpeg, so every test that triggered the enrichment via `.aac` got no condition at all and `tryCatch` returned the verb's value (a character vector, or a tibble on the batch path). The feature itself is not implicated — it reacts to whatever FFmpeg does — and the AC2 fall-through tests, which fail via AAC-copy-into-`.mp3`, passed on every platform. This is M27's lesson recurring on a new surface: the plan's Scope measurement "`.aac`/`.mp3`/`.wav` fail (measured ffmpeg 8.1.2)" is true of 8.1.2 and false of 6.1.1 for `.aac`.
+- 2026-07-30: added T7 (discovered sub-task, minor amendment) to make the enrichment tests FFmpeg-version-independent.
 
 ## Decisions
 
@@ -181,3 +189,78 @@ The engine is untouched either way — `ffm_batch()`'s signature is unchanged, t
 same hook D024/RR02 Q3 declined to add.
 
 ## Review
+
+_Fresh evidence, 2026-07-30, macOS 25.5.0, ffmpeg/ffprobe 8.1.2 both present. PR #48._
+- **AC1 — PASS.** The pre-change package was extracted from `b548902` with
+  `git archive` into a scratch tree (HEAD never moved) and loaded there, so the
+  baseline is the commit's own output rather than a transcribed string. Against it:
+  the default call and the explicit `audio_stream = NULL` call are both
+  `identical()` to `b548902`'s pair; `audio_stream = 1` and `= 1L` are
+  `identical()` to each other; the audio command contains the literal
+  `-map 0:a:1` and the video command the literal `-map 0:v`, the latter
+  `identical()` to the baseline's video string.
+- **AC2 — PASS.** Executed on a freshly generated three-track Matroska into
+  `.aac`: the condition is `tidymedia_multitrack_separation`, and its message
+  reads "carries 3 audio tracks and no `audio_stream` was named, so all 3 were
+  mapped into one output", offers "Take one track with `audio_stream`: 0 is the
+  first audio track, 1 the second", and offers "keep all 3 by writing a container
+  that holds several -- Matroska ('.mka') or '.m4a'". The exit status appears
+  twice: in the headline ("FFmpeg exited with status 234") and again through the
+  chained parent, which also carries the failing command. Each clause is stated as
+  a property of the input and the container rather than of a muxer diagnostic, so
+  it holds on any non-zero exit. Fall-through verified as three separate runs, all
+  landing on `ffm_run()`'s own abort with `tidymedia_multitrack_separation`
+  absent: a named track that still fails (AAC copy into `.mp3`), a single-track
+  input, and `find_ffprobe()` returning NULL. The positive control also holds —
+  the same three-track input into `.mka` raises nothing and the output carries 3
+  audio streams.
+- **AC3 — PASS.** Both spellings of the evidence exist. The criterion's own
+  spelling (`find_ffmpeg()` / `find_ffprobe()` stubbed to abort) compiles every
+  documented call of both verbs without error. Independently, a traced run that
+  wraps `run_program`, `find_ffmpeg`, `find_ffprobe` and `count_audio_streams` in
+  the package namespace and counts invocations across all five documented
+  `run = FALSE` calls — the three scalar `@examples` lines, the batch `@examples`
+  line, and a batch call carrying an `audio_stream` column — records **0**
+  invocations. The counting form is the load-bearing one: `run_separation_audio()`
+  and `count_audio_streams()` both wrap calls in `tryCatch()`, which swallows a
+  `stop()` mock (M44's trap).
+- **AC4 — PASS.** `audio_stream = 2` on a two-row table compiles `-map 0:a:2` on
+  both audio rows and `-map 0:v` on both video rows, with no `0:a` token anywhere
+  in a video command. A column `c(0, NA)` against `audio_stream = 1` compiles
+  `0:a:0` for row 1 and the every-track `0:a` for row 2, so the column overrides
+  the argument and the `NA` cell means every track rather than deferring to the
+  argument. Execution on a three-row table (row 1 multi-track/no track named,
+  row 2 multi-track/track 1, row 3 single-track) returns all six rows with
+  `success = c(FALSE, TRUE, TRUE, TRUE, TRUE, TRUE)` — the batch did not abort —
+  and raises exactly ONE `tidymedia_multitrack_separation` warning naming
+  "Input row 1" and neither row 2 nor row 3, carrying AC2's three clauses.
+- **AC5 — PASS.** D025 exists, headed "extends D023". Checked clause by clause:
+  it records the every-track-vs-first-track split; it quotes D023's `NULL` bullet,
+  and the quote is verbatim modulo line wrapping (verified by normalizing
+  whitespace and substring-matching against D023's own text); it states that
+  "`0:a` and `0:a:<n>` answer different questions" and grounds that on D023's own
+  closing bullet; and it records the absorption of `separate_audio_video` from the
+  pass-through-selector candidate. The ROADMAP candidate row was updated to match.
+- **AC6 — PASS.** `devtools::document()` leaves `man/` and `NAMESPACE` clean (0
+  dirty files after running it). `devtools::test()`: 0 failures, 2800 passing, 5
+  skips (all nvenc, none in this milestone's tests — the M45 file alone runs 63
+  assertions with 0 skips, so the AC2/AC4 execution tests ran rather than
+  skipped). `ffmpeg` and `ffprobe` both resolve on PATH. `R CMD check`:
+  `Status: OK` — 0 errors, 0 warnings, 0 notes (the masked spelling NOTE M17
+  warns about was caught during implement and closed with
+  `spelling::update_wordlist()`). NEWS carries three bullets: the positional
+  breaking change, the argument, and the abort plus the batch warning.
+
+### Consistency gate
+
+- `cairn_validate` exit 0 — 16 PASS, 8 advisory OK, no FAIL or WARN.
+- `cairn_impact` skipped: no `DESIGN.md` principle changed (the header's
+  "Principles touched: IP1" records a principle respected, not amended; `DESIGN.md`
+  is not in the branch diff).
+- Toolchain slot (`r-package`): `document()` no diff · generated files clean ·
+  `README.Rmd`/`README.md` untouched by the diff and in sync · `pkgdown::check_pkgdown()`
+  "No problems found" · NEWS entry present · no new top-level files · full
+  `R CMD check` `Status: OK`.
+- No newly exported object, so no `_pkgdown.yml` row was owed (NAMESPACE unchanged).
+- Thrash count: 0 returns to `in-progress`; first review pass.
+

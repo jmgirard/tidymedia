@@ -1165,10 +1165,16 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   rlang::check_string(audio_codec, allow_null = TRUE)
   # video_codec had no front-door check, so a non-string reached the per-row
   # pipeline and aborted inside purrr::pmap(), carrying `In index: <n>` and
-  # blaming pmap rather than this verb (M41). allow_null deliberately waves NULL
-  # through to the per-row path it already takes -- here that path aborts, and
-  # whether it should is M42's question, not this milestone's.
-  rlang::check_string(video_codec, allow_null = TRUE)
+  # blaming pmap rather than this verb (M41).
+  #
+  # Deliberately NOT check_string(allow_null = TRUE): that spelling's message
+  # offers `NULL` as legal, and it is not -- anonymize_pipeline() refuses it a
+  # few lines below, and the scalar sibling anonymize_video() says plain "must be
+  # a single string" (review F3). This shape waves NULL through to the per-row
+  # path it already takes, exactly as allow_null would, without advertising it;
+  # whether that path SHOULD refuse NULL is M42's question, not this milestone's.
+  # Same shape as separate_audio_video_batch()'s scalar guards (M37 review).
+  if (!is.null(video_codec)) rlang::check_string(video_codec)
 
   if (!is.data.frame(jobs)) {
     cli::cli_abort("{.arg jobs} must be a data frame with one row per input.")
@@ -3342,8 +3348,16 @@ extract_audio_batch <- function(jobs, audio_codec = "copy", run = TRUE,
   # disagree about what `audio_codec = NULL` means: the batch form compiles `-vn`
   # with no -codec:a, the scalar form aborts. That split predates this milestone
   # and is preserved here on purpose -- M41 changes only which values are
-  # refused, never what an accepted value does. Reconciling the two is M42's
-  # job (and D021 records the asymmetry).
+  # refused, never what an accepted value does. Reconciling the two is M42's job.
+  #
+  # D021 does NOT record this split, and an earlier version of this comment
+  # wrongly cited it as doing so (review F19). D021 instead asserts that
+  # extract_audio() "accepts neither `NULL` nor `NA`" and never mentions this
+  # batch verb at all -- a claim measurement contradicts, since
+  # extract_audio_batch(audio_codec = NULL) compiled before this milestone and
+  # still compiles. DECISIONS.md is append-only history, so the repair is a
+  # superseding entry from M42, which owns these semantics -- not an edit there
+  # and not a citation here.
   rlang::check_string(audio_codec, allow_null = TRUE)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one map/drop-video pipeline per

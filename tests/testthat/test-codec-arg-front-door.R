@@ -127,7 +127,15 @@ test_that("every codec argument refuses a non-string at its own front door", {
                                       input)
 
         # It must abort at all -- the M41 regression was a silent compile.
-        expect_true(inherits(cnd, "error"), label = paste(label, "aborts"))
+        # Fail SOFT past this point: without the `next`, a pair that does not
+        # abort sends NULL into conditionMessage() below, which throws and takes
+        # the whole test_that() down with it -- silently dropping every later
+        # verb in the sweep, so one broken guard hides the state of nineteen
+        # others (review F8). The mutation sweep blanked one guard at a time and
+        # so never produced the two-failure case that exposes this.
+        aborted <- inherits(cnd, "error")
+        expect_true(aborted, label = paste(label, "aborts"))
+        if (!aborted) next
         msg <- cli::ansi_strip(conditionMessage(cnd))
 
         # AC2: the message names the caller's own argument ...

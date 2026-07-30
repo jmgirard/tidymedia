@@ -50,8 +50,18 @@ codec_guard_imports <- function(root = ".", ref = NULL) {
   ns <- if (is.null(ref)) {
     readLines(file.path(root, "NAMESPACE"), warn = FALSE)
   } else {
-    system2("git", c("-C", shQuote(root), "show",
-                     shQuote(paste0(ref, ":NAMESPACE"))), stdout = TRUE)
+    # Checked like every other git call in this file: an unchecked failure here
+    # yields an EMPTY imports env, and every bare glue()/tibble() call then
+    # aborts as "could not find function" -- the masquerade the comment above
+    # warns about, arriving as a fake codec abort in every row (review F13).
+    text <- system2("git", c("-C", shQuote(root), "show",
+                             shQuote(paste0(ref, ":NAMESPACE"))),
+                    stdout = TRUE, stderr = TRUE)
+    if (!is.null(attr(text, "status"))) {
+      stop("git show failed for ", ref, ":NAMESPACE: ",
+           paste(text, collapse = " "))
+    }
+    text
   }
   for (line in grep("^importFrom\\(", ns, value = TRUE)) {
     parts <- strsplit(sub("^importFrom\\(([^)]*)\\).*$", "\\1", line), ",")[[1]]

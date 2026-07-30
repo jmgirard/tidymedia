@@ -1,11 +1,11 @@
 # M47: Stop `standardize_video()` and `anonymize_video()` picking an audio track by disposition
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** —
+- **Branch/PR:** m47-audio-stream-standardize-anonymize
 
 ## Goal
 
@@ -81,7 +81,7 @@ rule and answering the question D025's fifth bullet left open. NEWS.
 
 ## Tasks
 
-- [ ] T1 Record both verbs' current compiled commands as committed literals and
+- [x] T1 Record both verbs' current compiled commands as committed literals and
       add the failing-first compile tests. Extend `make_multitrack_video()`
       (`tests/testthat/helper-media.R:158`) to put the DEFAULT disposition on
       track 1 — it sets none today — and assert the fixture's own disposition
@@ -112,6 +112,10 @@ rule and answering the question D025's fifth bullet left open. NEWS.
 - 2026-07-30: plan gate chose `0:v` + `0:a` over `-map 0` for the `NULL` case because `-map 0` into `.mp4` on a subtitle-bearing input fails outright (measured exit 8, ffmpeg 8.1.2), which would newly break both verbs on the package's flagship container; falsified by a default output container that accepts subtitles, or an FFmpeg build that stream-copies unencodable streams.
 - 2026-07-30: plan gate chose two milestones by verb pair over one eight-entry-point milestone, because eight entry points is roughly twice M43's proven size and trips the >~7-criteria and >~10-task tripwires; falsified by M47 landing in well under one working session.
 - 2026-07-30: criteria audit ([O], fresh context) returned 13 findings; 10 with one clear answer were fixed before the gate (non-discriminating execution criterion, an evaporating `master` baseline, unnamed output containers, four bundled criteria, omitted NEWS and `@param` obligations, the falsified `ffm_copy()` prose, undetermined scalar `NA`, the unmentioned map invariant, and a false `run = FALSE` purity claim under `hardware = "nvenc"` that I reproduced); the remaining 3 collapsed into the gate's first question.
+
+- 2026-07-30: T1 — `make_multitrack_video()` gained `default_track =` rather than moving the disposition in place: 22 existing call sites use the fixture, and a defaulted parameter leaves every one of them compiling the identical command. `NULL` emits no `-disposition` flags at all.
+- 2026-07-30: T1 — the fixture clears track 0's DEFAULT before setting the requested one; `-disposition:a:1 default` alone ADDS the flag, leaving two default tracks and FFmpeg back on its own preference. Verified `1 0 0` unchanged vs `0 1 0` with `default_track = 1`.
+- 2026-07-30: T1 — 7 tests red for the right reason (`unused argument (audio_stream = 2)`), 36 green.
 
 ## Decisions
 

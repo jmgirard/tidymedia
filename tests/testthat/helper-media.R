@@ -155,9 +155,29 @@ make_silent_audio <- function(env = parent.frame()) {
 # file, which is the discriminator the hotfix regression test needs. Matroska
 # rather than MP4 so the per-stream language tags survive the round trip. Skips
 # the calling test if ffmpeg is unavailable. Returns the file path.
-make_multitrack_video <- function(env = parent.frame()) {
+#
+# `default_track` moves the container's DEFAULT disposition onto that 0-based
+# audio track. It exists because FFmpeg's implicit stream selection prefers the
+# DEFAULT-disposition track, so a fixture that leaves DEFAULT on track 0 cannot
+# tell "the implicit heuristic" apart from "the first track" -- the two coincide,
+# and a test meant to prove a verb stopped consulting the heuristic passes with
+# the verb unchanged (M47's criteria audit found exactly that). NULL, the
+# default, emits no -disposition flags at all, so the 22 call sites that predate
+# this parameter compile the identical command they always did.
+make_multitrack_video <- function(default_track = NULL, env = parent.frame()) {
   skip_if_no_ffmpeg()
   path <- withr::local_tempfile(fileext = ".mkv", .local_envir = env)
+  disposition <- if (is.null(default_track)) {
+    ""
+  } else {
+    # Clearing track 0 is not optional: -disposition:a:1 default ADDS the flag
+    # without removing it from track 0, leaving two default tracks and FFmpeg
+    # back on its own preference among them.
+    paste(
+      "-disposition:a:0 0",
+      sprintf("-disposition:a:%d default", as.integer(default_track))
+    )
+  }
   command <- paste(
     "-y -f lavfi -i testsrc=duration=1:size=64x64:rate=10",
     "-f lavfi -i sine=frequency=300:duration=1",
@@ -168,12 +188,39 @@ make_multitrack_video <- function(env = parent.frame()) {
     "-metadata:s:a:0 language=eng",
     "-metadata:s:a:1 language=spa",
     "-metadata:s:a:2 language=fra",
+    disposition,
     sprintf('"%s"', path)
   )
   run_ffmpeg_fixture(command)
   testthat::skip_if_not(file.exists(path),
                         "multitrack test video could not be generated")
+  # Assert the fixture's own property before any test trusts a result from it
+  # (M43): three attempts to move a disposition there silently produced a file
+  # that did not carry it, and every before/after comparison on such a file
+  # compares equal and measures nothing.
+  if (!is.null(default_track)) {
+    flags <- audio_default_flags(path)
+    testthat::skip_if_not(
+      length(flags) == 3L &&
+        identical(which(flags == 1L) - 1L, as.integer(default_track)),
+      "DEFAULT disposition did not land on the requested audio track"
+    )
+  }
   path
+}
+
+# Read each audio stream's DEFAULT disposition flag, in stream order. Used to
+# prove make_multitrack_video(default_track=) actually took.
+audio_default_flags <- function(path) {
+  skip_if_no_ffprobe()
+  out <- system2(
+    find_ffprobe(),
+    c("-v", "error", "-select_streams", "a",
+      "-show_entries", "stream_disposition=default",
+      "-of", "csv=p=0", shQuote(path)),
+    stdout = TRUE, stderr = FALSE
+  )
+  as.integer(out[nzchar(out)])
 }
 
 # Generate a video carrying a subtitle track beside its video and audio, so

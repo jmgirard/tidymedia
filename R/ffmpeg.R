@@ -438,13 +438,20 @@ separate_audio_video <- function(infile, audiofile, videofile,
 # check_string(audio_codec) lives here so the batch sibling inherits it per row
 # (M13); command assembly stays in Layer 1 (IP1/D002).
 #
+# The map is `0:a:0` -- the input's FIRST audio stream -- not `a`, which is every
+# audio stream. On a multi-track input the unbounded form fed three streams to a
+# single-stream muxer and FFmpeg aborted ("Exactly one MP3 audio stream is
+# required", exit 65514) leaving a zero-byte output, against a documented
+# contract that has always been singular. Letting the caller choose WHICH track
+# is M43's `audio_stream`; this only makes the one taken deterministic and one.
+#
 # The argument was spelled `format` until M40 renamed it to D014's `audio_codec`
 # vocabulary; the NULL branch is unchanged, so every default command stays
 # byte-identical. NULL here means "-q:a 0", NOT D016's emit-nothing sentinel --
 # the departure is deliberate and recorded in D021.
 convert_audio_pipeline <- function(input, output, audio_codec = NULL) {
   p <- ffm_files(input, output)
-  p <- ffm_map(p, "a")
+  p <- ffm_map(p, "0:a:0")
   if (is.null(audio_codec)) {
     p <- ffm_output_options(p, "-q:a 0")
   } else {
@@ -461,6 +468,9 @@ convert_audio_pipeline <- function(input, output, audio_codec = NULL) {
 #' extension at highest VBR quality (\code{-q:a 0}) — e.g. an \code{.mp3}
 #' extension yields an MP3. Pass \code{audio_codec} to pin the output audio
 #' codec explicitly, regardless of the extension.
+#'
+#' When \code{infile} carries more than one audio track, the \strong{first} one
+#' is taken. Choosing a different track is not yet supported.
 #'
 #' @param infile A string containing the path to a media file.
 #' @param outfile A string containing the path of the audio file to write.

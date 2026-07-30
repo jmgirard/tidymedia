@@ -104,7 +104,7 @@ rule and answering the question D025's fifth bullet left open. NEWS.
       `check_batch_stream_values()` is not needed (`R/ffmpeg.R:3793-3801`).
 - [x] T6 Same for `anonymize_video_batch()` (`R/ffmpeg.R:1661`); its closure
       names `regions` explicitly (`:1774`), so the new column arrives via `dots`.
-- [ ] T7 Roxygen on all four, the `@param jobs` column enumerations (M39), and
+- [x] T7 Roxygen on all four, the `@param jobs` column enumerations (M39), and
       the D025 cross-references; `devtools::document()`.
 - [ ] T8 Execution tests on the multi-track fixture; the D-entry; NEWS.
 
@@ -127,6 +127,10 @@ rule and answering the question D025's fifth bullet left open. NEWS.
 
 - 2026-07-30: T5/T6 — both batch verbs take the argument and an `audio_stream` column; `na_means = "keep every audio track"`, which is a third wording beside the composite verbs' "drop audio" and the extraction verbs' "keep the first audio track", and the tests assert the other two are ABSENT (M40). Neither verb reshapes its jobs table, so `check_batch_stream_values()` is deliberately not called — pmap's index already is the caller's row (M45 review F4).
 - 2026-07-30: T5/T6 — full suite 0 failures, 2911 pass.
+
+- 2026-07-30: T7 — the D025 cross-reference obligation was honoured on all TEN blocks that carry `audio_stream`, not only M47's four: after this milestone `NULL` means "first track" on the four extraction entry points and "every track" on the six others, so a block stating only its own reading leaves a reader who meets two of them with no way to tell. The four extraction blocks now point at the every-track families and `separate_audio_video()`'s names the two new ones.
+- 2026-07-30: T7 — both new batch verbs' `@param jobs` enumerations gained the `audio_stream` column; each closes "Any other columns are ignored", which a reader believes (M39).
+- 2026-07-30: T7 — `devtools::document()` is idempotent (second run touches nothing) and `run_examples()` is clean.
 
 ## Decisions
 

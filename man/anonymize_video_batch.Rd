@@ -12,6 +12,7 @@ anonymize_video_batch(
   pixel_format = "yuv420p",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
+  audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -35,7 +36,9 @@ basis; rows (or knobs) that omit the column fall back to the argument's
 value. In either codec column, \code{NA} leaves that row's codec unset (the
 column form of \code{video_codec = NULL} / \code{audio_codec = NULL}); in a
 \code{color} or \code{pixel_format} column it is an error, because those
-have no unset state. Any other columns are ignored.}
+have no unset state. An \code{audio_stream} column overrides the
+\code{audio_stream} argument per row, where \code{NA} keeps that row on
+every audio track. Any other columns are ignored.}
 
 \item{color}{A string naming the default fill color (FFmpeg color syntax)
 applied to every row, unless \code{jobs} carries a \code{color} column or a
@@ -69,6 +72,14 @@ encoding. Batch-wide (a machine property), not a per-row column; a
 but nvenc is unavailable, re-encode with the software \code{video_codec} and
 a message (\code{TRUE}) instead of aborting (\code{FALSE}, default).
 Batch-wide, not a per-row column.}
+
+\item{audio_stream}{The 0-based index of the audio track to carry, applied to
+every row unless \code{jobs} carries an \code{audio_stream} column, in
+which case \code{NA} in a cell keeps that row on \strong{every} audio
+track. The index counts \emph{among each input's audio streams}.
+\code{NULL} (default) carries every audio track. See
+\code{\link{standardize_video}} for how this differs from the extraction
+verbs' \code{NULL}. (default = \code{NULL})}
 
 \item{run}{A logical: run each input's command through FFmpeg (\code{TRUE},
 default) or only compile them for inspection (\code{FALSE}).}

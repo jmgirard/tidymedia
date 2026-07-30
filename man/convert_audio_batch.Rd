@@ -36,7 +36,8 @@ name a codec (e.g. \code{"aac"}, \code{"flac"}) to pin \code{-c:a}.}
 every row unless \code{jobs} carries an \code{audio_stream} column, in
 which case \code{NA} in a cell keeps that row on the first audio track.
 The index counts \emph{among each input's audio streams}. \code{NULL}
-(default) takes the first audio track.}
+(default) takes the first audio track. See \code{\link{extract_audio}}
+for the verb families whose \code{NULL} keeps every track instead.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}

@@ -61,7 +61,9 @@ verb has always done: a container that holds several (\code{.mka},
 (\code{.aac}, \code{.mp3}, \code{.wav}) makes FFmpeg fail — name a track to
 write one of those. This differs from \code{\link{extract_audio}} and
 \code{\link{convert_audio}}, whose \code{NULL} takes the first track only.
-\code{videofile} is never affected.}
+The pass-through verbs \code{\link{standardize_video}} and
+\code{\link{anonymize_video}} read \code{NULL} the same way this one
+does. \code{videofile} is never affected.}
 
 \item{run}{A logical: run the commands through FFmpeg (\code{TRUE}, default)
 or return the compiled commands without running them (\code{FALSE}).}

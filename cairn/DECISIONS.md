@@ -496,3 +496,58 @@ survives it. Sits under IP1/GP1; uses D014's pre-0.2.0 clean-break policy.
   strictly widening — calls that aborted now compile. Rules out reading this
   entry as a behavior change to existing pipelines, and is why it ships without
   a deprecation cycle beyond D014's standing policy.
+
+## D023 — Audio-track selection: `audio_stream` indexes streams, `audio` indexes inputs (2026-07-30, from M43, narrows D009; extends D003)
+
+The audio verbs now name the track they take instead of leaving it to FFmpeg.
+This entry fixes what the selector means, why it is a second argument rather
+than a widening of D009's `audio =`, and the Layer-1 contract change that
+carries it. Sits under IP1/D002; uses D014's pre-0.2.0 clean-break policy.
+
+- **Two arguments, two bases, and the difference is which thing is being
+  counted.** `audio_stream` on `extract_audio()` / `convert_audio()` (+ `_batch`)
+  is a 0-based index **among one input's audio streams** — `1` is that file's
+  second audio track. D009's `audio =` on `compare_videos()` /
+  `picture_in_picture()` is a 0-based index **among the verb's inputs** — `1` is
+  the second *file*. Both read as "0-based audio index" and neither can be
+  computed from the other, so they stay separate names. Rules out reusing
+  `audio` for track selection, which would make one argument mean two things
+  depending on the verb's arity.
+
+- **Selection is stated, never inherited from the file's flags.** `extract_audio()`
+  emitted no `-map` at all, so FFmpeg applied its default-stream heuristic,
+  which prefers whichever track carries the container's DEFAULT disposition.
+  That made the extracted track a property of the input's flags and of the
+  FFmpeg build, not of anything the caller wrote — the invisible variation the
+  package exists to remove. Both verbs now compile an explicit `0:a:<n>` on
+  every call. Rules out respecting the DEFAULT disposition, including as a
+  fallback: a heuristic consulted only sometimes is still a heuristic.
+
+- **`NULL` means "no selection", which resolves to the first audio track — it is
+  not D016's emit-nothing sentinel.** The codec family's `NULL` removes an
+  option from the command; here there is no such reading, because the map is
+  always emitted. A column `NA` is the column form of that same `NULL` and so
+  keeps its row on the first track, overriding the argument rather than
+  deferring to it — the family's rule from D022, applied to a numeric column.
+  Rules out reading D022's `NULL`/`NA` equivalence as also transferring the
+  codec family's *meaning* to every new argument.
+
+- **`ffm_map()` appends; `replace = TRUE` narrows.** Selecting a track needs a
+  map that can sit beside another (keep the video, name one audio track), which
+  overwriting made impossible — a second call silently discarded the first. The
+  builder now appends and renders one `-map` per element, and `mapping` takes a
+  character vector. `replace = TRUE` is the escape hatch appending needs:
+  `ffm_copy()` sets the all-streams map `0`, and appending to that duplicates a
+  stream rather than narrowing to it. No verb's compiled command changes — each
+  sets its map once, pinned by a test. Rules out append-only, which strands
+  `ffm_copy()`'s map with no way to narrow it. `replace` has no in-package
+  caller today and ships anyway, because the alternative removes an ability
+  `ffm_map()` has now.
+
+- **What this does not settle.** The pass-through verbs
+  (`separate_audio_video`, `standardize_video`, `crop_video`, `segment_video`,
+  `anonymize_video`) still take whatever their `-map 0` carries; extending the
+  selector to them stays a ROADMAP candidate, now unblocked because this entry
+  fixes the argument's shape. `separate_audio_video()`'s multi-track abort is a
+  separate candidate — that one is about how many tracks an output holds, not
+  which one it takes.

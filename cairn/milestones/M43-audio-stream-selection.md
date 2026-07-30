@@ -1,6 +1,6 @@
 # M43: Pick which audio track the extraction verbs take
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M41, M42
 - **Driving RR:** —
@@ -112,7 +112,7 @@ scope; `strip_metadata()`'s `-map 0` already keeps every stream.
       `.m4a` language tag, default → track 0, and the batch column overriding the
       argument. Prove they discriminate by mutating the resolved map to ignore
       `audio_stream` (M39 lesson).
-- [ ] T6: `@param` prose for all four verbs; NEWS entries per AC6;
+- [x] T6: `@param` prose for all four verbs; NEWS entries per AC6;
       `spelling::update_wordlist()`; `devtools::document()`, `test()`, `check()`.
 
 ## Work log
@@ -132,6 +132,9 @@ scope; `strip_metadata()`'s `-map 0` already keeps every stream.
 - 2026-07-30: T3 done — `audio_stream_map()` resolves the selector to `0:a:<n>` and carries the per-row `check_number_whole(min = 0, allow_null = TRUE)`; both scalar verbs check again at their own front door so a bad argument blames the verb. `extract_audio()` now compiles an explicit map on every call (it emitted none before) and keeps `-vn`; `convert_audio()`'s default still compiles the hotfix's literal `-map 0:a:0`, asserted byte-identically.
 - 2026-07-30: T4 done — `check_batch_audio_col()` gained `col`/`na_means` parameters rather than being copied, so the `audio_stream` column's hint says "keep the first audio track" where the composite verbs' `audio` column says "drop audio"; `batch_stream_cell()` resolves an `NA` cell to the NULL sentinel, kept separate from `batch_codec_cell()`. Both `@param jobs` enumerations updated.
 - 2026-07-30: T5 done — execution tests read the output's `language` tag from `.m4a`/`.mka`: `audio_stream = 1` yields `spa`, the default yields `eng`, `= 2` yields exactly one stream tagged `fra`, and a batch `audio_stream` column beats the argument row-wise while an `NA` cell falls to track 0. Mutating `audio_stream_map()` to ignore the selector turns 10 tests red, so they discriminate (M39).
+- 2026-07-30: T6 done — NEWS carries `audio_stream` (New features) plus two breaking-change entries, `extract_audio()`'s named default track and `ffm_map()`'s append semantics. `spelling::update_wordlist()` added one word (`WebM`, pre-existing, unlisted because `tests/spelling.R` runs with `error = FALSE`). `devtools::document()` no-diff, `check()` `Status: OK` (0/0/0), `pkgdown::check_pkgdown()` clean. `build_readme()` re-knit one command; its temp-libpath churn on an unrelated chunk was reverted (M24).
+- 2026-07-30: promoted the two cross-cutting choices to **D023** rather than leaving them milestone-local — the `audio_stream`-vs-`audio` indexing split constrains the carry candidate and narrows D009, and `ffm_map()`'s append contract binds every future verb.
+- 2026-07-30: `R/ffmpeg.R`'s CRLF line endings verified intact after every edit (4715 → 4844 lines, matching the diff's net insertions; M35 lesson).
 
 ## Decisions
 

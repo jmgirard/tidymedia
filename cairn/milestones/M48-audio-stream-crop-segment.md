@@ -35,10 +35,10 @@ replaces `ffm_copy()`'s `-map 0` rather than appending beside it, which gives
 
 - [ ] AC1 With `audio_stream` unset, `crop_video()`, `segment_video(reencode =
       TRUE)` and `segment_video(reencode = FALSE)` each compile exactly two
-      `-map` arguments, `-map 0:v` then `-map 0:a`, asserted as committed
+      `-map` arguments, `-map 0:v?` then `-map 0:a?`, asserted as committed
       literal command strings.
 - [ ] AC2 With `audio_stream = 2`, each of those three compiles exactly two
-      `-map` arguments, `-map 0:v` then `-map 0:a:2`; on the `reencode = FALSE`
+      `-map` arguments, `-map 0:v?` then `-map 0:a:2`; on the `reencode = FALSE`
       branch no `-map 0` survives, so the selector narrows `ffm_copy()`'s map
       rather than appending beside it.
 - [ ] AC3 With ffmpeg present, on a 3-audio-track, 1-subtitle `.mkv`:
@@ -109,6 +109,10 @@ replaces `ffm_copy()`'s `-map 0` rather than appending beside it, which gives
 - 2026-07-30: created by /milestone-plan.
 - 2026-07-30: plan gate chose to fold the `ffm_copy()`/`ffm_concat()` idempotence fix in here over leaving it a candidate row, because this milestone narrows `ffm_copy()`'s map on `segment_video(reencode = FALSE)` and so re-enters and re-reads that contract anyway — the promotion condition the candidate row itself named; falsified by the fix needing tests or a design call that outgrow this milestone's budget.
 - 2026-07-30: plan gate chose to keep `crop_video` and `segment_video` in one milestone over isolating `segment_video`, because crop is a single pipeline line and the shared `check_batch_jobs()` while segment carries the branch split and the fan-out, giving one milestone of roughly M43's size rather than a third planning cycle for a trivial verb; falsified by segment's two branches costing more than a working session on their own.
+- 2026-07-30: status -> in-progress on branch `m48-audio-stream-crop-segment`.
+- 2026-07-30: implement gate amended AC1/AC2's map literal from `-map 0:v` / `-map 0:a` to `-map 0:v?` / `-map 0:a?` — the criteria were written before M47 implementation added the trailing `?`, which D026's third bullet records as load-bearing (a bare `-map 0:a` aborts FFmpeg at exit 234 on a video-only input); the named specifier keeps no `?`. The same correction was already made to the ROADMAP row at 0445a62.
+- 2026-07-30: implement gate kept the two adjacent candidate rows out of scope — `format_for_web`/`normalize_audio`'s missing `-map`, and always-quoting map specifiers (117 literals across 15 test files) — because M48 already sits at the >~7-criteria split tripwire; both rows stand as written.
+- 2026-07-30: implement gate escalated T2's `ffm_copy()` idempotence spelling via `/milestone-brief` (RB tripwire: irreversible-api). The session's recommendation was `ffm_copy(streams = TRUE)` calling `ffm_map(replace = TRUE)`, leaving `ffm_map()`'s appending contract untouched; the user chose Fable review over settling it here.
 
 ## Decisions
 

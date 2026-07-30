@@ -149,7 +149,7 @@ transcodes to whatever the output extension implies — a
 <code>.wav</code> for an automatic-speech-recognition pipeline:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/convert_audio.html">convert_audio</a></span><span class="op">(</span><span class="va">session</span>, <span class="st">"session01_camA.wav"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map a \"session01_camA.wav\""</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map 0:a:0 \"session01_camA.wav\""</span></span></code></pre></div>
 <p>(If you only need the audio <em>without</em> re-encoding,
 <code><a href="../reference/extract_audio.html">extract_audio()</a></code> stream-copies it instead — see
 <code><a href="../articles/tidymedia.html">vignette("tidymedia")</a></code>.)</p>

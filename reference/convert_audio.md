@@ -39,6 +39,11 @@ convert_audio(infile, outfile, audio_codec = NULL, run = TRUE)
 
 The compiled FFmpeg command (invisibly when `run = TRUE`).
 
+## Details
+
+When `infile` carries more than one audio track, the **first** one is
+taken. Choosing a different track is not yet supported.
+
 ## See also
 
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md)
@@ -86,7 +91,7 @@ Other task verb functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 convert_audio(video, "audio.mp3", run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map a \"audio.mp3\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map 0:a:0 \"audio.mp3\""
 convert_audio(video, "audio.m4a", audio_codec = "aac", run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a aac -map a \"audio.m4a\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a aac -map 0:a:0 \"audio.m4a\""
 ```

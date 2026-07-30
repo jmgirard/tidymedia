@@ -115,7 +115,7 @@ automatic-speech-recognition pipeline:
 ``` r
 
 convert_audio(session, "session01_camA.wav", run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map a \"session01_camA.wav\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map 0:a:0 \"session01_camA.wav\""
 ```
 
 (If you only need the audio *without* re-encoding,

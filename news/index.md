@@ -97,6 +97,21 @@
   equivalent check no longer accepts an all-`NA` column of the wrong
   type.
 
+### Bug fixes
+
+- [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
+  and
+  [`convert_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/convert_audio_batch.md)
+  no longer fail on an input with more than one audio track. They mapped
+  *every* audio stream into the output, so a file carrying several
+  tracks — a recording with separate per-speaker or per-language audio,
+  say — handed several streams to a format that accepts only one. FFmpeg
+  aborted (`Exactly one MP3 audio stream is required`) and left a
+  zero-byte file behind. Both verbs now take the input’s first audio
+  track, which is what their documentation always described and what a
+  single-track file always did. Single-track inputs are unaffected.
+  Choosing a track other than the first is not yet supported.
+
 ### New features
 
 - [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)

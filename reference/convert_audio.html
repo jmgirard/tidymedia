@@ -92,6 +92,11 @@ or return the compiled command without running it (<code>FALSE</code>).</p></dd>
     <p>The compiled FFmpeg command (invisibly when <code>run = TRUE</code>).</p>
     </div>
     <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>When <code>infile</code> carries more than one audio track, the <strong>first</strong> one
+is taken. Choosing a different track is not yet supported.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="ffm_codec.html">ffm_codec()</a></code> and <code><a href="ffm_map.html">ffm_map()</a></code>, the builders it wraps;
 <code><a href="extract_audio.html">extract_audio()</a></code> to copy audio without re-encoding;
@@ -132,9 +137,9 @@ or return the compiled command without running it (<code>FALSE</code>).</p></dd>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">video</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sample.mp4"</span>, package <span class="op">=</span> <span class="st">"tidymedia"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">convert_audio</span><span class="op">(</span><span class="va">video</span>, <span class="st">"audio.mp3"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map a \"audio.mp3\""</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map 0:a:0 \"audio.mp3\""</span>
 <span class="r-in"><span><span class="fu">convert_audio</span><span class="op">(</span><span class="va">video</span>, <span class="st">"audio.m4a"</span>, audio_codec <span class="op">=</span> <span class="st">"aac"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a aac -map a \"audio.m4a\""</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a aac -map 0:a:0 \"audio.m4a\""</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

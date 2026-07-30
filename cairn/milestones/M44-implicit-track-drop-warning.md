@@ -317,6 +317,7 @@ that did not generate the findings. 15 findings reported, 2 scored >=80.
 - F4 (72) probe cost is unconditional, serial in batch, precedes `ffm_batch()`
   so it ignores `parallel = TRUE`, and has no opt-out; not documented in roxygen
   or NEWS. The scorer read it as an accepted trade-off RR02 settled.
+  Graduated to a ROADMAP candidate row at the merge gate at the user's request.
 - F3 (68) the batch summary says "from N inputs" while counting affected ROWS;
   a repeated input makes the arithmetic read as impossible. Test pins the
   current wording.

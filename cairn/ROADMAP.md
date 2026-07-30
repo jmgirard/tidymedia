@@ -2,7 +2,7 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-07-30 (plan pass for M45: the `separate_audio_video()` multi-track row promoted, the `audio_stream`-carry row narrowed to four verbs, one grouped candidate added for M45's failure-path leftovers. 33 lines, 5 terminal rows — at the retention limit, so prune before the next `done`.)_
+_Last hygiene check: 2026-07-30 (M44 merged and archived; F4 graduated to a candidate row; M39/M40 rows pruned to hold the 5-row terminal cap; LESSONS gained two M44 lines and shed M24's build_readme note under D-015 to stay under cap. 32 lines, 4 terminal rows.)_
 
 ## Milestones
 
@@ -11,10 +11,8 @@ _Last hygiene check: 2026-07-30 (plan pass for M45: the `separate_audio_video()`
 | M41 | Front-door validation parity for the codec arguments | done | — | normal | milestones/archive/M41-codec-arg-front-door-guards.md |
 | M42 | What `NULL` and column `NA` mean, settled across the codec family | done | M41 | normal | milestones/archive/M42-codec-null-na-semantics.md |
 | M43 | Pick which audio track the extraction verbs take (`audio_stream`) | done | M41, M42 | normal | milestones/archive/M43-audio-stream-selection.md |
-| M44 | Say something when audio tracks are dropped | review | M43 | normal | milestones/M44-implicit-track-drop-warning.md |
+| M44 | Say something when audio tracks are dropped | done | M43 | normal | milestones/archive/M44-implicit-track-drop-warning.md |
 | M45 | Give a multi-track `separate_audio_video()` caller a way out | planned | M43 | normal | milestones/M45-separate-av-multitrack.md |
-| M39 | `audio_codec` for `standardize_video` and `anonymize_video` (+ batch) | done | — | normal | milestones/archive/M39-standardize-anonymize-audio-codec.md |
-| M40 | `audio_codec` subsumes `format` on `convert_audio` (+ batch), closing the codec sweep | done | M39 | normal | milestones/archive/M40-convert-audio-codec-arg.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

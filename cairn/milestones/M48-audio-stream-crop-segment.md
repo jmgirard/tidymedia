@@ -1,9 +1,9 @@
 # M48: Carry the track selector to `crop_video()` and `segment_video()`, and make `ffm_copy()` idempotent again
 
-- **Status:** blocked
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M47
-- **Driving RR:** —
+- **Driving RR:** RR03
 - **Principles touched:** IP1, IP2, GP2
 - **Branch/PR:** `m48-audio-stream-crop-segment`
 
@@ -16,7 +16,7 @@ a repeated `ffm_copy()` duplicating every output stream.
 
 **In:** `audio_stream` on `crop_video()`, `segment_video()`,
 `crop_video_batch()`, `segment_video_batch()`, under M47's rule —
-`-map 0:v -map 0:a` when `NULL`, `-map 0:v -map 0:a:<n>` when a track is named,
+`-map 0:v? -map 0:a?` when `NULL`, `-map 0:v? -map 0:a:<n>` when named,
 on both `segment_video()` branches. On the `reencode = FALSE` branch the map
 replaces `ffm_copy()`'s `-map 0` rather than appending beside it, which gives
 `ffm_map(replace = TRUE)` its first in-package caller (M43 shipped it with none).
@@ -35,37 +35,64 @@ replaces `ffm_copy()`'s `-map 0` rather than appending beside it, which gives
 
 - [ ] AC1 With `audio_stream` unset, `crop_video()`, `segment_video(reencode =
       TRUE)` and `segment_video(reencode = FALSE)` each compile exactly two
-      `-map` arguments, `-map 0:v?` then `-map 0:a?`, asserted as committed
+      `-map` arguments — `-map 0:v?` then `-map 0:a?` — asserted as committed
       literal command strings.
-- [ ] AC2 With `audio_stream = 2`, each of those three compiles exactly two
-      `-map` arguments, `-map 0:v?` then `-map 0:a:2`; on the `reencode = FALSE`
-      branch no `-map 0` survives, so the selector narrows `ffm_copy()`'s map
-      rather than appending beside it.
+- [ ] AC2 With `audio_stream = 2` each of those three compiles exactly two,
+      `-map 0:v?` then `-map 0:a:2`; on the `reencode = FALSE` branch no
+      `-map 0` survives, the selector narrowing `ffm_copy()`'s map via
+      `ffm_map(replace = TRUE)` rather than appending beside it.
 - [ ] AC3 With ffmpeg present, on a 3-audio-track, 1-subtitle `.mkv`:
-      `crop_video(audio_stream = 2)` into `.mkv` writes exactly one audio stream
-      and it is `fra`; and `crop_video()` into `.mp4` exits 0, where on master
-      the same call fails (measured exit 8, no default mp4 subtitle encoder).
-- [ ] AC4 `ffm_copy()` applied twice compiles exactly one `-map 0`, and
-      `ffm_concat() |> ffm_copy()` likewise; with ffmpeg present a doubled
-      `ffm_copy()` over a 5-stream `.mkv` writes 5 streams, not the 10 master
-      writes. `ffm_copy()`'s `@param streams` prose (`R/ffm.R:610-613`), which
-      today documents the appending behavior as the contract, is rewritten.
+      `crop_video(audio_stream = 2)` into `.mkv` writes exactly one audio
+      stream and it is `fra`; and `crop_video()` into `.mp4` exits 0, where on
+      master it fails (measured exit 8, no default mp4 subtitle encoder).
+- [ ] AC4 With ffmpeg present a doubled `ffm_copy()` over a 5-stream `.mkv`
+      writes 5 streams, not the 10 master writes.
 - [ ] AC5 Both `_batch` siblings take an `audio_stream` argument and an
-      `audio_stream` jobs column overriding it per row, `NA` being the column
-      form of `NULL`; a one-row batch call compiles byte-identically to the
-      scalar call; and `segment_video()`'s own fan-out (`R/ffmpeg.R:2440`)
-      carries the argument to every segment it produces.
+      `audio_stream` jobs column overriding it per row, `NA` being the column form
+      of `NULL`; a one-row batch call compiles byte-identically to the scalar call;
+      and `segment_video()`'s own fan-out carries it to every segment it produces.
 - [ ] AC6 A wrongly typed `audio_stream` column aborts before any row runs,
       naming the column and saying `NA` keeps every audio track.
 - [ ] AC7 At the default `hardware`, no entry point runs a binary when
       `run = FALSE` (counting mock over `run_program()`, `find_ffmpeg()`,
       `find_ffprobe()`).
-- [ ] AC8 The map invariant test at `tests/testthat/test-ffm.R:438` states the
-      rule every verb now follows and covers each one M47 and M48 touched;
-      `NEWS.md` records the argument, the `ffm_copy()` fix, and the
-      subtitle-carriage change; `devtools::document()` produces no diff,
-      `devtools::test()` is clean, and `devtools::check()` reports 0 errors and
-      0 warnings.
+- [ ] AC8 The per-verb map-count invariant in `tests/testthat/test-ffm.R` states
+      the rule every verb now follows and covers each one M47 and M48 touched;
+      `NEWS.md` records the argument, the `ffm_copy()` fix and its new abort, and
+      the subtitle-carriage change; `devtools::document()` produces no diff,
+      `devtools::test()` is clean, `devtools::check()` 0 errors / 0 warnings.
+- [ ] AC-9 (BC1): `ffm_copy(streams = TRUE)` sets the pipeline map by assignment through
+      `ffm_map(object, "0", replace = TRUE)`; after `ffm_copy() |> ffm_copy()` and
+      after `ffm_concat() |> ffm_copy()`, `ffm_args()` contains exactly one
+      `"-map"` token (tolerance: exact) and the token following it is `"0"`.
+- [ ] AC-10 (BC2): `ffm_map()`'s contract is unchanged: no de-duplication is added to
+      `ffm_map()`, and the tests at `tests/testthat/test-ffm.R:407` (append) and
+      `:417` (`replace = TRUE` narrows) pass without modification.
+- [ ] AC-11 (BC3): `ffm_copy(streams = TRUE)` on a pipeline whose map is non-empty and not
+      identical to `"0"` aborts with a classed `cli` condition whose message names
+      `streams = FALSE`; the pinned failing case is
+      `ffm_map("0:v") |> ffm_copy()`, and the message is worded around the
+      pipeline's existing map rather than presuming the user called `ffm_copy()`
+      directly.
+- [ ] AC-12 (BC4): `ffm_map("0:v") |> ffm_copy(streams = FALSE)` compiles `-codec:v copy
+      -codec:a copy` and exactly one `-map` token, `"0:v"` (tolerance: exact).
+- [ ] AC-13 (BC5): With ffmpeg present, a doubled `ffm_copy()` remux of a multi-stream
+      `.mkv` fixture writes an output whose ffprobe stream count exactly equals
+      the input's (tolerance: 0); the test `skip_if`s when ffmpeg is absent.
+- [ ] AC-14 (BC6): `strip_metadata()`'s compiled command is byte-identical to its
+      pre-M48 master baseline, asserted as a committed literal.
+- [ ] AC-15 (BC7): `R/ffm.R`'s `@param streams` prose no longer documents appending; it
+      states the assignment and the abort; `NEWS.md` records both the idempotence
+      fix and the new abort; `devtools::document()` produces no diff.
+- [ ] AC-16 (BC8): A decision entry records the `ffm_copy()` contract (assigns;
+      conflicting prior map aborts; `ffm_map()` still appends) without editing
+      D023's existing bullets.
+
+### Deviations from RR03
+
+| BC | Departure | Why |
+|---|---|---|
+| BC6 | "byte-identical to its pre-M48 master baseline, asserted as a committed literal" is satisfied against a committed `sprintf()` **template** recording that form (`-y -i "%s" -codec:v copy -codec:a copy -map_metadata -1 -map_chapters -1 -fflags +bitexact -map 0 "%s"`), the input and output paths being the only substitutions. | The compiled command embeds the absolute input path, which in tests is a `withr` tempfile, so a byte-identical committed literal cannot exist. The `baseline_pair()` pattern BC6 cites (`test-separate-av-multitrack.R:32-37`) is itself a template. Agreed at the 2026-07-30 ingest gate. |
 
 ## Coverage
 
@@ -77,29 +104,44 @@ replaces `ffm_copy()`'s `-map 0` rather than appending beside it, which gives
 - AC6 → T5
 - AC7 → T3, T4, T5
 - AC8 → T6, T7
+- AC9 → T2
+- AC10 → T2
+- AC11 → T2
+- AC12 → T2
+- AC13 → T2
+- AC14 → T2
+- AC15 → T2, T7
+- AC16 → T2
 
 ## Tasks
 
 - [ ] T1 Record the three current commands as committed literals (the
       `baseline_pair()` pattern, `test-separate-av-multitrack.R:32-37`) and add
       the failing-first compile tests.
-- [ ] T2 Restore `ffm_copy()`/`ffm_concat()` idempotence: either de-duplicate
-      appended specifiers in `ffm_map()` (`R/ffm.R:590`) or have `ffm_copy()`
-      set its map with `replace` (`R/ffm.R:639`). Record which in the decision
-      log — de-duplicating changes a documented Layer-1 contract that D023's
-      fourth bullet rests on. (RB tripwire: irreversible-api) Add the doubled-copy
-      compile and execution tests, and rewrite the `@param streams` prose.
-- [ ] T3 `crop_video()` / `crop_video_pipeline()` (`R/ffmpeg.R:1045`, `:982`):
+- [ ] T2 Restore `ffm_copy()`/`ffm_concat()` idempotence per RR03: `ffm_copy()`
+      sets its map with `ffm_map(object, "0", replace = TRUE)` (`R/ffm.R:639`),
+      `ffm_map()` untouched, plus a `tidymedia_*`-classed abort when
+      `streams = TRUE` meets a non-empty map not identical to `"0"` — message
+      pipeline-state-worded (`ffm_concat()` calls `ffm_copy()` internally) and
+      naming both `streams = FALSE` and `ffm_map(replace = TRUE)`. New tests go
+      BELOW `test-ffm.R:417` so AC-10's line references stay true. Add the
+      doubled-copy compile and execution tests, the guard and escape tests, the
+      `strip_metadata()` baseline template, rewrite `ffm_copy()`'s `@param
+      streams` (`R/ffm.R:610-613`) and touch the M43 comment at `:586-590`.
+- [ ] T3 `crop_video()` / `crop_video_pipeline()` (`R/ffmpeg.R:1103`, `:1040`):
       argument before `run`, guard last in the front-door block (M41), and
-      replace `ffm_map(p, "0")` (`:989`) with M47's resolver.
-- [ ] T4 `segment_pipeline()` (`R/ffmpeg.R:2499`) on both branches, and
-      `segment_video()` (`:2402`) carrying the argument into the internal jobs
-      tibble it builds at `:2440`.
-- [ ] T5 `crop_video_batch()` (`R/ffmpeg.R:4246`) and `segment_video_batch()`
-      (`:2622`): argument, `check_batch_audio_col(jobs, "audio_stream",
+      replace `ffm_map(p, "0")` (`:1047`) with M47's resolver.
+- [ ] T4 `segment_pipeline()` (`R/ffmpeg.R:2620`) on both branches, and
+      `segment_video()` (`:2523`) carrying the argument into the internal jobs
+      tibble it builds. Ordering constraint from T2's guard: the
+      `ffm_map(..., replace = TRUE)` narrowing must stay AFTER the
+      `if (!reencode) ffm_copy(p)` line — hoisting it above, the shape
+      `standardize_pipeline()` uses, aborts every `reencode = FALSE` call.
+- [ ] T5 `crop_video_batch()` (`R/ffmpeg.R:4396`) and `segment_video_batch()`
+      (`:2743`): argument, `check_batch_audio_col(jobs, "audio_stream",
       na_means = …)`, `batch_stream_cell()` in each closure.
-- [ ] T6 Rewrite the invariant test at `tests/testthat/test-ffm.R:438` to the
-      new rule and extend it to every verb M47 and M48 touched.
+- [ ] T6 Rewrite the per-verb map-count invariant in `tests/testthat/test-ffm.R`
+      to the new rule and extend it to every verb M47 and M48 touched.
 - [ ] T7 Roxygen on all four plus the `@param jobs` enumerations (M39);
       `devtools::document()`; execution tests on the multi-track and
       subtitle fixtures; NEWS.
@@ -114,7 +156,46 @@ replaces `ffm_copy()`'s `-map 0` rather than appending beside it, which gives
 - 2026-07-30: implement gate kept the two adjacent candidate rows out of scope — `format_for_web`/`normalize_audio`'s missing `-map`, and always-quoting map specifiers (117 literals across 15 test files) — because M48 already sits at the >~7-criteria split tripwire; both rows stand as written.
 - 2026-07-30: implement gate escalated T2's `ffm_copy()` idempotence spelling via `/milestone-brief` (RB tripwire: irreversible-api). The session's recommendation was `ffm_copy(streams = TRUE)` calling `ffm_map(replace = TRUE)`, leaving `ffm_map()`'s appending contract untouched; the user chose Fable review over settling it here.
 - 2026-07-30: blocked on RB03 (`cairn/reviews/RB03-ffm-copy-idempotence.md`) — seven questions on which spelling restores `ffm_copy()`/`ffm_concat()` idempotence, carrying options A (`ffm_copy()` uses `replace = TRUE`), B (`unique()` in `ffm_map()`) and C (`ffm_copy()` appends `"0"` only when absent), plus whether the fix should signal rather than stay silent.
+- 2026-07-30: ingest audit of RR03's BC1–BC8 by a fresh-context [O] reader — verified every line reference and reproduced all three doubling compositions; found BC6 unsatisfiable as written and four criteria weaker than the report's own recommendations, plus an unstated ordering constraint on `segment_pipeline()`. Findings recorded in M48-D2 and raised at the ingest gate; none softened.
+- 2026-07-30: ingested RR03 — `Driving RR: RR03`, BC1–BC8 as AC-9…AC-16 verbatim with Coverage lines, one Deviations row for BC6 agreed at the gate, `ffm_copy()` contract promoted to D027, T2/T4 amended, status back to in-progress. AC1–AC8 compressed in one pass to hold the 150-line cap (148/149), which also retired three stale `R/ffmpeg.R` line references in T3/T4/T5 and the `test-ffm.R:438` reference in AC8/T6.
 
 ## Decisions
+
+**2026-07-30 — M48-D1: RR03 ingested; the `ffm_copy()` contract promoted to D027.**
+RR03 answered T2's escalated question with option A hardened by a guard:
+`ffm_copy()` assigns its map via `ffm_map(object, "0", replace = TRUE)`,
+`ffm_map()` untouched, plus an abort when a conflicting prior map is present.
+The substance is cross-cutting (a Layer-1 contract future milestones read), so
+it is recorded as **D027** rather than here; this entry records the triage.
+Applied: recommendations 1–4 (option A, the guard, the decision entry + NEWS +
+roxygen, the Q7 test set), all as binding criteria AC-9…AC-16. Applied also
+recommendation 5 (one roxygen sentence noting `ffm_map()` is the builder's only
+accumulating verb) as part of T7. Recommendation 6 applied as a ROADMAP
+candidate-row edit, not milestone work. Rejected by the report and not
+relitigated here: option B (`unique()` in `ffm_map()`), option C (append `"0"`
+only when absent), any `lifecycle` affordance, and a warning in place of the
+abort.
+
+**2026-07-30 — M48-D2: the ingest audit's findings, and the one departure.**
+The fresh-context [O] audit of BC1–BC8 verified every line reference and
+reproduced all three doubling compositions, and found **BC6 unsatisfiable as
+written** — `strip_metadata()`'s command embeds the absolute input path, a
+`withr` tempfile in tests, so no committed *literal* can be byte-identical; the
+`baseline_pair()` pattern BC6 cites is itself a `sprintf()` template. BC6 is
+ingested verbatim with the template reading recorded as the single row of the
+Deviations table, agreed at the ingest gate. Four criteria are satisfiable but
+weaker than the report's own recommendations, and are met by implementing the
+stronger reading rather than by departing: BC3 names only `streams = FALSE`
+where recommendation 2 requires both spellings (and `streams = FALSE` is
+unreachable on the `ffm_concat()` path) and says "classed" without naming a
+class, so the abort takes an explicit `tidymedia_*` class per the package's
+precedent (`R/ffmpeg.R:384`, `:657`) and names both; BC2 identifies two tests by
+line number, so T2's new tests go below `test-ffm.R:417`; BC5 says
+"multi-stream" where AC4 says five, so the fixture carries five streams; BC7
+says "`R/ffm.R`'s `@param streams`" where the file has two such blocks, so
+`ffm_copy()`'s (`:610-613`) is the one rewritten. The audit also surfaced an
+ordering constraint no criterion states — `segment_pipeline()` must keep the
+`ffm_map(..., replace = TRUE)` narrowing *after* its `ffm_copy()` call or the
+new guard aborts every `reencode = FALSE` segment — now pinned in T4.
 
 ## Review

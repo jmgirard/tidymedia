@@ -757,3 +757,73 @@ them, and the half where it was false was failing in a way nobody had measured.
   (+ `_batch`); M48 applies the identical rule to `crop_video()` and
   `segment_video()`, where it additionally has to narrow `ffm_copy()`'s
   `-map 0` rather than append beside it.
+
+## D027 — `ffm_copy()` assigns its map; a conflicting prior map aborts (2026-07-30, from M48/RR03, adds to D023's fourth bullet without narrowing it)
+
+M43 changed `ffm_map()` from overwrite to append (D023, fourth bullet) so a
+pipeline could keep the video and name one audio track. `ffm_copy()` sets its
+all-streams map through `ffm_map()`, so it inherited the append and stopped
+being idempotent: `ffm_copy() |> ffm_copy()` compiled `-map 0 -map 0` and
+duplicated every output stream, and `ffm_concat()` calls `ffm_copy()`
+internally so `ffm_concat() |> ffm_copy()` doubled too (measured 2026-07-30,
+compile-level). Settled by Fable review RR03
+(`cairn/reviews/archive/RR03-ffm-copy-idempotence.md`). Sits under IP1/D002 and
+IP2/D003; uses D014's pre-0.2.0 clean-break policy.
+
+- **`ffm_copy(streams = TRUE)` assigns**, setting the map through
+  `ffm_map(object, "0", replace = TRUE)`. The reason is the specifier, not
+  idempotence: `"0"` subsumes every other specifier the linear builder can
+  address (one input chain, IP2/D003), so `c(existing, "0")` has no composition
+  in which it is what the caller wanted — if the existing map is `"0"` it
+  duplicates every stream, and if it is narrower (`"0:v"`) it duplicates that
+  selection's streams. An operation whose right-hand side subsumes any possible
+  left-hand side is an assignment. Rules out de-duplicating inside `ffm_map()`,
+  which changes D023's contract yet leaves the subsumption half
+  (`ffm_map("0:v") |> ffm_copy()`) standing, and rules out appending `"0"` only
+  when absent, which fixes the literal instance and reopens on the next
+  subsuming pair.
+
+- **`ffm_map()`'s append contract is untouched.** D023's fourth bullet stands
+  verbatim. `object$map` remains the builder's only accumulating field — every
+  other `ffm_*` setter assigns — and that exception is earned by `ffm_map()`'s
+  arguments being partial selections that genuinely compose. `ffm_copy()`'s
+  `"0"` is not one.
+
+- **A conflicting prior map aborts rather than being discarded.**
+  `ffm_copy(streams = TRUE)` on a pipeline whose map is non-empty and not
+  identical to `"0"` raises a classed `tidymedia_*` condition naming both legal
+  spellings: `ffm_copy(streams = FALSE)` to keep the existing map, or
+  `ffm_copy()` first and `ffm_map(replace = TRUE)` after. Without the guard,
+  assignment would silently discard a stated selection — the precise flaw D023
+  was written to remove ("a second call silently discarded the first"). The
+  package already decided this shape one field over: `segment_pipeline()`
+  aborts on an `audio_codec` that `ffm_copy()` would silently overwrite
+  (M35/D017). The message is worded around the *pipeline's* map, never the
+  caller's frame, because `ffm_concat()` calls `ffm_copy()` internally and a
+  user chain `ffm_map(…) |> ffm_concat()` trips the guard from a frame the user
+  never called. Rules out a warning: the compiled command is the product
+  (D001), and an abort relaxed to a warning later is backward-compatible where
+  the reverse breaks running code.
+
+- **The `identical(map, "0")` carve-out is load-bearing.** It is what keeps
+  `ffm_copy() |> ffm_copy()` and `ffm_concat() |> ffm_copy()` silent no-op
+  restatements rather than aborts, and it is literal: `c("0", "0")` is not
+  identical to `"0"`, so `ffm_map(c("0", "0")) |> ffm_copy()` aborts.
+
+- **What this does not establish.** "The compiled command never maps the same
+  stream twice" is not reachable at Layer 1 — deciding whether `"0:a:1"`
+  overlaps `"0:a"` means implementing FFmpeg's stream-specifier algebra in R,
+  the full-coverage growth GP1/D001 refuses. The guard is one-directional:
+  `ffm_copy() |> ffm_map("0:a:1")` still compiles `-map 0 -map 0:a:1` silently,
+  and under D023 that is the user's stated selection. Two compositions change
+  behavior with no in-package or test caller today:
+  `ffm_hstack() |> ffm_map("0:a") |> ffm_copy()` now aborts, while
+  `ffm_hstack() |> ffm_copy()` still compiles `-map "[vout]" -map 0` and
+  duplicates the video stream, which no criterion in M48 addresses.
+
+- **No deprecation.** The appending behavior removed here shipped in M43 and
+  has never been in a release; no in-package pipeline performs any doubling
+  composition, and the two in-package `ffm_copy()` callers
+  (`strip_metadata_pipeline()`, `segment_pipeline()`) plus `ffm_concat()` all
+  call it on an empty map, so every existing compiled command is byte-identical.
+  NEWS plus the rewritten `@param streams` is the whole migration (D014).

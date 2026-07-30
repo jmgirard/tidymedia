@@ -100,9 +100,10 @@ four encode knobs — <code>color</code>, <code>video_codec</code>, <code>audio_
 <code>pixel_format</code> — may
 also appear as a column to override the corresponding argument on a per-row
 basis; rows (or knobs) that omit the column fall back to the argument's
-value. In an <code>audio_codec</code> column, <code>NA</code> leaves that row's audio
-codec unset (the column form of <code>audio_codec = NULL</code>). Any other
-columns are ignored.</p></dd>
+value. In either codec column, <code>NA</code> leaves that row's codec unset (the
+column form of <code>video_codec = NULL</code> / <code>audio_codec = NULL</code>); in a
+<code>color</code> or <code>pixel_format</code> column it is an error, because those
+have no unset state. Any other columns are ignored.</p></dd>
 
 
 <dt id="arg-color">color<a class="anchor" aria-label="anchor" href="#arg-color"></a></dt>
@@ -112,9 +113,13 @@ box supplies its own <code>color</code>. (default = <code>"black"</code>)</p></d
 
 
 <dt id="arg-video-codec">video_codec<a class="anchor" aria-label="anchor" href="#arg-video-codec"></a></dt>
-<dd><p>A string naming the output video codec applied to every row,
-unless <code>jobs</code> carries a <code>video_codec</code> column. (default =
-<code>"libx264"</code>)</p></dd>
+<dd><p>A string naming the output video codec applied to every
+row, unless <code>jobs</code> carries a <code>video_codec</code> column, in which case
+<code>NA</code> in a cell leaves that row's codec unset. Default
+<code>"libx264"</code>; <code>NULL</code> emits no <code>-codec:v</code> and lets the output
+container's default encoder decide (for a <code>.webm</code> output, pass
+<code>audio_codec = NULL</code> too — the default <code>"copy"</code> would otherwise
+carry a codec WebM cannot hold).</p></dd>
 
 
 <dt id="arg-audio-codec">audio_codec<a class="anchor" aria-label="anchor" href="#arg-audio-codec"></a></dt>

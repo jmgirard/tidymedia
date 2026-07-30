@@ -97,7 +97,12 @@ used for any row without its own <code>color</code> (default <code>"black"</code
 
 <dt id="arg-video-codec">video_codec<a class="anchor" aria-label="anchor" href="#arg-video-codec"></a></dt>
 <dd><p>A string naming the output video codec (default
-<code>"libx264"</code>).</p></dd>
+<code>"libx264"</code>), or <code>NULL</code> to emit no <code>-codec:v</code> and let the
+output container's default encoder decide. <code>NULL</code> is how you opt out
+of the H.264 default for a container that does not hold it — for a
+<code>.webm</code> output, pass <code>video_codec = NULL</code> <em>and</em>
+<code>audio_codec = NULL</code>, since the default <code>audio_codec = "copy"</code>
+would otherwise carry a codec WebM cannot hold.</p></dd>
 
 
 <dt id="arg-audio-codec">audio_codec<a class="anchor" aria-label="anchor" href="#arg-audio-codec"></a></dt>

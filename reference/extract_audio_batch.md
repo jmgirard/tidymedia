@@ -32,13 +32,17 @@ extract_audio_batch(
   instruction (it picks the container, and with `audio_codec = "copy"`
   must match the source codec). An optional `audio_codec` column
   overrides the `audio_codec` argument per row; rows omitting it fall
-  back to the argument. Any other columns are ignored.
+  back to the argument, and `NA` in a cell leaves that row's codec unset
+  (the column form of `audio_codec = NULL`). Any other columns are
+  ignored.
 
 - audio_codec:
 
   The audio codec applied to every row unless `jobs` carries an
-  `audio_codec` column. `"copy"` (default) stream-copies the audio
-  losslessly; name an encoder (e.g. `"aac"`) to transcode.
+  `audio_codec` column, in which case `NA` in a cell leaves that row's
+  codec unset. `"copy"` (default) stream-copies the audio losslessly;
+  name an encoder (e.g. `"aac"`) to transcode; or pass `NULL` to emit no
+  `-codec:a` and let the output container's default encoder decide.
 
 - run:
 

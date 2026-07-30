@@ -62,8 +62,11 @@
 
 
 <dt id="arg-audio-codec">audio_codec<a class="anchor" aria-label="anchor" href="#arg-audio-codec"></a></dt>
-<dd><p>A string naming the audio codec for the output stream.
-(default = <code>"copy"</code>, i.e. remux without re-encoding)</p></dd>
+<dd><p>A string naming the audio codec for the output stream
+(default <code>"copy"</code>, i.e. remux without re-encoding), or <code>NULL</code> to
+emit no <code>-codec:a</code> and let the output container's default encoder
+decide — useful when the source codec cannot be copied into the extension
+you asked for.</p></dd>
 
 
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>

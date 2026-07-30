@@ -42,9 +42,12 @@ standardize_video_batch(
   `width`, `height`, `fps`, `video_codec`, `audio_codec`, `pixel_format`
   — may also appear as a column to override the corresponding argument
   on a per-row basis; rows (or knobs) that omit the column fall back to
-  the argument's value. In an `audio_codec` column, `NA` leaves that
-  row's audio codec unset (the column form of `audio_codec = NULL`). Any
-  other columns are ignored.
+  the argument's value. In either codec column, `NA` leaves that row's
+  codec unset (the column form of `video_codec = NULL` /
+  `audio_codec = NULL`); in a `width`, `height`, `fps` or `pixel_format`
+  column it is an error. `pixel_format` has no unset state to express;
+  `width`, `height` and `fps` do accept `NULL` as arguments, but their
+  columns have no `NA` spelling for it. Any other columns are ignored.
 
 - width, height:
 
@@ -63,7 +66,11 @@ standardize_video_batch(
 - video_codec:
 
   A string naming the video codec applied to every row, unless `jobs`
-  carries a `video_codec` column. (default = `"libx264"`)
+  carries a `video_codec` column, in which case `NA` in a cell leaves
+  that row's codec unset. Default `"libx264"`; `NULL` emits no
+  `-codec:v` and lets the output container's default encoder decide (for
+  a `.webm` output, pass `audio_codec = NULL` too — the default `"copy"`
+  would otherwise carry a codec WebM cannot hold).
 
 - audio_codec:
 

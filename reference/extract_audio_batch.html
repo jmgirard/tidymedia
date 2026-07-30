@@ -82,13 +82,18 @@ verbs, an audio destination cannot be auto-named because its extension is
 the instruction (it picks the container, and with <code>audio_codec =
 "copy"</code> must match the source codec). An optional <code>audio_codec</code> column
 overrides the <code>audio_codec</code> argument per row; rows omitting it fall
-back to the argument. Any other columns are ignored.</p></dd>
+back to the argument, and <code>NA</code> in a cell leaves that row's codec unset
+(the column form of <code>audio_codec = NULL</code>). Any other columns are
+ignored.</p></dd>
 
 
 <dt id="arg-audio-codec">audio_codec<a class="anchor" aria-label="anchor" href="#arg-audio-codec"></a></dt>
 <dd><p>The audio codec applied to every row unless <code>jobs</code>
-carries an <code>audio_codec</code> column. <code>"copy"</code> (default) stream-copies
-the audio losslessly; name an encoder (e.g. <code>"aac"</code>) to transcode.</p></dd>
+carries an <code>audio_codec</code> column, in which case <code>NA</code> in a cell
+leaves that row's codec unset. <code>"copy"</code> (default) stream-copies the
+audio losslessly; name an encoder (e.g. <code>"aac"</code>) to transcode; or pass
+<code>NULL</code> to emit no <code>-codec:a</code> and let the output container's
+default encoder decide.</p></dd>
 
 
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>

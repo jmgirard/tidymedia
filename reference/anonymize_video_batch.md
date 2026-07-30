@@ -46,9 +46,11 @@ anonymize_video_batch(
   `color`, `video_codec`, `audio_codec`, `pixel_format` — may also
   appear as a column to override the corresponding argument on a per-row
   basis; rows (or knobs) that omit the column fall back to the
-  argument's value. In an `audio_codec` column, `NA` leaves that row's
-  audio codec unset (the column form of `audio_codec = NULL`). Any other
-  columns are ignored.
+  argument's value. In either codec column, `NA` leaves that row's codec
+  unset (the column form of `video_codec = NULL` /
+  `audio_codec = NULL`); in a `color` or `pixel_format` column it is an
+  error, because those have no unset state. Any other columns are
+  ignored.
 
 - color:
 
@@ -59,7 +61,11 @@ anonymize_video_batch(
 - video_codec:
 
   A string naming the output video codec applied to every row, unless
-  `jobs` carries a `video_codec` column. (default = `"libx264"`)
+  `jobs` carries a `video_codec` column, in which case `NA` in a cell
+  leaves that row's codec unset. Default `"libx264"`; `NULL` emits no
+  `-codec:v` and lets the output container's default encoder decide (for
+  a `.webm` output, pass `audio_codec = NULL` too — the default `"copy"`
+  would otherwise carry a codec WebM cannot hold).
 
 - audio_codec:
 

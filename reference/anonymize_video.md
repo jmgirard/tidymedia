@@ -45,7 +45,12 @@ anonymize_video(
 
 - video_codec:
 
-  A string naming the output video codec (default `"libx264"`).
+  A string naming the output video codec (default `"libx264"`), or
+  `NULL` to emit no `-codec:v` and let the output container's default
+  encoder decide. `NULL` is how you opt out of the H.264 default for a
+  container that does not hold it — for a `.webm` output, pass
+  `video_codec = NULL` *and* `audio_codec = NULL`, since the default
+  `audio_codec = "copy"` would otherwise carry a codec WebM cannot hold.
 
 - audio_codec:
 

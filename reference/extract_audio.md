@@ -20,8 +20,11 @@ extract_audio(infile, outfile, audio_codec = "copy", run = TRUE)
 
 - audio_codec:
 
-  A string naming the audio codec for the output stream. (default =
-  `"copy"`, i.e. remux without re-encoding)
+  A string naming the audio codec for the output stream (default
+  `"copy"`, i.e. remux without re-encoding), or `NULL` to emit no
+  `-codec:a` and let the output container's default encoder decide —
+  useful when the source codec cannot be copied into the extension you
+  asked for.
 
 - run:
 

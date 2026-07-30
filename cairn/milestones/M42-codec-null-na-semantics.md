@@ -294,4 +294,15 @@ changed cells — 9 abort→compiled, 21 abort→abort (up from 21/9/12 because 
 fix reworded nine more refusals). Zero compiled→compiled, so no existing
 command changed. `codec_guard_semantics()` still shows `convert_audio`/`_batch`
 as the only departure. `devtools::test()` 2583 passing / 0 failures / 0
-warnings.
+warnings; `devtools::document()` still idempotent; `devtools::check()` 0
+errors / 0 warnings / 0 notes; `cairn_validate` all green.
+
+F4's fix was verified by the same mutation that exposed it: deleting
+`check_batch_codec_col(jobs, "video_codec")` from `anonymize_video_batch` now
+fails the new test with `In index: 1` — M41's defect shape, which is what the
+guard exists to prevent. The line was restored from `HEAD` immediately after.
+
+One logged finding earned a ROADMAP candidate row (search-first: no existing
+row, archive entry or D-entry covers it): F5's observation that a bad codec
+*token* still reports Layer-1's argument name on the verbs whose pipelines
+call `ffm_codec()` directly. M41 fixed that class for non-string values only.

@@ -39,11 +39,13 @@ rule and answering the question D025's fifth bullet left open. NEWS.
 ## Acceptance criteria
 
 - [ ] AC1 With `audio_stream` unset, each verb compiles exactly two `-map`
-      arguments, `-map 0:v` then `-map 0:a`, asserted as a committed literal
+      arguments, `-map 0:v?` then `-map 0:a?`, asserted as a committed literal
       command string; the invariant test at `tests/testthat/test-ffm.R:438`
       is restated to the rule these verbs follow and gains both of them.
 - [ ] AC2 With `audio_stream = 2`, each verb compiles exactly two `-map`
-      arguments, `-map 0:v` then `-map 0:a:2`.
+      arguments, `-map 0:v?` then `-map 0:a:2` — the named track carries no
+      `?`, so naming a track the input lacks stays an FFmpeg error rather than
+      silently producing no audio (D023).
 - [ ] AC3 On both verbs a value that is non-numeric, non-whole, negative, `NA`,
       or longer than one aborts naming `audio_stream`, and `conditionCall()`
       resolves to the verb the caller wrote, not to a Layer-1 helper.
@@ -57,7 +59,8 @@ rule and answering the question D025's fifth bullet left open. NEWS.
 - [ ] AC6 With ffmpeg present, on a 3-audio-track `.mkv` whose DEFAULT
       disposition sits on track 1, `standardize_video(audio_stream = 2)` writes
       exactly one audio stream and it is `fra`; the same call with `audio_stream`
-      unset writes all three (master writes one, `spa`).
+      unset writes all three (master writes one, `spa`). A video-only input and
+      an audio-only input both still succeed, as they do on master.
 - [ ] AC7 At the default `hardware`, no entry point runs a binary when
       `run = FALSE`: a counting mock over `run_program()`, `find_ffmpeg()` and
       `find_ffprobe()` records zero invocations across all four.
@@ -86,13 +89,13 @@ rule and answering the question D025's fifth bullet left open. NEWS.
       (`tests/testthat/helper-media.R:158`) to put the DEFAULT disposition on
       track 1 — it sets none today — and assert the fixture's own disposition
       flags before trusting any result, skipping if they did not take (M43).
-- [ ] T2 Add a pass-through map resolver beside `audio_stream_map()`
+- [x] T2 Add a pass-through map resolver beside `audio_stream_map()`
       (`R/ffmpeg.R:273`) returning `c("0:v", "0:a")` for `NULL` and
       `c("0:v", "0:a:<n>")` for a named track; unit-test it.
-- [ ] T3 `standardize_video()` / `standardize_pipeline()` (`R/ffmpeg.R:1265`,
+- [x] T3 `standardize_video()` / `standardize_pipeline()` (`R/ffmpeg.R:1265`,
       `:1298`): argument before `run` (M45's precedent), guard at the END of the
       front-door block so precedence does not move (M41), map in the pipeline.
-- [ ] T4 Same for `anonymize_video()` / `anonymize_pipeline()`
+- [x] T4 Same for `anonymize_video()` / `anonymize_pipeline()`
       (`R/ffmpeg.R:1410`, `:1437`) — its front door is thin (`:1417-1419`) and
       most validation lives in the pipeline with `call =` threaded.
 - [ ] T5 `standardize_video_batch()` (`R/ffmpeg.R:3115`): argument,
@@ -116,6 +119,11 @@ rule and answering the question D025's fifth bullet left open. NEWS.
 - 2026-07-30: T1 — `make_multitrack_video()` gained `default_track =` rather than moving the disposition in place: 22 existing call sites use the fixture, and a defaulted parameter leaves every one of them compiling the identical command. `NULL` emits no `-disposition` flags at all.
 - 2026-07-30: T1 — the fixture clears track 0's DEFAULT before setting the requested one; `-disposition:a:1 default` alone ADDS the flag, leaving two default tracks and FFmpeg back on its own preference. Verified `1 0 0` unchanged vs `0 1 0` with `default_track = 1`.
 - 2026-07-30: T1 — 7 tests red for the right reason (`unused argument (audio_stream = 2)`), 36 green.
+
+- 2026-07-30: T3/T4 — AMENDMENT (gated). AC1 and AC2 pinned `-map 0:v` / `-map 0:a`; both break on an input missing a stream type. Measured ffmpeg 8.1.2: a bare `-map 0:a` on a video-only input exits 234 ("Stream map '' matches no streams"), and a bare `-map 0:v` on an audio-only input exits 234, where master — emitting no map — exits 0 and passes the stream through. The unselected specifiers now carry `?`; the NAMED one deliberately does not, so `audio_stream = 9` on a 3-track input stays an FFmpeg error, which is what every `@param audio_stream` in the package promises (D023). Ruled out at the gate: `?` on the named map too (turns a mistyped index into a silently audio-less output), and an FFprobe guard (a probe whose result enters the compiled command is outside D024's licence and would break AC7).
+- 2026-07-30: T3/T4 — the suite caught only the video-only half, via one existing test that happens to standardize a silent fixture (`test-ffmpeg.R:311`); the audio-only half was found by probing for it. Both are now regression tests over new `make_silent_video()` / existing `make_silent_audio()` fixtures.
+- 2026-07-30: T2 — `pass_through_maps()` reuses `audio_stream_map(null_map = "0:a?")` rather than re-deriving the specifier, so the argument's guard, its `arg =` and its `call` threading are inherited rather than duplicated. One `ffm_map()` call with both specifiers, never two: `ffm_map()` appends, so two calls are indistinguishable from a pipeline that mapped twice by accident.
+- 2026-07-30: T3/T4 — full suite 0 failures, 2890 pass (4 warnings, 5 skips — both counts unchanged from master). `R/ffmpeg.R` still 5429/5429 CRLF, diff 79/4, so the M35 whole-file-rewrite trap did not fire.
 
 ## Decisions
 

@@ -496,24 +496,33 @@ test_that("both composite batch verbs reject a wrongly typed audio column", {
 # The exact commands the pre-M39 code compiled, pinned so the "no default output
 # change" claim is checked against a literal rather than against the code that
 # would have to be wrong for the check to matter.
+#
+# M47 appended `-map 0:v? -map 0:a?` to both. That is a deliberate default
+# change and the one thing M39 promised not to make, so it is spelled out here
+# rather than folded silently into the literal: everything to the left of the
+# maps is still the byte-for-byte pre-M39 command, which is what these tests
+# exist to pin. The `?` suffixes keep a stream-less input working (M47).
+m47_maps <- "-map 0:v? -map 0:a? "
+
 m39_std_default <- function(f) {
   paste0('-y -i "', f, '" -vf "crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2',
          ':x=(in_w-out_w)/2:y=(in_h-out_h)/2" -codec:v libx264 -codec:a copy ',
-         '-pix_fmt yuv420p -movflags +faststart "out.mp4"')
+         '-pix_fmt yuv420p -movflags +faststart ', m47_maps, '"out.mp4"')
 }
 
 m39_anon_default <- function(f) {
   paste0('-y -i "', f, '" -vf "crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2',
          ':x=(in_w-out_w)/2:y=(in_h-out_h)/2,',
          'drawbox=x=10:y=10:w=50:h=50:c=black:t=fill" ',
-         '-codec:v libx264 -codec:a copy -pix_fmt yuv420p "out.mp4"')
+         '-codec:v libx264 -codec:a copy -pix_fmt yuv420p ', m47_maps,
+         '"out.mp4"')
 }
 
 m39_regions <- function() {
   data.frame(x = 10, y = 10, width = 50, height = 50)
 }
 
-test_that("standardize_video() compiles its pre-M39 default byte-for-byte", {
+test_that("standardize_video() keeps its pre-M39 default left of M47's maps", {
   f <- make_input()
   expect_equal(
     as.character(standardize_video(f, "out.mp4", run = FALSE)),
@@ -521,7 +530,7 @@ test_that("standardize_video() compiles its pre-M39 default byte-for-byte", {
   )
 })
 
-test_that("anonymize_video() compiles its pre-M39 default byte-for-byte", {
+test_that("anonymize_video() keeps its pre-M39 default left of M47's maps", {
   f <- make_input()
   expect_equal(
     as.character(anonymize_video(f, "out.mp4", m39_regions(), run = FALSE)),

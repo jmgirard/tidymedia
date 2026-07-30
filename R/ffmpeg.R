@@ -278,6 +278,56 @@ audio_stream_map <- function(audio_stream = NULL, null_map = "0:a:0",
   sprintf("0:a:%d", as.integer(audio_stream))
 }
 
+# pass_through_maps() -----------------------------------------------------
+
+# The map pair the PASS-THROUGH verbs compile: every video stream, plus either
+# every audio stream or the one track `audio_stream` names. Returned as a
+# character vector for a single ffm_map() call, because ffm_map() appends and
+# two calls would be indistinguishable from a pipeline that mapped twice by
+# accident -- the thing test-ffm.R's invariant exists to catch.
+#
+# These verbs emitted NO -map before M47, so FFmpeg's implicit selection chose
+# for them: one stream of each type, preferring whichever audio track carried
+# the container's DEFAULT disposition. Measured on a 3-audio-track .mkv with
+# DEFAULT on track 1 (ffmpeg 8.1.2): one audio stream out, and it was the
+# SECOND track. D023's second bullet rules that out in terms that are not
+# verb-scoped -- "a heuristic consulted only sometimes is still a heuristic" --
+# so the map is now stated on every call.
+#
+# NULL resolves to `0:a`, EVERY audio track, which is M45's reading rather than
+# D023's first-track one: these verbs pass audio through rather than producing
+# an audio stream, so their unselected case has an answer an extraction verb
+# does not have. That answers the question D025's fifth bullet left open.
+#
+# `0:v` and not `0:v:0`: it is the shape separate_stream_pipeline() already
+# compiles, and narrowing video is a separate argument nobody has asked for
+# (the M45-Out candidate row). Verified that -vf applies to both streams of a
+# two-video-stream input under this map and exits 0.
+#
+# What this does NOT map is subtitles and data. A uniform `-map 0` would carry
+# them, and was rejected at plan time: `-map 0` into .mp4 on a subtitle-bearing
+# input fails outright (exit 8, no default mp4 subtitle encoder), which is a
+# failure crop_video() already has today and M48 removes.
+#
+# The trailing `?` on the UNSELECTED specifiers is load-bearing, not a
+# belt-and-braces flourish. A bare `-map 0:a` aborts FFmpeg outright when the
+# input has no audio (exit 234, "Stream map '' matches no streams"), and a bare
+# `-map 0:v` does the same on an audio-only input -- where master, emitting no
+# map at all, exits 0 and passes the stream through. Both are ordinary research
+# inputs (a silent screen recording; an audio file). Without the `?` this
+# milestone would have shipped two regressions, and the suite caught only the
+# first because one existing test happens to standardize a silent fixture.
+#
+# The NAMED track deliberately keeps no `?`: `0:a:9` on a 3-track input must
+# stay an FFmpeg error, because every `@param audio_stream` in the package
+# promises "Naming a track the input does not have is an FFmpeg error, not an R
+# one" (D023). Making it optional would turn a mistyped index into a silently
+# audio-less output.
+pass_through_maps <- function(audio_stream = NULL,
+                              call = rlang::caller_env()) {
+  c("0:v?", audio_stream_map(audio_stream, null_map = "0:a?", call = call))
+}
+
 # warn_dropped_audio() ----------------------------------------------------
 
 # Emit the single classed warning for inputs carrying audio tracks the output
@@ -1267,7 +1317,7 @@ standardize_video <- function(infile, outfile,
                               video_codec = "libx264", audio_codec = "copy",
                               pixel_format = "yuv420p",
                               hardware = c("none", "nvenc"), fallback = FALSE,
-                              run = TRUE) {
+                              audio_stream = NULL, run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
@@ -1278,10 +1328,18 @@ standardize_video <- function(infile, outfile,
   # audio_codec is already checked inside standardize_pipeline(), which blames
   # this verb because the pipeline is called from here.
   rlang::check_string(video_codec, allow_null = TRUE)
+  # Last of the front-door checks, so adding it cannot move the precedence of
+  # the ones above (M41). It duplicates the check inside pass_through_maps(),
+  # which the pipeline always reaches with `call` resolving to this frame -- so
+  # here it is defense-in-depth and parity with the batch sibling, where the
+  # same call IS load-bearing because the column path reads NA as the NULL
+  # sentinel. No test is named after this line (M43's finding).
+  rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
 
   ffm_finish(
     standardize_pipeline(infile, outfile, width, height, fps, video_codec,
-                         audio_codec, pixel_format, hardware, fallback),
+                         audio_codec, pixel_format, hardware, fallback,
+                         audio_stream),
     run
   )
 }
@@ -1298,6 +1356,7 @@ standardize_video <- function(infile, outfile,
 standardize_pipeline <- function(input, output, width, height, fps, video_codec,
                                  audio_codec = "copy", pixel_format,
                                  hardware = "none", fallback = FALSE,
+                                 audio_stream = NULL,
                                  call = rlang::caller_env()) {
   video_codec <- resolve_hw_encoder(video_codec, hardware, fallback)
   p <- ffm_files(input, output)
@@ -1327,6 +1386,10 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
   # (parity with anonymize_pipeline(); M39 review F2).
   p <- ffm_codec(p, video = video_codec)
   p <- apply_audio_codec(p, audio_codec, call = call)
+  # State the stream selection instead of inheriting FFmpeg's (M47). One
+  # ffm_map() call with both specifiers, never two: ffm_map() appends, so two
+  # calls look exactly like a pipeline that mapped twice by accident.
+  p <- ffm_map(p, pass_through_maps(audio_stream, call = call))
   p <- ffm_pixel_format(p, pixel_format)
   ffm_output_options(p, "-movflags +faststart")
 }
@@ -1412,15 +1475,23 @@ anonymize_video <- function(infile, outfile, regions,
                             video_codec = "libx264", audio_codec = "copy",
                             pixel_format = "yuv420p",
                             hardware = c("none", "nvenc"), fallback = FALSE,
-                            run = TRUE) {
+                            audio_stream = NULL, run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
   hardware <- rlang::arg_match(hardware)
+  # This verb's front door is deliberately thin -- regions, color, the codecs
+  # and pixel_format are all validated inside anonymize_pipeline() with `call`
+  # threaded, so they blame this verb anyway. `audio_stream` is checked here
+  # regardless, for parity with the five other verbs carrying it and with the
+  # batch sibling, where the same call is load-bearing. Last in the block, so
+  # it cannot move the precedence of the checks above (M41).
+  rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
 
   ffm_finish(
     anonymize_pipeline(infile, outfile, regions, color, video_codec,
-                       audio_codec, pixel_format, hardware, fallback),
+                       audio_codec, pixel_format, hardware, fallback,
+                       audio_stream),
     run
   )
 }
@@ -1437,6 +1508,7 @@ anonymize_video <- function(infile, outfile, regions,
 anonymize_pipeline <- function(input, output, regions, color, video_codec,
                                audio_codec = "copy", pixel_format,
                                hardware = "none", fallback = FALSE,
+                               audio_stream = NULL,
                                call = rlang::caller_env()) {
   check_regions(regions, call = call)
   rlang::check_string(color, call = call)
@@ -1495,6 +1567,9 @@ anonymize_pipeline <- function(input, output, regions, color, video_codec,
   video_codec <- resolve_hw_encoder(video_codec, hardware, fallback, call = call)
   p <- ffm_codec(p, video = video_codec)
   p <- apply_audio_codec(p, audio_codec, call = call)
+  # State the stream selection instead of inheriting FFmpeg's (M47); see
+  # standardize_pipeline() for why this is one ffm_map() call and not two.
+  p <- ffm_map(p, pass_through_maps(audio_stream, call = call))
   ffm_pixel_format(p, pixel_format)
 }
 

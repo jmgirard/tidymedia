@@ -230,6 +230,9 @@ test_that("standardize_video() compiles the full standardization command", {
       paste(
         '-y -i "%s" -vf "scale=w=1280:h=720,fps=30"',
         "-codec:v libx264 -codec:a copy -pix_fmt yuv420p -movflags +faststart",
+        # M47: the verb states its stream selection instead of inheriting
+        # FFmpeg's. The `?` suffixes keep an input missing a stream type working.
+        "-map 0:v? -map 0:a?",
         '"out.mp4"'
       ),
       f
@@ -271,6 +274,9 @@ test_that("standardize_video() defaults are deterministic and documented", {
         '-y -i "%s"',
         '-vf "crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2"',
         "-codec:v libx264 -codec:a copy -pix_fmt yuv420p -movflags +faststart",
+        # M47: the verb states its stream selection instead of inheriting
+        # FFmpeg's. The `?` suffixes keep an input missing a stream type working.
+        "-map 0:v? -map 0:a?",
         '"out.mp4"'
       ),
       f

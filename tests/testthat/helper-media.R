@@ -148,6 +148,36 @@ make_silent_audio <- function(env = parent.frame()) {
   path
 }
 
+# Generate a video with NO audio stream at all. The counterpart to
+# make_silent_audio(): that one is audio without video, this is video without
+# audio. Both exist because a verb that states its stream selection has to name
+# stream types the input may not have, and FFmpeg treats an unmatched -map as
+# fatal rather than empty -- `-map 0:a` on this file exits 234 (M47). Skips the
+# calling test if ffmpeg is unavailable. Returns the file path.
+make_silent_video <- function(env = parent.frame()) {
+  skip_if_no_ffmpeg()
+  path <- withr::local_tempfile(fileext = ".mp4", .local_envir = env)
+  command <- paste(
+    "-y -f lavfi -i testsrc=duration=1:size=64x64:rate=10",
+    sprintf('-c:v libx264 -pix_fmt yuv420p "%s"', path)
+  )
+  run_ffmpeg_fixture(command)
+  testthat::skip_if_not(file.exists(path),
+                        "silent test video could not be generated")
+  path
+}
+
+# Probe each audio stream's language tag, in stream order. The discriminator for
+# "which track came out": make_multitrack_video() tags its three eng/spa/fra, so
+# a single tag names the track without depending on stream order or on content.
+audio_languages <- function(path) {
+  skip_if_no_ffprobe()
+  trimws(ffprobe(sprintf(
+    paste('-v error -select_streams a -show_entries stream_tags=language',
+          '-of csv=p=0 "%s"'), path
+  )))
+}
+
 # Generate a video carrying THREE audio tracks (aac, tagged eng/spa/fra, at
 # distinct sine frequencies), so tests can observe which track a verb selects and
 # whether it selects exactly one. A verb mapping every audio stream into a

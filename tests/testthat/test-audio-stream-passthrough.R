@@ -9,10 +9,17 @@
 # survived was therefore a property of the input's flags and of the FFmpeg
 # build, which is the invisible variation D023 exists to remove.
 #
-# Both verbs now compile `-map 0:v -map 0:a` when no track is named and
-# `-map 0:v -map 0:a:<n>` when one is. A uniform `-map 0` was rejected at plan
+# Both verbs now compile `-map 0:v? -map 0:a?` when no track is named and
+# `-map 0:v? -map 0:a:<n>` when one is. A uniform `-map 0` was rejected at plan
 # time because it fails outright into .mp4 on a subtitle-bearing input (exit 8,
 # no default mp4 subtitle encoder).
+#
+# The `?` on the unselected specifiers is what keeps a stream-less input
+# working: a bare `-map 0:a` aborts FFmpeg on a silent video and a bare
+# `-map 0:v` aborts on an audio-only file, both exit 234, where master emitted
+# no map and exited 0. The named specifier keeps no `?` so that naming a track
+# the input lacks stays an error (D023). See the "tolerates" tests at the foot
+# of this file.
 
 regions_1 <- function() {
   data.frame(x = 0, y = 0, width = 10, height = 10)
@@ -56,11 +63,11 @@ test_that("an unset audio_stream compiles every video and every audio stream", {
   f <- make_input()
   expect_identical(
     standardize_video(f, "out.mp4", run = FALSE),
-    standardize_command(f, "-map 0:v -map 0:a ")
+    standardize_command(f, "-map 0:v? -map 0:a? ")
   )
   expect_identical(
     anonymize_video(f, "out.mp4", regions = regions_1(), run = FALSE),
-    anonymize_command(f, "-map 0:v -map 0:a ")
+    anonymize_command(f, "-map 0:v? -map 0:a? ")
   )
 })
 
@@ -83,12 +90,12 @@ test_that("a named audio_stream compiles that track and no other", {
   f <- make_input()
   expect_identical(
     standardize_video(f, "out.mp4", audio_stream = 2, run = FALSE),
-    standardize_command(f, "-map 0:v -map 0:a:2 ")
+    standardize_command(f, "-map 0:v? -map 0:a:2 ")
   )
   expect_identical(
     anonymize_video(f, "out.mp4", regions = regions_1(), audio_stream = 2,
                     run = FALSE),
-    anonymize_command(f, "-map 0:v -map 0:a:2 ")
+    anonymize_command(f, "-map 0:v? -map 0:a:2 ")
   )
 })
 
@@ -102,16 +109,18 @@ test_that("both verbs compile exactly two maps either way", {
                     run = FALSE)
   )
   expect_identical(map_count(cmds), rep(2L, 4))
-  # 0:a and 0:a:2 differ by a suffix, so a containment check for the first
-  # would pass on the second. Pin the absence with the trailing space (M45).
-  expect_false(grepl("-map 0:a ", cmds[[2]], fixed = TRUE))
+  # A named call must not ALSO carry the every-track map -- ffm_map() appends,
+  # so `-map 0:a? -map 0:a:2` would satisfy a containment check for either one
+  # on its own (M45's absence-assertion trick).
+  expect_false(grepl("-map 0:a? ", cmds[[2]], fixed = TRUE))
+  expect_false(grepl("-map 0:a? ", cmds[[4]], fixed = TRUE))
 })
 
 test_that("audio_stream = 0 names the first track rather than emitting 0:a", {
   f <- make_input()
   expect_identical(
     standardize_video(f, "out.mp4", audio_stream = 0, run = FALSE),
-    standardize_command(f, "-map 0:v -map 0:a:0 ")
+    standardize_command(f, "-map 0:v? -map 0:a:0 ")
   )
 })
 
@@ -169,4 +178,73 @@ test_that("run = FALSE runs no binary at the default hardware", {
   # shell out under run = FALSE. Found by this milestone's criteria audit,
   # reproduced under this same mock, and carried as a ROADMAP candidate row --
   # it falsifies D024's "sole exception" sentence and is not M47's to fix.
+})
+
+# AC6: the stream-less inputs an explicit map can break --------------------
+
+# Stating a selection means naming stream types the input may not have, and
+# FFmpeg treats an unmatched `-map` as fatal rather than empty. These two are
+# the regression guards for the `?` suffix: with a bare `0:a`/`0:v` both abort
+# at exit 234, where master -- emitting no map at all -- exits 0.
+
+test_that("a video-only input still standardizes", {
+  skip_if_no_ffmpeg()
+  infile <- make_silent_video()
+  outfile <- withr::local_tempfile(fileext = ".mp4")
+  expect_no_error(standardize_video(infile, outfile))
+  expect_true(file.exists(outfile))
+  expect_identical(stream_types(outfile), "video")
+})
+
+test_that("an audio-only input still standardizes", {
+  skip_if_no_ffmpeg()
+  infile <- make_silent_audio()
+  outfile <- withr::local_tempfile(fileext = ".mp4")
+  expect_no_error(standardize_video(infile, outfile))
+  expect_true(file.exists(outfile))
+  expect_identical(stream_types(outfile), "audio")
+})
+
+test_that("a video-only input still anonymizes", {
+  skip_if_no_ffmpeg()
+  infile <- make_silent_video()
+  outfile <- withr::local_tempfile(fileext = ".mp4")
+  expect_no_error(anonymize_video(infile, outfile, regions = regions_1()))
+  expect_identical(stream_types(outfile), "video")
+})
+
+# AC6: which track actually comes out -------------------------------------
+
+test_that("an unset audio_stream now carries every track, not FFmpeg's pick", {
+  skip_if_no_ffmpeg()
+  skip_if_no_ffprobe()
+  # DEFAULT on track 1 so "the heuristic" and "track 0" cannot coincide: on a
+  # fixture leaving DEFAULT at 0 this test passes with audio_stream ignored
+  # entirely, which is what the criteria audit caught in the drafted version.
+  infile <- make_multitrack_video(default_track = 1)
+  outfile <- withr::local_tempfile(fileext = ".mkv")
+  standardize_video(infile, outfile)
+  expect_identical(stream_types(outfile), c("video", "audio", "audio", "audio"))
+})
+
+test_that("a named audio_stream takes that track and no other", {
+  skip_if_no_ffmpeg()
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video(default_track = 1)
+  outfile <- withr::local_tempfile(fileext = ".mkv")
+  # Track 2 (`fra`) is neither the first track nor the DEFAULT one, so no
+  # implicit selection can produce it -- only the map can.
+  standardize_video(infile, outfile, audio_stream = 2)
+  expect_identical(stream_types(outfile), c("video", "audio"))
+  expect_identical(audio_languages(outfile), "fra")
+})
+
+test_that("naming a track the input lacks stays an FFmpeg error", {
+  skip_if_no_ffmpeg()
+  infile <- make_multitrack_video()
+  outfile <- withr::local_tempfile(fileext = ".mkv")
+  # The `?` that makes an unselected map tolerant is deliberately absent here:
+  # every @param audio_stream in the package promises this is an FFmpeg error
+  # rather than an R one (D023), and a silent audio-less output would be worse.
+  expect_error(standardize_video(infile, outfile, audio_stream = 9))
 })

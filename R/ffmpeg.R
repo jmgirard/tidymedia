@@ -1736,6 +1736,7 @@ derive_anonymized_names <- function(input) {
 anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264",
                              audio_codec = "copy", pixel_format = "yuv420p",
                              hardware = c("none", "nvenc"), fallback = FALSE,
+                             audio_stream = NULL,
                              run = TRUE, parallel = FALSE, ...) {
 
   hardware <- rlang::arg_match(hardware)
@@ -1838,6 +1839,11 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   # SHAPE block (review A6), then past its content checks too (review
   # A1r3). Here it changes nothing but the message a bad codec gets.
   rlang::check_string(video_codec, allow_null = TRUE)
+  # See standardize_video_batch() for why the hint says "every" here and why
+  # check_batch_stream_values() is not needed on a verb that does not reshape.
+  check_batch_audio_col(jobs, "audio_stream",
+                        na_means = "keep every audio track")
+  rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output box-fill
   # pipeline per row, sharing anonymize_pipeline() with anonymize_video(). A
@@ -1859,7 +1865,10 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
         # hardware/fallback are batch-wide (a machine property), never per-row
         # columns -- parity with standardize_video_batch (D-M31).
         hardware = hardware,
-        fallback = fallback
+        fallback = fallback,
+        # Arrives through `dots` rather than a named closure argument: only
+        # `regions` is named here, because pmap must unwrap that list-column.
+        audio_stream = batch_stream_cell(pick("audio_stream", audio_stream))
       )
     },
     run = run,
@@ -3191,6 +3200,7 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
                                video_codec = "libx264", audio_codec = "copy",
                                pixel_format = "yuv420p",
                                hardware = c("none", "nvenc"), fallback = FALSE,
+                               audio_stream = NULL,
                                run = TRUE, parallel = FALSE, ...) {
 
   hardware <- rlang::arg_match(hardware)
@@ -3278,6 +3288,22 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
   # SHAPE block (review A6), then past its content checks too (review
   # A1r3). Here it changes nothing but the message a bad codec gets.
   rlang::check_string(video_codec, allow_null = TRUE)
+  # The stream-index column's own type guard, with a hint saying what NA means
+  # HERE. The shared default ("drop audio") belongs to the composite verbs and
+  # the extraction verbs say "keep the first audio track"; on the pass-through
+  # family an unselected row keeps them ALL, so a borrowed hint would be false
+  # (M40).
+  check_batch_audio_col(jobs, "audio_stream",
+                        na_means = "keep every audio track")
+  # And the scalar argument's front-door check. Unlike the scalar verb's, this
+  # one is load-bearing: the column path resolves NA to the NULL sentinel, so
+  # without it `audio_stream = NA` would quietly compile every track instead of
+  # erroring (the M37/M41 shape). Per-row VALUES are checked again inside
+  # audio_stream_map(), which every row's pipeline reaches (M32). No
+  # check_batch_stream_values() here -- that is only needed where a verb
+  # RESHAPES its jobs table before the fan-out, and this one is 1 row in, 1 row
+  # out, so pmap's index already IS the caller's row (M45 review F4).
+  rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output re-encode
   # pipeline per row, sharing standardize_pipeline() with standardize_video().
@@ -3298,7 +3324,8 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
         audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         pixel_format = pick("pixel_format", pixel_format),
         hardware = hardware,
-        fallback = fallback
+        fallback = fallback,
+        audio_stream = batch_stream_cell(pick("audio_stream", audio_stream))
       )
     },
     run = run,

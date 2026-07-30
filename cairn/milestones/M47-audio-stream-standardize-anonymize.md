@@ -98,11 +98,11 @@ rule and answering the question D025's fifth bullet left open. NEWS.
 - [x] T4 Same for `anonymize_video()` / `anonymize_pipeline()`
       (`R/ffmpeg.R:1410`, `:1437`) — its front door is thin (`:1417-1419`) and
       most validation lives in the pipeline with `call =` threaded.
-- [ ] T5 `standardize_video_batch()` (`R/ffmpeg.R:3115`): argument,
+- [x] T5 `standardize_video_batch()` (`R/ffmpeg.R:3115`): argument,
       `check_batch_audio_col(jobs, "audio_stream", na_means = …)`,
       `batch_stream_cell()` in the closure. No reshape, so
       `check_batch_stream_values()` is not needed (`R/ffmpeg.R:3793-3801`).
-- [ ] T6 Same for `anonymize_video_batch()` (`R/ffmpeg.R:1661`); its closure
+- [x] T6 Same for `anonymize_video_batch()` (`R/ffmpeg.R:1661`); its closure
       names `regions` explicitly (`:1774`), so the new column arrives via `dots`.
 - [ ] T7 Roxygen on all four, the `@param jobs` column enumerations (M39), and
       the D025 cross-references; `devtools::document()`.
@@ -124,6 +124,9 @@ rule and answering the question D025's fifth bullet left open. NEWS.
 - 2026-07-30: T3/T4 — the suite caught only the video-only half, via one existing test that happens to standardize a silent fixture (`test-ffmpeg.R:311`); the audio-only half was found by probing for it. Both are now regression tests over new `make_silent_video()` / existing `make_silent_audio()` fixtures.
 - 2026-07-30: T2 — `pass_through_maps()` reuses `audio_stream_map(null_map = "0:a?")` rather than re-deriving the specifier, so the argument's guard, its `arg =` and its `call` threading are inherited rather than duplicated. One `ffm_map()` call with both specifiers, never two: `ffm_map()` appends, so two calls are indistinguishable from a pipeline that mapped twice by accident.
 - 2026-07-30: T3/T4 — full suite 0 failures, 2890 pass (4 warnings, 5 skips — both counts unchanged from master). `R/ffmpeg.R` still 5429/5429 CRLF, diff 79/4, so the M35 whole-file-rewrite trap did not fire.
+
+- 2026-07-30: T5/T6 — both batch verbs take the argument and an `audio_stream` column; `na_means = "keep every audio track"`, which is a third wording beside the composite verbs' "drop audio" and the extraction verbs' "keep the first audio track", and the tests assert the other two are ABSENT (M40). Neither verb reshapes its jobs table, so `check_batch_stream_values()` is deliberately not called — pmap's index already is the caller's row (M45 review F4).
+- 2026-07-30: T5/T6 — full suite 0 failures, 2911 pass.
 
 ## Decisions
 

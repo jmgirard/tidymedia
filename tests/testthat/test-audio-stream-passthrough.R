@@ -180,6 +180,104 @@ test_that("run = FALSE runs no binary at the default hardware", {
   # it falsifies D024's "sole exception" sentence and is not M47's to fix.
 })
 
+# AC4 / AC5: the batch siblings --------------------------------------------
+
+std_jobs <- function(f, ...) {
+  tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"), ...)
+}
+
+anon_jobs <- function(f, ...) {
+  tibble::tibble(
+    input = c(f, f), output = c("a.mp4", "b.mp4"),
+    regions = list(regions_1(), regions_1()), ...
+  )
+}
+
+test_that("the batch argument reaches every row", {
+  f <- make_input()
+  out <- standardize_video_batch(std_jobs(f), audio_stream = 2, run = FALSE)
+  expect_true(all(grepl("-map 0:v? -map 0:a:2", out$command, fixed = TRUE)))
+  out <- anonymize_video_batch(anon_jobs(f), audio_stream = 2, run = FALSE)
+  expect_true(all(grepl("-map 0:v? -map 0:a:2", out$command, fixed = TRUE)))
+})
+
+test_that("an audio_stream column overrides the argument per row", {
+  f <- make_input()
+  # Row 2's NA is the column form of the NULL sentinel: it keeps that row on
+  # every audio track, overriding the argument rather than deferring to it.
+  out <- standardize_video_batch(
+    std_jobs(f, audio_stream = c(1, NA)), audio_stream = 2, run = FALSE
+  )
+  expect_match(out$command[[1]], "-map 0:a:1", fixed = TRUE)
+  expect_match(out$command[[2]], "-map 0:a?", fixed = TRUE)
+  expect_false(grepl("-map 0:a:", out$command[[2]], fixed = TRUE))
+})
+
+test_that("a one-row batch compiles what the scalar verb compiles", {
+  f <- make_input()
+  out <- standardize_video_batch(
+    tibble::tibble(input = f, output = "out.mp4"), audio_stream = 2,
+    run = FALSE
+  )
+  expect_identical(
+    as.character(out$command[[1]]),
+    as.character(standardize_video(f, "out.mp4", audio_stream = 2,
+                                   run = FALSE))
+  )
+  out <- anonymize_video_batch(
+    tibble::tibble(input = f, output = "out.mp4",
+                   regions = list(regions_1())),
+    audio_stream = 2, run = FALSE
+  )
+  expect_identical(
+    as.character(out$command[[1]]),
+    as.character(anonymize_video(f, "out.mp4", regions = regions_1(),
+                                 audio_stream = 2, run = FALSE))
+  )
+})
+
+test_that("a wrongly typed audio_stream column aborts before any row runs", {
+  f <- make_input()
+  for (bad in list(c("1", "2"), c(TRUE, FALSE))) {
+    err <- expect_error(
+      standardize_video_batch(std_jobs(f, audio_stream = bad), run = FALSE)
+    )
+    expect_match(conditionMessage(err), "audio_stream")
+    # The hint has to be true on THIS family. Borrowing the extraction verbs'
+    # wording would tell a caller NA keeps the first track, where here it keeps
+    # them all (M40's stale-hint lesson, which is about a caller being ADDED).
+    expect_match(conditionMessage(err), "keep every audio track")
+    expect_no_match(conditionMessage(err), "first audio track")
+    expect_no_match(conditionMessage(err), "drop audio")
+  }
+  err <- expect_error(
+    anonymize_video_batch(anon_jobs(f, audio_stream = c("1", "2")),
+                          run = FALSE)
+  )
+  expect_match(conditionMessage(err), "keep every audio track")
+})
+
+test_that("an all-NA audio_stream column is accepted, being logical", {
+  f <- make_input()
+  # R types c(NA, NA) as logical, so an is.numeric-only guard would wrongly
+  # reject the column spelling of "leave every row unselected" (M34).
+  out <- standardize_video_batch(
+    std_jobs(f, audio_stream = c(NA, NA)), run = FALSE
+  )
+  expect_true(all(grepl("-map 0:a?", out$command, fixed = TRUE)))
+})
+
+test_that("a scalar NA audio_stream aborts rather than compiling every track", {
+  f <- make_input()
+  # Load-bearing here in a way it is not on the scalar verb: the column path
+  # reads NA as the NULL sentinel, so without the front-door guard this would
+  # quietly compile 0:a? instead of erroring (M37/M41).
+  expect_error(
+    standardize_video_batch(std_jobs(f), audio_stream = NA, run = FALSE),
+    "audio_stream"
+  )
+})
+
 # AC6: the stream-less inputs an explicit map can break --------------------
 
 # Stating a selection means naming stream types the input may not have, and

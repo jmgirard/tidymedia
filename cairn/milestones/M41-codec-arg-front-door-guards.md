@@ -1,6 +1,6 @@
 # M41: Front-door validation parity for the codec arguments
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -140,11 +140,14 @@ refused, completing the M37 review's repair of `separate_audio_video_batch`.
       `if (!is.null(x)) check_string(x)` shape, so it stops advertising a `NULL`
       its own batch sibling's message denies; and correct NEWS's false
       "has always done" history for `separate_audio_video_batch`.
-- [ ] T16: Re-run the instrument against both refs and confirm AC4's enumerated
+- [x] T16: Re-run the instrument against both refs and confirm AC4's enumerated
       changed-set exactly; `devtools::test()` + `devtools::check()` clean.
 
 ## Work log
 
+- 2026-07-29: status -> review (round 3). All 16 tasks checked, `devtools::test()` 0 FAIL / 0 WARN / 15 SKIP / 2429 PASS, `devtools::check()` `Status: OK` 0 errors / 0 warnings / 0 notes (3m 6s), `devtools::document()` no diff. M41 authored no prose-guard — its tests assert runtime condition messages, not doc wording — so guard-doctrine §8's fresh-reader step does not apply.
+- 2026-07-29: T16 checked AC4's enumerated set clause by clause, by script rather than by eye: 306 rows per side, grids the same size, **0** vacuous cells on either side, 33 changed rows total — 21 at `col = absent` on exactly the seven T3 pairs (only `normalize_audio_batch audio_codec na` moving `compiled -> abort`, the other 20 already aborts), 12 at `col = present` on exactly the four M41-D2 pairs (all `compiled -> abort`), **0** `default`/`null` rows and **0** `jobs = invalid` rows. Every clause of AC4 as amended, measured.
+- 2026-07-29: T16 mutation-verified both new tests rather than trusting them (M39 lesson): reverting the `picture_in_picture_batch` template to the `inputs` shape reddens the jobs-shape test, and putting `standardize_video_batch`'s guard back ahead of the jobs check reddens the precedence test. Both files restored byte-identical, tree clean.
 - 2026-07-29: T13/T14/T15 in one checkpoint — the three fixes interleave in `R/ffmpeg.R`, the instrument and the test file, and were verified together; each has its own log line below.
 - 2026-07-29: T14 found A6 UNDERSTATED the split. Measured on `origin/master`, codec-before-`jobs` precedence holds on **11** of the 17 batch verb/argument pairs, not two: `compare_videos_batch` both, `crop_video_batch` both, `picture_in_picture_batch` both, `segment_video_batch` both, `standardize_video_batch` `audio_codec` (M39), plus M41's two. So the majority position is codec-first and the inconsistency is inherited, not M41's. Only the two M41 moved are moved back; normalizing the rest would change error text on verbs this milestone never touched — the exact fault being repaired.
 - 2026-07-29: T14 pins that map as data in the test file rather than asserting a rule the package does not follow. A first draft asserted `jobs`-first universally and went red on 5 pre-existing pairs — a useful failure, since it is what measured the 11-vs-6 split.

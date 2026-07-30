@@ -58,19 +58,25 @@ refused, completing the M37 review's repair of `separate_audio_video_batch`.
       `In index: <n>` in its message, on the same condition AC2 inspects —
       showing the scalar check ran before the fan-out, not inside
       `purrr::pmap()`.
-- [ ] AC4: The guards add no new acceptance of `NULL`, and exactly one class of
-      new rejection. No new acceptance: for every argument in AC2, a `NULL` call
-      and a default call produce the same outcome after the milestone as before
-      it — the same compiled command where one compiles today, or the same abort
-      where `NULL` aborts today (`anonymize_video`/`_batch` `video_codec`,
-      `extract_audio` `audio_codec`). The one adopted new rejection: a
-      non-string *scalar* codec argument on a `_batch` verb whose `jobs` carries
-      a matching codec column, which `pick()` previously let the column override
-      in silence — expected on `standardize_video_batch`,
-      `anonymize_video_batch`, `extract_audio_batch` and `normalize_audio_batch`,
-      and on no other pair. Both halves measured against the baseline the T2
-      script regenerates from the pre-milestone ref, whose grid now probes each
-      `_batch` verb with that column absent *and* present.
+- [ ] AC4: Measured as the diff between the baseline the T2 script regenerates
+      from the pre-milestone ref and the same grid run on the branch — every AC2
+      verb/argument pair × the five value scenarios, with each `_batch` pair
+      probed at `col = absent` and `col = present`, and each `_batch` verb also
+      probed with an invalid `jobs` alongside a bad scalar codec — the set of
+      rows whose outcome changed is **exactly** these two groups:
+      (a) **21 rows at `col = absent`** — the three non-string scenarios (`NA`,
+      a number, a length-2 character vector) on each of the seven pairs T3
+      enumerated as non-compliant. One of them,
+      `normalize_audio_batch audio_codec na`, moves `compiled -> abort` (AC1's
+      silent-default bug); the other twenty were already aborts and change only
+      their message text, their blamed call, or their `In index:` status.
+      (b) **12 rows at `col = present`** — the same three scenarios on the four
+      `_batch` verbs M41-D2 names (`standardize_video_batch`,
+      `anonymize_video_batch`, `extract_audio_batch`, `normalize_audio_batch`),
+      each moving `compiled -> abort`.
+      And no others: no `default` or `null` row changes at either `col` setting,
+      no row changes on any other verb/argument pair, and no invalid-`jobs` row
+      changes which error it reports.
 - [x] AC5: `extract_audio_batch`'s new `audio_codec` guard passes
       `allow_null = TRUE`, so `extract_audio_batch(audio_codec = NULL)` still
       compiles (`-vn`, no `-codec:a`) while `extract_audio(audio_codec = NULL)`
@@ -81,65 +87,67 @@ refused, completing the M37 review's repair of `separate_audio_video_batch`.
 ## Coverage
 
 - AC1 → T2, T4
-- AC2 → T3, T5, T6, T7, T11
+- AC2 → T3, T5, T6, T7, T11, T15
 - AC3 → T5, T7
-- AC4 → T2, T8, T10
+- AC4 → T2, T8, T10, T13, T14, T16
 - AC5 → T5, T7
-- AC6 → T1, T8, T12
+- AC6 → T1, T8, T12, T16
 
 ## Tasks
 
-- [x] T1: Install `spelling` into the active R 4.6 library — a declared
-      `Suggests`, absent after the 4.6 upgrade, and the package M17's lesson
-      needs (`spelling::update_wordlist()`; `devtools::check()` masks the
-      `spelling.Rout` NOTE). Environment repair, not a dependency change (no
-      D-entry).
+- [x] T1: Verify/install `spelling` in the active R 4.6 library. Environment
+      repair, not a dependency change (no D-entry).
 - [x] T2: Commit the baseline regeneration script under `data-raw/`: reconstruct
-      `R/*.R` from a named git ref via `git show` into a temp dir, source them,
-      and print the compiled command *or* the abort message for every AC2
-      verb/argument pair at its default and `NULL` call. Capture the
+      `R/*.R` from a named git ref via `git show`, source them, and record the
+      compiled command *or* abort message per AC2 pair per scenario. Capture the
       pre-milestone baseline from the default branch.
-- [x] T3: Enumerate the AC2 verb/argument set from source into this file's work
-      log — the eight non-compliant pairs and the compliant ones — so T7's test
-      runs over a fixed list, not a re-derivation.
+- [x] T3: Enumerate the AC2 verb/argument set from source into the work log —
+      non-compliant and compliant pairs — so T7 runs over a fixed list.
 - [x] T4: Regression test first, shown red against T2's reconstructed pre-fix
       tree, then the fix: front-door
-      `rlang::check_string(audio_codec, allow_null = TRUE)` in
-      `normalize_audio_batch` ([ffmpeg.R:2891](../../R/ffmpeg.R#L2891)).
-- [x] T5: Front-door guards for the remaining sites: `standardize_video_batch`
-      `video_codec` ([ffmpeg.R:2547](../../R/ffmpeg.R#L2547)),
-      `anonymize_video_batch` `video_codec`
-      ([ffmpeg.R:1145](../../R/ffmpeg.R#L1145)), `extract_audio_batch`
-      `audio_codec` with `allow_null = TRUE` plus the AC5 comment
-      ([ffmpeg.R:3290](../../R/ffmpeg.R#L3290)), and `standardize_video`
-      `video_codec` ([ffmpeg.R:780](../../R/ffmpeg.R#L780)).
-- [x] T6: Make `normalize_audio` ([ffmpeg.R:1329](../../R/ffmpeg.R#L1329)) and
-      `convert_audio` ([ffmpeg.R:485](../../R/ffmpeg.R#L485)) blame the verb
-      rather than their `*_pipeline()` helper — thread `call` or hoist the check.
+      `check_string(audio_codec, allow_null = TRUE)` in `normalize_audio_batch`.
+- [x] T5: Front-door guards for the remaining sites — `standardize_video_batch`
+      and `anonymize_video_batch` `video_codec`, `extract_audio_batch`
+      `audio_codec` (`allow_null`, plus the AC5 comment), `standardize_video`
+      `video_codec`.
+- [x] T6: Make `normalize_audio` and `convert_audio` blame the verb rather than
+      their shared `*_pipeline()` helper — thread `call` or hoist the check.
+- [x] T9 (discovered): Two `test-video-codec.R` execution tests shell out to
+      *mediainfo* under only `skip_if_no_ffprobe()`, so they fail rather than
+      skip where that CLI is absent. Blocks AC6, so fixed here.
 - [x] T7: Parameterized test over T3's list: message and `call` for `NA`, a
-      number, and a length-2 vector on every pair, plus AC3's `In index:`
-      absence at `parallel = FALSE`. Prove it discriminates by reverting one
-      guard and confirming it goes red (M39 lesson).
-- [x] T9 (discovered): Two `test-video-codec.R` execution tests call `get_width()`
-      — which shells out to *mediainfo* — while guarding only on
-      `skip_if_no_ffprobe()`, so they fail rather than skip wherever the
-      mediainfo CLI is absent, against the convention CLAUDE.md states and the
-      existing `skip_if_no_mediainfo()` helper serves. Blocks AC6, so fixed here.
-- [x] T8: Re-run T2's script against the pre-milestone ref and the branch;
-      confirm every `NULL`/default outcome matches. Update `@param` prose where a
-      guard changes the documented error, `devtools::document()`, NEWS entry,
-      `devtools::test()` + `devtools::check()` clean.
-- [x] T10: Extend T2's grid with the codec-column dimension — each `_batch`
-      verb probed with a matching codec column absent and present — and re-run
-      both refs, confirming AC4's amended two halves.
-- [x] T11: The four actioned review findings: F8 fail-soft the sweep, F3 the
+      number and a length-2 vector on every pair, plus AC3's `In index:` absence
+      at `parallel = FALSE`. Prove it discriminates by reverting a guard (M39).
+- [x] T8: Re-run T2's script against both refs and confirm every `NULL`/default
+      outcome matches. `@param` prose, `document()`, NEWS, `test()` + `check()`.
+- [x] T10: Extend T2's grid with the codec-column dimension — each `_batch` verb
+      probed with a matching codec column absent and present — re-run both refs.
+- [x] T11: The four actioned round-1 findings: F8 fail-soft the sweep, F3 the
       `anonymize_video_batch` guard shape, F13 the unchecked `git show`, F19 the
       comment's false D021 citation.
 - [x] T12: Correct the NEWS entry's "which values are accepted is unchanged",
-      then `devtools::test()` + `devtools::check()` clean.
+      then `test()` + `check()` clean.
+- [ ] T13 (round 2, A1): Repoint the `picture_in_picture_batch` call template in
+      both the instrument and the test at D015's `main`/`overlay`/`output`
+      columns, so its `default`/`null` cells compile instead of aborting on
+      missing columns and its `col = present` half stops duplicating `absent`.
+- [ ] T14 (round 2, A6): Move `standardize_video_batch`'s and
+      `anonymize_video_batch`'s new codec guards after the jobs-shape check, so
+      an invalid `jobs` keeps reporting first as it did pre-milestone; add an
+      invalid-`jobs` dimension to the instrument, and a test, proving no verb
+      changed which error it reports.
+- [ ] T15 (round 2, A7/A5): Give `convert_audio`'s hoisted guard the
+      `if (!is.null(x)) check_string(x)` shape, so it stops advertising a `NULL`
+      its own batch sibling's message denies; and correct NEWS's false
+      "has always done" history for `separate_audio_video_batch`.
+- [ ] T16: Re-run the instrument against both refs and confirm AC4's enumerated
+      changed-set exactly; `devtools::test()` + `devtools::check()` clean.
 
 ## Work log
 
+- 2026-07-29: AMENDMENT (substantive, gated) — AC4 restated as an **enumerated changed-set** criterion per the thrash-trigger-(b) remedy: the diff against the pre-milestone ref contains exactly 21 `col = absent` rows and 12 `col = present` rows, and no others. The two prior wordings were global negatives about new rejections ("adds no new rejection", then "exactly one class"), each falsified by a class nobody had named; an enumeration cannot be, since an unnamed class arrives as an extra row and fails visibly. Rejected at the gate: a third re-cut adding an AC1 carve-out to the same predicate shape. Coverage gains AC4 → T13/T14/T16, AC2 → T15, AC6 → T16; tasks T13–T16 added.
+- 2026-07-29: implement gate chose restoring the pre-milestone `jobs`-before-codec error precedence on `standardize_video_batch`/`anonymize_video_batch` (A6) over keeping the new guards beside their sibling and enumerating the flip, because guard *placement* is not what AC2/AC3 constrain and the milestone's repeated failure mode is unenumerated behaviour change; falsified by a caller for whom the codec complaint is the more useful first error on a doubly-invalid call.
+- 2026-07-29: over-cap remedy — the amendment pushed the plan-owned body to 151/149, so the heaviest section (Tasks) was compressed in one pass; completed T1–T12 keep their identity and shed detail the work log already holds. Now 145/149.
 - 2026-07-29: REVIEW RETURN 2 — AC4 fails again, by a new mechanism (finding A10, scored 95). The amended criterion claims "exactly one class of new rejection" and describes only the column-override class, but the 33-row diff also contains `normalize_audio_batch audio_codec na` at `col = absent` moving `compiled -> abort` with no column present — AC1's silent-default bug, which AC4 does not carve out. Confirmed from my own AC1 measurement, not taken on report. AC4 unticked; every other criterion measured green this round. Status back to `in-progress`. Returns: 2.
 - 2026-07-29: THRASH TRIGGER (b) — AC4 has now failed twice, each by a new mechanism of the same shape: a global negative about new rejections that measurement keeps falsifying. Recommended remedy is to change the approach rather than re-cut the predicate: restate AC4 as an enumerated changed-set criterion (the diff against the pre-milestone ref contains exactly these rows and no others), which cannot be falsified by a class nobody named. Trigger (a) not reached.
 - 2026-07-29: review-time FIX for A3/C1 (92/84) — the executed suite gained the `col` dimension, so M41-D2's adopted refusal is now regression-tested on every `_batch` verb. Confirmed discriminating by mutation: making `normalize_audio_batch`'s guard column-conditional (exactly the alternative M41-D2 rejected) previously left the whole suite green at 2162 PASS, and now produces 3 targeted failures naming `col = present`. Suite 0 FAIL / 0 WARN / 15 SKIP / 2417 PASS; `check()` `Status: OK` 0/0/0.

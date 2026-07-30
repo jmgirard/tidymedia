@@ -1,11 +1,11 @@
 # M42: What `NULL` and column `NA` mean, settled across the codec family
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M41
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m42-codec-null-na-semantics`
 
 ## Goal
 

@@ -435,14 +435,128 @@ test_that("ffm_map() rejects a non-character, empty, or NA mapping", {
   expect_error(ffm_map(p, "0:v", replace = NA), "`replace`")
 })
 
-test_that("every in-package pipeline emits the maps its verb's contract says", {
-  # ffm_map() appends, so a pipeline that gains a map without meaning to
-  # duplicates the output stream rather than overwriting it. This pinned the
-  # invariant as "<= 1" until M47, when the pass-through verbs began stating
-  # both halves of their selection and started emitting exactly two. A bound no
-  # longer says anything useful, so pin the exact count per verb: a wrong count
-  # is the failure mode, in either direction.
+# M48/D027: ffm_copy() assigns its map ----------------------------------------
+#
+# These sit BELOW the two ffm_map() contract tests above on purpose. Those two
+# are the evidence that this fix landed in ffm_copy() and not in ffm_map(), so
+# they must pass unmodified -- and RR03's binding criterion identifies them by
+# line number, which inserting above them would falsify.
+
+test_that("ffm_copy() applied twice compiles one -map 0, not two", {
+  # Before M48 this compiled `-map 0 -map 0` and duplicated every output stream
+  # (a 1v/1a input gave a 4-stream output), because ffm_copy() set its map
+  # through ffm_map(), which appends since M43.
   f <- make_input()
+  p <- ffm_copy(ffm_copy(ffm_files(f, "out.mkv")))
+  expect_equal(p$map, "0")
+  args <- tidymedia:::ffm_args(p)
+  expect_identical(sum(args == "-map"), 1L)
+  expect_identical(args[which(args == "-map") + 1L], "0")
+})
+
+test_that("ffm_concat() |> ffm_copy() compiles one -map 0, not two", {
+  # ffm_concat() calls ffm_copy() internally, so this composition doubled too.
+  f1 <- make_input()
+  f2 <- make_input()
+  p <- ffm_copy(ffm_concat(ffm_files(c(f1, f2), "out.mp4")))
+  expect_equal(p$map, "0")
+  args <- tidymedia:::ffm_args(p)
+  expect_identical(sum(args == "-map"), 1L)
+  expect_identical(args[which(args == "-map") + 1L], "0")
+})
+
+test_that("ffm_copy() refuses to discard a different stated mapping", {
+  # Assignment without this guard would silently drop the caller's selection --
+  # the flaw D023 removed from ffm_map(), reintroduced for one verb.
+  f <- make_input()
+  p <- ffm_map(ffm_files(f, "out.mkv"), "0:v")
+  expect_error(ffm_copy(p), class = "tidymedia_copy_map_conflict")
+  # The message has to be actionable on both escape routes, and must describe
+  # the PIPELINE rather than presume the caller typed ffm_copy(): ffm_concat()
+  # reaches this from a frame the user never called, where `streams = FALSE` is
+  # not an argument they can pass.
+  expect_error(ffm_copy(p), "streams = FALSE", fixed = TRUE)
+  expect_error(ffm_copy(p), "replace = TRUE", fixed = TRUE)
+  expect_error(ffm_copy(p), "already sets a stream mapping", fixed = TRUE)
+})
+
+test_that("the conflict guard reaches the pipeline through ffm_concat() too", {
+  f1 <- make_input()
+  f2 <- make_input()
+  p <- ffm_map(ffm_files(c(f1, f2), "out.mp4"), "0:v")
+  expect_error(ffm_concat(p), class = "tidymedia_copy_map_conflict")
+})
+
+test_that("the identical-to-\"0\" carve-out is literal", {
+  # It is what keeps the doubled ffm_copy() a silent no-op; a map already
+  # doubled by hand is a different vector and is a conflict.
+  f <- make_input()
+  expect_error(
+    ffm_copy(ffm_map(ffm_files(f, "out.mkv"), c("0", "0"))),
+    class = "tidymedia_copy_map_conflict"
+  )
+})
+
+test_that("streams = FALSE keeps an existing mapping and still copies codecs", {
+  f <- make_input()
+  p <- ffm_copy(ffm_map(ffm_files(f, "out.mkv"), "0:v"), streams = FALSE)
+  expect_equal(p$map, "0:v")
+  args <- tidymedia:::ffm_args(p)
+  expect_identical(sum(args == "-map"), 1L)
+  expect_identical(args[which(args == "-map") + 1L], "0:v")
+  expect_match(ffm_compile(p), "-codec:v copy -codec:a copy", fixed = TRUE)
+})
+
+test_that("strip_metadata() compiles its pre-M48 command unchanged", {
+  # The untouched in-package ffm_copy() caller: it calls ffm_copy() on an empty
+  # map, so assignment and appending agree and its command must not move. A
+  # sprintf() template rather than a fixed literal because the input path is a
+  # per-test tempfile (the deviation recorded against RR03's BC6).
+  f <- make_input()
+  expect_identical(
+    strip_metadata(f, "out.mp4", run = FALSE),
+    sprintf(
+      paste0('-y -i "%s" -codec:v copy -codec:a copy -map_metadata -1 ',
+             '-map_chapters -1 -fflags +bitexact -map 0 "%s"'),
+      f, "out.mp4"
+    )
+  )
+})
+
+test_that("a doubled ffm_copy() remux writes the input's stream count", {
+  # The execution half: the compile-level fix is only worth having because the
+  # duplicated maps duplicated real output streams. Five in, five out.
+  skip_if_no_ffmpeg()
+  infile <- make_multitrack_subtitle_video()
+  out <- withr::local_tempfile(fileext = ".mkv")
+  ffm_run(ffm_copy(ffm_copy(ffm_files(infile, out))))
+  expect_identical(length(stream_types(out)), length(stream_types(infile)))
+  expect_identical(length(stream_types(out)), 5L)
+})
+
+test_that("every in-package pipeline emits the maps its verb's contract says", {
+  # THE RULE, as of M48. A verb's -map count is exactly one of three numbers,
+  # and which one is a property of what the verb's output is:
+  #
+  #   2 -- a PASS-THROUGH verb, which states both halves of its selection:
+  #        `-map 0:v?` plus either `-map 0:a?` or `-map 0:a:<n>` (D026).
+  #        standardize/anonymize took this at M47, crop/segment at M48.
+  #   1 -- a verb whose output is ONE stream (the extraction verbs, each side
+  #        of the separation fan-out) or one that copies every stream with the
+  #        all-streams specifier `0` (strip_metadata, concatenate_videos).
+  #   0 -- a verb that still states nothing and lets FFmpeg's implicit
+  #        selection choose. This is not a design position, it is the gap the
+  #        standing ROADMAP candidate row covers; the zeros below are pinned so
+  #        that closing it is a visible change here rather than a silent one.
+  #
+  # The count is the assertion because ffm_map() appends (D023): a pipeline
+  # that gains a map without meaning to duplicates the output stream rather
+  # than overwriting it, and no containment assertion can see that. The
+  # invariant was a "<= 1" BOUND until M47; a bound stopped saying anything
+  # once verbs began emitting two, so it is an exact count per verb, and a
+  # wrong count fails in either direction.
+  f <- make_input()
+  f2 <- make_input()
   maps <- function(cmd) {
     vapply(cmd, function(x) {
       sum(gregexpr("-map ", x, fixed = TRUE)[[1]] > 0)
@@ -450,34 +564,42 @@ test_that("every in-package pipeline emits the maps its verb's contract says", {
   }
   regions <- data.frame(x = 0, y = 0, width = 10, height = 10)
   expected <- c(
-    # One map: these name a single audio stream, or copy every stream with the
-    # all-streams specifier.
     "extract_audio" = 1L,
     "convert_audio" = 1L,
-    "crop_video" = 1L,
     "strip_metadata" = 1L,
-    # Both segment_video() branches: the re-encode path and the ffm_copy() path,
-    # which is the one that sets a map of its own.
-    "segment_video(reencode = TRUE)" = 0L,
-    "segment_video(reencode = FALSE)" = 1L,
-    # A fan-out: one map on each of the two commands.
+    "concatenate_videos" = 1L,
+    # The fan-out: one map on each of the two commands.
     "separate_audio_video(audio)" = 1L,
     "separate_audio_video(video)" = 1L,
-    # Two maps: the pass-through verbs state video AND audio (M47).
+    # The pass-through family. Both segment_video() branches are here: the
+    # re-encode path, which emitted NO map before M48, and the copy path, where
+    # the selection replaces ffm_copy()'s `-map 0` rather than appending to it.
+    "crop_video" = 2L,
+    "segment_video(reencode = TRUE)" = 2L,
+    "segment_video(reencode = FALSE)" = 2L,
     "standardize_video" = 2L,
-    "anonymize_video" = 2L
+    "anonymize_video" = 2L,
+    # Still unstated, and known: format_for_web() is standardize_video()'s
+    # shape and normalize_audio() re-encodes audio by construction. Neither is
+    # in D026's Scope bullet, so both still consult FFmpeg's DEFAULT-disposition
+    # heuristic.
+    "format_for_web" = 0L,
+    "normalize_audio" = 0L
   )
   cmds <- c(
     extract_audio(f, "out.aac", run = FALSE),
     convert_audio(f, "out.mp3", run = FALSE),
-    crop_video(f, "out.mp4", 32, 32, run = FALSE),
     strip_metadata(f, "out.mp4", run = FALSE),
+    concatenate_videos(c(f, f2), "out.mp4", run = FALSE),
+    unlist(separate_audio_video(f, "out.m4a", "out.mp4", run = FALSE)),
+    crop_video(f, "out.mp4", 32, 32, run = FALSE),
     segment_video(f, 0, 1, outfiles = "seg.mp4", run = FALSE)$command,
     segment_video(f, 0, 1, outfiles = "seg.mp4", reencode = FALSE,
                   run = FALSE)$command,
-    unlist(separate_audio_video(f, "out.m4a", "out.mp4", run = FALSE)),
     standardize_video(f, "out.mp4", run = FALSE),
-    anonymize_video(f, "out.mp4", regions, run = FALSE)
+    anonymize_video(f, "out.mp4", regions, run = FALSE),
+    format_for_web(f, "out.mp4", run = FALSE),
+    normalize_audio(f, "out.mp4", run = FALSE)
   )
   expect_identical(setNames(maps(cmds), names(expected)), expected)
 })

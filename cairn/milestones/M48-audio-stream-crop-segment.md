@@ -118,7 +118,7 @@ replaces `ffm_copy()`'s `-map 0` rather than appending beside it, which gives
 - [x] T1 Record the three current commands as committed literals (the
       `baseline_pair()` pattern, `test-separate-av-multitrack.R:32-37`) and add
       the failing-first compile tests.
-- [ ] T2 Restore `ffm_copy()`/`ffm_concat()` idempotence per RR03: `ffm_copy()`
+- [x] T2 Restore `ffm_copy()`/`ffm_concat()` idempotence per RR03: `ffm_copy()`
       sets its map with `ffm_map(object, "0", replace = TRUE)` (`R/ffm.R:639`),
       `ffm_map()` untouched, plus a `tidymedia_*`-classed abort when
       `streams = TRUE` meets a non-empty map not identical to `"0"` — message
@@ -128,10 +128,10 @@ replaces `ffm_copy()`'s `-map 0` rather than appending beside it, which gives
       doubled-copy compile and execution tests, the guard and escape tests, the
       `strip_metadata()` baseline template, rewrite `ffm_copy()`'s `@param
       streams` (`R/ffm.R:610-613`) and touch the M43 comment at `:586-590`.
-- [ ] T3 `crop_video()` / `crop_video_pipeline()` (`R/ffmpeg.R:1103`, `:1040`):
+- [x] T3 `crop_video()` / `crop_video_pipeline()` (`R/ffmpeg.R:1103`, `:1040`):
       argument before `run`, guard last in the front-door block (M41), and
       replace `ffm_map(p, "0")` (`:1047`) with M47's resolver.
-- [ ] T4 `segment_pipeline()` (`R/ffmpeg.R:2620`) on both branches, and
+- [x] T4 `segment_pipeline()` (`R/ffmpeg.R:2620`) on both branches, and
       `segment_video()` (`:2523`) carrying the argument into the internal jobs
       tibble it builds. Ordering constraint from T2's guard: the
       `ffm_map(..., replace = TRUE)` narrowing must stay AFTER the
@@ -140,7 +140,7 @@ replaces `ffm_copy()`'s `-map 0` rather than appending beside it, which gives
 - [ ] T5 `crop_video_batch()` (`R/ffmpeg.R:4396`) and `segment_video_batch()`
       (`:2743`): argument, `check_batch_audio_col(jobs, "audio_stream",
       na_means = …)`, `batch_stream_cell()` in each closure.
-- [ ] T6 Rewrite the per-verb map-count invariant in `tests/testthat/test-ffm.R`
+- [x] T6 Rewrite the per-verb map-count invariant in `tests/testthat/test-ffm.R`
       to the new rule and extend it to every verb M47 and M48 touched.
 - [ ] T7 Roxygen on all four plus the `@param jobs` enumerations (M39);
       `devtools::document()`; execution tests on the multi-track and
@@ -159,6 +159,9 @@ replaces `ffm_copy()`'s `-map 0` rather than appending beside it, which gives
 - 2026-07-30: ingest audit of RR03's BC1–BC8 by a fresh-context [O] reader — verified every line reference and reproduced all three doubling compositions; found BC6 unsatisfiable as written and four criteria weaker than the report's own recommendations, plus an unstated ordering constraint on `segment_pipeline()`. Findings recorded in M48-D2 and raised at the ingest gate; none softened.
 - 2026-07-30: ingested RR03 — `Driving RR: RR03`, BC1–BC8 as AC-9…AC-16 verbatim with Coverage lines, one Deviations row for BC6 agreed at the gate, `ffm_copy()` contract promoted to D027, T2/T4 amended, status back to in-progress. AC1–AC8 compressed in one pass to hold the 150-line cap (148/149), which also retired three stale `R/ffmpeg.R` line references in T3/T4/T5 and the `test-ffm.R:438` reference in AC8/T6.
 - 2026-07-30: T1 — `test-audio-stream-crop-segment.R` records the three pre-M48 commands as committed templates (from master at 0b9985a) and adds the AC1/AC2 compile tests. Red as intended: 10 failures, all `unused argument (audio_stream = …)` or the old `-map 0`; T3/T4 turn them green.
+- 2026-07-30: T2 — `ffm_copy()` assigns its map via `ffm_map(..., replace = TRUE)` and `check_copy_map_conflict()` aborts (`tidymedia_copy_map_conflict`) on a different stated mapping; `ffm_map()` untouched; new `make_multitrack_subtitle_video()` 5-stream fixture; seven tests below `test-ffm.R:417` covering the doubled copy, the concat composition, the guard through both entry points, the literal `identical("0")` carve-out, the `streams = FALSE` escape, the `strip_metadata()` template and the 5-in/5-out execution case.
+- 2026-07-30: T3, T4 — `audio_stream` on `crop_video()`/`crop_video_pipeline()` and `segment_video()`/`segment_pipeline()`, both branches, via `pass_through_maps()`. T3 omits the scalar front-door guard, following M47 review F8 rather than the task's own wording: it would be the only guard reporting before `ffm_crop()`'s dimension checks (M41's precedence trap), and `pass_through_maps()` carries the identical check with `call` resolving to the verb. `segment_pipeline()`'s narrowing sits below its `ffm_copy()` call, per the ingest audit.
+- 2026-07-30: T6 — the map-count invariant now states the three-number rule (2 pass-through / 1 single-stream-or-all-streams / 0 unstated) and covers 13 entry points, adding `concatenate_videos`, `format_for_web` and `normalize_audio`; the two zeros pin the standing candidate row's gap so closing it is visible here. Nine existing baselines updated across five test files where `-map 0` or an adjacent seek moved. `devtools::test()` clean.
 
 ## Decisions
 

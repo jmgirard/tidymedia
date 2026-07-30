@@ -1041,11 +1041,18 @@ crop_video_pipeline <- function(input, output, width, height,
                                 x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
                                 video_codec = NULL, audio_codec = "copy",
                                 hardware = "none",
-                                fallback = FALSE, call = rlang::caller_env()) {
+                                fallback = FALSE, audio_stream = NULL,
+                                call = rlang::caller_env()) {
   p <- ffm_files(input, output)
   p <- ffm_crop(p, width = width, height = height, x = x, y = y)
-  p <- ffm_map(p, "0")
-  # -map 0 carries the audio through, and the default audio_codec = "copy"
+  # Was `ffm_map(p, "0")`: every stream, including subtitles and data. That
+  # carried every audio track, which is the behavior D026 keeps -- but it also
+  # carried subtitles, which fails outright into .mp4 on a subtitle-bearing
+  # input (exit 8, no default mp4 subtitle encoder), a failure this verb had
+  # today and M48 removes. The pair also gives the caller a way to name ONE
+  # track, which `-map 0` never offered (M48/D026).
+  p <- ffm_map(p, pass_through_maps(audio_stream, call = call))
+  # The map carries the audio through, and the default audio_codec = "copy"
   # stream-copies it rather than letting the container's default encoder
   # re-encode it (M35/D017).
   p <- apply_audio_codec(p, audio_codec, call = call)
@@ -1104,17 +1111,25 @@ crop_video <- function(infile, outfile, width, height,
                        x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
                        video_codec = NULL, audio_codec = "copy",
                        hardware = c("none", "nvenc"),
-                       fallback = FALSE, run = TRUE) {
+                       fallback = FALSE, audio_stream = NULL, run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
   rlang::check_string(video_codec, allow_null = TRUE)
   rlang::check_string(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
+  # No front-door check for `audio_stream`, matching standardize_video() (M47
+  # review F8). It would be the only guard on this verb reporting BEFORE
+  # width/height, which ffm_crop() validates, so a caller wrong about a
+  # dimension AND the track would be told about the track -- M41's precedence
+  # trap. pass_through_maps() carries the identical check with `call` resolving
+  # to this frame, so the blame is unchanged. The BATCH sibling keeps its own,
+  # where it is load-bearing.
 
   ffm_finish(
     crop_video_pipeline(infile, outfile, width, height, x, y,
-                        video_codec, audio_codec, hardware, fallback),
+                        video_codec, audio_codec, hardware, fallback,
+                        audio_stream),
     run
   )
 }
@@ -2529,6 +2544,7 @@ segment_video <- function(infile,
                           audio_codec = "copy",
                           hardware = c("none", "nvenc"),
                           fallback = FALSE,
+                          audio_stream = NULL,
                           run = TRUE,
                           parallel = FALSE) {
 
@@ -2564,9 +2580,13 @@ segment_video <- function(infile,
   ffm_batch(
     jobs,
     function(input, output, start, end, ...) {
+      # `audio_stream` is captured from the enclosing call rather than read off
+      # a column: this fan-out builds its own jobs tibble from one input, so
+      # every segment of one call takes the same track by construction.
       segment_pipeline(input, output, start, end, reencode,
                        video_codec = video_codec, audio_codec = audio_codec,
-                       hardware = hardware, fallback = fallback)
+                       hardware = hardware, fallback = fallback,
+                       audio_stream = audio_stream)
     },
     run = run,
     parallel = parallel
@@ -2620,7 +2640,8 @@ derive_frame_names <- function(input, format = "png") {
 segment_pipeline <- function(input, output, start, end, reencode,
                              video_codec = NULL, audio_codec = "copy",
                              hardware = "none",
-                             fallback = FALSE, call = rlang::caller_env()) {
+                             fallback = FALSE, audio_stream = NULL,
+                             call = rlang::caller_env()) {
   # A stream copy writes the source video bytes through untouched, so naming an
   # encoder -- in software or on the GPU -- cannot mean anything on that path
   # (D008 keeps the copy lossless and opt-in). Abort rather than silently drop
@@ -2657,6 +2678,16 @@ segment_pipeline <- function(input, output, start, end, reencode,
   p <- ffm_seek(ffm_files(input, output), start = start, end = end,
                 reencode = reencode)
   if (!reencode) p <- ffm_copy(p)
+  # ORDER IS LOAD-BEARING: this must stay BELOW the ffm_copy() line. ffm_copy()
+  # assigns the all-streams map and aborts on a pipeline that already states a
+  # different one (M48/D027), so hoisting this above -- the shared-line
+  # placement standardize_pipeline() and crop_video_pipeline() use, and the
+  # obvious tidy-up -- would abort EVERY reencode = FALSE call. `replace = TRUE`
+  # because ffm_map() appends (D023): on the copy branch ffm_copy() has already
+  # set `0`, and appending beside it would compile three maps and duplicate
+  # every stream instead of narrowing to two. On the re-encode branch there is
+  # no prior map, so `replace` is a no-op and one line serves both.
+  p <- ffm_map(p, pass_through_maps(audio_stream, call = call), replace = TRUE)
   p <- apply_audio_codec(p, audio_codec, call = call)
   apply_video_codec(p, video_codec, hardware, fallback, call = call)
 }

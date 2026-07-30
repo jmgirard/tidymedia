@@ -18,9 +18,15 @@ test_that("segment_video_batch() returns one command per job across multiple inp
   expect_true("command" %in% names(res))
   # Each row's command reflects its own start/end and output (default
   # reencode = TRUE: accurate output-seek, -ss/-to after -i).
-  expect_match(res$command[[1]], '-ss 0 -to 5 "a.mp4"', fixed = TRUE)
-  expect_match(res$command[[2]], '-ss 5 -to 10 "b.mp4"', fixed = TRUE)
-  expect_match(res$command[[3]], '-ss 0 -to 3 "c.mp4"', fixed = TRUE)
+  # The seek and the output are no longer adjacent: M48's stated map sits
+  # between them (D026).
+  maps <- "-map 0:v? -map 0:a?"
+  expect_match(res$command[[1]], paste0('-ss 0 -to 5 ', maps, ' "a.mp4"'),
+               fixed = TRUE)
+  expect_match(res$command[[2]], paste0('-ss 5 -to 10 ', maps, ' "b.mp4"'),
+               fixed = TRUE)
+  expect_match(res$command[[3]], paste0('-ss 0 -to 3 ', maps, ' "c.mp4"'),
+               fixed = TRUE)
   # Each row uses its own input file.
   expect_match(res$command[[1]], f1, fixed = TRUE)
   expect_match(res$command[[3]], f2, fixed = TRUE)
@@ -30,7 +36,8 @@ test_that("segment_video_batch() default reencode = TRUE is accurate output-seek
   f <- make_input()
   jobs <- tibble::tibble(input = f, output = "clip.mp4", start = 0, end = 5)
   res <- segment_video_batch(jobs, run = FALSE)
-  expect_match(res$command[[1]], '-ss 0 -to 5 "clip.mp4"', fixed = TRUE)
+  expect_match(res$command[[1]],
+               '-ss 0 -to 5 -map 0:v? -map 0:a? "clip.mp4"', fixed = TRUE)
   expect_no_match(res$command[[1]], "-codec:v copy", fixed = TRUE)
 })
 
@@ -160,7 +167,8 @@ test_that("segment_video_batch() honors a per-row reencode column", {
   res <- segment_video_batch(jobs, run = FALSE)
   # Row 1 re-encodes (accurate output-seek, no stream copy)...
   expect_no_match(res$command[[1]], "-codec:v copy", fixed = TRUE)
-  expect_match(res$command[[1]], '-ss 0 -to 5 "a.mp4"', fixed = TRUE)
+  expect_match(res$command[[1]],
+               '-ss 0 -to 5 -map 0:v? -map 0:a? "a.mp4"', fixed = TRUE)
   # ...row 2 takes the fast copy path.
   expect_match(res$command[[2]], "-codec:v copy -codec:a copy", fixed = TRUE)
   expect_match(res$command[[2]], "-avoid_negative_ts make_zero", fixed = TRUE)

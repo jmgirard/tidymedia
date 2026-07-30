@@ -281,8 +281,18 @@ audio_stream_map <- function(audio_stream = NULL, call = rlang::caller_env()) {
 # and could differ across FFmpeg versions. `audio_stream` names the track
 # instead (M43). The `-vn` from ffm_drop() is now redundant beside the map and is
 # kept anyway: it costs nothing, keeps every existing compiled command a
-# superset of what it was, and this verb is still documented as an ffm_drop()
-# caller.
+# superset of what it was TOKEN-wise, and this verb is still documented as an
+# ffm_drop() caller.
+#
+# A superset of tokens is NOT a superset of output streams, and the difference is
+# a real behavior change. With no -map, FFmpeg's default selection carried one
+# stream of EACH type, so a subtitle stream reached any container that accepts
+# one; -vn removed only the video. Measured at M43 review: a video+audio+srt
+# input written to .mkv gave audio+subtitle before and audio alone now.
+# Audio-only containers never carried it, so .aac / .m4a / .mka are unaffected.
+# Documented in NEWS rather than restored -- this verb extracts audio, and the
+# subtitle was FFmpeg's default leaking through rather than anything the package
+# chose.
 extract_audio_pipeline <- function(input, output, audio_codec = "copy",
                                    audio_stream = NULL,
                                    call = rlang::caller_env()) {
@@ -332,10 +342,13 @@ extract_audio <- function(infile, outfile, audio_codec = "copy",
   # container's default encoder decide. This verb refused it until M42 while
   # extract_audio_batch() next door had always compiled the same call.
   rlang::check_string(audio_codec, allow_null = TRUE)
-  # Duplicates the check inside audio_stream_map(), which the shared pipeline
-  # needs for per-row values arriving from a batch column (M13/M32). Checking
-  # here too means a bad scalar argument blames this verb rather than reporting
-  # from inside the pipeline (M41).
+  # States the contract at the signature, where the repo puts scalar validation
+  # (M32/M37/M41). It is deliberately NOT what produces the blame: deleting this
+  # line leaves every test green, because audio_stream_map() carries the same
+  # check and its `call` already resolves to this verb's frame. Kept as
+  # defense-in-depth against that `call` chain being refactored away, not
+  # because it currently changes any message -- the earlier comment here claimed
+  # it did, which the M42 delete-and-run probe disproved at review.
   rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
 
   ffm_finish(
@@ -582,10 +595,13 @@ convert_audio <- function(infile, outfile, audio_codec = NULL,
   # Neither message mentions the `NULL` both verbs accept; that is a
   # pre-existing habit across the codec family (review A8) and M42's to settle.
   if (!is.null(audio_codec)) rlang::check_string(audio_codec)
-  # Duplicates the check inside audio_stream_map(), which the shared pipeline
-  # needs for per-row values arriving from a batch column (M13/M32). Checking
-  # here too means a bad scalar argument blames this verb rather than reporting
-  # from inside the pipeline (M41).
+  # States the contract at the signature, where the repo puts scalar validation
+  # (M32/M37/M41). It is deliberately NOT what produces the blame: deleting this
+  # line leaves every test green, because audio_stream_map() carries the same
+  # check and its `call` already resolves to this verb's frame. Kept as
+  # defense-in-depth against that `call` chain being refactored away, not
+  # because it currently changes any message -- the earlier comment here claimed
+  # it did, which the M42 delete-and-run probe disproved at review.
   rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
 
   # No `...` here, so a stale `format =` gets R's own `unused argument` error --

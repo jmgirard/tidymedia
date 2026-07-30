@@ -75,10 +75,12 @@ test_that("both verbs reject a non-whole, negative, or non-numeric audio_stream"
   }
 })
 
-test_that("the scalar verbs blame themselves, not the shared pipeline", {
-  # audio_stream_map() carries the same check for per-row batch values, so
-  # without a front-door check the message would report from inside the
-  # pipeline instead of from the verb the caller wrote (M41).
+test_that("a bad audio_stream blames the verb the caller wrote", {
+  # This pins the CONTRACT -- the error names the verb, not an internal helper
+  # (M41) -- and deliberately not the front-door guard, which cannot be pinned:
+  # deleting it leaves this and every other test green, because
+  # audio_stream_map()'s `call` already resolves to the verb's frame. Naming it
+  # after the guard would be a test that claims coverage it does not have (M42).
   f <- make_input()
   expect_error(extract_audio(f, "out.aac", audio_stream = -1, run = FALSE),
                class = "rlang_error")
@@ -291,6 +293,37 @@ test_that("extract_audio() ignores the container's DEFAULT disposition", {
   out2 <- withr::local_tempfile(fileext = ".m4a")
   extract_audio(flagged, out2, audio_stream = 1)
   expect_identical(audio_language(out2), "spa")
+})
+
+test_that("extract_audio() takes audio alone from a subtitle-bearing input", {
+  # The explicit map's second, documented consequence. With no -map, FFmpeg
+  # carried one stream of EACH type, so a subtitle reached any container that
+  # accepts one and `-vn` removed only the video; naming the audio stream takes
+  # audio alone. The output container has to accept subtitles for this to
+  # discriminate at all -- .m4a or .mka would pass either way.
+  skip_if_no_ffprobe()
+  srt <- withr::local_tempfile(fileext = ".srt")
+  writeLines(c("1", "00:00:00,000 --> 00:00:01,000", "hello", ""), srt)
+  infile <- withr::local_tempfile(fileext = ".mkv")
+  ffmpeg(paste(
+    "-y -f lavfi -i testsrc=duration=2:size=64x64:rate=10",
+    "-f lavfi -i sine=frequency=440:duration=2",
+    sprintf('-i "%s"', srt),
+    "-map 0:v -map 1:a -map 2:s -c:v libx264 -c:a aac -c:s srt",
+    sprintf('-shortest -pix_fmt yuv420p "%s"', infile)
+  ))
+  skip_if_not(file.exists(infile), "subtitle fixture could not be generated")
+  types <- function(p) {
+    trimws(ffprobe(sprintf(
+      '-v error -show_entries stream=codec_type -of csv=p=0 "%s"', p
+    )))
+  }
+  # The fixture only discriminates if the source really carries a subtitle.
+  skip_if_not("subtitle" %in% types(infile), "fixture carries no subtitle")
+
+  out <- withr::local_tempfile(fileext = ".mkv")
+  extract_audio(infile, out)
+  expect_identical(types(out), "audio")
 })
 
 test_that("convert_audio(audio_stream = 1) converts the second track (spa)", {

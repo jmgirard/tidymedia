@@ -5,7 +5,7 @@
 - **Depends on:** M47
 - **Driving RR:** RR03
 - **Principles touched:** IP1, IP2, GP2
-- **Branch/PR:** `m48-audio-stream-crop-segment`
+- **Branch/PR:** `m48-audio-stream-crop-segment` / https://github.com/jmgirard/tidymedia/pull/51
 
 ## Goal
 

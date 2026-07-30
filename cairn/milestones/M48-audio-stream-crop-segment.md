@@ -1,11 +1,11 @@
 # M48: Carry the track selector to `crop_video()` and `segment_video()`, and make `ffm_copy()` idempotent again
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M47
 - **Driving RR:** —
 - **Principles touched:** IP1, IP2, GP2
-- **Branch/PR:** —
+- **Branch/PR:** `m48-audio-stream-crop-segment`
 
 ## Goal
 

@@ -58,7 +58,7 @@ make_test_video <- function(env = parent.frame()) {
     "-f lavfi -i sine=frequency=440:duration=2",
     sprintf('-shortest -pix_fmt yuv420p "%s"', path)
   )
-  ffmpeg(command)
+  run_ffmpeg_fixture(command)
   testthat::skip_if_not(file.exists(path), "test video could not be generated")
   path
 }
@@ -77,7 +77,7 @@ make_mp3_audio_video <- function(env = parent.frame()) {
     "-c:v libx264 -c:a libmp3lame -shortest -pix_fmt yuv420p",
     sprintf('"%s"', path)
   )
-  ffmpeg(command)
+  run_ffmpeg_fixture(command)
   testthat::skip_if_not(file.exists(path), "test video could not be generated")
   path
 }
@@ -94,7 +94,7 @@ make_keyframed_video <- function(duration = 12, rate = 24, gop = 48,
     sprintf("-c:v libx264 -g %s -keyint_min %s -sc_threshold 0", gop, gop),
     sprintf('-pix_fmt yuv420p "%s"', path)
   )
-  ffmpeg(command)
+  run_ffmpeg_fixture(command)
   testthat::skip_if_not(file.exists(path), "test video could not be generated")
   path
 }
@@ -113,7 +113,7 @@ make_dynamic_audio <- function(env = parent.frame()) {
     "-af tremolo=f=0.2:d=0.9",
     sprintf('-c:a aac "%s"', path)
   )
-  ffmpeg(command)
+  run_ffmpeg_fixture(command)
   testthat::skip_if_not(file.exists(path),
                         "dynamic test audio could not be generated")
   path
@@ -130,7 +130,7 @@ make_silent_audio <- function(env = parent.frame()) {
     "-y -f lavfi -i anullsrc=r=44100:cl=mono -t 1",
     sprintf('-c:a aac "%s"', path)
   )
-  ffmpeg(command)
+  run_ffmpeg_fixture(command)
   testthat::skip_if_not(file.exists(path),
                         "silent test audio could not be generated")
   path
@@ -158,7 +158,7 @@ make_multitrack_video <- function(env = parent.frame()) {
     "-metadata:s:a:2 language=fra",
     sprintf('"%s"', path)
   )
-  ffmpeg(command)
+  run_ffmpeg_fixture(command)
   testthat::skip_if_not(file.exists(path),
                         "multitrack test video could not be generated")
   path
@@ -227,13 +227,13 @@ probe_duration <- function(path) {
 make_tagged_video <- function(env = parent.frame()) {
   skip_if_no_ffmpeg()
   plain <- withr::local_tempfile(fileext = ".mp4", .local_envir = env)
-  ffmpeg(paste(
+  run_ffmpeg_fixture(paste(
     "-y -f lavfi -i testsrc=duration=1:size=64x64:rate=10",
     "-f lavfi -i sine=frequency=440:duration=1",
     sprintf('-shortest -pix_fmt yuv420p "%s"', plain)
   ))
   path <- withr::local_tempfile(fileext = ".mp4", .local_envir = env)
-  ffmpeg(paste(
+  run_ffmpeg_fixture(paste(
     sprintf('-y -display_rotation:v:0 90 -i "%s" -c copy', plain),
     '-metadata title="Secret Study" -metadata comment="participant 007"',
     '-metadata location="+40.7128-074.0060/"',

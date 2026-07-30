@@ -85,7 +85,7 @@ row, `audio_stream`-carry included.
       timeout = )` (default 120 s, overridable), muffle its warning, and on a
       `status` attribute of 124 `testthat::fail()` naming the binary and the
       limit only. Confirm no orphan `ffmpeg` survives the kill.
-- [ ] T2 Route the twelve fixture call sites in AC3 through it; leave every
+- [x] T2 Route the twelve fixture call sites in AC3 through it; leave every
       other `ffmpeg`-stemmed call (`find_ffmpeg`, `skip_if_no_ffmpeg`,
       `ffmpeg_codecs`, `ffmpeg_encoders`) untouched.
 - [x] T3 Move the subtitle fixture command into `make_subtitle_video()` in
@@ -116,6 +116,7 @@ row, `audio_stream`-carry included.
 - 2026-07-30: T1 done — `run_ffmpeg_fixture(command, timeout = 120)` in `helper-media.R`; it errors rather than skipping (a skip would go green on CI, which is the failure this milestone closes) and names only the binary and the limit. Probed with a 3-second limit against an unbounded encode: returned at 3.0 s with "ffmpeg fixture generation timed out after 3 seconds.", and `pgrep ffmpeg` found no survivor, so R's kill reaps the child.
 - 2026-07-30: minor amendment — T3 moved ahead of T2. Verification between tasks runs the full suite, and until `-shortest` is gone each run carries the measured ~40% hang; fixing the fixture first makes every later run deterministic. Task text unchanged.
 - 2026-07-30: T3 done — `make_subtitle_video()` in `helper-media.R` holds the command, `-shortest` is gone, and the measured hang rates are recorded at the generator. Added `stream_types()` beside it since two tests now probe codec types (the inline `types()` closure in `test-audio-stream.R` is retired). T6's 10-run test is committed in the same change so its mutation probe runs against a committed baseline (M44). `test-audio-stream.R` 24 tests pass, the new one 10/10.
+- 2026-07-30: T2 done — the eleven remaining fixture sites (T3 absorbed the twelfth into `make_subtitle_video()`) now call `run_ffmpeg_fixture()`: `helper-media.R` ×8, `test-audio-stream.R` ×1, `test-ffmpeg.R` ×2. No direct `ffmpeg()` call is left under `tests/testthat/` — which is exactly the gap AC4 exists to close. Full suite FAIL 0, PASS 2824, 60 s.
 - 2026-07-30: baseline suite on the branch before any test change — FAIL 0, WARN 4, SKIP 5, PASS 2814, 57 s (this run did not hit the hang).
 
 ## Decisions

@@ -272,7 +272,7 @@ test_that("extract_audio() ignores the container's DEFAULT disposition", {
   skip_if_no_ffprobe()
   plain <- make_multitrack_video()
   flagged <- withr::local_tempfile(fileext = ".mkv")
-  ffmpeg(sprintf(
+  run_ffmpeg_fixture(sprintf(
     '-y -i "%s" -map 0 -c copy -disposition:a:0 0 -disposition:a:1 default "%s"',
     plain, flagged
   ))

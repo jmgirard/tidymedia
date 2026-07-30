@@ -284,7 +284,7 @@ test_that("standardize_video() default path encodes an odd-dimensioned source", 
   # yuv420p re-encode rejects odd dimensions and writes a 0-byte file.
   skip_if_no_ffmpeg()
   infile <- withr::local_tempfile(fileext = ".mp4")
-  ffmpeg(sprintf(
+  run_ffmpeg_fixture(sprintf(
     "-y -f lavfi -i testsrc=duration=1:size=65x49:rate=10 -pix_fmt yuv444p \"%s\"",
     infile
   ))
@@ -300,7 +300,7 @@ test_that("standardize_video() stream-copies audio unchanged", {
   # default; -c:a copy must preserve the source audio codec.
   skip_if_no_ffprobe()
   infile <- withr::local_tempfile(fileext = ".mp4")
-  ffmpeg(sprintf(paste(
+  run_ffmpeg_fixture(sprintf(paste(
     "-y -f lavfi -i testsrc=duration=1:size=64x64:rate=10",
     "-f lavfi -i sine=frequency=440:duration=1",
     "-c:a libmp3lame -shortest -pix_fmt yuv420p \"%s\""

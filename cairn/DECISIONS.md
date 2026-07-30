@@ -630,3 +630,62 @@ reaches another verb — and a predicate about narrowing a multi-track input,
 which states this warning's *occasion* and would be misread as the licence
 *condition*: M45, where `NULL` means every track and nothing narrows by
 default, would wrongly read itself as excluded from diagnostics entirely.
+
+## D025 — `audio_stream = NULL` means every track on `separate_audio_video()`, the first track on the extraction verbs (2026-07-30, from M45, extends D023; annotates D024)
+
+M43 gave `extract_audio()` / `convert_audio()` an `audio_stream` whose `NULL`
+resolves to the first audio track. M45 gives `separate_audio_video()` the same
+argument name and the same counting base with the opposite `NULL`: every audio
+track. This entry records the split, why the two are different questions, and
+what it costs a caller who uses both families.
+
+- **The D023 bullet this departs from**, verbatim:
+
+  > **`NULL` means "no selection", which resolves to the first audio track — it
+  > is not D016's emit-nothing sentinel.** The codec family's `NULL` removes an
+  > option from the command; here there is no such reading, because the map is
+  > always emitted.
+
+  Its reasoning is untouched on the verbs it was written for, and half-untouched
+  here: the map is always emitted on this verb too, so `NULL` is "no selection"
+  and not "emit nothing". What differs is what no selection resolves *to*, which
+  D023 fixed only for the two verbs in front of it.
+
+- **`0:a` and `0:a:<n>` answer different questions, and D023 said so.** Its
+  closing bullet already separated them: "`separate_audio_video()`'s multi-track
+  abort is a separate candidate — that one is about how many tracks an output
+  holds, not which one it takes." An extraction verb writes one audio stream by
+  construction, so its unselected case must pick one, and "the first" is the only
+  non-heuristic answer available. A separation verb writes whatever the caller's
+  container holds, so its unselected case has a second answer — all of them — and
+  that is the answer it has given since it shipped.
+
+- **What made the divergence the cheaper option.** Uniformity here is not free,
+  it is measured breakage: `-map 0:a` into `.mka` / `.m4a` carries all three
+  tracks of a three-track input today (measured 2026-07-30, ffmpeg 8.1.2), and
+  M44's dropped-track warning does not cover this verb, so a first-track default
+  would have narrowed those callers to one track in silence. Rules out the
+  uniform default, and rules out a second argument name too: the base being
+  counted is identical (0-based among one input's audio streams), so a second
+  name would make a caller learn one concept twice.
+
+- **The cost, stated.** One argument name now carries two defaults across two
+  verb families, so a caller using both must read which. Both `@param` blocks say
+  so and name the other family. Falsified by a report of a caller confused by the
+  split, which reopens the choice under D014's pre-0.2.0 clean break.
+
+- **The milestone absorbed one verb from the pass-through candidate.** The ROADMAP
+  row carrying `audio_stream` to the five pass-through verbs no longer covers
+  `separate_audio_video`; M45 took that one alone, because the row's promotion
+  condition had not fired and the full five-verb carry trips the sizing tripwire.
+  That row must now settle whether the four remaining verbs follow this entry's
+  every-track `NULL` or D023's first-track one — `standardize_video`,
+  `crop_video`, `segment_video` and `anonymize_video` all pass audio *through*,
+  so on their face they are the separation shape rather than the extraction one.
+
+- **The abort is Layer 2's, and its probe adopts D024 rather than extending it.**
+  The enriched multi-track abort names `audio_stream`, so it is raised in the verb
+  and never in `ffm_run()` (IP1/D002). The FFprobe call behind it runs only after
+  FFmpeg has already failed and decides only which abort is signalled, never
+  whether execution proceeds — D024's licence, on the four conditions recorded in
+  M45's own decision log (M45-D1 for the scalar verb, M45-D2 for the batch).

@@ -164,6 +164,44 @@ make_multitrack_video <- function(env = parent.frame()) {
   path
 }
 
+# Generate a video carrying a subtitle track beside its video and audio, so
+# tests can observe whether an explicit -map takes audio alone or lets FFmpeg's
+# old implicit "one stream of each type" selection carry a subtitle along (M43).
+# Matroska because the container has to accept a subtitle for the distinction to
+# be visible at all.
+#
+# Deliberately NO -shortest. Both lavfi sources are already bounded by their own
+# duration= options, so the flag changes nothing here -- and `-shortest` beside a
+# mapped subtitle stream deadlocks FFmpeg intermittently: this command hung 10
+# times in 25 runs on ffmpeg 8.1.2/macOS, while the same command without the flag
+# hung 0 in 15, and the flag WITH the subtitle map dropped hung 0 in 15 (M46).
+# Skips the calling test if ffmpeg is unavailable. Returns the file path.
+make_subtitle_video <- function(env = parent.frame()) {
+  skip_if_no_ffmpeg()
+  srt <- withr::local_tempfile(fileext = ".srt", .local_envir = env)
+  writeLines(c("1", "00:00:00,000 --> 00:00:01,000", "hello", ""), srt)
+  path <- withr::local_tempfile(fileext = ".mkv", .local_envir = env)
+  run_ffmpeg_fixture(paste(
+    "-y -f lavfi -i testsrc=duration=2:size=64x64:rate=10",
+    "-f lavfi -i sine=frequency=440:duration=2",
+    sprintf('-i "%s"', srt),
+    "-map 0:v -map 1:a -map 2:s -c:v libx264 -c:a aac -c:s srt",
+    sprintf('-pix_fmt yuv420p "%s"', path)
+  ))
+  testthat::skip_if_not(file.exists(path),
+                        "subtitle test video could not be generated")
+  path
+}
+
+# Probe a media file's stream types via ffprobe, in stream order: a character
+# vector of "video"/"audio"/"subtitle". Skips if ffprobe is unavailable.
+stream_types <- function(path) {
+  skip_if_no_ffprobe()
+  trimws(ffprobe(sprintf(
+    '-v error -show_entries stream=codec_type -of csv=p=0 "%s"', path
+  )))
+}
+
 # Build an ffm pipeline WITHOUT ffm_files()'s file-readability check, so pure
 # (binary-free) tests can assert compiled commands for named-but-absent files.
 ffm_dry <- function(input, output) {

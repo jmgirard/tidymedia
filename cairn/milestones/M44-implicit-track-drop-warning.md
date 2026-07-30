@@ -5,7 +5,7 @@
 - **Depends on:** M43
 - **Driving RR:** RR02
 - **Principles touched:** IP1
-- **Branch/PR:** `m44-implicit-track-drop-warning`
+- **Branch/PR:** `m44-implicit-track-drop-warning` · https://github.com/jmgirard/tidymedia/pull/47
 
 ## Goal
 
@@ -32,7 +32,7 @@ here: a multi-track input is legal, and the selector is how a caller resolves it
 
 ## Acceptance criteria
 
-- [ ] AC1: On the executing path, when the input carries more audio tracks than
+- [x] AC1: On the executing path, when the input carries more audio tracks than
       the output receives and the caller named no `audio_stream`, the verb warns
       once per input, stating how many tracks were dropped, naming
       `audio_stream`, and stating that `probe_audio()`'s `index` is the absolute
@@ -40,25 +40,25 @@ here: a multi-track input is legal, and the selector is how a caller resolves it
       differ (`1,2,3` vs `0,1,2` on M43's three-track fixture), so a message
       naming `probe_audio()` without the offset walks a reader into an
       off-by-one. A caller who named `audio_stream` gets no warning.
-- [ ] AC2: `run = FALSE` runs no binary. A test with ffmpeg and ffprobe masked
+- [x] AC2: `run = FALSE` runs no binary. A test with ffmpeg and ffprobe masked
       off `PATH` (`Sys.which() == ""`, M30's trick) compiles every affected call
       cleanly, and the ungated roxygen `@examples` plus
       `vignettes/tidymedia.Rmd:49` still build with the binaries masked.
-- [ ] AC3: The warning is skipped without error when ffprobe is absent or the
+- [x] AC3: The warning is skipped without error when ffprobe is absent or the
       input cannot be probed — an unprobeable input still runs and still warns
       about nothing.
-- [ ] AC4: The `_batch` siblings emit one aggregated warning naming every
+- [x] AC4: The `_batch` siblings emit one aggregated warning naming every
       affected row and its dropped-track count, and a batch whose rows all name
       `audio_stream` (by argument or column) performs no probe at all.
-- [ ] AC5: A `cairn/DECISIONS.md` entry clarifies the boundary the purity
+- [x] AC5: A `cairn/DECISIONS.md` entry clarifies the boundary the purity
       convention always drew rather than extending D013's carve-out, records
       D013's two-pass path as the sole `run = FALSE` exception, and states which
       paths may run a binary. It quotes the DESIGN.md convention it qualifies,
       and a companion DESIGN.md Conventions line names that boundary.
-- [ ] AC6: `devtools::document()` no-diff; `devtools::test()` and
+- [x] AC6: `devtools::document()` no-diff; `devtools::test()` and
       `devtools::check()` clean — 0 errors, 0 warnings. NEWS records the new
       warning.
-- [ ] AC7 (BC1): The ratified D024 entry is framed as a clarification and
+- [x] AC7 (BC1): The ratified D024 entry is framed as a clarification and
       asserts all three of: (i) `ffm_compile()` and every `ffm_*` builder run no
       binary from any path; (ii) every verb's `run = FALSE` call runs no binary,
       with `normalize_audio(two_pass = TRUE)` (D013) named as the sole
@@ -66,25 +66,25 @@ here: a multi-track input is legal, and the selector is how a caller resolves it
       compilation provided the probe's outcome changes nothing observable except
       a diagnostic condition. It contains no sentence claiming `run = FALSE` is
       binary-free on *every* verb without the D013 exception attached.
-- [ ] AC8 (BC2): The entry's operative rule is effect-based: it licenses only
+- [x] AC8 (BC2): The entry's operative rule is effect-based: it licenses only
       probes whose outcome affects nothing but a diagnostic condition, and it
       states that a probe whose result changes the compiled command, resolves a
       default, decides whether execution proceeds, or selects between pipelines
       is outside the licence and requires its own decision entry.
-- [ ] AC9 (BC3): The batch probe runs in the Layer-2 batch verbs before
+- [x] AC9 (BC3): The batch probe runs in the Layer-2 batch verbs before
       `ffm_batch()` is called, only when `run = TRUE`; `ffm_batch()`'s signature
       and behavior are unchanged by M44 (its formals are identical before and
       after the milestone diff).
-- [ ] AC10 (BC4): Exactly one internal helper performs the stream-count probe,
+- [x] AC10 (BC4): Exactly one internal helper performs the stream-count probe,
       it lives in `R/ffprobe.R`, and no FFprobe token vector is assembled in any
       Layer-2 verb body (grep for `-select_streams` outside `R/ffprobe.R`
       returns no R-code hits).
-- [ ] AC11 (BC5): The track-drop warning carries a documented condition class,
+- [x] AC11 (BC5): The track-drop warning carries a documented condition class,
       and a test asserts the class; a test with the FFprobe locator mocked
       absent shows the probe path emits no error and no warning (a
       once-per-session `rlang::inform(.frequency = "once")` message is
       permitted).
-- [ ] AC12 (BC6): The roxygen for all four verbs states the warning is
+- [x] AC12 (BC6): The roxygen for all four verbs states the warning is
       best-effort: emitted when FFprobe is available and the input can be
       probed, silently skipped otherwise.
 
@@ -212,3 +212,82 @@ here: a multi-track input is legal, and the selector is how a caller resolves it
   `run = FALSE` in `normalize_audio_batch()`.
 
 ## Review
+
+Evidence gathered 2026-07-30 on `m44-implicit-track-drop-warning` at PR #47.
+Fresh `test_local(filter = "audio-track-drop")`: 15 tests, 37 assertions, 0
+failed, 0 errors, 0 skipped.
+
+- **AC1** — `extract_audio()` on the 3-track fixture emits one
+  `tidymedia_dropped_audio` warning reading "Dropping 2 audio tracks from 1
+  input", naming the file and its count, pointing at `audio_stream`, and
+  spelling the offset ("its index column counts ALL streams while
+  `audio_stream` counts audio streams from 0 -- ... those read 1, 2, 3 there and
+  0, 1, 2 here"). The offset claim is oracled by its own test:
+  `probe_audio(infile = fixture)$index` is `1, 2, 3`. `audio_stream = 1` on
+  `extract_audio()` and `= 2` on `convert_audio()` both emit nothing; a
+  single-track input emits nothing. 11 assertions across 5 tests.
+- **AC2** — the strong test counts `run_program()` invocations across all four
+  verbs at `run = FALSE`: 0. Deleting the `run` gate turns that test red
+  (measured at T4). Separately, with `PATH` emptied (`Sys.which()` returns `""`
+  for both binaries) all four compile with no warning, and the vignette's
+  `extract_audio(video, "audio.m4a", run = FALSE)` compiles clean under the same
+  mask. Every ungated `@examples` line on the four verbs passes `run = FALSE`,
+  so no example can probe.
+- **AC3** — with `find_ffprobe` mocked to `NULL`, a real `run = TRUE`
+  `extract_audio()` on the 3-track fixture runs with no error and no warning.
+  `count_audio_streams()` returns `NA_integer_` and signals nothing for both an
+  unreadable input and an absent locator; `warn_dropped_audio()` on an `NA`
+  count warns nothing.
+- **AC4** — a 3-row batch (rows 1 and 3 multi-track, row 2 single-track) emits
+  exactly one warning: "Dropping 4 audio tracks from 2 inputs", naming Row 1 and
+  Row 3 and not Row 2. A jobs table whose every row names `audio_stream`, and
+  one covered by the scalar argument, each record zero calls into the probe; an
+  `NA` cell is probed, per D023's column semantics. A repeated input is probed
+  once (`c("a.mkv", "a.mkv", "b.mkv")` -> two probes).
+- **AC5** — `cairn/DECISIONS.md` D024 quotes the DESIGN.md Conventions line
+  verbatim in its opening paragraph, frames itself as a clarification rather
+  than an extension of D013's carve-out, names D013's two-pass path as the sole
+  `run = FALSE` exception, and states which paths may run a binary. The
+  companion DESIGN.md Conventions line names that boundary.
+- **AC6** — `devtools::check()` at this commit: Status OK, 0 errors / 0 warnings
+  / 0 notes, duration 1m36s, full test suite run inside it and vignettes
+  rebuilt. `devtools::document()` re-run afterwards leaves no diff in `man/`,
+  `NAMESPACE`, `R/`, `tests/` or `NEWS.md`. NEWS records the new warning under
+  New features, including the condition class and the best-effort contract.
+- **AC7 (BC1)** — D024 asserts clause (i) ("`ffm_compile()` and every builder it
+  walks run no binary from any path", with the doc-tag narrowing recorded in the
+  Deviations table), clause (ii) with the exception attached in the same
+  sentence, and clause (iii) ("A `run = TRUE` call may run a binary before or
+  after compilation, provided the conditions below hold"). Every `run = FALSE`
+  mention in the entry was read: none states binary-freedom on every verb
+  without the D013 exception attached.
+- **AC8 (BC2)** — D024's operative rule is effect-based ("changes nothing
+  observable except whether a diagnostic condition is signalled") and lists the
+  four out-of-licence shapes (result enters the command / resolves a default /
+  decides whether execution proceeds / selects between pipelines), each stated
+  to need "its own decision entry before it is built".
+- **AC9 (BC3)** — `git diff --stat master..HEAD -- R/ffm_batch.R` is empty; the
+  file is untouched. `names(formals(ffm_batch))` is the nine expected names, and
+  a test pins them. Both batch verbs call `warn_dropped_audio_batch()` above
+  their `ffm_batch()` call, guarded by `isTRUE(run)`.
+- **AC10 (BC4)** — scoped to `R/` per the Deviations table: `-select_streams`
+  appears at `R/ffprobe.R:136` (the new counter) and `R/ffprobe.R:169`
+  (`probe_one()`, pre-existing). No hit in any Layer-2 verb body. Exactly one
+  helper performs the probe.
+- **AC11 (BC5)** — the warning carries class `tidymedia_dropped_audio`; four
+  roxygen blocks document it as a `suppressWarnings(classes = ...)` handle; the
+  class is asserted by `expect_s3_class()` in two tests and by
+  `expect_warning(class = )` in four more. The mocked-absent-locator test shows
+  no error and no warning; no once-per-session notice was taken.
+- **AC12 (BC6)** — all four generated `.Rd` files carry the best-effort
+  sentence: emitted when FFprobe is available and the input can be probed,
+  silently skipped otherwise.
+
+### Consistency gate
+
+- `cairn_validate` exit 0, every check PASS. One advisory: `sizing` warns that
+  M44 carries 12 acceptance criteria against the >7 tripwire — expected, raised
+  with the user at the RR02 ingest gate and kept as one milestone by their
+  choice.
+- `cairn_impact` skipped: the milestone changed no `DESIGN.md` IP/GP principle,
+  only a Conventions line (`git diff master..HEAD -- cairn/DESIGN.md` confirms).

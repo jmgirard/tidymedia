@@ -1,11 +1,11 @@
 # M44: Say something when audio tracks are dropped
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M43
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** —
+- **Branch/PR:** `m44-implicit-track-drop-warning`
 
 ## Goal
 
@@ -91,6 +91,7 @@ here: a multi-track input is legal, and the selector is how a caller resolves it
 - 2026-07-29: plan gate chose warning only on the executing path over no warning at all and over scalar-verbs-only, because it keeps compilation binary-free while still surfacing silent track loss, and divergent scalar/batch behavior is a defect this repo has fixed twice (M19, M35); falsified by the per-row probe cost (~1.2 s measured per probe, all incurred up front since `ffm_batch` builds every pipeline before running any) making a large batch unusable.
 - 2026-07-29: plan chose warning over erroring on an implicit drop, because a multi-track input is legal input and `audio_stream` is the caller's resolution; falsified by a silent-drop incident where a warning was present and still missed.
 - 2026-07-29: split from M43 because 9 acceptance criteria hit the sizing tripwire; this half is what needs a convention decision, so separating it lets the selector ship first.
+- 2026-07-30: /milestone-implement started; branch `m44-implicit-track-drop-warning` cut from master.
 
 ## Decisions
 

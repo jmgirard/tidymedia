@@ -1,6 +1,6 @@
 # M45: Give a multi-track `separate_audio_video()` caller a way out
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M43
 - **Driving RR:** —

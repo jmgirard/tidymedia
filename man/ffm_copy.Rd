@@ -17,7 +17,10 @@ ffm_copy(object, audio = TRUE, video = TRUE, streams = TRUE)
 (default = \code{TRUE})}
 
 \item{streams}{A logical indicating whether to map all streams from the
-input (via \code{ffm_map(mapping = "0")}). (default = \code{TRUE})}
+input (via \code{ffm_map(mapping = "0")}). Because \code{\link{ffm_map}}
+appends, this \emph{adds} \code{-map 0} to any mapping already set; to
+narrow the result afterwards, call \code{ffm_map(replace = TRUE)}.
+(default = \code{TRUE})}
 }
 \value{
 \code{object} with the added instruction to copy codecs and/or map

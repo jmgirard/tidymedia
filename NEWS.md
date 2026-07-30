@@ -2,6 +2,52 @@
 
 ## Breaking changes
 
+* `extract_audio()` now names the audio track it takes instead of leaving the
+  choice to FFmpeg. It previously emitted no stream mapping at all, so FFmpeg
+  picked a track by its own rules — which prefer whichever track carries the
+  container's "default" flag. On a multi-track file that could be any track, and
+  it could differ between FFmpeg versions on the same file, which is exactly the
+  kind of invisible variation this package exists to remove. The verb now maps
+  the input's **first** audio track unless you say otherwise with the new
+  `audio_stream` argument.
+
+  Single-track inputs are unaffected. On a multi-track input whose *second*
+  track is flagged as the default, the extracted audio changes — you would have
+  got that second track before and get the first one now. Pass
+  `audio_stream = 1` to keep the old result on such a file.
+
+  Extracting to a container that can hold subtitles (`.mkv`, say) also stops
+  carrying a subtitle track through. The old command named no streams at all, so
+  FFmpeg carried one stream of *each* type and `-vn` removed only the video;
+  naming the audio stream takes audio alone. Extracting to an audio-only
+  container such as `.aac`, `.m4a` or `.mka` is unaffected, because those never
+  carried the subtitle track in the first place.
+
+* `audio_stream` is inserted **before** `run` on `extract_audio()`,
+  `convert_audio()`, `extract_audio_batch()` and `convert_audio_batch()`, so the
+  arguments after it have all shifted one position: **calls that pass `run` (or
+  `parallel` on the batch verbs) by position rather than by name must be
+  updated.** `extract_audio(video, "audio.aac", "copy", FALSE)` now reads
+  `FALSE` as the audio-stream index rather than as `run` — an error rather than
+  a silent misread, since the index must be a whole number. In line with this
+  package's pre-1.0 clean-break policy the argument is placed where it belongs
+  rather than appended for compatibility; naming your arguments avoids the
+  problem entirely.
+
+* `ffm_map()` appends instead of overwriting. Calling it twice on the same
+  pipeline used to discard the first mapping; it now keeps both, emitting one
+  `-map` per mapping in the order given, which is what lets a pipeline keep the
+  video and then name one audio track. `mapping` may now be a character vector
+  for the same reason. Pass `replace = TRUE` to get the old
+  discard-what-came-before behavior, which is how you narrow the all-streams
+  mapping that `ffm_copy()` sets. No task verb's compiled command changes *as a
+  result of this*: each sets its mapping once. Note that composing Layer-1
+  builders that each set a mapping now accumulates them — `ffm_copy()` maps
+  every stream, so calling it twice, or calling it after `ffm_concat()` (which
+  calls it internally), emits `-map 0` twice and duplicates every stream in the
+  output. That was a harmless no-op before; use `ffm_map(replace = TRUE)` to
+  narrow instead.
+
 * `convert_audio()` and `convert_audio_batch()` rename the `format` argument to
   `audio_codec`. The argument was always an audio codec — its own documentation
   said so, and its value has only ever been passed to FFmpeg's `-c:a` — so this
@@ -79,10 +125,25 @@
   one. FFmpeg aborted (`Exactly one MP3 audio stream is required`) and left a
   zero-byte file behind. Both verbs now take the input's first audio track, which
   is what their documentation always described and what a single-track file
-  always did. Single-track inputs are unaffected. Choosing a track other than the
-  first is not yet supported.
+  always did. Single-track inputs are unaffected. To choose a track other than
+  the first, see the new `audio_stream` argument below.
 
 ## New features
+
+* `extract_audio()`, `convert_audio()` and their `_batch` siblings gain an
+  `audio_stream` argument for choosing which audio track to take from a file
+  that carries several — a recording with separate per-speaker or per-language
+  tracks, say. It is a 0-based index counted among the input's audio streams, so
+  `audio_stream = 1` takes the second audio track whatever its position among
+  the file's streams; the default takes the first.
+
+  In a jobs table, `audio_stream` may be a per-row column, which overrides the
+  argument row by row. `NA` in a cell keeps that row on the first audio track,
+  the per-row form of leaving the argument unset.
+
+  Asking for a track the input does not have is an FFmpeg error, not an R one:
+  the compiled command is still what you asked for, and FFmpeg reports that the
+  stream map matches no streams.
 
 * `NULL` now means the same thing on every codec argument in the package, and
   `NA` means the same thing in every per-row codec column. `audio_codec = NULL`

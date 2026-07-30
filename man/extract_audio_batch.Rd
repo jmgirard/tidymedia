@@ -7,6 +7,7 @@
 extract_audio_batch(
   jobs,
   audio_codec = "copy",
+  audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -21,8 +22,10 @@ the instruction (it picks the container, and with \code{audio_codec =
 "copy"} must match the source codec). An optional \code{audio_codec} column
 overrides the \code{audio_codec} argument per row; rows omitting it fall
 back to the argument, and \code{NA} in a cell leaves that row's codec unset
-(the column form of \code{audio_codec = NULL}). Any other columns are
-ignored.}
+(the column form of \code{audio_codec = NULL}). An optional
+\code{audio_stream} column likewise overrides the \code{audio_stream}
+argument per row, where \code{NA} keeps that row on the first audio track.
+Any other columns are ignored.}
 
 \item{audio_codec}{The audio codec applied to every row unless \code{jobs}
 carries an \code{audio_codec} column, in which case \code{NA} in a cell
@@ -30,6 +33,12 @@ leaves that row's codec unset. \code{"copy"} (default) stream-copies the
 audio losslessly; name an encoder (e.g. \code{"aac"}) to transcode; or pass
 \code{NULL} to emit no \code{-codec:a} and let the output container's
 default encoder decide.}
+
+\item{audio_stream}{The 0-based index of the audio track to take, applied to
+every row unless \code{jobs} carries an \code{audio_stream} column, in
+which case \code{NA} in a cell keeps that row on the first audio track.
+The index counts \emph{among each input's audio streams}. \code{NULL}
+(default) takes the first audio track.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}

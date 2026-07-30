@@ -4,7 +4,13 @@
 \alias{convert_audio}
 \title{Extract or convert a media file's audio track}
 \usage{
-convert_audio(infile, outfile, audio_codec = NULL, run = TRUE)
+convert_audio(
+  infile,
+  outfile,
+  audio_codec = NULL,
+  audio_stream = NULL,
+  run = TRUE
+)
 }
 \arguments{
 \item{infile}{A string containing the path to a media file.}
@@ -17,6 +23,12 @@ convert_audio(infile, outfile, audio_codec = NULL, run = TRUE)
 \code{outfile} extension and encoded at highest VBR quality. Unlike the
 other transform verbs, \code{NULL} here is \emph{not} the "leave the codec
 unset" sentinel — it selects \code{-q:a 0}.}
+
+\item{audio_stream}{The 0-based index of the audio track to take, counted
+\emph{among the input's audio streams} — \code{0} is the first audio track,
+\code{1} the second, whatever their positions among the file's streams.
+\code{NULL} (default) takes the first audio track. Naming a track the input
+does not have is an FFmpeg error, not an R one.}
 
 \item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
 or return the compiled command without running it (\code{FALSE}).}
@@ -32,13 +44,15 @@ extension yields an MP3. Pass \code{audio_codec} to pin the output audio
 codec explicitly, regardless of the extension.
 }
 \details{
-When \code{infile} carries more than one audio track, the \strong{first} one
-is taken. Choosing a different track is not yet supported.
+When \code{infile} carries more than one audio track, \code{audio_stream}
+names which one to take; with no selector the \strong{first} one is taken.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 convert_audio(video, "audio.mp3", run = FALSE)
 convert_audio(video, "audio.m4a", audio_codec = "aac", run = FALSE)
+# Convert the second audio track instead of the first
+convert_audio(video, "audio.mp3", audio_stream = 1, run = FALSE)
 }
 \seealso{
 \code{\link[=ffm_codec]{ffm_codec()}} and \code{\link[=ffm_map]{ffm_map()}}, the builders it wraps;

@@ -4,7 +4,13 @@
 \alias{extract_audio}
 \title{Extract the audio stream from a media file}
 \usage{
-extract_audio(infile, outfile, audio_codec = "copy", run = TRUE)
+extract_audio(
+  infile,
+  outfile,
+  audio_codec = "copy",
+  audio_stream = NULL,
+  run = TRUE
+)
 }
 \arguments{
 \item{infile}{A string containing the path to a media file.}
@@ -17,6 +23,12 @@ emit no \code{-codec:a} and let the output container's default encoder
 decide — useful when the source codec cannot be copied into the extension
 you asked for.}
 
+\item{audio_stream}{The 0-based index of the audio track to take, counted
+\emph{among the input's audio streams} — \code{0} is the first audio track,
+\code{1} the second, whatever their positions among the file's streams.
+\code{NULL} (default) takes the first audio track. Naming a track the input
+does not have is an FFmpeg error, not an R one.}
+
 \item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
 or return the compiled command without running it (\code{FALSE}).}
 }
@@ -24,11 +36,15 @@ or return the compiled command without running it (\code{FALSE}).}
 The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 }
 \description{
-Extract the audio stream from a media file
+Pulls one audio track out of \code{infile}, dropping the video. When the
+input carries more than one audio track, \code{audio_stream} names which one
+to take; with no selector the \strong{first} audio track is taken.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 extract_audio(video, "audio.aac", run = FALSE)
+# Take the second audio track instead of the first
+extract_audio(video, "audio.aac", audio_stream = 1, run = FALSE)
 }
 \seealso{
 \code{\link[=ffm_drop]{ffm_drop()}} and \code{\link[=ffm_codec]{ffm_codec()}}, the builders it wraps;

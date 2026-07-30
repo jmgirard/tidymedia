@@ -21,6 +21,7 @@ separate_audio_video(
   video_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
+  audio_stream = NULL,
   run = TRUE
 )
 ```
@@ -73,6 +74,23 @@ separate_audio_video(
   default). With `video_codec = NULL` the fallback leaves the codec
   unset rather than injecting one.
 
+- audio_stream:
+
+  The 0-based index of the audio track to write to `audiofile`, counted
+  among `infile`'s *audio* streams only (`0` is the first audio track,
+  `1` the second) — not the `index` column of
+  [`probe_audio`](https://jmgirard.github.io/tidymedia/reference/probe_container.md),
+  which counts all streams. `NULL` (default) takes **every** audio
+  track, which is what this verb has always done: a container that holds
+  several (`.mka`, `.m4a`) receives them all, while a single-stream
+  container (`.aac`, `.mp3`, `.wav`) makes FFmpeg fail — name a track to
+  write one of those. This differs from
+  [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
+  and
+  [`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
+  whose `NULL` takes the first track only. `videofile` is never
+  affected.
+
 - run:
 
   A logical: run the commands through FFmpeg (`TRUE`, default) or return
@@ -83,6 +101,25 @@ separate_audio_video(
 A named character vector of the two compiled commands (`audio`,
 `video`); invisible when `run = TRUE`.
 
+## When the audio output fails
+
+Because the default keeps every audio track, writing a multi-track input
+to a container that holds only one (`.aac`, `.mp3`, `.wav`) makes FFmpeg
+fail. When that happens and no `audio_stream` was named, the error
+additionally reports how many audio tracks `infile` carries and names
+the two ways out — `audio_stream` to write one track, or a container
+such as `.mka` or `.m4a` to keep them all. FFmpeg's own error and exit
+status are still reported beneath it, and remain the authority on why
+the command failed: the extra report is attached to *any* failing audio
+command on a multi-track input, not only to a container refusal.
+
+Counting the tracks means running FFprobe, so this is **best-effort**:
+it is added when FFprobe is available and `infile` can be probed, and
+omitted silently otherwise, leaving FFmpeg's own error alone. It never
+runs under `run = FALSE`, never changes the compiled commands, and is
+skipped entirely when `audio_stream` names a track — with one track
+mapped, the track count cannot be what FFmpeg objected to.
+
 ## See also
 
 [`ffm_map()`](https://jmgirard.github.io/tidymedia/reference/ffm_map.md)
@@ -92,7 +129,9 @@ the builders it wraps;
 [`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
 for the `hardware = "nvenc"` toggle;
 [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
-to pull out just the audio.
+to pull out just the audio;
+[`probe_audio()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md)
+to list an input's audio tracks.
 
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
@@ -141,4 +180,11 @@ separate_audio_video(video, "audio.mp3", "video.mp4",
 #> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a libmp3lame -map 0:a \"audio.mp3\"" 
 #>                                                                                                               video 
 #>       "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -map 0:v \"video.mp4\"" 
+# write only the second audio track (this sample has one, so compile only)
+separate_audio_video(video, "audio.aac", "video.mp4",
+                     audio_stream = 1, run = FALSE)
+#>                                                                                                           audio 
+#> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -map 0:a:1 \"audio.aac\"" 
+#>                                                                                                           video 
+#>   "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -map 0:v \"video.mp4\"" 
 ```

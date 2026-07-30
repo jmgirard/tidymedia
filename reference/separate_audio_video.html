@@ -78,6 +78,7 @@ GPU; the audio output is never affected.</p>
 <span>  video_codec <span class="op">=</span> <span class="st">"copy"</span>,</span>
 <span>  hardware <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"nvenc"</span><span class="op">)</span>,</span>
 <span>  fallback <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  audio_stream <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -134,6 +135,20 @@ aborting (<code>FALSE</code>, default). With <code>video_codec = NULL</code> the
 fallback leaves the codec unset rather than injecting one.</p></dd>
 
 
+<dt id="arg-audio-stream">audio_stream<a class="anchor" aria-label="anchor" href="#arg-audio-stream"></a></dt>
+<dd><p>The 0-based index of the audio track to write to
+<code>audiofile</code>, counted among <code>infile</code>'s <em>audio</em> streams only
+(<code>0</code> is the first audio track, <code>1</code> the second) — not the
+<code>index</code> column of <code><a href="probe_container.html">probe_audio</a></code>, which counts all streams.
+<code>NULL</code> (default) takes <strong>every</strong> audio track, which is what this
+verb has always done: a container that holds several (<code>.mka</code>,
+<code>.m4a</code>) receives them all, while a single-stream container
+(<code>.aac</code>, <code>.mp3</code>, <code>.wav</code>) makes FFmpeg fail — name a track to
+write one of those. This differs from <code><a href="extract_audio.html">extract_audio</a></code> and
+<code><a href="convert_audio.html">convert_audio</a></code>, whose <code>NULL</code> takes the first track only.
+<code>videofile</code> is never affected.</p></dd>
+
+
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>
 <dd><p>A logical: run the commands through FFmpeg (<code>TRUE</code>, default)
 or return the compiled commands without running them (<code>FALSE</code>).</p></dd>
@@ -145,10 +160,31 @@ or return the compiled commands without running them (<code>FALSE</code>).</p></
 (<code>audio</code>, <code>video</code>); invisible when <code>run = TRUE</code>.</p>
     </div>
     <div class="section level2">
+    <h2 id="when-the-audio-output-fails">When the audio output fails<a class="anchor" aria-label="anchor" href="#when-the-audio-output-fails"></a></h2>
+
+
+<p>Because the default keeps every audio track, writing a multi-track input to a
+container that holds only one (<code>.aac</code>, <code>.mp3</code>, <code>.wav</code>) makes
+FFmpeg fail. When that happens and no <code>audio_stream</code> was named, the error
+additionally reports how many audio tracks <code>infile</code> carries and names the
+two ways out — <code>audio_stream</code> to write one track, or a container such as
+<code>.mka</code> or <code>.m4a</code> to keep them all. FFmpeg's own error and exit status
+are still reported beneath it, and remain the authority on why the command
+failed: the extra report is attached to <em>any</em> failing audio command on a
+multi-track input, not only to a container refusal.</p>
+<p>Counting the tracks means running FFprobe, so this is <strong>best-effort</strong>: it
+is added when FFprobe is available and <code>infile</code> can be probed, and
+omitted silently otherwise, leaving FFmpeg's own error alone. It never runs
+under <code>run = FALSE</code>, never changes the compiled commands, and is skipped
+entirely when <code>audio_stream</code> names a track — with one track mapped, the
+track count cannot be what FFmpeg objected to.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="ffm_map.html">ffm_map()</a></code> and <code><a href="ffm_codec.html">ffm_codec()</a></code>, the builders it wraps;
 <code><a href="nvenc_encoder.html">has_nvenc()</a></code> for the <code>hardware = "nvenc"</code> toggle;
-<code><a href="extract_audio.html">extract_audio()</a></code> to pull out just the audio.</p>
+<code><a href="extract_audio.html">extract_audio()</a></code> to pull out just the audio;
+<code><a href="probe_container.html">probe_audio()</a></code> to list an input's audio tracks.</p>
 <p>Other task verb functions:
 <code><a href="anonymize_video.html">anonymize_video()</a></code>,
 <code><a href="anonymize_video_batch.html">anonymize_video_batch()</a></code>,
@@ -196,6 +232,13 @@ or return the compiled commands without running them (<code>FALSE</code>).</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a libmp3lame -map 0:a \"audio.mp3\"" </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                                               video </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -map 0:v \"video.mp4\"" </span>
+<span class="r-in"><span><span class="co"># write only the second audio track (this sample has one, so compile only)</span></span></span>
+<span class="r-in"><span><span class="fu">separate_audio_video</span><span class="op">(</span><span class="va">video</span>, <span class="st">"audio.aac"</span>, <span class="st">"video.mp4"</span>,</span></span>
+<span class="r-in"><span>                     audio_stream <span class="op">=</span> <span class="fl">1</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                                           audio </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -map 0:a:1 \"audio.aac\"" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                                           video </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -map 0:v \"video.mp4\"" </span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

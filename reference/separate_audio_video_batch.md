@@ -21,6 +21,7 @@ separate_audio_video_batch(
   video_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
+  audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -40,9 +41,11 @@ separate_audio_video_batch(
   Optional `audio_codec` and `video_codec` columns (character; `NA` to
   emit no codec option for that stream) override the arguments of the
   same name per row; rows omitting a column fall back to that argument.
-  Any other columns are ignored — except a `reencode` column, retired
-  with the argument of the same name, which is an error rather than a
-  silent no-op.
+  An optional numeric `audio_stream` column (`NA` to keep every audio
+  track in that row's `audiofile`) likewise overrides the `audio_stream`
+  argument per row. Any other columns are ignored — except a `reencode`
+  column, retired with the argument of the same name, which is an error
+  rather than a silent no-op.
 
 - audio_codec:
 
@@ -68,6 +71,16 @@ separate_audio_video_batch(
   `hardware = "nvenc"` conflicts with any row whose video codec resolves
   to `"copy"` — including the default — so a jobs table mixing copied
   and re-encoded video must be split into separate calls.
+
+- audio_stream:
+
+  The 0-based index of the audio track to write to every `audiofile`,
+  unless `jobs` carries an `audio_stream` column. `NULL` (default) keeps
+  **every** audio track, as
+  [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+  does; an `NA` cell in the column says the same for that row. Only
+  `audiofile` is affected — a `videofile` always takes the input's video
+  streams.
 
 - run:
 
@@ -96,9 +109,26 @@ added `command` column — plus, when `run = TRUE`, a `success` column
 (and `verified` / provenance manifest when requested via `...`). When
 `jobs` supplies either codec column, a single `codec` column carries
 each row's resolved encoder for its own stream (`NA` where none is
-emitted). The columns match the other `_batch` verbs' output plus the
-`stream` marker. See
+emitted). When `audio_stream` is supplied as either the argument or a
+`jobs` column, an `audio_stream` column likewise carries each row's
+resolved track: the selected index on an audio row, and `NA` both on
+every video row (which takes no audio) and on an audio row that named no
+track — so `NA` does not by itself mark a video row; read the `stream`
+column for that. The columns match the other `_batch` verbs' output plus
+the `stream` marker. See
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
+
+## Failed audio outputs
+
+A row whose `audiofile` FFmpeg refuses is recorded as `success = FALSE`
+rather than aborting the batch. When such a row named no `audio_stream`
+and its input carries more than one audio track, the verb warns **once**
+for the whole batch, naming every affected input row and the ways out.
+That check runs FFprobe on the failed rows only, so it is emitted when
+FFprobe is available and the input can be probed, and skipped silently
+otherwise; it never runs under `run = FALSE` and never changes any
+compiled command. Suppress it with
+`suppressWarnings(classes = "tidymedia_multitrack_separation")`.
 
 ## See also
 

@@ -260,6 +260,39 @@ test_that("extract_audio() writes exactly one audio stream from a 3-track input"
   expect_identical(audio_language(out), "fra")
 })
 
+test_that("extract_audio() ignores the container's DEFAULT disposition", {
+  # The behavior change the explicit map buys, measured rather than asserted.
+  # With the DEFAULT flag moved to the second track, the old recipe (no -map)
+  # extracted `spa` because FFmpeg's default-stream selection prefers the
+  # flagged track; the explicit map takes `eng` regardless of the flag. Remux
+  # with -map 0 or the remux itself drops the extra tracks (default selection
+  # applies there too) and the fixture silently stops discriminating.
+  skip_if_no_ffprobe()
+  plain <- make_multitrack_video()
+  flagged <- withr::local_tempfile(fileext = ".mkv")
+  ffmpeg(sprintf(
+    '-y -i "%s" -map 0 -c copy -disposition:a:0 0 -disposition:a:1 default "%s"',
+    plain, flagged
+  ))
+  skip_if_not(file.exists(flagged), "disposition fixture could not be generated")
+  dispositions <- ffprobe(sprintf(
+    '-v error -select_streams a -show_entries stream_disposition=default -of csv=p=0 "%s"',
+    flagged
+  ))
+  # The fixture only discriminates if the flag really moved off track 0.
+  skip_if_not(identical(trimws(dispositions), c("0", "1", "0")),
+              "DEFAULT disposition did not move to the second track")
+
+  out <- withr::local_tempfile(fileext = ".m4a")
+  extract_audio(flagged, out)
+  expect_identical(audio_language(out), "eng")
+
+  # And the flagged track is still reachable, by name rather than by flag.
+  out2 <- withr::local_tempfile(fileext = ".m4a")
+  extract_audio(flagged, out2, audio_stream = 1)
+  expect_identical(audio_language(out2), "spa")
+})
+
 test_that("convert_audio(audio_stream = 1) converts the second track (spa)", {
   skip_if_no_ffprobe()
   infile <- make_multitrack_video()

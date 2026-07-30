@@ -135,6 +135,7 @@ scope; `strip_metadata()`'s `-map 0` already keeps every stream.
 - 2026-07-30: T6 done — NEWS carries `audio_stream` (New features) plus two breaking-change entries, `extract_audio()`'s named default track and `ffm_map()`'s append semantics. `spelling::update_wordlist()` added one word (`WebM`, pre-existing, unlisted because `tests/spelling.R` runs with `error = FALSE`). `devtools::document()` no-diff, `check()` `Status: OK` (0/0/0), `pkgdown::check_pkgdown()` clean. `build_readme()` re-knit one command; its temp-libpath churn on an unrelated chunk was reverted (M24).
 - 2026-07-30: promoted the two cross-cutting choices to **D023** rather than leaving them milestone-local — the `audio_stream`-vs-`audio` indexing split constrains the carry candidate and narrows D009, and `ffm_map()`'s append contract binds every future verb.
 - 2026-07-30: `R/ffmpeg.R`'s CRLF line endings verified intact after every edit (4715 → 4844 lines, matching the diff's net insertions; M35 lesson).
+- 2026-07-30: AC1's claimed default-disposition change re-measured on FFmpeg 8.1.2 and confirmed — with the DEFAULT flag on track 1 the old no-map recipe extracts `spa` where the explicit map takes `eng`. Added a test for it. First three attempts to build the fixture failed silently because the remux itself applies default stream selection and kept one audio track, so the test asserts the flag actually moved before trusting the result.
 
 ## Decisions
 

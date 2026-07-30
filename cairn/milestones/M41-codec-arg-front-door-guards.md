@@ -145,6 +145,8 @@ refused, completing the M37 review's repair of `separate_audio_video_batch`.
 
 ## Work log
 
+- 2026-07-29: SUPERSEDES the T14 line below that says "**11** of the 17 batch verb/argument pairs" are codec-before-`jobs` on `origin/master`. The measured split is **10 codec / 7 jobs**, on both refs. The miscount omitted `anonymize_video_batch audio_codec` (codec-first on `origin/master` under M39's placement) and counted M41's own two guards as codec-first on a ref where no such guard exists. Round-3 finding A7r3 (63); the code comment carrying the same number is corrected in place, this line supersedes the history. The 17-entry map itself was re-verified pair by pair and is correct.
+- 2026-07-29: round-3 review found ONE actioned defect class (3 findings, 80/85/88), confirmed by my own before/after measurement rather than on report: M41's new front-door guards preempt validation that used to run first, so a call wrong about two things now reports a different one. Nine measured cases across `standardize_video_batch`, `anonymize_video_batch`, `normalize_audio_batch`, `standardize_video` and `normalize_audio`. `extract_audio_batch` is the control and is unaffected. AC4 as written still passes — it is scoped to the T2 grid, and the grid does not reach these calls.
 - 2026-07-29: status -> review (round 3). All 16 tasks checked, `devtools::test()` 0 FAIL / 0 WARN / 15 SKIP / 2429 PASS, `devtools::check()` `Status: OK` 0 errors / 0 warnings / 0 notes (3m 6s), `devtools::document()` no diff. M41 authored no prose-guard — its tests assert runtime condition messages, not doc wording — so guard-doctrine §8's fresh-reader step does not apply.
 - 2026-07-29: T16 checked AC4's enumerated set clause by clause, by script rather than by eye: 306 rows per side, grids the same size, **0** vacuous cells on either side, 33 changed rows total — 21 at `col = absent` on exactly the seven T3 pairs (only `normalize_audio_batch audio_codec na` moving `compiled -> abort`, the other 20 already aborts), 12 at `col = present` on exactly the four M41-D2 pairs (all `compiled -> abort`), **0** `default`/`null` rows and **0** `jobs = invalid` rows. Every clause of AC4 as amended, measured.
 - 2026-07-29: T16 mutation-verified both new tests rather than trusting them (M39 lesson): reverting the `picture_in_picture_batch` template to the `inputs` shape reddens the jobs-shape test, and putting `standardize_video_batch`'s guard back ahead of the jobs check reddens the precedence test. Both files restored byte-identical, tree clean.
@@ -336,6 +338,98 @@ skipped — `DESIGN.md` untouched, no principle changed. Toolchain gate (r-packa
 `NAMESPACE`, `man/`, `data/`, `_pkgdown.yml`, `README*` all untouched · `NEWS.md`
 carries the entry with no milestone numbers in user-facing text ·
 `data-raw/` has its `^data-raw$` `.Rbuildignore` entry.
+
+**Independent review — three lenses, then a scorer.** Three fresh-context reviewers
+with distinct evidence bases (the diff; `git blame` history; the prior-review
+record), then a separate Sonnet scorer that did not generate the findings and was
+given the diff and the plan. The blame lens reported **no history conflicts** —
+D019's analysis-before-refusal ordering intact, D021's `-q:a 0` sentinel intact,
+`col_extra`'s `audio = 0` a valid D009 index, and no CI coverage lost by T9
+(macOS/Windows runners install neither binary; the Linux runners install both).
+The prior-review lens reported **no regressions** across all five points it was
+pointed at; its `gh api .../pulls/comments` probe returned `[]`, so it worked from
+archived `## Review` sections. The diff lens returned 19 findings; **3 scored 80+
+and are actioned**, 16 below 80 are logged here rather than dropped (IP3).
+
+**Actioned (score ≥ 80) — one defect class, confirmed by the orchestrator's own
+measurement against both refs, not taken on report.** M41's new front-door guards
+preempt validation that used to run first, so a call wrong about *two* things now
+reports a different one of them. Nine measured cases:
+
+- **A1r3 (88) — the A6 fix is incomplete.** T14 moved the new scalar guards below
+  each verb's jobs-*shape* block, but they still sit above the second tier: the
+  override-column type checks, `check_audio_codec_not_copy(jobs$audio_codec)`, and
+  the derived-output duplicate check. Measured `origin/master` → branch:
+  `standardize_video_batch(tibble(input = c(f,f)), video_codec = NA)` moves from
+  the duplicated-`input` abort to the `video_codec` abort; the same call with a
+  numeric `pixel_format` column moves from the `pixel_format` abort;
+  `anonymize_video_batch` and `normalize_audio_batch` move the same way on
+  duplicated `input`; and `normalize_audio_batch(tibble(input = f, output = o,
+  audio_codec = "copy"), audio_codec = NA)` moves from ``` `audio_codec` can't be
+  "copy" ``` to `check_string`. `extract_audio_batch` is the control and does
+  **not** change — its guard sits below all of its jobs validation. The instrument
+  is blind to this: `col = present` always injects a *valid* codec, and
+  `jobs = invalid` only ever sets `jobs <- "oops"`, which trips the very first
+  `is.data.frame()` check.
+- **A2r3 (85) — `standardize_video`'s guard flips against the dimension checks.**
+  Measured: `standardize_video(f, o, width = 0, video_codec = NA)` reported
+  ``` `width` must be a single FFmpeg expression or number ``` on `origin/master`
+  and reports the `video_codec` abort on the branch. Pre-M41 the codec error came
+  from `ffm_codec()` inside `standardize_pipeline()`, i.e. after `ffm_scale()`'s
+  `check_dim()`. The grid never passes an invalid `width`/`height`/`fps`.
+- **A3r3 (80) — the `two_pass = TRUE` path changed, and the grid fixes
+  `two_pass`.** The loudness verbs' new guards were hoisted above the entire
+  `if (two_pass)` block, which already validated the argument via `check_token()`
+  → `check_string()` *without* `allow_null`. Measured:
+  `normalize_audio(f, o, audio_codec = NA, two_pass = TRUE)` changes message from
+  "must be a single string" to "must be a single string or `NULL`"; and with
+  `channels = 0` added it flips from the `channels` abort to the `audio_codec`
+  abort. Round-1 finding F7 (68) named this dimension gap and was not actioned.
+
+**Note on AC4.** AC4 as amended is scoped by its own wording to the T2 grid
+("Measured as the diff between the baseline the T2 script regenerates … and the
+same grid run on the branch"), and within that grid the changed set matched the
+enumeration exactly. So AC4 **passes as written** and is ticked on that evidence;
+it is deliberately not reinterpreted to fail. What the three findings show is that
+the grid does not span the space — which is a defect in the evidence instrument
+and in the guards, not a criterion failure. Recorded plainly so the distinction
+survives: the criterion is met and the milestone still changed behaviour nobody
+declared.
+
+**Logged, not actioned (score < 80):** A4r3 (76) both citations of the
+`separate_audio_video_batch` precedent still point at ffmpeg.R:3828; the guards are
+at 3870–3871 (round 2's A11, unfixed) · A5r3 (70) the new jobs-shape test guards
+only the test file's templates, not the `.Rbuildignore`d instrument's, so the
+CI-catches-drift claim in its own comment overreaches · A6r3 (65) `codec_guard_diff()`'s
+`in_index` axis still ignores an NA↔TRUE/FALSE transition (the unfixed half of
+round 2's A17) · A7r3 (63) the precedence comment and work log say "eleven of
+seventeen" where the table has 10 codec / 7 jobs — **corrected in this round**, see
+below · A8r3 (62) the committed instrument asserts none of AC4's enumerated counts,
+so the clause-by-clause check is still a per-round manual script · A9r3 (55) the new
+jobs-shape test's `tryCatch(condition=)` could pass vacuously on a warning, and its
+detector misses two real shape messages · A10r3 (55) `col_extra` uses `[[<-`, the
+NULL-deletion trap this file documents twice elsewhere · A11r3 (55)
+`codec_guard_vacuous()` inspects only the `default` scenario · A12r3 (52) the
+`extract_audio_batch` comment's "D021 never mentions this batch verb" is an
+over-read — D021's `check_batch_string_col()` clause does address the batch verb's
+column (round 2's A20) · A13r3 (50) the NEWS bullets sit at section 13 of 19, not
+near the top (round 1's F4) · A14r3 (45) NEWS's "Every … argument" still overclaims;
+token-invalid strings and `anonymize_video_batch(video_codec = NULL)` still leak
+`In index:` (F1/A4/A9, third round raised) · A15r3 (45) the instrument merges git
+stderr into reconstructed sources (round 2's A14) · A16r3 (45) `codec_guard_diff()`
+scrubs paths only from compiled rows, not from `call`/abort messages · A17r3 (40)
+the precedence classifier labels any non-`jobs` message "codec" · A18r3 (30) the
+`\037` key separator is a raw control byte that renders as `sep = ""` (round 2's C2)
+· A19r3 (12) a blank line makes one NEWS list loose.
+
+**Review-time correction.** A7r3 is an error this session introduced: the
+precedence comment in `tests/testthat/test-codec-arg-front-door.R` and the T14 work-log
+line both said "eleven of these seventeen pairs" where the measured split is **10
+codec / 7 jobs** on both refs. The miscount omitted `anonymize_video_batch audio_codec`
+(codec-first on `origin/master` via M39's placement) and counted M41's own two guards
+as codec-first on a ref where they do not exist. The comment is current knowledge and
+is corrected in place; the work-log line is history and is superseded, not edited. The
+17-entry map itself was verified correct pair by pair and is unchanged.
 
 ### Round 2 — 2026-07-29 — SENT BACK (AC4 fails again, by a new mechanism)
 

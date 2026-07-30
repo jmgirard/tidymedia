@@ -226,7 +226,7 @@ test_that("every batch template is a jobs shape its own verb accepts", {
 
 # Which complaint a batch verb makes when a call is wrong about BOTH `jobs` and
 # the codec argument. Measured against the pre-M41 tree, not chosen: the split
-# below is inherited, and eleven of these seventeen pairs answered "codec" long
+# below is inherited, and ten of these seventeen pairs answered "codec" long
 # before this milestone existed. Deliberately NOT normalized here -- making them
 # agree would change error text on verbs M41 never touched, which is precisely
 # the unasked-for behaviour change this table exists to catch.

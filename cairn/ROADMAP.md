@@ -2,7 +2,7 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-07-30 (M46 merged and archived; its promoted candidate row already struck through at plan time, and the runtime-path-timeout row it spawned stays open; 6 terminal rows exceeded the retention cap so M41 was pruned, back to 5; LESSONS gained 2 M46 lines, 47 to 49, nothing retired — M46 shipped no guard that covers an existing lesson. 36 lines.)_
+_Last hygiene check: 2026-07-30 (M46 merged and archived; its promoted candidate row already struck through at plan time, and the runtime-path-timeout row it spawned stays open; 6 terminal rows exceeded the retention cap so M41 was pruned, back to 5; LESSONS gained 2 M46 lines, 47 to 49, nothing retired — M46 shipped no guard that covers an existing lesson. 35 lines.)_
 
 ## Milestones
 

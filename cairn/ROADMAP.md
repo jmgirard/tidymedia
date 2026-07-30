@@ -2,20 +2,19 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-07-29 (four milestones planned: M41/M42 from the corrected M40 candidate row — one silent-`NA` site, not three; M43/M44 for audio-track selection, split at the 9-criteria sizing tripwire. One candidate row added for the carry-through verbs; a `convert_audio()` multi-track crash found and routed to `/hotfix`. Terminal rows at 5, no pruning needed.)_
+_Last hygiene check: 2026-07-29 (M41 merged and archived after three review rounds; AC4 needed a gated amendment to an enumerated changed-set before it could pass. Two lessons captured on guard placement and before/after-grid blind spots, room made by reflowing two legacy hard-wrapped entries. Terminal rows pruned 6 -> 5, dropping M36.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M41 | Front-door validation parity for the codec arguments | review | — | normal | milestones/M41-codec-arg-front-door-guards.md |
+| M41 | Front-door validation parity for the codec arguments | done | — | normal | milestones/archive/M41-codec-arg-front-door-guards.md |
 | M42 | What `NULL` and column `NA` mean, settled across the codec family | planned | M41 | normal | milestones/M42-codec-null-na-semantics.md |
 | M43 | Pick which audio track the extraction verbs take (`audio_stream`) | planned | M41, M42 | normal | milestones/M43-audio-stream-selection.md |
 | M44 | Say something when audio tracks are dropped | planned | M43 | normal | milestones/M44-implicit-track-drop-warning.md |
 | M39 | `audio_codec` for `standardize_video` and `anonymize_video` (+ batch) | done | — | normal | milestones/archive/M39-standardize-anonymize-audio-codec.md |
 | M40 | `audio_codec` subsumes `format` on `convert_audio` (+ batch), closing the codec sweep | done | M39 | normal | milestones/archive/M40-convert-audio-codec-arg.md |
 | M38 | `hardware=` nvenc on `separate_audio_video` (+ batch) | done | — | normal | milestones/archive/M38-separate-av-hardware.md |
-| M36 | `audio_codec` for `normalize_audio` (+ batch) — NULL sentinel, `"copy"` aborts | done | — | normal | milestones/archive/M36-normalize-audio-codec.md |
 | M37 | Codec args subsume `reencode` on `separate_audio_video` (+ batch) | done | — | normal | milestones/archive/M37-separate-av-codec-args.md |
 
 ## Candidates

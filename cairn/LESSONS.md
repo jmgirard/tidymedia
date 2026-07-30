@@ -21,19 +21,11 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
   in mov stream tags is ffmpeg-version dependent (became `name` on 8.x macOS,
   absent on Ubuntu CI) — green locally + macOS, red on Ubuntu. Don't sanity-assert
   an injected per-stream tag's *presence*; assert only on the stripped *output*.
-- 2026-07-13 (M28): extracting a shared helper *between* a documented function's
-  `#'` roxygen block and its `fn <- function` line silently re-targets the roxygen
-  to the helper and drops the original's `.Rd` — `document()` warns "Deleting
-  <fn>.Rd". Put the extracted helper ABOVE the roxygen block, not between it and
-  the function.
+- 2026-07-13 (M28): extracting a shared helper *between* a documented function's `#'` roxygen block and its `fn <- function` line silently re-targets the roxygen to the helper and drops the original's `.Rd` — `document()` warns "Deleting <fn>.Rd". Put the extracted helper ABOVE the roxygen block, not between it and the function.
 - 2026-07-26 (M31): skip a hardware-encoder execution test on run-time
   usability, not merely that the encoder is *listed* — CI lists `h264_nvenc`
   without a GPU, so probe a 1-frame lavfi encode and skip unless it exits 0.
-- 2026-07-12 (M30): a `*_batch` verb's jobs tibble keys on `input`/`output`
-  *columns* (via `check_batch_jobs`), NOT the scalar verb's `infile`/`outfile`
-  *argument* names — an easy mismatch in vignette/example chunks that errors only
-  at build. Render vignettes with the ffmpeg/ffprobe/mediainfo binaries masked
-  off PATH (`Sys.which()==""`) to reproduce the CI-absent build and catch it.
+- 2026-07-12 (M30): a `*_batch` verb's jobs tibble keys on `input`/`output` *columns* (via `check_batch_jobs`), NOT the scalar verb's `infile`/`outfile` *argument* names — an easy mismatch in vignette/example chunks that errors only at build. Render vignettes with the ffmpeg/ffprobe/mediainfo binaries masked off PATH (`Sys.which()==""`) to reproduce the CI-absent build and catch it.
 - 2026-07-26 (M32): a `_batch` per-row override *column* skips the scalar's arg guards (`check_number_whole`/range) — re-validate each override column per row.
 - 2026-07-26 (M34): guarding a `_batch` override column whose documented `NA` means "unset" — R types an all-NA column *logical*, so an `is.character`/`is.numeric`-only guard wrongly rejects it, while the usual patch `!is.character(x) && !all(is.na(x))` over-corrects and admits an all-NA numeric or Date. Spell it out: `is.character(x) || (is.logical(x) && all(is.na(x)))`, and test both boundaries.
 - 2026-07-27 (M35): `R/ffmpeg.R` is the repo's only CRLF file, so editing it with anything that normalizes line endings (a Python `open(p, "w").write()` round-trip) silently rewrites all ~4000 lines — the diff reads 4172/3999 instead of the true 209/36 and `git blame` repoints the whole file at your milestone. Read and write it as bytes, restoring `\r\n`, and compare `grep -c $'\r'` against `git show <default-branch>:<file>` before committing.
@@ -46,4 +38,6 @@ least-useful when full. Not status, not decisions (a choice is a D-entry)._
 - 2026-07-26 (M38): a `cli_abort()` remediation hint must be true under the condition that FIRED the guard, not in general — the M38 guard only fires under `hardware = "nvenc"`, where the `NULL` codec sentinel assumes H.264 rather than deferring to the container, so the general-case hint walked a `.webm` caller into an `h264_nvenc`-in-WebM command. Check a hint against the branch that reaches it.
 - 2026-07-26 (M39): a `_batch` verb's batch-wide argument needs a test naming a NON-default value — asserting only the default passes even when the argument never reaches the fan-out, because the shared pipeline carries the same default. Prove the test discriminates by mutating the fan-out to ignore the argument: it must go red.
 - 2026-07-27 (M40): moving a verb onto a SHARED column guard imports that guard's remediation hint, which can be false for the new caller even though it was true for every existing one — `check_batch_codec_col()` says "`NA` to leave the codec unset", but on `convert_audio_batch` `NA` selects `-q:a 0`. M38's rule is about the branch you wrote; this is the hint going stale because a caller was ADDED. Parameterize the wording (`na_means =`) and assert both the true string and the absence of the default one.
+- 2026-07-29 (M41): a front-door guard added only to improve a *message* silently reassigns error PRECEDENCE — every check already in that function now reports later than it did, and a caller wrong about two things gets told about the wrong one. Put such a guard at the END of the function's front-door validation, where the value was effectively read before (for a `_batch` verb, just before `ffm_batch()`), and test a call that is invalid in two ways at once; a grid built only from otherwise-valid inputs cannot see the change.
+- 2026-07-29 (M41): a before/after grid proves contract-neutrality only over the dimensions it VARIES — three review rounds each found a different unvaried one (a matching `jobs` override column, a malformed `jobs`, then `two_pass`/`width`). Before trusting one, list the arguments it holds fixed, and check that each cell's baseline call actually SUCCEEDS: a cell whose default aborts compares equal on both refs while measuring nothing.
 - 2026-07-26 (M39): adding an override column to a `_batch` verb also falsifies its `@param jobs` prose, which enumerates the honoured columns and closes "Any other columns are ignored" — a reader who believes that adds the column as a note-to-self and silently re-encodes every row. Update the enumeration, not just the new `@param`.

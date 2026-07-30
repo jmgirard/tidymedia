@@ -1,11 +1,11 @@
 # M46: Stop the subtitle fixture hanging, and bound every fixture command
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m46-fixture-hang-timeout`
+- **Branch/PR:** `m46-fixture-hang-timeout` · PR [#49](https://github.com/jmgirard/tidymedia/pull/49)
 
 ## Goal
 
@@ -31,41 +31,41 @@ row, `audio_stream`-carry included.
 
 ## Acceptance criteria
 
-- [ ] AC1 `helper-media.R` carries a `make_subtitle_video()` generator holding
+- [x] AC1 `helper-media.R` carries a `make_subtitle_video()` generator holding
       the subtitle-bearing fixture command; that command passes no `-shortest`,
       and a comment there records both that the lavfi sources are already
       bounded by their `duration=` options and that FFmpeg deadlocks
       intermittently when `-shortest` accompanies a mapped subtitle stream. The
       subtitle test in `test-audio-stream.R` calls the generator rather than
       building the command inline.
-- [ ] AC2 Review records two 25-run probes of the subtitle-fixture command,
+- [x] AC2 Review records two 25-run probes of the subtitle-fixture command,
       each run bounded by a 20-second wall-clock limit: post-fix, 25 of 25
       complete; pre-fix (command recovered from git), at least one run reaches
       the limit. Every post-fix output's `ffprobe -v error -show_entries
       stream=codec_type -of csv=p=0` reads exactly `video`, `audio`, `subtitle`,
       in that order.
-- [ ] AC3 Each of the twelve FFmpeg fixture-generation call sites under
+- [x] AC3 Each of the twelve FFmpeg fixture-generation call sites under
       `tests/testthat/` — `helper-media.R:27,46,63,82,99,127,158,164`,
       `test-audio-stream.R:275,308`, `test-ffmpeg.R:287,303` — runs its command
       through the new timeout-bearing helper, and after the change the only
       calls to `ffmpeg()` under `tests/testthat/` are AC4's.
-- [ ] AC4 The exported `ffmpeg()` gains the direct coverage it has only
+- [x] AC4 The exported `ffmpeg()` gains the direct coverage it has only
       incidentally today: a committed test calls `ffmpeg("-version")` and
       asserts FFmpeg's version banner in the returned vector, skipping when the
       binary is absent, and a second fires its `rlang::check_string()` branch on
       a non-string `command`.
-- [ ] AC5 A committed test proves the timeout fires: a command that would
+- [x] AC5 A committed test proves the timeout fires: a command that would
       otherwise run well past the limit runs through the helper with a 3-second
       limit, and the call fails within 8 seconds with a message naming the
       binary and the limit in seconds — and naming neither the command string
       nor any temp path. It skips when the ffmpeg binary is absent.
-- [ ] AC6 A committed regression test generates the subtitle fixture 10
+- [x] AC6 A committed regression test generates the subtitle fixture 10
       consecutive times through the helper and requires every generation to
       complete within the limit; the subtitle-presence check stays a
       fixture-validity skip, never the discriminating assertion. It skips when
       ffmpeg or ffprobe is absent. Re-adding `-shortest` to the generator makes
       it fail within at most three suite runs, recorded in Review.
-- [ ] AC7 `devtools::test()` passes with 0 failures and `devtools::check()`
+- [x] AC7 `devtools::test()` passes with 0 failures and `devtools::check()`
       reports 0 errors and 0 warnings, any NOTE justified in Review.
 
 ## Coverage
@@ -131,3 +131,76 @@ row, `audio_stream`-carry included.
 ## Decisions
 
 ## Review
+
+Fresh evidence, 2026-07-30, ffmpeg 8.1.2 / R 4.6.1 / macOS. Every figure below
+was executed at review, not recalled from implementation.
+
+**AC1** — `make_subtitle_video()` at `helper-media.R:167` holds the command and
+passes no `-shortest`; its comment records the deadlock measurement and (after
+finding E) the real duration delta. `test-audio-stream.R:305` calls the
+generator instead of building the command inline. Read directly.
+
+**AC2** — 25-run probes at a 20 s per-run limit. Post-fix: 25/25 completed, 0
+timeouts, and every output's `stream=codec_type` read exactly
+`video,audio,subtitle` in that order. Pre-fix (`-shortest` restored): 4
+timeouts in 25.
+
+**AC3** — grep: twelve fixture sites call `run_ffmpeg_fixture()` (`helper-media.R`
+9, `test-audio-stream.R` 1, `test-ffmpeg.R` 2; the twelfth moved into the
+generator). The only `ffmpeg()` calls left under `tests/testthat/` are AC4's four.
+
+**AC4** — `ffmpeg("-version")` 2 expectations and the `check_string()` test 3,
+both passing, neither skipped; the branch fires on a length-2 vector, a number
+and `NULL`.
+
+**AC5** — `test-fixture-helpers.R` 8 expectations passing. Measured directly: a
+1080p60 unbounded encode under a 3 s limit failed in 3.03 s (bound: 8) with
+"ffmpeg fixture generation timed out after 3 seconds." — names the binary and
+the limit, names neither `testsrc` nor `tempdir()`.
+
+**AC6** — the reworked test passes with its one discriminating expectation
+(`expect_identical(completed, 10L)`), 0 skipped. Fresh mutation probe on the
+committed baseline: `-shortest` re-added, red on run 1 of an allowed 3, at
+`test-audio-stream.R:330`, with the timeout error rather than a hang. Restored
+clean.
+
+**AC7** — `devtools::test()` FAIL 0, WARN 4 (pre-existing M44 dropped-track
+warnings), SKIP 5, PASS 2828. `devtools::check()` Status OK — 0 errors, 0
+warnings, 0 notes.
+
+**Consistency gate** — `cairn_validate` all checks passed; `document()` no diff;
+`pkgdown::check_pkgdown()` no problems; no new top-level files needing
+`.Rbuildignore`; no `NEWS.md` entry owed (nothing user-visible); no principle
+changed, so `cairn_impact` does not apply.
+
+**Independent review** — three fresh-context lenses (diff-bug [O], blame-history
+[S], prior-review-record [S]), 15 candidate findings, scored by a fresh [S]
+scorer. Two scored >=80 and were fixed; 13 scored below and are logged, not
+actioned:
+
+- **E (92), fixed.** The generator comment claimed dropping `-shortest` "changes
+  nothing here". False: it tracked the 1-second `.srt`, so duration went
+  1.021 s -> 2.023 s. This met the plan gate's own recorded falsifier, which had
+  never been evaluated. The approach survives on the merits — identical stream
+  set, and both consumers assert stream types only — but the comment was wrong
+  and is corrected.
+- **A (90), fixed.** AC6 requires the subtitle-presence check stay a
+  fixture-validity skip; the code asserted it. Reworked to `skip_if_not()` plus
+  a completion-count assertion. This was the [O] criteria audit's own finding at
+  plan time, fixed in the criterion and then not carried into the code.
+- Logged, below threshold: D 72 (helper dropped `ffmpeg()`'s `check_string()`, so
+  a vectorized command silently truncates to element 1 — verified); B 62
+  (the warning muffle matches English text, so under a translated locale R's
+  timeout warning escapes carrying the command and temp paths — verified de/fr);
+  I 45 (10-run test uses the 120 s default, so a reintroduced `-shortest` takes
+  minutes to redden); C 42 (status 124 is the sole timeout signal); N 42
+  (`-version` success test overlaps AC4's); H 40 (unquoted binary path,
+  pre-existing pattern); G 35 (`system()` vs `system2()` on Windows,
+  pre-existing); J 35 (`%g` misformats fractional/huge limits); F 30 (CI installs
+  ffmpeg on Linux only, so the macOS/Windows CI-green claim is not evidence for
+  this mechanism); K 25 (wall-clock flake surface, mandated by AC5); L 25 (a
+  fast non-timeout failure still degrades to a skip, pre-existing); M 15 (ffprobe
+  and verb calls stay unbounded — scoped out, candidate row exists); O 15
+  (`expect_no_match` needs testthat 3.2.0 against a 3.0.0 floor, pre-existing).
+
+**Returns:** 1 (AC6, above). Below the thrash rule's third-return threshold.

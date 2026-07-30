@@ -92,6 +92,8 @@ here: a multi-track input is legal, and the selector is how a caller resolves it
 - 2026-07-29: plan chose warning over erroring on an implicit drop, because a multi-track input is legal input and `audio_stream` is the caller's resolution; falsified by a silent-drop incident where a warning was present and still missed.
 - 2026-07-29: split from M43 because 9 acceptance criteria hit the sizing tripwire; this half is what needs a convention decision, so separating it lets the selector ship first.
 - 2026-07-30: /milestone-implement started; branch `m44-implicit-track-drop-warning` cut from master.
+- 2026-07-30: implement question gate settled two of three — the track count uses a narrow one-shot `ffprobe -select_streams a` call rather than `probe_audio()`, because a failed probe then returns nothing (AC3's silent skip) with no `probe_all()` warning to suppress and roughly half the invocations at the ~1.2 s per-input cost the plan measured; and the `_batch` verbs emit one aggregated warning naming every affected row rather than one per row, so a large batch never hits R's 50-warning collapse.
+- 2026-07-30: T1 escalated to /milestone-brief at the user's choice on the plan's `ip-touching` tripwire — the drafted D024 (extending D013's executing-path carve-out from one verb to four and from command-building to diagnostics, plus a DESIGN.md Conventions cross-reference) goes to Fable-level review before any probe code lands; T2–T5 wait on it because Scope puts the D-entry ahead of the probe.
 
 ## Decisions
 

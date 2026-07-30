@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-07-30 (M46 merged and archived; its promoted candidate row already struck through at plan time, and the runtime-path-timeout row it spawned stays open; 6 terminal rows exceeded the retention cap so M41 was pruned, back to 5; LESSONS gained 2 M46 lines, 47 to 49, nothing retired — M46 shipped no guard that covers an existing lesson. 35 lines.)_
+_Last hygiene check: 2026-07-30 (M47 merged and archived; M42 pruned to hold the 5-row retention cap. Candidates +4: `probe_all()` scalability, plus three from M47 — the nvenc `run = FALSE` leak, `format_for_web`/`normalize_audio` still picking by disposition, and unquoted map specifiers. LESSONS 49: +3 M47, M43's duplicate-guard line retired by F8, M32/M37 and M38/M40 consolidated.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M42 | What `NULL` and column `NA` mean, settled across the codec family | done | M41 | normal | milestones/archive/M42-codec-null-na-semantics.md |
 | M43 | Pick which audio track the extraction verbs take (`audio_stream`) | done | M41, M42 | normal | milestones/archive/M43-audio-stream-selection.md |
 | M44 | Say something when audio tracks are dropped | done | M43 | normal | milestones/archive/M44-implicit-track-drop-warning.md |
 | M45 | Give a multi-track `separate_audio_video()` caller a way out | done | M43 | normal | milestones/archive/M45-separate-av-multitrack.md |
 | M46 | Stop the subtitle fixture hanging, and bound every fixture command | done | — | normal | milestones/archive/M46-fixture-hang-timeout.md |
-| M47 | Stop `standardize_video()` and `anonymize_video()` picking an audio track by disposition | review | — | normal | milestones/M47-audio-stream-standardize-anonymize.md |
+| M47 | Stop `standardize_video()` and `anonymize_video()` picking an audio track by disposition | done | — | normal | milestones/archive/M47-audio-stream-standardize-anonymize.md |
 | M48 | Carry the track selector to `crop_video()` and `segment_video()`, and make `ffm_copy()` idempotent again | planned | M47 | normal | milestones/M48-audio-stream-crop-segment.md |
 
 ## Candidates

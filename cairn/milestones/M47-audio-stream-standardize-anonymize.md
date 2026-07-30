@@ -1,6 +1,6 @@
 # M47: Stop `standardize_video()` and `anonymize_video()` picking an audio track by disposition
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -134,6 +134,8 @@ rule and answering the question D025's fifth bullet left open. NEWS.
 
 - 2026-07-30: T8 — the `test-ffm.R:438` invariant was pinned as `all(maps) <= 1L`, which M47 falsifies; rewritten as an exact per-verb count table rather than a looser bound, so a wrong count fails in either direction. Writing it revealed `segment_video(reencode = TRUE)` emits ZERO maps, which the old bound had hidden and which M48 must handle.
 - 2026-07-30: T8 — D026 appended, answering D025's fifth bullet with M45's every-track reading and recording the `?` asymmetry, the rejected `-map 0`, and the subtitle-carriage change. NEWS carries the breaking change (bigger outputs on multi-track inputs; subtitles no longer carried into `.mkv`) and the new argument.
+
+- 2026-07-30: all 8 tasks done; `devtools::check()` Status: OK (0 errors, 0 warnings, 0 notes; `spelling.Rout` matched, so M17's masked-NOTE trap did not fire), `devtools::test()` 2911 pass / 0 fail, `pkgdown::check_pkgdown()` clean, `document()` idempotent. Status -> review.
 
 ## Decisions
 

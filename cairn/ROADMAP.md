@@ -13,7 +13,7 @@ _Last hygiene check: 2026-07-30 (M46 merged and archived; its promoted candidate
 | M44 | Say something when audio tracks are dropped | done | M43 | normal | milestones/archive/M44-implicit-track-drop-warning.md |
 | M45 | Give a multi-track `separate_audio_video()` caller a way out | done | M43 | normal | milestones/archive/M45-separate-av-multitrack.md |
 | M46 | Stop the subtitle fixture hanging, and bound every fixture command | done | — | normal | milestones/archive/M46-fixture-hang-timeout.md |
-| M47 | Stop `standardize_video()` and `anonymize_video()` picking an audio track by disposition | in-progress | — | normal | milestones/M47-audio-stream-standardize-anonymize.md |
+| M47 | Stop `standardize_video()` and `anonymize_video()` picking an audio track by disposition | review | — | normal | milestones/M47-audio-stream-standardize-anonymize.md |
 | M48 | Carry the track selector to `crop_video()` and `segment_video()`, and make `ffm_copy()` idempotent again | planned | M47 | normal | milestones/M48-audio-stream-crop-segment.md |
 
 ## Candidates

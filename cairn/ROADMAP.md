@@ -9,7 +9,7 @@ _Last hygiene check: 2026-07-29 (full audit after the M41 merge: every check and
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M41 | Front-door validation parity for the codec arguments | done | — | normal | milestones/archive/M41-codec-arg-front-door-guards.md |
-| M42 | What `NULL` and column `NA` mean, settled across the codec family | in-progress | M41 | normal | milestones/M42-codec-null-na-semantics.md |
+| M42 | What `NULL` and column `NA` mean, settled across the codec family | review | M41 | normal | milestones/M42-codec-null-na-semantics.md |
 | M43 | Pick which audio track the extraction verbs take (`audio_stream`) | planned | M41, M42 | normal | milestones/M43-audio-stream-selection.md |
 | M44 | Say something when audio tracks are dropped | planned | M43 | normal | milestones/M44-implicit-track-drop-warning.md |
 | M39 | `audio_codec` for `standardize_video` and `anonymize_video` (+ batch) | done | — | normal | milestones/archive/M39-standardize-anonymize-audio-codec.md |

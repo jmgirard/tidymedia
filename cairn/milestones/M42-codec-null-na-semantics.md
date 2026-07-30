@@ -1,6 +1,6 @@
 # M42: What `NULL` and column `NA` mean, settled across the codec family
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M41
 - **Driving RR:** —

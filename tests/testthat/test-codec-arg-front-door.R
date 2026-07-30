@@ -92,10 +92,32 @@ codec_front_door_call <- function(verb, input, out) {
   )
 }
 
+# A valid codec for the `col = "present"` runs below. It must be a value the
+# per-row column guards accept, so the column genuinely wins the internal
+# `pick()` and the scalar argument is the only thing under test.
+codec_front_door_col_value <- function(arg) {
+  if (arg == "video_codec") "libx264" else "aac"
+}
+
+# Which column states a verb can be in: a scalar verb has no `jobs` table, so
+# "present" is not a state it can reach.
+codec_front_door_cols <- function(args) {
+  if ("jobs" %in% names(args)) c("absent", "present") else "absent"
+}
+
 # Call `verb` with `arg` set to `value`, returning the condition it throws (or
 # NULL if it did not throw). `parallel = FALSE` is passed explicitly where the
 # verb accepts it, because AC3 is a claim about exactly that path.
-codec_front_door_catch <- function(verb, arg, value, input, out = "out.mp4") {
+#
+# `col = "present"` gives `jobs` a column of the same name as `arg`. Internally
+# the batch verbs prefer that column over the scalar argument, so before M41 the
+# scalar was never read on this path and a bad value in it was discarded in
+# silence. M41-D2 adopts refusing it, and this is the ONLY place the executed
+# suite measures that: without these runs, making a guard conditional on the
+# column's absence reverts M41-D2 with the whole suite still green (measured at
+# the round-2 review).
+codec_front_door_catch <- function(verb, arg, value, input, out = "out.mp4",
+                                   col = "absent") {
   f <- get(verb, envir = asNamespace("tidymedia"))
   args <- codec_front_door_call(verb, input, out)
   args$run <- FALSE
@@ -103,6 +125,9 @@ codec_front_door_catch <- function(verb, arg, value, input, out = "out.mp4") {
   # Single-bracket assignment of list(value) so a NULL value would be STORED
   # rather than deleting the element (`args[[arg]] <- NULL` removes it).
   args[arg] <- list(value)
+  if (identical(col, "present")) {
+    args$jobs[[arg]] <- codec_front_door_col_value(arg)
+  }
   tryCatch({
     do.call(verb, args, envir = asNamespace("tidymedia"))
     NULL
@@ -121,10 +146,12 @@ test_that("every codec argument refuses a non-string at its own front door", {
   for (pair in codec_front_door_pairs()) {
     verb <- pair$verb
     for (arg in pair$args) {
+      cols <- codec_front_door_cols(codec_front_door_call(verb, input, "out.mp4"))
+      for (col in cols) {
       for (shape in names(codec_front_door_bad)) {
-        label <- paste0(verb, "(", arg, " = ", shape, ")")
+        label <- paste0(verb, "(", arg, " = ", shape, ", col = ", col, ")")
         cnd <- codec_front_door_catch(verb, arg, codec_front_door_bad[[shape]],
-                                      input)
+                                      input, col = col)
 
         # It must abort at all -- the M41 regression was a silent compile.
         # Fail SOFT past this point: without the `next`, a pair that does not
@@ -153,6 +180,7 @@ test_that("every codec argument refuses a non-string at its own front door", {
         # AC3: it fired before the fan-out, not inside purrr::pmap().
         expect_no_match(msg, "In index:", fixed = TRUE,
                         label = paste(label, "is not mid-fan-out"))
+      }
       }
     }
   }

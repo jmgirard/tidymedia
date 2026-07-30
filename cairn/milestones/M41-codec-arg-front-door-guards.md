@@ -1,6 +1,6 @@
 # M41: Front-door validation parity for the codec arguments
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -140,6 +140,10 @@ refused, completing the M37 review's repair of `separate_audio_video_batch`.
 
 ## Work log
 
+- 2026-07-29: REVIEW RETURN 2 — AC4 fails again, by a new mechanism (finding A10, scored 95). The amended criterion claims "exactly one class of new rejection" and describes only the column-override class, but the 33-row diff also contains `normalize_audio_batch audio_codec na` at `col = absent` moving `compiled -> abort` with no column present — AC1's silent-default bug, which AC4 does not carve out. Confirmed from my own AC1 measurement, not taken on report. AC4 unticked; every other criterion measured green this round. Status back to `in-progress`. Returns: 2.
+- 2026-07-29: THRASH TRIGGER (b) — AC4 has now failed twice, each by a new mechanism of the same shape: a global negative about new rejections that measurement keeps falsifying. Recommended remedy is to change the approach rather than re-cut the predicate: restate AC4 as an enumerated changed-set criterion (the diff against the pre-milestone ref contains exactly these rows and no others), which cannot be falsified by a class nobody named. Trigger (a) not reached.
+- 2026-07-29: review-time FIX for A3/C1 (92/84) — the executed suite gained the `col` dimension, so M41-D2's adopted refusal is now regression-tested on every `_batch` verb. Confirmed discriminating by mutation: making `normalize_audio_batch`'s guard column-conditional (exactly the alternative M41-D2 rejected) previously left the whole suite green at 2162 PASS, and now produces 3 targeted failures naming `col = present`. Suite 0 FAIL / 0 WARN / 15 SKIP / 2417 PASS; `check()` `Status: OK` 0/0/0.
+- 2026-07-29: four more actioned findings for the return — A1 the instrument is still blind on `picture_in_picture_batch` (wrong jobs shape, so its `col = present` half duplicates `absent` and its default/null cells never compile); A6 guard-vs-`jobs` precedence split 2-to-3 across the batch verbs, changing which error a doubly-invalid call reports; A5 NEWS's "has always done" is false history; A7 the `convert_audio` hoist created a fresh scalar/batch message divergence. 23 sub-80 findings logged in the Review section, not dropped.
 - 2026-07-29: status -> review (round 2). All tasks checked, `devtools::test()` 0 FAIL / 0 WARN / 15 SKIP / 2162 PASS, `devtools::check()` `Status: OK` 0 errors / 0 warnings / 0 notes. M41 authored no prose-guard (its tests assert runtime condition messages, not doc wording), so the guard-doctrine §8 fresh-reader step does not apply.
 - 2026-07-29: NOTE FOR REVIEW — AC1/AC2/AC3/AC5/AC6 were ticked in round 1 against a tree that has since moved: F3 changes `anonymize_video_batch`'s message wording, F8 the sweep's control flow, F13/F19 the instrument and a comment. Those ticks stand as round 1's record, but every criterion needs fresh evidence this round, AC2 most of all since a guard's message text changed.
 - 2026-07-29: T12 `devtools::check()` first run flagged `Relatedly` in my own new NEWS prose — the same self-inflicted spelling NOTE T8 hit. Reworded rather than added to `inst/WORDLIST`, on T8's precedent; re-run came back `Status: OK` with 0 notes.
@@ -255,6 +259,140 @@ family; and it follows the M37 review's in-file precedent rather than setting ne
 policy.
 
 ## Review
+
+### Round 2 — 2026-07-29 — SENT BACK (AC4 fails again, by a new mechanism)
+
+`origin/master` is an ancestor of HEAD and local `master` is in sync, so no merge
+was needed and all evidence is fresh against the merge base. CI green on the exact
+review commit `c7f8596` (9/9 checks: 4 R-CMD-check platforms, pkgdown, coverage).
+PR #43 remains a draft. Evidence for AC1–AC5 is one session's re-run of
+`data-raw/codec-guard-baseline.R` against both refs: 255 observations per side
+(34 verb/argument pairs × 5 scenarios, with the 17 `_batch` pairs probed at both
+`col = absent` and `col = present`).
+
+- **AC1 — measured, passes.** On the branch, `normalize_audio_batch(jobs, audio_codec = NA)`
+  at default `two_pass = FALSE` aborts "`audio_codec` must be a single string or
+  `NULL`, not `NA`." — names `audio_codec`, no `In index:`. Against the tree the
+  script reconstructs from `origin/master` the same call **compiled**
+  `-af "loudnorm=I=-23:TP=-1:LRA=7" -codec:v copy`, byte-identical to the `NULL`
+  call and carrying no `-codec:a`.
+- **AC2 — measured, passes, 0 violations** over 153 observations (51 verb/argument/col
+  cells × 3 non-string shapes): every one aborts; every message names that verb's own
+  argument; none matches the Layer-1 leak "`video` must be"/"`audio` must be"; every
+  `conditionCall()` deparses to the Layer-2 verb, the blamed set being exactly the 20
+  verbs, with no `*_pipeline()`, `pmap` or `ffm_` among them. `verify_media()` excluded
+  per the criterion.
+- **AC3 — measured, passes, 0 violations.** No abort in those same 153 observations
+  carries `In index:` at explicit `parallel = FALSE`.
+- **AC4 — FAILS AS WRITTEN (finding A10).** Both halves the criterion *describes*
+  measure green: zero `default`/`null` rows changed at either `col` setting (of 102
+  compared), and the 12 `col = present` changes are all `compiled → abort` on exactly
+  the four pairs M41-D2 names. But AC4 claims the guards add "exactly one class of new
+  rejection" and describes only the column-override class, while the 33-row diff
+  contains a second: `normalize_audio_batch audio_codec na` at `col = absent`, with no
+  column present, also moves `compiled → abort`. That is AC1's silent-default bug —
+  legitimate, and separately required by AC1 — but AC4 does not carve it out, so the
+  criterion is false against the very evidence it cites. Not reinterpreted to pass;
+  round 1 returned this milestone for exactly that discipline.
+- **AC5 — measured, passes.** `extract_audio_batch(audio_codec = NULL)` compiles
+  `-y -i "<in>" -vn "<out>"`: `-vn` present, no `-codec:a`.
+  `extract_audio(audio_codec = NULL)` still aborts "`audio_codec` must be a single
+  string, not `NULL`." The guard passes `allow_null = TRUE` and its comment states the
+  scalar/batch disagreement and routes it to M42.
+- **AC6 — measured, passes.** `devtools::test()` 0 FAIL / 0 WARN / 15 SKIP / 2417 PASS
+  and `devtools::check()` `Status: OK`, 0 errors / 0 warnings / 0 notes (3m 4s), both
+  re-run on the review tree after this round's coverage fix.
+
+**Consistency gate.** `cairn_validate` exit 0 — all 16 CHECKs PASS, 7 advisories OK,
+one WARN: `sizing` at 12 tasks against the >10 tripwire, which fired because review
+returns added tasks to a finished plan, not from mis-sizing. `cairn_impact` skipped, no
+`DESIGN.md` principle changed. Toolchain gate (r-package): `devtools::document()` no
+diff · `pkgdown::check_pkgdown()` "No problems found" · `NAMESPACE`, `man/`, `data/`,
+`_pkgdown.yml`, `README*` all untouched · `NEWS.md` carries the entry · `data-raw/` has
+its `^data-raw$` `.Rbuildignore` entry.
+
+**Independent review — three lenses, then a scorer.** Three fresh-context reviewers
+with distinct evidence bases (the diff; `git blame` history; the prior-review record),
+then a separate Sonnet scorer that did not generate the findings and was given the diff
+and the plan. 30 findings scored; **7 at 80+ actioned**, 23 below 80 logged here rather
+than dropped (IP3). The prior-review lens's `gh api .../pulls/comments` probe returned
+`[]`, so it worked from archived `## Review` sections. The blame lens confirmed D019's
+analysis-before-refusal ordering preserved, D021's `-q:a 0` sentinel intact, no prior
+guard ever added-then-removed on these pairs, and no CI coverage lost by T9.
+
+**Actioned (score ≥ 80):**
+
+- **A10 (95) — AC4 is contradicted by its own evidence.** See AC4 above. Verified by
+  the orchestrator from its own AC1 measurement, not taken on report. Requires a gated
+  amendment: state AC4 as an enumerated changed-set rather than a global negative.
+- **A3 (92) / C1 (84) — M41-D2's adopted change had zero regression coverage.** The
+  whole substance of round 2 was measured only by the `.Rbuildignore`d instrument.
+  Confirmed by mutation: making one guard column-conditional (the alternative M41-D2
+  rejected) left the full suite at 0 FAIL / 2162 PASS. **FIXED IN THIS ROUND** — the
+  test sweep gained the same `col` dimension the instrument has; the same mutation now
+  yields 3 targeted failures and the suite is 2417 PASS. C1 reached it independently
+  from M39's review F3, which taught this exact lesson.
+- **A1 (85) — the instrument is still structurally blind on one verb.**
+  `picture_in_picture_batch` requires named `main`/`overlay`/`output` columns (D015),
+  but the instrument and the test both hand it `inputs = list(c(s,s))`. Its
+  `default`/`null` cells abort on missing columns and never compile, so AC4's
+  "zero rows changed" is vacuous there, and its `col = present` half duplicates
+  `absent`. Same blindness class that caused round 1's return, on a different verb.
+- **A6 (82) — guard-vs-`jobs` precedence split 2-to-3, and an unmeasured behaviour
+  change.** `anonymize_video_batch` and `standardize_video_batch` guard the codec
+  *before* the `is.data.frame(jobs)` check; the other three batch verbs guard after.
+  Measured: `standardize_video_batch("oops", video_codec = NA)` reported the `jobs`
+  error on `origin/master` and reports the codec error on the branch. Every instrument
+  template passes a valid `jobs`, so the grid cannot see it.
+- **A5 (80) — NEWS states a false history.** "which is what `separate_audio_video_batch()`
+  has always done" — that verb arrived in M29 with no codec arguments and gained these
+  guards in M37.
+- **A7 (80) — the `convert_audio` hoist created a fresh scalar/batch message
+  divergence.** `convert_audio` now says "must be a single string or `NULL`" while
+  `convert_audio_batch` still says "must be a single string" and accepts `NULL`
+  regardless — the mirror image of the defect F3 was actioned to remove, introduced by
+  this diff.
+
+**Logged, not actioned (score < 80):** A11 (78) both citations of the
+`separate_audio_video_batch` precedent point at the wrong lines (actual guards 3847–48)
+· A17 (70) `codec_guard_diff()` is asymmetric on `in_index`, drops before-only rows, and
+carries a dead `nrow(b)` guard · A19 (65) the new code comments narrate review-finding
+IDs and a DECISIONS dispute inside `R/ffmpeg.R` · A2 (60) `col = present` degrades to an
+unrelated D017 abort on `compare_videos_batch audio_codec`, and nothing asserts the
+injected column won the `pick()` · A12 (60) AC4 unticked while the log called it green,
+now moot · A4 (55) NEWS's "Every … argument" overclaims; token-invalid strings still
+leak · A18 (55) the 20 call templates are hand-duplicated across instrument and test,
+already divergent per A1 · A20 (55) the comment's "D021 never mentions this batch verb"
+is an over-read of D021's `check_batch_string_col()` bullet · C3 (55) F15 is now
+deliberately entrenched rather than resolved · A13 (50) path scrubbing misses
+list-columns, 14 of 89 compiled rows keep machine paths · A16 (50) `tryCatch(condition=)`
+in both instrument and test treats a warning as the outcome · A14 (45) the instrument
+merges git stderr into reconstructed sources · B1 (45) "same shape" holds for only one of
+the four guards · A9 (40) the Goal's "non-string" is broader than what shipped, since
+`anonymize_video_batch(video_codec = NULL)` still aborts mid-`pmap` · A21 (38) a 428-line
+instrument nothing ever executes · A8 (35) five other messages deny a `NULL` they accept
+(pre-existing) · A15 (35) the reconstructed-ref env falls through to the search path ·
+A22 (25) the AC1 test's `tryCatch(error=)` degrades to a type error on regression ·
+C2 (25) F11's refutation confirmed; the `\037` separator stays undocumented · B2 (20)
+D021's own text stays uncorrected pending M42 · B3 (15) verification that the adoption
+contradicts no prior decision · A23 (10) a PASS-count gap fully explained by this
+round's added assertions.
+
+**Thrash rule — trigger (b) fires.** Returns for this milestone: **2**, so trigger (a)
+(the third return) has not been reached. But AC4 has now failed twice, each time by a
+new mechanism of the same shape: round 1 because a new rejection existed that the
+criterion forbade, round 2 because a second new rejection exists that the amended
+criterion does not carve out. The shape is AC4 asserting a global negative about new
+rejections that measurement keeps falsifying. The remedy is to reconsider the approach
+rather than re-cut the same predicate: state AC4 as an **enumerated changed-set**
+criterion — the diff against the pre-milestone ref contains exactly these rows, and no
+others — which is checkable and cannot be falsified by a class nobody thought to name.
+
+**Disposition.** Status back to `in-progress`. AC4 needs a gated amendment
+(`/milestone-implement` step 6), and A1, A6, A5, A7 need fixing in the same return;
+A3/C1 was fixed during this review and its evidence is recorded above.
+
+### Round 1 — 2026-07-29
 
 Reviewed 2026-07-29 on branch `m41-codec-arg-front-door-guards`, PR
 [#43](https://github.com/jmgirard/tidymedia/pull/43). `origin/master` had not

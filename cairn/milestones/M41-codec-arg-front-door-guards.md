@@ -27,9 +27,11 @@ re-verifiable at review rather than a transcript.
 **Out:** what `NULL` and column `NA` *mean* per verb → M42. That covers the
 `standardize_video` vs `anonymize_video` `NULL` disagreement, the `extract_audio`
 vs `extract_audio_batch` disagreement, and `standardize_video_batch`'s
-`video_codec` column rejecting `NA`. This milestone is deliberately
-contract-neutral: it changes which values are *refused*, never what an accepted
-value does.
+`video_codec` column rejecting `NA`. This milestone changes which values are
+*refused*, never what an accepted value does — with one deliberate exception,
+adopted at the 2026-07-29 amendment gate and stated in AC4: a bad *scalar* codec
+argument that a matching `jobs` column used to override in silence is now
+refused, completing the M37 review's repair of `separate_audio_video_batch`.
 
 ## Acceptance criteria
 
@@ -56,13 +58,19 @@ value does.
       `In index: <n>` in its message, on the same condition AC2 inspects —
       showing the scalar check ran before the fan-out, not inside
       `purrr::pmap()`.
-- [ ] AC4: The guards add no new rejection and no new acceptance of `NULL`: for
-      every argument in AC2, a `NULL` call and a default call produce the same
-      outcome after the milestone as before it — the same compiled command where
-      one compiles today, or the same abort where `NULL` aborts today
-      (`anonymize_video`/`_batch` `video_codec`, `extract_audio` `audio_codec`).
-      Compared against the baseline the T2 script regenerates from the
-      pre-milestone ref.
+- [ ] AC4: The guards add no new acceptance of `NULL`, and exactly one class of
+      new rejection. No new acceptance: for every argument in AC2, a `NULL` call
+      and a default call produce the same outcome after the milestone as before
+      it — the same compiled command where one compiles today, or the same abort
+      where `NULL` aborts today (`anonymize_video`/`_batch` `video_codec`,
+      `extract_audio` `audio_codec`). The one adopted new rejection: a
+      non-string *scalar* codec argument on a `_batch` verb whose `jobs` carries
+      a matching codec column, which `pick()` previously let the column override
+      in silence — expected on `standardize_video_batch`,
+      `anonymize_video_batch`, `extract_audio_batch` and `normalize_audio_batch`,
+      and on no other pair. Both halves measured against the baseline the T2
+      script regenerates from the pre-milestone ref, whose grid now probes each
+      `_batch` verb with that column absent *and* present.
 - [x] AC5: `extract_audio_batch`'s new `audio_codec` guard passes
       `allow_null = TRUE`, so `extract_audio_batch(audio_codec = NULL)` still
       compiles (`-vn`, no `-codec:a`) while `extract_audio(audio_codec = NULL)`
@@ -73,11 +81,11 @@ value does.
 ## Coverage
 
 - AC1 → T2, T4
-- AC2 → T3, T5, T6, T7
+- AC2 → T3, T5, T6, T7, T11
 - AC3 → T5, T7
-- AC4 → T2, T8
+- AC4 → T2, T8, T10
 - AC5 → T5, T7
-- AC6 → T1, T8
+- AC6 → T1, T8, T12
 
 ## Tasks
 
@@ -121,9 +129,19 @@ value does.
       confirm every `NULL`/default outcome matches. Update `@param` prose where a
       guard changes the documented error, `devtools::document()`, NEWS entry,
       `devtools::test()` + `devtools::check()` clean.
+- [ ] T10: Extend T2's grid with the codec-column dimension — each `_batch`
+      verb probed with a matching codec column absent and present — and re-run
+      both refs, confirming AC4's amended two halves.
+- [ ] T11: The four actioned review findings: F8 fail-soft the sweep, F3 the
+      `anonymize_video_batch` guard shape, F13 the unchecked `git show`, F19 the
+      comment's false D021 citation.
+- [ ] T12: Correct the NEWS entry's "which values are accepted is unchanged",
+      then `devtools::test()` + `devtools::check()` clean.
 
 ## Work log
 
+- 2026-07-29: AMENDMENT (substantive, gated) — F2's new rejection on the four `_batch` verbs is ADOPTED, not reverted: AC4 rewritten to permit exactly that one class and Scope's contract-neutrality sentence qualified to name it. Decided at the gate on the ground that [ffmpeg.R:3828](../../R/ffmpeg.R#L3828) already refuses a bad scalar codec on `separate_audio_video_batch` for the identical reason (M37 review), so reverting would have left the package refusing the value on one batch verb and ignoring it on four. Coverage gains AC4 → T10 and AC2 → T11; tasks T10–T12 added. Rationale and the rejected alternative in M41-D2.
+- 2026-07-29: minor amendment — T11 (the four actioned findings) runs before T10 (the grid extension), because T10's re-measurement is only meaningful against the final code; same reordering the T2/T3 entry below records, no task content changed.
 - 2026-07-29: REVIEW RETURN 1 — AC4 fails as written. Independent review found that four batch verbs (`standardize_video_batch`, `anonymize_video_batch`, `extract_audio_batch`, `normalize_audio_batch`) newly REJECT a scalar `video_codec`/`audio_codec` of `NA` when `jobs` carries a matching codec column: `pick()` lets the column override the scalar, so the scalar was dead weight and a bad value in it was previously ignored. Re-measured directly: all four COMPILED on `origin/master` and abort on the branch. AC4's headline clause is "The guards add no new rejection", so this fails it; not narrowed to its NULL/default operationalization to make it pass. T2's script never builds a call template carrying a codec column, which is why its evidence missed this. Status back to `in-progress`.
 - 2026-07-29: four more actioned findings to fix on return — F8 the parameterized sweep is not fail-soft (no `next` after the abort assertion, so `conditionMessage(NULL)` throws and kills the rest of the 20-verb loop); F3 `anonymize_video_batch`'s guard advertises `NULL` while `anonymize_pipeline()` refuses it six lines later; F13 unchecked `git show` in the baseline script's imports bootstrap; F19 a code comment citing a claim D021 does not make. Fourteen sub-80 findings logged in the Review section, not dropped.
 - 2026-07-29: F19 also exposes a false claim in D021 itself — it asserts `extract_audio` "accepts neither `NULL` nor `NA`", but `extract_audio_batch(audio_codec = NULL)` compiled on `origin/master` and still compiles, and `extract_audio_batch` appears nowhere in DECISIONS.md. DECISIONS.md is history under IP4, so this is superseded by a new entry, never edited in place; the correction is M42's to make since M42 owns these semantics. Left for the maintainer to route.
@@ -195,6 +213,36 @@ front doors become the redundant copies and threading is the cheaper fix.
 **Not a D-entry:** M41 changes which values are refused, never what an accepted
 value does, so nothing cross-cutting was decided. The `NULL`/`NA` semantics this
 deliberately leaves alone are M42's, per D021's closing note.
+
+### M41-D2 — The bad scalar is refused even when a column overrides it (2026-07-29)
+
+On a `_batch` verb, `pick()` prefers a `jobs` column over the scalar argument of
+the same name, so a scalar `video_codec`/`audio_codec` that the table also
+carried was never read — and a non-string value in it was ignored rather than
+refused. M41's front doors refuse it. Review finding F2 measured the change on
+`standardize_video_batch`, `anonymize_video_batch`, `extract_audio_batch` and
+`normalize_audio_batch`: all four compiled on `origin/master`, all four abort on
+the branch. AC4 as planned forbade any new rejection, so the gate had to choose.
+
+- **Chosen: adopt the refusal and amend AC4.** `separate_audio_video_batch`
+  already does exactly this at [ffmpeg.R:3828](../../R/ffmpeg.R#L3828), added by
+  the M37 review for the same reason — "`video_codec = NA` silently emitted
+  nothing whenever `jobs` happened to carry a codec column". Adopting makes all
+  five batch verbs agree; the cost is that M41 is no longer strictly
+  contract-neutral, so Scope, AC4 and NEWS all say so.
+- **Rejected: gate each guard on the column's absence.** Preserves AC4 as
+  written, but keeps a bad scalar silently ignored in exactly the case a caller
+  is least likely to notice, and leaves one batch verb refusing the value while
+  four ignore it.
+
+**Falsified by:** a caller who deliberately passes a placeholder non-string
+scalar alongside a complete codec column — for whom the refusal is a regression
+rather than a repair.
+
+**Still not a D-entry:** the choice is about which values are *refused*, never
+what an accepted value *means*, so it does not join the D016–D021 semantics
+family; and it follows the M37 review's in-file precedent rather than setting new
+policy.
 
 ## Review
 

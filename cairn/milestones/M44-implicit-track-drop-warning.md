@@ -159,6 +159,7 @@ here: a multi-track input is legal, and the selector is how a caller resolves it
 - 2026-07-30: T5 done — `devtools::check()` clean (0 errors, 0 warnings, 0 notes; vignette rebuilt OK) and `devtools::document()` no-diff. AC10's grep, scoped to `R/` per the Deviations table, finds `-select_streams` only in `R/ffprobe.R` (the new counter and `probe_one()`); every ungated `@examples` line on the four verbs uses `run = FALSE`, so no example can trigger a probe.
 - 2026-07-30: all tasks checked; status to review.
 - 2026-07-30: `R/ffmpeg.R` is a CRLF file and Python text-mode edits silently rewrote it to LF, turning the branch diff into a 9869-line whole-file rewrite; endings restored with `perl -pi -e 's/\n/\r\n/'` and `devtools::check()` re-run against the restored file (still 0/0/0), so the recorded check result matches what is on the branch. Diff is now +149 lines in that file.
+- 2026-07-30: review fan-out (3 lenses + scorer) returned 15 findings, 2 at or above the 80 threshold and both fixed on the branch — F1 (96) cli glue-interpolated file paths in the warning bullets, so `my{video}.mkv` aborted the verb and `{n}.mkv` silently printed a nonexistent name; F2 (82) `find_ffprobe()`'s error channel escaped the probe's `tryCatch`, aborting a call that previously ran. Both pinned by discriminating tests (18 tests / 51 assertions); the other 13 findings are logged in the Review section. Checkpoint: final `devtools::check()` still running at commit time.
 
 ## Decisions
 
@@ -282,6 +283,73 @@ failed, 0 errors, 0 skipped.
 - **AC12 (BC6)** — all four generated `.Rd` files carry the best-effort
   sentence: emitted when FFprobe is available and the input can be probed,
   silently skipped otherwise.
+
+### Independent review (3 lenses + scorer)
+
+Three fresh-context reviewers with distinct evidence bases, then a Sonnet scorer
+that did not generate the findings. 15 findings reported, 2 scored >=80.
+
+**Actioned (>=80), both fixed on the branch:**
+
+- **F1 (96) — cli glue-interpolates file paths in the warning bullets.**
+  `sprintf()` built each bullet and handed it to `cli_warn()`, which
+  glue-interpolates in `warn_dropped_audio()`'s own frame. Reproduced by two
+  agents independently: `extract_audio("my{video}.mkv", ...)` ABORTED the verb
+  ("Could not evaluate cli '{}' expression"), and `{n}.mkv` -- naming a local of
+  that function -- silently printed "3.mkv", a file that does not exist. Both
+  give the probe an effect beyond its diagnostic, which is what D024 licenses it
+  on not having. Fixed by escaping braces after `sprintf()`; a test over four
+  hostile paths plus the batch builder pins it, and deleting the escape turns
+  that test red.
+- **F2 (82) — locator errors escaped the probe.** `find_ffprobe()` sat inside
+  `suppressWarnings()` but OUTSIDE the `tryCatch()`. `find_program()` reads a
+  `set_ffprobe()` user config with `readLines()` then tests it, so an empty
+  config gives `if (logical(0))` and a two-line one a length-2 condition --
+  both aborting a verb that previously just ran. Scored against the code, not
+  the report: both throws confirmed by execution. Fixed by wrapping the locator
+  in its own `tryCatch()` and guarding `length(loc) != 1L` first (a
+  `character(0)` locator would have made `is.na(loc)` return `logical(0)` and
+  thrown on the guard itself). Two tests pin it; removing the wrap turns one
+  red.
+
+**Logged, below the 80 threshold, not actioned (13):**
+
+- F4 (72) probe cost is unconditional, serial in batch, precedes `ffm_batch()`
+  so it ignores `parallel = TRUE`, and has no opt-out; not documented in roxygen
+  or NEWS. The scorer read it as an accepted trade-off RR02 settled.
+- F3 (68) the batch summary says "from N inputs" while counting affected ROWS;
+  a repeated input makes the arithmetic read as impossible. Test pins the
+  current wording.
+- F8 (66) batch bullets use `basename()` where the scalar path uses the full
+  path, so `/a/take1.mkv` and `/b/take1.mkv` are indistinguishable.
+- F11 (60) test gaps; its two strongest cases were F1 and F2, now covered.
+- F7 (50) / F14 (22) the column-vs-argument rule is derived in
+  `warn_dropped_audio_batch()` and again via `batch_stream_cell()`; they agree
+  today.
+- F9 (45) the documented `suppressWarnings(classes = ...)` snippet omits `expr`
+  and is not runnable as literal code (it is prose inside `\code{}`, not an
+  executed example).
+- F10 (30) the message's worked example ("1, 2, 3 there and 0, 1, 2 here") holds
+  only when one non-audio stream precedes the audio; AC1 mandated those exact
+  numbers.
+- F6 (22) `rows[keep]` is correct as written; flagged as order-fragile.
+- F5 (18) under `options(warn = 2)` a successful probe stops execution and a
+  failed one does not; generic R warning semantics, not specific to this diff.
+- F12 (15) AC7 and AC10 hold via the Deviations table rather than literally --
+  raised so the gate signs off on the deviations explicitly.
+- F15 (10) / F13 (8) a code comment's M19/M35 citation is broader than the two
+  archives strictly support; blank lines and 81-84 column lines.
+
+The blame-history lens found no historical conflict and verified the CRLF commit
+by measurement (content-only diff empty, both sides 100% CRLF). The
+prior-review lens found no regression against any archived `## Review` section
+or `LESSONS.md` entry; its GitHub inline-comment probe returned `[]`, so that
+surface was skipped.
+
+**Note for hygiene:** the CRLF incident this milestone hit is a recurrence of
+M35's F1 (scored 92) and is already covered verbatim by a `LESSONS.md` line
+naming "a Python `open(p, \"w\").write()` round-trip" as the cause. The lesson
+existed and was not consulted; no new lesson is owed for it.
 
 ### Consistency gate
 

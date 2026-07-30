@@ -1,11 +1,11 @@
 # M45: Give a multi-track `separate_audio_video()` caller a way out
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M43
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** —
+- **Branch/PR:** `m45-separate-av-multitrack`
 
 ## Goal
 
@@ -117,6 +117,7 @@ failed → one grouped candidate row.
 - 2026-07-30: plan gate chose absorbing `separate_audio_video` alone from the `audio_stream`-carry candidate over promoting the whole five-verb row, because the row's promotion condition has not fired and the full carry trips the sizing tripwire; falsified by a second pass-through verb needing the selector before that row is promoted, which would make two milestones of one.
 - 2026-07-30: plan gate chose the enriched abort in the verb with a post-`ffm_batch()` per-row warning over placing it in `ffm_run()`, because the Layer-1 abort would carry the Layer-2 name `audio_stream` (IP1), and over a scalar-only message, because scalar/batch divergence is a defect this repo has fixed twice (M19, M35); falsified by the per-row probe cost making a large failed batch slow to report.
 - 2026-07-30: criteria audit ([O], fresh context, authored none of the criteria) returned findings on all six. Fixed before the gate: AC1's "byte-identical to master's" pinned to literal tokens and a recorded baseline; AC2's "FFmpeg's error text stays visible" dropped as unverifiable (`run_program(stderr = "")` streams to console, never into the condition) and its hint reworded to hold on any non-zero exit; AC3 scoped to these two verbs (package-wide it contradicts D013), its already-gated vignette clause dropped, and `PATH`-masking replaced by stubbing the finders past `find_program()`'s `rappdirs` fallback; AC6 changed to no-diff *after* documenting; AC6 now requires the binaries present so AC2/AC4 evidence cannot come from skipped tests. Routed to the gate: AC4's argument-plus-column ambiguity, AC2's enrichment site, and D023's split of selector from abort.
+- 2026-07-30: implement started; branch `m45-separate-av-multitrack` cut from master at e885859.
 
 ## Decisions
 

@@ -64,7 +64,7 @@ rule and answering the question D025's fifth bullet left open. NEWS.
 - [x] AC7 At the default `hardware`, no entry point runs a binary when
       `run = FALSE`: a counting mock over `run_program()`, `find_ffmpeg()` and
       `find_ffprobe()` records zero invocations across all four.
-- [x] AC8 `cairn/DECISIONS.md` gains an entry recording the pass-through rule and
+- [ ] AC8 `cairn/DECISIONS.md` gains an entry recording the pass-through rule and
       why it diverges from D023's first-track `NULL`; each `@param audio_stream`
       names the other two families' `NULL` (D025's stated cost); `NEWS.md`
       records the argument and both breaking changes; `devtools::document()`
@@ -180,7 +180,15 @@ running the verbs directly rather than by re-reading the tests.**
   `hardware` by AC wording: `hardware = "nvenc"` does shell out, which is the
   candidate row this milestone opened.
 
-- **AC8 ✓** `cairn/DECISIONS.md` gains D026, answering D025's fifth bullet with
+- **AC8 — FAILED on first pass, see finding F2.** My first evidence line for
+  this criterion counted `@param audio_stream` occurrences file-wide and
+  concluded all ten blocks carried the cross-reference. That grep cannot see
+  per-block coverage, and the diff-bug lens caught what it missed:
+  `separate_audio_video_batch()`'s block (`R/ffmpeg.R:4580`) names only
+  `separate_audio_video()`, never the extraction family, and
+  `man/separate_audio_video_batch.Rd` is one of ten man files the branch does
+  NOT touch. Re-verified by reading the block. Ticked only after the fix below.
+- **AC8 (after fix) ✓** `cairn/DECISIONS.md` gains D026, answering D025's fifth bullet with
   M45's every-track reading and recording the `?` asymmetry, the rejected
   `-map 0`, and the subtitle-carriage change. All ten `@param audio_stream`
   blocks now name the families reading `NULL` the other way (attributed one by

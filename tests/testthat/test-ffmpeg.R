@@ -107,34 +107,62 @@ test_that("extract_audio(audio_codec=) sets the audio codec", {
   expect_match(cmd, "-codec:a aac -vn", fixed = TRUE)
 })
 
-test_that("convert_audio() default (audio_codec = NULL) compiles to -q:a 0 -map a", {
+test_that("convert_audio() default (audio_codec = NULL) compiles to -q:a 0 -map 0:a:0", {
   f <- make_input()
   cmd <- convert_audio(f, "out.mp3", run = FALSE)
-  expect_match(cmd, "-q:a 0 -map a", fixed = TRUE)
+  expect_match(cmd, "-q:a 0 -map 0:a:0", fixed = TRUE)
 })
 
 test_that("convert_audio(audio_codec=) pins -codec:a and drops -q:a", {
   f <- make_input()
   cmd <- convert_audio(f, "out.m4a", audio_codec = "aac", run = FALSE)
   expect_match(cmd, "-codec:a aac", fixed = TRUE)
-  expect_match(cmd, "-map a", fixed = TRUE)
+  expect_match(cmd, "-map 0:a:0", fixed = TRUE)
   expect_no_match(cmd, "-q:a", fixed = TRUE)
 })
 
-test_that("convert_audio() rename is byte-identical to the pre-M40 commands", {
+test_that("convert_audio() commands match the pre-M40 rename apart from the map", {
   # M40 renamed `format` to `audio_codec` without touching the recipe, so both
-  # branches must still compile exactly what the pre-rename verb compiled. The
-  # expectations below are the commands recorded from master before the rename,
-  # not a re-derivation from the current code.
+  # branches compiled exactly what the pre-rename verb compiled. The map is the
+  # one deliberate departure since: `-map a` was replaced by `-map 0:a:0` to stop
+  # a multi-track input feeding every stream to a single-stream muxer. Every
+  # other token below is still the command recorded from master before the
+  # rename, not a re-derivation from the current code, which is what makes this
+  # a byte-identity check and not a tautology.
   f <- make_input()
   expect_identical(
     convert_audio(f, "out.mp3", run = FALSE),
-    paste0('-y -i "', f, '" -q:a 0 -map a "out.mp3"')
+    paste0('-y -i "', f, '" -q:a 0 -map 0:a:0 "out.mp3"')
   )
   expect_identical(
     convert_audio(f, "out.m4a", audio_codec = "aac", run = FALSE),
-    paste0('-y -i "', f, '" -codec:a aac -map a "out.m4a"')
+    paste0('-y -i "', f, '" -codec:a aac -map 0:a:0 "out.m4a"')
   )
+})
+
+test_that("convert_audio() takes exactly one track from a multi-track input (binary-gated)", {
+  # Regression: the recipe emitted `-map a`, which maps EVERY audio stream. On a
+  # three-track input the mp3 muxer refused it ("Exactly one MP3 audio stream is
+  # required"), FFmpeg exited 65514, and a zero-byte output was left on disk --
+  # while the documented contract is singular ("Maps the audio stream of infile
+  # into outfile"). A single-track input never exposed this, so the fixture must
+  # carry more than one track for the test to discriminate.
+  skip_if_no_ffprobe()
+  f <- make_multitrack_video()
+  out <- withr::local_tempfile(fileext = ".mp3")
+  expect_no_error(convert_audio(f, out))
+  expect_gt(file.size(out), 0)
+  expect_equal(nrow(probe_audio(infile = out)), 1L)
+})
+
+test_that("convert_audio() maps the first audio stream deterministically", {
+  # The pure counterpart to the execution test above: `-map a` is unbounded,
+  # `-map 0:a:0` names one stream. Pinning the emitted map here means a recipe
+  # change is caught without the binaries. `audio_stream` selection is M43's;
+  # this only fixes WHICH single stream is taken to a stated one.
+  f <- make_input()
+  expect_match(convert_audio(f, "out.mp3", run = FALSE), "-map 0:a:0", fixed = TRUE)
+  expect_no_match(convert_audio(f, "out.mp3", run = FALSE), "-map a", fixed = TRUE)
 })
 
 test_that("convert_audio() rejects the retired `format` argument", {

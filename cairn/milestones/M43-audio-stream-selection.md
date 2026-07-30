@@ -123,6 +123,7 @@ scope; `strip_metadata()`'s `-map 0` already keeps every stream.
 - 2026-07-29: plan chose `audio_stream` as the argument name over reusing `audio`, because D009 documents `audio =` as a 0-based *input* index on `compare_videos`/`picture_in_picture` while this indexes streams within one input; falsified by the follow-up unifying both under one argument.
 - 2026-07-29: plan gate chose hotfixing `convert_audio()`'s `-map a` crash separately over folding it into this milestone, so a broken verb is not gated behind M41 and M42; falsified by the hotfix's deterministic map proving insufficient without the selector.
 - 2026-07-29: split from M44 because 9 acceptance criteria hit the sizing tripwire; the run-path probe and its D013 extension are independently shippable, so the selector ships without waiting on a convention decision.
+- 2026-07-29: the precondition hotfix shipped — `convert_audio_pipeline()` now maps `0:a:0` instead of `a`, so AC1's "keeps the hotfix's explicit map" reads against that literal. It also landed `make_multitrack_video()` in `helper-media.R` to the shape AC5 specifies (3 aac tracks tagged eng/spa/fra, distinct sine frequencies, `.mkv`), so verify T1 rather than re-adding it; four `-map a` assertions were retargeted, and the M40 byte-identity test at `test-ffmpeg.R:124-137` was already rewritten for the map, narrowing what AC1 leaves to do.
 
 ## Decisions
 

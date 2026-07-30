@@ -31,6 +31,10 @@ extension at highest VBR quality (\code{-q:a 0}) — e.g. an \code{.mp3}
 extension yields an MP3. Pass \code{audio_codec} to pin the output audio
 codec explicitly, regardless of the extension.
 }
+\details{
+When \code{infile} carries more than one audio track, the \strong{first} one
+is taken. Choosing a different track is not yet supported.
+}
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 convert_audio(video, "audio.mp3", run = FALSE)

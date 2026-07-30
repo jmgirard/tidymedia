@@ -102,6 +102,34 @@ make_silent_audio <- function(env = parent.frame()) {
   path
 }
 
+# Generate a video carrying THREE audio tracks (aac, tagged eng/spa/fra, at
+# distinct sine frequencies), so tests can observe which track a verb selects and
+# whether it selects exactly one. A verb mapping every audio stream into a
+# single-stream container (mp3) fails on this input and succeeds on a one-track
+# file, which is the discriminator the hotfix regression test needs. Matroska
+# rather than MP4 so the per-stream language tags survive the round trip. Skips
+# the calling test if ffmpeg is unavailable. Returns the file path.
+make_multitrack_video <- function(env = parent.frame()) {
+  skip_if_no_ffmpeg()
+  path <- withr::local_tempfile(fileext = ".mkv", .local_envir = env)
+  command <- paste(
+    "-y -f lavfi -i testsrc=duration=1:size=64x64:rate=10",
+    "-f lavfi -i sine=frequency=300:duration=1",
+    "-f lavfi -i sine=frequency=600:duration=1",
+    "-f lavfi -i sine=frequency=900:duration=1",
+    "-map 0:v -map 1:a -map 2:a -map 3:a",
+    "-c:v libx264 -c:a aac -b:a 32k -pix_fmt yuv420p",
+    "-metadata:s:a:0 language=eng",
+    "-metadata:s:a:1 language=spa",
+    "-metadata:s:a:2 language=fra",
+    sprintf('"%s"', path)
+  )
+  ffmpeg(command)
+  testthat::skip_if_not(file.exists(path),
+                        "multitrack test video could not be generated")
+  path
+}
+
 # Build an ffm pipeline WITHOUT ffm_files()'s file-readability check, so pure
 # (binary-free) tests can assert compiled commands for named-but-absent files.
 ffm_dry <- function(input, output) {

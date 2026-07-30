@@ -13,6 +13,40 @@ compile_scrubbed <- function(p) {
   cmd
 }
 
+# Run an FFmpeg fixture command under a wall-clock timeout, and error if it
+# reaches the limit. Fixture generation goes through here rather than through
+# ffmpeg() because a hung FFmpeg would otherwise block the run forever with no
+# output: `-shortest` beside a mapped subtitle stream deadlocked ~40% of runs on
+# ffmpeg 8.1.2 (M46). A synthetic clip of a couple of seconds cannot legitimately
+# take minutes, so reaching the limit is a defect and must be loudly red -- an
+# error rather than a skip, which would go green on CI. base R's system()
+# timeout kills the child at the limit and reports status 124, so no package
+# dependency is involved. Skips the calling test if ffmpeg is unavailable.
+# Returns FFmpeg's stdout invisibly.
+run_ffmpeg_fixture <- function(command, timeout = 120) {
+  skip_if_no_ffmpeg()
+  location <- find_ffmpeg()
+  out <- withCallingHandlers(
+    system(paste(location, command), intern = TRUE, input = "",
+           timeout = timeout),
+    # Muffle only R's own timeout warning -- the failure is raised below with a
+    # better message. Every other warning (a non-zero FFmpeg exit) still reaches
+    # the reporter exactly as it did when these sites called ffmpeg().
+    warning = function(w) {
+      if (grepl("timed out", conditionMessage(w), fixed = TRUE)) {
+        invokeRestart("muffleWarning")
+      }
+    }
+  )
+  status <- attr(out, "status")
+  if (!is.null(status) && identical(as.integer(status), 124L)) {
+    # Name the binary and the limit only: the command string carries temp paths.
+    stop(sprintf("%s fixture generation timed out after %g seconds.",
+                 basename(location), timeout), call. = FALSE)
+  }
+  invisible(out)
+}
+
 # Generate a short test video (with an audio track) using ffmpeg's synthetic
 # lavfi sources, so integration tests do not need a checked-in media fixture.
 # Skips the calling test if ffmpeg is unavailable. Returns the file path.

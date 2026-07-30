@@ -13,7 +13,7 @@ _Last hygiene check: 2026-07-30 (M46 planned from the subtitle-fixture hang row,
 | M43 | Pick which audio track the extraction verbs take (`audio_stream`) | done | M41, M42 | normal | milestones/archive/M43-audio-stream-selection.md |
 | M44 | Say something when audio tracks are dropped | done | M43 | normal | milestones/archive/M44-implicit-track-drop-warning.md |
 | M45 | Give a multi-track `separate_audio_video()` caller a way out | done | M43 | normal | milestones/archive/M45-separate-av-multitrack.md |
-| M46 | Stop the subtitle fixture hanging, and bound every fixture command | planned | — | normal | milestones/M46-fixture-hang-timeout.md |
+| M46 | Stop the subtitle fixture hanging, and bound every fixture command | in-progress | — | normal | milestones/M46-fixture-hang-timeout.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

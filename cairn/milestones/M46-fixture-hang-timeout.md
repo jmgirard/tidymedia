@@ -1,11 +1,11 @@
 # M46: Stop the subtitle fixture hanging, and bound every fixture command
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m46-fixture-hang-timeout`
 
 ## Goal
 
@@ -80,7 +80,7 @@ row, `audio_stream`-carry included.
 
 ## Tasks
 
-- [ ] T1 Add the timeout-bearing runner to `tests/testthat/helper-media.R`:
+- [x] T1 Add the timeout-bearing runner to `tests/testthat/helper-media.R`:
       resolve with `find_ffmpeg()`, run `system(..., intern = TRUE, input = "",
       timeout = )` (default 120 s, overridable), muffle its warning, and on a
       `status` attribute of 124 `testthat::fail()` naming the binary and the
@@ -112,6 +112,10 @@ row, `audio_stream`-carry included.
 - 2026-07-30: plan gate chose a test-only timeout helper over a `timeout=` argument on `ffmpeg()`/`run_program()` because the exported-API change needs its own D-entry and default-value decision; falsified by a user report of a package call hanging (a candidate row carries it).
 - 2026-07-30: plan gate chose committing the 10-run regression test over review-only probe evidence, against the "never test dependency behavior" reading the [O] criteria audit surfaced, because the subject under test is this repo's fixture recipe rather than FFmpeg's behavior; falsified by the test going red for any cause other than a reintroduced `-shortest`.
 - 2026-07-30: [O] criteria audit ran on the step-2 criteria and returned six findings — a false premise under AC3 (no test exercises `ffmpeg()` as its subject, so routing all twelve sites would strip the exported function of all coverage; AC4 added), the AC1/AC5 fixture-location split, strict-vs-diagnostic and ordered-vs-set ambiguities in AC2, an under-specified timeout message, a missing binary-absent skip, and a decorative assertion in the repeat test (the guard is completion-within-limit, not subtitle presence). Five fixed in the wording; the sixth went to the gate as Q2.
+
+- 2026-07-30: T1 done — `run_ffmpeg_fixture(command, timeout = 120)` in `helper-media.R`; it errors rather than skipping (a skip would go green on CI, which is the failure this milestone closes) and names only the binary and the limit. Probed with a 3-second limit against an unbounded encode: returned at 3.0 s with "ffmpeg fixture generation timed out after 3 seconds.", and `pgrep ffmpeg` found no survivor, so R's kill reaps the child.
+- 2026-07-30: minor amendment — T3 moved ahead of T2. Verification between tasks runs the full suite, and until `-shortest` is gone each run carries the measured ~40% hang; fixing the fixture first makes every later run deterministic. Task text unchanged.
+- 2026-07-30: baseline suite on the branch before any test change — FAIL 0, WARN 4, SKIP 5, PASS 2814, 57 s (this run did not hit the hang).
 
 ## Decisions
 

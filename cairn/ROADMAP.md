@@ -12,7 +12,7 @@ _Last hygiene check: 2026-07-30 (M44 merged and archived; F4 graduated to a cand
 | M42 | What `NULL` and column `NA` mean, settled across the codec family | done | M41 | normal | milestones/archive/M42-codec-null-na-semantics.md |
 | M43 | Pick which audio track the extraction verbs take (`audio_stream`) | done | M41, M42 | normal | milestones/archive/M43-audio-stream-selection.md |
 | M44 | Say something when audio tracks are dropped | done | M43 | normal | milestones/archive/M44-implicit-track-drop-warning.md |
-| M45 | Give a multi-track `separate_audio_video()` caller a way out | in-progress | M43 | normal | milestones/M45-separate-av-multitrack.md |
+| M45 | Give a multi-track `separate_audio_video()` caller a way out | review | M43 | normal | milestones/M45-separate-av-multitrack.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

@@ -4391,8 +4391,12 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #'   column (and \code{verified} / provenance manifest when requested via
 #'   \code{...}). When \code{jobs} supplies either codec column, a single
 #'   \code{codec} column carries each row's resolved encoder for its own stream
-#'   (\code{NA} where none is emitted). The columns match the other \code{_batch}
-#'   verbs' output plus the \code{stream} marker. See \code{\link{ffm_batch}}.
+#'   (\code{NA} where none is emitted). When \code{audio_stream} is supplied as
+#'   either the argument or a \code{jobs} column, an \code{audio_stream} column
+#'   likewise carries each row's resolved track — the selected index on an audio
+#'   row, \code{NA} on a video row, which takes no audio. The columns match the
+#'   other \code{_batch} verbs' output plus the \code{stream} marker. See
+#'   \code{\link{ffm_batch}}.
 #' @seealso [separate_audio_video()], the scalar verb it wraps; [ffm_batch()],
 #'   the batch runner; [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
 #'   [segment_video_batch()] for the other fan-out batch verb.

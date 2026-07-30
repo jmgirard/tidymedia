@@ -1,6 +1,6 @@
 # M45: Give a multi-track `separate_audio_video()` caller a way out
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M43
 - **Driving RR:** —
@@ -129,6 +129,8 @@ failed → one grouped candidate row.
 - 2026-07-30: T4 done — D025 appended: quotes the D023 `NULL` bullet it departs from, separates the every-track from the which-track question using D023's own closing bullet, states the cost (one name, two defaults) with its falsifier, and records the absorption plus the D024 adoption pointer. The `audio_stream`-carry candidate row now cites D025 and its observation that all four remaining verbs pass audio through, so on their face they take M45's shape rather than D023's.
 - 2026-07-30: T5 done — 30 tests in `tests/testthat/test-separate-av-multitrack.R`, written per task with the code rather than batched here. Gap-closing this task: AC3's evidence exists in BOTH spellings — the counting mock (cannot go vacuous) and the AC3-worded stub-to-abort (weaker, kept beside it, with a comment saying why neither replaces the other) — and AC2's status assertion now requires a digit rather than only the phrase. Three mutation probes all red on distinct failure sets: unconditional enrichment, no fail-open, fan-out ignoring the argument. `test()` 0 failures / 2798 passing.
 - 2026-07-30: T6 done — NEWS gained one Breaking-changes bullet (the positional shift of `run`/`parallel` behind the new argument, matching the one M43 wrote for the four audio verbs) and two New-features bullets (the argument with its deliberately different default spelled out, and the enriched abort plus the batch's aggregated warning with its best-effort caveat). `document()` produces no diff. `devtools::check()` printed 0 notes while `R CMD check` sat at `Status: 1 NOTE` — M17's masked spelling NOTE, new word "Matroska"; `spelling::update_wordlist()` then `Status: OK`, 0 errors / 0 warnings / 0 notes with ffmpeg and ffprobe present, so the AC2/AC4 execution tests ran rather than skipped. The only vignette mention of the verb names its arguments, so the positional shift reaches no in-repo caller.
+- 2026-07-30: T6 follow-up — the batch `@return` now documents the `audio_stream` column the result gains when the argument or a column is supplied (the selected index on audio rows, `NA` on video rows), with a test pinning both that shape and the unchanged pre-change shape when neither is given (M19's return-schema lesson). `test()` 0 failures / 2800 passing; `R CMD check` `Status: OK`, 0/0/0.
+- 2026-07-30: all tasks done; status review. No prose-guard was authored or edited (the milestone's substring assertions are over runtime condition messages, not over doc wording), so guard-doctrine §8's fresh-context description reader does not apply.
 
 ## Decisions
 

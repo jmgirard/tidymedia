@@ -265,6 +265,17 @@ test_that("a non-numeric audio_stream column and an NA argument are rejected", {
   )
 })
 
+test_that("the result carries the resolved audio_stream, and only when asked", {
+  # The return schema is a contract (M19): supplying the argument or the column
+  # adds a column, and supplying neither must leave the pre-change shape.
+  infile <- make_input("mkv")
+  plain <- separate_audio_video_batch(sep_jobs(infile), run = FALSE)
+  expect_false("audio_stream" %in% names(plain))
+  named <- separate_audio_video_batch(sep_jobs(c(infile, infile)),
+                                      audio_stream = 1, run = FALSE)
+  expect_identical(named$audio_stream, c(1, NA, 1, NA))
+})
+
 test_that("a failed audio row records success = FALSE and warns once", {
   skip_if_no_ffprobe()
   multi <- make_multitrack_video()

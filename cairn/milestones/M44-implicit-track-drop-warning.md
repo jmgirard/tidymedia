@@ -158,6 +158,7 @@ here: a multi-track input is legal, and the selector is how a caller resolves it
 
 - 2026-07-30: T5 done — `devtools::check()` clean (0 errors, 0 warnings, 0 notes; vignette rebuilt OK) and `devtools::document()` no-diff. AC10's grep, scoped to `R/` per the Deviations table, finds `-select_streams` only in `R/ffprobe.R` (the new counter and `probe_one()`); every ungated `@examples` line on the four verbs uses `run = FALSE`, so no example can trigger a probe.
 - 2026-07-30: all tasks checked; status to review.
+- 2026-07-30: `R/ffmpeg.R` is a CRLF file and Python text-mode edits silently rewrote it to LF, turning the branch diff into a 9869-line whole-file rewrite; endings restored with `perl -pi -e 's/\n/\r\n/'` and `devtools::check()` re-run against the restored file (still 0/0/0), so the recorded check result matches what is on the branch. Diff is now +149 lines in that file.
 
 ## Decisions
 

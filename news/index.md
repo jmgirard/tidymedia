@@ -434,6 +434,52 @@ and soaking).
 
 ### Bug fixes
 
+- `normalize_audio_batch(audio_codec = NA)` now aborts instead of
+  quietly compiling the default command. A scalar `NA` was resolved the
+  same way as an `NA` cell in a jobs-table column — where it
+  legitimately means “leave this row’s codec unset” — so an accidental
+  `NA` argument produced a command with no `-codec:a` and no indication
+  that anything had been ignored.
+
+- Every `video_codec` and `audio_codec` argument now reports a bad value
+  against the argument and the verb you actually called. Several
+  previously blamed an internal helper, named FFmpeg’s own `video` /
+  `audio` parameter instead of the argument you passed, or — on the
+  `_batch` verbs — surfaced the complaint from inside the row loop with
+  an `In index: 1` prefix, as though one row’s data were at fault rather
+  than a whole-table argument. Affected
+  [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
+  [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md),
+  [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),
+  [`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md),
+  [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
+  and
+  [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md).
+
+- A bad `video_codec` / `audio_codec` **argument** on a `_batch` verb is
+  now refused even when `jobs` carries a column of the same name. The
+  column takes precedence over the argument, so a non-string value
+  passed as the argument used to be discarded in silence;
+  [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md),
+  [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),
+  [`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md)
+  and
+  [`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md)
+  now report it, matching
+  [`separate_audio_video_batch()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video_batch.md),
+  which already refused it. Values these verbs *accept* are unchanged —
+  a codec string, and `NULL` where it was already legal, behave exactly
+  as before.
+
+- One knock-on for
+  [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md):
+  a call that passes both a bad `video_codec` and an invalid `width` /
+  `height` / `fps` now reports the codec problem first, where it
+  previously reported the dimension problem. Both complaints are real
+  and fixing the codec argument reveals the other; no value that was
+  accepted before is refused now. The other verbs keep their previous
+  ordering.
+
 - [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
   (and the `parallel = TRUE` path of
   [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)

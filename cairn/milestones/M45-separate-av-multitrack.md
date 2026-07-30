@@ -109,7 +109,7 @@ failed → one grouped candidate row.
       argument/column/`NA` matrix and the per-row warning. Prove the AC2 test
       discriminates by making the enrichment unconditional — it must go red
       (M39's lesson).
-- [ ] T6: Docs — `@param audio_stream` on both verbs and the batch
+- [x] T6: Docs — `@param audio_stream` on both verbs and the batch
       `@param jobs` column enumeration (M39's lesson); NEWS; `document()`,
       `test()`, `check()` with the binaries present.
 
@@ -128,6 +128,7 @@ failed → one grouped candidate row.
 - 2026-07-30: T3 done — `audio_stream` on `separate_audio_video_batch()`: batch-wide argument plus per-row column, materialized into the 2N reshape on each input's AUDIO row only (video rows carry NA, and the video branch never reads the value — two independent reasons a video map cannot narrow). `NA` cell keeps that row on every track via `check_batch_audio_col(na_means = "keep every audio track")`. After `ffm_batch()` returns, `warn_failed_separation_batch()` probes only the failed no-track audio rows and emits ONE warning naming each affected INPUT row (not the 2N result row) with the scalar abort's three clauses. Discrimination probe (M39): making the fan-out ignore the argument reddens 4 tests. `@param jobs` column enumeration updated in the same task rather than at T6 (M39's lesson), plus a Failed-audio-outputs docs section. `document()` clean, `test()` 0 failures / 2797 passing.
 - 2026-07-30: T4 done — D025 appended: quotes the D023 `NULL` bullet it departs from, separates the every-track from the which-track question using D023's own closing bullet, states the cost (one name, two defaults) with its falsifier, and records the absorption plus the D024 adoption pointer. The `audio_stream`-carry candidate row now cites D025 and its observation that all four remaining verbs pass audio through, so on their face they take M45's shape rather than D023's.
 - 2026-07-30: T5 done — 30 tests in `tests/testthat/test-separate-av-multitrack.R`, written per task with the code rather than batched here. Gap-closing this task: AC3's evidence exists in BOTH spellings — the counting mock (cannot go vacuous) and the AC3-worded stub-to-abort (weaker, kept beside it, with a comment saying why neither replaces the other) — and AC2's status assertion now requires a digit rather than only the phrase. Three mutation probes all red on distinct failure sets: unconditional enrichment, no fail-open, fan-out ignoring the argument. `test()` 0 failures / 2798 passing.
+- 2026-07-30: T6 done — NEWS gained one Breaking-changes bullet (the positional shift of `run`/`parallel` behind the new argument, matching the one M43 wrote for the four audio verbs) and two New-features bullets (the argument with its deliberately different default spelled out, and the enriched abort plus the batch's aggregated warning with its best-effort caveat). `document()` produces no diff. `devtools::check()` printed 0 notes while `R CMD check` sat at `Status: 1 NOTE` — M17's masked spelling NOTE, new word "Matroska"; `spelling::update_wordlist()` then `Status: OK`, 0 errors / 0 warnings / 0 notes with ffmpeg and ffprobe present, so the AC2/AC4 execution tests ran rather than skipped. The only vignette mention of the verb names its arguments, so the positional shift reaches no in-repo caller.
 
 ## Decisions
 

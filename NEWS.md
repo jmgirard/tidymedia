@@ -34,6 +34,13 @@
   rather than appended for compatibility; naming your arguments avoids the
   problem entirely.
 
+* `audio_stream` is likewise inserted **before** `run` on
+  `separate_audio_video()` and `separate_audio_video_batch()`, so `run` (and
+  `parallel` on the batch verb) shifts one position there too: **calls passing
+  them by position rather than by name must be updated.** As above, the argument
+  is placed where it belongs rather than appended, in line with this package's
+  pre-1.0 clean-break policy; naming your arguments avoids the problem.
+
 * `ffm_map()` appends instead of overwriting. Calling it twice on the same
   pipeline used to discard the first mapping; it now keeps both, emitting one
   `-map` per mapping in the order given, which is what lets a pipeline keep the
@@ -167,6 +174,49 @@
   Asking for a track the input does not have is an FFmpeg error, not an R one:
   the compiled command is still what you asked for, and FFmpeg reports that the
   stream map matches no streams.
+
+* `separate_audio_video()` and `separate_audio_video_batch()` gain an
+  `audio_stream` argument for writing one audio track instead of all of them.
+  Like the argument of the same name on `extract_audio()` and `convert_audio()`,
+  it is a 0-based index counted among the input's audio streams, so
+  `audio_stream = 1` writes the second audio track whatever its position among
+  the file's streams. Only the audio output is affected — the video file always
+  takes the input's video.
+
+  **The default is different on these two verbs, deliberately.** Leaving
+  `audio_stream` unset keeps **every** audio track, which is what they have
+  always done, rather than the first track `extract_audio()` and
+  `convert_audio()` take. An audio container that holds several streams —
+  Matroska (`.mka`) or `.m4a` — therefore still receives all of them, and no
+  working call changes. The two families differ because they answer different
+  questions: an extraction verb writes one track by construction, while a
+  separation verb writes whatever your container can hold.
+
+  In a jobs table, `audio_stream` may be a per-row column, which overrides the
+  argument row by row; `NA` in a cell keeps that row on every audio track, the
+  per-row form of leaving the argument unset.
+
+* `separate_audio_video()` now explains itself when FFmpeg refuses your audio
+  file because the input carries several audio tracks. Most audio containers
+  (`.aac`, `.mp3`, `.wav`) hold exactly one stream, so separating a three-track
+  recording into one of them failed with FFmpeg's own message and a zero-byte
+  file — with nothing to say that the track count was the problem, or that there
+  was any way around it. The error now states how many tracks the input carries
+  and names both ways out: `audio_stream` to write one of them, or a container
+  such as `.mka` or `.m4a` to keep them all.
+
+  `separate_audio_video_batch()` cannot abort one row without abandoning the
+  rest of the table, so it still records that row as `success = FALSE` and warns
+  **once** when the batch finishes, naming every affected input row. Suppress it
+  with `suppressWarnings(classes = "tidymedia_multitrack_separation")`.
+
+  Counting the tracks means running FFprobe, so the explanation is
+  **best-effort**: you get it when FFprobe is available and the input can be
+  probed, and FFmpeg's own error otherwise. The probe runs only after FFmpeg has
+  already failed, only on a real run (never under `run = FALSE`), and never
+  changes the command that gets compiled. Naming a track skips it entirely —
+  with one track mapped, a failure is something else and a track count would not
+  explain it.
 
 * `NULL` now means the same thing on every codec argument in the package, and
   `NA` means the same thing in every per-row codec column. `audio_codec = NULL`

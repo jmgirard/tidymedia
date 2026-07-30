@@ -94,7 +94,7 @@ row, `audio_stream`-carry included.
 - [x] T4 Add the direct `ffmpeg()` tests to `test-ffmpeg.R` (AC4).
 - [x] T5 Add the timeout-mechanism test in a new
       `tests/testthat/test-fixture-helpers.R` (AC5).
-- [ ] T6 Add the 10-run regression test beside the subtitle test, then probe it
+- [x] T6 Add the 10-run regression test beside the subtitle test, then probe it
       red by re-adding `-shortest` to the generator — commit the baseline first,
       since `git checkout` restores from the index and would otherwise revert
       the fix itself (M44) — and restore.
@@ -114,6 +114,7 @@ row, `audio_stream`-carry included.
 - 2026-07-30: [O] criteria audit ran on the step-2 criteria and returned six findings — a false premise under AC3 (no test exercises `ffmpeg()` as its subject, so routing all twelve sites would strip the exported function of all coverage; AC4 added), the AC1/AC5 fixture-location split, strict-vs-diagnostic and ordered-vs-set ambiguities in AC2, an under-specified timeout message, a missing binary-absent skip, and a decorative assertion in the repeat test (the guard is completion-within-limit, not subtitle presence). Five fixed in the wording; the sixth went to the gate as Q2.
 
 - 2026-07-30: T1 done — `run_ffmpeg_fixture(command, timeout = 120)` in `helper-media.R`; it errors rather than skipping (a skip would go green on CI, which is the failure this milestone closes) and names only the binary and the limit. Probed with a 3-second limit against an unbounded encode: returned at 3.0 s with "ffmpeg fixture generation timed out after 3 seconds.", and `pgrep ffmpeg` found no survivor, so R's kill reaps the child.
+- 2026-07-30: T6 done — mutation probe against the committed baseline: `-shortest` re-added to `make_subtitle_video()`, `test-audio-stream.R` run three times, ALL THREE red (AC6 allows up to three, needing one). Runs 1 and 2 failed in the 10-run regression test at `:325`, run 3 in the original subtitle test at `:305`; every failure read `Error: ffmpeg fixture generation timed out after 120 seconds.` — an error, never a hang, which is the whole point. Restored with `git checkout` (clean vs HEAD) and the file re-ran green.
 - 2026-07-30: T5 done — `test-fixture-helpers.R`: a 1080p60 unbounded encode under a 3-second limit errors in under 8 s naming `ffmpeg` and "timed out after 3 seconds" while naming neither the command nor `tempdir()`, plus a finishing command returning FFmpeg's output. Recorded in the file what the test cannot catch: a mutation that stops passing the limit through makes it HANG rather than go red, since non-termination is the failure under test. Full suite FAIL 0, PASS 2837.
 - 2026-07-30: T4 done — two tests in `test-ffmpeg.R`: `ffmpeg("-version")` returns a character vector whose first line matches `^ffmpeg version`, and the `check_string()` branch fires on a length-2 vector, a number, and `NULL`. That branch had never been fired. Full suite FAIL 0, PASS 2829.
 - 2026-07-30: minor amendment — T1's text said `testthat::fail()`; the helper raises an error instead. `fail()` records a failure and returns, so the generator would run on into its `skip_if_not(file.exists(path))` and report the test as failed AND skipped; an error stops at the hang and is what `expect_error()` can pin in T5. Behavior is the one the criteria name (loudly red, never a skip).

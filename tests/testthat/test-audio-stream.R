@@ -314,17 +314,24 @@ test_that("extract_audio() takes audio alone from a subtitle-bearing input", {
 test_that("the subtitle fixture completes every time it is generated", {
   # Regression (M46): with `-shortest`, this command deadlocked FFmpeg on ~40%
   # of runs and the suite sat forever with no output. The discriminating
-  # assertion is that all ten generations RETURN -- run_ffmpeg_fixture() turns a
-  # hang into an error at its limit, so a reintroduced `-shortest` reddens this
-  # test instead of stalling the run. The stream check below is a
-  # fixture-validity guard, not the guard against the hang: every run that
-  # completes carries a subtitle, including the 60% that completed before the
-  # fix.
+  # assertion is the COUNT below -- it is reachable only if all ten generations
+  # returned, and run_ffmpeg_fixture() turns a hang into an error at its limit,
+  # so a reintroduced `-shortest` reddens this test instead of stalling the run.
+  #
+  # The subtitle check is a fixture-validity SKIP, deliberately not an
+  # assertion: every generation that completes carries a subtitle (including the
+  # 60% that completed before the fix), so asserting it would only add a way for
+  # this test to go red for a reason that is not the deadlock -- e.g. an FFmpeg
+  # build without SRT-in-Matroska. Skipping keeps the red signal meaning one
+  # thing (M43's fixture-validity rule).
   skip_if_no_ffprobe()
+  completed <- 0L
   for (i in seq_len(10)) {
     infile <- make_subtitle_video()
-    expect_true("subtitle" %in% stream_types(infile))
+    skip_if_not("subtitle" %in% stream_types(infile), "fixture carries no subtitle")
+    completed <- completed + 1L
   }
+  expect_identical(completed, 10L)
 })
 
 test_that("convert_audio(audio_stream = 1) converts the second track (spa)", {

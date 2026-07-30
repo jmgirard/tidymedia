@@ -1,6 +1,6 @@
 # M46: Stop the subtitle fixture hanging, and bound every fixture command
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -114,6 +114,8 @@ row, `audio_stream`-carry included.
 - 2026-07-30: [O] criteria audit ran on the step-2 criteria and returned six findings — a false premise under AC3 (no test exercises `ffmpeg()` as its subject, so routing all twelve sites would strip the exported function of all coverage; AC4 added), the AC1/AC5 fixture-location split, strict-vs-diagnostic and ordered-vs-set ambiguities in AC2, an under-specified timeout message, a missing binary-absent skip, and a decorative assertion in the repeat test (the guard is completion-within-limit, not subtitle presence). Five fixed in the wording; the sixth went to the gate as Q2.
 
 - 2026-07-30: T1 done — `run_ffmpeg_fixture(command, timeout = 120)` in `helper-media.R`; it errors rather than skipping (a skip would go green on CI, which is the failure this milestone closes) and names only the binary and the limit. Probed with a 3-second limit against an unbounded encode: returned at 3.0 s with "ffmpeg fixture generation timed out after 3 seconds.", and `pgrep ffmpeg` found no survivor, so R's kill reaps the child.
+- 2026-07-30: RETURN 1 from review (thrash count: 1). AC6 was not met as written — the 10-run test asserted subtitle presence (`expect_true`) where AC6 requires it stay a fixture-validity SKIP. Three review lenses flagged it independently and it was the [O] criteria audit's own finding #6, fixed in the criterion wording at plan time and then not carried into the code. Reworked: the subtitle check is now `skip_if_not()` and the discriminating assertion is `expect_identical(completed, 10L)`, reachable only if all ten generations returned. No criterion was reinterpreted.
+- 2026-07-30: review finding E (scored 92) fixed — the generator comment claimed dropping `-shortest` "changes nothing here". Measured false: `-shortest` tracked the 1-second `.srt`, not the two 2-second lavfi sources, so container duration goes 1.021 s -> 2.023 s. The plan gate's own falsifier was "a post-fix output whose duration or stream set differs from the pre-fix one" — the duration DOES differ, so the falsifier fired and had never been evaluated. The approach still stands on the merits: the stream set is identical, both consumers assert stream types only, and no test asserts duration. Comment corrected to state the real delta.
 - 2026-07-30: T7 done — 25-run probes at a 20 s limit: post-fix 25/25 completed, 0 timeouts, every output exactly `video,audio,subtitle`; pre-fix (`-shortest` restored) 7 timeouts in 25. `devtools::check()` Status OK, 0 errors / 0 warnings / 0 notes, 1m38s. Full suite FAIL 0, PASS 2837. No `NEWS.md` entry — test-only, no user-visible surface.
 - 2026-07-30: branch pushed and PR #49 opened (review owns the header slot); CI green on all five R-CMD-check platforms — macOS, Windows, ubuntu release/devel/oldrel-1 — plus pkgdown and test-coverage. Ubuntu's ffmpeg 6.1.1 passes the rerouted fixtures, which is the M45 version-straddle risk cleared.
 - 2026-07-30: no prose-guard was authored or edited by this milestone, so step 8's fresh-context guard-description read does not apply.

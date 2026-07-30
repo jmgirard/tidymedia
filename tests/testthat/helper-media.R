@@ -170,11 +170,17 @@ make_multitrack_video <- function(env = parent.frame()) {
 # Matroska because the container has to accept a subtitle for the distinction to
 # be visible at all.
 #
-# Deliberately NO -shortest. Both lavfi sources are already bounded by their own
-# duration= options, so the flag changes nothing here -- and `-shortest` beside a
-# mapped subtitle stream deadlocks FFmpeg intermittently: this command hung 10
-# times in 25 runs on ffmpeg 8.1.2/macOS, while the same command without the flag
-# hung 0 in 15, and the flag WITH the subtitle map dropped hung 0 in 15 (M46).
+# Deliberately NO -shortest, because beside a mapped subtitle stream it deadlocks
+# FFmpeg intermittently: this command hung 10 times in 25 runs on ffmpeg
+# 8.1.2/macOS, while the same command without the flag hung 0 in 15, and the flag
+# WITH the subtitle map dropped hung 0 in 15 (M46).
+#
+# Removing it is not a no-op, though every consumer here is indifferent to what
+# it changes. The flag was tracking the SHORTEST stream, which is the 1-second
+# .srt and not the two 2-second lavfi sources, so the container duration goes
+# 1.021 s -> 2.023 s (measured). The stream set is identical either way, and both
+# consumers asserting on this fixture assert stream TYPES only -- so if you ever
+# add a duration assertion here, that is the number to expect.
 # Skips the calling test if ffmpeg is unavailable. Returns the file path.
 make_subtitle_video <- function(env = parent.frame()) {
   skip_if_no_ffmpeg()

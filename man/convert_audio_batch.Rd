@@ -7,6 +7,7 @@
 convert_audio_batch(
   jobs,
   audio_codec = NULL,
+  audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -19,7 +20,10 @@ path). An \code{output} column is \strong{required} — an audio destination
 cannot be auto-named because its extension picks the output format. An
 optional \code{audio_codec} column overrides the \code{audio_codec}
 argument per row, where \code{NA} spells "use the highest-VBR-quality
-default"; rows omitting it fall back to the argument. Any other columns are
+default"; rows omitting it fall back to the argument. An optional
+\code{audio_stream} column likewise overrides the \code{audio_stream}
+argument per row, where \code{NA} keeps that row on the first audio track.
+Any other columns are
 ignored — except a \code{format} column, retired with the argument of the
 same name, which is an error rather than a silent no-op.}
 
@@ -27,6 +31,12 @@ same name, which is an error rather than a silent no-op.}
 \code{jobs} carries an \code{audio_codec} column. \code{NULL} (default)
 infers the codec from each \code{output} extension at highest VBR quality;
 name a codec (e.g. \code{"aac"}, \code{"flac"}) to pin \code{-c:a}.}
+
+\item{audio_stream}{The 0-based index of the audio track to take, applied to
+every row unless \code{jobs} carries an \code{audio_stream} column, in
+which case \code{NA} in a cell keeps that row on the first audio track.
+The index counts \emph{among each input's audio streams}. \code{NULL}
+(default) takes the first audio track.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}

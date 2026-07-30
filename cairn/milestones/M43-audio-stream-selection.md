@@ -101,14 +101,14 @@ scope; `strip_metadata()`'s `-map 0` already keeps every stream.
 - [x] T2: `ffm_map()` ([ffm.R:555](../../R/ffm.R#L555)) — accept a character
       vector, append on chaining, add `replace = TRUE`; correct its docs and
       `ffm_copy(streams=)`'s prose; compile tests over every existing call site.
-- [ ] T3: `audio_stream` on `extract_audio()` and `convert_audio()` — front-door
+- [x] T3: `audio_stream` on `extract_audio()` and `convert_audio()` — front-door
       `check_number_whole(min = 0, allow_null = TRUE)`, resolving through
       `ffm_map()` to `0:a:<n>`, default track 0. Rewrite the superseded
       byte-identity test at `test-ffmpeg.R:124-137`.
-- [ ] T4: `audio_stream` on `extract_audio_batch()` and `convert_audio_batch()`:
+- [x] T4: `audio_stream` on `extract_audio_batch()` and `convert_audio_batch()`:
       batch-wide argument plus the per-row override column with AC4's guard,
       hint, and per-row re-validation.
-- [ ] T5: Execution tests on T1's fixture — `audio_stream = 1` → `spa` via the
+- [x] T5: Execution tests on T1's fixture — `audio_stream = 1` → `spa` via the
       `.m4a` language tag, default → track 0, and the batch column overriding the
       argument. Prove they discriminate by mutating the resolved map to ignore
       `audio_stream` (M39 lesson).
@@ -128,6 +128,10 @@ scope; `strip_metadata()`'s `-map 0` already keeps every stream.
 - 2026-07-30: T1 verified, not re-authored — the precondition hotfix already landed `make_multitrack_video()` at AC5's shape (3 aac tracks, eng/spa/fra, distinct sine frequencies, `.mkv`, no committed media).
 - 2026-07-30: implement gate confirmed both plan choices unchanged — `ffm_map()` ships `replace =` per AC3 (unused in-package, but its only alternative strands `ffm_copy()`'s all-streams map with no way to narrow it, and the carry follow-up needs it), and `extract_audio()` keeps `-vn` beside its new map.
 - 2026-07-30: T2 done — `ffm_map()` takes a character vector, appends on chaining, gains `replace = TRUE`; `check_string()` replaced by a spelled-out character-vector guard (rlang's `check_character()` is unexported). `ffm_compile()` untouched. Docs corrected on `ffm_map()` and `ffm_copy(streams=)`; a new test pins ≤1 `-map` per compiled command across every in-package call site.
+- 2026-07-30: T3–T5 landed in one commit rather than three — the shared `audio_stream_map()` helper, both scalar verbs, both batch verbs and the tests were one working set, and splitting the commit after the fact would have invented a sequence the work did not have.
+- 2026-07-30: T3 done — `audio_stream_map()` resolves the selector to `0:a:<n>` and carries the per-row `check_number_whole(min = 0, allow_null = TRUE)`; both scalar verbs check again at their own front door so a bad argument blames the verb. `extract_audio()` now compiles an explicit map on every call (it emitted none before) and keeps `-vn`; `convert_audio()`'s default still compiles the hotfix's literal `-map 0:a:0`, asserted byte-identically.
+- 2026-07-30: T4 done — `check_batch_audio_col()` gained `col`/`na_means` parameters rather than being copied, so the `audio_stream` column's hint says "keep the first audio track" where the composite verbs' `audio` column says "drop audio"; `batch_stream_cell()` resolves an `NA` cell to the NULL sentinel, kept separate from `batch_codec_cell()`. Both `@param jobs` enumerations updated.
+- 2026-07-30: T5 done — execution tests read the output's `language` tag from `.m4a`/`.mka`: `audio_stream = 1` yields `spa`, the default yields `eng`, `= 2` yields exactly one stream tagged `fra`, and a batch `audio_stream` column beats the argument row-wise while an `NA` cell falls to track 0. Mutating `audio_stream_map()` to ignore the selector turns 10 tests red, so they discriminate (M39).
 
 ## Decisions
 

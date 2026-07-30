@@ -98,6 +98,10 @@ test_that("extract_audio() compiles to a copy + drop-video command", {
   f <- make_input()
   cmd <- extract_audio(f, "out.aac", run = FALSE)
   expect_match(cmd, "-codec:a copy -vn", fixed = TRUE)
+  # M43: the map is explicit on every call. Without it FFmpeg picked the track
+  # carrying the container's DEFAULT disposition, so which track came out
+  # depended on the file's flags rather than on the caller.
+  expect_match(cmd, "-vn -map 0:a:0", fixed = TRUE)
   expect_match(cmd, '"out.aac"', fixed = TRUE)
 })
 

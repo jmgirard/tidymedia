@@ -25,6 +25,17 @@ regions_1 <- function() {
   data.frame(x = 0, y = 0, width = 10, height = 10)
 }
 
+std_jobs <- function(f, ...) {
+  tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"), ...)
+}
+
+anon_jobs <- function(f, ...) {
+  tibble::tibble(
+    input = c(f, f), output = c("a.mp4", "b.mp4"),
+    regions = list(regions_1(), regions_1()), ...
+  )
+}
+
 # The pre-M47 commands, recorded from master at f3c3054 and committed here as
 # literals. They are written as templates taking the maps because the claim
 # under test is "these two -map arguments appeared and nothing else moved", and
@@ -172,7 +183,18 @@ test_that("run = FALSE runs no binary at the default hardware", {
   anonymize_video(f, "out.mp4", regions = regions_1(), run = FALSE)
   anonymize_video(f, "out.mp4", regions = regions_1(), audio_stream = 2,
                   run = FALSE)
+  # All FOUR entry points, not just the two scalars: AC7 says "across all
+  # four" and Coverage maps it to the batch tasks too. Reviewing this
+  # milestone caught the batch pair missing here (F3).
+  standardize_video_batch(std_jobs(f), audio_stream = 2, run = FALSE)
+  anonymize_video_batch(anon_jobs(f), audio_stream = 2, run = FALSE)
   expect_identical(n, 0L)
+  # Prove the mock is actually in scope for the batch verbs rather than
+  # silently inert: one run = TRUE batch call must trip the counter. Without
+  # this, `n == 0` is equally consistent with "no binary ran" and "the mock
+  # never bound" (M39's discriminate-the-test rule, M44's counting-mock rule).
+  standardize_video_batch(std_jobs(f), run = TRUE)
+  expect_gt(n, 0L)
   # Deliberately NOT extended to hardware = "nvenc": resolve_hw_encoder()
   # reaches ffmpeg("-encoders") before `run` is consulted, so that path DOES
   # shell out under run = FALSE. Found by this milestone's criteria audit,
@@ -181,17 +203,6 @@ test_that("run = FALSE runs no binary at the default hardware", {
 })
 
 # AC4 / AC5: the batch siblings --------------------------------------------
-
-std_jobs <- function(f, ...) {
-  tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"), ...)
-}
-
-anon_jobs <- function(f, ...) {
-  tibble::tibble(
-    input = c(f, f), output = c("a.mp4", "b.mp4"),
-    regions = list(regions_1(), regions_1()), ...
-  )
-}
 
 test_that("the batch argument reaches every row", {
   f <- make_input()

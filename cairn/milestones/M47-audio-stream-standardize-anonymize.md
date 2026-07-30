@@ -19,8 +19,9 @@ being a property of the input's flags.
 `standardize_video_batch()`, `anonymize_video_batch()` — 0-based among the
 input's audio streams (D023), scalar argument plus a per-row `audio_stream`
 jobs column. Both pipelines emit an explicit map on every call:
-`-map 0:v -map 0:a` when `audio_stream` is `NULL`, `-map 0:v -map 0:a:<n>` when
-a track is named. A `cairn/DECISIONS.md` entry fixing the pass-through family's
+`-map 0:v? -map 0:a?` when `audio_stream` is `NULL`, `-map 0:v? -map 0:a:<n>`
+when a track is named (the `?` amendment, gated 2026-07-30 and recorded in the
+work log; without it FFmpeg aborts on an input lacking the stream type). A `cairn/DECISIONS.md` entry fixing the pass-through family's
 rule and answering the question D025's fifth bullet left open. NEWS.
 
 **Out:**
@@ -64,7 +65,7 @@ rule and answering the question D025's fifth bullet left open. NEWS.
 - [x] AC7 At the default `hardware`, no entry point runs a binary when
       `run = FALSE`: a counting mock over `run_program()`, `find_ffmpeg()` and
       `find_ffprobe()` records zero invocations across all four.
-- [ ] AC8 `cairn/DECISIONS.md` gains an entry recording the pass-through rule and
+- [x] AC8 `cairn/DECISIONS.md` gains an entry recording the pass-through rule and
       why it diverges from D023's first-track `NULL`; each `@param audio_stream`
       names the other two families' `NULL` (D025's stated cost); `NEWS.md`
       records the argument and both breaking changes; `devtools::document()`
@@ -188,7 +189,10 @@ running the verbs directly rather than by re-reading the tests.**
   `separate_audio_video()`, never the extraction family, and
   `man/separate_audio_video_batch.Rd` is one of ten man files the branch does
   NOT touch. Re-verified by reading the block. Ticked only after the fix below.
-- **AC8 (after fix) ✓** `cairn/DECISIONS.md` gains D026, answering D025's fifth bullet with
+- **AC8 (after fix) ✓** Re-verified per block by parsing each `@param
+  audio_stream` and listing the verbs it names: **all ten** now cross-reference
+  a family reading `NULL` the other way (`separate_audio_video_batch` names
+  five). `cairn/DECISIONS.md` gains D026, answering D025's fifth bullet with
   M45's every-track reading and recording the `?` asymmetry, the rejected
   `-map 0`, and the subtitle-carriage change. All ten `@param audio_stream`
   blocks now name the families reading `NULL` the other way (attributed one by
@@ -216,3 +220,67 @@ running the verbs directly rather than by re-reading the tests.**
   the ffmpeg-6.1.1 platform M45's lesson warns about (macOS brew ships 8.x);
   the new disposition fixture and the `?` map suffix behave identically there.
 
+### Independent review — three lenses, then a scorer
+
+Three fresh-context reviewers with distinct evidence bases; every reported
+finding was passed to a separate scorer that did not generate them.
+
+- **[O] diff-bug** (full diff vs criteria, DESIGN, DECISIONS): 18 findings.
+- **[S] blame-history** (`git log`/`blame` on the modified lines): **zero**. It
+  traced `ffm_map()`'s append contract, the invariant-test rewrite, the fixture
+  parameter's 22 call sites, the six pre-existing `@param` edits, and M41 guard
+  placement, and independently reproduced 2911 pass / 0 fail.
+- **[S] prior-review** (archived `## Review` sections + a probe-gated PR-thread
+  walk): **zero**. The `gh api pulls/comments` probe returned empty, so the
+  per-PR walk was correctly skipped; it reported the diff complies with rather
+  than regresses M18/M34/M37/M40/M41/M43/M44/M45/M46.
+
+**Actioned (scored ≥ 80), 5 of 18:**
+
+- **F2 (92) — fixed.** `separate_audio_video_batch()`'s `@param audio_stream`
+  named only `separate_audio_video()`, so AC8's and D026's "all ten blocks"
+  claim was false and the branch touched nine man files, not ten. **This failed
+  AC8, which I had already ticked on a file-wide grep that could not see
+  per-block coverage.** Unticked, fixed, re-verified per block.
+- **F3 (90) — fixed.** The `run = FALSE` counting-mock test called only the two
+  scalars, where AC7 says "across all four" and Coverage maps it to the batch
+  tasks. Both batch verbs added, plus an `expect_gt` after a `run = TRUE` call
+  proving the mock is in scope rather than inert.
+- **F4 (85) — follow-up, not fixed here.** Map specifiers render unquoted, so
+  the returned command string fails when pasted into zsh (`no matches found:
+  0:v?`); execution is unaffected. Always-quoting is a Layer-1 convention change
+  touching 117 literals across 15 test files, including M45's deliberately
+  pre-change baselines, and lands on every map-emitting verb including M48's.
+  New candidate row; promote with or just after M48.
+- **F7 (82) — fixed.** The plan's Scope "In" still quoted the pre-amendment
+  `-map 0:v -map 0:a`, stale against its own amended criteria, the ROADMAP row
+  and the work log. Propagated (an already-gated decision, not a new one).
+- **F8 (80) — fixed.** The new front-door guards reported before every check
+  living in the pipeline, so `anonymize_video(regions = <bad>, audio_stream =
+  -1)` blamed `audio_stream` rather than `regions` — the M41 precedence trap the
+  comment claimed to avoid. Both scalar guards removed (`pass_through_maps()`
+  carries the identical check with `call` resolving to the verb, so blame is
+  unchanged and AC3 still holds; the batch guards stay, being load-bearing).
+  Verified: `regions`, `audio_codec`, `pixel_format` and `fps` all now report
+  first, and the compiled command is byte-identical.
+
+**Logged, not actioned (13 scored below 80).** F1 (38) `format_for_web()` and
+`normalize_audio()` still pick by DEFAULT disposition — real but pre-existing
+and outside D026's scope; **new candidate row**. F13 (78) the "defense-in-depth"
+comment was false under `hardware = "nvenc"` — moot, F8's fix deleted the
+comment. F10 (76) the invariant test's title claims more coverage than its verb
+list. F5 (75) `-map 0:v?` carries every video stream; NEWS discloses only the
+audio and subtitle effects. F15 (72) the every-track execution test asserts
+stream types but not languages. F11 (65) audio-only input untested on
+`anonymize_video()`. F16 (65) scalar/batch parity only exercised named. F12 (45)
+positional-call breakage from the new argument's position, fails loudly, covered
+by D014. F6 (38) a bad *value* in a jobs column blames `purrr::pmap` —
+family-consistent with `extract_audio_batch`. F9 (32) a fixture helper shells out
+unbounded, but the wrapper it is contrasted with is equally unbounded. F14 (30)
+`-map 0:a:NA` from an out-of-int-range index, inherited from M43. F17 (25) dash
+style and a NEWS wording awkwardness. F18 (22) `...` swallows a misspelled
+argument, family-wide and pre-existing (M37).
+
+**Re-verified after the fixes:** `devtools::test()` 2912 pass / 0 fail ·
+`devtools::check()` Status: OK, 0 errors / 0 warnings / 0 notes ·
+`cairn_validate` all checks passed.

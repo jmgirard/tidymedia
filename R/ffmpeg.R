@@ -1347,13 +1347,14 @@ standardize_video <- function(infile, outfile,
   # audio_codec is already checked inside standardize_pipeline(), which blames
   # this verb because the pipeline is called from here.
   rlang::check_string(video_codec, allow_null = TRUE)
-  # Last of the front-door checks, so adding it cannot move the precedence of
-  # the ones above (M41). It duplicates the check inside pass_through_maps(),
-  # which the pipeline always reaches with `call` resolving to this frame -- so
-  # here it is defense-in-depth and parity with the batch sibling, where the
-  # same call IS load-bearing because the column path reads NA as the NULL
-  # sentinel. No test is named after this line (M43's finding).
-  rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
+  # No front-door check for `audio_stream` here, deliberately. It would be the
+  # only guard on this verb reporting BEFORE width/height/fps/pixel_format and
+  # the audio codec, which standardize_pipeline() validates -- so a caller
+  # wrong about a dimension AND the track would be told about the track, which
+  # is exactly M41's precedence trap. pass_through_maps() carries the identical
+  # check with `call` resolving to this frame, so the blame is unchanged and
+  # the guard bought nothing (M42/M43: such a guard is unpinnable anyway). The
+  # BATCH sibling keeps its own, where it is load-bearing (M47 review F8).
 
   ffm_finish(
     standardize_pipeline(infile, outfile, width, height, fps, video_codec,
@@ -1408,8 +1409,8 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
   # State the stream selection instead of inheriting FFmpeg's (M47). One
   # ffm_map() call with both specifiers, never two: ffm_map() appends, so two
   # calls look exactly like a pipeline that mapped twice by accident.
-  p <- ffm_map(p, pass_through_maps(audio_stream, call = call))
   p <- ffm_pixel_format(p, pixel_format)
+  p <- ffm_map(p, pass_through_maps(audio_stream, call = call))
   ffm_output_options(p, "-movflags +faststart")
 }
 
@@ -1510,13 +1511,10 @@ anonymize_video <- function(infile, outfile, regions,
   check_file_exists(infile)
   rlang::check_string(outfile)
   hardware <- rlang::arg_match(hardware)
-  # This verb's front door is deliberately thin -- regions, color, the codecs
-  # and pixel_format are all validated inside anonymize_pipeline() with `call`
-  # threaded, so they blame this verb anyway. `audio_stream` is checked here
-  # regardless, for parity with the five other verbs carrying it and with the
-  # batch sibling, where the same call is load-bearing. Last in the block, so
-  # it cannot move the precedence of the checks above (M41).
-  rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
+  # No front-door check for `audio_stream`, for the reason spelled out in
+  # standardize_video(): this verb's front door is thinner still, so such a
+  # guard reported before `regions` -- the argument a caller is likeliest to
+  # get wrong, and one they pass positionally (M47 review F8).
 
   ffm_finish(
     anonymize_pipeline(infile, outfile, regions, color, video_codec,
@@ -4580,7 +4578,10 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #' @param audio_stream The 0-based index of the audio track to write to every
 #'   \code{audiofile}, unless \code{jobs} carries an \code{audio_stream} column.
 #'   \code{NULL} (default) keeps \strong{every} audio track, as
-#'   \code{\link{separate_audio_video}} does; an \code{NA} cell in the column
+#'   \code{\link{separate_audio_video}} does, and as the pass-through verbs
+#'   \code{\link{standardize_video}} and \code{\link{anonymize_video}} do;
+#'   \code{\link{extract_audio}} and \code{\link{convert_audio}} read it the
+#'   other way, as the first track only. An \code{NA} cell in the column
 #'   says the same for that row. Only \code{audiofile} is affected — a
 #'   \code{videofile} always takes the input's video streams.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)

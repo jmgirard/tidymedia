@@ -1,6 +1,6 @@
 # M44: Say something when audio tracks are dropped
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M43
 - **Driving RR:** RR02
@@ -133,7 +133,7 @@ here: a multi-track input is legal, and the selector is how a caller resolves it
       not PATH masking, which cannot make ffprobe absent while ffmpeg is present;
       an unprobeable input still runs. Prove the warning test discriminates by
       making the count unconditional — it must go red (M39 lesson).
-- [ ] T5: NEWS entry; `devtools::document()`, `test()`, `check()`.
+- [x] T5: NEWS entry; `devtools::document()`, `test()`, `check()`.
 
 ## Work log
 
@@ -155,6 +155,9 @@ here: a multi-track input is legal, and the selector is how a caller resolves it
 - 2026-07-30: a mid-task `git checkout R/ffmpeg.R` during the first mutation probe reverted T2/T3's then-uncommitted work, making that probe's four identical "red" results meaningless — they only showed the feature was absent; reapplied, committed, and re-probed against a committed baseline.
 - 2026-07-30: T4 done — 15 tests, all passing. The M39 discrimination probe mutated four gates and each went red: unconditional count (4 tests), dropping the `audio_stream` gate (1), dropping the `run` gate (1), dropping the unique-input dedup (1). Two probe findings fixed in place — the first AC2 test was vacuous because `count_audio_streams()`'s `tryCatch` swallows a `stop()`ing mock, so it now counts invocations instead; and the absent-ffprobe short-circuit proved redundant against that `tryCatch`, so its comment now records that rather than claiming to be the guarantee.
 - 2026-07-30: full `devtools::test()` clean (exit 0, no failures); `devtools::document()` regenerated the four verbs' `.Rd` files; NEWS entry written.
+
+- 2026-07-30: T5 done — `devtools::check()` clean (0 errors, 0 warnings, 0 notes; vignette rebuilt OK) and `devtools::document()` no-diff. AC10's grep, scoped to `R/` per the Deviations table, finds `-select_streams` only in `R/ffprobe.R` (the new counter and `probe_one()`); every ungated `@examples` line on the four verbs uses `run = FALSE`, so no example can trigger a probe.
+- 2026-07-30: all tasks checked; status to review.
 
 ## Decisions
 

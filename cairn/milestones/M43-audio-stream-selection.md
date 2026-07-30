@@ -5,7 +5,7 @@
 - **Depends on:** M41, M42
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** `m43-audio-stream-selection`
+- **Branch/PR:** `m43-audio-stream-selection` / https://github.com/jmgirard/tidymedia/pull/46
 
 ## Goal
 
@@ -39,7 +39,7 @@ scope; `strip_metadata()`'s `-map 0` already keeps every stream.
 
 ## Acceptance criteria
 
-- [ ] AC1: `extract_audio()` compiles an explicit audio-stream map on every call
+- [x] AC1: `extract_audio()` compiles an explicit audio-stream map on every call
       (today it emits no `-map` at all) and `convert_audio()` keeps the hotfix's
       explicit map. Two consequences are carried, not discovered: the
       byte-identity assertion M40 left at `test-ffmpeg.R:124-137`, which pins
@@ -47,7 +47,7 @@ scope; `strip_metadata()`'s `-map 0` already keeps every stream.
       container's DEFAULT disposition the extracted track changes (measured:
       `spa` → `eng`). Both appear in NEWS. `convert_audio()`'s `-q:a 0` output
       stays byte-identical for a single-track input (measured).
-- [ ] AC2: `audio_stream` on `extract_audio()`, `extract_audio_batch()`,
+- [x] AC2: `audio_stream` on `extract_audio()`, `extract_audio_batch()`,
       `convert_audio()` and `convert_audio_batch()` selects by 0-based index
       within the input's audio streams, validated at the front door as
       `rlang::check_number_whole(min = 0, allow_null = TRUE)` — the in-repo
@@ -55,7 +55,7 @@ scope; `strip_metadata()`'s `-map 0` already keeps every stream.
       against AC5's fixture yields the `spa` track, asserted on the output's
       `language` tag written to `.m4a` or `.mka`; the tag does not survive to
       `.aac` or `.mp3`, so those containers cannot carry this evidence.
-- [ ] AC3: `ffm_map()` accepts a character vector and emits one `-map` per
+- [x] AC3: `ffm_map()` accepts a character vector and emits one `-map` per
       element; chaining appends, and `replace = TRUE` restores replacement so
       `ffm_map(ffm_copy(p), "0:a:1", replace = TRUE)` compiles only `-map 0:a:1`.
       `ffm_compile()` is unchanged. No internal caller's behavior changes — each
@@ -66,19 +66,19 @@ scope; `strip_metadata()`'s `-map 0` already keeps every stream.
       [ffmpeg.R:4089](../../R/ffmpeg.R#L4089),
       [ffm.R:605](../../R/ffm.R#L605)) — and `ffm_map()`'s "Set the Stream
       Mapping" docs plus `ffm_copy(streams=)`'s prose are corrected.
-- [ ] AC4: The `_batch` siblings honour an `audio_stream` override column,
+- [x] AC4: The `_batch` siblings honour an `audio_stream` override column,
       guarded `is.numeric(x) || (is.logical(x) && all(is.na(x)))` (the M34 shape
       at [ffmpeg.R:3165](../../R/ffmpeg.R#L3165)), re-validated per row (M32),
       with a hint parameterized to this column's meaning rather than inherited
       (M40). A cell of `NA` keeps that row on the track-0 default, overriding the
       argument — the family's sentinel meaning, not "defer to the argument". The
       `@param jobs` column enumeration lists it (M39).
-- [ ] AC5: A `make_multitrack_video()` generator joins the six in
+- [x] AC5: A `make_multitrack_video()` generator joins the six in
       `tests/testthat/helper-media.R` — 1 video plus 3 aac tracks tagged
       `eng`/`spa`/`fra` from lavfi `sine` sources at distinct frequencies, no
       committed media, matching that file's stated reason for generating
       fixtures.
-- [ ] AC6: `devtools::document()` no-diff; `devtools::test()` and
+- [x] AC6: `devtools::document()` no-diff; `devtools::test()` and
       `devtools::check()` clean — 0 errors, 0 warnings, with
       `spelling::update_wordlist()` run for new terms (M17). NEWS covers
       `audio_stream`, `extract_audio()`'s changed default track, and
@@ -140,3 +140,14 @@ scope; `strip_metadata()`'s `-map 0` already keeps every stream.
 ## Decisions
 
 ## Review
+
+_2026-07-30, PR #46, branch at `efe2969` + review commits. `master` had not moved since the branch was cut (`git rev-list --count HEAD..origin/master` = 0), so no merge was needed._
+
+### Acceptance-criteria evidence
+
+- **AC1** — PASS. The 21-cell before/after command grid (master via `git archive` into a temp tree vs the branch, both loaded with `devtools::load_all`, zero errored cells) shows `extract_audio` as the only verb whose command changes, gaining `-map 0:a:0` on both its default and `audio_codec=` branches; `convert_audio` compiles the hotfix literal unchanged. The M40 byte-identity assertion (`test-ffmpeg.R`, "commands match the pre-M40 rename apart from the map") pins `-q:a 0 -map 0:a:0`, is untouched by this diff, and passes — it had already been rewritten by the precondition hotfix, as the 2026-07-29 work-log line records. DEFAULT-disposition consequence measured through the package on FFmpeg 8.1.2: with audio dispositions `(0,1,0)`, the pre-M43 recipe extracts `spa`, `extract_audio()` now extracts `eng`, and `audio_stream = 1` still reaches `spa` — exactly the `spa` → `eng` the plan projected. Output byte-identity for a single-track input measured directly: md5 `ba258091f81c9a0ee49c243222ac00a2`, 10887 bytes, from both the M43-compiled command and master's recorded literal. Both consequences appear in NEWS (Breaking changes, and the Bug-fixes sentence repointed to the new argument).
+- **AC2** — PASS. `rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)` present verbatim at all four front doors (`R/ffmpeg.R` lines 339, 589, 3581, 3706), the spelling and the in-repo precedent the criterion names. `audio_stream = 1` against the multitrack fixture yields the `spa` track, asserted on the `.m4a` `language` tag; `.mka` used where a stream count is asserted. Non-whole, negative, non-numeric, `NA` and length-2 values rejected on both scalar verbs.
+- **AC3** — PASS. `ffm_map()` takes a character vector and emits one `-map` per element; chaining appends; `ffm_map(ffm_copy(p), "0:a:1", replace = TRUE)` compiles exactly one `-map 0:a:1`. `ffm_compile()` is unchanged — the `R/ffm.R` diff touches only lines 533–618 (the `ffm_map`/`ffm_copy` region), while `ffm_compile()` begins near line 1150. No internal caller's behavior changes: the 21-cell grid above is byte-identical for every verb except `extract_audio`, the two cells that errored on both refs were fixed and re-run so they measure something (M41 lesson), and a test pins ≤1 `-map` per compiled command across the task verbs. `ffm_map()`'s and `ffm_copy(streams=)`'s docs corrected.
+- **AC4** — PASS. Both `_batch` verbs take the argument and honour an `audio_stream` column; the guard is `check_batch_audio_col()`'s unchanged `is.numeric(x) || (is.logical(x) && all(is.na(x)))`, with both boundaries tested (all-NA legal, character and mixed-logical rejected). Values are re-validated per row through `audio_stream_map()` in the shared pipeline. The hint is parameterized (`na_means = "keep the first audio track"`), asserted present with the inherited "drop audio" asserted absent. An `NA` cell keeps that row on track 0 overriding the argument — proven on compiled commands and on run outputs (`fra` / `eng` with the argument naming track 1). Both `@param jobs` enumerations list the column.
+- **AC5** — PASS. `make_multitrack_video()` is in `tests/testthat/helper-media.R` with the specified shape: one `testsrc` video plus three `-c:a aac -b:a 32k` tracks from lavfi `sine` at 300/600/900 Hz, tagged `eng`/`spa`/`fra`, written to a `withr` temp file so nothing is committed, with a comment giving the fixture's reason. Noted, not a failure: the criterion's parenthetical "the six" counts the generators it joins; there were five `make_*` generators before the precondition hotfix added this one. The criterion's testable content — a generator of that shape in that file — holds, and M43 did not need to touch the file.
+- **AC6** — PASS. `devtools::document()` leaves `man/` and `NAMESPACE` clean (`git status --porcelain` empty). `devtools::test()`: 2685 pass, 0 fail, 5 skip (all pre-existing nvenc-absent). `devtools::check()`: `Status: OK` — 0 errors, 0 warnings, 0 notes. `spelling::update_wordlist()` run, adding one word (`WebM`, pre-existing and unlisted because `tests/spelling.R` runs with `error = FALSE`). NEWS covers `audio_stream`, `extract_audio()`'s changed default track, and `ffm_map()`'s API change.

@@ -113,7 +113,7 @@ here: a multi-track input is legal, and the selector is how a caller resolves it
 
 ## Tasks
 
-- [ ] T1: Draft the D013-extending D-entry and surface it at the implement
+- [x] T1: Draft the D013-extending D-entry and surface it at the implement
       question gate before any probe lands; update DESIGN.md's Conventions line
       if the qualification belongs there too.
       *(RB tripwire: ip-touching)*
@@ -149,6 +149,7 @@ here: a multi-track input is legal, and the selector is how a caller resolves it
 - 2026-07-30: amendment gate — AC4 amended to the aggregated batch warning (it contradicted the implement gate's own settlement), AC5 amended from "extends D013" to the clarification framing, and Scope In reworded because RR02 falsified its premise; user approved all three. T2/T3/T4 refined for the helper placement, the up-front batch probe and the mocked-locator test (minor).
 - 2026-07-30: fresh-context [O] audit of BC1–BC6 before ingestion found BC4 false on arrival (its grep returns 9 test-side hits today) and BC1's clauses (i)/(ii) contradicted by `R/ffm.R:1299` and `R/ffmpeg.R:3217`; both ingested verbatim with three rows in the Deviations from RR02 table rather than softened.
 - 2026-07-30: RB02/RR02 archived; M44 back to in-progress with 12 acceptance criteria — past the >~7 split tripwire, flagged to the user at the gate and left as one milestone by their choice.
+- 2026-07-30: T1 done — D024 written as a clarification per AC7/AC8: the pure surface is compilation plus `run = FALSE` (D013's two-pass path the sole exception, batch sibling included), the licence is effect-based with four named out-of-licence probe shapes each needing its own entry, and scope is stated by four conditions with the audio verbs as first instances. DESIGN.md's Conventions line now names that boundary. `cairn_validate` green.
 
 ## Decisions
 

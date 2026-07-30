@@ -45,8 +45,11 @@ realtime/streaming, and full filtergraph DAGs.
 
 - User-facing conditions use `cli::cli_abort()` / rlang checks; assertthat is
   being retired — never add new assertthat calls (D004).
-- Command **compilation** is pure and CI-safe (no binaries); command
-  **execution** tests `skip_if` the ffmpeg/mediainfo binaries are absent (D004).
+- Command **compilation** is pure and CI-safe (no binaries), and a `run = FALSE`
+  call runs no binary — sole exception, D013's two-pass analysis pass. The
+  `run = TRUE` path may run helper binaries: D013's analysis pass and D024's
+  diagnostic probes. Command **execution** tests `skip_if` the ffmpeg/mediainfo
+  binaries are absent (D004, D024).
 - Batch is one tibble-in/tibble-out runner, `ffm_batch(jobs, .f, …)`; `.f`
   builds one pipeline per row (pmap-style), one reproducible command per job (D007).
 - testthat 3e; usethis scaffolding; GitHub Actions CI. `man/` and `README.md`

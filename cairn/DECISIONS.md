@@ -689,3 +689,71 @@ what it costs a caller who uses both families.
   FFmpeg has already failed and decides only which abort is signalled, never
   whether execution proceeds — D024's licence, on the four conditions recorded in
   M45's own decision log (M45-D1 for the scalar verb, M45-D2 for the batch).
+
+## D026 — The pass-through verbs state their stream selection; `NULL` keeps every audio track (2026-07-30, from M47, extends D023/D025; answers the question D025's fifth bullet left open)
+
+D025 closed by naming a question and handing it to the ROADMAP row this
+milestone promotes:
+
+> That row must now settle whether the four remaining verbs follow this entry's
+> every-track `NULL` or D023's first-track one — `standardize_video`,
+> `crop_video`, `segment_video` and `anonymize_video` all pass audio *through*,
+> so on their face they are the separation shape rather than the extraction one.
+
+The answer is M45's every-track reading, and the reason is not the one D025
+guessed at. "They pass audio through" turned out to be true of only half of
+them, and the half where it was false was failing in a way nobody had measured.
+
+- **What these verbs actually did, measured.** On a 3-audio-track + 1-subtitle
+  `.mkv` (ffmpeg 8.1.2, macOS), `standardize_video()` and `anonymize_video()`
+  emitted **no `-map` at all**, so FFmpeg's implicit selection applied: one
+  stream of each type, preferring whichever audio track carries the container's
+  DEFAULT disposition. With DEFAULT moved to track 1 the output carried the
+  **second** track and dropped the other two, silently. `crop_video()` and
+  `segment_video(reencode = FALSE)` emit `-map 0` and did carry all three. So
+  the four were never one family: two of them were narrowing three tracks to
+  one by a rule the caller never wrote and could not see, which is precisely
+  D023's second bullet — "a heuristic consulted only sometimes is still a
+  heuristic" — stated there in terms that were never verb-scoped.
+
+- **The map is emitted on every call, and `NULL` means every audio track.**
+  `NULL` → `-map 0:v? -map 0:a?`; a named track → `-map 0:v? -map 0:a:<n>`.
+  This keeps `crop_video()` and the `segment_video()` copy path compiling what
+  they compile today and stops the other two consulting the heuristic. Rules
+  out D023's first-track `NULL`, which would have narrowed the `-map 0` verbs
+  from every track to one — a data loss, to buy uniformity with verbs whose
+  output *is* an audio stream. An extraction verb's unselected case must pick
+  one track because it writes one; a pass-through verb's need not, and D025
+  already established that the two questions are different.
+
+- **The trailing `?` on the unselected specifiers is load-bearing.** A bare
+  `-map 0:a` aborts FFmpeg outright on an input with no audio (exit 234,
+  "Stream map '' matches no streams"), and a bare `-map 0:v` does the same on
+  an audio-only input — both ordinary research inputs, and both cases where
+  the pre-M47 code exited 0 and passed the stream through. The **named**
+  specifier deliberately carries no `?`, so naming a track the input lacks
+  stays an FFmpeg error, which is what every `@param audio_stream` in the
+  package promises (D023). Rules out a uniform `?`, which would turn a
+  mistyped index into a silently audio-less output, and rules out an FFprobe
+  guard, whose result would enter the compiled command and so sit outside
+  D024's licence.
+
+- **Subtitle and data streams are not carried, and that is a change.** A
+  uniform `-map 0` would carry them and was rejected on measurement: `-map 0`
+  into `.mp4` on a subtitle-bearing input fails outright (exit 8, no default
+  mp4 subtitle encoder). That failure is one `crop_video()` already has today
+  and M48 removes. Into `.mkv` these two verbs previously carried one subtitle
+  and now carry none. A `subtitle_stream`/`video_stream` selector is the
+  standing ROADMAP candidate row; `0:v` rather than `0:v:0` leaves video
+  unnarrowed until that row is promoted.
+
+- **The cost, stated.** `audio_stream` now carries two defaults across three
+  verb families: the first track on the four extraction entry points, every
+  track on the six others. All ten `@param` blocks name the families that read
+  it the other way. Falsified by a report of a caller confused by the split,
+  which reopens the choice under D014's pre-0.2.0 clean break.
+
+- **Scope.** M47 applies this to `standardize_video()` and `anonymize_video()`
+  (+ `_batch`); M48 applies the identical rule to `crop_video()` and
+  `segment_video()`, where it additionally has to narrow `ffm_copy()`'s
+  `-map 0` rather than append beside it.

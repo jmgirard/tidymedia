@@ -27,7 +27,10 @@ unset" sentinel — it selects \code{-q:a 0}.}
 \item{audio_stream}{The 0-based index of the audio track to take, counted
 \emph{among the input's audio streams} — \code{0} is the first audio track,
 \code{1} the second, whatever their positions among the file's streams.
-\code{NULL} (default) takes the first audio track. Naming a track the input
+\code{NULL} (default) takes the first audio track -- unlike
+\code{\link{separate_audio_video}}, \code{\link{standardize_video}} and
+\code{\link{anonymize_video}}, whose \code{NULL} keeps every track.
+Naming a track the input
 does not have is an FFmpeg error, not an R one.}
 
 \item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)

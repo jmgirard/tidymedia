@@ -53,7 +53,10 @@ separate calls.}
 \item{audio_stream}{The 0-based index of the audio track to write to every
 \code{audiofile}, unless \code{jobs} carries an \code{audio_stream} column.
 \code{NULL} (default) keeps \strong{every} audio track, as
-\code{\link{separate_audio_video}} does; an \code{NA} cell in the column
+\code{\link{separate_audio_video}} does, and as the pass-through verbs
+\code{\link{standardize_video}} and \code{\link{anonymize_video}} do;
+\code{\link{extract_audio}} and \code{\link{convert_audio}} read it the
+other way, as the first track only. An \code{NA} cell in the column
 says the same for that row. Only \code{audiofile} is affected — a
 \code{videofile} always takes the input's video streams.}
 

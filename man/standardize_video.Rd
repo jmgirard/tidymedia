@@ -15,6 +15,7 @@ standardize_video(
   pixel_format = "yuv420p",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
+  audio_stream = NULL,
   run = TRUE
 )
 }
@@ -62,6 +63,16 @@ unavailable, re-encode with the software \code{video_codec} and a message
 (\code{TRUE}) instead of aborting (\code{FALSE}, default). Keeps output
 reproducible by never changing the codec silently.}
 
+\item{audio_stream}{The 0-based index of the audio track to carry into the
+output, counted \emph{among the input's audio streams} -- \code{0} is the
+first audio track, \code{1} the second, whatever their positions among the
+file's streams. \code{NULL} (default) carries \strong{every} audio track,
+which is also what \code{\link{separate_audio_video}} does, and differs
+from \code{\link{extract_audio}} and \code{\link{convert_audio}}, whose
+\code{NULL} takes the first track only. Naming a track the input does not
+have is an FFmpeg error, not an R one. Subtitle and data streams are not
+carried either way. (default = \code{NULL})}
+
 \item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
 or return the compiled command without running it (\code{FALSE}).}
 }
@@ -99,6 +110,8 @@ standardize_video(video, "std.mp4", run = FALSE)
 # Pin resolution and frame rate too
 standardize_video(video, "std.mp4", width = 1280, height = 720, fps = 30,
                   run = FALSE)
+# Carry only the second audio track instead of all of them
+standardize_video(video, "std.mp4", audio_stream = 1, run = FALSE)
 }
 \seealso{
 \code{\link[=ffm_scale]{ffm_scale()}}, \code{\link[=ffm_codec]{ffm_codec()}}, and \code{\link[=ffm_pixel_format]{ffm_pixel_format()}}, among the

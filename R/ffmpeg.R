@@ -278,6 +278,56 @@ audio_stream_map <- function(audio_stream = NULL, null_map = "0:a:0",
   sprintf("0:a:%d", as.integer(audio_stream))
 }
 
+# pass_through_maps() -----------------------------------------------------
+
+# The map pair the PASS-THROUGH verbs compile: every video stream, plus either
+# every audio stream or the one track `audio_stream` names. Returned as a
+# character vector for a single ffm_map() call, because ffm_map() appends and
+# two calls would be indistinguishable from a pipeline that mapped twice by
+# accident -- the thing test-ffm.R's invariant exists to catch.
+#
+# These verbs emitted NO -map before M47, so FFmpeg's implicit selection chose
+# for them: one stream of each type, preferring whichever audio track carried
+# the container's DEFAULT disposition. Measured on a 3-audio-track .mkv with
+# DEFAULT on track 1 (ffmpeg 8.1.2): one audio stream out, and it was the
+# SECOND track. D023's second bullet rules that out in terms that are not
+# verb-scoped -- "a heuristic consulted only sometimes is still a heuristic" --
+# so the map is now stated on every call.
+#
+# NULL resolves to `0:a`, EVERY audio track, which is M45's reading rather than
+# D023's first-track one: these verbs pass audio through rather than producing
+# an audio stream, so their unselected case has an answer an extraction verb
+# does not have. That answers the question D025's fifth bullet left open.
+#
+# `0:v` and not `0:v:0`: it is the shape separate_stream_pipeline() already
+# compiles, and narrowing video is a separate argument nobody has asked for
+# (the M45-Out candidate row). Verified that -vf applies to both streams of a
+# two-video-stream input under this map and exits 0.
+#
+# What this does NOT map is subtitles and data. A uniform `-map 0` would carry
+# them, and was rejected at plan time: `-map 0` into .mp4 on a subtitle-bearing
+# input fails outright (exit 8, no default mp4 subtitle encoder), which is a
+# failure crop_video() already has today and M48 removes.
+#
+# The trailing `?` on the UNSELECTED specifiers is load-bearing, not a
+# belt-and-braces flourish. A bare `-map 0:a` aborts FFmpeg outright when the
+# input has no audio (exit 234, "Stream map '' matches no streams"), and a bare
+# `-map 0:v` does the same on an audio-only input -- where master, emitting no
+# map at all, exits 0 and passes the stream through. Both are ordinary research
+# inputs (a silent screen recording; an audio file). Without the `?` this
+# milestone would have shipped two regressions, and the suite caught only the
+# first because one existing test happens to standardize a silent fixture.
+#
+# The NAMED track deliberately keeps no `?`: `0:a:9` on a 3-track input must
+# stay an FFmpeg error, because every `@param audio_stream` in the package
+# promises "Naming a track the input does not have is an FFmpeg error, not an R
+# one" (D023). Making it optional would turn a mistyped index into a silently
+# audio-less output.
+pass_through_maps <- function(audio_stream = NULL,
+                              call = rlang::caller_env()) {
+  c("0:v?", audio_stream_map(audio_stream, null_map = "0:a?", call = call))
+}
+
 # warn_dropped_audio() ----------------------------------------------------
 
 # Emit the single classed warning for inputs carrying audio tracks the output
@@ -433,7 +483,10 @@ extract_audio_pipeline <- function(input, output, audio_codec = "copy",
 #' @param audio_stream The 0-based index of the audio track to take, counted
 #'   \emph{among the input's audio streams} — \code{0} is the first audio track,
 #'   \code{1} the second, whatever their positions among the file's streams.
-#'   \code{NULL} (default) takes the first audio track. Naming a track the input
+#'   \code{NULL} (default) takes the first audio track -- unlike
+#'   \code{\link{separate_audio_video}}, \code{\link{standardize_video}} and
+#'   \code{\link{anonymize_video}}, whose \code{NULL} keeps every track.
+#'   Naming a track the input
 #'   does not have is an FFmpeg error, not an R one.
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
@@ -764,7 +817,9 @@ ffmpeg_exit_status <- function(cnd) {
 #'   (\code{.aac}, \code{.mp3}, \code{.wav}) makes FFmpeg fail — name a track to
 #'   write one of those. This differs from \code{\link{extract_audio}} and
 #'   \code{\link{convert_audio}}, whose \code{NULL} takes the first track only.
-#'   \code{videofile} is never affected.
+#'   The pass-through verbs \code{\link{standardize_video}} and
+#'   \code{\link{anonymize_video}} read \code{NULL} the same way this one
+#'   does. \code{videofile} is never affected.
 #' @param run A logical: run the commands through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled commands without running them (\code{FALSE}).
 #' @return A named character vector of the two compiled commands
@@ -912,7 +967,10 @@ convert_audio_pipeline <- function(input, output, audio_codec = NULL,
 #' @param audio_stream The 0-based index of the audio track to take, counted
 #'   \emph{among the input's audio streams} — \code{0} is the first audio track,
 #'   \code{1} the second, whatever their positions among the file's streams.
-#'   \code{NULL} (default) takes the first audio track. Naming a track the input
+#'   \code{NULL} (default) takes the first audio track -- unlike
+#'   \code{\link{separate_audio_video}}, \code{\link{standardize_video}} and
+#'   \code{\link{anonymize_video}}, whose \code{NULL} keeps every track.
+#'   Naming a track the input
 #'   does not have is an FFmpeg error, not an R one.
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
@@ -1247,6 +1305,15 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #'   unavailable, re-encode with the software \code{video_codec} and a message
 #'   (\code{TRUE}) instead of aborting (\code{FALSE}, default). Keeps output
 #'   reproducible by never changing the codec silently.
+#' @param audio_stream The 0-based index of the audio track to carry into the
+#'   output, counted \emph{among the input's audio streams} -- \code{0} is the
+#'   first audio track, \code{1} the second, whatever their positions among the
+#'   file's streams. \code{NULL} (default) carries \strong{every} audio track,
+#'   which is also what \code{\link{separate_audio_video}} does, and differs
+#'   from \code{\link{extract_audio}} and \code{\link{convert_audio}}, whose
+#'   \code{NULL} takes the first track only. Naming a track the input does not
+#'   have is an FFmpeg error, not an R one. Subtitle and data streams are not
+#'   carried either way. (default = \code{NULL})
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
@@ -1261,13 +1328,15 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #' # Pin resolution and frame rate too
 #' standardize_video(video, "std.mp4", width = 1280, height = 720, fps = 30,
 #'                   run = FALSE)
+#' # Carry only the second audio track instead of all of them
+#' standardize_video(video, "std.mp4", audio_stream = 1, run = FALSE)
 #' @export
 standardize_video <- function(infile, outfile,
                               width = NULL, height = NULL, fps = NULL,
                               video_codec = "libx264", audio_codec = "copy",
                               pixel_format = "yuv420p",
                               hardware = c("none", "nvenc"), fallback = FALSE,
-                              run = TRUE) {
+                              audio_stream = NULL, run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
@@ -1278,10 +1347,19 @@ standardize_video <- function(infile, outfile,
   # audio_codec is already checked inside standardize_pipeline(), which blames
   # this verb because the pipeline is called from here.
   rlang::check_string(video_codec, allow_null = TRUE)
+  # No front-door check for `audio_stream` here, deliberately. It would be the
+  # only guard on this verb reporting BEFORE width/height/fps/pixel_format and
+  # the audio codec, which standardize_pipeline() validates -- so a caller
+  # wrong about a dimension AND the track would be told about the track, which
+  # is exactly M41's precedence trap. pass_through_maps() carries the identical
+  # check with `call` resolving to this frame, so the blame is unchanged and
+  # the guard bought nothing (M42/M43: such a guard is unpinnable anyway). The
+  # BATCH sibling keeps its own, where it is load-bearing (M47 review F8).
 
   ffm_finish(
     standardize_pipeline(infile, outfile, width, height, fps, video_codec,
-                         audio_codec, pixel_format, hardware, fallback),
+                         audio_codec, pixel_format, hardware, fallback,
+                         audio_stream),
     run
   )
 }
@@ -1298,6 +1376,7 @@ standardize_video <- function(infile, outfile,
 standardize_pipeline <- function(input, output, width, height, fps, video_codec,
                                  audio_codec = "copy", pixel_format,
                                  hardware = "none", fallback = FALSE,
+                                 audio_stream = NULL,
                                  call = rlang::caller_env()) {
   video_codec <- resolve_hw_encoder(video_codec, hardware, fallback)
   p <- ffm_files(input, output)
@@ -1327,7 +1406,11 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
   # (parity with anonymize_pipeline(); M39 review F2).
   p <- ffm_codec(p, video = video_codec)
   p <- apply_audio_codec(p, audio_codec, call = call)
+  # State the stream selection instead of inheriting FFmpeg's (M47). One
+  # ffm_map() call with both specifiers, never two: ffm_map() appends, so two
+  # calls look exactly like a pipeline that mapped twice by accident.
   p <- ffm_pixel_format(p, pixel_format)
+  p <- ffm_map(p, pass_through_maps(audio_stream, call = call))
   ffm_output_options(p, "-movflags +faststart")
 }
 
@@ -1390,6 +1473,15 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
 #'   unavailable, re-encode with the software \code{video_codec} and a message
 #'   (\code{TRUE}) instead of aborting (\code{FALSE}, default). Keeps output
 #'   reproducible by never changing the codec silently.
+#' @param audio_stream The 0-based index of the audio track to carry into the
+#'   output, counted \emph{among the input's audio streams} -- \code{0} is the
+#'   first audio track, \code{1} the second, whatever their positions among the
+#'   file's streams. \code{NULL} (default) carries \strong{every} audio track,
+#'   which is also what \code{\link{separate_audio_video}} does, and differs
+#'   from \code{\link{extract_audio}} and \code{\link{convert_audio}}, whose
+#'   \code{NULL} takes the first track only. Naming a track the input does not
+#'   have is an FFmpeg error, not an R one. Subtitle and data streams are not
+#'   carried either way. (default = \code{NULL})
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
@@ -1406,21 +1498,28 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
 #'   width = c(120, 80), height = c(90, 60)
 #' )
 #' anonymize_video(video, "anon.mp4", regions, run = FALSE)
+#' # Carry only the second audio track instead of all of them
+#' anonymize_video(video, "anon.mp4", regions, audio_stream = 1, run = FALSE)
 #' @export
 anonymize_video <- function(infile, outfile, regions,
                             color = "black",
                             video_codec = "libx264", audio_codec = "copy",
                             pixel_format = "yuv420p",
                             hardware = c("none", "nvenc"), fallback = FALSE,
-                            run = TRUE) {
+                            audio_stream = NULL, run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
   hardware <- rlang::arg_match(hardware)
+  # No front-door check for `audio_stream`, for the reason spelled out in
+  # standardize_video(): this verb's front door is thinner still, so such a
+  # guard reported before `regions` -- the argument a caller is likeliest to
+  # get wrong, and one they pass positionally (M47 review F8).
 
   ffm_finish(
     anonymize_pipeline(infile, outfile, regions, color, video_codec,
-                       audio_codec, pixel_format, hardware, fallback),
+                       audio_codec, pixel_format, hardware, fallback,
+                       audio_stream),
     run
   )
 }
@@ -1437,6 +1536,7 @@ anonymize_video <- function(infile, outfile, regions,
 anonymize_pipeline <- function(input, output, regions, color, video_codec,
                                audio_codec = "copy", pixel_format,
                                hardware = "none", fallback = FALSE,
+                               audio_stream = NULL,
                                call = rlang::caller_env()) {
   check_regions(regions, call = call)
   rlang::check_string(color, call = call)
@@ -1495,6 +1595,9 @@ anonymize_pipeline <- function(input, output, regions, color, video_codec,
   video_codec <- resolve_hw_encoder(video_codec, hardware, fallback, call = call)
   p <- ffm_codec(p, video = video_codec)
   p <- apply_audio_codec(p, audio_codec, call = call)
+  # State the stream selection instead of inheriting FFmpeg's (M47); see
+  # standardize_pipeline() for why this is one ffm_map() call and not two.
+  p <- ffm_map(p, pass_through_maps(audio_stream, call = call))
   ffm_pixel_format(p, pixel_format)
 }
 
@@ -1596,7 +1699,9 @@ derive_anonymized_names <- function(input) {
 #'   value. In either codec column, \code{NA} leaves that row's codec unset (the
 #'   column form of \code{video_codec = NULL} / \code{audio_codec = NULL}); in a
 #'   \code{color} or \code{pixel_format} column it is an error, because those
-#'   have no unset state. Any other columns are ignored.
+#'   have no unset state. An \code{audio_stream} column overrides the
+#'   \code{audio_stream} argument per row, where \code{NA} keeps that row on
+#'   every audio track. Any other columns are ignored.
 #' @param color A string naming the default fill color (FFmpeg color syntax)
 #'   applied to every row, unless \code{jobs} carries a \code{color} column or a
 #'   box supplies its own \code{color}. (default = \code{"black"})
@@ -1624,6 +1729,13 @@ derive_anonymized_names <- function(input) {
 #'   but nvenc is unavailable, re-encode with the software \code{video_codec} and
 #'   a message (\code{TRUE}) instead of aborting (\code{FALSE}, default).
 #'   Batch-wide, not a per-row column.
+#' @param audio_stream The 0-based index of the audio track to carry, applied to
+#'   every row unless \code{jobs} carries an \code{audio_stream} column, in
+#'   which case \code{NA} in a cell keeps that row on \strong{every} audio
+#'   track. The index counts \emph{among each input's audio streams}.
+#'   \code{NULL} (default) carries every audio track. See
+#'   \code{\link{standardize_video}} for how this differs from the extraction
+#'   verbs' \code{NULL}. (default = \code{NULL})
 #' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
 #'   default) or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: anonymize in
@@ -1661,6 +1773,7 @@ derive_anonymized_names <- function(input) {
 anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264",
                              audio_codec = "copy", pixel_format = "yuv420p",
                              hardware = c("none", "nvenc"), fallback = FALSE,
+                             audio_stream = NULL,
                              run = TRUE, parallel = FALSE, ...) {
 
   hardware <- rlang::arg_match(hardware)
@@ -1763,6 +1876,11 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   # SHAPE block (review A6), then past its content checks too (review
   # A1r3). Here it changes nothing but the message a bad codec gets.
   rlang::check_string(video_codec, allow_null = TRUE)
+  # See standardize_video_batch() for why the hint says "every" here and why
+  # check_batch_stream_values() is not needed on a verb that does not reshape.
+  check_batch_audio_col(jobs, "audio_stream",
+                        na_means = "keep every audio track")
+  rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output box-fill
   # pipeline per row, sharing anonymize_pipeline() with anonymize_video(). A
@@ -1784,7 +1902,10 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
         # hardware/fallback are batch-wide (a machine property), never per-row
         # columns -- parity with standardize_video_batch (D-M31).
         hardware = hardware,
-        fallback = fallback
+        fallback = fallback,
+        # Arrives through `dots` rather than a named closure argument: only
+        # `regions` is named here, because pmap must unwrap that list-column.
+        audio_stream = batch_stream_cell(pick("audio_stream", audio_stream))
       )
     },
     run = run,
@@ -3050,7 +3171,9 @@ derive_standardized_names <- function(input) {
 #'   \code{height}, \code{fps} or \code{pixel_format} column it is an error.
 #'   \code{pixel_format} has no unset state to express; \code{width},
 #'   \code{height} and \code{fps} do accept \code{NULL} as arguments, but their
-#'   columns have no \code{NA} spelling for it. Any other columns are ignored.
+#'   columns have no \code{NA} spelling for it. An \code{audio_stream} column
+#'   overrides the \code{audio_stream} argument per row, where \code{NA} keeps
+#'   that row on every audio track. Any other columns are ignored.
 #' @param width,height Optional target dimensions applied to every row, unless
 #'   \code{jobs} carries a column of the same name (see \code{jobs}). When only
 #'   one is given the other is derived to preserve aspect ratio; when neither is
@@ -3082,6 +3205,13 @@ derive_standardized_names <- function(input) {
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
 #'   unavailable, re-encode with the software \code{video_codec} and a message
 #'   (\code{TRUE}) instead of aborting (\code{FALSE}, default).
+#' @param audio_stream The 0-based index of the audio track to carry, applied to
+#'   every row unless \code{jobs} carries an \code{audio_stream} column, in
+#'   which case \code{NA} in a cell keeps that row on \strong{every} audio
+#'   track. The index counts \emph{among each input's audio streams}.
+#'   \code{NULL} (default) carries every audio track. See
+#'   \code{\link{standardize_video}} for how this differs from the extraction
+#'   verbs' \code{NULL}. (default = \code{NULL})
 #' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
 #'   default) or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: standardize in
@@ -3116,6 +3246,7 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
                                video_codec = "libx264", audio_codec = "copy",
                                pixel_format = "yuv420p",
                                hardware = c("none", "nvenc"), fallback = FALSE,
+                               audio_stream = NULL,
                                run = TRUE, parallel = FALSE, ...) {
 
   hardware <- rlang::arg_match(hardware)
@@ -3203,6 +3334,22 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
   # SHAPE block (review A6), then past its content checks too (review
   # A1r3). Here it changes nothing but the message a bad codec gets.
   rlang::check_string(video_codec, allow_null = TRUE)
+  # The stream-index column's own type guard, with a hint saying what NA means
+  # HERE. The shared default ("drop audio") belongs to the composite verbs and
+  # the extraction verbs say "keep the first audio track"; on the pass-through
+  # family an unselected row keeps them ALL, so a borrowed hint would be false
+  # (M40).
+  check_batch_audio_col(jobs, "audio_stream",
+                        na_means = "keep every audio track")
+  # And the scalar argument's front-door check. Unlike the scalar verb's, this
+  # one is load-bearing: the column path resolves NA to the NULL sentinel, so
+  # without it `audio_stream = NA` would quietly compile every track instead of
+  # erroring (the M37/M41 shape). Per-row VALUES are checked again inside
+  # audio_stream_map(), which every row's pipeline reaches (M32). No
+  # check_batch_stream_values() here -- that is only needed where a verb
+  # RESHAPES its jobs table before the fan-out, and this one is 1 row in, 1 row
+  # out, so pmap's index already IS the caller's row (M45 review F4).
+  rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output re-encode
   # pipeline per row, sharing standardize_pipeline() with standardize_video().
@@ -3223,7 +3370,8 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
         audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         pixel_format = pick("pixel_format", pixel_format),
         hardware = hardware,
-        fallback = fallback
+        fallback = fallback,
+        audio_stream = batch_stream_cell(pick("audio_stream", audio_stream))
       )
     },
     run = run,
@@ -3945,7 +4093,8 @@ check_fanin_jobs <- function(jobs, min_inputs = 1L, verb = NULL,
 #'   every row unless \code{jobs} carries an \code{audio_stream} column, in
 #'   which case \code{NA} in a cell keeps that row on the first audio track.
 #'   The index counts \emph{among each input's audio streams}. \code{NULL}
-#'   (default) takes the first audio track.
+#'   (default) takes the first audio track. See \code{\link{extract_audio}}
+#'   for the verb families whose \code{NULL} keeps every track instead.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -4066,7 +4215,8 @@ extract_audio_batch <- function(jobs, audio_codec = "copy",
 #'   every row unless \code{jobs} carries an \code{audio_stream} column, in
 #'   which case \code{NA} in a cell keeps that row on the first audio track.
 #'   The index counts \emph{among each input's audio streams}. \code{NULL}
-#'   (default) takes the first audio track.
+#'   (default) takes the first audio track. See \code{\link{extract_audio}}
+#'   for the verb families whose \code{NULL} keeps every track instead.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -4428,7 +4578,10 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #' @param audio_stream The 0-based index of the audio track to write to every
 #'   \code{audiofile}, unless \code{jobs} carries an \code{audio_stream} column.
 #'   \code{NULL} (default) keeps \strong{every} audio track, as
-#'   \code{\link{separate_audio_video}} does; an \code{NA} cell in the column
+#'   \code{\link{separate_audio_video}} does, and as the pass-through verbs
+#'   \code{\link{standardize_video}} and \code{\link{anonymize_video}} do;
+#'   \code{\link{extract_audio}} and \code{\link{convert_audio}} read it the
+#'   other way, as the first track only. An \code{NA} cell in the column
 #'   says the same for that row. Only \code{audiofile} is affected — a
 #'   \code{videofile} always takes the input's video streams.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)

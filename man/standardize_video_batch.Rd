@@ -14,6 +14,7 @@ standardize_video_batch(
   pixel_format = "yuv420p",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
+  audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -37,7 +38,9 @@ codec column, \code{NA} leaves that row's codec unset (the column form of
 \code{height}, \code{fps} or \code{pixel_format} column it is an error.
 \code{pixel_format} has no unset state to express; \code{width},
 \code{height} and \code{fps} do accept \code{NULL} as arguments, but their
-columns have no \code{NA} spelling for it. Any other columns are ignored.}
+columns have no \code{NA} spelling for it. An \code{audio_stream} column
+overrides the \code{audio_stream} argument per row, where \code{NA} keeps
+that row on every audio track. Any other columns are ignored.}
 
 \item{width, height}{Optional target dimensions applied to every row, unless
 \code{jobs} carries a column of the same name (see \code{jobs}). When only
@@ -76,6 +79,14 @@ per-row column). See \code{\link{standardize_video}} and
 \item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
 unavailable, re-encode with the software \code{video_codec} and a message
 (\code{TRUE}) instead of aborting (\code{FALSE}, default).}
+
+\item{audio_stream}{The 0-based index of the audio track to carry, applied to
+every row unless \code{jobs} carries an \code{audio_stream} column, in
+which case \code{NA} in a cell keeps that row on \strong{every} audio
+track. The index counts \emph{among each input's audio streams}.
+\code{NULL} (default) carries every audio track. See
+\code{\link{standardize_video}} for how this differs from the extraction
+verbs' \code{NULL}. (default = \code{NULL})}
 
 \item{run}{A logical: run each input's command through FFmpeg (\code{TRUE},
 default) or only compile them for inspection (\code{FALSE}).}

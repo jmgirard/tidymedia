@@ -2,6 +2,24 @@
 
 ## Breaking changes
 
+* `standardize_video()` and `anonymize_video()` (and their `_batch` siblings)
+  now keep **every** audio track from the input instead of letting FFmpeg pick
+  one. Neither verb emitted a stream mapping before, so FFmpeg applied its own
+  rules: one stream of each type, preferring whichever audio track carries the
+  container's "default" flag. On a three-track file that meant two tracks were
+  discarded in silence, and *which* one survived depended on the input's flags
+  rather than on anything you wrote — on a test file whose default flag sat on
+  the second track, the second track is what came out. Both verbs now state
+  their selection on every call, and a new `audio_stream` argument names a
+  single track when you want one.
+
+  Two consequences worth knowing about. Output files from multi-track inputs
+  will be larger, because they now carry tracks that were previously dropped.
+  And subtitle streams are no longer carried: into a container that accepts
+  them (`.mkv`) these verbs used to pass one subtitle through, and now pass
+  none. Writing to `.mp4`, the common case, is unaffected — that container was
+  already dropping them.
+
 * `extract_audio()` now names the audio track it takes instead of leaving the
   choice to FFmpeg. It previously emitted no stream mapping at all, so FFmpeg
   picked a track by its own rules — which prefer whichever track carries the
@@ -136,6 +154,24 @@
   the first, see the new `audio_stream` argument below.
 
 ## New features
+
+* `standardize_video()`, `anonymize_video()` and their `_batch` siblings gain an
+  `audio_stream` argument: the 0-based index of the audio track to carry,
+  counted among the input's audio streams, so `0` is the first audio track
+  whatever its position among the file's streams. Leaving it unset keeps every
+  track. The `_batch` verbs also accept an `audio_stream` column in `jobs` to
+  choose per row, where `NA` in a cell keeps that row's tracks all.
+
+  Note that `NULL` does not mean the same thing across the package:
+  `extract_audio()` and `convert_audio()` take the **first** track when you
+  leave `audio_stream` unset, because they write exactly one audio stream and
+  have to pick. The verbs that pass audio through — `separate_audio_video()`
+  and now these two — keep them all. Each function's documentation says which
+  it does and names the ones that do the other.
+
+  Naming a track the input does not have is an FFmpeg error rather than an R
+  one, unchanged from the other verbs that take this argument. An input with no
+  audio at all is fine, and so is a video-only or audio-only file.
 
 * `extract_audio()` and `convert_audio()` (and their `_batch` siblings) now warn
   when the file they read carries audio tracks the file they write will not.

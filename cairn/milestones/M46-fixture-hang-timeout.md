@@ -130,6 +130,8 @@ row, `audio_stream`-carry included.
 
 ## Decisions
 
+- 2026-07-30 (review): two sub-threshold review findings (D 72, B 62) were fixed rather than logged, at the maintainer's explicit direction at the approval gate. Recorded because it departs from the scorer's 80 threshold in the permissive direction: the threshold governs what review actions automatically, and the maintainer may still elect a logged finding. Both are in `run_ffmpeg_fixture()`, the helper this milestone adds, so fixing them here avoided a follow-up that would reopen the same function.
+
 ## Review
 
 Fresh evidence, 2026-07-30, ffmpeg 8.1.2 / R 4.6.1 / macOS. Every figure below
@@ -165,7 +167,7 @@ committed baseline: `-shortest` re-added, red on run 1 of an allowed 3, at
 clean.
 
 **AC7** — `devtools::test()` FAIL 0, WARN 4 (pre-existing M44 dropped-track
-warnings), SKIP 5, PASS 2828. `devtools::check()` Status OK — 0 errors, 0
+warnings), SKIP 5, PASS 2831 (re-run after the B/D fixes). `devtools::check()` Status OK — 0 errors, 0
 warnings, 0 notes.
 
 **Consistency gate** — `cairn_validate` all checks passed; `document()` no diff;
@@ -188,11 +190,16 @@ actioned:
   fixture-validity skip; the code asserted it. Reworked to `skip_if_not()` plus
   a completion-count assertion. This was the [O] criteria audit's own finding at
   plan time, fixed in the criterion and then not carried into the code.
-- Logged, below threshold: D 72 (helper dropped `ffmpeg()`'s `check_string()`, so
-  a vectorized command silently truncates to element 1 — verified); B 62
-  (the warning muffle matches English text, so under a translated locale R's
-  timeout warning escapes carrying the command and temp paths — verified de/fr);
-  I 45 (10-run test uses the 120 s default, so a reintroduced `-shortest` takes
+- **D (72) and B (62), fixed at the maintainer's direction** — both scored below
+  the action threshold and were logged; the maintainer chose to fold them in
+  rather than ship them. D: `rlang::check_string(command)` restored, since base
+  `system()` silently runs only element 1 of a vectorized command. B: the handler
+  now holds every warning and re-raises the non-timeout ones after reading the
+  status, instead of matching English message text — verified 0 warnings escape
+  under both `LANGUAGE=en` and `LANGUAGE=de`, where the old match failed and R's
+  warning carried the command line and temp paths. Two tests added for the guard
+  and one proving a non-timeout failure still warns.
+- Logged, below threshold and not actioned: I 45 (10-run test uses the 120 s default, so a reintroduced `-shortest` takes
   minutes to redden); C 42 (status 124 is the sole timeout signal); N 42
   (`-version` success test overlaps AC4's); H 40 (unquoted binary path,
   pre-existing pattern); G 35 (`system()` vs `system2()` on Windows,
@@ -203,4 +210,5 @@ actioned:
   and verb calls stay unbounded — scoped out, candidate row exists); O 15
   (`expect_no_match` needs testthat 3.2.0 against a 3.0.0 floor, pre-existing).
 
-**Returns:** 1 (AC6, above). Below the thrash rule's third-return threshold.
+**Returns:** 1 (AC6, above) — below the thrash rule's third-return threshold. The
+B/D fixes were a maintainer-directed addition at the approval gate, not a return.

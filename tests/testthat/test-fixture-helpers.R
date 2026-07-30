@@ -34,3 +34,17 @@ test_that("run_ffmpeg_fixture() returns FFmpeg's output on a command that finish
   expect_type(out, "character")
   expect_match(out[[1]], "^ffmpeg version")
 })
+
+test_that("run_ffmpeg_fixture() rejects a command that is not a single string", {
+  # The guard `ffmpeg()` carries and base system() does not: a vectorized
+  # command silently runs only its first element (M46 review finding D).
+  expect_error(run_ffmpeg_fixture(c("-version", "-hide_banner")), "single string")
+  expect_error(run_ffmpeg_fixture(1), "single string")
+})
+
+test_that("run_ffmpeg_fixture() still surfaces a non-timeout FFmpeg failure", {
+  # Only the TIMEOUT warning is suppressed. Every other warning is held and
+  # re-raised, so a failing command is as visible as it was through ffmpeg().
+  skip_if_no_ffmpeg()
+  expect_warning(run_ffmpeg_fixture("-this-is-not-an-option"), "status")
+})

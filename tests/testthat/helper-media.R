@@ -25,25 +25,37 @@ compile_scrubbed <- function(p) {
 # Returns FFmpeg's stdout invisibly.
 run_ffmpeg_fixture <- function(command, timeout = 120) {
   skip_if_no_ffmpeg()
+  # The ffmpeg() this replaces guards its argument; without the same guard a
+  # vectorized `command` silently runs only element 1 (base system() takes the
+  # first and says nothing), and the fixture is then asserted against though it
+  # was built from the wrong command.
+  rlang::check_string(command)
   location <- find_ffmpeg()
+  # Hold every warning rather than deciding which to muffle inside the handler:
+  # the timeout is identified by the status, which is not known until system()
+  # returns. Matching R's warning TEXT instead would be English-only -- under a
+  # translated locale ("Zeitüberschreitung bei Kommando ...") the match fails and
+  # R's warning, which embeds the full command line and its temp paths, escapes
+  # to the reporter (M46 review finding B).
+  held <- character()
   out <- withCallingHandlers(
     system(paste(location, command), intern = TRUE, input = "",
            timeout = timeout),
-    # Muffle only R's own timeout warning -- the failure is raised below with a
-    # better message. Every other warning (a non-zero FFmpeg exit) still reaches
-    # the reporter exactly as it did when these sites called ffmpeg().
     warning = function(w) {
-      if (grepl("timed out", conditionMessage(w), fixed = TRUE)) {
-        invokeRestart("muffleWarning")
-      }
+      held <<- c(held, conditionMessage(w))
+      invokeRestart("muffleWarning")
     }
   )
   status <- attr(out, "status")
   if (!is.null(status) && identical(as.integer(status), 124L)) {
-    # Name the binary and the limit only: the command string carries temp paths.
+    # Name the binary and the limit only, and drop the held warning with them:
+    # the command string carries temp paths.
     stop(sprintf("%s fixture generation timed out after %g seconds.",
                  basename(location), timeout), call. = FALSE)
   }
+  # Not a timeout, so re-raise what was held: a non-zero FFmpeg exit still
+  # reaches the reporter exactly as it did when these sites called ffmpeg().
+  for (msg in held) warning(msg, call. = FALSE)
   invisible(out)
 }
 

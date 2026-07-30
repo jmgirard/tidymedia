@@ -119,7 +119,7 @@ test_that("a multi-track input into a single-stream container names the way out"
                   error = function(e) e)
   expect_s3_class(cnd, "tidymedia_multitrack_separation")
   msg <- cli::ansi_strip(conditionMessage(cnd))
-  expect_match(msg, "exited with status")     # AC2: carries FFmpeg's status
+  expect_match(msg, "exited with status -?[0-9]+")  # AC2: carries the status
   expect_match(msg, "3 audio tracks")         # AC2: states the count
   expect_match(msg, "audio_stream")           # AC2: names the way to take one
   expect_match(msg, ".mka", fixed = TRUE)     # AC2: names a container for several
@@ -344,6 +344,25 @@ test_that("run = FALSE invokes no binary on either separation verb", {
   separate_audio_video_batch(sep_jobs(infile), run = FALSE)
   separate_audio_video_batch(sep_jobs(infile), audio_stream = 1, run = FALSE)
   expect_identical(called, 0L)
+})
+
+test_that("run = FALSE compiles with the locators stubbed to abort", {
+  # AC3's evidence as worded. Weaker than the counting test above and kept beside
+  # it rather than instead of it: nothing in a test can see whether the call site
+  # wraps its call in a tryCatch() that would swallow this stop(), which is how
+  # M44's equivalent test stayed green with the gate it pinned deleted. The
+  # counting test is the one that cannot go vacuous.
+  infile <- make_input("mkv")
+  local_mocked_bindings(
+    find_ffmpeg = function() stop("no binary may be located on this path"),
+    find_ffprobe = function() stop("no binary may be located on this path")
+  )
+  expect_no_error({
+    separate_audio_video(infile, "a.aac", "v.mp4", run = FALSE)
+    separate_audio_video(infile, "a.aac", "v.mp4", audio_stream = 1, run = FALSE)
+    separate_audio_video_batch(sep_jobs(infile), run = FALSE)
+    separate_audio_video_batch(sep_jobs(infile), audio_stream = 1, run = FALSE)
+  })
 })
 
 test_that("every documented call of both verbs compiles with no binary", {

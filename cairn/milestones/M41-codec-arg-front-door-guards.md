@@ -328,9 +328,11 @@ non-string scenarios also probed with an invalid `jobs`).
   `extract_audio(audio_codec = NULL)` still aborts "`audio_codec` must be a single
   string, not `NULL`." The guard passes `allow_null = TRUE` and its comment states
   the scalar/batch disagreement and routes it to M42.
-- **AC6 — measured, passes.** Both re-run at review on the exact review tree:
-  `devtools::test()` 0 FAIL / 0 WARN / 15 SKIP / **2429 PASS**, and
-  `devtools::check()` `Status: OK`, **0 errors / 0 warnings / 0 notes** (3m 8s).
+- **AC6 — measured, passes.** Re-run on the review tree, and again after this
+  round's A1r3/A3r3 fix: `devtools::test()` 0 FAIL / 0 WARN / 15 SKIP /
+  **2441 PASS** (2429 before the new regression test), and `devtools::check()`
+  `Status: OK`, **0 errors / 0 warnings / 0 notes** (3m 7s), with
+  `devtools::document()` producing no diff.
 
 **Consistency gate.** `cairn_validate` exit 0 — all 16 CHECKs PASS, 7 advisories OK,
 one WARN: `sizing` at 16 tasks against the >10 tripwire, which fired because two

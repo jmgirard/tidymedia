@@ -395,6 +395,71 @@ test_that("ffm_map() sets the stream mapping", {
   expect_match(ffm_compile(p), "-map 0:v ", fixed = TRUE)
 })
 
+test_that("ffm_map() accepts a character vector and emits one -map per element", {
+  f <- make_input()
+  p <- ffm_map(ffm_files(f, "out.mkv"), c("0:v", "0:a:1", "0:a:2"))
+  expect_equal(p$map, c("0:v", "0:a:1", "0:a:2"))
+  args <- tidymedia:::ffm_args(p)
+  expect_identical(sum(args == "-map"), 3L)
+  expect_identical(args[which(args == "-map") + 1L], c("0:v", "0:a:1", "0:a:2"))
+})
+
+test_that("ffm_map() appends on chaining rather than overwriting", {
+  # M43 changed this: the builder used to overwrite `object$map`, so a second
+  # call silently discarded the first. Appending is what lets a caller keep the
+  # video and then name one audio track.
+  f <- make_input()
+  p <- ffm_map(ffm_map(ffm_files(f, "out.mkv"), "0:v"), "0:a:1")
+  expect_equal(p$map, c("0:v", "0:a:1"))
+  expect_match(ffm_compile(p), "-map 0:v -map 0:a:1", fixed = TRUE)
+})
+
+test_that("ffm_map(replace = TRUE) narrows an existing map instead of adding to it", {
+  # The escape hatch appending needs: ffm_copy() already mapped "0" (every
+  # stream), and appending "0:a:1" to that would duplicate the output stream
+  # rather than narrow it -- the exact failure the convert_audio map fix removed.
+  f <- make_input()
+  p <- ffm_map(ffm_copy(ffm_files(f, "out.mkv")), "0:a:1", replace = TRUE)
+  expect_equal(p$map, "0:a:1")
+  args <- tidymedia:::ffm_args(p)
+  expect_identical(sum(args == "-map"), 1L)
+  expect_identical(args[which(args == "-map") + 1L], "0:a:1")
+})
+
+test_that("ffm_map() rejects a non-character, empty, or NA mapping", {
+  f <- make_input()
+  p <- ffm_files(f, "out.mp4")
+  expect_error(ffm_map(p, 0), "character vector")
+  expect_error(ffm_map(p, character(0)), "character vector")
+  expect_error(ffm_map(p, c("0:v", NA)), "character vector")
+  expect_error(ffm_map(p, "0:v", replace = NA), "`replace`")
+})
+
+test_that("no in-package pipeline emits more than one -map", {
+  # Appending is only safe because no internal pipeline maps twice; a pipeline
+  # that gains a second map without meaning to now duplicates the output stream
+  # rather than overwriting, so pin the invariant across every call site.
+  f <- make_input()
+  maps <- function(cmd) {
+    vapply(cmd, function(x) {
+      sum(gregexpr("-map ", x, fixed = TRUE)[[1]] > 0)
+    }, integer(1), USE.NAMES = FALSE)
+  }
+  cmds <- c(
+    extract_audio(f, "out.aac", run = FALSE),
+    convert_audio(f, "out.mp3", run = FALSE),
+    crop_video(f, "out.mp4", 32, 32, run = FALSE),
+    strip_metadata(f, "out.mp4", run = FALSE),
+    # Both segment_video() branches: the re-encode path and the ffm_copy() path,
+    # which is the one that sets a map of its own.
+    segment_video(f, 0, 1, outfiles = "seg.mp4", run = FALSE)$command,
+    segment_video(f, 0, 1, outfiles = "seg.mp4", reencode = FALSE,
+                  run = FALSE)$command,
+    unlist(separate_audio_video(f, "out.m4a", "out.mp4", run = FALSE))
+  )
+  expect_true(all(maps(cmds) <= 1L))
+})
+
 # ffm_pixel_format() -----------------------------------------------------------
 
 test_that("ffm_pixel_format() sets the pixel format with correct spacing", {

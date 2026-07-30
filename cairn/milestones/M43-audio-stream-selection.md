@@ -95,10 +95,10 @@ scope; `strip_metadata()`'s `-map 0` already keeps every stream.
 
 ## Tasks
 
-- [ ] T1: Add `make_multitrack_video()` to `tests/testthat/helper-media.R` beside
+- [x] T1: Add `make_multitrack_video()` to `tests/testthat/helper-media.R` beside
       the existing six generators — video plus three `-b:a 32k` aac tracks
       tagged eng/spa/fra from lavfi `sine` sources at distinct frequencies.
-- [ ] T2: `ffm_map()` ([ffm.R:555](../../R/ffm.R#L555)) — accept a character
+- [x] T2: `ffm_map()` ([ffm.R:555](../../R/ffm.R#L555)) — accept a character
       vector, append on chaining, add `replace = TRUE`; correct its docs and
       `ffm_copy(streams=)`'s prose; compile tests over every existing call site.
 - [ ] T3: `audio_stream` on `extract_audio()` and `convert_audio()` — front-door
@@ -124,6 +124,10 @@ scope; `strip_metadata()`'s `-map 0` already keeps every stream.
 - 2026-07-29: plan gate chose hotfixing `convert_audio()`'s `-map a` crash separately over folding it into this milestone, so a broken verb is not gated behind M41 and M42; falsified by the hotfix's deterministic map proving insufficient without the selector.
 - 2026-07-29: split from M44 because 9 acceptance criteria hit the sizing tripwire; the run-path probe and its D013 extension are independently shippable, so the selector ships without waiting on a convention decision.
 - 2026-07-29: the precondition hotfix shipped — `convert_audio_pipeline()` now maps `0:a:0` instead of `a`, so AC1's "keeps the hotfix's explicit map" reads against that literal. It also landed `make_multitrack_video()` in `helper-media.R` to the shape AC5 specifies (3 aac tracks tagged eng/spa/fra, distinct sine frequencies, `.mkv`), so verify T1 rather than re-adding it; four `-map a` assertions were retargeted, and the M40 byte-identity test at `test-ffmpeg.R:124-137` was already rewritten for the map, narrowing what AC1 leaves to do.
+
+- 2026-07-30: T1 verified, not re-authored — the precondition hotfix already landed `make_multitrack_video()` at AC5's shape (3 aac tracks, eng/spa/fra, distinct sine frequencies, `.mkv`, no committed media).
+- 2026-07-30: implement gate confirmed both plan choices unchanged — `ffm_map()` ships `replace =` per AC3 (unused in-package, but its only alternative strands `ffm_copy()`'s all-streams map with no way to narrow it, and the carry follow-up needs it), and `extract_audio()` keeps `-vn` beside its new map.
+- 2026-07-30: T2 done — `ffm_map()` takes a character vector, appends on chaining, gains `replace = TRUE`; `check_string()` replaced by a spelled-out character-vector guard (rlang's `check_character()` is unexported). `ffm_compile()` untouched. Docs corrected on `ffm_map()` and `ffm_copy(streams=)`; a new test pins ≤1 `-map` per compiled command across every in-package call site.
 
 ## Decisions
 

@@ -4,13 +4,17 @@
 \alias{ffm_map}
 \title{Set the Stream Mapping in an FFmpeg Pipeline}
 \usage{
-ffm_map(object, mapping = "0")
+ffm_map(object, mapping = "0", replace = FALSE)
 }
 \arguments{
 \item{object}{An ffmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
-\item{mapping}{A string determining the stream mapping.}
+\item{mapping}{A character vector of one or more stream specifiers, one
+\code{-map} each.}
+
+\item{replace}{A logical: discard any mapping already set on \code{object}
+(\code{TRUE}) or append to it (\code{FALSE}, default).}
 }
 \value{
 \code{object} with the added stream mapping instruction.
@@ -18,7 +22,19 @@ ffm_map(object, mapping = "0")
 \description{
 Select which input streams are included in the output via FFmpeg's
 \code{-map} option. The default (\code{"0"}) maps every stream from the first
-input. When the pipeline uses a multi-input verb (e.g.
+input. \code{mapping} may be a character vector, which emits one \code{-map}
+per element in the order given — for example
+\code{ffm_map(object, c("0:v", "0:a:1"))} keeps the video and the input's
+\emph{second} audio track.
+}
+\details{
+Chaining \strong{appends}: a second \code{ffm_map()} call adds to the maps
+already set rather than replacing them. Pass \code{replace = TRUE} to discard
+them instead, which is how you narrow the all-streams map that
+\code{\link{ffm_copy}} sets — appending to that one would duplicate the
+stream in the output rather than select it.
+
+When the pipeline uses a multi-input verb (e.g.
 \code{\link{ffm_hstack}}), the explicit mapping is added \emph{alongside}
 the automatic \code{-map "[vout]"} of the filtered stream — for example,
 \code{ffm_map(object, "0:a")} keeps the first input's audio next to the
@@ -28,6 +44,11 @@ stacked video.
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 ffm(video, "output.mp4") |>
   ffm_map(mapping = "0") |>
+  ffm_compile()
+
+# Keep the video and the second audio track only
+ffm(video, "output.mkv") |>
+  ffm_map(mapping = c("0:v", "0:a:1")) |>
   ffm_compile()
 }
 \seealso{

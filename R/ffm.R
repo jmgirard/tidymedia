@@ -533,7 +533,18 @@ ffm_codec <- function(object,
 #'
 #' Select which input streams are included in the output via FFmpeg's
 #' \code{-map} option. The default (\code{"0"}) maps every stream from the first
-#' input. When the pipeline uses a multi-input verb (e.g.
+#' input. \code{mapping} may be a character vector, which emits one \code{-map}
+#' per element in the order given — for example
+#' \code{ffm_map(object, c("0:v", "0:a:1"))} keeps the video and the input's
+#' \emph{second} audio track.
+#'
+#' Chaining \strong{appends}: a second \code{ffm_map()} call adds to the maps
+#' already set rather than replacing them. Pass \code{replace = TRUE} to discard
+#' them instead, which is how you narrow the all-streams map that
+#' \code{\link{ffm_copy}} sets — appending to that one would duplicate the
+#' stream in the output rather than select it.
+#'
+#' When the pipeline uses a multi-input verb (e.g.
 #' \code{\link{ffm_hstack}}), the explicit mapping is added \emph{alongside}
 #' the automatic \code{-map "[vout]"} of the filtered stream — for example,
 #' \code{ffm_map(object, "0:a")} keeps the first input's audio next to the
@@ -541,7 +552,10 @@ ffm_codec <- function(object,
 #'
 #' @param object An ffmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param mapping A string determining the stream mapping.
+#' @param mapping A character vector of one or more stream specifiers, one
+#'   \code{-map} each.
+#' @param replace A logical: discard any mapping already set on \code{object}
+#'   (\code{TRUE}) or append to it (\code{FALSE}, default).
 #' @return \code{object} with the added stream mapping instruction.
 #' @seealso [ffm_copy()], which maps all streams; [separate_audio_video()] is a
 #'   task verb built on it.
@@ -551,13 +565,30 @@ ffm_codec <- function(object,
 #' ffm(video, "output.mp4") |>
 #'   ffm_map(mapping = "0") |>
 #'   ffm_compile()
+#'
+#' # Keep the video and the second audio track only
+#' ffm(video, "output.mkv") |>
+#'   ffm_map(mapping = c("0:v", "0:a:1")) |>
+#'   ffm_compile()
 #' @export
-ffm_map <- function(object, mapping = "0") {
+ffm_map <- function(object, mapping = "0", replace = FALSE) {
   check_ffm(object)
-  rlang::check_string(mapping)
+  # Not check_string(): a vector is the point (M43). Spelled out rather than
+  # deferred to rlang because check_character() is unexported.
+  if (!is.character(mapping) || length(mapping) == 0L || anyNA(mapping)) {
+    cli::cli_abort(
+      "{.arg mapping} must be a character vector of one or more stream \\
+       specifiers (no {.val {NA}})."
+    )
+  }
+  rlang::check_bool(replace)
 
-  object$map <- mapping
-  
+  # Append by default. Overwriting was the old behavior and it silently
+  # discarded the earlier call, so a pipeline could not keep the video and then
+  # name one audio track; `replace` keeps overwriting reachable for the one case
+  # that needs it -- narrowing ffm_copy()'s all-streams "0" (M43).
+  object$map <- if (replace) mapping else c(object$map, mapping)
+
   object
 }
 
@@ -577,7 +608,10 @@ ffm_map <- function(object, mapping = "0") {
 #' @param video A logical indicating whether to copy the video codec.
 #'   (default = \code{TRUE})
 #' @param streams A logical indicating whether to map all streams from the
-#'   input (via \code{ffm_map(mapping = "0")}). (default = \code{TRUE})
+#'   input (via \code{ffm_map(mapping = "0")}). Because \code{\link{ffm_map}}
+#'   appends, this \emph{adds} \code{-map 0} to any mapping already set; to
+#'   narrow the result afterwards, call \code{ffm_map(replace = TRUE)}.
+#'   (default = \code{TRUE})
 #' @return \code{object} with the added instruction to copy codecs and/or map
 #'   all streams.
 #' @seealso [ffm_codec()] and [ffm_map()], which it wraps; [segment_video()]

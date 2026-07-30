@@ -12,6 +12,7 @@ separate_audio_video(
   video_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
+  audio_stream = NULL,
   run = TRUE
 )
 }
@@ -50,6 +51,18 @@ unavailable, encode in software with a message (\code{TRUE}) instead of
 aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
 fallback leaves the codec unset rather than injecting one.}
 
+\item{audio_stream}{The 0-based index of the audio track to write to
+\code{audiofile}, counted among \code{infile}'s \emph{audio} streams only
+(\code{0} is the first audio track, \code{1} the second) — not the
+\code{index} column of \code{\link{probe_audio}}, which counts all streams.
+\code{NULL} (default) takes \strong{every} audio track, which is what this
+verb has always done: a container that holds several (\code{.mka},
+\code{.m4a}) receives them all, while a single-stream container
+(\code{.aac}, \code{.mp3}, \code{.wav}) makes FFmpeg fail — name a track to
+write one of those. This differs from \code{\link{extract_audio}} and
+\code{\link{convert_audio}}, whose \code{NULL} takes the first track only.
+\code{videofile} is never affected.}
+
 \item{run}{A logical: run the commands through FFmpeg (\code{TRUE}, default)
 or return the compiled commands without running them (\code{FALSE}).}
 }
@@ -74,11 +87,15 @@ separate_audio_video(video, "audio.aac", "video.mp4", run = FALSE)
 # transcode the audio to MP3 while copying the video through untouched
 separate_audio_video(video, "audio.mp3", "video.mp4",
                      audio_codec = "libmp3lame", run = FALSE)
+# write only the second audio track of a multi-track input
+separate_audio_video(video, "audio.aac", "video.mp4",
+                     audio_stream = 1, run = FALSE)
 }
 \seealso{
 \code{\link[=ffm_map]{ffm_map()}} and \code{\link[=ffm_codec]{ffm_codec()}}, the builders it wraps;
 \code{\link[=has_nvenc]{has_nvenc()}} for the \code{hardware = "nvenc"} toggle;
-\code{\link[=extract_audio]{extract_audio()}} to pull out just the audio.
+\code{\link[=extract_audio]{extract_audio()}} to pull out just the audio;
+\code{\link[=probe_audio]{probe_audio()}} to list an input's audio tracks.
 
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

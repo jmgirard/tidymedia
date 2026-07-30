@@ -251,20 +251,31 @@ ensure_dir <- function(dir, arg = rlang::caller_arg(dir),
 
 # Resolve an `audio_stream` selector to the FFmpeg stream specifier the audio
 # verbs map: `0:a:<n>`, the n-th audio stream *within the input* (0-based), not
-# the n-th stream overall. NULL is the documented default and resolves to the
-# same `0:a:0` an explicit 0 does -- the argument's own sentinel for "no
-# selection", which is what lets a batch column's NA cell say "leave this row on
-# the default" (M43).
+# the n-th stream overall. NULL is the documented default and, on the extraction
+# verbs, resolves to the same `0:a:0` an explicit 0 does -- the argument's own
+# sentinel for "no selection", which is what lets a batch column's NA cell say
+# "leave this row on the default" (M43).
+#
+# `null_map` is what NULL resolves to, and it is a parameter because M45 added a
+# caller whose no-selection default is a DIFFERENT MAP, not merely a different
+# hint: on separate_audio_video() NULL stays `0:a` -- EVERY audio track -- which
+# is what that verb has compiled since it shipped and what its Matroska callers
+# receive today, so baking `0:a:0` in here would have silently narrowed them to
+# one track. D023's NULL bullet reads the other way for the extraction verbs and
+# the M45 D-entry records the split. Same shape as
+# check_batch_audio_col(na_means =), parameterized at M43 when a new caller's NA
+# meant something else (M40's lesson).
 #
 # The check lives here so every caller inherits it, including a batch row whose
 # value arrives from an override column rather than the argument (M13/M32); the
 # scalar verbs check again at their own front door so a bad argument blames the
 # verb rather than aborting mid-fan-out (M41).
-audio_stream_map <- function(audio_stream = NULL, call = rlang::caller_env()) {
+audio_stream_map <- function(audio_stream = NULL, null_map = "0:a:0",
+                             call = rlang::caller_env()) {
   rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE,
                             arg = "audio_stream", call = call)
-  n <- if (is.null(audio_stream)) 0L else as.integer(audio_stream)
-  sprintf("0:a:%d", n)
+  if (is.null(audio_stream)) return(null_map)
+  sprintf("0:a:%d", as.integer(audio_stream))
 }
 
 # warn_dropped_audio() ----------------------------------------------------
@@ -485,15 +496,27 @@ extract_audio <- function(infile, outfile, audio_codec = "copy",
 # reach the video command. `hardware`/`fallback` ride the same routing (M38):
 # nvenc encodes video, so only the video branch forwards them and the audio
 # command is byte-identical whatever the caller asked for -- the routing lives
-# here once rather than at each call site.
+# here once rather than at each call site. `audio_stream` rides the same routing
+# in the other direction: it narrows the audio map to one track and the video
+# branch never reads it, so the video command is byte-identical whatever the
+# caller selected (M45).
 # Splitting one input into audio + video is a fan-out,
 # so each stream stays its own single-output pipeline (D003/D007); both verbs
 # wrap this once per stream. Command assembly stays in Layer 1 (IP1/D002). Kept
 # ABOVE the roxygen block below so document() does not re-target it (M28 lesson).
 separate_stream_pipeline <- function(input, output, stream, codec = "copy",
                                      hardware = "none", fallback = FALSE,
+                                     audio_stream = NULL,
                                      call = rlang::caller_env()) {
-  p <- ffm_map(ffm_files(input, output), if (stream == "audio") "0:a" else "0:v")
+  # `null_map = "0:a"` keeps EVERY audio track when the caller named none, which
+  # is this verb's map since it shipped -- audio_stream_map()'s own default is
+  # the extraction verbs' `0:a:0` and would silently narrow to one track (M45).
+  map <- if (stream == "audio") {
+    audio_stream_map(audio_stream, null_map = "0:a", call = call)
+  } else {
+    "0:v"
+  }
+  p <- ffm_map(ffm_files(input, output), map)
   if (stream == "audio") {
     # nvenc encodes video, so `hardware`/`fallback` never reach this branch and
     # the audio command is byte-identical whatever the caller asked for (M38).
@@ -567,13 +590,25 @@ separate_stream_pipeline <- function(input, output, stream, codec = "copy",
 #'   unavailable, encode in software with a message (\code{TRUE}) instead of
 #'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
 #'   fallback leaves the codec unset rather than injecting one.
+#' @param audio_stream The 0-based index of the audio track to write to
+#'   \code{audiofile}, counted among \code{infile}'s \emph{audio} streams only
+#'   (\code{0} is the first audio track, \code{1} the second) — not the
+#'   \code{index} column of \code{\link{probe_audio}}, which counts all streams.
+#'   \code{NULL} (default) takes \strong{every} audio track, which is what this
+#'   verb has always done: a container that holds several (\code{.mka},
+#'   \code{.m4a}) receives them all, while a single-stream container
+#'   (\code{.aac}, \code{.mp3}, \code{.wav}) makes FFmpeg fail — name a track to
+#'   write one of those. This differs from \code{\link{extract_audio}} and
+#'   \code{\link{convert_audio}}, whose \code{NULL} takes the first track only.
+#'   \code{videofile} is never affected.
 #' @param run A logical: run the commands through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled commands without running them (\code{FALSE}).
 #' @return A named character vector of the two compiled commands
 #'   (\code{audio}, \code{video}); invisible when \code{run = TRUE}.
 #' @seealso [ffm_map()] and [ffm_codec()], the builders it wraps;
 #'   [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
-#'   [extract_audio()] to pull out just the audio.
+#'   [extract_audio()] to pull out just the audio;
+#'   [probe_audio()] to list an input's audio tracks.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -581,11 +616,14 @@ separate_stream_pipeline <- function(input, output, stream, codec = "copy",
 #' # transcode the audio to MP3 while copying the video through untouched
 #' separate_audio_video(video, "audio.mp3", "video.mp4",
 #'                      audio_codec = "libmp3lame", run = FALSE)
+#' # write only the second audio track of a multi-track input
+#' separate_audio_video(video, "audio.aac", "video.mp4",
+#'                      audio_stream = 1, run = FALSE)
 #' @export
 separate_audio_video <- function(infile, audiofile, videofile,
                                  audio_codec = "copy", video_codec = "copy",
                                  hardware = c("none", "nvenc"),
-                                 fallback = FALSE,
+                                 fallback = FALSE, audio_stream = NULL,
                                  run = TRUE) {
 
   check_file_exists(infile)
@@ -596,13 +634,22 @@ separate_audio_video <- function(infile, audiofile, videofile,
   # default call. Validating here also attributes the error to this verb (M37).
   hardware <- rlang::arg_match(hardware)
   rlang::check_bool(fallback)
+  # Last of the front-door checks, so adding it cannot move the precedence of
+  # the ones above (M41). It duplicates the check inside audio_stream_map(),
+  # which the audio pipeline below always reaches with `call` resolving to this
+  # frame -- so on the scalar verb it is defense-in-depth and parity with the
+  # batch sibling, where the same call IS load-bearing because the reshape reads
+  # NA as the NULL sentinel. No test is named after this line (M43's finding).
+  rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
 
   # One input -> two outputs is a fan-out: emit two single-output pipelines
   # (D-M03-2) rather than a dual-`-map` command the linear engine can't model.
   # separate_stream_pipeline() carries the per-stream recipe shared with
   # separate_audio_video_batch(), and token-checks each codec there.
+  # `audio_stream` is passed to the audio call only: the video command cannot
+  # narrow its map even by mistake, because the value never reaches it.
   audio <- separate_stream_pipeline(infile, audiofile, "audio", audio_codec,
-                                    hardware, fallback)
+                                    hardware, fallback, audio_stream)
   video <- separate_stream_pipeline(infile, videofile, "video", video_codec,
                                     hardware, fallback)
   commands <- c(audio = ffm_compile(audio), video = ffm_compile(video))

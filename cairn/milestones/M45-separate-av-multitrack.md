@@ -86,7 +86,7 @@ failed → one grouped candidate row.
 
 ## Tasks
 
-- [ ] T1: Record the pre-change compiled strings from b548902 as AC1's baseline,
+- [x] T1: Record the pre-change compiled strings from b548902 as AC1's baseline,
       then add `audio_stream` to `separate_audio_video()` — front-door
       `check_number_whole(min = 0, allow_null = TRUE)`, threaded through
       `separate_stream_pipeline()` (`R/ffmpeg.R:379`) to the audio branch only;
@@ -123,6 +123,7 @@ failed → one grouped candidate row.
 - 2026-07-30: implement started; branch `m45-separate-av-multitrack` cut from master at e885859.
 - 2026-07-30: implement gate kept the plan's `audio_stream` name with its every-track `NULL` (over a D023-uniform first-track default, which would silently narrow the `.mka`/`.m4a` callers who receive all tracks today, and over a second argument name for the same counting base); irreversible-api tripwire offered escalation and it was declined.
 - 2026-07-30: AMENDMENT (substantive, gated) — AC2 and T2 now fall through to today's plain `ffm_run()` abort when the caller NAMED a track: with `0:a:<n>` mapped the failure is not a multi-track refusal, so "name a track with `audio_stream`" would be false under the branch that fired it (M38's twice-learned lesson). AC4/T3 amended from "warns once per failed audio row" to ONE aggregated warning naming every failed no-track audio row, matching M44's aggregation so R's 50-warning collapse cannot bury a large batch's message.
+- 2026-07-30: T1 done — `audio_stream` on `separate_audio_video()`, threaded to the audio branch of `separate_stream_pipeline()` only (the video call is never passed the value, so the video map cannot narrow by mistake). `audio_stream_map()` gained a `null_map` parameter rather than a second helper: one guard site keeps the `check_number_whole` wording identical across verb families, and `null_map = "0:a"` is what makes this verb's `NULL` mean every track (the `check_batch_audio_col(na_means=)` shape from M43/M40). AC1's baseline recorded verbatim in the new test file's header, provenance `b548902`, with `git diff b548902 HEAD -- R/ffmpeg.R` confirming no separation code moved in between. Minor refinement: AC1's compile tests were written here with the code rather than deferred to T5 (tests-first), so T5 now carries AC2–AC4 only. `document()` clean, `test()` 0 failures / 2751 passing (the 4 warnings are M44's drop diagnostic in pre-existing tests, unchanged).
 
 ## Decisions
 

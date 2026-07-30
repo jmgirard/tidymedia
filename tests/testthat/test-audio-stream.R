@@ -272,7 +272,7 @@ test_that("extract_audio() ignores the container's DEFAULT disposition", {
   skip_if_no_ffprobe()
   plain <- make_multitrack_video()
   flagged <- withr::local_tempfile(fileext = ".mkv")
-  ffmpeg(sprintf(
+  run_ffmpeg_fixture(sprintf(
     '-y -i "%s" -map 0 -c copy -disposition:a:0 0 -disposition:a:1 default "%s"',
     plain, flagged
   ))
@@ -302,28 +302,36 @@ test_that("extract_audio() takes audio alone from a subtitle-bearing input", {
   # audio alone. The output container has to accept subtitles for this to
   # discriminate at all -- .m4a or .mka would pass either way.
   skip_if_no_ffprobe()
-  srt <- withr::local_tempfile(fileext = ".srt")
-  writeLines(c("1", "00:00:00,000 --> 00:00:01,000", "hello", ""), srt)
-  infile <- withr::local_tempfile(fileext = ".mkv")
-  ffmpeg(paste(
-    "-y -f lavfi -i testsrc=duration=2:size=64x64:rate=10",
-    "-f lavfi -i sine=frequency=440:duration=2",
-    sprintf('-i "%s"', srt),
-    "-map 0:v -map 1:a -map 2:s -c:v libx264 -c:a aac -c:s srt",
-    sprintf('-shortest -pix_fmt yuv420p "%s"', infile)
-  ))
-  skip_if_not(file.exists(infile), "subtitle fixture could not be generated")
-  types <- function(p) {
-    trimws(ffprobe(sprintf(
-      '-v error -show_entries stream=codec_type -of csv=p=0 "%s"', p
-    )))
-  }
+  infile <- make_subtitle_video()
   # The fixture only discriminates if the source really carries a subtitle.
-  skip_if_not("subtitle" %in% types(infile), "fixture carries no subtitle")
+  skip_if_not("subtitle" %in% stream_types(infile), "fixture carries no subtitle")
 
   out <- withr::local_tempfile(fileext = ".mkv")
   extract_audio(infile, out)
-  expect_identical(types(out), "audio")
+  expect_identical(stream_types(out), "audio")
+})
+
+test_that("the subtitle fixture completes every time it is generated", {
+  # Regression (M46): with `-shortest`, this command deadlocked FFmpeg on ~40%
+  # of runs and the suite sat forever with no output. The discriminating
+  # assertion is the COUNT below -- it is reachable only if all ten generations
+  # returned, and run_ffmpeg_fixture() turns a hang into an error at its limit,
+  # so a reintroduced `-shortest` reddens this test instead of stalling the run.
+  #
+  # The subtitle check is a fixture-validity SKIP, deliberately not an
+  # assertion: every generation that completes carries a subtitle (including the
+  # 60% that completed before the fix), so asserting it would only add a way for
+  # this test to go red for a reason that is not the deadlock -- e.g. an FFmpeg
+  # build without SRT-in-Matroska. Skipping keeps the red signal meaning one
+  # thing (M43's fixture-validity rule).
+  skip_if_no_ffprobe()
+  completed <- 0L
+  for (i in seq_len(10)) {
+    infile <- make_subtitle_video()
+    skip_if_not("subtitle" %in% stream_types(infile), "fixture carries no subtitle")
+    completed <- completed + 1L
+  }
+  expect_identical(completed, 10L)
 })
 
 test_that("convert_audio(audio_stream = 1) converts the second track (spa)", {

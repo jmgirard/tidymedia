@@ -13,6 +13,52 @@ compile_scrubbed <- function(p) {
   cmd
 }
 
+# Run an FFmpeg fixture command under a wall-clock timeout, and error if it
+# reaches the limit. Fixture generation goes through here rather than through
+# ffmpeg() because a hung FFmpeg would otherwise block the run forever with no
+# output: `-shortest` beside a mapped subtitle stream deadlocked ~40% of runs on
+# ffmpeg 8.1.2 (M46). A synthetic clip of a couple of seconds cannot legitimately
+# take minutes, so reaching the limit is a defect and must be loudly red -- an
+# error rather than a skip, which would go green on CI. base R's system()
+# timeout kills the child at the limit and reports status 124, so no package
+# dependency is involved. Skips the calling test if ffmpeg is unavailable.
+# Returns FFmpeg's stdout invisibly.
+run_ffmpeg_fixture <- function(command, timeout = 120) {
+  skip_if_no_ffmpeg()
+  # The ffmpeg() this replaces guards its argument; without the same guard a
+  # vectorized `command` silently runs only element 1 (base system() takes the
+  # first and says nothing), and the fixture is then asserted against though it
+  # was built from the wrong command.
+  rlang::check_string(command)
+  location <- find_ffmpeg()
+  # Hold every warning rather than deciding which to muffle inside the handler:
+  # the timeout is identified by the status, which is not known until system()
+  # returns. Matching R's warning TEXT instead would be English-only -- under a
+  # translated locale ("Zeitüberschreitung bei Kommando ...") the match fails and
+  # R's warning, which embeds the full command line and its temp paths, escapes
+  # to the reporter (M46 review finding B).
+  held <- character()
+  out <- withCallingHandlers(
+    system(paste(location, command), intern = TRUE, input = "",
+           timeout = timeout),
+    warning = function(w) {
+      held <<- c(held, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  status <- attr(out, "status")
+  if (!is.null(status) && identical(as.integer(status), 124L)) {
+    # Name the binary and the limit only, and drop the held warning with them:
+    # the command string carries temp paths.
+    stop(sprintf("%s fixture generation timed out after %g seconds.",
+                 basename(location), timeout), call. = FALSE)
+  }
+  # Not a timeout, so re-raise what was held: a non-zero FFmpeg exit still
+  # reaches the reporter exactly as it did when these sites called ffmpeg().
+  for (msg in held) warning(msg, call. = FALSE)
+  invisible(out)
+}
+
 # Generate a short test video (with an audio track) using ffmpeg's synthetic
 # lavfi sources, so integration tests do not need a checked-in media fixture.
 # Skips the calling test if ffmpeg is unavailable. Returns the file path.
@@ -24,7 +70,7 @@ make_test_video <- function(env = parent.frame()) {
     "-f lavfi -i sine=frequency=440:duration=2",
     sprintf('-shortest -pix_fmt yuv420p "%s"', path)
   )
-  ffmpeg(command)
+  run_ffmpeg_fixture(command)
   testthat::skip_if_not(file.exists(path), "test video could not be generated")
   path
 }
@@ -43,7 +89,7 @@ make_mp3_audio_video <- function(env = parent.frame()) {
     "-c:v libx264 -c:a libmp3lame -shortest -pix_fmt yuv420p",
     sprintf('"%s"', path)
   )
-  ffmpeg(command)
+  run_ffmpeg_fixture(command)
   testthat::skip_if_not(file.exists(path), "test video could not be generated")
   path
 }
@@ -60,7 +106,7 @@ make_keyframed_video <- function(duration = 12, rate = 24, gop = 48,
     sprintf("-c:v libx264 -g %s -keyint_min %s -sc_threshold 0", gop, gop),
     sprintf('-pix_fmt yuv420p "%s"', path)
   )
-  ffmpeg(command)
+  run_ffmpeg_fixture(command)
   testthat::skip_if_not(file.exists(path), "test video could not be generated")
   path
 }
@@ -79,7 +125,7 @@ make_dynamic_audio <- function(env = parent.frame()) {
     "-af tremolo=f=0.2:d=0.9",
     sprintf('-c:a aac "%s"', path)
   )
-  ffmpeg(command)
+  run_ffmpeg_fixture(command)
   testthat::skip_if_not(file.exists(path),
                         "dynamic test audio could not be generated")
   path
@@ -96,7 +142,7 @@ make_silent_audio <- function(env = parent.frame()) {
     "-y -f lavfi -i anullsrc=r=44100:cl=mono -t 1",
     sprintf('-c:a aac "%s"', path)
   )
-  ffmpeg(command)
+  run_ffmpeg_fixture(command)
   testthat::skip_if_not(file.exists(path),
                         "silent test audio could not be generated")
   path
@@ -124,10 +170,54 @@ make_multitrack_video <- function(env = parent.frame()) {
     "-metadata:s:a:2 language=fra",
     sprintf('"%s"', path)
   )
-  ffmpeg(command)
+  run_ffmpeg_fixture(command)
   testthat::skip_if_not(file.exists(path),
                         "multitrack test video could not be generated")
   path
+}
+
+# Generate a video carrying a subtitle track beside its video and audio, so
+# tests can observe whether an explicit -map takes audio alone or lets FFmpeg's
+# old implicit "one stream of each type" selection carry a subtitle along (M43).
+# Matroska because the container has to accept a subtitle for the distinction to
+# be visible at all.
+#
+# Deliberately NO -shortest, because beside a mapped subtitle stream it deadlocks
+# FFmpeg intermittently: this command hung 10 times in 25 runs on ffmpeg
+# 8.1.2/macOS, while the same command without the flag hung 0 in 15, and the flag
+# WITH the subtitle map dropped hung 0 in 15 (M46).
+#
+# Removing it is not a no-op, though every consumer here is indifferent to what
+# it changes. The flag was tracking the SHORTEST stream, which is the 1-second
+# .srt and not the two 2-second lavfi sources, so the container duration goes
+# 1.021 s -> 2.023 s (measured). The stream set is identical either way, and both
+# consumers asserting on this fixture assert stream TYPES only -- so if you ever
+# add a duration assertion here, that is the number to expect.
+# Skips the calling test if ffmpeg is unavailable. Returns the file path.
+make_subtitle_video <- function(env = parent.frame()) {
+  skip_if_no_ffmpeg()
+  srt <- withr::local_tempfile(fileext = ".srt", .local_envir = env)
+  writeLines(c("1", "00:00:00,000 --> 00:00:01,000", "hello", ""), srt)
+  path <- withr::local_tempfile(fileext = ".mkv", .local_envir = env)
+  run_ffmpeg_fixture(paste(
+    "-y -f lavfi -i testsrc=duration=2:size=64x64:rate=10",
+    "-f lavfi -i sine=frequency=440:duration=2",
+    sprintf('-i "%s"', srt),
+    "-map 0:v -map 1:a -map 2:s -c:v libx264 -c:a aac -c:s srt",
+    sprintf('-pix_fmt yuv420p "%s"', path)
+  ))
+  testthat::skip_if_not(file.exists(path),
+                        "subtitle test video could not be generated")
+  path
+}
+
+# Probe a media file's stream types via ffprobe, in stream order: a character
+# vector of "video"/"audio"/"subtitle". Skips if ffprobe is unavailable.
+stream_types <- function(path) {
+  skip_if_no_ffprobe()
+  trimws(ffprobe(sprintf(
+    '-v error -show_entries stream=codec_type -of csv=p=0 "%s"', path
+  )))
 }
 
 # Build an ffm pipeline WITHOUT ffm_files()'s file-readability check, so pure
@@ -155,13 +245,13 @@ probe_duration <- function(path) {
 make_tagged_video <- function(env = parent.frame()) {
   skip_if_no_ffmpeg()
   plain <- withr::local_tempfile(fileext = ".mp4", .local_envir = env)
-  ffmpeg(paste(
+  run_ffmpeg_fixture(paste(
     "-y -f lavfi -i testsrc=duration=1:size=64x64:rate=10",
     "-f lavfi -i sine=frequency=440:duration=1",
     sprintf('-shortest -pix_fmt yuv420p "%s"', plain)
   ))
   path <- withr::local_tempfile(fileext = ".mp4", .local_envir = env)
-  ffmpeg(paste(
+  run_ffmpeg_fixture(paste(
     sprintf('-y -display_rotation:v:0 90 -i "%s" -c copy', plain),
     '-metadata title="Secret Study" -metadata comment="participant 007"',
     '-metadata location="+40.7128-074.0060/"',

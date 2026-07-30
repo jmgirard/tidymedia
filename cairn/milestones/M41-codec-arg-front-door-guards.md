@@ -58,7 +58,7 @@ refused, completing the M37 review's repair of `separate_audio_video_batch`.
       `In index: <n>` in its message, on the same condition AC2 inspects —
       showing the scalar check ran before the fan-out, not inside
       `purrr::pmap()`.
-- [ ] AC4: Measured as the diff between the baseline the T2 script regenerates
+- [x] AC4: Measured as the diff between the baseline the T2 script regenerates
       from the pre-milestone ref and the same grid run on the branch — every AC2
       verb/argument pair × the five value scenarios, with each `_batch` pair
       probed at `col = absent` and `col = present`, and each `_batch` verb also
@@ -281,6 +281,61 @@ family; and it follows the M37 review's in-file precedent rather than setting ne
 policy.
 
 ## Review
+
+### Round 3 — 2026-07-29
+
+`origin/master` (0a0ad90) is an ancestor of HEAD and local `master` is in sync, so
+no merge was needed and all evidence is fresh against the merge base. CI green on
+the exact review commit `c9c0c25` — 9/9 checks (4 R-CMD-check platforms, pkgdown,
+test-coverage, 2 codecov). PR #43 remains a draft. Evidence for AC1–AC5 is one
+session's re-run of `data-raw/codec-guard-baseline.R` against both refs:
+**306 observations per side** (34 verb/argument pairs × 5 scenarios, the 17
+`_batch` pairs also probed at `col = present`, and each `_batch` pair's three
+non-string scenarios also probed with an invalid `jobs`).
+
+- **AC1 — measured, passes.** On the branch, `normalize_audio_batch(jobs, audio_codec = NA)`
+  at default `two_pass = FALSE` aborts "`audio_codec` must be a single string or
+  `NULL`, not `NA`." — names `audio_codec`, no `In index:`. Against the tree the
+  script reconstructs from `origin/master` the same call **compiled**
+  `-af "loudnorm=I=-23:TP=-1:LRA=7" -codec:v copy`, `identical()` to the `NULL`
+  call's command and carrying no `-codec:a`.
+- **AC2 — measured, passes, 0 violations** over 153 observations (51
+  verb/argument/`col` cells × 3 non-string shapes, scoped to `jobs = valid`; the
+  `jobs = invalid` cells are AC4's precedence probe, where the call is
+  deliberately wrong about the table too). Every one aborts; every message names
+  that verb's own argument; **0** match the Layer-1 leak "`video` must be" /
+  "`audio` must be"; every `conditionCall()` deparses to the Layer-2 verb — the
+  blamed set is exactly the 20 verbs, with no `*_pipeline()`, `pmap` or `ffm_`
+  among them. `verify_media()` excluded per the criterion, and confirmed absent
+  from the grid.
+- **AC3 — measured, passes, 0 violations.** No abort in those same 153
+  observations carries `In index:` at explicit `parallel = FALSE`.
+- **AC4 — measured, passes, every clause.** Grids equal at 306 rows; **0** vacuous
+  cells on either side (a cell whose `default` call does not compile satisfies the
+  comparison while measuring nothing — the round-2 defect). **33** rows changed:
+  **21 at `col = absent`** on exactly the seven pairs T3 enumerated, of which
+  exactly one — `normalize_audio_batch audio_codec na` — moves `compiled → abort`
+  and the other twenty were already aborts changing only message, blame or index;
+  **12 at `col = present`** on exactly the four pairs M41-D2 names, every one
+  `compiled → abort`. And no others: **0** `default` rows, **0** `null` rows, **0**
+  `jobs = invalid` rows.
+- **AC5 — measured, passes.** `extract_audio_batch(audio_codec = NULL)` compiles
+  `-y -i "<in>" -vn "a.aac"`: `-vn` present, no `-codec:a`.
+  `extract_audio(audio_codec = NULL)` still aborts "`audio_codec` must be a single
+  string, not `NULL`." The guard passes `allow_null = TRUE` and its comment states
+  the scalar/batch disagreement and routes it to M42.
+- **AC6 — measured, passes.** Both re-run at review on the exact review tree:
+  `devtools::test()` 0 FAIL / 0 WARN / 15 SKIP / **2429 PASS**, and
+  `devtools::check()` `Status: OK`, **0 errors / 0 warnings / 0 notes** (3m 8s).
+
+**Consistency gate.** `cairn_validate` exit 0 — all 16 CHECKs PASS, 7 advisories OK,
+one WARN: `sizing` at 16 tasks against the >10 tripwire, which fired because two
+review returns added tasks to a finished plan, not from mis-sizing. `cairn_impact`
+skipped — `DESIGN.md` untouched, no principle changed. Toolchain gate (r-package):
+`devtools::document()` no diff · `pkgdown::check_pkgdown()` "No problems found" ·
+`NAMESPACE`, `man/`, `data/`, `_pkgdown.yml`, `README*` all untouched · `NEWS.md`
+carries the entry with no milestone numbers in user-facing text ·
+`data-raw/` has its `^data-raw$` `.Rbuildignore` entry.
 
 ### Round 2 — 2026-07-29 — SENT BACK (AC4 fails again, by a new mechanism)
 

@@ -13,7 +13,7 @@ _Last hygiene check: 2026-07-30 (M47 merged and archived; M42 pruned to hold the
 | M45 | Give a multi-track `separate_audio_video()` caller a way out | done | M43 | normal | milestones/archive/M45-separate-av-multitrack.md |
 | M46 | Stop the subtitle fixture hanging, and bound every fixture command | done | — | normal | milestones/archive/M46-fixture-hang-timeout.md |
 | M47 | Stop `standardize_video()` and `anonymize_video()` picking an audio track by disposition | done | — | normal | milestones/archive/M47-audio-stream-standardize-anonymize.md |
-| M48 | Carry the track selector to `crop_video()` and `segment_video()`, and make `ffm_copy()` idempotent again | in-progress | M47 | normal | milestones/M48-audio-stream-crop-segment.md |
+| M48 | Carry the track selector to `crop_video()` and `segment_video()`, and make `ffm_copy()` idempotent again | blocked | M47 | normal | milestones/M48-audio-stream-crop-segment.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

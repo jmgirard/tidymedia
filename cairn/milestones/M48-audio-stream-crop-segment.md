@@ -1,6 +1,6 @@
 # M48: Carry the track selector to `crop_video()` and `segment_video()`, and make `ffm_copy()` idempotent again
 
-- **Status:** in-progress
+- **Status:** blocked
 - **Priority:** normal
 - **Depends on:** M47
 - **Driving RR:** —
@@ -113,6 +113,7 @@ replaces `ffm_copy()`'s `-map 0` rather than appending beside it, which gives
 - 2026-07-30: implement gate amended AC1/AC2's map literal from `-map 0:v` / `-map 0:a` to `-map 0:v?` / `-map 0:a?` — the criteria were written before M47 implementation added the trailing `?`, which D026's third bullet records as load-bearing (a bare `-map 0:a` aborts FFmpeg at exit 234 on a video-only input); the named specifier keeps no `?`. The same correction was already made to the ROADMAP row at 0445a62.
 - 2026-07-30: implement gate kept the two adjacent candidate rows out of scope — `format_for_web`/`normalize_audio`'s missing `-map`, and always-quoting map specifiers (117 literals across 15 test files) — because M48 already sits at the >~7-criteria split tripwire; both rows stand as written.
 - 2026-07-30: implement gate escalated T2's `ffm_copy()` idempotence spelling via `/milestone-brief` (RB tripwire: irreversible-api). The session's recommendation was `ffm_copy(streams = TRUE)` calling `ffm_map(replace = TRUE)`, leaving `ffm_map()`'s appending contract untouched; the user chose Fable review over settling it here.
+- 2026-07-30: blocked on RB03 (`cairn/reviews/RB03-ffm-copy-idempotence.md`) — seven questions on which spelling restores `ffm_copy()`/`ffm_concat()` idempotence, carrying options A (`ffm_copy()` uses `replace = TRUE`), B (`unique()` in `ffm_map()`) and C (`ffm_copy()` appends `"0"` only when absent), plus whether the fix should signal rather than stay silent.
 
 ## Decisions
 

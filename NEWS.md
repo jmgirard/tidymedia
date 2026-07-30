@@ -115,6 +115,25 @@
   always have and as their documentation says. `pixel_format` and `color`
   columns still reject `NA`, having no unset state to spell.
 
+  Three error messages changed along the way, all on calls that aborted before
+  and still abort:
+
+  - A non-character `video_codec` / `audio_codec` column now reports "must be
+    character (`NA` to leave the codec unset)" instead of "must be character
+    (no `NA`)", on `standardize_video_batch()`, `anonymize_video_batch()` and
+    `extract_audio_batch()` — the message every other codec column already gave.
+  - A bad `video_codec` value passed to `anonymize_video()`,
+    `anonymize_video_batch()` or `extract_audio()` now says it "must be a single
+    string or `NULL`", where it used to say only "a single string". `NULL` is
+    legal on those arguments as of this release, so the old wording had become
+    untrue.
+  - On `standardize_video_batch()` and `anonymize_video_batch()`, a jobs table
+    invalid in *both* its `video_codec` column and its `pixel_format` column now
+    reports the `pixel_format` problem first; it reported `video_codec` first
+    before. Only the reporting order changed — both columns are still rejected.
+    (`anonymize_video_batch()`'s `color`-before-`video_codec` order is
+    unchanged.)
+
 * `standardize_video()` and `anonymize_video()` (and their `_batch` siblings)
   gain an `audio_codec` argument. Both verbs re-encode video and stream-copy
   audio, but the copy was fixed in place, so there was no way to say otherwise —

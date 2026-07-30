@@ -778,8 +778,10 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #' @param video_codec A string naming the output video codec (default
 #'   \code{"libx264"}), or \code{NULL} to emit no \code{-codec:v} and let the
 #'   output container's default encoder decide. \code{NULL} is how you opt out
-#'   of the H.264 default for a container that does not hold it (e.g.
-#'   \code{.webm}).
+#'   of the H.264 default for a container that does not hold it — for a
+#'   \code{.webm} output, pass \code{video_codec = NULL} \emph{and}
+#'   \code{audio_codec = NULL}, since the default \code{audio_codec = "copy"}
+#'   would otherwise carry a codec WebM cannot hold.
 #' @param audio_codec A string naming the output audio codec (default
 #'   \code{"copy"}, i.e. stream-copy the source audio unchanged). Name a real
 #'   encoder (e.g. \code{"aac"}) when the source audio codec cannot be copied
@@ -919,8 +921,10 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
 #' @param video_codec A string naming the output video codec (default
 #'   \code{"libx264"}), or \code{NULL} to emit no \code{-codec:v} and let the
 #'   output container's default encoder decide. \code{NULL} is how you opt out
-#'   of the H.264 default for a container that does not hold it (e.g.
-#'   \code{.webm}).
+#'   of the H.264 default for a container that does not hold it — for a
+#'   \code{.webm} output, pass \code{video_codec = NULL} \emph{and}
+#'   \code{audio_codec = NULL}, since the default \code{audio_codec = "copy"}
+#'   would otherwise carry a codec WebM cannot hold.
 #' @param audio_codec A string naming the output audio codec (default
 #'   \code{"copy"}, i.e. stream-copy the source audio unchanged). Name a real
 #'   encoder (e.g. \code{"aac"}) when the source audio codec cannot be copied
@@ -990,14 +994,20 @@ anonymize_pipeline <- function(input, output, regions, color, video_codec,
   rlang::check_string(color, call = call)
   # NULL is D016's "leave the codec alone" sentinel, and D022 makes it the
   # family-wide spelling of "unset": emit no -codec:v and let the output
-  # container's default encoder decide. It has to be skipped here rather than
-  # handled downstream, because check_token() -> check_string() refuses NULL
-  # outright -- which is the whole reason anonymize_video() aborted on a call
-  # standardize_video() has always compiled (measured at M42 T1). The check stays
-  # at this position rather than moving into apply_video_codec() below so it
-  # keeps reporting before pixel_format and the drawbox dimensions, exactly as it
-  # did (the precedence M41's review twice caught moving).
-  if (!is.null(video_codec)) check_token(video_codec, call = call)
+  # container's default encoder decide. Refusing it here is the whole reason
+  # anonymize_video() aborted on a call standardize_video() has always compiled
+  # (measured at M42 T1).
+  #
+  # `allow_null = TRUE` rather than `if (!is.null(video_codec)) check_token(...)`:
+  # the two accept identical values, but only this spelling makes the refusal
+  # message say "must be a single string or `NULL`". The other one keeps
+  # advertising NULL as illegal on the argument where it is now the documented
+  # escape hatch (M42 review F1).
+  #
+  # The check stays at this position rather than moving into apply_video_codec()
+  # below so it keeps reporting before pixel_format and the drawbox dimensions,
+  # exactly as it did (the precedence M41's review twice caught moving).
+  check_token(video_codec, allow_null = TRUE, call = call)
   check_token(pixel_format, call = call)
 
   # Integer coordinates are natural pixel values, but ffm_drawbox()'s check_dim()
@@ -1146,7 +1156,9 @@ derive_anonymized_names <- function(input) {
 #'   row, unless \code{jobs} carries a \code{video_codec} column, in which case
 #'   \code{NA} in a cell leaves that row's codec unset. Default
 #'   \code{"libx264"}; \code{NULL} emits no \code{-codec:v} and lets the output
-#'   container's default encoder decide.
+#'   container's default encoder decide (for a \code{.webm} output, pass
+#'   \code{audio_codec = NULL} too — the default \code{"copy"} would otherwise
+#'   carry a codec WebM cannot hold).
 #' @param audio_codec A string naming the output audio codec applied to every
 #'   row, unless \code{jobs} carries an \code{audio_codec} column, in which case
 #'   \code{NA} in a cell leaves that row's codec unset. \code{"copy"} (default)
@@ -1288,10 +1300,12 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   # blaming pmap rather than this verb (M41).
   #
   # M42 answered the question M41 left here: `NULL` IS legal, the family-wide
-  # sentinel for "emit no -codec:v" (D022). The `if (!is.null(...))` shape is
-  # kept over check_string(allow_null = TRUE) only because it is what
-  # separate_audio_video_batch()'s scalar guards use (M37 review); the two now
-  # accept the same values, so the choice is spelling, not contract.
+  # sentinel for "emit no -codec:v" (D022). So this takes allow_null = TRUE,
+  # not the `if (!is.null(...))` shape M41 chose to avoid advertising NULL --
+  # that shape accepts the same values but keeps saying NULL is illegal, which
+  # is now false (M42 review F1). separate_audio_video_batch() still carries the
+  # older spelling; its arguments' NULL semantics are D020's, not this
+  # milestone's, so it is left alone rather than swept.
   #
   # Placed at the END of this verb's front-door validation, not beside the
   # other scalar checks: before M41 this argument was only read per row
@@ -1300,7 +1314,7 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   # function silently reassigned that precedence -- first past the jobs
   # SHAPE block (review A6), then past its content checks too (review
   # A1r3). Here it changes nothing but the message a bad codec gets.
-  if (!is.null(video_codec)) rlang::check_string(video_codec)
+  rlang::check_string(video_codec, allow_null = TRUE)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output box-fill
   # pipeline per row, sharing anonymize_pipeline() with anonymize_video(). A
@@ -2599,7 +2613,9 @@ derive_standardized_names <- function(input) {
 #'   unless \code{jobs} carries a \code{video_codec} column, in which case
 #'   \code{NA} in a cell leaves that row's codec unset. Default
 #'   \code{"libx264"}; \code{NULL} emits no \code{-codec:v} and lets the output
-#'   container's default encoder decide.
+#'   container's default encoder decide (for a \code{.webm} output, pass
+#'   \code{audio_codec = NULL} too — the default \code{"copy"} would otherwise
+#'   carry a codec WebM cannot hold).
 #' @param audio_codec A string naming the audio codec applied to every row,
 #'   unless \code{jobs} carries an \code{audio_codec} column, in which case
 #'   \code{NA} in a cell leaves that row's codec unset. \code{"copy"} (default)

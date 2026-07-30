@@ -41,9 +41,18 @@ check_file_exists <- function(x, arg = rlang::caller_arg(x),
 # Validate that `x` is a single clean CLI token: a codec, pixel-format, or
 # similar name made of letters, digits, and `_ + . -`. Cheap sanity check only
 # (D-M06-3) — whether the token names a real codec/format stays FFmpeg's call.
-check_token <- function(x, arg = rlang::caller_arg(x),
+#
+# `allow_null` exists so a caller whose argument takes D016's NULL sentinel gets
+# a message that SAYS so: the alternative spelling, `if (!is.null(x))
+# check_token(x)`, accepts exactly the same values but leaves check_string()
+# reporting "must be a single string, not `NA`" — telling a user that NULL is
+# illegal on an argument where it is the documented escape hatch (M42/D022).
+check_token <- function(x, arg = rlang::caller_arg(x), allow_null = FALSE,
                         call = rlang::caller_env()) {
-  rlang::check_string(x, arg = arg, call = call)
+  rlang::check_string(x, arg = arg, allow_null = allow_null, call = call)
+  if (allow_null && is.null(x)) {
+    return(invisible(x))
+  }
   if (!grepl("^[A-Za-z0-9][A-Za-z0-9_+.-]*$", x)) {
     cli::cli_abort(
       c(

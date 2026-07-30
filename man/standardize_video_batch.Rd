@@ -51,7 +51,9 @@ leave the frame rate unchanged)}
 unless \code{jobs} carries a \code{video_codec} column, in which case
 \code{NA} in a cell leaves that row's codec unset. Default
 \code{"libx264"}; \code{NULL} emits no \code{-codec:v} and lets the output
-container's default encoder decide.}
+container's default encoder decide (for a \code{.webm} output, pass
+\code{audio_codec = NULL} too — the default \code{"copy"} would otherwise
+carry a codec WebM cannot hold).}
 
 \item{audio_codec}{A string naming the audio codec applied to every row,
 unless \code{jobs} carries an \code{audio_codec} column, in which case

@@ -296,6 +296,108 @@ test_that("a mixed codec column leaves the named rows alone (D022)", {
   expect_no_match(as.character(cmds[[2]]), "-codec:v", fixed = TRUE)
 })
 
+test_that("each widened codec column still refuses a non-character column", {
+  # The move to check_batch_codec_col() widened these columns to accept NA. It
+  # must not have widened them to accept anything else. `standardize_video_batch`
+  # and `extract_audio_batch` already had a test of their own
+  # (test-standardize-video-batch.R, test-extract-audio-batch.R);
+  # `anonymize_video_batch` had none, so deleting its new guard outright left the
+  # whole suite green (M42 review F4). Without the guard a numeric column reaches
+  # check_token() per row and aborts inside purrr::pmap() with `In index: 1` --
+  # the defect shape M41 exists to have removed.
+  input <- make_input()
+  r <- data.frame(x = 0, y = 0, width = 32, height = 32)
+  cases <- list(
+    list(lbl = "anonymize_video_batch video_codec",
+         f = function() anonymize_video_batch(
+           tibble::tibble(input = input, output = "o.mp4",
+                          regions = list(r), video_codec = 5),
+           run = FALSE, parallel = FALSE),
+         want = "video_codec"),
+    list(lbl = "standardize_video_batch video_codec",
+         f = function() standardize_video_batch(
+           tibble::tibble(input = input, output = "o.mp4", video_codec = 5),
+           run = FALSE, parallel = FALSE),
+         want = "video_codec"),
+    list(lbl = "extract_audio_batch audio_codec",
+         f = function() extract_audio_batch(
+           tibble::tibble(input = input, output = "a.aac", audio_codec = 1),
+           run = FALSE, parallel = FALSE),
+         want = "audio_codec")
+  )
+  for (case in cases) {
+    cnd <- tryCatch({ case$f(); NULL }, error = function(e) e)
+    expect_true(inherits(cnd, "error"), label = paste(case$lbl, "aborts"))
+    if (!inherits(cnd, "error")) next
+    msg <- cli::ansi_strip(conditionMessage(cnd))
+    expect_match(msg, case$want, fixed = TRUE,
+                 label = paste(case$lbl, "names the column"))
+    # At the front door, not mid-fan-out.
+    expect_no_match(msg, "In index:", fixed = TRUE,
+                    label = paste(case$lbl, "is not mid-fan-out"))
+  }
+})
+
+test_that("a bad codec column no longer preempts a bad non-codec column", {
+  # Moving video_codec out of the str_cols loop into check_batch_codec_col()
+  # changed which complaint a jobs table bad in BOTH columns receives:
+  # `video_codec` reported first before M42, `pixel_format` reports first now.
+  # M41's review caught an unpinned precedence move twice, so this freezes the
+  # new order rather than leaving it to a comment (M42 review F3).
+  input <- make_input()
+  r <- data.frame(x = 0, y = 0, width = 32, height = 32)
+  expect_match(
+    tryCatch(standardize_video_batch(
+      tibble::tibble(input = input, output = "o.mp4",
+                     video_codec = 5, pixel_format = 1),
+      run = FALSE, parallel = FALSE), error = conditionMessage),
+    "pixel_format", fixed = TRUE
+  )
+  expect_match(
+    tryCatch(anonymize_video_batch(
+      tibble::tibble(input = input, output = "o.mp4", regions = list(r),
+                     video_codec = 5, pixel_format = 1),
+      run = FALSE, parallel = FALSE), error = conditionMessage),
+    "pixel_format", fixed = TRUE
+  )
+  # `color` came before `video_codec` in anonymize's str_cols already, so that
+  # pair's order is UNCHANGED by M42 -- pinned so a later reader does not read
+  # the flip above as covering it too.
+  expect_match(
+    tryCatch(anonymize_video_batch(
+      tibble::tibble(input = input, output = "o.mp4", regions = list(r),
+                     video_codec = 5, color = 1),
+      run = FALSE, parallel = FALSE), error = conditionMessage),
+    "color", fixed = TRUE
+  )
+})
+
+test_that("a widened codec argument's refusal says NULL is legal", {
+  # allow_null = TRUE over `if (!is.null(x)) check_string(x)`: both accept the
+  # same values, but only the former's message names NULL. M41 chose the latter
+  # deliberately, when NULL really was illegal here; D022 made it legal and the
+  # message had to follow (M42 review F1).
+  input <- make_input()
+  r <- data.frame(x = 0, y = 0, width = 32, height = 32)
+  expect_match(
+    tryCatch(anonymize_video(input, "o.mp4", regions = r, video_codec = NA,
+                             run = FALSE), error = conditionMessage),
+    "or `NULL`", fixed = TRUE
+  )
+  expect_match(
+    tryCatch(anonymize_video_batch(
+      tibble::tibble(input = input, output = "o.mp4", regions = list(r)),
+      video_codec = NA, run = FALSE, parallel = FALSE),
+      error = conditionMessage),
+    "or `NULL`", fixed = TRUE
+  )
+  expect_match(
+    tryCatch(extract_audio(input, "a.aac", audio_codec = NA, run = FALSE),
+             error = conditionMessage),
+    "or `NULL`", fixed = TRUE
+  )
+})
+
 test_that("pixel_format and color columns still reject NA (D022)", {
   # str_cols keeps the non-codec columns, which have no sentinel: nothing about
   # a codec column learning to spell "unset" says an unset pixel format means

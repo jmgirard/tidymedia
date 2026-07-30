@@ -36,8 +36,10 @@ the input frame rate.}
 \item{video_codec}{A string naming the output video codec (default
 \code{"libx264"}), or \code{NULL} to emit no \code{-codec:v} and let the
 output container's default encoder decide. \code{NULL} is how you opt out
-of the H.264 default for a container that does not hold it (e.g.
-\code{.webm}).}
+of the H.264 default for a container that does not hold it — for a
+\code{.webm} output, pass \code{video_codec = NULL} \emph{and}
+\code{audio_codec = NULL}, since the default \code{audio_codec = "copy"}
+would otherwise carry a codec WebM cannot hold.}
 
 \item{audio_codec}{A string naming the output audio codec (default
 \code{"copy"}, i.e. stream-copy the source audio unchanged). Name a real

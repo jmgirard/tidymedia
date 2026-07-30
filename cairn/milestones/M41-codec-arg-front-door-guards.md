@@ -1,6 +1,6 @@
 # M41: Front-door validation parity for the codec arguments
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -56,7 +56,7 @@ value does.
       `In index: <n>` in its message, on the same condition AC2 inspects —
       showing the scalar check ran before the fan-out, not inside
       `purrr::pmap()`.
-- [x] AC4: The guards add no new rejection and no new acceptance of `NULL`: for
+- [ ] AC4: The guards add no new rejection and no new acceptance of `NULL`: for
       every argument in AC2, a `NULL` call and a default call produce the same
       outcome after the milestone as before it — the same compiled command where
       one compiles today, or the same abort where `NULL` aborts today
@@ -124,6 +124,9 @@ value does.
 
 ## Work log
 
+- 2026-07-29: REVIEW RETURN 1 — AC4 fails as written. Independent review found that four batch verbs (`standardize_video_batch`, `anonymize_video_batch`, `extract_audio_batch`, `normalize_audio_batch`) newly REJECT a scalar `video_codec`/`audio_codec` of `NA` when `jobs` carries a matching codec column: `pick()` lets the column override the scalar, so the scalar was dead weight and a bad value in it was previously ignored. Re-measured directly: all four COMPILED on `origin/master` and abort on the branch. AC4's headline clause is "The guards add no new rejection", so this fails it; not narrowed to its NULL/default operationalization to make it pass. T2's script never builds a call template carrying a codec column, which is why its evidence missed this. Status back to `in-progress`.
+- 2026-07-29: four more actioned findings to fix on return — F8 the parameterized sweep is not fail-soft (no `next` after the abort assertion, so `conditionMessage(NULL)` throws and kills the rest of the 20-verb loop); F3 `anonymize_video_batch`'s guard advertises `NULL` while `anonymize_pipeline()` refuses it six lines later; F13 unchecked `git show` in the baseline script's imports bootstrap; F19 a code comment citing a claim D021 does not make. Fourteen sub-80 findings logged in the Review section, not dropped.
+- 2026-07-29: F19 also exposes a false claim in D021 itself — it asserts `extract_audio` "accepts neither `NULL` nor `NA`", but `extract_audio_batch(audio_codec = NULL)` compiled on `origin/master` and still compiles, and `extract_audio_batch` appears nowhere in DECISIONS.md. DECISIONS.md is history under IP4, so this is superseded by a new entry, never edited in place; the correction is M42's to make since M42 owns these semantics. Left for the maintainer to route.
 - 2026-07-29: T8 COMPLETE — `devtools::check()` `Status: OK`, **0 errors / 0 warnings / 0 notes** (3m 3s), so AC6 is met and the checkpoint above is superseded. Both NOTEs from the first run were self-inflicted and are gone: the `typo'd` spelling hit and the two committed `.rds` scratch files. Status moved to `review`.
 - 2026-07-29: CHECKPOINT, T8 INCOMPLETE — everything T8 asks for is done and committed except the final `devtools::check()` confirmation, which was still in its testthat stage when this checkpoint was made. The first check run returned 0 errors / 0 warnings / 2 NOTEs, both self-inflicted (the `typo'd` spelling hit and the two committed `.rds` scratch files); both causes are fixed here and the re-run had already cleared those two stages. T8 stays unchecked and the milestone stays `in-progress` until a check run is seen clean end to end.
 - 2026-07-29: T8 `devtools::check()` also caught scratch debris I had committed myself: `baseline-origin-master.rds` and `baseline-worktree.rds`, RDS dumps my probe wrappers wrote into the repo root (cwd is the package root when running them), swept into commit 7df5216 by a `git add -A` I ran without checking `git status` first — the exact 'never sweep strangers into a checkpoint commit' rule. Removed from the index and from disk, and the `saveRDS()` calls deleted from the scratch wrappers so a re-run cannot recreate them. `data-raw/codec-guard-baseline.R` itself never wrote files; only my throwaway wrappers did.
@@ -222,7 +225,18 @@ against `origin/master` and the branch in one session: 34 verb/argument pairs ×
 - **AC3 — measured, 0 violations.** No abort in those same 102 observations
   carries `In index:` at explicit `parallel = FALSE`, on the same conditions AC2
   inspects.
-- **AC4 — measured, 0 changed rows.** Comparing the two baselines, **zero**
+- **AC4 — FAILS as written.** The `default`/`null` comparison passed (zero rows
+  differ), but the criterion's headline clause is "The guards add no new
+  rejection", and finding F2 below demonstrates four. Re-measured directly:
+  with a jobs table carrying a matching codec column and the scalar argument
+  `= NA`, `standardize_video_batch`, `anonymize_video_batch`,
+  `extract_audio_batch` and `normalize_audio_batch` all **compiled on
+  `origin/master`** and **abort on the branch**. `pick()` lets a column override
+  the scalar, so the scalar was dead weight and a bad value there was ignored.
+  T2's script builds every call template without a codec column, so the AC4
+  evidence was structurally blind to the one place the contract moved. Not
+  reinterpreted to pass: the criterion says what it says.
+  Original passing sub-measurement, retained: comparing the two baselines, zero
   `default` or `null` rows differ. Exactly 21 rows changed in total, all on the
   three non-string scenarios (7 each), across exactly the 7 repaired pairs. The
   two pairs the criterion names as NULL-aborting today —
@@ -257,3 +271,74 @@ Returns to `in-progress` for this milestone: **0**. No thrash trigger.
 
 9 files, +753/−13. `R/ffmpeg.R` +52/−0 — pure additions, which is
 contract-neutrality visible in the diff shape.
+
+### Independent review — three lenses, then a scorer
+
+Three fresh-context reviewers with distinct evidence bases (the diff; `git blame`
+history; the prior-review record), then a separate Sonnet scorer that did not
+generate the findings. 19 findings scored; **5 at 80+ are actioned**, 14 below 80
+are logged here rather than dropped (IP3).
+
+The prior-review lens reported **zero** regressions: its
+`gh api .../pulls/comments` probe returned `[]`, so it worked from archived
+`## Review` sections, and it independently re-derived the mutation claim by hand.
+The blame lens confirmed D019's analysis-before-refusal ordering is preserved,
+D021's `convert_audio` NULL semantics intact, no prior guard attempt ever
+reverted, and — answering the coverage worry T9 raised — **no CI coverage was
+lost**: macOS/Windows runners install neither ffmpeg nor mediainfo (so those two
+tests already skipped there), and the Linux runner installs both together (so
+they still run real assertions).
+
+**Actioned (score ≥ 80):**
+
+- **F2 (95) — new rejection on four batch verbs; AC4 fails.** See AC4 above.
+  Verified by the orchestrator, not taken on report. Probably a *desirable*
+  change — it mirrors the M37-review fix recorded at
+  [ffmpeg.R:2827](../../R/ffmpeg.R#L2827) — but it contradicts Scope's
+  contract-neutrality claim and NEWS's "which values are accepted is unchanged",
+  so it must be either reverted or adopted deliberately via amendment.
+- **F8 (87) — the parameterized sweep is not fail-soft.**
+  [test-codec-arg-front-door.R:150](../../tests/testthat/test-codec-arg-front-door.R#L150):
+  no `next` after the abort assertion, so a non-aborting guard sends
+  `conditionMessage(NULL)` on to throw and kill the whole `test_that`, silently
+  losing coverage of every later verb. The mutation sweep blanked one guard at a
+  time and so never saw it.
+- **F3 (82) — a guard advertising a value its own verb refuses.**
+  `anonymize_video_batch(video_codec = NA)` says "must be a single string or
+  `NULL`" while `NULL` aborts six lines later in `anonymize_pipeline()`. Its
+  scalar sibling says "must be a single string". Verified.
+- **F13 (82) — unchecked `git show` in the instrument's imports bootstrap.**
+  [codec-guard-baseline.R:53](../../data-raw/codec-guard-baseline.R#L53) omits the
+  `attr(, "status")` check the same file's other git calls make, so a failed
+  NAMESPACE fetch yields an empty imports env and the "could not find function"
+  masquerade the file's own header warns about.
+- **F19 (80) — a code comment citing a claim D021 does not make.**
+  [ffmpeg.R:3345](../../R/ffmpeg.R#L3345) says D021 records the scalar/batch NULL
+  disagreement. D021 instead asserts `extract_audio` "accepts neither `NULL` nor
+  `NA`", and never mentions `extract_audio_batch` (0 matches). Measured:
+  `extract_audio_batch(audio_codec = NULL)` compiled on `origin/master`. So D021
+  itself carries a false claim about the batch verb — and DECISIONS.md is history
+  under IP4, so that is superseded by a new entry, never edited.
+
+**Logged, not actioned (score < 80):** F1 (62) NEWS overclaims "every" argument —
+token-invalid *strings* still leak, verified identical on both refs, but AC2/AC3
+scope to non-strings so the code meets its criteria · F7 (68) the probe grid never
+varies codec column / `two_pass` / `hardware` / `reencode` / token-invalid
+strings, which is why F1 and F2 escaped it · F6 (78) `codec_guard_diff()` drops
+rows present in `before` but absent from `after` · F12 (60) vestigial
+`nrow(b)` guard · F4 (55) NEWS entry landed in the oldest `## Bug fixes` section
+of a newest-first block · F15 (55) guard-vs-`jobs` precedence inconsistent across
+the four batch verbs · F14 (48) `tryCatch(condition =)` would record a
+pre-compile message instead of the command · F9 (40) anti-leak assertion keyed to
+one exact phrasing · F10 (40) `expect_match(msg, arg)` asserts the string
+appears, not that the argument is named · F5 (30) undocumented NULL contract in
+error text — deliberate per Scope · F11 (30) non-injective diff key · F16 (22)
+vestigial `skip_if_no_ffprobe()` · F17 (12) DESCRIPTION under-declares testthat
+(pre-existing) · F18 (8) stale.
+
+### Disposition
+
+**Sent back to `in-progress`.** AC4 fails as written (F2). Criteria are not
+reinterpreted at review, so the fix is a gated amendment deciding whether the
+four batch verbs' new rejection is adopted (amend Scope + AC4, correct NEWS) or
+reverted, then a re-review. Returns for this milestone: **1**.

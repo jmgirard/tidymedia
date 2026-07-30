@@ -1235,16 +1235,25 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   # here rather than as an opaque FFmpeg error mid-batch (M11 parity lesson).
   # Value-level checks (valid color/codec/pixfmt tokens) are inherited per row
   # from anonymize_pipeline()'s guards.
-  str_cols <- c("color", "video_codec", "pixel_format")
+  str_cols <- c("color", "pixel_format")
   for (col in intersect(str_cols, names(jobs))) {
     if (!is.character(jobs[[col]]) || anyNA(jobs[[col]])) {
       cli::cli_abort("The {.field {col}} column of {.arg jobs} must be character (no {.val {NA}}).")
     }
   }
-  # audio_codec is deliberately NOT in str_cols above: unlike video_codec (a
-  # literal "libx264" default with no sentinel), NA is meaningful here -- it is
-  # the column form of audio_codec = NULL (M39/D017), so it needs the guard that
-  # admits NA and the all-NA logical column R hands back (M34 lesson).
+  # Both codec columns take the codec guard, which admits NA and the all-NA
+  # logical column R hands back (M34 lesson). `video_codec` sat in str_cols
+  # above until M42, justified by a comment calling it "a literal libx264
+  # default with no sentinel" -- false when written, since the argument accepts
+  # NULL, and now the family rule: NA is the column form of that NULL (D022).
+  # `color` and `pixel_format` stay in str_cols: not codec arguments, no
+  # sentinel, so an NA cell there spells nothing.
+  #
+  # Checking video_codec here rather than in the loop's slot moves it after
+  # `color` and `pixel_format` in the reporting order for a jobs table with two
+  # bad columns. Named because M41's review twice caught a guard reassigning
+  # precedence unremarked; the two codec columns now report together.
+  check_batch_codec_col(jobs, "video_codec")
   check_batch_codec_col(jobs, "audio_codec")
 
   # Auto-name outputs when the column is absent. One input -> one output, so a
@@ -1295,7 +1304,7 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
       anonymize_pipeline(
         input, output, regions,
         color = pick("color", color),
-        video_codec = pick("video_codec", video_codec),
+        video_codec = batch_codec_cell(pick("video_codec", video_codec)),
         audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         pixel_format = pick("pixel_format", pixel_format),
         # hardware/fallback are batch-wide (a machine property), never per-row
@@ -2662,16 +2671,25 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
       cli::cli_abort("The {.field {col}} column of {.arg jobs} must not contain {.val {NA}}.")
     }
   }
-  str_cols <- c("video_codec", "pixel_format")
+  str_cols <- c("pixel_format")
   for (col in intersect(str_cols, names(jobs))) {
     if (!is.character(jobs[[col]]) || anyNA(jobs[[col]])) {
       cli::cli_abort("The {.field {col}} column of {.arg jobs} must be character (no {.val {NA}}).")
     }
   }
-  # audio_codec is deliberately NOT in str_cols above: unlike video_codec (a
-  # literal "libx264" default with no sentinel), NA is meaningful here -- it is
-  # the column form of audio_codec = NULL (M39/D017), so it needs the guard that
-  # admits NA and the all-NA logical column R hands back (M34 lesson).
+  # Both codec columns take the codec guard, which admits NA and the all-NA
+  # logical column R hands back (M34 lesson). `video_codec` sat in str_cols
+  # above until M42, justified by a comment calling it "a literal libx264
+  # default with no sentinel" -- false when written, since the argument accepts
+  # NULL, and now the family rule: NA is the column form of that NULL (D022).
+  # `pixel_format` stays in str_cols: not a codec argument, no sentinel, so an
+  # NA cell there spells nothing.
+  #
+  # Checking video_codec here rather than in the loop's slot moves it after
+  # `pixel_format` in the reporting order for a jobs table with two bad columns.
+  # Named because M41's review twice caught a guard reassigning precedence
+  # unremarked; the two codec columns now report together.
+  check_batch_codec_col(jobs, "video_codec")
   check_batch_codec_col(jobs, "audio_codec")
 
   # Auto-name outputs when the column is absent. One input -> one output, so a
@@ -2719,7 +2737,7 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
         width = pick("width", width),
         height = pick("height", height),
         fps = pick("fps", fps),
-        video_codec = pick("video_codec", video_codec),
+        video_codec = batch_codec_cell(pick("video_codec", video_codec)),
         audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         pixel_format = pick("pixel_format", pixel_format),
         hardware = hardware,
@@ -3400,7 +3418,11 @@ extract_audio_batch <- function(jobs, audio_codec = "copy", run = TRUE,
 
   jobs <- check_batch_jobs(jobs, require_output = TRUE, verb = "Audio extraction")
   jobs <- reject_duplicate_outputs(jobs)
-  check_batch_string_col(jobs, "audio_codec")
+  # check_batch_codec_col(), never check_batch_string_col(), which rejects NA
+  # and so leaves the column unable to spell the "unset" its own argument can
+  # say with NULL (D022). This was the third and last codec column on the wrong
+  # guard.
+  check_batch_codec_col(jobs, "audio_codec")
   # Without this, a non-string audio_codec reached ffm_codec() per row and
   # aborted inside purrr::pmap() naming Layer-1's `audio` -- the only pair in the
   # package that leaked the engine's name, fired mid-fan-out, AND blamed pmap all
@@ -3421,7 +3443,10 @@ extract_audio_batch <- function(jobs, audio_codec = "copy", run = TRUE,
     function(input, output, ...) {
       dots <- list(...)
       pick <- function(nm, default) if (nm %in% names(dots)) dots[[nm]] else default
-      extract_audio_pipeline(input, output, audio_codec = pick("audio_codec", audio_codec))
+      extract_audio_pipeline(
+        input, output,
+        audio_codec = batch_codec_cell(pick("audio_codec", audio_codec))
+      )
     },
     run = run,
     parallel = parallel,

@@ -119,7 +119,7 @@ the `NULL` path M41's guards deliberately waved through.
 - [x] T4: Land the `extract_audio` / `extract_audio_batch` resolution
       ([ffmpeg.R:283](../../R/ffmpeg.R#L283),
       [ffmpeg.R:3295](../../R/ffmpeg.R#L3295)); remove M41's pointer comment.
-- [ ] T5: Land the codec-column resolution on all three columns that reject
+- [x] T5: Land the codec-column resolution on all three columns that reject
       `NA` — `standardize_video_batch` and `anonymize_video_batch`'s
       `video_codec` (`str_cols`), `extract_audio_batch`'s `audio_codec`
       (`check_batch_string_col`) — and correct the falsified `str_cols`
@@ -139,6 +139,7 @@ the `NULL` path M41's guards deliberately waved through.
 - 2026-07-29: amendment (substantive, gated above) — Scope 3, AC4 and T5 now name all three no-`NA` codec columns instead of `standardize_video_batch`'s alone, because the T1 probe found three where the plan asserted one.
 - 2026-07-29: T3 — one line: `anonymize_pipeline()`'s unconditional `check_token(video_codec)` was the sole cause of split 1, and skipping it for `NULL` fixes both anonymize verbs (the batch one's `In index:` abort included). Check left at its original position so it keeps reporting before `pixel_format`/drawbox. New `test-codec-null-na-semantics.R`; every absence assertion paired with a named-encoder non-vacuity assertion. Suite 2461 passing.
 - 2026-07-29: T4 — `extract_audio()` takes `allow_null = TRUE`; M41's 14-line pointer comment replaced by a 4-line statement of the settled rule. M41's "NULL keeps its existing per-verb meaning" test moved whole into the new file rather than edited in place, because two files asserting NULL semantics is how they drift; what stayed behind is the NA-still-aborts half, which is that file's own concern. Suite 2466 passing.
+- 2026-07-29: T5 — all three columns moved to `check_batch_codec_col()` + `batch_codec_cell()`; `color`/`pixel_format` stay in `str_cols` (no sentinel). `codec_guard_diff(origin/master, HEAD)`: 21 changed cells, 8 abort→compiled (the widening) and 13 abort→abort where only the message moved; `codec_guard_semantics()` now shows `convert_audio`/`_batch` as the sole departure. Re-probed the newly reachable `col = na` aborts: each still names its own argument, blames the verb, carries no `In index:` (M41's contract). Suite 2482 passing.
 
 ## Decisions
 

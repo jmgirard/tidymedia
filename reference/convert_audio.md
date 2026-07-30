@@ -58,6 +58,14 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 When `infile` carries more than one audio track, `audio_stream` names
 which one to take; with no selector the **first** one is taken.
 
+When no `audio_stream` is named and the input turns out to carry tracks
+the output will not, the verb warns. That check is **best-effort**: it
+runs FFprobe, so it is emitted when FFprobe is available and the input
+can be probed, and is skipped silently otherwise. It never runs under
+`run = FALSE`, and never changes the compiled command. Suppress it by
+naming a track with `audio_stream`, or by class with
+`suppressWarnings(classes = "tidymedia_dropped_audio")`.
+
 ## See also
 
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md)

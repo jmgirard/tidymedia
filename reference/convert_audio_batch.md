@@ -78,6 +78,17 @@ a `success` column (plus `verified` / provenance manifest when requested
 via `...`). See
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
 
+## Details
+
+When a row names no `audio_stream` and its input turns out to carry
+tracks the output will not, the verb warns **once** for the whole batch,
+naming every affected row. That check is **best-effort**: it runs
+FFprobe, so it is emitted when FFprobe is available and the input can be
+probed, and is skipped silently otherwise. It never runs under
+`run = FALSE`, never changes any compiled command, and is skipped
+entirely when every row names a track. Suppress it by class with
+`suppressWarnings(classes = "tidymedia_dropped_audio")`.
+
 ## See also
 
 [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),

@@ -109,6 +109,13 @@ or return the compiled command without running it (<code>FALSE</code>).</p></dd>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>When <code>infile</code> carries more than one audio track, <code>audio_stream</code>
 names which one to take; with no selector the <strong>first</strong> one is taken.</p>
+<p>When no <code>audio_stream</code> is named and the input turns out to carry tracks
+the output will not, the verb warns. That check is <strong>best-effort</strong>: it
+runs FFprobe, so it is emitted when FFprobe is available and the input can be
+probed, and is skipped silently otherwise. It never runs under <code>run =
+FALSE</code>, and never changes the compiled command. Suppress it by naming a track
+with <code>audio_stream</code>, or by class with
+<code>suppressWarnings(classes = "tidymedia_dropped_audio")</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

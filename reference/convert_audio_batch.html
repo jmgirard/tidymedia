@@ -132,6 +132,17 @@ provenance manifest when requested via <code>...</code>). See
 <code><a href="ffm_batch.html">ffm_batch</a></code>.</p>
     </div>
     <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>When a row names no <code>audio_stream</code> and its input turns out to carry
+tracks the output will not, the verb warns <strong>once</strong> for the whole batch,
+naming every affected row. That check is <strong>best-effort</strong>: it runs
+FFprobe, so it is emitted when FFprobe is available and the input can be
+probed, and is skipped silently otherwise. It never runs under <code>run =
+FALSE</code>, never changes any compiled command, and is skipped entirely when
+every row names a track. Suppress it by class with
+<code>suppressWarnings(classes = "tidymedia_dropped_audio")</code>.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="convert_audio.html">convert_audio()</a></code>, the scalar verb it wraps; <code><a href="ffm_batch.html">ffm_batch()</a></code>, the batch
 runner; <code><a href="extract_audio_batch.html">extract_audio_batch()</a></code> to stream-copy audio in batch.</p>

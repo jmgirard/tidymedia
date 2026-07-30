@@ -173,6 +173,37 @@
 
 ### New features
 
+- [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
+  and
+  [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
+  (and their `_batch` siblings) now warn when the file they read carries
+  audio tracks the file they write will not. Each of these verbs takes
+  exactly one track, so feeding a three-track recording to
+  [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
+  without saying which track you want quietly discarded two of them. It
+  now says so, tells you how many went, and points at `audio_stream` for
+  choosing a different one. Name a track and the warning stops; suppress
+  it by class with
+  `suppressWarnings(classes = "tidymedia_dropped_audio")`.
+
+  The batch verbs warn **once** for the whole table, naming every
+  affected row, rather than once per row.
+
+  The message also spells out a trap worth knowing about:
+  [`probe_audio()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md)’s
+  `index` column counts *all* of a file’s streams, while `audio_stream`
+  counts only its audio streams. On a video file with three audio tracks
+  those read `1, 2, 3` and `0, 1, 2` respectively, so reading a number
+  off
+  [`probe_audio()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md)
+  and passing it straight to `audio_stream` lands you one track off.
+
+  Counting the tracks means running FFprobe, so the check is
+  **best-effort**: it is made when FFprobe is available and the input
+  can be probed, and skipped silently otherwise. It never runs under
+  `run = FALSE` — compiling a command still touches no binary — and it
+  never changes the command that gets compiled.
+
 - [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
   [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
   and their `_batch` siblings gain an `audio_stream` argument for

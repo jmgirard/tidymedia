@@ -1,6 +1,6 @@
 # M48: Carry the track selector to `crop_video()` and `segment_video()`, and make `ffm_copy()` idempotent again
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M47
 - **Driving RR:** RR03
@@ -164,6 +164,7 @@ replaces `ffm_copy()`'s `-map 0` rather than appending beside it, which gives
 - 2026-07-30: T6 — the map-count invariant now states the three-number rule (2 pass-through / 1 single-stream-or-all-streams / 0 unstated) and covers 13 entry points, adding `concatenate_videos`, `format_for_web` and `normalize_audio`; the two zeros pin the standing candidate row's gap so closing it is visible here. Nine existing baselines updated across five test files where `-map 0` or an adjacent seek moved. `devtools::test()` clean.
 - 2026-07-30: T5 — `audio_stream` on `crop_video_batch()` and `segment_video_batch()`, each with `check_batch_audio_col(na_means = "keep every audio track")`, the scalar front-door `check_number_whole()` (load-bearing on the batch pair, unlike the scalars), and `batch_stream_cell()` in the closure. No `check_batch_stream_values()`: neither verb reshapes its jobs table, so pmap's index already is the caller's row (M45 review F4). Tests cover the argument, the column override with `NA`, one-row byte-identity against the scalar, `segment_video()`'s own fan-out, AC6's typed-column abort, and AC7's counting mock.
 - 2026-07-30: T7 — `@param audio_stream` on all four entry points naming the families that read `NULL` the other way, both `@param jobs` column enumerations extended, `devtools::document()` run; AC3 execution tests on the new 5-stream fixture (named track is `fra`, unset keeps all three and drops the subtitle, `.mp4` now succeeds where master exited 8, both segment branches, and `audio_stream = 9` still errors); NEWS entries for the argument, the subtitle-carriage change, and `ffm_copy()`'s assignment plus its new abort. Full `devtools::test()` clean.
+- 2026-07-30: all seven tasks done; `devtools::test()` clean, `devtools::check()` 0 errors / 0 warnings / 0 notes, `devtools::document()` no diff, `cairn_validate` all checks pass. Status -> review.
 
 ## Decisions
 

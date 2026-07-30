@@ -96,7 +96,7 @@ failed → one grouped candidate row.
       (`R/ffmpeg.R:495`); on a non-zero exit probe `infile`'s audio-stream count
       and re-raise. Fall through to today's abort when the caller named a track,
       when the count is 1, when ffprobe is absent, or when the probe fails.
-- [ ] T3: The batch sibling — `audio_stream` argument plus per-row column
+- [x] T3: The batch sibling — `audio_stream` argument plus per-row column
       through the 2N reshape, audio rows only, `NA` meaning every track via a
       parameterized `check_batch_audio_col(na_means = )`. After `ffm_batch()`
       returns, emit one aggregated warning naming every failed audio row that
@@ -125,6 +125,7 @@ failed → one grouped candidate row.
 - 2026-07-30: AMENDMENT (substantive, gated) — AC2 and T2 now fall through to today's plain `ffm_run()` abort when the caller NAMED a track: with `0:a:<n>` mapped the failure is not a multi-track refusal, so "name a track with `audio_stream`" would be false under the branch that fired it (M38's twice-learned lesson). AC4/T3 amended from "warns once per failed audio row" to ONE aggregated warning naming every failed no-track audio row, matching M44's aggregation so R's 50-warning collapse cannot bury a large batch's message.
 - 2026-07-30: T1 done — `audio_stream` on `separate_audio_video()`, threaded to the audio branch of `separate_stream_pipeline()` only (the video call is never passed the value, so the video map cannot narrow by mistake). `audio_stream_map()` gained a `null_map` parameter rather than a second helper: one guard site keeps the `check_number_whole` wording identical across verb families, and `null_map = "0:a"` is what makes this verb's `NULL` mean every track (the `check_batch_audio_col(na_means=)` shape from M43/M40). AC1's baseline recorded verbatim in the new test file's header, provenance `b548902`, with `git diff b548902 HEAD -- R/ffmpeg.R` confirming no separation code moved in between. Minor refinement: AC1's compile tests were written here with the code rather than deferred to T5 (tests-first), so T5 now carries AC2–AC4 only. `document()` clean, `test()` 0 failures / 2751 passing (the 4 warnings are M44's drop diagnostic in pre-existing tests, unchanged).
 - 2026-07-30: T2 done — `run_separation_audio()` wraps the audio `ffm_run()`; on a non-zero exit it probes the input's audio-stream count and re-raises with the count, `audio_stream`, and `.mka`/`.m4a` as the two ways out, chaining the original as `parent` so FFmpeg's status and failing command survive. A non-zero EXIT is told apart from every other failure (missing binary, unreadable path) by parsing ffm_run()'s own status wording, with a test pinning that coupling so a reword there fails loudly instead of silently retiring the branch. Mutation probe (M39): deleting the named-track early return reddens the fall-through test; deleting the fail-open line reddens the single-track and ffprobe-absent tests — two distinct failure sets, not the identical one M44 flagged as the tell for a bad probe. Baseline was copied aside rather than restored with `git checkout` (M44's trap). D024 adoption recorded as M45-D1. `test()` 0 failures / 2769 passing.
+- 2026-07-30: T3 done — `audio_stream` on `separate_audio_video_batch()`: batch-wide argument plus per-row column, materialized into the 2N reshape on each input's AUDIO row only (video rows carry NA, and the video branch never reads the value — two independent reasons a video map cannot narrow). `NA` cell keeps that row on every track via `check_batch_audio_col(na_means = "keep every audio track")`. After `ffm_batch()` returns, `warn_failed_separation_batch()` probes only the failed no-track audio rows and emits ONE warning naming each affected INPUT row (not the 2N result row) with the scalar abort's three clauses. Discrimination probe (M39): making the fan-out ignore the argument reddens 4 tests. `@param jobs` column enumeration updated in the same task rather than at T6 (M39's lesson), plus a Failed-audio-outputs docs section. `document()` clean, `test()` 0 failures / 2797 passing.
 
 ## Decisions
 
@@ -154,5 +155,24 @@ D024 also anticipated this verb by name, ruling out "a predicate about narrowing
 a multi-track input" as its licence condition precisely so that M45 — where
 `NULL` means every track and nothing narrows by default — would not read itself
 as excluded from diagnostics. This entry is that reading applied.
+
+### M45-D2 — The batch's failed-row probe adopts D024 too, and runs after the fan-out (2026-07-30)
+
+`warn_failed_separation_batch()` adopts D024 on the same four conditions M45-D1
+records for the scalar verb: the outcome moves nothing but whether a warning is
+signalled, an unanswerable count is skipped in silence, it sits inside
+`if (isTRUE(run))`, and no builder reaches it.
+
+Where it differs from M44's sibling diagnostic is *when* it runs. M44 probes
+**before** `ffm_batch()`, deliberately, so the warning lands while the caller can
+still stop the fan-out. This one probes **after**, because its occasion is a row
+that *failed*, which is not knowable until the row runs. The consequence is the
+better half of the trade: a batch whose rows all succeed spawns no FFprobe at
+all, where M44's up-front probe pays for every unique input regardless (the cost
+the M44 review logged as F4). Probing before would mean probing rows that were
+never going to fail.
+
+The engine is untouched either way — `ffm_batch()`'s signature is unchanged, the
+same hook D024/RR02 Q3 declined to add.
 
 ## Review

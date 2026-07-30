@@ -193,6 +193,198 @@ test_that("a brace-bearing output path does not execute in the abort", {
   expect_match(cli::ansi_strip(conditionMessage(cnd)), "my{n}.aac", fixed = TRUE)
 })
 
+# AC4: the batch sibling -----------------------------------------------------
+
+sep_jobs <- function(inputs, tag = "") {
+  tibble::tibble(
+    input = inputs,
+    audiofile = sprintf("a%s%d.aac", tag, seq_along(inputs)),
+    videofile = sprintf("v%s%d.mp4", tag, seq_along(inputs))
+  )
+}
+
+test_that("the batch argument reaches every audio row and no video row", {
+  # A NON-default value, because asserting only the default passes even when the
+  # argument never reaches the fan-out (M39's lesson).
+  infile <- make_input("mkv")
+  out <- separate_audio_video_batch(sep_jobs(c(infile, infile)),
+                                    audio_stream = 2, run = FALSE)
+  audio <- out$command[out$stream == "audio"]
+  video <- out$command[out$stream == "video"]
+  expect_true(all(grepl("-map 0:a:2", audio, fixed = TRUE)))
+  expect_false(any(grepl("0:a", video, fixed = TRUE)))
+  expect_true(all(grepl("-map 0:v", video, fixed = TRUE)))
+})
+
+test_that("the batch default leaves every row on every audio track", {
+  infile <- make_input("mkv")
+  out <- separate_audio_video_batch(sep_jobs(c(infile, infile)), run = FALSE)
+  audio <- out$command[out$stream == "audio"]
+  expect_true(all(grepl("-map 0:a ", audio, fixed = TRUE)))
+  expect_false(any(grepl("0:a:", audio, fixed = TRUE)))
+})
+
+test_that("an audio_stream column overrides the argument per row", {
+  infile <- make_input("mkv")
+  jobs <- sep_jobs(c(infile, infile, infile))
+  jobs$audio_stream <- c(0, 2, NA)
+  out <- separate_audio_video_batch(jobs, audio_stream = 1, run = FALSE)
+  audio <- out$command[out$stream == "audio"]
+  expect_match(audio[[1]], "-map 0:a:0", fixed = TRUE)
+  expect_match(audio[[2]], "-map 0:a:2", fixed = TRUE)
+  # The NA cell is the column form of the NULL sentinel: every track for that
+  # row, overriding the argument rather than deferring to it (D023's rule,
+  # applied to this verb's NULL meaning).
+  expect_match(audio[[3]], "-map 0:a ", fixed = TRUE)
+  expect_false(grepl("0:a:", audio[[3]], fixed = TRUE))
+  expect_false(any(grepl("0:a", out$command[out$stream == "video"], fixed = TRUE)))
+})
+
+test_that("an all-NA audio_stream column is accepted and keeps every track", {
+  # R types an all-NA column logical, which an is.numeric-only guard rejects
+  # (M34's lesson).
+  infile <- make_input("mkv")
+  jobs <- sep_jobs(c(infile, infile))
+  jobs$audio_stream <- NA
+  out <- separate_audio_video_batch(jobs, run = FALSE)
+  expect_true(all(grepl("-map 0:a ", out$command[out$stream == "audio"],
+                        fixed = TRUE)))
+})
+
+test_that("a non-numeric audio_stream column and an NA argument are rejected", {
+  infile <- make_input("mkv")
+  jobs <- sep_jobs(c(infile, infile))
+  jobs$audio_stream <- c("0", "1")
+  expect_error(separate_audio_video_batch(jobs, run = FALSE),
+               "keep every audio track")
+  # The argument's front-door check: NA resolves to the NULL sentinel in the
+  # reshape, so without it this would silently keep every track (M37/M41).
+  expect_error(
+    separate_audio_video_batch(sep_jobs(infile), audio_stream = NA, run = FALSE),
+    "audio_stream"
+  )
+})
+
+test_that("a failed audio row records success = FALSE and warns once", {
+  skip_if_no_ffprobe()
+  multi <- make_multitrack_video()
+  single <- make_test_video()
+  dir <- withr::local_tempdir()
+  jobs <- tibble::tibble(
+    input     = c(multi, multi, single),
+    audiofile = file.path(dir, c("bad.aac", "named.aac", "ok.aac")),
+    videofile = file.path(dir, c("v1.mkv", "v2.mkv", "v3.mkv")),
+    # Row 2 names a track, so its audio output succeeds; row 3 is single-track.
+    audio_stream = c(NA, 1, NA)
+  )
+  w <- tryCatch(separate_audio_video_batch(jobs), warning = function(w) w)
+  expect_s3_class(w, "tidymedia_multitrack_separation")
+  msg <- cli::ansi_strip(conditionMessage(w))
+  expect_match(msg, "Input row 1")
+  expect_false(grepl("Input row 2", msg))
+  expect_false(grepl("Input row 3", msg))
+  expect_match(msg, "3 audio tracks")
+  expect_match(msg, "audio_stream")
+  expect_match(msg, ".mka", fixed = TRUE)
+
+  res <- suppressWarnings(separate_audio_video_batch(jobs))
+  expect_false(res$success[[1]])          # row 1's audio: refused
+  expect_true(res$success[[3]])           # row 2's audio: one track named
+  expect_true(res$success[[5]])           # row 3's audio: single-track input
+})
+
+test_that("a batch where every row names a track probes nothing", {
+  skip_if_no_ffmpeg()
+  multi <- make_multitrack_video()
+  dir <- withr::local_tempdir()
+  jobs <- tibble::tibble(
+    input     = c(multi, multi),
+    audiofile = file.path(dir, c("a1.aac", "a2.aac")),
+    videofile = file.path(dir, c("v1.mkv", "v2.mkv")),
+    audio_stream = c(0, 1)
+  )
+  probed <- 0L
+  local_mocked_bindings(
+    count_audio_streams = function(file) {
+      probed <<- probed + 1L
+      3L
+    }
+  )
+  expect_no_warning(separate_audio_video_batch(jobs))
+  expect_identical(probed, 0L)
+})
+
+
+# AC3: nothing runs a binary under run = FALSE -------------------------------
+
+test_that("run = FALSE invokes no binary on either separation verb", {
+  # Counts invocations rather than raising from the mock: run_separation_audio()
+  # and count_audio_streams() both wrap their calls in tryCatch(), which would
+  # swallow a stop() and let a probe on the compile path pass unseen (M44's
+  # lesson). find_ffmpeg()/find_ffprobe() are mocked too, since PATH masking
+  # alone leaves find_program()'s stored-config fallback in play.
+  infile <- make_input("mkv")
+  called <- 0L
+  local_mocked_bindings(
+    run_program = function(...) {
+      called <<- called + 1L
+      character(0)
+    },
+    find_ffmpeg = function() {
+      called <<- called + 1L
+      "ffmpeg"
+    },
+    find_ffprobe = function() {
+      called <<- called + 1L
+      "ffprobe"
+    }
+  )
+  separate_audio_video(infile, "a.aac", "v.mp4", run = FALSE)
+  separate_audio_video(infile, "a.aac", "v.mp4", audio_stream = 1, run = FALSE)
+  separate_audio_video_batch(sep_jobs(infile), run = FALSE)
+  separate_audio_video_batch(sep_jobs(infile), audio_stream = 1, run = FALSE)
+  expect_identical(called, 0L)
+})
+
+test_that("every documented call of both verbs compiles with no binary", {
+  # AC3 over the roxygen @examples themselves: an ungated example that shells out
+  # breaks the CI-absent build, which is where this class of defect surfaces
+  # (M30's lesson).
+  sample <- system.file("extdata", "sample.mp4", package = "tidymedia")
+  called <- 0L
+  local_mocked_bindings(
+    run_program = function(...) {
+      called <<- called + 1L
+      character(0)
+    },
+    find_ffmpeg = function() {
+      called <<- called + 1L
+      "ffmpeg"
+    },
+    find_ffprobe = function() {
+      called <<- called + 1L
+      "ffprobe"
+    }
+  )
+  expect_no_error({
+    separate_audio_video(sample, "audio.aac", "video.mp4", run = FALSE)
+    separate_audio_video(sample, "audio.mp3", "video.mp4",
+                         audio_codec = "libmp3lame", run = FALSE)
+    separate_audio_video(sample, "audio.aac", "video.mp4",
+                         audio_stream = 1, run = FALSE)
+    separate_audio_video_batch(
+      tibble::tibble(
+        input     = c(sample, sample),
+        audiofile = c("a1.aac", "a2.aac"),
+        videofile = c("v1.mp4", "v2.mp4")
+      ),
+      run = FALSE
+    )
+  })
+  expect_identical(called, 0L)
+})
+
+
 test_that("the extraction verbs' NULL still means the first track", {
   # The other half of the split this milestone records: parameterizing
   # audio_stream_map()'s NULL resolution must not have moved D023's callers.

@@ -609,6 +609,94 @@ run_separation_audio <- function(pipeline, infile, outfile, audio_stream,
   )
 }
 
+# warn_failed_separation() ------------------------------------------------
+
+# The batch form of T2's abort. separate_audio_video_batch() cannot abort on a
+# failed row -- ffm_batch() records `success = FALSE` and carries on, which is the
+# batch contract (D007) -- so the same diagnostic arrives as ONE warning after the
+# fan-out, naming every audio row that failed on a multi-track input without
+# naming a track.
+#
+# ONE warning whatever the length, for M44's reason: R collapses many warnings
+# into "There were 50 or more warnings" and a large jobs table would bury the
+# message it exists to deliver. The wording carries the same three clauses the
+# scalar abort does -- the count, `audio_stream`, and a container that holds
+# several -- so scalar and batch cannot drift, the divergence this repo has fixed
+# twice (M19, M35).
+#
+# `rows` are INPUT row numbers (the caller's jobs table), not row numbers of the
+# 2N-row result: a caller reads the message to fix a row of the table they wrote.
+warn_failed_separation <- function(rows, inputs, outputs, n,
+                                   call = rlang::caller_env()) {
+  keep <- !is.na(n) & n > 1
+  if (!any(keep)) return(invisible(NULL))
+  rows <- rows[keep]
+  inputs <- inputs[keep]
+  outputs <- outputs[keep]
+  n <- as.integer(n[keep])
+  bullets <- sprintf(
+    "Input row %d (%s) carries %d audio tracks; FFmpeg would not write all %d to %s.",
+    rows, basename(inputs), n, n, basename(outputs)
+  )
+  # Double every brace sprintf() has already interpolated: cli glue-evaluates
+  # each bullet in THIS frame, so a path like `my{n}.aac` would otherwise print a
+  # local of this function and `my{video}.aac` would abort the call outright.
+  # Braces are legal in filenames everywhere this package runs (M44 review F1).
+  bullets <- gsub("}", "}}", gsub("{", "{{", bullets, fixed = TRUE), fixed = TRUE)
+  cli::cli_warn(
+    c(
+      "{length(rows)} audio output{?s} failed on a multi-track input.",
+      rlang::set_names(bullets, rep("x", length(bullets))),
+      "i" = "Most audio containers hold exactly one stream ({.file .aac}, \\
+             {.file .mp3}, {.file .wav}) and FFmpeg fails when asked to write \\
+             more.",
+      "i" = "Take one track with {.arg audio_stream}, batch-wide or as a per-row \\
+             {.field audio_stream} column: {.val {0}} is the first audio track, \\
+             {.val {1}} the second.",
+      "i" = "Or keep every track by writing a container that holds several -- \\
+             Matroska ({.file .mka}) or {.file .m4a}."
+    ),
+    class = "tidymedia_multitrack_separation",
+    call = call
+  )
+  invisible(NULL)
+}
+
+# Probe the failed audio rows of a finished separation batch and warn once.
+#
+# Runs AFTER ffm_batch() returns, unlike M44's up-front probe: this diagnostic is
+# about rows that actually failed, which is not knowable before they run, and the
+# probe therefore costs nothing on a batch where every row succeeds. Same D024
+# licence as M44's (see this milestone's M45-D2): the outcome moves nothing but
+# whether the warning is signalled, and an unanswerable count is skipped in
+# silence rather than reported as a second failure.
+#
+# `out` is the 2N-row result; audio rows are the odd ones, so an input row number
+# is (i + 1) %/% 2. A row that NAMED a track is excluded -- it mapped one stream,
+# so a track count says nothing about why it failed (T2's narrowing).
+warn_failed_separation_batch <- function(out, audio_stream = NULL,
+                                        call = rlang::caller_env()) {
+  if (!"success" %in% names(out)) return(invisible(NULL))
+  sel <- if ("audio_stream" %in% names(out)) {
+    out$audio_stream
+  } else {
+    rep(if (is.null(audio_stream)) NA_real_ else as.numeric(audio_stream),
+        nrow(out))
+  }
+  bad <- which(out$stream == "audio" & !out$success & is.na(sel))
+  if (length(bad) == 0) return(invisible(NULL))
+  inputs <- out$input[bad]
+  uniq <- unique(inputs)
+  counts <- vapply(uniq, count_audio_streams, integer(1), USE.NAMES = FALSE)
+  warn_failed_separation(
+    rows = (bad + 1L) %/% 2L,
+    inputs = inputs,
+    outputs = out$output[bad],
+    n = counts[match(inputs, uniq)],
+    call = call
+  )
+}
+
 # Pull FFmpeg's exit status out of the abort ffm_run() raises on a non-zero exit
 # ("FFmpeg exited with status 234."), or NA when the condition is not that abort.
 # cli styles the message, so strip the ANSI first.
@@ -4262,9 +4350,11 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #'   match the source codec). Optional \code{audio_codec} and \code{video_codec}
 #'   columns (character; \code{NA} to emit no codec option for that stream)
 #'   override the arguments of the same name per row; rows omitting a column fall
-#'   back to that argument. Any other columns are ignored — except a
-#'   \code{reencode} column, retired with the argument of the same name, which is
-#'   an error rather than a silent no-op.
+#'   back to that argument. An optional numeric \code{audio_stream} column
+#'   (\code{NA} to keep every audio track in that row's \code{audiofile})
+#'   likewise overrides the \code{audio_stream} argument per row. Any other
+#'   columns are ignored — except a \code{reencode} column, retired with the
+#'   argument of the same name, which is an error rather than a silent no-op.
 #' @param audio_codec A string naming the encoder for every \code{audiofile}
 #'   unless \code{jobs} carries an \code{audio_codec} column. The default
 #'   \code{"copy"} stream-copies the audio losslessly; \code{NULL} emits no
@@ -4281,6 +4371,12 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #'   row whose video codec resolves to \code{"copy"} — including the default —
 #'   so a jobs table mixing copied and re-encoded video must be split into
 #'   separate calls.
+#' @param audio_stream The 0-based index of the audio track to write to every
+#'   \code{audiofile}, unless \code{jobs} carries an \code{audio_stream} column.
+#'   \code{NULL} (default) keeps \strong{every} audio track, as
+#'   \code{\link{separate_audio_video}} does; an \code{NA} cell in the column
+#'   says the same for that row. Only \code{audiofile} is affected — a
+#'   \code{videofile} always takes the input's video streams.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -4300,6 +4396,16 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #' @seealso [separate_audio_video()], the scalar verb it wraps; [ffm_batch()],
 #'   the batch runner; [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
 #'   [segment_video_batch()] for the other fan-out batch verb.
+#' @section Failed audio outputs:
+#' A row whose \code{audiofile} FFmpeg refuses is recorded as \code{success =
+#' FALSE} rather than aborting the batch. When such a row named no
+#' \code{audio_stream} and its input carries more than one audio track, the verb
+#' warns \strong{once} for the whole batch, naming every affected input row and
+#' the ways out. That check runs FFprobe on the failed rows only, so it is
+#' emitted when FFprobe is available and the input can be probed, and skipped
+#' silently otherwise; it never runs under \code{run = FALSE} and never changes
+#' any compiled command. Suppress it with \code{suppressWarnings(classes =
+#' "tidymedia_multitrack_separation")}.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -4314,7 +4420,8 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 separate_audio_video_batch <- function(jobs, audio_codec = "copy",
                                        video_codec = "copy",
                                        hardware = c("none", "nvenc"),
-                                       fallback = FALSE, run = TRUE,
+                                       fallback = FALSE, audio_stream = NULL,
+                                       run = TRUE,
                                        parallel = FALSE, ...) {
 
   jobs <- check_batch_jobs(jobs, verb = "Audio/video separation")
@@ -4393,6 +4500,17 @@ separate_audio_video_batch <- function(jobs, audio_codec = "copy",
   # NA (M34/D016).
   check_batch_codec_col(jobs, "audio_codec")
   check_batch_codec_col(jobs, "video_codec")
+  # The stream-index column's own type guard, with a hint saying what NA means
+  # HERE: on this verb it keeps EVERY track, where on the extraction verbs the
+  # same cell keeps the first one (M40's stale-hint lesson, which is why the
+  # wording is a parameter).
+  check_batch_audio_col(jobs, "audio_stream",
+                        na_means = "keep every audio track")
+  # And the argument's front-door check. Load-bearing here, unlike on the scalar
+  # sibling: the reshape below materializes this argument into a column whose NA
+  # cells mean the NULL sentinel, so without it `audio_stream = NA` would quietly
+  # keep every track instead of erroring (the M37/M41 shape).
+  rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
 
   # Reshape N input rows -> 2N single-output rows (D003/D007): each input fans out
   # into an audio row (0:a -> audiofile) and a video row (0:v -> videofile),
@@ -4428,6 +4546,20 @@ separate_audio_video_batch <- function(jobs, audio_codec = "copy",
       pick_codec("video_codec", video_codec)
     ))
   }
+  # `audio_stream` is one choice per INPUT that applies to the audio row only, so
+  # the reshaped column carries each input's value on its audio row and NA on its
+  # video row. NA is the no-selection sentinel, and the video branch of
+  # separate_stream_pipeline() never reads the value anyway -- two independent
+  # reasons a video output cannot be narrowed by this argument. as.numeric()
+  # carries an all-NA column, which R types logical (M34).
+  if ("audio_stream" %in% names(jobs) || !is.null(audio_stream)) {
+    per_input <- if ("audio_stream" %in% names(jobs)) {
+      as.numeric(jobs$audio_stream)
+    } else {
+      rep(as.numeric(audio_stream), n)
+    }
+    long$audio_stream <- as.vector(rbind(per_input, rep(NA_real_, n)))
+  }
   long <- reject_duplicate_outputs(long)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output pipeline per
@@ -4436,7 +4568,7 @@ separate_audio_video_batch <- function(jobs, audio_codec = "copy",
   # column-over-argument resolution; without it each row takes its stream's
   # argument. `...` also forwards ffm_batch options (verify/manifest/...) to the
   # runner.
-  ffm_batch(
+  out <- ffm_batch(
     long,
     function(input, output, stream, ...) {
       dots <- list(...)
@@ -4447,12 +4579,26 @@ separate_audio_video_batch <- function(jobs, audio_codec = "copy",
       } else {
         video_codec
       }
-      separate_stream_pipeline(input, output, stream, codec, hardware, fallback)
+      # Passed on audio rows only: the video command never receives the value, so
+      # no column or argument can narrow a video map even by mistake.
+      sel <- if (identical(stream, "audio")) {
+        batch_stream_cell(
+          if ("audio_stream" %in% names(dots)) dots$audio_stream else audio_stream
+        )
+      }
+      separate_stream_pipeline(input, output, stream, codec, hardware, fallback,
+                               sel)
     },
     run = run,
     parallel = parallel,
     ...
   )
+
+  # The failed-row diagnostic, after the fan-out rather than before it: which
+  # rows failed is not knowable until they run, so a batch where every row
+  # succeeds pays nothing (M45-D2).
+  if (isTRUE(run)) warn_failed_separation_batch(out, audio_stream)
+  out
 }
 
 

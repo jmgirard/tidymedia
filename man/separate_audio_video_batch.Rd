@@ -10,6 +10,7 @@ separate_audio_video_batch(
   video_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
+  audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -24,9 +25,11 @@ because a copied stream's container extension is the instruction (it must
 match the source codec). Optional \code{audio_codec} and \code{video_codec}
 columns (character; \code{NA} to emit no codec option for that stream)
 override the arguments of the same name per row; rows omitting a column fall
-back to that argument. Any other columns are ignored — except a
-\code{reencode} column, retired with the argument of the same name, which is
-an error rather than a silent no-op.}
+back to that argument. An optional numeric \code{audio_stream} column
+(\code{NA} to keep every audio track in that row's \code{audiofile})
+likewise overrides the \code{audio_stream} argument per row. Any other
+columns are ignored — except a \code{reencode} column, retired with the
+argument of the same name, which is an error rather than a silent no-op.}
 
 \item{audio_codec}{A string naming the encoder for every \code{audiofile}
 unless \code{jobs} carries an \code{audio_codec} column. The default
@@ -46,6 +49,13 @@ stream copy runs no encoder, \code{hardware = "nvenc"} conflicts with any
 row whose video codec resolves to \code{"copy"} — including the default —
 so a jobs table mixing copied and re-encoded video must be split into
 separate calls.}
+
+\item{audio_stream}{The 0-based index of the audio track to write to every
+\code{audiofile}, unless \code{jobs} carries an \code{audio_stream} column.
+\code{NULL} (default) keeps \strong{every} audio track, as
+\code{\link{separate_audio_video}} does; an \code{NA} cell in the column
+says the same for that row. Only \code{audiofile} is affected — a
+\code{videofile} always takes the input's video streams.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}
@@ -79,6 +89,19 @@ table of \code{N} rows returns \code{2N} rows — one reproducible compiled
 command per stream — sharing the same per-stream map/stream-copy pipeline as
 the scalar verb.
 }
+\section{Failed audio outputs}{
+
+A row whose \code{audiofile} FFmpeg refuses is recorded as \code{success =
+FALSE} rather than aborting the batch. When such a row named no
+\code{audio_stream} and its input carries more than one audio track, the verb
+warns \strong{once} for the whole batch, naming every affected input row and
+the ways out. That check runs FFprobe on the failed rows only, so it is
+emitted when FFprobe is available and the input can be probed, and skipped
+silently otherwise; it never runs under \code{run = FALSE} and never changes
+any compiled command. Suppress it with \code{suppressWarnings(classes =
+"tidymedia_multitrack_separation")}.
+}
+
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 jobs <- tibble::tibble(

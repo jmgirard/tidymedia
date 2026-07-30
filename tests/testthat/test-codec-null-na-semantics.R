@@ -95,6 +95,58 @@ test_that("the NULL sentinel changes nothing else about the compiled command", {
   expect_match(anon, "drawbox", fixed = TRUE)
 })
 
+test_that("extract_audio and its batch sibling agree on audio_codec = NULL (D022)", {
+  input <- make_input()
+  calls <- list(
+    extract_audio       = list(infile = input, outfile = "a.aac"),
+    extract_audio_batch = list(jobs = tibble::tibble(input = input,
+                                                     output = "a.aac"))
+  )
+  for (verb in names(calls)) {
+    args <- calls[[verb]]
+    expect_match(
+      codec_compiled(verb, codec_with(args, "audio_codec", "aac")),
+      "-codec:a aac", fixed = TRUE,
+      label = paste(verb, "emits -codec:a for a named encoder")
+    )
+    # The scalar verb aborted here until M42 while the batch sibling compiled;
+    # D021 recorded that as "defensible" without noticing the disagreement.
+    expect_no_match(
+      codec_compiled(verb, codec_with(args, "audio_codec", NULL)),
+      "-codec:a", fixed = TRUE,
+      label = paste(verb, "drops -codec:a under NULL")
+    )
+    # Dropping the codec is not licence to drop the video-stream removal that
+    # is this verb's actual job.
+    expect_match(
+      codec_compiled(verb, codec_with(args, "audio_codec", NULL)),
+      "-vn", fixed = TRUE,
+      label = paste(verb, "still drops video under NULL")
+    )
+  }
+})
+
+test_that("each remaining verb's NULL keeps the meaning D022 records for it", {
+  # Inherited from test-codec-arg-front-door.R, where M41 pinned these as the
+  # per-verb meanings it left untouched. They belong here now: D022 makes them
+  # one family rule with one departure, and a second file asserting NULL
+  # semantics is how the two drift apart.
+  input <- make_input()
+
+  # convert_audio is the departure: NULL selects -q:a 0, not "emit nothing"
+  # (D021, reaffirmed at M42's gate).
+  expect_match(
+    as.character(convert_audio(input, "a.mp3", audio_codec = NULL, run = FALSE)),
+    "-q:a 0", fixed = TRUE
+  )
+  # normalize_audio is D019's emit-nothing sentinel.
+  expect_no_match(
+    as.character(normalize_audio(input, "out.mp4", audio_codec = NULL,
+                                 run = FALSE)),
+    "-codec:a", fixed = TRUE
+  )
+})
+
 test_that("a NULL video_codec still resolves to the nvenc H.264 family (D016)", {
   # D016 puts the sentinel INSIDE resolve_hw_encoder(), before family inference:
   # under hardware = "nvenc" a NULL assumes H.264 rather than emitting nothing.

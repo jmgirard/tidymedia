@@ -280,7 +280,10 @@ extract_audio <- function(infile, outfile, audio_codec = "copy", run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
-  rlang::check_string(audio_codec)
+  # allow_null is D022's family rule: NULL emits no -codec:a and lets the output
+  # container's default encoder decide. This verb refused it until M42 while
+  # extract_audio_batch() next door had always compiled the same call.
+  rlang::check_string(audio_codec, allow_null = TRUE)
 
   ffm_finish(extract_audio_pipeline(infile, outfile, audio_codec), run)
 }
@@ -3403,21 +3406,10 @@ extract_audio_batch <- function(jobs, audio_codec = "copy", run = TRUE,
   # package that leaked the engine's name, fired mid-fan-out, AND blamed pmap all
   # at once (M41).
   #
-  # allow_null = TRUE here while extract_audio() next door uses a bare
-  # check_string() that REJECTS NULL, so the scalar verb and its batch sibling
-  # disagree about what `audio_codec = NULL` means: the batch form compiles `-vn`
-  # with no -codec:a, the scalar form aborts. That split predates this milestone
-  # and is preserved here on purpose -- M41 changes only which values are
-  # refused, never what an accepted value does. Reconciling the two is M42's job.
-  #
-  # D021 does NOT record this split, and an earlier version of this comment
-  # wrongly cited it as doing so (review F19). D021 instead asserts that
-  # extract_audio() "accepts neither `NULL` nor `NA`" and never mentions this
-  # batch verb at all -- a claim measurement contradicts, since
-  # extract_audio_batch(audio_codec = NULL) compiled before this milestone and
-  # still compiles. DECISIONS.md is append-only history, so the repair is a
-  # superseding entry from M42, which owns these semantics -- not an edit there
-  # and not a citation here.
+  # allow_null carries D022's family rule: NULL emits no -codec:a. The scalar
+  # sibling now agrees; until M42 it aborted on this same call, which is the
+  # split D021 recorded from the wrong side (it called extract_audio() the verb
+  # that "accepts neither NULL nor NA" without noticing this one always had).
   rlang::check_string(audio_codec, allow_null = TRUE)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one map/drop-video pipeline per

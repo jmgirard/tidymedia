@@ -116,7 +116,7 @@ the `NULL` path M41's guards deliberately waved through.
       `standardize_video_batch` ([ffmpeg.R:2547](../../R/ffmpeg.R#L2547)),
       `anonymize_video`, and `anonymize_video_batch`
       ([ffmpeg.R:1145](../../R/ffmpeg.R#L1145)).
-- [ ] T4: Land the `extract_audio` / `extract_audio_batch` resolution
+- [x] T4: Land the `extract_audio` / `extract_audio_batch` resolution
       ([ffmpeg.R:283](../../R/ffmpeg.R#L283),
       [ffmpeg.R:3295](../../R/ffmpeg.R#L3295)); remove M41's pointer comment.
 - [ ] T5: Land the codec-column resolution on all three columns that reject
@@ -138,6 +138,7 @@ the `NULL` path M41's guards deliberately waved through.
 - 2026-07-29: T2 gate — user chose "`NULL` = unset everywhere" over a verb-class split and over resolving toward abort (the escalation option was offered on the `irreversible-api` tripwire and declined), kept `convert_audio`'s `-q:a 0` departure, and accepted the scope amendment. Landed as D022.
 - 2026-07-29: amendment (substantive, gated above) — Scope 3, AC4 and T5 now name all three no-`NA` codec columns instead of `standardize_video_batch`'s alone, because the T1 probe found three where the plan asserted one.
 - 2026-07-29: T3 — one line: `anonymize_pipeline()`'s unconditional `check_token(video_codec)` was the sole cause of split 1, and skipping it for `NULL` fixes both anonymize verbs (the batch one's `In index:` abort included). Check left at its original position so it keeps reporting before `pixel_format`/drawbox. New `test-codec-null-na-semantics.R`; every absence assertion paired with a named-encoder non-vacuity assertion. Suite 2461 passing.
+- 2026-07-29: T4 — `extract_audio()` takes `allow_null = TRUE`; M41's 14-line pointer comment replaced by a 4-line statement of the settled rule. M41's "NULL keeps its existing per-verb meaning" test moved whole into the new file rather than edited in place, because two files asserting NULL semantics is how they drift; what stayed behind is the NA-still-aborts half, which is that file's own concern. Suite 2466 passing.
 
 ## Decisions
 

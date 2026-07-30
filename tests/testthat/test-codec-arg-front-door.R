@@ -359,40 +359,25 @@ test_that("the front-door sweep covers every codec argument the package exports"
   expect_setequal(found, c(covered, excluded))
 })
 
-test_that("NULL keeps its existing per-verb meaning (M41 is contract-neutral)", {
+test_that("M41's guards still refuse a bad value when NULL is legal beside it", {
+  # M41 pinned each verb's per-verb NULL meaning here, when the family had no
+  # single answer. D022 gave it one, and those pins moved whole to
+  # test-codec-null-na-semantics.R -- two files asserting NULL semantics is how
+  # the two drift apart.
+  #
+  # What stays here is the interaction this file owns: `allow_null = TRUE` is a
+  # widening, and a guard written as "accept NULL" is one typo away from
+  # "accept anything nullish". NA is the value that distinguishes them, on the
+  # two verbs M42 widened.
   input <- make_input()
-  # M41 changed only which values are REFUSED. Every guard takes
-  # allow_null = TRUE, so NULL reaches exactly the path it reached before, and
-  # these verbs still disagree about what it means there -- deliberately, with
-  # the reconciliation left to M42.
-
-  # Compiles, dropping the codec flag entirely.
-  expect_no_match(
-    as.character(extract_audio_batch(
-      tibble::tibble(input = input, output = "a.aac"),
-      audio_codec = NULL, run = FALSE)$command[[1]]),
-    "-codec:a", fixed = TRUE
-  )
-  # ... while the scalar sibling refuses NULL outright.
   expect_error(
-    extract_audio(input, "a.aac", audio_codec = NULL, run = FALSE),
+    extract_audio(input, "a.aac", audio_codec = NA, run = FALSE),
     "audio_codec"
   )
-  # convert_audio's NULL selects -q:a 0 rather than emitting nothing (D021).
-  expect_match(
-    as.character(convert_audio(input, "a.mp3", audio_codec = NULL, run = FALSE)),
-    "-q:a 0", fixed = TRUE
-  )
-  # standardize_video's NULL drops -codec:v and keeps everything else.
-  expect_no_match(
-    as.character(standardize_video(input, "out.mp4", video_codec = NULL,
-                                   run = FALSE)),
-    "-codec:v", fixed = TRUE
-  )
-  # normalize_audio's NULL is D019's emit-nothing sentinel.
-  expect_no_match(
-    as.character(normalize_audio(input, "out.mp4", audio_codec = NULL,
-                                 run = FALSE)),
-    "-codec:a", fixed = TRUE
+  expect_error(
+    anonymize_video(input, "out.mp4",
+                    regions = data.frame(x = 0, y = 0, width = 32, height = 32),
+                    video_codec = NA, run = FALSE),
+    "video_codec"
   )
 })

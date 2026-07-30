@@ -276,3 +276,32 @@ _Fresh evidence, 2026-07-30, macOS 25.5.0, ffmpeg/ffprobe 8.1.2 both present. PR
 - No newly exported object, so no `_pkgdown.yml` row was owed (NAMESPACE unchanged).
 - Thrash count: 0 returns to `in-progress`; first review pass.
 
+### Fan-out, CI, and re-verification
+
+- **Reviewers.** Three fresh-context lenses with distinct evidence bases, then a
+  separate scorer that generated none of the findings and was given the diff and
+  the plan. Blame-history: 11 clean confirmations, zero defects. Prior-review
+  regression: zero regressions (its `gh api .../pulls/comments` probe returned
+  empty, so the PR-thread walk was correctly skipped; archived `## Review`
+  sections were the evidence base). Diff-bug: 16 findings. Scores: A-F4 88,
+  A-F3 82, A-F9 74, A-F2 72, A-F7 72, A-F12 68, A-F1 65, A-F13 55, A-F5 52,
+  A-F10 45, A-F6 42, A-F15 40, A-F16 40, A-F8 35, A-F14 32, A-F11 32, N1 25.
+  Two at or above 80, both fixed; five below threshold fixed anyway with reasons
+  in the work log; two grouped into a candidate row; the rest logged.
+- **CI (PR #48).** First run RED — all three ubuntu-latest jobs plus
+  test-coverage, from the ffmpeg 6.1.1 adts difference; macOS and Windows green.
+  That returned the milestone to `in-progress` (thrash count 1). After T7 and the
+  finding fixes, all nine checks pass: ubuntu release / devel / oldrel-1,
+  macos-latest, windows-latest, pkgdown, test-coverage, codecov patch + project.
+  Ubuntu now *runs* the enrichment tests rather than skipping them, so the
+  post-fix coverage is stronger than the first attempt's.
+- **Post-fix re-verification.** `devtools::test()` 0 failures / 2814 passing ·
+  `R CMD check` `Status: OK` 0 errors / 0 warnings / 0 notes ·
+  `devtools::document()` no diff · `cairn_validate` exit 0 · A-F2's rewording
+  re-measured on the case that exposed it (a row failing for a missing output
+  directory while writing `.mka`): the bullet now reads "carries 3 audio tracks,
+  all 3 mapped into a.mka, which failed", asserting the count and the mapping
+  and no longer claiming FFmpeg refused the container.
+- **Thrash rule.** 1 return to `in-progress`, from CI rather than from a
+  criterion; below the third-return threshold, and no criterion failed twice.
+

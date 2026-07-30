@@ -157,3 +157,220 @@ test_that("audio_stream = 0 is a selection, not the unset sentinel", {
                    crop_command(f, "-map 0:v? -map 0:a:0 "))
   expect_false(identical(crop_of(f, audio_stream = 0), crop_of(f)))
 })
+
+
+# AC5 / AC6: the batch siblings ------------------------------------------------
+
+crop_jobs <- function(f, ...) {
+  tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"), ...)
+}
+
+segment_jobs <- function(f, ...) {
+  tibble::tibble(
+    input = c(f, f), output = c("a.mp4", "b.mp4"),
+    start = c(0, 1), end = c(1, 2), ...
+  )
+}
+
+test_that("the batch argument reaches every row", {
+  f <- make_input()
+  out <- crop_video_batch(crop_jobs(f), width = 32, height = 32,
+                          audio_stream = 2, run = FALSE)
+  expect_true(all(grepl("-map 0:v? -map 0:a:2", out$command, fixed = TRUE)))
+  out <- segment_video_batch(segment_jobs(f), audio_stream = 2, run = FALSE)
+  expect_true(all(grepl("-map 0:v? -map 0:a:2", out$command, fixed = TRUE)))
+  # And on the copy branch, where the selection has to REPLACE ffm_copy()'s map
+  # rather than sit beside it.
+  out <- segment_video_batch(segment_jobs(f), reencode = FALSE,
+                             audio_stream = 2, run = FALSE)
+  expect_true(all(grepl("-map 0:v? -map 0:a:2", out$command, fixed = TRUE)))
+  expect_identical(map_count(out$command), c(2L, 2L))
+})
+
+test_that("an audio_stream column overrides the argument per row", {
+  f <- make_input()
+  out <- crop_video_batch(crop_jobs(f, audio_stream = c(1, NA)),
+                          width = 32, height = 32, audio_stream = 2,
+                          run = FALSE)
+  # NA is the column form of NULL, so row 2 keeps EVERY track -- it does not
+  # fall back to the argument, which is what an ABSENT column means (D023/D026).
+  expect_match(out$command[[1]], "-map 0:v? -map 0:a:1", fixed = TRUE)
+  expect_match(out$command[[2]], "-map 0:v? -map 0:a?", fixed = TRUE)
+
+  out <- segment_video_batch(segment_jobs(f, audio_stream = c(1, NA)),
+                             audio_stream = 2, run = FALSE)
+  expect_match(out$command[[1]], "-map 0:v? -map 0:a:1", fixed = TRUE)
+  expect_match(out$command[[2]], "-map 0:v? -map 0:a?", fixed = TRUE)
+})
+
+test_that("a one-row batch call compiles byte-identically to the scalar call", {
+  f <- make_input()
+  for (sel in list(NULL, 2)) {
+    expect_identical(
+      crop_video_batch(tibble::tibble(input = f, output = "out.mp4"),
+                       width = 32, height = 32, audio_stream = sel,
+                       run = FALSE)$command,
+      crop_video(f, "out.mp4", 32, 32, audio_stream = sel, run = FALSE)
+    )
+    expect_identical(
+      segment_video_batch(
+        tibble::tibble(input = f, output = "seg.mp4", start = 0, end = 1),
+        audio_stream = sel, run = FALSE
+      )$command,
+      segment_video(f, 0, 1, outfiles = "seg.mp4", audio_stream = sel,
+                    run = FALSE)$command
+    )
+  }
+})
+
+test_that("segment_video()'s own fan-out carries the argument to every segment", {
+  # This verb builds its OWN jobs tibble from one input, so the argument has to
+  # reach the closure rather than a column.
+  f <- make_input()
+  out <- segment_video(f, c(0, 1, 2), c(1, 2, 3),
+                       outfiles = c("a.mp4", "b.mp4", "c.mp4"),
+                       audio_stream = 2, run = FALSE)
+  expect_identical(nrow(out), 3L)
+  expect_true(all(grepl("-map 0:v? -map 0:a:2", out$command, fixed = TRUE)))
+})
+
+test_that("a wrongly typed audio_stream column aborts before any row runs", {
+  f <- make_input()
+  for (bad in list(c("0", "1"), c(TRUE, FALSE))) {
+    err <- expect_error(
+      crop_video_batch(crop_jobs(f, audio_stream = bad), width = 32,
+                       height = 32, run = FALSE)
+    )
+    expect_match(conditionMessage(err), "audio_stream")
+    expect_match(conditionMessage(err), "keep every audio track")
+    expect_identical(rlang::call_name(conditionCall(err)), "crop_video_batch")
+
+    err <- expect_error(
+      segment_video_batch(segment_jobs(f, audio_stream = bad), run = FALSE)
+    )
+    expect_match(conditionMessage(err), "audio_stream")
+    expect_match(conditionMessage(err), "keep every audio track")
+    expect_identical(rlang::call_name(conditionCall(err)),
+                     "segment_video_batch")
+  }
+})
+
+test_that("a scalar audio_stream = NA aborts rather than compiling the default", {
+  # The column path resolves NA to the NULL sentinel, so without the batch
+  # verbs' own front-door check this would quietly keep every track (M37/M41).
+  f <- make_input()
+  expect_error(
+    crop_video_batch(crop_jobs(f), width = 32, height = 32,
+                     audio_stream = NA, run = FALSE),
+    "audio_stream"
+  )
+  expect_error(
+    segment_video_batch(segment_jobs(f), audio_stream = NA, run = FALSE),
+    "audio_stream"
+  )
+})
+
+
+# AC7 --------------------------------------------------------------------------
+
+test_that("run = FALSE runs no binary at the default hardware", {
+  f <- make_input()
+  # Count invocations rather than stop()ing in the mock: these call sites sit
+  # under tryCatch() in places, which swallows a raising mock and leaves the
+  # test green with the gate it exists to pin deleted (M44).
+  n <- 0L
+  local_mocked_bindings(
+    run_program = function(...) {
+      n <<- n + 1L
+      list(status = 0L, stdout = character(), stderr = character())
+    },
+    find_ffmpeg = function(...) {
+      n <<- n + 1L
+      "ffmpeg"
+    },
+    find_ffprobe = function(...) {
+      n <<- n + 1L
+      "ffprobe"
+    }
+  )
+  crop_video(f, "out.mp4", 32, 32, run = FALSE)
+  crop_video(f, "out.mp4", 32, 32, audio_stream = 2, run = FALSE)
+  segment_video(f, 0, 1, outfiles = "seg.mp4", audio_stream = 2, run = FALSE)
+  segment_video(f, 0, 1, outfiles = "seg.mp4", reencode = FALSE,
+                audio_stream = 2, run = FALSE)
+  crop_video_batch(crop_jobs(f), width = 32, height = 32, audio_stream = 2,
+                   run = FALSE)
+  segment_video_batch(segment_jobs(f), audio_stream = 2, run = FALSE)
+  expect_identical(n, 0L)
+  # Prove the mock is actually in scope rather than silently inert: one
+  # run = TRUE call must trip the counter. Without this, `n == 0` is equally
+  # consistent with "no binary ran" and "the mock never bound" (M39's
+  # discriminate-the-test rule, M44's counting-mock rule).
+  crop_video_batch(crop_jobs(f), width = 32, height = 32, run = TRUE)
+  expect_gt(n, 0L)
+  # Deliberately NOT extended to hardware = "nvenc": resolve_hw_encoder()
+  # reaches ffmpeg("-encoders") before `run` is consulted, so that path DOES
+  # shell out under run = FALSE on these verbs too. Carried as a ROADMAP
+  # candidate row since M47; it falsifies D024's "sole exception" sentence and
+  # is not M48's to fix.
+})
+
+
+# AC3: execution on a 3-audio-track, 1-subtitle .mkv ---------------------------
+
+test_that("crop_video(audio_stream = ) writes exactly the named track", {
+  skip_if_no_ffmpeg()
+  infile <- make_multitrack_subtitle_video()
+  out <- withr::local_tempfile(fileext = ".mkv")
+  crop_video(infile, out, width = 32, height = 32, audio_stream = 2)
+  expect_identical(stream_types(out), c("video", "audio"))
+  # The language tag, not the position: it names the track independently of
+  # stream order, and track 2 is `fra` in this fixture.
+  expect_identical(audio_languages(out), "fra")
+})
+
+test_that("crop_video() with no selection keeps every audio track and no subtitle", {
+  skip_if_no_ffmpeg()
+  infile <- make_multitrack_subtitle_video()
+  out <- withr::local_tempfile(fileext = ".mkv")
+  crop_video(infile, out, width = 32, height = 32)
+  # Every audio track survives -- `-map 0` did that too, and D026 keeps it --
+  # but the subtitle no longer does. That is the deliberate change.
+  expect_identical(stream_types(out),
+                   c("video", "audio", "audio", "audio"))
+  expect_identical(audio_languages(out), c("eng", "spa", "fra"))
+})
+
+test_that("crop_video() into .mp4 now succeeds on a subtitle-bearing input", {
+  # On master this call FAILED: `-map 0` carried the subtitle into .mp4 and
+  # FFmpeg exited 8 with no default mp4 subtitle encoder. Not carrying
+  # subtitles is what fixes it.
+  skip_if_no_ffmpeg()
+  infile <- make_multitrack_subtitle_video()
+  out <- withr::local_tempfile(fileext = ".mp4")
+  expect_no_error(crop_video(infile, out, width = 32, height = 32))
+  expect_true(file.exists(out) && file.size(out) > 0)
+  expect_identical(stream_types(out), c("video", "audio", "audio", "audio"))
+})
+
+test_that("segment_video() carries the named track on both branches", {
+  skip_if_no_ffmpeg()
+  infile <- make_multitrack_subtitle_video()
+  for (reencode in c(TRUE, FALSE)) {
+    out <- withr::local_tempfile(fileext = ".mkv")
+    segment_video(infile, 0, 1, outfiles = out, reencode = reencode,
+                  audio_stream = 2)
+    expect_identical(stream_types(out), c("video", "audio"))
+    expect_identical(audio_languages(out), "fra")
+  }
+})
+
+test_that("a named track the input lacks is an FFmpeg error, not an R one", {
+  # D026's third bullet, end to end: the named specifier carries no `?`, so
+  # `0:a:9` on a 3-track input must fail rather than write a silent file.
+  skip_if_no_ffmpeg()
+  infile <- make_multitrack_subtitle_video()
+  out <- withr::local_tempfile(fileext = ".mkv")
+  expect_error(crop_video(infile, out, width = 32, height = 32,
+                          audio_stream = 9))
+})

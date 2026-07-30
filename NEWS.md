@@ -2,6 +2,36 @@
 
 ## Breaking changes
 
+* `crop_video()` and `segment_video()` (and their `_batch` siblings) take a new
+  `audio_stream` argument naming which audio track to carry, and now state that
+  selection on every call. Both verbs mapped *every* stream before, which kept
+  every audio track — that part is unchanged — but also offered no way to pick
+  one, and dragged subtitle and data streams along with it. Subtitles are no
+  longer carried: `crop_video()` writing to `.mkv` used to pass one through and
+  now passes none. The same change fixes a real failure, since `crop_video()`
+  writing a subtitle-bearing input to `.mp4` used to abort outright (FFmpeg has
+  no default subtitle encoder for that container) and now succeeds.
+
+  `NULL`, the default, keeps every audio track, matching `standardize_video()`,
+  `anonymize_video()` and `separate_audio_video()`. Note that `extract_audio()`
+  and `convert_audio()` read `NULL` the other way — they take the first track —
+  because their output *is* an audio stream and has to be one track. Each
+  argument's documentation says which family it belongs to.
+
+* `ffm_copy()` now **sets** the all-streams mapping rather than adding to it, so
+  calling it twice no longer duplicates every output stream. Since the mapping
+  builder began appending, `ffm_copy() |> ffm_copy()` compiled `-map 0` twice
+  and a one-video/one-audio input came out with four streams;
+  `ffm_concat() |> ffm_copy()` did the same, because concatenation copies
+  internally. No pipeline built by a task verb was affected — this only reached
+  you if you composed the builder yourself.
+
+  If the pipeline already states a *different* mapping, `ffm_copy()` now stops
+  with an error rather than discarding it silently. Pass `streams = FALSE` to
+  keep the mapping you set, or call `ffm_copy()` first and narrow afterwards
+  with `ffm_map(replace = TRUE)`. `ffm_map()` itself is unchanged and still
+  appends.
+
 * `standardize_video()` and `anonymize_video()` (and their `_batch` siblings)
   now keep **every** audio track from the input instead of letting FFmpeg pick
   one. Neither verb emitted a stream mapping before, so FFmpeg applied its own

@@ -1096,6 +1096,16 @@ crop_video_pipeline <- function(input, output, width, height,
 #'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
 #'   fallback leaves the codec unset rather than picking one, so the codec never
 #'   changes silently.
+#' @param audio_stream The 0-based index of the audio track to carry into the
+#'   output, counted \emph{among the input's audio streams} -- \code{0} is the
+#'   first audio track, \code{1} the second, whatever their positions among the
+#'   file's streams. \code{NULL} (default) carries \strong{every} audio track,
+#'   which is also what \code{\link{separate_audio_video}},
+#'   \code{\link{standardize_video}} and \code{\link{anonymize_video}} do, and
+#'   differs from \code{\link{extract_audio}} and \code{\link{convert_audio}},
+#'   whose \code{NULL} takes the first track only. Naming a track the input does
+#'   not have is an FFmpeg error, not an R one. Subtitle and data streams are not
+#'   carried either way. (default = \code{NULL})
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
@@ -2514,6 +2524,16 @@ apply_audio_codec <- function(object, audio_codec, call = rlang::caller_env()) {
 #'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
 #'   fallback leaves the codec unset rather than picking one, so the codec never
 #'   changes silently.
+#' @param audio_stream The 0-based index of the audio track to carry into the
+#'   output, counted \emph{among the input's audio streams} -- \code{0} is the
+#'   first audio track, \code{1} the second, whatever their positions among the
+#'   file's streams. \code{NULL} (default) carries \strong{every} audio track,
+#'   which is also what \code{\link{separate_audio_video}},
+#'   \code{\link{standardize_video}} and \code{\link{anonymize_video}} do, and
+#'   differs from \code{\link{extract_audio}} and \code{\link{convert_audio}},
+#'   whose \code{NULL} takes the first track only. Naming a track the input does
+#'   not have is an FFmpeg error, not an R one. Subtitle and data streams are not
+#'   carried either way. (default = \code{NULL})
 #' @param run A logical: run each segment's command (\code{TRUE}, default) or
 #'   only compile them (\code{FALSE}).
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: cut segments in
@@ -2713,8 +2733,10 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #'   restarting at 1 for each input file (the same rule as
 #'   \code{\link{segment_video}}). A \code{video_codec} or \code{audio_codec}
 #'   column overrides that argument per row, with \code{NA} meaning "leave the
-#'   codec unset" (the column's way of writing the argument's \code{NULL}). Any
-#'   other columns are ignored.
+#'   codec unset" (the column's way of writing the argument's \code{NULL}). An
+#'   \code{audio_stream} column likewise overrides that argument per row, with
+#'   \code{NA} meaning "keep every audio track" (the column's way of writing
+#'   that argument's \code{NULL}). Any other columns are ignored.
 #' @param reencode A logical passed to \code{\link{ffm_seek}}: cut each segment
 #'   frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
 #'   lossless copy that snaps to keyframes (\code{FALSE}). See \code{ffm_seek}
@@ -2739,6 +2761,17 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #'   with a stream-copy row on its own — even one naming no codec — so a jobs
 #'   table mixing \code{reencode = FALSE} rows with GPU encoding must be split
 #'   into separate calls.
+#' @param audio_stream The 0-based index of the audio track to carry into each
+#'   output, counted \emph{among that row's input's audio streams} -- \code{0}
+#'   is the first audio track, \code{1} the second, whatever their positions
+#'   among the file's streams. Applied to every row lacking an
+#'   \code{audio_stream} column. \code{NULL} (default) carries \strong{every}
+#'   audio track, which is also what \code{\link{separate_audio_video}},
+#'   \code{\link{standardize_video}} and \code{\link{anonymize_video}} do, and
+#'   differs from \code{\link{extract_audio}} and \code{\link{convert_audio}},
+#'   whose \code{NULL} takes the first track only. Naming a track the input does
+#'   not have is an FFmpeg error, not an R one. Subtitle and data streams are not
+#'   carried either way. (default = \code{NULL})
 #' @param run A logical: run each segment's command through FFmpeg
 #'   (\code{TRUE}, default) or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: cut segments in
@@ -2774,6 +2807,7 @@ segment_pipeline <- function(input, output, start, end, reencode,
 segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
                            audio_codec = "copy",
                            hardware = c("none", "nvenc"), fallback = FALSE,
+                           audio_stream = NULL,
                            run = TRUE, parallel = FALSE, ...) {
 
   rlang::check_string(video_codec, allow_null = TRUE)
@@ -2810,6 +2844,22 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
   }
   check_batch_codec_col(jobs)
   check_batch_codec_col(jobs, "audio_codec")
+  # The stream-index column's own type guard, with a hint saying what NA means
+  # HERE: on the pass-through family an unselected row keeps EVERY track, where
+  # on the extraction verbs the same cell keeps the first one, and on the
+  # composites it drops audio entirely (M40's stale-hint lesson, which is why
+  # the wording is a parameter).
+  check_batch_audio_col(jobs, "audio_stream",
+                        na_means = "keep every audio track")
+  # And the argument's front-door check. Load-bearing here, unlike on the scalar
+  # sibling: the column path resolves NA to the NULL sentinel, so without it
+  # `audio_stream = NA` would quietly keep every track instead of erroring (the
+  # M37/M41 shape). Per-row VALUES are checked again inside audio_stream_map(),
+  # which every row's pipeline reaches (M32). No check_batch_stream_values()
+  # here -- that is only needed where a verb RESHAPES its jobs table before the
+  # fan-out, and this one is 1 row in, 1 row out, so pmap's index already IS the
+  # caller's row (M45 review F4).
+  rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
   rlang::check_bool(reencode)
 
   # Auto-name outputs when the column is absent: derive per-input segment names
@@ -2834,7 +2884,8 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
         video_codec = batch_codec_cell(pick("video_codec", video_codec)),
         audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         hardware = hardware,
-        fallback = fallback
+        fallback = fallback,
+        audio_stream = batch_stream_cell(pick("audio_stream", audio_stream))
       )
     },
     run = run,
@@ -4385,7 +4436,9 @@ derive_web_names <- function(input) {
 #'   omitting the column fall back to the argument. A \code{video_codec} column
 #'   overrides that argument per row, with \code{NA} meaning "leave the codec
 #'   unset" (the column's way of writing the argument's \code{NULL}); an
-#'   \code{audio_codec} column works the same way. Any two
+#'   \code{audio_codec} column works the same way. An \code{audio_stream} column
+#'   overrides that argument per row, with \code{NA} meaning "keep every audio
+#'   track" (the column's way of writing that argument's \code{NULL}). Any two
 #'   rows that resolve to the same output path are rejected. Any other columns
 #'   are ignored.
 #' @param width,height The output crop size in pixels, applied to every row
@@ -4403,6 +4456,17 @@ derive_web_names <- function(input) {
 #' @param hardware,fallback The encoder backend and its fallback behavior,
 #'   applied to the whole batch (a property of the machine, not of a row, so
 #'   neither is read as a \code{jobs} column). See [crop_video()].
+#' @param audio_stream The 0-based index of the audio track to carry into each
+#'   output, counted \emph{among that row's input's audio streams} -- \code{0}
+#'   is the first audio track, \code{1} the second, whatever their positions
+#'   among the file's streams. Applied to every row lacking an
+#'   \code{audio_stream} column. \code{NULL} (default) carries \strong{every}
+#'   audio track, which is also what \code{\link{separate_audio_video}},
+#'   \code{\link{standardize_video}} and \code{\link{anonymize_video}} do, and
+#'   differs from \code{\link{extract_audio}} and \code{\link{convert_audio}},
+#'   whose \code{NULL} takes the first track only. Naming a track the input does
+#'   not have is an FFmpeg error, not an R one. Subtitle and data streams are not
+#'   carried either way. (default = \code{NULL})
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -4428,6 +4492,7 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
                              x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
                              video_codec = NULL, audio_codec = "copy",
                              hardware = c("none", "nvenc"), fallback = FALSE,
+                             audio_stream = NULL,
                              run = TRUE, parallel = FALSE, ...) {
 
   rlang::check_string(video_codec, allow_null = TRUE)
@@ -4459,6 +4524,11 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
   }
   check_batch_codec_col(jobs)
   check_batch_codec_col(jobs, "audio_codec")
+  # See segment_video_batch() for why the hint says "every" here and why
+  # check_batch_stream_values() is not needed on a verb that does not reshape.
+  check_batch_audio_col(jobs, "audio_stream",
+                        na_means = "keep every audio track")
+  rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
 
   if (!"output" %in% names(jobs)) {
     jobs$output <- derive_cropped_names(jobs$input)
@@ -4479,7 +4549,8 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
         video_codec = batch_codec_cell(pick("video_codec", video_codec)),
         audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         hardware = hardware,
-        fallback = fallback
+        fallback = fallback,
+        audio_stream = batch_stream_cell(pick("audio_stream", audio_stream))
       )
     },
     run = run,

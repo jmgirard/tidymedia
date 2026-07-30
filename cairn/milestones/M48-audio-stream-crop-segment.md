@@ -137,12 +137,12 @@ replaces `ffm_copy()`'s `-map 0` rather than appending beside it, which gives
       `ffm_map(..., replace = TRUE)` narrowing must stay AFTER the
       `if (!reencode) ffm_copy(p)` line — hoisting it above, the shape
       `standardize_pipeline()` uses, aborts every `reencode = FALSE` call.
-- [ ] T5 `crop_video_batch()` (`R/ffmpeg.R:4396`) and `segment_video_batch()`
+- [x] T5 `crop_video_batch()` (`R/ffmpeg.R:4396`) and `segment_video_batch()`
       (`:2743`): argument, `check_batch_audio_col(jobs, "audio_stream",
       na_means = …)`, `batch_stream_cell()` in each closure.
 - [x] T6 Rewrite the per-verb map-count invariant in `tests/testthat/test-ffm.R`
       to the new rule and extend it to every verb M47 and M48 touched.
-- [ ] T7 Roxygen on all four plus the `@param jobs` enumerations (M39);
+- [x] T7 Roxygen on all four plus the `@param jobs` enumerations (M39);
       `devtools::document()`; execution tests on the multi-track and
       subtitle fixtures; NEWS.
 
@@ -162,6 +162,8 @@ replaces `ffm_copy()`'s `-map 0` rather than appending beside it, which gives
 - 2026-07-30: T2 — `ffm_copy()` assigns its map via `ffm_map(..., replace = TRUE)` and `check_copy_map_conflict()` aborts (`tidymedia_copy_map_conflict`) on a different stated mapping; `ffm_map()` untouched; new `make_multitrack_subtitle_video()` 5-stream fixture; seven tests below `test-ffm.R:417` covering the doubled copy, the concat composition, the guard through both entry points, the literal `identical("0")` carve-out, the `streams = FALSE` escape, the `strip_metadata()` template and the 5-in/5-out execution case.
 - 2026-07-30: T3, T4 — `audio_stream` on `crop_video()`/`crop_video_pipeline()` and `segment_video()`/`segment_pipeline()`, both branches, via `pass_through_maps()`. T3 omits the scalar front-door guard, following M47 review F8 rather than the task's own wording: it would be the only guard reporting before `ffm_crop()`'s dimension checks (M41's precedence trap), and `pass_through_maps()` carries the identical check with `call` resolving to the verb. `segment_pipeline()`'s narrowing sits below its `ffm_copy()` call, per the ingest audit.
 - 2026-07-30: T6 — the map-count invariant now states the three-number rule (2 pass-through / 1 single-stream-or-all-streams / 0 unstated) and covers 13 entry points, adding `concatenate_videos`, `format_for_web` and `normalize_audio`; the two zeros pin the standing candidate row's gap so closing it is visible here. Nine existing baselines updated across five test files where `-map 0` or an adjacent seek moved. `devtools::test()` clean.
+- 2026-07-30: T5 — `audio_stream` on `crop_video_batch()` and `segment_video_batch()`, each with `check_batch_audio_col(na_means = "keep every audio track")`, the scalar front-door `check_number_whole()` (load-bearing on the batch pair, unlike the scalars), and `batch_stream_cell()` in the closure. No `check_batch_stream_values()`: neither verb reshapes its jobs table, so pmap's index already is the caller's row (M45 review F4). Tests cover the argument, the column override with `NA`, one-row byte-identity against the scalar, `segment_video()`'s own fan-out, AC6's typed-column abort, and AC7's counting mock.
+- 2026-07-30: T7 — `@param audio_stream` on all four entry points naming the families that read `NULL` the other way, both `@param jobs` column enumerations extended, `devtools::document()` run; AC3 execution tests on the new 5-stream fixture (named track is `fra`, unset keeps all three and drops the subtitle, `.mp4` now succeeds where master exited 8, both segment branches, and `audio_stream = 9` still errors); NEWS entries for the argument, the subtitle-carriage change, and `ffm_copy()`'s assignment plus its new abort. Full `devtools::test()` clean.
 
 ## Decisions
 

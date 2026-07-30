@@ -34,6 +34,11 @@ them instead, which is how you narrow the all-streams map that
 \code{\link{ffm_copy}} sets — appending to that one would duplicate the
 stream in the output rather than select it.
 
+This is the only builder verb that accumulates; every other \code{ffm_*}
+setter, \code{\link{ffm_copy}} included, assigns. The exception is earned by
+this function's arguments being \emph{partial} selections that genuinely
+compose (keep the video, then name one audio track).
+
 When the pipeline uses a multi-input verb (e.g.
 \code{\link{ffm_hstack}}), the explicit mapping is added \emph{alongside}
 the automatic \code{-map "[vout]"} of the filtered stream — for example,

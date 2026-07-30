@@ -14,6 +14,7 @@ crop_video_batch(
   audio_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
+  audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -30,7 +31,9 @@ column to override the corresponding argument per row; rows (or dimensions)
 omitting the column fall back to the argument. A \code{video_codec} column
 overrides that argument per row, with \code{NA} meaning "leave the codec
 unset" (the column's way of writing the argument's \code{NULL}); an
-\code{audio_codec} column works the same way. Any two
+\code{audio_codec} column works the same way. An \code{audio_stream} column
+overrides that argument per row, with \code{NA} meaning "keep every audio
+track" (the column's way of writing that argument's \code{NULL}). Any two
 rows that resolve to the same output path are rejected. Any other columns
 are ignored.}
 
@@ -53,6 +56,18 @@ leave the codec unset so each output keeps its container's default encoder.}
 \item{hardware, fallback}{The encoder backend and its fallback behavior,
 applied to the whole batch (a property of the machine, not of a row, so
 neither is read as a \code{jobs} column). See \code{\link[=crop_video]{crop_video()}}.}
+
+\item{audio_stream}{The 0-based index of the audio track to carry into each
+output, counted \emph{among that row's input's audio streams} -- \code{0}
+is the first audio track, \code{1} the second, whatever their positions
+among the file's streams. Applied to every row lacking an
+\code{audio_stream} column. \code{NULL} (default) carries \strong{every}
+audio track, which is also what \code{\link{separate_audio_video}},
+\code{\link{standardize_video}} and \code{\link{anonymize_video}} do, and
+differs from \code{\link{extract_audio}} and \code{\link{convert_audio}},
+whose \code{NULL} takes the first track only. Naming a track the input does
+not have is an FFmpeg error, not an R one. Subtitle and data streams are not
+carried either way. (default = \code{NULL})}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}

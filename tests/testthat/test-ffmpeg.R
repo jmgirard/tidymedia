@@ -31,6 +31,24 @@ test_that("segment_video() rejects mismatched timestamp lengths", {
   expect_error(segment_video(f, c(0, 5), c(5)), "same length")
 })
 
+# ffmpeg() (Layer 0 escape hatch) ---------------------------------------------
+
+test_that("ffmpeg() passes its command through and returns FFmpeg's output", {
+  # The exported escape hatch had no test of its own until M46: every call in
+  # the suite was fixture generation, and once those moved to
+  # run_ffmpeg_fixture() nothing exercised it at all.
+  skip_if_no_ffmpeg()
+  out <- ffmpeg("-version")
+  expect_type(out, "character")
+  expect_match(out[[1]], "^ffmpeg version")
+})
+
+test_that("ffmpeg() rejects a command that is not a single string", {
+  expect_error(ffmpeg(c("-version", "-hide_banner")), "single string")
+  expect_error(ffmpeg(1), "single string")
+  expect_error(ffmpeg(NULL), "single string")
+})
+
 test_that("ffmpeg_codecs() returns a tidy tibble", {
   skip_if_no_ffmpeg()
   cc <- ffmpeg_codecs()

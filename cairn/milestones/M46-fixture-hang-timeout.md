@@ -83,7 +83,7 @@ row, `audio_stream`-carry included.
 - [x] T1 Add the timeout-bearing runner to `tests/testthat/helper-media.R`:
       resolve with `find_ffmpeg()`, run `system(..., intern = TRUE, input = "",
       timeout = )` (default 120 s, overridable), muffle its warning, and on a
-      `status` attribute of 124 `testthat::fail()` naming the binary and the
+      `status` attribute of 124 raise an error naming the binary and the
       limit only. Confirm no orphan `ffmpeg` survives the kill.
 - [x] T2 Route the twelve fixture call sites in AC3 through it; leave every
       other `ffmpeg`-stemmed call (`find_ffmpeg`, `skip_if_no_ffmpeg`,
@@ -91,7 +91,7 @@ row, `audio_stream`-carry included.
 - [x] T3 Move the subtitle fixture command into `make_subtitle_video()` in
       `helper-media.R`, drop `-shortest`, record why at the generator, and
       repoint `test-audio-stream.R:298-327` at it.
-- [ ] T4 Add the direct `ffmpeg()` tests to `test-ffmpeg.R` (AC4).
+- [x] T4 Add the direct `ffmpeg()` tests to `test-ffmpeg.R` (AC4).
 - [ ] T5 Add the timeout-mechanism test in a new
       `tests/testthat/test-fixture-helpers.R` (AC5).
 - [ ] T6 Add the 10-run regression test beside the subtitle test, then probe it
@@ -114,6 +114,8 @@ row, `audio_stream`-carry included.
 - 2026-07-30: [O] criteria audit ran on the step-2 criteria and returned six findings — a false premise under AC3 (no test exercises `ffmpeg()` as its subject, so routing all twelve sites would strip the exported function of all coverage; AC4 added), the AC1/AC5 fixture-location split, strict-vs-diagnostic and ordered-vs-set ambiguities in AC2, an under-specified timeout message, a missing binary-absent skip, and a decorative assertion in the repeat test (the guard is completion-within-limit, not subtitle presence). Five fixed in the wording; the sixth went to the gate as Q2.
 
 - 2026-07-30: T1 done — `run_ffmpeg_fixture(command, timeout = 120)` in `helper-media.R`; it errors rather than skipping (a skip would go green on CI, which is the failure this milestone closes) and names only the binary and the limit. Probed with a 3-second limit against an unbounded encode: returned at 3.0 s with "ffmpeg fixture generation timed out after 3 seconds.", and `pgrep ffmpeg` found no survivor, so R's kill reaps the child.
+- 2026-07-30: T4 done — two tests in `test-ffmpeg.R`: `ffmpeg("-version")` returns a character vector whose first line matches `^ffmpeg version`, and the `check_string()` branch fires on a length-2 vector, a number, and `NULL`. That branch had never been fired. Full suite FAIL 0, PASS 2829.
+- 2026-07-30: minor amendment — T1's text said `testthat::fail()`; the helper raises an error instead. `fail()` records a failure and returns, so the generator would run on into its `skip_if_not(file.exists(path))` and report the test as failed AND skipped; an error stops at the hang and is what `expect_error()` can pin in T5. Behavior is the one the criteria name (loudly red, never a skip).
 - 2026-07-30: minor amendment — T3 moved ahead of T2. Verification between tasks runs the full suite, and until `-shortest` is gone each run carries the measured ~40% hang; fixing the fixture first makes every later run deterministic. Task text unchanged.
 - 2026-07-30: T3 done — `make_subtitle_video()` in `helper-media.R` holds the command, `-shortest` is gone, and the measured hang rates are recorded at the generator. Added `stream_types()` beside it since two tests now probe codec types (the inline `types()` closure in `test-audio-stream.R` is retired). T6's 10-run test is committed in the same change so its mutation probe runs against a committed baseline (M44). `test-audio-stream.R` 24 tests pass, the new one 10/10.
 - 2026-07-30: T2 done — the eleven remaining fixture sites (T3 absorbed the twelfth into `make_subtitle_video()`) now call `run_ffmpeg_fixture()`: `helper-media.R` ×8, `test-audio-stream.R` ×1, `test-ffmpeg.R` ×2. No direct `ffmpeg()` call is left under `tests/testthat/` — which is exactly the gap AC4 exists to close. Full suite FAIL 0, PASS 2824, 60 s.

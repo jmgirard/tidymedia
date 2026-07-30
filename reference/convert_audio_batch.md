@@ -15,6 +15,7 @@ pipeline (and per-value `audio_codec` validation) as the scalar verb.
 convert_audio_batch(
   jobs,
   audio_codec = NULL,
+  audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -31,9 +32,11 @@ convert_audio_batch(
   because its extension picks the output format. An optional
   `audio_codec` column overrides the `audio_codec` argument per row,
   where `NA` spells "use the highest-VBR-quality default"; rows omitting
-  it fall back to the argument. Any other columns are ignored — except a
-  `format` column, retired with the argument of the same name, which is
-  an error rather than a silent no-op.
+  it fall back to the argument. An optional `audio_stream` column
+  likewise overrides the `audio_stream` argument per row, where `NA`
+  keeps that row on the first audio track. Any other columns are ignored
+  — except a `format` column, retired with the argument of the same
+  name, which is an error rather than a silent no-op.
 
 - audio_codec:
 
@@ -41,6 +44,14 @@ convert_audio_batch(
   `audio_codec` column. `NULL` (default) infers the codec from each
   `output` extension at highest VBR quality; name a codec (e.g. `"aac"`,
   `"flac"`) to pin `-c:a`.
+
+- audio_stream:
+
+  The 0-based index of the audio track to take, applied to every row
+  unless `jobs` carries an `audio_stream` column, in which case `NA` in
+  a cell keeps that row on the first audio track. The index counts
+  *among each input's audio streams*. `NULL` (default) takes the first
+  audio track.
 
 - run:
 

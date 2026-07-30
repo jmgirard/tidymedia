@@ -95,7 +95,7 @@ wrote. To see the command <em>without</em> running anything, pass
 and returns it as a string you can inspect, log, or save:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/extract_audio.html">extract_audio</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"audio.m4a"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -vn \"audio.m4a\""</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -vn -map 0:a:0 \"audio.m4a\""</span></span></code></pre></div>
 <p>That reproducible command is the thread running through the whole
 package: a pipeline is a value you can examine before you commit to it.
 Cropping works the same way — describe the job, inspect the command,

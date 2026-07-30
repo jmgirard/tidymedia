@@ -58,7 +58,13 @@ codec explicitly, regardless of the extension.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">convert_audio</span><span class="op">(</span><span class="va">infile</span>, <span class="va">outfile</span>, audio_codec <span class="op">=</span> <span class="cn">NULL</span>, run <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">convert_audio</span><span class="op">(</span></span>
+<span>  <span class="va">infile</span>,</span>
+<span>  <span class="va">outfile</span>,</span>
+<span>  audio_codec <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  audio_stream <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  run <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -82,6 +88,14 @@ other transform verbs, <code>NULL</code> here is <em>not</em> the "leave the cod
 unset" sentinel — it selects <code>-q:a 0</code>.</p></dd>
 
 
+<dt id="arg-audio-stream">audio_stream<a class="anchor" aria-label="anchor" href="#arg-audio-stream"></a></dt>
+<dd><p>The 0-based index of the audio track to take, counted
+<em>among the input's audio streams</em> — <code>0</code> is the first audio track,
+<code>1</code> the second, whatever their positions among the file's streams.
+<code>NULL</code> (default) takes the first audio track. Naming a track the input
+does not have is an FFmpeg error, not an R one.</p></dd>
+
+
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>
 <dd><p>A logical: run the command through FFmpeg (<code>TRUE</code>, default)
 or return the compiled command without running it (<code>FALSE</code>).</p></dd>
@@ -93,8 +107,8 @@ or return the compiled command without running it (<code>FALSE</code>).</p></dd>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>When <code>infile</code> carries more than one audio track, the <strong>first</strong> one
-is taken. Choosing a different track is not yet supported.</p>
+    <p>When <code>infile</code> carries more than one audio track, <code>audio_stream</code>
+names which one to take; with no selector the <strong>first</strong> one is taken.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -140,6 +154,9 @@ is taken. Choosing a different track is not yet supported.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map 0:a:0 \"audio.mp3\""</span>
 <span class="r-in"><span><span class="fu">convert_audio</span><span class="op">(</span><span class="va">video</span>, <span class="st">"audio.m4a"</span>, audio_codec <span class="op">=</span> <span class="st">"aac"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a aac -map 0:a:0 \"audio.m4a\""</span>
+<span class="r-in"><span><span class="co"># Convert the second audio track instead of the first</span></span></span>
+<span class="r-in"><span><span class="fu">convert_audio</span><span class="op">(</span><span class="va">video</span>, <span class="st">"audio.mp3"</span>, audio_stream <span class="op">=</span> <span class="fl">1</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map 0:a:1 \"audio.mp3\""</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

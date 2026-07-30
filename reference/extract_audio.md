@@ -1,11 +1,19 @@
 # Extract the audio stream from a media file
 
-Extract the audio stream from a media file
+Pulls one audio track out of `infile`, dropping the video. When the
+input carries more than one audio track, `audio_stream` names which one
+to take; with no selector the **first** audio track is taken.
 
 ## Usage
 
 ``` r
-extract_audio(infile, outfile, audio_codec = "copy", run = TRUE)
+extract_audio(
+  infile,
+  outfile,
+  audio_codec = "copy",
+  audio_stream = NULL,
+  run = TRUE
+)
 ```
 
 ## Arguments
@@ -25,6 +33,14 @@ extract_audio(infile, outfile, audio_codec = "copy", run = TRUE)
   `-codec:a` and let the output container's default encoder decide —
   useful when the source codec cannot be copied into the extension you
   asked for.
+
+- audio_stream:
+
+  The 0-based index of the audio track to take, counted *among the
+  input's audio streams* — `0` is the first audio track, `1` the second,
+  whatever their positions among the file's streams. `NULL` (default)
+  takes the first audio track. Naming a track the input does not have is
+  an FFmpeg error, not an R one.
 
 - run:
 
@@ -82,5 +98,8 @@ Other task verb functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 extract_audio(video, "audio.aac", run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -vn \"audio.aac\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -vn -map 0:a:0 \"audio.aac\""
+# Take the second audio track instead of the first
+extract_audio(video, "audio.aac", audio_stream = 1, run = FALSE)
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -vn -map 0:a:1 \"audio.aac\""
 ```

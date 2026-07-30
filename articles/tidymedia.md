@@ -41,7 +41,7 @@ can inspect, log, or save:
 ``` r
 
 extract_audio(video, "audio.m4a", run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -vn \"audio.m4a\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -vn -map 0:a:0 \"audio.m4a\""
 ```
 
 That reproducible command is the thread running through the whole

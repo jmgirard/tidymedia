@@ -151,7 +151,7 @@
 <p>Common tasks have their own verbs (Layer 2). Pass <code>run = FALSE</code> to see the command without executing it:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/extract_audio.html">extract_audio</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"audio.aac"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "-y -i \"/private/var/folders/kr/tx86v16n5bx_djz_z2cpvfkc0000gq/T/RtmpdjtTVC/temp_libpathdea11ba1723/tidymedia/extdata/sample.mp4\" -codec:a copy -vn \"audio.aac\""</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "-y -i \"/private/var/folders/kr/tx86v16n5bx_djz_z2cpvfkc0000gq/T/RtmpdjtTVC/temp_libpathdea11ba1723/tidymedia/extdata/sample.mp4\" -codec:a copy -vn -map 0:a:0 \"audio.aac\""</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="read-metadata-as-tibbles">Read metadata as tibbles<a class="anchor" aria-label="anchor" href="#read-metadata-as-tibbles"></a>

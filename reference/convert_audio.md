@@ -9,7 +9,13 @@ explicitly, regardless of the extension.
 ## Usage
 
 ``` r
-convert_audio(infile, outfile, audio_codec = NULL, run = TRUE)
+convert_audio(
+  infile,
+  outfile,
+  audio_codec = NULL,
+  audio_stream = NULL,
+  run = TRUE
+)
 ```
 
 ## Arguments
@@ -30,6 +36,14 @@ convert_audio(infile, outfile, audio_codec = NULL, run = TRUE)
   highest VBR quality. Unlike the other transform verbs, `NULL` here is
   *not* the "leave the codec unset" sentinel — it selects `-q:a 0`.
 
+- audio_stream:
+
+  The 0-based index of the audio track to take, counted *among the
+  input's audio streams* — `0` is the first audio track, `1` the second,
+  whatever their positions among the file's streams. `NULL` (default)
+  takes the first audio track. Naming a track the input does not have is
+  an FFmpeg error, not an R one.
+
 - run:
 
   A logical: run the command through FFmpeg (`TRUE`, default) or return
@@ -41,8 +55,8 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 
 ## Details
 
-When `infile` carries more than one audio track, the **first** one is
-taken. Choosing a different track is not yet supported.
+When `infile` carries more than one audio track, `audio_stream` names
+which one to take; with no selector the **first** one is taken.
 
 ## See also
 
@@ -94,4 +108,7 @@ convert_audio(video, "audio.mp3", run = FALSE)
 #> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map 0:a:0 \"audio.mp3\""
 convert_audio(video, "audio.m4a", audio_codec = "aac", run = FALSE)
 #> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a aac -map 0:a:0 \"audio.m4a\""
+# Convert the second audio track instead of the first
+convert_audio(video, "audio.mp3", audio_stream = 1, run = FALSE)
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map 0:a:1 \"audio.mp3\""
 ```

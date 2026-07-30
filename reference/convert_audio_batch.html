@@ -67,6 +67,7 @@ the scalar verb.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">convert_audio_batch</span><span class="op">(</span></span>
 <span>  <span class="va">jobs</span>,</span>
 <span>  audio_codec <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  audio_stream <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span></span>
@@ -84,7 +85,10 @@ path). An <code>output</code> column is <strong>required</strong> — an audio d
 cannot be auto-named because its extension picks the output format. An
 optional <code>audio_codec</code> column overrides the <code>audio_codec</code>
 argument per row, where <code>NA</code> spells "use the highest-VBR-quality
-default"; rows omitting it fall back to the argument. Any other columns are
+default"; rows omitting it fall back to the argument. An optional
+<code>audio_stream</code> column likewise overrides the <code>audio_stream</code>
+argument per row, where <code>NA</code> keeps that row on the first audio track.
+Any other columns are
 ignored — except a <code>format</code> column, retired with the argument of the
 same name, which is an error rather than a silent no-op.</p></dd>
 
@@ -94,6 +98,14 @@ same name, which is an error rather than a silent no-op.</p></dd>
 <code>jobs</code> carries an <code>audio_codec</code> column. <code>NULL</code> (default)
 infers the codec from each <code>output</code> extension at highest VBR quality;
 name a codec (e.g. <code>"aac"</code>, <code>"flac"</code>) to pin <code>-c:a</code>.</p></dd>
+
+
+<dt id="arg-audio-stream">audio_stream<a class="anchor" aria-label="anchor" href="#arg-audio-stream"></a></dt>
+<dd><p>The 0-based index of the audio track to take, applied to
+every row unless <code>jobs</code> carries an <code>audio_stream</code> column, in
+which case <code>NA</code> in a cell keeps that row on the first audio track.
+The index counts <em>among each input's audio streams</em>. <code>NULL</code>
+(default) takes the first audio track.</p></dd>
 
 
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>

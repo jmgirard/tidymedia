@@ -15,6 +15,7 @@ map/drop-video pipeline as the scalar verb.
 extract_audio_batch(
   jobs,
   audio_codec = "copy",
+  audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -33,7 +34,9 @@ extract_audio_batch(
   must match the source codec). An optional `audio_codec` column
   overrides the `audio_codec` argument per row; rows omitting it fall
   back to the argument, and `NA` in a cell leaves that row's codec unset
-  (the column form of `audio_codec = NULL`). Any other columns are
+  (the column form of `audio_codec = NULL`). An optional `audio_stream`
+  column likewise overrides the `audio_stream` argument per row, where
+  `NA` keeps that row on the first audio track. Any other columns are
   ignored.
 
 - audio_codec:
@@ -43,6 +46,14 @@ extract_audio_batch(
   codec unset. `"copy"` (default) stream-copies the audio losslessly;
   name an encoder (e.g. `"aac"`) to transcode; or pass `NULL` to emit no
   `-codec:a` and let the output container's default encoder decide.
+
+- audio_stream:
+
+  The 0-based index of the audio track to take, applied to every row
+  unless `jobs` carries an `audio_stream` column, in which case `NA` in
+  a cell keeps that row on the first audio track. The index counts
+  *among each input's audio streams*. `NULL` (default) takes the first
+  audio track.
 
 - run:
 

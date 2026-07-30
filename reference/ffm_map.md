@@ -2,16 +2,15 @@
 
 Select which input streams are included in the output via FFmpeg's
 `-map` option. The default (`"0"`) maps every stream from the first
-input. When the pipeline uses a multi-input verb (e.g.
-[`ffm_hstack`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md)),
-the explicit mapping is added *alongside* the automatic `-map "[vout]"`
-of the filtered stream — for example, `ffm_map(object, "0:a")` keeps the
-first input's audio next to the stacked video.
+input. `mapping` may be a character vector, which emits one `-map` per
+element in the order given — for example
+`ffm_map(object, c("0:v", "0:a:1"))` keeps the video and the input's
+*second* audio track.
 
 ## Usage
 
 ``` r
-ffm_map(object, mapping = "0")
+ffm_map(object, mapping = "0", replace = FALSE)
 ```
 
 ## Arguments
@@ -23,11 +22,31 @@ ffm_map(object, mapping = "0")
 
 - mapping:
 
-  A string determining the stream mapping.
+  A character vector of one or more stream specifiers, one `-map` each.
+
+- replace:
+
+  A logical: discard any mapping already set on `object` (`TRUE`) or
+  append to it (`FALSE`, default).
 
 ## Value
 
 `object` with the added stream mapping instruction.
+
+## Details
+
+Chaining **appends**: a second `ffm_map()` call adds to the maps already
+set rather than replacing them. Pass `replace = TRUE` to discard them
+instead, which is how you narrow the all-streams map that
+[`ffm_copy`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md)
+sets — appending to that one would duplicate the stream in the output
+rather than select it.
+
+When the pipeline uses a multi-input verb (e.g.
+[`ffm_hstack`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md)),
+the explicit mapping is added *alongside* the automatic `-map "[vout]"`
+of the filtered stream — for example, `ffm_map(object, "0:a")` keeps the
+first input's audio next to the stacked video.
 
 ## See also
 
@@ -68,4 +87,10 @@ ffm(video, "output.mp4") |>
   ffm_map(mapping = "0") |>
   ffm_compile()
 #> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -map 0 \"output.mp4\""
+
+# Keep the video and the second audio track only
+ffm(video, "output.mkv") |>
+  ffm_map(mapping = c("0:v", "0:a:1")) |>
+  ffm_compile()
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -map 0:v -map 0:a:1 \"output.mkv\""
 ```

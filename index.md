@@ -131,7 +131,7 @@ the command without executing it:
 ``` r
 
 extract_audio(video, "audio.aac", run = FALSE)
-#> [1] "-y -i \"/private/var/folders/kr/tx86v16n5bx_djz_z2cpvfkc0000gq/T/RtmpdjtTVC/temp_libpathdea11ba1723/tidymedia/extdata/sample.mp4\" -codec:a copy -vn \"audio.aac\""
+#> [1] "-y -i \"/private/var/folders/kr/tx86v16n5bx_djz_z2cpvfkc0000gq/T/RtmpdjtTVC/temp_libpathdea11ba1723/tidymedia/extdata/sample.mp4\" -codec:a copy -vn -map 0:a:0 \"audio.aac\""
 ```
 
 ### Read metadata as tibbles

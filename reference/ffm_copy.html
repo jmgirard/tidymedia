@@ -76,7 +76,10 @@ remux or cut on keyframes.</p>
 
 <dt id="arg-streams">streams<a class="anchor" aria-label="anchor" href="#arg-streams"></a></dt>
 <dd><p>A logical indicating whether to map all streams from the
-input (via <code>ffm_map(mapping = "0")</code>). (default = <code>TRUE</code>)</p></dd>
+input (via <code>ffm_map(mapping = "0")</code>). Because <code><a href="ffm_map.html">ffm_map</a></code>
+appends, this <em>adds</em> <code>-map 0</code> to any mapping already set; to
+narrow the result afterwards, call <code>ffm_map(replace = TRUE)</code>.
+(default = <code>TRUE</code>)</p></dd>
 
 </dl></div>
     <div class="section level2">

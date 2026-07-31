@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-07-30 (M47 merged and archived; M42 pruned to hold the 5-row retention cap. Candidates +4: `probe_all()` scalability, plus three from M47 — the nvenc `run = FALSE` leak, `format_for_web`/`normalize_audio` still picking by disposition, and unquoted map specifiers. LESSONS 49: +3 M47, M43's duplicate-guard line retired by F8, M32/M37 and M38/M40 consolidated.)_
+_Last hygiene check: 2026-07-30 (M48 merged and archived; M43 pruned to hold the 5-row retention cap. RB03/RR03 archived — the repo's first Fable escalation. LESSONS 34: +1 M48 branch-shape lesson, M45's reshaped-index line absorbed into the M47 front-door lesson, whose converse M48 F1 proved false for fan-out verbs, and M35's CRLF line marked as recurred.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M43 | Pick which audio track the extraction verbs take (`audio_stream`) | done | M41, M42 | normal | milestones/archive/M43-audio-stream-selection.md |
 | M44 | Say something when audio tracks are dropped | done | M43 | normal | milestones/archive/M44-implicit-track-drop-warning.md |
 | M45 | Give a multi-track `separate_audio_video()` caller a way out | done | M43 | normal | milestones/archive/M45-separate-av-multitrack.md |
 | M46 | Stop the subtitle fixture hanging, and bound every fixture command | done | — | normal | milestones/archive/M46-fixture-hang-timeout.md |
 | M47 | Stop `standardize_video()` and `anonymize_video()` picking an audio track by disposition | done | — | normal | milestones/archive/M47-audio-stream-standardize-anonymize.md |
-| M48 | Carry the track selector to `crop_video()` and `segment_video()`, and make `ffm_copy()` idempotent again | review | M47 | normal | milestones/M48-audio-stream-crop-segment.md |
+| M48 | Carry the track selector to `crop_video()` and `segment_video()`, and make `ffm_copy()` idempotent again | done | M47 | normal | milestones/archive/M48-audio-stream-crop-segment.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

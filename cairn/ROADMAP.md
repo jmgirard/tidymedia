@@ -13,7 +13,7 @@ _Last hygiene check: 2026-07-31 (M49-M53 planned across two runs. M52/M53 split 
 | M46 | Stop the subtitle fixture hanging, and bound every fixture command | done | — | normal | milestones/archive/M46-fixture-hang-timeout.md |
 | M47 | Stop `standardize_video()` and `anonymize_video()` picking an audio track by disposition | done | — | normal | milestones/archive/M47-audio-stream-standardize-anonymize.md |
 | M48 | Carry the track selector to `crop_video()` and `segment_video()`, and make `ffm_copy()` idempotent again | done | M47 | normal | milestones/archive/M48-audio-stream-crop-segment.md |
-| M49 | Finish D026 on `format_for_web()` and `normalize_audio()` | planned | — | normal | milestones/M49-audio-stream-format-web-normalize.md |
+| M49 | Finish D026 on `format_for_web()` and `normalize_audio()` | in-progress | — | normal | milestones/M49-audio-stream-format-web-normalize.md |
 | M50 | Quote map specifiers in the compiled command string | planned | M49 | normal | milestones/M50-quote-map-specifiers.md |
 | M51 | Make the package's two 0-based audio indices legible | planned | M49, M50 | normal | milestones/M51-audio-index-docs.md |
 | M52 | Collapse `probe_one()`'s per-stream FFprobe loop into one call | planned | — | normal | milestones/M52-probe-one-single-call.md |

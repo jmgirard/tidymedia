@@ -1,11 +1,11 @@
 # M49: Finish D026 on `format_for_web()` and `normalize_audio()`
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** —
+- **Branch/PR:** `m49-audio-stream-format-web-normalize`
 
 ## Goal
 
@@ -86,7 +86,7 @@ candidate row. Quoting the emitted specifiers → M50.
 
 ## Tasks
 
-- [ ] T1 Commit the pre-change evidence first, before any source edit, so AC4
+- [x] T1 Commit the pre-change evidence first, before any source edit, so AC4
       and AC6 have a fixed reference the branch cannot destroy (M44's lesson):
       the disposition-shifted 3-track fixture, what each verb carries from it
       today, and the analysis pass's JSON-block count under `-map 0:a?`.
@@ -129,6 +129,10 @@ candidate row. Quoting the emitted specifiers → M50.
 - 2026-07-31: plan gate chose a first-track `NULL` for `normalize_audio()` over D026's every-track `NULL` because an every-track map makes the two-pass analysis print one JSON block per track while the parser reads only the first, silently correcting every track with track 0's measurements; falsified by a per-stream filter-options seam that lets one measured set attach to each mapped track, which would make uniformity affordable again.
 - 2026-07-31: plan gate chose one milestone over splitting `format_for_web` and `normalize_audio` apart because the D-entry records a single split decision across both verbs and half of it is incoherent alone; falsified by the task count crossing the ~10 tripwire during implementation.
 - 2026-07-31: plan measurements (ffmpeg 8.1.2, macOS; a 3-audio-track `.mkv` with DEFAULT disposition moved to track 2 and languages eng/deu/fra): `format_for_web()` and `normalize_audio()` each carry only `fra` today; `-map 0:v? -map 0:a?` carries all three on both; `-map 0:v? -map 0:a:0?` carries `eng`; the analysis pass prints 3 JSON blocks under `0:a?` and 1 under `0:a:0?` or a named track; on a video-only input `0:a:0` exits 234 while `0:a:0?` and no-map both exit 0. T1 re-records these on the branch.
+- 2026-07-31: T1 baseline recorded on-branch before any source edit (ffmpeg 8.1.2, macOS; 3-audio-track `.mkv`, languages eng/spa/fra, DEFAULT flags `0,0,1` asserted before any result was read). Today `format_for_web()` and `normalize_audio()` each compile ZERO `-map` arguments and each output carries only `fra` — the DEFAULT track, not the first.
+- 2026-07-31: T1 baseline, analysis pass: today's `loudnorm_analysis_pipeline()` compiles no `-map` either, and FFmpeg's implicit selection sends stream `#0:3` (`fra`) to `loudnorm`, printing 1 JSON block — so analysis and correction currently agree by accident, both landing on whichever track carries DEFAULT. Under `-map 0:a?` the same pipeline prints **3** blocks (one per mapped track) while `classify_loudnorm_output()` reads `hit[[1]]` (`R/loudnorm_two_pass.R:48`) — AC6's measured reason for the first-track carve-out. Under `0:a:0?` or a named track it prints 1.
+- 2026-07-31: T1 baseline, no-regression references: `normalize_audio()` on a video-only `.mp4` exits 0 today; on the analysis pass an audio-only `-map 0:a:0?` also exits 0 there (empty null-sink output is legal), while a named `-map 0:a:1` exits 234.
+- 2026-07-31: implement gate chose an AUDIO-ONLY map on the analysis pass (`0:a:0?` / `0:a:<n>`, no `0:v?`) over mirroring the correction command's pair, because that pass writes to `-f null` and has no output for a video selection to describe; measured indistinguishable on exit code and block count for every input tried, and 0.356 s vs 0.372 s per run on a 20 s 720p file.
 - 2026-07-31: criteria audit ([O], fresh context) returned seven findings: AC3 and AC5 demanded a compiled analysis command that D013/D024 make unreachable from a verb call; AC4's pre-change comparison had no surviving reference and no task; the `test-ffm.R` rule statement, `hit[[1]]`, and both `loudnorm_two_pass.R` caller lines were cited off by one to six lines; and "keyed on command shape" was undefined. All fixed above; none became a gate question.
 
 ## Decisions

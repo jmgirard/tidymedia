@@ -1,13 +1,25 @@
 # M48: `audio_stream` on crop_video() / segment_video() (+ _batch), under the
 # same rule M47 gave standardize_video() and anonymize_video() (D026).
 #
-# These two verbs did NOT have M47's defect: they emit `-map 0` and so already
-# carried every audio track. What they carried was too much and too little at
-# once -- `-map 0` also carries subtitles and data, which fails outright into
-# .mp4 on a subtitle-bearing input (exit 8, no default mp4 subtitle encoder),
-# and it offered no way to name one track. Both now compile
-# `-map 0:v? -map 0:a?` when no track is named and `-map 0:v? -map 0:a:<n>`
-# when one is.
+# The three code paths did NOT start in the same place, and the difference was
+# only measured at M48 review (F2). `crop_video()` and
+# `segment_video(reencode = FALSE)` emit `-map 0`, so they already carried every
+# audio track; what they carried was too much and too little at once, since
+# `-map 0` also drags subtitles and data along -- which fails outright into .mp4
+# on a subtitle-bearing input (exit 8, no default mp4 subtitle encoder) -- while
+# offering no way to name one track.
+#
+# `segment_video(reencode = TRUE)`, the DEFAULT branch, emitted NO map at all,
+# so it had M47's defect exactly: FFmpeg's implicit selection took one stream of
+# each type, preferring whichever audio track carried the container's DEFAULT
+# disposition. Measured at review on a 3-audio-track + 1-subtitle .mkv with
+# DEFAULT on track 1 (ffmpeg 8.1.2): master wrote video + `spa` + subtitle --
+# the SECOND audio track, chosen by a rule the caller never wrote -- where this
+# branch now writes all three and no subtitle. That is the largest behavior
+# change in this milestone, and neither the plan nor D026 anticipated it.
+#
+# All three now compile `-map 0:v? -map 0:a?` when no track is named and
+# `-map 0:v? -map 0:a:<n>` when one is.
 #
 # The `?` on the unselected specifiers is load-bearing: a bare `-map 0:a`
 # aborts FFmpeg on a silent video and a bare `-map 0:v` aborts on an audio-only
@@ -31,7 +43,9 @@
 #
 # Note segment(reencode = TRUE) carried NO map at all, so its `maps` default is
 # the empty string: the re-encode branch is the one place in this milestone
-# where a map appears where none stood before.
+# where a map appears where none stood before -- and, per the header above, the
+# one place where the previous behavior was FFmpeg's disposition heuristic
+# rather than every stream.
 
 crop_command <- function(infile, maps = "-map 0 ", outfile = "out.mp4") {
   paste0(
@@ -373,4 +387,37 @@ test_that("a named track the input lacks is an FFmpeg error, not an R one", {
   out <- withr::local_tempfile(fileext = ".mkv")
   expect_error(crop_video(infile, out, width = 32, height = 32,
                           audio_stream = 9))
+})
+
+
+test_that("segment_video() with no selection keeps every audio track on both branches", {
+  # The milestone's largest behavior change, asserted end to end rather than at
+  # compile level only (M48 review F3). The re-encode branch is the one that
+  # emitted no map at all, so on master this wrote ONE audio track -- whichever
+  # carried the DEFAULT disposition -- plus a subtitle.
+  skip_if_no_ffmpeg()
+  infile <- make_multitrack_subtitle_video()
+  for (reencode in c(TRUE, FALSE)) {
+    out <- withr::local_tempfile(fileext = ".mkv")
+    segment_video(infile, 0, 1, outfiles = out, reencode = reencode)
+    expect_identical(stream_types(out), c("video", "audio", "audio", "audio"))
+    expect_identical(audio_languages(out), c("eng", "spa", "fra"))
+  }
+})
+
+test_that("a bad audio_stream blames segment_video(), not the fan-out runner", {
+  # segment_video() fans out through ffm_batch() -> purrr::pmap(), so the check
+  # inside the shared pipeline resolves to the anonymous closure and reported
+  # "Error in `purrr::pmap(jobs, .f, ...)` / In index: 1" -- leaking a
+  # dependency's name and an internal index (M48 review F1). Every other
+  # argument on this verb is checked at the front door; this one now is too.
+  f <- make_input()
+  for (bad in list("x", NA, 1.5, -1)) {
+    err <- expect_error(
+      segment_video(f, 0, 1, outfiles = "s.mp4", audio_stream = bad,
+                    run = FALSE)
+    )
+    expect_match(conditionMessage(err), "audio_stream")
+    expect_identical(rlang::call_name(conditionCall(err)), "segment_video")
+  }
 })

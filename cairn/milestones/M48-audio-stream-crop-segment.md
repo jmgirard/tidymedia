@@ -165,6 +165,7 @@ replaces `ffm_copy()`'s `-map 0` rather than appending beside it, which gives
 - 2026-07-30: T5 — `audio_stream` on `crop_video_batch()` and `segment_video_batch()`, each with `check_batch_audio_col(na_means = "keep every audio track")`, the scalar front-door `check_number_whole()` (load-bearing on the batch pair, unlike the scalars), and `batch_stream_cell()` in the closure. No `check_batch_stream_values()`: neither verb reshapes its jobs table, so pmap's index already is the caller's row (M45 review F4). Tests cover the argument, the column override with `NA`, one-row byte-identity against the scalar, `segment_video()`'s own fan-out, AC6's typed-column abort, and AC7's counting mock.
 - 2026-07-30: T7 — `@param audio_stream` on all four entry points naming the families that read `NULL` the other way, both `@param jobs` column enumerations extended, `devtools::document()` run; AC3 execution tests on the new 5-stream fixture (named track is `fra`, unset keeps all three and drops the subtitle, `.mp4` now succeeds where master exited 8, both segment branches, and `audio_stream = 9` still errors); NEWS entries for the argument, the subtitle-carriage change, and `ffm_copy()`'s assignment plus its new abort. Full `devtools::test()` clean.
 - 2026-07-30: all seven tasks done; `devtools::test()` clean, `devtools::check()` 0 errors / 0 warnings / 0 notes, `devtools::document()` no diff, `cairn_validate` all checks pass. Status -> review.
+- 2026-07-30: review — 16/16 criteria verified with fresh evidence, consistency gate clean, CI green on all 7 checks. Code review returned 13 findings; two scored 80+ (F2/93 the NEWS-vs-reality error on `segment_video(reencode = TRUE)`, F1/92 the `purrr::pmap` blame leak) and were fixed, F3/76 fixed anyway, ten logged. M48-D3 records the measurement behind F2. `devtools::check()` re-run 0/0/0 after the fixes.
 - 2026-07-30: caught and fixed a whole-file line-ending flip — several edits went through a Python rewrite that converted `R/ffmpeg.R` from CRLF to LF, inflating the branch diff to 11,116 lines on that file alone. Restored CRLF; the real diff is 126 lines there. `devtools::check()` re-run clean on the restored file. No other file's endings changed.
 
 ## Decisions
@@ -205,6 +206,24 @@ says "`R/ffm.R`'s `@param streams`" where the file has two such blocks, so
 ordering constraint no criterion states — `segment_pipeline()` must keep the
 `ffm_map(..., replace = TRUE)` narrowing *after* its `ffm_copy()` call or the
 new guard aborts every `reencode = FALSE` segment — now pinned in T4.
+
+**2026-07-30 — M48-D3: `segment_video(reencode = TRUE)` had M47's defect, and nobody knew.**
+Surfaced by the review's diff-bug lens (F2, scored 93) and measured before
+acting. The plan, D026 and this milestone's own tests all described
+`crop_video()` and `segment_video()` as verbs that emit `-map 0` and so already
+carry every audio track. That is true of `crop_video()` and of
+`segment_video(reencode = FALSE)`, and false of `segment_video()`'s **default**
+branch, which emitted no map at all — the pre-M48 map-count invariant pinned it
+at `0` in plain sight. On a 3-audio-track + 1-subtitle `.mkv` with DEFAULT on
+track 1 (ffmpeg 8.1.2), master's default `segment_video()` wrote `video,
+audio(spa), subtitle`: one audio track, chosen by the container's disposition
+flag rather than by the caller — D023's "a heuristic consulted only sometimes is
+still a heuristic", on a third verb. M48 fixes it in the same motion as the rest,
+so the change is right; what was wrong was the record. Corrected in NEWS (which
+had claimed the audio behavior was unchanged) and in the test file's header.
+D026 is history and is not edited (IP4); its Scope bullet remains accurate about
+what it measured, and this entry is where a later reader finds the branch it did
+not cover.
 
 ## Review
 
@@ -301,6 +320,82 @@ No shortfall on any projection.
 - AC-16 (BC8) D027 records the contract. `git diff` on `cairn/DECISIONS.md`
   shows **zero deleted lines**, so D023's bullets are untouched and the
   append-only discipline held.
+
+### Independent code review
+
+Three fresh-context reviewers with distinct evidence bases, then a scorer that
+did not generate the findings. 13 findings reported; the scorer was given the
+diff and this milestone file, since three of the rubric's five out-of-scope
+members are judgments about them.
+
+- **[S] prior-PR-comments lens: 0 findings.** The GitHub inline-comment probe
+  returned empty across the whole repo, so archived `## Review` sections were
+  the evidence base (M32, M39, M40, M41, M43, M44, M45, M47). It found the diff
+  annotated *against* those lessons rather than regressing any.
+- **[S] blame-history lens: 0 conflicts.** Verified the M47 F8 citation resolves
+  to what the code claims, that `ffm_map()`'s append contract is untouched, and
+  that the new fixture honors M46's `-shortest` deadlock lesson and M43's
+  assert-the-fixture rule. Contributed one cosmetic item (C5).
+- **[O] diff-bug lens: 12 findings**, two of which were load-bearing.
+
+**Actioned (scored 80+), fixed on the branch:**
+
+- **F2 (93) — NEWS stated the opposite of what happens to
+  `segment_video(reencode = TRUE)`.** The default branch emitted **no `-map` at
+  all** on master, so it had M47's defect exactly: FFmpeg's implicit selection
+  took one stream of each type, preferring the DEFAULT-disposition audio track.
+  Measured at review on the 3-audio-track + 1-subtitle `.mkv` with DEFAULT on
+  track 1 (ffmpeg 8.1.2): master wrote `video, audio(spa), subtitle` — the
+  **second** track — where M48 writes `video, audio(eng), audio(spa),
+  audio(fra)`. Neither the plan, nor D026, nor the NEWS entry, nor the new test
+  file's own header comment had this right; D026 measured only the
+  `reencode = FALSE` branch and is silent on the default one. NEWS rewritten to
+  describe the actual change per branch, and the test-file header corrected.
+- **F1 (92) — a bad `audio_stream` on `segment_video()` blamed
+  `purrr::pmap()`.** `crop_video()` calls its pipeline directly, so M47 F8's
+  reasoning holds there; `segment_video()` fans out through `ffm_batch()` →
+  `purrr::pmap()`, so `segment_pipeline()`'s `caller_env()` resolved to the
+  anonymous closure and reported `Error in purrr::pmap(jobs, .f, ...)` /
+  `In index: 1` — the M41 shape every other argument on the verb avoids. Added
+  the front-door `check_number_whole()`; it now blames `segment_video()`, pinned
+  by a regression test over four bad values.
+
+**Fixed though below threshold:**
+
+- **F3 (76) — no execution test for the milestone's largest behavior change.**
+  `segment_video()` *unset* on the multi-track fixture was asserted only at
+  compile level, while the parallel crop case was execution-tested. Added, both
+  branches.
+
+**Logged, not actioned (below 80, surfaced rather than dropped):**
+
+- F4 (66) `ffm_copy()`'s guard passes `call = rlang::caller_env()`, so a direct
+  top-level misuse reports a call-less `Error:` where the package convention is
+  ``Error in `ffm_copy()`:``. Correct for the `ffm_concat()` path, uninformative
+  for the direct one; genuinely a trade, which is why it scored where it did.
+- F5 (58) The comment justifying `crop_video()`'s omitted scalar guard claims it
+  would be "the only guard reporting BEFORE width/height"; five front-door
+  checks already do. The conclusion stands, the stated premise does not.
+- F8 (38) D027's "every existing compiled command is byte-identical" is true of
+  the `ffm_copy()` change in isolation but reads wider; `segment_pipeline()`'s
+  command does change in this milestone. `DECISIONS.md` is history (IP4), so it
+  is recorded here rather than edited there.
+- C5 (35) `test-ffmpeg.R:204` is still titled "mapping all streams", now stale.
+- F7 (30) Batch `audio_stream` *values* validate mid-fan-out — matches the
+  accepted pattern on `extract_audio_batch()` / `standardize_video_batch()`.
+- F11 (30) A named track drops the others with no `warn_dropped_audio()`, unlike
+  the extraction family; consistent with M47.
+- F6 (28) `-map 0:v?` is emitted unquoted and breaks a paste into zsh; the
+  always-quote candidate row was deliberately kept out at the implement gate,
+  and this milestone extends the surface to two more verbs.
+- F12 (28) `audio_stream` sits before `run`, so positional calls rebind; covered
+  by D014's clean break and M47's precedent, unmentioned in NEWS.
+- F9 (25) Two assertions match phrases near cli's wrap column. The scorer could
+  not reproduce the cited line numbers, which undermines the finding as stated.
+- F10 (20) `identical(map, "0")` is name-sensitive; unreachable in-package.
+
+Re-verified after the fixes: `devtools::test()` clean, `devtools::check()` 0
+errors / 0 warnings / 0 notes.
 
 ### Consistency gate
 

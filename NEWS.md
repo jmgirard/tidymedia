@@ -4,13 +4,25 @@
 
 * `crop_video()` and `segment_video()` (and their `_batch` siblings) take a new
   `audio_stream` argument naming which audio track to carry, and now state that
-  selection on every call. Both verbs mapped *every* stream before, which kept
-  every audio track — that part is unchanged — but also offered no way to pick
-  one, and dragged subtitle and data streams along with it. Subtitles are no
-  longer carried: `crop_video()` writing to `.mkv` used to pass one through and
-  now passes none. The same change fixes a real failure, since `crop_video()`
-  writing a subtitle-bearing input to `.mp4` used to abort outright (FFmpeg has
-  no default subtitle encoder for that container) and now succeeds.
+  selection on every call. What that changes depends on which of them you use,
+  because the two verbs did not start from the same place.
+
+  `crop_video()` and `segment_video(reencode = FALSE)` mapped *every* stream
+  before, so they already kept every audio track — that part is unchanged for
+  them — but they dragged subtitle and data streams along and offered no way to
+  pick a track. Subtitles are no longer carried: writing to `.mkv` used to pass
+  one through and now passes none. That also fixes a real failure, since
+  `crop_video()` writing a subtitle-bearing input to `.mp4` used to abort
+  outright (FFmpeg has no default subtitle encoder for that container) and now
+  succeeds.
+
+  `segment_video()` with its **default** `reencode = TRUE` is the bigger change:
+  it emitted no stream mapping at all, so FFmpeg picked for it — one stream of
+  each type, preferring whichever audio track carries the container's "default"
+  flag. On a three-track test file whose default flag sat on the second track,
+  cutting a segment kept only that second track and discarded the other two in
+  silence. That branch now keeps all three. If you cut segments from multi-track
+  sources, your outputs will gain tracks they used to lose, and grow accordingly.
 
   `NULL`, the default, keeps every audio track, matching `standardize_video()`,
   `anonymize_video()` and `separate_audio_video()`. Note that `extract_audio()`

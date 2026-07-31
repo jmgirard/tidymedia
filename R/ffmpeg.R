@@ -2585,6 +2585,15 @@ segment_video <- function(infile,
   rlang::check_string(video_codec, allow_null = TRUE)
   rlang::check_string(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
+  # Unlike crop_video(), this verb DOES need its own front-door check. M47's F8
+  # reasoning -- "pass_through_maps() carries the identical check with `call`
+  # resolving to the verb" -- holds only where the verb calls its pipeline
+  # directly. This one fans out through ffm_batch() -> purrr::pmap(), so
+  # segment_pipeline()'s caller_env() resolves to the anonymous closure and a bad
+  # value was reported as "Error in `purrr::pmap(jobs, .f, ...)` / In index: 1",
+  # leaking a dependency's name and an internal index -- the exact M41 shape
+  # every other argument on this verb already avoids (M48 review F1).
+  rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
 
   # If no names are provided, derive per-segment names from the input file.
   if (is.null(outfiles)) {

@@ -1,6 +1,6 @@
 # M49: Finish D026 on `format_for_web()` and `normalize_audio()`
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -120,7 +120,7 @@ candidate row. Quoting the emitted specifiers → M50.
 - [x] T8 Roxygen `@param audio_stream` on the four new entry points, the
       `@param jobs` column enumeration on both `_batch` verbs,
       `@seealso`/NEWS/`inst/WORDLIST`; `devtools::document()`.
-- [ ] T9 Append the D-entry; add the per-track-two-pass candidate row named in
+- [x] T9 Append the D-entry; add the per-track-two-pass candidate row named in
       Out; run the profile's verify slot and `devtools::check()`.
 
 ## Work log
@@ -142,6 +142,9 @@ candidate row. Quoting the emitted specifiers → M50.
 - 2026-07-31: T6 — the re-baselining list was shorter than planned. Six exact-command assertions moved (`test-normalize-audio.R` ×4 including the M16 characterization baseline, `test-normalize-audio-batch.R` ×2, `test-loudnorm-two-pass.R` ×1); `test-normalize-audios-two-pass.R` and the `format_for_web` scalar/batch byte-identity test needed no change, the first because its assertions are containment rather than equality and the second because it compares the two entry points to each other. Also corrected against the plan: `ffm_compile()` emits maps AFTER the output options (`-ac`/`-ar`/`-f null`) and immediately before the output URL, not before them.
 - 2026-07-31: T7 — execution evidence green on a 3-track fixture with DEFAULT asserted on track 2 before any result was read: `format_for_web()` carries eng/spa/fra, `normalize_audio()` carries eng, a named track lands on both, `normalize_audio()` still exits 0 on a video-only input, `audio_stream = 9` is an FFmpeg error, and the two-pass path measures and corrects the same track on both the scalar and batch entry points.
 - 2026-07-31: T8 — `@param audio_stream` on all four new entry points (each naming which family reads `NULL` the other way), the `@param jobs` column enumeration on both `_batch` verbs, and a NEWS entry describing both changes and why the two verbs read an unset selector differently. `devtools::document()` produces no diff and `spelling::spell_check_package()` is clean, so `inst/WORDLIST` needs no additions. `@seealso` deliberately unchanged: the package puts these cross-references inside the `@param audio_stream` block (crop_video's precedent), and refreshing the sibling enumerations in the fourteen existing blocks is M51's, not this milestone's.
+- 2026-07-31: T9 — D028 appended to `cairn/DECISIONS.md` (narrows D026; extends D023/D025), and the per-track-two-pass candidate row added to the ROADMAP with its promotion condition stated as the class of evidence that would falsify the first-track choice. Counted rather than assumed for the D-entry's cost bullet: exactly **18** exported entry points now take `audio_stream` (6 first-track, 12 every-track), enumerated from the namespace.
+- 2026-07-31: verify slot clean and `devtools::check()` reports 0 errors / 0 warnings / 0 notes; `devtools::test()` 3098 passing, 0 failures (4 warnings and 5 skips, all pre-existing and in files this milestone does not touch); `devtools::document()` produces no diff. `cairn_validate` passes every check; its two advisories are both pre-existing — the ROADMAP hygiene stamp is over the density cap (left for review's post-merge hygiene pass, which owns that stamp) and M51 carries 8 acceptance criteria.
+- 2026-07-31: status → review.
 - 2026-07-31: criteria audit ([O], fresh context) returned seven findings: AC3 and AC5 demanded a compiled analysis command that D013/D024 make unreachable from a verb call; AC4's pre-change comparison had no surviving reference and no task; the `test-ffm.R` rule statement, `hit[[1]]`, and both `loudnorm_two_pass.R` caller lines were cited off by one to six lines; and "keyed on command shape" was undefined. All fixed above; none became a gate question.
 
 ## Decisions

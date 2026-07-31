@@ -22,6 +22,7 @@ crop_video_batch(
   audio_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
+  audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -41,9 +42,11 @@ crop_video_batch(
   per row; rows (or dimensions) omitting the column fall back to the
   argument. A `video_codec` column overrides that argument per row, with
   `NA` meaning "leave the codec unset" (the column's way of writing the
-  argument's `NULL`); an `audio_codec` column works the same way. Any
-  two rows that resolve to the same output path are rejected. Any other
-  columns are ignored.
+  argument's `NULL`); an `audio_codec` column works the same way. An
+  `audio_stream` column overrides that argument per row, with `NA`
+  meaning "keep every audio track" (the column's way of writing that
+  argument's `NULL`). Any two rows that resolve to the same output path
+  are rejected. Any other columns are ignored.
 
 - width, height:
 
@@ -75,6 +78,25 @@ crop_video_batch(
   batch (a property of the machine, not of a row, so neither is read as
   a `jobs` column). See
   [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md).
+
+- audio_stream:
+
+  The 0-based index of the audio track to carry into each output,
+  counted *among that row's input's audio streams* – `0` is the first
+  audio track, `1` the second, whatever their positions among the file's
+  streams. Applied to every row lacking an `audio_stream` column. `NULL`
+  (default) carries **every** audio track, which is also what
+  [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
+  [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+  and
+  [`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
+  do, and differs from
+  [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
+  and
+  [`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
+  whose `NULL` takes the first track only. Naming a track the input does
+  not have is an FFmpeg error, not an R one. Subtitle and data streams
+  are not carried either way. (default = `NULL`)
 
 - run:
 

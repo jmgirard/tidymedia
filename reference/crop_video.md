@@ -16,6 +16,7 @@ crop_video(
   audio_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
+  audio_stream = NULL,
   run = TRUE
 )
 ```
@@ -81,6 +82,24 @@ crop_video(
   default). With `video_codec = NULL` the fallback leaves the codec
   unset rather than picking one, so the codec never changes silently.
 
+- audio_stream:
+
+  The 0-based index of the audio track to carry into the output, counted
+  *among the input's audio streams* – `0` is the first audio track, `1`
+  the second, whatever their positions among the file's streams. `NULL`
+  (default) carries **every** audio track, which is also what
+  [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
+  [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+  and
+  [`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
+  do, and differs from
+  [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
+  and
+  [`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
+  whose `NULL` takes the first track only. Naming a track the input does
+  not have is an FFmpeg error, not an R one. Subtitle and data streams
+  are not carried either way. (default = `NULL`)
+
 - run:
 
   A logical: run the command through FFmpeg (`TRUE`, default) or return
@@ -135,5 +154,5 @@ Other task verb functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 crop_video(video, "cropped.mp4", width = 160, height = 120, run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:a copy -map 0 \"cropped.mp4\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:a copy -map 0:v? -map 0:a? \"cropped.mp4\""
 ```

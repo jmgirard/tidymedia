@@ -76,10 +76,13 @@ remux or cut on keyframes.</p>
 
 <dt id="arg-streams">streams<a class="anchor" aria-label="anchor" href="#arg-streams"></a></dt>
 <dd><p>A logical indicating whether to map all streams from the
-input (via <code>ffm_map(mapping = "0")</code>). Because <code><a href="ffm_map.html">ffm_map</a></code>
-appends, this <em>adds</em> <code>-map 0</code> to any mapping already set; to
-narrow the result afterwards, call <code>ffm_map(replace = TRUE)</code>.
-(default = <code>TRUE</code>)</p></dd>
+input. This <strong>sets</strong> the mapping to <code>-map 0</code> rather than adding
+to it, so calling <code>ffm_copy()</code> twice compiles one <code>-map 0</code>, not
+two. If the pipeline already states a <em>different</em> mapping, that is a
+conflict and <code>ffm_copy()</code> aborts rather than discard it silently:
+pass <code>streams = FALSE</code> to keep the mapping you set, or call
+<code>ffm_copy()</code> first and narrow afterwards with
+<code>ffm_map(replace = TRUE)</code>. (default = <code>TRUE</code>)</p></dd>
 
 </dl></div>
     <div class="section level2">

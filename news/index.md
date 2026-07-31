@@ -4,6 +4,67 @@
 
 ### Breaking changes
 
+- [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md)
+  and
+  [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
+  (and their `_batch` siblings) take a new `audio_stream` argument
+  naming which audio track to carry, and now state that selection on
+  every call. What that changes depends on which of them you use,
+  because the two verbs did not start from the same place.
+
+  [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md)
+  and `segment_video(reencode = FALSE)` mapped *every* stream before, so
+  they already kept every audio track — that part is unchanged for them
+  — but they dragged subtitle and data streams along and offered no way
+  to pick a track. Subtitles are no longer carried: writing to `.mkv`
+  used to pass one through and now passes none. That also fixes a real
+  failure, since
+  [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md)
+  writing a subtitle-bearing input to `.mp4` used to abort outright
+  (FFmpeg has no default subtitle encoder for that container) and now
+  succeeds.
+
+  [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
+  with its **default** `reencode = TRUE` is the bigger change: it
+  emitted no stream mapping at all, so FFmpeg picked for it — one stream
+  of each type, preferring whichever audio track carries the container’s
+  “default” flag. On a three-track test file whose default flag sat on
+  the second track, cutting a segment kept only that second track and
+  discarded the other two in silence. That branch now keeps all three.
+  If you cut segments from multi-track sources, your outputs will gain
+  tracks they used to lose, and grow accordingly.
+
+  `NULL`, the default, keeps every audio track, matching
+  [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
+  [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
+  and
+  [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md).
+  Note that
+  [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
+  and
+  [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
+  read `NULL` the other way — they take the first track — because their
+  output *is* an audio stream and has to be one track. Each argument’s
+  documentation says which family it belongs to.
+
+- [`ffm_copy()`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md)
+  now **sets** the all-streams mapping rather than adding to it, so
+  calling it twice no longer duplicates every output stream. Since the
+  mapping builder began appending, `ffm_copy() |> ffm_copy()` compiled
+  `-map 0` twice and a one-video/one-audio input came out with four
+  streams; `ffm_concat() |> ffm_copy()` did the same, because
+  concatenation copies internally. No pipeline built by a task verb was
+  affected — this only reached you if you composed the builder yourself.
+
+  If the pipeline already states a *different* mapping,
+  [`ffm_copy()`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md)
+  now stops with an error rather than discarding it silently. Pass
+  `streams = FALSE` to keep the mapping you set, or call
+  [`ffm_copy()`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md)
+  first and narrow afterwards with `ffm_map(replace = TRUE)`.
+  [`ffm_map()`](https://jmgirard.github.io/tidymedia/reference/ffm_map.md)
+  itself is unchanged and still appends.
+
 - [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
   and
   [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)

@@ -65,6 +65,7 @@ name its source, destination, and cut points. This is a thin wrapper over
 <span>  audio_codec <span class="op">=</span> <span class="st">"copy"</span>,</span>
 <span>  hardware <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"nvenc"</span><span class="op">)</span>,</span>
 <span>  fallback <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  audio_stream <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span></span>
@@ -86,8 +87,10 @@ Two optional columns are recognized: <code>output</code> (destination path) and
 restarting at 1 for each input file (the same rule as
 <code><a href="segment_video.html">segment_video</a></code>). A <code>video_codec</code> or <code>audio_codec</code>
 column overrides that argument per row, with <code>NA</code> meaning "leave the
-codec unset" (the column's way of writing the argument's <code>NULL</code>). Any
-other columns are ignored.</p></dd>
+codec unset" (the column's way of writing the argument's <code>NULL</code>). An
+<code>audio_stream</code> column likewise overrides that argument per row, with
+<code>NA</code> meaning "keep every audio track" (the column's way of writing
+that argument's <code>NULL</code>). Any other columns are ignored.</p></dd>
 
 
 <dt id="arg-reencode">reencode<a class="anchor" aria-label="anchor" href="#arg-reencode"></a></dt>
@@ -124,6 +127,20 @@ Because <code>hardware</code> is batch-wide, <code>hardware = "nvenc"</code> con
 with a stream-copy row on its own — even one naming no codec — so a jobs
 table mixing <code>reencode = FALSE</code> rows with GPU encoding must be split
 into separate calls.</p></dd>
+
+
+<dt id="arg-audio-stream">audio_stream<a class="anchor" aria-label="anchor" href="#arg-audio-stream"></a></dt>
+<dd><p>The 0-based index of the audio track to carry into each
+output, counted <em>among that row's input's audio streams</em> – <code>0</code>
+is the first audio track, <code>1</code> the second, whatever their positions
+among the file's streams. Applied to every row lacking an
+<code>audio_stream</code> column. <code>NULL</code> (default) carries <strong>every</strong>
+audio track, which is also what <code><a href="separate_audio_video.html">separate_audio_video</a></code>,
+<code><a href="standardize_video.html">standardize_video</a></code> and <code><a href="anonymize_video.html">anonymize_video</a></code> do, and
+differs from <code><a href="extract_audio.html">extract_audio</a></code> and <code><a href="convert_audio.html">convert_audio</a></code>,
+whose <code>NULL</code> takes the first track only. Naming a track the input does
+not have is an FFmpeg error, not an R one. Subtitle and data streams are not
+carried either way. (default = <code>NULL</code>)</p></dd>
 
 
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>

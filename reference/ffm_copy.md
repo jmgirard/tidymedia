@@ -29,11 +29,13 @@ ffm_copy(object, audio = TRUE, video = TRUE, streams = TRUE)
 
 - streams:
 
-  A logical indicating whether to map all streams from the input (via
-  `ffm_map(mapping = "0")`). Because
-  [`ffm_map`](https://jmgirard.github.io/tidymedia/reference/ffm_map.md)
-  appends, this *adds* `-map 0` to any mapping already set; to narrow
-  the result afterwards, call `ffm_map(replace = TRUE)`. (default =
+  A logical indicating whether to map all streams from the input. This
+  **sets** the mapping to `-map 0` rather than adding to it, so calling
+  `ffm_copy()` twice compiles one `-map 0`, not two. If the pipeline
+  already states a *different* mapping, that is a conflict and
+  `ffm_copy()` aborts rather than discard it silently: pass
+  `streams = FALSE` to keep the mapping you set, or call `ffm_copy()`
+  first and narrow afterwards with `ffm_map(replace = TRUE)`. (default =
   `TRUE`)
 
 ## Value

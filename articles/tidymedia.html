@@ -102,7 +102,7 @@ Cropping works the same way — describe the job, inspect the command,
 then run it:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/crop_video.html">crop_video</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"cropped.mp4"</span>, width <span class="op">=</span> <span class="fl">160</span>, height <span class="op">=</span> <span class="fl">120</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:a copy -map 0 \"cropped.mp4\""</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:a copy -map 0:v? -map 0:a? \"cropped.mp4\""</span></span></code></pre></div>
 <p>For preprocessing a whole folder of files at once, every task verb
 has a batch sibling (<code><a href="../reference/extract_audio_batch.html">extract_audio_batch()</a></code>,
 <code><a href="../reference/crop_video_batch.html">crop_video_batch()</a></code>, …); see <code><a href="../articles/batch.html">vignette("batch")</a></code>.

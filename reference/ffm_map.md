@@ -42,6 +42,13 @@ instead, which is how you narrow the all-streams map that
 sets — appending to that one would duplicate the stream in the output
 rather than select it.
 
+This is the only builder verb that accumulates; every other `ffm_*`
+setter,
+[`ffm_copy`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md)
+included, assigns. The exception is earned by this function's arguments
+being *partial* selections that genuinely compose (keep the video, then
+name one audio track).
+
 When the pipeline uses a multi-input verb (e.g.
 [`ffm_hstack`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md)),
 the explicit mapping is added *alongside* the automatic `-map "[vout]"`

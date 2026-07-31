@@ -94,6 +94,10 @@ already set rather than replacing them. Pass <code>replace = TRUE</code> to disc
 them instead, which is how you narrow the all-streams map that
 <code><a href="ffm_copy.html">ffm_copy</a></code> sets — appending to that one would duplicate the
 stream in the output rather than select it.</p>
+<p>This is the only builder verb that accumulates; every other <code>ffm_*</code>
+setter, <code><a href="ffm_copy.html">ffm_copy</a></code> included, assigns. The exception is earned by
+this function's arguments being <em>partial</em> selections that genuinely
+compose (keep the video, then name one audio track).</p>
 <p>When the pipeline uses a multi-input verb (e.g.
 <code><a href="ffm_hstack.html">ffm_hstack</a></code>), the explicit mapping is added <em>alongside</em>
 the automatic <code>-map "[vout]"</code> of the filtered stream — for example,

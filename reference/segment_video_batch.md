@@ -19,6 +19,7 @@ segment_video_batch(
   audio_codec = "copy",
   hardware = c("none", "nvenc"),
   fallback = FALSE,
+  audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -40,7 +41,10 @@ segment_video_batch(
   [`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)).
   A `video_codec` or `audio_codec` column overrides that argument per
   row, with `NA` meaning "leave the codec unset" (the column's way of
-  writing the argument's `NULL`). Any other columns are ignored.
+  writing the argument's `NULL`). An `audio_stream` column likewise
+  overrides that argument per row, with `NA` meaning "keep every audio
+  track" (the column's way of writing that argument's `NULL`). Any other
+  columns are ignored.
 
 - reencode:
 
@@ -80,6 +84,25 @@ segment_video_batch(
   a stream-copy row on its own — even one naming no codec — so a jobs
   table mixing `reencode = FALSE` rows with GPU encoding must be split
   into separate calls.
+
+- audio_stream:
+
+  The 0-based index of the audio track to carry into each output,
+  counted *among that row's input's audio streams* – `0` is the first
+  audio track, `1` the second, whatever their positions among the file's
+  streams. Applied to every row lacking an `audio_stream` column. `NULL`
+  (default) carries **every** audio track, which is also what
+  [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
+  [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+  and
+  [`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
+  do, and differs from
+  [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
+  and
+  [`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
+  whose `NULL` takes the first track only. Naming a track the input does
+  not have is an FFmpeg error, not an R one. Subtitle and data streams
+  are not carried either way. (default = `NULL`)
 
 - run:
 

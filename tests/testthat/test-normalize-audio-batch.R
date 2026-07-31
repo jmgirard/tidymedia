@@ -63,12 +63,12 @@ test_that("normalize_audio_batch(run = FALSE) single-pass command column is unch
   expect_equal(
     scrub(res$command[[1]]),
     paste0('-y -i "<in>" -af "loudnorm=I=-23:TP=-1:LRA=7" ',
-           '-codec:v copy -ac 2 -ar 48000 "a.mp4"')
+           '-codec:v copy -ac 2 -ar 48000 -map 0:v? -map 0:a:0? "a.mp4"')
   )
   expect_equal(
     scrub(res$command[[2]]),
     paste0('-y -i "<in>" -af "loudnorm=I=-16:TP=-1.5:LRA=11" ',
-           '-codec:v copy -ac 1 -ar 44100 "b.mp4"')
+           '-codec:v copy -ac 1 -ar 44100 -map 0:v? -map 0:a:0? "b.mp4"')
   )
 })
 

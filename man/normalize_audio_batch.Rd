@@ -13,6 +13,7 @@ normalize_audio_batch(
   sample_rate = NULL,
   audio_codec = NULL,
   two_pass = FALSE,
+  audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -32,8 +33,10 @@ as a column to override the corresponding argument on a per-row basis; rows
 (or knobs) that omit the column fall back to the argument's value. An
 optional \code{audio_codec} column (character) names each row's output
 audio encoder, with \code{NA} meaning "leave the encoder unset"; rows
-omitting it fall back to the \code{audio_codec} argument. Any other
-columns are ignored.}
+omitting it fall back to the \code{audio_codec} argument. An optional
+numeric \code{audio_stream} column (\code{NA} to normalize that row's first
+audio track) likewise overrides the \code{audio_stream} argument per row.
+Any other columns are ignored.}
 
 \item{target_loudness, true_peak, loudness_range}{The EBU R128 loudness targets
 applied to every row, unless \code{jobs} carries a column of the same name
@@ -79,6 +82,15 @@ batch — the non-silent rows are normalized, the silent rows are marked in a
 logical \code{silent} column (with \code{success = FALSE} and no output
 written), and a warning names them. The single-pass default touches no
 binary under \code{run = FALSE}.}
+
+\item{audio_stream}{The 0-based index of the audio track to normalize in
+every row, unless \code{jobs} carries an \code{audio_stream} column.
+\code{NULL} (default) normalizes each input's \strong{first} audio track,
+as \code{\link{normalize_audio}} does; an \code{NA} cell in the column says
+the same for that row. Under \code{two_pass = TRUE} each row's analysis
+pass measures the same track its correction pass normalizes. See
+\code{\link{normalize_audio}} for how this differs from the pass-through
+verbs.}
 
 \item{run}{A logical: run each input's command through FFmpeg (\code{TRUE},
 default) or only compile them for inspection (\code{FALSE}). Under

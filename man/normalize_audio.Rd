@@ -14,6 +14,7 @@ normalize_audio(
   sample_rate = NULL,
   audio_codec = NULL,
   two_pass = FALSE,
+  audio_stream = NULL,
   run = TRUE
 )
 }
@@ -59,6 +60,22 @@ binary under \code{run = FALSE}. If the input is \strong{silent}, the
 analysis pass measures its loudness as \code{-inf}; normalizing silence to
 a target is undefined, so two-pass aborts with a clear error (the
 single-pass default leaves silence untouched).}
+
+\item{audio_stream}{The 0-based index of the audio track to normalize,
+counted \emph{among the input's audio streams} -- \code{0} is the first
+audio track, \code{1} the second, whatever their positions among the file's
+streams. \code{NULL} (default) normalizes the \strong{first} audio track,
+as \code{\link{extract_audio}} and \code{\link{convert_audio}} do, and
+differs from the pass-through verbs (\code{\link{format_for_web}},
+\code{\link{standardize_video}}, \code{\link{crop_video}} and their
+siblings), whose \code{NULL} keeps every track. This verb reads it the
+first-track way because the two-pass analysis produces one measurement per
+audio track while the correction takes a single set, so normalizing several
+tracks at once would apply one track's measurements to all of them. Only
+the named track reaches the output; the video streams are copied through.
+Under \code{two_pass = TRUE} the analysis pass measures this same track.
+Naming a track the input does not have is an FFmpeg error, not an R one.
+(default = \code{NULL})}
 
 \item{run}{A logical: run the (correction) command through FFmpeg
 (\code{TRUE}, default) or return the compiled command without running it

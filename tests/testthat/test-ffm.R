@@ -535,25 +535,34 @@ test_that("a doubled ffm_copy() remux writes the input's stream count", {
 })
 
 test_that("every in-package pipeline emits the maps its verb's contract says", {
-  # THE RULE, as of M48. A verb's -map count is exactly one of three numbers,
-  # and which one is a property of what the verb's output is:
+  # THE RULE, as of M49. A COMPILED COMMAND's -map count is exactly one of two
+  # numbers, and which one is a property of what that command's output is:
   #
-  #   2 -- a PASS-THROUGH verb, which states both halves of its selection:
-  #        `-map 0:v?` plus either `-map 0:a?` or `-map 0:a:<n>` (D026).
-  #        standardize/anonymize took this at M47, crop/segment at M48.
-  #   1 -- a verb whose output is ONE stream (the extraction verbs, each side
-  #        of the separation fan-out) or one that copies every stream with the
-  #        all-streams specifier `0` (strip_metadata, concatenate_videos).
-  #   0 -- a verb that still states nothing and lets FFmpeg's implicit
-  #        selection choose. This is not a design position, it is the gap the
-  #        standing ROADMAP candidate row covers; the zeros below are pinned so
-  #        that closing it is a visible change here rather than a silent one.
+  #   2 -- a command whose output carries both video and audio, and which
+  #        states both halves of its selection: `-map 0:v?` plus one of
+  #        `-map 0:a?`, `-map 0:a:0?` or `-map 0:a:<n>` (D026, D028).
+  #   1 -- a command whose output is ONE stream (the extraction verbs, each
+  #        side of the separation fan-out, the two-pass analysis pass, which
+  #        writes to `-f null` and maps audio alone), or one that copies every
+  #        stream with the all-streams specifier `0` (strip_metadata,
+  #        concatenate_videos).
+  #
+  # The rows are one per COMPILED COMMAND, not one per verb (M49): a verb whose
+  # branches compile different commands gets a row each, named verb-plus-branch,
+  # so normalize_audio()'s analysis and correction commands are separate rows.
+  # Keying on the verb hid the analysis pass entirely -- the one command in the
+  # package whose map has to AGREE with another command's rather than merely be
+  # well-formed.
+  #
+  # There is no longer a zero category. Every in-package command states its
+  # stream selection as of M49, which is what D026 set out to finish; a new verb
+  # that states nothing fails this test rather than being pinned as a known gap.
   #
   # The count is the assertion because ffm_map() appends (D023): a pipeline
   # that gains a map without meaning to duplicates the output stream rather
   # than overwriting it, and no containment assertion can see that. The
   # invariant was a "<= 1" BOUND until M47; a bound stopped saying anything
-  # once verbs began emitting two, so it is an exact count per verb, and a
+  # once verbs began emitting two, so it is an exact count per command, and a
   # wrong count fails in either direction.
   f <- make_input()
   f2 <- make_input()
@@ -580,10 +589,12 @@ test_that("every in-package pipeline emits the maps its verb's contract says", {
     "standardize_video" = 2L,
     "anonymize_video" = 2L,
     "format_for_web" = 2L,
-    # Still unstated, and known: normalize_audio() re-encodes audio by
-    # construction and is not in D026's Scope bullet, so it still consults
-    # FFmpeg's DEFAULT-disposition heuristic. M49 closes it.
-    "normalize_audio" = 0L
+    # normalize_audio()'s two commands. The correction command is the
+    # pass-through shape with a first-track unselected case (D028); the
+    # analysis command writes to `-f null` and maps audio alone, so it is a
+    # one-stream output rather than a pass-through.
+    "normalize_audio(correction)" = 2L,
+    "normalize_audio(analysis)" = 1L
   )
   cmds <- c(
     extract_audio(f, "out.aac", run = FALSE),
@@ -598,7 +609,12 @@ test_that("every in-package pipeline emits the maps its verb's contract says", {
     standardize_video(f, "out.mp4", run = FALSE),
     anonymize_video(f, "out.mp4", regions, run = FALSE),
     format_for_web(f, "out.mp4", run = FALSE),
-    normalize_audio(f, "out.mp4", run = FALSE)
+    normalize_audio(f, "out.mp4", run = FALSE),
+    # The analysis pipeline is compiled directly rather than reached through
+    # normalize_audio(two_pass = TRUE): D013 makes that pass RUN before `run` is
+    # consulted, so no verb call yields this command without executing FFmpeg
+    # (D024), and this test must stay binary-free.
+    ffm_compile(loudnorm_analysis_pipeline(f))
   )
   expect_identical(setNames(maps(cmds), names(expected)), expected)
 })

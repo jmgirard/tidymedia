@@ -323,9 +323,18 @@ audio_stream_map <- function(audio_stream = NULL, null_map = "0:a:0",
 # promises "Naming a track the input does not have is an FFmpeg error, not an R
 # one" (D023). Making it optional would turn a mistyped index into a silently
 # audio-less output.
-pass_through_maps <- function(audio_stream = NULL,
+# `null_map` is a parameter for the same reason audio_stream_map() has one, and
+# it was added by the same kind of caller: M49 gave normalize_audio() this map
+# pair with a FIRST-TRACK unselected case (`0:a:0?`) rather than D026's
+# every-track one. The reason is measured and specific to that verb's two-pass
+# path -- an every-track map makes the analysis pass print one JSON block per
+# mapped track while the parser reads only the first, so every track would be
+# corrected with track 0's measurements, silently. D028 records it. The `?` is
+# kept on the first-track spelling for the same reason it is kept on `0:a?`:
+# without it a video-only input aborts at exit 234 where master exited 0.
+pass_through_maps <- function(audio_stream = NULL, null_map = "0:a?",
                               call = rlang::caller_env()) {
-  c("0:v?", audio_stream_map(audio_stream, null_map = "0:a?", call = call))
+  c("0:v?", audio_stream_map(audio_stream, null_map = null_map, call = call))
 }
 
 # warn_dropped_audio() ----------------------------------------------------
@@ -2025,6 +2034,21 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #'   analysis pass measures its loudness as \code{-inf}; normalizing silence to
 #'   a target is undefined, so two-pass aborts with a clear error (the
 #'   single-pass default leaves silence untouched).
+#' @param audio_stream The 0-based index of the audio track to normalize,
+#'   counted \emph{among the input's audio streams} -- \code{0} is the first
+#'   audio track, \code{1} the second, whatever their positions among the file's
+#'   streams. \code{NULL} (default) normalizes the \strong{first} audio track,
+#'   as \code{\link{extract_audio}} and \code{\link{convert_audio}} do, and
+#'   differs from the pass-through verbs (\code{\link{format_for_web}},
+#'   \code{\link{standardize_video}}, \code{\link{crop_video}} and their
+#'   siblings), whose \code{NULL} keeps every track. This verb reads it the
+#'   first-track way because the two-pass analysis produces one measurement per
+#'   audio track while the correction takes a single set, so normalizing several
+#'   tracks at once would apply one track's measurements to all of them. Only
+#'   the named track reaches the output; the video streams are copied through.
+#'   Under \code{two_pass = TRUE} the analysis pass measures this same track.
+#'   Naming a track the input does not have is an FFmpeg error, not an R one.
+#'   (default = \code{NULL})
 #' @param run A logical: run the (correction) command through FFmpeg
 #'   (\code{TRUE}, default) or return the compiled command without running it
 #'   (\code{FALSE}). Under \code{two_pass = TRUE} this gates only the correction
@@ -2055,6 +2079,7 @@ normalize_audio <- function(infile, outfile,
                             sample_rate = NULL,
                             audio_codec = NULL,
                             two_pass = FALSE,
+                            audio_stream = NULL,
                             run = TRUE) {
 
   check_file_exists(infile)
@@ -2070,13 +2095,19 @@ normalize_audio <- function(infile, outfile,
   if (two_pass) {
     rlang::check_number_whole(channels, min = 1, allow_null = TRUE)
     rlang::check_number_whole(sample_rate, min = 1, allow_null = TRUE)
+    # Hoisted for the same reason as the two above: on the single-pass path
+    # pass_through_maps() carries this check, but there the compile is all
+    # there is. Here an unchecked bad index would abort from the correction
+    # pipeline AFTER the analysis pass had already run (M49).
+    rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
     check_audio_codec_not_copy(audio_codec)
     # Token-check here too, not only inside apply_audio_codec(): the whole point
     # of hoisting is to fail before the analysis pass runs, and a malformed
     # encoder name is as fatal as "copy".
     if (!is.null(audio_codec)) check_token(audio_codec)
     measured <- run_loudnorm_analysis(infile, target_loudness, true_peak,
-                                      loudness_range)
+                                      loudness_range,
+                                      audio_stream = audio_stream)
   }
 
   # Duplicates the check apply_audio_codec() makes inside
@@ -2095,7 +2126,8 @@ normalize_audio <- function(infile, outfile,
   ffm_finish(
     normalize_audio_pipeline(infile, outfile, target_loudness, true_peak,
                              loudness_range, channels, sample_rate,
-                             audio_codec = audio_codec, measured = measured),
+                             audio_codec = audio_codec, measured = measured,
+                             audio_stream = audio_stream),
     run
   )
 }
@@ -2135,12 +2167,22 @@ normalize_audio_pipeline <- function(input, output,
                                      channels = NULL,
                                      sample_rate = NULL,
                                      audio_codec = NULL,
-                                     measured = NULL) {
+                                     measured = NULL,
+                                     audio_stream = NULL,
+                                     call = rlang::caller_env()) {
   rlang::check_number_whole(channels, min = 1, allow_null = TRUE)
   rlang::check_number_whole(sample_rate, min = 1, allow_null = TRUE)
   check_audio_codec_not_copy(audio_codec)
 
   p <- ffm_files(input, output)
+  # This verb emitted NO map until M49, so FFmpeg's implicit selection picked
+  # one audio track for it -- whichever carried the container's DEFAULT
+  # disposition, measured as the THIRD track of a 3-track fixture. The change
+  # is determinism, not cardinality: one track before, one track after, but now
+  # a stated one. NULL resolves to the FIRST track rather than D026's every
+  # track, which is this verb's carve-out (D028) -- see pass_through_maps().
+  p <- ffm_map(p, pass_through_maps(audio_stream, null_map = "0:a:0?",
+                                    call = call))
   # Loudness: EBU R128 loudnorm; ffm_loudnorm() validates the target ranges. With
   # `measured` (the two-pass correction path), feed the analysis-pass values back
   # and switch to linear normalization so the target is hit precisely (M16).
@@ -3657,8 +3699,10 @@ derive_normalized_names <- function(input) {
 #'   (or knobs) that omit the column fall back to the argument's value. An
 #'   optional \code{audio_codec} column (character) names each row's output
 #'   audio encoder, with \code{NA} meaning "leave the encoder unset"; rows
-#'   omitting it fall back to the \code{audio_codec} argument. Any other
-#'   columns are ignored.
+#'   omitting it fall back to the \code{audio_codec} argument. An optional
+#'   numeric \code{audio_stream} column (\code{NA} to normalize that row's first
+#'   audio track) likewise overrides the \code{audio_stream} argument per row.
+#'   Any other columns are ignored.
 #' @param target_loudness,true_peak,loudness_range The EBU R128 loudness targets
 #'   applied to every row, unless \code{jobs} carries a column of the same name
 #'   (see \code{jobs}). Defaults follow EBU Recommendation R 128 (2014):
@@ -3699,6 +3743,14 @@ derive_normalized_names <- function(input) {
 #'   logical \code{silent} column (with \code{success = FALSE} and no output
 #'   written), and a warning names them. The single-pass default touches no
 #'   binary under \code{run = FALSE}.
+#' @param audio_stream The 0-based index of the audio track to normalize in
+#'   every row, unless \code{jobs} carries an \code{audio_stream} column.
+#'   \code{NULL} (default) normalizes each input's \strong{first} audio track,
+#'   as \code{\link{normalize_audio}} does; an \code{NA} cell in the column says
+#'   the same for that row. Under \code{two_pass = TRUE} each row's analysis
+#'   pass measures the same track its correction pass normalizes. See
+#'   \code{\link{normalize_audio}} for how this differs from the pass-through
+#'   verbs.
 #' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
 #'   default) or only compile them for inspection (\code{FALSE}). Under
 #'   \code{two_pass = TRUE} this gates only the correction pass; the analysis
@@ -3750,8 +3802,8 @@ derive_normalized_names <- function(input) {
 normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
                              loudness_range = 7, channels = NULL,
                              sample_rate = NULL, audio_codec = NULL,
-                             two_pass = FALSE, run = TRUE,
-                             parallel = FALSE, ...) {
+                             two_pass = FALSE, audio_stream = NULL,
+                             run = TRUE, parallel = FALSE, ...) {
 
   rlang::check_bool(two_pass)
   if (!is.data.frame(jobs)) {
@@ -3793,6 +3845,22 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
   check_batch_codec_col(jobs, "audio_codec")
   check_audio_codec_not_copy(audio_codec)
   if ("audio_codec" %in% names(jobs)) check_audio_codec_not_copy(jobs$audio_codec)
+
+  # An audio_stream column is a numeric stream-index column, and on THIS verb an
+  # NA cell means the first audio track, not every track -- the hint has to say
+  # so, which is why check_batch_audio_col() takes `na_means` (M40's lesson).
+  check_batch_audio_col(jobs, "audio_stream",
+                        na_means = "keep the first audio track")
+  # Unlike the pass-through batch verbs, the two-pass path RESHAPES the jobs
+  # table (it corrects jobs[!silent, ]), so a per-row abort from inside the
+  # fan-out would name a row of the reshaped table rather than the caller's.
+  # Check every cell here, against the caller's row numbers (M45 review F4).
+  check_batch_stream_values(jobs, "audio_stream")
+  # The scalar argument needs its own front door: batch_stream_cell() maps a
+  # scalar NA to the NULL sentinel exactly as it maps an NA cell, so without
+  # this `audio_stream = NA` would silently compile the first-track default
+  # (M37/M41).
+  rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
 
   # Auto-name outputs when the column is absent. One input -> one output, so a
   # duplicated input with no explicit output would map to the same file; reject
@@ -3846,7 +3914,15 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
       col_or("target_loudness", target_loudness),
       col_or("true_peak", true_peak),
       col_or("loudness_range", loudness_range),
-      parallel
+      parallel,
+      # col_or() would collapse a NULL default to NULL rather than to one value
+      # per row, so the column is passed straight through and the argument is
+      # expanded inside run_loudnorm_analysis_batch().
+      audio_stream = if ("audio_stream" %in% names(jobs)) {
+        jobs$audio_stream
+      } else {
+        audio_stream
+      }
     )
     # Continue-and-mark on silence (M18): a silent input (input_i = -inf) cannot
     # be normalized to a loudness target, but one silent row must not abort the
@@ -3873,8 +3949,8 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
     ok_res <- if (any(!silent)) {
       run_normalize_correction(
         jobs[!silent, , drop = FALSE], target_loudness, true_peak,
-        loudness_range, channels, sample_rate, audio_codec, run = run,
-        parallel = parallel, ...
+        loudness_range, channels, sample_rate, audio_codec,
+        audio_stream = audio_stream, run = run, parallel = parallel, ...
       )
     } else {
       NULL
@@ -3925,7 +4001,8 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
         loudness_range = pick("loudness_range", loudness_range),
         channels = pick("channels", channels),
         sample_rate = pick("sample_rate", sample_rate),
-        audio_codec = batch_codec_cell(pick("audio_codec", audio_codec))
+        audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
+        audio_stream = batch_stream_cell(pick("audio_stream", audio_stream))
       )
     },
     run = run,

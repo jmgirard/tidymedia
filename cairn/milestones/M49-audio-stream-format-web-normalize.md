@@ -96,18 +96,18 @@ candidate row. Quoting the emitted specifiers → M50.
       (`R/ffmpeg.R:1192`) and `format_for_web_batch()` (`R/ffmpeg.R:4619`),
       including the batch front-door guard and `check_batch_audio_col()` column
       support that M47 established (`R/ffmpeg.R:1906-1908` pattern).
-- [ ] T3 Tests first, then add a first-track optional variant beside
+- [x] T3 Tests first, then add a first-track optional variant beside
       `pass_through_maps()` (`null_map = "0:a:0?"`) and wire it into
       `normalize_audio_pipeline()` (`R/ffmpeg.R:2103-2145`),
       `normalize_audio()` (`R/ffmpeg.R:2022`) and `normalize_audio_batch()`
       (`R/ffmpeg.R:3722`).
-- [ ] T4 Tests first, then carry the same selection into
+- [x] T4 Tests first, then carry the same selection into
       `loudnorm_analysis_pipeline()` (`R/loudnorm_two_pass.R:16-24`) and its
       callers `run_loudnorm_analysis()` (`:105`) and
       `run_loudnorm_analysis_batch()` (`:136`).
-- [ ] T5 Rewrite the map-count invariant table (`tests/testthat/test-ffm.R:537-604`)
+- [x] T5 Rewrite the map-count invariant table (`tests/testthat/test-ffm.R:537-604`)
       onto compiled commands and update its rule statement.
-- [ ] T6 Re-baseline the exact-command assertions this breaks:
+- [x] T6 Re-baseline the exact-command assertions this breaks:
       `tests/testthat/test-normalize-audio.R:8-15`, `:20-32` (the M16
       characterization baseline — overwrite it deliberately, its comment at
       `:17-19` forbids drift), `:210-222`, `:224-236`;
@@ -115,7 +115,7 @@ candidate row. Quoting the emitted specifiers → M50.
       `tests/testthat/test-normalize-audios-two-pass.R`; and the
       `format_for_web` scalar/batch byte-identity test
       (`tests/testthat/test-format-for-web-batch.R:18-24`).
-- [ ] T7 Execution tests against T1's baseline, plus the two no-regression
+- [x] T7 Execution tests against T1's baseline, plus the two no-regression
       checks (video-only input, out-of-range named track).
 - [ ] T8 Roxygen `@param audio_stream` on the four new entry points, the
       `@param jobs` column enumeration on both `_batch` verbs,
@@ -135,8 +135,38 @@ candidate row. Quoting the emitted specifiers → M50.
 - 2026-07-31: implement gate chose an AUDIO-ONLY map on the analysis pass (`0:a:0?` / `0:a:<n>`, no `0:v?`) over mirroring the correction command's pair, because that pass writes to `-f null` and has no output for a video selection to describe; measured indistinguishable on exit code and block count for every input tried, and 0.356 s vs 0.372 s per run on a 20 s 720p file.
 - 2026-07-31: T2 done — `format_for_web()` / `format_for_web_batch()` carry `audio_stream` under D026's every-track rule; tests in a new `test-audio-stream-format-web.R` (M49's tests are split by verb, one file each, because the two verbs take different `NULL` rules and a shared file could not be green until both landed). `devtools::test()` clean, 0 failures. No existing exact-command test named this verb's command, so T6's re-baselining list is untouched by this task.
 - 2026-07-31: minor plan refinement — T5's map-count table is being updated per verb as each lands rather than rewritten once at the end, so the suite stays green at every checkpoint; `format_for_web` moved 0 → 2 here and the full rewrite onto compiled commands still happens in T5.
+- 2026-07-31: T3–T7 landed in one checkpoint (minor plan amendment). T3 and T4 are two halves of one contract — AC3 is the assertion that the analysis and correction commands name the same track — so a checkpoint carrying only one of them would have shipped a normalize path whose two passes disagreed. T5 and T6 then had to ride along: the suite cannot be green until the map-count table and the exact-command baselines match the new commands.
+- 2026-07-31: T3 — `pass_through_maps()` gained a `null_map` parameter rather than a sibling helper being added beside it (plan wording said "beside"). Same shape `audio_stream_map()` already had for the same reason, and it keeps one comment block explaining both spellings instead of two that can drift.
+- 2026-07-31: T3 — discovered sub-task, done: `normalize_audio_batch()` also gets `check_batch_stream_values()`, which the pass-through batch verbs do not need. Its two-pass path corrects `jobs[!silent, ]`, so a per-row abort from inside the fan-out would name a row of the reshaped table rather than the caller's (M45 review F4).
+- 2026-07-31: T4 — `audio_stream` threaded through `loudnorm_analysis_pipeline()`, `run_loudnorm_analysis()` and `run_loudnorm_analysis_batch()`; the batch form expands a scalar/NULL argument to one value per row itself, because `col_or()` would collapse a NULL default to NULL rather than to a per-row vector.
+- 2026-07-31: T6 — the re-baselining list was shorter than planned. Six exact-command assertions moved (`test-normalize-audio.R` ×4 including the M16 characterization baseline, `test-normalize-audio-batch.R` ×2, `test-loudnorm-two-pass.R` ×1); `test-normalize-audios-two-pass.R` and the `format_for_web` scalar/batch byte-identity test needed no change, the first because its assertions are containment rather than equality and the second because it compares the two entry points to each other. Also corrected against the plan: `ffm_compile()` emits maps AFTER the output options (`-ac`/`-ar`/`-f null`) and immediately before the output URL, not before them.
+- 2026-07-31: T7 — execution evidence green on a 3-track fixture with DEFAULT asserted on track 2 before any result was read: `format_for_web()` carries eng/spa/fra, `normalize_audio()` carries eng, a named track lands on both, `normalize_audio()` still exits 0 on a video-only input, `audio_stream = 9` is an FFmpeg error, and the two-pass path measures and corrects the same track on both the scalar and batch entry points.
 - 2026-07-31: criteria audit ([O], fresh context) returned seven findings: AC3 and AC5 demanded a compiled analysis command that D013/D024 make unreachable from a verb call; AC4's pre-change comparison had no surviving reference and no task; the `test-ffm.R` rule statement, `hit[[1]]`, and both `loudnorm_two_pass.R` caller lines were cited off by one to six lines; and "keyed on command shape" was undefined. All fixed above; none became a gate question.
 
 ## Decisions
+
+### M49-D1 — The two-pass analysis pass maps audio alone (2026-07-31)
+
+`loudnorm_analysis_pipeline()` emits `-map 0:a:0?` (or `-map 0:a:<n>`) and no
+`-map 0:v?`, unlike the correction command it feeds, which emits both halves.
+
+The pass writes to `-f null` and produces no output file, so there is no output
+for a video selection to describe; mapping video decodes a stream the pass
+discards. Measured on-branch: the two spellings are indistinguishable in exit
+code and in JSON-block count on a 3-audio-track `.mkv` and on a video-only
+`.mp4` alike, and the pair runs 0.372 s against 0.356 s per run on a 20 s 720p
+file. So the choice was not settled by behavior or by speed but by what the
+command states.
+
+Rules out mirroring the correction command's map pair for readability. The
+invariant that matters is not that the two commands *look* alike — it is that
+they name the same **audio** track, which is asserted directly rather than
+inferred from their shapes. Making the analysis pass carry `0:v?` would have
+made a mismatch on the audio half no easier to see.
+
+This is why the map-count invariant table now has a row per compiled command
+rather than per verb: keyed on the verb, the analysis pass had no row at all,
+and it is the one command in the package whose map must *agree* with another
+command's rather than merely be well-formed.
 
 ## Review

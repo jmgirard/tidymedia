@@ -8,7 +8,8 @@ test_that("normalize_audio() compiles the default EBU R128 command", {
   expect_equal(
     cmd,
     sprintf(
-      '-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" -codec:v copy "out.mp4"',
+      paste0('-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" -codec:v copy ',
+             '-map 0:v? -map 0:a:0? "out.mp4"'),
       f
     )
   )
@@ -17,7 +18,13 @@ test_that("normalize_audio() compiles the default EBU R128 command", {
 # Characterization: pin the full command for a fully-specified single-pass call
 # so the `two_pass = FALSE` default (added in M16) stays byte-for-byte identical
 # to today's behavior. This baseline must not drift when two-pass lands.
-test_that("normalize_audio() single-pass command is byte-for-byte stable (M16 baseline)", {
+#
+# Deliberately overwritten at M49, which is the one thing the paragraph above
+# forbids doing by accident. The map pair is a stated behavior change, not
+# drift: this verb emitted no map at all and let FFmpeg's DEFAULT-disposition
+# heuristic pick one audio track (D028). The rest of the command is unchanged
+# byte for byte, and that is what this baseline still pins.
+test_that("normalize_audio() single-pass command is byte-for-byte stable (M16 baseline, re-based M49)", {
   f <- make_input()
   cmd <- normalize_audio(f, "out.mp4", target_loudness = -16, true_peak = -1.5,
                          loudness_range = 11, channels = 1, sample_rate = 48000,
@@ -26,7 +33,7 @@ test_that("normalize_audio() single-pass command is byte-for-byte stable (M16 ba
     cmd,
     sprintf(
       paste0('-y -i "%s" -af "loudnorm=I=-16:TP=-1.5:LRA=11" ',
-             '-codec:v copy -ac 1 -ar 48000 "out.mp4"'),
+             '-codec:v copy -ac 1 -ar 48000 -map 0:v? -map 0:a:0? "out.mp4"'),
       f
     )
   )
@@ -215,7 +222,8 @@ test_that("normalize_audio() emits no -codec:a by default (NULL sentinel)", {
   expect_equal(
     cmd,
     sprintf(
-      '-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" -codec:v copy "out.mp4"',
+      paste0('-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" -codec:v copy ',
+             '-map 0:v? -map 0:a:0? "out.mp4"'),
       f
     )
   )
@@ -230,7 +238,7 @@ test_that("normalize_audio(audio_codec = ) names the output audio encoder", {
     cmd,
     sprintf(
       paste0('-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" ',
-             '-codec:v copy -codec:a aac "out.mp4"'),
+             '-codec:v copy -codec:a aac -map 0:v? -map 0:a:0? "out.mp4"'),
       f
     )
   )

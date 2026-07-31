@@ -579,11 +579,10 @@ test_that("every in-package pipeline emits the maps its verb's contract says", {
     "segment_video(reencode = FALSE)" = 2L,
     "standardize_video" = 2L,
     "anonymize_video" = 2L,
-    # Still unstated, and known: format_for_web() is standardize_video()'s
-    # shape and normalize_audio() re-encodes audio by construction. Neither is
-    # in D026's Scope bullet, so both still consult FFmpeg's DEFAULT-disposition
-    # heuristic.
-    "format_for_web" = 0L,
+    "format_for_web" = 2L,
+    # Still unstated, and known: normalize_audio() re-encodes audio by
+    # construction and is not in D026's Scope bullet, so it still consults
+    # FFmpeg's DEFAULT-disposition heuristic. M49 closes it.
     "normalize_audio" = 0L
   )
   cmds <- c(

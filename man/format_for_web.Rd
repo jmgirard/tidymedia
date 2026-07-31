@@ -9,6 +9,7 @@ format_for_web(
   outfile,
   hardware = c("none", "nvenc"),
   fallback = FALSE,
+  audio_stream = NULL,
   run = TRUE
 )
 }
@@ -24,6 +25,19 @@ libx264) or \code{"nvenc"} for NVIDIA GPU H.264 encoding
 \item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
 unavailable, re-encode with software libx264 and a message (\code{TRUE})
 instead of aborting (\code{FALSE}, default).}
+
+\item{audio_stream}{The 0-based index of the audio track to carry into the
+output, counted \emph{among the input's audio streams} -- \code{0} is the
+first audio track, \code{1} the second, whatever their positions among the
+file's streams. \code{NULL} (default) carries \strong{every} audio track,
+which is also what \code{\link{separate_audio_video}},
+\code{\link{standardize_video}}, \code{\link{anonymize_video}},
+\code{\link{crop_video}} and \code{\link{segment_video}} do, and differs
+from \code{\link{extract_audio}}, \code{\link{convert_audio}} and
+\code{\link{normalize_audio}}, whose \code{NULL} takes the first track
+only. Naming a track the input does not have is an FFmpeg error, not an R
+one. Subtitle and data streams are not carried either way. (default =
+\code{NULL})}
 
 \item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
 or return the compiled command without running it (\code{FALSE}).}

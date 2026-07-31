@@ -1152,12 +1152,20 @@ crop_video <- function(infile, outfile, width, height,
 # dimensions down to even as the codec requires. No per-row knobs — every input
 # gets the same recipe. Command assembly stays in Layer 1 (IP1/D002).
 format_for_web_pipeline <- function(input, output, hardware = "none",
-                                    fallback = FALSE) {
+                                    fallback = FALSE, audio_stream = NULL,
+                                    call = rlang::caller_env()) {
   # The recipe stays H.264 (family fixed); hardware = "nvenc" swaps libx264 for
   # h264_nvenc when available. Layer 2 only computes the codec name (D009, IP1).
   video_codec <- resolve_hw_encoder("libx264", hardware, fallback)
   p <- ffm_files(input, output)
   p <- ffm_crop(p, width = "floor(in_w/2)*2", height = "floor(in_h/2)*2")
+  # This verb emitted NO map until M49, so FFmpeg's implicit selection picked
+  # one audio track for it -- whichever carried the container's DEFAULT
+  # disposition, measured as the THIRD track of a 3-track fixture. D026's
+  # every-track rule applies here unchanged: the recipe re-encodes audio to AAC
+  # and writes .mp4, a container that holds many audio tracks, so the
+  # unselected case has no reason to narrow (D028).
+  p <- ffm_map(p, pass_through_maps(audio_stream, call = call))
   p <- ffm_codec(p, video = video_codec, audio = "aac")
   p <- ffm_pixel_format(p, "yuv420p")
   ffm_output_options(p, "-movflags +faststart")
@@ -1177,6 +1185,18 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
 #'   unavailable, re-encode with software libx264 and a message (\code{TRUE})
 #'   instead of aborting (\code{FALSE}, default).
+#' @param audio_stream The 0-based index of the audio track to carry into the
+#'   output, counted \emph{among the input's audio streams} -- \code{0} is the
+#'   first audio track, \code{1} the second, whatever their positions among the
+#'   file's streams. \code{NULL} (default) carries \strong{every} audio track,
+#'   which is also what \code{\link{separate_audio_video}},
+#'   \code{\link{standardize_video}}, \code{\link{anonymize_video}},
+#'   \code{\link{crop_video}} and \code{\link{segment_video}} do, and differs
+#'   from \code{\link{extract_audio}}, \code{\link{convert_audio}} and
+#'   \code{\link{normalize_audio}}, whose \code{NULL} takes the first track
+#'   only. Naming a track the input does not have is an FFmpeg error, not an R
+#'   one. Subtitle and data streams are not carried either way. (default =
+#'   \code{NULL})
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
@@ -1190,13 +1210,21 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
 #' format_for_web(video, "web.mp4", run = FALSE)
 #' @export
 format_for_web <- function(infile, outfile, hardware = c("none", "nvenc"),
-                           fallback = FALSE, run = TRUE) {
+                           fallback = FALSE, audio_stream = NULL, run = TRUE) {
 
   check_file_exists(infile)
   rlang::check_string(outfile)
   hardware <- rlang::arg_match(hardware)
+  # No front-door check for `audio_stream`, matching crop_video() and
+  # standardize_video() (M47 review F8): pass_through_maps() carries the
+  # identical check with `call` resolving to this frame, so the blame is
+  # unchanged and this verb gains no guard that reorders its complaints. The
+  # BATCH sibling keeps its own, where it is load-bearing.
 
-  ffm_finish(format_for_web_pipeline(infile, outfile, hardware, fallback), run)
+  ffm_finish(
+    format_for_web_pipeline(infile, outfile, hardware, fallback, audio_stream),
+    run
+  )
 }
 
 
@@ -4586,7 +4614,9 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #'   \code{_web} to each input's basename with an \code{.mp4} extension (the web
 #'   re-encode always writes H.264/mp4), e.g. \code{clip.mkv} becomes
 #'   \code{clip_web.mp4}. Any two rows that resolve to the same output path are
-#'   rejected. Any other columns are ignored — including \code{video_codec} and
+#'   rejected. An optional numeric \code{audio_stream} column (\code{NA} to keep
+#'   every audio track in that row) overrides the \code{audio_stream} argument
+#'   per row. Any other columns are ignored — including \code{video_codec} and
 #'   \code{audio_codec}, which the sibling batch verbs read as per-row overrides
 #'   but this one does not: the web recipe fixes both codecs by identity (H.264
 #'   video, AAC audio). For per-row codecs use a verb that exposes them, such as
@@ -4597,6 +4627,12 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
 #'   unavailable, re-encode with software libx264 and a message (\code{TRUE})
 #'   instead of aborting (\code{FALSE}, default).
+#' @param audio_stream The 0-based index of the audio track to carry into every
+#'   output, unless \code{jobs} carries an \code{audio_stream} column.
+#'   \code{NULL} (default) carries \strong{every} audio track, as
+#'   \code{\link{format_for_web}} does; an \code{NA} cell in the column says the
+#'   same for that row. See \code{\link{format_for_web}} for how this differs
+#'   from the extraction verbs and from \code{\link{normalize_audio}}.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -4617,11 +4653,21 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #' format_for_web_batch(jobs, run = FALSE)
 #' @export
 format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
-                                 fallback = FALSE, run = TRUE, parallel = FALSE,
+                                 fallback = FALSE, audio_stream = NULL,
+                                 run = TRUE, parallel = FALSE,
                                  ...) {
 
   jobs <- check_batch_jobs(jobs, require_output = FALSE)
   hardware <- rlang::arg_match(hardware)
+  # See crop_video_batch() for why the hint says "every" here and why
+  # check_batch_stream_values() is not needed on a verb that does not reshape.
+  check_batch_audio_col(jobs, "audio_stream",
+                        na_means = "keep every audio track")
+  # The scalar argument needs its own front door: batch_stream_cell() maps a
+  # scalar NA to the NULL sentinel exactly as it maps an NA cell, so without
+  # this `audio_stream = NA` would silently compile the every-track default
+  # (M37/M41).
+  rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
 
   if (!"output" %in% names(jobs)) {
     jobs$output <- derive_web_names(jobs$input)
@@ -4630,11 +4676,17 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one web re-encode pipeline per
   # row, sharing format_for_web_pipeline() with format_for_web(). hardware/
-  # fallback are batch-wide; other extra job columns are ignored.
+  # fallback are batch-wide; `audio_stream` is the one per-row override this
+  # verb reads, and other extra job columns are still ignored.
   ffm_batch(
     jobs,
     function(input, output, ...) {
-      format_for_web_pipeline(input, output, hardware, fallback)
+      dots <- list(...)
+      pick <- function(nm, default) if (nm %in% names(dots)) dots[[nm]] else default
+      format_for_web_pipeline(
+        input, output, hardware, fallback,
+        audio_stream = batch_stream_cell(pick("audio_stream", audio_stream))
+      )
     },
     run = run,
     parallel = parallel,

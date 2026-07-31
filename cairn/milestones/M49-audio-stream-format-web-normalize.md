@@ -90,7 +90,7 @@ candidate row. Quoting the emitted specifiers → M50.
       and AC6 have a fixed reference the branch cannot destroy (M44's lesson):
       the disposition-shifted 3-track fixture, what each verb carries from it
       today, and the analysis pass's JSON-block count under `-map 0:a?`.
-- [ ] T2 Tests first, then thread `audio_stream` through
+- [x] T2 Tests first, then thread `audio_stream` through
       `format_for_web_pipeline()` (`R/ffmpeg.R:1154-1165`) via
       `pass_through_maps()` (`R/ffmpeg.R:326-329`), `format_for_web()`
       (`R/ffmpeg.R:1192`) and `format_for_web_batch()` (`R/ffmpeg.R:4619`),
@@ -133,6 +133,8 @@ candidate row. Quoting the emitted specifiers → M50.
 - 2026-07-31: T1 baseline, analysis pass: today's `loudnorm_analysis_pipeline()` compiles no `-map` either, and FFmpeg's implicit selection sends stream `#0:3` (`fra`) to `loudnorm`, printing 1 JSON block — so analysis and correction currently agree by accident, both landing on whichever track carries DEFAULT. Under `-map 0:a?` the same pipeline prints **3** blocks (one per mapped track) while `classify_loudnorm_output()` reads `hit[[1]]` (`R/loudnorm_two_pass.R:48`) — AC6's measured reason for the first-track carve-out. Under `0:a:0?` or a named track it prints 1.
 - 2026-07-31: T1 baseline, no-regression references: `normalize_audio()` on a video-only `.mp4` exits 0 today; on the analysis pass an audio-only `-map 0:a:0?` also exits 0 there (empty null-sink output is legal), while a named `-map 0:a:1` exits 234.
 - 2026-07-31: implement gate chose an AUDIO-ONLY map on the analysis pass (`0:a:0?` / `0:a:<n>`, no `0:v?`) over mirroring the correction command's pair, because that pass writes to `-f null` and has no output for a video selection to describe; measured indistinguishable on exit code and block count for every input tried, and 0.356 s vs 0.372 s per run on a 20 s 720p file.
+- 2026-07-31: T2 done — `format_for_web()` / `format_for_web_batch()` carry `audio_stream` under D026's every-track rule; tests in a new `test-audio-stream-format-web.R` (M49's tests are split by verb, one file each, because the two verbs take different `NULL` rules and a shared file could not be green until both landed). `devtools::test()` clean, 0 failures. No existing exact-command test named this verb's command, so T6's re-baselining list is untouched by this task.
+- 2026-07-31: minor plan refinement — T5's map-count table is being updated per verb as each lands rather than rewritten once at the end, so the suite stays green at every checkpoint; `format_for_web` moved 0 → 2 here and the full rewrite onto compiled commands still happens in T5.
 - 2026-07-31: criteria audit ([O], fresh context) returned seven findings: AC3 and AC5 demanded a compiled analysis command that D013/D024 make unreachable from a verb call; AC4's pre-change comparison had no surviving reference and no task; the `test-ffm.R` rule statement, `hit[[1]]`, and both `loudnorm_two_pass.R` caller lines were cited off by one to six lines; and "keyed on command shape" was undefined. All fixed above; none became a gate question.
 
 ## Decisions

@@ -73,5 +73,5 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 ffm(c(video, video), "output.mp4") |>
   ffm_concat() |>
   ffm_compile()
-#> [1] "-y -f concat -safe 0 -i \"/tmp/RtmpmntBaR/ffm-concat20802fd89e76.txt\" -codec:v copy -codec:a copy -map 0 \"output.mp4\""
+#> [1] "-y -f concat -safe 0 -i \"/tmp/Rtmpx2YBcA/ffm-concat201347a694da.txt\" -codec:v copy -codec:a copy -map 0 \"output.mp4\""
 ```

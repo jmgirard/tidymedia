@@ -2,6 +2,36 @@
 
 ## Breaking changes
 
+* `format_for_web()` and `normalize_audio()` (and their `_batch` siblings) take
+  a new `audio_stream` argument naming which audio track to work on, and now
+  state that selection on every call. Both previously emitted no stream mapping
+  at all, so FFmpeg picked for them — one stream of each type, preferring
+  whichever audio track carries the container's "default" flag. On a
+  three-track test file whose default flag sat on the third track, both verbs
+  kept only that third track, in silence.
+
+  The two verbs read an unset `audio_stream` differently, and the difference is
+  deliberate. `format_for_web()` now keeps **every** audio track, matching
+  `crop_video()`, `segment_video()`, `standardize_video()`,
+  `anonymize_video()` and `separate_audio_video()`. If you re-encode multi-track
+  sources for the web, your outputs will gain tracks they used to lose, and grow
+  accordingly.
+
+  `normalize_audio()` keeps the **first** audio track, matching
+  `extract_audio()` and `convert_audio()`. That is not a narrowing: the verb
+  already produced a single audio track, just an unpredictable one. It reads
+  `NULL` this way because measuring loudness produces one measurement per audio
+  track while the correction applies a single set of values, so normalizing
+  several tracks at once would silently apply the first track's measurements to
+  all of them. Under `two_pass = TRUE` the measurement pass now measures exactly
+  the track the correction pass normalizes. Normalizing every track
+  independently would need per-track filter settings the pipeline builder does
+  not have, and is not offered.
+
+  Naming a track the input does not have remains an FFmpeg error rather than an
+  R one, on both verbs. Each argument's documentation says which family it
+  belongs to.
+
 * `crop_video()` and `segment_video()` (and their `_batch` siblings) take a new
   `audio_stream` argument naming which audio track to carry, and now state that
   selection on every call. What that changes depends on which of them you use,

@@ -117,7 +117,7 @@ candidate row. Quoting the emitted specifiers → M50.
       (`tests/testthat/test-format-for-web-batch.R:18-24`).
 - [x] T7 Execution tests against T1's baseline, plus the two no-regression
       checks (video-only input, out-of-range named track).
-- [ ] T8 Roxygen `@param audio_stream` on the four new entry points, the
+- [x] T8 Roxygen `@param audio_stream` on the four new entry points, the
       `@param jobs` column enumeration on both `_batch` verbs,
       `@seealso`/NEWS/`inst/WORDLIST`; `devtools::document()`.
 - [ ] T9 Append the D-entry; add the per-track-two-pass candidate row named in
@@ -141,6 +141,7 @@ candidate row. Quoting the emitted specifiers → M50.
 - 2026-07-31: T4 — `audio_stream` threaded through `loudnorm_analysis_pipeline()`, `run_loudnorm_analysis()` and `run_loudnorm_analysis_batch()`; the batch form expands a scalar/NULL argument to one value per row itself, because `col_or()` would collapse a NULL default to NULL rather than to a per-row vector.
 - 2026-07-31: T6 — the re-baselining list was shorter than planned. Six exact-command assertions moved (`test-normalize-audio.R` ×4 including the M16 characterization baseline, `test-normalize-audio-batch.R` ×2, `test-loudnorm-two-pass.R` ×1); `test-normalize-audios-two-pass.R` and the `format_for_web` scalar/batch byte-identity test needed no change, the first because its assertions are containment rather than equality and the second because it compares the two entry points to each other. Also corrected against the plan: `ffm_compile()` emits maps AFTER the output options (`-ac`/`-ar`/`-f null`) and immediately before the output URL, not before them.
 - 2026-07-31: T7 — execution evidence green on a 3-track fixture with DEFAULT asserted on track 2 before any result was read: `format_for_web()` carries eng/spa/fra, `normalize_audio()` carries eng, a named track lands on both, `normalize_audio()` still exits 0 on a video-only input, `audio_stream = 9` is an FFmpeg error, and the two-pass path measures and corrects the same track on both the scalar and batch entry points.
+- 2026-07-31: T8 — `@param audio_stream` on all four new entry points (each naming which family reads `NULL` the other way), the `@param jobs` column enumeration on both `_batch` verbs, and a NEWS entry describing both changes and why the two verbs read an unset selector differently. `devtools::document()` produces no diff and `spelling::spell_check_package()` is clean, so `inst/WORDLIST` needs no additions. `@seealso` deliberately unchanged: the package puts these cross-references inside the `@param audio_stream` block (crop_video's precedent), and refreshing the sibling enumerations in the fourteen existing blocks is M51's, not this milestone's.
 - 2026-07-31: criteria audit ([O], fresh context) returned seven findings: AC3 and AC5 demanded a compiled analysis command that D013/D024 make unreachable from a verb call; AC4's pre-change comparison had no surviving reference and no task; the `test-ffm.R` rule statement, `hit[[1]]`, and both `loudnorm_two_pass.R` caller lines were cited off by one to six lines; and "keyed on command shape" was undefined. All fixed above; none became a gate question.
 
 ## Decisions

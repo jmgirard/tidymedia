@@ -288,6 +288,52 @@ make_subtitle_video <- function(env = parent.frame()) {
   path
 }
 
+# Generate a FIVE-stream .mkv: one video, three tagged audio tracks (eng/spa/
+# fra) and one subtitle -- make_multitrack_video() and make_subtitle_video()
+# combined. M48 needs both properties on ONE file: three tracks to prove which
+# one `audio_stream` took, and a subtitle to prove the new `-map 0:v? -map 0:a?`
+# stops carrying subtitles where `-map 0` carried them (and so stops failing
+# into .mp4). It is also the 5-stream input the doubled-ffm_copy() execution
+# test counts against, which is why the count is fixed at five rather than left
+# to "several".
+#
+# No `-shortest`, for the reason make_subtitle_video() records: beside a mapped
+# subtitle stream it deadlocks FFmpeg intermittently (10 hangs in 25 runs on
+# ffmpeg 8.1.2/macOS; 0 in 15 without it -- M46). The lavfi sources are
+# duration-bounded already, so nothing needs it.
+#
+# Skips the calling test if ffmpeg is unavailable. Returns the file path.
+make_multitrack_subtitle_video <- function(env = parent.frame()) {
+  skip_if_no_ffmpeg()
+  srt <- withr::local_tempfile(fileext = ".srt", .local_envir = env)
+  writeLines(c("1", "00:00:00,000 --> 00:00:01,000", "hello", ""), srt)
+  path <- withr::local_tempfile(fileext = ".mkv", .local_envir = env)
+  run_ffmpeg_fixture(paste(
+    "-y -f lavfi -i testsrc=duration=1:size=64x64:rate=10",
+    "-f lavfi -i sine=frequency=300:duration=1",
+    "-f lavfi -i sine=frequency=600:duration=1",
+    "-f lavfi -i sine=frequency=900:duration=1",
+    sprintf('-i "%s"', srt),
+    "-map 0:v -map 1:a -map 2:a -map 3:a -map 4:s",
+    "-c:v libx264 -c:a aac -b:a 32k -c:s srt -pix_fmt yuv420p",
+    "-metadata:s:a:0 language=eng",
+    "-metadata:s:a:1 language=spa",
+    "-metadata:s:a:2 language=fra",
+    sprintf('"%s"', path)
+  ))
+  testthat::skip_if_not(file.exists(path),
+                        "multitrack subtitle test video could not be generated")
+  # Assert the fixture's own property before any test trusts a result from it
+  # (M43's lesson): a test counting five streams out is measuring nothing if the
+  # input never had five in.
+  testthat::skip_if_not(
+    identical(stream_types(path),
+              c("video", "audio", "audio", "audio", "subtitle")),
+    "multitrack subtitle fixture did not carry the expected five streams"
+  )
+  path
+}
+
 # Probe a media file's stream types via ffprobe, in stream order: a character
 # vector of "video"/"audio"/"subtitle". Skips if ffprobe is unavailable.
 stream_types <- function(path) {

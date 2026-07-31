@@ -17,7 +17,7 @@ test_that("crop_video() stream-copies audio by default", {
   expect_equal(
     as.character(cmd),
     paste0('-y -i "', f, '" -vf "crop=w=100:h=50:x=0:y=0" ',
-           '-codec:a copy -map 0 "out.mp4"')
+           '-codec:a copy -map 0:v? -map 0:a? "out.mp4"')
   )
   expect_no_match(as.character(cmd), "-codec:v", fixed = TRUE)
 })
@@ -39,7 +39,7 @@ test_that("crop_video(audio_codec = NULL) emits no -codec:a", {
   expect_equal(
     as.character(cmd),
     paste0('-y -i "', f, '" -vf "crop=w=100:h=50:x=',
-           '(in_w-out_w)/2:y=(in_h-out_h)/2" -map 0 "out.mp4"')
+           '(in_w-out_w)/2:y=(in_h-out_h)/2" -map 0:v? -map 0:a? "out.mp4"')
   )
 })
 
@@ -74,7 +74,8 @@ test_that("segment_video() stream-copies audio on the re-encode path", {
   # The pre-M35 literal, plus -codec:a copy and nothing else.
   expect_equal(
     as.character(out$command),
-    paste0('-y -i "', f, '" -codec:a copy -ss 0 -to 1 "seg.mp4"')
+    paste0('-y -i "', f, '" -codec:a copy -ss 0 -to 1 ',
+           '-map 0:v? -map 0:a? "seg.mp4"')
   )
   expect_no_match(as.character(out$command), "-codec:v", fixed = TRUE)
 })

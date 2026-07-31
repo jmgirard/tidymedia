@@ -8,7 +8,10 @@ test_that("segment_video() returns a job tibble with one accurate-cut command pe
   expect_s3_class(res, "tbl_df")
   expect_equal(nrow(res), 2)
   # Default reencode = TRUE: accurate output-seek (-ss/-to after -i), no copy.
-  expect_match(res$command[[1]], '-ss 0 -to 5 "a.mp4"', fixed = TRUE)
+  # The seek and the output are no longer adjacent: M48's stated map sits
+  # between them (D026).
+  expect_match(res$command[[1]], '-ss 0 -to 5 -map 0:v? -map 0:a? "a.mp4"',
+               fixed = TRUE)
   expect_no_match(res$command[[1]], "-codec:v copy", fixed = TRUE)
 })
 
@@ -204,7 +207,7 @@ test_that("crop_video() compiles to a crop filter mapping all streams", {
   # The filter and the map are no longer adjacent: the default audio_codec
   # emits -codec:a copy between them (M35/D017).
   expect_match(cmd, '-vf "crop=w=100:h=50:x=0:y=0"', fixed = TRUE)
-  expect_match(cmd, '-map 0 "out.mp4"', fixed = TRUE)
+  expect_match(cmd, '-map 0:v? -map 0:a? "out.mp4"', fixed = TRUE)
 })
 
 test_that("format_for_web() compiles to the web-friendly re-encode", {

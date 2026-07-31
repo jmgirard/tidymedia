@@ -25,7 +25,8 @@ test_that("crop_video() with the default video_codec emits no -codec:v", {
   # changed it (the default audio_codec adds -codec:a copy); it is pinned
   # byte-for-byte in test-audio-codec.R instead.
   expect_match(as.character(cmd), '-vf "crop=w=100:h=50:x=0:y=0"', fixed = TRUE)
-  expect_match(as.character(cmd), '-map 0 "out.mp4"', fixed = TRUE)
+  expect_match(as.character(cmd), '-map 0:v? -map 0:a? "out.mp4"',
+               fixed = TRUE)
   expect_no_match(as.character(cmd), "-codec:v", fixed = TRUE)
 })
 
@@ -172,7 +173,8 @@ test_that("segment_video() with the default video_codec emits no -codec:v", {
   # M34 existed. The full default literal is no longer pinned here because M35
   # changed it (the default audio_codec adds -codec:a copy); it is pinned
   # byte-for-byte in test-audio-codec.R instead.
-  expect_match(as.character(out$command), '-ss 0 -to 1 "seg.mp4"', fixed = TRUE)
+  expect_match(as.character(out$command),
+               '-ss 0 -to 1 -map 0:v? -map 0:a? "seg.mp4"', fixed = TRUE)
   expect_no_match(as.character(out$command), "-codec:v", fixed = TRUE)
 })
 
@@ -221,7 +223,7 @@ test_that("segment_video(reencode = FALSE) keeps its pre-M34 stream copy", {
   expect_equal(
     as.character(out$command),
     paste0('-y -ss 0 -to 1 -i "', f, '" -codec:v copy -codec:a copy ',
-           '-avoid_negative_ts make_zero -map 0 "seg.mp4"')
+           '-avoid_negative_ts make_zero -map 0:v? -map 0:a? "seg.mp4"')
   )
 })
 

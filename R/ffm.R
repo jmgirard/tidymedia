@@ -544,6 +544,11 @@ ffm_codec <- function(object,
 #' \code{\link{ffm_copy}} sets — appending to that one would duplicate the
 #' stream in the output rather than select it.
 #'
+#' This is the only builder verb that accumulates; every other \code{ffm_*}
+#' setter, \code{\link{ffm_copy}} included, assigns. The exception is earned by
+#' this function's arguments being \emph{partial} selections that genuinely
+#' compose (keep the video, then name one audio track).
+#'
 #' When the pipeline uses a multi-input verb (e.g.
 #' \code{\link{ffm_hstack}}), the explicit mapping is added \emph{alongside}
 #' the automatic \code{-map "[vout]"} of the filtered stream — for example,
@@ -586,7 +591,16 @@ ffm_map <- function(object, mapping = "0", replace = FALSE) {
   # Append by default. Overwriting was the old behavior and it silently
   # discarded the earlier call, so a pipeline could not keep the video and then
   # name one audio track; `replace` keeps overwriting reachable for the one case
-  # that needs it -- narrowing ffm_copy()'s all-streams "0" (M43).
+  # that needs it -- narrowing ffm_copy()'s all-streams "0" (M43). ffm_copy()
+  # now sets that map through `replace` itself (M48/D027), so the two in-package
+  # callers of this branch are it and segment_pipeline().
+  #
+  # No de-duplication here, deliberately: that was considered and rejected at
+  # M48 (RR03). It would change this contract to fix a defect that is not this
+  # function's -- `c(existing, "0")` is wrong because "0" SUBSUMES whatever it
+  # is appended to, which is a fact about ffm_copy()'s specifier, not about
+  # appending -- and it would leave `ffm_map("0:v") |> ffm_copy()` duplicating
+  # the video stream regardless.
   object$map <- if (replace) mapping else c(object$map, mapping)
 
   object
@@ -608,10 +622,13 @@ ffm_map <- function(object, mapping = "0", replace = FALSE) {
 #' @param video A logical indicating whether to copy the video codec.
 #'   (default = \code{TRUE})
 #' @param streams A logical indicating whether to map all streams from the
-#'   input (via \code{ffm_map(mapping = "0")}). Because \code{\link{ffm_map}}
-#'   appends, this \emph{adds} \code{-map 0} to any mapping already set; to
-#'   narrow the result afterwards, call \code{ffm_map(replace = TRUE)}.
-#'   (default = \code{TRUE})
+#'   input. This \strong{sets} the mapping to \code{-map 0} rather than adding
+#'   to it, so calling \code{ffm_copy()} twice compiles one \code{-map 0}, not
+#'   two. If the pipeline already states a \emph{different} mapping, that is a
+#'   conflict and \code{ffm_copy()} aborts rather than discard it silently:
+#'   pass \code{streams = FALSE} to keep the mapping you set, or call
+#'   \code{ffm_copy()} first and narrow afterwards with
+#'   \code{ffm_map(replace = TRUE)}. (default = \code{TRUE})
 #' @return \code{object} with the added instruction to copy codecs and/or map
 #'   all streams.
 #' @seealso [ffm_codec()] and [ffm_map()], which it wraps; [segment_video()]
@@ -636,10 +653,58 @@ ffm_copy <- function(object, audio = TRUE, video = TRUE, streams = TRUE) {
     object <- ffm_codec(object, video = "copy")
   }
   if (streams) {
-    object <- ffm_map(object, mapping = "0")
+    # ASSIGN, never append (M48/D027). "0" subsumes every other specifier the
+    # linear builder can address (one input chain, IP2/D003), so appending it
+    # has no composition in which it is what the caller wanted: beside an
+    # existing "0" it duplicates every stream, and beside anything narrower
+    # ("0:v") it duplicates that selection's streams. An operation whose
+    # right-hand side subsumes any possible left-hand side is an assignment,
+    # and ffm_copy() executing it as an increment is what M43's append change
+    # accidentally made it do.
+    check_copy_map_conflict(object$map, call = rlang::caller_env())
+    object <- ffm_map(object, mapping = "0", replace = TRUE)
   }
-  
+
   object
+}
+
+# Refuse to assign the all-streams map over a DIFFERENT stated mapping. Without
+# this, ffm_copy()'s assignment would silently discard a selection the caller
+# wrote -- the precise flaw D023 was written to remove ("a second call silently
+# discarded the first"), reintroduced for one verb. The package already decided
+# this shape one field over: segment_pipeline() aborts on an `audio_codec` that
+# ffm_copy() would silently overwrite (M35/D017). RR03 chose an abort over a
+# warning because the compiled command is the product (D001), and because an
+# abort relaxed to a warning later is backward-compatible where the reverse
+# breaks running code.
+#
+# The identical("0") carve-out is load-bearing, not a convenience: it is what
+# keeps ffm_copy() |> ffm_copy() and ffm_concat() |> ffm_copy() silent no-op
+# restatements instead of errors. It is literal, so c("0", "0") -- a map already
+# doubled by hand -- is a conflict and aborts.
+#
+# Worded around the PIPELINE's map rather than the caller's frame, because
+# ffm_concat() calls ffm_copy() internally: a user chain
+# `ffm_map(...) |> ffm_concat()` trips this from a function they never called,
+# where "you passed streams = TRUE" would be a lie and `streams = FALSE` is not
+# an argument they can reach. That chain compiled `-map 0:v -map 0` before M48
+# and duplicated a stream, so erroring is a fix rather than a regression.
+check_copy_map_conflict <- function(map, call = rlang::caller_env()) {
+  if (length(map) == 0L || identical(map, "0")) {
+    return(invisible(NULL))
+  }
+  cli::cli_abort(
+    c(
+      "This pipeline already sets a stream mapping ({.val {map}}), which
+       copying every stream would discard.",
+      "i" = "Keep it with {.code ffm_copy(streams = FALSE)}, which copies the
+             codecs and leaves the mapping alone.",
+      "i" = "Or copy first and narrow after, with
+             {.code ffm_map(..., replace = TRUE)}."
+    ),
+    class = "tidymedia_copy_map_conflict",
+    call = call
+  )
 }
 
 # ffm_pixel_format() ------------------------------------------------------

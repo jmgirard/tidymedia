@@ -12,7 +12,7 @@ test_that("loudnorm_analysis_pipeline() compiles a print_format=json null pass",
   expect_match(cmd, "loudnorm=I=-23:TP=-1:LRA=7:print_format=json", fixed = TRUE)
   # The map sits between the output options and the output URL, which is where
   # ffm_compile() emits every map (M49 added it here; see D028).
-  expect_match(cmd, '-f null -map 0:a:0? "-"', fixed = TRUE)
+  expect_match(cmd, '-f null -map 0:a:0 "-"', fixed = TRUE)
   expect_no_match(cmd, "-codec", fixed = TRUE)
 })
 

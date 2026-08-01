@@ -68,6 +68,7 @@ luma
 md
 mediainfo
 multithreading
+mux
 muxed
 muxer
 normalisation
@@ -85,6 +86,7 @@ reproducibly
 retarget
 rlang
 rlang's
+roadmap
 runnable
 scalar's
 schemas

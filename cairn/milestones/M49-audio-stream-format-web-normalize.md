@@ -1,6 +1,6 @@
 # M49: Finish D026 on `format_for_web()` and `normalize_audio()`
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -33,112 +33,99 @@ candidate row. Quoting the emitted specifiers → M50.
 
 ## Acceptance criteria
 
-_Compressed in one pass 2026-07-31 for the 150-line cap; no criterion's
-substance changed. AC2/AC7 amended and AC8 added at the review send-back._
+_Compressed in one pass 2026-07-31 for the cap; no criterion's substance
+changed. AC2/AC4/AC5/AC8 amended at the second review send-back — see the work
+log for what changed and why._
 
-- [x] AC1 `format_for_web()` / `_batch` accept `audio_stream`; the compiled
-      command carries `-map 0:v? -map 0:a?` under `NULL` and `-map 0:v?
-      -map 0:a:<n>` when named. Compile level (`run = FALSE`), both entry
-      points, and for the batch verb from the argument and from a jobs
-      `audio_stream` column whose `NA` cell keeps that row on every track.
-- [x] AC2 `normalize_audio()` / `_batch` accept `audio_stream`; the compiled
-      correction command carries `-map 0:a:0?` under `NULL` and `-map 0:a:<n>`
-      when named, preceded by `-map 0:v?` **unless the output path names an
-      audio-only container**, where the video map is omitted. Compile level,
-      both entry points, for a video-container and an audio-container output
-      each, and from a column whose `NA` cell keeps that row on the first track.
-- [x] AC3 The analysis command names the same audio track the correction
-      command normalizes, under `NULL` and a named track. Asserted on
+- [x] AC1 `format_for_web()` / `_batch` accept `audio_stream`; compiled command
+      carries `-map 0:v? -map 0:a?` under `NULL`, `-map 0:v? -map 0:a:<n>` when
+      named. Compile level, both entry points, from the argument and from a
+      column whose `NA` cell keeps that row on every track.
+- [ ] AC2 `normalize_audio()` / `_batch` accept `audio_stream`; the correction
+      command carries exactly one map — `-map 0:a:0` under `NULL`,
+      `-map 0:a:<n>` when named — **never a video map, never a `-codec:v`**, and
+      does not vary with the output container. Compile level, both entry points,
+      over audio and video output extensions, and from a column whose `NA` cell
+      keeps that row on the first track.
+- [x] AC3 The analysis command names the same audio track the correction command
+      normalizes, under `NULL` and a named track. Asserted on
       `loudnorm_analysis_pipeline()`'s compiled output directly, never through a
-      verb call: D013 runs that pass before `run` is consulted, so no
-      `two_pass = TRUE` call yields the command without executing FFmpeg.
-- [x] AC4 Execution evidence on a 3-audio-track fixture whose DEFAULT
-      disposition is asserted to sit on track 2 first (M43's fixture-took
-      check): `format_for_web()` carries all three, `normalize_audio()` carries
-      track 0, compared against T1's recorded baseline rather than a re-run of
-      the old code. Two no-regression checks: `normalize_audio()` still exits 0
-      on a video-only input, and `audio_stream = 9` on a 3-track input is an
-      FFmpeg error, not an R one. `skip_if` FFmpeg is absent.
-- [x] AC5 The map-count invariant test (`tests/testthat/test-ffm.R`) covers both
-      verbs with one row per *compiled command* rather than per verb — branches
-      compiling different commands get a row each, named verb-plus-branch — so
-      the analysis and correction commands are separate rows, and its zero-map
-      rule statement no longer describes an empty category.
-- [x] AC6 A `cairn/DECISIONS.md` entry records the split and its measured
-      reason: under `-map 0:a?` the analysis pass prints one JSON block per
-      mapped track while `classify_loudnorm_output()` reads `hit[[1]]`, so every
-      mapped track would be corrected with track 0's measurements, silently.
-      It cites T1's measurement, not the plan's.
-- [x] AC7 `devtools::document()` no diff, `devtools::test()` clean,
-      `devtools::check()` 0 errors / 0 warnings; NEWS describes both changes in
-      user-facing terms and names the two argument-surface breaks: `run` moved
-      position in four exported signatures, and `audio` is no longer an
-      unambiguous partial match for `audio_codec` on the normalize verbs.
-- [ ] AC8 No output container that worked before this milestone fails after it.
-      Execution evidence on a video input across `.wav`, `.mp3`, `.aac`,
-      `.opus`, `.flac`, `.m4a`, `.mka`, `.mp4`, `.mkv`: each that exited 0 on
-      master exits 0 here and writes a non-empty file, and each audio-only
-      container's output carries no video stream. `.ogg` and `.webm` are
-      excluded, recorded as failing on master too. `skip_if` FFmpeg is absent.
+      verb call: D013 runs that pass before `run` is consulted.
+- [ ] AC4 Execution on a 3-audio-track fixture whose DEFAULT is asserted to sit
+      on track 2 first (M43's fixture-took check): `format_for_web()` carries all
+      three, `normalize_audio()` carries track 0, against T1's recorded baseline
+      rather than a re-run of the old code. Two error checks: `audio_stream = 9`
+      on a 3-track input, and an input with **no audio**, are both FFmpeg errors
+      rather than R ones or silent video copies. `skip_if` FFmpeg is absent.
+- [ ] AC5 The map-count invariant test (`tests/testthat/test-ffm.R`) keys rows on
+      *compiled commands* rather than verbs — branches compiling different
+      commands get a row each — so the analysis and correction commands are
+      separate rows, and those two are `normalize_audio()`'s only compiled
+      commands. Its rule statement describes the verbs absent from the table
+      accurately.
+- [x] AC6 A `cairn/DECISIONS.md` entry records the split and its measured reason:
+      under `-map 0:a?` the analysis pass prints one JSON block per mapped track
+      while `classify_loudnorm_output()` reads `hit[[1]]`, so every mapped track
+      would be corrected with track 0's measurements, silently. It cites T1's
+      measurement, not the plan's.
+- [ ] AC7 `devtools::document()` no diff, `devtools::test()` clean,
+      `devtools::check()` 0 errors / 0 warnings; NEWS describes the changes in
+      user-facing terms, names the capability `normalize_audio()` loses, and
+      names the two argument-surface breaks (`run` moved position in four
+      signatures; `audio` is no longer an unambiguous partial match).
+- [ ] AC8 The output container does not affect whether the call works. Execution
+      on a video input across seventeen extensions spanning audio and video
+      containers — including the six an enumerated list missed (`.w64`, `.mpa`,
+      `.voc`, `.sbc`, `.latm`, `.adts`) — each exits 0, writes a non-empty file,
+      and carries one audio stream and no video. `.wma` is excluded, recorded as
+      failing on master too. `skip_if` FFmpeg is absent.
 
 ## Coverage
 
 - AC1 → T2, T6
-- AC2 → T3, T6, T10
+- AC2 → T3, T6, T13
 - AC3 → T4
 - AC4 → T1, T7
 - AC5 → T5
 - AC6 → T1, T9
-- AC7 → T8, T9, T12
-- AC8 → T11
+- AC7 → T8, T9, T14, T15
+- AC8 → T11, T13
 
 ## Tasks
 
-- [x] T1 Commit the pre-change evidence first, before any source edit, so AC4
-      and AC6 have a fixed reference the branch cannot destroy (M44's lesson):
-      the disposition-shifted 3-track fixture, what each verb carries from it
-      today, and the analysis pass's JSON-block count under `-map 0:a?`.
-- [x] T2 Tests first, then thread `audio_stream` through
-      `format_for_web_pipeline()` (`R/ffmpeg.R:1154-1165`) via
-      `pass_through_maps()` (`R/ffmpeg.R:326-329`), `format_for_web()`
-      (`R/ffmpeg.R:1192`) and `format_for_web_batch()` (`R/ffmpeg.R:4619`),
-      including the batch front-door guard and `check_batch_audio_col()` column
-      support that M47 established (`R/ffmpeg.R:1906-1908` pattern).
-- [x] T3 Tests first, then add a first-track optional variant beside
-      `pass_through_maps()` (`null_map = "0:a:0?"`) and wire it into
-      `normalize_audio_pipeline()` (`R/ffmpeg.R:2103-2145`),
-      `normalize_audio()` (`R/ffmpeg.R:2022`) and `normalize_audio_batch()`
-      (`R/ffmpeg.R:3722`).
-- [x] T4 Tests first, then carry the same selection into
-      `loudnorm_analysis_pipeline()` (`R/loudnorm_two_pass.R:16-24`) and its
-      callers `run_loudnorm_analysis()` (`:105`) and
-      `run_loudnorm_analysis_batch()` (`:136`).
-- [x] T5 Rewrite the map-count invariant table (`tests/testthat/test-ffm.R:537-604`)
-      onto compiled commands and update its rule statement.
-- [x] T6 Re-baseline the exact-command assertions this breaks:
-      `tests/testthat/test-normalize-audio.R:8-15`, `:20-32` (the M16
-      characterization baseline — overwrite it deliberately, its comment at
-      `:17-19` forbids drift), `:210-222`, `:224-236`;
-      `tests/testthat/test-normalize-audio-batch.R:62-72`, `:529-530`;
-      `tests/testthat/test-normalize-audios-two-pass.R`; and the
-      `format_for_web` scalar/batch byte-identity test
-      (`tests/testthat/test-format-for-web-batch.R:18-24`).
-- [x] T7 Execution tests against T1's baseline, plus the two no-regression
-      checks (video-only input, out-of-range named track).
-- [x] T8 Roxygen `@param audio_stream` on the four new entry points, the
-      `@param jobs` column enumeration on both `_batch` verbs,
-      `@seealso`/NEWS/`inst/WORDLIST`; `devtools::document()`.
-- [x] T9 Append the D-entry; add the per-track-two-pass candidate row named in
-      Out; run the profile's verify slot and `devtools::check()`.
-- [x] T10 Tests first, then add an audio-only-container predicate and gate
-      `normalize_audio_pipeline()`'s `-map 0:v?` on it. Compile-level assertions
-      for a video-container and an audio-container output on both entry points.
-- [x] T11 Execution evidence across the AC8 container matrix, asserting both
-      exit status and the absence of a video stream in the audio-container
-      outputs.
-- [x] T12 NEWS: the container rule, plus the positional-shift and
-      partial-matching breaks. Append D029 narrowing D028's video half. Re-run
-      the verify slot and `devtools::check()`.
+_Compressed in one pass 2026-07-31; the work log carries what each one did._
+
+- [x] T1 Commit the pre-change evidence before any source edit, so AC4 and AC6
+      have a reference the branch cannot destroy (M44's lesson).
+- [x] T2 `audio_stream` through `format_for_web_pipeline()` /
+      `format_for_web()` / `format_for_web_batch()`, incl. the batch front-door
+      guard and column support M47 established.
+- [x] T3 A first-track variant of the map pair, wired into
+      `normalize_audio_pipeline()` / `normalize_audio()` /
+      `normalize_audio_batch()`.
+- [x] T4 The same selection into `loudnorm_analysis_pipeline()` and its two
+      callers.
+- [x] T5 Rewrite the map-count invariant table onto compiled commands.
+- [x] T6 Re-baseline the exact-command assertions this breaks, including the M16
+      characterization baseline (overwritten deliberately).
+- [x] T7 Execution tests against T1's baseline, plus the error checks.
+- [x] T8 Roxygen on the four new entry points, the `@param jobs` column
+      enumerations, NEWS, `inst/WORDLIST`, `devtools::document()`.
+- [x] T9 D028; the per-track-two-pass candidate row; verify slot and
+      `devtools::check()`.
+- [x] T10 (superseded by T13) An audio-only-container predicate gating the video
+      map.
+- [x] T11 Execution evidence across the container matrix.
+- [x] T12 (superseded by T14) NEWS for the container rule and the two
+      argument-surface breaks; D029.
+- [x] T13 Drop the video map, the container predicate and the dead
+      `-codec:v copy`; drop the trailing `?` from both passes. Tests: container
+      independence, no video map ever, a no-audio input erroring.
+- [x] T14 Docs for the audio-only contract (`@description`, `@param outfile`,
+      `@param audio_stream` on both verbs), the NEWS rewrite, D030, and the
+      ROADMAP candidate row for the capability this removes.
+- [x] T15 Re-baseline what the `-codec:v copy` removal breaks; verify slot and
+      `devtools::check()`.
 
 ## Work log
 
@@ -176,6 +163,13 @@ substance changed. AC2/AC7 amended and AC8 added at the review send-back._
 
 - 2026-07-31: review round 2 returned the milestone to `in-progress` (return 2 of 3). AC1/AC2/AC3/AC4/AC6/AC7 pass with fresh evidence and every mechanical gate is clean (check 0/0/0, CI green on nine jobs, cairn_validate 0). AC5 and AC8 fail AS WRITTEN: the map-count table has no row for `normalize_audio()`'s audio-container branch though AC5's own rule demands one, and AC8's absolute "no output container that worked before fails after" is false for `.w64`, `.mpa`, `.voc`, `.sbc`, `.latm` and `.adts` — all measured 0 → 234 (or 176). One finding actioned at 85: AC8's execution test guards on ffprobe where AC8 says ffmpeg.
 - 2026-07-31: thrash trigger (b) fired — the same failure shape ("a container that worked before now fails") missed twice by a new mechanism each round: first no rule at all, then an incomplete enumeration plus an untouched `format_for_web()`. The remedy is to reconsider the alternatives the plan gate recorded against (an opt-out argument; documenting the loss), plus one it did not consider (dropping video passthrough from `normalize_audio()` entirely, which needs no list) — not another pass at the enumeration.
+
+- 2026-07-31: amendment gate (substantive, second) — `normalize_audio()` now produces audio and NO video, chosen over extending the container list (the thrash rule identifies that as buying the next missing extension) and over an opt-out argument. AC2/AC4/AC5/AC8 amended, T13–T15 added, and both the Acceptance criteria and Tasks sections compressed one pass each for the cap. The user also chose to finish M49 as one milestone despite both split tripwires firing (8 criteria, 15 tasks): the `format_for_web` half is done and verified, and splitting a nearly-finished milestone buys ceremony.
+- 2026-07-31: T13 — `AUDIO_ONLY_CONTAINERS`/`audio_only_container()` deleted; `normalize_audio_pipeline()` emits one audio map and no `-codec:v copy` (which named a stream that is never mapped). NEW MEASUREMENT that decided the `?`: when EVERY map specifier is optional and matches nothing, FFmpeg discards the maps and reverts to default stream selection — `-map 0:a:5?` on a video+audio file writes video AND audio. This verb emits one map, so a silent screen recording would have exited 0 while writing video through, via the very heuristic M49 removes. The `?` is therefore dropped from both passes and a no-audio input is now an FFmpeg error. This also supplies the measured reason behind D026's rule that named specifiers carry no `?`.
+- 2026-07-31: T14 — `@description`, `@param outfile` and both `@param audio_stream` blocks rewritten for the audio-only contract; NEWS leads with the capability removed and the no-audio input becoming an error; D030 appended (supersedes D029, narrows D028's video half); ROADMAP candidate row created for normalize-and-keep-picture, which also records `format_for_web()`'s identical latent break into an audio container, deliberately not fixed here.
+- 2026-07-31: T15 — eleven exact-command assertions re-baselined for the `-codec:v copy` removal across five test files; two tests inverted rather than deleted (`normalize_audio() stream-copies video` now asserts no `-codec:v` and no `0:v`; the batch default-knobs check asserts the audio map instead). `devtools::test()` 3215 passing, 0 failures.
+- 2026-07-31: review round 2's other findings — G6 (85, actioned) fixed by guarding the AC8 test on ffmpeg as well as ffprobe. G8/G11/G7/G3 dissolved with the predicate they were about. G1 (`format_for_web()`'s identical break) is recorded on the new candidate row rather than fixed, since its product is a web video file. G4/G5 (stale `@description`, undocumented batch rule) fixed in T14.
+- 2026-07-31: status → review (third time).
 
 ## Decisions
 

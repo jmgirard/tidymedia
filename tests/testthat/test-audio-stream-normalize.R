@@ -18,30 +18,42 @@
 # that uniform needs per-stream filter options the linear builder has no slot
 # for -- its own ROADMAP candidate row.
 #
-# The analysis pass carries the AUDIO half only (`0:a:0?` or `0:a:<n>`, no
-# `0:v?`): it writes to `-f null` and has no output for a video selection to
-# describe. What it must never do is measure a different track from the one the
-# correction pass normalizes.
+# The verb no longer carries video AT ALL (D030). Two earlier attempts to state
+# the video half both failed: `-map 0:v?` unconditionally broke every audio-only
+# destination (exit 234 -- the `?` covers an ABSENT stream, not a REFUSING
+# muxer), and enumerating the containers that refuse it missed six more
+# (.w64/.mpa/.voc/.sbc/.latm/.adts). So the question was removed rather than
+# answered again: this is an audio verb whose output is one audio stream, like
+# extract_audio() and convert_audio(). No `-codec:v copy` either, since it named
+# a stream that is never mapped.
+#
+# The unselected map carries NO trailing `?`, and that is measured rather than
+# stylistic. When EVERY map specifier is optional and matches nothing, FFmpeg
+# DISCARDS the maps and reverts to default stream selection: `-map 0:a:5?` on a
+# video+audio file writes video AND audio. This verb emits exactly one map, so
+# "all maps matched nothing" is reachable by an ordinary input -- a silent
+# screen recording -- and with a `?` that call would exit 0 while silently
+# writing the video through, via the very DEFAULT-disposition heuristic this
+# milestone removes. Without it the input fails loudly at exit 234.
 #
 # The pre-M49 commands, recorded from master at a4fc322 and committed here as
-# templates taking the map arguments -- templates rather than a comparison
-# against "what master returns today", which stops being checkable the moment
-# this branch merges (M47's lesson, M48's shape). Both carried no map at all, so
-# every `maps` default is the empty string.
+# templates -- templates rather than a comparison against "what master returns
+# today", which stops being checkable the moment this branch merges (M47's
+# lesson, M48's shape). Both carried no map at all.
 #
 #   correction: -y -i "<f>" -af "loudnorm=I=-23:TP=-1:LRA=7" -codec:v copy \
 #                  "out.mkv"
 #   analysis:   -y -i "<f>" -af "loudnorm=I=-23:TP=-1:LRA=7:print_format=json" \
 #                  -f null "-"
 
-normalize_command <- function(infile, maps = "", outfile = "out.mkv") {
+normalize_command <- function(infile, maps = "-map 0:a:0 ", outfile = "out.mkv") {
   paste0(
-    '-y -i "', infile, '" -af "loudnorm=I=-23:TP=-1:LRA=7" -codec:v copy ',
+    '-y -i "', infile, '" -af "loudnorm=I=-23:TP=-1:LRA=7" ',
     maps, '"', outfile, '"'
   )
 }
 
-analysis_command <- function(infile, maps = "") {
+analysis_command <- function(infile, maps = "-map 0:a:0 ") {
   paste0(
     '-y -i "', infile, '"',
     ' -af "loudnorm=I=-23:TP=-1:LRA=7:print_format=json" -f null ',
@@ -69,9 +81,9 @@ normalize_jobs <- function(f, ...) {
 test_that("normalize_audio() with no selection compiles the first audio track", {
   f <- make_input()
   expect_identical(normalize_of(f),
-                   normalize_command(f, "-map 0:v? -map 0:a:0? "))
+                   normalize_command(f))
   expect_identical(normalize_of(f, audio_stream = NULL), normalize_of(f))
-  expect_identical(norm_map_count(normalize_of(f)), 2L)
+  expect_identical(norm_map_count(normalize_of(f)), 1L)
 })
 
 test_that("normalize_audio()'s unselected case is NOT the every-track map", {
@@ -81,115 +93,81 @@ test_that("normalize_audio()'s unselected case is NOT the every-track map", {
   expect_false(grepl("-map 0:a? ", normalize_of(f), fixed = TRUE))
 })
 
-test_that("normalize_audio()'s unselected audio map carries the `?`", {
-  # Load-bearing and independently measured: a bare `-map 0:a:0` exits 234 on a
-  # video-only input, where master (emitting no map) exited 0. Without the `?`
-  # this milestone would ship a regression on an ordinary research input.
-  f <- make_input()
-  expect_match(normalize_of(f), "-map 0:a:0?", fixed = TRUE)
-})
-
 test_that("normalize_audio(audio_stream = ) narrows the audio map only", {
   f <- make_input()
   expect_identical(normalize_of(f, audio_stream = 2),
-                   normalize_command(f, "-map 0:v? -map 0:a:2 "))
+                   normalize_command(f, "-map 0:a:2 "))
   expect_false(grepl("0:a:2?", normalize_of(f, audio_stream = 2), fixed = TRUE))
 })
 
-test_that("normalize_audio(audio_stream = 0) names the same track as NULL but keeps no `?`", {
-  # Unlike the pass-through verbs, NULL and 0 select the SAME track here. They
-  # still compile differently, and the difference is the `?`: an explicit 0 on
-  # an input with no audio must stay an FFmpeg error (D023), while the unset
-  # case must keep master's exit 0.
+test_that("normalize_audio(audio_stream = 0) compiles exactly what NULL does", {
+  # Unlike the pass-through verbs, NULL and 0 select the same track here, and
+  # since D030 dropped the `?` they now compile the SAME command byte for byte.
+  # That is the intended collapse: an input with no audio is an FFmpeg error
+  # either way, so the two spellings have nothing left to differ about.
   f <- make_input()
   expect_identical(normalize_of(f, audio_stream = 0),
-                   normalize_command(f, "-map 0:v? -map 0:a:0 "))
-  expect_false(identical(normalize_of(f, audio_stream = 0), normalize_of(f)))
+                   normalize_command(f, "-map 0:a:0 "))
+  expect_identical(normalize_of(f, audio_stream = 0), normalize_of(f))
 })
 
 
-# AC2: the audio-only-container rule ------------------------------------------
+# AC2 / AC8: the output container is irrelevant --------------------------------
 
-# Added at M49's review send-back. `-map 0:v?` forces the video stream into the
-# output muxer, and the `?` covers an ABSENT stream, never a REJECTING muxer, so
-# the first version of this milestone broke every audio-only output container:
-# measured on `inst/extdata/sample.mp4` (ffmpeg 8.1.2), `.wav`/`.mp3`/`.aac`/
-# `.opus` went from exit 0 on master to exit 234, and `.mka` silently GAINED a
-# video stream where master wrote audio only. Master got this right by
-# delegating to FFmpeg's implicit selection, which is muxer-aware -- but that is
-# the same mechanism that picked the audio track nondeterministically, and only
-# the AUDIO half needed removing. The video half now follows the output
-# container, decided from the caller's own output path so the compile stays
-# binary-free (D024).
+# The property that replaced the container list. Nothing about the compiled
+# command depends on the output extension any more, which is what makes the
+# "did we enumerate every audio-only container?" question unanswerable-by-
+# construction rather than merely answered.
 
-test_that("an audio-only output container omits the video map", {
+test_that("the compiled command is identical whatever the output container", {
   f <- make_input()
-  for (ext in c("wav", "mp3", "aac", "flac", "ogg", "opus", "m4a", "mka")) {
+  base <- normalize_audio(f, "out.mkv", run = FALSE)
+  for (ext in c("wav", "mp3", "aac", "opus", "flac", "m4a", "mka", "w64",
+                "mpa", "voc", "sbc", "latm", "adts", "mp4", "mov", "webm",
+                "somethingnew")) {
     cmd <- normalize_audio(f, paste0("out.", ext), run = FALSE)
-    expect_false(grepl("-map 0:v?", cmd, fixed = TRUE),
-                 label = paste("video map present for", ext))
-    expect_match(cmd, "-map 0:a:0?", fixed = TRUE)
-    expect_identical(norm_map_count(cmd), 1L)
+    expect_identical(sub('"out\\.[^"]*"$', "", cmd), sub('"out\\.mkv"$', "", base),
+                     label = paste("command differs for", ext))
   }
 })
 
-test_that("a video output container keeps the video map", {
+test_that("no compiled command ever maps video", {
   f <- make_input()
-  for (ext in c("mp4", "mkv", "mov", "avi", "webm", "m4v")) {
-    cmd <- normalize_audio(f, paste0("out.", ext), run = FALSE)
-    expect_match(cmd, "-map 0:v? -map 0:a:0?", fixed = TRUE)
-    expect_identical(norm_map_count(cmd), 2L)
+  for (out in c("out.mkv", "out.mp4", "out.wav", "out.w64")) {
+    for (sel in list(NULL, 0, 2)) {
+      cmd <- normalize_audio(f, out, audio_stream = sel, run = FALSE)
+      expect_false(grepl("0:v", cmd, fixed = TRUE),
+                   label = paste("video map in", out))
+      expect_identical(norm_map_count(cmd), 1L)
+    }
   }
 })
 
-test_that("the container rule reads the output, not the input", {
-  # The discriminator: a video INPUT written to an audio container takes the
-  # audio-only shape, and an audio input written to a video container does not.
-  # Reading the input would need a probe, which run = FALSE forbids (D024).
-  f <- make_input(ext = "mp4")
-  g <- make_input(ext = "wav")
-  expect_false(grepl("0:v?", normalize_audio(f, "out.wav", run = FALSE), fixed = TRUE))
-  expect_match(normalize_audio(g, "out.mkv", run = FALSE), "-map 0:v?", fixed = TRUE)
-})
-
-test_that("an unknown output extension keeps the video map", {
-  # The list only ever ADDS working cases: anything not named in it compiles the
-  # pass-through shape, which is what every video container needs.
+test_that("no compiled command names a video codec", {
+  # `-codec:v copy` named a stream that is never mapped; the compiled command is
+  # the product (D001), so it is gone rather than merely inert.
   f <- make_input()
-  expect_match(normalize_audio(f, "out.somethingnew", run = FALSE),
-               "-map 0:v?", fixed = TRUE)
+  expect_false(grepl("-codec:v", normalize_audio(f, "out.mkv", run = FALSE),
+                     fixed = TRUE))
 })
 
-test_that("the container rule is case-insensitive", {
+test_that("the unselected map carries no trailing `?`", {
+  # The discriminator for D030's measured reason. With a `?`, an input with no
+  # audio matches nothing, FFmpeg discards the map and reverts to default
+  # selection, and the video is written through in silence.
   f <- make_input()
-  expect_false(grepl("0:v?", normalize_audio(f, "out.WAV", run = FALSE), fixed = TRUE))
+  expect_false(grepl("0:a:0?", normalize_audio(f, "out.mkv", run = FALSE),
+                     fixed = TRUE))
+  expect_match(normalize_audio(f, "out.mkv", run = FALSE), "-map 0:a:0",
+               fixed = TRUE)
 })
 
-test_that("a named track still narrows the audio map in an audio container", {
-  f <- make_input()
-  expect_identical(normalize_audio(f, "out.wav", audio_stream = 2, run = FALSE),
-                   normalize_command(f, "-map 0:a:2 ", outfile = "out.wav"))
-})
-
-test_that("the batch verb applies the container rule per row", {
-  # Outputs are per-row, so the rule is too -- a jobs table mixing an audio and
-  # a video destination must compile two different map shapes.
+test_that("the batch verb is container-independent too", {
   f <- make_input()
   jobs <- tibble::tibble(input = c(f, f), output = c("a.wav", "b.mkv"))
   out <- normalize_audio_batch(jobs, run = FALSE)
-  expect_identical(norm_map_count(out$command), c(1L, 2L))
-  expect_false(grepl("0:v?", out$command[[1]], fixed = TRUE))
-  expect_match(out$command[[2]], "-map 0:v?", fixed = TRUE)
-})
-
-test_that("the analysis pass is unaffected by the output container", {
-  # It writes to `-f null` and never had a video map, so the rule cannot reach
-  # it; the two passes must still name the same audio track.
-  f <- make_input()
-  expect_identical(
-    ffm_compile(loudnorm_analysis_pipeline(f)),
-    analysis_command(f, "-map 0:a:0? ")
-  )
+  expect_identical(norm_map_count(out$command), c(1L, 1L))
+  expect_false(any(grepl("0:v", out$command, fixed = TRUE)))
 })
 
 
@@ -198,8 +176,8 @@ test_that("the analysis pass is unaffected by the output container", {
 test_that("the normalize_audio_batch() argument reaches every row", {
   f <- make_input()
   out <- normalize_audio_batch(normalize_jobs(f), audio_stream = 2, run = FALSE)
-  expect_true(all(grepl("-map 0:v? -map 0:a:2", out$command, fixed = TRUE)))
-  expect_identical(norm_map_count(out$command), c(2L, 2L))
+  expect_true(all(grepl("-map 0:a:2", out$command, fixed = TRUE)))
+  expect_identical(norm_map_count(out$command), c(1L, 1L))
 })
 
 test_that("a normalize_audio_batch() audio_stream column overrides the argument per row", {
@@ -208,8 +186,8 @@ test_that("a normalize_audio_batch() audio_stream column overrides the argument 
                                audio_stream = 2, run = FALSE)
   # NA is the column form of NULL, which on THIS verb means the first track --
   # it does not fall back to the argument, which is what an ABSENT column means.
-  expect_match(out$command[[1]], "-map 0:v? -map 0:a:1", fixed = TRUE)
-  expect_match(out$command[[2]], "-map 0:v? -map 0:a:0?", fixed = TRUE)
+  expect_match(out$command[[1]], "-map 0:a:1", fixed = TRUE)
+  expect_match(out$command[[2]], "-map 0:a:0", fixed = TRUE)
 })
 
 test_that("a one-row normalize_audio_batch() call matches the scalar call byte for byte", {
@@ -269,7 +247,7 @@ test_that("the analysis pipeline maps the first audio track when unselected", {
   f <- make_input()
   expect_identical(
     ffm_compile(loudnorm_analysis_pipeline(f)),
-    analysis_command(f, "-map 0:a:0? ")
+    analysis_command(f)
   )
   expect_identical(
     ffm_compile(loudnorm_analysis_pipeline(f, audio_stream = NULL)),
@@ -396,14 +374,18 @@ test_that("normalize_audio(audio_stream = ) writes exactly the named track", {
   expect_identical(audio_languages(out), "spa")
 })
 
-test_that("normalize_audio() still exits 0 on a video-only input", {
-  # The `?` regression check. A bare `-map 0:a:0` exits 234 here; master, with
-  # no map at all, exited 0 and this must keep doing so.
+test_that("an input with no audio is an FFmpeg error, not a silent video copy", {
+  # D030. The `?` is gone precisely so this fails: with it, the single map
+  # matches nothing, FFmpeg discards the map, reverts to default selection, and
+  # writes the VIDEO through at exit 0 -- the heuristic this milestone removes,
+  # returning through the back door on the one input that can reach it.
   skip_if_no_ffmpeg()
   infile <- make_silent_video()
-  out <- withr::local_tempfile(fileext = ".mp4")
-  expect_no_error(normalize_audio(infile, out))
-  expect_true(file.exists(out) && file.size(out) > 0)
+  out <- withr::local_tempfile(fileext = ".wav")
+  err <- expect_error(normalize_audio(infile, out))
+  expect_match(conditionMessage(err), "FFmpeg")
+  # And nothing usable was written: no video sneaked through.
+  expect_false(file.exists(out) && file.size(out) > 0)
 })
 
 test_that("a named track the input lacks is an FFmpeg error, not an R one", {
@@ -425,7 +407,7 @@ test_that("two-pass normalization measures and corrects the same track", {
   infile <- make_multitrack_video(default_track = 2)
   out <- withr::local_tempfile(fileext = ".mkv")
   cmd <- normalize_audio(infile, out, two_pass = TRUE, audio_stream = 1)
-  expect_match(cmd, "-map 0:v? -map 0:a:1", fixed = TRUE)
+  expect_match(cmd, "-map 0:a:1", fixed = TRUE)
   expect_identical(audio_languages(out), "spa")
 })
 
@@ -453,40 +435,36 @@ test_that("the two-pass batch path carries a per-row audio_stream column", {
   expect_warning(res <- normalize_audio_batch(jobs, two_pass = TRUE), "silent")
   expect_identical(res$silent, c(TRUE, FALSE))
   expect_true(is.na(res$command[[1]]))
-  expect_match(res$command[[2]], "-map 0:v? -map 0:a:2", fixed = TRUE)
+  expect_match(res$command[[2]], "-map 0:a:2", fixed = TRUE)
   # The discriminator: `fra` is track 2, `eng` is what a one-row misalignment
   # would have produced.
   expect_identical(audio_languages(b), "fra")
 })
 
-test_that("no output container that worked before this milestone fails now", {
-  # AC8, added at the review send-back. This is the coverage whose ABSENCE let a
-  # green suite sit over a real regression: nothing in the package normalized to
-  # an audio container, so `-map 0:v?` breaking every one of them was invisible.
+test_that("every plausible output container works, audio-only or not", {
+  # AC8. This is the coverage whose ABSENCE let a green suite sit over a real
+  # regression twice: nothing in the package normalized to an audio container,
+  # so first an unconditional `-map 0:v?` and then an incomplete list of
+  # audio-only containers both went unnoticed.
   #
-  # The reference column is master's measured behavior on this same input
-  # (ffmpeg 8.1.2, inst/extdata/sample.mp4), recorded at the send-back:
-  #   exit 0, audio only  -- wav mp3 aac opus flac mka
-  #   exit 0, video+audio -- m4a mp4 mkv
-  #   exit 234            -- ogg webm  (pre-existing; NOT this milestone's)
-  # `.m4a` is the one deliberate divergence from master: it carried video there
-  # and carries none here, because a caller who writes `.m4a` means audio.
+  # The list deliberately includes the six that the enumeration missed
+  # (.w64 .mpa .voc .sbc .latm .adts) alongside the obvious ones, because those
+  # are what falsified the previous approach. `.wma` is excluded and recorded
+  # here as failing on master too (exit 234), so it is not this milestone's.
+  skip_if_no_ffmpeg()
   skip_if_no_ffprobe()
   infile <- system.file("extdata", "sample.mp4", package = "tidymedia")
   skip_if_not(nzchar(infile), "packaged sample video unavailable")
-  audio_only <- c("wav", "mp3", "aac", "opus", "flac", "m4a", "mka")
-  for (ext in c(audio_only, "mp4", "mkv")) {
+  for (ext in c("wav", "mp3", "aac", "opus", "flac", "m4a", "mka", "oga",
+                "w64", "mpa", "voc", "sbc", "latm", "adts", "mp4", "mkv",
+                "mov")) {
     out <- withr::local_tempfile(fileext = paste0(".", ext))
     expect_no_error(normalize_audio(infile, out))
     expect_gt(file.size(out), 0)
+    # Audio out, and never video -- whatever the container would have allowed.
     types <- stream_types(out)
-    expect_true("audio" %in% types)
-    # An audio-only container carries no video stream; a video one still does.
-    if (ext %in% audio_only) {
-      expect_false("video" %in% types, label = paste("video stream in", ext))
-    } else {
-      expect_true("video" %in% types, label = paste("no video stream in", ext))
-    }
+    expect_true("audio" %in% types, label = paste("no audio stream in", ext))
+    expect_false("video" %in% types, label = paste("video stream in", ext))
   }
 })
 

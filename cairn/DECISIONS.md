@@ -965,3 +965,64 @@ unchanged.
   the pre-fix code. Falsified by an audio container that this list does not
   name and that a caller reports failing — which is an addition to the list,
   not a reopening of the rule.
+
+## D030 — `normalize_audio()` produces audio and no video (2026-07-31, from M49's second review send-back, supersedes D029 and narrows D028's video half)
+
+D029 made `normalize_audio()`'s video map conditional on the output container,
+via an enumerated `AUDIO_ONLY_CONTAINERS` list. Review measured six audio-only
+containers the list did not name — `.w64`, `.mpa`, `.voc`, `.sbc`, `.latm`,
+`.adts` — each going from exit 0 on master to exit 234 (or 176) on the branch.
+That was the second attempt at the same question and the second miss, so the
+question is removed rather than answered again. D029's list and predicate are
+deleted; this entry replaces them.
+
+- **The rule.** `normalize_audio()` and `normalize_audio_batch()` compile
+  exactly one map — `-map 0:a:0` unselected, `-map 0:a:<n>` when a track is
+  named — and never a video map. The compiled command does not depend on the
+  output container at all, which is what makes "did we enumerate every
+  audio-only container?" unanswerable by construction rather than answered
+  again. `-codec:v copy` is gone with it: it named a stream that is never
+  mapped, and the compiled command is the product (D001).
+
+- **What this costs, stated plainly.** Normalizing a recording's soundtrack
+  *while keeping its picture* was possible on master in one call and is not
+  possible with this verb any more. That is a real capability removed, not a
+  clarification, and it is the reason this entry exists rather than a doc fix.
+  The replacement path is to normalize to an audio file and mux it back with
+  the `ffmpeg()` escape hatch; a first-class verb for it is a ROADMAP candidate
+  row created by this entry.
+
+- **Why an audio verb, and not a third try at the predicate.** `normalize_audio`
+  re-encodes audio by construction and its product is an audio stream — the
+  shape `extract_audio()` and `convert_audio()` already have, and the reason
+  D023 gives those verbs a first-track `NULL`. The pass-through family
+  (`crop_video`, `standardize_video`, …) keeps D026 unchanged; nothing here
+  touches it. Ruled out: extending the list, which the thrash rule identifies as
+  buying the next missing extension rather than a fix; an opt-out argument,
+  which leaves the broken default in place until a caller discovers the switch;
+  and probing the output muxer, which D024 forbids on the compile path and which
+  would make `run = FALSE` and `run = TRUE` compile different commands.
+
+- **The unselected map carries no trailing `?`, and that is measured.** When
+  EVERY map specifier is optional and matches nothing, FFmpeg discards the maps
+  and reverts to default stream selection: `-map 0:a:5?` on a video+audio file
+  writes video AND audio, the map ignored entirely. This verb emits exactly one
+  map, so "all maps matched nothing" is reachable by an ordinary input — a
+  silent screen recording — and with a `?` that call would exit 0 while writing
+  the video through, by way of the very DEFAULT-disposition heuristic M49
+  removes. Without it the input fails at exit 234, "Stream map '' matches no
+  streams". An input with no audio is therefore an error, which is the honest
+  answer for a verb whose output is audio. This also supplies the measured
+  reason behind D026's rule that named specifiers carry no `?`; that was
+  reasoning when written and is now evidence.
+
+- **Scope.** `normalize_audio()` and `normalize_audio_batch()` only. D028's
+  first-track `NULL` and its measured reason stand. D026 and the pass-through
+  verbs are untouched — `format_for_web()` keeps `-map 0:v? -map 0:a?`, which is
+  right for a verb whose product is a web video file, though writing it to an
+  audio container fails as it does for every pass-through verb (recorded as a
+  ROADMAP candidate row, not fixed here).
+
+- **Falsified by** a caller who needs normalized audio muxed back over the
+  original video often enough that the escape hatch is not an answer — which
+  promotes the candidate row into a verb, and does not reopen this rule.

@@ -19,9 +19,15 @@ normalize_audio(
 )
 }
 \arguments{
-\item{infile}{A string containing the path to a media file (with audio).}
+\item{infile}{A string containing the path to a media file (with audio). An
+input with no audio stream is an FFmpeg error, not a silent copy of the
+video.}
 
-\item{outfile}{A string containing the path of the file to write.}
+\item{outfile}{A string containing the path of the audio file to write. Any
+container FFmpeg can write is accepted and the compiled command does not
+depend on which -- an audio container (\code{.wav}, \code{.flac}) holds the
+result exactly as a video container (\code{.mkv}) does, the latter simply
+carrying one audio stream and nothing else.}
 
 \item{target_loudness}{The target integrated loudness, in LUFS (a number in
 \code{-70}..\code{-5}; default \code{-23}, the EBU R128 target).}
@@ -72,13 +78,7 @@ siblings), whose \code{NULL} keeps every track. This verb reads it the
 first-track way because the two-pass analysis produces one measurement per
 audio track while the correction takes a single set, so normalizing several
 tracks at once would apply one track's measurements to all of them. Only
-the named track reaches the output. The input's video streams are copied
-through when \code{outfile} names a container that holds video; when it
-names an audio-only container (\code{.wav}, \code{.mp3}, \code{.aac},
-\code{.flac}, \code{.m4a}, \code{.mka}, \code{.opus} and the like) no video
-is carried, so normalizing a video's soundtrack straight to an audio file
-works. The decision is made from the output path you give, never by
-inspecting the input, so \code{run = FALSE} still touches no binary.
+the named track reaches the output, and no video does.
 Under \code{two_pass = TRUE} the analysis pass measures this same track.
 Naming a track the input does not have is an FFmpeg error, not an R one.
 (default = \code{NULL})}
@@ -96,9 +96,12 @@ measured values.
 \description{
 Normalize the perceived loudness of a file's audio toward an EBU R128 target
 using FFmpeg's single-pass \code{loudnorm} filter, optionally downmixing the
-channel count and resampling. The video stream is copied unchanged
-(\code{-c:v copy}), so only the audio is touched -- the audio-side complement
-to \code{\link{standardize_video}}, which leaves audio alone.
+channel count and resampling. The output holds \strong{one audio stream and
+no video}, whatever the input and whatever container \code{outfile} names --
+so this is an audio-producing verb like \code{\link{extract_audio}} and
+\code{\link{convert_audio}}, not a pass-through one. To normalize a
+recording's soundtrack \emph{and} keep its picture, normalize to an audio
+file and mux it back with the \code{\link{ffmpeg}} escape hatch.
 }
 \details{
 The default targets follow EBU Recommendation R 128 (2014) --

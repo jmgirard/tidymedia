@@ -8,8 +8,8 @@ test_that("normalize_audio() compiles the default EBU R128 command", {
   expect_equal(
     cmd,
     sprintf(
-      paste0('-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" -codec:v copy ',
-             '-map 0:v? -map 0:a:0? "out.mp4"'),
+      paste0('-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" ',
+             '-map 0:a:0 "out.mp4"'),
       f
     )
   )
@@ -33,7 +33,7 @@ test_that("normalize_audio() single-pass command is byte-for-byte stable (M16 ba
     cmd,
     sprintf(
       paste0('-y -i "%s" -af "loudnorm=I=-16:TP=-1.5:LRA=11" ',
-             '-codec:v copy -ac 1 -ar 48000 -map 0:v? -map 0:a:0? "out.mp4"'),
+             '-ac 1 -ar 48000 -map 0:a:0 "out.mp4"'),
       f
     )
   )
@@ -53,7 +53,7 @@ test_that("normalize_audio() adds downmix and resample when requested", {
   f <- make_input()
   cmd <- normalize_audio(f, "out.mp4", channels = 1, sample_rate = 48000,
                          run = FALSE)
-  expect_match(cmd, "-codec:v copy -ac 1 -ar 48000", fixed = TRUE)
+  expect_match(cmd, "-ac 1 -ar 48000", fixed = TRUE)
 })
 
 test_that("normalize_audio() omits downmix/resample by default", {
@@ -63,11 +63,15 @@ test_that("normalize_audio() omits downmix/resample by default", {
   expect_no_match(cmd, "-ar ", fixed = TRUE)
 })
 
-test_that("normalize_audio() stream-copies video (touches audio only)", {
+test_that("normalize_audio() names no video codec and maps no video (D030)", {
+  # Was "stream-copies video (touches audio only)". The verb no longer carries
+  # video at all, so `-codec:v copy` named a stream that is never mapped; this
+  # test is inverted rather than deleted, because what it originally guarded --
+  # that the video is never RE-ENCODED -- is now guaranteed more strongly.
   f <- make_input()
   cmd <- normalize_audio(f, "out.mp4", run = FALSE)
-  expect_match(cmd, "-codec:v copy", fixed = TRUE)
-  expect_no_match(cmd, "-codec:v libx264", fixed = TRUE)
+  expect_no_match(cmd, "-codec:v", fixed = TRUE)
+  expect_no_match(cmd, "0:v", fixed = TRUE)
 })
 
 # Two-pass correction builder (M16) ---------------------------------------
@@ -87,7 +91,7 @@ test_that("normalize_audio_pipeline() threads measured values into a linear corr
   )
   # The correction pass still rides the shared pipeline's shaping: copy video,
   # downmix, resample.
-  expect_match(cmd, "-codec:v copy -ac 1 -ar 48000", fixed = TRUE)
+  expect_match(cmd, "-ac 1 -ar 48000", fixed = TRUE)
 })
 
 test_that("normalize_audio_pipeline() without measured is single-pass (no linear)", {
@@ -222,8 +226,8 @@ test_that("normalize_audio() emits no -codec:a by default (NULL sentinel)", {
   expect_equal(
     cmd,
     sprintf(
-      paste0('-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" -codec:v copy ',
-             '-map 0:v? -map 0:a:0? "out.mp4"'),
+      paste0('-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" ',
+             '-map 0:a:0 "out.mp4"'),
       f
     )
   )
@@ -238,7 +242,7 @@ test_that("normalize_audio(audio_codec = ) names the output audio encoder", {
     cmd,
     sprintf(
       paste0('-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" ',
-             '-codec:v copy -codec:a aac -map 0:v? -map 0:a:0? "out.mp4"'),
+             '-codec:a aac -map 0:a:0 "out.mp4"'),
       f
     )
   )

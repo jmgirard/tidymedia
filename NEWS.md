@@ -32,14 +32,25 @@
   R one, on both verbs. Each argument's documentation says which family it
   belongs to.
 
-  `normalize_audio()` decides whether to carry the video stream from the
-  **output** you name. Writing to a container that holds audio only — `.wav`,
-  `.mp3`, `.aac`, `.flac`, `.m4a`, `.mka`, `.opus` and the like — carries just
-  the audio, so normalizing a video's soundtrack straight to a `.wav` works as
-  it always did. Writing to a video container carries the video through
-  untouched, as before. Two small differences from previous behavior, both in
-  the direction you would expect: `.m4a` output no longer carries a video
-  stream, and `.ogg` output now succeeds where it used to fail.
+  `normalize_audio()` now writes **one audio stream and no video**, whatever
+  container you name for the output. It has become an audio-producing verb like
+  `extract_audio()` and `convert_audio()`, rather than one that passes a video
+  stream through. Two consequences worth reading before you upgrade:
+
+  - **Normalizing a recording's loudness while keeping its picture is no longer
+    possible in one call.** If you relied on `normalize_audio("clip.mp4",
+    "clip_norm.mp4")` returning a playable video, it now returns an audio-only
+    `.mp4`. Normalize to an audio file and mux it back with the `ffmpeg()`
+    escape hatch; a first-class way to do this is on the roadmap.
+  - **An input with no audio is now an error** rather than a silent copy of the
+    video. A silent screen recording stops with FFmpeg's "Stream map '' matches
+    no streams" instead of quietly producing a file with no normalized audio in
+    it.
+
+  What you gain is that the output container no longer matters: writing to
+  `.wav`, `.mp3`, `.flac`, `.opus`, `.w64` or anything else FFmpeg can mux now
+  works uniformly, where before the choice of extension could decide whether the
+  call succeeded at all.
 
 * Two argument-surface changes on the four verbs that gained `audio_stream`,
   worth knowing if you call them tersely. The new argument sits before `run`, so

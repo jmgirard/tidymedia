@@ -30,14 +30,15 @@ test_that("run_normalize_correction() builds one linear correction command per r
   expect_s3_class(res, "tbl_df")
   expect_equal(nrow(res), 2)
   # Row 1: per-row measured values, target, and knobs thread through, with
-  # linear=true and the shared pipeline's -codec:v copy preserved.
+  # linear=true and the shared pipeline's shaping knobs preserved (the
+  # -codec:v copy this once checked went away with D030's audio-only contract).
   expect_match(
     res$command[[1]],
     paste0("loudnorm=I=-23:TP=-1:LRA=7:measured_I=-27.61:measured_TP=-9.32:",
            "measured_LRA=5.9:measured_thresh=-38.06:offset=0.3:linear=true"),
     fixed = TRUE
   )
-  expect_match(res$command[[1]], "-codec:v copy -ac 1 -ar 44100", fixed = TRUE)
+  expect_match(res$command[[1]], "-ac 1 -ar 44100 -map 0:a:0", fixed = TRUE)
   # Row 2: a different per-row target and measured block.
   expect_match(
     res$command[[2]],
@@ -45,7 +46,7 @@ test_that("run_normalize_correction() builds one linear correction command per r
            "measured_LRA=8:measured_thresh=-29:offset=-0.1:linear=true"),
     fixed = TRUE
   )
-  expect_match(res$command[[2]], "-codec:v copy -ac 2 -ar 48000", fixed = TRUE)
+  expect_match(res$command[[2]], "-ac 2 -ar 48000 -map 0:a:0", fixed = TRUE)
 })
 
 # Phase 1: measured-table assembly ---------------------------------------------

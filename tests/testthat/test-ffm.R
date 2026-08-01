@@ -593,11 +593,11 @@ test_that("every in-package pipeline emits the maps its verb's contract says", {
     "standardize_video" = 2L,
     "anonymize_video" = 2L,
     "format_for_web" = 2L,
-    # normalize_audio()'s two commands. The correction command is the
-    # pass-through shape with a first-track unselected case (D028); the
-    # analysis command writes to `-f null` and maps audio alone, so it is a
-    # one-stream output rather than a pass-through.
-    "normalize_audio(correction)" = 2L,
+    # normalize_audio()'s two commands. Both map one audio stream and no video
+    # (D030): this verb's output IS an audio stream, so it sits with the
+    # extraction verbs rather than the pass-through family, and its analysis
+    # command writes to `-f null`.
+    "normalize_audio(correction)" = 1L,
     "normalize_audio(analysis)" = 1L
   )
   cmds <- c(

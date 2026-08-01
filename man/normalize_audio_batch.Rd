@@ -88,9 +88,11 @@ every row, unless \code{jobs} carries an \code{audio_stream} column.
 \code{NULL} (default) normalizes each input's \strong{first} audio track,
 as \code{\link{normalize_audio}} does; an \code{NA} cell in the column says
 the same for that row. Under \code{two_pass = TRUE} each row's analysis
-pass measures the same track its correction pass normalizes. See
-\code{\link{normalize_audio}} for how this differs from the pass-through
-verbs.}
+pass measures the same track its correction pass normalizes. Every output
+holds one audio stream and no video, whatever its container -- so a derived
+output name keeping a video extension (see \code{jobs}) yields a video
+container carrying audio alone. A row whose input has no audio is an FFmpeg
+error. See \code{\link{normalize_audio}}.}
 
 \item{run}{A logical: run each input's command through FFmpeg (\code{TRUE},
 default) or only compile them for inspection (\code{FALSE}). Under

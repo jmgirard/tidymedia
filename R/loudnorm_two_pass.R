@@ -39,7 +39,10 @@ loudnorm_analysis_pipeline <- function(input,
                                        audio_stream = NULL,
                                        call = rlang::caller_env()) {
   p <- ffm_files(input, "-")
-  p <- ffm_map(p, audio_stream_map(audio_stream, null_map = "0:a:0?",
+  # No trailing `?`, matching the correction pass it feeds (D030): an input with
+  # no audio must fail here rather than fall back to default stream selection,
+  # which is what FFmpeg does when every optional map matches nothing.
+  p <- ffm_map(p, audio_stream_map(audio_stream, null_map = "0:a:0",
                                    call = call))
   p <- ffm_loudnorm(p, target_loudness = target_loudness, true_peak = true_peak,
                     loudness_range = loudness_range, print_format = "json")

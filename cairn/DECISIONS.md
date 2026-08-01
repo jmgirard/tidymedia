@@ -1055,24 +1055,33 @@ answers `no matches found: 0:v?`.
 
 - **`quote` is an INDEX, not a level.** `ffm_group(args, quote = 2L)` means
   "quote `args[[2]]`" — a positional index into the group's own argument vector,
-  and the sole quoting style in the package is `paste0('"', x, '"')`
+  and the display renderer's sole quoting style is `paste0('"', x, '"')`
   (`R/ffm.R:1175-1183`). `quote = 2L` recurs across the file because the value
   is the second element of a two-element option group, not because there is a
-  level 2.
+  level 2. Note this is the DISPLAY renderer's style, not the package's only
+  one: execution quotes separately and differently, per the next bullet.
 
 - **Why this cannot reach FFmpeg.** `ffm_groups()` returns both renderings of
   each group, and quoting exists only in `display`. `ffm_compile()` pastes the
-  `display` fields (`R/ffm.R:1149-1152`); `ffm_run()` executes `ffm_args()`,
-  the `args` fields, one shell-free token per argument, and never the display
-  string (`R/ffm.R:1161-1164`, `:1383-1389`). The two renderings coming from one
+  `display` fields (`R/ffm.R:1149-1152`); `ffm_run()` executes `ffm_args()`, the
+  `args` fields, and never the display string (`R/ffm.R:1161-1164`,
+  `:1383-1389`). Execution then does its own quoting, which is why the display
+  style cannot leak into it: `run_program()` hands the vector to
+  `system2(location, args = shQuote(args, type = quote_type))`
+  (`R/program_management.R:113-121`), one element per argument, `shQuote`d for
+  the platform's shell — `"sh"` elsewhere, `"cmd"` on Windows. The safety of a
+  path carrying spaces or `$` comes from that `shQuote`, not from bypassing a
+  shell. The two renderings coming from one
   structure is M06's reason for the split, and it is what makes a display-only
-  change provable rather than argued: M50 pins `ffm_args()` for all fifteen
+  change provable rather than argued: M50 pins `ffm_args()` for all fourteen
   in-package pipelines in a snapshot recorded before the change, and the snapshot
   did not move.
 
-- **Falsified by** any path FFmpeg receives differing from the path the display
-  string shows — which would mean the two renderings had drifted, and is a bug
-  in the split rather than in this rule. Note the display string is a
+- **Falsified by** any token FFmpeg receives whose VALUE differs from the value
+  the display string shows — path, filter graph, or map specifier alike; the two
+  renderings quote differently by design, so only the values are comparable.
+  That would mean the split had drifted, and is a bug in the split rather than
+  in this rule. Note the display string is a
   reproducibility artifact, not a shell-escaping library: a path containing a
   double quote still renders unescaped, which predates this entry and is
   untouched by it.

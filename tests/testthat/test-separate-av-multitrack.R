@@ -13,7 +13,11 @@
 #   audio: -y -i "<...>/sample.mp4" -codec:a copy -map 0:a "audio.aac"
 #   video: -y -i "<...>/sample.mp4" -codec:v copy -map 0:v "video.mp4"
 #
-# The tests pin that form as a template so they do not depend on a temp path.
+# The tests pin that form as a template so they do not depend on a temp path --
+# with the map specifier quoted, `-map "0:a"` and `-map "0:v"`, since M50/D031.
+# The transcript above is left in its pre-M50 spelling because it records what
+# b548902 produced; the SELECTION it pins is what this file is about, and that
+# is unchanged.
 #
 # PORTABILITY, learned the hard way at review (M27's lesson on a new surface):
 # WHICH container refuses several audio streams is FFmpeg-version dependent. The

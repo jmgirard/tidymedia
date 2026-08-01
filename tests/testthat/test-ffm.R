@@ -669,7 +669,10 @@ enumerated_pipelines <- function(f, f2) {
 # that one token and in nothing else. Both the parity test and the snapshot
 # below compare across compilations, so both blank it out.
 stable_paths <- function(x, f = NULL, f2 = NULL) {
-  x <- gsub("[^\"[:space:]|]*ffm-concat[^\"[:space:]|]*\\.txt", "<concat-list>", x)
+  # Bounded by the enclosing quote rather than by whitespace: a temp path may
+  # contain a space (routinely so under a Windows profile directory), and a
+  # whitespace-bounded pattern would fail to scrub it on that platform alone.
+  x <- gsub("[^\"|]*ffm-concat[^\"|]*\\.txt", "<concat-list>", x)
   if (!is.null(f)) x <- sub(f, "<input>", x, fixed = TRUE)
   if (!is.null(f2)) x <- sub(f2, "<input2>", x, fixed = TRUE)
   x
@@ -767,7 +770,7 @@ test_that("the complex branch quotes a user map beside the automatic one", {
 })
 
 test_that("no in-package pipeline compiles a bare map specifier", {
-  # AC2, over the same fifteen commands the map-count table enumerates. That
+  # AC2, over the same fourteen commands the map-count table enumerates. That
   # table says how many maps each command emits; this says every one of them
   # survives a paste into a shell.
   f <- make_input()
@@ -775,8 +778,14 @@ test_that("no in-package pipeline compiles a bare map specifier", {
   specifiers <- lapply(enumerated_pipelines(f, f2), function(p) {
     map_specifiers(ffm_compile(p))
   })
-  bare <- specifiers[!vapply(specifiers, function(s) {
-    length(s) > 0 && all(startsWith(s, '"') & endsWith(s, '"'))
+  # Two separate claims, so each names its own offender. Folding "emits no map"
+  # into the quoting predicate would report a map-less pipeline as compiling a
+  # BARE specifier, which is the wrong diagnosis: every row here emits at least
+  # one map today, but `extract_frame()` and `sample_frames()` emit none and are
+  # legitimate future rows.
+  expect_identical(names(specifiers)[lengths(specifiers) == 0L], character(0))
+  bare <- specifiers[vapply(specifiers, function(s) {
+    !all(startsWith(s, '"') & endsWith(s, '"'))
   }, logical(1))]
   expect_identical(names(bare), character(0))
 })

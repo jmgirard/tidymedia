@@ -333,6 +333,19 @@
 
 ### Bug fixes
 
+- The compiled command string that every verb returns under
+  `run = FALSE` — and that
+  [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md)
+  produces — now wraps each stream map in double quotes: `-map "0:a:0"`
+  where it used to print `-map 0:a:0`. Since the verbs began stating
+  their stream selection explicitly, that string could carry a `?` (as
+  in `-map 0:v?`, “this stream if the input has one”), and pasting it
+  into a shell failed there rather than running: zsh reads a bare `?` as
+  a filename pattern and answers `no matches found`. The command
+  tidymedia itself runs is unchanged — it never goes through a shell —
+  so this affects only what you read, log, and paste. If you compare
+  compiled commands against saved strings, those strings need updating.
+
 - [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
   and
   [`convert_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/convert_audio_batch.md)

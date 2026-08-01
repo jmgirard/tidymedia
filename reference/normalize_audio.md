@@ -200,12 +200,12 @@ Other task verb functions:
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 # The output holds audio only, so name an audio file for it
 normalize_audio(video, "normalized.wav", run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -map 0:a:0 \"normalized.wav\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -map \"0:a:0\" \"normalized.wav\""
 # Normalize to a streaming target and downmix to mono
 normalize_audio(video, "mono.wav", target_loudness = -16, channels = 1,
                 run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-16:TP=-1:LRA=7\" -ac 1 -map 0:a:0 \"mono.wav\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-16:TP=-1:LRA=7\" -ac 1 -map \"0:a:0\" \"mono.wav\""
 # Name the output audio encoder instead of taking the container's default
 normalize_audio(video, "normalized.m4a", audio_codec = "aac", run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -codec:a aac -map 0:a:0 \"normalized.m4a\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -codec:a aac -map \"0:a:0\" \"normalized.m4a\""
 ```

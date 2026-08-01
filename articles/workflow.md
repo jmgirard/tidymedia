@@ -49,7 +49,7 @@ standardize_video(
   width = 1280, height = 720, fps = 30,
   run = FALSE
 )
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"scale=w=1280:h=720,fps=30\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -movflags +faststart -map 0:v? -map 0:a? \"session01_camA_std.mp4\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"scale=w=1280:h=720,fps=30\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -movflags +faststart -map \"0:v?\" -map \"0:a?\" \"session01_camA_std.mp4\""
 ```
 
 Because this runs the same way for every file, reach for the batch
@@ -105,7 +105,7 @@ container would give you a `.mp4` carrying nothing but sound:
 
 normalize_audio(session, "session01_camA_norm.wav",
                 target_loudness = -23, run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -map 0:a:0 \"session01_camA_norm.wav\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -map \"0:a:0\" \"session01_camA_norm.wav\""
 ```
 
 To normalize a recording’s loudness *and* keep its picture, normalize to
@@ -122,7 +122,7 @@ automatic-speech-recognition pipeline:
 ``` r
 
 convert_audio(session, "session01_camA.wav", run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map 0:a:0 \"session01_camA.wav\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map \"0:a:0\" \"session01_camA.wav\""
 ```
 
 (If you only need the audio *without* re-encoding,
@@ -165,7 +165,7 @@ recording timestamps — without touching the audio or video streams:
 ``` r
 
 strip_metadata(session, "session01_camA_clean.mp4", run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -codec:a copy -map_metadata -1 -map_chapters -1 -fflags +bitexact -map 0 \"session01_camA_clean.mp4\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -codec:a copy -map_metadata -1 -map_chapters -1 -fflags +bitexact -map \"0\" \"session01_camA_clean.mp4\""
 ```
 
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
@@ -181,7 +181,7 @@ regions <- tibble::tibble(
 )
 anonymize_video(session, "session01_camA_deid.mp4", regions = regions,
                 run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2,drawbox=x=16:y=640:w=360:h=64:c=black:t=fill\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -map 0:v? -map 0:a? \"session01_camA_deid.mp4\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2,drawbox=x=16:y=640:w=360:h=64:c=black:t=fill\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -map \"0:v?\" -map \"0:a?\" \"session01_camA_deid.mp4\""
 ```
 
 ## 5. Assemble and share
@@ -207,7 +207,7 @@ enabled, so coders can stream it in a browser without a large download:
 ``` r
 
 format_for_web(session, "session01_camA_share.mp4", run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -codec:a aac -pix_fmt yuv420p -movflags +faststart -map 0:v? -map 0:a? \"session01_camA_share.mp4\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -codec:a aac -pix_fmt yuv420p -movflags +faststart -map \"0:v?\" -map \"0:a?\" \"session01_camA_share.mp4\""
 ```
 
 ## Reproducibility

@@ -118,10 +118,10 @@ Other task verb functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 convert_audio(video, "audio.mp3", run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map 0:a:0 \"audio.mp3\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map \"0:a:0\" \"audio.mp3\""
 convert_audio(video, "audio.m4a", audio_codec = "aac", run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a aac -map 0:a:0 \"audio.m4a\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a aac -map \"0:a:0\" \"audio.m4a\""
 # Convert the second audio track instead of the first
 convert_audio(video, "audio.mp3", audio_stream = 1, run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map 0:a:1 \"audio.mp3\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map \"0:a:1\" \"audio.mp3\""
 ```

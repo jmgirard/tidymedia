@@ -93,11 +93,11 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 ffm(video, "output.mp4") |>
   ffm_map(mapping = "0") |>
   ffm_compile()
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -map 0 \"output.mp4\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -map \"0\" \"output.mp4\""
 
 # Keep the video and the second audio track only
 ffm(video, "output.mkv") |>
   ffm_map(mapping = c("0:v", "0:a:1")) |>
   ffm_compile()
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -map 0:v -map 0:a:1 \"output.mkv\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -map \"0:v\" -map \"0:a:1\" \"output.mkv\""
 ```

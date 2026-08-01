@@ -172,22 +172,22 @@ Other task verb functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 separate_audio_video(video, "audio.aac", "video.mp4", run = FALSE)
-#>                                                                                                         audio 
-#> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -map 0:a \"audio.aac\"" 
-#>                                                                                                         video 
-#> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -map 0:v \"video.mp4\"" 
+#>                                                                                                             audio 
+#> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -map \"0:a\" \"audio.aac\"" 
+#>                                                                                                             video 
+#> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -map \"0:v\" \"video.mp4\"" 
 # transcode the audio to MP3 while copying the video through untouched
 separate_audio_video(video, "audio.mp3", "video.mp4",
                      audio_codec = "libmp3lame", run = FALSE)
-#>                                                                                                               audio 
-#> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a libmp3lame -map 0:a \"audio.mp3\"" 
-#>                                                                                                               video 
-#>       "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -map 0:v \"video.mp4\"" 
+#>                                                                                                                   audio 
+#> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a libmp3lame -map \"0:a\" \"audio.mp3\"" 
+#>                                                                                                                   video 
+#>       "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -map \"0:v\" \"video.mp4\"" 
 # write only the second audio track (this sample has one, so compile only)
 separate_audio_video(video, "audio.aac", "video.mp4",
                      audio_stream = 1, run = FALSE)
-#>                                                                                                           audio 
-#> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -map 0:a:1 \"audio.aac\"" 
-#>                                                                                                           video 
-#>   "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -map 0:v \"video.mp4\"" 
+#>                                                                                                               audio 
+#> "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -map \"0:a:1\" \"audio.aac\"" 
+#>                                                                                                               video 
+#>   "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -map \"0:v\" \"video.mp4\"" 
 ```

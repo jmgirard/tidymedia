@@ -104,7 +104,7 @@ target:</p>
 <span>  width <span class="op">=</span> <span class="fl">1280</span>, height <span class="op">=</span> <span class="fl">720</span>, fps <span class="op">=</span> <span class="fl">30</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"scale=w=1280:h=720,fps=30\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -movflags +faststart -map 0:v? -map 0:a? \"session01_camA_std.mp4\""</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"scale=w=1280:h=720,fps=30\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -movflags +faststart -map \"0:v?\" -map \"0:a?\" \"session01_camA_std.mp4\""</span></span></code></pre></div>
 <p>Because this runs the same way for every file, reach for the batch
 sibling to do the whole folder from a jobs tibble (see
 <code><a href="../articles/batch.html">vignette("batch")</a></code> for the batch model). Every task verb has
@@ -145,7 +145,7 @@ for it — normalizing into a video container would give you a
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/normalize_audio.html">normalize_audio</a></span><span class="op">(</span><span class="va">session</span>, <span class="st">"session01_camA_norm.wav"</span>,</span>
 <span>                target_loudness <span class="op">=</span> <span class="op">-</span><span class="fl">23</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -map 0:a:0 \"session01_camA_norm.wav\""</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -map \"0:a:0\" \"session01_camA_norm.wav\""</span></span></code></pre></div>
 <p>To normalize a recording’s loudness <em>and</em> keep its picture,
 normalize to an audio file as above and mux it back with the
 <code><a href="../reference/ffmpeg.html">ffmpeg()</a></code> escape hatch.</p>
@@ -155,7 +155,7 @@ transcodes to whatever the output extension implies — a
 <code>.wav</code> for an automatic-speech-recognition pipeline:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/convert_audio.html">convert_audio</a></span><span class="op">(</span><span class="va">session</span>, <span class="st">"session01_camA.wav"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map 0:a:0 \"session01_camA.wav\""</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map \"0:a:0\" \"session01_camA.wav\""</span></span></code></pre></div>
 <p>(If you only need the audio <em>without</em> re-encoding,
 <code><a href="../reference/extract_audio.html">extract_audio()</a></code> stream-copies it instead — see
 <code><a href="../articles/tidymedia.html">vignette("tidymedia")</a></code>.)</p>
@@ -186,7 +186,7 @@ camera model, GPS coordinates, recording timestamps — without touching
 the audio or video streams:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/strip_metadata.html">strip_metadata</a></span><span class="op">(</span><span class="va">session</span>, <span class="st">"session01_camA_clean.mp4"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -codec:a copy -map_metadata -1 -map_chapters -1 -fflags +bitexact -map 0 \"session01_camA_clean.mp4\""</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -codec:a copy -map_metadata -1 -map_chapters -1 -fflags +bitexact -map \"0\" \"session01_camA_clean.mp4\""</span></span></code></pre></div>
 <p><code><a href="../reference/anonymize_video.html">anonymize_video()</a></code> box-fills one or more <strong>fixed
 rectangles</strong> you specify. This is not face tracking — you give it
 the coordinates of a region that stays put, such as an on-screen name
@@ -198,7 +198,7 @@ are a data frame, one row per box:</p>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/anonymize_video.html">anonymize_video</a></span><span class="op">(</span><span class="va">session</span>, <span class="st">"session01_camA_deid.mp4"</span>, regions <span class="op">=</span> <span class="va">regions</span>,</span>
 <span>                run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2,drawbox=x=16:y=640:w=360:h=64:c=black:t=fill\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -map 0:v? -map 0:a? \"session01_camA_deid.mp4\""</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2,drawbox=x=16:y=640:w=360:h=64:c=black:t=fill\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -map \"0:v?\" -map \"0:a?\" \"session01_camA_deid.mp4\""</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="assemble-and-share">5. Assemble and share<a class="anchor" aria-label="anchor" href="#assemble-and-share"></a>
@@ -216,7 +216,7 @@ broadly compatible H.264 file with fast-start enabled, so coders can
 stream it in a browser without a large download:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/format_for_web.html">format_for_web</a></span><span class="op">(</span><span class="va">session</span>, <span class="st">"session01_camA_share.mp4"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -codec:a aac -pix_fmt yuv420p -movflags +faststart -map 0:v? -map 0:a? \"session01_camA_share.mp4\""</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -codec:a aac -pix_fmt yuv420p -movflags +faststart -map \"0:v?\" -map \"0:a?\" \"session01_camA_share.mp4\""</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="reproducibility">Reproducibility<a class="anchor" aria-label="anchor" href="#reproducibility"></a>

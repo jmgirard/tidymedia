@@ -122,7 +122,7 @@ ffm(video, "output.mp4") |>
   ffm_codec(video = "libx264") |>
   ffm_drop(streams = "audio") |>
   ffm_compile()
-#> [1] "-y -i \"/private/var/folders/kr/tx86v16n5bx_djz_z2cpvfkc0000gq/T/RtmpdjtTVC/temp_libpathdea11ba1723/tidymedia/extdata/sample.mp4\" -vf \"trim=start=1:end=5,setpts=PTS-STARTPTS,crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -an \"output.mp4\""
+#> [1] "-y -i \"/private/var/folders/kr/tx86v16n5bx_djz_z2cpvfkc0000gq/T/Rtmp2poUR0/temp_libpath54967766ef9f/tidymedia/extdata/sample.mp4\" -vf \"trim=start=1:end=5,setpts=PTS-STARTPTS,crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -an \"output.mp4\""
 ```
 
 Common tasks have their own verbs (Layer 2). Pass `run = FALSE` to see
@@ -131,7 +131,7 @@ the command without executing it:
 ``` r
 
 extract_audio(video, "audio.aac", run = FALSE)
-#> [1] "-y -i \"/private/var/folders/kr/tx86v16n5bx_djz_z2cpvfkc0000gq/T/RtmpdjtTVC/temp_libpathdea11ba1723/tidymedia/extdata/sample.mp4\" -codec:a copy -vn -map 0:a:0 \"audio.aac\""
+#> [1] "-y -i \"/private/var/folders/kr/tx86v16n5bx_djz_z2cpvfkc0000gq/T/Rtmp2poUR0/temp_libpath54967766ef9f/tidymedia/extdata/sample.mp4\" -codec:a copy -vn -map \"0:a:0\" \"audio.aac\""
 ```
 
 ### Read metadata as tibbles

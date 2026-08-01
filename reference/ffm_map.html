@@ -139,13 +139,13 @@ task verb built on it.</p>
 <span class="r-in"><span><span class="fu"><a href="ffm.html">ffm</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"output.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">ffm_map</span><span class="op">(</span>mapping <span class="op">=</span> <span class="st">"0"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="ffm_compile.html">ffm_compile</a></span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -map 0 \"output.mp4\""</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -map \"0\" \"output.mp4\""</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Keep the video and the second audio track only</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="ffm.html">ffm</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"output.mkv"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">ffm_map</span><span class="op">(</span>mapping <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"0:v"</span>, <span class="st">"0:a:1"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="ffm_compile.html">ffm_compile</a></span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -map 0:v -map 0:a:1 \"output.mkv\""</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -map \"0:v\" -map \"0:a:1\" \"output.mkv\""</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

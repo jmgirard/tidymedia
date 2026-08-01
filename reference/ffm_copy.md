@@ -30,13 +30,13 @@ ffm_copy(object, audio = TRUE, video = TRUE, streams = TRUE)
 - streams:
 
   A logical indicating whether to map all streams from the input. This
-  **sets** the mapping to `-map 0` rather than adding to it, so calling
-  `ffm_copy()` twice compiles one `-map 0`, not two. If the pipeline
-  already states a *different* mapping, that is a conflict and
-  `ffm_copy()` aborts rather than discard it silently: pass
-  `streams = FALSE` to keep the mapping you set, or call `ffm_copy()`
-  first and narrow afterwards with `ffm_map(replace = TRUE)`. (default =
-  `TRUE`)
+  **sets** the mapping to the all-streams specifier `"0"` rather than
+  adding to it, so calling `ffm_copy()` twice compiles one `-map "0"`,
+  not two. If the pipeline already states a *different* mapping, that is
+  a conflict and `ffm_copy()` aborts rather than discard it silently:
+  pass `streams = FALSE` to keep the mapping you set, or call
+  `ffm_copy()` first and narrow afterwards with
+  `ffm_map(replace = TRUE)`. (default = `TRUE`)
 
 ## Value
 
@@ -83,5 +83,5 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 ffm(video, "output.mp4") |>
   ffm_copy() |>
   ffm_compile()
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -codec:a copy -map 0 \"output.mp4\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -codec:a copy -map \"0\" \"output.mp4\""
 ```

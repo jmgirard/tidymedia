@@ -98,5 +98,5 @@ ffm(video, "output.mp4") |>
   ffm_seek(start = 1, end = 5, reencode = FALSE) |>
   ffm_copy() |>
   ffm_compile()
-#> [1] "-y -ss 1 -to 5 -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -codec:a copy -avoid_negative_ts make_zero -map 0 \"output.mp4\""
+#> [1] "-y -ss 1 -to 5 -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -codec:a copy -avoid_negative_ts make_zero -map \"0\" \"output.mp4\""
 ```

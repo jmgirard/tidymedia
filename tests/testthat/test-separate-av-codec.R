@@ -10,10 +10,10 @@
 # than by substring (AC1, AC2).
 pre_m37 <- function(input) {
   list(
-    copy_audio  = sprintf('-y -i "%s" -codec:a copy -map 0:a "a.aac"', input),
-    copy_video  = sprintf('-y -i "%s" -codec:v copy -map 0:v "v.mp4"', input),
-    unset_audio = sprintf('-y -i "%s" -map 0:a "a.aac"', input),
-    unset_video = sprintf('-y -i "%s" -map 0:v "v.mp4"', input)
+    copy_audio  = sprintf('-y -i "%s" -codec:a copy -map "0:a" "a.aac"', input),
+    copy_video  = sprintf('-y -i "%s" -codec:v copy -map "0:v" "v.mp4"', input),
+    unset_audio = sprintf('-y -i "%s" -map "0:a" "a.aac"', input),
+    unset_video = sprintf('-y -i "%s" -map "0:v" "v.mp4"', input)
   )
 }
 

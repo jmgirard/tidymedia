@@ -20,7 +20,7 @@ test_that("segment_video_batch() returns one command per job across multiple inp
   # reencode = TRUE: accurate output-seek, -ss/-to after -i).
   # The seek and the output are no longer adjacent: M48's stated map sits
   # between them (D026).
-  maps <- "-map 0:v? -map 0:a?"
+  maps <- "-map \"0:v?\" -map \"0:a?\""
   expect_match(res$command[[1]], paste0('-ss 0 -to 5 ', maps, ' "a.mp4"'),
                fixed = TRUE)
   expect_match(res$command[[2]], paste0('-ss 5 -to 10 ', maps, ' "b.mp4"'),
@@ -37,7 +37,7 @@ test_that("segment_video_batch() default reencode = TRUE is accurate output-seek
   jobs <- tibble::tibble(input = f, output = "clip.mp4", start = 0, end = 5)
   res <- segment_video_batch(jobs, run = FALSE)
   expect_match(res$command[[1]],
-               '-ss 0 -to 5 -map 0:v? -map 0:a? "clip.mp4"', fixed = TRUE)
+               '-ss 0 -to 5 -map "0:v?" -map "0:a?" "clip.mp4"', fixed = TRUE)
   expect_no_match(res$command[[1]], "-codec:v copy", fixed = TRUE)
 })
 
@@ -168,7 +168,7 @@ test_that("segment_video_batch() honors a per-row reencode column", {
   # Row 1 re-encodes (accurate output-seek, no stream copy)...
   expect_no_match(res$command[[1]], "-codec:v copy", fixed = TRUE)
   expect_match(res$command[[1]],
-               '-ss 0 -to 5 -map 0:v? -map 0:a? "a.mp4"', fixed = TRUE)
+               '-ss 0 -to 5 -map "0:v?" -map "0:a?" "a.mp4"', fixed = TRUE)
   # ...row 2 takes the fast copy path.
   expect_match(res$command[[2]], "-codec:v copy -codec:a copy", fixed = TRUE)
   expect_match(res$command[[2]], "-avoid_negative_ts make_zero", fixed = TRUE)

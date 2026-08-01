@@ -622,9 +622,10 @@ ffm_map <- function(object, mapping = "0", replace = FALSE) {
 #' @param video A logical indicating whether to copy the video codec.
 #'   (default = \code{TRUE})
 #' @param streams A logical indicating whether to map all streams from the
-#'   input. This \strong{sets} the mapping to \code{-map 0} rather than adding
-#'   to it, so calling \code{ffm_copy()} twice compiles one \code{-map 0}, not
-#'   two. If the pipeline already states a \emph{different} mapping, that is a
+#'   input. This \strong{sets} the mapping to the all-streams specifier
+#'   \code{"0"} rather than adding to it, so calling \code{ffm_copy()} twice
+#'   compiles one \code{-map "0"}, not two. If the pipeline already states a
+#'   \emph{different} mapping, that is a
 #'   conflict and \code{ffm_copy()} aborts rather than discard it silently:
 #'   pass \code{streams = FALSE} to keep the mapping you set, or call
 #'   \code{ffm_copy()} first and narrow afterwards with
@@ -1279,9 +1280,12 @@ ffm_groups <- function(object) {
     ))
     # D-M06-1: explicit ffm_map() maps ride alongside the auto [vout] map
     # (e.g. keep 0:a audio next to stacked video) instead of being dropped.
+    # Both are `quote = 2L`: the specifier is quoted in the DISPLAY string only
+    # (D031), so a compiled command survives a paste into a shell, where
+    # `-map 0:v?` and `-map [vout]` are both glob patterns. `args` is untouched.
     map <- c(
       list(ffm_group(c("-map", "[vout]"), quote = 2L)),
-      lapply(object$map, function(m) ffm_group(c("-map", m)))
+      lapply(object$map, function(m) ffm_group(c("-map", m), quote = 2L))
     )
   } else {
     if (length(object$filter_video)) {
@@ -1296,7 +1300,8 @@ ffm_groups <- function(object) {
         quote = 2L
       )))
     }
-    map <- lapply(object$map, function(m) ffm_group(c("-map", m)))
+    # Display-only quoting, as in the complex branch above (D031).
+    map <- lapply(object$map, function(m) ffm_group(c("-map", m), quote = 2L))
   }
 
   # Output options (after the inputs, before the output file).

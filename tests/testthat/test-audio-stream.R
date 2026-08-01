@@ -7,17 +7,17 @@
 test_that("both verbs compile an explicit audio-stream map by default", {
   f <- make_input()
   expect_match(extract_audio(f, "out.aac", run = FALSE),
-               "-map 0:a:0", fixed = TRUE)
+               "-map \"0:a:0\"", fixed = TRUE)
   expect_match(convert_audio(f, "out.mp3", run = FALSE),
-               "-map 0:a:0", fixed = TRUE)
+               "-map \"0:a:0\"", fixed = TRUE)
 })
 
 test_that("audio_stream selects the named track on both verbs", {
   f <- make_input()
   expect_match(extract_audio(f, "out.aac", audio_stream = 1, run = FALSE),
-               "-map 0:a:1", fixed = TRUE)
+               "-map \"0:a:1\"", fixed = TRUE)
   expect_match(convert_audio(f, "out.mp3", audio_stream = 2, run = FALSE),
-               "-map 0:a:2", fixed = TRUE)
+               "-map \"0:a:2\"", fixed = TRUE)
 })
 
 test_that("audio_stream = NULL and audio_stream = 0 compile the same command", {
@@ -40,11 +40,11 @@ test_that("convert_audio() commands are unchanged when audio_stream is absent", 
   f <- make_input()
   expect_identical(
     convert_audio(f, "out.mp3", run = FALSE),
-    paste0('-y -i "', f, '" -q:a 0 -map 0:a:0 "out.mp3"')
+    paste0('-y -i "', f, '" -q:a 0 -map "0:a:0" "out.mp3"')
   )
   expect_identical(
     convert_audio(f, "out.m4a", audio_codec = "aac", run = FALSE),
-    paste0('-y -i "', f, '" -codec:a aac -map 0:a:0 "out.m4a"')
+    paste0('-y -i "', f, '" -codec:a aac -map "0:a:0" "out.m4a"')
   )
 })
 
@@ -98,11 +98,11 @@ test_that("the batch verbs carry a batch-wide audio_stream argument", {
   f <- make_input()
   jobs <- tibble::tibble(input = c(f, f), output = c("a.aac", "b.aac"))
   res <- extract_audio_batch(jobs, audio_stream = 1, run = FALSE)
-  expect_true(all(grepl("-map 0:a:1", res$command, fixed = TRUE)))
+  expect_true(all(grepl("-map \"0:a:1\"", res$command, fixed = TRUE)))
 
   jobs <- tibble::tibble(input = c(f, f), output = c("a.mp3", "b.mp3"))
   res <- convert_audio_batch(jobs, audio_stream = 2, run = FALSE)
-  expect_true(all(grepl("-map 0:a:2", res$command, fixed = TRUE)))
+  expect_true(all(grepl("-map \"0:a:2\"", res$command, fixed = TRUE)))
 })
 
 test_that("an audio_stream column overrides the argument per row", {
@@ -110,14 +110,14 @@ test_that("an audio_stream column overrides the argument per row", {
   jobs <- tibble::tibble(input = c(f, f), output = c("a.aac", "b.aac"),
                          audio_stream = c(2, 1))
   res <- extract_audio_batch(jobs, audio_stream = 0, run = FALSE)
-  expect_match(res$command[[1]], "-map 0:a:2", fixed = TRUE)
-  expect_match(res$command[[2]], "-map 0:a:1", fixed = TRUE)
+  expect_match(res$command[[1]], "-map \"0:a:2\"", fixed = TRUE)
+  expect_match(res$command[[2]], "-map \"0:a:1\"", fixed = TRUE)
 
   jobs <- tibble::tibble(input = c(f, f), output = c("a.mp3", "b.mp3"),
                          audio_stream = c(2, 1))
   res <- convert_audio_batch(jobs, audio_stream = 0, run = FALSE)
-  expect_match(res$command[[1]], "-map 0:a:2", fixed = TRUE)
-  expect_match(res$command[[2]], "-map 0:a:1", fixed = TRUE)
+  expect_match(res$command[[1]], "-map \"0:a:2\"", fixed = TRUE)
+  expect_match(res$command[[2]], "-map \"0:a:1\"", fixed = TRUE)
 })
 
 test_that("an NA cell keeps that row on the track-0 default, overriding the argument", {
@@ -128,14 +128,14 @@ test_that("an NA cell keeps that row on the track-0 default, overriding the argu
   jobs <- tibble::tibble(input = c(f, f), output = c("a.aac", "b.aac"),
                          audio_stream = c(NA, 1))
   res <- extract_audio_batch(jobs, audio_stream = 2, run = FALSE)
-  expect_match(res$command[[1]], "-map 0:a:0", fixed = TRUE)
-  expect_match(res$command[[2]], "-map 0:a:1", fixed = TRUE)
+  expect_match(res$command[[1]], "-map \"0:a:0\"", fixed = TRUE)
+  expect_match(res$command[[2]], "-map \"0:a:1\"", fixed = TRUE)
 
   jobs <- tibble::tibble(input = c(f, f), output = c("a.mp3", "b.mp3"),
                          audio_stream = c(NA, 1))
   res <- convert_audio_batch(jobs, audio_stream = 2, run = FALSE)
-  expect_match(res$command[[1]], "-map 0:a:0", fixed = TRUE)
-  expect_match(res$command[[2]], "-map 0:a:1", fixed = TRUE)
+  expect_match(res$command[[1]], "-map \"0:a:0\"", fixed = TRUE)
+  expect_match(res$command[[2]], "-map \"0:a:1\"", fixed = TRUE)
 })
 
 test_that("an all-NA audio_stream column is legal on both batch verbs", {
@@ -145,12 +145,12 @@ test_that("an all-NA audio_stream column is legal on both batch verbs", {
   jobs <- tibble::tibble(input = c(f, f), output = c("a.aac", "b.aac"),
                          audio_stream = c(NA, NA))
   res <- extract_audio_batch(jobs, run = FALSE)
-  expect_true(all(grepl("-map 0:a:0", res$command, fixed = TRUE)))
+  expect_true(all(grepl("-map \"0:a:0\"", res$command, fixed = TRUE)))
 
   jobs <- tibble::tibble(input = c(f, f), output = c("a.mp3", "b.mp3"),
                          audio_stream = c(NA, NA))
   res <- convert_audio_batch(jobs, run = FALSE)
-  expect_true(all(grepl("-map 0:a:0", res$command, fixed = TRUE)))
+  expect_true(all(grepl("-map \"0:a:0\"", res$command, fixed = TRUE)))
 })
 
 test_that("a non-numeric audio_stream column is rejected up front", {

@@ -46,14 +46,14 @@
 #   analysis:   -y -i "<f>" -af "loudnorm=I=-23:TP=-1:LRA=7:print_format=json" \
 #                  -f null "-"
 
-normalize_command <- function(infile, maps = "-map 0:a:0 ", outfile = "out.mkv") {
+normalize_command <- function(infile, maps = "-map \"0:a:0\" ", outfile = "out.mkv") {
   paste0(
     '-y -i "', infile, '" -af "loudnorm=I=-23:TP=-1:LRA=7" ',
     maps, '"', outfile, '"'
   )
 }
 
-analysis_command <- function(infile, maps = "-map 0:a:0 ") {
+analysis_command <- function(infile, maps = "-map \"0:a:0\" ") {
   paste0(
     '-y -i "', infile, '"',
     ' -af "loudnorm=I=-23:TP=-1:LRA=7:print_format=json" -f null ',
@@ -90,13 +90,13 @@ test_that("normalize_audio()'s unselected case is NOT the every-track map", {
   # The discriminator for the carve-out. Without this, a later change back to
   # D026's uniform `0:a?` would leave every assertion above green.
   f <- make_input()
-  expect_false(grepl("-map 0:a? ", normalize_of(f), fixed = TRUE))
+  expect_false(grepl("-map \"0:a?\" ", normalize_of(f), fixed = TRUE))
 })
 
 test_that("normalize_audio(audio_stream = ) narrows the audio map only", {
   f <- make_input()
   expect_identical(normalize_of(f, audio_stream = 2),
-                   normalize_command(f, "-map 0:a:2 "))
+                   normalize_command(f, "-map \"0:a:2\" "))
   expect_false(grepl("0:a:2?", normalize_of(f, audio_stream = 2), fixed = TRUE))
 })
 
@@ -107,7 +107,7 @@ test_that("normalize_audio(audio_stream = 0) compiles exactly what NULL does", {
   # either way, so the two spellings have nothing left to differ about.
   f <- make_input()
   expect_identical(normalize_of(f, audio_stream = 0),
-                   normalize_command(f, "-map 0:a:0 "))
+                   normalize_command(f, "-map \"0:a:0\" "))
   expect_identical(normalize_of(f, audio_stream = 0), normalize_of(f))
 })
 
@@ -158,7 +158,7 @@ test_that("the unselected map carries no trailing `?`", {
   f <- make_input()
   expect_false(grepl("0:a:0?", normalize_audio(f, "out.mkv", run = FALSE),
                      fixed = TRUE))
-  expect_match(normalize_audio(f, "out.mkv", run = FALSE), "-map 0:a:0",
+  expect_match(normalize_audio(f, "out.mkv", run = FALSE), "-map \"0:a:0\"",
                fixed = TRUE)
 })
 
@@ -176,7 +176,7 @@ test_that("the batch verb is container-independent too", {
 test_that("the normalize_audio_batch() argument reaches every row", {
   f <- make_input()
   out <- normalize_audio_batch(normalize_jobs(f), audio_stream = 2, run = FALSE)
-  expect_true(all(grepl("-map 0:a:2", out$command, fixed = TRUE)))
+  expect_true(all(grepl("-map \"0:a:2\"", out$command, fixed = TRUE)))
   expect_identical(norm_map_count(out$command), c(1L, 1L))
 })
 
@@ -186,8 +186,8 @@ test_that("a normalize_audio_batch() audio_stream column overrides the argument 
                                audio_stream = 2, run = FALSE)
   # NA is the column form of NULL, which on THIS verb means the first track --
   # it does not fall back to the argument, which is what an ABSENT column means.
-  expect_match(out$command[[1]], "-map 0:a:1", fixed = TRUE)
-  expect_match(out$command[[2]], "-map 0:a:0", fixed = TRUE)
+  expect_match(out$command[[1]], "-map \"0:a:1\"", fixed = TRUE)
+  expect_match(out$command[[2]], "-map \"0:a:0\"", fixed = TRUE)
 })
 
 test_that("a one-row normalize_audio_batch() call matches the scalar call byte for byte", {
@@ -259,7 +259,7 @@ test_that("the analysis pipeline maps a named track", {
   f <- make_input()
   expect_identical(
     ffm_compile(loudnorm_analysis_pipeline(f, audio_stream = 2)),
-    analysis_command(f, "-map 0:a:2 ")
+    analysis_command(f, "-map \"0:a:2\" ")
   )
 })
 
@@ -407,7 +407,7 @@ test_that("two-pass normalization measures and corrects the same track", {
   infile <- make_multitrack_video(default_track = 2)
   out <- withr::local_tempfile(fileext = ".mkv")
   cmd <- normalize_audio(infile, out, two_pass = TRUE, audio_stream = 1)
-  expect_match(cmd, "-map 0:a:1", fixed = TRUE)
+  expect_match(cmd, "-map \"0:a:1\"", fixed = TRUE)
   expect_identical(audio_languages(out), "spa")
 })
 
@@ -435,7 +435,7 @@ test_that("the two-pass batch path carries a per-row audio_stream column", {
   expect_warning(res <- normalize_audio_batch(jobs, two_pass = TRUE), "silent")
   expect_identical(res$silent, c(TRUE, FALSE))
   expect_true(is.na(res$command[[1]]))
-  expect_match(res$command[[2]], "-map 0:a:2", fixed = TRUE)
+  expect_match(res$command[[2]], "-map \"0:a:2\"", fixed = TRUE)
   # The discriminator: `fra` is track 2, `eng` is what a one-row misalignment
   # would have produced.
   expect_identical(audio_languages(b), "fra")

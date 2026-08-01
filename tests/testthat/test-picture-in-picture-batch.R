@@ -48,7 +48,7 @@ test_that("picture_in_picture_batch() audio column carries an input's audio; NA 
     output = c("a.mp4", "s.mp4"), audio = c(1, NA)
   )
   res <- picture_in_picture_batch(jobs, run = FALSE)
-  expect_match(res$command[[1]], "-map 1:a", fixed = TRUE)
+  expect_match(res$command[[1]], "-map \"1:a\"", fixed = TRUE)
   # The overlay always maps its video output ([vout]); only the audio map is
   # conditional, so NA drops the ":a" map, not the "[vout]" one.
   expect_no_match(res$command[[2]], ":a", fixed = TRUE)

@@ -17,7 +17,7 @@ test_that("crop_video() stream-copies audio by default", {
   expect_equal(
     as.character(cmd),
     paste0('-y -i "', f, '" -vf "crop=w=100:h=50:x=0:y=0" ',
-           '-codec:a copy -map 0:v? -map 0:a? "out.mp4"')
+           '-codec:a copy -map "0:v?" -map "0:a?" "out.mp4"')
   )
   expect_no_match(as.character(cmd), "-codec:v", fixed = TRUE)
 })
@@ -39,7 +39,7 @@ test_that("crop_video(audio_codec = NULL) emits no -codec:a", {
   expect_equal(
     as.character(cmd),
     paste0('-y -i "', f, '" -vf "crop=w=100:h=50:x=',
-           '(in_w-out_w)/2:y=(in_h-out_h)/2" -map 0:v? -map 0:a? "out.mp4"')
+           '(in_w-out_w)/2:y=(in_h-out_h)/2" -map "0:v?" -map "0:a?" "out.mp4"')
   )
 })
 
@@ -75,7 +75,7 @@ test_that("segment_video() stream-copies audio on the re-encode path", {
   expect_equal(
     as.character(out$command),
     paste0('-y -i "', f, '" -codec:a copy -ss 0 -to 1 ',
-           '-map 0:v? -map 0:a? "seg.mp4"')
+           '-map "0:v?" -map "0:a?" "seg.mp4"')
   )
   expect_no_match(as.character(out$command), "-codec:v", fixed = TRUE)
 })
@@ -165,7 +165,7 @@ test_that("compare_videos(audio = ) stream-copies the carried track", {
   f2 <- make_input()
   cmd <- compare_videos(c(f1, f2), "out.mp4", audio = 0, run = FALSE)
   expect_match(as.character(cmd), "-codec:a copy", fixed = TRUE)
-  expect_match(as.character(cmd), "-map 0:a", fixed = TRUE)
+  expect_match(as.character(cmd), "-map \"0:a\"", fixed = TRUE)
 })
 
 test_that("compare_videos() carries a named audio codec into the complex path", {
@@ -180,7 +180,7 @@ test_that("compare_videos() carries a named audio codec into the complex path", 
   expect_match(cmd, "-filter_complex", fixed = TRUE)
   expect_match(cmd, "[vout]", fixed = TRUE)
   expect_match(cmd, '-map "[vout]"', fixed = TRUE)
-  expect_match(cmd, "-map 1:a", fixed = TRUE)
+  expect_match(cmd, "-map \"1:a\"", fixed = TRUE)
   expect_match(cmd, "-codec:v libx264", fixed = TRUE)
   expect_match(cmd, "-codec:a aac", fixed = TRUE)
 })
@@ -213,7 +213,7 @@ test_that("picture_in_picture(audio = ) stream-copies the carried track", {
   f2 <- make_input()
   cmd <- picture_in_picture(f1, f2, "out.mp4", audio = 0, run = FALSE)
   expect_match(as.character(cmd), "-codec:a copy", fixed = TRUE)
-  expect_match(as.character(cmd), "-map 0:a", fixed = TRUE)
+  expect_match(as.character(cmd), "-map \"0:a\"", fixed = TRUE)
 })
 
 test_that("picture_in_picture() carries a named audio codec into the complex path", {
@@ -225,7 +225,7 @@ test_that("picture_in_picture() carries a named audio codec into the complex pat
   )
   expect_match(cmd, "-filter_complex", fixed = TRUE)
   expect_match(cmd, '-map "[vout]"', fixed = TRUE)
-  expect_match(cmd, "-map 1:a", fixed = TRUE)
+  expect_match(cmd, "-map \"1:a\"", fixed = TRUE)
   expect_match(cmd, "-codec:v libx264", fixed = TRUE)
   expect_match(cmd, "-codec:a aac", fixed = TRUE)
 })
@@ -503,7 +503,7 @@ test_that("both composite batch verbs reject a wrongly typed audio column", {
 # rather than folded silently into the literal: everything to the left of the
 # maps is still the byte-for-byte pre-M39 command, which is what these tests
 # exist to pin. The `?` suffixes keep a stream-less input working (M47).
-m47_maps <- "-map 0:v? -map 0:a? "
+m47_maps <- "-map \"0:v?\" -map \"0:a?\" "
 
 m39_std_default <- function(f) {
   paste0('-y -i "', f, '" -vf "crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2',

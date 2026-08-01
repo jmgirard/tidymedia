@@ -13,7 +13,11 @@
 #   audio: -y -i "<...>/sample.mp4" -codec:a copy -map 0:a "audio.aac"
 #   video: -y -i "<...>/sample.mp4" -codec:v copy -map 0:v "video.mp4"
 #
-# The tests pin that form as a template so they do not depend on a temp path.
+# The tests pin that form as a template so they do not depend on a temp path --
+# with the map specifier quoted, `-map "0:a"` and `-map "0:v"`, since M50/D031.
+# The transcript above is left in its pre-M50 spelling because it records what
+# b548902 produced; the SELECTION it pins is what this file is about, and that
+# is unchanged.
 #
 # PORTABILITY, learned the hard way at review (M27's lesson on a new surface):
 # WHICH container refuses several audio streams is FFmpeg-version dependent. The
@@ -31,8 +35,8 @@
 
 baseline_pair <- function(infile, audiofile, videofile) {
   c(
-    audio = sprintf('-y -i "%s" -codec:a copy -map 0:a "%s"', infile, audiofile),
-    video = sprintf('-y -i "%s" -codec:v copy -map 0:v "%s"', infile, videofile)
+    audio = sprintf('-y -i "%s" -codec:a copy -map "0:a" "%s"', infile, audiofile),
+    video = sprintf('-y -i "%s" -codec:v copy -map "0:v" "%s"', infile, videofile)
   )
 }
 
@@ -57,12 +61,12 @@ test_that("audio_stream narrows the audio map and leaves the video map alone", {
   infile <- make_input("mkv")
   out <- separate_audio_video(infile, "a.aac", "v.mp4", audio_stream = 1,
                               run = FALSE)
-  expect_match(out[["audio"]], "-map 0:a:1", fixed = TRUE)
-  expect_match(out[["video"]], "-map 0:v", fixed = TRUE)
+  expect_match(out[["audio"]], "-map \"0:a:1\"", fixed = TRUE)
+  expect_match(out[["video"]], "-map \"0:v\"", fixed = TRUE)
   # The every-track form must be GONE from the audio command, not merely joined
   # by the narrow one: `-map 0:a -map 0:a:1` would carry every track and pass a
   # containment-only assertion (M43 made ffm_map() append).
-  expect_false(grepl("-map 0:a ", out[["audio"]], fixed = TRUE))
+  expect_false(grepl("-map \"0:a\" ", out[["audio"]], fixed = TRUE))
   expect_identical(out[["video"]], baseline_pair(infile, "a.aac", "v.mp4")[["video"]])
 })
 
@@ -80,7 +84,7 @@ test_that("audio_stream = 0 selects the first track rather than every track", {
   infile <- make_input("mkv")
   narrow <- separate_audio_video(infile, "a.aac", "v.mp4", audio_stream = 0,
                                  run = FALSE)
-  expect_match(narrow[["audio"]], "-map 0:a:0", fixed = TRUE)
+  expect_match(narrow[["audio"]], "-map \"0:a:0\"", fixed = TRUE)
   expect_false(identical(narrow, baseline_pair(infile, "a.aac", "v.mp4")))
 })
 
@@ -263,16 +267,16 @@ test_that("the batch argument reaches every audio row and no video row", {
                                     audio_stream = 2, run = FALSE)
   audio <- out$command[out$stream == "audio"]
   video <- out$command[out$stream == "video"]
-  expect_true(all(grepl("-map 0:a:2", audio, fixed = TRUE)))
+  expect_true(all(grepl("-map \"0:a:2\"", audio, fixed = TRUE)))
   expect_false(any(grepl("0:a", video, fixed = TRUE)))
-  expect_true(all(grepl("-map 0:v", video, fixed = TRUE)))
+  expect_true(all(grepl("-map \"0:v\"", video, fixed = TRUE)))
 })
 
 test_that("the batch default leaves every row on every audio track", {
   infile <- make_input("mkv")
   out <- separate_audio_video_batch(sep_jobs(c(infile, infile)), run = FALSE)
   audio <- out$command[out$stream == "audio"]
-  expect_true(all(grepl("-map 0:a ", audio, fixed = TRUE)))
+  expect_true(all(grepl("-map \"0:a\" ", audio, fixed = TRUE)))
   expect_false(any(grepl("0:a:", audio, fixed = TRUE)))
 })
 
@@ -282,12 +286,12 @@ test_that("an audio_stream column overrides the argument per row", {
   jobs$audio_stream <- c(0, 2, NA)
   out <- separate_audio_video_batch(jobs, audio_stream = 1, run = FALSE)
   audio <- out$command[out$stream == "audio"]
-  expect_match(audio[[1]], "-map 0:a:0", fixed = TRUE)
-  expect_match(audio[[2]], "-map 0:a:2", fixed = TRUE)
+  expect_match(audio[[1]], "-map \"0:a:0\"", fixed = TRUE)
+  expect_match(audio[[2]], "-map \"0:a:2\"", fixed = TRUE)
   # The NA cell is the column form of the NULL sentinel: every track for that
   # row, overriding the argument rather than deferring to it (D023's rule,
   # applied to this verb's NULL meaning).
-  expect_match(audio[[3]], "-map 0:a ", fixed = TRUE)
+  expect_match(audio[[3]], "-map \"0:a\" ", fixed = TRUE)
   expect_false(grepl("0:a:", audio[[3]], fixed = TRUE))
   expect_false(any(grepl("0:a", out$command[out$stream == "video"], fixed = TRUE)))
 })
@@ -299,7 +303,7 @@ test_that("an all-NA audio_stream column is accepted and keeps every track", {
   jobs <- sep_jobs(c(infile, infile))
   jobs$audio_stream <- NA
   out <- separate_audio_video_batch(jobs, run = FALSE)
-  expect_true(all(grepl("-map 0:a ", out$command[out$stream == "audio"],
+  expect_true(all(grepl("-map \"0:a\" ", out$command[out$stream == "audio"],
                         fixed = TRUE)))
 })
 
@@ -536,8 +540,8 @@ test_that("the extraction verbs' NULL still means the first track", {
   # The other half of the split this milestone records: parameterizing
   # audio_stream_map()'s NULL resolution must not have moved D023's callers.
   infile <- make_input("mkv")
-  expect_match(extract_audio(infile, "a.aac", run = FALSE), "-map 0:a:0",
+  expect_match(extract_audio(infile, "a.aac", run = FALSE), "-map \"0:a:0\"",
                fixed = TRUE)
-  expect_match(convert_audio(infile, "a.mp3", run = FALSE), "-map 0:a:0",
+  expect_match(convert_audio(infile, "a.mp3", run = FALSE), "-map \"0:a:0\"",
                fixed = TRUE)
 })

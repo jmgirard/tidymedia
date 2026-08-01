@@ -38,7 +38,7 @@ test_that("run_normalize_correction() builds one linear correction command per r
            "measured_LRA=5.9:measured_thresh=-38.06:offset=0.3:linear=true"),
     fixed = TRUE
   )
-  expect_match(res$command[[1]], "-ac 1 -ar 44100 -map 0:a:0", fixed = TRUE)
+  expect_match(res$command[[1]], "-ac 1 -ar 44100 -map \"0:a:0\"", fixed = TRUE)
   # Row 2: a different per-row target and measured block.
   expect_match(
     res$command[[2]],
@@ -46,7 +46,7 @@ test_that("run_normalize_correction() builds one linear correction command per r
            "measured_LRA=8:measured_thresh=-29:offset=-0.1:linear=true"),
     fixed = TRUE
   )
-  expect_match(res$command[[2]], "-ac 2 -ar 48000 -map 0:a:0", fixed = TRUE)
+  expect_match(res$command[[2]], "-ac 2 -ar 48000 -map \"0:a:0\"", fixed = TRUE)
 })
 
 # Phase 1: measured-table assembly ---------------------------------------------

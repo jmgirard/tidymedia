@@ -53,7 +53,7 @@ test_that("compare_videos_batch() audio column carries one input's audio; NA dro
     audio  = c(1, NA)
   )
   res <- compare_videos_batch(jobs, run = FALSE)
-  expect_match(res$command[[1]], "-map 1:a", fixed = TRUE)      # keep input 1's audio
+  expect_match(res$command[[1]], "-map \"1:a\"", fixed = TRUE)      # keep input 1's audio
   expect_no_match(res$command[[2]], ":a", fixed = TRUE)         # NA -> drop audio
 })
 

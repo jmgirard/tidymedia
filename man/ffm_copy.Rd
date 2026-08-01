@@ -17,9 +17,10 @@ ffm_copy(object, audio = TRUE, video = TRUE, streams = TRUE)
 (default = \code{TRUE})}
 
 \item{streams}{A logical indicating whether to map all streams from the
-input. This \strong{sets} the mapping to \code{-map 0} rather than adding
-to it, so calling \code{ffm_copy()} twice compiles one \code{-map 0}, not
-two. If the pipeline already states a \emph{different} mapping, that is a
+input. This \strong{sets} the mapping to the all-streams specifier
+\code{"0"} rather than adding to it, so calling \code{ffm_copy()} twice
+compiles one \code{-map "0"}, not two. If the pipeline already states a
+\emph{different} mapping, that is a
 conflict and \code{ffm_copy()} aborts rather than discard it silently:
 pass \code{streams = FALSE} to keep the mapping you set, or call
 \code{ffm_copy()} first and narrow afterwards with

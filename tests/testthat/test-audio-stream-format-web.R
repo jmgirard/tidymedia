@@ -48,7 +48,7 @@ web_jobs <- function(f, ...) {
 
 test_that("format_for_web() with no selection compiles every video and audio stream", {
   f <- make_input()
-  expect_identical(web_of(f), web_command(f, "-map 0:v? -map 0:a? "))
+  expect_identical(web_of(f), web_command(f, "-map \"0:v?\" -map \"0:a?\" "))
   expect_identical(web_of(f, audio_stream = NULL), web_of(f))
   expect_identical(web_map_count(web_of(f)), 2L)
 })
@@ -56,7 +56,7 @@ test_that("format_for_web() with no selection compiles every video and audio str
 test_that("format_for_web(audio_stream = ) narrows the audio map only", {
   f <- make_input()
   expect_identical(web_of(f, audio_stream = 2),
-                   web_command(f, "-map 0:v? -map 0:a:2 "))
+                   web_command(f, "-map \"0:v?\" -map \"0:a:2\" "))
   expect_identical(web_map_count(web_of(f, audio_stream = 2)), 2L)
   # D026's third bullet: the named specifier carries no `?`, so naming a track
   # the input lacks stays an FFmpeg error rather than a silently audio-less
@@ -67,7 +67,7 @@ test_that("format_for_web(audio_stream = ) narrows the audio map only", {
 test_that("format_for_web(audio_stream = 0) is a selection, not the unset sentinel", {
   f <- make_input()
   expect_identical(web_of(f, audio_stream = 0),
-                   web_command(f, "-map 0:v? -map 0:a:0 "))
+                   web_command(f, "-map \"0:v?\" -map \"0:a:0\" "))
   expect_false(identical(web_of(f, audio_stream = 0), web_of(f)))
 })
 
@@ -77,7 +77,7 @@ test_that("format_for_web(audio_stream = 0) is a selection, not the unset sentin
 test_that("the format_for_web_batch() argument reaches every row", {
   f <- make_input()
   out <- format_for_web_batch(web_jobs(f), audio_stream = 2, run = FALSE)
-  expect_true(all(grepl("-map 0:v? -map 0:a:2", out$command, fixed = TRUE)))
+  expect_true(all(grepl("-map \"0:v?\" -map \"0:a:2\"", out$command, fixed = TRUE)))
   expect_identical(web_map_count(out$command), c(2L, 2L))
 })
 
@@ -87,8 +87,8 @@ test_that("a format_for_web_batch() audio_stream column overrides the argument p
                               audio_stream = 2, run = FALSE)
   # NA is the column form of NULL, so row 2 keeps EVERY track -- it does not
   # fall back to the argument, which is what an ABSENT column means (D023/D026).
-  expect_match(out$command[[1]], "-map 0:v? -map 0:a:1", fixed = TRUE)
-  expect_match(out$command[[2]], "-map 0:v? -map 0:a?", fixed = TRUE)
+  expect_match(out$command[[1]], "-map \"0:v?\" -map \"0:a:1\"", fixed = TRUE)
+  expect_match(out$command[[2]], "-map \"0:v?\" -map \"0:a?\"", fixed = TRUE)
 })
 
 test_that("a one-row format_for_web_batch() call matches the scalar call byte for byte", {

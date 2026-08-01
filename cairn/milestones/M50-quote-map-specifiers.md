@@ -1,11 +1,11 @@
 # M50: Quote map specifiers in the compiled command string
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M49
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** —
+- **Branch/PR:** m50-quote-map-specifiers
 
 ## Goal
 
@@ -70,7 +70,7 @@ itself contains a double quote — pre-existing, and orthogonal.
 
 ## Tasks
 
-- [ ] T1 Record the pre-change `ffm_args()` baseline for every pipeline the
+- [x] T1 Record the pre-change `ffm_args()` baseline for every pipeline the
       invariant test enumerates, committed before the source change so AC3's
       comparison has a fixed reference (M44's lesson: commit the baseline
       before mutating).
@@ -88,6 +88,7 @@ itself contains a double quote — pre-existing, and orthogonal.
 - 2026-07-31: created by /milestone-plan.
 - 2026-07-31: plan chose a convention scoped to map specifiers over a general "quote every value token" rule because the general rule reaches codecs, pixel formats, seek values and the raw output-options path, which bypasses `ffm_group()`'s quoting altogether and would need a signature change; falsified by a report of any of those classes breaking a pasted command, at which point the candidate row promotes.
 - 2026-07-31: sequenced after M49 so one re-baselining pass covers M49's new map literals too, rather than re-baselining the same test files twice.
+- 2026-07-31: T1 — gate chose a testthat snapshot for the AC3 baseline over an `.rds` fixture (opaque in a diff, and the profile's provenance rule would need a `data-raw/` generator) or inline literals (~15 verbose vectors duplicating the compile tests). The verbs return only the compiled string under `run = FALSE`, so the fifteen pipelines are rebuilt through the internal `*_pipeline()` builders; a parity test asserts the rebuild compiles what the verbs compile, so it cannot drift. `ffm_concat()`'s per-call demuxer list file has a random name, so both the parity test and the snapshot blank it.
 - 2026-07-31: criteria audit ([O], fresh context) returned three findings: the literal count in AC4 was contested between two independent investigations (209 vs 248, differing on comment-line handling), so the number was removed from the criterion rather than settled; AC6 named `R/ffm.R:535`, `:536` and `:561`, which refer to the bare `-map` option and stay correct after the change; and its `man/ffm_copy.Rd` cite was off by one and pointed at a generated file. All fixed above; none became a gate question.
 
 ## Decisions

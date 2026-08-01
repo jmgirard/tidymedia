@@ -1,3 +1,23 @@
+# the executed argument vector is pinned for every enumerated pipeline
+
+    Code
+      cat(paste0(names(rendered), ": ", rendered), sep = "\n")
+    Output
+      extract_audio: -y | -i | <input> | -codec:a | copy | -vn | -map | 0:a:0 | out.aac
+      convert_audio: -y | -i | <input> | -q:a | 0 | -map | 0:a:0 | out.mp3
+      strip_metadata: -y | -i | <input> | -codec:v | copy | -codec:a | copy | -map_metadata | -1 | -map_chapters | -1 | -fflags | +bitexact | -map | 0 | out.mp4
+      concatenate_videos: -y | -f | concat | -safe | 0 | -i | <concat-list> | -codec:v | copy | -codec:a | copy | -map | 0 | out.mp4
+      separate_audio_video(audio): -y | -i | <input> | -codec:a | copy | -map | 0:a | out.m4a
+      separate_audio_video(video): -y | -i | <input> | -codec:v | copy | -map | 0:v | out.mp4
+      crop_video: -y | -i | <input> | -vf | crop=w=32:h=32:x=(in_w-out_w)/2:y=(in_h-out_h)/2 | -codec:a | copy | -map | 0:v? | -map | 0:a? | out.mp4
+      segment_video(reencode = TRUE): -y | -i | <input> | -codec:a | copy | -ss | 0 | -to | 1 | -map | 0:v? | -map | 0:a? | seg.mp4
+      segment_video(reencode = FALSE): -y | -ss | 0 | -to | 1 | -i | <input> | -codec:v | copy | -codec:a | copy | -avoid_negative_ts | make_zero | -map | 0:v? | -map | 0:a? | seg.mp4
+      standardize_video: -y | -i | <input> | -vf | crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2 | -codec:v | libx264 | -codec:a | copy | -pix_fmt | yuv420p | -movflags | +faststart | -map | 0:v? | -map | 0:a? | out.mp4
+      anonymize_video: -y | -i | <input> | -vf | crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2,drawbox=x=0:y=0:w=10:h=10:c=black:t=fill | -codec:v | libx264 | -codec:a | copy | -pix_fmt | yuv420p | -map | 0:v? | -map | 0:a? | out.mp4
+      format_for_web: -y | -i | <input> | -vf | crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2 | -codec:v | libx264 | -codec:a | aac | -pix_fmt | yuv420p | -movflags | +faststart | -map | 0:v? | -map | 0:a? | out.mp4
+      normalize_audio(correction): -y | -i | <input> | -af | loudnorm=I=-23:TP=-1:LRA=7 | -map | 0:a:0 | out.mp4
+      normalize_audio(analysis): -y | -i | <input> | -af | loudnorm=I=-23:TP=-1:LRA=7:print_format=json | -f | null | -map | 0:a:0 | -
+
 # compiled commands match snapshots
 
     Code

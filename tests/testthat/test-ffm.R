@@ -624,6 +624,103 @@ test_that("every in-package pipeline emits the maps its verb's contract says", {
   expect_identical(setNames(maps(cmds), names(expected)), expected)
 })
 
+# M50: the executed argument vector, pinned ------------------------------------
+
+# The same commands the map-count table above enumerates, rebuilt as PIPELINE
+# OBJECTS rather than compiled strings. The verbs return only the compiled
+# string under `run = FALSE`, and `ffm_args()` -- the vector that actually
+# reaches FFmpeg -- needs the object, so each row calls the internal builder its
+# verb calls, with that verb's documented defaults. The parity test below is
+# what stops this rebuild drifting from the verbs it stands in for.
+enumerated_pipelines <- function(f, f2) {
+  regions <- data.frame(x = 0, y = 0, width = 10, height = 10)
+  list(
+    "extract_audio" = extract_audio_pipeline(f, "out.aac", "copy"),
+    "convert_audio" = convert_audio_pipeline(f, "out.mp3", NULL),
+    "strip_metadata" = strip_metadata_pipeline(f, "out.mp4"),
+    "concatenate_videos" = concatenate_pipeline(c(f, f2), "out.mp4"),
+    "separate_audio_video(audio)" = separate_stream_pipeline(
+      f, "out.m4a", "audio", "copy", "none", FALSE, NULL
+    ),
+    "separate_audio_video(video)" = separate_stream_pipeline(
+      f, "out.mp4", "video", "copy", "none", FALSE
+    ),
+    "crop_video" = crop_video_pipeline(f, "out.mp4", 32, 32),
+    "segment_video(reencode = TRUE)" = segment_pipeline(
+      f, "seg.mp4", 0, 1, TRUE, NULL, "copy", "none", FALSE, NULL
+    ),
+    "segment_video(reencode = FALSE)" = segment_pipeline(
+      f, "seg.mp4", 0, 1, FALSE, NULL, "copy", "none", FALSE, NULL
+    ),
+    "standardize_video" = standardize_pipeline(
+      f, "out.mp4", NULL, NULL, NULL, "libx264", "copy", "yuv420p"
+    ),
+    "anonymize_video" = anonymize_pipeline(
+      f, "out.mp4", regions, "black", "libx264", "copy", "yuv420p"
+    ),
+    "format_for_web" = format_for_web_pipeline(f, "out.mp4"),
+    "normalize_audio(correction)" = normalize_audio_pipeline(f, "out.mp4"),
+    "normalize_audio(analysis)" = loudnorm_analysis_pipeline(f)
+  )
+}
+
+# ffm_concat() writes a fresh demuxer list file per call, under a name carrying
+# a random suffix, so two compilations of the same concat pipeline differ in
+# that one token and in nothing else. Both the parity test and the snapshot
+# below compare across compilations, so both blank it out.
+stable_paths <- function(x, f = NULL, f2 = NULL) {
+  x <- gsub("[^\"[:space:]|]*ffm-concat[^\"[:space:]|]*\\.txt", "<concat-list>", x)
+  if (!is.null(f)) x <- sub(f, "<input>", x, fixed = TRUE)
+  if (!is.null(f2)) x <- sub(f2, "<input2>", x, fixed = TRUE)
+  x
+}
+
+test_that("the rebuilt pipelines compile the commands their verbs compile", {
+  # Guards the rebuild above. Both sides read the live code, so a future change
+  # to a verb's map moves them together; what this catches is the rebuild
+  # standing for a command the verb no longer compiles.
+  f <- make_input()
+  f2 <- make_input()
+  regions <- data.frame(x = 0, y = 0, width = 10, height = 10)
+  rebuilt <- vapply(enumerated_pipelines(f, f2), ffm_compile, character(1))
+  from_verbs <- c(
+    extract_audio(f, "out.aac", run = FALSE),
+    convert_audio(f, "out.mp3", run = FALSE),
+    strip_metadata(f, "out.mp4", run = FALSE),
+    concatenate_videos(c(f, f2), "out.mp4", run = FALSE),
+    unlist(separate_audio_video(f, "out.m4a", "out.mp4", run = FALSE)),
+    crop_video(f, "out.mp4", 32, 32, run = FALSE),
+    segment_video(f, 0, 1, outfiles = "seg.mp4", run = FALSE)$command,
+    segment_video(f, 0, 1, outfiles = "seg.mp4", reencode = FALSE,
+                  run = FALSE)$command,
+    standardize_video(f, "out.mp4", run = FALSE),
+    anonymize_video(f, "out.mp4", regions, run = FALSE),
+    format_for_web(f, "out.mp4", run = FALSE),
+    normalize_audio(f, "out.mp4", run = FALSE),
+    # Compiled directly for the reason the map-count table gives: no verb call
+    # yields the analysis command without running FFmpeg (D013/D024).
+    ffm_compile(loudnorm_analysis_pipeline(f))
+  )
+  expect_identical(stable_paths(unname(rebuilt)), stable_paths(unname(from_verbs)))
+})
+
+test_that("the executed argument vector is pinned for every enumerated pipeline", {
+  # AC3/T1, recorded BEFORE the map-quoting change and not touched by it: the
+  # quoting M50 adds lives in each group's `display` only, so this snapshot is
+  # the evidence that nothing reached the vector `ffm_run()` executes. A diff
+  # here is the change escaping to FFmpeg. Committed before the source change so
+  # the reference is fixed rather than co-authored with what it checks (M44).
+  f <- make_input()
+  f2 <- make_input()
+  rendered <- vapply(enumerated_pipelines(f, f2), function(p) {
+    args <- stable_paths(tidymedia:::ffm_args(p), f, f2)
+    # " | " between elements: the point of the vector is where one argument
+    # ends and the next begins, which a space-joined string would hide.
+    paste(args, collapse = " | ")
+  }, character(1))
+  expect_snapshot(cat(paste0(names(rendered), ": ", rendered), sep = "\n"))
+})
+
 # ffm_pixel_format() -----------------------------------------------------------
 
 test_that("ffm_pixel_format() sets the pixel format with correct spacing", {

@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-01 (M49 merged and archived after three review rounds; its central design decision was remade twice, ending at `normalize_audio()` producing audio and no video — D028/D029/D030 record the sequence. Four candidate rows added from what M49 left out: per-track two-pass loudnorm, normalize-and-keep-picture, the missing dropped-track warning, and pinning line endings. M47's `?` lesson corrected in place with M49's finding that FFmpeg reverts to default selection when every optional map matches nothing.)_
+_Last hygiene check: 2026-07-31 (M50 merged and archived in one review round; D031 now owns the display-string quoting convention, which was unowned prose. Its one at-or-above-80 finding was a miscount — "fifteen" pipelines where there are fourteen — repeated in five places. M45 aged off the table.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M45 | Give a multi-track `separate_audio_video()` caller a way out | done | M43 | normal | milestones/archive/M45-separate-av-multitrack.md |
 | M46 | Stop the subtitle fixture hanging, and bound every fixture command | done | — | normal | milestones/archive/M46-fixture-hang-timeout.md |
 | M47 | Stop `standardize_video()` and `anonymize_video()` picking an audio track by disposition | done | — | normal | milestones/archive/M47-audio-stream-standardize-anonymize.md |
 | M48 | Carry the track selector to `crop_video()` and `segment_video()`, and make `ffm_copy()` idempotent again | done | M47 | normal | milestones/archive/M48-audio-stream-crop-segment.md |
 | M49 | Finish D026 on `format_for_web()` and `normalize_audio()` | done | — | normal | milestones/archive/M49-audio-stream-format-web-normalize.md |
-| M50 | Quote map specifiers in the compiled command string | review | M49 | normal | milestones/M50-quote-map-specifiers.md |
+| M50 | Quote map specifiers in the compiled command string | done | M49 | normal | milestones/archive/M50-quote-map-specifiers.md |
 | M51 | Make the package's two 0-based audio indices legible | planned | M49, M50 | normal | milestones/M51-audio-index-docs.md |
 | M52 | Collapse `probe_one()`'s per-stream FFprobe loop into one call | planned | — | normal | milestones/M52-probe-one-single-call.md |
 | M53 | Give `probe_all()` a `parallel =` argument | planned | M52 | normal | milestones/M53-probe-all-parallel.md |

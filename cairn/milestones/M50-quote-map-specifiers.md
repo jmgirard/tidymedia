@@ -1,6 +1,6 @@
 # M50: Quote map specifiers in the compiled command string
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M49
 - **Driving RR:** —
@@ -80,7 +80,7 @@ itself contains a double quote — pre-existing, and orthogonal.
       the `_snaps/ffm.md` snapshot.
 - [x] T4 Re-knit `README.md` via `devtools::build_readme()`; correct the
       roxygen prose at `R/ffm.R:625-626` and `devtools::document()`.
-- [ ] T5 Append the D-entry, add the deferred-quoting candidate row, write
+- [x] T5 Append the D-entry, add the deferred-quoting candidate row, write
       NEWS, and run the profile's verify slot plus `devtools::check()`.
 
 ## Work log
@@ -92,6 +92,7 @@ itself contains a double quote — pre-existing, and orthogonal.
 - 2026-07-31: T2+T3 landed in one commit rather than two (minor amendment): the source change turns 147 tests red until the literals move, so T2 could not be checked off against a clean `devtools::test()` on its own. AC1/AC2 tests were written and seen to fail before the two-line change.
 - 2026-07-31: T3 — the re-baselining ran through a string-aware transformer (specifier grammar rather than "the next token"; a greedy class swallowed the enclosing literal's closing quote on the first attempt and was reverted). Comments naming the option and `helper-media.R`'s fixture commands were left alone: neither expects the compiled form. Two hand-fixes: the prefix probe at `test-audio-stream-passthrough.R:224` keeps no closing quote, or it would refute nothing; the seven negative assertions across the suite were re-baselined for the same reason.
 - 2026-07-31: T4 — `README.md` re-knitted (the `extract_audio()` example now shows `-map "0:a:0"`; the temp-path churn in both example outputs is inherent to knitting). The `ffm_copy()` `@param streams` prose now separates the specifier it sets (`"0"`) from the command it compiles (`-map "0"`); `R/ffm.R:535`, `:536`, `:561` and `:554` were left alone, naming the bare option and the already-quoted `[vout]` map.
+- 2026-07-31: T5 — D031 appended (what the display string quotes, `quote=` as a positional index, and why `ffm_run()` executing `ffm_args()` makes the change unreachable by FFmpeg); the deferred classes got a candidate row; NEWS carries a Bug-fixes entry stating the compiled string changed and the executed command did not. `devtools::check()` is Status: OK — the one NOTE it first raised was `spelling` flagging "zsh" in the new NEWS text, added to `inst/WORDLIST`. `pkgdown::check_pkgdown()` clean; `devtools::document()` no diff.
 - 2026-07-31: criteria audit ([O], fresh context) returned three findings: the literal count in AC4 was contested between two independent investigations (209 vs 248, differing on comment-line handling), so the number was removed from the criterion rather than settled; AC6 named `R/ffm.R:535`, `:536` and `:561`, which refer to the bare `-map` option and stay correct after the change; and its `man/ffm_copy.Rd` cite was off by one and pointed at a generated file. All fixed above; none became a gate question.
 
 ## Decisions

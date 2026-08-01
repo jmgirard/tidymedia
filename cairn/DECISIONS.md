@@ -1026,3 +1026,53 @@ deleted; this entry replaces them.
 - **Falsified by** a caller who needs normalized audio muxed back over the
   original video often enough that the escape hatch is not an answer — which
   promotes the candidate row into a verb, and does not reopen this rule.
+
+## D031 — What the compiled command string quotes, and why quoting it cannot reach FFmpeg (2026-07-31, from M50; states a convention that was unowned prose)
+
+Nothing in DESIGN.md or DECISIONS.md said which tokens the compiled command
+string wraps in double quotes. It had accumulated one file at a time — paths,
+filter graphs, the automatic `[vout]` map — and M47's `-map 0:v?` was the first
+metacharacter to reach a token nobody had quoted, so the string the vignette
+sells as the thing you inspect, log, and paste stopped surviving a paste: zsh
+answers `no matches found: 0:v?`.
+
+- **The rule.** The display string quotes, at minimum: every input and output
+  **path**, every **filter graph** (`-vf`, `-af`, `-filter_complex`), and every
+  **map specifier** (`-map`), including the automatic `[vout]` one. Map
+  specifiers join that list here; the rest were already there. Adding a token
+  class to the list is additive and needs no entry; removing one is a change to
+  what a reader can paste, and needs one.
+
+- **Left bare, deliberately:** codec names (`-codec:v libx264`), pixel formats,
+  seek values, and the raw output-option passthrough (`-movflags +faststart`,
+  `-q:a 0`, `-f null`). The first three are single clean tokens today by their
+  own validators, so quoting buys nothing; the passthrough cannot express it at
+  all — it hands `ffm_group()` a
+  finished `display` (`R/ffm.R:1331`) and so bypasses the quoting mechanism
+  without a signature change. A ROADMAP candidate row carries that work,
+  promoted by the first report of one of those classes breaking a pasted
+  command.
+
+- **`quote` is an INDEX, not a level.** `ffm_group(args, quote = 2L)` means
+  "quote `args[[2]]`" — a positional index into the group's own argument vector,
+  and the sole quoting style in the package is `paste0('"', x, '"')`
+  (`R/ffm.R:1175-1183`). `quote = 2L` recurs across the file because the value
+  is the second element of a two-element option group, not because there is a
+  level 2.
+
+- **Why this cannot reach FFmpeg.** `ffm_groups()` returns both renderings of
+  each group, and quoting exists only in `display`. `ffm_compile()` pastes the
+  `display` fields (`R/ffm.R:1149-1152`); `ffm_run()` executes `ffm_args()`,
+  the `args` fields, one shell-free token per argument, and never the display
+  string (`R/ffm.R:1161-1164`, `:1383-1389`). The two renderings coming from one
+  structure is M06's reason for the split, and it is what makes a display-only
+  change provable rather than argued: M50 pins `ffm_args()` for all fifteen
+  in-package pipelines in a snapshot recorded before the change, and the snapshot
+  did not move.
+
+- **Falsified by** any path FFmpeg receives differing from the path the display
+  string shows — which would mean the two renderings had drifted, and is a bug
+  in the split rather than in this rule. Note the display string is a
+  reproducibility artifact, not a shell-escaping library: a path containing a
+  double quote still renders unescaped, which predates this entry and is
+  untouched by it.

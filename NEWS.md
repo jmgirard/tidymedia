@@ -245,6 +245,17 @@
 
 ## Bug fixes
 
+* The compiled command string that every verb returns under `run = FALSE` — and
+  that `ffm_compile()` produces — now wraps each stream map in double quotes:
+  `-map "0:a:0"` where it used to print `-map 0:a:0`. Since the verbs began
+  stating their stream selection explicitly, that string could carry a `?`
+  (as in `-map 0:v?`, "this stream if the input has one"), and pasting it into a
+  shell failed there rather than running: zsh reads a bare `?` as a filename
+  pattern and answers `no matches found`. The command tidymedia itself runs is
+  unchanged — it never goes through a shell — so this affects only what you
+  read, log, and paste. If you compare compiled commands against saved strings,
+  those strings need updating.
+
 * `convert_audio()` and `convert_audio_batch()` no longer fail on an input with
   more than one audio track. They mapped *every* audio stream into the output,
   so a file carrying several tracks — a recording with separate per-speaker or

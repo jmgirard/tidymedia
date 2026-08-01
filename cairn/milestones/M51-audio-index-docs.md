@@ -2,6 +2,7 @@
 
 - **Status:** review
 - **Branch:** `m51-audio-index-docs`
+- **PR:** https://github.com/jmgirard/tidymedia/pull/54
 - **Priority:** normal
 - **Depends on:** M49, M50
 - **Driving RR:** —
@@ -33,7 +34,7 @@ no `_PACKAGE` sentinel) → new candidate row. Any behavior change.
 
 ## Acceptance criteria
 
-- [ ] AC1 A documentation-only topic exists, built from a roxygen `@name` block
+- [x] AC1 A documentation-only topic exists, built from a roxygen `@name` block
       in the `R/utils-tidy-eval.R:1-15` shape but **without** its `@keywords
       internal` (`:11`), and it states in prose: that `audio_stream` counts one
       input's audio streams while `audio` counts a verb's inputs; which verb
@@ -43,39 +44,39 @@ no `_PACKAGE` sentinel) → new candidate row. Any behavior change.
       cell in a `_batch` override column means that row's `NULL` sentinel while
       an absent column means the scalar argument applies; and that `audio` also
       names a codec on `ffm_codec()` and a logical on `ffm_copy()`.
-- [ ] AC2 The topic is reachable from the reference index: it has a
+- [x] AC2 The topic is reachable from the reference index: it has a
       `_pkgdown.yml` entry and `pkgdown::check_pkgdown()` still reports no
       problems, as it does today.
-- [ ] AC3 Every exported verb carrying `audio_stream` (eighteen after M49) and
+- [x] AC3 Every exported verb carrying `audio_stream` (eighteen after M49) and
       every exported verb carrying `audio` as an input index
       (`compare_videos()`, `picture_in_picture()`, and their `_batch`
       siblings) links to the new topic. Asserted by a test that enumerates the
       parameter across `man/*.Rd` and fails when a topic carrying it lacks the
       link — so a future verb that gains the argument and not the link is
       caught.
-- [ ] AC4 The sentences naming the every-track and first-track families exist
+- [x] AC4 The sentences naming the every-track and first-track families exist
       in exactly one place in `R/`, with the eighteen `@param audio_stream`
       blocks inheriting them rather than restating them; the rendered `.Rd`
       files still each carry the text. A stale enumeration is then
       unrepresentable rather than merely detected.
-- [ ] AC5 `audio_stream` appears in at least one vignette with a runnable
+- [x] AC5 `audio_stream` appears in at least one vignette with a runnable
       chunk. `vignettes/tidymedia.Rmd:141` currently reads "Each manages its
       own stream labels internally, so audio is dropped unless you map it back"
       — the fix is that a reader cannot carry that sentence to the
       pass-through verbs, whether by scoping its wording or by adding the
       contrast; the vignette names at least one pass-through verb as behaving
       differently.
-- [ ] AC6 `compare_videos_batch()` and `picture_in_picture_batch()` state what
+- [x] AC6 `compare_videos_batch()` and `picture_in_picture_batch()` state what
       `audio` means rather than only deferring to the scalar verb
       (`R/ffmpeg.R:5350`, `:5471`), and `extract_audio_batch()` /
       `convert_audio_batch()` carry the "FFmpeg error, not an R one" sentence
       their scalar siblings have and they lack (`R/ffmpeg.R:4183`, `:4305`
       against `:490`, `:974`).
-- [ ] AC7 A `cairn/DECISIONS.md` entry re-confirms or revises D023's first
+- [x] AC7 A `cairn/DECISIONS.md` entry re-confirms or revises D023's first
       bullet — two names, two bases — now that the argument spans eighteen
       verbs and two `NULL` readings in three spellings (`0:a:0`, `0:a:0?`,
       `0:a?`), and records what would reopen it.
-- [ ] AC8 `devtools::document()` produces no diff, `devtools::test()` clean,
+- [x] AC8 `devtools::document()` produces no diff, `devtools::test()` clean,
       `devtools::check()` reports 0 errors / 0 warnings including the spelling
       NOTE (`inst/WORDLIST` updated via `spelling::update_wordlist()`), and
       NEWS carries a documentation entry.
@@ -147,3 +148,73 @@ no `_PACKAGE` sentinel) → new candidate row. Any behavior change.
   now loads the package to render these blocks, which it already did.
 
 ## Review
+
+Fresh evidence, 2026-07-31, on `m51-audio-index-docs` at PR #54.
+
+- **AC1** — `man/audio_stream.Rd` exists, generated from the `@name audio_stream`
+  block in `R/audio-stream-doc.R`; `grep -c 'keyword{internal}'` returns 0, so it
+  keeps the `R/utils-tidy-eval.R` shape without that tag. Its four rendered
+  `\section{}` blocks are "The two indices", "What `NULL` means, and it is not the
+  same thing", "In a `_batch` jobs table" and "`audio` names three things", which
+  carry all five required statements: the two counting bases; the two `NULL`
+  family readings; that `audio = NULL` emits no map and so drops audio, unlike
+  `audio_stream = NULL`; the `NA`-cell-versus-absent-column rule; and `audio`'s
+  codec and logical meanings on `ffm_codec()` / `ffm_copy()`.
+- **AC2** — `_pkgdown.yml` gains a "Concepts" section listing `audio_stream`;
+  `pkgdown::check_pkgdown()` re-run at review reports "No problems found", as it
+  did before the change.
+- **AC3** — 18 `man/*.Rd` files document `audio_stream` and all 18 link to the
+  topic; 6 document `audio` and all 6 link to it (the four input-index verbs plus
+  `ffm_codec()` / `ffm_copy()`, which the test covers rather than allowlists).
+  The guard is load-bearing, verified by mutation at review: replacing
+  `\link{audio_stream}` with `\code{audio_stream}` in `man/crop_video.Rd` turned
+  the suite red naming exactly that file; restored, green again.
+- **AC4** — the family-naming sentences are generated by
+  `audio_stream_family_sentence()` from the two vectors in `audio_stream_families`,
+  and `grep -rn 'extraction family|pass-through family' R/` outside
+  `R/audio-stream-doc.R` returns one hit, an internal code comment at
+  `R/ffmpeg.R:2865` that enumerates no verbs. 19 rendered `.Rd` files carry the
+  sentence (the 18 verbs plus the topic itself), so the text is present
+  everywhere and authored once.
+- **AC5** — `vignettes/tidymedia.Rmd` gains a "Choosing an audio track" section
+  with two runnable `run = FALSE` chunks calling `extract_audio()` and
+  `crop_video()` with `audio_stream = 1`; knitted at implementation, both emit
+  M50's quoted `-map "0:a:1"`, and `R CMD check`'s vignette re-build passes at
+  review. The `:141` sentence now reads "so *these multi-input builders* drop
+  audio unless you map it back ... the single-input pass-through verbs above are
+  the opposite, keeping every audio track by default" — scoped to the builders
+  and naming the pass-through verbs as behaving differently.
+- **AC6** — `man/compare_videos_batch.Rd` and `man/picture_in_picture_batch.Rd`
+  each now carry their own `\item{audio}` stating the input-index meaning, the
+  silent-output default and the per-row `NA` rule, rather than only deferring to
+  the scalar verb. `man/extract_audio_batch.Rd` and `man/convert_audio_batch.Rd`
+  both now contain "FFmpeg error, not an R one", inherited from the shared
+  `audio_stream_param()` closing sentence.
+- **AC7** — `cairn/DECISIONS.md:1089` holds D032, which quotes D023's first
+  bullet verbatim, re-confirms it at eighteen verbs, records the documentation
+  answer shipped in place of a rename, and states the falsifier (a caller-confusion
+  report, per D025/D026, under D014's pre-0.2.0 clean break) while ruling out the
+  argument count alone as a trigger.
+- **AC8** — re-run at review: `devtools::document()` leaves the tree clean apart
+  from the milestone file; `devtools::test()` 3238 pass / 0 fail / 5 skip;
+  `devtools::check()` Status OK, 0 errors / 0 warnings / 0 notes, with the
+  spelling test passing after `spelling::update_wordlist()` added "arity" and
+  "unselected" (`inst/WORDLIST` +2). NEWS.md gains two Documentation bullets
+  (+14 lines).
+
+### Consistency gate
+
+- `cairn_validate.py` exit 0 — all 16 CHECKs pass. One advisory: `sizing (split
+  tripwires)` warns that M51 has 8 acceptance criteria against a 7 tripwire.
+  Noted, not actioned: the milestone is complete and shipped as one reviewable
+  documentation PR, so a retrospective split would create tracking work with no
+  reviewable output.
+- No `DESIGN.md` principle changed, so `cairn_impact.py` is not run.
+- Profile `consistency-gate` slot (r-package): `document()` no diff; generated
+  `man/` and `NAMESPACE` regenerate from roxygen (the no-diff run proves it);
+  `README.Rmd` untouched so `README.md` stays in sync; `pkgdown::check_pkgdown()`
+  clean; `NEWS.md` carries this milestone's user-visible changes with no milestone
+  numbers; no new top-level files, so no `.Rbuildignore` entry is owed; full
+  `devtools::check()` clean.
+- CI on PR #54: all five jobs green (ubuntu release/devel/oldrel-1, windows,
+  test-coverage).

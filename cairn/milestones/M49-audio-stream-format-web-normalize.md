@@ -1,6 +1,6 @@
 # M49: Finish D026 on `format_for_web()` and `normalize_audio()`
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -41,7 +41,7 @@ substance changed. AC2/AC7 amended and AC8 added at the review send-back._
       -map 0:a:<n>` when named. Compile level (`run = FALSE`), both entry
       points, and for the batch verb from the argument and from a jobs
       `audio_stream` column whose `NA` cell keeps that row on every track.
-- [ ] AC2 `normalize_audio()` / `_batch` accept `audio_stream`; the compiled
+- [x] AC2 `normalize_audio()` / `_batch` accept `audio_stream`; the compiled
       correction command carries `-map 0:a:0?` under `NULL` and `-map 0:a:<n>`
       when named, preceded by `-map 0:v?` **unless the output path names an
       audio-only container**, where the video map is omitted. Compile level,
@@ -69,7 +69,7 @@ substance changed. AC2/AC7 amended and AC8 added at the review send-back._
       mapped track while `classify_loudnorm_output()` reads `hit[[1]]`, so every
       mapped track would be corrected with track 0's measurements, silently.
       It cites T1's measurement, not the plan's.
-- [ ] AC7 `devtools::document()` no diff, `devtools::test()` clean,
+- [x] AC7 `devtools::document()` no diff, `devtools::test()` clean,
       `devtools::check()` 0 errors / 0 warnings; NEWS describes both changes in
       user-facing terms and names the two argument-surface breaks: `run` moved
       position in four exported signatures, and `audio` is no longer an
@@ -173,6 +173,9 @@ substance changed. AC2/AC7 amended and AC8 added at the review send-back._
 - 2026-07-31: two sub-threshold review findings fixed while the branch was open. F7 (68) — the two-pass batch test now puts a SILENT row first, so `jobs[!silent, ]` genuinely reshapes and a one-row column misalignment would read `eng` instead of `fra`; it previously asserted nothing about the seam it named. F3 (62) — `test-ffm.R`'s "there is no longer a zero category" claim was false (`extract_frame()`/`sample_frames()` compile no map) and is replaced by an accurate statement of why they are absent from the table.
 - 2026-07-31: T12 — D029 appended, narrowing D028's video half while leaving its first-track audio rule and measured reason standing (D028 is history and is not edited — IP4). NEWS gains the container rule and both argument-surface breaks. `devtools::check()` 0/0/0, `devtools::test()` 3181 passing 0 failures, `document()` no diff, spelling clean.
 - 2026-07-31: status → review (second time).
+
+- 2026-07-31: review round 2 returned the milestone to `in-progress` (return 2 of 3). AC1/AC2/AC3/AC4/AC6/AC7 pass with fresh evidence and every mechanical gate is clean (check 0/0/0, CI green on nine jobs, cairn_validate 0). AC5 and AC8 fail AS WRITTEN: the map-count table has no row for `normalize_audio()`'s audio-container branch though AC5's own rule demands one, and AC8's absolute "no output container that worked before fails after" is false for `.w64`, `.mpa`, `.voc`, `.sbc`, `.latm` and `.adts` — all measured 0 → 234 (or 176). One finding actioned at 85: AC8's execution test guards on ffprobe where AC8 says ffmpeg.
+- 2026-07-31: thrash trigger (b) fired — the same failure shape ("a container that worked before now fails") missed twice by a new mechanism each round: first no rule at all, then an incomplete enumeration plus an untouched `format_for_web()`. The remedy is to reconsider the alternatives the plan gate recorded against (an opt-out argument; documenting the loss), plus one it did not consider (dropping video passthrough from `normalize_audio()` entirely, which needs no list) — not another pass at the enumeration.
 
 ## Decisions
 
@@ -378,3 +381,132 @@ change what AC2 demands.
 
 First return for this milestone (thrash count 1 of 3).
 
+---
+
+## Review — round 2 (2026-07-31, after the container-rule fix)
+
+**AC1 PASS.** Re-verified fresh: `format_for_web()` compiles `-map 0:v? -map 0:a?`
+under `NULL` and `-map 0:v? -map 0:a:2` when named; batch from the argument
+carries `0:a:2` on both rows, and from a `c(1, NA)` column carries `0:a:1` then
+`0:a?`.
+
+**AC2 PASS (amended criterion).** `normalize_audio()` compiles
+`-map 0:v? -map 0:a:0?` into `.mkv` and `-map 0:a:0?` alone into `.wav`; a named
+track narrows the audio half in both. The batch verb applies it per row — a jobs
+table of `a.wav`/`b.mkv` compiles 1 map then 2. Predicate edge cases verified:
+`o.WAV` takes the audio shape (case-insensitive), `dir.wav/o.mkv` and `noext`
+keep the video map (a dot in a directory name does not fool it), and an unknown
+extension keeps the video map.
+
+**AC3 PASS.** Analysis and correction agree on the audio specifier across
+`NULL`/`0`/`1`/`2` — four agreements, zero mismatches — asserted on
+`loudnorm_analysis_pipeline()`'s compiled output directly.
+
+**AC4 PASS.** Fixture-took check `0,0,1` first; `format_for_web()` writes
+`eng,spa,fra` and `normalize_audio()` writes `eng` against T1's recorded
+baseline of `fra`. Video-only input exits 0; `audio_stream = 9` aborts naming
+FFmpeg's status 234.
+
+**AC5 FAIL.** The table is keyed on compiled commands and carries fourteen rows
+with no zero row, but AC5's own rule — "a verb whose branches compile different
+commands gets a row each" — is not satisfied by the table it now describes.
+`normalize_audio()` compiles two different commands depending on the output
+container (2 maps for `out.mp4`, 1 for `out.wav`) and only the 2-map branch has
+a row. A change making the audio-container branch emit two maps again would not
+fail here.
+
+**AC6 PASS.** D028 records the split with T1's measurement; D029 narrows its
+video half.
+
+**AC7 PASS (amended criterion).** `document()` no diff, `test()` 3181 passing /
+0 failures, `check()` 0 errors / 0 warnings / 0 notes, spelling clean. NEWS
+carries the container rule and both argument-surface breaks.
+
+**AC8 FAIL.** The nine-container matrix passes exactly as enumerated: every one
+that exited 0 on master exits 0 here with a non-empty file, audio-only ones
+carry no video, video ones still do. But the criterion is written absolutely —
+"No output container that worked before this milestone fails after it" — and
+that is false. Measured on the same input: `.w64`, `.mpa`, `.sbc`, `.latm` and
+`.adts` all go from exit 0 to exit 234, and `.voc` to exit 176. They are
+audio-only containers absent from `AUDIO_ONLY_CONTAINERS`. The criterion's own
+execution matrix cannot see them because it walks only the nine extensions it
+names.
+
+The code matches D029, which pre-declares the list one-directional and names
+this exact tradeoff. The criterion contradicts the decision it implements. Per
+the never-reinterpret rule, that makes the criterion wrong rather than the work
+wrong — and it returns to `/milestone-implement` for a gated amendment, not a
+review-side reading.
+
+### Consistency gate
+
+`cairn_validate` exits 0; `check()` 0/0/0; `pkgdown` clean; `document()` no
+diff; CI green on all nine jobs. Advisories: the pre-existing ROADMAP stamp
+density, and **M49 now trips both split tripwires (8 criteria, 12 tasks)** — the
+plan's own work log named "the task count crossing the ~10 tripwire" as the
+falsifier for keeping both verbs in one milestone, and it has fired.
+
+### Independent review — round 2
+
+**[S] prior-review lens: no regressions.** Checked all twelve round-1 findings
+against the current diff: F1/F6/F5/F3 fixed as triaged; the eight logged below
+threshold verified still merely logged and not worsened.
+
+**[S] blame-history lens: one candidate.** Confirmed D028 was appended to and
+never edited (IP4 intact), that `audio_only_container()` is called from
+`normalize_audio_pipeline()` alone so no other verb's D026 contract moved, that
+`ffm_map()` is still called once with a pre-computed vector (M43's append), and
+that no assertion was loosened. Its candidate is G10 below.
+
+**[O] diff-bug lens: twelve findings, scored by a fresh [S] scorer.** One clears
+80.
+
+**G6 (85) — ACTIONED.** AC8's own execution test guards with
+`skip_if_no_ffprobe()` but calls `normalize_audio()`, which needs ffmpeg; AC8
+says "`skip_if` FFmpeg is absent", and every sibling execution test in the file
+uses `skip_if_no_ffmpeg()`. On a machine with ffprobe and no ffmpeg it errors
+instead of skipping.
+
+**Logged below threshold (11), surfaced not discarded:**
+- G8 (78) the map-count table lacks a row for the audio-container branch — the
+  same gap AC5 fails on above, so it rides along with the send-back.
+- G1 (75) `format_for_web()` carries the identical mechanism and was not fixed:
+  its command shape into `.wav` goes from exit 0 to exit 234, verified. Weighed
+  down because the verb's whole recipe is H.264/AAC/faststart web delivery, so
+  the call is arguably nonsense — but the inconsistency is real and undocumented.
+- G4 (75) `normalize_audio()`'s `@description` still says "The video stream is
+  copied unchanged", now true only for video containers; the rule is documented
+  only inside `@param audio_stream`.
+- G2 (65) the six unlisted audio containers — the substance of AC8's failure,
+  scored as arguable only because D029 declares the tradeoff.
+- G5 (60) the container rule is undocumented on the batch verb.
+- G7 (38) `if (audio_only_container(output))` is not scalar-guarded; both front
+  doors pass a scalar, so reachability is low.
+- G10 (30) the two-pass batch rewrite verifies one non-default index end to end
+  where the version it replaced verified two; it fixed a real seam gap but is
+  not a pure superset.
+- G11 (25) a trailing space or query string in the output path defeats the
+  extension match.
+- G9 (18) three container-rule tests are non-discriminating alone; each is
+  paired with a discriminating assertion, and six tests were mutation-verified
+  to go red without the fix.
+- G3 (12) `.m4a`/`.ogg` muxers do accept video, so classifying them audio-only
+  drops a stream silently — scored low because D029 and NEWS both declare it
+  deliberately, though the drop is announced nowhere at runtime.
+- G12 (6) an artifact of the reviewer reading the file mid-review.
+
+### Disposition
+
+**Gate result: send back to `/milestone-implement`.** AC5 and AC8 both fail as
+written. Return 2 of 3.
+
+**Thrash trigger (b) has fired.** The same failure shape — "an output container
+that worked before now fails" — has now been missed twice, by a new mechanism
+each time: round 1 stated the video map with no rule at all; round 2 stated it
+with an enumerated list that is incomplete, and left `format_for_web()`
+untouched. Re-cutting around an enumeration buys the next missing extension,
+which is precisely what round 2 bought. The plan gate recorded two alternatives
+against the chosen approach — an opt-out argument, and documenting the loss —
+and they are the ones to reconsider, alongside a third the gate did not
+consider: dropping video passthrough from `normalize_audio()` entirely, which
+needs no list.

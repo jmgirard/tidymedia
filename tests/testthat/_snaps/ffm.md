@@ -50,7 +50,7 @@
     Code
       writeLines(compile_scrubbed(ffm_copy(ffm_files(f1, "out.mp4"))))
     Output
-      -y -i "<in1>" -codec:v copy -codec:a copy -map 0 "out.mp4"
+      -y -i "<in1>" -codec:v copy -codec:a copy -map "0" "out.mp4"
     Code
       writeLines(compile_scrubbed(ffm_crop(ffm_scale(ffm_files(f1, "out.mp4"), 640,
       480), width = 100, height = 50)))
@@ -99,7 +99,7 @@
       writeLines(compile_scrubbed(ffm_copy(ffm_seek(ffm_files(f1, "out.mp4"), start = 3,
       end = 7, reencode = FALSE))))
     Output
-      -y -ss 3 -to 7 -i "<in1>" -codec:v copy -codec:a copy -avoid_negative_ts make_zero -map 0 "out.mp4"
+      -y -ss 3 -to 7 -i "<in1>" -codec:v copy -codec:a copy -avoid_negative_ts make_zero -map "0" "out.mp4"
     Code
       writeLines(compile_scrubbed(ffm_output_options(ffm_files(f1, "out.mp4"),
       "-q:v 1", "-frames:v 1")))
@@ -108,5 +108,5 @@
     Code
       writeLines(compile_scrubbed(ffm_concat(ffm_files(c(f1, f2), "out.mp4"))))
     Output
-      -y -f concat -safe 0 -i "<concatlist>" -codec:v copy -codec:a copy -map 0 "out.mp4"
+      -y -f concat -safe 0 -i "<concatlist>" -codec:v copy -codec:a copy -map "0" "out.mp4"
 

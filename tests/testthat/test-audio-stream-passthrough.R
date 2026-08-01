@@ -74,11 +74,11 @@ test_that("an unset audio_stream compiles every video and every audio stream", {
   f <- make_input()
   expect_identical(
     standardize_video(f, "out.mp4", run = FALSE),
-    standardize_command(f, "-map 0:v? -map 0:a? ")
+    standardize_command(f, "-map \"0:v?\" -map \"0:a?\" ")
   )
   expect_identical(
     anonymize_video(f, "out.mp4", regions = regions_1(), run = FALSE),
-    anonymize_command(f, "-map 0:v? -map 0:a? ")
+    anonymize_command(f, "-map \"0:v?\" -map \"0:a?\" ")
   )
 })
 
@@ -101,12 +101,12 @@ test_that("a named audio_stream compiles that track and no other", {
   f <- make_input()
   expect_identical(
     standardize_video(f, "out.mp4", audio_stream = 2, run = FALSE),
-    standardize_command(f, "-map 0:v? -map 0:a:2 ")
+    standardize_command(f, "-map \"0:v?\" -map \"0:a:2\" ")
   )
   expect_identical(
     anonymize_video(f, "out.mp4", regions = regions_1(), audio_stream = 2,
                     run = FALSE),
-    anonymize_command(f, "-map 0:v? -map 0:a:2 ")
+    anonymize_command(f, "-map \"0:v?\" -map \"0:a:2\" ")
   )
 })
 
@@ -123,15 +123,15 @@ test_that("both verbs compile exactly two maps either way", {
   # A named call must not ALSO carry the every-track map -- ffm_map() appends,
   # so `-map 0:a? -map 0:a:2` would satisfy a containment check for either one
   # on its own (M45's absence-assertion trick).
-  expect_false(grepl("-map 0:a? ", cmds[[2]], fixed = TRUE))
-  expect_false(grepl("-map 0:a? ", cmds[[4]], fixed = TRUE))
+  expect_false(grepl("-map \"0:a?\" ", cmds[[2]], fixed = TRUE))
+  expect_false(grepl("-map \"0:a?\" ", cmds[[4]], fixed = TRUE))
 })
 
 test_that("audio_stream = 0 names the first track rather than emitting 0:a", {
   f <- make_input()
   expect_identical(
     standardize_video(f, "out.mp4", audio_stream = 0, run = FALSE),
-    standardize_command(f, "-map 0:v? -map 0:a:0 ")
+    standardize_command(f, "-map \"0:v?\" -map \"0:a:0\" ")
   )
 })
 
@@ -207,9 +207,9 @@ test_that("run = FALSE runs no binary at the default hardware", {
 test_that("the batch argument reaches every row", {
   f <- make_input()
   out <- standardize_video_batch(std_jobs(f), audio_stream = 2, run = FALSE)
-  expect_true(all(grepl("-map 0:v? -map 0:a:2", out$command, fixed = TRUE)))
+  expect_true(all(grepl("-map \"0:v?\" -map \"0:a:2\"", out$command, fixed = TRUE)))
   out <- anonymize_video_batch(anon_jobs(f), audio_stream = 2, run = FALSE)
-  expect_true(all(grepl("-map 0:v? -map 0:a:2", out$command, fixed = TRUE)))
+  expect_true(all(grepl("-map \"0:v?\" -map \"0:a:2\"", out$command, fixed = TRUE)))
 })
 
 test_that("an audio_stream column overrides the argument per row", {
@@ -219,9 +219,11 @@ test_that("an audio_stream column overrides the argument per row", {
   out <- standardize_video_batch(
     std_jobs(f, audio_stream = c(1, NA)), audio_stream = 2, run = FALSE
   )
-  expect_match(out$command[[1]], "-map 0:a:1", fixed = TRUE)
-  expect_match(out$command[[2]], "-map 0:a?", fixed = TRUE)
-  expect_false(grepl("-map 0:a:", out$command[[2]], fixed = TRUE))
+  expect_match(out$command[[1]], "-map \"0:a:1\"", fixed = TRUE)
+  expect_match(out$command[[2]], "-map \"0:a?\"", fixed = TRUE)
+  # A PREFIX probe, so it keeps no closing quote: what it refutes is any
+  # `-map "0:a:<n>"` on the NA row, and a closed `-map "0:a:"` matches nothing.
+  expect_false(grepl("-map \"0:a:", out$command[[2]], fixed = TRUE))
 })
 
 test_that("a one-row batch compiles what the scalar verb compiles", {
@@ -275,7 +277,7 @@ test_that("an all-NA audio_stream column is accepted, being logical", {
   out <- standardize_video_batch(
     std_jobs(f, audio_stream = c(NA, NA)), run = FALSE
   )
-  expect_true(all(grepl("-map 0:a?", out$command, fixed = TRUE)))
+  expect_true(all(grepl("-map \"0:a?\"", out$command, fixed = TRUE)))
 })
 
 test_that("a scalar NA audio_stream aborts rather than compiling every track", {

@@ -22,7 +22,7 @@ test_that("concatenate_videos_batch() compiles one concat command per row", {
   expect_true(all(c("inputs", "output", "command") %in% names(res)))
   # Each row is a concat-demuxer command writing its own output.
   expect_match(res$command[[1]], "-f concat -safe 0", fixed = TRUE)
-  expect_match(res$command[[1]], '-codec:v copy -codec:a copy -map 0 "j1.mp4"', fixed = TRUE)
+  expect_match(res$command[[1]], '-codec:v copy -codec:a copy -map "0" "j1.mp4"', fixed = TRUE)
   expect_match(res$command[[2]], '"j2.mp4"', fixed = TRUE)
 })
 

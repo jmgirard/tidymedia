@@ -11,7 +11,7 @@ test_that("normalize_audio() compiles the default EBU R128 command", {
     cmd,
     sprintf(
       paste0('-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" ',
-             '-map 0:a:0 "out.mp4"'),
+             '-map "0:a:0" "out.mp4"'),
       f
     )
   )
@@ -35,7 +35,7 @@ test_that("normalize_audio() single-pass command is byte-for-byte stable (M16 ba
     cmd,
     sprintf(
       paste0('-y -i "%s" -af "loudnorm=I=-16:TP=-1.5:LRA=11" ',
-             '-ac 1 -ar 48000 -map 0:a:0 "out.mp4"'),
+             '-ac 1 -ar 48000 -map "0:a:0" "out.mp4"'),
       f
     )
   )
@@ -229,7 +229,7 @@ test_that("normalize_audio() emits no -codec:a by default (NULL sentinel)", {
     cmd,
     sprintf(
       paste0('-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" ',
-             '-map 0:a:0 "out.mp4"'),
+             '-map "0:a:0" "out.mp4"'),
       f
     )
   )
@@ -244,7 +244,7 @@ test_that("normalize_audio(audio_codec = ) names the output audio encoder", {
     cmd,
     sprintf(
       paste0('-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" ',
-             '-codec:a aac -map 0:a:0 "out.mp4"'),
+             '-codec:a aac -map "0:a:0" "out.mp4"'),
       f
     )
   )

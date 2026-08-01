@@ -8,7 +8,7 @@ test_that("strip_metadata() compiles to a bit-exact stream copy that drops metad
   cmd <- strip_metadata(f, "clean.mp4", run = FALSE)
   # Lossless carry-through of every stream.
   expect_match(cmd, "-codec:v copy -codec:a copy", fixed = TRUE)
-  expect_match(cmd, "-map 0", fixed = TRUE)
+  expect_match(cmd, "-map \"0\"", fixed = TRUE)
   # The scrub itself: global tags, chapters, and FFmpeg's own re-added tags.
   expect_match(cmd, "-map_metadata -1", fixed = TRUE)
   expect_match(cmd, "-map_chapters -1", fixed = TRUE)

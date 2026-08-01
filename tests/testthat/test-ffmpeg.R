@@ -10,7 +10,7 @@ test_that("segment_video() returns a job tibble with one accurate-cut command pe
   # Default reencode = TRUE: accurate output-seek (-ss/-to after -i), no copy.
   # The seek and the output are no longer adjacent: M48's stated map sits
   # between them (D026).
-  expect_match(res$command[[1]], '-ss 0 -to 5 -map 0:v? -map 0:a? "a.mp4"',
+  expect_match(res$command[[1]], '-ss 0 -to 5 -map "0:v?" -map "0:a?" "a.mp4"',
                fixed = TRUE)
   expect_no_match(res$command[[1]], "-codec:v copy", fixed = TRUE)
 })
@@ -122,7 +122,7 @@ test_that("extract_audio() compiles to a copy + drop-video command", {
   # M43: the map is explicit on every call. Without it FFmpeg picked the track
   # carrying the container's DEFAULT disposition, so which track came out
   # depended on the file's flags rather than on the caller.
-  expect_match(cmd, "-vn -map 0:a:0", fixed = TRUE)
+  expect_match(cmd, "-vn -map \"0:a:0\"", fixed = TRUE)
   expect_match(cmd, '"out.aac"', fixed = TRUE)
 })
 
@@ -132,17 +132,17 @@ test_that("extract_audio(audio_codec=) sets the audio codec", {
   expect_match(cmd, "-codec:a aac -vn", fixed = TRUE)
 })
 
-test_that("convert_audio() default (audio_codec = NULL) compiles to -q:a 0 -map 0:a:0", {
+test_that("convert_audio() default (audio_codec = NULL) compiles to -q:a 0 -map \"0:a:0\"", {
   f <- make_input()
   cmd <- convert_audio(f, "out.mp3", run = FALSE)
-  expect_match(cmd, "-q:a 0 -map 0:a:0", fixed = TRUE)
+  expect_match(cmd, "-q:a 0 -map \"0:a:0\"", fixed = TRUE)
 })
 
 test_that("convert_audio(audio_codec=) pins -codec:a and drops -q:a", {
   f <- make_input()
   cmd <- convert_audio(f, "out.m4a", audio_codec = "aac", run = FALSE)
   expect_match(cmd, "-codec:a aac", fixed = TRUE)
-  expect_match(cmd, "-map 0:a:0", fixed = TRUE)
+  expect_match(cmd, "-map \"0:a:0\"", fixed = TRUE)
   expect_no_match(cmd, "-q:a", fixed = TRUE)
 })
 
@@ -157,11 +157,11 @@ test_that("convert_audio() commands match the pre-M40 rename apart from the map"
   f <- make_input()
   expect_identical(
     convert_audio(f, "out.mp3", run = FALSE),
-    paste0('-y -i "', f, '" -q:a 0 -map 0:a:0 "out.mp3"')
+    paste0('-y -i "', f, '" -q:a 0 -map "0:a:0" "out.mp3"')
   )
   expect_identical(
     convert_audio(f, "out.m4a", audio_codec = "aac", run = FALSE),
-    paste0('-y -i "', f, '" -codec:a aac -map 0:a:0 "out.m4a"')
+    paste0('-y -i "', f, '" -codec:a aac -map "0:a:0" "out.m4a"')
   )
 })
 
@@ -186,8 +186,8 @@ test_that("convert_audio() maps the first audio stream deterministically", {
   # change is caught without the binaries. `audio_stream` selection is M43's;
   # this only fixes WHICH single stream is taken to a stated one.
   f <- make_input()
-  expect_match(convert_audio(f, "out.mp3", run = FALSE), "-map 0:a:0", fixed = TRUE)
-  expect_no_match(convert_audio(f, "out.mp3", run = FALSE), "-map a", fixed = TRUE)
+  expect_match(convert_audio(f, "out.mp3", run = FALSE), "-map \"0:a:0\"", fixed = TRUE)
+  expect_no_match(convert_audio(f, "out.mp3", run = FALSE), "-map \"a\"", fixed = TRUE)
 })
 
 test_that("convert_audio() rejects the retired `format` argument", {
@@ -207,7 +207,7 @@ test_that("crop_video() compiles to a crop filter mapping all streams", {
   # The filter and the map are no longer adjacent: the default audio_codec
   # emits -codec:a copy between them (M35/D017).
   expect_match(cmd, '-vf "crop=w=100:h=50:x=0:y=0"', fixed = TRUE)
-  expect_match(cmd, '-map 0:v? -map 0:a? "out.mp4"', fixed = TRUE)
+  expect_match(cmd, '-map "0:v?" -map "0:a?" "out.mp4"', fixed = TRUE)
 })
 
 test_that("format_for_web() compiles to the web-friendly re-encode", {
@@ -235,7 +235,7 @@ test_that("standardize_video() compiles the full standardization command", {
         "-codec:v libx264 -codec:a copy -pix_fmt yuv420p -movflags +faststart",
         # M47: the verb states its stream selection instead of inheriting
         # FFmpeg's. The `?` suffixes keep an input missing a stream type working.
-        "-map 0:v? -map 0:a?",
+        "-map \"0:v?\" -map \"0:a?\"",
         '"out.mp4"'
       ),
       f
@@ -279,7 +279,7 @@ test_that("standardize_video() defaults are deterministic and documented", {
         "-codec:v libx264 -codec:a copy -pix_fmt yuv420p -movflags +faststart",
         # M47: the verb states its stream selection instead of inheriting
         # FFmpeg's. The `?` suffixes keep an input missing a stream type working.
-        "-map 0:v? -map 0:a?",
+        "-map \"0:v?\" -map \"0:a?\"",
         '"out.mp4"'
       ),
       f
@@ -444,8 +444,8 @@ test_that("separate_audio_video() emits two single-output mapped commands", {
   f <- make_input()
   cmds <- separate_audio_video(f, "a.aac", "v.mp4", run = FALSE)
   expect_named(cmds, c("audio", "video"))
-  expect_match(cmds[["audio"]], '-map 0:a "a.aac"', fixed = TRUE)
-  expect_match(cmds[["video"]], '-map 0:v "v.mp4"', fixed = TRUE)
+  expect_match(cmds[["audio"]], '-map "0:a" "a.aac"', fixed = TRUE)
+  expect_match(cmds[["video"]], '-map "0:v" "v.mp4"', fixed = TRUE)
 })
 
 test_that("concatenate_videos() compiles to the concat demuxer", {
@@ -453,7 +453,7 @@ test_that("concatenate_videos() compiles to the concat demuxer", {
   f2 <- make_input()
   cmd <- concatenate_videos(c(f1, f2), "out.mp4", run = FALSE)
   expect_match(cmd, "-f concat -safe 0 -i ", fixed = TRUE)
-  expect_match(cmd, "-codec:v copy -codec:a copy -map 0", fixed = TRUE)
+  expect_match(cmd, "-codec:v copy -codec:a copy -map \"0\"", fixed = TRUE)
 })
 
 test_that("concatenate_videos() warns on mixed extensions", {
@@ -515,7 +515,7 @@ test_that("compare_videos(audio = ) carries that input's audio via -map", {
   f1 <- make_input()
   f2 <- make_input()
   cmd <- compare_videos(c(f1, f2), "out.mp4", audio = 1, run = FALSE)
-  expect_match(cmd, '-map "[vout]" -map 1:a', fixed = TRUE)
+  expect_match(cmd, '-map "[vout]" -map "1:a"', fixed = TRUE)
 })
 
 test_that("compare_videos() drops audio by default (no extra -map)", {
@@ -588,7 +588,7 @@ test_that("picture_in_picture(audio = ) carries that input's audio", {
   m <- make_input()
   o <- make_input()
   cmd <- picture_in_picture(m, o, "out.mp4", audio = 0, run = FALSE)
-  expect_match(cmd, '-map "[vout]" -map 0:a', fixed = TRUE)
+  expect_match(cmd, '-map "[vout]" -map "0:a"', fixed = TRUE)
 })
 
 test_that("picture_in_picture() validates scale, margin, and audio", {

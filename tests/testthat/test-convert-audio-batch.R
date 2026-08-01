@@ -11,7 +11,7 @@ test_that("convert_audio_batch() returns one convert command per job", {
   expect_s3_class(res, "tbl_df")
   expect_equal(nrow(res), 2)
   # Default (audio_codec = NULL) is highest-VBR-quality, audio-only.
-  expect_match(res$command[[1]], "-q:a 0 -map 0:a:0", fixed = TRUE)
+  expect_match(res$command[[1]], "-q:a 0 -map \"0:a:0\"", fixed = TRUE)
   expect_match(res$command[[1]], '"a.mp3"', fixed = TRUE)
 })
 

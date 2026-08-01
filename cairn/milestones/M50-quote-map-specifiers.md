@@ -74,9 +74,9 @@ itself contains a double quote — pre-existing, and orthogonal.
       invariant test enumerates, committed before the source change so AC3's
       comparison has a fixed reference (M44's lesson: commit the baseline
       before mutating).
-- [ ] T2 Tests first, then quote the specifier in both map branches
+- [x] T2 Tests first, then quote the specifier in both map branches
       (`R/ffm.R:1284`, `:1299`).
-- [ ] T3 Re-baseline the `-map` literals across `tests/testthat/` and accept
+- [x] T3 Re-baseline the `-map` literals across `tests/testthat/` and accept
       the `_snaps/ffm.md` snapshot.
 - [ ] T4 Re-knit `README.md` via `devtools::build_readme()`; correct the
       roxygen prose at `R/ffm.R:625-626` and `devtools::document()`.
@@ -89,6 +89,8 @@ itself contains a double quote — pre-existing, and orthogonal.
 - 2026-07-31: plan chose a convention scoped to map specifiers over a general "quote every value token" rule because the general rule reaches codecs, pixel formats, seek values and the raw output-options path, which bypasses `ffm_group()`'s quoting altogether and would need a signature change; falsified by a report of any of those classes breaking a pasted command, at which point the candidate row promotes.
 - 2026-07-31: sequenced after M49 so one re-baselining pass covers M49's new map literals too, rather than re-baselining the same test files twice.
 - 2026-07-31: T1 — gate chose a testthat snapshot for the AC3 baseline over an `.rds` fixture (opaque in a diff, and the profile's provenance rule would need a `data-raw/` generator) or inline literals (~15 verbose vectors duplicating the compile tests). The verbs return only the compiled string under `run = FALSE`, so the fifteen pipelines are rebuilt through the internal `*_pipeline()` builders; a parity test asserts the rebuild compiles what the verbs compile, so it cannot drift. `ffm_concat()`'s per-call demuxer list file has a random name, so both the parity test and the snapshot blank it.
+- 2026-07-31: T2+T3 landed in one commit rather than two (minor amendment): the source change turns 147 tests red until the literals move, so T2 could not be checked off against a clean `devtools::test()` on its own. AC1/AC2 tests were written and seen to fail before the two-line change.
+- 2026-07-31: T3 — the re-baselining ran through a string-aware transformer (specifier grammar rather than "the next token"; a greedy class swallowed the enclosing literal's closing quote on the first attempt and was reverted). Comments naming the option and `helper-media.R`'s fixture commands were left alone: neither expects the compiled form. Two hand-fixes: the prefix probe at `test-audio-stream-passthrough.R:224` keeps no closing quote, or it would refute nothing; the seven negative assertions across the suite were re-baselined for the same reason.
 - 2026-07-31: criteria audit ([O], fresh context) returned three findings: the literal count in AC4 was contested between two independent investigations (209 vs 248, differing on comment-line handling), so the number was removed from the criterion rather than settled; AC6 named `R/ffm.R:535`, `:536` and `:561`, which refer to the bare `-map` option and stay correct after the change; and its `man/ffm_copy.Rd` cite was off by one and pointed at a generated file. All fixed above; none became a gate question.
 
 ## Decisions

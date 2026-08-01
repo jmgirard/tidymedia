@@ -47,7 +47,7 @@
 # one place where the previous behavior was FFmpeg's disposition heuristic
 # rather than every stream.
 
-crop_command <- function(infile, maps = "-map 0 ", outfile = "out.mp4") {
+crop_command <- function(infile, maps = "-map \"0\" ", outfile = "out.mp4") {
   paste0(
     '-y -i "', infile, '"',
     ' -vf "crop=w=32:h=32:x=(in_w-out_w)/2:y=(in_h-out_h)/2"',
@@ -61,7 +61,7 @@ segment_reencode_command <- function(infile, maps = "", outfile = "seg.mp4") {
   )
 }
 
-segment_copy_command <- function(infile, maps = "-map 0 ", outfile = "seg.mp4") {
+segment_copy_command <- function(infile, maps = "-map \"0\" ", outfile = "seg.mp4") {
   paste0(
     '-y -ss 0 -to 1 -i "', infile, '"',
     " -codec:v copy -codec:a copy -avoid_negative_ts make_zero ",
@@ -88,14 +88,14 @@ segment_of <- function(f, ...) {
 
 test_that("an unset audio_stream compiles every video and every audio stream", {
   f <- make_input()
-  expect_identical(crop_of(f), crop_command(f, "-map 0:v? -map 0:a? "))
+  expect_identical(crop_of(f), crop_command(f, "-map \"0:v?\" -map \"0:a?\" "))
   expect_identical(
     segment_of(f),
-    segment_reencode_command(f, "-map 0:v? -map 0:a? ")
+    segment_reencode_command(f, "-map \"0:v?\" -map \"0:a?\" ")
   )
   expect_identical(
     segment_of(f, reencode = FALSE),
-    segment_copy_command(f, "-map 0:v? -map 0:a? ")
+    segment_copy_command(f, "-map \"0:v?\" -map \"0:a?\" ")
   )
 })
 
@@ -128,15 +128,15 @@ test_that("audio_stream narrows the audio map and leaves the video map alone", {
   f <- make_input()
   expect_identical(
     crop_of(f, audio_stream = 2),
-    crop_command(f, "-map 0:v? -map 0:a:2 ")
+    crop_command(f, "-map \"0:v?\" -map \"0:a:2\" ")
   )
   expect_identical(
     segment_of(f, audio_stream = 2),
-    segment_reencode_command(f, "-map 0:v? -map 0:a:2 ")
+    segment_reencode_command(f, "-map \"0:v?\" -map \"0:a:2\" ")
   )
   expect_identical(
     segment_of(f, reencode = FALSE, audio_stream = 2),
-    segment_copy_command(f, "-map 0:v? -map 0:a:2 ")
+    segment_copy_command(f, "-map \"0:v?\" -map \"0:a:2\" ")
   )
 })
 
@@ -159,7 +159,7 @@ test_that("the copy branch narrows ffm_copy()'s map rather than appending to it"
   for (cmd in c(segment_of(f, reencode = FALSE),
                 segment_of(f, reencode = FALSE, audio_stream = 2))) {
     expect_identical(map_count(cmd), 2L)
-    expect_false(grepl("-map 0 ", cmd, fixed = TRUE))
+    expect_false(grepl("-map \"0\" ", cmd, fixed = TRUE))
   }
 })
 
@@ -168,7 +168,7 @@ test_that("audio_stream = 0 is a selection, not the unset sentinel", {
   # where NULL resolves to the first track: here NULL keeps every track (D026).
   f <- make_input()
   expect_identical(crop_of(f, audio_stream = 0),
-                   crop_command(f, "-map 0:v? -map 0:a:0 "))
+                   crop_command(f, "-map \"0:v?\" -map \"0:a:0\" "))
   expect_false(identical(crop_of(f, audio_stream = 0), crop_of(f)))
 })
 
@@ -190,14 +190,14 @@ test_that("the batch argument reaches every row", {
   f <- make_input()
   out <- crop_video_batch(crop_jobs(f), width = 32, height = 32,
                           audio_stream = 2, run = FALSE)
-  expect_true(all(grepl("-map 0:v? -map 0:a:2", out$command, fixed = TRUE)))
+  expect_true(all(grepl("-map \"0:v?\" -map \"0:a:2\"", out$command, fixed = TRUE)))
   out <- segment_video_batch(segment_jobs(f), audio_stream = 2, run = FALSE)
-  expect_true(all(grepl("-map 0:v? -map 0:a:2", out$command, fixed = TRUE)))
+  expect_true(all(grepl("-map \"0:v?\" -map \"0:a:2\"", out$command, fixed = TRUE)))
   # And on the copy branch, where the selection has to REPLACE ffm_copy()'s map
   # rather than sit beside it.
   out <- segment_video_batch(segment_jobs(f), reencode = FALSE,
                              audio_stream = 2, run = FALSE)
-  expect_true(all(grepl("-map 0:v? -map 0:a:2", out$command, fixed = TRUE)))
+  expect_true(all(grepl("-map \"0:v?\" -map \"0:a:2\"", out$command, fixed = TRUE)))
   expect_identical(map_count(out$command), c(2L, 2L))
 })
 
@@ -208,13 +208,13 @@ test_that("an audio_stream column overrides the argument per row", {
                           run = FALSE)
   # NA is the column form of NULL, so row 2 keeps EVERY track -- it does not
   # fall back to the argument, which is what an ABSENT column means (D023/D026).
-  expect_match(out$command[[1]], "-map 0:v? -map 0:a:1", fixed = TRUE)
-  expect_match(out$command[[2]], "-map 0:v? -map 0:a?", fixed = TRUE)
+  expect_match(out$command[[1]], "-map \"0:v?\" -map \"0:a:1\"", fixed = TRUE)
+  expect_match(out$command[[2]], "-map \"0:v?\" -map \"0:a?\"", fixed = TRUE)
 
   out <- segment_video_batch(segment_jobs(f, audio_stream = c(1, NA)),
                              audio_stream = 2, run = FALSE)
-  expect_match(out$command[[1]], "-map 0:v? -map 0:a:1", fixed = TRUE)
-  expect_match(out$command[[2]], "-map 0:v? -map 0:a?", fixed = TRUE)
+  expect_match(out$command[[1]], "-map \"0:v?\" -map \"0:a:1\"", fixed = TRUE)
+  expect_match(out$command[[2]], "-map \"0:v?\" -map \"0:a?\"", fixed = TRUE)
 })
 
 test_that("a one-row batch call compiles byte-identically to the scalar call", {
@@ -245,7 +245,7 @@ test_that("segment_video()'s own fan-out carries the argument to every segment",
                        outfiles = c("a.mp4", "b.mp4", "c.mp4"),
                        audio_stream = 2, run = FALSE)
   expect_identical(nrow(out), 3L)
-  expect_true(all(grepl("-map 0:v? -map 0:a:2", out$command, fixed = TRUE)))
+  expect_true(all(grepl("-map \"0:v?\" -map \"0:a:2\"", out$command, fixed = TRUE)))
 })
 
 test_that("a wrongly typed audio_stream column aborts before any row runs", {

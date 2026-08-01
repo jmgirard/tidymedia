@@ -19,10 +19,10 @@ test_that("separate_audio_video_batch() reshapes N inputs into 2N single-output 
   expect_equal(res$stream, rep(c("audio", "video"), 2))
   expect_equal(res$output, c("a1.aac", "v1.mp4", "a2.aac", "v2.mp4"))
   # Audio rows map 0:a into audiofile; video rows map 0:v into videofile.
-  expect_match(res$command[[1]], '-map 0:a "a1.aac"', fixed = TRUE)
-  expect_match(res$command[[2]], '-map 0:v "v1.mp4"', fixed = TRUE)
-  expect_match(res$command[[3]], '-map 0:a "a2.aac"', fixed = TRUE)
-  expect_match(res$command[[4]], '-map 0:v "v2.mp4"', fixed = TRUE)
+  expect_match(res$command[[1]], '-map "0:a" "a1.aac"', fixed = TRUE)
+  expect_match(res$command[[2]], '-map "0:v" "v1.mp4"', fixed = TRUE)
+  expect_match(res$command[[3]], '-map "0:a" "a2.aac"', fixed = TRUE)
+  expect_match(res$command[[4]], '-map "0:v" "v2.mp4"', fixed = TRUE)
   # Each row carries its own input file.
   expect_match(res$command[[1]], f1, fixed = TRUE)
   expect_match(res$command[[3]], f2, fixed = TRUE)

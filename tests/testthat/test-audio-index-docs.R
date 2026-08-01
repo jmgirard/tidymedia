@@ -87,6 +87,41 @@ test_that("every topic documenting an `audio` argument links to the concept topi
   expect_equal(missing, character(0))
 })
 
+test_that("the generated @param text names both families and links the topic", {
+  first <- audio_stream_param("take", "takes", "first")
+  every <- audio_stream_param("carry into the output", "carries", "every")
+  for (txt in list(first, every)) {
+    expect_length(txt, 1L)
+    # Every verb of both families is named, from the one set of vectors, so a
+    # verb added to a family cannot reach the docs of only some of its siblings.
+    for (v in c(audio_stream_families$first, audio_stream_families$every)) {
+      expect_match(txt, sprintf("\\\\link\\{%s\\}", v), fixed = FALSE)
+    }
+    expect_match(txt, "\\\\link\\{audio_stream\\}")
+    expect_match(txt, "FFmpeg error, not an R one", fixed = TRUE)
+  }
+  expect_match(first, "takes the \\strong{first} audio track", fixed = TRUE)
+  expect_match(every, "carries \\strong{every} audio track", fixed = TRUE)
+  # The batch form adds the column/NA rule; the scalar form must not claim it.
+  expect_match(audio_stream_param("take", "takes", "first", batch = TRUE),
+               "audio_stream} column", fixed = TRUE)
+  expect_false(grepl("audio_stream} column", first, fixed = TRUE))
+})
+
+test_that("the generated @param audio text states the input basis", {
+  scalar <- audio_input_param()
+  batch <- audio_input_param(batch = TRUE, extra = "Row-checked.")
+  expect_match(scalar, "counts the verb's inputs", fixed = TRUE)
+  expect_match(scalar, "\\\\link\\{audio_stream\\}")
+  # `audio = NULL` drops audio entirely -- the difference from audio_stream that
+  # the whole concept topic exists to make legible.
+  expect_match(scalar, "maps no audio at all", fixed = TRUE)
+  expect_match(batch, "Row-checked.", fixed = TRUE)
+  # Verb-specific text lands before the closing pointer, not after it.
+  expect_lt(regexpr("Row-checked.", batch, fixed = TRUE),
+            regexpr("(default = ", batch, fixed = TRUE))
+})
+
 test_that("the two family vectors are non-empty and disjoint", {
   # rd_verb_list() refuses a family under two members, so an emptied family
   # fails document() rather than silently deleting the sentence from 18 blocks.

@@ -21,7 +21,9 @@ ffm_codec(object, audio = NULL, video = NULL)
 - audio:
 
   A string indicating which audio codec to use or `NULL` to only set the
-  video codec. default = `NULL`
+  video codec (default = `NULL`). See
+  [`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
+  for the three unrelated things `audio` names across tidymedia.
 
 - video:
 

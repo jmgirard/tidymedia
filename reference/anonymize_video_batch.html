@@ -155,13 +155,7 @@ Batch-wide, not a per-row column.</p></dd>
 
 
 <dt id="arg-audio-stream">audio_stream<a class="anchor" aria-label="anchor" href="#arg-audio-stream"></a></dt>
-<dd><p>The 0-based index of the audio track to carry, applied to
-every row unless <code>jobs</code> carries an <code>audio_stream</code> column, in
-which case <code>NA</code> in a cell keeps that row on <strong>every</strong> audio
-track. The index counts <em>among each input's audio streams</em>.
-<code>NULL</code> (default) carries every audio track. See
-<code><a href="standardize_video.html">standardize_video</a></code> for how this differs from the extraction
-verbs' <code>NULL</code>. (default = <code>NULL</code>)</p></dd>
+<dd><p>The 0-based index of the audio track to carry into each output, counted <em>among that row's input's audio streams</em> – <code>0</code> is the first audio track, <code>1</code> the second, whatever their positions among the file's streams. <code>NULL</code> (default) carries <strong>every</strong> audio track. The argument applies to every row lacking an <code>audio_stream</code> column; an <code>NA</code> cell in that column means the same as <code>NULL</code> for that row, rather than falling back to the argument. The every-track family reads <code>NULL</code> this way – <code><a href="separate_audio_video.html">separate_audio_video</a></code>, <code><a href="standardize_video.html">standardize_video</a></code>, <code><a href="anonymize_video.html">anonymize_video</a></code>, <code><a href="crop_video.html">crop_video</a></code>, <code><a href="segment_video.html">segment_video</a></code> and <code><a href="format_for_web.html">format_for_web</a></code>, plus their <code>_batch</code> siblings. The first-track family takes one track only: <code><a href="extract_audio.html">extract_audio</a></code>, <code><a href="convert_audio.html">convert_audio</a></code> and <code><a href="normalize_audio.html">normalize_audio</a></code>, plus theirs. Subtitle and data streams are not carried either way. Naming a track the input does not have is an FFmpeg error, not an R one. See <code><a href="audio_stream.html">audio_stream</a></code> for how this differs from <code>audio</code>, the input index on <code><a href="compare_videos.html">compare_videos</a></code> and <code><a href="picture_in_picture.html">picture_in_picture</a></code>. (default = <code>NULL</code>)</p></dd>
 
 
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>
@@ -227,7 +221,30 @@ table-driven siblings.</p>
 <code><a href="standardize_video.html">standardize_video()</a></code>,
 <code><a href="standardize_video_batch.html">standardize_video_batch()</a></code>,
 <code><a href="strip_metadata.html">strip_metadata()</a></code>,
-<code><a href="strip_metadata_batch.html">strip_metadata_batch()</a></code></p></div>
+<code><a href="strip_metadata_batch.html">strip_metadata_batch()</a></code></p>
+<p>Other audio selection functions:
+<code><a href="anonymize_video.html">anonymize_video()</a></code>,
+<code><a href="audio_stream.html">audio_stream</a></code>,
+<code><a href="compare_videos.html">compare_videos()</a></code>,
+<code><a href="compare_videos_batch.html">compare_videos_batch()</a></code>,
+<code><a href="convert_audio.html">convert_audio()</a></code>,
+<code><a href="convert_audio_batch.html">convert_audio_batch()</a></code>,
+<code><a href="crop_video.html">crop_video()</a></code>,
+<code><a href="crop_video_batch.html">crop_video_batch()</a></code>,
+<code><a href="extract_audio.html">extract_audio()</a></code>,
+<code><a href="extract_audio_batch.html">extract_audio_batch()</a></code>,
+<code><a href="format_for_web.html">format_for_web()</a></code>,
+<code><a href="format_for_web_batch.html">format_for_web_batch()</a></code>,
+<code><a href="normalize_audio.html">normalize_audio()</a></code>,
+<code><a href="normalize_audio_batch.html">normalize_audio_batch()</a></code>,
+<code><a href="picture_in_picture.html">picture_in_picture()</a></code>,
+<code><a href="picture_in_picture_batch.html">picture_in_picture_batch()</a></code>,
+<code><a href="segment_video.html">segment_video()</a></code>,
+<code><a href="segment_video_batch.html">segment_video_batch()</a></code>,
+<code><a href="separate_audio_video.html">separate_audio_video()</a></code>,
+<code><a href="separate_audio_video_batch.html">separate_audio_video_batch()</a></code>,
+<code><a href="standardize_video.html">standardize_video()</a></code>,
+<code><a href="standardize_video_batch.html">standardize_video_batch()</a></code></p></div>
     </div>
 
     <div class="section level2">

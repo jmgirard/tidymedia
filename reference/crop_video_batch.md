@@ -84,19 +84,32 @@ crop_video_batch(
   The 0-based index of the audio track to carry into each output,
   counted *among that row's input's audio streams* – `0` is the first
   audio track, `1` the second, whatever their positions among the file's
-  streams. Applied to every row lacking an `audio_stream` column. `NULL`
-  (default) carries **every** audio track, which is also what
+  streams. `NULL` (default) carries **every** audio track. The argument
+  applies to every row lacking an `audio_stream` column; an `NA` cell in
+  that column means the same as `NULL` for that row, rather than falling
+  back to the argument. The every-track family reads `NULL` this way –
   [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
-  [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+  [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
+  [`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
+  [`crop_video`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
+  [`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
   and
-  [`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
-  do, and differs from
-  [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
+  [`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
+  plus their `_batch` siblings. The first-track family takes one track
+  only:
+  [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
+  [`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
   and
-  [`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
-  whose `NULL` takes the first track only. Naming a track the input does
-  not have is an FFmpeg error, not an R one. Subtitle and data streams
-  are not carried either way. (default = `NULL`)
+  [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
+  plus theirs. Subtitle and data streams are not carried either way.
+  Naming a track the input does not have is an FFmpeg error, not an R
+  one. See
+  [`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
+  for how this differs from `audio`, the input index on
+  [`compare_videos`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
+  and
+  [`picture_in_picture`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md).
+  (default = `NULL`)
 
 - run:
 
@@ -164,6 +177,30 @@ Other task verb functions:
 [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md),
 [`strip_metadata()`](https://jmgirard.github.io/tidymedia/reference/strip_metadata.md),
 [`strip_metadata_batch()`](https://jmgirard.github.io/tidymedia/reference/strip_metadata_batch.md)
+
+Other audio selection functions:
+[`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
+[`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),
+[`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md),
+[`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
+[`compare_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/compare_videos_batch.md),
+[`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
+[`convert_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/convert_audio_batch.md),
+[`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
+[`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
+[`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md),
+[`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
+[`format_for_web_batch()`](https://jmgirard.github.io/tidymedia/reference/format_for_web_batch.md),
+[`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
+[`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md),
+[`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
+[`picture_in_picture_batch()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture_batch.md),
+[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
+[`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md),
+[`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
+[`separate_audio_video_batch()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video_batch.md),
+[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
+[`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
 
 ## Examples
 

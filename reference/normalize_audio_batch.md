@@ -111,17 +111,42 @@ normalize_audio_batch(
 
 - audio_stream:
 
-  The 0-based index of the audio track to normalize in every row, unless
-  `jobs` carries an `audio_stream` column. `NULL` (default) normalizes
-  each input's **first** audio track, as
-  [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
-  does; an `NA` cell in the column says the same for that row. Under
-  `two_pass = TRUE` each row's analysis pass measures the same track its
-  correction pass normalizes. Every output holds one audio stream and no
-  video, whatever its container – so a derived output name keeping a
-  video extension (see `jobs`) yields a video container carrying audio
-  alone. A row whose input has no audio is an FFmpeg error. See
-  [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md).
+  The 0-based index of the audio track to normalize, counted *among that
+  row's input's audio streams* – `0` is the first audio track, `1` the
+  second, whatever their positions among the file's streams. `NULL`
+  (default) normalizes the **first** audio track. The argument applies
+  to every row lacking an `audio_stream` column; an `NA` cell in that
+  column means the same as `NULL` for that row, rather than falling back
+  to the argument. The first-track family reads `NULL` this way –
+  [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
+  [`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
+  and
+  [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
+  plus their `_batch` siblings. The every-track family keeps them all
+  instead:
+  [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
+  [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
+  [`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
+  [`crop_video`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
+  [`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
+  and
+  [`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
+  plus theirs. This verb reads `NULL` the first-track way because the
+  two-pass analysis produces one measurement per audio track while the
+  correction takes a single set, so normalizing several tracks at once
+  would apply one track's measurements to all of them. Under
+  `two_pass = TRUE` the analysis pass measures this same track. Only the
+  named track reaches the output, and no video does – whatever the
+  container, so an output name that keeps a video extension yields a
+  video file carrying audio alone. An input with no audio at all is an
+  FFmpeg error. Naming a track the input does not have is an FFmpeg
+  error, not an R one. See
+  [`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
+  for how this differs from `audio`, the input index on
+  [`compare_videos`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
+  and
+  [`picture_in_picture`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md).
+  (default = `NULL`)
 
 - run:
 
@@ -209,6 +234,30 @@ Other task verb functions:
 [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md),
 [`strip_metadata()`](https://jmgirard.github.io/tidymedia/reference/strip_metadata.md),
 [`strip_metadata_batch()`](https://jmgirard.github.io/tidymedia/reference/strip_metadata_batch.md)
+
+Other audio selection functions:
+[`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
+[`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),
+[`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md),
+[`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
+[`compare_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/compare_videos_batch.md),
+[`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
+[`convert_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/convert_audio_batch.md),
+[`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
+[`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md),
+[`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
+[`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md),
+[`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
+[`format_for_web_batch()`](https://jmgirard.github.io/tidymedia/reference/format_for_web_batch.md),
+[`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
+[`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
+[`picture_in_picture_batch()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture_batch.md),
+[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
+[`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md),
+[`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
+[`separate_audio_video_batch()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video_batch.md),
+[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
+[`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
 
 ## Examples
 

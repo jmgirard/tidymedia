@@ -166,16 +166,7 @@ binary under <code>run = FALSE</code>.</p></dd>
 
 
 <dt id="arg-audio-stream">audio_stream<a class="anchor" aria-label="anchor" href="#arg-audio-stream"></a></dt>
-<dd><p>The 0-based index of the audio track to normalize in
-every row, unless <code>jobs</code> carries an <code>audio_stream</code> column.
-<code>NULL</code> (default) normalizes each input's <strong>first</strong> audio track,
-as <code><a href="normalize_audio.html">normalize_audio</a></code> does; an <code>NA</code> cell in the column says
-the same for that row. Under <code>two_pass = TRUE</code> each row's analysis
-pass measures the same track its correction pass normalizes. Every output
-holds one audio stream and no video, whatever its container – so a derived
-output name keeping a video extension (see <code>jobs</code>) yields a video
-container carrying audio alone. A row whose input has no audio is an FFmpeg
-error. See <code><a href="normalize_audio.html">normalize_audio</a></code>.</p></dd>
+<dd><p>The 0-based index of the audio track to normalize, counted <em>among that row's input's audio streams</em> – <code>0</code> is the first audio track, <code>1</code> the second, whatever their positions among the file's streams. <code>NULL</code> (default) normalizes the <strong>first</strong> audio track. The argument applies to every row lacking an <code>audio_stream</code> column; an <code>NA</code> cell in that column means the same as <code>NULL</code> for that row, rather than falling back to the argument. The first-track family reads <code>NULL</code> this way – <code><a href="extract_audio.html">extract_audio</a></code>, <code><a href="convert_audio.html">convert_audio</a></code> and <code><a href="normalize_audio.html">normalize_audio</a></code>, plus their <code>_batch</code> siblings. The every-track family keeps them all instead: <code><a href="separate_audio_video.html">separate_audio_video</a></code>, <code><a href="standardize_video.html">standardize_video</a></code>, <code><a href="anonymize_video.html">anonymize_video</a></code>, <code><a href="crop_video.html">crop_video</a></code>, <code><a href="segment_video.html">segment_video</a></code> and <code><a href="format_for_web.html">format_for_web</a></code>, plus theirs. This verb reads <code>NULL</code> the first-track way because the two-pass analysis produces one measurement per audio track while the correction takes a single set, so normalizing several tracks at once would apply one track's measurements to all of them. Under <code>two_pass = TRUE</code> the analysis pass measures this same track. Only the named track reaches the output, and no video does – whatever the container, so an output name that keeps a video extension yields a video file carrying audio alone. An input with no audio at all is an FFmpeg error. Naming a track the input does not have is an FFmpeg error, not an R one. See <code><a href="audio_stream.html">audio_stream</a></code> for how this differs from <code>audio</code>, the input index on <code><a href="compare_videos.html">compare_videos</a></code> and <code><a href="picture_in_picture.html">picture_in_picture</a></code>. (default = <code>NULL</code>)</p></dd>
 
 
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>
@@ -255,7 +246,30 @@ batch runner and the arguments forwarded through <code>...</code>;
 <code><a href="standardize_video.html">standardize_video()</a></code>,
 <code><a href="standardize_video_batch.html">standardize_video_batch()</a></code>,
 <code><a href="strip_metadata.html">strip_metadata()</a></code>,
-<code><a href="strip_metadata_batch.html">strip_metadata_batch()</a></code></p></div>
+<code><a href="strip_metadata_batch.html">strip_metadata_batch()</a></code></p>
+<p>Other audio selection functions:
+<code><a href="anonymize_video.html">anonymize_video()</a></code>,
+<code><a href="anonymize_video_batch.html">anonymize_video_batch()</a></code>,
+<code><a href="audio_stream.html">audio_stream</a></code>,
+<code><a href="compare_videos.html">compare_videos()</a></code>,
+<code><a href="compare_videos_batch.html">compare_videos_batch()</a></code>,
+<code><a href="convert_audio.html">convert_audio()</a></code>,
+<code><a href="convert_audio_batch.html">convert_audio_batch()</a></code>,
+<code><a href="crop_video.html">crop_video()</a></code>,
+<code><a href="crop_video_batch.html">crop_video_batch()</a></code>,
+<code><a href="extract_audio.html">extract_audio()</a></code>,
+<code><a href="extract_audio_batch.html">extract_audio_batch()</a></code>,
+<code><a href="format_for_web.html">format_for_web()</a></code>,
+<code><a href="format_for_web_batch.html">format_for_web_batch()</a></code>,
+<code><a href="normalize_audio.html">normalize_audio()</a></code>,
+<code><a href="picture_in_picture.html">picture_in_picture()</a></code>,
+<code><a href="picture_in_picture_batch.html">picture_in_picture_batch()</a></code>,
+<code><a href="segment_video.html">segment_video()</a></code>,
+<code><a href="segment_video_batch.html">segment_video_batch()</a></code>,
+<code><a href="separate_audio_video.html">separate_audio_video()</a></code>,
+<code><a href="separate_audio_video_batch.html">separate_audio_video_batch()</a></code>,
+<code><a href="standardize_video.html">standardize_video()</a></code>,
+<code><a href="standardize_video_batch.html">standardize_video_batch()</a></code></p></div>
     </div>
 
     <div class="section level2">

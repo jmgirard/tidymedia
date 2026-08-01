@@ -55,6 +55,39 @@ crop_video(video, "cropped.mp4", width = 160, height = 120, run = FALSE)
 #> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:a copy -map \"0:v?\" -map \"0:a?\" \"cropped.mp4\""
 ```
 
+### Choosing an audio track
+
+A recording with more than one audio track — a room mic and a lapel mic,
+say — needs you to say which one you mean, or FFmpeg will decide for
+you. Every single-input verb that selects an audio track takes the same
+`audio_stream` argument: a 0-based index counted *among that file’s
+audio streams*, so `1` is its second audio track whatever position it
+holds among the file’s streams overall.
+
+``` r
+
+extract_audio(video, "lapel.m4a", audio_stream = 1, run = FALSE)
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -vn -map \"0:a:1\" \"lapel.m4a\""
+```
+
+Leave it out and the default depends on what the verb is for. A verb
+that writes one audio stream by construction has to pick a track, so it
+takes the first; a verb that carries audio through can keep whatever the
+input holds, so it keeps every track. Compare the map arguments — one
+named track above, all of them here:
+
+``` r
+
+crop_video(video, "cropped.mp4", width = 160, height = 120, run = FALSE)
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:a copy -map \"0:v?\" -map \"0:a?\" \"cropped.mp4\""
+```
+
+[`?audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
+lists which verbs read it each way and is the one place that list is
+maintained. It also covers `audio` — a *different* 0-based index, over a
+verb’s inputs rather than over one file’s tracks, on the multi-input
+verbs below.
+
 For preprocessing a whole folder of files at once, every task verb has a
 batch sibling
 ([`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md),
@@ -176,9 +209,10 @@ ffm(c(video, video), "side_by_side.mp4") |>
 #> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -filter_complex \"[0:v][1:v]hstack=inputs=2:shortest=0[vout]\" -map \"[vout]\" \"side_by_side.mp4\""
 ```
 
-Each manages its own stream labels internally, so audio is dropped
-unless you map it back with `ffm_map("0:a")`. The task-verb layer wraps
-the common cases:
+Each manages its own stream labels internally, so *these multi-input
+builders* drop audio unless you map it back with `ffm_map("0:a")` — the
+single-input pass-through verbs above are the opposite, keeping every
+audio track by default. The task-verb layer wraps the common cases:
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
 for a side-by-side (or stacked) comparison and
 [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)

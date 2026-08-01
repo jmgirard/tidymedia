@@ -1,5 +1,14 @@
 # Package index
 
+## Concepts
+
+Background on arguments that recur across many verbs.
+
+- [`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
+  [`audio-tracks`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
+  [`audio_indices`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
+  : Audio track and audio input indices
+
 ## Layer 0: escape hatches
 
 Pass a raw argument string straight to the command-line tools. Use these

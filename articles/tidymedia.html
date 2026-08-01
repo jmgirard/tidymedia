@@ -103,11 +103,37 @@ then run it:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/crop_video.html">crop_video</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"cropped.mp4"</span>, width <span class="op">=</span> <span class="fl">160</span>, height <span class="op">=</span> <span class="fl">120</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:a copy -map \"0:v?\" -map \"0:a?\" \"cropped.mp4\""</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="choosing-an-audio-track">Choosing an audio track<a class="anchor" aria-label="anchor" href="#choosing-an-audio-track"></a>
+</h3>
+<p>A recording with more than one audio track — a room mic and a lapel
+mic, say — needs you to say which one you mean, or FFmpeg will decide
+for you. Every single-input verb that selects an audio track takes the
+same <code>audio_stream</code> argument: a 0-based index counted
+<em>among that file’s audio streams</em>, so <code>1</code> is its
+second audio track whatever position it holds among the file’s streams
+overall.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/extract_audio.html">extract_audio</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"lapel.m4a"</span>, audio_stream <span class="op">=</span> <span class="fl">1</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -vn -map \"0:a:1\" \"lapel.m4a\""</span></span></code></pre></div>
+<p>Leave it out and the default depends on what the verb is for. A verb
+that writes one audio stream by construction has to pick a track, so it
+takes the first; a verb that carries audio through can keep whatever the
+input holds, so it keeps every track. Compare the map arguments — one
+named track above, all of them here:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/crop_video.html">crop_video</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"cropped.mp4"</span>, width <span class="op">=</span> <span class="fl">160</span>, height <span class="op">=</span> <span class="fl">120</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:a copy -map \"0:v?\" -map \"0:a?\" \"cropped.mp4\""</span></span></code></pre></div>
+<p><code><a href="../reference/audio_stream.html">?audio_stream</a></code> lists which verbs read it each way and is
+the one place that list is maintained. It also covers <code>audio</code>
+— a <em>different</em> 0-based index, over a verb’s inputs rather than
+over one file’s tracks, on the multi-input verbs below.</p>
 <p>For preprocessing a whole folder of files at once, every task verb
 has a batch sibling (<code><a href="../reference/extract_audio_batch.html">extract_audio_batch()</a></code>,
 <code><a href="../reference/crop_video_batch.html">crop_video_batch()</a></code>, …); see <code><a href="../articles/batch.html">vignette("batch")</a></code>.
 For an end-to-end research pipeline that chains many verbs together, see
 <code><a href="../articles/workflow.html">vignette("workflow")</a></code>.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="the-three-layers">The three layers<a class="anchor" aria-label="anchor" href="#the-three-layers"></a>
@@ -144,7 +170,7 @@ then add steps with <code>|&gt;</code>. Each <code>ffm_*</code> verb
 records an instruction; nothing runs until you ask it to. Calling
 <code><a href="../reference/ffm_compile.html">ffm_compile()</a></code> turns the pipeline into the exact FFmpeg
 command it represents:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ffm.html">ffm</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"output.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_trim.html">ffm_trim</a></span><span class="op">(</span>start <span class="op">=</span> <span class="fl">1</span>, end <span class="op">=</span> <span class="fl">5</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_crop.html">ffm_crop</a></span><span class="op">(</span>width <span class="op">=</span> <span class="fl">160</span>, height <span class="op">=</span> <span class="fl">120</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -153,7 +179,7 @@ command it represents:</p>
 <span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"trim=start=1:end=5,setpts=PTS-STARTPTS,crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 \"output.mp4\""</span></span></code></pre></div>
 <p>Printing a pipeline shows the same compiled command, so you can
 eyeball a pipeline at any point:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ffm.html">ffm</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"output.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_scale.html">ffm_scale</a></span><span class="op">(</span>width <span class="op">=</span> <span class="fl">320</span>, height <span class="op">=</span> <span class="fl">240</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_pixel_format.html">ffm_pixel_format</a></span><span class="op">(</span><span class="st">"yuv420p"</span><span class="op">)</span></span>
@@ -172,7 +198,7 @@ slower) or <strong>fast and lossless</strong> (a stream copy that snaps
 to keyframes). <code><a href="../reference/ffm_seek.html">ffm_seek()</a></code> exposes both via its
 <code>reencode</code> argument, and pairs naturally with
 <code><a href="../reference/ffm_copy.html">ffm_copy()</a></code> for the fast path:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fast, lossless cut</span></span>
 <span><span class="fu"><a href="../reference/ffm.html">ffm</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"output.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_seek.html">ffm_seek</a></span><span class="op">(</span>start <span class="op">=</span> <span class="fl">1</span>, end <span class="op">=</span> <span class="fl">5</span>, reencode <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -193,26 +219,28 @@ files to <code><a href="../reference/ffm.html">ffm()</a></code>, then combine th
 <code><a href="../reference/ffm_vstack.html">ffm_vstack()</a></code>, composite one over another with
 <code><a href="../reference/ffm_overlay.html">ffm_overlay()</a></code>, or join them end-to-end with
 <code><a href="../reference/ffm_concat.html">ffm_concat()</a></code>:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ffm.html">ffm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">video</span>, <span class="va">video</span><span class="op">)</span>, <span class="st">"side_by_side.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_hstack.html">ffm_hstack</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_compile.html">ffm_compile</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -filter_complex \"[0:v][1:v]hstack=inputs=2:shortest=0[vout]\" -map \"[vout]\" \"side_by_side.mp4\""</span></span></code></pre></div>
-<p>Each manages its own stream labels internally, so audio is dropped
-unless you map it back with <code>ffm_map("0:a")</code>. The task-verb
+<p>Each manages its own stream labels internally, so <em>these
+multi-input builders</em> drop audio unless you map it back with
+<code>ffm_map("0:a")</code> — the single-input pass-through verbs above
+are the opposite, keeping every audio track by default. The task-verb
 layer wraps the common cases: <code><a href="../reference/compare_videos.html">compare_videos()</a></code> for a
 side-by-side (or stacked) comparison and
 <code><a href="../reference/picture_in_picture.html">picture_in_picture()</a></code> for an inset overlay. Both take an
 <code>audio</code> index naming the input whose track to carry, and
 stream-copy that track through untouched unless you name an encoder with
 <code>audio_codec</code>.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/compare_videos.html">compare_videos</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">video</span>, <span class="va">video</span><span class="op">)</span>, <span class="st">"compare.mp4"</span>, audio <span class="op">=</span> <span class="fl">0</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -filter_complex \"[0:v][1:v]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[0s][1s];[1s][0s]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[1s][0s];[0s][1s]hstack,setsar=1[vout]\" -codec:a copy -map \"[vout]\" -map \"0:a\" \"compare.mp4\""</span></span></code></pre></div>
 <p>The builder stays deliberately linear — one input chain, sequential
 filters, one output — so full FFmpeg filtergraphs are out of scope. When
 you need one, reach for the Layer 0 escape hatch:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Layer 0: raw arguments passed straight to FFmpeg</span></span>
 <span><span class="fu"><a href="../reference/ffmpeg.html">ffmpeg</a></span><span class="op">(</span><span class="st">"-version"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span></span>
 <span><span class="co">#&gt; [1] "ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers"</span></span></code></pre></div>

@@ -30,6 +30,7 @@ VBR
 WebM
 anonymization
 anonymize
+arity
 assertthat
 auditable
 bitstream
@@ -104,4 +105,5 @@ transcode
 transcodes
 transcoding
 unexecuted
+unselected
 zsh

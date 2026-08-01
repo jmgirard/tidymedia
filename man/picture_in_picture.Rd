@@ -36,8 +36,7 @@ preserved (\code{0 < scale <= 1}). (default = \code{0.25})}
 \item{margin}{The gap in pixels between the inset and the video edges (ignored
 for \code{position = "center"}). (default = \code{16})}
 
-\item{audio}{The 0-based index of the input whose audio to keep, or
-\code{NULL} to drop audio. (default = \code{NULL})}
+\item{audio}{The 0-based index of the \emph{input} whose audio to keep -- \code{0} is the first file passed in, \code{1} the second. This counts the verb's inputs, not one input's audio streams, so it is a different index from \code{audio_stream} on the single-input verbs. \code{NULL} (default) maps no audio at all, so the output is silent -- unlike \code{audio_stream = NULL}, which always maps something. Naming an input the call does not have is an R error, raised before FFmpeg runs. See \code{\link{audio_stream}}. (default = \code{NULL})}
 
 \item{video_codec}{A string naming the output video codec, or \code{NULL}
 (default) to leave it unset, so the output container's default encoder is
@@ -123,5 +122,30 @@ Other task verb functions:
 \code{\link[=standardize_video_batch]{standardize_video_batch()}},
 \code{\link[=strip_metadata]{strip_metadata()}},
 \code{\link[=strip_metadata_batch]{strip_metadata_batch()}}
+
+Other audio selection functions:
+\code{\link[=anonymize_video]{anonymize_video()}},
+\code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
+\code{\link{audio_stream}},
+\code{\link[=compare_videos]{compare_videos()}},
+\code{\link[=compare_videos_batch]{compare_videos_batch()}},
+\code{\link[=convert_audio]{convert_audio()}},
+\code{\link[=convert_audio_batch]{convert_audio_batch()}},
+\code{\link[=crop_video]{crop_video()}},
+\code{\link[=crop_video_batch]{crop_video_batch()}},
+\code{\link[=extract_audio]{extract_audio()}},
+\code{\link[=extract_audio_batch]{extract_audio_batch()}},
+\code{\link[=format_for_web]{format_for_web()}},
+\code{\link[=format_for_web_batch]{format_for_web_batch()}},
+\code{\link[=normalize_audio]{normalize_audio()}},
+\code{\link[=normalize_audio_batch]{normalize_audio_batch()}},
+\code{\link[=picture_in_picture_batch]{picture_in_picture_batch()}},
+\code{\link[=segment_video]{segment_video()}},
+\code{\link[=segment_video_batch]{segment_video_batch()}},
+\code{\link[=separate_audio_video]{separate_audio_video()}},
+\code{\link[=separate_audio_video_batch]{separate_audio_video_batch()}},
+\code{\link[=standardize_video]{standardize_video()}},
+\code{\link[=standardize_video_batch]{standardize_video_batch()}}
 }
+\concept{audio selection functions}
 \concept{task verb functions}

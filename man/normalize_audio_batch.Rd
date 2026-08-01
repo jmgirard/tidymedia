@@ -86,16 +86,7 @@ logical \code{silent} column (with \code{success = FALSE} and no output
 written), and a warning names them. The single-pass default touches no
 binary under \code{run = FALSE}.}
 
-\item{audio_stream}{The 0-based index of the audio track to normalize in
-every row, unless \code{jobs} carries an \code{audio_stream} column.
-\code{NULL} (default) normalizes each input's \strong{first} audio track,
-as \code{\link{normalize_audio}} does; an \code{NA} cell in the column says
-the same for that row. Under \code{two_pass = TRUE} each row's analysis
-pass measures the same track its correction pass normalizes. Every output
-holds one audio stream and no video, whatever its container -- so a derived
-output name keeping a video extension (see \code{jobs}) yields a video
-container carrying audio alone. A row whose input has no audio is an FFmpeg
-error. See \code{\link{normalize_audio}}.}
+\item{audio_stream}{The 0-based index of the audio track to normalize, counted \emph{among that row's input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) normalizes the \strong{first} audio track. The argument applies to every row lacking an \code{audio_stream} column; an \code{NA} cell in that column means the same as \code{NULL} for that row, rather than falling back to the argument. The first-track family reads \code{NULL} this way -- \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus their \code{_batch} siblings. The every-track family keeps them all instead: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus theirs. This verb reads \code{NULL} the first-track way because the two-pass analysis produces one measurement per audio track while the correction takes a single set, so normalizing several tracks at once would apply one track's measurements to all of them. Under \code{two_pass = TRUE} the analysis pass measures this same track. Only the named track reaches the output, and no video does -- whatever the container, so an output name that keeps a video extension yields a video file carrying audio alone. An input with no audio at all is an FFmpeg error. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
 \item{run}{A logical: run each input's command through FFmpeg (\code{TRUE},
 default) or only compile them for inspection (\code{FALSE}). Under
@@ -192,5 +183,30 @@ Other task verb functions:
 \code{\link[=standardize_video_batch]{standardize_video_batch()}},
 \code{\link[=strip_metadata]{strip_metadata()}},
 \code{\link[=strip_metadata_batch]{strip_metadata_batch()}}
+
+Other audio selection functions:
+\code{\link[=anonymize_video]{anonymize_video()}},
+\code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
+\code{\link{audio_stream}},
+\code{\link[=compare_videos]{compare_videos()}},
+\code{\link[=compare_videos_batch]{compare_videos_batch()}},
+\code{\link[=convert_audio]{convert_audio()}},
+\code{\link[=convert_audio_batch]{convert_audio_batch()}},
+\code{\link[=crop_video]{crop_video()}},
+\code{\link[=crop_video_batch]{crop_video_batch()}},
+\code{\link[=extract_audio]{extract_audio()}},
+\code{\link[=extract_audio_batch]{extract_audio_batch()}},
+\code{\link[=format_for_web]{format_for_web()}},
+\code{\link[=format_for_web_batch]{format_for_web_batch()}},
+\code{\link[=normalize_audio]{normalize_audio()}},
+\code{\link[=picture_in_picture]{picture_in_picture()}},
+\code{\link[=picture_in_picture_batch]{picture_in_picture_batch()}},
+\code{\link[=segment_video]{segment_video()}},
+\code{\link[=segment_video_batch]{segment_video_batch()}},
+\code{\link[=separate_audio_video]{separate_audio_video()}},
+\code{\link[=separate_audio_video_batch]{separate_audio_video_batch()}},
+\code{\link[=standardize_video]{standardize_video()}},
+\code{\link[=standardize_video_batch]{standardize_video_batch()}}
 }
+\concept{audio selection functions}
 \concept{task verb functions}

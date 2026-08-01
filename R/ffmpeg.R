@@ -487,14 +487,7 @@ extract_audio_pipeline <- function(input, output, audio_codec = "copy",
 #'   emit no \code{-codec:a} and let the output container's default encoder
 #'   decide — useful when the source codec cannot be copied into the extension
 #'   you asked for.
-#' @param audio_stream The 0-based index of the audio track to take, counted
-#'   \emph{among the input's audio streams} — \code{0} is the first audio track,
-#'   \code{1} the second, whatever their positions among the file's streams.
-#'   \code{NULL} (default) takes the first audio track -- unlike
-#'   \code{\link{separate_audio_video}}, \code{\link{standardize_video}} and
-#'   \code{\link{anonymize_video}}, whose \code{NULL} keeps every track.
-#'   Naming a track the input
-#'   does not have is an FFmpeg error, not an R one.
+#' @param audio_stream `r audio_stream_param("take", "takes", "first")`
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
@@ -814,19 +807,7 @@ ffmpeg_exit_status <- function(cnd) {
 #'   unavailable, encode in software with a message (\code{TRUE}) instead of
 #'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
 #'   fallback leaves the codec unset rather than injecting one.
-#' @param audio_stream The 0-based index of the audio track to write to
-#'   \code{audiofile}, counted among \code{infile}'s \emph{audio} streams only
-#'   (\code{0} is the first audio track, \code{1} the second) — not the
-#'   \code{index} column of \code{\link{probe_audio}}, which counts all streams.
-#'   \code{NULL} (default) takes \strong{every} audio track, which is what this
-#'   verb has always done: a container that holds several (\code{.mka},
-#'   \code{.m4a}) receives them all, while a single-stream container
-#'   (\code{.aac}, \code{.mp3}, \code{.wav}) makes FFmpeg fail — name a track to
-#'   write one of those. This differs from \code{\link{extract_audio}} and
-#'   \code{\link{convert_audio}}, whose \code{NULL} takes the first track only.
-#'   The pass-through verbs \code{\link{standardize_video}} and
-#'   \code{\link{anonymize_video}} read \code{NULL} the same way this one
-#'   does. \code{videofile} is never affected.
+#' @param audio_stream `r audio_stream_param("write to \\code{audiofile}", "keeps", "every", extra = audio_stream_extras$separation_container)`
 #' @param run A logical: run the commands through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled commands without running them (\code{FALSE}).
 #' @return A named character vector of the two compiled commands
@@ -971,14 +952,7 @@ convert_audio_pipeline <- function(input, output, audio_codec = NULL,
 #'   \code{outfile} extension and encoded at highest VBR quality. Unlike the
 #'   other transform verbs, \code{NULL} here is \emph{not} the "leave the codec
 #'   unset" sentinel — it selects \code{-q:a 0}.
-#' @param audio_stream The 0-based index of the audio track to take, counted
-#'   \emph{among the input's audio streams} — \code{0} is the first audio track,
-#'   \code{1} the second, whatever their positions among the file's streams.
-#'   \code{NULL} (default) takes the first audio track -- unlike
-#'   \code{\link{separate_audio_video}}, \code{\link{standardize_video}} and
-#'   \code{\link{anonymize_video}}, whose \code{NULL} keeps every track.
-#'   Naming a track the input
-#'   does not have is an FFmpeg error, not an R one.
+#' @param audio_stream `r audio_stream_param("take", "takes", "first")`
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
@@ -1103,16 +1077,7 @@ crop_video_pipeline <- function(input, output, width, height,
 #'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
 #'   fallback leaves the codec unset rather than picking one, so the codec never
 #'   changes silently.
-#' @param audio_stream The 0-based index of the audio track to carry into the
-#'   output, counted \emph{among the input's audio streams} -- \code{0} is the
-#'   first audio track, \code{1} the second, whatever their positions among the
-#'   file's streams. \code{NULL} (default) carries \strong{every} audio track,
-#'   which is also what \code{\link{separate_audio_video}},
-#'   \code{\link{standardize_video}} and \code{\link{anonymize_video}} do, and
-#'   differs from \code{\link{extract_audio}} and \code{\link{convert_audio}},
-#'   whose \code{NULL} takes the first track only. Naming a track the input does
-#'   not have is an FFmpeg error, not an R one. Subtitle and data streams are not
-#'   carried either way. (default = \code{NULL})
+#' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
@@ -1192,18 +1157,7 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
 #'   unavailable, re-encode with software libx264 and a message (\code{TRUE})
 #'   instead of aborting (\code{FALSE}, default).
-#' @param audio_stream The 0-based index of the audio track to carry into the
-#'   output, counted \emph{among the input's audio streams} -- \code{0} is the
-#'   first audio track, \code{1} the second, whatever their positions among the
-#'   file's streams. \code{NULL} (default) carries \strong{every} audio track,
-#'   which is also what \code{\link{separate_audio_video}},
-#'   \code{\link{standardize_video}}, \code{\link{anonymize_video}},
-#'   \code{\link{crop_video}} and \code{\link{segment_video}} do, and differs
-#'   from \code{\link{extract_audio}}, \code{\link{convert_audio}} and
-#'   \code{\link{normalize_audio}}, whose \code{NULL} takes the first track
-#'   only. Naming a track the input does not have is an FFmpeg error, not an R
-#'   one. Subtitle and data streams are not carried either way. (default =
-#'   \code{NULL})
+#' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
@@ -1365,15 +1319,7 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #'   unavailable, re-encode with the software \code{video_codec} and a message
 #'   (\code{TRUE}) instead of aborting (\code{FALSE}, default). Keeps output
 #'   reproducible by never changing the codec silently.
-#' @param audio_stream The 0-based index of the audio track to carry into the
-#'   output, counted \emph{among the input's audio streams} -- \code{0} is the
-#'   first audio track, \code{1} the second, whatever their positions among the
-#'   file's streams. \code{NULL} (default) carries \strong{every} audio track,
-#'   which is also what \code{\link{separate_audio_video}} does, and differs
-#'   from \code{\link{extract_audio}} and \code{\link{convert_audio}}, whose
-#'   \code{NULL} takes the first track only. Naming a track the input does not
-#'   have is an FFmpeg error, not an R one. Subtitle and data streams are not
-#'   carried either way. (default = \code{NULL})
+#' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
@@ -1533,15 +1479,7 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
 #'   unavailable, re-encode with the software \code{video_codec} and a message
 #'   (\code{TRUE}) instead of aborting (\code{FALSE}, default). Keeps output
 #'   reproducible by never changing the codec silently.
-#' @param audio_stream The 0-based index of the audio track to carry into the
-#'   output, counted \emph{among the input's audio streams} -- \code{0} is the
-#'   first audio track, \code{1} the second, whatever their positions among the
-#'   file's streams. \code{NULL} (default) carries \strong{every} audio track,
-#'   which is also what \code{\link{separate_audio_video}} does, and differs
-#'   from \code{\link{extract_audio}} and \code{\link{convert_audio}}, whose
-#'   \code{NULL} takes the first track only. Naming a track the input does not
-#'   have is an FFmpeg error, not an R one. Subtitle and data streams are not
-#'   carried either way. (default = \code{NULL})
+#' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
@@ -1789,13 +1727,7 @@ derive_anonymized_names <- function(input) {
 #'   but nvenc is unavailable, re-encode with the software \code{video_codec} and
 #'   a message (\code{TRUE}) instead of aborting (\code{FALSE}, default).
 #'   Batch-wide, not a per-row column.
-#' @param audio_stream The 0-based index of the audio track to carry, applied to
-#'   every row unless \code{jobs} carries an \code{audio_stream} column, in
-#'   which case \code{NA} in a cell keeps that row on \strong{every} audio
-#'   track. The index counts \emph{among each input's audio streams}.
-#'   \code{NULL} (default) carries every audio track. See
-#'   \code{\link{standardize_video}} for how this differs from the extraction
-#'   verbs' \code{NULL}. (default = \code{NULL})
+#' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
 #'   default) or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: anonymize in
@@ -2041,21 +1973,7 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #'   analysis pass measures its loudness as \code{-inf}; normalizing silence to
 #'   a target is undefined, so two-pass aborts with a clear error (the
 #'   single-pass default leaves silence untouched).
-#' @param audio_stream The 0-based index of the audio track to normalize,
-#'   counted \emph{among the input's audio streams} -- \code{0} is the first
-#'   audio track, \code{1} the second, whatever their positions among the file's
-#'   streams. \code{NULL} (default) normalizes the \strong{first} audio track,
-#'   as \code{\link{extract_audio}} and \code{\link{convert_audio}} do, and
-#'   differs from the pass-through verbs (\code{\link{format_for_web}},
-#'   \code{\link{standardize_video}}, \code{\link{crop_video}} and their
-#'   siblings), whose \code{NULL} keeps every track. This verb reads it the
-#'   first-track way because the two-pass analysis produces one measurement per
-#'   audio track while the correction takes a single set, so normalizing several
-#'   tracks at once would apply one track's measurements to all of them. Only
-#'   the named track reaches the output, and no video does.
-#'   Under \code{two_pass = TRUE} the analysis pass measures this same track.
-#'   Naming a track the input does not have is an FFmpeg error, not an R one.
-#'   (default = \code{NULL})
+#' @param audio_stream `r audio_stream_param("normalize", "normalizes", "first", extra = audio_stream_extras$normalize_one_track)`
 #' @param run A logical: run the (correction) command through FFmpeg
 #'   (\code{TRUE}, default) or return the compiled command without running it
 #'   (\code{FALSE}). Under \code{two_pass = TRUE} this gates only the correction
@@ -2622,16 +2540,7 @@ apply_audio_codec <- function(object, audio_codec, call = rlang::caller_env()) {
 #'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
 #'   fallback leaves the codec unset rather than picking one, so the codec never
 #'   changes silently.
-#' @param audio_stream The 0-based index of the audio track to carry into the
-#'   output, counted \emph{among the input's audio streams} -- \code{0} is the
-#'   first audio track, \code{1} the second, whatever their positions among the
-#'   file's streams. \code{NULL} (default) carries \strong{every} audio track,
-#'   which is also what \code{\link{separate_audio_video}},
-#'   \code{\link{standardize_video}} and \code{\link{anonymize_video}} do, and
-#'   differs from \code{\link{extract_audio}} and \code{\link{convert_audio}},
-#'   whose \code{NULL} takes the first track only. Naming a track the input does
-#'   not have is an FFmpeg error, not an R one. Subtitle and data streams are not
-#'   carried either way. (default = \code{NULL})
+#' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each segment's command (\code{TRUE}, default) or
 #'   only compile them (\code{FALSE}).
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: cut segments in
@@ -2868,17 +2777,7 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #'   with a stream-copy row on its own — even one naming no codec — so a jobs
 #'   table mixing \code{reencode = FALSE} rows with GPU encoding must be split
 #'   into separate calls.
-#' @param audio_stream The 0-based index of the audio track to carry into each
-#'   output, counted \emph{among that row's input's audio streams} -- \code{0}
-#'   is the first audio track, \code{1} the second, whatever their positions
-#'   among the file's streams. Applied to every row lacking an
-#'   \code{audio_stream} column. \code{NULL} (default) carries \strong{every}
-#'   audio track, which is also what \code{\link{separate_audio_video}},
-#'   \code{\link{standardize_video}} and \code{\link{anonymize_video}} do, and
-#'   differs from \code{\link{extract_audio}} and \code{\link{convert_audio}},
-#'   whose \code{NULL} takes the first track only. Naming a track the input does
-#'   not have is an FFmpeg error, not an R one. Subtitle and data streams are not
-#'   carried either way. (default = \code{NULL})
+#' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each segment's command through FFmpeg
 #'   (\code{TRUE}, default) or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: cut segments in
@@ -3394,13 +3293,7 @@ derive_standardized_names <- function(input) {
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
 #'   unavailable, re-encode with the software \code{video_codec} and a message
 #'   (\code{TRUE}) instead of aborting (\code{FALSE}, default).
-#' @param audio_stream The 0-based index of the audio track to carry, applied to
-#'   every row unless \code{jobs} carries an \code{audio_stream} column, in
-#'   which case \code{NA} in a cell keeps that row on \strong{every} audio
-#'   track. The index counts \emph{among each input's audio streams}.
-#'   \code{NULL} (default) carries every audio track. See
-#'   \code{\link{standardize_video}} for how this differs from the extraction
-#'   verbs' \code{NULL}. (default = \code{NULL})
+#' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
 #'   default) or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: standardize in
@@ -3774,16 +3667,7 @@ derive_normalized_names <- function(input) {
 #'   logical \code{silent} column (with \code{success = FALSE} and no output
 #'   written), and a warning names them. The single-pass default touches no
 #'   binary under \code{run = FALSE}.
-#' @param audio_stream The 0-based index of the audio track to normalize in
-#'   every row, unless \code{jobs} carries an \code{audio_stream} column.
-#'   \code{NULL} (default) normalizes each input's \strong{first} audio track,
-#'   as \code{\link{normalize_audio}} does; an \code{NA} cell in the column says
-#'   the same for that row. Under \code{two_pass = TRUE} each row's analysis
-#'   pass measures the same track its correction pass normalizes. Every output
-#'   holds one audio stream and no video, whatever its container -- so a derived
-#'   output name keeping a video extension (see \code{jobs}) yields a video
-#'   container carrying audio alone. A row whose input has no audio is an FFmpeg
-#'   error. See \code{\link{normalize_audio}}.
+#' @param audio_stream `r audio_stream_param("normalize", "normalizes", "first", batch = TRUE, extra = audio_stream_extras$normalize_one_track)`
 #' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
 #'   default) or only compile them for inspection (\code{FALSE}). Under
 #'   \code{two_pass = TRUE} this gates only the correction pass; the analysis
@@ -4318,12 +4202,7 @@ check_fanin_jobs <- function(jobs, min_inputs = 1L, verb = NULL,
 #'   audio losslessly; name an encoder (e.g. \code{"aac"}) to transcode; or pass
 #'   \code{NULL} to emit no \code{-codec:a} and let the output container's
 #'   default encoder decide.
-#' @param audio_stream The 0-based index of the audio track to take, applied to
-#'   every row unless \code{jobs} carries an \code{audio_stream} column, in
-#'   which case \code{NA} in a cell keeps that row on the first audio track.
-#'   The index counts \emph{among each input's audio streams}. \code{NULL}
-#'   (default) takes the first audio track. See \code{\link{extract_audio}}
-#'   for the verb families whose \code{NULL} keeps every track instead.
+#' @param audio_stream `r audio_stream_param("take", "takes", "first", batch = TRUE)`
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -4440,12 +4319,7 @@ extract_audio_batch <- function(jobs, audio_codec = "copy",
 #'   \code{jobs} carries an \code{audio_codec} column. \code{NULL} (default)
 #'   infers the codec from each \code{output} extension at highest VBR quality;
 #'   name a codec (e.g. \code{"aac"}, \code{"flac"}) to pin \code{-c:a}.
-#' @param audio_stream The 0-based index of the audio track to take, applied to
-#'   every row unless \code{jobs} carries an \code{audio_stream} column, in
-#'   which case \code{NA} in a cell keeps that row on the first audio track.
-#'   The index counts \emph{among each input's audio streams}. \code{NULL}
-#'   (default) takes the first audio track. See \code{\link{extract_audio}}
-#'   for the verb families whose \code{NULL} keeps every track instead.
+#' @param audio_stream `r audio_stream_param("take", "takes", "first", batch = TRUE)`
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -4603,17 +4477,7 @@ derive_web_names <- function(input) {
 #' @param hardware,fallback The encoder backend and its fallback behavior,
 #'   applied to the whole batch (a property of the machine, not of a row, so
 #'   neither is read as a \code{jobs} column). See [crop_video()].
-#' @param audio_stream The 0-based index of the audio track to carry into each
-#'   output, counted \emph{among that row's input's audio streams} -- \code{0}
-#'   is the first audio track, \code{1} the second, whatever their positions
-#'   among the file's streams. Applied to every row lacking an
-#'   \code{audio_stream} column. \code{NULL} (default) carries \strong{every}
-#'   audio track, which is also what \code{\link{separate_audio_video}},
-#'   \code{\link{standardize_video}} and \code{\link{anonymize_video}} do, and
-#'   differs from \code{\link{extract_audio}} and \code{\link{convert_audio}},
-#'   whose \code{NULL} takes the first track only. Naming a track the input does
-#'   not have is an FFmpeg error, not an R one. Subtitle and data streams are not
-#'   carried either way. (default = \code{NULL})
+#' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -4737,12 +4601,7 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
 #'   unavailable, re-encode with software libx264 and a message (\code{TRUE})
 #'   instead of aborting (\code{FALSE}, default).
-#' @param audio_stream The 0-based index of the audio track to carry into every
-#'   output, unless \code{jobs} carries an \code{audio_stream} column.
-#'   \code{NULL} (default) carries \strong{every} audio track, as
-#'   \code{\link{format_for_web}} does; an \code{NA} cell in the column says the
-#'   same for that row. See \code{\link{format_for_web}} for how this differs
-#'   from the extraction verbs and from \code{\link{normalize_audio}}.
+#' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -4848,15 +4707,7 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #'   row whose video codec resolves to \code{"copy"} — including the default —
 #'   so a jobs table mixing copied and re-encoded video must be split into
 #'   separate calls.
-#' @param audio_stream The 0-based index of the audio track to write to every
-#'   \code{audiofile}, unless \code{jobs} carries an \code{audio_stream} column.
-#'   \code{NULL} (default) keeps \strong{every} audio track, as
-#'   \code{\link{separate_audio_video}} does, and as the pass-through verbs
-#'   \code{\link{standardize_video}} and \code{\link{anonymize_video}} do;
-#'   \code{\link{extract_audio}} and \code{\link{convert_audio}} read it the
-#'   other way, as the first track only. An \code{NA} cell in the column
-#'   says the same for that row. Only \code{audiofile} is affected — a
-#'   \code{videofile} always takes the input's video streams.
+#' @param audio_stream `r audio_stream_param("write to each \\code{audiofile}", "keeps", "every", batch = TRUE, extra = audio_stream_extras$separation_container)`
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}

@@ -100,7 +100,7 @@ no `_PACKAGE` sentinel) → new candidate row. Any behavior change.
 - [ ] T3 Add the `@family` tag and `@seealso` links across all twenty-two
       affected verbs; fix the two batch `@param audio` blocks and the two
       missing "FFmpeg error" sentences.
-- [ ] T4 Introduce the shared `@param audio_stream` source — an
+- [x] T4 Introduce the shared `@param audio_stream` source — an
       `@inheritParams` donor or a `man-roxygen` template, neither of which the
       package has today — and collapse the eighteen copies onto it, keeping the
       per-family differences that are genuinely per-family.
@@ -122,6 +122,7 @@ no `_PACKAGE` sentinel) → new candidate row. Any behavior change.
 - 2026-07-31: T1 done — `tests/testthat/test-audio-index-docs.R` enumerates `\item{}` parameter names across `man/*.Rd` and demands a link to the concept topic; red before the docs change (18 `audio_stream` topics and all 6 `audio` topics unlinked). It covers `ffm_codec()`/`ffm_copy()`'s non-index `audio` too rather than allowlisting them, so there is no second list to keep in step; it skips where `man/` is absent (a built tarball).
 - 2026-07-31: T2 done — `R/audio-stream-doc.R` carries the `audio_stream` topic (aliases `audio-tracks`, `audio_indices`, no `@keywords internal`) plus the shared-text functions T4 will consume; `_pkgdown.yml` gains a "Concepts" section and `pkgdown::check_pkgdown()` still reports no problems. The topic's own family sentence is generated from the same vectors the `@param` blocks will use, so the hub cannot drift from the spokes either.
 - 2026-07-31: minor amendment — AC1's two source cites for `audio = NULL` emitting no map were stale (`R/ffmpeg.R:5028` is now the codec-column reshape). Verified and corrected to `R/ffmpeg.R:5190` and `:5335`, the two `if (!is.null(audio))` map sites. Criterion substance unchanged. Also confirmed while there that an out-of-range `audio` is an R error (`:5271`, `:5419` bound it with `max =`), which the topic now states.
+- 2026-07-31: T4 done (taken before T3, a minor reorder: T3 edits the same eighteen blocks T4 rewrites wholesale, so doing T4 first avoided editing text about to be replaced). `audio_stream_param()` in `R/audio-stream-doc.R` now generates all eighteen `@param audio_stream` blocks through an inline `r` call; each verb supplies only its own action verb, family, batch flag and caveat. Net -167/+18 lines in `R/ffmpeg.R`, and the four blocks carrying stale sibling lists are now correct by construction. The scripted edit preserved `R/ffmpeg.R`'s CRLF endings deliberately (M49 review H1) and asserted 18 blocks matched before writing. Suite: 3237 pass, the one remaining failure is T3's `audio` half.
 
 ## Decisions
 

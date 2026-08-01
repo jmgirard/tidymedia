@@ -86,16 +86,7 @@ logical \code{silent} column (with \code{success = FALSE} and no output
 written), and a warning names them. The single-pass default touches no
 binary under \code{run = FALSE}.}
 
-\item{audio_stream}{The 0-based index of the audio track to normalize in
-every row, unless \code{jobs} carries an \code{audio_stream} column.
-\code{NULL} (default) normalizes each input's \strong{first} audio track,
-as \code{\link{normalize_audio}} does; an \code{NA} cell in the column says
-the same for that row. Under \code{two_pass = TRUE} each row's analysis
-pass measures the same track its correction pass normalizes. Every output
-holds one audio stream and no video, whatever its container -- so a derived
-output name keeping a video extension (see \code{jobs}) yields a video
-container carrying audio alone. A row whose input has no audio is an FFmpeg
-error. See \code{\link{normalize_audio}}.}
+\item{audio_stream}{The 0-based index of the audio track to normalize, counted \emph{among that row's input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) normalizes the \strong{first} audio track. The argument applies to every row lacking an \code{audio_stream} column; an \code{NA} cell in that column means the same as \code{NULL} for that row, rather than falling back to the argument. The extraction family reads \code{NULL} this way -- \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus their \code{_batch} siblings. The pass-through family keeps every track instead: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus theirs. This verb reads \code{NULL} the first-track way because the two-pass analysis produces one measurement per audio track while the correction takes a single set, so normalizing several tracks at once would apply one track's measurements to all of them. Under \code{two_pass = TRUE} the analysis pass measures this same track. Only the named track reaches the output, and no video does. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
 \item{run}{A logical: run each input's command through FFmpeg (\code{TRUE},
 default) or only compile them for inspection (\code{FALSE}). Under

@@ -76,12 +76,13 @@ audio_stream_param <- function(action,
                    "positions among the file's streams."),
             action,
             if (batch) "that row's input's" else "the input's"),
-    if (batch) {
-      paste0("Applied to every row lacking an \\code{audio_stream} column; an ",
-             "\\code{NA} cell in that column means the same as \\code{NULL} ",
-             "for that row.")
-    },
     sprintf("\\code{NULL} (default) %s %s.", null_action, quantity),
+    if (batch) {
+      paste0("The argument applies to every row lacking an ",
+             "\\code{audio_stream} column; an \\code{NA} cell in that column ",
+             "means the same as \\code{NULL} for that row, rather than ",
+             "falling back to the argument.")
+    },
     audio_stream_family_sentence(reading),
     extra,
     paste0("Naming a track the input does not have is an FFmpeg error, not an ",
@@ -117,6 +118,29 @@ audio_input_param <- function(batch = FALSE) {
     collapse = " "
   )
 }
+
+# Verb-specific sentences that nonetheless recur across a whole family, so they
+# get one home here rather than ten copies in the blocks. Anything that is
+# genuinely true of exactly one verb stays written out at that verb's block.
+audio_stream_extras <- list(
+  passthrough_subtitles = paste0(
+    "Subtitle and data streams are not carried either way."
+  ),
+  separation_container = paste0(
+    "A container that holds several audio streams (\\code{.mka}, ",
+    "\\code{.m4a}) receives them all, while a single-stream container ",
+    "(\\code{.aac}, \\code{.mp3}, \\code{.wav}) makes FFmpeg fail -- name a ",
+    "track to write one of those. \\code{videofile} is never affected."
+  ),
+  normalize_one_track = paste0(
+    "This verb reads \\code{NULL} the first-track way because the two-pass ",
+    "analysis produces one measurement per audio track while the correction ",
+    "takes a single set, so normalizing several tracks at once would apply ",
+    "one track's measurements to all of them. Under \\code{two_pass = TRUE} ",
+    "the analysis pass measures this same track. Only the named track reaches ",
+    "the output, and no video does."
+  )
+)
 
 #' Audio track and audio input indices
 #'

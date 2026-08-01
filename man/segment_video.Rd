@@ -71,16 +71,7 @@ aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
 fallback leaves the codec unset rather than picking one, so the codec never
 changes silently.}
 
-\item{audio_stream}{The 0-based index of the audio track to carry into the
-output, counted \emph{among the input's audio streams} -- \code{0} is the
-first audio track, \code{1} the second, whatever their positions among the
-file's streams. \code{NULL} (default) carries \strong{every} audio track,
-which is also what \code{\link{separate_audio_video}},
-\code{\link{standardize_video}} and \code{\link{anonymize_video}} do, and
-differs from \code{\link{extract_audio}} and \code{\link{convert_audio}},
-whose \code{NULL} takes the first track only. Naming a track the input does
-not have is an FFmpeg error, not an R one. Subtitle and data streams are not
-carried either way. (default = \code{NULL})}
+\item{audio_stream}{The 0-based index of the audio track to carry into the output, counted \emph{among the input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) carries \strong{every} audio track. The pass-through family reads \code{NULL} this way -- \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus their \code{_batch} siblings. The extraction family takes the first track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus theirs. Subtitle and data streams are not carried either way. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
 \item{run}{A logical: run each segment's command (\code{TRUE}, default) or
 only compile them (\code{FALSE}).}

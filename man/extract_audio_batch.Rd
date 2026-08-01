@@ -34,12 +34,7 @@ audio losslessly; name an encoder (e.g. \code{"aac"}) to transcode; or pass
 \code{NULL} to emit no \code{-codec:a} and let the output container's
 default encoder decide.}
 
-\item{audio_stream}{The 0-based index of the audio track to take, applied to
-every row unless \code{jobs} carries an \code{audio_stream} column, in
-which case \code{NA} in a cell keeps that row on the first audio track.
-The index counts \emph{among each input's audio streams}. \code{NULL}
-(default) takes the first audio track. See \code{\link{extract_audio}}
-for the verb families whose \code{NULL} keeps every track instead.}
+\item{audio_stream}{The 0-based index of the audio track to take, counted \emph{among that row's input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) takes the \strong{first} audio track. The argument applies to every row lacking an \code{audio_stream} column; an \code{NA} cell in that column means the same as \code{NULL} for that row, rather than falling back to the argument. The extraction family reads \code{NULL} this way -- \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus their \code{_batch} siblings. The pass-through family keeps every track instead: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus theirs. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}

@@ -50,15 +50,7 @@ row whose video codec resolves to \code{"copy"} — including the default —
 so a jobs table mixing copied and re-encoded video must be split into
 separate calls.}
 
-\item{audio_stream}{The 0-based index of the audio track to write to every
-\code{audiofile}, unless \code{jobs} carries an \code{audio_stream} column.
-\code{NULL} (default) keeps \strong{every} audio track, as
-\code{\link{separate_audio_video}} does, and as the pass-through verbs
-\code{\link{standardize_video}} and \code{\link{anonymize_video}} do;
-\code{\link{extract_audio}} and \code{\link{convert_audio}} read it the
-other way, as the first track only. An \code{NA} cell in the column
-says the same for that row. Only \code{audiofile} is affected — a
-\code{videofile} always takes the input's video streams.}
+\item{audio_stream}{The 0-based index of the audio track to write to each \code{audiofile}, counted \emph{among that row's input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) keeps \strong{every} audio track. The argument applies to every row lacking an \code{audio_stream} column; an \code{NA} cell in that column means the same as \code{NULL} for that row, rather than falling back to the argument. The pass-through family reads \code{NULL} this way -- \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus their \code{_batch} siblings. The extraction family takes the first track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus theirs. A container that holds several audio streams (\code{.mka}, \code{.m4a}) receives them all, while a single-stream container (\code{.aac}, \code{.mp3}, \code{.wav}) makes FFmpeg fail -- name a track to write one of those. \code{videofile} is never affected. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}

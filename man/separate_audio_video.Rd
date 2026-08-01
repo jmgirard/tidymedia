@@ -51,19 +51,7 @@ unavailable, encode in software with a message (\code{TRUE}) instead of
 aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
 fallback leaves the codec unset rather than injecting one.}
 
-\item{audio_stream}{The 0-based index of the audio track to write to
-\code{audiofile}, counted among \code{infile}'s \emph{audio} streams only
-(\code{0} is the first audio track, \code{1} the second) — not the
-\code{index} column of \code{\link{probe_audio}}, which counts all streams.
-\code{NULL} (default) takes \strong{every} audio track, which is what this
-verb has always done: a container that holds several (\code{.mka},
-\code{.m4a}) receives them all, while a single-stream container
-(\code{.aac}, \code{.mp3}, \code{.wav}) makes FFmpeg fail — name a track to
-write one of those. This differs from \code{\link{extract_audio}} and
-\code{\link{convert_audio}}, whose \code{NULL} takes the first track only.
-The pass-through verbs \code{\link{standardize_video}} and
-\code{\link{anonymize_video}} read \code{NULL} the same way this one
-does. \code{videofile} is never affected.}
+\item{audio_stream}{The 0-based index of the audio track to write to \code{audiofile}, counted \emph{among the input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) keeps \strong{every} audio track. The pass-through family reads \code{NULL} this way -- \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus their \code{_batch} siblings. The extraction family takes the first track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus theirs. A container that holds several audio streams (\code{.mka}, \code{.m4a}) receives them all, while a single-stream container (\code{.aac}, \code{.mp3}, \code{.wav}) makes FFmpeg fail -- name a track to write one of those. \code{videofile} is never affected. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
 \item{run}{A logical: run the commands through FFmpeg (\code{TRUE}, default)
 or return the compiled commands without running them (\code{FALSE}).}

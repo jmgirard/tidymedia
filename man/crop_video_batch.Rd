@@ -57,17 +57,7 @@ leave the codec unset so each output keeps its container's default encoder.}
 applied to the whole batch (a property of the machine, not of a row, so
 neither is read as a \code{jobs} column). See \code{\link[=crop_video]{crop_video()}}.}
 
-\item{audio_stream}{The 0-based index of the audio track to carry into each
-output, counted \emph{among that row's input's audio streams} -- \code{0}
-is the first audio track, \code{1} the second, whatever their positions
-among the file's streams. Applied to every row lacking an
-\code{audio_stream} column. \code{NULL} (default) carries \strong{every}
-audio track, which is also what \code{\link{separate_audio_video}},
-\code{\link{standardize_video}} and \code{\link{anonymize_video}} do, and
-differs from \code{\link{extract_audio}} and \code{\link{convert_audio}},
-whose \code{NULL} takes the first track only. Naming a track the input does
-not have is an FFmpeg error, not an R one. Subtitle and data streams are not
-carried either way. (default = \code{NULL})}
+\item{audio_stream}{The 0-based index of the audio track to carry into each output, counted \emph{among that row's input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) carries \strong{every} audio track. The argument applies to every row lacking an \code{audio_stream} column; an \code{NA} cell in that column means the same as \code{NULL} for that row, rather than falling back to the argument. The pass-through family reads \code{NULL} this way -- \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus their \code{_batch} siblings. The extraction family takes the first track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus theirs. Subtitle and data streams are not carried either way. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}

@@ -108,7 +108,7 @@ no `_PACKAGE` sentinel) → new candidate row. Any behavior change.
       `spelling::update_wordlist()`.
 - [x] T6 Vignette chunk for `audio_stream` and the `vignettes/tidymedia.Rmd:141`
       correction; re-knit any affected vignette.
-- [ ] T7 Append the D-entry, write NEWS, add the two candidate rows named in
+- [x] T7 Append the D-entry, write NEWS, add the two candidate rows named in
       Out, and run the profile's verify slot plus `devtools::check()`.
 
 ## Work log
@@ -126,7 +126,23 @@ no `_PACKAGE` sentinel) → new candidate row. Any behavior change.
 - 2026-07-31: T3 done — `@family audio selection functions` on all twenty-two verbs; `compare_videos()`/`picture_in_picture()` and both `_batch` siblings now generate `@param audio` from a shared `audio_input_param()`, which is also where the batch verbs stop merely deferring to the scalar verb (AC6); `ffm_codec()`/`ffm_copy()` gain a pointer to the concept topic so all four meanings of `audio` reach it. AC6's other half needed no separate edit — the shared `audio_stream` text carries the "FFmpeg error, not an R one" sentence, so `extract_audio_batch()`/`convert_audio_batch()` now have it. Suite 3238 pass / 0 fail; the cross-link test is green in both halves.
 - 2026-07-31: T5 done — `devtools::document()` produces no diff, `pkgdown::check_pkgdown()` reports no problems (AC2), and `spelling::update_wordlist()` added the two new words the concept topic introduces ("arity", "unselected"); the package now spell-checks clean.
 - 2026-07-31: T6 done — `vignettes/tidymedia.Rmd` gains a "Choosing an audio track" subsection with two runnable `run = FALSE` chunks (both render M50's quoted `-map "0:a:1"`), stating the two families' defaults and pointing at `?audio_stream`. The line-141 sentence is now scoped to the multi-input builders and carries the contrast, so it can no longer be read as a claim about the pass-through verbs. Knitted locally to confirm both chunks execute; spell-check still clean.
+- 2026-07-31: T7 done — D032 appended (re-confirms D023's first bullet at eighteen verbs, records what shipped instead of a rename, and keeps D025/D026's caller-confusion falsifier); NEWS gains two Documentation bullets; the two candidate rows named in Out are on the ROADMAP. `devtools::check()` reports 0 errors / 0 warnings / 0 notes, vignettes re-build clean, and the spelling test passes. Weight caps clear: ROADMAP 51 lines, plan-owned body 113.
 
 ## Decisions
+
+- **M51-D1 (2026-07-31) — the shared `@param` source is an R function, evaluated
+  by roxygen at `document()` time.** The plan offered an `@inheritParams` donor
+  or a `man-roxygen/` template; a third option won at the gate. `R/audio-stream-doc.R`
+  holds the two verb vectors and builds each block's text from them, and every
+  block reaches it through an inline `` `r audio_stream_param(...)` `` call.
+  Rules out `@inheritParams`, which copies a whole block, so expressing the two
+  `NULL` readings needs two donors and writes the family lists twice — the exact
+  duplication AC4 exists to remove. Rules out `man-roxygen/`, which works but
+  puts the text outside `R/` in brew syntax and leaves it checkable only by
+  reading rendered `.Rd`. Probed in a scratch package before committing to it:
+  roxygen inserts the result verbatim, so the package's existing
+  `\code{\link{}}` register survives untouched, and the family vectors stay
+  ordinary R data a unit test can read directly. The cost is that `document()`
+  now loads the package to render these blocks, which it already did.
 
 ## Review

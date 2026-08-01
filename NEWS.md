@@ -532,6 +532,20 @@ changes with no deprecation shims (the package is still pre-1.0 and soaking).
 
 ## Documentation
 
+* New `?audio_stream` help page explains the two 0-based audio arguments the
+  package exposes and how they differ: `audio_stream` counts one input's audio
+  tracks, while `audio` on `compare_videos()` and `picture_in_picture()` counts
+  the verb's inputs, so neither index can be read off the other. It also covers
+  what leaving each unset means (the extraction verbs take the first track, the
+  pass-through verbs keep every track, and an unset `audio` drops audio
+  altogether), what an `NA` cell means in a `_batch` jobs column, and the two
+  unrelated things `audio` names on `ffm_codec()` and `ffm_copy()`. Every verb
+  taking either argument now links to it, and the getting-started vignette
+  gains a section on choosing an audio track.
+* Corrected several `audio_stream` help pages whose descriptions still listed
+  only some of the verbs that keep every audio track, omitting ones added
+  later. Those lists are now generated from a single source, so they cannot
+  fall behind the code again.
 * Help pages now cross-reference each other: every task verb links to the
   `ffm_*` pipeline builders it is built on (and each builder back to the verbs
   that use it), and the three metadata reader families (`probe_*()`,

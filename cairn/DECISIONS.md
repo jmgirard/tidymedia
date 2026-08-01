@@ -1085,3 +1085,49 @@ answers `no matches found: 0:v?`.
   reproducibility artifact, not a shell-escaping library: a path containing a
   double quote still renders unescaped, which predates this entry and is
   untouched by it.
+
+## D032 — `audio_stream` and `audio` stay two names; the docs, not the API, carry the disambiguation (2026-07-31, from M51, re-confirms D023's first bullet at eighteen verbs; extends D025/D026/D028)
+
+D023 fixed the two counting bases when the selector reached two verbs. It now
+reaches eighteen, reads `NULL` two ways across two families, and compiles in
+three spellings (`0:a:0`, `0:a:0?`, `0:a?`). This entry re-confirms the
+two-name call at that scale and records what M51 shipped in place of a rename.
+
+- **The D023 bullet re-confirmed**, verbatim:
+
+  > **Two arguments, two bases, and the difference is which thing is being
+  > counted.** `audio_stream` on `extract_audio()` / `convert_audio()`
+  > (+ `_batch`) is a 0-based index **among one input's audio streams** — `1`
+  > is that file's second audio track. D009's `audio =` on `compare_videos()` /
+  > `picture_in_picture()` is a 0-based index **among the verb's inputs** — `1`
+  > is the second *file*. Both read as "0-based audio index" and neither can be
+  > computed from the other, so they stay separate names.
+
+- **Nothing that grew since D023 touches its reason.** The two `NULL` readings
+  (D025/D026/D028) and the `?` suffix (M47) are both about *how much* audio a
+  verb takes and *whether a missing track aborts*; neither changes *what is
+  being counted*, which is the only thing the bullet fixes. Scale is not an
+  argument against it either: eighteen verbs sharing one well-documented base
+  is the bullet working, not failing.
+
+- **What shipped instead of a rename.** A user-facing `audio_stream` topic
+  (`?audio_stream`, aliased `audio-tracks` / `audio_indices`) covering both
+  bases, both `NULL` readings, the `NA`-cell-versus-absent-column rule, and the
+  three unrelated things `audio` names (input index; a codec string on
+  `ffm_codec()`; a logical on `ffm_copy()`). All twenty-two verbs carrying
+  either argument link to it, asserted by a test that enumerates the parameters
+  across `man/*.Rd`, and share a `@family audio selection functions`.
+
+- **The family enumerations are now generated, not written.** `R/audio-stream-doc.R`
+  holds the two verb vectors and the `@param` text built from them; the
+  eighteen blocks call it through an inline `` `r ` `` roxygen expression. This
+  is why the entry can be a documentation answer rather than an API one: the
+  failure a rename would have pre-empted — a `@param` block naming the wrong
+  siblings — was live in four blocks when M51 started, and is now
+  unrepresentable rather than merely detected.
+
+- **Falsified by** a report of a caller confused by the two names or the two
+  `NULL` readings, which is D025's and D026's stated falsifier and reopens the
+  choice under D014's pre-0.2.0 clean break. Ruled out as a trigger: the count
+  alone. Eighteen verbs is not eighteen confused callers, and a rename paid for
+  by a headcount would be paid by every existing caller.

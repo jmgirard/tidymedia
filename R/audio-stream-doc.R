@@ -25,8 +25,11 @@ audio_stream_families <- list(
 # "\code{\link{a}}, \code{\link{b}} and \code{\link{c}}" -- Rd links in the
 # register the rest of the package's roxygen uses.
 rd_verb_list <- function(verbs) {
+  # An emptied family would otherwise return character(0) and vanish silently
+  # from every block that pastes it in, which is the one way this mechanism
+  # could lose the enumeration it exists to keep correct.
+  stopifnot(length(verbs) >= 2)
   links <- sprintf("\\code{\\link{%s}}", verbs)
-  if (length(links) < 2) return(links)
   paste0(paste(links[-length(links)], collapse = ", "), " and ",
          links[length(links)])
 }
@@ -39,13 +42,13 @@ audio_stream_family_sentence <- function(reading = c("first", "every")) {
   first <- rd_verb_list(audio_stream_families$first)
   every <- rd_verb_list(audio_stream_families$every)
   if (identical(reading, "first")) {
-    paste0("The extraction family reads \\code{NULL} this way -- ", first,
-           ", plus their \\code{_batch} siblings. The pass-through family ",
-           "keeps every track instead: ", every, ", plus theirs.")
+    paste0("The first-track family reads \\code{NULL} this way -- ", first,
+           ", plus their \\code{_batch} siblings. The every-track family ",
+           "keeps them all instead: ", every, ", plus theirs.")
   } else {
-    paste0("The pass-through family reads \\code{NULL} this way -- ", every,
-           ", plus their \\code{_batch} siblings. The extraction family takes ",
-           "the first track only: ", first, ", plus theirs.")
+    paste0("The every-track family reads \\code{NULL} this way -- ", every,
+           ", plus their \\code{_batch} siblings. The first-track family takes ",
+           "one track only: ", first, ", plus theirs.")
   }
 }
 
@@ -131,7 +134,11 @@ audio_stream_extras <- list(
     "A container that holds several audio streams (\\code{.mka}, ",
     "\\code{.m4a}) receives them all, while a single-stream container ",
     "(\\code{.aac}, \\code{.mp3}, \\code{.wav}) makes FFmpeg fail -- name a ",
-    "track to write one of those. \\code{videofile} is never affected."
+    "track to write one of those. Count among the input's \\emph{audio} ",
+    "streams, not the \\code{index} column of \\code{\\link{probe_audio}}, ",
+    "which counts every stream. Unlike the verbs that pass video through, an ",
+    "input carrying no audio at all is an FFmpeg error here, because this ",
+    "verb's product is the audio file. \\code{videofile} is never affected."
   ),
   normalize_one_track = paste0(
     "This verb reads \\code{NULL} the first-track way because the two-pass ",
@@ -139,7 +146,9 @@ audio_stream_extras <- list(
     "takes a single set, so normalizing several tracks at once would apply ",
     "one track's measurements to all of them. Under \\code{two_pass = TRUE} ",
     "the analysis pass measures this same track. Only the named track reaches ",
-    "the output, and no video does."
+    "the output, and no video does -- whatever the container, so an output ",
+    "name that keeps a video extension yields a video file carrying audio ",
+    "alone. An input with no audio at all is an FFmpeg error."
   )
 )
 
@@ -159,9 +168,10 @@ audio_stream_extras <- list(
 #' every stream, audio or not).
 #'
 #' \code{audio} counts \strong{a verb's inputs}. On
-#' \code{\link{compare_videos}} and \code{\link{picture_in_picture}} -- the
-#' verbs that take more than one file -- \code{audio = 1} is the second
-#' \emph{file}, and says nothing about which of its tracks is taken.
+#' \code{\link{compare_videos}} and \code{\link{picture_in_picture}}, which
+#' combine several files into one output and must choose whose sound to keep,
+#' \code{audio = 1} is the second \emph{file}, and says nothing about which of
+#' its tracks is taken.
 #'
 #' Neither can be computed from the other, which is why they stay separate
 #' names rather than one argument meaning two things depending on the verb's
@@ -169,13 +179,18 @@ audio_stream_extras <- list(
 #'
 #' # What `NULL` means, and it is not the same thing
 #'
-#' \code{audio_stream = NULL} always maps something; what differs is how much.
+#' \code{audio_stream = NULL} is a selection rather than an absence: the verb
+#' still emits a stream map. What differs is how much it selects.
 #'
 #' * `r audio_stream_family_sentence("first")`
-#' * The two readings exist because an extraction verb writes one audio stream
-#'   by construction, so its unselected case must pick one track, while a
-#'   pass-through verb writes whatever its container holds and can keep them
-#'   all.
+#' * The two readings exist because a verb that writes one audio stream by
+#'   construction must pick one track when you name none, while a verb that
+#'   carries audio through can keep whatever its container holds.
+#' * On the verbs that pass video through, the every-track map is written so
+#'   that it matches nothing rather than failing, so an input with no audio at
+#'   all simply yields an output with none. On
+#'   \code{\link{separate_audio_video}} and \code{\link{normalize_audio}},
+#'   whose product \emph{is} audio, that same case is an FFmpeg error.
 #'
 #' \code{audio = NULL} is different in kind: it emits no audio map at all, so
 #' the output carries \strong{no audio}. A silent output is the default for
@@ -189,8 +204,11 @@ audio_stream_extras <- list(
 #'
 #' # In a `_batch` jobs table
 #'
-#' Every \code{_batch} verb takes the same argument as a scalar default and
-#' also accepts a per-row column of the same name. An \strong{absent column}
+#' Both arguments follow one rule on a \code{_batch} verb: the scalar argument
+#' is the default, and a \code{jobs} column of the same name overrides it row by
+#' row. (This is how these two behave; it is not a claim about every
+#' \code{_batch} argument — \code{hardware}, \code{parallel} and \code{two_pass}
+#' are batch-wide and read no column.) An \strong{absent column}
 #' means the scalar argument applies to every row. A \strong{present column}
 #' overrides it row by row, and an \code{NA} cell is that column's spelling of
 #' \code{NULL} -- it does not fall back to the scalar argument. So
@@ -209,12 +227,12 @@ audio_stream_extras <- list(
 #' * a \emph{logical} on \code{\link{ffm_copy}}, where \code{audio = TRUE}
 #'   stream-copies the audio instead of re-encoding it.
 #'
-#' @seealso \code{\link{extract_audio}} and \code{\link{convert_audio}} for the
-#'   first-track reading; \code{\link{standardize_video}} and
-#'   \code{\link{separate_audio_video}} for the every-track one;
-#'   \code{\link{compare_videos}} and \code{\link{picture_in_picture}} for the
-#'   input index; \code{\link{probe_audio}} to see what tracks a file actually
-#'   holds.
+#' @seealso `r rd_verb_list(audio_stream_families$first)` for the first-track
+#'   reading; `r rd_verb_list(audio_stream_families$every)` for the every-track
+#'   one; \code{\link{compare_videos}} and \code{\link{picture_in_picture}} for
+#'   the input index; \code{\link{probe_audio}} to see what tracks a file
+#'   actually holds.
+#' @family audio selection functions
 #'
 #' @aliases audio-tracks audio_indices
 #' @name audio_stream

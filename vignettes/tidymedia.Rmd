@@ -60,29 +60,30 @@ crop_video(video, "cropped.mp4", width = 160, height = 120, run = FALSE)
 ### Choosing an audio track
 
 A recording with more than one audio track — a room mic and a lapel mic, say —
-needs you to say which one you mean, or FFmpeg will decide for you. Every verb
-that touches audio takes the same `audio_stream` argument: a 0-based index
-counted *among that file's audio streams*, so `1` is its second audio track
-whatever position it holds among the file's streams overall.
+needs you to say which one you mean, or FFmpeg will decide for you. Every
+single-input verb that selects an audio track takes the same `audio_stream`
+argument: a 0-based index counted *among that file's audio streams*, so `1` is
+its second audio track whatever position it holds among the file's streams
+overall.
 
 ```{r}
 extract_audio(video, "lapel.m4a", audio_stream = 1, run = FALSE)
 ```
 
-Leave it out and the default depends on what the verb is for. The extraction
-verbs (`extract_audio()`, `convert_audio()`, `normalize_audio()`) write one
-audio stream by construction, so they take the first track. The pass-through
-verbs (`crop_video()`, `standardize_video()`, `segment_video()`, …) carry
-audio through rather than producing it, so they keep every track:
+Leave it out and the default depends on what the verb is for. A verb that
+writes one audio stream by construction has to pick a track, so it takes the
+first; a verb that carries audio through can keep whatever the input holds, so
+it keeps every track. Compare the map arguments — one named track above, all of
+them here:
 
 ```{r}
-crop_video(video, "cropped.mp4", width = 160, height = 120,
-           audio_stream = 1, run = FALSE)
+crop_video(video, "cropped.mp4", width = 160, height = 120, run = FALSE)
 ```
 
-See `?audio_stream` for the whole picture, including `audio` — a *different*
-0-based index, over a verb's inputs rather than over one file's tracks, on the
-multi-input verbs below.
+`?audio_stream` lists which verbs read it each way and is the one place that
+list is maintained. It also covers `audio` — a *different* 0-based index, over
+a verb's inputs rather than over one file's tracks, on the multi-input verbs
+below.
 
 For preprocessing a whole folder of files at once, every task verb has a batch
 sibling (`extract_audio_batch()`, `crop_video_batch()`, …); see

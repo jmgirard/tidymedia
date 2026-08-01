@@ -10,10 +10,9 @@ ffm_copy(object, audio = TRUE, video = TRUE, streams = TRUE)
 \item{object}{An ffmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
-\item{audio}{A logical indicating whether to copy the audio codec.
-(default = \code{TRUE})
-See \code{\link{audio_stream}} for the three unrelated things \code{audio}
-names across tidymedia.}
+\item{audio}{A logical indicating whether to copy the audio codec
+(default = \code{TRUE}). See \code{\link{audio_stream}} for the three
+unrelated things \code{audio} names across tidymedia.}
 
 \item{video}{A logical indicating whether to copy the video codec.
 (default = \code{TRUE})}

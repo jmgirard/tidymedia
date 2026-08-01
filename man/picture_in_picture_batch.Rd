@@ -121,6 +121,7 @@ Other task verb functions:
 Other audio selection functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
+\code{\link{audio_stream}},
 \code{\link[=compare_videos]{compare_videos()}},
 \code{\link[=compare_videos_batch]{compare_videos_batch()}},
 \code{\link[=convert_audio]{convert_audio()}},

@@ -1090,8 +1090,14 @@ answers `no matches found: 0:v?`.
 
 D023 fixed the two counting bases when the selector reached two verbs. It now
 reaches eighteen, reads `NULL` two ways across two families, and compiles in
-three spellings (`0:a:0`, `0:a:0?`, `0:a?`). This entry re-confirms the
-two-name call at that scale and records what M51 shipped in place of a rename.
+four spellings: the named `0:a:<n>`, and three unselected ones — `0:a:0` on the
+first-track family (`R/ffmpeg.R:273`, `:2142`, `R/loudnorm_two_pass.R:45`), a
+bare `0:a` on `separate_audio_video()` (`R/ffmpeg.R:569`), and the optional
+`0:a?` on the verbs that pass video through (`R/ffmpeg.R:335`). There is no
+`0:a:0?`: a *named* track deliberately carries no `?`, so a mistyped index stays
+an FFmpeg error rather than a silently audio-less output (`R/ffmpeg.R:322-327`).
+This entry re-confirms the two-name call at that scale and records what M51
+shipped in place of a rename.
 
 - **The D023 bullet re-confirmed**, verbatim:
 
@@ -1101,7 +1107,9 @@ two-name call at that scale and records what M51 shipped in place of a rename.
   > is that file's second audio track. D009's `audio =` on `compare_videos()` /
   > `picture_in_picture()` is a 0-based index **among the verb's inputs** — `1`
   > is the second *file*. Both read as "0-based audio index" and neither can be
-  > computed from the other, so they stay separate names.
+  > computed from the other, so they stay separate names. Rules out reusing
+  > `audio` for track selection, which would make one argument mean two things
+  > depending on the verb's arity.
 
 - **Nothing that grew since D023 touches its reason.** The two `NULL` readings
   (D025/D026/D028) and the `?` suffix (M47) are both about *how much* audio a

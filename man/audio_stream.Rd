@@ -17,9 +17,10 @@ is not the \code{index} column of \code{\link{probe_audio}}, which counts
 every stream, audio or not).
 
 \code{audio} counts \strong{a verb's inputs}. On
-\code{\link{compare_videos}} and \code{\link{picture_in_picture}} -- the
-verbs that take more than one file -- \code{audio = 1} is the second
-\emph{file}, and says nothing about which of its tracks is taken.
+\code{\link{compare_videos}} and \code{\link{picture_in_picture}}, which
+combine several files into one output and must choose whose sound to keep,
+\code{audio = 1} is the second \emph{file}, and says nothing about which of
+its tracks is taken.
 
 Neither can be computed from the other, which is why they stay separate
 names rather than one argument meaning two things depending on the verb's
@@ -27,13 +28,18 @@ arity.
 }
 
 \section{What \code{NULL} means, and it is not the same thing}{
-\code{audio_stream = NULL} always maps something; what differs is how much.
+\code{audio_stream = NULL} is a selection rather than an absence: the verb
+still emits a stream map. What differs is how much it selects.
 \itemize{
-\item The extraction family reads \code{NULL} this way -- \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus their \code{_batch} siblings. The pass-through family keeps every track instead: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus theirs.
-\item The two readings exist because an extraction verb writes one audio stream
-by construction, so its unselected case must pick one track, while a
-pass-through verb writes whatever its container holds and can keep them
-all.
+\item The first-track family reads \code{NULL} this way -- \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus their \code{_batch} siblings. The every-track family keeps them all instead: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus theirs.
+\item The two readings exist because a verb that writes one audio stream by
+construction must pick one track when you name none, while a verb that
+carries audio through can keep whatever its container holds.
+\item On the verbs that pass video through, the every-track map is written so
+that it matches nothing rather than failing, so an input with no audio at
+all simply yields an output with none. On
+\code{\link{separate_audio_video}} and \code{\link{normalize_audio}},
+whose product \emph{is} audio, that same case is an FFmpeg error.
 }
 
 \code{audio = NULL} is different in kind: it emits no audio map at all, so
@@ -48,8 +54,11 @@ the track count is a property of the file rather than of the call.
 }
 
 \section{In a \verb{_batch} jobs table}{
-Every \code{_batch} verb takes the same argument as a scalar default and
-also accepts a per-row column of the same name. An \strong{absent column}
+Both arguments follow one rule on a \code{_batch} verb: the scalar argument
+is the default, and a \code{jobs} column of the same name overrides it row by
+row. (This is how these two behave; it is not a claim about every
+\code{_batch} argument — \code{hardware}, \code{parallel} and \code{two_pass}
+are batch-wide and read no column.) An \strong{absent column}
 means the scalar argument applies to every row. A \strong{present column}
 overrides it row by row, and an \code{NA} cell is that column's spelling of
 \code{NULL} -- it does not fall back to the scalar argument. So
@@ -71,10 +80,34 @@ stream-copies the audio instead of re-encoding it.
 }
 
 \seealso{
-\code{\link{extract_audio}} and \code{\link{convert_audio}} for the
-first-track reading; \code{\link{standardize_video}} and
-\code{\link{separate_audio_video}} for the every-track one;
-\code{\link{compare_videos}} and \code{\link{picture_in_picture}} for the
-input index; \code{\link{probe_audio}} to see what tracks a file actually
-holds.
+\code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}} for the first-track
+reading; \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}} for the every-track
+one; \code{\link{compare_videos}} and \code{\link{picture_in_picture}} for
+the input index; \code{\link{probe_audio}} to see what tracks a file
+actually holds.
+
+Other audio selection functions:
+\code{\link[=anonymize_video]{anonymize_video()}},
+\code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
+\code{\link[=compare_videos]{compare_videos()}},
+\code{\link[=compare_videos_batch]{compare_videos_batch()}},
+\code{\link[=convert_audio]{convert_audio()}},
+\code{\link[=convert_audio_batch]{convert_audio_batch()}},
+\code{\link[=crop_video]{crop_video()}},
+\code{\link[=crop_video_batch]{crop_video_batch()}},
+\code{\link[=extract_audio]{extract_audio()}},
+\code{\link[=extract_audio_batch]{extract_audio_batch()}},
+\code{\link[=format_for_web]{format_for_web()}},
+\code{\link[=format_for_web_batch]{format_for_web_batch()}},
+\code{\link[=normalize_audio]{normalize_audio()}},
+\code{\link[=normalize_audio_batch]{normalize_audio_batch()}},
+\code{\link[=picture_in_picture]{picture_in_picture()}},
+\code{\link[=picture_in_picture_batch]{picture_in_picture_batch()}},
+\code{\link[=segment_video]{segment_video()}},
+\code{\link[=segment_video_batch]{segment_video_batch()}},
+\code{\link[=separate_audio_video]{separate_audio_video()}},
+\code{\link[=separate_audio_video_batch]{separate_audio_video_batch()}},
+\code{\link[=standardize_video]{standardize_video()}},
+\code{\link[=standardize_video_batch]{standardize_video_batch()}}
 }
+\concept{audio selection functions}

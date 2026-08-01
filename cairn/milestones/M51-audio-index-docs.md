@@ -106,7 +106,7 @@ no `_PACKAGE` sentinel) → new candidate row. Any behavior change.
       per-family differences that are genuinely per-family.
 - [x] T5 `devtools::document()`; `pkgdown::check_pkgdown()`;
       `spelling::update_wordlist()`.
-- [ ] T6 Vignette chunk for `audio_stream` and the `vignettes/tidymedia.Rmd:141`
+- [x] T6 Vignette chunk for `audio_stream` and the `vignettes/tidymedia.Rmd:141`
       correction; re-knit any affected vignette.
 - [ ] T7 Append the D-entry, write NEWS, add the two candidate rows named in
       Out, and run the profile's verify slot plus `devtools::check()`.
@@ -125,6 +125,7 @@ no `_PACKAGE` sentinel) → new candidate row. Any behavior change.
 - 2026-07-31: T4 done (taken before T3, a minor reorder: T3 edits the same eighteen blocks T4 rewrites wholesale, so doing T4 first avoided editing text about to be replaced). `audio_stream_param()` in `R/audio-stream-doc.R` now generates all eighteen `@param audio_stream` blocks through an inline `r` call; each verb supplies only its own action verb, family, batch flag and caveat. Net -167/+18 lines in `R/ffmpeg.R`, and the four blocks carrying stale sibling lists are now correct by construction. The scripted edit preserved `R/ffmpeg.R`'s CRLF endings deliberately (M49 review H1) and asserted 18 blocks matched before writing. Suite: 3237 pass, the one remaining failure is T3's `audio` half.
 - 2026-07-31: T3 done — `@family audio selection functions` on all twenty-two verbs; `compare_videos()`/`picture_in_picture()` and both `_batch` siblings now generate `@param audio` from a shared `audio_input_param()`, which is also where the batch verbs stop merely deferring to the scalar verb (AC6); `ffm_codec()`/`ffm_copy()` gain a pointer to the concept topic so all four meanings of `audio` reach it. AC6's other half needed no separate edit — the shared `audio_stream` text carries the "FFmpeg error, not an R one" sentence, so `extract_audio_batch()`/`convert_audio_batch()` now have it. Suite 3238 pass / 0 fail; the cross-link test is green in both halves.
 - 2026-07-31: T5 done — `devtools::document()` produces no diff, `pkgdown::check_pkgdown()` reports no problems (AC2), and `spelling::update_wordlist()` added the two new words the concept topic introduces ("arity", "unselected"); the package now spell-checks clean.
+- 2026-07-31: T6 done — `vignettes/tidymedia.Rmd` gains a "Choosing an audio track" subsection with two runnable `run = FALSE` chunks (both render M50's quoted `-map "0:a:1"`), stating the two families' defaults and pointing at `?audio_stream`. The line-141 sentence is now scoped to the multi-input builders and carries the contrast, so it can no longer be read as a claim about the pass-through verbs. Knitted locally to confirm both chunks execute; spell-check still clean.
 
 ## Decisions
 

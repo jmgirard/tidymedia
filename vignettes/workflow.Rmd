@@ -93,12 +93,17 @@ scope — reach for the `ffmpeg()` escape hatch there.
 
 Acoustic and transcription tools want clean, consistently loud audio.
 `normalize_audio()` brings a file to a target integrated loudness (here −23 LUFS,
-the EBU R128 broadcast reference):
+the EBU R128 broadcast reference). Its output is **one audio stream and no
+video**, so name an audio file for it — normalizing into a video container would
+give you a `.mp4` carrying nothing but sound:
 
 ```{r}
-normalize_audio(session, "session01_camA_norm.mp4",
+normalize_audio(session, "session01_camA_norm.wav",
                 target_loudness = -23, run = FALSE)
 ```
+
+To normalize a recording's loudness *and* keep its picture, normalize to an
+audio file as above and mux it back with the `ffmpeg()` escape hatch.
 
 To hand the speech to a transcription or acoustic-analysis tool, pull the audio
 into a standalone file. `convert_audio()` transcodes to whatever the output

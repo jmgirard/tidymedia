@@ -14,13 +14,20 @@ normalize_audio(
   sample_rate = NULL,
   audio_codec = NULL,
   two_pass = FALSE,
+  audio_stream = NULL,
   run = TRUE
 )
 }
 \arguments{
-\item{infile}{A string containing the path to a media file (with audio).}
+\item{infile}{A string containing the path to a media file (with audio). An
+input with no audio stream is an FFmpeg error, not a silent copy of the
+video.}
 
-\item{outfile}{A string containing the path of the file to write.}
+\item{outfile}{A string containing the path of the audio file to write. Any
+container FFmpeg can write is accepted and the compiled command does not
+depend on which -- an audio container (\code{.wav}, \code{.flac}) holds the
+result exactly as a video container (\code{.mkv}) does, the latter simply
+carrying one audio stream and nothing else.}
 
 \item{target_loudness}{The target integrated loudness, in LUFS (a number in
 \code{-70}..\code{-5}; default \code{-23}, the EBU R128 target).}
@@ -60,6 +67,22 @@ analysis pass measures its loudness as \code{-inf}; normalizing silence to
 a target is undefined, so two-pass aborts with a clear error (the
 single-pass default leaves silence untouched).}
 
+\item{audio_stream}{The 0-based index of the audio track to normalize,
+counted \emph{among the input's audio streams} -- \code{0} is the first
+audio track, \code{1} the second, whatever their positions among the file's
+streams. \code{NULL} (default) normalizes the \strong{first} audio track,
+as \code{\link{extract_audio}} and \code{\link{convert_audio}} do, and
+differs from the pass-through verbs (\code{\link{format_for_web}},
+\code{\link{standardize_video}}, \code{\link{crop_video}} and their
+siblings), whose \code{NULL} keeps every track. This verb reads it the
+first-track way because the two-pass analysis produces one measurement per
+audio track while the correction takes a single set, so normalizing several
+tracks at once would apply one track's measurements to all of them. Only
+the named track reaches the output, and no video does.
+Under \code{two_pass = TRUE} the analysis pass measures this same track.
+Naming a track the input does not have is an FFmpeg error, not an R one.
+(default = \code{NULL})}
+
 \item{run}{A logical: run the (correction) command through FFmpeg
 (\code{TRUE}, default) or return the compiled command without running it
 (\code{FALSE}). Under \code{two_pass = TRUE} this gates only the correction
@@ -73,9 +96,12 @@ measured values.
 \description{
 Normalize the perceived loudness of a file's audio toward an EBU R128 target
 using FFmpeg's single-pass \code{loudnorm} filter, optionally downmixing the
-channel count and resampling. The video stream is copied unchanged
-(\code{-c:v copy}), so only the audio is touched -- the audio-side complement
-to \code{\link{standardize_video}}, which leaves audio alone.
+channel count and resampling. The output holds \strong{one audio stream and
+no video}, whatever the input and whatever container \code{outfile} names --
+so this is an audio-producing verb like \code{\link{extract_audio}} and
+\code{\link{convert_audio}}, not a pass-through one. To normalize a
+recording's soundtrack \emph{and} keep its picture, normalize to an audio
+file and mux it back with the \code{\link{ffmpeg}} escape hatch.
 }
 \details{
 The default targets follow EBU Recommendation R 128 (2014) --
@@ -93,12 +119,13 @@ rate.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-normalize_audio(video, "normalized.mp4", run = FALSE)
+# The output holds audio only, so name an audio file for it
+normalize_audio(video, "normalized.wav", run = FALSE)
 # Normalize to a streaming target and downmix to mono
-normalize_audio(video, "mono.mp4", target_loudness = -16, channels = 1,
+normalize_audio(video, "mono.wav", target_loudness = -16, channels = 1,
                 run = FALSE)
 # Name the output audio encoder instead of taking the container's default
-normalize_audio(video, "aac.mp4", audio_codec = "aac", run = FALSE)
+normalize_audio(video, "normalized.m4a", audio_codec = "aac", run = FALSE)
 }
 \references{
 EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
@@ -106,7 +133,8 @@ maximum level of audio signals}; ITU-R BS.1770-4.
 }
 \seealso{
 \code{\link[=ffm_loudnorm]{ffm_loudnorm()}}, the builder it wraps; \code{\link[=normalize_audio_batch]{normalize_audio_batch()}}
-for the many-file form; \code{\link[=standardize_video]{standardize_video()}}, its video-side complement.
+for the many-file form; \code{\link[=extract_audio]{extract_audio()}} and \code{\link[=convert_audio]{convert_audio()}}, the other
+verbs whose output is one audio stream.
 
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

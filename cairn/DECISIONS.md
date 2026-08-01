@@ -827,3 +827,202 @@ IP2/D003; uses D014's pre-0.2.0 clean-break policy.
   (`strip_metadata_pipeline()`, `segment_pipeline()`) plus `ffm_concat()` all
   call it on an empty map, so every existing compiled command is byte-identical.
   NEWS plus the rewritten `@param streams` is the whole migration (D014).
+
+## D028 — `normalize_audio()`'s unselected `audio_stream` is the first track, not every track (2026-07-31, from M49, narrows D026; extends D023/D025)
+
+D026 gave the pass-through verbs one rule for the unselected case — `NULL` →
+`-map 0:v? -map 0:a?`, every audio track — and named `standardize_video`,
+`anonymize_video`, `crop_video` and `segment_video` in its Scope bullet. Two
+verbs were outside that bullet and still emitted no `-map` at all:
+`format_for_web()` and `normalize_audio()`. M49 closes both. One of them takes
+D026's rule unchanged; the other cannot, and this entry records why.
+
+- **What the two verbs actually did, measured.** On a 3-audio-track `.mkv`
+  (ffmpeg 8.1.2, macOS; languages eng/spa/fra, DEFAULT disposition moved to
+  track 2), both verbs emitted **zero** `-map` arguments, so FFmpeg's implicit
+  selection applied and each output carried only `fra` — the **third** track,
+  chosen by the container's DEFAULT flag rather than by anything the caller
+  wrote. The two-pass analysis pass did the same thing independently: with no
+  map of its own it sent stream `#0:3` to `loudnorm`, so measurement and
+  correction agreed only by both consulting the same heuristic.
+
+- **`format_for_web()` takes D026's rule unchanged.** `NULL` →
+  `-map 0:v? -map 0:a?`, a named track → `-map 0:v? -map 0:a:<n>`. Nothing
+  about this verb argues for narrowing: it re-encodes audio to AAC into `.mp4`,
+  a container that holds many audio tracks, and its output is a video file
+  rather than an audio stream. This is the case D026 already decided.
+
+- **`normalize_audio()` takes a first-track `NULL`, spelled `0:a:0?`.** Under
+  `-map 0:a?` the two-pass analysis pass prints one JSON measurement block **per
+  mapped audio track** — three, measured on the fixture above — while
+  `classify_loudnorm_output()` reads `hit[[1]]` (`R/loudnorm_two_pass.R`). So an
+  every-track `NULL` would correct every mapped track with **track 0's**
+  measurements, and would do it silently: the command succeeds, the file is
+  written, and the only symptom is that two of the three tracks are normalized
+  to the wrong loudness. This is a defect the every-track rule would *introduce*,
+  which is what distinguishes it from D026's cases.
+
+- **This is a determinism change, not a cardinality one.** The verb already
+  carried exactly one audio track; it just could not say which. Ruling out
+  D026's uniform every-track `NULL` therefore costs no data, unlike the
+  symmetric case D026 itself ruled out — narrowing `crop_video()`'s `-map 0`
+  from three tracks to one, which would have.
+
+- **Ruled out: making the analysis pass per-track so uniformity is affordable.**
+  One measured set per mapped track needs per-stream filter options, and the
+  linear builder has no slot for them (IP2/D003 keeps it one filter chain). That
+  is a real feature and now its own ROADMAP candidate row — it is the falsifier
+  for this entry, not an objection to it. Also ruled out: leaving
+  `normalize_audio()` unmapped, which is the status quo this milestone exists to
+  remove, and which D023's second bullet already refuses in terms that were
+  never verb-scoped.
+
+- **The analysis pass carries the audio half only.** `-map 0:a:0?` or
+  `-map 0:a:<n>`, never `0:v?`: that pass writes to `-f null` and has no output
+  for a video selection to describe. Measured indistinguishable from the
+  `0:v?`-carrying pair in exit code and block count on a 3-track `.mkv` and a
+  video-only `.mp4` alike. The invariant that matters is not that the analysis
+  and correction commands *look* alike but that they name the same **audio**
+  track, which is asserted directly (M49-D1 records this).
+
+- **The `?` is load-bearing on the unselected spelling and absent from the named
+  one**, exactly as D026 established: a bare `-map 0:a:0` exits 234 on a
+  video-only input where the unmapped code exited 0, while a named `0:a:9` on a
+  3-track input must stay an FFmpeg error rather than compile to a silently
+  audio-less output (D023).
+
+- **The cost, stated.** `audio_stream` now carries two defaults across
+  **eighteen** exported entry points: the first track on `extract_audio`,
+  `convert_audio` and `normalize_audio` (+ `_batch`), every track on the six
+  pass-through verbs (+ `_batch`). D026 stated this cost for a ten/four split
+  and accepted it; M49 moves `normalize_audio` from the every-track side of the
+  ledger to the first-track side, so the split is now three families deep rather
+  than two, and the reason for the third is a property of the two-pass path
+  rather than of the argument. Falsified by a report of a caller confused by the
+  split, which reopens the choice under D014's pre-0.2.0 clean break — the same
+  falsifier D026 named, now carrying one more case.
+
+## D029 — `normalize_audio()`'s video map follows the output container (2026-07-31, from M49's review send-back, narrows D028's video half; extends D026)
+
+D028 gave `normalize_audio()` the map pair `-map 0:v? -map 0:a:0?` and stated
+its change as "determinism, not cardinality". That is true of the **audio**
+half and false of the **video** half, and the video half broke real calls. This
+entry narrows it. D028's first-track audio rule, and its measured reason, stand
+unchanged.
+
+- **What broke, measured.** `-map 0:v?` forces the input's video stream into the
+  output muxer. The `?` makes a specifier optional when the **stream** is
+  absent; it does nothing when the stream is present and the **muxer refuses
+  it**. On `inst/extdata/sample.mp4` (ffmpeg 8.1.2, macOS), against master:
+  `.wav`, `.mp3`, `.aac` and `.opus` went from exit 0 to **exit 234** ("wav
+  muxer does not support any stream of type video", zero bytes written), and
+  `.mka` silently **gained** a video stream where master wrote audio alone.
+  `normalize_audio("interview.mp4", "interview.wav")` is an ordinary research
+  call and D028 broke it.
+
+- **Why D028 did not see it.** Master delegated the whole selection to FFmpeg's
+  implicit rule, which is **muxer-aware**: it dropped video for a container that
+  could not hold it. That same rule picked the audio track by DEFAULT
+  disposition, which is the defect M49 exists to remove — so the mechanism was
+  right about video and wrong about audio, and D028 replaced both halves when
+  only the audio half was at fault. `0:v?` came from D026, written for verbs
+  whose product **is** a video file; `normalize_audio()`'s product is whatever
+  container the caller named.
+
+- **The rule.** `normalize_audio()` (and `_batch`) emit `-map 0:v?` unless the
+  **output path** names an audio-only container, in which case the audio map
+  stands alone. Keyed on the output extension the caller wrote — not on the
+  input, and not on a probe — so the compile stays binary-free under
+  `run = FALSE` (D024). The list lives in `AUDIO_ONLY_CONTAINERS`
+  (`R/ffmpeg.R`), and it is deliberately one-directional: an extension absent
+  from it keeps the pass-through shape, so a missing entry costs an unusual
+  audio container its pre-M49 behavior and can never cost a video caller their
+  video.
+
+- **This is a stated rule, not a restored heuristic.** D023's objection is to a
+  selection the caller never wrote and cannot see. Here the caller writes the
+  extension, the rule is documented on `@param audio_stream` and in NEWS, and
+  the compiled command shows the result. What is *not* reinstated is FFmpeg
+  choosing which audio track to normalize.
+
+- **Two deliberate divergences from master, both toward the caller's intent.**
+  `.m4a` carried a video stream on master and carries none here, because a
+  caller writing `.m4a` means audio. `.ogg` exited 234 on master (H.264 cannot
+  be copied into Ogg) and now succeeds, because no video is mapped into it.
+
+- **Ruled out.** Dropping the video map unconditionally — it would strip video
+  from `.mp4`/`.mkv` outputs and contradict the documented `-codec:v copy`
+  pass-through, a worse regression than the one being fixed. An opt-out
+  argument — it leaves the default broken and makes the caller discover the
+  switch after hitting exit 234. Probing the input to decide — forbidden on the
+  compile path by D024, and unnecessary, since the output path already carries
+  the caller's intent.
+
+- **The coverage gap that let this ship.** No test in the package normalized to
+  an audio container, so a fully green suite sat over the regression; review
+  caught it, not the suite. `test-audio-stream-normalize.R` now walks the
+  container matrix under execution, and the walk was verified to fail against
+  the pre-fix code. Falsified by an audio container that this list does not
+  name and that a caller reports failing — which is an addition to the list,
+  not a reopening of the rule.
+
+## D030 — `normalize_audio()` produces audio and no video (2026-07-31, from M49's second review send-back, supersedes D029 and narrows D028's video half)
+
+D029 made `normalize_audio()`'s video map conditional on the output container,
+via an enumerated `AUDIO_ONLY_CONTAINERS` list. Review measured six audio-only
+containers the list did not name — `.w64`, `.mpa`, `.voc`, `.sbc`, `.latm`,
+`.adts` — each going from exit 0 on master to exit 234 (or 176) on the branch.
+That was the second attempt at the same question and the second miss, so the
+question is removed rather than answered again. D029's list and predicate are
+deleted; this entry replaces them.
+
+- **The rule.** `normalize_audio()` and `normalize_audio_batch()` compile
+  exactly one map — `-map 0:a:0` unselected, `-map 0:a:<n>` when a track is
+  named — and never a video map. The compiled command does not depend on the
+  output container at all, which is what makes "did we enumerate every
+  audio-only container?" unanswerable by construction rather than answered
+  again. `-codec:v copy` is gone with it: it named a stream that is never
+  mapped, and the compiled command is the product (D001).
+
+- **What this costs, stated plainly.** Normalizing a recording's soundtrack
+  *while keeping its picture* was possible on master in one call and is not
+  possible with this verb any more. That is a real capability removed, not a
+  clarification, and it is the reason this entry exists rather than a doc fix.
+  The replacement path is to normalize to an audio file and mux it back with
+  the `ffmpeg()` escape hatch; a first-class verb for it is a ROADMAP candidate
+  row created by this entry.
+
+- **Why an audio verb, and not a third try at the predicate.** `normalize_audio`
+  re-encodes audio by construction and its product is an audio stream — the
+  shape `extract_audio()` and `convert_audio()` already have, and the reason
+  D023 gives those verbs a first-track `NULL`. The pass-through family
+  (`crop_video`, `standardize_video`, …) keeps D026 unchanged; nothing here
+  touches it. Ruled out: extending the list, which the thrash rule identifies as
+  buying the next missing extension rather than a fix; an opt-out argument,
+  which leaves the broken default in place until a caller discovers the switch;
+  and probing the output muxer, which D024 forbids on the compile path and which
+  would make `run = FALSE` and `run = TRUE` compile different commands.
+
+- **The unselected map carries no trailing `?`, and that is measured.** When
+  EVERY map specifier is optional and matches nothing, FFmpeg discards the maps
+  and reverts to default stream selection: `-map 0:a:5?` on a video+audio file
+  writes video AND audio, the map ignored entirely. This verb emits exactly one
+  map, so "all maps matched nothing" is reachable by an ordinary input — a
+  silent screen recording — and with a `?` that call would exit 0 while writing
+  the video through, by way of the very DEFAULT-disposition heuristic M49
+  removes. Without it the input fails at exit 234, "Stream map '' matches no
+  streams". An input with no audio is therefore an error, which is the honest
+  answer for a verb whose output is audio. This also supplies the measured
+  reason behind D026's rule that named specifiers carry no `?`; that was
+  reasoning when written and is now evidence.
+
+- **Scope.** `normalize_audio()` and `normalize_audio_batch()` only. D028's
+  first-track `NULL` and its measured reason stand. D026 and the pass-through
+  verbs are untouched — `format_for_web()` keeps `-map 0:v? -map 0:a?`, which is
+  right for a verb whose product is a web video file, though writing it to an
+  audio container fails as it does for every pass-through verb (recorded as a
+  ROADMAP candidate row, not fixed here).
+
+- **Falsified by** a caller who needs normalized audio muxed back over the
+  original video often enough that the escape hatch is not an answer — which
+  promotes the candidate row into a verb, and does not reopen this rule.

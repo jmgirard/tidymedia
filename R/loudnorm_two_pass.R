@@ -13,11 +13,37 @@
 # input as-is (FFmpeg's canonical two-pass recipe) -- no downmix/resample, which
 # belong to the correction/output stage. The measured values are read back from
 # this pass's stderr by parse_loudnorm_measurements().
+#
+# The map (M49) is what makes the measurement correspond to the correction. Two
+# things forced it. Without any map, FFmpeg's implicit selection sends whichever
+# audio track carries the container's DEFAULT disposition to loudnorm -- so the
+# measured track was chosen by a rule the caller never wrote, and matched the
+# correction pass only because that pass consulted the same heuristic. And with
+# an EVERY-track map (`0:a?`) loudnorm prints one JSON block PER MAPPED TRACK
+# (three, measured on a 3-track .mkv) while classify_loudnorm_output() reads
+# hit[[1]], so every track would be corrected with track 0's measurements,
+# silently -- which is why normalize_audio()'s unselected case is the first
+# track rather than every track (D028).
+#
+# AUDIO ONLY, no `0:v?`: this pass writes to `-f null` and has no output for a
+# video selection to describe, so mapping video decodes a stream the pass
+# discards. Measured indistinguishable in exit code and block count from the
+# `0:v?`-carrying pair on every input tried, and marginally slower. The
+# invariant that matters is not that the two commands look alike but that they
+# name the same AUDIO track, which test-audio-stream-normalize.R asserts
+# directly.
 loudnorm_analysis_pipeline <- function(input,
                                        target_loudness = -23,
                                        true_peak = -1,
-                                       loudness_range = 7) {
+                                       loudness_range = 7,
+                                       audio_stream = NULL,
+                                       call = rlang::caller_env()) {
   p <- ffm_files(input, "-")
+  # No trailing `?`, matching the correction pass it feeds (D030): an input with
+  # no audio must fail here rather than fall back to default stream selection,
+  # which is what FFmpeg does when every optional map matches nothing.
+  p <- ffm_map(p, audio_stream_map(audio_stream, null_map = "0:a:0",
+                                   call = call))
   p <- ffm_loudnorm(p, target_loudness = target_loudness, true_peak = true_peak,
                     loudness_range = loudness_range, print_format = "json")
   ffm_output_options(p, "-f null")
@@ -106,9 +132,11 @@ run_loudnorm_analysis <- function(input,
                                   target_loudness = -23,
                                   true_peak = -1,
                                   loudness_range = 7,
+                                  audio_stream = NULL,
                                   call = rlang::caller_env()) {
   p <- loudnorm_analysis_pipeline(input, target_loudness, true_peak,
-                                  loudness_range)
+                                  loudness_range, audio_stream = audio_stream,
+                                  call = call)
   out <- run_program(find_ffmpeg(), ffm_args(p), program = "FFmpeg",
                      input = "", stderr = TRUE, call = call)
   status <- attr(out, "status")
@@ -134,7 +162,8 @@ run_loudnorm_analysis <- function(input,
 # mid-fan-out. Parallelism follows the active future plan; the sequential-plan
 # warning is left to the Phase 2 ffm_batch() call so it fires exactly once.
 run_loudnorm_analysis_batch <- function(inputs, target_loudness, true_peak,
-                                        loudness_range, parallel) {
+                                        loudness_range, parallel,
+                                        audio_stream = NULL) {
   # Phase 1 runs before Phase 2's ffm_batch() furrr guard, so guard furrr here
   # too -- otherwise a furrr-less machine crashes with a raw "future_pmap not
   # found" instead of the package's friendly install prompt. The sequential-plan
@@ -142,14 +171,28 @@ run_loudnorm_analysis_batch <- function(inputs, target_loudness, true_peak,
   if (parallel) {
     rlang::check_installed("furrr", reason = "for parallel batch processing.")
   }
-  analyze_one <- function(input, target_loudness, true_peak, loudness_range) {
-    p <- loudnorm_analysis_pipeline(input, target_loudness, true_peak,
-                                    loudness_range)
+  analyze_one <- function(input, target_loudness, true_peak, loudness_range,
+                          audio_stream) {
+    p <- loudnorm_analysis_pipeline(
+      input, target_loudness, true_peak, loudness_range,
+      # NA is the column form of the NULL sentinel, exactly as it is on the
+      # correction side (batch_codec_cell()'s shape, M34/D016).
+      audio_stream = batch_stream_cell(audio_stream)
+    )
     run_program(find_ffmpeg(), ffm_args(p), program = "FFmpeg", input = "",
                 stderr = TRUE)
   }
+  # `audio_stream` arrives either as the scalar argument (NULL, or one index for
+  # the whole table) or as a per-row column; pmap needs a vector either way, and
+  # NA_real_ is what a NULL argument spells per row.
+  audio_stream <- if (is.null(audio_stream)) {
+    rep(NA_real_, length(inputs))
+  } else {
+    rep_len(as.numeric(audio_stream), length(inputs))
+  }
   args <- list(input = inputs, target_loudness = target_loudness,
-               true_peak = true_peak, loudness_range = loudness_range)
+               true_peak = true_peak, loudness_range = loudness_range,
+               audio_stream = audio_stream)
   if (parallel) {
     furrr::future_pmap(args, analyze_one)
   } else {
@@ -301,8 +344,9 @@ bind_two_pass_result <- function(jobs, silent, ok_res, run, verify = FALSE,
 # linear correction command per row of a jobs table already augmented with the
 # five measured columns (measured_I/TP/LRA/thresh/offset) by Phase 1. A thin
 # fan-out over ffm_batch() (D007) sharing normalize_audio_pipeline() with the
-# scalar/single-pass paths, so channels/sample_rate/audio_codec/-codec:v copy
-# and the per-value validation are inherited by construction. A per-row
+# scalar/single-pass paths, so channels/sample_rate/audio_codec, the audio map
+# and the per-value validation are inherited by construction (the `-codec:v
+# copy` this once listed went away with D030's audio-only contract). A per-row
 # audio_codec column resolves through batch_codec_cell() exactly as it does on
 # the single-pass path (M36). The measured columns arrive
 # via `...` (pmap-style) and thread back as the `measured` list, switching each
@@ -311,7 +355,8 @@ bind_two_pass_result <- function(jobs, silent, ok_res, run, verify = FALSE,
 # ffm_batch options (verify/manifest/...) to the runner.
 run_normalize_correction <- function(jobs, target_loudness, true_peak,
                                      loudness_range, channels, sample_rate,
-                                     audio_codec = NULL, run, parallel, ...) {
+                                     audio_codec = NULL, audio_stream = NULL,
+                                     run, parallel, ...) {
   ffm_batch(
     jobs,
     function(input, output, ...) {
@@ -325,6 +370,7 @@ run_normalize_correction <- function(jobs, target_loudness, true_peak,
         channels = pick("channels", channels),
         sample_rate = pick("sample_rate", sample_rate),
         audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
+        audio_stream = batch_stream_cell(pick("audio_stream", audio_stream)),
         measured = list(
           i = dots[["measured_I"]], tp = dots[["measured_TP"]],
           lra = dots[["measured_LRA"]], thresh = dots[["measured_thresh"]],

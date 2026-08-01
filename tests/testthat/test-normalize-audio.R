@@ -1,6 +1,8 @@
 # Tests for normalize_audio(): a Layer-2 verb that loudness-normalizes a file's
-# audio (EBU R128 loudnorm) while stream-copying video. Command construction is
-# tested purely (run = FALSE); execution is gated on the ffmpeg binary.
+# audio (EBU R128 loudnorm). Its output is ONE audio stream and no video since
+# D030 -- it no longer stream-copies video, and no longer names a video codec.
+# Command construction is tested purely (run = FALSE); execution is gated on the
+# ffmpeg binary.
 
 test_that("normalize_audio() compiles the default EBU R128 command", {
   f <- make_input()
@@ -8,7 +10,8 @@ test_that("normalize_audio() compiles the default EBU R128 command", {
   expect_equal(
     cmd,
     sprintf(
-      '-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" -codec:v copy "out.mp4"',
+      paste0('-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" ',
+             '-map 0:a:0 "out.mp4"'),
       f
     )
   )
@@ -17,7 +20,13 @@ test_that("normalize_audio() compiles the default EBU R128 command", {
 # Characterization: pin the full command for a fully-specified single-pass call
 # so the `two_pass = FALSE` default (added in M16) stays byte-for-byte identical
 # to today's behavior. This baseline must not drift when two-pass lands.
-test_that("normalize_audio() single-pass command is byte-for-byte stable (M16 baseline)", {
+#
+# Deliberately overwritten at M49, which is the one thing the paragraph above
+# forbids doing by accident. The map pair is a stated behavior change, not
+# drift: this verb emitted no map at all and let FFmpeg's DEFAULT-disposition
+# heuristic pick one audio track (D028). The rest of the command is unchanged
+# byte for byte, and that is what this baseline still pins.
+test_that("normalize_audio() single-pass command is byte-for-byte stable (M16 baseline, re-based M49)", {
   f <- make_input()
   cmd <- normalize_audio(f, "out.mp4", target_loudness = -16, true_peak = -1.5,
                          loudness_range = 11, channels = 1, sample_rate = 48000,
@@ -26,7 +35,7 @@ test_that("normalize_audio() single-pass command is byte-for-byte stable (M16 ba
     cmd,
     sprintf(
       paste0('-y -i "%s" -af "loudnorm=I=-16:TP=-1.5:LRA=11" ',
-             '-codec:v copy -ac 1 -ar 48000 "out.mp4"'),
+             '-ac 1 -ar 48000 -map 0:a:0 "out.mp4"'),
       f
     )
   )
@@ -46,7 +55,7 @@ test_that("normalize_audio() adds downmix and resample when requested", {
   f <- make_input()
   cmd <- normalize_audio(f, "out.mp4", channels = 1, sample_rate = 48000,
                          run = FALSE)
-  expect_match(cmd, "-codec:v copy -ac 1 -ar 48000", fixed = TRUE)
+  expect_match(cmd, "-ac 1 -ar 48000", fixed = TRUE)
 })
 
 test_that("normalize_audio() omits downmix/resample by default", {
@@ -56,11 +65,15 @@ test_that("normalize_audio() omits downmix/resample by default", {
   expect_no_match(cmd, "-ar ", fixed = TRUE)
 })
 
-test_that("normalize_audio() stream-copies video (touches audio only)", {
+test_that("normalize_audio() names no video codec and maps no video (D030)", {
+  # Was "stream-copies video (touches audio only)". The verb no longer carries
+  # video at all, so `-codec:v copy` named a stream that is never mapped; this
+  # test is inverted rather than deleted, because what it originally guarded --
+  # that the video is never RE-ENCODED -- is now guaranteed more strongly.
   f <- make_input()
   cmd <- normalize_audio(f, "out.mp4", run = FALSE)
-  expect_match(cmd, "-codec:v copy", fixed = TRUE)
-  expect_no_match(cmd, "-codec:v libx264", fixed = TRUE)
+  expect_no_match(cmd, "-codec:v", fixed = TRUE)
+  expect_no_match(cmd, "0:v", fixed = TRUE)
 })
 
 # Two-pass correction builder (M16) ---------------------------------------
@@ -78,9 +91,9 @@ test_that("normalize_audio_pipeline() threads measured values into a linear corr
            "measured_LRA=5.9:measured_thresh=-38.06:offset=0.3:linear=true"),
     fixed = TRUE
   )
-  # The correction pass still rides the shared pipeline's shaping: copy video,
-  # downmix, resample.
-  expect_match(cmd, "-codec:v copy -ac 1 -ar 48000", fixed = TRUE)
+  # The correction pass still rides the shared pipeline's shaping: downmix,
+  # resample, and the audio map (the video copy went with D030).
+  expect_match(cmd, "-ac 1 -ar 48000", fixed = TRUE)
 })
 
 test_that("normalize_audio_pipeline() without measured is single-pass (no linear)", {
@@ -215,7 +228,8 @@ test_that("normalize_audio() emits no -codec:a by default (NULL sentinel)", {
   expect_equal(
     cmd,
     sprintf(
-      '-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" -codec:v copy "out.mp4"',
+      paste0('-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" ',
+             '-map 0:a:0 "out.mp4"'),
       f
     )
   )
@@ -230,7 +244,7 @@ test_that("normalize_audio(audio_codec = ) names the output audio encoder", {
     cmd,
     sprintf(
       paste0('-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" ',
-             '-codec:v copy -codec:a aac "out.mp4"'),
+             '-codec:a aac -map 0:a:0 "out.mp4"'),
       f
     )
   )

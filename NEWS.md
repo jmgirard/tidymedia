@@ -2,6 +2,66 @@
 
 ## Breaking changes
 
+* `format_for_web()` and `normalize_audio()` (and their `_batch` siblings) take
+  a new `audio_stream` argument naming which audio track to work on, and now
+  state that selection on every call. Both previously emitted no stream mapping
+  at all, so FFmpeg picked for them — one stream of each type, preferring
+  whichever audio track carries the container's "default" flag. On a
+  three-track test file whose default flag sat on the third track, both verbs
+  kept only that third track, in silence.
+
+  The two verbs read an unset `audio_stream` differently, and the difference is
+  deliberate. `format_for_web()` now keeps **every** audio track, matching
+  `crop_video()`, `segment_video()`, `standardize_video()`,
+  `anonymize_video()` and `separate_audio_video()`. If you re-encode multi-track
+  sources for the web, your outputs will gain tracks they used to lose, and grow
+  accordingly.
+
+  `normalize_audio()` keeps the **first** audio track, matching
+  `extract_audio()` and `convert_audio()`. That is not a narrowing: the verb
+  already produced a single audio track, just an unpredictable one. It reads
+  `NULL` this way because measuring loudness produces one measurement per audio
+  track while the correction applies a single set of values, so normalizing
+  several tracks at once would silently apply the first track's measurements to
+  all of them. Under `two_pass = TRUE` the measurement pass now measures exactly
+  the track the correction pass normalizes. Normalizing every track
+  independently would need per-track filter settings the pipeline builder does
+  not have, and is not offered.
+
+  Naming a track the input does not have remains an FFmpeg error rather than an
+  R one, on both verbs. Each argument's documentation says which family it
+  belongs to.
+
+  `normalize_audio()` now writes **one audio stream and no video**, whatever
+  container you name for the output. It has become an audio-producing verb like
+  `extract_audio()` and `convert_audio()`, rather than one that passes a video
+  stream through. Two consequences worth reading before you upgrade:
+
+  - **Normalizing a recording's loudness while keeping its picture is no longer
+    possible in one call.** If you relied on `normalize_audio("clip.mp4",
+    "clip_norm.mp4")` returning a playable video, it now returns an audio-only
+    `.mp4`. Normalize to an audio file and mux it back with the `ffmpeg()`
+    escape hatch; a first-class way to do this is on the roadmap.
+  - **An input with no audio is now an error** rather than a silent copy of the
+    video. A silent screen recording stops with FFmpeg's "Stream map '' matches
+    no streams" instead of quietly producing a file with no normalized audio in
+    it.
+
+  What you gain is that the output container no longer decides whether the call
+  works. `.wav`, `.mp3`, `.aac`, `.flac`, `.opus`, `.m4a`, `.mka`, `.oga`,
+  `.w64` and the video containers all behave the same way now, where before the
+  choice of extension could decide whether the call succeeded at all. (Anything
+  FFmpeg itself cannot encode for is still an FFmpeg error — `.wma`, for one,
+  which failed before this change too.)
+
+* Two argument-surface changes on the four verbs that gained `audio_stream`,
+  worth knowing if you call them tersely. The new argument sits before `run`, so
+  **positional** calls that supplied `run` (or `parallel`) by position now bind
+  it to the wrong argument — name your arguments, or move `run` along by one.
+  And on `normalize_audio()` / `normalize_audio_batch()`, abbreviating
+  `audio_codec` to `audio` no longer works: with `audio_stream` beside it, any
+  prefix shorter than `audio_c` is ambiguous. Spell `audio_codec` out.
+
 * `crop_video()` and `segment_video()` (and their `_batch` siblings) take a new
   `audio_stream` argument naming which audio track to carry, and now state that
   selection on every call. What that changes depends on which of them you use,

@@ -8,6 +8,7 @@ format_for_web_batch(
   jobs,
   hardware = c("none", "nvenc"),
   fallback = FALSE,
+  audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -20,7 +21,9 @@ the destination; when absent, one is derived per row by appending
 \code{_web} to each input's basename with an \code{.mp4} extension (the web
 re-encode always writes H.264/mp4), e.g. \code{clip.mkv} becomes
 \code{clip_web.mp4}. Any two rows that resolve to the same output path are
-rejected. Any other columns are ignored — including \code{video_codec} and
+rejected. An optional numeric \code{audio_stream} column (\code{NA} to keep
+every audio track in that row) overrides the \code{audio_stream} argument
+per row. Any other columns are ignored — including \code{video_codec} and
 \code{audio_codec}, which the sibling batch verbs read as per-row overrides
 but this one does not: the web recipe fixes both codecs by identity (H.264
 video, AAC audio). For per-row codecs use a verb that exposes them, such as
@@ -33,6 +36,13 @@ Batch-wide (not a per-row column). See \code{\link{has_nvenc}}.}
 \item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
 unavailable, re-encode with software libx264 and a message (\code{TRUE})
 instead of aborting (\code{FALSE}, default).}
+
+\item{audio_stream}{The 0-based index of the audio track to carry into every
+output, unless \code{jobs} carries an \code{audio_stream} column.
+\code{NULL} (default) carries \strong{every} audio track, as
+\code{\link{format_for_web}} does; an \code{NA} cell in the column says the
+same for that row. See \code{\link{format_for_web}} for how this differs
+from the extraction verbs and from \code{\link{normalize_audio}}.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}

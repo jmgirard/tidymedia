@@ -13,7 +13,7 @@ _Last hygiene check: 2026-07-31 (M50 merged and archived in one review round; D0
 | M48 | Carry the track selector to `crop_video()` and `segment_video()`, and make `ffm_copy()` idempotent again | done | M47 | normal | milestones/archive/M48-audio-stream-crop-segment.md |
 | M49 | Finish D026 on `format_for_web()` and `normalize_audio()` | done | — | normal | milestones/archive/M49-audio-stream-format-web-normalize.md |
 | M50 | Quote map specifiers in the compiled command string | done | M49 | normal | milestones/archive/M50-quote-map-specifiers.md |
-| M51 | Make the package's two 0-based audio indices legible | in-progress | M49, M50 | normal | milestones/M51-audio-index-docs.md |
+| M51 | Make the package's two 0-based audio indices legible | review | M49, M50 | normal | milestones/M51-audio-index-docs.md |
 | M52 | Collapse `probe_one()`'s per-stream FFprobe loop into one call | planned | — | normal | milestones/M52-probe-one-single-call.md |
 | M53 | Give `probe_all()` a `parallel =` argument | planned | M52 | normal | milestones/M53-probe-all-parallel.md |
 

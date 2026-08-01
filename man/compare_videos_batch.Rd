@@ -30,9 +30,10 @@ column's way of writing the scalar's \code{NULL}); in a \code{video_codec}
 or \code{audio_codec} column it means "leave the codec unset". Any two rows
 resolving to the same output path are rejected; other columns are ignored.}
 
-\item{direction, resize, audio}{Defaults applied to every row lacking the
-corresponding column. See \code{\link[=compare_videos]{compare_videos()}} for their meaning. \code{audio}
-is validated per row against that row's input count.}
+\item{direction, resize}{Defaults applied to every row lacking the
+corresponding column. See \code{\link[=compare_videos]{compare_videos()}} for their meaning.}
+
+\item{audio}{The 0-based index of the \emph{input} whose audio to keep -- \code{0} is the first file passed in, \code{1} the second. This counts the verb's inputs, not one input's audio streams, so it is a different index from \code{audio_stream} on the single-input verbs. \code{NULL} (default) maps no audio at all, so the output is silent -- unlike \code{audio_stream = NULL}, which always maps something. Naming an input the call does not have is an R error, raised before FFmpeg runs. Applied to every row lacking an \code{audio} column; an \code{NA} cell in that column means the same as \code{NULL} for that row, dropping that output's audio. Each row's value is validated against that row's input count. See \code{\link{audio_stream}}. (default = \code{NULL})}
 
 \item{video_codec}{A string naming the output video codec, applied to every
 row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
@@ -113,5 +114,29 @@ Other task verb functions:
 \code{\link[=standardize_video_batch]{standardize_video_batch()}},
 \code{\link[=strip_metadata]{strip_metadata()}},
 \code{\link[=strip_metadata_batch]{strip_metadata_batch()}}
+
+Other audio selection functions:
+\code{\link[=anonymize_video]{anonymize_video()}},
+\code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
+\code{\link[=compare_videos]{compare_videos()}},
+\code{\link[=convert_audio]{convert_audio()}},
+\code{\link[=convert_audio_batch]{convert_audio_batch()}},
+\code{\link[=crop_video]{crop_video()}},
+\code{\link[=crop_video_batch]{crop_video_batch()}},
+\code{\link[=extract_audio]{extract_audio()}},
+\code{\link[=extract_audio_batch]{extract_audio_batch()}},
+\code{\link[=format_for_web]{format_for_web()}},
+\code{\link[=format_for_web_batch]{format_for_web_batch()}},
+\code{\link[=normalize_audio]{normalize_audio()}},
+\code{\link[=normalize_audio_batch]{normalize_audio_batch()}},
+\code{\link[=picture_in_picture]{picture_in_picture()}},
+\code{\link[=picture_in_picture_batch]{picture_in_picture_batch()}},
+\code{\link[=segment_video]{segment_video()}},
+\code{\link[=segment_video_batch]{segment_video_batch()}},
+\code{\link[=separate_audio_video]{separate_audio_video()}},
+\code{\link[=separate_audio_video_batch]{separate_audio_video_batch()}},
+\code{\link[=standardize_video]{standardize_video()}},
+\code{\link[=standardize_video_batch]{standardize_video_batch()}}
 }
+\concept{audio selection functions}
 \concept{task verb functions}

@@ -96,7 +96,7 @@ audio_stream_param <- function(action,
 
 # The `@param audio` text for the two fan-in verbs, which count inputs rather
 # than streams. Shared for the same reason the block above is.
-audio_input_param <- function(batch = FALSE) {
+audio_input_param <- function(batch = FALSE, extra = NULL) {
   paste(
     c(
       paste0("The 0-based index of the \\emph{input} whose audio to keep -- ",
@@ -113,6 +113,7 @@ audio_input_param <- function(batch = FALSE) {
                "\\code{NA} cell in that column means the same as \\code{NULL} ",
                "for that row, dropping that output's audio.")
       },
+      extra,
       "See \\code{\\link{audio_stream}}. (default = \\code{NULL})"
     ),
     collapse = " "

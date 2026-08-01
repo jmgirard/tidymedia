@@ -493,6 +493,8 @@ ffm_loudnorm <- function(object,
 #'   \code{ffm_files()}.
 #' @param audio A string indicating which audio codec to use or \code{NULL} to
 #'   only set the video codec. default = \code{NULL}
+#'   See \code{\link{audio_stream}} for the three unrelated things \code{audio}
+#'   names across tidymedia.
 #' @param video A string indicating which video codec to use or \code{NULL} to
 #'   only set the audio codec. default = \code{NULL}
 #' @return \code{object} but with the added instruction to change the codec(s).
@@ -619,6 +621,8 @@ ffm_map <- function(object, mapping = "0", replace = FALSE) {
 #'   \code{ffm_files()}.
 #' @param audio A logical indicating whether to copy the audio codec.
 #'   (default = \code{TRUE})
+#'   See \code{\link{audio_stream}} for the three unrelated things \code{audio}
+#'   names across tidymedia.
 #' @param video A logical indicating whether to copy the video codec.
 #'   (default = \code{TRUE})
 #' @param streams A logical indicating whether to map all streams from the

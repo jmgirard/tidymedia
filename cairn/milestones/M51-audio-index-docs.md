@@ -97,7 +97,7 @@ no `_PACKAGE` sentinel) → new candidate row. Any behavior change.
       `audio_stream` and for `audio`-as-input-index, and assert each topic
       carries the cross-link. It must go red before the docs change.
 - [x] T2 Author the concept topic and register it in `_pkgdown.yml`.
-- [ ] T3 Add the `@family` tag and `@seealso` links across all twenty-two
+- [x] T3 Add the `@family` tag and `@seealso` links across all twenty-two
       affected verbs; fix the two batch `@param audio` blocks and the two
       missing "FFmpeg error" sentences.
 - [x] T4 Introduce the shared `@param audio_stream` source — an
@@ -123,6 +123,7 @@ no `_PACKAGE` sentinel) → new candidate row. Any behavior change.
 - 2026-07-31: T2 done — `R/audio-stream-doc.R` carries the `audio_stream` topic (aliases `audio-tracks`, `audio_indices`, no `@keywords internal`) plus the shared-text functions T4 will consume; `_pkgdown.yml` gains a "Concepts" section and `pkgdown::check_pkgdown()` still reports no problems. The topic's own family sentence is generated from the same vectors the `@param` blocks will use, so the hub cannot drift from the spokes either.
 - 2026-07-31: minor amendment — AC1's two source cites for `audio = NULL` emitting no map were stale (`R/ffmpeg.R:5028` is now the codec-column reshape). Verified and corrected to `R/ffmpeg.R:5190` and `:5335`, the two `if (!is.null(audio))` map sites. Criterion substance unchanged. Also confirmed while there that an out-of-range `audio` is an R error (`:5271`, `:5419` bound it with `max =`), which the topic now states.
 - 2026-07-31: T4 done (taken before T3, a minor reorder: T3 edits the same eighteen blocks T4 rewrites wholesale, so doing T4 first avoided editing text about to be replaced). `audio_stream_param()` in `R/audio-stream-doc.R` now generates all eighteen `@param audio_stream` blocks through an inline `r` call; each verb supplies only its own action verb, family, batch flag and caveat. Net -167/+18 lines in `R/ffmpeg.R`, and the four blocks carrying stale sibling lists are now correct by construction. The scripted edit preserved `R/ffmpeg.R`'s CRLF endings deliberately (M49 review H1) and asserted 18 blocks matched before writing. Suite: 3237 pass, the one remaining failure is T3's `audio` half.
+- 2026-07-31: T3 done — `@family audio selection functions` on all twenty-two verbs; `compare_videos()`/`picture_in_picture()` and both `_batch` siblings now generate `@param audio` from a shared `audio_input_param()`, which is also where the batch verbs stop merely deferring to the scalar verb (AC6); `ffm_codec()`/`ffm_copy()` gain a pointer to the concept topic so all four meanings of `audio` reach it. AC6's other half needed no separate edit — the shared `audio_stream` text carries the "FFmpeg error, not an R one" sentence, so `extract_audio_batch()`/`convert_audio_batch()` now have it. Suite 3238 pass / 0 fail; the cross-link test is green in both halves.
 
 ## Decisions
 

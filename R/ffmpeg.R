@@ -495,6 +495,7 @@ extract_audio_pipeline <- function(input, output, audio_codec = "copy",
 #'   [convert_audio()] to re-encode the extracted audio;
 #'   [extract_audio_batch()] for the many-file form.
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' extract_audio(video, "audio.aac", run = FALSE)
@@ -834,6 +835,7 @@ ffmpeg_exit_status <- function(cnd) {
 #' entirely when \code{audio_stream} names a track — with one track mapped, the
 #' track count cannot be what FFmpeg objected to.
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' separate_audio_video(video, "audio.aac", "video.mp4", run = FALSE)
@@ -960,6 +962,7 @@ convert_audio_pipeline <- function(input, output, audio_codec = NULL,
 #'   [extract_audio()] to copy audio without re-encoding;
 #'   [convert_audio_batch()] for the many-file form.
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' convert_audio(video, "audio.mp3", run = FALSE)
@@ -1085,6 +1088,7 @@ crop_video_pipeline <- function(input, output, width, height,
 #'   \code{hardware = "nvenc"} toggle;
 #'   [crop_video_batch()] for the many-file form.
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' crop_video(video, "cropped.mp4", width = 160, height = 120, run = FALSE)
@@ -1166,6 +1170,7 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
 #'   [standardize_video()] for a configurable re-encode;
 #'   [format_for_web_batch()] for the many-file form.
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' format_for_web(video, "web.mp4", run = FALSE)
@@ -1327,6 +1332,7 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #'   builders it wraps; [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
 #'   [standardize_video_batch()] for the many-file form.
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # The documented default standard (H.264 / yuv420p / +faststart)
@@ -1488,6 +1494,7 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
 #'   for the many-file (batch) form.
 #' @references https://ffmpeg.org/ffmpeg-filters.html#drawbox
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # Cover two fixed regions with black boxes
@@ -1749,6 +1756,7 @@ derive_anonymized_names <- function(input) {
 #'   [standardize_video_batch()] and [segment_video_batch()] for the other
 #'   table-driven siblings.
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' jobs <- tibble::tibble(
@@ -1988,6 +1996,7 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #' EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
 #' maximum level of audio signals}; ITU-R BS.1770-4.
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # The output holds audio only, so name an audio file for it
@@ -2557,6 +2566,7 @@ apply_audio_codec <- function(object, audio_codec, call = rlang::caller_env()) {
 #'   [segment_video_batch()] for the many-file form.
 #' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # Two segments; run = FALSE compiles one command per segment
@@ -2799,6 +2809,7 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #'   [ffm_seek()] for the cut trade-off.
 #' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' jobs <- tibble::tibble(
@@ -3314,6 +3325,7 @@ derive_standardized_names <- function(input) {
 #'   [segment_video_batch()] and [extract_frame_batch()] for the other
 #'   table-driven siblings.
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' jobs <- tibble::tibble(
@@ -3701,6 +3713,7 @@ derive_normalized_names <- function(input) {
 #'   batch runner and the arguments forwarded through \code{...};
 #'   [standardize_video_batch()] for the video-side table-driven sibling.
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' jobs <- tibble::tibble(
@@ -4217,6 +4230,7 @@ check_fanin_jobs <- function(jobs, min_inputs = 1L, verb = NULL,
 #' @seealso [extract_audio()], the scalar verb it wraps; [ffm_batch()], the batch
 #'   runner; [convert_audio_batch()] to transcode audio in batch.
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' jobs <- tibble::tibble(input = c(video, video), output = c("a.aac", "b.aac"))
@@ -4334,6 +4348,7 @@ extract_audio_batch <- function(jobs, audio_codec = "copy",
 #' @seealso [convert_audio()], the scalar verb it wraps; [ffm_batch()], the batch
 #'   runner; [extract_audio_batch()] to stream-copy audio in batch.
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' jobs <- tibble::tibble(input = c(video, video), output = c("a.mp3", "b.mp3"))
@@ -4493,6 +4508,7 @@ derive_web_names <- function(input) {
 #'   runner; [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
 #'   [standardize_video_batch()] to re-encode in batch.
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' jobs <- tibble::tibble(input = c(video, video), output = c("a.mp4", "b.mp4"),
@@ -4616,6 +4632,7 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #' @seealso [format_for_web()], the scalar verb it wraps; [ffm_batch()], the
 #'   batch runner; [standardize_video_batch()] for a configurable re-encode.
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' jobs <- tibble::tibble(input = c(video, video), output = c("a.mp4", "b.mp4"))
@@ -4744,6 +4761,7 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #' any compiled command. Suppress it with \code{suppressWarnings(classes =
 #' "tidymedia_multitrack_separation")}.
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' jobs <- tibble::tibble(
@@ -5070,8 +5088,7 @@ compare_videos_pipeline <- function(infiles, outfile,
 #'   \code{"vertical"} (stacked top to bottom).
 #' @param resize A logical indicating whether to resize the inputs to share an
 #'   edge. Only supported for exactly two inputs. (default = \code{TRUE})
-#' @param audio The 0-based index of the input whose audio to keep in the
-#'   output, or \code{NULL} to drop audio entirely. (default = \code{NULL})
+#' @param audio `r audio_input_param()`
 #' @param video_codec A string naming the output video codec, or \code{NULL}
 #'   (default) to leave it unset, so the output container's default encoder is
 #'   used and the compiled command is unchanged from one that never named a
@@ -5102,6 +5119,7 @@ compare_videos_pipeline <- function(infiles, outfile,
 #'   [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
 #'   [picture_in_picture()] for insetting instead of stacking.
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' compare_videos(c(video, video), "compare.mp4", run = FALSE)
@@ -5217,8 +5235,7 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
 #'   preserved (\code{0 < scale <= 1}). (default = \code{0.25})
 #' @param margin The gap in pixels between the inset and the video edges (ignored
 #'   for \code{position = "center"}). (default = \code{16})
-#' @param audio The 0-based index of the input whose audio to keep, or
-#'   \code{NULL} to drop audio. (default = \code{NULL})
+#' @param audio `r audio_input_param()`
 #' @param video_codec A string naming the output video codec, or \code{NULL}
 #'   (default) to leave it unset, so the output container's default encoder is
 #'   used and the compiled command is unchanged from one that never named a
@@ -5249,6 +5266,7 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
 #'   \code{hardware = "nvenc"} toggle; [compare_videos()] for
 #'   side-by-side stacking.
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' picture_in_picture(video, video, "pip.mp4", run = FALSE)
@@ -5360,9 +5378,9 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #'   column's way of writing the scalar's \code{NULL}); in a \code{video_codec}
 #'   or \code{audio_codec} column it means "leave the codec unset". Any two rows
 #'   resolving to the same output path are rejected; other columns are ignored.
-#' @param direction,resize,audio Defaults applied to every row lacking the
-#'   corresponding column. See [compare_videos()] for their meaning. \code{audio}
-#'   is validated per row against that row's input count.
+#' @param direction,resize Defaults applied to every row lacking the
+#'   corresponding column. See [compare_videos()] for their meaning.
+#' @param audio `r audio_input_param(batch = TRUE, extra = "Each row's value is validated against that row's input count.")`
 #' @param video_codec A string naming the output video codec, applied to every
 #'   row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
 #'   it unset so each output keeps its container's default encoder.
@@ -5390,6 +5408,7 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #'   [concatenate_videos_batch()] and [picture_in_picture_batch()],
 #'   the other fan-in batch siblings.
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' jobs <- tibble::tibble(inputs = list(c(video, video)), output = "compare.mp4")
@@ -5481,8 +5500,9 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #'   scalar's \code{NULL}); in a \code{video_codec} or \code{audio_codec} column
 #'   it means "leave the codec unset". Any two rows resolving to the same output
 #'   path are rejected; other columns are ignored.
-#' @param position,scale,margin,audio Defaults applied to every row lacking the
+#' @param position,scale,margin Defaults applied to every row lacking the
 #'   corresponding column. See [picture_in_picture()] for their meaning.
+#' @param audio `r audio_input_param(batch = TRUE)`
 #' @param video_codec A string naming the output video codec, applied to every
 #'   row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
 #'   it unset so each output keeps its container's default encoder.
@@ -5510,6 +5530,7 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #'   [concatenate_videos_batch()] and [compare_videos_batch()],
 #'   the other fan-in batch siblings.
 #' @family task verb functions
+#' @family audio selection functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' jobs <- tibble::tibble(main = video, overlay = video, output = "pip.mp4")

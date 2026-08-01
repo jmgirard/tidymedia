@@ -1,6 +1,7 @@
 # M51: Make the package's two 0-based audio indices legible
 
-- **Status:** planned
+- **Status:** in-progress
+- **Branch:** `m51-audio-index-docs`
 - **Priority:** normal
 - **Depends on:** M49, M50
 - **Driving RR:** —
@@ -115,6 +116,7 @@ no `_PACKAGE` sentinel) → new candidate row. Any behavior change.
 - 2026-07-31: created by /milestone-plan.
 - 2026-07-31: plan gate chose one shared `@param audio_stream` source over keeping eighteen hand-written copies guarded by a drift test, because the test encodes the family lists a second time and catches drift only at review; falsified by the shared source proving unable to express a per-family difference without a conditional, at which point the copies plus the guard return.
 - 2026-07-31: sequenced after M50 so the concept topic and the vignette describe the quoted specifier form rather than needing a second pass.
+- 2026-07-31: implementation gate settled three open choices, all as recommended: the shared `@param audio_stream` source is an internal R function whose result roxygen inserts via an inline `` `r ` `` call (probed in a scratch package first — the result is inserted verbatim, so the existing `\code{\link{}}` register survives, and the family lists become directly unit-testable); the concept topic is named `audio_stream` so `?audio_stream` reaches it; the `@family` grouping stays as scoped.
 - 2026-07-31: criteria audit ([O], fresh context) returned three findings: AC4 offered two incompatible end-states, one of which made AC3's assertion vacuous — resolved at the gate in favour of the shared source; AC7 said "three `NULL` readings" where D026 and this file's own AC1 say two (in three spellings); and the Coverage table orphaned T1, the task writing the very test AC3 relies on. All fixed above. The audit confirmed the eighteen-verb arithmetic (fourteen `.Rd` files carry `audio_stream` today, plus M49's four) and every other citation in the file.
 
 ## Decisions

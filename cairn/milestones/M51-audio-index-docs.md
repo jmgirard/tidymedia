@@ -104,7 +104,7 @@ no `_PACKAGE` sentinel) → new candidate row. Any behavior change.
       `@inheritParams` donor or a `man-roxygen` template, neither of which the
       package has today — and collapse the eighteen copies onto it, keeping the
       per-family differences that are genuinely per-family.
-- [ ] T5 `devtools::document()`; `pkgdown::check_pkgdown()`;
+- [x] T5 `devtools::document()`; `pkgdown::check_pkgdown()`;
       `spelling::update_wordlist()`.
 - [ ] T6 Vignette chunk for `audio_stream` and the `vignettes/tidymedia.Rmd:141`
       correction; re-knit any affected vignette.
@@ -124,6 +124,7 @@ no `_PACKAGE` sentinel) → new candidate row. Any behavior change.
 - 2026-07-31: minor amendment — AC1's two source cites for `audio = NULL` emitting no map were stale (`R/ffmpeg.R:5028` is now the codec-column reshape). Verified and corrected to `R/ffmpeg.R:5190` and `:5335`, the two `if (!is.null(audio))` map sites. Criterion substance unchanged. Also confirmed while there that an out-of-range `audio` is an R error (`:5271`, `:5419` bound it with `max =`), which the topic now states.
 - 2026-07-31: T4 done (taken before T3, a minor reorder: T3 edits the same eighteen blocks T4 rewrites wholesale, so doing T4 first avoided editing text about to be replaced). `audio_stream_param()` in `R/audio-stream-doc.R` now generates all eighteen `@param audio_stream` blocks through an inline `r` call; each verb supplies only its own action verb, family, batch flag and caveat. Net -167/+18 lines in `R/ffmpeg.R`, and the four blocks carrying stale sibling lists are now correct by construction. The scripted edit preserved `R/ffmpeg.R`'s CRLF endings deliberately (M49 review H1) and asserted 18 blocks matched before writing. Suite: 3237 pass, the one remaining failure is T3's `audio` half.
 - 2026-07-31: T3 done — `@family audio selection functions` on all twenty-two verbs; `compare_videos()`/`picture_in_picture()` and both `_batch` siblings now generate `@param audio` from a shared `audio_input_param()`, which is also where the batch verbs stop merely deferring to the scalar verb (AC6); `ffm_codec()`/`ffm_copy()` gain a pointer to the concept topic so all four meanings of `audio` reach it. AC6's other half needed no separate edit — the shared `audio_stream` text carries the "FFmpeg error, not an R one" sentence, so `extract_audio_batch()`/`convert_audio_batch()` now have it. Suite 3238 pass / 0 fail; the cross-link test is green in both halves.
+- 2026-07-31: T5 done — `devtools::document()` produces no diff, `pkgdown::check_pkgdown()` reports no problems (AC2), and `spelling::update_wordlist()` added the two new words the concept topic introduces ("arity", "unselected"); the package now spell-checks clean.
 
 ## Decisions
 

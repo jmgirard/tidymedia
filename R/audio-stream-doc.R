@@ -1,0 +1,196 @@
+# Documentation source for the two 0-based audio indices ---------------------
+#
+# The package exposes two arguments that both read as "0-based audio index" and
+# count different things (D023). This file is the single source for the prose
+# that says so: the user-facing concept topic below, and the shared `@param
+# audio_stream` text every verb inherits through an inline `r` call in its
+# roxygen block. Nothing here runs at package-use time -- roxygen evaluates it
+# at document() time and pastes the result into man/*.Rd.
+#
+# Keeping the family enumerations in R data rather than in eighteen hand-written
+# blocks is what makes a stale enumeration unrepresentable: before M51 the
+# blocks on standardize_video() and anonymize_video() still named
+# separate_audio_video() as their only fellow every-track verb, because M48
+# added crop/segment without back-linking them.
+
+# The two verb families, by how each reads `audio_stream = NULL`. Every entry
+# also has a `_batch` sibling reading it the same way, so the rendered lists say
+# "and their _batch siblings" rather than doubling in length.
+audio_stream_families <- list(
+  first = c("extract_audio", "convert_audio", "normalize_audio"),
+  every = c("separate_audio_video", "standardize_video", "anonymize_video",
+            "crop_video", "segment_video", "format_for_web")
+)
+
+# "\code{\link{a}}, \code{\link{b}} and \code{\link{c}}" -- Rd links in the
+# register the rest of the package's roxygen uses.
+rd_verb_list <- function(verbs) {
+  links <- sprintf("\\code{\\link{%s}}", verbs)
+  if (length(links) < 2) return(links)
+  paste0(paste(links[-length(links)], collapse = ", "), " and ",
+         links[length(links)])
+}
+
+# The sentence naming both families, told from the point of view of the family
+# `reading` belongs to. Exists in exactly one place; both readings are rendered
+# from the same two vectors, so neither list can drift from the other.
+audio_stream_family_sentence <- function(reading = c("first", "every")) {
+  reading <- match.arg(reading)
+  first <- rd_verb_list(audio_stream_families$first)
+  every <- rd_verb_list(audio_stream_families$every)
+  if (identical(reading, "first")) {
+    paste0("The extraction family reads \\code{NULL} this way -- ", first,
+           ", plus their \\code{_batch} siblings. The pass-through family ",
+           "keeps every track instead: ", every, ", plus theirs.")
+  } else {
+    paste0("The pass-through family reads \\code{NULL} this way -- ", every,
+           ", plus their \\code{_batch} siblings. The extraction family takes ",
+           "the first track only: ", first, ", plus theirs.")
+  }
+}
+
+# The full `@param audio_stream` text for one verb. Callers supply only what is
+# genuinely theirs: how the verb speaks of the track (`action` / `null_action`),
+# whether it is a `_batch` verb, and any verb-specific caveat.
+#
+#   action      infinitive phrase completing "the audio track to ..."
+#   null_action third-person verb completing "\code{NULL} (default) ..."
+#   reading     which family this verb belongs to
+#   batch       TRUE for a `_batch` verb (adds the column/NA sentence)
+#   extra       verb-specific sentence(s), appended before the closing links
+audio_stream_param <- function(action,
+                               null_action,
+                               reading = c("first", "every"),
+                               batch = FALSE,
+                               extra = NULL) {
+  reading <- match.arg(reading)
+  quantity <- if (identical(reading, "first")) {
+    "the \\strong{first} audio track"
+  } else {
+    "\\strong{every} audio track"
+  }
+  parts <- c(
+    sprintf(paste0("The 0-based index of the audio track to %s, counted ",
+                   "\\emph{among %s audio streams} -- \\code{0} is the first ",
+                   "audio track, \\code{1} the second, whatever their ",
+                   "positions among the file's streams."),
+            action,
+            if (batch) "that row's input's" else "the input's"),
+    if (batch) {
+      paste0("Applied to every row lacking an \\code{audio_stream} column; an ",
+             "\\code{NA} cell in that column means the same as \\code{NULL} ",
+             "for that row.")
+    },
+    sprintf("\\code{NULL} (default) %s %s.", null_action, quantity),
+    audio_stream_family_sentence(reading),
+    extra,
+    paste0("Naming a track the input does not have is an FFmpeg error, not an ",
+           "R one. See \\code{\\link{audio_stream}} for how this differs from ",
+           "\\code{audio}, the input index on \\code{\\link{compare_videos}} ",
+           "and \\code{\\link{picture_in_picture}}."),
+    "(default = \\code{NULL})"
+  )
+  paste(parts, collapse = " ")
+}
+
+# The `@param audio` text for the two fan-in verbs, which count inputs rather
+# than streams. Shared for the same reason the block above is.
+audio_input_param <- function(batch = FALSE) {
+  paste(
+    c(
+      paste0("The 0-based index of the \\emph{input} whose audio to keep -- ",
+             "\\code{0} is the first file passed in, \\code{1} the second. ",
+             "This counts the verb's inputs, not one input's audio streams, ",
+             "so it is a different index from \\code{audio_stream} on the ",
+             "single-input verbs."),
+      paste0("\\code{NULL} (default) maps no audio at all, so the output is ",
+             "silent -- unlike \\code{audio_stream = NULL}, which always maps ",
+             "something. Naming an input the call does not have is an R ",
+             "error, raised before FFmpeg runs."),
+      if (batch) {
+        paste0("Applied to every row lacking an \\code{audio} column; an ",
+               "\\code{NA} cell in that column means the same as \\code{NULL} ",
+               "for that row, dropping that output's audio.")
+      },
+      "See \\code{\\link{audio_stream}}. (default = \\code{NULL})"
+    ),
+    collapse = " "
+  )
+}
+
+#' Audio track and audio input indices
+#'
+#' @description
+#' tidymedia has two 0-based audio arguments that count different things. This
+#' page says which is which, so that meeting one after the other is not a trap.
+#'
+#' @details
+#' # The two indices
+#'
+#' \code{audio_stream} counts \strong{one input's audio streams}. On
+#' \code{\link{extract_audio}}, \code{audio_stream = 1} is that file's second
+#' audio track, whatever position it holds among the file's streams overall (it
+#' is not the \code{index} column of \code{\link{probe_audio}}, which counts
+#' every stream, audio or not).
+#'
+#' \code{audio} counts \strong{a verb's inputs}. On
+#' \code{\link{compare_videos}} and \code{\link{picture_in_picture}} -- the
+#' verbs that take more than one file -- \code{audio = 1} is the second
+#' \emph{file}, and says nothing about which of its tracks is taken.
+#'
+#' Neither can be computed from the other, which is why they stay separate
+#' names rather than one argument meaning two things depending on the verb's
+#' arity.
+#'
+#' # What `NULL` means, and it is not the same thing
+#'
+#' \code{audio_stream = NULL} always maps something; what differs is how much.
+#'
+#' * `r audio_stream_family_sentence("first")`
+#' * The two readings exist because an extraction verb writes one audio stream
+#'   by construction, so its unselected case must pick one track, while a
+#'   pass-through verb writes whatever its container holds and can keep them
+#'   all.
+#'
+#' \code{audio = NULL} is different in kind: it emits no audio map at all, so
+#' the output carries \strong{no audio}. A silent output is the default for
+#' \code{\link{compare_videos}} and \code{\link{picture_in_picture}}, because
+#' there is no non-arbitrary answer to which of several inputs should be heard.
+#'
+#' Out of range, the two also fail differently. An \code{audio} beyond the
+#' inputs you passed is an R error raised before FFmpeg runs; an
+#' \code{audio_stream} beyond the input's tracks is an FFmpeg error, because
+#' the track count is a property of the file rather than of the call.
+#'
+#' # In a `_batch` jobs table
+#'
+#' Every \code{_batch} verb takes the same argument as a scalar default and
+#' also accepts a per-row column of the same name. An \strong{absent column}
+#' means the scalar argument applies to every row. A \strong{present column}
+#' overrides it row by row, and an \code{NA} cell is that column's spelling of
+#' \code{NULL} -- it does not fall back to the scalar argument. So
+#' \code{audio_stream = 2} with an \code{audio_stream} column holding \code{NA}
+#' puts that row on its family's \code{NULL} reading, not on track 2.
+#'
+#' # `audio` names three things
+#'
+#' The name is reused across layers, and only the first of these is an index:
+#'
+#' * an input index on \code{\link{compare_videos}} and
+#'   \code{\link{picture_in_picture}} (and their \code{_batch} siblings), as
+#'   above;
+#' * an audio \emph{codec} string on \code{\link{ffm_codec}}, where
+#'   \code{audio = "aac"} names an encoder;
+#' * a \emph{logical} on \code{\link{ffm_copy}}, where \code{audio = TRUE}
+#'   stream-copies the audio instead of re-encoding it.
+#'
+#' @seealso \code{\link{extract_audio}} and \code{\link{convert_audio}} for the
+#'   first-track reading; \code{\link{standardize_video}} and
+#'   \code{\link{separate_audio_video}} for the every-track one;
+#'   \code{\link{compare_videos}} and \code{\link{picture_in_picture}} for the
+#'   input index; \code{\link{probe_audio}} to see what tracks a file actually
+#'   holds.
+#'
+#' @aliases audio-tracks audio_indices
+#' @name audio_stream
+NULL

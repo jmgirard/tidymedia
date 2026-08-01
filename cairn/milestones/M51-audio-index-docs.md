@@ -39,7 +39,7 @@ no `_PACKAGE` sentinel) → new candidate row. Any behavior change.
       input's audio streams while `audio` counts a verb's inputs; which verb
       families read `audio_stream = NULL` as the first track and which as every
       track; that `audio = NULL` emits no map at all and so drops audio
-      (`R/ffmpeg.R:5028`, `:5173`), unlike `audio_stream = NULL`; that an `NA`
+      (`R/ffmpeg.R:5190`, `:5335`), unlike `audio_stream = NULL`; that an `NA`
       cell in a `_batch` override column means that row's `NULL` sentinel while
       an absent column means the scalar argument applies; and that `audio` also
       names a codec on `ffm_codec()` and a logical on `ffm_copy()`.
@@ -96,7 +96,7 @@ no `_PACKAGE` sentinel) → new candidate row. Any behavior change.
 - [x] T1 Write the enumerating test first (AC3): walk `man/*.Rd` for
       `audio_stream` and for `audio`-as-input-index, and assert each topic
       carries the cross-link. It must go red before the docs change.
-- [ ] T2 Author the concept topic and register it in `_pkgdown.yml`.
+- [x] T2 Author the concept topic and register it in `_pkgdown.yml`.
 - [ ] T3 Add the `@family` tag and `@seealso` links across all twenty-two
       affected verbs; fix the two batch `@param audio` blocks and the two
       missing "FFmpeg error" sentences.
@@ -120,6 +120,8 @@ no `_PACKAGE` sentinel) → new candidate row. Any behavior change.
 - 2026-07-31: criteria audit ([O], fresh context) returned three findings: AC4 offered two incompatible end-states, one of which made AC3's assertion vacuous — resolved at the gate in favour of the shared source; AC7 said "three `NULL` readings" where D026 and this file's own AC1 say two (in three spellings); and the Coverage table orphaned T1, the task writing the very test AC3 relies on. All fixed above. The audit confirmed the eighteen-verb arithmetic (fourteen `.Rd` files carry `audio_stream` today, plus M49's four) and every other citation in the file.
 
 - 2026-07-31: T1 done — `tests/testthat/test-audio-index-docs.R` enumerates `\item{}` parameter names across `man/*.Rd` and demands a link to the concept topic; red before the docs change (18 `audio_stream` topics and all 6 `audio` topics unlinked). It covers `ffm_codec()`/`ffm_copy()`'s non-index `audio` too rather than allowlisting them, so there is no second list to keep in step; it skips where `man/` is absent (a built tarball).
+- 2026-07-31: T2 done — `R/audio-stream-doc.R` carries the `audio_stream` topic (aliases `audio-tracks`, `audio_indices`, no `@keywords internal`) plus the shared-text functions T4 will consume; `_pkgdown.yml` gains a "Concepts" section and `pkgdown::check_pkgdown()` still reports no problems. The topic's own family sentence is generated from the same vectors the `@param` blocks will use, so the hub cannot drift from the spokes either.
+- 2026-07-31: minor amendment — AC1's two source cites for `audio = NULL` emitting no map were stale (`R/ffmpeg.R:5028` is now the codec-column reshape). Verified and corrected to `R/ffmpeg.R:5190` and `:5335`, the two `if (!is.null(audio))` map sites. Criterion substance unchanged. Also confirmed while there that an out-of-range `audio` is an R error (`:5271`, `:5419` bound it with `max =`), which the topic now states.
 
 ## Decisions
 

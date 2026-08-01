@@ -93,7 +93,7 @@ no `_PACKAGE` sentinel) → new candidate row. Any behavior change.
 
 ## Tasks
 
-- [ ] T1 Write the enumerating test first (AC3): walk `man/*.Rd` for
+- [x] T1 Write the enumerating test first (AC3): walk `man/*.Rd` for
       `audio_stream` and for `audio`-as-input-index, and assert each topic
       carries the cross-link. It must go red before the docs change.
 - [ ] T2 Author the concept topic and register it in `_pkgdown.yml`.
@@ -118,6 +118,8 @@ no `_PACKAGE` sentinel) → new candidate row. Any behavior change.
 - 2026-07-31: sequenced after M50 so the concept topic and the vignette describe the quoted specifier form rather than needing a second pass.
 - 2026-07-31: implementation gate settled three open choices, all as recommended: the shared `@param audio_stream` source is an internal R function whose result roxygen inserts via an inline `` `r ` `` call (probed in a scratch package first — the result is inserted verbatim, so the existing `\code{\link{}}` register survives, and the family lists become directly unit-testable); the concept topic is named `audio_stream` so `?audio_stream` reaches it; the `@family` grouping stays as scoped.
 - 2026-07-31: criteria audit ([O], fresh context) returned three findings: AC4 offered two incompatible end-states, one of which made AC3's assertion vacuous — resolved at the gate in favour of the shared source; AC7 said "three `NULL` readings" where D026 and this file's own AC1 say two (in three spellings); and the Coverage table orphaned T1, the task writing the very test AC3 relies on. All fixed above. The audit confirmed the eighteen-verb arithmetic (fourteen `.Rd` files carry `audio_stream` today, plus M49's four) and every other citation in the file.
+
+- 2026-07-31: T1 done — `tests/testthat/test-audio-index-docs.R` enumerates `\item{}` parameter names across `man/*.Rd` and demands a link to the concept topic; red before the docs change (18 `audio_stream` topics and all 6 `audio` topics unlinked). It covers `ffm_codec()`/`ffm_copy()`'s non-index `audio` too rather than allowlisting them, so there is no second list to keep in step; it skips where `man/` is absent (a built tarball).
 
 ## Decisions
 

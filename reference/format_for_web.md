@@ -12,6 +12,7 @@ format_for_web(
   outfile,
   hardware = c("none", "nvenc"),
   fallback = FALSE,
+  audio_stream = NULL,
   run = TRUE
 )
 ```
@@ -37,6 +38,27 @@ format_for_web(
   A logical: when `hardware = "nvenc"` but nvenc is unavailable,
   re-encode with software libx264 and a message (`TRUE`) instead of
   aborting (`FALSE`, default).
+
+- audio_stream:
+
+  The 0-based index of the audio track to carry into the output, counted
+  *among the input's audio streams* – `0` is the first audio track, `1`
+  the second, whatever their positions among the file's streams. `NULL`
+  (default) carries **every** audio track, which is also what
+  [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
+  [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
+  [`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
+  [`crop_video`](https://jmgirard.github.io/tidymedia/reference/crop_video.md)
+  and
+  [`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
+  do, and differs from
+  [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
+  [`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
+  and
+  [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
+  whose `NULL` takes the first track only. Naming a track the input does
+  not have is an FFmpeg error, not an R one. Subtitle and data streams
+  are not carried either way. (default = `NULL`)
 
 - run:
 
@@ -96,5 +118,5 @@ Other task verb functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 format_for_web(video, "web.mp4", run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -codec:a aac -pix_fmt yuv420p -movflags +faststart \"web.mp4\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -codec:a aac -pix_fmt yuv420p -movflags +faststart -map 0:v? -map 0:a? \"web.mp4\""
 ```

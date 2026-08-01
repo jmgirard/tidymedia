@@ -16,6 +16,7 @@ format_for_web_batch(
   jobs,
   hardware = c("none", "nvenc"),
   fallback = FALSE,
+  audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -31,7 +32,9 @@ format_for_web_batch(
   absent, one is derived per row by appending `_web` to each input's
   basename with an `.mp4` extension (the web re-encode always writes
   H.264/mp4), e.g. `clip.mkv` becomes `clip_web.mp4`. Any two rows that
-  resolve to the same output path are rejected. Any other columns are
+  resolve to the same output path are rejected. An optional numeric
+  `audio_stream` column (`NA` to keep every audio track in that row)
+  overrides the `audio_stream` argument per row. Any other columns are
   ignored — including `video_codec` and `audio_codec`, which the sibling
   batch verbs read as per-row overrides but this one does not: the web
   recipe fixes both codecs by identity (H.264 video, AAC audio). For
@@ -52,6 +55,17 @@ format_for_web_batch(
   A logical: when `hardware = "nvenc"` but nvenc is unavailable,
   re-encode with software libx264 and a message (`TRUE`) instead of
   aborting (`FALSE`, default).
+
+- audio_stream:
+
+  The 0-based index of the audio track to carry into every output,
+  unless `jobs` carries an `audio_stream` column. `NULL` (default)
+  carries **every** audio track, as
+  [`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
+  does; an `NA` cell in the column says the same for that row. See
+  [`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
+  for how this differs from the extraction verbs and from
+  [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md).
 
 - run:
 

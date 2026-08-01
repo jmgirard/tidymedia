@@ -97,14 +97,21 @@ escape hatch there.
 Acoustic and transcription tools want clean, consistently loud audio.
 [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
 brings a file to a target integrated loudness (here −23 LUFS, the EBU
-R128 broadcast reference):
+R128 broadcast reference). Its output is **one audio stream and no
+video**, so name an audio file for it — normalizing into a video
+container would give you a `.mp4` carrying nothing but sound:
 
 ``` r
 
-normalize_audio(session, "session01_camA_norm.mp4",
+normalize_audio(session, "session01_camA_norm.wav",
                 target_loudness = -23, run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -codec:v copy \"session01_camA_norm.mp4\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -map 0:a:0 \"session01_camA_norm.wav\""
 ```
+
+To normalize a recording’s loudness *and* keep its picture, normalize to
+an audio file as above and mux it back with the
+[`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)
+escape hatch.
 
 To hand the speech to a transcription or acoustic-analysis tool, pull
 the audio into a standalone file.
@@ -200,7 +207,7 @@ enabled, so coders can stream it in a browser without a large download:
 ``` r
 
 format_for_web(session, "session01_camA_share.mp4", run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -codec:a aac -pix_fmt yuv420p -movflags +faststart \"session01_camA_share.mp4\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -codec:a aac -pix_fmt yuv420p -movflags +faststart -map 0:v? -map 0:a? \"session01_camA_share.mp4\""
 ```
 
 ## Reproducibility

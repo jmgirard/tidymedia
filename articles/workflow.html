@@ -138,11 +138,17 @@ reach for the <code><a href="../reference/ffmpeg.html">ffmpeg()</a></code> escap
 </h2>
 <p>Acoustic and transcription tools want clean, consistently loud audio.
 <code><a href="../reference/normalize_audio.html">normalize_audio()</a></code> brings a file to a target integrated
-loudness (here −23 LUFS, the EBU R128 broadcast reference):</p>
+loudness (here −23 LUFS, the EBU R128 broadcast reference). Its output
+is <strong>one audio stream and no video</strong>, so name an audio file
+for it — normalizing into a video container would give you a
+<code>.mp4</code> carrying nothing but sound:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/normalize_audio.html">normalize_audio</a></span><span class="op">(</span><span class="va">session</span>, <span class="st">"session01_camA_norm.mp4"</span>,</span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/normalize_audio.html">normalize_audio</a></span><span class="op">(</span><span class="va">session</span>, <span class="st">"session01_camA_norm.wav"</span>,</span>
 <span>                target_loudness <span class="op">=</span> <span class="op">-</span><span class="fl">23</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -codec:v copy \"session01_camA_norm.mp4\""</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -map 0:a:0 \"session01_camA_norm.wav\""</span></span></code></pre></div>
+<p>To normalize a recording’s loudness <em>and</em> keep its picture,
+normalize to an audio file as above and mux it back with the
+<code><a href="../reference/ffmpeg.html">ffmpeg()</a></code> escape hatch.</p>
 <p>To hand the speech to a transcription or acoustic-analysis tool, pull
 the audio into a standalone file. <code><a href="../reference/convert_audio.html">convert_audio()</a></code>
 transcodes to whatever the output extension implies — a
@@ -210,7 +216,7 @@ broadly compatible H.264 file with fast-start enabled, so coders can
 stream it in a browser without a large download:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/format_for_web.html">format_for_web</a></span><span class="op">(</span><span class="va">session</span>, <span class="st">"session01_camA_share.mp4"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -codec:a aac -pix_fmt yuv420p -movflags +faststart \"session01_camA_share.mp4\""</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -codec:a aac -pix_fmt yuv420p -movflags +faststart -map 0:v? -map 0:a? \"session01_camA_share.mp4\""</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="reproducibility">Reproducibility<a class="anchor" aria-label="anchor" href="#reproducibility"></a>

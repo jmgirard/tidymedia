@@ -24,6 +24,7 @@ normalize_audio_batch(
   sample_rate = NULL,
   audio_codec = NULL,
   two_pass = FALSE,
+  audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -38,7 +39,9 @@ normalize_audio_batch(
   (source path). An optional `output` column names the destination; when
   absent, one is derived per row by appending `_normalized` to each
   input's basename, keeping the input's extension (e.g. `clip.mkv`
-  becomes `clip_normalized.mkv`). Because normalization is
+  becomes `clip_normalized.mkv`) — note that the derived name keeps a
+  *video* extension while the file itself holds audio only, so name an
+  `output` column explicitly when that matters. Because normalization is
   one-input-to-one-output, a duplicated `input` with no `output` column
   would collide and is rejected. Each of the five loudness knobs —
   `target_loudness`, `true_peak`, `loudness_range`, `channels`,
@@ -47,8 +50,10 @@ normalize_audio_batch(
   the column fall back to the argument's value. An optional
   `audio_codec` column (character) names each row's output audio
   encoder, with `NA` meaning "leave the encoder unset"; rows omitting it
-  fall back to the `audio_codec` argument. Any other columns are
-  ignored.
+  fall back to the `audio_codec` argument. An optional numeric
+  `audio_stream` column (`NA` to normalize that row's first audio track)
+  likewise overrides the `audio_stream` argument per row. Any other
+  columns are ignored.
 
 - target_loudness, true_peak, loudness_range:
 
@@ -103,6 +108,20 @@ normalize_audio_batch(
   are marked in a logical `silent` column (with `success = FALSE` and no
   output written), and a warning names them. The single-pass default
   touches no binary under `run = FALSE`.
+
+- audio_stream:
+
+  The 0-based index of the audio track to normalize in every row, unless
+  `jobs` carries an `audio_stream` column. `NULL` (default) normalizes
+  each input's **first** audio track, as
+  [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
+  does; an `NA` cell in the column says the same for that row. Under
+  `two_pass = TRUE` each row's analysis pass measures the same track its
+  correction pass normalizes. Every output holds one audio stream and no
+  video, whatever its container – so a derived output name keeping a
+  video extension (see `jobs`) yields a video container carrying audio
+  alone. A row whose input has no audio is an FFmpeg error. See
+  [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md).
 
 - run:
 

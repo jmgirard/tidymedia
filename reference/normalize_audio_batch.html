@@ -76,6 +76,7 @@ across the whole table (see <code>two_pass</code>).</p>
 <span>  sample_rate <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  audio_codec <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  two_pass <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  audio_stream <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span></span>
@@ -91,7 +92,10 @@ across the whole table (see <code>two_pass</code>).</p>
 <code>input</code> column (source path). An optional <code>output</code> column names
 the destination; when absent, one is derived per row by appending
 <code>_normalized</code> to each input's basename, keeping the input's extension
-(e.g. <code>clip.mkv</code> becomes <code>clip_normalized.mkv</code>). Because
+(e.g. <code>clip.mkv</code> becomes <code>clip_normalized.mkv</code>) — note that the
+derived name keeps a <em>video</em> extension while the file itself holds
+audio only, so name an <code>output</code> column explicitly when that matters.
+Because
 normalization is one-input-to-one-output, a duplicated <code>input</code> with no
 <code>output</code> column would collide and is rejected. Each of the five
 loudness knobs — <code>target_loudness</code>, <code>true_peak</code>,
@@ -100,8 +104,10 @@ as a column to override the corresponding argument on a per-row basis; rows
 (or knobs) that omit the column fall back to the argument's value. An
 optional <code>audio_codec</code> column (character) names each row's output
 audio encoder, with <code>NA</code> meaning "leave the encoder unset"; rows
-omitting it fall back to the <code>audio_codec</code> argument. Any other
-columns are ignored.</p></dd>
+omitting it fall back to the <code>audio_codec</code> argument. An optional
+numeric <code>audio_stream</code> column (<code>NA</code> to normalize that row's first
+audio track) likewise overrides the <code>audio_stream</code> argument per row.
+Any other columns are ignored.</p></dd>
 
 
 <dt id="arg-target-loudness-true-peak-loudness-range">target_loudness, true_peak, loudness_range<a class="anchor" aria-label="anchor" href="#arg-target-loudness-true-peak-loudness-range"></a></dt>
@@ -157,6 +163,19 @@ batch — the non-silent rows are normalized, the silent rows are marked in a
 logical <code>silent</code> column (with <code>success = FALSE</code> and no output
 written), and a warning names them. The single-pass default touches no
 binary under <code>run = FALSE</code>.</p></dd>
+
+
+<dt id="arg-audio-stream">audio_stream<a class="anchor" aria-label="anchor" href="#arg-audio-stream"></a></dt>
+<dd><p>The 0-based index of the audio track to normalize in
+every row, unless <code>jobs</code> carries an <code>audio_stream</code> column.
+<code>NULL</code> (default) normalizes each input's <strong>first</strong> audio track,
+as <code><a href="normalize_audio.html">normalize_audio</a></code> does; an <code>NA</code> cell in the column says
+the same for that row. Under <code>two_pass = TRUE</code> each row's analysis
+pass measures the same track its correction pass normalizes. Every output
+holds one audio stream and no video, whatever its container – so a derived
+output name keeping a video extension (see <code>jobs</code>) yields a video
+container carrying audio alone. A row whose input has no audio is an FFmpeg
+error. See <code><a href="normalize_audio.html">normalize_audio</a></code>.</p></dd>
 
 
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>

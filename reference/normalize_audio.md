@@ -2,11 +2,16 @@
 
 Normalize the perceived loudness of a file's audio toward an EBU R128
 target using FFmpeg's single-pass `loudnorm` filter, optionally
-downmixing the channel count and resampling. The video stream is copied
-unchanged (`-c:v copy`), so only the audio is touched – the audio-side
-complement to
-[`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
-which leaves audio alone.
+downmixing the channel count and resampling. The output holds **one
+audio stream and no video**, whatever the input and whatever container
+`outfile` names – so this is an audio-producing verb like
+[`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
+and
+[`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
+not a pass-through one. To normalize a recording's soundtrack *and* keep
+its picture, normalize to an audio file and mux it back with the
+[`ffmpeg`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)
+escape hatch.
 
 ## Usage
 
@@ -21,6 +26,7 @@ normalize_audio(
   sample_rate = NULL,
   audio_codec = NULL,
   two_pass = FALSE,
+  audio_stream = NULL,
   run = TRUE
 )
 ```
@@ -29,11 +35,17 @@ normalize_audio(
 
 - infile:
 
-  A string containing the path to a media file (with audio).
+  A string containing the path to a media file (with audio). An input
+  with no audio stream is an FFmpeg error, not a silent copy of the
+  video.
 
 - outfile:
 
-  A string containing the path of the file to write.
+  A string containing the path of the audio file to write. Any container
+  FFmpeg can write is accepted and the compiled command does not depend
+  on which – an audio container (`.wav`, `.flac`) holds the result
+  exactly as a video container (`.mkv`) does, the latter simply carrying
+  one audio stream and nothing else.
 
 - target_loudness:
 
@@ -85,6 +97,28 @@ normalize_audio(
   undefined, so two-pass aborts with a clear error (the single-pass
   default leaves silence untouched).
 
+- audio_stream:
+
+  The 0-based index of the audio track to normalize, counted *among the
+  input's audio streams* – `0` is the first audio track, `1` the second,
+  whatever their positions among the file's streams. `NULL` (default)
+  normalizes the **first** audio track, as
+  [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
+  and
+  [`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
+  do, and differs from the pass-through verbs
+  ([`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
+  [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
+  [`crop_video`](https://jmgirard.github.io/tidymedia/reference/crop_video.md)
+  and their siblings), whose `NULL` keeps every track. This verb reads
+  it the first-track way because the two-pass analysis produces one
+  measurement per audio track while the correction takes a single set,
+  so normalizing several tracks at once would apply one track's
+  measurements to all of them. Only the named track reaches the output,
+  and no video does. Under `two_pass = TRUE` the analysis pass measures
+  this same track. Naming a track the input does not have is an FFmpeg
+  error, not an R one. (default = `NULL`)
+
 - run:
 
   A logical: run the (correction) command through FFmpeg (`TRUE`,
@@ -124,8 +158,10 @@ maximum level of audio signals*; ITU-R BS.1770-4.
 the builder it wraps;
 [`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md)
 for the many-file form;
-[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
-its video-side complement.
+[`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
+and
+[`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
+the other verbs whose output is one audio stream.
 
 Other task verb functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
@@ -162,13 +198,14 @@ Other task verb functions:
 
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-normalize_audio(video, "normalized.mp4", run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -codec:v copy \"normalized.mp4\""
+# The output holds audio only, so name an audio file for it
+normalize_audio(video, "normalized.wav", run = FALSE)
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -map 0:a:0 \"normalized.wav\""
 # Normalize to a streaming target and downmix to mono
-normalize_audio(video, "mono.mp4", target_loudness = -16, channels = 1,
+normalize_audio(video, "mono.wav", target_loudness = -16, channels = 1,
                 run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-16:TP=-1:LRA=7\" -codec:v copy -ac 1 \"mono.mp4\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-16:TP=-1:LRA=7\" -ac 1 -map 0:a:0 \"mono.wav\""
 # Name the output audio encoder instead of taking the container's default
-normalize_audio(video, "aac.mp4", audio_codec = "aac", run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -codec:v copy -codec:a aac \"aac.mp4\""
+normalize_audio(video, "normalized.m4a", audio_codec = "aac", run = FALSE)
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -codec:a aac -map 0:a:0 \"normalized.m4a\""
 ```

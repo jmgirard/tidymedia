@@ -1,6 +1,8 @@
 # Tests for normalize_audio(): a Layer-2 verb that loudness-normalizes a file's
-# audio (EBU R128 loudnorm) while stream-copying video. Command construction is
-# tested purely (run = FALSE); execution is gated on the ffmpeg binary.
+# audio (EBU R128 loudnorm). Its output is ONE audio stream and no video since
+# D030 -- it no longer stream-copies video, and no longer names a video codec.
+# Command construction is tested purely (run = FALSE); execution is gated on the
+# ffmpeg binary.
 
 test_that("normalize_audio() compiles the default EBU R128 command", {
   f <- make_input()
@@ -89,8 +91,8 @@ test_that("normalize_audio_pipeline() threads measured values into a linear corr
            "measured_LRA=5.9:measured_thresh=-38.06:offset=0.3:linear=true"),
     fixed = TRUE
   )
-  # The correction pass still rides the shared pipeline's shaping: copy video,
-  # downmix, resample.
+  # The correction pass still rides the shared pipeline's shaping: downmix,
+  # resample, and the audio map (the video copy went with D030).
   expect_match(cmd, "-ac 1 -ar 48000", fixed = TRUE)
 })
 

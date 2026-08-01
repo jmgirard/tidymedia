@@ -24,7 +24,10 @@ normalize_audio_batch(
 \code{input} column (source path). An optional \code{output} column names
 the destination; when absent, one is derived per row by appending
 \code{_normalized} to each input's basename, keeping the input's extension
-(e.g. \code{clip.mkv} becomes \code{clip_normalized.mkv}). Because
+(e.g. \code{clip.mkv} becomes \code{clip_normalized.mkv}) — note that the
+derived name keeps a \emph{video} extension while the file itself holds
+audio only, so name an \code{output} column explicitly when that matters.
+Because
 normalization is one-input-to-one-output, a duplicated \code{input} with no
 \code{output} column would collide and is rejected. Each of the five
 loudness knobs — \code{target_loudness}, \code{true_peak},

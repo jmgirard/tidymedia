@@ -47,10 +47,12 @@
     no streams" instead of quietly producing a file with no normalized audio in
     it.
 
-  What you gain is that the output container no longer matters: writing to
-  `.wav`, `.mp3`, `.flac`, `.opus`, `.w64` or anything else FFmpeg can mux now
-  works uniformly, where before the choice of extension could decide whether the
-  call succeeded at all.
+  What you gain is that the output container no longer decides whether the call
+  works. `.wav`, `.mp3`, `.aac`, `.flac`, `.opus`, `.m4a`, `.mka`, `.oga`,
+  `.w64` and the video containers all behave the same way now, where before the
+  choice of extension could decide whether the call succeeded at all. (Anything
+  FFmpeg itself cannot encode for is still an FFmpeg error — `.wma`, for one,
+  which failed before this change too.)
 
 * Two argument-surface changes on the four verbs that gained `audio_stream`,
   worth knowing if you call them tersely. The new argument sits before `run`, so

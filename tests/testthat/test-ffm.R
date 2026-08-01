@@ -539,8 +539,9 @@ test_that("every in-package pipeline emits the maps its verb's contract says", {
   # numbers, and which one is a property of what that command's output is:
   #
   #   2 -- a command whose output carries both video and audio, and which
-  #        states both halves of its selection: `-map 0:v?` plus one of
-  #        `-map 0:a?`, `-map 0:a:0?` or `-map 0:a:<n>` (D026, D028).
+  #        states both halves of its selection: `-map 0:v?` plus either
+  #        `-map 0:a?` or `-map 0:a:<n>` (D026). No in-package command compiles
+  #        `0:a:0?`; D030 deleted the one that did.
   #   1 -- a command whose output is ONE stream (the extraction verbs, each
   #        side of the separation fan-out, the two-pass analysis pass, which
   #        writes to `-f null` and maps audio alone), or one that copies every

@@ -344,8 +344,9 @@ bind_two_pass_result <- function(jobs, silent, ok_res, run, verify = FALSE,
 # linear correction command per row of a jobs table already augmented with the
 # five measured columns (measured_I/TP/LRA/thresh/offset) by Phase 1. A thin
 # fan-out over ffm_batch() (D007) sharing normalize_audio_pipeline() with the
-# scalar/single-pass paths, so channels/sample_rate/audio_codec/-codec:v copy
-# and the per-value validation are inherited by construction. A per-row
+# scalar/single-pass paths, so channels/sample_rate/audio_codec, the audio map
+# and the per-value validation are inherited by construction (the `-codec:v
+# copy` this once listed went away with D030's audio-only contract). A per-row
 # audio_codec column resolves through batch_codec_cell() exactly as it does on
 # the single-pass path (M36). The measured columns arrive
 # via `...` (pmap-style) and thread back as the `measured` list, switching each

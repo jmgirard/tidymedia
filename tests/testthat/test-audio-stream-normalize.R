@@ -463,9 +463,30 @@ test_that("every plausible output container works, audio-only or not", {
     expect_gt(file.size(out), 0)
     # Audio out, and never video -- whatever the container would have allowed.
     types <- stream_types(out)
-    expect_true("audio" %in% types, label = paste("no audio stream in", ext))
+    expect_identical(sum(types == "audio"), 1L,
+                     label = paste("audio stream count in", ext))
     expect_false("video" %in% types, label = paste("video stream in", ext))
   }
+})
+
+test_that("a multi-track input still yields exactly one audio stream", {
+  # The matrix above runs on a single-track fixture, so "one audio stream" and
+  # "has audio" are indistinguishable there: a regression mapping `0:a?` would
+  # stay green. This is the discriminator AC8's count actually needs.
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video(default_track = 2)
+  for (ext in c("wav", "mka", "mkv", "mp4")) {
+    out <- withr::local_tempfile(fileext = paste0(".", ext))
+    normalize_audio(infile, out)
+    types <- stream_types(out)
+    expect_identical(sum(types == "audio"), 1L,
+                     label = paste("audio stream count in", ext))
+    expect_false("video" %in% types, label = paste("video stream in", ext))
+  }
+  # And it is the FIRST track, not the DEFAULT-disposition one.
+  out <- withr::local_tempfile(fileext = ".mka")
+  normalize_audio(infile, out)
+  expect_identical(audio_languages(out), "eng")
 })
 
 test_that("the audio written to an audio-only container is actually normalized", {

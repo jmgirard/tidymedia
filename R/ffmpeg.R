@@ -323,18 +323,16 @@ audio_stream_map <- function(audio_stream = NULL, null_map = "0:a:0",
 # promises "Naming a track the input does not have is an FFmpeg error, not an R
 # one" (D023). Making it optional would turn a mistyped index into a silently
 # audio-less output.
-# `null_map` is a parameter for the same reason audio_stream_map() has one, and
-# it was added by the same kind of caller: M49 gave normalize_audio() this map
-# pair with a FIRST-TRACK unselected case (`0:a:0?`) rather than D026's
-# every-track one. The reason is measured and specific to that verb's two-pass
-# path -- an every-track map makes the analysis pass print one JSON block per
-# mapped track while the parser reads only the first, so every track would be
-# corrected with track 0's measurements, silently. D028 records it. The `?` is
-# kept on the first-track spelling for the same reason it is kept on `0:a?`:
-# without it a video-only input aborts at exit 234 where master exited 0.
-pass_through_maps <- function(audio_stream = NULL, null_map = "0:a?",
+# NOT used by normalize_audio(). M49 briefly routed that verb through here with
+# a first-track `null_map`, then with a container-conditional video half; both
+# broke audio-only destinations and both are gone (D030). That verb now maps
+# audio alone via audio_stream_map() and carries no `?`, because when EVERY map
+# specifier is optional and matches nothing FFmpeg discards the maps and reverts
+# to default selection. Do not copy this helper's `0:a?` spelling into an
+# audio-producing verb: this pair is for verbs whose product is a video file.
+pass_through_maps <- function(audio_stream = NULL,
                               call = rlang::caller_env()) {
-  c("0:v?", audio_stream_map(audio_stream, null_map = null_map, call = call))
+  c("0:v?", audio_stream_map(audio_stream, null_map = "0:a?", call = call))
 }
 
 # warn_dropped_audio() ----------------------------------------------------
@@ -2066,19 +2064,21 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #'   \code{two_pass = TRUE} this is the correction command built from the
 #'   measured values.
 #' @seealso [ffm_loudnorm()], the builder it wraps; [normalize_audio_batch()]
-#'   for the many-file form; [standardize_video()], its video-side complement.
+#'   for the many-file form; [extract_audio()] and [convert_audio()], the other
+#'   verbs whose output is one audio stream.
 #' @references
 #' EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
 #' maximum level of audio signals}; ITU-R BS.1770-4.
 #' @family task verb functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' normalize_audio(video, "normalized.mp4", run = FALSE)
+#' # The output holds audio only, so name an audio file for it
+#' normalize_audio(video, "normalized.wav", run = FALSE)
 #' # Normalize to a streaming target and downmix to mono
-#' normalize_audio(video, "mono.mp4", target_loudness = -16, channels = 1,
+#' normalize_audio(video, "mono.wav", target_loudness = -16, channels = 1,
 #'                 run = FALSE)
 #' # Name the output audio encoder instead of taking the container's default
-#' normalize_audio(video, "aac.mp4", audio_codec = "aac", run = FALSE)
+#' normalize_audio(video, "normalized.m4a", audio_codec = "aac", run = FALSE)
 #' @export
 normalize_audio <- function(infile, outfile,
                             target_loudness = -23,
@@ -3718,7 +3718,10 @@ derive_normalized_names <- function(input) {
 #'   \code{input} column (source path). An optional \code{output} column names
 #'   the destination; when absent, one is derived per row by appending
 #'   \code{_normalized} to each input's basename, keeping the input's extension
-#'   (e.g. \code{clip.mkv} becomes \code{clip_normalized.mkv}). Because
+#'   (e.g. \code{clip.mkv} becomes \code{clip_normalized.mkv}) — note that the
+#'   derived name keeps a \emph{video} extension while the file itself holds
+#'   audio only, so name an \code{output} column explicitly when that matters.
+#'   Because
 #'   normalization is one-input-to-one-output, a duplicated \code{input} with no
 #'   \code{output} column would collide and is rejected. Each of the five
 #'   loudness knobs — \code{target_loudness}, \code{true_peak},

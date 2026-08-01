@@ -119,12 +119,13 @@ rate.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-normalize_audio(video, "normalized.mp4", run = FALSE)
+# The output holds audio only, so name an audio file for it
+normalize_audio(video, "normalized.wav", run = FALSE)
 # Normalize to a streaming target and downmix to mono
-normalize_audio(video, "mono.mp4", target_loudness = -16, channels = 1,
+normalize_audio(video, "mono.wav", target_loudness = -16, channels = 1,
                 run = FALSE)
 # Name the output audio encoder instead of taking the container's default
-normalize_audio(video, "aac.mp4", audio_codec = "aac", run = FALSE)
+normalize_audio(video, "normalized.m4a", audio_codec = "aac", run = FALSE)
 }
 \references{
 EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
@@ -132,7 +133,8 @@ maximum level of audio signals}; ITU-R BS.1770-4.
 }
 \seealso{
 \code{\link[=ffm_loudnorm]{ffm_loudnorm()}}, the builder it wraps; \code{\link[=normalize_audio_batch]{normalize_audio_batch()}}
-for the many-file form; \code{\link[=standardize_video]{standardize_video()}}, its video-side complement.
+for the many-file form; \code{\link[=extract_audio]{extract_audio()}} and \code{\link[=convert_audio]{convert_audio()}}, the other
+verbs whose output is one audio stream.
 
 Other task verb functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

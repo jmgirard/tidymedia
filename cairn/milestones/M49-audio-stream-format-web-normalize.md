@@ -17,12 +17,12 @@ DEFAULT-disposition heuristic.
 
 **In:** `audio_stream` on `format_for_web()` / `format_for_web_batch()` under
 D026's every-track `NULL` (`-map 0:v? -map 0:a?`), and on `normalize_audio()` /
-`normalize_audio_batch()` under a **first-track** `NULL` spelled `0:a:0?` —
-carried onto the two-pass analysis command as well as the correction one, with
-the video half omitted when the output names an audio-only container (added
-2026-07-31 at review send-back). The
-D-entry recording that split and its measurement; the map-count invariant
-table; roxygen, NEWS, `inst/WORDLIST`.
+`normalize_audio_batch()`, whose output becomes **one audio stream and no
+video** — one map, `0:a:0` unselected and `0:a:<n>` when named, carried onto the
+two-pass analysis command as well as the correction one. The D-entries recording
+that and their measurements; the map-count invariant table; roxygen, NEWS,
+`inst/WORDLIST`. (Amended 2026-07-31 at review round 3: this section still
+described the superseded container-predicate design.)
 
 **Out:** refreshing the sibling-verb enumeration inside the fourteen existing
 `@param audio_stream` blocks → M51. Per-track two-pass loudnorm (one measured
@@ -57,12 +57,14 @@ log for what changed and why._
       rather than a re-run of the old code. Two error checks: `audio_stream = 9`
       on a 3-track input, and an input with **no audio**, are both FFmpeg errors
       rather than R ones or silent video copies. `skip_if` FFmpeg is absent.
-- [ ] AC5 The map-count invariant test (`tests/testthat/test-ffm.R`) keys rows on
-      *compiled commands* rather than verbs — branches compiling different
-      commands get a row each — so the analysis and correction commands are
-      separate rows, and those two are `normalize_audio()`'s only compiled
-      commands. Its rule statement describes the verbs absent from the table
-      accurately.
+- [x] AC5 The map-count invariant test (`tests/testthat/test-ffm.R`) keys rows on
+      *compiled commands* rather than verbs, so `normalize_audio()`'s analysis
+      and correction commands are separate rows. A verb branch whose compiled
+      command differs **in map count** gets its own row; branches differing only
+      in codec or filter arguments do not, since the invariant is a map count.
+      Its rule statement names only specifiers the package actually compiles.
+      (Amended 2026-07-31 at review round 3: the earlier wording demanded a row
+      per codec/hardware branch package-wide.)
 - [x] AC6 A `cairn/DECISIONS.md` entry records the split and its measured reason:
       under `-map 0:a?` the analysis pass prints one JSON block per mapped track
       while `classify_loudnorm_output()` reads `hit[[1]]`, so every mapped track
@@ -170,6 +172,9 @@ _Compressed in one pass 2026-07-31; the work log carries what each one did._
 - 2026-07-31: T15 — eleven exact-command assertions re-baselined for the `-codec:v copy` removal across five test files; two tests inverted rather than deleted (`normalize_audio() stream-copies video` now asserts no `-codec:v` and no `0:v`; the batch default-knobs check asserts the audio map instead). `devtools::test()` 3215 passing, 0 failures.
 - 2026-07-31: review round 2's other findings — G6 (85, actioned) fixed by guarding the AC8 test on ffmpeg as well as ffprobe. G8/G11/G7/G3 dissolved with the predicate they were about. G1 (`format_for_web()`'s identical break) is recorded on the new candidate row rather than fixed, since its product is a web video file. G4/G5 (stale `@description`, undocumented batch rule) fixed in T14.
 - 2026-07-31: status → review (third time).
+
+- 2026-07-31: review round 3 — eleven findings fixed on the branch (six actioned at ≥80, five sub-threshold but the same defect class). The most consequential was H1: a scripted edit had silently rewritten `R/ffmpeg.R` from CRLF to LF, inflating `git diff master..HEAD` to 5777/5618 for a 215-line change and making `git blame` attribute every line of the package's largest file to one commit — which would have blinded the blame-history review lens this process runs every milestone. Restored; the diff is 193/31 and only that file was affected.
+- 2026-07-31: review round 3 gate — user approved amending Scope (still described the superseded container-predicate design) and AC5 (demanded a table row per codec/hardware branch package-wide, where the invariant is a map count), and approved fixing `vignettes/workflow.Rmd`, which still taught `normalize_audio()` writing to `.mp4`. Two candidate rows created for what was deliberately left out: the missing `warn_dropped_audio()` diagnostic, and `format_for_web()`'s identical audio-container break.
 
 ## Decisions
 

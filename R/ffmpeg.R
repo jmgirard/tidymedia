@@ -337,6 +337,45 @@ pass_through_maps <- function(audio_stream = NULL, null_map = "0:a?",
   c("0:v?", audio_stream_map(audio_stream, null_map = null_map, call = call))
 }
 
+# audio_only_container() --------------------------------------------------
+
+# Extensions naming a container the caller means to hold audio and nothing else.
+#
+# This exists because `-map 0:v?` is not as forgiving as it looks. The `?`
+# makes a specifier optional when the STREAM is absent; it does nothing when the
+# stream is present and the MUXER refuses it. So a stated `-map 0:v?` turns a
+# video input written to `.wav` into a hard failure -- measured at M49's review
+# (ffmpeg 8.1.2, inst/extdata/sample.mp4): exit 234, "wav muxer does not support
+# any stream of type video", zero bytes written, where master emitted no map at
+# all and wrote 392428 bytes at exit 0. `.mp3`, `.aac` and `.opus` broke the same
+# way, and `.mka` silently GAINED a video stream master had not written.
+#
+# What master was doing is muxer-aware selection, and it got the VIDEO half
+# right for the same reason it got the AUDIO half wrong: FFmpeg chose. M49 only
+# ever needed to take the audio choice away -- `0:v?` came from D026, which was
+# written for verbs whose product is a video file. normalize_audio()'s product
+# is whatever container the caller named.
+#
+# Keyed on the OUTPUT PATH, never on the input, so no probe is involved and the
+# compile stays binary-free under run = FALSE (D024). The caller's own extension
+# is the statement of intent; this reads it rather than guessing from content.
+#
+# The list is deliberately one-directional: an extension NOT named here keeps
+# the pass-through shape, which is what every video container needs. So a
+# missing entry costs a caller the pre-M49 behavior on an unusual audio
+# container, and never costs a video caller their video. `.ogg` is included and
+# is a fix rather than a preservation -- it exited 234 on master too, because
+# `-codec:v copy` cannot put H.264 into Ogg.
+AUDIO_ONLY_CONTAINERS <- c(
+  "aac", "ac3", "aif", "aiff", "amr", "ape", "au", "caf", "dts", "eac3",
+  "flac", "m4a", "m4b", "mka", "mp2", "mp3", "oga", "ogg", "opus", "ra",
+  "spx", "tta", "wav", "wma", "wv"
+)
+
+audio_only_container <- function(path) {
+  tolower(tools::file_ext(path)) %in% AUDIO_ONLY_CONTAINERS
+}
+
 # warn_dropped_audio() ----------------------------------------------------
 
 # Emit the single classed warning for inputs carrying audio tracks the output
@@ -2045,7 +2084,13 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #'   first-track way because the two-pass analysis produces one measurement per
 #'   audio track while the correction takes a single set, so normalizing several
 #'   tracks at once would apply one track's measurements to all of them. Only
-#'   the named track reaches the output; the video streams are copied through.
+#'   the named track reaches the output. The input's video streams are copied
+#'   through when \code{outfile} names a container that holds video; when it
+#'   names an audio-only container (\code{.wav}, \code{.mp3}, \code{.aac},
+#'   \code{.flac}, \code{.m4a}, \code{.mka}, \code{.opus} and the like) no video
+#'   is carried, so normalizing a video's soundtrack straight to an audio file
+#'   works. The decision is made from the output path you give, never by
+#'   inspecting the input, so \code{run = FALSE} still touches no binary.
 #'   Under \code{two_pass = TRUE} the analysis pass measures this same track.
 #'   Naming a track the input does not have is an FFmpeg error, not an R one.
 #'   (default = \code{NULL})
@@ -2177,12 +2222,22 @@ normalize_audio_pipeline <- function(input, output,
   p <- ffm_files(input, output)
   # This verb emitted NO map until M49, so FFmpeg's implicit selection picked
   # one audio track for it -- whichever carried the container's DEFAULT
-  # disposition, measured as the THIRD track of a 3-track fixture. The change
-  # is determinism, not cardinality: one track before, one track after, but now
-  # a stated one. NULL resolves to the FIRST track rather than D026's every
-  # track, which is this verb's carve-out (D028) -- see pass_through_maps().
-  p <- ffm_map(p, pass_through_maps(audio_stream, null_map = "0:a:0?",
-                                    call = call))
+  # disposition, measured as the THIRD track of a 3-track fixture. On the AUDIO
+  # half the change is determinism, not cardinality: one track before, one track
+  # after, but now a stated one. NULL resolves to the FIRST track rather than
+  # D026's every track, which is this verb's carve-out (D028).
+  #
+  # The VIDEO half follows the output container (D029). Stating `-map 0:v?`
+  # unconditionally broke every audio-only destination, because the `?` covers
+  # an absent stream and not a refusing muxer -- see audio_only_container(),
+  # which carries the measurement. An audio-only output maps audio alone; the
+  # `-codec:v copy` below is then inert rather than wrong (verified: it changes
+  # neither exit status nor output bytes when no video stream is mapped).
+  p <- ffm_map(p, if (audio_only_container(output)) {
+    audio_stream_map(audio_stream, null_map = "0:a:0?", call = call)
+  } else {
+    pass_through_maps(audio_stream, null_map = "0:a:0?", call = call)
+  })
   # Loudness: EBU R128 loudnorm; ffm_loudnorm() validates the target ranges. With
   # `measured` (the two-pass correction path), feed the analysis-pass values back
   # and switch to linear normalization so the target is hit precisely (M16).

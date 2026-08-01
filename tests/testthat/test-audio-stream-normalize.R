@@ -108,6 +108,91 @@ test_that("normalize_audio(audio_stream = 0) names the same track as NULL but ke
 })
 
 
+# AC2: the audio-only-container rule ------------------------------------------
+
+# Added at M49's review send-back. `-map 0:v?` forces the video stream into the
+# output muxer, and the `?` covers an ABSENT stream, never a REJECTING muxer, so
+# the first version of this milestone broke every audio-only output container:
+# measured on `inst/extdata/sample.mp4` (ffmpeg 8.1.2), `.wav`/`.mp3`/`.aac`/
+# `.opus` went from exit 0 on master to exit 234, and `.mka` silently GAINED a
+# video stream where master wrote audio only. Master got this right by
+# delegating to FFmpeg's implicit selection, which is muxer-aware -- but that is
+# the same mechanism that picked the audio track nondeterministically, and only
+# the AUDIO half needed removing. The video half now follows the output
+# container, decided from the caller's own output path so the compile stays
+# binary-free (D024).
+
+test_that("an audio-only output container omits the video map", {
+  f <- make_input()
+  for (ext in c("wav", "mp3", "aac", "flac", "ogg", "opus", "m4a", "mka")) {
+    cmd <- normalize_audio(f, paste0("out.", ext), run = FALSE)
+    expect_false(grepl("-map 0:v?", cmd, fixed = TRUE),
+                 label = paste("video map present for", ext))
+    expect_match(cmd, "-map 0:a:0?", fixed = TRUE)
+    expect_identical(norm_map_count(cmd), 1L)
+  }
+})
+
+test_that("a video output container keeps the video map", {
+  f <- make_input()
+  for (ext in c("mp4", "mkv", "mov", "avi", "webm", "m4v")) {
+    cmd <- normalize_audio(f, paste0("out.", ext), run = FALSE)
+    expect_match(cmd, "-map 0:v? -map 0:a:0?", fixed = TRUE)
+    expect_identical(norm_map_count(cmd), 2L)
+  }
+})
+
+test_that("the container rule reads the output, not the input", {
+  # The discriminator: a video INPUT written to an audio container takes the
+  # audio-only shape, and an audio input written to a video container does not.
+  # Reading the input would need a probe, which run = FALSE forbids (D024).
+  f <- make_input(ext = "mp4")
+  g <- make_input(ext = "wav")
+  expect_false(grepl("0:v?", normalize_audio(f, "out.wav", run = FALSE), fixed = TRUE))
+  expect_match(normalize_audio(g, "out.mkv", run = FALSE), "-map 0:v?", fixed = TRUE)
+})
+
+test_that("an unknown output extension keeps the video map", {
+  # The list only ever ADDS working cases: anything not named in it compiles the
+  # pass-through shape, which is what every video container needs.
+  f <- make_input()
+  expect_match(normalize_audio(f, "out.somethingnew", run = FALSE),
+               "-map 0:v?", fixed = TRUE)
+})
+
+test_that("the container rule is case-insensitive", {
+  f <- make_input()
+  expect_false(grepl("0:v?", normalize_audio(f, "out.WAV", run = FALSE), fixed = TRUE))
+})
+
+test_that("a named track still narrows the audio map in an audio container", {
+  f <- make_input()
+  expect_identical(normalize_audio(f, "out.wav", audio_stream = 2, run = FALSE),
+                   normalize_command(f, "-map 0:a:2 ", outfile = "out.wav"))
+})
+
+test_that("the batch verb applies the container rule per row", {
+  # Outputs are per-row, so the rule is too -- a jobs table mixing an audio and
+  # a video destination must compile two different map shapes.
+  f <- make_input()
+  jobs <- tibble::tibble(input = c(f, f), output = c("a.wav", "b.mkv"))
+  out <- normalize_audio_batch(jobs, run = FALSE)
+  expect_identical(norm_map_count(out$command), c(1L, 2L))
+  expect_false(grepl("0:v?", out$command[[1]], fixed = TRUE))
+  expect_match(out$command[[2]], "-map 0:v?", fixed = TRUE)
+})
+
+test_that("the analysis pass is unaffected by the output container", {
+  # It writes to `-f null` and never had a video map, so the rule cannot reach
+  # it; the two passes must still name the same audio track.
+  f <- make_input()
+  expect_identical(
+    ffm_compile(loudnorm_analysis_pipeline(f)),
+    analysis_command(f, "-map 0:a:0? ")
+  )
+})
+
+
 # AC2: the batch sibling -------------------------------------------------------
 
 test_that("the normalize_audio_batch() argument reaches every row", {
@@ -346,20 +431,76 @@ test_that("two-pass normalization measures and corrects the same track", {
 
 test_that("the two-pass batch path carries a per-row audio_stream column", {
   # The batch two-pass path has two fan-outs -- the analysis phase and the
-  # correction phase -- and the column has to reach BOTH. It also reshapes the
-  # jobs table between them (it corrects jobs[!silent, ]), which is the seam a
-  # per-row argument is most likely to fall through.
+  # correction phase -- and the column has to reach BOTH. It also RESHAPES the
+  # jobs table between them: the correction runs over jobs[!silent, ], so a
+  # column that did not travel with the subset would be read off by one row.
+  #
+  # The silent row is therefore load-bearing and deliberately FIRST. Without it
+  # `!silent` is all-TRUE, the subset is the identity, and this test asserts
+  # nothing about the seam it names -- the false coverage M49's review caught
+  # in its first version. With the silent row first, a misaligned column would
+  # read the silent row's NA (the first track, `eng`) instead of row 2's 2.
   skip_if_no_ffmpeg()
-  infile <- make_multitrack_video(default_track = 2)
-  a <- withr::local_tempfile(fileext = ".mkv")
+  quiet <- make_silent_audio()
+  loud <- make_multitrack_video(default_track = 2)
+  a <- withr::local_tempfile(fileext = ".mka")
   b <- withr::local_tempfile(fileext = ".mkv")
-  jobs <- tibble::tibble(input = c(infile, infile), output = c(a, b),
-                         audio_stream = c(1, 2))
-  res <- normalize_audio_batch(jobs, two_pass = TRUE)
-  expect_match(res$command[[1]], "-map 0:v? -map 0:a:1", fixed = TRUE)
+  jobs <- tibble::tibble(input = c(quiet, loud), output = c(a, b),
+                         audio_stream = c(NA, 2))
+  # Assign inside expect_warning() rather than taking its return value: it
+  # returns the condition, not the expression's value.
+  res <- NULL
+  expect_warning(res <- normalize_audio_batch(jobs, two_pass = TRUE), "silent")
+  expect_identical(res$silent, c(TRUE, FALSE))
+  expect_true(is.na(res$command[[1]]))
   expect_match(res$command[[2]], "-map 0:v? -map 0:a:2", fixed = TRUE)
-  expect_identical(audio_languages(a), "spa")
+  # The discriminator: `fra` is track 2, `eng` is what a one-row misalignment
+  # would have produced.
   expect_identical(audio_languages(b), "fra")
+})
+
+test_that("no output container that worked before this milestone fails now", {
+  # AC8, added at the review send-back. This is the coverage whose ABSENCE let a
+  # green suite sit over a real regression: nothing in the package normalized to
+  # an audio container, so `-map 0:v?` breaking every one of them was invisible.
+  #
+  # The reference column is master's measured behavior on this same input
+  # (ffmpeg 8.1.2, inst/extdata/sample.mp4), recorded at the send-back:
+  #   exit 0, audio only  -- wav mp3 aac opus flac mka
+  #   exit 0, video+audio -- m4a mp4 mkv
+  #   exit 234            -- ogg webm  (pre-existing; NOT this milestone's)
+  # `.m4a` is the one deliberate divergence from master: it carried video there
+  # and carries none here, because a caller who writes `.m4a` means audio.
+  skip_if_no_ffprobe()
+  infile <- system.file("extdata", "sample.mp4", package = "tidymedia")
+  skip_if_not(nzchar(infile), "packaged sample video unavailable")
+  audio_only <- c("wav", "mp3", "aac", "opus", "flac", "m4a", "mka")
+  for (ext in c(audio_only, "mp4", "mkv")) {
+    out <- withr::local_tempfile(fileext = paste0(".", ext))
+    expect_no_error(normalize_audio(infile, out))
+    expect_gt(file.size(out), 0)
+    types <- stream_types(out)
+    expect_true("audio" %in% types)
+    # An audio-only container carries no video stream; a video one still does.
+    if (ext %in% audio_only) {
+      expect_false("video" %in% types, label = paste("video stream in", ext))
+    } else {
+      expect_true("video" %in% types, label = paste("no video stream in", ext))
+    }
+  }
+})
+
+test_that("the audio written to an audio-only container is actually normalized", {
+  # Exit 0 and a non-empty file are not enough: the point of the verb is the
+  # loudness. Re-measure the .wav output and require it near the target, so a
+  # future "fix" that drops the filter or writes the source through unchanged
+  # fails here rather than passing on file size.
+  skip_if_no_ffmpeg()
+  src <- make_dynamic_audio()
+  out <- withr::local_tempfile(fileext = ".wav")
+  normalize_audio(src, out, target_loudness = -23, two_pass = TRUE)
+  measured <- run_loudnorm_analysis(out, target_loudness = -23)$i
+  expect_lt(abs(measured - (-23)), 1)
 })
 
 test_that("the two-pass analysis pass yields exactly one measurement block", {

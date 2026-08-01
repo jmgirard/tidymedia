@@ -901,3 +901,67 @@ D026's rule unchanged; the other cannot, and this entry records why.
   rather than of the argument. Falsified by a report of a caller confused by the
   split, which reopens the choice under D014's pre-0.2.0 clean break — the same
   falsifier D026 named, now carrying one more case.
+
+## D029 — `normalize_audio()`'s video map follows the output container (2026-07-31, from M49's review send-back, narrows D028's video half; extends D026)
+
+D028 gave `normalize_audio()` the map pair `-map 0:v? -map 0:a:0?` and stated
+its change as "determinism, not cardinality". That is true of the **audio**
+half and false of the **video** half, and the video half broke real calls. This
+entry narrows it. D028's first-track audio rule, and its measured reason, stand
+unchanged.
+
+- **What broke, measured.** `-map 0:v?` forces the input's video stream into the
+  output muxer. The `?` makes a specifier optional when the **stream** is
+  absent; it does nothing when the stream is present and the **muxer refuses
+  it**. On `inst/extdata/sample.mp4` (ffmpeg 8.1.2, macOS), against master:
+  `.wav`, `.mp3`, `.aac` and `.opus` went from exit 0 to **exit 234** ("wav
+  muxer does not support any stream of type video", zero bytes written), and
+  `.mka` silently **gained** a video stream where master wrote audio alone.
+  `normalize_audio("interview.mp4", "interview.wav")` is an ordinary research
+  call and D028 broke it.
+
+- **Why D028 did not see it.** Master delegated the whole selection to FFmpeg's
+  implicit rule, which is **muxer-aware**: it dropped video for a container that
+  could not hold it. That same rule picked the audio track by DEFAULT
+  disposition, which is the defect M49 exists to remove — so the mechanism was
+  right about video and wrong about audio, and D028 replaced both halves when
+  only the audio half was at fault. `0:v?` came from D026, written for verbs
+  whose product **is** a video file; `normalize_audio()`'s product is whatever
+  container the caller named.
+
+- **The rule.** `normalize_audio()` (and `_batch`) emit `-map 0:v?` unless the
+  **output path** names an audio-only container, in which case the audio map
+  stands alone. Keyed on the output extension the caller wrote — not on the
+  input, and not on a probe — so the compile stays binary-free under
+  `run = FALSE` (D024). The list lives in `AUDIO_ONLY_CONTAINERS`
+  (`R/ffmpeg.R`), and it is deliberately one-directional: an extension absent
+  from it keeps the pass-through shape, so a missing entry costs an unusual
+  audio container its pre-M49 behavior and can never cost a video caller their
+  video.
+
+- **This is a stated rule, not a restored heuristic.** D023's objection is to a
+  selection the caller never wrote and cannot see. Here the caller writes the
+  extension, the rule is documented on `@param audio_stream` and in NEWS, and
+  the compiled command shows the result. What is *not* reinstated is FFmpeg
+  choosing which audio track to normalize.
+
+- **Two deliberate divergences from master, both toward the caller's intent.**
+  `.m4a` carried a video stream on master and carries none here, because a
+  caller writing `.m4a` means audio. `.ogg` exited 234 on master (H.264 cannot
+  be copied into Ogg) and now succeeds, because no video is mapped into it.
+
+- **Ruled out.** Dropping the video map unconditionally — it would strip video
+  from `.mp4`/`.mkv` outputs and contradict the documented `-codec:v copy`
+  pass-through, a worse regression than the one being fixed. An opt-out
+  argument — it leaves the default broken and makes the caller discover the
+  switch after hitting exit 234. Probing the input to decide — forbidden on the
+  compile path by D024, and unnecessary, since the output path already carries
+  the caller's intent.
+
+- **The coverage gap that let this ship.** No test in the package normalized to
+  an audio container, so a fully green suite sat over the regression; review
+  caught it, not the suite. `test-audio-stream-normalize.R` now walks the
+  container matrix under execution, and the walk was verified to fail against
+  the pre-fix code. Falsified by an audio container that this list does not
+  name and that a caller reports failing — which is an addition to the list,
+  not a reopening of the rule.

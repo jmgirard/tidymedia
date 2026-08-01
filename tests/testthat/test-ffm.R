@@ -554,9 +554,13 @@ test_that("every in-package pipeline emits the maps its verb's contract says", {
   # package whose map has to AGREE with another command's rather than merely be
   # well-formed.
   #
-  # There is no longer a zero category. Every in-package command states its
-  # stream selection as of M49, which is what D026 set out to finish; a new verb
-  # that states nothing fails this test rather than being pinned as a known gap.
+  # No row is 0 any more, but that is a fact about the commands LISTED here, not
+  # about the package: extract_frame() and sample_frames() still compile no map
+  # at all, and are absent from this table rather than pinned at zero, because
+  # their output is an image and D026's stream-selection question does not
+  # arise for them. The table is a hardcoded list, so it cannot fail on a verb
+  # nobody added to it -- adding the row is what catches a new verb, and this
+  # comment is the standing reminder to do it.
   #
   # The count is the assertion because ffm_map() appends (D023): a pipeline
   # that gains a map without meaning to duplicates the output stream rather

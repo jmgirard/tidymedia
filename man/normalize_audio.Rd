@@ -72,7 +72,13 @@ siblings), whose \code{NULL} keeps every track. This verb reads it the
 first-track way because the two-pass analysis produces one measurement per
 audio track while the correction takes a single set, so normalizing several
 tracks at once would apply one track's measurements to all of them. Only
-the named track reaches the output; the video streams are copied through.
+the named track reaches the output. The input's video streams are copied
+through when \code{outfile} names a container that holds video; when it
+names an audio-only container (\code{.wav}, \code{.mp3}, \code{.aac},
+\code{.flac}, \code{.m4a}, \code{.mka}, \code{.opus} and the like) no video
+is carried, so normalizing a video's soundtrack straight to an audio file
+works. The decision is made from the output path you give, never by
+inspecting the input, so \code{run = FALSE} still touches no binary.
 Under \code{two_pass = TRUE} the analysis pass measures this same track.
 Naming a track the input does not have is an FFmpeg error, not an R one.
 (default = \code{NULL})}

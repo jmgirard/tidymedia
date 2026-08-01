@@ -32,6 +32,23 @@
   R one, on both verbs. Each argument's documentation says which family it
   belongs to.
 
+  `normalize_audio()` decides whether to carry the video stream from the
+  **output** you name. Writing to a container that holds audio only — `.wav`,
+  `.mp3`, `.aac`, `.flac`, `.m4a`, `.mka`, `.opus` and the like — carries just
+  the audio, so normalizing a video's soundtrack straight to a `.wav` works as
+  it always did. Writing to a video container carries the video through
+  untouched, as before. Two small differences from previous behavior, both in
+  the direction you would expect: `.m4a` output no longer carries a video
+  stream, and `.ogg` output now succeeds where it used to fail.
+
+* Two argument-surface changes on the four verbs that gained `audio_stream`,
+  worth knowing if you call them tersely. The new argument sits before `run`, so
+  **positional** calls that supplied `run` (or `parallel`) by position now bind
+  it to the wrong argument — name your arguments, or move `run` along by one.
+  And on `normalize_audio()` / `normalize_audio_batch()`, abbreviating
+  `audio_codec` to `audio` no longer works: with `audio_stream` beside it, any
+  prefix shorter than `audio_c` is ambiguous. Spell `audio_codec` out.
+
 * `crop_video()` and `segment_video()` (and their `_batch` siblings) take a new
   `audio_stream` argument naming which audio track to carry, and now state that
   selection on every call. What that changes depends on which of them you use,

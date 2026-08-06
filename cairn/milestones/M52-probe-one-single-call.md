@@ -98,7 +98,7 @@ renamed or extra column is a defect here, not a deliverable.
 - [x] T3 Write the compact-line parser beside `format_probe()` with its own
       unit tests — section dispatch, unescaping all four escapes, prefix
       normalization, and the AC4 regression, all red before T4.
-- [ ] T4 Rewrite `probe_one()` onto the single call and route it through the
+- [x] T4 Rewrite `probe_one()` onto the single call and route it through the
       new parser.
 - [ ] T5 Resilience and `typed` parity tests against T1's baseline.
 - [ ] T6 NEWS; run the profile's verify slot and `devtools::check()`.
@@ -120,6 +120,8 @@ renamed or extra column is a defect here, not a deliverable.
 - 2026-08-06: T3 done. `parse_compact_probe()` and three helpers land beside `format_probe()`; `test-probe-compact-parser.R` is binary-free and green, rebuilding the recorded pre-change tibbles from the recorded text for the four non-escape fixtures. Field splitting walks the characters rather than substituting a placeholder byte, because the writer passes BEL, TAB and vertical tab through raw, so no byte is free to stand in for a separator. Unescaping is one pass via `regmatches<-`; sequential `gsub()`s would decode `\\n` into a newline.
 - 2026-08-06: AC4 asks for evidence that runs red against pre-change source, which a recorded-versus-parsed comparison cannot give since it is green in both directions. Added the live counterpart in `test-probe-single-call.R` over a new `make_hostile_tag_video()` helper; it is red now on both the bogus `break` column and the truncated tag value, and the recorded baseline stands beside it as the frozen half.
 - 2026-08-06: `format_probe()` kept for now so this checkpoint still loads; its only two callers are the `probe_one()` sites T4 replaces, so it and its test go there.
+- 2026-08-06: T4 done. `probe_one()` is one `run_program()` call through `parse_compact_probe()`; the writer options `print_section=1:nokey=0:escape=c` are pinned rather than inherited because the parser depends on all three. Full suite green. `format_probe()` and its test removed as dead; its first-`=`-only contract is re-asserted against the new parser rather than dropped.
+- 2026-08-06: measured on the branch, ten probes of a 4-stream file: 1.709 s before, 0.456 s after (3.75x), spawns per file 5 to 1. The plan's 4.7x was on a 5-stream file, so the two are consistent rather than in conflict — the win grows with stream count.
 
 ## Decisions
 

@@ -85,6 +85,14 @@ test_that("parse_compact_probe() dispatches by section, format arriving last", {
   expect_false("stream" %in% names(out$streams))
 })
 
+test_that("a field splits only on its first '='", {
+  # Carried over from format_probe()'s test when probe_one() stopped using it:
+  # a value containing `=` must survive, and the writer does not escape `=`.
+  out <- parse_compact_probe("format|key=a=b=c|n=2")
+  expect_equal(out$container$key, "a=b=c")
+  expect_equal(out$container$n, "2")
+})
+
 test_that("parse_compact_probe() returns NULL on empty or format-less output", {
   expect_null(parse_compact_probe(character(0)))
   expect_null(parse_compact_probe(""))

@@ -158,30 +158,25 @@ count_audio_streams <- function(file) {
 # Probe a single file. Returns list(container, streams) of raw-character tibbles
 # (no `file` column, no type conversion; probe_all() adds those), or NULL if the
 # file cannot be probed (missing path, unreachable URL, unreadable media).
+#
+# ONE FFprobe process per file, not `nb_streams + 1`. The container and every
+# stream come back from a single call, because the compact writer delimits its
+# sections by line and its fields by `|` -- where `default=nw=1` runs sections
+# together with no delimiter at all, which is why the old code had to ask for
+# one stream at a time and pay a process for each.
+#
+# The three writer options are pinned rather than left to their defaults
+# because parse_compact_probe() depends on all three: `print_section=1` emits
+# the leading `stream|`/`format|` field it dispatches on, `nokey=0` keeps the
+# `key=value` form, and `escape=c` is the escaping it decodes.
 probe_one <- function(file) {
-  loc <- find_ffprobe()
-  base <- c("-i", file, "-v", "quiet")
-  fmt <- run_program(
-    loc, c(base, "-show_format", "-of", "default=nw=1"), program = "ffprobe"
+  out <- run_program(
+    find_ffprobe(),
+    c("-i", file, "-v", "quiet", "-show_format", "-show_streams",
+      "-of", "compact=print_section=1:nokey=0:escape=c"),
+    program = "ffprobe"
   )
-  if (length(fmt) == 0) return(NULL)
-  container <- format_probe(fmt)
-
-  n <- suppressWarnings(as.integer(container[["nb_streams"]]))
-  if (length(n) != 1 || is.na(n) || n < 1) {
-    return(list(container = container, streams = tibble::tibble()))
-  }
-  rows <- vector("list", n)
-  for (i in seq_len(n)) {
-    s <- run_program(
-      loc,
-      c(base, "-show_streams", "-select_streams", as.character(i - 1),
-        "-of", "default=nw=1"),
-      program = "ffprobe"
-    )
-    rows[[i]] <- if (length(s)) format_probe(s) else tibble::tibble()
-  }
-  list(container = container, streams = dplyr::bind_rows(rows))
+  parse_compact_probe(out)
 }
 
 # probe_container() -------------------------------------------------------
@@ -269,18 +264,6 @@ resolve_probe <- function(probe, infile, typed, call = rlang::caller_env()) {
   }
   if (!is.null(infile)) probe <- probe_all(infile, typed = typed)
   probe
-}
-
-# format_probe() ----------------------------------------------------------
-
-# Turn FFprobe's `key=value` lines into a one-row tibble. Splits on the *first*
-# `=` only, so values that themselves contain `=` (e.g. tag values) survive.
-format_probe <- function(x) {
-  x <- x[nzchar(x)]
-  key <- sub("=.*$", "", x)
-  value <- sub("^[^=]*=", "", x)
-  names(value) <- key
-  tibble::as_tibble(as.list(value))
 }
 
 # parse_compact_probe() ---------------------------------------------------

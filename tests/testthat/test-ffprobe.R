@@ -1,5 +1,6 @@
-# convert_fractions() and format_probe() are pure. probe_* functions are gated
-# on the ffprobe binary.
+# convert_fractions() is pure. probe_* functions are gated on the ffprobe
+# binary. The compact-line parser probe_one() now reads its output through has
+# its own binary-free file, test-probe-compact-parser.R.
 
 test_that("convert_fractions() evaluates string fractions", {
   expect_equal(convert_fractions(c("30000 / 1001", "25/1")), c(29.97003, 25),
@@ -10,12 +11,6 @@ test_that("convert_fractions() passes NA through and rejects junk", {
   expect_equal(convert_fractions(c("1/2", NA)), c(0.5, NA_real_))
   expect_error(convert_fractions("not a fraction"))
   expect_error(convert_fractions(1:3))
-})
-
-test_that("format_probe() splits only on the first '='", {
-  out <- format_probe(c("key=a=b=c", "n=2"))
-  expect_equal(out$key, "a=b=c")
-  expect_equal(out$n, "2")
 })
 
 test_that("probe_all() returns file-keyed container and streams tibbles", {

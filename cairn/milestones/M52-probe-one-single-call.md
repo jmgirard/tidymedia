@@ -81,7 +81,7 @@ renamed or extra column is a defect here, not a deliverable.
 
 ## Tasks
 
-- [ ] T1 Record and commit the pre-change baseline before touching source:
+- [x] T1 Record and commit the pre-change baseline before touching source:
       `probe_all()` output for every suite fixture under both `typed` values,
       plus the current per-file spawn count (M44's lesson — `git checkout`
       restores from the index, so a baseline taken on uncommitted work is
@@ -105,6 +105,8 @@ renamed or extra column is a defect here, not a deliverable.
 - 2026-07-31: criteria audit ([O], fresh context) returned five findings, all fixed above and all confirmed by re-measurement. The important one: AC2 was unsatisfiable as drafted, because `-of compact` emits `tag:`/`disposition:` where `default=nw=1` emits `TAG:`/`DISPOSITION:` and prepends a keyless section field, so byte-identical columns need normalization the Scope had not named. Also: the format line arrives last in a combined call, so the parser must dispatch by section; the escape set includes `\r`, which the Scope had omitted; AC4 demanded a test failing on a ref that never had it; and the resilience contract was cited at `:249-258`, which is `filter_streams()`, not `:75-94`.
 - 2026-08-06: implementation started on `m52-probe-one-single-call`; question gate skipped, nothing genuinely open (the writer choice was settled at plan time and the parser shape is fixed by AC2's unchanged-output promise).
 - 2026-08-06: re-measured the compact writer's escape set on ffmpeg 8.1.2 before any edit, confirming the plan's four escapes and that `=` is deliberately unescaped, so a per-field split on the first `=` still holds. AC4's corruption reproduces: a newline-bearing tag under `default=nw=1` emits a bare continuation line that `format_probe()` reads as a `key=value` pair.
+- 2026-08-06: T1 done. `data-raw/probe-baseline.R` records five synthetic fixtures against a git ref, pairing the combined call's raw compact text with the pre-change `probe_one()`/`probe_all()` tibbles built from the same file, so AC2 becomes a binary-free pure-function test rather than a re-probe. It reuses M41's `codec_guard_env()` ref loader rather than copying it. Committed as `tests/testthat/fixtures/probe-baseline.rds`.
+- 2026-08-06: the baseline captured AC4's corruption as recorded pre-change fact: on the escape fixture the per-stream parse truncates the audio title tag to `line` and emits a bogus `break` column holding `break`. The recorded pre-change spawn counts are 3/5/2/2/3 for the five fixtures, each `nb_streams + 1`.
 
 ## Decisions
 

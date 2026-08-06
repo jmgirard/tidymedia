@@ -90,7 +90,7 @@ renamed or extra column is a defect here, not a deliverable.
       plus the current per-file spawn count (M44's lesson — `git checkout`
       restores from the index, so a baseline taken on uncommitted work is
       worthless).
-- [ ] T2 Tests first: the counting mock over `run_program()` that pins the
+- [x] T2 Tests first: the counting mock over `run_program()` that pins the
       per-file spawn count, red at `nb_streams + 1`.
 - [ ] T3 Write the compact-line parser beside `format_probe()` with its own
       unit tests — section dispatch, unescaping all four escapes, prefix
@@ -112,6 +112,7 @@ renamed or extra column is a defect here, not a deliverable.
 - 2026-08-06: T1 done. `data-raw/probe-baseline.R` records five synthetic fixtures against a git ref, pairing the combined call's raw compact text with the pre-change `probe_one()`/`probe_all()` tibbles built from the same file, so AC2 becomes a binary-free pure-function test rather than a re-probe. It reuses M41's `codec_guard_env()` ref loader rather than copying it. Committed as `tests/testthat/fixtures/probe-baseline.rds`.
 - 2026-08-06: the baseline captured AC4's corruption as recorded pre-change fact: on the escape fixture the per-stream parse truncates the audio title tag to `line` and emits a bogus `break` column holding `break`. The recorded pre-change spawn counts are 3/5/2/2/3 for the five fixtures, each `nb_streams + 1`.
 - 2026-08-06: substantive amendment, user-approved at a mini gate — AC2 now exempts the escape fixture, which AC4 owns. As written the two criteria contradicted each other on that one file: AC2 demanded byte-identical output against a baseline that records the corruption AC4 exists to remove, so satisfying both was impossible and satisfying AC2 literally would have pinned the bug.
+- 2026-08-06: T2 done and RED by design — the suite stays red until T4 lands the single call, so the profile's verify slot is not clean at this checkpoint. `test-probe-single-call.R` counts `run_program()` invocations through a mock that delegates to the real binding, so the tibbles stay real. Three of its four assertions fail at the pre-change counts; the unprobeable-file case already spawns once and is pinned as an invariant rather than a change.
 
 ## Decisions
 

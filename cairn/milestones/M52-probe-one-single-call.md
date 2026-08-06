@@ -1,6 +1,6 @@
 # M52: Collapse `probe_one()`'s per-stream FFprobe loop into one call
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -101,7 +101,7 @@ renamed or extra column is a defect here, not a deliverable.
 - [x] T4 Rewrite `probe_one()` onto the single call and route it through the
       new parser.
 - [x] T5 Resilience and `typed` parity tests against T1's baseline.
-- [ ] T6 NEWS; run the profile's verify slot and `devtools::check()`.
+- [x] T6 NEWS; run the profile's verify slot and `devtools::check()`.
 
 ## Work log
 
@@ -123,6 +123,7 @@ renamed or extra column is a defect here, not a deliverable.
 - 2026-08-06: T4 done. `probe_one()` is one `run_program()` call through `parse_compact_probe()`; the writer options `print_section=1:nokey=0:escape=c` are pinned rather than inherited because the parser depends on all three. Full suite green. `format_probe()` and its test removed as dead; its first-`=`-only contract is re-asserted against the new parser rather than dropped.
 - 2026-08-06: measured on the branch, ten probes of a 4-stream file: 1.709 s before, 0.456 s after (3.75x), spawns per file 5 to 1. The plan's 4.7x was on a 5-stream file, so the two are consistent rather than in conflict — the win grows with stream count.
 - 2026-08-06: T5 done. `test-probe-typed-resilience.R` feeds the recorded text to the REAL `probe_all()` through a mocked `run_program()`/`find_ffprobe()` pair, so `typed` parity is checked through the package's own composition rather than a test-side copy of it, and the file needs no binary. Both `typed` values reproduce the recorded pre-change output on all four non-escape fixtures. Resilience covered as four cases: unprobeable, no readable streams, a mixed vector, and two failures warning once rather than twice. Full suite 3397 passing, 0 failures, 5 skips.
+- 2026-08-06: T6 done. NEWS gains a `## Performance` section for the single-call read and a `## Bug fixes` entry for the newline-tag corruption; both claims are enforced by named tests, and the timing figure is stated as a local measurement rather than a guarantee. `devtools::document()` produces no diff and `devtools::check()` is 0 errors / 0 warnings / 0 notes. Status to `review`.
 
 ## Decisions
 

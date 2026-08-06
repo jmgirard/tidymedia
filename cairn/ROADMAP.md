@@ -2,7 +2,7 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-07-31 (M51 merged and archived in one review round; D032 re-confirms D023 at eighteen verbs. Review found three at-or-above-80 findings plus fourteen verified-false sentences in the milestone's own new prose, all fixed — including a doc guard that skipped entirely under R CMD check. LESSONS.md reflowed: six legacy entries were hard-wrapped, costing 7 lines against an item cap. M46 aged off the table.)_
+_Last hygiene check: 2026-08-06 (all checks green, nothing in flight; M52 and M53 planned and workable in that order. No open issues or PRs to triage.)_
 
 ## Milestones
 

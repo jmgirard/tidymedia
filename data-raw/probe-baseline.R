@@ -31,57 +31,68 @@ source("data-raw/codec-guard-baseline.R", chdir = FALSE)
 
 # -- fixtures ----------------------------------------------------------------
 #
-# Five synthetic inputs, all built from ffmpeg's lavfi sources so nothing is
-# checked in as media. Each entry is the ffmpeg argument string that builds it,
-# with `%s` taking the output path. They are chosen to exercise the parse paths
+# Six synthetic inputs, all built from ffmpeg's lavfi sources so nothing is
+# checked in as media. Each entry carries `cmds`, one or more ffmpeg argument
+# strings run in order, with `{out}` standing for the fixture's final path and
+# `{scratch}` for an intermediate. They are chosen to exercise the parse paths
 # that differ between the two writers rather than to be realistic media:
 #
 #   plain     video + audio, the ordinary case
-#   five      video + three tagged audio tracks + a subtitle: several streams,
-#             so a per-stream loop and a single call visibly disagree on spawns
+#   five      two video + three tagged audio tracks: several streams, so a
+#             per-stream loop and a single call visibly disagree on spawns
 #   silent    video and no audio
 #   audioonly audio and no video
 #   hostile   one tag per escape the compact writer emits -- a literal `|`, an
 #             embedded newline, a carriage return and a backslash. This is the
 #             fixture AC3 rests on, and the one whose newline tag corrupts the
 #             PRE-change per-stream parse (AC4).
+#   rotated   a display matrix, i.e. stream SIDE DATA -- the nested section the
+#             two writers name differently (`rotation` bare under `default=nw=1`,
+#             `side_datum/display_matrix:rotation` under `-of compact`), and the
+#             one essentially every phone video carries. Added after review
+#             round 1, where the absence of any side-data fixture is what let a
+#             renamed `rotation` column reach review. Its own pre-change output
+#             is corrupt in AC4's way, because the old writer prints the matrix
+#             across four lines and the old parser read three of them as
+#             columns; the amended AC2 exempts it on that ground and requires
+#             the real columns to survive instead.
 probe_baseline_fixtures <- function() {
   list(
     plain = list(
       ext = ".mp4",
-      cmd = paste(
+      cmds = paste(
         "-y -v error -f lavfi -i testsrc=duration=1:size=64x64:rate=10",
         "-f lavfi -i sine=frequency=440:duration=1",
-        "-c:v libx264 -c:a aac -shortest -pix_fmt yuv420p '%s'")),
+        "-c:v libx264 -c:a aac -shortest -pix_fmt yuv420p '{out}'")),
     five = list(
       ext = ".mkv",
-      cmd = paste(
+      cmds = paste(
         "-y -v error -f lavfi -i testsrc=duration=1:size=64x64:rate=10",
         "-f lavfi -i sine=frequency=300:duration=1",
         "-f lavfi -i sine=frequency=600:duration=1",
         "-f lavfi -i sine=frequency=900:duration=1",
         "-f lavfi -i color=c=black:s=64x64:d=1",
-        "-map 0:v -map 1:a -map 2:a -map 3:a",
+        "-map 0:v -map 1:a -map 2:a -map 3:a -map 4:v",
         "-c:v libx264 -c:a aac -b:a 32k -pix_fmt yuv420p",
         "-metadata:s:a:0 language=eng",
         "-metadata:s:a:1 language=spa",
-        "-metadata:s:a:2 language=fra '%s'")),
+        "-metadata:s:a:2 language=fra '{out}'")),
     silent = list(
       ext = ".mp4",
-      cmd = paste(
+      cmds = paste(
         "-y -v error -f lavfi -i testsrc=duration=1:size=64x64:rate=10",
-        "-c:v libx264 -pix_fmt yuv420p '%s'")),
+        "-c:v libx264 -pix_fmt yuv420p '{out}'")),
     audioonly = list(
       ext = ".m4a",
-      cmd = paste(
+      cmds = paste(
         "-y -v error -f lavfi -i sine=frequency=440:duration=1",
-        "-c:a aac '%s'")),
+        "-c:a aac '{out}'")),
     # The escape fixture. Each value is written through a shell single-quoted
     # string, so the newline and CR are real control characters in the tag and
     # not the two-character sequences `\n` / `\r`.
     hostile = list(
       ext = ".mkv",
-      cmd = paste0(
+      cmds = paste0(
         "-y -v error -f lavfi -i testsrc=duration=1:size=64x64:rate=10 ",
         "-f lavfi -i sine=frequency=440:duration=1 ",
         "-c:v libx264 -c:a aac -shortest -pix_fmt yuv420p ",
@@ -89,7 +100,18 @@ probe_baseline_fixtures <- function() {
         "-metadata:s:a:0 'title=line\nbreak' ",
         "-metadata 'comment=carriage\rreturn' ",
         "-metadata 'title=back\\slash' ",
-        "'%s'"))
+        "'{out}'")),
+    # Two passes, because `-display_rotation` is an INPUT option: encoding it
+    # onto the output is rejected, and `-metadata:s:v:0 rotate=90` was measured
+    # to write a tag that produces no side data at all. Remuxing with `-c copy`
+    # attaches the display matrix without re-encoding.
+    rotated = list(
+      ext = ".mp4",
+      scratch_ext = ".mp4",
+      cmds = c(
+        paste("-y -v error -f lavfi -i testsrc=duration=1:size=64x48:rate=10",
+              "-c:v libx264 -pix_fmt yuv420p '{scratch}'"),
+        "-y -v error -display_rotation 90 -i '{scratch}' -c copy '{out}'"))
   )
 }
 
@@ -99,9 +121,15 @@ probe_baseline_build <- function(dir = tempfile("probe-baseline-")) {
   specs <- probe_baseline_fixtures()
   paths <- character()
   for (nm in names(specs)) {
-    path <- file.path(dir, paste0(nm, specs[[nm]]$ext))
-    cmd <- sprintf(specs[[nm]]$cmd, path)
-    out <- system2("ffmpeg", cmd, stdout = TRUE, stderr = TRUE)
+    spec <- specs[[nm]]
+    path <- file.path(dir, paste0(nm, spec$ext))
+    scratch_ext <- if (is.null(spec$scratch_ext)) ".mp4" else spec$scratch_ext
+    scratch <- file.path(dir, paste0(nm, "-scratch", scratch_ext))
+    for (cmd in spec$cmds) {
+      cmd <- gsub("{out}", path, cmd, fixed = TRUE)
+      cmd <- gsub("{scratch}", scratch, cmd, fixed = TRUE)
+      out <- system2("ffmpeg", cmd, stdout = TRUE, stderr = TRUE)
+    }
     if (!file.exists(path)) {
       stop("fixture ", nm, " was not written: ", paste(out, collapse = " "))
     }
@@ -192,7 +220,8 @@ probe_baseline_record <- function(ref = "HEAD", root = ".") {
       recorded = as.character(Sys.Date()),
       ffmpeg = system2("ffmpeg", "-version", stdout = TRUE)[[1]],
       ffprobe = system2("ffprobe", "-version", stdout = TRUE)[[1]],
-      fixtures = vapply(probe_baseline_fixtures(), function(s) s$cmd, "")
+      fixtures = vapply(probe_baseline_fixtures(),
+                        function(s) paste(s$cmds, collapse = " && "), "")
     )
   )
 }

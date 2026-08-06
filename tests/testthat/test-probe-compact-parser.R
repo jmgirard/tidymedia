@@ -4,22 +4,9 @@
 # the text recorded in the T1 baseline, so a green run means the parser is
 # right, never that this machine's FFprobe happened to agree with it.
 
-baseline <- function() {
-  readRDS(test_path("fixtures", "probe-baseline.rds"))
-}
-
-# The scrub data-raw/probe-baseline.R applied before recording: the fixture's
-# own temp path becomes a stable token. Re-applied here to whatever is parsed
-# out of the recorded text, so the comparison is not two temp directories.
-scrub_paths <- function(x, path, token) {
-  for (col in names(x)) {
-    if (is.character(x[[col]])) {
-      x[[col]] <- gsub(path, token, x[[col]], fixed = TRUE)
-      x[[col]] <- gsub(basename(path), basename(token), x[[col]], fixed = TRUE)
-    }
-  }
-  x
-}
+# baseline(), exempt_fixtures(), matrix_row_columns() and scrub_paths() live in
+# helper-probe-baseline.R, shared with the typed/resilience file.
+baseline <- probe_baseline
 
 # -- field splitting ---------------------------------------------------------
 
@@ -64,11 +51,22 @@ test_that("compact_unescape() decodes each pair exactly once", {
 
 # -- section dispatch and prefix casing --------------------------------------
 
-test_that("compact_section_case() restores the default writer's casing", {
-  expect_equal(compact_section_case("tag:title"), "TAG:title")
-  expect_equal(compact_section_case("disposition:default"),
+test_that("compact_key_name() gives nested keys their old-writer names", {
+  expect_equal(compact_key_name("tag:title"), "TAG:title")
+  expect_equal(compact_key_name("disposition:default"),
                "DISPOSITION:default")
-  expect_equal(compact_section_case("codec_name"), "codec_name")
+  expect_equal(compact_key_name("codec_name"), "codec_name")
+  # Side data: the old writer printed it with NO prefix, so the prefix is
+  # dropped rather than uppercased. Uppercasing renamed `rotation` away.
+  expect_equal(compact_key_name("side_datum/display_matrix:rotation"),
+               "rotation")
+  expect_equal(compact_key_name("side_datum/display_matrix:side_data_type"),
+               "side_data_type")
+  # Only the first `:` is the prefix boundary, so a tag whose own name carries
+  # one keeps it.
+  expect_equal(compact_key_name("tag:com.apple:make"), "TAG:com.apple:make")
+  # An unrecognized prefix is left alone rather than guessed at.
+  expect_equal(compact_key_name("newsection:key"), "newsection:key")
 })
 
 test_that("parse_compact_probe() dispatches by section, format arriving last", {
@@ -109,9 +107,11 @@ test_that("parse_compact_probe() gives an empty streams tibble with no streams",
 
 test_that("the parser rebuilds the pre-change tibbles from the recorded text", {
   b <- baseline()
-  # The escape fixture is excluded: its recorded baseline is the CORRUPTION
-  # AC4 removes, so asserting equality there would pin the bug in place.
-  for (nm in setdiff(names(b), "hostile")) {
+  # Two fixtures are excluded, both because their recorded baseline is itself
+  # CORRUPT -- a value the old writer printed across several lines, which the
+  # old parser then read as further columns. Asserting equality on either would
+  # pin the bug in place. `hostile` is AC4's; `rotated` is checked just below.
+  for (nm in setdiff(names(b), exempt_fixtures())) {
     entry <- b[[nm]]
     out <- parse_compact_probe(entry$compact)
     expect_equal(names(out$container), names(entry$one$container),
@@ -125,6 +125,62 @@ test_that("the parser rebuilds the pre-change tibbles from the recorded text", {
     expect_equal(scrub_paths(out$streams, entry$path, entry$token),
                  entry$one$streams, info = nm)
   }
+})
+
+# -- AC2: the side-data fixture, whose baseline is itself corrupt -------------
+
+test_that("side-data columns keep the names probe_all() has always returned", {
+  b <- baseline()
+  before <- b$rotated$one$streams
+  after <- parse_compact_probe(b$rotated$compact)$streams
+
+  # The corruption in the recorded baseline: the display matrix's value runs
+  # over four lines, and the old parser read three of them as columns.
+  bogus <- matrix_row_columns(names(before))
+  expect_length(bogus, 3L)
+
+  # Every other column survives, in the same order, with no column and no row
+  # added -- `rotation` above all, which review round 1 found renamed away.
+  expect_equal(names(after), setdiff(names(before), bogus))
+  expect_equal(nrow(after), nrow(before))
+  expect_true("rotation" %in% names(after))
+  expect_equal(after$rotation, before$rotation)
+  expect_equal(after$side_data_type, before$side_data_type)
+
+  # Same values everywhere except the cell the corruption truncated: the old
+  # parser cut `displaymatrix` off at the first newline and spent the rest on
+  # bogus columns. Its three lines are back in the one cell they belong to.
+  shared <- setdiff(names(after), "displaymatrix")
+  expect_equal(after[shared], before[shared])
+  expect_equal(before$displaymatrix, "")
+  for (row in bogus) expect_true(grepl(row, after$displaymatrix, fixed = TRUE))
+})
+
+# -- a line the session's locale cannot read ---------------------------------
+
+test_that("a byte invalid in the session locale keeps its row", {
+  # A character-wise split returns NA on such a line (warning only), which sent
+  # the whole stream row to the section-dispatch floor and deleted it silently.
+  # The parse is byte-based precisely so one unreadable metadata byte costs
+  # nothing but its own legibility.
+  odd <- rawToChar(as.raw(0xE9))
+  line <- paste0("stream|index=0|codec_type=video|tag:title=caf", odd)
+  out <- parse_compact_probe(c(line, "format|nb_streams=1"))
+  expect_equal(nrow(out$streams), 1L)
+  expect_equal(out$streams$index, "0")
+  expect_equal(charToRaw(out$streams[["TAG:title"]]),
+               charToRaw(paste0("caf", odd)))
+})
+
+test_that("field splitting and unescaping survive an unreadable byte", {
+  odd <- rawToChar(as.raw(0xE9))
+  expect_equal(compact_fields(paste0("stream|a=", odd, "|b=2")),
+               c("stream", paste0("a=", odd), "b=2"))
+  # The escaped pipe stays inside the value even beside the odd byte.
+  expect_equal(compact_fields(paste0("stream|a=x\\|", odd)),
+               c("stream", paste0("a=x\\|", odd)))
+  expect_equal(charToRaw(compact_unescape(paste0("a\\n", odd))),
+               charToRaw(paste0("a\n", odd)))
 })
 
 # -- AC4: the corruption the old parser had ----------------------------------

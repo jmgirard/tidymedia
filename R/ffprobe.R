@@ -286,8 +286,8 @@ resolve_probe <- function(probe, infile, typed, call = rlang::caller_env()) {
 #     and in a combined call the format line arrives LAST, so rows are dispatched
 #     by that field rather than by position;
 #   - fields are separated by `|`, which a value may also contain as `\|`;
-#   - nested sections render as `tag:` / `disposition:` where `default=nw=1`
-#     renders them `TAG:` / `DISPOSITION:`.
+#   - nested sections carry a key prefix the old writer spelled differently, or
+#     did not spell at all -- see compact_key_name().
 parse_compact_probe <- function(x) {
   x <- x[nzchar(x)]
   if (length(x) == 0) return(NULL)
@@ -318,12 +318,20 @@ parse_compact_probe <- function(x) {
 # the *first* `=` only, exactly as the old parser did, so a value containing `=`
 # survives; the writer does not escape `=`, so splitting before unescaping is
 # safe.
+#
+# Every string operation from here down is byte-based (`useBytes = TRUE`). The
+# separators and escapes are all ASCII, so byte matching is exactly equivalent
+# on well-formed input, and on ill-formed input it is the difference between
+# parsing the line and losing it: R's character-based string functions treat a
+# line that is invalid in the session's `LC_CTYPE` as an error or an `NA`, which
+# would drop a whole stream row for one unreadable metadata byte.
 compact_row <- function(line) {
   fields <- compact_fields(line)
   kv <- fields[-1]
   kv <- kv[nzchar(kv)]
-  key <- compact_section_case(compact_unescape(sub("=.*$", "", kv)))
-  value <- compact_unescape(sub("^[^=]*=", "", kv))
+  key <- compact_key_name(compact_unescape(sub("=.*$", "", kv,
+                                               useBytes = TRUE)))
+  value <- compact_unescape(sub("^[^=]*=", "", kv, useBytes = TRUE))
   names(value) <- key
   list(section = fields[[1]], data = tibble::as_tibble(as.list(value)))
 }
@@ -334,27 +342,46 @@ compact_row <- function(line) {
 # only when an even number of backslashes precede it, since the writer spells a
 # literal backslash `\\` and a literal `|` `\|`.
 #
-# Walking the characters is what makes that decidable. The obvious shortcut --
-# substitute a placeholder byte for the escaped forms, split on what is left --
-# has no safe placeholder here: the writer passes control characters through
-# RAW (BEL, TAB and vertical tab were each measured arriving unescaped), so no
-# byte is free to stand in for a separator without risking a collision with a
-# value that genuinely contains it.
+# Split on every `|` first, then glue back the ones that were escaped. The
+# obvious alternative -- substitute a placeholder for the escaped forms and
+# split on what is left -- has no safe placeholder here: the writer passes
+# control characters through RAW (BEL, TAB and vertical tab were each measured
+# arriving unescaped), so no byte is free to stand in for a separator without
+# risking a collision with a value that genuinely contains it.
 compact_fields <- function(line) {
-  ch <- strsplit(line, "", fixed = TRUE)[[1]]
-  n <- length(ch)
-  if (n == 0) return("")
-  # Position of the last non-backslash at or before each index; the count of
-  # backslashes immediately preceding index i is then (i - 1) - last[i - 1].
-  last <- cummax(ifelse(ch == "\\", 0L, seq_len(n)))
-  run <- c(0L, seq_len(n - 1L) - last[-n])
-  cuts <- which(ch == "|" & run %% 2L == 0L)
-  starts <- c(1L, cuts + 1L)
-  ends <- c(cuts - 1L, n)
-  vapply(seq_along(starts), function(k) {
-    if (ends[[k]] < starts[[k]]) "" else
-      paste0(ch[starts[[k]]:ends[[k]]], collapse = "")
-  }, character(1))
+  raw <- charToRaw(line)
+  if (length(raw) == 0) return("")
+  pieces <- strsplit(line, "|", fixed = TRUE, useBytes = TRUE)[[1]]
+  # strsplit() drops trailing empty fields, so `a|` comes back as one piece
+  # where the line has two. Count the separators to put them back.
+  n_sep <- sum(raw == as.raw(0x7C))
+  if (length(pieces) < n_sep + 1L) {
+    pieces <- c(pieces, rep("", n_sep + 1L - length(pieces)))
+  }
+  out <- character(0)
+  cur <- pieces[[1]]
+  for (i in seq_along(pieces)[-1]) {
+    if (ends_in_odd_backslashes(cur)) {
+      # The `|` that split these two was escaped: it belongs to the value.
+      cur <- paste0(cur, "|", pieces[[i]])
+    } else {
+      out <- c(out, cur)
+      cur <- pieces[[i]]
+    }
+  }
+  c(out, cur)
+}
+
+# Does `s` end in an ODD number of backslashes -- i.e. would a `|` following it
+# have been escaped? Counted over bytes, so a value carrying a byte invalid in
+# the session locale is still measurable.
+ends_in_odd_backslashes <- function(s) {
+  raw <- charToRaw(s)
+  n <- length(raw)
+  if (n == 0 || raw[[n]] != as.raw(0x5C)) return(FALSE)
+  other <- which(raw != as.raw(0x5C))
+  run <- if (length(other) == 0) n else n - max(other)
+  run %% 2L == 1L
 }
 
 # compact_unescape() ------------------------------------------------------
@@ -375,8 +402,8 @@ compact_fields <- function(line) {
 compact_unescape <- function(x) {
   map <- c(n = "\n", r = "\r", f = "\f", b = "\b", t = "\t", v = "\v", a = "\a")
   vapply(x, function(s) {
-    if (!grepl("\\", s, fixed = TRUE)) return(s)
-    hits <- gregexpr("\\\\.", s, perl = TRUE)
+    if (!grepl("\\", s, fixed = TRUE, useBytes = TRUE)) return(s)
+    hits <- gregexpr("\\\\.", s, perl = TRUE, useBytes = TRUE)
     pairs <- regmatches(s, hits)[[1]]
     if (length(pairs) == 0) return(s)
     tail <- substr(pairs, 2L, 2L)
@@ -386,17 +413,35 @@ compact_unescape <- function(x) {
   }, character(1), USE.NAMES = FALSE)
 }
 
-# compact_section_case() --------------------------------------------------
+# compact_key_name() ------------------------------------------------------
 
-# Restore the nested-section prefix casing `default=nw=1` used, so the column
-# names `probe_all()` returns are unchanged: `tag:title` -> `TAG:title`,
-# `disposition:default` -> `DISPOSITION:default`. Uppercasing whatever precedes
-# the first `:` covers any nested section rather than the two seen today.
-compact_section_case <- function(key) {
-  at <- regexpr(":", key, fixed = TRUE)
-  ifelse(at > 0L,
-         paste0(toupper(substr(key, 1L, at - 1L)), substring(key, at)),
-         key)
+# Give a nested-section key the name `default=nw=1` gave it, so the columns
+# `probe_all()` returns are unchanged. The two writers disagree three ways, and
+# only two of them are about casing:
+#
+#   tag:title                          -> TAG:title
+#   disposition:default                -> DISPOSITION:default
+#   side_datum/display_matrix:rotation -> rotation
+#
+# Side data is the one that bites. The old writer printed it with NO prefix at
+# all, so `rotation` -- present on essentially every phone video, and read by
+# anything that corrects orientation -- is a bare column name that users
+# already depend on. Uppercasing the prefix instead of dropping it renamed that
+# column out of existence, which is how M52's first review round found this.
+# The prefix also varies by side-data type, so uppercasing scatters a mixed
+# batch across per-type columns where it had one shared `rotation`.
+#
+# Those three are the whole nested-section set `-show_format -show_streams`
+# emits, measured on ffmpeg 8.1.2. An unrecognized prefix is left ALONE rather
+# than guessed at: a wrong rename is silent, where a compact-shaped name in the
+# output is at least visible.
+#
+# Byte-based, like everything else in this parser: a metadata key carrying a
+# byte invalid in the session locale must not take its row down with it.
+compact_key_name <- function(key) {
+  key <- sub("^tag:", "TAG:", key, useBytes = TRUE)
+  key <- sub("^disposition:", "DISPOSITION:", key, useBytes = TRUE)
+  sub("^side_datum/[^:]*:", "", key, useBytes = TRUE)
 }
 
 

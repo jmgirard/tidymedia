@@ -7,19 +7,9 @@
 # composition -- the `file` column, bind_rows, type_columns and the warning --
 # instead of a test-side re-implementation of it.
 
-baseline <- function() {
-  readRDS(test_path("fixtures", "probe-baseline.rds"))
-}
-
-scrub_paths <- function(x, path, token) {
-  for (col in names(x)) {
-    if (is.character(x[[col]])) {
-      x[[col]] <- gsub(path, token, x[[col]], fixed = TRUE)
-      x[[col]] <- gsub(basename(path), basename(token), x[[col]], fixed = TRUE)
-    }
-  }
-  x
-}
+# baseline(), exempt_fixtures() and scrub_paths() live in
+# helper-probe-baseline.R, shared with the parser file.
+baseline <- probe_baseline
 
 # Answer every FFprobe call from `responses`, one per call in order. A single
 # character vector answers every call. find_ffprobe() is mocked too so these
@@ -41,7 +31,7 @@ local_recorded_ffprobe <- function(responses, env = parent.frame()) {
 
 test_that("typed = TRUE reproduces the recorded pre-change output", {
   b <- baseline()
-  for (nm in setdiff(names(b), "hostile")) {
+  for (nm in setdiff(names(b), exempt_fixtures())) {
     entry <- b[[nm]]
     local_recorded_ffprobe(entry$compact)
     out <- probe_all(entry$path, typed = TRUE)
@@ -54,7 +44,7 @@ test_that("typed = TRUE reproduces the recorded pre-change output", {
 
 test_that("typed = FALSE reproduces the recorded pre-change output", {
   b <- baseline()
-  for (nm in setdiff(names(b), "hostile")) {
+  for (nm in setdiff(names(b), exempt_fixtures())) {
     entry <- b[[nm]]
     local_recorded_ffprobe(entry$compact)
     out <- probe_all(entry$path, typed = FALSE)
@@ -64,6 +54,24 @@ test_that("typed = FALSE reproduces the recorded pre-change output", {
                  entry$untyped$streams, info = nm)
     # The point of typed = FALSE: nothing was converted.
     expect_true(all(vapply(out$streams, is.character, logical(1))))
+  }
+})
+
+test_that("side data reaches probe_all() under both typed values", {
+  # The exempt fixtures are still checked here, on everything their recorded
+  # baseline gets right: parity is claimed for the whole streams tibble minus
+  # the columns the old writer's multi-line value corrupted.
+  b <- baseline()
+  entry <- b$rotated
+  for (typed in c(TRUE, FALSE)) {
+    local_recorded_ffprobe(entry$compact)
+    out <- probe_all(entry$path, typed = typed)
+    before <- if (typed) entry$typed$streams else entry$untyped$streams
+    shared <- setdiff(names(before),
+                      c(matrix_row_columns(names(before)), "displaymatrix"))
+    expect_equal(scrub_paths(out$streams, entry$path, entry$token)[shared],
+                 before[shared], info = paste("typed =", typed))
+    expect_true("rotation" %in% names(out$streams))
   }
 })
 

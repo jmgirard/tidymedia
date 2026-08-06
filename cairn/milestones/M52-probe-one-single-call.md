@@ -1,11 +1,11 @@
 # M52: Collapse `probe_one()`'s per-stream FFprobe loop into one call
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m52-probe-one-single-call`
 
 ## Goal
 
@@ -103,6 +103,8 @@ renamed or extra column is a defect here, not a deliverable.
 - 2026-07-31: plan measurements (ffmpeg 8.1.2, macOS; a 5-stream `.mkv`, ten copies): today 60 spawns / 1.700 s; one call with section markers 10 spawns / 0.267 s; one call with `-of compact` 10 spawns / 0.358 s (~4.7x). A title tag of `a\n[/STREAM]\nb` yields six bare close-markers for five streams under the marker writer, and corrupts the CURRENT per-stream output too; `-of compact` renders it `\n`, a literal `|` as `\|` and a CR as `\r`. T1 re-records the spawn count on the branch.
 - 2026-07-31: the question gate ran before the criteria audit this once, because the writer choice determined which criteria existed to audit; the audit ran on the drafted wording before commit, which is what it exists for.
 - 2026-07-31: criteria audit ([O], fresh context) returned five findings, all fixed above and all confirmed by re-measurement. The important one: AC2 was unsatisfiable as drafted, because `-of compact` emits `tag:`/`disposition:` where `default=nw=1` emits `TAG:`/`DISPOSITION:` and prepends a keyless section field, so byte-identical columns need normalization the Scope had not named. Also: the format line arrives last in a combined call, so the parser must dispatch by section; the escape set includes `\r`, which the Scope had omitted; AC4 demanded a test failing on a ref that never had it; and the resilience contract was cited at `:249-258`, which is `filter_streams()`, not `:75-94`.
+- 2026-08-06: implementation started on `m52-probe-one-single-call`; question gate skipped, nothing genuinely open (the writer choice was settled at plan time and the parser shape is fixed by AC2's unchanged-output promise).
+- 2026-08-06: re-measured the compact writer's escape set on ffmpeg 8.1.2 before any edit, confirming the plan's four escapes and that `=` is deliberately unescaped, so a per-field split on the first `=` still holds. AC4's corruption reproduces: a newline-bearing tag under `default=nw=1` emits a bare continuation line that `format_probe()` reads as a `key=value` pair.
 
 ## Decisions
 

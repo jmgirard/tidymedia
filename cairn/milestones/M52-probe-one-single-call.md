@@ -20,8 +20,8 @@ container and every stream from a single compact-format call.
 compact-line parser beside `format_probe()` (`R/ffprobe.R:278-284`) that does
 four things the current parser does not have to: dispatch each line by its
 keyless leading section field (`stream|…`, `format|…`, with the format line
-arriving **last**); split on unescaped `|`; unescape `\n`, `\r`, `\|` and
-`\\`; and restore the nested-section prefixes to the casing today's output
+arriving **last**); split on unescaped `|`; unescape the **six** sequences the
+writer emits — `\\`, `\|`, `\n`, `\r`, `\b` and `\f`; and restore the nested-section prefixes to the casing today's output
 uses, since the compact writer emits `tag:` / `disposition:` where
 `default=nw=1` emits `TAG:` / `DISPOSITION:`.
 
@@ -55,10 +55,13 @@ renamed or extra column is a defect here, not a deliverable.
       spurious `stream` column — so a passing AC2 is what proves the
       normalization complete.
 - [ ] AC3 The parser round-trips every escape the compact writer emits,
-      verified at plan time as `\n`, `\r`, `\|` and `\\`: a stream tag whose
-      value contains a literal `|`, one containing an embedded newline, and one
-      containing a carriage return each come back as the original string, in
-      one cell, adding no column and no row.
+      re-measured during implementation as **six** rather than the four
+      recorded at plan time: `\\`, `\|`, `\n`, `\r`, `\b` and `\f`. BEL, TAB
+      and vertical tab were measured passing through raw and need no decoding,
+      which is why the set is six and not nine. A stream tag whose value
+      contains each of the six, and one carrying a raw byte the writer leaves
+      alone, each come back as the original string, in one cell, adding no
+      column and no row.
 - [ ] AC4 The same input fixes a latent corruption rather than merely avoiding
       one: a newline-bearing tag today makes `format_probe()` read the value's
       trailing lines as further `key=value` pairs and emit bogus columns
@@ -113,6 +116,7 @@ renamed or extra column is a defect here, not a deliverable.
 - 2026-08-06: the baseline captured AC4's corruption as recorded pre-change fact: on the escape fixture the per-stream parse truncates the audio title tag to `line` and emits a bogus `break` column holding `break`. The recorded pre-change spawn counts are 3/5/2/2/3 for the five fixtures, each `nb_streams + 1`.
 - 2026-08-06: substantive amendment, user-approved at a mini gate — AC2 now exempts the escape fixture, which AC4 owns. As written the two criteria contradicted each other on that one file: AC2 demanded byte-identical output against a baseline that records the corruption AC4 exists to remove, so satisfying both was impossible and satisfying AC2 literally would have pinned the bug.
 - 2026-08-06: T2 done and RED by design — the suite stays red until T4 lands the single call, so the profile's verify slot is not clean at this checkpoint. `test-probe-single-call.R` counts `run_program()` invocations through a mock that delegates to the real binding, so the tibbles stay real. Three of its four assertions fail at the pre-change counts; the unprobeable-file case already spawns once and is pinned as an invariant rather than a change.
+- 2026-08-06: substantive amendment, user-approved at a mini gate — the Scope's escape list and AC3 widen from four sequences to six. Byte-level measurement (ffmpeg 8.1.2, one tag per byte, read with `od -c` so a raw control byte is told apart from a two-character escape) shows the writer also escapes `\b` and `\f`, while BEL, TAB and vertical tab pass through raw. Decoding only the planned four would return a form feed as a literal backslash-f, the corruption class AC3 exists to prevent. The plan-time note that `\a` is escaped was an artifact of reading `od -c`'s rendering of a raw BEL as an escape.
 
 ## Decisions
 

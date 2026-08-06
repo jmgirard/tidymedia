@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m52-probe-one-single-call`
+- **Branch/PR:** `m52-probe-one-single-call` / https://github.com/jmgirard/tidymedia/pull/55
 
 ## Goal
 
@@ -35,14 +35,14 @@ renamed or extra column is a defect here, not a deliverable.
 
 ## Acceptance criteria
 
-- [ ] AC1 On a fixture with at least three streams, `probe_one()` spawns
+- [x] AC1 On a fixture with at least three streams, `probe_one()` spawns
       exactly one FFprobe process, where the pre-change count is
       `nb_streams + 1`. Asserted by a mock that **counts** invocations, not by
       timing and not by a mock that errors (M44's lesson: a `stop()`ing mock
       proves nothing where the caller catches). The one-spawn count also holds
       on the early-return paths, which already spawn once
       (`R/ffprobe.R:167`, `:170-173`).
-- [ ] AC2 `probe_all()`'s output is unchanged: for every fixture in the suite
+- [x] AC2 `probe_all()`'s output is unchanged: for every fixture in the suite
       **except the escape fixture**, both returned tibbles compare identical in
       names, column order, row order, types and values against a baseline
       recorded from the pre-change ref and committed before any source edit
@@ -54,7 +54,7 @@ renamed or extra column is a defect here, not a deliverable.
       compact parse renames every `TAG:`/`DISPOSITION:` column and adds a
       spurious `stream` column — so a passing AC2 is what proves the
       normalization complete.
-- [ ] AC3 The parser round-trips every escape the compact writer emits,
+- [x] AC3 The parser round-trips every escape the compact writer emits,
       re-measured during implementation as **six** rather than the four
       recorded at plan time: `\\`, `\|`, `\n`, `\r`, `\b` and `\f`. BEL, TAB
       and vertical tab were measured passing through raw and need no decoding,
@@ -62,19 +62,19 @@ renamed or extra column is a defect here, not a deliverable.
       contains each of the six, and one carrying a raw byte the writer leaves
       alone, each come back as the original string, in one cell, adding no
       column and no row.
-- [ ] AC4 The same input fixes a latent corruption rather than merely avoiding
+- [x] AC4 The same input fixes a latent corruption rather than merely avoiding
       one: a newline-bearing tag today makes `format_probe()` read the value's
       trailing lines as further `key=value` pairs and emit bogus columns
       (reproduced at plan time against the current per-stream call). After this
       milestone it is one cell. Evidence is a test that runs red against
       pre-change source — written in T3, before T4 rewrites `probe_one()` —
       and green after.
-- [ ] AC5 `typed = TRUE` and `typed = FALSE` both produce output identical to
+- [x] AC5 `typed = TRUE` and `typed = FALSE` both produce output identical to
       their recorded baselines, and the resilience contract is intact — a file
       with no readable streams, an unprobeable file, and a mixed vector of both
       still yield all-`NA` rows plus one warning rather than an abort
       (`R/ffprobe.R:75-94`, documented at `:48-50`).
-- [ ] AC6 `devtools::test()` clean and `devtools::check()` reports 0 errors /
+- [x] AC6 `devtools::test()` clean and `devtools::check()` reports 0 errors /
       0 warnings; NEWS records the speedup in user-facing terms.
 
 ## Coverage
@@ -128,3 +128,61 @@ renamed or extra column is a defect here, not a deliverable.
 ## Decisions
 
 ## Review
+
+Reviewed 2026-08-06 on `m52-probe-one-single-call`, PR #55. All evidence below
+is from commands run at review, not from implementation-time transcripts.
+
+**AC1 — one spawn per file.** `test-probe-single-call.R` counts `run_program()`
+invocations through a mock that delegates to the real binding, so the returned
+tibbles stay real; 10 assertions pass. On the 5-stream fixture the count is 1
+and the streams tibble carries 5 rows. The early-return paths (video-only,
+audio-only) and the unprobeable path each count 1. The pre-change counts are
+recorded in the T1 baseline as `nb_streams + 1` across all five fixtures
+(3/5/2/2/3 for 2/4/1/1/2 streams).
+
+**AC2 — output unchanged.** `test-probe-compact-parser.R` rebuilds the recorded
+pre-change tibbles from the recorded compact text for the four non-escape
+fixtures; names, column order, row order, types and values all compare
+identical. Column counts match exactly per fixture: container 15/12/15/15,
+streams 68/68/62/50. The escape fixture is exempt by the 2026-08-06 amendment
+and is AC4's.
+
+**AC3 — every escape round-trips.** The six sequences the writer emits (`\\`,
+`\|`, `\n`, `\r`, `\b`, `\f`) each round-trip to the original string in one
+cell, adding no column and no row; a raw TAB, which the writer leaves alone, is
+covered in the same test. 75 assertions pass in the parser file.
+
+**AC4 — the latent corruption is fixed, not merely avoided.** Two independent
+pieces of evidence. Recorded: the T1 baseline holds the pre-change output for
+the escape fixture, where the newline-bearing tag yields 69 columns including a
+bogus `break` column and a title truncated to `line`; the new parse yields 68
+columns, no `break`, the title whole as `line\nbreak`, and the same row count.
+Live: the test over `make_hostile_tag_video()` was run red against pre-change
+source at T3 (failing on both the bogus column and the truncated value) and
+passes now.
+
+**AC5 — `typed` parity and resilience.** `test-probe-typed-resilience.R` runs
+the real `probe_all()` over the recorded text through a mocked `run_program()`,
+so parity is checked through the package's own composition rather than a
+test-side copy; both `typed` values reproduce the recorded pre-change output on
+all four non-escape fixtures, and under `typed = FALSE` every stream column is
+character. The resilience contract is covered as four cases — an unprobeable
+file, a file with no readable streams, a mixed vector, and two failures warning
+once rather than twice — plus `probe_video()`/`probe_audio()` on wholly
+unreadable input. 39 assertions pass.
+
+**AC6 — suite and check clean, NEWS written.** Full `devtools::test()` at review:
+3397 passing, 0 failures, 0 errors, 5 skips. Fresh `devtools::check()` at
+review: Status OK, 0 errors / 0 warnings / 0 notes. NEWS carries a new
+`## Performance` section for the single-call read (five processes to one; the
+local 1.709 s → 0.456 s figure stated as a measurement, not a guarantee) and a
+`## Bug fixes` entry for the newline-tag corruption; both behavioral claims are
+enforced by named tests.
+
+**Consistency gate.** `cairn_validate` exits 0 with every check passing and no
+advisories. No DESIGN principle changed, so the impact report is skipped. The
+`r-package` profile's toolchain slot: `devtools::document()` produces no diff,
+`pkgdown::check_pkgdown()` reports no problems, README.Rmd/README.md are
+untouched by this branch, the declared changelog has entries for this
+milestone's user-visible changes, and the branch adds no top-level file needing
+an `.Rbuildignore` entry.

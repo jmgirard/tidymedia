@@ -171,6 +171,11 @@ probe_baseline_record <- function(ref = "HEAD", root = ".") {
       untyped = list(
         container = probe_baseline_scrub(all_raw$container, path, token),
         streams = probe_baseline_scrub(all_raw$streams, path, token)),
+      # The path the recorded compact text was produced from, and the token it
+      # was scrubbed to. The suite re-applies exactly this substitution to what
+      # it parses out of `compact`, so a comparison against the recorded
+      # tibbles is not a comparison of two different temp directories.
+      path = path,
       token = token,
       # The spawn count the pre-change loop pays for this file, so AC1's "the
       # count was nb_streams + 1 before" is recorded evidence rather than a

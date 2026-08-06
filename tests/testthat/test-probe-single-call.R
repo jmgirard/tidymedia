@@ -48,6 +48,19 @@ test_that("probe_one() spawns once on the early-return paths too", {
   expect_equal(n_audio, 1L)
 })
 
+test_that("a newline-bearing tag reaches one cell, not a bogus column", {
+  # AC4's evidence, live rather than recorded: this runs RED against pre-change
+  # source, where the per-stream `default=nw=1` parse reads the tag value's
+  # trailing line as a further `key=value` pair.
+  skip_if_no_ffprobe()
+  infile <- make_hostile_tag_video()
+  s <- probe_one(infile)$streams
+  expect_false("break" %in% names(s))
+  expect_true("TAG:title" %in% names(s))
+  expect_true(any(s[["TAG:title"]] == "line\nbreak", na.rm = TRUE))
+  expect_true(any(s[["TAG:title"]] == "pipe|here", na.rm = TRUE))
+})
+
 test_that("probe_one() spawns once on an unprobeable file and returns NULL", {
   skip_if_no_ffprobe()
   missing <- file.path(tempdir(), "tm-does-not-exist-m52.mkv")

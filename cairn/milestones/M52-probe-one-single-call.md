@@ -95,7 +95,7 @@ renamed or extra column is a defect here, not a deliverable.
       worthless).
 - [x] T2 Tests first: the counting mock over `run_program()` that pins the
       per-file spawn count, red at `nb_streams + 1`.
-- [ ] T3 Write the compact-line parser beside `format_probe()` with its own
+- [x] T3 Write the compact-line parser beside `format_probe()` with its own
       unit tests — section dispatch, unescaping all four escapes, prefix
       normalization, and the AC4 regression, all red before T4.
 - [ ] T4 Rewrite `probe_one()` onto the single call and route it through the
@@ -117,6 +117,9 @@ renamed or extra column is a defect here, not a deliverable.
 - 2026-08-06: substantive amendment, user-approved at a mini gate — AC2 now exempts the escape fixture, which AC4 owns. As written the two criteria contradicted each other on that one file: AC2 demanded byte-identical output against a baseline that records the corruption AC4 exists to remove, so satisfying both was impossible and satisfying AC2 literally would have pinned the bug.
 - 2026-08-06: T2 done and RED by design — the suite stays red until T4 lands the single call, so the profile's verify slot is not clean at this checkpoint. `test-probe-single-call.R` counts `run_program()` invocations through a mock that delegates to the real binding, so the tibbles stay real. Three of its four assertions fail at the pre-change counts; the unprobeable-file case already spawns once and is pinned as an invariant rather than a change.
 - 2026-08-06: substantive amendment, user-approved at a mini gate — the Scope's escape list and AC3 widen from four sequences to six. Byte-level measurement (ffmpeg 8.1.2, one tag per byte, read with `od -c` so a raw control byte is told apart from a two-character escape) shows the writer also escapes `\b` and `\f`, while BEL, TAB and vertical tab pass through raw. Decoding only the planned four would return a form feed as a literal backslash-f, the corruption class AC3 exists to prevent. The plan-time note that `\a` is escaped was an artifact of reading `od -c`'s rendering of a raw BEL as an escape.
+- 2026-08-06: T3 done. `parse_compact_probe()` and three helpers land beside `format_probe()`; `test-probe-compact-parser.R` is binary-free and green, rebuilding the recorded pre-change tibbles from the recorded text for the four non-escape fixtures. Field splitting walks the characters rather than substituting a placeholder byte, because the writer passes BEL, TAB and vertical tab through raw, so no byte is free to stand in for a separator. Unescaping is one pass via `regmatches<-`; sequential `gsub()`s would decode `\\n` into a newline.
+- 2026-08-06: AC4 asks for evidence that runs red against pre-change source, which a recorded-versus-parsed comparison cannot give since it is green in both directions. Added the live counterpart in `test-probe-single-call.R` over a new `make_hostile_tag_video()` helper; it is red now on both the bogus `break` column and the truncated tag value, and the recorded baseline stands beside it as the frozen half.
+- 2026-08-06: `format_probe()` kept for now so this checkpoint still loads; its only two callers are the `probe_one()` sites T4 replaces, so it and its test go there.
 
 ## Decisions
 

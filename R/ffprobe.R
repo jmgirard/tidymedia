@@ -283,6 +283,139 @@ format_probe <- function(x) {
   tibble::as_tibble(as.list(value))
 }
 
+# parse_compact_probe() ---------------------------------------------------
+
+# Turn the output of ONE `ffprobe -show_format -show_streams -of compact` call
+# into the same list(container, streams) of raw-character tibbles the old
+# per-stream `-of default=nw=1` loop built, or NULL when the file could not be
+# probed.
+#
+# The compact writer is what lets a single call carry every stream: it puts one
+# section per LINE and escapes anything that could forge a line or field break,
+# where `default=nw=1` concatenates sections with no delimiter and escapes
+# nothing at all. That second half is not a hypothetical -- a tag value carrying
+# a newline splits into further `key=value`-looking lines under the old writer,
+# and the old parser duly turned the remainder into bogus columns.
+#
+# Three things this has to undo to keep the returned columns byte-identical to
+# what the package has always returned:
+#   - each line leads with a KEYLESS section field (`stream|...`, `format|...`),
+#     and in a combined call the format line arrives LAST, so rows are dispatched
+#     by that field rather than by position;
+#   - fields are separated by `|`, which a value may also contain as `\|`;
+#   - nested sections render as `tag:` / `disposition:` where `default=nw=1`
+#     renders them `TAG:` / `DISPOSITION:`.
+parse_compact_probe <- function(x) {
+  x <- x[nzchar(x)]
+  if (length(x) == 0) return(NULL)
+
+  rows <- lapply(x, compact_row)
+  section <- vapply(rows, function(r) r$section, character(1))
+
+  fmt <- rows[section == "format"]
+  # No format section means FFprobe told us nothing about the container, which
+  # is what an unreadable file looks like; the old code reached the same NULL by
+  # way of an empty `-show_format` call.
+  if (length(fmt) == 0) return(NULL)
+
+  st <- rows[section == "stream"]
+  streams <- if (length(st)) {
+    dplyr::bind_rows(lapply(st, function(r) r$data))
+  } else {
+    # A container FFprobe can read but that carries no streams. The old code
+    # reached this through an `nb_streams < 1` early return.
+    tibble::tibble()
+  }
+  list(container = fmt[[1]]$data, streams = streams)
+}
+
+# compact_row() -----------------------------------------------------------
+
+# One compact line -> list(section, one-row tibble). The `key=value` split is on
+# the *first* `=` only, exactly as the old parser did, so a value containing `=`
+# survives; the writer does not escape `=`, so splitting before unescaping is
+# safe.
+compact_row <- function(line) {
+  fields <- compact_fields(line)
+  kv <- fields[-1]
+  kv <- kv[nzchar(kv)]
+  key <- compact_section_case(compact_unescape(sub("=.*$", "", kv)))
+  value <- compact_unescape(sub("^[^=]*=", "", kv))
+  names(value) <- key
+  list(section = fields[[1]], data = tibble::as_tibble(as.list(value)))
+}
+
+# compact_fields() --------------------------------------------------------
+
+# Split one compact line on its UNESCAPED `|` separators. A `|` is a separator
+# only when an even number of backslashes precede it, since the writer spells a
+# literal backslash `\\` and a literal `|` `\|`.
+#
+# Walking the characters is what makes that decidable. The obvious shortcut --
+# substitute a placeholder byte for the escaped forms, split on what is left --
+# has no safe placeholder here: the writer passes control characters through
+# RAW (BEL, TAB and vertical tab were each measured arriving unescaped), so no
+# byte is free to stand in for a separator without risking a collision with a
+# value that genuinely contains it.
+compact_fields <- function(line) {
+  ch <- strsplit(line, "", fixed = TRUE)[[1]]
+  n <- length(ch)
+  if (n == 0) return("")
+  # Position of the last non-backslash at or before each index; the count of
+  # backslashes immediately preceding index i is then (i - 1) - last[i - 1].
+  last <- cummax(ifelse(ch == "\\", 0L, seq_len(n)))
+  run <- c(0L, seq_len(n - 1L) - last[-n])
+  cuts <- which(ch == "|" & run %% 2L == 0L)
+  starts <- c(1L, cuts + 1L)
+  ends <- c(cuts - 1L, n)
+  vapply(seq_along(starts), function(k) {
+    if (ends[[k]] < starts[[k]]) "" else
+      paste0(ch[starts[[k]]:ends[[k]]], collapse = "")
+  }, character(1))
+}
+
+# compact_unescape() ------------------------------------------------------
+
+# Decode the writer's C-style escapes. Measured on ffmpeg 8.1.2, the compact
+# writer emits exactly six: `\\`, `\|`, `\n`, `\r`, `\b` and `\f`. The control
+# characters BEL, TAB and vertical tab arrive raw and so need no decoding.
+#
+# The table carries `t`, `v` and `a` anyway, and every other `\X` decodes to
+# `X`. That is not guesswork: since a literal backslash always arrives as `\\`,
+# a lone `\` in the decoded input is impossible, so no mapping here can collide
+# with real content -- a source value of backslash-then-t arrives as `\\t`, is
+# consumed as the pair `\\`, and comes back as backslash-then-t either way.
+#
+# The pairs are decoded in ONE pass. A sequence of gsub() calls cannot do this:
+# resolving `\\` first turns the literal backslash-n of `\\n` into a real `\n`,
+# which the next gsub then reads as a newline escape.
+compact_unescape <- function(x) {
+  map <- c(n = "\n", r = "\r", f = "\f", b = "\b", t = "\t", v = "\v", a = "\a")
+  vapply(x, function(s) {
+    if (!grepl("\\", s, fixed = TRUE)) return(s)
+    hits <- gregexpr("\\\\.", s, perl = TRUE)
+    pairs <- regmatches(s, hits)[[1]]
+    if (length(pairs) == 0) return(s)
+    tail <- substr(pairs, 2L, 2L)
+    regmatches(s, hits) <- list(unname(ifelse(tail %in% names(map),
+                                              map[tail], tail)))
+    s
+  }, character(1), USE.NAMES = FALSE)
+}
+
+# compact_section_case() --------------------------------------------------
+
+# Restore the nested-section prefix casing `default=nw=1` used, so the column
+# names `probe_all()` returns are unchanged: `tag:title` -> `TAG:title`,
+# `disposition:default` -> `DISPOSITION:default`. Uppercasing whatever precedes
+# the first `:` covers any nested section rather than the two seen today.
+compact_section_case <- function(key) {
+  at <- regexpr(":", key, fixed = TRUE)
+  ifelse(at > 0L,
+         paste0(toupper(substr(key, 1L, at - 1L)), substring(key, at)),
+         key)
+}
+
 
 # convert_fractions() -----------------------------------------------------
 

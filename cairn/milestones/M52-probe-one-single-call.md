@@ -42,11 +42,15 @@ renamed or extra column is a defect here, not a deliverable.
       proves nothing where the caller catches). The one-spawn count also holds
       on the early-return paths, which already spawn once
       (`R/ffprobe.R:167`, `:170-173`).
-- [ ] AC2 `probe_all()`'s output is unchanged: for every fixture in the suite,
-      both returned tibbles compare identical in names, column order, row
-      order, types and values against a baseline recorded from the pre-change
-      ref and committed before any source edit (T1). This is the criterion the
-      writer switch most endangers — measured at plan time, an unnormalized
+- [ ] AC2 `probe_all()`'s output is unchanged: for every fixture in the suite
+      **except the escape fixture**, both returned tibbles compare identical in
+      names, column order, row order, types and values against a baseline
+      recorded from the pre-change ref and committed before any source edit
+      (T1). The escape fixture is excluded here and owned by AC4, whose whole
+      subject is that the pre-change output on it is *wrong* — its baseline
+      records a truncated tag value and a bogus `break` column, so an
+      identical-output assertion there would pin the corruption in place. This
+      is the criterion the writer switch most endangers — measured at plan time, an unnormalized
       compact parse renames every `TAG:`/`DISPOSITION:` column and adds a
       spurious `stream` column — so a passing AC2 is what proves the
       normalization complete.
@@ -107,6 +111,7 @@ renamed or extra column is a defect here, not a deliverable.
 - 2026-08-06: re-measured the compact writer's escape set on ffmpeg 8.1.2 before any edit, confirming the plan's four escapes and that `=` is deliberately unescaped, so a per-field split on the first `=` still holds. AC4's corruption reproduces: a newline-bearing tag under `default=nw=1` emits a bare continuation line that `format_probe()` reads as a `key=value` pair.
 - 2026-08-06: T1 done. `data-raw/probe-baseline.R` records five synthetic fixtures against a git ref, pairing the combined call's raw compact text with the pre-change `probe_one()`/`probe_all()` tibbles built from the same file, so AC2 becomes a binary-free pure-function test rather than a re-probe. It reuses M41's `codec_guard_env()` ref loader rather than copying it. Committed as `tests/testthat/fixtures/probe-baseline.rds`.
 - 2026-08-06: the baseline captured AC4's corruption as recorded pre-change fact: on the escape fixture the per-stream parse truncates the audio title tag to `line` and emits a bogus `break` column holding `break`. The recorded pre-change spawn counts are 3/5/2/2/3 for the five fixtures, each `nb_streams + 1`.
+- 2026-08-06: substantive amendment, user-approved at a mini gate — AC2 now exempts the escape fixture, which AC4 owns. As written the two criteria contradicted each other on that one file: AC2 demanded byte-identical output against a baseline that records the corruption AC4 exists to remove, so satisfying both was impossible and satisfying AC2 literally would have pinned the bug.
 
 ## Decisions
 

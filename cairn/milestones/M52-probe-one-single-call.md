@@ -1,6 +1,6 @@
 # M52: Collapse `probe_one()`'s per-stream FFprobe loop into one call
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -42,7 +42,7 @@ renamed or extra column is a defect here, not a deliverable.
       proves nothing where the caller catches). The one-spawn count also holds
       on the early-return paths, which already spawn once
       (`R/ffprobe.R:167`, `:170-173`).
-- [x] AC2 `probe_all()`'s output is unchanged: for every fixture in the suite
+- [ ] AC2 `probe_all()`'s output is unchanged: for every fixture in the suite
       **except the escape fixture**, both returned tibbles compare identical in
       names, column order, row order, types and values against a baseline
       recorded from the pre-change ref and committed before any source edit
@@ -69,7 +69,7 @@ renamed or extra column is a defect here, not a deliverable.
       milestone it is one cell. Evidence is a test that runs red against
       pre-change source — written in T3, before T4 rewrites `probe_one()` —
       and green after.
-- [x] AC5 `typed = TRUE` and `typed = FALSE` both produce output identical to
+- [ ] AC5 `typed = TRUE` and `typed = FALSE` both produce output identical to
       their recorded baselines, and the resilience contract is intact — a file
       with no readable streams, an unprobeable file, and a mixed vector of both
       still yield all-`NA` rows plus one warning rather than an abort
@@ -124,6 +124,8 @@ renamed or extra column is a defect here, not a deliverable.
 - 2026-08-06: measured on the branch, ten probes of a 4-stream file: 1.709 s before, 0.456 s after (3.75x), spawns per file 5 to 1. The plan's 4.7x was on a 5-stream file, so the two are consistent rather than in conflict — the win grows with stream count.
 - 2026-08-06: T5 done. `test-probe-typed-resilience.R` feeds the recorded text to the REAL `probe_all()` through a mocked `run_program()`/`find_ffprobe()` pair, so `typed` parity is checked through the package's own composition rather than a test-side copy of it, and the file needs no binary. Both `typed` values reproduce the recorded pre-change output on all four non-escape fixtures. Resilience covered as four cases: unprobeable, no readable streams, a mixed vector, and two failures warning once rather than twice. Full suite 3397 passing, 0 failures, 5 skips.
 - 2026-08-06: T6 done. NEWS gains a `## Performance` section for the single-call read and a `## Bug fixes` entry for the newline-tag corruption; both claims are enforced by named tests, and the timing figure is stated as a local measurement rather than a guarantee. `devtools::document()` produces no diff and `devtools::check()` is 0 errors / 0 warnings / 0 notes. Status to `review`.
+
+- 2026-08-06: review round 1 RETURNED to `in-progress` (defect return #1). What failed: `probe_all()` renames stream side-data columns, so `$streams$rotation` — present on essentially every phone video — is `"90"` on `master` and absent on this branch, which the Scope's Out clause names a defect rather than a deliverable (F1, scored 96, verified end-to-end at review). Two more actioned: a tag byte invalid in the session locale makes the whole stream row vanish silently where the old parser errored loudly (F2, 88), and NEWS asserts the returned tibbles are unchanged (F4, 85). CI was green on all three workflows and every gate check passed; the fixture family is what missed this, being lavfi-synthesized with no side data and no non-ASCII bytes (F3, 74). AC2 and AC5 unticked pending re-verification against a widened fixture set; AC1/AC3/AC4/AC6 keep their evidence.
 
 ## Decisions
 
@@ -186,3 +188,62 @@ advisories. No DESIGN principle changed, so the impact report is skipped. The
 untouched by this branch, the declared changelog has entries for this
 milestone's user-visible changes, and the branch adds no top-level file needing
 an `.Rbuildignore` entry.
+
+### Independent review — round 1 (2026-08-06): RETURNED
+
+CI green on all three workflows (R-CMD-check, pkgdown, test-coverage). Three
+fresh-context lenses ran with distinct evidence bases; 18 findings were scored
+by a separate Sonnet scorer holding the diff and the plan.
+
+**Actioned (scored ≥80), all three verified by the reviewing session itself:**
+
+- **F1 (96) — side-data columns are renamed; `rotation` disappears.**
+  `default=nw=1` printed stream side data with no prefix (`side_data_type`,
+  `displaymatrix`, `rotation`); `-of compact` prints it as
+  `side_datum/display_matrix:rotation`, and `compact_section_case()` uppercases
+  the whole prefix, yielding `SIDE_DATUM/DISPLAY_MATRIX:rotation`. Verified
+  end-to-end on a rotated `.mp4`: `probe_all(f)$streams$rotation` is `"90"` on
+  `master` and the column does not exist on this branch. Display-matrix side
+  data is on essentially every phone video, and the new names vary by
+  side-data type, so a mixed batch gets sparse per-type columns where it had
+  one shared `rotation`. This is exactly what the Scope's Out clause names a
+  defect rather than a deliverable.
+- **F2 (88) — metadata invalid in the session locale silently deletes the
+  stream row.** `strsplit(line, "", fixed = TRUE)` returns `NA_character_`
+  (warning only) on a string invalid in `LC_CTYPE`, so `compact_fields()`
+  yields the literal `"NA"`, the section dispatch drops the line, and the row
+  vanishes. Verified: one Latin-1 `0xE9` byte in a tag gives a 0-row streams
+  tibble. The old `sub()`-based parser errored loudly on the same input, so
+  this trades a loud failure for silent data loss. Reachable via legacy
+  Windows-1252 tags and non-UTF-8 Windows codepages.
+- **F4 (85) — NEWS asserts something F1 falsifies.** The new `## Performance`
+  entry says "Nothing about the returned tibbles changes: the same columns, in
+  the same order, with the same values and types."
+
+**Logged below threshold (15 findings), surfaced not dropped.** F15 (78) the
+`count_audio_streams()` comment still says `probe_all()` costs one process per
+stream, which this milestone makes false. F3 (74) AC2's five lavfi fixtures
+carry no side data and no non-ASCII bytes, so the baseline structurally could
+not catch F1 or F2 — derivative of them, but it is why they reached review.
+F8 (66) duplicate keys abort rather than warn, and the new prefix scheme makes
+same-type side-data entries collide into identical names. F18 (66) the
+generator's `five` fixture yields four streams — its fifth lavfi input is never
+mapped. F14 (58) per-character splitting costs ~21 ms on a 200 KB line.
+F11 (48) the early-return spawn test binds its results without inspecting them.
+F6 (47), F5 (44), F7 (40), F9 (36) defensive-parsing gaps on section lines real
+FFprobe does not emit. F12 (45) `NA` is laundered into `"NA"`. F10 (42) the
+mocked `run_program()` ignores its arguments, so the pinned writer options are
+unasserted off the binary-gated path. F17 (35) a garbled comment in
+`test-ffprobe.R`. F13 (25) a latent byte-vs-character offset that cannot fire
+while prefixes stay ASCII. F16 (25) a stale figure on an unmodified ROADMAP
+line.
+
+**Disposition.** Defect return #1. F1 scored ≥90 on a defect in what the
+package does for its users, which meets the return floor on its own; F2 and F4
+are fixed with it. AC2 and AC5 are unticked — their recorded evidence stands
+for the fixtures tested, but F3 shows that fixture family excludes the inputs
+where the writer switch actually changes behavior, so both must be re-verified
+against a widened set. AC1, AC3, AC4 and AC6 are unaffected and keep their
+evidence. No criterion is amended: AC2's wording already binds to "every
+fixture in the suite", so adding side-data and non-ASCII fixtures strengthens
+it without a text change.

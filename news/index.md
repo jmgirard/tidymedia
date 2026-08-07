@@ -367,6 +367,46 @@
 
 ### Bug fixes
 
+- A malformed codec value — a string carrying whitespace or shell
+  characters, such as `"aac -evil"` — is now reported against the
+  argument and the function you called. Every verb whose `video_codec`
+  or `audio_codec` argument *sets* a codec used to accept such a value
+  at its front door and refuse it deeper in, reporting it against the
+  pipeline’s internal `audio` / `video` setting, against an internal
+  helper, or — on the verbs that fan out, meaning every `_batch` sibling
+  and the scalar
+  [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
+  — against the fan-out, prefixed `In index:`. Non-string values were
+  already reported this way.
+  ([`verify_media()`](https://jmgirard.github.io/tidymedia/reference/verify_media.md)
+  carries same-named arguments that are expected probe *values* rather
+  than codec settings; it is unaffected.)
+
+  A `_batch` verb reads the same value three ways, and all three now
+  answer alike. A malformed value in the scalar argument used to be
+  discarded in silence whenever the `jobs` table carried a column of the
+  same name, since the column wins; it is now refused. A malformed value
+  in the **column** used to be reported from inside the fan-out, naming
+  an internal closure; it is now refused at the verb’s own front door,
+  before any row runs.
+
+  Under `hardware = "nvenc"`,
+  [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+  and
+  [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
+  used to accept a malformed `video_codec` outright — the encoder name
+  was rewritten to the nvenc equivalent before anything checked it, and
+  the rewritten name is well-formed. They now refuse it, as
+  [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md)
+  already did. One consequence for callers who pass both
+  `hardware = "nvenc"` and bad dimensions:
+  [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+  now reports the dimensions first, where it used to report the missing
+  nvenc encoder first.
+
+  No compiled command changes: every legal codec value compiles exactly
+  the command it did before.
+
 - When `hardware = "nvenc"` is requested on a machine whose FFmpeg does
   not list the encoder,
   [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)

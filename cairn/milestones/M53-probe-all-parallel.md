@@ -1,11 +1,11 @@
 # M53: Give `probe_all()` a `parallel =` argument
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M52
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m53-probe-all-parallel`
 
 ## Goal
 
@@ -19,7 +19,8 @@ is bounded by the active future plan rather than by a `for` loop.
 `furrr` and honoring the active `future::plan()` as `ffm_batch()` does
 (`R/ffm_batch.R:95-102`, D007/D012); `rlang::check_installed("furrr")` on the
 parallel path only, so the Suggests dependency stays optional; a D-entry
-recording that the package now has a second `furrr` fan-out; roxygen, NEWS.
+recording that `furrr` fan-out now crosses from the execution side to the
+metadata side; roxygen, NEWS.
 
 **Out:** any change to `probe_one()`'s per-file cost, which is M52's. The batch
 verbs' up-front dropped-track probe → the standing candidate row.
@@ -55,12 +56,17 @@ candidate row. Changing the default, which stays sequential.
       reprobe via `infile` and ignore it when given a `probe` object, matching
       how they already treat `typed` (`R/ffprobe.R:259-267`, consumed only on
       the `infile` branch at `:265`).
-- [ ] AC6 A `cairn/DECISIONS.md` entry records that the package now fans out
-      with `furrr` in two places rather than one, and states what keeps them
-      one concept: D007 says "Batch processing is a single tibble-in/tibble-out
-      runner" and rules out "vectorizing individual verbs", neither of which
-      this violates — `probe_all()` is a metadata reader already vectorized
-      over files — but the entry is what stops that reading eroding.
+- [ ] AC6 A `cairn/DECISIONS.md` entry records that `furrr` fan-out now
+      crosses from the execution side to the metadata side, and states what
+      keeps that one concept. It records the side-crossing rather than a site
+      count: `grep -rn "furrr::" R/` returns three pre-existing call sites in
+      two files (`R/ffm_batch.R:102`, `:132`, `R/loudnorm_two_pass.R:197`),
+      all execution-side, so this criterion's original "two places rather
+      than one" was false. The entry states that D007 — "Batch processing is
+      a single tibble-in/tibble-out runner", ruling out "vectorizing
+      individual verbs" — is not violated, `probe_all()` being a metadata
+      reader already vectorized over files; the entry is what stops that
+      reading eroding.
 - [ ] AC7 `devtools::document()` produces no diff, `devtools::test()` clean,
       `devtools::check()` reports 0 errors / 0 warnings; NEWS entry.
 
@@ -76,7 +82,7 @@ candidate row. Changing the default, which stays sequential.
 
 ## Tasks
 
-- [ ] T1 Read `ffm_batch()`'s parallel seam (`R/ffm_batch.R:95-105`,
+- [x] T1 Read `ffm_batch()`'s parallel seam (`R/ffm_batch.R:95-105`,
       `:174-184`) and decide whether to reuse its sequential-plan guard here;
       log the decision, since AC3's wording depends on it and D012 exists for
       that guard.
@@ -106,6 +112,26 @@ candidate row. Changing the default, which stays sequential.
   `ffm_batch()` seam, which was clipped mid-`if`/`else` (`:95-102` → `:95-105`).
   AC1's `:72-87`/`:89-94`, AC3's `R/ffm_batch.R:174-184`, and the four
   shortcuts at `:216-241` all still land where the plan says.
+
+- 2026-08-06: T1 — `probe_all()`'s parallel path WILL call
+  `warn_if_sequential_plan()`. Rejected the alternative of following
+  `run_loudnorm_analysis_batch()`'s shape, which fans out silently and leaves
+  the warning to "the Phase 2 `ffm_batch()` call so it fires exactly once"
+  (`R/loudnorm_two_pass.R:162-171`): that rationale rests on a downstream
+  call that warns, and `probe_all()` is a terminal entry point with none, so
+  copying it would make `parallel = TRUE` under the default sequential plan
+  silently no-op — the case D012 added the guard for. Falsified by a user
+  report that the doubled warning (guard + unprobeable-file) is noisier than
+  the silent no-speedup it prevents. AC3 already fixes the test shape for
+  this branch: assert on the file warning's class or text, never a count.
+- 2026-08-06: implement gate amended AC6 and the Scope line it mirrors. AC6
+  required a D-entry recording "two places rather than one"; that count was
+  false before the milestone started — `grep -rn "furrr::" R/` returns three
+  call sites in two files (`R/ffm_batch.R:102`, `:132`,
+  `R/loudnorm_two_pass.R:197`), all execution-side. Amended to record the
+  execution→metadata side-crossing instead, and to name that grep as the
+  procedure enumerating the domain. Rejected fixing only the count, which
+  would have kept site-counting as the thing the D-entry records.
 
 ## Decisions
 

@@ -1,6 +1,6 @@
 # M57: A missing nvenc encoder is refused at the front door, on every verb that fans out
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M54, M56
 - **Driving RR:** —
@@ -35,7 +35,7 @@ door → rejected at the plan gate (work log).
 
 ## Acceptance criteria
 
-- [ ] AC1: On each of `segment_video()`, `anonymize_video_batch()`,
+- [x] AC1: On each of `segment_video()`, `anonymize_video_batch()`,
       `segment_video_batch()`, `standardize_video_batch()`, `crop_video_batch()`,
       `format_for_web_batch()`, `separate_audio_video_batch()`,
       `compare_videos_batch()` and `picture_in_picture_batch()`, a call with
@@ -48,36 +48,36 @@ door → rejected at the plan gate (work log).
       `parallel = TRUE`, whose master reading is furrr's internal `...furrr_fn`
       closure rather than the `furrr::future_pmap` this criterion first
       predicted (D033).
-- [ ] AC2: The unavailable-nvenc abort text is emitted from exactly one
+- [x] AC2: The unavailable-nvenc abort text is emitted from exactly one
       function, and `resolve_hw_encoder()` reaches it by calling that function
       rather than by carrying its own copy. Evidence: reading the two functions,
       plus a test asserting the front-door and pipeline messages are
       string-identical for one `(video_codec, hardware, fallback)` triple.
-- [ ] AC3: On a `_batch` verb carrying a `video_codec` column, the guard checks
+- [x] AC3: On a `_batch` verb carrying a `video_codec` column, the guard checks
       every distinct family the column spells, with an `NA` cell and an absent
       column both spelling the h264 family that `resolve_hw_encoder()`'s `NULL`
       sentinel resolves to (`R/ffmpeg.R:2475-2480`, D022); a verb with no such
       column checks the argument alone. Evidence: a two-row table (H.264 + AV1)
       under a seam listing only `h264_nvenc` aborts naming the AV1 encoder, and
       compiles under a seam listing both; an all-`NA` column behaves as h264.
-- [ ] AC4: `fallback = TRUE` reaches no front-door guard at all — including the
+- [x] AC4: `fallback = TRUE` reaches no front-door guard at all — including the
       column sweep, whose `codec_family()` call aborts on an unmappable codec
       regardless of `fallback` (`R/ffmpeg.R:2440-2452`). Evidence: a test on one
       fan-out verb asserting no abort and the *same count* of fallback
       `cli_inform()` messages as before the change; the pre-existing fallback
       tests green.
-- [ ] AC5: No existing test is re-baselined and no compiled command the suite
+- [x] AC5: No existing test is re-baselined and no compiled command the suite
       exercises changes, with one named exception: `test-nvenc.R`'s M54 blame
       test pins the misblame this milestone removes and its own comment
       anticipates going red here. Its three fan-out assertions flip from
       `purrr::pmap` to the verb named; its scalar control is untouched.
       Evidence: `git diff tests/` shows additions only outside that one test;
       `devtools::test()` green; `devtools::check()` reports `Status: OK`.
-- [ ] AC6: Each `cli::cli_abort()` site that `grep -n "cli_abort(" R/` returns
+- [x] AC6: Each `cli::cli_abort()` site that `grep -n "cli_abort(" R/` returns
       inside the nine verbs' `*_pipeline()` functions carries a recorded
       disposition — guarded here, ROADMAP candidate row, or left with a stated
       reason. Evidence: the grep output and its dispositions in the work log.
-- [ ] AC7: `devtools::document()` produces no diff; `NEWS.md` carries the
+- [x] AC7: `devtools::document()` produces no diff; `NEWS.md` carries the
       user-visible change; `R/ffmpeg.R`'s CRLF line endings survive every commit
       (M35/M48).
 
@@ -112,7 +112,7 @@ door → rejected at the plan gate (work log).
 - [x] T6: `fallback = TRUE` test asserting no abort and the message count.
 - [x] T7: Run AC6's grep, record the dispositions in the work log, add the
       ROADMAP candidate rows it produces.
-- [ ] T8: `@param hardware` wording on the nine verbs, `NEWS.md`,
+- [x] T8: `@param hardware` wording on the nine verbs, `NEWS.md`,
       `devtools::document()`, `devtools::test()`, `devtools::check()`; check
       `grep -c $'\r' R/ffmpeg.R` against the default branch before every commit
       touching it (M35/M48).
@@ -124,6 +124,7 @@ door → rejected at the plan gate (work log).
 - 2026-08-07: plan gate chose duplicating the check at the front door over hoisting resolution there, because hoisting re-forks the resolver seam for per-row `video_codec` columns and undoes M56's fix that made `standardize_pipeline()` hand `hardware` to the seam unresolved; falsified by a front-door guard and a pipeline guard observed firing on different inputs.
 - 2026-08-07: plan gate chose nvenc availability alone over every pipeline-level validation on the nine verbs, because the wider cut trips the sizing tripwires; falsified by AC6's enumeration returning few enough sites to have been folded in.
 - 2026-08-07: implement gate skipped — the plan gate settled hoist-vs-duplicate, scope, AC6 and the probe cache, and nothing left open was more than a helper signature.
+- 2026-08-07 (T8): the availability note added to the nine fan-out verbs' `@param hardware` blocks; `devtools::document()` rewrote exactly those nine `.Rd` files and a second run produced no further change. The M54 NEWS paragraph that stated the fan-out limitation is rewritten, since M57 removes what it described. `devtools::test()` FAIL 0 | PASS 3918 with the same 4 warnings and 5 skips as at T1; `devtools::check()` `Status: OK`, 0 errors / 0 warnings / 0 notes. `git diff master -- tests/` outside `test-nvenc.R` has 0 deleted lines, so AC5's exception is the only re-baseline. `R/ffmpeg.R` CRLF 5749 on master -> 5922 here for 173 added lines, 0 deleted (M35/M48).
 - 2026-08-07 (T7): AC6 enumeration run. `grep -n "cli_abort(" R/` attributed to the enclosing function returns six sites inside the nine verbs' `*_pipeline()` functions, and each was measured on the branch rather than read off the source: `separate_stream_pipeline():592` (copy video codec against `hardware`), `segment_pipeline():2810` and `:2826` (the two `reencode = FALSE` contradictions), `compare_videos_pipeline():5251` (audio codec, no mapped audio) and `:5263` (the two-input `resize` limit), `picture_in_picture_pipeline():5396` (audio codec, no mapped audio). Disposition: all six blame `purrr::pmap` today and all six are out of M57's scope by the plan gate's nvenc-only cut, so they take one grouped ROADMAP candidate row. None is guarded here, and none is left without a row.
 - 2026-08-07 (T7): the first `:5263` measurement recorded a `jobs` schema error, not the resize limit — `compare_videos_batch()` takes `output` as a column, never an argument. Re-measured against the verb's real column names before the disposition was written (M54).
 - 2026-08-07 (T5/T6): column-spanning and fallback tests added. A two-row table spelling h264 and av1 under a seam holding only `h264_nvenc` aborts naming `av1_nvenc`, and compiles under a seam holding both; an `NA` cell and an absent column both read as h264; `format_for_web_batch()` checks h264. `fallback = TRUE` emits 2 fallback messages for a 2-row table on the branch and 2 on master, and an unmappable `prores` cell under `fallback = TRUE` still fails inside the fan-out rather than at the front door. Suite FAIL 0 | PASS 3918.

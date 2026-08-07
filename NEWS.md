@@ -302,12 +302,21 @@
   command it did before.
 
 * When `hardware = "nvenc"` is requested on a machine whose FFmpeg does not
-  list the encoder, `standardize_video()` and `format_for_web()` now report the
-  error against the function you called rather than against an internal helper,
-  as most other verbs taking `hardware` already did. A call that fans out over
-  several commands still reports the error against the internal fan-out
-  instead: every `_batch` verb, and the scalar `segment_video()`, which fans
-  out over its segments.
+  list the encoder, every verb taking `hardware` now reports the error against
+  the function you called rather than against an internal helper. This last
+  covers the verbs that fan out over several commands — every `_batch` verb,
+  and the scalar `segment_video()`, which fans out over its segments — which
+  previously reported the error against `purrr::pmap()` with an internal row
+  index, or against a `furrr` closure under `parallel = TRUE`.
+
+  On those verbs the check now also runs before any row does, so a large jobs
+  table fails immediately instead of after building the first row's command.
+  Where a `video_codec` column names several codec families in one call, each
+  family is checked: a build listing `h264_nvenc` but not `av1_nvenc` refuses
+  the table rather than failing partway through it.
+
+  Nothing else changes. `fallback = TRUE` behaves exactly as before, and no
+  call that used to succeed now fails.
 
 * Metadata values containing a newline no longer corrupt the probe output.
   `probe_all()` and the `probe_*()` shortcuts read FFprobe's per-stream output

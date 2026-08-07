@@ -2856,20 +2856,24 @@ segment_video <- function(infile,
   # leaking a dependency's name and an internal index -- the exact M41 shape
   # every other argument on this verb already avoids (M48 review F1).
   rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
+  # The two cut contradictions (conditions 2 and 3), re-checked here so a
+  # contradictory call blames this verb instead of purrr::pmap() (M58). Every
+  # value is a scalar argument on this verb -- only the _batch sibling has
+  # columns to sweep -- so one call each covers every segment.
+  check_codec_needs_reencode(reencode, video_codec, hardware)
+  check_audio_codec_needs_reencode(reencode, audio_codec)
   # nvenc availability, re-checked here so an unavailable encoder blames this
   # verb instead of purrr::pmap() (M57/D035). Last in the front-door block, so
   # every check above still reports first (M41).
   #
-  # Gated on `reencode` because segment_pipeline() aborts EARLIER on a
-  # non-re-encoding cut that names an encoder ("{.arg video_codec} and
-  # {.arg hardware} need a re-encoding cut"), never reaching
-  # resolve_hw_encoder(). Firing unconditionally here would replace that
-  # message with an availability one, which is not why the call failed --
-  # D035's second condition is that the guard changes the blame and the moment,
-  # never which calls fail or what they are told.
-  if (isTRUE(reencode)) {
-    check_nvenc_available(video_codec, hardware, fallback)
-  }
+  # UNGATED since M58, where M57 gated it on `reencode`. The gate was there
+  # because segment_pipeline() aborted EARLIER on a non-re-encoding cut naming
+  # an encoder, and firing here would have replaced that message with an
+  # availability one. The contradiction check two lines up now makes that
+  # impossible: this guard only ever acts on `hardware = "nvenc"`, and a
+  # `reencode = FALSE` call naming nvenc has already been refused above. The
+  # gate is dead code, not a live protection (M58 T2).
+  check_nvenc_available(video_codec, hardware, fallback)
 
   # If no names are provided, derive per-segment names from the input file.
   if (is.null(outfiles)) {
@@ -3131,27 +3135,33 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
   # `reencode` column (arriving via `...` from pmap) overrides the scalar arg;
   # `...` also forwards ffm_batch options (verify/manifest/...) to the runner,
   # never to the pipeline builder.
+  # The two cut contradictions (conditions 2 and 3), re-checked here so a
+  # contradictory call blames this verb instead of purrr::pmap() (M58). Swept
+  # ROW BY ROW because all three values can arrive as columns: a table mixing a
+  # copying row with a re-encoding one is refused for the copying row alone,
+  # where an all-or-nothing gate would either refuse the whole table or miss it
+  # (the shape M57 review F4 caught on this verb's nvenc guard).
+  reencode_rows <- batch_arg_rows(jobs, "reencode", reencode)
+  vcodec_rows <- batch_arg_rows(jobs, "video_codec", video_codec,
+                                batch_codec_cell)
+  acodec_rows <- batch_arg_rows(jobs, "audio_codec", audio_codec,
+                                batch_codec_cell)
+  for (i in seq_len(nrow(jobs))) {
+    check_codec_needs_reencode(reencode_rows[[i]], vcodec_rows[[i]], hardware)
+    check_audio_codec_needs_reencode(reencode_rows[[i]], acodec_rows[[i]])
+  }
   # nvenc availability, re-checked here so an unavailable encoder blames this
   # verb instead of purrr::pmap() (M57/D035), immediately before ffm_batch() so
   # every check above still reports first (M41).
   #
-  # Scoped to the rows that re-encode, never gated on the whole table:
-  # segment_pipeline() aborts EARLIER on a non-re-encoding cut that names an
-  # encoder, never reaching resolve_hw_encoder(), so a row that copies has no
-  # encoder to check. `reencode` is a per-row column here, so an all-or-nothing
-  # gate skipped the guard for the re-encoding rows of a MIXED column and left
-  # them blaming purrr::pmap() -- the misblame this verb's guard exists to
-  # remove (M57 review F4). Sweeping the re-encoding rows alone keeps both: a
-  # table with no re-encoding row reaches no guard at all, and one with any
-  # re-encoding row is checked for exactly the families those rows spell.
-  reencode_rows <- if ("reencode" %in% names(jobs)) jobs$reencode else reencode
-  encoding <- which(rep_len(reencode_rows %in% TRUE, nrow(jobs)))
-  if (length(encoding) > 0L) {
-    check_nvenc_available(
-      batch_video_codecs(jobs[encoding, , drop = FALSE], video_codec),
-      hardware, fallback
-    )
-  }
+  # UNSCOPED since M58, where M57 swept only the re-encoding rows. That scoping
+  # was there because a copying row has no encoder to check and its own cut
+  # error had to report instead. The row sweep above now makes that impossible:
+  # this guard only ever acts on `hardware = "nvenc"`, which contradicts EVERY
+  # copying row, so any table reaching this line re-encodes on every row. The
+  # scoping is dead code, not a live protection (M58 T2).
+  check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
+                        fallback)
 
   ffm_batch(
     jobs,
@@ -4328,6 +4338,28 @@ check_batch_codec_col <- function(jobs, col = "video_codec",
 # column form of the NULL sentinel (M34/D016).
 batch_codec_cell <- function(value) {
   if (length(value) == 1L && is.na(value)) NULL else value
+}
+
+# batch_arg_rows(): the per-row values a jobs table will hand the pipeline for
+# ONE argument -- the override column's cells where the table carries one,
+# resolved through `resolve`, and the scalar argument repeated otherwise. This
+# is the same column-over-argument rule each _batch verb's `pick()` closure
+# applies inside the fan-out, hoisted so a front-door checker can be run per row
+# before anything is built (M58).
+#
+# Returns a LIST, never a vector: a resolved cell may be NULL (the codec and
+# audio columns spell their argument's NULL sentinel as NA, via
+# batch_codec_cell() / batch_stream_cell()), and a vector cannot hold one.
+#
+# Deliberately NOT unique()'d, unlike batch_video_codecs(): a row-swept checker
+# names no row in its message today, but collapsing here would make naming one
+# impossible later, and the sweep is over a handful of comparisons per row.
+batch_arg_rows <- function(jobs, col, arg, resolve = identity) {
+  n <- nrow(jobs)
+  if (!col %in% names(jobs)) {
+    return(rep(list(arg), n))
+  }
+  lapply(seq_len(n), function(i) resolve(jobs[[col]][[i]]))
 }
 
 # batch_video_codecs(): the distinct video_codec values a jobs table will hand

@@ -108,7 +108,7 @@ owing its own entry. Line-ending governance → M60.
       `*_pipeline()` functions call them rather than carrying the abort; give
       condition 5's abort (`R/ffmpeg.R:5312`) the `call = call` its siblings
       already thread.
-- [ ] T2 — `segment_video()` and `segment_video_batch()` front doors
+- [x] T2 — `segment_video()` and `segment_video_batch()` front doors
       (conditions 2, 3), row-swept on `reencode`/`video_codec`/`audio_codec`
       columns, placed before M57's nvenc guard; retire that guard's now-dead
       `reencode` gating (`R/ffmpeg.R:2744`, `:3047`).
@@ -135,6 +135,9 @@ owing its own entry. Line-ending governance → M60.
 - 2026-08-07: plan gate chose five shared checkers over six because conditions 4 and 6 have a byte-identical headline and differ only in hint text, so six sites would fail AC1's own uniqueness test; falsified by the two hints diverging enough that one parameter cannot carry both.
 - 2026-08-07: criteria audit ([O] fresh-context reader) returned findings on AC1 (two ways), AC3, AC4, AC6, and a coverage gap on AC7; all fixed before writing. AC2 and AC7 returned clean. Its AC5 finding — that three of five verbs are vacuous on uniform calls and two committed tests pin the opposite precedence — went to the question gate.
 - 2026-08-07: T1 — five checkers extracted; the four pipelines call them. Measured against `origin/master`: five of the six messages and their `conditionCall()` are byte-identical, and condition 5's call target moves from the pipeline to its caller, which is the `call = call` AC6 asks for.
+
+- 2026-08-07: T2 — both segment front doors check conditions 2 and 3 (the _batch one row-swept via a new `batch_arg_rows()`); M57's `reencode` gate and row-scoping on the nvenc guards retired as dead, since `hardware = "nvenc"` now contradicts every copying row before that guard runs.
+- 2026-08-07: minor amendment (task reorder) — T7's rewrite of the two committed precedence tests was pulled forward into T2's checkpoint, because the precedence flip turns them red the moment T2's code lands and the verify slot must be clean per task. A third test (`test-nvenc-front-door.R:299`) kept passing but for a new reason, so its comment was corrected and a blame assertion added. T7 keeps the two uniform-call tests, which need T4/T5.
 
 ## Decisions
 

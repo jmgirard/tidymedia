@@ -16,13 +16,21 @@ values.
 ## Scope
 
 **In:** routing `extract_audio_pipeline()` (`R/ffmpeg.R:464`), `convert_audio_pipeline()`
-(`:925`) and the video side of `standardize_pipeline()` (`:1419`) through
+(`:930`) and the video side of `standardize_pipeline()` (`:1433`) through
 `apply_audio_codec()` / `apply_video_codec()` with `call =` threaded; passing `call =` at
-`normalize_audio_pipeline()`'s seam call (`:2159`), the one seam call that omits it and so
+`normalize_audio_pipeline()`'s seam call (`:2179`), the one seam call that omits it and so
 blames the internal helper; and extending `test-codec-arg-front-door.R`'s family sweep,
 whose `codec_front_door_bad` set is today only non-string shapes, with a malformed-but-string
 token. Also makes D022's first bullet true, which already names the two seams as carrying
 the family rule though these pipelines bypass them.
+
+Also upgrading every codec-family verb's front-door `rlang::check_string(<codec>, allow_null
+= TRUE)` to `check_token(<codec>, allow_null = TRUE)` at the same site, so a malformed token
+is refused at the front door on every verb the sweep covers. Measured on `master`: of the 51
+verb x argument x column cells the sweep runs, 11 already blame the verb, 25 report the token
+from a helper or mid-fan-out (`In index:`), and 15 ignore the malformed scalar outright when
+a `jobs` column of the same name wins. Same site, so the non-string precedence the family
+already pins is unmoved.
 
 **Out:**
 - Giving `ffm_codec()` `arg` / `call` parameters — weighed and rejected at the plan gate
@@ -40,7 +48,7 @@ the family rule though these pipelines bypass them.
 - [ ] AC1 `grep -n "ffm_codec(" R/*.R` shows every remaining direct call passing either a
       package literal or a value already token-checked with `call =` threaded at that
       verb's front door. The three sites named in Scope no longer pass an unchecked user
-      value, and `R/ffmpeg.R:2159` passes `call =`.
+      value, and `R/ffmpeg.R:2179` passes `call =`.
 - [ ] AC2 `extract_audio()`, `convert_audio()`, `standardize_video()` and their `_batch`
       siblings, given a malformed-but-string codec token, emit a message naming the verb's
       own argument (`audio_codec` / `video_codec`), never Layer-1's `audio` / `video`, and
@@ -57,21 +65,23 @@ the family rule though these pipelines bypass them.
 - [ ] AC4 No compiled command changes. For each verb touched, the `run = FALSE` compiled
       string is byte-identical to `master`'s across a grid varying the codec value over
       that verb's legal set — `NULL`, a literal it accepts, and `"copy"` only where it
-      accepts it (`helper-codec-family.R:100-104`) — with
+      accepts it (`helper-codec-family.R:100-102`) — with
       `withr::local_options(tidymedia.nvenc_encoders = ...)` pinned so any nvenc cell is
       machine-independent. `data-raw/codec-guard-baseline.R` is the instrument.
 - [ ] AC5 PROFILE.md's verify slot clean — `devtools::check()` 0 errors / 0 warnings, read
       from `<pkg>.Rcheck/00check.log`'s `Status:` line — and `devtools::test()` passes.
-- [ ] AC6 `grep -c $'\r' R/ffmpeg.R` on the branch tip equals 5652, the count on `master`.
+- [ ] AC6 `grep -c $'\r' R/ffmpeg.R` on the branch tip equals 5708, the count on `master` at
+      699551f, the commit this branch was cut from. (The plan's 5652 was measured at
+      `bcc6f5c`, before M54's merge changed this file.)
 
 ## Coverage
 
 - AC1 → T2
-- AC2 → T3
-- AC3 → T3
+- AC2 → T2, T2b, T3
+- AC3 → T2b, T3
 - AC4 → T1, T4
 - AC5 → T5
-- AC6 → T2, T5
+- AC6 → T2, T2b, T5
 
 ## Tasks
 
@@ -80,9 +90,11 @@ the family rule though these pipelines bypass them.
       pinned. Commit the baseline **before** mutating anything — probing uncommitted work
       reverts the feature itself (LESSONS M44).
 - [ ] T2 Route the three direct sites through the seams and add `call =` at
-      `R/ffmpeg.R:2159`. `R/ffmpeg.R` is the repo's only CRLF file: read and write it as
+      `R/ffmpeg.R:2179`. `R/ffmpeg.R` is the repo's only CRLF file: read and write it as
       bytes restoring `\r\n`, and check that one file's diffstat before committing
       (LESSONS M35/M48).
+- [ ] T2b Upgrade every codec-family verb's front-door `check_string(<codec>)` to
+      `check_token(<codec>)` at the same site, per the Scope amendment.
 - [ ] T3 Extend `codec_front_door_bad` per AC3; prove discrimination by reverting each of
       the four changes in turn and confirming the sweep goes red for that verb.
 - [ ] T4 Re-run the baseline and diff against T1's; any difference is a defect, not a
@@ -97,6 +109,8 @@ the family rule though these pipelines bypass them.
 - 2026-08-06: investigation found a fourth leaking site the ROADMAP row did not name — `convert_audio_pipeline()` at `R/ffmpeg.R:925` — measured emitting "`audio` must be a single clean token" blamed on `ffm_codec()`. Folded into scope.
 - 2026-08-06: plan gate chose routing through the existing seams over giving `ffm_codec()` `arg` / `call` parameters, because the seams already take `call =` and their `caller_arg()` resolves to `video_codec` / `audio_codec` — the correct public names for all four verbs — so the fix needs no Layer-1 change, where the alternative would start Layer 1 carrying Layer-2 argument names against IP1 and the boundary comment at `R/ffmpeg.R:2469-2470`; falsified by a verb whose public codec argument is named something other than `video_codec` / `audio_codec`, which the seams cannot then blame correctly.
 - 2026-08-07: /milestone-implement started; branch `m56-codec-token-blame` cut from `master` at 699551f.
+- 2026-08-07: amendment — Scope **In** widened to upgrade every codec-family verb's front-door `check_string(<codec>)` to `check_token(<codec>)`, after measuring `"aac -evil"` over the sweep on `master`: 11 of 51 cells blame the verb, 25 report the token from a helper or mid-fan-out, 15 ignore the malformed scalar when a same-named `jobs` column wins — so AC3's "every verb x argument pair" was unreachable from the four routing changes alone. Chosen at the gate over narrowing AC3 to the eight in-scope verbs. T2b added; AC2/AC3/AC6 coverage updated.
+- 2026-08-07: amendment — AC6's 5652 replaced by 5708, the CRLF-line count on `master` at 699551f; the planned figure was measured at `bcc6f5c`, before M54's merge changed `R/ffmpeg.R`. Stale line pointers refreshed in the same pass (`:925`→`:930`, `:1419`→`:1433`, `:2159`→`:2179`, `helper-codec-family.R:100-104`→`:100-102`).
 
 ## Decisions
 

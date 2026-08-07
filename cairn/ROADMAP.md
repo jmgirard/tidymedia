@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-07 (M54 merged and archived; M49's terminal row pruned under the 5-row retention rule. M55 and M56 are planned and unblocked — M56's dependency on M54 is now met. Candidates at 21: the fan-out blame row added by M54, corrected at review.)_
+_Last hygiene check: 2026-08-07 (M55 merged and archived; M50's terminal row pruned under the 5-row retention rule. M56 is planned, unblocked, and the only open milestone. Candidates at 21, untouched — M55 spawned none. LESSONS at 49 of 50: M55's package-doc line added, nothing retired.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M50 | Quote map specifiers in the compiled command string | done | M49 | normal | milestones/archive/M50-quote-map-specifiers.md |
 | M51 | Make the package's two 0-based audio indices legible | done | M49, M50 | normal | milestones/archive/M51-audio-index-docs.md |
 | M52 | Collapse `probe_one()`'s per-stream FFprobe loop into one call | done | — | normal | milestones/archive/M52-probe-one-single-call.md |
 | M53 | Give `probe_all()` a `parallel =` argument | done | M52 | normal | milestones/archive/M53-probe-all-parallel.md |
 | M54 | Correct the `run = FALSE` purity claim for the nvenc encoder probe | done | — | normal | milestones/archive/M54-nvenc-dry-run-purity.md |
-| M55 | A package landing topic, and a `parallel` enumeration that matches the code | review | — | normal | milestones/M55-package-topic-parallel-docs.md |
+| M55 | A package landing topic, and a `parallel` enumeration that matches the code | done | — | normal | milestones/archive/M55-package-topic-parallel-docs.md |
 | M56 | A bad codec token names the verb's argument, never Layer 1's | planned | M54 | normal | milestones/M56-codec-token-blame.md |
 
 ## Candidates

@@ -125,6 +125,21 @@ probe_all(files)$container
 Files that cannot be read yield an all-`NA` row plus a warning, rather than
 aborting the whole call — so one bad file never sinks a batch.
 
+A large folder is the case for `parallel = TRUE`, which fans the per-file probes
+out with [furrr](https://furrr.futureverse.org/) instead of reading them one
+after another. Every `probe_*()` reader accepts it, and on the four shortcuts it
+applies to the `infile` you pass — hand one an existing `probe` object instead
+and there is nothing left to fan out, so the argument is ignored.
+
+```{r, eval = FALSE}
+probe_all(files, parallel = TRUE)$container
+```
+
+Like every parallel path in tidymedia it follows whatever
+[future](https://future.futureverse.org/) plan you have set. With no plan set it
+still reads one file at a time, and warns to tell you so — see
+`vignette("batch")` for the setup.
+
 ## Where to next
 
 - `vignette("workflow")` — an end-to-end research preprocessing pipeline.

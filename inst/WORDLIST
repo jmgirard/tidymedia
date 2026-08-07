@@ -25,6 +25,7 @@ Matroska
 MediaInfo
 MediaInfo's
 NTSC
+ORCID
 README
 VBR
 WebM
@@ -105,5 +106,4 @@ transcode
 transcodes
 transcoding
 unexecuted
-unselected
 zsh

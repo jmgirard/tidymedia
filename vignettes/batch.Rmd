@@ -100,10 +100,20 @@ separate_audio_video(video, "audio.aac", "video.mp4", run = FALSE)
 
 ## Running in parallel
 
-Both `ffm_batch()` and the fan-out verbs accept `parallel = TRUE`, which maps
-over jobs with [furrr](https://furrr.futureverse.org/). Parallelism follows
-whatever [future](https://future.futureverse.org/) plan you have set, so you opt
-in explicitly:
+`parallel = TRUE` is accepted by `ffm_batch()` and by every `*_batch` verb; by
+`segment_video()`, which sends its own segments through the same machinery; and
+by the five metadata readers `probe_all()`, `probe_container()`,
+`probe_streams()`, `probe_video()`, and `probe_audio()`. On the four reader
+shortcuts it applies when you pass `infile` and is ignored when you hand them an
+existing `probe` object, which has nothing left to fan out. Nothing else takes
+the argument — `separate_audio_video()` compiles its two commands directly
+rather than through `ffm_batch()`, so only `separate_audio_video_batch()`
+accepts it.
+
+The argument maps over jobs with [furrr](https://furrr.futureverse.org/), and
+parallelism follows whatever [future](https://future.futureverse.org/) plan you
+have set, so you opt in explicitly. With no plan set, `parallel = TRUE` still
+runs one job at a time, and warns to tell you so:
 
 ```{r, eval = FALSE}
 library(future)

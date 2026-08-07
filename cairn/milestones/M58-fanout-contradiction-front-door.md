@@ -119,7 +119,7 @@ owing its own entry. Line-ending governance → M60.
       `audio`/`audio_codec`/`resize` columns and per-row `inputs` lengths.
 - [x] T5 — `picture_in_picture_batch()` front door (condition 6), row-swept on
       `audio`/`audio_codec`.
-- [ ] T6 — Tests: one blame test per (condition, verb) pair; mixed-column
+- [x] T6 — Tests: one blame test per (condition, verb) pair; mixed-column
       tests; scalar-sibling tests; mutation-verify each front-door call by
       deleting it and requiring the paired test red.
 - [x] T7 — Rewrite the two committed precedence tests to contradiction-first
@@ -141,6 +141,7 @@ owing its own entry. Line-ending governance → M60.
 - 2026-08-07: T3 — `separate_audio_video_batch()` sweeps condition 1 over its `video_codec` column, below the reshape so a within-row output collision still reports first (M57 review F3). The nvenc guard's `Filter("copy")` retired as dead for the same reason T2's gating was. Second committed precedence test rewritten.
 - 2026-08-07: T4, T5 — the two fan-in composites sweep conditions 4/5 and 6 over their `audio`/`audio_codec`/`resize` columns and per-row input counts.
 - 2026-08-07: T7 — all five verbs carrying both guards now pin contradiction-first. The two mixed-column cases were rewritten under T2/T3; the three encoder-independent ones (conditions 4, 5, 6) are a new uniform-call test asserting the two seams give an identical message, and condition 5 left the availability-first sweep it used to sit in.
+- 2026-08-07: T6 — `test-contradiction-front-door.R`: eight blame tests, nine mixed-versus-clean column pairs, four scalar-sibling tests, and the one-site headline check (five headlines, five sites). Mutation-verified all eight front-door call sites by deleting each and re-running the file: 3, 3, 5, 4, 2, 5, 5 and 4 assertions red respectively, every site restored after.
 
 ## Decisions
 

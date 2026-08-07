@@ -1816,7 +1816,7 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 
   hardware <- rlang::arg_match(hardware)
   # NULL is legal (the "emit no -codec:a" escape hatch), so allow_null (M39).
-  rlang::check_string(audio_codec, allow_null = TRUE)
+  check_token(audio_codec, allow_null = TRUE)
 
   if (!is.data.frame(jobs)) {
     cli::cli_abort("{.arg jobs} must be a data frame with one row per input.")
@@ -1913,7 +1913,7 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   # function silently reassigned that precedence -- first past the jobs
   # SHAPE block (review A6), then past its content checks too (review
   # A1r3). Here it changes nothing but the message a bad codec gets.
-  rlang::check_string(video_codec, allow_null = TRUE)
+  check_token(video_codec, allow_null = TRUE)
   # See standardize_video_batch() for why the hint says "every" here and why
   # check_batch_stream_values() is not needed on a verb that does not reshape.
   check_batch_audio_col(jobs, "audio_stream",
@@ -2644,8 +2644,8 @@ segment_video <- function(infile,
     cli::cli_abort("{.arg outfiles} must have the same length as {.arg start}.")
   }
   rlang::check_bool(reencode)
-  rlang::check_string(video_codec, allow_null = TRUE)
-  rlang::check_string(audio_codec, allow_null = TRUE)
+  check_token(video_codec, allow_null = TRUE)
+  check_token(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
   # Unlike crop_video(), this verb DOES need its own front-door check. M47's F8
   # reasoning -- "pass_through_maps() carries the identical check with `call`
@@ -2877,8 +2877,8 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
                            audio_stream = NULL,
                            run = TRUE, parallel = FALSE, ...) {
 
-  rlang::check_string(video_codec, allow_null = TRUE)
-  rlang::check_string(audio_codec, allow_null = TRUE)
+  check_token(video_codec, allow_null = TRUE)
+  check_token(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
 
   if (!is.data.frame(jobs)) {
@@ -3398,7 +3398,7 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
 
   hardware <- rlang::arg_match(hardware)
   # NULL is legal (the "emit no -codec:a" escape hatch), so allow_null (M39).
-  rlang::check_string(audio_codec, allow_null = TRUE)
+  check_token(audio_codec, allow_null = TRUE)
 
   if (!is.data.frame(jobs)) {
     cli::cli_abort("{.arg jobs} must be a data frame with one row per input.")
@@ -3480,7 +3480,7 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
   # function silently reassigned that precedence -- first past the jobs
   # SHAPE block (review A6), then past its content checks too (review
   # A1r3). Here it changes nothing but the message a bad codec gets.
-  rlang::check_string(video_codec, allow_null = TRUE)
+  check_token(video_codec, allow_null = TRUE)
   # The stream-index column's own type guard, with a hint saying what NA means
   # HERE. The shared default ("drop audio") belongs to the composite verbs and
   # the extraction verbs say "keep the first audio track"; on the pass-through
@@ -3964,7 +3964,7 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
   # function silently reassigned that precedence -- first past the jobs
   # SHAPE block (review A6), then past its content checks too (review
   # A1r3). Here it changes nothing but the message a bad codec gets.
-  rlang::check_string(audio_codec, allow_null = TRUE)
+  check_token(audio_codec, allow_null = TRUE)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output loudnorm
   # pipeline per row, sharing normalize_audio_pipeline() with normalize_audio().
@@ -4309,7 +4309,7 @@ extract_audio_batch <- function(jobs, audio_codec = "copy",
   # sibling now agrees; until M42 it aborted on this same call, which is the
   # split D021 recorded from the wrong side (it called extract_audio() the verb
   # that "accepts neither NULL nor NA" without noticing this one always had).
-  rlang::check_string(audio_codec, allow_null = TRUE)
+  check_token(audio_codec, allow_null = TRUE)
   # The stream-index column's own type guard, with a hint saying what NA means
   # HERE -- the shared default ("drop audio") belongs to the composite verbs and
   # would be false on this one (M40).
@@ -4446,7 +4446,7 @@ convert_audio_batch <- function(jobs, audio_codec = NULL,
   # NA` would quietly compile the default instead of erroring, the M37 shape
   # where a scalar arg reaching the pipeline by the column path skips its own
   # type check. NULL stays legal: it IS the sentinel.
-  if (!is.null(audio_codec)) rlang::check_string(audio_codec)
+  if (!is.null(audio_codec)) check_token(audio_codec)
   # The stream-index column's own type guard, with a hint saying what NA means
   # HERE -- the shared default ("drop audio") belongs to the composite verbs and
   # would be false on this one (M40).
@@ -4578,8 +4578,8 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
                              audio_stream = NULL,
                              run = TRUE, parallel = FALSE, ...) {
 
-  rlang::check_string(video_codec, allow_null = TRUE)
-  rlang::check_string(audio_codec, allow_null = TRUE)
+  check_token(video_codec, allow_null = TRUE)
+  check_token(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
 
   jobs <- check_batch_jobs(jobs, require_output = FALSE)
@@ -4911,8 +4911,8 @@ separate_audio_video_batch <- function(jobs, audio_codec = "copy",
   # this, `video_codec = TRUE` compiled `-codec:v TRUE` and `video_codec = NA`
   # silently emitted nothing whenever `jobs` happened to carry a codec column
   # (M37 review). NULL stays legal -- it is the sentinel.
-  if (!is.null(audio_codec)) rlang::check_string(audio_codec)
-  if (!is.null(video_codec)) rlang::check_string(video_codec)
+  if (!is.null(audio_codec)) check_token(audio_codec)
+  if (!is.null(video_codec)) check_token(video_codec)
 
   # NA is legal in either codec column: it is the column form of the NULL
   # sentinel, so these need check_batch_codec_col(), never a guard that rejects
@@ -5497,8 +5497,8 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
   direction <- rlang::arg_match(direction)
   rlang::check_bool(resize)
   rlang::check_number_whole(audio, min = 0, allow_null = TRUE)
-  rlang::check_string(video_codec, allow_null = TRUE)
-  rlang::check_string(audio_codec, allow_null = TRUE)
+  check_token(video_codec, allow_null = TRUE)
+  check_token(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
 
   jobs <- check_fanin_jobs(jobs, min_inputs = 2L, verb = "Comparison")
@@ -5626,8 +5626,8 @@ picture_in_picture_batch <- function(jobs,
   rlang::check_number_decimal(scale)
   rlang::check_number_whole(margin, min = 0)
   rlang::check_number_whole(audio, min = 0, max = 1, allow_null = TRUE)
-  rlang::check_string(video_codec, allow_null = TRUE)
-  rlang::check_string(audio_codec, allow_null = TRUE)
+  check_token(video_codec, allow_null = TRUE)
+  check_token(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
 
   # Fixed two-input shape (D015): main/overlay are distinct roles, so named

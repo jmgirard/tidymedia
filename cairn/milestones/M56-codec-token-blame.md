@@ -93,7 +93,7 @@ already pins is unmoved.
       `R/ffmpeg.R:2179`. `R/ffmpeg.R` is the repo's only CRLF file: read and write it as
       bytes restoring `\r\n`, and check that one file's diffstat before committing
       (LESSONS M35/M48).
-- [ ] T2b Upgrade every codec-family verb's front-door `check_string(<codec>)` to
+- [x] T2b Upgrade every codec-family verb's front-door `check_string(<codec>)` to
       `check_token(<codec>)` at the same site, per the Scope amendment.
 - [ ] T3 Extend `codec_front_door_bad` per AC3; prove discrimination by reverting each of
       the four changes in turn and confirming the sweep goes red for that verb.
@@ -113,6 +113,7 @@ already pins is unmoved.
 - 2026-08-07: amendment — AC6's 5652 replaced by 5708, the CRLF-line count on `master` at 699551f; the planned figure was measured at `bcc6f5c`, before M54's merge changed `R/ffmpeg.R`. Stale line pointers refreshed in the same pass (`:925`→`:930`, `:1419`→`:1433`, `:2159`→`:2179`, `helper-codec-family.R:100-104`→`:100-102`).
 - 2026-08-07: T1 — `data-raw/codec-guard-baseline.R` gained `literal` / `copy` / `token` scenarios, an nvenc-pool pin (`options(tidymedia.nvenc_encoders = character())`), a `copy_ok` predicate (measured: the loudness verbs refuse `copy` on audio, and every video verb but `separate_audio_video()` refuses it on video), and `col_extra` applied at the value scenarios so the two scalar fan-in verbs stop recording D017's no-audio abort. Baseline captured off the `master` ref: 584 cells, 244 legal cells compiled, **0 vacuous**. The `before` side reads git, not the working tree, so it is immune to the mutations that follow (LESSONS M44). `devtools::test()` clean beforehand: 0 failures, 3505 passing.
 - 2026-08-07: T2 — the three direct `ffm_codec()` sites now go through `apply_audio_codec()` / `apply_video_codec()` with `call =` threaded, and `normalize_audio_pipeline()`'s seam call gained `call =`. `standardize_pipeline()` passes the seam its default `hardware`, leaving the nvenc resolution where it is so that abort keeps firing before `ffm_scale()`'s dimension checks. Measured: `extract_audio()`, `convert_audio()`, `standardize_video()` (both arguments) and `normalize_audio()` now name their own argument and blame themselves for `"aac -evil"`; the `_batch` siblings still report it mid-fan-out, which is T2b. CRLF-line count on `R/ffmpeg.R` still 5708, diffstat that one file +24/-4. `devtools::test()`: 0 failures, 3505 passing.
+- 2026-08-07: T2b — 19 front-door `rlang::check_string(<codec>)` calls upgraded to `check_token(<codec>)` at the same site, across the ten `_batch` verbs and `segment_video()`. Narrower than the amendment's "every codec-family verb", and deliberately: the seam-routed scalar verbs already blame themselves after T2, so upgrading them would only move a token error ahead of checks their pipelines make (crop_video's dimensions), changing error text on verbs this milestone has no business changing — the stance M41's precedence table takes. The rationale is recorded once at `check_token()` in `R/utils.R` rather than 19 times at the call sites. Measured after: all 51 verb x argument x column cells of the sweep name the verb's own argument, hide Layer-1's, blame the verb, and carry no `In index:` — from 11 of 51 on `master`. `devtools::test()`: 0 failures, 3505 passing; CRLF count still 5708.
 
 ## Decisions
 

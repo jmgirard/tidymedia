@@ -185,6 +185,50 @@ Evidence gathered 2026-08-07 on branch tip d0c0b3e, PR #59.
 - **AC6 — verified.** `wc -l < R/ffmpeg.R` = 5728 and `grep -c $'\r$' R/ffmpeg.R` = 5728;
   every line CRLF-terminated, against `master`'s 5708.
 
+### Independent review, 2026-08-07
+
+Three fresh-context reviewers (diff-bug [O], blame-history [S], prior-review [S]) plus a
+[S] scorer. Blame-history and prior-review returned zero findings each; the prior-review
+lens probed for GitHub inline review threads, found none on this repo, and read the
+archived `## Review` sections for M34–M48 instead. The diff-bug lens returned 11.
+
+**Actioned (score >= 80), 2 findings — neither reaching the return floor (both < 90; AC2
+and the sweep test the scalar argument, and AC4's grid covers only each verb's legal codec
+values, so no criterion is demonstrated failing):**
+
+- **F1 (88) — the column path's blame degraded to `.f()`.** Threading `call` into the
+  seams makes `call` resolve to `ffm_batch()`'s anonymous pmap lambda on the batch path.
+  Measured with a malformed token in a `jobs` codec column: `extract_audio_batch` and
+  `convert_audio_batch` moved from "Caused by error in `ffm_codec()`" to "in `.f()`", and
+  `normalize_audio_batch` from "in `normalize_audio_pipeline()`" to "in `.f()`". The
+  argument name improved (`audio` -> `audio_codec`); the blamed function did not. Neither
+  instrument could see it: the sweep's `col = "present"` cells and the baseline grid's
+  `codec_guard_col_value()` both put a VALID codec in the column, so no cell anywhere
+  carries a malformed one. The comment at `R/ffmpeg.R:2087-2091` warning against exactly
+  this was left standing.
+- **F3 (85) — a new scalar/batch divergence on the nvenc path.** With the nvenc pool
+  pinned, `standardize_video(video_codec = "libx264 -evil", hardware = "nvenc")` compiles
+  on both refs, while `standardize_video_batch` compiled on `master` and now aborts. Root
+  cause is F2 below: `standardize_pipeline()` hands the seam a value `resolve_hw_encoder()`
+  has already rewritten to `"h264_nvenc"`, which passes `check_token()`. The Decisions
+  entry's premise "after T2 every scalar verb already blames itself" is false on this path,
+  and its stated falsifier does not reach it — the gap is a scalar verb whose value is
+  TRANSFORMED before the seam, not one that bypasses the seam.
+
+**Logged below threshold (9), surfaced not dropped:** F10 (75) `codec-guard-baseline.R`
+still says "five scenarios" in two places where there are now eight · F4 (55) the NEWS
+entry says "every verb", but `verify_media()` carries both arguments and is excluded by
+design · F6 (55) `codec_front_door_precedence_at()` classifies an empty message as
+"codec", so its nine "codec" rows can pass without an error being raised · F11 (40)
+`convert_audio_pipeline()`'s retained `check_string()` omits `call =` while the adjacent
+seam call has it · F7 (35) `literal`/`copy` cells at `col = "present"` cannot see the
+scalar path, since the column wins `pick()` · F5 (30) AC4's instrument is not part of the
+executed suite · F9 (30) two upgrade sites keep the `if (!is.null(x))` spelling where 16
+use `allow_null = TRUE`; inherited from `master` · F8 (25) `col_extra` now applies at
+`literal`/`copy` but not `default`/`null`, so scenarios are not comparable across a row ·
+F2 (10) the nvenc token check runs on the resolved codec — measured pre-existing, compiles
+identically on `master`.
+
 Consistency gate — `cairn_validate` all checks passed. `devtools::document()` no diff.
 No new exports, so no `_pkgdown.yml` row owed; `pkgdown` CI job passes. NEWS.md carries the
 user-visible entry. No `.Rbuildignore` entry owed (no new top-level file). No DESIGN.md

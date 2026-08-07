@@ -12,13 +12,13 @@ files.
 ## Usage
 
 ``` r
-probe_container(probe = NULL, infile = NULL, typed = TRUE)
+probe_container(probe = NULL, infile = NULL, typed = TRUE, parallel = FALSE)
 
-probe_streams(probe = NULL, infile = NULL, typed = TRUE)
+probe_streams(probe = NULL, infile = NULL, typed = TRUE, parallel = FALSE)
 
-probe_video(probe = NULL, infile = NULL, typed = TRUE)
+probe_video(probe = NULL, infile = NULL, typed = TRUE, parallel = FALSE)
 
-probe_audio(probe = NULL, infile = NULL, typed = TRUE)
+probe_audio(probe = NULL, infile = NULL, typed = TRUE, parallel = FALSE)
 ```
 
 ## Arguments
@@ -40,6 +40,14 @@ probe_audio(probe = NULL, infile = NULL, typed = TRUE)
   [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
   when `infile` is used (default `TRUE`); ignored when `probe` is
   supplied.
+
+- parallel:
+
+  A logical passed to
+  [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
+  when `infile` is used: probe the files in parallel with furrr (`TRUE`)
+  or one at a time (`FALSE`, the default). Ignored when `probe` is
+  supplied, since a probe object has nothing left to probe.
 
 ## Value
 

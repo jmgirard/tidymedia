@@ -8,7 +8,7 @@ the output is ready for `dplyr` joins and filters over a whole batch.
 ## Usage
 
 ``` r
-probe_all(infile, typed = TRUE)
+probe_all(infile, typed = TRUE, parallel = FALSE)
 ```
 
 ## Arguments
@@ -24,6 +24,16 @@ probe_all(infile, typed = TRUE)
   integers/doubles and FFprobe's `"N/A"` becomes `NA`; fractions,
   ratios, hex identifiers, and text stay as strings. When `FALSE` every
   value is returned as an unconverted string.
+
+- parallel:
+
+  A logical: probe the files in parallel with furrr (`TRUE`) or one at a
+  time (`FALSE`, the default). The parallel path honors the active
+  [`future::plan()`](https://future.futureverse.org/reference/plan.html)
+  and warns when that plan is sequential, since it would then give no
+  speedup. Output is identical either way, rows included and in the same
+  order. Requires the optional furrr package, which is checked for only
+  when `parallel` is `TRUE`.
 
 ## Value
 

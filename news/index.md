@@ -334,6 +334,26 @@
 ### Performance
 
 - [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
+  and the `probe_*()` shortcuts take a new `parallel` argument (default
+  `FALSE`). With `parallel = TRUE` the per-file probes are spread across
+  workers with the optional **furrr** package, following whatever
+  [`future::plan()`](https://future.futureverse.org/reference/plan.html)
+  is active — the same mechanism
+  [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+  already uses, so one plan configures both. The output is unchanged
+  either way: the same tibbles, the same types, and rows in the order
+  the input vector gave them. Files that cannot be probed still produce
+  one warning at the end of the call naming all of them, not one per
+  worker.
+
+  Two things to know. `furrr` is looked for only when `parallel = TRUE`,
+  so it stays an optional dependency for everyone else. And because the
+  default `future` plan is sequential, `parallel = TRUE` on its own
+  gives no speedup — it now says so with a warning rather than quietly
+  doing nothing. Set a plan first,
+  e.g. `future::plan(future::multisession)`.
+
+- [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
   and the `probe_*()` shortcuts now read each file with a **single**
   FFprobe process instead of one per stream plus one more for the
   container. A five-stream file needed six processes and needs one. The

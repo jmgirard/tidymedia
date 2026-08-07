@@ -55,7 +55,7 @@ are stacked and keyed by a leading <code>file</code> column, so the output is re
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">probe_all</span><span class="op">(</span><span class="va">infile</span>, typed <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">probe_all</span><span class="op">(</span><span class="va">infile</span>, typed <span class="op">=</span> <span class="cn">TRUE</span>, parallel <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -72,6 +72,15 @@ paths or web links) to probe.</p></dd>
 to integers/doubles and FFprobe's <code>"N/A"</code> becomes <code>NA</code>; fractions, ratios,
 hex identifiers, and text stay as strings. When <code>FALSE</code> every value is
 returned as an unconverted string.</p></dd>
+
+
+<dt id="arg-parallel">parallel<a class="anchor" aria-label="anchor" href="#arg-parallel"></a></dt>
+<dd><p>A logical: probe the files in parallel with <span class="pkg">furrr</span>
+(<code>TRUE</code>) or one at a time (<code>FALSE</code>, the default). The parallel path
+honors the active <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code> and warns when that plan is
+sequential, since it would then give no speedup. Output is identical
+either way, rows included and in the same order. Requires the optional
+<span class="pkg">furrr</span> package, which is checked for only when <code>parallel</code> is <code>TRUE</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

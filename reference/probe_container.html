@@ -61,13 +61,13 @@ files.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">probe_container</span><span class="op">(</span>probe <span class="op">=</span> <span class="cn">NULL</span>, infile <span class="op">=</span> <span class="cn">NULL</span>, typed <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">probe_container</span><span class="op">(</span>probe <span class="op">=</span> <span class="cn">NULL</span>, infile <span class="op">=</span> <span class="cn">NULL</span>, typed <span class="op">=</span> <span class="cn">TRUE</span>, parallel <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">probe_streams</span><span class="op">(</span>probe <span class="op">=</span> <span class="cn">NULL</span>, infile <span class="op">=</span> <span class="cn">NULL</span>, typed <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu">probe_streams</span><span class="op">(</span>probe <span class="op">=</span> <span class="cn">NULL</span>, infile <span class="op">=</span> <span class="cn">NULL</span>, typed <span class="op">=</span> <span class="cn">TRUE</span>, parallel <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">probe_video</span><span class="op">(</span>probe <span class="op">=</span> <span class="cn">NULL</span>, infile <span class="op">=</span> <span class="cn">NULL</span>, typed <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu">probe_video</span><span class="op">(</span>probe <span class="op">=</span> <span class="cn">NULL</span>, infile <span class="op">=</span> <span class="cn">NULL</span>, typed <span class="op">=</span> <span class="cn">TRUE</span>, parallel <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">probe_audio</span><span class="op">(</span>probe <span class="op">=</span> <span class="cn">NULL</span>, infile <span class="op">=</span> <span class="cn">NULL</span>, typed <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">probe_audio</span><span class="op">(</span>probe <span class="op">=</span> <span class="cn">NULL</span>, infile <span class="op">=</span> <span class="cn">NULL</span>, typed <span class="op">=</span> <span class="cn">TRUE</span>, parallel <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -87,6 +87,13 @@ files.</p>
 <dt id="arg-typed">typed<a class="anchor" aria-label="anchor" href="#arg-typed"></a></dt>
 <dd><p>A logical passed to <code><a href="probe_all.html">probe_all()</a></code> when <code>infile</code> is used (default
 <code>TRUE</code>); ignored when <code>probe</code> is supplied.</p></dd>
+
+
+<dt id="arg-parallel">parallel<a class="anchor" aria-label="anchor" href="#arg-parallel"></a></dt>
+<dd><p>A logical passed to <code><a href="probe_all.html">probe_all()</a></code> when <code>infile</code> is used:
+probe the files in parallel with <span class="pkg">furrr</span> (<code>TRUE</code>) or one at a time
+(<code>FALSE</code>, the default). Ignored when <code>probe</code> is supplied, since a probe
+object has nothing left to probe.</p></dd>
 
 </dl></div>
     <div class="section level2">

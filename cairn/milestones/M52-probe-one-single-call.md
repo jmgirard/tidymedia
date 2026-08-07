@@ -1,6 +1,6 @@
 # M52: Collapse `probe_one()`'s per-stream FFprobe loop into one call
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -21,9 +21,12 @@ compact-line parser beside `format_probe()` (`R/ffprobe.R:278-284`) that does
 four things the current parser does not have to: dispatch each line by its
 keyless leading section field (`stream|…`, `format|…`, with the format line
 arriving **last**); split on unescaped `|`; unescape the **six** sequences the
-writer emits — `\\`, `\|`, `\n`, `\r`, `\b` and `\f`; and restore the nested-section prefixes to the casing today's output
-uses, since the compact writer emits `tag:` / `disposition:` where
-`default=nw=1` emits `TAG:` / `DISPOSITION:`.
+writer emits — `\\`, `\|`, `\n`, `\r`, `\b` and `\f`; and give each
+nested-section key the name today's output uses, which is two
+different repairs: the compact writer emits `tag:` / `disposition:` where
+`default=nw=1` emits `TAG:` / `DISPOSITION:`, and it prefixes stream side data
+(`side_datum/display_matrix:rotation`) where `default=nw=1` prints it bare
+(`rotation`), so that prefix is dropped rather than cased.
 
 **Out:** parallelizing across files → M53. The batch verbs' up-front
 dropped-track probe → the standing candidate row (its open question is API
@@ -114,7 +117,7 @@ renamed or extra column is a defect here, not a deliverable.
       prefix is stripped, not uppercased) and make field splitting and
       unescaping byte-safe, so a line invalid in the session locale keeps its
       row; re-verify AC2 and AC5 against the widened baseline.
-- [ ] T9 Correct the NEWS claim that the returned tibbles are unchanged and the
+- [x] T9 Correct the NEWS claim that the returned tibbles are unchanged and the
       stale per-stream cost comment; re-run the verify slot and
       `devtools::check()`.
 
@@ -147,6 +150,8 @@ renamed or extra column is a defect here, not a deliverable.
 - 2026-08-06: T7 done and RED by design, as T2 was: the baseline now carries a sixth `rotated` fixture and the parser tests loop over it, so the suite stays red until T8 lands the side-data parity. Re-recorded against `master`: six fixtures, `five` now genuinely five streams (its fifth input was never mapped), pre-change spawn counts 3/6/2/2/3/2, still `nb_streams + 1` each. The rotated fixture's recorded pre-change streams tibble is 68 columns, three of them the display matrix's continuation lines read as columns, with `rotation` = `90` beside them.
 - 2026-08-06: T8 done. `compact_section_case()` becomes `compact_key_name()`: `tag:`/`disposition:` still uppercase, `side_datum/<type>:` is now stripped, and an unrecognized prefix is left alone rather than guessed at, since a wrong rename is silent where a compact-shaped name is visible. Verified end to end on a rotated `.mp4`: `probe_all(f)$streams$rotation` is `90` again, no matrix-row column remains, and the matrix is one cell. Every parser operation moved to `useBytes = TRUE`, which keeps the row for a line invalid in the session locale and also retires the per-character split review measured at ~21 ms on a 200 KB line.
 - 2026-08-06: on the rotated fixture the "artifact" AC2 exempts is read as the whole split — the columns the old parser cut out AND the `displaymatrix` cell it truncated to `""` — exactly as `hostile` is read, where AC4 owns both the bogus `break` column and the truncated `TAG:title`. Every other column, `rotation` and `side_data_type` included, is asserted identical to the recorded pre-change value under both `typed` settings.
+- 2026-08-06: T9 done. NEWS no longer claims the returned tibbles are wholly unchanged; the Performance entry excepts the invented columns and the Bug fixes entry names the rotated-video case those columns come from, a claim the new fixture's test fails without. `count_audio_streams()`'s comment no longer says `probe_all()` costs a process per stream. Full suite: 0 failures, 3422 passing, 5 skips, 4 warnings that are the dropped-track diagnostic firing in tests this branch does not touch. `devtools::document()` produces no diff; `devtools::check()` is 0 errors / 0 warnings / 0 notes.
+- 2026-08-06: substantive amendment, user-approved at a mini gate — the Scope's In clause said the nested-section repair was casing only, which is the reading that produced the defect return; it now names both repairs, casing for `tag:`/`disposition:` and prefix removal for side data. Status back to `review`; AC2 and AC5 stay unticked for review to re-verify against the widened fixture set.
 - 2026-08-06: two below-threshold review findings gated in because they sit in files this pass edits anyway: the `count_audio_streams()` comment's per-stream cost claim (F15) and the `five` fixture's unmapped fifth input (F18).
 
 ## Decisions

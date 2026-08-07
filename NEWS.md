@@ -251,8 +251,9 @@
   stream count and with the number of files, so it is largest on exactly the
   batch work these functions exist for —
   locally, probing ten copies of a four-stream file went from 1.7 seconds to
-  0.46. Nothing about the returned tibbles changes: the same columns, in the
-  same order, with the same values and types.
+  0.46. The returned tibbles keep the same columns, in the same order, with the
+  same values and types — except for the invented columns described under Bug
+  fixes below, which were never data in the first place.
 
 ## Bug fixes
 
@@ -265,6 +266,12 @@
   one cell. Values containing `|` or a backslash are likewise returned
   unchanged. If you worked around this by dropping unexpected columns, that
   workaround is no longer needed.
+
+  The commonest case in practice is a rotated video. FFprobe prints a stream's
+  display matrix across four lines, so `streams` gained three columns named
+  after the matrix's own rows while its `displaymatrix` cell sat empty. The
+  matrix now arrives whole in that cell, and the `rotation` column beside it is
+  unchanged.
 
 * The compiled command string that every verb returns under `run = FALSE` — and
   that `ffm_compile()` produces — now wraps each stream map in double quotes:

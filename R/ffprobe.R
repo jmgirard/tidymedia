@@ -108,9 +108,9 @@ probe_all <- function(infile, typed = TRUE) {
 # This is the ONLY place the audio verbs' track-drop diagnostic assembles an
 # FFprobe token vector -- it lives here beside probe_one(), the package's other
 # FFprobe token builder, rather than in a Layer-2 verb body (D024/RR02 Q4). One
-# narrow invocation rather than probe_all(), which runs FFprobe once per stream
-# plus once for the container and warns on an unreadable file: this needs a
-# single number and must stay silent.
+# narrow invocation rather than probe_all(), which reads every field of every
+# stream and warns on an unreadable file: this needs a single number and must
+# stay silent.
 #
 # NA is "no answer", never "no audio". D024 licenses this probe only while its
 # outcome changes nothing but whether a warning is signalled, so every failure

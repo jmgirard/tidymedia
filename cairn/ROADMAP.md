@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-06 (M52 merged and archived; M47's terminal row pruned to keep five. M53 is the only workable milestone and its dependency is now done. Nothing in flight.)_
+_Last hygiene check: 2026-08-06 (M53 merged and archived; M49's terminal row is now the oldest of five after M48's was pruned. Two candidate rows added from M53's review — the default probe path's memory profile and a stale vignette enumeration. Nothing in flight; no workable planned milestone remains.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M48 | Carry the track selector to `crop_video()` and `segment_video()`, and make `ffm_copy()` idempotent again | done | M47 | normal | milestones/archive/M48-audio-stream-crop-segment.md |
 | M49 | Finish D026 on `format_for_web()` and `normalize_audio()` | done | — | normal | milestones/archive/M49-audio-stream-format-web-normalize.md |
 | M50 | Quote map specifiers in the compiled command string | done | M49 | normal | milestones/archive/M50-quote-map-specifiers.md |
 | M51 | Make the package's two 0-based audio indices legible | done | M49, M50 | normal | milestones/archive/M51-audio-index-docs.md |
 | M52 | Collapse `probe_one()`'s per-stream FFprobe loop into one call | done | — | normal | milestones/archive/M52-probe-one-single-call.md |
-| M53 | Give `probe_all()` a `parallel =` argument | review | M52 | normal | milestones/M53-probe-all-parallel.md |
+| M53 | Give `probe_all()` a `parallel =` argument | done | M52 | normal | milestones/archive/M53-probe-all-parallel.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

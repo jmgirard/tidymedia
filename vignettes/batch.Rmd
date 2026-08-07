@@ -100,8 +100,12 @@ separate_audio_video(video, "audio.aac", "video.mp4", run = FALSE)
 
 ## Running in parallel
 
-Both `ffm_batch()` and the fan-out verbs accept `parallel = TRUE`, which maps
-over jobs with [furrr](https://furrr.futureverse.org/). Parallelism follows
+`ffm_batch()`, every `*_batch` verb, and `segment_video()` — which fans out over
+its own segments — accept `parallel = TRUE`, as do the five metadata readers
+`probe_all()`, `probe_container()`, `probe_streams()`, `probe_video()`, and
+`probe_audio()`. The scalar verbs do not: `separate_audio_video()` has no
+`parallel` argument, only `separate_audio_video_batch()` does. The argument maps
+over jobs with [furrr](https://furrr.futureverse.org/), and parallelism follows
 whatever [future](https://future.futureverse.org/) plan you have set, so you opt
 in explicitly:
 

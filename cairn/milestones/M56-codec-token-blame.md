@@ -1,6 +1,7 @@
 # M56: A bad codec token names the verb's argument, never Layer 1's
 
-- **Status:** planned
+- **Status:** in-progress
+- **Branch:** `m56-codec-token-blame`
 - **Priority:** normal
 - **Depends on:** M54
 - **Driving RR:** —
@@ -95,6 +96,7 @@ the family rule though these pipelines bypass them.
 - 2026-08-06: criteria audit ([O], fresh context) returned 5 findings on this milestone's criteria. Two changed the scope: the drafted AC1 was internally unsatisfiable, since `anonymize_pipeline()` at `R/ffmpeg.R:1601` also hands `ffm_codec()` a user value and its pre-guard must stay put, so the grep claim was narrowed to "literal, or already token-checked with `call =`"; and a drafted AC mandating a `helper-codec-family.R` ↔ exports completeness test was **dropped**, that test already existing at `test-codec-arg-front-door.R:255-271`, and its asserted 21 = 20 equality being false besides (`verify_media` is excluded by design). Also fixed: AC3 passing vacuously on verbs that already front-door with `check_token()`, and AC4's grid containing cells that abort rather than compile plus an unpinned machine-dependent nvenc axis. All disposed before AC wording was written; none needed a gate question.
 - 2026-08-06: investigation found a fourth leaking site the ROADMAP row did not name — `convert_audio_pipeline()` at `R/ffmpeg.R:925` — measured emitting "`audio` must be a single clean token" blamed on `ffm_codec()`. Folded into scope.
 - 2026-08-06: plan gate chose routing through the existing seams over giving `ffm_codec()` `arg` / `call` parameters, because the seams already take `call =` and their `caller_arg()` resolves to `video_codec` / `audio_codec` — the correct public names for all four verbs — so the fix needs no Layer-1 change, where the alternative would start Layer 1 carrying Layer-2 argument names against IP1 and the boundary comment at `R/ffmpeg.R:2469-2470`; falsified by a verb whose public codec argument is named something other than `video_codec` / `audio_codec`, which the seams cannot then blame correctly.
+- 2026-08-07: /milestone-implement started; branch `m56-codec-token-blame` cut from `master` at 699551f.
 
 ## Decisions
 

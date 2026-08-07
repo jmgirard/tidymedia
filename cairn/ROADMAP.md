@@ -13,7 +13,7 @@ _Last hygiene check: 2026-08-07 (M55 merged and archived; M50's terminal row pru
 | M53 | Give `probe_all()` a `parallel =` argument | done | M52 | normal | milestones/archive/M53-probe-all-parallel.md |
 | M54 | Correct the `run = FALSE` purity claim for the nvenc encoder probe | done | — | normal | milestones/archive/M54-nvenc-dry-run-purity.md |
 | M55 | A package landing topic, and a `parallel` enumeration that matches the code | done | — | normal | milestones/archive/M55-package-topic-parallel-docs.md |
-| M56 | A bad codec token names the verb's argument, never Layer 1's | planned | M54 | normal | milestones/M56-codec-token-blame.md |
+| M56 | A bad codec token names the verb's argument, never Layer 1's | in-progress | M54 | normal | milestones/M56-codec-token-blame.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

@@ -45,7 +45,9 @@ door → rejected at the plan gate (work log).
       that verb. Evidence: a sweep test, one cell per verb, each matching the
       message *before* reading `conditionCall()` (M54); nine of nine green, each
       cell recorded naming `purrr::pmap` on master, plus one cell at
-      `parallel = TRUE`, whose master reading is `furrr::future_pmap` (D033).
+      `parallel = TRUE`, whose master reading is furrr's internal `...furrr_fn`
+      closure rather than the `furrr::future_pmap` this criterion first
+      predicted (D033).
 - [ ] AC2: The unavailable-nvenc abort text is emitted from exactly one
       function, and `resolve_hw_encoder()` reaches it by calling that function
       rather than by carrying its own copy. Evidence: reading the two functions,
@@ -92,7 +94,7 @@ door → rejected at the plan gate (work log).
       the abort from `resolve_hw_encoder()` (`R/ffmpeg.R:2498-2506`) into a
       shared `check_nvenc_available()`; `resolve_hw_encoder()` calls it. No
       behavior change; suite green.
-- [ ] T2: Write the nine-cell sweep test (message first, then
+- [x] T2: Write the nine-cell sweep test (message first, then
       `conditionCall()`), plus the `parallel = TRUE` cell. Record each cell's
       master reading. Red on master.
 - [ ] T3: Add the front-door guard to `segment_video()`, last in its front-door
@@ -118,6 +120,8 @@ door → rejected at the plan gate (work log).
 - 2026-08-07: plan gate chose duplicating the check at the front door over hoisting resolution there, because hoisting re-forks the resolver seam for per-row `video_codec` columns and undoes M56's fix that made `standardize_pipeline()` hand `hardware` to the seam unresolved; falsified by a front-door guard and a pipeline guard observed firing on different inputs.
 - 2026-08-07: plan gate chose nvenc availability alone over every pipeline-level validation on the nine verbs, because the wider cut trips the sizing tripwires; falsified by AC6's enumeration returning few enough sites to have been folded in.
 - 2026-08-07: implement gate skipped — the plan gate settled hoist-vs-duplicate, scope, AC6 and the probe cache, and nothing left open was more than a helper signature.
+- 2026-08-07 (T2): master readings recorded on a worktree at master — nine of nine fan-out verbs blame `purrr::pmap` with the nvenc-unavailable message, `separate_audio_video_batch` reporting "In index: 2" for a 1-row table because it reshapes N->2N (M45). Sweep red on the branch: nine blame cells plus the parallel cell; every message assertion already passes, which is what confirms these are the nvenc failure and not a schema error (M54).
+- 2026-08-07 (T2): amendment — AC1 predicted a `furrr::future_pmap` master reading at `parallel = TRUE`; measured, it is furrr's internal `...furrr_fn` closure. Criterion amended at a mini gate to record the measurement and that the prediction was wrong.
 - 2026-08-07 (T1): D035 written before any code, as D024 requires of a shape its third exclusion reserved. Abort extracted from `resolve_hw_encoder()` into `check_nvenc_available()`; the resolver now reaches it by calling it. `devtools::test()` FAIL 0 | PASS 3856, the same 4 warnings and 5 skips as before, all in test files this milestone does not touch. `R/ffmpeg.R` CRLF count 5749 -> 5791 for 42 net added lines, diffstat 55/13 (M35/M48).
 
 ## Decisions

@@ -2,7 +2,7 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-06 (full audit: all 24 validate checks green, no advisories. Nothing in flight, no planned milestone, working tree clean, no open issues or PRs. candidates groomed 31 → 20: nine promoted rows graduated (M41/M45–M52, overdue under records-hygiene §1, detail stays in `milestones/archive/`), and two clusters merged — the builder-blocked `normalize_audio()` pair and the two remaining docs gaps.)_
+_Last hygiene check: 2026-08-06 (full audit green; nothing in flight, no open issues or PRs. Candidates groomed 31 → 20: nine promoted rows graduated (M41/M45–M52, overdue under records-hygiene §1; detail stays in `milestones/archive/`), plus two merges — the builder-blocked `normalize_audio()` pair, and the two docs gaps.)_
 
 ## Milestones
 

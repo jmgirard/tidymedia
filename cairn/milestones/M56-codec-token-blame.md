@@ -1,6 +1,6 @@
 # M56: A bad codec token names the verb's argument, never Layer 1's
 
-- **Status:** review
+- **Status:** in-progress
 - **Branch:** `m56-codec-token-blame`
 - **PR:** https://github.com/jmgirard/tidymedia/pull/59
 - **Priority:** normal
@@ -48,18 +48,21 @@ already pins is unmoved.
 
 - [ ] AC1 `grep -n "ffm_codec(" R/*.R` shows every remaining direct call passing either a
       package literal or a value already token-checked with `call =` threaded at that
-      verb's front door. The three sites named in Scope no longer pass an unchecked user
-      value, and `R/ffmpeg.R:2179` passes `call =`.
+      verb's front door. The three pipelines named in Scope — `extract_audio_pipeline()`,
+      `convert_audio_pipeline()`, and the video side of `standardize_pipeline()` — no
+      longer pass an unchecked user value, and `normalize_audio_pipeline()`'s
+      `apply_audio_codec()` call passes `call =`. Sites are named by function, never by
+      line: this milestone inserts comment lines into `R/ffmpeg.R`, so any line number
+      written at plan time is stale by the time the criterion is read.
 - [x] AC2 `extract_audio()`, `convert_audio()`, `standardize_video()` and their `_batch`
       siblings, given a malformed-but-string codec token, emit a message naming the verb's
       own argument (`audio_codec` / `video_codec`), never Layer-1's `audio` / `video`, and
       blame the verb rather than `ffm_codec()` or `purrr::pmap()`. `normalize_audio(
       audio_codec = "aac -evil")` blames `normalize_audio()`, not `normalize_audio_pipeline()`.
-- [ ] AC3 `codec_front_door_bad` (`tests/testthat/test-codec-arg-front-door.R:55-59`)
-      gains `"aac -evil"`, and the file's four existing assertions — names the verb's own
-      argument (`:86`), never Layer-1's (`:88-90`), blames the verb (`:93-95`), no
-      `In index:` (`:98-99`) — pass for every verb × argument pair in
-      `tests/testthat/helper-codec-family.R`. The new value is shown to discriminate on the
+- [ ] AC3 `codec_front_door_bad` (`tests/testthat/test-codec-arg-front-door.R`) gains
+      `"aac -evil"`, and the file's four existing assertions — labelled `names arg`,
+      `hides engine arg`, `blames the verb`, and `is not mid-fan-out` — pass for every
+      verb × argument pair in `tests/testthat/helper-codec-family.R`. The new value is shown to discriminate on the
       four target verbs specifically: reverting each routing change turns it red. Verbs
       that already front-door with `check_token()` pass it unchanged, which is expected,
       not evidence.
@@ -76,6 +79,18 @@ already pins is unmoved.
       comment lines T2/T2b added. (The plan's 5652 was measured at `bcc6f5c`, before M54's
       merge; this milestone's first amendment pinned `master`'s 5708, which a milestone that
       adds lines to the file cannot satisfy.)
+- [ ] AC7 A malformed codec token in a `jobs` **column** blames the batch verb: for
+      `extract_audio_batch()`, `convert_audio_batch()`, `normalize_audio_batch()` and
+      `standardize_video_batch()`, a `jobs` table carrying `"aac -evil"` in a codec column
+      emits a message naming that column's argument and attributing the error to the batch
+      verb — never to `.f()`, `ffm_codec()`, or a `*_pipeline()` helper. A test in
+      `test-codec-arg-front-door.R` covers it and goes red when the fix is reverted.
+- [ ] AC8 `standardize_video()` and `standardize_video_batch()` answer alike on the nvenc
+      path: with `withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")` and
+      `hardware = "nvenc"`, both refuse `video_codec = "libx264 -evil"` naming
+      `video_codec`, matching `crop_video()`, which already checks the user's token before
+      `resolve_hw_encoder()` rewrites it. A test covers both siblings and goes red when the
+      fix is reverted.
 
 ## Coverage
 
@@ -85,6 +100,8 @@ already pins is unmoved.
 - AC4 → T1, T4
 - AC5 → T5
 - AC6 → T2, T2b, T5
+- AC7 → T6
+- AC8 → T7
 
 ## Tasks
 
@@ -104,6 +121,16 @@ already pins is unmoved.
       re-baseline.
 - [x] T5 Run `devtools::document()`, `devtools::test()`, `devtools::check()`; confirm the
       CRLF count and the `00check.log` `Status:` line.
+- [ ] T6 Fix the column path's blame (review F1): each batch verb captures its own frame
+      and passes it as `call =` into the pipeline inside the `ffm_batch()` lambda, so a
+      malformed token in a codec column names the batch verb rather than `.f()`. Add the
+      AC7 test; re-run the baseline.
+- [ ] T7 Fix the nvenc token check (review F3, and the pre-existing F2 under it):
+      `standardize_pipeline()` passes `hardware` / `fallback` into `apply_video_codec()`
+      and drops its own earlier `resolve_hw_encoder()` call, so the seam checks the user's
+      token before family inference — what its comment already promises and what
+      `crop_video_pipeline()` already does. The nvenc-unavailable abort then fires after
+      `ffm_scale()`'s dimension checks; record that, and re-run T5's checks.
 
 ## Work log
 
@@ -123,6 +150,9 @@ already pins is unmoved.
 - 2026-08-07: T4 — baseline re-run on the working tree and diffed against T1's `master` capture: 584 cells both sides, 0 vacuous both sides, **67 changed rows, every one of them the `token` scenario**. No legal-value cell moved (`default` / `null` / `literal` / `copy` all identical), so no compiled command changed; the non-string cells (`na` / `number` / `vec2`) are absent from the diff too. The changed rows are the intended ones: the token error moving to the verb, plus the `col = present` / `col = na` cells where a malformed scalar used to compile silently because a same-named jobs column won. Measured side effect on the doubly-invalid cells: ten pairs flipped from reporting `jobs` to reporting the codec, which is what the frozen precedence table already says an NA gets there — the token now answers exactly as a non-string does on every pair, and the NA table itself is unchanged. Locked with a new test in `test-codec-arg-front-door.R` asserting the token's precedence against that same frozen table (reverting `crop_video_batch`'s guard turns 7 assertions red). `devtools::test()`: 0 failures, 3762 passing.
 - 2026-08-07: T5 — `devtools::document()` produces no diff (only comments changed, no roxygen); `devtools::test()` 0 failures / 3762 passing; `devtools::check()` **Status: OK**, 0 errors / 0 warnings / 0 notes, read from the run's `00check.log`. `R/ffmpeg.R` is wholly CRLF on the branch tip: 5728 lines, 5728 CRLF-terminated, against master's 5708. NEWS.md gained a Bug fixes entry for the new blame and for the `_batch` scalar that used to be discarded when a same-named column won. Status → review.
 - 2026-08-07: candidate row added (search-first: no overlapping row; M41's archive covers the scalar argument only) — a malformed token in a `jobs` codec COLUMN still reports mid-fan-out, measured on the branch tip.
+- 2026-08-07: amendment return: AC1 — "Sites are named by function, never by line: this milestone inserts comment lines into `R/ffmpeg.R`, so any line number written at plan time is stale by the time the criterion is read."
+- 2026-08-07: amendment return: AC3 — "the file's four existing assertions — labelled `names arg`, `hides engine arg`, `blames the verb`, and `is not mid-fan-out` — pass for every verb × argument pair in `tests/testthat/helper-codec-family.R`."
+- 2026-08-07: review triage — F1 (88) and F3 (85) both actioned **fix now** at the user's gate choice; neither reached the return floor, so the status change here is the amendment return's, not theirs. AC7/AC8 and T6/T7 added for the two fixes. The nine sub-threshold findings are logged in the Review section and none was actioned; F2 (10) is subsumed by T7's fix rather than left, since the same change removes it.
 
 ## Decisions
 

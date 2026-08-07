@@ -28,11 +28,26 @@ file_warnings <- function(warnings) {
   Filter(function(w) grepl("Could not probe", conditionMessage(w)), warnings)
 }
 
+# Guard a test that takes the REAL parallel path. Two things, both borrowed from
+# test-ffm-batch.R:111-113, which guards the same seam:
+#   * furrr is an optional (Suggests) dependency, so its absence must SKIP the
+#     test rather than fail it -- the parallel path calls check_installed(),
+#     which errors non-interactively.
+#   * the sequential-plan assertions below speak about the ACTIVE future plan,
+#     so pin it rather than inherit whatever the session (or an .Rprofile, or an
+#     earlier test file) left installed, and restore it on the way out.
+local_sequential_furrr <- function(env = parent.frame()) {
+  testthat::skip_if_not_installed("furrr")
+  old <- future::plan(future::sequential)
+  withr::defer(future::plan(old), envir = env)
+}
+
 
 # AC1 -- parity and row order ---------------------------------------------
 
 test_that("probe_all(parallel = TRUE) matches parallel = FALSE exactly", {
   skip_if_no_ffprobe()
+  local_sequential_furrr()
   infile <- make_test_video()
   missing <- file.path(tempdir(), "tm-does-not-exist-xyz.mp4")
   # A duplicated path and an unprobeable file in one vector: the case
@@ -47,6 +62,7 @@ test_that("probe_all(parallel = TRUE) matches parallel = FALSE exactly", {
 
 test_that("probe_all(parallel = TRUE) keeps rows in INPUT order", {
   skip_if_no_ffprobe()
+  local_sequential_furrr()
   infile <- make_test_video()
   other <- make_test_video()
   missing <- file.path(tempdir(), "tm-does-not-exist-xyz.mp4")
@@ -62,6 +78,7 @@ test_that("probe_all(parallel = TRUE) keeps rows in INPUT order", {
 
 test_that("probe_all(parallel = TRUE) types columns exactly as the sequential path", {
   skip_if_no_ffprobe()
+  local_sequential_furrr()
   infile <- make_test_video()
   files <- c(infile, infile)
 
@@ -116,6 +133,7 @@ test_that("probe_all() rejects a non-logical `parallel`", {
 
 test_that("two unprobeable files raise exactly ONE file warning naming both", {
   skip_if_no_ffprobe()
+  local_sequential_furrr()
   infile <- make_test_video()
   miss_a <- file.path(tempdir(), "tm-missing-a-xyz.mp4")
   miss_b <- file.path(tempdir(), "tm-missing-b-xyz.mp4")
@@ -134,6 +152,7 @@ test_that("two unprobeable files raise exactly ONE file warning naming both", {
 
 test_that("probe_all(parallel = TRUE) warns about a sequential plan", {
   skip_if_no_ffprobe()
+  local_sequential_furrr()
   infile <- make_test_video()
 
   got <- collect_warnings(probe_all(infile, parallel = TRUE))$warnings

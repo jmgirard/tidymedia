@@ -5,7 +5,7 @@
 - **Depends on:** M52
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m53-probe-all-parallel`
+- **Branch/PR:** `m53-probe-all-parallel` / https://github.com/jmgirard/tidymedia/pull/56
 
 ## Goal
 
@@ -29,18 +29,18 @@ candidate row. Changing the default, which stays sequential.
 
 ## Acceptance criteria
 
-- [ ] AC1 `probe_all(parallel = TRUE)` returns output identical to
+- [x] AC1 `probe_all(parallel = TRUE)` returns output identical to
       `parallel = FALSE` — same tibbles, same types, and rows aligned to the
       **input vector's** order, which is what `probe_all()` guarantees today by
       assigning into a preallocated list at `[[i]]` (`R/ffprobe.R:68-87`).
       Tested on a multi-file vector containing an unprobeable file and a
       duplicated path, the case the suite already exercises
       (`tests/testthat/test-ffprobe.R:55-58`).
-- [ ] AC2 The `parallel` argument reaches the fan-out rather than being
+- [x] AC2 The `parallel` argument reaches the fan-out rather than being
       accepted and ignored: proven by mutating the implementation to drop it
       and observing the test go red (M39's mutation trick, which the repo
       adopted precisely because asserting a default passes either way).
-- [ ] AC3 The unprobeable-file warning contract survives the fan-out: a vector
+- [x] AC3 The unprobeable-file warning contract survives the fan-out: a vector
       containing two unprobeable files raises exactly **one** such warning
       naming both, under either `parallel` value — not one per worker and not
       none. Stated as "one unprobeable-file warning" deliberately: if T1 adopts
@@ -48,15 +48,15 @@ candidate row. Changing the default, which stays sequential.
       `parallel = TRUE` call under the default sequential plan also emits that
       guard's warning, and the test must assert on the class or text of the
       file warning rather than on a total count.
-- [ ] AC4 `furrr` is required only on the parallel path: with `furrr` masked as
+- [x] AC4 `furrr` is required only on the parallel path: with `furrr` masked as
       unavailable, `parallel = FALSE` completes normally and `parallel = TRUE`
       raises `rlang`'s `check_installed()` condition, asserted by that
       condition's class rather than by its message text.
-- [ ] AC5 The four `probe_*()` shortcuts pass `parallel` through when they
+- [x] AC5 The four `probe_*()` shortcuts pass `parallel` through when they
       reprobe via `infile` and ignore it when given a `probe` object, matching
       how they already treat `typed` (`R/ffprobe.R:259-267`, consumed only on
       the `infile` branch at `:265`).
-- [ ] AC6 A `cairn/DECISIONS.md` entry records that `furrr` fan-out now
+- [x] AC6 A `cairn/DECISIONS.md` entry records that `furrr` fan-out now
       crosses from the execution side to the metadata side, and states what
       keeps that one concept. It records the side-crossing rather than a site
       count: `grep -rn "furrr::" R/` returns three pre-existing call sites in
@@ -67,7 +67,7 @@ candidate row. Changing the default, which stays sequential.
       individual verbs" — is not violated, `probe_all()` being a metadata
       reader already vectorized over files; the entry is what stops that
       reading eroding.
-- [ ] AC7 `devtools::document()` produces no diff, `devtools::test()` clean,
+- [x] AC7 `devtools::document()` produces no diff, `devtools::test()` clean,
       `devtools::check()` reports 0 errors / 0 warnings; NEWS entry.
 
 ## Coverage
@@ -104,67 +104,130 @@ candidate row. Changing the default, which stays sequential.
 - 2026-07-31: sequenced after M52 so the parallel path fans out the one-spawn probe rather than the N+1 one, which would otherwise multiply workers against a cost M52 removes.
 - 2026-07-31: plan chose to reuse `ffm_batch()`'s existing `furrr` seam over introducing a second parallel mechanism, and to keep the default sequential; D014 already fixes `parallel` as the spelling and seventeen verbs carry it, so no naming question was open.
 - 2026-07-31: criteria audit ([O], fresh context) returned four findings, all fixed above. AC3 was unreachable under T1's own design, because reusing `warn_if_sequential_plan()` emits a second warning under `parallel = TRUE` on the default sequential plan that a test run always has. AC1 said row order was "keyed by `file`" where it is actually input order, and justified itself by a scrambling risk furrr does not pose. AC4 carried an unfalsifiable clause asserting `Suggests` placement this milestone cannot change. And the audit flagged that a second `furrr` fan-out wants a D-entry against D007's single-runner reading, which is now AC6. Two cites corrected: `R/ffm_batch.R:95-102` and `:174-184`.
-
-- 2026-08-06: re-planning run over the already-planned M53 confirmed the scope
-  and criteria stand; no re-cut. Every code cite was re-verified against the
-  post-M52 tree and two were refreshed for drift: AC5's `resolve_probe()` span
-  (`R/ffprobe.R:264-272`, branch `:270` → `:259-267`, branch `:265`) and T1's
-  `ffm_batch()` seam, which was clipped mid-`if`/`else` (`:95-102` → `:95-105`).
-  AC1's `:72-87`/`:89-94`, AC3's `R/ffm_batch.R:174-184`, and the four
-  shortcuts at `:216-241` all still land where the plan says.
-
-- 2026-08-06: T1 — `probe_all()`'s parallel path WILL call
-  `warn_if_sequential_plan()`. Rejected the alternative of following
-  `run_loudnorm_analysis_batch()`'s shape, which fans out silently and leaves
-  the warning to "the Phase 2 `ffm_batch()` call so it fires exactly once"
-  (`R/loudnorm_two_pass.R:162-171`): that rationale rests on a downstream
-  call that warns, and `probe_all()` is a terminal entry point with none, so
-  copying it would make `parallel = TRUE` under the default sequential plan
-  silently no-op — the case D012 added the guard for. Falsified by a user
-  report that the doubled warning (guard + unprobeable-file) is noisier than
-  the silent no-speedup it prevents. AC3 already fixes the test shape for
-  this branch: assert on the file warning's class or text, never a count.
-- 2026-08-06: implement gate amended AC6 and the Scope line it mirrors. AC6
-  required a D-entry recording "two places rather than one"; that count was
-  false before the milestone started — `grep -rn "furrr::" R/` returns three
-  call sites in two files (`R/ffm_batch.R:102`, `:132`,
-  `R/loudnorm_two_pass.R:197`), all execution-side. Amended to record the
-  execution→metadata side-crossing instead, and to name that grep as the
-  procedure enumerating the domain. Rejected fixing only the count, which
-  would have kept site-counting as the thing the D-entry records.
-
-- 2026-08-06: T2–T5 landed in one commit rather than four. Minor amendment: the
-  profile's verify slot requires `devtools::test()` clean before a task is
-  checked off, and T2's tests cannot go green until T3/T5 exist — so splitting
-  them would have committed a red suite. Task wording and ordering unchanged.
-- 2026-08-06: T3 fans out `probe_one()` alone and leaves the assembly loop in
-  the parent process. The rejected alternative was mapping the whole per-file
-  body (assembly included) and reducing the results: it would have moved the
-  `failed` accumulator and the end-of-call `cli_warn()` into workers, where
-  AC3's "exactly one warning naming both" becomes one warning per worker or
-  none. Only `probe_one()` shells out, so the discarded parallelism is free.
-  Falsified by a profile showing the parent-side assembly dominating probe time.
-- 2026-08-06: AC2 mutation probe run and recorded. With
-  `probes <- if (parallel)` mutated to `if (FALSE)` the suite goes 5 failed /
-  23 passed, the failures landing exactly on the two argument-load-bearing
-  tests ("routes through furrr, parallel = FALSE does not", 1; "shortcuts pass
-  `parallel` through on the infile branch", 4). Restored: 28 passed, 0 failed.
-- 2026-08-06: AC4's furrr masking is staged by stubbing `rlang::check_installed`
-  rather than by hiding the installed package. Rejected mocking
-  `rlang::is_installed` or `detect_installed`: `check_installed()` short-circuits
-  on `.getNamespace(x)` before it reaches either, so with furrr loaded neither
-  stub can make it report missing. The stub raises rlang's real
-  `rlib_error_package_not_found` class and the test asserts that class, as AC4
-  requires. Falsified by a future rlang that stops emitting that class.
-
-- 2026-08-06: T6 — D033 appended, NEWS entry under Performance, roxygen
-  documented. `devtools::check()` **Status: OK** (0 errors / 0 warnings /
-  0 notes) after one fix: the spelling test flagged "honours" in
-  `probe_all.Rd`, changed to "honors" to match `ffm_batch()`'s existing
-  wording. `pkgdown::check_pkgdown()` clean; no new exports, so no
-  `_pkgdown.yml` row was needed. `devtools::document()` re-run produces no
-  further diff.
+- 2026-08-06: re-planning run over the already-planned M53 confirmed the scope and criteria stand; no re-cut. Every code cite was re-verified against the post-M52 tree and two were refreshed for drift: AC5's `resolve_probe()` span (`R/ffprobe.R:264-272`, branch `:270` → `:259-267`, branch `:265`) and T1's `ffm_batch()` seam, which was clipped mid-`if`/`else` (`:95-102` → `:95-105`). AC1's `:72-87`/`:89-94`, AC3's `R/ffm_batch.R:174-184`, and the four shortcuts at `:216-241` all still land where the plan says.
+- 2026-08-06: T1 — `probe_all()`'s parallel path WILL call `warn_if_sequential_plan()`. Rejected the alternative of following `run_loudnorm_analysis_batch()`'s shape, which fans out silently and leaves the warning to "the Phase 2 `ffm_batch()` call so it fires exactly once" (`R/loudnorm_two_pass.R:162-171`): that rationale rests on a downstream call that warns, and `probe_all()` is a terminal entry point with none, so copying it would make `parallel = TRUE` under the default sequential plan silently no-op — the case D012 added the guard for. Falsified by a user report that the doubled warning (guard + unprobeable-file) is noisier than the silent no-speedup it prevents. AC3 already fixes the test shape for this branch: assert on the file warning's class or text, never a count.
+- 2026-08-06: implement gate amended AC6 and the Scope line it mirrors. AC6 required a D-entry recording "two places rather than one"; that count was false before the milestone started — `grep -rn "furrr::" R/` returns three call sites in two files (`R/ffm_batch.R:102`, `:132`, `R/loudnorm_two_pass.R:197`), all execution-side. Amended to record the execution→metadata side-crossing instead, and to name that grep as the procedure enumerating the domain. Rejected fixing only the count, which would have kept site-counting as the thing the D-entry records.
+- 2026-08-06: T2–T5 landed in one commit rather than four. Minor amendment: the profile's verify slot requires `devtools::test()` clean before a task is checked off, and T2's tests cannot go green until T3/T5 exist — so splitting them would have committed a red suite. Task wording and ordering unchanged.
+- 2026-08-06: T3 fans out `probe_one()` alone and leaves the assembly loop in the parent process. The rejected alternative was mapping the whole per-file body (assembly included) and reducing the results: it would have moved the `failed` accumulator and the end-of-call `cli_warn()` into workers, where AC3's "exactly one warning naming both" becomes one warning per worker or none. Only `probe_one()` shells out, so the discarded parallelism is free. Falsified by a profile showing the parent-side assembly dominating probe time.
+- 2026-08-06: AC2 mutation probe run and recorded. With `probes <- if (parallel)` mutated to `if (FALSE)` the suite goes 5 failed / 23 passed, the failures landing exactly on the two argument-load-bearing tests ("routes through furrr, parallel = FALSE does not", 1; "shortcuts pass `parallel` through on the infile branch", 4). Restored: 28 passed, 0 failed.
+- 2026-08-06: AC4's furrr masking is staged by stubbing `rlang::check_installed` rather than by hiding the installed package. Rejected mocking `rlang::is_installed` or `detect_installed`: `check_installed()` short-circuits on `.getNamespace(x)` before it reaches either, so with furrr loaded neither stub can make it report missing. The stub raises rlang's real `rlib_error_package_not_found` class and the test asserts that class, as AC4 requires. Falsified by a future rlang that stops emitting that class.
+- 2026-08-06: T6 — D033 appended, NEWS entry under Performance, roxygen documented. `devtools::check()` **Status: OK** (0 errors / 0 warnings / 0 notes) after one fix: the spelling test flagged "honours" in `probe_all.Rd`, changed to "honors" to match `ffm_batch()`'s existing wording. `pkgdown::check_pkgdown()` clean; no new exports, so no `_pkgdown.yml` row was needed. `devtools::document()` re-run produces no further diff.
 
 ## Decisions
 
 ## Review
+
+Reviewed 2026-08-06 on PR #56. Evidence gathered fresh on this branch.
+
+**AC1 — parity, types, input order.** Three tests green
+(`test-probe-parallel.R`): `identical()` on the whole two-tibble list across
+`parallel` values for a vector holding a duplicated path and an unprobeable
+file; `container$file` equal to the input vector for a 4-element vector with a
+duplicate; typed/untyped both matching their sequential counterparts, with
+`expect_false(identical(typed, raw))` proving the pair is not one assertion
+twice. Additionally verified OFF the test suite against the **installed**
+package (`R CMD INSTALL` to a temp lib) under a real
+`future::plan(multisession, workers = 3)`: `identical(seq, par)` TRUE and
+`identical(par$container$file, files)` TRUE. That closes the gap the suite
+alone leaves, where `future_map()` under a sequential plan degenerates to an
+in-process map.
+
+**AC2 — the argument is load-bearing.** Mutation probe run fresh at review:
+mutating `probes <- if (parallel)` to `if (FALSE)` takes the file to 5 failed /
+23 passed, the failures landing on exactly the two argument-consuming tests
+("routes through furrr, parallel = FALSE does not", 1; "shortcuts pass
+`parallel` through on the infile branch", 4). Restored: 28 passed, 0 failed.
+
+**AC3 — one unprobeable-file warning naming both.** Test asserts exactly one
+"Could not probe" warning naming both missing basenames, looped over both
+`parallel` values. Asserted on the warning's text rather than a total count, as
+the criterion requires, because the guard adds a second warning on the parallel
+path. Verified against the installed package under a real multisession plan:
+1 file warning, 0 sequential-plan warnings (the plan was parallel), 1 total.
+
+**AC4 — furrr only on the parallel path.** With `rlang::check_installed`
+stubbed to raise `rlib_error_package_not_found`, `parallel = TRUE` errors with
+that class and `parallel = FALSE` returns a `tbl_df` normally. Asserted by
+class, not message text. Recorded limitation: the stub ignores its `pkg`
+argument, so it proves "a `check_installed` call happens on the parallel path
+and none on the sequential one" rather than naming furrr specifically (scored
+63, logged below).
+
+**AC5 — the four shortcuts.** `probe_container`/`probe_streams`/`probe_video`/
+`probe_audio` each route through a furrr stub on the `infile` branch (4
+assertions, one per shortcut, `info = nm`); with a `probe` object the stub is
+never reached and results equal the plain call.
+
+**AC6 — the D-entry.** D033 appended, recording the execution→metadata
+side-crossing rather than a site count, naming `grep -rn "furrr::" R/` as the
+enumerating procedure and citing its three pre-existing execution-side sites
+(`R/ffm_batch.R:102`, `:132`, `R/loudnorm_two_pass.R:197`), and stating why
+D007's single-runner rule is not violated plus what may not follow from it.
+
+**AC7 — toolchain.** `devtools::document()` no diff; `devtools::test()`
+3454 passed / 0 failed / 5 skipped; `devtools::check()` **Status: OK**
+(0 errors / 0 warnings / 0 notes); NEWS entry present under Performance with no
+milestone numbers. `pkgdown::check_pkgdown()` clean. GitHub CI green on all 9
+checks (macOS, Windows, ubuntu release/devel/oldrel-1, pkgdown, coverage).
+
+**Consistency gate.** `cairn_validate` exit 0, all checks passed (48 advisory
+work-log-format warnings were fixed in-review by reflowing this file's entries
+to one line each; re-run clean). No principle change, so `cairn_impact`
+no-ops. `cairn_budget`: plan-owned body 99/149.
+
+**Independent review — three lenses, then a scorer.** The [O] diff-bug lens
+returned 17 candidate findings; the [S] blame-history lens returned 1 and found
+no case where the change undoes deliberate past work or contradicts a recorded
+decision; the [S] prior-review lens returned 0 (the GitHub inline-comment probe
+returned `[]`, and no archived `## Review` finding touches this code path).
+A separate [S] scorer, given the diff and this milestone file, scored all 18.
+
+Actioned (>= 80), both triaged **fix now**:
+
+- **F1 (88)** — five tests took the real parallel path guarded only by
+  `skip_if_no_ffprobe()`, so on a machine with ffprobe but without furrr they
+  would fail with `rlib_error_package_not_found` instead of skipping.
+- **F5 (85)** — `furrr::future_map(infile, probe_one)` fans out a
+  *non-exported* function, so under `devtools::load_all()` plus a real parallel
+  plan the worker cannot resolve it.
+
+F1 fixed by a local `local_sequential_furrr()` helper on those five tests,
+which also pins the plan to sequential and restores it (F2, scored 66 — fixed
+in the same edit because it is the same two lines of the precedent at
+`test-ffm-batch.R:111-113` and prevents a real ambient-state flake). Proven
+load-bearing: with `plan(multisession)` set ambiently, the pre-fix file gives
+5 errors / 19 passed and the post-fix file 0 errors / 28 passed.
+
+F5 fixed by documentation, not by code. Measured, not assumed: the **installed**
+package under `plan(multisession, workers = 3)` is correct (AC1 evidence above),
+and `devtools::load_all()` plus `plan(multisession)` reproducibly errors with
+`could not find function "parse_compact_probe"`. `ffm_batch(parallel = TRUE)`
+under the same load_all conditions works, so this is specific to fanning out a
+non-exported function and is not a pre-existing package-wide artifact. Shipped
+behavior is unaffected, so production code was left alone and the trap is
+recorded in `cairn/LESSONS.md`.
+
+Logged, below the 80 threshold, not actioned (15 findings): F2 66 (fixed
+anyway, above) · F7 74, the default path now materializes every probe via
+`purrr::map` where the old loop streamed, so peak memory rises on large corpora
+· F13 63, AC4's stub ignores `pkg` · F11 62, `expect_error()` without `class=`
+on the two validation assertions · F16 58, the `probe`-object branch is
+asserted for two of four shortcuts · F3 55, no test uses a genuinely parallel
+plan (the off-suite installed-package run above covers what it warns about) ·
+F9 52, `vignettes/batch.Rmd:103` still enumerates only `ffm_batch()` and the
+fan-out verbs · F14 50, no probe_all-side test of the guard's non-sequential
+branch · F17 45, no `info=` in the two-value loop · F12 42, the
+`parallel = FALSE` guard test is near-vacuous · F8 42, the guard fires
+regardless of `length(infile)` and becomes an error under `options(warn = 2)` ·
+F4 35, worker-side binary resolution under `plan(cluster)` across hosts · F6 32,
+no `.options`/seed on `future_map()` · F15 28, `resolve_probe()`'s `call` moved
+to position 5 · F10 25, NEWS entry under Performance rather than New features ·
+F18 15, a stale comment on an unmodified line of `R/ffm_batch.R`.
+
+Two of these are worth a follow-up rather than silence: F7 (default-path memory)
+and F9 (vignette enumeration). Both are raised at the approval gate.
+
+**Return floor.** Neither actioned finding trips it: both scored below 90, and
+neither demonstrates an acceptance criterion failing inside the domain of a
+procedure that criterion names. No defect return; no amendment return. Return
+count for this milestone remains 0.

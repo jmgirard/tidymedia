@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-07 (second pass, no work since the M56 merge: all validate checks green, both GitHub inboxes empty, tree clean. Corrected the candidate count to 19 and closed the stray blank line splitting the list.)_
+_Last hygiene check: 2026-08-07 (M57 merged: row to done, live milestone file replaced by its archive summary, M52's terminal row pruned to hold the 5-row limit, and the fan-out-misblame candidate row extended with the four error classes M57's review measured. All validate checks green.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M52 | Collapse `probe_one()`'s per-stream FFprobe loop into one call | done | — | normal | milestones/archive/M52-probe-one-single-call.md |
 | M53 | Give `probe_all()` a `parallel =` argument | done | M52 | normal | milestones/archive/M53-probe-all-parallel.md |
 | M54 | Correct the `run = FALSE` purity claim for the nvenc encoder probe | done | — | normal | milestones/archive/M54-nvenc-dry-run-purity.md |
 | M55 | A package landing topic, and a `parallel` enumeration that matches the code | done | — | normal | milestones/archive/M55-package-topic-parallel-docs.md |
 | M56 | A bad codec token names the verb's argument, never Layer 1's | done | M54 | normal | milestones/archive/M56-codec-token-blame.md |
-| M57 | A missing nvenc encoder is refused at the front door, on every verb that fans out | review | M54, M56 | normal | milestones/M57-fanout-nvenc-front-door.md |
+| M57 | A missing nvenc encoder is refused at the front door, on every verb that fans out | done | M54, M56 | normal | milestones/archive/M57-fanout-nvenc-front-door.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

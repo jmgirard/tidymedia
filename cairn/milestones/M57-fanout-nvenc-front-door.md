@@ -106,10 +106,10 @@ door → rejected at the plan gate (work log).
 - [x] T4: Add it to the eight `_batch` verbs, reading the `hardware` argument
       and any `video_codec` column; place it after `check_batch_codec_col()` so
       a malformed codec still reports first (M41 precedence).
-- [ ] T5: Column-spanning tests (H.264 + AV1; all-`NA`; no column), verified
+- [x] T5: Column-spanning tests (H.264 + AV1; all-`NA`; no column), verified
       against each verb's real column names — `picture_in_picture_batch()` takes
       `overlay`, `compare_videos_batch()` an `inputs` list-column (M54).
-- [ ] T6: `fallback = TRUE` test asserting no abort and the message count.
+- [x] T6: `fallback = TRUE` test asserting no abort and the message count.
 - [ ] T7: Run AC6's grep, record the dispositions in the work log, add the
       ROADMAP candidate rows it produces.
 - [ ] T8: `@param hardware` wording on the nine verbs, `NEWS.md`,
@@ -124,6 +124,8 @@ door → rejected at the plan gate (work log).
 - 2026-08-07: plan gate chose duplicating the check at the front door over hoisting resolution there, because hoisting re-forks the resolver seam for per-row `video_codec` columns and undoes M56's fix that made `standardize_pipeline()` hand `hardware` to the seam unresolved; falsified by a front-door guard and a pipeline guard observed firing on different inputs.
 - 2026-08-07: plan gate chose nvenc availability alone over every pipeline-level validation on the nine verbs, because the wider cut trips the sizing tripwires; falsified by AC6's enumeration returning few enough sites to have been folded in.
 - 2026-08-07: implement gate skipped — the plan gate settled hoist-vs-duplicate, scope, AC6 and the probe cache, and nothing left open was more than a helper signature.
+- 2026-08-07 (T5/T6): column-spanning and fallback tests added. A two-row table spelling h264 and av1 under a seam holding only `h264_nvenc` aborts naming `av1_nvenc`, and compiles under a seam holding both; an `NA` cell and an absent column both read as h264; `format_for_web_batch()` checks h264. `fallback = TRUE` emits 2 fallback messages for a 2-row table on the branch and 2 on master, and an unmappable `prores` cell under `fallback = TRUE` still fails inside the fan-out rather than at the front door. Suite FAIL 0 | PASS 3918.
+- 2026-08-07 (T5): the sweep helper used `utils::modifyList()` to apply per-test overrides, which merged a replacement `jobs` tibble column-wise into the template's (a tibble is a list) and would have deleted any `NULL`-valued override instead of setting it. Replaced with direct element assignment; two tests were erroring on it.
 - 2026-08-07 (T4): eight `_batch` guards added immediately before each `ffm_batch()` call, which is where M41 puts a guard added for blame, rather than after `check_batch_codec_col()` as the plan said — on several verbs that anchor sits mid-block, so output derivation and duplicate-path checks would have started reporting after it. `separate_audio_video_batch()` takes its guard before the N->2N reshape, while `jobs` still carries the caller's `video_codec` column. New helper `batch_video_codecs()` yields the column's distinct cells, or the argument where the verb honours no column. `format_for_web_batch()` passes `"libx264"`: its recipe fixes the codec by identity. Sweep 46/46 green; full suite FAIL 0 | PASS 3902, the same 4 warnings and 5 skips as at T1. `R/ffmpeg.R` +90 lines, 0 deletions, CRLF 5805 -> 5895 (M35/M48).
 - 2026-08-07 (T4): the M54 blame test flipped under AC5's amended exception — three fan-out assertions now name their verb, the scalar control untouched, and the `test_that()` title corrected, since it read "still blames the fan-out".
 - 2026-08-07 (T3): `segment_video()` guarded; its sweep cell is green and the other eight plus the parallel cell stay red until T4. Two pipelines abort BEFORE reaching `resolve_hw_encoder()` — `segment_pipeline()` on a non-re-encoding cut naming an encoder, and the shared separation recipe on `video_codec = "copy"` — so each front door mirrors that precondition, with two tests asserting the pipeline's own message still reports there.

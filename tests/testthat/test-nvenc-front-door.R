@@ -90,7 +90,11 @@ nvenc_fanout_catch <- function(verb, input, out = "out.mp4", parallel = FALSE,
   args$fallback <- FALSE
   args$run <- FALSE
   if ("parallel" %in% names(formals(f))) args$parallel <- parallel
-  args <- utils::modifyList(args, extra)
+  # Plain replacement, never modifyList(): a tibble IS a list, so modifyList
+  # merges `extra$jobs` column-wise into the template's jobs instead of
+  # replacing it, and it DELETES any element whose value is NULL rather than
+  # setting it -- which would silently drop a `video_codec = NULL` case.
+  for (nm in names(extra)) args[nm] <- list(extra[[nm]])
   # Catch the ERROR, never any condition: at parallel = TRUE the sequential-plan
   # warning arrives first and a `condition =` handler would return that instead
   # (measured while recording the master readings).
@@ -142,6 +146,105 @@ test_that("the abort names the verb at parallel = TRUE too", {
   expect_s3_class(cnd, "rlang_error")
   expect_match(conditionMessage(cnd), "nvenc encoder .* is not available")
   expect_identical(nvenc_blamed(cnd), "standardize_video_batch")
+})
+
+# --- AC3: the guard sweeps the whole video_codec column ---------------------
+#
+# A _batch call is one `hardware` choice over many rows, but the FAMILY is
+# per row: seven of the eight _batch verbs let a `video_codec` column override
+# the argument, and h264_nvenc being listed says nothing about av1_nvenc. A
+# guard reading only the argument would pass a table whose second row cannot
+# encode.
+
+test_that("the guard checks every family a video_codec column spells", {
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  input <- make_input()
+  jobs <- tibble::tibble(input = c(input, input), output = c("a.mp4", "b.mp4"),
+                         video_codec = c("libx264", "libaom-av1"))
+  cnd <- nvenc_fanout_catch("standardize_video_batch", input,
+                            extra = list(jobs = jobs))
+  expect_s3_class(cnd, "rlang_error")
+  # The AV1 row is the one with no encoder; naming h264_nvenc here would mean
+  # the guard had read the argument and stopped.
+  expect_match(conditionMessage(cnd), "av1_nvenc", fixed = TRUE)
+  expect_identical(nvenc_blamed(cnd), "standardize_video_batch")
+})
+
+test_that("the same column compiles when every family is available", {
+  withr::local_options(tidymedia.nvenc_encoders = c("h264_nvenc", "av1_nvenc"))
+  input <- make_input()
+  jobs <- tibble::tibble(input = c(input, input), output = c("a.mp4", "b.mp4"),
+                         video_codec = c("libx264", "libaom-av1"))
+  expect_null(nvenc_fanout_catch("standardize_video_batch", input,
+                                 extra = list(jobs = jobs)))
+})
+
+test_that("an NA cell and an absent column both read as the h264 family", {
+  input <- make_input()
+  # NA is the column form of the NULL sentinel (D022), which
+  # resolve_hw_encoder() resolves to h264 -- so a seam holding only av1_nvenc
+  # must refuse both shapes, naming h264_nvenc.
+  withr::local_options(tidymedia.nvenc_encoders = "av1_nvenc")
+  na_jobs <- tibble::tibble(input = input, output = "a.mp4",
+                            video_codec = NA)
+  cnd <- nvenc_fanout_catch("segment_video_batch", input,
+                            extra = list(jobs = tibble::tibble(
+                              input = input, output = "a.mp4",
+                              start = 0, end = 1, video_codec = NA)))
+  expect_match(conditionMessage(cnd), "h264_nvenc", fixed = TRUE)
+  expect_identical(nvenc_blamed(cnd), "segment_video_batch")
+
+  # And with no column at all, the argument's own NULL default.
+  bare <- nvenc_fanout_catch("segment_video_batch", input)
+  expect_match(conditionMessage(bare), "h264_nvenc", fixed = TRUE)
+  expect_identical(nvenc_blamed(bare), "segment_video_batch")
+  expect_true(is.na(na_jobs$video_codec))
+})
+
+test_that("format_for_web_batch checks h264, the codec its recipe fixes", {
+  withr::local_options(tidymedia.nvenc_encoders = "av1_nvenc")
+  input <- make_input()
+  cnd <- nvenc_fanout_catch("format_for_web_batch", input)
+  expect_match(conditionMessage(cnd), "h264_nvenc", fixed = TRUE)
+  expect_identical(nvenc_blamed(cnd), "format_for_web_batch")
+})
+
+# --- AC4: fallback = TRUE reaches no front-door guard -----------------------
+
+test_that("fallback = TRUE still falls back, once per row", {
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  input <- make_input()
+  jobs <- tibble::tibble(input = c(input, input), output = c("a.mp4", "b.mp4"))
+  n <- 0
+  out <- withCallingHandlers(
+    standardize_video_batch(jobs, hardware = "nvenc", fallback = TRUE,
+                            run = FALSE),
+    message = function(m) {
+      if (grepl("falling back", conditionMessage(m))) n <<- n + 1
+      invokeRestart("muffleMessage")
+    }
+  )
+  # Two, not one: the message belongs to the per-row resolution, and a guard
+  # that hoisted or suppressed it would show up here as 1 or 0. Measured at 2
+  # on master for the same table, so this is a count carried across, not a
+  # count invented here.
+  expect_identical(n, 2)
+  expect_s3_class(out, "data.frame")
+})
+
+test_that("fallback = TRUE never lets the front door refuse an unmappable codec", {
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  input <- make_input()
+  # codec_family() aborts on "prores" regardless of `fallback`, so a front-door
+  # column sweep would refuse this call. The guard's early return is what keeps
+  # the failure where it was -- inside the fan-out, unchanged from master.
+  jobs <- tibble::tibble(input = input, output = "a.mp4",
+                         video_codec = "prores")
+  cnd <- nvenc_fanout_catch("standardize_video_batch", input,
+                            extra = list(jobs = jobs, fallback = TRUE))
+  expect_s3_class(cnd, "rlang_error")
+  expect_match(conditionMessage(cnd), "No nvenc encoder")
+  expect_false(identical(nvenc_blamed(cnd), "standardize_video_batch"))
 })
 
 # --- the preconditions each front door mirrors ------------------------------

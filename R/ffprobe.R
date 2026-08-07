@@ -43,6 +43,12 @@ ffprobe <- function(command) {
 #'   to integers/doubles and FFprobe's `"N/A"` becomes `NA`; fractions, ratios,
 #'   hex identifiers, and text stay as strings. When `FALSE` every value is
 #'   returned as an unconverted string.
+#' @param parallel A logical: probe the files in parallel with \pkg{furrr}
+#'   (`TRUE`) or one at a time (`FALSE`, the default). The parallel path
+#'   honors the active `future::plan()` and warns when that plan is
+#'   sequential, since it would then give no speedup. Output is identical
+#'   either way, rows included and in the same order. Requires the optional
+#'   \pkg{furrr} package, which is checked for only when `parallel` is `TRUE`.
 #' @return A list of two tibbles: `container` (one row per input file) and
 #'   `streams` (one row per stream, or a single `NA` row for a file with no
 #'   readable streams). Both lead with a `file` column identifying the input.
@@ -57,13 +63,37 @@ ffprobe <- function(command) {
 #' info$container
 #' info$streams
 #' @export
-probe_all <- function(infile, typed = TRUE) {
+probe_all <- function(infile, typed = TRUE, parallel = FALSE) {
   if (!rlang::is_character(infile) || length(infile) == 0) {
     cli::cli_abort(
       "{.arg infile} must be a character vector of one or more file locations."
     )
   }
   rlang::check_bool(typed)
+  rlang::check_bool(parallel)
+
+  if (parallel) {
+    rlang::check_installed("furrr", reason = "for parallel probing.")
+    # probe_all() is a terminal entry point -- unlike loudnorm's Phase 1
+    # fan-out, which leaves this warning to the ffm_batch() call that follows
+    # it, nothing downstream warns for this one. Without the guard,
+    # `parallel = TRUE` under the default sequential plan is a silent no-op,
+    # which is the case D012 added the guard for (M53 T1).
+    warn_if_sequential_plan()
+  }
+
+  # Only probe_one() shells out, so only probe_one() is worth fanning out; the
+  # assembly below stays in this process. That is deliberate rather than
+  # incidental -- the failure list and the single end-of-call warning are
+  # parent-process state, and accumulating them inside workers would either
+  # lose them or emit one warning per worker (AC3). Mapping over `infile` in
+  # order also keeps the output rows in the INPUT vector's order, which is
+  # what the preallocated `[[i]]` assignment used to guarantee.
+  probes <- if (parallel) {
+    furrr::future_map(infile, probe_one)
+  } else {
+    purrr::map(infile, probe_one)
+  }
 
   containers <- vector("list", length(infile))
   streams_l <- vector("list", length(infile))
@@ -71,7 +101,7 @@ probe_all <- function(infile, typed = TRUE) {
 
   for (i in seq_along(infile)) {
     f <- infile[[i]]
-    res <- probe_one(f)
+    res <- probes[[i]]
     if (is.null(res)) {
       failed <- c(failed, f)
       containers[[i]] <- tibble::tibble(file = f)
@@ -200,6 +230,10 @@ probe_one <- function(file) {
 #'   `NULL` if `probe` is supplied.
 #' @param typed A logical passed to [probe_all()] when `infile` is used (default
 #'   `TRUE`); ignored when `probe` is supplied.
+#' @param parallel A logical passed to [probe_all()] when `infile` is used:
+#'   probe the files in parallel with \pkg{furrr} (`TRUE`) or one at a time
+#'   (`FALSE`, the default). Ignored when `probe` is supplied, since a probe
+#'   object has nothing left to probe.
 #' @return A tibble containing only the requested information.
 #' @seealso [probe_all()] for the full probe; [mediainfo_query()] for the
 #'   MediaInfo backend; [get_width()] and friends for single scalar values.
@@ -213,32 +247,36 @@ probe_one <- function(file) {
 #' probe_video(info)
 #' probe_audio(info)
 #' @export
-probe_container <- function(probe = NULL, infile = NULL, typed = TRUE) {
-  resolve_probe(probe, infile, typed)$container
+probe_container <- function(probe = NULL, infile = NULL, typed = TRUE,
+                            parallel = FALSE) {
+  resolve_probe(probe, infile, typed, parallel)$container
 }
 
 # probe_streams() ---------------------------------------------------------
 
 #' @rdname probe_container
 #' @export
-probe_streams <- function(probe = NULL, infile = NULL, typed = TRUE) {
-  resolve_probe(probe, infile, typed)$streams
+probe_streams <- function(probe = NULL, infile = NULL, typed = TRUE,
+                          parallel = FALSE) {
+  resolve_probe(probe, infile, typed, parallel)$streams
 }
 
 # probe_video() -----------------------------------------------------------
 
 #' @rdname probe_container
 #' @export
-probe_video <- function(probe = NULL, infile = NULL, typed = TRUE) {
-  filter_streams(resolve_probe(probe, infile, typed)$streams, "video")
+probe_video <- function(probe = NULL, infile = NULL, typed = TRUE,
+                        parallel = FALSE) {
+  filter_streams(resolve_probe(probe, infile, typed, parallel)$streams, "video")
 }
 
 # probe_audio() -----------------------------------------------------------
 
 #' @rdname probe_container
 #' @export
-probe_audio <- function(probe = NULL, infile = NULL, typed = TRUE) {
-  filter_streams(resolve_probe(probe, infile, typed)$streams, "audio")
+probe_audio <- function(probe = NULL, infile = NULL, typed = TRUE,
+                        parallel = FALSE) {
+  filter_streams(resolve_probe(probe, infile, typed, parallel)$streams, "audio")
 }
 
 # filter_streams() --------------------------------------------------------
@@ -256,13 +294,18 @@ filter_streams <- function(streams, type) {
 
 # Shared front-end for the probe_*() shortcuts: require exactly one of `probe`
 # or `infile`, and probe the file(s) when `infile` is given.
-resolve_probe <- function(probe, infile, typed, call = rlang::caller_env()) {
+resolve_probe <- function(probe, infile, typed, parallel = FALSE,
+                          call = rlang::caller_env()) {
   if (is.null(probe) + is.null(infile) != 1) {
     cli::cli_abort(
       "Provide exactly one of {.arg probe} or {.arg infile}.", call = call
     )
   }
-  if (!is.null(infile)) probe <- probe_all(infile, typed = typed)
+  # `parallel` is consumed exactly where `typed` is -- on the infile branch.
+  # A probe object has nothing left to fan out, so both are ignored there.
+  if (!is.null(infile)) {
+    probe <- probe_all(infile, typed = typed, parallel = parallel)
+  }
   probe
 }
 

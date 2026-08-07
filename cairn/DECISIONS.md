@@ -1139,3 +1139,56 @@ shipped in place of a rename.
   choice under D014's pre-0.2.0 clean break. Ruled out as a trigger: the count
   alone. Eighteen verbs is not eighteen confused callers, and a rename paid for
   by a headcount would be paid by every existing caller.
+
+## D033 — `furrr` fan-out crosses to the metadata side (2026-08-06, from M53, extends D007/D012)
+
+`probe_all(parallel = TRUE)` fans its per-file FFprobe calls out with
+`furrr::future_map()`, honoring the active `future::plan()`. The default stays
+`FALSE`, and the four `probe_*()` shortcuts pass `parallel` through exactly
+where they already pass `typed` — on the `infile` branch, ignored when handed a
+`probe` object.
+
+- **What is new is the side, not the site count.** Before this milestone
+  `grep -rn "furrr::" R/` returned three call sites in two files
+  (`R/ffm_batch.R:102`, `:132`, `R/loudnorm_two_pass.R:197`), and all three sit
+  on the **execution** side — running FFmpeg jobs. This is the first fan-out on
+  the **metadata-reading** side. M53's plan originally framed the entry as
+  recording "a second `furrr` fan-out"; that count was wrong when it was
+  written, and the framing is corrected here rather than carried forward.
+
+- **D007 is not violated, and this entry is what stops that reading eroding.**
+  D007 fixes batch processing as "a single tibble-in/tibble-out runner" and
+  rules out "vectorizing individual verbs". `probe_all()` is neither: it is a
+  metadata reader that has always been vectorized over `infile`, so giving it a
+  worker pool adds no second runner and vectorizes no verb. The line D007 draws
+  is around the **engine's execution model** — one input chain, one output, one
+  runner (D003) — not around every use of `future`.
+
+- **What may NOT follow from this.** A `parallel` argument on a *scalar* verb,
+  a second runner beside `ffm_batch()`, or a parallel mechanism other than
+  `furrr`/`future`. Each of those is the thing D007 and D003 rule out, and this
+  entry licenses none of them. Parallelizing the `mediainfo_*()` readers or the
+  `get_*()` helpers is not ruled out — it is simply unplanned (a ROADMAP
+  candidate, not a decision).
+
+- **The guard fires here, unlike loudnorm's Phase 1.**
+  `run_loudnorm_analysis_batch()` fans out silently and leaves
+  `warn_if_sequential_plan()` to the `ffm_batch()` call that follows it, "so it
+  fires exactly once" (`R/loudnorm_two_pass.R:162-171`). That rationale needs a
+  downstream call that warns. `probe_all()` is a terminal entry point with
+  none, so it emits the guard itself — otherwise `parallel = TRUE` under the
+  default sequential plan is a silent no-op, which is the case D012 added the
+  guard for. Callers therefore see two warnings from one call when the plan is
+  sequential and a file is unprobeable; the file warning stays a single
+  end-of-call report naming every failure, which is what the fan-out had to
+  preserve.
+
+- **Only `probe_one()` is fanned out.** The failure accumulator and the
+  end-of-call warning stay in the parent process; moving them into workers
+  would make that one report one-per-worker or none. Only `probe_one()` shells
+  out, so the parallelism given up is free.
+
+- **Falsified by** a profile showing the parent-side assembly, rather than the
+  FFprobe spawns, dominating `probe_all()` on a large corpus — which would mean
+  the fan-out is drawn around the wrong part — or by a caller needing a
+  parallel mechanism `future` cannot express, which reopens D012's choice.

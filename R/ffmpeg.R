@@ -461,7 +461,12 @@ extract_audio_pipeline <- function(input, output, audio_codec = "copy",
                                    audio_stream = NULL,
                                    call = rlang::caller_env()) {
   p <- ffm_files(input, output)
-  p <- ffm_codec(p, audio = audio_codec)
+  # Through M35's apply_audio_codec() seam rather than ffm_codec() directly, so
+  # a malformed token names `audio_codec` and blames extract_audio() instead of
+  # naming Layer-1's `audio` and blaming ffm_codec() (M56). The seam's NULL
+  # branch emits no -codec:a, which is what ffm_codec(audio = NULL) did here
+  # anyway, so every compiled command is unchanged.
+  p <- apply_audio_codec(p, audio_codec, call = call)
   p <- ffm_map(p, audio_stream_map(audio_stream, call = call))
   ffm_drop(p, "video")
 }
@@ -927,7 +932,12 @@ convert_audio_pipeline <- function(input, output, audio_codec = NULL,
     p <- ffm_output_options(p, "-q:a 0")
   } else {
     rlang::check_string(audio_codec)
-    p <- ffm_codec(p, audio = audio_codec)
+    # Through M35's seam (M56): a malformed token now names `audio_codec` and
+    # blames convert_audio(), where ffm_codec() named Layer-1's `audio`. The
+    # check_string() above stays and still fires first, so the NON-string
+    # message and its blame target are untouched here and in the batch sibling
+    # that inherits this helper's per-row validation (M41).
+    p <- apply_audio_codec(p, audio_codec, call = call)
   }
   p
 }
@@ -1430,7 +1440,15 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
   # apply_audio_codec() seam, so NULL emits no -codec:a (M39/D017). `call` is
   # threaded so a bad token names standardize_video(), not this internal helper
   # (parity with anonymize_pipeline(); M39 review F2).
-  p <- ffm_codec(p, video = video_codec)
+  #
+  # Video goes through the matching seam (M56), so a malformed token names
+  # `video_codec` and blames standardize_video() rather than naming Layer-1's
+  # `video`. `hardware` is deliberately left at its default: the nvenc
+  # resolution already happened at the top of this function, and passing it here
+  # too would move that abort past ffm_scale()'s dimension checks -- a
+  # precedence change this milestone does not make. The seam's second pass is a
+  # no-op, resolve_hw_encoder() returning immediately at hardware = "none".
+  p <- apply_video_codec(p, video_codec, call = call)
   p <- apply_audio_codec(p, audio_codec, call = call)
   # State the stream selection instead of inheriting FFmpeg's (M47). One
   # ffm_map() call with both specifiers, never two: ffm_map() appends, so two
@@ -2176,7 +2194,9 @@ normalize_audio_pipeline <- function(input, output,
   }
   # Name the audio encoder, if asked. NULL emits no -codec:a, leaving the
   # output container's default encoder in place -- the pre-M36 behavior.
-  p <- apply_audio_codec(p, audio_codec)
+  # `call` threaded (M56): without it this seam's token check blamed
+  # normalize_audio_pipeline(), the one seam call in the package that omitted it.
+  p <- apply_audio_codec(p, audio_codec, call = call)
   if (!is.null(channels)) {
     p <- ffm_output_options(p, paste0("-ac ", channels))
   }

@@ -2702,6 +2702,20 @@ segment_video <- function(infile,
   # leaking a dependency's name and an internal index -- the exact M41 shape
   # every other argument on this verb already avoids (M48 review F1).
   rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
+  # nvenc availability, re-checked here so an unavailable encoder blames this
+  # verb instead of purrr::pmap() (M57/D035). Last in the front-door block, so
+  # every check above still reports first (M41).
+  #
+  # Gated on `reencode` because segment_pipeline() aborts EARLIER on a
+  # non-re-encoding cut that names an encoder ("{.arg video_codec} and
+  # {.arg hardware} need a re-encoding cut"), never reaching
+  # resolve_hw_encoder(). Firing unconditionally here would replace that
+  # message with an availability one, which is not why the call failed --
+  # D035's second condition is that the guard changes the blame and the moment,
+  # never which calls fail or what they are told.
+  if (isTRUE(reencode)) {
+    check_nvenc_available(video_codec, hardware, fallback)
+  }
 
   # If no names are provided, derive per-segment names from the input file.
   if (is.null(outfiles)) {

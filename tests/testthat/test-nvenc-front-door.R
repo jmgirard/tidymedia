@@ -144,6 +144,36 @@ test_that("the abort names the verb at parallel = TRUE too", {
   expect_identical(nvenc_blamed(cnd), "standardize_video_batch")
 })
 
+# --- the preconditions each front door mirrors ------------------------------
+#
+# Two pipelines abort BEFORE they ever reach resolve_hw_encoder(), so on those
+# verbs the front-door guard must not fire: doing so would replace a specific
+# message with an availability one that is not why the call failed (D035's
+# second condition). These tests are what catches the guard's gate being
+# dropped -- without them, widening it reads as green everywhere else.
+
+test_that("a non-re-encoding cut still reports the cut, not availability", {
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  input <- make_input()
+  for (verb in c("segment_video", "segment_video_batch")) {
+    cnd <- nvenc_fanout_catch(verb, input,
+                              extra = list(reencode = FALSE, video_codec = NULL))
+    expect_s3_class(cnd, "rlang_error")
+    expect_match(conditionMessage(cnd), "need a re-encoding cut", info = verb)
+    expect_no_match(conditionMessage(cnd), "is not available", info = verb)
+  }
+})
+
+test_that("a copy video_codec still reports the copy, not availability", {
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  input <- make_input()
+  cnd <- nvenc_fanout_catch("separate_audio_video_batch", input,
+                            extra = list(video_codec = "copy"))
+  expect_s3_class(cnd, "rlang_error")
+  expect_match(conditionMessage(cnd), "needs a re-encoding")
+  expect_no_match(conditionMessage(cnd), "is not available")
+})
+
 test_that("resolve_hw_encoder() reaches the abort by calling the shared guard", {
   # Read the function object, never the source tree: a test that opens R/ under
   # the package root SKIPS under R CMD check, which runs against an installed

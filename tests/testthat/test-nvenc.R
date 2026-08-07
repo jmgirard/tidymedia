@@ -75,6 +75,12 @@ test_that("resolve_hw_encoder() falls back to software with a message", {
 # aborts with call = call, so a call site that omits `call =` blames itself.
 # crop_video()/anonymize_video() thread it and are the discriminating controls:
 # if this test ever passed for the wrong reason, they would fail too.
+#
+# Each case asserts WHICH failure it caught. Every verb here validates its own
+# arguments with `call = call` too, so a malformed input aborts blaming the same
+# front door and satisfies the expectation for a reason that has nothing to do
+# with encoder resolution -- which is how this block's `regions` control used to
+# pass while pinning nothing.
 
 test_that("an nvenc-unavailable abort names the verb, not its pipeline helper", {
   withr::local_options(tidymedia.nvenc_encoders = character(0))
@@ -83,6 +89,10 @@ test_that("an nvenc-unavailable abort names the verb, not its pipeline helper", 
 
   blamed <- function(expr) {
     err <- rlang::catch_cnd(expr, classes = "error")
+    expect_match(
+      paste(conditionMessage(err), collapse = " "),
+      "h264_nvenc\" is not available"
+    )
     deparse(conditionCall(err))[[1]]
   }
 
@@ -104,7 +114,7 @@ test_that("an nvenc-unavailable abort names the verb, not its pipeline helper", 
   )
   expect_match(
     blamed(anonymize_video(infile, "o.mp4",
-      regions = list(c(1, 1, 2, 2)),
+      regions = data.frame(x = 1, y = 1, width = 2, height = 2),
       hardware = "nvenc", run = FALSE
     )),
     "^anonymize_video\\("

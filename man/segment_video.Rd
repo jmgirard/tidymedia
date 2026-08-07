@@ -63,7 +63,12 @@ source audio codec (e.g. FLAC in \code{.mp4}) — name an encoder instead.}
 \code{video_codec = NULL} the H.264 family is assumed, so a non-H.264
 container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
 \code{video_codec}. See \code{\link{has_nvenc}} for availability and its
-caveats.}
+caveats.
+Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
+a \code{"nvenc"} call that re-encodes the video runs the binary while the
+command is built, even under \code{run = FALSE}.
+The stream-copy conflict named under \code{reencode} is caught first, so
+such a call aborts without probing.}
 
 \item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
 unavailable, encode in software with a message (\code{TRUE}) instead of

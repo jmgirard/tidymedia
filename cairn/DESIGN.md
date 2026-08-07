@@ -45,11 +45,13 @@ realtime/streaming, and full filtergraph DAGs.
 
 - User-facing conditions use `cli::cli_abort()` / rlang checks; assertthat is
   being retired — never add new assertthat calls (D004).
-- Command **compilation** is pure and CI-safe (no binaries), and a `run = FALSE`
-  call runs no binary — sole exception, D013's two-pass analysis pass. The
-  `run = TRUE` path may run helper binaries: D013's analysis pass and D024's
-  diagnostic probes. Command **execution** tests `skip_if` the ffmpeg/mediainfo
-  binaries are absent (D004, D024).
+- Command **compilation** is pure and CI-safe (no binaries). `run = FALSE`
+  promises a *command*, not a binary-free call: a probe whose result enters the
+  compiled command runs when the pipeline is built, `run` notwithstanding —
+  today D013's two-pass analysis pass and the nvenc encoder resolver, the two
+  the D034 grep finds. The `run = TRUE` path may additionally run D024's
+  diagnostic probes, which never run under `run = FALSE`. Command **execution**
+  tests `skip_if` the ffmpeg/mediainfo binaries are absent (D004, D024, D034).
 - Batch is one tibble-in/tibble-out runner, `ffm_batch(jobs, .f, …)`; `.f`
   builds one pipeline per row (pmap-style), one reproducible command per job (D007).
 - testthat 3e; usethis scaffolding; GitHub Actions CI. `man/` and `README.md`

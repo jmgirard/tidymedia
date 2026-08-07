@@ -322,11 +322,37 @@ test_that("run = FALSE runs no binary at the default hardware", {
   # discriminate-the-test rule, M44's counting-mock rule).
   crop_video_batch(crop_jobs(f), width = 32, height = 32, run = TRUE)
   expect_gt(n, 0L)
-  # Deliberately NOT extended to hardware = "nvenc": resolve_hw_encoder()
-  # reaches ffmpeg("-encoders") before `run` is consulted, so that path DOES
-  # shell out under run = FALSE on these verbs too. Carried as a ROADMAP
-  # candidate row since M47; it falsifies D024's "sole exception" sentence and
-  # is not M48's to fix.
+  # For hardware = "nvenc", which is NOT binary-free here, see the D034 test
+  # below. M48 carried that gap as a comment; M54 made it an assertion.
+})
+
+test_that("hardware = 'nvenc' probes FFmpeg while building, though run = FALSE", {
+  # D034: see test-audio-stream-passthrough.R for the full rationale. Counting
+  # at ffmpeg_encoders() because ffmpeg() shells out through system(), which the
+  # run_program()/find_ffmpeg() mock in the block above cannot intercept.
+  f <- make_input()
+  withr::local_options(tidymedia.nvenc_encoders = NULL) # force the real probe
+  probes <- 0L
+  local_mocked_bindings(
+    ffmpeg_encoders = function(...) {
+      probes <<- probes + 1L
+      tibble::tibble(name = "h264_nvenc")
+    }
+  )
+  crop_video(f, "out.mp4", 32, 32, run = FALSE)
+  segment_video(f, 0, 1, outfiles = "seg.mp4", run = FALSE)
+  expect_identical(probes, 0L)
+  crop_video(f, "out.mp4", 32, 32, hardware = "nvenc", run = FALSE)
+  expect_gt(probes, 0L)
+  before <- probes
+  segment_video(f, 0, 1, outfiles = "seg.mp4", hardware = "nvenc", run = FALSE)
+  expect_gt(probes, before)
+  before <- probes
+  crop_video_batch(crop_jobs(f),
+    width = 32, height = 32,
+    hardware = "nvenc", run = FALSE
+  )
+  expect_gt(probes, before)
 })
 
 

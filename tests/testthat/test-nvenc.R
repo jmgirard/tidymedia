@@ -70,6 +70,112 @@ test_that("resolve_hw_encoder() falls back to software with a message", {
   expect_equal(out, "libx264")
 })
 
+# An nvenc-unavailable abort must name the VERB the user called, never the
+# internal *_pipeline() helper (M41's blame convention; M54). resolve_hw_encoder()
+# aborts with call = call, so a call site that omits `call =` blames itself.
+# crop_video()/anonymize_video() thread it and are the discriminating controls:
+# if this test ever passed for the wrong reason, they would fail too.
+#
+# Each case asserts WHICH failure it caught. Every verb here validates its own
+# arguments with `call = call` too, so a malformed input aborts blaming the same
+# front door and satisfies the expectation for a reason that has nothing to do
+# with encoder resolution -- which is how this block's `regions` control used to
+# pass while pinning nothing.
+
+test_that("an nvenc-unavailable abort names the verb, not its pipeline helper", {
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  infile <- withr::local_tempfile(fileext = ".mp4")
+  file.create(infile)
+
+  blamed <- function(expr) {
+    err <- rlang::catch_cnd(expr, classes = "error")
+    expect_match(
+      paste(conditionMessage(err), collapse = " "),
+      "h264_nvenc\" is not available"
+    )
+    deparse(conditionCall(err))[[1]]
+  }
+
+  expect_match(
+    blamed(standardize_video(infile, "o.mp4", hardware = "nvenc", run = FALSE)),
+    "^standardize_video\\("
+  )
+  expect_match(
+    blamed(format_for_web(infile, "o.mp4", hardware = "nvenc", run = FALSE)),
+    "^format_for_web\\("
+  )
+  # Controls: these two already passed `call =` before M54.
+  expect_match(
+    blamed(crop_video(infile, "o.mp4",
+      width = 10, height = 10,
+      hardware = "nvenc", run = FALSE
+    )),
+    "^crop_video\\("
+  )
+  expect_match(
+    blamed(anonymize_video(infile, "o.mp4",
+      regions = data.frame(x = 1, y = 1, width = 2, height = 2),
+      hardware = "nvenc", run = FALSE
+    )),
+    "^anonymize_video\\("
+  )
+})
+
+test_that("a fan-out call still blames the fan-out, not the verb", {
+  # The limitation the release note states, pinned so the note cannot outlive
+  # it. Threading `call =` into a pipeline reaches only a verb that calls that
+  # pipeline DIRECTLY: a fan-out routes through ffm_batch() -> purrr::pmap(),
+  # so caller_env() lands on the anonymous closure (LESSONS M47/M48-F1). Fixing
+  # it needs a front-door guard in each such verb, which is not this milestone's
+  # scope; when that lands, this test goes red and the note is rewritten.
+  # The control is a scalar verb that blames ITSELF (standardize_video(), the
+  # one T1 fixed), so a blanket "everything blames pmap" would fail here.
+  #
+  # Every case asserts WHICH failure it caught, not merely that one happened: a
+  # malformed jobs table aborts at the schema check, before any fan-out, and
+  # reads as correct blame attribution if the message goes unchecked. That is
+  # exactly how this test's previous control passed while pinning nothing.
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  infile <- withr::local_tempfile(fileext = ".mp4")
+  file.create(infile)
+
+  blamed <- function(expr) {
+    err <- rlang::catch_cnd(expr, classes = "error")
+    expect_match(
+      paste(conditionMessage(err), collapse = " "),
+      "h264_nvenc\" is not available"
+    )
+    deparse(conditionCall(err))[[1]]
+  }
+
+  expect_match(
+    blamed(standardize_video_batch(
+      tibble::tibble(input = infile, output = "o.mp4"),
+      hardware = "nvenc", run = FALSE
+    )),
+    "^purrr::pmap\\("
+  )
+  expect_match(
+    blamed(segment_video(infile, 0, 5, "o.mp4",
+      hardware = "nvenc", run = FALSE
+    )),
+    "^purrr::pmap\\("
+  )
+  expect_match(
+    blamed(picture_in_picture_batch(
+      tibble::tibble(main = infile, overlay = infile, output = "o.mp4"),
+      hardware = "nvenc", run = FALSE
+    )),
+    "^purrr::pmap\\("
+  )
+  expect_match(
+    blamed(standardize_video(infile, "o.mp4",
+      hardware = "nvenc", run = FALSE
+    )),
+    "^standardize_video\\("
+  )
+})
+
 # The NULL sentinel (M34/D016): "leave the codec alone". codec_family() errors
 # on NULL, so the sentinel is resolved in its own branch before that call.
 

@@ -2,7 +2,7 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-06 (M53 merged and archived; M49's terminal row is now the oldest of five after M48's was pruned. Two candidate rows added from M53's review — the default probe path's memory profile and a stale vignette enumeration. Nothing in flight; no workable planned milestone remains.)_
+_Last hygiene check: 2026-08-06 (full audit: all 24 validate checks green, no advisories. Nothing in flight, no planned milestone, working tree clean, no open issues or PRs. 31 candidates, none stale. Next action is to plan a milestone.)_
 
 ## Milestones
 

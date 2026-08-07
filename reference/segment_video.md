@@ -92,7 +92,10 @@ segment_video(
   for availability and its caveats. Resolving `"nvenc"` asks this FFmpeg
   build which encoders it has, so a `"nvenc"` call that re-encodes the
   video runs the binary while the command is built, even under
-  `run = FALSE`. The stream-copy conflict named under `reencode` is
+  `run = FALSE`. Availability is checked at this verb's own front door,
+  before any row runs, so an unavailable encoder aborts naming this
+  function rather than the internal fan-out it would otherwise be
+  reported against. The stream-copy conflict named under `reencode` is
   caught first, so such a call aborts without probing.
 
 - fallback:

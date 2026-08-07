@@ -13,7 +13,7 @@ _Last hygiene check: 2026-08-06 (M52 merged and archived; M47's terminal row pru
 | M50 | Quote map specifiers in the compiled command string | done | M49 | normal | milestones/archive/M50-quote-map-specifiers.md |
 | M51 | Make the package's two 0-based audio indices legible | done | M49, M50 | normal | milestones/archive/M51-audio-index-docs.md |
 | M52 | Collapse `probe_one()`'s per-stream FFprobe loop into one call | done | — | normal | milestones/archive/M52-probe-one-single-call.md |
-| M53 | Give `probe_all()` a `parallel =` argument | in-progress | M52 | normal | milestones/M53-probe-all-parallel.md |
+| M53 | Give `probe_all()` a `parallel =` argument | review | M52 | normal | milestones/M53-probe-all-parallel.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

@@ -1,6 +1,6 @@
 # M53: Give `probe_all()` a `parallel =` argument
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M52
 - **Driving RR:** —
@@ -94,7 +94,7 @@ candidate row. Changing the default, which stays sequential.
 - [x] T4 `check_installed("furrr")` on the parallel path only, with a test that
       the sequential path never reaches it.
 - [x] T5 Thread `parallel` through `resolve_probe()` and the four shortcuts.
-- [ ] T6 Append the D-entry; roxygen, NEWS, `devtools::document()`; run the
+- [x] T6 Append the D-entry; roxygen, NEWS, `devtools::document()`; run the
       profile's verify slot and `devtools::check()`.
 
 ## Work log
@@ -156,6 +156,14 @@ candidate row. Changing the default, which stays sequential.
   stub can make it report missing. The stub raises rlang's real
   `rlib_error_package_not_found` class and the test asserts that class, as AC4
   requires. Falsified by a future rlang that stops emitting that class.
+
+- 2026-08-06: T6 — D033 appended, NEWS entry under Performance, roxygen
+  documented. `devtools::check()` **Status: OK** (0 errors / 0 warnings /
+  0 notes) after one fix: the spelling test flagged "honours" in
+  `probe_all.Rd`, changed to "honors" to match `ffm_batch()`'s existing
+  wording. `pkgdown::check_pkgdown()` clean; no new exports, so no
+  `_pkgdown.yml` row was needed. `devtools::document()` re-run produces no
+  further diff.
 
 ## Decisions
 

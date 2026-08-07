@@ -45,7 +45,7 @@ ffprobe <- function(command) {
 #'   returned as an unconverted string.
 #' @param parallel A logical: probe the files in parallel with \pkg{furrr}
 #'   (`TRUE`) or one at a time (`FALSE`, the default). The parallel path
-#'   honours the active `future::plan()` and warns when that plan is
+#'   honors the active `future::plan()` and warns when that plan is
 #'   sequential, since it would then give no speedup. Output is identical
 #'   either way, rows included and in the same order. Requires the optional
 #'   \pkg{furrr} package, which is checked for only when `parallel` is `TRUE`.

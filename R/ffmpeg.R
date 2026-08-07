@@ -581,28 +581,13 @@ separate_stream_pipeline <- function(input, output, stream, codec = "copy",
     # the audio command is byte-identical whatever the caller asked for (M38).
     apply_audio_codec(p, codec, call = call)
   } else {
-    # A stream copy writes the source video bytes through untouched, so no
-    # encoder -- GPU or software -- runs on that path (D008 keeps the copy
-    # lossless and opt-in; D016 rules the same way for segment_video). Catch it
-    # here rather than letting codec_family("copy") abort, which blames the
-    # codec name instead of the copy. The guard sits in the shared recipe so
-    # both verbs inherit it per stream; ffm_batch builds every row's pipeline
-    # before running any (R/ffm_batch.R), so a batch fails before it encodes.
-    if (identical(codec, "copy") && !identical(hardware, "none")) {
-      cli::cli_abort(
-        c(
-          "{.arg hardware} needs a re-encoding {.arg video_codec}.",
-          "x" = "{.code video_codec = \"copy\"} stream-copies the video, so no
-                 encoder runs.",
-          "i" = "Name an encoder (e.g. {.code video_codec = \"libx264\"}), or
-                 pass {.code video_codec = NULL} to assume the H.264 family --
-                 a non-H.264 container then needs an explicit HEVC- or
-                 AV1-family codec.",
-          "i" = "Or drop {.arg hardware} to keep stream-copying the video."
-        ),
-        call = call
-      )
-    }
+    # The copy-versus-hardware contradiction (condition 1), worded once in
+    # check_hardware_needs_encode(). The guard sits in the shared recipe so both
+    # verbs inherit it per stream; ffm_batch builds every row's pipeline before
+    # running any (R/ffm_batch.R), so a batch fails before it encodes. The
+    # _batch verb ALSO calls it at its front door (M58), where the abort can
+    # name the verb; here it still covers separate_audio_video().
+    check_hardware_needs_encode(codec, hardware, call = call)
     apply_video_codec(p, codec, hardware, fallback, call = call)
   }
 }
@@ -2608,6 +2593,147 @@ apply_audio_codec <- function(object, audio_codec, call = rlang::caller_env()) {
 }
 
 
+# the argument contradictions ---------------------------------------------
+
+# Five checkers, one per contradiction between values a verb already holds
+# before anything runs, and the only place each is worded. Each of the five
+# aborts used to sit inside a `*_pipeline()` function, which is still where it
+# fires for the verbs that call their pipeline directly; the verbs that fan out
+# through ffm_batch() -> purrr::pmap() call the same checker at their front
+# doors, so the abort names the verb the user called instead of
+# "Error in `purrr::pmap(jobs, .f, ...)` / In index: 1" (the M47/M48-F1 shape,
+# and the same fix M57 made for encoder availability). D035 supplies the SHAPE
+# only, never the licence: none of these consults FFmpeg, the filesystem, or
+# anything else outside the arguments already in hand, so D024's exclusions and
+# D034 are not engaged.
+#
+# Each takes ONE row's already-resolved values and answers for that row. A
+# _batch verb resolves its override columns to per-row values with
+# batch_arg_rows() and calls the checker once per row, so a column carrying one
+# violating row is refused while a column carrying none compiles -- an
+# all-or-nothing gate on the whole table would do neither (the shape M57 review
+# F4 caught on segment_video_batch's `reencode` column).
+#
+# `call` is threaded by every caller: from a pipeline it carries the scalar
+# verb's frame, and at a front door the caller_env() default already IS the
+# verb. The message text is the pipeline's own, moved rather than rewritten, so
+# these guards change WHERE a call is refused and never WHICH calls are.
+
+# Condition 1 (separate_stream_pipeline). A stream copy writes the source video
+# bytes through untouched, so no encoder -- GPU or software -- runs on that path
+# (D008 keeps the copy lossless and opt-in; D016 rules the same way for
+# segment_video). Caught here rather than left to codec_family("copy"), which
+# blames the codec name instead of the copy.
+check_hardware_needs_encode <- function(video_codec, hardware = "none",
+                                        call = rlang::caller_env()) {
+  if (identical(video_codec, "copy") && !identical(hardware, "none")) {
+    cli::cli_abort(
+      c(
+        "{.arg hardware} needs a re-encoding {.arg video_codec}.",
+        "x" = "{.code video_codec = \"copy\"} stream-copies the video, so no
+               encoder runs.",
+        "i" = "Name an encoder (e.g. {.code video_codec = \"libx264\"}), or
+               pass {.code video_codec = NULL} to assume the H.264 family --
+               a non-H.264 container then needs an explicit HEVC- or
+               AV1-family codec.",
+        "i" = "Or drop {.arg hardware} to keep stream-copying the video."
+      ),
+      call = call
+    )
+  }
+  invisible(NULL)
+}
+
+# Condition 2 (segment_pipeline). Same reasoning as condition 1 for the cut
+# verbs, where the copy is spelled `reencode = FALSE` rather than a codec value:
+# naming an encoder -- in software or on the GPU -- cannot mean anything on that
+# path, so abort rather than silently drop the request (M34/D016).
+check_codec_needs_reencode <- function(reencode, video_codec = NULL,
+                                       hardware = "none",
+                                       call = rlang::caller_env()) {
+  if (!reencode && (!is.null(video_codec) || !identical(hardware, "none"))) {
+    cli::cli_abort(
+      c(
+        "{.arg video_codec} and {.arg hardware} need a re-encoding cut.",
+        "x" = "{.code reencode = FALSE} stream-copies each segment, so no
+               encoder runs.",
+        "i" = "Pass {.code reencode = TRUE} to cut by re-encoding, or drop
+               {.arg video_codec} / {.arg hardware}."
+      ),
+      call = call
+    )
+  }
+  invisible(NULL)
+}
+
+# Condition 3 (segment_pipeline), with one wrinkle over condition 2: the copy
+# path's ffm_copy() sets -codec:a copy itself, so "copy" is the one value that
+# agrees with it. Anything else -- a named encoder, or NULL asking for no
+# -codec:a at all -- would be silently overwritten by ffm_copy() (M35/D017).
+check_audio_codec_needs_reencode <- function(reencode, audio_codec,
+                                             call = rlang::caller_env()) {
+  if (!reencode && !identical(audio_codec, "copy")) {
+    cli::cli_abort(
+      c(
+        "{.arg audio_codec} needs a re-encoding cut.",
+        "x" = "{.code reencode = FALSE} stream-copies every stream, so the
+               audio is always copied.",
+        "i" = "Pass {.code reencode = TRUE} to cut by re-encoding, or leave
+               {.code audio_codec = \"copy\"}."
+      ),
+      call = call
+    )
+  }
+  invisible(NULL)
+}
+
+# Conditions 4 and 6 (compare_videos_pipeline, picture_in_picture_pipeline).
+# audio_codec configures an encode; with no audio mapped there is no stream to
+# encode, so a named encoder is a contradiction rather than a no-op. NULL stays
+# legal -- it only ever means "emit no -codec:a", which is already the case
+# (M35/D017). IP3/D009 is untouched: the graph and its labels are unchanged.
+#
+# ONE checker for two verbs, not two: the headline and the "x" line are
+# byte-identical on both and only the way out differs, so `hint` carries that
+# difference as a parameter. Two sites spelling the same headline is the drift
+# M40 hit by copying a shared guard's wording, and it is what the one-site
+# uniqueness test in test-contradiction-front-door.R now fails on.
+check_audio_codec_needs_audio <- function(audio, audio_codec, hint,
+                                          call = rlang::caller_env()) {
+  if (is.null(audio) && !is.null(audio_codec) &&
+      !identical(audio_codec, "copy")) {
+    cli::cli_abort(
+      c(
+        "{.arg audio_codec} needs an audio stream to encode.",
+        "x" = "{.code audio = NULL} carries no audio into the output.",
+        "i" = hint
+      ),
+      call = call
+    )
+  }
+  invisible(NULL)
+}
+
+# Condition 5 (compare_videos_pipeline). ffm_hstack()/ffm_vstack() scale to the
+# first input's size, which is defined for a pair and not for a stack of three,
+# so resize supports exactly two inputs. Takes the input COUNT rather than the
+# paths: the count is all the condition reads, and a fan-in front door already
+# has it per row without materializing anything.
+check_resize_needs_two_inputs <- function(resize, n_inputs,
+                                          call = rlang::caller_env()) {
+  if (resize && n_inputs != 2) {
+    cli::cli_abort(
+      c(
+        "{.arg resize} currently supports exactly two inputs.",
+        "i" = "Pass {.code resize = FALSE} to compare more than two videos."
+      ),
+      call = call
+    )
+  }
+  invisible(NULL)
+}
+
+
 # segment_video() ---------------------------------------------------------
 
 #' Segment Video
@@ -2821,39 +2947,13 @@ segment_pipeline <- function(input, output, start, end, reencode,
                              hardware = "none",
                              fallback = FALSE, audio_stream = NULL,
                              call = rlang::caller_env()) {
-  # A stream copy writes the source video bytes through untouched, so naming an
-  # encoder -- in software or on the GPU -- cannot mean anything on that path
-  # (D008 keeps the copy lossless and opt-in). Abort rather than silently drop
-  # the request; the check lives here so both callers inherit it per row
-  # (M34/D016).
-  if (!reencode && (!is.null(video_codec) || !identical(hardware, "none"))) {
-    cli::cli_abort(
-      c(
-        "{.arg video_codec} and {.arg hardware} need a re-encoding cut.",
-        "x" = "{.code reencode = FALSE} stream-copies each segment, so no
-               encoder runs.",
-        "i" = "Pass {.code reencode = TRUE} to cut by re-encoding, or drop
-               {.arg video_codec} / {.arg hardware}."
-      ),
-      call = call
-    )
-  }
-  # Same reasoning for the audio stream, with one wrinkle: the copy path's
-  # ffm_copy() sets -codec:a copy itself, so "copy" is the one value that agrees
-  # with it. Anything else -- a named encoder, or NULL asking for no -codec:a at
-  # all -- would be silently overwritten by ffm_copy(), so it aborts (M35/D017).
-  if (!reencode && !identical(audio_codec, "copy")) {
-    cli::cli_abort(
-      c(
-        "{.arg audio_codec} needs a re-encoding cut.",
-        "x" = "{.code reencode = FALSE} stream-copies every stream, so the
-               audio is always copied.",
-        "i" = "Pass {.code reencode = TRUE} to cut by re-encoding, or leave
-               {.code audio_codec = \"copy\"}."
-      ),
-      call = call
-    )
-  }
+  # The two cut contradictions (conditions 2 and 3), worded once in their
+  # checkers. They live here so both callers inherit them per row (M34/D016,
+  # M35/D017); segment_video() and segment_video_batch() ALSO call them at their
+  # front doors (M58), where the abort can name the verb instead of
+  # purrr::pmap().
+  check_codec_needs_reencode(reencode, video_codec, hardware, call = call)
+  check_audio_codec_needs_reencode(reencode, audio_codec, call = call)
   p <- ffm_seek(ffm_files(input, output), start = start, end = end,
                 reencode = reencode)
   if (!reencode) p <- ffm_copy(p)
@@ -5291,29 +5391,18 @@ compare_videos_pipeline <- function(infiles, outfile,
                                     fallback = FALSE,
                                     call = rlang::caller_env()) {
   direction <- rlang::arg_match(direction)
-  # audio_codec configures an encode; with no audio mapped there is no stream to
-  # encode, so a named encoder is a contradiction rather than a no-op. NULL stays
-  # legal -- it only ever means "emit no -codec:a", which is already the case
-  # (M35/D017). IP3/D009 is untouched: the graph and its labels are unchanged.
-  if (is.null(audio) && !is.null(audio_codec) &&
-      !identical(audio_codec, "copy")) {
-    cli::cli_abort(
-      c(
-        "{.arg audio_codec} needs an audio stream to encode.",
-        "x" = "{.code audio = NULL} carries no audio into the output.",
-        "i" = "Pass {.arg audio} the 0-based index of the input whose audio to
-               keep, or drop {.arg audio_codec}."
-      ),
-      call = call
-    )
-  }
-
-  if (resize && length(infiles) != 2) {
-    cli::cli_abort(c(
-      "{.arg resize} currently supports exactly two inputs.",
-      "i" = "Pass {.code resize = FALSE} to compare more than two videos."
-    ))
-  }
+  # Conditions 4 and 5, worded once in their checkers; compare_videos_batch()
+  # ALSO calls both at its front door (M58). The `call = call` on the resize
+  # guard is new with M58 -- without it the abort displayed
+  # `compare_videos_pipeline()`, the one of the six that leaked an internal name
+  # to the user.
+  check_audio_codec_needs_audio(
+    audio, audio_codec,
+    hint = "Pass {.arg audio} the 0-based index of the input whose audio to
+            keep, or drop {.arg audio_codec}.",
+    call = call
+  )
+  check_resize_needs_two_inputs(resize, length(infiles), call = call)
   p <- ffm_files(infiles, outfile)
   p <- switch(
     direction,
@@ -5437,21 +5526,15 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
                                         fallback = FALSE,
                                         call = rlang::caller_env()) {
   position <- rlang::arg_match(position)
-  # Same contradiction as compare_videos(): no mapped audio means no stream for a
-  # named encoder to act on, while NULL only ever means "emit no -codec:a"
-  # (M35/D017). IP3/D009 untouched -- the graph and its labels are unchanged.
-  if (is.null(audio) && !is.null(audio_codec) &&
-      !identical(audio_codec, "copy")) {
-    cli::cli_abort(
-      c(
-        "{.arg audio_codec} needs an audio stream to encode.",
-        "x" = "{.code audio = NULL} carries no audio into the output.",
-        "i" = "Pass {.arg audio} {.val {0}} for the main video's audio or
-               {.val {1}} for the overlay's, or drop {.arg audio_codec}."
-      ),
-      call = call
-    )
-  }
+  # Condition 6 -- the same contradiction as compare_videos(), which is why it
+  # shares that verb's checker and differs only in the way out (M58).
+  # picture_in_picture_batch() ALSO calls it at its front door.
+  check_audio_codec_needs_audio(
+    audio, audio_codec,
+    hint = "Pass {.arg audio} {.val {0}} for the main video's audio or
+            {.val {1}} for the overlay's, or drop {.arg audio_codec}.",
+    call = call
+  )
 
   m <- as.integer(margin)
   pos <- switch(

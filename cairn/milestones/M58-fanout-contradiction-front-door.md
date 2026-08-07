@@ -1,11 +1,11 @@
 # M58: Six argument contradictions are refused at the fan-out verb's front door
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M57
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** —
+- **Branch/PR:** `m58-fanout-contradiction-front-door`
 
 ## Goal
 
@@ -104,7 +104,7 @@ owing its own entry. Line-ending governance → M60.
 
 ## Tasks
 
-- [ ] T1 — Extract the six conditions into five shared checkers; the four
+- [x] T1 — Extract the six conditions into five shared checkers; the four
       `*_pipeline()` functions call them rather than carrying the abort; give
       condition 5's abort (`R/ffmpeg.R:5312`) the `call = call` its siblings
       already thread.
@@ -134,6 +134,7 @@ owing its own entry. Line-ending governance → M60.
 - 2026-08-07: plan gate chose contradiction-before-availability precedence over keeping M57's availability-first order because a contradiction is machine-independent while availability is not, so the same wrong call is diagnosed identically everywhere (the M54 lesson); falsified by a contradiction whose detection turns out to need the encoder list, or by a user report preferring the availability error on a mixed column.
 - 2026-08-07: plan gate chose five shared checkers over six because conditions 4 and 6 have a byte-identical headline and differ only in hint text, so six sites would fail AC1's own uniqueness test; falsified by the two hints diverging enough that one parameter cannot carry both.
 - 2026-08-07: criteria audit ([O] fresh-context reader) returned findings on AC1 (two ways), AC3, AC4, AC6, and a coverage gap on AC7; all fixed before writing. AC2 and AC7 returned clean. Its AC5 finding — that three of five verbs are vacuous on uniform calls and two committed tests pin the opposite precedence — went to the question gate.
+- 2026-08-07: T1 — five checkers extracted; the four pipelines call them. Measured against `origin/master`: five of the six messages and their `conditionCall()` are byte-identical, and condition 5's call target moves from the pipeline to its caller, which is the `call = call` AC6 asks for.
 
 ## Decisions
 

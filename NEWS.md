@@ -595,7 +595,9 @@ changes with no deprecation shims (the package is still pre-1.0 and soaking).
   `separate_audio_video()` (only its `_batch` sibling takes the argument) while
   omitting the metadata readers and `segment_video()` entirely. The metadata
   vignette's batching section, which was silent about the argument, now covers
-  it too. that asking for `"nvenc"` queries your
+  it too.
+
+* Every verb taking `hardware` now says that asking for `"nvenc"` queries your
   FFmpeg build for the encoder while the command is being assembled, so a call
   that re-encodes the video runs the binary even with `run = FALSE`. Asking for
   `"nvenc"` alongside a stream copy is an error those pages already describe —

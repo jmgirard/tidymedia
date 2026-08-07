@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m55-package-topic-parallel-docs`
+- **Branch/PR:** `m55-package-topic-parallel-docs` / https://github.com/jmgirard/tidymedia/pull/58
 
 ## Goal
 

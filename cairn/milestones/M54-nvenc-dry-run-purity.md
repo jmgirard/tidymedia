@@ -1,6 +1,6 @@
 # M54: Correct the `run = FALSE` purity claim for the nvenc encoder probe
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -86,7 +86,7 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
       `devtools::document()`.
 - [x] T6 Add the Rd guard test per AC4, reusing `rd_sources()` / `rd_param_names()` from
       `tests/testthat/test-audio-index-docs.R:20-40`.
-- [ ] T7 Run `devtools::document()`, `devtools::test()`, `devtools::check()`; confirm the
+- [x] T7 Run `devtools::document()`, `devtools::test()`, `devtools::check()`; confirm the
       CRLF count and the `00check.log` `Status:` line.
 
 ## Work log
@@ -109,6 +109,9 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
 
 - 2026-08-06: T5 done. The probe sentence added to all 16 `@param hardware` blocks in `R/ffmpeg.R` (there is no `@inheritParams` tying them together -- the docs are themselves the kind of hand-list D024 went stale as). Byte-level edit: 48 insertions = 16 blocks x 3 lines, CRLF 5652 -> 5700, zero bare LF. `devtools::document()` regenerated; all 16 `hardware`-bearing Rd topics carry it, measured by comma-splitting `\item{}` names.
 - 2026-08-06: T6 done. `rd_sources()`, `rd_param_names()` and `topics_documenting()` lifted out of `test-audio-index-docs.R` into a new `tests/testthat/helper-rd.R`, so M51's guard and this one share one implementation rather than duplicating the two-shape Rd source; `links_to_topic()` stayed behind as audio-specific. New `tests/testthat/test-nvenc-docs.R` asserts the sentence on every `hardware`-documenting topic plus the converse (the sentence never appears on a topic without the argument), so a package-wide paste cannot make it pass vacuously. Green, and M51's guard still passes (43 expectations). Discrimination proven: deleting the sentence from `man/crop_video.Rd` turned it red naming that topic.
+
+- 2026-08-06: T7 done, and it caught a real defect in the T5+T6 commit. Mutation-probing the Rd guard, I restored `man/crop_video.Rd` with `git checkout` -- which restores from the INDEX, and T5's `document()` output was not staged yet, so the restore reverted the generated sentence rather than only my mutation, and 77dce2e shipped that file without it. This is precisely the trap LESSONS M44 records ("commit the baseline before mutation-probing"); the guard written at T6 is what surfaced it. Verified by stashing back to 77dce2e: FAIL 1, and FAIL 0 with the regenerated file. `devtools::document()` now produces no further diff.
+- 2026-08-06: T7 evidence. `devtools::test()`: FAIL 0, PASS 3472, SKIP 5. `devtools::check()`: `Status: OK` read from `00check.log:68`, 0 errors / 0 warnings / 0 notes. The doc guard was confirmed to RUN under check rather than skip (LESSONS M51): check-run totals are identical to local (PASS 3472, SKIP 5) and all 5 skips are `test-nvenc.R`'s GPU gate, so the `Rd_db()` fallback path works. AC5: all four `resolve_hw_encoder()` call sites pass `call =` (the one grep hit lacking it is a comment). AC7: 0 bare-LF endings, 5700 CRLF, diffstat vs master 50 insertions / 2 deletions. NEWS.md gained a Bug fixes entry for the corrected blame and a Documentation entry for the stated probe.
 
 ## Decisions
 

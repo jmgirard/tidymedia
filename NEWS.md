@@ -272,6 +272,12 @@
 
 ## Bug fixes
 
+* When `hardware = "nvenc"` is requested on a machine whose FFmpeg does not
+  list the encoder, `standardize_video()` and `format_for_web()` now report the
+  error against the function you called rather than against an internal helper.
+  Their `_batch` siblings improve the same way. The other verbs taking
+  `hardware` already did this.
+
 * Metadata values containing a newline no longer corrupt the probe output.
   `probe_all()` and the `probe_*()` shortcuts read FFprobe's per-stream output
   as one `key=value` pair per line, so a tag whose value spanned lines — a
@@ -574,6 +580,12 @@ changes with no deprecation shims (the package is still pre-1.0 and soaking).
   remains reexported.
 
 ## Documentation
+
+* Every verb taking `hardware` now says that asking for `"nvenc"` queries your
+  FFmpeg build for the encoder while the command is being assembled, so such a
+  call runs the binary even with `run = FALSE`. This was always true; only the
+  documentation is new. `run = FALSE` promises you the command that would run,
+  not a call that touches nothing.
 
 * New `?audio_stream` help page explains the two 0-based audio arguments the
   package exposes and how they differ: `audio_stream` counts one input's audio

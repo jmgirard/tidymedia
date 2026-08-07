@@ -1,6 +1,6 @@
 # M54: Correct the `run = FALSE` purity claim for the nvenc encoder probe
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -101,7 +101,7 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
       the NEWS entry and the ROADMAP candidate row; repair `test-nvenc.R`'s vacuous control.
 - [x] T12 (review return, D4) Carry T8's conditional wording into `NEWS.md`'s Documentation
       entry, which still states round 1's unconditional proposition.
-- [ ] T13 Re-run `devtools::document()`, `devtools::test()`, `devtools::check()`; confirm
+- [x] T13 Re-run `devtools::document()`, `devtools::test()`, `devtools::check()`; confirm
       line-ending integrity and the `00check.log` `Status:` line.
 
 ## Work log
@@ -142,6 +142,7 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
 
 - 2026-08-06: T11 done (D1/D2/D3). Re-measured all sixteen `hardware`-bearing verbs under `tidymedia.nvenc_encoders = character(0)`, asserting each abort's MESSAGE is the nvenc-unavailable one before reading its `conditionCall` — the step T9 skipped. That check caught four of my own first-pass cases aborting on malformed inputs instead (`anonymize_video` missing `regions`, `crop_video` on transposed positional args, and the `regions` / `videofile`-`audiofile` columns of two `_batch` tables). With well-formed inputs the result is uniform: all eight `_batch` verbs blame `purrr::pmap(jobs, .f, ...)`, `picture_in_picture_batch()` included, plus the scalar `segment_video()`; the other seven scalars blame themselves. NEWS and the ROADMAP row corrected to drop the exclusion; `test-nvenc.R`'s vacuous control replaced by `picture_in_picture_batch()` with its real `overlay` column plus `standardize_video()` as a self-blaming control, and `blamed()` now asserts the failure identity in every case. Both repairs proven by mutation: restoring the `inset` column reddens the identity assertion naming the schema error, and reverting `call = call` at `R/ffmpeg.R:1407` reddens the new control. `R/ffmpeg.R` restored — 5708 CRLF, 0 bare LF. nvenc suite: FAIL 0, PASS 82, SKIP 3.
 - 2026-08-06: T12 done (D4). `NEWS.md`'s Documentation entry now carries T8's condition — the probe claim is limited to a call that re-encodes the video, and the four stream-copy topics are named with the conflict that aborts them first. T8's behavioral guard in `test-nvenc-docs.R` (0 probes across the four aborts against 1 for the re-encoding control) is the test behind the entry's claim.
+- 2026-08-06: T13 done; all four round-2 findings closed, status back to `review`. `devtools::document()` no diff. `devtools::check()`: `Status: OK` at `00check.log:68`, 0 errors / 0 warnings / 0 notes. Test totals under check equal local (FAIL 0, PASS 3491, SKIP 5) and the skip count is unchanged, so the repaired blame test is not silently skipping (LESSONS M51). `pkgdown::check_pkgdown()` "No problems found". `cairn_validate` exit 0, all 16 checks PASS; its one advisory is the >10-task split tripwire, which two review returns produced and which splitting at this point would not serve. AC7 re-measured: 0 bare-LF endings, 5708 CRLF, `git diff --stat master -- R/ffmpeg.R` 58 insertions / 2 deletions.
 
 ## Decisions
 

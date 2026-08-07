@@ -35,9 +35,11 @@ Batch-wide (not a per-row column). See \code{\link{has_nvenc}}.
 Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 a \code{"nvenc"} call that re-encodes the video runs the binary while the
 command is built, even under \code{run = FALSE}.
-Availability is checked once at this verb's own front door, before any
-row runs, so an unavailable encoder aborts naming this function rather
-than the internal fan-out it would otherwise be reported against.}
+Availability is checked at this verb's own front door, before any row
+runs, so an unavailable encoder aborts naming this function rather than
+the internal fan-out it would otherwise be reported against. Only the
+encoders the call actually needs are checked: a row that copies rather
+than re-encodes names none.}
 
 \item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
 unavailable, re-encode with software libx264 and a message (\code{TRUE})

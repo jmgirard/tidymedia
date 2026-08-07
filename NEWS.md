@@ -315,8 +315,14 @@
   family is checked: a build listing `h264_nvenc` but not `av1_nvenc` refuses
   the table rather than failing partway through it.
 
-  Nothing else changes. `fallback = TRUE` behaves exactly as before, and no
-  call that used to succeed now fails.
+  Only the encoders a call actually needs are checked, so a row that copies
+  rather than re-encodes is not held to an encoder it never asks for. One
+  consequence for a jobs table that both copies and re-encodes: such a call can
+  fail two ways, and on a machine missing the encoder it now reports the missing
+  encoder where it used to report the copy conflict first.
+
+  `fallback = TRUE` behaves exactly as before, and no call that used to succeed
+  now fails.
 
 * Metadata values containing a newline no longer corrupt the probe output.
   `probe_all()` and the `probe_*()` shortcuts read FFprobe's per-stream output

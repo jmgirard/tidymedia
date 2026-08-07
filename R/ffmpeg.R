@@ -1772,9 +1772,11 @@ derive_anonymized_names <- function(input) {
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 #'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
 #'   command is built, even under \code{run = FALSE}.
-#'   Availability is checked once at this verb's own front door, before any
-#'   row runs, so an unavailable encoder aborts naming this function rather
-#'   than the internal fan-out it would otherwise be reported against.
+#'   Availability is checked at this verb's own front door, before any row
+#'   runs, so an unavailable encoder aborts naming this function rather than
+#'   the internal fan-out it would otherwise be reported against. Only the
+#'   encoders the call actually needs are checked: a row that copies rather
+#'   than re-encodes names none.
 #' @param fallback A logical applied to every row: when \code{hardware = "nvenc"}
 #'   but nvenc is unavailable, re-encode with the software \code{video_codec} and
 #'   a message (\code{TRUE}) instead of aborting (\code{FALSE}, default).
@@ -2658,9 +2660,11 @@ apply_audio_codec <- function(object, audio_codec, call = rlang::caller_env()) {
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 #'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
 #'   command is built, even under \code{run = FALSE}.
-#'   Availability is checked once at this verb's own front door, before any
-#'   row runs, so an unavailable encoder aborts naming this function rather
-#'   than the internal fan-out it would otherwise be reported against.
+#'   Availability is checked at this verb's own front door, before any row
+#'   runs, so an unavailable encoder aborts naming this function rather than
+#'   the internal fan-out it would otherwise be reported against. Only the
+#'   encoders the call actually needs are checked: a row that copies rather
+#'   than re-encodes names none.
 #'   The stream-copy conflict named under \code{reencode} is caught first, so
 #'   such a call aborts without probing.
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
@@ -2923,9 +2927,11 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 #'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
 #'   command is built, even under \code{run = FALSE}.
-#'   Availability is checked once at this verb's own front door, before any
-#'   row runs, so an unavailable encoder aborts naming this function rather
-#'   than the internal fan-out it would otherwise be reported against.
+#'   Availability is checked at this verb's own front door, before any row
+#'   runs, so an unavailable encoder aborts naming this function rather than
+#'   the internal fan-out it would otherwise be reported against. Only the
+#'   encoders the call actually needs are checked: a row that copies rather
+#'   than re-encodes names none.
 #'   The stream-copy conflict named under \code{reencode} is caught first, so
 #'   such a call aborts without probing.
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
@@ -3467,9 +3473,11 @@ derive_standardized_names <- function(input) {
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 #'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
 #'   command is built, even under \code{run = FALSE}.
-#'   Availability is checked once at this verb's own front door, before any
-#'   row runs, so an unavailable encoder aborts naming this function rather
-#'   than the internal fan-out it would otherwise be reported against.
+#'   Availability is checked at this verb's own front door, before any row
+#'   runs, so an unavailable encoder aborts naming this function rather than
+#'   the internal fan-out it would otherwise be reported against. Only the
+#'   encoders the call actually needs are checked: a row that copies rather
+#'   than re-encodes names none.
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
 #'   unavailable, re-encode with the software \code{video_codec} and a message
 #'   (\code{TRUE}) instead of aborting (\code{FALSE}, default).
@@ -4703,9 +4711,11 @@ derive_web_names <- function(input) {
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 #'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
 #'   command is built, even under \code{run = FALSE}.
-#'   Availability is checked once at this verb's own front door, before any
-#'   row runs, so an unavailable encoder aborts naming this function rather
-#'   than the internal fan-out it would otherwise be reported against.
+#'   Availability is checked at this verb's own front door, before any row
+#'   runs, so an unavailable encoder aborts naming this function rather than
+#'   the internal fan-out it would otherwise be reported against. Only the
+#'   encoders the call actually needs are checked: a row that copies rather
+#'   than re-encodes names none.
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
@@ -4839,9 +4849,11 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 #'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
 #'   command is built, even under \code{run = FALSE}.
-#'   Availability is checked once at this verb's own front door, before any
-#'   row runs, so an unavailable encoder aborts naming this function rather
-#'   than the internal fan-out it would otherwise be reported against.
+#'   Availability is checked at this verb's own front door, before any row
+#'   runs, so an unavailable encoder aborts naming this function rather than
+#'   the internal fan-out it would otherwise be reported against. Only the
+#'   encoders the call actually needs are checked: a row that copies rather
+#'   than re-encodes names none.
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
 #'   unavailable, re-encode with software libx264 and a message (\code{TRUE})
 #'   instead of aborting (\code{FALSE}, default).
@@ -4962,9 +4974,11 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 #'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
 #'   command is built, even under \code{run = FALSE}.
-#'   Availability is checked once at this verb's own front door, before any
-#'   row runs, so an unavailable encoder aborts naming this function rather
-#'   than the internal fan-out it would otherwise be reported against.
+#'   Availability is checked at this verb's own front door, before any row
+#'   runs, so an unavailable encoder aborts naming this function rather than
+#'   the internal fan-out it would otherwise be reported against. Only the
+#'   encoders the call actually needs are checked: a row that copies rather
+#'   than re-encodes names none.
 #'   The stream-copy conflict above is caught first, so such a call aborts
 #'   without probing.
 #' @param audio_stream `r audio_stream_param("write to each \\code{audiofile}", "keeps", "every", batch = TRUE, extra = audio_stream_extras$separation_container)`
@@ -5665,9 +5679,11 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 #'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
 #'   command is built, even under \code{run = FALSE}.
-#'   Availability is checked once at this verb's own front door, before any
-#'   row runs, so an unavailable encoder aborts naming this function rather
-#'   than the internal fan-out it would otherwise be reported against.
+#'   Availability is checked at this verb's own front door, before any row
+#'   runs, so an unavailable encoder aborts naming this function rather than
+#'   the internal fan-out it would otherwise be reported against. Only the
+#'   encoders the call actually needs are checked: a row that copies rather
+#'   than re-encodes names none.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -5801,9 +5817,11 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 #'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
 #'   command is built, even under \code{run = FALSE}.
-#'   Availability is checked once at this verb's own front door, before any
-#'   row runs, so an unavailable encoder aborts naming this function rather
-#'   than the internal fan-out it would otherwise be reported against.
+#'   Availability is checked at this verb's own front door, before any row
+#'   runs, so an unavailable encoder aborts naming this function rather than
+#'   the internal fan-out it would otherwise be reported against. Only the
+#'   encoders the call actually needs are checked: a row that copies rather
+#'   than re-encodes names none.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}

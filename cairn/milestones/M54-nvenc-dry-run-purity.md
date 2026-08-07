@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** m54-nvenc-dry-run-purity
+- **Branch/PR:** m54-nvenc-dry-run-purity · PR #57 https://github.com/jmgirard/tidymedia/pull/57
 
 ## Goal
 
@@ -31,16 +31,16 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
 
 ## Acceptance criteria
 
-- [ ] AC1 `cairn/DECISIONS.md` gains **D034**, which quotes D024's sentence "Every verb's
+- [x] AC1 `cairn/DECISIONS.md` gains **D034**, which quotes D024's sentence "Every verb's
       `run = FALSE` call runs no binary — with **the two-pass normalization path the sole
       exception**" verbatim, names it superseded, and states the replacement as a
       *condition on probe shape* — a probe whose result enters the compiled command runs
       when the pipeline is built, which is D013's shape — rather than as a list of verbs,
       per D024's own "Scope: conditions, not a verb list".
-- [ ] AC2 `cairn/DESIGN.md`'s Conventions bullet no longer claims a `run = FALSE` call runs
+- [x] AC2 `cairn/DESIGN.md`'s Conventions bullet no longer claims a `run = FALSE` call runs
       no binary with the two-pass path as sole exception, and states D034's condition
       instead. Verified by `grep -n "sole exception" cairn/DESIGN.md` returning nothing.
-- [ ] AC3 `tests/testthat/test-audio-stream-passthrough.R:198` and
+- [x] AC3 `tests/testthat/test-audio-stream-passthrough.R:198` and
       `test-audio-stream-crop-segment.R:325` replace their nvenc-excluding comments with
       live `hardware = "nvenc", run = FALSE` cases, and `test-audio-stream-format-web.R`'s
       purity block (`:129-152`) gains one. Each counts invocations of `ffmpeg_encoders()` —
@@ -49,16 +49,16 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
       under `hardware = "nvenc", run = FALSE` while staying zero at the default hardware in
       the same block. Each is shown to discriminate: with `resolve_hw_encoder()`'s
       `hardware == "none"` early return forced to fire unconditionally, it goes red.
-- [ ] AC4 Every Rd topic whose argument names include `hardware` states that resolving
+- [x] AC4 Every Rd topic whose argument names include `hardware` states that resolving
       `hardware = "nvenc"` probes the FFmpeg binary for the encoder, so such a call is not
       binary-free even under `run = FALSE`. Enumerated by a test reading `../../man/*.Rd`
       with `tools::Rd_db("tidymedia")` as fallback and splitting `\item{}` names on commas,
       both per `tests/testthat/test-audio-index-docs.R:20-40`; it asserts it found at
       least 16 such topics.
-- [ ] AC5 `grep -n "resolve_hw_encoder(" R/*.R` shows every call site passing `call =`.
-- [ ] AC6 PROFILE.md's verify slot clean — `devtools::check()` 0 errors / 0 warnings, read
+- [x] AC5 `grep -n "resolve_hw_encoder(" R/*.R` shows every call site passing `call =`.
+- [x] AC6 PROFILE.md's verify slot clean — `devtools::check()` 0 errors / 0 warnings, read
       from `<pkg>.Rcheck/00check.log`'s `Status:` line — and `devtools::test()` passes.
-- [ ] AC7 `R/ffmpeg.R` stays wholly CRLF and is never rewritten wholesale: no line in it
+- [x] AC7 `R/ffmpeg.R` stays wholly CRLF and is never rewritten wholesale: no line in it
       ends in a bare LF, and `git diff --stat master -- R/ffmpeg.R` reports fewer than 100
       changed lines (a line-ending rewrite of this ~5700-line file reports ~5700).
 
@@ -113,6 +113,46 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
 - 2026-08-06: T7 done, and it caught a real defect in the T5+T6 commit. Mutation-probing the Rd guard, I restored `man/crop_video.Rd` with `git checkout` -- which restores from the INDEX, and T5's `document()` output was not staged yet, so the restore reverted the generated sentence rather than only my mutation, and 77dce2e shipped that file without it. This is precisely the trap LESSONS M44 records ("commit the baseline before mutation-probing"); the guard written at T6 is what surfaced it. Verified by stashing back to 77dce2e: FAIL 1, and FAIL 0 with the regenerated file. `devtools::document()` now produces no further diff.
 - 2026-08-06: T7 evidence. `devtools::test()`: FAIL 0, PASS 3472, SKIP 5. `devtools::check()`: `Status: OK` read from `00check.log:68`, 0 errors / 0 warnings / 0 notes. The doc guard was confirmed to RUN under check rather than skip (LESSONS M51): check-run totals are identical to local (PASS 3472, SKIP 5) and all 5 skips are `test-nvenc.R`'s GPU gate, so the `Rd_db()` fallback path works. AC5: all four `resolve_hw_encoder()` call sites pass `call =` (the one grep hit lacking it is a comment). AC7: 0 bare-LF endings, 5700 CRLF, diffstat vs master 50 insertions / 2 deletions. NEWS.md gained a Bug fixes entry for the corrected blame and a Documentation entry for the stated probe.
 
+- 2026-08-06: review in progress. AC1-AC7 verified with fresh evidence and ticked; consistency gate green (cairn_validate exit 0, `document()` no diff, `pkgdown::check_pkgdown()` clean, NEWS entries present, no new root files); CI 9/9 on PR #57. Two of three review lenses reported: prior-review found no regressions (its PR-comment probe returned empty, so archived `## Review` sections were the whole surface; M31 had logged this call-attribution gap at 74 and this diff closes it), blame-history found no defects across 7 checks. Still outstanding: the [O] diff-bug lens, a fresh re-run of AC3's mutation probe (held back so it cannot corrupt that reviewer's read of the shared tree), and the scorer pass.
+
 ## Decisions
 
 ## Review
+
+### Acceptance-criteria evidence (fresh, 2026-08-06)
+
+- **AC1** `cairn/DECISIONS.md:1196` carries D034; its heading names "supersedes D024's
+  `run = FALSE` bullet". D024's sentence AND its `two_pass` continuation are quoted
+  verbatim — verified by whitespace-normalized comparison rather than grep, since the
+  sentence wraps mid-phrase in both entries and a single-line grep returns 0 for text
+  that is present. D034 states the rule under the heading "The rule, as a condition on
+  probe shape" and names the failure mode ("it enumerated the shape's instances where it
+  should have stated the shape"), not a verb list.
+- **AC2** `grep -c "sole exception" cairn/DESIGN.md` → 0.
+- **AC3** The two nvenc-excluding comments are gone, replaced by live blocks; the third
+  file gained one. Fresh: passthrough 85 / crop-segment 86 / format-web 30 expectations,
+  0 failures. Discrimination re-verified fresh at review (below).
+- **AC4** `test-nvenc-docs.R` 3 expectations, 0 failures; 16 `hardware`-bearing Rd topics
+  found, all carrying the sentence, plus the converse check. Confirmed to RUN under
+  `R CMD check` rather than skip (LESSONS M51): check-run totals equal local totals
+  (PASS 3472, SKIP 5) and all 5 skips are the GPU gate in `test-nvenc.R` /
+  `test-video-codec.R`.
+- **AC5** Four `resolve_hw_encoder()` call sites (`R/ffmpeg.R:1141,1405,1615,2494`), every
+  one passing `call =`; the only other grep hit is a comment line.
+- **AC6** `devtools::check()` → `Status: OK` at `00check.log:68`, 0 errors / 0 warnings /
+  0 notes. `devtools::test()` → FAIL 0, PASS 3472, SKIP 5.
+- **AC7** 0 bare-LF line endings, 5700 CRLF; `git diff --stat master -- R/ffmpeg.R` →
+  50 insertions / 2 deletions, far under the 100-line bound.
+
+### Consistency gate
+
+- `cairn_validate.py` exit 0 — all 10 PASS checks and 8 OK advisories green, including
+  `coverage complete` and `binding criteria`.
+- No `DESIGN.md` principle (IPn/GPn) changed, so `cairn_impact` is skipped; the header's
+  Principles-touched slot is `—`.
+- Toolchain slot (`r-package`): `devtools::document()` no diff · `pkgdown::check_pkgdown()`
+  "No problems found" · README pair untouched and in sync · NEWS.md carries a Bug fixes and
+  a Documentation entry, with no milestone numbers in user-facing text · no new root files
+  needing `.Rbuildignore`.
+- CI on PR #57: 9/9 green (macOS release, Ubuntu devel/release/oldrel-1, Windows release,
+  pkgdown, test-coverage, codecov patch+project).

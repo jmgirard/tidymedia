@@ -14,7 +14,7 @@ _2026-08-06: M54–M56 planned. Three candidate rows absorbed (the nvenc `run = 
 | M51 | Make the package's two 0-based audio indices legible | done | M49, M50 | normal | milestones/archive/M51-audio-index-docs.md |
 | M52 | Collapse `probe_one()`'s per-stream FFprobe loop into one call | done | — | normal | milestones/archive/M52-probe-one-single-call.md |
 | M53 | Give `probe_all()` a `parallel =` argument | done | M52 | normal | milestones/archive/M53-probe-all-parallel.md |
-| M54 | Correct the `run = FALSE` purity claim for the nvenc encoder probe | planned | — | normal | milestones/M54-nvenc-dry-run-purity.md |
+| M54 | Correct the `run = FALSE` purity claim for the nvenc encoder probe | in-progress | — | normal | milestones/M54-nvenc-dry-run-purity.md |
 | M55 | A package landing topic, and a `parallel` enumeration that matches the code | planned | — | normal | milestones/M55-package-topic-parallel-docs.md |
 | M56 | A bad codec token names the verb's argument, never Layer 1's | planned | M54 | normal | milestones/M56-codec-token-blame.md |
 

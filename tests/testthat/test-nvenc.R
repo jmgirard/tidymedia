@@ -70,6 +70,47 @@ test_that("resolve_hw_encoder() falls back to software with a message", {
   expect_equal(out, "libx264")
 })
 
+# An nvenc-unavailable abort must name the VERB the user called, never the
+# internal *_pipeline() helper (M41's blame convention; M54). resolve_hw_encoder()
+# aborts with call = call, so a call site that omits `call =` blames itself.
+# crop_video()/anonymize_video() thread it and are the discriminating controls:
+# if this test ever passed for the wrong reason, they would fail too.
+
+test_that("an nvenc-unavailable abort names the verb, not its pipeline helper", {
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  infile <- withr::local_tempfile(fileext = ".mp4")
+  file.create(infile)
+
+  blamed <- function(expr) {
+    err <- rlang::catch_cnd(expr, classes = "error")
+    deparse(conditionCall(err))[[1]]
+  }
+
+  expect_match(
+    blamed(standardize_video(infile, "o.mp4", hardware = "nvenc", run = FALSE)),
+    "^standardize_video\\("
+  )
+  expect_match(
+    blamed(format_for_web(infile, "o.mp4", hardware = "nvenc", run = FALSE)),
+    "^format_for_web\\("
+  )
+  # Controls: these two already passed `call =` before M54.
+  expect_match(
+    blamed(crop_video(infile, "o.mp4",
+      width = 10, height = 10,
+      hardware = "nvenc", run = FALSE
+    )),
+    "^crop_video\\("
+  )
+  expect_match(
+    blamed(anonymize_video(infile, "o.mp4",
+      regions = list(c(1, 1, 2, 2)),
+      hardware = "nvenc", run = FALSE
+    )),
+    "^anonymize_video\\("
+  )
+})
+
 # The NULL sentinel (M34/D016): "leave the codec alone". codec_family() errors
 # on NULL, so the sentinel is resolved in its own branch before that call.
 

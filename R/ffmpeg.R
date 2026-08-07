@@ -1132,7 +1132,7 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
                                     call = rlang::caller_env()) {
   # The recipe stays H.264 (family fixed); hardware = "nvenc" swaps libx264 for
   # h264_nvenc when available. Layer 2 only computes the codec name (D009, IP1).
-  video_codec <- resolve_hw_encoder("libx264", hardware, fallback)
+  video_codec <- resolve_hw_encoder("libx264", hardware, fallback, call = call)
   p <- ffm_files(input, output)
   p <- ffm_crop(p, width = "floor(in_w/2)*2", height = "floor(in_h/2)*2")
   # This verb emitted NO map until M49, so FFmpeg's implicit selection picked
@@ -1390,7 +1390,7 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
                                  hardware = "none", fallback = FALSE,
                                  audio_stream = NULL,
                                  call = rlang::caller_env()) {
-  video_codec <- resolve_hw_encoder(video_codec, hardware, fallback)
+  video_codec <- resolve_hw_encoder(video_codec, hardware, fallback, call = call)
   p <- ffm_files(input, output)
   # Resolution: exact when both given; aspect-preserving with an even output
   # dimension (FFmpeg's -2) when only one. ffm_scale() validates each dimension

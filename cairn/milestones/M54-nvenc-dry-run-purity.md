@@ -1,11 +1,11 @@
 # M54: Correct the `run = FALSE` purity claim for the nvenc encoder probe
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** m54-nvenc-dry-run-purity
 
 ## Goal
 
@@ -70,7 +70,7 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
 
 ## Tasks
 
-- [ ] T1 Thread `call = call` into `resolve_hw_encoder()` at `R/ffmpeg.R:1135`
+- [x] T1 Thread `call = call` into `resolve_hw_encoder()` at `R/ffmpeg.R:1135`
       (`format_for_web_pipeline()`) and `R/ffmpeg.R:1393` (`standardize_pipeline()`).
       `R/ffmpeg.R` is the repo's only CRLF file: read and write it as bytes restoring
       `\r\n`, and check that one file's diffstat before committing (LESSONS M35/M48).
@@ -91,6 +91,8 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
 - 2026-08-06: criteria audit ([O], fresh context) returned 9 findings on this milestone's criteria: DESIGN.md left uncorrected by AC1; AC1's verb-list scoping contradicting its own no-hand-list clause; "three" comment-excluding tests where only two exist; the `tidymedia.nvenc_encoders` option seam making AC3 red for the wrong reason; AC4's literal `\item{hardware}` scan missing six `\item{hardware, fallback}` topics; AC4's Rd-source order reversed against the cited precedent; and the mandated sentence contradicted on `segment_video(reencode = FALSE)`, which aborts before probing. All fixed before AC wording was written; none needed a gate question. AC5 and AC7 passed all three questions.
 - 2026-08-06: plan gate chose correcting the record over making the probe lazy, because `resolve_hw_encoder()` is a probe whose result enters the compiled command — D024's own taxonomy calls that D013's analyze-then-build shape, already licensed — and because the only true lazy seam is `ffm_finish()`/`ffm_batch()`, the sole readers of `run`, which needs the pipeline-object hook D024/RR02 Q3 rejected, and would force a dry run on a GPU-less machine to print a command that aborts; falsified by a report of a dry run's compiled command differing from what a subsequent `run = TRUE` call executes.
 - 2026-08-06: plan gate kept the per-row re-probe cost out, because caching `has_nvenc()` / `ffmpeg_encoders()` needs its own lifetime decision (a user installing FFmpeg mid-session), which is a separate question from whether the probe is licensed; falsified by a measured `_batch` stall attributable to repeated `ffmpeg -encoders` calls.
+
+- 2026-08-06: T1 done. Reproduced the blame defect before fixing: with `tidymedia.nvenc_encoders = character(0)`, `standardize_video(hardware = "nvenc", run = FALSE)` blamed `standardize_pipeline(...)` and `format_for_web(...)` blamed `format_for_web_pipeline(...)`, while `crop_video` and `anonymize_video` already named the verb. Added a test to `tests/testthat/test-nvenc.R` carrying those two already-correct verbs as discriminating controls, confirmed red on exactly the two targets, then threaded `call = call` at `R/ffmpeg.R:1135,1393`. `devtools::test()`: 0 failures, 3458 passing, 5 skips; the 4 warnings are the pre-existing M44 dropped-track diagnostic in files this diff does not touch. `R/ffmpeg.R` edited as bytes: CRLF count 5652 unchanged, diffstat 2 insertions / 2 deletions.
 
 ## Decisions
 

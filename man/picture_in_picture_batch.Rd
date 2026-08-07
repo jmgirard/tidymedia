@@ -51,8 +51,8 @@ naming an encoder on such a row is an error.}
 applied to the whole batch (a property of the machine, not of a row, so
 neither is read as a \code{jobs} column). See \code{\link[=picture_in_picture]{picture_in_picture()}}.
 Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-a \code{"nvenc"} call runs the binary while the command is built, even
-under \code{run = FALSE}.}
+a \code{"nvenc"} call that re-encodes the video runs the binary while the
+command is built, even under \code{run = FALSE}.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}

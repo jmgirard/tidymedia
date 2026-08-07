@@ -46,8 +46,10 @@ alongside \code{video_codec = "copy"} is an error: name an encoder or pass
 \code{video_codec = NULL}. See \code{\link{has_nvenc}} for availability and
 its caveats.
 Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-a \code{"nvenc"} call runs the binary while the command is built, even
-under \code{run = FALSE}.}
+a \code{"nvenc"} call that re-encodes the video runs the binary while the
+command is built, even under \code{run = FALSE}.
+The stream-copy conflict above is caught first, so such a call aborts
+without probing.}
 
 \item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
 unavailable, encode in software with a message (\code{TRUE}) instead of

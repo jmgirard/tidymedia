@@ -88,6 +88,13 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
       `tests/testthat/test-audio-index-docs.R:20-40`.
 - [x] T7 Run `devtools::document()`, `devtools::test()`, `devtools::check()`; confirm the
       CRLF count and the `00check.log` `Status:` line.
+- [x] T8 (review return, F2) Make the roxygen probe sentence conditional on re-encoding and
+      state the stream-copy exception on the four topics it applies to; guard both the
+      wording and the behavior it describes.
+- [ ] T9 (review return, F1) Narrow the NEWS blame entry to what the scalar verbs do, and
+      add a ROADMAP candidate row for the `_batch` fan-out blame gap.
+- [ ] T10 Re-run `devtools::document()`, `devtools::test()`, `devtools::check()`; confirm
+      line-ending integrity and the `00check.log` `Status:` line.
 
 ## Work log
 
@@ -116,6 +123,10 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
 - 2026-08-06: review in progress. AC1-AC7 verified with fresh evidence and ticked; consistency gate green (cairn_validate exit 0, `document()` no diff, `pkgdown::check_pkgdown()` clean, NEWS entries present, no new root files); CI 9/9 on PR #57. Two of three review lenses reported: prior-review found no regressions (its PR-comment probe returned empty, so archived `## Review` sections were the whole surface; M31 had logged this call-attribution gap at 74 and this diff closes it), blame-history found no defects across 7 checks. Still outstanding: the [O] diff-bug lens, a fresh re-run of AC3's mutation probe (held back so it cannot corrupt that reviewer's read of the shared tree), and the scorer pass.
 
 - 2026-08-06: REVIEW RETURNED to in-progress. Two findings at 92. (1) `NEWS.md:275-279` states that the `_batch` siblings gained the corrected blame and that the other `hardware` verbs already had it; measured at review, every `_batch` verb still aborts naming `purrr::pmap(jobs, .f, ...)`, because threading `call =` into the pipeline builders reaches the scalar verbs only — the fan-out shape LESSONS M47/M48-F1 already records. (2) The roxygen sentence added to all 16 `@param hardware` blocks claims unconditionally that a `"nvenc"` call runs the binary under `run = FALSE`; it is false on `separate_audio_video` (at its DEFAULT `video_codec = "copy"`), on `segment_video(reencode = FALSE)`, and on both `_batch` siblings, all of which abort before resolving — 0 probes measured against 1 for the control. The plan-time criteria audit caught this case and the fix reached AC4's wording but never the sentence. Twelve further findings scored below 80 and are logged in the Review section, not actioned.
+
+- 2026-08-06: return gate. F1: correct the NEWS claim rather than give the `_batch` verbs the blame fix, because LESSONS M47/M48-F1 records that a fan-out verb's `caller_env()` lands on `purrr::pmap()`'s anonymous closure whatever the pipeline threads, so the fix is a front-door guard in six verbs — new runtime behavior outside this milestone's stated Scope, and a guard the same lesson says no test can pin. F2: tailor the sentence per topic rather than hedge it uniformly, so a reader can tell which of their calls probe.
+
+- 2026-08-06: T8 done (F2). Measured first: with `tidymedia.nvenc_encoders = character(0)` the four stream-copy topics do not skip the probe silently — `hardware = "nvenc"` alongside a stream copy is an error each topic already documents, and it fires before resolution (`separate_audio_video`/`_batch` at their default `video_codec = "copy"`: "`hardware` needs a re-encoding `video_codec`"; `segment_video`/`_batch` at `reencode = FALSE`: "`video_codec` and `hardware` need a re-encoding cut"). So the gate-approved wording was corrected to say the conflict aborts the call rather than that nothing is probed. All 16 blocks now condition the claim on re-encoding; the four gained one sentence pointing at the conflict they already state. `test-nvenc-docs.R` gained two guards — the exception clause on exactly those four topics, and a behavioral block counting `ffmpeg_encoders()` at 0 across all four aborts against 1 for the re-encoding control. Both proven to discriminate by mutation from a staged baseline (LESSONS M44): blanking the clause in `man/segment_video.Rd` reddened the topic-set guard, and forcing `segment_video_pipeline()`'s `!reencode` conflict branch dead reddened 3 expectations in the behavioral one. `R/ffmpeg.R` edited as bytes: CRLF 5700 -> 5708, 0 bare LF. `devtools::test()`: FAIL 0, PASS 3479, SKIP 5; the 4 warnings are the pre-existing M44 dropped-track diagnostic.
 
 ## Decisions
 

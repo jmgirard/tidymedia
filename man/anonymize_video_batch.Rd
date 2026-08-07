@@ -68,8 +68,8 @@ row, unless \code{jobs} carries a \code{pixel_format} column.
 encoding. Batch-wide (a machine property), not a per-row column; a
 \code{hardware} column in \code{jobs} is ignored. See \code{\link{has_nvenc}}.
 Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-a \code{"nvenc"} call runs the binary while the command is built, even
-under \code{run = FALSE}.}
+a \code{"nvenc"} call that re-encodes the video runs the binary while the
+command is built, even under \code{run = FALSE}.}
 
 \item{fallback}{A logical applied to every row: when \code{hardware = "nvenc"}
 but nvenc is unavailable, re-encode with the software \code{video_codec} and

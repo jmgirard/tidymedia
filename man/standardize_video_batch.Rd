@@ -76,8 +76,8 @@ unless \code{jobs} carries a \code{pixel_format} column.
 per-row column). See \code{\link{standardize_video}} and
 \code{\link{has_nvenc}}.
 Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-a \code{"nvenc"} call runs the binary while the command is built, even
-under \code{run = FALSE}.}
+a \code{"nvenc"} call that re-encodes the video runs the binary while the
+command is built, even under \code{run = FALSE}.}
 
 \item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
 unavailable, re-encode with the software \code{video_codec} and a message

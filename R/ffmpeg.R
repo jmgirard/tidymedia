@@ -1930,6 +1930,14 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   # of the same name; `...` also forwards ffm_batch options (verify/manifest/...)
   # to the runner, never to the pipeline builder. The `regions` list-column
   # arrives unwrapped per row (pmap passes each cell's data frame by name).
+  # nvenc availability, re-checked here so an unavailable encoder blames this
+  # verb instead of purrr::pmap() (M57/D035). Immediately before ffm_batch(),
+  # which is where M41 puts a guard added for blame, so every check above still
+  # reports first. The sweep covers each distinct family a `video_codec` column
+  # spells, never only the argument's.
+  check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
+                        fallback)
+
   ffm_batch(
     jobs,
     function(input, output, regions, ...) {
@@ -3000,6 +3008,20 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
   # `reencode` column (arriving via `...` from pmap) overrides the scalar arg;
   # `...` also forwards ffm_batch options (verify/manifest/...) to the runner,
   # never to the pipeline builder.
+  # nvenc availability, re-checked here so an unavailable encoder blames this
+  # verb instead of purrr::pmap() (M57/D035), immediately before ffm_batch() so
+  # every check above still reports first (M41).
+  #
+  # Skipped unless every row re-encodes: segment_pipeline() aborts EARLIER on a
+  # non-re-encoding cut that names an encoder, never reaching
+  # resolve_hw_encoder(), and firing here would replace that message with an
+  # availability one (D035's second condition). Mirrors segment_video().
+  reencode_rows <- if ("reencode" %in% names(jobs)) jobs$reencode else reencode
+  if (all(reencode_rows %in% TRUE)) {
+    check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
+                          fallback)
+  }
+
   ffm_batch(
     jobs,
     function(input, output, start, end, ...) {
@@ -3563,6 +3585,14 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
   # A per-row knob column (arriving via `...` from pmap) overrides the scalar
   # arg of the same name; `...` also forwards ffm_batch options
   # (verify/manifest/...) to the runner, never to the pipeline builder.
+  # nvenc availability, re-checked here so an unavailable encoder blames this
+  # verb instead of purrr::pmap() (M57/D035). Immediately before ffm_batch(),
+  # which is where M41 puts a guard added for blame, so every check above still
+  # reports first. The sweep covers each distinct family a `video_codec` column
+  # spells, never only the argument's.
+  check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
+                        fallback)
+
   ffm_batch(
     jobs,
     function(input, output, ...) {
@@ -4166,6 +4196,20 @@ batch_codec_cell <- function(value) {
   if (length(value) == 1L && is.na(value)) NULL else value
 }
 
+# batch_video_codecs(): the distinct video_codec values a jobs table will hand
+# the pipeline -- the column's cells where the verb honours one (seven of the
+# eight _batch verbs do; format_for_web_batch fixes its codecs by identity), and
+# the scalar argument otherwise. This is what the front-door nvenc guard sweeps,
+# because one call's column may spell several families and each needs its own
+# encoder. NA stays NA here and check_nvenc_available() reads it as the h264
+# sentinel, the same reading batch_codec_cell() gives the pipeline (D022).
+batch_video_codecs <- function(jobs, video_codec) {
+  if (!"video_codec" %in% names(jobs)) {
+    return(list(video_codec))
+  }
+  as.list(unique(jobs[["video_codec"]]))
+}
+
 # check_batch_audio_col(): type-guard a numeric stream-index column up front.
 # Legal: a numeric column (NA cells allowed), or the all-NA column R types as
 # logical. The same spelled-out shape check_batch_codec_col() uses, and for the
@@ -4695,6 +4739,14 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
   }
   jobs <- reject_duplicate_outputs(jobs)
 
+  # nvenc availability, re-checked here so an unavailable encoder blames this
+  # verb instead of purrr::pmap() (M57/D035). Immediately before ffm_batch(),
+  # which is where M41 puts a guard added for blame, so every check above still
+  # reports first. The sweep covers each distinct family a `video_codec` column
+  # spells, never only the argument's.
+  check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
+                        fallback)
+
   ffm_batch(
     jobs,
     function(input, output, ...) {
@@ -4800,6 +4852,13 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
   # row, sharing format_for_web_pipeline() with format_for_web(). hardware/
   # fallback are batch-wide; `audio_stream` is the one per-row override this
   # verb reads, and other extra job columns are still ignored.
+  # nvenc availability, re-checked here so an unavailable encoder blames this
+  # verb instead of purrr::pmap() (M57/D035), immediately before ffm_batch() so
+  # every check above still reports first (M41). The web recipe fixes the codec
+  # by identity, so the family is always h264 -- the same "libx264"
+  # format_for_web_pipeline() hands resolve_hw_encoder().
+  check_nvenc_available("libx264", hardware, fallback)
+
   ffm_batch(
     jobs,
     function(input, output, ...) {
@@ -5015,6 +5074,21 @@ separate_audio_video_batch <- function(jobs, audio_codec = "copy",
   # cells mean the NULL sentinel, so without it `audio_stream = NA` would quietly
   # keep every track instead of erroring (the M37/M41 shape).
   rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
+  # nvenc availability, re-checked here so an unavailable encoder blames this
+  # verb instead of purrr::pmap() (M57/D035). Placed before the reshape below,
+  # while `jobs` still carries the caller's `video_codec` column, and last in
+  # the front-door block so every check above still reports first (M41).
+  #
+  # A "copy" cell is dropped: the shared separation recipe aborts EARLIER on a
+  # copied video stream that names hardware, never reaching resolve_hw_encoder(),
+  # and firing here would replace that message with an availability one (D035's
+  # second condition).
+  check_nvenc_available(
+    Filter(function(x) !identical(x, "copy"),
+           batch_video_codecs(jobs, video_codec)),
+    hardware, fallback
+  )
+
 
   # Reshape N input rows -> 2N single-output rows (D003/D007): each input fans out
   # into an audio row (0:a -> audiofile) and a video row (0:v -> videofile),
@@ -5599,6 +5673,14 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
   # row, sharing compare_videos_pipeline() with compare_videos(). A per-row
   # override column (via `...` from pmap) wins over the scalar arg; an `audio`
   # cell of NA means "drop audio" (the column form of the scalar's NULL).
+  # nvenc availability, re-checked here so an unavailable encoder blames this
+  # verb instead of purrr::pmap() (M57/D035). Immediately before ffm_batch(),
+  # which is where M41 puts a guard added for blame, so every check above still
+  # reports first. The sweep covers each distinct family a `video_codec` column
+  # spells, never only the argument's.
+  check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
+                        fallback)
+
   ffm_batch(
     jobs,
     function(inputs, output, ...) {
@@ -5749,6 +5831,14 @@ picture_in_picture_batch <- function(jobs,
   # sharing picture_in_picture_pipeline() with picture_in_picture(). A per-row
   # override column (via `...` from pmap) wins over the scalar arg; an `audio`
   # cell of NA means "drop audio" (the column form of the scalar's NULL).
+  # nvenc availability, re-checked here so an unavailable encoder blames this
+  # verb instead of purrr::pmap() (M57/D035). Immediately before ffm_batch(),
+  # which is where M41 puts a guard added for blame, so every check above still
+  # reports first. The sweep covers each distinct family a `video_codec` column
+  # spells, never only the argument's.
+  check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
+                        fallback)
+
   ffm_batch(
     jobs,
     function(main, overlay, output, ...) {

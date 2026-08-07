@@ -272,6 +272,24 @@
 
 ## Bug fixes
 
+* A malformed codec value — a string carrying whitespace or shell characters,
+  such as `"aac -evil"` — is now reported against the argument and the function
+  you called. Every verb with a `video_codec` or `audio_codec` argument used to
+  accept such a value at its front door and refuse it deeper in, reporting it
+  against the pipeline's internal `audio` / `video` setting, against an internal
+  helper, or — on the verbs that fan out, meaning every `_batch` sibling and the
+  scalar `segment_video()` — against the fan-out, prefixed `In index:`.
+  Non-string values were already reported this way.
+
+  On a `_batch` verb, a malformed value in the scalar argument used to be
+  discarded in silence whenever the `jobs` table carried a column of the same
+  name, since the column wins. It is now refused, matching how a non-string
+  value in that position has behaved since the column-override rule was
+  adopted.
+
+  No compiled command changes: every legal codec value compiles exactly the
+  command it did before.
+
 * When `hardware = "nvenc"` is requested on a machine whose FFmpeg does not
   list the encoder, `standardize_video()` and `format_for_web()` now report the
   error against the function you called rather than against an internal helper,

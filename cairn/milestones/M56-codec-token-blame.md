@@ -1,6 +1,6 @@
 # M56: A bad codec token names the verb's argument, never Layer 1's
 
-- **Status:** in-progress
+- **Status:** review
 - **Branch:** `m56-codec-token-blame`
 - **Priority:** normal
 - **Depends on:** M54
@@ -101,7 +101,7 @@ already pins is unmoved.
       the four changes in turn and confirming the sweep goes red for that verb.
 - [x] T4 Re-run the baseline and diff against T1's; any difference is a defect, not a
       re-baseline.
-- [ ] T5 Run `devtools::document()`, `devtools::test()`, `devtools::check()`; confirm the
+- [x] T5 Run `devtools::document()`, `devtools::test()`, `devtools::check()`; confirm the
       CRLF count and the `00check.log` `Status:` line.
 
 ## Work log
@@ -120,7 +120,36 @@ already pins is unmoved.
 - 2026-08-07: amendment — AC6 restated from a pinned total to the invariant it was reaching for: `grep -c $'\r$' R/ffmpeg.R` equals `wc -l < R/ffmpeg.R` (5728 = 5728 on the branch tip, against master's 5708). A total pinned to `master` cannot survive a milestone that adds a line to that file, which this one does. Chosen at a mini gate over pinning the new total.
 - 2026-08-07: T3 — `codec_front_door_bad` gained `` `malformed token` = "aac -evil" ``; the file's four assertions pass for all 51 verb x argument x column cells (`devtools::test(filter = "codec")`: 0 failures, 1563 passing). Discrimination measured by reverting each of the 15 changes in turn, one at a time, and re-running the sweep: every revert turned red exactly its own verb's cells and nothing else — the four routing changes each only their verb, each front-door upgrade only its own (both arguments where the verb carries two). Tied to the executed suite rather than the probe alone: reverting `extract_audio_pipeline()` gives 3 real failures in `test-codec-arg-front-door.R` (names arg / hides engine arg / blames the verb), the `In index:` assertion staying green because that verb does not fan out.
 - 2026-08-07: T4 — baseline re-run on the working tree and diffed against T1's `master` capture: 584 cells both sides, 0 vacuous both sides, **67 changed rows, every one of them the `token` scenario**. No legal-value cell moved (`default` / `null` / `literal` / `copy` all identical), so no compiled command changed; the non-string cells (`na` / `number` / `vec2`) are absent from the diff too. The changed rows are the intended ones: the token error moving to the verb, plus the `col = present` / `col = na` cells where a malformed scalar used to compile silently because a same-named jobs column won. Measured side effect on the doubly-invalid cells: ten pairs flipped from reporting `jobs` to reporting the codec, which is what the frozen precedence table already says an NA gets there — the token now answers exactly as a non-string does on every pair, and the NA table itself is unchanged. Locked with a new test in `test-codec-arg-front-door.R` asserting the token's precedence against that same frozen table (reverting `crop_video_batch`'s guard turns 7 assertions red). `devtools::test()`: 0 failures, 3762 passing.
+- 2026-08-07: T5 — `devtools::document()` produces no diff (only comments changed, no roxygen); `devtools::test()` 0 failures / 3762 passing; `devtools::check()` **Status: OK**, 0 errors / 0 warnings / 0 notes, read from the run's `00check.log`. `R/ffmpeg.R` is wholly CRLF on the branch tip: 5728 lines, 5728 CRLF-terminated, against master's 5708. NEWS.md gained a Bug fixes entry for the new blame and for the `_batch` scalar that used to be discarded when a same-named column won. Status → review.
+- 2026-08-07: candidate row added (search-first: no overlapping row; M41's archive covers the scalar argument only) — a malformed token in a `jobs` codec COLUMN still reports mid-fan-out, measured on the branch tip.
 
 ## Decisions
+
+### 2026-08-07 — the front-door token check goes to the fan-out verbs only
+
+The gate widened Scope to "every codec-family verb's front-door
+`check_string(<codec>)` → `check_token(<codec>)`". Implementation narrowed that
+to the eleven verbs that fan out — the ten `_batch` siblings and
+`segment_video()` — and left the seam-routed scalar verbs' front doors as
+`check_string()`.
+
+After T2 every scalar verb already blames itself for a malformed token, because
+its pipeline's `apply_audio_codec()` / `apply_video_codec()` seam carries the
+check with `call` threaded. A second, earlier check at those verbs' front doors
+would change nothing a user sees except **precedence**: a call wrong about both
+a codec token and something the pipeline validates — a crop dimension, a pixel
+format — would start reporting the codec. That is error text moving on verbs
+this milestone has no reason to touch, which is the stance M41's frozen
+precedence table takes.
+
+A fan-out verb cannot borrow that blame: its seam runs inside `purrr::pmap()`,
+so the message arrives as `In index: 1` blamed on pmap. There the front door is
+the only site that can answer, and putting the check at M41's existing site
+leaves the non-string precedence unmoved — measured, the NA precedence table is
+identical before and after.
+
+Falsified by a scalar verb whose codec argument reaches `ffm_codec()` without
+passing a seam: it would need its own front-door check, and the split above
+would stop being "fans out or not".
 
 ## Review

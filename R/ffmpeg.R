@@ -5849,6 +5849,23 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
   # row, sharing compare_videos_pipeline() with compare_videos(). A per-row
   # override column (via `...` from pmap) wins over the scalar arg; an `audio`
   # cell of NA means "drop audio" (the column form of the scalar's NULL).
+  #
+  # Conditions 4 and 5, re-checked here so a contradictory call blames this verb
+  # instead of purrr::pmap() (M58). Swept ROW BY ROW: `audio`, `audio_codec` and
+  # `resize` can each arrive as a column, and the input count is per row by
+  # construction on a fan-in verb, so no two rows need agree.
+  audio_rows <- batch_arg_rows(jobs, "audio", audio, batch_stream_cell)
+  acodec_rows <- batch_arg_rows(jobs, "audio_codec", audio_codec,
+                                batch_codec_cell)
+  resize_rows <- batch_arg_rows(jobs, "resize", resize)
+  for (i in seq_len(nrow(jobs))) {
+    check_audio_codec_needs_audio(
+      audio_rows[[i]], acodec_rows[[i]],
+      hint = "Pass {.arg audio} the 0-based index of the input whose audio to
+              keep, or drop {.arg audio_codec}."
+    )
+    check_resize_needs_two_inputs(resize_rows[[i]], length(jobs$inputs[[i]]))
+  }
   # nvenc availability, re-checked here so an unavailable encoder blames this
   # verb instead of purrr::pmap() (M57/D035). Immediately before ffm_batch(),
   # which is where M41 puts a guard added for blame, so every check above still
@@ -6010,6 +6027,22 @@ picture_in_picture_batch <- function(jobs,
   # sharing picture_in_picture_pipeline() with picture_in_picture(). A per-row
   # override column (via `...` from pmap) wins over the scalar arg; an `audio`
   # cell of NA means "drop audio" (the column form of the scalar's NULL).
+  #
+  # Condition 6, re-checked here so a contradictory call blames this verb
+  # instead of purrr::pmap() (M58). Swept ROW BY ROW: both `audio` and
+  # `audio_codec` can arrive as columns. The hint is this verb's own -- the
+  # checker is shared with compare_videos_batch(), whose inputs are open-ended
+  # where these are the two fixed roles (D015).
+  audio_rows <- batch_arg_rows(jobs, "audio", audio, batch_stream_cell)
+  acodec_rows <- batch_arg_rows(jobs, "audio_codec", audio_codec,
+                                batch_codec_cell)
+  for (i in seq_len(nrow(jobs))) {
+    check_audio_codec_needs_audio(
+      audio_rows[[i]], acodec_rows[[i]],
+      hint = "Pass {.arg audio} {.val {0}} for the main video's audio or
+              {.val {1}} for the overlay's, or drop {.arg audio_codec}."
+    )
+  }
   # nvenc availability, re-checked here so an unavailable encoder blames this
   # verb instead of purrr::pmap() (M57/D035). Immediately before ffm_batch(),
   # which is where M41 puts a guard added for blame, so every check above still

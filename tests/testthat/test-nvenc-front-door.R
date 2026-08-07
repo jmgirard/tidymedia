@@ -419,12 +419,11 @@ test_that("the guard reports before pipeline checks it now precedes", {
            input = input, output = "o.mp4", width = -5, height = 32))),
     list(verb = "picture_in_picture_batch", own = "must be a whole number",
          args = list(jobs = tibble::tibble(
-           main = input, overlay = input, output = "o.mp4", margin = -3))),
-    list(verb = "compare_videos_batch", own = "exactly two inputs",
-         args = list(jobs = tibble::tibble(
-           inputs = list(c(input, input, input)), output = "o.mp4"),
-           resize = TRUE))
+           main = input, overlay = input, output = "o.mp4", margin = -3)))
   )
+  # compare_videos_batch's three-input `resize` case left this sweep at M58,
+  # which moved that check to the front door ABOVE this guard: it no longer
+  # reports second, and its new precedence is pinned below instead.
   for (case in cases) {
     call_it <- function() {
       args <- case$args
@@ -448,6 +447,55 @@ test_that("the guard reports before pipeline checks it now precedes", {
     missing <- call_it()
     expect_match(conditionMessage(missing), "is not available", info = case$verb)
     expect_identical(nvenc_blamed(missing), case$verb, info = case$verb)
+  }
+})
+
+# The other three verbs carrying both guards. Their contradictions are decided
+# without reference to any encoder, so unlike the two mixed-column cases above
+# these need no mixed table: a plain uniform call has both errors live at once.
+
+test_that("a contradiction reports before availability on the fan-in verbs", {
+  input <- make_input()
+  cases <- list(
+    # Condition 4: an audio encoder named with no audio mapped.
+    list(verb = "compare_videos_batch", own = "needs an audio stream to encode",
+         args = list(jobs = tibble::tibble(inputs = list(c(input, input)),
+                                           output = "o.mp4"),
+                     audio_codec = "aac")),
+    # Condition 6: the same contradiction on the overlay verb.
+    list(verb = "picture_in_picture_batch",
+         own = "needs an audio stream to encode",
+         args = list(jobs = tibble::tibble(main = input, overlay = input,
+                                           output = "o.mp4"),
+                     audio_codec = "aac")),
+    # Condition 5: resize across three inputs. Encoder-independent too, which
+    # is why it left the availability-first sweep above at M58.
+    list(verb = "compare_videos_batch", own = "exactly two inputs",
+         args = list(jobs = tibble::tibble(
+           inputs = list(c(input, input, input)), output = "o.mp4"),
+           resize = TRUE))
+  )
+  for (case in cases) {
+    call_it <- function() {
+      args <- case$args
+      args$hardware <- "nvenc"
+      args$run <- FALSE
+      tryCatch(do.call(case$verb, args, envir = asNamespace("tidymedia")),
+               error = function(e) e)
+    }
+    # Both seams, and the assertion is that they agree: a contradiction between
+    # two arguments is settled without consulting the local FFmpeg build, so the
+    # same wrong call must be diagnosed identically on any machine (M54).
+    withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+    present <- call_it()
+    withr::local_options(tidymedia.nvenc_encoders = character(0))
+    absent <- call_it()
+    expect_match(conditionMessage(present), case$own, info = case$verb)
+    expect_match(conditionMessage(absent), case$own, info = case$verb)
+    expect_no_match(conditionMessage(absent), "is not available",
+                    info = case$verb)
+    expect_identical(conditionMessage(present), conditionMessage(absent))
+    expect_identical(nvenc_blamed(absent), case$verb, info = case$verb)
   }
 })
 

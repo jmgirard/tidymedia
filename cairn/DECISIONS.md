@@ -1247,3 +1247,63 @@ who needs a binary-free call needs the option seam or a machine without the verb
   probing had begun deciding more than the encoder name — or by a third
   build-time probe appearing that the stated grep does not find, which would mean
   the procedure, not the list, is the thing that is wrong.
+
+## D035 — A probe already licensed under D034 may also gate at the front door (2026-08-07, from M57, licenses one instance of the shape D024's third exclusion reserved; extends D034)
+
+D024 lists four probe shapes outside its diagnostic licence, "each need[ing]
+its own decision entry before it is built". The third, verbatim:
+
+> - a probe that decides whether execution proceeds — an abort gate is not a
+>   diagnostic, and an abort gate that fails open silently stops gating;
+
+This entry licenses one instance of that shape: the nvenc availability check,
+run a second time at the front door of the nine verbs that fan out through
+`ffm_batch()`, so an unavailable encoder blames the verb the user called
+instead of `purrr::pmap()`.
+
+**Why the exclusion does not settle it either way.** The abort gate D024
+refused was a *new* effect — a probe that would stop a call the package would
+otherwise have run. This one stops nothing that was not already stopped:
+`resolve_hw_encoder()` has aborted on an unavailable encoder since nvenc
+shipped at M31, and D034 already licenses that probe running while the pipeline
+is built. M57 changes *where* the identical abort is raised, never *whether*
+one is. D024's clause is about a gate's existence; it does not reach a gate's
+position, and reading it as forbidding this would forbid moving any existing
+abort earlier in any verb.
+
+**The rule.** A probe already licensed under D034 — its result entering the
+compiled command — may also run at a verb's front door, before any fan-out,
+when three conditions hold:
+
+- **One abort site.** The front door and the pipeline reach the abort through
+  one shared function, so no wording and no firing condition exists in two
+  places to drift apart. Here that function is `check_nvenc_available()`, which
+  `resolve_hw_encoder()` calls rather than carrying its own copy.
+- **No new refusal.** Every call the front-door guard aborts is a call the
+  pipeline would have aborted. The guard changes the `conditionCall()` and the
+  moment of failure, never the set of calls that fail. It does reassign
+  precedence *within* a failing call — an unavailable encoder now reports
+  before validations that live in the pipeline — which is M41's known cost and
+  is tested for, not assumed away.
+- **It fails closed, and must.** D024's fail-open requirement is a consequence
+  of the diagnostic licence, whose probes may have no effect but a message.
+  This probe is not a diagnostic and never was: an unavailable encoder has to
+  stop the call, or `hardware = "nvenc"` would silently encode in software.
+
+**What it does not license.** A front-door probe with no pipeline counterpart —
+one refusing a call nothing downstream would refuse — is a new abort gate and
+still needs its own entry. So does a probe adopted under D024's diagnostic
+licence that later grows an abort; that is the fail-open clause, and it stands
+unnarrowed.
+
+**Rules out** hoisting resolution to the front door — resolving the encoder
+once there and handing the name down. Weighed at M57's plan gate and rejected:
+it re-forks the resolver seam for the per-row `video_codec` column that seven
+of the eight `_batch` verbs honour, and it undoes M56's fix that made
+`standardize_pipeline()` hand `hardware` to the seam *unresolved*, so the token
+check sees the user's value rather than `resolve_hw_encoder()`'s rewrite of it.
+
+- **Falsified by** the front-door guard and the pipeline guard observed firing
+  on different inputs — which would mean the one shared function had stopped
+  being shared — or by any call the front door refuses that a `run = FALSE`
+  pipeline still compiles.

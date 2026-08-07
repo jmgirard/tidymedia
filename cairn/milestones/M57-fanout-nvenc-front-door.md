@@ -1,11 +1,11 @@
 # M57: A missing nvenc encoder is refused at the front door, on every verb that fans out
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M54, M56
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** —
+- **Branch/PR:** m57-fanout-nvenc-front-door
 
 ## Goal
 
@@ -87,7 +87,7 @@ door → rejected at the plan gate (work log).
 
 ## Tasks
 
-- [ ] T1: Write the D-entry licensing a construction-time abort gate (D024's
+- [x] T1: Write the D-entry licensing a construction-time abort gate (D024's
       third excluded shape) — before any code, as D024 requires. Then extract
       the abort from `resolve_hw_encoder()` (`R/ffmpeg.R:2498-2506`) into a
       shared `check_nvenc_available()`; `resolve_hw_encoder()` calls it. No
@@ -117,7 +117,12 @@ door → rejected at the plan gate (work log).
 - 2026-08-07: criteria audit ([O] reader) returned findings on all six drafted criteria — AC1 scoped itself to an absent section and ignored the `furrr::future_pmap` path; AC2 claimed a firing-condition invariance AC3 falsifies, over a grep matching two `cli_inform()` lines; AC3 was undefined for D022's `NA` cells; AC3/AC4 collided on `codec_family()` aborting regardless of `fallback`; AC4 asserted presence where count was meant; AC5's `.new`-file check was satisfied by the state it excluded; AC6 quantified over a call graph no grep computes. Six fixed at the gate, the hoist-vs-duplicate finding raised as a gate question.
 - 2026-08-07: plan gate chose duplicating the check at the front door over hoisting resolution there, because hoisting re-forks the resolver seam for per-row `video_codec` columns and undoes M56's fix that made `standardize_pipeline()` hand `hardware` to the seam unresolved; falsified by a front-door guard and a pipeline guard observed firing on different inputs.
 - 2026-08-07: plan gate chose nvenc availability alone over every pipeline-level validation on the nine verbs, because the wider cut trips the sizing tripwires; falsified by AC6's enumeration returning few enough sites to have been folded in.
+- 2026-08-07: implement gate skipped — the plan gate settled hoist-vs-duplicate, scope, AC6 and the probe cache, and nothing left open was more than a helper signature.
+- 2026-08-07 (T1): D035 written before any code, as D024 requires of a shape its third exclusion reserved. Abort extracted from `resolve_hw_encoder()` into `check_nvenc_available()`; the resolver now reaches it by calling it. `devtools::test()` FAIL 0 | PASS 3856, the same 4 warnings and 5 skips as before, all in test files this milestone does not touch. `R/ffmpeg.R` CRLF count 5749 -> 5791 for 42 net added lines, diffstat 55/13 (M35/M48).
 
 ## Decisions
+
+- 2026-08-07 (T1): the shared guard takes `video_codec` as either one value or a LIST of values, so one function serves the scalar resolver and a `_batch` verb whose `video_codec` column spells several families in one call. `NULL` and its column form `NA` (D022) both resolve to the h264 family, matching `resolve_hw_encoder()`'s sentinel branch — the two readings must agree, or the front door would refuse a call the pipeline compiles, which is D035's second condition.
+- 2026-08-07 (T1): `check_nvenc_available()` returns early on `fallback = TRUE` rather than sweeping and then suppressing. Sweeping a column would reach `codec_family()`, which aborts on an unmappable codec regardless of `fallback` (`R/ffmpeg.R:2440-2452`), so a `fallback = TRUE` call that falls back happily today would start being refused.
 
 ## Review

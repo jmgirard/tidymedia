@@ -2478,10 +2478,7 @@ resolve_hw_encoder <- function(video_codec, hardware = c("none", "nvenc"),
   } else {
     codec_family(video_codec, call = call)
   }
-  if (has_nvenc(family)) {
-    return(nvenc_encoder(family))
-  }
-  if (fallback) {
+  if (fallback && !has_nvenc(family)) {
     cli::cli_inform(c(
       "!" = if (is.null(video_codec)) {
         # Falling back from the sentinel keeps the sentinel -- never a silently
@@ -2495,15 +2492,60 @@ resolve_hw_encoder <- function(video_codec, hardware = c("none", "nvenc"),
     ))
     return(video_codec)
   }
-  cli::cli_abort(
-    c(
-      "nvenc encoder {.val {nvenc_encoder(family)}} is not available.",
-      "x" = "This FFmpeg build does not list it (see {.fn ffmpeg_encoders}).",
-      "i" = "Use a machine with an nvenc-capable FFmpeg + NVIDIA GPU, or set
-             {.code fallback = TRUE} to encode in software instead."
-    ),
-    call = call
-  )
+  # The abort lives in check_nvenc_available(), never in a copy here: the nine
+  # fan-out verbs call that same function at their front doors (M57/D035), and
+  # two copies of the wording and the firing condition is exactly the drift the
+  # single site exists to make impossible. `fallback = TRUE` returns above, so
+  # this call can only pass (encoder available) or abort.
+  check_nvenc_available(video_codec, hardware, fallback, call = call)
+  nvenc_encoder(family)
+}
+
+# check_nvenc_available(): the nvenc availability gate, and the only place its
+# abort is worded. Called twice per verb by design (D035) -- once at the front
+# door of each verb that fans out through ffm_batch(), so the abort names the
+# verb rather than purrr::pmap(), and once from resolve_hw_encoder() while the
+# pipeline is built, which is where it has fired since M31.
+#
+# `video_codec` takes either one codec value or a LIST of them, because a _batch
+# verb's `video_codec` column may spell several families in one call and each
+# one needs its own encoder. NULL -- and NA, its column form (D022) -- spells
+# the h264 family, matching the sentinel branch resolve_hw_encoder() applies
+# above; the two readings must agree or the front door would refuse a call the
+# pipeline compiles.
+#
+# Returns early on `fallback = TRUE`: that call cannot abort here, and sweeping
+# a column anyway would reach codec_family(), which aborts on an unmappable
+# codec regardless of fallback and would refuse a call that falls back happily
+# today.
+check_nvenc_available <- function(video_codec, hardware = "none",
+                                  fallback = FALSE,
+                                  call = rlang::caller_env()) {
+  if (!identical(hardware, "nvenc") || isTRUE(fallback)) {
+    return(invisible(NULL))
+  }
+  codecs <- if (is.list(video_codec)) video_codec else list(video_codec)
+  families <- unique(vapply(codecs, function(vc) {
+    if (is.null(vc) || (length(vc) == 1L && is.na(vc))) {
+      "h264"
+    } else {
+      codec_family(vc, call = call)
+    }
+  }, character(1)))
+  for (family in families) {
+    if (!has_nvenc(family)) {
+      cli::cli_abort(
+        c(
+          "nvenc encoder {.val {nvenc_encoder(family)}} is not available.",
+          "x" = "This FFmpeg build does not list it (see {.fn ffmpeg_encoders}).",
+          "i" = "Use a machine with an nvenc-capable FFmpeg + NVIDIA GPU, or set
+                 {.code fallback = TRUE} to encode in software instead."
+        ),
+        call = call
+      )
+    }
+  }
+  invisible(NULL)
 }
 
 # apply_video_codec(): thread a verb's video_codec/hardware/fallback choice into

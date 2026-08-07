@@ -274,9 +274,11 @@
 
 * When `hardware = "nvenc"` is requested on a machine whose FFmpeg does not
   list the encoder, `standardize_video()` and `format_for_web()` now report the
-  error against the function you called rather than against an internal helper.
-  Their `_batch` siblings improve the same way. The other verbs taking
-  `hardware` already did this.
+  error against the function you called rather than against an internal helper,
+  as most other verbs taking `hardware` already did. A call that fans out over
+  several commands still reports the error against the internal fan-out
+  instead: the `_batch` verbs, bar `picture_in_picture_batch()`, and
+  `segment_video()`.
 
 * Metadata values containing a newline no longer corrupt the probe output.
   `probe_all()` and the `probe_*()` shortcuts read FFprobe's per-stream output

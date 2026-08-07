@@ -111,6 +111,46 @@ test_that("an nvenc-unavailable abort names the verb, not its pipeline helper", 
   )
 })
 
+test_that("a fan-out call still blames the fan-out, not the verb", {
+  # The limitation the release note states, pinned so the note cannot outlive
+  # it. Threading `call =` into a pipeline reaches only a verb that calls that
+  # pipeline DIRECTLY: a fan-out routes through ffm_batch() -> purrr::pmap(),
+  # so caller_env() lands on the anonymous closure (LESSONS M47/M48-F1). Fixing
+  # it needs a front-door guard in each such verb, which is not this milestone's
+  # scope; when that lands, this test goes red and the note is rewritten.
+  # picture_in_picture_batch() is the control: it validates before fanning out,
+  # so a blanket "every fan-out blames pmap" would fail here.
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  infile <- withr::local_tempfile(fileext = ".mp4")
+  file.create(infile)
+
+  blamed <- function(expr) {
+    err <- rlang::catch_cnd(expr, classes = "error")
+    deparse(conditionCall(err))[[1]]
+  }
+
+  expect_match(
+    blamed(standardize_video_batch(
+      tibble::tibble(input = infile, output = "o.mp4"),
+      hardware = "nvenc", run = FALSE
+    )),
+    "^purrr::pmap\\("
+  )
+  expect_match(
+    blamed(segment_video(infile, 0, 5, "o.mp4",
+      hardware = "nvenc", run = FALSE
+    )),
+    "^purrr::pmap\\("
+  )
+  expect_match(
+    blamed(picture_in_picture_batch(
+      tibble::tibble(main = infile, inset = infile, output = "o.mp4"),
+      hardware = "nvenc", run = FALSE
+    )),
+    "^picture_in_picture_batch\\("
+  )
+})
+
 # The NULL sentinel (M34/D016): "leave the codec alone". codec_family() errors
 # on NULL, so the sentinel is resolved in its own branch before that call.
 

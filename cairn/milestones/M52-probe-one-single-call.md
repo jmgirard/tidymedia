@@ -45,7 +45,7 @@ renamed or extra column is a defect here, not a deliverable.
       proves nothing where the caller catches). The one-spawn count also holds
       on the early-return paths, which already spawn once
       (`R/ffprobe.R:167`, `:170-173`).
-- [ ] AC2 `probe_all()`'s output is unchanged: for every fixture in the suite
+- [x] AC2 `probe_all()`'s output is unchanged: for every fixture in the suite
       **except those whose recorded pre-change output is itself corrupt**, both
       returned tibbles compare identical in names, column order, row order,
       types and values against a baseline recorded from the pre-change ref and
@@ -76,7 +76,7 @@ renamed or extra column is a defect here, not a deliverable.
       milestone it is one cell. Evidence is a test that runs red against
       pre-change source — written in T3, before T4 rewrites `probe_one()` —
       and green after.
-- [ ] AC5 `typed = TRUE` and `typed = FALSE` both produce output identical to
+- [x] AC5 `typed = TRUE` and `typed = FALSE` both produce output identical to
       their recorded baselines, and the resilience contract is intact — a file
       with no readable streams, an unprobeable file, and a mixed vector of both
       still yield all-`NA` rows plus one warning rather than an abort
@@ -215,6 +215,73 @@ advisories. No DESIGN principle changed, so the impact report is skipped. The
 untouched by this branch, the declared changelog has entries for this
 milestone's user-visible changes, and the branch adds no top-level file needing
 an `.Rbuildignore` entry.
+
+### Round 2 — acceptance criteria re-verified (2026-08-06)
+
+All evidence below is from commands run in this second review, on branch HEAD
+`fc9bb25`, against the widened six-fixture baseline. It supersedes round 1's
+evidence wherever the two disagree.
+
+**AC1 — one spawn per file.** `test-probe-single-call.R`: 10 assertions, 0
+failures. The counting mock delegates to the real `run_program()`, so the
+tibbles stay real. Count is 1 on the 5-stream fixture (whose streams tibble
+carries 5 rows), 1 on each early-return path, 1 on the unprobeable path. The
+recorded pre-change counts are `nb_streams + 1` on all six fixtures: 3/6/2/2/3/2
+for 2/5/1/1/2/1 streams.
+
+**AC2 — output unchanged.** `test-probe-compact-parser.R`: 96 assertions, 0
+failures. Parsing the recorded compact text rebuilds the recorded pre-change
+tibbles exactly — names, column order, row order, types, values — for the four
+non-exempt fixtures. Measured column counts, before → after: streams 68→68,
+68→68, 62→62, 50→50; containers 15/12/15/15 unchanged. The two exempt fixtures
+behave as the amended criterion requires: `hostile` 69→68 (the bogus `break`
+column gone), `rotated` 68→65 (the three matrix-row columns gone), each with the
+same row count, no column added, and every other column identical — `rotation`
+and `side_data_type` included.
+
+**AC3 — every escape round-trips.** The six sequences the writer emits (`\\`,
+`\|`, `\n`, `\r`, `\b`, `\f`) each come back as the original string in one cell,
+adding no column and no row; a raw TAB, which the writer leaves alone, is
+covered in the same test. Two further cases were added this round: field
+splitting and unescaping both preserve a byte invalid in the session locale.
+
+**AC4 — the latent corruption is fixed, not merely avoided.** Recorded: the
+`hostile` baseline holds the pre-change output, where the newline-bearing tag
+yields 69 columns including a bogus `break` and a title truncated to `line`; the
+new parse yields 68, no `break`, the title whole as `line\nbreak`, same row
+count. Live: the test over `make_hostile_tag_video()` ran red against pre-change
+source at T3 and passes now. The same defect on the `rotated` fixture — the
+display matrix printed across four lines — is now covered too.
+
+**AC5 — `typed` parity and resilience.** `test-probe-typed-resilience.R`: 43
+assertions, 0 failures. The real `probe_all()` runs over the recorded text
+through a mocked `run_program()`, so parity is checked through the package's own
+composition; both `typed` values reproduce the recorded pre-change output on the
+four non-exempt fixtures, and on `rotated` for every column outside the
+corruption. Under `typed = FALSE` every stream column is character. Resilience
+covered as four cases — an unprobeable file, a file with no readable streams, a
+mixed vector, two failures warning once rather than twice — plus
+`probe_video()`/`probe_audio()` on wholly unreadable input.
+
+**AC6 — suite and check clean, NEWS written.** Fresh `devtools::test()`: 3422
+passing, 0 failures, 5 skips, 4 warnings — all four the dropped-track diagnostic
+firing in tests this branch does not touch (`R/ffmpeg.R` is not in the diff).
+Fresh `devtools::check()`: 0 errors / 0 warnings / 0 notes. NEWS carries the
+`## Performance` entry for the single-call read and the `## Bug fixes` entry for
+the newline corruption, the latter now naming the rotated-video case; both
+behavioral claims are enforced by named tests.
+
+**Consistency gate.** `cairn_validate` exits 0, every check passing, no
+advisories. No DESIGN principle changed, so the impact report is skipped. The
+`r-package` profile's slot: `devtools::document()` produces no diff,
+`pkgdown::check_pkgdown()` reports no problems, README is untouched by this
+branch, NEWS has entries for this milestone's user-visible changes, and the
+branch adds no top-level file needing an `.Rbuildignore` entry.
+
+**CI.** Green on branch HEAD across all three workflows and every platform
+(ubuntu release/devel/oldrel-1, macOS, Windows; pkgdown; test-coverage). The one
+red mark is `codecov/patch`, which the profile makes diagnostic-only — `covr` is
+never a merge gate here.
 
 ### Independent review — round 1 (2026-08-06): RETURNED
 

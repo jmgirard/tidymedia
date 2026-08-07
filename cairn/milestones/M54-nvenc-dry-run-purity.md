@@ -74,7 +74,7 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
       (`format_for_web_pipeline()`) and `R/ffmpeg.R:1393` (`standardize_pipeline()`).
       `R/ffmpeg.R` is the repo's only CRLF file: read and write it as bytes restoring
       `\r\n`, and check that one file's diffstat before committing (LESSONS M35/M48).
-- [ ] T2 Write D034 in `cairn/DECISIONS.md` per AC1.
+- [x] T2 Write D034 in `cairn/DECISIONS.md` per AC1.
 - [ ] T3 Correct `cairn/DESIGN.md`'s Conventions bullet to match D034.
 - [ ] T4 Extend the three purity tests per AC3; prove each new case discriminates by
       stubbing `has_nvenc()`.
@@ -93,6 +93,8 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
 - 2026-08-06: plan gate kept the per-row re-probe cost out, because caching `has_nvenc()` / `ffmpeg_encoders()` needs its own lifetime decision (a user installing FFmpeg mid-session), which is a separate question from whether the probe is licensed; falsified by a measured `_batch` stall attributable to repeated `ffmpeg -encoders` calls.
 
 - 2026-08-06: T1 done. Reproduced the blame defect before fixing: with `tidymedia.nvenc_encoders = character(0)`, `standardize_video(hardware = "nvenc", run = FALSE)` blamed `standardize_pipeline(...)` and `format_for_web(...)` blamed `format_for_web_pipeline(...)`, while `crop_video` and `anonymize_video` already named the verb. Added a test to `tests/testthat/test-nvenc.R` carrying those two already-correct verbs as discriminating controls, confirmed red on exactly the two targets, then threaded `call = call` at `R/ffmpeg.R:1135,1393`. `devtools::test()`: 0 failures, 3458 passing, 5 skips; the 4 warnings are the pre-existing M44 dropped-track diagnostic in files this diff does not touch. `R/ffmpeg.R` edited as bytes: CRLF count 5652 unchanged, diffstat 2 insertions / 2 deletions.
+
+- 2026-08-06: T2 done. D034 appended to `cairn/DECISIONS.md`. It states the rule as a condition on probe shape and enumerates today's instances by a stated grep over the execution seams (`run_program(`, `ffmpeg(`, `ffprobe(`, `mediainfo(`) filtered to build-time reachability, rather than by recall. That grep found exactly two: D013's loudnorm analysis (`R/loudnorm_two_pass.R:140,182`) and the nvenc resolver (`R/ffmpeg.R:2283`, sole internal caller `has_nvenc()` at `:2388`); `ffmpeg_codecs()` has no internal caller. Also established that D024's bullet was false on the day it was written — nvenc shipped at M31 on 2026-07-26, D024 is dated 2026-07-30 — so the entry records a list falsified by existing code, not by later work.
 
 ## Decisions
 

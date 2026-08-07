@@ -1192,3 +1192,58 @@ where they already pass `typed` — on the `infile` branch, ignored when handed 
   FFprobe spawns, dominating `probe_all()` on a large corpus — which would mean
   the fan-out is drawn around the wrong part — or by a caller needing a
   parallel mechanism `future` cannot express, which reopens D012's choice.
+
+## D034 — A probe whose result enters the compiled command runs when the pipeline is built, `run` notwithstanding (2026-08-06, from M54, supersedes D024's `run = FALSE` bullet; extends D013)
+
+D024 stated the pure surface with a bullet that hand-listed its exceptions:
+
+> Every verb's `run = FALSE` call runs no binary — with **the two-pass
+> normalization path the sole exception**: `normalize_audio(two_pass = TRUE)`
+> and `normalize_audio_batch(two_pass = TRUE)` both run D013's analysis pass
+> before `run` is consulted.
+
+That sentence was false when it was written. `resolve_hw_encoder()` reaches
+`has_nvenc()` → `ffmpeg_encoders()` → `ffmpeg("-encoders")` while the pipeline is
+being built, so `standardize_video(hardware = "nvenc", run = FALSE)` shells out —
+measured 2026-07-30 under a counting mock, and again at M54. nvenc shipped at M31
+on 2026-07-26, four days *before* D024; the list was falsified by code already in
+the package, not by anything that came later. This entry **supersedes that
+bullet**, and `cairn/DESIGN.md`'s Conventions bullet, which carried the same
+claim, is corrected with it.
+
+**The rule, as a condition on probe shape.** A probe whose result enters the
+compiled command runs when the pipeline is built. `run` gates execution, never
+construction — so `run = FALSE` promises a *command*, not a binary-free call.
+This is D013's analyze-then-build shape, which D024's own taxonomy already names
+("a probe whose result enters the compiled command — this is D013's shape") and
+already treats as licensed. D024's error was not the licence but the bookkeeping:
+it enumerated the shape's instances where it should have stated the shape.
+
+**What the condition covers today, by procedure rather than by recall.** Grep
+`R/` for the execution seams — `run_program(`, `ffmpeg(`, `ffprobe(`,
+`mediainfo(` — and keep the call sites reachable while a pipeline is being built.
+Two survive: D013's loudnorm analysis pass (`R/loudnorm_two_pass.R:140,182`) and
+the nvenc resolver (`R/ffmpeg.R:2283`, whose sole internal caller is `has_nvenc()`
+at `:2388`). `ffmpeg_codecs()` has no internal caller at all. Re-run the grep
+rather than trusting this pair — a reader who trusts the pair has reproduced the
+exact mistake this entry exists to correct.
+
+**What it does not change.** D024's diagnostic licence stands unnarrowed,
+including its condition (iii) that a diagnostic probe never runs on the
+`run = FALSE` path — that is a different shape (its result reaches a condition,
+never the command) and its tests still pin it. No runtime behavior changes here:
+every call compiles and executes exactly what it did before.
+
+**Rules out** making the probe lazy. Deferring resolution to `ffm_finish()` /
+`ffm_batch()` — the only readers of `run` — needs the pipeline-object hook
+D024/RR02 Q3 rejected, and would force a `run = FALSE` call to name an encoder it
+had not verified, so a dry run on a GPU-less machine would print a command that
+aborts on execution. Weighed and rejected at M54's plan gate. Also rules out
+reading `run = FALSE` as a sandbox: it is a command-preview switch, and a caller
+who needs a binary-free call needs the option seam or a machine without the verb.
+
+- **Falsified by** a report of a dry run's compiled command differing from what a
+  subsequent `run = TRUE` call executes — which would mean construction-time
+  probing had begun deciding more than the encoder name — or by a third
+  build-time probe appearing that the stated grep does not find, which would mean
+  the procedure, not the list, is the thing that is wrong.

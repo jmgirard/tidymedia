@@ -2,19 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-06 (full audit green; nothing in flight, no open issues or PRs. Candidates groomed 31 → 20: nine promoted rows graduated (M41/M45–M52, overdue under records-hygiene §1; detail stays in `milestones/archive/`), plus two merges — the builder-blocked `normalize_audio()` pair, and the two docs gaps.)_
-_2026-08-06: M54–M56 planned. Three candidate rows absorbed (the nvenc `run = FALSE` leak → M54; the two grouped docs gaps → M55; the codec-token blame leak → M56); one new row added for the uncached per-row nvenc probe, split out of M54._
+_Last hygiene check: 2026-08-07 (M54 merged and archived; M49's terminal row pruned under the 5-row retention rule. M55 and M56 are planned and unblocked — M56's dependency on M54 is now met. Candidates at 21: the fan-out blame row added by M54, corrected at review.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M49 | Finish D026 on `format_for_web()` and `normalize_audio()` | done | — | normal | milestones/archive/M49-audio-stream-format-web-normalize.md |
 | M50 | Quote map specifiers in the compiled command string | done | M49 | normal | milestones/archive/M50-quote-map-specifiers.md |
 | M51 | Make the package's two 0-based audio indices legible | done | M49, M50 | normal | milestones/archive/M51-audio-index-docs.md |
 | M52 | Collapse `probe_one()`'s per-stream FFprobe loop into one call | done | — | normal | milestones/archive/M52-probe-one-single-call.md |
 | M53 | Give `probe_all()` a `parallel =` argument | done | M52 | normal | milestones/archive/M53-probe-all-parallel.md |
-| M54 | Correct the `run = FALSE` purity claim for the nvenc encoder probe | review | — | normal | milestones/M54-nvenc-dry-run-purity.md |
+| M54 | Correct the `run = FALSE` purity claim for the nvenc encoder probe | done | — | normal | milestones/archive/M54-nvenc-dry-run-purity.md |
 | M55 | A package landing topic, and a `parallel` enumeration that matches the code | planned | — | normal | milestones/M55-package-topic-parallel-docs.md |
 | M56 | A bad codec token names the verb's argument, never Layer 1's | planned | M54 | normal | milestones/M56-codec-token-blame.md |
 

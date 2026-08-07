@@ -1,6 +1,6 @@
 # M57: A missing nvenc encoder is refused at the front door, on every verb that fans out
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M54, M56
 - **Driving RR:** —
@@ -35,7 +35,7 @@ door → rejected at the plan gate (work log).
 
 ## Acceptance criteria
 
-- [x] AC1: On each of `segment_video()`, `anonymize_video_batch()`,
+- [ ] AC1: On each of `segment_video()`, `anonymize_video_batch()`,
       `segment_video_batch()`, `standardize_video_batch()`, `crop_video_batch()`,
       `format_for_web_batch()`, `separate_audio_video_batch()`,
       `compare_videos_batch()` and `picture_in_picture_batch()`, a call with
@@ -137,6 +137,8 @@ door → rejected at the plan gate (work log).
 - 2026-08-07 (T2): amendment — AC1 predicted a `furrr::future_pmap` master reading at `parallel = TRUE`; measured, it is furrr's internal `...furrr_fn` closure. Criterion amended at a mini gate to record the measurement and that the prediction was wrong.
 - 2026-08-07 (T1): D035 written before any code, as D024 requires of a shape its third exclusion reserved. Abort extracted from `resolve_hw_encoder()` into `check_nvenc_available()`; the resolver now reaches it by calling it. `devtools::test()` FAIL 0 | PASS 3856, the same 4 warnings and 5 skips as before, all in test files this milestone does not touch. `R/ffmpeg.R` CRLF count 5749 -> 5791 for 42 net added lines, diffstat 55/13 (M35/M48).
 
+- 2026-08-07 (review): returned to in-progress. AC1 fails on a legal call the sweep never ran: `segment_video_batch()` with a mixed `reencode = c(TRUE, FALSE)` column skips the guard entirely and still blames `purrr::pmap` (F4, scored 90). Two more actioned: `separate_audio_video_batch()`'s guard preempts `reject_duplicate_outputs()` and hides M26's within-row collision catch (F3, 85), and `check_nvenc_available()`'s `isTRUE(fallback)` swallows a malformed `fallback` that `resolve_hw_encoder()`'s `check_bool()` would have caught, machine-dependently (F1, 82). Six logged below threshold. Three lenses plus a scorer; blame-history and prior-review zero.
+
 ## Decisions
 
 - 2026-08-07 (T1): the shared guard takes `video_codec` as either one value or a LIST of values, so one function serves the scalar resolver and a `_batch` verb whose `video_codec` column spells several families in one call. `NULL` and its column form `NA` (D022) both resolve to the h264 family, matching `resolve_hw_encoder()`'s sentinel branch — the two readings must agree, or the front door would refuse a call the pipeline compiles, which is D035's second condition.
@@ -206,6 +208,66 @@ worktree at HEAD: disabling `crop_video_batch()`'s guard alone failed exactly
 one assertion in the whole file, and that assertion was `crop_video_batch`'s
 blame cell. Every other verb stayed green, so the sweep is not passing for a
 shared reason.
+
+**Independent review — three lenses plus a scorer.** The [S] blame-history
+lens traced every modified line through M31/M38/M41/M47/M48/M54/M56 and
+returned zero findings. The [S] prior-review lens ran the inline-comment
+existence probe, got an empty result, correctly skipped the thread walk, and
+returned zero regressions. The [O] diff-bug lens returned eight findings; a
+ninth came from blame-history as a wording nit. All nine went to a fresh [S]
+scorer holding the diff and this milestone file, which reproduced every
+measured claim on this machine.
+
+**Actioned (>=80), and the milestone returns.**
+
+- F4 (90) — `segment_video_batch`'s guard is skipped whenever ANY row has
+  `reencode = FALSE`, so a legal mixed `reencode = c(TRUE, FALSE)` column with
+  `hardware = "nvenc"` and no encoder still aborts `In index: 1 ... purrr::pmap`
+  — the exact misblame M57 exists to remove. **This is AC1 failing inside its
+  own domain**: AC1 promises the abort for "a call with `hardware = "nvenc"`,
+  `fallback = FALSE` and a seam lacking the required encoder", and this is such
+  a call. The `@param hardware` sentence this milestone added
+  ("checked once at this verb's own front door, before any row runs") is
+  unqualified and false for it. No test covers a mixed `reencode` column.
+- F3 (85) — `separate_audio_video_batch`'s guard sits at `R/ffmpeg.R:5107`
+  while `reject_duplicate_outputs(long)` runs below it at `:5162`, so the guard
+  preempts the duplicate-output check, including M26's within-row
+  `audiofile == videofile` catch. A row with `audiofile == videofile` reports
+  the collision on master and nvenc-unavailable on the branch. Every other
+  guarded `_batch` verb places its guard after its duplicate check, and this
+  guard's own comment claims it is "last in the front-door block".
+- F1 (82) — `check_nvenc_available()` gates on `isTRUE(fallback)` where
+  `resolve_hw_encoder()` validates with `rlang::check_bool(fallback)`. Eight of
+  the nine guarded verbs never `check_bool(fallback)` at their front door, so a
+  malformed `fallback` (`NA`, `"yes"`, `c(TRUE, TRUE)`) now receives the
+  nvenc-unavailable message instead of its own type error — and only on a
+  machine lacking nvenc, so one wrong call is diagnosed two ways depending on
+  the machine. That is D035's own stated falsifier.
+
+**Logged below threshold (6).**
+
+- F2 (78) — the `"copy"` exemption in `separate_audio_video_batch` filters copy
+  CELLS but a mixed column still has copy ROWS the pipeline aborts on first, so
+  the branch reports availability where master reported the copy conflict. Same
+  verb and same shape as F3; it travels with F3's fix.
+- F6 (72) — D035's second bullet says the precedence reassignment "is tested
+  for, not assumed away". No test pins any reassignment; three were measured
+  flipping (`compare_videos_batch`'s resize limit and its audio-codec case,
+  `picture_in_picture_batch`'s audio-codec case). The claim is unsupported as
+  written.
+- F7 (55) — the front door adds an unmemoized `ffmpeg -encoders` subprocess per
+  distinct family, so a 1-row nvenc batch shells out twice instead of once,
+  undocumented. The memoization candidate row already exists.
+- F8 (35) — the deparsed-body test pins source text rather than behavior; the
+  scorer rejected it as evidence AC2 explicitly called for.
+- F9 (20) — "checked once" undersells a mechanism that re-checks per row; no
+  observable behavior is misstated.
+- F5 (20) — `%in% TRUE` coerces, but the `reencode` column type guard makes it
+  unreachable.
+
+**Disposition: back to `in-progress`.** F4 demonstrates AC1 failing, which is
+the return floor. AC1 is unticked; the evidence recorded for AC2-AC7 stands.
+This is the first defect return on this milestone.
 
 **Consistency gate.** `cairn_validate` exit 0, all checks passed, no advisory
 warnings. `cairn_impact` skipped: `cairn/DESIGN.md` is unchanged, so no

@@ -1772,6 +1772,9 @@ derive_anonymized_names <- function(input) {
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 #'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
 #'   command is built, even under \code{run = FALSE}.
+#'   Availability is checked at this verb's own front door, before any row
+#'   runs, so an unavailable encoder aborts naming this function rather than
+#'   the internal fan-out it would otherwise be reported against.
 #' @param fallback A logical applied to every row: when \code{hardware = "nvenc"}
 #'   but nvenc is unavailable, re-encode with the software \code{video_codec} and
 #'   a message (\code{TRUE}) instead of aborting (\code{FALSE}, default).
@@ -1930,6 +1933,14 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   # of the same name; `...` also forwards ffm_batch options (verify/manifest/...)
   # to the runner, never to the pipeline builder. The `regions` list-column
   # arrives unwrapped per row (pmap passes each cell's data frame by name).
+  # nvenc availability, re-checked here so an unavailable encoder blames this
+  # verb instead of purrr::pmap() (M57/D035). Immediately before ffm_batch(),
+  # which is where M41 puts a guard added for blame, so every check above still
+  # reports first. The sweep covers each distinct family a `video_codec` column
+  # spells, never only the argument's.
+  check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
+                        fallback)
+
   ffm_batch(
     jobs,
     function(input, output, regions, ...) {
@@ -2478,10 +2489,7 @@ resolve_hw_encoder <- function(video_codec, hardware = c("none", "nvenc"),
   } else {
     codec_family(video_codec, call = call)
   }
-  if (has_nvenc(family)) {
-    return(nvenc_encoder(family))
-  }
-  if (fallback) {
+  if (fallback && !has_nvenc(family)) {
     cli::cli_inform(c(
       "!" = if (is.null(video_codec)) {
         # Falling back from the sentinel keeps the sentinel -- never a silently
@@ -2495,15 +2503,74 @@ resolve_hw_encoder <- function(video_codec, hardware = c("none", "nvenc"),
     ))
     return(video_codec)
   }
-  cli::cli_abort(
-    c(
-      "nvenc encoder {.val {nvenc_encoder(family)}} is not available.",
-      "x" = "This FFmpeg build does not list it (see {.fn ffmpeg_encoders}).",
-      "i" = "Use a machine with an nvenc-capable FFmpeg + NVIDIA GPU, or set
-             {.code fallback = TRUE} to encode in software instead."
-    ),
-    call = call
-  )
+  # The abort lives in check_nvenc_available(), never in a copy here: the nine
+  # fan-out verbs call that same function at their front doors (M57/D035), and
+  # two copies of the wording and the firing condition is exactly the drift the
+  # single site exists to make impossible. `fallback = TRUE` returns above, so
+  # this call can only pass (encoder available) or abort.
+  check_nvenc_available(video_codec, hardware, fallback, call = call)
+  nvenc_encoder(family)
+}
+
+# check_nvenc_available(): the nvenc availability gate, and the only place its
+# abort is worded. Called twice per verb by design (D035) -- once at the front
+# door of each verb that fans out through ffm_batch(), so the abort names the
+# verb rather than purrr::pmap(), and once from resolve_hw_encoder() while the
+# pipeline is built, which is where it has fired since M31.
+#
+# `video_codec` takes either one codec value or a LIST of them, because a _batch
+# verb's `video_codec` column may spell several families in one call and each
+# one needs its own encoder. NULL -- and NA, its column form (D022) -- spells
+# the h264 family, matching the sentinel branch resolve_hw_encoder() applies
+# above; the two readings must agree or the front door would refuse a call the
+# pipeline compiles.
+#
+# Returns early on `fallback = TRUE`: that call cannot abort here, and sweeping
+# a column anyway would reach codec_family(), which aborts on an unmappable
+# codec regardless of fallback and would refuse a call that falls back happily
+# today.
+#
+# `fallback` is VALIDATED before it is read, never tested with isTRUE(): under
+# isTRUE() a malformed value (NA, "yes", c(TRUE, TRUE)) read as FALSE and got
+# the availability abort in place of its own type error -- and only on a
+# machine missing the encoder, so one wrong call was diagnosed two ways
+# depending on the machine (M57 review F1). resolve_hw_encoder() has always
+# checked it with rlang::check_bool(), so this raises the same error the
+# pipeline would have raised, at the verb instead of inside purrr::pmap().
+# It sits AFTER the hardware test: a hardware = "none" call never consults
+# fallback here, and refusing one at the front door would be a new refusal.
+check_nvenc_available <- function(video_codec, hardware = "none",
+                                  fallback = FALSE,
+                                  call = rlang::caller_env()) {
+  if (!identical(hardware, "nvenc")) {
+    return(invisible(NULL))
+  }
+  rlang::check_bool(fallback, call = call)
+  if (fallback) {
+    return(invisible(NULL))
+  }
+  codecs <- if (is.list(video_codec)) video_codec else list(video_codec)
+  families <- unique(vapply(codecs, function(vc) {
+    if (is.null(vc) || (length(vc) == 1L && is.na(vc))) {
+      "h264"
+    } else {
+      codec_family(vc, call = call)
+    }
+  }, character(1)))
+  for (family in families) {
+    if (!has_nvenc(family)) {
+      cli::cli_abort(
+        c(
+          "nvenc encoder {.val {nvenc_encoder(family)}} is not available.",
+          "x" = "This FFmpeg build does not list it (see {.fn ffmpeg_encoders}).",
+          "i" = "Use a machine with an nvenc-capable FFmpeg + NVIDIA GPU, or set
+                 {.code fallback = TRUE} to encode in software instead."
+        ),
+        call = call
+      )
+    }
+  }
+  invisible(NULL)
 }
 
 # apply_video_codec(): thread a verb's video_codec/hardware/fallback choice into
@@ -2591,6 +2658,9 @@ apply_audio_codec <- function(object, audio_codec, call = rlang::caller_env()) {
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 #'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
 #'   command is built, even under \code{run = FALSE}.
+#'   Availability is checked at this verb's own front door, before any row
+#'   runs, so an unavailable encoder aborts naming this function rather than
+#'   the internal fan-out it would otherwise be reported against.
 #'   The stream-copy conflict named under \code{reencode} is caught first, so
 #'   such a call aborts without probing.
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
@@ -2660,6 +2730,20 @@ segment_video <- function(infile,
   # leaking a dependency's name and an internal index -- the exact M41 shape
   # every other argument on this verb already avoids (M48 review F1).
   rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
+  # nvenc availability, re-checked here so an unavailable encoder blames this
+  # verb instead of purrr::pmap() (M57/D035). Last in the front-door block, so
+  # every check above still reports first (M41).
+  #
+  # Gated on `reencode` because segment_pipeline() aborts EARLIER on a
+  # non-re-encoding cut that names an encoder ("{.arg video_codec} and
+  # {.arg hardware} need a re-encoding cut"), never reaching
+  # resolve_hw_encoder(). Firing unconditionally here would replace that
+  # message with an availability one, which is not why the call failed --
+  # D035's second condition is that the guard changes the blame and the moment,
+  # never which calls fail or what they are told.
+  if (isTRUE(reencode)) {
+    check_nvenc_available(video_codec, hardware, fallback)
+  }
 
   # If no names are provided, derive per-segment names from the input file.
   if (is.null(outfiles)) {
@@ -2839,6 +2923,9 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 #'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
 #'   command is built, even under \code{run = FALSE}.
+#'   Availability is checked at this verb's own front door, before any row
+#'   runs, so an unavailable encoder aborts naming this function rather than
+#'   the internal fan-out it would otherwise be reported against.
 #'   The stream-copy conflict named under \code{reencode} is caught first, so
 #'   such a call aborts without probing.
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
@@ -2944,6 +3031,28 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
   # `reencode` column (arriving via `...` from pmap) overrides the scalar arg;
   # `...` also forwards ffm_batch options (verify/manifest/...) to the runner,
   # never to the pipeline builder.
+  # nvenc availability, re-checked here so an unavailable encoder blames this
+  # verb instead of purrr::pmap() (M57/D035), immediately before ffm_batch() so
+  # every check above still reports first (M41).
+  #
+  # Scoped to the rows that re-encode, never gated on the whole table:
+  # segment_pipeline() aborts EARLIER on a non-re-encoding cut that names an
+  # encoder, never reaching resolve_hw_encoder(), so a row that copies has no
+  # encoder to check. `reencode` is a per-row column here, so an all-or-nothing
+  # gate skipped the guard for the re-encoding rows of a MIXED column and left
+  # them blaming purrr::pmap() -- the misblame this verb's guard exists to
+  # remove (M57 review F4). Sweeping the re-encoding rows alone keeps both: a
+  # table with no re-encoding row reaches no guard at all, and one with any
+  # re-encoding row is checked for exactly the families those rows spell.
+  reencode_rows <- if ("reencode" %in% names(jobs)) jobs$reencode else reencode
+  encoding <- which(rep_len(reencode_rows %in% TRUE, nrow(jobs)))
+  if (length(encoding) > 0L) {
+    check_nvenc_available(
+      batch_video_codecs(jobs[encoding, , drop = FALSE], video_codec),
+      hardware, fallback
+    )
+  }
+
   ffm_batch(
     jobs,
     function(input, output, start, end, ...) {
@@ -3358,6 +3467,9 @@ derive_standardized_names <- function(input) {
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 #'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
 #'   command is built, even under \code{run = FALSE}.
+#'   Availability is checked at this verb's own front door, before any row
+#'   runs, so an unavailable encoder aborts naming this function rather than
+#'   the internal fan-out it would otherwise be reported against.
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
 #'   unavailable, re-encode with the software \code{video_codec} and a message
 #'   (\code{TRUE}) instead of aborting (\code{FALSE}, default).
@@ -3507,6 +3619,14 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
   # A per-row knob column (arriving via `...` from pmap) overrides the scalar
   # arg of the same name; `...` also forwards ffm_batch options
   # (verify/manifest/...) to the runner, never to the pipeline builder.
+  # nvenc availability, re-checked here so an unavailable encoder blames this
+  # verb instead of purrr::pmap() (M57/D035). Immediately before ffm_batch(),
+  # which is where M41 puts a guard added for blame, so every check above still
+  # reports first. The sweep covers each distinct family a `video_codec` column
+  # spells, never only the argument's.
+  check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
+                        fallback)
+
   ffm_batch(
     jobs,
     function(input, output, ...) {
@@ -4110,6 +4230,20 @@ batch_codec_cell <- function(value) {
   if (length(value) == 1L && is.na(value)) NULL else value
 }
 
+# batch_video_codecs(): the distinct video_codec values a jobs table will hand
+# the pipeline -- the column's cells where the verb honours one (seven of the
+# eight _batch verbs do; format_for_web_batch fixes its codecs by identity), and
+# the scalar argument otherwise. This is what the front-door nvenc guard sweeps,
+# because one call's column may spell several families and each needs its own
+# encoder. NA stays NA here and check_nvenc_available() reads it as the h264
+# sentinel, the same reading batch_codec_cell() gives the pipeline (D022).
+batch_video_codecs <- function(jobs, video_codec) {
+  if (!"video_codec" %in% names(jobs)) {
+    return(list(video_codec))
+  }
+  as.list(unique(jobs[["video_codec"]]))
+}
+
 # check_batch_audio_col(): type-guard a numeric stream-index column up front.
 # Legal: a numeric column (NA cells allowed), or the all-NA column R types as
 # logical. The same spelled-out shape check_batch_codec_col() uses, and for the
@@ -4569,6 +4703,9 @@ derive_web_names <- function(input) {
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 #'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
 #'   command is built, even under \code{run = FALSE}.
+#'   Availability is checked at this verb's own front door, before any row
+#'   runs, so an unavailable encoder aborts naming this function rather than
+#'   the internal fan-out it would otherwise be reported against.
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
@@ -4639,6 +4776,14 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
   }
   jobs <- reject_duplicate_outputs(jobs)
 
+  # nvenc availability, re-checked here so an unavailable encoder blames this
+  # verb instead of purrr::pmap() (M57/D035). Immediately before ffm_batch(),
+  # which is where M41 puts a guard added for blame, so every check above still
+  # reports first. The sweep covers each distinct family a `video_codec` column
+  # spells, never only the argument's.
+  check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
+                        fallback)
+
   ffm_batch(
     jobs,
     function(input, output, ...) {
@@ -4694,6 +4839,9 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 #'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
 #'   command is built, even under \code{run = FALSE}.
+#'   Availability is checked at this verb's own front door, before any row
+#'   runs, so an unavailable encoder aborts naming this function rather than
+#'   the internal fan-out it would otherwise be reported against.
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
 #'   unavailable, re-encode with software libx264 and a message (\code{TRUE})
 #'   instead of aborting (\code{FALSE}, default).
@@ -4744,6 +4892,13 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
   # row, sharing format_for_web_pipeline() with format_for_web(). hardware/
   # fallback are batch-wide; `audio_stream` is the one per-row override this
   # verb reads, and other extra job columns are still ignored.
+  # nvenc availability, re-checked here so an unavailable encoder blames this
+  # verb instead of purrr::pmap() (M57/D035), immediately before ffm_batch() so
+  # every check above still reports first (M41). The web recipe fixes the codec
+  # by identity, so the family is always h264 -- the same "libx264"
+  # format_for_web_pipeline() hands resolve_hw_encoder().
+  check_nvenc_available("libx264", hardware, fallback)
+
   ffm_batch(
     jobs,
     function(input, output, ...) {
@@ -4807,6 +4962,9 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 #'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
 #'   command is built, even under \code{run = FALSE}.
+#'   Availability is checked at this verb's own front door, before any row
+#'   runs, so an unavailable encoder aborts naming this function rather than
+#'   the internal fan-out it would otherwise be reported against.
 #'   The stream-copy conflict above is caught first, so such a call aborts
 #'   without probing.
 #' @param audio_stream `r audio_stream_param("write to each \\code{audiofile}", "keeps", "every", batch = TRUE, extra = audio_stream_extras$separation_container)`
@@ -5009,6 +5167,27 @@ separate_audio_video_batch <- function(jobs, audio_codec = "copy",
     long$audio_stream <- as.vector(rbind(per_input, rep(NA_real_, n)))
   }
   long <- reject_duplicate_outputs(long)
+
+  # nvenc availability, re-checked here so an unavailable encoder blames this
+  # verb instead of purrr::pmap() (M57/D035). Immediately before ffm_batch(),
+  # which is where M41 puts a guard added for blame and where the other seven
+  # guarded _batch verbs put theirs: above the reshape it preempted
+  # reject_duplicate_outputs(), and a row whose audiofile equals its videofile
+  # was told the encoder was missing instead of that its two outputs collide --
+  # M26's within-row catch, which only the reshaped table can make (review F3).
+  # It reads `jobs`, not `long`: the caller's `video_codec` column survives the
+  # reshape only as a per-stream `codec` column mixing both streams' choices.
+  #
+  # A "copy" cell is dropped rather than swept: the shared separation recipe
+  # aborts on a copied video stream that names hardware, never reaching
+  # resolve_hw_encoder(), so such a cell has no encoder to check. On a column
+  # mixing copy and re-encoded cells both errors are live and this one reports
+  # first -- the precedence D035's second condition admits and the tests pin.
+  check_nvenc_available(
+    Filter(function(x) !identical(x, "copy"),
+           batch_video_codecs(jobs, video_codec)),
+    hardware, fallback
+  )
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output pipeline per
   # reshaped row, sharing separate_stream_pipeline() with separate_audio_video().
@@ -5486,6 +5665,9 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 #'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
 #'   command is built, even under \code{run = FALSE}.
+#'   Availability is checked at this verb's own front door, before any row
+#'   runs, so an unavailable encoder aborts naming this function rather than
+#'   the internal fan-out it would otherwise be reported against.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -5543,6 +5725,14 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
   # row, sharing compare_videos_pipeline() with compare_videos(). A per-row
   # override column (via `...` from pmap) wins over the scalar arg; an `audio`
   # cell of NA means "drop audio" (the column form of the scalar's NULL).
+  # nvenc availability, re-checked here so an unavailable encoder blames this
+  # verb instead of purrr::pmap() (M57/D035). Immediately before ffm_batch(),
+  # which is where M41 puts a guard added for blame, so every check above still
+  # reports first. The sweep covers each distinct family a `video_codec` column
+  # spells, never only the argument's.
+  check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
+                        fallback)
+
   ffm_batch(
     jobs,
     function(inputs, output, ...) {
@@ -5611,6 +5801,9 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 #'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
 #'   command is built, even under \code{run = FALSE}.
+#'   Availability is checked at this verb's own front door, before any row
+#'   runs, so an unavailable encoder aborts naming this function rather than
+#'   the internal fan-out it would otherwise be reported against.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -5693,6 +5886,14 @@ picture_in_picture_batch <- function(jobs,
   # sharing picture_in_picture_pipeline() with picture_in_picture(). A per-row
   # override column (via `...` from pmap) wins over the scalar arg; an `audio`
   # cell of NA means "drop audio" (the column form of the scalar's NULL).
+  # nvenc availability, re-checked here so an unavailable encoder blames this
+  # verb instead of purrr::pmap() (M57/D035). Immediately before ffm_batch(),
+  # which is where M41 puts a guard added for blame, so every check above still
+  # reports first. The sweep covers each distinct family a `video_codec` column
+  # spells, never only the argument's.
+  check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
+                        fallback)
+
   ffm_batch(
     jobs,
     function(main, overlay, output, ...) {

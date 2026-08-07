@@ -121,15 +121,15 @@ test_that("an nvenc-unavailable abort names the verb, not its pipeline helper", 
   )
 })
 
-test_that("a fan-out call still blames the fan-out, not the verb", {
-  # The limitation the release note states, pinned so the note cannot outlive
-  # it. Threading `call =` into a pipeline reaches only a verb that calls that
+test_that("a fan-out call blames the verb, not the fan-out", {
+  # Every verb taking `hardware` blames ITSELF for an unavailable encoder.
+  # Threading `call =` into a pipeline reaches only a verb that calls that
   # pipeline DIRECTLY: a fan-out routes through ffm_batch() -> purrr::pmap(),
-  # so caller_env() lands on the anonymous closure (LESSONS M47/M48-F1). Fixing
-  # it needs a front-door guard in each such verb, which is not this milestone's
-  # scope; when that lands, this test goes red and the note is rewritten.
-  # The control is a scalar verb that blames ITSELF (standardize_video(), the
-  # one T1 fixed), so a blanket "everything blames pmap" would fail here.
+  # so caller_env() lands on the anonymous closure (LESSONS M47/M48-F1), and
+  # until M57 these three read "purrr::pmap(jobs, .f, ...)". M57 gave each
+  # fan-out verb a front-door guard (D035), so they now name themselves like
+  # the scalar control below. The wider sweep over all nine fan-out verbs, and
+  # the preconditions the guards mirror, live in test-nvenc-front-door.R.
   #
   # Every case asserts WHICH failure it caught, not merely that one happened: a
   # malformed jobs table aborts at the schema check, before any fan-out, and
@@ -153,20 +153,20 @@ test_that("a fan-out call still blames the fan-out, not the verb", {
       tibble::tibble(input = infile, output = "o.mp4"),
       hardware = "nvenc", run = FALSE
     )),
-    "^purrr::pmap\\("
+    "^standardize_video_batch\\("
   )
   expect_match(
     blamed(segment_video(infile, 0, 5, "o.mp4",
       hardware = "nvenc", run = FALSE
     )),
-    "^purrr::pmap\\("
+    "^segment_video\\("
   )
   expect_match(
     blamed(picture_in_picture_batch(
       tibble::tibble(main = infile, overlay = infile, output = "o.mp4"),
       hardware = "nvenc", run = FALSE
     )),
-    "^purrr::pmap\\("
+    "^picture_in_picture_batch\\("
   )
   expect_match(
     blamed(standardize_video(infile, "o.mp4",

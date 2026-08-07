@@ -1,6 +1,6 @@
 # M54: Correct the `run = FALSE` purity claim for the nvenc encoder probe
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -130,6 +130,7 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
 
 - 2026-08-06: T9 done (F1). Measured `conditionCall` on all sixteen `hardware`-bearing verbs under `tidymedia.nvenc_encoders = character(0)` rather than trusting the review's three: the fan-out blame reaches further than F1 said (the scalar `segment_video()` blames `purrr::pmap()` too, since it fans out over segments) and less far (`picture_in_picture_batch()` blames itself, validating before the fan-out). The NEWS entry now states exactly that, and `test-nvenc.R` gained a block pinning it — the two fan-out cases plus `picture_in_picture_batch()` as the control, so a blanket claim would fail there. The block is written to go red when the front-door guard lands, which is the signal to rewrite the note. ROADMAP candidate row added for that guard (search-first: no existing row or standing rejection covers batch blame attribution; M56 is codec tokens on scalar verbs). `cairn_validate` exit 0.
 - 2026-08-06: T10 done; both returned findings closed, status back to `review`. `devtools::document()` no diff. `devtools::check()`: `Status: OK` at `00check.log:68`, 0 errors / 0 warnings / 0 notes. Test totals under check equal local (FAIL 0, PASS 3482, SKIP 5) and the skip count is unchanged from the pre-return run, so neither new guard is silently skipping (LESSONS M51). `pkgdown::check_pkgdown()` "No problems found". AC7 re-measured: 0 bare-LF endings, 5708 CRLF, `git diff --stat master -- R/ffmpeg.R` 58 insertions / 2 deletions.
+- 2026-08-06: REVIEW ROUND 2 RETURNED to in-progress. Four findings at or above 80. D1 (94): `NEWS.md` excludes `picture_in_picture_batch()` from the fan-out blame limitation, but measured at HEAD with its real columns (`main`, `overlay`, `output`) it blames `purrr::pmap(jobs, .f, ...)` like every other `_batch` verb — T9's exclusion came from a measurement taken with the column name `inset`, whose jobs-schema abort fires before the fan-out and was misread as correct blame attribution. D2 (85): the control in `tests/testthat/test-nvenc.R` carries that same wrong column, so it passes for a schema reason and discriminates nothing. D3 (88): the ROADMAP candidate row repeats the exclusion and over-claims "measured across all sixteen verbs". D4 (88): `NEWS.md`'s Documentation entry still carries round 1's F2 proposition unconditionally — T8 fixed the roxygen and never touched NEWS. Eight further findings scored below 80 and are logged in the Review section. All seven acceptance criteria re-verified with fresh evidence and hold; the consistency gate is green. Defect return count for M54: 2.
 
 ## Decisions
 
@@ -236,3 +237,99 @@ in user-facing deliverables (release notes and reference documentation). Neither
 amendment return — AC4's mandated claim is conditional ("resolving `hardware = "nvenc"`
 probes...") and correct as written; the roxygen sentence overreached it. Defect return
 count for M54: 1.
+
+## Review — round 2 (2026-08-06)
+
+### Acceptance-criteria evidence (fresh, round 2)
+
+- **AC1** `cairn/DECISIONS.md:1196` carries D034; heading names "supersedes D024's
+  `run = FALSE` bullet". D024's sentence and its `two_pass` continuation are quoted
+  verbatim (byte-compared by the diff-bug lens). The rule is stated under "The rule, as a
+  condition on probe shape", naming the failure mode rather than a verb list.
+- **AC2** `grep -c "sole exception" cairn/DESIGN.md` → 0.
+- **AC3** The two nvenc-excluding comments are replaced by live blocks and the third file
+  has one; fresh counts 85 / 86 / 30 expectations, 0 failures. Discrimination re-run fresh:
+  forcing `resolve_hw_encoder()`'s `hardware == "none"` early return to fire
+  unconditionally turns the `audio-stream-*` suite red; baseline is 0 failures.
+  `R/ffmpeg.R` restored afterward — 5708 CRLF, 0 bare LF.
+- **AC4** 16 Rd topics document `hardware`; all 16 carry the probe sentence, measured by
+  `grep -l` over `man/*.Rd`. Exactly four carry the stream-copy exception clause
+  (`separate_audio_video`, `separate_audio_video_batch`, `segment_video`,
+  `segment_video_batch`). `test-nvenc-docs.R` 10 expectations, 0 failures.
+- **AC5** Four `resolve_hw_encoder()` call sites (`R/ffmpeg.R:1143,1407,1617,2496`), every
+  one passing `call =`; the fifth grep hit is a comment.
+- **AC6** `devtools::check()` → `Status: OK` at `00check.log:68`, 0 errors / 0 warnings /
+  0 notes. `devtools::test()` → FAIL 0, PASS 3482, SKIP 5. Test totals under `R CMD check`
+  equal local totals, so no new guard is silently skipping.
+- **AC7** 0 bare-LF endings, 5708 CRLF; `git diff --stat master -- R/ffmpeg.R` → 58
+  insertions / 2 deletions, under the 100-line bound.
+
+### Consistency gate — round 2
+
+- `cairn_validate.py` exit 0; all 16 PASS checks and 8 OK advisories green, including
+  `coverage complete` and `binding criteria`.
+- No `DESIGN.md` principle changed, so `cairn_impact` is skipped.
+- Toolchain slot (`r-package`): `devtools::document()` no diff · `pkgdown::check_pkgdown()`
+  "No problems found" · README pair untouched · NEWS.md carries entries with no milestone
+  numbers · no new root files.
+
+### Independent review — three lenses + scorer (round 2)
+
+- **[O] diff-bug (Opus):** 12 findings, plus a verified-clean list (line-ending integrity,
+  `document()` no-diff against a `git archive` copy, D034's verbatim quote, the Rd topic
+  counts, and a check that `tool_versions()` is not a third build-time probe seam).
+- **[S] blame-history (Sonnet):** 11 checks, 1 finding (D034's drifted line citations).
+  No past intent undone: the deleted nvenc-excluding comments are honored, `helper-rd.R`
+  is a verbatim lift, D034 narrows nothing D013/D024 rely on.
+- **[S] prior-review (Sonnet):** no findings. Its PR-comment probe returned empty, so
+  archived and live `## Review` sections were the whole surface; round 1's F1 and F2 are
+  genuinely addressed rather than merely claimed.
+- **[S] scorer (Sonnet, fresh):** 4 findings at or above 80; 8 below.
+
+### Actioned findings (>= 80)
+
+- **D1 (94) — `picture_in_picture_batch()` does NOT validate before fanning out; the NEWS
+  claim is false.** `NEWS.md:278-281` says the fan-out blame applies to "the `_batch`
+  verbs, bar `picture_in_picture_batch()`". Measured at HEAD with
+  `tidymedia.nvenc_encoders = character(0)` and a well-formed jobs table (`main`,
+  `overlay`, `output`): conditionCall is `purrr::pmap(jobs, .f, ...)`, the same as every
+  other `_batch` verb. `compare_videos_batch` with its correct columns likewise.
+- **D3 (88) — the ROADMAP candidate row repeats the same false exclusion** and over-claims
+  its provenance: `cairn/ROADMAP.md` says "bar `picture_in_picture_batch()`, which
+  validates before fanning out ... measured 2026-08-06 across all sixteen
+  `hardware`-bearing verbs", while that measurement used a malformed jobs table.
+- **D4 (88) — F2's fix never reached NEWS.md.** `NEWS.md:586-590` still states
+  unconditionally that asking for `"nvenc"` means "such a call runs the binary even with
+  `run = FALSE`" — the proposition round 1 scored 92 on — and so misdescribes the
+  documentation change it announces, since four topics now say the opposite for their
+  default arguments.
+- **D2 (85) — the test written to pin D1 is vacuous.** `tests/testthat/test-nvenc.R:147`
+  passes `inset` where `picture_in_picture_batch()` requires `overlay`, so the call aborts
+  on a jobs-schema error before any fan-out and independently of `hardware`; the
+  expectation passes for a reason unrelated to blame attribution.
+
+### Logged, not actioned (8 below the 80 threshold)
+
+- D6 (72) "as most other verbs taking `hardware` already did" is a minority, not a majority.
+- D9 (68) the exception guard hand-lists its four topics where the probe guard derives its
+  list from the Rd — the staleness shape D034 exists to retire.
+- D8 (62) round 1's AC evidence block cites pre-T8 line numbers and totals; round 2's block
+  above supersedes it.
+- D5 (58) "that re-encodes the video" still overreaches where `codec_family()` cannot map
+  the codec (e.g. `video_codec = "libvpx-vp9"`), which aborts with 0 probes.
+- D11 (50) D034's "no runtime behavior changes here" sits in tension with T1's changed
+  `conditionCall`, documented as a bug fix.
+- D7 (50) D034's cited line numbers drifted further after T8 — round 1's F3, still open.
+- D10 (38) five topics carry the probe claim with no probe-count assertion behind it.
+- D12 (32) `standardize_video(video_codec = "copy")` aborts without probing and its topic
+  does not say so.
+
+### Disposition — round 2
+
+**Returned to `in-progress`** under the return floor: D1 scores 94 on a defect in a
+user-facing deliverable (the release notes). D2, D3 and D4 are actioned alongside it —
+D1/D2/D3 share one root cause, a `picture_in_picture_batch()` measurement taken with a
+wrong column name whose schema error was read as correct blame attribution, and D4 is
+round 1's F2 surviving in a file T8 never touched. No finding is an amendment return: no
+acceptance criterion is falsified, and all seven verified above. Defect return count for
+M54: 2.

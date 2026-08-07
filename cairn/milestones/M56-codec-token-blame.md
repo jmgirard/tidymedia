@@ -99,7 +99,7 @@ already pins is unmoved.
       `check_token(<codec>)` at the same site, per the Scope amendment.
 - [x] T3 Extend `codec_front_door_bad` per AC3; prove discrimination by reverting each of
       the four changes in turn and confirming the sweep goes red for that verb.
-- [ ] T4 Re-run the baseline and diff against T1's; any difference is a defect, not a
+- [x] T4 Re-run the baseline and diff against T1's; any difference is a defect, not a
       re-baseline.
 - [ ] T5 Run `devtools::document()`, `devtools::test()`, `devtools::check()`; confirm the
       CRLF count and the `00check.log` `Status:` line.
@@ -119,6 +119,7 @@ already pins is unmoved.
 - 2026-08-07: correction — T2's work-log line above says the CRLF count was "still 5708"; it was not re-measured and is false. The count after T2 is 5728, master's 5708 plus the 20 comment lines T2 added, with every line still CRLF-terminated. The line stands as written (history); this supersedes it.
 - 2026-08-07: amendment — AC6 restated from a pinned total to the invariant it was reaching for: `grep -c $'\r$' R/ffmpeg.R` equals `wc -l < R/ffmpeg.R` (5728 = 5728 on the branch tip, against master's 5708). A total pinned to `master` cannot survive a milestone that adds a line to that file, which this one does. Chosen at a mini gate over pinning the new total.
 - 2026-08-07: T3 — `codec_front_door_bad` gained `` `malformed token` = "aac -evil" ``; the file's four assertions pass for all 51 verb x argument x column cells (`devtools::test(filter = "codec")`: 0 failures, 1563 passing). Discrimination measured by reverting each of the 15 changes in turn, one at a time, and re-running the sweep: every revert turned red exactly its own verb's cells and nothing else — the four routing changes each only their verb, each front-door upgrade only its own (both arguments where the verb carries two). Tied to the executed suite rather than the probe alone: reverting `extract_audio_pipeline()` gives 3 real failures in `test-codec-arg-front-door.R` (names arg / hides engine arg / blames the verb), the `In index:` assertion staying green because that verb does not fan out.
+- 2026-08-07: T4 — baseline re-run on the working tree and diffed against T1's `master` capture: 584 cells both sides, 0 vacuous both sides, **67 changed rows, every one of them the `token` scenario**. No legal-value cell moved (`default` / `null` / `literal` / `copy` all identical), so no compiled command changed; the non-string cells (`na` / `number` / `vec2`) are absent from the diff too. The changed rows are the intended ones: the token error moving to the verb, plus the `col = present` / `col = na` cells where a malformed scalar used to compile silently because a same-named jobs column won. Measured side effect on the doubly-invalid cells: ten pairs flipped from reporting `jobs` to reporting the codec, which is what the frozen precedence table already says an NA gets there — the token now answers exactly as a non-string does on every pair, and the NA table itself is unchanged. Locked with a new test in `test-codec-arg-front-door.R` asserting the token's precedence against that same frozen table (reverting `crop_video_batch`'s guard turns 7 assertions red). `devtools::test()`: 0 failures, 3762 passing.
 
 ## Decisions
 

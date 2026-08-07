@@ -185,15 +185,15 @@ codec_front_door_precedence <- function() {
   )
 }
 
-test_that("a bad codec argument does not change which error an invalid jobs gets", {
-  expected <- codec_front_door_precedence()
+# Which complaint a doubly-invalid call gets, at one bad value.
+codec_front_door_precedence_at <- function(value) {
   observed <- character()
   for (pair in codec_family_pairs()) {
     verb <- pair$verb
     if (!"jobs" %in% names(codec_family_call(verb, "in.mp4", "out.mp4"))) next
     for (arg in pair$args) {
       args <- list(jobs = "oops", run = FALSE, parallel = FALSE)
-      args[arg] <- list(NA)
+      args[arg] <- list(value)
       cnd <- tryCatch({
         do.call(verb, args, envir = asNamespace("tidymedia"))
         NULL
@@ -203,8 +203,30 @@ test_that("a bad codec argument does not change which error an invalid jobs gets
         if (grepl("`jobs`", msg, fixed = TRUE)) "jobs" else "codec"
     }
   }
+  observed
+}
+
+test_that("a bad codec argument does not change which error an invalid jobs gets", {
+  expected <- codec_front_door_precedence()
+  observed <- codec_front_door_precedence_at(NA)
   # setequal on names first, so a verb added or dropped reports as that rather
   # than as a confusing value mismatch.
+  expect_setequal(names(observed), names(expected))
+  expect_identical(observed[names(expected)], expected)
+})
+
+test_that("a malformed token gets the same precedence a non-string does", {
+  # M56 moved the token guard onto M41's site, so a doubly-invalid call answers
+  # identically whichever kind of bad codec value it carries. Ten of these pairs
+  # answered "jobs" for a token before M56 and "codec" for an NA, because the
+  # token was refused deep in the pipeline where the jobs check had already
+  # spoken; measured on both refs via data-raw/codec-guard-baseline.R.
+  #
+  # Asserted against the SAME frozen table rather than against a fresh NA run:
+  # a table-free "these two agree" would stay green if both drifted together,
+  # which is the whole failure the table above exists to catch.
+  expected <- codec_front_door_precedence()
+  observed <- codec_front_door_precedence_at("aac -evil")
   expect_setequal(names(observed), names(expected))
   expect_identical(observed[names(expected)], expected)
 })

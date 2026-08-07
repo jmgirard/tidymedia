@@ -112,7 +112,7 @@ owing its own entry. Line-ending governance → M60.
       (conditions 2, 3), row-swept on `reencode`/`video_codec`/`audio_codec`
       columns, placed before M57's nvenc guard; retire that guard's now-dead
       `reencode` gating (`R/ffmpeg.R:2744`, `:3047`).
-- [ ] T3 — `separate_audio_video_batch()` front door (condition 1), row-swept
+- [x] T3 — `separate_audio_video_batch()` front door (condition 1), row-swept
       on `video_codec`, before the nvenc guard; reconcile with the existing
       `Filter("copy")` in that guard's call (`R/ffmpeg.R:5186`).
 - [ ] T4 — `compare_videos_batch()` front door (conditions 4, 5), row-swept on
@@ -138,6 +138,7 @@ owing its own entry. Line-ending governance → M60.
 
 - 2026-08-07: T2 — both segment front doors check conditions 2 and 3 (the _batch one row-swept via a new `batch_arg_rows()`); M57's `reencode` gate and row-scoping on the nvenc guards retired as dead, since `hardware = "nvenc"` now contradicts every copying row before that guard runs.
 - 2026-08-07: minor amendment (task reorder) — T7's rewrite of the two committed precedence tests was pulled forward into T2's checkpoint, because the precedence flip turns them red the moment T2's code lands and the verify slot must be clean per task. A third test (`test-nvenc-front-door.R:299`) kept passing but for a new reason, so its comment was corrected and a blame assertion added. T7 keeps the two uniform-call tests, which need T4/T5.
+- 2026-08-07: T3 — `separate_audio_video_batch()` sweeps condition 1 over its `video_codec` column, below the reshape so a within-row output collision still reports first (M57 review F3). The nvenc guard's `Filter("copy")` retired as dead for the same reason T2's gating was. Second committed precedence test rewritten.
 
 ## Decisions
 

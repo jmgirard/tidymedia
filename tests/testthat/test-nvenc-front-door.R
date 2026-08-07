@@ -374,11 +374,12 @@ test_that("a within-row output collision still reports the collision", {
   expect_identical(nvenc_blamed(cnd), "separate_audio_video_batch")
 })
 
-test_that("a mixed copy column reports availability before the copy conflict", {
+test_that("a mixed copy column reports the copy conflict before availability", {
   input <- make_input()
   # The copy cell has no encoder to check and the libx264 cell does, so both
-  # errors are live on this table and which one reports depends on the seam --
-  # the precedence D035's second condition admits (review F2).
+  # errors are live on this table (M57 review F2). M57 let the seam decide which
+  # one reported; M58 fixes it on the copy conflict, so the same wrong call is
+  # diagnosed identically on a machine with the encoder and one without.
   jobs <- tibble::tibble(input = c(input, input),
                          audiofile = c("a1.aac", "a2.aac"),
                          videofile = c("v1.mp4", "v2.mp4"),
@@ -387,11 +388,14 @@ test_that("a mixed copy column reports availability before the copy conflict", {
   present <- nvenc_fanout_catch("separate_audio_video_batch", input,
                                 extra = list(jobs = jobs))
   expect_match(conditionMessage(present), "needs a re-encoding")
+  expect_identical(nvenc_blamed(present), "separate_audio_video_batch")
   withr::local_options(tidymedia.nvenc_encoders = character(0))
   absent <- nvenc_fanout_catch("separate_audio_video_batch", input,
                                extra = list(jobs = jobs))
-  expect_match(conditionMessage(absent), "is not available")
+  expect_match(conditionMessage(absent), "needs a re-encoding")
+  expect_no_match(conditionMessage(absent), "is not available")
   expect_identical(nvenc_blamed(absent), "separate_audio_video_batch")
+  expect_identical(conditionMessage(present), conditionMessage(absent))
 })
 
 # --- the precedence the guard reassigns -------------------------------------

@@ -5310,16 +5310,25 @@ separate_audio_video_batch <- function(jobs, audio_codec = "copy",
   # It reads `jobs`, not `long`: the caller's `video_codec` column survives the
   # reshape only as a per-stream `codec` column mixing both streams' choices.
   #
-  # A "copy" cell is dropped rather than swept: the shared separation recipe
-  # aborts on a copied video stream that names hardware, never reaching
-  # resolve_hw_encoder(), so such a cell has no encoder to check. On a column
-  # mixing copy and re-encoded cells both errors are live and this one reports
-  # first -- the precedence D035's second condition admits and the tests pin.
-  check_nvenc_available(
-    Filter(function(x) !identical(x, "copy"),
-           batch_video_codecs(jobs, video_codec)),
-    hardware, fallback
-  )
+  # The copy-versus-hardware contradiction (condition 1), re-checked here so a
+  # contradictory call blames this verb instead of purrr::pmap() (M58). Swept
+  # ROW BY ROW over the caller's `video_codec` column, and placed BELOW the
+  # reshape for the reason M57 review F3 gave its neighbour: above it, a row
+  # whose audiofile equals its videofile would be told about the copy instead of
+  # about its colliding outputs -- M26's within-row catch, which only the
+  # reshaped table can make.
+  vcodec_rows <- batch_arg_rows(jobs, "video_codec", video_codec,
+                                batch_codec_cell)
+  for (vc in vcodec_rows) check_hardware_needs_encode(vc, hardware)
+  # And nvenc availability (M57/D035).
+  #
+  # The Filter() that dropped "copy" cells before sweeping is retired with M58.
+  # It was there because a copied video stream has no encoder to check and its
+  # own error had to report instead; the sweep above now refuses every such cell
+  # whenever `hardware = "nvenc"`, which is the only setting under which this
+  # guard acts at all, so no copy cell can reach it.
+  check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
+                        fallback)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output pipeline per
   # reshaped row, sharing separate_stream_pipeline() with separate_audio_video().

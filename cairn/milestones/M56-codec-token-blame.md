@@ -46,7 +46,7 @@ already pins is unmoved.
 
 ## Acceptance criteria
 
-- [ ] AC1 `grep -n "ffm_codec(" R/*.R` shows every remaining direct call passing either a
+- [x] AC1 `grep -n "ffm_codec(" R/*.R` shows every remaining direct call passing either a
       package literal or a value already token-checked with `call =` threaded at that
       verb's front door. The three pipelines named in Scope — `extract_audio_pipeline()`,
       `convert_audio_pipeline()`, and the video side of `standardize_pipeline()` — no
@@ -59,7 +59,7 @@ already pins is unmoved.
       own argument (`audio_codec` / `video_codec`), never Layer-1's `audio` / `video`, and
       blame the verb rather than `ffm_codec()` or `purrr::pmap()`. `normalize_audio(
       audio_codec = "aac -evil")` blames `normalize_audio()`, not `normalize_audio_pipeline()`.
-- [ ] AC3 `codec_front_door_bad` (`tests/testthat/test-codec-arg-front-door.R`) gains
+- [x] AC3 `codec_front_door_bad` (`tests/testthat/test-codec-arg-front-door.R`) gains
       `"aac -evil"`, and the file's four existing assertions — labelled `names arg`,
       `hides engine arg`, `blames the verb`, and `is not mid-fan-out` — pass for every
       verb × argument pair in `tests/testthat/helper-codec-family.R`. The new value is shown to discriminate on the
@@ -75,17 +75,18 @@ already pins is unmoved.
 - [x] AC5 PROFILE.md's verify slot clean — `devtools::check()` 0 errors / 0 warnings, read
       from `<pkg>.Rcheck/00check.log`'s `Status:` line — and `devtools::test()` passes.
 - [x] AC6 `R/ffmpeg.R` stays wholly CRLF: on the branch tip `grep -c $'\r$' R/ffmpeg.R`
-      equals `wc -l < R/ffmpeg.R`, both 5728 — 20 lines more than `master`'s 5708, the
-      comment lines T2/T2b added. (The plan's 5652 was measured at `bcc6f5c`, before M54's
-      merge; this milestone's first amendment pinned `master`'s 5708, which a milestone that
-      adds lines to the file cannot satisfy.)
-- [ ] AC7 A malformed codec token in a `jobs` **column** blames the batch verb: for
+      equals `wc -l < R/ffmpeg.R`. No literal count is written into this criterion. Every
+      figure pinned here has gone stale inside the milestone that wrote it — the plan's
+      5652 (measured before M54's merge), then `master`'s 5708, then the branch's own 5728
+      once the review fixes added more comment lines — because this milestone's whole
+      method is inserting comments into that file.
+- [x] AC7 A malformed codec token in a `jobs` **column** blames the batch verb: for
       `extract_audio_batch()`, `convert_audio_batch()`, `normalize_audio_batch()` and
       `standardize_video_batch()`, a `jobs` table carrying `"aac -evil"` in a codec column
       emits a message naming that column's argument and attributing the error to the batch
       verb — never to `.f()`, `ffm_codec()`, or a `*_pipeline()` helper. A test in
       `test-codec-arg-front-door.R` covers it and goes red when the fix is reverted.
-- [ ] AC8 `standardize_video()` and `standardize_video_batch()` answer alike on the nvenc
+- [x] AC8 `standardize_video()` and `standardize_video_batch()` answer alike on the nvenc
       path: with `withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")` and
       `hardware = "nvenc"`, both refuse `video_codec = "libx264 -evil"` naming
       `video_codec`, matching `crop_video()`, which already checks the user's token before
@@ -158,6 +159,8 @@ already pins is unmoved.
 - 2026-08-07: also corrected in this pass, both defects the diff itself introduced rather than actioned findings: `data-raw/codec-guard-baseline.R` said "five scenarios" in two places where the diff had made it eight (review F10, 75), and the NEWS entry said "every verb with a `video_codec` or `audio_codec` argument" where `verify_media()` carries both and is excluded by design (review F4a, 55). The other seven sub-threshold findings stand as logged.
 - 2026-08-07: the ROADMAP candidate added earlier today for the column path's mid-fan-out blame is removed — T6 fixed it, so the row is no longer true.
 - 2026-08-07: AC4 re-measured after both fixes: 584 cells each side, 0 vacuous each side, 67 changed rows all in the `token` scenario, 0 legal-value changes. Status → review.
+- 2026-08-07: amendment return: AC6 — "No literal count is written into this criterion. Every figure pinned here has gone stale inside the milestone that wrote it — the plan's 5652 (measured before M54's merge), then `master`'s 5708, then the branch's own 5728 once the review fixes added more comment lines — because this milestone's whole method is inserting comments into that file."
+- 2026-08-07: re-review — all eight criteria verified with fresh evidence on tip cc07834. Local `devtools::check()` Status: OK; CI 8 pass / 1 fail, the failure `codecov/project` at -0.07% with the patch itself 100% covered, which PROFILE.md makes diagnostic rather than a gate.
 
 ## Decisions
 
@@ -263,6 +266,39 @@ use `allow_null = TRUE`; inherited from `master` · F8 (25) `col_extra` now appl
 `literal`/`copy` but not `default`/`null`, so scenarios are not comparable across a row ·
 F2 (10) the nvenc token check runs on the resolved codec — measured pre-existing, compiles
 identically on `master`.
+
+### Re-review after the two fixes, 2026-08-07 (tip cc07834)
+
+- **AC1 — verified.** `grep -n "ffm_codec(" R/*.R` returns six direct calls: two package
+  literals in `ffm_copy()`, `format_for_web_pipeline()`'s resolved `"libx264"` + `"aac"`
+  pair, `anonymize_pipeline()` (Out of scope, pre-token-checked with `call =`), and the two
+  seam bodies, each preceded by `check_token(..., call = call)`. The three pipelines named
+  in Scope route through the seams, and `normalize_audio_pipeline()`'s
+  `apply_audio_codec()` call passes `call =`.
+- **AC2 — verified.** All 34 verb x argument pairs: a malformed token in the scalar
+  argument aborts, names that verb's own argument, blames the verb in `conditionCall()`,
+  and carries no `In index:`. 34 of 34.
+- **AC3 — verified.** `codec_front_door_bad` carries `"aac -evil"`;
+  `devtools::test(filter = "codec")` passes 1659 assertions, 0 failures. Discrimination
+  re-confirmed by mutation for the 15 original changes and both new fixes.
+- **AC4 — verified after the fixes.** 584 cells each side, 0 vacuous each side, 67 changed
+  rows, all `token`; 0 legal-value changes.
+- **AC5 — verified.** `devtools::check()` `Status: OK`, 0 errors / 0 warnings / 0 notes.
+  `devtools::test()` 0 failures / 3856 passing.
+- **AC6 — verified.** `wc -l < R/ffmpeg.R` = 5749 and `grep -c $'\r$' R/ffmpeg.R` = 5749;
+  every line CRLF-terminated, against `master`'s 5708.
+- **AC7 — verified.** All 17 batch verb x codec-column pairs: a malformed token in the
+  `jobs` column aborts at the verb's front door, names the column's argument, blames the
+  batch verb, and carries neither `In index:` nor `.f()`. 17 of 17, where `master` had 0.
+- **AC8 — verified.** With the encoder pool pinned and `hardware = "nvenc"`,
+  `standardize_video()` and `standardize_video_batch()` both refuse
+  `video_codec = "libx264 -evil"` naming `video_codec`, alongside `crop_video()` as the
+  control. `master` compiled on both.
+
+CI on PR #59 after the fixes: 8 pass, 1 fail — `codecov/project` at 95.14% (-0.07% against
+`master`), with `codecov/patch` reporting 100.00% of the diff hit. PROFILE.md's
+test-doctrine makes coverage diagnostic-only and never a merge gate; recorded here rather
+than treated as either green or blocking.
 
 Consistency gate — `cairn_validate` all checks passed. `devtools::document()` no diff.
 No new exports, so no `_pkgdown.yml` row owed; `pkgdown` CI job passes. NEWS.md carries the

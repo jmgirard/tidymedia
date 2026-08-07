@@ -122,7 +122,7 @@ door → rejected at the plan gate (work log).
 - [x] T10 (review return, F3/F2): move `separate_audio_video_batch()`'s guard
       below `reject_duplicate_outputs()` so M26's within-row collision still
       reports; test it, and pin the copy-column precedence F2 named.
-- [ ] T11 (review return, F1): `check_nvenc_available()` validates `fallback`
+- [x] T11 (review return, F1): `check_nvenc_available()` validates `fallback`
       where it consults it, so a malformed value is diagnosed the same way on
       every machine.
 - [ ] T12: re-check the `@param hardware` wording against the fixed guards;
@@ -152,11 +152,23 @@ door → rejected at the plan gate (work log).
 - 2026-08-07 (T9): minor amendment — the review return added T9-T12, one per actioned finding plus a closing docs/check pass, and the Coverage map gained them; no criterion text changed.
 - 2026-08-07 (T9): `segment_video_batch()`'s guard now sweeps `jobs[which(reencode)]` rather than skipping on `all(reencode %in% TRUE)`, so a mixed column's re-encoding rows are checked at the front door. Four tests added: the mixed column blames the verb, an all-FALSE column still reports the cut, a copying AV1 row is not swept under an h264-only seam, and the precedence pin — the same mixed call reports the cut from inside the fan-out when the encoder is present and availability at the verb when it is not. Discrimination checked by reverting `R/ffmpeg.R` alone: exactly the two mixed-column blame assertions fail, both reading `purrr::pmap`. Suite FAIL 0 | PASS 3931, the same 4 warnings and 5 skips as at T1. CRLF 5922 -> 5930 for a numstat of 15 added / 7 deleted (M35/M48).
 - 2026-08-07 (T10): `separate_audio_video_batch()`'s guard moved below `reject_duplicate_outputs(long)`, immediately before `ffm_batch()` as on the other seven guarded `_batch` verbs; it still reads `jobs`, since the caller's `video_codec` column survives the reshape only as a mixed per-stream `codec` column. Two tests added: a row whose `audiofile` equals its `videofile` now reports the collision M26 catches rather than availability, and a column mixing `copy` with `libx264` reports the copy conflict under an h264 seam and availability under an empty one — the precedence F2 named, now pinned rather than denied by the comment. Discrimination checked by reverting `R/ffmpeg.R` alone: exactly the two collision assertions fail, both reading the availability message. Suite FAIL 0 | PASS 3938. CRLF 5930 -> 5936 for a numstat of 21 added / 15 deleted (M35/M48).
+- 2026-08-07 (T11): `check_nvenc_available()` now validates `fallback` with `rlang::check_bool()` where it reads it, after the hardware test, replacing the `isTRUE()` gate that read a malformed value as FALSE. Two tests: `fallback = NA` at `hardware = "nvenc"` gives the type error and blames the verb under a seam holding the encoder AND under an empty one, where before the two seams gave different diagnoses; a `hardware = "none"` control still fails from inside the fan-out, unchanged from master, which is what keeps the validation from becoming a new front-door refusal. Discrimination checked by reverting `R/ffmpeg.R` alone: three assertions fail, all in the F1 shape. Suite FAIL 0 | PASS 3949. CRLF 5936 -> 5950 (M35/M48).
 
 ## Decisions
 
 - 2026-08-07 (T1): the shared guard takes `video_codec` as either one value or a LIST of values, so one function serves the scalar resolver and a `_batch` verb whose `video_codec` column spells several families in one call. `NULL` and its column form `NA` (D022) both resolve to the h264 family, matching `resolve_hw_encoder()`'s sentinel branch — the two readings must agree, or the front door would refuse a call the pipeline compiles, which is D035's second condition.
 - 2026-08-07 (T1): `check_nvenc_available()` returns early on `fallback = TRUE` rather than sweeping and then suppressing. Sweeping a column would reach `codec_family()`, which aborts on an unmappable codec regardless of `fallback` (`R/ffmpeg.R:2440-2452`), so a `fallback = TRUE` call that falls back happily today would start being refused.
+
+- 2026-08-07 (T9/T10/T11, review return): a per-row skip condition scopes the
+  guard to the rows it applies to, never gates the whole table. `reencode` and a
+  `"copy"` cell each mean "this row names no encoder", and reading them as
+  all-or-nothing let a mixed column skip the guard for the rows that DO encode
+  (F4). Scoping instead means a mixed column can fail two ways, and which error
+  reports depends on the machine's encoders — the precedence reassignment D035's
+  second condition admits and requires be tested, so both mixed cases are pinned
+  by a test that runs the same call under a seam with and without the encoder.
+  What must not vary with the machine is which ARGUMENTS are legal: `fallback`
+  is validated where it is read (F1), never inferred with `isTRUE()`.
 
 ## Review
 

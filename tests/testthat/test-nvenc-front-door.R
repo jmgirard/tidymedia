@@ -390,6 +390,46 @@ test_that("a mixed copy column reports availability before the copy conflict", {
   expect_identical(nvenc_blamed(absent), "separate_audio_video_batch")
 })
 
+# --- the guard validates what it reads --------------------------------------
+
+test_that("a malformed fallback reports its own type error, on any machine", {
+  input <- make_input()
+  jobs <- tibble::tibble(input = input, output = "a.mp4")
+  # The guard used to test isTRUE(fallback), under which NA read as FALSE and
+  # the call was told the encoder was missing -- but only where it WAS missing,
+  # so one wrong call had two diagnoses depending on the machine (review F1).
+  # Both seams must now give the type error resolve_hw_encoder() would give.
+  for (seam in list("h264_nvenc", character(0))) {
+    withr::local_options(tidymedia.nvenc_encoders = seam)
+    cnd <- tryCatch(
+      standardize_video_batch(jobs, hardware = "nvenc", fallback = NA,
+                              run = FALSE),
+      error = function(e) e
+    )
+    expect_s3_class(cnd, "rlang_error")
+    expect_match(conditionMessage(cnd), "must be `TRUE` or `FALSE`")
+    expect_no_match(conditionMessage(cnd), "is not available")
+    expect_identical(nvenc_blamed(cnd), "standardize_video_batch")
+  }
+})
+
+test_that("hardware = \"none\" reaches no fallback check at the front door", {
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  input <- make_input()
+  jobs <- tibble::tibble(input = input, output = "a.mp4")
+  # The validation sits after the hardware test on purpose: a hardware = "none"
+  # call never consults `fallback` at the front door, so refusing one there
+  # would be a refusal master does not make. It still fails, from the pipeline.
+  cnd <- tryCatch(
+    standardize_video_batch(jobs, hardware = "none", fallback = NA,
+                            run = FALSE),
+    error = function(e) e
+  )
+  expect_s3_class(cnd, "rlang_error")
+  expect_match(conditionMessage(cnd), "must be `TRUE` or `FALSE`")
+  expect_false(identical(nvenc_blamed(cnd), "standardize_video_batch"))
+})
+
 test_that("resolve_hw_encoder() reaches the abort by calling the shared guard", {
   # Read the function object, never the source tree: a test that opens R/ under
   # the package root SKIPS under R CMD check, which runs against an installed

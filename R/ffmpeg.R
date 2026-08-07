@@ -2529,10 +2529,24 @@ resolve_hw_encoder <- function(video_codec, hardware = c("none", "nvenc"),
 # a column anyway would reach codec_family(), which aborts on an unmappable
 # codec regardless of fallback and would refuse a call that falls back happily
 # today.
+#
+# `fallback` is VALIDATED before it is read, never tested with isTRUE(): under
+# isTRUE() a malformed value (NA, "yes", c(TRUE, TRUE)) read as FALSE and got
+# the availability abort in place of its own type error -- and only on a
+# machine missing the encoder, so one wrong call was diagnosed two ways
+# depending on the machine (M57 review F1). resolve_hw_encoder() has always
+# checked it with rlang::check_bool(), so this raises the same error the
+# pipeline would have raised, at the verb instead of inside purrr::pmap().
+# It sits AFTER the hardware test: a hardware = "none" call never consults
+# fallback here, and refusing one at the front door would be a new refusal.
 check_nvenc_available <- function(video_codec, hardware = "none",
                                   fallback = FALSE,
                                   call = rlang::caller_env()) {
-  if (!identical(hardware, "nvenc") || isTRUE(fallback)) {
+  if (!identical(hardware, "nvenc")) {
+    return(invisible(NULL))
+  }
+  rlang::check_bool(fallback, call = call)
+  if (fallback) {
     return(invisible(NULL))
   }
   codecs <- if (is.list(video_codec)) video_codec else list(video_codec)

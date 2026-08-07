@@ -35,7 +35,7 @@ door → rejected at the plan gate (work log).
 
 ## Acceptance criteria
 
-- [ ] AC1: On each of `segment_video()`, `anonymize_video_batch()`,
+- [x] AC1: On each of `segment_video()`, `anonymize_video_batch()`,
       `segment_video_batch()`, `standardize_video_batch()`, `crop_video_batch()`,
       `format_for_web_batch()`, `separate_audio_video_batch()`,
       `compare_videos_batch()` and `picture_in_picture_batch()`, a call with
@@ -154,6 +154,7 @@ door → rejected at the plan gate (work log).
 - 2026-08-07 (T10): `separate_audio_video_batch()`'s guard moved below `reject_duplicate_outputs(long)`, immediately before `ffm_batch()` as on the other seven guarded `_batch` verbs; it still reads `jobs`, since the caller's `video_codec` column survives the reshape only as a mixed per-stream `codec` column. Two tests added: a row whose `audiofile` equals its `videofile` now reports the collision M26 catches rather than availability, and a column mixing `copy` with `libx264` reports the copy conflict under an h264 seam and availability under an empty one — the precedence F2 named, now pinned rather than denied by the comment. Discrimination checked by reverting `R/ffmpeg.R` alone: exactly the two collision assertions fail, both reading the availability message. Suite FAIL 0 | PASS 3938. CRLF 5930 -> 5936 for a numstat of 21 added / 15 deleted (M35/M48).
 - 2026-08-07 (T11): `check_nvenc_available()` now validates `fallback` with `rlang::check_bool()` where it reads it, after the hardware test, replacing the `isTRUE()` gate that read a malformed value as FALSE. Two tests: `fallback = NA` at `hardware = "nvenc"` gives the type error and blames the verb under a seam holding the encoder AND under an empty one, where before the two seams gave different diagnoses; a `hardware = "none"` control still fails from inside the fan-out, unchanged from master, which is what keeps the validation from becoming a new front-door refusal. Discrimination checked by reverting `R/ffmpeg.R` alone: three assertions fail, all in the F1 shape. Suite FAIL 0 | PASS 3949. CRLF 5936 -> 5950 (M35/M48).
 - 2026-08-07 (T12): the nine verbs' `@param hardware` sentence dropped "once" and gained what the fixes made true — only the encoders a call actually needs are checked, a copying row naming none; `devtools::document()` rewrote exactly those nine `.Rd` files and a second run produced no further change. The NEWS paragraph gained the same qualification plus the precedence a mixed table now sees, both covered by the tests added at T9/T10. `devtools::test()` FAIL 0 | PASS 3949 with the same 4 warnings and 5 skips as at T1; `devtools::check()` `Status: OK`, 0/0/0. `git diff master -- tests/` still shows 0 deleted lines outside `test-nvenc.R`, so AC5's named exception remains the only re-baseline. `R/ffmpeg.R` CRLF 5749 on master -> 5968 here, matching a branch numstat of 232 added / 13 deleted (M35/M48).
+- 2026-08-07 (review round 2): two findings actioned on the branch. D3 (83) — the `@param hardware` sentence added at T12 was true on only three of the nine verbs, so it is removed from all nine; the three where the exemption is real already documented it themselves. D1 (80) — the guard displaces four error classes AC6's grep never reached, because that grep attributes an abort to the function that writes it; the precedence is now pinned by a 12-assertion test running each call under both encoder seams, and the grouped candidate row is extended with the remainder. D4 and D7 fixed alongside them though below threshold. Suite FAIL 0 | PASS 3960; `check()` Status: OK.
 
 ## Decisions
 
@@ -309,3 +310,170 @@ implement, which fencing forbids — they are review-owned. All seven were
 unticked at the start of this review and re-ticked one at a time as the
 evidence above was recorded.
 
+---
+
+## Review — round 2 (2026-08-07)
+
+Fresh evidence, gathered 2026-08-07 on `m57-fanout-nvenc-front-door` at PR #60,
+after the round-1 defect return. Every figure below was re-measured this round;
+the seven boxes carrying round-1 evidence were unticked first, since the code
+under them changed. Branch contains `origin/master`; tree clean.
+
+**AC1 — the abort names the fan-out verb.** `testthat::test_file()` per-test:
+the nine-cell sweep runs 27 assertions, 0 failed — three per verb (error class,
+message, blamed function); "the abort names the verb at parallel = TRUE too"
+3 assertions, 0 failed. Each cell matches the nvenc message *before* reading
+`conditionCall()`, so a schema error cannot satisfy it (M54). The call that
+failed round 1 is now covered: a `segment_video_batch()` table with
+`reencode = c(TRUE, FALSE)` blames the verb (3 assertions), and reverting the
+row-scoping alone reddens exactly its two blame assertions, both reading
+`purrr::pmap`. A completeness test pins the nine fan-out verbs plus the seven
+direct ones to exactly the exported functions carrying a `hardware` formal.
+Master readings stand from T2: nine of nine `purrr::pmap`, `...furrr_fn` for
+the parallel cell.
+
+**AC2 — one abort site.** `check_nvenc_available()` holds the only
+`cli_abort()` for the unavailable-encoder condition; `resolve_hw_encoder()`
+reaches it by calling that function. Verified by reading both, and by two tests
+(4 + 2 assertions, 0 failed): the front-door and pipeline messages are
+string-identical for `("libx264", "nvenc", FALSE)`, and the resolver's deparsed
+body contains the call and no `cli_abort` of its own. The guard now validates
+`fallback` with `rlang::check_bool()` where it reads it, so the two sites also
+agree on which arguments are legal — 8 assertions across both encoder seams,
+0 failed.
+
+**AC3 — every family the column spells.** Four tests, 10 assertions, 0 failed:
+a two-row H.264+AV1 table under a seam holding only `h264_nvenc` aborts naming
+`av1_nvenc` and blames `standardize_video_batch()`; the same table compiles
+under a seam holding both; an `NA` cell and an absent column both read as h264
+on `segment_video_batch()`; `format_for_web_batch()` checks h264. Round 2 also
+pins the row scoping: a copying AV1 row is not swept under an h264-only seam
+(3 assertions). One assertion was removed from the `NA` test this round — it
+asserted a property of the test file's own literal and passed with the package
+unloaded (round-2 D7).
+
+**AC4 — fallback untouched.** Two tests, 5 assertions, 0 failed. A 2-row table
+at `fallback = TRUE` with nothing available emits 2 fallback messages, the
+count measured on a master worktree for the same table. An unmappable `prores`
+cell at `fallback = TRUE` still fails inside the fan-out, not at the front
+door. The `check_bool()` added this round sits *after* the hardware test, so a
+`hardware = "none"` call still reaches no front-door validation and fails from
+the pipeline, unchanged from master (3 assertions).
+
+**AC5 — no other re-baseline.** `git diff origin/master..HEAD -- tests/`
+excluding `test-nvenc.R` has 0 deleted lines; the sole exception is the named
+M54 blame test (11 added / 11 deleted). `devtools::test()` FAIL 0 | WARN 4 |
+SKIP 5 | PASS 3960 — the same 4 warnings and 5 skips as the pre-change
+baseline, all in files this milestone does not touch. `devtools::check()`
+`Status: OK`, 0 errors / 0 warnings / 0 notes.
+
+**AC6 — the remaining aborts enumerated.** The stated grep, re-run this round
+and attributed to enclosing functions, returns the same six `cli_abort()` sites
+inside the nine verbs' `*_pipeline()` functions (`separate_stream_pipeline` 1,
+`segment_pipeline` 2, `compare_videos_pipeline` 2,
+`picture_in_picture_pipeline` 1; the other four pipelines 0), each carried in
+the grouped ROADMAP candidate row. Line numbers shifted with the branch, so the
+row now says to re-derive them. Round-2 D1 measured that the grep under-counts
+what the guard displaces; that remainder extends the same row rather than
+changing this criterion's evidence.
+
+**AC7 — docs and line endings.** `devtools::document()` rewrote exactly the
+nine fan-out verbs' `.Rd` files; a re-run left 0 files changed. `NEWS.md`
+carries the user-visible change, with no milestone or decision identifiers in
+the added lines (grep count 0). `R/ffmpeg.R` CRLF 5749 on master -> 5950 here,
+matching a branch numstat of 214 added / 13 deleted — a real edit, not a
+full-file re-encode (M35/M48).
+
+**Discrimination probes.** Run fresh in a detached worktree at HEAD, one
+mutation at a time, each restored byte-identical afterward:
+
+- reverting `segment_video_batch()`'s row scoping to the all-or-nothing gate
+  fails exactly 2 tests, both mixed-column blame assertions reading
+  `purrr::pmap`;
+- raising `separate_audio_video_batch()`'s guard back above the reshape fails
+  exactly the within-row collision test, which reads the availability message;
+- restoring `isTRUE(fallback)` fails exactly the malformed-fallback test, 3
+  assertions;
+- deleting `crop_video_batch()`'s guard alone fails exactly one assertion in
+  the whole file, and it is `crop_video_batch`'s blame cell reading
+  `purrr::pmap` — so the family sweep is not passing for a shared reason (M56).
+
+**Independent review — three lenses plus a scorer.** The [S] blame-history lens
+traced the modified lines and returned one finding. The [S] prior-review lens
+ran the inline-comment existence probe, got an empty result, correctly skipped
+the thread walk, checked each round-1 finding against its claimed fix, and
+returned zero regressions. The [O] diff-bug lens returned nine findings. All
+ten went to a fresh [S] scorer holding the diff and this milestone file, which
+reproduced the claims on this machine.
+
+**Actioned (>=80).**
+
+- D3 (83) — the `@param hardware` sentence added at T12 ("Only the encoders the
+  call actually needs are checked: a row that copies rather than re-encodes
+  names none") was added verbatim to all nine verbs, but is true on only three
+  of them: on `standardize_video_batch`, `crop_video_batch`,
+  `anonymize_video_batch`, `compare_videos_batch` and
+  `picture_in_picture_batch` a `"copy"` cell is refused rather than exempted,
+  and `format_for_web_batch` has no `video_codec` argument at all. **Fixed:**
+  the sentence is removed from all nine. The three verbs where the exemption is
+  real already documented it in their own words, so nothing is lost — a
+  cross-reference replaces branch-added prose that restates what the artifact
+  shows.
+- D1 (80) — the guard displaces four error classes AC6's grep never reached,
+  because that grep attributes an abort to the function that writes it: a check
+  a pipeline reaches through a helper, or one living in the batch closure, is
+  invisible to it. Measured on the branch: `anonymize_video_batch`'s malformed
+  `regions` table, `crop_video_batch`'s out-of-range `width`, and
+  `picture_in_picture_batch`'s out-of-range `margin` now report nvenc
+  availability, as does `compare_videos_batch`'s resize limit. **Split:** the
+  precedence is now pinned by a test running each of the four calls under a
+  seam holding the encoder (where each reaches its own check, proving the
+  inputs exercise it) and under an empty one (where availability reports
+  first) — 12 assertions, closing D035's "tested for, not assumed away" clause
+  for these cases. Which of them a front door should duplicate is the existing
+  grouped candidate row's question, and that row is extended to name them; it
+  is outside the plan gate's nvenc-only cut.
+
+Neither actioned finding demonstrates an acceptance criterion failing inside
+the domain of the procedure that criterion names — AC6's evidence claim is
+about the grep it ran, and D3 is doc prose AC7's `document()` check does not
+reach — and neither scores 90+. So neither meets the return floor; both took
+triage on the branch.
+
+**Logged below threshold (8).**
+
+- D2 (76) — an unmappable codec *cell* now aborts at the verb with no row
+  index, where master reported it from `purrr::pmap` with `In index: 2`; the
+  message also names `{.arg video_codec}` when the value came from a column.
+  Real and untested, outside any criterion's text.
+- D4 (74) — the NEWS paragraph scoped the precedence change to tables that both
+  copy and re-encode. **Fixed anyway** while D3's prose was being repaired, since
+  it is the same sentence family: it now names the wider class D1 measured.
+- D6 (62) — `segment_video(v, numeric(0), numeric(0), hardware = "nvenc")`
+  reports availability where master reported `ffm_batch()`'s empty-jobs error.
+  A call asking for zero segments needs zero encoders; both fail either way.
+- D7 (55) — a dead fixture and an assertion about the test file's own literal
+  in the AC3 test. **Fixed anyway:** removed, since this review cites that
+  test's assertion count as evidence.
+- D5 (40) — one un-memoized `ffmpeg -encoders` subprocess per distinct family;
+  round-1 F7 restated, with the standing candidate row already carrying it and
+  Scope marking memoization Out.
+- D8 (35) — three negative blame assertions pin "not this verb" rather than a
+  specific blame; their paired message assertions carry the weight.
+- D9 (30) — the deparsed-body test pins source text; round-1 F8 restated.
+- D10 (15) — the `(M26)` citation on the duplicate-output family is wrong
+  (M28 introduced the helper, M29 the within-row catch), but it is pre-existing
+  at five sites on master and the branch's comment follows that convention.
+
+**Disposition: proceed.** No finding met the return floor. This milestone has
+one defect return (round 1) and no amendment returns.
+
+**Consistency gate.** `cairn_validate` exit 0, all checks passed; one advisory
+warning — M57 carries 12 tasks against the >10 split tripwire, which is the
+round-1 return adding T9-T12 to a milestone that is still one reviewable PR,
+not new scope. `cairn_impact` skipped: `cairn/DESIGN.md` is unchanged, so no
+principle moved. Toolchain slot: `document()` no diff; `NAMESPACE`, `man/` and
+`data/` regenerate clean; `README.Rmd` untouched so `README.md` is in sync;
+`pkgdown::check_pkgdown()` "No problems found"; `NEWS.md` carries the entry; no
+new top-level files, so no `.Rbuildignore` entry is owed; `devtools::check()`
+clean.

@@ -185,8 +185,6 @@ test_that("an NA cell and an absent column both read as the h264 family", {
   # resolve_hw_encoder() resolves to h264 -- so a seam holding only av1_nvenc
   # must refuse both shapes, naming h264_nvenc.
   withr::local_options(tidymedia.nvenc_encoders = "av1_nvenc")
-  na_jobs <- tibble::tibble(input = input, output = "a.mp4",
-                            video_codec = NA)
   cnd <- nvenc_fanout_catch("segment_video_batch", input,
                             extra = list(jobs = tibble::tibble(
                               input = input, output = "a.mp4",
@@ -198,7 +196,6 @@ test_that("an NA cell and an absent column both read as the h264 family", {
   bare <- nvenc_fanout_catch("segment_video_batch", input)
   expect_match(conditionMessage(bare), "h264_nvenc", fixed = TRUE)
   expect_identical(nvenc_blamed(bare), "segment_video_batch")
-  expect_true(is.na(na_jobs$video_codec))
 })
 
 test_that("format_for_web_batch checks h264, the codec its recipe fixes", {
@@ -388,6 +385,59 @@ test_that("a mixed copy column reports availability before the copy conflict", {
                                extra = list(jobs = jobs))
   expect_match(conditionMessage(absent), "is not available")
   expect_identical(nvenc_blamed(absent), "separate_audio_video_batch")
+})
+
+# --- the precedence the guard reassigns -------------------------------------
+#
+# D035's second condition admits that a front-door guard reports before checks
+# that live in the pipeline, and requires that this be tested rather than
+# assumed away. AC6's grep enumerated the `cli_abort()` sites inside the nine
+# verbs' `*_pipeline()` functions; it does NOT reach an abort a pipeline raises
+# through a helper, nor a per-row check living in the batch closure. Those are
+# pinned here instead of left unmeasured.
+
+test_that("the guard reports before pipeline checks it now precedes", {
+  input <- make_input()
+  cases <- list(
+    list(verb = "anonymize_video_batch", own = "missing 4 required columns",
+         args = list(jobs = tibble::tibble(
+           input = input, output = "o.mp4",
+           regions = list(data.frame(nope = 1))))),
+    list(verb = "crop_video_batch", own = "must be a single FFmpeg expression",
+         args = list(jobs = tibble::tibble(
+           input = input, output = "o.mp4", width = -5, height = 32))),
+    list(verb = "picture_in_picture_batch", own = "must be a whole number",
+         args = list(jobs = tibble::tibble(
+           main = input, overlay = input, output = "o.mp4", margin = -3))),
+    list(verb = "compare_videos_batch", own = "exactly two inputs",
+         args = list(jobs = tibble::tibble(
+           inputs = list(c(input, input, input)), output = "o.mp4"),
+           resize = TRUE))
+  )
+  for (case in cases) {
+    call_it <- function() {
+      args <- case$args
+      args$hardware <- "nvenc"
+      args$run <- FALSE
+      tryCatch(
+        do.call(case$verb, args, envir = asNamespace("tidymedia")),
+        error = function(e) e
+      )
+    }
+    # The control runs first and is what makes the pin mean anything: with the
+    # encoder present each call still reaches its own check, so the inputs are
+    # verified to exercise that check rather than merely to fail (M54).
+    withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+    own <- call_it()
+    expect_match(conditionMessage(own), case$own, info = case$verb)
+    # Without it, the availability abort reports first. The call fails either
+    # way -- what moves is which error and where it is raised, never whether
+    # the call fails (D035's second condition).
+    withr::local_options(tidymedia.nvenc_encoders = character(0))
+    missing <- call_it()
+    expect_match(conditionMessage(missing), "is not available", info = case$verb)
+    expect_identical(nvenc_blamed(missing), case$verb, info = case$verb)
+  }
 })
 
 # --- the guard validates what it reads --------------------------------------

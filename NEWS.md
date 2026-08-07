@@ -316,10 +316,14 @@
   the table rather than failing partway through it.
 
   Only the encoders a call actually needs are checked, so a row that copies
-  rather than re-encodes is not held to an encoder it never asks for. One
-  consequence for a jobs table that both copies and re-encodes: such a call can
-  fail two ways, and on a machine missing the encoder it now reports the missing
-  encoder where it used to report the copy conflict first.
+  rather than re-encodes is not held to an encoder it never asks for.
+
+  Because the check now runs first, it also reports first. On a machine that
+  lacks the encoder, a call that is *also* wrong in some other way — a
+  malformed `regions` table, an out-of-range `width` or `margin`, a codec that
+  contradicts a stream copy — is now told about the missing encoder, where it
+  used to be told about the other problem from inside the fan-out. Such calls
+  failed before and fail now; what changes is which of the two errors you see.
 
   `fallback = TRUE` behaves exactly as before, and no call that used to succeed
   now fails.

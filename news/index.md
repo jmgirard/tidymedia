@@ -793,6 +793,27 @@ and soaking).
 
 ### Documentation
 
+- The package has a landing help topic:
+  [`?tidymedia`](https://jmgirard.github.io/tidymedia/reference/tidymedia-package.md)
+  now resolves to an overview of the three layers and the vignettes, and
+  the topic is listed by
+  [`help(package = "tidymedia")`](https://jmgirard.github.io/tidymedia/reference)
+  and on the reference index. Previously neither reached anything.
+
+- The batch vignette’s account of `parallel = TRUE` now names the
+  functions that actually take it —
+  [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
+  every `*_batch` verb,
+  [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
+  and the five `probe_*()` readers — and says that the scalar verbs do
+  not. It previously said “the fan-out verbs”, which read as covering
+  [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+  (only its `_batch` sibling takes the argument) while omitting the
+  metadata readers and
+  [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
+  entirely. The metadata vignette’s batching section, which was silent
+  about the argument, now covers it too.
+
 - Every verb taking `hardware` now says that asking for `"nvenc"`
   queries your FFmpeg build for the encoder while the command is being
   assembled, so a call that re-encodes the video runs the binary even

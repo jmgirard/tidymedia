@@ -254,6 +254,17 @@ path:</p>
 <p>Files that cannot be read yield an all-<code>NA</code> row plus a
 warning, rather than aborting the whole call — so one bad file never
 sinks a batch.</p>
+<p>A large folder is the case for <code>parallel = TRUE</code>, which
+fans the per-file probes out with <a href="https://furrr.futureverse.org/" class="external-link">furrr</a> instead of reading them
+one after another. Every <code>probe_*()</code> reader accepts it, and
+on the four shortcuts it applies to the <code>infile</code> you pass —
+hand one an existing <code>probe</code> object instead and there is
+nothing left to fan out, so the argument is ignored.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/probe_all.html">probe_all</a></span><span class="op">(</span><span class="va">files</span>, parallel <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">$</span><span class="va">container</span></span></code></pre></div>
+<p>Like every parallel path in tidymedia it follows whatever <a href="https://future.futureverse.org/" class="external-link">future</a> plan you have set.
+With no plan set it still reads one file at a time, and warns to tell
+you so — see <code><a href="../articles/batch.html">vignette("batch")</a></code> for the setup.</p>
 </div>
 <div class="section level2">
 <h2 id="where-to-next">Where to next<a class="anchor" aria-label="anchor" href="#where-to-next"></a>

@@ -164,10 +164,23 @@ video streams, returning the two compiled commands:</p>
 <div class="section level2">
 <h2 id="running-in-parallel">Running in parallel<a class="anchor" aria-label="anchor" href="#running-in-parallel"></a>
 </h2>
-<p>Both <code><a href="../reference/ffm_batch.html">ffm_batch()</a></code> and the fan-out verbs accept
-<code>parallel = TRUE</code>, which maps over jobs with <a href="https://furrr.futureverse.org/" class="external-link">furrr</a>. Parallelism follows
+<p><code>parallel = TRUE</code> is accepted by <code><a href="../reference/ffm_batch.html">ffm_batch()</a></code>
+and by every <code>*_batch</code> verb; by <code><a href="../reference/segment_video.html">segment_video()</a></code>,
+which sends its own segments through the same machinery; and by the five
+metadata readers <code><a href="../reference/probe_all.html">probe_all()</a></code>,
+<code><a href="../reference/probe_container.html">probe_container()</a></code>, <code><a href="../reference/probe_container.html">probe_streams()</a></code>,
+<code><a href="../reference/probe_container.html">probe_video()</a></code>, and <code><a href="../reference/probe_container.html">probe_audio()</a></code>. On the four
+reader shortcuts it applies when you pass <code>infile</code> and is
+ignored when you hand them an existing <code>probe</code> object, which
+has nothing left to fan out. Nothing else takes the argument —
+<code><a href="../reference/separate_audio_video.html">separate_audio_video()</a></code> compiles its two commands directly
+rather than through <code><a href="../reference/ffm_batch.html">ffm_batch()</a></code>, so only
+<code><a href="../reference/separate_audio_video_batch.html">separate_audio_video_batch()</a></code> accepts it.</p>
+<p>The argument maps over jobs with <a href="https://furrr.futureverse.org/" class="external-link">furrr</a>, and parallelism follows
 whatever <a href="https://future.futureverse.org/" class="external-link">future</a> plan you
-have set, so you opt in explicitly:</p>
+have set, so you opt in explicitly. With no plan set,
+<code>parallel = TRUE</code> still runs one job at a time, and warns to
+tell you so:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://future.futureverse.org" class="external-link">future</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="va">multisession</span><span class="op">)</span></span>

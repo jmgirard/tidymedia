@@ -121,12 +121,33 @@ separate_audio_video(video, "audio.aac", "video.mp4", run = FALSE)
 
 ## Running in parallel
 
-Both
+`parallel = TRUE` is accepted by
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
-and the fan-out verbs accept `parallel = TRUE`, which maps over jobs
-with [furrr](https://furrr.futureverse.org/). Parallelism follows
+and by every `*_batch` verb; by
+[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
+which sends its own segments through the same machinery; and by the five
+metadata readers
+[`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md),
+[`probe_container()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md),
+[`probe_streams()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md),
+[`probe_video()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md),
+and
+[`probe_audio()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md).
+On the four reader shortcuts it applies when you pass `infile` and is
+ignored when you hand them an existing `probe` object, which has nothing
+left to fan out. Nothing else takes the argument —
+[`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+compiles its two commands directly rather than through
+[`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
+so only
+[`separate_audio_video_batch()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video_batch.md)
+accepts it.
+
+The argument maps over jobs with
+[furrr](https://furrr.futureverse.org/), and parallelism follows
 whatever [future](https://future.futureverse.org/) plan you have set, so
-you opt in explicitly:
+you opt in explicitly. With no plan set, `parallel = TRUE` still runs
+one job at a time, and warns to tell you so:
 
 ``` r
 

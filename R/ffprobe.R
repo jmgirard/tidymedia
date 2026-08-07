@@ -108,9 +108,9 @@ probe_all <- function(infile, typed = TRUE) {
 # This is the ONLY place the audio verbs' track-drop diagnostic assembles an
 # FFprobe token vector -- it lives here beside probe_one(), the package's other
 # FFprobe token builder, rather than in a Layer-2 verb body (D024/RR02 Q4). One
-# narrow invocation rather than probe_all(), which runs FFprobe once per stream
-# plus once for the container and warns on an unreadable file: this needs a
-# single number and must stay silent.
+# narrow invocation rather than probe_all(), which reads every field of every
+# stream and warns on an unreadable file: this needs a single number and must
+# stay silent.
 #
 # NA is "no answer", never "no audio". D024 licenses this probe only while its
 # outcome changes nothing but whether a warning is signalled, so every failure
@@ -158,30 +158,25 @@ count_audio_streams <- function(file) {
 # Probe a single file. Returns list(container, streams) of raw-character tibbles
 # (no `file` column, no type conversion; probe_all() adds those), or NULL if the
 # file cannot be probed (missing path, unreachable URL, unreadable media).
+#
+# ONE FFprobe process per file, not `nb_streams + 1`. The container and every
+# stream come back from a single call, because the compact writer delimits its
+# sections by line and its fields by `|` -- where `default=nw=1` runs sections
+# together with no delimiter at all, which is why the old code had to ask for
+# one stream at a time and pay a process for each.
+#
+# The three writer options are pinned rather than left to their defaults
+# because parse_compact_probe() depends on all three: `print_section=1` emits
+# the leading `stream|`/`format|` field it dispatches on, `nokey=0` keeps the
+# `key=value` form, and `escape=c` is the escaping it decodes.
 probe_one <- function(file) {
-  loc <- find_ffprobe()
-  base <- c("-i", file, "-v", "quiet")
-  fmt <- run_program(
-    loc, c(base, "-show_format", "-of", "default=nw=1"), program = "ffprobe"
+  out <- run_program(
+    find_ffprobe(),
+    c("-i", file, "-v", "quiet", "-show_format", "-show_streams",
+      "-of", "compact=print_section=1:nokey=0:escape=c"),
+    program = "ffprobe"
   )
-  if (length(fmt) == 0) return(NULL)
-  container <- format_probe(fmt)
-
-  n <- suppressWarnings(as.integer(container[["nb_streams"]]))
-  if (length(n) != 1 || is.na(n) || n < 1) {
-    return(list(container = container, streams = tibble::tibble()))
-  }
-  rows <- vector("list", n)
-  for (i in seq_len(n)) {
-    s <- run_program(
-      loc,
-      c(base, "-show_streams", "-select_streams", as.character(i - 1),
-        "-of", "default=nw=1"),
-      program = "ffprobe"
-    )
-    rows[[i]] <- if (length(s)) format_probe(s) else tibble::tibble()
-  }
-  list(container = container, streams = dplyr::bind_rows(rows))
+  parse_compact_probe(out)
 }
 
 # probe_container() -------------------------------------------------------
@@ -271,16 +266,191 @@ resolve_probe <- function(probe, infile, typed, call = rlang::caller_env()) {
   probe
 }
 
-# format_probe() ----------------------------------------------------------
+# parse_compact_probe() ---------------------------------------------------
 
-# Turn FFprobe's `key=value` lines into a one-row tibble. Splits on the *first*
-# `=` only, so values that themselves contain `=` (e.g. tag values) survive.
-format_probe <- function(x) {
+# Turn the output of ONE `ffprobe -show_format -show_streams -of compact` call
+# into the same list(container, streams) of raw-character tibbles the old
+# per-stream `-of default=nw=1` loop built, or NULL when the file could not be
+# probed.
+#
+# The compact writer is what lets a single call carry every stream: it puts one
+# section per LINE and escapes anything that could forge a line or field break,
+# where `default=nw=1` concatenates sections with no delimiter and escapes
+# nothing at all. That second half is not a hypothetical -- a tag value carrying
+# a newline splits into further `key=value`-looking lines under the old writer,
+# and the old parser duly turned the remainder into bogus columns.
+#
+# Three things this has to undo to keep the returned columns byte-identical to
+# what the package has always returned:
+#   - each line leads with a KEYLESS section field (`stream|...`, `format|...`),
+#     and in a combined call the format line arrives LAST, so rows are dispatched
+#     by that field rather than by position;
+#   - fields are separated by `|`, which a value may also contain as `\|`;
+#   - nested sections carry a key prefix the old writer spelled differently, or
+#     did not spell at all -- see compact_key_name().
+parse_compact_probe <- function(x) {
   x <- x[nzchar(x)]
-  key <- sub("=.*$", "", x)
-  value <- sub("^[^=]*=", "", x)
+  if (length(x) == 0) return(NULL)
+
+  rows <- lapply(x, compact_row)
+  section <- vapply(rows, function(r) r$section, character(1))
+
+  fmt <- rows[section == "format"]
+  # No format section means FFprobe told us nothing about the container, which
+  # is what an unreadable file looks like; the old code reached the same NULL by
+  # way of an empty `-show_format` call.
+  if (length(fmt) == 0) return(NULL)
+
+  st <- rows[section == "stream"]
+  streams <- if (length(st)) {
+    dplyr::bind_rows(lapply(st, function(r) r$data))
+  } else {
+    # A container FFprobe can read but that carries no streams. The old code
+    # reached this through an `nb_streams < 1` early return.
+    tibble::tibble()
+  }
+  list(container = fmt[[1]]$data, streams = streams)
+}
+
+# compact_row() -----------------------------------------------------------
+
+# One compact line -> list(section, one-row tibble). The `key=value` split is on
+# the *first* `=` only, exactly as the old parser did, so a value containing `=`
+# survives; the writer does not escape `=`, so splitting before unescaping is
+# safe.
+#
+# Every string operation from here down is byte-based (`useBytes = TRUE`). The
+# separators and escapes are all ASCII, so byte matching is exactly equivalent
+# on well-formed input, and on ill-formed input it is the difference between
+# parsing the line and losing it: R's character-based string functions treat a
+# line that is invalid in the session's `LC_CTYPE` as an error or an `NA`, which
+# would drop a whole stream row for one unreadable metadata byte.
+compact_row <- function(line) {
+  fields <- compact_fields(line)
+  kv <- fields[-1]
+  kv <- kv[nzchar(kv)]
+  key <- compact_key_name(compact_unescape(sub("=.*$", "", kv,
+                                               useBytes = TRUE)))
+  value <- compact_unescape(sub("^[^=]*=", "", kv, useBytes = TRUE))
   names(value) <- key
-  tibble::as_tibble(as.list(value))
+  list(section = fields[[1]], data = tibble::as_tibble(as.list(value)))
+}
+
+# compact_fields() --------------------------------------------------------
+
+# Split one compact line on its UNESCAPED `|` separators. A `|` is a separator
+# only when an even number of backslashes precede it, since the writer spells a
+# literal backslash `\\` and a literal `|` `\|`.
+#
+# Split on every `|` first, then glue back the ones that were escaped. The
+# obvious alternative -- substitute a placeholder for the escaped forms and
+# split on what is left -- has no safe placeholder here: the writer passes
+# control characters through RAW (BEL, TAB and vertical tab were each measured
+# arriving unescaped), so no byte is free to stand in for a separator without
+# risking a collision with a value that genuinely contains it.
+compact_fields <- function(line) {
+  raw <- charToRaw(line)
+  if (length(raw) == 0) return("")
+  pieces <- strsplit(line, "|", fixed = TRUE, useBytes = TRUE)[[1]]
+  # strsplit() drops trailing empty fields, so `a|` comes back as one piece
+  # where the line has two. Count the separators to put them back.
+  n_sep <- sum(raw == as.raw(0x7C))
+  if (length(pieces) < n_sep + 1L) {
+    pieces <- c(pieces, rep("", n_sep + 1L - length(pieces)))
+  }
+  out <- character(0)
+  cur <- pieces[[1]]
+  for (i in seq_along(pieces)[-1]) {
+    if (ends_in_odd_backslashes(cur)) {
+      # The `|` that split these two was escaped: it belongs to the value.
+      cur <- paste0(cur, "|", pieces[[i]])
+    } else {
+      out <- c(out, cur)
+      cur <- pieces[[i]]
+    }
+  }
+  c(out, cur)
+}
+
+# Does `s` end in an ODD number of backslashes -- i.e. would a `|` following it
+# have been escaped? Counted over bytes, so a value carrying a byte invalid in
+# the session locale is still measurable.
+ends_in_odd_backslashes <- function(s) {
+  raw <- charToRaw(s)
+  n <- length(raw)
+  if (n == 0 || raw[[n]] != as.raw(0x5C)) return(FALSE)
+  other <- which(raw != as.raw(0x5C))
+  run <- if (length(other) == 0) n else n - max(other)
+  run %% 2L == 1L
+}
+
+# compact_unescape() ------------------------------------------------------
+
+# Decode the writer's C-style escapes. Measured on ffmpeg 8.1.2, the compact
+# writer emits exactly six: `\\`, `\|`, `\n`, `\r`, `\b` and `\f`. The control
+# characters BEL, TAB and vertical tab arrive raw and so need no decoding.
+#
+# The table carries `t`, `v` and `a` anyway, and every other `\X` decodes to
+# `X`. That is not guesswork: since a literal backslash always arrives as `\\`,
+# a lone `\` in the decoded input is impossible, so no mapping here can collide
+# with real content -- a source value of backslash-then-t arrives as `\\t`, is
+# consumed as the pair `\\`, and comes back as backslash-then-t either way.
+#
+# The pairs are decoded in ONE pass. A sequence of gsub() calls cannot do this:
+# resolving `\\` first turns the literal backslash-n of `\\n` into a real `\n`,
+# which the next gsub then reads as a newline escape.
+compact_unescape <- function(x) {
+  map <- c(n = "\n", r = "\r", f = "\f", b = "\b", t = "\t", v = "\v", a = "\a")
+  vapply(x, function(s) {
+    if (!grepl("\\", s, fixed = TRUE, useBytes = TRUE)) return(s)
+    hits <- gregexpr("\\\\.", s, perl = TRUE, useBytes = TRUE)
+    pairs <- regmatches(s, hits)[[1]]
+    if (length(pairs) == 0) return(s)
+    tail <- substr(pairs, 2L, 2L)
+    regmatches(s, hits) <- list(unname(ifelse(tail %in% names(map),
+                                              map[tail], tail)))
+    s
+  }, character(1), USE.NAMES = FALSE)
+}
+
+# compact_key_name() ------------------------------------------------------
+
+# Give a nested-section key the name `default=nw=1` gave it, so the columns
+# `probe_all()` returns are unchanged. The two writers disagree three ways, and
+# only two of them are about casing:
+#
+#   tag:title                          -> TAG:title
+#   disposition:default                -> DISPOSITION:default
+#   side_datum/display_matrix:rotation -> rotation
+#
+# Side data is the one that bites. The old writer printed it with NO prefix at
+# all, so `rotation` -- present on essentially every phone video, and read by
+# anything that corrects orientation -- is a bare column name that users
+# already depend on. Uppercasing the prefix instead of dropping it renamed that
+# column out of existence, which is how M52's first review round found this.
+# The prefix also varies by side-data type, so uppercasing scatters a mixed
+# batch across per-type columns where it had one shared `rotation`.
+#
+# Those three are the whole nested-section set `-show_format -show_streams`
+# emits, measured on ffmpeg 8.1.2. An unrecognized prefix is left ALONE rather
+# than guessed at: a wrong rename is silent, where a compact-shaped name in the
+# output is at least visible.
+#
+# The side-data pattern is deliberately wider than the one spelling measured
+# here. FFprobe builds the prefix from the section's own name and an optional
+# type slug, and both have moved across versions: an older writer emits the key
+# bare (nothing to strip, and the `^` anchor means nothing is), 8.1.2 emits
+# `side_datum/display_matrix:`, and the stem has been spelled `side_data` too.
+# Matching the stem plus anything up to the first `:` covers all of them, and
+# cannot over-reach: FFprobe's own field names carry no `:`, so only a nested
+# section can match at all.
+#
+# Byte-based, like everything else in this parser: a metadata key carrying a
+# byte invalid in the session locale must not take its row down with it.
+compact_key_name <- function(key) {
+  key <- sub("^tag:", "TAG:", key, useBytes = TRUE)
+  key <- sub("^disposition:", "DISPOSITION:", key, useBytes = TRUE)
+  sub("^side_dat(a|um)[^:]*:", "", key, useBytes = TRUE)
 }
 
 

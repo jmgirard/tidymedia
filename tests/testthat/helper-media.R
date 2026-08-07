@@ -334,6 +334,32 @@ make_multitrack_subtitle_video <- function(env = parent.frame()) {
   path
 }
 
+# Generate a video whose stream and container tags carry the characters the
+# FFprobe writers treat specially: a literal `|`, an embedded newline, a
+# carriage return and a backslash. It exists because the two writers disagree
+# about them -- `-of compact` escapes all four, while `default=nw=1` escapes
+# nothing, so the newline tag splits into what looks like a further `key=value`
+# line and the old per-stream parse emitted it as a bogus column (M52).
+# Matroska because MP4 will not carry an arbitrary per-stream title tag.
+# Skips the calling test if ffmpeg is unavailable. Returns the file path.
+make_hostile_tag_video <- function(env = parent.frame()) {
+  skip_if_no_ffmpeg()
+  path <- withr::local_tempfile(fileext = ".mkv", .local_envir = env)
+  run_ffmpeg_fixture(paste0(
+    "-y -f lavfi -i testsrc=duration=1:size=64x64:rate=10 ",
+    "-f lavfi -i sine=frequency=440:duration=1 ",
+    "-c:v libx264 -c:a aac -shortest -pix_fmt yuv420p ",
+    '-metadata:s:v:0 "title=pipe|here" ',
+    sprintf('-metadata:s:a:0 "title=line%sbreak" ', "\n"),
+    sprintf('-metadata "comment=carriage%sreturn" ', "\r"),
+    '-metadata "title=back\\\\slash" ',
+    sprintf('"%s"', path)
+  ))
+  testthat::skip_if_not(file.exists(path),
+                        "hostile-tag test video could not be generated")
+  path
+}
+
 # Probe a media file's stream types via ffprobe, in stream order: a character
 # vector of "video"/"audio"/"subtitle". Skips if ffprobe is unavailable.
 stream_types <- function(path) {

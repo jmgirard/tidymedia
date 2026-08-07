@@ -4,7 +4,7 @@
 \alias{probe_all}
 \title{Look up information about media files using FFprobe}
 \usage{
-probe_all(infile, typed = TRUE)
+probe_all(infile, typed = TRUE, parallel = FALSE)
 }
 \arguments{
 \item{infile}{A character vector of one or more media-file locations (file
@@ -14,6 +14,13 @@ paths or web links) to probe.}
 to integers/doubles and FFprobe's \code{"N/A"} becomes \code{NA}; fractions, ratios,
 hex identifiers, and text stay as strings. When \code{FALSE} every value is
 returned as an unconverted string.}
+
+\item{parallel}{A logical: probe the files in parallel with \pkg{furrr}
+(\code{TRUE}) or one at a time (\code{FALSE}, the default). The parallel path
+honours the active \code{future::plan()} and warns when that plan is
+sequential, since it would then give no speedup. Output is identical
+either way, rows included and in the same order. Requires the optional
+\pkg{furrr} package, which is checked for only when \code{parallel} is \code{TRUE}.}
 }
 \value{
 A list of two tibbles: \code{container} (one row per input file) and

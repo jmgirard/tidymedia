@@ -86,14 +86,14 @@ candidate row. Changing the default, which stays sequential.
       `:174-184`) and decide whether to reuse its sequential-plan guard here;
       log the decision, since AC3's wording depends on it and D012 exists for
       that guard.
-- [ ] T2 Tests first: parity between the two `parallel` values, plus the
+- [x] T2 Tests first: parity between the two `parallel` values, plus the
       mutation probe that proves the argument is load-bearing.
-- [ ] T3 Replace `probe_all()`'s `for` loop (`R/ffprobe.R:72-87`) with the
+- [x] T3 Replace `probe_all()`'s `for` loop (`R/ffprobe.R:72-87`) with the
       mapped form, preserving the failure accumulation and the single
       end-of-call warning (`:89-94`).
-- [ ] T4 `check_installed("furrr")` on the parallel path only, with a test that
+- [x] T4 `check_installed("furrr")` on the parallel path only, with a test that
       the sequential path never reaches it.
-- [ ] T5 Thread `parallel` through `resolve_probe()` and the four shortcuts.
+- [x] T5 Thread `parallel` through `resolve_probe()` and the four shortcuts.
 - [ ] T6 Append the D-entry; roxygen, NEWS, `devtools::document()`; run the
       profile's verify slot and `devtools::check()`.
 
@@ -132,6 +132,30 @@ candidate row. Changing the default, which stays sequential.
   execution→metadata side-crossing instead, and to name that grep as the
   procedure enumerating the domain. Rejected fixing only the count, which
   would have kept site-counting as the thing the D-entry records.
+
+- 2026-08-06: T2–T5 landed in one commit rather than four. Minor amendment: the
+  profile's verify slot requires `devtools::test()` clean before a task is
+  checked off, and T2's tests cannot go green until T3/T5 exist — so splitting
+  them would have committed a red suite. Task wording and ordering unchanged.
+- 2026-08-06: T3 fans out `probe_one()` alone and leaves the assembly loop in
+  the parent process. The rejected alternative was mapping the whole per-file
+  body (assembly included) and reducing the results: it would have moved the
+  `failed` accumulator and the end-of-call `cli_warn()` into workers, where
+  AC3's "exactly one warning naming both" becomes one warning per worker or
+  none. Only `probe_one()` shells out, so the discarded parallelism is free.
+  Falsified by a profile showing the parent-side assembly dominating probe time.
+- 2026-08-06: AC2 mutation probe run and recorded. With
+  `probes <- if (parallel)` mutated to `if (FALSE)` the suite goes 5 failed /
+  23 passed, the failures landing exactly on the two argument-load-bearing
+  tests ("routes through furrr, parallel = FALSE does not", 1; "shortcuts pass
+  `parallel` through on the infile branch", 4). Restored: 28 passed, 0 failed.
+- 2026-08-06: AC4's furrr masking is staged by stubbing `rlang::check_installed`
+  rather than by hiding the installed package. Rejected mocking
+  `rlang::is_installed` or `detect_installed`: `check_installed()` short-circuits
+  on `.getNamespace(x)` before it reaches either, so with furrr loaded neither
+  stub can make it report missing. The stub raises rlang's real
+  `rlib_error_package_not_found` class and the test asserts that class, as AC4
+  requires. Falsified by a future rlang that stops emitting that class.
 
 ## Decisions
 

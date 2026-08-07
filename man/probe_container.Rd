@@ -7,13 +7,13 @@
 \alias{probe_audio}
 \title{Shortcut functions for probing specific information}
 \usage{
-probe_container(probe = NULL, infile = NULL, typed = TRUE)
+probe_container(probe = NULL, infile = NULL, typed = TRUE, parallel = FALSE)
 
-probe_streams(probe = NULL, infile = NULL, typed = TRUE)
+probe_streams(probe = NULL, infile = NULL, typed = TRUE, parallel = FALSE)
 
-probe_video(probe = NULL, infile = NULL, typed = TRUE)
+probe_video(probe = NULL, infile = NULL, typed = TRUE, parallel = FALSE)
 
-probe_audio(probe = NULL, infile = NULL, typed = TRUE)
+probe_audio(probe = NULL, infile = NULL, typed = TRUE, parallel = FALSE)
 }
 \arguments{
 \item{probe}{A list object created by \code{\link[=probe_all]{probe_all()}}. Must be \code{NULL} if
@@ -24,6 +24,11 @@ probe_audio(probe = NULL, infile = NULL, typed = TRUE)
 
 \item{typed}{A logical passed to \code{\link[=probe_all]{probe_all()}} when \code{infile} is used (default
 \code{TRUE}); ignored when \code{probe} is supplied.}
+
+\item{parallel}{A logical passed to \code{\link[=probe_all]{probe_all()}} when \code{infile} is used:
+probe the files in parallel with \pkg{furrr} (\code{TRUE}) or one at a time
+(\code{FALSE}, the default). Ignored when \code{probe} is supplied, since a probe
+object has nothing left to probe.}
 }
 \value{
 A tibble containing only the requested information.

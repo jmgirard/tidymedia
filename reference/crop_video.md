@@ -73,7 +73,10 @@ crop_video(
   family is assumed, so a non-H.264 container (e.g. `.webm`) needs an
   explicit HEVC- or AV1-family `video_codec`. See
   [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
-  for availability and its caveats.
+  for availability and its caveats. Resolving `"nvenc"` asks this FFmpeg
+  build which encoders it has, so a `"nvenc"` call that re-encodes the
+  video runs the binary while the command is built, even under
+  `run = FALSE`.
 
 - fallback:
 

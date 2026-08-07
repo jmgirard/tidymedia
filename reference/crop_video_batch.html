@@ -127,7 +127,10 @@ leave the codec unset so each output keeps its container's default encoder.</p><
 <dt id="arg-hardware-fallback">hardware, fallback<a class="anchor" aria-label="anchor" href="#arg-hardware-fallback"></a></dt>
 <dd><p>The encoder backend and its fallback behavior,
 applied to the whole batch (a property of the machine, not of a row, so
-neither is read as a <code>jobs</code> column). See <code><a href="crop_video.html">crop_video()</a></code>.</p></dd>
+neither is read as a <code>jobs</code> column). See <code><a href="crop_video.html">crop_video()</a></code>.
+Resolving <code>"nvenc"</code> asks this FFmpeg build which encoders it has, so
+a <code>"nvenc"</code> call that re-encodes the video runs the binary while the
+command is built, even under <code>run = FALSE</code>.</p></dd>
 
 
 <dt id="arg-audio-stream">audio_stream<a class="anchor" aria-label="anchor" href="#arg-audio-stream"></a></dt>

@@ -83,7 +83,11 @@ segment_video_batch(
   Because `hardware` is batch-wide, `hardware = "nvenc"` conflicts with
   a stream-copy row on its own — even one naming no codec — so a jobs
   table mixing `reencode = FALSE` rows with GPU encoding must be split
-  into separate calls.
+  into separate calls. Resolving `"nvenc"` asks this FFmpeg build which
+  encoders it has, so a `"nvenc"` call that re-encodes the video runs
+  the binary while the command is built, even under `run = FALSE`. The
+  stream-copy conflict named under `reencode` is caught first, so such a
+  call aborts without probing.
 
 - audio_stream:
 

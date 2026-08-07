@@ -126,7 +126,12 @@ neither is read as a <code>jobs</code> column). See <code><a href="segment_video
 Because <code>hardware</code> is batch-wide, <code>hardware = "nvenc"</code> conflicts
 with a stream-copy row on its own — even one naming no codec — so a jobs
 table mixing <code>reencode = FALSE</code> rows with GPU encoding must be split
-into separate calls.</p></dd>
+into separate calls.
+Resolving <code>"nvenc"</code> asks this FFmpeg build which encoders it has, so
+a <code>"nvenc"</code> call that re-encodes the video runs the binary while the
+command is built, even under <code>run = FALSE</code>.
+The stream-copy conflict named under <code>reencode</code> is caught first, so
+such a call aborts without probing.</p></dd>
 
 
 <dt id="arg-audio-stream">audio_stream<a class="anchor" aria-label="anchor" href="#arg-audio-stream"></a></dt>

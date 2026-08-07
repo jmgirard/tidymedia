@@ -70,7 +70,11 @@ separate_audio_video_batch(
   Because `hardware` is batch-wide, and a stream copy runs no encoder,
   `hardware = "nvenc"` conflicts with any row whose video codec resolves
   to `"copy"` — including the default — so a jobs table mixing copied
-  and re-encoded video must be split into separate calls.
+  and re-encoded video must be split into separate calls. Resolving
+  `"nvenc"` asks this FFmpeg build which encoders it has, so a `"nvenc"`
+  call that re-encodes the video runs the binary while the command is
+  built, even under `run = FALSE`. The stream-copy conflict above is
+  caught first, so such a call aborts without probing.
 
 - audio_stream:
 

@@ -78,6 +78,9 @@ crop_video_batch(
   batch (a property of the machine, not of a row, so neither is read as
   a `jobs` column). See
   [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md).
+  Resolving `"nvenc"` asks this FFmpeg build which encoders it has, so a
+  `"nvenc"` call that re-encodes the video runs the binary while the
+  command is built, even under `run = FALSE`.
 
 - audio_stream:
 

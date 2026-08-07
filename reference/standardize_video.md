@@ -82,7 +82,10 @@ standardize_video(
   `"h264_nvenc"`); see
   [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
   for availability and its caveats. Applies to video only: `audio_codec`
-  is never hardware-accelerated.
+  is never hardware-accelerated. Resolving `"nvenc"` asks this FFmpeg
+  build which encoders it has, so a `"nvenc"` call that re-encodes the
+  video runs the binary while the command is built, even under
+  `run = FALSE`.
 
 - fallback:
 

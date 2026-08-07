@@ -84,6 +84,9 @@ compare_videos_batch(
   batch (a property of the machine, not of a row, so neither is read as
   a `jobs` column). See
   [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md).
+  Resolving `"nvenc"` asks this FFmpeg build which encoders it has, so a
+  `"nvenc"` call that re-encodes the video runs the binary while the
+  command is built, even under `run = FALSE`.
 
 - run:
 

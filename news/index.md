@@ -367,6 +367,19 @@
 
 ### Bug fixes
 
+- When `hardware = "nvenc"` is requested on a machine whose FFmpeg does
+  not list the encoder,
+  [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+  and
+  [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
+  now report the error against the function you called rather than
+  against an internal helper, as most other verbs taking `hardware`
+  already did. A call that fans out over several commands still reports
+  the error against the internal fan-out instead: every `_batch` verb,
+  and the scalar
+  [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
+  which fans out over its segments.
+
 - Metadata values containing a newline no longer corrupt the probe
   output.
   [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
@@ -780,6 +793,18 @@ and soaking).
 
 ### Documentation
 
+- Every verb taking `hardware` now says that asking for `"nvenc"`
+  queries your FFmpeg build for the encoder while the command is being
+  assembled, so a call that re-encodes the video runs the binary even
+  with `run = FALSE`. Asking for `"nvenc"` alongside a stream copy is an
+  error those pages already describe —
+  [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+  at its default `video_codec = "copy"`,
+  `segment_video(reencode = FALSE)`, and both `_batch` siblings — and it
+  is caught first, so such a call aborts without probing. This was
+  always true; only the documentation is new. `run = FALSE` promises you
+  the command that would run, not a call that touches nothing.
+
 - New
   [`?audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
   help page explains the two 0-based audio arguments the package exposes
@@ -798,19 +823,23 @@ and soaking).
   [`ffm_copy()`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md).
   Every verb taking either argument now links to it, and the
   getting-started vignette gains a section on choosing an audio track.
+
 - Corrected several `audio_stream` help pages whose descriptions still
   listed only some of the verbs that keep every audio track, omitting
   ones added later. Those lists are now generated from a single source,
   so they cannot fall behind the code again.
+
 - Help pages now cross-reference each other: every task verb links to
   the `ffm_*` pipeline builders it is built on (and each builder back to
   the verbs that use it), and the three metadata reader families
   (`probe_*()`, `mediainfo_*()`, `get_*()`) link to one another so you
   can find the alternative backend.
+
 - Each metadata help page now states its backend (FFprobe or MediaInfo)
   and what it returns (a tibble, a value, or a single scalar per file),
   and the “Media metadata as tibbles” vignette gains a table comparing
   the reader families at a glance.
+
 - New “A research preprocessing workflow” vignette walks an end-to-end
   pipeline — standardizing recordings, normalizing and extracting audio,
   sampling frames, de-identifying, and packaging for sharing —

@@ -32,6 +32,9 @@ format_for_web(
   The encoder backend: `"none"` (default, software libx264) or `"nvenc"`
   for NVIDIA GPU H.264 encoding (`"h264_nvenc"`) when available. See
   [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md).
+  Resolving `"nvenc"` asks this FFmpeg build which encoders it has, so a
+  `"nvenc"` call that re-encodes the video runs the binary while the
+  command is built, even under `run = FALSE`.
 
 - fallback:
 

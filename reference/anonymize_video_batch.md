@@ -89,6 +89,9 @@ anonymize_video_batch(
   Batch-wide (a machine property), not a per-row column; a `hardware`
   column in `jobs` is ignored. See
   [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md).
+  Resolving `"nvenc"` asks this FFmpeg build which encoders it has, so a
+  `"nvenc"` call that re-encodes the video runs the binary while the
+  command is built, even under `run = FALSE`.
 
 - fallback:
 

@@ -116,7 +116,10 @@ the output container cannot hold the source audio codec (e.g. FLAC in
 <code>video_codec = NULL</code> the H.264 family is assumed, so a non-H.264
 container (e.g. <code>.webm</code>) needs an explicit HEVC- or AV1-family
 <code>video_codec</code>. See <code><a href="nvenc_encoder.html">has_nvenc</a></code> for availability and its
-caveats.</p></dd>
+caveats.
+Resolving <code>"nvenc"</code> asks this FFmpeg build which encoders it has, so
+a <code>"nvenc"</code> call that re-encodes the video runs the binary while the
+command is built, even under <code>run = FALSE</code>.</p></dd>
 
 
 <dt id="arg-fallback">fallback<a class="anchor" aria-label="anchor" href="#arg-fallback"></a></dt>

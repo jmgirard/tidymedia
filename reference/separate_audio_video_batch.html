@@ -125,7 +125,12 @@ machine, not of a row, so neither is read as a <code>jobs</code> column). See
 stream copy runs no encoder, <code>hardware = "nvenc"</code> conflicts with any
 row whose video codec resolves to <code>"copy"</code> — including the default —
 so a jobs table mixing copied and re-encoded video must be split into
-separate calls.</p></dd>
+separate calls.
+Resolving <code>"nvenc"</code> asks this FFmpeg build which encoders it has, so
+a <code>"nvenc"</code> call that re-encodes the video runs the binary while the
+command is built, even under <code>run = FALSE</code>.
+The stream-copy conflict above is caught first, so such a call aborts
+without probing.</p></dd>
 
 
 <dt id="arg-audio-stream">audio_stream<a class="anchor" aria-label="anchor" href="#arg-audio-stream"></a></dt>

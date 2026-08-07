@@ -65,7 +65,11 @@ separate_audio_video(
   encoder at all, `hardware = "nvenc"` alongside `video_codec = "copy"`
   is an error: name an encoder or pass `video_codec = NULL`. See
   [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
-  for availability and its caveats.
+  for availability and its caveats. Resolving `"nvenc"` asks this FFmpeg
+  build which encoders it has, so a `"nvenc"` call that re-encodes the
+  video runs the binary while the command is built, even under
+  `run = FALSE`. The stream-copy conflict above is caught first, so such
+  a call aborts without probing.
 
 - fallback:
 

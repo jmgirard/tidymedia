@@ -96,6 +96,9 @@ standardize_video_batch(
   [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
   and
   [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md).
+  Resolving `"nvenc"` asks this FFmpeg build which encoders it has, so a
+  `"nvenc"` call that re-encodes the video runs the binary while the
+  command is built, even under `run = FALSE`.
 
 - fallback:
 

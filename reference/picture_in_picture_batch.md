@@ -83,6 +83,9 @@ picture_in_picture_batch(
   batch (a property of the machine, not of a row, so neither is read as
   a `jobs` column). See
   [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md).
+  Resolving `"nvenc"` asks this FFmpeg build which encoders it has, so a
+  `"nvenc"` call that re-encodes the video runs the binary while the
+  command is built, even under `run = FALSE`.
 
 - run:
 

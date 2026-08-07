@@ -49,6 +49,9 @@ format_for_web_batch(
   libx264) or `"nvenc"` for NVIDIA GPU H.264 encoding. Batch-wide (not a
   per-row column). See
   [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md).
+  Resolving `"nvenc"` asks this FFmpeg build which encoders it has, so a
+  `"nvenc"` call that re-encodes the video runs the binary while the
+  command is built, even under `run = FALSE`.
 
 - fallback:
 

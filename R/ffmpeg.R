@@ -3021,14 +3021,22 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
   # verb instead of purrr::pmap() (M57/D035), immediately before ffm_batch() so
   # every check above still reports first (M41).
   #
-  # Skipped unless every row re-encodes: segment_pipeline() aborts EARLIER on a
-  # non-re-encoding cut that names an encoder, never reaching
-  # resolve_hw_encoder(), and firing here would replace that message with an
-  # availability one (D035's second condition). Mirrors segment_video().
+  # Scoped to the rows that re-encode, never gated on the whole table:
+  # segment_pipeline() aborts EARLIER on a non-re-encoding cut that names an
+  # encoder, never reaching resolve_hw_encoder(), so a row that copies has no
+  # encoder to check. `reencode` is a per-row column here, so an all-or-nothing
+  # gate skipped the guard for the re-encoding rows of a MIXED column and left
+  # them blaming purrr::pmap() -- the misblame this verb's guard exists to
+  # remove (M57 review F4). Sweeping the re-encoding rows alone keeps both: a
+  # table with no re-encoding row reaches no guard at all, and one with any
+  # re-encoding row is checked for exactly the families those rows spell.
   reencode_rows <- if ("reencode" %in% names(jobs)) jobs$reencode else reencode
-  if (all(reencode_rows %in% TRUE)) {
-    check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
-                          fallback)
+  encoding <- which(rep_len(reencode_rows %in% TRUE, nrow(jobs)))
+  if (length(encoding) > 0L) {
+    check_nvenc_available(
+      batch_video_codecs(jobs[encoding, , drop = FALSE], video_codec),
+      hardware, fallback
+    )
   }
 
   ffm_batch(

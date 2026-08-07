@@ -83,13 +83,13 @@ door → rejected at the plan gate (work log).
 
 ## Coverage
 
-- AC1 → T2, T3, T4
-- AC2 → T1
-- AC3 → T4, T5
+- AC1 → T2, T3, T4, T9, T10, T11
+- AC2 → T1, T11
+- AC3 → T4, T5, T9
 - AC4 → T6
-- AC5 → T8
+- AC5 → T8, T12
 - AC6 → T7
-- AC7 → T8
+- AC7 → T8, T12
 
 ## Tasks
 
@@ -116,6 +116,17 @@ door → rejected at the plan gate (work log).
       `devtools::document()`, `devtools::test()`, `devtools::check()`; check
       `grep -c $'\r' R/ffmpeg.R` against the default branch before every commit
       touching it (M35/M48).
+- [x] T9 (review return, F4): `segment_video_batch()`'s guard sweeps the rows
+      that re-encode instead of skipping whenever any row does not; mixed
+      `reencode` regression test, plus the precedence pin D035 asks for.
+- [ ] T10 (review return, F3/F2): move `separate_audio_video_batch()`'s guard
+      below `reject_duplicate_outputs()` so M26's within-row collision still
+      reports; test it, and pin the copy-column precedence F2 named.
+- [ ] T11 (review return, F1): `check_nvenc_available()` validates `fallback`
+      where it consults it, so a malformed value is diagnosed the same way on
+      every machine.
+- [ ] T12: re-check the `@param hardware` wording against the fixed guards;
+      `devtools::document()`, `devtools::test()`, `devtools::check()`, CRLF.
 
 ## Work log
 
@@ -138,6 +149,8 @@ door → rejected at the plan gate (work log).
 - 2026-08-07 (T1): D035 written before any code, as D024 requires of a shape its third exclusion reserved. Abort extracted from `resolve_hw_encoder()` into `check_nvenc_available()`; the resolver now reaches it by calling it. `devtools::test()` FAIL 0 | PASS 3856, the same 4 warnings and 5 skips as before, all in test files this milestone does not touch. `R/ffmpeg.R` CRLF count 5749 -> 5791 for 42 net added lines, diffstat 55/13 (M35/M48).
 
 - 2026-08-07 (review): returned to in-progress. AC1 fails on a legal call the sweep never ran: `segment_video_batch()` with a mixed `reencode = c(TRUE, FALSE)` column skips the guard entirely and still blames `purrr::pmap` (F4, scored 90). Two more actioned: `separate_audio_video_batch()`'s guard preempts `reject_duplicate_outputs()` and hides M26's within-row collision catch (F3, 85), and `check_nvenc_available()`'s `isTRUE(fallback)` swallows a malformed `fallback` that `resolve_hw_encoder()`'s `check_bool()` would have caught, machine-dependently (F1, 82). Six logged below threshold. Three lenses plus a scorer; blame-history and prior-review zero.
+- 2026-08-07 (T9): minor amendment — the review return added T9-T12, one per actioned finding plus a closing docs/check pass, and the Coverage map gained them; no criterion text changed.
+- 2026-08-07 (T9): `segment_video_batch()`'s guard now sweeps `jobs[which(reencode)]` rather than skipping on `all(reencode %in% TRUE)`, so a mixed column's re-encoding rows are checked at the front door. Four tests added: the mixed column blames the verb, an all-FALSE column still reports the cut, a copying AV1 row is not swept under an h264-only seam, and the precedence pin — the same mixed call reports the cut from inside the fan-out when the encoder is present and availability at the verb when it is not. Discrimination checked by reverting `R/ffmpeg.R` alone: exactly the two mixed-column blame assertions fail, both reading `purrr::pmap`. Suite FAIL 0 | PASS 3931, the same 4 warnings and 5 skips as at T1. CRLF 5922 -> 5930 for a numstat of 15 added / 7 deleted (M35/M48).
 
 ## Decisions
 

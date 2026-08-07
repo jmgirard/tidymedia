@@ -267,6 +267,81 @@ test_that("a non-re-encoding cut still reports the cut, not availability", {
   }
 })
 
+test_that("an all-FALSE reencode column reaches no front-door guard", {
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  input <- make_input()
+  # The column form of the scalar case above: every row copies, so no row has an
+  # encoder to check and segment_pipeline()'s own cut error must survive.
+  jobs <- tibble::tibble(input = c(input, input), output = c("a.mp4", "b.mp4"),
+                         start = c(0, 0), end = c(1, 1),
+                         reencode = c(FALSE, FALSE))
+  cnd <- nvenc_fanout_catch("segment_video_batch", input,
+                            extra = list(jobs = jobs))
+  expect_s3_class(cnd, "rlang_error")
+  expect_match(conditionMessage(cnd), "need a re-encoding cut")
+  expect_no_match(conditionMessage(cnd), "is not available")
+})
+
+test_that("a MIXED reencode column is still refused at the front door", {
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  input <- make_input()
+  # `reencode` is per row, so an all-or-nothing gate skipped the guard entirely
+  # here and the re-encoding row went back to blaming purrr::pmap() -- a legal
+  # call inside AC1's own domain (M57 review F4). Row 1 re-encodes and has no
+  # encoder, so this is the availability failure, not the cut error row 2 owes.
+  jobs <- tibble::tibble(input = c(input, input), output = c("a.mp4", "b.mp4"),
+                         start = c(0, 0), end = c(1, 1),
+                         reencode = c(TRUE, FALSE))
+  cnd <- nvenc_fanout_catch("segment_video_batch", input,
+                            extra = list(jobs = jobs))
+  expect_s3_class(cnd, "rlang_error")
+  expect_match(conditionMessage(cnd), "nvenc encoder .* is not available")
+  expect_identical(nvenc_blamed(cnd), "segment_video_batch")
+})
+
+test_that("the guard sweeps only the re-encoding rows' families", {
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  input <- make_input()
+  # The AV1 row copies, so it names no encoder and the h264-only seam must not
+  # refuse the table: a guard reading the whole column would abort on av1_nvenc.
+  # Its own cut error is what this call fails on instead, from inside the
+  # fan-out -- master's behavior for this table, unchanged.
+  jobs <- tibble::tibble(input = c(input, input), output = c("a.mp4", "b.mp4"),
+                         start = c(0, 0), end = c(1, 1),
+                         reencode = c(TRUE, FALSE),
+                         video_codec = c("libx264", "libaom-av1"))
+  cnd <- nvenc_fanout_catch("segment_video_batch", input,
+                            extra = list(jobs = jobs))
+  expect_s3_class(cnd, "rlang_error")
+  expect_no_match(conditionMessage(cnd), "av1_nvenc")
+  expect_match(conditionMessage(cnd), "need a re-encoding cut")
+})
+
+# The precedence D035's second condition admits and requires be tested rather
+# than assumed away: a mixed-`reencode` call fails either way, and which of its
+# two errors reports depends on whether the encoder is there.
+
+test_that("on a mixed column availability reports before the pipeline's cut error", {
+  input <- make_input()
+  jobs <- tibble::tibble(input = c(input, input), output = c("a.mp4", "b.mp4"),
+                         start = c(0, 0), end = c(1, 1),
+                         reencode = c(TRUE, FALSE))
+  # Encoder present: nothing to refuse at the front door, so row 2's cut error
+  # reports from inside the fan-out, exactly as on master.
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  present <- nvenc_fanout_catch("segment_video_batch", input,
+                                extra = list(jobs = jobs))
+  expect_match(conditionMessage(present), "need a re-encoding cut")
+  expect_false(identical(nvenc_blamed(present), "segment_video_batch"))
+  # Encoder absent: the same call now reports availability at the verb. The set
+  # of failing calls is unchanged; only which error and where it is raised move.
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  absent <- nvenc_fanout_catch("segment_video_batch", input,
+                               extra = list(jobs = jobs))
+  expect_match(conditionMessage(absent), "is not available")
+  expect_identical(nvenc_blamed(absent), "segment_video_batch")
+})
+
 test_that("a copy video_codec still reports the copy, not availability", {
   withr::local_options(tidymedia.nvenc_encoders = character(0))
   input <- make_input()

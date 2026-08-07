@@ -1,6 +1,6 @@
 # M54: Correct the `run = FALSE` purity claim for the nvenc encoder probe
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -115,6 +115,8 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
 
 - 2026-08-06: review in progress. AC1-AC7 verified with fresh evidence and ticked; consistency gate green (cairn_validate exit 0, `document()` no diff, `pkgdown::check_pkgdown()` clean, NEWS entries present, no new root files); CI 9/9 on PR #57. Two of three review lenses reported: prior-review found no regressions (its PR-comment probe returned empty, so archived `## Review` sections were the whole surface; M31 had logged this call-attribution gap at 74 and this diff closes it), blame-history found no defects across 7 checks. Still outstanding: the [O] diff-bug lens, a fresh re-run of AC3's mutation probe (held back so it cannot corrupt that reviewer's read of the shared tree), and the scorer pass.
 
+- 2026-08-06: REVIEW RETURNED to in-progress. Two findings at 92. (1) `NEWS.md:275-279` states that the `_batch` siblings gained the corrected blame and that the other `hardware` verbs already had it; measured at review, every `_batch` verb still aborts naming `purrr::pmap(jobs, .f, ...)`, because threading `call =` into the pipeline builders reaches the scalar verbs only — the fan-out shape LESSONS M47/M48-F1 already records. (2) The roxygen sentence added to all 16 `@param hardware` blocks claims unconditionally that a `"nvenc"` call runs the binary under `run = FALSE`; it is false on `separate_audio_video` (at its DEFAULT `video_codec = "copy"`), on `segment_video(reencode = FALSE)`, and on both `_batch` siblings, all of which abort before resolving — 0 probes measured against 1 for the control. The plan-time criteria audit caught this case and the fix reached AC4's wording but never the sentence. Twelve further findings scored below 80 and are logged in the Review section, not actioned.
+
 ## Decisions
 
 ## Review
@@ -141,6 +143,9 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
   one passing `call =`; the only other grep hit is a comment line.
 - **AC6** `devtools::check()` → `Status: OK` at `00check.log:68`, 0 errors / 0 warnings /
   0 notes. `devtools::test()` → FAIL 0, PASS 3472, SKIP 5.
+- **AC3 discrimination, re-run fresh at review:** forcing `resolve_hw_encoder()`'s
+  `hardware == "none"` early return to fire unconditionally turned exactly the three new
+  blocks red (3 / 3 / 2 failing expectations); `R/ffmpeg.R` restored, CRLF 5700, 0 bare LF.
 - **AC7** 0 bare-LF line endings, 5700 CRLF; `git diff --stat master -- R/ffmpeg.R` →
   50 insertions / 2 deletions, far under the 100-line bound.
 
@@ -156,3 +161,64 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
   needing `.Rbuildignore`.
 - CI on PR #57: 9/9 green (macOS release, Ubuntu devel/release/oldrel-1, Windows release,
   pkgdown, test-coverage, codecov patch+project).
+
+### Independent review — three lenses + scorer
+
+- **[O] diff-bug (Opus):** 13 findings. Confirmed all seven ACs literally satisfied and
+  independently reproduced the evidence, but found the milestone's Goal not fully met.
+- **[S] blame-history (Sonnet):** 7 checks, no defects. The deleted nvenc-excluding
+  comments are honored rather than undone (M47/M48 wrote them as a documented gap, and
+  the ROADMAP records M54 as the milestone closing that candidate); `helper-rd.R` is a
+  verbatim move preserving M51's `../../man`-only constraint; D034 narrows nothing
+  M45/M47/M48/M49 rely on.
+- **[S] prior-review (Sonnet):** no findings. Its PR-comment probe returned empty, so
+  archived `## Review` sections were the whole surface. There it found M31 had logged this
+  exact call-attribution gap (scored 74, not actioned then) — this diff closes it.
+- **[S] scorer (Sonnet, fresh):** 2 findings at or above 80; 12 below, logged below.
+
+### Actioned findings (>= 80)
+
+- **F1 (92) — `NEWS.md:275-279` claims a `_batch` blame fix that did not happen.** Measured
+  at review with `tidymedia.nvenc_encoders = character(0)`: `standardize_video_batch`,
+  `format_for_web_batch` and `crop_video_batch` all abort with `conditionCall`
+  `purrr::pmap(jobs, .f, ...)`. Threading `call =` at `R/ffmpeg.R:1141,1405` fixes the
+  scalar verbs only; no `_batch` verb passes a front-door `call` into its pipeline, so
+  `caller_env()` lands on the anonymous `.f`. LESSONS M47/M48-F1 records exactly this
+  fan-out shape and it was not applied.
+- **F2 (92) — the new roxygen sentence is false on 4 of the 16 topics.** Its second clause
+  ("a `"nvenc"` call runs the binary while the command is built, even under
+  `run = FALSE`") is unconditional. Measured at review: `separate_audio_video(hardware =
+  "nvenc", run = FALSE)` on its DEFAULT `video_codec = "copy"` performs 0 probes and
+  aborts; `segment_video(reencode = FALSE, ...)` likewise; both `_batch` siblings likewise;
+  control `segment_video` default performs 1. Sites `R/ffmpeg.R:807, 2565, 2811, 4760`.
+  The plan-time criteria audit flagged this exact case and the work log records it as
+  "fixed before AC wording was written" — AC4's wording was made conditional, the roxygen
+  sentence was not. The finding was raised and then lost between the two.
+
+### Logged, not actioned (12 below the 80 threshold)
+
+- F3 (78) D034 cites `R/ffmpeg.R:2283` / `:2388`; real lines are `:2301` / `:2403` after
+  T5 inserted 48 lines, and `:2301` is inside `ffmpeg_encoders()`, not the resolver.
+- F4 (72) `test-nvenc.R`'s blame test covers scalars only — the direct cause of F1.
+- F9 (68) `ROADMAP.md:29` cites `has_nvenc()` at `:2385`; now `:2403`. Same class as F3.
+- F5 (55) The purity tests count `ffmpeg_encoders()` calls, pinning the seam rather than a
+  real process; a future cache would keep them green while the doc claim goes false.
+- F13 (48) The sentence's "runs the binary" is absolute while `has_nvenc()` short-circuits
+  on the option seam. Overlaps F2.
+- F8 (45) D034's grep also hits dead code (`get_volume()`) and omits `system(`/`system2(`.
+- F10 (38) D034 and the T4 amendment appear to disagree about what the 2026-07-30
+  measurement observed.
+- F6 (30) Vignettes still say `run = FALSE` runs nothing; out of stated Scope.
+- F11 (30) `DESIGN.md`'s bullet reads self-contradictory without DECISIONS.md beside it.
+- F7 (22) `@examples` comments say "without calling FFmpeg" on topics now carrying the
+  new sentence.
+- F12 (15) `arg_match(hardware)` lacks `error_call`; pre-existing and unreachable.
+- F14 (12) `helper-rd.R` names are now visible to every test file.
+
+### Disposition
+
+**Returned to `in-progress`** under the return floor: F1 and F2 both score 92 on defects
+in user-facing deliverables (release notes and reference documentation). Neither is an
+amendment return — AC4's mandated claim is conditional ("resolving `hardware = "nvenc"`
+probes...") and correct as written; the roxygen sentence overreached it. Defect return
+count for M54: 1.

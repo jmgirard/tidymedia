@@ -21,7 +21,8 @@ which return container and stream tibbles; and MediaInfo, through
 return a single value.
 
 See \code{vignette("tidymedia")} for the guided tour, \code{vignette("batch")} for
-running a verb over many files, and \code{vignette("metadata")} for the readers.
+running a verb over many files, \code{vignette("metadata")} for the readers, and
+\code{vignette("workflow")} for an end-to-end research preprocessing pipeline.
 The full function list is on the package's reference index.
 }
 \seealso{

@@ -98,6 +98,7 @@ set so a future export gaining or losing `parallel` goes red instead of rotting 
 - 2026-08-07: T5 done, plus a minor amendment adding a discovered sub-task. `test-parallel-surface.R` pins the 22-name set; AC5's `get(name, envir = ns)` needed the INHERITING lookup, not `inherits = FALSE` — `.data` is a re-export bound in the imports env, not the namespace, so the strict form errors "object '.data' not found" before the function filter ever runs. Discriminated by mutation: deleting `parallel` from `probe_video()`'s signature turns it red naming `probe_video`. Sub-task: `test-package-topic.R` pins both halves of AC1 (the topic exists with a `\alias{tidymedia}`; it carries no `\keyword{internal}`), so this milestone's NEWS claim about `?tidymedia` is test-enforced rather than hand-checked once. Discriminated by two mutations, each reddening only its own guard: appending `\keyword{internal}` to the `.Rd` fails the second test alone; deleting the roxygen block above the sentinel makes `document()` delete the `.Rd` and fails the first alone. NEWS gains two Documentation bullets. Full `devtools::test()`: FAIL 0 | WARN 4 | SKIP 5 | PASS 3502, the 4 warnings pre-existing in `test-audio-stream.R` and `test-ffmpeg.R`, untouched here.
 - 2026-08-07: T6 done; milestone to `review`. LESSONS M17 fired exactly as written: `devtools::check()` reported "0 notes" while `00check.log` read `Status: 1 NOTE` — a spelling NOTE on `ORCID`, a word the generated `tidymedia-package.Rd` author block introduced. `spelling::update_wordlist()` added it (and dropped the now-unused `unselected`); the re-run's `00check.log` reads `Status: OK`, read from the file under an explicit `check_dir`. `devtools::document()` leaves no diff. Vignettes: all four re-built clean against an `R CMD INSTALL`ed copy of this branch with `ffmpeg`/`ffprobe`/`mediainfo` all absent from `PATH` (asserted via `Sys.which() == ""` before the build, LESSONS M30). Plan-owned body at 88 lines, under the 150 cap.
 - 2026-08-07: review. All seven criteria executed with fresh evidence (Review section). Three fresh-context lenses returned 13 findings; the scorer actioned 1. F2 (85) fixed on the branch: the `@details` landing text said the `get_*()` helpers read metadata "as tibbles" alongside `probe_all()`, where they route through `mediainfo_parameter()` to MediaInfo — a different back end — and return a single value. Separately, the prior-review lens caught that the M55 NEWS bullets had been inserted over the opening line of M54's nvenc bullet, splicing the new text onto M54's sentence and leaving `it too. that asking for "nvenc" queries your`; verified against the file and repaired, so NEWS.md is now purely additive against master. Twelve sub-threshold findings logged in the Review section, four of them real inaccuracies in this milestone's own prose (F3 68, F4 68, F5 78, F12 65) carried to the merge gate for the maintainer's call.
+- 2026-08-07: merge gate. Maintainer directed that the four sub-threshold prose findings (F5 78, F3 68, F4 68, F12 65) be fixed before merge rather than logged and shipped, on the ground that this milestone's subject is precisely the accuracy of those sentences. Fixed as recorded in the Review section; `00check.log` `Status: OK`, FAIL 0 | PASS 3505, masked vignette build clean after.
 
 ## Decisions
 
@@ -159,22 +160,30 @@ findings; a fresh [S] scorer holding the diff and this milestone file scored the
   back ends separately and points at `mediainfo_query()` and `get_duration()` for the MediaInfo side.
   Re-verified: every cross-reference resolves, `document()` regenerates, `check()` `Status: OK`.
 
-**Below threshold, logged not actioned (12):** F1 (15) NEWS.md corruption — the M55 bullets were
+**Below threshold, four fixed at the maintainer's direction at the merge gate.** F5, F3, F4 and F12
+scored 78/68/68/65 — under the 80 bar, so excluded from the actioned list — but each was verified
+against the code and each sits in prose this milestone itself wrote, which is the milestone's whole
+subject. Surfaced verbatim at the gate; the maintainer chose to fix them before merge. `batch.Rmd`'s
+paragraph was rewritten to drop the scalar-vs-fan-out framing entirely (the real discriminator is
+whether the verb routes through `ffm_batch()`, and `separate_audio_video()` compiles its two commands
+directly), to state that the four reader shortcuts ignore `parallel` when handed a `probe` object
+rather than an `infile`, and to say that `parallel = TRUE` with no plan set runs one job at a time and
+warns — `warn_if_sequential_plan()` is called by both `ffm_batch()` (`R/ffm_batch.R:97`) and
+`probe_all()` (`R/ffprobe.R:82`). `metadata.Rmd` gained the same two qualifications. The landing topic
+now names all four vignettes. Re-verified after: `document()` regenerates, `00check.log` `Status: OK`,
+FAIL 0 | PASS 3505, all four vignettes re-build with the binaries masked.
+
+**Below threshold, logged not actioned (8):** F1 (15) NEWS.md corruption — the M55 bullets were
 inserted over the opening line of M54's nvenc bullet, splicing the new text onto M54's sentence; found
 by the prior-review lens, verified against the file, and fixed during review, so it scored low as
-already-repaired rather than as unreal. F5 (78) the new `metadata.Rmd` example warns under the default
-sequential plan (`warn_if_sequential_plan()`, D033) and the prose describes a quiet no-op instead.
-F3 (68) `batch.Rmd` calls `separate_audio_video()` a "scalar verb" 25 lines after its own `## Fan-out
-verbs` heading classes it as a fan-out verb. F4 (68) both vignettes state the `probe_*()` rule without
-D033's caveat that `parallel` is discarded, silently, when a `probe` object is passed instead of
-`infile`. F12 (65) the landing topic names three of the package's four vignettes, omitting `workflow`.
-F6 (55) the test's inheriting `get()` could in principle resolve a same-named object from
+already-repaired rather than as unreal. F6 (55) the test's inheriting `get()` could in principle resolve a same-named object from
 `.GlobalEnv`. F11 (35) NEWS's "Previously neither reached anything" is ambiguous. F7 (35) the
 `expect_gte` floor can never fire before the adjacent `expect_identical`. F8 (30) the formals test
 cannot pin the prose it protects. F9 (30) the `\keyword{internal}` assertion is a proxy that never
 reads the installed `INDEX`. F10 (20) `helper-rd.R`'s `Rd_db` fallback passes no `lib.loc =`
 (pre-existing). F13 (15) M51's archived work-log account of why `unselected` entered `inst/WORDLIST`
-does not hold up, which is a fact about a past record rather than about this diff.
+does not hold up, which is a fact about a past record rather than about this diff. (F3, F4, F5 and F12
+moved to the fixed paragraph above.)
 
 Return floor: no actioned finding demonstrates an acceptance criterion failing, and F2 is a
 documentation defect rather than one in what the package does for users, so the milestone stays at

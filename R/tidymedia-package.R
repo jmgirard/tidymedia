@@ -11,7 +11,8 @@
 #' return a single value.
 #'
 #' See `vignette("tidymedia")` for the guided tour, `vignette("batch")` for
-#' running a verb over many files, and `vignette("metadata")` for the readers.
+#' running a verb over many files, `vignette("metadata")` for the readers, and
+#' `vignette("workflow")` for an end-to-end research preprocessing pipeline.
 #' The full function list is on the package's reference index.
 "_PACKAGE"
 

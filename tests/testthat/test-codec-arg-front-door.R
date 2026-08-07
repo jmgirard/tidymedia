@@ -284,6 +284,83 @@ test_that("a codec guard does not preempt a verb's other front-door checks", {
   }
 })
 
+test_that("a malformed token in a jobs COLUMN blames the batch verb", {
+  # The column form of the sweep above. A batch verb reaches its pipeline
+  # through ffm_batch() -> purrr::pmap(), so a per-row abort names `.f()` and
+  # carries "In index: 1" -- which is what every batch verb did with a malformed
+  # codec CELL until M56 moved the check into check_batch_codec_col(), at the
+  # verb's own front door. Without this test the column path is unmeasured:
+  # codec_family_col_value() deliberately puts a VALID codec in the column, so
+  # the sweep above can never see a malformed one there.
+  input <- make_input()
+  for (pair in codec_family_pairs()) {
+    verb <- pair$verb
+    args0 <- codec_family_call(verb, input, "out.mp4")
+    if (!"jobs" %in% names(args0)) next
+    for (arg in pair$args) {
+      label <- paste0(verb, "(jobs$", arg, " = malformed token)")
+      args <- codec_family_call(verb, input, "out.mp4")
+      args$run <- FALSE
+      args$parallel <- FALSE
+      args$jobs[[arg]] <- "aac -evil"
+      args <- c(args, codec_family_extra(verb, arg))
+      cnd <- tryCatch({
+        do.call(verb, args, envir = asNamespace("tidymedia"))
+        NULL
+      }, condition = function(cnd) cnd)
+
+      aborted <- inherits(cnd, "error")
+      expect_true(aborted, label = paste(label, "aborts"))
+      if (!aborted) next
+      msg <- cli::ansi_strip(conditionMessage(cnd))
+      expect_match(msg, arg, fixed = TRUE, label = paste(label, "names arg"))
+      call_txt <- paste(deparse(conditionCall(cnd)), collapse = " ")
+      expect_match(call_txt, paste0("^", verb, "\\("),
+                   label = paste(label, "blames the verb"))
+      expect_no_match(msg, "In index:", fixed = TRUE,
+                      label = paste(label, "is not mid-fan-out"))
+      expect_no_match(msg, ".f()", fixed = TRUE,
+                      label = paste(label, "does not name the pmap closure"))
+    }
+  }
+})
+
+test_that("the nvenc path refuses a malformed token the same as the software path", {
+  # resolve_hw_encoder() REWRITES video_codec before the pipeline's seam sees
+  # it: codec_family() reads "libx264 -evil" as h264 and yields "h264_nvenc",
+  # a perfectly clean token. So a verb that resolves before it checks accepts a
+  # malformed value under hardware = "nvenc" while refusing it under "none".
+  # standardize_video() did exactly that -- on master too -- until M56 gave the
+  # seam `hardware` and let it check first, the shape crop_video() already had.
+  # The encoder pool is pinned so the cell does not depend on this machine.
+  input <- make_input()
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  cases <- list(
+    list(lbl = "standardize_video", f = function() standardize_video(
+      input, "o.mp4", video_codec = "libx264 -evil", hardware = "nvenc",
+      run = FALSE)),
+    list(lbl = "standardize_video_batch", f = function() standardize_video_batch(
+      tibble::tibble(input = input, output = "o.mp4"),
+      video_codec = "libx264 -evil", hardware = "nvenc", run = FALSE,
+      parallel = FALSE)),
+    # The sibling that was already right, kept as the control: it passes for the
+    # same reason the two above now do, and would go red with them.
+    list(lbl = "crop_video", f = function() crop_video(
+      input, "o.mp4", 32, 32, video_codec = "libx264 -evil",
+      hardware = "nvenc", run = FALSE))
+  )
+  for (case in cases) {
+    cnd <- tryCatch({ case$f(); NULL }, error = function(e) e)
+    expect_true(inherits(cnd, "error"), label = paste(case$lbl, "aborts"))
+    if (!inherits(cnd, "error")) next
+    msg <- cli::ansi_strip(conditionMessage(cnd))
+    expect_match(msg, "video_codec", fixed = TRUE,
+                 label = paste(case$lbl, "names video_codec"))
+    expect_match(msg, "single clean token", fixed = TRUE,
+                 label = paste(case$lbl, "is the token complaint"))
+  }
+})
+
 test_that("the front-door sweep covers every codec argument the package exports", {
   # Completeness: a verb that gains a video_codec/audio_codec argument later must
   # either join the list above or be excluded on the record, rather than quietly

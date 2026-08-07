@@ -1414,7 +1414,6 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
                                  hardware = "none", fallback = FALSE,
                                  audio_stream = NULL,
                                  call = rlang::caller_env()) {
-  video_codec <- resolve_hw_encoder(video_codec, hardware, fallback, call = call)
   p <- ffm_files(input, output)
   # Resolution: exact when both given; aspect-preserving with an even output
   # dimension (FFmpeg's -2) when only one. ffm_scale() validates each dimension
@@ -1443,12 +1442,17 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
   #
   # Video goes through the matching seam (M56), so a malformed token names
   # `video_codec` and blames standardize_video() rather than naming Layer-1's
-  # `video`. `hardware` is deliberately left at its default: the nvenc
-  # resolution already happened at the top of this function, and passing it here
-  # too would move that abort past ffm_scale()'s dimension checks -- a
-  # precedence change this milestone does not make. The seam's second pass is a
-  # no-op, resolve_hw_encoder() returning immediately at hardware = "none".
-  p <- apply_video_codec(p, video_codec, call = call)
+  # `video`. `hardware` and `fallback` go through the seam TOO, and this
+  # function no longer resolves the encoder itself -- the shape
+  # crop_video_pipeline() already had. Resolving first fed check_token() the
+  # RESOLVED name: under hardware = "nvenc", codec_family() read "libx264 -evil"
+  # as h264 and handed the seam "h264_nvenc", which is a clean token, so the
+  # malformed value compiled (measured at M56 review, F2/F3 -- and on master
+  # too). Checking before family inference is what the seam's own comment
+  # promises. The cost is precedence: the nvenc-unavailable abort now fires
+  # after ffm_scale()'s dimension checks rather than before them, matching
+  # crop_video().
+  p <- apply_video_codec(p, video_codec, hardware, fallback, call = call)
   p <- apply_audio_codec(p, audio_codec, call = call)
   # State the stream selection instead of inheriting FFmpeg's (M47). One
   # ffm_map() call with both specifiers, never two: ffm_map() appends, so two
@@ -4079,6 +4083,23 @@ check_batch_codec_col <- function(jobs, col = "video_codec",
        ({.val {NA}} to {na_means}).",
       call = call
     )
+  }
+  # Every non-NA cell must also be a clean token, checked HERE rather than per
+  # row inside the fan-out (M56). A batch verb reaches its pipeline through
+  # ffm_batch() -> purrr::pmap(), so a per-row abort resolves its `call` to the
+  # anonymous closure and reports "Error in `.f()` / In index: 1" -- a
+  # dependency's name and an internal index in place of the verb the user
+  # called, the exact shape M48 review F1 removed from segment_video()'s
+  # front door and M41 removed from the scalar arguments. This is the column
+  # form of the same fix, and it is one site because every batch verb's codec
+  # columns already come through here. normalize_audio_batch()'s two_pass block
+  # made the same check for its own reason (a reshaped jobs table renumbers the
+  # rows); that one now duplicates this and stays, since it must fire before
+  # Phase 1 analyzes anything.
+  if (col %in% names(jobs)) {
+    for (cell in jobs[[col]][!is.na(jobs[[col]])]) {
+      check_token(cell, arg = col, call = call)
+    }
   }
   invisible(jobs)
 }

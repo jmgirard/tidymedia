@@ -274,18 +274,29 @@
 
 * A malformed codec value — a string carrying whitespace or shell characters,
   such as `"aac -evil"` — is now reported against the argument and the function
-  you called. Every verb with a `video_codec` or `audio_codec` argument used to
-  accept such a value at its front door and refuse it deeper in, reporting it
-  against the pipeline's internal `audio` / `video` setting, against an internal
-  helper, or — on the verbs that fan out, meaning every `_batch` sibling and the
-  scalar `segment_video()` — against the fan-out, prefixed `In index:`.
-  Non-string values were already reported this way.
+  you called. Every verb whose `video_codec` or `audio_codec` argument *sets* a
+  codec used to accept such a value at its front door and refuse it deeper in,
+  reporting it against the pipeline's internal `audio` / `video` setting,
+  against an internal helper, or — on the verbs that fan out, meaning every
+  `_batch` sibling and the scalar `segment_video()` — against the fan-out,
+  prefixed `In index:`. Non-string values were already reported this way.
+  (`verify_media()` carries same-named arguments that are expected probe
+  *values* rather than codec settings; it is unaffected.)
 
-  On a `_batch` verb, a malformed value in the scalar argument used to be
-  discarded in silence whenever the `jobs` table carried a column of the same
-  name, since the column wins. It is now refused, matching how a non-string
-  value in that position has behaved since the column-override rule was
-  adopted.
+  A `_batch` verb reads the same value three ways, and all three now answer
+  alike. A malformed value in the scalar argument used to be discarded in
+  silence whenever the `jobs` table carried a column of the same name, since the
+  column wins; it is now refused. A malformed value in the **column** used to be
+  reported from inside the fan-out, naming an internal closure; it is now
+  refused at the verb's own front door, before any row runs.
+
+  Under `hardware = "nvenc"`, `standardize_video()` and
+  `standardize_video_batch()` used to accept a malformed `video_codec`
+  outright — the encoder name was rewritten to the nvenc equivalent before
+  anything checked it, and the rewritten name is well-formed. They now refuse
+  it, as `crop_video()` already did. One consequence for callers who pass both
+  `hardware = "nvenc"` and bad dimensions: `standardize_video()` now reports the
+  dimensions first, where it used to report the missing nvenc encoder first.
 
   No compiled command changes: every legal codec value compiles exactly the
   command it did before.

@@ -13,11 +13,10 @@ _Last hygiene check: 2026-08-07 (M55 merged and archived; M50's terminal row pru
 | M53 | Give `probe_all()` a `parallel =` argument | done | M52 | normal | milestones/archive/M53-probe-all-parallel.md |
 | M54 | Correct the `run = FALSE` purity claim for the nvenc encoder probe | done | — | normal | milestones/archive/M54-nvenc-dry-run-purity.md |
 | M55 | A package landing topic, and a `parallel` enumeration that matches the code | done | — | normal | milestones/archive/M55-package-topic-parallel-docs.md |
-| M56 | A bad codec token names the verb's argument, never Layer 1's | in-progress | M54 | normal | milestones/M56-codec-token-blame.md |
+| M56 | A bad codec token names the verb's argument, never Layer 1's | review | M54 | normal | milestones/M56-codec-token-blame.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->
-- A malformed codec token in a `jobs` **column** still reports mid-fan-out: measured 2026-08-07, `extract_audio_batch(tibble(..., audio_codec = "aac -evil"))` gives "In index: 1 / Caused by error in `.f()`" blamed on `purrr::pmap()`, where the same value in the scalar argument now blames the verb (M56). The message names `audio_codec` correctly; what is wrong is the blame and the `In index:` wrapper. Fixing it means validating the codec columns up front against the whole table rather than per row at the seam — a pre-check beside the existing `check_batch_codec_col()` guards, needing no API change but moving error precedence on ten verbs, which is why M56 left it. Promote on any report of a batch codec error being hard to locate, or alongside the next milestone touching `check_batch_codec_col()`. — added 2026-08-07 — M56
 - Fixed-region *region blur* (no face tracking): split→crop→boxblur→overlay needs an IP2 filtergraph design call (new blessed composite verb vs Layer 0) plus a new `ffm_boxblur` filter; not plannable until that call. Box-fill half became M20/M21. Confirmed in-scope (defer) by M25. — added 2026-07-10, split 2026-07-12, reconciled 2026-07-13 — research-verbs family 4; M25 survey §3 D1
 - `burn_timecode` / drawtext text-and-timecode burn-in for coders & reliability raters; in-scope but needs a new `ffm_drawtext` Layer-1 filter + a surface-scope call. — added 2026-07-13 — M25 survey §3 D2 (defer)
 - Minor in-scope convenience verbs (grouped): split multi-view→per-person clips, orientation fix (rotate/flip), contact-sheet QC montage; each needs a small arg-shape design call. — added 2026-07-13 — M25 survey §3 D3 (defer-low)

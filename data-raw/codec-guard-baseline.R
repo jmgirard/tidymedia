@@ -5,7 +5,7 @@
 # evidence rather than an implementation-time transcript (M41 T2/T8, AC4).
 #
 # For every task verb and `_batch` sibling carrying a `video_codec` or
-# `audio_codec` argument that *sets* a codec, this probes five scenarios per
+# `audio_codec` argument that *sets* a codec, this probes eight scenarios per
 # verb/argument pair and records the observable outcome:
 #
 #   default  the argument left alone            -> compiled command
@@ -287,7 +287,7 @@ codec_guard_verbs <- function() {
   )
 }
 
-# The five scenarios, as a list of value-producing thunks. `default` is spelled
+# The eight scenarios, as a list of value-producing thunks. `default` is spelled
 # by *omitting* the argument, which is why the value is a sentinel rather than
 # a value.
 codec_guard_scenarios <- list(

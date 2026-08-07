@@ -1,6 +1,6 @@
 # M56: A bad codec token names the verb's argument, never Layer 1's
 
-- **Status:** in-progress
+- **Status:** review
 - **Branch:** `m56-codec-token-blame`
 - **PR:** https://github.com/jmgirard/tidymedia/pull/59
 - **Priority:** normal
@@ -121,11 +121,11 @@ already pins is unmoved.
       re-baseline.
 - [x] T5 Run `devtools::document()`, `devtools::test()`, `devtools::check()`; confirm the
       CRLF count and the `00check.log` `Status:` line.
-- [ ] T6 Fix the column path's blame (review F1): each batch verb captures its own frame
+- [x] T6 Fix the column path's blame (review F1): each batch verb captures its own frame
       and passes it as `call =` into the pipeline inside the `ffm_batch()` lambda, so a
       malformed token in a codec column names the batch verb rather than `.f()`. Add the
       AC7 test; re-run the baseline.
-- [ ] T7 Fix the nvenc token check (review F3, and the pre-existing F2 under it):
+- [x] T7 Fix the nvenc token check (review F3, and the pre-existing F2 under it):
       `standardize_pipeline()` passes `hardware` / `fallback` into `apply_video_codec()`
       and drops its own earlier `resolve_hw_encoder()` call, so the seam checks the user's
       token before family inference — what its comment already promises and what
@@ -153,6 +153,11 @@ already pins is unmoved.
 - 2026-08-07: amendment return: AC1 — "Sites are named by function, never by line: this milestone inserts comment lines into `R/ffmpeg.R`, so any line number written at plan time is stale by the time the criterion is read."
 - 2026-08-07: amendment return: AC3 — "the file's four existing assertions — labelled `names arg`, `hides engine arg`, `blames the verb`, and `is not mid-fan-out` — pass for every verb × argument pair in `tests/testthat/helper-codec-family.R`."
 - 2026-08-07: review triage — F1 (88) and F3 (85) both actioned **fix now** at the user's gate choice; neither reached the return floor, so the status change here is the amendment return's, not theirs. AC7/AC8 and T6/T7 added for the two fixes. The nine sub-threshold findings are logged in the Review section and none was actioned; F2 (10) is subsumed by T7's fix rather than left, since the same change removes it.
+- 2026-08-07: T6 — the column path is fixed at `check_batch_codec_col()` rather than by threading a frame into `ffm_batch()`'s lambda: every non-NA codec cell is token-checked at the batch verb's own front door, which is where M48 review F1 and M41 both put this family's guards. Measured on `master`, `.f()` blame on the column path was the pre-existing norm for seven verb/argument pairs and this branch had extended it to four more, so fixing only AC7's four would have left the divergence F3 punished; one site fixes all ten batch verbs. `normalize_audio_batch()`'s two_pass cell check now duplicates it and stays, since it must fire before Phase 1 analyzes anything. New test reddens across the batch verbs when the loop is removed.
+- 2026-08-07: T7 — `standardize_pipeline()` drops its own `resolve_hw_encoder()` call and passes `hardware` / `fallback` into `apply_video_codec()`, the shape `crop_video_pipeline()` already had, so the seam checks the user's token before family inference as its comment promises. This also removes review F2, which was measured pre-existing: `codec_family("libx264 -evil")` matched "264", so the seam was handed the clean token `"h264_nvenc"` and compiled. Precedence moves as the plan said it would — the nvenc-unavailable abort now fires after `ffm_scale()`'s dimension checks — and NEWS says so. New test reddens on `standardize_video()` when the resolve is put back, with `crop_video()` as the passing control.
+- 2026-08-07: also corrected in this pass, both defects the diff itself introduced rather than actioned findings: `data-raw/codec-guard-baseline.R` said "five scenarios" in two places where the diff had made it eight (review F10, 75), and the NEWS entry said "every verb with a `video_codec` or `audio_codec` argument" where `verify_media()` carries both and is excluded by design (review F4a, 55). The other seven sub-threshold findings stand as logged.
+- 2026-08-07: the ROADMAP candidate added earlier today for the column path's mid-fan-out blame is removed — T6 fixed it, so the row is no longer true.
+- 2026-08-07: AC4 re-measured after both fixes: 584 cells each side, 0 vacuous each side, 67 changed rows all in the `token` scenario, 0 legal-value changes. Status → review.
 
 ## Decisions
 

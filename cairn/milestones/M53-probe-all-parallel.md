@@ -53,8 +53,8 @@ candidate row. Changing the default, which stays sequential.
       condition's class rather than by its message text.
 - [ ] AC5 The four `probe_*()` shortcuts pass `parallel` through when they
       reprobe via `infile` and ignore it when given a `probe` object, matching
-      how they already treat `typed` (`R/ffprobe.R:264-272`, consumed only on
-      the `infile` branch at `:270`).
+      how they already treat `typed` (`R/ffprobe.R:259-267`, consumed only on
+      the `infile` branch at `:265`).
 - [ ] AC6 A `cairn/DECISIONS.md` entry records that the package now fans out
       with `furrr` in two places rather than one, and states what keeps them
       one concept: D007 says "Batch processing is a single tibble-in/tibble-out
@@ -76,7 +76,7 @@ candidate row. Changing the default, which stays sequential.
 
 ## Tasks
 
-- [ ] T1 Read `ffm_batch()`'s parallel seam (`R/ffm_batch.R:95-102`,
+- [ ] T1 Read `ffm_batch()`'s parallel seam (`R/ffm_batch.R:95-105`,
       `:174-184`) and decide whether to reuse its sequential-plan guard here;
       log the decision, since AC3's wording depends on it and D012 exists for
       that guard.
@@ -98,6 +98,14 @@ candidate row. Changing the default, which stays sequential.
 - 2026-07-31: sequenced after M52 so the parallel path fans out the one-spawn probe rather than the N+1 one, which would otherwise multiply workers against a cost M52 removes.
 - 2026-07-31: plan chose to reuse `ffm_batch()`'s existing `furrr` seam over introducing a second parallel mechanism, and to keep the default sequential; D014 already fixes `parallel` as the spelling and seventeen verbs carry it, so no naming question was open.
 - 2026-07-31: criteria audit ([O], fresh context) returned four findings, all fixed above. AC3 was unreachable under T1's own design, because reusing `warn_if_sequential_plan()` emits a second warning under `parallel = TRUE` on the default sequential plan that a test run always has. AC1 said row order was "keyed by `file`" where it is actually input order, and justified itself by a scrambling risk furrr does not pose. AC4 carried an unfalsifiable clause asserting `Suggests` placement this milestone cannot change. And the audit flagged that a second `furrr` fan-out wants a D-entry against D007's single-runner reading, which is now AC6. Two cites corrected: `R/ffm_batch.R:95-102` and `:174-184`.
+
+- 2026-08-06: re-planning run over the already-planned M53 confirmed the scope
+  and criteria stand; no re-cut. Every code cite was re-verified against the
+  post-M52 tree and two were refreshed for drift: AC5's `resolve_probe()` span
+  (`R/ffprobe.R:264-272`, branch `:270` → `:259-267`, branch `:265`) and T1's
+  `ffm_batch()` seam, which was clipped mid-`if`/`else` (`:95-102` → `:95-105`).
+  AC1's `:72-87`/`:89-94`, AC3's `R/ffm_batch.R:174-184`, and the four
+  shortcuts at `:216-241` all still land where the plan says.
 
 ## Decisions
 

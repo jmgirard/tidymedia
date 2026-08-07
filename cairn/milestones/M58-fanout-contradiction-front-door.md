@@ -124,7 +124,7 @@ owing its own entry. Line-ending governance → M60.
       deleting it and requiring the paired test red.
 - [x] T7 — Rewrite the two committed precedence tests to contradiction-first
       and add the two uniform-call precedence tests.
-- [ ] T8 — Build and commit the before/after grid as the evidence ledger.
+- [x] T8 — Build and commit the before/after grid as the evidence ledger.
 - [ ] T9 — D-entry superseding D035's precedence example; NEWS; roxygen where
       precedence changed; run the verify slot clean.
 
@@ -142,6 +142,7 @@ owing its own entry. Line-ending governance → M60.
 - 2026-08-07: T4, T5 — the two fan-in composites sweep conditions 4/5 and 6 over their `audio`/`audio_codec`/`resize` columns and per-row input counts.
 - 2026-08-07: T7 — all five verbs carrying both guards now pin contradiction-first. The two mixed-column cases were rewritten under T2/T3; the three encoder-independent ones (conditions 4, 5, 6) are a new uniform-call test asserting the two seams give an identical message, and condition 5 left the availability-first sweep it used to sit in.
 - 2026-08-07: T6 — `test-contradiction-front-door.R`: eight blame tests, nine mixed-versus-clean column pairs, four scalar-sibling tests, and the one-site headline check (five headlines, five sites). Mutation-verified all eight front-door call sites by deleting each and re-running the file: 3, 3, 5, 4, 2, 5, 5 and 4 assertions red respectively, every site restored after.
+- 2026-08-07: T8 — `data-raw/contradiction-guard-baseline.R` (112 cells: six conditions x scalar/column/mixed forms x each named argument at a violating and a non-violating value, condition 5 crossed with input counts 2 and 3). Measured `origin/master` against the working tree: 0 vacuous cells on either ref, 33 aborting cells on both and **0 whose refusal changed**, 30 whose blame moved (29 `purrr::pmap` -> the verb, 1 `compare_videos_pipeline` -> `compare_videos`), `In index:` in 29 cells before and 0 after.
 
 ## Decisions
 

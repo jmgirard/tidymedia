@@ -2,6 +2,7 @@
 
 - **Status:** review
 - **Branch:** `m56-codec-token-blame`
+- **PR:** https://github.com/jmgirard/tidymedia/pull/59
 - **Priority:** normal
 - **Depends on:** M54
 - **Driving RR:** —
@@ -49,7 +50,7 @@ already pins is unmoved.
       package literal or a value already token-checked with `call =` threaded at that
       verb's front door. The three sites named in Scope no longer pass an unchecked user
       value, and `R/ffmpeg.R:2179` passes `call =`.
-- [ ] AC2 `extract_audio()`, `convert_audio()`, `standardize_video()` and their `_batch`
+- [x] AC2 `extract_audio()`, `convert_audio()`, `standardize_video()` and their `_batch`
       siblings, given a malformed-but-string codec token, emit a message naming the verb's
       own argument (`audio_codec` / `video_codec`), never Layer-1's `audio` / `video`, and
       blame the verb rather than `ffm_codec()` or `purrr::pmap()`. `normalize_audio(
@@ -62,15 +63,15 @@ already pins is unmoved.
       four target verbs specifically: reverting each routing change turns it red. Verbs
       that already front-door with `check_token()` pass it unchanged, which is expected,
       not evidence.
-- [ ] AC4 No compiled command changes. For each verb touched, the `run = FALSE` compiled
+- [x] AC4 No compiled command changes. For each verb touched, the `run = FALSE` compiled
       string is byte-identical to `master`'s across a grid varying the codec value over
       that verb's legal set — `NULL`, a literal it accepts, and `"copy"` only where it
       accepts it (`helper-codec-family.R:100-102`) — with
       `withr::local_options(tidymedia.nvenc_encoders = ...)` pinned so any nvenc cell is
       machine-independent. `data-raw/codec-guard-baseline.R` is the instrument.
-- [ ] AC5 PROFILE.md's verify slot clean — `devtools::check()` 0 errors / 0 warnings, read
+- [x] AC5 PROFILE.md's verify slot clean — `devtools::check()` 0 errors / 0 warnings, read
       from `<pkg>.Rcheck/00check.log`'s `Status:` line — and `devtools::test()` passes.
-- [ ] AC6 `R/ffmpeg.R` stays wholly CRLF: on the branch tip `grep -c $'\r$' R/ffmpeg.R`
+- [x] AC6 `R/ffmpeg.R` stays wholly CRLF: on the branch tip `grep -c $'\r$' R/ffmpeg.R`
       equals `wc -l < R/ffmpeg.R`, both 5728 — 20 lines more than `master`'s 5708, the
       comment lines T2/T2b added. (The plan's 5652 was measured at `bcc6f5c`, before M54's
       merge; this milestone's first amendment pinned `master`'s 5708, which a milestone that
@@ -153,3 +154,39 @@ passing a seam: it would need its own front-door check, and the split above
 would stop being "fans out or not".
 
 ## Review
+
+Evidence gathered 2026-08-07 on branch tip d0c0b3e, PR #59.
+
+- **AC1 — not verified as written.** The substance holds: `grep -n "ffm_codec(" R/*.R`
+  returns six direct calls, all either package literals (`ffm_copy()`'s two `"copy"` calls,
+  `format_for_web_pipeline()`'s resolved `"libx264"` + `"aac"`) or values already
+  token-checked with `call =` threaded (`anonymize_pipeline()`, Out of scope by plan; the
+  two seam bodies). But the criterion names `R/ffmpeg.R:2179` as the seam call that must
+  pass `call =`, and on the branch tip line 2179 is a comment — the call is at 2199,
+  displaced by this milestone's own comment insertions. The criterion fails as written on a
+  coordinate the work necessarily moves. Amendment return, not a defect return.
+- **AC2 — verified.** All eight named verbs run at `run = FALSE` with `"aac -evil"`:
+  `extract_audio`, `convert_audio`, `standardize_video`, `normalize_audio` and their four
+  `_batch` siblings each emit "`audio_codec`/`video_codec` must be a single clean token",
+  blame themselves in `conditionCall()`, and carry no `In index:`. The criterion's named
+  case, `normalize_audio(audio_codec = "aac -evil")`, blames `normalize_audio()`.
+- **AC3 — not verified as written.** The substance holds: `codec_front_door_bad` carries
+  `"aac -evil"` and `devtools::test(filter = "codec")` passes 1565 assertions, 0 failures,
+  over all 51 verb x argument x column cells. But the criterion locates its four assertions
+  at `:86`, `:88-90`, `:93-95`, `:98-99` and the value list at `:55-59`; the branch tip has
+  them at 100, 102-104, 107-109, 112-113 and 66-71, moved by this milestone's own edits to
+  that file. Same shape as AC1. Amendment return.
+- **AC4 — verified.** `codec_guard_baseline("master")` vs the working tree: 584 cells each
+  side, 0 vacuous each side, 67 changed rows, **every one the `token` scenario**. Legal-value
+  changes: 0. The 244 compiled legal cells (`default` / `null` / `literal` / `copy`) are
+  byte-identical across the two refs, with the nvenc pool pinned.
+- **AC5 — verified.** `devtools::check()` re-run at review: `Status: OK`, 0 errors /
+  0 warnings / 0 notes. `devtools::test()` 0 failures / 3762 passing.
+- **AC6 — verified.** `wc -l < R/ffmpeg.R` = 5728 and `grep -c $'\r$' R/ffmpeg.R` = 5728;
+  every line CRLF-terminated, against `master`'s 5708.
+
+Consistency gate — `cairn_validate` all checks passed. `devtools::document()` no diff.
+No new exports, so no `_pkgdown.yml` row owed; `pkgdown` CI job passes. NEWS.md carries the
+user-visible entry. No `.Rbuildignore` entry owed (no new top-level file). No DESIGN.md
+principle changed, so `cairn_impact` skipped. CI on PR #59 green, 9 of 9.
+

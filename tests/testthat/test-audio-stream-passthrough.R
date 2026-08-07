@@ -195,11 +195,38 @@ test_that("run = FALSE runs no binary at the default hardware", {
   # never bound" (M39's discriminate-the-test rule, M44's counting-mock rule).
   standardize_video_batch(std_jobs(f), run = TRUE)
   expect_gt(n, 0L)
-  # Deliberately NOT extended to hardware = "nvenc": resolve_hw_encoder()
-  # reaches ffmpeg("-encoders") before `run` is consulted, so that path DOES
-  # shell out under run = FALSE. Found by this milestone's criteria audit,
-  # reproduced under this same mock, and carried as a ROADMAP candidate row --
-  # it falsifies D024's "sole exception" sentence and is not M47's to fix.
+  # For hardware = "nvenc", which is NOT binary-free here, see the D034 test
+  # below. M47 carried that gap as a comment; M54 made it an assertion.
+})
+
+test_that("hardware = 'nvenc' probes FFmpeg while building, though run = FALSE", {
+  # D034: a probe whose result enters the compiled command runs when the
+  # pipeline is built -- `run` gates execution, never construction. Counting at
+  # ffmpeg_encoders() rather than find_ffmpeg(): ffmpeg() shells out through
+  # system(), not run_program(), so the purity block's mock above cannot see it.
+  f <- make_input()
+  withr::local_options(tidymedia.nvenc_encoders = NULL) # force the real probe
+  probes <- 0L
+  local_mocked_bindings(
+    ffmpeg_encoders = function(...) {
+      probes <<- probes + 1L
+      tibble::tibble(name = "h264_nvenc")
+    }
+  )
+  # Default hardware: resolve_hw_encoder() returns before reaching has_nvenc().
+  standardize_video(f, "out.mp4", run = FALSE)
+  anonymize_video(f, "out.mp4", regions = regions_1(), run = FALSE)
+  expect_identical(probes, 0L)
+  # nvenc: the probe runs during construction, with run = FALSE throughout.
+  standardize_video(f, "out.mp4", hardware = "nvenc", run = FALSE)
+  expect_gt(probes, 0L)
+  before <- probes
+  anonymize_video(f, "out.mp4", regions = regions_1(), hardware = "nvenc",
+                  run = FALSE)
+  expect_gt(probes, before)
+  before <- probes
+  standardize_video_batch(std_jobs(f), hardware = "nvenc", run = FALSE)
+  expect_gt(probes, before)
 })
 
 # AC4 / AC5: the batch siblings --------------------------------------------

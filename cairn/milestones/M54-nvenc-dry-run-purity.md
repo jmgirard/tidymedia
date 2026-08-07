@@ -43,10 +43,12 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
 - [ ] AC3 `tests/testthat/test-audio-stream-passthrough.R:198` and
       `test-audio-stream-crop-segment.R:325` replace their nvenc-excluding comments with
       live `hardware = "nvenc", run = FALSE` cases, and `test-audio-stream-format-web.R`'s
-      purity block (`:129-152`) gains one. Each counts `find_ffmpeg()` invocations with
-      `withr::local_options(tidymedia.nvenc_encoders = NULL)` pinning the option seam
-      unset, and asserts the count exceeds zero. Each is shown to discriminate: with
-      `has_nvenc()` stubbed to return `TRUE` without probing, it goes red.
+      purity block (`:129-152`) gains one. Each counts invocations of `ffmpeg_encoders()` —
+      the seam that actually shells out, and the one `has_nvenc()` reaches when
+      `getOption("tidymedia.nvenc_encoders")` is unset — asserting the count exceeds zero
+      under `hardware = "nvenc", run = FALSE` while staying zero at the default hardware in
+      the same block. Each is shown to discriminate: with `resolve_hw_encoder()`'s
+      `hardware == "none"` early return forced to fire unconditionally, it goes red.
 - [ ] AC4 Every Rd topic whose argument names include `hardware` states that resolving
       `hardware = "nvenc"` probes the FFmpeg binary for the encoder, so such a call is not
       binary-free even under `run = FALSE`. Enumerated by a test reading `../../man/*.Rd`
@@ -76,7 +78,7 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
       `\r\n`, and check that one file's diffstat before committing (LESSONS M35/M48).
 - [x] T2 Write D034 in `cairn/DECISIONS.md` per AC1.
 - [x] T3 Correct `cairn/DESIGN.md`'s Conventions bullet to match D034.
-- [ ] T4 Extend the three purity tests per AC3; prove each new case discriminates by
+- [x] T4 Extend the three purity tests per AC3; prove each new case discriminates by
       stubbing `has_nvenc()`.
 - [ ] T5 Add the probe sentence to the shared `@param hardware` roxygen blocks; run
       `devtools::document()`.
@@ -96,6 +98,10 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
 - 2026-08-06: T2 done. D034 appended to `cairn/DECISIONS.md`. It states the rule as a condition on probe shape and enumerates today's instances by a stated grep over the execution seams (`run_program(`, `ffmpeg(`, `ffprobe(`, `mediainfo(`) filtered to build-time reachability, rather than by recall. That grep found exactly two: D013's loudnorm analysis (`R/loudnorm_two_pass.R:140,182`) and the nvenc resolver (`R/ffmpeg.R:2283`, sole internal caller `has_nvenc()` at `:2388`); `ffmpeg_codecs()` has no internal caller. Also established that D024's bullet was false on the day it was written — nvenc shipped at M31 on 2026-07-26, D024 is dated 2026-07-30 — so the entry records a list falsified by existing code, not by later work.
 
 - 2026-08-06: T3 done. `cairn/DESIGN.md`'s Conventions bullet restated to match D034; `grep -n "sole exception" cairn/DESIGN.md` now returns nothing, satisfying AC2. The replacement also drops the old bullet's implication that D024's diagnostic probes are a `run = TRUE`-only *addition* to the same list, since they are a different shape entirely.
+
+- 2026-08-06: amendment (substantive, gated). AC3's counting seam changed from `find_ffmpeg()` to `ffmpeg_encoders()`. `ffmpeg()` reaches the binary through `system(glue('{find_ffmpeg()} {command}'))` at `R/ffmpeg.R:28`, not through `run_program()`, so the existing counting mock cannot intercept it: counting `find_ffmpeg()` alone would leave a real `ffmpeg -encoders` process running inside a test whose whole point is that it is binary-free, and would fail for an unrelated reason wherever FFmpeg is absent. Counting at `ffmpeg_encoders()` pins the identical claim deterministically. Rejected: stubbing `ffmpeg()` with canned `-encoders` output, which would make the test depend on a hand-written fixture of FFmpeg's encoder-table format that LESSONS M52 records as going stale across tool versions.
+
+- 2026-08-06: T4 done. The two nvenc-excluding comments (`test-audio-stream-passthrough.R`, `test-audio-stream-crop-segment.R`) are replaced by live D034 blocks and `test-audio-stream-format-web.R` gained one; each asserts zero probes at the default hardware and a rising count under `hardware = "nvenc", run = FALSE`, across the scalar verbs and one `_batch` sibling. Green: 85 / 86 / 30 passing, 0 failures. Discrimination proven by mutation — forcing `resolve_hw_encoder()`'s `hardware == "none"` early return to fire unconditionally turned exactly the three new blocks red (3 / 3 / 2 failing expectations) and nothing else in those files; `R/ffmpeg.R` restored from the index afterward with CRLF 5652 intact.
 
 ## Decisions
 

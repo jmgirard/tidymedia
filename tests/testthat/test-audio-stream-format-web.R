@@ -156,6 +156,30 @@ test_that("format_for_web()'s new argument runs no binary under run = FALSE", {
   # "no binary ran" and "the mock never bound" (M39/M44).
   format_for_web_batch(web_jobs(f), run = TRUE)
   expect_gt(n, 0L)
+  # For hardware = "nvenc", which is NOT binary-free here, see the D034 test
+  # below.
+})
+
+test_that("hardware = 'nvenc' probes FFmpeg while building, though run = FALSE", {
+  # D034: see test-audio-stream-passthrough.R for the full rationale. Counting
+  # at ffmpeg_encoders() because ffmpeg() shells out through system(), which the
+  # run_program()/find_ffmpeg() mock in the block above cannot intercept.
+  f <- make_input()
+  withr::local_options(tidymedia.nvenc_encoders = NULL) # force the real probe
+  probes <- 0L
+  local_mocked_bindings(
+    ffmpeg_encoders = function(...) {
+      probes <<- probes + 1L
+      tibble::tibble(name = "h264_nvenc")
+    }
+  )
+  format_for_web(f, "out.mp4", run = FALSE)
+  expect_identical(probes, 0L)
+  format_for_web(f, "out.mp4", hardware = "nvenc", run = FALSE)
+  expect_gt(probes, 0L)
+  before <- probes
+  format_for_web_batch(web_jobs(f), hardware = "nvenc", run = FALSE)
+  expect_gt(probes, before)
 })
 
 

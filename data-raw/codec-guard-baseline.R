@@ -10,9 +10,20 @@
 #
 #   default  the argument left alone            -> compiled command
 #   null     the argument passed NULL           -> compiled command, or an abort
+#   literal  a plain codec the verb accepts     -> compiled command (M56)
+#   copy     the argument passed "copy"         -> compiled command (M56)
 #   na       the argument passed NA             -> an abort (AC1/AC2)
 #   number   the argument passed 1              -> an abort (AC2)
 #   vec2     the argument passed c("aac","mp3") -> an abort (AC2)
+#   token    the argument passed "aac -evil"    -> an abort (M56 AC2)
+#
+# The `literal` and `copy` scenarios are M56's: its AC4 asks that the compiled
+# command be byte-identical across each verb's LEGAL codec values, not only at
+# the default and at NULL, so a front-door guard that narrowed what a verb
+# accepts would show up here rather than in the abort columns. `copy` is probed
+# only where the verb accepts it -- the loudness verbs refuse it outright
+# (check_audio_codec_not_copy()), and a cell that aborts on both refs compares
+# equal while measuring nothing.
 #
 # Each scenario is probed twice on a `_batch` verb, once per value of a second
 # dimension -- whether `jobs` carries a column of the same name as the argument
@@ -185,9 +196,15 @@ codec_guard_verbs <- function() {
       args = c("video_codec", "audio_codec"),
       call = function(s, o) list(jobs = tibble::tibble(
         input = s, output = o, regions = list(codec_guard_regions())))),
+    # `col_extra` on a SCALAR verb reads oddly until M56: the field is consumed
+    # wherever a cell sets a codec, which since M56 includes the `literal` and
+    # `copy` scenarios at `col = "absent"`. Without it these two fan-in verbs
+    # record D017's "needs an audio stream to encode" at every legal audio
+    # value, exactly as their `_batch` siblings did before review A2.
     compare_videos = list(
       args = c("video_codec", "audio_codec"),
-      call = function(s, o) list(infiles = c(s, s), outfile = o)),
+      call = function(s, o) list(infiles = c(s, s), outfile = o),
+      col_extra = list(audio_codec = list(audio = 0))),
     # col_extra: what else the call needs before a `col = present` run measures
     # anything. An audio_codec COLUMN on a fan-in verb whose `audio` is NULL is
     # refused by D017 ("needs an audio stream to encode") before the scalar
@@ -230,7 +247,8 @@ codec_guard_verbs <- function() {
       call = function(s, o) list(jobs = tibble::tibble(input = s, output = o))),
     picture_in_picture = list(
       args = c("video_codec", "audio_codec"),
-      call = function(s, o) list(main = s, overlay = s, outfile = o)),
+      call = function(s, o) list(main = s, overlay = s, outfile = o),
+      col_extra = list(audio_codec = list(audio = 0))),
     # Fixed two-input shape (D015): named main/overlay columns, NOT the
     # `inputs` list-column the other fan-in verb takes. With the wrong shape
     # every cell here aborted on "Missing columns", so the default/null cells
@@ -275,10 +293,39 @@ codec_guard_verbs <- function() {
 codec_guard_scenarios <- list(
   default = quote(OMIT),
   null    = quote(NULL),
+  # Another sentinel: the value depends on which argument is under test, so it
+  # is resolved per cell rather than carried here (codec_guard_col_value()).
+  literal = quote(LITERAL),
+  copy    = quote("copy"),
   na      = quote(NA),
   number  = quote(1),
-  vec2    = quote(c("aac", "mp3"))
+  vec2    = quote(c("aac", "mp3")),
+  token   = quote("aac -evil")
 )
+
+# The scenarios whose value is a LEGAL codec setting: these are expected to
+# compile, and M56's AC4 rests on their commands being byte-identical across two
+# refs. The abort scenarios are the complement.
+codec_guard_legal <- c("default", "null", "literal", "copy")
+
+# Whether `verb` accepts "copy" in `arg` at all. Two documented refusals, both
+# measured on master rather than assumed:
+#
+#   audio_codec  the loudness verbs refuse it (check_audio_codec_not_copy()):
+#                re-encoding is the whole point of a loudness pass.
+#   video_codec  every verb that applies a video filter or seeks accurately
+#                refuses it ("Can't apply a video filter while the video codec
+#                is set to \"copy\"", and segment_video's frame-accurate-seek
+#                variant) -- which is all of them but separate_audio_video(),
+#                whose video side is a pass-through remux.
+#
+# Probing a refusing cell would record a matching pair of aborts, which passes
+# the before/after comparison while measuring nothing -- the vacuity trap
+# codec_guard_vacuous() exists for.
+codec_guard_copy_ok <- function(verb, arg) {
+  if (arg == "audio_codec") return(!grepl("^normalize_audio", verb))
+  grepl("^separate_audio_video", verb)
+}
 
 # The value the jobs column carries, per `col` setting. For `present` it must be
 # a value the per-row column guards accept, so that the column genuinely wins the
@@ -313,7 +360,7 @@ codec_guard_cells <- function(base, scenario) {
   if ("jobs" %in% names(base)) {
     cells <- c(cells, list(list(col = "present", jobs = "valid")),
                list(list(col = "na", jobs = "valid")))
-    if (!scenario %in% c("default", "null")) {
+    if (!scenario %in% codec_guard_legal) {
       cells <- c(cells, list(list(col = "absent", jobs = "invalid")))
     }
   }
@@ -325,8 +372,16 @@ codec_guard_cells <- function(base, scenario) {
 # Run every scenario for every verb/argument pair against `env`, returning a
 # data frame of observations. `input` paths are scrubbed out of compiled
 # commands so two machines' baselines compare equal.
-codec_guard_baseline <- function(ref = NULL, root = ".", sample = NULL) {
+codec_guard_baseline <- function(ref = NULL, root = ".", sample = NULL,
+                                 nvenc = character()) {
   env <- codec_guard_env(ref, root)
+  # Pin the nvenc encoder pool for the whole grid (M56 AC4). No cell sets
+  # hardware = "nvenc" today, so this changes nothing measured -- it removes the
+  # possibility that one ever does and makes the baseline depend on whether the
+  # machine running it has an nvenc-capable FFmpeg. The default, an empty pool,
+  # is "this build lists no nvenc encoder", which is deterministic everywhere.
+  old_opt <- options(tidymedia.nvenc_encoders = nvenc)
+  on.exit(options(old_opt), add = TRUE)
   if (is.null(sample)) sample <- normalizePath(
     file.path(root, "inst", "extdata", "sample.mp4"), mustWork = TRUE)
   outfile <- file.path(tempdir(), "codec-guard-out.mp4")
@@ -340,6 +395,7 @@ codec_guard_baseline <- function(ref = NULL, root = ".", sample = NULL) {
     if (!is.function(f)) {
       # A ref predating the verb (or its rename) has nothing to compare.
       for (arg in spec$args) for (sc in names(codec_guard_scenarios)) {
+        if (sc == "copy" && !codec_guard_copy_ok(verb, arg)) next
         for (cell in codec_guard_cells(spec$call(sample, outfile), sc)) {
           rows[[length(rows) + 1]] <- data.frame(
             verb = verb, arg = arg, scenario = sc, col = cell$col,
@@ -353,6 +409,7 @@ codec_guard_baseline <- function(ref = NULL, root = ".", sample = NULL) {
     if (!all(spec$args %in% names(formals(f)))) {
       for (arg in setdiff(spec$args, names(formals(f)))) {
         for (sc in names(codec_guard_scenarios)) {
+          if (sc == "copy" && !codec_guard_copy_ok(verb, arg)) next
           for (cell in codec_guard_cells(spec$call(sample, outfile), sc)) {
             rows[[length(rows) + 1]] <- data.frame(
               verb = verb, arg = arg, scenario = sc, col = cell$col,
@@ -366,6 +423,7 @@ codec_guard_baseline <- function(ref = NULL, root = ".", sample = NULL) {
 
     for (arg in intersect(spec$args, names(formals(f)))) {
       for (sc in names(codec_guard_scenarios)) {
+       if (sc == "copy" && !codec_guard_copy_ok(verb, arg)) next
        for (cell in codec_guard_cells(spec$call(sample, outfile), sc)) {
         cl <- cell$col
         base <- spec$call(sample, outfile)
@@ -373,7 +431,12 @@ codec_guard_baseline <- function(ref = NULL, root = ".", sample = NULL) {
         # `parallel = FALSE` is the default, but AC3 is about this exact path,
         # so the probe states it rather than inheriting it.
         if ("parallel" %in% names(formals(f))) base$parallel <- FALSE
-        if (sc != "default") {
+        if (sc == "literal") {
+          # Resolved here rather than in the scenario table: the value depends
+          # on which argument is under test, and it is the same one the
+          # `col = present` half uses, so the two halves cannot drift.
+          base[arg] <- list(codec_guard_col_value(arg))
+        } else if (sc != "default") {
           # `base[[arg]] <- NULL` DELETES the element, silently turning the
           # `null` scenario back into `default` -- and the null column is what
           # AC4's before/after comparison rests on. Single-bracket assignment
@@ -389,6 +452,15 @@ codec_guard_baseline <- function(ref = NULL, root = ".", sample = NULL) {
         # same unrelated abort a valid one does.
         if (cl %in% c("present", "na")) {
           base$jobs[[arg]] <- codec_guard_col_value(arg, cl)
+        }
+        # `col_extra` keeps a cell ON the codec argument rather than on an
+        # unrelated abort, so it is owed wherever the cell actually SETS a
+        # codec: the two column halves, and (M56) the `literal`/`copy`
+        # scenarios, which set the scalar argument at `col = "absent"` too.
+        # Without it the fan-in verbs' audio_codec cells record D017's "needs an
+        # audio stream to encode" at every legal value, which is the same
+        # vacuity the column halves already guard against (review A2).
+        if (cl %in% c("present", "na") || sc %in% c("literal", "copy")) {
           for (nm in names(spec$col_extra[[arg]])) {
             base[[nm]] <- spec$col_extra[[arg]][[nm]]
           }
@@ -504,7 +576,7 @@ codec_guard_diff <- function(before, after) {
 # function the non-string aborts blame, and whether any carries `In index:`. A
 # `kinds=compiled` cell is a pair that did NOT refuse the bad value.
 codec_guard_report <- function(baseline) {
-  bad <- baseline[baseline$scenario %in% c("na", "number", "vec2") &
+  bad <- baseline[baseline$scenario %in% c("na", "number", "vec2", "token") &
                     baseline$jobs == "valid", ]
   pairs <- unique(bad[c("verb", "arg", "col")])
   for (i in seq_len(nrow(pairs))) {
@@ -538,10 +610,17 @@ codec_guard_report <- function(baseline) {
 # broken cell -- it is the finding, a codec column that refuses to spell "unset"
 # (M42). Folding the two together would report M42's subject matter as M41's
 # instrumentation failure.
-codec_guard_vacuous <- function(baseline) {
-  d <- baseline[baseline$scenario == "default" & baseline$jobs == "valid" &
+#
+# `scenarios` defaults to the legal-value set less `null`, which is M56's
+# widening: AC4's comparison now spans `literal` and `copy` too, and a cell that
+# aborts there is as dead as one that aborts at the default. `null` stays out
+# because a verb refusing NULL is a finding about the sentinel (D022), not a
+# broken cell -- the same reason `col = "na"` is excluded below.
+codec_guard_vacuous <- function(baseline,
+                                scenarios = c("default", "literal", "copy")) {
+  d <- baseline[baseline$scenario %in% scenarios & baseline$jobs == "valid" &
                   baseline$col %in% c("absent", "present"), ]
-  d[d$kind != "compiled", c("verb", "arg", "col", "kind", "outcome")]
+  d[d$kind != "compiled", c("verb", "arg", "scenario", "col", "kind", "outcome")]
 }
 
 # -- the M42 semantics table -------------------------------------------------

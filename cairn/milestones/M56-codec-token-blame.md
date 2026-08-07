@@ -85,7 +85,7 @@ already pins is unmoved.
 
 ## Tasks
 
-- [ ] T1 Baseline first: capture the `run = FALSE` compiled commands on `master` for the
+- [x] T1 Baseline first: capture the `run = FALSE` compiled commands on `master` for the
       affected verbs via `data-raw/codec-guard-baseline.R`, with `tidymedia.nvenc_encoders`
       pinned. Commit the baseline **before** mutating anything — probing uncommitted work
       reverts the feature itself (LESSONS M44).
@@ -111,6 +111,7 @@ already pins is unmoved.
 - 2026-08-07: /milestone-implement started; branch `m56-codec-token-blame` cut from `master` at 699551f.
 - 2026-08-07: amendment — Scope **In** widened to upgrade every codec-family verb's front-door `check_string(<codec>)` to `check_token(<codec>)`, after measuring `"aac -evil"` over the sweep on `master`: 11 of 51 cells blame the verb, 25 report the token from a helper or mid-fan-out, 15 ignore the malformed scalar when a same-named `jobs` column wins — so AC3's "every verb x argument pair" was unreachable from the four routing changes alone. Chosen at the gate over narrowing AC3 to the eight in-scope verbs. T2b added; AC2/AC3/AC6 coverage updated.
 - 2026-08-07: amendment — AC6's 5652 replaced by 5708, the CRLF-line count on `master` at 699551f; the planned figure was measured at `bcc6f5c`, before M54's merge changed `R/ffmpeg.R`. Stale line pointers refreshed in the same pass (`:925`→`:930`, `:1419`→`:1433`, `:2159`→`:2179`, `helper-codec-family.R:100-104`→`:100-102`).
+- 2026-08-07: T1 — `data-raw/codec-guard-baseline.R` gained `literal` / `copy` / `token` scenarios, an nvenc-pool pin (`options(tidymedia.nvenc_encoders = character())`), a `copy_ok` predicate (measured: the loudness verbs refuse `copy` on audio, and every video verb but `separate_audio_video()` refuses it on video), and `col_extra` applied at the value scenarios so the two scalar fan-in verbs stop recording D017's no-audio abort. Baseline captured off the `master` ref: 584 cells, 244 legal cells compiled, **0 vacuous**. The `before` side reads git, not the working tree, so it is immune to the mutations that follow (LESSONS M44). `devtools::test()` clean beforehand: 0 failures, 3505 passing.
 
 ## Decisions
 

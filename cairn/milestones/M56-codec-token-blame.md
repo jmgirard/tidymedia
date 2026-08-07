@@ -97,7 +97,7 @@ already pins is unmoved.
       (LESSONS M35/M48).
 - [x] T2b Upgrade every codec-family verb's front-door `check_string(<codec>)` to
       `check_token(<codec>)` at the same site, per the Scope amendment.
-- [ ] T3 Extend `codec_front_door_bad` per AC3; prove discrimination by reverting each of
+- [x] T3 Extend `codec_front_door_bad` per AC3; prove discrimination by reverting each of
       the four changes in turn and confirming the sweep goes red for that verb.
 - [ ] T4 Re-run the baseline and diff against T1's; any difference is a defect, not a
       re-baseline.
@@ -118,6 +118,7 @@ already pins is unmoved.
 - 2026-08-07: T2b — 19 front-door `rlang::check_string(<codec>)` calls upgraded to `check_token(<codec>)` at the same site, across the ten `_batch` verbs and `segment_video()`. Narrower than the amendment's "every codec-family verb", and deliberately: the seam-routed scalar verbs already blame themselves after T2, so upgrading them would only move a token error ahead of checks their pipelines make (crop_video's dimensions), changing error text on verbs this milestone has no business changing — the stance M41's precedence table takes. The rationale is recorded once at `check_token()` in `R/utils.R` rather than 19 times at the call sites. Measured after: all 51 verb x argument x column cells of the sweep name the verb's own argument, hide Layer-1's, blame the verb, and carry no `In index:` — from 11 of 51 on `master`. `devtools::test()`: 0 failures, 3505 passing; CRLF count still 5708.
 - 2026-08-07: correction — T2's work-log line above says the CRLF count was "still 5708"; it was not re-measured and is false. The count after T2 is 5728, master's 5708 plus the 20 comment lines T2 added, with every line still CRLF-terminated. The line stands as written (history); this supersedes it.
 - 2026-08-07: amendment — AC6 restated from a pinned total to the invariant it was reaching for: `grep -c $'\r$' R/ffmpeg.R` equals `wc -l < R/ffmpeg.R` (5728 = 5728 on the branch tip, against master's 5708). A total pinned to `master` cannot survive a milestone that adds a line to that file, which this one does. Chosen at a mini gate over pinning the new total.
+- 2026-08-07: T3 — `codec_front_door_bad` gained `` `malformed token` = "aac -evil" ``; the file's four assertions pass for all 51 verb x argument x column cells (`devtools::test(filter = "codec")`: 0 failures, 1563 passing). Discrimination measured by reverting each of the 15 changes in turn, one at a time, and re-running the sweep: every revert turned red exactly its own verb's cells and nothing else — the four routing changes each only their verb, each front-door upgrade only its own (both arguments where the verb carries two). Tied to the executed suite rather than the probe alone: reverting `extract_audio_pipeline()` gives 3 real failures in `test-codec-arg-front-door.R` (names arg / hides engine arg / blames the verb), the `In index:` assertion staying green because that verb does not fan out.
 
 ## Decisions
 

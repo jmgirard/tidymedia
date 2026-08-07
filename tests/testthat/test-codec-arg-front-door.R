@@ -1,10 +1,18 @@
 # Front-door validation parity for the codec arguments (M41).
 #
 # Every task verb and `_batch` sibling whose `video_codec` or `audio_codec`
-# argument *sets* a codec must refuse a non-string value at its own front door:
+# argument *sets* a codec must refuse a bad value at its own front door:
 # naming its own argument (never Layer-1's `video`/`audio`), blaming itself
 # (never a `*_pipeline()` helper or `purrr::pmap()`), and firing before the
 # fan-out (no `In index: <n>` at parallel = FALSE).
+#
+# "Bad" covered only non-string shapes until M56. A malformed but perfectly
+# string-shaped TOKEN -- "aac -evil" -- took a different route: it passed every
+# front-door check_string() and was refused deeper in, by ffm_codec(), which
+# names Layer-1's `audio`/`video` and blames itself, or by a pipeline seam
+# inside purrr::pmap(), which arrives as "In index: 1". Measured on the
+# pre-M56 tree, 11 of the 51 cells this sweep runs held; the token value is in
+# the set below so that stays true rather than being re-derived.
 #
 # `verify_media()` is excluded by design: its same-named arguments are expected
 # probe values, not codec settings.
@@ -51,14 +59,18 @@ codec_front_door_catch <- function(verb, arg, value, input, out = "out.mp4",
   }, condition = function(cnd) cnd)
 }
 
-# The three non-string shapes AC2 names.
+# The three non-string shapes AC2 names, plus M56's malformed token. The token
+# is the only value here that a front-door check_string() lets through, so it is
+# what distinguishes a verb guarded by check_token() (or routed through a
+# Layer-2 codec seam with `call` threaded) from one that merely type-checks.
 codec_front_door_bad <- list(
   `NA` = NA,
   number = 1,
-  `length-2 vector` = c("aac", "mp3")
+  `length-2 vector` = c("aac", "mp3"),
+  `malformed token` = "aac -evil"
 )
 
-test_that("every codec argument refuses a non-string at its own front door", {
+test_that("every codec argument refuses a bad value at its own front door", {
   input <- make_input()
   for (pair in codec_family_pairs()) {
     verb <- pair$verb
@@ -70,7 +82,9 @@ test_that("every codec argument refuses a non-string at its own front door", {
         cnd <- codec_front_door_catch(verb, arg, codec_front_door_bad[[shape]],
                                       input, col = col)
 
-        # It must abort at all -- the M41 regression was a silent compile.
+        # It must abort at all -- the M41 regression was a silent compile, and
+        # M56's `col = present` cells were silent compiles too: the malformed
+        # scalar was discarded outright whenever a same-named jobs column won.
         # Fail SOFT past this point: without the `next`, a pair that does not
         # abort sends NULL into conditionMessage() below, which throws and takes
         # the whole test_that() down with it -- silently dropping every later

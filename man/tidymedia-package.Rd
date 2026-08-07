@@ -14,8 +14,11 @@ command-line tools: \code{\link[=ffmpeg]{ffmpeg()}}, \code{\link[=ffprobe]{ffpro
 pipeline builder, which assembles an FFmpeg command step by step and then
 compiles or runs it: \code{\link[=ffm]{ffm()}} and the \verb{ffm_*()} functions. Layer 2 is the task
 verbs, thin wrappers over the builder for common preprocessing jobs such as
-\code{\link[=extract_audio]{extract_audio()}} and \code{\link[=segment_video]{segment_video()}}. Container and stream metadata are read
-as tibbles by \code{\link[=probe_all]{probe_all()}} and the \verb{get_*()} helpers.
+\code{\link[=extract_audio]{extract_audio()}} and \code{\link[=segment_video]{segment_video()}}. Metadata is read by two independent
+back ends: FFprobe, through \code{\link[=probe_all]{probe_all()}} and the other \verb{probe_*()} readers,
+which return container and stream tibbles; and MediaInfo, through
+\code{\link[=mediainfo_query]{mediainfo_query()}} and the \verb{get_*()} helpers such as \code{\link[=get_duration]{get_duration()}}, which
+return a single value.
 
 See \code{vignette("tidymedia")} for the guided tour, \code{vignette("batch")} for
 running a verb over many files, and \code{vignette("metadata")} for the readers.

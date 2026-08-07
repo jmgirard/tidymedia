@@ -283,6 +283,20 @@ branch adds no top-level file needing an `.Rbuildignore` entry.
 red mark is `codecov/patch`, which the profile makes diagnostic-only — `covr` is
 never a merge gate here.
 
+### Round 2 — hardening taken at the merge gate (2026-08-06)
+
+At the merge gate the user chose to widen the side-data prefix pattern before
+merging, taking round 2's F1 (scored 35, below the action threshold) as cheap
+insurance rather than leaving it logged. `compact_key_name()` now matches the
+stem `side_dat(a|um)` plus anything up to the first `:`, which strips all four
+shapes — `side_datum/display_matrix:`, `side_datum:`, `side_data/display_matrix:`
+and `side_data:` — to the same bare column names, while a build emitting the key
+bare still gets nothing stripped. It cannot over-reach: FFprobe's own field
+names carry no `:`, so only a nested section can match the pattern at all.
+Verified on all four shapes at the parser and on a real rotated `.mp4`
+end to end. Full suite after the change: 3426 passing, 0 failures, 5 skips;
+`devtools::check()` 0 errors / 0 warnings / 0 notes.
+
 ### Independent review — round 2 (2026-08-06): PASSED
 
 CI green on branch HEAD across all three workflows and every platform; the only

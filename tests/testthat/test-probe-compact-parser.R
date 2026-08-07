@@ -62,6 +62,14 @@ test_that("compact_key_name() gives nested keys their old-writer names", {
                "rotation")
   expect_equal(compact_key_name("side_datum/display_matrix:side_data_type"),
                "side_data_type")
+  # The prefix FFprobe builds has moved across versions, so the stem is matched
+  # with whatever follows it: a build omitting the type slug, and the older
+  # `side_data` spelling, must strip to the same bare names.
+  expect_equal(compact_key_name("side_datum:rotation"), "rotation")
+  expect_equal(compact_key_name("side_data/display_matrix:rotation"), "rotation")
+  expect_equal(compact_key_name("side_data:rotation"), "rotation")
+  # A build that emits the key bare needs no stripping, and gets none.
+  expect_equal(compact_key_name("rotation"), "rotation")
   # Only the first `:` is the prefix boundary, so a tag whose own name carries
   # one keeps it.
   expect_equal(compact_key_name("tag:com.apple:make"), "TAG:com.apple:make")

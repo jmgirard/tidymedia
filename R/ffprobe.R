@@ -436,12 +436,21 @@ compact_unescape <- function(x) {
 # than guessed at: a wrong rename is silent, where a compact-shaped name in the
 # output is at least visible.
 #
+# The side-data pattern is deliberately wider than the one spelling measured
+# here. FFprobe builds the prefix from the section's own name and an optional
+# type slug, and both have moved across versions: an older writer emits the key
+# bare (nothing to strip, and the `^` anchor means nothing is), 8.1.2 emits
+# `side_datum/display_matrix:`, and the stem has been spelled `side_data` too.
+# Matching the stem plus anything up to the first `:` covers all of them, and
+# cannot over-reach: FFprobe's own field names carry no `:`, so only a nested
+# section can match at all.
+#
 # Byte-based, like everything else in this parser: a metadata key carrying a
 # byte invalid in the session locale must not take its row down with it.
 compact_key_name <- function(key) {
   key <- sub("^tag:", "TAG:", key, useBytes = TRUE)
   key <- sub("^disposition:", "DISPOSITION:", key, useBytes = TRUE)
-  sub("^side_datum/[^:]*:", "", key, useBytes = TRUE)
+  sub("^side_dat(a|um)[^:]*:", "", key, useBytes = TRUE)
 }
 
 

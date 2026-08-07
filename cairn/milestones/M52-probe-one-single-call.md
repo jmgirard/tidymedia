@@ -283,6 +283,54 @@ branch adds no top-level file needing an `.Rbuildignore` entry.
 red mark is `codecov/patch`, which the profile makes diagnostic-only — `covr` is
 never a merge gate here.
 
+### Independent review — round 2 (2026-08-06): PASSED
+
+CI green on branch HEAD across all three workflows and every platform; the only
+red mark is `codecov/patch`, diagnostic-only by the profile. Three fresh-context
+lenses ran with distinct evidence bases and reported 16 findings, scored by a
+separate Sonnet scorer holding the diff and the plan.
+
+**Actioned (scored ≥80): none.** The highest scores are 55. No finding
+demonstrates an acceptance criterion failing, and none is a ≥90 defect in what
+the package does for its users, so the return floor is not met.
+
+**Round 1's three actioned findings are independently confirmed fixed.** The
+prior-review lens verified each against the current diff: F1 by
+`compact_key_name()` stripping the side-data prefix plus the new `rotated`
+fixture and its tests, F2 by the byte-based parse and its `0xE9` test, F4 by
+NEWS's corrected exception clause. The blame-history lens found no protection
+weakened: `count_audio_streams()`'s D024/RR02 behavior is byte-for-byte
+unchanged, `probe_all()`'s resilience contract is intact, and the deleted
+`format_probe()` test's first-`=`-only coverage was carried forward.
+
+**Logged below threshold (16 findings), surfaced not dropped.** F3 (55) and F13's
+second half: `useBytes = TRUE` drops the `Encoding()` mark from returned values —
+bytes identical, `identical()` blind to it, and only consequential in a
+non-UTF-8 session. F12 (55) `make_hostile_tag_video()` puts a raw newline through
+`system(paste(...))`, which would fail rather than skip for a Windows
+contributor running the suite locally; CI installs ffmpeg on Linux only. F4 (40)
+and F6 (40) and F7 (40) test-rigor gaps: the mocked `run_program()` ignores its
+arguments so the pinned writer options are unasserted off the binary path, the
+`hostile` fixture's parity is asserted on named columns rather than all 67 and
+gets no `typed` evidence, and the early-return spawn test binds its results
+without inspecting them — F4 and F7 are round 1's F10 and F11, unchanged. F1
+(35) the side-data strip regex requires the `/` in `side_datum/<type>:`, so a
+hypothetical FFprobe build spelling it `side_datum:` would go unstripped; no
+released version was shown to do so, and the frozen `.rds` fixtures cannot see
+across versions. F13 (35) NEWS's Performance exception clause arguably does not
+reach the `displaymatrix` cell, which the Bug fixes entry does describe. F5 (30)
+the baseline generator omits the two writer options the code pins, which agree
+only by matching defaults. F8 (30) a line whose section is neither `stream` nor
+`format` is dropped silently. F14 (30) `probe_one()` no longer cross-checks
+`nb_streams`. F16 (30) the garbled header comment in `test-ffprobe.R`, round 1's
+F17, pre-dating this milestone. F9 (28) an unknown future escape would decode to
+its tail character. F11 (25) a raw newline in a field would break the split.
+F10 (22) `substr()` in `compact_unescape()` is the one character-based call left,
+round 1's F13, probed and not reproducible. F2 (20) two side-data entries on one
+stream collide into duplicate column names and abort — parity with `master`,
+which collided identically, so not a regression. F15 (20) the baseline
+generator reports the last command's output when an earlier pass failed.
+
 ### Independent review — round 1 (2026-08-06): RETURNED
 
 CI green on all three workflows (R-CMD-check, pkgdown, test-coverage). Three

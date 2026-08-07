@@ -47,6 +47,19 @@ check_file_exists <- function(x, arg = rlang::caller_arg(x),
 # check_token(x)`, accepts exactly the same values but leaves check_string()
 # reporting "must be a single string, not `NA`" — telling a user that NULL is
 # illegal on an argument where it is the documented escape hatch (M42/D022).
+#
+# Every codec-family verb that FANS OUT — the ten `_batch` siblings and
+# segment_video(), which spreads one input over several outfiles — calls this at
+# its front door on `video_codec` / `audio_codec`, in place of the plain
+# check_string() M41 put there. A fan-out verb cannot inherit the blame from the
+# pipeline seams the way its scalar sibling does: the seam runs inside
+# purrr::pmap(), so its message arrives wrapped in "In index: 1" and blamed on
+# pmap rather than on the verb the user called (M56). The upgrade sits at M41's
+# site, deliberately: check_string() runs first inside this function, so the
+# non-string messages and the precedence those guards were placed for are
+# unmoved, and only the token case is new. The seam-routed scalar verbs keep
+# check_string() here for that same reason — their token blame already comes
+# from apply_audio_codec() / apply_video_codec() with `call` threaded.
 check_token <- function(x, arg = rlang::caller_arg(x), allow_null = FALSE,
                         call = rlang::caller_env()) {
   rlang::check_string(x, arg = arg, allow_null = allow_null, call = call)

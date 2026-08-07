@@ -44,7 +44,10 @@ this never affects \code{audiofile}. Because this verb's video default is a
 stream copy, which runs no encoder at all, \code{hardware = "nvenc"}
 alongside \code{video_codec = "copy"} is an error: name an encoder or pass
 \code{video_codec = NULL}. See \code{\link{has_nvenc}} for availability and
-its caveats.}
+its caveats.
+Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
+a \code{"nvenc"} call runs the binary while the command is built, even
+under \code{run = FALSE}.}
 
 \item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
 unavailable, encode in software with a message (\code{TRUE}) instead of

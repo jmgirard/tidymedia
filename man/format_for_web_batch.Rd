@@ -31,7 +31,10 @@ video, AAC audio). For per-row codecs use a verb that exposes them, such as
 
 \item{hardware}{The encoder backend applied to every row: \code{"none"}
 (default, software libx264) or \code{"nvenc"} for NVIDIA GPU H.264 encoding.
-Batch-wide (not a per-row column). See \code{\link{has_nvenc}}.}
+Batch-wide (not a per-row column). See \code{\link{has_nvenc}}.
+Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
+a \code{"nvenc"} call runs the binary while the command is built, even
+under \code{run = FALSE}.}
 
 \item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
 unavailable, re-encode with software libx264 and a message (\code{TRUE})

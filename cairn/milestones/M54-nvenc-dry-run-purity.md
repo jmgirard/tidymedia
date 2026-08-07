@@ -54,11 +54,13 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
       binary-free even under `run = FALSE`. Enumerated by a test reading `../../man/*.Rd`
       with `tools::Rd_db("tidymedia")` as fallback and splitting `\item{}` names on commas,
       both per `tests/testthat/test-audio-index-docs.R:20-40`; it asserts it found at
-      least 17 such topics.
+      least 16 such topics.
 - [ ] AC5 `grep -n "resolve_hw_encoder(" R/*.R` shows every call site passing `call =`.
 - [ ] AC6 PROFILE.md's verify slot clean — `devtools::check()` 0 errors / 0 warnings, read
       from `<pkg>.Rcheck/00check.log`'s `Status:` line — and `devtools::test()` passes.
-- [ ] AC7 `grep -c $'\r' R/ffmpeg.R` on the branch tip equals 5652, the count on `master`.
+- [ ] AC7 `R/ffmpeg.R` stays wholly CRLF and is never rewritten wholesale: no line in it
+      ends in a bare LF, and `git diff --stat master -- R/ffmpeg.R` reports fewer than 100
+      changed lines (a line-ending rewrite of this ~5700-line file reports ~5700).
 
 ## Coverage
 
@@ -80,9 +82,9 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
 - [x] T3 Correct `cairn/DESIGN.md`'s Conventions bullet to match D034.
 - [x] T4 Extend the three purity tests per AC3; prove each new case discriminates by
       stubbing `has_nvenc()`.
-- [ ] T5 Add the probe sentence to the shared `@param hardware` roxygen blocks; run
+- [x] T5 Add the probe sentence to the shared `@param hardware` roxygen blocks; run
       `devtools::document()`.
-- [ ] T6 Add the Rd guard test per AC4, reusing `rd_sources()` / `rd_param_names()` from
+- [x] T6 Add the Rd guard test per AC4, reusing `rd_sources()` / `rd_param_names()` from
       `tests/testthat/test-audio-index-docs.R:20-40`.
 - [ ] T7 Run `devtools::document()`, `devtools::test()`, `devtools::check()`; confirm the
       CRLF count and the `00check.log` `Status:` line.
@@ -102,6 +104,11 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
 - 2026-08-06: amendment (substantive, gated). AC3's counting seam changed from `find_ffmpeg()` to `ffmpeg_encoders()`. `ffmpeg()` reaches the binary through `system(glue('{find_ffmpeg()} {command}'))` at `R/ffmpeg.R:28`, not through `run_program()`, so the existing counting mock cannot intercept it: counting `find_ffmpeg()` alone would leave a real `ffmpeg -encoders` process running inside a test whose whole point is that it is binary-free, and would fail for an unrelated reason wherever FFmpeg is absent. Counting at `ffmpeg_encoders()` pins the identical claim deterministically. Rejected: stubbing `ffmpeg()` with canned `-encoders` output, which would make the test depend on a hand-written fixture of FFmpeg's encoder-table format that LESSONS M52 records as going stale across tool versions.
 
 - 2026-08-06: T4 done. The two nvenc-excluding comments (`test-audio-stream-passthrough.R`, `test-audio-stream-crop-segment.R`) are replaced by live D034 blocks and `test-audio-stream-format-web.R` gained one; each asserts zero probes at the default hardware and a rising count under `hardware = "nvenc", run = FALSE`, across the scalar verbs and one `_batch` sibling. Green: 85 / 86 / 30 passing, 0 failures. Discrimination proven by mutation — forcing `resolve_hw_encoder()`'s `hardware == "none"` early return to fire unconditionally turned exactly the three new blocks red (3 / 3 / 2 failing expectations) and nothing else in those files; `R/ffmpeg.R` restored from the index afterward with CRLF 5652 intact.
+
+- 2026-08-06: amendment (substantive, gated). Two criteria corrected. AC4's floor 17 -> 16: the true count of Rd topics carrying a `hardware` argument is 16, measured by comma-splitting `\item{}` names; the 17 came from misreading the plan-time audit's own parenthetical, which listed "six more" topics while noting one of them was already inside the eleven it had just counted. AC7's exact CRLF equality (5652) -> a line-ending-integrity plus no-wholesale-rewrite check: the exact form forbade adding any line to `R/ffmpeg.R`, which T5's 48 roxygen lines necessarily do, so AC4 and AC7 as written could not both hold. The rewritten AC7 guards what the original was for -- LESSONS M35/M48's whole-file normalization -- without pinning the file's length.
+
+- 2026-08-06: T5 done. The probe sentence added to all 16 `@param hardware` blocks in `R/ffmpeg.R` (there is no `@inheritParams` tying them together -- the docs are themselves the kind of hand-list D024 went stale as). Byte-level edit: 48 insertions = 16 blocks x 3 lines, CRLF 5652 -> 5700, zero bare LF. `devtools::document()` regenerated; all 16 `hardware`-bearing Rd topics carry it, measured by comma-splitting `\item{}` names.
+- 2026-08-06: T6 done. `rd_sources()`, `rd_param_names()` and `topics_documenting()` lifted out of `test-audio-index-docs.R` into a new `tests/testthat/helper-rd.R`, so M51's guard and this one share one implementation rather than duplicating the two-shape Rd source; `links_to_topic()` stayed behind as audio-specific. New `tests/testthat/test-nvenc-docs.R` asserts the sentence on every `hardware`-documenting topic plus the converse (the sentence never appears on a topic without the argument), so a package-wide paste cannot make it pass vacuously. Green, and M51's guard still passes (43 expectations). Discrimination proven: deleting the sentence from `man/crop_video.Rd` turned it red naming that topic.
 
 ## Decisions
 

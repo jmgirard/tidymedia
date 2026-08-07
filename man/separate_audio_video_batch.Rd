@@ -48,7 +48,10 @@ machine, not of a row, so neither is read as a \code{jobs} column). See
 stream copy runs no encoder, \code{hardware = "nvenc"} conflicts with any
 row whose video codec resolves to \code{"copy"} — including the default —
 so a jobs table mixing copied and re-encoded video must be split into
-separate calls.}
+separate calls.
+Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
+a \code{"nvenc"} call runs the binary while the command is built, even
+under \code{run = FALSE}.}
 
 \item{audio_stream}{The 0-based index of the audio track to write to each \code{audiofile}, counted \emph{among that row's input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) keeps \strong{every} audio track. The argument applies to every row lacking an \code{audio_stream} column; an \code{NA} cell in that column means the same as \code{NULL} for that row, rather than falling back to the argument. The every-track family reads \code{NULL} this way -- \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus their \code{_batch} siblings. The first-track family takes one track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus theirs. A container that holds several audio streams (\code{.mka}, \code{.m4a}) receives them all, while a single-stream container (\code{.aac}, \code{.mp3}, \code{.wav}) makes FFmpeg fail -- name a track to write one of those. Count among the input's \emph{audio} streams, not the \code{index} column of \code{\link{probe_audio}}, which counts every stream. Unlike the verbs that pass video through, an input carrying no audio at all is an FFmpeg error here, because this verb's product is the audio file. \code{videofile} is never affected. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 

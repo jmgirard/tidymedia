@@ -1,6 +1,6 @@
 # M54: Correct the `run = FALSE` purity claim for the nvenc encoder probe
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -93,7 +93,7 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
       wording and the behavior it describes.
 - [x] T9 (review return, F1) Narrow the NEWS blame entry to what the scalar verbs do, and
       add a ROADMAP candidate row for the `_batch` fan-out blame gap.
-- [ ] T10 Re-run `devtools::document()`, `devtools::test()`, `devtools::check()`; confirm
+- [x] T10 Re-run `devtools::document()`, `devtools::test()`, `devtools::check()`; confirm
       line-ending integrity and the `00check.log` `Status:` line.
 
 ## Work log
@@ -129,6 +129,7 @@ threaded at the two `resolve_hw_encoder()` sites that omit it
 - 2026-08-06: T8 done (F2). Measured first: with `tidymedia.nvenc_encoders = character(0)` the four stream-copy topics do not skip the probe silently — `hardware = "nvenc"` alongside a stream copy is an error each topic already documents, and it fires before resolution (`separate_audio_video`/`_batch` at their default `video_codec = "copy"`: "`hardware` needs a re-encoding `video_codec`"; `segment_video`/`_batch` at `reencode = FALSE`: "`video_codec` and `hardware` need a re-encoding cut"). So the gate-approved wording was corrected to say the conflict aborts the call rather than that nothing is probed. All 16 blocks now condition the claim on re-encoding; the four gained one sentence pointing at the conflict they already state. `test-nvenc-docs.R` gained two guards — the exception clause on exactly those four topics, and a behavioral block counting `ffmpeg_encoders()` at 0 across all four aborts against 1 for the re-encoding control. Both proven to discriminate by mutation from a staged baseline (LESSONS M44): blanking the clause in `man/segment_video.Rd` reddened the topic-set guard, and forcing `segment_video_pipeline()`'s `!reencode` conflict branch dead reddened 3 expectations in the behavioral one. `R/ffmpeg.R` edited as bytes: CRLF 5700 -> 5708, 0 bare LF. `devtools::test()`: FAIL 0, PASS 3479, SKIP 5; the 4 warnings are the pre-existing M44 dropped-track diagnostic.
 
 - 2026-08-06: T9 done (F1). Measured `conditionCall` on all sixteen `hardware`-bearing verbs under `tidymedia.nvenc_encoders = character(0)` rather than trusting the review's three: the fan-out blame reaches further than F1 said (the scalar `segment_video()` blames `purrr::pmap()` too, since it fans out over segments) and less far (`picture_in_picture_batch()` blames itself, validating before the fan-out). The NEWS entry now states exactly that, and `test-nvenc.R` gained a block pinning it — the two fan-out cases plus `picture_in_picture_batch()` as the control, so a blanket claim would fail there. The block is written to go red when the front-door guard lands, which is the signal to rewrite the note. ROADMAP candidate row added for that guard (search-first: no existing row or standing rejection covers batch blame attribution; M56 is codec tokens on scalar verbs). `cairn_validate` exit 0.
+- 2026-08-06: T10 done; both returned findings closed, status back to `review`. `devtools::document()` no diff. `devtools::check()`: `Status: OK` at `00check.log:68`, 0 errors / 0 warnings / 0 notes. Test totals under check equal local (FAIL 0, PASS 3482, SKIP 5) and the skip count is unchanged from the pre-return run, so neither new guard is silently skipping (LESSONS M51). `pkgdown::check_pkgdown()` "No problems found". AC7 re-measured: 0 bare-LF endings, 5708 CRLF, `git diff --stat master -- R/ffmpeg.R` 58 insertions / 2 deletions.
 
 ## Decisions
 

@@ -73,7 +73,7 @@ set so a future export gaining or losing `parallel` goes red instead of rotting 
       installed `INDEX`, and so from `help(package = "tidymedia")`, which AC1 requires.
       Place it **above** the two existing usethis namespace blocks, never between a
       roxygen block and what it documents (LESSONS M28). Run `devtools::document()`.
-- [ ] T2 Catalogue `tidymedia-package` in `_pkgdown.yml`, whose reference index
+- [x] T2 Catalogue `tidymedia-package` in `_pkgdown.yml`, whose reference index
       (`:6-118`) enumerates every topic explicitly; run `pkgdown::check_pkgdown()`.
 - [ ] T3 Run `grep -rn "parallel" vignettes/`, disposition each hit in the work log, and
       rewrite `vignettes/batch.Rmd:103` to state the rule (every `*_batch` verb, the five
@@ -89,6 +89,7 @@ set so a future export gaining or losing `parallel` goes red instead of rotting 
 - 2026-08-06: created by /milestone-plan.
 - 2026-08-06: criteria audit ([O], fresh context) returned 5 findings on this milestone's criteria: AC3's grep cannot see a claim that is wrong by *omission* (prose listing batch verbs without the word `parallel` contains no token to match), so the promise was narrowed to lines containing the string and the known omission split out as AC4; AC5's `get(name)` resolving outside the namespace and warning on the non-function export `.data`; AC4's target section unanchored; and AC6 naming `devtools::check()`'s summary, which does not print the `Status:` line it demanded. All fixed before AC wording was written; none needed a gate question. AC1 passed all three questions.
 - 2026-08-07: T1 done. Two plan assumptions falsified by measurement on an `R CMD INSTALL`ed copy. (1) `@keywords internal` — which T1 mandated — is exactly what excludes the topic from the installed `INDEX`, so `help(package = "tidymedia")` did not list it; stripping only that line from the `.Rd` and reinstalling restored the row (index 104 entries -> the `tidymedia-package` row present). Gate chose delivering AC1 as written over keeping the usethis template line; T1 amended to forbid the keyword. (2) A bare `"_PACKAGE"` with no roxygen block above it is not seen by roxygen at all — `document()` reported `Deleting 'tidymedia-package.Rd'` — so the sentinel carries an `@details` landing body (three-layer orientation + vignette pointers) instead. Both halves of AC1 then verified: `?tidymedia` -> `tidymedia-package`, and the index row is present.
+- 2026-08-07: T2 done. New `Package` reference section at the top of `_pkgdown.yml` holding `tidymedia-package`; `pkgdown::check_pkgdown()` reports "No problems found."
 - 2026-08-07: implement gate: package topic goes in a new `Package` section at the TOP of the pkgdown reference index (over folding it into `Concepts`, whose stated subject is recurring arguments, or a bottom section); `vignettes/metadata.Rmd` gets prose naming `parallel =` plus a short non-run example and a pointer to `batch.Rmd` for the `plan()` setup, rather than repeating the setup block in a second place.
 - 2026-08-06: plan gate kept DESCRIPTION `Title` title-casing out, because it is release mechanics owned by the standing CRAN-readiness row and folding it in would blur a docs-only milestone into release-shaped work; falsified by the Title NOTE blocking something other than a submission.
 

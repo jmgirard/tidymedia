@@ -4,6 +4,11 @@ template:
   bootstrap: 5
 
 reference:
+- title: "Package"
+  desc: >
+    What tidymedia is for and how its three layers fit together.
+  contents:
+  - tidymedia-package
 - title: "Concepts"
   desc: >
     Background on arguments that recur across many verbs.

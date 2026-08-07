@@ -119,7 +119,7 @@ door → rejected at the plan gate (work log).
 - [x] T9 (review return, F4): `segment_video_batch()`'s guard sweeps the rows
       that re-encode instead of skipping whenever any row does not; mixed
       `reencode` regression test, plus the precedence pin D035 asks for.
-- [ ] T10 (review return, F3/F2): move `separate_audio_video_batch()`'s guard
+- [x] T10 (review return, F3/F2): move `separate_audio_video_batch()`'s guard
       below `reject_duplicate_outputs()` so M26's within-row collision still
       reports; test it, and pin the copy-column precedence F2 named.
 - [ ] T11 (review return, F1): `check_nvenc_available()` validates `fallback`
@@ -151,6 +151,7 @@ door → rejected at the plan gate (work log).
 - 2026-08-07 (review): returned to in-progress. AC1 fails on a legal call the sweep never ran: `segment_video_batch()` with a mixed `reencode = c(TRUE, FALSE)` column skips the guard entirely and still blames `purrr::pmap` (F4, scored 90). Two more actioned: `separate_audio_video_batch()`'s guard preempts `reject_duplicate_outputs()` and hides M26's within-row collision catch (F3, 85), and `check_nvenc_available()`'s `isTRUE(fallback)` swallows a malformed `fallback` that `resolve_hw_encoder()`'s `check_bool()` would have caught, machine-dependently (F1, 82). Six logged below threshold. Three lenses plus a scorer; blame-history and prior-review zero.
 - 2026-08-07 (T9): minor amendment — the review return added T9-T12, one per actioned finding plus a closing docs/check pass, and the Coverage map gained them; no criterion text changed.
 - 2026-08-07 (T9): `segment_video_batch()`'s guard now sweeps `jobs[which(reencode)]` rather than skipping on `all(reencode %in% TRUE)`, so a mixed column's re-encoding rows are checked at the front door. Four tests added: the mixed column blames the verb, an all-FALSE column still reports the cut, a copying AV1 row is not swept under an h264-only seam, and the precedence pin — the same mixed call reports the cut from inside the fan-out when the encoder is present and availability at the verb when it is not. Discrimination checked by reverting `R/ffmpeg.R` alone: exactly the two mixed-column blame assertions fail, both reading `purrr::pmap`. Suite FAIL 0 | PASS 3931, the same 4 warnings and 5 skips as at T1. CRLF 5922 -> 5930 for a numstat of 15 added / 7 deleted (M35/M48).
+- 2026-08-07 (T10): `separate_audio_video_batch()`'s guard moved below `reject_duplicate_outputs(long)`, immediately before `ffm_batch()` as on the other seven guarded `_batch` verbs; it still reads `jobs`, since the caller's `video_codec` column survives the reshape only as a mixed per-stream `codec` column. Two tests added: a row whose `audiofile` equals its `videofile` now reports the collision M26 catches rather than availability, and a column mixing `copy` with `libx264` reports the copy conflict under an h264 seam and availability under an empty one — the precedence F2 named, now pinned rather than denied by the comment. Discrimination checked by reverting `R/ffmpeg.R` alone: exactly the two collision assertions fail, both reading the availability message. Suite FAIL 0 | PASS 3938. CRLF 5930 -> 5936 for a numstat of 21 added / 15 deleted (M35/M48).
 
 ## Decisions
 

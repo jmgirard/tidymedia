@@ -5103,21 +5103,6 @@ separate_audio_video_batch <- function(jobs, audio_codec = "copy",
   # cells mean the NULL sentinel, so without it `audio_stream = NA` would quietly
   # keep every track instead of erroring (the M37/M41 shape).
   rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
-  # nvenc availability, re-checked here so an unavailable encoder blames this
-  # verb instead of purrr::pmap() (M57/D035). Placed before the reshape below,
-  # while `jobs` still carries the caller's `video_codec` column, and last in
-  # the front-door block so every check above still reports first (M41).
-  #
-  # A "copy" cell is dropped: the shared separation recipe aborts EARLIER on a
-  # copied video stream that names hardware, never reaching resolve_hw_encoder(),
-  # and firing here would replace that message with an availability one (D035's
-  # second condition).
-  check_nvenc_available(
-    Filter(function(x) !identical(x, "copy"),
-           batch_video_codecs(jobs, video_codec)),
-    hardware, fallback
-  )
-
 
   # Reshape N input rows -> 2N single-output rows (D003/D007): each input fans out
   # into an audio row (0:a -> audiofile) and a video row (0:v -> videofile),
@@ -5168,6 +5153,27 @@ separate_audio_video_batch <- function(jobs, audio_codec = "copy",
     long$audio_stream <- as.vector(rbind(per_input, rep(NA_real_, n)))
   }
   long <- reject_duplicate_outputs(long)
+
+  # nvenc availability, re-checked here so an unavailable encoder blames this
+  # verb instead of purrr::pmap() (M57/D035). Immediately before ffm_batch(),
+  # which is where M41 puts a guard added for blame and where the other seven
+  # guarded _batch verbs put theirs: above the reshape it preempted
+  # reject_duplicate_outputs(), and a row whose audiofile equals its videofile
+  # was told the encoder was missing instead of that its two outputs collide --
+  # M26's within-row catch, which only the reshaped table can make (review F3).
+  # It reads `jobs`, not `long`: the caller's `video_codec` column survives the
+  # reshape only as a per-stream `codec` column mixing both streams' choices.
+  #
+  # A "copy" cell is dropped rather than swept: the shared separation recipe
+  # aborts on a copied video stream that names hardware, never reaching
+  # resolve_hw_encoder(), so such a cell has no encoder to check. On a column
+  # mixing copy and re-encoded cells both errors are live and this one reports
+  # first -- the precedence D035's second condition admits and the tests pin.
+  check_nvenc_available(
+    Filter(function(x) !identical(x, "copy"),
+           batch_video_codecs(jobs, video_codec)),
+    hardware, fallback
+  )
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output pipeline per
   # reshaped row, sharing separate_stream_pipeline() with separate_audio_video().

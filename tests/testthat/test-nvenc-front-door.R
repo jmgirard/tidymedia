@@ -352,6 +352,44 @@ test_that("a copy video_codec still reports the copy, not availability", {
   expect_no_match(conditionMessage(cnd), "is not available")
 })
 
+test_that("a within-row output collision still reports the collision", {
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  input <- make_input()
+  # separate_audio_video_batch reshapes N rows -> 2N before pooling the duplicate
+  # check, so audiofile == videofile is a collision only the reshaped table can
+  # see (M26). Above the reshape the availability guard preempted it and this
+  # caller was told the encoder was missing (review F3); below it, the guard is
+  # last in the front-door block on this verb as on the other seven.
+  jobs <- tibble::tibble(input = input, audiofile = "same.mkv",
+                         videofile = "same.mkv")
+  cnd <- nvenc_fanout_catch("separate_audio_video_batch", input,
+                            extra = list(jobs = jobs))
+  expect_s3_class(cnd, "rlang_error")
+  expect_match(conditionMessage(cnd), "same output path")
+  expect_no_match(conditionMessage(cnd), "is not available")
+  expect_identical(nvenc_blamed(cnd), "separate_audio_video_batch")
+})
+
+test_that("a mixed copy column reports availability before the copy conflict", {
+  input <- make_input()
+  # The copy cell has no encoder to check and the libx264 cell does, so both
+  # errors are live on this table and which one reports depends on the seam --
+  # the precedence D035's second condition admits (review F2).
+  jobs <- tibble::tibble(input = c(input, input),
+                         audiofile = c("a1.aac", "a2.aac"),
+                         videofile = c("v1.mp4", "v2.mp4"),
+                         video_codec = c("copy", "libx264"))
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  present <- nvenc_fanout_catch("separate_audio_video_batch", input,
+                                extra = list(jobs = jobs))
+  expect_match(conditionMessage(present), "needs a re-encoding")
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  absent <- nvenc_fanout_catch("separate_audio_video_batch", input,
+                               extra = list(jobs = jobs))
+  expect_match(conditionMessage(absent), "is not available")
+  expect_identical(nvenc_blamed(absent), "separate_audio_video_batch")
+})
+
 test_that("resolve_hw_encoder() reaches the abort by calling the shared guard", {
   # Read the function object, never the source tree: a test that opens R/ under
   # the package root SKIPS under R CMD check, which runs against an installed

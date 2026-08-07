@@ -2,7 +2,7 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-07 (M57 merged: row to done, live milestone file replaced by its archive summary, M52's terminal row pruned to hold the 5-row limit, and the fan-out-misblame candidate row extended with the four error classes M57's review measured. All validate checks green.)_
+_Last hygiene check: 2026-08-07 (third pass, nothing to fix: no milestone in flight, no open RB, both GitHub inboxes empty, all validate checks green.)_
 
 ## Milestones
 

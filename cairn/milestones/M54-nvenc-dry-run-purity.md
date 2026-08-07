@@ -337,7 +337,7 @@ count for M54: 1.
 - D12 (32) `standardize_video(video_codec = "copy")` aborts without probing and its topic
   does not say so.
 
-### Disposition — round 2
+### Disposition — round 2 (superseded by round 3 below)
 
 **Returned to `in-progress`** under the return floor: D1 scores 94 on a defect in a
 user-facing deliverable (the release notes). D2, D3 and D4 are actioned alongside it —
@@ -346,3 +346,108 @@ wrong column name whose schema error was read as correct blame attribution, and 
 round 1's F2 surviving in a file T8 never touched. No finding is an amendment return: no
 acceptance criterion is falsified, and all seven verified above. Defect return count for
 M54: 2.
+
+## Review — round 3 (2026-08-07)
+
+### Acceptance-criteria evidence (fresh, round 3)
+
+- **AC1** `cairn/DECISIONS.md` carries D034, heading "supersedes D024's `run = FALSE`
+  bullet". D024's sentence and its `two_pass` continuation are quoted as a blockquote and
+  compared programmatically against D024's own text with blockquote markers stripped and
+  whitespace normalized — identical, emphasis included. A naive single-line grep returns 0
+  here for text that is present, which is why the comparison is programmatic. D034 states
+  the rule under "The rule, as a condition on probe shape" and names the failure mode
+  ("it enumerated the shape's instances where it should have stated the shape").
+- **AC2** `grep -c "sole exception" cairn/DESIGN.md` → 0.
+- **AC3** The two nvenc-excluding comments are gone, replaced by live blocks, and the third
+  file has one. Fresh: passthrough 85 / crop-segment 86 / format-web 30 expectations,
+  FAIL 0. Discrimination re-run fresh this round: forcing `resolve_hw_encoder()`'s
+  `hardware == "none"` early return to fire unconditionally turns exactly the three new
+  blocks red (3 / 3 / 2 failing) and nothing else in those files. `R/ffmpeg.R` restored —
+  5708 CRLF, 0 bare LF.
+- **AC4** 16 Rd topics document `hardware`, measured by comma-splitting `\item{}` names;
+  all 16 carry the probe sentence, exactly four carry the stream-copy exception clause
+  (`separate_audio_video`, `separate_audio_video_batch`, `segment_video`,
+  `segment_video_batch`), and no topic without the argument carries the sentence.
+  `test-nvenc-docs.R` 10 expectations, FAIL 0.
+- **AC5** Four `resolve_hw_encoder()` call sites (`R/ffmpeg.R:1143,1407,1617,2496`), every
+  one passing `call =`; the fifth grep hit (`:2431`) is a comment.
+- **AC6** `devtools::check()` → `Status: OK` at `00check.log:68`, 0 errors / 0 warnings /
+  0 notes. `devtools::test()` → FAIL 0, PASS 3499, SKIP 5; totals under `R CMD check` are
+  identical, so no guard is silently skipping (LESSONS M51).
+- **AC7** 0 bare-LF endings, 5708 CRLF; `git diff --stat master -- R/ffmpeg.R` → 58
+  insertions / 2 deletions, under the 100-line bound.
+
+### Consistency gate — round 3
+
+- `cairn_validate.py` exit 0; all 16 PASS checks green, including `coverage complete` and
+  `binding criteria`. One advisory: M54 now carries 13 tasks, past the >10 split tripwire —
+  the product of two review returns, not of scope growth.
+- No `DESIGN.md` principle changed, so `cairn_impact` is skipped.
+- Toolchain slot (`r-package`): `devtools::document()` no diff · `pkgdown::check_pkgdown()`
+  "No problems found" · README pair untouched · NEWS.md entries carry no milestone numbers ·
+  no new root files.
+
+### Independent review — three lenses + scorer (round 3)
+
+- **[O] diff-bug (Opus):** 10 findings, plus a verified-clean list (D024's quote
+  byte-compared, the Rd topic counts, the four call sites, line-ending integrity, the
+  `helper-rd.R` lift preserving M51's `../../man`-only constraint, and an independent
+  reproduction of the corrected fan-out claim across all 16 verbs).
+- **[S] blame-history (Sonnet):** 8 checks, no defects. The `overlay` column restores
+  conformance with D015 rather than departing from it; the NEWS rewording drops nothing
+  true; the test change strictly increases rigor over what rounds 1–2 established.
+- **[S] prior-review (Sonnet):** no findings. Its PR-comment probe returned empty, so the
+  archived and live `## Review` sections were the whole surface; rounds 1 and 2's findings
+  are genuinely closed rather than merely claimed.
+- **[S] scorer (Sonnet, fresh):** 1 finding at or above 80; 9 below.
+
+### Actioned findings (>= 80)
+
+- **F1 (86) — the `anonymize_video` control in `tests/testthat/test-nvenc.R:105-111` is
+  vacuous.** Its `blamed()` helper (`:84-87`) has no message assertion, unlike the repaired
+  one at `:132-139`. It passes `regions = list(c(1, 1, 2, 2))`, which aborts with
+  `` `regions` must be a data frame with one row per box. `` — a schema error firing before
+  `hardware` is consulted — so the `^anonymize_video\(` expectation pins nothing and would
+  stay green if `call =` threading were removed everywhere. With well-formed regions the
+  call does abort with the nvenc message blaming `anonymize_video(...)`, so the claim is
+  true but untested. The block's comment at `:76-77` explicitly asserts these are
+  "discriminating controls: if this test ever passed for the wrong reason, they would fail
+  too" — false for `anonymize_video`. Same defect class as round 2's D2 (scored 85), in the
+  adjacent test block, in the same file the round-3 commit edited.
+
+  **Triage: fixed on the branch.** Not a floor return — it scores below 90 and is a defect
+  in a test, not in what the package does for its users, and it falsifies no acceptance
+  criterion. The block gained the same failure-identity assertion and a well-formed
+  `regions` data frame. Proven by mutation both ways: restoring the malformed `regions`
+  reddens the identity assertion naming the schema error, and stripping `call = call` at
+  `R/ffmpeg.R:1617` reddens the `anonymize_video` control, which it did not do before.
+
+### Logged, not actioned (9 below the 80 threshold)
+
+- F2 (74) `NEWS.md:278` "as most other verbs taking `hardware` already did" is a minority:
+  5 of the other 14 self-blamed. Round 2's D6, unchanged in substance.
+- F5 (58) `cairn/ROADMAP.md:29` cites `has_nvenc()` at `R/ffmpeg.R:2385`; it is at `:2405`.
+  Round 1's F9.
+- F3 (56) the re-encode condition still overreaches where `codec_family()` cannot map the
+  codec, or where `video_codec = "copy"` is passed explicitly. Round 2's D5 and D12.
+- F6 (52) `test-nvenc-docs.R:96` transposes `separate_audio_video()`'s `audiofile` and
+  `videofile`; both orders produce the identical error, so the claim is unharmed today.
+- F7 (50) the stream-copy exception guard hand-lists its four topics where its sibling
+  derives the list from the Rd. Round 2's D9.
+- F9 (48) the purity blocks count `ffmpeg_encoders()` calls, so a future memoization would
+  keep them green while the documented claim goes false. Round 1's F5.
+- F4 (42) D034's cited lines `:2283` / `:2388` are roxygen lines and the entry calls
+  `ffmpeg_encoders()` "the nvenc resolver". Round 1's F3 / round 2's D7; `DECISIONS.md` is
+  append-only, so a repair means a superseding entry, not an edit.
+- F10 (24) AC3 cites `test-audio-stream-format-web.R:129-152`; the block starts at `:131`.
+- F8 (15) `arg_match(hardware)` at `R/ffmpeg.R:2444` lacks `error_call`; pre-existing and
+  unreachable through the front doors.
+
+### Disposition — round 3
+
+**No return.** One finding cleared the 80 threshold and it does not meet the return floor:
+F1 scores 86, below the 90 bar, and lands on a test rather than on what the package does
+for its users — no acceptance criterion is falsified, and all seven are verified above with
+fresh evidence. It took the fix-now triage on the branch. Defect return count for M54
+stands at 2; no amendment return has occurred.

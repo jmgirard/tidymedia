@@ -118,14 +118,23 @@ test_that("a fan-out call still blames the fan-out, not the verb", {
   # so caller_env() lands on the anonymous closure (LESSONS M47/M48-F1). Fixing
   # it needs a front-door guard in each such verb, which is not this milestone's
   # scope; when that lands, this test goes red and the note is rewritten.
-  # picture_in_picture_batch() is the control: it validates before fanning out,
-  # so a blanket "every fan-out blames pmap" would fail here.
+  # The control is a scalar verb that blames ITSELF (standardize_video(), the
+  # one T1 fixed), so a blanket "everything blames pmap" would fail here.
+  #
+  # Every case asserts WHICH failure it caught, not merely that one happened: a
+  # malformed jobs table aborts at the schema check, before any fan-out, and
+  # reads as correct blame attribution if the message goes unchecked. That is
+  # exactly how this test's previous control passed while pinning nothing.
   withr::local_options(tidymedia.nvenc_encoders = character(0))
   infile <- withr::local_tempfile(fileext = ".mp4")
   file.create(infile)
 
   blamed <- function(expr) {
     err <- rlang::catch_cnd(expr, classes = "error")
+    expect_match(
+      paste(conditionMessage(err), collapse = " "),
+      "h264_nvenc\" is not available"
+    )
     deparse(conditionCall(err))[[1]]
   }
 
@@ -144,10 +153,16 @@ test_that("a fan-out call still blames the fan-out, not the verb", {
   )
   expect_match(
     blamed(picture_in_picture_batch(
-      tibble::tibble(main = infile, inset = infile, output = "o.mp4"),
+      tibble::tibble(main = infile, overlay = infile, output = "o.mp4"),
       hardware = "nvenc", run = FALSE
     )),
-    "^picture_in_picture_batch\\("
+    "^purrr::pmap\\("
+  )
+  expect_match(
+    blamed(standardize_video(infile, "o.mp4",
+      hardware = "nvenc", run = FALSE
+    )),
+    "^standardize_video\\("
   )
 })
 

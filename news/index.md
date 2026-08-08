@@ -398,9 +398,25 @@
   since a column whose type has not been checked yet cannot usefully be
   swept for paths.
 
-  A file that *exists* but cannot be read is not yet covered: that case
-  is still reported from inside the pipeline, and the wording differs.
-  It is being brought in line separately.
+  A file that *exists* but cannot be opened for reading is refused the
+  same way, and by the same test the pipeline has always applied: there
+  is now one readability test, reached both from the verb you call and
+  from the pipeline underneath it, so the two cannot disagree about
+  which paths are acceptable. Such a file was previously refused only
+  once the pipeline reached it, reported against
+  [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md)
+  or, from a `_batch` verb, against
+  [`purrr::pmap()`](https://purrr.tidyverse.org/reference/pmap.html)
+  with an `In index:` prefix.
+
+  Because one message now covers both cases, the wording changed. Where
+  these verbs said `` `infile` does not exist: 'clip.mp4'. `` they now
+  say `` `infile` can't be found or read: 'clip.mp4'. ``, and the
+  many-path form reads `names 2 files that can't be found or read`.
+  Which calls are refused is unchanged.
+  [`verify_media()`](https://jmgirard.github.io/tidymedia/reference/verify_media.md)
+  and `write_mediainfo_template()` keep the existence wording, their
+  file arguments not being pipeline inputs.
 
 - A malformed codec value — a string carrying whitespace or shell
   characters, such as `"aac -evil"` — is now reported against the

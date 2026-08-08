@@ -67,9 +67,10 @@ re-encoding, see the <a href="https://ffmpeg.org/ffmpeg-filters.html#concat" cla
 
 <dl><dt id="arg-infiles">infiles<a class="anchor" aria-label="anchor" href="#arg-infiles"></a></dt>
 <dd><p>A character vector containing the file paths to video files.
-Every path is checked at this verb's own front door, so a path that does
-not exist aborts naming this function and lists every missing path, rather
-than being reported against the internal builder it would otherwise reach.</p></dd>
+Every path is checked at this verb's own front door, so a path that cannot
+be found or read aborts naming this function and lists every such path,
+rather than being reported against the internal builder it would otherwise
+reach.</p></dd>
 
 
 <dt id="arg-outfile">outfile<a class="anchor" aria-label="anchor" href="#arg-outfile"></a></dt>
@@ -125,7 +126,7 @@ or return the compiled command without running it (<code>FALSE</code>).</p></dd>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">video</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sample.mp4"</span>, package <span class="op">=</span> <span class="st">"tidymedia"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">concatenate_videos</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">video</span>, <span class="va">video</span><span class="op">)</span>, <span class="st">"joined.mp4"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -f concat -safe 0 -i \"/tmp/Rtmp0e6VR7/ffm-concat200355800629.txt\" -codec:v copy -codec:a copy -map \"0\" \"joined.mp4\""</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -f concat -safe 0 -i \"/tmp/Rtmpl7Usxf/ffm-concat1fbe214a064c.txt\" -codec:v copy -codec:a copy -map \"0\" \"joined.mp4\""</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

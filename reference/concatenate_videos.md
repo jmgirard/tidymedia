@@ -19,10 +19,10 @@ concatenate_videos(infiles, outfile, run = TRUE)
 - infiles:
 
   A character vector containing the file paths to video files. Every
-  path is checked at this verb's own front door, so a path that does not
-  exist aborts naming this function and lists every missing path, rather
-  than being reported against the internal builder it would otherwise
-  reach.
+  path is checked at this verb's own front door, so a path that cannot
+  be found or read aborts naming this function and lists every such
+  path, rather than being reported against the internal builder it would
+  otherwise reach.
 
 - outfile:
 
@@ -79,5 +79,5 @@ Other task verb functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 concatenate_videos(c(video, video), "joined.mp4", run = FALSE)
-#> [1] "-y -f concat -safe 0 -i \"/tmp/Rtmp0e6VR7/ffm-concat200355800629.txt\" -codec:v copy -codec:a copy -map \"0\" \"joined.mp4\""
+#> [1] "-y -f concat -safe 0 -i \"/tmp/Rtmpl7Usxf/ffm-concat1fbe214a064c.txt\" -codec:v copy -codec:a copy -map \"0\" \"joined.mp4\""
 ```

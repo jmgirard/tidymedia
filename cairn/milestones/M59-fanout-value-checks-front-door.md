@@ -1,6 +1,6 @@
 # M59: Six per-row value checks are refused at the fan-out verb's front door
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M58
 - **Driving RR:** —
@@ -93,7 +93,7 @@ milestone moves where a check reports, never what is checked.
       `check_dim()` directly or threads `call` through `ffm_crop()`, names the
       alternative rejected, and states the evidence class that would falsify
       the choice.
-- [x] AC5 — Precedence is pinned, and the value-check ordering is this
+- [ ] AC5 — Precedence is pinned, and the value-check ordering is this
       milestone's own call, not one M58 makes:
       (a) on the two verbs carrying both an M58 contradiction and a value check
       (`compare_videos_batch`, `picture_in_picture_batch`), a call invalid in
@@ -173,6 +173,8 @@ milestone moves where a check reports, never what is checked.
 - 2026-08-07: T9 — NEWS entry added for the six value checks, naming AC5(c)'s displaced set (`run`, `parallel`, `progress`, `manifest`, `checksums`, `verify`) read off `R/ffm_batch.R:70-98` and stating the excluded `jobs`-shape guards; the M57 entry's paragraph claiming an unavailable encoder now reports ahead of a bad `regions` / `width` / `margin` was corrected in place, that precedence having been reversed here. Roxygen updated on the four verbs whose `hardware` precedence changed.
 - 2026-08-07: T9 — verify slot clean: `devtools::document()` no diff, `devtools::test()` FAIL 0 / WARN 4 / SKIP 5 / PASS 4355 (the 4 warnings and 5 skips match the pre-branch master baseline), `devtools::check()` 0 errors / 0 warnings / 0 notes. Status → review.
 - 2026-08-07: repaired a self-inflicted whole-file change: the scripted edits to `R/ffmpeg.R` were made through Python's text mode, which strips the file's CRLF terminators, so the branch diff read 12,387 lines instead of 171. Master's copy is uniformly CRLF (6,130 of 6,130 lines), so the file was converted back and the diff is now 149 insertions / 22 deletions; `document()` no diff and `devtools::test()` FAIL 0 / PASS 4355 re-run after the conversion. No other file's terminators changed. This is exactly the hazard M60 exists to remove, and is not a substitute for it.
+- 2026-08-07: review returned the milestone to `in-progress`. Floor return on F1 (scored 95): `check_vocab_arg()`'s `identical(value, values)` shortcut covers only the exact default vector, so any other length->1 value reaches `rlang::arg_match0()`, whose own length check aborts ignoring `error_call` — `picture_in_picture(v, v, "o.mp4", position = c("center", "topleft"))` now blames `rlang::arg_match0(...)` where master blamed `picture_in_picture()`. Also actioned F9 (82): `?compare_videos_batch` and `?picture_in_picture_batch` now document the accepted values in neither Usage nor Arguments, the mid-work gate's rationale having held only for the two scalar pages. AC1, AC3, AC4 and AC6 verified clean; AC2 deferred (its mutation evidence would be invalidated by the F1 fix); 10 findings logged, not actioned.
+- 2026-08-07: amendment return: AC5 — "on the two verbs carrying both an M58 contradiction and a value check (`compare_videos_batch`, `picture_in_picture_batch`), a call invalid in both reports the contradiction" is unbounded over the scalar-argument versus `jobs`-column form. Measured: the scalar form reports the value check (unchanged from master, where the scalar `arg_match()` already sat above M58's contradiction sweep) while the column form reports the contradiction. The criterion must name which form it binds before it can be verified.
 
 ## Decisions
 
@@ -268,6 +270,81 @@ _Fresh evidence gathered 2026-08-07 on branch `m59-fanout-value-checks-front-doo
 - **AC6** — `devtools::document()` produces no `man/` diff; `devtools::test()`
   FAIL 0 / WARN 4 / SKIP 5 / PASS 4355 (warnings and skips match the pre-branch
   master baseline); `devtools::check()` 0 errors, 0 warnings, 0 notes.
+
+- **AC2** — NOT verified at review. The mutation half needs `R/` rewritten in
+  place, and the F1 fix below changes `check_vocab_arg()`, which would
+  invalidate any evidence gathered now. Deferred to re-review. The
+  non-mutation half was checked by inspection: `check_dim()`'s message and
+  `check_regions()`'s headline each occur at exactly one code site, and
+  `check_vocab_arg()` is the only refusal site for both vocabularies.
+- **AC5** — NOT verified. Falsified as written by F5: the criterion is
+  unbounded over the scalar-argument versus `jobs`-column form, and the scalar
+  form reports the value check where the criterion says the contradiction
+  reports. AC5(b) and AC5(c) each passed on their own (24 assertions apiece).
+
+### Independent review — three lenses, then a scorer
+
+- **[S] blame-history:** zero findings. Traced both deleted closure re-checks to
+  M32 (`abeeae0`) and confirmed each is removed only in the commit installing its
+  documented replacement; the M57 precedence reversal is recorded, not silent.
+- **[S] prior-PR-comments:** zero findings. Archive `## Review` sections for M40,
+  M41, M54, M56, M57, M58 checked; the GitHub inline-comment probe returned `[]`,
+  so the per-PR walk was correctly skipped.
+- **[O] diff-bug:** 13 findings. Scored by a fresh [S] scorer that did not
+  generate them.
+
+**Actioned (score ≥80):**
+
+- **F1 (95)** — `check_vocab_arg()`'s `identical(value, values)` shortcut only
+  covers the exact default vector, so any other length-`>1` value falls through
+  to `rlang::arg_match0()`, whose own length check aborts ignoring
+  `error_call`. Measured: `picture_in_picture(v, v, "o.mp4", position =
+  c("center", "topleft"))` reports `` `arg` must be a string or have the same
+  length as `values` `` blaming `rlang::arg_match0(value, values, arg_nm = arg,
+  error_call = call)`, where master blamed `picture_in_picture()`. A blame
+  regression introduced by this branch, on the milestone whose subject is blame.
+  **Disposition: fix, on return.**
+- **F5 (85)** — AC5(a) is unbounded over form. Measured:
+  `compare_videos_batch(jobs, direction = "sideways", audio_codec = "aac")`
+  reports the `direction` error while the same mistakes written as a column
+  report the contradiction; likewise `margin` on `picture_in_picture_batch()`.
+  The scalar ordering is unchanged from master — what is new is the two forms
+  disagreeing. **Disposition: amendment return — the criterion is wrong, not the
+  work; it must say which form it binds.**
+- **F9 (82)** — the two `_batch` help pages document the accepted values in
+  neither Usage nor Arguments, because their `@param` delegates to the scalar
+  verb's page. The mid-work gate's accepted rationale held for the two scalar
+  pages only. **Disposition: fix, on return.**
+
+**Logged (score <80), 10 findings — surfaced, not actioned:**
+
+- F2 (78) — a multi-element `direction` yields rlang's internal `arg` in the
+  message rather than `direction`; same root cause as F1, narrower.
+- F3 (78) — the comment at `R/ffmpeg.R:2766-2771` asserting the refusal reads
+  unchanged is falsified by F1/F2.
+- F10 (66) — the AC2 vocabulary-uniqueness test's `../../R` path does not
+  resolve under `R CMD check`, so it skips there; fails safe, not a false pass.
+- F4 (65) — the AC3 grid compares abort *kind* and blame but never message, and
+  probes no multi-element vocabulary value, so it could not have caught F1.
+- F12 (55) — the `parallel = TRUE` half of the AC1 test never reaches `furrr`
+  now that every check aborts first; AC1 requires both settings regardless.
+- F11 (50) — the uniqueness test is a literal-string grep and would miss a
+  re-spelled fourth copy.
+- F13 (50) — the `expect_no_match` halves of the AC5(b)/(c) tests are not
+  discriminating; their controls carry the load.
+- F6 (40) — `crop_video_batch()`'s `x`/`y` still report from `purrr::pmap()`;
+  Scope In names `width`/`height` only.
+- F7 (40) — `picture_in_picture_batch()`'s per-row `audio` index still reports
+  `aud` from `pmap`; not one of the six enumerated sites.
+- F8 (40) — four stale comments; all on lines outside every diff hunk.
+
+### Verdict — returned to `in-progress`
+
+Two returns compose. **Floor return** on F1: scored 95 on a defect in what the
+package does for its users, and introduced by this branch. **Amendment return**
+on AC5, whose text is unbounded over a distinction the milestone never intended
+to bind. F9 is fixed on the same return. Defect-return count for this milestone:
+1. Amendment-return count for AC5: 1. Neither thrash trigger is near.
 
 ### Consistency gate
 

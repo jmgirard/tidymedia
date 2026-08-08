@@ -113,10 +113,10 @@ reach `ffm_files()`.
       `run_normalize_correction()`.
 - [x] T4 — Add the front-door guard to `concatenate_videos()` and
       `compare_videos()`.
-- [ ] T5 — Author `data-raw/input-guard-baseline.R` and
+- [x] T5 — Author `data-raw/input-guard-baseline.R` and
       `input_guard_uncovered()` on the D039 pattern
       (`data-raw/value-guard-baseline.R` is the model); run it against both refs.
-- [ ] T6 — Mutation-verify the reader, the control validator, and the domain
+- [x] T6 — Mutation-verify the reader, the control validator, and the domain
       walk (`data-raw/value-guard-mutations.py` is the model).
 - [x] T7 — Write the walk-derived completeness tests for AC1–AC4, reading the
       namespace rather than the source tree (the M51/M59 lesson).
@@ -137,7 +137,23 @@ reach `ffm_files()`.
 - 2026-08-08: amendment (substantive, user-approved) - AC1 rewritten. It promised `ffm_files()` reaches the shared abort site, which M62 deliberately does not do: `ffm_files()`'s predicate is readability and unifying the two is M63's scope. The replacement promises one site for the FRONT DOOR and pins the residual with a test asserting `ffm_files()`/`ffm` are the only other place an input refusal is worded.
 - 2026-08-08: T7 - walk-derived tests complete; 138 pass. Verified by mutation, not by eye: deleting crop_video_batch's sweep -> 3 red; deleting compare_videos' sweep -> 3 red; duplicating the abort wording into another body -> 1 red; deleting one verb's call-shape spec -> 3 red; degrading the walk to a deparsed-substring match -> `ffm_manifest` re-enters the fan-out set, which its pinning test refuses.
 - 2026-08-08: session end at a task boundary; T1-T4 and T7 done, branch pushed, tree clean, suite 4785 pass / 0 fail. Resume at T5 (`data-raw/input-guard-baseline.R`, modelled on `data-raw/value-guard-baseline.R`), then T6 and T8. `data-raw/input-guard-progress.R` is the working checker, not evidence, and is deleted at T8.
+- 2026-08-08: T5 — `data-raw/input-guard-baseline.R` generates its cells from three declarations (the walk-derived verb domain, a per-verb crossing list, a per-verb call shape) crossed with the two forms. Measured at this commit by sourcing that file and running its nine readers over `origin/master` and the working tree: 404 cells; vacuous 0 and 0, refusals 0, message regressions 0, blame regressions 0, lost `call` 0, dead controls 0, uncovered 0, misordered 0, with 66 cells' blame moved to the verb the user called. Three declarations were corrected by the grid rather than by eye: six fan-out verbs validate their table inline and reject no NA in the input carrier, so `jobs_na` is declared only where that guard exists and those six pin AC6's upper half through `column_type` instead; `sample_frames_batch` needs a per-row `outdir` or every multi-row cell reports the frame-pattern collision guard; and the `nvenc` crossing must not name `video_codec` on a verb that has none, which raises "unused argument" in place of the crossed error.
+- 2026-08-08: T5 (minor amendment) — the crossing declaration names two aborts beyond AC5's colon-list, `jobs_na` and `column_type`, because AC6's first half ("after each fan-out verb's jobs-shape and column-type guards") has no cell without them. AC5's four remain as written; this widens the declaration the reader re-derives from, never narrows it.
+- 2026-08-08: T6 — `data-raw/input-guard-mutations.py`; all three AC7 mutations caught, tree restored by the harness after each. Deleting `crop_video_batch`'s call shape made `input_guard_uncovered()` report exactly the 10 combinations it owed (5 crossings x 2 forms); re-pointing the `audio_codec` contradiction's control at `ffm_batch()`'s `run` guard made `input_guard_dead_controls()` report 8 controls, each `reported run_guard`; deleting `strip_metadata_batch`'s `ffm_batch()` call edge moved it out of the walk's fan-out set and into its scalar set. `input_guard_domain()` was narrowed so the missing-shape case reaches the reader instead of a hard error that would have shadowed it.
 
 ## Decisions
+
+- **M62-D1: the grid's ordering claim is stated over the after ref alone.**
+  `input_guard_misordered()` asserts only where each crossed cell's error
+  reports NOW — the crossing for the two guards above the sweep, `input` for
+  the four below. It states no expected BEFORE value, because there is no
+  single one: a verb that already guarded its input reported `input` before
+  too, and the two scalar fan-in verbs reported `ffm_files`'s readability
+  refusal for some crossings and the crossing itself for others, depending on
+  where their pipeline happened to reach `ffm_files()`. Declaring a
+  per-(verb, crossing) `want_before` would be fitting the expectation to the
+  measurement. The before ref carries AC5's claims instead — fate, message,
+  blame, lost `call` — and `input_guard_ordering()` shows the move as a table
+  without asserting one shape for it.
 
 ## Review

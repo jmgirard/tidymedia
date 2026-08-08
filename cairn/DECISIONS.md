@@ -1395,3 +1395,51 @@ IP1 violation, and the remedy is one shared checker, never an IP exception.
   what happens to them; or by a Layer-1 checker whose abort cannot be aimed at
   a Layer-2 caller at all, which would force validation back down a layer for
   mechanical reasons rather than principled ones.
+
+---
+
+## D038 — D036's contradiction-first rule is scoped to the swept form; the scalar-argument form is a disclosed gap (2026-08-07, from M59's review, narrows D036)
+
+D036 states its rule without qualification: "Where a verb carries both, **the
+contradiction reports first.**" M59's review measured that this is false for one
+form of one class of call, and M59 recorded the exception in its own acceptance
+criterion, in NEWS, on two help pages and in a ROADMAP candidate row — but not
+here, which is the only file a later contributor is obliged to read. That is the
+gap this entry closes; the behavior it describes is unchanged.
+
+**What is actually true.** On `compare_videos_batch()` and
+`picture_in_picture_batch()`, a value violation arriving in a `jobs` column is
+swept at the front door *after* the M58 contradiction sweep, so the
+contradiction reports — D036 as written. The same violation passed as a scalar
+*argument* is caught by the verb's own `direction`/`position`/`margin` guard,
+which sits at the top of the function, above the contradiction sweep, and
+reports the value instead:
+
+    compare_videos_batch(jobs, direction = "sideways", audio_codec = "aac")
+    #> `direction` must be one of "horizontal" or "vertical", not "sideways".
+
+    compare_videos_batch(jobs_with_direction_column, audio_codec = "aac")
+    #> `audio_codec` needs an audio stream to encode.
+
+**This ordering predates both M58 and M59.** Those scalar guards have sat at the
+top of their verbs since M32; M58 added the contradiction sweep below them and
+M59 placed its column sweep below that. Neither milestone moved a scalar guard,
+so no branch introduced the disagreement — what M59 introduced is a second form
+of the same mistake that answers differently.
+
+**Why it is recorded rather than fixed.** Making the two agree means moving each
+scalar guard below the contradiction sweep, which also reorders it against every
+other front-door check above it — the jobs-shape guards, `check_token()` on both
+codecs, `arg_match(hardware)` — none of which has a test or a changelog line
+pinning its position today. The work is that disclosure and its tests, not the
+move, and it is the reordering-unremarked failure M41's review caught twice. It
+carries a ROADMAP candidate row.
+
+**D036's own reasoning says the gap should close.** A contradiction is decided
+identically on every machine and that is why D036 puts it first; nothing in that
+argument distinguishes a column from an argument. So this entry scopes D036's
+rule to what the code does, and does not defend the difference.
+
+- **Falsified by** any report of a caller confused by the two forms answering
+  differently, or by a milestone that pins these verbs' front-door ordering —
+  at which point the exception should close rather than be re-recorded.

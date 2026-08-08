@@ -107,8 +107,11 @@ test_that("normalize_audio_pipeline() without measured is single-pass (no linear
 # Front-door validation ---------------------------------------------------
 
 test_that("normalize_audio() rejects a missing input file", {
+  # Matched on the WORDING, not on "exist": the fixture path contains that
+  # substring, so the old pattern passed on the filename it printed rather than
+  # on the refusal (M63).
   expect_error(normalize_audio("does_not_exist.mp4", "out.mp4", run = FALSE),
-               "exist")
+               "can't be found or read")
 })
 
 test_that("normalize_audio() rejects out-of-range loudness targets", {

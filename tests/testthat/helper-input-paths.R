@@ -74,6 +74,19 @@ input_guard_verbs <- function(pkg = "tidymedia") {
   list(fanout = fanout, scalar = setdiff(reaches_files, fanout))
 }
 
+# M63 -- a file that EXISTS and cannot be read, or NULL where this platform
+# will not make one (a process running as root reads a mode-000 file anyway).
+# The fixture is VERIFIED with the same predicate the guard uses rather than
+# assumed from Sys.chmod()'s return, so a test built on it is testing
+# unreadability and not a chmod that quietly did nothing.
+tm_unreadable_path <- function(dir, name = "m63-unreadable-input.mp4") {
+  p <- file.path(dir, name)
+  file.create(p)
+  Sys.chmod(p, "000")
+  if (!file.exists(p) || file.access(p, mode = 4) == 0) return(NULL)
+  p
+}
+
 # Call-shape specs: what a LEGAL call to each verb looks like, with `p` standing
 # in for an input path. The specs supply only the shape — which arguments and
 # jobs columns the verb requires — never which verbs exist; that is the walk's

@@ -45,8 +45,10 @@ existence semantics; the milestone states why rather than sweeping them.
 - [ ] AC4 — `data-raw/input-guard-baseline.R` is extended with the
       present-but-unreadable form as an additional declared axis, not as
       hand-added cells, and `input_guard_uncovered()` reports no uncovered
-      combination. Measured over both refs: the set of refused calls grows by
-      exactly the unreadable-but-present cases and by nothing else.
+      combination. Measured over both refs: no call's fate changes — an
+      unreadable-but-present input was already refused inside the pipeline —
+      and what moves is exactly those cases' blame and message, and nothing
+      else.
 - [ ] AC5 — The M62 D-entry's recorded residual is closed by an appended entry
       naming it, rather than left standing.
 - [ ] AC6 — `NEWS.md` records the message change for the thirteen scalar verbs
@@ -66,12 +68,12 @@ existence semantics; the milestone states why rather than sweeping them.
 
 ## Tasks
 
-- [ ] T1 — Swap the shared checker's predicate to `file.access(mode = 4)` and
+- [x] T1 — Swap the shared checker's predicate to `file.access(mode = 4)` and
       re-word its message; keep the abort at one site and have `ffm_files()`
       reach it.
-- [ ] T2 — Build the four-case path corpus and the property test pairing the
+- [x] T2 — Build the four-case path corpus and the property test pairing the
       front door against `ffm_files()`.
-- [ ] T3 — Retarget the thirteen `check_file_exists(infile)` scalar sites; state
+- [x] T3 — Retarget the thirteen `check_file_exists(infile)` scalar sites; state
       in a comment why `R/verify.R:53` and `R/mediainfo.R:203` keep existence
       semantics.
 - [ ] T4 — Extend the M62 grid's declaration with the unreadable-but-present
@@ -83,6 +85,11 @@ existence semantics; the milestone states why rather than sweeping them.
 
 - 2026-08-08: created by /milestone-plan, split from M62 at the plan gate.
 - 2026-08-08: in-progress on `m63-unreadable-input-front-door`, cut from origin/master at f4357e7.
+- 2026-08-08: T1/T2/T3 — `check_paths_readable()` is the one site (`file.access(mode = 4)`, renamed from `check_paths_exist()` since the predicate moved); `check_file_readable()` carries the thirteen scalar input sites and `ffm_files()` reaches the same site, so its own refusal is deleted rather than duplicated. `check_file_exists()` keeps existence for its two non-input callers with the reason in a comment.
+- 2026-08-08: T2 — the four-case corpus is present-readable / absent / present-unreadable / directory; the directory case measured as accepted by BOTH predicates, so the property test asserts agreement and pins which cases split, or the identity would hold vacuously. The unreadable fixture verifies itself with the guard's own predicate and skips where a mode-000 file is still readable.
+- 2026-08-08: T3 — two sibling tests matched the retired wording: `test-ffmpeg.R:418` failed, and `test-normalize-audio.R:111` passed only because "does_not_exist.mp4" contains "exist"; both now match the wording.
+- 2026-08-08: amendment (gated) — AC4's "the set of refused calls grows" is falsified by measurement: an existing-but-unreadable input already aborts inside the pipeline (`ffm_files()` for a scalar verb, `purrr::pmap()` for a batch one), so the criterion now reads that no call's fate changes and exactly those cases' blame and message move.
+- 2026-08-08: implementation gate chose ONE wording covering both conditions ("can't be found or read") over one wording per condition, accepting that the thirteen scalar verbs' existing missing-file text moves; the per-condition option costs six renderings where the shared site has two, and the count form would need a third for a call carrying both.
 - 2026-08-08: plan gate chose splitting the readability upgrade out of M62 over doing both in one milestone, because the upgrade changes an existing message on thirteen working verbs and roughly doubles the measurement grid; falsified by M62 shipping and the residual proving indistinguishable to callers, which would mean the split bought nothing.
 
 ## Decisions

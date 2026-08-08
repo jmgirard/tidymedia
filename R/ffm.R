@@ -28,13 +28,14 @@ ffm_files <- function(input, output, overwrite = TRUE) {
   }
   rlang::check_string(output)
   rlang::check_bool(overwrite)
-  unreadable <- input[file.access(input, mode = 4) != 0]
-  if (length(unreadable) > 0) {
-    cli::cli_abort(c(
-      "Can't find or read {length(unreadable)} input file{?s}.",
-      "x" = "Not readable: {.file {unreadable}}."
-    ))
-  }
+  # The pipeline's own input refusal, reaching the same site every verb's front
+  # door reaches (M63). Its predicate WAS this function's, tested here and
+  # nowhere else, so a front door refusing existence and a pipeline refusing
+  # readability disagreed on a file that is there but cannot be opened. One site
+  # now holds the predicate and the wording, so the two cannot disagree.
+  # `multiple = TRUE` follows the ARGUMENT's contract -- `input` admits several
+  # paths for stacking -- not the count this call happened to pass.
+  check_paths_readable(input, arg = "input", multiple = TRUE)
 
   new_ffm(
     input = input,

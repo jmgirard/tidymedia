@@ -41,7 +41,7 @@ reach `ffm_files()`.
       site; the same test asserts `ffm_files()` and its `ffm` alias are the only
       places that second wording appears, so the residual is pinned by a test
       rather than assumed.
-- [ ] AC2 — For a one-path call the shared checker's rendering is byte-identical
+- [x] AC2 — For a one-path call the shared checker's rendering is byte-identical
       to the string `check_file_exists()` emits on merged master, asserted by a
       snapshot recorded against the pre-change ref; for a multi-path call it
       names every missing path, not the first.
@@ -360,4 +360,97 @@ did not generate the findings.
 **Disposition — return floor tripped.** F1 scores 92 on a defect in what the
 package does for its users, and F2 demonstrates AC2 failing. Status returns to
 `in-progress`; F3 is folded into the same return. Review stops here.
+
+## Review — round 2
+
+Re-reviewed 2026-08-08 against PR #65 at `3baf2cb`, base `origin/master` at
+`33b064c` (still unmoved since the branch was cut, re-checked with `git fetch`
+this session, so no merge was needed). Every criterion was re-executed this
+round rather than carried over from round 1: the return changed both the code
+and the AC5 instrument, so round 1's evidence no longer describes what is on
+the branch. Every figure below was measured this session.
+
+### Acceptance criteria
+
+- **AC1** — `testthat::test_local(filter = "input-path-front-door")`: 16 tests,
+  146 assertions, 0 failures. The two namespace-walk tests still pin the single
+  front-door site and the two `ffm_files`/`ffm` occurrences of the readability
+  wording, so the M63 residual stays pinned by a test.
+- **AC2** — **now passes, on both clauses.** One-path rendering compared
+  byte-for-byte against `origin/master` this session by sourcing that ref's
+  `check_file_exists()` into an environment (`codec_guard_env("origin/master")`)
+  and diffing: `identical()` TRUE at `arg = "infile"` and at `arg = "file"`.
+  Multi-path: two missing of two names both; one missing of two names the one
+  and leads with the count; `picture_in_picture_batch()` with both columns
+  missing now reports ``  `jobs$main` and `jobs$overlay` name 2 files that do
+  not exist ``, where round 1 measured `main` alone; twenty rows sharing one bad
+  path report "1 file". The instrument note from round 1 stands: the pre-change
+  strings are asserted as literals, not as a `testthat` snapshot, because a
+  snapshot records itself on first run and cannot witness a pre-change string.
+  The property the criterion states is met and was re-measured against the ref.
+- **AC3** — 16 fan-out verbs derived by the parsed call-node walk, each refusing
+  with `conditionCall()` naming it. Falsifiability re-measured this round on a
+  different verb than round 1's: deleting `picture_in_picture_batch()`'s
+  `check_batch_inputs(jobs, c("main", "overlay"))` line turned 3 named tests red
+  ("every fan-out verb refuses a missing input at its own front door", 2
+  failures; "no verb reports the missing input from inside the fan-out", 1; "a
+  verb with two input columns names both missing files", 1). Working tree
+  restored, `git status` clean.
+- **AC4** — 14 scalar verbs from the same walk, `concatenate_videos()` and
+  `compare_videos()` among them; the grid confirms both blame themselves where
+  `origin/master` blamed `ffm_files()`.
+- **AC5** — the grid re-run over `origin/master` and the working tree at this
+  commit: **524 cells, 424 live** (round 1: 404/362). All comparison readers
+  empty — vacuous 0 on each ref, refusals 0, message regressions 0, blame
+  regressions 0, lost `call` 0, dead controls 0, uncovered 0. 96 cells' blame
+  moved to the verb the user called (round 1: 66). Round 1's recorded caveat is
+  discharged rather than restated: the two axes it named the cell set could not
+  reach are now declared forms (`dup`, `factor`), and `all`'s absent paths are
+  distinct instead of one constant string.
+- **AC6** — `input_guard_misordered()` 0 rows: every cell crossed with a guard
+  above the sweep reports that guard, every cell crossed with one below it
+  reports the missing input, each paired with a control proving the crossed
+  error live (`input_guard_dead_controls()` empty).
+- **AC7** — `python3 data-raw/input-guard-mutations.py`: all three CAUGHT
+  against the widened grid. Mutation 1 now reports the widened **12**
+  combinations `crop_video_batch` owed rather than round 1's 10, which is the
+  reader tracking its own declarations; mutation 2 reports 8 dead controls, each
+  `reported run_guard`; mutation 3 moves `strip_metadata_batch` from the walk's
+  fan-out set to its scalar set. Tree restored by the harness.
+- **AC8** — D040 stands, with its first condition amended this round to name the
+  two scalar fan-in verbs it exists for and to record that reaching the site is
+  not enough on its own — an untyped carrier raises base R's error before the
+  site is reached, so the site coerces.
+- **AC9** — `NEWS.md` "Bug fixes" entry, user-facing terms, no milestone number;
+  corrected this round (it had said `segment_video()` takes a `jobs` table, and
+  "first" meant the first row), and it now states the duplicate rule. The named
+  tests behind it are falsifiable, measured by running the current test file
+  against `70dc722` in a throwaway worktree: 7 assertion failures across the
+  three new tests, 0 here.
+- **AC10** — `devtools::document()` leaves the tree clean (`git status` empty
+  after it); `devtools::test()` 4793 pass / 0 fail (4 warnings and 5 skips
+  pre-existing: M44 dropped-track warnings, nvenc-absent skips);
+  `devtools::check()` Status OK — 0 errors, 0 warnings, 0 notes.
+
+**The widening is falsifiable, not decorative.** The same widened grid run over
+`70dc722` — the branch as round 1 found it — reports `input_guard_unnamed()` 19
+(1 `all`, 16 `dup`, 2 `factor`), `input_guard_blame_regressions()` 1
+(`segment_video_batch`/`factor`, blaming `file.exists`) and
+`input_guard_unreported()` 1. Over `origin/master`, `unnamed` is 17. Every one
+of those readers is 0 on this commit.
+
+### Consistency gate
+
+`cairn_validate` exit 0, all checks PASS. One advisory, terminal for this
+milestone and unchanged from round 1: `sizing (split tripwires)` warns that M62
+carries 10 acceptance criteria against a 7 tripwire. Toolchain slot
+(`cairn/PROFILE.md`): `document()` no diff; `NAMESPACE`, `man/` and `.Rd` files
+regenerate; no README.Rmd change; `pkgdown::check_pkgdown()` "No problems
+found"; `NEWS.md` carries the user-visible change with no milestone number; no
+new top-level files (`check()` 0 notes); full `check()` clean. No `DESIGN.md`
+principle changed, so `cairn_impact` was not run.
+
+**Return count.** One defect return on this milestone (round 1), no amendment
+returns beyond the AC1 amendment logged during implementation. Below the
+thrash rule's third-return threshold.
 

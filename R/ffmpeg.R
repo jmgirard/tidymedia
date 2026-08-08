@@ -5547,10 +5547,6 @@ compare_videos_pipeline <- function(infiles, outfile,
                                     hardware = "none",
                                     fallback = FALSE,
                                     call = rlang::caller_env()) {
-  # `call = call` so compare_videos() is blamed rather than this internal
-  # pipeline -- the same leak M58 closed on the resize guard.
-  direction <- check_vocab_arg(direction, stack_directions(), "direction",
-                               call = call)
   # Conditions 4 and 5, worded once in their checkers; compare_videos_batch()
   # ALSO calls both at its front door (M58). The `call = call` on the resize
   # guard is new with M58 -- without it the abort displayed
@@ -5563,6 +5559,14 @@ compare_videos_pipeline <- function(infiles, outfile,
     call = call
   )
   check_resize_needs_two_inputs(resize, length(infiles), call = call)
+  # BELOW the two contradiction checkers, deliberately (M61): a call wrong in
+  # both `direction` and one of them is told about the contradiction, and the
+  # column sweep in compare_videos_batch() already sits below them, so the two
+  # forms of the same mistake now answer alike (D036 restored unconditionally).
+  # `call = call` so compare_videos() is blamed rather than this internal
+  # pipeline -- the same leak M58 closed on the resize guard.
+  direction <- check_vocab_arg(direction, stack_directions(), "direction",
+                               call = call)
   p <- ffm_files(infiles, outfile)
   p <- switch(
     direction,
@@ -5683,9 +5687,6 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
                                         hardware = "none",
                                         fallback = FALSE,
                                         call = rlang::caller_env()) {
-  # `call = call`, as for compare_videos_pipeline() above.
-  position <- check_vocab_arg(position, pip_positions(), "position",
-                              call = call)
   # Condition 6 -- the same contradiction as compare_videos(), which is why it
   # shares that verb's checker and differs only in the way out (M58).
   # picture_in_picture_batch() ALSO calls it at its front door.
@@ -5695,6 +5696,10 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
             {.val {1}} for the overlay's, or drop {.arg audio_codec}.",
     call = call
   )
+  # BELOW the contradiction checker, deliberately (M61), for the reason given at
+  # the same move in compare_videos_pipeline(). `call = call`, as there.
+  position <- check_vocab_arg(position, pip_positions(), "position",
+                              call = call)
 
   m <- as.integer(margin)
   pos <- switch(

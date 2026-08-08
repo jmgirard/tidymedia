@@ -98,7 +98,7 @@ pipeline; any change to which calls are refused.
 - [x] T1 — Milestone-local decision entry: the four-guard set with the commit it
       was closed at, the displaced-error list AC2 crosses, and why `resize`,
       the jobs-shape and column-type guards stay above.
-- [ ] T2 — Move `check_vocab_arg()` below the contradiction checkers in
+- [x] T2 — Move `check_vocab_arg()` below the contradiction checkers in
       `compare_videos_pipeline()` and `picture_in_picture_pipeline()`.
 - [ ] T3 — `compare_videos_batch()`: move the scalar `direction` guard down;
       delete the scalar `audio` lower-bound check the per-row sweep now covers.
@@ -121,6 +121,7 @@ pipeline; any change to which calls are refused.
 - 2026-08-07: criteria audit ([O] fresh-context reader) returned findings on all seven drafts. Acted on before the gate: the Approach was narrowed from "every per-value check" to the four genuinely non-uniform guards, after the reader MEASURED that moving `check_bool(resize)` degrades `check_resize_needs_two_inputs()` to three unattributed base-R errors; AC1 and AC2 were bounded to named values and to the grid, dropping "every"; AC2 gained message-text comparison (the M59 F4 hole) and the lost-`call` reader; AC3 gained the AC5(b) nvenc invariant, which moving checks downward could otherwise have silently inverted; AC5's `cairn/`-only grep was replaced with an enumerated retirement list plus a residue grep over `R/`, `man/`, `NEWS.md` and `tests/`, the reader having found the exception's wording lives outside `cairn/` and that a `cairn/` grep can never return the claimed result because IP4 forbids rewriting M59's record; AC6 now quotes the sentence it pins instead of promising a test that tracks prose. AC7 returned clean. Two vacuous cells the reader found are recorded in AC1 rather than asserted.
 - 2026-08-08: question gate chose to extend `data-raw/value-guard-baseline.R` rather than add a sibling script (it already probes these four guards in both forms); to cross the grid against the contradiction, `check_nvenc_available()` and `ffm_batch()`'s `run` guard; and to rewrite NEWS's known-gap paragraph in place rather than append a retraction, the whole entry being unreleased.
 - 2026-08-08: T1 — M61-D1 records the four-guard set closed by inspection at `1d54b20`, the three displaced errors AC2's grid crosses, and why `resize`, the jobs-shape and the column-type guards stay above.
+- 2026-08-08: T2 — `check_vocab_arg()` now runs below the contradiction checkers in both `*_pipeline()` functions, so `direction` and `position` report after them in the argument form as they already did in the column form. `devtools::test()`: 0 failures, 4402 passing.
 
 ## Decisions
 

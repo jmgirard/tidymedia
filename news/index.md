@@ -431,14 +431,69 @@
 
   Because the check now runs first, it also reports first. On a machine
   that lacks the encoder, a call that is *also* wrong in some other way
-  — a malformed `regions` table, an out-of-range `width` or `margin`, a
-  codec that contradicts a stream copy — is now told about the missing
-  encoder, where it used to be told about the other problem from inside
-  the fan-out. Such calls failed before and fail now; what changes is
-  which of the two errors you see.
+  — a malformed `regions` table, an out-of-range `width` or `margin` —
+  is now told about the missing encoder, where it used to be told about
+  the other problem from inside the fan-out. Such calls failed before
+  and fail now; what changes is which of the two errors you see.
+  (Contradictory *arguments* are the exception, and are reported before
+  the encoder check — see the entry below.)
 
   `fallback = TRUE` behaves exactly as before, and no call that used to
   succeed now fails.
+
+- Arguments that contradict each other are now refused by the function
+  you called. Six such contradictions used to be caught only while each
+  command was being built, which on a verb that processes many files at
+  once meant the error was reported against
+  [`purrr::pmap()`](https://purrr.tidyverse.org/reference/pmap.html)
+  with an internal row index instead of against your call:
+
+  - a video stream copy asked to encode on the GPU
+    ([`separate_audio_video_batch()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video_batch.md));
+  - a `reencode = FALSE` cut that names a `video_codec` or `hardware`
+    ([`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
+    [`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md));
+  - a `reencode = FALSE` cut that names an `audio_codec` other than
+    `"copy"` (same two verbs);
+  - an `audio_codec` with no audio carried into the output
+    ([`compare_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/compare_videos_batch.md),
+    [`picture_in_picture_batch()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture_batch.md));
+  - `resize = TRUE` across other than two inputs
+    ([`compare_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/compare_videos_batch.md)).
+
+  Where any of these values can arrive as a `jobs` column, the check is
+  made per row: a table with one offending row is refused for that row,
+  and a table with none compiles as before. Large tables now fail
+  immediately rather than after building the first command.
+
+  Exactly the same calls are refused as before, verified cell by cell
+  across a grid of every combination of the arguments involved. What
+  moves is which function the error names, and when.
+
+  Because the check now runs before any row is built, it also reports
+  before errors that used to surface from inside the fan-out. A call
+  that is wrong in more than one way — a contradiction *plus* an
+  out-of-range `audio` index, a misspelled `direction`, an out-of-range
+  `margin`, or a bad `run`/`parallel` value — is now told about the
+  contradiction. Such calls failed before and fail now; which of the
+  errors you see is what changes.
+
+  On a machine lacking an nvenc encoder, a call that both contradicts
+  itself and asks for GPU encoding is told about the contradiction
+  rather than about the encoder. A contradiction between two arguments
+  is the same mistake on every machine, so it is not reported
+  differently depending on which FFmpeg build you happen to have.
+
+  The single-file verbs —
+  [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
+  [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
+  [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
+  — build one command each, so three of the four contradictions they can
+  raise already named the verb and are unchanged. The fourth,
+  [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)’s
+  two-input `resize` error, reported against an internal function name
+  and now names
+  [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md).
 
 - Metadata values containing a newline no longer corrupt the probe
   output.

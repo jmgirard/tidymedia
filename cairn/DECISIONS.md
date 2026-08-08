@@ -1443,3 +1443,98 @@ rule to what the code does, and does not defend the difference.
 - **Falsified by** any report of a caller confused by the two forms answering
   differently, or by a milestone that pins these verbs' front-door ordering —
   at which point the exception should close rather than be re-recorded.
+
+---
+
+## D039 — A value error and a contradiction resolve the same way in both forms (2026-08-08, from M61, supersedes D038 and restores D036 unconditionally)
+
+D036 stated its rule without qualification: "Where a verb carries both, **the
+contradiction reports first.**" D038 measured that this was false for one form
+of one class of call on `compare_videos_batch()` and `picture_in_picture_batch()`
+— a value violation arriving in a `jobs` column obeyed the rule, while the same
+violation passed as a scalar argument was caught by a guard at the top of the
+verb and reported instead — and recorded the difference as a disclosed gap
+rather than defending it. This entry closes the gap. D036 is again true as
+written, in both forms, and D038's exception is retired.
+
+**What moved.** Four front-door value guards, and only four: `direction`
+(compare), `position` and `margin` (pip), and the per-row `audio` bound (both).
+Each now runs *below* its verb's M58 contradiction sweep, where its column
+counterpart already sat. The two vocabulary guards live in the shared
+`*_pipeline()` functions, which the SCALAR `compare_videos()` and
+`picture_in_picture()` also call and which is their only vocabulary check — so
+those two verbs answer the new way as well, on the same reasoning and with
+their own cells in the grid. `picture_in_picture_batch()`'s `audio` index gained a
+front-door sweep it never had — before, it was re-checked only inside the
+fan-out closure, so an out-of-range column cell was reported against
+`purrr::pmap()` naming the closure's local `aud` (M59 review F7). The set was
+closed by inspection, not by a procedure, and the milestone-local decision entry
+(M61-D1) names the commit it was closed at.
+
+**The guards moved rather than being deleted.** Three of the four are also
+covered by a per-row sweep that resolves a column over the argument, so deleting
+the scalar guard looked equivalent. It is not: a sweep never sees a bad argument
+that a column overrides, and all three scalar guards refuse such a call today
+(measured — `compare_videos_batch(jobs_with_audio_column, audio = -1)` aborts).
+Deleting one would have lost a refusal, which D035's "no new refusal" condition
+governs in the other direction and this milestone's scope forbids outright.
+
+**What was measured.** `data-raw/value-guard-baseline.R` now crosses each guard,
+in each form, with each front-door error that could report instead of it — the
+contradiction, `check_nvenc_available()`, and `ffm_batch()`'s own `run` guard —
+each paired with a control asserting the crossed error is live on that call.
+Over 124 cells against both refs: no refusal changed, no message regressed, no
+blame regressed, no abort lost its `call`, no control was dead. Thirteen cells
+change which error they report — eight scalar-argument cells on the `_batch`
+verbs crossed with a contradiction, three on the scalar verbs, and pip's
+`audio` column crossed with the availability and `run` guards, whose front-door
+guard is new. Where a verb carries two contradictions, each guard is crossed
+with both: `compare_videos_batch()`'s `direction` against the `audio_codec` one
+and against `resize`.
+
+**The four guards also report after every check that stays above them.** D038
+named this consequence and called its disclosure "the work": a call wrong in
+both one of these four values and in an earlier argument check — a malformed
+codec token, an unrecognized `hardware`, a non-numeric `scale`, a `jobs` table
+of the wrong shape — is now told about the earlier check. No refusal changes;
+only which error is shown. NEWS states it, and the grid pins the three crossings
+that the ordering rule itself is about.
+
+**Which bound, not only which value.** D038 noted that for `audio` the answer
+varied "even by which bound was crossed", and that is why the grid probes
+compare's `audio` at both. Its upper bound already sat below the sweep; only the
+lower bound moved. A grid probing one bound would have measured no change and
+reported the milestone complete.
+
+**And which value.** `audio` is the one guard here whose value decides whether
+the contradiction exists at all, because supplying an index is what gives the
+encoder something to encode. An in-range index removes the contradiction and so
+does an out-of-range one; what does not is an **NA-ish** value, which
+`batch_stream_cell()` resolves to `NULL` — dropping the audio while still being
+a value the argument guard refuses. That helper tests `is.na()`, and
+`is.na(NaN)` is `TRUE`, so the reachable set is every length-1 NA-ish value,
+`NA` and `NaN` alike. Both are probed, with `audio = NULL` as the control — an
+in-range control would remove the very error it exists to prove live.
+
+This took two rounds to state correctly, and the two errors have one shape:
+reasoning from the values in hand to a universal. The milestone first recorded
+the cell as one that could not exist, on the reasoning that "supplying `audio`
+at all removes the contradiction" — false at `NA`. Its replacement said the
+pairing was reachable "at exactly one value" — false at `NaN`. What survives
+both is the mechanism rather than the enumeration: the pairing is reachable
+exactly where `batch_stream_cell()` resolves the argument to `NULL`.
+
+**What this does not change.** `rlang::check_bool(resize)`, the jobs-shape
+guards and every column *type* guard stay above the contradiction sweep, for the
+reasons M61-D1 records — the first because the contradiction checker consumes
+`resize` and degrades to unattributed base-R errors without its type guard, the
+rest because the row-sweep reads the table's shape. `check_token()` on both
+codecs and `arg_match(hardware)` also stay: their column counterparts already
+sit above the sweep, so moving them would create the disagreement this entry
+removes.
+
+- **Falsified by** a caller who needs the value error first on a call that also
+  contradicts itself — the case D036's machine-independence argument does not
+  reach — or by a fifth guard turning up non-uniform, which would mean the set
+  was closed by inspection over the wrong surface rather than that the rule is
+  wrong.

@@ -20,22 +20,9 @@
 # availability is a failure rather than a coincidence; the one test that needs a
 # call to SUCCEED under `hardware = "nvenc"` holds it full and says why.
 
-blamed_verb <- function(cnd) {
-  cl <- conditionCall(cnd)
-  if (is.null(cl)) return(NA_character_)
-  paste(deparse(cl[[1]]), collapse = "")
-}
-
-catch_call <- function(verb, args) {
-  # Only DEFAULT `run`, never override it: one case below passes a malformed
-  # `run` on purpose, and clobbering it would leave that case asserting the
-  # absence of an error the call no longer had.
-  if (is.null(args$run)) args$run <- FALSE
-  tryCatch(
-    do.call(verb, args, envir = asNamespace("tidymedia")),
-    error = function(e) e
-  )
-}
+# blamed_verb() and catch_call() come from helper-blame.R, which holds the one
+# definition this suite, test-value-check-front-door.R and
+# test-front-door-ordering.R all read (M61 lifted the duplicated pair out).
 
 # --- AC1: one site per headline ---------------------------------------------
 #

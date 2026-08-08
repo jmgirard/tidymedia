@@ -62,7 +62,7 @@ out and every scripted edit still has to remember.
       non-empty and touches exactly the two text files AC2's command names
       today. The second half is what stops AC3 being satisfied by doing
       nothing.
-- [ ] AC4 — `git add --renormalize .` on a clean tree after the change
+- [x] AC4 — `git add --renormalize .` on a clean tree after the change
       produces no further staged diff, so the pinned setting and the stored
       bytes agree on this machine.
 - [x] AC5 — The `LESSONS.md` CRLF entry is corrected and then retired: its
@@ -193,3 +193,20 @@ Every line below is a command run in this phase, never recalled from implement.
   other entry. A fresh `pkgbuild::build()` tarball greps empty for
   `gitattributes|git-blame`, contains no dotfile at any path, and carries only
   `DESCRIPTION`, `NAMESPACE`, `NEWS.md`, `README.md` at top level.
+
+- AC4 — PASS. Run on a genuinely clean tree (`git status --short` empty
+  immediately before and after): `git add --renormalize .` produces no staged
+  diff at all, so the pinned attribute and the stored bytes agree on this
+  machine and the tree is at its normalization fixed point. An earlier run in
+  this phase reported a 1/1 staged diff on this milestone file, which was an
+  uncommitted edit of my own rather than a normalization — re-run after the
+  checkpoint commit, it is empty.
+
+### CI
+
+All nine checks green on PR #63 — `macos-latest (release)`, `ubuntu-latest`
+(release / devel / oldrel-1), `windows-latest (release)`, `pkgdown`,
+`test-coverage`, and both codecov reports. The Windows job matters
+disproportionately here: it is the platform where a repo-wide line-ending
+change would most plausibly break a build, and it passes.
+

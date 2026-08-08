@@ -1460,7 +1460,11 @@ written, in both forms, and D038's exception is retired.
 **What moved.** Four front-door value guards, and only four: `direction`
 (compare), `position` and `margin` (pip), and the per-row `audio` bound (both).
 Each now runs *below* its verb's M58 contradiction sweep, where its column
-counterpart already sat. `picture_in_picture_batch()`'s `audio` index gained a
+counterpart already sat. The two vocabulary guards live in the shared
+`*_pipeline()` functions, which the SCALAR `compare_videos()` and
+`picture_in_picture()` also call and which is their only vocabulary check — so
+those two verbs answer the new way as well, on the same reasoning and with
+their own cells in the grid. `picture_in_picture_batch()`'s `audio` index gained a
 front-door sweep it never had — before, it was re-checked only inside the
 fan-out closure, so an out-of-range column cell was reported against
 `purrr::pmap()` naming the closure's local `aud` (M59 review F7). The set was
@@ -1479,17 +1483,38 @@ governs in the other direction and this milestone's scope forbids outright.
 in each form, with each front-door error that could report instead of it — the
 contradiction, `check_nvenc_available()`, and `ffm_batch()`'s own `run` guard —
 each paired with a control asserting the crossed error is live on that call.
-Over 110 cells against both refs: no refusal changed, no message regressed, no
-blame regressed, no abort lost its `call`, no control was dead. Six cells change
-which error they report — the four scalar-argument cells crossed with a
-contradiction, and pip's `audio` column crossed with the availability and `run`
-guards, whose front-door guard is new.
+Over 118 cells against both refs: no refusal changed, no message regressed, no
+blame regressed, no abort lost its `call`, no control was dead. Eleven cells
+change which error they report — six scalar-argument cells on the `_batch`
+verbs crossed with a contradiction, three on the scalar verbs, and pip's
+`audio` column crossed with the availability and `run` guards, whose front-door
+guard is new.
+
+**The four guards also report after every check that stays above them.** D038
+named this consequence and called its disclosure "the work": a call wrong in
+both one of these four values and in an earlier argument check — a malformed
+codec token, an unrecognized `hardware`, a non-numeric `scale`, a `jobs` table
+of the wrong shape — is now told about the earlier check. No refusal changes;
+only which error is shown. NEWS states it, and the grid pins the three crossings
+that the ordering rule itself is about.
 
 **Which bound, not only which value.** D038 noted that for `audio` the answer
 varied "even by which bound was crossed", and that is why the grid probes
 compare's `audio` at both. Its upper bound already sat below the sweep; only the
 lower bound moved. A grid probing one bound would have measured no change and
 reported the milestone complete.
+
+**And which value.** `audio` is the one guard here whose value decides whether
+the contradiction exists at all, because supplying an index is what gives the
+encoder something to encode. That makes the pairing reachable through the
+argument at exactly one value — `NA`, which `batch_stream_cell()` resolves to
+`NULL`, dropping the audio while still being a value the argument guard refuses.
+An in-range index removes the contradiction and so does an out-of-range one.
+This milestone first recorded the cell as one that could not exist, on the
+over-general reasoning that "supplying `audio` at all removes the
+contradiction"; its review measured that false. The cell is asserted at `NA`,
+with `audio = NULL` as its control — an in-range control would remove the very
+error it exists to prove live.
 
 **What this does not change.** `rlang::check_bool(resize)`, the jobs-shape
 guards and every column *type* guard stay above the contradiction sweep, for the

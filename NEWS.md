@@ -430,6 +430,19 @@
   about the value. If you match on the text of an error from such a call, that
   is the message that changed.
 
+  Two consequences worth knowing if you match on error text. First, these four
+  checks now also report **after** every argument check that runs before them,
+  not only after the contradiction: a call wrong in both one of these values and
+  in a malformed `video_codec` or `audio_codec` token, an unrecognized
+  `hardware`, a non-numeric `scale`, or a `jobs` table of the wrong shape is now
+  told about that other check. Second, the same reordering reaches the
+  single-call `compare_videos()` and `picture_in_picture()`, which check
+  `direction` and `position` inside the pipeline they share with the batch
+  verbs — so `compare_videos(files, out, direction = "sideways", audio_codec =
+  "aac")` now reports the `audio_codec` contradiction too. Exactly the same
+  calls are refused as before in every case; only which error you are shown
+  moves.
+
   `picture_in_picture_batch()` gains a front-door check on its `audio` index as
   part of this. An out-of-range index in a `jobs` `audio` column was previously
   caught only while a row's command was being built, so it was reported against
@@ -437,6 +450,14 @@
   the verb you called, before any row runs. Two errors that used to report ahead
   of it — an unavailable nvenc encoder, and `ffm_batch()`'s own argument checks
   — now report after it, matching the other value checks above.
+
+  One value behaves differently from the rest, on both verbs. Passing
+  `audio = NA` asks to drop the audio, so it is the one `audio` argument that
+  creates the "`audio_codec` needs an audio stream to encode" contradiction
+  rather than removing it — `picture_in_picture_batch(jobs, audio = NA,
+  audio_codec = "aac")` now reports that contradiction where it used to report
+  the `audio` value. An out-of-range index still reports the value, because it
+  carries audio.
 
   Two smaller corrections come with this. `compare_videos_batch()`'s
   out-of-range `audio` message named an internal variable (`aud`) rather than

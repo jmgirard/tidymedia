@@ -121,13 +121,58 @@ ordering_cases <- function(input) {
          control = list(jobs = cmp2x(audio = c(0, 0)), resize = TRUE)),
 
     # picture_in_picture_batch()'s `audio` reaches its verb's only
-    # contradiction in the column form ONLY -- see the test below for the
-    # argument form, which cannot. Row 1 drops audio (`NA`) and so contradicts
-    # the encoder; row 2 carries an index past the two fixed roles.
+    # contradiction in the column form because rows may disagree: row 1 drops
+    # audio (`NA`) and so contradicts the encoder, row 2 carries an index past
+    # the two fixed roles.
     list(id = "audio/column", verb = "picture_in_picture_batch",
          wins = no_audio, other = range,
          args = list(jobs = pip2(audio = c(NA, 9)), audio_codec = "aac"),
-         control = list(jobs = pip2(audio = c(NA, 0)), audio_codec = "aac"))
+         control = list(jobs = pip2(audio = c(NA, 0)), audio_codec = "aac")),
+
+    # And it reaches the same contradiction in the ARGUMENT form at exactly one
+    # value. An in-range index removes the contradiction, and so does 9 -- but
+    # `NA` does not: batch_stream_cell() resolves it to `NULL`, which drops the
+    # audio the encoder needs while still being a value the argument guard
+    # refuses. An earlier draft of this milestone recorded this cell as one
+    # that could not exist; M61's review measured otherwise.
+    #
+    # The CONTROL is `audio = NULL`, not an in-range index, and it has to be:
+    # an in-range index is what REMOVES the contradiction, so it would prove
+    # nothing. `NULL` is the value `NA` resolves to, and the argument guard
+    # accepts it, leaving the contradiction as the only live error.
+    list(id = "audio/argument", verb = "picture_in_picture_batch",
+         wins = no_audio, other = range,
+         args = list(jobs = pip1(), audio = NA, audio_codec = "aac"),
+         control = list(jobs = pip1(), audio = NULL, audio_codec = "aac")),
+    list(id = "audio-na/argument", verb = "compare_videos_batch",
+         wins = no_audio, other = range,
+         args = list(jobs = cmp1(), audio = NA, audio_codec = "aac"),
+         control = list(jobs = cmp1(), audio = NULL, audio_codec = "aac")),
+
+    # The SCALAR verbs. Neither has a vocabulary guard of its own -- the shared
+    # *_pipeline() is the only one -- so moving that check below the pipeline's
+    # contradiction checkers moved these verbs' answer too. The milestone's
+    # scope carves their front doors out only "beyond their shared pipeline",
+    # so this is intended; what it was not, until M61's review, was covered.
+    # There is no column form: these verbs take arguments and no `jobs` table.
+    list(id = "direction/scalar-verb", verb = "compare_videos",
+         wins = no_audio, other = vocab,
+         args = list(infiles = c(input, input), outfile = "o.mp4",
+                     direction = "sideways", audio_codec = "aac"),
+         control = list(infiles = c(input, input), outfile = "o.mp4",
+                        direction = "vertical", audio_codec = "aac")),
+    list(id = "direction-resize/scalar-verb", verb = "compare_videos",
+         wins = resize2, other = vocab,
+         args = list(infiles = rep(input, 3), outfile = "o.mp4",
+                     direction = "sideways", resize = TRUE),
+         control = list(infiles = rep(input, 3), outfile = "o.mp4",
+                        direction = "vertical", resize = TRUE)),
+    list(id = "position/scalar-verb", verb = "picture_in_picture",
+         wins = no_audio, other = vocab,
+         args = list(main = input, overlay = input, outfile = "o.mp4",
+                     position = "middleish", audio_codec = "aac"),
+         control = list(main = input, overlay = input, outfile = "o.mp4",
+                        position = "center", audio_codec = "aac"))
   )
 }
 
@@ -137,27 +182,36 @@ test_that("a contradiction reports before a value error, in both forms", {
   for (case in ordering_cases(input)) expect_reports(case)
 })
 
-test_that("pip's `audio` argument has no contradiction to be ordered against", {
-  # The one cell of the grid that does not exist, asserted rather than left as
-  # a silent gap. picture_in_picture_batch() carries exactly one contradiction
-  # -- an `audio_codec` naming an encoder with no audio carried -- and an
-  # `audio` ARGUMENT applies to every row, so supplying one at all is what
-  # removes the contradiction. There is therefore no call that is wrong in both
-  # this value and this contradiction, and the value is what reports.
+test_that("only `NA` reaches pip's contradiction through the `audio` argument", {
+  # The reachability condition AC1 names, pinned as its own test rather than
+  # left implicit in the case list. `audio` is the one guard here whose value
+  # decides whether the contradiction exists at all, so the three outcomes are
+  # asserted together: `NA` resolves to `NULL` and reaches it, an out-of-range
+  # index does NOT (it carries audio, so the encoder has something to encode),
+  # and an in-range index compiles.
   withr::local_options(tidymedia.nvenc_encoders = character(0))
   input <- make_input()
   jobs <- tibble::tibble(main = input, overlay = input, output = "o.mp4")
 
-  cnd <- catch_call("picture_in_picture_batch",
-                    list(jobs = jobs, audio = 9, audio_codec = "aac"))
-  expect_s3_class(cnd, "rlang_error")
-  expect_match(conditionMessage(cnd), "must be a whole number")
-  expect_no_match(conditionMessage(cnd), "needs an audio stream to encode")
-  expect_identical(blamed_verb(cnd), "picture_in_picture_batch")
+  na_cell <- catch_call("picture_in_picture_batch",
+                        list(jobs = jobs, audio = NA, audio_codec = "aac"))
+  expect_s3_class(na_cell, "rlang_error")
+  expect_match(conditionMessage(na_cell), "needs an audio stream to encode")
+  expect_identical(blamed_verb(na_cell), "picture_in_picture_batch")
 
-  # And the reason, measured rather than asserted from the code: the same call
-  # with the index IN range compiles, so the `audio_codec` had no contradiction
-  # to raise in the first place.
+  # Out of range, and therefore NOT a cell of the contradiction pairing: the
+  # index carries audio, so there is no contradiction and the value reports.
+  # This is the fact an earlier draft over-generalized into "supplying `audio`
+  # at all removes the contradiction", which is false at `NA`.
+  out_of_range <- catch_call("picture_in_picture_batch",
+                             list(jobs = jobs, audio = 9, audio_codec = "aac"))
+  expect_s3_class(out_of_range, "rlang_error")
+  expect_match(conditionMessage(out_of_range), "must be a whole number")
+  expect_no_match(conditionMessage(out_of_range),
+                  "needs an audio stream to encode")
+
+  # In range: compiles, which is what makes the line above a statement about
+  # the contradiction rather than about the guard.
   ok <- catch_call("picture_in_picture_batch",
                    list(jobs = jobs, audio = 1, audio_codec = "aac"))
   expect_false(inherits(ok, "condition"))
@@ -351,23 +405,28 @@ test_that("each term the sentence quantifies over has a cell", {
   }, character(1))
   # "compare_videos_batch audio-low/argument" -> verb + value + form, with the
   # bound suffix dropped: both bounds of one value are the same term.
-  key <- sub("-(low|high)", "", sub("/.*$", "", ids))
+  key <- sub("-(low|high|na|resize)", "", sub("/.*$", "", ids))
   form <- sub("^.*/", "", ids)
   present <- lapply(split(form, key), function(x) sort(unique(x)))
 
   expect_setequal(names(present), c(
     "compare_videos_batch direction", "compare_videos_batch audio",
     "picture_in_picture_batch position", "picture_in_picture_batch margin",
-    "picture_in_picture_batch audio"
+    "picture_in_picture_batch audio",
+    "compare_videos direction", "picture_in_picture position"
   ))
   both <- c("argument", "column")
+  # Every `_batch` pair carries both forms. `audio` reaches its contradiction
+  # in the argument form only at `NA`, which is why the case list carries an
+  # `audio-na` id -- the key strips the bound suffix, so both bounds and the
+  # `NA` cell count as the one term the sentence quantifies over.
   expect_identical(present[["compare_videos_batch direction"]], both)
   expect_identical(present[["compare_videos_batch audio"]], both)
   expect_identical(present[["picture_in_picture_batch position"]], both)
   expect_identical(present[["picture_in_picture_batch margin"]], both)
-  # The one pair with a single form, and it is asserted as one rather than
-  # tolerated: pip's `audio` ARGUMENT has no contradiction to be ordered
-  # against, because supplying the argument is what removes it. The test above
-  # covers that cell by measuring why it cannot exist.
-  expect_identical(present[["picture_in_picture_batch audio"]], "column")
+  expect_identical(present[["picture_in_picture_batch audio"]], both)
+  # The two scalar verbs have an argument form and no other: they take no
+  # `jobs` table, so "either form" has only one member for them.
+  expect_identical(present[["compare_videos direction"]], "scalar-verb")
+  expect_identical(present[["picture_in_picture position"]], "scalar-verb")
 })

@@ -1,6 +1,6 @@
 # M61: A value error and a contradiction resolve the same way in both forms
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M59
 - **Driving RR:** —
@@ -150,8 +150,8 @@ depending on whether the value arrived as an argument or in a `jobs` column:
 
 | Guard | Verb | Argument form, before | Column form, before |
 |---|---|---|---|
-| `direction` vocabulary | compare | `check_vocab_arg()` at the top of the verb AND of `compare_videos_pipeline()` | `check_batch_vocab_col()`, below the contradiction sweep |
-| `position` vocabulary | pip | `check_vocab_arg()` at the top of the verb AND of `picture_in_picture_pipeline()` | `check_batch_vocab_col()`, below the contradiction sweep |
+| `direction` vocabulary | compare | `check_vocab_arg()` at the top of `compare_videos_batch()` AND at the top of `compare_videos_pipeline()` — the scalar `compare_videos()` has none of its own and reaches the check only through the pipeline | `check_batch_vocab_col()`, below the contradiction sweep |
+| `position` vocabulary | pip | `check_vocab_arg()` at the top of `picture_in_picture_batch()` AND at the top of `picture_in_picture_pipeline()` — the scalar `picture_in_picture()` has none of its own | `check_batch_vocab_col()`, below the contradiction sweep |
 | `margin` lower bound | pip | `check_number_whole(margin, min = 0)` at the top of the verb | the per-row `margin` sweep, below the contradiction sweep |
 | `audio` upper bound | both | compare: no upper bound above (only `min = 0`); pip: `max = 1` at the top of the verb | compare: the per-row sweep below the contradiction sweep; pip: **not at the front door at all** — inside the fan-out closure, reported against `purrr::pmap()` with the local name `aud` (M59 review F7) |
 
@@ -183,6 +183,15 @@ form against each of them:
 Only (1) changes. (2) and (3) are measured because a downward move could
 silently invert either, and an unmeasured invariant is an assumed one.
 
+**A fourth class, added after M61's review measured it (F1).** The four guards
+also now report after every argument check that stays above them —
+`check_token()` on both codecs, `arg_match(hardware)`, `check_number_decimal(scale)`,
+`rlang::check_bool(resize)` — and after the jobs-shape and column-type guards.
+D038 named exactly this consequence and called the disclosure "the work"; the
+list above initially carried only the three errors the grid crosses, which is
+not the same thing. No refusal changes: a call wrong in both is refused either
+way, and only which error it is told about moves. NEWS states it.
+
 **What stays above, and why.**
 
 - `rlang::check_bool(resize)` on `compare_videos_batch()`. Measured: without it
@@ -197,6 +206,9 @@ silently invert either, and an unmeasured invariant is an assumed one.
 - `check_token()` on both codecs and `arg_match(hardware)`. Their column
   counterparts already sit above the contradiction sweep, so they are uniform
   already; moving them would create the disagreement this milestone removes.
+- 2026-08-08: M61-D1 corrected in place per the logged override — the `direction`/`position` rows said `check_vocab_arg()` sits "at the top of the verb", conflating the `_batch` verb with the scalar one, which is why the scalar verbs' change went unseen (review F3); and its displaced-error list gained the fourth class D038 named (review F1).
+- 2026-08-08: grid widened for the amendment and for review F2/F4 — pip's `audio`/argument cell asserted at `NA` with an `audio = NULL` control (an in-range control would remove the contradiction it exists to prove), the same cell added for compare, and the two scalar verbs gained cells at `form = "argument"`. 118 cells; the only remaining nonexistent cell is M59's site-3 `regions` argument, which is not one of AC1's. Eleven cells now change which error they report, against the six recorded before.
+- 2026-08-08: NEWS gained the two disclosures review asked for (F1: the four checks also report after the codec/hardware/scale/jobs-shape checks; F2: the same reordering reaches the single-call `compare_videos()` / `picture_in_picture()`), plus the `audio = NA` case F4 surfaced. D039 corrected in place per the logged override: the scalar verbs named, the changed-cell count six -> eleven, and the false "cannot exist" reasoning replaced by the reachability condition and its control. Verify slot clean: `document()` no diff, `devtools::test()` 0 failures / 4620 passing, `devtools::check()` 0/0/0.
 
 ## Review
 

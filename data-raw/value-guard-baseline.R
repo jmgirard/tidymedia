@@ -396,21 +396,47 @@ value_guard_cases <- function(s) {
     # site 7, `audio` on picture_in_picture_batch(). New with M61: before it,
     # this index was checked only inside the fan-out closure.
     #
-    # The scalar x contradiction cell DOES NOT EXIST, and is recorded as
-    # nonexistent rather than omitted: pip's only contradiction is an
-    # `audio_codec` with no audio carried, and an `audio` ARGUMENT applies to
-    # every row, so supplying one at all removes the contradiction. The column
-    # form reaches it because rows may disagree -- one row dropping audio
-    # (`NA`) contradicts the encoder while another carries an out-of-range
-    # index.
+    # The scalar x contradiction cell is reachable only at ONE value, and the
+    # value is the point. pip's only contradiction is an `audio_codec` with no
+    # audio carried, and an `audio` ARGUMENT applies to every row -- so an
+    # in-range index removes the contradiction and 9 does too. `NA` does not:
+    # batch_stream_cell() resolves it to `NULL`, which drops the audio the
+    # encoder needs while still being a value the argument guard refuses. An
+    # earlier draft of this grid recorded the cell as NONEXISTENT on the
+    # reasoning that "supplying `audio` at all removes the contradiction";
+    # that is false at `NA`, and M61's review measured it. The column form
+    # reaches the pairing a second way, because rows may disagree -- one row
+    # dropping audio (`NA`) contradicts the encoder while another carries an
+    # out-of-range index.
+    # The CONTROL differs by crossing, and it has to. A control's job is to
+    # prove the crossed error is live on the call with the value in range --
+    # but for the audio_codec contradiction, an in-range `audio` is exactly
+    # what REMOVES it. So the contradiction control passes `audio = NULL`: the
+    # same resolved value `NA` produces, which the argument guard accepts, so
+    # the contradiction is the only error left. At `nvenc` and the `run` guard,
+    # where the crossed error is independent of `audio`, an in-range 0 is the
+    # right control.
     pip_contradiction <- identical(x$name, "contradiction")
     order_add(7L, "picture_in_picture_batch", "scalar", "audio", x$name,
               bad = list(jobs = two(main = s, overlay = s, output = "o.mp4"),
-                         audio = 9),
+                         audio = if (pip_contradiction) NA else 9),
               ok = list(jobs = two(main = s, overlay = s, output = "o.mp4"),
-                        audio = 0),
-              extra = x$extra, seam = x$seam,
-              exists = !pip_contradiction)
+                        audio = if (pip_contradiction) NULL else 0),
+              extra = x$extra, seam = x$seam)
+
+    # The same `NA` cell on compare_videos_batch(), whose `audio` reaches its
+    # audio_codec contradiction the same way. Crossed with the contradiction
+    # ONLY: at `nvenc` and the `run` guard the plain out-of-range cells above
+    # already cover this guard, and `NA` there would probe the argument guard's
+    # NA branch rather than the ordering this grid is about.
+    if (pip_contradiction) {
+      order_add(4L, "compare_videos_batch", "scalar", "audio(NA)", x$name,
+                bad = list(jobs = two(inputs = list(c(s, s)),
+                                      output = "o.mp4"), audio = NA),
+                ok = list(jobs = two(inputs = list(c(s, s)),
+                                     output = "o.mp4"), audio = NULL),
+                extra = list(audio_codec = "aac"), seam = x$seam)
+    }
     order_add(7L, "picture_in_picture_batch", "column", "audio", x$name,
               bad = list(jobs = two(main = c(s, s), overlay = c(s, s),
                                     output = c("a.mp4", "b.mp4"),
@@ -422,6 +448,44 @@ value_guard_cases <- function(s) {
                                            else c(0, 0))),
               extra = x$extra, seam = x$seam)
   }
+
+
+  # -- the scalar verbs (M61 review, F2) --------------------------------------
+  #
+  # compare_videos() and picture_in_picture() have NO vocabulary guard of their
+  # own: `direction` and `position` are checked only inside the shared
+  # *_pipeline(), so moving that check below the pipeline's contradiction
+  # checkers moved the scalar verbs' answer too. The milestone's scope carves
+  # those front doors out only "beyond their shared pipeline", so this is an
+  # intended change -- but every cell above probes a `_batch` verb, so nothing
+  # measured it until M61's review did.
+  #
+  # There is no column form to probe: these verbs take arguments and no `jobs`
+  # table. Each is recorded at `form = "argument"` rather than "scalar", so a
+  # reader cannot mistake one of these for a `_batch` verb's scalar cell.
+  scalar_add <- function(site, verb, guard, bad, ok) {
+    lab <- sprintf("%s/argument x contradiction", guard)
+    add(site, verb, "argument", lab, TRUE, bad, crossed = "contradiction")
+    add(site, verb, "argument", paste(lab, "control"), TRUE, ok,
+        crossed = "contradiction", control = TRUE)
+  }
+  scalar_add(5L, "compare_videos", "direction",
+             bad = list(infiles = c(s, s), outfile = "o.mp4",
+                        direction = "sideways", audio_codec = "aac"),
+             ok = list(infiles = c(s, s), outfile = "o.mp4",
+                       direction = "vertical", audio_codec = "aac"))
+  # The resize contradiction as well, since compare_videos() carries two and
+  # they are refused in different checkers.
+  scalar_add(5L, "compare_videos", "direction(resize)",
+             bad = list(infiles = rep(s, 3), outfile = "o.mp4",
+                        direction = "sideways", resize = TRUE),
+             ok = list(infiles = rep(s, 3), outfile = "o.mp4",
+                       direction = "vertical", resize = TRUE))
+  scalar_add(6L, "picture_in_picture", "position",
+             bad = list(main = s, overlay = s, outfile = "o.mp4",
+                        position = "middleish", audio_codec = "aac"),
+             ok = list(main = s, overlay = s, outfile = "o.mp4",
+                       position = "center", audio_codec = "aac"))
 
   cases
 }

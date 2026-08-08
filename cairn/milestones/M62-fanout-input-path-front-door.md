@@ -1,6 +1,6 @@
 # M62: A missing input file is refused at the front door, in both forms
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M61
 - **Driving RR:** —
@@ -41,7 +41,7 @@ reach `ffm_files()`.
       site; the same test asserts `ffm_files()` and its `ffm` alias are the only
       places that second wording appears, so the residual is pinned by a test
       rather than assumed.
-- [x] AC2 — For a one-path call the shared checker's rendering is byte-identical
+- [ ] AC2 — For a one-path call the shared checker's rendering is byte-identical
       to the string `check_file_exists()` emits on merged master, asserted by a
       snapshot recorded against the pre-change ref; for a multi-path call it
       names every missing path, not the first.
@@ -142,6 +142,7 @@ reach `ffm_files()`.
 - 2026-08-08: T6 — `data-raw/input-guard-mutations.py`; all three AC7 mutations caught, tree restored by the harness after each. Deleting `crop_video_batch`'s call shape made `input_guard_uncovered()` report exactly the 10 combinations it owed (5 crossings x 2 forms); re-pointing the `audio_codec` contradiction's control at `ffm_batch()`'s `run` guard made `input_guard_dead_controls()` report 8 controls, each `reported run_guard`; deleting `strip_metadata_batch`'s `ffm_batch()` call edge moved it out of the walk's fan-out set and into its scalar set. `input_guard_domain()` was narrowed so the missing-shape case reaches the reader instead of a hard error that would have shadowed it.
 - 2026-08-08: T8 — D040 appended (licenses the front-door filesystem read; quotes D024's third exclusion verbatim, takes D035's shape and not its licence, discloses the existence-vs-readability residual M63 closes, and answers D036's machine-independence argument rather than ignoring it). `NEWS.md` bug-fix entry, no milestone number. `@param infiles` on `concatenate_videos()` and `compare_videos()` records the new front door. `data-raw/input-guard-progress.R` deleted as planned — it was the working checker, never evidence.
 - 2026-08-08: T8 — measured at this commit: `devtools::document()` no diff after regenerating the two `.Rd` files, `devtools::test()` 4785 pass / 0 fail (4 warnings and 5 skips pre-existing: M44 dropped-track warnings, nvenc-absent skips), `devtools::check()` Status OK — 0 errors, 0 warnings, 0 notes. `spelling::spell_check_package()` clean after two NEWS words were reworded rather than added to the wordlist.
+- 2026-08-08: review return 1 (defect) — AC2 fails and two message/blame regressions against `origin/master` were measured. F1: `segment_video_batch()` never coerces `jobs$input` to character, so a factor column reaches `file.exists()` and raises the base error `invalid 'file' argument` blamed on `file.exists(x)`, where master raised a cli abort blamed on `purrr::pmap()`. F2: `picture_in_picture_batch()` calls the sweep once per column, so a row missing both `main` and `overlay` names only `main`, where master named both — AC2's "names every missing path, not the first" is false for that verb. F3 (folded in, scored 82): `check_paths_exist()` has no `unique()`, so one bad path shared by N rows reports as N files. Status back to `in-progress`; the 16 sub-threshold findings are logged in the Review section.
 
 ## Decisions
 
@@ -181,6 +182,12 @@ cut, so no merge was needed). Every figure below was measured this session.
   a snapshot records itself on first run and so cannot witness a pre-change
   string. The property the criterion states is met and was re-measured against
   the ref; only the word "snapshot" reads narrower than what is in the file.
+  **FAILS on its second clause.** `picture_in_picture_batch()` sweeps `main`
+  and `overlay` as two independent aborts, so a row missing both names only
+  `main` — measured this session against `origin/master`, which named both
+  ("Can't find or read 2 input files. Not readable: 'm.mp4' and 'ov.mp4'").
+  "names every missing path, not the first" is false for that verb, and was
+  true before. Finding F2 below; unticked.
 - **AC3** — 16 fan-out verbs derived by the parsed call-node walk; each refuses
   a missing input with `conditionCall()` naming it. Falsifiability re-measured
   this session, not cited: deleting `crop_video_batch`'s
@@ -194,7 +201,14 @@ cut, so no merge was needed). Every figure below was measured this session.
   working tree: 404 cells, 362 live. All eight comparison readers empty —
   vacuous 0 on each ref, refusals 0, message regressions 0, blame regressions
   0, lost `call` 0, dead controls 0, uncovered 0. 66 cells' blame moved to the
-  verb the user called.
+  verb the user called. **Caveat recorded rather than left implicit:** the
+  criterion is a claim about what that procedure measures, and it holds — but
+  the cell set does not reach two defects found by inspection. Every cell's
+  input column is character, so no cell exercises F1's factor column; and every
+  missing path in every cell is the same constant string, so no cell can
+  distinguish "names every missing path" from "names the first", nor surface
+  F3's duplicate miscount. Widening the cell set on those two axes belongs with
+  the fix, or the fix ships unmeasured.
 - **AC6** — `input_guard_misordered()` 0 rows over 133 crossed cells: all 42
   cells crossed with a guard above the sweep report that guard, all 91 crossed
   with a guard below it report the missing input. Each is paired with a control
@@ -234,4 +248,89 @@ milestone number; no new top-level files (`data-raw/` is already
 No `DESIGN.md` principle changed, so `cairn_impact` was not run.
 
 ### Independent review
+
+Three fresh-context lenses, spawned in parallel, then a separate scorer that
+did not generate the findings.
+
+- **[S] prior-review record** — archived `## Review` sections for M57–M61 plus
+  a GitHub inline-comment probe (empty, so no thread walk). **Zero findings.**
+  Checked specifically for all-or-nothing gating, "some failure" assertions,
+  vacuous grid cells, controls that establish nothing, messages moving while
+  blame stays put, aborts losing `conditionCall()`, and source-tree-instead-of-
+  namespace reads.
+- **[S] blame history** — `git log -L` / `git blame` over every touched hunk
+  against M41, M48, M54, M57, M58, M59, M61 and D024/D034/D035/D036/D039.
+  **Zero findings.** Confirmed the sweep sits above each verb's nvenc check
+  without displacing M41's "immediately before `ffm_batch()`" placement, that
+  the M58 → M61 tier order is intact beneath it, and that the
+  `check_file_exists()` refactor is behaviour-preserving across all 15 existing
+  callers.
+- **[O] diff bug** — 19 candidate findings, unfiltered as instructed.
+
+**Actioned (scored 80+), all three reproduced independently before recording:**
+
+- **F1 (92) — `segment_video_batch()`'s sweep degrades to an unattributed base
+  error.** It is the only fan-out verb whose inline block never coerces
+  `jobs$input` to character, so a factor column reaches `file.exists()` raw.
+  Measured: branch raises `invalid 'file' argument` with `conditionCall()`
+  naming `file.exists(x)`; `origin/master` raised a cli abort, ``  `input` must
+  be a character vector naming at least one input file. ``, naming
+  `purrr::pmap(jobs, .f, ...)`. Both the message and the blame are worse than
+  before. Violates CLAUDE.md's cli-abort rule and D040's own first condition.
+  → **fix now**, in the return below.
+- **F2 (88) — `picture_in_picture_batch()` hides the missing `overlay`.**
+  `R/ffmpeg.R:6328-6329` calls the sweep twice, once per column, so the first
+  abort wins. Measured above; falsifies AC2's second clause and the `NEWS.md`
+  promise. The fix is one `check_paths_exist()` over both columns with a
+  combined `arg`, not two calls. → **fix now**.
+- **F3 (82) — duplicated missing paths are counted once per occurrence.**
+  `check_paths_exist()` has no `unique()`. Measured: a two-row table sharing
+  one bad path reports "names 2 files that do not exist ... 'gone.mp4' and
+  'gone.mp4'"; `origin/master` reported "1 input file". On the `inputs`
+  list-column `unlist()` flattens rows, so one typo shared by twenty rows reads
+  as twenty files. Every sibling guard in the package (`reject_duplicate_
+  outputs`, `standardize_video_batch`'s duplicate-input guard) uses `unique()`.
+  → **fix now** (below the return floor on its own, folded into this return).
+
+**Logged, below the 80 threshold (16), surfaced not dropped:**
+
+- F11 (78) — `NEWS.md` says `segment_video()` "used to accept a `jobs` table
+  naming a missing path"; it takes no `jobs` table and already had
+  `check_file_exists()`. And "stopping at the first" describes the first *row*,
+  not the first path. Both confirmed. Worth folding into F2's NEWS rewrite.
+- F5 (72) — `R/utils.R:27-31`'s header comment still says `ffm_files()` reaches
+  the shared abort site, the claim AC1 was amended to retract; D040's "one
+  abort site" bullet omits `concatenate_videos()`/`compare_videos()`, the two
+  verbs it exists for.
+- F4 (68) — cli's default `vec_trunc` elides paths past ~20, so "lists every
+  missing path" overclaims in NEWS, D040 and both new roxygen blocks.
+- F7 (66) — no reader asserts a `none` cell reports the missing-input error;
+  the ordering readers filter `crossing != "none"` and the message reader
+  excludes moved-blame cells.
+- F8 (65) — two ordering claims written into `crop_video_batch` /
+  `anonymize_video_batch` comments (M59 sites 1 and 3) have no declared
+  crossing and so no cell.
+- F6 (62) — the grid's single constant `absent` path (see the AC5 caveat).
+- F9 (58) — `tryCatch(condition =)` records a warning as `kind = "condition"`,
+  which the vacuity screen accepts as a refusal; latent, zero today.
+- F13 (45) — `tm_callees()` reads only bare-name call heads, so a
+  namespace-qualified `ffm_batch()` call would silently shrink the domain.
+- F17 (42) — the classifier's `"not exist"` branch wins first in the cascade.
+- F14 (40) — `check_batch_inputs()` errors rather than no-ops on an absent
+  column; unreachable at all ten current call sites.
+- F12 (32) — T3 and the criteria-audit log describe
+  `normalize_audio(two_pass = TRUE)` as reaching `ffm_batch`; it does not, and
+  there is no coverage gap because the scalar verb guards its input already.
+- F18 (32) — `check_paths_exist()`'s `multiple` default branches on received
+  length, which its own comment says it must not.
+- F16 (28) — the mutation harness edits the shared tree under `try/finally`;
+  inherited from `value-guard-mutations.py`.
+- F10 (22) — AC2's "snapshot" instrument, already surfaced above.
+- F19 (22) — a test name says "readable" where the checker tests existence.
+- F15 (15) — `jobs$input` vs the package's "the `input` column of `jobs`"
+  spelling; recorded at the implement gate as deliberate.
+
+**Disposition — return floor tripped.** F1 scores 92 on a defect in what the
+package does for its users, and F2 demonstrates AC2 failing. Status returns to
+`in-progress`; F3 is folded into the same return. Review stops here.
 

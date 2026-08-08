@@ -18,7 +18,10 @@ compare_videos(
 )
 }
 \arguments{
-\item{infiles}{A character vector of two or more video file paths.}
+\item{infiles}{A character vector of two or more video file paths. Every
+path is checked at this verb's own front door, so a path that does not
+exist aborts naming this function and lists every missing path, rather
+than being reported against the internal builder it would otherwise reach.}
 
 \item{outfile}{A string giving the path to write the comparison video to.}
 

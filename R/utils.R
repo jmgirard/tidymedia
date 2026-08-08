@@ -23,16 +23,79 @@ pad_integers <- function(x, width = NULL, flag = "0") {
   formatC(x, width = width, flag = flag)
 }
 
+# check_paths_exist() -----------------------------------------------------
+
+# THE site the package's missing-input abort is written (M62). Every FRONT DOOR
+# reaches it -- the single-input verbs through check_file_exists() below, the
+# fan-out verbs' per-row sweeps and the two scalar fan-in verbs
+# (concatenate_videos(), compare_videos()) through check_batch_inputs()
+# directly -- so no wording and no firing condition exists in two places to
+# drift apart. ffm_files() is NOT one of them: its predicate is readability
+# rather than existence, and unifying the two is M63's scope, pinned meanwhile
+# by a test asserting it is the only other place an input refusal is worded.
+# This is D035's shape, not its licence: D035's rule is
+# conditioned on a probe whose result enters the compiled command, and a file's
+# existence never does (see the M62 D-entry).
+#
+# `x` is a character vector of ALREADY RESOLVED paths, so a caller sweeping a
+# jobs column passes the column and a scalar verb passes its one argument.
+#
+# The message branches on `multiple` -- what the ARGUMENT's contract admits --
+# never on how many paths it happened to receive or how many turned out to be
+# missing. A single-file argument renders exactly the string check_file_exists()
+# emitted before this function existed (pinned byte-for-byte in
+# test-input-path-front-door.R); a column or vector leads with the count, and
+# does so at one row as well as at fifty, because "`jobs$input` does not exist"
+# would misdescribe a column and because a one-row batch must not answer
+# differently from a two-row one.
+#
+# One missing path is reported ONCE however many rows name it: `missing` is
+# deduplicated, so a single typo shared by twenty rows reads as one file, not
+# twenty (M62 review F3, matching reject_duplicate_outputs() and every other
+# sibling guard, all of which unique() before they count).
+#
+# `arg` may name more than one carrier -- picture_in_picture_batch() sweeps
+# `main` and `overlay` in ONE call, so a row missing both names both (M62 review
+# F2). cli collapses the vector and the verb agrees with its length.
+#
+# Pluralization is driven off the scalar `length(missing)` via cli::qty(), never
+# off the `{.file {missing}}` vector: a `{?}` governed by a `{.val {vector}}`
+# throws `length(object) == 1` with 2+ items (M18).
+check_paths_exist <- function(x, arg = rlang::caller_arg(x),
+                              multiple = length(x) != 1L,
+                              call = rlang::caller_env()) {
+  # A path carrier can arrive as a factor (paths as levels) or as any other
+  # atomic vector; coerce before the predicate so file.exists() cannot raise its
+  # unattributed base error `invalid 'file' argument` from inside a front-door
+  # guard (M62 review F1). This is check_batch_jobs()'s coercion, at the one
+  # site every sweep reaches, so a verb that validates its table inline gets it
+  # too. Coercing here decides only what THIS guard reads: a verb whose own
+  # column contract rejects the type still rejects it downstream, unmoved.
+  x <- as.character(x)
+  missing <- unique(x[!file.exists(x)])
+  if (length(missing) == 0) {
+    return(invisible(x))
+  }
+  if (!multiple) {
+    cli::cli_abort("{.arg {arg}} does not exist: {.file {missing}}.", call = call)
+  }
+  cli::cli_abort(c(
+    "{.arg {arg}} {cli::qty(length(arg))}{?names/name} {length(missing)} \\
+     file{?s} that {cli::qty(length(missing))}{?does/do} not exist.",
+    "x" = "Missing: {.file {missing}}."
+  ), call = call)
+}
+
 # check_file_exists() -----------------------------------------------------
 
 # Validate that `x` is a single string naming an existing file. Replaces the
-# recurring `is_character(x, n = 1)` + `file.exists(x)` validation pair.
+# recurring `is_character(x, n = 1)` + `file.exists(x)` validation pair. The
+# existence half delegates to check_paths_exist() above (M62); the string check
+# stays here because this spelling is the one that promises a SINGLE file.
 check_file_exists <- function(x, arg = rlang::caller_arg(x),
                               call = rlang::caller_env()) {
   rlang::check_string(x, arg = arg, call = call)
-  if (!file.exists(x)) {
-    cli::cli_abort("{.arg {arg}} does not exist: {.file {x}}.", call = call)
-  }
+  check_paths_exist(x, arg = arg, call = call)
   invisible(x)
 }
 

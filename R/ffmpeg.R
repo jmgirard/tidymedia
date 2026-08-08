@@ -1915,6 +1915,11 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
                         na_means = "keep every audio track")
   rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
 
+  # Sweep jobs$input now that its shape/type is settled, and before the
+  # per-row regions value sweep below, so a missing input blames this verb
+  # rather than purrr::pmap() (M62).
+  check_batch_inputs(jobs)
+
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output box-fill
   # pipeline per row, sharing anonymize_pipeline() with anonymize_video(). A
   # per-row knob column (arriving via `...` from pmap) overrides the scalar arg
@@ -3200,6 +3205,11 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
     jobs$output <- derive_segment_names(jobs$input)
   }
 
+  # Sweep jobs$input here, below the shape/type guards and above the cut
+  # contradiction sweep below, so a missing input blames this verb rather
+  # than purrr::pmap() (M62).
+  check_batch_inputs(jobs)
+
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output seek pipeline
   # per row, sharing segment_pipeline() with segment_video(). A per-row
   # `reencode` column (arriving via `...` from pmap) overrides the scalar arg;
@@ -3372,6 +3382,11 @@ extract_frame_batch <- function(jobs, format = "png", run = TRUE,
   if (!"output" %in% names(jobs)) {
     jobs$output <- derive_frame_names(jobs$input, format = format)
   }
+
+  # Sweep jobs$input now that its shape/type is settled, immediately before
+  # the fan-out, so a missing input blames this verb rather than
+  # purrr::pmap() (M62).
+  check_batch_inputs(jobs)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-frame pipeline per
   # row, sharing frame_pipeline() with extract_frame(). frame->timestamp
@@ -3546,6 +3561,11 @@ sample_frames_batch <- function(jobs, fps = NULL, interval = NULL,
       "i" = "Give colliding inputs distinct {.field outdir}s or rename them."
     ))
   }
+
+  # Sweep jobs$input here, below the shape/type/collision guards above and
+  # immediately before the fan-out, so a missing input blames this verb
+  # rather than purrr::pmap() (M62).
+  check_batch_inputs(jobs)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one image2-pattern sampling
   # pipeline per input, sharing sample_frames_pipeline() with sample_frames().
@@ -3794,6 +3814,11 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
   # out, so pmap's index already IS the caller's row (M45 review F4).
   rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
 
+  # Sweep jobs$input now that its shape/type is settled, and before the nvenc
+  # availability sweep below, so a missing input blames this verb rather
+  # than purrr::pmap() (M62).
+  check_batch_inputs(jobs)
+
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output re-encode
   # pipeline per row, sharing standardize_pipeline() with standardize_video().
   # A per-row knob column (arriving via `...` from pmap) overrides the scalar
@@ -3933,6 +3958,11 @@ strip_metadata_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
       "i" = "Give each row a distinct {.field output}, or de-duplicate the inputs."
     ))
   }
+
+  # Sweep jobs$input here, below the shape/type/collision guards above and
+  # immediately before the fan-out, so a missing input blames this verb
+  # rather than purrr::pmap() (M62).
+  check_batch_inputs(jobs)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output strip pipeline
   # per row, sharing strip_metadata_pipeline() with strip_metadata(). `...`
@@ -4164,6 +4194,11 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
     jobs$output <- derive_normalized_names(jobs$input)
   }
 
+  # Sweep jobs$input here, below the shape/type guards above and before
+  # Phase 1 reads any input, so a missing input blames this verb rather than
+  # purrr::pmap() (M62).
+  check_batch_inputs(jobs)
+
   # Two-pass (measured/linear): the audio-side M16 analyze-then-build path fanned
   # across the jobs table (D013). Phase 1 measures every input (honoring
   # `parallel`) and appends the five measured columns; Phase 2 builds & runs one
@@ -4340,6 +4375,45 @@ check_batch_jobs <- function(jobs, require_output = FALSE, verb = NULL,
     }
   }
   jobs
+}
+
+# Sweep a jobs table's INPUT paths at the front door, so a row naming a file
+# that isn't there blames the verb the user called instead of
+# `purrr::pmap(jobs, .f, ...)` / "In index: 1" (M62). Handles both input shapes:
+# a character column (`input`, `main`, `overlay`) and D015's `inputs`
+# list-column, whose cells are character vectors.
+#
+# `multiple = TRUE` unconditionally: the message shape follows the COLUMN's
+# contract, so a one-row table answers like a fifty-row one.
+#
+# The abort itself is check_paths_exist()'s and is never copied here -- that
+# single site is what keeps this guard and ffm_files()' own refusal from
+# drifting apart, and is D035's shape (one abort site, no new refusal, fails
+# closed) rather than D035's licence, which is conditioned on a probe whose
+# result enters the compiled command. A path's existence never does.
+#
+# PLACEMENT is per verb, deliberately not inside check_batch_jobs() /
+# check_fanin_jobs(): those run above each verb's column-type guards, and this
+# sweep belongs below them (you cannot usefully sweep a column whose type is
+# still unvalidated) and above the M58 contradiction sweep, so a caller who
+# mistyped a path hears about the path. That ordering is measured cell by cell
+# in data-raw/input-guard-baseline.R.
+#
+# `col` may name SEVERAL carriers, and a verb with more than one input column
+# passes them all in ONE call: two calls would abort on the first column and
+# hide the second, so a picture-in-picture row missing both files named only
+# `main` (M62 review F2). One call sweeps the union and names every missing
+# path, which is what "names every missing path, not the first" asks for.
+check_batch_inputs <- function(jobs, col = "input",
+                               call = rlang::caller_env()) {
+  paths <- unlist(lapply(col, function(nm) {
+    x <- jobs[[nm]]
+    if (is.list(x)) x <- unlist(x, use.names = FALSE)
+    as.character(x)
+  }), use.names = FALSE)
+  check_paths_exist(paths, arg = paste0("jobs$", col), multiple = TRUE,
+                    call = call)
+  invisible(jobs)
 }
 
 # Reject any two rows that resolve to the same output path — not just duplicated
@@ -4704,6 +4778,10 @@ extract_audio_batch <- function(jobs, audio_codec = "copy",
   # again inside audio_stream_map(), which every row's pipeline calls (M32).
   rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
 
+  # Sweep jobs$input before the D024 probe below, which reads each input via
+  # FFprobe, so a missing input blames this verb rather than that probe or
+  # purrr::pmap() (M62).
+  check_batch_inputs(jobs)
 
   # D024's diagnostic probe, up front so it lands before the fan-out encodes;
   # ffm_batch() itself is untouched. isTRUE() rather than a bare `run` so a
@@ -4841,6 +4919,10 @@ convert_audio_batch <- function(jobs, audio_codec = NULL,
   # again inside audio_stream_map(), which every row's pipeline calls (M32).
   rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
 
+  # Sweep jobs$input before the D024 probe below, which reads each input via
+  # FFprobe, so a missing input blames this verb rather than that probe or
+  # purrr::pmap() (M62).
+  check_batch_inputs(jobs)
 
   # D024's diagnostic probe, up front so it lands before the fan-out encodes;
   # ffm_batch() itself is untouched. isTRUE() rather than a bare `run` so a
@@ -5008,6 +5090,11 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
   }
   jobs <- reject_duplicate_outputs(jobs)
 
+  # Sweep jobs$input here, below the shape/type/duplicate-output guards above
+  # and before the per-row dimension sweep below, so a missing input blames
+  # this verb rather than purrr::pmap() (M62).
+  check_batch_inputs(jobs)
+
   # Per-row `width`/`height` VALUES, swept here so a bad dimension blames this
   # verb instead of purrr::pmap() (M59 site 1). The column guards above cover
   # the column's TYPE; this covers each value the fan-out would resolve.
@@ -5132,6 +5219,11 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
     jobs$output <- derive_web_names(jobs$input)
   }
   jobs <- reject_duplicate_outputs(jobs)
+
+  # Sweep jobs$input here, below the shape/type/duplicate-output guards above
+  # and before the nvenc availability sweep below, so a missing input blames
+  # this verb rather than purrr::pmap() (M62).
+  check_batch_inputs(jobs)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one web re-encode pipeline per
   # row, sharing format_for_web_pipeline() with format_for_web(). hardware/
@@ -5366,6 +5458,11 @@ separate_audio_video_batch <- function(jobs, audio_codec = "copy",
   # keep every track instead of erroring (the M37/M41 shape).
   rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
 
+  # Sweep the CALLER's jobs$input before the reshape below, so a missing input
+  # blames this verb rather than the reshaped `long` table or purrr::pmap()
+  # (M62).
+  check_batch_inputs(jobs)
+
   # Reshape N input rows -> 2N single-output rows (D003/D007): each input fans out
   # into an audio row (0:a -> audiofile) and a video row (0:v -> videofile),
   # tagged by a `stream` marker; interleaved audio,video per input. Melting both
@@ -5510,6 +5607,9 @@ concatenate_pipeline <- function(infiles, outfile) {
 #' filter](https://ffmpeg.org/ffmpeg-filters.html#concat)
 #'
 #' @param infiles A character vector containing the file paths to video files.
+#'   Every path is checked at this verb's own front door, so a path that does
+#'   not exist aborts naming this function and lists every missing path, rather
+#'   than being reported against the internal builder it would otherwise reach.
 #' @param outfile A string containing the desired file path to write the new,
 #'   concatenated video file to.
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
@@ -5527,6 +5627,11 @@ concatenate_videos <- function(infiles, outfile, run = TRUE) {
     cli::cli_abort("{.arg infiles} must be a character vector of file paths.")
   }
   rlang::check_string(outfile)
+
+  # Sweep infiles here, below the type guards above and before the pipeline
+  # (whose contradiction checks live inside concatenate_pipeline()), so a
+  # missing input blames this verb rather than ffm_files() (M62).
+  check_paths_exist(infiles, arg = "infiles", multiple = TRUE)
 
   ffm_finish(concatenate_pipeline(infiles, outfile), run)
 }
@@ -5599,7 +5704,10 @@ compare_videos_pipeline <- function(infiles, outfile,
 #' Audio is dropped unless \code{audio} names an input to carry; a carried
 #' track is stream-copied unless \code{audio_codec} names an encoder.
 #'
-#' @param infiles A character vector of two or more video file paths.
+#' @param infiles A character vector of two or more video file paths. Every
+#'   path is checked at this verb's own front door, so a path that does not
+#'   exist aborts naming this function and lists every missing path, rather
+#'   than being reported against the internal builder it would otherwise reach.
 #' @param outfile A string giving the path to write the comparison video to.
 #' @param direction Either \code{"horizontal"} (side-by-side, the default) or
 #'   \code{"vertical"} (stacked top to bottom).
@@ -5662,6 +5770,11 @@ compare_videos <- function(infiles, outfile,
   rlang::check_string(video_codec, allow_null = TRUE)
   rlang::check_string(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
+
+  # Sweep infiles here, below the type guards above and before the pipeline
+  # (whose contradiction checks live inside compare_videos_pipeline()), so a
+  # missing input blames this verb rather than ffm_files() (M62).
+  check_paths_exist(infiles, arg = "infiles", multiple = TRUE)
 
   p <- compare_videos_pipeline(infiles, outfile, direction, resize, audio,
                                video_codec = video_codec,
@@ -5861,6 +5974,11 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
   jobs <- check_fanin_jobs(jobs, verb = "Concatenation")
   jobs <- reject_duplicate_outputs(jobs)
 
+  # Sweep jobs$inputs here, below the shape/type/duplicate-output guards above
+  # and immediately before the fan-out, so a missing input blames this verb
+  # rather than purrr::pmap() (M62).
+  check_batch_inputs(jobs, "inputs")
+
   # Thin Layer-2 fan-in over ffm_batch (D007/D015): one concat-demuxer pipeline
   # per row, sharing concatenate_pipeline() with concatenate_videos(). pmap
   # passes each `inputs` list cell as a character vector; `...` forwards
@@ -5980,6 +6098,11 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
       "The {.field resize} column of {.arg jobs} must be {.val {TRUE}} or {.val {FALSE}} (no {.val {NA}})."
     )
   }
+
+  # Sweep jobs$inputs here, below the shape/type guards above and before the
+  # contradiction sweep below, so a missing input blames this verb rather
+  # than purrr::pmap() (M62).
+  check_batch_inputs(jobs, "inputs")
 
   # Thin Layer-2 fan-in over ffm_batch (D007/D015): one stacking pipeline per
   # row, sharing compare_videos_pipeline() with compare_videos(). A per-row
@@ -6207,6 +6330,13 @@ picture_in_picture_batch <- function(jobs,
   check_batch_audio_col(jobs)
   check_batch_codec_col(jobs)
   check_batch_codec_col(jobs, "audio_codec")
+
+  # Sweep both role columns here, below the shape/type guards above and
+  # before the contradiction sweep below, so a missing input blames this verb
+  # rather than purrr::pmap() (M62). ONE call over both columns, never one per
+  # column: a row missing both files must name both, as the pipeline's own
+  # refusal did before this guard existed (M62 review F2).
+  check_batch_inputs(jobs, c("main", "overlay"))
 
   # Thin Layer-2 fan-in over ffm_batch (D007/D015): one overlay pipeline per row,
   # sharing picture_in_picture_pipeline() with picture_in_picture(). A per-row

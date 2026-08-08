@@ -2,7 +2,7 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-08 (M59 merged as PR #62 and archived; M61 unblocked. Two lessons extended in place rather than added — the CRLF trap recurred a fourth time, and M38's arg_match lesson absorbed the arg_match0 trap. M54's terminal row pruned to hold the 5-row retention; its archive summary stands.)_
+_Last hygiene check: 2026-08-08 (M60 merged as PR #63 and archived; the repo is LF-normalized and pinned, and the ignore-revs SHA was repointed at the squash commit post-merge. One merged lesson added (the renormalize and blame-SHA traps) against the CRLF lesson M60 retired by enforcement, netting LESSONS.md to 44 items. M55's terminal row pruned to hold the 5-row retention; its archive summary stands.)_
 
 ## Milestones
 
@@ -10,9 +10,8 @@ _Last hygiene check: 2026-08-08 (M59 merged as PR #62 and archived; M61 unblocke
 |---|---|---|---|---|---|
 | M59 | Six per-row value checks are refused at the fan-out verb's front door | done | M58 | normal | milestones/archive/M59-fanout-value-checks-front-door.md |
 | M61 | A value error and a contradiction resolve the same way in both forms | planned | M59 | normal | milestones/M61-uniform-front-door-ordering.md |
-| M60 | The repo's line endings are normalized once and enforced mechanically | review | — | normal | milestones/M60-line-ending-normalization.md |
+| M60 | The repo's line endings are normalized once and enforced mechanically | done | — | normal | milestones/archive/M60-line-ending-normalization.md |
 | M58 | Six argument contradictions are refused at the fan-out verb's front door | done | M57 | normal | milestones/archive/M58-fanout-contradiction-front-door.md |
-| M55 | A package landing topic, and a `parallel` enumeration that matches the code | done | — | normal | milestones/archive/M55-package-topic-parallel-docs.md |
 | M56 | A bad codec token names the verb's argument, never Layer 1's | done | M54 | normal | milestones/archive/M56-codec-token-blame.md |
 | M57 | A missing nvenc encoder is refused at the front door, on every verb that fans out | done | M54, M56 | normal | milestones/archive/M57-fanout-nvenc-front-door.md |
 

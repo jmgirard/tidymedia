@@ -105,7 +105,7 @@ pipeline; any change to which calls are refused.
 - [x] T4 — `picture_in_picture_batch()`: move the scalar `position` and `margin`
       guards down; add the front-door per-row `audio` sweep and retire the
       fan-out closure's copy.
-- [ ] T5 — Extend the grid: the four guards × both forms × the displaced errors,
+- [x] T5 — Extend the grid: the four guards × both forms × the displaced errors,
       plus the message-text and `call`-presence readers.
 - [ ] T6 — Tests: AC1's cells with their nonexistent pair recorded, AC3's nvenc
       invariant, AC4, AC6's sentence cells; invert M59's argument-form tests.
@@ -124,6 +124,8 @@ pipeline; any change to which calls are refused.
 - 2026-08-08: T2 — `check_vocab_arg()` now runs below the contradiction checkers in both `*_pipeline()` functions, so `direction` and `position` report after them in the argument form as they already did in the column form. `devtools::test()`: 0 failures, 4402 passing.
 - 2026-08-08: T3 — `compare_videos_batch()` checks `direction` and the scalar `audio` bound below the contradiction sweep. Minor task refinement: T3 said DELETE the scalar `audio` check as covered by the per-row sweep; measured on `1d54b20` that all three scalar guards refuse today even when a `jobs` column overrides the argument (`compare_videos_batch(jobs_with_audio_column, audio = -1)` aborts), so deleting one would lose a refusal, which Scope Out and AC3 both forbid. It moves instead. `devtools::test()`: 0 failures, 4402 passing.
 - 2026-08-08: T4 — `picture_in_picture_batch()` checks `position`, `margin` and `audio` below the contradiction sweep, and gains a front-door per-row `audio` sweep; the fan-out closure's copy retires. Measured: an out-of-range `audio` column now aborts naming the verb at both `parallel` settings, with no `pmap`, `In index:` or `aud` in the message. As in T3 the scalar guards move rather than being deleted. `devtools::test()`: 0 failures, 4402 passing.
+- 2026-08-08: T5 — `data-raw/value-guard-baseline.R` gains the ordering dimension: each of the four guards plus pip's `audio` (new site 7), in scalar and column form, crossed with the contradiction, `check_nvenc_available()` and `ffm_batch()`'s `run` guard, each paired with a control proving the crossed error is live. 110 cells. Two readers added — `value_guard_missing_call()` (no abort lost its `call`) and `value_guard_ordering()` / `value_guard_dead_controls()`. Two existing readers narrowed with their reasons recorded in the file: `value_guard_message_regressions()` now covers only `crossed = "none"` cells (an ordering cell changes its message with its blame frame unmoved, which is the deliverable, not a regression), and `value_guard_blame_regressions()` exempts the `run_guard` controls (`ffm_batch()` names itself for its own guard, and did before this milestone).
+- 2026-08-08: T5 — measured against `origin/master`: 0 changed refusals, 0 message regressions, 0 blame regressions, 0 aborts missing a `call`, 0 dead controls, 0 vacuous cells on either ref. Six cells change which error they report: the four scalar-argument cells crossed with a contradiction (`direction`, `position`, `margin`, and compare's `audio` at its LOWER bound) move value → contradiction; pip's `audio` column crossed with nvenc and with the `run` guard moves those → value, the front-door guard being new. Probing compare's `audio` only at its upper bound would have missed its moving cell — the upper bound already sat below the sweep, which is the asymmetry D038 recorded.
 
 ## Decisions
 

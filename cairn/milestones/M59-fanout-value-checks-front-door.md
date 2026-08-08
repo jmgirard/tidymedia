@@ -1,6 +1,6 @@
 # M59: Six per-row value checks are refused at the fan-out verb's front door
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M58
 - **Driving RR:** —
@@ -82,7 +82,7 @@ milestone moves where a check reports, never what is checked.
       decision entry records whether the front door calls `check_dim()` directly
       or threads `call` through `ffm_crop()`, names the alternative rejected,
       and states the evidence class that would falsify the choice.
-- [x] AC5 — Precedence is pinned, and the value-check ordering is this
+- [ ] AC5 — Precedence is pinned, and the value-check ordering is this
       milestone's own call, not one M58 makes:
       (a) on the two verbs carrying both an M58 contradiction and a value check
       (`compare_videos_batch`, `picture_in_picture_batch`), a call whose value
@@ -185,6 +185,7 @@ milestone moves where a check reports, never what is checked.
 - 2026-08-07: the AC2 amendment took the plan-owned body to 153 lines. Acceptance criteria was compressed first (the heaviest section) but that left it 2 over, and a third pass at the same section would be the nibble-and-recount the remedy forbids — so one decisive cut was made at Scope instead, whose six-site enumeration restated citations M59-D2 and the front-door code comments already carry (the "milestone restating a durable record" overrun the rules name). In/Out substance unchanged. Cap now passes with margin.
 - 2026-08-07: verify slot clean — `document()` regenerated the four help pages the roxygen and signature changes touched and nothing else; `devtools::test()` FAIL 0 / WARN 4 / SKIP 5 / PASS 4402; `devtools::check()` 0 errors / 0 warnings / 0 notes; `R/ffmpeg.R` still uniformly CRLF (6278 of 6278). Status → review.
 - 2026-08-07: logged review finding F-A (72) actioned at the user's direction rather than left logged: **D038** records in `DECISIONS.md` the exception M59 had documented in AC5, NEWS, two help pages and a ROADMAP row but not in the one file a later contributor must read. It narrows D036 to the swept form, states the scalar-argument form as a disclosed gap, notes the ordering predates both M58 and M59, and says D036's own machine-independence reasoning argues the gap should close rather than defending it. The ROADMAP candidate row now cites D038.
+- 2026-08-07: third review pass returned the milestone to `in-progress` and STOPPED the retry loop. Floor return on P1 (90, user-facing): the N1 fix's replacement wording is false for `audio` on `compare_videos_batch`, whose per-row upper bound sits below the contradiction sweep — measured, `compare_videos_batch(jobs_with_3_inputs, audio = 5)` reports the `resize` contradiction. P2 (85) falsifies AC5(a) as compressed, the enumeration having been dropped for the line cap. P3 (85) actioned alongside. Seven logged. Thrash trigger (a) fires (third defect return: F1, N1, P1) and trigger (b) fires (AC5(a) failed twice, both as an overbroad claim about the scalar form); AC5 would be a second amendment return, which stops. Disposition to the user: re-cut via `/milestone-plan`, or take the alternative the amendment gate recorded against — move the scalar guards below the contradiction sweep so both forms agree and the sentence being got wrong stops existing.
 
 ## Decisions
 
@@ -538,6 +539,68 @@ M59-D3 and the front-door code comments carry, and one AC3 phrase that was
 *narrowed* rather than weakened — "sites 5/6's scalar cells" became "sites 5/6's
 single-string scalar cells", which is now the accurate statement since T10 added
 multi-element scalar cells that ARE read as evidence.
+
+### Third pass — independent review and verdict
+
+One lens ([O] diff-bug), scoped to what changed since the second return. It
+confirmed the N8 fix correct and complete ("I could not find a way to break
+it"), D038 factually accurate on every claim, `document()` clean on an isolated
+re-run, and the new drift test genuinely catching drift.
+
+**Actioned (score ≥80):**
+
+- **P1 (90, user-facing)** — the N1 fix replaced one false precedence claim with
+  another. Its new sentence says an argument-form value error reports before the
+  contradiction and names `audio` as an example; `compare_videos_batch`'s scalar
+  `audio` guard bounds only below, and the per-row upper bound sits BELOW the
+  contradiction sweep. Measured on three inputs:
+  `compare_videos_batch(jobs, audio = 5)` reports the `resize` contradiction,
+  and only `resize = FALSE` exposes the `audio` error. The pre-N1 wording was
+  right for `audio` and wrong for `direction`; the fix flipped which half is
+  wrong. NEWS enumerates the three arguments and is correct; the roxygen
+  generalizes and is not.
+- **P2 (85, falsifies AC5(a))** — the cap compression dropped AC5(a)'s
+  `direction`/`position`/`margin` enumeration, widening it to "those verbs'
+  scalar guards", which P1 falsifies for `audio`. The third pass's own
+  compression audit checked clause PRESENCE and not clause WIDENING, so it
+  passed this through.
+- **P3 (85)** — the accessor block's rationale comment still says every
+  signature defaults to the accessor and calls them the defaults of exported
+  arguments; the N8 fix made both false, and `check_vocab_arg()` passes `values`
+  explicitly so `arg_match()` reads no formal default anywhere.
+
+**Logged (score <80), 7 findings:** P4 (76, stale test-file header), P5 (72,
+two code comments cite the superseded M59-D2), P6 (62, AC2 and a test name
+overstate what one test compares), P7 (55, four `@param` prose copies of each
+vocabulary are unpinned), P8 (42, a superseded second-pass evidence bullet left
+unmarked), P9 (25, `ffm_batch.R` citation ranges disagree), P10 (8,
+pre-existing `arg_match()` naming of a valid element).
+
+### Verdict — third defect return; both thrash triggers fire
+
+Status back to `in-progress`, and this is where the retry stops.
+
+**Trigger (a) — third return.** Returns: F1 (pass 1), N1 (pass 2), P1 (pass 3).
+The threshold is reached, so the remedy is no longer another fix round.
+
+**Trigger (b) — the same criterion failing twice by a new mechanism of the same
+shape.** AC5(a) has now failed twice, both times as an overbroad claim about the
+scalar-argument form: F5 found it unbounded over form, P2 found the compression
+widened it again. The alternative the amendment gate recorded against is on
+file — move each verb's scalar guard below the contradiction sweep so both forms
+agree — and (b)'s remedy is to reconsider exactly that.
+
+**The pattern is worth naming.** Two of the three returns were caused by the fix
+for the previous return, and every one of them was a *description* of behavior
+rather than the behavior itself. The thing being described is irregular: on
+these two verbs some scalar guards sit above the contradiction sweep and one
+(`audio`'s upper bound) sits below it, so no short sentence is true of all of
+them. Three attempts to state it have produced three wrong statements. That is
+evidence about the subject, not only about the attempts.
+
+**AC5's second amendment return.** P2 routes to a criterion amendment, and it
+would be AC5's second on this milestone. The rule stops there: no further round
+is convened and the disposition goes to the user.
 
 ### Consistency gate
 

@@ -35,13 +35,15 @@ Layer-1 error, correctly.
 
 ## Acceptance criteria
 
-- [ ] AC1: For every cell of the spec list declared in `data-raw/blame-specs.R`
-      — each naming (verb, form, delivery, argument, violating value) — the call
-      aborts with `conditionCall()` whose function part is the verb called and
-      whose deparsed call contains none of `pmap`, `_pipeline(`, `ffm_`. A
-      completeness reader fails when a declared cell names something that is
-      neither a formal of that verb nor a column its `batch_arg_rows()` resolves.
-      The spec list is closed by inspection and the file says so.
+- [ ] AC1: For every cell of the spec list declared in
+      `tests/testthat/helper-blame-specs.R` — each naming (verb, form, delivery,
+      argument, violating value) — the call aborts with `conditionCall()` whose
+      function part is the verb called and whose deparsed call contains none of
+      `pmap`, `_pipeline(`, `ffm_`. A completeness reader fails when a declared
+      cell names something that is neither a formal of that verb nor a column its
+      `batch_arg_rows()` resolves. The spec list is closed by inspection and the
+      file says so. The `data-raw/` scripts backing AC3–AC5 read this same helper
+      from the source tree, so no second copy of the list exists.
 - [ ] AC2: Every `_batch` cell appears twice — the violating value passed as the
       argument, and carried in the `jobs` column — and for each (verb, argument)
       the scalar and batch cells report the same guard, compared cell-for-cell by
@@ -90,7 +92,7 @@ Layer-1 error, correctly.
 
 ## Tasks
 
-- [ ] T1: Declare `data-raw/blame-specs.R` and extend the M59 grid in
+- [ ] T1: Declare `tests/testthat/helper-blame-specs.R` and extend the M59 grid in
       `tests/testthat/test-value-check-front-door.R` to read it — cells for every
       M64 site, both deliveries, both forms — plus the completeness reader.
       Red first.
@@ -119,5 +121,7 @@ Layer-1 error, correctly.
 - 2026-08-08: created by /milestone-plan.
 - 2026-08-08: plan gate chose a Layer-2 front-door sweep calling the shared checker over adding a `call` argument to the exported `ffm_*` builders because D037 licenses Layer-2 validation and M59-D1 already rejected the signature change; falsified by a checker whose abort cannot be aimed at a Layer-2 caller from the verb's own frame.
 - 2026-08-08: plan gate chose reusing `resolve_sample_fps()` in `sample_frames_batch()` over sweeping with `check_dim()` because the two forms would otherwise word one complaint two ways; falsified by a row value the resolver accepts and `check_dim()` refuses.
+- 2026-08-08: T1 grid red first — 24 of 30 cells fail; the 6 green are `crop_video_batch`'s width/height (swept at M59) and `sample_frames`' two pinned scalar cells, which is the expected split. Completeness reader green.
+- 2026-08-08: pre-implementation gate amended AC1 — `data-raw/` is in `.Rbuildignore`, so a test sourcing the spec list from there would skip under `R CMD check`, unenforced in exactly the run the release gate uses (LESSONS M51/M59). The list moves to `tests/testthat/helper-blame-specs.R` and the `data-raw/` scripts read it from the source tree; gate chose that over a second copy in the test tree, which no test could detect diverging.
 - 2026-08-08: pre-implementation gate amended AC4 — the plan demanded unchanged precedence everywhere, but `standardize_video_batch()` reads its dimension values inside `pmap` today, AFTER `check_nvenc_available()` (`R/ffmpeg.R:3832`), so a front-door sweep necessarily flips that pair. Gate chose matching `crop_video_batch()`'s M59 placement (value above nvenc, `R/ffmpeg.R:5107` vs `:5118`) over preserving precedence by sweeping last, because a machine-independent refusal reporting before a machine-dependent one is the rule D036 already states and the alternative would make the two batch verbs disagree; falsified by a caller for whom the encoder's absence is the more actionable of the two.
 - 2026-08-08: criteria audit ([O], fresh context) returned defects on all seven drafted criteria — a `formals()`-derived domain that enumerated the wrong set, a baseline recording `conditionMessage()` where blame lives in `conditionCall()`, an all-cells-excluded vacuity hole in the precedence criterion, an unbounded "each other front-door guard", a mutation criterion satisfiable by another sweep's red, an AC6 naming a site its own grep misses and reaching archived history, and an unlocated NEWS citation. All seven rewritten before writing; three gate-changed criteria re-asked the audit's three questions and passed.

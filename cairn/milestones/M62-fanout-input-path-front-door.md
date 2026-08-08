@@ -454,3 +454,79 @@ principle changed, so `cairn_impact` was not run.
 returns beyond the AC1 amendment logged during implementation. Below the
 thrash rule's third-return threshold.
 
+### Independent review — round 2
+
+Three fresh-context lenses spawned in parallel, then a separate [S] scorer
+that did not generate the findings and was given the diff and the plan.
+
+- **[S] blame history** — `git log -L` / `git blame` over every touched hunk
+  against M18, M26, M32, M41, M57–M61 and D024/D034/D035/D036/D039/D040.
+  **Zero findings.** Confirmed the two-call `main`/`overlay` form was two
+  commits old rather than an older milestone's deliberate placement, that the
+  new `unique()` matches `reject_duplicate_outputs()`'s standing convention,
+  and that the new `{cli::qty(length(arg))}` pluralization follows M18's
+  lesson (the one M32's F1 flagged as a regression risk) rather than violating
+  it.
+- **[S] prior-review record** — archived summaries plus the live Review
+  section; the GitHub inline-comment probe returned empty, so no thread walk.
+  **Zero findings.** One note, checked and dismissed: `check_paths_exist()`'s
+  `multiple = length(x) != 1L` default is a promise evaluated after
+  `x <- as.character(x)`, and coercion preserves length, so the order is
+  immaterial.
+- **[O] diff bug** — 14 candidate findings, unfiltered as instructed. It
+  independently re-ran the suite, the grid on both refs, the `70dc722`
+  falsification and the mutation harness, and its figures match this section's.
+
+**Actioned (scored 80+): none.** The scorer put every finding below the
+threshold, so the return floor is not tripped and no finding demonstrates a
+named criterion failing inside its procedure's domain.
+
+**Logged, below the 80 threshold (14), surfaced not dropped:**
+
+- N2 (79) — for the eleven `slots = 1L` verbs the `all` form is still a
+  one-row cell, so the only cell carrying two DISTINCT absent paths on a plain
+  character `input` column is the `factor` one. AC2's second clause is
+  separately held by a direct unit test; what overclaims is the T9 log's
+  "`all`'s absent paths are now distinct", which buys coverage only on the
+  multi-slot shapes.
+- N7 (74) — `crop_video_batch()` with twenty duplicate missing inputs and
+  DERIVED outputs reports the colliding-output guard, which sits above the
+  sweep, so `NEWS.md`'s duplicate sentence is observable only when outputs are
+  explicit. Reproduced; the precedence is pre-existing and unchanged.
+- N1 (70) — reproduced this session: the AC1 site test matches on
+  `"does not exist"`, which appears in the single-path literal but not in the
+  multi-path one (`{?does/do} not exist`), so a copy of the multi-path branch
+  alone into another body would not turn it red. The site claim itself holds.
+- N3 (68) — reproduced: one missing column of two renders
+  `` `jobs$main` and `jobs$overlay` name 1 file that does not exist ``, naming
+  a carrier that is correct. Every missing path is named and the count agrees;
+  the subject over-names.
+- N11 (65) — cli elides past ~20 paths, so "every missing path" overclaims in
+  NEWS and both roxygen blocks. Duplicate of F4, still unfixed.
+- N5 (45) — the `factor` form's controls are exempt from the vacuity and blame
+  readers, so a degradation there is ungated. Reasoned and commented in place,
+  but the exempt set is exactly the set that would report today.
+- N12 (45) — T2's task text still names `check_batch_jobs()` /
+  `check_fanin_jobs()` as the wiring sites; the sweep is wired per verb, for a
+  reason recorded only in a code comment.
+- N9 (40) — on the six verbs with no NA guard an `NA` path now reads as a
+  missing file named `'NA'`; master's wording was equally wrong and the blame
+  improves, but the front door now owns the message and no cell measures it.
+- N6 (30) — the two readers added this round are outside AC7's three-mutation
+  harness; their falsifiability rests on the `70dc722` run instead.
+- N4 (25) — scalar `picture_in_picture()` names only `main`; the scorer read
+  this as the intentional narrowing M62-D2 records, not a defect.
+- N8 (22) — `segment_video_batch()` / `extract_frame_batch()` raise a base
+  error on an `NA` input from `derive_*_names()`, above the sweep; identical on
+  master.
+- N13 (20) — `check_batch_inputs()` would no-op rather than error on an absent
+  column of a `data.frame`; unreachable at every call site. Variant of F14.
+- N10 (18) — `concatenate_videos(character(0), …)` still reports from
+  `ffm_files()`; an empty-vector case, pre-existing.
+- N14 (12) — a dead conjunct in `input_guard_form_applies()`.
+
+**Disposition.** Nothing scored 80 or above; the return floor is not tripped
+and no criterion failure was demonstrated. All ten criteria carry fresh
+round-2 evidence and the consistency gate is green, so the milestone goes to
+the merge gate with the fourteen findings on the record.
+

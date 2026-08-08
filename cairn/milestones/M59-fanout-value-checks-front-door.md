@@ -1,6 +1,6 @@
 # M59: Six per-row value checks are refused at the fan-out verb's front door
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M58
 - **Driving RR:** —
@@ -13,39 +13,28 @@ Make six per-row value validations report from the fan-out verb the user called,
 
 ## Scope
 
-**In:** six (site, verb) pairs. The first four are the sites M57's review
-measured as invisible to its AC6 grep, because the grep attributes an abort to
-the function that *writes* it and each of these is written in a helper or in
-the batch closure itself. Sites 5 and 6 are the vocabulary half of the ROADMAP
-candidate row this milestone absorbs (M58 review F2). All six were measured
-reporting `purrr::pmap(jobs, .f, ...)` on merged master 2026-08-07:
+**In:** six (site, verb) pairs, each a range, shape or vocabulary check on ONE
+held value — unlike M58's six, which are contradictions between two. All six
+were measured reporting `purrr::pmap(jobs, .f, ...)` on merged master
+2026-08-07. The first four are the sites M57's review measured as invisible to
+its AC6 grep, which attributes an abort to the function that *writes* it while
+each of these is written in a shared helper or in the batch closure; sites 5
+and 6 are the vocabulary half of the ROADMAP candidate row this milestone
+absorbs (M58 review F2). M59-D2 names each site's abort site; the code comments
+at each front door carry the citations.
 
-1. `crop_video_batch()` — `width`/`height` range, authored in `check_dim()`
-   (`R/utils.R:115`) and reached per row through `crop_video_pipeline()` →
-   `ffm_crop()` (`R/ffm.R:287-288`).
-2. `picture_in_picture_batch()` — `margin` range, in the batch closure's own
-   re-check (`R/ffmpeg.R:6085`).
-3. `anonymize_video_batch()` — malformed `regions`, authored in
-   `check_regions()` (`R/ffmpeg.R:1639`) and reached per row through
-   `anonymize_pipeline()` (`R/ffmpeg.R:1570`).
-4. `compare_videos_batch()` — per-row `audio` index above
-   `length(inputs) - 1`, written in the batch closure (`R/ffmpeg.R:5905`).
-5. `compare_videos_batch()` — `direction` column value outside the vocabulary,
-   by `rlang::arg_match(direction)` in `compare_videos_pipeline()`
-   (`R/ffmpeg.R:5451`); the front door's `check_batch_string_col(jobs,
-   "direction")` (`:5857`) checks the column's TYPE only.
-6. `picture_in_picture_batch()` — `position` column value outside the
-   vocabulary, by `rlang::arg_match(position)` in
-   `picture_in_picture_pipeline()` (`:5586`); the front door's
-   `check_batch_string_col(jobs, "position")` (`:6039`) checks TYPE only.
+1. `crop_video_batch()` — `width`/`height` range, via `check_dim()`.
+2. `picture_in_picture_batch()` — `margin` range, in the batch closure.
+3. `anonymize_video_batch()` — malformed `regions`, via `check_regions()`.
+4. `compare_videos_batch()` — per-row `audio` index above `length(inputs) - 1`,
+   in the batch closure.
+5. `compare_videos_batch()` — `direction` column VALUE; the front door's
+   `check_batch_string_col()` checks that column's TYPE only.
+6. `picture_in_picture_batch()` — `position` column VALUE; likewise TYPE only.
 
-Unlike M58's six, these are range, shape and vocabulary checks on a single
-value rather than contradictions between two. Sites 2, 4, 5 and 6 already have
-a scalar front-door counterpart (`check_number_whole(margin, min = 0)`,
-`check_number_whole(audio, max = length(infiles) - 1)`, and the `arg_match()`
-calls at `R/ffmpeg.R:5844` and `:6003`); what is missing on each is only the
-sweep over the **column** form, whose home is the `check_batch_*_col()` family.
-Sites 1 and 3 have no scalar counterpart at either verb.
+Sites 2, 4, 5 and 6 already have a scalar front-door counterpart, so what each
+is missing is only the sweep over the **column** form, whose home is the
+`check_batch_*_col()` family. Sites 1 and 3 have no scalar counterpart.
 
 **The shape question this carries** is narrow: `check_dim()` is a shared
 internal helper reached by ten call sites and already taking
@@ -70,22 +59,25 @@ milestone moves where a check reports, never what is checked.
       both `parallel` settings.
 - [x] AC2 — For each of the six sites the front-door call and the per-row path
       resolve to the same abort site, named in the milestone-local decision
-      entry, with no verb spelling a second copy of the message or (sites 5/6) a
-      third copy of the vocabulary literal. Verified by mutation: deleting a
-      front-door call turns that site's AC1 test red, for all six; and for sites
-      1, 3, 5 and 6, whose per-row path is a shared helper or pipeline call the
-      scalar verb also reaches, deleting that shared call turns the scalar
-      verb's own test red. Sites 2 and 4 have no shared call (their check lived
-      in the batch closure), so that half does not apply.
+      entry, with no verb spelling a second copy of the message. For sites 5/6
+      every CHECK sources its vocabulary from one accessor, and the values are
+      additionally spelled in each verb pair's two exported signatures so the
+      help page shows them and `formals()` returns them; a test evaluates each
+      signature default and asserts it equals the accessor's, so the copies
+      cannot drift. Verified by mutation: deleting a front-door call turns that
+      site's AC1 test red, for all six; and for sites 1, 3, 5 and 6, whose
+      per-row path is a shared helper or pipeline call the scalar verb also
+      reaches, deleting that shared call turns the scalar verb's own test red.
+      Sites 2 and 4 have no shared call, so that half does not apply.
 - [x] AC3 — For each of the six sites the front-door guard refuses exactly the
       calls its current check refuses, over a committed before/after grid
       varying the value in- and out-of-range, in its `jobs` column form and —
       for the five sites that have one — its scalar-argument form, plus one
-      mixed column. Site 3 is column-only (`anonymize_video_batch()` has no
-      `regions` argument), so the grid records that cell nonexistent, and sites
-      5/6's scalar cells expected-identical on both refs; neither is read as
-      evidence. Every cell's in-range baseline is asserted to succeed on both
-      refs, so no cell compares equal by both sides failing.
+      mixed column. Site 3 is column-only (no `regions` argument), so the grid
+      records that cell nonexistent, and sites 5/6's single-string scalar cells
+      expected-identical on both refs; neither is read as evidence. Every cell's
+      in-range baseline is asserted to succeed on both refs, so no cell compares
+      equal by both sides failing.
 - [x] AC4 — The site-1 shape question is settled in writing: a milestone-local
       decision entry records whether the front door calls `check_dim()` directly
       or threads `call` through `ffm_crop()`, names the alternative rejected,
@@ -96,20 +88,19 @@ milestone moves where a check reports, never what is checked.
       (`compare_videos_batch`, `picture_in_picture_batch`), a call whose value
       violation arrives in a `jobs` column reports the contradiction. The
       scalar-argument form is outside this milestone's reach and reports the
-      value check, as it did before it — those verbs' scalar
-      `direction`/`position`/`margin` guards sit above M58's contradiction sweep
-      on merged master and are not moved here — so the two forms disagree, which
-      is stated rather than fixed and carries a ROADMAP candidate row;
+      value check, as it did before it — those verbs' scalar guards sit above
+      M58's contradiction sweep on merged master and are not moved here — so the
+      two forms disagree, which is stated rather than fixed, carries a ROADMAP
+      candidate row, and is stated on the affected help pages;
       (b) on all four verbs, a call invalid in its value check and in nvenc
       availability reports the value check, driven machine-independently through
       the `tidymedia.nvenc_encoders` option seam;
       (c) on all four verbs, a call invalid in its value check and in an
       argument `ffm_batch()` alone guards reports the value check — tested on
       `run`, with NEWS naming the displaced set (`run`, `parallel`, `progress`,
-      `manifest`, `checksums`, `verify`) read off `R/ffm_batch.R:84-98` rather
-      than recalled. The `jobs`-shape guards at `:75-80` are excluded and stated
-      as excluded: all four verbs already pre-empt them, so they are never
-      displaced.
+      `manifest`, `checksums`, `verify`) read off `R/ffm_batch.R:84-98`. The
+      `jobs`-shape guards at `:75-80` are excluded and stated as excluded: all
+      four verbs pre-empt them, so they are never displaced.
 - [x] AC6 — The r-package profile's verify slot is clean: `devtools::document()`
       produces no diff, `devtools::test()` passes, and `devtools::check()`
       reports 0 errors and 0 warnings.
@@ -188,6 +179,11 @@ milestone moves where a check reports, never what is checked.
 - 2026-08-07: T10 — F12 closed by correcting the claim rather than the code: the `parallel` loop's comment now says the two iterations run the same path since every check aborts before `ffm_batch()`, and that the loop is kept as a regression pin against a value reaching the fan-out again. AC1 requires both settings, so the loop stays. F13 remains logged and unactioned.
 - 2026-08-07: T10 verify slot clean — grid 38 cells, vacuity empty both sides, 0 refusals changed, 17 blame moves, both new readers empty; `document()` no diff; `devtools::test()` 0 failures; `devtools::check()` 0/0/0 with `testthat.R` OK. Status → review.
 - 2026-08-07: second review pass returned the milestone to `in-progress` (second defect return). All six criteria verified and ticked this pass — AC2's mutation half re-run with all ten deletions RED, AC5's amended clause verified in both forms, `check()` 0/0/0, CI green on all nine checks — but N1 (scored 92, user-facing) shows `R/ffmpeg.R:5903-5906` and `:6090-6093`, shipped as `man/compare_videos_batch.Rd` and `man/picture_in_picture_batch.Rd`, claiming a per-row value error reports "after the contradiction" unconditionally, where the argument form reports it first. Both blocks were added by this branch; it is F5's defect reproduced in documentation the AC5 amendment did not reach. N8 (85) returns with it: the four verbs' Usage lines name unexported accessors and `formals(compare_videos)$direction` no longer returns the vector, an introspection change the mid-work gate's accepted decision did not cover. Eleven findings logged, not actioned. Worth recording: no criterion failed, so the criteria as written do not reach roxygen accuracy.
+- 2026-08-07: review N1 fixed — the two `@param hardware` blocks said a per-row value error reports "after the contradiction" unconditionally; both now state that a `jobs` column reports the contradiction and an argument reports the value. F5's defect had been reproduced in shipped documentation the AC5 amendment did not reach.
+- 2026-08-07: review N8 fixed at the user's direction — the four exported signatures spell their vocabularies out again, so `?compare_videos` shows the values and `formals(compare_videos)$direction` returns `c("horizontal", "vertical")` rather than an unevaluatable call; the two internal pipelines keep the accessor and every check still sources from it. Exporting the accessors was offered and declined a second time. Recorded as M59-D3, superseding M59-D2's vocabulary paragraph.
+- 2026-08-07 (amendment): AC2's "no third copy of the vocabulary literal" clause ruled out the shape N8's fix requires, so it was amended at a mini gate to state the actual invariant — checks single-sourced, values spelled in the exported signatures, drift prevented by a test that EVALUATES each default and compares it to the accessor. That test is stronger than the clause it replaces: it catches a differently ordered or differently spelled copy, which the uniqueness grep could not (review N3).
+- 2026-08-07: the AC2 amendment took the plan-owned body to 153 lines. Acceptance criteria was compressed first (the heaviest section) but that left it 2 over, and a third pass at the same section would be the nibble-and-recount the remedy forbids — so one decisive cut was made at Scope instead, whose six-site enumeration restated citations M59-D2 and the front-door code comments already carry (the "milestone restating a durable record" overrun the rules name). In/Out substance unchanged. Cap now passes with margin.
+- 2026-08-07: verify slot clean — `document()` regenerated the four help pages the roxygen and signature changes touched and nothing else; `devtools::test()` FAIL 0 / WARN 4 / SKIP 5 / PASS 4402; `devtools::check()` 0 errors / 0 warnings / 0 notes; `R/ffmpeg.R` still uniformly CRLF (6278 of 6278). Status → review.
 
 ## Decisions
 
@@ -244,6 +240,35 @@ copy that can no longer fire goes.
 
 - **Falsified by** a value a fan-out closure can resolve that the front door
   cannot, which would make a retired re-check reachable again.
+
+### M59-D3 — The vocabulary is single-sourced for CHECKING, not for display (2026-08-07, review N8, supersedes M59-D2's vocabulary paragraph)
+
+M59-D2 said each vocabulary is "written once here and every signature defaults
+to it." That is no longer what the code does, and the reason is a cost D-2 did
+not price: a signature defaulting to an unexported accessor makes
+`?compare_videos` show `direction = stack_directions()`, which a reader cannot
+resolve, and makes `formals(compare_videos)$direction` return that call where it
+used to return the character vector — breaking programmatic introspection that
+worked before this milestone (review N8, scored 85).
+
+**The rule.** Every *check* sources its vocabulary from one accessor
+(`stack_directions()`, `pip_positions()`), and `check_vocab_arg()` remains the
+one site a value is refused. The four *exported* signatures spell their values
+out, so the help page and `formals()` both answer as they did before. The two
+internal pipelines keep the accessor, having no help page to serve.
+
+**What stops the drift** is agreement rather than uniqueness: a test evaluates
+every signature default and compares it to the accessor's values, which is the
+M40 failure mode itself and a stronger check than any spelling-based one — it
+catches a copy that is differently ordered or differently spelled and still
+wrong, which the uniqueness grep could not.
+
+- **Rejected:** exporting the two accessors (offered at the mid-work gate and
+  declined — it commits two more functions to the public surface); and keeping
+  the accessor defaults (leaves the introspection regression standing).
+- **Falsified by** a third vocabulary arriving whose values are computed rather
+  than literal, which no signature could spell.
+
 
 ## Review
 

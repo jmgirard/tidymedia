@@ -151,7 +151,7 @@ namespace_functions <- function() {
          mget(ls(ns, all.names = TRUE), envir = ns, ifnotfound = list(NULL)))
 }
 
-test_that("each enumerated vocabulary is written in exactly one body", {
+test_that("each enumerated vocabulary is written in exactly one function body", {
   fns <- namespace_functions()
   expect_gt(length(fns), 0)
   for (v in vocabularies()) {
@@ -173,20 +173,35 @@ test_that("each enumerated vocabulary is written in exactly one body", {
   }
 })
 
-test_that("every signature taking a vocabulary defaults to its accessor", {
-  # The other way a fourth copy could appear: a formal default written as a
-  # literal vector rather than as the accessor call. Six signatures carry these
-  # two arguments (the scalar verb, its _batch sibling, and the shared
-  # pipeline, for each vocabulary); the count is asserted so a NEW signature
-  # taking one of these arguments cannot join without this test noticing.
+test_that("every signature taking a vocabulary agrees with the accessor", {
+  # The copies that remain are deliberate, so the invariant is AGREEMENT rather
+  # than uniqueness. The four EXPORTED signatures spell their vocabulary out, so
+  # `?compare_videos` shows the values and `formals()` returns something a
+  # caller can read and evaluate (M59 review N8); the two internal pipelines
+  # default to the accessor. What must never drift is the values themselves, so
+  # every default is EVALUATED and compared to the accessor's answer -- which is
+  # the actual M40 failure mode, and a check no spelling-based test can make.
+  #
+  # Three signatures per vocabulary (scalar verb, _batch sibling, shared
+  # pipeline); the count is asserted so a NEW signature taking one of these
+  # arguments cannot join without this test noticing.
+  ns <- asNamespace("tidymedia")
   fns <- namespace_functions()
+  exported <- getNamespaceExports("tidymedia")
   for (v in vocabularies()) {
     takers <- Filter(function(f) v$arg %in% names(formals(f)), fns)
     expect_identical(length(takers), 3L, info = v$arg)
     for (nm in names(takers)) {
       default <- formals(takers[[nm]])[[v$arg]]
-      expect_identical(default, str2lang(paste0(v$accessor, "()")),
+      expect_identical(eval(default, envir = ns), v$values,
                        info = paste(v$arg, nm))
+      if (nm %in% exported) {
+        # Self-contained: it must evaluate with no access to this package, or
+        # the Usage line names something the reader cannot resolve and
+        # `formals()` hands back an unevaluatable call (N8).
+        expect_identical(eval(default, envir = baseenv()), v$values,
+                         info = paste(v$arg, nm, "exported"))
+      }
     }
   }
 })

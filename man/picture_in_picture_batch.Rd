@@ -6,7 +6,7 @@
 \usage{
 picture_in_picture_batch(
   jobs,
-  position = pip_positions(),
+  position = c("topright", "topleft", "bottomright", "bottomleft", "center"),
   scale = 0.25,
   margin = 16,
   audio = NULL,
@@ -64,7 +64,9 @@ is refused for the contradiction first, whether or not this machine has
 the encoder.
 A per-row value error — a negative \code{margin}, a \code{position}
 outside the five accepted values — likewise reports ahead of the encoder
-check, and after the contradiction.}
+check. Which of it and the contradiction reports first depends on where the
+bad value came from: in a \code{jobs} column the contradiction is reported,
+in an argument the value is.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}

@@ -5630,7 +5630,7 @@ compare_videos_pipeline <- function(infiles, outfile,
 #' compare_videos(c(video, video), "compare.mp4", run = FALSE)
 #' @export
 compare_videos <- function(infiles, outfile,
-                           direction = stack_directions(),
+                           direction = c("horizontal", "vertical"),
                            resize = TRUE, audio = NULL, video_codec = NULL,
                            audio_codec = "copy",
                            hardware = c("none", "nvenc"), fallback = FALSE,
@@ -5774,7 +5774,9 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
 #' picture_in_picture(video, video, "pip.mp4", run = FALSE)
 #' @export
 picture_in_picture <- function(main, overlay, outfile,
-                               position = pip_positions(),
+                               position = c("topright", "topleft",
+                                            "bottomright", "bottomleft",
+                                            "center"),
                                scale = 0.25, margin = 16, audio = NULL,
                                video_codec = NULL, audio_codec = "copy",
                                hardware = c("none", "nvenc"), fallback = FALSE,
@@ -5905,7 +5907,9 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #'   the encoder.
 #'   A per-row value error — an \code{audio} index past that row's input count,
 #'   a \code{direction} outside the two accepted values — likewise reports ahead
-#'   of the encoder check, and after the contradiction.
+#'   of the encoder check. Which of it and the contradiction reports first
+#'   depends on where the bad value came from: in a \code{jobs} column the
+#'   contradiction is reported, in an argument the value is.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -5928,7 +5932,7 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #' jobs <- tibble::tibble(inputs = list(c(video, video)), output = "compare.mp4")
 #' compare_videos_batch(jobs, run = FALSE)
 #' @export
-compare_videos_batch <- function(jobs, direction = stack_directions(),
+compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
                                  resize = TRUE, audio = NULL,
                                  video_codec = NULL, audio_codec = "copy",
                                  hardware = c("none", "nvenc"),
@@ -6092,7 +6096,9 @@ compare_videos_batch <- function(jobs, direction = stack_directions(),
 #'   the encoder.
 #'   A per-row value error — a negative \code{margin}, a \code{position}
 #'   outside the five accepted values — likewise reports ahead of the encoder
-#'   check, and after the contradiction.
+#'   check. Which of it and the contradiction reports first depends on where the
+#'   bad value came from: in a \code{jobs} column the contradiction is reported,
+#'   in an argument the value is.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -6116,7 +6122,9 @@ compare_videos_batch <- function(jobs, direction = stack_directions(),
 #' picture_in_picture_batch(jobs, run = FALSE)
 #' @export
 picture_in_picture_batch <- function(jobs,
-                                     position = pip_positions(),
+                                     position = c("topright", "topleft",
+                                                  "bottomright", "bottomleft",
+                                                  "center"),
                                      scale = 0.25, margin = 16, audio = NULL,
                                      video_codec = NULL, audio_codec = "copy",
                                      hardware = c("none", "nvenc"),

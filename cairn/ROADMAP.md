@@ -2,16 +2,15 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-07 (third pass, nothing to fix: no milestone in flight, no open RB, both GitHub inboxes empty, all validate checks green.)_
+_Last hygiene check: 2026-08-07 (M58 merged and archived; a subagent's scratch file `cairn/_tmp_diff.txt` was swept into the merge commit and removed here; LESSONS held at 44 by folding M58's test-vacuity lesson into the M54 line rather than adding a 45th.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M58 | Six argument contradictions are refused at the fan-out verb's front door | review | M57 | normal | milestones/M58-fanout-contradiction-front-door.md |
 | M59 | Four per-row value checks are refused at the fan-out verb's front door | planned | M58 | normal | milestones/M59-fanout-value-checks-front-door.md |
 | M60 | The repo's line endings are normalized once and enforced mechanically | planned | — | normal | milestones/M60-line-ending-normalization.md |
-| M53 | Give `probe_all()` a `parallel =` argument | done | M52 | normal | milestones/archive/M53-probe-all-parallel.md |
+| M58 | Six argument contradictions are refused at the fan-out verb's front door | done | M57 | normal | milestones/archive/M58-fanout-contradiction-front-door.md |
 | M54 | Correct the `run = FALSE` purity claim for the nvenc encoder probe | done | — | normal | milestones/archive/M54-nvenc-dry-run-purity.md |
 | M55 | A package landing topic, and a `parallel` enumeration that matches the code | done | — | normal | milestones/archive/M55-package-topic-parallel-docs.md |
 | M56 | A bad codec token names the verb's argument, never Layer 1's | done | M54 | normal | milestones/archive/M56-codec-token-blame.md |

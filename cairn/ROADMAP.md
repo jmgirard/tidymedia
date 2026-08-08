@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-07 (third pass, nothing to fix: no milestone in fli
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M58 | Six argument contradictions are refused at the fan-out verb's front door | in-progress | M57 | normal | milestones/M58-fanout-contradiction-front-door.md |
+| M58 | Six argument contradictions are refused at the fan-out verb's front door | review | M57 | normal | milestones/M58-fanout-contradiction-front-door.md |
 | M59 | Four per-row value checks are refused at the fan-out verb's front door | planned | M58 | normal | milestones/M59-fanout-value-checks-front-door.md |
 | M60 | The repo's line endings are normalized once and enforced mechanically | planned | — | normal | milestones/M60-line-ending-normalization.md |
 | M53 | Give `probe_all()` a `parallel =` argument | done | M52 | normal | milestones/archive/M53-probe-all-parallel.md |

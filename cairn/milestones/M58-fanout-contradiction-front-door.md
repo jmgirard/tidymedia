@@ -1,6 +1,6 @@
 # M58: Six argument contradictions are refused at the fan-out verb's front door
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M57
 - **Driving RR:** —
@@ -125,7 +125,7 @@ owing its own entry. Line-ending governance → M60.
 - [x] T7 — Rewrite the two committed precedence tests to contradiction-first
       and add the two uniform-call precedence tests.
 - [x] T8 — Build and commit the before/after grid as the evidence ledger.
-- [ ] T9 — D-entry superseding D035's precedence example; NEWS; roxygen where
+- [x] T9 — D-entry superseding D035's precedence example; NEWS; roxygen where
       precedence changed; run the verify slot clean.
 
 ## Work log
@@ -143,6 +143,8 @@ owing its own entry. Line-ending governance → M60.
 - 2026-08-07: T7 — all five verbs carrying both guards now pin contradiction-first. The two mixed-column cases were rewritten under T2/T3; the three encoder-independent ones (conditions 4, 5, 6) are a new uniform-call test asserting the two seams give an identical message, and condition 5 left the availability-first sweep it used to sit in.
 - 2026-08-07: T6 — `test-contradiction-front-door.R`: eight blame tests, nine mixed-versus-clean column pairs, four scalar-sibling tests, and the one-site headline check (five headlines, five sites). Mutation-verified all eight front-door call sites by deleting each and re-running the file: 3, 3, 5, 4, 2, 5, 5 and 4 assertions red respectively, every site restored after.
 - 2026-08-07: T8 — `data-raw/contradiction-guard-baseline.R` (112 cells: six conditions x scalar/column/mixed forms x each named argument at a violating and a non-violating value, condition 5 crossed with input counts 2 and 3). Measured `origin/master` against the working tree: 0 vacuous cells on either ref, 33 aborting cells on both and **0 whose refusal changed**, 30 whose blame moved (29 `purrr::pmap` -> the verb, 1 `compare_videos_pipeline` -> `compare_videos`), `In index:` in 29 cells before and 0 after.
+- 2026-08-07: T9 — D036 (contradiction before availability; supersedes D035's precedence example and states the checker shape M59 inherits); NEWS entry plus a narrowing of M57's precedence sentence, which this reverses for the six; the availability roxygen on the five verbs carrying both guards gained the precedence sentence.
+- 2026-08-07: verify slot clean — `devtools::document()` no diff, `devtools::test()` 4104 pass / 0 fail / 5 skip, `devtools::check()` 0 errors / 0 warnings / 0 notes. Status -> review.
 
 ## Decisions
 

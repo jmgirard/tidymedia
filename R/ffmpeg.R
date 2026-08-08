@@ -2786,7 +2786,10 @@ check_resize_needs_two_inputs <- function(resize, n_inputs,
 #'   command is built, even under \code{run = FALSE}.
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
-#'   the internal fan-out it would otherwise be reported against.
+#'   the internal fan-out it would otherwise be reported against. A call that
+#'   also contradicts itself — asking for GPU encoding alongside a stream copy,
+#'   say — is refused for the contradiction first, whether or not this machine
+#'   has the encoder.
 #'   The stream-copy conflict named under \code{reencode} is caught first, so
 #'   such a call aborts without probing.
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
@@ -3029,7 +3032,10 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #'   command is built, even under \code{run = FALSE}.
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
-#'   the internal fan-out it would otherwise be reported against.
+#'   the internal fan-out it would otherwise be reported against. A call that
+#'   also contradicts itself — asking for GPU encoding alongside a stream copy,
+#'   say — is refused for the contradiction first, whether or not this machine
+#'   has the encoder.
 #'   The stream-copy conflict named under \code{reencode} is caught first, so
 #'   such a call aborts without probing.
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
@@ -5096,7 +5102,10 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #'   command is built, even under \code{run = FALSE}.
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
-#'   the internal fan-out it would otherwise be reported against.
+#'   the internal fan-out it would otherwise be reported against. A call that
+#'   also contradicts itself — asking for GPU encoding alongside a stream copy,
+#'   say — is refused for the contradiction first, whether or not this machine
+#'   has the encoder.
 #'   The stream-copy conflict above is caught first, so such a call aborts
 #'   without probing.
 #' @param audio_stream `r audio_stream_param("write to each \\code{audiofile}", "keeps", "every", batch = TRUE, extra = audio_stream_extras$separation_container)`
@@ -5791,7 +5800,10 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #'   command is built, even under \code{run = FALSE}.
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
-#'   the internal fan-out it would otherwise be reported against.
+#'   the internal fan-out it would otherwise be reported against. A call that
+#'   also contradicts itself — asking for GPU encoding alongside a stream copy,
+#'   say — is refused for the contradiction first, whether or not this machine
+#'   has the encoder.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -5944,7 +5956,10 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #'   command is built, even under \code{run = FALSE}.
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
-#'   the internal fan-out it would otherwise be reported against.
+#'   the internal fan-out it would otherwise be reported against. A call that
+#'   also contradicts itself — asking for GPU encoding alongside a stream copy,
+#'   say — is refused for the contradiction first, whether or not this machine
+#'   has the encoder.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}

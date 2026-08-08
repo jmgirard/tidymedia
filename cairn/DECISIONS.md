@@ -1307,3 +1307,54 @@ check sees the user's value rather than `resolve_hw_encoder()`'s rewrite of it.
   on different inputs — which would mean the one shared function had stopped
   being shared — or by any call the front door refuses that a `run = FALSE`
   pipeline still compiles.
+
+## D036 — An argument contradiction reports before an availability probe (2026-08-07, from M58, supersedes D035's precedence example; states the front-door checker shape M59 inherits)
+
+M57 moved the nvenc availability abort to the front door of every verb that
+fans out, and D035 licensed that move. M58 does the same for six *argument
+contradictions* — a stream copy that also names GPU hardware, an audio encoder
+with no audio mapped, a resize across other than two inputs. Both now sit at
+the same five front doors, so which of them reports has to be decided rather
+than left to whichever line happens to come first.
+
+**D035's licence question does not arise here.** D024's exclusions are about
+*probes*: things that consult FFmpeg, the filesystem, or anything outside the
+call. None of the six contradictions consults anything — each compares two
+values the verb already holds — so D024 and D034 are not engaged and no licence
+is needed. What M58 takes from D035 is its **shape**, not its permission: one
+shared abort site, and no call refused that the pipeline would not have refused.
+
+**The rule.** Where a verb carries both, **the contradiction reports first.**
+
+A contradiction is decided identically on every machine; availability is not.
+Under M57's order the same wrong call was diagnosed two ways depending on the
+local FFmpeg build — a `video_codec = "copy"` batch naming `hardware = "nvenc"`
+was told about the copy on a GPU machine and about the missing encoder
+everywhere else. That is the failure mode M54 named: an error whose identity
+depends on the machine cannot be reasoned about from a bug report. Ordering the
+machine-independent answer first removes the dependence.
+
+**What this supersedes.** D035's second condition ("No new refusal") carries a
+worked example: "an unavailable encoder now reports before validations that live
+in the pipeline". For these six that example is now false — the six no longer
+live only in the pipeline, and they report first. **The condition itself stands
+unchanged**, and M58 satisfies it: measured over a 112-cell grid across both
+refs, the same 33 cells are refused before and after, and only the blame moves
+(`data-raw/contradiction-guard-baseline.R`). What is superseded is the example,
+not the rule it illustrates.
+
+**The checker shape.** A shared front-door checker takes **one row's already
+resolved values** and answers for that row; the fan-out verb resolves its
+override columns to per-row values and calls the checker once per row. The
+alternative — a checker taking the whole jobs table and sweeping it itself —
+was rejected at M58's question gate because the single-call pipelines would then
+have to hand it a one-row stand-in table, putting table shapes into code paths
+that have never carried one. Row-by-row is also what makes a mixed column
+answerable at all: a table with one violating row is refused for that row while
+a table with none compiles, where an all-or-nothing gate does neither (the shape
+M57's review caught on `segment_video_batch`).
+
+- **Falsified by** a contradiction whose detection turns out to need the encoder
+  list — which would make it machine-dependent and put it back behind
+  availability — or by a user report preferring the availability error on a
+  mixed column.

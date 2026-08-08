@@ -1383,6 +1383,21 @@ standardize_video <- function(infile, outfile,
   # audio_codec is already checked inside standardize_pipeline(), which blames
   # this verb because the pipeline is called from here.
   rlang::check_string(video_codec, allow_null = TRUE)
+  # The three geometry values, swept here so a bad one blames this verb instead
+  # of ffm_scale()/ffm_fps() (M64). Same shared checker the builders call. NULL
+  # is legal on all three -- it means "leave this dimension alone" -- so each is
+  # guarded rather than passed straight through.
+  #
+  # This is where the values were effectively read before: ffm_scale() and
+  # ffm_fps() run at the top of standardize_pipeline(), ahead of the codec
+  # seams, so nothing above or below changes its reporting order (M41).
+  # `pixel_format` is NOT swept here: the pipeline validates it AFTER both codec
+  # seams, and hoisting it would silently move it ahead of them. It is checked
+  # in standardize_pipeline() instead, at its own position, where `call` already
+  # resolves to this verb (the shape anonymize_pipeline() uses).
+  if (!is.null(width)) check_dim(width)
+  if (!is.null(height)) check_dim(height)
+  if (!is.null(fps)) check_dim(fps)
   # No front-door check for `audio_stream` here, deliberately. It would be the
   # only guard on this verb reporting BEFORE width/height/fps/pixel_format and
   # the audio codec, which standardize_pipeline() validates -- so a caller
@@ -1457,6 +1472,14 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
   # State the stream selection instead of inheriting FFmpeg's (M47). One
   # ffm_map() call with both specifiers, never two: ffm_map() appends, so two
   # calls look exactly like a pipeline that mapped twice by accident.
+  # Checked here rather than at the verb's front door so its position in the
+  # reporting order is unmoved: it has always been read after both codec seams,
+  # and hoisting it would have made a bad pixel format outrank a bad codec
+  # (M41/M64). `call` resolves to standardize_video() for the scalar verb, which
+  # calls this function directly; the batch sibling reaches it inside pmap and
+  # so carries its own front-door sweep instead. ffm_pixel_format() re-checks
+  # the same value for its own direct callers, naming its `format` argument.
+  check_token(pixel_format, call = call)
   p <- ffm_pixel_format(p, pixel_format)
   p <- ffm_map(p, pass_through_maps(audio_stream, call = call))
   ffm_output_options(p, "-movflags +faststart")
@@ -3515,7 +3538,9 @@ sample_frames_batch <- function(jobs, fps = NULL, interval = NULL,
 
   # Table-level rate exclusivity: exactly one of an fps source or an interval
   # source (argument or column), mirroring sample_frames()' scalar XOR. The
-  # per-row value checks are inherited from resolve_sample_fps() in the closure.
+  # per-row VALUES are swept below, immediately before the fan-out, calling the
+  # same resolve_sample_fps() the closure calls (M64); before that they were
+  # only read inside the closure, so a bad rate was blamed on purrr::pmap().
   fps_src <- !is.null(fps) || "fps" %in% names(jobs)
   interval_src <- !is.null(interval) || "interval" %in% names(jobs)
   if (fps_src == interval_src) {
@@ -3581,6 +3606,22 @@ sample_frames_batch <- function(jobs, fps = NULL, interval = NULL,
   # immediately before the fan-out, so a missing input blames this verb
   # rather than purrr::pmap() (M62).
   check_batch_inputs(jobs)
+
+  # Per-row rate VALUES, swept here so a bad rate blames this verb instead of
+  # purrr::pmap() (M64). The guards above cover each column's TYPE and the
+  # table-level exactly-one contract; this covers each value the fan-out would
+  # resolve. resolve_sample_fps() is the one site the message is written -- the
+  # same function the closure below calls, and the same one sample_frames()
+  # already reaches at its own front door, so the two forms refuse a bad rate
+  # with one sentence rather than two.
+  #
+  # Immediately before ffm_batch(), which is where M41 puts a guard added for
+  # blame, so every check above still reports first.
+  fps_rows <- batch_arg_rows(jobs, "fps", fps)
+  interval_rows <- batch_arg_rows(jobs, "interval", interval)
+  for (i in seq_len(nrow(jobs))) {
+    resolve_sample_fps(fps_rows[[i]], interval_rows[[i]])
+  }
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one image2-pattern sampling
   # pipeline per input, sharing sample_frames_pipeline() with sample_frames().
@@ -3833,6 +3874,28 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
   # availability sweep below, so a missing input blames this verb rather
   # than purrr::pmap() (M62).
   check_batch_inputs(jobs)
+
+  # Per-row geometry and pixel-format VALUES, swept here so a bad one blames
+  # this verb instead of purrr::pmap() (M64). Same shape and same site as
+  # crop_video_batch()'s sweep: inputs above, nvenc availability below.
+  #
+  # That placement REORDERS this verb: these values were read inside the
+  # fan-out, so an unavailable encoder used to report first and now does not.
+  # Deliberate, and the reason crop_video_batch() already answers this way -- a
+  # dimension is wrong on every machine, an encoder only on this one. Recorded
+  # in M64's reordering table.
+  #
+  # NULL means "leave this dimension alone" for the three geometry knobs, so a
+  # resolved NULL cell is skipped; `pixel_format` has no such sentinel and is
+  # always a token.
+  for (dim in c("width", "height", "fps")) {
+    for (value in batch_arg_rows(jobs, dim, get(dim))) {
+      if (!is.null(value)) check_dim(value, arg = dim)
+    }
+  }
+  for (value in batch_arg_rows(jobs, "pixel_format", pixel_format)) {
+    check_token(value, arg = "pixel_format")
+  }
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output re-encode
   # pipeline per row, sharing standardize_pipeline() with standardize_video().

@@ -17,11 +17,14 @@ the verb the caller typed rather than the Layer-1 builder it reached.
 
 **In:** front-door sweeps calling the same shared checkers the builders already
 call — `check_dim()` for `crop_video`'s `width`/`height`/`x`/`y` and
-`standardize_video`'s `width`/`height`/`fps`, `check_token()` for
-`standardize_video`'s `pixel_format`, and `resolve_sample_fps()` per row for
-`sample_frames_batch`. Both forms of each verb: `crop_video_batch()`'s sweep
+`standardize_video`'s `width`/`height`/`fps`, and `resolve_sample_fps()` per row
+for `sample_frames_batch`. `standardize_video`'s `pixel_format` is the one
+exception to the siting: the pipeline reads it after both codec seams, so it is
+checked there with `call` threaded — its position in the reporting order
+unmoved — while `standardize_video_batch` sweeps it at the front door like every
+other batch value. Both forms of each verb: `crop_video_batch()`'s sweep
 (`R/ffmpeg.R:5107`) extends to `x`/`y`, and `standardize_video_batch()`
-(`:3708`) and `sample_frames_batch()` (`:3483`) gain one. Placement follows
+(`:3708`) and `sample_frames_batch()` (`:3483`) gain one. Batch placement follows
 `crop_video_batch()`: last among the value guards, immediately above
 `check_nvenc_available()`. The `sample_frames()` scalar form already names
 itself and is pinned, not changed.
@@ -92,18 +95,18 @@ Layer-1 error, correctly.
 
 ## Tasks
 
-- [ ] T1: Declare `tests/testthat/helper-blame-specs.R` and extend the M59 grid in
+- [x] T1: Declare `tests/testthat/helper-blame-specs.R` and extend the M59 grid in
       `tests/testthat/test-value-check-front-door.R` to read it — cells for every
       M64 site, both deliveries, both forms — plus the completeness reader.
       Red first.
-- [ ] T2: `crop_video()` (`R/ffmpeg.R:1099`) sweeps `width`/`height`/`x`/`y`;
+- [x] T2: `crop_video()` (`R/ffmpeg.R:1099`) sweeps `width`/`height`/`x`/`y`;
       `crop_video_batch()`'s sweep (`:5107`) extends to `x`/`y`. Rewrite the
       front-door comment at `:1109-1116`, whose reason ("which `ffm_crop()`
       validates") this task falsifies.
-- [ ] T3: `standardize_video()` (`:1355`) sweeps `width`/`height`/`fps` and
+- [x] T3: `standardize_video()` (`:1355`) sweeps `width`/`height`/`fps` and
       `check_token(pixel_format)`; `standardize_video_batch()` (`:3708`) gains
       the same sweep over argument and column. Rewrite `:1367-1372`.
-- [ ] T4: `sample_frames_batch()` (`:3483`) sweeps each row through
+- [x] T4: `sample_frames_batch()` (`:3483`) sweeps each row through
       `resolve_sample_fps()`; add the pin holding `sample_frames()`'s existing
       self-naming.
 - [ ] T5: `data-raw/blame-precedence.R` — crossing list, live controls, run at
@@ -121,6 +124,8 @@ Layer-1 error, correctly.
 - 2026-08-08: created by /milestone-plan.
 - 2026-08-08: plan gate chose a Layer-2 front-door sweep calling the shared checker over adding a `call` argument to the exported `ffm_*` builders because D037 licenses Layer-2 validation and M59-D1 already rejected the signature change; falsified by a checker whose abort cannot be aimed at a Layer-2 caller from the verb's own frame.
 - 2026-08-08: plan gate chose reusing `resolve_sample_fps()` in `sample_frames_batch()` over sweeping with `check_dim()` because the two forms would otherwise word one complaint two ways; falsified by a row value the resolver accepts and `check_dim()` refuses.
+- 2026-08-08: gated Scope amendment — Scope In promised a front-door sweep for `standardize_video`'s `pixel_format`; it is checked inside `standardize_pipeline()` with `call` threaded instead, siting it where the value was already read (after both codec seams) so its reporting order is unmoved. Blame lands on the verb either way. Gate chose that over the planned front-door siting, which would have made a bad pixel format outrank a bad codec — a reordering AC4 does not permit.
+- 2026-08-08: T2-T4 done; full suite FAIL 0 / PASS 5260, the 4 warnings all the pre-existing dropped-audio-track diagnostic in unrelated files. `standardize_video()`'s `pixel_format` is checked inside `standardize_pipeline()` with `call` threaded rather than at the front door, because the pipeline reads it AFTER both codec seams and hoisting it would have moved a bad pixel format ahead of a bad codec; the batch sibling carries the front-door sweep instead, where the reordering is the one AC4 permits.
 - 2026-08-08: T1 grid red first — 24 of 30 cells fail; the 6 green are `crop_video_batch`'s width/height (swept at M59) and `sample_frames`' two pinned scalar cells, which is the expected split. Completeness reader green.
 - 2026-08-08: pre-implementation gate amended AC1 — `data-raw/` is in `.Rbuildignore`, so a test sourcing the spec list from there would skip under `R CMD check`, unenforced in exactly the run the release gate uses (LESSONS M51/M59). The list moves to `tests/testthat/helper-blame-specs.R` and the `data-raw/` scripts read it from the source tree; gate chose that over a second copy in the test tree, which no test could detect diverging.
 - 2026-08-08: pre-implementation gate amended AC4 — the plan demanded unchanged precedence everywhere, but `standardize_video_batch()` reads its dimension values inside `pmap` today, AFTER `check_nvenc_available()` (`R/ffmpeg.R:3832`), so a front-door sweep necessarily flips that pair. Gate chose matching `crop_video_batch()`'s M59 placement (value above nvenc, `R/ffmpeg.R:5107` vs `:5118`) over preserving precedence by sweeping last, because a machine-independent refusal reporting before a machine-dependent one is the rule D036 already states and the alternative would make the two batch verbs disagree; falsified by a caller for whom the encoder's absence is the more actionable of the two.

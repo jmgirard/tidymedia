@@ -45,10 +45,10 @@ existence semantics; the milestone states why rather than sweeping them.
 - [ ] AC4 — `data-raw/input-guard-baseline.R` is extended with the
       present-but-unreadable form as an additional declared axis, not as
       hand-added cells, and `input_guard_uncovered()` reports no uncovered
-      combination. Measured over both refs: no call's fate changes — an
-      unreadable-but-present input was already refused inside the pipeline —
-      and what moves is exactly those cases' blame and message, and nothing
-      else.
+      combination. Measured over both refs: no call's fate changes; every
+      message that changes does so either by the one declared re-wording or
+      at a cell whose blame moved; and the cells whose blame moved are
+      exactly the unreadable ones.
 - [ ] AC5 — The M62 D-entry's recorded residual is closed by an appended entry
       naming it, rather than left standing.
 - [ ] AC6 — `NEWS.md` records the message change for the thirteen scalar verbs
@@ -76,7 +76,7 @@ existence semantics; the milestone states why rather than sweeping them.
 - [x] T3 — Retarget the thirteen `check_file_exists(infile)` scalar sites; state
       in a comment why `R/verify.R:53` and `R/mediainfo.R:203` keep existence
       semantics.
-- [ ] T4 — Extend the M62 grid's declaration with the unreadable-but-present
+- [x] T4 — Extend the M62 grid's declaration with the unreadable-but-present
       axis; re-run against both refs.
 - [ ] T5 — Appended D-entry closing M62's residual, `NEWS.md`, roxygen; then
       `document()` / `test()` / `check()`.
@@ -85,6 +85,9 @@ existence semantics; the milestone states why rather than sweeping them.
 
 - 2026-08-08: created by /milestone-plan, split from M62 at the plan gate.
 - 2026-08-08: in-progress on `m63-unreadable-input-front-door`, cut from origin/master at f4357e7.
+- 2026-08-08: T4 — `unreadable` declared as a fifth form at the `none` crossing; 584 cells per ref, 484 live, 30 of them unreadable. Every reader empty over origin/master vs the branch; 200 messages changed, 170 by the declared re-wording and 30 at blame-moved cells, and the blame-moved set is exactly the 30 unreadable cells (reported `ffm_files` before, the verb after; no cell reports `ffm_files` after).
+- 2026-08-08: T4 — two instrument defects found by running it: the form counted two paths on a one-slot verb whose call shape then dropped the second, so `input_guard_unnamed()` held twelve cells to naming a path never passed; and the re-wording comparison ran over raw text, which cli wraps at a different word per ref, so 170 intended changes read as regressions. Both fixed in the declaration rather than exempted.
+- 2026-08-08: amendment (gated) — AC4 refined a second time, after measurement: the earlier text's "and nothing else" excluded the 170 wording-only changes the milestone intends, so the criterion now states three separately-measured claims (fate, message, blame).
 - 2026-08-08: T1/T2/T3 — `check_paths_readable()` is the one site (`file.access(mode = 4)`, renamed from `check_paths_exist()` since the predicate moved); `check_file_readable()` carries the thirteen scalar input sites and `ffm_files()` reaches the same site, so its own refusal is deleted rather than duplicated. `check_file_exists()` keeps existence for its two non-input callers with the reason in a comment.
 - 2026-08-08: T2 — the four-case corpus is present-readable / absent / present-unreadable / directory; the directory case measured as accepted by BOTH predicates, so the property test asserts agreement and pins which cases split, or the identity would hold vacuously. The unreadable fixture verifies itself with the guard's own predicate and skips where a mode-000 file is still readable.
 - 2026-08-08: T3 — two sibling tests matched the retired wording: `test-ffmpeg.R:418` failed, and `test-normalize-audio.R:111` passed only because "does_not_exist.mp4" contains "exist"; both now match the wording.

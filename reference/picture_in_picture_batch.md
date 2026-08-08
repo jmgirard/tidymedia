@@ -94,9 +94,12 @@ picture_in_picture_batch(
   it would otherwise be reported against. A call that also contradicts
   itself — naming an `audio_codec` with no audio carried into the output
   — is refused for the contradiction first, whether or not this machine
-  has the encoder. A per-row value error — a negative `margin`, a
-  `position` outside the five accepted values — likewise reports ahead
-  of the encoder check.
+  has the encoder. A per-row value error — a negative `margin`, an
+  `audio` index outside the two inputs, a `position` outside the five
+  accepted values — likewise reports ahead of the encoder check. A value
+  error and a contradiction resolve the same way whether the value
+  arrived as an argument or in a `jobs` column; the contradiction
+  reports first.
 
 - run:
 

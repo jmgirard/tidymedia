@@ -133,7 +133,10 @@ is refused for the contradiction first, whether or not this machine has
 the encoder.
 A per-row value error — an <code>audio</code> index past that row's input count,
 a <code>direction</code> outside the two accepted values — likewise reports ahead
-of the encoder check.</p></dd>
+of the encoder check.
+A value error and a contradiction resolve the same way whether the value
+arrived as an argument or in a <code>jobs</code> column; the contradiction
+reports first.</p></dd>
 
 
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>

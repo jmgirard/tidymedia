@@ -96,7 +96,9 @@ compare_videos_batch(
   — is refused for the contradiction first, whether or not this machine
   has the encoder. A per-row value error — an `audio` index past that
   row's input count, a `direction` outside the two accepted values —
-  likewise reports ahead of the encoder check.
+  likewise reports ahead of the encoder check. A value error and a
+  contradiction resolve the same way whether the value arrived as an
+  argument or in a `jobs` column; the contradiction reports first.
 
 - run:
 

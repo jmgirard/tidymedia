@@ -51,18 +51,23 @@ blame_specs <- function(input, outdir = tempfile("frames")) {
         form = "scalar", delivery = "arg", argument = arg,
         own = dim_msg, args = scalar_args)
 
+    # width/height already blamed this verb before M64: M59 swept them here,
+    # and left x/y to the fan-out. Pinned, so the mutation ledger does not
+    # credit an M64 sweep with a cell M59 fixed.
+    already <- arg %in% c("width", "height")
+
     batch_args <- list(jobs = one(input = input, output = "o.mp4"),
                        width = 160, height = 120)
     batch_args[[arg]] <- bad
     add(id = paste0("crop_video_batch/", arg, "/arg"),
         verb = "crop_video_batch", form = "batch", delivery = "arg",
-        argument = arg, own = dim_msg, args = batch_args)
+        argument = arg, own = dim_msg, pinned = already, args = batch_args)
 
     col_jobs <- one(input = input, output = "o.mp4")
     col_jobs[[arg]] <- bad
     add(id = paste0("crop_video_batch/", arg, "/column"),
         verb = "crop_video_batch", form = "batch", delivery = "column",
-        argument = arg, own = dim_msg,
+        argument = arg, own = dim_msg, pinned = already,
         args = list(jobs = col_jobs, width = 160, height = 120))
   }
 

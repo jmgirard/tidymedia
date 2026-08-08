@@ -31,7 +31,9 @@ or \code{audio_codec} column it means "leave the codec unset". Any two rows
 resolving to the same output path are rejected; other columns are ignored.}
 
 \item{direction, resize}{Defaults applied to every row lacking the
-corresponding column. See \code{\link[=compare_videos]{compare_videos()}} for their meaning.}
+corresponding column. \code{direction} is \code{"horizontal"} (the default)
+or \code{"vertical"}; a \code{direction} column is held to the same two
+values, per row. See \code{\link[=compare_videos]{compare_videos()}} for their fuller meaning.}
 
 \item{audio}{The 0-based index of the \emph{input} whose audio to keep -- \code{0} is the first file passed in, \code{1} the second. This counts the verb's inputs, not one input's audio streams, so it is a different index from \code{audio_stream} on the single-input verbs. \code{NULL} (default) maps no audio at all, so the output is silent -- unlike \code{audio_stream = NULL}, which always maps something. Naming an input the call does not have is an R error, raised before FFmpeg runs. Applied to every row lacking an \code{audio} column; an \code{NA} cell in that column means the same as \code{NULL} for that row, dropping that output's audio. Each row's value is validated against that row's input count. See \code{\link{audio_stream}}. (default = \code{NULL})}
 
@@ -56,7 +58,10 @@ runs, so an unavailable encoder aborts naming this function rather than
 the internal fan-out it would otherwise be reported against. A call that
 also contradicts itself — naming an \code{audio_codec} with no audio carried into the output —
 is refused for the contradiction first, whether or not this machine has
-the encoder.}
+the encoder.
+A per-row value error — an \code{audio} index past that row's input count,
+a \code{direction} outside the two accepted values — likewise reports ahead
+of the encoder check.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}

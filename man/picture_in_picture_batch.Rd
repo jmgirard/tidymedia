@@ -33,7 +33,10 @@ it means "leave the codec unset". Any two rows resolving to the same output
 path are rejected; other columns are ignored.}
 
 \item{position, scale, margin}{Defaults applied to every row lacking the
-corresponding column. See \code{\link[=picture_in_picture]{picture_in_picture()}} for their meaning.}
+corresponding column. \code{position} is one of \code{"topright"} (the
+default), \code{"topleft"}, \code{"bottomright"}, \code{"bottomleft"} or
+\code{"center"}; a \code{position} column is held to those same five
+values, per row. See \code{\link[=picture_in_picture]{picture_in_picture()}} for their fuller meaning.}
 
 \item{audio}{The 0-based index of the \emph{input} whose audio to keep -- \code{0} is the first file passed in, \code{1} the second. This counts the verb's inputs, not one input's audio streams, so it is a different index from \code{audio_stream} on the single-input verbs. \code{NULL} (default) maps no audio at all, so the output is silent -- unlike \code{audio_stream = NULL}, which always maps something. Naming an input the call does not have is an R error, raised before FFmpeg runs. Applied to every row lacking an \code{audio} column; an \code{NA} cell in that column means the same as \code{NULL} for that row, dropping that output's audio. See \code{\link{audio_stream}}. (default = \code{NULL})}
 
@@ -58,7 +61,10 @@ runs, so an unavailable encoder aborts naming this function rather than
 the internal fan-out it would otherwise be reported against. A call that
 also contradicts itself — naming an \code{audio_codec} with no audio carried into the output —
 is refused for the contradiction first, whether or not this machine has
-the encoder.}
+the encoder.
+A per-row value error — a negative \code{margin}, a \code{position}
+outside the five accepted values — likewise reports ahead of the encoder
+check.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}

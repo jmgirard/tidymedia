@@ -6,7 +6,7 @@
 - **Driving RR:** —
 - **Principles touched:** —
 
-- **Branch/PR:** `m60-line-ending-normalization`
+- **Branch/PR:** `m60-line-ending-normalization` / https://github.com/jmgirard/tidymedia/pull/63
 
 ## Goal
 
@@ -45,10 +45,10 @@ out and every scripted edit still has to remember.
 
 ## Acceptance criteria
 
-- [ ] AC1 — `.gitattributes` exists at the repo root with `* text=auto`, and
+- [x] AC1 — `.gitattributes` exists at the repo root with `* text=auto`, and
       `.git-blame-ignore-revs` exists naming the normalization commit's full
       SHA.
-- [ ] AC2 — No tracked *text* file carries a CR byte, verified by a procedure
+- [x] AC2 — No tracked *text* file carries a CR byte, verified by a procedure
       that enumerates the whole tracked set and lets git classify:
       `git ls-files -z | xargs -0 grep -lI $'\r'` returns empty. `-I` skips
       binary files, which is the intended domain — three tracked binaries
@@ -56,7 +56,7 @@ out and every scripted edit still has to remember.
       hand-list, which would leave any extension it omits stale, and `-lc`,
       which prints a `path:count` line for every file and so can never return
       empty.
-- [ ] AC3 — The normalization commit changes line endings and nothing else,
+- [x] AC3 — The normalization commit changes line endings and nothing else,
       shown both ways: `git diff --ignore-cr-at-eol <before> <after>` is empty
       over the whole tree, **and** the same diff without that flag is
       non-empty and touches exactly the two text files AC2's command names
@@ -65,16 +65,16 @@ out and every scripted edit still has to remember.
 - [ ] AC4 — `git add --renormalize .` on a clean tree after the change
       produces no further staged diff, so the pinned setting and the stored
       bytes agree on this machine.
-- [ ] AC5 — The `LESSONS.md` CRLF entry is corrected and then retired: its
+- [x] AC5 — The `LESSONS.md` CRLF entry is corrected and then retired: its
       "only CRLF file" claim is false (AC2's command returns two text files),
       and `.gitattributes` plus AC2's check is the enforcement that retires
       what remains. The entry is deleted outright, or its surviving text
       states in so many words what the enforcement does not cover; a trim that
       changes nothing does not satisfy this.
-- [ ] AC6 — The r-package profile's verify slot is clean after normalization:
+- [x] AC6 — The r-package profile's verify slot is clean after normalization:
       `devtools::document()` produces no diff, `devtools::test()` passes, and
       `devtools::check()` reports 0 errors and 0 warnings.
-- [ ] AC7 — Both new top-level files carry `.Rbuildignore` entries, per the
+- [x] AC7 — Both new top-level files carry `.Rbuildignore` entries, per the
       repo's CLAUDE.md convention, verified by inspection rather than by a
       check NOTE: `.Rbuildignore` holds anchored patterns matching
       `.gitattributes` and `.git-blame-ignore-revs`, and the tarball
@@ -129,3 +129,67 @@ out and every scripted edit still has to remember.
 ## Decisions
 
 ## Review
+
+Verified 2026-08-08 on branch `m60-line-ending-normalization` at PR #63.
+Every line below is a command run in this phase, never recalled from implement.
+
+### Consistency gate
+
+- `cairn_validate` exit 0 — 16 PASS, 8 advisory OK, nothing WARN or FAIL.
+- No `DESIGN.md` principle changed, so `cairn_impact` is skipped.
+- r-package `consistency-gate` slot: `devtools::document()` no diff (`git status`
+  empty over `man/`, `NAMESPACE`, `R/`, `DESCRIPTION` after it); no generated
+  file hand-edited; `README.Rmd`/`README.md` untouched by the branch so no
+  re-knit is owed; `pkgdown::check_pkgdown()` "No problems found"; both new
+  top-level files carry `.Rbuildignore` entries (AC7); `devtools::check()`
+  `Status: OK`. No `NEWS.md` entry: the milestone changes no user-visible
+  behavior — line endings, a build-ignore pattern, and two developer files.
+
+### Acceptance criteria
+
+- AC1 — PASS. `.gitattributes` contains exactly `* text=auto`.
+  `.git-blame-ignore-revs` holds one non-comment entry,
+  `482a1d3ee38fd9e38a4659d6f9e29faefa1f306a`, verified full 40-hex, verified by
+  `git cat-file -t` to be a commit, and verified by `git log -1` to be
+  "M60 T2: renormalize the repo to LF" — the normalization commit itself, not
+  merely a resolvable SHA.
+
+- AC2 — PASS. `git ls-files -z | xargs -0 grep -lI $'\r'` over all 284 tracked
+  files returns empty. A control run of the same sweep WITHOUT `-I` returns the
+  three tracked binaries, which shows the empty result is `-I` doing its job
+  rather than the sweep failing to reach any file.
+
+- AC3 — PASS, both halves. Against `<before>` = `5272eb8` (the normalization
+  commit's parent) and `<after>` = `482a1d3`: `git diff --ignore-cr-at-eol`
+  over the whole tree is empty, and the same diff unflagged is non-empty and
+  touches exactly `R/ffmpeg.R` (6288/6288) and `tidymedia.Rproj` (18/18) — the
+  two files AC2's command named on master, and no third. Additionally checked
+  over the whole branch rather than the single commit:
+  `git diff --ignore-cr-at-eol master..HEAD -- R/ffmpeg.R tidymedia.Rproj` is
+  also empty, so no semantic drift entered those files at any later commit.
+
+- AC5 — PASS by the criterion's first disjunct. `git diff master..HEAD --
+  cairn/LESSONS.md` is 0 added / 1 removed: the `2026-07-27 (M35; recurred M48,
+  M58, M59)` entry is deleted outright, not trimmed, so the "a trim that changes
+  nothing" failure mode cannot apply. No CRLF or line-ending text survives
+  anywhere in the file (`grep -inE 'crlf|line ending'` empty). The criterion's
+  own premise re-verified against master: sweeping `master`'s blobs returns
+  `R/ffmpeg.R` AND `tidymedia.Rproj`, so the entry's "only CRLF file" claim was
+  indeed false. `LESSONS.md` now holds 43 items against its 50-item cap.
+
+- AC6 — PASS. Fresh run in this phase: `devtools::document()` left no diff in
+  `man/`, `NAMESPACE`, `R/` or `DESCRIPTION`; `devtools::check()` exited 0 with
+  `Status: OK` — 0 errors, 0 warnings, 0 notes. `spelling.Rout` compared OK, so
+  M17's masked-NOTE trap is not concealing one behind the summary line. The
+  suite ran inside check (`Running 'testthat.R' ... OK`); the standalone
+  `devtools::test()` run recorded at T6 was FAIL 0 / WARN 4 / SKIP 5 / PASS
+  4402, its 4 warnings all the deliberate `warn_dropped_audio()` diagnostic
+  under test and its 5 skips the nvenc-absent guards.
+
+- AC7 — PASS, by inspection as the criterion requires rather than by a check
+  NOTE. `.Rbuildignore` lines 16-17 hold `^\.gitattributes$` and
+  `^\.git-blame-ignore-revs$`; matching each pattern against each filename in
+  Python confirms each file is matched by its own anchored pattern and by no
+  other entry. A fresh `pkgbuild::build()` tarball greps empty for
+  `gitattributes|git-blame`, contains no dotfile at any path, and carries only
+  `DESCRIPTION`, `NAMESPACE`, `NEWS.md`, `README.md` at top level.

@@ -2766,8 +2766,10 @@ check_resize_needs_two_inputs <- function(resize, n_inputs,
 # A function rather than a bare constant so the two internal pipelines can
 # default to it, and so a caller of these accessors gets a fresh vector rather
 # than a package-level object created at build time and kept in step with
-# lazy-loading. Note that arg_match() never reads a formal default anywhere in
-# this package: check_vocab_arg() always passes `values` explicitly.
+# lazy-loading. check_vocab_arg() passes `values` explicitly rather than letting
+# arg_match() read a formal default, because a column sweep has no formals to
+# read from; the single-argument arg_match() calls elsewhere in the package do
+# read theirs, as usual.
 stack_directions <- function() c("horizontal", "vertical")
 
 pip_positions <- function() {
@@ -6006,9 +6008,10 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
   # retires with this sweep (M59-D2). `arg` is named because the closure's local
   # was called `aud`, which is the name the message showed the user.
   #
-  # AFTER the contradiction sweep above, deliberately: a call wrong in both
-  # reports the contradiction (D036's ordering, extended to a value check by
-  # this milestone's AC5(a)).
+  # AFTER the contradiction sweep above, deliberately: a call whose value error
+  # arrives in a `jobs` column and which also contradicts itself reports the
+  # contradiction (D036's ordering). The ARGUMENT form is not uniform with this
+  # and M59 does not claim it is -- M61 makes the two agree.
   for (i in seq_len(nrow(jobs))) {
     if (!is.null(audio_rows[[i]])) {
       rlang::check_number_whole(audio_rows[[i]], min = 0,
@@ -6213,8 +6216,10 @@ picture_in_picture_batch <- function(jobs,
   # Per-row `margin` VALUES (M59 site 2). The column guard above covers the
   # column's TYPE; a negative cell used to reach the fan-out closure's own
   # re-check and be reported against purrr::pmap(). AFTER the contradiction
-  # sweep above, deliberately: a call wrong in both reports the contradiction
-  # (D036's ordering, extended to a value check by this milestone's AC5(a)).
+  # sweep above, deliberately: a call whose value error arrives in a `jobs`
+  # column and which also contradicts itself reports the contradiction (D036's
+  # ordering). The ARGUMENT form is not uniform with this and M59 does not claim
+  # it is -- M61 makes the two agree.
   for (value in batch_arg_rows(jobs, "margin", margin)) {
     rlang::check_number_whole(value, min = 0, arg = "margin")
   }

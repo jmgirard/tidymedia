@@ -420,13 +420,13 @@
   own shape is not in that list: all four verbs check it themselves before
   reaching `ffm_batch()`, so nothing displaces it.)
 
-  Where a value violation arrives in a `jobs` **column** and the call also
-  contradicts itself, the contradiction is reported. Passing that same value as
-  an **argument** instead reports the value, because these verbs have always
-  checked their scalar `direction`, `position` and `margin` arguments before
-  reaching the contradiction check, and this release does not move those. So
-  the two forms of one mistake can be reported differently; that is a known
-  gap, not a rule.
+  One caveat on ordering, on `compare_videos_batch()` and
+  `picture_in_picture_batch()`. When a call is wrong in **both** a per-row value
+  and one of the contradictions above, which error you are shown depends on how
+  the value was supplied. Supplied in a `jobs` **column**, the contradiction is
+  reported. Supplied as an **argument**, it varies — by which value it is, and
+  for `audio` even by which bound was crossed. That unevenness is a known gap
+  rather than a design, and a later release makes the two forms agree.
 
   Two smaller corrections come with this. `compare_videos_batch()`'s
   out-of-range `audio` message named an internal variable (`aud`) rather than

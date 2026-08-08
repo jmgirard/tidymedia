@@ -235,7 +235,7 @@ test_that("anonymize_video_batch() rejects a non-character knob column", {
   expect_error(anonymize_video_batch(jobs, run = FALSE), "color")
 })
 
-# Inherited per-region validation (reported by row index) -----------------
+# Per-region validation, swept at the front door (M59) -----------------
 
 test_that("anonymize_video_batch() checks each regions cell at its front door", {
   f <- make_input()

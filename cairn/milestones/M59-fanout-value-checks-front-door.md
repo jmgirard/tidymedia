@@ -46,7 +46,7 @@ its `call` from — calling `check_dim()` directly, or threading `call` through
 reuses its per-row checker shape, D036). An unreadable input file → the ROADMAP
 candidate row M58 created. `ffm_batch()`'s own argument checks
 (`R/ffm_batch.R:84-98`) → **not moved, only documented**: the verb does not own
-them and they cannot be hoisted, so AC5(c) pins and discloses the reordering
+them and they cannot be hoisted, so AC5(b) pins and discloses the reordering
 rather than changing it. Any validation not already enforced today — this
 milestone moves where a check reports, never what is checked.
 
@@ -124,10 +124,10 @@ milestone moves where a check reports, never what is checked.
       both front doors, sourcing the vocabulary from one place rather than a
       third copy; `check_batch_string_col()` keeps the type half.
 - [x] T7 — Tests: one blame test per pair at both `parallel` settings; mixed-
-      column tests; the three precedence cases of AC5; mutation-verify each
+      column tests; AC5's precedence cases; mutation-verify each
       front-door and shared call.
 - [x] T8 — Build and commit the before/after grid as the evidence ledger.
-- [x] T9 — NEWS (including AC5(c)'s displaced set); roxygen where precedence
+- [x] T9 — NEWS (including AC5(b)'s displaced set); roxygen where precedence
       changed; run the verify slot clean.
 
 - [x] T10 — Close review's evidence gaps: F10/F11 (guard runs under `R CMD
@@ -189,6 +189,7 @@ milestone moves where a check reports, never what is checked.
 - 2026-08-07: T11 — the three `AC5(*)` test names were renumbered to match the re-cut criterion. The contradiction-before-value test keeps its column-form cases and says in its comment that M59 no longer claims that ordering and M61 owns it; D036 still requires the column half, so it stays pinned. Checked that NO test asserts the ARGUMENT form reports the value check — the scalar-siblings cases pair no contradiction — so M61's AC5 clause about inverting such tests has nothing to invert as of this commit, and applies only to whatever M61 itself adds.
 - 2026-08-07: the plan commit for M61 was made on this branch by mistake; planning is docs-only and belongs on the default branch, or M61 would have been trapped behind M59's PR. Re-committed to `master` (`c8ffab2`) and merged back, the merge conflicting only on M59's own status row (branch `in-progress` kept over master's stale `planned`). The M59 milestone-file re-cut stays on this branch, where that file's updates live.
 - 2026-08-07: verify slot clean — `document()` regenerated only the two help pages whose roxygen changed; `devtools::test()` FAIL 0 / WARN 4 / SKIP 5 / PASS 4402; `devtools::check()` 0 errors / 0 warnings / 0 notes. Status → review.
+- 2026-08-07: fourth review pass — six findings actioned and fixed, seven logged; no return, the floor being untripped (nothing AC-failing, nothing ≥90). The notable one is Q2: NEWS carried the same over-general shape as the roxygen sentence T11 had deleted, and was measured false for `audio`; it now reports what the four measurements show — column form uniform, argument form varying by value and by bound — rather than asserting a rule. Q1 was a false absolute introduced by T11 itself. Q3 (D038's stale enumeration) is rejected here with reason: IP4 forbids editing it and M61's AC5 owns superseding it.
 
 ## Decisions
 
@@ -631,6 +632,66 @@ so the surviving clause is true for every value it names in both forms.
 `NEWS.md`'s column-versus-argument paragraph is accurate as written: it
 enumerates `direction`, `position` and `margin` rather than generalizing, which
 is exactly what the deleted roxygen sentence failed to do.
+
+### Fourth pass — independent review and triage
+
+One lens ([O] diff-bug) on the final state. Its verdict: **shipped behavior is
+correct**; all six criteria hold, re-probed independently (AC5(a) over 10 probes
+on four verbs in both forms; AC5(b) on four verbs with controls; the surviving
+roxygen clause on both verbs in both forms; N8's introspection fix intact;
+targeted suite 0 failures). All 13 findings are in descriptions.
+
+Scored by a fresh [S] scorer. **No finding is AC-failing and none reaches 90, so
+the return floor is not tripped** — all take ordinary triage with no status
+change. Six actioned (all fixed on this pass):
+
+- **Q4 (88)** — two source comments still credited the contradiction-versus-value
+  ordering to "this milestone's AC5(a)", which after the re-cut is the nvenc
+  clause. Rewritten to state the column-form ordering they actually justify and
+  to say plainly that the argument form is not uniform with it.
+- **Q2 (85, user-facing)** — NEWS's known-gap paragraph opened with an
+  unrestricted claim that the argument form reports the value, then narrowed it
+  in a because-clause naming three arguments. Measured false for `audio`:
+  `compare_videos_batch(3-input jobs, audio = 5)` reports the `resize`
+  contradiction. This is the same shape as the roxygen sentence T11 deleted.
+  Rewritten from measurement: in a `jobs` column the contradiction is reported
+  (verified 5/5); as an argument it varies — `direction` gives the value,
+  `audio`'s upper bound gives the contradiction, `audio`'s lower bound gives the
+  value. The paragraph now says it varies rather than stating a rule.
+- **Q3 (85)** — D038's enumeration of where the exception is recorded went stale
+  within this session: three of its four locations are gone (criterion re-cut
+  out, both help-page sentences deleted, candidate row absorbed into M61), and
+  its own falsifier has fired since M61 is planned and pins this ordering.
+  **Rejected as a fix here, with reason:** `DECISIONS.md` is history and IP4
+  forbids editing it, and M61's AC5 already owns superseding D038. Recorded so
+  M61's superseding entry states the stale enumeration rather than rediscovering
+  it.
+- **Q5 (85)** — `test-nvenc-front-door.R`'s pointer to the replacement pin said
+  `AC5(b)`; the renumbering made that the `ffm_batch`-guards test. Corrected to
+  `AC5(a)`.
+- **Q1 (82)** — the T11 fix introduced a fresh false absolute: "arg_match() never
+  reads a formal default anywhere in this package". There are 29 single-argument
+  `rlang::arg_match()` calls that do, and the claim contradicted its own
+  paragraph eight lines below. Rewritten to say why `check_vocab_arg()` passes
+  `values` explicitly without generalizing over the package.
+- **Q13 (80)** — `test-anonymize-video-batch.R`'s section header still said
+  "reported by row index", the behavior this branch removed. Retitled.
+
+Also fixed though logged below threshold, being one-word reference repairs the
+re-cut itself broke: **Q8 (78)** Scope Out and T9 cited `AC5(c)`; **Q9 (72)** T7
+described "the three precedence cases of AC5". Work-log and Review occurrences
+of the old numbering are left standing — they are history and record the
+numbering as it was.
+
+**Logged, not actioned:** Q6 (45) and Q7 (45), stale cross-references inside
+M61's file, which is unmodified by this branch and belongs to that milestone;
+Q10 (55), a test section header that over-claims where the test's own comment
+already discloses the truth; Q11 (30) and Q12 (30), the F8/N6 and P5 comment
+staleness, all on lines outside every diff hunk.
+
+**Post-fix verification:** `devtools::document()` no diff (the roxygen edits were
+comment-only); `devtools::test()` FAIL 0 / WARN 4 / SKIP 5 / PASS 4402;
+`devtools::check()` 0 errors / 0 warnings / 0 notes; CI green on all nine checks.
 
 ### Consistency gate
 

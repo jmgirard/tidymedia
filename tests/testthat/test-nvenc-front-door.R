@@ -416,7 +416,7 @@ test_that("a mixed copy column reports the copy conflict before availability", {
 # without it alike -- which is what makes the diagnosis machine-independent, the
 # property M54 named and D036 ordered for. The new pin, with a control proving
 # the availability abort is still live on the same verb, is
-# test-value-check-front-door.R's AC5(b) test; asserting it here as well would
+# test-value-check-front-door.R's AC5(a) test; asserting it here as well would
 # be a second site for one claim.
 #
 # compare_videos_batch's three-input `resize` case left this sweep at M58 for

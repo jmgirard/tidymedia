@@ -1,6 +1,6 @@
 # M59: Six per-row value checks are refused at the fan-out verb's front door
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M58
 - **Driving RR:** —
@@ -68,7 +68,7 @@ milestone moves where a check reports, never what is checked.
       message carrying none of `pmap` (covering `purrr::pmap` and
       `furrr::future_pmap`), `In index:`, or `_pipeline(`. One test per pair, at
       both `parallel` settings.
-- [ ] AC2 — For each of the six sites the front-door call and the per-row path
+- [x] AC2 — For each of the six sites the front-door call and the per-row path
       resolve to the same abort site, named in the milestone-local decision
       entry, with no verb spelling a second copy of the message or (sites 5/6) a
       third copy of the vocabulary literal. Verified by mutation: deleting a
@@ -187,6 +187,7 @@ milestone moves where a check reports, never what is checked.
 - 2026-08-07: T10 — F4 closed, and it was worse than review measured. Two readers were added to the grid, because the blind spot had two halves: `value_guard_message_regressions()` (a cell that reads differently without its blame moving) and `value_guard_blame_regressions()` (a cell blaming anything but the verb). The second exists because F1's `position` cell DID move its blame — to `rlang::arg_match0` — and so would have sat in `value_guard_blame()`'s success list looking like progress. Four multi-element vocabulary cells added, the class no cell covered. Verified against the returned commit `565fe9d`, where the regression was live: message reader catches `direction=[sideways,up]`, blame reader catches `position=[center,topleft]` blaming `rlang::arg_match0` — one each, both empty on the fixed tree.
 - 2026-08-07: T10 — F12 closed by correcting the claim rather than the code: the `parallel` loop's comment now says the two iterations run the same path since every check aborts before `ffm_batch()`, and that the loop is kept as a regression pin against a value reaching the fan-out again. AC1 requires both settings, so the loop stays. F13 remains logged and unactioned.
 - 2026-08-07: T10 verify slot clean — grid 38 cells, vacuity empty both sides, 0 refusals changed, 17 blame moves, both new readers empty; `document()` no diff; `devtools::test()` 0 failures; `devtools::check()` 0/0/0 with `testthat.R` OK. Status → review.
+- 2026-08-07: second review pass returned the milestone to `in-progress` (second defect return). All six criteria verified and ticked this pass — AC2's mutation half re-run with all ten deletions RED, AC5's amended clause verified in both forms, `check()` 0/0/0, CI green on all nine checks — but N1 (scored 92, user-facing) shows `R/ffmpeg.R:5903-5906` and `:6090-6093`, shipped as `man/compare_videos_batch.Rd` and `man/picture_in_picture_batch.Rd`, claiming a per-row value error reports "after the contradiction" unconditionally, where the argument form reports it first. Both blocks were added by this branch; it is F5's defect reproduced in documentation the AC5 amendment did not reach. N8 (85) returns with it: the four verbs' Usage lines name unexported accessors and `formals(compare_videos)$direction` no longer returns the vector, an introspection change the mid-work gate's accepted decision did not cover. Eleven findings logged, not actioned. Worth recording: no criterion failed, so the criteria as written do not reach roxygen accuracy.
 
 ## Decisions
 
@@ -389,7 +390,89 @@ evidence stands.
   (13 assertions) that replace the `../../R` glob: one asserts exactly one
   function BODY spells each vocabulary and names it, the other that all six
   signatures taking `direction`/`position` default to the accessor call. Neither
-  can skip. Mutation half below.
+  can skip. Mutation half re-run this pass against the current code via
+  `data-raw/value-guard-mutations.py`: all ten deletions RED, sources restored
+  clean — each of the six front-door sweeps reddens its AC1 blame test, and each
+  of the four shared calls a scalar verb also reaches reddens the
+  scalar-siblings test (sites 5/6 additionally redden the multi-element parity
+  tests). Both namespace guards were separately mutation-verified at T10: a
+  literal formal default reddens the formals guard and only it, a stray body
+  literal reddens the body guard and only it. **AC2 verified.**
+
+### Second pass — independent review
+
+- **[S] prior-review:** zero findings. It read this file's own first-pass
+  `## Review` record as the prior-review surface, checked each of F1–F13's
+  dispositions against the fixes, and specifically cleared the F7 candidate:
+  NEWS's `aud` claim is scoped to `compare_videos_batch()` and is true of it,
+  and the new grid reader's comment is scoped to the grid. GitHub probe `[]`
+  again, so no per-PR walk.
+- **[S] blame-history:** one finding (F-A, scored 72, logged).
+- **[O] diff-bug:** twelve findings (N1–N12). It confirmed F1/F2/F3, F4, F5,
+  F9, F10/F11 and F12 genuinely fixed — re-running the grid against the
+  returned commit `565fe9d` and getting exactly one row from each new reader,
+  empty against HEAD — and probed `check_vocab_arg()` against a pre-milestone
+  reference implementation across ten branches on both vocabularies, finding
+  every case identical in outcome, value and message.
+
+**Actioned (score ≥80):**
+
+- **N1 (92)** — `R/ffmpeg.R:5903-5906` and `:6090-6093`, rendered into
+  `man/compare_videos_batch.Rd` and `man/picture_in_picture_batch.Rd`, say a
+  per-row value error "likewise reports ahead of the encoder check, and after
+  the contradiction" — unconditionally. Measured:
+  `picture_in_picture_batch(jobs, margin = -5, audio_codec = "aac")` reports the
+  margin error, before the contradiction; likewise `direction` on
+  `compare_videos_batch()`. Both blocks were added by this branch. This is F5's
+  defect reproduced in shipped documentation, which the AC5 amendment did not
+  reach. **Disposition: fix, on return.**
+- **N8 (85)** — the four verbs' Usage lines show `stack_directions()` /
+  `pip_positions()`, which no user can evaluate, and
+  `formals(compare_videos)$direction` now returns that call where master
+  returned the character vector, so programmatic introspection that worked on
+  master is broken. The Usage half was accepted at a mid-work gate with export
+  offered and declined; the introspection half is new information that the
+  accepted decision did not cover. **Disposition: fix on the same return, shape
+  to be gated with the maintainer.**
+
+**Logged (score <80), 11 findings:**
+
+- F-A (72) — D036 states "the contradiction reports first" unconditionally, and
+  M59 documents an exception to it in AC5, NEWS and a ROADMAP row but never in
+  `DECISIONS.md`, the authoritative record.
+- N5 (68) — `value_guard_blame_regressions()` passes an abort whose `call` is NA,
+  so "blames nothing" reads as clean against an invariant its own comment states
+  absolutely.
+- N6 (65) — three inheritance comments now falsified by sweeps 15–90 lines below
+  them; an F8 re-surfacing, still on unmodified lines.
+- N7 (60) — `batch_arg_rows()` re-runs the completed scalar check once per row
+  when the column is absent; 0.121 s per 20 000 rows, no behavior change from a
+  `col %in% names(jobs)` short-circuit.
+- N2 (55) — AC5(a)'s scalar half is asserted by the criterion, NEWS and the
+  ROADMAP row, and pinned by no test.
+- N11 (55) — the permutation test covers `direction` on the scalar verb only.
+- N3 (45) — the uniqueness guard greps canonical element order, so a permuted
+  fourth copy still slips through; F11 only partly closed.
+- N4 (40) — the T10 work-log's "two possible homes" undercounts: a differently
+  named formal, a non-function namespace object and `sysdata.rda` are uncovered.
+- N12 (35) — a test comment overclaims what that guard catches.
+- N9 (25) — partly stale; AC5 was ticked after the lens read the file, AC2 was
+  held for the mutation run and is now verified.
+- N10 (20) — self-described as recording an evidence class, not a defect.
+
+### Verdict — returned to `in-progress` (second defect return)
+
+All six acceptance criteria are verified and ticked, and the consistency gate
+and CI are clean. The return is on the floor's other limb: N1 scored 92 on a
+defect in what the package tells its users — two shipped help pages assert a
+precedence the code does not have. N8 rides along on the same return. Neither
+falsifies a criterion, which is itself worth recording: the criteria as written
+do not reach roxygen accuracy, and a documentation claim contradicting the code
+passed every one of them.
+
+Defect-return count for this milestone: 2. Amendment returns: 1 (AC5). The
+third-return threshold is one away; if a third is needed the disposition is
+re-plan or split via `/milestone-plan`, not another retry.
 
 ### Consistency gate
 

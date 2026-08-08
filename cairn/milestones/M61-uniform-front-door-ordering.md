@@ -102,7 +102,7 @@ pipeline; any change to which calls are refused.
       `compare_videos_pipeline()` and `picture_in_picture_pipeline()`.
 - [x] T3 — `compare_videos_batch()`: move the scalar `direction` guard down;
       move the scalar `audio` lower-bound check down beside the per-row sweep.
-- [ ] T4 — `picture_in_picture_batch()`: move the scalar `position` and `margin`
+- [x] T4 — `picture_in_picture_batch()`: move the scalar `position` and `margin`
       guards down; add the front-door per-row `audio` sweep and retire the
       fan-out closure's copy.
 - [ ] T5 — Extend the grid: the four guards × both forms × the displaced errors,
@@ -123,6 +123,7 @@ pipeline; any change to which calls are refused.
 - 2026-08-08: T1 — M61-D1 records the four-guard set closed by inspection at `1d54b20`, the three displaced errors AC2's grid crosses, and why `resize`, the jobs-shape and the column-type guards stay above.
 - 2026-08-08: T2 — `check_vocab_arg()` now runs below the contradiction checkers in both `*_pipeline()` functions, so `direction` and `position` report after them in the argument form as they already did in the column form. `devtools::test()`: 0 failures, 4402 passing.
 - 2026-08-08: T3 — `compare_videos_batch()` checks `direction` and the scalar `audio` bound below the contradiction sweep. Minor task refinement: T3 said DELETE the scalar `audio` check as covered by the per-row sweep; measured on `1d54b20` that all three scalar guards refuse today even when a `jobs` column overrides the argument (`compare_videos_batch(jobs_with_audio_column, audio = -1)` aborts), so deleting one would lose a refusal, which Scope Out and AC3 both forbid. It moves instead. `devtools::test()`: 0 failures, 4402 passing.
+- 2026-08-08: T4 — `picture_in_picture_batch()` checks `position`, `margin` and `audio` below the contradiction sweep, and gains a front-door per-row `audio` sweep; the fan-out closure's copy retires. Measured: an out-of-range `audio` column now aborts naming the verb at both `parallel` settings, with no `pmap`, `In index:` or `aud` in the message. As in T3 the scalar guards move rather than being deleted. `devtools::test()`: 0 failures, 4402 passing.
 
 ## Decisions
 

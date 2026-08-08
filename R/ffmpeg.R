@@ -6156,10 +6156,10 @@ picture_in_picture_batch <- function(jobs,
                                      fallback = FALSE,
                                      run = TRUE, parallel = FALSE, ...) {
 
-  position <- check_vocab_arg(position, pip_positions(), "position")
+  # `position`, `margin` and `audio` are checked BELOW the contradiction sweep
+  # (M61); see there. `scale` stays here: it has no column sweep to be uniform
+  # with and no contradiction to be ordered against.
   rlang::check_number_decimal(scale)
-  rlang::check_number_whole(margin, min = 0)
-  rlang::check_number_whole(audio, min = 0, max = 1, allow_null = TRUE)
   check_token(video_codec, allow_null = TRUE)
   check_token(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
@@ -6223,6 +6223,15 @@ picture_in_picture_batch <- function(jobs,
     )
   }
 
+  # `position`, `margin` and `audio`, both forms, BELOW the contradiction sweep
+  # (M61). Each scalar guard is checked here rather than at the top of the verb,
+  # so a call wrong in both one of these values and the contradiction is told
+  # about the contradiction whichever form the bad value arrived in. None of the
+  # three is redundant with the sweep beside it: a sweep reads that column over
+  # the argument, so it never sees a bad argument a column overrides, and
+  # dropping the scalar guard would let a call that is refused today compile.
+  position <- check_vocab_arg(position, pip_positions(), "position")
+
   # Per-row `position` VALUES (M59 site 6). check_batch_string_col() above
   # covers that column's TYPE only, so an out-of-vocabulary cell used to reach
   # picture_in_picture_pipeline()'s own check inside the fan-out and be reported
@@ -6235,10 +6244,23 @@ picture_in_picture_batch <- function(jobs,
   # re-check and be reported against purrr::pmap(). AFTER the contradiction
   # sweep above, deliberately: a call whose value error arrives in a `jobs`
   # column and which also contradicts itself reports the contradiction (D036's
-  # ordering). The ARGUMENT form is not uniform with this and M59 does not claim
-  # it is -- M61 makes the two agree.
+  # ordering), and the scalar guard beside it now answers the same way (M61).
+  rlang::check_number_whole(margin, min = 0)
   for (value in batch_arg_rows(jobs, "margin", margin)) {
     rlang::check_number_whole(value, min = 0, arg = "margin")
+  }
+
+  # Per-row `audio` VALUES. The two inputs are fixed roles (D015), so the bound
+  # is a constant 0..1 rather than compare_videos_batch()'s per-row input count
+  # -- but the check was still made only inside the fan-out closure, where it
+  # reported against purrr::pmap() with the closure's local name `aud` (M59
+  # review F7). It runs at the front door now, naming `audio`, and the closure's
+  # copy retires with it. Same placement and the same reason as `margin` above.
+  rlang::check_number_whole(audio, min = 0, max = 1, allow_null = TRUE)
+  for (value in batch_arg_rows(jobs, "audio", audio, batch_stream_cell)) {
+    if (!is.null(value)) {
+      rlang::check_number_whole(value, min = 0, max = 1, arg = "audio")
+    }
   }
 
   # nvenc availability, re-checked here so an unavailable encoder blames this
@@ -6260,7 +6282,9 @@ picture_in_picture_batch <- function(jobs,
       mrg <- pick("margin", margin)
       aud <- pick("audio", audio)
       if (length(aud) == 1L && is.na(aud)) aud <- NULL
-      if (!is.null(aud)) rlang::check_number_whole(aud, min = 0, max = 1)
+      # The index needs no re-check here: the front door sweeps every row's
+      # value through the same batch_arg_rows() resolution this pick() applies
+      # (M61 retires the copy, as M59-D2 did for `margin`).
       picture_in_picture_pipeline(
         main, overlay, output,
         position = pick("position", position),

@@ -107,10 +107,10 @@ pipeline; any change to which calls are refused.
       fan-out closure's copy.
 - [x] T5 — Extend the grid: the four guards × both forms × the displaced errors,
       plus the message-text and `call`-presence readers.
-- [ ] T6 — Tests: AC1's cells with their nonexistent pair recorded, AC3's nvenc
-      invariant, AC4, AC6's sentence cells; invert M59's argument-form tests.
-- [ ] T7 — D-entry superseding D038; roxygen and NEWS; the residue grep;
-      run the verify slot clean.
+- [x] T6 — Tests: AC1's cells with their nonexistent pair recorded, AC3's nvenc
+      invariant, AC4; invert M59's argument-form tests.
+- [ ] T7 — D-entry superseding D038; roxygen and NEWS; AC6's sentence cells;
+      the residue grep; run the verify slot clean.
 
 ## Work log
 
@@ -126,6 +126,10 @@ pipeline; any change to which calls are refused.
 - 2026-08-08: T4 — `picture_in_picture_batch()` checks `position`, `margin` and `audio` below the contradiction sweep, and gains a front-door per-row `audio` sweep; the fan-out closure's copy retires. Measured: an out-of-range `audio` column now aborts naming the verb at both `parallel` settings, with no `pmap`, `In index:` or `aud` in the message. As in T3 the scalar guards move rather than being deleted. `devtools::test()`: 0 failures, 4402 passing.
 - 2026-08-08: T5 — `data-raw/value-guard-baseline.R` gains the ordering dimension: each of the four guards plus pip's `audio` (new site 7), in scalar and column form, crossed with the contradiction, `check_nvenc_available()` and `ffm_batch()`'s `run` guard, each paired with a control proving the crossed error is live. 110 cells. Two readers added — `value_guard_missing_call()` (no abort lost its `call`) and `value_guard_ordering()` / `value_guard_dead_controls()`. Two existing readers narrowed with their reasons recorded in the file: `value_guard_message_regressions()` now covers only `crossed = "none"` cells (an ordering cell changes its message with its blame frame unmoved, which is the deliverable, not a regression), and `value_guard_blame_regressions()` exempts the `run_guard` controls (`ffm_batch()` names itself for its own guard, and did before this milestone).
 - 2026-08-08: T5 — measured against `origin/master`: 0 changed refusals, 0 message regressions, 0 blame regressions, 0 aborts missing a `call`, 0 dead controls, 0 vacuous cells on either ref. Six cells change which error they report: the four scalar-argument cells crossed with a contradiction (`direction`, `position`, `margin`, and compare's `audio` at its LOWER bound) move value → contradiction; pip's `audio` column crossed with nvenc and with the `run` guard moves those → value, the front-door guard being new. Probing compare's `audio` only at its upper bound would have missed its moving cell — the upper bound already sat below the sweep, which is the asymmetry D038 recorded.
+- 2026-08-08: T6 — new `tests/testthat/test-front-door-ordering.R`: AC1's eleven ordering cells (four guards x both forms, compare's `audio` at both bounds) each with its control, the nonexistent pip-`audio`-argument cell asserted rather than left silent, AC3's nvenc invariant over all five sites in both forms, and AC4 at both `parallel` settings. Suite: 0 failures, 4578 passing (was 4402).
+- 2026-08-08: T6 — the "invert M59's argument-form tests" clause found NOTHING to invert: no M59 test asserts the argument form reports the value check ahead of a contradiction. Measured, not assumed — the full suite passed unchanged after T2-T4 moved every one of the four guards. M59's AC5(a)/AC5(b) tests order the value check against nvenc and against `ffm_batch()`'s `run` guard, both invariants this milestone preserves, and its column-form ordering test is unaffected. The clause is recorded as vacuous rather than quietly dropped.
+- 2026-08-08: T6 — `blamed_verb()` / `catch_call()` lifted into `tests/testthat/helper-blame.R`; the identical copies in `test-contradiction-front-door.R` and `test-value-check-front-door.R` are deleted rather than a third being written (the M40 trap).
+- 2026-08-08: T6 — the new tests verified red on the pre-milestone ref: the four scalar cells report the value on `origin/master` (grid), and pip's `audio` column there aborts with `purrr::pmap`, `In index: 1` and `aud` in the message, which is exactly what AC4 forbids.
 
 ## Decisions
 

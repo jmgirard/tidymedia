@@ -500,6 +500,45 @@ Defect-return count for this milestone: 2. Amendment returns: 1 (AC5). The
 third-return threshold is one away; if a third is needed the disposition is
 re-plan or split via `/milestone-plan`, not another retry.
 
+### Third pass — 2026-08-07, after the N1/N8 fixes, the AC2 amendment and D038
+
+Re-executed on the branch at PR #62. Only documentation, four signature
+defaults, one test and tracking files changed since the second pass, so the
+criteria below were re-run in full and the compression was audited clause by
+clause.
+
+- **AC1** — 112 assertions, 0 failed, 0 skipped; unchanged from the second pass.
+- **AC2** — 287 assertions across the file, 0 failed, 0 skipped. The amended
+  clause verified directly: all six signatures taking `direction`/`position`
+  evaluate to exactly their accessor's values (the four exported ones spelling
+  the literal, the two internal pipelines calling the accessor), and each
+  exported default additionally evaluates in `baseenv()`, which is the
+  introspection property N8 restored. Mutation half re-run below.
+- **AC3** — grid re-run: 38 cells, `value_guard_vacuous()` empty on both refs,
+  `value_guard_refusals()` empty, `value_guard_message_regressions()` empty,
+  `value_guard_blame_regressions()` empty, `value_guard_blame()` 17 cells all
+  `purrr::pmap` → the verb.
+- **AC4** — unchanged; M59-D1 stands.
+- **AC5** — re-verified in both forms on both verbs after the N1 rewording:
+  a `jobs` column carrying the bad value plus the M58 contradiction reports the
+  contradiction; the same value as an argument reports the value check. The two
+  help pages now say exactly this, where before the pass they claimed the
+  contradiction unconditionally.
+- **AC6** — `devtools::document()` no diff; `devtools::check()` 0 errors,
+  0 warnings, 0 notes; `pkgdown::check_pkgdown()` no problems.
+
+**Compression audit.** The Scope and Acceptance-criteria sections were shortened
+in the previous commit to hold the 150-line cap. Every operative clause of AC1
+through AC6 and of Scope In/Out was checked present against the pre-compression
+text: the forbidden substrings, the mutation obligations and their sites-2-and-4
+exemption, the grid's forms and its in-range baseline requirement, AC4's two
+obligations, AC5's three parts with the seam and the displaced set, and all four
+Scope Out clauses. What was dropped is inline file:line citations that M59-D2,
+M59-D3 and the front-door code comments carry, and one AC3 phrase that was
+*narrowed* rather than weakened — "sites 5/6's scalar cells" became "sites 5/6's
+single-string scalar cells", which is now the accurate statement since T10 added
+multi-element scalar cells that ARE read as evidence.
+
 ### Consistency gate
 
 - `cairn_validate.py` exit 0 — 16 checks PASS, 8 advisories OK, including

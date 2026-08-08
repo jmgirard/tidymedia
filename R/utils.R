@@ -23,33 +23,41 @@ pad_integers <- function(x, width = NULL, flag = "0") {
   formatC(x, width = width, flag = flag)
 }
 
-# check_paths_exist() -----------------------------------------------------
+# check_paths_readable() --------------------------------------------------
 
-# THE site the package's missing-input abort is written (M62). Every FRONT DOOR
-# reaches it -- the single-input verbs through check_file_exists() below, the
-# fan-out verbs' per-row sweeps and the two scalar fan-in verbs
-# (concatenate_videos(), compare_videos()) through check_batch_inputs()
-# directly -- so no wording and no firing condition exists in two places to
-# drift apart. ffm_files() is NOT one of them: its predicate is readability
-# rather than existence, and unifying the two is M63's scope, pinned meanwhile
-# by a test asserting it is the only other place an input refusal is worded.
-# This is D035's shape, not its licence: D035's rule is
-# conditioned on a probe whose result enters the compiled command, and a file's
-# existence never does (see the M62 D-entry).
+# THE site the package's bad-input abort is written (M62, predicate widened at
+# M63). Every FRONT DOOR reaches it -- the single-input verbs through
+# check_file_readable() below, the fan-out verbs' per-row sweeps and the two
+# scalar fan-in verbs (concatenate_videos(), compare_videos()) through
+# check_batch_inputs() directly, and ffm_files() itself -- so no wording and no
+# firing condition exists in two places to drift apart. This is D035's shape,
+# not its licence: D035's rule is conditioned on a probe whose result enters
+# the compiled command, and a file's readability never does (see the M62 and
+# M63 D-entries).
+#
+# The predicate is `file.access(mode = 4)`, which is ffm_files()' own and is
+# strictly wider than file.exists(): it refuses a file that is there but cannot
+# be opened for reading. M62 left the two predicates split, with the pipeline
+# the only place an unreadable input was refused; M63 closes that by giving
+# ffm_files() this site rather than by copying its test up to the front door.
+# The two agree on every path by construction now, there being one predicate.
 #
 # `x` is a character vector of ALREADY RESOLVED paths, so a caller sweeping a
 # jobs column passes the column and a scalar verb passes its one argument.
 #
 # The message branches on `multiple` -- what the ARGUMENT's contract admits --
 # never on how many paths it happened to receive or how many turned out to be
-# missing. A single-file argument renders exactly the string check_file_exists()
-# emitted before this function existed (pinned byte-for-byte in
-# test-input-path-front-door.R); a column or vector leads with the count, and
-# does so at one row as well as at fifty, because "`jobs$input` does not exist"
-# would misdescribe a column and because a one-row batch must not answer
-# differently from a two-row one.
+# bad. A column or vector leads with the count, and does so at one row as well
+# as at fifty, because "`jobs$input` can't be found or read" would misdescribe
+# a column and because a one-row batch must not answer differently from a
+# two-row one.
 #
-# One missing path is reported ONCE however many rows name it: `missing` is
+# The wording says neither "does not exist" nor "is not readable", because one
+# call's carrier can hold both kinds of bad path and the abort names them in
+# one list. What it may not do is assert absence of a file that is there, which
+# is what M62's wording did to every unreadable input (M63 AC3).
+#
+# One bad path is reported ONCE however many rows name it: `bad` is
 # deduplicated, so a single typo shared by twenty rows reads as one file, not
 # twenty (M62 review F3, matching reject_duplicate_outputs() and every other
 # sibling guard, all of which unique() before they count).
@@ -58,44 +66,65 @@ pad_integers <- function(x, width = NULL, flag = "0") {
 # `main` and `overlay` in ONE call, so a row missing both names both (M62 review
 # F2). cli collapses the vector and the verb agrees with its length.
 #
-# Pluralization is driven off the scalar `length(missing)` via cli::qty(), never
-# off the `{.file {missing}}` vector: a `{?}` governed by a `{.val {vector}}`
+# Pluralization is driven off the scalar `length(bad)` via cli::qty(), never
+# off the `{.file {bad}}` vector: a `{?}` governed by a `{.val {vector}}`
 # throws `length(object) == 1` with 2+ items (M18).
-check_paths_exist <- function(x, arg = rlang::caller_arg(x),
-                              multiple = length(x) != 1L,
-                              call = rlang::caller_env()) {
+check_paths_readable <- function(x, arg = rlang::caller_arg(x),
+                                 multiple = length(x) != 1L,
+                                 call = rlang::caller_env()) {
   # A path carrier can arrive as a factor (paths as levels) or as any other
-  # atomic vector; coerce before the predicate so file.exists() cannot raise its
-  # unattributed base error `invalid 'file' argument` from inside a front-door
+  # atomic vector; coerce before the predicate so file.access() cannot raise its
+  # unattributed base error `invalid 'names' argument` from inside a front-door
   # guard (M62 review F1). This is check_batch_jobs()'s coercion, at the one
   # site every sweep reaches, so a verb that validates its table inline gets it
   # too. Coercing here decides only what THIS guard reads: a verb whose own
   # column contract rejects the type still rejects it downstream, unmoved.
   x <- as.character(x)
-  missing <- unique(x[!file.exists(x)])
-  if (length(missing) == 0) {
+  bad <- unique(x[file.access(x, mode = 4) != 0])
+  if (length(bad) == 0) {
     return(invisible(x))
   }
   if (!multiple) {
-    cli::cli_abort("{.arg {arg}} does not exist: {.file {missing}}.", call = call)
+    cli::cli_abort("{.arg {arg}} can't be found or read: {.file {bad}}.",
+                   call = call)
   }
   cli::cli_abort(c(
-    "{.arg {arg}} {cli::qty(length(arg))}{?names/name} {length(missing)} \\
-     file{?s} that {cli::qty(length(missing))}{?does/do} not exist.",
-    "x" = "Missing: {.file {missing}}."
+    "{.arg {arg}} {cli::qty(length(arg))}{?names/name} {length(bad)} \\
+     file{?s} that can't be found or read.",
+    "x" = "Missing or unreadable: {.file {bad}}."
   ), call = call)
+}
+
+# check_file_readable() ---------------------------------------------------
+
+# Validate that `x` is a single string naming a readable file. Replaces the
+# recurring `is_character(x, n = 1)` + `file.exists(x)` validation pair at every
+# site whose argument is a pipeline INPUT. The predicate half delegates to
+# check_paths_readable() above; the string check stays here because this
+# spelling is the one that promises a SINGLE file.
+check_file_readable <- function(x, arg = rlang::caller_arg(x),
+                                call = rlang::caller_env()) {
+  rlang::check_string(x, arg = arg, call = call)
+  check_paths_readable(x, arg = arg, call = call)
+  invisible(x)
 }
 
 # check_file_exists() -----------------------------------------------------
 
-# Validate that `x` is a single string naming an existing file. Replaces the
-# recurring `is_character(x, n = 1)` + `file.exists(x)` validation pair. The
-# existence half delegates to check_paths_exist() above (M62); the string check
-# stays here because this spelling is the one that promises a SINGLE file.
+# Existence, not readability, and deliberately so: this spelling is left for the
+# two callers whose file is NOT a pipeline input -- verify_media()'s `file` and
+# write_mediainfo_template()'s `templatefile`. Neither has a downstream
+# counterpart that would refuse an unreadable file, so widening them here would
+# be a front-door abort refusing a call nothing else refuses, which is the shape
+# D040 says needs its own decision entry rather than a sweep (M63 Scope Out).
+# The abort is written here and nowhere else, as check_paths_readable()'s is at
+# its own site.
 check_file_exists <- function(x, arg = rlang::caller_arg(x),
                               call = rlang::caller_env()) {
   rlang::check_string(x, arg = arg, call = call)
-  check_paths_exist(x, arg = arg, call = call)
+  if (!file.exists(x)) {
+    cli::cli_abort("{.arg {arg}} does not exist: {.file {x}}.", call = call)
+  }
   invisible(x)
 }
 

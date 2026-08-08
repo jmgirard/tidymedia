@@ -74,6 +74,54 @@ input_guard_verbs <- function(pkg = "tidymedia") {
   list(fanout = fanout, scalar = setdiff(reaches_files, fanout))
 }
 
+# M63 -- a file that EXISTS and cannot be read, or NULL where this platform
+# will not make one (a process running as root reads a mode-000 file anyway).
+# The fixture is VERIFIED with the same predicate the guard uses rather than
+# assumed from Sys.chmod()'s return, so a test built on it is testing
+# unreadability and not a chmod that quietly did nothing.
+tm_unreadable_path <- function(dir, name = "m63-unreadable-input.mp4") {
+  p <- file.path(dir, name)
+  # Distinguish "this platform will not make one" from "the file was never
+  # created": an unwritable TMPDIR would otherwise be reported as a chmod
+  # limitation and send the reader to the wrong place (M63 review).
+  if (!isTRUE(file.create(p))) {
+    testthat::fail(paste0("could not create the fixture file: ", p))
+  }
+  Sys.chmod(p, "000")
+  if (!file.exists(p) || file.access(p, mode = 4) == 0) {
+    # Hand the mode back before giving up: on a platform where the chmod did not
+    # take, a file left mode-000 is one the caller's temp-dir cleanup may not be
+    # able to remove.
+    Sys.chmod(p, "600")
+    return(NULL)
+  }
+  p
+}
+
+# The gate in front of every M63 test: skip only where the platform genuinely
+# cannot express an unreadable file, and FAIL anywhere it can.
+#
+# A bare skip_if() made the milestone's whole behavioural evidence vanish on any
+# runner that happened to read a mode-000 file, with a green check and no signal
+# (M63 review). Two platforms really cannot express it -- Windows, whose chmod
+# reaches only the read-only bit, and a process running as root, which reads
+# regardless -- and on those the axis is untestable rather than broken. Anywhere
+# else, a NULL fixture means something is wrong with the run, not with the
+# platform, and the CI matrix's Linux and macOS jobs (non-root runners) are
+# therefore held to exercising the axis.
+tm_require_unreadable <- function(p) {
+  if (!is.null(p)) return(invisible(p))
+  windows <- .Platform$OS.type == "windows"
+  root <- !windows &&
+    identical(tryCatch(as.integer(system("id -u", intern = TRUE)),
+                       error = function(e) NA_integer_), 0L)
+  if (windows || root) {
+    testthat::skip("this platform cannot express an unreadable file")
+  }
+  testthat::fail(
+    "no unreadable fixture on a platform that should support one")
+}
+
 # Call-shape specs: what a LEGAL call to each verb looks like, with `p` standing
 # in for an input path. The specs supply only the shape — which arguments and
 # jobs columns the verb requires — never which verbs exist; that is the walk's

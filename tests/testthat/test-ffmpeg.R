@@ -415,7 +415,7 @@ test_that("sample_frames() rejects a non-positive rate", {
 test_that("sample_frames() rejects a missing input file", {
   d <- withr::local_tempdir()
   missing <- withr::local_tempfile(fileext = ".mp4")  # not created
-  expect_error(sample_frames(missing, d, fps = 1), "exist")
+  expect_error(sample_frames(missing, d, fps = 1), "can't be found or read")
 })
 
 test_that("sample_frames() aborts on an uncreatable output directory", {

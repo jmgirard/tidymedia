@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-08 (M62 merged as PR #65 and archived; one candidat
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M63 | An unreadable input is refused where a missing one already is | planned | M62 | normal | milestones/M63-unreadable-input-front-door.md |
+| M63 | An unreadable input is refused where a missing one already is | review | M62 | normal | milestones/M63-unreadable-input-front-door.md |
 | M62 | A missing input file is refused at the front door, in both forms | done | M61 | normal | milestones/archive/M62-fanout-input-path-front-door.md |
 | M59 | Six per-row value checks are refused at the fan-out verb's front door | done | M58 | normal | milestones/archive/M59-fanout-value-checks-front-door.md |
 | M61 | A value error and a contradiction resolve the same way in both forms | done | M59 | normal | milestones/archive/M61-uniform-front-door-ordering.md |

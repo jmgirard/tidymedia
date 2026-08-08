@@ -55,7 +55,7 @@ ffmpeg <- function(command) {
 #' @export
 extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL,
                           run = TRUE) {
-  check_file_exists(infile)
+  check_file_readable(infile)
   rlang::check_string(outfile)
   if (!is.null(timestamp) &&
       !(rlang::is_double(timestamp, n = 1, finite = TRUE) ||
@@ -134,7 +134,7 @@ frame_pipeline <- function(input, output, timestamp) {
 #' @export
 sample_frames <- function(infile, outdir, fps = NULL, interval = NULL,
                           format = "png", prefix = NULL, run = TRUE) {
-  check_file_exists(infile)
+  check_file_readable(infile)
   rlang::check_string(outdir)
   if (!is.null(prefix)) rlang::check_string(prefix)
   format <- check_image_format(format)
@@ -510,7 +510,7 @@ extract_audio_pipeline <- function(input, output, audio_codec = "copy",
 extract_audio <- function(infile, outfile, audio_codec = "copy",
                           audio_stream = NULL, run = TRUE) {
 
-  check_file_exists(infile)
+  check_file_readable(infile)
   rlang::check_string(outfile)
   # allow_null is D022's family rule: NULL emits no -codec:a and lets the output
   # container's default encoder decide. This verb refused it until M42 while
@@ -847,7 +847,7 @@ separate_audio_video <- function(infile, audiofile, videofile,
                                  fallback = FALSE, audio_stream = NULL,
                                  run = TRUE) {
 
-  check_file_exists(infile)
+  check_file_readable(infile)
   rlang::check_string(audiofile)
   rlang::check_string(videofile)
   # Resolve `hardware` at the front door: the copy guard below compares it to
@@ -973,7 +973,7 @@ convert_audio_pipeline <- function(input, output, audio_codec = NULL,
 convert_audio <- function(infile, outfile, audio_codec = NULL,
                           audio_stream = NULL, run = TRUE) {
 
-  check_file_exists(infile)
+  check_file_readable(infile)
   rlang::check_string(outfile)
   # Duplicates the check inside convert_audio_pipeline() on purpose. That helper
   # is shared with convert_audio_batch(), which relies on it for per-row
@@ -1102,7 +1102,7 @@ crop_video <- function(infile, outfile, width, height,
                        hardware = c("none", "nvenc"),
                        fallback = FALSE, audio_stream = NULL, run = TRUE) {
 
-  check_file_exists(infile)
+  check_file_readable(infile)
   rlang::check_string(outfile)
   rlang::check_string(video_codec, allow_null = TRUE)
   rlang::check_string(audio_codec, allow_null = TRUE)
@@ -1184,7 +1184,7 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
 format_for_web <- function(infile, outfile, hardware = c("none", "nvenc"),
                            fallback = FALSE, audio_stream = NULL, run = TRUE) {
 
-  check_file_exists(infile)
+  check_file_readable(infile)
   rlang::check_string(outfile)
   hardware <- rlang::arg_match(hardware)
   # No front-door check for `audio_stream`, matching crop_video() and
@@ -1262,7 +1262,7 @@ strip_metadata_pipeline <- function(input, output) {
 #' @export
 strip_metadata <- function(infile, outfile, run = TRUE) {
 
-  check_file_exists(infile)
+  check_file_readable(infile)
   rlang::check_string(outfile)
 
   p <- strip_metadata_pipeline(infile, outfile)
@@ -1359,7 +1359,7 @@ standardize_video <- function(infile, outfile,
                               hardware = c("none", "nvenc"), fallback = FALSE,
                               audio_stream = NULL, run = TRUE) {
 
-  check_file_exists(infile)
+  check_file_readable(infile)
   rlang::check_string(outfile)
   hardware <- rlang::arg_match(hardware)
   # Without this, a non-string video_codec reached ffm_codec() and aborted naming
@@ -1537,7 +1537,7 @@ anonymize_video <- function(infile, outfile, regions,
                             hardware = c("none", "nvenc"), fallback = FALSE,
                             audio_stream = NULL, run = TRUE) {
 
-  check_file_exists(infile)
+  check_file_readable(infile)
   rlang::check_string(outfile)
   hardware <- rlang::arg_match(hardware)
   # No front-door check for `audio_stream`, for the reason spelled out in
@@ -2074,7 +2074,7 @@ normalize_audio <- function(infile, outfile,
                             audio_stream = NULL,
                             run = TRUE) {
 
-  check_file_exists(infile)
+  check_file_readable(infile)
   rlang::check_string(outfile)
   rlang::check_bool(two_pass)
 
@@ -2902,7 +2902,7 @@ segment_video <- function(infile,
                           run = TRUE,
                           parallel = FALSE) {
 
-  check_file_exists(infile)
+  check_file_readable(infile)
   if (!(is.numeric(start) || is.character(start))) {
     cli::cli_abort("{.arg start} must be a numeric or character vector.")
   }
@@ -4386,11 +4386,13 @@ check_batch_jobs <- function(jobs, require_output = FALSE, verb = NULL,
 # `multiple = TRUE` unconditionally: the message shape follows the COLUMN's
 # contract, so a one-row table answers like a fifty-row one.
 #
-# The abort itself is check_paths_exist()'s and is never copied here -- that
+# The abort itself is check_paths_readable()'s and is never copied here -- that
 # single site is what keeps this guard and ffm_files()' own refusal from
-# drifting apart, and is D035's shape (one abort site, no new refusal, fails
-# closed) rather than D035's licence, which is conditioned on a probe whose
-# result enters the compiled command. A path's existence never does.
+# drifting apart, and since M63 it IS ffm_files()' refusal: one predicate, one
+# wording, reached from both ends. It is D035's shape (one abort site, no new
+# refusal, fails closed) rather than D035's licence, which is conditioned on a
+# probe whose result enters the compiled command. A path's readability never
+# does.
 #
 # PLACEMENT is per verb, deliberately not inside check_batch_jobs() /
 # check_fanin_jobs(): those run above each verb's column-type guards, and this
@@ -4411,7 +4413,7 @@ check_batch_inputs <- function(jobs, col = "input",
     if (is.list(x)) x <- unlist(x, use.names = FALSE)
     as.character(x)
   }), use.names = FALSE)
-  check_paths_exist(paths, arg = paste0("jobs$", col), multiple = TRUE,
+  check_paths_readable(paths, arg = paste0("jobs$", col), multiple = TRUE,
                     call = call)
   invisible(jobs)
 }
@@ -5607,9 +5609,10 @@ concatenate_pipeline <- function(infiles, outfile) {
 #' filter](https://ffmpeg.org/ffmpeg-filters.html#concat)
 #'
 #' @param infiles A character vector containing the file paths to video files.
-#'   Every path is checked at this verb's own front door, so a path that does
-#'   not exist aborts naming this function and lists every missing path, rather
-#'   than being reported against the internal builder it would otherwise reach.
+#'   Every path is checked at this verb's own front door, so a path that cannot
+#'   be found or read aborts naming this function and lists every such path,
+#'   rather than being reported against the internal builder it would otherwise
+#'   reach.
 #' @param outfile A string containing the desired file path to write the new,
 #'   concatenated video file to.
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
@@ -5631,7 +5634,7 @@ concatenate_videos <- function(infiles, outfile, run = TRUE) {
   # Sweep infiles here, below the type guards above and before the pipeline
   # (whose contradiction checks live inside concatenate_pipeline()), so a
   # missing input blames this verb rather than ffm_files() (M62).
-  check_paths_exist(infiles, arg = "infiles", multiple = TRUE)
+  check_paths_readable(infiles, arg = "infiles", multiple = TRUE)
 
   ffm_finish(concatenate_pipeline(infiles, outfile), run)
 }
@@ -5705,9 +5708,10 @@ compare_videos_pipeline <- function(infiles, outfile,
 #' track is stream-copied unless \code{audio_codec} names an encoder.
 #'
 #' @param infiles A character vector of two or more video file paths. Every
-#'   path is checked at this verb's own front door, so a path that does not
-#'   exist aborts naming this function and lists every missing path, rather
-#'   than being reported against the internal builder it would otherwise reach.
+#'   path is checked at this verb's own front door, so a path that cannot be
+#'   found or read aborts naming this function and lists every such path,
+#'   rather than being reported against the internal builder it would otherwise
+#'   reach.
 #' @param outfile A string giving the path to write the comparison video to.
 #' @param direction Either \code{"horizontal"} (side-by-side, the default) or
 #'   \code{"vertical"} (stacked top to bottom).
@@ -5774,7 +5778,7 @@ compare_videos <- function(infiles, outfile,
   # Sweep infiles here, below the type guards above and before the pipeline
   # (whose contradiction checks live inside compare_videos_pipeline()), so a
   # missing input blames this verb rather than ffm_files() (M62).
-  check_paths_exist(infiles, arg = "infiles", multiple = TRUE)
+  check_paths_readable(infiles, arg = "infiles", multiple = TRUE)
 
   p <- compare_videos_pipeline(infiles, outfile, direction, resize, audio,
                                video_codec = video_codec,
@@ -5911,8 +5915,8 @@ picture_in_picture <- function(main, overlay, outfile,
                                hardware = c("none", "nvenc"), fallback = FALSE,
                                run = TRUE) {
 
-  check_file_exists(main)
-  check_file_exists(overlay)
+  check_file_readable(main)
+  check_file_readable(overlay)
   rlang::check_string(outfile)
   rlang::check_number_decimal(scale)
   rlang::check_number_whole(margin, min = 0)

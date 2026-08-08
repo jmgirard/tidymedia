@@ -61,6 +61,9 @@
 #           path
 #   factor  every input path is absent and the carrier is a FACTOR column
 #           rather than a character one
+#   unreadable
+#           every input path EXISTS and cannot be opened for reading, each a
+#           different such path (M63's axis)
 #
 # `one` is the form that decides whether the sweep looks at the whole carrier or
 # stops at the first path, and `all`'s paths are distinct for the same reason:
@@ -76,12 +79,20 @@
 #           `all` distinct and `one` carrying a single absent path, nothing in
 #           the grid counted a repeat (M62 review F3).
 #   factor  a path column can arrive carrying its paths as factor levels, and a
-#           front-door guard that hands one to file.exists() raw degrades to the
-#           base error `invalid 'file' argument` blamed on file.exists (M62
-#           review F1). input_guard_blame_regressions() is the reader that sees
-#           it; it had no cell to see it in.
+#           front-door guard that hands one to the predicate raw degrades to an
+#           unattributed base error blamed on the predicate (M62 review F1).
+#           input_guard_blame_regressions() is the reader that sees it; it had
+#           no cell to see it in.
 #
-# Both are generated at the `none` crossing only. What they probe is what the
+# `unreadable` is M63's axis, added the same way rather than as hand-added
+# cells. M62's front door tested existence while the pipeline tested
+# readability, so a file that is there and cannot be opened was refused only
+# inside the fan-out; the form is what measures that residual closing. Its
+# fixtures are created mode-000 and VERIFIED unreadable with the same predicate
+# the guard uses, because a process that can read them anyway (root) would turn
+# every cell of this axis into a second `none` cell reading as success.
+#
+# All three are generated at the `none` crossing only. What they probe is what the
 # abort SAYS and who it blames, and a crossed cell says the crossing -- so
 # crossing them over the other seven would add cells that measure the crossing
 # again under a different label.
@@ -121,7 +132,10 @@
 #   input_guard_vacuous(after)           #   compile compiled on that ref
 #   input_guard_refusals(before, after)  # empty: the same calls are refused
 #   input_guard_message_regressions(before, after)  # empty: no cell reads worse
-#                                        #   without its blame having moved
+#                                        #   without its blame having moved or
+#                                        #   the declared re-wording explaining it
+#   input_guard_blame_unexpected(before, after)  # empty: the cells whose blame
+#                                        #   moved are exactly the unreadable ones
 #   input_guard_blame_regressions(after) # empty: no cell blames anything but
 #                                        #   the verb the user called
 #   input_guard_missing_call(after)      # empty: no abort lost its `call`
@@ -146,13 +160,14 @@ source(file.path("tests", "testthat", "helper-input-paths.R"))
 # -- the declared axes -------------------------------------------------------
 
 # How the call's input paths are populated. See the header.
-INPUT_GUARD_FORMS <- c("all", "one", "dup", "factor")
+INPUT_GUARD_FORMS <- c("all", "one", "dup", "factor", "unreadable")
 
 # The crossings each form is generated over; a form absent from this list is
 # generated over every crossing its verb declares. Declared here rather than
 # decided in the builder, so `input_guard_uncovered()` can re-derive exactly the
 # product the grid was asked for.
-INPUT_GUARD_FORM_CROSSINGS <- list(dup = "none", factor = "none")
+INPUT_GUARD_FORM_CROSSINGS <- list(dup = "none", factor = "none",
+                                   unreadable = "none")
 
 # Whether a (form, crossing, shape) combination is owed a cell, and if so
 # whether the shape can express it. Three answers, and the difference matters:
@@ -310,12 +325,16 @@ input_guard_error_crossing <- function(msg) {
   one <- function(m) {
     if (is.na(m)) return(NA_character_)
     has <- function(p) grepl(p, m, fixed = TRUE)
-    if (has("not exist")) return("input")
-    # The pipeline's own backstop, whose predicate is READABILITY rather than
-    # existence and whose wording M62 deliberately leaves alone (AC1's pinned
-    # residual, unified by M63). It is a distinct class here because on the
-    # pre-change ref it is what an unguarded verb's missing input reported, and
-    # collapsing it into `input` would hide exactly the move AC4 measures.
+    # Two wordings, one class: M62's front door said "does not exist" and M63's
+    # says "can't be found or read". Both are the front door refusing the
+    # input, and the grid is read across a ref on each side of that change.
+    if (has("not exist") || has("can't be found or read")) return("input")
+    # The pipeline's own backstop on the PRE-M63 ref, whose predicate was
+    # readability rather than existence. It stays a distinct class because on
+    # that ref it is what an unreadable input reported from inside the fan-out,
+    # and collapsing it into `input` would hide exactly the move AC4 measures.
+    # On the post-M63 ref no cell may report it: ffm_files() reaches the shared
+    # site and this wording is gone from the namespace.
     if (has("Can't find or read")) return("ffm_files")
     # The NA guards come first because two of their wordings ("The `input`
     # column of `jobs` must not contain `NA`") also carry the phrase the
@@ -575,8 +594,10 @@ input_guard_domain <- function(pkg = "tidymedia") {
 # -- the probe grid ----------------------------------------------------------
 
 # One cell and one control per (verb, form, crossing). `absent` is a path that
-# does not exist; `present` is the packaged sample.
-input_guard_cases <- function(present, absent, verbs = input_guard_domain()) {
+# does not exist, `unreadable` one that exists and cannot be read; `present` is
+# the packaged sample.
+input_guard_cases <- function(present, absent, unreadable,
+                              verbs = input_guard_domain()) {
   cases <- list()
   # `absent_paths` is the DISTINCT absent paths the cell carries, recorded so
   # input_guard_unnamed() can hold the abort to naming each of them exactly
@@ -621,18 +642,26 @@ input_guard_cases <- function(present, absent, verbs = input_guard_domain()) {
             list(paths)
           }
         }
+        # `unreadable` counts paths as `all` does -- one distinct bad path per
+        # input slot -- rather than as `one`/`dup` do. A one-slot verb's second
+        # path would be built and then dropped by its own call shape, and the
+        # cell would then be held to naming a path the call never carried.
         n_paths <- if (identical(shape$slots, 1L)) {
-          if (identical(form, "all")) 1L else 2L
+          if (form %in% c("all", "unreadable")) 1L else 2L
         } else {
           slots
         }
         # `absent` is a VECTOR of distinct nonexistent paths: `all` and `factor`
         # take a different one per slot, `dup` takes the same one every time,
-        # and `one` leaves all but the last slot present.
+        # and `one` leaves all but the last slot present. `unreadable` takes a
+        # different EXISTING-but-unreadable path per slot, for `all`'s reason:
+        # one constant path cannot tell "names every one" from "names the
+        # first".
         cell_paths <- switch(
           form,
           one = c(rep(present, n_paths - 1L), absent[[1]]),
           dup = rep(absent[[1]], n_paths),
+          unreadable = unreadable[seq_len(n_paths)],
           absent[seq_len(n_paths)]
         )
         ctrl_paths <- rep(present, n_paths)
@@ -671,10 +700,25 @@ input_guard_baseline <- function(ref = NULL, root = ".") {
     stop("an `absent` path exists: ",
          paste(absent[file.exists(absent)], collapse = ", "))
   }
+  # M63's fixtures: files that are THERE and cannot be read. Verified with the
+  # guard's own predicate rather than trusted from Sys.chmod(), and a hard stop
+  # rather than a skip -- a grid whose unreadable axis silently degraded to
+  # readable files would report full coverage of a case it never probed.
+  unreadable <- file.path(tempdir(), sprintf("m63-unreadable-input-%02d.mp4", 1:3))
+  for (p in unreadable) {
+    if (file.exists(p)) Sys.chmod(p, "600")
+    file.create(p)
+    Sys.chmod(p, "000")
+  }
+  if (!all(file.exists(unreadable) & file.access(unreadable, mode = 4) != 0)) {
+    stop("could not create unreadable fixtures (running as root?): ",
+         paste(unreadable, collapse = ", "))
+  }
+  on.exit(Sys.chmod(unreadable, "600"), add = TRUE)
   old <- options(tidymedia.nvenc_encoders = "h264_nvenc")
   on.exit(options(old), add = TRUE)
 
-  rows <- lapply(input_guard_cases(present, absent), function(case) {
+  rows <- lapply(input_guard_cases(present, absent, unreadable), function(case) {
     blank <- data.frame(
       verb = case$verb, form = case$form, crossing = case$crossing,
       control = case$control, exists = case$exists,
@@ -809,6 +853,12 @@ input_guard_refusals <- function(before, after) {
 #     the `none` ones; the crossed cells are not thereby unchecked --
 #     input_guard_ordering() states which error each showed on each ref, which
 #     is the stricter claim.
+#
+# `wording_only` is the second exception, and it is a SUBSTITUTION rather than
+# an exemption: M63 re-worded the front door's own abort, so a cell whose
+# before-text becomes its after-text under that one declared rewrite has not
+# regressed, while a cell differing by anything else still shows. Blanket-
+# exempting the input class instead would have hidden every other change to it.
 input_guard_messages <- function(before, after) {
   b <- input_guard_pair(before, after)
   both_abort <- b$kind == "abort" & after$kind == "abort"
@@ -819,16 +869,67 @@ input_guard_messages <- function(before, after) {
     (!is.na(b$call) & !is.na(after$call) & b$call == after$call)
   data.frame(verb = after$verb, form = after$form, crossing = after$crossing,
              control = after$control, moved_blame = !same_call,
+             wording_only = input_guard_reword(b$outcome) ==
+               gsub("[[:space:]]+", " ", after$outcome),
              before = b$outcome, after = after$outcome,
              stringsAsFactors = FALSE)[which(changed), , drop = FALSE]
 }
 
+# The one wording M63 moved, declared as a rewrite of the BEFORE text into the
+# AFTER text. Everything here is the front door's own abort; the pipeline's
+# retired wording is deliberately absent, because those cells moved blame too
+# and are excluded on that ground rather than on this one.
+INPUT_GUARD_WORDING <- c(
+  "does not exist:" = "can't be found or read:",
+  "that does not exist." = "that can't be found or read.",
+  "that do not exist." = "that can't be found or read.",
+  "Missing:" = "Missing or unreadable:")
+
+# Applied to a WHITESPACE-NORMALIZED message, because cli wraps to the terminal
+# and the two wordings are different lengths: the same sentence breaks at a
+# different word on each ref, and a fixed substitution over the raw text would
+# miss every wrapped occurrence and report the whole class as regressed. The
+# cost is that a whitespace-only change cannot be seen here, which no claim in
+# this milestone rests on.
+input_guard_reword <- function(msg) {
+  msg <- gsub("[[:space:]]+", " ", msg)
+  for (from in names(INPUT_GUARD_WORDING)) {
+    msg <- gsub(from, INPUT_GUARD_WORDING[[from]], msg, fixed = TRUE)
+  }
+  msg
+}
+
 # The half that must be empty: a cell that reads differently WITHOUT its blame
-# having moved and WITHOUT a second live error whose precedence this milestone
-# changed. Empty is the evidence.
+# having moved, WITHOUT a second live error whose precedence this milestone
+# changed, and beyond the declared wording rewrite. Empty is the evidence.
 input_guard_message_regressions <- function(before, after) {
   m <- input_guard_messages(before, after)
-  m[!m$moved_blame & m$crossing == "none", , drop = FALSE]
+  m[!m$moved_blame & !m$wording_only & m$crossing == "none", , drop = FALSE]
+}
+
+# AC4's blame claim as a pass/fail query: the cells whose blame moved are
+# EXACTLY the unreadable ones. Both directions are read, because each catches
+# what the other cannot -- a cell that moved and should not have is a
+# regression, and an unreadable cell that did not move is the residual left
+# standing. Empty is the evidence.
+input_guard_blame_unexpected <- function(before, after) {
+  key <- function(d) paste(d$verb, d$form, d$crossing, d$control, sep = "\037")
+  moved <- input_guard_blame(before, after)
+  want <- after[after$exists & !after$control & after$form == "unreadable", ,
+                drop = FALSE]
+  extra <- moved[!key(moved) %in% key(want), , drop = FALSE]
+  stayed <- want[!key(want) %in% key(moved), , drop = FALSE]
+  rbind(
+    data.frame(verb = extra$verb, form = extra$form, crossing = extra$crossing,
+               control = extra$control,
+               problem = rep("blame moved where it should not have",
+                             nrow(extra)),
+               stringsAsFactors = FALSE),
+    data.frame(verb = stayed$verb, form = stayed$form,
+               crossing = stayed$crossing, control = stayed$control,
+               problem = rep("unreadable cell's blame did not move",
+                             nrow(stayed)),
+               stringsAsFactors = FALSE))
 }
 
 # Blame that points anywhere but the verb the user called. The invariant is

@@ -2,13 +2,14 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-07 (M59 amended and retitled four → six. The M58-review F2/F6 candidate row was promoted into M59 and removed: F2's vocabulary half became M59 sites 5 and 6, F6's `ffm_batch()` half is documented by M59's AC5(c) rather than moved. M59's inherited IP1 framing was withdrawn as a misreading of DESIGN.md:62-64, and four stale code citations corrected.)_
+_Last hygiene check: 2026-08-07 (M61 planned from M59's third-pass thrash stop, absorbing the argument-versus-column candidate row added at M59's first return; M59 re-cut to drop the contradiction-versus-value criterion, which M61 now owns.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M59 | Six per-row value checks are refused at the fan-out verb's front door | planned | M58 | normal | milestones/M59-fanout-value-checks-front-door.md |
+| M61 | A value error and a contradiction resolve the same way in both forms | planned | M59 | normal | milestones/M61-uniform-front-door-ordering.md |
 | M60 | The repo's line endings are normalized once and enforced mechanically | planned | — | normal | milestones/M60-line-ending-normalization.md |
 | M58 | Six argument contradictions are refused at the fan-out verb's front door | done | M57 | normal | milestones/archive/M58-fanout-contradiction-front-door.md |
 | M54 | Correct the `run = FALSE` purity claim for the nvenc encoder probe | done | — | normal | milestones/archive/M54-nvenc-dry-run-purity.md |

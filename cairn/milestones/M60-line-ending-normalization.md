@@ -1,12 +1,12 @@
 # M60: The repo's line endings are normalized once and enforced mechanically
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
 
-- **Branch/PR:** —
+- **Branch/PR:** `m60-line-ending-normalization`
 
 ## Goal
 
@@ -94,7 +94,7 @@ out and every scripted edit still has to remember.
 
 ## Tasks
 
-- [ ] T1 — Add `.gitattributes` (`* text=auto`) and the `.Rbuildignore`
+- [x] T1 — Add `.gitattributes` (`* text=auto`) and the `.Rbuildignore`
       entries for both new top-level files; commit alone, before any byte
       changes.
 - [ ] T2 — Run `git add --renormalize .` and commit the result as one isolated
@@ -113,6 +113,9 @@ out and every scripted edit still has to remember.
 - 2026-08-07: plan gate chose one-time LF normalization over pinning the existing CRLF with `R/ffmpeg.R -text` because pinning is zero-diff but leaves the anomaly and its recurring trap in place, while normalizing pays the 5950-line diff once, deliberately, in a commit whose only purpose is that, with `.git-blame-ignore-revs` covering the blame cost; falsified by a tool in this repo's workflow that requires CRLF in that file, or by the ignore-revs file failing to restore readable blame in the maintainer's own tooling.
 - 2026-08-07: gate also rejected `.gitattributes` with `text eol=crlf`, which reads as the conservative option but is not: because CRLF is in the stored blob today, it renormalizes to LF in the repo and rewrites all 5950 lines anyway — the full cost of normalizing with none of the benefit.
 - 2026-08-07: criteria audit ([O] fresh-context reader) returned findings on AC1's coverage, AC2 (a `grep -lc` that can never return empty, and an unreachable universal over tracked binaries), AC3 (satisfiable by doing nothing), AC4 (an unbounded claim over contributor platforms), AC5 (a zero-character trim satisfies it; archive summary not checkable at review), and AC7 (a check NOTE that verifies nothing, plus a task-ordering defect). All fixed before commit; AC6 returned clean. The audit also corrected this file's own Scope: `R/ffmpeg.R` is not the only CRLF file.
+- 2026-08-08: implement gate — the tracked tarball stays out (its ROADMAP row named M60 as a promote trigger; folding an untracking commit in would dilute a milestone whose product is a bytes-only change), and `.git-blame-ignore-revs` ships with a documented one-time `git config blame.ignoreRevsFile` line in CLAUDE.md rather than an unconfigured file, since local `git blame` does not read the file on its own.
+- 2026-08-08: measured before T1 that `* text=auto` cannot mangle the three tracked binaries — git classifies a file binary on a NUL byte in its first 8000, and `sample.mp4`, `probe-baseline.rds` and the tarball carry 64, 29 and 45 respectively; T2's diff re-checks this empirically.
+- 2026-08-08: T1 — `.gitattributes` (`* text=auto`) added and both new top-level files given anchored `.Rbuildignore` entries, committed alone before any byte change.
 
 ## Decisions
 

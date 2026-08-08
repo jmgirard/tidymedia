@@ -36,23 +36,26 @@ pad_integers <- function(x, width = NULL, flag = "0") {
 # `x` is a character vector of ALREADY RESOLVED paths, so a caller sweeping a
 # jobs column passes the column and a scalar verb passes its one argument.
 #
-# The message branches on the ARGUMENT's arity, never on how many paths turned
-# out to be missing: a one-path argument renders exactly the string
-# check_file_exists() emitted before this function existed (pinned byte-for-byte
-# in test-input-path-front-door.R), while any vector argument leads with the
-# count, because "`jobs$input` does not exist" would misdescribe a five-row
-# column with one bad cell.
+# The message branches on `multiple` -- what the ARGUMENT's contract admits --
+# never on how many paths it happened to receive or how many turned out to be
+# missing. A single-file argument renders exactly the string check_file_exists()
+# emitted before this function existed (pinned byte-for-byte in
+# test-input-path-front-door.R); a column or vector leads with the count, and
+# does so at one row as well as at fifty, because "`jobs$input` does not exist"
+# would misdescribe a column and because a one-row batch must not answer
+# differently from a two-row one.
 #
 # Pluralization is driven off the scalar `length(missing)` via cli::qty(), never
 # off the `{.file {missing}}` vector: a `{?}` governed by a `{.val {vector}}`
 # throws `length(object) == 1` with 2+ items (M18).
 check_paths_exist <- function(x, arg = rlang::caller_arg(x),
+                              multiple = length(x) != 1L,
                               call = rlang::caller_env()) {
   missing <- x[!file.exists(x)]
   if (length(missing) == 0) {
     return(invisible(x))
   }
-  if (length(x) == 1L) {
+  if (!multiple) {
     cli::cli_abort("{.arg {arg}} does not exist: {.file {missing}}.", call = call)
   }
   cli::cli_abort(c(

@@ -55,6 +55,67 @@ test_that("the checker passes a readable path through invisibly", {
                    c(present, present))
 })
 
+test_that("the derived verb sets cover every spec and vice versa", {
+  # The walk fixes membership; the specs supply only call SHAPE. A verb the walk
+  # returns with no spec is a gap in the evidence, and a spec for a verb the
+  # walk does not return is a spec that has stopped describing the package.
+  verbs <- input_guard_verbs()
+  specs <- input_guard_specs()
+  expect_setequal(c(verbs$fanout, verbs$scalar), names(specs))
+  # The walk must also be finding real verbs, not an empty set that would make
+  # every criterion below vacuously true.
+  expect_gt(length(verbs$fanout), 10)
+  expect_gt(length(verbs$scalar), 10)
+})
+
+test_that("the walk excludes a name that only appears inside a message string", {
+  # ffm_manifest()'s body mentions `ffm_batch(` inside a cli hint. A deparsed
+  # substring search calls it a fan-out verb; a call-node walk does not.
+  expect_false("ffm_manifest" %in% input_guard_verbs()$fanout)
+  expect_true(grepl("ffm_batch(",
+                    paste(deparse(body(ffm_manifest)), collapse = " "),
+                    fixed = TRUE))
+})
+
+test_that("every fan-out verb refuses a missing input at its own front door", {
+  verbs <- input_guard_verbs()
+  specs <- input_guard_specs()
+  for (verb in verbs$fanout) {
+    err <- rlang::catch_cnd(specs[[verb]]("m62-absent-input.mp4"))
+    # WHICH failure, not that one occurred: a malformed spec aborts for its own
+    # reason and would otherwise satisfy the call check vacuously (M54/M58).
+    expect_match(conditionMessage(err), "not exist", fixed = TRUE,
+                 info = verb)
+    expect_match(paste(deparse(conditionCall(err)), collapse = " "),
+                 paste0(verb, "("), fixed = TRUE, info = verb)
+  }
+})
+
+test_that("every scalar verb refuses a missing input at its own front door", {
+  verbs <- input_guard_verbs()
+  specs <- input_guard_specs()
+  for (verb in verbs$scalar) {
+    err <- rlang::catch_cnd(specs[[verb]]("m62-absent-input.mp4"))
+    expect_match(conditionMessage(err), "not exist", fixed = TRUE,
+                 info = verb)
+    expect_match(paste(deparse(conditionCall(err)), collapse = " "),
+                 paste0(verb, "("), fixed = TRUE, info = verb)
+  }
+})
+
+test_that("no verb reports the missing input from inside the fan-out", {
+  # The defect this milestone removes, asserted as an absence against the two
+  # names that used to show: purrr's pmap and the Layer-1 builder.
+  verbs <- input_guard_verbs()
+  specs <- input_guard_specs()
+  for (verb in c(verbs$fanout, verbs$scalar)) {
+    err <- rlang::catch_cnd(specs[[verb]]("m62-absent-input.mp4"))
+    shown <- paste(deparse(conditionCall(err)), collapse = " ")
+    expect_false(grepl("pmap", shown, fixed = TRUE), info = verb)
+    expect_false(grepl("ffm_files", shown, fixed = TRUE), info = verb)
+  }
+})
+
 test_that("the checker blames its caller, not itself", {
   caller <- function(p) check_paths_exist(p, arg = "infile")
   err <- rlang::catch_cnd(caller("nope.mp4"))

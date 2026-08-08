@@ -99,16 +99,16 @@ reach `ffm_files()`.
 - [x] T1 — Add the shared vector-capable checker beside `check_file_exists()`
       (`R/utils.R:26-37`); make `check_file_exists()` delegate to it so the
       one-path rendering is unchanged. Snapshot the pre-change message first.
-- [ ] T2 — Wire the per-row sweep into the two shared jobs validators —
+- [x] T2 — Wire the per-row sweep into the two shared jobs validators —
       `check_batch_jobs()` (`R/ffmpeg.R:4310`) and `check_fanin_jobs()`
       (`R/ffmpeg.R:4563`) — and into `picture_in_picture_batch()`'s inline
       `main`/`overlay` block (`R/ffmpeg.R:6176`).
-- [ ] T3 — Wire it into the fan-out verbs that validate their jobs table inline
+- [x] T3 — Wire it into the fan-out verbs that validate their jobs table inline
       rather than through those two helpers: the sites at `R/ffmpeg.R:1822`,
       `:3155`, `:3319`, `:3478`, `:3705`, `:3903`, `:4102`, plus `segment_video()`
       and `normalize_audio(two_pass = TRUE)`, which reaches `ffm_batch` through
       `run_normalize_correction()`.
-- [ ] T4 — Add the front-door guard to `concatenate_videos()` and
+- [x] T4 — Add the front-door guard to `concatenate_videos()` and
       `compare_videos()`.
 - [ ] T5 — Author `data-raw/input-guard-baseline.R` and
       `input_guard_uncovered()` on the D039 pattern
@@ -126,6 +126,8 @@ reach `ffm_files()`.
 - 2026-08-08: criteria audit ([O], fresh context) returned 7 findings. Six had one right answer and were fixed before the gate: vector-capable single abort site (AC1/AC2), crossing axes narrowed to what the grid declares and widened to D039's four value guards (AC5), domain derived by parsed call-node walk rather than deparsed substring — fixing a measured false positive (`ffm_manifest`, matched inside a cli string) and a measured false negative (`normalize_audio(two_pass = TRUE)`) (AC3/AC4), aggregate-vs-first-path message made a measured property (AC2), D035 cited for shape not licence (AC8), third mutation over the domain walk (AC7). The seventh became gate question 2.
 - 2026-08-08: plan gate chose the existence predicate over `ffm_files()`'s readability predicate because it reuses the wording thirteen scalar verbs already emit and keeps both forms uniform, at the cost of an existing-but-unreadable residual; falsified by a report of an unreadable-but-present input reporting differently by form before M63 ships.
 - 2026-08-08: plan gate chose placing the sweep above the M58 contradiction sweep over placing it below, because a caller who mistyped a path should hear about the path and this matches where the scalar verbs' guard already sits; falsified by a report preferring the contradiction on a table that is both wrong about a path and self-contradictory. The alternative carried D036's machine-independent-first reasoning, which the M62 D-entry must therefore address rather than ignore.
+- 2026-08-08: T2-T4 - the sweep wired into 15 `_batch` verbs plus the 2 scalar fan-in verbs, delegated to an [S] agent against an objective checker; diff reviewed site by site. 30/30 verbs now refuse at their own front door; suite unchanged at 4658 pass / 0 fail. Two spec bugs found and fixed first (anonymize's `regions` cell shape, extract_frame's `timestamp` column) - both were aborting for their own reason and reading as passes, the M54 vacuity trap.
+- 2026-08-08: T7 (part) - walk-derived completeness tests added, including one pinning that `ffm_manifest` is excluded because its `ffm_batch(` occurrence is inside a cli string.
 - 2026-08-08: plan chose a generated cross-product grid over hand-written per-verb tests because M61's three review returns were each a combination nobody typed; falsified by the grid's declaration itself dropping a crossing, which its reader cannot catch.
 - 2026-08-08: implement gate chose the count-first plural rendering over one always-pluralized sentence, and `jobs$input` over the package's "the `input` column of `jobs`" phrasing, so both forms share one sentence shape; both prototyped against cli before the chip.
 - 2026-08-08: T1 — `check_paths_exist()` added at `R/utils.R:26`; `check_file_exists()` delegates its existence half. One-path rendering pinned byte-for-byte against strings captured from master before the change. Suite 4658 pass / 0 fail; the 4 warnings and 5 skips are pre-existing (M44 dropped-track warnings, nvenc-absent skips).

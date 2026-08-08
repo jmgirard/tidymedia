@@ -138,7 +138,7 @@ milestone moves where a check reports, never what is checked.
 - [x] T6 — Sites 5 and 6: sweep the `direction` and `position` column VALUES at
       both front doors, sourcing the vocabulary from one place rather than a
       third copy; `check_batch_string_col()` keeps the type half.
-- [ ] T7 — Tests: one blame test per pair at both `parallel` settings; mixed-
+- [x] T7 — Tests: one blame test per pair at both `parallel` settings; mixed-
       column tests; the three precedence cases of AC5; mutation-verify each
       front-door and shared call.
 - [ ] T8 — Build and commit the before/after grid as the evidence ledger.
@@ -167,6 +167,8 @@ milestone moves where a check reports, never what is checked.
 - 2026-08-07: two existing tests pinned precedence M59 deliberately reverses and were rewritten, not deleted for convenience: `test-nvenc-front-door.R`'s "the guard reports before pipeline checks it now precedes" (its three cases now report their own value error on both seam settings, and the new pin lives in `test-value-check-front-door.R`) and `test-anonymize-video-batch.R`'s per-row `index: 2` assertion (the check answers per row at the front door now, which is what that test keeps).
 - 2026-08-07: question gate (mid-work) chose to accept `stack_directions()` / `pip_positions()` appearing in four help pages' Usage lines over exporting the two accessors or hand-writing `@usage`, because each page's Arguments section already spells the values out in prose; falsified by a report of a caller unable to discover the accepted values from the help page.
 - 2026-08-07: ROADMAP candidate row added for the `crop_video()` → `ffm_crop()` blame leak M59-D1 leaves standing (search-first: no existing row covers it).
+- 2026-08-07: T7 — `tests/testthat/test-value-check-front-door.R` added: one blame pair per site at both `parallel` settings (14 cases), the one-site vocabulary scan, the scalar-siblings test, seven mixed-column cases, and AC5's three precedence groups (2 + 4 + 4 cases), each with a control proving the displaced error is live on the same call.
+- 2026-08-07: T7 — mutation-verified via `data-raw/value-guard-mutations.py`: all ten deletions RED. Each of the six front-door sweeps turned the AC1 blame test red (and the mixed-column test, plus whichever AC5 group that verb appears in); each of the four shared calls reached by a scalar verb — `ffm_crop()`'s `check_dim()`, `anonymize_pipeline()`'s `check_regions()`, and the two pipelines' `check_vocab_arg()` — turned the scalar-siblings test red. Sources restored clean.
 
 ## Decisions
 

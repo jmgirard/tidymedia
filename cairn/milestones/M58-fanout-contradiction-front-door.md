@@ -145,6 +145,7 @@ owing its own entry. Line-ending governance → M60.
 - 2026-08-07: T8 — `data-raw/contradiction-guard-baseline.R` (112 cells: six conditions x scalar/column/mixed forms x each named argument at a violating and a non-violating value, condition 5 crossed with input counts 2 and 3). Measured `origin/master` against the working tree: 0 vacuous cells on either ref, 33 aborting cells on both and **0 whose refusal changed**, 30 whose blame moved (29 `purrr::pmap` -> the verb, 1 `compare_videos_pipeline` -> `compare_videos`), `In index:` in 29 cells before and 0 after.
 - 2026-08-07: T9 — D036 (contradiction before availability; supersedes D035's precedence example and states the checker shape M59 inherits); NEWS entry plus a narrowing of M57's precedence sentence, which this reverses for the six; the availability roxygen on the five verbs carrying both guards gained the precedence sentence.
 - 2026-08-07: verify slot clean — `devtools::document()` no diff, `devtools::test()` 4104 pass / 0 fail / 5 skip, `devtools::check()` 0 errors / 0 warnings / 0 notes. Status -> review.
+- 2026-08-07: restored `R/ffmpeg.R`'s CRLF endings, which scripted edits during T1-T9 had stripped: master's copy is uniformly CRLF, so the branch diff had grown to 12072 changed lines and would have swept M60's scope into this PR. Real diff on that file is 307 insertions / 135 deletions; verify slot re-run clean afterwards.
 
 ## Decisions
 

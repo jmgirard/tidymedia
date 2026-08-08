@@ -109,7 +109,7 @@ Layer-1 error, correctly.
 - [x] T4: `sample_frames_batch()` (`:3483`) sweeps each row through
       `resolve_sample_fps()`; add the pin holding `sample_frames()`'s existing
       self-naming.
-- [ ] T5: `data-raw/blame-precedence.R` — crossing list, live controls, run at
+- [x] T5: `data-raw/blame-precedence.R` — crossing list, live controls, run at
       the merge-base and on the branch.
 - [x] T6: `data-raw/blame-baseline.R` — blame + message at both refs; write the
       Deviations table.
@@ -132,8 +132,27 @@ Layer-1 error, correctly.
 - 2026-08-08: pre-implementation gate amended AC1 — `data-raw/` is in `.Rbuildignore`, so a test sourcing the spec list from there would skip under `R CMD check`, unenforced in exactly the run the release gate uses (LESSONS M51/M59). The list moves to `tests/testthat/helper-blame-specs.R` and the `data-raw/` scripts read it from the source tree; gate chose that over a second copy in the test tree, which no test could detect diverging.
 - 2026-08-08: pre-implementation gate amended AC4 — the plan demanded unchanged precedence everywhere, but `standardize_video_batch()` reads its dimension values inside `pmap` today, AFTER `check_nvenc_available()` (`R/ffmpeg.R:3832`), so a front-door sweep necessarily flips that pair. Gate chose matching `crop_video_batch()`'s M59 placement (value above nvenc, `R/ffmpeg.R:5107` vs `:5118`) over preserving precedence by sweeping last, because a machine-independent refusal reporting before a machine-dependent one is the rule D036 already states and the alternative would make the two batch verbs disagree; falsified by a caller for whom the encoder's absence is the more actionable of the two.
 - 2026-08-08: criteria audit ([O], fresh context) returned defects on all seven drafted criteria — a `formals()`-derived domain that enumerated the wrong set, a baseline recording `conditionMessage()` where blame lives in `conditionCall()`, an all-cells-excluded vacuity hole in the precedence criterion, an unbounded "each other front-door guard", a mutation criterion satisfiable by another sweep's red, an AC6 naming a site its own grep misses and reaching archived history, and an unlocated NEWS citation. All seven rewritten before writing; three gate-changed criteria re-asked the audit's three questions and passed.
+- 2026-08-08: T5 precedence grid at the merge-base and the branch — 82 crossings, 0 dead controls and 0 unresolved cells on either ref; winners moved on exactly the 3 nvenc `_batch` crossings, recorded as M64-D2's reordering table. Suite FAIL 0 / PASS 5260.
 
 ## Decisions
+
+### M64-D2 — the reordering table: the three crossings the sweeps reassign (2026-08-08, from T5's grid)
+
+AC4 permits winner changes exactly where a new sweep now precedes
+`check_nvenc_available()` on a `_batch` verb, and the measured set is exactly
+that (`data-raw/blame-precedence.R`: 82 crossings at the merge-base and on the
+branch; 0 dead controls and 0 unresolved cells on both refs):
+
+| Crossing | merge-base | branch | The call whose answer changes |
+|---|---|---|---|
+| `crop_video_batch/xy` × nvenc-unavailable | nvenc | sweep | `crop_video_batch(jobs, width = 160, height = 120, x = -1, hardware = "nvenc")` on a machine whose FFmpeg lists no nvenc encoder: it said the nvenc encoder is not available, it now says `` `x` must be a single FFmpeg expression or number `` |
+| `standardize_video_batch/dims` × nvenc-unavailable | nvenc | sweep | same machine, `standardize_video_batch(jobs, width = 0, hardware = "nvenc")`: the nvenc abort gives way to `` `width` must be a single FFmpeg expression or number `` |
+| `standardize_video_batch/pixel_format` × nvenc-unavailable | nvenc | sweep | same machine, `standardize_video_batch(jobs, pixel_format = "yuv 420p", hardware = "nvenc")`: the nvenc abort gives way to `` `pixel_format` must be a single clean token `` |
+
+The other 79 crossings report the same guard on both refs. The reordering is
+the one the gated AC4 amendment chose: a value wrong on every machine reports
+before an encoder missing on this one (D036), matching `crop_video_batch()`'s
+M59 width/height placement.
 
 ### M64-D1 — the pixel-format message names the caller's argument (2026-08-08, from T6's baseline)
 

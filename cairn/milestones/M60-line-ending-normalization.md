@@ -125,6 +125,8 @@ out and every scripted edit still has to remember.
 - 2026-08-08: T6 — verify slot clean on the final tree: `devtools::document()` produced no diff (`git status` empty after it), `devtools::test()` gave FAIL 0 / WARN 4 / SKIP 5 / PASS 4402, and `devtools::check()` reported `Status: OK` — 0 errors, 0 warnings, 0 notes, with `spelling.Rout` comparing OK so M17's masked-NOTE trap is not hiding one. The 4 warnings are all the deliberate `warn_dropped_audio()` diagnostic under test (`test-audio-stream.R:249/289/355`, `test-ffmpeg.R:178`), unrelated to line endings; the 5 skips are the nvenc-absent guards.
 - 2026-08-08: T6 — AC7 verified by inspection, not by a check NOTE: `pkgbuild::build()` produced `tidymedia_0.1.0.9000.tar.gz`, whose grep for `gitattributes|git-blame-ignore-revs` is empty and whose only top-level entries are `DESCRIPTION`, `NAMESPACE`, `NEWS.md`, `README.md`. `.Rbuildignore` holds both anchored patterns at lines 16-17.
 - 2026-08-08: all tasks done, verify slot clean, status set to review.
+- 2026-08-08: review — seven criteria verified on fresh evidence, consistency gate clean (`cairn_validate` exit 0, `pkgdown::check_pkgdown()` clean, `document()` no diff), all nine CI checks green on PR #63 including `windows-latest`.
+- 2026-08-08: review — three-lens fan-out returned ten candidates; the scorer put one at or above 80. F3 (88, `CLAUDE.md`'s blame config is fatal on any ref lacking the ignore-revs file) fixed on the branch, and the first escape hatch drafted for it was itself measured wrong before shipping. F2 rejected on re-measurement: the ignore-revs file restores blame for 5912 of 6288 lines, so the plan gate's falsifier does not fire. Eight sub-threshold findings logged in the Review section; F1's remedy (a squash merge orphans the recorded SHA) is folded into post-merge hygiene.
 
 ## Decisions
 
@@ -209,4 +211,72 @@ All nine checks green on PR #63 — `macos-latest (release)`, `ubuntu-latest`
 `test-coverage`, and both codecov reports. The Windows job matters
 disproportionately here: it is the platform where a repo-wide line-ending
 change would most plausibly break a build, and it passes.
+
+### Independent review — three lenses, then a scorer
+
+Three fresh-context reviewers with distinct evidence bases, then a separate
+[S] scorer that did not generate the findings, given the diff and this file.
+Ten candidate findings; one scored at or above 80.
+
+**Actioned (>=80).**
+
+- **F3 (88) — the `CLAUDE.md` config line hard-breaks `git blame` on any
+  pre-M60 commit.** Setting `blame.ignoreRevsFile` makes every `git blame`
+  fail with `fatal: could not open object name list` whenever the file is
+  absent from the working tree — checking out a pre-M60 tag or branch does
+  exactly that — and the bullet as written offered no escape hatch. FIXED on
+  this branch. Note the fix itself needed a correction: the first escape hatch
+  drafted (`git -c blame.ignoreRevsFile= blame`) was measured NOT to work, and
+  neither does `-c blame.ignoreRevsFile=/dev/null` — git accumulates the
+  configured values rather than overriding them. `git blame
+  --no-ignore-revs-file` is the form that works, verified against a configured
+  absent path, and it is what the bullet now documents.
+
+**Rejected on measurement.**
+
+- **F2 (8) — "the ignore-revs file demonstrably does not restore blame."**
+  The finding's numbers are backwards and I re-measured them directly. Plain
+  `git blame R/ffmpeg.R` attributes all 6288 lines to the normalization
+  commit; with `--ignore-revs-file` that falls to 376. The mechanism restores
+  blame for 5912 lines, 94% of the file (`tidymedia.Rproj`: 18 -> 4). The 376
+  residual lines are ones the commit genuinely added, which no ignore-rev can
+  reattribute. This matters beyond the finding: restoring readable blame is
+  the falsifier the plan gate wrote for this milestone's whole approach, and
+  it does not fire.
+
+**Sub-threshold, logged not actioned (IP3 — surfaced, never dropped).** Six
+of the nine below score under 80 for the rubric's stated reasons; none is
+actioned, and F1's remedy is folded into post-merge hygiene because the fix
+does not exist until the squash commit does.
+
+- **F1 (74) — a squash merge orphans the SHA in `.git-blame-ignore-revs`.**
+  Sub-threshold, but its mechanical premise is certain rather than arguable:
+  this repo squash-merges every milestone, so `482a1d3` never becomes an
+  ancestor of the default branch and a fresh clone finds the file naming a
+  commit it does not have. Local blame then silently no-ops. The remedy —
+  rewriting the SHA to the squash commit's — is a post-merge hygiene step,
+  recorded here and surfaced at the merge gate.
+- **B2 (66)** — AC2's command reads raw working-tree bytes, so if RStudio
+  rewrites `tidymedia.Rproj` with CRLF locally without staging it, a future
+  maintainer reusing that command as a spot-check sees a false positive while
+  git itself is clean.
+- **F6 (58)** — the renormalize/working-tree quirk this branch discovered is
+  recorded only in a work log that will archive. Captured as a durable lesson
+  in post-merge hygiene, which owes that capture independently of this score.
+- **B1 (56)** — the retirement rests on `.gitattributes` rather than on a
+  test that fails, which is the criterion's literal wording; the git-level
+  guarantee is arguably stronger, since the bad state cannot be committed.
+- **F4 (33)** — the three binaries survive on git's NUL-byte heuristic rather
+  than a declared `binary` pattern; measured and knowingly accepted.
+- **B3 (28)** — a hypothetical future byte-exact text fixture could be
+  normalized; today's text fixtures carry no CR and are read via `readLines()`.
+- **F7 (22)** — the `D-045` citation resolves to nothing in this repo's
+  `DECISIONS.md`; pre-existing, not introduced here.
+- **F5 (15)** — the tracked tarball is still ignored by nothing; deliberately
+  deferred at the implement gate to keep this milestone bytes-only.
+
+**Return floor.** No finding scores >=90, and none demonstrates an acceptance
+criterion failing inside a named procedure's domain — F3 is a documentation
+defect, fixed on the branch. No return to `in-progress`; this is the
+milestone's first review pass, so the thrash count stands at zero.
 

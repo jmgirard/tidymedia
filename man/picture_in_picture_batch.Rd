@@ -55,7 +55,10 @@ a \code{"nvenc"} call that re-encodes the video runs the binary while the
 command is built, even under \code{run = FALSE}.
 Availability is checked at this verb's own front door, before any row
 runs, so an unavailable encoder aborts naming this function rather than
-the internal fan-out it would otherwise be reported against.}
+the internal fan-out it would otherwise be reported against. A call that
+also contradicts itself — naming an \code{audio_codec} with no audio carried into the output —
+is refused for the contradiction first, whether or not this machine has
+the encoder.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}

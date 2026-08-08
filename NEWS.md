@@ -350,9 +350,16 @@
   with none compiles as before. Large tables now fail immediately rather than
   after building the first command.
 
-  Exactly the same calls are refused as before — verified cell by cell across a
-  grid of every combination of the arguments involved — and every message is
-  unchanged. What moves is which function the error names, and when.
+  Exactly the same calls are refused as before, verified cell by cell across a
+  grid of every combination of the arguments involved. What moves is which
+  function the error names, and when.
+
+  Because the check now runs before any row is built, it also reports before
+  errors that used to surface from inside the fan-out. A call that is wrong in
+  more than one way — a contradiction *plus* an out-of-range `audio` index, a
+  misspelled `direction`, an out-of-range `margin`, or a bad `run`/`parallel`
+  value — is now told about the contradiction. Such calls failed before and
+  fail now; which of the errors you see is what changes.
 
   On a machine lacking an nvenc encoder, a call that both contradicts itself
   and asks for GPU encoding is told about the contradiction rather than about

@@ -2787,9 +2787,9 @@ check_resize_needs_two_inputs <- function(resize, n_inputs,
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
 #'   the internal fan-out it would otherwise be reported against. A call that
-#'   also contradicts itself — asking for GPU encoding alongside a stream copy,
-#'   say — is refused for the contradiction first, whether or not this machine
-#'   has the encoder.
+#'   also contradicts itself — asking for GPU encoding on a cut that stream-copies —
+#'   is refused for the contradiction first, whether or not this machine has
+#'   the encoder.
 #'   The stream-copy conflict named under \code{reencode} is caught first, so
 #'   such a call aborts without probing.
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
@@ -3033,9 +3033,9 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
 #'   the internal fan-out it would otherwise be reported against. A call that
-#'   also contradicts itself — asking for GPU encoding alongside a stream copy,
-#'   say — is refused for the contradiction first, whether or not this machine
-#'   has the encoder.
+#'   also contradicts itself — asking for GPU encoding on a cut that stream-copies —
+#'   is refused for the contradiction first, whether or not this machine has
+#'   the encoder.
 #'   The stream-copy conflict named under \code{reencode} is caught first, so
 #'   such a call aborts without probing.
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
@@ -4363,7 +4363,15 @@ batch_codec_cell <- function(value) {
 batch_arg_rows <- function(jobs, col, arg, resolve = identity) {
   n <- nrow(jobs)
   if (!col %in% names(jobs)) {
-    return(rep(list(arg), n))
+    # `resolve` applies to the ARGUMENT too, not only to a column's cells. The
+    # fan-out's pick() hands its result -- column cell or argument alike -- to
+    # batch_codec_cell()/batch_stream_cell(), so resolving only one branch would
+    # let the front door read a scalar NA as NA while the pipeline read it as
+    # NULL, and refuse a call the pipeline compiles. Upstream validators reject a
+    # scalar NA on all four verbs today, so this closes a hole rather than
+    # changing a reachable answer -- but D035's "no new refusal" condition is
+    # held here by the helper, not by those validators (M58 review F9).
+    return(rep(list(resolve(arg)), n))
   }
   lapply(seq_len(n), function(i) resolve(jobs[[col]][[i]]))
 }
@@ -5103,9 +5111,9 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
 #'   the internal fan-out it would otherwise be reported against. A call that
-#'   also contradicts itself — asking for GPU encoding alongside a stream copy,
-#'   say — is refused for the contradiction first, whether or not this machine
-#'   has the encoder.
+#'   also contradicts itself — asking for GPU encoding alongside a stream copy —
+#'   is refused for the contradiction first, whether or not this machine has
+#'   the encoder.
 #'   The stream-copy conflict above is caught first, so such a call aborts
 #'   without probing.
 #' @param audio_stream `r audio_stream_param("write to each \\code{audiofile}", "keeps", "every", batch = TRUE, extra = audio_stream_extras$separation_container)`
@@ -5801,9 +5809,9 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
 #'   the internal fan-out it would otherwise be reported against. A call that
-#'   also contradicts itself — asking for GPU encoding alongside a stream copy,
-#'   say — is refused for the contradiction first, whether or not this machine
-#'   has the encoder.
+#'   also contradicts itself — naming an \code{audio_codec} with no audio carried into the output —
+#'   is refused for the contradiction first, whether or not this machine has
+#'   the encoder.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -5957,9 +5965,9 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
 #'   the internal fan-out it would otherwise be reported against. A call that
-#'   also contradicts itself — asking for GPU encoding alongside a stream copy,
-#'   say — is refused for the contradiction first, whether or not this machine
-#'   has the encoder.
+#'   also contradicts itself — naming an \code{audio_codec} with no audio carried into the output —
+#'   is refused for the contradiction first, whether or not this machine has
+#'   the encoder.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}

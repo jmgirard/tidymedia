@@ -204,6 +204,78 @@ pass; on master the same call named `compare_videos_pipeline`.
 / 0 fail / 0 error / 5 skip; `devtools::check()` Status OK, 0 errors / 0
 warnings / 0 notes.
 
+**Independent review** — three fresh-context reviewers (an [O] diff-bug lens, an
+[S] blame-history lens, an [S] prior-review lens), then an [S] scorer that
+generated none of the findings. The blame-history lens confirmed the three
+retired nvenc gatings are genuinely dead (`hardware` is scalar on every affected
+verb, so any copying row aborts above the availability guard) and that
+`separate_audio_video_batch`'s placement still respects M57 review F3. The
+prior-review lens found no regression; its GitHub inline-comment probe returned
+empty, so the archived `## Review` sections were the evidence base. The diff-bug
+lens returned 13 findings; 14 were scored in total.
+
+Actioned (scored >= 80), each verified first-hand before acting:
+
+- **F6 (85)** — a front-door guard preempts `ffm_batch()`'s own argument checks.
+  `segment_video_batch(jobs, reencode = FALSE, video_codec = "libx264",
+  run = "yes")` reported ``run` must be `TRUE` or `FALSE`` on master and reports
+  the cut contradiction here. Not reorderable: `ffm_batch()`'s checks run when
+  it is called, necessarily after the front door. **Disclosed** in NEWS and
+  **pinned** by a new test; the ordering question itself is a ROADMAP row.
+- **F3 (80)** — same shape against the per-row `audio` range check inside the
+  fan-out closure. `compare_videos_batch(..., audio = c(7, NA),
+  audio_codec = "aac")` reported the out-of-range index on master and reports
+  the condition-4 contradiction here. **Disclosed and pinned**; the underlying
+  check moves to the front door in M59, which already depends on this milestone
+  and lists this exact validation in its scope.
+- **F10 (80)** — the roxygen sentence this milestone added illustrated the
+  precedence with "asking for GPU encoding alongside a stream copy" on all five
+  verbs, but `compare_videos_batch` and `picture_in_picture_batch` carry no such
+  contradiction: that call aborts from `codec_family()` inside the availability
+  guard instead, the opposite of what the sentence promised. **Fixed** — each
+  verb's sentence now names a contradiction it actually carries.
+
+Also actioned below threshold, by choice:
+
+- **F1 (72)** — NEWS claimed "every message is unchanged", which F3 and F6
+  falsify. **Fixed**: the claim narrows to "the same calls are refused", and the
+  precedence shift over fan-out errors is now stated outright. Under the
+  changelog rule that an asserted behavior needs a test that fails without it,
+  the new test "a contradiction reports before errors raised inside the fan-out"
+  pins all four cases the entry names, each with a control asserting the second
+  error is live on that call.
+- **F9 (50)** — `batch_arg_rows()` applied `resolve` only on the column branch
+  while the fan-out's `pick()` resolves both, so a scalar `NA` would have been
+  read as `NA` at the front door and `NULL` in the pipeline — D035's "no new
+  refusal" held by upstream validators rather than by the helper. Unreachable
+  today; **fixed** anyway (one line) because the helper's own comment claimed
+  the behavior it did not have.
+
+Logged, not actioned (scored below 80): F2 (78, `direction` vocabulary
+preemption — ROADMAP row with F6); F7 (55, the grid's refusal query compares
+abort-vs-compile and not message text, so it cannot see F1/F3 — true, and AC3's
+claim is about which calls are refused, which is what it does measure);
+F4 (55, no test pins the three-way order — now partly closed by the new test);
+F5 (45, unreadable-input preemption — absorbed into its existing candidate row);
+F13 (42, `if (!reencode && ...)` would raise base R's NA-in-condition error on
+an `NA` cell; unreachable, both verbs reject `NA` upfront — a note for M59);
+F11 (40, the headline test's `../../R` read makes it skip under `R CMD check`);
+F8 (30, the vacuity screen does not check WHY a violating cell aborted; no cell
+currently fails that way); F12 (30, no logical-typed all-NA column exercised on
+the fan-in verbs; verified untested-but-correct); F14 (30, the dead-code
+reasoning rests on `hardware` never becoming a per-row column — true today, no
+runtime assertion).
+
+While writing F1's test I found and fixed a defect in my own test helper:
+`catch_call()` force-set `run = FALSE`, which would have silently overridden the
+malformed `run` F6's case depends on and left that case asserting the absence of
+an error the call no longer had.
+
+**Post-fix re-verification** — `devtools::document()` no diff;
+`devtools::test()` 4124 pass / 0 fail / 0 error / 5 skip; the 112-cell grid
+re-measured unchanged (0 vacuous either ref, 33 aborting on both, 0 refusals
+changed, 30 blame moves, `In index:` 29 -> 0); `cairn_validate` exit 0.
+
 **Consistency gate** — `cairn_validate` exit 0, all 16 checks PASS and all 8
 advisories OK. No `DESIGN.md` principle changed, so `cairn_impact` did not
 apply. Toolchain slot: `document()` no diff (generated files not hand-edited);

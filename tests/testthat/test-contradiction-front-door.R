@@ -27,7 +27,10 @@ blamed_verb <- function(cnd) {
 }
 
 catch_call <- function(verb, args) {
-  args$run <- FALSE
+  # Only DEFAULT `run`, never override it: one case below passes a malformed
+  # `run` on purpose, and clobbering it would leave that case asserting the
+  # absence of an error the call no longer had.
+  if (is.null(args$run)) args$run <- FALSE
   tryCatch(
     do.call(verb, args, envir = asNamespace("tidymedia")),
     error = function(e) e
@@ -273,6 +276,81 @@ test_that("one violating row is refused and a clean column compiles", {
     expected_rows <- if (is.null(case$ok_rows)) 2L else case$ok_rows
     expect_identical(nrow(ok), expected_rows, info = case$id)
     expect_true(all(nzchar(ok$command)), info = case$id)
+  }
+})
+
+# --- the precedence the front door reassigns ---------------------------------
+#
+# A guard moved ahead of the fan-out reports ahead of everything the fan-out
+# raised, not only the checks the milestone set out to precede. That is M41's
+# known cost, and the rule this repo applies to it is that it be tested rather
+# than assumed away (D035's second condition). The four cases below are the
+# ones the changelog names, so the entry has a test that fails without the
+# behavior it asserts.
+#
+# Each case is wrong in TWO ways: the contradiction, plus a second error that
+# reported first on the previous version. The control is the same call with the
+# contradiction removed, asserted to still raise the second error -- without it
+# a case would pass for a call that had only ever had one error, and the
+# precedence claim would rest on nothing.
+
+test_that("a contradiction reports before errors raised inside the fan-out", {
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  input <- make_input()
+  two <- function(...) tibble::tibble(...)
+  cases <- list(
+    list(id = "per-row audio index", verb = "compare_videos_batch",
+         second = "must be a whole number",
+         args = list(jobs = two(inputs = list(c(input, input), c(input, input)),
+                                output = c("a.mp4", "b.mp4"),
+                                audio = c(7, NA)),
+                     audio_codec = "aac"),
+         # Row 2's NA is what drops the audio and makes the encoder a
+         # contradiction; giving it an index leaves only the range error.
+         control = list(jobs = two(inputs = list(c(input, input),
+                                                 c(input, input)),
+                                   output = c("a.mp4", "b.mp4"),
+                                   audio = c(7, 0)),
+                        audio_codec = "aac")),
+    list(id = "direction vocabulary", verb = "compare_videos_batch",
+         second = "must be one of",
+         args = list(jobs = two(inputs = list(rep(input, 3)), output = "o.mp4",
+                                direction = "diagonal"),
+                     resize = TRUE),
+         control = list(jobs = two(inputs = list(rep(input, 3)),
+                                   output = "o.mp4", direction = "diagonal"),
+                        resize = FALSE)),
+    list(id = "per-row margin range", verb = "picture_in_picture_batch",
+         second = "must be a whole number",
+         args = list(jobs = two(main = input, overlay = input,
+                                output = "o.mp4", margin = -3),
+                     audio_codec = "aac"),
+         control = list(jobs = two(main = input, overlay = input,
+                                   output = "o.mp4", margin = -3),
+                        audio_codec = "copy")),
+    list(id = "ffm_batch's own run check", verb = "segment_video_batch",
+         second = "`run` must be",
+         args = list(jobs = two(input = input, output = "o.mp4",
+                                start = 0, end = 1),
+                     reencode = FALSE, video_codec = "libx264", run = "yes"),
+         control = list(jobs = two(input = input, output = "o.mp4",
+                                   start = 0, end = 1),
+                        reencode = TRUE, video_codec = "libx264",
+                        run = "yes"))
+  )
+  for (case in cases) {
+    # The control first: it establishes that the second error is live on this
+    # call at all, so the assertion below records a precedence and not a typo.
+    ctl <- tryCatch(do.call(case$verb, case$control,
+                            envir = asNamespace("tidymedia")),
+                    error = function(e) e)
+    expect_s3_class(ctl, "rlang_error")
+    expect_match(conditionMessage(ctl), case$second, info = case$id)
+
+    cnd <- catch_call(case$verb, case$args)
+    expect_s3_class(cnd, "rlang_error")
+    expect_no_match(conditionMessage(cnd), case$second, info = case$id)
+    expect_identical(blamed_verb(cnd), case$verb, info = case$id)
   }
 })
 

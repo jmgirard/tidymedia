@@ -55,9 +55,9 @@ command is built, even under \code{run = FALSE}.
 Availability is checked at this verb's own front door, before any row
 runs, so an unavailable encoder aborts naming this function rather than
 the internal fan-out it would otherwise be reported against. A call that
-also contradicts itself — asking for GPU encoding alongside a stream copy,
-say — is refused for the contradiction first, whether or not this machine
-has the encoder.
+also contradicts itself — asking for GPU encoding alongside a stream copy —
+is refused for the contradiction first, whether or not this machine has
+the encoder.
 The stream-copy conflict above is caught first, so such a call aborts
 without probing.}
 

@@ -145,11 +145,9 @@ milestone moves where a check reports, never what is checked.
 - [x] T9 — NEWS (including AC5(c)'s displaced set); roxygen where precedence
       changed; run the verify slot clean.
 
-- [x] T10 — Close the three evidence gaps review logged: the vocabulary
-      uniqueness test must run under `R CMD check` and not pin formatting
-      (F10, F11); the AC3 grid must compare abort MESSAGES and probe a
-      multi-element vocabulary value, the blind spot that let F1 through (F4);
-      the AC1 `parallel` loop's comment must say what it now proves (F12).
+- [x] T10 — Close the evidence gaps review logged: F10/F11 (the uniqueness
+      guard must run under `R CMD check`, not pin formatting), F4 (the grid
+      must compare messages and blame targets), F12 (an honest comment).
 ## Work log
 
 - 2026-08-07: created by /milestone-plan.

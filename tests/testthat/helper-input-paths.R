@@ -31,6 +31,16 @@ tm_callees <- function(f) {
   unique(out)
 }
 
+# Every namespace function's body as text, for the abort-site counts. Reading
+# the namespace rather than `R/` keeps these alive under `R CMD check`, which
+# runs against an installed package with no source tree (M51/M59).
+tm_namespace_bodies <- function(pkg = "tidymedia") {
+  ns <- asNamespace(pkg)
+  fns <- mget(ls(ns, all.names = TRUE), envir = ns, ifnotfound = list(NULL))
+  fns <- fns[vapply(fns, is.function, logical(1))]
+  vapply(fns, function(f) paste(deparse(body(f)), collapse = " "), character(1))
+}
+
 # The package's internal call graph, restricted to functions it defines.
 tm_call_graph <- function(pkg = "tidymedia") {
   ns <- asNamespace(pkg)

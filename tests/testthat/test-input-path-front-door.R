@@ -55,6 +55,22 @@ test_that("the checker passes a readable path through invisibly", {
                    c(present, present))
 })
 
+test_that("the front door's missing-input abort is written at one site", {
+  bodies <- tm_namespace_bodies()
+  writes <- names(bodies)[grepl("does not exist", bodies, fixed = TRUE)]
+  expect_identical(writes, "check_paths_exist")
+})
+
+test_that("ffm_files() is the only other place an input refusal is worded", {
+  # M62 leaves ffm_files()' READABILITY refusal where it is -- its predicate is
+  # file.access(mode = 4), not file.exists(), and unifying the two is M63's
+  # scope. Pinning the residual here means M63 has something to delete, and
+  # means a third wording cannot appear unnoticed in the meantime.
+  bodies <- tm_namespace_bodies()
+  writes <- names(bodies)[grepl("find or read", bodies, fixed = TRUE)]
+  expect_setequal(writes, c("ffm", "ffm_files"))
+})
+
 test_that("the derived verb sets cover every spec and vice versa", {
   # The walk fixes membership; the specs supply only call SHAPE. A verb the walk
   # returns with no spec is a gap in the evidence, and a spec for a verb the

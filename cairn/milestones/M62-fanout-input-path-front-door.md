@@ -33,11 +33,14 @@ reach `ffm_files()`.
 
 ## Acceptance criteria
 
-- [ ] AC1 — The missing-input abort is written at exactly one site. A test
-      derives every function in `asNamespace("tidymedia")`, walks each parsed
-      body for call nodes (never substring matches on deparsed text, so a name
-      inside a `cli` string literal is not a hit), and asserts exactly one body
-      raises it; `check_file_exists()` and `ffm_files()` both reach it.
+- [ ] AC1 — The front door's missing-input abort is written at exactly one
+      site. A test walks every function body in `asNamespace("tidymedia")` and
+      asserts that abort's wording appears in exactly one, which
+      `check_file_exists()` and every front-door sweep reach. `ffm_files()`
+      keeps its own separate readability abort, which M63 unifies with this
+      site; the same test asserts `ffm_files()` and its `ffm` alias are the only
+      places that second wording appears, so the residual is pinned by a test
+      rather than assumed.
 - [ ] AC2 — For a one-path call the shared checker's rendering is byte-identical
       to the string `check_file_exists()` emits on merged master, asserted by a
       snapshot recorded against the pre-change ref; for a multi-path call it
@@ -115,7 +118,7 @@ reach `ffm_files()`.
       (`data-raw/value-guard-baseline.R` is the model); run it against both refs.
 - [ ] T6 — Mutation-verify the reader, the control validator, and the domain
       walk (`data-raw/value-guard-mutations.py` is the model).
-- [ ] T7 — Write the walk-derived completeness tests for AC1–AC4, reading the
+- [x] T7 — Write the walk-derived completeness tests for AC1–AC4, reading the
       namespace rather than the source tree (the M51/M59 lesson).
 - [ ] T8 — D-entry, `NEWS.md`, roxygen for the two newly-guarded verbs; then
       `document()` / `test()` / `check()`.
@@ -131,6 +134,8 @@ reach `ffm_files()`.
 - 2026-08-08: plan chose a generated cross-product grid over hand-written per-verb tests because M61's three review returns were each a combination nobody typed; falsified by the grid's declaration itself dropping a crossing, which its reader cannot catch.
 - 2026-08-08: implement gate chose the count-first plural rendering over one always-pluralized sentence, and `jobs$input` over the package's "the `input` column of `jobs`" phrasing, so both forms share one sentence shape; both prototyped against cli before the chip.
 - 2026-08-08: T1 — `check_paths_exist()` added at `R/utils.R:26`; `check_file_exists()` delegates its existence half. One-path rendering pinned byte-for-byte against strings captured from master before the change. Suite 4658 pass / 0 fail; the 4 warnings and 5 skips are pre-existing (M44 dropped-track warnings, nvenc-absent skips).
+- 2026-08-08: amendment (substantive, user-approved) - AC1 rewritten. It promised `ffm_files()` reaches the shared abort site, which M62 deliberately does not do: `ffm_files()`'s predicate is readability and unifying the two is M63's scope. The replacement promises one site for the FRONT DOOR and pins the residual with a test asserting `ffm_files()`/`ffm` are the only other place an input refusal is worded.
+- 2026-08-08: T7 - walk-derived tests complete; 138 pass. Verified by mutation, not by eye: deleting crop_video_batch's sweep -> 3 red; deleting compare_videos' sweep -> 3 red; duplicating the abort wording into another body -> 1 red; deleting one verb's call-shape spec -> 3 red; degrading the walk to a deparsed-substring match -> `ffm_manifest` re-enters the fan-out set, which its pinning test refuses.
 
 ## Decisions
 

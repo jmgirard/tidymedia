@@ -1,6 +1,6 @@
 # M61: A value error and a contradiction resolve the same way in both forms
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M59
 - **Driving RR:** —
@@ -213,6 +213,7 @@ way, and only which error it is told about moves. NEWS states it.
 - 2026-08-08: defect-return work. G4: the grid and the suite now cross `direction` with compare's SECOND contradiction (`resize` across other than two inputs), in both forms — the crossing M61-D1 names and AC2 requires. G1 and G2: the grid's site-4 comment and the test file's case-list comment no longer assert "supplying `audio` at all removes the contradiction"; each now says what is true of in-range values and points at the NA-ish cell that is the exception. G3 (logged at 62, fixed anyway at the user's direction): `NaN` reaches the same pairing because `batch_stream_cell()` tests `is.na()`, so the grid and the suite probe it, and D039 and NEWS now name the mechanism rather than enumerating values — the two over-generalizations this milestone made have one shape, and the mechanism is what survives both. AC1 is NOT amended: it rests on that mechanism, which was right all along.
 - 2026-08-08: two logged findings fixed in the same NEWS paragraph rather than left standing, being factual errors in prose already being edited — G6 (75): `resize` added to the displaced-check list, which D039 had and NEWS did not; G7 (60): `scale` marked as `picture_in_picture_batch()`-only, `compare_videos_batch()` having no such argument.
 - 2026-08-08: grid now 124 cells, 86 crossed; 13 cells change which error they report, against 11 before. All readers still empty on both refs. `document()` no diff, `devtools::test()` 0 failures / 4638 passing, `devtools::check()` 0/0/0.
+- 2026-08-08: review round 3 returned M61 to in-progress. AC2 failed again (H1, 88): compare's `audio` is crossed with the `audio_codec` contradiction in the scalar form only, leaving `compare_videos_batch` / `audio` / column / `audio_codec` the one uncovered triple. Second defect return; trigger (b) of the thrash rule has fired — the same criterion, twice, each by a new missing hand-written cell. Eight further findings actioned fix-now: D039's NA-ish biconditional is false at `audio = NULL` (H3); the retired "exactly one value" wording survives in three places in the test file including a test name (H4/H5/H6); the round-3 NEWS edit detached two paragraphs from their list item (H7); NEWS gained a false claim that an in-range index reports a value (H8); and the G6/G7 corrections reached NEWS but not D039, with `resize`/`scale` scoping still wrong in both (H9/H10).
 
 ## Review
 
@@ -299,3 +300,32 @@ One **[O]** reviewer on the delta (`6a1b316..HEAD`); `R/ffmpeg.R` is unchanged i
 G4 demonstrates AC2 failing inside the domain of the procedure AC2 names: the grid does not cross `direction`, in either form, with the second contradiction M61-D1 lists. AC2 is unticked; its round-2 evidence line above claimed completeness resting on M61-D1's crossing (1), and that claim is wrong. Every other criterion keeps its evidence.
 
 This is M61's first DEFECT return. The first round's return was an amendment return, which the thrash rule counts on a separate track, so the defect-return count stands at one.
+
+### Third round, 2026-08-08 — and a thrash trigger
+
+One **[O]** reviewer on the round-3 delta (`cb19b85..HEAD`); `R/ffmpeg.R` still unchanged across the whole milestone. Thirteen findings, scored by a fresh **[S]** scorer. Nine actioned.
+
+**The return: H1 (88) — AC2 fails a second time, by a second mechanism of the same shape.** The round-2 fix crossed `direction` with both of compare's contradictions in both forms, but crossed compare's `audio` with `resize` in both forms and with the `audio_codec` contradiction in the scalar form only. Enumerating verb × guard × form × crossing, every triple is covered except `compare_videos_batch` / `audio` / column / `audio_codec`. Measured reachable and live: `compare_videos_batch(jobs, audio = c(NA, 7), audio_codec = "aac")` reports the contradiction on both refs — a coverage gap, not a changed cell, but the identical failure shape round 2 returned on.
+
+**Actioned, triaged fix-now (8).**
+
+- **H3 (85)** — D039's third statement of the NA-ish claim is false at `audio = NULL`, which is its own control. `batch_stream_cell()` returns `NULL` for input `NULL` too (length 0 takes the `else` branch), so "reachable exactly where it resolves the argument to `NULL`" admits a call with no value error at all. The correct biconditional adds *non-`NULL`*.
+- **H4 (82), H5 (85), H6 (82)** — the "exactly one value" / "only at `NA`" wording that rounds 2 and 3 removed from D039 and NEWS survives in three places in the test file, including a `test_that()` **name**, each sitting within a few lines of the `audio-nan` case that falsifies it.
+- **H7 (87)** — the round-3 NEWS edit dropped a two-space continuation indent, so the last two paragraphs of the entry render *outside* their list item. Confirmed by rendering both refs through `commonmark::markdown_html()`. `check()` and `check_pkgdown()` do not catch it.
+- **H8 (85)** — NEWS now says "An index still reports the value, in range or out"; an in-range index compiles silently, as the suite itself asserts. The pre-delta wording was correct and the edit widened it into a falsehood.
+- **H9 (75→actioned with H10)**, **H10 (80)** — the G6/G7 corrections landed in NEWS but not in D039, which still omits `resize` and leaves `scale` unscoped; and NEWS's own new list scopes `scale` to pip while leaving `resize` unscoped, though `resize` is compare-only. A work-log line claiming "which D039 had" is itself inaccurate.
+
+**Logged, below threshold (4).**
+
+- H11 (40) — measured real: a wrongly-**typed** value still answers differently by form (`margin = "x"` as an argument reports the contradiction; as a column it reports the type error). The scorer's read, adopted here: Scope Out deliberately keeps every column *type* guard above the sweep, and AC6's sentence promises uniformity for a *value* error, not a type error. Disclosed consequence of an intentional boundary, not a falsification — but it is a real thing a user could hit, and it earns a candidate row rather than silence.
+- H2 (22) — the orchestrator's own reading, that AC2's "each front-door error named in the milestone-local decision entry" reaches M61-D1's fourth class. M61-D1 self-scopes ("The displaced errors AC2's grid crosses… three"), D039 says the grid pins those three, and round 2's return used the same narrow reading. Not actioned.
+- H12 (32) — AC1's "a particular value" singular; the round-2 disposition already settled that AC1 rests on the mechanism.
+- H13 (35) — the enumeration test's key regex lists `na` before `nan`; correct under R's default matcher, latent only under `perl = TRUE`.
+
+### Outcome — defect return on AC2, and thrash trigger (b)
+
+H1 returns the milestone: AC2 fails inside the domain of the procedure it names. That is **defect return two**; the round-1 amendment return counts on its own track, so trigger (a) — the third defect return — has not fired.
+
+**Trigger (b) HAS fired: the same criterion has now failed twice, each by a new mechanism of the same shape.** Round 2 was `direction` × the second contradiction; round 3 is `audio` × the first contradiction in the column form. Both are a hand-written cell that was never written. The rule's remedy is to reconsider the alternative the plan gate recorded against — but the two alternatives it recorded ("move the column sweeps above the contradiction checkers", "preserve today's behavior") are about the runtime design, which has been clean in every round and was cleared by the blame-history and prior-review lenses in round 1. Neither addresses what is actually thrashing, which is AC2's enumeration being satisfied by hand.
+
+The structural read: AC2 demands an exhaustive cross-product (guards × forms × named errors) and the grid supplies it as hand-written `order_add()` calls. Three rounds, three missing combinations, each found by a reviewer rather than by the grid. Generating the crossings from the enumeration would make completeness hold by construction instead of by vigilance.

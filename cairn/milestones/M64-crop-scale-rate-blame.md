@@ -1,11 +1,11 @@
 # M64: A crop, scale or rate mistake names the verb the user called, in both forms
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** —
+- **Branch/PR:** m64-crop-scale-rate-blame
 
 ## Goal
 
@@ -55,10 +55,14 @@ Layer-1 error, correctly.
       message on both refs.
 - [ ] AC4: For each crossing declared in `data-raw/blame-precedence.R` — each new
       sweep crossed with each guard in that file's crossing list, closed by
-      inspection and stated as such — a call violating both reports the same
-      guard on the branch as at the merge-base, and each cell carries a control
-      asserting the crossed guard is live on that call. A cell whose control is
-      dead fails; it is not excluded.
+      inspection and stated as such — the guard that reports is recorded at the
+      branch's merge-base and on the branch, and each cell carries a control
+      asserting the crossed guard is live on that call. The crossings whose
+      winner changes are exactly those where a new sweep now precedes
+      `check_nvenc_available()` on a `_batch` verb; each is listed in a
+      reordering table in this file naming the call whose answer it changes.
+      Every other cell reports the same guard on both refs. A cell whose control
+      is dead fails; it is not excluded.
 - [ ] AC5: `data-raw/blame-guard-mutations.py` derives its mutation list from the
       branch diff's added checker call sites, removes each in the FILE, and
       records the reds. Each mutation's reds include at least one cell that
@@ -115,4 +119,5 @@ Layer-1 error, correctly.
 - 2026-08-08: created by /milestone-plan.
 - 2026-08-08: plan gate chose a Layer-2 front-door sweep calling the shared checker over adding a `call` argument to the exported `ffm_*` builders because D037 licenses Layer-2 validation and M59-D1 already rejected the signature change; falsified by a checker whose abort cannot be aimed at a Layer-2 caller from the verb's own frame.
 - 2026-08-08: plan gate chose reusing `resolve_sample_fps()` in `sample_frames_batch()` over sweeping with `check_dim()` because the two forms would otherwise word one complaint two ways; falsified by a row value the resolver accepts and `check_dim()` refuses.
+- 2026-08-08: pre-implementation gate amended AC4 — the plan demanded unchanged precedence everywhere, but `standardize_video_batch()` reads its dimension values inside `pmap` today, AFTER `check_nvenc_available()` (`R/ffmpeg.R:3832`), so a front-door sweep necessarily flips that pair. Gate chose matching `crop_video_batch()`'s M59 placement (value above nvenc, `R/ffmpeg.R:5107` vs `:5118`) over preserving precedence by sweeping last, because a machine-independent refusal reporting before a machine-dependent one is the rule D036 already states and the alternative would make the two batch verbs disagree; falsified by a caller for whom the encoder's absence is the more actionable of the two.
 - 2026-08-08: criteria audit ([O], fresh context) returned defects on all seven drafted criteria — a `formals()`-derived domain that enumerated the wrong set, a baseline recording `conditionMessage()` where blame lives in `conditionCall()`, an all-cells-excluded vacuity hole in the precedence criterion, an unbounded "each other front-door guard", a mutation criterion satisfiable by another sweep's red, an AC6 naming a site its own grep misses and reaching archived history, and an unlocated NEWS citation. All seven rewritten before writing; three gate-changed criteria re-asked the audit's three questions and passed.

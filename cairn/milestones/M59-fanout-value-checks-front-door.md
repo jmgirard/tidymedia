@@ -90,7 +90,7 @@ milestone moves where a check reports, never what is checked.
       decision entry records whether the front door calls `check_dim()` directly
       or threads `call` through `ffm_crop()`, names the alternative rejected,
       and states the evidence class that would falsify the choice.
-- [ ] AC5 — Precedence is pinned, and the value-check ordering is this
+- [x] AC5 — Precedence is pinned, and the value-check ordering is this
       milestone's own call, not one M58 makes:
       (a) on the two verbs carrying both an M58 contradiction and a value check
       (`compare_videos_batch`, `picture_in_picture_batch`), a call whose value
@@ -357,6 +357,39 @@ package does for its users, and introduced by this branch. **Amendment return**
 on AC5, whose text is unbounded over a distinction the milestone never intended
 to bind. F9 is fixed on the same return. Defect-return count for this milestone:
 1. Amendment-return count for AC5: 1. Neither thrash trigger is near.
+
+### Second pass — 2026-08-07, after the F1/F9 fixes, the AC5 amendment and T10
+
+Re-executed on the branch at PR #62. The first pass's evidence above is
+superseded only where a criterion's code changed; AC4 is unchanged and its
+evidence stands.
+
+- **AC1** — 112 assertions, 0 failed, 0 skipped. Seven pairs over all six
+  sites, both `parallel` settings, each asserting the check's own message, the
+  verb in `conditionCall()`, and the absence of `pmap`, `In index:` and
+  `_pipeline(` from message and deparsed call alike.
+- **AC3** — grid re-run against `origin/master`, now 38 cells (four
+  multi-element vocabulary cells added under T10). `value_guard_vacuous()`
+  empty on both refs; `value_guard_refusals()` empty; `value_guard_blame()`
+  names 17 cells, every one `purrr::pmap` → the verb with `in_index`
+  TRUE → FALSE, covering all six sites. The two readers T10 added are both
+  empty: `value_guard_message_regressions()` (no cell reads differently
+  without its blame moving) and `value_guard_blame_regressions()` (no cell
+  blames anything but the verb).
+- **AC5** — 60 assertions over the three groups, 0 failed, and the amended
+  (a) verified directly: on all three column-form cases
+  (`compare_videos_batch` `direction`, `picture_in_picture_batch` `margin` and
+  `position`) a call also carrying the M58 contradiction reports the
+  contradiction; the two scalar-argument cases report the value check, which is
+  what the amended clause now states rather than promises against.
+- **AC6** — re-run this pass: `devtools::document()` no `man/`/`NAMESPACE`
+  diff; `devtools::check()` 0 errors, 0 warnings, 0 notes; the targeted suite
+  283 assertions, 0 failed, **0 skipped** (T10 removed the last skip path).
+- **AC2** — the vocabulary half is now guarded by two namespace-scanning tests
+  (13 assertions) that replace the `../../R` glob: one asserts exactly one
+  function BODY spells each vocabulary and names it, the other that all six
+  signatures taking `direction`/`position` default to the accessor call. Neither
+  can skip. Mutation half below.
 
 ### Consistency gate
 

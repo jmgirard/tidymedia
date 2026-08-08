@@ -1,11 +1,11 @@
 # M63: An unreadable input is refused where a missing one already is
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M62
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m63-unreadable-input-front-door`
 
 ## Goal
 
@@ -82,6 +82,7 @@ existence semantics; the milestone states why rather than sweeping them.
 ## Work log
 
 - 2026-08-08: created by /milestone-plan, split from M62 at the plan gate.
+- 2026-08-08: in-progress on `m63-unreadable-input-front-door`, cut from origin/master at f4357e7.
 - 2026-08-08: plan gate chose splitting the readability upgrade out of M62 over doing both in one milestone, because the upgrade changes an existing message on thirteen working verbs and roughly doubles the measurement grid; falsified by M62 shipping and the residual proving indistinguishable to callers, which would mean the split bought nothing.
 
 ## Decisions

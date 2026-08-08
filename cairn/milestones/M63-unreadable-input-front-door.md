@@ -1,6 +1,6 @@
 # M63: An unreadable input is refused where a missing one already is
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M62
 - **Driving RR:** —
@@ -78,7 +78,7 @@ existence semantics; the milestone states why rather than sweeping them.
       semantics.
 - [x] T4 — Extend the M62 grid's declaration with the unreadable-but-present
       axis; re-run against both refs.
-- [ ] T5 — Appended D-entry closing M62's residual, `NEWS.md`, roxygen; then
+- [x] T5 — Appended D-entry closing M62's residual, `NEWS.md`, roxygen; then
       `document()` / `test()` / `check()`.
 
 ## Work log
@@ -94,6 +94,8 @@ existence semantics; the milestone states why rather than sweeping them.
 - 2026-08-08: T3 — two sibling tests matched the retired wording: `test-ffmpeg.R:418` failed, and `test-normalize-audio.R:111` passed only because "does_not_exist.mp4" contains "exist"; both now match the wording.
 - 2026-08-08: amendment (gated) — AC4's "the set of refused calls grows" is falsified by measurement: an existing-but-unreadable input already aborts inside the pipeline (`ffm_files()` for a scalar verb, `purrr::pmap()` for a batch one), so the criterion now reads that no call's fate changes and exactly those cases' blame and message move.
 - 2026-08-08: implementation gate chose ONE wording covering both conditions ("can't be found or read") over one wording per condition, accepting that the thirteen scalar verbs' existing missing-file text moves; the per-condition option costs six renderings where the shared site has two, and the count form would need a third for a call carrying both.
+- 2026-08-08: T5 — `devtools::check()` clean (0 errors, 0 warnings, 0 notes, 3m 27s) and `devtools::test()` 0 failures / 4 pre-existing warnings / 5 nvenc skips; status to review.
+- 2026-08-08: incidental — the M62 review's N1 (the site test matched a string only the one-path literal contained) no longer holds: both renderings now carry "can't be found or read", so the site test is red against either branch alone. The other three findings in that ROADMAP row are untouched.
 - 2026-08-08: plan gate chose splitting the readability upgrade out of M62 over doing both in one milestone, because the upgrade changes an existing message on thirteen working verbs and roughly doubles the measurement grid; falsified by M62 shipping and the residual proving indistinguishable to callers, which would mean the split bought nothing.
 
 ## Decisions

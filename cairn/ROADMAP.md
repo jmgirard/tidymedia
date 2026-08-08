@@ -9,7 +9,7 @@ _Last hygiene check: 2026-08-08 (M60 merged as PR #63 and archived; the repo is 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M59 | Six per-row value checks are refused at the fan-out verb's front door | done | M58 | normal | milestones/archive/M59-fanout-value-checks-front-door.md |
-| M61 | A value error and a contradiction resolve the same way in both forms | in-progress | M59 | normal | milestones/M61-uniform-front-door-ordering.md |
+| M61 | A value error and a contradiction resolve the same way in both forms | review | M59 | normal | milestones/M61-uniform-front-door-ordering.md |
 | M60 | The repo's line endings are normalized once and enforced mechanically | done | — | normal | milestones/archive/M60-line-ending-normalization.md |
 | M58 | Six argument contradictions are refused at the fan-out verb's front door | done | M57 | normal | milestones/archive/M58-fanout-contradiction-front-door.md |
 | M56 | A bad codec token names the verb's argument, never Layer 1's | done | M54 | normal | milestones/archive/M56-codec-token-blame.md |

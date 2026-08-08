@@ -51,8 +51,9 @@ ordering_cases <- function(input) {
                             output = c("a.mp4", "b.mp4"), ...)
   # Three inputs, so `resize = TRUE` contradicts the input count while `audio`
   # stays free to be in or out of range independently of it. This is the only
-  # contradiction on compare_videos_batch() that an `audio` case can cross:
-  # supplying `audio` at all is what removes the audio_codec one.
+  # contradiction an IN-RANGE or out-of-range `audio` can cross: supplying such
+  # a value is what removes the audio_codec one. An NA-ish `audio` is the
+  # exception, and the `audio-na/argument` case below crosses exactly that.
   cmp1x <- function(...) two(inputs = list(rep(input, 3)), output = "o.mp4", ...)
   cmp2x <- function(...) two(inputs = list(rep(input, 3), rep(input, 3)),
                              output = c("a.mp4", "b.mp4"), ...)
@@ -73,6 +74,20 @@ ordering_cases <- function(input) {
                      audio_codec = "aac"),
          control = list(jobs = cmp2(direction = c("vertical", "vertical")),
                         audio_codec = "aac")),
+    # compare_videos_batch() carries TWO contradictions, and a guard is crossed
+    # with each rather than with whichever came to hand. The `resize` one is
+    # live on three inputs, independently of `direction`.
+    list(id = "direction-resize/argument", verb = "compare_videos_batch",
+         wins = resize2, other = vocab,
+         args = list(jobs = cmp1x(), direction = "sideways", resize = TRUE),
+         control = list(jobs = cmp1x(), direction = "vertical",
+                        resize = TRUE)),
+    list(id = "direction-resize/column", verb = "compare_videos_batch",
+         wins = resize2, other = vocab,
+         args = list(jobs = cmp2x(direction = c("sideways", "sideways")),
+                     resize = TRUE),
+         control = list(jobs = cmp2x(direction = c("vertical", "vertical")),
+                        resize = TRUE)),
 
     list(id = "position/argument", verb = "picture_in_picture_batch",
          wins = no_audio, other = vocab,
@@ -148,6 +163,15 @@ ordering_cases <- function(input) {
          wins = no_audio, other = range,
          args = list(jobs = cmp1(), audio = NA, audio_codec = "aac"),
          control = list(jobs = cmp1(), audio = NULL, audio_codec = "aac")),
+    # `NaN` too, and it is not a curiosity: batch_stream_cell() tests is.na(),
+    # and is.na(NaN) is TRUE, so the reachable set is every length-1 NA-ish
+    # value. Naming only `NA` was this milestone's SECOND over-generalization
+    # of the same shape -- reasoning from one value to a universal -- caught a
+    # round after the first.
+    list(id = "audio-nan/argument", verb = "picture_in_picture_batch",
+         wins = no_audio, other = range,
+         args = list(jobs = pip1(), audio = NaN, audio_codec = "aac"),
+         control = list(jobs = pip1(), audio = NULL, audio_codec = "aac")),
 
     # The SCALAR verbs. Neither has a vocabulary guard of its own -- the shared
     # *_pipeline() is the only one -- so moving that check below the pipeline's
@@ -405,7 +429,7 @@ test_that("each term the sentence quantifies over has a cell", {
   }, character(1))
   # "compare_videos_batch audio-low/argument" -> verb + value + form, with the
   # bound suffix dropped: both bounds of one value are the same term.
-  key <- sub("-(low|high|na|resize)", "", sub("/.*$", "", ids))
+  key <- sub("-(low|high|na|nan|resize)", "", sub("/.*$", "", ids))
   form <- sub("^.*/", "", ids)
   present <- lapply(split(form, key), function(x) sort(unique(x)))
 

@@ -1483,12 +1483,14 @@ governs in the other direction and this milestone's scope forbids outright.
 in each form, with each front-door error that could report instead of it — the
 contradiction, `check_nvenc_available()`, and `ffm_batch()`'s own `run` guard —
 each paired with a control asserting the crossed error is live on that call.
-Over 118 cells against both refs: no refusal changed, no message regressed, no
-blame regressed, no abort lost its `call`, no control was dead. Eleven cells
-change which error they report — six scalar-argument cells on the `_batch`
+Over 124 cells against both refs: no refusal changed, no message regressed, no
+blame regressed, no abort lost its `call`, no control was dead. Thirteen cells
+change which error they report — eight scalar-argument cells on the `_batch`
 verbs crossed with a contradiction, three on the scalar verbs, and pip's
 `audio` column crossed with the availability and `run` guards, whose front-door
-guard is new.
+guard is new. Where a verb carries two contradictions, each guard is crossed
+with both: `compare_videos_batch()`'s `direction` against the `audio_codec` one
+and against `resize`.
 
 **The four guards also report after every check that stays above them.** D038
 named this consequence and called its disclosure "the work": a call wrong in
@@ -1506,15 +1508,21 @@ reported the milestone complete.
 
 **And which value.** `audio` is the one guard here whose value decides whether
 the contradiction exists at all, because supplying an index is what gives the
-encoder something to encode. That makes the pairing reachable through the
-argument at exactly one value — `NA`, which `batch_stream_cell()` resolves to
-`NULL`, dropping the audio while still being a value the argument guard refuses.
-An in-range index removes the contradiction and so does an out-of-range one.
-This milestone first recorded the cell as one that could not exist, on the
-over-general reasoning that "supplying `audio` at all removes the
-contradiction"; its review measured that false. The cell is asserted at `NA`,
-with `audio = NULL` as its control — an in-range control would remove the very
-error it exists to prove live.
+encoder something to encode. An in-range index removes the contradiction and so
+does an out-of-range one; what does not is an **NA-ish** value, which
+`batch_stream_cell()` resolves to `NULL` — dropping the audio while still being
+a value the argument guard refuses. That helper tests `is.na()`, and
+`is.na(NaN)` is `TRUE`, so the reachable set is every length-1 NA-ish value,
+`NA` and `NaN` alike. Both are probed, with `audio = NULL` as the control — an
+in-range control would remove the very error it exists to prove live.
+
+This took two rounds to state correctly, and the two errors have one shape:
+reasoning from the values in hand to a universal. The milestone first recorded
+the cell as one that could not exist, on the reasoning that "supplying `audio`
+at all removes the contradiction" — false at `NA`. Its replacement said the
+pairing was reachable "at exactly one value" — false at `NaN`. What survives
+both is the mechanism rather than the enumeration: the pairing is reachable
+exactly where `batch_stream_cell()` resolves the argument to `NULL`.
 
 **What this does not change.** `rlang::check_bool(resize)`, the jobs-shape
 guards and every column *type* guard stay above the contradiction sweep, for the

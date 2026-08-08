@@ -312,6 +312,35 @@ value_guard_cases <- function(s) {
                                    direction = c("vertical", "vertical"))),
               extra = x$extra, seam = x$seam)
 
+    # `direction` against compare's OTHER contradiction. M61-D1's crossing (1)
+    # names two for this verb -- an `audio_codec` with no audio carried, and
+    # `resize` across other than two inputs -- and a guard is crossed with each
+    # error named there, not with whichever one came to hand. The rows carry
+    # three inputs so the resize contradiction is live; the control keeps it
+    # live with the vocabulary in range. Only the `contradiction` crossing
+    # branches here: `nvenc` and the `run` guard are single errors, and the
+    # cells above already cross `direction` with each.
+    if (identical(x$name, "contradiction")) {
+      order_add(5L, "compare_videos_batch", "scalar", "direction(resize)",
+                x$name,
+                bad = list(jobs = two(inputs = list(rep(s, 3)),
+                                      output = "o.mp4"),
+                           direction = "sideways"),
+                ok = list(jobs = two(inputs = list(rep(s, 3)),
+                                     output = "o.mp4"),
+                          direction = "vertical"),
+                extra = list(resize = TRUE), seam = x$seam)
+      order_add(5L, "compare_videos_batch", "column", "direction(resize)",
+                x$name,
+                bad = list(jobs = two(inputs = list(rep(s, 3), rep(s, 3)),
+                                      output = c("a.mp4", "b.mp4"),
+                                      direction = c("sideways", "sideways"))),
+                ok = list(jobs = two(inputs = list(rep(s, 3), rep(s, 3)),
+                                     output = c("a.mp4", "b.mp4"),
+                                     direction = c("vertical", "vertical"))),
+                extra = list(resize = TRUE), seam = x$seam)
+    }
+
     # site 6, `position` on picture_in_picture_batch()
     order_add(6L, "picture_in_picture_batch", "scalar", "position", x$name,
               bad = list(jobs = two(main = s, overlay = s, output = "o.mp4"),
@@ -344,12 +373,17 @@ value_guard_cases <- function(s) {
                                    margin = c(16, 16))),
               extra = x$extra, seam = x$seam)
 
-    # site 4, `audio` on compare_videos_batch(). The contradiction crossing is
-    # `resize`, not `audio_codec`: a non-NULL `audio` is what MAKES the
-    # audio_codec contradiction go away, so crossing this guard with it is the
-    # cell that cannot exist. `resize` is independent of `audio`, so the rows
-    # carry three inputs and ask to resize -- which leaves 7 out of range
-    # (0..2) and the resize contradiction live at once.
+    # site 4, `audio` on compare_videos_batch(). The contradiction crossed here
+    # is `resize`, not `audio_codec`, because an IN-RANGE `audio` removes the
+    # audio_codec one -- it gives the encoder something to encode. That holds
+    # for in-range values only: the `audio(NA)` cell below crosses this same
+    # guard with the audio_codec contradiction, because an NA-ish `audio`
+    # resolves to `NULL` and drops the audio. An earlier draft generalized the
+    # in-range case into "a non-NULL `audio` makes the contradiction go away,
+    # so that cell cannot exist"; M61's review measured that false. `resize` is
+    # independent of `audio`, so the rows carry three inputs and ask to resize
+    # -- which leaves 7 out of range (0..2) and the resize contradiction live
+    # at once.
     cmp_audio <- if (identical(x$name, "contradiction")) {
       list(rows1 = list(rep(s, 3)),
            rows2 = list(rep(s, 3), rep(s, 3)), extra = list(resize = TRUE))
@@ -396,18 +430,21 @@ value_guard_cases <- function(s) {
     # site 7, `audio` on picture_in_picture_batch(). New with M61: before it,
     # this index was checked only inside the fan-out closure.
     #
-    # The scalar x contradiction cell is reachable only at ONE value, and the
-    # value is the point. pip's only contradiction is an `audio_codec` with no
-    # audio carried, and an `audio` ARGUMENT applies to every row -- so an
-    # in-range index removes the contradiction and 9 does too. `NA` does not:
-    # batch_stream_cell() resolves it to `NULL`, which drops the audio the
-    # encoder needs while still being a value the argument guard refuses. An
-    # earlier draft of this grid recorded the cell as NONEXISTENT on the
-    # reasoning that "supplying `audio` at all removes the contradiction";
-    # that is false at `NA`, and M61's review measured it. The column form
-    # reaches the pairing a second way, because rows may disagree -- one row
-    # dropping audio (`NA`) contradicts the encoder while another carries an
-    # out-of-range index.
+    # The scalar x contradiction cell is reachable only at an NA-ish value, and
+    # which values those are is the point. pip's only contradiction is an
+    # `audio_codec` with no audio carried, and an `audio` ARGUMENT applies to
+    # every row -- so an in-range index removes the contradiction and 9 does
+    # too. `NA` does not: batch_stream_cell() resolves it to `NULL`, which
+    # drops the audio the encoder needs while still being a value the argument
+    # guard refuses. `NaN` does the same, because that helper tests is.na() and
+    # is.na(NaN) is TRUE -- so the reachable set is every length-1 NA-ish
+    # value, not the literal `NA`, and both are probed. An earlier draft of
+    # this grid recorded the cell as NONEXISTENT on the reasoning that
+    # "supplying `audio` at all removes the contradiction"; M61's review
+    # measured that false, and its own replacement ("exactly one value") was
+    # measured incomplete a round later. The column form reaches the pairing a
+    # second way, because rows may disagree -- one row dropping audio (`NA`)
+    # contradicts the encoder while another carries an out-of-range index.
     # The CONTROL differs by crossing, and it has to. A control's job is to
     # prove the crossed error is live on the call with the value in range --
     # but for the audio_codec contradiction, an in-range `audio` is exactly
@@ -430,6 +467,12 @@ value_guard_cases <- function(s) {
     # already cover this guard, and `NA` there would probe the argument guard's
     # NA branch rather than the ordering this grid is about.
     if (pip_contradiction) {
+      order_add(7L, "picture_in_picture_batch", "scalar", "audio(NaN)", x$name,
+                bad = list(jobs = two(main = s, overlay = s,
+                                      output = "o.mp4"), audio = NaN),
+                ok = list(jobs = two(main = s, overlay = s,
+                                     output = "o.mp4"), audio = NULL),
+                extra = x$extra, seam = x$seam)
       order_add(4L, "compare_videos_batch", "scalar", "audio(NA)", x$name,
                 bad = list(jobs = two(inputs = list(c(s, s)),
                                       output = "o.mp4"), audio = NA),

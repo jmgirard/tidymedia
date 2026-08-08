@@ -17,8 +17,8 @@ wholesale by accident.
 ## Scope
 
 **In:** measured state on merged master 2026-08-07 — no `.gitattributes`
-exists, `core.autocrlf` is unset, and `R/ffmpeg.R` carries CRLF on all 5950
-lines *in the stored blob* (`git show HEAD:R/ffmpeg.R`), not merely in the
+exists, `core.autocrlf` is unset, and `R/ffmpeg.R` carries CRLF on all 6288
+lines (planned as 5950, re-measured 2026-08-08) *in the stored blob* (`git show HEAD:R/ffmpeg.R`), not merely in the
 working tree. Nothing records or enforces this, and the trap has fired twice:
 M35 read a 209/36-line change as 4172/3999, M48 read a 126-line change as
 11,116.
@@ -97,10 +97,10 @@ out and every scripted edit still has to remember.
 - [x] T1 — Add `.gitattributes` (`* text=auto`) and the `.Rbuildignore`
       entries for both new top-level files; commit alone, before any byte
       changes.
-- [ ] T2 — Run `git add --renormalize .` and commit the result as one isolated
+- [x] T2 — Run `git add --renormalize .` and commit the result as one isolated
       commit touching nothing else; record the SHA.
-- [ ] T3 — Assert AC3's two-way diff against the recorded SHA.
-- [ ] T4 — Assert AC2 and AC4 and commit the evidence.
+- [x] T3 — Assert AC3's two-way diff against the recorded SHA.
+- [x] T4 — Assert AC2 and AC4 and commit the evidence.
 - [ ] T5 — Add `.git-blame-ignore-revs` with the T2 SHA; correct and retire
       the `LESSONS.md` CRLF entry; name in the work log what it graduated, for
       the archive summary review will write.
@@ -116,6 +116,10 @@ out and every scripted edit still has to remember.
 - 2026-08-08: implement gate — the tracked tarball stays out (its ROADMAP row named M60 as a promote trigger; folding an untracking commit in would dilute a milestone whose product is a bytes-only change), and `.git-blame-ignore-revs` ships with a documented one-time `git config blame.ignoreRevsFile` line in CLAUDE.md rather than an unconfigured file, since local `git blame` does not read the file on its own.
 - 2026-08-08: measured before T1 that `* text=auto` cannot mangle the three tracked binaries — git classifies a file binary on a NUL byte in its first 8000, and `sample.mp4`, `probe-baseline.rds` and the tarball carry 64, 29 and 45 respectively; T2's diff re-checks this empirically.
 - 2026-08-08: T1 — `.gitattributes` (`* text=auto`) added and both new top-level files given anchored `.Rbuildignore` entries, committed alone before any byte change.
+- 2026-08-08: T2 — normalization committed as `482a1d3ee38fd9e38a4659d6f9e29faefa1f306a`, touching `R/ffmpeg.R` (6288/6288) and `tidymedia.Rproj` (18/18) and no third file; the three tracked binaries were left alone, confirming the pre-T1 NUL-byte measurement empirically. The commit deliberately carries no tracking file, which is the one place this milestone departs from tracking-travels-with-code: AC3 asserts the diff touches exactly two files, so a milestone-file update riding along would falsify the criterion it exists to prove. Recorded here instead, one commit later.
+- 2026-08-08: `git add --renormalize` stages LF but does NOT rewrite the working tree, so both files still held CR bytes on disk after the commit while `git status` read clean (the checkin filter makes the CRLF working copy and the LF blob compare equal). AC2 reads the working tree, so it would have failed here. Refreshed by deleting both files and `git checkout --`, then verified disk md5 equals blob md5 for each.
+- 2026-08-08: T3/T4 — all four assertions pass on `5272eb8..482a1d3`. AC3a `git diff --ignore-cr-at-eol` over the whole tree: empty. AC3b the same diff unflagged: non-empty, exactly the two text files. AC2 `git ls-files -z | xargs -0 grep -lI $'\r'`: empty, with a control run WITHOUT `-I` returning the three binaries, so the empty result is the filter working rather than the sweep finding nothing. AC4 `git add --renormalize .` on the clean tree: no staged diff.
+- 2026-08-08: minor amendment — Scope's `5950` corrected to the measured `6288` (the figure was taken 2026-08-07 and the blob is larger); no criterion cites the number and no scope boundary moves. The plan-gate work-log line keeps `5950` as written, being history.
 
 ## Decisions
 

@@ -33,7 +33,10 @@ blame_specs <- function(input, outdir = tempfile("frames")) {
   # (non-negative); check_token() refuses whitespace; resolve_sample_fps()
   # refuses a non-positive rate.
   dim_msg <- "must be a single FFmpeg expression or number"
-  token_msg <- "must be a single clean token"
+  # The arg name is part of the assertion: ffm_pixel_format()'s parameter is
+  # named `format`, so before M64 this message told the caller to fix an
+  # argument the verb does not have (M64-D1). Matching the name pins the fix.
+  token_msg <- "`pixel_format` must be a single clean token"
   fps_msg <- "must be a single positive number or a string"
   interval_msg <- "must be a single positive number"
 

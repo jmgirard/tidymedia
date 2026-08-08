@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-08 (M64 and M65 planned; the builder-blame candidat
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M64 | A crop, scale or rate mistake names the verb the user called, in both forms | in-progress | — | normal | milestones/M64-crop-scale-rate-blame.md |
+| M64 | A crop, scale or rate mistake names the verb the user called, in both forms | review | — | normal | milestones/M64-crop-scale-rate-blame.md |
 | M65 | A region, overlay or loudness mistake names the verb the user called, in both forms | planned | M64 | normal | milestones/M65-region-overlay-loudness-blame.md |
 | M63 | An unreadable input is refused where a missing one already is | done | M62 | normal | milestones/archive/M63-unreadable-input-front-door.md |
 | M62 | A missing input file is refused at the front door, in both forms | done | M61 | normal | milestones/archive/M62-fanout-input-path-front-door.md |

@@ -76,6 +76,31 @@ test_that("a builder-bound value blames the verb the user called", {
   }
 })
 
+test_that("a bad batch value reports before a missing nvenc encoder", {
+  # The one reporting order M64 reassigns (M64-D2, D036): on the two `_batch`
+  # verbs whose sweep is new, a value wrong on every machine now outranks an
+  # encoder missing on this one -- the answer crop_video_batch() has given its
+  # width/height since M59. The encoder pool is EMPTY, so the nvenc abort is
+  # live on every one of these calls and losing is the finding.
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  input <- make_input()
+  jobs <- tibble::tibble(input = input, output = "o.mp4")
+
+  cnd <- catch_call("crop_video_batch",
+                    list(jobs = jobs, width = 160, height = 120, x = -1,
+                         hardware = "nvenc"))
+  expect_match(conditionMessage(cnd), "`x` must be a single FFmpeg expression")
+  cnd <- catch_call("standardize_video_batch",
+                    list(jobs = jobs, width = 0, hardware = "nvenc"))
+  expect_match(conditionMessage(cnd),
+               "`width` must be a single FFmpeg expression")
+  cnd <- catch_call("standardize_video_batch",
+                    list(jobs = jobs, pixel_format = "yuv 420p",
+                         hardware = "nvenc"))
+  expect_match(conditionMessage(cnd),
+               "`pixel_format` must be a single clean token")
+})
+
 test_that("both forms refuse the same value with the same guard", {
   # AC2: compared cell-for-cell rather than asserted independently, so a fix
   # landing on one form only is red here even when both forms abort.

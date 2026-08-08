@@ -1,6 +1,6 @@
 # M64: A crop, scale or rate mistake names the verb the user called, in both forms
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -115,7 +115,7 @@ Layer-1 error, correctly.
       Deviations table.
 - [x] T7: `data-raw/blame-guard-mutations.py` — diff-derived mutation list,
       per-sweep ownership check, reader/control mutations.
-- [ ] T8: AC6 sweep and corrections; NEWS entry + citation table; roxygen where
+- [x] T8: AC6 sweep and corrections; NEWS entry + citation table; roxygen where
       a `@param` describes who refuses the value; D-entry recording the
       front-door-sweep choice against threading `call`.
 
@@ -134,8 +134,30 @@ Layer-1 error, correctly.
 - 2026-08-08: criteria audit ([O], fresh context) returned defects on all seven drafted criteria — a `formals()`-derived domain that enumerated the wrong set, a baseline recording `conditionMessage()` where blame lives in `conditionCall()`, an all-cells-excluded vacuity hole in the precedence criterion, an unbounded "each other front-door guard", a mutation criterion satisfiable by another sweep's red, an AC6 naming a site its own grep misses and reaching archived history, and an unlocated NEWS citation. All seven rewritten before writing; three gate-changed criteria re-asked the audit's three questions and passed.
 - 2026-08-08: T5 precedence grid at the merge-base and the branch — 82 crossings, 0 dead controls and 0 unresolved cells on either ref; winners moved on exactly the 3 nvenc `_batch` crossings, recorded as M64-D2's reordering table. Suite FAIL 0 / PASS 5260.
 - 2026-08-08: T7 mutation harness — 12 sites derived from the branch diff, each red on ≥1 cell its own verb's grid owns; a planted-defect reader test added (a neutered reader passed the empty check, since the real list has no defects), red under the reader mutation; the control mutation pair shows the dead-control report appears when a crossed guard is removed and vanishes when the control check is neutered. All 15 red; suite FAIL 0 / PASS 5262.
+- 2026-08-08: T8 AC6 sweep — the criterion's grep matched 254 sites; six retained the inherited-from-the-builder claim (the crop and sample pipeline headers, standardize_pipeline's dim comment, both batch verbs' column-guard comments, and crop_video_batch's roxygen intro) and were rewritten, man/ regenerated. No `@param` text named a refuser, so the roxygen half of T8 is that one intro.
+- 2026-08-08: T8 NEWS entry + M64-D3 citation table; the "one wording in both forms" sentence was cut rather than cited (the both-forms test normalizes the names away, so no AC5 mutation reds it); a value-before-nvenc ordering test and the `pixel_format` arg-name pin were added so the remaining sentences cite observed reds; harness re-run, all 15 red. D042 records the sweep-over-`call`-threading rule. `devtools::check()` Status: OK, 0/0/0.
 
 ## Decisions
+
+### M64-D3 — the NEWS citation table (2026-08-08, from T8)
+
+AC7: each sentence of the NEWS entry, with the `test_that()` title that AC5's
+mutation run turns red without the behavior it claims. Every title is in
+`tests/testthat/test-builder-blame-front-door.R`.
+
+| NEWS sentence (abbreviated) | red without it |
+|---|---|
+| "A bad crop, scale, rate or pixel-format value is now refused by the function you called." | "a builder-bound value blames the verb the user called" — red under all 12 diff-derived sweep mutations |
+| "… used to be reported against an internal builder … or … against `purrr::pmap()` with an `In index:` prefix." | same title — its no-leak assertions (`ffm_`, `pmap`, `In index:`) are this sentence's claim |
+| "Each `_batch` sibling refuses the value whether it is passed as the argument or carried in a `jobs` column, and before any row runs." | same title — the spec list carries both deliveries per batch cell and asserts `In index:` absent |
+| "One message changes: a malformed `pixel_format` … now names `pixel_format`." | same title — the pixel-format cells' expected message pins the arg name; observed red under both pixel-format sweep mutations (2026-08-08) |
+| "… a call that is also wrong about `hardware = "nvenc"` … is now told about the bad value first …" | "a bad batch value reports before a missing nvenc encoder" — observed red under the standardize dims and pixel-format sweep mutations (2026-08-08) |
+
+One drafted sentence was cut instead of cited: "Both forms of each verb
+refuse a bad value with one wording." The both-forms test compares the
+guard's sentence from "must be" onward, deliberately excluding the names
+before it, so no AC5 mutation turns it red — and the entry narrows to what a
+named test enforces rather than citing a test that does not enforce it.
 
 ### M64-D2 — the reordering table: the three crossings the sweeps reassign (2026-08-08, from T5's grid)
 

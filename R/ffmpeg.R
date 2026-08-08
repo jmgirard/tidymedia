@@ -151,10 +151,12 @@ sample_frames <- function(infile, outdir, fps = NULL, interval = NULL,
 # Shared fixed-rate sampling pipeline for sample_frames() and
 # sample_frames_batch(): a constant-rate fps filter into an image2 printf
 # pattern, with a quality flag for the still encoder. Both verbs build identical
-# commands from this helper; the fps filter's own value check (check_dim() via
-# ffm_fps()) is inherited here, so the batch sibling gets per-row parity for
-# free (M13). `output` is a %0Nd pattern, so the single command fans out to many
-# image files (D003: still one input chain, one output target).
+# commands from this helper. The rate is validated by resolve_sample_fps() at
+# each verb's own front door before it gets here -- per row on the batch verb
+# (M64) -- so a bad rate blames the verb, never this pipeline or ffm_fps();
+# ffm_fps() still re-checks the value for its own direct callers. `output` is a
+# %0Nd pattern, so the single command fans out to many image files (D003: still
+# one input chain, one output target).
 sample_frames_pipeline <- function(input, output, fps) {
   p <- ffm_files(input, output)
   p <- ffm_fps(p, fps = fps)
@@ -1018,9 +1020,11 @@ convert_audio <- function(infile, outfile, audio_codec = NULL,
 # crop_video() ------------------------------------------------------------
 
 # Shared recipe behind crop_video() and crop_video_batch(): a crop filter to the
-# requested rectangle mapping every stream through. ffm_crop() carries the
-# per-value dimension guards, so the batch sibling inherits them per row (M13);
-# command assembly stays in Layer 1 (IP1/D002).
+# requested rectangle mapping every stream through. The four geometry values are
+# validated by check_dim() at each verb's own front door before they get here --
+# per row on the batch verb -- so a bad dimension blames the verb rather than
+# ffm_crop() (M59/M64); ffm_crop() still re-checks them for its own direct
+# callers. Command assembly stays in Layer 1 (IP1/D002).
 crop_video_pipeline <- function(input, output, width, height,
                                 x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
                                 video_codec = NULL, audio_codec = "copy",
@@ -1431,8 +1435,10 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
                                  call = rlang::caller_env()) {
   p <- ffm_files(input, output)
   # Resolution: exact when both given; aspect-preserving with an even output
-  # dimension (FFmpeg's -2) when only one. ffm_scale() validates each dimension
-  # via check_dim(). When neither is given, still force even dimensions so
+  # dimension (FFmpeg's -2) when only one. Both callers sweep the dimensions
+  # with check_dim() at their own front doors before building (M64), so a bad
+  # one blames the verb; ffm_scale() re-checks them for its own direct callers.
+  # When neither is given, still force even dimensions so
   # yuv420p/libx264 can encode odd-dimensioned sources -- floor-to-even is a
   # no-op for already-even input, mirroring format_for_web()'s guard.
   if (!is.null(width) || !is.null(height)) {
@@ -3792,8 +3798,9 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
 
   # Validate present override columns up front so a bad column fails clearly
   # here rather than as an opaque FFmpeg error mid-batch (M11 parity lesson).
-  # Value-level checks (positive dimensions, known codec/pixfmt) are inherited
-  # per row from standardize_pipeline()'s check_dim/check_token guards.
+  # These cover each column's TYPE; the per-row VALUES (positive dimensions,
+  # clean pixel-format tokens) are swept below, above the nvenc check, so a bad
+  # cell blames this verb rather than purrr::pmap() (M64).
   dim_cols <- c("width", "height", "fps")
   for (col in intersect(dim_cols, names(jobs))) {
     if (!(is.numeric(jobs[[col]]) || is.character(jobs[[col]]))) {
@@ -5057,8 +5064,9 @@ derive_web_names <- function(input) {
 #' the **batch** (table-driven) sibling of [crop_video()] for when you have more
 #' than one file. Each row is one input. This is a thin wrapper over
 #' \code{\link{ffm_batch}}: one reproducible compiled command per input, sharing
-#' the same crop pipeline (and its per-value dimension guards) as the scalar
-#' verb.
+#' the same crop pipeline as the scalar verb. Each row's geometry values are
+#' checked at this verb's own front door, so a bad cell is refused -- naming
+#' this function -- before any command runs.
 #'
 #' @param jobs A data frame with one row per input and (at least) an
 #'   \code{input} column (source path). An optional \code{output} column names
@@ -5147,8 +5155,9 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
       ))
     }
   }
-  # Validate present override columns up front; per-value checks (positive
-  # dimensions / valid expressions) are inherited per row from ffm_crop().
+  # Validate present override columns up front. These cover each column's TYPE;
+  # the per-row VALUES are swept below, above the nvenc check, so a bad cell
+  # blames this verb rather than ffm_crop() inside purrr::pmap() (M59/M64).
   for (col in intersect(c("width", "height", "x", "y"), names(jobs))) {
     if (!(is.numeric(jobs[[col]]) || is.character(jobs[[col]]))) {
       cli::cli_abort("The {.field {col}} column of {.arg jobs} must be numeric or character.")

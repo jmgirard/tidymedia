@@ -28,6 +28,26 @@ test_that("the spec list names only arguments its verbs actually have", {
   expect_identical(blame_spec_defects(blame_specs(make_input())), character(0))
 })
 
+test_that("the completeness reader detects the defects it exists for", {
+  # AC5's harness mutates the reader and requires a red. Without this test a
+  # neutered reader -- one returning character(0) unconditionally -- still
+  # passes the empty check above, since the real list HAS no defects; only a
+  # planted defect can tell a clean list from a reader that stopped looking.
+  specs <- blame_specs(make_input())
+  foreign <- specs[[1]]
+  foreign$id <- "planted/foreign-argument"
+  foreign$argument <- "no_such_formal"
+  no_col <- NULL
+  for (cell in specs) {
+    if (identical(cell$delivery, "column")) { no_col <- cell; break }
+  }
+  no_col$id <- "planted/missing-column"
+  no_col$args$jobs[[no_col$argument]] <- NULL
+  defects <- blame_spec_defects(c(specs, list(foreign, no_col)))
+  expect_match(defects, "planted/foreign-argument", fixed = TRUE, all = FALSE)
+  expect_match(defects, "planted/missing-column", fixed = TRUE, all = FALSE)
+})
+
 test_that("a builder-bound value blames the verb the user called", {
   withr::local_options(tidymedia.nvenc_encoders = character(0))
   input <- make_input()

@@ -113,7 +113,7 @@ Layer-1 error, correctly.
       the merge-base and on the branch.
 - [x] T6: `data-raw/blame-baseline.R` — blame + message at both refs; write the
       Deviations table.
-- [ ] T7: `data-raw/blame-guard-mutations.py` — diff-derived mutation list,
+- [x] T7: `data-raw/blame-guard-mutations.py` — diff-derived mutation list,
       per-sweep ownership check, reader/control mutations.
 - [ ] T8: AC6 sweep and corrections; NEWS entry + citation table; roxygen where
       a `@param` describes who refuses the value; D-entry recording the
@@ -133,6 +133,7 @@ Layer-1 error, correctly.
 - 2026-08-08: pre-implementation gate amended AC4 — the plan demanded unchanged precedence everywhere, but `standardize_video_batch()` reads its dimension values inside `pmap` today, AFTER `check_nvenc_available()` (`R/ffmpeg.R:3832`), so a front-door sweep necessarily flips that pair. Gate chose matching `crop_video_batch()`'s M59 placement (value above nvenc, `R/ffmpeg.R:5107` vs `:5118`) over preserving precedence by sweeping last, because a machine-independent refusal reporting before a machine-dependent one is the rule D036 already states and the alternative would make the two batch verbs disagree; falsified by a caller for whom the encoder's absence is the more actionable of the two.
 - 2026-08-08: criteria audit ([O], fresh context) returned defects on all seven drafted criteria — a `formals()`-derived domain that enumerated the wrong set, a baseline recording `conditionMessage()` where blame lives in `conditionCall()`, an all-cells-excluded vacuity hole in the precedence criterion, an unbounded "each other front-door guard", a mutation criterion satisfiable by another sweep's red, an AC6 naming a site its own grep misses and reaching archived history, and an unlocated NEWS citation. All seven rewritten before writing; three gate-changed criteria re-asked the audit's three questions and passed.
 - 2026-08-08: T5 precedence grid at the merge-base and the branch — 82 crossings, 0 dead controls and 0 unresolved cells on either ref; winners moved on exactly the 3 nvenc `_batch` crossings, recorded as M64-D2's reordering table. Suite FAIL 0 / PASS 5260.
+- 2026-08-08: T7 mutation harness — 12 sites derived from the branch diff, each red on ≥1 cell its own verb's grid owns; a planted-defect reader test added (a neutered reader passed the empty check, since the real list has no defects), red under the reader mutation; the control mutation pair shows the dead-control report appears when a crossed guard is removed and vanishes when the control check is neutered. All 15 red; suite FAIL 0 / PASS 5262.
 
 ## Decisions
 

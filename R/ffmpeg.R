@@ -1107,11 +1107,26 @@ crop_video <- function(infile, outfile, width, height,
   rlang::check_string(video_codec, allow_null = TRUE)
   rlang::check_string(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
+  # The four geometry values, swept here so a bad dimension blames this verb
+  # instead of ffm_crop(), the builder the caller never called (M64). Same
+  # shared checker the builder calls -- never a second copy of the message --
+  # and the same site crop_video_batch() sweeps per row (M59-D1/M59-D2).
+  #
+  # Placed at the END of this verb's front-door validation, where the value was
+  # effectively read before: ffm_crop() runs first inside crop_video_pipeline(),
+  # ahead of the codec seams and pass_through_maps(), so every check above still
+  # reports first and every check below still reports after (M41).
+  check_dim(width)
+  check_dim(height)
+  check_dim(x, inclusive = TRUE)
+  check_dim(y, inclusive = TRUE)
   # No front-door check for `audio_stream`, matching standardize_video() (M47
-  # review F8). It would be the only guard on this verb reporting BEFORE
-  # width/height, which ffm_crop() validates, so a caller wrong about a
-  # dimension AND the track would be told about the track -- M41's precedence
-  # trap. pass_through_maps() carries the identical check with `call` resolving
+  # review F8). It would be the only guard on this verb reporting BEFORE the
+  # dimensions, so a caller wrong about a dimension AND the track would be told
+  # about the track -- M41's precedence trap. That reasoning used to cite
+  # ffm_crop() as the dimension validator; the sweep above is now the site, and
+  # it sits above this comment for exactly the same reason (M64).
+  # pass_through_maps() carries the identical track check with `call` resolving
   # to this frame, so the blame is unchanged. The BATCH sibling keeps its own,
   # where it is load-bearing.
 
@@ -5097,16 +5112,25 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
   # this verb rather than purrr::pmap() (M62).
   check_batch_inputs(jobs)
 
-  # Per-row `width`/`height` VALUES, swept here so a bad dimension blames this
-  # verb instead of purrr::pmap() (M59 site 1). The column guards above cover
-  # the column's TYPE; this covers each value the fan-out would resolve.
-  # check_dim() is called directly rather than reached through ffm_crop(), and
-  # is the one site the message is written -- the scalar verb reaches the same
-  # site per row through the pipeline (M59-D1/M59-D2). `arg` is passed because
-  # caller_arg() would otherwise name the loop variable.
+  # Per-row geometry VALUES, swept here so a bad dimension blames this verb
+  # instead of purrr::pmap() (M59 site 1; `x`/`y` added at M64). The column
+  # guards above cover the column's TYPE; this covers each value the fan-out
+  # would resolve. check_dim() is called directly rather than reached through
+  # ffm_crop(), and is the one site the message is written -- the scalar verb
+  # calls the same checker at its own front door (M59-D1/M59-D2, M64). `arg` is
+  # passed because caller_arg() would otherwise name the loop variable.
+  #
+  # `x`/`y` are positions, so they permit zero; width/height are sizes and do
+  # not. Splitting the loop keeps that distinction at the call site rather than
+  # hiding it in a lookup.
   for (dim in c("width", "height")) {
     for (value in batch_arg_rows(jobs, dim, get(dim))) {
       check_dim(value, arg = dim)
+    }
+  }
+  for (dim in c("x", "y")) {
+    for (value in batch_arg_rows(jobs, dim, get(dim))) {
+      check_dim(value, arg = dim, inclusive = TRUE)
     }
   }
 

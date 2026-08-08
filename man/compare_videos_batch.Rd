@@ -56,7 +56,10 @@ runs, so an unavailable encoder aborts naming this function rather than
 the internal fan-out it would otherwise be reported against. A call that
 also contradicts itself — naming an \code{audio_codec} with no audio carried into the output —
 is refused for the contradiction first, whether or not this machine has
-the encoder.}
+the encoder.
+A per-row value error — an \code{audio} index past that row's input count,
+a \code{direction} outside the two accepted values — likewise reports ahead
+of the encoder check, and after the contradiction.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}

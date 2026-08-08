@@ -376,6 +376,57 @@
   fourth, `compare_videos()`'s two-input `resize` error, reported against an
   internal function name and now names `compare_videos()`.
 
+* Six per-row value checks are now made by the function you called, before any
+  row runs. Each was previously reached only while a row's command was being
+  built, so on a verb that processes many files at once the error was reported
+  against `purrr::pmap()` — or against a `furrr` closure under
+  `parallel = TRUE` — with an internal row index instead of against your call:
+
+  - a `width` or `height` that is neither a positive number nor an FFmpeg
+    expression (`crop_video_batch()`);
+  - a negative `margin` (`picture_in_picture_batch()`);
+  - a `regions` table missing a required column, or carrying one of the wrong
+    type (`anonymize_video_batch()`);
+  - an `audio` index past the number of inputs in that row
+    (`compare_videos_batch()`);
+  - a `direction` outside `"horizontal"` and `"vertical"`
+    (`compare_videos_batch()`);
+  - a `position` outside the five inset positions
+    (`picture_in_picture_batch()`).
+
+  The last two were previously checked only for the *argument*. A `jobs` column
+  of the same name had its type checked but never its values, so a misspelled
+  cell reached the fan-out; both columns are now checked against the same list
+  of values the argument is checked against.
+
+  Where any of these values can arrive as a `jobs` column, the check is made
+  per row: a table with one offending row is refused for that row, and a table
+  with none compiles as before. Large tables now fail immediately rather than
+  after building the first command.
+
+  Exactly the same calls are refused as before, verified cell by cell across a
+  grid that varies each value in and out of range, as an argument, as a column,
+  and as a column whose rows disagree. What moves is which function the error
+  names, and when.
+
+  Because these checks now run before any row is built, they also report before
+  errors that used to surface first. A call wrong in one of these ways *and*
+  asking for an nvenc encoder this machine does not have is now told about the
+  value — the reverse of the order shipped earlier in this development cycle,
+  so that the diagnosis no longer depends on which FFmpeg build you happen to
+  have. A call wrong in one of these ways *and* in an argument that
+  `ffm_batch()` alone guards — `run`, `parallel`, `progress`, `manifest`,
+  `checksums`, `verify` — is likewise told about the value. Contradictory
+  *arguments* still report ahead of all of these. (The `jobs` table's own shape
+  is not in that list: all four verbs check it themselves before reaching
+  `ffm_batch()`, so nothing displaces it.)
+
+  Two smaller corrections come with this. `compare_videos_batch()`'s
+  out-of-range `audio` message named an internal variable (`aud`) rather than
+  the argument, and now names `audio`. `compare_videos()` and
+  `picture_in_picture()` reported a misspelled `direction` or `position`
+  against their internal pipeline function, and now name themselves.
+
 * Metadata values containing a newline no longer corrupt the probe output.
   `probe_all()` and the `probe_*()` shortcuts read FFprobe's per-stream output
   as one `key=value` pair per line, so a tag whose value spanned lines — a

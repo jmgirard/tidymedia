@@ -72,7 +72,10 @@ a \code{"nvenc"} call that re-encodes the video runs the binary while the
 command is built, even under \code{run = FALSE}.
 Availability is checked at this verb's own front door, before any row
 runs, so an unavailable encoder aborts naming this function rather than
-the internal fan-out it would otherwise be reported against.}
+the internal fan-out it would otherwise be reported against.
+A call that is also wrong about a per-row value — a \code{regions}
+table missing a required column, say — is refused for the value first,
+whether or not this machine has the encoder.}
 
 \item{fallback}{A logical applied to every row: when \code{hardware = "nvenc"}
 but nvenc is unavailable, re-encode with the software \code{video_codec} and

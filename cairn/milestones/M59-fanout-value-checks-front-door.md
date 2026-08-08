@@ -1,6 +1,6 @@
 # M59: Six per-row value checks are refused at the fan-out verb's front door
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M58
 - **Driving RR:** —
@@ -142,7 +142,7 @@ milestone moves where a check reports, never what is checked.
       column tests; the three precedence cases of AC5; mutation-verify each
       front-door and shared call.
 - [x] T8 — Build and commit the before/after grid as the evidence ledger.
-- [ ] T9 — NEWS (including AC5(c)'s displaced set); roxygen where precedence
+- [x] T9 — NEWS (including AC5(c)'s displaced set); roxygen where precedence
       changed; run the verify slot clean.
 
 ## Work log
@@ -170,6 +170,8 @@ milestone moves where a check reports, never what is checked.
 - 2026-08-07: T7 — `tests/testthat/test-value-check-front-door.R` added: one blame pair per site at both `parallel` settings (14 cases), the one-site vocabulary scan, the scalar-siblings test, seven mixed-column cases, and AC5's three precedence groups (2 + 4 + 4 cases), each with a control proving the displaced error is live on the same call.
 - 2026-08-07: T7 — mutation-verified via `data-raw/value-guard-mutations.py`: all ten deletions RED. Each of the six front-door sweeps turned the AC1 blame test red (and the mixed-column test, plus whichever AC5 group that verb appears in); each of the four shared calls reached by a scalar verb — `ffm_crop()`'s `check_dim()`, `anonymize_pipeline()`'s `check_regions()`, and the two pipelines' `check_vocab_arg()` — turned the scalar-siblings test red. Sources restored clean.
 - 2026-08-07: T8 — `data-raw/value-guard-baseline.R` committed as the AC3 ledger and run across `origin/master` and the branch: 34 cells each side; both vacuity screens empty (every in-range cell compiled on both refs, so no cell compares equal by both sides failing); `value_guard_refusals()` empty — the same calls are refused; `value_guard_blame()` names 17 cells, every one moving from `purrr::pmap` to the verb the user called with purrr's row index dropping away. Site 3's scalar cell is recorded `exists = FALSE` (no `regions` argument) and sites 5/6's scalar cells `informative = FALSE`; neither appears in the blame list, which is what those two flags predicted.
+- 2026-08-07: T9 — NEWS entry added for the six value checks, naming AC5(c)'s displaced set (`run`, `parallel`, `progress`, `manifest`, `checksums`, `verify`) read off `R/ffm_batch.R:70-98` and stating the excluded `jobs`-shape guards; the M57 entry's paragraph claiming an unavailable encoder now reports ahead of a bad `regions` / `width` / `margin` was corrected in place, that precedence having been reversed here. Roxygen updated on the four verbs whose `hardware` precedence changed.
+- 2026-08-07: T9 — verify slot clean: `devtools::document()` no diff, `devtools::test()` FAIL 0 / WARN 4 / SKIP 5 / PASS 4355 (the 4 warnings and 5 skips match the pre-branch master baseline), `devtools::check()` 0 errors / 0 warnings / 0 notes. Status → review.
 
 ## Decisions
 

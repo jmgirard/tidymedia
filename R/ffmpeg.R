@@ -1760,6 +1760,9 @@ derive_anonymized_names <- function(input) {
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
 #'   the internal fan-out it would otherwise be reported against.
+#'   A call that is also wrong about a per-row value — a \code{regions}
+#'   table missing a required column, say — is refused for the value first,
+#'   whether or not this machine has the encoder.
 #' @param fallback A logical applied to every row: when \code{hardware = "nvenc"}
 #'   but nvenc is unavailable, re-encode with the software \code{video_codec} and
 #'   a message (\code{TRUE}) instead of aborting (\code{FALSE}, default).
@@ -4912,6 +4915,10 @@ derive_web_names <- function(input) {
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
 #'   the internal fan-out it would otherwise be reported against.
+#'   A call that is also wrong about a per-row value — a \code{width} or
+#'   \code{height} that is neither a positive number nor an FFmpeg expression
+#'   — is refused for the value first, whether or not this machine has the
+#'   encoder.
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
@@ -5886,6 +5893,9 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #'   also contradicts itself — naming an \code{audio_codec} with no audio carried into the output —
 #'   is refused for the contradiction first, whether or not this machine has
 #'   the encoder.
+#'   A per-row value error — an \code{audio} index past that row's input count,
+#'   a \code{direction} outside the two accepted values — likewise reports ahead
+#'   of the encoder check, and after the contradiction.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -6067,6 +6077,9 @@ compare_videos_batch <- function(jobs, direction = stack_directions(),
 #'   also contradicts itself — naming an \code{audio_codec} with no audio carried into the output —
 #'   is refused for the contradiction first, whether or not this machine has
 #'   the encoder.
+#'   A per-row value error — a negative \code{margin}, a \code{position}
+#'   outside the five accepted values — likewise reports ahead of the encoder
+#'   check, and after the contradiction.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}

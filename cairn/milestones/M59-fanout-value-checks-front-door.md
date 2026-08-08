@@ -82,7 +82,7 @@ milestone moves where a check reports, never what is checked.
       decision entry records whether the front door calls `check_dim()` directly
       or threads `call` through `ffm_crop()`, names the alternative rejected,
       and states the evidence class that would falsify the choice.
-- [ ] AC5 — Precedence is pinned for the two orderings this milestone owns:
+- [x] AC5 — Precedence is pinned for the two orderings this milestone owns:
       (a) on all four verbs, a call invalid in its value check and in nvenc
       availability reports the value check, driven machine-independently through
       the `tidymedia.nvenc_encoders` option seam;
@@ -604,6 +604,33 @@ evidence about the subject, not only about the attempts.
 **AC5's second amendment return.** P2 routes to a criterion amendment, and it
 would be AC5's second on this milestone. The rule stops there: no further round
 is convened and the disposition goes to the user.
+
+### Fourth pass — 2026-08-07, after the re-cut and T11
+
+- **AC1** — 112 assertions, 0 failed, 0 skipped.
+- **AC2** — 287 assertions across the file, 0 failed, 0 skipped; the two
+  namespace guards and the drift check all green.
+- **AC3** — grid re-run: 38 cells, vacuity empty on both refs, refusals
+  unchanged, message-regression and blame-regression readers both empty, 17
+  blame moves.
+- **AC4** — unchanged; M59-D1 stands.
+- **AC5 (re-cut)** — its two surviving clauses re-executed: 24 assertions for
+  the value-check-before-nvenc ordering and 24 for value-check-before
+  `ffm_batch()`'s guards, 0 failed, on all four verbs with controls. The
+  removed clause is M61's.
+- **AC6** — `devtools::document()` no diff; `devtools::check()` 0 errors,
+  0 warnings, 0 notes; `devtools::test()` FAIL 0 / PASS 4402.
+
+**The deleted sentence left nothing false.** The clause it was appended to —
+"a per-row value error likewise reports ahead of the encoder check" — was
+re-checked against the code on eight cases with the encoder seam held empty:
+crop `width` as argument and as column, anonymize `regions`, compare
+`direction` in both forms, compare's per-row `audio` index, pip `margin` and
+pip `position`. All eight report the value error, never the availability error,
+so the surviving clause is true for every value it names in both forms.
+`NEWS.md`'s column-versus-argument paragraph is accurate as written: it
+enumerates `direction`, `position` and `margin` rather than generalizing, which
+is exactly what the deleted roxygen sentence failed to do.
 
 ### Consistency gate
 

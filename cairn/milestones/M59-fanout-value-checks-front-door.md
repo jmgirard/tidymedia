@@ -125,7 +125,7 @@ milestone moves where a check reports, never what is checked.
 
 ## Tasks
 
-- [ ] T1 — Settle the site-1 shape question and record it as a milestone-local
+- [x] T1 — Settle the site-1 shape question and record it as a milestone-local
       decision; shape the shared checkers accordingly.
 - [ ] T2 — `crop_video_batch()` front door: `width`/`height` range, swept over
       the column form.
@@ -157,7 +157,62 @@ milestone moves where a check reports, never what is checked.
 - 2026-08-07 (amendment): corrected four stale citations inherited from the original plan — site 2's `margin` re-check is `R/ffmpeg.R:6085` not `:5905`; site 4's `audio` index check is `:5905` not `:5744` (roxygen); site 1's abort is authored in `check_dim()` (`R/utils.R:115`), not in `ffm_crop()`; and AC5(b)'s nvenc guards are `:1926`, `:4930`, `:5894`, `:6074`, of which the original plan had one right.
 
 - 2026-08-07: implement started on branch `m59-fanout-value-checks-front-door`.
+- 2026-08-07: T1 — question gate settled all three open shapes on their recommendations (call `check_dim()` directly; one named vocabulary source plus one shared `check_vocab_arg()`; delete both now-unreachable closure re-checks). Recorded as M59-D1 and M59-D2; added `stack_directions()`, `pip_positions()`, `check_vocab_arg()` and `check_batch_vocab_col()`.
 
 ## Decisions
+
+### M59-D1 — The crop front door calls `check_dim()` directly (2026-08-07, T1, answers AC4)
+
+`crop_video_batch()` calls `check_dim(value, arg = "width"/"height")` itself,
+once per resolved row, rather than threading a `call` argument through
+`ffm_crop()` so the pipeline's own abort could be aimed at the batch verb.
+
+`check_dim()` (`R/utils.R:115`) already takes `arg` and
+`call = rlang::caller_env()`, so calling it directly needs no signature change
+anywhere and leaves it the one site the message is written. Threading instead
+would add a blame-only parameter to `ffm_crop()`, an **exported** Layer-1
+builder reached by ten call sites, to serve a Layer-2 reporting concern — and
+`ffm_crop()` authors no abort of its own to re-aim, so the parameter would exist
+solely to be forwarded.
+
+- **Rejected:** threading `call` through `ffm_crop()`.
+- **Falsified by** a front-door check whose values cannot be resolved without
+  building the pipeline first, which would leave forwarding the only route; or
+  by `ffm_crop()` acquiring a `call` argument for its own reasons, which would
+  make the forwarding free.
+
+### M59-D2 — The six abort sites, and what retires with them (2026-08-07, T1, answers AC2)
+
+Each site's front-door call and its per-row path resolve to one abort site:
+
+1. `crop_video_batch()` `width`/`height` → `check_dim()` (`R/utils.R`), which
+   `ffm_crop()` also calls, so the scalar verb reaches the same site.
+2. `picture_in_picture_batch()` `margin` → `rlang::check_number_whole()`, called
+   at the front door only; the fan-out closure's copy retires (below).
+3. `anonymize_video_batch()` `regions` → `check_regions()` (`R/ffmpeg.R`), which
+   `anonymize_pipeline()` also calls.
+4. `compare_videos_batch()` per-row `audio` index → `rlang::check_number_whole()`,
+   called at the front door only; the closure's copy retires (below).
+5. `compare_videos_batch()` `direction` → `check_vocab_arg()`, values from
+   `stack_directions()`.
+6. `picture_in_picture_batch()` `position` → `check_vocab_arg()`, values from
+   `pip_positions()`.
+
+Sites 5 and 6 needed the vocabulary single-sourced before the sweep could exist.
+Each list was spelled out in three signatures and arg-matched separately at each,
+so one wrong value had three abort sites and a column sweep would have added a
+fourth. Each list is now one internal function used as every signature's default,
+and every check routes through `check_vocab_arg()`. Reading the list off the
+pipeline's formals was rejected: it removes the copies without removing the
+sites, and couples the check to another function's signature.
+
+**What retires.** Sweeping every row at the front door makes the two fan-out
+closures' re-checks — `margin` and the per-row `audio` index — unreachable: both
+resolve their value through the same `pick()` rule the sweep resolves through
+`batch_arg_rows()`. Both are deleted. What is checked is unchanged; only the
+copy that can no longer fire goes.
+
+- **Falsified by** a value a fan-out closure can resolve that the front door
+  cannot, which would make a retired re-check reachable again.
 
 ## Review

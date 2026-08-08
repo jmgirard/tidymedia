@@ -2734,6 +2734,38 @@ check_resize_needs_two_inputs <- function(resize, n_inputs,
 }
 
 
+# Enumerated vocabularies and their one refusal site (M59) ------------------
+#
+# M59 sites 5 and 6. The two vocabularies below were each spelled out in THREE
+# signatures -- the scalar verb, its _batch sibling, and the shared pipeline --
+# and arg-matched separately at each, so one wrong value had three possible
+# abort sites and the front-door column sweep would have added a fourth. Each
+# vocabulary is now written once here and every signature defaults to it.
+#
+# A function rather than a bare constant because these are the DEFAULTS of
+# exported arguments: rlang::arg_match() reads a formal's default by evaluating
+# it, so a call is as usable there as a literal, while a package-level constant
+# would have to be created at build time and kept in step with lazy-loading.
+stack_directions <- function() c("horizontal", "vertical")
+
+pip_positions <- function() {
+  c("topright", "topleft", "bottomright", "bottomleft", "center")
+}
+
+# The one site an out-of-vocabulary value is refused, for a scalar argument and
+# for a `jobs` column alike. rlang::arg_match() takes its values from the
+# CALLER's formals, which a column sweep has no equivalent of, so the values
+# are passed explicitly here; the unsupplied-argument case -- where the value
+# still IS the whole vector -- is resolved here rather than by arg_match()'s
+# own shortcut. The message is rlang's, unchanged: arg_match() is itself a
+# wrapper over arg_match0(), so nothing about which values are accepted or how
+# a refusal reads moves with this.
+check_vocab_arg <- function(value, values, arg, call = rlang::caller_env()) {
+  if (length(value) > 1L && identical(value, values)) return(values[[1L]])
+  rlang::arg_match0(value, values, arg_nm = arg, error_call = call)
+}
+
+
 # segment_video() ---------------------------------------------------------
 
 #' Segment Video
@@ -4468,6 +4500,24 @@ check_batch_string_col <- function(jobs, col, call = rlang::caller_env()) {
         call = call
       )
     }
+  }
+  invisible(jobs)
+}
+
+# Sweep an enumerated-vocabulary column's VALUES at the front door (M59 sites 5
+# and 6). check_batch_string_col() above covers only such a column's TYPE, so a
+# `direction` cell of "sideways" or a `position` cell of "middleish" used to
+# reach the pipeline's own arg_match() inside the fan-out and be reported
+# against purrr::pmap().
+#
+# Row by row through check_vocab_arg(), for D036's reason: a table with one
+# violating row is refused while a table with none compiles. batch_arg_rows()
+# supplies the same column-over-argument resolution the fan-out's pick() applies,
+# so the sweep sees exactly the values the pipeline would.
+check_batch_vocab_col <- function(jobs, col, arg, values,
+                                  call = rlang::caller_env()) {
+  for (value in batch_arg_rows(jobs, col, arg)) {
+    check_vocab_arg(value, values, col, call = call)
   }
   invisible(jobs)
 }

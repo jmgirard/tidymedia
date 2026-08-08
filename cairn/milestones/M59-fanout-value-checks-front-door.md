@@ -5,7 +5,7 @@
 - **Depends on:** M58
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m59-fanout-value-checks-front-door`
+- **Branch/PR:** `m59-fanout-value-checks-front-door` / PR #62 https://github.com/jmgirard/tidymedia/pull/62
 
 ## Goal
 
@@ -63,7 +63,7 @@ milestone moves where a check reports, never what is checked.
 
 ## Acceptance criteria
 
-- [ ] AC1 — For each of the six (site, verb) pairs enumerated in Scope In, a
+- [x] AC1 — For each of the six (site, verb) pairs enumerated in Scope In, a
       call violating that check aborts with `conditionCall()` naming the verb
       the user called, and a message containing none of the substrings `pmap`
       (covering `purrr::pmap` and `furrr::future_pmap` alike), `In index:`, or
@@ -77,7 +77,7 @@ milestone moves where a check reports, never what is checked.
       pipeline call the scalar verb also reaches, deleting that shared call
       turns the scalar verb's own test red. Sites 2 and 4 have no shared call
       (their check lives in the batch closure), so that half does not apply.
-- [ ] AC3 — For each of the six sites the front-door guard refuses exactly the
+- [x] AC3 — For each of the six sites the front-door guard refuses exactly the
       calls its current check refuses, over a committed before/after grid
       varying the value at an in-range and an out-of-range setting, in its
       `jobs` column form and — for the five sites that have one — its
@@ -88,12 +88,12 @@ milestone moves where a check reports, never what is checked.
       verbs already arg-match the scalar), so neither is read as evidence. Each
       cell's in-range baseline is asserted to succeed on both refs, so no cell
       compares equal by both sides failing.
-- [ ] AC4 — The shape question for site 1 is settled in writing: a
+- [x] AC4 — The shape question for site 1 is settled in writing: a
       milestone-local decision entry records whether the front door calls
       `check_dim()` directly or threads `call` through `ffm_crop()`, names the
       alternative rejected, and states the evidence class that would falsify
       the choice.
-- [ ] AC5 — Precedence is pinned, and the value-check ordering is this
+- [x] AC5 — Precedence is pinned, and the value-check ordering is this
       milestone's own call, not one M58 makes:
       (a) on the two verbs carrying both an M58 contradiction and a value check
       (`compare_videos_batch`, `picture_in_picture_batch`), a call invalid in
@@ -110,7 +110,7 @@ milestone moves where a check reports, never what is checked.
       `jobs`-shape guards at `:75-80` are excluded and stated as excluded: all
       four verbs already pre-empt them (`R/ffmpeg.R:1816`, `:4251`, `:4486`,
       `:6017`), so they are never displaced.
-- [ ] AC6 — The r-package profile's verify slot is clean:
+- [x] AC6 — The r-package profile's verify slot is clean:
       `devtools::document()` produces no diff, `devtools::test()` passes, and
       `devtools::check()` reports 0 errors and 0 warnings.
 
@@ -231,3 +231,52 @@ copy that can no longer fire goes.
   cannot, which would make a retired re-check reachable again.
 
 ## Review
+
+_Fresh evidence gathered 2026-08-07 on branch `m59-fanout-value-checks-front-door` at PR #62._
+
+### Acceptance criteria
+
+- **AC1** — `testthat::test_local(filter="value-check-front-door")`, test "every
+  (value check, verb) pair blames the verb the user called": 112 assertions, 0
+  failed. Seven (site, verb) pairs covering all six sites, each run at
+  `parallel = FALSE` and `parallel = TRUE`, each asserting the abort's own
+  message fragment, `conditionCall()` naming the verb, and the absence of
+  `pmap`, `In index:` and `_pipeline(` from both the message and the deparsed
+  call.
+- **AC3** — `data-raw/value-guard-baseline.R` re-run against `origin/master` and
+  the branch: 34 cells each side; `value_guard_vacuous()` empty on BOTH refs, so
+  every in-range baseline compiled on both and no cell compares equal by both
+  sides failing; `value_guard_refusals()` empty — the same calls are refused;
+  `value_guard_blame()` names 17 cells, every one `before_call == "purrr::pmap"`,
+  `after_call ==` the verb, and `in_index` TRUE → FALSE. All six sites appear,
+  each in its column and mixed forms; the scalar form moved on sites 1 and 4
+  only. Zero `informative = FALSE` cells (sites 5/6 scalar) appear in the blame
+  list, and site 3's scalar cell is recorded `exists = FALSE` — both as stated.
+- **AC4** — milestone-local decision **M59-D1** records the choice (the front
+  door calls `check_dim()` directly), names the rejected alternative (threading
+  `call` through `ffm_crop()`), and states two falsifying evidence classes.
+- **AC5** — three tests, 60 assertions, 0 failed. (a) "a contradiction reports
+  before a value check", 12 assertions over the two verbs carrying both.
+  (b) "a value check reports before nvenc availability", 24 assertions over all
+  four verbs, driven through the `tidymedia.nvenc_encoders` option seam held
+  empty, each with a control proving the availability abort is live on the same
+  verb. (c) "a value check reports before ffm_batch's own guards", 24 assertions
+  over all four verbs on `run`, each with a control proving the `run` abort is
+  live. NEWS names the displaced set — `run`, `parallel`, `progress`,
+  `manifest`, `checksums`, `verify` — read off `R/ffm_batch.R:70-98`, and states
+  the `jobs`-shape guards as excluded.
+- **AC6** — `devtools::document()` produces no `man/` diff; `devtools::test()`
+  FAIL 0 / WARN 4 / SKIP 5 / PASS 4355 (warnings and skips match the pre-branch
+  master baseline); `devtools::check()` 0 errors, 0 warnings, 0 notes.
+
+### Consistency gate
+
+- `cairn_validate.py` exit 0 — 16 checks PASS, 8 advisories OK, including
+  `coverage complete` and `weight caps`.
+- `cairn_impact.py` not applicable: `Principles touched: —`, no DESIGN.md
+  principle changed.
+- r-package profile `consistency-gate`: `document()` no diff; `NAMESPACE` and
+  `man/` regenerate clean; README untouched (no `README.Rmd` change);
+  `pkgdown::check_pkgdown()` "No problems found"; `NEWS.md` carries the entry;
+  no new top-level files; `check()` clean.
+

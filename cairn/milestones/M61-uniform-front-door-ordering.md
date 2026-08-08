@@ -1,6 +1,6 @@
 # M61: A value error and a contradiction resolve the same way in both forms
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M59
 - **Driving RR:** —
@@ -54,7 +54,7 @@ pipeline; any change to which calls are refused.
       contradiction in the argument form at `audio = NA`, which
       `batch_stream_cell()` resolves to `NULL`, dropping the audio the encoder
       needs.
-- [x] AC2 — A committed before/after grid crosses each of the four guards, in
+- [ ] AC2 — A committed before/after grid crosses each of the four guards, in
       each form, with each front-door error named in the milestone-local
       decision entry, run against both refs. It compares abort kind, blame
       target **and message text**. Every cell whose reported error changes is
@@ -209,6 +209,7 @@ way, and only which error it is told about moves. NEWS states it.
 - 2026-08-08: M61-D1 corrected in place per the logged override — the `direction`/`position` rows said `check_vocab_arg()` sits "at the top of the verb", conflating the `_batch` verb with the scalar one, which is why the scalar verbs' change went unseen (review F3); and its displaced-error list gained the fourth class D038 named (review F1).
 - 2026-08-08: grid widened for the amendment and for review F2/F4 — pip's `audio`/argument cell asserted at `NA` with an `audio = NULL` control (an in-range control would remove the contradiction it exists to prove), the same cell added for compare, and the two scalar verbs gained cells at `form = "argument"`. 118 cells; the only remaining nonexistent cell is M59's site-3 `regions` argument, which is not one of AC1's. Eleven cells now change which error they report, against the six recorded before.
 - 2026-08-08: NEWS gained the two disclosures review asked for (F1: the four checks also report after the codec/hardware/scale/jobs-shape checks; F2: the same reordering reaches the single-call `compare_videos()` / `picture_in_picture()`), plus the `audio = NA` case F4 surfaced. D039 corrected in place per the logged override: the scalar verbs named, the changed-cell count six -> eleven, and the false "cannot exist" reasoning replaced by the reachability condition and its control. Verify slot clean: `document()` no diff, `devtools::test()` 0 failures / 4620 passing, `devtools::check()` 0/0/0.
+- 2026-08-08: review round 2 returned M61 to in-progress. AC2 failed as written: it requires the grid to cross each of the four guards, in each form, with each front-door error named in M61-D1, and M61-D1's crossing (1) names TWO contradictions for compare — `audio_codec` with no audio, and `resize` across other than two inputs. `direction` is crossed with the first and never the second, and that crossing is a real changed cell (`compare_videos_batch(jobs_3_inputs, direction = "sideways", resize = TRUE)` reports `direction` on `origin/master` and `resize` on the branch) — a twelfth changed cell outside the grid and outside D039's eleven. Two further findings scored >= 80 and are triaged fix-now in the same return: the grid's site-4 comment (G1) and the test file's case-list comment (G2) both still assert the "supplying `audio` at all removes the contradiction" reasoning the first round measured false, each now contradicted by a cell the amendment itself added a few lines below. First defect return; the first round's was an amendment return, counted separately.
 
 ## Review
 
@@ -267,3 +268,31 @@ Re-verified against `origin/master` @ `1d54b20`. `R/ffmpeg.R` is unchanged since
 - **AC4, AC5, AC7** — re-run, unchanged: `devtools::test()` 0 failures / 4620 passing (was 4586), `devtools::check()` 0 errors / 0 warnings / 0 notes, `document()` no diff, residue grep still returns nothing.
 
 Consistency gate re-run: `cairn_validate` exit 0, `pkgdown::check_pkgdown()` "No problems found".
+
+### Second round — independent review of the amendment delta
+
+One **[O]** reviewer on the delta (`6a1b316..HEAD`); `R/ffmpeg.R` is unchanged in it, so the first round's blame-history and prior-review clearances still cover the runtime change. Thirteen findings, scored by a fresh **[S]** scorer.
+
+**Actioned (>= 80).**
+
+- **G4 (80) — the grid crosses `direction` with only one of compare's two contradictions, and the uncrossed one is a changed cell.** M61-D1's crossing (1) names both the `audio_codec` contradiction and `resize` across other than two inputs. The grid crosses `direction` with the first, `nvenc` and the `run` guard — never with the second. Measured: `compare_videos_batch(jobs_3_inputs, direction = "sideways", resize = TRUE)` reports `direction` on `origin/master` and "`resize` currently supports exactly two inputs" on the branch. A twelfth changed cell, outside the 118-cell grid and outside D039's eleven. The delta added a `direction(resize)` cell for the SCALAR `compare_videos()` while leaving the `_batch` verb uncrossed. **This fails AC2 as written** — see the disposition below.
+- **G1 (85) — the grid's site-4 comment still asserts the over-generalization the amendment exists to retire.** `data-raw/value-guard-baseline.R:347-352` reads "a non-NULL `audio` is what MAKES the audio_codec contradiction go away, so crossing this guard with it is the cell that cannot exist" — verbatim the reasoning the first round measured false, now contradicted 85 lines below by the `audio(NA)` cell the delta added. **Triage: fix now.**
+- **G2 (82) — the same stale comment inside the test file's case list.** `tests/testthat/test-front-door-ordering.R:52-55` claims the resize contradiction is "the only contradiction on `compare_videos_batch()` that an `audio` case can cross"; the `audio-na/argument` case the delta added a few lines below crosses the `audio_codec` one. **Triage: fix now.**
+
+**Logged, below threshold (10).**
+
+- G6 (75) — NEWS's displaced-check list omits `resize`, which D039's list includes; measured real (`resize = "yes"` displaces `direction` on the branch).
+- G5 (70) — no assertion in the suite pins that a scalar `audio = NA` is a value error, so the NA cell and its `NULL` control produce identical messages and the pair could go vacuous if `NA` ever became a legal argument spelling.
+- G10 (62) — deleting the compare-side NA case leaves the enumeration test green (its `audio-low` sibling supplies the same stripped key), where deleting its pip twin reddens it; unequal protection from inconsistent id spellings.
+- G3 (62) — `NaN` is a second value reaching the same pairing (`is.na(NaN)` is TRUE), so D039's "exactly one value", NEWS's "the one `audio` argument" and AC1's named example are incomplete. The scorer's read, which this review adopts: AC1 rests on the MECHANISM it names — `batch_stream_cell()`'s `is.na()` resolution — which already covers `NaN`, so the criterion is true and its illustration incomplete. Not a second falsification of AC1, and so not a second amendment return.
+- G7 (60) — NEWS attributes `scale` to both verbs; `compare_videos_batch()` has no `scale` argument.
+- G8 (35) — the scalar verbs' changed error is in NEWS but on no help page; F2's triage scoped the fix to NEWS and the grid.
+- G9 (30) — the enumeration test's `"scalar-verb"` form label is not one of the sentence's two forms; a naming choice, not a correctness claim.
+- G11 (15) — AC1's "No cell is recorded nonexistent" reads unqualified while site 3's `regions` cell remains; the reviewer's own judgment, which this review shares, is that `regions` is not one of AC1's four values.
+- G12 (10), G13 (10) — the first round's F9 and F5, explicitly conceded not materially worse.
+
+### Outcome — defect return on AC2
+
+G4 demonstrates AC2 failing inside the domain of the procedure AC2 names: the grid does not cross `direction`, in either form, with the second contradiction M61-D1 lists. AC2 is unticked; its round-2 evidence line above claimed completeness resting on M61-D1's crossing (1), and that claim is wrong. Every other criterion keeps its evidence.
+
+This is M61's first DEFECT return. The first round's return was an amendment return, which the thrash rule counts on a separate track, so the defect-return count stands at one.

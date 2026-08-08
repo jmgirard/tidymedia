@@ -5,7 +5,7 @@
 - **Depends on:** M59
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m61-uniform-front-door-ordering`
+- **Branch/PR:** `m61-uniform-front-door-ordering` · https://github.com/jmgirard/tidymedia/pull/64
 
 ## Goal
 
@@ -46,40 +46,40 @@ pipeline; any change to which calls are refused.
 
 ## Acceptance criteria
 
-- [ ] AC1 — For each of the four values in Scope In, in each of its argument and
+- [x] AC1 — For each of the four values in Scope In, in each of its argument and
       `jobs`-column forms, a call also violating a contradiction that verb
       carries reports the contradiction. Cells where the two cannot co-occur are
       recorded nonexistent rather than asserted — pip's `audio` against its only
       contradiction in the argument form, since a non-NULL `audio` removes that
       contradiction.
-- [ ] AC2 — A committed before/after grid crosses each of the four guards, in
+- [x] AC2 — A committed before/after grid crosses each of the four guards, in
       each form, with each front-door error named in the milestone-local
       decision entry, run against both refs. It compares abort kind, blame
       target **and message text**. Every cell whose reported error changes is
       listed in NEWS, and a reader asserts no cell's abort lost its `call` — the
       unattributed-base-error regression the Scope Out clause exists to prevent.
-- [ ] AC3 — Over the AC2 grid: no cell that compiled before aborts after, none
+- [x] AC3 — Over the AC2 grid: no cell that compiled before aborts after, none
       that aborted before compiles after, and every in-range baseline succeeds on
       both refs. Additionally, on all four sites a value check still reports
       before `check_nvenc_available()`, preserving M59's AC5(b).
-- [ ] AC4 — `picture_in_picture_batch()`'s per-row `audio` index is checked at
+- [x] AC4 — `picture_in_picture_batch()`'s per-row `audio` index is checked at
       its front door: a violating call aborts naming the verb, with a message
       carrying none of `pmap`, `In index:` or `aud`. Run at both `parallel`
       settings for parity with M59's suite, which is not additional evidence.
-- [ ] AC5 — The exception retires everywhere it is asserted as current: a new
+- [x] AC5 — The exception retires everywhere it is asserted as current: a new
       D-entry supersedes D038; both `@param hardware` blocks and NEWS's
       known-gap paragraph are rewritten; and M59's tests asserting the argument
       form reports the value check are inverted. A residue grep over `R/`, `man/`, `NEWS.md` and `tests/` for the
       exception's wording returns nothing. `cairn/` is excluded by design — its
       archive keeps the historical record (IP4).
-- [ ] AC6 — Both `_batch` verbs' `@param hardware` blocks and the NEWS entry
+- [x] AC6 — Both `_batch` verbs' `@param hardware` blocks and the NEWS entry
       state exactly: "A value error and a contradiction resolve the same way
       whether the value arrived as an argument or in a `jobs` column; the
       contradiction reports first." Each of that sentence's two quantified terms
       — the four values, the two forms — has a cell in the AC2 grid, and the test
       file names the sentence it pins. Any later edit to the quoted sentence is a
       widening unless the enumeration travels with it.
-- [ ] AC7 — The r-package profile's verify slot is clean: `devtools::document()`
+- [x] AC7 — The r-package profile's verify slot is clean: `devtools::document()`
       produces no diff, `devtools::test()` passes, and `devtools::check()`
       reports 0 errors and 0 warnings.
 
@@ -133,6 +133,7 @@ pipeline; any change to which calls are refused.
 - 2026-08-08: T7 — D039 appended, superseding D038 and restoring D036 unconditionally. Both `_batch` verbs' `@param hardware` blocks and the NEWS entry now carry the pinned sentence; NEWS's known-gap paragraph is rewritten in place (the whole entry is unreleased) and a second paragraph records pip's new front-door `audio` check and the two errors that now report after it. `test-front-door-ordering.R` gains the AC6 tests: the sentence in both Rd topics and in NEWS, matched on markup-normalized text, and an enumeration test keyed on (verb, value) asserting each pair's forms — including that pip's `audio` has the column form only, which is the cell measured not to exist.
 - 2026-08-08: T7 — residue grep over `R/`, `man/`, `NEWS.md`, `tests/` and `data-raw/` for the exception's wording returns nothing.
 - 2026-08-08: T7 — verify slot clean: `devtools::document()` writes only the two intended Rd files, `devtools::test()` 0 failures / 4586 passing (4 warnings, 5 skips, both unchanged from the branch base), `devtools::check()` 0 errors / 0 warnings / 0 notes.
+- 2026-08-08: review — all seven criteria verified with fresh evidence; consistency gate clean (`cairn_validate` exit 0, `document()` no diff, `pkgdown::check_pkgdown()` clean, `check()` 0/0/0). One criterion needed a fix at review: AC5's residue grep returned a match in the new test file's own header, which carried D038's "disclosed gap" phrasing; the comment was reworded and the grep now returns nothing.
 
 ## Decisions
 
@@ -193,3 +194,19 @@ silently invert either, and an unmeasured invariant is an assumed one.
   already; moving them would create the disagreement this milestone removes.
 
 ## Review
+
+_Reviewed 2026-08-08 on `m61-uniform-front-door-ordering` at PR #64, against `origin/master` @ `1d54b20`. Every line below is a command run in this session, never recall._
+
+### Acceptance criteria
+
+- **AC1** — `devtools::test(filter = "front-door-ordering")` passes: the eleven ordering cases (four guards x both forms, compare's `audio` at both bounds) each report the contradiction, each with a control first asserting the contradiction is live on that call. The one cell that cannot exist is asserted rather than omitted — pip's `audio` argument with `audio_codec = "aac"` reports the value, and the same call with the index in range COMPILES, which measures why no contradiction is there to cross. The grid agrees: every (guard, form, contradiction) cell reads `contradiction` after, and the single `exists = FALSE` cell is pip `audio`/scalar.
+- **AC2** — `data-raw/value-guard-baseline.R` run against both refs: 110 cells, 72 crossed, 3 nonexistent. Coverage enumerated from the grid itself — 5 (verb, guard) pairs x 2 forms x 3 crossings (contradiction, nvenc, `run` guard), the crossings being exactly those M61-D1 names. It compares abort kind (`value_guard_refusals`), blame target (`value_guard_blame_regressions`) and message text (`value_guard_messages`). `value_guard_missing_call(after)` returns 0 rows: no abort lost its `call`. Six cells change which error they report, in two families, both stated in NEWS — the four scalar-argument cells crossed with a contradiction, and pip's `audio` column crossed with the availability and `run` guards.
+- **AC3** — over the grid: `value_guard_refusals(before, after)` 0 rows (nothing that compiled aborts, nothing that aborted compiles); `value_guard_vacuous()` 0 rows on BOTH refs, so no in-range baseline failed on either side. The nvenc invariant is separately pinned by test: with the encoder seam held empty, all five sites in both forms report the value and never `nvenc`, each control asserting the availability abort is real.
+- **AC4** — `picture_in_picture_batch()`'s `audio` index aborts at the front door in all three forms (argument, column, mixed column) at both `parallel` settings, blaming `picture_in_picture_batch`, with no `pmap`, no `In index:` and no `aud` in the message or the deparsed call. A clean `audio` column still compiles both rows, so the guard sweeps rather than gates. Measured on `origin/master` for contrast: the same column call there reports `purrr::pmap` / `In index: 1` / `` `aud` ``.
+- **AC5** — D039 appended, superseding D038 and restoring D036 unconditionally; both `@param hardware` blocks and NEWS's known-gap paragraph rewritten. The residue grep over `R/`, `man/`, `NEWS.md` and `tests/` returned ONE match at review — the new test file's header carried D038's "disclosed gap" phrasing — which was reworded rather than argued away; the grep now returns nothing. The "invert M59's argument-form tests" clause is vacuous, and the emptiness is measured, not assumed: M59's two ordering cases (`test-value-check-front-door.R:452-471`) both carry the bad value in a `jobs` COLUMN and assert the contradiction wins, which this milestone preserves; and the full suite is green with all four guards moved, which a test asserting the old argument-form answer would have reddened.
+- **AC6** — the sentence appears in both `_batch` Rd topics and in NEWS, matched on markup-normalized text so `\code{jobs}` and `` `jobs` `` compare equal while a changed word still fails. The Rd assertion runs both directions: exactly `compare_videos_batch` and `picture_in_picture_batch` carry it, so no verb whose front door was never reordered claims that it was. The enumeration test keys on (verb, value) and requires each pair's forms — four pairs at both forms, and pip's `audio` at `column` only, which is the cell measured not to exist.
+- **AC7** — `devtools::document()` leaves `man/` and `NAMESPACE` with no diff; `devtools::test()` 0 failures, 4586 passing (4 warnings, 5 skips, both unchanged from the branch base); `devtools::check()` 0 errors, 0 warnings, 0 notes.
+
+### Consistency gate
+
+`cairn_validate` exit 0 — all PASS, all advisories OK. Toolchain slot: `document()` no diff, generated files unedited, README.Rmd untouched so README.md stays in sync, `pkgdown::check_pkgdown()` "No problems found", NEWS carries the user-visible change with no milestone numbers, no new top-level files, `check()` clean.

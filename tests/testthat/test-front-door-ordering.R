@@ -7,8 +7,9 @@
 # below that contradiction sweep -- so a value error arriving in a `jobs` column
 # obeyed D036, while the same value passed as a scalar ARGUMENT was caught by a
 # guard at the top of the verb and reported instead. D038 recorded that
-# disagreement as a disclosed gap. This suite is the gap closed: the four guards
-# now sit below the contradiction sweep, so both forms answer alike.
+# disagreement without defending it; D039 removes it. This suite is what D039
+# rests on: the four guards now sit below the contradiction sweep, so both forms
+# answer alike.
 #
 # Every case here is wrong in TWO ways, and every case has a CONTROL: the same
 # call with the value in range, asserted to still raise the other error. Without

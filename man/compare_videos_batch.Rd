@@ -61,9 +61,7 @@ is refused for the contradiction first, whether or not this machine has
 the encoder.
 A per-row value error — an \code{audio} index past that row's input count,
 a \code{direction} outside the two accepted values — likewise reports ahead
-of the encoder check. Which of it and the contradiction reports first
-depends on where the bad value came from: in a \code{jobs} column the
-contradiction is reported, in an argument the value is.}
+of the encoder check.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}

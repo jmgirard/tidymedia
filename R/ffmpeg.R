@@ -2752,13 +2752,22 @@ check_resize_needs_two_inputs <- function(resize, n_inputs,
 # M59 sites 5 and 6. The two vocabularies below were each spelled out in THREE
 # signatures -- the scalar verb, its _batch sibling, and the shared pipeline --
 # and arg-matched separately at each, so one wrong value had three possible
-# abort sites and the front-door column sweep would have added a fourth. Each
-# vocabulary is now written once here and every signature defaults to it.
+# abort sites and the front-door column sweep would have added a fourth.
 #
-# A function rather than a bare constant because these are the DEFAULTS of
-# exported arguments: rlang::arg_match() reads a formal's default by evaluating
-# it, so a call is as usable there as a literal, while a package-level constant
-# would have to be created at build time and kept in step with lazy-loading.
+# What is single-sourced here is CHECKING, not display (M59-D3). Every check
+# reads its vocabulary from these accessors and refuses through the one
+# check_vocab_arg() below. The four EXPORTED signatures still spell their values
+# out, so `?compare_videos` shows them and formals() returns something a caller
+# can evaluate; only the two internal pipelines default to an accessor. Editing
+# a vocabulary here therefore means editing those four signatures too -- which
+# is not left to memory: test-value-check-front-door.R EVALUATES every signature
+# default and fails unless it equals the accessor's answer.
+#
+# A function rather than a bare constant so the two internal pipelines can
+# default to it, and so a caller of these accessors gets a fresh vector rather
+# than a package-level object created at build time and kept in step with
+# lazy-loading. Note that arg_match() never reads a formal default anywhere in
+# this package: check_vocab_arg() always passes `values` explicitly.
 stack_directions <- function() c("horizontal", "vertical")
 
 pip_positions <- function() {
@@ -5907,9 +5916,7 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #'   the encoder.
 #'   A per-row value error — an \code{audio} index past that row's input count,
 #'   a \code{direction} outside the two accepted values — likewise reports ahead
-#'   of the encoder check. Which of it and the contradiction reports first
-#'   depends on where the bad value came from: in a \code{jobs} column the
-#'   contradiction is reported, in an argument the value is.
+#'   of the encoder check.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -6096,9 +6103,7 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #'   the encoder.
 #'   A per-row value error — a negative \code{margin}, a \code{position}
 #'   outside the five accepted values — likewise reports ahead of the encoder
-#'   check. Which of it and the contradiction reports first depends on where the
-#'   bad value came from: in a \code{jobs} column the contradiction is reported,
-#'   in an argument the value is.
+#'   check.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}

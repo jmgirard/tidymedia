@@ -64,9 +64,7 @@ is refused for the contradiction first, whether or not this machine has
 the encoder.
 A per-row value error — a negative \code{margin}, a \code{position}
 outside the five accepted values — likewise reports ahead of the encoder
-check. Which of it and the contradiction reports first depends on where the
-bad value came from: in a \code{jobs} column the contradiction is reported,
-in an argument the value is.}
+check.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}

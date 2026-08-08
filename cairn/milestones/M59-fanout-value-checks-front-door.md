@@ -1,6 +1,6 @@
 # M59: Six per-row value checks are refused at the fan-out verb's front door
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M58
 - **Driving RR:** —
@@ -132,7 +132,7 @@ milestone moves where a check reports, never what is checked.
 
 - [x] T10 — Close review's evidence gaps: F10/F11 (guard runs under `R CMD
       check`, formatting-independent), F4 (grid compares message and blame), F12.
-- [ ] T11 — Re-cut close-out: delete the contradiction-versus-value sentence
+- [x] T11 — Re-cut close-out: delete the contradiction-versus-value sentence
       from both `@param hardware` blocks (the true encoder-ordering clause
       stays), and correct the accessor block's stale rationale comment.
 ## Work log
@@ -185,6 +185,10 @@ milestone moves where a check reports, never what is checked.
 - 2026-08-07: third review pass returned the milestone to `in-progress` and STOPPED the retry loop. Floor return on P1 (90, user-facing): the N1 fix's replacement wording is false for `audio` on `compare_videos_batch`, whose per-row upper bound sits below the contradiction sweep — measured, `compare_videos_batch(jobs_with_3_inputs, audio = 5)` reports the `resize` contradiction. P2 (85) falsifies AC5(a) as compressed, the enumeration having been dropped for the line cap. P3 (85) actioned alongside. Seven logged. Thrash trigger (a) fires (third defect return: F1, N1, P1) and trigger (b) fires (AC5(a) failed twice, both as an overbroad claim about the scalar form); AC5 would be a second amendment return, which stops. Disposition to the user: re-cut via `/milestone-plan`, or take the alternative the amendment gate recorded against — move the scalar guards below the contradiction sweep so both forms agree and the sentence being got wrong stops existing.
 - 2026-08-07: disposition at the thrash stop — the user chose to make the four front-door guards uniform on `compare_videos_batch` and `picture_in_picture_batch`, i.e. the alternative the AC5 amendment gate recorded against: move each verb's scalar `direction`/`position`/`margin` guard, and `compare_videos_batch`'s per-row `audio` upper bound, so all four sit on the same side of the M58 contradiction sweep and both the argument and column forms answer alike. That removes the irregularity three successive wordings failed to describe, lets AC5(a) collapse to one clause, and makes D038's recorded exception retirable. Per thrash trigger (a) this is NOT queued as a fourth fix round under the current plan; it routes to `/milestone-plan`, which owns the cut between what M59 still ships and what the uniformity change becomes.
 - 2026-08-07: **re-cut by /milestone-plan** at the thrash stop, per trigger (a)'s remedy. AC5(a) — the contradiction-versus-value ordering — is removed from this milestone entirely and owned by M61, having failed twice as an overbroad claim about the argument form (F5, then P2 after the cap compression widened it). AC5's surviving (b) and (c) renumber to (a) and (b); both were verified clean in the second and third passes. T11 added: delete the sentence rather than attempt a fourth wording of it, and fix the accessor comment P3 named. The six value checks, their blame, their equivalence grid and their mutation verification — this milestone's actual Goal — are unchanged and were verified clean in all three passes.
+- 2026-08-07: T11 — both `@param hardware` blocks lose the contradiction-versus-value sentence entirely; the encoder-ordering clause it was appended to is true in both forms and stays. Deleting rather than rewording is the point of the re-cut: three attempts to state that ordering were each wrong, and M61 removes the irregularity instead of describing it. P3's accessor comment corrected — it still claimed every signature defaults to the accessor and that `arg_match()` reads a formal default, both made false by the N8 fix; it now states what M59-D3 decided and points at the test that enforces it.
+- 2026-08-07: T11 — the three `AC5(*)` test names were renumbered to match the re-cut criterion. The contradiction-before-value test keeps its column-form cases and says in its comment that M59 no longer claims that ordering and M61 owns it; D036 still requires the column half, so it stays pinned. Checked that NO test asserts the ARGUMENT form reports the value check — the scalar-siblings cases pair no contradiction — so M61's AC5 clause about inverting such tests has nothing to invert as of this commit, and applies only to whatever M61 itself adds.
+- 2026-08-07: the plan commit for M61 was made on this branch by mistake; planning is docs-only and belongs on the default branch, or M61 would have been trapped behind M59's PR. Re-committed to `master` (`c8ffab2`) and merged back, the merge conflicting only on M59's own status row (branch `in-progress` kept over master's stale `planned`). The M59 milestone-file re-cut stays on this branch, where that file's updates live.
+- 2026-08-07: verify slot clean — `document()` regenerated only the two help pages whose roxygen changed; `devtools::test()` FAIL 0 / WARN 4 / SKIP 5 / PASS 4402; `devtools::check()` 0 errors / 0 warnings / 0 notes. Status → review.
 
 ## Decisions
 

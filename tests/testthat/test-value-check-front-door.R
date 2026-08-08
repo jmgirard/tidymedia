@@ -449,9 +449,13 @@ expect_precedence <- function(case) {
   expect_identical(blamed_verb(cnd), case$verb, info = case$id)
 }
 
-test_that("AC5(a): a contradiction reports before a value check", {
+test_that("a contradiction reports before a value check, in the column form", {
   # The two verbs carrying both an M58 contradiction and one of these six value
-  # checks. Here the value check is the LOSER: the contradiction reports.
+  # checks, with the bad value in a `jobs` COLUMN: the contradiction reports.
+  # M59 no longer claims this ordering — its AC5(a) was re-cut out on 2026-08-07
+  # after failing twice as an overbroad statement about the ARGUMENT form, which
+  # answers the other way. M61 owns the ordering and makes both forms agree; the
+  # column half is kept pinned here meanwhile because D036 still requires it.
   withr::local_options(tidymedia.nvenc_encoders = character(0))
   input <- make_input()
   two <- function(...) tibble::tibble(...)
@@ -479,7 +483,7 @@ test_that("AC5(a): a contradiction reports before a value check", {
   for (case in cases) expect_precedence(case)
 })
 
-test_that("AC5(b): a value check reports before nvenc availability", {
+test_that("AC5(a): a value check reports before nvenc availability", {
   # The seam is held EMPTY, so `hardware = "nvenc"` is genuinely unavailable and
   # the control's availability abort is real rather than assumed. Driving it
   # through the option seam is what makes this machine-independent (M54/D035).
@@ -526,7 +530,7 @@ test_that("AC5(b): a value check reports before nvenc availability", {
   for (case in cases) expect_precedence(case)
 })
 
-test_that("AC5(c): a value check reports before ffm_batch's own guards", {
+test_that("AC5(b): a value check reports before ffm_batch's own guards", {
   # `run` is one of the six arguments ffm_batch() alone guards
   # (R/ffm_batch.R:84-98). Every one of these value checks now runs before
   # ffm_batch() is called at all, so a call wrong in both is told about the

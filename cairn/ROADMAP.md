@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-07 (M61 planned from M59's third-pass thrash stop, 
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M59 | Six per-row value checks are refused at the fan-out verb's front door | in-progress | M58 | normal | milestones/M59-fanout-value-checks-front-door.md |
+| M59 | Six per-row value checks are refused at the fan-out verb's front door | review | M58 | normal | milestones/M59-fanout-value-checks-front-door.md |
 | M61 | A value error and a contradiction resolve the same way in both forms | planned | M59 | normal | milestones/M61-uniform-front-door-ordering.md |
 | M60 | The repo's line endings are normalized once and enforced mechanically | planned | — | normal | milestones/M60-line-ending-normalization.md |
 | M58 | Six argument contradictions are refused at the fan-out verb's front door | done | M57 | normal | milestones/archive/M58-fanout-contradiction-front-door.md |

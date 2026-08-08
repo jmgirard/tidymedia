@@ -1483,20 +1483,34 @@ governs in the other direction and this milestone's scope forbids outright.
 in each form, with each front-door error that could report instead of it — the
 contradiction, `check_nvenc_available()`, and `ffm_batch()`'s own `run` guard —
 each paired with a control asserting the crossed error is live on that call.
-Over 124 cells against both refs: no refusal changed, no message regressed, no
-blame regressed, no abort lost its `call`, no control was dead. Thirteen cells
-change which error they report — eight scalar-argument cells on the `_batch`
-verbs crossed with a contradiction, three on the scalar verbs, and pip's
-`audio` column crossed with the availability and `run` guards, whose front-door
-guard is new. Where a verb carries two contradictions, each guard is crossed
-with both: `compare_videos_batch()`'s `direction` against the `audio_codec` one
-and against `resize`.
+Where a verb carries two contradictions, each guard is crossed with both:
+`compare_videos_batch()` carries an `audio_codec` one and a `resize` one, and
+they are separate members of the crossing list rather than one standing for the
+pair. Over 128 cells against both refs: no refusal changed, no message
+regressed, no blame regressed, no abort lost its `call`, no control was dead,
+and no combination went uncovered. Fourteen cells change which error they
+report — nine scalar-argument cells on the `_batch` verbs crossed with a
+contradiction, three on the scalar verbs, and pip's `audio` column crossed with
+the availability and `run` guards, whose front-door guard is new.
+
+**The crossings are generated, not listed.** Three review rounds each returned
+this milestone on a different combination of that cross-product being absent
+from the grid, every one a cell nobody had typed out. So the grid declares the
+(verb, value) pairs, the two forms and the per-verb crossings once and builds
+every combination from them; each guard supplies only what cannot be derived —
+the shape of a call to its verb, and which value violates it. A companion
+reader, `value_guard_uncovered()`, re-derives the same product and reports any
+combination with no cell, so completeness is checkable from the grid's output
+rather than by eye. What the reader cannot catch is a crossing dropped from the
+shared declaration; what it does catch is the failure that actually recurred.
 
 **The four guards also report after every check that stays above them.** D038
 named this consequence and called its disclosure "the work": a call wrong in
 both one of these four values and in an earlier argument check — a malformed
-codec token, an unrecognized `hardware`, a non-numeric `scale`, a `jobs` table
-of the wrong shape — is now told about the earlier check. No refusal changes;
+codec token, an unrecognized `hardware`, a `resize` that is not `TRUE` or
+`FALSE` (`compare_videos_batch()` only), a non-numeric `scale`
+(`picture_in_picture_batch()` only), a `jobs` table of the wrong shape — is now
+told about the earlier check. No refusal changes;
 only which error is shown. NEWS states it, and the grid pins the three crossings
 that the ordering rule itself is about.
 
@@ -1522,7 +1536,10 @@ the cell as one that could not exist, on the reasoning that "supplying `audio`
 at all removes the contradiction" — false at `NA`. Its replacement said the
 pairing was reachable "at exactly one value" — false at `NaN`. What survives
 both is the mechanism rather than the enumeration: the pairing is reachable
-exactly where `batch_stream_cell()` resolves the argument to `NULL`.
+exactly where `audio` is non-`NULL` and `batch_stream_cell()` resolves it to
+`NULL`. The non-`NULL` half is not pedantry — that helper returns `NULL` for
+input `NULL` too, which is why `audio = NULL` is the control here, and a
+biconditional omitting it would admit a call carrying no value error at all.
 
 **What this does not change.** `rlang::check_bool(resize)`, the jobs-shape
 guards and every column *type* guard stay above the contradiction sweep, for the

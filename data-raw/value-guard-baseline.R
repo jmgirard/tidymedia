@@ -73,8 +73,76 @@
 #                                        #   really does raise the crossed error
 #   value_guard_ordering(before, after)  # which error each crossed cell showed,
 #                                        #   before and after (M61)
+#   value_guard_uncovered(after)         # empty: every (verb, value, form,
+#                                        #   crossing) AC2 asks for has a cell
 
 source(file.path("data-raw", "codec-guard-baseline.R"))
+
+# -- the ordering cross-product, declared once -------------------------------
+#
+# AC2 asks for each of M61's guards, in each of its forms, crossed with each
+# front-door error M61-D1 names. That is a cross-product, and three review
+# rounds each found a different combination of it missing -- always a cell
+# nobody had typed out. So the combinations are GENERATED from the three
+# declarations below rather than written one call at a time, and
+# value_guard_uncovered() re-derives the same product and reports any
+# combination the grid did not produce. Completeness holds by construction;
+# the reader is what makes it checkable from the grid's own output.
+#
+# The (verb, value) pairs are AC1's four values in Scope In, plus pip's `audio`
+# -- the guard that had no front door at all before this milestone.
+VALUE_GUARD_PAIRS <- list(
+  c(verb = "compare_videos_batch", value = "direction"),
+  c(verb = "compare_videos_batch", value = "audio"),
+  c(verb = "picture_in_picture_batch", value = "position"),
+  c(verb = "picture_in_picture_batch", value = "margin"),
+  c(verb = "picture_in_picture_batch", value = "audio")
+)
+
+# The forms AC6's sentence quantifies over: the value as the verb's argument,
+# and the value in a `jobs` column. The scalar verbs below take no `jobs`
+# table, so they carry only the first, under its own name.
+VALUE_GUARD_FORMS <- c("scalar", "column")
+
+# M61-D1's three crossings, per verb. Crossing (1) is the verb's own M58
+# contradiction, and `compare_videos_batch()` carries TWO of them in two
+# different checkers -- an `audio_codec` naming an encoder with no audio
+# carried, and `resize` across other than two inputs -- so each is its own
+# member here rather than one "contradiction" standing for both. That
+# conflation is what round 2 returned on.
+#
+# The two scalar verbs cross the contradictions only. They reach these guards
+# through the shared `*_pipeline()`, which is below both the availability check
+# and `ffm_batch()`, so crossings (2) and (3) are not theirs to order.
+VALUE_GUARD_CROSSINGS <- list(
+  compare_videos_batch = c("contradiction:audio_codec", "contradiction:resize",
+                           "nvenc", "run_guard"),
+  picture_in_picture_batch = c("contradiction:audio_codec", "nvenc",
+                               "run_guard"),
+  compare_videos = c("contradiction:audio_codec", "contradiction:resize"),
+  picture_in_picture = c("contradiction:audio_codec")
+)
+
+# What each crossing supplies to a call, and what encoder seam it needs. The
+# `nvenc` crossing holds the seam EMPTY against the full seam every other cell
+# runs under: an availability error that cannot fire is not an error this grid
+# can be measured against.
+value_guard_crossing_extra <- function(crossing) {
+  switch(crossing,
+         "contradiction:audio_codec" = list(audio_codec = "aac"),
+         "contradiction:resize" = list(resize = TRUE),
+         "nvenc" = list(hardware = "nvenc", video_codec = "libx264"),
+         "run_guard" = list(run = "yes"),
+         stop("unknown crossing: ", crossing))
+}
+
+value_guard_crossing_seam <- function(crossing) {
+  if (identical(crossing, "nvenc")) character(0) else "h264_nvenc"
+}
+
+# The error CLASS a crossing belongs to, which is what value_guard_ordering()
+# reads off a message. Two crossings share the `contradiction` class.
+value_guard_crossing_class <- function(crossing) sub(":.*$", "", crossing)
 
 # -- the probe grid ----------------------------------------------------------
 
@@ -89,11 +157,11 @@ value_guard_cases <- function(s) {
   cases <- list()
   add <- function(site, verb, form, label, violating, args,
                   exists = TRUE, informative = TRUE, crossed = "none",
-                  control = FALSE, seam = "h264_nvenc") {
+                  crossing = "none", control = FALSE, seam = "h264_nvenc") {
     cases[[length(cases) + 1L]] <<- list(
       site = site, verb = verb, form = form, label = label,
       violating = violating, exists = exists, informative = informative,
-      crossed = crossed, control = control, seam = seam,
+      crossed = crossed, crossing = crossing, control = control, seam = seam,
       args = args)
   }
   two <- function(...) tibble::tibble(...)
@@ -252,18 +320,16 @@ value_guard_cases <- function(s) {
   # Every cell above probes ONE mistake. These probe TWO: a value violation
   # crossed with a front-door error that could report instead of it, so the
   # grid measures WHICH of the two the user is shown rather than only whether
-  # the call was refused. Four guards (sites 2, 4, 5, 6) plus pip's `audio`
-  # (site 7, which had no front-door guard at all before this milestone), each
-  # in its scalar-argument and `jobs`-column form, each crossed with the three
-  # errors M61-D1 names:
+  # the call was refused.
   #
-  #   contradiction  the verb's M58 checker -- `audio_codec` with no audio
-  #                  carried, or `resize` across other than two inputs. This is
-  #                  the one that CHANGES: before, the argument form reported
-  #                  the value; after, both forms report the contradiction.
-  #   nvenc          check_nvenc_available(), which must still report AFTER the
-  #                  value on both refs (M59's AC5(b), this milestone's AC3).
-  #   run_guard      ffm_batch()'s own `run` check, likewise still after.
+  # The cells are GENERATED from VALUE_GUARD_PAIRS x VALUE_GUARD_FORMS x
+  # VALUE_GUARD_CROSSINGS, declared at the top of this file. Nothing below
+  # names a combination; each guard supplies only the two things that cannot be
+  # derived -- the shape of a call to its verb, and which value violates it --
+  # and the driver crosses them. Three review rounds each found one
+  # hand-written combination missing, so the enumeration is the fix: a
+  # combination can no longer be forgotten, only mis-built, and
+  # value_guard_uncovered() reports either.
   #
   # Each cell is paired with a CONTROL: the same call with the value in range,
   # which must still be refused BY THE CROSSED ERROR. Without it a cell showing
@@ -271,264 +337,193 @@ value_guard_cases <- function(s) {
   # error reports its only one, and the ordering claim would rest on that.
   # Controls are `violating = TRUE` because they are refused calls; what makes
   # them controls rather than cells is `control = TRUE`.
-  #
-  # The nvenc cells hold the encoder seam EMPTY, against the full seam every
-  # other cell in this file runs under: an availability error that cannot fire
-  # is not an error this grid can be measured against.
-  order_add <- function(site, verb, form, guard, crossed, bad, ok, extra,
-                        seam = "h264_nvenc", exists = TRUE) {
-    lab <- sprintf("%s/%s x %s", guard, form, crossed)
-    add(site, verb, form, lab, TRUE,
-        if (exists) c(bad, extra) else NULL,
-        exists = exists, crossed = crossed, seam = seam)
-    add(site, verb, form, paste(lab, "control"), TRUE,
-        if (exists) c(ok, extra) else NULL,
-        exists = exists, crossed = crossed, control = TRUE, seam = seam)
+
+  # Row shapes. `compare_videos_batch()`'s row count of INPUTS is what makes
+  # the `resize` contradiction live, so it is a function of the crossing.
+  cmp_rows <- function(form, crossing, ...) {
+    n_in <- if (identical(crossing, "contradiction:resize")) 3L else 2L
+    if (identical(form, "column")) {
+      two(inputs = list(rep(s, n_in), rep(s, n_in)),
+          output = c("a.mp4", "b.mp4"), ...)
+    } else {
+      two(inputs = list(rep(s, n_in)), output = "o.mp4", ...)
+    }
+  }
+  pip_rows <- function(form, crossing, ...) {
+    if (identical(form, "column")) {
+      two(main = c(s, s), overlay = c(s, s), output = c("a.mp4", "b.mp4"), ...)
+    } else {
+      two(main = s, overlay = s, output = "o.mp4", ...)
+    }
   }
 
-  crossings <- list(
-    list(name = "contradiction", extra = list(audio_codec = "aac"),
-         seam = "h264_nvenc"),
-    list(name = "nvenc",
-         extra = list(hardware = "nvenc", video_codec = "libx264"),
-         seam = character(0)),
-    list(name = "run_guard", extra = list(run = "yes"), seam = "h264_nvenc")
+  # Put a value where its form says it goes: an argument beside `jobs` in the
+  # scalar form, a column inside `jobs` in the column form. `x[col] <- list(v)`
+  # rather than `x[[col]] <- v`, so a `NULL` value is PASSED as NULL rather
+  # than dropping the argument -- the two differ to a verb with a non-NULL
+  # default, and one control below depends on passing NULL explicitly.
+  place <- function(rows_fn, col) {
+    function(form, crossing, v) {
+      if (identical(form, "column")) {
+        cols <- list(v)
+        names(cols) <- col
+        list(jobs = do.call(rows_fn, c(list(form, crossing), cols)))
+      } else {
+        out <- list(jobs = rows_fn(form, crossing))
+        out[col] <- list(v)
+        out
+      }
+    }
+  }
+
+  # A value that violates the same way in both forms, and its in-range twin.
+  plain <- function(bad, ok) {
+    function(form, crossing) {
+      if (identical(form, "column")) list(bad = rep(bad, 2L), ok = rep(ok, 2L))
+      else list(bad = bad, ok = ok)
+    }
+  }
+
+  # `audio` is the one value whose violating spelling depends on the crossing,
+  # and the reason is the crossing itself. An `audio` index that is in range
+  # gives the encoder something to encode, which REMOVES the `audio_codec`
+  # contradiction -- so against that crossing the violating value has to be one
+  # the guard refuses AND that still drops the audio. `batch_stream_cell()`
+  # resolves any NA-ish length-1 value to `NULL`, which is exactly that; the
+  # `nan` variant below pins that it is the is.na() mechanism and not the
+  # literal `NA`. Two earlier readings of this cell were measured wrong -- that
+  # supplying `audio` at all removes the contradiction, and that exactly one
+  # value reaches it -- and both were over-generalizations of the same true
+  # fact about IN-RANGE values.
+  #
+  # The control differs by crossing, and it has to. A control proves the
+  # crossed error is live with the value in range -- but against `audio_codec`
+  # an in-range index is what removes it. So that control passes the value the
+  # violating one RESOLVES to: `NULL` in the scalar form, and in the column
+  # form a row that still drops its audio beside a row now in range. Against
+  # `nvenc` and the `run` guard, where the crossed error is independent of
+  # `audio`, an in-range index is the right control.
+  audio_values <- function(bad, ok) {
+    function(form, crossing) {
+      drops_audio <- identical(crossing, "contradiction:audio_codec")
+      if (identical(form, "column")) {
+        if (drops_audio) list(bad = c(NA, bad), ok = c(NA, ok))
+        else list(bad = rep(bad, 2L), ok = rep(ok, 2L))
+      } else {
+        if (drops_audio) list(bad = NA, ok = NULL)
+        else list(bad = bad, ok = ok)
+      }
+    }
+  }
+
+  # The five (verb, value) pairs, each with the row shape its verb takes and
+  # the value that violates it. `label` is the pair's value name, which is what
+  # value_guard_uncovered() reads back off the grid.
+  guard_specs <- list(
+    list(site = 5L, verb = "compare_videos_batch", label = "direction",
+         args = place(cmp_rows, "direction"),
+         values = plain("sideways", "vertical")),
+    list(site = 4L, verb = "compare_videos_batch", label = "audio",
+         args = place(cmp_rows, "audio"),
+         values = audio_values(7, 0)),
+    list(site = 6L, verb = "picture_in_picture_batch", label = "position",
+         args = place(pip_rows, "position"),
+         values = plain("middleish", "center")),
+    list(site = 2L, verb = "picture_in_picture_batch", label = "margin",
+         args = place(pip_rows, "margin"),
+         values = plain(-3, 16)),
+    list(site = 7L, verb = "picture_in_picture_batch", label = "audio",
+         args = place(pip_rows, "audio"),
+         values = audio_values(9, 0))
   )
 
-  for (x in crossings) {
-    # site 5, `direction` on compare_videos_batch()
-    order_add(5L, "compare_videos_batch", "scalar", "direction", x$name,
-              bad = list(jobs = two(inputs = list(c(s, s)), output = "o.mp4"),
-                         direction = "sideways"),
-              ok = list(jobs = two(inputs = list(c(s, s)), output = "o.mp4"),
-                        direction = "vertical"),
-              extra = x$extra, seam = x$seam)
-    order_add(5L, "compare_videos_batch", "column", "direction", x$name,
-              bad = list(jobs = two(inputs = list(c(s, s), c(s, s)),
-                                    output = c("a.mp4", "b.mp4"),
-                                    direction = c("sideways", "sideways"))),
-              ok = list(jobs = two(inputs = list(c(s, s), c(s, s)),
-                                   output = c("a.mp4", "b.mp4"),
-                                   direction = c("vertical", "vertical"))),
-              extra = x$extra, seam = x$seam)
+  # The scalar verbs (M61 review, F2). `compare_videos()` and
+  # `picture_in_picture()` have NO vocabulary guard of their own: `direction`
+  # and `position` are checked only inside the shared `*_pipeline()`, so moving
+  # that check below the pipeline's contradiction checkers moved these verbs'
+  # answer too. Scope Out carves their front doors out only "beyond their
+  # shared pipeline", so the change is intended -- but every cell above probes
+  # a `_batch` verb, and nothing measured these until M61's review did.
+  #
+  # They take arguments and no `jobs` table, so their one form is recorded as
+  # `argument` rather than `scalar`: a reader cannot then mistake one of these
+  # for a `_batch` verb's scalar cell.
+  scalar_specs <- list(
+    list(site = 5L, verb = "compare_videos", label = "direction",
+         args = function(form, crossing, v) {
+           n_in <- if (identical(crossing, "contradiction:resize")) 3L else 2L
+           list(infiles = rep(s, n_in), outfile = "o.mp4", direction = v)
+         },
+         values = plain("sideways", "vertical")),
+    list(site = 6L, verb = "picture_in_picture", label = "position",
+         args = function(form, crossing, v) {
+           list(main = s, overlay = s, outfile = "o.mp4", position = v)
+         },
+         values = plain("middleish", "center"))
+  )
 
-    # `direction` against compare's OTHER contradiction. M61-D1's crossing (1)
-    # names two for this verb -- an `audio_codec` with no audio carried, and
-    # `resize` across other than two inputs -- and a guard is crossed with each
-    # error named there, not with whichever one came to hand. The rows carry
-    # three inputs so the resize contradiction is live; the control keeps it
-    # live with the vocabulary in range. Only the `contradiction` crossing
-    # branches here: `nvenc` and the `run` guard are single errors, and the
-    # cells above already cross `direction` with each.
-    if (identical(x$name, "contradiction")) {
-      order_add(5L, "compare_videos_batch", "scalar", "direction(resize)",
-                x$name,
-                bad = list(jobs = two(inputs = list(rep(s, 3)),
-                                      output = "o.mp4"),
-                           direction = "sideways"),
-                ok = list(jobs = two(inputs = list(rep(s, 3)),
-                                     output = "o.mp4"),
-                          direction = "vertical"),
-                extra = list(resize = TRUE), seam = x$seam)
-      order_add(5L, "compare_videos_batch", "column", "direction(resize)",
-                x$name,
-                bad = list(jobs = two(inputs = list(rep(s, 3), rep(s, 3)),
-                                      output = c("a.mp4", "b.mp4"),
-                                      direction = c("sideways", "sideways"))),
-                ok = list(jobs = two(inputs = list(rep(s, 3), rep(s, 3)),
-                                     output = c("a.mp4", "b.mp4"),
-                                     direction = c("vertical", "vertical"))),
-                extra = list(resize = TRUE), seam = x$seam)
-    }
-
-    # site 6, `position` on picture_in_picture_batch()
-    order_add(6L, "picture_in_picture_batch", "scalar", "position", x$name,
-              bad = list(jobs = two(main = s, overlay = s, output = "o.mp4"),
-                         position = "middleish"),
-              ok = list(jobs = two(main = s, overlay = s, output = "o.mp4"),
-                        position = "center"),
-              extra = x$extra, seam = x$seam)
-    order_add(6L, "picture_in_picture_batch", "column", "position", x$name,
-              bad = list(jobs = two(main = c(s, s), overlay = c(s, s),
-                                    output = c("a.mp4", "b.mp4"),
-                                    position = c("middleish", "middleish"))),
-              ok = list(jobs = two(main = c(s, s), overlay = c(s, s),
-                                   output = c("a.mp4", "b.mp4"),
-                                   position = c("center", "center"))),
-              extra = x$extra, seam = x$seam)
-
-    # site 2, `margin` on picture_in_picture_batch()
-    order_add(2L, "picture_in_picture_batch", "scalar", "margin", x$name,
-              bad = list(jobs = two(main = s, overlay = s, output = "o.mp4"),
-                         margin = -3),
-              ok = list(jobs = two(main = s, overlay = s, output = "o.mp4"),
-                        margin = 16),
-              extra = x$extra, seam = x$seam)
-    order_add(2L, "picture_in_picture_batch", "column", "margin", x$name,
-              bad = list(jobs = two(main = c(s, s), overlay = c(s, s),
-                                    output = c("a.mp4", "b.mp4"),
-                                    margin = c(-3, -3))),
-              ok = list(jobs = two(main = c(s, s), overlay = c(s, s),
-                                   output = c("a.mp4", "b.mp4"),
-                                   margin = c(16, 16))),
-              extra = x$extra, seam = x$seam)
-
-    # site 4, `audio` on compare_videos_batch(). The contradiction crossed here
-    # is `resize`, not `audio_codec`, because an IN-RANGE `audio` removes the
-    # audio_codec one -- it gives the encoder something to encode. That holds
-    # for in-range values only: the `audio(NA)` cell below crosses this same
-    # guard with the audio_codec contradiction, because an NA-ish `audio`
-    # resolves to `NULL` and drops the audio. An earlier draft generalized the
-    # in-range case into "a non-NULL `audio` makes the contradiction go away,
-    # so that cell cannot exist"; M61's review measured that false. `resize` is
-    # independent of `audio`, so the rows carry three inputs and ask to resize
-    # -- which leaves 7 out of range (0..2) and the resize contradiction live
-    # at once.
-    cmp_audio <- if (identical(x$name, "contradiction")) {
-      list(rows1 = list(rep(s, 3)),
-           rows2 = list(rep(s, 3), rep(s, 3)), extra = list(resize = TRUE))
-    } else {
-      list(rows1 = list(c(s, s)),
-           rows2 = list(c(s, s), c(s, s)), extra = x$extra)
-    }
-    order_add(4L, "compare_videos_batch", "scalar", "audio", x$name,
-              bad = list(jobs = two(inputs = cmp_audio$rows1,
-                                    output = "o.mp4"), audio = 7),
-              ok = list(jobs = two(inputs = cmp_audio$rows1,
-                                   output = "o.mp4"), audio = 0),
-              extra = cmp_audio$extra, seam = x$seam)
-    order_add(4L, "compare_videos_batch", "column", "audio", x$name,
-              bad = list(jobs = two(inputs = cmp_audio$rows2,
-                                    output = c("a.mp4", "b.mp4"),
-                                    audio = c(7, 7))),
-              ok = list(jobs = two(inputs = cmp_audio$rows2,
-                                   output = c("a.mp4", "b.mp4"),
-                                   audio = c(0, 0))),
-              extra = cmp_audio$extra, seam = x$seam)
-
-    # The SAME guard at its other bound, because on compare_videos_batch() the
-    # two bounds were checked in two places: the argument's lower bound at the
-    # top of the verb, above the contradiction sweep, and the upper bound in the
+  # Variants beyond the cross-product: the SAME guard probed at a second
+  # violating value, where that value is checked somewhere else or resolved by
+  # a different mechanism. Each names the crossings it is probed against, since
+  # a variant is not required at every one -- `audio(low)` cannot cross
+  # `audio_codec`, because -1 is not NA-ish and so still carries audio.
+  variant_specs <- list(
+    # compare's `audio` at its LOWER bound. The two bounds were checked in two
+    # places before this milestone -- the argument's lower bound at the top of
+    # the verb, above the contradiction sweep, and the upper bound in the
     # per-row sweep below it. D038 records exactly that ("for `audio` even by
     # which bound was crossed"), so probing only 7 would miss the cell that
     # moves.
-    order_add(4L, "compare_videos_batch", "scalar", "audio(low)", x$name,
-              bad = list(jobs = two(inputs = cmp_audio$rows1,
-                                    output = "o.mp4"), audio = -1),
-              ok = list(jobs = two(inputs = cmp_audio$rows1,
-                                   output = "o.mp4"), audio = 0),
-              extra = cmp_audio$extra, seam = x$seam)
-    order_add(4L, "compare_videos_batch", "column", "audio(low)", x$name,
-              bad = list(jobs = two(inputs = cmp_audio$rows2,
-                                    output = c("a.mp4", "b.mp4"),
-                                    audio = c(-1, -1))),
-              ok = list(jobs = two(inputs = cmp_audio$rows2,
-                                   output = c("a.mp4", "b.mp4"),
-                                   audio = c(0, 0))),
-              extra = cmp_audio$extra, seam = x$seam)
+    list(site = 4L, verb = "compare_videos_batch", label = "audio(low)",
+         args = place(cmp_rows, "audio"), values = plain(-1, 0),
+         forms = VALUE_GUARD_FORMS,
+         crossings = c("contradiction:resize", "nvenc", "run_guard")),
+    # `NaN` against the `audio_codec` contradiction on both verbs, which pins
+    # that what reaches that pairing is `batch_stream_cell()`'s is.na() test
+    # and not the literal `NA` the cells above spell it with.
+    list(site = 4L, verb = "compare_videos_batch", label = "audio(NaN)",
+         args = place(cmp_rows, "audio"),
+         values = function(form, crossing) list(bad = NaN, ok = NULL),
+         forms = "scalar", crossings = "contradiction:audio_codec"),
+    list(site = 7L, verb = "picture_in_picture_batch", label = "audio(NaN)",
+         args = place(pip_rows, "audio"),
+         values = function(form, crossing) list(bad = NaN, ok = NULL),
+         forms = "scalar", crossings = "contradiction:audio_codec")
+  )
 
-    # site 7, `audio` on picture_in_picture_batch(). New with M61: before it,
-    # this index was checked only inside the fan-out closure.
-    #
-    # The scalar x contradiction cell is reachable only at an NA-ish value, and
-    # which values those are is the point. pip's only contradiction is an
-    # `audio_codec` with no audio carried, and an `audio` ARGUMENT applies to
-    # every row -- so an in-range index removes the contradiction and 9 does
-    # too. `NA` does not: batch_stream_cell() resolves it to `NULL`, which
-    # drops the audio the encoder needs while still being a value the argument
-    # guard refuses. `NaN` does the same, because that helper tests is.na() and
-    # is.na(NaN) is TRUE -- so the reachable set is every length-1 NA-ish
-    # value, not the literal `NA`, and both are probed. An earlier draft of
-    # this grid recorded the cell as NONEXISTENT on the reasoning that
-    # "supplying `audio` at all removes the contradiction"; M61's review
-    # measured that false, and its own replacement ("exactly one value") was
-    # measured incomplete a round later. The column form reaches the pairing a
-    # second way, because rows may disagree -- one row dropping audio (`NA`)
-    # contradicts the encoder while another carries an out-of-range index.
-    # The CONTROL differs by crossing, and it has to. A control's job is to
-    # prove the crossed error is live on the call with the value in range --
-    # but for the audio_codec contradiction, an in-range `audio` is exactly
-    # what REMOVES it. So the contradiction control passes `audio = NULL`: the
-    # same resolved value `NA` produces, which the argument guard accepts, so
-    # the contradiction is the only error left. At `nvenc` and the `run` guard,
-    # where the crossed error is independent of `audio`, an in-range 0 is the
-    # right control.
-    pip_contradiction <- identical(x$name, "contradiction")
-    order_add(7L, "picture_in_picture_batch", "scalar", "audio", x$name,
-              bad = list(jobs = two(main = s, overlay = s, output = "o.mp4"),
-                         audio = if (pip_contradiction) NA else 9),
-              ok = list(jobs = two(main = s, overlay = s, output = "o.mp4"),
-                        audio = if (pip_contradiction) NULL else 0),
-              extra = x$extra, seam = x$seam)
+  # The driver. One cell and one control per (guard, form, crossing).
+  order_add <- function(spec, form, crossing) {
+    v <- spec$values(form, crossing)
+    lab <- sprintf("%s/%s x %s", spec$label, form, crossing)
+    extra <- value_guard_crossing_extra(crossing)
+    seam <- value_guard_crossing_seam(crossing)
+    cls <- value_guard_crossing_class(crossing)
+    add(spec$site, spec$verb, form, lab, TRUE,
+        c(spec$args(form, crossing, v$bad), extra),
+        crossed = cls, crossing = crossing, seam = seam)
+    add(spec$site, spec$verb, form, paste(lab, "control"), TRUE,
+        c(spec$args(form, crossing, v$ok), extra),
+        crossed = cls, crossing = crossing, control = TRUE, seam = seam)
+  }
 
-    # The same `NA` cell on compare_videos_batch(), whose `audio` reaches its
-    # audio_codec contradiction the same way. Crossed with the contradiction
-    # ONLY: at `nvenc` and the `run` guard the plain out-of-range cells above
-    # already cover this guard, and `NA` there would probe the argument guard's
-    # NA branch rather than the ordering this grid is about.
-    if (pip_contradiction) {
-      order_add(7L, "picture_in_picture_batch", "scalar", "audio(NaN)", x$name,
-                bad = list(jobs = two(main = s, overlay = s,
-                                      output = "o.mp4"), audio = NaN),
-                ok = list(jobs = two(main = s, overlay = s,
-                                     output = "o.mp4"), audio = NULL),
-                extra = x$extra, seam = x$seam)
-      order_add(4L, "compare_videos_batch", "scalar", "audio(NA)", x$name,
-                bad = list(jobs = two(inputs = list(c(s, s)),
-                                      output = "o.mp4"), audio = NA),
-                ok = list(jobs = two(inputs = list(c(s, s)),
-                                     output = "o.mp4"), audio = NULL),
-                extra = list(audio_codec = "aac"), seam = x$seam)
+  for (spec in c(guard_specs, scalar_specs)) {
+    forms <- if (spec$verb %in% c("compare_videos", "picture_in_picture")) {
+      "argument"
+    } else {
+      VALUE_GUARD_FORMS
     }
-    order_add(7L, "picture_in_picture_batch", "column", "audio", x$name,
-              bad = list(jobs = two(main = c(s, s), overlay = c(s, s),
-                                    output = c("a.mp4", "b.mp4"),
-                                    audio = if (pip_contradiction) c(NA, 9)
-                                            else c(9, 9))),
-              ok = list(jobs = two(main = c(s, s), overlay = c(s, s),
-                                   output = c("a.mp4", "b.mp4"),
-                                   audio = if (pip_contradiction) c(NA, 0)
-                                           else c(0, 0))),
-              extra = x$extra, seam = x$seam)
+    for (form in forms) {
+      for (crossing in VALUE_GUARD_CROSSINGS[[spec$verb]]) {
+        order_add(spec, form, crossing)
+      }
+    }
+  }
+  for (spec in variant_specs) {
+    for (form in spec$forms) {
+      for (crossing in spec$crossings) order_add(spec, form, crossing)
+    }
   }
 
-
-  # -- the scalar verbs (M61 review, F2) --------------------------------------
-  #
-  # compare_videos() and picture_in_picture() have NO vocabulary guard of their
-  # own: `direction` and `position` are checked only inside the shared
-  # *_pipeline(), so moving that check below the pipeline's contradiction
-  # checkers moved the scalar verbs' answer too. The milestone's scope carves
-  # those front doors out only "beyond their shared pipeline", so this is an
-  # intended change -- but every cell above probes a `_batch` verb, so nothing
-  # measured it until M61's review did.
-  #
-  # There is no column form to probe: these verbs take arguments and no `jobs`
-  # table. Each is recorded at `form = "argument"` rather than "scalar", so a
-  # reader cannot mistake one of these for a `_batch` verb's scalar cell.
-  scalar_add <- function(site, verb, guard, bad, ok) {
-    lab <- sprintf("%s/argument x contradiction", guard)
-    add(site, verb, "argument", lab, TRUE, bad, crossed = "contradiction")
-    add(site, verb, "argument", paste(lab, "control"), TRUE, ok,
-        crossed = "contradiction", control = TRUE)
-  }
-  scalar_add(5L, "compare_videos", "direction",
-             bad = list(infiles = c(s, s), outfile = "o.mp4",
-                        direction = "sideways", audio_codec = "aac"),
-             ok = list(infiles = c(s, s), outfile = "o.mp4",
-                       direction = "vertical", audio_codec = "aac"))
-  # The resize contradiction as well, since compare_videos() carries two and
-  # they are refused in different checkers.
-  scalar_add(5L, "compare_videos", "direction(resize)",
-             bad = list(infiles = rep(s, 3), outfile = "o.mp4",
-                        direction = "sideways", resize = TRUE),
-             ok = list(infiles = rep(s, 3), outfile = "o.mp4",
-                       direction = "vertical", resize = TRUE))
-  scalar_add(6L, "picture_in_picture", "position",
-             bad = list(main = s, overlay = s, outfile = "o.mp4",
-                        position = "middleish", audio_codec = "aac"),
-             ok = list(main = s, overlay = s, outfile = "o.mp4",
-                       position = "center", audio_codec = "aac"))
 
   cases
 }
@@ -550,7 +545,8 @@ value_guard_baseline <- function(ref = NULL, root = ".") {
       return(data.frame(site = case$site, verb = case$verb, form = case$form,
                         label = case$label, violating = NA,
                         exists = FALSE, informative = FALSE,
-                        crossed = case$crossed, control = case$control,
+                        crossed = case$crossed, crossing = case$crossing,
+                        control = case$control,
                         kind = "nonexistent", outcome = NA_character_,
                         call = NA_character_, in_index = NA,
                         stringsAsFactors = FALSE))
@@ -594,7 +590,8 @@ value_guard_baseline <- function(ref = NULL, root = ".") {
     data.frame(site = case$site, verb = case$verb, form = case$form,
                label = case$label, violating = case$violating,
                exists = TRUE, informative = case$informative,
-               crossed = case$crossed, control = case$control,
+               crossed = case$crossed, crossing = case$crossing,
+               control = case$control,
                kind = obs$kind, outcome = obs$outcome, call = obs$call,
                in_index = obs$in_index, stringsAsFactors = FALSE)
   })
@@ -799,7 +796,7 @@ value_guard_ordering <- function(before, after) {
   b <- value_guard_pair(before, after)
   out <- data.frame(site = after$site, verb = after$verb, form = after$form,
                     label = after$label, crossed = after$crossed,
-                    control = after$control,
+                    crossing = after$crossing, control = after$control,
                     before = value_guard_error_class(b$outcome),
                     after = value_guard_error_class(after$outcome),
                     stringsAsFactors = FALSE)
@@ -813,6 +810,39 @@ value_guard_dead_controls <- function(after) {
   o <- value_guard_ordering(after, after)
   o <- o[o$control, , drop = FALSE]
   o[o$after != o$crossed, , drop = FALSE]
+}
+
+# AC2's completeness claim, as a query rather than as vigilance. Empty is the
+# evidence; a non-empty result names the (verb, value, form, crossing)
+# combinations AC2 asks for that no cell in the grid probes.
+#
+# It re-derives the cross-product from VALUE_GUARD_PAIRS x VALUE_GUARD_FORMS x
+# VALUE_GUARD_CROSSINGS and looks each combination up in the baseline the grid
+# actually produced. The cells are generated from the same crossing
+# declaration, so this cannot catch a crossing dropped from that list -- what
+# it catches is a PAIR dropped from the guard specs, a form never emitted, and
+# any combination whose builder produced nothing. The three round-on-round
+# failures were all of that kind: a combination nobody wrote.
+#
+# A variant cell counts for its own value: `audio(low)` and `audio(NaN)` both
+# probe `audio`, so the label is read back to its value name.
+value_guard_uncovered <- function(after) {
+  live <- after[!after$control & after$crossing != "none", , drop = FALSE]
+  value_of <- sub("[/(].*$", "", live$label)
+  have <- paste(live$verb, value_of, live$form, live$crossing, sep = "\037")
+  want <- list()
+  for (pair in VALUE_GUARD_PAIRS) {
+    for (form in VALUE_GUARD_FORMS) {
+      for (crossing in VALUE_GUARD_CROSSINGS[[pair[["verb"]]]]) {
+        want[[length(want) + 1L]] <- data.frame(
+          verb = pair[["verb"]], value = pair[["value"]], form = form,
+          crossing = crossing, stringsAsFactors = FALSE)
+      }
+    }
+  }
+  want <- do.call(rbind, want)
+  key <- paste(want$verb, want$value, want$form, want$crossing, sep = "\037")
+  want[!key %in% have, , drop = FALSE]
 }
 
 # AC2's lost-`call` reader. An abort with no `conditionCall()` is the

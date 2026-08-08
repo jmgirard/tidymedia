@@ -1,6 +1,6 @@
 # M61: A value error and a contradiction resolve the same way in both forms
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M59
 - **Driving RR:** —
@@ -113,6 +113,14 @@ pipeline; any change to which calls are refused.
       invariant, AC4; invert M59's argument-form tests.
 - [x] T7 — D-entry superseding D038; roxygen and NEWS; AC6's sentence cells;
       the residue grep; run the verify slot clean.
+- [x] T8 — Generate the grid's ordering crossings from a declared cross-product
+      instead of hand-written cells, with a reader that reports any combination
+      with no cell. Discovered sub-task: the thrash-rule remedy for AC2 failing
+      twice on a missing hand-written cell.
+- [x] T9 — The round-3 record fixes: the reachability biconditional at
+      `audio = NULL`, the retired "exactly one value" wording surviving in the
+      test file, NEWS's list-item indent and its in-range claim, and the
+      `resize`/`scale` scoping in D039.
 
 ## Work log
 
@@ -139,6 +147,13 @@ pipeline; any change to which calls are refused.
 - 2026-08-08: review returned M61 to in-progress. AC1 failed as written: it records pip's `audio` against its only contradiction in the ARGUMENT form as a cell that cannot exist, "since a non-NULL `audio` removes that contradiction" — measured false, because `audio = NA` is non-NULL and `batch_stream_cell()` maps it to `NULL`, so the contradiction fires (`picture_in_picture_batch(jobs, audio = NA, audio_codec = "aac")` reports the value error on `origin/master` and the contradiction on the branch). The criterion embeds the false premise, so this is an amendment return, not a defect return. AC1 and AC6 unticked; AC2, AC3, AC4, AC5, AC7 keep their evidence. Three further findings scored >= 80 and are triaged fix-now in the same return: the guards were also reordered against `check_token()`/`arg_match(hardware)`/`scale`/the jobs-shape guards with no disclosure (F1, the disclosure D038 named as the work); the scalar `compare_videos()`/`picture_in_picture()` changed their error through the shared pipeline with no disclosure and no grid cell (F2); and M61-D1's table records a `check_vocab_arg()` at the top of the scalar verbs that is not there (F3), which is why F2 went unseen.
 - 2026-08-08: amendment return: AC1 — "No cell is recorded nonexistent. Where a pairing is reachable only at a particular value, the cell is asserted at that value and the value is named: pip's `audio` reaches its verb's only contradiction in the argument form at `audio = NA`, which `batch_stream_cell()` resolves to `NULL`, dropping the audio the encoder needs."
 - 2026-08-08: user override, logged per tracking-rules: M61-D1 and D039 are corrected IN PLACE rather than by superseding entries, against the never-edit rule for decision records. Both were authored on this branch and neither has reached `master`, so the alternative publishes a false entry together with its retraction for a mistake no reader ever saw; the branch history holds the original wording either way.
+
+- 2026-08-08: question gate on the thrash trigger (b) remedy chose to generate the grid's ordering crossings from a declared cross-product over adding H1's one missing cell by hand or escalating via `/milestone-brief`. The two alternatives the plan gate recorded against are both about the runtime design, which every round has cleared; what thrashes is AC2's enumeration being satisfied by hand, so the remedy aims there. Falsified by a fourth review round finding a missing combination anyway, which would mean the cross-product itself is declared wrong rather than under-populated.
+- 2026-08-08: T8 — the grid's ordering cells are now generated from `VALUE_GUARD_PAIRS` x `VALUE_GUARD_FORMS` x `VALUE_GUARD_CROSSINGS`, declared once at the top of `data-raw/value-guard-baseline.R`; each guard supplies only its verb's call shape and its violating value, and a new `crossing` column carries the full crossing id where `crossed` carries its error class. The two contradictions `compare_videos_batch()` carries are separate members rather than one standing for both. New reader `value_guard_uncovered()` re-derives the product and names any combination with no cell; it reads the pairs from a declaration the generator does not use, so a dropped guard reddens, while a crossing dropped from the shared list is the case it cannot catch, recorded in D039.
+- 2026-08-08: T8 — H1's uncovered triple (`compare_videos_batch` / `audio` / column / `audio_codec`) exists now by construction, not by being noticed; measured to report the contradiction on both refs, so it is a coverage cell and not a changed one, as review measured. The suite gains its `audio-na/column` case for the same triple. Grid now 128 cells, 90 crossed; `value_guard_uncovered()` 0 rows, and vacuous / refusals / message-regression / blame-regression / missing-call / dead-control readers all 0 on both refs. Fourteen cells change which error they report, against 13 before — the new one is compare's `audio(NaN)` scalar cell, which the generated product reaches for both verbs where the hand-written grid probed only pip's.
+- 2026-08-08: T9 — H3: D039's reachability biconditional gains its non-`NULL` half, which `audio = NULL` (its own control) falsified. H4/H5/H6: the retired "exactly one value" / "only at `NA`" wording is gone from the test file's three sites including the `test_that()` name, and that test now asserts both `NA` and `NaN` reach the pairing. H7: NEWS's dropped two-space continuation indent restored — verified discriminating, the last two paragraphs of the entry render OUTSIDE the list item on `HEAD` and inside it after the fix, through `commonmark::markdown_html()`. H8: NEWS no longer claims an in-range index reports a value; it compiles. H9/H10: D039's displaced-check list gains `resize` and scopes both `resize` (compare) and `scale` (pip), and NEWS scopes `resize` the same way.
+- 2026-08-08: T9 — H11 (40, logged) earns a ROADMAP candidate row rather than silence: a wrongly-TYPED value still answers differently by form, which M61's Scope Out keeps that way on purpose.
+- 2026-08-08: verify slot clean after T8/T9: `devtools::document()` no diff, `devtools::test()` 0 failures / 4647 passing (4 warnings, 5 skips, both unchanged from the branch base), `devtools::check()` 0 errors / 0 warnings / 0 notes. Residue grep over `R/`, `man/`, `NEWS.md`, `tests/` and `data-raw/` still returns nothing.
 
 ## Decisions
 

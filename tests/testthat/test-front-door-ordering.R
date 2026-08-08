@@ -144,12 +144,15 @@ ordering_cases <- function(input) {
          args = list(jobs = pip2(audio = c(NA, 9)), audio_codec = "aac"),
          control = list(jobs = pip2(audio = c(NA, 0)), audio_codec = "aac")),
 
-    # And it reaches the same contradiction in the ARGUMENT form at exactly one
+    # And it reaches the same contradiction in the ARGUMENT form at any NA-ish
     # value. An in-range index removes the contradiction, and so does 9 -- but
-    # `NA` does not: batch_stream_cell() resolves it to `NULL`, which drops the
-    # audio the encoder needs while still being a value the argument guard
-    # refuses. An earlier draft of this milestone recorded this cell as one
-    # that could not exist; M61's review measured otherwise.
+    # an NA-ish one does not: batch_stream_cell() tests is.na(), and resolves
+    # such a value to `NULL`, which drops the audio the encoder needs while
+    # still being a value the argument guard refuses. So what reaches the
+    # pairing is that mechanism, not any one spelling; `NA` and `NaN` are both
+    # probed below for exactly that reason. An earlier draft of this milestone
+    # recorded this cell as one that could not exist, and its replacement
+    # named a single value; M61's review measured both wrong, a round apart.
     #
     # The CONTROL is `audio = NULL`, not an in-range index, and it has to be:
     # an in-range index is what REMOVES the contradiction, so it would prove
@@ -163,6 +166,14 @@ ordering_cases <- function(input) {
          wins = no_audio, other = range,
          args = list(jobs = cmp1(), audio = NA, audio_codec = "aac"),
          control = list(jobs = cmp1(), audio = NULL, audio_codec = "aac")),
+    # The same pairing in compare's COLUMN form, which reaches it the way pip's
+    # column cell does -- rows disagreeing, one dropping its audio and one past
+    # the input count. This triple went uncovered until M61's third review round
+    # found it; the grid now generates its crossings rather than listing them.
+    list(id = "audio-na/column", verb = "compare_videos_batch",
+         wins = no_audio, other = range,
+         args = list(jobs = cmp2(audio = c(NA, 7)), audio_codec = "aac"),
+         control = list(jobs = cmp2(audio = c(NA, 0)), audio_codec = "aac")),
     # `NaN` too, and it is not a curiosity: batch_stream_cell() tests is.na(),
     # and is.na(NaN) is TRUE, so the reachable set is every length-1 NA-ish
     # value. Naming only `NA` was this milestone's SECOND over-generalization
@@ -206,27 +217,32 @@ test_that("a contradiction reports before a value error, in both forms", {
   for (case in ordering_cases(input)) expect_reports(case)
 })
 
-test_that("only `NA` reaches pip's contradiction through the `audio` argument", {
+test_that("an NA-ish `audio` argument is what reaches pip's contradiction", {
   # The reachability condition AC1 names, pinned as its own test rather than
   # left implicit in the case list. `audio` is the one guard here whose value
-  # decides whether the contradiction exists at all, so the three outcomes are
-  # asserted together: `NA` resolves to `NULL` and reaches it, an out-of-range
+  # decides whether the contradiction exists at all, so the outcomes are
+  # asserted together: an NA-ish value resolves to `NULL` and reaches it -- and
+  # the condition is batch_stream_cell()'s is.na() test rather than a spelling,
+  # so `NA` and `NaN` are both asserted to reach it -- while an out-of-range
   # index does NOT (it carries audio, so the encoder has something to encode),
   # and an in-range index compiles.
   withr::local_options(tidymedia.nvenc_encoders = character(0))
   input <- make_input()
   jobs <- tibble::tibble(main = input, overlay = input, output = "o.mp4")
 
-  na_cell <- catch_call("picture_in_picture_batch",
-                        list(jobs = jobs, audio = NA, audio_codec = "aac"))
-  expect_s3_class(na_cell, "rlang_error")
-  expect_match(conditionMessage(na_cell), "needs an audio stream to encode")
-  expect_identical(blamed_verb(na_cell), "picture_in_picture_batch")
+  for (na_ish in list(NA, NaN)) {
+    na_cell <- catch_call("picture_in_picture_batch",
+                          list(jobs = jobs, audio = na_ish,
+                               audio_codec = "aac"))
+    expect_s3_class(na_cell, "rlang_error")
+    expect_match(conditionMessage(na_cell), "needs an audio stream to encode")
+    expect_identical(blamed_verb(na_cell), "picture_in_picture_batch")
+  }
 
   # Out of range, and therefore NOT a cell of the contradiction pairing: the
   # index carries audio, so there is no contradiction and the value reports.
   # This is the fact an earlier draft over-generalized into "supplying `audio`
-  # at all removes the contradiction", which is false at `NA`.
+  # at all removes the contradiction", which is false at any NA-ish value.
   out_of_range <- catch_call("picture_in_picture_batch",
                              list(jobs = jobs, audio = 9, audio_codec = "aac"))
   expect_s3_class(out_of_range, "rlang_error")
@@ -441,9 +457,9 @@ test_that("each term the sentence quantifies over has a cell", {
   ))
   both <- c("argument", "column")
   # Every `_batch` pair carries both forms. `audio` reaches its contradiction
-  # in the argument form only at `NA`, which is why the case list carries an
-  # `audio-na` id -- the key strips the bound suffix, so both bounds and the
-  # `NA` cell count as the one term the sentence quantifies over.
+  # only at an NA-ish value, which is why the case list carries `audio-na` and
+  # `audio-nan` ids -- the key strips those suffixes along with the bound ones,
+  # so every spelling counts as the one term the sentence quantifies over.
   expect_identical(present[["compare_videos_batch direction"]], both)
   expect_identical(present[["compare_videos_batch audio"]], both)
   expect_identical(present[["picture_in_picture_batch position"]], both)

@@ -434,7 +434,8 @@
   checks now also report **after** every argument check that runs before them,
   not only after the contradiction: a call wrong in both one of these values and
   in a malformed `video_codec` or `audio_codec` token, an unrecognized
-  `hardware`, a `resize` that is not `TRUE` or `FALSE`, a non-numeric `scale`
+  `hardware`, a `resize` that is not `TRUE` or `FALSE`
+  (`compare_videos_batch()` only), a non-numeric `scale`
   (`picture_in_picture_batch()` only), or a `jobs` table of the wrong shape is
   now told about that other check. Second, the same reordering reaches the
   single-call `compare_videos()` and `picture_in_picture()`, which check
@@ -452,13 +453,14 @@
   of it — an unavailable nvenc encoder, and `ffm_batch()`'s own argument checks
   — now report after it, matching the other value checks above.
 
-One class of `audio` value behaves differently from the rest, on both verbs.
+  One class of `audio` value behaves differently from the rest, on both verbs.
   Passing `audio = NA` (or `NaN`) asks to drop the audio, so these are the
   `audio` arguments that *create* the "`audio_codec` needs an audio stream to
   encode" contradiction rather than removing it — `picture_in_picture_batch(jobs,
   audio = NA, audio_codec = "aac")` now reports that contradiction where it used
-  to report the `audio` value. An index still reports the value, in range or
-  out, because it carries audio.
+  to report the `audio` value. An index carries audio, so it never creates that
+  contradiction: out of range it reports the `audio` value, and in range the
+  call compiles.
 
   Two smaller corrections come with this. `compare_videos_batch()`'s
   out-of-range `audio` message named an internal variable (`aud`) rather than

@@ -1504,6 +1504,19 @@ combination with no cell, so completeness is checkable from the grid's output
 rather than by eye. What the reader cannot catch is a crossing dropped from the
 shared declaration; what it does catch is the failure that actually recurred.
 
+Both the reader and the control validator were then verified by mutation rather
+than by eye, and both were wrong on their first pass. Deleting a whole guard
+from the specs reported one missing combination where eight were owed, because
+a variant cell (`audio(low)`) was read back to its base value and stood in for
+the guard it merely supplements; the reader now matches the bare value name, so
+a variant is extra coverage and never the coverage the criterion asks for
+(1 → 8 rows on the mutation). And a control was validated against the error
+*class* rather than the crossing it names, so a control for one of compare's
+contradictions passed when the other fired instead — the same conflation an
+earlier round returned on, relocated into the validator; it now compares at
+crossing grain (4 → 7 dead controls on the mutation, the three newly caught
+being exactly the `direction` controls that had fallen through).
+
 **The four guards also report after every check that stays above them.** D038
 named this consequence and called its disclosure "the work": a call wrong in
 both one of these four values and in an earlier argument check — a malformed

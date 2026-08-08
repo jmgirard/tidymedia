@@ -766,13 +766,26 @@ value_guard_blame <- function(before, after) {
 # of them at once, so a message matching none is "value" (the guard's own) and
 # a message is never counted twice.
 value_guard_error_class <- function(msg) {
+  sub(":.*$", "", value_guard_error_crossing(msg))
+}
+
+# The same classification at the resolution the crossing declaration uses, so a
+# verb's two contradictions do not stand for each other. `crossed` collapses
+# both to "contradiction", which is the right grain for the ordering claim -- a
+# cell must show A contradiction -- but the WRONG grain for validating a
+# control, whose job is to prove the specific crossed error live. A control
+# checked at class grain passes when the other contradiction fires instead,
+# which is the conflation round 2 returned on, in the validator rather than in
+# the grid (M61 review round 4, F4).
+value_guard_error_crossing <- function(msg) {
   ifelse(is.na(msg), NA_character_,
-  ifelse(grepl("needs an audio stream to encode", msg, fixed = TRUE) |
-           grepl("supports exactly two inputs", msg, fixed = TRUE),
-         "contradiction",
+  ifelse(grepl("needs an audio stream to encode", msg, fixed = TRUE),
+         "contradiction:audio_codec",
+  ifelse(grepl("supports exactly two inputs", msg, fixed = TRUE),
+         "contradiction:resize",
   ifelse(grepl("nvenc", msg, fixed = TRUE), "nvenc",
   ifelse(grepl("`run` must be", msg, fixed = TRUE), "run_guard",
-         "value"))))
+         "value")))))
 }
 
 # AC1/AC3's claim, as a query: for every crossed cell, which error reported
@@ -799,6 +812,7 @@ value_guard_ordering <- function(before, after) {
                     crossing = after$crossing, control = after$control,
                     before = value_guard_error_class(b$outcome),
                     after = value_guard_error_class(after$outcome),
+                    after_crossing = value_guard_error_crossing(after$outcome),
                     stringsAsFactors = FALSE)
   out[which(keep), , drop = FALSE]
 }
@@ -806,10 +820,14 @@ value_guard_ordering <- function(before, after) {
 # The controls that failed to establish their crossed error. Empty is the
 # evidence; a non-empty result names cells whose ordering claim rests on
 # nothing (the failure-identity check, run over the grid rather than by eye).
+# Compared at CROSSING grain, not class grain: a control for
+# `contradiction:resize` that raises the `audio_codec` contradiction instead has
+# not established the error its cell is crossed with, and a class-grain check
+# would pass it (M61 review round 4, F4).
 value_guard_dead_controls <- function(after) {
   o <- value_guard_ordering(after, after)
   o <- o[o$control, , drop = FALSE]
-  o[o$after != o$crossed, , drop = FALSE]
+  o[o$after_crossing != o$crossing, , drop = FALSE]
 }
 
 # AC2's completeness claim, as a query rather than as vigilance. Empty is the
@@ -824,11 +842,17 @@ value_guard_dead_controls <- function(after) {
 # any combination whose builder produced nothing. The three round-on-round
 # failures were all of that kind: a combination nobody wrote.
 #
-# A variant cell counts for its own value: `audio(low)` and `audio(NaN)` both
-# probe `audio`, so the label is read back to its value name.
+# A variant cell does NOT count for its base value. `audio(low)` and
+# `audio(NaN)` probe `audio` at a second violating value, and reading their
+# labels back to `audio` would let them stand in for the base guard: deleting
+# the whole `compare_videos_batch`/`audio` spec then hid 7 of its 8 lost
+# combinations behind the `audio(low)` variant, leaving one row where eight
+# were owed (M61 review round 4, F3). So the match is on the bare value name,
+# and a variant's parenthesized label never satisfies the product. A variant is
+# extra coverage; it is not the coverage AC2 asks for.
 value_guard_uncovered <- function(after) {
   live <- after[!after$control & after$crossing != "none", , drop = FALSE]
-  value_of <- sub("[/(].*$", "", live$label)
+  value_of <- sub("/.*$", "", live$label)
   have <- paste(live$verb, value_of, live$form, live$crossing, sep = "\037")
   want <- list()
   for (pair in VALUE_GUARD_PAIRS) {

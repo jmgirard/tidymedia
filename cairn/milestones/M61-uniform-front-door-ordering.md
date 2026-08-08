@@ -121,6 +121,10 @@ pipeline; any change to which calls are refused.
       `audio = NULL`, the retired "exactly one value" wording surviving in the
       test file, NEWS's list-item indent and its in-range claim, and the
       `resize`/`scale` scoping in D039.
+- [x] T10 — Round-4 gate work at the user's direction: harden the completeness
+      reader so a variant cannot stand in for its base guard (F3), and validate
+      a control at crossing grain rather than error-class grain (F4). Both
+      verified by mutation.
 
 ## Work log
 
@@ -230,6 +234,9 @@ way, and only which error it is told about moves. NEWS states it.
 - 2026-08-08: grid now 124 cells, 86 crossed; 13 cells change which error they report, against 11 before. All readers still empty on both refs. `document()` no diff, `devtools::test()` 0 failures / 4638 passing, `devtools::check()` 0/0/0.
 - 2026-08-08: review round 3 returned M61 to in-progress. AC2 failed again (H1, 88): compare's `audio` is crossed with the `audio_codec` contradiction in the scalar form only, leaving `compare_videos_batch` / `audio` / column / `audio_codec` the one uncovered triple. Second defect return; trigger (b) of the thrash rule has fired — the same criterion, twice, each by a new missing hand-written cell. Eight further findings actioned fix-now: D039's NA-ish biconditional is false at `audio = NULL` (H3); the retired "exactly one value" wording survives in three places in the test file including a test name (H4/H5/H6); the round-3 NEWS edit detached two paragraphs from their list item (H7); NEWS gained a false claim that an in-range index reports a value (H8); and the G6/G7 corrections reached NEWS but not D039, with `resize`/`scale` scoping still wrong in both (H9/H10).
 - 2026-08-08: review round 4 — all seven criteria re-verified with fresh evidence; consistency gate clean (`cairn_validate` exit 0, `document()` no diff, `pkgdown::check_pkgdown()` clean, `check()` 0/0/0) and CI green on nine checks. Seventeen findings across three lenses, NONE scoring >= 80: the highest is F3 at 76, on the new completeness reader collapsing a variant label to its base value name. No return; the defect-return count stands at two.
+- 2026-08-08: approval withheld at the round-4 merge gate; the user directed that F3 (76) and F4 (68) be fixed before merge rather than left logged. Status back to in-progress for T10, then re-review of the affected evidence.
+- 2026-08-08: T10 — F3: `value_guard_uncovered()` matched a variant label back to its base value, so `audio(low)` and `audio(NaN)` stood in for `audio`; it now matches the bare value name. Verified discriminating by mutation — deleting the `compare_videos_batch`/`audio` guard spec reports 8 uncovered combinations after the fix against 1 before. F4: `value_guard_dead_controls()` compared a control's raised error at CLASS grain, so a control for one of compare's two contradictions passed when the other fired; a new `value_guard_error_crossing()` classifies at crossing grain and the validator compares against `crossing`. Verified discriminating by mutation — making the `resize` crossing dead reports 7 dead controls after the fix against 4 before, the three newly caught being exactly the `direction` controls the class-grain check let through.
+- 2026-08-08: T10 — grid re-run against both refs after the fixes: 128 cells, 90 crossed, every reader still 0 rows, 14 changed cells unchanged. Verify slot clean: `document()` no diff, `devtools::test()` 0 failures / 4647 passing, `devtools::check()` 0/0/0.
 
 ## Review
 

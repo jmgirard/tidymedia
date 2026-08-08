@@ -1,6 +1,6 @@
 # M59: Six per-row value checks are refused at the fan-out verb's front door
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M58
 - **Driving RR:** —
@@ -179,6 +179,7 @@ milestone moves where a check reports, never what is checked.
 - 2026-08-07: review F9 fixed — `compare_videos_batch()`'s and `picture_in_picture_batch()`'s `@param` blocks now name their accepted values inline instead of delegating to the scalar verb's page. The mid-work gate's rationale for the Usage-line change held only for the two scalar pages; on these two the values were discoverable from neither Usage nor Arguments.
 - 2026-08-07: executed the AC5 amendment returned by review. The fixed-shape `amendment return: AC5` line is the one review appended above; this line deliberately does not repeat that prefix, so the per-milestone amendment-return count still reads one round-trip rather than two. Amended clause, verbatim: "(a) on the two verbs carrying both an M58 contradiction and a value check (`compare_videos_batch`, `picture_in_picture_batch`), a call whose value violation arrives in a `jobs` column reports the contradiction. The scalar-argument form is outside this milestone's reach and reports the value check, as it did before it — those verbs' scalar `direction`/`position`/`margin` guards sit above M58's contradiction sweep on merged master and are not moved here — so the two forms disagree, which is stated rather than fixed and carries a ROADMAP candidate row;". Chosen over moving each verb's scalar guards below the contradiction sweep, because that reorders them against the jobs-shape guards, both `check_token()` calls and `arg_match(hardware)`, none of which has a test or a changelog line pinning its position today; falsified by a report of the two forms' disagreement confusing a caller, which the new ROADMAP candidate row records. NEWS's flat "Contradictory arguments still report ahead of all of these" was false under the amendment and now states the column/argument split as a known gap.
 - 2026-08-07: the amendment took the plan-owned body to 153 lines (cap <150), so the heaviest plan-owned section — Acceptance criteria at 59 lines — was compressed in one pass; every operative clause kept, redundant inline line-number citations dropped. `cairn_validate` weight caps PASS.
+- 2026-08-07: AC2 mutation harness re-run against the fixed code — all ten deletions RED, sources restored clean; the sites 5/6 shared-call mutations now also redden the new multi-element parity tests, so those tests are load-bearing. Verify slot clean: `document()` no diff, `devtools::test()` FAIL 0 / WARN 4 / SKIP 5 / PASS 4387 (up 32; warnings and skips still match the pre-branch master baseline), `devtools::check()` 0 errors / 0 warnings / 0 notes. Status → review.
 
 ## Decisions
 

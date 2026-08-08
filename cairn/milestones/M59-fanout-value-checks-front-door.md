@@ -141,7 +141,7 @@ milestone moves where a check reports, never what is checked.
 - [x] T7 — Tests: one blame test per pair at both `parallel` settings; mixed-
       column tests; the three precedence cases of AC5; mutation-verify each
       front-door and shared call.
-- [ ] T8 — Build and commit the before/after grid as the evidence ledger.
+- [x] T8 — Build and commit the before/after grid as the evidence ledger.
 - [ ] T9 — NEWS (including AC5(c)'s displaced set); roxygen where precedence
       changed; run the verify slot clean.
 
@@ -169,6 +169,7 @@ milestone moves where a check reports, never what is checked.
 - 2026-08-07: ROADMAP candidate row added for the `crop_video()` → `ffm_crop()` blame leak M59-D1 leaves standing (search-first: no existing row covers it).
 - 2026-08-07: T7 — `tests/testthat/test-value-check-front-door.R` added: one blame pair per site at both `parallel` settings (14 cases), the one-site vocabulary scan, the scalar-siblings test, seven mixed-column cases, and AC5's three precedence groups (2 + 4 + 4 cases), each with a control proving the displaced error is live on the same call.
 - 2026-08-07: T7 — mutation-verified via `data-raw/value-guard-mutations.py`: all ten deletions RED. Each of the six front-door sweeps turned the AC1 blame test red (and the mixed-column test, plus whichever AC5 group that verb appears in); each of the four shared calls reached by a scalar verb — `ffm_crop()`'s `check_dim()`, `anonymize_pipeline()`'s `check_regions()`, and the two pipelines' `check_vocab_arg()` — turned the scalar-siblings test red. Sources restored clean.
+- 2026-08-07: T8 — `data-raw/value-guard-baseline.R` committed as the AC3 ledger and run across `origin/master` and the branch: 34 cells each side; both vacuity screens empty (every in-range cell compiled on both refs, so no cell compares equal by both sides failing); `value_guard_refusals()` empty — the same calls are refused; `value_guard_blame()` names 17 cells, every one moving from `purrr::pmap` to the verb the user called with purrr's row index dropping away. Site 3's scalar cell is recorded `exists = FALSE` (no `regions` argument) and sites 5/6's scalar cells `informative = FALSE`; neither appears in the blame list, which is what those two flags predicted.
 
 ## Decisions
 

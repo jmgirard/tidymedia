@@ -48,10 +48,12 @@ pipeline; any change to which calls are refused.
 
 - [ ] AC1 — For each of the four values in Scope In, in each of its argument and
       `jobs`-column forms, a call also violating a contradiction that verb
-      carries reports the contradiction. Cells where the two cannot co-occur are
-      recorded nonexistent rather than asserted — pip's `audio` against its only
-      contradiction in the argument form, since a non-NULL `audio` removes that
-      contradiction.
+      carries reports the contradiction. No cell is recorded nonexistent. Where
+      a pairing is reachable only at a particular value, the cell is asserted at
+      that value and the value is named: pip's `audio` reaches its verb's only
+      contradiction in the argument form at `audio = NA`, which
+      `batch_stream_cell()` resolves to `NULL`, dropping the audio the encoder
+      needs.
 - [x] AC2 — A committed before/after grid crosses each of the four guards, in
       each form, with each front-door error named in the milestone-local
       decision entry, run against both refs. It compares abort kind, blame
@@ -135,6 +137,8 @@ pipeline; any change to which calls are refused.
 - 2026-08-08: T7 — verify slot clean: `devtools::document()` writes only the two intended Rd files, `devtools::test()` 0 failures / 4586 passing (4 warnings, 5 skips, both unchanged from the branch base), `devtools::check()` 0 errors / 0 warnings / 0 notes.
 - 2026-08-08: review — all seven criteria verified with fresh evidence; consistency gate clean (`cairn_validate` exit 0, `document()` no diff, `pkgdown::check_pkgdown()` clean, `check()` 0/0/0). One criterion needed a fix at review: AC5's residue grep returned a match in the new test file's own header, which carried D038's "disclosed gap" phrasing; the comment was reworded and the grep now returns nothing.
 - 2026-08-08: review returned M61 to in-progress. AC1 failed as written: it records pip's `audio` against its only contradiction in the ARGUMENT form as a cell that cannot exist, "since a non-NULL `audio` removes that contradiction" — measured false, because `audio = NA` is non-NULL and `batch_stream_cell()` maps it to `NULL`, so the contradiction fires (`picture_in_picture_batch(jobs, audio = NA, audio_codec = "aac")` reports the value error on `origin/master` and the contradiction on the branch). The criterion embeds the false premise, so this is an amendment return, not a defect return. AC1 and AC6 unticked; AC2, AC3, AC4, AC5, AC7 keep their evidence. Three further findings scored >= 80 and are triaged fix-now in the same return: the guards were also reordered against `check_token()`/`arg_match(hardware)`/`scale`/the jobs-shape guards with no disclosure (F1, the disclosure D038 named as the work); the scalar `compare_videos()`/`picture_in_picture()` changed their error through the shared pipeline with no disclosure and no grid cell (F2); and M61-D1's table records a `check_vocab_arg()` at the top of the scalar verbs that is not there (F3), which is why F2 went unseen.
+- 2026-08-08: amendment return: AC1 — "No cell is recorded nonexistent. Where a pairing is reachable only at a particular value, the cell is asserted at that value and the value is named: pip's `audio` reaches its verb's only contradiction in the argument form at `audio = NA`, which `batch_stream_cell()` resolves to `NULL`, dropping the audio the encoder needs."
+- 2026-08-08: user override, logged per tracking-rules: M61-D1 and D039 are corrected IN PLACE rather than by superseding entries, against the never-edit rule for decision records. Both were authored on this branch and neither has reached `master`, so the alternative publishes a false entry together with its retraction for a mistake no reader ever saw; the branch history holds the original wording either way.
 
 ## Decisions
 

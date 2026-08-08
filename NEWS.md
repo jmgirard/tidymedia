@@ -416,10 +416,17 @@
   so that the diagnosis no longer depends on which FFmpeg build you happen to
   have. A call wrong in one of these ways *and* in an argument that
   `ffm_batch()` alone guards — `run`, `parallel`, `progress`, `manifest`,
-  `checksums`, `verify` — is likewise told about the value. Contradictory
-  *arguments* still report ahead of all of these. (The `jobs` table's own shape
-  is not in that list: all four verbs check it themselves before reaching
-  `ffm_batch()`, so nothing displaces it.)
+  `checksums`, `verify` — is likewise told about the value. (The `jobs` table's
+  own shape is not in that list: all four verbs check it themselves before
+  reaching `ffm_batch()`, so nothing displaces it.)
+
+  Where a value violation arrives in a `jobs` **column** and the call also
+  contradicts itself, the contradiction is reported. Passing that same value as
+  an **argument** instead reports the value, because these verbs have always
+  checked their scalar `direction`, `position` and `margin` arguments before
+  reaching the contradiction check, and this release does not move those. So
+  the two forms of one mistake can be reported differently; that is a known
+  gap, not a rule.
 
   Two smaller corrections come with this. `compare_videos_batch()`'s
   out-of-range `audio` message named an internal variable (`aud`) rather than

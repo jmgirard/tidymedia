@@ -63,56 +63,56 @@ milestone moves where a check reports, never what is checked.
 
 ## Acceptance criteria
 
-- [x] AC1 — For each of the six (site, verb) pairs enumerated in Scope In, a
-      call violating that check aborts with `conditionCall()` naming the verb
-      the user called, and a message containing none of the substrings `pmap`
-      (covering `purrr::pmap` and `furrr::future_pmap` alike), `In index:`, or
-      `_pipeline(`. One test per pair, at both `parallel` settings.
-- [ ] AC2 — For each of the six sites, the front-door call and the per-row path
+- [x] AC1 — For each of the six (site, verb) pairs in Scope In, a violating call
+      aborts with `conditionCall()` naming the verb the user called, and a
+      message carrying none of `pmap` (covering `purrr::pmap` and
+      `furrr::future_pmap`), `In index:`, or `_pipeline(`. One test per pair, at
+      both `parallel` settings.
+- [ ] AC2 — For each of the six sites the front-door call and the per-row path
       resolve to the same abort site, named in the milestone-local decision
-      entry, with no verb spelling out a second copy of the message or (sites
-      5/6) a third copy of the vocabulary literal. Verified by mutation:
-      deleting a front-door call turns that site's AC1 test red for all six;
-      and for sites 1, 3, 5 and 6, whose per-row path is a shared helper or
-      pipeline call the scalar verb also reaches, deleting that shared call
-      turns the scalar verb's own test red. Sites 2 and 4 have no shared call
-      (their check lives in the batch closure), so that half does not apply.
+      entry, with no verb spelling a second copy of the message or (sites 5/6) a
+      third copy of the vocabulary literal. Verified by mutation: deleting a
+      front-door call turns that site's AC1 test red, for all six; and for sites
+      1, 3, 5 and 6, whose per-row path is a shared helper or pipeline call the
+      scalar verb also reaches, deleting that shared call turns the scalar
+      verb's own test red. Sites 2 and 4 have no shared call (their check lived
+      in the batch closure), so that half does not apply.
 - [x] AC3 — For each of the six sites the front-door guard refuses exactly the
       calls its current check refuses, over a committed before/after grid
-      varying the value at an in-range and an out-of-range setting, in its
-      `jobs` column form and — for the five sites that have one — its
-      scalar-argument form, plus one mixed column. Site 3 is column-only —
-      `anonymize_video_batch()` has no `regions` argument
-      (`R/ffmpeg.R:1803-1808`) — so the grid records that cell as nonexistent,
-      and sites 5/6's scalar cells as expected-identical on both refs (those
-      verbs already arg-match the scalar), so neither is read as evidence. Each
-      cell's in-range baseline is asserted to succeed on both refs, so no cell
-      compares equal by both sides failing.
-- [x] AC4 — The shape question for site 1 is settled in writing: a
-      milestone-local decision entry records whether the front door calls
-      `check_dim()` directly or threads `call` through `ffm_crop()`, names the
-      alternative rejected, and states the evidence class that would falsify
-      the choice.
+      varying the value in- and out-of-range, in its `jobs` column form and —
+      for the five sites that have one — its scalar-argument form, plus one
+      mixed column. Site 3 is column-only (`anonymize_video_batch()` has no
+      `regions` argument), so the grid records that cell nonexistent, and sites
+      5/6's scalar cells expected-identical on both refs; neither is read as
+      evidence. Every cell's in-range baseline is asserted to succeed on both
+      refs, so no cell compares equal by both sides failing.
+- [x] AC4 — The site-1 shape question is settled in writing: a milestone-local
+      decision entry records whether the front door calls `check_dim()` directly
+      or threads `call` through `ffm_crop()`, names the alternative rejected,
+      and states the evidence class that would falsify the choice.
 - [ ] AC5 — Precedence is pinned, and the value-check ordering is this
       milestone's own call, not one M58 makes:
       (a) on the two verbs carrying both an M58 contradiction and a value check
-      (`compare_videos_batch`, `picture_in_picture_batch`), a call invalid in
-      both reports the contradiction;
+      (`compare_videos_batch`, `picture_in_picture_batch`), a call whose value
+      violation arrives in a `jobs` column reports the contradiction. The
+      scalar-argument form is outside this milestone's reach and reports the
+      value check, as it did before it — those verbs' scalar
+      `direction`/`position`/`margin` guards sit above M58's contradiction sweep
+      on merged master and are not moved here — so the two forms disagree, which
+      is stated rather than fixed and carries a ROADMAP candidate row;
       (b) on all four verbs, a call invalid in its value check and in nvenc
-      availability reports the value check — the nvenc guard being live at
-      `R/ffmpeg.R:1926`, `:4930`, `:5894`, `:6074`, driven machine-
-      independently through the `tidymedia.nvenc_encoders` option seam;
+      availability reports the value check, driven machine-independently through
+      the `tidymedia.nvenc_encoders` option seam;
       (c) on all four verbs, a call invalid in its value check and in an
       argument `ffm_batch()` alone guards reports the value check — tested on
-      `run`, and NEWS names the displaced set as the arguments guarded at
-      `R/ffm_batch.R:84-98` (`run`, `parallel`, `progress`, `manifest`,
-      `checksums`, `verify`), read off that block rather than recalled. The
-      `jobs`-shape guards at `:75-80` are excluded and stated as excluded: all
-      four verbs already pre-empt them (`R/ffmpeg.R:1816`, `:4251`, `:4486`,
-      `:6017`), so they are never displaced.
-- [x] AC6 — The r-package profile's verify slot is clean:
-      `devtools::document()` produces no diff, `devtools::test()` passes, and
-      `devtools::check()` reports 0 errors and 0 warnings.
+      `run`, with NEWS naming the displaced set (`run`, `parallel`, `progress`,
+      `manifest`, `checksums`, `verify`) read off `R/ffm_batch.R:84-98` rather
+      than recalled. The `jobs`-shape guards at `:75-80` are excluded and stated
+      as excluded: all four verbs already pre-empt them, so they are never
+      displaced.
+- [x] AC6 — The r-package profile's verify slot is clean: `devtools::document()`
+      produces no diff, `devtools::test()` passes, and `devtools::check()`
+      reports 0 errors and 0 warnings.
 
 ## Coverage
 
@@ -175,6 +175,10 @@ milestone moves where a check reports, never what is checked.
 - 2026-08-07: repaired a self-inflicted whole-file change: the scripted edits to `R/ffmpeg.R` were made through Python's text mode, which strips the file's CRLF terminators, so the branch diff read 12,387 lines instead of 171. Master's copy is uniformly CRLF (6,130 of 6,130 lines), so the file was converted back and the diff is now 149 insertions / 22 deletions; `document()` no diff and `devtools::test()` FAIL 0 / PASS 4355 re-run after the conversion. No other file's terminators changed. This is exactly the hazard M60 exists to remove, and is not a substitute for it.
 - 2026-08-07: review returned the milestone to `in-progress`. Floor return on F1 (scored 95): `check_vocab_arg()`'s `identical(value, values)` shortcut covers only the exact default vector, so any other length->1 value reaches `rlang::arg_match0()`, whose own length check aborts ignoring `error_call` — `picture_in_picture(v, v, "o.mp4", position = c("center", "topleft"))` now blames `rlang::arg_match0(...)` where master blamed `picture_in_picture()`. Also actioned F9 (82): `?compare_videos_batch` and `?picture_in_picture_batch` now document the accepted values in neither Usage nor Arguments, the mid-work gate's rationale having held only for the two scalar pages. AC1, AC3, AC4 and AC6 verified clean; AC2 deferred (its mutation evidence would be invalidated by the F1 fix); 10 findings logged, not actioned.
 - 2026-08-07: amendment return: AC5 — "on the two verbs carrying both an M58 contradiction and a value check (`compare_videos_batch`, `picture_in_picture_batch`), a call invalid in both reports the contradiction" is unbounded over the scalar-argument versus `jobs`-column form. Measured: the scalar form reports the value check (unchanged from master, where the scalar `arg_match()` already sat above M58's contradiction sweep) while the column form reports the contradiction. The criterion must name which form it binds before it can be verified.
+- 2026-08-07: review F1/F2/F3 fixed — `check_vocab_arg()` now calls `rlang::arg_match(value, values, error_arg = arg, error_call = call)`. `arg_match()` takes `values` as a parameter, so it never needed the caller's formals and reaching past it to the string-only `arg_match0()` was the whole defect: on a longer value `arg_match0()`'s own length guard fired first and aborted with ITS call, ignoring `error_call`. Measured parity against `rlang::arg_match()` on all seven branches (unsupplied default, permutation, multi non-permutation, out-of-vocabulary single, zero-length, valid single, both vocabularies): identical message and identical blame frame. The hand-rolled `identical()` shortcut is gone and the comment that claimed the refusal read unchanged (F3) is now true.
+- 2026-08-07: review F9 fixed — `compare_videos_batch()`'s and `picture_in_picture_batch()`'s `@param` blocks now name their accepted values inline instead of delegating to the scalar verb's page. The mid-work gate's rationale for the Usage-line change held only for the two scalar pages; on these two the values were discoverable from neither Usage nor Arguments.
+- 2026-08-07: executed the AC5 amendment returned by review. The fixed-shape `amendment return: AC5` line is the one review appended above; this line deliberately does not repeat that prefix, so the per-milestone amendment-return count still reads one round-trip rather than two. Amended clause, verbatim: "(a) on the two verbs carrying both an M58 contradiction and a value check (`compare_videos_batch`, `picture_in_picture_batch`), a call whose value violation arrives in a `jobs` column reports the contradiction. The scalar-argument form is outside this milestone's reach and reports the value check, as it did before it — those verbs' scalar `direction`/`position`/`margin` guards sit above M58's contradiction sweep on merged master and are not moved here — so the two forms disagree, which is stated rather than fixed and carries a ROADMAP candidate row;". Chosen over moving each verb's scalar guards below the contradiction sweep, because that reorders them against the jobs-shape guards, both `check_token()` calls and `arg_match(hardware)`, none of which has a test or a changelog line pinning its position today; falsified by a report of the two forms' disagreement confusing a caller, which the new ROADMAP candidate row records. NEWS's flat "Contradictory arguments still report ahead of all of these" was false under the amendment and now states the column/argument split as a known gap.
+- 2026-08-07: the amendment took the plan-owned body to 153 lines (cap <150), so the heaviest plan-owned section — Acceptance criteria at 59 lines — was compressed in one pass; every operative clause kept, redundant inline line-number citations dropped. `cairn_validate` weight caps PASS.
 
 ## Decisions
 

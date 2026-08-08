@@ -133,6 +133,82 @@ test_that("each enumerated vocabulary is written at exactly one site", {
     sum(grepl('"bottomright", "bottomleft", "center"', src, fixed = TRUE)), 1L)
 })
 
+# --- AC2: the shared vocabulary checker keeps arg_match()'s whole contract ---
+#
+# M59's review (F1/F2) caught check_vocab_arg() reaching past rlang::arg_match()
+# to arg_match0(), which takes a STRING: on any longer value arg_match0()'s own
+# length guard fired first and aborted with ITS call, ignoring `error_call`. A
+# user passing `position = c("center", "topleft")` was shown
+# "`arg` must be a string or have the same length as `values`" blamed on
+# `rlang::arg_match0(value, values, arg_nm = arg, error_call = call)` -- a
+# WORSE blame than the master this milestone set out to improve on.
+#
+# Each case below states master's answer, so the assertion is parity with what
+# these verbs did before M59 rather than a fresh opinion about what they should
+# do. The two vocabularies are covered separately because the defect only
+# surfaced on `position`: a two-element value happens to match the two-element
+# `direction` vocabulary's length, so it slipped past arg_match0()'s length
+# guard and failed later, with the frame intact but the wrong argument named.
+
+test_that("a multi-element vocabulary value is refused as rlang::arg_match() refuses it", {
+  input <- make_input()
+  cases <- list(
+    # A value that is not a permutation: refused, naming the ARGUMENT and the
+    # verb, never the checker or its formals.
+    list(id = "position 2-of-5, scalar verb", verb = "picture_in_picture",
+         own = "`position` must be one of", blame = "picture_in_picture",
+         args = list(main = input, overlay = input, outfile = "o.mp4",
+                     position = c("center", "topleft"))),
+    list(id = "position 2-of-5, batch verb", verb = "picture_in_picture_batch",
+         own = "`position` must be one of", blame = "picture_in_picture_batch",
+         args = list(jobs = tibble::tibble(main = input, overlay = input,
+                                           output = "o.mp4"),
+                     position = c("center", "topleft"))),
+    list(id = "direction 2 non-permutation, scalar verb", verb = "compare_videos",
+         own = "`direction` must be one of", blame = "compare_videos",
+         args = list(infiles = c(input, input), outfile = "o.mp4",
+                     direction = c("sideways", "up"))),
+    list(id = "direction 2 non-permutation, batch verb",
+         verb = "compare_videos_batch",
+         own = "`direction` must be one of", blame = "compare_videos_batch",
+         args = list(jobs = tibble::tibble(inputs = list(c(input, input)),
+                                           output = "o.mp4"),
+                     direction = c("sideways", "up"))),
+    # Zero length is arg_match()'s own third branch, and its message differs
+    # from the out-of-vocabulary one; pinned so a hand-rolled replacement that
+    # collapses the branches is caught.
+    list(id = "direction zero-length", verb = "compare_videos",
+         own = "must be length 1", blame = "compare_videos",
+         args = list(infiles = c(input, input), outfile = "o.mp4",
+                     direction = character(0)))
+  )
+  for (case in cases) {
+    cnd <- catch_call(case$verb, case$args)
+    expect_s3_class(cnd, "rlang_error")
+    expect_match(conditionMessage(cnd), case$own, fixed = TRUE, info = case$id)
+    expect_identical(blamed_verb(cnd), case$blame, info = case$id)
+    # The checker and rlang's string-only entry point are both internals;
+    # neither may reach the user, in the message or in the blamed call.
+    expect_no_match(conditionMessage(cnd), "arg_match", fixed = TRUE,
+                    info = case$id)
+    expect_no_match(blamed_verb(cnd), "arg_match", fixed = TRUE, info = case$id)
+    expect_no_match(conditionMessage(cnd), "check_vocab_arg", fixed = TRUE,
+                    info = case$id)
+  }
+})
+
+test_that("a reordered vocabulary default still selects its own first element", {
+  # arg_match()'s permutation branch: passing the vocabulary in another order is
+  # how a caller re-defaults it, and the FIRST element of what was passed wins
+  # (not the first of the vocabulary). Compiling rather than aborting is the
+  # property; the vertical stack proves which element was taken.
+  input <- make_input()
+  out <- compare_videos(c(input, input), "o.mp4",
+                        direction = c("vertical", "horizontal"), run = FALSE)
+  expect_true(any(grepl("vstack", out, fixed = TRUE)))
+  expect_false(any(grepl("hstack", out, fixed = TRUE)))
+})
+
 # --- AC2: the scalar siblings still blame themselves -------------------------
 #
 # Every one of the six checks is also reachable from a scalar verb, and four of

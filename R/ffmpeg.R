@@ -2766,16 +2766,24 @@ pip_positions <- function() {
 }
 
 # The one site an out-of-vocabulary value is refused, for a scalar argument and
-# for a `jobs` column alike. rlang::arg_match() takes its values from the
-# CALLER's formals, which a column sweep has no equivalent of, so the values
-# are passed explicitly here; the unsupplied-argument case -- where the value
-# still IS the whole vector -- is resolved here rather than by arg_match()'s
-# own shortcut. The message is rlang's, unchanged: arg_match() is itself a
-# wrapper over arg_match0(), so nothing about which values are accepted or how
-# a refusal reads moves with this.
+# for a `jobs` column alike. arg_match() normally reads its values from the
+# CALLER's formals, which a column sweep has no equivalent of -- but `values`
+# is a parameter, so passing them explicitly keeps every branch of its contract
+# rather than replacing any of it. Nothing about which values are accepted, how
+# a refusal reads, or which frame is blamed moves with this: an unsupplied
+# argument (the value still IS the whole vector) and a caller-reordered
+# permutation both return the value's first element, a length-1 value is matched
+# against the vocabulary, and everything else aborts naming `arg` and `call`.
+#
+# This went through rlang::arg_match0() until M59's review (F1/F2). arg_match0()
+# takes a STRING, so on any longer value its own length guard fired first and
+# aborted with ITS call, ignoring `error_call` -- which put
+# `rlang::arg_match0(value, values, arg_nm = arg, error_call = call)`, and that
+# helper's own formal names, in front of a user who had passed a two-element
+# `position`. arg_match() is the entry point that takes a vector; reaching past
+# it to the string-only one was the whole defect.
 check_vocab_arg <- function(value, values, arg, call = rlang::caller_env()) {
-  if (length(value) > 1L && identical(value, values)) return(values[[1L]])
-  rlang::arg_match0(value, values, arg_nm = arg, error_call = call)
+  rlang::arg_match(value, values, error_arg = arg, error_call = call)
 }
 
 
@@ -5871,7 +5879,9 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #'   or \code{audio_codec} column it means "leave the codec unset". Any two rows
 #'   resolving to the same output path are rejected; other columns are ignored.
 #' @param direction,resize Defaults applied to every row lacking the
-#'   corresponding column. See [compare_videos()] for their meaning.
+#'   corresponding column. \code{direction} is \code{"horizontal"} (the default)
+#'   or \code{"vertical"}; a \code{direction} column is held to the same two
+#'   values, per row. See [compare_videos()] for their fuller meaning.
 #' @param audio `r audio_input_param(batch = TRUE, extra = "Each row's value is validated against that row's input count.")`
 #' @param video_codec A string naming the output video codec, applied to every
 #'   row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
@@ -6055,7 +6065,10 @@ compare_videos_batch <- function(jobs, direction = stack_directions(),
 #'   it means "leave the codec unset". Any two rows resolving to the same output
 #'   path are rejected; other columns are ignored.
 #' @param position,scale,margin Defaults applied to every row lacking the
-#'   corresponding column. See [picture_in_picture()] for their meaning.
+#'   corresponding column. \code{position} is one of \code{"topright"} (the
+#'   default), \code{"topleft"}, \code{"bottomright"}, \code{"bottomleft"} or
+#'   \code{"center"}; a \code{position} column is held to those same five
+#'   values, per row. See [picture_in_picture()] for their fuller meaning.
 #' @param audio `r audio_input_param(batch = TRUE)`
 #' @param video_codec A string naming the output video codec, applied to every
 #'   row lacking a \code{video_codec} column, or \code{NULL} (default) to leave

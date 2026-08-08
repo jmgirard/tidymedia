@@ -7,7 +7,7 @@
 compare_videos(
   infiles,
   outfile,
-  direction = c("horizontal", "vertical"),
+  direction = stack_directions(),
   resize = TRUE,
   audio = NULL,
   video_codec = NULL,

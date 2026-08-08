@@ -237,11 +237,15 @@ test_that("anonymize_video_batch() rejects a non-character knob column", {
 
 # Inherited per-region validation (reported by row index) -----------------
 
-test_that("anonymize_video_batch() inherits per-region validation, reported by row", {
+test_that("anonymize_video_batch() checks each regions cell at its front door", {
   f <- make_input()
-  # Row 2's regions cell is missing the `height` column; check_regions() (inside
-  # anonymize_pipeline) aborts, and purrr annotates the failing row index. The
-  # front door does not re-implement the region checks (M13 lesson).
+  # Row 2's regions cell is missing the `height` column. Until M59 this aborted
+  # from check_regions() INSIDE anonymize_pipeline(), so purrr annotated the
+  # failing row index and blamed purrr::pmap(); the front door now sweeps every
+  # cell through the same check_regions(), before anything is built. The verb's
+  # blame and the absence of the index are pinned in
+  # test-value-check-front-door.R; what this test keeps is that the check still
+  # answers PER ROW -- a clean row beside a bad one is not what saves the call.
   jobs <- tibble::tibble(
     input   = c(f, f), output = c("a.mp4", "b.mp4"),
     regions = list(
@@ -250,7 +254,18 @@ test_that("anonymize_video_batch() inherits per-region validation, reported by r
     )
   )
   expect_error(anonymize_video_batch(jobs, run = FALSE), "missing")
-  expect_error(anonymize_video_batch(jobs, run = FALSE), "index: 2")
+  expect_no_error(
+    anonymize_video_batch(
+      tibble::tibble(
+        input   = c(f, f), output = c("a.mp4", "b.mp4"),
+        regions = list(
+          data.frame(x = 0, y = 0, width = 10, height = 10),
+          data.frame(x = 0, y = 0, width = 10, height = 10)
+        )
+      ),
+      run = FALSE
+    )
+  )
 })
 
 test_that("anonymize_video_batch() inherits per-region size checks from ffm_drawbox", {

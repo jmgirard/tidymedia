@@ -8,7 +8,7 @@ picture_in_picture(
   main,
   overlay,
   outfile,
-  position = c("topright", "topleft", "bottomright", "bottomleft", "center"),
+  position = pip_positions(),
   scale = 0.25,
   margin = 16,
   audio = NULL,

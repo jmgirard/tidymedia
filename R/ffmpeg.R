@@ -1918,6 +1918,16 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   # of the same name; `...` also forwards ffm_batch options (verify/manifest/...)
   # to the runner, never to the pipeline builder. The `regions` list-column
   # arrives unwrapped per row (pmap passes each cell's data frame by name).
+  #
+  # Each cell's SHAPE is checked here rather than left to the per-row
+  # check_regions() inside anonymize_pipeline(), which reported against
+  # purrr::pmap() (M59 site 3). check_regions() is the one site those messages
+  # are written and the pipeline still calls it, so anonymize_video() reaches
+  # the same site (M59-D2). The list-column guard above covers only the column.
+  for (cell in jobs$regions) {
+    check_regions(cell)
+  }
+
   # nvenc availability, re-checked here so an unavailable encoder blames this
   # verb instead of purrr::pmap() (M57/D035). Immediately before ffm_batch(),
   # which is where M41 puts a guard added for blame, so every check above still
@@ -4972,6 +4982,19 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
   }
   jobs <- reject_duplicate_outputs(jobs)
 
+  # Per-row `width`/`height` VALUES, swept here so a bad dimension blames this
+  # verb instead of purrr::pmap() (M59 site 1). The column guards above cover
+  # the column's TYPE; this covers each value the fan-out would resolve.
+  # check_dim() is called directly rather than reached through ffm_crop(), and
+  # is the one site the message is written -- the scalar verb reaches the same
+  # site per row through the pipeline (M59-D1/M59-D2). `arg` is passed because
+  # caller_arg() would otherwise name the loop variable.
+  for (dim in c("width", "height")) {
+    for (value in batch_arg_rows(jobs, dim, get(dim))) {
+      check_dim(value, arg = dim)
+    }
+  }
+
   # nvenc availability, re-checked here so an unavailable encoder blames this
   # verb instead of purrr::pmap() (M57/D035). Immediately before ffm_batch(),
   # which is where M41 puts a guard added for blame, so every check above still
@@ -5492,13 +5515,16 @@ concatenate_videos <- function(infiles, outfile, run = TRUE) {
 # `audio` already type-checked by the caller; `direction` is arg-matched here so
 # both callers get a clean per-value error. ABOVE the roxygen block (M28 lesson).
 compare_videos_pipeline <- function(infiles, outfile,
-                                    direction = c("horizontal", "vertical"),
+                                    direction = stack_directions(),
                                     resize = TRUE, audio = NULL,
                                     video_codec = NULL, audio_codec = "copy",
                                     hardware = "none",
                                     fallback = FALSE,
                                     call = rlang::caller_env()) {
-  direction <- rlang::arg_match(direction)
+  # `call = call` so compare_videos() is blamed rather than this internal
+  # pipeline -- the same leak M58 closed on the resize guard.
+  direction <- check_vocab_arg(direction, stack_directions(), "direction",
+                               call = call)
   # Conditions 4 and 5, worded once in their checkers; compare_videos_batch()
   # ALSO calls both at its front door (M58). The `call = call` on the resize
   # guard is new with M58 -- without it the abort displayed
@@ -5589,7 +5615,7 @@ compare_videos_pipeline <- function(infiles, outfile,
 #' compare_videos(c(video, video), "compare.mp4", run = FALSE)
 #' @export
 compare_videos <- function(infiles, outfile,
-                           direction = c("horizontal", "vertical"),
+                           direction = stack_directions(),
                            resize = TRUE, audio = NULL, video_codec = NULL,
                            audio_codec = "copy",
                            hardware = c("none", "nvenc"), fallback = FALSE,
@@ -5624,16 +5650,16 @@ compare_videos <- function(infiles, outfile,
 # `position` is arg-matched here so both callers get a clean per-value error.
 # ABOVE the roxygen block (M28 lesson).
 picture_in_picture_pipeline <- function(main, overlay, outfile,
-                                        position = c("topright", "topleft",
-                                                     "bottomright", "bottomleft",
-                                                     "center"),
+                                        position = pip_positions(),
                                         scale = 0.25, margin = 16, audio = NULL,
                                         video_codec = NULL,
                                         audio_codec = "copy",
                                         hardware = "none",
                                         fallback = FALSE,
                                         call = rlang::caller_env()) {
-  position <- rlang::arg_match(position)
+  # `call = call`, as for compare_videos_pipeline() above.
+  position <- check_vocab_arg(position, pip_positions(), "position",
+                              call = call)
   # Condition 6 -- the same contradiction as compare_videos(), which is why it
   # shares that verb's checker and differs only in the way out (M58).
   # picture_in_picture_batch() ALSO calls it at its front door.
@@ -5733,9 +5759,7 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
 #' picture_in_picture(video, video, "pip.mp4", run = FALSE)
 #' @export
 picture_in_picture <- function(main, overlay, outfile,
-                               position = c("topright", "topleft",
-                                            "bottomright", "bottomleft",
-                                            "center"),
+                               position = pip_positions(),
                                scale = 0.25, margin = 16, audio = NULL,
                                video_codec = NULL, audio_codec = "copy",
                                hardware = c("none", "nvenc"), fallback = FALSE,
@@ -5884,14 +5908,14 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #' jobs <- tibble::tibble(inputs = list(c(video, video)), output = "compare.mp4")
 #' compare_videos_batch(jobs, run = FALSE)
 #' @export
-compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
+compare_videos_batch <- function(jobs, direction = stack_directions(),
                                  resize = TRUE, audio = NULL,
                                  video_codec = NULL, audio_codec = "copy",
                                  hardware = c("none", "nvenc"),
                                  fallback = FALSE,
                                  run = TRUE, parallel = FALSE, ...) {
 
-  direction <- rlang::arg_match(direction)
+  direction <- check_vocab_arg(direction, stack_directions(), "direction")
   rlang::check_bool(resize)
   rlang::check_number_whole(audio, min = 0, allow_null = TRUE)
   check_token(video_codec, allow_null = TRUE)
@@ -5936,6 +5960,32 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
     )
     check_resize_needs_two_inputs(resize_rows[[i]], length(jobs$inputs[[i]]))
   }
+
+  # Per-row `direction` VALUES (M59 site 5). check_batch_string_col() above
+  # covers that column's TYPE only, so an out-of-vocabulary cell used to reach
+  # compare_videos_pipeline()'s own check inside the fan-out and be reported
+  # against purrr::pmap() -- additionally leaking the pipeline's name. The
+  # vocabulary is stack_directions()'s, never a copy (M59-D2).
+  check_batch_vocab_col(jobs, "direction", direction, stack_directions())
+
+  # Per-row `audio` index against THAT row's own input count (M59 site 4). The
+  # count is per row by construction on a fan-in verb, so the scalar check above
+  # can only bound the index below; the upper bound used to be re-checked inside
+  # the fan-out closure and reported against purrr::pmap(). That closure copy
+  # retires with this sweep (M59-D2). `arg` is named because the closure's local
+  # was called `aud`, which is the name the message showed the user.
+  #
+  # AFTER the contradiction sweep above, deliberately: a call wrong in both
+  # reports the contradiction (D036's ordering, extended to a value check by
+  # this milestone's AC5(a)).
+  for (i in seq_len(nrow(jobs))) {
+    if (!is.null(audio_rows[[i]])) {
+      rlang::check_number_whole(audio_rows[[i]], min = 0,
+                                max = length(jobs$inputs[[i]]) - 1,
+                                arg = "audio")
+    }
+  }
+
   # nvenc availability, re-checked here so an unavailable encoder blames this
   # verb instead of purrr::pmap() (M57/D035). Immediately before ffm_batch(),
   # which is where M41 puts a guard added for blame, so every check above still
@@ -5951,9 +6001,8 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
       pick <- function(nm, default) if (nm %in% names(dots)) dots[[nm]] else default
       aud <- pick("audio", audio)
       if (length(aud) == 1L && is.na(aud)) aud <- NULL
-      if (!is.null(aud)) {
-        rlang::check_number_whole(aud, min = 0, max = length(inputs) - 1)
-      }
+      # The index needs no re-check here: the front door sweeps every row's
+      # value against that row's own input count (M59-D2 retires the copy).
       compare_videos_pipeline(
         inputs, output,
         direction = pick("direction", direction),
@@ -6041,16 +6090,14 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #' picture_in_picture_batch(jobs, run = FALSE)
 #' @export
 picture_in_picture_batch <- function(jobs,
-                                     position = c("topright", "topleft",
-                                                  "bottomright", "bottomleft",
-                                                  "center"),
+                                     position = pip_positions(),
                                      scale = 0.25, margin = 16, audio = NULL,
                                      video_codec = NULL, audio_codec = "copy",
                                      hardware = c("none", "nvenc"),
                                      fallback = FALSE,
                                      run = TRUE, parallel = FALSE, ...) {
 
-  position <- rlang::arg_match(position)
+  position <- check_vocab_arg(position, pip_positions(), "position")
   rlang::check_number_decimal(scale)
   rlang::check_number_whole(margin, min = 0)
   rlang::check_number_whole(audio, min = 0, max = 1, allow_null = TRUE)
@@ -6116,6 +6163,23 @@ picture_in_picture_batch <- function(jobs,
               {.val {1}} for the overlay's, or drop {.arg audio_codec}."
     )
   }
+
+  # Per-row `position` VALUES (M59 site 6). check_batch_string_col() above
+  # covers that column's TYPE only, so an out-of-vocabulary cell used to reach
+  # picture_in_picture_pipeline()'s own check inside the fan-out and be reported
+  # against purrr::pmap() -- additionally leaking the pipeline's name. The
+  # vocabulary is pip_positions()'s, never a copy (M59-D2).
+  check_batch_vocab_col(jobs, "position", position, pip_positions())
+
+  # Per-row `margin` VALUES (M59 site 2). The column guard above covers the
+  # column's TYPE; a negative cell used to reach the fan-out closure's own
+  # re-check and be reported against purrr::pmap(). AFTER the contradiction
+  # sweep above, deliberately: a call wrong in both reports the contradiction
+  # (D036's ordering, extended to a value check by this milestone's AC5(a)).
+  for (value in batch_arg_rows(jobs, "margin", margin)) {
+    rlang::check_number_whole(value, min = 0, arg = "margin")
+  }
+
   # nvenc availability, re-checked here so an unavailable encoder blames this
   # verb instead of purrr::pmap() (M57/D035). Immediately before ffm_batch(),
   # which is where M41 puts a guard added for blame, so every check above still
@@ -6129,10 +6193,10 @@ picture_in_picture_batch <- function(jobs,
     function(main, overlay, output, ...) {
       dots <- list(...)
       pick <- function(nm, default) if (nm %in% names(dots)) dots[[nm]] else default
-      # Re-check the resolved margin per row: a `margin` column bypasses the
-      # scalar arg's check_number_whole(min = 0), so enforce it here (parity).
+      # The resolved margin needs no re-check here: the front door sweeps every
+      # row's value through the same batch_arg_rows() resolution this pick()
+      # applies, so a re-check could never fire (M59-D2 retires it).
       mrg <- pick("margin", margin)
-      rlang::check_number_whole(mrg, min = 0, arg = "margin")
       aud <- pick("audio", audio)
       if (length(aud) == 1L && is.na(aud)) aud <- NULL
       if (!is.null(aud)) rlang::check_number_whole(aud, min = 0, max = 1)

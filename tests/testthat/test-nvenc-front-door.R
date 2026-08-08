@@ -407,48 +407,20 @@ test_that("a mixed copy column reports the copy conflict before availability", {
 # through a helper, nor a per-row check living in the batch closure. Those are
 # pinned here instead of left unmeasured.
 
-test_that("the guard reports before pipeline checks it now precedes", {
-  input <- make_input()
-  cases <- list(
-    list(verb = "anonymize_video_batch", own = "missing 4 required columns",
-         args = list(jobs = tibble::tibble(
-           input = input, output = "o.mp4",
-           regions = list(data.frame(nope = 1))))),
-    list(verb = "crop_video_batch", own = "must be a single FFmpeg expression",
-         args = list(jobs = tibble::tibble(
-           input = input, output = "o.mp4", width = -5, height = 32))),
-    list(verb = "picture_in_picture_batch", own = "must be a whole number",
-         args = list(jobs = tibble::tibble(
-           main = input, overlay = input, output = "o.mp4", margin = -3)))
-  )
-  # compare_videos_batch's three-input `resize` case left this sweep at M58,
-  # which moved that check to the front door ABOVE this guard: it no longer
-  # reports second, and its new precedence is pinned below instead.
-  for (case in cases) {
-    call_it <- function() {
-      args <- case$args
-      args$hardware <- "nvenc"
-      args$run <- FALSE
-      tryCatch(
-        do.call(case$verb, args, envir = asNamespace("tidymedia")),
-        error = function(e) e
-      )
-    }
-    # The control runs first and is what makes the pin mean anything: with the
-    # encoder present each call still reaches its own check, so the inputs are
-    # verified to exercise that check rather than merely to fail (M54).
-    withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
-    own <- call_it()
-    expect_match(conditionMessage(own), case$own, info = case$verb)
-    # Without it, the availability abort reports first. The call fails either
-    # way -- what moves is which error and where it is raised, never whether
-    # the call fails (D035's second condition).
-    withr::local_options(tidymedia.nvenc_encoders = character(0))
-    missing <- call_it()
-    expect_match(conditionMessage(missing), "is not available", info = case$verb)
-    expect_identical(nvenc_blamed(missing), case$verb, info = case$verb)
-  }
-})
+# The three cases this section pinned at M57 have REVERSED, and the pin moved
+# with them. M57 measured a regions cell, a crop dimension and an inset margin
+# all reporting the availability error first once the encoder was absent, and
+# recorded that as a precedence the guard had taken. M59 moved all three checks
+# to their verbs' front doors, ahead of check_nvenc_available(), so each now
+# reports its own value error on a machine with the encoder and on a machine
+# without it alike -- which is what makes the diagnosis machine-independent, the
+# property M54 named and D036 ordered for. The new pin, with a control proving
+# the availability abort is still live on the same verb, is
+# test-value-check-front-door.R's AC5(b) test; asserting it here as well would
+# be a second site for one claim.
+#
+# compare_videos_batch's three-input `resize` case left this sweep at M58 for
+# the same reason, one milestone earlier.
 
 # The other three verbs carrying both guards. Their contradictions are decided
 # without reference to any encoder, so unlike the two mixed-column cases above

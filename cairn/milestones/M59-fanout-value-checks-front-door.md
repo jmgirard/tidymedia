@@ -127,15 +127,15 @@ milestone moves where a check reports, never what is checked.
 
 - [x] T1 — Settle the site-1 shape question and record it as a milestone-local
       decision; shape the shared checkers accordingly.
-- [ ] T2 — `crop_video_batch()` front door: `width`/`height` range, swept over
+- [x] T2 — `crop_video_batch()` front door: `width`/`height` range, swept over
       the column form.
-- [ ] T3 — `picture_in_picture_batch()` front door: `margin` range, swept over
+- [x] T3 — `picture_in_picture_batch()` front door: `margin` range, swept over
       the column form; retire the closure's re-check if it becomes dead.
-- [ ] T4 — `anonymize_video_batch()` front door: `regions` shape, swept over
+- [x] T4 — `anonymize_video_batch()` front door: `regions` shape, swept over
       the list-column.
-- [ ] T5 — `compare_videos_batch()` front door: per-row `audio` index against
+- [x] T5 — `compare_videos_batch()` front door: per-row `audio` index against
       each row's own `inputs` length.
-- [ ] T6 — Sites 5 and 6: sweep the `direction` and `position` column VALUES at
+- [x] T6 — Sites 5 and 6: sweep the `direction` and `position` column VALUES at
       both front doors, sourcing the vocabulary from one place rather than a
       third copy; `check_batch_string_col()` keeps the type half.
 - [ ] T7 — Tests: one blame test per pair at both `parallel` settings; mixed-
@@ -158,6 +158,15 @@ milestone moves where a check reports, never what is checked.
 
 - 2026-08-07: implement started on branch `m59-fanout-value-checks-front-door`.
 - 2026-08-07: T1 — question gate settled all three open shapes on their recommendations (call `check_dim()` directly; one named vocabulary source plus one shared `check_vocab_arg()`; delete both now-unreachable closure re-checks). Recorded as M59-D1 and M59-D2; added `stack_directions()`, `pip_positions()`, `check_vocab_arg()` and `check_batch_vocab_col()`.
+- 2026-08-07: T2 — `crop_video_batch()` sweeps each resolved `width`/`height` through `check_dim()` at its front door.
+- 2026-08-07: T3 — `picture_in_picture_batch()` sweeps each resolved `margin`; the fan-out closure's now-unreachable re-check deleted.
+- 2026-08-07: T4 — `anonymize_video_batch()` sweeps each `regions` cell through `check_regions()`.
+- 2026-08-07: T5 — `compare_videos_batch()` sweeps each row's `audio` index against that row's own `inputs` length; the closure's re-check deleted, and the message now names `audio` rather than the closure's local `aud`.
+- 2026-08-07: T6 — the `direction` and `position` column VALUES are swept via `check_batch_vocab_col()`; both vocabularies single-sourced and all six signatures re-defaulted to the accessors.
+- 2026-08-07: discovered sub-task (minor amendment): the two pipelines' vocabulary checks needed `call = call`, without which `compare_videos()` / `picture_in_picture()` blamed their own `*_pipeline()` — the leak M58 closed on the resize guard. Fixed; pinned by the scalar-siblings test.
+- 2026-08-07: two existing tests pinned precedence M59 deliberately reverses and were rewritten, not deleted for convenience: `test-nvenc-front-door.R`'s "the guard reports before pipeline checks it now precedes" (its three cases now report their own value error on both seam settings, and the new pin lives in `test-value-check-front-door.R`) and `test-anonymize-video-batch.R`'s per-row `index: 2` assertion (the check answers per row at the front door now, which is what that test keeps).
+- 2026-08-07: question gate (mid-work) chose to accept `stack_directions()` / `pip_positions()` appearing in four help pages' Usage lines over exporting the two accessors or hand-writing `@usage`, because each page's Arguments section already spells the values out in prose; falsified by a report of a caller unable to discover the accepted values from the help page.
+- 2026-08-07: ROADMAP candidate row added for the `crop_video()` → `ffm_crop()` blame leak M59-D1 leaves standing (search-first: no existing row covers it).
 
 ## Decisions
 

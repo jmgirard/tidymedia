@@ -6,7 +6,7 @@
 \usage{
 picture_in_picture_batch(
   jobs,
-  position = c("topright", "topleft", "bottomright", "bottomleft", "center"),
+  position = pip_positions(),
   scale = 0.25,
   margin = 16,
   audio = NULL,

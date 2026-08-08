@@ -23,16 +23,55 @@ pad_integers <- function(x, width = NULL, flag = "0") {
   formatC(x, width = width, flag = flag)
 }
 
+# check_paths_exist() -----------------------------------------------------
+
+# THE site the package's missing-input abort is written (M62). Every front
+# door reaches it -- the single-input verbs through check_file_exists() below,
+# the fan-out verbs' per-row sweeps directly, and ffm_files() as the pipeline's
+# own backstop -- so no wording and no firing condition exists in two places to
+# drift apart. This is D035's shape, not its licence: D035's rule is
+# conditioned on a probe whose result enters the compiled command, and a file's
+# existence never does (see the M62 D-entry).
+#
+# `x` is a character vector of ALREADY RESOLVED paths, so a caller sweeping a
+# jobs column passes the column and a scalar verb passes its one argument.
+#
+# The message branches on the ARGUMENT's arity, never on how many paths turned
+# out to be missing: a one-path argument renders exactly the string
+# check_file_exists() emitted before this function existed (pinned byte-for-byte
+# in test-input-path-front-door.R), while any vector argument leads with the
+# count, because "`jobs$input` does not exist" would misdescribe a five-row
+# column with one bad cell.
+#
+# Pluralization is driven off the scalar `length(missing)` via cli::qty(), never
+# off the `{.file {missing}}` vector: a `{?}` governed by a `{.val {vector}}`
+# throws `length(object) == 1` with 2+ items (M18).
+check_paths_exist <- function(x, arg = rlang::caller_arg(x),
+                              call = rlang::caller_env()) {
+  missing <- x[!file.exists(x)]
+  if (length(missing) == 0) {
+    return(invisible(x))
+  }
+  if (length(x) == 1L) {
+    cli::cli_abort("{.arg {arg}} does not exist: {.file {missing}}.", call = call)
+  }
+  cli::cli_abort(c(
+    "{.arg {arg}} names {length(missing)} file{?s} that \\
+     {cli::qty(length(missing))}{?does/do} not exist.",
+    "x" = "Missing: {.file {missing}}."
+  ), call = call)
+}
+
 # check_file_exists() -----------------------------------------------------
 
 # Validate that `x` is a single string naming an existing file. Replaces the
-# recurring `is_character(x, n = 1)` + `file.exists(x)` validation pair.
+# recurring `is_character(x, n = 1)` + `file.exists(x)` validation pair. The
+# existence half delegates to check_paths_exist() above (M62); the string check
+# stays here because this spelling is the one that promises a SINGLE file.
 check_file_exists <- function(x, arg = rlang::caller_arg(x),
                               call = rlang::caller_env()) {
   rlang::check_string(x, arg = arg, call = call)
-  if (!file.exists(x)) {
-    cli::cli_abort("{.arg {arg}} does not exist: {.file {x}}.", call = call)
-  }
+  check_paths_exist(x, arg = arg, call = call)
   invisible(x)
 }
 

@@ -1,11 +1,11 @@
 # M62: A missing input file is refused at the front door, in both forms
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M61
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m62-fanout-input-path-front-door`
 
 ## Goal
 
@@ -96,7 +96,7 @@ reach `ffm_files()`.
 
 ## Tasks
 
-- [ ] T1 — Add the shared vector-capable checker beside `check_file_exists()`
+- [x] T1 — Add the shared vector-capable checker beside `check_file_exists()`
       (`R/utils.R:26-37`); make `check_file_exists()` delegate to it so the
       one-path rendering is unchanged. Snapshot the pre-change message first.
 - [ ] T2 — Wire the per-row sweep into the two shared jobs validators —
@@ -127,6 +127,8 @@ reach `ffm_files()`.
 - 2026-08-08: plan gate chose the existence predicate over `ffm_files()`'s readability predicate because it reuses the wording thirteen scalar verbs already emit and keeps both forms uniform, at the cost of an existing-but-unreadable residual; falsified by a report of an unreadable-but-present input reporting differently by form before M63 ships.
 - 2026-08-08: plan gate chose placing the sweep above the M58 contradiction sweep over placing it below, because a caller who mistyped a path should hear about the path and this matches where the scalar verbs' guard already sits; falsified by a report preferring the contradiction on a table that is both wrong about a path and self-contradictory. The alternative carried D036's machine-independent-first reasoning, which the M62 D-entry must therefore address rather than ignore.
 - 2026-08-08: plan chose a generated cross-product grid over hand-written per-verb tests because M61's three review returns were each a combination nobody typed; falsified by the grid's declaration itself dropping a crossing, which its reader cannot catch.
+- 2026-08-08: implement gate chose the count-first plural rendering over one always-pluralized sentence, and `jobs$input` over the package's "the `input` column of `jobs`" phrasing, so both forms share one sentence shape; both prototyped against cli before the chip.
+- 2026-08-08: T1 — `check_paths_exist()` added at `R/utils.R:26`; `check_file_exists()` delegates its existence half. One-path rendering pinned byte-for-byte against strings captured from master before the change. Suite 4658 pass / 0 fail; the 4 warnings and 5 skips are pre-existing (M44 dropped-track warnings, nvenc-absent skips).
 
 ## Decisions
 

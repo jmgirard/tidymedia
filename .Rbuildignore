@@ -13,3 +13,5 @@
 ^pkgdown$
 ^cran-comments\.md$
 ^data-raw$
+^\.gitattributes$
+^\.git-blame-ignore-revs$

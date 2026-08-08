@@ -1,0 +1,6 @@
+# Commits that changed only formatting or line endings.
+# Enable locally (once per clone):
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# Normalize the repo to LF under `* text=auto` (no content change).
+482a1d3ee38fd9e38a4659d6f9e29faefa1f306a

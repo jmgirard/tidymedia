@@ -49,3 +49,13 @@ Tasks → milestone files · Decisions → DECISIONS · History → archive + gi
 - `man/` is generated: edit roxygen comments, then `devtools::document()`
 - `README.md` is generated: edit `README.Rmd`, then `devtools::build_readme()`
 - New non-package files at repo root must be added to `.Rbuildignore`
+- Line endings are LF, pinned by `.gitattributes` (`* text=auto`); `git` normalizes
+  on commit, so no editor or script needs to remember. One-time, per clone, so
+  `git blame` skips the normalization commit:
+  `git config blame.ignoreRevsFile .git-blame-ignore-revs`. Note this setting is
+  fatal whenever the file is absent from the working tree — check out a pre-M60
+  tag or branch and every `git blame` dies with `could not open object name
+  list`. Skip it for one call with `git blame --no-ignore-revs-file <file>`
+  (the `-c blame.ignoreRevsFile=` forms do not work — git accumulates the
+  values rather than overriding), or undo it with
+  `git config --unset blame.ignoreRevsFile`.

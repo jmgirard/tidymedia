@@ -1358,3 +1358,40 @@ M57's review caught on `segment_video_batch`).
   list — which would make it machine-dependent and put it back behind
   availability — or by a user report preferring the availability error on a
   mixed column.
+
+---
+
+## D037 — IP1 governs command assembly, not validation (2026-08-07, from M59's plan amendment; states the scope of an existing principle rather than changing it)
+
+M59 was planned on the reading that IP1 "puts validation logic in Layer 1
+once", making a Layer-2 front-door check a principle violation needing an
+exception. That reading is wrong, and it survived a plan, a criteria-audit
+line and a routing decision before a fresh-context reader caught it.
+
+**What IP1 actually says** (`cairn/DESIGN.md:62-64`, verbatim): "Layer 2 task
+verbs are thin wrappers that never glue their own command strings; all
+assembly, quoting, and copy-vs-re-encode logic lives once in Layer 1." Every
+clause is about building the command. Validation is not mentioned.
+
+**The standing counterexamples.** Layer 2 front doors validate pervasively and
+always have: `rlang::arg_match()`, `check_number_whole()`, `check_token()`, and
+the whole `check_batch_*_col()` family. Two D-entries put checks there on
+purpose — D035 licensed hoisting the nvenc availability probe to nine front
+doors, and D036 did the same for six argument contradictions and fixed their
+precedence. If IP1 governed validation, both would be exceptions to it, and
+neither records one, because none is needed.
+
+**The rule.** A Layer-2 verb may validate its own arguments at its front door
+without engaging IP1. What IP1 still forbids is unchanged: a Layer-2 verb
+assembling, quoting, or copy-vs-re-encode-branching its own command string.
+
+**What this does not license.** Duplicating a check's *wording* or its
+vocabulary across layers is still a defect — the M40 stale-hint lesson and
+M59's AC2 both bite on it — but it is a drift-and-maintenance problem, not an
+IP1 violation, and the remedy is one shared checker, never an IP exception.
+
+- **Falsified by** a DESIGN.md amendment extending IP1 to validation locality,
+  which would retroactively make D035 and D036 exceptions and so needs to say
+  what happens to them; or by a Layer-1 checker whose abort cannot be aimed at
+  a Layer-2 caller at all, which would force validation back down a layer for
+  mechanical reasons rather than principled ones.

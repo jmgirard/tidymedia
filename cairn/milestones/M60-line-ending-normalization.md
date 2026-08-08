@@ -101,7 +101,7 @@ out and every scripted edit still has to remember.
       commit touching nothing else; record the SHA.
 - [x] T3 — Assert AC3's two-way diff against the recorded SHA.
 - [x] T4 — Assert AC2 and AC4 and commit the evidence.
-- [ ] T5 — Add `.git-blame-ignore-revs` with the T2 SHA; correct and retire
+- [x] T5 — Add `.git-blame-ignore-revs` with the T2 SHA; correct and retire
       the `LESSONS.md` CRLF entry; name in the work log what it graduated, for
       the archive summary review will write.
 - [ ] T6 — Run the full verify slot and AC7's tarball inspection on the final
@@ -120,6 +120,8 @@ out and every scripted edit still has to remember.
 - 2026-08-08: `git add --renormalize` stages LF but does NOT rewrite the working tree, so both files still held CR bytes on disk after the commit while `git status` read clean (the checkin filter makes the CRLF working copy and the LF blob compare equal). AC2 reads the working tree, so it would have failed here. Refreshed by deleting both files and `git checkout --`, then verified disk md5 equals blob md5 for each.
 - 2026-08-08: T3/T4 — all four assertions pass on `5272eb8..482a1d3`. AC3a `git diff --ignore-cr-at-eol` over the whole tree: empty. AC3b the same diff unflagged: non-empty, exactly the two text files. AC2 `git ls-files -z | xargs -0 grep -lI $'\r'`: empty, with a control run WITHOUT `-I` returning the three binaries, so the empty result is the filter working rather than the sweep finding nothing. AC4 `git add --renormalize .` on the clean tree: no staged diff.
 - 2026-08-08: minor amendment — Scope's `5950` corrected to the measured `6288` (the figure was taken 2026-08-07 and the blob is larger); no criterion cites the number and no scope boundary moves. The plan-gate work-log line keeps `5950` as written, being history.
+- 2026-08-08: T5 — `.git-blame-ignore-revs` added naming `482a1d3ee38fd9e38a4659d6f9e29faefa1f306a` (verified to resolve to a commit), with the one-time `git config blame.ignoreRevsFile` line in its own header comment and in CLAUDE.md's development conventions, since local `git blame` reads the file only when configured to while GitHub's blame UI reads it unprompted.
+- 2026-08-08: T5 — the CRLF lesson (`2026-07-27 (M35; recurred M48, M58, M59)`) is retired by enforcement and deleted outright; its own closing sentence named M60 as the trigger. What it graduated, for the archive summary: the whole of it, into `.gitattributes` — a text-mode round-trip can no longer produce a spurious diff, because git normalizes on checkin, so the diffstat-vigilance habit it taught has nothing left to catch. Two of its claims were also false by this branch's measurements — `R/ffmpeg.R` was not the repo's only CRLF file (`tidymedia.Rproj` was the other) and the file is 6288 lines, not the '~5500' it stated — and deleting the line removes them from readable text, which is what correcting in place exists to achieve. `LESSONS.md` now stands at 48 lines against its 50-line cap.
 
 ## Decisions
 

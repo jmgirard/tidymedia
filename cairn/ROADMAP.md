@@ -2,7 +2,7 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-08 (M60 merged as PR #63 and archived; the repo is LF-normalized and pinned, and the ignore-revs SHA was repointed at the squash commit post-merge. One merged lesson added (the renormalize and blame-SHA traps) against the CRLF lesson M60 retired by enforcement, netting LESSONS.md to 44 items. M55's terminal row pruned to hold the 5-row retention; its archive summary stands.)_
+_Last hygiene check: 2026-08-08 (M60 merged as PR #63 and archived; the repo is LF-normalized and pinned, and the ignore-revs SHA was repointed at the squash commit post-merge. One merged lesson added — the renormalize and blame-SHA traps — against the CRLF lesson M60 retired by enforcement, netting 44 items. M55's terminal row pruned for the 5-row retention; its archive summary stands.)_
 
 ## Milestones
 

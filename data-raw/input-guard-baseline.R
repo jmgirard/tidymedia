@@ -52,17 +52,45 @@
 # disagree about which verbs the criteria reach. A verb the walk returns with no
 # entry in INPUT_GUARD_SHAPES is an error, not a silent omission.
 #
-# FORMS -- which of a call's input paths are missing:
+# FORMS -- how a call's input paths are populated:
 #
-#   all   every input path in the call is absent
-#   one   the call carries 2+ input paths and exactly ONE is absent
+#   all     every input path in the call is absent, and each is a DIFFERENT
+#           absent path
+#   one     the call carries 2+ input paths and exactly ONE is absent
+#   dup     the call carries 2+ input paths and every one is the SAME absent
+#           path
+#   factor  every input path is absent and the carrier is a FACTOR column
+#           rather than a character one
 #
 # `one` is the form that decides whether the sweep looks at the whole carrier or
-# stops at the first path, and it is where AC2's "names every missing path, not
-# the first" is measured on a real verb rather than on `check_paths_exist()`
-# alone. A verb whose legal call carries exactly one input path has no `one`
-# form; those cells are recorded with `exists = FALSE` rather than omitted, so
-# the grid states the gap instead of implying full coverage.
+# stops at the first path, and `all`'s paths are distinct for the same reason:
+# with one constant path repeated, a checker that named only the first would
+# render identically to one that named them all, and the grid could not tell
+# them apart. That blindness is what let a verb sweeping its two input columns
+# in two separate aborts read as covered (M62 review F2).
+#
+# `dup` and `factor` are the two axes the M62 review found the first cell set
+# could not reach, added with the fix rather than after it:
+#
+#   dup     one mistyped path shared by N rows is ONE missing file, not N. With
+#           `all` distinct and `one` carrying a single absent path, nothing in
+#           the grid counted a repeat (M62 review F3).
+#   factor  a path column can arrive carrying its paths as factor levels, and a
+#           front-door guard that hands one to file.exists() raw degrades to the
+#           base error `invalid 'file' argument` blamed on file.exists (M62
+#           review F1). input_guard_blame_regressions() is the reader that sees
+#           it; it had no cell to see it in.
+#
+# Both are generated at the `none` crossing only. What they probe is what the
+# abort SAYS and who it blames, and a crossed cell says the crossing -- so
+# crossing them over the other seven would add cells that measure the crossing
+# again under a different label.
+#
+# A verb whose legal call carries exactly one input path has no `one` or `dup`
+# form, and one whose paths do not travel in a plain column (D015's `inputs`
+# list-column, and every scalar signature) has no `factor` form. Those cells are
+# recorded with `exists = FALSE` rather than omitted, so the grid states the gap
+# instead of implying full coverage.
 #
 # CONTROLS. Each cell is paired with a control: the same call with every input
 # path PRESENT, which must still be refused -- by the crossed error, at the
@@ -103,6 +131,12 @@
 #                                        #   and after -- the move, cell by cell
 #   input_guard_misordered(after)        # empty: AC6's precedence holds at
 #                                        #   every crossed cell
+#   input_guard_unreported(after)        # empty: every UNCROSSED cell reports
+#                                        #   the missing path, not something
+#                                        #   else it tripped on the way
+#   input_guard_unnamed(after)           # empty: every uncrossed cell's abort
+#                                        #   names every missing path it
+#                                        #   carried, and counts them once each
 #   input_guard_uncovered(after)         # empty: every (verb, form, crossing)
 #                                        #   the declarations ask for has a cell
 
@@ -111,8 +145,38 @@ source(file.path("tests", "testthat", "helper-input-paths.R"))
 
 # -- the declared axes -------------------------------------------------------
 
-# Which of the call's input paths are absent. See the header.
-INPUT_GUARD_FORMS <- c("all", "one")
+# How the call's input paths are populated. See the header.
+INPUT_GUARD_FORMS <- c("all", "one", "dup", "factor")
+
+# The crossings each form is generated over; a form absent from this list is
+# generated over every crossing its verb declares. Declared here rather than
+# decided in the builder, so `input_guard_uncovered()` can re-derive exactly the
+# product the grid was asked for.
+INPUT_GUARD_FORM_CROSSINGS <- list(dup = "none", factor = "none")
+
+# Whether a (form, crossing, shape) combination is owed a cell, and if so
+# whether the shape can express it. Three answers, and the difference matters:
+#
+#   NA     not owed -- the form is not generated over this crossing at all
+#   FALSE  owed but inexpressible by this verb's call shape; recorded as a
+#          stated gap (`exists = FALSE`), never silently dropped
+#   TRUE   generate the cell
+#
+# A shape that has been REMOVED (the AC7 mutation) answers TRUE wherever it can:
+# with no declaration left there is nothing to say the verb carries one input
+# path or a list-column, and a reader that guessed the narrower answer would
+# under-report the gap it exists to find.
+input_guard_form_applies <- function(form, crossing, shape) {
+  only <- INPUT_GUARD_FORM_CROSSINGS[[form]]
+  if (!is.null(only) && !crossing %in% only) return(NA)
+  multi <- is.null(shape) || is.null(shape$multi) || isTRUE(shape$multi)
+  in_column <- is.null(shape) || !is.null(shape$path_cols)
+  switch(form,
+    one = multi,
+    dup = multi,
+    factor = in_column,
+    TRUE)
+}
 
 # The front-door aborts each verb carries, and therefore the crossings its cells
 # are generated over. `"none"` is every verb's baseline cell -- the missing path
@@ -297,10 +361,14 @@ tm_out <- function(i, ext = ".mp4") {
 # row count supplying the per-row columns that verb requires; `type_col` is the
 # column the `column_type` crossing puts a wrong-typed value in, named here
 # because which column a verb type-guards is the verb's business.
+#
+# `path_cols` names the jobs columns that CARRY paths as a plain vector, which
+# is what the `factor` form re-types. A shape with none -- a list-column or a
+# scalar signature -- has no factor form.
 tm_shape_input <- function(verb, type_col = list(video_codec = 1), extra = NULL,
                            args = list(), video_codec_arg = TRUE) {
   list(
-    slots = 1L, multi = TRUE, type_col = type_col,
+    slots = 1L, multi = TRUE, type_col = type_col, path_cols = "input",
     video_codec_arg = video_codec_arg,
     build = function(rows, cols, xargs) {
       n <- length(rows)
@@ -336,7 +404,8 @@ tm_shape_inputs <- function(verb, type_col = list(), args = list(),
 # handle.
 tm_shape_pair <- function(type_col = list(video_codec = 1), args = list()) {
   list(
-    slots = 2L, multi = TRUE, type_col = type_col, video_codec_arg = TRUE,
+    slots = 2L, multi = TRUE, type_col = type_col,
+    path_cols = c("main", "overlay"), video_codec_arg = TRUE,
     build = function(rows, cols, xargs) {
       n <- length(rows)
       jobs <- tibble::tibble(
@@ -351,9 +420,16 @@ tm_shape_pair <- function(type_col = list(video_codec = 1), args = list()) {
 # A scalar verb: one row, its paths passed as arguments. `slots` is how many
 # input paths the verb's signature takes, and `multi` follows from it -- a
 # one-path verb has no `one` form to probe.
-tm_shape_scalar <- function(slots, build, video_codec_arg = TRUE) {
+#
+# `separate_args` says those slots are SEPARATE single-file arguments rather
+# than one vector-valued one: `picture_in_picture(main, overlay)` against
+# `compare_videos(infiles)`. Each such argument reports on its own, which is the
+# single-file rendering AC2's first clause pins, so input_guard_unnamed() does
+# not hold those calls to naming every missing path in one abort.
+tm_shape_scalar <- function(slots, build, video_codec_arg = TRUE,
+                            separate_args = FALSE) {
   list(slots = slots, multi = slots > 1L, type_col = list(),
-       video_codec_arg = video_codec_arg,
+       video_codec_arg = video_codec_arg, separate_args = separate_args,
        build = function(rows, cols, xargs) build(rows[[1]], xargs))
 }
 
@@ -456,7 +532,8 @@ INPUT_GUARD_SHAPES <- list(
   normalize_audio = tm_shape_scalar(1L, function(p, xargs) c(
     list(infile = p[[1]], outfile = tm_out(1, ".wav")), xargs)),
   picture_in_picture = tm_shape_scalar(2L, function(p, xargs) c(
-    list(main = p[[1]], overlay = p[[2]], outfile = tm_out(1)), xargs)),
+    list(main = p[[1]], overlay = p[[2]], outfile = tm_out(1)), xargs),
+    separate_args = TRUE),
   sample_frames = tm_shape_scalar(1L, function(p, xargs) c(
     list(infile = p[[1]], outdir = tempdir(), fps = 1), xargs)),
   separate_audio_video = tm_shape_scalar(1L, function(p, xargs) c(
@@ -501,10 +578,16 @@ input_guard_domain <- function(pkg = "tidymedia") {
 # does not exist; `present` is the packaged sample.
 input_guard_cases <- function(present, absent, verbs = input_guard_domain()) {
   cases <- list()
-  add <- function(verb, form, crossing, control, exists, args, seam) {
+  # `absent_paths` is the DISTINCT absent paths the cell carries, recorded so
+  # input_guard_unnamed() can hold the abort to naming each of them exactly
+  # once. Without it the grid can see that a cell was refused but not whether
+  # the refusal accounted for every path the caller got wrong.
+  add <- function(verb, form, crossing, control, exists, args, seam,
+                  absent_paths = character()) {
     cases[[length(cases) + 1L]] <<- list(
       verb = verb, form = form, crossing = crossing, control = control,
-      exists = exists, args = args, seam = seam)
+      exists = exists, args = args, seam = seam,
+      absent_paths = absent_paths)
   }
 
   for (verb in verbs) {
@@ -517,10 +600,14 @@ input_guard_cases <- function(present, absent, verbs = input_guard_domain()) {
       slots <- if (is.null(parts$slots)) shape$slots else parts$slots
       cols <- parts$cols
       for (form in INPUT_GUARD_FORMS) {
-        # The `one` form needs two input paths to distinguish itself from
-        # `all`. A single-path scalar verb has none to spare; a jobs table
-        # always does, because a second ROW is a second path.
-        if (identical(form, "one") && !shape$multi) {
+        # Three answers, per input_guard_form_applies(): NA is not owed at all,
+        # FALSE is owed but inexpressible by this shape -- the `one` and `dup`
+        # forms need two input paths (a single-path scalar verb has none to
+        # spare; a jobs table always does, because a second ROW is a second
+        # path), and the `factor` form needs a plain path column.
+        applies <- input_guard_form_applies(form, crossing, shape)
+        if (is.na(applies)) next
+        if (!applies) {
           add(verb, form, crossing, FALSE, FALSE, NULL, parts$seam)
           add(verb, form, crossing, TRUE, FALSE, NULL, parts$seam)
           next
@@ -535,15 +622,19 @@ input_guard_cases <- function(present, absent, verbs = input_guard_domain()) {
           }
         }
         n_paths <- if (identical(shape$slots, 1L)) {
-          if (identical(form, "one")) 2L else 1L
+          if (identical(form, "all")) 1L else 2L
         } else {
           slots
         }
-        cell_paths <- if (identical(form, "one")) {
-          c(rep(present, n_paths - 1L), absent)
-        } else {
-          rep(absent, n_paths)
-        }
+        # `absent` is a VECTOR of distinct nonexistent paths: `all` and `factor`
+        # take a different one per slot, `dup` takes the same one every time,
+        # and `one` leaves all but the last slot present.
+        cell_paths <- switch(
+          form,
+          one = c(rep(present, n_paths - 1L), absent[[1]]),
+          dup = rep(absent[[1]], n_paths),
+          absent[seq_len(n_paths)]
+        )
         ctrl_paths <- rep(present, n_paths)
         for (ctl in c(FALSE, TRUE)) {
           paths <- if (ctl) ctrl_paths else cell_paths
@@ -551,8 +642,14 @@ input_guard_cases <- function(present, absent, verbs = input_guard_domain()) {
           if (parts$na_row) {
             rows <- c(rows, list(rep(NA_character_, length(rows[[1]]))))
           }
-          add(verb, form, crossing, ctl, TRUE,
-              shape$build(rows, cols, parts$args), parts$seam)
+          args <- shape$build(rows, cols, parts$args)
+          if (identical(form, "factor")) {
+            for (nm in shape$path_cols) {
+              args$jobs[[nm]] <- factor(args$jobs[[nm]])
+            }
+          }
+          add(verb, form, crossing, ctl, TRUE, args, parts$seam,
+              if (ctl) character() else unique(setdiff(paths, present)))
         }
       }
     }
@@ -566,8 +663,14 @@ input_guard_baseline <- function(ref = NULL, root = ".") {
   env <- codec_guard_env(ref, root)
   present <- system.file("extdata", "sample.mp4", package = "tidymedia")
   if (!nzchar(present)) stop("sample.mp4 not found; install the package first")
-  absent <- file.path(tempdir(), "m62-absent-input.mp4")
-  if (file.exists(absent)) stop("the `absent` path exists: ", absent)
+  # Distinct absent paths, one per input slot the widest shape carries: a cell
+  # whose missing paths are all the same string cannot tell "names every
+  # missing path" from "names the first" (see the FORMS header).
+  absent <- file.path(tempdir(), sprintf("m62-absent-input-%02d.mp4", 1:3))
+  if (any(file.exists(absent))) {
+    stop("an `absent` path exists: ",
+         paste(absent[file.exists(absent)], collapse = ", "))
+  }
   old <- options(tidymedia.nvenc_encoders = "h264_nvenc")
   on.exit(options(old), add = TRUE)
 
@@ -576,7 +679,9 @@ input_guard_baseline <- function(ref = NULL, root = ".") {
       verb = case$verb, form = case$form, crossing = case$crossing,
       control = case$control, exists = case$exists,
       kind = NA_character_, outcome = NA_character_, call = NA_character_,
-      in_index = NA, reported = NA_character_, stringsAsFactors = FALSE)
+      in_index = NA, reported = NA_character_,
+      absent = paste(case$absent_paths, collapse = "\037"),
+      stringsAsFactors = FALSE)
     if (!case$exists) {
       blank$kind <- "nonexistent"
       return(blank)
@@ -643,6 +748,14 @@ input_guard_baseline <- function(ref = NULL, root = ".") {
 # compiled where an abort was owed is the other half of the screen.
 input_guard_vacuous <- function(baseline) {
   live <- baseline[baseline$exists, , drop = FALSE]
+  # The `factor` form's CONTROLS are excluded from both halves of the screen:
+  # whether a factor path column is a legal call is each verb's own contract --
+  # the verbs routing through check_batch_jobs() coerce it and compile,
+  # segment_video_batch() never has and aborts downstream -- so neither answer
+  # is owed and declaring one would be fitting the expectation to the
+  # measurement. Those probes are here for the form's CELLS, whose blame
+  # input_guard_blame_regressions() reads with no declared expectation at all.
+  live <- live[!(live$control & live$form == "factor"), , drop = FALSE]
   owes_compile <- live$control & live$crossing == "none"
   bad <- (owes_compile & live$kind != "compiled") |
     (!owes_compile & live$kind == "compiled")
@@ -723,15 +836,22 @@ input_guard_message_regressions <- function(before, after) {
 # aborting probe in this grid calls an exported verb directly, so the only name
 # the caller may be shown is that verb's. Empty is the evidence.
 #
-# ONE class is excluded, because the error it raises is not the verb's:
-# ffm_batch()'s `run` guard names `ffm_batch()` and has since long before this
-# milestone. The exclusion is by the error REPORTED, not by the crossing
-# declared, so a `run_guard` cell that starts reporting something else is still
-# held to the invariant.
+# TWO classes are excluded. ffm_batch()'s `run` guard names `ffm_batch()` and
+# has since long before this milestone; that exclusion is by the error
+# REPORTED, not by the crossing declared, so a `run_guard` cell that starts
+# reporting something else is still held to the invariant. The `factor` form's
+# CONTROLS are the second: a factor path column is not a call shape every verb
+# accepts (segment_video_batch() never coerced one), so where the verb refuses
+# it the refusal comes from the pipeline, blamed on purrr::pmap, exactly as it
+# did on the pre-change ref -- which input_guard_messages() and
+# input_guard_blame() state by comparison rather than by declaration. The
+# form's CELLS are held to the invariant in full: a sweep handed a factor
+# column raw blames file.exists(), and that cell is what catches it.
 input_guard_blame_regressions <- function(after) {
   own <- after$reported != "run_guard"
   own[is.na(own)] <- TRUE
-  bad <- own & after$kind == "abort" & !is.na(after$call) &
+  factor_control <- after$control & after$form == "factor"
+  bad <- own & !factor_control & after$kind == "abort" & !is.na(after$call) &
     after$call != after$verb
   bad[is.na(bad)] <- FALSE
   data.frame(verb = after$verb, form = after$form, crossing = after$crossing,
@@ -823,6 +943,96 @@ input_guard_misordered <- function(after) {
   cbind(o[bad, setdiff(names(o), "before"), drop = FALSE], want = want[bad])
 }
 
+# The claim the crossed cells cannot make: an UNCROSSED cell -- a missing path
+# and nothing else wrong with the call -- must report the missing path. Empty is
+# the evidence.
+#
+# The ordering readers above filter `none` out, because a cell with no second
+# error has no precedence to state, and the message readers compare the two refs
+# rather than naming an expected error. Between them nothing asserted that a
+# `none` cell reports `input` at all, so a cell aborting for a reason of its own
+# -- a table this grid built wrong, a guard that fires above the sweep on a
+# shape only one form produces -- counted as a refusal and read as coverage.
+# That is the vacuity trap one level up from the one input_guard_vacuous()
+# screens for, and it is what the `dup` and `factor` forms would otherwise sit
+# in: both put a second row or a second type in front of the sweep.
+input_guard_unreported <- function(after) {
+  d <- after[after$exists & !after$control & after$crossing == "none", ,
+             drop = FALSE]
+  bad <- is.na(d$reported) | d$reported != "input"
+  d[bad, c("verb", "form", "kind", "reported", "call", "outcome"),
+    drop = FALSE]
+}
+
+# AC2's second clause -- "names every missing path, not the first" -- as a query
+# over the whole domain rather than at the two or three call shapes anyone would
+# think to type. For every uncrossed cell: each DISTINCT absent path the call
+# carried must appear in the abort, and the count the abort states must be the
+# number of distinct absent paths. Empty is the evidence.
+#
+# Both halves are load-bearing, and each catches a defect the other cannot. A
+# verb sweeping its two input columns in two aborts names the first and stops
+# (M62 review F2): every path named, false. A checker that does not deduplicate
+# turns one mistyped path shared by N rows into N missing files (M62 review F3):
+# count right, false. Neither was visible while every cell's missing paths were
+# one constant string repeated.
+#
+# The count is read only from the two wordings that state one -- this package's
+# and the pipeline backstop's -- and never as "the first integer in the
+# message", which would find the `1` in purrr's "In index: 1" wrapper on the
+# pre-change ref and the `62` in this grid's own path names on both. A message
+# stating no count is held to carrying exactly one absent path, which is the
+# single-file rendering's contract.
+#
+# Stated over the AFTER ref alone, for M62-D1's reason: the pre-change ref
+# reported these calls through the pipeline one ROW at a time, so a two-row cell
+# named one row's path and stopped, and asserting the claim there would be
+# asserting that the defect this milestone removes was already absent. Run it
+# over the before ref to SEE the move, never to gate it.
+#
+# The verbs whose shape declares `separate_args` are excluded, and the exclusion
+# is declared rather than discovered: picture_in_picture() takes `main` and
+# `overlay` as two SINGLE-FILE arguments, and a single-file argument reporting
+# on its own is AC2's first clause, not a violation of its second. Its jobs-table
+# sibling, whose two columns are one carrier swept once, is held to the claim in
+# full. This is unchanged from the pre-change ref for that verb, which the
+# message and blame readers state by comparison.
+input_guard_unnamed <- function(after) {
+  separate <- vapply(after$verb, function(v)
+    isTRUE(INPUT_GUARD_SHAPES[[v]]$separate_args), logical(1),
+    USE.NAMES = FALSE)
+  after <- after[!separate, , drop = FALSE]
+  d <- after[after$exists & !after$control & after$crossing == "none" &
+               after$kind == "abort" & nzchar(after$absent), , drop = FALSE]
+  if (nrow(d) == 0) return(d[, c("verb", "form", "outcome"), drop = FALSE])
+  problem <- vapply(seq_len(nrow(d)), function(i) {
+    paths <- strsplit(d$absent[[i]], "\037", fixed = TRUE)[[1]]
+    msg <- d$outcome[[i]]
+    unnamed <- paths[!vapply(paths, grepl, logical(1), x = msg, fixed = TRUE)]
+    if (length(unnamed)) {
+      return(paste0("not named: ", paste(basename(unnamed), collapse = ", ")))
+    }
+    stated <- NA_integer_
+    for (pat in c("names? ([0-9]+) files? that",
+                  "find or read ([0-9]+) input file")) {
+      m <- regmatches(msg, regexec(pat, msg))[[1]]
+      if (length(m) == 2L) stated <- as.integer(m[[2]])
+    }
+    want <- length(paths)
+    if (is.na(stated)) {
+      if (want != 1L) return(paste0("states no count but carried ", want))
+      return(NA_character_)
+    }
+    if (stated != want) {
+      return(paste0("states ", stated, " but carried ", want))
+    }
+    NA_character_
+  }, character(1))
+  out <- d[!is.na(problem), c("verb", "form", "outcome"), drop = FALSE]
+  out$problem <- problem[!is.na(problem)]
+  out
+}
+
 # AC5's completeness claim, as a query rather than as vigilance. Empty is the
 # evidence; a non-empty result names the (verb, form, crossing) combinations the
 # declarations ask for that no cell in the grid probes.
@@ -847,11 +1057,11 @@ input_guard_uncovered <- function(after, verbs = input_guard_domain()) {
     # left there is nothing to say it carries only one input path, and a reader
     # that guessed the narrower answer would under-report the very gap it exists
     # to find.
-    multi <- INPUT_GUARD_SHAPES[[verb]]$multi
-    multi <- is.null(multi) || isTRUE(multi)
+    shape <- INPUT_GUARD_SHAPES[[verb]]
     for (crossing in INPUT_GUARD_CROSSINGS[[verb]]) {
       for (form in INPUT_GUARD_FORMS) {
-        if (identical(form, "one") && !multi) next
+        applies <- input_guard_form_applies(form, crossing, shape)
+        if (is.na(applies) || !applies) next
         want[[length(want) + 1L]] <- data.frame(
           verb = verb, form = form, crossing = crossing,
           stringsAsFactors = FALSE)

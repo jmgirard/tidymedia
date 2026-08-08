@@ -4398,10 +4398,19 @@ check_batch_jobs <- function(jobs, require_output = FALSE, verb = NULL,
 # still unvalidated) and above the M58 contradiction sweep, so a caller who
 # mistyped a path hears about the path. That ordering is measured cell by cell
 # in data-raw/input-guard-baseline.R.
+#
+# `col` may name SEVERAL carriers, and a verb with more than one input column
+# passes them all in ONE call: two calls would abort on the first column and
+# hide the second, so a picture-in-picture row missing both files named only
+# `main` (M62 review F2). One call sweeps the union and names every missing
+# path, which is what "names every missing path, not the first" asks for.
 check_batch_inputs <- function(jobs, col = "input",
                                call = rlang::caller_env()) {
-  paths <- jobs[[col]]
-  if (is.list(paths)) paths <- unlist(paths, use.names = FALSE)
+  paths <- unlist(lapply(col, function(nm) {
+    x <- jobs[[nm]]
+    if (is.list(x)) x <- unlist(x, use.names = FALSE)
+    as.character(x)
+  }), use.names = FALSE)
   check_paths_exist(paths, arg = paste0("jobs$", col), multiple = TRUE,
                     call = call)
   invisible(jobs)
@@ -6324,9 +6333,10 @@ picture_in_picture_batch <- function(jobs,
 
   # Sweep both role columns here, below the shape/type guards above and
   # before the contradiction sweep below, so a missing input blames this verb
-  # rather than purrr::pmap() (M62).
-  check_batch_inputs(jobs, "main")
-  check_batch_inputs(jobs, "overlay")
+  # rather than purrr::pmap() (M62). ONE call over both columns, never one per
+  # column: a row missing both files must name both, as the pipeline's own
+  # refusal did before this guard existed (M62 review F2).
+  check_batch_inputs(jobs, c("main", "overlay"))
 
   # Thin Layer-2 fan-in over ffm_batch (D007/D015): one overlay pipeline per row,
   # sharing picture_in_picture_pipeline() with picture_in_picture(). A per-row

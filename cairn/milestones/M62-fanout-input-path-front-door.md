@@ -1,6 +1,6 @@
 # M62: A missing input file is refused at the front door, in both forms
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M61
 - **Driving RR:** —
@@ -87,7 +87,7 @@ reach `ffm_files()`.
 ## Coverage
 
 - AC1 → T1, T7
-- AC2 → T1, T7
+- AC2 → T1, T7, T9
 - AC3 → T2, T3, T7
 - AC4 → T4, T7
 - AC5 → T5
@@ -122,6 +122,10 @@ reach `ffm_files()`.
       namespace rather than the source tree (the M51/M59 lesson).
 - [x] T8 — D-entry, `NEWS.md`, roxygen for the two newly-guarded verbs; then
       `document()` / `test()` / `check()`.
+- [x] T9 — review return 1: fix F1 (factor carrier), F2 (two columns, two
+      aborts) and F3 (duplicates counted twice) at the shared site; widen the
+      grid on the two axes the review's AC5 caveat named so the fix ships
+      measured; regression tests; `NEWS.md` correction (F11).
 
 ## Work log
 
@@ -144,6 +148,16 @@ reach `ffm_files()`.
 - 2026-08-08: T8 — measured at this commit: `devtools::document()` no diff after regenerating the two `.Rd` files, `devtools::test()` 4785 pass / 0 fail (4 warnings and 5 skips pre-existing: M44 dropped-track warnings, nvenc-absent skips), `devtools::check()` Status OK — 0 errors, 0 warnings, 0 notes. `spelling::spell_check_package()` clean after two NEWS words were reworded rather than added to the wordlist.
 - 2026-08-08: review return 1 (defect) — AC2 fails and two message/blame regressions against `origin/master` were measured. F1: `segment_video_batch()` never coerces `jobs$input` to character, so a factor column reaches `file.exists()` and raises the base error `invalid 'file' argument` blamed on `file.exists(x)`, where master raised a cli abort blamed on `purrr::pmap()`. F2: `picture_in_picture_batch()` calls the sweep once per column, so a row missing both `main` and `overlay` names only `main`, where master named both — AC2's "names every missing path, not the first" is false for that verb. F3 (folded in, scored 82): `check_paths_exist()` has no `unique()`, so one bad path shared by N rows reports as N files. Status back to `in-progress`; the 16 sub-threshold findings are logged in the Review section.
 
+- 2026-08-08: T9 (minor amendment) — T9 added as a discovered task carrying review return 1; AC2's Coverage row gains it. No criterion or scope text changed: the three findings are defects against AC2 and AC5 as written.
+- 2026-08-08: T9 — F1/F2/F3 fixed at the shared site, not at the three verbs. `check_paths_exist()` coerces its carrier with `as.character()` before `file.exists()` and deduplicates `missing`; `check_batch_inputs()` accepts several columns and `picture_in_picture_batch()` sweeps `main`/`overlay` in one call, the message's verb agreeing with `length(arg)`. All three reproduced against `origin/master` first and re-measured after: F1 `invalid 'file' argument` blamed on `file.exists(x)` → the verb's own abort (and a factor column of PRESENT paths falls through to exactly master's error, unmoved); F2 `jobs$main` alone → `` `jobs$main` and `jobs$overlay` name 2 files that do not exist ``; F3 two rows one bad path "2 files" → "1 file".
+- 2026-08-08: T9 — grid widened on the two axes the review's AC5 caveat named, so the fix ships measured rather than asserted: `all`'s absent paths are now distinct, and two declared forms were added at the `none` crossing — `dup` (2+ slots, one repeated absent path) and `factor` (the path column re-typed). 524 cells, 424 live, up from 404/362.
+- 2026-08-08: T9 — two readers added, because the widened cells had nothing holding them: `input_guard_unreported()` (every uncrossed cell must report the missing path, closing the review's F7 gap that the new forms would otherwise sit in) and `input_guard_unnamed()` (every distinct absent path named, counted once — AC2's second clause as a query over the domain instead of at hand-typed shapes).
+- 2026-08-08: T9 — measured over three refs at this commit. Working tree: all eleven readers empty (vacuous both refs, refusals, message regressions, blame regressions, lost `call`, dead controls, uncovered, misordered, unreported, unnamed), 96 cells' blame moved. Pre-fix branch tip `70dc722` under the SAME widened grid: unnamed 19, blame_regressions 1 (`segment_video_batch`/`factor` blaming `file.exists`), unreported 1 — so the widening is falsifiable, not decorative. `origin/master`: unnamed 17.
+- 2026-08-08: T9 — the three regression tests fail against `70dc722` and pass here, verified by running the new test file in a worktree at that ref: 7 assertion failures across the three (20-vs-1 duplicate count, `jobs$main` alone twice, `invalid 'file' argument` / `file.exists` three times).
+- 2026-08-08: T9 gate chose to leave scalar `picture_in_picture(main, overlay)` naming only `main` when both are missing, at parity with master, over sweeping its two arguments jointly: they are two single-file arguments and a single-file argument reporting on its own is AC2's first clause. Recorded as a declared `separate_args` exclusion in the grid rather than an undisclosed one; falsified by a report reading two missing arguments as one multi-path call.
+- 2026-08-08: T9 — two below-threshold findings folded in where the same prose was being rewritten anyway: F11 (`NEWS.md` said `segment_video()` took a `jobs` table, and "first" meant the first row) and F5 (`R/utils.R`'s header and D040's first condition still claimed `ffm_files()` reaches the shared site — the claim AC1 was amended to retract). The other 14 stand as logged.
+- 2026-08-08: T9 — measured at this commit: `devtools::document()` no diff, `devtools::test()` 4793 pass / 0 fail (4 warnings and 5 skips pre-existing), `devtools::check()` Status OK — 0 errors, 0 warnings, 0 notes, `spelling::spell_check_package()` clean after one NEWS word was reworded. `python3 data-raw/input-guard-mutations.py` all three CAUGHT, mutation 1 now reporting the widened 12 combinations rather than 10; tree restored.
+
 ## Decisions
 
 - **M62-D1: the grid's ordering claim is stated over the after ref alone.**
@@ -158,6 +172,19 @@ reach `ffm_files()`.
   measurement. The before ref carries AC5's claims instead — fate, message,
   blame, lost `call` — and `input_guard_ordering()` shows the move as a table
   without asserting one shape for it.
+
+- **M62-D2: "names every missing path" is a claim about a CARRIER, not about a
+  call.** `input_guard_unnamed()` holds every uncrossed cell to naming each
+  distinct absent path once, and excludes the verbs whose shape declares
+  `separate_args` — today only scalar `picture_in_picture(main, overlay)`,
+  whose two paths arrive as two single-file arguments rather than in one
+  carrier. A single-file argument reporting on its own IS AC2's first clause,
+  the rendering pinned byte-for-byte against master; requiring those two
+  arguments to report jointly would change a message on a verb master already
+  guarded, with no blame moving, which is the one thing AC5 forbids. The
+  exclusion is declared on the shape rather than applied in the reader, so a
+  verb acquiring a second input carrier is held to the claim by default and
+  has to be opted out on the record.
 
 ## Review
 

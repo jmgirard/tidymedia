@@ -1606,9 +1606,12 @@ existence and abort, when three conditions hold:
 
 - **One abort site.** `check_paths_exist()` (`R/utils.R`) is where the
   package's missing-input abort is written, and every front door reaches it —
-  the single-input verbs through `check_file_exists()`, the fan-out verbs
-  through `check_batch_inputs()`. No wording and no firing condition exists in
-  two places to drift apart.
+  the single-input verbs through `check_file_exists()`, the fan-out verbs and
+  the two scalar fan-in verbs this entry exists for through
+  `check_batch_inputs()`. No wording and no firing condition exists in two
+  places to drift apart. Reaching it is not enough on its own: a carrier handed
+  to the predicate untyped raises base R's error before the site is reached, so
+  the site coerces (M62 review F1).
 - **No new refusal, with one disclosed asymmetry.** Every call the front door
   refuses is a call `ffm_files()` would have refused inside the fan-out. The
   converse does not hold, and the reason is that the two predicates differ:

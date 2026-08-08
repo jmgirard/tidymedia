@@ -273,16 +273,17 @@
 ## Bug fixes
 
 * An input file that does not exist is now reported against the verb you
-  called. Every `_batch` verb — and `segment_video()`, which fans out the same
-  way — used to accept a `jobs` table naming a missing path and only discover it
-  once the batch was under way, so the error arrived as `In index: 3` against
-  `purrr::pmap()`, naming a row number in a table you may have built
-  programmatically rather than the file that was not there.
+  called. Every `_batch` verb used to accept a `jobs` table naming a missing
+  path and only discover it once the batch was under way, so the error arrived
+  as `In index: 3` against `purrr::pmap()`, naming a row number in a table you
+  may have built programmatically rather than the file that was not there.
   `concatenate_videos()` and `compare_videos()` had no check of their own at all
   and reported `Error in ffm_files(infiles, outfile)`. All of them now refuse
-  the call up front, name the function you called, and list **every** missing
-  path rather than stopping at the first — so one run tells you about all four
-  typos in a fifty-row table instead of four runs.
+  the call up front, name the function you called, and account for **every**
+  missing path in one message rather than stopping at the first row — so one
+  run tells you about all four typos in a fifty-row table instead of four runs.
+  One path typed wrong the same way in twenty rows is one missing file, not
+  twenty.
 
   The check reads the same way whichever shape carries the paths: the `input`
   column, the `inputs` list-column of the many-in/one-out verbs, and

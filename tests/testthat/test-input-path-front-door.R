@@ -132,6 +132,57 @@ test_that("no verb reports the missing input from inside the fan-out", {
   }
 })
 
+# The three defects the M62 review returned, each pinned where it was measured:
+# at the shared checker AND at the verb whose front door showed it, because the
+# checker being right is not the same claim as every carrier reaching it right.
+
+test_that("one path repeated across rows is one missing file, not several", {
+  # No unique(): a single typo shared by twenty rows read as twenty files, and
+  # on the `inputs` list-column the flattening made it worse (review F3).
+  err <- rlang::catch_cnd(
+    check_paths_exist(rep("gone.mp4", 20), arg = "jobs$input")
+  )
+  expect_match(conditionMessage(err),
+               "`jobs$input` names 1 file that does not exist.", fixed = TRUE)
+  jobs <- tibble::tibble(
+    input = rep("m62-gone.mp4", 3),
+    output = file.path(tempdir(), sprintf("m62-dup-%d.mp4", 1:3)))
+  err <- rlang::catch_cnd(
+    crop_video_batch(jobs, width = 10, height = 10, run = FALSE))
+  expect_match(conditionMessage(err),
+               "names 1 file that does not exist", fixed = TRUE)
+})
+
+test_that("a verb with two input columns names both missing files", {
+  # Two sweeps, one per column, aborted on the first and hid the second, so a
+  # row missing both named only `main` (review F2).
+  jobs <- tibble::tibble(main = "m62-gone-main.mp4",
+                         overlay = "m62-gone-overlay.mp4",
+                         output = file.path(tempdir(), "m62-pip.mp4"))
+  err <- rlang::catch_cnd(picture_in_picture_batch(jobs, run = FALSE))
+  msg <- conditionMessage(err)
+  expect_match(msg, "`jobs$main` and `jobs$overlay` name 2 files", fixed = TRUE)
+  expect_match(msg, "m62-gone-main.mp4", fixed = TRUE)
+  expect_match(msg, "m62-gone-overlay.mp4", fixed = TRUE)
+})
+
+test_that("a factor path column keeps the abort attributed", {
+  # A factor carries its paths as levels; handed to file.exists() raw it raised
+  # the base error `invalid 'file' argument`, blamed on file.exists() -- worse
+  # in both message and blame than what the pipeline said before the sweep
+  # existed (review F1).
+  expect_match(
+    conditionMessage(rlang::catch_cnd(
+      check_paths_exist(factor(c("m62-a.mp4", "m62-b.mp4")), arg = "jobs$input"))),
+    "names 2 files that do not exist", fixed = TRUE)
+  jobs <- data.frame(input = factor(c("m62-fa.mp4", "m62-fb.mp4")),
+                     start = 0, end = 1)
+  err <- rlang::catch_cnd(segment_video_batch(jobs, run = FALSE))
+  expect_match(conditionMessage(err), "not exist", fixed = TRUE)
+  expect_match(paste(deparse(conditionCall(err)), collapse = " "),
+               "segment_video_batch(", fixed = TRUE)
+})
+
 test_that("the checker blames its caller, not itself", {
   caller <- function(p) check_paths_exist(p, arg = "infile")
   err <- rlang::catch_cnd(caller("nope.mp4"))

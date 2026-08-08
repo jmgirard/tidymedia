@@ -5953,9 +5953,10 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
                                  fallback = FALSE,
                                  run = TRUE, parallel = FALSE, ...) {
 
-  direction <- check_vocab_arg(direction, stack_directions(), "direction")
+  # `direction` and `audio` are checked BELOW the contradiction sweep (M61); see
+  # there. `resize` stays here because check_resize_needs_two_inputs() consumes
+  # it and degrades to unattributed base-R errors without this type guard.
   rlang::check_bool(resize)
-  rlang::check_number_whole(audio, min = 0, allow_null = TRUE)
   check_token(video_codec, allow_null = TRUE)
   check_token(audio_codec, allow_null = TRUE)
   hardware <- rlang::arg_match(hardware)
@@ -5999,6 +6000,14 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
     check_resize_needs_two_inputs(resize_rows[[i]], length(jobs$inputs[[i]]))
   }
 
+  # `direction`, both forms, BELOW the contradiction sweep (M61). The scalar
+  # argument is normalized and checked here rather than at the top of the verb,
+  # so a call wrong in both `direction` and one of the two contradictions is
+  # told about the contradiction whichever form the bad value arrived in. The
+  # scalar guard still runs when a `direction` column overrides it, so no call
+  # that was refused before compiles now.
+  direction <- check_vocab_arg(direction, stack_directions(), "direction")
+
   # Per-row `direction` VALUES (M59 site 5). check_batch_string_col() above
   # covers that column's TYPE only, so an out-of-vocabulary cell used to reach
   # compare_videos_pipeline()'s own check inside the fan-out and be reported
@@ -6015,8 +6024,11 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
   #
   # AFTER the contradiction sweep above, deliberately: a call whose value error
   # arrives in a `jobs` column and which also contradicts itself reports the
-  # contradiction (D036's ordering). The ARGUMENT form is not uniform with this
-  # and M59 does not claim it is -- M61 makes the two agree.
+  # contradiction (D036's ordering). The scalar guard below sits here for the
+  # same reason, so the argument form answers alike (M61); it is not redundant
+  # with the sweep, which reads an `audio` COLUMN over the argument and so
+  # never sees a bad argument a column overrides.
+  rlang::check_number_whole(audio, min = 0, allow_null = TRUE)
   for (i in seq_len(nrow(jobs))) {
     if (!is.null(audio_rows[[i]])) {
       rlang::check_number_whole(audio_rows[[i]], min = 0,

@@ -100,8 +100,8 @@ pipeline; any change to which calls are refused.
       the jobs-shape and column-type guards stay above.
 - [x] T2 — Move `check_vocab_arg()` below the contradiction checkers in
       `compare_videos_pipeline()` and `picture_in_picture_pipeline()`.
-- [ ] T3 — `compare_videos_batch()`: move the scalar `direction` guard down;
-      delete the scalar `audio` lower-bound check the per-row sweep now covers.
+- [x] T3 — `compare_videos_batch()`: move the scalar `direction` guard down;
+      move the scalar `audio` lower-bound check down beside the per-row sweep.
 - [ ] T4 — `picture_in_picture_batch()`: move the scalar `position` and `margin`
       guards down; add the front-door per-row `audio` sweep and retire the
       fan-out closure's copy.
@@ -122,6 +122,7 @@ pipeline; any change to which calls are refused.
 - 2026-08-08: question gate chose to extend `data-raw/value-guard-baseline.R` rather than add a sibling script (it already probes these four guards in both forms); to cross the grid against the contradiction, `check_nvenc_available()` and `ffm_batch()`'s `run` guard; and to rewrite NEWS's known-gap paragraph in place rather than append a retraction, the whole entry being unreleased.
 - 2026-08-08: T1 — M61-D1 records the four-guard set closed by inspection at `1d54b20`, the three displaced errors AC2's grid crosses, and why `resize`, the jobs-shape and the column-type guards stay above.
 - 2026-08-08: T2 — `check_vocab_arg()` now runs below the contradiction checkers in both `*_pipeline()` functions, so `direction` and `position` report after them in the argument form as they already did in the column form. `devtools::test()`: 0 failures, 4402 passing.
+- 2026-08-08: T3 — `compare_videos_batch()` checks `direction` and the scalar `audio` bound below the contradiction sweep. Minor task refinement: T3 said DELETE the scalar `audio` check as covered by the per-row sweep; measured on `1d54b20` that all three scalar guards refuse today even when a `jobs` column overrides the argument (`compare_videos_batch(jobs_with_audio_column, audio = -1)` aborts), so deleting one would lose a refusal, which Scope Out and AC3 both forbid. It moves instead. `devtools::test()`: 0 failures, 4402 passing.
 
 ## Decisions
 

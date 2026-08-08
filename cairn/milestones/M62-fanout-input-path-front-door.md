@@ -136,6 +136,7 @@ reach `ffm_files()`.
 - 2026-08-08: T1 — `check_paths_exist()` added at `R/utils.R:26`; `check_file_exists()` delegates its existence half. One-path rendering pinned byte-for-byte against strings captured from master before the change. Suite 4658 pass / 0 fail; the 4 warnings and 5 skips are pre-existing (M44 dropped-track warnings, nvenc-absent skips).
 - 2026-08-08: amendment (substantive, user-approved) - AC1 rewritten. It promised `ffm_files()` reaches the shared abort site, which M62 deliberately does not do: `ffm_files()`'s predicate is readability and unifying the two is M63's scope. The replacement promises one site for the FRONT DOOR and pins the residual with a test asserting `ffm_files()`/`ffm` are the only other place an input refusal is worded.
 - 2026-08-08: T7 - walk-derived tests complete; 138 pass. Verified by mutation, not by eye: deleting crop_video_batch's sweep -> 3 red; deleting compare_videos' sweep -> 3 red; duplicating the abort wording into another body -> 1 red; deleting one verb's call-shape spec -> 3 red; degrading the walk to a deparsed-substring match -> `ffm_manifest` re-enters the fan-out set, which its pinning test refuses.
+- 2026-08-08: session end at a task boundary; T1-T4 and T7 done, branch pushed, tree clean, suite 4785 pass / 0 fail. Resume at T5 (`data-raw/input-guard-baseline.R`, modelled on `data-raw/value-guard-baseline.R`), then T6 and T8. `data-raw/input-guard-progress.R` is the working checker, not evidence, and is deleted at T8.
 
 ## Decisions
 

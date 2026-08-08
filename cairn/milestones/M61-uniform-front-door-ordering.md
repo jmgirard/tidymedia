@@ -1,6 +1,6 @@
 # M61: A value error and a contradiction resolve the same way in both forms
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M59
 - **Driving RR:** —
@@ -46,7 +46,7 @@ pipeline; any change to which calls are refused.
 
 ## Acceptance criteria
 
-- [x] AC1 — For each of the four values in Scope In, in each of its argument and
+- [ ] AC1 — For each of the four values in Scope In, in each of its argument and
       `jobs`-column forms, a call also violating a contradiction that verb
       carries reports the contradiction. Cells where the two cannot co-occur are
       recorded nonexistent rather than asserted — pip's `audio` against its only
@@ -72,7 +72,7 @@ pipeline; any change to which calls are refused.
       form reports the value check are inverted. A residue grep over `R/`, `man/`, `NEWS.md` and `tests/` for the
       exception's wording returns nothing. `cairn/` is excluded by design — its
       archive keeps the historical record (IP4).
-- [x] AC6 — Both `_batch` verbs' `@param hardware` blocks and the NEWS entry
+- [ ] AC6 — Both `_batch` verbs' `@param hardware` blocks and the NEWS entry
       state exactly: "A value error and a contradiction resolve the same way
       whether the value arrived as an argument or in a `jobs` column; the
       contradiction reports first." Each of that sentence's two quantified terms
@@ -134,6 +134,7 @@ pipeline; any change to which calls are refused.
 - 2026-08-08: T7 — residue grep over `R/`, `man/`, `NEWS.md`, `tests/` and `data-raw/` for the exception's wording returns nothing.
 - 2026-08-08: T7 — verify slot clean: `devtools::document()` writes only the two intended Rd files, `devtools::test()` 0 failures / 4586 passing (4 warnings, 5 skips, both unchanged from the branch base), `devtools::check()` 0 errors / 0 warnings / 0 notes.
 - 2026-08-08: review — all seven criteria verified with fresh evidence; consistency gate clean (`cairn_validate` exit 0, `document()` no diff, `pkgdown::check_pkgdown()` clean, `check()` 0/0/0). One criterion needed a fix at review: AC5's residue grep returned a match in the new test file's own header, which carried D038's "disclosed gap" phrasing; the comment was reworded and the grep now returns nothing.
+- 2026-08-08: review returned M61 to in-progress. AC1 failed as written: it records pip's `audio` against its only contradiction in the ARGUMENT form as a cell that cannot exist, "since a non-NULL `audio` removes that contradiction" — measured false, because `audio = NA` is non-NULL and `batch_stream_cell()` maps it to `NULL`, so the contradiction fires (`picture_in_picture_batch(jobs, audio = NA, audio_codec = "aac")` reports the value error on `origin/master` and the contradiction on the branch). The criterion embeds the false premise, so this is an amendment return, not a defect return. AC1 and AC6 unticked; AC2, AC3, AC4, AC5, AC7 keep their evidence. Three further findings scored >= 80 and are triaged fix-now in the same return: the guards were also reordered against `check_token()`/`arg_match(hardware)`/`scale`/the jobs-shape guards with no disclosure (F1, the disclosure D038 named as the work); the scalar `compare_videos()`/`picture_in_picture()` changed their error through the shared pipeline with no disclosure and no grid cell (F2); and M61-D1's table records a `check_vocab_arg()` at the top of the scalar verbs that is not there (F3), which is why F2 went unseen.
 
 ## Decisions
 
@@ -210,3 +211,31 @@ _Reviewed 2026-08-08 on `m61-uniform-front-door-ordering` at PR #64, against `or
 ### Consistency gate
 
 `cairn_validate` exit 0 — all PASS, all advisories OK. Toolchain slot: `document()` no diff, generated files unedited, README.Rmd untouched so README.md stays in sync, `pkgdown::check_pkgdown()` "No problems found", NEWS carries the user-visible change with no milestone numbers, no new top-level files, `check()` clean.
+
+### Independent review — three lenses, then a scorer
+
+Three fresh-context reviewers, distinct evidence bases. The **[S] blame-history** lens returned zero findings (it blamed every moved and deleted line back to M32/M59, and read D035–D039). The **[S] prior-review** lens returned zero findings; its GitHub inline-comment probe came back empty, so archived `## Review` sections were the evidence base. The **[O] diff-bug** lens returned twelve. A fourth **[S] scorer**, which did not generate them, scored each against the rubric.
+
+**Actioned (>= 80).** All four re-verified in this session by running the named calls on both refs.
+
+- **F1 (88) — the four guards were also reordered against `check_token()`, `arg_match(hardware)`, `scale` and the jobs-shape guards, and that is undisclosed.** D038 said of this move: "The work is that disclosure and its tests, not the move." M61 made the move and disclosed only the contradiction crossing. Measured: `compare_videos_batch(jobs, direction = "sideways", hardware = "bogus")` reports `direction` on master and `hardware` on HEAD; `picture_in_picture_batch(jobs, position = "middleish", scale = "x")` reports `position` then `scale`; `picture_in_picture_batch(jobs[0, ], margin = -3)` reports `margin` then the empty-table error. A 4488-shape sweep found 718 cells whose message changed, against the six the milestone enumerates. No refusal changed (0 differing verdicts across all 4488), so this is diagnostics ordering on multi-error calls, not a contract change. **Triage: fix now** — the disclosure D038 asked for, in NEWS and in M61-D1's displaced-error list.
+- **F2 (82) — the scalar verbs `compare_videos()` and `picture_in_picture()` changed their user-visible error, and no document says so.** Neither has its own `check_vocab_arg()`; the shared pipeline is their only vocabulary guard, so moving it moved theirs. Measured: `compare_videos(c(s, s), "o.mp4", direction = "sideways", audio_codec = "aac")` reports `direction` on master and the contradiction on HEAD; same shape for `picture_in_picture()`. Scope Out excludes those front doors "beyond their shared pipeline", so the change is IN scope — what is missing is its disclosure, and the grid probes only the `_batch` verbs so no criterion ever saw these cells. **Triage: fix now** — NEWS names the scalar verbs, and the grid gains their cells.
+- **F3 (80) — M61-D1's table states a false fact, and it is the one the closed-by-inspection set rests on.** It records `check_vocab_arg()` as sitting "at the top of the verb AND of `compare_videos_pipeline()`", but the scalar verbs have no top-level copy — only the `_batch` verb does. The table conflates the `_batch` verb with the scalar verb, which is why F2 went unnoticed. **Triage: fix now**, by a superseding milestone-local entry — M61-D1 is history and is never edited (D-074, IP4).
+- **F4 (88) — AC1's "cannot exist" cell does exist, and it changed behavior.** AC1, D039, the grid's `exists = FALSE` cell and a test all rest on "a non-NULL `audio` removes that contradiction". `NA` is non-NULL, and `batch_stream_cell()` maps it to `NULL`, so the contradiction fires. Measured: `picture_in_picture_batch(jobs, audio = NA, audio_codec = "aac")` reports the value error on master and the contradiction on HEAD; likewise `compare_videos_batch(jobs, audio = NA, audio_codec = "aac")`. These are changed cells seven and eight beyond D039's "six cells change". **This is an amendment return** — see below.
+
+**Logged, below threshold (8).** Surfaced, not actioned:
+
+- F9 (78) — the AC6 enumeration test builds its expectation from the same list it asserts over, so reverting every guard move leaves it green.
+- F11 (76) — NEWS and both `@param hardware` blocks understate the changed population; subsumed by F1/F2/F4's fixes.
+- F5 (68) — `value_guard_blame_regressions()` exempts by message class rather than by `control == TRUE`, so it would also exempt the one non-control cell it exists to catch.
+- F10 (65) — `value_guard_ordering()` returns a table for a human to read where the other readers assert emptiness.
+- F6 (62) — `value_guard_message_regressions()`'s narrowing drops the nvenc- and `run_guard`-crossed cells too, whose messages are meant to be invariant; measured to hide nothing today.
+- F7 (45) — `value_guard_error_class()` matches `nvenc` as a substring, latent until a cell probes an nvenc-family `video_codec`.
+- F8 (45) — AC4's `parallel = TRUE` arm now executes identical code to the `FALSE` arm; AC4's own text already says it is not additional evidence.
+- F12 (8) — claimed the AC checkboxes were unticked; they had already been ticked when scored.
+
+### Outcome — amendment return on AC1
+
+AC1 states as fact that pip's `audio` against its only contradiction "cannot co-occur" in the argument form, "since a non-NULL `audio` removes that contradiction". F4 measures that false. The criterion instructs recording a cell nonexistent that is now known to exist, so no amount of work satisfies it as written — the criterion is wrong, not the work. That routes to the gated criterion-amendment protocol (`/milestone-implement` step 6) and re-review, per the amendment-return rule.
+
+AC1 and AC6 are unticked: AC1 because its own text is what is wrong, AC6 because its enumeration test encodes the same carve-out and its evidence is therefore contaminated. AC2, AC3, AC4, AC5 and AC7 keep their evidence and their ticks. This is M61's first return, and an amendment return, which counts on its own track and not toward the defect-return count.

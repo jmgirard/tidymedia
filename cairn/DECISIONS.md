@@ -1657,3 +1657,58 @@ case.
   reach either way — or by a report of an existing-but-unreadable input still
   reporting differently by form after M63 ships, which would mean the residual
   above was a permanent split rather than a staged one.
+
+## D041 — One predicate refuses an input, and both ends reach it (2026-08-08, from M63, closes the residual D040 disclosed; narrows D040's "One abort site" and "No new refusal" conditions)
+
+D040 licensed a front-door existence test and disclosed, in the same entry, the
+one thing that test could not reach:
+
+> An input that exists but cannot be read is therefore still refused only by
+> `ffm_files()`, still inside the fan-out, still blaming `purrr::pmap()`. That
+> residual is M63's scope [...] and is disclosed here rather than assumed away.
+
+This entry closes it, and the way it closes matters. The front door did not
+acquire a second, wider test of its own; the two tests became one. The site
+D040 named holds `ffm_files()`' predicate — `file.access(mode = 4)` — and
+`ffm_files()` now reaches that site instead of writing a refusal of its own.
+
+**Why unification rather than a second test.** Copying readability up to the
+front door would have satisfied the same acceptance criterion and left the
+defect intact: two predicates spelled the same way today drift apart at the
+first edit, and drift is precisely what D040's one-abort-site condition exists
+to prevent. With one predicate there is nothing left to disagree — the front
+door and the pipeline refuse the same paths because the same code decides.
+Measured over the M62 grid across both refs, the cells whose blame moved are
+exactly the unreadable ones, no call's fate changes, and no cell reports the
+pipeline's retired wording at all.
+
+**The rule.** The package tests a pipeline input for READABILITY, at one site,
+and every front door and the pipeline builder reach it. `check_file_exists()`
+remains for the two arguments that are not pipeline inputs — `verify_media()`'s
+`file` and `write_mediainfo_template()`'s `templatefile` — and keeps existence
+semantics for D040's own reason: neither has a downstream counterpart that
+would refuse an unreadable file, so widening them here would be a front-door
+abort refusing a call nothing else refuses, the shape D040 says needs its own
+entry rather than a sweep.
+
+**The wording moved, and had to.** "Does not exist" is false of a file that is
+there and unopenable, so one message now covers both conditions: a single-file
+argument renders `` `infile` can't be found or read: 'clip.mp4'. `` and a
+carrier renders the count form. This is a user-visible change to thirteen verbs
+that were already refusing missing inputs correctly, taken because the
+alternative — branching the wording on which condition each path failed —
+needs three renderings per arity and a fourth for a call carrying both, all at
+the site whose single-wording property is the thing being protected.
+
+**What this does not license.** Reading anything *about* an input but whether
+it can be opened — its size, its container, its streams — is unchanged and
+stays under D013/D034. A directory passes both the old predicate and the new
+one (measured 2026-08-08), so nothing here starts refusing one; whether a
+directory in an input slot should be refused is a separate question this entry
+does not answer.
+
+- **Falsified by** a report of a call the front door refuses and the pipeline
+  would have accepted, or the reverse — which under one predicate can only mean
+  a caller reaching the pipeline by a path that skips the site — or by a report
+  of the new wording sending someone looking for a permissions problem where
+  the file was simply not there.

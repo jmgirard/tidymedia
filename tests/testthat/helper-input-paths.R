@@ -83,7 +83,13 @@ tm_unreadable_path <- function(dir, name = "m63-unreadable-input.mp4") {
   p <- file.path(dir, name)
   file.create(p)
   Sys.chmod(p, "000")
-  if (!file.exists(p) || file.access(p, mode = 4) == 0) return(NULL)
+  if (!file.exists(p) || file.access(p, mode = 4) == 0) {
+    # Hand the mode back before giving up: on a platform where the chmod did not
+    # take, a file left mode-000 is one the caller's temp-dir cleanup may not be
+    # able to remove.
+    Sys.chmod(p, "600")
+    return(NULL)
+  }
   p
 }
 

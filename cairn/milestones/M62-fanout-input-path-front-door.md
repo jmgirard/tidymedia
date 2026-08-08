@@ -5,7 +5,7 @@
 - **Depends on:** M61
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m62-fanout-input-path-front-door`
+- **Branch/PR:** `m62-fanout-input-path-front-door` / [#65](https://github.com/jmgirard/tidymedia/pull/65)
 
 ## Goal
 
@@ -33,7 +33,7 @@ reach `ffm_files()`.
 
 ## Acceptance criteria
 
-- [ ] AC1 — The front door's missing-input abort is written at exactly one
+- [x] AC1 — The front door's missing-input abort is written at exactly one
       site. A test walks every function body in `asNamespace("tidymedia")` and
       asserts that abort's wording appears in exactly one, which
       `check_file_exists()` and every front-door sweep reach. `ffm_files()`
@@ -41,22 +41,22 @@ reach `ffm_files()`.
       site; the same test asserts `ffm_files()` and its `ffm` alias are the only
       places that second wording appears, so the residual is pinned by a test
       rather than assumed.
-- [ ] AC2 — For a one-path call the shared checker's rendering is byte-identical
+- [x] AC2 — For a one-path call the shared checker's rendering is byte-identical
       to the string `check_file_exists()` emits on merged master, asserted by a
       snapshot recorded against the pre-change ref; for a multi-path call it
       names every missing path, not the first.
-- [ ] AC3 — Every exported verb whose parsed call graph transitively reaches
+- [x] AC3 — Every exported verb whose parsed call graph transitively reaches
       `ffm_batch` refuses a missing input at its front door, with
       `conditionCall()` naming that verb. The domain is derived by that walk and
       never listed: the test fails when a verb the walk returns has no
       call-shape spec, so the walk fixes membership and the spec supplies only
       the shape of a legal call.
-- [ ] AC4 — Every exported verb whose parsed call graph transitively reaches
+- [x] AC4 — Every exported verb whose parsed call graph transitively reaches
       `ffm_files` but not `ffm_batch` refuses a missing input at its own front
       door, with `conditionCall()` naming that verb — the same walk-derived,
       spec-required construction. This is what makes `concatenate_videos()` and
       `compare_videos()` stop reporting `Error in ffm_files(infiles, outfile)`.
-- [ ] AC5 — `data-raw/input-guard-baseline.R` generates its cells from declared
+- [x] AC5 — `data-raw/input-guard-baseline.R` generates its cells from declared
       axes rather than hand-written rows, crossing each verb and form with each
       front-door abort named in its declaration: the M58 contradiction sweep,
       `check_nvenc_available()`, `ffm_batch()`'s `run` guard, and the four value
@@ -66,22 +66,22 @@ reach `ffm_files()`.
       refs: no call's refused-or-accepted status changes, no message regresses,
       no abort loses its `call`, and every cell's crossed error is shown live by
       a paired control.
-- [ ] AC6 — The sweep runs after each fan-out verb's jobs-shape and column-type
+- [x] AC6 — The sweep runs after each fan-out verb's jobs-shape and column-type
       guards and before its M58 contradiction sweep, pinned by the AC5 cells
       that cross the two.
-- [ ] AC7 — `input_guard_uncovered()`, the control validator, and the domain
+- [x] AC7 — `input_guard_uncovered()`, the control validator, and the domain
       walk are each verified by mutation: deleting one verb's spec makes the
       reader report every combination that verb owed, re-pointing a control at a
       different error makes it fail, and deleting a call edge changes the
       derived verb set.
-- [ ] AC8 — A `cairn/DECISIONS.md` entry licenses a filesystem read at a verb's
+- [x] AC8 — A `cairn/DECISIONS.md` entry licenses a filesystem read at a verb's
       front door, quoting D024's third exclusion verbatim, taking D035's *shape*
       and not its licence (D035's rule is conditioned on a probe whose result
       enters the compiled command; this one's does not), stating its conditions
       and what it does not license, and recording the M63 residual.
-- [ ] AC9 — `NEWS.md` records the blame move in user-facing terms with no
+- [x] AC9 — `NEWS.md` records the blame move in user-facing terms with no
       milestone number, and a named test fails without the behavior it asserts.
-- [ ] AC10 — `devtools::document()` produces no diff, `devtools::test()` and
+- [x] AC10 — `devtools::document()` produces no diff, `devtools::test()` and
       `devtools::check()` are clean (0 errors, 0 warnings; NOTEs justified).
 
 ## Coverage
@@ -159,3 +159,79 @@ reach `ffm_files()`.
   without asserting one shape for it.
 
 ## Review
+
+Reviewed 2026-08-08 against PR #65, branch `m62-fanout-input-path-front-door`
+at `16f8231`, base `origin/master` at `33b064c` (unmoved since the branch was
+cut, so no merge was needed). Every figure below was measured this session.
+
+### Acceptance criteria
+
+- **AC1** — `testthat::test_local(filter = "input-path-front-door")`: 13 tests,
+  138 assertions, 0 failures. Two of them walk `tm_namespace_bodies()` and
+  assert the front-door wording appears in exactly one body and the
+  `ffm_files()` readability wording in exactly two (`ffm_files` and its `ffm`
+  alias), so the M63 residual is pinned rather than assumed.
+- **AC2** — the one-path rendering was compared byte-for-byte against
+  `origin/master` this session by sourcing that ref's `check_file_exists()`
+  into an environment (`codec_guard_env("origin/master")`) and diffing the
+  message: `identical()` TRUE at `arg = "infile"` and at `arg = "file"`. The
+  multi-path branch names every missing path and leads with the count, at two
+  missing of two and at one missing of two (tests 3 and 4). Mechanism note: the
+  pre-change strings are asserted as literals, not as a `testthat` snapshot —
+  a snapshot records itself on first run and so cannot witness a pre-change
+  string. The property the criterion states is met and was re-measured against
+  the ref; only the word "snapshot" reads narrower than what is in the file.
+- **AC3** — 16 fan-out verbs derived by the parsed call-node walk; each refuses
+  a missing input with `conditionCall()` naming it. Falsifiability re-measured
+  this session, not cited: deleting `crop_video_batch`'s
+  `check_batch_inputs(jobs)` line turned 2 named tests red ("every fan-out verb
+  refuses a missing input at its own front door", 2 failures; "no verb reports
+  the missing input from inside the fan-out", 1). Working tree restored.
+- **AC4** — 14 scalar verbs derived by the same walk, `concatenate_videos()`
+  and `compare_videos()` among them; the grid confirms both now blame
+  themselves where `origin/master` blamed `ffm_files()`.
+- **AC5** — `data-raw/input-guard-baseline.R` run over `origin/master` and the
+  working tree: 404 cells, 362 live. All eight comparison readers empty —
+  vacuous 0 on each ref, refusals 0, message regressions 0, blame regressions
+  0, lost `call` 0, dead controls 0, uncovered 0. 66 cells' blame moved to the
+  verb the user called.
+- **AC6** — `input_guard_misordered()` 0 rows over 133 crossed cells: all 42
+  cells crossed with a guard above the sweep report that guard, all 91 crossed
+  with a guard below it report the missing input. Each is paired with a control
+  proving the crossed error live, and `input_guard_dead_controls()` is empty.
+- **AC7** — `python3 data-raw/input-guard-mutations.py`: all three CAUGHT.
+  Deleting `crop_video_batch`'s call shape made `input_guard_uncovered()`
+  report exactly the 10 combinations it owed; re-pointing the `audio_codec`
+  contradiction's control at `ffm_batch()`'s `run` guard made
+  `input_guard_dead_controls()` report 8 controls, each `reported run_guard`;
+  deleting `strip_metadata_batch`'s `ffm_batch()` call edge moved it from the
+  walk's fan-out set to its scalar set. Tree restored by the harness.
+- **AC8** — D040 appended. It quotes D024's third exclusion verbatim, states
+  why D035's licence does not carry and only its shape does (D035 is
+  conditioned on a probe whose result enters the compiled command; a file's
+  existence never does), gives three conditions and a "what this does not
+  license" clause, discloses the existence-vs-readability residual as M63's
+  scope, and answers D036's machine-independence argument rather than ignoring
+  it.
+- **AC9** — `NEWS.md` "Bug fixes" entry, user-facing terms, no milestone
+  number; it also discloses the unreadable-input residual. The named test
+  behind it is falsifiable — see AC3's re-measured mutation.
+- **AC10** — `devtools::document()` leaves `man/` and `NAMESPACE` with no diff;
+  `devtools::test()` 4785 pass / 0 fail (4 warnings and 5 skips pre-existing:
+  M44 dropped-track warnings, nvenc-absent skips); `devtools::check()` Status
+  OK — 0 errors, 0 warnings, 0 notes.
+
+### Consistency gate
+
+`cairn_validate` exit 0, all checks PASS. One advisory: `sizing (split
+tripwires)` warns that M62 carries 10 acceptance criteria against a 7
+tripwire — noted, not a gate failure, and terminal for this milestone.
+Toolchain slot: `document()` no diff; `man/`, `NAMESPACE` and `.Rd` files
+regenerate; no README.Rmd change; no `_pkgdown.yml` change needed (no new
+exports); `NEWS.md` carries this milestone's user-visible change with no
+milestone number; no new top-level files (`data-raw/` is already
+`.Rbuildignore`d, confirmed by check() reporting 0 notes); full `check()` clean.
+No `DESIGN.md` principle changed, so `cairn_impact` was not run.
+
+### Independent review
+

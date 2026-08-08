@@ -398,3 +398,14 @@ Three fresh-context reviewers, distinct evidence bases, aimed at the generated-c
 ### Outcome — fourth round passes
 
 All seven criteria carry fresh evidence, the consistency gate is clean, CI is green, and no finding reached the actioned threshold. AC2 — the criterion that failed in rounds 2 and 3, each time on a hand-written cell nobody wrote — now holds by construction rather than by vigilance: the grid generates the product and `value_guard_uncovered()` returns zero rows over 37 triples. The thrash remedy is judged to have worked on the axis it was aimed at; F3 and P1 record the two ways the new reader can still be fooled, neither of which is a present incompleteness.
+
+### Fourth round — addendum after the gate, 2026-08-08
+
+Approval was withheld at the merge gate and the two highest sub-threshold findings were fixed at the user's direction rather than left logged (T10). Both were verified discriminating by mutation — the fix is shown to catch what the old code let through, not merely to be present.
+
+- **F3, fixed.** `value_guard_uncovered()` matched a variant label back to its base value name, so `audio(low)` and `audio(NaN)` counted as covering `audio`. It now matches the bare name. Mutation: deleting the whole `compare_videos_batch`/`audio` guard spec reports **8** uncovered combinations after the fix, against **1** before — the eight actually owed.
+- **F4, fixed.** `value_guard_dead_controls()` compared a control's raised error at class grain, so a control naming one of compare's two contradictions passed when the other fired. A new `value_guard_error_crossing()` classifies at crossing grain and the validator compares against `crossing`. Mutation: making the `resize` crossing dead reports **7** dead controls after the fix, against **4** before; the three newly caught are exactly the `direction` controls, which had fallen through because the substituted contradiction shares their class.
+
+Re-verified after the fixes: grid 128 cells / 90 crossed against both refs, `value_guard_uncovered()` 0 rows, every other reader 0 rows, 14 changed cells unchanged, `contradiction` cells all reading `contradiction` after. `cairn_validate` exit 0; `document()` no diff; `devtools::test()` 0 failures / 4647 passing; `devtools::check()` 0 errors / 0 warnings / 0 notes. No criterion's evidence is disturbed — the fixes strengthen AC2's readers without changing what the grid contains or what any cell reports.
+
+The fifteen remaining findings stay logged as recorded above.

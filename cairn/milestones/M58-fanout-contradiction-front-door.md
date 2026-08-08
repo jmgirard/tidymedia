@@ -5,7 +5,7 @@
 - **Depends on:** M57
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** `m58-fanout-contradiction-front-door`
+- **Branch/PR:** `m58-fanout-contradiction-front-door` · PR #61 https://github.com/jmgirard/tidymedia/pull/61
 
 ## Goal
 
@@ -50,18 +50,18 @@ owing its own entry. Line-ending governance → M60.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Each of the six conditions is authored in exactly one place:
+- [x] AC1 — Each of the six conditions is authored in exactly one place:
       five shared checkers, conditions 4 and 6 sharing one parameterized
       checker because their headline is byte-identical (`R/ffmpeg.R:5301`,
       `:5443`) and only the hint differs. Verified two ways: a test asserting
       exactly one `cli_abort()` site per distinct headline across `R/*.R`, and
       mutation — deleting any one front-door call turns that pair's AC2 test
       red.
-- [ ] AC2 — For each of the eight (condition, verb) pairs enumerated in Scope
+- [x] AC2 — For each of the eight (condition, verb) pairs enumerated in Scope
       In, a call violating that condition aborts with `conditionCall()` naming
       the verb the user called and a message containing neither `purrr::pmap`
       nor `In index:`. One test per pair.
-- [ ] AC3 — For each of the six conditions the front-door guard refuses
+- [x] AC3 — For each of the six conditions the front-door guard refuses
       exactly the calls its pipeline counterpart refuses, over a committed
       before/after grid varying: each argument the condition names, at a
       violating and a non-violating value; the scalar-versus-column form of
@@ -69,11 +69,11 @@ owing its own entry. Line-ending governance → M60.
       condition 5, input count (2 and 3) crossed with `resize`. Each cell's
       non-violating baseline is asserted to succeed on both refs, so no cell
       compares equal by both sides failing.
-- [ ] AC4 — Where a contradiction's values can arrive as `jobs` columns, the
+- [x] AC4 — Where a contradiction's values can arrive as `jobs` columns, the
       guard sweeps rows rather than gating all-or-nothing: a column with at
       least one violating row aborts naming the verb, and a column all of
       whose rows are non-violating does not abort and compiles.
-- [ ] AC5 — Contradiction reports before nvenc availability on each of the
+- [x] AC5 — Contradiction reports before nvenc availability on each of the
       five verbs carrying both guards, measured only on calls where both
       errors are live: a uniform call for `compare_videos_batch` and
       `picture_in_picture_batch`, whose contradiction is encoder-independent;
@@ -82,13 +82,13 @@ owing its own entry. Line-ending governance → M60.
       to check. The two committed tests pinning the old order
       (`test-nvenc-front-door.R:320`, `:369`) are rewritten to it. Every test
       runs under a seam holding no encoder.
-- [ ] AC6 — For the four conditions whose scalar sibling keeps no front-door
+- [x] AC6 — For the four conditions whose scalar sibling keeps no front-door
       guard (1, 4, 5, 6 → `separate_audio_video()`, `compare_videos()`,
       `picture_in_picture()`), the pipeline's own abort still reports with
       `conditionCall()` naming the scalar verb. Condition 5's abort threads
       `call = call` like the other five, so none of the six displays a
       `*_pipeline()` name to the user.
-- [ ] AC7 — The r-package profile's verify slot is clean:
+- [x] AC7 — The r-package profile's verify slot is clean:
       `devtools::document()` produces no diff, `devtools::test()` passes, and
       `devtools::check()` reports 0 errors and 0 warnings.
 
@@ -150,3 +150,65 @@ owing its own entry. Line-ending governance → M60.
 ## Decisions
 
 ## Review
+
+Reviewed 2026-08-07 on branch `m58-fanout-contradiction-front-door`, PR #61.
+`origin/master` unmoved since the branch was cut (ffcb6d5), so no merge-forward
+was needed. All evidence below is fresh, gathered by command in this session.
+
+**AC1** — Each of the five distinct headlines the six conditions carry occurs at
+exactly one `cli_abort()` site across `R/*.R` (grep count 1 for each of the
+five; five checker definitions). Conditions 4 and 6 share one checker, and the
+two verbs' hints are asserted to differ. Mutation, re-run fresh over all eight
+front-door call sites: deleting each turned 3, 3, 5, 4, 2, 5, 5 and 4
+assertions red respectively (segment_video c2/c3, segment_video_batch c2/c3,
+separate_av_batch c1, compare_batch c5/c4, pip_batch c6); `R/ffmpeg.R` restored
+clean after each.
+
+**AC2** — `test-contradiction-front-door.R` "every (condition, verb) pair blames
+the verb the user called": 48 assertions pass over the eight pairs (six per
+pair — the condition's own message, `conditionCall()` naming the verb, and the
+absence of `purrr::pmap` / `In index:` from both message and call).
+
+**AC3** — `data-raw/contradiction-guard-baseline.R`, `origin/master` against the
+branch: 112 cells (condition 1: 8 scalar / 4 column / 2 mixed; 2: 16/8/4;
+3: 8/4/2; 4: 12/6/2; 5: 8/4/4; 6: 12/6/2). Vacuity screen empty on BOTH refs,
+so no cell compares equal by both sides failing. 33 cells abort on each ref and
+**0 cells changed which refusal they get**. Blame moved on 30 cells (29
+`purrr::pmap` -> the verb, 1 `compare_videos_pipeline` -> `compare_videos`);
+`In index:` present in 29 cells before and 0 after.
+
+**AC4** — "one violating row is refused and a clean column compiles": 54
+assertions pass over nine mixed-versus-clean pairs covering every column a
+condition's values can arrive in (`video_codec`, `reencode`, `audio_codec`,
+`audio`, `resize`, and per-row `inputs` counts). Each pair asserts the violating
+table aborts naming the verb AND the clean table compiles the expected number of
+commands, so no case passes by refusing everything.
+
+**AC5** — Contradiction-before-availability pinned on all five verbs carrying
+both guards, every test under a seam holding no encoder. Mixed-column cases:
+"a MIXED reencode column is refused at the front door" (3), "on a mixed column
+the cut contradiction reports before availability" (6), "a mixed copy column
+reports the copy conflict before availability" (6) — the last two being the
+committed tests that pinned the old order, rewritten. Uniform-call cases: "a
+contradiction reports before availability on the fan-in verbs" (15) covers
+conditions 4, 5 and 6, asserting the present-encoder and absent-encoder seams
+yield an identical message.
+
+**AC6** — "the scalar siblings still blame themselves": 16 assertions pass over
+`separate_audio_video`, `compare_videos` (conditions 4 and 5) and
+`picture_in_picture`, each asserting `conditionCall()` names the verb and
+contains no `_pipeline`. Condition 5's `call = call` is what makes its case
+pass; on master the same call named `compare_videos_pipeline`.
+
+**AC7** — `devtools::document()` produced no diff; `devtools::test()` 4104 pass
+/ 0 fail / 0 error / 5 skip; `devtools::check()` Status OK, 0 errors / 0
+warnings / 0 notes.
+
+**Consistency gate** — `cairn_validate` exit 0, all 16 checks PASS and all 8
+advisories OK. No `DESIGN.md` principle changed, so `cairn_impact` did not
+apply. Toolchain slot: `document()` no diff (generated files not hand-edited);
+`README.Rmd` untouched so README is in sync; `pkgdown::check_pkgdown()` reports
+no problems; NEWS.md carries the user-visible entry with no milestone numbers;
+no new top-level files (both new files sit under already-ignored `data-raw/`
+and `tests/`); `check()` clean.
+

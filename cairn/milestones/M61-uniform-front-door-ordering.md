@@ -1,11 +1,11 @@
 # M61: A value error and a contradiction resolve the same way in both forms
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M59
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m61-uniform-front-door-ordering`
 
 ## Goal
 

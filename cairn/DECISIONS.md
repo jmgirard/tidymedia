@@ -1568,3 +1568,89 @@ removes.
   reach — or by a fifth guard turning up non-uniform, which would mean the set
   was closed by inspection over the wrong surface rather than that the rule is
   wrong.
+
+## D040 — A verb's front door may read the filesystem to refuse a missing input (2026-08-08, from M62, licenses a second instance of the shape D024's third exclusion reserved; takes D035's shape, not its licence; narrows D036's ordering)
+
+D024 lists four probe shapes outside its diagnostic licence, "each need[ing]
+its own decision entry before it is built". The third, verbatim:
+
+> - a probe that decides whether execution proceeds — an abort gate is not a
+>   diagnostic, and an abort gate that fails open silently stops gating;
+
+This entry licenses a second instance of that shape: `file.exists()`, run at
+the front door of every verb that fans out through `ffm_batch()` and of the two
+scalar fan-in verbs, so a call naming a file that is not there blames the verb
+the user called instead of `purrr::pmap()` or `ffm_files()`.
+
+**Why D035's licence does not carry, only its shape.** D035's rule opens on a
+condition this probe fails: "A probe already licensed under D034 — its result
+entering the compiled command — may also run at a verb's front door". A file's
+existence never enters the compiled command. The *path* does, and it is written
+into the command whether or not anything is at the end of it; that is precisely
+why an absent input is a runtime failure today rather than a compile-time one.
+So D034 does not reach this probe, D035's rule cannot be invoked for it, and
+what M62 takes from D035 is its **shape** — one shared abort site, no new
+refusal, fails closed — under an entry of its own.
+
+**Purity is untouched, which is not the same as unengaged.** DESIGN.md's
+Conventions and D024 protect a *binary*-pure compilation surface; `file.exists()`
+runs no binary, so nothing here costs the CI-safety claim, and unlike D035's
+nvenc probe this guard needs no FFmpeg build to be decided. What it does engage
+is D024's reach past the call — the filesystem is outside the call in the sense
+D024 means — and that is why an entry is needed at all rather than nothing.
+That this guard runs on the `run = FALSE` path is D035's precedent, not a new
+departure: the front-door nvenc gate has run there since M57.
+
+**The rule.** A verb's front door may test its resolved input paths for
+existence and abort, when three conditions hold:
+
+- **One abort site.** `check_paths_exist()` (`R/utils.R`) is where the
+  package's missing-input abort is written, and every front door reaches it —
+  the single-input verbs through `check_file_exists()`, the fan-out verbs
+  through `check_batch_inputs()`. No wording and no firing condition exists in
+  two places to drift apart.
+- **No new refusal, with one disclosed asymmetry.** Every call the front door
+  refuses is a call `ffm_files()` would have refused inside the fan-out. The
+  converse does not hold, and the reason is that the two predicates differ:
+  `check_paths_exist()` tests existence, `ffm_files()` tests readability. An
+  input that exists but cannot be read is therefore still refused only by
+  `ffm_files()`, still inside the fan-out, still blaming `purrr::pmap()`. That
+  residual is M63's scope, is pinned by a test asserting `ffm_files()` and its
+  `ffm` alias are the only other place an input refusal is worded, and is
+  disclosed here rather than assumed away.
+- **It fails closed, and must.** D024's fail-open requirement is a consequence
+  of the diagnostic licence, whose probes may have no effect but a message.
+  This is not a diagnostic: a missing input has to stop the call, or FFmpeg
+  would be handed a path to nothing.
+
+**Ordering, and what D036 does and does not decide.** The sweep reports *before*
+the M58 contradiction sweep, which is the opposite direction to D036's rule that
+the machine-independent answer comes first — and a file's existence is
+machine-dependent in the strongest available sense. D036's argument is not
+reached here, because its subject is an error whose *identity* changes with the
+machine while the call stays the same: "a `video_codec = "copy"` batch naming
+`hardware = "nvenc"` was told about the copy on a GPU machine and about the
+missing encoder everywhere else", which "cannot be reasoned about from a bug
+report". A missing input does not vary that way. It varies with the caller's own
+data, which the caller has and the report names — `` `jobs$input` names 1 file
+that does not exist: 'clip3.mp4' `` is fully actionable by the person who typed
+the path, and reproducing it elsewhere is not what anyone needs to do with it.
+Ordering it first also keeps both forms uniform: thirteen scalar verbs already
+put this exact refusal above everything else, and leaving the table-driven form
+alone would reinstate the by-form disagreement D039 closed.
+
+**What this does not license.** Reading anything *about* an input but its
+existence — its size, its container, its streams — is a probe of a different
+kind whose result would shape the command, and stays under D013/D034. A
+front-door abort with no pipeline counterpart, refusing a call nothing
+downstream would refuse, remains a new abort gate needing its own entry; the
+asymmetry disclosed above is the reverse of that shape, a pipeline refusal the
+front door does not yet reach. Output paths and `outdir` creation are untouched:
+this entry is about inputs, and an output that does not exist yet is the normal
+case.
+
+- **Falsified by** a report preferring the contradiction on a table that is both
+  wrong about a path and self-contradictory — the case D036's argument does not
+  reach either way — or by a report of an existing-but-unreadable input still
+  reporting differently by form after M63 ships, which would mean the residual
+  above was a permanent split rather than a staged one.

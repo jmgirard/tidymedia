@@ -272,6 +272,33 @@
 
 ## Bug fixes
 
+* An input file that does not exist is now reported against the verb you
+  called. Every `_batch` verb — and `segment_video()`, which fans out the same
+  way — used to accept a `jobs` table naming a missing path and only discover it
+  once the batch was under way, so the error arrived as `In index: 3` against
+  `purrr::pmap()`, naming a row number in a table you may have built
+  programmatically rather than the file that was not there.
+  `concatenate_videos()` and `compare_videos()` had no check of their own at all
+  and reported `Error in ffm_files(infiles, outfile)`. All of them now refuse
+  the call up front, name the function you called, and list **every** missing
+  path rather than stopping at the first — so one run tells you about all four
+  typos in a fifty-row table instead of four runs.
+
+  The check reads the same way whichever shape carries the paths: the `input`
+  column, the `inputs` list-column of the many-in/one-out verbs, and
+  `picture_in_picture_batch()`'s `main`/`overlay` pair. A call that is wrong
+  about a path *and* about something else — contradictory codec arguments, an
+  unavailable hardware encoder, an out-of-range per-row value — is now told
+  about the path first, on the reasoning that a path typed wrong is the more
+  likely mistake and is the one you can act on without reading further.
+  Malformed table shapes and wrong column types still report before it, since a
+  column whose type has not been checked yet cannot usefully be swept for
+  paths.
+
+  A file that *exists* but cannot be read is not yet covered: that case is
+  still reported from inside the pipeline, and the wording differs. It is being
+  brought in line separately.
+
 * A malformed codec value — a string carrying whitespace or shell characters,
   such as `"aac -evil"` — is now reported against the argument and the function
   you called. Every verb whose `video_codec` or `audio_codec` argument *sets* a

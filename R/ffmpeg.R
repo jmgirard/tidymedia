@@ -5598,6 +5598,9 @@ concatenate_pipeline <- function(infiles, outfile) {
 #' filter](https://ffmpeg.org/ffmpeg-filters.html#concat)
 #'
 #' @param infiles A character vector containing the file paths to video files.
+#'   Every path is checked at this verb's own front door, so a path that does
+#'   not exist aborts naming this function and lists every missing path, rather
+#'   than being reported against the internal builder it would otherwise reach.
 #' @param outfile A string containing the desired file path to write the new,
 #'   concatenated video file to.
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
@@ -5692,7 +5695,10 @@ compare_videos_pipeline <- function(infiles, outfile,
 #' Audio is dropped unless \code{audio} names an input to carry; a carried
 #' track is stream-copied unless \code{audio_codec} names an encoder.
 #'
-#' @param infiles A character vector of two or more video file paths.
+#' @param infiles A character vector of two or more video file paths. Every
+#'   path is checked at this verb's own front door, so a path that does not
+#'   exist aborts naming this function and lists every missing path, rather
+#'   than being reported against the internal builder it would otherwise reach.
 #' @param outfile A string giving the path to write the comparison video to.
 #' @param direction Either \code{"horizontal"} (side-by-side, the default) or
 #'   \code{"vertical"} (stacked top to bottom).

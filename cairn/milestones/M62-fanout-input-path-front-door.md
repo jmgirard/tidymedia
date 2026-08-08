@@ -1,6 +1,6 @@
 # M62: A missing input file is refused at the front door, in both forms
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M61
 - **Driving RR:** —
@@ -120,7 +120,7 @@ reach `ffm_files()`.
       walk (`data-raw/value-guard-mutations.py` is the model).
 - [x] T7 — Write the walk-derived completeness tests for AC1–AC4, reading the
       namespace rather than the source tree (the M51/M59 lesson).
-- [ ] T8 — D-entry, `NEWS.md`, roxygen for the two newly-guarded verbs; then
+- [x] T8 — D-entry, `NEWS.md`, roxygen for the two newly-guarded verbs; then
       `document()` / `test()` / `check()`.
 
 ## Work log
@@ -140,6 +140,8 @@ reach `ffm_files()`.
 - 2026-08-08: T5 — `data-raw/input-guard-baseline.R` generates its cells from three declarations (the walk-derived verb domain, a per-verb crossing list, a per-verb call shape) crossed with the two forms. Measured at this commit by sourcing that file and running its nine readers over `origin/master` and the working tree: 404 cells; vacuous 0 and 0, refusals 0, message regressions 0, blame regressions 0, lost `call` 0, dead controls 0, uncovered 0, misordered 0, with 66 cells' blame moved to the verb the user called. Three declarations were corrected by the grid rather than by eye: six fan-out verbs validate their table inline and reject no NA in the input carrier, so `jobs_na` is declared only where that guard exists and those six pin AC6's upper half through `column_type` instead; `sample_frames_batch` needs a per-row `outdir` or every multi-row cell reports the frame-pattern collision guard; and the `nvenc` crossing must not name `video_codec` on a verb that has none, which raises "unused argument" in place of the crossed error.
 - 2026-08-08: T5 (minor amendment) — the crossing declaration names two aborts beyond AC5's colon-list, `jobs_na` and `column_type`, because AC6's first half ("after each fan-out verb's jobs-shape and column-type guards") has no cell without them. AC5's four remain as written; this widens the declaration the reader re-derives from, never narrows it.
 - 2026-08-08: T6 — `data-raw/input-guard-mutations.py`; all three AC7 mutations caught, tree restored by the harness after each. Deleting `crop_video_batch`'s call shape made `input_guard_uncovered()` report exactly the 10 combinations it owed (5 crossings x 2 forms); re-pointing the `audio_codec` contradiction's control at `ffm_batch()`'s `run` guard made `input_guard_dead_controls()` report 8 controls, each `reported run_guard`; deleting `strip_metadata_batch`'s `ffm_batch()` call edge moved it out of the walk's fan-out set and into its scalar set. `input_guard_domain()` was narrowed so the missing-shape case reaches the reader instead of a hard error that would have shadowed it.
+- 2026-08-08: T8 — D040 appended (licenses the front-door filesystem read; quotes D024's third exclusion verbatim, takes D035's shape and not its licence, discloses the existence-vs-readability residual M63 closes, and answers D036's machine-independence argument rather than ignoring it). `NEWS.md` bug-fix entry, no milestone number. `@param infiles` on `concatenate_videos()` and `compare_videos()` records the new front door. `data-raw/input-guard-progress.R` deleted as planned — it was the working checker, never evidence.
+- 2026-08-08: T8 — measured at this commit: `devtools::document()` no diff after regenerating the two `.Rd` files, `devtools::test()` 4785 pass / 0 fail (4 warnings and 5 skips pre-existing: M44 dropped-track warnings, nvenc-absent skips), `devtools::check()` Status OK — 0 errors, 0 warnings, 0 notes. `spelling::spell_check_package()` clean after two NEWS words were reworded rather than added to the wordlist.
 
 ## Decisions
 

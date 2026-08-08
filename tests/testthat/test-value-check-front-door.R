@@ -40,10 +40,16 @@ catch_call <- function(verb, args) {
 # for an unrelated reason (a schema error, a missing column) records that
 # instead of passing on a bare abort.
 #
-# Both `parallel` settings, because the two fan-out backends name themselves
-# differently in the leaked message -- `purrr::pmap` sequentially and
-# `furrr::future_pmap` in parallel -- so a guard tested at one setting could
-# leave the other's name reaching the user.
+# Both `parallel` settings, but be honest about what that buys NOW. Before this
+# milestone the two fan-out backends named themselves differently in the leaked
+# message -- `purrr::pmap` sequentially, `furrr::future_pmap` in parallel -- so
+# testing one setting could leave the other's name reaching the user. Now that
+# every one of these checks aborts BEFORE `ffm_batch()` is reached, neither
+# backend is engaged and the two iterations run the same code (M59 review F12).
+# The loop is kept as a regression pin rather than as doubled evidence: it is
+# what fails if a future change lets one of these values reach the fan-out
+# again, and at `parallel = TRUE` the name it would leak is the one no test
+# below this line would otherwise see.
 
 value_check_pairs <- function(input) {
   two <- function(...) tibble::tibble(...)
@@ -119,18 +125,70 @@ test_that("every (value check, verb) pair blames the verb the user called", {
 # it, so this fails on a fourth copy the way M58's headline test fails on a
 # second copy of a message.
 
-test_that("each enumerated vocabulary is written at exactly one site", {
-  src <- unlist(lapply(list.files("../../R", pattern = "\\.R$",
-                                  full.names = TRUE),
-                       readLines, warn = FALSE))
-  skip_if(length(src) == 0, "package sources not readable from the test dir")
-  # The literals as CODE, not as the roxygen prose that also names the values:
-  # the roxygen spells them one \code{} at a time across several lines, so
-  # neither fragment below can match documentation.
-  expect_identical(sum(grepl('c("horizontal", "vertical")', src, fixed = TRUE)),
-                   1L)
-  expect_identical(
-    sum(grepl('"bottomright", "bottomleft", "center"', src, fixed = TRUE)), 1L)
+#
+# Read from the loaded NAMESPACE, never from `../../R`. The first version of
+# this test globbed the source directory, which exists under `devtools::test()`
+# and does not under `R CMD check` — there the tests run in
+# `<pkg>.Rcheck/tests/testthat/` and `../../R` holds only the lazy-load
+# database, so the whole test skipped in exactly the run the AC6 gate uses
+# (M59 review F10). It also grepped literal source text, so a fourth copy
+# written with single quotes, different spacing, or wrapped across lines would
+# have left it green (F11). Deparsing normalizes all three.
+
+vocabularies <- function() {
+  list(
+    list(arg = "direction", accessor = "stack_directions",
+         values = c("horizontal", "vertical")),
+    list(arg = "position", accessor = "pip_positions",
+         values = c("topright", "topleft", "bottomright", "bottomleft",
+                    "center"))
+  )
+}
+
+namespace_functions <- function() {
+  ns <- asNamespace("tidymedia")
+  Filter(is.function,
+         mget(ls(ns, all.names = TRUE), envir = ns, ifnotfound = list(NULL)))
+}
+
+test_that("each enumerated vocabulary is written in exactly one body", {
+  fns <- namespace_functions()
+  expect_gt(length(fns), 0)
+  for (v in vocabularies()) {
+    # width.cutoff on BOTH sides, or the five-element vocabulary deparses onto
+    # two lines here and one line in the body, and the comparison fails on the
+    # rejoin rather than on the invariant.
+    literal <- paste(deparse(v$values, width.cutoff = 500L), collapse = "")
+    holders <- names(Filter(function(f) {
+      grepl(literal,
+            paste(deparse(body(f), width.cutoff = 500L), collapse = " "),
+            fixed = TRUE)
+    }, fns))
+    # Exactly one function's body spells the vocabulary out, and it is the
+    # accessor. Naming it rather than only counting means a test that passes
+    # because the literal moved somewhere else still fails.
+    expect_identical(holders, v$accessor, info = v$arg)
+    expect_identical(do.call(v$accessor, list(), envir = asNamespace("tidymedia")),
+                     v$values, info = v$arg)
+  }
+})
+
+test_that("every signature taking a vocabulary defaults to its accessor", {
+  # The other way a fourth copy could appear: a formal default written as a
+  # literal vector rather than as the accessor call. Six signatures carry these
+  # two arguments (the scalar verb, its _batch sibling, and the shared
+  # pipeline, for each vocabulary); the count is asserted so a NEW signature
+  # taking one of these arguments cannot join without this test noticing.
+  fns <- namespace_functions()
+  for (v in vocabularies()) {
+    takers <- Filter(function(f) v$arg %in% names(formals(f)), fns)
+    expect_identical(length(takers), 3L, info = v$arg)
+    for (nm in names(takers)) {
+      default <- formals(takers[[nm]])[[v$arg]]
+      expect_identical(default, str2lang(paste0(v$accessor, "()")),
+                       info = paste(v$arg, nm))
+    }
+  }
 })
 
 # --- AC2: the shared vocabulary checker keeps arg_match()'s whole contract ---

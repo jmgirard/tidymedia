@@ -63,6 +63,10 @@
 #   value_guard_vacuous(before)          # both empty: every in-range cell
 #   value_guard_vacuous(after)           #   compiled on that ref
 #   value_guard_refusals(before, after)  # empty: the same calls are refused
+#   value_guard_message_regressions(before, after)   # empty: no cell reads
+#                                        #   worse without its blame moving
+#   value_guard_blame_regressions(after) # empty: no cell blames anything but
+#                                        #   the verb the user called
 #   value_guard_blame(before, after)     # the cells whose blame moved
 
 source(file.path("data-raw", "codec-guard-baseline.R"))
@@ -188,6 +192,21 @@ value_guard_cases <- function(s) {
                       output = c("a.mp4", "b.mp4"),
                       direction = c("vertical", "sideways"))))
 
+  # A MULTI-ELEMENT vocabulary argument, which is how a caller re-defaults one
+  # -- and the cell class this grid originally lacked. M59's review (F1/F2)
+  # found a blame-and-message regression reachable only here: the first fix
+  # delegated to rlang::arg_match0(), which takes a string, so its own length
+  # guard fired before the supplied `error_call` could be honoured. Every cell
+  # above passes a single string and could not have caught it. `informative`
+  # stays TRUE: unlike the single-string scalar cells, these must NOT change.
+  add(5L, "compare_videos_batch", "scalar", "direction=[sideways,up]", TRUE,
+      list(jobs = two(inputs = list(c(s, s)), output = "o.mp4"),
+           direction = c("sideways", "up")))
+  add(5L, "compare_videos_batch", "scalar", "direction=[vertical,horizontal]",
+      FALSE,
+      list(jobs = two(inputs = list(c(s, s)), output = "o.mp4"),
+           direction = c("vertical", "horizontal")))
+
   # -- site 6: position vocabulary -------------------------------------------
   # Same expected-identical scalar cells, for the same reason.
   for (p in c("center", "middleish")) {
@@ -207,6 +226,19 @@ value_guard_cases <- function(s) {
       list(jobs = two(main = c(s, s), overlay = c(s, s),
                       output = c("a.mp4", "b.mp4"),
                       position = c("center", "middleish"))))
+  # The `position` counterpart of the multi-element cells above. This is the
+  # exact cell F1 was measured on: two of five values, so the length guard the
+  # first fix tripped over fires here and not on `direction`, whose vocabulary
+  # happens to be two elements long.
+  add(6L, "picture_in_picture_batch", "scalar", "position=[center,topleft]",
+      TRUE,
+      list(jobs = two(main = s, overlay = s, output = "o.mp4"),
+           position = c("center", "topleft")))
+  add(6L, "picture_in_picture_batch", "scalar",
+      "position=[topleft,topright,bottomright,bottomleft,center]", FALSE,
+      list(jobs = two(main = s, overlay = s, output = "o.mp4"),
+           position = c("topleft", "topright", "bottomright", "bottomleft",
+                        "center")))
 
   cases
 }
@@ -323,6 +355,72 @@ value_guard_refusals <- function(before, after) {
              before_kind = b$kind, after_kind = after$kind,
              before = b$outcome, after = after$outcome,
              stringsAsFactors = FALSE)[which(changed), , drop = FALSE]
+}
+
+# The cells whose abort MESSAGE changed, split by whether their blame moved.
+#
+# This reader exists because the grid did not have one and a real regression
+# walked through the gap (M59 review F4). value_guard_refusals() above compares
+# only the OUTCOME KIND -- refused versus compiled -- so a cell that was refused
+# on both refs compares equal no matter how differently it reads, and
+# value_guard_blame() below sees only conditionCall(). A cell can therefore keep
+# its verdict, keep its blame frame, and still start telling the user something
+# worse; that is exactly what F2 was.
+#
+# The split is the whole point, because the two halves have OPPOSITE
+# expectations:
+#
+#   moved_blame = TRUE  -- expected to change. These are the cells the milestone
+#     set out to fix, and their `before` text carries purrr's
+#     "In index: N / Caused by error in ..." wrapper that the fix removes.
+#   moved_blame = FALSE -- must NOT change. A cell whose blame was already right
+#     has no reason for its wording to move; anything here is a regression in
+#     what the user reads, and is what F1/F2 would have surfaced on this grid.
+#
+# So the evidence is not "this result is empty" but "its FALSE half is empty",
+# which is what value_guard_message_regressions() returns.
+value_guard_messages <- function(before, after) {
+  b <- value_guard_pair(before, after)
+  both_abort <- b$kind == "abort" & after$kind == "abort"
+  both_abort[is.na(both_abort)] <- FALSE
+  changed <- both_abort & (b$outcome != after$outcome)
+  changed[is.na(changed)] <- FALSE
+  same_call <- (is.na(b$call) & is.na(after$call)) |
+    (!is.na(b$call) & !is.na(after$call) & b$call == after$call)
+  data.frame(site = after$site, verb = after$verb, form = after$form,
+             label = after$label, moved_blame = !same_call,
+             before = b$outcome, after = after$outcome,
+             stringsAsFactors = FALSE)[which(changed), , drop = FALSE]
+}
+
+# The half that must be empty: a cell that reads differently WITHOUT its blame
+# having moved. Empty is the evidence; a non-empty result names the calls whose
+# message regressed while every other query in this file stayed green.
+value_guard_message_regressions <- function(before, after) {
+  m <- value_guard_messages(before, after)
+  m[!m$moved_blame, , drop = FALSE]
+}
+
+# Blame that moved AWAY from the verb, rather than toward it.
+#
+# The companion hole to value_guard_message_regressions(), and the other half of
+# what let F1 through. value_guard_blame() below reports every cell whose blame
+# moved, and the milestone reads a long list there as success -- but "moved" and
+# "moved somewhere better" are different claims. F1's `position` cell moved its
+# blame FROM `picture_in_picture_batch` TO `rlang::arg_match0(...)`, so it would
+# have sat in that success list looking like progress.
+#
+# The invariant is absolute rather than comparative, which is why it needs no
+# `before`: after this milestone every aborting cell in this grid calls a
+# `_batch` verb directly, so the only name the user may be shown is that verb's.
+# Empty is the evidence.
+value_guard_blame_regressions <- function(after) {
+  bad <- after$kind == "abort" & !is.na(after$call) & after$call != after$verb
+  bad[is.na(bad)] <- FALSE
+  data.frame(site = after$site, verb = after$verb, form = after$form,
+             label = after$label, blamed = after$call,
+             message = after$outcome,
+             stringsAsFactors = FALSE)[which(bad), , drop = FALSE]
 }
 
 # The cells whose BLAME moved -- what the milestone set out to change. Expect

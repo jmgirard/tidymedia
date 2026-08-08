@@ -95,7 +95,9 @@ resolving to the same output path are rejected; other columns are ignored.</p></
 
 <dt id="arg-direction-resize">direction, resize<a class="anchor" aria-label="anchor" href="#arg-direction-resize"></a></dt>
 <dd><p>Defaults applied to every row lacking the
-corresponding column. See <code><a href="compare_videos.html">compare_videos()</a></code> for their meaning.</p></dd>
+corresponding column. <code>direction</code> is <code>"horizontal"</code> (the default)
+or <code>"vertical"</code>; a <code>direction</code> column is held to the same two
+values, per row. See <code><a href="compare_videos.html">compare_videos()</a></code> for their fuller meaning.</p></dd>
 
 
 <dt id="arg-audio">audio<a class="anchor" aria-label="anchor" href="#arg-audio"></a></dt>
@@ -128,7 +130,10 @@ runs, so an unavailable encoder aborts naming this function rather than
 the internal fan-out it would otherwise be reported against. A call that
 also contradicts itself — naming an <code>audio_codec</code> with no audio carried into the output —
 is refused for the contradiction first, whether or not this machine has
-the encoder.</p></dd>
+the encoder.
+A per-row value error — an <code>audio</code> index past that row's input count,
+a <code>direction</code> outside the two accepted values — likewise reports ahead
+of the encoder check.</p></dd>
 
 
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>

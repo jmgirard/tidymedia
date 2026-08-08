@@ -45,9 +45,12 @@ picture_in_picture_batch(
 
 - position, scale, margin:
 
-  Defaults applied to every row lacking the corresponding column. See
+  Defaults applied to every row lacking the corresponding column.
+  `position` is one of `"topright"` (the default), `"topleft"`,
+  `"bottomright"`, `"bottomleft"` or `"center"`; a `position` column is
+  held to those same five values, per row. See
   [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
-  for their meaning.
+  for their fuller meaning.
 
 - audio:
 
@@ -91,7 +94,9 @@ picture_in_picture_batch(
   it would otherwise be reported against. A call that also contradicts
   itself — naming an `audio_codec` with no audio carried into the output
   — is refused for the contradiction first, whether or not this machine
-  has the encoder.
+  has the encoder. A per-row value error — a negative `margin`, a
+  `position` outside the five accepted values — likewise reports ahead
+  of the encoder check.
 
 - run:
 

@@ -100,7 +100,10 @@ path are rejected; other columns are ignored.</p></dd>
 
 <dt id="arg-position-scale-margin">position, scale, margin<a class="anchor" aria-label="anchor" href="#arg-position-scale-margin"></a></dt>
 <dd><p>Defaults applied to every row lacking the
-corresponding column. See <code><a href="picture_in_picture.html">picture_in_picture()</a></code> for their meaning.</p></dd>
+corresponding column. <code>position</code> is one of <code>"topright"</code> (the
+default), <code>"topleft"</code>, <code>"bottomright"</code>, <code>"bottomleft"</code> or
+<code>"center"</code>; a <code>position</code> column is held to those same five
+values, per row. See <code><a href="picture_in_picture.html">picture_in_picture()</a></code> for their fuller meaning.</p></dd>
 
 
 <dt id="arg-audio">audio<a class="anchor" aria-label="anchor" href="#arg-audio"></a></dt>
@@ -133,7 +136,10 @@ runs, so an unavailable encoder aborts naming this function rather than
 the internal fan-out it would otherwise be reported against. A call that
 also contradicts itself — naming an <code>audio_codec</code> with no audio carried into the output —
 is refused for the contradiction first, whether or not this machine has
-the encoder.</p></dd>
+the encoder.
+A per-row value error — a negative <code>margin</code>, a <code>position</code>
+outside the five accepted values — likewise reports ahead of the encoder
+check.</p></dd>
 
 
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>

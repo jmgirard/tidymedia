@@ -45,9 +45,11 @@ compare_videos_batch(
 
 - direction, resize:
 
-  Defaults applied to every row lacking the corresponding column. See
+  Defaults applied to every row lacking the corresponding column.
+  `direction` is `"horizontal"` (the default) or `"vertical"`; a
+  `direction` column is held to the same two values, per row. See
   [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
-  for their meaning.
+  for their fuller meaning.
 
 - audio:
 
@@ -92,7 +94,9 @@ compare_videos_batch(
   it would otherwise be reported against. A call that also contradicts
   itself — naming an `audio_codec` with no audio carried into the output
   — is refused for the contradiction first, whether or not this machine
-  has the encoder.
+  has the encoder. A per-row value error — an `audio` index past that
+  row's input count, a `direction` outside the two accepted values —
+  likewise reports ahead of the encoder check.
 
 - run:
 

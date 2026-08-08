@@ -94,7 +94,10 @@ anonymize_video_batch(
   command is built, even under `run = FALSE`. Availability is checked at
   this verb's own front door, before any row runs, so an unavailable
   encoder aborts naming this function rather than the internal fan-out
-  it would otherwise be reported against.
+  it would otherwise be reported against. A call that is also wrong
+  about a per-row value — a `regions` table missing a required column,
+  say — is refused for the value first, whether or not this machine has
+  the encoder.
 
 - fallback:
 

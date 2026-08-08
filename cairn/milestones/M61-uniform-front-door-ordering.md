@@ -1,6 +1,6 @@
 # M61: A value error and a contradiction resolve the same way in both forms
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M59
 - **Driving RR:** —

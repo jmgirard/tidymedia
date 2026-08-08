@@ -46,7 +46,7 @@ pipeline; any change to which calls are refused.
 
 ## Acceptance criteria
 
-- [ ] AC1 — For each of the four values in Scope In, in each of its argument and
+- [x] AC1 — For each of the four values in Scope In, in each of its argument and
       `jobs`-column forms, a call also violating a contradiction that verb
       carries reports the contradiction. No cell is recorded nonexistent. Where
       a pairing is reachable only at a particular value, the cell is asserted at
@@ -74,7 +74,7 @@ pipeline; any change to which calls are refused.
       form reports the value check are inverted. A residue grep over `R/`, `man/`, `NEWS.md` and `tests/` for the
       exception's wording returns nothing. `cairn/` is excluded by design — its
       archive keeps the historical record (IP4).
-- [ ] AC6 — Both `_batch` verbs' `@param hardware` blocks and the NEWS entry
+- [x] AC6 — Both `_batch` verbs' `@param hardware` blocks and the NEWS entry
       state exactly: "A value error and a contradiction resolve the same way
       whether the value arrived as an argument or in a `jobs` column; the
       contradiction reports first." Each of that sentence's two quantified terms
@@ -255,3 +255,15 @@ Three fresh-context reviewers, distinct evidence bases. The **[S] blame-history*
 AC1 states as fact that pip's `audio` against its only contradiction "cannot co-occur" in the argument form, "since a non-NULL `audio` removes that contradiction". F4 measures that false. The criterion instructs recording a cell nonexistent that is now known to exist, so no amount of work satisfies it as written — the criterion is wrong, not the work. That routes to the gated criterion-amendment protocol (`/milestone-implement` step 6) and re-review, per the amendment-return rule.
 
 AC1 and AC6 are unticked: AC1 because its own text is what is wrong, AC6 because its enumeration test encodes the same carve-out and its evidence is therefore contaminated. AC2, AC3, AC4, AC5 and AC7 keep their evidence and their ticks. This is M61's first return, and an amendment return, which counts on its own track and not toward the defect-return count.
+
+### Second round (after the amendment return), 2026-08-08
+
+Re-verified against `origin/master` @ `1d54b20`. `R/ffmpeg.R` is unchanged since the first round, so the runtime change keeps that round's clearance; the delta is the grid, the suite and the prose records.
+
+- **AC1** (re-verified, was unticked) — the grid records **zero** crossed cells as nonexistent. The one nonexistent cell left is M59's site-3 `regions` argument on `anonymize_video_batch()`, which carries `crossed = "none"` and is not a cell of this criterion — AC1 quantifies over the four values in Scope In, and `regions` is not one of them. All 16 non-control contradiction cells report the contradiction, the pip `audio`/argument cell among them: it reads `value` on master and `contradiction` on the branch, asserted at `audio = NA` with `audio = NULL` as its control. The suite pins the reachability condition itself in its own test — `NA` reaches the contradiction, an out-of-range index does not (it carries audio), an in-range index compiles.
+- **AC2** (re-verified after widening) — 118 cells, 80 crossed, run against both refs. `value_guard_missing_call()` and `value_guard_dead_controls()` both 0 rows. Eleven cells change which error they report, and NEWS states all eleven in three groups: the six `_batch` scalar-argument cells crossed with a contradiction, the two pip `audio` column cells crossed with the availability and `run` guards, and the three scalar-verb cells. The `audio = NA` cells are called out separately in NEWS because that value behaves opposite to the rest of its own guard.
+- **AC3** (re-verified after widening) — `value_guard_refusals()` 0 rows, `value_guard_vacuous()` 0 rows on both refs, `value_guard_message_regressions()` 0, `value_guard_blame_regressions()` 0.
+- **AC6** (re-verified, was unticked) — the sentence still appears exactly once in each of the two Rd topics and in NEWS. The enumeration test now requires both forms for every `_batch` (verb, value) pair including pip's `audio`, and the argument form alone for the two scalar verbs, which take no `jobs` table. The carve-out it previously asserted as a measured impossibility is gone.
+- **AC4, AC5, AC7** — re-run, unchanged: `devtools::test()` 0 failures / 4620 passing (was 4586), `devtools::check()` 0 errors / 0 warnings / 0 notes, `document()` no diff, residue grep still returns nothing.
+
+Consistency gate re-run: `cairn_validate` exit 0, `pkgdown::check_pkgdown()` "No problems found".

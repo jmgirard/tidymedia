@@ -82,25 +82,19 @@ milestone moves where a check reports, never what is checked.
       decision entry records whether the front door calls `check_dim()` directly
       or threads `call` through `ffm_crop()`, names the alternative rejected,
       and states the evidence class that would falsify the choice.
-- [ ] AC5 — Precedence is pinned, and the value-check ordering is this
-      milestone's own call, not one M58 makes:
-      (a) on the two verbs carrying both an M58 contradiction and a value check
-      (`compare_videos_batch`, `picture_in_picture_batch`), a call whose value
-      violation arrives in a `jobs` column reports the contradiction. The
-      scalar-argument form is outside this milestone's reach and reports the
-      value check, as it did before it — those verbs' scalar guards sit above
-      M58's contradiction sweep on merged master and are not moved here — so the
-      two forms disagree, which is stated rather than fixed, carries a ROADMAP
-      candidate row, and is stated on the affected help pages;
-      (b) on all four verbs, a call invalid in its value check and in nvenc
+- [ ] AC5 — Precedence is pinned for the two orderings this milestone owns:
+      (a) on all four verbs, a call invalid in its value check and in nvenc
       availability reports the value check, driven machine-independently through
       the `tidymedia.nvenc_encoders` option seam;
-      (c) on all four verbs, a call invalid in its value check and in an
+      (b) on all four verbs, a call invalid in its value check and in an
       argument `ffm_batch()` alone guards reports the value check — tested on
       `run`, with NEWS naming the displaced set (`run`, `parallel`, `progress`,
       `manifest`, `checksums`, `verify`) read off `R/ffm_batch.R:84-98`. The
       `jobs`-shape guards at `:75-80` are excluded and stated as excluded: all
       four verbs pre-empt them, so they are never displaced.
+      The contradiction-versus-value ordering is **not** this milestone's to
+      claim — re-cut out on 2026-08-07 after failing twice as an overbroad
+      statement about the argument form, and owned by M61.
 - [x] AC6 — The r-package profile's verify slot is clean: `devtools::document()`
       produces no diff, `devtools::test()` passes, and `devtools::check()`
       reports 0 errors and 0 warnings.
@@ -138,6 +132,9 @@ milestone moves where a check reports, never what is checked.
 
 - [x] T10 — Close review's evidence gaps: F10/F11 (guard runs under `R CMD
       check`, formatting-independent), F4 (grid compares message and blame), F12.
+- [ ] T11 — Re-cut close-out: delete the contradiction-versus-value sentence
+      from both `@param hardware` blocks (the true encoder-ordering clause
+      stays), and correct the accessor block's stale rationale comment.
 ## Work log
 
 - 2026-08-07: created by /milestone-plan.
@@ -187,6 +184,7 @@ milestone moves where a check reports, never what is checked.
 - 2026-08-07: logged review finding F-A (72) actioned at the user's direction rather than left logged: **D038** records in `DECISIONS.md` the exception M59 had documented in AC5, NEWS, two help pages and a ROADMAP row but not in the one file a later contributor must read. It narrows D036 to the swept form, states the scalar-argument form as a disclosed gap, notes the ordering predates both M58 and M59, and says D036's own machine-independence reasoning argues the gap should close rather than defending it. The ROADMAP candidate row now cites D038.
 - 2026-08-07: third review pass returned the milestone to `in-progress` and STOPPED the retry loop. Floor return on P1 (90, user-facing): the N1 fix's replacement wording is false for `audio` on `compare_videos_batch`, whose per-row upper bound sits below the contradiction sweep — measured, `compare_videos_batch(jobs_with_3_inputs, audio = 5)` reports the `resize` contradiction. P2 (85) falsifies AC5(a) as compressed, the enumeration having been dropped for the line cap. P3 (85) actioned alongside. Seven logged. Thrash trigger (a) fires (third defect return: F1, N1, P1) and trigger (b) fires (AC5(a) failed twice, both as an overbroad claim about the scalar form); AC5 would be a second amendment return, which stops. Disposition to the user: re-cut via `/milestone-plan`, or take the alternative the amendment gate recorded against — move the scalar guards below the contradiction sweep so both forms agree and the sentence being got wrong stops existing.
 - 2026-08-07: disposition at the thrash stop — the user chose to make the four front-door guards uniform on `compare_videos_batch` and `picture_in_picture_batch`, i.e. the alternative the AC5 amendment gate recorded against: move each verb's scalar `direction`/`position`/`margin` guard, and `compare_videos_batch`'s per-row `audio` upper bound, so all four sit on the same side of the M58 contradiction sweep and both the argument and column forms answer alike. That removes the irregularity three successive wordings failed to describe, lets AC5(a) collapse to one clause, and makes D038's recorded exception retirable. Per thrash trigger (a) this is NOT queued as a fourth fix round under the current plan; it routes to `/milestone-plan`, which owns the cut between what M59 still ships and what the uniformity change becomes.
+- 2026-08-07: **re-cut by /milestone-plan** at the thrash stop, per trigger (a)'s remedy. AC5(a) — the contradiction-versus-value ordering — is removed from this milestone entirely and owned by M61, having failed twice as an overbroad claim about the argument form (F5, then P2 after the cap compression widened it). AC5's surviving (b) and (c) renumber to (a) and (b); both were verified clean in the second and third passes. T11 added: delete the sentence rather than attempt a fourth wording of it, and fix the accessor comment P3 named. The six value checks, their blame, their equivalence grid and their mutation verification — this milestone's actual Goal — are unchanged and were verified clean in all three passes.
 
 ## Decisions
 

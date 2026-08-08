@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-07 (M59 amended and retitled four → six. The M58-
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M59 | Six per-row value checks are refused at the fan-out verb's front door | planned | M58 | normal | milestones/M59-fanout-value-checks-front-door.md |
+| M59 | Six per-row value checks are refused at the fan-out verb's front door | in-progress | M58 | normal | milestones/M59-fanout-value-checks-front-door.md |
 | M60 | The repo's line endings are normalized once and enforced mechanically | planned | — | normal | milestones/M60-line-ending-normalization.md |
 | M58 | Six argument contradictions are refused at the fan-out verb's front door | done | M57 | normal | milestones/archive/M58-fanout-contradiction-front-door.md |
 | M54 | Correct the `run = FALSE` purity claim for the nvenc encoder probe | done | — | normal | milestones/archive/M54-nvenc-dry-run-purity.md |

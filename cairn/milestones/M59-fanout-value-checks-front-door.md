@@ -1,11 +1,11 @@
 # M59: Six per-row value checks are refused at the fan-out verb's front door
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M58
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m59-fanout-value-checks-front-door`
 
 ## Goal
 
@@ -155,6 +155,8 @@ milestone moves where a check reports, never what is checked.
 - 2026-08-07 (amendment): the amended criteria went to a second [O] fresh-context reader, which returned findings on AC1 (the `parallel = TRUE` path leaks `furrr::future_pmap`, which the forbidden-substring list missed), AC2 (two: "exactly one place" quantified over a domain no named procedure enumerates, and a cross-product IP1 clause), AC3 (site 3 has no scalar-argument form, making that cell unsatisfiable), AC4 (`ffm_crop()` authors no abort to re-aim), AC5 (two: three of four nvenc line numbers wrong, and the zero-row `jobs` test describes an unreachable state under D036's row-by-row shape). AC5(a) and AC6 returned clean. It also found four stale line numbers in the inherited Scope and a false gloss of IP1. All fixed before commit.
 - 2026-08-07 (amendment): **the inherited IP1 framing was a misreading and is withdrawn.** `cairn/DESIGN.md:62-64` scopes IP1 to command assembly and says nothing about validation; Layer 2 front doors validate throughout under D035/D036. The plan gate chose to drop the framing — `Principles touched` IP1 → `—`, AC4 rewritten as the narrow question of where the front door's `call` comes from, AC2's cross-product IP1 clause struck — over amending DESIGN.md to extend IP1 to validation, which would retroactively govern D035, D036 and every existing Layer-2 check and so needs its own milestone. Falsified by a reviewer reading IP1's "thin wrappers" clause as implying validation locality, which would reinstate the exception question. Promoted to **D037** on 2026-08-07 at the user's direction, the misreading having survived a plan, a criteria-audit line and a routing decision before a fresh-context reader caught it; the Scope paragraph now cites D037 rather than re-arguing it.
 - 2026-08-07 (amendment): corrected four stale citations inherited from the original plan — site 2's `margin` re-check is `R/ffmpeg.R:6085` not `:5905`; site 4's `audio` index check is `:5905` not `:5744` (roxygen); site 1's abort is authored in `check_dim()` (`R/utils.R:115`), not in `ffm_crop()`; and AC5(b)'s nvenc guards are `:1926`, `:4930`, `:5894`, `:6074`, of which the original plan had one right.
+
+- 2026-08-07: implement started on branch `m59-fanout-value-checks-front-door`.
 
 ## Decisions
 

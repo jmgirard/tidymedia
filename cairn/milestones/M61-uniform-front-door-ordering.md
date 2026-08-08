@@ -109,7 +109,7 @@ pipeline; any change to which calls are refused.
       plus the message-text and `call`-presence readers.
 - [x] T6 — Tests: AC1's cells with their nonexistent pair recorded, AC3's nvenc
       invariant, AC4; invert M59's argument-form tests.
-- [ ] T7 — D-entry superseding D038; roxygen and NEWS; AC6's sentence cells;
+- [x] T7 — D-entry superseding D038; roxygen and NEWS; AC6's sentence cells;
       the residue grep; run the verify slot clean.
 
 ## Work log
@@ -130,6 +130,9 @@ pipeline; any change to which calls are refused.
 - 2026-08-08: T6 — the "invert M59's argument-form tests" clause found NOTHING to invert: no M59 test asserts the argument form reports the value check ahead of a contradiction. Measured, not assumed — the full suite passed unchanged after T2-T4 moved every one of the four guards. M59's AC5(a)/AC5(b) tests order the value check against nvenc and against `ffm_batch()`'s `run` guard, both invariants this milestone preserves, and its column-form ordering test is unaffected. The clause is recorded as vacuous rather than quietly dropped.
 - 2026-08-08: T6 — `blamed_verb()` / `catch_call()` lifted into `tests/testthat/helper-blame.R`; the identical copies in `test-contradiction-front-door.R` and `test-value-check-front-door.R` are deleted rather than a third being written (the M40 trap).
 - 2026-08-08: T6 — the new tests verified red on the pre-milestone ref: the four scalar cells report the value on `origin/master` (grid), and pip's `audio` column there aborts with `purrr::pmap`, `In index: 1` and `aud` in the message, which is exactly what AC4 forbids.
+- 2026-08-08: T7 — D039 appended, superseding D038 and restoring D036 unconditionally. Both `_batch` verbs' `@param hardware` blocks and the NEWS entry now carry the pinned sentence; NEWS's known-gap paragraph is rewritten in place (the whole entry is unreleased) and a second paragraph records pip's new front-door `audio` check and the two errors that now report after it. `test-front-door-ordering.R` gains the AC6 tests: the sentence in both Rd topics and in NEWS, matched on markup-normalized text, and an enumeration test keyed on (verb, value) asserting each pair's forms — including that pip's `audio` has the column form only, which is the cell measured not to exist.
+- 2026-08-08: T7 — residue grep over `R/`, `man/`, `NEWS.md`, `tests/` and `data-raw/` for the exception's wording returns nothing.
+- 2026-08-08: T7 — verify slot clean: `devtools::document()` writes only the two intended Rd files, `devtools::test()` 0 failures / 4586 passing (4 warnings, 5 skips, both unchanged from the branch base), `devtools::check()` 0 errors / 0 warnings / 0 notes.
 
 ## Decisions
 

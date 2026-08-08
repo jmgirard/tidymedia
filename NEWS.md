@@ -420,13 +420,23 @@
   own shape is not in that list: all four verbs check it themselves before
   reaching `ffm_batch()`, so nothing displaces it.)
 
-  One caveat on ordering, on `compare_videos_batch()` and
-  `picture_in_picture_batch()`. When a call is wrong in **both** a per-row value
-  and one of the contradictions above, which error you are shown depends on how
-  the value was supplied. Supplied in a `jobs` **column**, the contradiction is
-  reported. Supplied as an **argument**, it varies — by which value it is, and
-  for `audio` even by which bound was crossed. That unevenness is a known gap
-  rather than a design, and a later release makes the two forms agree.
+  On `compare_videos_batch()` and `picture_in_picture_batch()`, a call can be
+  wrong in **both** a per-row value and one of the contradictions above. A value
+  error and a contradiction resolve the same way whether the value arrived as an
+  argument or in a `jobs` column; the contradiction reports first. Four checks
+  moved to make that true — `direction`, `position`, `margin`, and the `audio`
+  index — so a call passing one of these as an **argument** alongside a
+  contradiction is now told about the contradiction, where it used to be told
+  about the value. If you match on the text of an error from such a call, that
+  is the message that changed.
+
+  `picture_in_picture_batch()` gains a front-door check on its `audio` index as
+  part of this. An out-of-range index in a `jobs` `audio` column was previously
+  caught only while a row's command was being built, so it was reported against
+  `purrr::pmap()` and named an internal variable (`aud`); it now aborts naming
+  the verb you called, before any row runs. Two errors that used to report ahead
+  of it — an unavailable nvenc encoder, and `ffm_batch()`'s own argument checks
+  — now report after it, matching the other value checks above.
 
   Two smaller corrections come with this. `compare_videos_batch()`'s
   out-of-range `audio` message named an internal variable (`aud`) rather than

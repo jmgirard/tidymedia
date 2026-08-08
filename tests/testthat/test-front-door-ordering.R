@@ -295,3 +295,78 @@ test_that("a clean `audio` column still compiles every row", {
   expect_identical(nrow(out), 2L)
   expect_true(all(nzchar(out$command)))
 })
+
+# --- AC6: the sentence the docs and the changelog pin -------------------------
+
+# The claim these verbs make to the user, in one wording, in three places. It is
+# pinned rather than paraphrased because it is quantified twice -- over the four
+# values and over the two forms -- and a rewrite that widens either quantifier
+# would claim behavior no cell measures. The enumeration test below is what
+# stops the sentence outrunning the evidence.
+ordering_sentence <- paste(
+  "A value error and a contradiction resolve the same way whether the value",
+  "arrived as an argument or in a jobs column; the contradiction reports first."
+)
+
+# Both sources wrap the sentence across lines and mark up `jobs` differently --
+# \code{jobs} in the Rd, `jobs` in the changelog -- so the comparison is made on
+# normalized text. Markup, not wording, is what is normalized away: a changed
+# word still fails.
+normalize_prose <- function(txt) {
+  txt <- gsub("\\\\code\\{([^}]*)\\}", "\\1", txt)
+  txt <- gsub("`", "", txt, fixed = TRUE)
+  txt <- gsub("[[:space:]]+", " ", txt)
+  txt
+}
+
+ordering_topics <- c("compare_videos_batch", "picture_in_picture_batch")
+
+test_that("both `_batch` verbs' help states the ordering sentence", {
+  rd <- rd_sources()
+  skip_if(is.null(rd), "no Rd source available")
+  carrying <- sub("\\.Rd$", "", names(rd)[
+    grepl(ordering_sentence, normalize_prose(rd), fixed = TRUE)])
+  # Both directions at once: every topic that should carry it does, and no
+  # other topic claims it. A verb whose front door was never reordered must not
+  # tell its user that it was.
+  expect_identical(sort(carrying), sort(ordering_topics))
+})
+
+test_that("the changelog states the ordering sentence", {
+  news <- if (file.exists("../../NEWS.md")) "../../NEWS.md" else
+    system.file("NEWS.md", package = "tidymedia")
+  skip_if(!nzchar(news) || !file.exists(news), "no NEWS.md available")
+  txt <- normalize_prose(paste(readLines(news, warn = FALSE), collapse = "\n"))
+  expect_match(txt, ordering_sentence, fixed = TRUE)
+})
+
+test_that("each term the sentence quantifies over has a cell", {
+  # The sentence says "a value error" and "either form". This is the test that
+  # keeps those two quantifiers honest: every (verb, value) pair must have an
+  # ordering case in each form it can reach -- so widening the sentence later
+  # without widening the evidence fails here rather than at a reader.
+  ids <- vapply(ordering_cases(make_input()), function(case) {
+    paste(case$verb, case$id)
+  }, character(1))
+  # "compare_videos_batch audio-low/argument" -> verb + value + form, with the
+  # bound suffix dropped: both bounds of one value are the same term.
+  key <- sub("-(low|high)", "", sub("/.*$", "", ids))
+  form <- sub("^.*/", "", ids)
+  present <- lapply(split(form, key), function(x) sort(unique(x)))
+
+  expect_setequal(names(present), c(
+    "compare_videos_batch direction", "compare_videos_batch audio",
+    "picture_in_picture_batch position", "picture_in_picture_batch margin",
+    "picture_in_picture_batch audio"
+  ))
+  both <- c("argument", "column")
+  expect_identical(present[["compare_videos_batch direction"]], both)
+  expect_identical(present[["compare_videos_batch audio"]], both)
+  expect_identical(present[["picture_in_picture_batch position"]], both)
+  expect_identical(present[["picture_in_picture_batch margin"]], both)
+  # The one pair with a single form, and it is asserted as one rather than
+  # tolerated: pip's `audio` ARGUMENT has no contradiction to be ordered
+  # against, because supplying the argument is what removes it. The test above
+  # covers that cell by measuring why it cannot exist.
+  expect_identical(present[["picture_in_picture_batch audio"]], "column")
+})

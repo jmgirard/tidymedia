@@ -5924,6 +5924,9 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #'   A per-row value error — an \code{audio} index past that row's input count,
 #'   a \code{direction} outside the two accepted values — likewise reports ahead
 #'   of the encoder check.
+#'   A value error and a contradiction resolve the same way whether the value
+#'   arrived as an argument or in a \code{jobs} column; the contradiction
+#'   reports first.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -6121,9 +6124,12 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #'   also contradicts itself — naming an \code{audio_codec} with no audio carried into the output —
 #'   is refused for the contradiction first, whether or not this machine has
 #'   the encoder.
-#'   A per-row value error — a negative \code{margin}, a \code{position}
-#'   outside the five accepted values — likewise reports ahead of the encoder
-#'   check.
+#'   A per-row value error — a negative \code{margin}, an \code{audio} index
+#'   outside the two inputs, a \code{position} outside the five accepted values
+#'   — likewise reports ahead of the encoder check.
+#'   A value error and a contradiction resolve the same way whether the value
+#'   arrived as an argument or in a \code{jobs} column; the contradiction
+#'   reports first.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}

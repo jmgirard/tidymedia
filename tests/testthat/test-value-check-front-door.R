@@ -19,19 +19,9 @@
 # is held EMPTY wherever a call is expected to abort, so a message mentioning
 # availability is a failure rather than a coincidence.
 
-blamed_verb <- function(cnd) {
-  cl <- conditionCall(cnd)
-  if (is.null(cl)) return(NA_character_)
-  paste(deparse(cl[[1]]), collapse = "")
-}
-
-catch_call <- function(verb, args) {
-  if (is.null(args$run)) args$run <- FALSE
-  tryCatch(
-    do.call(verb, args, envir = asNamespace("tidymedia")),
-    error = function(e) e
-  )
-}
+# blamed_verb() and catch_call() come from helper-blame.R, which holds the one
+# definition this suite, test-contradiction-front-door.R and
+# test-front-door-ordering.R all read (M61 lifted the duplicated pair out).
 
 # --- AC1: one blame test per (site, verb) pair, at both `parallel` settings ---
 #

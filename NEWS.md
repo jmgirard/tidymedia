@@ -420,13 +420,47 @@
   own shape is not in that list: all four verbs check it themselves before
   reaching `ffm_batch()`, so nothing displaces it.)
 
-  One caveat on ordering, on `compare_videos_batch()` and
-  `picture_in_picture_batch()`. When a call is wrong in **both** a per-row value
-  and one of the contradictions above, which error you are shown depends on how
-  the value was supplied. Supplied in a `jobs` **column**, the contradiction is
-  reported. Supplied as an **argument**, it varies — by which value it is, and
-  for `audio` even by which bound was crossed. That unevenness is a known gap
-  rather than a design, and a later release makes the two forms agree.
+  On `compare_videos_batch()` and `picture_in_picture_batch()`, a call can be
+  wrong in **both** a per-row value and one of the contradictions above. A value
+  error and a contradiction resolve the same way whether the value arrived as an
+  argument or in a `jobs` column; the contradiction reports first. Four checks
+  moved to make that true — `direction`, `position`, `margin`, and the `audio`
+  index — so a call passing one of these as an **argument** alongside a
+  contradiction is now told about the contradiction, where it used to be told
+  about the value. If you match on the text of an error from such a call, that
+  is the message that changed.
+
+  Two consequences worth knowing if you match on error text. First, these four
+  checks now also report **after** every argument check that runs before them,
+  not only after the contradiction: a call wrong in both one of these values and
+  in a malformed `video_codec` or `audio_codec` token, an unrecognized
+  `hardware`, a `resize` that is not `TRUE` or `FALSE`
+  (`compare_videos_batch()` only), a non-numeric `scale`
+  (`picture_in_picture_batch()` only), or a `jobs` table of the wrong shape is
+  now told about that other check. Second, the same reordering reaches the
+  single-call `compare_videos()` and `picture_in_picture()`, which check
+  `direction` and `position` inside the pipeline they share with the batch
+  verbs — so `compare_videos(files, out, direction = "sideways", audio_codec =
+  "aac")` now reports the `audio_codec` contradiction too. Exactly the same
+  calls are refused as before in every case; only which error you are shown
+  moves.
+
+  `picture_in_picture_batch()` gains a front-door check on its `audio` index as
+  part of this. An out-of-range index in a `jobs` `audio` column was previously
+  caught only while a row's command was being built, so it was reported against
+  `purrr::pmap()` and named an internal variable (`aud`); it now aborts naming
+  the verb you called, before any row runs. Two errors that used to report ahead
+  of it — an unavailable nvenc encoder, and `ffm_batch()`'s own argument checks
+  — now report after it, matching the other value checks above.
+
+  One class of `audio` value behaves differently from the rest, on both verbs.
+  Passing `audio = NA` (or `NaN`) asks to drop the audio, so these are the
+  `audio` arguments that *create* the "`audio_codec` needs an audio stream to
+  encode" contradiction rather than removing it — `picture_in_picture_batch(jobs,
+  audio = NA, audio_codec = "aac")` now reports that contradiction where it used
+  to report the `audio` value. An index carries audio, so it never creates that
+  contradiction: out of range it reports the `audio` value, and in range the
+  call compiles.
 
   Two smaller corrections come with this. `compare_videos_batch()`'s
   out-of-range `audio` message named an internal variable (`aud`) rather than

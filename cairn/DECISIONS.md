@@ -1702,10 +1702,12 @@ the site whose single-wording property is the thing being protected.
 
 **What this does not license.** Reading anything *about* an input but whether
 it can be opened — its size, its container, its streams — is unchanged and
-stays under D013/D034. A directory passes both the old predicate and the new
-one (measured 2026-08-08), so nothing here starts refusing one; whether a
-directory in an input slot should be refused is a separate question this entry
-does not answer.
+stays under D013/D034. A *readable* directory passes both the old predicate and
+the new one (measured 2026-08-08), so nothing here starts refusing one; an
+unreadable directory is refused, as any unreadable path now is, and its fate is
+unchanged for the same reason every unreadable path's is — `ffm_files()` applied
+this predicate already. Whether a directory in an input slot should be refused
+*as a directory* is a separate question this entry does not answer.
 
 - **Falsified by** a report of a call the front door refuses and the pipeline
   would have accepted, or the reverse — which under one predicate can only mean

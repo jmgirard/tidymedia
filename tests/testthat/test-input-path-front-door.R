@@ -211,20 +211,26 @@ test_that("a factor path column keeps the abort attributed", {
 # M63 -- the front door and the pipeline refuse the same paths, and the wording
 # no longer asserts absence of a file that is there.
 
-# The corpus: the four cases the two predicates can be told apart on. A
-# directory is in it because file.exists() and file.access(mode = 4) BOTH
-# accept one (measured 2026-08-08), so it is the case where agreement means
-# accepting rather than refusing -- a property test that only ever compared
-# refusals could not see a guard that started refusing directories.
+# The corpus. A readable directory is in it because file.exists() and
+# file.access(mode = 4) BOTH accept one (measured 2026-08-08), so it is the case
+# where agreement means accepting rather than refusing -- a property test that
+# only ever compared refusals could not see a guard that started refusing
+# directories. An UNREADABLE directory is the case that splits them, and it is
+# here because the readable one alone would have left the claim "a directory
+# passes both predicates" reading as true of directories generally (M63 review).
 tm_path_corpus <- function(dir) {
   present <- file.path(dir, "m63-present.mp4")
   file.create(present)
   subdir <- file.path(dir, "m63-subdir")
   dir.create(subdir)
+  shut <- file.path(dir, "m63-shut-dir")
+  dir.create(shut)
+  Sys.chmod(shut, "000")
   list(present = present,
        absent = file.path(dir, "m63-absent.mp4"),
        unreadable = tm_unreadable_path(dir),
-       directory = subdir)
+       directory = subdir,
+       unreadable_directory = if (file.access(shut, mode = 4) != 0) shut)
 }
 
 # Did this call refuse the INPUT, as opposed to compiling or tripping on
@@ -239,9 +245,9 @@ tm_refused_input <- function(expr) {
 test_that("the front door and ffm_files() refuse the same set of paths", {
   dir <- withr::local_tempdir()
   corpus <- tm_path_corpus(dir)
-  skip_if(is.null(corpus$unreadable),
-          "this platform will not make an unreadable file")
+  tm_require_unreadable(corpus$unreadable)
   out <- file.path(dir, "m63-out.mp4")
+  corpus <- corpus[!vapply(corpus, is.null, logical(1))]
   for (case in names(corpus)) {
     p <- corpus[[case]]
     door <- tm_refused_input(check_paths_readable(p, arg = "infile"))
@@ -257,13 +263,19 @@ test_that("the front door and ffm_files() refuse the same set of paths", {
   expect_identical(refused[["absent"]], TRUE)
   expect_identical(refused[["unreadable"]], TRUE)
   expect_identical(refused[["present"]], FALSE)
+  # A readable directory is accepted and an unreadable one is refused, which is
+  # the predicate applied to a directory rather than a policy about directories:
+  # whether an input slot should take one at all is open (M63's D-entry).
   expect_identical(refused[["directory"]], FALSE)
+  if (!is.null(corpus$unreadable_directory)) {
+    expect_identical(refused[["unreadable_directory"]], TRUE)
+  }
 })
 
 test_that("the message does not assert absence of a file that is there", {
   dir <- withr::local_tempdir()
   p <- tm_unreadable_path(dir)
-  skip_if(is.null(p), "this platform will not make an unreadable file")
+  tm_require_unreadable(p)
   msg <- conditionMessage(rlang::catch_cnd(
     check_paths_readable(p, arg = "infile")))
   expect_false(grepl("not exist", msg, fixed = TRUE))
@@ -283,7 +295,7 @@ test_that("every verb refuses an unreadable input at its own front door", {
   # one does.
   dir <- withr::local_tempdir()
   p <- tm_unreadable_path(dir)
-  skip_if(is.null(p), "this platform will not make an unreadable file")
+  tm_require_unreadable(p)
   verbs <- input_guard_verbs()
   specs <- input_guard_specs()
   for (verb in c(verbs$fanout, verbs$scalar)) {

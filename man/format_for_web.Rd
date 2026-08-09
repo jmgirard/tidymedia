@@ -22,8 +22,10 @@ format_for_web(
 libx264) or \code{"nvenc"} for NVIDIA GPU H.264 encoding
 (\code{"h264_nvenc"}) when available. See \code{\link{has_nvenc}}.
 Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-a \code{"nvenc"} call that re-encodes the video runs the binary while the
-command is built, even under \code{run = FALSE}.}
+the first \code{"nvenc"} call that re-encodes the video runs the binary
+while the command is built, even under \code{run = FALSE}. The answer is
+remembered for the rest of the R session; see
+\code{\link{refresh_ffmpeg_capabilities}} to discard it.}
 
 \item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
 unavailable, re-encode with software libx264 and a message (\code{TRUE})

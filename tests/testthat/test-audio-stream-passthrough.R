@@ -218,13 +218,18 @@ test_that("hardware = 'nvenc' probes FFmpeg while building, though run = FALSE",
   anonymize_video(f, "out.mp4", regions = regions_1(), run = FALSE)
   expect_identical(probes, 0L)
   # nvenc: the probe runs during construction, with run = FALSE throughout.
+  # M67 made the answer session-scoped, so each measured call discards the memo
+  # first: without that, calls 2 and 3 would read the first call's answer and
+  # the test would measure the memo instead of D034's construction-time probe.
   standardize_video(f, "out.mp4", hardware = "nvenc", run = FALSE)
   expect_gt(probes, 0L)
   before <- probes
+  forget_ffmpeg_capabilities()
   anonymize_video(f, "out.mp4", regions = regions_1(), hardware = "nvenc",
                   run = FALSE)
   expect_gt(probes, before)
   before <- probes
+  forget_ffmpeg_capabilities()
   standardize_video_batch(std_jobs(f), hardware = "nvenc", run = FALSE)
   expect_gt(probes, before)
 })

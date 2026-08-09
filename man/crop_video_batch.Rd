@@ -57,8 +57,10 @@ leave the codec unset so each output keeps its container's default encoder.}
 applied to the whole batch (a property of the machine, not of a row, so
 neither is read as a \code{jobs} column). See \code{\link[=crop_video]{crop_video()}}.
 Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-a \code{"nvenc"} call that re-encodes the video runs the binary while the
-command is built, even under \code{run = FALSE}.
+the first \code{"nvenc"} call that re-encodes the video runs the binary
+while the command is built, even under \code{run = FALSE}. The answer is
+remembered for the rest of the R session; see
+\code{\link{refresh_ffmpeg_capabilities}} to discard it.
 Availability is checked at this verb's own front door, before any row
 runs, so an unavailable encoder aborts naming this function rather than
 the internal fan-out it would otherwise be reported against.

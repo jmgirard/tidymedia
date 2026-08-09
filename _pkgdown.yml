@@ -114,6 +114,7 @@ reference:
   - ffmpeg_encoders
   - nvenc_encoder
   - has_nvenc
+  - refresh_ffmpeg_capabilities
 - title: "Program management"
   desc: >
     Locate, configure, and install the FFmpeg and MediaInfo binaries.

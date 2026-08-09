@@ -29,6 +29,30 @@ test_that("every topic documenting `hardware` states that nvenc probes FFmpeg", 
   expect_identical(missing, character())
 })
 
+# M67 extended the sentence: the probe now happens once per session, and the
+# discard call is how a caller escapes a stale answer. Asserted on the same
+# enumerated topic set, so the new half cannot go stale on fifteen of sixteen.
+memo_sentence <- "remembered for the rest of the R session"
+
+test_that("every topic documenting `hardware` states the answer is remembered", {
+  rd <- rd_sources()
+  skip_if(is.null(rd), "no Rd source available")
+  topics <- topics_documenting(rd, "hardware")
+  expect_gte(length(topics), 16L)
+
+  missing <- names(topics)[!grepl(memo_sentence, topics, fixed = TRUE)]
+  expect_identical(missing, character())
+})
+
+test_that("every topic documenting `hardware` points at the discard call", {
+  rd <- rd_sources()
+  skip_if(is.null(rd), "no Rd source available")
+  topics <- topics_documenting(rd, "hardware")
+  missing <- names(topics)[!grepl("refresh_ffmpeg_capabilities", topics,
+                                  fixed = TRUE)]
+  expect_identical(missing, character())
+})
+
 test_that("the nvenc probe sentence is not claimed where `hardware` is absent", {
   # Keeps the guard honest in the other direction: if the sentence were pasted
   # package-wide, the test above would pass while saying nothing. Every topic

@@ -1,11 +1,11 @@
 # M67: The encoder probe answers once per session, not once per row
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP1
-- **Branch/PR:** —
+- **Branch/PR:** `m67-nvenc-probe-cache`
 
 ## Goal
 
@@ -106,21 +106,21 @@ never leaks between test files. A D-entry fixing the lifetime.
 
 ## Tasks
 
-- [ ] T1 Add the memo: a package-local environment (the package has none today
+- [x] T1 Add the memo: a package-local environment (the package has none today
       — no `zzz.R`, no `.onLoad`, no `new.env()` in `R/`) holding the encoder-
       name pool, read and written inside `has_nvenc()` (`R/ffmpeg.R:2519-2524`)
       strictly *below* the `getOption()` line, plus an internal discard helper.
       Tests first (AC1, AC6).
-- [ ] T2 Test scaffolding: a counting stub helper on the
+- [x] T2 Test scaffolding: a counting stub helper on the
       `test-nvenc-docs.R:71-75` pattern, the `setup-` discard hook (AC8), and
       the `ffmpeg_encoders()`-stays-uncached test (AC5).
-- [ ] T3 Export the discard call — name settled against D014's scheme, sited
+- [x] T3 Export the discard call — name settled against D014's scheme, sited
       with the capability family (`_pkgdown.yml:108-116`) — and call it from
       `set_program()` (`R/program_management.R:141-159`). Roxygen documents
       both routes and the mid-session install story.
       *(RB tripwire: irreversible-api — a new permanent export; GP1 trades on
       it, so the D-entry must state the trade.)*
-- [ ] T4 The AC2/AC3 generated grid: derive H from the namespace, build each
+- [x] T4 The AC2/AC3 generated grid: derive H from the namespace, build each
       cell's call from its own `formals()`, per-cell abort control, cold-memo
       and warm-memo totals.
 - [ ] T5 Rework the three D034 probe-counting tests to discard-then-measure,
@@ -138,6 +138,12 @@ never leaks between test files. A D-entry fixing the lifetime.
 - 2026-08-08: plan chose siting the memo below the `getOption()` seam over above it, because ~80 existing test call sites set that option to control the answer; a memo above it would make them order-dependent. Falsified by a test needing the memo to override an explicitly-set option.
 - 2026-08-08: `cairn_validate` sizing tripwire fired (10 ACs > 7) and was deliberately not split. The obvious seam — memo in M67, exported discard call in M68 — would ship a session-scoped cache with no user-facing escape from a stale answer, which is precisely the open question the candidate row carried ("a user installing FFmpeg or a GPU driver mid-session must not be pinned to a stale answer"), so the split makes the first half worse than not shipping it. The count is inflated by one mechanism measured six ways (AC1/2/3/5/6) after the criteria audit forced precision, plus two boilerplate criteria (AC9 record, AC10 profile verify); six tasks, each under a session. Falsified by implement finding T1+T4 alone fills a session, which would mean the measurements, not the mechanism, are the milestone.
 - 2026-08-08: criteria audit ([O], fresh context) returned draft-AC2 and draft-AC6 UNSATISFIABLE, draft-AC7 UNBOUNDED-PROMISE, and draft-AC1/AC3/AC5 AMBIGUOUS. All fixed before writing, none left for the gate: AC2's procedure narrowed to `getNamespaceExports()` ∩ `hardware` formal (the drafted `mget(ls(asNamespace()))` enumerated 29, thirteen of them internal pipelines, and `parallel = FALSE` is an unused-argument error for 7 of the 16 exported, while `separate_audio_video*` abort at their `video_codec = "copy"` default); the mutation criterion's mutant retargeted from `R/ffmpeg.R:2571` to `:2643`, since the former is short-circuited at `fallback = FALSE` and so killed nothing; "updated wherever it is now false" replaced with one re-decided wording over the topic set `test-nvenc-docs.R:19-31` enumerates; AC1 given a second codec so a per-codec memo fails it; AC5's counter moved off `run_program` onto `ffmpeg`, which is the seam `ffmpeg_encoders()` actually reaches.
+
+- 2026-08-09: branch `m67-nvenc-probe-cache` cut from `origin/master`; status in-progress.
+- 2026-08-09: implement question gate — the export is named `refresh_ffmpeg_capabilities()` (broad over `refresh_ffmpeg_encoders()`/`reset_nvenc_cache()`, so the split-off `find_ffmpeg()` memo can join it without a second permanent export under D014's clean-break policy), and the `@param hardware` sentence is extended rather than rewritten (the existing matched clause stays live, so `test-nvenc-docs.R`'s fence needs no re-anchoring).
+- 2026-08-09: minor amendment (reorder) — T2's `setup-` hook and T5's discard-then-measure rework were done alongside T1 rather than after it, because the memo makes the three D034 probe-counting tests and `test-nvenc-docs.R:80` red the moment T1 lands, and the profile's `verify` slot requires a clean `devtools::test()` before any task is checked off. T5's mutation half is unchanged and still follows a committed baseline.
+- 2026-08-09: T1–T4 — memo in `R/cache.R` (a package-local `new.env(parent = emptyenv())`, the package's first), read via `cached_encoder_names()` strictly below `has_nvenc()`'s `getOption()` seam; `refresh_ffmpeg_capabilities()` exported and called from `set_program()`; `setup-nvenc-memo.R` discards via testthat's state inspector, which is its only per-test hook; the AC2/AC3 grid derives H from the namespace and builds each cell from its own `formals()`, taking a batch verb's `jobs` columns from its scalar sibling's required formals. `devtools::test()` clean (5984 pass, 0 fail).
+- 2026-08-09: T6 part — the re-decided `@param hardware` wording applied to all 16 topics, and `test-nvenc-docs.R` gained two assertions fencing the new half (the "remembered for the rest of the R session" clause and the `refresh_ffmpeg_capabilities` pointer) over the same enumerated topic set.
 
 ## Decisions
 

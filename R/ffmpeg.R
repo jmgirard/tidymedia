@@ -797,8 +797,10 @@ ffmpeg_exit_status <- function(cnd) {
 #'   \code{video_codec = NULL}. See \code{\link{has_nvenc}} for availability and
 #'   its caveats.
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
-#'   command is built, even under \code{run = FALSE}.
+#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   while the command is built, even under \code{run = FALSE}. The answer is
+#'   remembered for the rest of the R session; see
+#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 #'   The stream-copy conflict above is caught first, so such a call aborts
 #'   without probing.
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
@@ -1080,8 +1082,10 @@ crop_video_pipeline <- function(input, output, width, height,
 #'   \code{video_codec}. See \code{\link{has_nvenc}} for availability and its
 #'   caveats.
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
-#'   command is built, even under \code{run = FALSE}.
+#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   while the command is built, even under \code{run = FALSE}. The answer is
+#'   remembered for the rest of the R session; see
+#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
 #'   unavailable, encode in software with a message (\code{TRUE}) instead of
 #'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
@@ -1181,8 +1185,10 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
 #'   libx264) or \code{"nvenc"} for NVIDIA GPU H.264 encoding
 #'   (\code{"h264_nvenc"}) when available. See \code{\link{has_nvenc}}.
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
-#'   command is built, even under \code{run = FALSE}.
+#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   while the command is built, even under \code{run = FALSE}. The answer is
+#'   remembered for the rest of the R session; see
+#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
 #'   unavailable, re-encode with software libx264 and a message (\code{TRUE})
 #'   instead of aborting (\code{FALSE}, default).
@@ -1346,8 +1352,10 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #'   \code{\link{has_nvenc}} for availability and its caveats. Applies to video
 #'   only: \code{audio_codec} is never hardware-accelerated.
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
-#'   command is built, even under \code{run = FALSE}.
+#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   while the command is built, even under \code{run = FALSE}. The answer is
+#'   remembered for the rest of the R session; see
+#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
 #'   unavailable, re-encode with the software \code{video_codec} and a message
 #'   (\code{TRUE}) instead of aborting (\code{FALSE}, default). Keeps output
@@ -1551,8 +1559,10 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
 #'   \code{\link{has_nvenc}} for availability and its caveats. Applies to video
 #'   only: \code{audio_codec} is never hardware-accelerated.
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
-#'   command is built, even under \code{run = FALSE}.
+#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   while the command is built, even under \code{run = FALSE}. The answer is
+#'   remembered for the rest of the R session; see
+#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
 #'   unavailable, re-encode with the software \code{video_codec} and a message
 #'   (\code{TRUE}) instead of aborting (\code{FALSE}, default). Keeps output
@@ -1813,8 +1823,10 @@ derive_anonymized_names <- function(input) {
 #'   encoding. Batch-wide (a machine property), not a per-row column; a
 #'   \code{hardware} column in \code{jobs} is ignored. See \code{\link{has_nvenc}}.
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
-#'   command is built, even under \code{run = FALSE}.
+#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   while the command is built, even under \code{run = FALSE}. The answer is
+#'   remembered for the rest of the R session; see
+#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
 #'   the internal fan-out it would otherwise be reported against.
@@ -2519,7 +2531,9 @@ nvenc_encoder <- function(codec = c("h264", "hevc", "av1")) {
 has_nvenc <- function(codec = c("h264", "hevc", "av1")) {
   enc <- nvenc_encoder(codec)
   pool <- getOption("tidymedia.nvenc_encoders", default = NULL)
-  if (is.null(pool)) pool <- ffmpeg_encoders()$name
+  # The option seam is read first on every call, so setting it mid-session takes
+  # effect at once; only the fall-through consults the session memo (D044).
+  if (is.null(pool)) pool <- cached_encoder_names()
   enc %in% pool
 }
 
@@ -2927,8 +2941,10 @@ check_vocab_arg <- function(value, values, arg, call = rlang::caller_env()) {
 #'   \code{video_codec}. See \code{\link{has_nvenc}} for availability and its
 #'   caveats.
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
-#'   command is built, even under \code{run = FALSE}.
+#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   while the command is built, even under \code{run = FALSE}. The answer is
+#'   remembered for the rest of the R session; see
+#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
 #'   the internal fan-out it would otherwise be reported against. A call that
@@ -3173,8 +3189,10 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #'   table mixing \code{reencode = FALSE} rows with GPU encoding must be split
 #'   into separate calls.
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
-#'   command is built, even under \code{run = FALSE}.
+#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   while the command is built, even under \code{run = FALSE}. The answer is
+#'   remembered for the rest of the R session; see
+#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
 #'   the internal fan-out it would otherwise be reported against. A call that
@@ -3773,8 +3791,10 @@ derive_standardized_names <- function(input) {
 #'   per-row column). See \code{\link{standardize_video}} and
 #'   \code{\link{has_nvenc}}.
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
-#'   command is built, even under \code{run = FALSE}.
+#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   while the command is built, even under \code{run = FALSE}. The answer is
+#'   remembered for the rest of the R session; see
+#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
 #'   the internal fan-out it would otherwise be reported against.
@@ -5179,8 +5199,10 @@ derive_web_names <- function(input) {
 #'   applied to the whole batch (a property of the machine, not of a row, so
 #'   neither is read as a \code{jobs} column). See [crop_video()].
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
-#'   command is built, even under \code{run = FALSE}.
+#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   while the command is built, even under \code{run = FALSE}. The answer is
+#'   remembered for the rest of the R session; see
+#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
 #'   the internal fan-out it would otherwise be reported against.
@@ -5351,8 +5373,10 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #'   (default, software libx264) or \code{"nvenc"} for NVIDIA GPU H.264 encoding.
 #'   Batch-wide (not a per-row column). See \code{\link{has_nvenc}}.
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
-#'   command is built, even under \code{run = FALSE}.
+#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   while the command is built, even under \code{run = FALSE}. The answer is
+#'   remembered for the rest of the R session; see
+#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
 #'   the internal fan-out it would otherwise be reported against.
@@ -5479,8 +5503,10 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #'   so a jobs table mixing copied and re-encoded video must be split into
 #'   separate calls.
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
-#'   command is built, even under \code{run = FALSE}.
+#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   while the command is built, even under \code{run = FALSE}. The answer is
+#'   remembered for the rest of the R session; see
+#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
 #'   the internal fan-out it would otherwise be reported against. A call that
@@ -5920,8 +5946,10 @@ compare_videos_pipeline <- function(infiles, outfile,
 #'   \code{video_codec}. See \code{\link{has_nvenc}} for availability and its
 #'   caveats.
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
-#'   command is built, even under \code{run = FALSE}.
+#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   while the command is built, even under \code{run = FALSE}. The answer is
+#'   remembered for the rest of the R session; see
+#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
 #'   unavailable, encode in software with a message (\code{TRUE}) instead of
 #'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
@@ -6077,8 +6105,10 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
 #'   \code{video_codec}. See \code{\link{has_nvenc}} for availability and its
 #'   caveats.
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
-#'   command is built, even under \code{run = FALSE}.
+#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   while the command is built, even under \code{run = FALSE}. The answer is
+#'   remembered for the rest of the R session; see
+#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 #' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
 #'   unavailable, encode in software with a message (\code{TRUE}) instead of
 #'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
@@ -6225,8 +6255,10 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #'   applied to the whole batch (a property of the machine, not of a row, so
 #'   neither is read as a \code{jobs} column). See [compare_videos()].
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
-#'   command is built, even under \code{run = FALSE}.
+#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   while the command is built, even under \code{run = FALSE}. The answer is
+#'   remembered for the rest of the R session; see
+#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
 #'   the internal fan-out it would otherwise be reported against. A call that
@@ -6449,8 +6481,10 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #'   applied to the whole batch (a property of the machine, not of a row, so
 #'   neither is read as a \code{jobs} column). See [picture_in_picture()].
 #'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   a \code{"nvenc"} call that re-encodes the video runs the binary while the
-#'   command is built, even under \code{run = FALSE}.
+#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   while the command is built, even under \code{run = FALSE}. The answer is
+#'   remembered for the rest of the R session; see
+#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
 #'   the internal fan-out it would otherwise be reported against. A call that

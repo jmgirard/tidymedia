@@ -175,9 +175,13 @@ test_that("hardware = 'nvenc' probes FFmpeg while building, though run = FALSE",
   )
   format_for_web(f, "out.mp4", run = FALSE)
   expect_identical(probes, 0L)
+  # M67 made the answer session-scoped, so the measured call below discards the
+  # memo first -- otherwise it would read the previous call's answer and measure
+  # the memo instead of D034's construction-time probe.
   format_for_web(f, "out.mp4", hardware = "nvenc", run = FALSE)
   expect_gt(probes, 0L)
   before <- probes
+  forget_ffmpeg_capabilities()
   format_for_web_batch(web_jobs(f), hardware = "nvenc", run = FALSE)
   expect_gt(probes, before)
 })

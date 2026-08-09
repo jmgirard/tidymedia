@@ -95,8 +95,12 @@ def mutate_row_pass(path, lineno):
     src = open(path).read()
     lines = src.splitlines(keepends=True)
     offset = sum(len(l) for l in lines[: lineno - 1])
-    m = re.search(r"check_batch_cell\(", src[offset:])
-    assert m, f"no check_batch_cell( at {path}:{lineno}"
+    # Bounded to the recorded line: an unbounded search from a stale offset
+    # would silently lock onto the NEXT wrapper after unrelated edits shift
+    # line numbers, mutating the wrong site (M66 review F9).
+    m = re.search(r"check_batch_cell\(", src[offset: offset + len(lines[lineno - 1])])
+    assert m, (f"no check_batch_cell( on {path}:{lineno} -- line numbers "
+               "drifted; regenerate the triage")
     start = offset + m.end()
     depth, i, quote = 1, start, None
     while i < len(src):

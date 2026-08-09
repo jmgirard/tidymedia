@@ -134,10 +134,12 @@ locator_specs <- function(input3) {
                              output = c("a.mp4", "b.mp4"),
                              audio_codec = c(NA, "aac"))),
       own = "needs an audio stream to encode")
+  # `resize` delivered as a COLUMN: the locator gates on the resize column's
+  # presence (M66 review F1), so the cell carries it there.
   add(id = "compare/resize-three-inputs", verb = "compare_videos_batch", row = 2,
       args = list(jobs = one(inputs = list(c(i1, i2), c(i1, i2, i3)),
-                             output = c("a.mp4", "b.mp4")),
-                  resize = TRUE),
+                             output = c("a.mp4", "b.mp4"),
+                             resize = c(FALSE, TRUE))),
       own = "exactly two inputs")
   add(id = "pip/needs-audio", verb = "picture_in_picture_batch", row = 2,
       args = list(jobs = one(main = c(i1, i2), overlay = c(i2, i3),
@@ -267,6 +269,21 @@ locator_specs <- function(input3) {
                              output = c("a.mp4", "b.mp4")),
                   direction = "diagonal"),
       own = vocab_msg)
+  # The two sites M66's review found violating the complement (F1/F2): a
+  # scalar `audio` or `resize` against a uniform table offends on every row,
+  # so no row may be named.
+  add(id = "arg/compare-audio-bound", verb = "compare_videos_batch",
+      locator = FALSE,
+      args = list(jobs = one(inputs = list(c(i1, i2), c(i2, i3)),
+                             output = c("a.mp4", "b.mp4")),
+                  audio = 5),
+      own = whole_msg)
+  add(id = "arg/compare-resize", verb = "compare_videos_batch",
+      locator = FALSE,
+      args = list(jobs = one(inputs = list(c(i1, i2, i3), c(i1, i2, i3)),
+                             output = c("a.mp4", "b.mp4")),
+                  resize = TRUE),
+      own = "exactly two inputs")
 
   specs
 }

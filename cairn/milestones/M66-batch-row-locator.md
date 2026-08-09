@@ -1,6 +1,6 @@
 # M66: A batch value refusal names the offending row
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -197,8 +197,29 @@ first-offender here) — not attempted; disclosed in the triage.
   0 match the rendered locator. NEWS bullet added (claims scoped to what
   test-row-locator-grid.R enforces). devtools::test 0 fail; devtools::check
   0 errors / 0 warnings / 0 notes. Status → review.
+- 2026-08-08: review return 1 (floor, defect-return count 1): AC2's complement
+  demonstrated failing on compare_videos_batch (F1 90, F2 92) — argument-
+  delivered audio/resize refusals carried a locator naming a row where
+  nothing is distinct. Fix: both locators now gate on their own column's
+  presence (M66-D1); grid resize cell moved to column delivery; the two
+  missing complement cells added. Sub-threshold fixes taken with it, each
+  logged: F9 72 (harness mutation regex bounded to its line), F12/F13 72/72
+  (two-ref and instrument evidence runners committed to data-raw/), F3 65 +
+  F6 35 (wrapper materializes a function body before appending; malformed
+  row degrades to pass-through). Status → in-progress for the fix;
+  re-verification battery re-running.
 
 ## Decisions
+
+- 2026-08-08 M66-D1: `compare_videos_batch`'s audio-bound and resize locators
+  gate on their OWN column's presence, like every other site — the T4 claim
+  that the per-row input count makes those refusals row-dependent even when
+  argument-delivered was falsified by the uniform-table case (review F1,
+  scored 90): with a scalar `audio`/`resize` every row offends alike and
+  "row 1" sends the caller to a row where nothing is distinct. A scalar
+  value against a RAGGED `inputs` column now carries no locator either —
+  the disclosed cost of the uniform rule, revisit on the first report of a
+  caller needing it.
 
 ## Review
 

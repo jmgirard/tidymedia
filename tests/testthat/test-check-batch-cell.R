@@ -100,3 +100,21 @@ test_that("an NA row is the argument-delivered pass-through: no locator", {
   expect_identical(conditionMessage(cnd), conditionMessage(plain))
   expect_identical(check_batch_cell(NA_integer_, check_token("h264")), "h264")
 })
+
+test_that("a malformed row or a function-valued body never destroys the refusal", {
+  # F6: wrong-length row degrades to the pass-through.
+  plain <- rlang::catch_cnd(check_token("has space", arg = "video_codec"))
+  for (bad_row in list(integer(0), NULL, c(1L, 2L))) {
+    cnd <- rlang::catch_cnd(
+      check_batch_cell(bad_row, check_token("has space", arg = "video_codec"))
+    )
+    expect_identical(conditionMessage(cnd), conditionMessage(plain))
+  }
+  # F3: a function-valued rlang body takes the message path, keeping the
+  # refusal renderable and locating it all the same.
+  fn_body <- function() rlang::abort("Head.", body = function(cnd) c("i" = "dyn"))
+  cnd <- rlang::catch_cnd(check_batch_cell(2L, fn_body()))
+  msg <- conditionMessage(cnd)
+  expect_match(msg, "^Head\\.")
+  expect_match(msg, "First offending jobs row: 2\\.$")
+})

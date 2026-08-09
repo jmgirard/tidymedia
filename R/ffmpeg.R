@@ -6321,11 +6321,11 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
                 keep, or drop {.arg audio_codec}."
       )
     )
-    # `inputs` is a column by construction on a fan-in verb, so the per-row
-    # input count that decides this contradiction is always column-delivered
-    # and the locator is unconditional (M66).
+    # Locator only when `resize` itself arrives as a column: with a scalar
+    # `resize` on a uniform table every row offends alike, and "row 1" would
+    # send the caller to a row where nothing is distinct (M66 review F1).
     check_batch_cell(
-      i,
+      if ("resize" %in% names(jobs)) i else NA_integer_,
       check_resize_needs_two_inputs(resize_rows[[i]], length(jobs$inputs[[i]]))
     )
   }
@@ -6361,11 +6361,11 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
   rlang::check_number_whole(audio, min = 0, allow_null = TRUE)
   for (i in seq_len(nrow(jobs))) {
     if (!is.null(audio_rows[[i]])) {
-      # The upper bound is that row's own input count, so a refusal here is
-      # row-dependent even when `audio` arrived as the scalar argument: the
-      # locator is unconditional (M66).
+      # Locator only when `audio` itself arrives as a column: a scalar `audio`
+      # against a uniform `inputs` column offends on every row, and naming
+      # row 1 misleads — the pip sibling gates the same way (M66 review F1).
       check_batch_cell(
-        i,
+        if ("audio" %in% names(jobs)) i else NA_integer_,
         rlang::check_number_whole(audio_rows[[i]], min = 0,
                                   max = length(jobs$inputs[[i]]) - 1,
                                   arg = "audio")

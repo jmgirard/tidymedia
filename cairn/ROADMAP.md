@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-09 (full audit re-run after M67's archive: all validate checks green, no advisories, both GitHub inboxes empty, nothing in flight — the next action is planning.)_
+_Last hygiene check: 2026-08-09 (M68 archived: validate green, M63's terminal row pruned to the five most recent, M31's fixture-gate lesson extended rather than a line added — nothing in flight, the next action is planning.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M68 | A failed run removes the broken output it wrote | review | — | normal | milestones/M68-failed-run-output-cleanup.md |
+| M68 | A failed run removes the broken output it wrote | done | — | normal | milestones/archive/M68-failed-run-output-cleanup.md |
 | M67 | The encoder probe answers once per session, not once per row | done | — | normal | milestones/archive/M67-nvenc-probe-cache.md |
 | M66 | A batch value refusal names the offending row | done | — | normal | milestones/archive/M66-batch-row-locator.md |
 | M65 | A region, overlay or loudness mistake names the verb the user called, in both forms | done | M64 | normal | milestones/archive/M65-region-overlay-loudness-blame.md |
 | M64 | A crop, scale or rate mistake names the verb the user called, in both forms | done | — | normal | milestones/archive/M64-crop-scale-rate-blame.md |
-| M63 | An unreadable input is refused where a missing one already is | done | M62 | normal | milestones/archive/M63-unreadable-input-front-door.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

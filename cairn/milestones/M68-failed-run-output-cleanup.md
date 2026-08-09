@@ -88,7 +88,7 @@ this one site.
 
 ## Tasks
 
-- [ ] **T1.** Write the failing regression test: provoke an AAC-to-MP3 stream
+- [x] **T1.** Write the failing regression test: provoke an AAC-to-MP3 stream
       copy through a compiled pipeline, both pre-states, asserting the output
       path is absent. Confirm red against `master` before T2.
 - [ ] **T2.** Add `remove_failed_output()` beside `ffm_run()` in `R/ffm.R` and
@@ -117,7 +117,10 @@ this one site.
 - 2026-08-09: plan chose siting the removal in `ffm_run()` over each Layer-2 verb because IP1 keeps execution in Layer 1 once; falsified by a verb needing to fail without removing, e.g. one keeping the partial file for diagnosis.
 - 2026-08-09: amendment gate — AC1's adts trigger replaced by an AAC-to-MP3 stream copy, since ffmpeg 6.1.1 on ubuntu-latest writes the multi-stream .aac and exits 0 (M45's lesson, recorded in test-separate-av-multitrack.R); measured 234 with a zero-byte leftover on 8.1.2 for the replacement.
 - 2026-08-09: amendment gate — added AC8 and T8 for the `overwrite = FALSE` guard chosen at the implement gate, narrowed to a pre-existing output so a non-overwriting run that creates a zero-byte file still gets it removed.
+- 2026-08-09: T1 — tests/testthat/test-failed-run-cleanup.R added; both cases red against the branch's unchanged R/ ("Expected `file.exists(outfile)` to be FALSE. actual: TRUE"), which is master's behavior and AC1's pre-change counterfactual.
 - 2026-08-09: criteria audit ([O], fresh context) returned 11 findings; ten fixed in the drafted wording (unbounded promises in AC1/AC3/AC4/AC5, a non-discriminating control, AC3 snapshotting the Layer-2 abort rather than `ffm_run()`'s, "unconditional" contradicting a two-disposition design, an unevidenced counterfactual), and its AC2 satisfiability finding became the gate question the first line above records.
+
+
 
 ## Decisions
 

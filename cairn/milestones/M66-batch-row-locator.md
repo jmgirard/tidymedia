@@ -96,7 +96,7 @@ first-offender here) — not attempted; disclosed in the triage.
       bound unused (3304, 3659, 4328, 6272/6310, 6507), 6 value-loops needing
       index conversion (3930, 3934, 5244–5252, 6538, 6549, 6562), 2 needing
       rework (1992 regions, 4607 codec col).
-- [ ] T2. Write the locator mechanism at one new site — catch a per-row
+- [x] T2. Write the locator mechanism at one new site — catch a per-row
       refusal and re-abort with the row bullet appended, preserving message,
       class, and blamed call (the rlang-owned wordings of
       `check_number_decimal()`/`arg_match()` admit no suffix parameter, so
@@ -153,6 +153,10 @@ first-offender here) — not attempted; disclosed in the triage.
   already-located, 223 excluded by class (data-raw/m66-site-triage.tsv). The
   procedure surfaced two swept sites no prior map had: extract_frame_batch's
   timestamp-finite (ffmpeg.R:3435) and frame-whole (3447) column value checks.
+- 2026-08-08: T2 done — check_batch_cell() (R/utils.R) appends the plain-text
+  first-offender bullet to the thrown condition's body and re-raises: head,
+  class, and blamed call byte-preserved (measured); strip_row_locator()
+  (helper-blame.R) verified both directions; 17 unit tests; suite 0 fail.
 
 ## Decisions
 

@@ -27,3 +27,14 @@ catch_call <- function(verb, args) {
     error = function(e) e
   )
 }
+
+# strip_row_locator(): removes M66's batch row-locator bullet -- the LAST line
+# of a wrapped refusal, "<glyph> First offending jobs row: N." -- and nothing
+# else. The cross-form equality test compares scalar and batch messages after
+# this, so its own honesty is load-bearing: test-check-batch-cell.R verifies it
+# in both directions (a row-number-only pair compares equal after removal; a
+# pair differing outside the locator stays different). Kept in sync with the
+# wording at check_batch_cell()'s one site (R/utils.R).
+strip_row_locator <- function(msg) {
+  sub("\n[^\n]{1,2} First offending jobs row: [0-9]+\\.$", "", msg)
+}

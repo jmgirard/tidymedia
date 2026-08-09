@@ -1,6 +1,6 @@
 # M69: A hung media program stops the call, not the session
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -78,7 +78,7 @@ naming the program and the limit. A D-entry records the shape.
       Verified by reading the section, not by substring grep: the doc guard
       asserts the scoped sentence, and restoring the unqualified "A call that
       reaches the limit aborts" reddens it.
-- [x] AC9 `cairn/DECISIONS.md` gains a D-entry recording the option-seam shape
+- [ ] AC9 `cairn/DECISIONS.md` gains a D-entry recording the option-seam shape
       and the per-verb argument it rejects, off-by-default, abort-not-warn, the
       disclosed `parallel = TRUE` worker gap, and the falsifier.
 - [x] AC10 The `verify` slot of `cairn/PROFILE.md` is clean —
@@ -202,6 +202,8 @@ naming the program and the limit. A D-entry records the shape.
 - 2026-08-09: local `covr` run named the uncovered lines rather than guessing at the codecov delta: none belong to return 2's changes — the sentinel, `probe_all()`'s timeout counting, `verify_media()`'s hold/replay/re-raise and both MediaInfo branches are all covered. The patch shortfall is `mediainfo()`'s own `resolve_timeout()`/`guard_timeout()` lines from T2, uncovered because the Layer 0 hatch had no execution test at all — its happy path was unexercised. Closed with `mediainfo("--Version")`, which the repo's every-exported-function rule wanted regardless; AC3's carve-out is about a 120-second MediaInfo invocation and is untouched by a version call.
 - 2026-08-09: verify slot after return 2 — `devtools::document()` no diff, `devtools::test()` FAIL 0 / PASS 6160 / SKIP 5 with the suite's warning count back to its pre-existing 4, `devtools::check()` `Status: OK` (0/0/0, read from the real status line — M17). `cairn_validate` exit 0. Status back to `review`; CI on PR #72 is the gate that caught the AC3 failure and has not yet run on the fix.
 - 2026-08-09: T14 — `mediainfo_query()` test added, covering the `mediainfo_read()` absorber the first return shipped untested. Mutation probe: removing that absorber reddens it, which is the claim the corrected T8 line could not make.
+
+- 2026-08-09: review RETURN -> in-progress (third defect return). What failed: (1) J4 (90), AC8 names `count_audio_streams()` among the readers that absorb a timeout but neither doc mentions it, and measured, it absorbs with zero warnings against the docs' uniform "an NA row and one warning" — an AC8 failure and a user-facing invisible hang under `remove_audio()`; (2) J3 (95), D047 still asserts the uniform-absorption shape T12 replaced inside this same milestone, so AC9's evidence cites a stale entry. Also actioned: J2 (87), the real `verify_media()` re-raise says lowercase `ffprobe` and its fencing test asserts its own mock's literal; J7 (82), the `tm_timed_out` attribute leaks into `print()` and breaks `@param parallel`'s identity promise. AC8 and AC9 unticked; AC1-AC7 and AC10 stand, CI green on all nine checks. Sixteen sub-threshold findings logged. Thrash trigger (a) fires on the third return: no further retry under this plan, routing to `/milestone-plan`.
 
 ## Decisions
 
@@ -474,11 +476,81 @@ generated files unedited · README untouched · `pkgdown::check_pkgdown()` no
 problems · NEWS.md entry present with no milestone or decision ids · no new
 top-level files.
 
-**Independent review — 3 lenses (2 in at this checkpoint), scored after.**
+**Independent review — 3 lenses, 20 findings, scored by a fourth agent.**
 [S] blame-history: no resurrected bug or weakened guard; D002/D011/D024/D046
 boundaries respected, F7's and G1's narrowings both intact, and
 `verify_media()`'s replay correctly avoids F17's trap by replaying the condition
-object. One finding: D047's readers bullet is now stale. [S] prior-review: the
-`gh api .../pulls/comments` probe returned empty and no archived `## Review`
-findings touch these files; F8/P1 raised a third time, plus the same D047
-staleness. [O] diff-bug still running — triage and scoring pending.
+object. [S] prior-review: the `gh api .../pulls/comments` probe returned empty
+and no archived `## Review` findings touch these files. [O] diff-bug: eighteen
+findings. Four score >=80, and D047's staleness was raised independently by all
+three lenses.
+
+**Actioned (>=80).** The first two were verified by the reviewing session's own
+execution before triage, not taken on the lens's word:
+
+- **J3 (95) — D047 is stale; it asserts the behaviour T12 replaced.** D047 says
+  "The readers absorb it exactly as they absorb any other error… Making them
+  re-raise would change `probe_all()`'s error contract… The distinct class is
+  what leaves that available later without re-deciding anything now." T12
+  re-decided it inside this same milestone: `verify_media()` re-raises and
+  `probe_all()` distinguishes timeouts in its warning and on an attribute.
+  **Demonstrates AC9 failing** — AC9's evidence cites D047 as recording the
+  shape, and the shape recorded is no longer the branch's. D047 is also silent
+  on return 2's load-bearing choice (keeping base R's ladder over `processx`),
+  which lives only in a work log that gets archived. Raised by all three lenses.
+- **J4 (90) — AC8's absorb set names `count_audio_streams()`; neither doc does,
+  and it absorbs silently.** Measured: `count_audio_streams()` returns
+  `NA_integer_` with **zero warnings** on a timeout, while both docs describe
+  absorption uniformly as "an `NA` row and one warning at the end of the call".
+  **Demonstrates AC8 failing**, inside the domain of the two files AC8 names,
+  and it is also a user-facing defect: a hung dropped-track probe under
+  `remove_audio()` is invisible.
+- **J2 (87) — the real re-raise says `ffprobe`, and the test fencing it asserts
+  its own mock.** Measured on a real FIFO: `verify_media()` aborts with
+  `ffprobe timed out after 2 seconds.` in lowercase against the Layer 0 hatch's
+  `FFprobe`. The test mocks `run_program` with a hard-coded
+  `abort_timeout("FFprobe", 2)`, so `expect_match(msg, "FFprobe")` tests the
+  mock's literal, not the code path. No AC failure; a vacuous assertion plus a
+  message inconsistency.
+- **J7 (82) — `probe_all()`'s `tm_timed_out` attribute leaks into print and
+  breaks the parallel-vs-sequential identity promise.** Attached to a bare list
+  with no print method, so `print(probe_all(hung))` dumps the attribute and its
+  class. `@param parallel` promises "Output is identical either way"; workers
+  never see the option, so only the sequential path carries the attribute. No AC
+  failure — no criterion polices that docstring — but a real behavioral surprise.
+
+**Logged, below the 80 threshold (16).** J1 (78) a timed-out
+`ffm_batch(verify=)` is completely silent, the hold-and-replay plus
+`ffm_batch()`'s `tryCatch` erasing both the warning and the abort; L1 (78) the
+`@section` still swallows the vignette-pointer paragraph and T13 made it longer
+— a third consecutive pass raising F8; J6 (76) = F4, `ffm_run()`'s re-raise
+reads `Error in handlers[[1L]](cnd)`; J13 (72) = F17, `guard_timeout()` replays
+bare `simpleWarning`s while `verify_media()` in the same milestone does it
+correctly; J9 (65) = F5, no upper bound in `resolve_timeout()`; J5 (65) the
+`*_batch` verbs do not abort, arguably over-broadening "the task verbs abort";
+J11 (58) AC8's positive doc guards are still substring greps and one negative
+guard can never redden; J17 (50) the new `mediainfo("--Version")` test assumes
+stdout; J10 (48) `?verify_media` and `?probe_all` never mention the timeout;
+J15 (45) the sentinel swap weakened two `is.null()` guards, latent only; J16
+(42) the sentinel protocol rests on three hand-written call-site checks; J12
+(40) the fixture's Linux cost comment undercounts; J8 (35) "1 of these" reads
+wrong at n=1; J18 (30) not findings; K1 (25) `skip_on_cran()` weighed against
+M46 and judged non-conflicting; J14 (20) = F19, a stale comment.
+
+**Return (pass 3).** Two findings demonstrate criteria failing: J4 (90) on AC8
+and J3 (95) on AC9, both inside the domain of what those criteria name. J4 is
+independently a >=90 user-facing defect. AC8 and AC9 unticked; AC1-AC7 and AC10
+evidence stands, and CI at `fd988de` is green on all nine checks.
+
+**Thrash rule — trigger (a) FIRES: this is the third defect return.** The
+threshold holds once reached, so no further retry is queued under the current
+plan; the milestone routes to `/milestone-plan` for a re-cut or split. No
+re-plan or split has been spent on M69 yet, so re-plan-or-split is still the
+available remedy rather than the move that already failed. Two independent
+corroborations that the milestone is mis-sized rather than merely unlucky:
+`cairn_validate` now warns on both split tripwires (10 acceptance criteria
+against >7, 14 tasks against >10), and each return has been in a different
+area — the readers, then the platform, now the decision record and the doc set.
+Trigger (b) fired at pass 2 on AC3's second failure; its diagnosis and its
+per-instance `/milestone-brief` escalation offer carry into that routing rather
+than being discarded.

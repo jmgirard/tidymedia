@@ -1,6 +1,6 @@
 # M69: A hung media program stops the call, not the session
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -64,7 +64,7 @@ naming the program and the limit. A D-entry records the shape.
 - [x] AC9 `cairn/DECISIONS.md` gains a D-entry recording the option-seam shape
       and the per-verb argument it rejects, off-by-default, abort-not-warn, the
       disclosed `parallel = TRUE` worker gap, and the falsifier.
-- [x] AC10 The `verify` slot of `cairn/PROFILE.md` is clean —
+- [ ] AC10 The `verify` slot of `cairn/PROFILE.md` is clean —
       `devtools::document()`, `devtools::test()` and `devtools::check()` (0
       errors, 0 warnings).
 
@@ -152,6 +152,9 @@ naming the program and the limit. A D-entry records the shape.
 - 2026-08-09: T9 (F15) — AC3 verified as written. Measured on the FIFO fixture under a 2 s limit: `ffmpeg()` 2.06 s, `ffprobe()` 2.04 s, `ffm_run()` 2.06 s, each message naming its program and `2 seconds`. The bound is now the criterion's 10 s, and all three tests assert the limit. Mutation probe: dropping the limit from `abort_timeout()`'s message reddened the ffprobe and ffm_run tests, which it did not before.
 - 2026-08-09: T10 (F7) — `?tidymedia` and NEWS.md now scope the partial-output removal to the calls that know their own output and state that the raw `ffmpeg()` hatch leaves the file; the hatch parses no argument string, so cleanup there is not available under D002. Fenced by a new test using a stand-in binary that writes and then blocks, which produces the partial output a FIFO cannot. Mutation probe: adding the rejected cleanup to `ffmpeg()` reddened it.
 - 2026-08-09: verify slot after the return — `devtools::document()` rewrote only `man/tidymedia-package.Rd`; `devtools::test()` FAIL 0 / PASS 6132 / SKIP 5 (the 4 warnings are T2's pre-existing `warn_dropped_audio()` calls); `devtools::check()` `Status: OK`, 0 errors / 0 warnings / 0 notes (read from the real status line, not devtools' summary — M17). `cairn_validate` exit 0, one pre-existing advisory on the 10-AC sizing tripwire. Status back to `review`.
+
+- 2026-08-09: correction, superseding the T8 line above — that line's "removing each absorber reddened exactly its own test and no other" covers three absorbers but only two were probed. `mediainfo_read()`'s absorber has no test in the suite at all (`grep mediainfo_read tests/` is empty), so no mutation of it could redden anything. Raised independently by the prior-review and diff-bug lenses (G6/P2, scored 78).
+- 2026-08-09: review RETURN -> in-progress (second defect return). What failed: (1) step-4 gate — AC3 fails on Linux, where `ffmpeg()` and `ffm_run()` take 42.1 s to abort under a 2 s limit against the criterion's 10 s, and PR #72's R-CMD-check has been red on every Linux job since `afaf950` while the first review pass recorded no CI evidence; (2) G2/H4 (88), a timed-out probe inside `verify_media()` is reported as a property mismatch so `ffm_run(verify=)` blames a successful encode — a regression T8 introduced on the D011 path; (3) G1 (85), `?tidymedia` and NEWS.md still claim every timed-out call aborts, false for every metadata reader after T8. AC3 and AC10 unticked; AC1/AC2/AC4-AC9 evidence stands. Thrash trigger (b) fires on AC3's second failure; escalation offered per instance.
 
 ## Decisions
 
@@ -263,4 +266,116 @@ package does for its users, and F15 demonstrates AC3 failing as written. Status
 back to `in-progress`; AC3 unticked. First defect return for M69 -- the thrash
 rule's trigger (a) (third return) and trigger (b) (same AC twice) are both
 unfired.
+
+---
+
+## Second pass (2026-08-09, branch `m69-runtime-timeout` @ `9154bc3`)
+
+**Evidence** (fresh; the four returned findings were re-verified first):
+
+- AC1 — all four sites carry one `resolve_timeout(`, one `timeout = limit` and
+  one `guard_timeout(` each (counted per file).
+- AC2 — `resolve_timeout()` with the option unset returns `0` (run directly).
+- **AC3 — FAILS on Linux.** See the gate failure below. On macOS the three
+  entry points abort in 2.08 s / 2.04 s / 2.04 s, each naming its program and
+  `2 seconds`; on Linux `ffmpeg()` and `ffm_run()` take **42.1 s** against the
+  criterion's 10 s. Unticked.
+- AC4 — the branch is `identical(as.integer(status), 124L)`; a grep of
+  `R/timeout.R` for `grepl|regexpr|regmatches|gsub|sub\(|startsWith|grep\(`
+  returns nothing.
+- AC5 — both D046 dispositions observed: a pre-existing output survives
+  byte-identical with `was left as it was`, and the injected-kill case reads
+  `was removed` with the file gone.
+- AC6 — `is_timeout(status = 124, limit = 0)` is `FALSE`; `limit = 2` is `TRUE`.
+- AC7 — zero warnings signalled across all three entry points; the `ffmpeg()`
+  abort message contains no `tempdir()` substring and no command line.
+- AC8 — `man/tidymedia-package.Rd` carries `tidymedia.timeout`, `second`,
+  `no limit`, `abort`; `NEWS.md` carries the entry. (The claim behind the
+  `abort` substring is now over-broad — G1 below.)
+- AC9 — `cairn/DECISIONS.md:1941`, D047.
+- **AC10 — unticked.** `devtools::document()` no diff, `devtools::test()`
+  FAIL 0 / PASS 6132 / SKIP 5 and `devtools::check()` `Status: OK` (0/0/0) on
+  the dev machine, but the same suite is FAIL 2 on Linux, so the slot is not
+  clean everywhere.
+
+**Consistency gate:** `cairn_validate` exit 0, all checks PASS, one advisory
+(`M69: 10 acceptance criteria (>7 tripwire)`). `cairn_impact` not run —
+Principles touched is `—`. Toolchain slot: `document()` no diff · generated
+files unedited · README untouched · `pkgdown::check_pkgdown()` no problems ·
+NEWS.md entry present with no milestone or decision ids · no new top-level
+files. **`devtools::check()` clean locally, red on CI.**
+
+**GATE FAILURE — AC3 fails on Linux, and CI has been red since `afaf950`.**
+PR #72's R-CMD-check has failed on every Linux job for all four branch commits;
+macOS, Windows and pkgdown pass. At `afaf950` the single failure was
+`test-runtime-timeout.R:202` (`ffmpeg()`) at **42.0 s against the then-20 s
+bound**; tightening the bound to the criterion's 10 s at `9154bc3` made it two
+failures, `ffmpeg()` and `ffm_run()`, both at **42.1 s**. The first review pass
+recorded no CI evidence and did not look. Three Linux jobs (release, devel,
+oldrel-1) agree; macOS aborts in ~2 s, so this is platform-specific and not
+reproducible on the dev machine. Unverified hypothesis for implement to settle:
+the two failing entry points are exactly the two that pass `input = ""`
+(`ffmpeg()` via `system()`, `ffm_run()` via `run_program()`), while `ffprobe()`,
+which passes no input, aborts inside the bound and passes on Linux — and
+`?system2` states a timeout runs the command with stdin redirected from
+`/dev/null`, which is a second redirection of the same channel.
+
+**Independent review — 3 lenses, 16 findings, scored by a fourth agent.**
+[S] blame-history: no resurrected bug, contradicted D-entry or weakened guard;
+D002/D024/D046 boundaries respected and the four returned findings correctly
+fixed. [S] prior-review: `cairn/milestones/archive/` holds no `## Review`
+findings on these files, and the `gh api .../pulls/comments` probe returned
+empty, so PR threads were not walked; two candidates, both also raised by
+another lens. [O] diff-bug: ten findings, two scoring >=80.
+
+**Actioned (>=80).**
+
+- **G2/H4 (88) — a timed-out probe inside `verify_media()` is reported as a
+  property mismatch, not a timeout.** `R/verify.R:81` calls `probe_all()`,
+  which this branch's T8 fix made absorb the timeout; the tibbles come back NA
+  and `compare_expectations()` marks every check failed with `actual = NA`.
+  `ffm_run(verify = list(width = 1920))` then aborts with "expected 1920, got
+  NA", blaming a successful encode for a hung FFprobe. Verified by both the
+  diff-bug and blame-history lenses independently, the former by execution.
+  A regression T8 introduced on the D011 verification path, which no AC and no
+  part of D047 considers. **Fix in the return.**
+- **G1 (85) — `?tidymedia` and `NEWS.md` still claim every timed-out call
+  aborts.** T10 narrowed the *partial-output* claim but left "A call that
+  reaches the limit aborts, naming the program and the limit" as an unqualified
+  universal. After T8 that is false for every metadata reader — `probe_all()`,
+  `mediainfo_*()`, the `get_*()` helpers — which warn and return NA. Same shape
+  as F7, at the same two files, created by fixing F1. AC8's test greps only for
+  the substring `abort`, so it passes while the claim is over-broad.
+  **Fix in the return.**
+
+**Logged, below the 80 threshold (12).** G6/P2 (78) `mediainfo_read()`'s
+absorber ships with no test at all, and the T8 work-log line's "removing each
+absorber reddened exactly its own test" is therefore false as written; P1 (76)
+T10 appended more prose to the `@section` that F8 already showed swallows the
+vignette-pointer paragraph, leaving F8 unaddressed and less isolated; H2 (75)
+= F4, the re-raised timeout's `call` is the handler frame; G3 (68)
+`run_loudnorm_analysis_batch()` is a fourth site where a timeout still kills
+the whole fan-out, milder than F1 because `purrr_error_indexed` carries the
+index; H1 (68) = F17, held warnings replayed as fresh `simpleWarning`s; H3 (65)
+= F5, no upper bound in `resolve_timeout()`; G9 (55) the timeout abort omits
+the "failing command" bullet its exit-status sibling carries; G7 (45) the new
+F7 test is near-tautological on its own and mocks `find_ffmpeg()` to a
+`shQuote()`d value it could never return; G4 (35) a hung file stays
+indistinguishable from a corrupt one — D047's own disclosed falsifier; G8 (30)
+the `input=` comments no longer describe the only mechanism at work; G5 (15)
+`probe_one()`'s `if (is.null(out)) return(NULL)` is dead code; G10 (12) a
+non-ASCII byte in an R comment.
+
+**Return.** Step-4 gate failure: AC3 fails on Linux with fresh CI evidence, and
+the PR's checks are red. G2/H4 and G1 are actioned into the same return. Status
+back to `in-progress`; AC3 and AC10 unticked, AC1/AC2/AC4–AC9 evidence stands.
+Second defect return for M69. Thrash trigger (a) (third return) is unfired.
+**Thrash trigger (b) FIRES** — AC3 has now failed twice, by two mechanisms of
+one shape: pass 1 found the tests did not measure what the criterion says, and
+pass 2 finds the package does not do what the criterion says on Linux. The
+remedy is to reconsider the alternative the plan gate recorded against; the
+gate recorded none about the timeout *mechanism* — whether base R's `timeout=`
+can deliver a bounded abort on every platform, or whether that needs real
+process control — so escalation via `/milestone-brief` is offered per instance
+(D-004), never automatically.
 

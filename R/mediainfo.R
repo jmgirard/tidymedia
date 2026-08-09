@@ -86,7 +86,15 @@ mediainfo_parameter <- function(file, section, parameter, typed = TRUE) {
       next
     }
     if (is.null(loc)) loc <- find_mediainfo()
-    res <- run_program(loc, c(inform, f), program = "mediainfo")
+    # A timeout on one file is that file's failure, not the call's: this loop
+    # documents an NA per unreadable file, so an escaping abort would discard
+    # the values already collected for the files before it (D047).
+    res <- absorb_timeout(run_program(loc, c(inform, f), program = "mediainfo"))
+    if (is.null(res)) {
+      failed <- c(failed, f)
+      out[[i]] <- NA_character_
+      next
+    }
     # A missing section/parameter prints nothing or a multi-line dump.
     out[[i]] <- if (length(res) == 1) res else NA_character_
   }
@@ -253,7 +261,14 @@ mediainfo_read <- function(file, inform) {
       next
     }
     if (is.null(loc)) loc <- find_mediainfo()
-    res <- run_program(loc, c(inform, f), program = "mediainfo")
+    # Same absorption as mediainfo_parameter(), for the same reason: this
+    # reader also promises an NA row per unreadable file (D047).
+    res <- absorb_timeout(run_program(loc, c(inform, f), program = "mediainfo"))
+    if (is.null(res)) {
+      failed <- c(failed, f)
+      rows[[i]] <- tibble::tibble(file = f)
+      next
+    }
     # Valid output is a header line plus a values line; anything shorter means
     # MediaInfo could not read the file (empty or header-only). Treat it like a
     # missing file: warn + NA row rather than letting read.csv abort (D-M04-7).

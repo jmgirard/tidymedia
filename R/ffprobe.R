@@ -204,13 +204,20 @@ count_audio_streams <- function(file) {
 # because parse_compact_probe() depends on all three: `print_section=1` emits
 # the leading `stream|`/`format|` field it dispatches on, `nokey=0` keeps the
 # `key=value` form, and `escape=c` is the escaping it decodes.
+#
+# A timeout is absorbed here rather than allowed to propagate: probe_all() maps
+# this over the whole input vector, so an escaping abort would throw away every
+# other file's result to report the one that hung. D047 puts the timeout on the
+# same footing as any other unreadable file -- NULL here, an NA row and the
+# end-of-call warning in probe_all().
 probe_one <- function(file) {
-  out <- run_program(
+  out <- absorb_timeout(run_program(
     find_ffprobe(),
     c("-i", file, "-v", "quiet", "-show_format", "-show_streams",
       "-of", "compact=print_section=1:nokey=0:escape=c"),
     program = "ffprobe"
-  )
+  ))
+  if (is.null(out)) return(NULL)
   parse_compact_probe(out)
 }
 

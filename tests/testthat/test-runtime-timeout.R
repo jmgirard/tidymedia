@@ -199,7 +199,7 @@ test_that("ffmpeg() aborts at the limit instead of blocking forever", {
     ffmpeg(paste("-y -i", shQuote(blocked), shQuote(out))),
     class = "tidymedia_timeout"
   )
-  expect_lt(as.numeric(difftime(Sys.time(), start, units = "secs")), 20)
+  expect_lt(as.numeric(difftime(Sys.time(), start, units = "secs")), 10)
   msg <- cli::ansi_strip(conditionMessage(err))
   expect_match(msg, "FFmpeg")
   expect_match(msg, "2 seconds")
@@ -212,8 +212,10 @@ test_that("ffprobe() aborts at the limit", {
   start <- Sys.time()
   err <- expect_error(ffprobe(paste("-i", shQuote(blocked))),
                       class = "tidymedia_timeout")
-  expect_lt(as.numeric(difftime(Sys.time(), start, units = "secs")), 20)
-  expect_match(cli::ansi_strip(conditionMessage(err)), "FFprobe")
+  expect_lt(as.numeric(difftime(Sys.time(), start, units = "secs")), 10)
+  msg <- cli::ansi_strip(conditionMessage(err))
+  expect_match(msg, "FFprobe")
+  expect_match(msg, "2 seconds")
 })
 
 test_that("the abort names the limit but never R's command line or temp path", {
@@ -243,10 +245,12 @@ test_that("ffm_run() aborts at the limit and states D046's disposition (AC5)", {
   blocked <- local_blocking_input()
   out <- withr::local_tempfile(fileext = ".mp4")
   withr::local_options(tidymedia.timeout = 2)
+  start <- Sys.time()
   err <- expect_error(ffm_run(ffm(blocked, out)), class = "tidymedia_timeout")
+  expect_lt(as.numeric(difftime(Sys.time(), start, units = "secs")), 10)
   msg <- cli::ansi_strip(conditionMessage(err))
   expect_match(msg, "FFmpeg")
-  expect_match(msg, "timed out")
+  expect_match(msg, "2 seconds")
   # FFmpeg blocks on the FIFO's header BEFORE it opens the output, so it writes
   # nothing and D046 correctly has nothing to report -- the disposition bullet
   # is absent, not missing. What must hold is that no output was left behind.
@@ -311,6 +315,87 @@ test_that("with the option unset the same blocking input is NOT bounded", {
     warning = function(w) invokeRestart("muffleWarning")
   )
   expect_identical(as.integer(attr(res, "status")), 124L)
+})
+
+# The readers absorb a timeout instead of losing the batch (D047) --------------
+
+# D047 puts a timeout on the same footing as any other unreadable file for the
+# metadata readers. The defect these fence is not "the hung file fails" -- it is
+# that the hung file used to take every OTHER file's result down with it, which
+# is what a 500-file corpus with one bad file actually costs.
+
+test_that("probe_all() yields an NA row for a hung file and keeps the rest", {
+  skip_if_no_ffprobe()
+  blocked <- local_blocking_input()
+  good <- make_test_video()
+  withr::local_options(tidymedia.timeout = 2)
+  info <- NULL
+  expect_warning(info <- probe_all(c(good, blocked, good)), "Could not probe")
+  # Three rows, in input order, and the two readable files still carry data:
+  # the assertion that fails without the absorber is that this returned at all.
+  expect_identical(nrow(info$container), 3L)
+  expect_identical(info$container$file, c(good, blocked, good))
+  expect_true(is.na(info$container$format_name[[2]]))
+  expect_false(is.na(info$container$format_name[[1]]))
+})
+
+test_that("mediainfo_parameter() returns NA for a hung file and keeps the rest", {
+  # The kill is injected at the run_program() seam rather than produced by a
+  # FIFO: MediaInfo's behavior on a named pipe is not something this suite can
+  # pin down across platforms, and the loop's recovery -- the thing F3 is about
+  # -- stays entirely real either way.
+  one <- withr::local_tempfile(fileext = ".mp4")
+  two <- withr::local_tempfile(fileext = ".mp4")
+  writeLines("not really a video", one)
+  writeLines("not really a video", two)
+  calls <- 0L
+  local_mocked_bindings(
+    find_mediainfo = function(...) "mediainfo",
+    run_program = function(...) {
+      calls <<- calls + 1L
+      if (calls == 2L) abort_timeout("MediaInfo", 2)
+      "1920"
+    }
+  )
+  vals <- NULL
+  expect_warning(
+    vals <- mediainfo_parameter(c(one, two), section = "Video",
+                                parameter = "Width"),
+    "Could not read"
+  )
+  # Both files were attempted, and the first file's value survived the second
+  # file's timeout.
+  expect_identical(calls, 2L)
+  expect_identical(vals, c(1920L, NA_integer_))
+})
+
+# The Layer 0 hatch leaves its partial output behind (F7's narrowed claim) -----
+
+test_that("a timed-out ffmpeg() leaves what the killed run wrote", {
+  # ?tidymedia and NEWS.md both say the raw hatch does NOT clean up after a
+  # timeout, because it never parses the argument string and so cannot know
+  # which argument is the output. That claim needs a run that actually writes
+  # something before it hangs, which a FIFO input cannot produce -- FFmpeg
+  # blocks on the header before opening its output. A stand-in binary that
+  # writes and then blocks produces it deterministically, without racing a real
+  # encode against the limit on an unknown host (the M31/M46 failure mode).
+  skip_on_os("windows")
+  out <- withr::local_tempfile(fileext = ".mp4")
+  fake <- withr::local_tempfile(fileext = ".sh")
+  writeLines(
+    c("#!/bin/sh", 'printf partial > "$1"', "exec sleep 600"),
+    fake
+  )
+  Sys.chmod(fake, "0755")
+  local_mocked_bindings(find_ffmpeg = function(...) shQuote(fake))
+  withr::local_options(tidymedia.timeout = 2)
+  start <- Sys.time()
+  expect_error(ffmpeg(shQuote(out)), class = "tidymedia_timeout")
+  expect_lt(as.numeric(difftime(Sys.time(), start, units = "secs")), 10)
+  # The kill really happened after the write, so the surviving file is the
+  # documented behavior and not an artifact of nothing having run.
+  expect_true(file.exists(out))
+  expect_identical(readLines(out, warn = FALSE), "partial")
 })
 
 # Documentation (AC8) ---------------------------------------------------------

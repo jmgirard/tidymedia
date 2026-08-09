@@ -17,9 +17,13 @@
 #'
 #' \preformatted{options(tidymedia.timeout = 600)}
 #'
-#' A call that reaches the limit aborts, naming the program and the limit;
-#' where the run had already written part of its output, that partial file is
-#' removed just as it is after any other failed run. The default is `0`, which
+#' A call that reaches the limit aborts, naming the program and the limit. For
+#' the task verbs and [ffm_run()], which know where their output goes, a
+#' partial file the killed run had written is removed just as it is after any
+#' other failed run. The raw [ffmpeg()] escape hatch is handed an argument
+#' string it does not parse, so it cannot tell which of those arguments is the
+#' output and leaves whatever the killed run wrote in place — check the output
+#' of a timed-out [ffmpeg()] call yourself. The default is `0`, which
 #' means no limit — every call waits as long as the program takes, which is
 #' what you want for a legitimate multi-hour encode. Fractional values are
 #' refused rather than rounded, because the underlying limit is whole seconds

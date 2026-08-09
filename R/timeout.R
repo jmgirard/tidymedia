@@ -117,3 +117,21 @@ guard_timeout <- function(program, limit, expr, suppress = FALSE,
   if (!suppress) for (msg in held) warning(msg, call. = FALSE)
   out
 }
+
+# absorb_timeout(): let a resilient reader count a timeout as one more file it
+# could not read.
+#
+# The metadata readers each document an NA row (or NA value) plus one
+# end-of-call warning for a file they cannot read, and D047 makes a timeout no
+# exception -- the readers absorb it exactly as they absorb any other failure.
+# Without this the abort escapes probe_all()'s purrr::map() and the MediaInfo
+# readers' per-file loop, so ONE hung file in a 500-file corpus discards every
+# other file's result and falsifies the @return the caller read.
+#
+# Scoped to `tidymedia_timeout` alone: every other error still propagates, so
+# this is a narrow absorber and not a blanket try(). `NULL` is a safe sentinel
+# because system2(stdout = TRUE) returns character(0) at its emptiest, never
+# NULL.
+absorb_timeout <- function(expr) {
+  rlang::try_fetch(expr, tidymedia_timeout = function(cnd) NULL)
+}

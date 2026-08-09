@@ -1,6 +1,6 @@
 # M69: A hung media program stops the call, not the session
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -72,12 +72,12 @@ naming the program and the limit. A D-entry records the shape.
 
 - AC1 → T2, T3
 - AC2 → T1, T2, T3
-- AC3 → T4
+- AC3 → T4, T9
 - AC4 → T2, T4
 - AC5 → T3, T4
 - AC6 → T2, T4
 - AC7 → T4
-- AC8 → T5
+- AC8 → T5, T10
 - AC9 → T6
 - AC10 → T7
 
@@ -103,6 +103,17 @@ naming the program and the limit. A D-entry records the shape.
       the ROADMAP, added by this plan).
 - [x] T7 Run the `verify` slot end to end; `spelling::update_wordlist()` if the
       check NOTEs on new terms (M17).
+- [x] T8 (review return, F1/F3) Absorb `tidymedia_timeout` in the resilient
+      readers — `probe_one()`, `mediainfo_parameter()`, `mediainfo_read()` — so
+      a hung file yields the NA row and end-of-call warning each already
+      documents, per D047's readers bullet, instead of discarding the whole
+      call's results. Tests + mutation probe.
+- [x] T9 (review return, F15) Tighten the AC3 execution tests to the criterion
+      as written: a 10-second wall-clock bound on all three entry points, and
+      the limit asserted in every abort message, not just the program.
+- [x] T10 (review return, F7) Narrow the partial-output claim in `?tidymedia`
+      and `NEWS.md` to the calls that know their own output; fence the Layer 0
+      behavior with a test that a timed-out `ffmpeg()` leaves what it wrote.
 
 ## Work log
 
@@ -135,6 +146,12 @@ naming the program and the limit. A D-entry records the shape.
 - 2026-08-09: review — [S] blame-history lens: no resurrected bug, contradicted D-entry or weakened guard; one nuance to score (Layer 0 re-raised warnings lose the original condition's call context via `warning(msg, call. = FALSE)`). [S] prior-review lens: no prior-review regression; GitHub inline-comment probe empty, threads not walked. [O] diff-bug lens still running — triage and scoring pending.
 
 - 2026-08-09: review RETURN -> in-progress. What failed: (1) F1, `probe_all()` aborts on a timeout instead of yielding an NA row, falsifying its own `@return` and D047's readers bullet (measured: `purrr_error_indexed`, `tidymedia_timeout` only as `$parent`); (2) F15, AC3 unverified as written — tests assert `expect_lt(..., 20)` against the criterion's 10 s, the ffprobe test omits the limit, the ffm_run test has no wall-clock assertion; (3) F3, `mediainfo_parameter()` aborts mid-loop against its `@return`; (4) F7, Layer 0 timeouts leave a playable truncated output (measured 107 s of a 600 s source) while `?tidymedia` and NEWS.md say the partial file is removed. AC3 unticked; AC1/AC2/AC4-AC10 evidence stands.
+
+- 2026-08-09: return amendment (minor) — T8/T9/T10 added for the three actioned findings that are code or doc defects; AC3 and every other criterion stay as written, since F15 found the tests wrong rather than the criterion. Coverage gains AC3 → T9 and AC8 → T10; T8 maps to no criterion (D047's readers bullet, not an AC). One checkpoint commit covers all three: they share `tests/testthat/test-runtime-timeout.R` and one verify-slot run.
+- 2026-08-09: T8 (F1/F3) — `absorb_timeout()` added to `R/timeout.R` and wired into `probe_one()`, `mediainfo_parameter()` and `mediainfo_read()` (the last shares F3's defect and was fixed with it). A hung file now yields the NA row and the existing end-of-call warning; every non-timeout error still propagates. Mutation probe: removing each absorber reddened exactly its own test and no other.
+- 2026-08-09: T9 (F15) — AC3 verified as written. Measured on the FIFO fixture under a 2 s limit: `ffmpeg()` 2.06 s, `ffprobe()` 2.04 s, `ffm_run()` 2.06 s, each message naming its program and `2 seconds`. The bound is now the criterion's 10 s, and all three tests assert the limit. Mutation probe: dropping the limit from `abort_timeout()`'s message reddened the ffprobe and ffm_run tests, which it did not before.
+- 2026-08-09: T10 (F7) — `?tidymedia` and NEWS.md now scope the partial-output removal to the calls that know their own output and state that the raw `ffmpeg()` hatch leaves the file; the hatch parses no argument string, so cleanup there is not available under D002. Fenced by a new test using a stand-in binary that writes and then blocks, which produces the partial output a FIFO cannot. Mutation probe: adding the rejected cleanup to `ffmpeg()` reddened it.
+- 2026-08-09: verify slot after the return — `devtools::document()` rewrote only `man/tidymedia-package.Rd`; `devtools::test()` FAIL 0 / PASS 6132 / SKIP 5 (the 4 warnings are T2's pre-existing `warn_dropped_audio()` calls); `devtools::check()` `Status: OK`, 0 errors / 0 warnings / 0 notes (read from the real status line, not devtools' summary — M17). `cairn_validate` exit 0, one pre-existing advisory on the 10-AC sizing tripwire. Status back to `review`.
 
 ## Decisions
 

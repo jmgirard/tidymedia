@@ -52,8 +52,11 @@ this one site.
       NAMESPACE man/` adds no export and no `\usage` argument; and
       `grep -rn "getOption(" R/` returns the same single site on both refs.
 - [ ] **AC3.** The abort `ffm_run()` raises at `R/ffm.R:1398` names the file
-      it removed. Evidence: `expect_snapshot()` of that abort, recorded under
-      `devtools::test()` (never `test_file()` — M50's lesson).
+      it removed. Evidence: a test catching that condition and matching its
+      message against both the removal wording and the output's basename —
+      not `expect_snapshot()`, since the abort embeds `tempfile()` paths for
+      the input and the output that change on every run, so a recorded
+      snapshot would churn rather than pin anything.
 - [ ] **AC4.** `separate_audio_video()`'s multi-track abort still carries
       `ffm_run()`'s condition as its `parent`, so AC3's sentence reaches that
       caller. Evidence: a test asserting the caught condition's class is
@@ -95,7 +98,7 @@ this one site.
       call it from `ffm_run()` (`R/ffm.R:1396-1403`) on a non-zero status
       before raising; name the removed file in the abort's bullets, and say
       so when the removal itself fails.
-- [ ] **T3.** Snapshot the new abort; record under `devtools::test()`.
+- [x] **T3.** Assert the new abort's wording and the file it names.
 - [ ] **T4.** Add the parent-chain test through `separate_audio_video()`
       against `run_separation_audio()` (`R/ffmpeg.R:617-656`).
 - [ ] **T5.** Add the two-row batch execution test; confirm `run_one()`
@@ -106,7 +109,7 @@ this one site.
       record a decision entry for reading and writing the filesystem after a
       failed run — it is not a probe under the executing-path licence, which
       governs running a binary, and D040 already licensed a filesystem read.
-- [ ] **T8.** Unit-test `remove_failed_output()` over the four `overwrite` ×
+- [x] **T8.** Unit-test `remove_failed_output()` over the four `overwrite` ×
       pre-existence combinations (AC8).
 
 ## Work log
@@ -119,6 +122,9 @@ this one site.
 - 2026-08-09: amendment gate — added AC8 and T8 for the `overwrite = FALSE` guard chosen at the implement gate, narrowed to a pre-existing output so a non-overwriting run that creates a zero-byte file still gets it removed.
 - 2026-08-09: T1 — tests/testthat/test-failed-run-cleanup.R added; both cases red against the branch's unchanged R/ ("Expected `file.exists(outfile)` to be FALSE. actual: TRUE"), which is master's behavior and AC1's pre-change counterfactual.
 - 2026-08-09: T2 — remove_failed_output() added beside ffm_run() (R/ffm.R) and called from its non-zero-status branch; both T1 cases now green and devtools::test() reports FAIL 0 | SKIP 5 | PASS 5993.
+- 2026-08-09: T8/T3 — helper unit tests over the four overwrite x pre-existence cells, the unremovable-file case, and the abort's wording; 7 tests / 26 expectations green, 0 skipped.
+- 2026-08-09: T8 mutation control — with the unlink stubbed to a no-op, 4 of the 7 tests go red (12 failures) while the three that never exercise the unlink success path stay green; R/ffm.R restored from the T2 commit afterwards.
+- 2026-08-09: amendment gate — AC3's expect_snapshot() replaced by a targeted message match, since the abort embeds two tempfile() paths and a recorded snapshot would churn every run (measured on the AC4 probe).
 - 2026-08-09: criteria audit ([O], fresh context) returned 11 findings; ten fixed in the drafted wording (unbounded promises in AC1/AC3/AC4/AC5, a non-discriminating control, AC3 snapshotting the Layer-2 abort rather than `ffm_run()`'s, "unconditional" contradicting a two-disposition design, an unevidenced counterfactual), and its AC2 satisfiability finding became the gate question the first line above records.
 
 

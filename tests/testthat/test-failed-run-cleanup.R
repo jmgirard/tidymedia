@@ -164,7 +164,8 @@ test_that("a wildcard in the output's name costs no neighboring file", {
   dir <- withr::local_tempdir()
   target <- file.path(dir, "a*.mp4")
   neighbors <- file.path(dir, c("aQQQ.mp4", "aXYZ.mp4"))
-  for (p in c(target, neighbors)) writeLines("content", p)
+  tm_require_wildcard_name(target)
+  for (p in neighbors) writeLines("content", p)
 
   bullets <- remove_failed_output(target, overwrite = TRUE,
                                   before = character(0))

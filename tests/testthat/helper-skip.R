@@ -83,3 +83,26 @@ tm_require_unwritable_dir <- function(dir) {
   }
   testthat::fail("the fixture directory is still writable after chmod 0500")
 }
+
+# M68 -- the gate in front of the wildcard-name case.
+#
+# `unlink()` globs by default, so an output named "a*.mp4" could take its
+# neighbors with it. Windows cannot express that hazard at all: `*` and `?` are
+# illegal in a filename there, so the fixture cannot be created (measured on
+# windows-latest at M68's review -- `writeLines()` fails with "cannot open the
+# connection"). Build the fixture, verify it, and skip ONLY where the platform
+# genuinely cannot hold such a name; anywhere else a missing fixture means
+# something is wrong with the run, not with the platform (M63's shape). The
+# creation is not the operation under test -- the removal is -- so this is a
+# capability gate rather than a skip keyed on an outcome.
+tm_require_wildcard_name <- function(path) {
+  made <- tryCatch({
+    writeLines("content", path)
+    file.exists(path)
+  }, error = function(e) FALSE, warning = function(w) FALSE)
+  if (isTRUE(made)) return(invisible(path))
+  if (.Platform$OS.type == "windows") {
+    testthat::skip("Windows filenames cannot contain `*`")
+  }
+  testthat::fail(paste0("could not create the fixture file: ", path))
+}

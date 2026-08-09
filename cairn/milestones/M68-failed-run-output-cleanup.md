@@ -35,60 +35,60 @@ interrupts (SIGINT) is not a non-zero exit → no row; raise one if reported.
 
 ## Acceptance criteria
 
-- [ ] **AC1.** When `ffm_run()`'s FFmpeg invocation exits non-zero and the run
+- [x] **AC1.** When `ffm_run()`'s FFmpeg invocation exits non-zero and the run
       wrote to the output path, that path does not exist after the abort.
       Evidence: an execution test provoking an AAC-to-MP3 stream copy — a
       refusal no FFmpeg build can avoid, unlike the version-dependent adts
       refusal M45 paid for — with the path absent beforehand and with it
       pre-written, asserting absence after each abort; and the same test with
       the removal stubbed out, red, with its failure output quoted.
-- [ ] **AC2.** The change stays confined: one removal site, no user-facing
+- [x] **AC2.** The change stays confined: one removal site, no user-facing
       switch. Evidence: `grep -rn "unlink(\|file.remove(" R/` returns the
       pre-existing `R/program_management.R` line and exactly one new line,
       inside `ffm_run()`; `grep -rn "ffm_run(" R/` shows every caller reaches
       it rather than removing anything itself; `git diff master..HEAD --
       NAMESPACE man/` adds no export and no `\usage` argument; and
       `grep -rn "getOption(" R/` returns the same single site on both refs.
-- [ ] **AC3.** The abort `ffm_run()` raises names the file it removed.
+- [x] **AC3.** The abort `ffm_run()` raises names the file it removed.
       Evidence: a test catching that condition and matching its message against
       both the removal wording and the output's basename — not
       `expect_snapshot()`, since the abort embeds `tempfile()` paths that
       change on every run.
-- [ ] **AC4.** `separate_audio_video()`'s multi-track abort still carries
+- [x] **AC4.** `separate_audio_video()`'s multi-track abort still carries
       `ffm_run()`'s condition as its `parent`, so AC3's sentence reaches that
       caller. Evidence: a test asserting the caught condition's class is
       `tidymedia_multitrack_separation` and its `$parent` message matches
       AC3's wording.
-- [ ] **AC5.** A failed batch row's output path is absent and a succeeding
+- [x] **AC5.** A failed batch row's output path is absent and a succeeding
       row's is present. Evidence: a two-row execution test through
       `ffm_batch()` asserting both paths and `success == c(FALSE, TRUE)`.
-- [ ] **AC6.** `NEWS.md` carries an entry stating the removal, naming no
+- [x] **AC6.** `NEWS.md` carries an entry stating the removal, naming no
       milestone number, and AC1's stubbed-out run is the test that fails
       without the behavior the entry asserts.
-- [ ] **AC7.** The profile's `verify` slot is clean and its fuller
+- [x] **AC7.** The profile's `verify` slot is clean and its fuller
       pre-review check passes: `devtools::document()` no diff,
       `devtools::test()` clean, `devtools::check()` 0 errors / 0 warnings.
-- [ ] **AC8.** `overwrite = FALSE` never costs the caller a file: a pre-existing
+- [x] **AC8.** `overwrite = FALSE` never costs the caller a file: a pre-existing
       output is preserved under it by a guard of its own, whatever FFmpeg did,
       while an output the run created is removed whatever `overwrite` said.
       Evidence: direct tests of the removal helper over the four combinations of
       `overwrite` (`TRUE`/`FALSE`) and pre-existence, asserting removal in three
       and preservation with the content intact only for `overwrite = FALSE`
       against a pre-existing path.
-- [ ] **AC9.** A failed run leaves a pre-existing output FFmpeg never opened
+- [x] **AC9.** A failed run leaves a pre-existing output FFmpeg never opened
       exactly as it was. Evidence: an execution test provoking an unknown
       encoder — exit 8, raised before the output is opened — against a
       pre-written output, asserting the bytes and the mtime are unchanged and
       that the abort says the file was left alone; red against the removal this
       milestone first shipped, with that failure output quoted.
-- [ ] **AC10.** The removal deletes what the run wrote and nothing beside it.
+- [x] **AC10.** The removal deletes what the run wrote and nothing beside it.
       Evidence: a direct test that an output named `a*.mp4` costs neither
       `aQQQ.mp4` nor `aXYZ.mp4`, and that `out[1].mp4` goes while `out1.mp4`
       stays (R's `unlink()` globs by default, measured at review); and an
       execution test over a `%06d` frame pattern where a failed sampling run
       removes the frames it wrote while an earlier run's frames and an unrelated
       file in the same directory survive.
-- [ ] **AC11.** No test here skips on the outcome of the operation it tests.
+- [x] **AC11.** No test here skips on the outcome of the operation it tests.
       Evidence: the unremovable-file case verifies its fixture with
       `file.access(dir, mode = 2)` rather than by attempting the unlink, and
       skips only on Windows or as root, failing anywhere else — the shape
@@ -170,6 +170,7 @@ interrupts (SIGINT) is not a non-zero exit → no row; raise one if reported.
 - 2026-08-09: T13 — NEWS.md entry rewritten to what the package now does (what the run wrote, the untouched-output case, the literal-name rule, the frame sequence); `devtools::document()` no diff, `devtools::test()` FAIL 0 | WARN 4 | SKIP 5 | PASS 6035, `devtools::check()` Status: OK (0/0/0). The 4 warnings are the package's own "Dropping N audio tracks" warnings in test-audio-stream.R and test-ffmpeg.R, unrelated to this branch.
 - 2026-08-09: T13 — a first check run reported 1 NOTE, the spelling test on "neighbouring" in NEWS.md; the package spells US ("behavior" x20), so the branch does too. A sweep that also touched two unrelated files' comments was reverted, keeping the diff confined (AC2).
 - 2026-08-09: all thirteen tasks done and checks clean; the review's six actioned findings are answered (F1/F10 by the write-detection rule and its never-opened test, F2/F3 by `expand = FALSE` and the two neighbor tests, F6 by the frame-pattern set, P1 by the fixture-verified gate); status -> review.
+- 2026-08-09: review round 2 — CI red on windows-latest: the `a*.mp4` fixture cannot be created there (`*` is illegal in a Windows filename; `writeLines()` fails with "cannot open the connection" at test-failed-run-cleanup.R:167). Gated with `tm_require_wildcard_name()`, which builds and verifies the fixture and skips only on Windows, failing anywhere else; the test still reddens under the default-globbing control locally.
 
 
 
@@ -244,3 +245,78 @@ measurement.
 emptied the directory; `unlink("out[1].mp4")` deleted `out1.mp4`, left
 `out[1].mp4`, and returned 0.
 
+
+### Round 2 — acceptance-criteria evidence (fresh, 2026-08-09)
+
+Whole file fresh: 14 tests, 50 expectations, 0 failed, **0 skipped**.
+
+- **AC1** — cases 1 and 2 green: the output path is absent after the abort with
+  the path absent beforehand and with it pre-written with content. Counterfactual
+  with the `unlink()` stubbed to `invisible(NULL)`: 10 of 14 tests red, 21
+  failures, first one quoted — `Expected file.exists(outfile) to be FALSE.
+  actual: TRUE`. `R/ffm.R` restored (`grep -c MUTATION` -> 0, `git diff --stat`
+  empty).
+- **AC2** — `grep -rn "unlink(\|file.remove(" R/` -> `R/program_management.R:247`
+  (pre-existing) and one new call at `R/ffm.R:1464`, inside
+  `remove_failed_output()`. The five `ffm_run()` call sites (`R/ffm_batch.R:127`,
+  `R/ffm.R:1589`, `R/ffmpeg.R:619,621,887`) remove nothing themselves — the grep
+  above finds no `unlink()` in either file. `git diff master..HEAD --
+  NAMESPACE man/` -> 0 lines. `grep -rn "getOption(" R/` -> `R/ffmpeg.R:2533` on
+  this branch and on `master` alike.
+- **AC3** — case 12 green, and the rendered abort read directly: `The incomplete
+  '<tmp>/filee7386d32cc27.mp3' was removed.` alongside `FFmpeg exited with
+  status 234.` The match is on the wording and the basename, not a snapshot.
+- **AC4** — case 13 green: the caught condition is
+  `tidymedia_multitrack_separation` and its `$parent` message carries the
+  removal sentence.
+- **AC5** — case 14 green: `success` reads `FALSE, TRUE`, the failed row's output
+  is absent and the succeeding row's is present.
+- **AC6** — `NEWS.md:296` carries the entry, naming no milestone number. Each
+  behavior it asserts has a run that fails without it: the removal itself by
+  AC1's stub above; "only what the run wrote" by the control that removes
+  everything at the output (reddens the never-opened case and the frames case);
+  the literal-name rule by `unlink()`'s default globbing (reddens the two
+  neighbor cases) and by dropping the literal-first reading (reddens its own
+  case); the frame sequence by treating every output as a literal path (reddens
+  the frames case).
+- **AC7** — `devtools::document()` no diff (re-run, `git status` clean);
+  `devtools::test()` FAIL 0 | WARN 4 | SKIP 5 | PASS 6035, the 4 warnings being
+  the package's own "Dropping N audio tracks" warnings in `test-audio-stream.R`
+  and `test-ffmpeg.R`, on neither this branch's files nor its behavior;
+  `devtools::check()` Status: OK — 0 errors, 0 warnings, 0 notes.
+- **AC8** — cases 3 and 4 green: removal in the three cells where the run wrote,
+  and preservation with the content intact only for `overwrite = FALSE` against
+  a pre-existing path — asserted against a fixture where the file WAS written
+  after the snapshot, so the guard is shown to hold independently of what FFmpeg
+  did rather than by riding on the write-detection rule.
+- **AC9** — case 7 green: after an unknown-encoder run the pre-written output
+  still exists, `readLines()` returns its original line, and its size and mtime
+  are `identical()` to the pre-run stat. The rendered abort read directly:
+  `'<tmp>/filee73821f94c73.mp4' was left as it was: FFmpeg never wrote to it.`
+  alongside `FFmpeg exited with status 8.` The control that removes everything
+  at the output reddens exactly this case and the frames case, and nothing else.
+- **AC10** — cases 8, 9, 10 and 11 green: `a*.mp4` goes while `aQQQ.mp4` and
+  `aXYZ.mp4` stay; `out[1].mp4` goes while `out1.mp4` stays; a literal
+  `100%d.mp4` goes while `1005.mp4` stays; and a failed `sample_frames()` run —
+  blocked at its third frame by a directory sitting where that file must go,
+  exit 235 with two frames written — loses `f_000001.png` and `f_000002.png`
+  while the blocking directory, an earlier run's `f_000010.png` (size and mtime
+  `identical()`) and a non-matching `notes.txt` all survive. Three controls
+  discriminate: default globbing reddens the two neighbor cases, dropping the
+  literal-first reading reddens the `100%d.mp4` case, and treating every output
+  as a literal path reddens the frames case.
+- **AC11** — the whole file runs with 0 skipped on this machine. The
+  unremovable-file case calls `tm_require_unwritable_dir()`
+  (`tests/testthat/helper-skip.R`), which asks `file.access(dir, mode = 2)`,
+  skips only on Windows or as root, and calls `testthat::fail()` anywhere else —
+  no skip anywhere in the file is keyed on the outcome of the operation under
+  test.
+
+**Consistency gate.** `cairn_validate.py` exit 0, all checks passed (2 advisory
+warnings: the >7-criteria and >10-task sizing tripwires, a return-driven
+expansion of work already in flight rather than a split). No `DESIGN.md`
+principle changed, so `cairn_impact` is skipped. Profile `consistency-gate`
+slot: `document()` no diff; `README.Rmd`/`README.md` untouched by this branch (0
+lines); `pkgdown::check_pkgdown()` "No problems found."; `NEWS.md` entry present
+and naming no milestone number; the only top-level file the branch touches is
+`NEWS.md`, already tracked; `devtools::check()` Status: OK.

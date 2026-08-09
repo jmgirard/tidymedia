@@ -7,7 +7,9 @@ for when you have more than one file. Each row is one input. This is a
 thin wrapper over
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
 one reproducible compiled command per input, sharing the same crop
-pipeline (and its per-value dimension guards) as the scalar verb.
+pipeline as the scalar verb. Each row's geometry values are checked at
+this verb's own front door, so a bad cell is refused – naming this
+function – before any command runs.
 
 ## Usage
 

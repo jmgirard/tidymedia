@@ -367,6 +367,32 @@
 
 ### Bug fixes
 
+- A bad crop, scale, rate or pixel-format value is now refused by the
+  function you called.
+  [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md)’s
+  `width`, `height`, `x` and `y`,
+  [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)’s
+  `width`, `height`, `fps` and `pixel_format`, and
+  [`sample_frames_batch()`](https://jmgirard.github.io/tidymedia/reference/sample_frames_batch.md)’s
+  per-row rate used to be reported against an internal builder the
+  caller never called —
+  [`ffm_crop()`](https://jmgirard.github.io/tidymedia/reference/ffm_crop.md),
+  [`ffm_scale()`](https://jmgirard.github.io/tidymedia/reference/ffm_scale.md),
+  [`ffm_fps()`](https://jmgirard.github.io/tidymedia/reference/ffm_fps.md),
+  [`ffm_pixel_format()`](https://jmgirard.github.io/tidymedia/reference/ffm_pixel_format.md)
+  — or, on the `_batch` verbs, against
+  [`purrr::pmap()`](https://purrr.tidyverse.org/reference/pmap.html)
+  with an `In index:` prefix. Each `_batch` sibling refuses the value
+  whether it is passed as the argument or carried in a `jobs` column,
+  and before any row runs. One message changes: a malformed
+  `pixel_format` used to be reported against `format`, an argument name
+  these verbs do not have, and now names `pixel_format`. On the two
+  `_batch` verbs gaining a sweep, a call that is also wrong about
+  `hardware = "nvenc"` — the machine lacks the encoder — is now told
+  about the bad value first, the same answer
+  [`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md)
+  gives for its `width` and `height`.
+
 - An input file that does not exist is now reported against the verb you
   called. Every `_batch` verb used to accept a `jobs` table naming a
   missing path and only discover it once the batch was under way, so the

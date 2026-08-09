@@ -38,7 +38,7 @@ Layer-1 error, correctly.
 
 ## Acceptance criteria
 
-- [ ] AC1: For every cell of the spec list declared in
+- [x] AC1: For every cell of the spec list declared in
       `tests/testthat/helper-blame-specs.R` — each naming (verb, form, delivery,
       argument, violating value) — the call aborts with `conditionCall()` whose
       function part is the verb called and whose deparsed call contains none of
@@ -49,18 +49,18 @@ Layer-1 error, correctly.
       helper in the source tree — `data-raw/blame-baseline.R` is the one
       consumer — and no second copy of the list exists anywhere; the AC4 and
       AC5 scripts declare no cell list of their own.
-- [ ] AC2: Every `_batch` cell appears twice — the violating value passed as the
+- [x] AC2: Every `_batch` cell appears twice — the violating value passed as the
       argument, and carried in the `jobs` column — and for each (verb, argument)
       the scalar and batch cells report the same guard, compared cell-for-cell by
       the grid rather than asserted independently. Both `sample_frames` forms
       report `resolve_sample_fps()`'s wording.
-- [ ] AC3: `data-raw/blame-baseline.R` records `blamed_verb()` and
+- [x] AC3: `data-raw/blame-baseline.R` records `blamed_verb()` and
       `conditionMessage()` for every AC1 cell at the branch's merge-base and on
       the branch. `blamed_verb()` changes on every cell this milestone claims to
       fix; every cell whose message differs is listed in a Deviations table in
       this file with a reason, and a cell absent from that table has an identical
       message on both refs.
-- [ ] AC4: For each crossing declared in `data-raw/blame-precedence.R` — each new
+- [x] AC4: For each crossing declared in `data-raw/blame-precedence.R` — each new
       sweep crossed with each guard in that file's crossing list, closed by
       inspection and stated as such — the guard that reports is recorded at the
       branch's merge-base and on the branch, and each cell carries a control
@@ -70,18 +70,18 @@ Layer-1 error, correctly.
       reordering table in this file naming the call whose answer it changes.
       Every other cell reports the same guard on both refs. A cell whose control
       is dead fails; it is not excluded.
-- [ ] AC5: `data-raw/blame-guard-mutations.py` derives its mutation list from the
+- [x] AC5: `data-raw/blame-guard-mutations.py` derives its mutation list from the
       branch diff's added checker call sites, removes each in the FILE, and
       records the reds. Each mutation's reds include at least one cell that
       sweep owns. AC1's completeness reader and AC4's controls are themselves
       mutated and go red.
-- [ ] AC6: Each site matched by `grep -rn 'ffm_crop\|ffm_scale\|ffm_fps\|ffm_pixel_format\|crop_video_pipeline\|standardize_pipeline\|sample_frames_pipeline' R/ tests/ man/ NEWS.md README.Rmd vignettes/ cairn/DESIGN.md cairn/ROADMAP.md`
+- [x] AC6: Each site matched by `grep -rn 'ffm_crop\|ffm_scale\|ffm_fps\|ffm_pixel_format\|crop_video_pipeline\|standardize_pipeline\|sample_frames_pipeline' R/ tests/ man/ NEWS.md README.Rmd vignettes/ cairn/DESIGN.md cairn/ROADMAP.md`
       is read, and no matched site outside `cairn/milestones/archive/` retains a
       claim that one of these is the blamed call for an argument this milestone
       fixes. Archived milestones are history and stay unedited. `R/ffmpeg.R:1367-1372`
       is corrected too, named here because it makes the claim without naming a
       builder and so the grep does not reach it.
-- [ ] AC7: Each sentence of the NEWS entry cites, in a table in this file, the
+- [x] AC7: Each sentence of the NEWS entry cites, in a table in this file, the
       test file and `test_that()` title that AC5's mutation run turns red without
       it. `devtools::test()` clean and `devtools::check()` `Status: OK`.
 
@@ -197,3 +197,17 @@ a different `arg`. `ffm_pixel_format()`'s parameter is named `format`, so
 `pixel_format`; the user was told to fix an argument that does not exist on the
 verb they called. Checking at the verb's own layer names the verb's own
 argument. The other 27 cells' messages are byte-identical.
+
+## Review
+
+_Review of 2026-08-08 on branch commit 0e8b7d1 (PR #67), merge-base 194e11f. No Driving RR, so projection-vs-outcome no-ops._
+
+- AC1: grid fresh — `testthat::test_local(filter="builder-blame")`: 5 tests, 329 expectations, 0 failed / 0 errors. Completeness reader green on the real list, red on two planted defects (its own test). Helper states closure by inspection. `blame_specs(` is consumed in `data-raw/` only by `blame-baseline.R`; the AC4/AC5 scripts declare no cell list (grep, this review) — the amended clause holds.
+- AC2: same run's "both forms refuse the same value with the same guard": every (verb, argument) group carries both forms and normalizes to one guard sentence; both `sample_frames` forms match `resolve_sample_fps()`'s wording via each cell's expected message.
+- AC3: baseline at 194e11f and the working tree — 30 cells, 0 vacuous either side; 24 moves = every non-pinned cell and no pinned one; every move's new blame target is its own verb; message drift = exactly the 3 pixel-format cells in M64-D1's table.
+- AC4: precedence at both refs — 82 crossings, 0 dead controls and 0 unresolved on both; winner flips = exactly the 3 nvenc `_batch` crossings in M64-D2's reordering table.
+- AC5: harness exit 0 — 12 sites derived from the branch diff, each mutation's reds including ≥1 cell its own verb's grid owns; the neutered reader is red via the planted-defect test; the dead-control report appears when a crossed guard is removed and vanishes when the control check is neutered.
+- AC6: grep = 257 matched sites, all read (T8's sweep plus this review's re-grep); the retired inherited-from-the-builder phrasings match nowhere; the site the criterion names by line number was rewritten at T3 into the front-door sweep comment.
+- AC7: M64-D3 cites each NEWS sentence's enforcing test; `devtools::test()` 0 failed / 5265 passed; `devtools::check()` Status: OK, 0 errors / 0 warnings / 0 notes.
+
+Consistency gate: `cairn_validate` all checks pass; `devtools::document()` produces no diff; `pkgdown::check_pkgdown()` clean; NEWS entry present with no milestone numbers; no new top-level files; no DESIGN.md principle changed (`cairn_impact` skipped).

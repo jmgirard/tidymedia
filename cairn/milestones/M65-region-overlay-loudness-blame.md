@@ -1,11 +1,11 @@
 # M65: A region, overlay or loudness mistake names the verb the user called, in both forms
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M64
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** —
+- **Branch/PR:** m65-region-overlay-loudness-blame
 
 ## Goal
 
@@ -49,7 +49,7 @@ today is the path CI cannot check; T5 records the local run.
       same bindings by an inline helper, as `audio_stream_param()` already does,
       and `devtools::document()` produces no diff.
 - [ ] AC3: For every cell of the spec list declared in
-      `data-raw/blame-specs-m65.R` — each naming (verb, form, delivery, argument
+      `tests/testthat/helper-blame-specs-m65.R` — each naming (verb, form, delivery, argument
       or region field, violating value), with `two_pass` in {FALSE, TRUE} as an
       axis on `normalize_audio` and the bad region row and field varied within a
       multi-row `regions` frame — the call aborts with `conditionCall()` naming
@@ -105,7 +105,7 @@ today is the path CI cannot check; T5 records the local run.
       builder layer.
 - [ ] T2: Generate the roxygen bounds at `R/ffmpeg.R:2009-2014` from the same
       bindings via an inline helper; `document()`.
-- [ ] T3: Declare `data-raw/blame-specs-m65.R` and extend M64's grid to read it —
+- [ ] T3: Declare `tests/testthat/helper-blame-specs-m65.R` and extend M64's grid to read it —
       both forms, both deliveries, the `two_pass` axis, the region row/field
       variation, and AC5's two `scale` cells. Red first.
 - [ ] T4: `anonymize_video()` (`R/ffmpeg.R:1533`) and `anonymize_video_batch()`
@@ -128,4 +128,5 @@ today is the path CI cannot check; T5 records the local run.
 - 2026-08-08: created by /milestone-plan.
 - 2026-08-08: plan gate chose moving `normalize_audio()`'s loudness sweep above the `two_pass` analysis block over scoping the milestone to single-pass and disclosing the gap, because a disclosed ordering gap is the shape D038 recorded and D039 had to undo; falsified by a reordering that changes the reported guard for a caller the crossing table cannot enumerate.
 - 2026-08-08: plan gate chose one internal binding read by both layers over restating each bound at the front door, because a restated number is exactly what the M40 stale-hint lesson bites on and no test comparing literals can see the drift; falsified by a bound whose two layers must legitimately differ.
+- 2026-08-08: substantive amendment (gated): AC3/T3's spec list moved from `data-raw/blame-specs-m65.R` to `tests/testthat/helper-blame-specs-m65.R` — `^data-raw$` is in `.Rbuildignore`, so the grid test sourcing it there would skip under `R CMD check` (the M51/M59 lesson; M64's list lives in tests/ for the same reason). User approved "Move to tests/".
 - 2026-08-08: criteria audit ([O], fresh context) returned defects on all seven drafted criteria — a bounds test that could not distinguish a shared binding from a restated literal, a "one site in `R/`" claim falsified by roxygen the criterion never mentioned, a `two_pass` path the grid never reached, an inherited unbounded crossing domain, a type/range conflation at error-class grain, and a mutation criterion asserting a redness that cannot occur. All seven rewritten before writing.

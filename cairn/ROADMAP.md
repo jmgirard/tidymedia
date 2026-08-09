@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-08 (M64 done and archived; M65 unblocked. Terminal-
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M65 | A region, overlay or loudness mistake names the verb the user called, in both forms | planned | M64 | normal | milestones/M65-region-overlay-loudness-blame.md |
+| M65 | A region, overlay or loudness mistake names the verb the user called, in both forms | in-progress | M64 | normal | milestones/M65-region-overlay-loudness-blame.md |
 | M64 | A crop, scale or rate mistake names the verb the user called, in both forms | done | — | normal | milestones/archive/M64-crop-scale-rate-blame.md |
 | M63 | An unreadable input is refused where a missing one already is | done | M62 | normal | milestones/archive/M63-unreadable-input-front-door.md |
 | M62 | A missing input file is refused at the front door, in both forms | done | M61 | normal | milestones/archive/M62-fanout-input-path-front-door.md |

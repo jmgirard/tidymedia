@@ -65,7 +65,7 @@ naming the program and the limit. A D-entry records the shape.
       points of AC3 when they time out — asserted locale-free with
       `expect_no_warning()`, never by matching `timed out after`, since R's
       warning embeds the full command line and the `input=` temp path.
-- [x] AC8 `NEWS.md` and the `?tidymedia` Rd topic both document the option's
+- [ ] AC8 `NEWS.md` and the `?tidymedia` Rd topic both document the option's
       name, unit (seconds), default (`0`, no limit), and — as one scoped claim,
       not two coexisting sentences — which calls a reached limit aborts (the
       task verbs, `ffm_run()`, and the Layer 0 hatches `ffmpeg()`, `ffprobe()`,

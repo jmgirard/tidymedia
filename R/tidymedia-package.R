@@ -17,8 +17,19 @@
 #'
 #' \preformatted{options(tidymedia.timeout = 600)}
 #'
-#' A call that reaches the limit aborts, naming the program and the limit. For
-#' the task verbs and [ffm_run()], which know where their output goes, a
+#' What a reached limit does depends on which call you made. The task verbs,
+#' [ffm_run()] and the Layer 0 escape hatches [ffmpeg()], [ffprobe()] and
+#' [mediainfo()] **abort**, naming the program and the limit. The metadata
+#' readers — [probe_all()] and the `probe_*()` accessors,
+#' [mediainfo_parameter()], [mediainfo_query()], [mediainfo_template()] and the
+#' `get_*()` helpers — instead **absorb** it, treating the file as one they
+#' could not read: an `NA` row and one warning at the end of the call, so a
+#' single hung file does not discard a whole corpus. That warning says how many
+#' of the files it names timed out rather than being unreadable.
+#' [verify_media()] is the exception among readers: it aborts, because a probe
+#' that never answered is not an answer of "no".
+#'
+#' For the task verbs and [ffm_run()], which know where their output goes, a
 #' partial file the killed run had written is removed just as it is after any
 #' other failed run. The raw [ffmpeg()] escape hatch is handed an argument
 #' string it does not parse, so it cannot tell which of those arguments is the
@@ -33,6 +44,14 @@
 #' 600-second limit bounds each row at 600 seconds. It is also read in the
 #' process that sets it, so under `parallel = TRUE` the worker processes do not
 #' see it.
+#'
+#' The limit bounds the wait; it does not promise the program dies at the
+#' second. R asks the program to stop when the limit is reached, insists 20
+#' seconds later, and kills it 20 seconds after that, so on Unix a program that
+#' does not answer the first two can outlive its limit by up to 40 seconds — an
+#' FFmpeg blocked on an unresponsive input has been measured doing exactly that.
+#' R does not guarantee termination at all: a program can be written to survive
+#' the attempt.
 #'
 #' See `vignette("tidymedia")` for the guided tour, `vignette("batch")` for
 #' running a verb over many files, `vignette("metadata")` for the readers, and

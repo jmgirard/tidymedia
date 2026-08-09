@@ -77,6 +77,7 @@ mediainfo_parameter <- function(file, section, parameter, typed = TRUE) {
   inform <- paste0("--Inform=", section, ";%", parameter, "%")
   loc <- NULL
   failed <- character(0)
+  timed_out <- character(0)
   out <- character(length(file))
   for (i in seq_along(file)) {
     f <- file[[i]]
@@ -90,15 +91,16 @@ mediainfo_parameter <- function(file, section, parameter, typed = TRUE) {
     # documents an NA per unreadable file, so an escaping abort would discard
     # the values already collected for the files before it (D047).
     res <- absorb_timeout(run_program(loc, c(inform, f), program = "mediainfo"))
-    if (is.null(res)) {
+    if (is_absorbed_timeout(res)) {
       failed <- c(failed, f)
+      timed_out <- c(timed_out, f)
       out[[i]] <- NA_character_
       next
     }
     # A missing section/parameter prints nothing or a multi-line dump.
     out[[i]] <- if (length(res) == 1) res else NA_character_
   }
-  warn_unreadable(failed)
+  warn_unreadable(failed, timed_out)
   if (typed) coerce_column(out) else out
 }
 
@@ -252,6 +254,7 @@ mediainfo_summary <- mediainfo_template
 mediainfo_read <- function(file, inform) {
   loc <- NULL
   failed <- character(0)
+  timed_out <- character(0)
   rows <- vector("list", length(file))
   for (i in seq_along(file)) {
     f <- file[[i]]
@@ -264,8 +267,9 @@ mediainfo_read <- function(file, inform) {
     # Same absorption as mediainfo_parameter(), for the same reason: this
     # reader also promises an NA row per unreadable file (D047).
     res <- absorb_timeout(run_program(loc, c(inform, f), program = "mediainfo"))
-    if (is.null(res)) {
+    if (is_absorbed_timeout(res)) {
       failed <- c(failed, f)
+      timed_out <- c(timed_out, f)
       rows[[i]] <- tibble::tibble(file = f)
       next
     }
@@ -284,7 +288,7 @@ mediainfo_read <- function(file, inform) {
     names(df) <- trimws(names(df))
     rows[[i]] <- tibble::add_column(tibble::as_tibble(df), file = f, .before = 1)
   }
-  warn_unreadable(failed)
+  warn_unreadable(failed, timed_out)
   dplyr::bind_rows(rows)
 }
 
@@ -292,11 +296,16 @@ mediainfo_read <- function(file, inform) {
 
 # Emit the shared "could not read these files" warning used by the resilient
 # MediaInfo readers. No-op when nothing failed.
-warn_unreadable <- function(failed) {
+warn_unreadable <- function(failed, timed_out = character(0)) {
   if (length(failed)) {
     cli::cli_warn(c(
       "Could not read {length(failed)} file{?s}; returning {.val {NA}} row{?s}.",
-      "x" = "{.file {failed}}"
+      "x" = "{.file {failed}}",
+      if (length(timed_out)) c(
+        "i" = "{length(timed_out)} of {cli::qty(length(failed))}{?these/those} \\
+               timed out rather than being unreadable; raise or remove \\
+               {.code options(tidymedia.timeout = )}."
+      )
     ))
   }
   invisible(failed)

@@ -103,10 +103,21 @@ probe_all <- function(infile, typed = TRUE, parallel = FALSE) {
   containers <- vector("list", length(infile))
   streams_l <- vector("list", length(infile))
   failed <- character(0)
+  # Tracked apart from `failed` because a file that HUNG and a file that is
+  # unreadable are different facts for the caller, even though both yield the
+  # same NA row. A user who set a limit precisely to catch hangs cannot act on
+  # a warning that calls the two the same thing.
+  timed_out <- character(0)
+  hit <- NULL
 
   for (i in seq_along(infile)) {
     f <- infile[[i]]
     res <- probes[[i]]
+    if (is_absorbed_timeout(res)) {
+      timed_out <- c(timed_out, f)
+      if (is.null(hit)) hit <- res
+      res <- NULL
+    }
     if (is.null(res)) {
       failed <- c(failed, f)
       containers[[i]] <- tibble::tibble(file = f)
@@ -124,7 +135,12 @@ probe_all <- function(infile, typed = TRUE, parallel = FALSE) {
   if (length(failed)) {
     cli::cli_warn(c(
       "Could not probe {length(failed)} file{?s}; returning {.val {NA}} row{?s}.",
-      "x" = "{.file {failed}}"
+      "x" = "{.file {failed}}",
+      if (length(timed_out)) c(
+        "i" = "{length(timed_out)} of {cli::qty(length(failed))}{?these/those} \\
+               timed out rather than being unreadable; raise or remove \\
+               {.code options(tidymedia.timeout = )}."
+      )
     ))
   }
 
@@ -134,7 +150,13 @@ probe_all <- function(infile, typed = TRUE, parallel = FALSE) {
     container <- type_columns(container)
     streams <- type_columns(streams)
   }
-  list(container = container, streams = streams)
+  # The sentinel rides out on an attribute rather than in the list, so the
+  # documented `list(container, streams)` shape is unchanged and only a caller
+  # that looks for it -- verify_media() -- can act on it.
+  structure(
+    list(container = container, streams = streams),
+    tm_timed_out = if (length(timed_out)) hit
+  )
 }
 
 # count_audio_streams() ---------------------------------------------------
@@ -208,8 +230,10 @@ count_audio_streams <- function(file) {
 # A timeout is absorbed here rather than allowed to propagate: probe_all() maps
 # this over the whole input vector, so an escaping abort would throw away every
 # other file's result to report the one that hung. D047 puts the timeout on the
-# same footing as any other unreadable file -- NULL here, an NA row and the
-# end-of-call warning in probe_all().
+# same footing as any other unreadable file for the RETURN VALUE -- an NA row
+# either way -- but not for the diagnosis: the sentinel travels up to
+# probe_all(), which says which files hung, and to verify_media(), which
+# refuses outright.
 probe_one <- function(file) {
   out <- absorb_timeout(run_program(
     find_ffprobe(),
@@ -217,7 +241,7 @@ probe_one <- function(file) {
       "-of", "compact=print_section=1:nokey=0:escape=c"),
     program = "ffprobe"
   ))
-  if (is.null(out)) return(NULL)
+  if (is_absorbed_timeout(out)) return(out)
   parse_compact_probe(out)
 }
 

@@ -179,8 +179,18 @@ test_that("no warning at all escapes a timed-out guard (AC7, locale-free)", {
 # creation call -- and the gate skips rather than fail()s, because
 # testthat::fail() RECORDS a failure and RETURNS, falling on into the operation
 # it guards.
+#
+# These tests are SLOW on Linux and the slowness is the feature under test, not
+# waste: base R escalates SIGINT -> SIGTERM -> SIGKILL across limit + 40 s, and
+# an FFmpeg blocked on the FIFO rides that ladder to the end, so each of these
+# costs ~42 s there against ~2 s on macOS. Five of them is four minutes of a
+# CRAN check spent waiting, which is not a reasonable thing to ask of CRAN's
+# machines -- so they skip there. `devtools::check()` and the CI workflow both
+# set NOT_CRAN, so the release gate and every push still run them; only CRAN's
+# own submission check opts out.
 local_blocking_input <- function(env = parent.frame()) {
   skip_on_os("windows")
+  skip_on_cran()
   skip_if_no_ffmpeg()
   path <- withr::local_tempfile(fileext = ".mp4", .local_envir = env)
   ok <- suppressWarnings(system2("mkfifo", shQuote(path)))
@@ -199,7 +209,7 @@ test_that("ffmpeg() aborts at the limit instead of blocking forever", {
     ffmpeg(paste("-y -i", shQuote(blocked), shQuote(out))),
     class = "tidymedia_timeout"
   )
-  expect_lt(as.numeric(difftime(Sys.time(), start, units = "secs")), 10)
+  expect_lt(as.numeric(difftime(Sys.time(), start, units = "secs")), 60)
   msg <- cli::ansi_strip(conditionMessage(err))
   expect_match(msg, "FFmpeg")
   expect_match(msg, "2 seconds")
@@ -212,7 +222,7 @@ test_that("ffprobe() aborts at the limit", {
   start <- Sys.time()
   err <- expect_error(ffprobe(paste("-i", shQuote(blocked))),
                       class = "tidymedia_timeout")
-  expect_lt(as.numeric(difftime(Sys.time(), start, units = "secs")), 10)
+  expect_lt(as.numeric(difftime(Sys.time(), start, units = "secs")), 60)
   msg <- cli::ansi_strip(conditionMessage(err))
   expect_match(msg, "FFprobe")
   expect_match(msg, "2 seconds")
@@ -247,7 +257,7 @@ test_that("ffm_run() aborts at the limit and states D046's disposition (AC5)", {
   withr::local_options(tidymedia.timeout = 2)
   start <- Sys.time()
   err <- expect_error(ffm_run(ffm(blocked, out)), class = "tidymedia_timeout")
-  expect_lt(as.numeric(difftime(Sys.time(), start, units = "secs")), 10)
+  expect_lt(as.numeric(difftime(Sys.time(), start, units = "secs")), 60)
   msg <- cli::ansi_strip(conditionMessage(err))
   expect_match(msg, "FFmpeg")
   expect_match(msg, "2 seconds")
@@ -369,6 +379,93 @@ test_that("mediainfo_parameter() returns NA for a hung file and keeps the rest",
   expect_identical(vals, c(1920L, NA_integer_))
 })
 
+test_that("mediainfo_query() returns an NA row for a hung file and keeps the rest", {
+  # mediainfo_read() is the third absorber site and the one the first return
+  # shipped untested; mediainfo_query() and mediainfo_template() both reach it.
+  one <- withr::local_tempfile(fileext = ".mp4")
+  two <- withr::local_tempfile(fileext = ".mp4")
+  writeLines("not really a video", one)
+  writeLines("not really a video", two)
+  calls <- 0L
+  local_mocked_bindings(
+    find_mediainfo = function(...) "mediainfo",
+    run_program = function(...) {
+      calls <<- calls + 1L
+      if (calls == 1L) abort_timeout("MediaInfo", 2)
+      c("Width, Height", "1920, 1080")
+    }
+  )
+  res <- NULL
+  expect_warning(
+    res <- mediainfo_query(c(one, two), section = "Video",
+                           parameters = c("Width", "Height")),
+    "Could not read"
+  )
+  expect_identical(calls, 2L)
+  expect_identical(nrow(res), 2L)
+  # The hung file is row 1 and NA; the file after it still carries its values,
+  # which is the property the absorber exists for.
+  expect_true(is.na(res$Width[[1]]))
+  expect_identical(res$Width[[2]], 1920L)
+})
+
+# A hung file is named as hung, not merged into "unreadable" -------------------
+
+# The readers still return the same NA row D047 specifies. What changed is the
+# diagnosis: a caller who set a limit precisely to catch hangs could not tell a
+# hang from a corrupt file, and one caller -- verify_media() -- turned that
+# ambiguity into an actively wrong message.
+
+test_that("probe_all()'s warning says which files timed out", {
+  skip_if_no_ffprobe()
+  blocked <- local_blocking_input()
+  good <- make_test_video()
+  withr::local_options(tidymedia.timeout = 2)
+  expect_warning(probe_all(c(good, blocked)), "timed out rather than")
+})
+
+test_that("probe_all() does not mention a timeout when nothing timed out", {
+  # The control: without it the assertion above would pass on a reader that
+  # always says "timed out", which would be the same defect facing the other way.
+  skip_if_no_ffprobe()
+  missing <- file.path(tempdir(), "no-such-file-XYZ.mp4")
+  good <- make_test_video()
+  withr::local_options(tidymedia.timeout = NULL)
+  w <- tryCatch(probe_all(c(good, missing)), warning = function(w) w)
+  expect_s3_class(w, "warning")
+  expect_no_match(cli::ansi_strip(conditionMessage(w)), "timed out")
+})
+
+test_that("verify_media() refuses on a timed-out probe instead of failing every check", {
+  # The defect: probe_all() absorbs the timeout, every expectation reads
+  # `actual = NA`, and ffm_run(verify=) then aborts blaming a successful encode
+  # for producing the wrong width. A probe that never answered is not an answer.
+  video <- make_test_video()
+  withr::local_options(tidymedia.timeout = 2)
+  calls <- 0L
+  local_mocked_bindings(
+    run_program = function(...) {
+      calls <<- calls + 1L
+      abort_timeout("FFprobe", 2)
+    }
+  )
+  err <- NULL
+  # No warning either: the probe's "could not read" warning describes the same
+  # event the abort describes, and telling the caller twice is noise.
+  expect_no_warning(
+    err <- expect_error(
+      verify_media(video, width = 64, video_codec = "h264"),
+      class = "tidymedia_timeout"
+    )
+  )
+  expect_identical(calls, 1L)
+  msg <- cli::ansi_strip(conditionMessage(err))
+  expect_match(msg, "FFprobe")
+  expect_match(msg, "2 seconds")
+  # The wrong message must be gone, not merely joined by a right one.
+  expect_no_match(msg, "expected", fixed = TRUE)
+})
+
 # The Layer 0 hatch leaves its partial output behind (F7's narrowed claim) -----
 
 test_that("a timed-out ffmpeg() leaves what the killed run wrote", {
@@ -391,7 +488,7 @@ test_that("a timed-out ffmpeg() leaves what the killed run wrote", {
   withr::local_options(tidymedia.timeout = 2)
   start <- Sys.time()
   expect_error(ffmpeg(shQuote(out)), class = "tidymedia_timeout")
-  expect_lt(as.numeric(difftime(Sys.time(), start, units = "secs")), 10)
+  expect_lt(as.numeric(difftime(Sys.time(), start, units = "secs")), 60)
   # The kill really happened after the write, so the surviving file is the
   # documented behavior and not an artifact of nothing having run.
   expect_true(file.exists(out))
@@ -413,6 +510,57 @@ test_that("?tidymedia documents the option's name, unit, default and effect", {
   expect_match(txt, "second")            # the unit
   expect_match(txt, "no limit")          # what the default means
   expect_match(txt, "abort")             # what reaching it does
+})
+
+# The four assertions above are substring greps, and a substring grep is how the
+# over-broad claim shipped green once already: "abort" was present the whole
+# time the doc said EVERY timed-out call aborts, which stopped being true when
+# the readers began absorbing. These two guards fence the scoped claim instead,
+# so restoring the unqualified sentence reddens them.
+
+doc_timeout_sources <- function() {
+  rd <- rd_sources()
+  hit <- if (is.null(rd)) NULL else rd[grepl("tidymedia-package", names(rd))]
+  news <- if (file.exists("../../NEWS.md")) {
+    "../../NEWS.md"
+  } else {
+    p <- system.file("NEWS.md", package = "tidymedia")
+    if (nzchar(p)) p else NULL
+  }
+  list(
+    rd = if (length(hit) == 1L) hit[[1]] else NULL,
+    news = if (is.null(news)) NULL else
+      paste(readLines(news, warn = FALSE), collapse = "\n")
+  )
+}
+
+test_that("both docs scope the abort and name the readers that absorb instead", {
+  src <- doc_timeout_sources()
+  skip_if(is.null(src$rd) || is.null(src$news), "docs not available")
+  for (nm in c("rd", "news")) {
+    txt <- src[[nm]]
+    # The absorbing half must be stated, not merely implied by silence: it is
+    # the half a reader acting on an NA row needs.
+    expect_match(txt, "absorb", info = nm)
+    expect_match(txt, "probe_all", fixed = TRUE, info = nm)
+    expect_match(txt, "verify_media", fixed = TRUE, info = nm)
+    # And the unqualified universal must be absent. This is the assertion that
+    # reddens if the old sentence comes back.
+    expect_no_match(txt, "A call that reaches the limit aborts", fixed = TRUE,
+                    info = nm)
+    expect_no_match(txt, "a call that\nreaches it aborts", fixed = TRUE,
+                    info = nm)
+  }
+})
+
+test_that("both docs disclose that the abort can lag the limit", {
+  src <- doc_timeout_sources()
+  skip_if(is.null(src$rd) || is.null(src$news), "docs not available")
+  for (nm in c("rd", "news")) {
+    txt <- src[[nm]]
+    expect_match(txt, "40 seconds", fixed = TRUE, info = nm)
+    expect_match(txt, "guarantee", info = nm)
+  }
 })
 
 test_that("NEWS.md carries the entry", {

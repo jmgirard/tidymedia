@@ -131,20 +131,20 @@ naming the program and the limit. A D-entry records the shape.
 - [x] T10 (review return, F7) Narrow the partial-output claim in `?tidymedia`
       and `NEWS.md` to the calls that know their own output; fence the Layer 0
       behavior with a test that a timed-out `ffmpeg()` leaves what it wrote.
-- [ ] T11 (return 2, AC3) Relax every wall-clock assertion in
+- [x] T11 (return 2, AC3) Relax every wall-clock assertion in
       `tests/testthat/test-runtime-timeout.R` to the amended 60 s bound, and
       keep the Linux cost of the file inside a CRAN check budget — each FIFO
       test costs ~42 s there, and there are six.
-- [ ] T12 (return 2, G2/H4) Make a timed-out probe distinguishable from an
+- [x] T12 (return 2, G2/H4) Make a timed-out probe distinguishable from an
       unreadable file: `probe_one()` returns a timeout sentinel, `probe_all()`
       keeps the NA row and the end-of-call warning but names the timeout, and
       `verify_media()` re-raises rather than reporting every property as a
       mismatch. Tests + mutation probe.
-- [ ] T13 (return 2, G1 + AC8) Rewrite the abort claim in `?tidymedia` and
+- [x] T13 (return 2, G1 + AC8) Rewrite the abort claim in `?tidymedia` and
       `NEWS.md` as the one scoped claim AC8 now requires, and replace the
       substring-grep doc guard with one that reddens when the unqualified
       sentence is restored.
-- [ ] T14 (return 2, G6/P2) Add the missing `mediainfo_read()` absorber test
+- [x] T14 (return 2, G6/P2) Add the missing `mediainfo_read()` absorber test
       (via `mediainfo_query()`), and mutation-probe it.
 
 ## Work log
@@ -193,6 +193,12 @@ naming the program and the limit. A D-entry records the shape.
 - 2026-08-09: implement gate chose making a timeout distinguishable inside `probe_all()` — sentinel from `probe_one()`, NA row and warning kept, the warning naming the timeout — over giving `verify_media()` a private non-absorbing probe, because the same change closes both the misleading `ffm_run(verify=)` abort (G2/H4, 88) and the indistinguishable-hang gap (G4), and it leaves D047's return contract untouched. Falsified by a caller wanting the timeout invisible to every reader path.
 - 2026-08-09: criteria audit ([O] fresh-context reader) of the two amended criteria returned 10 findings, all with one clear right answer and all fixed before the text was written: AC3 named a 120-second command the suite never uses (the fixture is a writer-less FIFO), was silent on Windows where it is vacuous, conflated entry points with spawned programs, left the measurement start point unstated, and asserted a cause its own cited evidence contradicts — `ffprobe()` aborts in ~2 s on the same Linux FIFO, so the discriminator is not "FFmpeg blocks in a syscall"; AC8 left `NEWS.md` unconstrained though G1 condemned both files, listed "aborts" and "readers absorb" as two coexisting sentences that a contradictory doc satisfies literally, quantified over an unnamed "metadata readers" set, and kept the substring grep that let G1 ship green. The auditor also flagged that the 60 s relaxation must reach the other wall-clock assertions in the file and that six FIFO tests at ~42 s each is a CRAN budget problem — both taken as T11.
 - 2026-08-09: amendment (substantive) — AC3's "within 10 wall-clock seconds" becomes the audited 60 s bound scoped to Linux and macOS, per spawned program, with the escalation ladder and its measurements stated; AC8 gains the scoped abort-vs-absorb claim over both files plus the lag disclosure, and requires a guard that reddens on the unqualified sentence. AC8 unticked, since its evidence no longer covers what it now asks. Made under a defect return, not an amendment return, so it does not enter the amendment-return count.
+
+- 2026-08-09: T11 — every wall-clock assertion in the file now reads 60 s (four sites). The FIFO fixture gained `skip_on_cran()`: five of these tests ride base R's full escalation ladder on Linux at ~42 s each, and four minutes of waiting is not a reasonable ask of CRAN's machines. `devtools::check()` and the CI workflow both set NOT_CRAN, so the release gate and every push still run them.
+- 2026-08-09: T12 — `absorb_timeout()` now returns a classed sentinel carrying the program and limit instead of a bare `NULL`, so a hung file and an unreadable one stop being the same fact. `probe_all()` counts them apart, keeps the NA row, and its warning says how many timed out; the sentinel rides out on a `tm_timed_out` attribute so the documented `list(container, streams)` shape is unchanged. `verify_media()` reads that attribute and re-raises — a probe that never answered is not an answer of "no", and absorbing it was what made `ffm_run(verify=)` blame a successful encode. Mutation probes: dropping the re-raise reddened only the verify test, dropping the warning clause only the naming test.
+- 2026-08-09: T12 — the first cut of the re-raise left the suite at WARN 5 rather than the pre-existing 4: `probe_all()` warned and `verify_media()` then aborted about the same hang, telling the caller twice. `verify_media()` now holds the probe's warnings and replays them only when it does not re-raise, replaying the condition objects themselves so class and call survive (F17's trap, avoided). Caught by counting the suite's warnings rather than reading FAIL 0.
+- 2026-08-09: T13 — `?tidymedia` and NEWS.md now carry one scoped claim naming which calls abort and which absorb, plus the lag disclosure and base R's own non-guarantee. The substring-grep guard is joined by two that fence the scoped sentence; mutation probe: restoring "A call that reaches the limit aborts" ahead of the scoped paragraph reddened the scoping guard, which is the check AC8 asks for by name.
+- 2026-08-09: T14 — `mediainfo_query()` test added, covering the `mediainfo_read()` absorber the first return shipped untested. Mutation probe: removing that absorber reddens it, which is the claim the corrected T8 line could not make.
 
 ## Decisions
 

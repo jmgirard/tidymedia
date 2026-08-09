@@ -129,9 +129,35 @@ guard_timeout <- function(program, limit, expr, suppress = FALSE,
 # other file's result and falsifies the @return the caller read.
 #
 # Scoped to `tidymedia_timeout` alone: every other error still propagates, so
-# this is a narrow absorber and not a blanket try(). `NULL` is a safe sentinel
-# because system2(stdout = TRUE) returns character(0) at its emptiest, never
-# NULL.
+# this is a narrow absorber and not a blanket try().
+#
+# What comes back is a SENTINEL rather than the `NULL` a reader already uses for
+# "unreadable", because those two outcomes are not the same fact and the reader
+# has to be able to tell them apart. Returning `NULL` for both made a hung file
+# indistinguishable from a corrupt one, which is how `ffm_run(verify = )` came
+# to report a hung FFprobe as "width: expected 1920, got NA" -- blaming a
+# successful encode for the wrong reason. The sentinel carries the program and
+# the limit off the condition so a caller that must not absorb (verify_media())
+# can rebuild the refusal without parsing anyone's message.
 absorb_timeout <- function(expr) {
-  rlang::try_fetch(expr, tidymedia_timeout = function(cnd) NULL)
+  rlang::try_fetch(
+    expr,
+    tidymedia_timeout = function(cnd) {
+      structure(
+        list(program = cnd$tm_program, limit = cnd$tm_limit),
+        class = "tidymedia_absorbed_timeout"
+      )
+    }
+  )
+}
+
+is_absorbed_timeout <- function(x) inherits(x, "tidymedia_absorbed_timeout")
+
+# reraise_absorbed(): turn a sentinel back into the abort it stands for.
+#
+# For the one caller that must not absorb. `verify_media()` asks whether a file
+# HAS given properties; a probe that never answered is not an answer of "no",
+# so it refuses rather than reporting every property as a mismatch.
+reraise_absorbed <- function(x, call = rlang::caller_env()) {
+  abort_timeout(x$program, x$limit, call = call)
 }

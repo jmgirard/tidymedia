@@ -28,8 +28,19 @@ it. Set a wall-clock limit, in whole seconds, to bound the wait:
 
 \preformatted{options(tidymedia.timeout = 600)}
 
-A call that reaches the limit aborts, naming the program and the limit. For
-the task verbs and \code{\link[=ffm_run]{ffm_run()}}, which know where their output goes, a
+What a reached limit does depends on which call you made. The task verbs,
+\code{\link[=ffm_run]{ffm_run()}} and the Layer 0 escape hatches \code{\link[=ffmpeg]{ffmpeg()}}, \code{\link[=ffprobe]{ffprobe()}} and
+\code{\link[=mediainfo]{mediainfo()}} \strong{abort}, naming the program and the limit. The metadata
+readers — \code{\link[=probe_all]{probe_all()}} and the \verb{probe_*()} accessors,
+\code{\link[=mediainfo_parameter]{mediainfo_parameter()}}, \code{\link[=mediainfo_query]{mediainfo_query()}}, \code{\link[=mediainfo_template]{mediainfo_template()}} and the
+\verb{get_*()} helpers — instead \strong{absorb} it, treating the file as one they
+could not read: an \code{NA} row and one warning at the end of the call, so a
+single hung file does not discard a whole corpus. That warning says how many
+of the files it names timed out rather than being unreadable.
+\code{\link[=verify_media]{verify_media()}} is the exception among readers: it aborts, because a probe
+that never answered is not an answer of "no".
+
+For the task verbs and \code{\link[=ffm_run]{ffm_run()}}, which know where their output goes, a
 partial file the killed run had written is removed just as it is after any
 other failed run. The raw \code{\link[=ffmpeg]{ffmpeg()}} escape hatch is handed an argument
 string it does not parse, so it cannot tell which of those arguments is the
@@ -44,6 +55,14 @@ The limit applies per spawned program, not per batch: a 100-row batch with a
 600-second limit bounds each row at 600 seconds. It is also read in the
 process that sets it, so under \code{parallel = TRUE} the worker processes do not
 see it.
+
+The limit bounds the wait; it does not promise the program dies at the
+second. R asks the program to stop when the limit is reached, insists 20
+seconds later, and kills it 20 seconds after that, so on Unix a program that
+does not answer the first two can outlive its limit by up to 40 seconds — an
+FFmpeg blocked on an unresponsive input has been measured doing exactly that.
+R does not guarantee termination at all: a program can be written to survive
+the attempt.
 
 See \code{vignette("tidymedia")} for the guided tour, \code{vignette("batch")} for
 running a verb over many files, \code{vignette("metadata")} for the readers, and

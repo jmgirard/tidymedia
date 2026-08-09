@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** m69-runtime-timeout
+- **Branch/PR:** m69-runtime-timeout · https://github.com/jmgirard/tidymedia/pull/72
 
 ## Goal
 
@@ -35,36 +35,36 @@ naming the program and the limit. A D-entry records the shape.
 
 ## Acceptance criteria
 
-- [ ] AC1 Each of the four spawn sites — `R/ffmpeg.R:28`, `R/ffprobe.R:21`,
+- [x] AC1 Each of the four spawn sites — `R/ffmpeg.R:28`, `R/ffprobe.R:21`,
       `R/mediainfo.R:26`, `R/program_management.R:119` — passes the resolved
       limit to its `timeout=` argument.
-- [ ] AC2 With `tidymedia.timeout` unset, the resolver returns `0`, and each of
+- [x] AC2 With `tidymedia.timeout` unset, the resolver returns `0`, and each of
       the four sites named in AC1 therefore passes `timeout = 0`.
-- [ ] AC3 With `options(tidymedia.timeout = 2)`, `ffmpeg()`, `ffprobe()` and
+- [x] AC3 With `options(tidymedia.timeout = 2)`, `ffmpeg()`, `ffprobe()` and
       `ffm_run()` each abort within 10 wall-clock seconds on a command that
       would otherwise run for 120 s, and each abort names the program and the
       limit in seconds. `mediainfo()` is covered by AC1 and the AC2 resolver
       test only: no 120-second MediaInfo invocation can be named.
-- [ ] AC4 The timeout branch's condition is a comparison of the `status`
+- [x] AC4 The timeout branch's condition is a comparison of the `status`
       attribute to `124L` — not a match against the text of R's timeout
       warning, whose wording is translated under a non-English locale (M46).
       Evidence: the branch's source.
-- [ ] AC5 A timed-out `ffm_run()` applies D046's existing output-disposition
+- [x] AC5 A timed-out `ffm_run()` applies D046's existing output-disposition
       rule unchanged, and the abort names which disposition applied.
-- [ ] AC6 Given a synthetic result carrying `status = 124` and a resolved limit
+- [x] AC6 Given a synthetic result carrying `status = 124` and a resolved limit
       of `0`, the internal classifier reports an ordinary non-zero exit and its
       message does not mention a timeout.
-- [ ] AC7 No warning at all is signalled to the caller from the three entry
+- [x] AC7 No warning at all is signalled to the caller from the three entry
       points of AC3 when they time out — asserted locale-free with
       `expect_no_warning()`, never by matching `timed out after`, since R's
       warning embeds the full command line and the `input=` temp path.
-- [ ] AC8 `NEWS.md` carries an entry, and the `?tidymedia` Rd topic documents
+- [x] AC8 `NEWS.md` carries an entry, and the `?tidymedia` Rd topic documents
       the option's name, unit (seconds), default (`0`, no limit), and that
       reaching it aborts.
-- [ ] AC9 `cairn/DECISIONS.md` gains a D-entry recording the option-seam shape
+- [x] AC9 `cairn/DECISIONS.md` gains a D-entry recording the option-seam shape
       and the per-verb argument it rejects, off-by-default, abort-not-warn, the
       disclosed `parallel = TRUE` worker gap, and the falsifier.
-- [ ] AC10 The `verify` slot of `cairn/PROFILE.md` is clean —
+- [x] AC10 The `verify` slot of `cairn/PROFILE.md` is clean —
       `devtools::document()`, `devtools::test()` and `devtools::check()` (0
       errors, 0 warnings).
 
@@ -131,6 +131,52 @@ naming the program and the limit. A D-entry records the shape.
 - 2026-08-09: T7 — verify slot clean: `devtools::document()` no diff, `devtools::test()` FAIL 0 / PASS 6118 / SKIP 5, `devtools::check()` `Status: OK` (0/0/0, read from the real status line, not devtools' summary — M17).
 - 2026-08-09: T7 — both doc guards verified to RUN under `R CMD check` rather than skip (M51): with the package installed, `tools::Rd_db("tidymedia")` yields the `tidymedia-package` topic carrying all four asserted strings, and `system.file("NEWS.md")` resolves, so the NEWS guard was given the same installed fallback rather than left source-tree-only.
 
+- 2026-08-09: review — PR #72 opened as draft; fresh evidence recorded for AC1-AC10 and all ten boxes ticked against it; consistency gate green (`cairn_validate` exit 0, 16 PASS + 1 advisory on the 10-AC sizing tripwire; `cairn_impact` no-op, no principle touched).
+- 2026-08-09: review — [S] blame-history lens: no resurrected bug, contradicted D-entry or weakened guard; one nuance to score (Layer 0 re-raised warnings lose the original condition's call context via `warning(msg, call. = FALSE)`). [S] prior-review lens: no prior-review regression; GitHub inline-comment probe empty, threads not walked. [O] diff-bug lens still running — triage and scoring pending.
+
 ## Decisions
 
 ## Review
+
+**Evidence** (fresh, 2026-08-09, branch `m69-runtime-timeout` @ `afaf950`):
+
+- AC1 — all four sites carry the wiring: `R/ffmpeg.R`, `R/ffprobe.R`,
+  `R/mediainfo.R`, `R/program_management.R` each show one `resolve_timeout(`,
+  one `timeout = limit`, one `guard_timeout(`. Body-reading test asserts the
+  same three per site.
+- AC2 — `resolve_timeout()` with the option unset returns `0` (run directly).
+  `devtools::test()` FAIL 0 / PASS 6118 / SKIP 5.
+- AC3 — real hang, real kill: `ffmpeg()` on a writer-less FIFO under
+  `tidymedia.timeout = 2` aborted in **2.09 s** with class
+  `tidymedia_timeout` and message `FFmpeg timed out after 2 seconds.`
+  `mediainfo()` covered by AC1 + the resolver test, as the criterion states.
+- AC4 — the branch is `identical(as.integer(status), 124L)`; a grep of
+  `R/timeout.R` for `grepl|regexpr|regmatches|gsub|sub\(|startsWith|grep\(`
+  returns nothing, so no text match exists to go stale under a locale.
+- AC5 — timeout path reaches D046 unchanged: on a pre-existing output the
+  abort added `... was left as it was: FFmpeg never wrote to it.` and the file
+  survived byte-identical. The written-output case is proven by injecting the
+  kill at the `run_program()` seam with a call-counting mock (FFmpeg blocks on
+  the FIFO before opening its output, so that route cannot produce a partial
+  file); the disposition read `was removed` and the file was gone.
+- AC6 — `is_timeout(status = 124, limit = 0)` is `FALSE`; `limit = 2` is
+  `TRUE`.
+- AC7 — no warning escapes: asserted with `expect_no_warning()`, never a text
+  match. The abort message contains no `tempdir()` substring. (The caller's own
+  output path does appear, via D046's pre-existing `{.file {output}}` bullet —
+  that is the user's own file, not R's command line.)
+- AC8 — `man/tidymedia-package.Rd` contains `tidymedia.timeout`, `second`,
+  `no limit`, `abort`; `NEWS.md` carries the entry. Both guards verified to run
+  under `R CMD check` (installed `Rd_db` and `system.file("NEWS.md")` both
+  resolve), not merely under `devtools::test()`.
+- AC9 — `cairn/DECISIONS.md:1941`, D047.
+- AC10 — `devtools::document()` no diff; `devtools::test()` FAIL 0 / PASS 6118;
+  `devtools::check()` `Status: OK`, 0 errors / 0 warnings / 0 notes.
+
+**Consistency gate:** `cairn_validate` exit 0, all 16 checks PASS, one advisory
+(`M69: 10 acceptance criteria (>7 tripwire)`). `cairn_impact` not run —
+Principles touched is `—`. Toolchain slot: `document()` no diff · generated
+files unedited · README untouched, in sync · `pkgdown::check_pkgdown()` no
+problems · NEWS.md entry present with no milestone or decision ids in
+user-facing text · no new top-level files · `check()` clean.
+

@@ -1989,13 +1989,14 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   # purrr::pmap() (M59 site 3). check_regions() is the one site those messages
   # are written and the pipeline still calls it, so anonymize_video() reaches
   # the same site (M59-D2). The list-column guard above covers only the column.
-  for (cell in jobs$regions) {
-    check_regions(cell)
+  for (i in seq_along(jobs$regions)) {
+    check_batch_cell(i, check_regions(jobs$regions[[i]]))
     # And each cell's VALUES (M65): the same check_dim() refusals
     # ffm_drawbox() makes, re-called here -- beside the structure check, as in
     # anonymize_pipeline() -- so a bad region value blames this verb rather
-    # than purrr::pmap() (D042).
-    check_region_values(cell)
+    # than purrr::pmap() (D042). `regions` is a required list-column, so the
+    # locator is unconditional here (M66).
+    check_batch_cell(i, check_region_values(jobs$regions[[i]]))
   }
 
   # nvenc availability, re-checked here so an unavailable encoder blames this
@@ -3656,8 +3657,10 @@ sample_frames_batch <- function(jobs, fps = NULL, interval = NULL,
   # blame, so every check above still reports first.
   fps_rows <- batch_arg_rows(jobs, "fps", fps)
   interval_rows <- batch_arg_rows(jobs, "interval", interval)
+  rate_cols <- any(c("fps", "interval") %in% names(jobs))
   for (i in seq_len(nrow(jobs))) {
-    resolve_sample_fps(fps_rows[[i]], interval_rows[[i]])
+    check_batch_cell(if (rate_cols) i else NA_integer_,
+                     resolve_sample_fps(fps_rows[[i]], interval_rows[[i]]))
   }
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one image2-pattern sampling
@@ -3927,12 +3930,18 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
   # resolved NULL cell is skipped; `pixel_format` has no such sentinel and is
   # always a token.
   for (dim in c("width", "height", "fps")) {
-    for (value in batch_arg_rows(jobs, dim, get(dim))) {
-      if (!is.null(value)) check_dim(value, arg = dim)
+    rows <- batch_arg_rows(jobs, dim, get(dim))
+    for (i in seq_along(rows)) {
+      if (!is.null(rows[[i]])) {
+        check_batch_cell(if (dim %in% names(jobs)) i else NA_integer_,
+                         check_dim(rows[[i]], arg = dim))
+      }
     }
   }
-  for (value in batch_arg_rows(jobs, "pixel_format", pixel_format)) {
-    check_token(value, arg = "pixel_format")
+  pixfmt_rows <- batch_arg_rows(jobs, "pixel_format", pixel_format)
+  for (i in seq_along(pixfmt_rows)) {
+    check_batch_cell(if ("pixel_format" %in% names(jobs)) i else NA_integer_,
+                     check_token(pixfmt_rows[[i]], arg = "pixel_format"))
   }
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output re-encode
@@ -4277,7 +4286,10 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
   # front, so two-pass fails before Phase 1 wastes an analysis pass per row.
   check_batch_codec_col(jobs, "audio_codec")
   check_audio_codec_not_copy(audio_codec)
-  if ("audio_codec" %in% names(jobs)) check_audio_codec_not_copy(jobs$audio_codec)
+  if ("audio_codec" %in% names(jobs)) {
+    check_batch_cell(which(jobs$audio_codec == "copy")[1],
+                     check_audio_codec_not_copy(jobs$audio_codec))
+  }
 
   # An audio_stream column is a numeric stream-index column, and on THIS verb an
   # NA cell means the first audio track, not every track -- the hint has to say
@@ -4325,8 +4337,13 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
   target_rows <- batch_arg_rows(jobs, "target_loudness", target_loudness)
   peak_rows <- batch_arg_rows(jobs, "true_peak", true_peak)
   range_rows <- batch_arg_rows(jobs, "loudness_range", loudness_range)
+  loud_cols <- any(c("target_loudness", "true_peak", "loudness_range") %in%
+                     names(jobs))
   for (i in seq_len(nrow(jobs))) {
-    check_loudnorm_targets(target_rows[[i]], peak_rows[[i]], range_rows[[i]])
+    check_batch_cell(
+      if (loud_cols) i else NA_integer_,
+      check_loudnorm_targets(target_rows[[i]], peak_rows[[i]], range_rows[[i]])
+    )
   }
 
   # Two-pass (measured/linear): the audio-side M16 analyze-then-build path fanned
@@ -4347,14 +4364,18 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
     # every row. The argument and every non-NA cell are checked here.
     if (!is.null(audio_codec)) check_token(audio_codec)
     if ("audio_codec" %in% names(jobs)) {
-      cells <- jobs$audio_codec[!is.na(jobs$audio_codec)]
-      for (cell in cells) check_token(cell)
+      for (i in which(!is.na(jobs$audio_codec))) {
+        check_batch_cell(i, check_token(jobs$audio_codec[[i]]))
+      }
     }
     for (col in intersect(c("channels", "sample_rate"), names(jobs))) {
       if (any(jobs[[col]] %% 1 != 0) || any(jobs[[col]] < 1)) {
-        cli::cli_abort(
-          "The {.field {col}} column of {.arg jobs} must be whole numbers \\
-           ({.val {1}} or greater) for two-pass normalization."
+        check_batch_cell(
+          which(jobs[[col]] %% 1 != 0 | jobs[[col]] < 1)[1],
+          cli::cli_abort(
+            "The {.field {col}} column of {.arg jobs} must be whole numbers \\
+             ({.val {1}} or greater) for two-pass normalization."
+          )
         )
       }
     }
@@ -5241,13 +5262,17 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
   # not. Splitting the loop keeps that distinction at the call site rather than
   # hiding it in a lookup.
   for (dim in c("width", "height")) {
-    for (value in batch_arg_rows(jobs, dim, get(dim))) {
-      check_dim(value, arg = dim)
+    rows <- batch_arg_rows(jobs, dim, get(dim))
+    for (i in seq_along(rows)) {
+      check_batch_cell(if (dim %in% names(jobs)) i else NA_integer_,
+                       check_dim(rows[[i]], arg = dim))
     }
   }
   for (dim in c("x", "y")) {
-    for (value in batch_arg_rows(jobs, dim, get(dim))) {
-      check_dim(value, arg = dim, inclusive = TRUE)
+    rows <- batch_arg_rows(jobs, dim, get(dim))
+    for (i in seq_along(rows)) {
+      check_batch_cell(if (dim %in% names(jobs)) i else NA_integer_,
+                       check_dim(rows[[i]], arg = dim, inclusive = TRUE))
     }
   }
 
@@ -6559,8 +6584,10 @@ picture_in_picture_batch <- function(jobs,
   # same placement logic as `margin` and `audio` above: below the
   # contradiction sweep (M61), above the nvenc probe -- a machine-independent
   # refusal reports before a machine-dependent one (D036, M64-D2's shape).
-  for (value in batch_arg_rows(jobs, "scale", scale)) {
-    check_overlay_scale(value)
+  scale_rows <- batch_arg_rows(jobs, "scale", scale)
+  for (i in seq_along(scale_rows)) {
+    check_batch_cell(if ("scale" %in% names(jobs)) i else NA_integer_,
+                     check_overlay_scale(scale_rows[[i]]))
   }
 
   # nvenc availability, re-checked here so an unavailable encoder blames this

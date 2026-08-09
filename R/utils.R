@@ -324,7 +324,12 @@ check_region_values <- function(regions, call = rlang::caller_env()) {
 # constraints (M66 AC2): first offender only; pluralization-free; no
 # substring "index" (test-separate-av-multitrack.R bans it); must match no
 # blame-instrument marker.
+# An NA `row` evaluates the expression with no locator: the sweep sites pass
+# `i` when the value's carrier column is present in `jobs` and NA when the
+# value arrived as the verb's own argument -- an argument applies to every
+# row, so naming one would mislead (AC2's complement).
 check_batch_cell <- function(row, expr) {
+  if (is.na(row)) return(expr)
   rlang::try_fetch(expr, error = function(cnd) {
     locator <- sprintf("First offending jobs row: %d.", as.integer(row))
     if (rlang::is_condition(cnd) && inherits(cnd, "rlang_error")) {

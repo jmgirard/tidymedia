@@ -233,7 +233,24 @@ test_that("both forms refuse the same value with the same guard", {
     # forms -- bullets included, which is what catches an `inclusive =`
     # divergence between a scalar sweep and its batch sibling. The previous
     # spelling normalized every message to one identical byte (base sub() has
-    # no lazy quantifier), comparing nothing (M64 review F12).
-    expect_length(unique(cli::ansi_strip(msgs)), 1L)
+    # no lazy quantifier), comparing nothing (M64 review F12). Since M66 the
+    # batch COLUMN cells append the row locator the scalar form must not
+    # carry, so the comparison runs after strip_row_locator() -- a remover
+    # verified in both directions by test-check-batch-cell.R, not a
+    # normalizer of the kind F12 warned about: a column cell must still
+    # CARRY the locator (asserted here, so a neutered locator is red), and
+    # everything outside the locator still compares byte-for-byte.
+    for (k in seq_along(group)) {
+      cell <- group[[k]]
+      if (cell$form == "batch" && identical(cell$delivery, "column")) {
+        expect_match(cli::ansi_strip(msgs[[k]]),
+                     "First offending jobs row: [0-9]+\\.$",
+                     info = cell$id)
+      } else {
+        expect_no_match(cli::ansi_strip(msgs[[k]]),
+                        "First offending jobs row", info = cell$id)
+      }
+    }
+    expect_length(unique(strip_row_locator(cli::ansi_strip(msgs))), 1L)
   }
 })

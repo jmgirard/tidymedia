@@ -91,3 +91,12 @@ test_that("strip_row_locator removes the locator and nothing else (AC4)", {
   plain <- conditionMessage(rlang::catch_cnd(check_token("has space")))
   expect_identical(strip_row_locator(plain), plain)
 })
+
+test_that("an NA row is the argument-delivered pass-through: no locator", {
+  plain <- rlang::catch_cnd(check_token("has space", arg = "video_codec"))
+  cnd <- rlang::catch_cnd(
+    check_batch_cell(NA_integer_, check_token("has space", arg = "video_codec"))
+  )
+  expect_identical(conditionMessage(cnd), conditionMessage(plain))
+  expect_identical(check_batch_cell(NA_integer_, check_token("h264")), "h264")
+})

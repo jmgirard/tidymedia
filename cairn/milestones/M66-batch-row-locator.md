@@ -102,7 +102,7 @@ first-offender here) — not attempted; disclosed in the triage.
       `check_number_decimal()`/`arg_match()` admit no suffix parameter, so
       the wrapper is the uniform mechanism) — with unit tests and the
       marker-list check of AC2.
-- [ ] T3. Thread it through the value-checker sweeps (M64/M65 families),
+- [x] T3. Thread it through the value-checker sweeps (M64/M65 families),
       converting value-loops to index loops.
 - [ ] T4. Thread it through the M58/M59 contradiction and rlang sweeps and
       the shared per-cell column helpers (index-preserving `which()` rework
@@ -157,6 +157,14 @@ first-offender here) — not attempted; disclosed in the triage.
   first-offender bullet to the thrown condition's body and re-raises: head,
   class, and blamed call byte-preserved (measured); strip_row_locator()
   (helper-blame.R) verified both directions; 17 unit tests; suite 0 fail.
+- 2026-08-08: T3 done — locator threaded through the M64/M65 value sweeps
+  (crop dims, standardize dims/pixel_format, sample rate loop, anonymize
+  regions, pip scale, normalize loudnorm/copy-column/two-pass token and
+  channels checks); NA row = argument-delivered pass-through, so locators fire
+  only for column-delivered values (measured, 9 sites). The cross-form
+  equality test now compares after strip_row_locator() and asserts each batch
+  column cell carries the locator and every other cell does not (T5 part);
+  suite 0 fail, 5637 pass.
 
 ## Decisions
 

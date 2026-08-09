@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-09 (M68 archived: validate green, M63's terminal ro
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M69 | A hung media program stops the call, not the session | in-progress | — | normal | milestones/M69-runtime-timeout.md |
+| M69 | A hung media program stops the call, not the session | review | — | normal | milestones/M69-runtime-timeout.md |
 | M68 | A failed run removes the broken output it wrote | done | — | normal | milestones/archive/M68-failed-run-output-cleanup.md |
 | M67 | The encoder probe answers once per session, not once per row | done | — | normal | milestones/archive/M67-nvenc-probe-cache.md |
 | M66 | A batch value refusal names the offending row | done | — | normal | milestones/archive/M66-batch-row-locator.md |

@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** m66-batch-row-locator
+- **Branch/PR:** m66-batch-row-locator · https://github.com/jmgirard/tidymedia/pull/69
 
 ## Goal
 

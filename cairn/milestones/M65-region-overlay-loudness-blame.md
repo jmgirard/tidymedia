@@ -116,12 +116,36 @@ today is the path CI cannot check; T5 records the local run.
       the `two_pass` block; `normalize_audio_batch()` (`:4119`) sweeps the same
       values per row, last among the value guards above its own `two_pass`
       block. Record the local FFmpeg run backing the `two_pass = TRUE` cells.
-- [ ] T6: `data-raw/blame-precedence-m65.R` — crossing list, live controls, both
+- [x] T6: `data-raw/blame-precedence-m65.R` — crossing list, live controls, both
       refs; write the reordering table.
 - [ ] T7: `data-raw/blame-guard-mutations-m65.py` — diff-derived list, split
       Layer-1/Layer-2 redness targets, reader/control mutations.
 - [ ] T8: AC7 sweep and corrections; NEWS entry + citation table; D-entry
       recording that a cheap value refusal precedes the analysis probe.
+
+## Decisions
+
+- **M65-D1 (2026-08-08): the reordering table.** The six sweeps reassign 22
+  reporting orders, measured by `data-raw/blame-precedence-m65.R` at the
+  merge-base (`master`, ddc14be) versus the branch — 113 crossings, every
+  control live, zero unresolved, on both refs. Every flip moves the winner
+  crossed→sweep:
+
+  | flips | crossings | caller whose answer changes |
+  |---|---|---|
+  | 1–3 | `anonymize_video/regions` × color-not-string, video_codec-token, pixel_format-token | `anonymize_video(f, "o.mp4", bad_regions, color = 1)` (or a bad `video_codec`/`pixel_format` token) heard the knob's complaint from the pipeline; it now hears the region refusal — the argument a caller is likeliest to get wrong (M47 F8) reports first. |
+  | 4–5 | `anonymize_video_batch/regions` × color-arg-not-string, pixel_format-arg-token | Same two knobs on the batch verb — the only two whose sole check ran per row inside the fan-out (blaming `purrr::pmap()`); a bad region value now outranks them. |
+  | 6–8 | `anonymize_video_batch/regions` × nvenc; `picture_in_picture_batch/scale` (both deliveries) × nvenc | A machine-independent value error now outranks a missing nvenc encoder — M64-D2's shape, D036's machine-independent-first rule. |
+  | 9–18 | `normalize_audio/loudness` (two-pass AND single-pass) × channels, sample_rate, audio_stream, audio_codec-copy, audio_codec-token/-not-string | AC4's named five: a call wrong about a loudness target and a shaping knob is now told about the target, whichever pass; on two-pass, the target refusal also precedes the analysis spawn (the Scope's reason). |
+  | 19–22 | `normalize_audio_batch/loudness` (both deliveries) × channels-col-whole-2p, audio_codec-token-2p | The batch two-pass block's own guards — the batch mirrors the scalar's flips exactly under the "last among the value guards" placement. |
+
+  **Disclosed cross-form divergence:** `video_codec-token` — the batch checks
+  the token at its front door (above the region sweep, unchanged), the scalar
+  now reports the region value first (flip 2). Unavoidable without moving
+  pre-existing guards: the batch's token check must precede its per-cell
+  sweep, the scalar's sits in the pipeline below the sweep's mandated
+  beside-`check_regions()` slot. The alternative placement diverged on
+  `color`/`pixel_format` instead, two knobs rather than one.
 
 ## Work log
 
@@ -131,6 +155,7 @@ today is the path CI cannot check; T5 records the local run.
 - 2026-08-08: T2 done — `loudnorm_bounds_rd()` inline helper; `normalize_audio()`'s AND `ffm_loudnorm()`'s roxygen bounds now render from the bindings (same helper, same words; only source line-wrap moved). `document()` stable after the commit.
 - 2026-08-08: T3 done — `helper-blame-specs-m65.R` (30 cells: 8 region row/field-varied, 8 scale incl. AC5's type/range pairs, 12 loudness with the scalar `two_pass` axis, + reader) and the M64 grid extended with four M65 blocks; observed red on blame before the sweeps (builder/pmap blamed), as declared.
 - 2026-08-08: T4 done — region sweep via `check_region_values()` in `anonymize_pipeline()` (call threaded) + per cell at the batch front door; `check_overlay_scale()` in `picture_in_picture_pipeline()` below the contradiction/position checks (M61 ordering) + per resolved row at the batch front door above the nvenc probe.
+- 2026-08-08: T6 done — `data-raw/blame-precedence-m65.R` (113 crossings over the six sweeps, `two_pass` axis on the normalize verbs; reuses M64's runner via a new `cells` parameter on `blame_precedence()`); both refs clean of dead controls and unresolved cells; 22 flips recorded as M65-D1's table. No scale-type crossing: one scalar cannot be non-numeric and out-of-range at once, so its control could never be live — AC5's grid cells carry that distinction.
 - 2026-08-08: T5 done — `check_loudnorm_targets()` above `normalize_audio()`'s `two_pass` block and per resolved row above `normalize_audio_batch()`'s, below `check_batch_inputs()`. Local FFmpeg run (ffmpeg 8.1.2, macOS): full suite 0 fail / 5579 pass / 5 skips, none of them the two-pass blame block — the `two_pass = TRUE` cells executed and passed.
 - 2026-08-08: plan gate chose moving `normalize_audio()`'s loudness sweep above the `two_pass` analysis block over scoping the milestone to single-pass and disclosing the gap, because a disclosed ordering gap is the shape D038 recorded and D039 had to undo; falsified by a reordering that changes the reported guard for a caller the crossing table cannot enumerate.
 - 2026-08-08: plan gate chose one internal binding read by both layers over restating each bound at the front door, because a restated number is exactly what the M40 stale-hint lesson bites on and no test comparing literals can see the drift; falsified by a bound whose two layers must legitimately differ.

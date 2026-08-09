@@ -1,11 +1,11 @@
 # M69: A hung media program stops the call, not the session
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** m69-runtime-timeout
 
 ## Goal
 
@@ -83,7 +83,7 @@ naming the program and the limit. A D-entry records the shape.
 
 ## Tasks
 
-- [ ] T1 Add the resolver (`resolve_timeout()`, new or in `R/utils.R`): reads
+- [x] T1 Add the resolver (`resolve_timeout()`, new or in `R/utils.R`): reads
       `getOption("tidymedia.timeout", 0)`, validates it is a single
       non-negative number, returns `0` when unset. Tests first.
 - [ ] T2 Thread it into the three Layer 0 sites (`R/ffmpeg.R:28`,
@@ -111,6 +111,9 @@ naming the program and the limit. A D-entry records the shape.
 - 2026-08-09: plan gate chose `0` (no limit, off) over a generous default ceiling because a ceiling would abort a legitimate multi-hour transcode that finishes today, changing the default behavior of every existing pipeline; falsified by a report of a hang from a caller who had read the docs and still expected a bound.
 - 2026-08-09: plan gate chose abort over warn-and-return because a killed run leaves a truncated output that looks finished, and `ffm_batch()` records per-row errors, so a warning would make a timed-out row indistinguishable from a successful one in the results tibble; falsified by a caller wanting a partial output kept and the batch continued.
 - 2026-08-09: plan gate chose all four spawn sites over the FFmpeg execution path alone because a hung FFprobe inside `probe_all()` over a corpus is an equally realistic hang and a narrower rule would ship stated with an exception; falsified by a measured cost to the metadata readers from the extra argument.
+- 2026-08-09: implement gate chose refusing a fractional `tidymedia.timeout` over rounding it up, because base R truncates toward zero and a value below 1 becomes 0 — its own "no limit" sentinel — so `0.5` left a 6 s child unbounded (measured, R 4.6.1); rounding up would instead substitute a limit the caller never asked for. Falsified by a report of a legitimately computed fractional limit being refused.
+- 2026-08-09: implement gate chose giving the timeout abort a distinct `tidymedia_timeout` class while letting `count_audio_streams()` and `probe_one()` absorb it exactly as they absorb any other error today, over making those two readers re-raise it; re-raising would change `probe_all()`'s error contract and D024 licenses the dropped-track probe only while its outcome changes nothing but whether a warning fires. Falsified by a report of a bounded-but-silent hang inside `probe_all()` being the reported problem.
+- 2026-08-09: T1 — `R/timeout.R` adds `resolve_timeout()`, `is_timeout()` and `abort_timeout()`; 26 assertions in `tests/testthat/test-runtime-timeout.R`, all green.
 - 2026-08-09: criteria audit ([O] fresh-context reader) returned 8 findings — AC1 and AC4 backed universals with proxy enumerations (a `system2?\(` regex; a four-spelling hand-list), AC2 was unsatisfiable because that sweep hits a comment at `R/program_management.R:104`, AC4's "held warning text" was vacuous under `run_program()`'s existing `suppressWarnings()`, AC5 conflicted with D046's `overwrite = FALSE` guard (`cairn/DECISIONS.md:1930`) and miscounted D046's cases, AC7's `timed out after` match was defeated by the translated warning the criterion itself cited, and AC3/AC6 named no reachable instance for `mediainfo()` and for a genuine 124 exit. All 8 had one clear right answer and were fixed before the gate; none of the gate's four answers changed a criterion, so no criterion needed re-auditing.
 
 ## Decisions

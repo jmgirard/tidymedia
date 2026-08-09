@@ -1,6 +1,6 @@
 # M68: A failed run removes the broken output it wrote
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -110,8 +110,8 @@ loudnorm analysis calls `run_program()` directly and writes to `-f null`
 - [x] **T5.** Add the two-row batch execution test; confirm `run_one()`
       (`R/ffm_batch.R:127`) needs no removal code of its own, and run AC2's
       two greps.
-- [ ] **T6.** NEWS.md entry; run AC6's diff and grep against `master`.
-- [ ] **T7.** `devtools::document()`, `devtools::test()`, `devtools::check()`;
+- [x] **T6.** NEWS.md entry; run AC6's diff and grep against `master`.
+- [x] **T7.** `devtools::document()`, `devtools::test()`, `devtools::check()`;
       record a decision entry for reading and writing the filesystem after a
       failed run — it is not a probe under the executing-path licence, which
       governs running a binary, and D040 already licensed a filesystem read.
@@ -134,6 +134,9 @@ loudnorm analysis calls `run_program()` directly and writes to `-f null`
 - 2026-08-09: T4/T5 — parent-chain and two-row batch tests added; 9 tests / 32 expectations green, 0 skipped, success reads FALSE,TRUE with the failed row's output gone and the good row's present.
 - 2026-08-09: T5 — AC2's greps run: unlink/file.remove is R/program_management.R:247 plus exactly one new call at R/ffm.R:1392; no ffm_run() caller removes anything itself; getOption() is R/ffmpeg.R:2533 on this branch and on master alike.
 - 2026-08-09: scope corrected, not amended by gate — the In paragraph claimed every execution path inherits the removal; Layer 0's ffmpeg() calls system() on a verbatim string (R/ffmpeg.R:28) and the loudnorm analysis pass writes to -f null (R/loudnorm_two_pass.R:41,140), so neither can be covered and no alternative was available to gate.
+- 2026-08-09: T6 — NEWS.md Bug fixes entry added; git diff master..HEAD -- NAMESPACE man/ is empty (0 lines), so no export and no documented argument changed.
+- 2026-08-09: T7 — devtools::document() no diff, devtools::test() FAIL 0 | SKIP 5 | PASS 6019, devtools::check() Status: OK (0 errors, 0 warnings, 0 notes); D045 appended to cairn/DECISIONS.md.
+- 2026-08-09: all eight tasks done and checks clean; status -> review.
 - 2026-08-09: criteria audit ([O], fresh context) returned 11 findings; ten fixed in the drafted wording (unbounded promises in AC1/AC3/AC4/AC5, a non-discriminating control, AC3 snapshotting the Layer-2 abort rather than `ffm_run()`'s, "unconditional" contradicting a two-disposition design, an unevidenced counterfactual), and its AC2 satisfiability finding became the gate question the first line above records.
 
 

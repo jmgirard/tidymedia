@@ -293,6 +293,22 @@
 
 ## Bug fixes
 
+* A run that fails no longer leaves a broken output file behind. FFmpeg creates
+  its output before it knows the command will work, so a refused encode left a
+  zero-byte file sitting where a result should be — and if you were writing over
+  an existing file, FFmpeg had already truncated that to zero on its way to
+  failing. Every verb, and every row of a `_batch` verb, now deletes that file
+  when the run fails, and the error says so and names it. The one exception is
+  `overwrite = FALSE` against a file that was already there: FFmpeg was told not
+  to replace it, so neither will tidymedia, and the error says that instead. A
+  failed run that created its output still has it cleaned up whatever
+  `overwrite` says. If the file cannot be deleted — a read-only directory, say —
+  the error tells you it is still there rather than claiming a cleanup that did
+  not happen.
+
+  This does not reach `ffmpeg()`, the raw escape hatch, which runs a command
+  string it cannot parse for an output path.
+
 * A `_batch` verb that refuses a bad value carried in a `jobs` column now says
   which row carries it. The refusal message gains one final bullet — `First
   offending jobs row: 7.` — on the front-door value, vocabulary, codec-token

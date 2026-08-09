@@ -1,11 +1,11 @@
 # M66: A batch value refusal names the offending row
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** m66-batch-row-locator
 
 ## Goal
 
@@ -89,7 +89,7 @@ first-offender here) — not attempted; disclosed in the triage.
 
 ## Tasks
 
-- [ ] T1. Derive and commit the site list: run AC1's recorded grep + callee
+- [x] T1. Derive and commit the site list: run AC1's recorded grep + callee
       closure over the 15 front doors (`R/ffmpeg.R`); triage every hit as
       swept / already-located / excluded-with-reason; disclose the
       two-convention asymmetry. Known sites from planning: 5 loops with `i`
@@ -145,6 +145,14 @@ first-offender here) — not attempted; disclosed in the triage.
   parameter into the shared checkers because the rlang-owned wordings admit
   no suffix; falsified by a wrapper unable to preserve a refusal's class or
   blamed call.
+- 2026-08-08: implement started; branch m66-batch-row-locator; step-3 gate
+  skipped (nothing open: plan gate settled scope/wording/semantics; triage
+  home data-raw/ per the M65 spec-list lesson, derivation executable per AC4).
+- 2026-08-08: T1 done — 274 abort sites derived (data-raw/m66-derive-sites.py;
+  --check gates triage sync); triage: 27 swept, 19 swept-helper, 5
+  already-located, 223 excluded by class (data-raw/m66-site-triage.tsv). The
+  procedure surfaced two swept sites no prior map had: extract_frame_batch's
+  timestamp-finite (ffmpeg.R:3435) and frame-whole (3447) column value checks.
 
 ## Decisions
 

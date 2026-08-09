@@ -15,3 +15,4 @@
 ^data-raw$
 ^\.gitattributes$
 ^\.git-blame-ignore-revs$
+^.*\.tar\.gz$

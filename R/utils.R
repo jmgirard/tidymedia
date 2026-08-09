@@ -310,3 +310,44 @@ check_region_values <- function(regions, call = rlang::caller_env()) {
   }
   invisible(regions)
 }
+
+# check_batch_cell(): the batch row locator, at its one site (M66). A `_batch`
+# front-door sweep that refuses a jobs-COLUMN value wraps the per-row checker
+# call in this helper, which appends one first-offender bullet naming the
+# caller's 1-indexed row and re-raises the SAME condition -- message head,
+# class, and blamed call all byte-preserved, so every wording still lives at
+# the checker's own site (D042) and the blame grid's markers still match.
+# Callers apply it only when the value's carrier column is present in `jobs`:
+# an argument-delivered refusal applies to every row and carries no locator.
+# The bullet is plain text (no cli markup): it is appended to an
+# already-thrown condition, which no cli formatter revisits. Wording
+# constraints (M66 AC2): first offender only; pluralization-free; no
+# substring "index" (test-separate-av-multitrack.R bans it); must match no
+# blame-instrument marker.
+# An NA `row` evaluates the expression with no locator: the sweep sites pass
+# `i` when the value's carrier column is present in `jobs` and NA when the
+# value arrived as the verb's own argument -- an argument applies to every
+# row, so naming one would mislead (AC2's complement).
+check_batch_cell <- function(row, expr) {
+  # A malformed `row` (wrong length, NULL) degrades to the pass-through: the
+  # refusal must never be destroyed by its own locator (M66 review F6).
+  if (length(row) != 1L || is.na(row)) return(expr)
+  rlang::try_fetch(expr, error = function(cnd) {
+    locator <- sprintf("First offending jobs row: %d.", as.integer(row))
+    if (rlang::is_condition(cnd) && inherits(cnd, "rlang_error")) {
+      if (is.function(cnd$body)) {
+        # A function-valued `body` cannot take an appended element — c()
+        # would yield a list rlang refuses to render, replacing the refusal
+        # with an internal error (M66 review F3) — and it renders LAST, so
+        # appending to the message would bury the locator mid-message.
+        # Materialize it, then append; if it will not materialize, drop to
+        # the character branch with what the condition already shows.
+        cnd$body <- tryCatch(cnd$body(cnd), error = function(e) NULL)
+      }
+      cnd$body <- c(cnd$body, c("x" = locator))
+    } else {
+      cnd$message <- paste0(conditionMessage(cnd), "\nx ", locator)
+    }
+    stop(cnd)
+  })
+}

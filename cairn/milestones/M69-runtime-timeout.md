@@ -41,10 +41,17 @@ naming the program and the limit. A D-entry records the shape.
 - [x] AC2 With `tidymedia.timeout` unset, the resolver returns `0`, and each of
       the four sites named in AC1 therefore passes `timeout = 0`.
 - [ ] AC3 With `options(tidymedia.timeout = 2)`, `ffmpeg()`, `ffprobe()` and
-      `ffm_run()` each abort within 10 wall-clock seconds on a command that
-      would otherwise run for 120 s, and each abort names the program and the
-      limit in seconds. `mediainfo()` is covered by AC1 and the AC2 resolver
-      test only: no 120-second MediaInfo invocation can be named.
+      `ffm_run()` each abort within 60 wall-clock seconds of the call on a
+      writer-less FIFO input that blocks the program indefinitely
+      (`local_blocking_input()`), and each abort names the program and the
+      limit in seconds. Linux and macOS only: the fixture cannot be built on
+      Windows, where R terminates the child directly instead of escalating
+      signals. The bound is 60 s rather than the limit, and is per spawned
+      program, because base R escalates SIGINT/SIGTERM/SIGKILL across
+      limit + 40 s (ladder and measurements in the work log, 2026-08-09) — so
+      a pipeline spawning several programs can take that long once each.
+      `mediainfo()` is covered by AC1 and the AC2 resolver test only: no
+      120-second MediaInfo invocation can be named.
 - [x] AC4 The timeout branch's condition is a comparison of the `status`
       attribute to `124L` — not a match against the text of R's timeout
       warning, whose wording is translated under a non-English locale (M46).
@@ -58,9 +65,19 @@ naming the program and the limit. A D-entry records the shape.
       points of AC3 when they time out — asserted locale-free with
       `expect_no_warning()`, never by matching `timed out after`, since R's
       warning embeds the full command line and the `input=` temp path.
-- [x] AC8 `NEWS.md` carries an entry, and the `?tidymedia` Rd topic documents
-      the option's name, unit (seconds), default (`0`, no limit), and that
-      reaching it aborts.
+- [ ] AC8 `NEWS.md` and the `?tidymedia` Rd topic both document the option's
+      name, unit (seconds), default (`0`, no limit), and — as one scoped claim,
+      not two coexisting sentences — which calls a reached limit aborts (the
+      task verbs, `ffm_run()`, and the Layer 0 hatches `ffmpeg()`, `ffprobe()`,
+      `mediainfo()`) against which absorb it as an unreadable file (the
+      metadata readers: `probe_all()` and the `probe_*()` accessors,
+      `mediainfo_parameter()/_query()/_template()`, the `get_*()` helpers, and
+      `count_audio_streams()`). Neither file states the abort as an unqualified
+      universal. Both also state that on Unix the abort can lag the limit by up
+      to 40 seconds, and that base R does not guarantee termination at all.
+      Verified by reading the section, not by substring grep: the doc guard
+      asserts the scoped sentence, and restoring the unqualified "A call that
+      reaches the limit aborts" reddens it.
 - [x] AC9 `cairn/DECISIONS.md` gains a D-entry recording the option-seam shape
       and the per-verb argument it rejects, off-by-default, abort-not-warn, the
       disclosed `parallel = TRUE` worker gap, and the falsifier.
@@ -72,12 +89,12 @@ naming the program and the limit. A D-entry records the shape.
 
 - AC1 → T2, T3
 - AC2 → T1, T2, T3
-- AC3 → T4, T9
+- AC3 → T4, T9, T11
 - AC4 → T2, T4
 - AC5 → T3, T4
 - AC6 → T2, T4
 - AC7 → T4
-- AC8 → T5, T10
+- AC8 → T5, T10, T13
 - AC9 → T6
 - AC10 → T7
 
@@ -114,6 +131,21 @@ naming the program and the limit. A D-entry records the shape.
 - [x] T10 (review return, F7) Narrow the partial-output claim in `?tidymedia`
       and `NEWS.md` to the calls that know their own output; fence the Layer 0
       behavior with a test that a timed-out `ffmpeg()` leaves what it wrote.
+- [ ] T11 (return 2, AC3) Relax every wall-clock assertion in
+      `tests/testthat/test-runtime-timeout.R` to the amended 60 s bound, and
+      keep the Linux cost of the file inside a CRAN check budget — each FIFO
+      test costs ~42 s there, and there are six.
+- [ ] T12 (return 2, G2/H4) Make a timed-out probe distinguishable from an
+      unreadable file: `probe_one()` returns a timeout sentinel, `probe_all()`
+      keeps the NA row and the end-of-call warning but names the timeout, and
+      `verify_media()` re-raises rather than reporting every property as a
+      mismatch. Tests + mutation probe.
+- [ ] T13 (return 2, G1 + AC8) Rewrite the abort claim in `?tidymedia` and
+      `NEWS.md` as the one scoped claim AC8 now requires, and replace the
+      substring-grep doc guard with one that reddens when the unqualified
+      sentence is restored.
+- [ ] T14 (return 2, G6/P2) Add the missing `mediainfo_read()` absorber test
+      (via `mediainfo_query()`), and mutation-probe it.
 
 ## Work log
 
@@ -155,6 +187,12 @@ naming the program and the limit. A D-entry records the shape.
 
 - 2026-08-09: correction, superseding the T8 line above — that line's "removing each absorber reddened exactly its own test and no other" covers three absorbers but only two were probed. `mediainfo_read()`'s absorber has no test in the suite at all (`grep mediainfo_read tests/` is empty), so no mutation of it could redden anything. Raised independently by the prior-review and diff-bug lenses (G6/P2, scored 78).
 - 2026-08-09: review RETURN -> in-progress (second defect return). What failed: (1) step-4 gate — AC3 fails on Linux, where `ffmpeg()` and `ffm_run()` take 42.1 s to abort under a 2 s limit against the criterion's 10 s, and PR #72's R-CMD-check has been red on every Linux job since `afaf950` while the first review pass recorded no CI evidence; (2) G2/H4 (88), a timed-out probe inside `verify_media()` is reported as a property mismatch so `ffm_run(verify=)` blames a successful encode — a regression T8 introduced on the D011 path; (3) G1 (85), `?tidymedia` and NEWS.md still claim every timed-out call aborts, false for every metadata reader after T8. AC3 and AC10 unticked; AC1/AC2/AC4-AC9 evidence stands. Thrash trigger (b) fires on AC3's second failure; escalation offered per instance.
+
+- 2026-08-09: mechanism identified for the AC3 gate failure — base R's `timeout=` escalates SIGINT at the limit, SIGTERM at +20 s and SIGKILL at +40 s. Measured locally (macOS, R 4.6.1) under a 2 s limit: a child that dies on SIGINT takes 2.01 s, one ignoring SIGINT 22.01 s, one ignoring SIGINT and SIGTERM 42.01 s. Linux CI's 42.0-42.1 s is the third rung. Not a wiring fault: `?system` states termination "works for typical commands, but is not guaranteed".
+- 2026-08-09: implement gate chose keeping base R's `timeout=` and amending AC3 to the real guarantee over adding `processx` for direct process control, because the Goal — a hung program stops the call rather than the session — is met by a bounded 42 s exactly as by a bounded 2 s, while a dependency plus a rewiring of all four spawn sites is a fresh round of risk at the second return. Falsified by a report that the limit-plus-40s lag is itself the reported problem. The tighter-kill work is a ROADMAP candidate.
+- 2026-08-09: implement gate chose making a timeout distinguishable inside `probe_all()` — sentinel from `probe_one()`, NA row and warning kept, the warning naming the timeout — over giving `verify_media()` a private non-absorbing probe, because the same change closes both the misleading `ffm_run(verify=)` abort (G2/H4, 88) and the indistinguishable-hang gap (G4), and it leaves D047's return contract untouched. Falsified by a caller wanting the timeout invisible to every reader path.
+- 2026-08-09: criteria audit ([O] fresh-context reader) of the two amended criteria returned 10 findings, all with one clear right answer and all fixed before the text was written: AC3 named a 120-second command the suite never uses (the fixture is a writer-less FIFO), was silent on Windows where it is vacuous, conflated entry points with spawned programs, left the measurement start point unstated, and asserted a cause its own cited evidence contradicts — `ffprobe()` aborts in ~2 s on the same Linux FIFO, so the discriminator is not "FFmpeg blocks in a syscall"; AC8 left `NEWS.md` unconstrained though G1 condemned both files, listed "aborts" and "readers absorb" as two coexisting sentences that a contradictory doc satisfies literally, quantified over an unnamed "metadata readers" set, and kept the substring grep that let G1 ship green. The auditor also flagged that the 60 s relaxation must reach the other wall-clock assertions in the file and that six FIFO tests at ~42 s each is a CRAN budget problem — both taken as T11.
+- 2026-08-09: amendment (substantive) — AC3's "within 10 wall-clock seconds" becomes the audited 60 s bound scoped to Linux and macOS, per spawned program, with the escalation ladder and its measurements stated; AC8 gains the scoped abort-vs-absorb claim over both files plus the lag disclosure, and requires a guard that reddens on the unqualified sentence. AC8 unticked, since its evidence no longer covers what it now asks. Made under a defect return, not an amendment return, so it does not enter the amendment-return count.
 
 ## Decisions
 

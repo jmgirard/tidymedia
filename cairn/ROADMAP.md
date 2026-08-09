@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-09 (full audit re-run after M67's archive: all vali
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M68 | A failed run removes the broken output it wrote | planned | — | normal | milestones/M68-failed-run-output-cleanup.md |
+| M68 | A failed run removes the broken output it wrote | in-progress | — | normal | milestones/M68-failed-run-output-cleanup.md |
 | M67 | The encoder probe answers once per session, not once per row | done | — | normal | milestones/archive/M67-nvenc-probe-cache.md |
 | M66 | A batch value refusal names the offending row | done | — | normal | milestones/archive/M66-batch-row-locator.md |
 | M65 | A region, overlay or loudness mistake names the verb the user called, in both forms | done | M64 | normal | milestones/archive/M65-region-overlay-loudness-blame.md |

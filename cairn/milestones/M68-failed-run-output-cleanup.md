@@ -1,11 +1,11 @@
 # M68: A failed run removes the broken output it wrote
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** —
+- **Branch/PR:** `m68-failed-run-output-cleanup`
 
 ## Goal
 
@@ -99,6 +99,7 @@ each reaches this one site.
 ## Work log
 
 - 2026-08-09: created by /milestone-plan.
+- 2026-08-09: implement started; branch `m68-failed-run-output-cleanup` cut from master at dfa219d.
 - 2026-08-09: plan gate chose one unconditional removal over deleting only a path the run itself created because FFmpeg truncates a pre-existing output to zero before failing, so preservation preserves nothing while shipping two behaviors and a pre-run stat; falsified by a measured FFmpeg failure mode leaving a pre-existing output's bytes intact.
 - 2026-08-09: plan chose siting the removal in `ffm_run()` over each Layer-2 verb because IP1 keeps execution in Layer 1 once; falsified by a verb needing to fail without removing, e.g. one keeping the partial file for diagnosis.
 - 2026-08-09: criteria audit ([O], fresh context) returned 11 findings; ten fixed in the drafted wording (unbounded promises in AC1/AC3/AC4/AC5, a non-discriminating control, AC3 snapshotting the Layer-2 abort rather than `ffm_run()`'s, "unconditional" contradicting a two-disposition design, an unevidenced counterfactual), and its AC2 satisfiability finding became the gate question the first line above records.

@@ -166,11 +166,15 @@ test_that("a rewrite that does not change the size is still detected", {
   path <- withr::local_tempfile(fileext = ".mp3")
   writeLines("aaaa", path)
   before <- output_snapshot(path)
+  size_before <- file.info(path)$size
   # Past a coarse filesystem's one-second tick, so this pins mtime rather than
   # the resolution of the clock underneath it.
   Sys.sleep(1.1)
   writeLines("bbbb", path)
-  expect_identical(file.info(path)$size, as.numeric(nchar("bbbb") + 1))
+  # The size is asserted EQUAL rather than against a byte count: the point is
+  # that mtime alone carries the difference, and a line's byte count is not the
+  # same on a platform that writes CRLF.
+  expect_identical(file.info(path)$size, size_before)
 
   remove_failed_output(path, overwrite = TRUE, before = before)
 
@@ -182,9 +186,12 @@ test_that("a directory matching the frame pattern is never a target", {
   dir.create(file.path(dir, "f_000003.png"))
   writeLines("a frame", file.path(dir, "f_000001.png"))
 
+  # Compared by basename: what is asserted is WHICH entries come back, and a
+  # full path does not survive the separator and short-name differences between
+  # `list.files()` and `file.path()` on every platform.
   expect_identical(
-    output_targets(file.path(dir, "f_%06d.png")),
-    file.path(dir, "f_000001.png")
+    basename(output_targets(file.path(dir, "f_%06d.png"))),
+    "f_000001.png"
   )
 })
 

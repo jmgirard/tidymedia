@@ -1845,3 +1845,95 @@ it without a second permanent export.
   actually change under a session — or by a measured parallel batch whose
   W-worker probe count is itself the reported problem, which would mean the
   per-process disclosure should have been a fix.
+
+## D045 — Removing a failed run's output is not a probe; the executing path may delete what it wrote (2026-08-09, from M68; takes D040's filesystem premise and adds the write half; bounded by, not licensed by, D024)
+
+`ffm_run()` now deletes the pipeline's output when FFmpeg exits non-zero, and
+names it in the abort. Two questions had to be answered before it could.
+
+**Is this a D024 probe?** No. D024 governs running a *binary* on a
+`run = TRUE` path and confines one to a diagnostic-only effect. Nothing here
+runs a binary: `ffm_run()` stats the output with `file.exists()` before the run
+and `unlink()`s it after a non-zero exit. D040 already settled that reading the
+filesystem is not a probe in D024's sense — a verb's front door stats its input
+to refuse a missing one — and this entry takes that premise and adds the write
+half.
+
+**Then what bounds it?** Not D024's licence, which it would fail: removing a
+file is observable and is not a diagnostic condition. What bounds it is *when*
+it runs. It fires only after FFmpeg has already failed, so it changes no
+compiled command, no resolved default, no choice of pipeline, and never whether
+execution proceeds — the four things D024 puts outside its own licence. The call
+aborts under every outcome; the removal decides only what is left on disk when
+it does.
+
+**Why at all.** FFmpeg creates its output before it knows the command will work
+and truncates an existing one to zero on the way, so a failed run left a
+zero-byte file looking like a result (measured 2026-08-09, ffmpeg 8.1.2 macOS:
+an AAC-to-MP3 stream copy exits 234 with a zero-byte output, whatever the path
+held beforehand).
+
+**Scope.** `ffm_run()` alone, which every Layer 1 and Layer 2 execution path
+reaches, `ffm_batch()` included. Two paths are not covered and cannot be: Layer
+0's `ffmpeg()` runs a verbatim command string through `system()` and cannot tell
+which token is an output; the two-pass loudnorm analysis calls `run_program()`
+directly and writes to `-f null`, so it has no output to remove.
+
+**The one exception** is `overwrite = FALSE` against a path that already
+existed: FFmpeg was told not to replace that file, so the package does not
+either. Narrowed to pre-existence deliberately — a non-overwriting run that
+*created* its output still gets it cleaned up, so the exception protects a
+caller's file without stranding a broken one.
+
+Rules out a `cleanup =` argument or an option seam (there is one behavior, so
+there is nothing to configure), and per-verb removal (IP1 keeps execution in
+Layer 1 once). Falsified by a report of a caller who needed the failed output
+kept: today's measured failures leave zero bytes, so there is nothing to
+inspect, and a failure mode leaving a usefully partial file would reopen this.
+
+## D046 — A failed run removes what it wrote, not what it found (2026-08-09, from M68's review return; supersedes D045's one-unconditional-rule half and its "one behavior" premise, keeps D045's not-a-probe reasoning intact)
+
+D045 chose one unconditional removal on the premise that FFmpeg always truncates
+a pre-existing output before failing, and the plan recorded its own falsifier: a
+measured failure mode leaving a pre-existing output's bytes intact. That mode is
+now measured, twice and independently. `ffmpeg -y -i in.mp4 -c:v nosuchcodec
+out.mp4` exits 8 with a 13-byte pre-existing `out.mp4` byte-for-byte intact and
+its mtime unmoved (2026-08-09, ffmpeg 8.1.2 macOS), because an unknown encoder —
+like an unknown filter or a bad option value — is refused before the output is
+opened. The unconditional rule deletes a caller's file that the run never
+touched, and reports it as incomplete.
+
+**The rule now.** `ffm_run()` stats the files its output designates before
+running, and again after a non-zero exit, and removes only those this run
+created or changed — by size or by modification time. The zero-byte truncation
+D045 was written for is still removed; a file FFmpeg never opened is left
+exactly as it was, and the abort says so.
+
+**The degenerate case** is a pre-existing zero-byte output that FFmpeg opens and
+leaves zero bytes: size cannot tell it apart, and mtime can — measured at
+11:00:44.112779 before and 11:00:45.515060 after an AAC-to-MP3 copy into an
+empty file (2026-08-09, same build). On a filesystem whose timestamp resolution
+hides even that, the run leaves a zero-byte file that was already zero bytes.
+
+**Frame sequences.** `sample_frames()`'s output is an image2 `%0Nd` pattern
+rather than a path, so `file.exists()` was false of it and a failed sampling run
+left every frame it had written. The rule applies set-wise: the files the
+pattern matches in its own directory are snapshotted before the run, and those
+the run created or changed are removed — an earlier run's frames survive.
+
+**Deleting exactly the named path.** R's `unlink()` expands wildcards by
+default: `unlink("a*.mp4")` emptied a directory of `aQQQ.mp4` and `aXYZ.mp4`,
+and `unlink("out[1].mp4")` deleted `out1.mp4` and left `out[1].mp4` (measured at
+M68's review). The removal passes `expand = FALSE`, so an output whose name
+contains `*`, `?` or `[` costs no neighbour.
+
+**`overwrite = FALSE` keeps the guard D045 gave it**, even though the general
+rule now subsumes it: FFmpeg leaving the file alone is something the general
+rule *observes*, while the guard is a promise the package *made*, and a build
+that touched the file anyway must not cost the caller it.
+
+Rejected: never removing a pre-existing output (strands the zero-byte
+truncation, the common case this milestone exists for); keeping D045's
+unconditional rule (refuted above). Falsified by a failure mode that writes a
+usefully partial output a caller would want kept — today's failures leave zero
+bytes or nothing at all.

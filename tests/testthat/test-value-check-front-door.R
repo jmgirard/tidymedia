@@ -284,12 +284,15 @@ test_that("the scalar siblings refuse the same values and blame themselves", {
   withr::local_options(tidymedia.nvenc_encoders = character(0))
   input <- make_input()
   cases <- list(
-    # `blame` is the scalar verb everywhere but site 1, where check_dim() is
-    # reached through ffm_crop() and so names the BUILDER. That leak predates
-    # M59 and is left standing by it: closing it means threading `call` through
-    # an exported Layer-1 builder, which M59-D1 rejected. Recorded here rather
-    # than glossed, so the test says what the user actually sees.
-    list(id = "1/crop_video", verb = "crop_video", blame = "ffm_crop",
+    # `blame` is now the scalar verb everywhere. Site 1 used to name the
+    # BUILDER: check_dim() was reached through ffm_crop(), whose caller_env()
+    # default lands on the builder's own frame. M59 left that standing rather
+    # than thread `call` through an exported Layer-1 builder (M59-D1); M64
+    # closed it the other way, by calling the same shared checker at
+    # crop_video()'s own front door. The `blame` field is kept because it is
+    # what the test says the user sees, and a future leak wants somewhere to
+    # be recorded rather than glossed.
+    list(id = "1/crop_video", verb = "crop_video",
          own = "must be a single FFmpeg expression or number",
          args = list(infile = input, outfile = "o.mp4", width = 0,
                      height = 120)),

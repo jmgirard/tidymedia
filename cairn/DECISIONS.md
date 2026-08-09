@@ -1714,3 +1714,42 @@ this predicate already. Whether a directory in an input slot should be refused
   a caller reaching the pipeline by a path that skips the site — or by a report
   of the new wording sending someone looking for a permissions problem where
   the file was simply not there.
+
+## D042 — A builder-bound value moves to the verb by re-calling the shared checker, never by threading `call` through an exported builder (2026-08-08, from M64; generalizes the shape M59-D1 chose for one verb and D037 licenses; extends D036's ordering to the crop/scale/rate sweeps)
+
+A value that a Layer-2 verb hands to a validating `ffm_*` builder used to
+abort naming the builder (scalar form) or `purrr::pmap()` (batch form) —
+a function the caller never typed. Two fixes were available, and this entry
+records why the package now has a rule rather than a per-verb choice.
+
+**Rejected: giving the exported builders a `call` argument.** The builders
+are Layer-1 API with direct callers of their own, for whom the builder IS the
+right blame — that behavior is correct and keeps working. A `call` parameter
+on an exported signature is API surface with an audience of one (the package
+itself), it would have to land on every validating builder to close the class,
+and M59-D1 already declined it for `ffm_crop()`. Threading `call` through an
+INTERNAL `*_pipeline()` helper remains fine — `standardize_pipeline()`'s
+pixel-format check does exactly that — because an internal signature is not
+surface.
+
+**Chosen: the verb calls the same shared checker at its own front door.**
+`check_dim()`, `check_token()` and `resolve_sample_fps()` already exist apart
+from the builders and write each message at one site, so the sweep adds no
+second wording anything could drift from — measured by M64's baseline: across
+30 cells at both refs, 27 messages are byte-identical and the 3 that differ
+are the `format` → `pixel_format` argument-name correction (M64-D1), the same
+sentence from the same site.
+
+**The siting rule.** A sweep sits where the value was effectively read
+before, so it changes blame and nothing else: at the end of the scalar
+front door when the builder ran first in the pipeline, in the pipeline with
+`call` threaded when the value is read mid-pipeline (`pixel_format`, which a
+front-door check would have hoisted past both codec seams), and on a `_batch`
+verb last among the value guards, immediately above `check_nvenc_available()`
+— a machine-independent refusal reports before a machine-dependent one
+(D036), which is the one reporting order M64 reassigns (M64-D2).
+
+- **Falsified by** a shared checker whose abort cannot be aimed at a Layer-2
+  caller from the verb's own frame, or a builder value whose refusal wording
+  must diverge between the verb and the builder — either breaks the
+  one-site-one-wording premise the sweep rests on.

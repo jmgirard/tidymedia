@@ -2054,12 +2054,14 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #'   depend on which -- an audio container (\code{.wav}, \code{.flac}) holds the
 #'   result exactly as a video container (\code{.mkv}) does, the latter simply
 #'   carrying one audio stream and nothing else.
-#' @param target_loudness The target integrated loudness, in LUFS (a number in
-#'   \code{-70}..\code{-5}; default \code{-23}, the EBU R128 target).
-#' @param true_peak The maximum true peak, in dBTP (a number in \code{-9}..\code{0};
-#'   default \code{-1}, the EBU R128 ceiling).
-#' @param loudness_range The target loudness range, in LU (a number in
-#'   \code{1}..\code{50}; default \code{7}).
+#' @param target_loudness The target integrated loudness, in LUFS
+#'   (`r loudnorm_bounds_rd("target_loudness")`; default \code{-23}, the EBU
+#'   R128 target).
+#' @param true_peak The maximum true peak, in dBTP
+#'   (`r loudnorm_bounds_rd("true_peak")`; default \code{-1}, the EBU R128
+#'   ceiling).
+#' @param loudness_range The target loudness range, in LU
+#'   (`r loudnorm_bounds_rd("loudness_range")`; default \code{7}).
 #' @param channels The output channel count, e.g. \code{1} to downmix to mono (a
 #'   positive whole number), or \code{NULL} (default) to keep the source layout.
 #' @param sample_rate The output sample rate in Hz, e.g. \code{48000} (a positive

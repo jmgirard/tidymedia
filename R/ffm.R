@@ -385,12 +385,14 @@ ffm_fps <- function(object, fps) {
 #'
 #' @param object An ffmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param target_loudness The target integrated loudness, in LUFS (a number in
-#'   \code{-70}..\code{-5}; default \code{-23}, the EBU R128 target).
-#' @param true_peak The maximum true peak, in dBTP (a number in \code{-9}..\code{0};
-#'   default \code{-1}, the EBU R128 ceiling).
-#' @param loudness_range The target loudness range, in LU (a number in
-#'   \code{1}..\code{50}; default \code{7}).
+#' @param target_loudness The target integrated loudness, in LUFS
+#'   (`r loudnorm_bounds_rd("target_loudness")`; default \code{-23}, the EBU
+#'   R128 target).
+#' @param true_peak The maximum true peak, in dBTP
+#'   (`r loudnorm_bounds_rd("true_peak")`; default \code{-1}, the EBU R128
+#'   ceiling).
+#' @param loudness_range The target loudness range, in LU
+#'   (`r loudnorm_bounds_rd("loudness_range")`; default \code{7}).
 #' @param measured_i,measured_tp,measured_lra,measured_thresh Measured input
 #'   values from a prior \code{loudnorm} analysis pass (integrated loudness,
 #'   true peak, loudness range, and threshold). Supplied together to drive an

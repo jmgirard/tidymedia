@@ -103,7 +103,7 @@ today is the path CI cannot check; T5 records the local run.
       internal binding each; point `ffm_overlay()` (`R/ffm.R:931-933`) and
       `ffm_loudnorm()` (`:437-439`) at them. Red-first boundary probes at the
       builder layer.
-- [ ] T2: Generate the roxygen bounds at `R/ffmpeg.R:2009-2014` from the same
+- [x] T2: Generate the roxygen bounds at `R/ffmpeg.R:2009-2014` from the same
       bindings via an inline helper; `document()`.
 - [ ] T3: Declare `tests/testthat/helper-blame-specs-m65.R` and extend M64's grid to read it —
       both forms, both deliveries, the `two_pass` axis, the region row/field
@@ -127,6 +127,7 @@ today is the path CI cannot check; T5 records the local run.
 
 - 2026-08-08: created by /milestone-plan.
 - 2026-08-08: T1 done — bindings `overlay_scale_range` + three `loudnorm_range_*` in R/utils.R, shared checkers `check_overlay_scale()`/`check_loudnorm_targets()`/`check_region_values()`; builders point at them; AC1 boundary probes in test-shared-range-bindings.R (both layers, bounds derived from the namespace bindings). Suite clean.
+- 2026-08-08: T2 done — `loudnorm_bounds_rd()` inline helper; `normalize_audio()`'s AND `ffm_loudnorm()`'s roxygen bounds now render from the bindings (same helper, same words; only source line-wrap moved). `document()` stable after the commit.
 - 2026-08-08: plan gate chose moving `normalize_audio()`'s loudness sweep above the `two_pass` analysis block over scoping the milestone to single-pass and disclosing the gap, because a disclosed ordering gap is the shape D038 recorded and D039 had to undo; falsified by a reordering that changes the reported guard for a caller the crossing table cannot enumerate.
 - 2026-08-08: plan gate chose one internal binding read by both layers over restating each bound at the front door, because a restated number is exactly what the M40 stale-hint lesson bites on and no test comparing literals can see the drift; falsified by a bound whose two layers must legitimately differ.
 - 2026-08-08: substantive amendment (gated): AC3/T3's spec list moved from `data-raw/blame-specs-m65.R` to `tests/testthat/helper-blame-specs-m65.R` — `^data-raw$` is in `.Rbuildignore`, so the grid test sourcing it there would skip under `R CMD check` (the M51/M59 lesson; M64's list lives in tests/ for the same reason). User approved "Move to tests/".

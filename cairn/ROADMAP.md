@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-08 (M64 done and archived; M65 unblocked. Terminal-row retention pruned M59's row. M64's logged review findings absorbed into the M62/M63 instruments candidate row.)_
+_Last hygiene check: 2026-08-08 (M65 done and archived; terminal-row retention pruned M60's row. New grouped candidate row for M65's review leftovers: batch row-locator + normalize copy/audio_stream form divergence.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M65 | A region, overlay or loudness mistake names the verb the user called, in both forms | review | M64 | normal | milestones/M65-region-overlay-loudness-blame.md |
+| M65 | A region, overlay or loudness mistake names the verb the user called, in both forms | done | M64 | normal | milestones/archive/M65-region-overlay-loudness-blame.md |
 | M64 | A crop, scale or rate mistake names the verb the user called, in both forms | done | — | normal | milestones/archive/M64-crop-scale-rate-blame.md |
 | M63 | An unreadable input is refused where a missing one already is | done | M62 | normal | milestones/archive/M63-unreadable-input-front-door.md |
 | M62 | A missing input file is refused at the front door, in both forms | done | M61 | normal | milestones/archive/M62-fanout-input-path-front-door.md |
 | M61 | A value error and a contradiction resolve the same way in both forms | done | M59 | normal | milestones/archive/M61-uniform-front-door-ordering.md |
-| M60 | The repo's line endings are normalized once and enforced mechanically | done | — | normal | milestones/archive/M60-line-ending-normalization.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

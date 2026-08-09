@@ -13,110 +13,130 @@ An FFmpeg run that fails leaves no output file behind.
 
 ## Scope
 
-**In:** `ffm_run()` deletes the pipeline's output path when its FFmpeg
+**In:** `ffm_run()` removes what its FFmpeg invocation wrote when that
 invocation exits non-zero, and says so in the abort it already raises
-(`R/ffm.R:1384-1406`). One rule, whatever the path held before: FFmpeg
-truncates a pre-existing output to zero bytes before failing anyway
-(measured 2026-08-09, ffmpeg 8.1.2 macOS), so there is nothing left to
-preserve. The single exception is `overwrite = FALSE` against a path that
-already existed, where the package promised not to replace it (AC8). Every
-Layer 1 and Layer 2 execution path inherits this, `ffm_batch()` included,
-because each reaches this one site.
+(`R/ffm.R:1384-1406`). The rule is *this run wrote it* — the output is stat'd
+before the run and after the failure, and a file goes only where the run created
+it or changed its size or timestamp; D046 carries the measurement behind it, the
+`overwrite = FALSE` guard (AC8), and the image2 pattern case
+(`sample_frames()`), where the rule applies to the files the pattern matches in
+its own directory.
+Every Layer 1 and Layer 2 path inherits this, `ffm_batch()`
+included; Layer 0's `ffmpeg()` (`R/ffmpeg.R:28`) and the loudnorm analysis pass
+(`R/loudnorm_two_pass.R:41,140`) do not and cannot — one runs a verbatim string
+through `system()`, the other writes to `-f null`.
 
-Two paths do not, and cannot. Layer 0's `ffmpeg()` takes a verbatim command
-string and calls `system()` (`R/ffmpeg.R:28`), so it never reaches `ffm_run()`
-and cannot tell which of the caller's tokens is an output. The two-pass
-loudnorm analysis calls `run_program()` directly and writes to `-f null`
-(`R/loudnorm_two_pass.R:41,140`), so it has no output to remove.
-
-**Out:**
-- `separate_audio_video()`'s video command still never runs once its audio
-  command aborts → stays the candidate row this milestone was split from.
-- The concat verbs' unconditional `-map 0`, which fails on a subtitle-bearing
-  `.mkv` into `.mp4` → same candidate row.
-- Any partial-output policy for a run the user interrupts (SIGINT), which is
-  not a non-zero FFmpeg exit → no row; raise one if it is ever reported.
-- Classifying *why* FFmpeg failed → the existing separation-diagnostics
-  candidate row.
+**Out:** `separate_audio_video()`'s video command still never runs once its
+audio command aborts, and the concat verbs' unconditional `-map 0` still fails
+on a subtitle-bearing `.mkv` → both stay the candidate row this milestone was
+split from. Classifying *why* FFmpeg failed → the existing
+separation-diagnostics candidate row. A partial-output policy for a run the user
+interrupts (SIGINT) is not a non-zero exit → no row; raise one if reported.
 
 ## Acceptance criteria
 
-- [x] **AC1.** When `ffm_run()`'s FFmpeg invocation exits non-zero and the
-      pipeline allows overwriting, the pipeline's output path does not exist
-      after the abort. Evidence: an execution test provoking an AAC-to-MP3
-      stream copy — a refusal no FFmpeg build can avoid, unlike the
-      version-dependent adts multi-stream refusal M45 paid for — twice, once
-      with the output path absent beforehand and once with it pre-written with
-      content, asserting the path is absent after each abort; and the same
-      test re-run with the removal stubbed out, red, with its failure output
-      quoted.
-- [x] **AC2.** The change stays confined: one removal site, no user-facing
+- [ ] **AC1.** When `ffm_run()`'s FFmpeg invocation exits non-zero and the run
+      wrote to the output path, that path does not exist after the abort.
+      Evidence: an execution test provoking an AAC-to-MP3 stream copy — a
+      refusal no FFmpeg build can avoid, unlike the version-dependent adts
+      refusal M45 paid for — with the path absent beforehand and with it
+      pre-written, asserting absence after each abort; and the same test with
+      the removal stubbed out, red, with its failure output quoted.
+- [ ] **AC2.** The change stays confined: one removal site, no user-facing
       switch. Evidence: `grep -rn "unlink(\|file.remove(" R/` returns the
       pre-existing `R/program_management.R` line and exactly one new line,
       inside `ffm_run()`; `grep -rn "ffm_run(" R/` shows every caller reaches
       it rather than removing anything itself; `git diff master..HEAD --
       NAMESPACE man/` adds no export and no `\usage` argument; and
       `grep -rn "getOption(" R/` returns the same single site on both refs.
-- [x] **AC3.** The abort `ffm_run()` raises at `R/ffm.R:1398` names the file
-      it removed. Evidence: a test catching that condition and matching its
-      message against both the removal wording and the output's basename —
-      not `expect_snapshot()`, since the abort embeds `tempfile()` paths for
-      the input and the output that change on every run, so a recorded
-      snapshot would churn rather than pin anything.
-- [x] **AC4.** `separate_audio_video()`'s multi-track abort still carries
+- [ ] **AC3.** The abort `ffm_run()` raises names the file it removed.
+      Evidence: a test catching that condition and matching its message against
+      both the removal wording and the output's basename — not
+      `expect_snapshot()`, since the abort embeds `tempfile()` paths that
+      change on every run.
+- [ ] **AC4.** `separate_audio_video()`'s multi-track abort still carries
       `ffm_run()`'s condition as its `parent`, so AC3's sentence reaches that
       caller. Evidence: a test asserting the caught condition's class is
       `tidymedia_multitrack_separation` and its `$parent` message matches
       AC3's wording.
-- [x] **AC5.** A failed batch row's output path is absent and a succeeding
+- [ ] **AC5.** A failed batch row's output path is absent and a succeeding
       row's is present. Evidence: a two-row execution test through
       `ffm_batch()` asserting both paths and `success == c(FALSE, TRUE)`.
-- [x] **AC6.** `NEWS.md` carries an entry stating the removal, naming no
+- [ ] **AC6.** `NEWS.md` carries an entry stating the removal, naming no
       milestone number, and AC1's stubbed-out run is the test that fails
       without the behavior the entry asserts.
-- [x] **AC7.** The profile's `verify` slot is clean and its fuller
+- [ ] **AC7.** The profile's `verify` slot is clean and its fuller
       pre-review check passes: `devtools::document()` no diff,
       `devtools::test()` clean, `devtools::check()` 0 errors / 0 warnings.
-- [x] **AC8.** `overwrite = FALSE` never costs the caller a file, and never
-      strands one either: the removal is skipped only for an output that
-      existed before the run. Evidence: direct tests of the removal helper
-      over the four combinations of `overwrite` (`TRUE`/`FALSE`) and
-      pre-existence, asserting removal in three and preservation only for
-      `overwrite = FALSE` against a pre-existing path.
+- [ ] **AC8.** `overwrite = FALSE` never costs the caller a file: a pre-existing
+      output is preserved under it by a guard of its own, whatever FFmpeg did,
+      while an output the run created is removed whatever `overwrite` said.
+      Evidence: direct tests of the removal helper over the four combinations of
+      `overwrite` (`TRUE`/`FALSE`) and pre-existence, asserting removal in three
+      and preservation with the content intact only for `overwrite = FALSE`
+      against a pre-existing path.
+- [ ] **AC9.** A failed run leaves a pre-existing output FFmpeg never opened
+      exactly as it was. Evidence: an execution test provoking an unknown
+      encoder — exit 8, raised before the output is opened — against a
+      pre-written output, asserting the bytes and the mtime are unchanged and
+      that the abort says the file was left alone; red against the removal this
+      milestone first shipped, with that failure output quoted.
+- [ ] **AC10.** The removal deletes what the run wrote and nothing beside it.
+      Evidence: a direct test that an output named `a*.mp4` costs neither
+      `aQQQ.mp4` nor `aXYZ.mp4`, and that `out[1].mp4` goes while `out1.mp4`
+      stays (R's `unlink()` globs by default, measured at review); and an
+      execution test over a `%06d` frame pattern where a failed sampling run
+      removes the frames it wrote while an earlier run's frames and an unrelated
+      file in the same directory survive.
+- [ ] **AC11.** No test here skips on the outcome of the operation it tests.
+      Evidence: the unremovable-file case verifies its fixture with
+      `file.access(dir, mode = 2)` rather than by attempting the unlink, and
+      skips only on Windows or as root, failing anywhere else — the shape
+      `tm_require_unreadable()` (M63) already holds for unreadable inputs.
 
 ## Coverage
 
-- AC1 → T1, T2
+- AC1 → T1, T2, T10
 - AC2 → T2, T5, T6
 - AC3 → T2, T3
 - AC4 → T4
 - AC5 → T5
-- AC6 → T6
-- AC7 → T7
+- AC6 → T6, T13
+- AC7 → T7, T13
 - AC8 → T2, T8
+- AC9 → T9, T10
+- AC10 → T9, T10, T11
+- AC11 → T12
 
 ## Tasks
 
-- [x] **T1.** Write the failing regression test: provoke an AAC-to-MP3 stream
-      copy through a compiled pipeline, both pre-states, asserting the output
-      path is absent. Confirm red against `master` before T2.
-- [x] **T2.** Add `remove_failed_output()` beside `ffm_run()` in `R/ffm.R` and
-      call it from `ffm_run()` (`R/ffm.R:1396-1403`) on a non-zero status
-      before raising; name the removed file in the abort's bullets, and say
-      so when the removal itself fails.
+- [x] **T1.** Failing regression test: an AAC-to-MP3 stream copy through a
+      compiled pipeline, both pre-states, asserting the output is absent.
+- [x] **T2.** Add `remove_failed_output()` beside `ffm_run()` in `R/ffm.R`,
+      call it on a non-zero status before raising, name the removed file in
+      the abort's bullets, and say so when the removal itself fails.
 - [x] **T3.** Assert the new abort's wording and the file it names.
-- [x] **T4.** Add the parent-chain test through `separate_audio_video()`
-      against `run_separation_audio()` (`R/ffmpeg.R:617-656`).
-- [x] **T5.** Add the two-row batch execution test; confirm `run_one()`
-      (`R/ffm_batch.R:127`) needs no removal code of its own, and run AC2's
-      two greps.
+- [x] **T4.** Parent-chain test through `separate_audio_video()`
+      (`R/ffmpeg.R:617-656`).
+- [x] **T5.** Two-row batch execution test; confirm `run_one()`
+      (`R/ffm_batch.R:127`) needs no removal code of its own; run AC2's greps.
 - [x] **T6.** NEWS.md entry; run AC6's diff and grep against `master`.
 - [x] **T7.** `devtools::document()`, `devtools::test()`, `devtools::check()`;
       record a decision entry for reading and writing the filesystem after a
-      failed run — it is not a probe under the executing-path licence, which
-      governs running a binary, and D040 already licensed a filesystem read.
+      failed run — not a probe under the executing-path licence (D045).
 - [x] **T8.** Unit-test `remove_failed_output()` over the four `overwrite` ×
       pre-existence combinations (AC8).
+- [ ] **T9.** Failing tests first for the two defects the review measured: a
+      pre-existing output an unknown-encoder run never opened (AC9), and the
+      glob and frame-pattern cases (AC10). Confirm each red against the branch.
+- [ ] **T10.** Replace the pre-run existence flag with a snapshot of the files
+      the output designates (path, size, mtime) and remove, after a failure,
+      only those the run created or changed; `unlink(expand = FALSE)`.
+- [ ] **T11.** Match an image2 `%0Nd` pattern to its own files in its own
+      directory, so a frame sequence is snapshotted and removed as a set.
+- [ ] **T12.** Rebuild the unremovable-file test's gate on the M63 shape (AC11).
+- [ ] **T13.** Supersede D045 with the write-detection rule, update the NEWS
+      entry to what the package now does, and re-run document/test/check.
 
 ## Work log
 
@@ -139,6 +159,9 @@ loudnorm analysis calls `run_program()` directly and writes to `-f null`
 - 2026-08-09: all eight tasks done and checks clean; status -> review.
 - 2026-08-09: review returned M68 to in-progress under the return floor — F1 (92) deletes a pre-existing output FFmpeg never opened (exit 8, file intact, re-measured), F2 (90) and F3 (88) are unlink()'s default glob expansion deleting unrelated files, F6 (84) leaves every frame of a failed sample_frames() run, P1 (85) is an outcome-keyed skip M63 already retired, F10 (80) is the test blindness that hid F1.
 - 2026-08-09: criteria audit ([O], fresh context) returned 11 findings; ten fixed in the drafted wording (unbounded promises in AC1/AC3/AC4/AC5, a non-discriminating control, AC3 snapshotting the Layer-2 abort rather than `ffm_run()`'s, "unconditional" contradicting a two-disposition design, an unevidenced counterfactual), and its AC2 satisfiability finding became the gate question the first line above records.
+- 2026-08-09: F1 re-measured this session — `ffmpeg -y -i in.mp4 -c:v nosuchcodec out.mp4` exits 8 with a pre-existing 13-byte output byte-for-byte intact (same md5, same mtime), and a pre-existing zero-byte output that FFmpeg *did* truncate came back with an unchanged size but a bumped mtime, so "did this run write here?" is answerable from a size+mtime stat.
+- 2026-08-09: implement gate re-asked against that measurement — chose removing only what the run wrote over never touching a pre-existing output (which strands the zero-byte truncation), and chose deleting a failed frame run's own frames over leaving them; escalation was offered and declined.
+- 2026-08-09: amendment gate — Scope In rewritten to the write-detection rule, AC1/AC8 amended, AC9/AC10/AC11 and T9-T13 added, every AC box unticked because the behavior beneath them changed; D046 appended superseding D045's unconditional half; sizing advisory now warns 11 criteria / 13 tasks, a return-driven expansion of an in-flight milestone rather than a split.
 
 
 

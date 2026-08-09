@@ -1890,3 +1890,50 @@ there is nothing to configure), and per-verb removal (IP1 keeps execution in
 Layer 1 once). Falsified by a report of a caller who needed the failed output
 kept: today's measured failures leave zero bytes, so there is nothing to
 inspect, and a failure mode leaving a usefully partial file would reopen this.
+
+## D046 — A failed run removes what it wrote, not what it found (2026-08-09, from M68's review return; supersedes D045's one-unconditional-rule half and its "one behavior" premise, keeps D045's not-a-probe reasoning intact)
+
+D045 chose one unconditional removal on the premise that FFmpeg always truncates
+a pre-existing output before failing, and the plan recorded its own falsifier: a
+measured failure mode leaving a pre-existing output's bytes intact. That mode is
+now measured, twice and independently. `ffmpeg -y -i in.mp4 -c:v nosuchcodec
+out.mp4` exits 8 with a 13-byte pre-existing `out.mp4` byte-for-byte intact and
+its mtime unmoved (2026-08-09, ffmpeg 8.1.2 macOS), because an unknown encoder —
+like an unknown filter or a bad option value — is refused before the output is
+opened. The unconditional rule deletes a caller's file that the run never
+touched, and reports it as incomplete.
+
+**The rule now.** `ffm_run()` stats the files its output designates before
+running, and again after a non-zero exit, and removes only those this run
+created or changed — by size or by modification time. The zero-byte truncation
+D045 was written for is still removed; a file FFmpeg never opened is left
+exactly as it was, and the abort says so.
+
+**The degenerate case** is a pre-existing zero-byte output that FFmpeg opens and
+leaves zero bytes: size cannot tell it apart, and mtime can — measured at
+11:00:44.112779 before and 11:00:45.515060 after an AAC-to-MP3 copy into an
+empty file (2026-08-09, same build). On a filesystem whose timestamp resolution
+hides even that, the run leaves a zero-byte file that was already zero bytes.
+
+**Frame sequences.** `sample_frames()`'s output is an image2 `%0Nd` pattern
+rather than a path, so `file.exists()` was false of it and a failed sampling run
+left every frame it had written. The rule applies set-wise: the files the
+pattern matches in its own directory are snapshotted before the run, and those
+the run created or changed are removed — an earlier run's frames survive.
+
+**Deleting exactly the named path.** R's `unlink()` expands wildcards by
+default: `unlink("a*.mp4")` emptied a directory of `aQQQ.mp4` and `aXYZ.mp4`,
+and `unlink("out[1].mp4")` deleted `out1.mp4` and left `out[1].mp4` (measured at
+M68's review). The removal passes `expand = FALSE`, so an output whose name
+contains `*`, `?` or `[` costs no neighbour.
+
+**`overwrite = FALSE` keeps the guard D045 gave it**, even though the general
+rule now subsumes it: FFmpeg leaving the file alone is something the general
+rule *observes*, while the guard is a promise the package *made*, and a build
+that touched the file anyway must not cost the caller it.
+
+Rejected: never removing a pre-existing output (strands the zero-byte
+truncation, the common case this milestone exists for); keeping D045's
+unconditional rule (refuted above). Falsified by a failure mode that writes a
+usefully partial output a caller would want kept — today's failures leave zero
+bytes or nothing at all.

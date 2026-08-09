@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** m64-crop-scale-rate-blame
+- **Branch/PR:** m64-crop-scale-rate-blame · https://github.com/jmgirard/tidymedia/pull/67
 
 ## Goal
 
@@ -45,8 +45,10 @@ Layer-1 error, correctly.
       `pmap`, `_pipeline(`, `ffm_`. A completeness reader fails when a declared
       cell names something that is neither a formal of that verb nor a column its
       `batch_arg_rows()` resolves. The spec list is closed by inspection and the
-      file says so. The `data-raw/` scripts backing AC3–AC5 read this same helper
-      from the source tree, so no second copy of the list exists.
+      file says so. Every script that consumes the spec list reads it from this
+      helper in the source tree — `data-raw/blame-baseline.R` is the one
+      consumer — and no second copy of the list exists anywhere; the AC4 and
+      AC5 scripts declare no cell list of their own.
 - [ ] AC2: Every `_batch` cell appears twice — the violating value passed as the
       argument, and carried in the `jobs` column — and for each (verb, argument)
       the scalar and batch cells report the same guard, compared cell-for-cell by
@@ -136,6 +138,7 @@ Layer-1 error, correctly.
 - 2026-08-08: T7 mutation harness — 12 sites derived from the branch diff, each red on ≥1 cell its own verb's grid owns; a planted-defect reader test added (a neutered reader passed the empty check, since the real list has no defects), red under the reader mutation; the control mutation pair shows the dead-control report appears when a crossed guard is removed and vanishes when the control check is neutered. All 15 red; suite FAIL 0 / PASS 5262.
 - 2026-08-08: T8 AC6 sweep — the criterion's grep matched 254 sites; six retained the inherited-from-the-builder claim (the crop and sample pipeline headers, standardize_pipeline's dim comment, both batch verbs' column-guard comments, and crop_video_batch's roxygen intro) and were rewritten, man/ regenerated. No `@param` text named a refuser, so the roxygen half of T8 is that one intro.
 - 2026-08-08: T8 NEWS entry + M64-D3 citation table; the "one wording in both forms" sentence was cut rather than cited (the both-forms test normalizes the names away, so no AC5 mutation reds it); a value-before-nvenc ordering test and the `pixel_format` arg-name pin were added so the remaining sentences cite observed reds; harness re-run, all 15 red. D042 records the sweep-over-`call`-threading rule. `devtools::check()` Status: OK, 0/0/0.
+- 2026-08-08: amendment return: AC1 — "Every script that consumes the spec list reads it from this helper in the source tree — `data-raw/blame-baseline.R` is the one consumer — and no second copy of the list exists anywhere; the AC4 and AC5 scripts declare no cell list of their own." The drafted sentence had all three evidence scripts reading the helper, written before T5/T7 existed to show two of them consume no cell list (one declares crossings, one derives sites from the diff, in Python). Same commit corrects the helper header, which named `blame-precedence.R` as a reader it never was. Re-review resumes immediately.
 
 ## Decisions
 

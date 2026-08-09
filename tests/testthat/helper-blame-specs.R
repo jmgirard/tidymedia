@@ -1,10 +1,12 @@
 # The M64 blame grid's spec list: every (verb, form, delivery, argument,
 # violating value) cell whose abort must name the verb the caller typed.
 #
-# One declaration, read by three consumers: the grid in
-# test-builder-blame-front-door.R, and -- from the source tree, since they are
-# developer scripts that never run under `R CMD check` --
-# data-raw/blame-baseline.R and data-raw/blame-precedence.R. The list lives HERE
+# One declaration, read by its two consumers: the grid in
+# test-builder-blame-front-door.R, and -- from the source tree, since it is a
+# developer script that never runs under `R CMD check` --
+# data-raw/blame-baseline.R. The other data-raw/ scripts hold no copy either:
+# blame-precedence.R declares CROSSINGS, not spec-list cells, and
+# blame-guard-mutations.py derives its sites from the branch diff. The list lives HERE
 # rather than in data-raw/ because `^data-raw$` is in .Rbuildignore: a test
 # sourcing it from there finds nothing under `R CMD check` and skips, leaving
 # the guard unenforced in exactly the run the release gate uses (LESSONS

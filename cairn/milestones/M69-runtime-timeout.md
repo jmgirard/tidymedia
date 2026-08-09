@@ -40,7 +40,7 @@ naming the program and the limit. A D-entry records the shape.
       limit to its `timeout=` argument.
 - [x] AC2 With `tidymedia.timeout` unset, the resolver returns `0`, and each of
       the four sites named in AC1 therefore passes `timeout = 0`.
-- [ ] AC3 With `options(tidymedia.timeout = 2)`, `ffmpeg()`, `ffprobe()` and
+- [x] AC3 With `options(tidymedia.timeout = 2)`, `ffmpeg()`, `ffprobe()` and
       `ffm_run()` each abort within 60 wall-clock seconds of the call on a
       writer-less FIFO input that blocks the program indefinitely
       (`local_blocking_input()`), and each abort names the program and the
@@ -65,7 +65,7 @@ naming the program and the limit. A D-entry records the shape.
       points of AC3 when they time out — asserted locale-free with
       `expect_no_warning()`, never by matching `timed out after`, since R's
       warning embeds the full command line and the `input=` temp path.
-- [ ] AC8 `NEWS.md` and the `?tidymedia` Rd topic both document the option's
+- [x] AC8 `NEWS.md` and the `?tidymedia` Rd topic both document the option's
       name, unit (seconds), default (`0`, no limit), and — as one scoped claim,
       not two coexisting sentences — which calls a reached limit aborts (the
       task verbs, `ffm_run()`, and the Layer 0 hatches `ffmpeg()`, `ffprobe()`,
@@ -81,7 +81,7 @@ naming the program and the limit. A D-entry records the shape.
 - [x] AC9 `cairn/DECISIONS.md` gains a D-entry recording the option-seam shape
       and the per-verb argument it rejects, off-by-default, abort-not-warn, the
       disclosed `parallel = TRUE` worker gap, and the falsifier.
-- [ ] AC10 The `verify` slot of `cairn/PROFILE.md` is clean —
+- [x] AC10 The `verify` slot of `cairn/PROFILE.md` is clean —
       `devtools::document()`, `devtools::test()` and `devtools::check()` (0
       errors, 0 warnings).
 
@@ -413,7 +413,7 @@ the `input=` comments no longer describe the only mechanism at work; G5 (15)
 `probe_one()`'s `if (is.null(out)) return(NULL)` is dead code; G10 (12) a
 non-ASCII byte in an R comment.
 
-**Return.** Step-4 gate failure: AC3 fails on Linux with fresh CI evidence, and
+**Return (pass 2).** Step-4 gate failure: AC3 fails on Linux with fresh CI evidence, and
 the PR's checks are red. G2/H4 and G1 are actioned into the same return. Status
 back to `in-progress`; AC3 and AC10 unticked, AC1/AC2/AC4–AC9 evidence stands.
 Second defect return for M69. Thrash trigger (a) (third return) is unfired.
@@ -426,3 +426,59 @@ can deliver a bounded abort on every platform, or whether that needs real
 process control — so escalation via `/milestone-brief` is offered per instance
 (D-004), never automatically.
 
+
+---
+
+## Third pass (2026-08-09, branch `m69-runtime-timeout` @ `fd988de`)
+
+**Evidence** (fresh; AC3 and AC8 were amended since pass 2, so their pass-2
+evidence no longer applies and was re-gathered against the new wording):
+
+- AC1 — all four spawn sites carry one `resolve_timeout(`, one
+  `timeout = limit` and one `guard_timeout(` each, counted per file.
+- AC2 — `resolve_timeout()` with the option unset returns `0` (run directly).
+- AC3 (amended) — on the FIFO fixture under a 2 s limit: `ffmpeg()` 2.08 s,
+  `ffprobe()` 2.05 s, `ffm_run()` 2.05 s, all inside the 60 s bound, each
+  aborting with class `tidymedia_timeout` and a message naming its program and
+  `2 seconds`. The bound's reason for being 60 rather than 2 is the escalation
+  ladder measured in the work log; Linux CI now passes on all three jobs, which
+  is the platform the criterion was amended for.
+- AC4 — the branch is `!is.null(status) && identical(as.integer(status), 124L)`;
+  `R/timeout.R` contains zero text-matching calls.
+- AC5 — both D046 dispositions observed: a pre-existing output survives
+  byte-identical with `was left as it was: FFmpeg never wrote to it.`, and the
+  injected-kill case reads `The incomplete ... was removed.` with the file gone.
+- AC6 — `is_timeout(status = 124, limit = 0)` is `FALSE`; `limit = 2` is `TRUE`.
+- AC7 — zero warnings signalled across all three entry points.
+- AC8 (amended) — both `man/tidymedia-package.Rd` and `NEWS.md` carry
+  `tidymedia.timeout`, `second`, `no limit`, `abort`, `absorb`, `probe_all`,
+  `verify_media`, `40 seconds` and `guarantee`, and neither contains the
+  unqualified `A call that reaches the limit aborts`. The criterion's own
+  verification clause was executed rather than cited: restoring that sentence
+  ahead of the scoped paragraph reddened `both docs scope the abort and name
+  the readers that absorb instead`, and only that test.
+- AC9 — `cairn/DECISIONS.md:1941`, D047.
+- AC10 — `devtools::document()` no diff; `devtools::test()` FAIL 0 / PASS 6166 /
+  SKIP 5 with the warning count at its pre-existing 4; `devtools::check()`
+  `Status: OK`, 0 errors / 0 warnings / 0 notes. CI at `fd988de` is green on all
+  nine checks — the three Ubuntu jobs that failed pass 2 among them, plus both
+  codecov statuses, which the new `mediainfo("--Version")` test carried over the
+  patch-coverage line.
+
+**Consistency gate:** `cairn_validate` exit 0, all checks PASS, two advisories
+(`M69: 10 acceptance criteria (>7 tripwire)`, `M69: 14 tasks (>10 tripwire)`) —
+both grew across two defect returns and are recorded rather than acted on, since
+splitting a milestone at its merge gate would discard the branch. `cairn_impact`
+not run — Principles touched is `—`. Toolchain slot: `document()` no diff ·
+generated files unedited · README untouched · `pkgdown::check_pkgdown()` no
+problems · NEWS.md entry present with no milestone or decision ids · no new
+top-level files.
+
+**Independent review — 3 lenses (2 in at this checkpoint), scored after.**
+[S] blame-history: no resurrected bug or weakened guard; D002/D011/D024/D046
+boundaries respected, F7's and G1's narrowings both intact, and
+`verify_media()`'s replay correctly avoids F17's trap by replaying the condition
+object. One finding: D047's readers bullet is now stale. [S] prior-review: the
+`gh api .../pulls/comments` probe returned empty and no archived `## Review`
+findings touch these files; F8/P1 raised a third time, plus the same D047
+staleness. [O] diff-bug still running — triage and scoring pending.

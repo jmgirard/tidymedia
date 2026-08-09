@@ -1,6 +1,6 @@
 # M68: A failed run removes the broken output it wrote
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -169,6 +169,7 @@ interrupts (SIGINT) is not a non-zero exit → no row; raise one if reported.
 - 2026-08-09: T10 refinement — a file at the literal output path is read as the output whatever its name looks like, so a caller's `100%d.mp4` is not searched for as a pattern; a fourth control (dropping that reading) reddens only the new test for it.
 - 2026-08-09: T13 — NEWS.md entry rewritten to what the package now does (what the run wrote, the untouched-output case, the literal-name rule, the frame sequence); `devtools::document()` no diff, `devtools::test()` FAIL 0 | WARN 4 | SKIP 5 | PASS 6035, `devtools::check()` Status: OK (0/0/0). The 4 warnings are the package's own "Dropping N audio tracks" warnings in test-audio-stream.R and test-ffmpeg.R, unrelated to this branch.
 - 2026-08-09: T13 — a first check run reported 1 NOTE, the spelling test on "neighbouring" in NEWS.md; the package spells US ("behavior" x20), so the branch does too. A sweep that also touched two unrelated files' comments was reverted, keeping the diff confined (AC2).
+- 2026-08-09: all thirteen tasks done and checks clean; the review's six actioned findings are answered (F1/F10 by the write-detection rule and its never-opened test, F2/F3 by `expand = FALSE` and the two neighbor tests, F6 by the frame-pattern set, P1 by the fixture-verified gate); status -> review.
 
 
 

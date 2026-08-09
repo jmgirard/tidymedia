@@ -2,7 +2,7 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-09 (M67 done and archived; its M62 row pruned under terminal-row retention, leaving five. No milestone is now in flight — the next action is planning, not implementing.)_
+_Last hygiene check: 2026-08-09 (full audit re-run after M67's archive: all validate checks green, no advisories, both GitHub inboxes empty, nothing in flight — the next action is planning.)_
 
 ## Milestones
 

@@ -1783,3 +1783,65 @@ pays for the mistake — is exactly the path the refusal must reach first.
   the analysis result itself (its refusal then cannot precede the probe), or a
   measured caller for whom a shaping-knob complaint preceding a target
   complaint is load-bearing.
+
+## D044 — A capability probe's answer is remembered for the R session, and the escape from it is exported (2026-08-09, from M67; narrows D034's per-build-frequency, leaves its licence untouched; trades GP1)
+
+D034 licensed a probe whose result enters the compiled command to run while the
+pipeline is built. It said nothing about how OFTEN, and the answer was: every
+time. `has_nvenc()` reached `ffmpeg_encoders()` → `ffmpeg("-encoders")` on each
+call, so an N-row `hardware = "nvenc"` batch spawned N FFmpeg processes to
+re-learn a fact about the binary that cannot change while the binary does not.
+
+**The rule.** The encoder-name pool is asked of FFmpeg at most once per R
+session and remembered in a package-local environment (`R/cache.R`). The memo
+sits strictly BELOW `has_nvenc()`'s `getOption("tidymedia.nvenc_encoders")`
+seam: the option is read first on every call, so setting it mid-session takes
+effect at once and never reads or populates the memo. `ffmpeg_encoders()` and
+`ffmpeg_codecs()` stay uncached, so a caller always keeps a route to a fresh
+answer.
+
+**Lifetime, stated as a contract.** The memo lives for the R session. It is
+discarded on exactly two routes: the exported `refresh_ffmpeg_capabilities()`,
+and `set_program()`, which is the one package call that can repoint tidymedia at
+a different binary. Nothing else discards it — not a new FFmpeg install, not a
+driver change, not time. A caller who changes the machine under a running
+session and uses neither route is pinned to the old answer, by design and by
+documentation.
+
+**Per-process, so `parallel = TRUE` workers each keep their own.**
+`furrr::future_pmap()` runs `.f` in workers that `loadNamespace()` fresh, and
+`future` exports the closure's globals rather than the package's internal
+environment bindings, so a W-worker nvenc batch asks FFmpeg W times where the
+sequential one asks once, and discarding in the parent does not reach them. W is
+bounded by the worker count, not the row count, so this is a completeness gap
+rather than a stall. Seeding workers was weighed and rejected: it means the
+package *writing* `tidymedia.nvenc_encoders`, an option that is read-only from
+the package's side today, which would change what that seam means. Disclosed in
+the docs and carried as a ROADMAP candidate row.
+
+**Why this does not trip D034's falsifier.** D034 is falsified by a dry run's
+compiled command differing from what a subsequent `run = TRUE` call executes, or
+by a third build-time probe its stated grep does not find. The memo changes how
+often the probe runs, never what it answers within a session, so both calls
+still compile the same encoder name; and it adds no execution seam, so the grep
+finds exactly what it found before. D034's licence is untouched — the probe
+still runs at construction, `run` notwithstanding. What is narrowed is only its
+unstated frequency.
+
+**The GP1 trade.** GP1 prefers refusing surface over growing it, and this adds a
+permanent exported function under D014's clean-break policy. The trade is taken
+because the alternative is worse than the surface: a session-scoped memo with no
+user-facing escape pins a caller who installs FFmpeg or a GPU driver mid-session
+to a stale answer, with no route back short of restarting R. The option seam is
+not that route — it overrides the answer rather than refreshing it, and requires
+the caller to already know the encoder names. The name is deliberately broader
+than the memo it discards today (`refresh_ffmpeg_capabilities()`, not
+`refresh_ffmpeg_encoders()`), so the already-planned `find_ffmpeg()` memo joins
+it without a second permanent export.
+
+- **Falsified by** a report of a stale pool surviving a mid-session FFmpeg
+  change that neither `refresh_ffmpeg_capabilities()` nor `set_program()` was
+  used for — which would mean the two discard routes do not cover how binaries
+  actually change under a session — or by a measured parallel batch whose
+  W-worker probe count is itself the reported problem, which would mean the
+  per-process disclosure should have been a fix.

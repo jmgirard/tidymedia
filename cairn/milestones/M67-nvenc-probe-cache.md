@@ -123,11 +123,11 @@ never leaks between test files. A D-entry fixing the lifetime.
 - [x] T4 The AC2/AC3 generated grid: derive H from the namespace, build each
       cell's call from its own `formals()`, per-cell abort control, cold-memo
       and warm-memo totals.
-- [ ] T5 Rework the three D034 probe-counting tests to discard-then-measure,
+- [x] T5 Rework the three D034 probe-counting tests to discard-then-measure,
       then run the AC7 mutation from a committed baseline (M44: commit first,
       or `git checkout` reverts the feature and every mutant reads red for the
       wrong reason) and record all three red.
-- [ ] T6 D-entry, NEWS `## Performance` entry, the re-decided `@param hardware`
+- [x] T6 D-entry, NEWS `## Performance` entry, the re-decided `@param hardware`
       sentence across the enumerated topics, `document()`, `check()`.
 
 ## Work log
@@ -144,6 +144,8 @@ never leaks between test files. A D-entry fixing the lifetime.
 - 2026-08-09: minor amendment (reorder) — T2's `setup-` hook and T5's discard-then-measure rework were done alongside T1 rather than after it, because the memo makes the three D034 probe-counting tests and `test-nvenc-docs.R:80` red the moment T1 lands, and the profile's `verify` slot requires a clean `devtools::test()` before any task is checked off. T5's mutation half is unchanged and still follows a committed baseline.
 - 2026-08-09: T1–T4 — memo in `R/cache.R` (a package-local `new.env(parent = emptyenv())`, the package's first), read via `cached_encoder_names()` strictly below `has_nvenc()`'s `getOption()` seam; `refresh_ffmpeg_capabilities()` exported and called from `set_program()`; `setup-nvenc-memo.R` discards via testthat's state inspector, which is its only per-test hook; the AC2/AC3 grid derives H from the namespace and builds each cell from its own `formals()`, taking a batch verb's `jobs` columns from its scalar sibling's required formals. `devtools::test()` clean (5984 pass, 0 fail).
 - 2026-08-09: T6 part — the re-decided `@param hardware` wording applied to all 16 topics, and `test-nvenc-docs.R` gained two assertions fencing the new half (the "remembered for the rest of the R session" clause and the `refresh_ffmpeg_capabilities` pointer) over the same enumerated topic set.
+- 2026-08-09: T5 mutation, run from committed baseline c0cde20 — `R/ffmpeg.R:2654`'s `if (!has_nvenc(family))` replaced by `if (FALSE)`, deleting the probe inside `check_nvenc_available()`. All three D034 probe-counting tests went red (8 failures), and the first failure in each is the probe assertion itself, not an abort: `test-audio-stream-passthrough.R:225` reports `Expected \`probes\` > 0L. Actual comparison: 0 <= 0`, with `:230`/`:234` following, `test-audio-stream-format-web.R:182`/`:186`, and `test-audio-stream-crop-segment.R:349`/`:353`/`:360`. Mutant reverted with `git checkout R/ffmpeg.R`.
+- 2026-08-09: T6 — D044 appended (lifetime, the two discard routes, the per-process `parallel = TRUE` behavior, why D034's falsifier is untripped, and the GP1 trade the new export takes); NEWS `## Performance` entry added; `document()` no diff, `pkgdown::check_pkgdown()` clean.
 
 ## Decisions
 

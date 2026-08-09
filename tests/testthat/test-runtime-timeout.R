@@ -466,6 +466,25 @@ test_that("verify_media() refuses on a timed-out probe instead of failing every 
   expect_no_match(msg, "expected", fixed = TRUE)
 })
 
+test_that("verify_media() still surfaces the probe's warning when nothing timed out", {
+  # The other half of the hold-and-replay: holding the warning is only correct
+  # because it is replayed when the abort does NOT happen. Without this, an
+  # unreadable file would go from "warned about" to silent, which is a
+  # regression the timeout test cannot see.
+  skip_if_no_ffprobe()
+  bad <- withr::local_tempfile(fileext = ".mp4")
+  writeLines("not a video at all", bad)
+  withr::local_options(tidymedia.timeout = NULL)
+  res <- NULL
+  w <- expect_warning(
+    res <- verify_media(bad, width = 64),
+    "Could not probe"
+  )
+  # Replayed as the condition it was, not re-signalled from its text.
+  expect_s3_class(w, "rlang_warning")
+  expect_false(res$pass[[1]])
+})
+
 # The Layer 0 hatch leaves its partial output behind (F7's narrowed claim) -----
 
 test_that("a timed-out ffmpeg() leaves what the killed run wrote", {

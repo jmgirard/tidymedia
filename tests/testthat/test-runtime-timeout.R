@@ -331,8 +331,17 @@ test_that("?tidymedia documents the option's name, unit, default and effect", {
 })
 
 test_that("NEWS.md carries the entry", {
-  news <- if (file.exists("../../NEWS.md")) "../../NEWS.md" else NULL
-  skip_if(is.null(news), "NEWS.md not in the tested tree")
+  # Two shapes, for the same reason the Rd guard has two: under R CMD check the
+  # tests run against an INSTALLED package with no source tree. NEWS.md IS
+  # installed into the package root, so the guard runs in both shapes rather
+  # than skipping in exactly the run the release gate uses (M51).
+  news <- if (file.exists("../../NEWS.md")) {
+    "../../NEWS.md"
+  } else {
+    p <- system.file("NEWS.md", package = "tidymedia")
+    if (nzchar(p)) p else NULL
+  }
+  skip_if(is.null(news), "NEWS.md not available in either shape")
   txt <- paste(readLines(news, warn = FALSE), collapse = "\n")
   expect_match(txt, "tidymedia.timeout", fixed = TRUE)
 })

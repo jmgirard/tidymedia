@@ -1,6 +1,6 @@
 # M69: A hung media program stops the call, not the session
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -101,7 +101,7 @@ naming the program and the limit. A D-entry records the shape.
       `devtools::document()`, add the `NEWS.md` entry.
 - [x] T6 Write the D-entry (the two candidate rows for Scope Out are already on
       the ROADMAP, added by this plan).
-- [ ] T7 Run the `verify` slot end to end; `spelling::update_wordlist()` if the
+- [x] T7 Run the `verify` slot end to end; `spelling::update_wordlist()` if the
       check NOTEs on new terms (M17).
 
 ## Work log
@@ -127,6 +127,9 @@ naming the program and the limit. A D-entry records the shape.
 
 - 2026-08-09: T5 — `?tidymedia` gained a "Bounding a run that hangs" section; NEWS.md entry added; `devtools::document()` run. Two doc guards added, reading Rd through the shared two-shape reader so they run under `R CMD check` too (M51).
 - 2026-08-09: T6 — D047 appended; the two Scope Out candidate rows were already added by the plan commit. `cairn_validate` green.
+
+- 2026-08-09: T7 — verify slot clean: `devtools::document()` no diff, `devtools::test()` FAIL 0 / PASS 6118 / SKIP 5, `devtools::check()` `Status: OK` (0/0/0, read from the real status line, not devtools' summary — M17).
+- 2026-08-09: T7 — both doc guards verified to RUN under `R CMD check` rather than skip (M51): with the package installed, `tools::Rd_db("tidymedia")` yields the `tidymedia-package` topic carrying all four asserted strings, and `system.file("NEWS.md")` resolves, so the NEWS guard was given the same installed fallback rather than left source-tree-only.
 
 ## Decisions
 

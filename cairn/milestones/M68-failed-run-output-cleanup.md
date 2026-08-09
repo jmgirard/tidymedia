@@ -173,6 +173,7 @@ interrupts (SIGINT) is not a non-zero exit → no row; raise one if reported.
 - 2026-08-09: review round 2 — CI red on windows-latest: the `a*.mp4` fixture cannot be created there (`*` is illegal in a Windows filename; `writeLines()` fails with "cannot open the connection" at test-failed-run-cleanup.R:167). Gated with `tm_require_wildcard_name()`, which builds and verifies the fixture and skips only on Windows, failing anywhere else; the test still reddens under the default-globbing control locally.
 - 2026-08-09: review round 2 — 34 findings scored, one actioned (F20, 82: the mtime half of the rule was untested) and fixed, with F1/F21/F22 fixed alongside it as one-line neighbors; F1 was the localtime-formatted mtime that would delete an untouched file across a TZ change. Not a return: 82 < 90 and no criterion failed as written. Full check Status: OK, 16 tests / 53 expectations / 0 skipped.
 - 2026-08-09: review round 2 — CI red again on windows-latest, on the two tests just added: a hardcoded byte count (CRLF makes the line 6 bytes there, not 5) and a full-path comparison between `list.files()` and `file.path()`. Both assertions were proxies; they now assert the claim itself — the size is EQUAL across the rewrite, and the returned entry is compared by basename. Both controls still redden.
+- 2026-08-09: review round 2 — codecov red at 91.83% patch against a 95.76% target (it passed on PRs #69 and #70, so the drop was this branch's); two untested expressions in remove_failed_output() covered by direct tests, F27 fixed so the unwritable-dir gate halts rather than falling into the removal, coverage now 95.83%.
 
 
 
@@ -381,3 +382,26 @@ rather than skipped. Gated with `tm_require_wildcard_name()`; all eight build
 jobs green afterwards. `codecov/patch` and `codecov/project` report `fail`
 against their coverage thresholds, as they do on this repo generally; no build
 or check job is red.
+
+**Coverage.** `codecov/patch` and `codecov/project` were red — 91.83% of the
+diff hit against a 95.76% target, and 95.70% project (-0.06%) — and both passed
+on the two PRs before this one, so the drop is this branch's, not a standing
+condition. Two expressions in `remove_failed_output()` carried it: the
+pattern-output case where the run wrote nothing, and the multi-file "could not
+be removed" message. Both now have direct tests, `covr` reports no uncovered
+expression left in the changed region, and package coverage reads 95.83%. The
+second of those tests leans on `tm_require_unwritable_dir()`, so **F27 (52) was
+fixed too** rather than left logged: `testthat::fail()` records and returns
+(verified directly), so a fallthrough would have deleted the fixture; the gate
+now halts with a skip after recording the failure.
+
+**Five controls, re-run against the final tree**, each reddening only what its
+claim covers: dropping mtime from the snapshot -> the size-equal case; dropping
+the directory filter -> the pattern-directory case; `unlink()`'s default
+globbing -> the two neighbor cases; removing everything at the output rather
+than what the run wrote -> the never-opened case and both frame cases; dropping
+the literal-first reading -> thirteen tests. `R/ffm.R` restored after each
+(`grep -c MUTATION` -> 0).
+
+Final: 18 tests, 58 expectations, 0 failed, 0 skipped; `devtools::check()`
+Status: OK; all eight CI build jobs green.

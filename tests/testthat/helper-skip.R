@@ -81,7 +81,12 @@ tm_require_unwritable_dir <- function(dir) {
   if (windows || root) {
     testthat::skip("this platform cannot express an undeletable file")
   }
+  # fail() RECORDS a failure and returns, so on a platform where the chmod did
+  # not take, control would fall on into the removal under test and delete the
+  # fixture -- a second, misleading failure on top of the real one (M68 review).
+  # The skip that follows halts the test with the failure already recorded.
   testthat::fail("the fixture directory is still writable after chmod 0500")
+  testthat::skip("fixture unusable; see the failure above")
 }
 
 # M68 -- the gate in front of the wildcard-name case.

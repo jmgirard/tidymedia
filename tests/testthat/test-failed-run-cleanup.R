@@ -181,6 +181,41 @@ test_that("a rewrite that does not change the size is still detected", {
   expect_false(file.exists(path))
 })
 
+test_that("nothing is claimed when a failed frame run wrote no frames", {
+  # The pattern's directory holds an earlier run's frames and this run wrote
+  # none: there is nothing to remove and nothing to say about it, so the abort
+  # gains no disposition bullet at all.
+  dir <- withr::local_tempdir()
+  earlier <- file.path(dir, "f_000001.png")
+  writeLines("an earlier run's frame", earlier)
+  pattern <- file.path(dir, "f_%06d.png")
+  before <- output_snapshot(pattern)
+
+  expect_identical(
+    remove_failed_output(pattern, overwrite = TRUE, before = before),
+    character(0)
+  )
+  expect_true(file.exists(earlier))
+})
+
+test_that("a frame set that cannot be removed says how many are still there", {
+  dir <- withr::local_tempdir()
+  pattern <- file.path(dir, "f_%06d.png")
+  before <- output_snapshot(pattern)
+  for (n in c("f_000001.png", "f_000002.png")) {
+    writeLines("frame", file.path(dir, n))
+  }
+  Sys.chmod(dir, "0500")
+  withr::defer(Sys.chmod(dir, "0700"))
+  tm_require_unwritable_dir(dir)
+
+  bullets <- remove_failed_output(pattern, overwrite = TRUE, before = before)
+
+  expect_named(bullets, "x")
+  expect_match(bullets, "2 files this run wrote")
+  expect_match(bullets, "are still there")
+})
+
 test_that("a directory matching the frame pattern is never a target", {
   dir <- withr::local_tempdir()
   dir.create(file.path(dir, "f_000003.png"))

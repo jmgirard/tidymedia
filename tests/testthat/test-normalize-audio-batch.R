@@ -192,8 +192,9 @@ test_that("normalize_audio_batch() rejects an NA in a knob column at the front d
 
 test_that("normalize_audio_batch() rejects an out-of-range loudness value per row (parity)", {
   f <- make_input()
-  # -3 LUFS is outside the scalar verb's -70..-5 range; the shared pipeline's
-  # ffm_loudnorm() guard must reject it for the batch sibling too (M11 parity).
+  # -3 LUFS is outside the scalar verb's -70..-5 range; the same shared
+  # checker refuses it for the batch sibling, at its own front door since M65
+  # (one binding per range; M11 parity).
   jobs <- tibble::tibble(
     input = c(f, f), output = c("a.mp4", "b.mp4"),
     target_loudness = c(-23, -3)

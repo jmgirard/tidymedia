@@ -1753,3 +1753,33 @@ verb last among the value guards, immediately above `check_nvenc_available()`
   caller from the verb's own frame, or a builder value whose refusal wording
   must diverge between the verb and the builder — either breaks the
   one-site-one-wording premise the sweep rests on.
+
+## D043 — A cheap value refusal precedes the analysis probe (2026-08-08, from M65; extends D042's siting rule and D036's ordering to the probe-bearing path)
+
+D042 sites a blame sweep where the value was effectively read before, so it
+changes blame and nothing else. `normalize_audio(two_pass = TRUE)` is the case
+where that rule conflicts with cost: the loudness targets were effectively
+read only inside the analysis pipeline, AFTER `run_loudnorm_analysis()` had
+spawned FFmpeg and measured the input — so the change-nothing-else placement
+would preserve a wasted measurement per bad call (and per row on the batch
+sibling's Phase 1).
+
+**Chosen: the loudness sweep sits ABOVE the `two_pass` block, on both forms.**
+A pure-R range comparison that refuses identically on every machine precedes a
+probe that costs an FFmpeg execution. This is D036's
+machine-independent-before-machine-dependent ordering read as cost: a free
+refusal precedes an expensive probe, even where getting there moves the sweep
+up the front door — the one deliberate exception to D042's siting rule in the
+M64/M65 family. The reorderings it makes (10 scalar, 4 batch; every one a
+shaping-knob complaint yielding to a target complaint) are M65-D1's table rows
+9–22, each with a live control at both refs.
+
+**Rejected: refusing only on the single-pass path and disclosing the two-pass
+gap.** A disclosed ordering gap between two forms of the same verb is the
+shape D038 recorded and D039 had to undo; the two-pass path — the one that
+pays for the mistake — is exactly the path the refusal must reach first.
+
+- **Falsified by** a builder-bound value whose validity is knowable only from
+  the analysis result itself (its refusal then cannot precede the probe), or a
+  measured caller for whom a shaping-knob complaint preceding a target
+  complaint is load-bearing.

@@ -287,6 +287,27 @@
   now told about the bad value first, the same answer `crop_video_batch()`
   gives for its `width` and `height`.
 
+* A bad region, inset-scale or loudness value is now refused by the function
+  you called. `anonymize_video()`'s per-region `x`, `y`, `width` and `height`
+  values, `picture_in_picture()`'s out-of-range `scale`, and
+  `normalize_audio()`'s `target_loudness`, `true_peak` and `loudness_range`
+  used to be reported against an internal builder the caller never called —
+  `ffm_drawbox()`, `ffm_overlay()`, `ffm_loudnorm()` — or, on the `_batch`
+  siblings, against `purrr::pmap()` with an `In index:` prefix. Each `_batch`
+  sibling refuses the value whether it is passed as the argument or carried in
+  a `jobs` column (`regions`, which exists only as a column on the batch verb,
+  in its column form), and before any row runs. Under `two_pass = TRUE`, a bad
+  loudness target is refused before the analysis pass measures the input,
+  instead of after that measurement was already spent.
+  `picture_in_picture()`'s existing complaint about a non-numeric `scale` is
+  unchanged; the new refusal covers a numeric `scale` outside
+  `0 < scale <= 1`. On the two `_batch` verbs that take `hardware`, a call
+  also wrong about `hardware = "nvenc"` on a machine without the encoder is
+  now told about the bad value first, the same answer the crop and
+  standardize verbs give. The documented loudness ranges and the checks that
+  enforce them now read from one shared definition per range, so the
+  documentation and the refusal can no longer drift apart.
+
 * An input file that does not exist is now reported against the verb you
   called. Every `_batch` verb used to accept a `jobs` table naming a missing
   path and only discover it once the batch was under way, so the error arrived

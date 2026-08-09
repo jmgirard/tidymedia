@@ -1616,6 +1616,13 @@ anonymize_pipeline <- function(input, output, regions, color, video_codec,
                                audio_stream = NULL,
                                call = rlang::caller_env()) {
   check_regions(regions, call = call)
+  # The region VALUES, beside the structure check (M65): the same per-field
+  # check_dim() refusals ffm_drawbox() makes below, re-called from
+  # check_region_values() so the abort names the caller's verb rather than the
+  # builder (D042). `call` threaded, so anonymize_video() is blamed on the
+  # scalar path; the batch verb sweeps each cell at its own front door, where
+  # this per-row copy would blame purrr::pmap().
+  check_region_values(regions, call = call)
   rlang::check_string(color, call = call)
   # NULL is D016's "leave the codec alone" sentinel, and D022 makes it the
   # family-wide spelling of "unset": emit no -codec:v and let the output
@@ -1653,7 +1660,8 @@ anonymize_pipeline <- function(input, output, regions, color, video_codec,
   } else {
     rep(color, nrow(regions))
   }
-  # One filled drawbox per region; ffm_drawbox() validates each x/y/w/h.
+  # One filled drawbox per region; the values were swept above (M65), and
+  # ffm_drawbox() still checks its own direct callers.
   for (i in seq_len(nrow(regions))) {
     p <- ffm_drawbox(
       p,
@@ -1683,7 +1691,9 @@ anonymize_pipeline <- function(input, output, regions, color, video_codec,
 
 # Validate the `regions` data frame for anonymize_video()/its batch sibling:
 # structure and column type/NA only. Per-value dimension checks (positive size,
-# valid expression) are inherited per row from ffm_drawbox()'s check_dim().
+# valid expression) are swept beside this check by check_region_values() (M65),
+# which re-calls the same check_dim() that ffm_drawbox() still runs for its own
+# direct callers.
 check_regions <- function(regions, call = rlang::caller_env()) {
   if (!is.data.frame(regions)) {
     cli::cli_abort("{.arg regions} must be a data frame with one row per box.",
@@ -1882,9 +1892,8 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   }
   # The regions column is a list-column (one boxes data frame per row); a flat
   # column can't hold per-row tables, so reject it here with a clear message
-  # rather than as an opaque per-row abort. Each cell's structure is validated
-  # per row by check_regions() inside anonymize_pipeline() (inherited, reported
-  # by row index via purrr; M13 extract-first lesson).
+  # rather than as an opaque per-row abort. Each cell's structure and values
+  # are checked at this front door below (M59 structure, M65 values).
   if (!is.list(jobs$regions) || is.data.frame(jobs$regions)) {
     cli::cli_abort(c(
       "The {.field regions} column of {.arg jobs} must be a list-column.",
@@ -1982,6 +1991,11 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   # the same site (M59-D2). The list-column guard above covers only the column.
   for (cell in jobs$regions) {
     check_regions(cell)
+    # And each cell's VALUES (M65): the same check_dim() refusals
+    # ffm_drawbox() makes, re-called here -- beside the structure check, as in
+    # anonymize_pipeline() -- so a bad region value blames this verb rather
+    # than purrr::pmap() (D042).
+    check_region_values(cell)
   }
 
   # nvenc availability, re-checked here so an unavailable encoder blames this
@@ -2054,12 +2068,14 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #'   depend on which -- an audio container (\code{.wav}, \code{.flac}) holds the
 #'   result exactly as a video container (\code{.mkv}) does, the latter simply
 #'   carrying one audio stream and nothing else.
-#' @param target_loudness The target integrated loudness, in LUFS (a number in
-#'   \code{-70}..\code{-5}; default \code{-23}, the EBU R128 target).
-#' @param true_peak The maximum true peak, in dBTP (a number in \code{-9}..\code{0};
-#'   default \code{-1}, the EBU R128 ceiling).
-#' @param loudness_range The target loudness range, in LU (a number in
-#'   \code{1}..\code{50}; default \code{7}).
+#' @param target_loudness The target integrated loudness, in LUFS
+#'   (`r loudnorm_bounds_rd("target_loudness")`; default \code{-23}, the EBU
+#'   R128 target).
+#' @param true_peak The maximum true peak, in dBTP
+#'   (`r loudnorm_bounds_rd("true_peak")`; default \code{-1}, the EBU R128
+#'   ceiling).
+#' @param loudness_range The target loudness range, in LU
+#'   (`r loudnorm_bounds_rd("loudness_range")`; default \code{7}).
 #' @param channels The output channel count, e.g. \code{1} to downmix to mono (a
 #'   positive whole number), or \code{NULL} (default) to keep the source layout.
 #' @param sample_rate The output sample rate in Hz, e.g. \code{48000} (a positive
@@ -2125,11 +2141,19 @@ normalize_audio <- function(infile, outfile,
   check_file_readable(infile)
   rlang::check_string(outfile)
   rlang::check_bool(two_pass)
+  # The three loudness targets, ABOVE the two_pass block deliberately (M65):
+  # they were validated by ffm_loudnorm() -- on the two-pass path only after
+  # the analysis pass had already run, and blaming the builder either way.
+  # Re-calling the shared checker here (one binding per range, D042) names
+  # this verb and refuses a bad target before FFmpeg spawns. This is the one
+  # sweep in the M64/M65 family that is not "last among the value guards";
+  # the reordering it makes is recorded in the milestone's precedence table.
+  check_loudnorm_targets(target_loudness, true_peak, loudness_range)
 
   # Two-pass: measure the input first, then build a linear correction from the
   # measurements. Validate the shaping knobs up front so a bad channels/
   # sample_rate fails before the analysis pass runs, not after wasting it
-  # (targets are validated when the analysis pipeline builds). Single-pass keeps
+  # (the targets are refused above, before either pass). Single-pass keeps
   # its pure, binary-free run = FALSE compile.
   measured <- NULL
   if (two_pass) {
@@ -2196,10 +2220,12 @@ check_audio_codec_not_copy <- function(audio_codec, call = rlang::caller_env()) 
 # normalize_audio_pipeline() ----------------------------------------------
 
 # Shared loudness-normalization pipeline for normalize_audio() and (M15)
-# normalize_audio_batch(): build one single-output pipeline for a single input. Both
-# verbs compile identical commands from this helper, so per-value validation
-# (loudness targets via ffm_loudnorm(), channels/sample_rate here) lives once --
-# the batch sibling inherits it by construction (D002, D007; M13 lesson).
+# normalize_audio_batch(): build one single-output pipeline for a single input.
+# Both verbs compile identical commands from this helper, so channels/
+# sample_rate validation lives here once and the batch sibling inherits it by
+# construction (D002, D007; M13 lesson). The loudness TARGETS are swept at
+# both verbs' front doors since M65; ffm_loudnorm() below still checks them
+# for its own direct callers.
 normalize_audio_pipeline <- function(input, output,
                                      target_loudness = -23,
                                      true_peak = -1,
@@ -2245,7 +2271,8 @@ normalize_audio_pipeline <- function(input, output,
   # that does not exist, and the compiled command is the product (D001).
   p <- ffm_map(p, audio_stream_map(audio_stream, null_map = "0:a:0",
                                    call = call))
-  # Loudness: EBU R128 loudnorm; ffm_loudnorm() validates the target ranges. With
+  # Loudness: EBU R128 loudnorm. The target ranges were swept at the verbs'
+  # front doors (M65); ffm_loudnorm() still checks its own direct callers. With
   # `measured` (the two-pass correction path), feed the analysis-pass values back
   # and switch to linear normalization so the target is hit precisely (M16).
   if (is.null(measured)) {
@@ -4231,9 +4258,9 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
 
   # Validate present override columns up front so a bad column fails clearly
   # here rather than as an opaque FFmpeg error mid-batch (M11 parity lesson).
-  # Value-level checks (loudness ranges, whole channels/sample_rate) are
-  # inherited per row from normalize_audio_pipeline()'s ffm_loudnorm() and
-  # check_number_whole() guards.
+  # The loudness RANGES are swept per resolved row further down this front
+  # door (M65); whole-number channels/sample_rate values stay inherited per
+  # row from normalize_audio_pipeline()'s check_number_whole() guards.
   knob_cols <- c("target_loudness", "true_peak", "loudness_range",
                  "channels", "sample_rate")
   for (col in intersect(knob_cols, names(jobs))) {
@@ -4288,6 +4315,20 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
   # purrr::pmap() (M62).
   check_batch_inputs(jobs)
 
+  # Per-row loudness target VALUES, last among the value guards (M65, D042):
+  # the knob loop above checks the columns' TYPE only, so an out-of-range
+  # target was refused by ffm_loudnorm() -- from purrr::pmap() on the
+  # single-pass path, and only after Phase 1 had analyzed every row on the
+  # two-pass path. Resolved column-over-argument, as the fan-out will read
+  # them; above the two_pass block, so a bad target costs no analysis pass --
+  # mirroring the scalar verb's placement above ITS two_pass block.
+  target_rows <- batch_arg_rows(jobs, "target_loudness", target_loudness)
+  peak_rows <- batch_arg_rows(jobs, "true_peak", true_peak)
+  range_rows <- batch_arg_rows(jobs, "loudness_range", loudness_range)
+  for (i in seq_len(nrow(jobs))) {
+    check_loudnorm_targets(target_rows[[i]], peak_rows[[i]], range_rows[[i]])
+  }
+
   # Two-pass (measured/linear): the audio-side M16 analyze-then-build path fanned
   # across the jobs table (D013). Phase 1 measures every input (honoring
   # `parallel`) and appends the five measured columns; Phase 2 builds & runs one
@@ -4298,7 +4339,7 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
   if (two_pass) {
     # Validate the shaping knobs up front (parity with the scalar two-pass verb)
     # so a bad channels/sample_rate fails before Phase 1 wastes an analysis pass
-    # per row; per-value target checks stay per-row in the Phase 2 pipeline.
+    # per row; the loudness targets were already swept per row above (M65).
     rlang::check_number_whole(channels, min = 1, allow_null = TRUE)
     rlang::check_number_whole(sample_rate, min = 1, allow_null = TRUE)
     # Same reason, for the encoder name: a malformed token would otherwise abort
@@ -5917,6 +5958,13 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
   # the same move in compare_videos_pipeline(). `call = call`, as there.
   position <- check_vocab_arg(position, pip_positions(), "position",
                               call = call)
+  # The `scale` RANGE, below the contradiction and `position` checks (M61's
+  # ordering: the contradiction reports first) and where ffm_overlay()
+  # effectively read it before -- so this changes blame and nothing else for
+  # the scalar verb (M65, D042). `call` threaded; the batch verb sweeps its
+  # resolved rows at its own front door, where this per-row copy would blame
+  # purrr::pmap().
+  check_overlay_scale(scale, call = call)
 
   m <- as.integer(margin)
   pos <- switch(
@@ -6390,8 +6438,9 @@ picture_in_picture_batch <- function(jobs,
                                      run = TRUE, parallel = FALSE, ...) {
 
   # `position`, `margin` and `audio` are checked BELOW the contradiction sweep
-  # (M61); see there. `scale` stays here: it has no column sweep to be uniform
-  # with and no contradiction to be ordered against.
+  # (M61); see there. `scale`'s TYPE check stays here, where it has always
+  # been; its RANGE is swept below the contradiction sweep with the other
+  # per-value guards (M65).
   rlang::check_number_decimal(scale)
   check_token(video_codec, allow_null = TRUE)
   check_token(audio_codec, allow_null = TRUE)
@@ -6501,6 +6550,17 @@ picture_in_picture_batch <- function(jobs,
     if (!is.null(value)) {
       rlang::check_number_whole(value, min = 0, max = 1, arg = "audio")
     }
+  }
+
+  # Per-row `scale` RANGE values (M65), last among the value guards. The type
+  # checks above cover the argument and the column; the RANGE lived only in
+  # ffm_overlay(), so an out-of-range value was reported against purrr::pmap()
+  # from inside the fan-out. Same shared checker (one binding, one wording),
+  # same placement logic as `margin` and `audio` above: below the
+  # contradiction sweep (M61), above the nvenc probe -- a machine-independent
+  # refusal reports before a machine-dependent one (D036, M64-D2's shape).
+  for (value in batch_arg_rows(jobs, "scale", scale)) {
+    check_overlay_scale(value)
   }
 
   # nvenc availability, re-checked here so an unavailable encoder blames this

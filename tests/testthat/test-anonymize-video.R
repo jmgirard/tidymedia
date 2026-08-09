@@ -105,7 +105,8 @@ test_that("anonymize_video() rejects a malformed regions table", {
                     run = FALSE),
     "must not contain"
   )
-  # Non-positive size is caught per-region by ffm_drawbox()'s check_dim().
+  # Non-positive size is refused by check_dim() -- since M65 re-called beside
+  # check_regions(), so the abort names this verb rather than ffm_drawbox().
   expect_error(
     anonymize_video(f, "anon.mp4",
                     data.frame(x = 0, y = 0, width = 0, height = 10),

@@ -268,10 +268,11 @@ test_that("anonymize_video_batch() checks each regions cell at its front door", 
   )
 })
 
-test_that("anonymize_video_batch() inherits per-region size checks from ffm_drawbox", {
+test_that("anonymize_video_batch() refuses a non-positive region size", {
   f <- make_input()
-  # A non-positive size is caught per-region by ffm_drawbox()'s check_dim(),
-  # inherited through anonymize_pipeline() — not re-checked at the front door.
+  # A non-positive size is refused by check_dim() — since M65 re-called at
+  # this verb's own front door (check_region_values), so the abort names the
+  # verb rather than ffm_drawbox() or purrr::pmap().
   jobs <- tibble::tibble(
     input   = f, output = "a.mp4",
     regions = list(data.frame(x = 0, y = 0, width = 0, height = 10))

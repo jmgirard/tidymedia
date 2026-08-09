@@ -385,12 +385,14 @@ ffm_fps <- function(object, fps) {
 #'
 #' @param object An ffmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param target_loudness The target integrated loudness, in LUFS (a number in
-#'   \code{-70}..\code{-5}; default \code{-23}, the EBU R128 target).
-#' @param true_peak The maximum true peak, in dBTP (a number in \code{-9}..\code{0};
-#'   default \code{-1}, the EBU R128 ceiling).
-#' @param loudness_range The target loudness range, in LU (a number in
-#'   \code{1}..\code{50}; default \code{7}).
+#' @param target_loudness The target integrated loudness, in LUFS
+#'   (`r loudnorm_bounds_rd("target_loudness")`; default \code{-23}, the EBU
+#'   R128 target).
+#' @param true_peak The maximum true peak, in dBTP
+#'   (`r loudnorm_bounds_rd("true_peak")`; default \code{-1}, the EBU R128
+#'   ceiling).
+#' @param loudness_range The target loudness range, in LU
+#'   (`r loudnorm_bounds_rd("loudness_range")`; default \code{7}).
 #' @param measured_i,measured_tp,measured_lra,measured_thresh Measured input
 #'   values from a prior \code{loudnorm} analysis pass (integrated loudness,
 #'   true peak, loudness range, and threshold). Supplied together to drive an
@@ -434,9 +436,9 @@ ffm_loudnorm <- function(object,
                          print_format = NULL) {
 
   check_ffm(object)
-  rlang::check_number_decimal(target_loudness, min = -70, max = -5)
-  rlang::check_number_decimal(true_peak, min = -9, max = 0)
-  rlang::check_number_decimal(loudness_range, min = 1, max = 50)
+  # The three target ranges live in one binding each (loudnorm_range_*), read
+  # here and at normalize_audio()'s / _batch's front doors (M65).
+  check_loudnorm_targets(target_loudness, true_peak, loudness_range)
   # Measured values are observed (not user targets), so they are range-free but
   # must be finite real numbers.
   rlang::check_number_decimal(measured_i, allow_null = TRUE, allow_infinite = FALSE)
@@ -929,9 +931,9 @@ ffm_overlay <- function(object,
   check_dim(y, inclusive = TRUE)
   rlang::check_bool(shortest)
   rlang::check_number_decimal(scale, allow_null = TRUE)
-  if (!is.null(scale) && (scale <= 0 || scale > 1)) {
-    cli::cli_abort("{.arg scale} must be greater than 0 and at most 1.")
-  }
+  # The range rule lives in one binding (overlay_scale_range), read here and at
+  # picture_in_picture()'s / _batch's front doors (M65).
+  check_overlay_scale(scale)
   if (length(object$input) != 2) {
     cli::cli_abort("Overlaying requires exactly two input files.")
   }

@@ -220,3 +220,93 @@ check_dim <- function(x, inclusive = FALSE,
   }
   invisible(x)
 }
+
+# Builder-bound value ranges ----------------------------------------------
+
+# ONE binding per builder-bound range, read by BOTH the Layer-1 builder and the
+# Layer-2 front doors (M65). Restating a number at a second site is what the
+# stale-hint lesson bites on: two restated literals compare equal until one is
+# edited, and no test comparing them can see the drift. The refusal messages
+# below interpolate these values, so the wording tracks the binding too.
+#
+# overlay_scale_range: exclusive lower bound, inclusive upper (0 < scale <= 1).
+# The loudnorm ranges are inclusive at both ends (rlang min/max semantics).
+overlay_scale_range <- c(0, 1)
+loudnorm_range_target_loudness <- c(-70, -5)
+loudnorm_range_true_peak <- c(-9, 0)
+loudnorm_range_loudness_range <- c(1, 50)
+
+# The `r ...` inline source for a loudnorm target's documented range: the
+# roxygen blocks paste this in at document() time (as audio_stream_param()
+# already does for the audio-index prose), so the man pages cannot drift from
+# the binding the validators read.
+loudnorm_bounds_rd <- function(which) {
+  range <- switch(
+    which,
+    target_loudness = loudnorm_range_target_loudness,
+    true_peak = loudnorm_range_true_peak,
+    loudness_range = loudnorm_range_loudness_range,
+    # A typo'd key would otherwise return character(0) and render a man page
+    # with the range silently missing -- document() would not complain.
+    cli::cli_abort("Unknown loudnorm range key {.val {which}}.")
+  )
+  sprintf("a number in \\code{%s}..\\code{%s}", range[[1]], range[[2]])
+}
+
+# check_overlay_scale(): the overlay `scale` RANGE rule, at its one site.
+# ffm_overlay() calls it for its own direct callers;
+# picture_in_picture_pipeline() (call threaded) and picture_in_picture_batch()
+# re-call it so the abort names the verb the caller typed (M65, D042). Range
+# only: each caller type-checks `scale` first, at its own precedence slot.
+check_overlay_scale <- function(scale, call = rlang::caller_env()) {
+  if (!is.null(scale) &&
+      (scale <= overlay_scale_range[[1]] || scale > overlay_scale_range[[2]])) {
+    cli::cli_abort(
+      "{.arg scale} must be greater than {overlay_scale_range[[1]]} and at
+       most {overlay_scale_range[[2]]}.",
+      call = call
+    )
+  }
+  invisible(scale)
+}
+
+# check_loudnorm_targets(): the three loudness target ranges, at their one
+# site. ffm_loudnorm() calls it for its own direct callers; normalize_audio()
+# and normalize_audio_batch() (per resolved row) re-call it so the abort names
+# the verb -- and, on the two-pass path, fires before the analysis pass spawns
+# FFmpeg (M65, D042).
+check_loudnorm_targets <- function(target_loudness, true_peak, loudness_range,
+                                   call = rlang::caller_env()) {
+  rlang::check_number_decimal(target_loudness,
+                              min = loudnorm_range_target_loudness[[1]],
+                              max = loudnorm_range_target_loudness[[2]],
+                              call = call)
+  rlang::check_number_decimal(true_peak,
+                              min = loudnorm_range_true_peak[[1]],
+                              max = loudnorm_range_true_peak[[2]],
+                              call = call)
+  rlang::check_number_decimal(loudness_range,
+                              min = loudnorm_range_loudness_range[[1]],
+                              max = loudnorm_range_loudness_range[[2]],
+                              call = call)
+  invisible(NULL)
+}
+
+# check_region_values(): per-value sweep of a `regions` frame -- the values
+# check_regions() deliberately leaves to ffm_drawbox()'s check_dim(). Same
+# checker, same messages, re-called from Layer 2 so the abort names the verb
+# (M65, D042): anonymize_pipeline() (call threaded) covers the scalar verb,
+# anonymize_video_batch() sweeps each cell at its front door. Numeric values
+# are coerced to double exactly as anonymize_pipeline() does before
+# ffm_drawbox(), so an integer/integerish frame is not rejected here either.
+check_region_values <- function(regions, call = rlang::caller_env()) {
+  for (i in seq_len(nrow(regions))) {
+    for (field in c("x", "y", "width", "height")) {
+      value <- regions[[field]][[i]]
+      if (is.numeric(value)) value <- as.double(value)
+      check_dim(value, inclusive = field %in% c("x", "y"),
+                arg = field, call = call)
+    }
+  }
+  invisible(regions)
+}

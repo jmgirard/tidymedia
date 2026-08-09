@@ -29,14 +29,16 @@ depend on which -- an audio container (\code{.wav}, \code{.flac}) holds the
 result exactly as a video container (\code{.mkv}) does, the latter simply
 carrying one audio stream and nothing else.}
 
-\item{target_loudness}{The target integrated loudness, in LUFS (a number in
-\code{-70}..\code{-5}; default \code{-23}, the EBU R128 target).}
+\item{target_loudness}{The target integrated loudness, in LUFS
+(a number in \code{-70}..\code{-5}; default \code{-23}, the EBU
+R128 target).}
 
-\item{true_peak}{The maximum true peak, in dBTP (a number in \code{-9}..\code{0};
-default \code{-1}, the EBU R128 ceiling).}
+\item{true_peak}{The maximum true peak, in dBTP
+(a number in \code{-9}..\code{0}; default \code{-1}, the EBU R128
+ceiling).}
 
-\item{loudness_range}{The target loudness range, in LU (a number in
-\code{1}..\code{50}; default \code{7}).}
+\item{loudness_range}{The target loudness range, in LU
+(a number in \code{1}..\code{50}; default \code{7}).}
 
 \item{channels}{The output channel count, e.g. \code{1} to downmix to mono (a
 positive whole number), or \code{NULL} (default) to keep the source layout.}

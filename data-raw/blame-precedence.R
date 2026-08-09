@@ -295,7 +295,11 @@ blame_precedence_cells <- function(input,
 
 # -- running the grid ---------------------------------------------------------
 
-blame_precedence <- function(ref = NULL, root = ".") {
+# `cells` parameterizes the grid so data-raw/blame-precedence-m65.R can reuse
+# this runner (and its dead-control / unresolved / flip readers) over its own
+# crossing list instead of copying sixty lines that would drift (M40's reason).
+blame_precedence <- function(ref = NULL, root = ".",
+                             cells = blame_precedence_cells) {
   env <- codec_guard_env(ref, root)
   sample <- normalizePath(
     file.path(root, "inst", "extdata", "sample.mp4"), mustWork = TRUE)
@@ -337,7 +341,7 @@ blame_precedence <- function(ref = NULL, root = ".") {
     "unmatched"
   }
 
-  rows <- lapply(blame_precedence_cells(sample), function(cell) {
+  rows <- lapply(cells(sample), function(cell) {
     cross <- probe(cell$verb, cell$hit(apply_overlay(cell$base, cell$bad)))
     control <- probe(cell$verb, cell$hit(apply_overlay(cell$base, cell$good)))
     control_ok <- control$kind == "abort" &&

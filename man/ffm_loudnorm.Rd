@@ -22,14 +22,16 @@ ffm_loudnorm(
 \item{object}{An ffmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
-\item{target_loudness}{The target integrated loudness, in LUFS (a number in
-\code{-70}..\code{-5}; default \code{-23}, the EBU R128 target).}
+\item{target_loudness}{The target integrated loudness, in LUFS
+(a number in \code{-70}..\code{-5}; default \code{-23}, the EBU
+R128 target).}
 
-\item{true_peak}{The maximum true peak, in dBTP (a number in \code{-9}..\code{0};
-default \code{-1}, the EBU R128 ceiling).}
+\item{true_peak}{The maximum true peak, in dBTP
+(a number in \code{-9}..\code{0}; default \code{-1}, the EBU R128
+ceiling).}
 
-\item{loudness_range}{The target loudness range, in LU (a number in
-\code{1}..\code{50}; default \code{7}).}
+\item{loudness_range}{The target loudness range, in LU
+(a number in \code{1}..\code{50}; default \code{7}).}
 
 \item{measured_i, measured_tp, measured_lra, measured_thresh}{Measured input
 values from a prior \code{loudnorm} analysis pass (integrated loudness,

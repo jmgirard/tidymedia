@@ -57,3 +57,29 @@ make_input <- function(ext = "mp4", env = parent.frame()) {
   file.create(path)
   path
 }
+
+# M68 -- the gate in front of the unremovable-output case.
+#
+# A test whose fixture is "a file that cannot be deleted" must not establish
+# that by TRYING to delete it: the attempt is the operation under test, and on a
+# platform where it succeeds the fixture is gone and the evidence vanishes
+# behind a green run (M63's review made the same call for unreadable inputs).
+# Ask the filesystem instead -- write permission on the containing directory is
+# what unlink() needs -- and skip only where the question cannot be posed:
+# Windows, whose chmod reaches only the read-only bit, and a process running as
+# root, which writes regardless. Anywhere else, a directory still writable after
+# Sys.chmod("0500") means something is wrong with the run, not with the
+# platform.
+tm_require_unwritable_dir <- function(dir) {
+  if (file.access(dir, mode = 2) != 0) return(invisible(dir))
+  windows <- .Platform$OS.type == "windows"
+  root <- !windows && identical(
+    tryCatch(as.integer(system("id -u", intern = TRUE)),
+             error = function(e) NA_integer_),
+    0L
+  )
+  if (windows || root) {
+    testthat::skip("this platform cannot express an undeletable file")
+  }
+  testthat::fail("the fixture directory is still writable after chmod 0500")
+}

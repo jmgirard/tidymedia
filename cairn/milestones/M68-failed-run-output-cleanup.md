@@ -126,15 +126,15 @@ interrupts (SIGINT) is not a non-zero exit → no row; raise one if reported.
       failed run — not a probe under the executing-path licence (D045).
 - [x] **T8.** Unit-test `remove_failed_output()` over the four `overwrite` ×
       pre-existence combinations (AC8).
-- [ ] **T9.** Failing tests first for the two defects the review measured: a
+- [x] **T9.** Failing tests first for the two defects the review measured: a
       pre-existing output an unknown-encoder run never opened (AC9), and the
       glob and frame-pattern cases (AC10). Confirm each red against the branch.
-- [ ] **T10.** Replace the pre-run existence flag with a snapshot of the files
+- [x] **T10.** Replace the pre-run existence flag with a snapshot of the files
       the output designates (path, size, mtime) and remove, after a failure,
       only those the run created or changed; `unlink(expand = FALSE)`.
-- [ ] **T11.** Match an image2 `%0Nd` pattern to its own files in its own
+- [x] **T11.** Match an image2 `%0Nd` pattern to its own files in its own
       directory, so a frame sequence is snapshotted and removed as a set.
-- [ ] **T12.** Rebuild the unremovable-file test's gate on the M63 shape (AC11).
+- [x] **T12.** Rebuild the unremovable-file test's gate on the M63 shape (AC11).
 - [ ] **T13.** Supersede D045 with the write-detection rule, update the NEWS
       entry to what the package now does, and re-run document/test/check.
 
@@ -162,6 +162,10 @@ interrupts (SIGINT) is not a non-zero exit → no row; raise one if reported.
 - 2026-08-09: F1 re-measured this session — `ffmpeg -y -i in.mp4 -c:v nosuchcodec out.mp4` exits 8 with a pre-existing 13-byte output byte-for-byte intact (same md5, same mtime), and a pre-existing zero-byte output that FFmpeg *did* truncate came back with an unchanged size but a bumped mtime, so "did this run write here?" is answerable from a size+mtime stat.
 - 2026-08-09: implement gate re-asked against that measurement — chose removing only what the run wrote over never touching a pre-existing output (which strands the zero-byte truncation), and chose deleting a failed frame run's own frames over leaving them; escalation was offered and declined.
 - 2026-08-09: amendment gate — Scope In rewritten to the write-detection rule, AC1/AC8 amended, AC9/AC10/AC11 and T9-T13 added, every AC box unticked because the behavior beneath them changed; D046 appended superseding D045's unconditional half; sizing advisory now warns 11 criteria / 13 tasks, a return-driven expansion of an in-flight milestone rather than a split.
+- 2026-08-09: T9 — three failing tests added: an unknown-encoder run (exit 8) against a pre-written output, the `a*.mp4` and `out[1].mp4` neighbour cases, and a frame run blocked at its third frame by a directory sitting where that file must go (exit 235 with two frames written, measured 2026-08-09 on ffmpeg 8.1.2 macOS — a trigger no build can accept, unlike a codec refusal).
+- 2026-08-09: T10/T11 — `output_targets()`/`output_snapshot()` added beside `ffm_run()`; the removal now compares a pre-run snapshot with a post-failure one and unlinks only what moved, with `expand = FALSE`, and a `%0Nd` output is matched as an escaped regex over its own directory so the set is snapshotted and removed together.
+- 2026-08-09: T12 — the unremovable-file case now verifies its fixture with `tm_require_unwritable_dir()` (helper-skip.R), which asks `file.access(dir, mode = 2)` and fails anywhere but Windows or root, replacing the skip keyed on the unlink under test; the file's 13 tests run with 0 skipped.
+- 2026-08-09: T9-T12 controls — three mutations, each reddening only the tests whose claim it breaks: removing everything at the output rather than what the run wrote reddens the never-opened case and the frames case (an earlier run's frame goes with it); `unlink()` with its default globbing reddens the two neighbour tests; treating every output as a literal path reddens the frames case. R/ffm.R restored after each (grep -c MUTATION -> 0).
 
 
 

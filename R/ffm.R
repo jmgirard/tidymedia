@@ -1352,47 +1352,144 @@ ffm_groups <- function(object) {
   )
 }
 
+# output_targets() -------------------------------------------------------------
+
+# The files a pipeline's `output` designates, as they exist right now.
+#
+# Usually that is one path. Where the output is an image2 printf PATTERN --
+# sample_frames()' "<outdir>/<prefix>_%06d.png" -- it is the numbered files that
+# pattern names in its own directory: one FFmpeg command fans out to many files
+# there (D003), so the run's output is the SET, and `file.exists()` is false of
+# the pattern itself.
+#
+# The pattern is matched as a REGEX built from the pattern's own text, never as
+# a glob: every character outside the `%0Nd` field is escaped, so a prefix
+# containing `*` or `[` matches itself and nothing else.
+#
+# Directories are never targets. `unlink()` leaves one alone without
+# `recursive = TRUE`, so reporting it as removed would be a lie, and a directory
+# sitting where a frame's file must go is a failure the run hit rather than
+# something it wrote.
+output_targets <- function(output) {
+  if (!grepl("%[0-9]*d", output)) {
+    exists <- file.exists(output) && !dir.exists(output)
+    return(if (exists) output else character(0))
+  }
+  escaped <- gsub("([][{}()+*^$|\\\\?.])", "\\\\\\1", basename(output))
+  rx <- paste0("^", gsub("%[0-9]*d", "[0-9]+", escaped), "$")
+  found <- list.files(dirname(output), pattern = rx, full.names = TRUE)
+  found[!dir.exists(found)]
+}
+
+
+# output_snapshot() ------------------------------------------------------------
+
+# What each of those files looked like at one moment: a character vector of
+# "<size> <mtime>", named by path. Comparing a snapshot taken BEFORE the run
+# with one taken after a failure is how the removal below tells what this run
+# wrote from what it merely found -- the pre-run one has to be taken by the
+# caller, since afterwards the answer is no longer recoverable.
+#
+# Size alone is not enough: a pre-existing zero-byte output that FFmpeg opens
+# and leaves at zero bytes is distinguished only by its mtime (measured
+# 2026-08-09, ffmpeg 8.1.2 macOS). Where a filesystem's timestamp resolution
+# hides even that, the run leaves a zero-byte file that was already zero bytes.
+output_snapshot <- function(output) {
+  paths <- output_targets(output)
+  if (!length(paths)) return(character(0))
+  info <- file.info(paths, extra_cols = FALSE)
+  rlang::set_names(
+    paste(info$size, format(info$mtime, "%Y-%m-%d %H:%M:%OS6")),
+    paths
+  )
+}
+
+
 # remove_failed_output() -------------------------------------------------------
 
-# Delete the output of a run that failed, and report what happened as cli
-# bullets for the abort that follows.
+# Delete what a failed run wrote, and report what happened as cli bullets for
+# the abort that follows.
 #
-# WHY AT ALL. FFmpeg creates its output file before it knows the command will
-# work, and truncates an existing one to zero on the way, so a failed run leaves
-# a file that is empty and looks like a result (measured 2026-08-09, ffmpeg
-# 8.1.2 macOS: an AAC-to-MP3 stream copy exits 234 with a zero-byte output,
-# whatever the path held beforehand). Removing it here rather than in each verb
-# keeps execution in Layer 1 once (IP1/D002); every verb and ffm_batch() reach
-# this one site.
+# WHY AT ALL. FFmpeg creates its output before it knows the command will work,
+# and truncates an existing one to zero on the way, so a failed run left a file
+# that is empty and looks like a result (measured 2026-08-09, ffmpeg 8.1.2
+# macOS: an AAC-to-MP3 stream copy exits 234 with a zero-byte output). Removing
+# it here rather than in each verb keeps execution in Layer 1 once (IP1/D002);
+# every verb and ffm_batch() reach this one site.
 #
-# THE ONE EXCEPTION is `overwrite = FALSE` against a path that ALREADY EXISTED:
-# there the caller told FFmpeg not to replace that file, so the package must not
-# either. Narrowing the exception to `preexisting` is deliberate -- a
-# non-overwriting run that CREATED its output still gets it cleaned up, so the
-# exception protects a caller's file without stranding a broken one.
+# WHAT IT REMOVES is what THIS RUN wrote, never what it found (D046): a target
+# goes only if it is absent from `before` or its size or mtime has moved. The
+# rule is not "the output path", because FFmpeg refuses an unknown encoder,
+# filter or option value BEFORE opening the output and exits 8 with a
+# pre-existing file byte-for-byte intact -- deleting that file was M68's own
+# review defect.
 #
-# `preexisting` is measured by the CALLER, before the run: afterwards the path
-# exists either way, so the answer is no longer recoverable here.
+# THE ONE EXCEPTION is `overwrite = FALSE` against a path that ALREADY EXISTED.
+# The rule above already spares it on every build measured, since FFmpeg does
+# not touch it; the guard stays because that is a promise the package MADE
+# rather than a behavior it observes, and a build that touched the file anyway
+# must not cost the caller it.
+#
+# `unlink(expand = FALSE)` because unlink() globs by default: an output legally
+# named `a*.mp4` otherwise takes its neighbours with it (measured at M68's
+# review).
 #
 # Returns a named character vector of cli bullets, interpolated in the calling
-# frame -- so `output` must be bound there, and the path goes through a cli
-# field (`{.file {output}}`), which does not recurse into the value: a filename
-# containing braces would otherwise abort the message itself (M44's lesson).
-remove_failed_output <- function(output, overwrite, preexisting) {
-  if (isFALSE(overwrite) && preexisting) {
+# frame -- so `output` must be bound there, it is the only value they reference,
+# and it goes through a cli field (`{.file {output}}`), which does not recurse
+# into the value: a filename containing braces would otherwise abort the message
+# itself (M44's lesson).
+remove_failed_output <- function(output, overwrite, before) {
+  if (isFALSE(overwrite) && output %in% names(before)) {
     return(c(
       "i" = "{.file {output}} was left as it was: {.arg overwrite} is
              {.code FALSE}, so FFmpeg was told not to replace it."
     ))
   }
-  if (!file.exists(output)) return(character(0))
+  after <- output_snapshot(output)
+  if (!length(after)) return(character(0))
+  prior <- before[names(after)]
+  written <- names(after)[is.na(prior) | prior != after]
+
+  if (!length(written)) {
+    # Everything at the output is exactly as the run found it.
+    if (!identical(output, names(after))) return(character(0))
+    return(c(
+      "i" = "{.file {output}} was left as it was: FFmpeg never wrote to it."
+    ))
+  }
+
+  unlink(written, expand = FALSE)
   # unlink() signals nothing and reports failure only through its return value;
   # a read-only directory is the ordinary way it fails. Say so rather than let
   # the caller believe in a cleanup that did not happen.
-  if (unlink(output) != 0L || file.exists(output)) {
-    return(c("x" = "{.file {output}} could not be removed and is still there."))
+  stuck <- written[file.exists(written)]
+  single <- identical(written, output)
+  if (length(stuck)) {
+    return(c("x" = if (single) {
+      "{.file {output}} could not be removed and is still there."
+    } else {
+      sprintf(paste("%s this run wrote for {.file {output}} could not be",
+                    "removed and %s still there."),
+              n_files(stuck), if (length(stuck) == 1L) "is" else "are")
+    }))
   }
-  c("i" = "The incomplete {.file {output}} was removed.")
+  c("i" = if (single) {
+    "The incomplete {.file {output}} was removed."
+  } else {
+    sprintf("The %s this run wrote for {.file {output}} %s removed.",
+            n_files(written), if (length(written) == 1L) "was" else "were")
+  })
+}
+
+
+# n_files() --------------------------------------------------------------------
+
+# "1 file" / "3 files". The count is baked into the bullet here rather than left
+# as a cli field, so a bullet still references only `output` in the frame that
+# renders it (remove_failed_output()'s contract).
+n_files <- function(x) {
+  sprintf("%d file%s", length(x), if (length(x) == 1L) "" else "s")
 }
 
 # ffm_run() --------------------------------------------------------------------
@@ -1434,15 +1531,16 @@ ffm_run <- function(object, verify = NULL) {
   # verbatim (M06). stdin is redirected from an empty input so FFmpeg cannot
   # drain the parent process's stdin (see ffmpeg()); stderr streams to the
   # console as before.
-  # Stat the output BEFORE running: remove_failed_output() needs to know whether
-  # the path was already there, and after the run it exists either way.
+  # Snapshot the output BEFORE running: remove_failed_output() removes what this
+  # run wrote and nothing it merely found, and the difference is only visible
+  # against a pre-run size and mtime (D046).
   output <- object$output
-  preexisting <- file.exists(output)
+  before <- output_snapshot(output)
   out <- run_program(find_ffmpeg(), ffm_args(object), program = "FFmpeg",
                      input = "", stderr = "")
   status <- attr(out, "status")
   if (!is.null(status)) {
-    disposition <- remove_failed_output(output, object$overwrite, preexisting)
+    disposition <- remove_failed_output(output, object$overwrite, before)
     cli::cli_abort(c(
       "FFmpeg exited with status {status}.",
       "i" = "FFmpeg's error output is printed above.",

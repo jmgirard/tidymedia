@@ -1937,3 +1937,68 @@ truncation, the common case this milestone exists for); keeping D045's
 unconditional rule (refuted above). Falsified by a failure mode that writes a
 usefully partial output a caller would want kept — today's failures leave zero
 bytes or nothing at all.
+
+## D047 — A wall-clock limit on every spawned program, off by default, carried by an option (2026-08-09, from M69; extends D044's seam precedent, bounded by D024, applies D046 unchanged)
+
+The package's own runtime path had no timeout: every call blocked for as long
+as FFmpeg, FFprobe or MediaInfo took, so a hung program blocked the R session
+with it. M46 fixed this for the test suite only, deliberately.
+
+- **The limit lives in an option, `tidymedia.timeout`, not in an argument.**
+  Whole seconds; `0` means no limit. Read by `resolve_timeout()` and passed to
+  base R's `timeout=` at all four spawn sites — `ffmpeg()`, `ffprobe()`,
+  `mediainfo()` and `run_program()`, through which every task verb, `ffm_run()`,
+  both loudnorm analysis passes and all metadata readers funnel. This is the
+  package's second option seam, after `tidymedia.nvenc_encoders` (D044), and the
+  first that changes what happens rather than what is reported.
+- **Rejected: a `timeout =` argument on the run-capable verbs.** Sixty-odd new
+  arguments is the largest irreversible-API commitment the package could make,
+  and the seam forecloses none of it: the argument stays available under D014's
+  pre-0.2.0 clean break, and is a ROADMAP candidate. The seam's grain is the
+  session, which is the wrong grain for a script wanting different limits per
+  call — that is this half's falsifier.
+- **The default is `0`, no limit.** A ceiling would abort a legitimate
+  multi-hour transcode that finishes today, changing the default behavior of
+  every existing pipeline. Rejected accordingly; the cost is that a user who
+  never reads the docs still hangs, which is the falsifier for this half.
+- **Fractional values are refused, not rounded.** Measured on R 4.6.1: base R
+  truncates `timeout=` toward zero, so a value below 1 becomes `0` — its own
+  "no limit" sentinel — and a 6-second child ran to completion under a
+  0.5-second limit. Rounding up would instead substitute a limit the caller
+  never asked for. Nothing downstream catches a bad value either: `system2()`
+  accepts `"2"` and `c(1, 2)` without complaint.
+- **A timeout is identified by the `status` attribute being 124, never by
+  matching R's timeout warning**, whose wording is translated under a
+  non-English locale and which embeds the full command line and the `input=`
+  temp path. The warning is held and dropped; the package's own message,
+  naming only the program and the limit, replaces it. This is M46's lesson
+  applied to the runtime path.
+- **`limit > 0` is part of that test.** 124 is an ordinary exit status a
+  program may return for its own reasons, so it means "killed by the limit"
+  only when a limit was in force.
+- **It aborts rather than warns, with class `tidymedia_timeout`.** A killed run
+  leaves a truncated output that looks finished, and `ffm_batch()` records
+  per-row errors, so a warning would make a timed-out row indistinguishable
+  from a successful one in the results tibble.
+- **D046 is applied unchanged on the timeout path.** `ffm_run()` catches the
+  condition, calls `remove_failed_output()` with the same pre-run snapshot, and
+  re-raises with the disposition appended, so which of D046's outcomes applied
+  is stated here too. The rule itself is untouched: an output the killed run
+  merely found still survives.
+- **The readers absorb it exactly as they absorb any other error.**
+  `count_audio_streams()` returns `NA` and a `probe_all()` row reads
+  "unreadable", as both already do for every other failure. Making them
+  re-raise would change `probe_all()`'s error contract, and D024 licenses the
+  dropped-track probe only while its outcome changes nothing but whether a
+  warning fires. The distinct class is what leaves that available later without
+  re-deciding anything now.
+- **Disclosed, not fixed: `parallel = TRUE` workers do not see the option.**
+  Measured 2026-08-09 on future 1.70.0 — a `multisession` worker reading an
+  option set to `42` in the parent got `UNSET` — so a parallel batch runs
+  unbounded while the sequential one is bounded. Seeding workers means the
+  package writing options into them, a seam question of its own; this takes
+  D044's shape, which disclosed the same per-process gap for the capability
+  memo. ROADMAP candidate.
+
+Falsified by a report that the session-wide grain is itself the problem, or by
+a hang from a caller who had read the docs and still expected a bound.

@@ -1,5 +1,18 @@
 # tidymedia (development version)
 
+## New features
+
+* A hung media program no longer blocks the R session indefinitely. Setting
+  `options(tidymedia.timeout = 600)` gives every FFmpeg, FFprobe and MediaInfo
+  process tidymedia starts a wall-clock limit in whole seconds; a call that
+  reaches it aborts, naming the program and the limit, and any partial output
+  the killed run had written is removed just as it is after any other failed
+  run. The default is `0`, meaning no limit, so existing code is unaffected —
+  a legitimate multi-hour encode still runs to completion. The limit applies to
+  each spawned program rather than to a batch as a whole, and it is read in the
+  process that sets it, so `parallel = TRUE` workers do not see it. See
+  `?tidymedia`.
+
 ## Breaking changes
 
 * `format_for_web()` and `normalize_audio()` (and their `_batch` siblings) take

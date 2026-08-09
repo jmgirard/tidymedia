@@ -97,9 +97,9 @@ naming the program and the limit. A D-entry records the shape.
       `-f lavfi -i testsrc=duration=120` encode is the long command) and unit
       tests for AC4/AC6 against the classifier. Mutation-probe each new
       assertion — delete the guard it fences and confirm it reddens (M44).
-- [ ] T5 Roxygen: document the option in `R/tidymedia-package.R`'s `@details`,
+- [x] T5 Roxygen: document the option in `R/tidymedia-package.R`'s `@details`,
       `devtools::document()`, add the `NEWS.md` entry.
-- [ ] T6 Write the D-entry (the two candidate rows for Scope Out are already on
+- [x] T6 Write the D-entry (the two candidate rows for Scope Out are already on
       the ROADMAP, added by this plan).
 - [ ] T7 Run the `verify` slot end to end; `spelling::update_wordlist()` if the
       check NOTEs on new terms (M17).
@@ -124,6 +124,9 @@ naming the program and the limit. A D-entry records the shape.
 - 2026-08-09: T4 — the hang is produced by a FIFO with no writer, which blocks FFmpeg deterministically, rather than by racing a long encode against the limit on an unknown host (the M31/M46 failure mode). Windows skips (no mkfifo); the fixture is built inside the gate and the gate skips rather than `fail()`s (M68).
 - 2026-08-09: T4 — FFmpeg blocks on the FIFO before opening its output, so the half-written-output half of AC5 is unreachable that way; it is proven instead by injecting the kill at the `run_program()` seam with a call-counting mock, leaving the cleanup path real. Filter green: 67 pass, 0 fail. Full suite FAIL 0 / PASS 6112.
 - 2026-08-09: T3 mutation probe — dropping the handler, skipping `remove_failed_output()`, and moving the snapshot after the run each reddened 3 tests, with the feature verified still present in the tree.
+
+- 2026-08-09: T5 — `?tidymedia` gained a "Bounding a run that hangs" section; NEWS.md entry added; `devtools::document()` run. Two doc guards added, reading Rd through the shared two-shape reader so they run under `R CMD check` too (M51).
+- 2026-08-09: T6 — D047 appended; the two Scope Out candidate rows were already added by the plan commit. `cairn_validate` green.
 
 ## Decisions
 

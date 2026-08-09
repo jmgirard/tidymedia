@@ -312,3 +312,27 @@ test_that("with the option unset the same blocking input is NOT bounded", {
   )
   expect_identical(as.integer(attr(res, "status")), 124L)
 })
+
+# Documentation (AC8) ---------------------------------------------------------
+
+test_that("?tidymedia documents the option's name, unit, default and effect", {
+  rd <- rd_sources()
+  skip_if(is.null(rd), "no Rd source available")
+  # Read through the shared two-shape reader: under R CMD check there is no
+  # man/ dir, and a source-tree-only guard would silently SKIP in exactly the
+  # run the release gate uses (M51).
+  hit <- rd[grepl("tidymedia-package", names(rd))]
+  expect_length(hit, 1)
+  txt <- hit[[1]]
+  expect_match(txt, "tidymedia.timeout", fixed = TRUE)
+  expect_match(txt, "second")            # the unit
+  expect_match(txt, "no limit")          # what the default means
+  expect_match(txt, "abort")             # what reaching it does
+})
+
+test_that("NEWS.md carries the entry", {
+  news <- if (file.exists("../../NEWS.md")) "../../NEWS.md" else NULL
+  skip_if(is.null(news), "NEWS.md not in the tested tree")
+  txt <- paste(readLines(news, warn = FALSE), collapse = "\n")
+  expect_match(txt, "tidymedia.timeout", fixed = TRUE)
+})

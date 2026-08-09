@@ -103,6 +103,12 @@ test_that("a stream-copy nvenc call aborts without probing, as documented", {
   segment_video(f, 0, 5, "out.mp4", hardware = "nvenc", run = FALSE)
   expect_gt(probes, 0L)
 
+  # M67: the control above warms the session memo, so without this discard the
+  # four calls below could never reach ffmpeg_encoders() whether or not they
+  # reach has_nvenc() -- `probes == 0L` would hold even if the codec-conflict
+  # guard regressed to run AFTER resolve_hw_encoder(), which is the whole
+  # regression this test exists to catch.
+  forget_ffmpeg_capabilities()
   probes <- 0L
   expect_error(
     segment_video(f, 0, 5, "out.mp4", reencode = FALSE, hardware = "nvenc",

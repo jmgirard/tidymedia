@@ -14,6 +14,26 @@ test_that("H is read from the namespace and is not empty", {
   expect_true(all(c("standardize_video", "standardize_video_batch") %in% h))
 })
 
+# The per-cell abort control (AC2): a cell that aborts measures nothing (M41),
+# so each cell asserts it did not.
+#
+# Deliberately NOT `expect_no_error(expr, message = <label>)`: that `message`
+# is passed through as the matcher's REGEXP, not as a failure label, so an
+# abort whose text does not match the label records no expectation at all and
+# propagates -- turning the run red, but without naming the verb and without
+# measuring the rest of H. Catching the condition here keeps the failure
+# labelled and lets the loop finish the remaining cells.
+expect_cell_ran <- function(verb, expr) {
+  err <- tryCatch({
+    force(expr)
+    NULL
+  }, error = function(e) conditionMessage(e))
+  expect_null(
+    err,
+    info = paste0(verb, ": the cell aborted, so it measured nothing")
+  )
+}
+
 test_that("each verb asks FFmpeg once, from a cold memo", {
   # AC2. One cell per member of H, each starting cold, each asserting the call
   # did not abort -- a cell that aborts measures nothing (M41).
@@ -21,10 +41,7 @@ test_that("each verb asks FFmpeg once, from a cold memo", {
   for (verb in nvenc_hardware_exports()) {
     probes <- local_encoder_probe_counter()
     args <- nvenc_grid_args(verb, f)
-    expect_no_error(
-      do.call(verb, args, envir = asNamespace("tidymedia")),
-      message = paste0(verb, ": the cell aborted, so it measured nothing")
-    )
+    expect_cell_ran(verb, do.call(verb, args, envir = asNamespace("tidymedia")))
     expect_identical(probes(), 1L, info = verb)
     forget_ffmpeg_capabilities()
   }
@@ -38,9 +55,9 @@ test_that("one answer serves every verb in a session", {
   probes <- local_encoder_probe_counter()
 
   for (verb in nvenc_hardware_exports()) {
-    expect_no_error(
-      do.call(verb, nvenc_grid_args(verb, f), envir = asNamespace("tidymedia")),
-      message = paste0(verb, ": the cell aborted, so it measured nothing")
+    expect_cell_ran(
+      verb,
+      do.call(verb, nvenc_grid_args(verb, f), envir = asNamespace("tidymedia"))
     )
   }
   expect_identical(probes(), 1L)

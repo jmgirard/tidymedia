@@ -18,8 +18,10 @@ invocation exits non-zero, and says so in the abort it already raises
 (`R/ffm.R:1384-1406`). One rule, whatever the path held before: FFmpeg
 truncates a pre-existing output to zero bytes before failing anyway
 (measured 2026-08-09, ffmpeg 8.1.2 macOS), so there is nothing left to
-preserve. Every execution path inherits it, `ffm_batch()` included, because
-each reaches this one site.
+preserve. The single exception is `overwrite = FALSE` against a path that
+already existed, where the package promised not to replace it (AC8). Every
+execution path inherits this, `ffm_batch()` included, because each reaches
+this one site.
 
 **Out:**
 - `separate_audio_video()`'s video command still never runs once its audio
@@ -33,13 +35,15 @@ each reaches this one site.
 
 ## Acceptance criteria
 
-- [ ] **AC1.** When `ffm_run()`'s FFmpeg invocation exits non-zero, the
-      pipeline's output path does not exist after the abort. Evidence: an
-      execution test provoking FFmpeg's adts multi-stream refusal (exit 234)
-      twice — once with the output path absent beforehand, once with it
-      pre-written with content — asserting the path is absent after each
-      abort; and the same test re-run with the removal line stubbed out, red,
-      with its failure output quoted.
+- [ ] **AC1.** When `ffm_run()`'s FFmpeg invocation exits non-zero and the
+      pipeline allows overwriting, the pipeline's output path does not exist
+      after the abort. Evidence: an execution test provoking an AAC-to-MP3
+      stream copy — a refusal no FFmpeg build can avoid, unlike the
+      version-dependent adts multi-stream refusal M45 paid for — twice, once
+      with the output path absent beforehand and once with it pre-written with
+      content, asserting the path is absent after each abort; and the same
+      test re-run with the removal stubbed out, red, with its failure output
+      quoted.
 - [ ] **AC2.** The change stays confined: one removal site, no user-facing
       switch. Evidence: `grep -rn "unlink(\|file.remove(" R/` returns the
       pre-existing `R/program_management.R` line and exactly one new line,
@@ -64,6 +68,12 @@ each reaches this one site.
 - [ ] **AC7.** The profile's `verify` slot is clean and its fuller
       pre-review check passes: `devtools::document()` no diff,
       `devtools::test()` clean, `devtools::check()` 0 errors / 0 warnings.
+- [ ] **AC8.** `overwrite = FALSE` never costs the caller a file, and never
+      strands one either: the removal is skipped only for an output that
+      existed before the run. Evidence: direct tests of the removal helper
+      over the four combinations of `overwrite` (`TRUE`/`FALSE`) and
+      pre-existence, asserting removal in three and preservation only for
+      `overwrite = FALSE` against a pre-existing path.
 
 ## Coverage
 
@@ -74,16 +84,17 @@ each reaches this one site.
 - AC5 → T5
 - AC6 → T6
 - AC7 → T7
+- AC8 → T2, T8
 
 ## Tasks
 
-- [ ] **T1.** Write the failing regression test: provoke the adts refusal
-      (exit 234) through a compiled pipeline on a three-audio-track fixture,
-      both pre-states, asserting the output path is absent. Confirm red
-      against `master` before T2.
-- [ ] **T2.** In `ffm_run()` (`R/ffm.R:1396-1403`), remove the output path on
-      a non-zero status before raising, and name the removed file in the
-      abort's bullets.
+- [ ] **T1.** Write the failing regression test: provoke an AAC-to-MP3 stream
+      copy through a compiled pipeline, both pre-states, asserting the output
+      path is absent. Confirm red against `master` before T2.
+- [ ] **T2.** Add `remove_failed_output()` beside `ffm_run()` in `R/ffm.R` and
+      call it from `ffm_run()` (`R/ffm.R:1396-1403`) on a non-zero status
+      before raising; name the removed file in the abort's bullets, and say
+      so when the removal itself fails.
 - [ ] **T3.** Snapshot the new abort; record under `devtools::test()`.
 - [ ] **T4.** Add the parent-chain test through `separate_audio_video()`
       against `run_separation_audio()` (`R/ffmpeg.R:617-656`).
@@ -95,6 +106,8 @@ each reaches this one site.
       record a decision entry for reading and writing the filesystem after a
       failed run — it is not a probe under the executing-path licence, which
       governs running a binary, and D040 already licensed a filesystem read.
+- [ ] **T8.** Unit-test `remove_failed_output()` over the four `overwrite` ×
+      pre-existence combinations (AC8).
 
 ## Work log
 
@@ -102,6 +115,8 @@ each reaches this one site.
 - 2026-08-09: implement started; branch `m68-failed-run-output-cleanup` cut from master at dfa219d.
 - 2026-08-09: plan gate chose one unconditional removal over deleting only a path the run itself created because FFmpeg truncates a pre-existing output to zero before failing, so preservation preserves nothing while shipping two behaviors and a pre-run stat; falsified by a measured FFmpeg failure mode leaving a pre-existing output's bytes intact.
 - 2026-08-09: plan chose siting the removal in `ffm_run()` over each Layer-2 verb because IP1 keeps execution in Layer 1 once; falsified by a verb needing to fail without removing, e.g. one keeping the partial file for diagnosis.
+- 2026-08-09: amendment gate — AC1's adts trigger replaced by an AAC-to-MP3 stream copy, since ffmpeg 6.1.1 on ubuntu-latest writes the multi-stream .aac and exits 0 (M45's lesson, recorded in test-separate-av-multitrack.R); measured 234 with a zero-byte leftover on 8.1.2 for the replacement.
+- 2026-08-09: amendment gate — added AC8 and T8 for the `overwrite = FALSE` guard chosen at the implement gate, narrowed to a pre-existing output so a non-overwriting run that creates a zero-byte file still gets it removed.
 - 2026-08-09: criteria audit ([O], fresh context) returned 11 findings; ten fixed in the drafted wording (unbounded promises in AC1/AC3/AC4/AC5, a non-discriminating control, AC3 snapshotting the Layer-2 abort rather than `ffm_run()`'s, "unconditional" contradicting a two-disposition design, an unevidenced counterfactual), and its AC2 satisfiability finding became the gate question the first line above records.
 
 ## Decisions

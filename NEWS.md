@@ -306,7 +306,7 @@
   checks the output's size and timestamp before the run and again after the
   failure, leaves such a file exactly as it was, and says that instead. A file
   whose name contains `*`, `?` or `[` is deleted as the name it is, never as a
-  pattern, so a neighbouring file is never taken with it.
+  pattern, so a neighboring file is never taken with it.
 
   `overwrite = FALSE` against a file that was already there keeps its own
   guarantee: FFmpeg was told not to replace it, so neither will tidymedia. A

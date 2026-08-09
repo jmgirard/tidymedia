@@ -156,34 +156,50 @@ test_that("a failed run leaves an output FFmpeg never opened exactly as it was",
 # AC10: the removal deletes the named path and nothing beside it --------------
 #
 # unlink() expands wildcards by default, so the output's own NAME can reach a
-# neighbour: unlink("a*.mp4") emptied a directory of aQQQ.mp4 and aXYZ.mp4, and
+# neighbor: unlink("a*.mp4") emptied a directory of aQQQ.mp4 and aXYZ.mp4, and
 # unlink("out[1].mp4") deleted out1.mp4 and left out[1].mp4 (measured at M68's
 # review). Both names are legal on every platform the package supports.
 
-test_that("a wildcard in the output's name costs no neighbouring file", {
+test_that("a wildcard in the output's name costs no neighboring file", {
   dir <- withr::local_tempdir()
   target <- file.path(dir, "a*.mp4")
-  neighbours <- file.path(dir, c("aQQQ.mp4", "aXYZ.mp4"))
-  for (p in c(target, neighbours)) writeLines("content", p)
+  neighbors <- file.path(dir, c("aQQQ.mp4", "aXYZ.mp4"))
+  for (p in c(target, neighbors)) writeLines("content", p)
 
   bullets <- remove_failed_output(target, overwrite = TRUE,
                                   before = character(0))
 
   expect_false(file.exists(target))
-  expect_true(all(file.exists(neighbours)))
+  expect_true(all(file.exists(neighbors)))
   expect_match(bullets, "was removed")
+})
+
+test_that("a literal percent-d output name is a file, not a pattern", {
+  # "100%d.mp4" is a legal filename. Read as an image2 pattern it would send the
+  # search after "1005.mp4" and leave the run's own output standing.
+  dir <- withr::local_tempdir()
+  target <- file.path(dir, "100%d.mp4")
+  neighbor <- file.path(dir, "1005.mp4")
+  writeLines("the neighbor's content", neighbor)
+  before <- output_snapshot(target)
+  writeLines("what the failed run wrote", target)
+
+  remove_failed_output(target, overwrite = TRUE, before = before)
+
+  expect_false(file.exists(target))
+  expect_true(file.exists(neighbor))
 })
 
 test_that("a bracketed output name is the file that goes", {
   dir <- withr::local_tempdir()
   target <- file.path(dir, "out[1].mp4")
-  neighbour <- file.path(dir, "out1.mp4")
-  for (p in c(target, neighbour)) writeLines("content", p)
+  neighbor <- file.path(dir, "out1.mp4")
+  for (p in c(target, neighbor)) writeLines("content", p)
 
   remove_failed_output(target, overwrite = TRUE, before = character(0))
 
   expect_false(file.exists(target))
-  expect_true(file.exists(neighbour))
+  expect_true(file.exists(neighbor))
 })
 
 

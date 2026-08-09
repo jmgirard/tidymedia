@@ -135,7 +135,7 @@ interrupts (SIGINT) is not a non-zero exit → no row; raise one if reported.
 - [x] **T11.** Match an image2 `%0Nd` pattern to its own files in its own
       directory, so a frame sequence is snapshotted and removed as a set.
 - [x] **T12.** Rebuild the unremovable-file test's gate on the M63 shape (AC11).
-- [ ] **T13.** Supersede D045 with the write-detection rule, update the NEWS
+- [x] **T13.** Supersede D045 with the write-detection rule, update the NEWS
       entry to what the package now does, and re-run document/test/check.
 
 ## Work log
@@ -166,6 +166,9 @@ interrupts (SIGINT) is not a non-zero exit → no row; raise one if reported.
 - 2026-08-09: T10/T11 — `output_targets()`/`output_snapshot()` added beside `ffm_run()`; the removal now compares a pre-run snapshot with a post-failure one and unlinks only what moved, with `expand = FALSE`, and a `%0Nd` output is matched as an escaped regex over its own directory so the set is snapshotted and removed together.
 - 2026-08-09: T12 — the unremovable-file case now verifies its fixture with `tm_require_unwritable_dir()` (helper-skip.R), which asks `file.access(dir, mode = 2)` and fails anywhere but Windows or root, replacing the skip keyed on the unlink under test; the file's 13 tests run with 0 skipped.
 - 2026-08-09: T9-T12 controls — three mutations, each reddening only the tests whose claim it breaks: removing everything at the output rather than what the run wrote reddens the never-opened case and the frames case (an earlier run's frame goes with it); `unlink()` with its default globbing reddens the two neighbour tests; treating every output as a literal path reddens the frames case. R/ffm.R restored after each (grep -c MUTATION -> 0).
+- 2026-08-09: T10 refinement — a file at the literal output path is read as the output whatever its name looks like, so a caller's `100%d.mp4` is not searched for as a pattern; a fourth control (dropping that reading) reddens only the new test for it.
+- 2026-08-09: T13 — NEWS.md entry rewritten to what the package now does (what the run wrote, the untouched-output case, the literal-name rule, the frame sequence); `devtools::document()` no diff, `devtools::test()` FAIL 0 | WARN 4 | SKIP 5 | PASS 6035, `devtools::check()` Status: OK (0/0/0). The 4 warnings are the package's own "Dropping N audio tracks" warnings in test-audio-stream.R and test-ffmpeg.R, unrelated to this branch.
+- 2026-08-09: T13 — a first check run reported 1 NOTE, the spelling test on "neighbouring" in NEWS.md; the package spells US ("behavior" x20), so the branch does too. A sweep that also touched two unrelated files' comments was reverted, keeping the diff confined (AC2).
 
 
 

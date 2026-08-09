@@ -1371,10 +1371,12 @@ ffm_groups <- function(object) {
 # sitting where a frame's file must go is a failure the run hit rather than
 # something it wrote.
 output_targets <- function(output) {
-  if (!grepl("%[0-9]*d", output)) {
-    exists <- file.exists(output) && !dir.exists(output)
-    return(if (exists) output else character(0))
-  }
+  # A file sitting at the literal path IS the output, whatever its name looks
+  # like: a caller may legally name one "100%d.mp4", and reading that as a
+  # pattern would send the search after its neighbors. Only when nothing is
+  # there does the printf reading get a turn.
+  if (file.exists(output) && !dir.exists(output)) return(output)
+  if (!grepl("%[0-9]*d", output)) return(character(0))
   escaped <- gsub("([][{}()+*^$|\\\\?.])", "\\\\\\1", basename(output))
   rx <- paste0("^", gsub("%[0-9]*d", "[0-9]+", escaped), "$")
   found <- list.files(dirname(output), pattern = rx, full.names = TRUE)
@@ -1431,7 +1433,7 @@ output_snapshot <- function(output) {
 # must not cost the caller it.
 #
 # `unlink(expand = FALSE)` because unlink() globs by default: an output legally
-# named `a*.mp4` otherwise takes its neighbours with it (measured at M68's
+# named `a*.mp4` otherwise takes its neighbors with it (measured at M68's
 # review).
 #
 # Returns a named character vector of cli bullets, interpolated in the calling

@@ -262,6 +262,12 @@ blame_precedence_cells_m65 <- function(input) {
                                       function(args) {
         args$jobs$audio_stream <- "a"; args }),
       `audio_stream-fractional` = guard(m_whole, set(audio_stream = 1.5)),
+      # Reachable on both passes: single-pass from the per-row pipeline check,
+      # two-pass from the block's own hoisted copy. Both sit BELOW the new
+      # sweep, so these are flips (added at review return #1 — the first cut
+      # of this list omitted them and M65-D1's table undercounted).
+      `channels-fractional` = guard(m_whole, set(channels = 1.5)),
+      `sample_rate-fractional` = guard(m_whole, set(sample_rate = 1.5)),
       `duplicate-inputs-no-output` = guard(m_dup_in, function(args) {
         args$jobs <- args$jobs[c(1, 1), ]
         args$jobs$output <- NULL

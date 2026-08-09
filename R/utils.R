@@ -245,7 +245,10 @@ loudnorm_bounds_rd <- function(which) {
     which,
     target_loudness = loudnorm_range_target_loudness,
     true_peak = loudnorm_range_true_peak,
-    loudness_range = loudnorm_range_loudness_range
+    loudness_range = loudnorm_range_loudness_range,
+    # A typo'd key would otherwise return character(0) and render a man page
+    # with the range silently missing -- document() would not complain.
+    cli::cli_abort("Unknown loudnorm range key {.val {which}}.")
   )
   sprintf("a number in \\code{%s}..\\code{%s}", range[[1]], range[[2]])
 }

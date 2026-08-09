@@ -295,7 +295,8 @@
   `ffm_drawbox()`, `ffm_overlay()`, `ffm_loudnorm()` — or, on the `_batch`
   siblings, against `purrr::pmap()` with an `In index:` prefix. Each `_batch`
   sibling refuses the value whether it is passed as the argument or carried in
-  a `jobs` column, and before any row runs. Under `two_pass = TRUE`, a bad
+  a `jobs` column (`regions`, which exists only as a column on the batch verb,
+  in its column form), and before any row runs. Under `two_pass = TRUE`, a bad
   loudness target is refused before the analysis pass measures the input,
   instead of after that measurement was already spent.
   `picture_in_picture()`'s existing complaint about a non-numeric `scale` is

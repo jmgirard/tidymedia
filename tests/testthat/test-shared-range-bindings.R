@@ -28,6 +28,8 @@ test_that("the man pages carry the binding-rendered loudness ranges", {
                    info = paste(topic, arg))
     }
   }
+  # A typo'd key aborts rather than rendering an empty range into a man page.
+  expect_error(render("no_such_key"), "Unknown loudnorm range key")
 })
 
 test_that("the overlay scale range is one binding read by both layers", {

@@ -160,10 +160,37 @@ today is the path CI cannot check; T5 records the local run.
   | bad value outranks a missing nvenc encoder | `test-builder-blame-front-door.R` "a bad region or scale value reports before a missing nvenc encoder" |
   | one shared definition per range; docs cannot drift | `test-shared-range-bindings.R` (both tests) — red under the two Layer-1 site deletions; the roxygen bounds render from the same bindings at `document()` time |
 
+- **M65-D3 (2026-08-08, from review return #1): corrected reordering table
+  and full divergence disclosure — supersedes M65-D1's `normalize_audio_batch`
+  rows, its mirror sentence, and its single-item divergence note.** The first
+  crossing list omitted `channels`/`sample_rate` for `normalize_audio_batch`;
+  the corrected grid (121 crossings, live controls, zero dead/unresolved on
+  both refs) records **30 flips**. M65-D1's rows 1–18 stand. The batch rows
+  become: `normalize_audio_batch/loudness` × channels-fractional,
+  sample_rate-fractional (both passes, both deliveries — 8 flips) and ×
+  channels-col-whole-2p, audio_codec-token-2p (both deliveries — 4 flips):
+  **12 batch flips, not 4**; D043's "(10 scalar, 4 batch)" parenthetical reads
+  per the superseded grid. The mirror sentence is corrected: the batch mirrors
+  the scalar's flips **only for guards that sit below both sweeps**; a guard
+  at the batch front door above its sweep but below the scalar's answers
+  differently by form. **Full cross-form divergence disclosure:**
+  `video_codec-token` on the anonymize pair (batch: token first; scalar:
+  region value first); `audio_codec = "copy"` and `audio_stream` on the
+  normalize pair (batch reports them first, scalar reports the target first —
+  measured; on master both forms reported them first). Unavoidable within
+  this milestone: the batch checks copy/`audio_stream` at its front door
+  above the input sweep deliberately (M34/M45: fail before Phase 1 wastes an
+  analysis pass per row), the scalar's plan-mandated above-the-block sweep
+  precedes its own copies of those guards, and no batch placement mirrors
+  both these and the input-first order M62 fixed. The residual is a candidate
+  row.
+
 ## Work log
 
 - 2026-08-08: created by /milestone-plan.
 
+- 2026-08-08: return #1 fix pass done — S6 extended (channels/sample_rate crossings, both passes), grid re-run both refs (121 cells, 0 dead/unresolved, 30 flips), M65-D3 supersedes M65-D1's batch rows + mirror sentence + divergence note; F3/F4 comments fixed; F6/F7 fixed voluntarily; F10 + the divergence residual → grouped candidate row. Re-verified: suite 0 fail / 5588 pass; harness 11/11 red; `check()` 0/0/0; `cairn_validate` exit 0. Status → review; AC4 re-ticked on the corrected evidence.
+- 2026-08-08: review return #1 (floor: finding F1 scored 92; defect-return count now 1) — AC4's "Every reordering is listed" clause failed: the S6 crossing list omitted guards the batch sweep now precedes (`channels`/`sample_rate`, measured flipping), so the table undercounted; and the batch form now answers `audio_codec = "copy"`/`audio_stream` crossings differently from the scalar (measured), undisclosed, with M65-D1's "mirrors exactly" sentence overclaiming. Status → in-progress for the fix pass.
 - 2026-08-08: T1 done — bindings `overlay_scale_range` + three `loudnorm_range_*` in R/utils.R, shared checkers `check_overlay_scale()`/`check_loudnorm_targets()`/`check_region_values()`; builders point at them; AC1 boundary probes in test-shared-range-bindings.R (both layers, bounds derived from the namespace bindings). Suite clean.
 - 2026-08-08: minor amendment: T5's batch sweep placed "last among the value guards above the `two_pass` block" rather than "beside the type-only column sweep" — the early placement would have put a loudness value error above the missing-input sweep, diverging from the scalar form and from M62's family-wide input-first order; the late placement mirrors the scalar's flips exactly (D042's siting rule).
 - 2026-08-08: T2 done — `loudnorm_bounds_rd()` inline helper; `normalize_audio()`'s AND `ffm_loudnorm()`'s roxygen bounds now render from the bindings (same helper, same words; only source line-wrap moved). `document()` stable after the commit.
@@ -216,4 +243,34 @@ Consistency gate: `cairn_validate` exit 0, all checks PASS; no principle
 changed (no `cairn_impact`); `document()` no diff; README.Rmd untouched;
 `pkgdown::check_pkgdown()` no problems; NEWS entry present, no milestone
 numbers; no new top-level files. Driving RR: — (projection check no-op).
+
+Independent review (fresh-context: [O] diff-bug, [S] blame-history, [S]
+prior-review-record; [S] scorer): 14 candidate findings, all from the
+diff-bug lens (the other two: none / no prior-review evidence). Actioned
+(≥80): F1 (92) normalize copy/audio_stream form divergence undisclosed +
+M65-D1 mirror overclaim → review return #1; fixed by extending S6, re-running
+the grid (121 cells, 30 flips), and superseding via M65-D3; F3 (90) stale
+"validation lives once" comment → fixed; F4 (82) stale Phase-2 targets
+comment → fixed; F10 (80) batch refusals name no row → follow-up candidate
+row (grouped with the divergence residual). Logged <80, one line each:
+F2 (78) S6 crossing-list omissions — absorbed into F1's fix; F7 (78) NEWS
+regions-argument overclaim — fixed voluntarily (column-form parenthetical);
+F11 (70) no `normalize_audio_batch(two_pass = TRUE)` grid cell — the batch
+Phase-1 claim rests on the precedence grid's two-pass cells, not AC3's;
+F5 (68) AC1 probes cannot detect a restated identical literal (deletion is
+mutation-covered; restatement is not); F6 (55) `loudnorm_bounds_rd()` silent
+on a typo'd key — fixed voluntarily (abort default + test); F13 (55) three
+message-side leak assertions per cell cannot fail (call-side covers the
+property); F9 (42) `check_overlay_scale()` assumes pre-typed input (comment
+is the contract; unreachable today); F12 (30) `pinned` field read by nothing
+(M64-inherited convention); F14 (28) nvenc-ordering test has no live control
+(M64-inherited shape; the precedence grid carries the controls); F8 (25)
+`scale` doc literal not binding-rendered (unmodified lines, outside AC2's
+scope).
+
+Post-return re-verification (2026-08-08, after the fix pass): AC4 fresh —
+corrected grid at `master` and working tree: 121 cells, 0 dead controls and
+0 unresolved on both refs, 30 flips = M65-D3's table. Full suite
+`devtools::test()` and `devtools::check()` re-run clean (recorded in the
+work log); mutation harness re-run 11/11 red.
 

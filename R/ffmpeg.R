@@ -2220,10 +2220,12 @@ check_audio_codec_not_copy <- function(audio_codec, call = rlang::caller_env()) 
 # normalize_audio_pipeline() ----------------------------------------------
 
 # Shared loudness-normalization pipeline for normalize_audio() and (M15)
-# normalize_audio_batch(): build one single-output pipeline for a single input. Both
-# verbs compile identical commands from this helper, so per-value validation
-# (loudness targets via ffm_loudnorm(), channels/sample_rate here) lives once --
-# the batch sibling inherits it by construction (D002, D007; M13 lesson).
+# normalize_audio_batch(): build one single-output pipeline for a single input.
+# Both verbs compile identical commands from this helper, so channels/
+# sample_rate validation lives here once and the batch sibling inherits it by
+# construction (D002, D007; M13 lesson). The loudness TARGETS are swept at
+# both verbs' front doors since M65; ffm_loudnorm() below still checks them
+# for its own direct callers.
 normalize_audio_pipeline <- function(input, output,
                                      target_loudness = -23,
                                      true_peak = -1,
@@ -4337,7 +4339,7 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
   if (two_pass) {
     # Validate the shaping knobs up front (parity with the scalar two-pass verb)
     # so a bad channels/sample_rate fails before Phase 1 wastes an analysis pass
-    # per row; per-value target checks stay per-row in the Phase 2 pipeline.
+    # per row; the loudness targets were already swept per row above (M65).
     rlang::check_number_whole(channels, min = 1, allow_null = TRUE)
     rlang::check_number_whole(sample_rate, min = 1, allow_null = TRUE)
     # Same reason, for the encoder name: a malformed token would otherwise abort

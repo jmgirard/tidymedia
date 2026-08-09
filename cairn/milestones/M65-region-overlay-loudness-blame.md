@@ -105,17 +105,17 @@ today is the path CI cannot check; T5 records the local run.
       builder layer.
 - [x] T2: Generate the roxygen bounds at `R/ffmpeg.R:2009-2014` from the same
       bindings via an inline helper; `document()`.
-- [ ] T3: Declare `tests/testthat/helper-blame-specs-m65.R` and extend M64's grid to read it —
+- [x] T3: Declare `tests/testthat/helper-blame-specs-m65.R` and extend M64's grid to read it —
       both forms, both deliveries, the `two_pass` axis, the region row/field
       variation, and AC5's two `scale` cells. Red first.
-- [ ] T4: `anonymize_video()` (`R/ffmpeg.R:1533`) and `anonymize_video_batch()`
+- [x] T4: `anonymize_video()` (`R/ffmpeg.R:1533`) and `anonymize_video_batch()`
       (`:1806`) sweep each region field beside `check_regions()`;
       `picture_in_picture()` (`:5909`) and `_batch` (`:6282`) sweep the `scale`
       range at the front door.
-- [ ] T5: `normalize_audio()` (`:2066`) sweeps the three loudness values ABOVE
+- [x] T5: `normalize_audio()` (`:2066`) sweeps the three loudness values ABOVE
       the `two_pass` block; `normalize_audio_batch()` (`:4119`) sweeps the same
-      values per row, beside its existing type-only column sweep (`:4149-4156`).
-      Record the local FFmpeg run backing the `two_pass = TRUE` cells.
+      values per row, last among the value guards above its own `two_pass`
+      block. Record the local FFmpeg run backing the `two_pass = TRUE` cells.
 - [ ] T6: `data-raw/blame-precedence-m65.R` — crossing list, live controls, both
       refs; write the reordering table.
 - [ ] T7: `data-raw/blame-guard-mutations-m65.py` — diff-derived list, split
@@ -127,7 +127,11 @@ today is the path CI cannot check; T5 records the local run.
 
 - 2026-08-08: created by /milestone-plan.
 - 2026-08-08: T1 done — bindings `overlay_scale_range` + three `loudnorm_range_*` in R/utils.R, shared checkers `check_overlay_scale()`/`check_loudnorm_targets()`/`check_region_values()`; builders point at them; AC1 boundary probes in test-shared-range-bindings.R (both layers, bounds derived from the namespace bindings). Suite clean.
+- 2026-08-08: minor amendment: T5's batch sweep placed "last among the value guards above the `two_pass` block" rather than "beside the type-only column sweep" — the early placement would have put a loudness value error above the missing-input sweep, diverging from the scalar form and from M62's family-wide input-first order; the late placement mirrors the scalar's flips exactly (D042's siting rule).
 - 2026-08-08: T2 done — `loudnorm_bounds_rd()` inline helper; `normalize_audio()`'s AND `ffm_loudnorm()`'s roxygen bounds now render from the bindings (same helper, same words; only source line-wrap moved). `document()` stable after the commit.
+- 2026-08-08: T3 done — `helper-blame-specs-m65.R` (30 cells: 8 region row/field-varied, 8 scale incl. AC5's type/range pairs, 12 loudness with the scalar `two_pass` axis, + reader) and the M64 grid extended with four M65 blocks; observed red on blame before the sweeps (builder/pmap blamed), as declared.
+- 2026-08-08: T4 done — region sweep via `check_region_values()` in `anonymize_pipeline()` (call threaded) + per cell at the batch front door; `check_overlay_scale()` in `picture_in_picture_pipeline()` below the contradiction/position checks (M61 ordering) + per resolved row at the batch front door above the nvenc probe.
+- 2026-08-08: T5 done — `check_loudnorm_targets()` above `normalize_audio()`'s `two_pass` block and per resolved row above `normalize_audio_batch()`'s, below `check_batch_inputs()`. Local FFmpeg run (ffmpeg 8.1.2, macOS): full suite 0 fail / 5579 pass / 5 skips, none of them the two-pass blame block — the `two_pass = TRUE` cells executed and passed.
 - 2026-08-08: plan gate chose moving `normalize_audio()`'s loudness sweep above the `two_pass` analysis block over scoping the milestone to single-pass and disclosing the gap, because a disclosed ordering gap is the shape D038 recorded and D039 had to undo; falsified by a reordering that changes the reported guard for a caller the crossing table cannot enumerate.
 - 2026-08-08: plan gate chose one internal binding read by both layers over restating each bound at the front door, because a restated number is exactly what the M40 stale-hint lesson bites on and no test comparing literals can see the drift; falsified by a bound whose two layers must legitimately differ.
 - 2026-08-08: substantive amendment (gated): AC3/T3's spec list moved from `data-raw/blame-specs-m65.R` to `tests/testthat/helper-blame-specs-m65.R` — `^data-raw$` is in `.Rbuildignore`, so the grid test sourcing it there would skip under `R CMD check` (the M51/M59 lesson; M64's list lives in tests/ for the same reason). User approved "Move to tests/".

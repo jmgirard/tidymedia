@@ -102,6 +102,89 @@ test_that("a bad batch value reports before a missing nvenc encoder", {
                "`pixel_format` must be a single clean token")
 })
 
+# --- The M65 extension: region, overlay-scale and loudness cells -------------
+# Same grid, next family (blame_specs_m65() in helper-blame-specs-m65.R): the
+# values anonymize_video, picture_in_picture and normalize_audio hand to
+# ffm_drawbox() / ffm_overlay() / ffm_loudnorm().
+
+test_that("the M65 spec list names only arguments its verbs actually have", {
+  expect_identical(blame_spec_defects_m65(blame_specs_m65(make_input())),
+                   character(0))
+})
+
+test_that("the M65 completeness reader detects the defects it exists for", {
+  # AC6 mutates the reader and requires a red; only planted defects can tell a
+  # clean list from a reader that stopped looking. The planted trio covers the
+  # reader's third clause too -- the region-field check M64's reader has no
+  # equivalent of.
+  specs <- blame_specs_m65(make_input())
+  foreign <- NULL
+  for (cell in specs) {
+    if (!identical(cell$argument, "regions")) { foreign <- cell; break }
+  }
+  foreign$id <- "planted/foreign-argument"
+  foreign$argument <- "no_such_formal"
+  no_col <- NULL
+  for (cell in specs) {
+    if (identical(cell$delivery, "column") &&
+        !identical(cell$argument, "regions")) { no_col <- cell; break }
+  }
+  no_col$id <- "planted/missing-column"
+  no_col$args$jobs[[no_col$argument]] <- NULL
+  bad_field <- NULL
+  for (cell in specs) {
+    if (identical(cell$argument, "regions")) { bad_field <- cell; break }
+  }
+  bad_field$id <- "planted/foreign-region-field"
+  bad_field$field <- "no_such_field"
+  defects <- blame_spec_defects_m65(c(specs, list(foreign, no_col, bad_field)))
+  expect_match(defects, "planted/foreign-argument", fixed = TRUE, all = FALSE)
+  expect_match(defects, "planted/missing-column", fixed = TRUE, all = FALSE)
+  expect_match(defects, "planted/foreign-region-field", fixed = TRUE,
+               all = FALSE)
+})
+
+# The shared cell assertions: which failure (never that one occurred), whose
+# blame, and no internal's name leaking through the deparsed call.
+expect_blames_verb_m65 <- function(cell) {
+  cnd <- catch_call(cell$verb, cell$args)
+  expect_s3_class(cnd, "rlang_error")
+  expect_match(conditionMessage(cnd), cell$own, info = cell$id)
+  if (!is.null(cell$absent)) {
+    expect_no_match(conditionMessage(cnd), cell$absent, fixed = TRUE,
+                    info = cell$id)
+  }
+  expect_identical(blamed_verb(cnd), cell$verb, info = cell$id)
+  deparsed <- paste(deparse(conditionCall(cnd)), collapse = "")
+  for (leak in c("pmap", "_pipeline(", "ffm_")) {
+    expect_no_match(deparsed, leak, fixed = TRUE, info = cell$id)
+    expect_no_match(conditionMessage(cnd), leak, fixed = TRUE, info = cell$id)
+  }
+  expect_no_match(conditionMessage(cnd), "In index:", fixed = TRUE,
+                  info = cell$id)
+}
+
+test_that("a region, overlay or loudness value blames the verb the user called", {
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  for (cell in blame_specs_m65(make_input())) {
+    if (isTRUE(cell$needs_ffmpeg)) next  # the two-pass block below
+    expect_blames_verb_m65(cell)
+  }
+})
+
+test_that("a two-pass loudness value blames the verb, before the analysis pass", {
+  # The `two_pass = TRUE` cells: the sweep aborts before
+  # run_loudnorm_analysis() spawns FFmpeg, but with the sweep deleted these
+  # calls DO reach it (D034's shape), so they run only where the binary exists
+  # and their evidence is local-only (the milestone's evidence note; T5).
+  skip_if_no_ffmpeg()
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  for (cell in blame_specs_m65(make_input())) {
+    if (!isTRUE(cell$needs_ffmpeg)) next
+    expect_blames_verb_m65(cell)
+  }
+})
+
 test_that("both forms refuse the same value with the same guard", {
   # AC2: compared cell-for-cell rather than asserted independently, so a fix
   # landing on one form only is red here even when both forms abort.

@@ -284,8 +284,8 @@
   against `format`, an argument name these verbs do not have, and now names
   `pixel_format`. On the two `_batch` verbs gaining a sweep, a call that is
   also wrong about `hardware = "nvenc"` — the machine lacks the encoder — is
-  now told about the bad value first, as `crop_video_batch()` has answered for
-  its `width` and `height` since the last development cycle.
+  now told about the bad value first, the same answer `crop_video_batch()`
+  gives for its `width` and `height`.
 
 * An input file that does not exist is now reported against the verb you
   called. Every `_batch` verb used to accept a `jobs` table naming a missing

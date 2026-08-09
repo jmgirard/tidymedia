@@ -14,7 +14,8 @@
 # again here (see the milestone's Decisions).
 #
 # The cells come from blame_specs() in helper-blame-specs.R -- one declaration
-# shared with data-raw/blame-baseline.R and data-raw/blame-precedence.R.
+# shared with data-raw/blame-baseline.R, the list's one other consumer (the
+# other data-raw scripts declare no cell list of their own).
 # blamed_verb() and catch_call() come from helper-blame.R.
 #
 # Nothing here needs FFmpeg: every probe runs at `run = FALSE` and every cell
@@ -121,9 +122,11 @@ test_that("both forms refuse the same value with the same guard", {
     msgs <- vapply(group, function(cell) {
       conditionMessage(catch_call(cell$verb, cell$args))
     }, character(1))
-    # The verb's own name legitimately differs between the forms; the guard's
-    # sentence must not.
-    normalized <- unique(sub("^.*?(must be [^\n]*).*$", "\\1", msgs))
-    expect_length(normalized, 1L)
+    # The messages carry no verb name, so the WHOLE message must match across
+    # forms -- bullets included, which is what catches an `inclusive =`
+    # divergence between a scalar sweep and its batch sibling. The previous
+    # spelling normalized every message to one identical byte (base sub() has
+    # no lazy quantifier), comparing nothing (M64 review F12).
+    expect_length(unique(cli::ansi_strip(msgs)), 1L)
   }
 })

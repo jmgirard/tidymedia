@@ -1402,14 +1402,16 @@ standardize_video <- function(infile, outfile,
   if (!is.null(width)) check_dim(width)
   if (!is.null(height)) check_dim(height)
   if (!is.null(fps)) check_dim(fps)
-  # No front-door check for `audio_stream` here, deliberately. It would be the
-  # only guard on this verb reporting BEFORE width/height/fps/pixel_format and
-  # the audio codec, which standardize_pipeline() validates -- so a caller
-  # wrong about a dimension AND the track would be told about the track, which
-  # is exactly M41's precedence trap. pass_through_maps() carries the identical
-  # check with `call` resolving to this frame, so the blame is unchanged and
-  # the guard bought nothing (M42/M43: such a guard is unpinnable anyway). The
-  # BATCH sibling keeps its own, where it is load-bearing (M47 review F8).
+  # No front-door check for `audio_stream` here, deliberately. It would report
+  # BEFORE `pixel_format` and the audio codec, which the pipeline validates --
+  # so a caller wrong about one of those AND the track would be told about the
+  # track, which is exactly M41's precedence trap. That reasoning used to cite
+  # the pipeline for width/height/fps too; the sweep above is now their site,
+  # and it sits above this comment for exactly the same reason (M64).
+  # pass_through_maps() carries the identical check with `call` resolving to
+  # this frame, so the blame is unchanged and the guard bought nothing
+  # (M42/M43: such a guard is unpinnable anyway). The BATCH sibling keeps its
+  # own, where it is load-bearing (M47 review F8).
 
   ffm_finish(
     standardize_pipeline(infile, outfile, width, height, fps, video_codec,
@@ -1424,10 +1426,12 @@ standardize_video <- function(infile, outfile,
 
 # Shared standardization pipeline for standardize_video() and
 # standardize_video_batch(): build one single-output re-encode pipeline for a single
-# input. Both verbs compile identical commands from this helper, so per-value
-# validation (dimensions via check_dim, codec/pixfmt via check_token) and M12's
+# input. Both verbs compile identical commands from this helper, and M12's
 # guards (audio stream-copy, even-dimension safeguard, +faststart) live here
-# once -- the batch sibling inherits them by construction (D002, D003, D007).
+# once (D002, D003, D007). The per-value checks no longer ride the pipeline:
+# each verb sweeps its dimensions and pixel format at its own front door --
+# per row on the batch verb -- so a bad value blames the verb (M64), and the
+# codec seams below re-check their tokens with `call` threaded.
 standardize_pipeline <- function(input, output, width, height, fps, video_codec,
                                  audio_codec = "copy", pixel_format,
                                  hardware = "none", fallback = FALSE,

@@ -139,6 +139,7 @@ Layer-1 error, correctly.
 - 2026-08-08: T8 AC6 sweep — the criterion's grep matched 254 sites; six retained the inherited-from-the-builder claim (the crop and sample pipeline headers, standardize_pipeline's dim comment, both batch verbs' column-guard comments, and crop_video_batch's roxygen intro) and were rewritten, man/ regenerated. No `@param` text named a refuser, so the roxygen half of T8 is that one intro.
 - 2026-08-08: T8 NEWS entry + M64-D3 citation table; the "one wording in both forms" sentence was cut rather than cited (the both-forms test normalizes the names away, so no AC5 mutation reds it); a value-before-nvenc ordering test and the `pixel_format` arg-name pin were added so the remaining sentences cite observed reds; harness re-run, all 15 red. D042 records the sweep-over-`call`-threading rule. `devtools::check()` Status: OK, 0/0/0.
 - 2026-08-08: amendment return: AC1 — "Every script that consumes the spec list reads it from this helper in the source tree — `data-raw/blame-baseline.R` is the one consumer — and no second copy of the list exists anywhere; the AC4 and AC5 scripts declare no cell list of their own." The drafted sentence had all three evidence scripts reading the helper, written before T5/T7 existed to show two of them consume no cell list (one declares crossings, one derives sites from the diff, in Python). Same commit corrects the helper header, which named `blame-precedence.R` as a reader it never was. Re-review resumes immediately.
+- 2026-08-08: review round 1 (defect return #1): five findings scored ≥80 — two AC6 sites retaining the falsified pipeline-validates claim (F1/F2), a stale consumer claim in the grid test header (F3), a false NEWS clause (F9), and a vacuous both-forms comparison (F12, AC2's enforcing test) — all fixed in the same session; ten findings logged below threshold. Post-fix: grid 329/0, suite 0/5265, check 0/0/0.
 
 ## Decisions
 
@@ -211,3 +212,17 @@ _Review of 2026-08-08 on branch commit 0e8b7d1 (PR #67), merge-base 194e11f. No 
 - AC7: M64-D3 cites each NEWS sentence's enforcing test; `devtools::test()` 0 failed / 5265 passed; `devtools::check()` Status: OK, 0 errors / 0 warnings / 0 notes.
 
 Consistency gate: `cairn_validate` all checks pass; `devtools::document()` produces no diff; `pkgdown::check_pkgdown()` clean; NEWS entry present with no milestone numbers; no new top-level files; no DESIGN.md principle changed (`cairn_impact` skipped).
+
+### Round 1 — independent review (2026-08-08)
+
+Three fresh-context reviewers ([O] diff-bug, [S] blame-history, [S] prior-review-record): blame-history and prior-review-record returned zero findings (the latter's probe-gated GitHub check, run orchestrator-side: zero inline review comments repo-wide); the diff-bug reviewer returned 15. The [S] scorer actioned five at ≥80, all fixed on the branch this round:
+
+- F1 (85, fixed): `standardize_video()`'s audio_stream comment still claimed the pipeline validates width/height/fps — rewritten to cite the front-door sweep, keeping M47-F8's reasoning.
+- F2 (82, fixed): `standardize_pipeline()`'s header still claimed per-value validation lives there and the batch sibling inherits it by construction — rewritten.
+- F3 (85, fixed): the grid test's header still named `blame-precedence.R` a spec-list consumer — the copy the AC1 amendment commit missed; corrected.
+- F9 (85, fixed): NEWS claimed `crop_video_batch()` answered this way "since the last development cycle" — M59 and M64 ship in the same release, so no such cycle exists for the reader; reworded present-tense.
+- F12 (85, fixed): the both-forms normalization mapped every message to one identical byte (base `sub()` has no lazy quantifier), so AC2's same-guard comparison compared nothing — replaced by whole-message comparison, which also catches an `inclusive =` divergence between forms.
+
+Logged below threshold (IP3), not actioned: F5 (78) the harness's controls-neutered check passes vacuously if Rscript crashes (the sibling direction fails safe); F10 (72) the precedence crossing list has asymmetric omissions (S1 codec-token, S2 x-column, S6 outdir/interval-type), none of which would flip a winner; F11 (62) the nvenc-ordering test carries no guard-liveness control; F4 (25) `check_dim()`'s NA crash is pre-existing, relocated not introduced; F6 (48) `sh()` blindness mislabels a broken toolchain, fails safe; F7 (55) the baseline/precedence usage docs say `origin/master` where the ACs say merge-base, equal today; F8 (42) `blame_moves()` NA-call garbage row, unobservable with today's checkers; F13 (55) the `pixel_format = NULL` message rename sits outside the Deviations table because no cell probes NULL; F14 (42) the completeness reader is stricter than AC1's disjunction; F15 (35) `winner_of()` first-match fragility with no overlapping markers today.
+
+Round-2 evidence after the fixes: grid 329 expectations / 0 failed; AC6 re-grep — the falsified-claim phrasings match nowhere (the remaining "live here" matches are anonymize/segment sites outside M64's arguments); full suite 0 failed / 5265 passed; `devtools::check()` Status: OK, 0/0/0.

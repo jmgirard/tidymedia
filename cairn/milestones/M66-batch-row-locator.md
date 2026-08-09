@@ -104,7 +104,7 @@ first-offender here) — not attempted; disclosed in the triage.
       marker-list check of AC2.
 - [x] T3. Thread it through the value-checker sweeps (M64/M65 families),
       converting value-loops to index loops.
-- [ ] T4. Thread it through the M58/M59 contradiction and rlang sweeps and
+- [x] T4. Thread it through the M58/M59 contradiction and rlang sweeps and
       the shared per-cell column helpers (index-preserving `which()` rework
       at `check_batch_codec_col()`).
 - [ ] T5. Extend the blame grids/spec lists with a row-≥-2 cell per swept
@@ -165,6 +165,13 @@ first-offender here) — not attempted; disclosed in the triage.
   equality test now compares after strip_row_locator() and asserts each batch
   column cell carries the locator and every other cell does not (T5 part);
   suite 0 fail, 5637 pass.
+- 2026-08-08: T4 done — locator on the M58/M59 sweeps (segment reencode pair,
+  compare needs-audio/resize/audio-bound, pip needs-audio/margin/audio,
+  separate hardware) and the shared helpers (vocab col; codec col token loop
+  reworked to which(); extract_frame finite/whole checks). compare's
+  audio-bound and resize locators are unconditional: the per-row input count
+  makes those refusals row-dependent even argument-delivered (measured).
+  Suite 0 fail, 5637 pass.
 
 ## Decisions
 

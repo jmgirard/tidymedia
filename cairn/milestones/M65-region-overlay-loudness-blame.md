@@ -1,6 +1,6 @@
 # M65: A region, overlay or loudness mistake names the verb the user called, in both forms
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M64
 - **Driving RR:** —
@@ -120,7 +120,7 @@ today is the path CI cannot check; T5 records the local run.
       refs; write the reordering table.
 - [x] T7: `data-raw/blame-guard-mutations-m65.py` — diff-derived list, split
       Layer-1/Layer-2 redness targets, reader/control mutations.
-- [ ] T8: AC7 sweep and corrections; NEWS entry + citation table; D-entry
+- [x] T8: AC7 sweep and corrections; NEWS entry + citation table; D-entry
       recording that a cheap value refusal precedes the analysis probe.
 
 ## Decisions
@@ -147,6 +147,19 @@ today is the path CI cannot check; T5 records the local run.
   beside-`check_regions()` slot. The alternative placement diverged on
   `color`/`pixel_format` instead, two knobs rather than one.
 
+- **M65-D2 (2026-08-08): NEWS citation table.** Each sentence of the M65 NEWS
+  entry, and the test whose redness `data-raw/blame-guard-mutations-m65.py`'s
+  run demonstrates (AC7):
+
+  | NEWS sentence (by claim) | test AC6's run reddens |
+  |---|---|
+  | "refused by the function you called" + the builder/`pmap` history | `test-builder-blame-front-door.R` "a region, overlay or loudness value blames the verb the user called" — red under each of the six Layer-2 site deletions |
+  | `_batch` refusal in both deliveries, before any row runs | the same test's `/arg` and `/column` cells — red under the three batch-site deletions |
+  | two-pass target refused before the analysis pass | `test-builder-blame-front-door.R` "a two-pass loudness value blames the verb, before the analysis pass" — red under the `normalize_audio` site deletion |
+  | non-numeric `scale` complaint unchanged; new refusal is range-grain | the AC5 type/range cell pairs (each asserting the other's wording absent) — range cells red under the two `picture_in_picture` site deletions; type cells pinned |
+  | bad value outranks a missing nvenc encoder | `test-builder-blame-front-door.R` "a bad region or scale value reports before a missing nvenc encoder" |
+  | one shared definition per range; docs cannot drift | `test-shared-range-bindings.R` (both tests) — red under the two Layer-1 site deletions; the roxygen bounds render from the same bindings at `document()` time |
+
 ## Work log
 
 - 2026-08-08: created by /milestone-plan.
@@ -155,6 +168,7 @@ today is the path CI cannot check; T5 records the local run.
 - 2026-08-08: T2 done — `loudnorm_bounds_rd()` inline helper; `normalize_audio()`'s AND `ffm_loudnorm()`'s roxygen bounds now render from the bindings (same helper, same words; only source line-wrap moved). `document()` stable after the commit.
 - 2026-08-08: T3 done — `helper-blame-specs-m65.R` (30 cells: 8 region row/field-varied, 8 scale incl. AC5's type/range pairs, 12 loudness with the scalar `two_pass` axis, + reader) and the M64 grid extended with four M65 blocks; observed red on blame before the sweeps (builder/pmap blamed), as declared.
 - 2026-08-08: T4 done — region sweep via `check_region_values()` in `anonymize_pipeline()` (call threaded) + per cell at the batch front door; `check_overlay_scale()` in `picture_in_picture_pipeline()` below the contradiction/position checks (M61 ordering) + per resolved row at the batch front door above the nvenc probe.
+- 2026-08-08: T8 done — AC7 sweep over the 237 grep matches: seven stale validating-site claims corrected (drawbox-loop and pipeline-loudnorm comments, batch list-column and knob-loop comments, three test comments/titles); NEWS entry added with M65-D2's per-sentence citation table (plus a new nvenc-ordering test backing its ordering sentence); D043 appended. `devtools::test()` 0 fail / 5581 pass; `devtools::check()` 0 errors / 0 warnings / 0 notes. Status → review.
 - 2026-08-08: T7 done — mutation harness run clean, 11/11 required reds: 8 diff-derived sites (2 Layer-1 reddening AC1's builder probes only, 6 Layer-2 reddening their own verbs' grid cells only), the neutered reader caught by the planted-defect test, the removed `check_bool(two_pass)` guard reported dead by the controls and the report vanishing when the control check itself is neutered. Tree restored (git status clean).
 - 2026-08-08: T6 done — `data-raw/blame-precedence-m65.R` (113 crossings over the six sweeps, `two_pass` axis on the normalize verbs; reuses M64's runner via a new `cells` parameter on `blame_precedence()`); both refs clean of dead controls and unresolved cells; 22 flips recorded as M65-D1's table. No scale-type crossing: one scalar cannot be non-numeric and out-of-range at once, so its control could never be live — AC5's grid cells carry that distinction.
 - 2026-08-08: T5 done — `check_loudnorm_targets()` above `normalize_audio()`'s `two_pass` block and per resolved row above `normalize_audio_batch()`'s, below `check_batch_inputs()`. Local FFmpeg run (ffmpeg 8.1.2, macOS): full suite 0 fail / 5579 pass / 5 skips, none of them the two-pass blame block — the `two_pass = TRUE` cells executed and passed.

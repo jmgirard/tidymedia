@@ -185,6 +185,30 @@ test_that("a two-pass loudness value blames the verb, before the analysis pass",
   }
 })
 
+test_that("a bad region or scale value reports before a missing nvenc encoder", {
+  # M65's slice of the M64-D2 reordering (D036): on the two `_batch` verbs
+  # whose new sweep sits above check_nvenc_available(), a value wrong on every
+  # machine outranks an encoder missing on this one. The encoder pool is EMPTY,
+  # so the nvenc abort is live on both calls and losing is the finding.
+  # (normalize_audio_batch() has no hardware argument, so it has no such cell.)
+  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  input <- make_input()
+
+  cnd <- catch_call("anonymize_video_batch", list(
+    jobs = tibble::tibble(
+      input = input, output = "o.mp4",
+      regions = list(data.frame(x = 0, y = 0, width = 0, height = 10))),
+    hardware = "nvenc"))
+  expect_match(conditionMessage(cnd),
+               "`width` must be a single FFmpeg expression")
+
+  cnd <- catch_call("picture_in_picture_batch", list(
+    jobs = tibble::tibble(main = input, overlay = input, output = "o.mp4"),
+    scale = 2, hardware = "nvenc", video_codec = "libx264"))
+  expect_match(conditionMessage(cnd),
+               "`scale` must be greater than 0 and at most 1")
+})
+
 test_that("both forms refuse the same value with the same guard", {
   # AC2: compared cell-for-cell rather than asserted independently, so a fix
   # landing on one form only is red here even when both forms abort.

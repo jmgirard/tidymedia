@@ -1660,7 +1660,8 @@ anonymize_pipeline <- function(input, output, regions, color, video_codec,
   } else {
     rep(color, nrow(regions))
   }
-  # One filled drawbox per region; ffm_drawbox() validates each x/y/w/h.
+  # One filled drawbox per region; the values were swept above (M65), and
+  # ffm_drawbox() still checks its own direct callers.
   for (i in seq_len(nrow(regions))) {
     p <- ffm_drawbox(
       p,
@@ -1891,9 +1892,8 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   }
   # The regions column is a list-column (one boxes data frame per row); a flat
   # column can't hold per-row tables, so reject it here with a clear message
-  # rather than as an opaque per-row abort. Each cell's structure is validated
-  # per row by check_regions() inside anonymize_pipeline() (inherited, reported
-  # by row index via purrr; M13 extract-first lesson).
+  # rather than as an opaque per-row abort. Each cell's structure and values
+  # are checked at this front door below (M59 structure, M65 values).
   if (!is.list(jobs$regions) || is.data.frame(jobs$regions)) {
     cli::cli_abort(c(
       "The {.field regions} column of {.arg jobs} must be a list-column.",
@@ -2269,7 +2269,8 @@ normalize_audio_pipeline <- function(input, output,
   # that does not exist, and the compiled command is the product (D001).
   p <- ffm_map(p, audio_stream_map(audio_stream, null_map = "0:a:0",
                                    call = call))
-  # Loudness: EBU R128 loudnorm; ffm_loudnorm() validates the target ranges. With
+  # Loudness: EBU R128 loudnorm. The target ranges were swept at the verbs'
+  # front doors (M65); ffm_loudnorm() still checks its own direct callers. With
   # `measured` (the two-pass correction path), feed the analysis-pass values back
   # and switch to linear normalization so the target is hit precisely (M16).
   if (is.null(measured)) {
@@ -4255,9 +4256,9 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
 
   # Validate present override columns up front so a bad column fails clearly
   # here rather than as an opaque FFmpeg error mid-batch (M11 parity lesson).
-  # Value-level checks (loudness ranges, whole channels/sample_rate) are
-  # inherited per row from normalize_audio_pipeline()'s ffm_loudnorm() and
-  # check_number_whole() guards.
+  # The loudness RANGES are swept per resolved row further down this front
+  # door (M65); whole-number channels/sample_rate values stay inherited per
+  # row from normalize_audio_pipeline()'s check_number_whole() guards.
   knob_cols <- c("target_loudness", "true_peak", "loudness_range",
                  "channels", "sample_rate")
   for (col in intersect(knob_cols, names(jobs))) {

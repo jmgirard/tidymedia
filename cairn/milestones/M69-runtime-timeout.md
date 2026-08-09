@@ -1,6 +1,6 @@
 # M69: A hung media program stops the call, not the session
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -40,7 +40,7 @@ naming the program and the limit. A D-entry records the shape.
       limit to its `timeout=` argument.
 - [x] AC2 With `tidymedia.timeout` unset, the resolver returns `0`, and each of
       the four sites named in AC1 therefore passes `timeout = 0`.
-- [x] AC3 With `options(tidymedia.timeout = 2)`, `ffmpeg()`, `ffprobe()` and
+- [ ] AC3 With `options(tidymedia.timeout = 2)`, `ffmpeg()`, `ffprobe()` and
       `ffm_run()` each abort within 10 wall-clock seconds on a command that
       would otherwise run for 120 s, and each abort names the program and the
       limit in seconds. `mediainfo()` is covered by AC1 and the AC2 resolver
@@ -134,6 +134,8 @@ naming the program and the limit. A D-entry records the shape.
 - 2026-08-09: review — PR #72 opened as draft; fresh evidence recorded for AC1-AC10 and all ten boxes ticked against it; consistency gate green (`cairn_validate` exit 0, 16 PASS + 1 advisory on the 10-AC sizing tripwire; `cairn_impact` no-op, no principle touched).
 - 2026-08-09: review — [S] blame-history lens: no resurrected bug, contradicted D-entry or weakened guard; one nuance to score (Layer 0 re-raised warnings lose the original condition's call context via `warning(msg, call. = FALSE)`). [S] prior-review lens: no prior-review regression; GitHub inline-comment probe empty, threads not walked. [O] diff-bug lens still running — triage and scoring pending.
 
+- 2026-08-09: review RETURN -> in-progress. What failed: (1) F1, `probe_all()` aborts on a timeout instead of yielding an NA row, falsifying its own `@return` and D047's readers bullet (measured: `purrr_error_indexed`, `tidymedia_timeout` only as `$parent`); (2) F15, AC3 unverified as written — tests assert `expect_lt(..., 20)` against the criterion's 10 s, the ffprobe test omits the limit, the ffm_run test has no wall-clock assertion; (3) F3, `mediainfo_parameter()` aborts mid-loop against its `@return`; (4) F7, Layer 0 timeouts leave a playable truncated output (measured 107 s of a 600 s source) while `?tidymedia` and NEWS.md say the partial file is removed. AC3 unticked; AC1/AC2/AC4-AC10 evidence stands.
+
 ## Decisions
 
 ## Review
@@ -179,4 +181,69 @@ Principles touched is `—`. Toolchain slot: `document()` no diff · generated
 files unedited · README untouched, in sync · `pkgdown::check_pkgdown()` no
 problems · NEWS.md entry present with no milestone or decision ids in
 user-facing text · no new top-level files · `check()` clean.
+
+**Independent review — 3 lenses, 20 findings, scored by a fourth agent.**
+[S] blame-history: no resurrected bug, contradicted D-entry or weakened guard
+(`input = ""` untouched, the D046 snapshot ordering preserved,
+`guard_timeout(suppress = TRUE)` net-equivalent to the `suppressWarnings()` it
+replaced). [S] prior-review: no prior-review regression; the GitHub inline-
+comment probe returned empty so PR threads were not walked. [O] diff-bug: 20
+findings, four scoring >=80.
+
+**Actioned (>=80).** All four verified independently before triage:
+
+- **F1 (90) — `probe_all()` aborts on a timeout instead of returning an NA
+  row.** `probe_one()` calls `run_program()` with no handler and `probe_all()`
+  maps it bare, so the error propagates. Measured:
+  `probe_all(c(good, fifo, good))` under a 2 s limit died with
+  `purrr_error_indexed`, and `tryCatch(..., tidymedia_timeout = )` does not fire
+  because the class survives only as `$parent`. Falsifies `probe_all()`'s
+  `@return` and D047's "the readers absorb it exactly as they absorb any other
+  error ... a `probe_all()` row reads 'unreadable'". A 500-file corpus with one
+  hung file loses every other file's result. **Fix now.**
+- **F15 (88) — AC3 is not verified as written.** The criterion says "within 10
+  wall-clock seconds"; the tests assert `expect_lt(..., 20)`. The criterion says
+  each abort "names the program and the limit"; the `ffprobe()` test checks only
+  `"FFprobe"`, and the `ffm_run()` test never asserts `"2 seconds"` and carries
+  no wall-clock assertion at all. **Fix now** (the criterion is right, the tests
+  are wrong -- a defect return, not an amendment).
+- **F3 (85) — `mediainfo_parameter()` aborts mid-loop on a timeout**, discarding
+  the partially filled result, where its `@return` promises a warning rather
+  than an abort for unreadable files. **Fix now.**
+- **F7 (85) — the Layer 0 hatches leave a silently truncated output, and the
+  docs say otherwise.** `remove_failed_output()` is wired only into `ffm_run()`.
+  Measured: a `ffmpeg()` timeout under a 3 s limit left a **playable 107-second
+  MP4** from a 600-second source (620,527 bytes) -- an output that looks
+  complete. `?tidymedia` ("Every tidymedia call that touches FFmpeg, FFprobe or
+  MediaInfo ... that partial file is removed") and NEWS.md ("any partial output
+  the killed run had written is removed") are both false on that branch.
+  **Fix now** -- either wire the cleanup or narrow the claim.
+
+**Logged, below the 80 threshold (16).** F4 (78) the re-raised timeout's `call`
+resolves to the `try_fetch` handler frame, so the abort reads
+``Error in `handlers[[1L]]()` `` and no `parent` is chained; F8 (78) the new
+`@section` was inserted before the trailing prose, so roxygen absorbed the
+vignette-pointer paragraph into it (confirmed in the rendered Rd); F17 (72)
+held warnings are replayed as fresh `simpleWarning`s, losing the original
+condition's class and call (raised independently by the blame lens); F5 (70)
+`resolve_timeout()` has no upper bound, so `3e9` passes and base R then errors
+`invalid 'timeout' argument`; F2 (65) `tidymedia_timeout` does not survive
+`probe_all()`'s purrr wrapper; F6 (65) `guard_timeout()` drops held warnings if
+`expr` errors; F16 (60) the `expect_no_match(msg, tempdir())` assertion is
+near-tautological; F12 (55) the test named "each site resolves a limit of 0" is
+a verbatim duplicate of the resolver test and touches no spawn site; F14 (55)
+the "control" test calls `system2()` directly, bypassing every package
+function, so its stated control property cannot hold; F9 (45) a malformed
+option is absorbed silently by `ffm_batch()` and `count_audio_streams()`;
+F13 (38) the AC1 test is a source-text grep; F18 (38) `Inf` is refused;
+F20 (35) the "byte-for-byte" comment overstates; F10 (30) program-name casing
+differs between the reader and Layer 0 paths; F11 (25) three tests are named
+`timeout_status()` for a function called `is_timeout()`; F19 (22) a stale
+comment says `expr` is evaluated "inside the handler".
+
+**Return.** Two independent triggers: F1 scores >=90 on a defect in what the
+package does for its users, and F15 demonstrates AC3 failing as written. Status
+back to `in-progress`; AC3 unticked. First defect return for M69 -- the thrash
+rule's trigger (a) (third return) and trigger (b) (same AC twice) are both
+unfired.
 

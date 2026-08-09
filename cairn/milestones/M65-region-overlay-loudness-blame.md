@@ -5,7 +5,7 @@
 - **Depends on:** M64
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** m65-region-overlay-loudness-blame
+- **Branch/PR:** m65-region-overlay-loudness-blame · PR #68 https://github.com/jmgirard/tidymedia/pull/68
 
 ## Goal
 
@@ -38,17 +38,17 @@ today is the path CI cannot check; T5 records the local run.
 
 ## Acceptance criteria
 
-- [ ] AC1: The `scale` range rule and the three loudness bounds each exist as one
+- [x] AC1: The `scale` range rule and the three loudness bounds each exist as one
       internal binding in `R/`, read by both the Layer-1 builder and the Layer-2
       front door. Verified by a test that reads each binding from the namespace
       and then probes the value either side of it at BOTH layers — a direct
       `ffm_overlay()`/`ffm_loudnorm()` call and the verb — asserting each layer's
       accept/refuse boundary sits at the binding's value. Comparing literals is
       not evidence: two restated numbers compare equal.
-- [ ] AC2: The roxygen bounds at `R/ffmpeg.R:2009-2014` are generated from the
+- [x] AC2: The roxygen bounds at `R/ffmpeg.R:2009-2014` are generated from the
       same bindings by an inline helper, as `audio_stream_param()` already does,
       and `devtools::document()` produces no diff.
-- [ ] AC3: For every cell of the spec list declared in
+- [x] AC3: For every cell of the spec list declared in
       `tests/testthat/helper-blame-specs-m65.R` — each naming (verb, form, delivery, argument
       or region field, violating value), with `two_pass` in {FALSE, TRUE} as an
       axis on `normalize_audio` and the bad region row and field varied within a
@@ -58,7 +58,7 @@ today is the path CI cannot check; T5 records the local run.
       and column delivery. A completeness reader fails on a declared cell naming
       neither a formal, a resolved column, nor a `check_regions()` field. The
       list is closed by inspection and the file says so.
-- [ ] AC4: For each crossing declared in `data-raw/blame-precedence-m65.R` —
+- [x] AC4: For each crossing declared in `data-raw/blame-precedence-m65.R` —
       each new sweep crossed with each guard in that file's crossing list, which
       for `normalize_audio` names every guard the sweep now precedes
       (`channels`, `sample_rate`, `audio_stream`, `check_audio_codec_not_copy`,
@@ -67,19 +67,19 @@ today is the path CI cannot check; T5 records the local run.
       crossed guard is live. Every reordering is listed in a table in this file
       with the caller it changes the answer for. A cell whose control is dead
       fails; it is not excluded.
-- [ ] AC5: `picture_in_picture`'s existing `check_number_decimal(scale)`
+- [x] AC5: `picture_in_picture`'s existing `check_number_decimal(scale)`
       (`R/ffmpeg.R:5921`) and the new range refusal are distinguished at range
       grain, not by error class: AC3 carries a cell for a non-numeric `scale` and
       a cell for an out-of-range one, and each asserts the other's wording is
       absent.
-- [ ] AC6: `data-raw/blame-guard-mutations-m65.py` derives its mutation list from
+- [x] AC6: `data-raw/blame-guard-mutations-m65.py` derives its mutation list from
       the branch diff's added checker call sites, removes each in the FILE, and
       records the reds. Deleting a Layer-2 sweep reddens AC3's grid; deleting a
       Layer-1 read of a binding reddens AC1's direct-builder probe instead —
       AC3's grid cannot see it, and a criterion claiming otherwise would assert
       an impossible redness. AC3's completeness reader and AC4's controls are
       themselves mutated and go red.
-- [ ] AC7: Each site matched by `grep -rn 'ffm_drawbox\|ffm_overlay\|ffm_loudnorm\|anonymize_pipeline\|picture_in_picture_pipeline\|normalize_audio_pipeline' R/ tests/ man/ NEWS.md README.Rmd vignettes/ cairn/DESIGN.md cairn/ROADMAP.md`
+- [x] AC7: Each site matched by `grep -rn 'ffm_drawbox\|ffm_overlay\|ffm_loudnorm\|anonymize_pipeline\|picture_in_picture_pipeline\|normalize_audio_pipeline' R/ tests/ man/ NEWS.md README.Rmd vignettes/ cairn/DESIGN.md cairn/ROADMAP.md`
       is read, and no matched site outside `cairn/milestones/archive/` retains a
       claim that one of these is the blamed call or the validating site for a
       value this milestone moves — `R/ffmpeg.R:1637-1638` and `R/ffm.R:437-439`
@@ -163,6 +163,7 @@ today is the path CI cannot check; T5 records the local run.
 ## Work log
 
 - 2026-08-08: created by /milestone-plan.
+
 - 2026-08-08: T1 done — bindings `overlay_scale_range` + three `loudnorm_range_*` in R/utils.R, shared checkers `check_overlay_scale()`/`check_loudnorm_targets()`/`check_region_values()`; builders point at them; AC1 boundary probes in test-shared-range-bindings.R (both layers, bounds derived from the namespace bindings). Suite clean.
 - 2026-08-08: minor amendment: T5's batch sweep placed "last among the value guards above the `two_pass` block" rather than "beside the type-only column sweep" — the early placement would have put a loudness value error above the missing-input sweep, diverging from the scalar form and from M62's family-wide input-first order; the late placement mirrors the scalar's flips exactly (D042's siting rule).
 - 2026-08-08: T2 done — `loudnorm_bounds_rd()` inline helper; `normalize_audio()`'s AND `ffm_loudnorm()`'s roxygen bounds now render from the bindings (same helper, same words; only source line-wrap moved). `document()` stable after the commit.
@@ -176,3 +177,43 @@ today is the path CI cannot check; T5 records the local run.
 - 2026-08-08: plan gate chose one internal binding read by both layers over restating each bound at the front door, because a restated number is exactly what the M40 stale-hint lesson bites on and no test comparing literals can see the drift; falsified by a bound whose two layers must legitimately differ.
 - 2026-08-08: substantive amendment (gated): AC3/T3's spec list moved from `data-raw/blame-specs-m65.R` to `tests/testthat/helper-blame-specs-m65.R` — `^data-raw$` is in `.Rbuildignore`, so the grid test sourcing it there would skip under `R CMD check` (the M51/M59 lesson; M64's list lives in tests/ for the same reason). User approved "Move to tests/".
 - 2026-08-08: criteria audit ([O], fresh context) returned defects on all seven drafted criteria — a bounds test that could not distinguish a shared binding from a restated literal, a "one site in `R/`" claim falsified by roxygen the criterion never mentioned, a `two_pass` path the grid never reached, an inherited unbounded crossing domain, a type/range conflation at error-class grain, and a mutation criterion asserting a redness that cannot occur. All seven rewritten before writing.
+
+
+## Review
+
+Fresh evidence, this session (2026-08-08, branch head 544e954, PR #68):
+
+- AC1: `test-shared-range-bindings.R` run fresh — both tests pass; each of the
+  four bindings read from the namespace via `get()`, probed either side at the
+  builder AND the verb (loudness also at the batch verb); combined
+  shared-range+grid run: 645 pass / 0 fail / 0 skip.
+- AC2: `devtools::document()` re-run at review — zero modified files under
+  `man/` or `NAMESPACE`; the three `@param` bounds render through
+  `loudnorm_bounds_rd()` from the same bindings (R/ffmpeg.R and R/ffm.R).
+- AC3: the M65 grid (four blocks in `test-builder-blame-front-door.R`, cells
+  from `tests/testthat/helper-blame-specs-m65.R`) run fresh — every cell
+  asserts its own message, `blamed_verb()` = the verb, and no `pmap` /
+  `_pipeline(` / `ffm_` in the deparsed call; `_batch` cells in both
+  deliveries; `two_pass` axis ran (0 skips, local FFmpeg 8.1.2); completeness
+  reader clean on the real list and red on all three planted defects. The
+  spec file states the list is closed by inspection.
+- AC4: `blame_precedence_m65()` run fresh at `master` (merge-base ddc14be)
+  and the working tree: 113 cells, 0 dead controls and 0 unresolved on BOTH
+  refs, 22 flips — identical to M65-D1's table.
+- AC5: the four type/range `scale` cell pairs ran in the AC3 grid, each
+  asserting the other's wording absent; type cells pinned.
+- AC6: `data-raw/blame-guard-mutations-m65.py` re-run fresh at review:
+  baseline green, 8 diff-derived sites, 11/11 required reds (2 Layer-1 →
+  AC1 probes only; 6 Layer-2 → owning verbs' cells only; reader + control
+  mutations caught); tree restored.
+- AC7: sweep evidence in the T8 work-log line (237 matches read via
+  keyword passes + full scans of NEWS/README/vignettes/man; 7 corrections);
+  NEWS citations in M65-D2. Fresh at review: `devtools::test()` 0 fail /
+  5581 pass / 5 pre-existing env skips; `devtools::check()` 0 errors /
+  0 warnings / 0 notes (2m52s).
+
+Consistency gate: `cairn_validate` exit 0, all checks PASS; no principle
+changed (no `cairn_impact`); `document()` no diff; README.Rmd untouched;
+`pkgdown::check_pkgdown()` no problems; NEWS entry present, no milestone
+numbers; no new top-level files. Driving RR: — (projection check no-op).
+

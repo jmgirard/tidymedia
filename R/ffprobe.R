@@ -18,7 +18,12 @@
 #' @export
 ffprobe <- function(command) {
   rlang::check_string(command)
-  out <- system(glue('"{find_ffprobe()}" {command}'), intern = TRUE)
+  limit <- resolve_timeout()
+  out <- guard_timeout(
+    "FFprobe", limit,
+    system(glue('"{find_ffprobe()}" {command}'), intern = TRUE,
+           timeout = limit)
+  )
   out
 }
 

@@ -86,7 +86,7 @@ naming the program and the limit. A D-entry records the shape.
 - [x] T1 Add the resolver (`resolve_timeout()`, new or in `R/utils.R`): reads
       `getOption("tidymedia.timeout", 0)`, validates it is a single
       non-negative number, returns `0` when unset. Tests first.
-- [ ] T2 Thread it into the three Layer 0 sites (`R/ffmpeg.R:28`,
+- [x] T2 Thread it into the three Layer 0 sites (`R/ffmpeg.R:28`,
       `R/ffprobe.R:21`, `R/mediainfo.R:26`) and into `run_program()`
       (`R/program_management.R:108-122`); add the shared timeout classifier
       that keys on `status == 124L` and is inert when the resolved limit is `0`.
@@ -115,6 +115,10 @@ naming the program and the limit. A D-entry records the shape.
 - 2026-08-09: implement gate chose giving the timeout abort a distinct `tidymedia_timeout` class while letting `count_audio_streams()` and `probe_one()` absorb it exactly as they absorb any other error today, over making those two readers re-raise it; re-raising would change `probe_all()`'s error contract and D024 licenses the dropped-track probe only while its outcome changes nothing but whether a warning fires. Falsified by a report of a bounded-but-silent hang inside `probe_all()` being the reported problem.
 - 2026-08-09: T1 — `R/timeout.R` adds `resolve_timeout()`, `is_timeout()` and `abort_timeout()`; 26 assertions in `tests/testthat/test-runtime-timeout.R`, all green.
 - 2026-08-09: criteria audit ([O] fresh-context reader) returned 8 findings — AC1 and AC4 backed universals with proxy enumerations (a `system2?\(` regex; a four-spelling hand-list), AC2 was unsatisfiable because that sweep hits a comment at `R/program_management.R:104`, AC4's "held warning text" was vacuous under `run_program()`'s existing `suppressWarnings()`, AC5 conflicted with D046's `overwrite = FALSE` guard (`cairn/DECISIONS.md:1930`) and miscounted D046's cases, AC7's `timed out after` match was defeated by the translated warning the criterion itself cited, and AC3/AC6 named no reachable instance for `mediainfo()` and for a genuine 124 exit. All 8 had one clear right answer and were fixed before the gate; none of the gate's four answers changed a criterion, so no criterion needed re-auditing.
+
+- 2026-08-09: T2 — `guard_timeout()` added; all four spawn sites resolve and pass the limit. `suppress=` follows each site's existing behavior (`run_program()` keeps its `suppressWarnings()` semantics; the three Layer 0 hatches keep letting a non-zero exit warn). Full suite FAIL 0 / PASS 6088 / SKIP 5.
+- 2026-08-09: T2 — the suite's 4 warnings are pre-existing `warn_dropped_audio()` calls, not M69's: a `master` worktree and the branch both report warn 4 / fail 0 / pass 195 over `test-audio-stream.R` + `test-ffmpeg.R`.
+- 2026-08-09: T1 mutation probe — 7 mutations of `R/timeout.R` each reddened the suite (1/3/3/1/1/1/1 failures), and the differing failure sets rule out M44's identical-set tell.
 
 ## Decisions
 

@@ -23,7 +23,12 @@ mediainfo <- function(command) {
   # Validate arguments
   rlang::check_string(command)
   # Look up mediainfo location and run it with command
-  system(glue('"{find_mediainfo()}" {command}'), intern = TRUE)
+  limit <- resolve_timeout()
+  guard_timeout(
+    "MediaInfo", limit,
+    system(glue('"{find_mediainfo()}" {command}'), intern = TRUE,
+           timeout = limit)
+  )
 }
 
 # mediainfo_parameter() ---------------------------------------------------

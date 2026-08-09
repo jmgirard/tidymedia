@@ -98,3 +98,68 @@ test_that("abort_timeout() names the option so the caller can raise it", {
   err <- expect_error(abort_timeout("FFmpeg", 30))
   expect_match(cli::ansi_strip(conditionMessage(err)), "tidymedia.timeout")
 })
+
+# The four spawn sites (AC1, AC2) ---------------------------------------------
+
+# The domain of AC1 is the four sites named in the milestone's Scope, not
+# "every spawn site" -- a source regex cannot enumerate that, and the plan's
+# criteria audit cut the universal for exactly that reason. These read the
+# functions' own bodies, so a site that stops passing the limit reddens here.
+
+timeout_site_bodies <- function() {
+  list(
+    ffmpeg    = tidymedia::ffmpeg,
+    ffprobe   = tidymedia::ffprobe,
+    mediainfo = tidymedia::mediainfo,
+    run_program = get("run_program", envir = asNamespace("tidymedia"))
+  )
+}
+
+test_that("each of the four spawn sites passes a resolved limit to timeout=", {
+  for (nm in names(timeout_site_bodies())) {
+    src <- paste(deparse(body(timeout_site_bodies()[[nm]])), collapse = "\n")
+    expect_match(src, "resolve_timeout(", fixed = TRUE,
+                 info = paste(nm, "must resolve the limit"))
+    expect_match(src, "timeout = limit", fixed = TRUE,
+                 info = paste(nm, "must pass it to timeout="))
+    expect_match(src, "guard_timeout(", fixed = TRUE,
+                 info = paste(nm, "must route through the shared guard"))
+  }
+})
+
+test_that("with the option unset, each site resolves a limit of 0", {
+  withr::local_options(tidymedia.timeout = NULL)
+  expect_identical(resolve_timeout(), 0)
+})
+
+test_that("guard_timeout() re-raises a non-timeout warning but drops it on a timeout", {
+  # Layer 0 has always let a non-zero exit warn; that must survive.
+  expect_warning(
+    guard_timeout("FFmpeg", 0, {warning("ordinary"); structure("x", status = 1L)}),
+    "ordinary"
+  )
+  # On a timeout the held warning is dropped -- it carries the command line and
+  # the input= temp path -- and replaced by the package's own message.
+  expect_error(
+    guard_timeout("FFmpeg", 2, {warning("secret /tmp/path"); structure("x", status = 124L)}),
+    "timed out"
+  )
+})
+
+test_that("guard_timeout(suppress = TRUE) discards warnings, as run_program() always has", {
+  expect_no_warning(
+    guard_timeout("x", 0, {warning("ordinary"); "ok"}, suppress = TRUE)
+  )
+})
+
+test_that("no warning at all escapes a timed-out guard (AC7, locale-free)", {
+  # Asserted as "no warning", never as a match on `timed out after`: R's warning
+  # text is translated under a non-English locale, so a text match would pass
+  # while the command line still leaked (M46).
+  expect_no_warning(
+    tryCatch(
+      guard_timeout("FFmpeg", 2, {warning("timed out after 2s"); structure("x", status = 124L)}),
+      error = function(e) NULL
+    )
+  )
+})

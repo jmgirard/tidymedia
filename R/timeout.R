@@ -69,3 +69,33 @@ abort_timeout <- function(program, limit, call = rlang::caller_env()) {
     call = call
   )
 }
+
+# guard_timeout(): the one wrapper every spawn site shares.
+#
+# Evaluates `expr` (a system()/system2() call, lazily, inside the handler),
+# holds every warning it signals, and turns a timeout kill into abort_timeout().
+#
+# Warnings are HELD rather than filtered in the handler because the timeout is
+# identified by the status, which is not known until the call returns -- the
+# same ordering constraint the test-side helper hit at M46. They are held
+# unconditionally and dropped on the timeout path, because R's timeout warning
+# carries the full command line and the `input=` temp path with it.
+#
+# `suppress` follows the site's EXISTING behavior rather than imposing one:
+# run_program() has always wrapped its system2() in suppressWarnings(), while
+# the three Layer 0 hatches have always let a non-zero exit warn. Changing
+# either would be a behavior change this milestone did not promise.
+guard_timeout <- function(program, limit, expr, suppress = FALSE,
+                          call = rlang::caller_env()) {
+  held <- character()
+  out <- withCallingHandlers(
+    expr,
+    warning = function(w) {
+      held <<- c(held, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  if (is_timeout(out, limit)) abort_timeout(program, limit, call = call)
+  if (!suppress) for (msg in held) warning(msg, call. = FALSE)
+  out
+}

@@ -33,7 +33,7 @@ first-offender here) — not attempted; disclosed in the triage.
 
 ## Acceptance criteria
 
-- [ ] AC1. Every column-delivered per-row value or contradiction refusal on
+- [x] AC1. Every column-delivered per-row value or contradiction refusal on
       the committed site list names the caller's 1-indexed jobs row. The site
       list is produced by enumerating every abort site reachable from each of
       the 15 `_batch` verbs' front doors before `ffm_batch()` — the recorded
@@ -45,7 +45,7 @@ first-offender here) — not attempted; disclosed in the triage.
       excluded with a stated reason; each swept site has a grid cell placing
       the bad value in a jobs column at a row other than 1 and asserting the
       refusal names that row.
-- [ ] AC2. Each swept refusal is its merge-base refusal plus one
+- [x] AC2. Each swept refusal is its merge-base refusal plus one
       first-offender locator bullet: per grid cell, removing the locator from
       the branch message yields the cell's merge-base message byte-for-byte.
       The locator wording is written at one new site, names the first
@@ -61,12 +61,12 @@ first-offender here) — not attempted; disclosed in the triage.
       `jobs` rather than the reshaped `long` table, a grid cell places the
       bad cell at caller row 2 (reshaped index 3) and asserts the message
       names 2 and never 3.
-- [ ] AC3. Nothing else moves: across the merge-base and the branch, every
+- [x] AC3. Nothing else moves: across the merge-base and the branch, every
       scalar-form grid cell's message is byte-identical, every cell (scalar
       and batch) blames the verb the user called with no `pmap` or
       `In index:` leak, and the precedence instruments re-run with zero
       flips — no call changes which error reports first.
-- [ ] AC4. The instruments stay honest: the cross-form equality test compares
+- [x] AC4. The instruments stay honest: the cross-form equality test compares
       scalar and batch messages after a locator-remover verified in both
       directions — two messages differing only in the row number compare
       equal, and two differing outside the locator (in the sentence preceding
@@ -76,7 +76,7 @@ first-offender here) — not attempted; disclosed in the triage.
       on any difference), mutates each swept site's row-index pass to the
       constant `1L`, each mutation caught red by that site's
       row-other-than-1 grid cell.
-- [ ] AC5. The r-package profile's verify slot clean: `devtools::test()` all
+- [x] AC5. The r-package profile's verify slot clean: `devtools::test()` all
       green and `devtools::check()` 0 errors / 0 warnings.
 
 ## Coverage
@@ -201,3 +201,38 @@ first-offender here) — not attempted; disclosed in the triage.
 ## Decisions
 
 ## Review
+
+Fresh evidence, 2026-08-08, branch m66-batch-row-locator @ PR #69:
+
+- AC1: `python3 data-raw/m66-derive-sites.py --check` → "triage in sync: 300
+  sites" (exit 0), triage committed with every hit dispositioned;
+  test-row-locator-grid.R green in the fresh suite run and the harness's
+  OWNER map covers all 24 swept wrapper sites with a row-≠-1 cell each (one
+  wrapper triaged excluded-backstop with stated reason, measured redding
+  nothing). Ticked.
+- AC2: two-ref runner over all 49 grid cells at master vs branch: 49/49
+  abort at both refs; 44/44 locator cells strip to the master message
+  byte-for-byte; 5/5 argument-delivered complements byte-identical
+  unstripped. Locator written once (check_batch_cell, R/utils.R); wording
+  contains no "index", no vector pluralization (unit tests); 48 instrument
+  markers enumerated, 0 match the rendered locator; reshape cell asserts
+  row 2 present and row 3 absent. Ticked.
+- AC3: blame baseline master→branch: 0 vacuous, 0 blame moves, 0 message
+  drift; 10/10 scalar cells byte-identical raw; M64 and M65 precedence
+  instruments both: 0 dead controls, 0 unresolved, 0 flips; grid asserts no
+  `pmap`/`In index:` leak per cell. Ticked.
+- AC4: strip_row_locator verified both directions (test-check-batch-cell.R,
+  fresh suite green); blame-guard-mutations-m66.py re-derives the site set
+  (refuses drift), mutates each of 24 row-index passes to 1L: 24/24 owned
+  reds on a clean tree. (An earlier same-session run crashed — the
+  blame-history reviewer had invoked the harness concurrently, each
+  mutating R/ffmpeg.R under the other; verified as interference, rerun
+  clean.) Ticked.
+- AC5: devtools::test fresh: 0 fail / 5884 pass (4 warns are the suite's
+  intentional warning paths, 5 skips binary-gated); devtools::check on this
+  code tree: 0 errors / 0 warnings / 0 notes. Ticked.
+
+Consistency gate: cairn_validate exit 0 (advisory work-log wrap WARNs only);
+document() no diff; README newer than Rmd; pkgdown check_pkgdown clean; NEWS
+entry present, no milestone numbers; no new top-level files needing
+.Rbuildignore (data-raw covered). Driving RR: — (no-op).

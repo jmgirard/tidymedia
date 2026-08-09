@@ -149,7 +149,43 @@ test_that("a failed run leaves an output FFmpeg never opened exactly as it was",
   expect_true(file.exists(outfile))
   expect_identical(readLines(outfile), "the caller's own file")
   expect_identical(file.info(outfile)[c("size", "mtime")], before)
-  expect_match(conditionMessage(cnd), "left as it was")
+  # Match the branch's OWN sentence, not the "left as it was" opener it shares
+  # with the overwrite = FALSE guard: shared wording would let this pass through
+  # a completely different code path (M68 review).
+  expect_match(conditionMessage(cnd), "FFmpeg never wrote to it")
+})
+
+
+# The two halves of "did this run write here?", each on its own -------------
+#
+# Size and mtime are both load-bearing and the fixtures above move both at once,
+# so neither half is pinned by them: dropping mtime from the snapshot left the
+# whole file green (M68 review). These two hold each half in place.
+
+test_that("a rewrite that does not change the size is still detected", {
+  path <- withr::local_tempfile(fileext = ".mp3")
+  writeLines("aaaa", path)
+  before <- output_snapshot(path)
+  # Past a coarse filesystem's one-second tick, so this pins mtime rather than
+  # the resolution of the clock underneath it.
+  Sys.sleep(1.1)
+  writeLines("bbbb", path)
+  expect_identical(file.info(path)$size, as.numeric(nchar("bbbb") + 1))
+
+  remove_failed_output(path, overwrite = TRUE, before = before)
+
+  expect_false(file.exists(path))
+})
+
+test_that("a directory matching the frame pattern is never a target", {
+  dir <- withr::local_tempdir()
+  dir.create(file.path(dir, "f_000003.png"))
+  writeLines("a frame", file.path(dir, "f_000001.png"))
+
+  expect_identical(
+    output_targets(file.path(dir, "f_%06d.png")),
+    file.path(dir, "f_000001.png")
+  )
 })
 
 

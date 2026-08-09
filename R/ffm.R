@@ -1396,12 +1396,19 @@ output_targets <- function(output) {
 # and leaves at zero bytes is distinguished only by its mtime (measured
 # 2026-08-09, ffmpeg 8.1.2 macOS). Where a filesystem's timestamp resolution
 # hides even that, the run leaves a zero-byte file that was already zero bytes.
+#
+# The mtime is recorded as EPOCH SECONDS, never as a formatted local time: a
+# formatted string carries the session's timezone, so a `TZ` change or a DST
+# crossing between the two snapshots would make an untouched file compare
+# unequal -- and an untouched file comparing unequal is a caller's file deleted
+# (M68 review). `sprintf("%.6f")` because `paste()` on the double would round
+# the sub-second part away.
 output_snapshot <- function(output) {
   paths <- output_targets(output)
   if (!length(paths)) return(character(0))
   info <- file.info(paths, extra_cols = FALSE)
   rlang::set_names(
-    paste(info$size, format(info$mtime, "%Y-%m-%d %H:%M:%OS6")),
+    paste(info$size, sprintf("%.6f", as.numeric(info$mtime))),
     paths
   )
 }

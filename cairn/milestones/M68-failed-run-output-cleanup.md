@@ -171,6 +171,7 @@ interrupts (SIGINT) is not a non-zero exit → no row; raise one if reported.
 - 2026-08-09: T13 — a first check run reported 1 NOTE, the spelling test on "neighbouring" in NEWS.md; the package spells US ("behavior" x20), so the branch does too. A sweep that also touched two unrelated files' comments was reverted, keeping the diff confined (AC2).
 - 2026-08-09: all thirteen tasks done and checks clean; the review's six actioned findings are answered (F1/F10 by the write-detection rule and its never-opened test, F2/F3 by `expand = FALSE` and the two neighbor tests, F6 by the frame-pattern set, P1 by the fixture-verified gate); status -> review.
 - 2026-08-09: review round 2 — CI red on windows-latest: the `a*.mp4` fixture cannot be created there (`*` is illegal in a Windows filename; `writeLines()` fails with "cannot open the connection" at test-failed-run-cleanup.R:167). Gated with `tm_require_wildcard_name()`, which builds and verifies the fixture and skips only on Windows, failing anywhere else; the test still reddens under the default-globbing control locally.
+- 2026-08-09: review round 2 — 34 findings scored, one actioned (F20, 82: the mtime half of the rule was untested) and fixed, with F1/F21/F22 fixed alongside it as one-line neighbors; F1 was the localtime-formatted mtime that would delete an untouched file across a TZ change. Not a return: 82 < 90 and no criterion failed as written. Full check Status: OK, 16 tests / 53 expectations / 0 skipped.
 
 
 
@@ -320,3 +321,62 @@ slot: `document()` no diff; `README.Rmd`/`README.md` untouched by this branch (0
 lines); `pkgdown::check_pkgdown()` "No problems found."; `NEWS.md` entry present
 and naming no milestone number; the only top-level file the branch touches is
 `NEWS.md`, already tracked; `devtools::check()` Status: OK.
+
+### Round 2 — independent review: three lenses, then a scorer
+
+34 candidate findings scored (33 from the diff lens, 1 from the prior-review
+lens; the blame-history lens reported no regression in any area it checked, and
+the prior-review lens found the GitHub comment surface empty and every one of
+round 1's six actioned findings answered).
+
+**One actioned (>=80): F20 (82)** — the mtime half of the write-detection rule
+was untested: dropping mtime from `output_snapshot()` left all 14 tests green,
+so nothing pinned the size-equal/mtime-differs case D046 names as the reason
+mtime is there at all. **Fixed now.** Not a return under the floor: 82 rather
+than >=90, and no criterion fails as written — none promises a test of that
+case.
+
+**Three sub-threshold findings fixed alongside it**, because they sit in the
+same lines and each cost one line: **F1 (78)**, the snapshot recording mtime as
+a localtime-formatted string, so a `TZ` change or DST crossing between the two
+snapshots made an untouched file compare unequal and be deleted — now epoch
+seconds at microsecond precision, verified by switching `TZ` between the
+snapshots and watching the file survive; **F21 (78)**, the directory filter in
+`output_targets()` being unpinned (its mutation also left the suite green);
+**F22 (62)**, AC9's test matching `"left as it was"`, wording shared with the
+`overwrite = FALSE` guard, now matching `"FFmpeg never wrote to it"`.
+
+Both previously-green mutations now redden exactly one test each, and the file
+runs 16 tests / 53 expectations / 0 failed / 0 skipped.
+
+**Thirty logged below threshold:** F1/F21 (78, fixed anyway as above); F2 (72)
+and F3 (66) symlinked outputs — `unlink()` removes the link, not the target;
+F22 (62, fixed anyway); F6 (62) `list.files()` cannot see a dot-prefixed frame
+sequence; F13 (58) a partial removal reports only what stuck; F33 (55) NEWS
+overstates coverage against the `verify =` path; F4 (55) a concurrent writer
+into a shared pattern directory; F27 (52) `testthat::fail()` does not halt, so
+the unwritable-dir gate falls through on a platform where the chmod did not
+take; F30 (52) AC2 says "inside `ffm_run()`" where the call sits in
+`remove_failed_output()`; F32 (52) the frame test's `notes.txt` assertion is a
+tautology; F23 (50) helper tests match un-rendered cli templates; F29 (48) AC1
+and AC8 are in tension on a combination no measured build reaches; F7 (48) the
+`overwrite = FALSE` guard does not apply to pattern outputs; F12 (45) a failed
+`verify =` does no removal; F25 (45) three helper tests pass an empty `before`;
+F9 (42) a zero-length output errors; F15 (42) hand-rolled pluralization against
+the cli convention; F26 (40) the empty-disposition path is untested end-to-end;
+F10 (35) a TOCTOU window inside the snapshot; F11 (32) the literal/pattern
+reading can flip across a run; F5 (30) the `overwrite = FALSE` bullet asserts
+disk state it does not stat; F16 (28) sprintf-in-a-cli-template idiom; F14 (28)
+`unlink()`'s return value discarded; F28 (25) `system("id -u")` in a skip
+helper; F8 (22) coarse-timestamp filesystems; F24 (22) `info =` on one of three
+expectations; F17 (20) helper placement; F19 (18) the snapshot runs on
+successful runs too; P-cand-1 (15) the disposition bullet's position, already
+declined at round 1; F31 (10) stale review evidence, moot once round 2 was
+written; F18 (12) D045 lacking a superseded marker, refuted by D046's heading.
+
+**CI.** `windows-latest (release)` was red: the `a*.mp4` fixture cannot be
+created there — `*` is illegal in a Windows filename — so the test errored
+rather than skipped. Gated with `tm_require_wildcard_name()`; all eight build
+jobs green afterwards. `codecov/patch` and `codecov/project` report `fail`
+against their coverage thresholds, as they do on this repo generally; no build
+or check job is red.

@@ -1,11 +1,11 @@
 # M68: A failed run removes the broken output it wrote
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** `m68-failed-run-output-cleanup`
+- **Branch/PR:** `m68-failed-run-output-cleanup` / https://github.com/jmgirard/tidymedia/pull/71
 
 ## Goal
 
@@ -41,7 +41,7 @@ loudnorm analysis calls `run_program()` directly and writes to `-f null`
 
 ## Acceptance criteria
 
-- [ ] **AC1.** When `ffm_run()`'s FFmpeg invocation exits non-zero and the
+- [x] **AC1.** When `ffm_run()`'s FFmpeg invocation exits non-zero and the
       pipeline allows overwriting, the pipeline's output path does not exist
       after the abort. Evidence: an execution test provoking an AAC-to-MP3
       stream copy — a refusal no FFmpeg build can avoid, unlike the
@@ -50,34 +50,34 @@ loudnorm analysis calls `run_program()` directly and writes to `-f null`
       content, asserting the path is absent after each abort; and the same
       test re-run with the removal stubbed out, red, with its failure output
       quoted.
-- [ ] **AC2.** The change stays confined: one removal site, no user-facing
+- [x] **AC2.** The change stays confined: one removal site, no user-facing
       switch. Evidence: `grep -rn "unlink(\|file.remove(" R/` returns the
       pre-existing `R/program_management.R` line and exactly one new line,
       inside `ffm_run()`; `grep -rn "ffm_run(" R/` shows every caller reaches
       it rather than removing anything itself; `git diff master..HEAD --
       NAMESPACE man/` adds no export and no `\usage` argument; and
       `grep -rn "getOption(" R/` returns the same single site on both refs.
-- [ ] **AC3.** The abort `ffm_run()` raises at `R/ffm.R:1398` names the file
+- [x] **AC3.** The abort `ffm_run()` raises at `R/ffm.R:1398` names the file
       it removed. Evidence: a test catching that condition and matching its
       message against both the removal wording and the output's basename —
       not `expect_snapshot()`, since the abort embeds `tempfile()` paths for
       the input and the output that change on every run, so a recorded
       snapshot would churn rather than pin anything.
-- [ ] **AC4.** `separate_audio_video()`'s multi-track abort still carries
+- [x] **AC4.** `separate_audio_video()`'s multi-track abort still carries
       `ffm_run()`'s condition as its `parent`, so AC3's sentence reaches that
       caller. Evidence: a test asserting the caught condition's class is
       `tidymedia_multitrack_separation` and its `$parent` message matches
       AC3's wording.
-- [ ] **AC5.** A failed batch row's output path is absent and a succeeding
+- [x] **AC5.** A failed batch row's output path is absent and a succeeding
       row's is present. Evidence: a two-row execution test through
       `ffm_batch()` asserting both paths and `success == c(FALSE, TRUE)`.
-- [ ] **AC6.** `NEWS.md` carries an entry stating the removal, naming no
+- [x] **AC6.** `NEWS.md` carries an entry stating the removal, naming no
       milestone number, and AC1's stubbed-out run is the test that fails
       without the behavior the entry asserts.
-- [ ] **AC7.** The profile's `verify` slot is clean and its fuller
+- [x] **AC7.** The profile's `verify` slot is clean and its fuller
       pre-review check passes: `devtools::document()` no diff,
       `devtools::test()` clean, `devtools::check()` 0 errors / 0 warnings.
-- [ ] **AC8.** `overwrite = FALSE` never costs the caller a file, and never
+- [x] **AC8.** `overwrite = FALSE` never costs the caller a file, and never
       strands one either: the removal is skipped only for an output that
       existed before the run. Evidence: direct tests of the removal helper
       over the four combinations of `overwrite` (`TRUE`/`FALSE`) and
@@ -137,6 +137,7 @@ loudnorm analysis calls `run_program()` directly and writes to `-f null`
 - 2026-08-09: T6 — NEWS.md Bug fixes entry added; git diff master..HEAD -- NAMESPACE man/ is empty (0 lines), so no export and no documented argument changed.
 - 2026-08-09: T7 — devtools::document() no diff, devtools::test() FAIL 0 | SKIP 5 | PASS 6019, devtools::check() Status: OK (0 errors, 0 warnings, 0 notes); D045 appended to cairn/DECISIONS.md.
 - 2026-08-09: all eight tasks done and checks clean; status -> review.
+- 2026-08-09: review returned M68 to in-progress under the return floor — F1 (92) deletes a pre-existing output FFmpeg never opened (exit 8, file intact, re-measured), F2 (90) and F3 (88) are unlink()'s default glob expansion deleting unrelated files, F6 (84) leaves every frame of a failed sample_frames() run, P1 (85) is an outcome-keyed skip M63 already retired, F10 (80) is the test blindness that hid F1.
 - 2026-08-09: criteria audit ([O], fresh context) returned 11 findings; ten fixed in the drafted wording (unbounded promises in AC1/AC3/AC4/AC5, a non-discriminating control, AC3 snapshotting the Layer-2 abort rather than `ffm_run()`'s, "unconditional" contradicting a two-disposition design, an unevidenced counterfactual), and its AC2 satisfiability finding became the gate question the first line above records.
 
 
@@ -144,3 +145,71 @@ loudnorm analysis calls `run_program()` directly and writes to `-f null`
 ## Decisions
 
 ## Review
+
+**PR:** https://github.com/jmgirard/tidymedia/pull/71
+
+### Acceptance-criteria evidence (fresh, 2026-08-09)
+
+- **AC1** — `test-failed-run-cleanup.R` cases 1 and 2 green: the output path is
+  absent after the abort with the path absent beforehand and with it
+  pre-written. Counterfactual re-run with the `unlink()` stubbed to a no-op:
+  6 of the 9 tests red, 15 failures; the 3 that stay green are exactly those
+  that never reach the unlink success path. `R/ffm.R` restored from the branch
+  afterwards (`grep -c MUTATION` → 0).
+- **AC2** — `grep -rn "unlink(\|file.remove(" R/` → `R/program_management.R:247`
+  (pre-existing) and one new call at `R/ffm.R:1392`. No `ffm_run()` caller
+  removes anything itself. `git diff master..HEAD -- NAMESPACE man/` → 0 lines.
+  `grep -rn "getOption(" R/` → `R/ffmpeg.R:2533` on this branch and on master.
+- **AC3** — case 7 green: the caught condition's message matches both the
+  removal wording and the output's basename.
+- **AC4** — case 8 green: the condition is `tidymedia_multitrack_separation`
+  and its `$parent` message carries the removal sentence.
+- **AC5** — case 9 green: `success` reads `FALSE, TRUE`, the failed row's
+  output is absent and the succeeding row's is present.
+- **AC6** — `NEWS.md:296` carries the entry, naming no milestone number; the
+  AC1 counterfactual above is the run that fails without the behavior.
+- **AC7** — `devtools::document()` no diff; `devtools::test()` FAIL 0 | SKIP 5
+  | PASS 6019; `devtools::check()` Status: OK, 0 errors / 0 warnings / 0 notes.
+- **AC8** — cases 3, 4 and 6 green: removal in the three cells, preservation
+  with content intact only for `overwrite = FALSE` against a pre-existing path.
+
+Whole file fresh: 9 tests, 32 expectations, 0 failed, 0 skipped.
+
+### Independent review — three lenses, then a scorer
+
+26 candidate findings scored. **Six actioned (>=80):** F1 (92), F2 (90),
+F3 (88), P1 (85), F6 (84), F10 (80). **Twenty logged below threshold:** F4 (78)
+tilde paths expand in R but not for FFmpeg; F9 (74) the empty-disposition path
+is untested end-to-end; F13 (72) parallel rows sharing an output can delete each
+other's file; F5 (68) a symlinked output loses the link, not the truncated
+target; F11 (68) the helper tests match un-rendered glue templates; F15 (58)
+D045's scope claim overstates coverage; F8 (55) the overwrite=FALSE branch
+asserts disk state without stat'ing; F7 (52) a failed `verify =` does no
+removal; F12 (50) the rendered-message test is exposed to cli hyperlinking;
+F14 (45) a directory output is handled by the defensive check, not by design;
+F16 (35) the failure bullet sits mid-list; H8 (30) the pre-run stat is a
+timing-order dependency; H1-H7 (5) seven history checks, all "no regression
+found".
+
+**Disposition: returned to `in-progress` under the return floor.** F1 is a
+>=90 defect in what the package does for its users, and F2/F3 are the same
+class. No acceptance criterion failed as written — which is itself the finding
+implement's amendment gate must answer: AC1 is satisfied *by* the destructive
+behavior, so the criterion was too weak to catch it. Defect return 1 of this
+milestone; the thrash rule's third-return threshold is not reached.
+
+**The premise behind the plan gate's chosen design is refuted.** The plan
+recorded "falsified by a measured FFmpeg failure mode leaving a pre-existing
+output's bytes intact"; that mode is now measured. `ffmpeg -y -i in.mkv -c:v
+nosuchcodec out.mp4` exits 8 and leaves a 14-byte pre-existing `out.mp4`
+byte-for-byte intact (2026-08-09, ffmpeg 8.1.2 macOS), because FFmpeg fails
+before opening the output for unknown encoders, unknown filters and bad option
+values. The "one unconditional rule" chosen at the plan gate deletes that file
+and reports it as incomplete. The gate must be re-asked against this
+measurement.
+
+**Also measured independently:** `unlink()` defaults to `expand = TRUE`. With
+`a*.mp4`, `aQQQ.mp4` and `aXYZ.mp4` present, `unlink("a*.mp4")` returned 0 and
+emptied the directory; `unlink("out[1].mp4")` deleted `out1.mp4`, left
+`out[1].mp4`, and returned 0.
+

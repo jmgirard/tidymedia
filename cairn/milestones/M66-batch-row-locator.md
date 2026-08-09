@@ -107,7 +107,7 @@ first-offender here) — not attempted; disclosed in the triage.
 - [x] T4. Thread it through the M58/M59 contradiction and rlang sweeps and
       the shared per-cell column helpers (index-preserving `which()` rework
       at `check_batch_codec_col()`).
-- [ ] T5. Extend the blame grids/spec lists with a row-≥-2 cell per swept
+- [x] T5. Extend the blame grids/spec lists with a row-≥-2 cell per swept
       site (incl. the reshape-discriminating `separate_audio_video_batch`
       cell); add the locator-remover with both verification directions; amend
       the cross-form equality test (`test-builder-blame-front-door.R:237`) to
@@ -172,6 +172,13 @@ first-offender here) — not attempted; disclosed in the triage.
   audio-bound and resize locators are unconditional: the per-row input count
   makes those refusals row-dependent even argument-delivered (measured).
   Suite 0 fail, 5637 pass.
+- 2026-08-08: T5 done — test-row-locator-grid.R: 47 cells (42 locator incl.
+  the reshape-discriminating separate cell asserting row 2 and never 3, and
+  17 codec-column cells across the calling verbs; 5 argument-delivered
+  complements asserting NO locator), each pinning the guard's own marker
+  before reading the locator; 237 assertions green. Cell authoring caught
+  one semantics fact: an NA audio_codec cell under reencode=FALSE is itself
+  the contradiction, so its clean row must carry "copy".
 
 ## Decisions
 

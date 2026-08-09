@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-08 (M67 planned; the uncached-nvenc-probe candidate
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M67 | The encoder probe answers once per session, not once per row | in-progress | — | normal | milestones/M67-nvenc-probe-cache.md |
+| M67 | The encoder probe answers once per session, not once per row | review | — | normal | milestones/M67-nvenc-probe-cache.md |
 | M66 | A batch value refusal names the offending row | done | — | normal | milestones/archive/M66-batch-row-locator.md |
 | M65 | A region, overlay or loudness mistake names the verb the user called, in both forms | done | M64 | normal | milestones/archive/M65-region-overlay-loudness-blame.md |
 | M64 | A crop, scale or rate mistake names the verb the user called, in both forms | done | — | normal | milestones/archive/M64-crop-scale-rate-blame.md |

@@ -1,6 +1,6 @@
 # M67: The encoder probe answers once per session, not once per row
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -146,6 +146,7 @@ never leaks between test files. A D-entry fixing the lifetime.
 - 2026-08-09: T6 part — the re-decided `@param hardware` wording applied to all 16 topics, and `test-nvenc-docs.R` gained two assertions fencing the new half (the "remembered for the rest of the R session" clause and the `refresh_ffmpeg_capabilities` pointer) over the same enumerated topic set.
 - 2026-08-09: T5 mutation, run from committed baseline c0cde20 — `R/ffmpeg.R:2654`'s `if (!has_nvenc(family))` replaced by `if (FALSE)`, deleting the probe inside `check_nvenc_available()`. All three D034 probe-counting tests went red (8 failures), and the first failure in each is the probe assertion itself, not an abort: `test-audio-stream-passthrough.R:225` reports `Expected \`probes\` > 0L. Actual comparison: 0 <= 0`, with `:230`/`:234` following, `test-audio-stream-format-web.R:182`/`:186`, and `test-audio-stream-crop-segment.R:349`/`:353`/`:360`. Mutant reverted with `git checkout R/ffmpeg.R`.
 - 2026-08-09: T6 — D044 appended (lifetime, the two discard routes, the per-process `parallel = TRUE` behavior, why D034's falsifier is untripped, and the GP1 trade the new export takes); NEWS `## Performance` entry added; `document()` no diff, `pkgdown::check_pkgdown()` clean.
+- 2026-08-09: AC10 — the first `devtools::check()` reported `Status: 1 NOTE` (spelling: "repoints", NEWS.md:254) while devtools' own summary line read "0 notes ✔", which is exactly the mask M17 recorded; NEWS reworded and re-run reports `Status: OK` (0 errors, 0 warnings, 0 notes, 4m 14s), with the spelling comparison OK and `testthat.R` OK. `cairn_validate` all checks passed, one advisory (the 10-AC sizing tripwire the plan already logged as a deliberate non-split); `cairn_budget` plan-owned body 132/149. Status → review.
 
 ## Decisions
 

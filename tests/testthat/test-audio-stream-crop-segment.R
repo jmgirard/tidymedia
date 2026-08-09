@@ -342,12 +342,17 @@ test_that("hardware = 'nvenc' probes FFmpeg while building, though run = FALSE",
   crop_video(f, "out.mp4", 32, 32, run = FALSE)
   segment_video(f, 0, 1, outfiles = "seg.mp4", run = FALSE)
   expect_identical(probes, 0L)
+  # M67 made the answer session-scoped, so each measured call discards the memo
+  # first: without that, calls 2 and 3 would read the first call's answer and
+  # the test would measure the memo instead of D034's construction-time probe.
   crop_video(f, "out.mp4", 32, 32, hardware = "nvenc", run = FALSE)
   expect_gt(probes, 0L)
   before <- probes
+  forget_ffmpeg_capabilities()
   segment_video(f, 0, 1, outfiles = "seg.mp4", hardware = "nvenc", run = FALSE)
   expect_gt(probes, before)
   before <- probes
+  forget_ffmpeg_capabilities()
   crop_video_batch(crop_jobs(f),
     width = 32, height = 32,
     hardware = "nvenc", run = FALSE

@@ -157,6 +157,12 @@ set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"),
   
   # Save location to user configuration file
   writeLines(location, config_file)
+
+  # Pointing at a different binary invalidates everything remembered about the
+  # old one, so the session memo goes with it (M67/D044). Unconditional across
+  # all four programs: cheap, and it cannot be forgotten when a second
+  # capability memo is added later.
+  forget_ffmpeg_capabilities()
 }
 
 # set_mediainfo() ---------------------------------------------------------

@@ -61,6 +61,7 @@ has_nvenc("h264")
 
 Other capability functions:
 \code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}},
-\code{\link[=ffmpeg_encoders]{ffmpeg_encoders()}}
+\code{\link[=ffmpeg_encoders]{ffmpeg_encoders()}},
+\code{\link[=refresh_ffmpeg_capabilities]{refresh_ffmpeg_capabilities()}}
 }
 \concept{capability functions}

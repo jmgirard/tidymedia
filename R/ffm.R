@@ -1352,6 +1352,49 @@ ffm_groups <- function(object) {
   )
 }
 
+# remove_failed_output() -------------------------------------------------------
+
+# Delete the output of a run that failed, and report what happened as cli
+# bullets for the abort that follows.
+#
+# WHY AT ALL. FFmpeg creates its output file before it knows the command will
+# work, and truncates an existing one to zero on the way, so a failed run leaves
+# a file that is empty and looks like a result (measured 2026-08-09, ffmpeg
+# 8.1.2 macOS: an AAC-to-MP3 stream copy exits 234 with a zero-byte output,
+# whatever the path held beforehand). Removing it here rather than in each verb
+# keeps execution in Layer 1 once (IP1/D002); every verb and ffm_batch() reach
+# this one site.
+#
+# THE ONE EXCEPTION is `overwrite = FALSE` against a path that ALREADY EXISTED:
+# there the caller told FFmpeg not to replace that file, so the package must not
+# either. Narrowing the exception to `preexisting` is deliberate -- a
+# non-overwriting run that CREATED its output still gets it cleaned up, so the
+# exception protects a caller's file without stranding a broken one.
+#
+# `preexisting` is measured by the CALLER, before the run: afterwards the path
+# exists either way, so the answer is no longer recoverable here.
+#
+# Returns a named character vector of cli bullets, interpolated in the calling
+# frame -- so `output` must be bound there, and the path goes through a cli
+# field (`{.file {output}}`), which does not recurse into the value: a filename
+# containing braces would otherwise abort the message itself (M44's lesson).
+remove_failed_output <- function(output, overwrite, preexisting) {
+  if (isFALSE(overwrite) && preexisting) {
+    return(c(
+      "i" = "{.file {output}} was left as it was: {.arg overwrite} is
+             {.code FALSE}, so FFmpeg was told not to replace it."
+    ))
+  }
+  if (!file.exists(output)) return(character(0))
+  # unlink() signals nothing and reports failure only through its return value;
+  # a read-only directory is the ordinary way it fails. Say so rather than let
+  # the caller believe in a cleanup that did not happen.
+  if (unlink(output) != 0L || file.exists(output)) {
+    return(c("x" = "{.file {output}} could not be removed and is still there."))
+  }
+  c("i" = "The incomplete {.file {output}} was removed.")
+}
+
 # ffm_run() --------------------------------------------------------------------
 
 #' Run the FFmpeg Pipeline
@@ -1391,13 +1434,19 @@ ffm_run <- function(object, verify = NULL) {
   # verbatim (M06). stdin is redirected from an empty input so FFmpeg cannot
   # drain the parent process's stdin (see ffmpeg()); stderr streams to the
   # console as before.
+  # Stat the output BEFORE running: remove_failed_output() needs to know whether
+  # the path was already there, and after the run it exists either way.
+  output <- object$output
+  preexisting <- file.exists(output)
   out <- run_program(find_ffmpeg(), ffm_args(object), program = "FFmpeg",
                      input = "", stderr = "")
   status <- attr(out, "status")
   if (!is.null(status)) {
+    disposition <- remove_failed_output(output, object$overwrite, preexisting)
     cli::cli_abort(c(
       "FFmpeg exited with status {status}.",
       "i" = "FFmpeg's error output is printed above.",
+      disposition,
       "i" = "The failing command was: {.code ffmpeg {ffm_compile(object)}}"
     ))
   }

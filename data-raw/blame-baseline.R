@@ -141,6 +141,12 @@ blame_message_drift <- function(before, after) {
     # character alone. Strip it on both sides: it is punctuation the wrapper
     # added, not wording anyone wrote.
     x <- sub("^!\\s*", "", trimws(x))
+    # M66's row locator is an ADDED bullet, not a rewording: strip it the way
+    # the `In index:` prefix is stripped above, so the drift report keeps
+    # measuring wording. Same pattern as strip_row_locator()
+    # (tests/testthat/helper-blame.R), whose two-direction verification lives
+    # in test-check-batch-cell.R.
+    x <- sub("\n[^\n]{1,2} First offending jobs row: [0-9]+\\.$", "", x)
     trimws(x)
   }
   b <- strip(before$outcome)

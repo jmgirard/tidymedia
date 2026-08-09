@@ -95,6 +95,15 @@ locator_specs <- function(input3) {
                   two_pass = TRUE),
       own = "whole numbers")
 
+  add(id = "extract_frame/timestamp-finite", verb = "extract_frame_batch", row = 2,
+      args = list(jobs = one(input = c(i1, i2), timestamp = c(1, Inf)),
+                  outdir = withr::local_tempdir(.local_envir = parent.frame(2))),
+      own = "must be finite")
+  add(id = "extract_frame/frame-whole", verb = "extract_frame_batch", row = 2,
+      args = list(jobs = one(input = c(i1, i2), frame = c(1, 2.5)),
+                  outdir = withr::local_tempdir(.local_envir = parent.frame(2))),
+      own = "must contain whole numbers")
+
   # --- M58 contradiction sweeps ---------------------------------------------
   add(id = "segment/reencode-video", verb = "segment_video_batch", row = 2,
       args = list(jobs = one(input = c(i1, i2), start = 0, end = 1,

@@ -112,7 +112,7 @@ first-offender here) — not attempted; disclosed in the triage.
       cell); add the locator-remover with both verification directions; amend
       the cross-form equality test (`test-builder-blame-front-door.R:237`) to
       compare post-removal.
-- [ ] T6. Extend the mutation harness: re-derive the site set at run time,
+- [x] T6. Extend the mutation harness: re-derive the site set at run time,
       compare against the committed triage, mutate each row-index pass to
       `1L`, attribute each red.
 - [ ] T7. Re-run baseline + precedence instruments at both refs (zero flips,
@@ -179,6 +179,18 @@ first-offender here) — not attempted; disclosed in the triage.
   before reading the locator; 237 assertions green. Cell authoring caught
   one semantics fact: an NA audio_codec cell under reencode=FALSE is itself
   the contradiction, so its clean row must carry "copy".
+- 2026-08-08: T6 done — triage regenerated against the wrapped tree (300
+  sites, --check green; a first join inherited by first-match and flattened 5
+  duplicate-path aborts into shape guards — caught by diffing dispositions,
+  fixed by ordered consumption). blame-guard-mutations-m66.py re-derives the
+  site set, refuses drift, mutates each row-index pass to 1L: 24/24 owned
+  reds. Its first run measured normalize's two-pass token wrapper reds
+  nothing — shadowed by check_batch_codec_col's earlier locator loop — so
+  that site is triaged excluded-backstop with that reason, and the grid keeps
+  its behavior cell (the locator the user sees comes from the codec-col loop).
+- 2026-08-08: minor amendment (T7 prep) — blame_message_drift()'s strip
+  gains the locator pattern beside its In-index strip: an added bullet is
+  not a rewording; same regex as the verified strip_row_locator().
 
 ## Decisions
 

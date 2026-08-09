@@ -20,8 +20,14 @@ truncates a pre-existing output to zero bytes before failing anyway
 (measured 2026-08-09, ffmpeg 8.1.2 macOS), so there is nothing left to
 preserve. The single exception is `overwrite = FALSE` against a path that
 already existed, where the package promised not to replace it (AC8). Every
-execution path inherits this, `ffm_batch()` included, because each reaches
-this one site.
+Layer 1 and Layer 2 execution path inherits this, `ffm_batch()` included,
+because each reaches this one site.
+
+Two paths do not, and cannot. Layer 0's `ffmpeg()` takes a verbatim command
+string and calls `system()` (`R/ffmpeg.R:28`), so it never reaches `ffm_run()`
+and cannot tell which of the caller's tokens is an output. The two-pass
+loudnorm analysis calls `run_program()` directly and writes to `-f null`
+(`R/loudnorm_two_pass.R:41,140`), so it has no output to remove.
 
 **Out:**
 - `separate_audio_video()`'s video command still never runs once its audio
@@ -99,9 +105,9 @@ this one site.
       before raising; name the removed file in the abort's bullets, and say
       so when the removal itself fails.
 - [x] **T3.** Assert the new abort's wording and the file it names.
-- [ ] **T4.** Add the parent-chain test through `separate_audio_video()`
+- [x] **T4.** Add the parent-chain test through `separate_audio_video()`
       against `run_separation_audio()` (`R/ffmpeg.R:617-656`).
-- [ ] **T5.** Add the two-row batch execution test; confirm `run_one()`
+- [x] **T5.** Add the two-row batch execution test; confirm `run_one()`
       (`R/ffm_batch.R:127`) needs no removal code of its own, and run AC2's
       two greps.
 - [ ] **T6.** NEWS.md entry; run AC6's diff and grep against `master`.
@@ -125,6 +131,9 @@ this one site.
 - 2026-08-09: T8/T3 — helper unit tests over the four overwrite x pre-existence cells, the unremovable-file case, and the abort's wording; 7 tests / 26 expectations green, 0 skipped.
 - 2026-08-09: T8 mutation control — with the unlink stubbed to a no-op, 4 of the 7 tests go red (12 failures) while the three that never exercise the unlink success path stay green; R/ffm.R restored from the T2 commit afterwards.
 - 2026-08-09: amendment gate — AC3's expect_snapshot() replaced by a targeted message match, since the abort embeds two tempfile() paths and a recorded snapshot would churn every run (measured on the AC4 probe).
+- 2026-08-09: T4/T5 — parent-chain and two-row batch tests added; 9 tests / 32 expectations green, 0 skipped, success reads FALSE,TRUE with the failed row's output gone and the good row's present.
+- 2026-08-09: T5 — AC2's greps run: unlink/file.remove is R/program_management.R:247 plus exactly one new call at R/ffm.R:1392; no ffm_run() caller removes anything itself; getOption() is R/ffmpeg.R:2533 on this branch and on master alike.
+- 2026-08-09: scope corrected, not amended by gate — the In paragraph claimed every execution path inherits the removal; Layer 0's ffmpeg() calls system() on a verbatim string (R/ffmpeg.R:28) and the loudnorm analysis pass writes to -f null (R/loudnorm_two_pass.R:41,140), so neither can be covered and no alternative was available to gate.
 - 2026-08-09: criteria audit ([O], fresh context) returned 11 findings; ten fixed in the drafted wording (unbounded promises in AC1/AC3/AC4/AC5, a non-discriminating control, AC3 snapshotting the Layer-2 abort rather than `ffm_run()`'s, "unconditional" contradicting a two-disposition design, an unevidenced counterfactual), and its AC2 satisfiability finding became the gate question the first line above records.
 
 

@@ -117,3 +117,40 @@ test_that("the abort names the output it removed", {
   expect_match(conditionMessage(cnd), "was removed")
   expect_match(conditionMessage(cnd), basename(outfile), fixed = TRUE)
 })
+
+
+# AC4/AC5: the disposition reaches the two paths that wrap ffm_run() ---------
+
+test_that("the multi-track separation abort carries the removal in its parent", {
+  skip_if_no_ffmpeg()
+  infile <- make_multitrack_video()
+  audiofile <- withr::local_tempfile(fileext = ".mp3")
+  videofile <- withr::local_tempfile(fileext = ".mp4")
+
+  cnd <- rlang::catch_cnd(
+    separate_audio_video(infile, audiofile, videofile), "error"
+  )
+
+  # The verb REPLACES ffm_run()'s condition with its own multi-track diagnostic
+  # and keeps the original only as `parent` (R/ffmpeg.R:636-653), so the removal
+  # sentence reaches this caller through the chain rather than the top message.
+  # Asserting the class as well as the text keeps this from passing on some
+  # other error that happens to mention a removal (M54's lesson).
+  expect_s3_class(cnd, "tidymedia_multitrack_separation")
+  expect_match(conditionMessage(cnd$parent), "was removed")
+  expect_false(file.exists(audiofile))
+})
+
+test_that("a failed batch row loses its output and a good row keeps its own", {
+  skip_if_no_ffmpeg()
+  infile <- make_test_video()
+  bad <- withr::local_tempfile(fileext = ".mp3")   # AAC copy into mp3: refused
+  good <- withr::local_tempfile(fileext = ".m4a")  # AAC copy into m4a: fine
+  jobs <- tibble::tibble(input = c(infile, infile), output = c(bad, good))
+
+  res <- ffm_batch(jobs, function(input, output) failing_copy(input, output))
+
+  expect_identical(res$success, c(FALSE, TRUE))
+  expect_false(file.exists(bad))
+  expect_true(file.exists(good))
+})

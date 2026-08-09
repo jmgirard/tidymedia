@@ -163,3 +163,152 @@ test_that("no warning at all escapes a timed-out guard (AC7, locale-free)", {
     )
   )
 })
+
+# Execution: a real program actually gets killed (AC3, AC5, AC7) ---------------
+
+# These are the criterion's real evidence. The body-reading tests above prove
+# the limit is PASSED; only these prove it BITES.
+#
+# The hang is produced by a FIFO nobody writes to: FFmpeg blocks reading its
+# header forever, so the test does not race the machine's encoding speed the way
+# "encode 600 seconds of video" would. A slow-command fixture that a fast host
+# finishes before the limit would pass this file while measuring nothing.
+#
+# Windows has no mkfifo, so the gate skips there. Per M68, the fixture is built
+# INSIDE the gate -- a platform that cannot create it must not reach the
+# creation call -- and the gate skips rather than fail()s, because
+# testthat::fail() RECORDS a failure and RETURNS, falling on into the operation
+# it guards.
+local_blocking_input <- function(env = parent.frame()) {
+  skip_on_os("windows")
+  skip_if_no_ffmpeg()
+  path <- withr::local_tempfile(fileext = ".mp4", .local_envir = env)
+  ok <- suppressWarnings(system2("mkfifo", shQuote(path)))
+  if (!identical(as.integer(ok), 0L) || !file.exists(path)) {
+    skip("could not create a FIFO to block on")
+  }
+  path
+}
+
+test_that("ffmpeg() aborts at the limit instead of blocking forever", {
+  blocked <- local_blocking_input()
+  out <- withr::local_tempfile(fileext = ".mp4")
+  withr::local_options(tidymedia.timeout = 2)
+  start <- Sys.time()
+  err <- expect_error(
+    ffmpeg(paste("-y -i", shQuote(blocked), shQuote(out))),
+    class = "tidymedia_timeout"
+  )
+  expect_lt(as.numeric(difftime(Sys.time(), start, units = "secs")), 20)
+  msg <- cli::ansi_strip(conditionMessage(err))
+  expect_match(msg, "FFmpeg")
+  expect_match(msg, "2 seconds")
+})
+
+test_that("ffprobe() aborts at the limit", {
+  skip_if_no_ffprobe()
+  blocked <- local_blocking_input()
+  withr::local_options(tidymedia.timeout = 2)
+  start <- Sys.time()
+  err <- expect_error(ffprobe(paste("-i", shQuote(blocked))),
+                      class = "tidymedia_timeout")
+  expect_lt(as.numeric(difftime(Sys.time(), start, units = "secs")), 20)
+  expect_match(cli::ansi_strip(conditionMessage(err)), "FFprobe")
+})
+
+test_that("the abort names the limit but never R's command line or temp path", {
+  # AC7's other half: R's timeout warning embeds the full command line and the
+  # input= temp file. The package's message replaces it.
+  blocked <- local_blocking_input()
+  out <- withr::local_tempfile(fileext = ".mp4")
+  withr::local_options(tidymedia.timeout = 2)
+  err <- expect_error(ffmpeg(paste("-y -i", shQuote(blocked), shQuote(out))))
+  msg <- cli::ansi_strip(conditionMessage(err))
+  expect_no_match(msg, tempdir(), fixed = TRUE)
+})
+
+test_that("no R timeout warning escapes the call (AC7, locale-free)", {
+  blocked <- local_blocking_input()
+  out <- withr::local_tempfile(fileext = ".mp4")
+  withr::local_options(tidymedia.timeout = 2)
+  # Asserted as "no warning at all", never as a match on R's English text:
+  # under a translated locale a text match passes while the warning still leaks.
+  expect_no_warning(
+    tryCatch(ffmpeg(paste("-y -i", shQuote(blocked), shQuote(out))),
+             error = function(e) NULL)
+  )
+})
+
+test_that("ffm_run() aborts at the limit and states D046's disposition (AC5)", {
+  blocked <- local_blocking_input()
+  out <- withr::local_tempfile(fileext = ".mp4")
+  withr::local_options(tidymedia.timeout = 2)
+  err <- expect_error(ffm_run(ffm(blocked, out)), class = "tidymedia_timeout")
+  msg <- cli::ansi_strip(conditionMessage(err))
+  expect_match(msg, "FFmpeg")
+  expect_match(msg, "timed out")
+  # FFmpeg blocks on the FIFO's header BEFORE it opens the output, so it writes
+  # nothing and D046 correctly has nothing to report -- the disposition bullet
+  # is absent, not missing. What must hold is that no output was left behind.
+  expect_false(file.exists(out))
+})
+
+test_that("a timed-out ffm_run() removes what the killed run DID write (AC5)", {
+  # The written case cannot be produced by the FIFO: FFmpeg never reaches the
+  # output. Racing a real encode against the limit would make the test depend on
+  # the host's speed, which is the failure mode M31/M46 both paid for. So the
+  # kill is injected at the seam instead, leaving the cleanup path -- the thing
+  # AC5 is about -- entirely real.
+  skip_if_no_ffmpeg()
+  video <- make_test_video()
+  out <- withr::local_tempfile(fileext = ".mp4")
+  withr::local_options(tidymedia.timeout = 2)
+  calls <- 0L
+  local_mocked_bindings(
+    run_program = function(...) {
+      calls <<- calls + 1L
+      # What a killed FFmpeg leaves behind: a partial output on disk.
+      writeLines("half an mp4", out)
+      abort_timeout("FFmpeg", 2)
+    }
+  )
+  err <- expect_error(ffm_run(ffm(video, out)), class = "tidymedia_timeout")
+  # Count the invocation rather than trusting the mock ran: a mock that is
+  # never reached makes every assertion below vacuous (M44).
+  expect_identical(calls, 1L)
+  msg <- cli::ansi_strip(conditionMessage(err))
+  expect_match(msg, "timed out")
+  expect_match(msg, "was removed")
+  expect_false(file.exists(out))
+})
+
+test_that("ffm_run() keeps an output the killed run never wrote, per D046", {
+  blocked <- local_blocking_input()
+  out <- withr::local_tempfile(fileext = ".mp4")
+  writeLines("pre-existing", out)
+  keep <- readLines(out)
+  withr::local_options(tidymedia.timeout = 2)
+  err <- expect_error(ffm_run(ffm(blocked, out)), class = "tidymedia_timeout")
+  expect_match(cli::ansi_strip(conditionMessage(err)), "left as it was")
+  # D046's rule is applied unchanged: FFmpeg blocked on the input and never
+  # opened the output, so what was already there survives.
+  expect_true(file.exists(out))
+  expect_identical(readLines(out), keep)
+})
+
+test_that("with the option unset the same blocking input is NOT bounded", {
+  # The control. Without it every assertion above would pass even if the abort
+  # came from something other than the timeout -- a FIFO input is unusual
+  # enough that FFmpeg could plausibly refuse it outright.
+  blocked <- local_blocking_input()
+  out <- withr::local_tempfile(fileext = ".mp4")
+  withr::local_options(tidymedia.timeout = NULL)
+  # Bounded by the harness, not by the package: if the package were still
+  # imposing a limit this would abort instead of being killed at 8 s.
+  res <- withCallingHandlers(
+    system2(find_ffmpeg(), shQuote(c("-y", "-i", blocked, out)),
+            stdout = TRUE, input = "", timeout = 8),
+    warning = function(w) invokeRestart("muffleWarning")
+  )
+  expect_identical(as.integer(attr(res, "status")), 124L)
+})

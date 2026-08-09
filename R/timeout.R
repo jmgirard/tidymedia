@@ -58,15 +58,33 @@ is_timeout <- function(out, limit) {
 # embeds the full command line, including the `input=` temp-file path; the spawn
 # sites drop that warning and this message replaces it, so the path never
 # reaches the caller (M46 review finding B, same trap).
-abort_timeout <- function(program, limit, call = rlang::caller_env()) {
+#
+# `extra` appends caller-supplied bullets (ffm_run() adds D046's output
+# disposition). `.envir` is what makes that safe: those bullets carry cli fields
+# like `{.file {output}}` that resolve only in the CALLER's frame, and cli
+# interpolates every bullet in one environment. The caller therefore passes its
+# own frame and defines `program`/`limit` there -- which is why the handler in
+# ffm_run() reads them off the condition into locals rather than reusing the
+# already-formatted message. Re-interpolating that message would re-run glue
+# over user data, which is M44's brace trap.
+#
+# `program` and `limit` also ride on the condition so a handler can rebuild this
+# refusal without parsing its text.
+abort_timeout <- function(program, limit, extra = NULL,
+                          call = rlang::caller_env(),
+                          .envir = rlang::current_env()) {
   cli::cli_abort(
     c(
       "{program} timed out after {limit} second{?s}.",
       "i" = "Raise or remove the limit with \\
-             {.code options(tidymedia.timeout = )}; {.code 0} means no limit."
+             {.code options(tidymedia.timeout = )}; {.code 0} means no limit.",
+      extra
     ),
     class = "tidymedia_timeout",
-    call = call
+    tm_program = program,
+    tm_limit = limit,
+    call = call,
+    .envir = .envir
   )
 }
 

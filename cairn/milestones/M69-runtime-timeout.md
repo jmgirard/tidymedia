@@ -90,10 +90,10 @@ naming the program and the limit. A D-entry records the shape.
       `R/ffprobe.R:21`, `R/mediainfo.R:26`) and into `run_program()`
       (`R/program_management.R:108-122`); add the shared timeout classifier
       that keys on `status == 124L` and is inert when the resolved limit is `0`.
-- [ ] T3 Wire `ffm_run()` (`R/ffm.R:1548-1562`): a timeout aborts naming the
+- [x] T3 Wire `ffm_run()` (`R/ffm.R:1548-1562`): a timeout aborts naming the
       program and limit, and reaches `remove_failed_output()` on the same path
       a non-zero exit does, so D046's disposition rule is applied unchanged.
-- [ ] T4 Execution tests for AC3/AC5/AC7 (`skip_if` no binaries; a
+- [x] T4 Execution tests for AC3/AC5/AC7 (`skip_if` no binaries; a
       `-f lavfi -i testsrc=duration=120` encode is the long command) and unit
       tests for AC4/AC6 against the classifier. Mutation-probe each new
       assertion — delete the guard it fences and confirm it reddens (M44).
@@ -119,6 +119,11 @@ naming the program and the limit. A D-entry records the shape.
 - 2026-08-09: T2 — `guard_timeout()` added; all four spawn sites resolve and pass the limit. `suppress=` follows each site's existing behavior (`run_program()` keeps its `suppressWarnings()` semantics; the three Layer 0 hatches keep letting a non-zero exit warn). Full suite FAIL 0 / PASS 6088 / SKIP 5.
 - 2026-08-09: T2 — the suite's 4 warnings are pre-existing `warn_dropped_audio()` calls, not M69's: a `master` worktree and the branch both report warn 4 / fail 0 / pass 195 over `test-audio-stream.R` + `test-ffmpeg.R`.
 - 2026-08-09: T1 mutation probe — 7 mutations of `R/timeout.R` each reddened the suite (1/3/3/1/1/1/1 failures), and the differing failure sets rule out M44's identical-set tell.
+
+- 2026-08-09: T3/T4 — `ffm_run()` catches `tidymedia_timeout` and re-raises it with D046's disposition appended; `abort_timeout()` gained `extra=`/`.envir=` so `remove_failed_output()`'s `{.file {output}}` bullets interpolate in the caller's frame rather than being re-glued from a formatted message (M44's brace trap).
+- 2026-08-09: T4 — the hang is produced by a FIFO with no writer, which blocks FFmpeg deterministically, rather than by racing a long encode against the limit on an unknown host (the M31/M46 failure mode). Windows skips (no mkfifo); the fixture is built inside the gate and the gate skips rather than `fail()`s (M68).
+- 2026-08-09: T4 — FFmpeg blocks on the FIFO before opening its output, so the half-written-output half of AC5 is unreachable that way; it is proven instead by injecting the kill at the `run_program()` seam with a call-counting mock, leaving the cleanup path real. Filter green: 67 pass, 0 fail. Full suite FAIL 0 / PASS 6112.
+- 2026-08-09: T3 mutation probe — dropping the handler, skipping `remove_failed_output()`, and moving the snapshot after the run each reddened 3 tests, with the feature verified still present in the tree.
 
 ## Decisions
 

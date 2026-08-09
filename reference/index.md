@@ -199,6 +199,8 @@ including opt-in NVIDIA nvenc GPU encoding.
 - [`nvenc_encoder()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
   [`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
   : NVIDIA nvenc hardware encoders
+- [`refresh_ffmpeg_capabilities()`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
+  : Forget what tidymedia remembers about your FFmpeg build
 
 ## Program management
 

@@ -69,7 +69,8 @@ for the Layer 0 escape hatch.
 
 Other capability functions:
 [`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md),
-[`nvenc_encoder()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+[`nvenc_encoder()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md),
+[`refresh_ffmpeg_capabilities()`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
 
 ## Examples
 

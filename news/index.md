@@ -333,6 +333,35 @@
 
 ### Performance
 
+- `hardware = "nvenc"` asks FFmpeg which encoders it has once per R
+  session instead of once per call. Every such call previously started a
+  separate FFmpeg process to re-read the same encoder list, so a 500-row
+  nvenc batch paid 500 of them before encoding anything; now it pays
+  one. The compiled commands are unchanged.
+
+  The answer is remembered for the rest of the session, which matters if
+  the build changes underneath you — a fresh FFmpeg install, a new GPU
+  driver, a different binary. Two calls discard it: the new
+  [`refresh_ffmpeg_capabilities()`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md),
+  and
+  [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+  (or
+  [`set_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)),
+  which discards it for you since it points tidymedia at a different
+  binary. Setting `options(tidymedia.nvenc_encoders = )` still overrides
+  the answer outright and is read before anything remembered, so it
+  takes effect at once.
+
+  [`ffmpeg_encoders()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md)
+  and
+  [`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md)
+  are never remembered: they query FFmpeg on every call and always
+  report the build as it is now.
+
+  What is remembered is per R process, so under `parallel = TRUE` each
+  worker asks once rather than sharing the parent’s answer. That is
+  bounded by the worker count, not the row count.
+
 - [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
   and the `probe_*()` shortcuts take a new `parallel` argument (default
   `FALSE`). With `parallel = TRUE` the per-file probes are spread across

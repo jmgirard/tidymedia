@@ -127,8 +127,10 @@ alongside <code>video_codec = "copy"</code> is an error: name an encoder or pass
 <code>video_codec = NULL</code>. See <code><a href="nvenc_encoder.html">has_nvenc</a></code> for availability and
 its caveats.
 Resolving <code>"nvenc"</code> asks this FFmpeg build which encoders it has, so
-a <code>"nvenc"</code> call that re-encodes the video runs the binary while the
-command is built, even under <code>run = FALSE</code>.
+the first <code>"nvenc"</code> call that re-encodes the video runs the binary
+while the command is built, even under <code>run = FALSE</code>. The answer is
+remembered for the rest of the R session; see
+<code><a href="refresh_ffmpeg_capabilities.html">refresh_ffmpeg_capabilities</a></code> to discard it.
 The stream-copy conflict above is caught first, so such a call aborts
 without probing.</p></dd>
 

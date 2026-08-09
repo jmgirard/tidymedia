@@ -86,19 +86,22 @@ compare_videos_batch(
   batch (a property of the machine, not of a row, so neither is read as
   a `jobs` column). See
   [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md).
-  Resolving `"nvenc"` asks this FFmpeg build which encoders it has, so a
-  `"nvenc"` call that re-encodes the video runs the binary while the
-  command is built, even under `run = FALSE`. Availability is checked at
-  this verb's own front door, before any row runs, so an unavailable
-  encoder aborts naming this function rather than the internal fan-out
-  it would otherwise be reported against. A call that also contradicts
-  itself — naming an `audio_codec` with no audio carried into the output
-  — is refused for the contradiction first, whether or not this machine
-  has the encoder. A per-row value error — an `audio` index past that
-  row's input count, a `direction` outside the two accepted values —
-  likewise reports ahead of the encoder check. A value error and a
-  contradiction resolve the same way whether the value arrived as an
-  argument or in a `jobs` column; the contradiction reports first.
+  Resolving `"nvenc"` asks this FFmpeg build which encoders it has, so
+  the first `"nvenc"` call that re-encodes the video runs the binary
+  while the command is built, even under `run = FALSE`. The answer is
+  remembered for the rest of the R session; see
+  [`refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
+  to discard it. Availability is checked at this verb's own front door,
+  before any row runs, so an unavailable encoder aborts naming this
+  function rather than the internal fan-out it would otherwise be
+  reported against. A call that also contradicts itself — naming an
+  `audio_codec` with no audio carried into the output — is refused for
+  the contradiction first, whether or not this machine has the encoder.
+  A per-row value error — an `audio` index past that row's input count,
+  a `direction` outside the two accepted values — likewise reports ahead
+  of the encoder check. A value error and a contradiction resolve the
+  same way whether the value arrived as an argument or in a `jobs`
+  column; the contradiction reports first.
 
 - run:
 

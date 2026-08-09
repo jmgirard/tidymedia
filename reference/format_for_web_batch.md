@@ -49,12 +49,15 @@ format_for_web_batch(
   libx264) or `"nvenc"` for NVIDIA GPU H.264 encoding. Batch-wide (not a
   per-row column). See
   [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md).
-  Resolving `"nvenc"` asks this FFmpeg build which encoders it has, so a
-  `"nvenc"` call that re-encodes the video runs the binary while the
-  command is built, even under `run = FALSE`. Availability is checked at
-  this verb's own front door, before any row runs, so an unavailable
-  encoder aborts naming this function rather than the internal fan-out
-  it would otherwise be reported against.
+  Resolving `"nvenc"` asks this FFmpeg build which encoders it has, so
+  the first `"nvenc"` call that re-encodes the video runs the binary
+  while the command is built, even under `run = FALSE`. The answer is
+  remembered for the rest of the R session; see
+  [`refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
+  to discard it. Availability is checked at this verb's own front door,
+  before any row runs, so an unavailable encoder aborts naming this
+  function rather than the internal fan-out it would otherwise be
+  reported against.
 
 - fallback:
 

@@ -396,6 +396,40 @@
 
 ### Bug fixes
 
+- A run that fails no longer leaves a broken output file behind. FFmpeg
+  creates its output before it knows the command will work, so a refused
+  encode left a zero-byte file sitting where a result should be — and if
+  you were writing over an existing file, FFmpeg had already truncated
+  that to zero on its way to failing. Every verb, and every row of a
+  `_batch` verb, now deletes what the failed run wrote, and the error
+  says so and names it.
+
+  Only what the run wrote. Some failures — an unknown encoder, an
+  unknown filter, a bad option value — are refused before FFmpeg opens
+  the output at all, and a file already sitting at that path is then
+  untouched. tidymedia checks the output’s size and timestamp before the
+  run and again after the failure, leaves such a file exactly as it was,
+  and says that instead. A file whose name contains `*`, `?` or `[` is
+  deleted as the name it is, never as a pattern, so a neighboring file
+  is never taken with it.
+
+  `overwrite = FALSE` against a file that was already there keeps its
+  own guarantee: FFmpeg was told not to replace it, so neither will
+  tidymedia. A failed run that created its output still has it cleaned
+  up whatever `overwrite` says. If the file cannot be deleted — a
+  read-only directory, say — the error tells you it is still there
+  rather than claiming a cleanup that did not happen.
+
+  [`sample_frames()`](https://jmgirard.github.io/tidymedia/reference/sample_frames.md)
+  writes a numbered image sequence from one command, and a failed run
+  there deletes the frames that run wrote, in that directory, leaving an
+  earlier run’s frames alone.
+
+  This does not reach
+  [`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md),
+  the raw escape hatch, which runs a command string it cannot parse for
+  an output path.
+
 - A `_batch` verb that refuses a bad value carried in a `jobs` column
   now says which row carries it. The refusal message gains one final
   bullet — `First offending jobs row: 7.` — on the front-door value,

@@ -13,6 +13,23 @@ range_wording <- function(arg) {
   paste0("`", arg, "` must be ")
 }
 
+test_that("the man pages carry the binding-rendered loudness ranges", {
+  # AC2's enforcement between document() runs: the three documented ranges are
+  # pasted in from loudnorm_bounds_rd() at document() time, so the installed
+  # pages must contain exactly what the helper renders from the bindings NOW.
+  # A binding moved without re-documenting -- the drift AC2 exists to prevent
+  # -- fails here rather than waiting for the next document() diff.
+  rd <- rd_sources()
+  skip_if(is.null(rd), "no Rd source available")
+  render <- get("loudnorm_bounds_rd", envir = asNamespace("tidymedia"))
+  for (topic in c("normalize_audio.Rd", "ffm_loudnorm.Rd")) {
+    for (arg in c("target_loudness", "true_peak", "loudness_range")) {
+      expect_match(rd[[topic]], render(arg), fixed = TRUE,
+                   info = paste(topic, arg))
+    }
+  }
+})
+
 test_that("the overlay scale range is one binding read by both layers", {
   rng <- get("overlay_scale_range", envir = asNamespace("tidymedia"))
   input <- make_input()

@@ -1,6 +1,6 @@
 # M66: A batch value refusal names the offending row
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -257,3 +257,30 @@ Consistency gate: cairn_validate exit 0 (advisory work-log wrap WARNs only);
 document() no diff; README newer than Rmd; pkgdown check_pkgdown clean; NEWS
 entry present, no milestone numbers; no new top-level files needing
 .Rbuildignore (data-raw covered). Driving RR: — (no-op).
+
+Fresh-context review (three lenses → scorer): blame-history 0 findings;
+prior-review 0 (no PR threads; M64 F12 affirmatively guarded, M65 F10 is
+this milestone); diff-bug 17. Actioned (≥80): F1 (90) argument-delivered
+audio/resize refusals on compare carried a locator — fixed, M66-D1, return 1;
+F2 (92) the complement cell set omitted exactly those two sites — fixed, two
+cells added. Logged (<80), 15: F9 72 harness line-drift (fixed anyway,
+bounded regex); F12 72 two-ref evidence uncommitted (fixed, runner in
+data-raw); F13 72 marker check uncommitted (fixed, runner in data-raw); F4
+68 rlang footer defeats the $-anchored strip (latent, no checker uses
+footer); F3 65 function-valued body corrupted (fixed anyway, materialized);
+F10 45 closure misses functions passed as values (both abort-free today);
+F5 42 nesting undocumented; F6 35 zero-length row (fixed anyway,
+pass-through); F7 35 wrapper catches internal errors too; F8 30 silent row
+coercion; F11 28 duplicate-name overwrite in parser (none exist); F16 28
+test nits (partly inaccurate per scorer); F14 32 two-pass-token cell
+mislabeled (shadowing already disclosed in T6 log); F15 12 two locator
+conventions (scoped out, disclosed); F17 12 pre-existing frame=Inf crash
+(identical at master).
+
+Post-return re-verification, 2026-08-08 (branch @ 6551ca1): suite 0 fail /
+5899 pass; two-ref runner 51 cells, 51 abort both refs, 44/44 locator cells
+strip to master byte-for-byte, 7/7 complements byte-identical; instruments
+0 vacuous / 0 moves / 0 drift, 10/10 scalar byte-identical, both precedence
+grids 0 dead / 0 unresolved / 0 flips, 48 markers 0 matching; harness 24/24
+owned on the regenerated triage (in sync); check 0 errors / 0 warnings /
+0 notes. AC1–AC5 stand ticked on this refreshed evidence.

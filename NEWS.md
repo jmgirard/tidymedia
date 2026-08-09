@@ -272,6 +272,16 @@
 
 ## Bug fixes
 
+* A `_batch` verb that refuses a bad value carried in a `jobs` column now says
+  which row carries it. The refusal message gains one final bullet — `First
+  offending jobs row: 7.` — on the front-door value, vocabulary, codec-token
+  and contradiction sweeps of the batch verbs, so a bad cell in a 50-row table
+  no longer has to be found by hand. The rest of the message is unchanged
+  byte-for-byte, and the same value passed as the verb's own argument (which
+  applies to every row) still refuses without naming one. On
+  `separate_audio_video_batch()`, whose jobs table is reshaped internally, the
+  row named is the row of *your* table, not the reshaped one.
+
 * A bad crop, scale, rate or pixel-format value is now refused by the function
   you called. `crop_video()`'s `width`, `height`, `x` and `y`,
   `standardize_video()`'s `width`, `height`, `fps` and `pixel_format`, and

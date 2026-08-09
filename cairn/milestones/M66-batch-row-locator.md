@@ -1,6 +1,6 @@
 # M66: A batch value refusal names the offending row
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -115,7 +115,7 @@ first-offender here) — not attempted; disclosed in the triage.
 - [x] T6. Extend the mutation harness: re-derive the site set at run time,
       compare against the committed triage, mutate each row-index pass to
       `1L`, attribute each red.
-- [ ] T7. Re-run baseline + precedence instruments at both refs (zero flips,
+- [x] T7. Re-run baseline + precedence instruments at both refs (zero flips,
       scalar byte-identity, no leak); NEWS entry narrowed to what the grid
       enforces; profile verify clean.
 
@@ -191,6 +191,12 @@ first-offender here) — not attempted; disclosed in the triage.
 - 2026-08-08: minor amendment (T7 prep) — blame_message_drift()'s strip
   gains the locator pattern beside its In-index strip: an added bullet is
   not a rewording; same regex as the verified strip_row_locator().
+- 2026-08-08: T7 done — instruments at master vs tree: blame baseline 0
+  vacuous / 0 moves / 0 drift, 10/10 scalar cells byte-identical; M64 + M65
+  precedence: 0 dead controls, 0 unresolved, 0 flips; 48 markers enumerated,
+  0 match the rendered locator. NEWS bullet added (claims scoped to what
+  test-row-locator-grid.R enforces). devtools::test 0 fail; devtools::check
+  0 errors / 0 warnings / 0 notes. Status → review.
 
 ## Decisions
 

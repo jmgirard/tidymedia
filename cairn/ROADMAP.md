@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-08 (M66 planned from the M65-leftovers row's part (
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M66 | A batch value refusal names the offending row | in-progress | — | normal | milestones/M66-batch-row-locator.md |
+| M66 | A batch value refusal names the offending row | review | — | normal | milestones/M66-batch-row-locator.md |
 | M65 | A region, overlay or loudness mistake names the verb the user called, in both forms | done | M64 | normal | milestones/archive/M65-region-overlay-loudness-blame.md |
 | M64 | A crop, scale or rate mistake names the verb the user called, in both forms | done | — | normal | milestones/archive/M64-crop-scale-rate-blame.md |
 | M63 | An unreadable input is refused where a missing one already is | done | M62 | normal | milestones/archive/M63-unreadable-input-front-door.md |

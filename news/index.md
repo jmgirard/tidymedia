@@ -393,6 +393,36 @@
   [`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md)
   gives for its `width` and `height`.
 
+- A bad region, inset-scale or loudness value is now refused by the
+  function you called.
+  [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)’s
+  per-region `x`, `y`, `width` and `height` values,
+  [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)’s
+  out-of-range `scale`, and
+  [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)’s
+  `target_loudness`, `true_peak` and `loudness_range` used to be
+  reported against an internal builder the caller never called —
+  [`ffm_drawbox()`](https://jmgirard.github.io/tidymedia/reference/ffm_drawbox.md),
+  [`ffm_overlay()`](https://jmgirard.github.io/tidymedia/reference/ffm_overlay.md),
+  [`ffm_loudnorm()`](https://jmgirard.github.io/tidymedia/reference/ffm_loudnorm.md)
+  — or, on the `_batch` siblings, against
+  [`purrr::pmap()`](https://purrr.tidyverse.org/reference/pmap.html)
+  with an `In index:` prefix. Each `_batch` sibling refuses the value
+  whether it is passed as the argument or carried in a `jobs` column
+  (`regions`, which exists only as a column on the batch verb, in its
+  column form), and before any row runs. Under `two_pass = TRUE`, a bad
+  loudness target is refused before the analysis pass measures the
+  input, instead of after that measurement was already spent.
+  [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)’s
+  existing complaint about a non-numeric `scale` is unchanged; the new
+  refusal covers a numeric `scale` outside `0 < scale <= 1`. On the two
+  `_batch` verbs that take `hardware`, a call also wrong about
+  `hardware = "nvenc"` on a machine without the encoder is now told
+  about the bad value first, the same answer the crop and standardize
+  verbs give. The documented loudness ranges and the checks that enforce
+  them now read from one shared definition per range, so the
+  documentation and the refusal can no longer drift apart.
+
 - An input file that does not exist is now reported against the verb you
   called. Every `_batch` verb used to accept a `jobs` table naming a
   missing path and only discover it once the batch was under way, so the

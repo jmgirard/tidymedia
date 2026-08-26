@@ -2,7 +2,7 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-09 (M68 archived: validate green, M63's terminal row pruned to the five most recent, M31's fixture-gate lesson extended rather than a line added — nothing in flight, the next action is planning.)_
+_Last hygiene check: 2026-08-26 (validate green with one sizing advisory; M69 is in-progress on `m69-runtime-timeout` after a third review return routed it to re-plan — master's cairn copy is 17 commits behind that branch and is stale by design, not broken; LESSONS.md is 33,163 bytes against its 20,000-byte budget, surfaced for the user.)_
 
 ## Milestones
 

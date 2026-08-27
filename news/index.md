@@ -7,36 +7,37 @@
 - A hung media program no longer blocks the R session indefinitely.
   Setting `options(tidymedia.timeout = 600)` gives every FFmpeg, FFprobe
   and MediaInfo process tidymedia starts a wall-clock limit in whole
-  seconds. What a reached limit does depends on the call, and there are
-  three answers rather than two. The task verbs,
+  seconds. A reached limit is never silent: every call that can start
+  one of those programs either aborts or warns. The task verbs,
   [`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md)
   and the raw
   [`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)/[`ffprobe()`](https://jmgirard.github.io/tidymedia/reference/ffprobe.md)/[`mediainfo()`](https://jmgirard.github.io/tidymedia/reference/mediainfo.md)
   hatches abort, naming the program and the limit;
   [`verify_media()`](https://jmgirard.github.io/tidymedia/reference/verify_media.md)
-  aborts too, since a probe that never answered is not an answer. The
-  metadata readers —
+  aborts too, since a probe that never answered is not an answer.
+  Everywhere one hung file must not discard the rest of the work, it
+  warns instead. The metadata readers —
   [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
   and the `probe_*()` accessors,
   [`mediainfo_parameter()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_parameter.md),
   [`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md),
   [`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md)
-  and the `get_*()` helpers — absorb it as a file they could not read,
-  yielding an `NA` row and one warning that says how many files timed
-  out, so a single hung file does not discard a whole corpus. And two
-  internal paths absorb it with **no warning** at all: the track-count
-  probe `count_audio_streams()`, used by
+  and the `get_*()` helpers — give an `NA` row and one warning saying
+  how many files timed out, so a single hung file does not discard a
+  whole corpus.
+  [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+  and the `_batch` verbs mark the row `success = FALSE`, as they do for
+  any failed job, and warn once at the end of the run saying how many
+  jobs the limit killed. The dropped-track check behind
   [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
   [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
   [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
-  and their `_batch` siblings to decide whether to report a dropped
-  track, and `tool_versions()`, used by
-  [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
-  to record which FFmpeg built each output. On those calls a bounded
-  hang is invisible — inspect the result rather than waiting to be told.
-  Both are known gaps. These three lists describe the calls they name
-  and are **not a complete partition** of the package. Where the call
-  knows its own output — the task verbs and
+  and their `_batch` siblings warns that it could not check, and the
+  provenance manifest warns that it could not read a version. Those two
+  lists are not written from memory: a test derives the calls that can
+  start one of these programs from the package’s own call graph and
+  drives a timeout through each of them. Where the call knows its own
+  output — the task verbs and
   [`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md)
   — any partial file the killed run had written is removed just as it is
   after any other failed run; the raw

@@ -67,31 +67,36 @@ that program to finish, and a program that hangs blocks the R session with
 it. Set a wall-clock limit, in whole seconds, to bound the wait:</p>
 <div class="sourceCode"><pre><code><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>tidymedia.timeout <span class="op">=</span> <span class="fl">600</span><span class="op">)</span></span></code></pre></div>
 
-<p>What a reached limit does depends on which call you made, and there are
-three answers rather than two.</p>
+<p>A reached limit is never silent: every call that can start one of those
+programs either aborts or warns.</p>
 <p>It <strong>aborts</strong>, naming the program and the limit, from the task verbs,
 <code><a href="ffm_run.html">ffm_run()</a></code>, and the Layer 0 escape hatches <code><a href="ffmpeg.html">ffmpeg()</a></code>, <code><a href="ffprobe.html">ffprobe()</a></code> and
 <code><a href="mediainfo.html">mediainfo()</a></code>. <code><a href="verify_media.html">verify_media()</a></code> aborts as well, because a probe that never
 answered is not an answer of "no".</p>
-<p>It is <strong>absorbed as an unreadable file</strong> by <code><a href="probe_all.html">probe_all()</a></code> and the
-<code>probe_*()</code> accessors, <code><a href="mediainfo_parameter.html">mediainfo_parameter()</a></code>, <code><a href="mediainfo_query.html">mediainfo_query()</a></code>,
-<code><a href="mediainfo_template.html">mediainfo_template()</a></code> and the <code>get_*()</code> helpers: an <code>NA</code> row and one
-warning at the end of the call, saying how many of the files it names timed
-out rather than being unreadable. One hung file does not discard a whole
-corpus.</p>
-<p>It is <strong>absorbed with no warning at all</strong> by two internal paths. The
-track-count probe <code>count_audio_streams()</code>, which <code><a href="extract_audio.html">extract_audio()</a></code>,
-<code><a href="convert_audio.html">convert_audio()</a></code>, <code><a href="separate_audio_video.html">separate_audio_video()</a></code> and their <code>_batch</code> siblings use
-to decide whether to tell you a track was dropped, returns <code>NA</code> and says
-nothing; the dropped-track warning you would normally get is simply absent.
-<code>tool_versions()</code>, which <code><a href="ffm_batch.html">ffm_batch()</a></code> uses to record which FFmpeg built
-each output, records an <code>NA</code> version in the manifest just as it would for a
-missing binary. On those calls a bounded hang is invisible: inspect the
-result rather than waiting to be told. Both are known gaps, and closing them
-is why the two lists above are described rather than partitioned.</p>
-<p>Those three lists describe the calls they name. They are <strong>not a complete
-partition</strong> of the package, and a call named in none of them has not been
-checked either way.</p>
+<p>It <strong>warns</strong> everywhere a single hung file must not discard the rest of the
+work. <code><a href="probe_all.html">probe_all()</a></code> and the <code>probe_*()</code> accessors, <code><a href="mediainfo_parameter.html">mediainfo_parameter()</a></code>,
+<code><a href="mediainfo_query.html">mediainfo_query()</a></code>, <code><a href="mediainfo_template.html">mediainfo_template()</a></code> and the <code>get_*()</code> helpers give
+an <code>NA</code> row and one warning at the end of the call, saying how many of the
+files it names timed out rather than being unreadable. <code><a href="ffm_batch.html">ffm_batch()</a></code> and the
+<code>_batch</code> verbs mark the row <code>success = FALSE</code>, as they do for any failed
+job, and warn once at the end of the run saying how many jobs the limit
+killed — at <code>parallel = TRUE</code> the workers never see the limit, so nothing
+there reaches it to warn about (see below). The dropped-track check behind
+<code><a href="extract_audio.html">extract_audio()</a></code>, <code><a href="convert_audio.html">convert_audio()</a></code>, <code><a href="separate_audio_video.html">separate_audio_video()</a></code> and their
+<code>_batch</code> siblings warns that it could not check, and the provenance manifest
+warns that it could not read a version; both then carry on as they would for
+any other unreadable input.</p>
+<p>To handle either outcome programmatically, the abort carries the condition
+class <code>tidymedia_timeout</code>; the dropped-track and version-probe warnings
+carry <code>tidymedia_probe_timeout</code>, and the batch warning
+<code>tidymedia_batch_timeout</code>. So the documented recipe for silencing the
+dropped-track check, <code>suppressWarnings(classes = "tidymedia_dropped_audio")</code>,
+silences only the check itself — add <code>"tidymedia_probe_timeout"</code> to also
+silence the notice that the limit stopped it from running.</p>
+<p>Those two lists are not written from memory. A test derives the calls that
+can start one of these programs from the package's own call graph and drives
+a timeout through each of them, so a call that started absorbing one
+silently would fail the package's own checks.</p>
 <p>For the task verbs and <code><a href="ffm_run.html">ffm_run()</a></code>, which know where their output goes, a
 partial file the killed run had written is removed just as it is after any
 other failed run. The raw <code><a href="ffmpeg.html">ffmpeg()</a></code> escape hatch is handed an argument

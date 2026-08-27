@@ -115,9 +115,17 @@ run_program <- function(location, args, program = "the program",
   # process parses its command line with cmd-style (double-quote) rules, so
   # the type must follow the platform or spaced paths break there.
   quote_type <- if (.Platform$OS.type == "windows") "cmd" else "sh"
-  suppressWarnings(
+  # `suppress = TRUE` reproduces the suppressWarnings() this replaces: every
+  # caller here has always seen warnings discarded, and the timeout is the only
+  # new thing that reaches them (M69/D047). The limit is 0 -- no limit, byte-for
+  # -byte today's behavior -- unless the caller set `tidymedia.timeout`.
+  limit <- resolve_timeout(call = call)
+  guard_timeout(
+    program, limit,
     system2(location, args = shQuote(args, type = quote_type), stdout = TRUE,
-            stderr = stderr, input = input)
+            stderr = stderr, input = input, timeout = limit),
+    suppress = TRUE,
+    call = call
   )
 }
 

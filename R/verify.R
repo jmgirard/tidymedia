@@ -78,7 +78,28 @@ verify_media <- function(file,
   }
 
   # Probe once; the shortcuts would reprobe per call.
-  probe <- probe_all(file)
+  #
+  # The probe's own "could not read this file" warning is HELD rather than let
+  # through, because whether it is wanted is not known until the probe returns:
+  # on the timeout path the abort below reports the same event more precisely,
+  # and emitting both would tell the caller twice. Held conditions are replayed
+  # as themselves, not re-signalled from their text, so class and call survive.
+  held <- list()
+  probe <- withCallingHandlers(
+    probe_all(file),
+    warning = function(w) {
+      held[[length(held) + 1L]] <<- w
+      invokeRestart("muffleWarning")
+    }
+  )
+  # A probe that never answered is not an answer of "no". Absorbing the timeout
+  # here would mark every expectation failed with `actual = NA`, so a hung
+  # FFprobe after a SUCCESSFUL encode reads as "width: expected 1920, got NA"
+  # and blames the output for the probe's failure -- the one place the readers'
+  # absorb-and-carry-on rule (D047) gives the wrong answer, because this
+  # function's whole job is to assert.
+  if (!is.null(hit <- attr(probe, "tm_timed_out"))) reraise_absorbed(hit)
+  for (w in held) warning(w)
   container <- probe$container
   video <- filter_streams(probe$streams, "video")
   audio <- filter_streams(probe$streams, "audio")

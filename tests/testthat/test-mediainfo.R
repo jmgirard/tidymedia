@@ -2,6 +2,18 @@
 # (a missing file short-circuits before MediaInfo is invoked). Execution tests
 # are gated on the mediainfo binary and skip where it is absent.
 
+test_that("mediainfo() runs a raw command and returns its output", {
+  # The Layer 0 hatch had no execution test at all: its happy path was
+  # unexercised, so the limit resolution and guard M69 threaded through it were
+  # never actually run. `--Version` needs no media file and no network.
+  skip_if_no_mediainfo()
+  withr::local_options(tidymedia.timeout = NULL)
+  out <- mediainfo("--Version")
+  expect_type(out, "character")
+  expect_gt(length(out), 0)
+  expect_match(paste(out, collapse = " "), "MediaInfo")
+})
+
 test_that("mediainfo readers abort on malformed file arguments", {
   expect_error(mediainfo_parameter(123, "General", "Format"))
   expect_error(mediainfo_parameter(character(0), "General", "Format"))

@@ -25,7 +25,14 @@ ffmpeg <- function(command) {
   # is feeding R's stdin (e.g. the example stream during R CMD check). This is
   # the equivalent of FFmpeg's -nostdin flag, applied without touching the
   # verbatim `command` string.
-  out <- system(glue('{find_ffmpeg()} {command}'), intern = TRUE, input = "")
+  # A hung FFmpeg would otherwise block the session forever; the limit is off
+  # (0) unless the caller sets `tidymedia.timeout` (M69/D047).
+  limit <- resolve_timeout()
+  out <- guard_timeout(
+    "FFmpeg", limit,
+    system(glue('{find_ffmpeg()} {command}'), intern = TRUE, input = "",
+           timeout = limit)
+  )
   out
 }
 

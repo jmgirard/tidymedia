@@ -1560,8 +1560,29 @@ ffm_run <- function(object, verify = NULL) {
   # against a pre-run size and mtime (D046).
   output <- object$output
   before <- output_snapshot(output)
-  out <- run_program(find_ffmpeg(), ffm_args(object), program = "FFmpeg",
-                     input = "", stderr = "")
+  # A timeout ABORTS inside run_program() rather than returning a status, so the
+  # cleanup below would never be reached without this handler -- a killed FFmpeg
+  # leaves exactly the half-written output D046 exists to remove. The disposition
+  # is appended to the timeout's own message, so which of D046's outcomes applied
+  # is stated on this path too (M69 AC5). The rule itself is untouched: the same
+  # remove_failed_output() call, with the same pre-run snapshot.
+  out <- rlang::try_fetch(
+    run_program(find_ffmpeg(), ffm_args(object), program = "FFmpeg",
+                input = "", stderr = ""),
+    tidymedia_timeout = function(cnd) {
+      # Read the parts off the condition rather than reusing its formatted
+      # message: re-interpolating that would re-run glue over whatever the
+      # message already contains (M44's brace trap). `.envir` is this handler's
+      # frame, so `{.file {output}}` inside `disposition` resolves against
+      # ffm_run()'s `output` up the enclosure chain, while `program` and `limit`
+      # resolve to the locals below.
+      program <- cnd$tm_program
+      limit <- cnd$tm_limit
+      disposition <- remove_failed_output(output, object$overwrite, before)
+      abort_timeout(program, limit, extra = disposition,
+                    .envir = environment())
+    }
+  )
   status <- attr(out, "status")
   if (!is.null(status)) {
     disposition <- remove_failed_output(output, object$overwrite, before)

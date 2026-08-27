@@ -19,12 +19,75 @@ back ends: FFprobe, through \code{\link[=probe_all]{probe_all()}} and the other 
 which return container and stream tibbles; and MediaInfo, through
 \code{\link[=mediainfo_query]{mediainfo_query()}} and the \verb{get_*()} helpers such as \code{\link[=get_duration]{get_duration()}}, which
 return a single value.
+}
+\section{Bounding a run that hangs}{
+
+Every tidymedia call that touches FFmpeg, FFprobe or MediaInfo waits for
+that program to finish, and a program that hangs blocks the R session with
+it. Set a wall-clock limit, in whole seconds, to bound the wait:
+
+\preformatted{options(tidymedia.timeout = 600)}
+
+What a reached limit does depends on which call you made, and there are
+three answers rather than two.
+
+It \strong{aborts}, naming the program and the limit, from the task verbs,
+\code{\link[=ffm_run]{ffm_run()}}, and the Layer 0 escape hatches \code{\link[=ffmpeg]{ffmpeg()}}, \code{\link[=ffprobe]{ffprobe()}} and
+\code{\link[=mediainfo]{mediainfo()}}. \code{\link[=verify_media]{verify_media()}} aborts as well, because a probe that never
+answered is not an answer of "no".
+
+It is \strong{absorbed as an unreadable file} by \code{\link[=probe_all]{probe_all()}} and the
+\verb{probe_*()} accessors, \code{\link[=mediainfo_parameter]{mediainfo_parameter()}}, \code{\link[=mediainfo_query]{mediainfo_query()}},
+\code{\link[=mediainfo_template]{mediainfo_template()}} and the \verb{get_*()} helpers: an \code{NA} row and one
+warning at the end of the call, saying how many of the files it names timed
+out rather than being unreadable. One hung file does not discard a whole
+corpus.
+
+It is \strong{absorbed with no warning at all} by two internal paths. The
+track-count probe \code{count_audio_streams()}, which \code{\link[=extract_audio]{extract_audio()}},
+\code{\link[=convert_audio]{convert_audio()}}, \code{\link[=separate_audio_video]{separate_audio_video()}} and their \verb{_batch} siblings use
+to decide whether to tell you a track was dropped, returns \code{NA} and says
+nothing; the dropped-track warning you would normally get is simply absent.
+\code{tool_versions()}, which \code{\link[=ffm_batch]{ffm_batch()}} uses to record which FFmpeg built
+each output, records an \code{NA} version in the manifest just as it would for a
+missing binary. On those calls a bounded hang is invisible: inspect the
+result rather than waiting to be told. Both are known gaps, and closing them
+is why the two lists above are described rather than partitioned.
+
+Those three lists describe the calls they name. They are \strong{not a complete
+partition} of the package, and a call named in none of them has not been
+checked either way.
+
+For the task verbs and \code{\link[=ffm_run]{ffm_run()}}, which know where their output goes, a
+partial file the killed run had written is removed just as it is after any
+other failed run. The raw \code{\link[=ffmpeg]{ffmpeg()}} escape hatch is handed an argument
+string it does not parse, so it cannot tell which of those arguments is the
+output and leaves whatever the killed run wrote in place — check the output
+of a timed-out \code{\link[=ffmpeg]{ffmpeg()}} call yourself. The default is \code{0}, which
+means no limit — every call waits as long as the program takes, which is
+what you want for a legitimate multi-hour encode. Fractional values are
+refused rather than rounded, because the underlying limit is whole seconds
+and a value below one second would otherwise be read as no limit at all.
+
+The limit applies per spawned program, not per batch: a 100-row batch with a
+600-second limit bounds each row at 600 seconds. It is also read in the
+process that sets it, so under \code{parallel = TRUE} the worker processes do not
+see it.
+
+The limit bounds the wait; it does not promise the program dies at the
+second. R asks the program to stop when the limit is reached, insists 20
+seconds later, and kills it 20 seconds after that, so on Unix a program that
+does not answer the first two can outlive its limit by up to 40 seconds — an
+FFmpeg blocked on an unresponsive input has been measured doing exactly that.
+R does not guarantee termination at all: a program can be written to survive
+the attempt.
 
 See \code{vignette("tidymedia")} for the guided tour, \code{vignette("batch")} for
 running a verb over many files, \code{vignette("metadata")} for the readers, and
 \code{vignette("workflow")} for an end-to-end research preprocessing pipeline.
 The full function list is on the package's reference index.
 }
+
 \seealso{
 Useful links:
 \itemize{

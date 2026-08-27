@@ -139,6 +139,11 @@ measurement pass. The defaults follow EBU Recommendation R 128 (2014) —
 <code>target_loudness = -23</code> LUFS and <code>true_peak = -1</code> dBTP, loudness
 measured per ITU-R BS.1770-4 — with <code>loudness_range = 7</code> (FFmpeg's own
 <code>loudnorm</code> default, EBU R128 not prescribing a single value).</p>
+<p>Two filters are appended, not one: <code>loudnorm</code> is followed by
+<code>asetnsamples</code>, which re-chunks the filtered audio into 4096-sample
+frames without padding the last one. Dynamic <code>loudnorm</code> resamples to
+192 kHz and emits 192000-sample frames, which encoders that accept whatever
+frame they are handed — FLAC and Vorbis among them — refuse to open at all.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -180,7 +185,7 @@ maximum level of audio signals</em>; ITU-R BS.1770-4.
 <span class="r-in"><span><span class="fu"><a href="ffm.html">ffm</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"output.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">ffm_loudnorm</span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="ffm_compile.html">ffm_compile</a></span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" \"output.mp4\""</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7,asetnsamples=n=4096:p=0\" \"output.mp4\""</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

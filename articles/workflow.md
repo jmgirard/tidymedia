@@ -105,7 +105,7 @@ container would give you a `.mp4` carrying nothing but sound:
 
 normalize_audio(session, "session01_camA_norm.wav",
                 target_loudness = -23, run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -map \"0:a:0\" \"session01_camA_norm.wav\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7,asetnsamples=n=4096:p=0\" -map \"0:a:0\" \"session01_camA_norm.wav\""
 ```
 
 To normalize a recording’s loudness *and* keep its picture, normalize to

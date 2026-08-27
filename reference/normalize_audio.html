@@ -256,14 +256,14 @@ verbs whose output is one audio stream.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">video</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sample.mp4"</span>, package <span class="op">=</span> <span class="st">"tidymedia"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># The output holds audio only, so name an audio file for it</span></span></span>
 <span class="r-in"><span><span class="fu">normalize_audio</span><span class="op">(</span><span class="va">video</span>, <span class="st">"normalized.wav"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -map \"0:a:0\" \"normalized.wav\""</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7,asetnsamples=n=4096:p=0\" -map \"0:a:0\" \"normalized.wav\""</span>
 <span class="r-in"><span><span class="co"># Normalize to a streaming target and downmix to mono</span></span></span>
 <span class="r-in"><span><span class="fu">normalize_audio</span><span class="op">(</span><span class="va">video</span>, <span class="st">"mono.wav"</span>, target_loudness <span class="op">=</span> <span class="op">-</span><span class="fl">16</span>, channels <span class="op">=</span> <span class="fl">1</span>,</span></span>
 <span class="r-in"><span>                run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-16:TP=-1:LRA=7\" -ac 1 -map \"0:a:0\" \"mono.wav\""</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-16:TP=-1:LRA=7,asetnsamples=n=4096:p=0\" -ac 1 -map \"0:a:0\" \"mono.wav\""</span>
 <span class="r-in"><span><span class="co"># Name the output audio encoder instead of taking the container's default</span></span></span>
 <span class="r-in"><span><span class="fu">normalize_audio</span><span class="op">(</span><span class="va">video</span>, <span class="st">"normalized.m4a"</span>, audio_codec <span class="op">=</span> <span class="st">"aac"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -codec:a aac -map \"0:a:0\" \"normalized.m4a\""</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7,asetnsamples=n=4096:p=0\" -codec:a aac -map \"0:a:0\" \"normalized.m4a\""</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

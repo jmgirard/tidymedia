@@ -145,7 +145,7 @@ for it — normalizing into a video container would give you a
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/normalize_audio.html">normalize_audio</a></span><span class="op">(</span><span class="va">session</span>, <span class="st">"session01_camA_norm.wav"</span>,</span>
 <span>                target_loudness <span class="op">=</span> <span class="op">-</span><span class="fl">23</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" -map \"0:a:0\" \"session01_camA_norm.wav\""</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7,asetnsamples=n=4096:p=0\" -map \"0:a:0\" \"session01_camA_norm.wav\""</span></span></code></pre></div>
 <p>To normalize a recording’s loudness <em>and</em> keep its picture,
 normalize to an audio file as above and mux it back with the
 <code><a href="../reference/ffmpeg.html">ffmpeg()</a></code> escape hatch.</p>

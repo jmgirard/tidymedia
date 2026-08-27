@@ -85,6 +85,13 @@ measurement pass. The defaults follow EBU Recommendation R 128 (2014) —
 measured per ITU-R BS.1770-4 — with `loudness_range = 7` (FFmpeg's own
 `loudnorm` default, EBU R128 not prescribing a single value).
 
+Two filters are appended, not one: `loudnorm` is followed by
+`asetnsamples`, which re-chunks the filtered audio into 4096-sample
+frames without padding the last one. Dynamic `loudnorm` resamples to 192
+kHz and emits 192000-sample frames, which encoders that accept whatever
+frame they are handed — FLAC and Vorbis among them — refuse to open at
+all.
+
 ## References
 
 EBU Recommendation R 128 (2014), *Loudness normalisation and permitted
@@ -127,5 +134,5 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 ffm(video, "output.mp4") |>
   ffm_loudnorm() |>
   ffm_compile()
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7\" \"output.mp4\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7,asetnsamples=n=4096:p=0\" \"output.mp4\""
 ```

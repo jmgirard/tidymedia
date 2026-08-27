@@ -2297,11 +2297,16 @@ makes had only ever been measured on 3.0.3, so the floor stated a version
 nobody had run. It is measured now, and it stays.
 
 **What was measured.** `data-raw/withr-floor.R` installs a given `withr` from
-the CRAN archive into its own library, then runs — in a fresh `Rscript` session
-with that library first, each session asserting that the `withr` it actually
-loaded is the one requested — the two timeout-wrapper test files, the two
-top-level forms, `source(local = TRUE)`, the four documented claims about
-`local_timeout()`, and the `withr::` calls the documentation compares it to. On
+CRAN into its own library — the Archive for a retired version, the current
+`src/contrib` directory for the release, which is where 3.0.3 comes from — then
+runs, in a fresh `Rscript` session with that library first, the two
+timeout-wrapper test files, the two top-level forms, where each form's undo
+actually registered, `source(local = TRUE)`, the four documented claims about
+`local_timeout()`, and the `withr::` calls the documentation compares it to.
+Each child session asserts that the `withr` it loaded came from the library it
+was handed, not merely that the version string matches: the user library holds
+the current release, so a version check alone could not catch a failed install
+of the 3.0.3 arm. A failing `test_that()` block stops the run. On
 2.5.0 and on 3.0.3: all 35 `test_that()` blocks of `test-local-timeout.R` and
 `test-with-timeout.R` pass, 0 failures and 0 skips on either; the four
 documented claims read exactly as written on both; `withr::defer()` and
@@ -2313,16 +2318,23 @@ finalizer registered after withr's own, the `source()` form has the caller's
 value back when `source()` returns.
 
 **The mechanism changed; what these forms observe did not.** withr 3.0.0
-rewrote `defer()`'s `globalenv()` branch, and `local_timeout()` does reach it:
-at the top level of a file run by `Rscript` and at the top level of a
-`source()`d file alike, `parent.frame()` — the default `.local_envir` — is
-`globalenv()`, measured `TRUE` on both versions. The branch is reached and the
-two versions still agree, which is a different claim from the branch being
-unreachable, and it is the one that was measured. Only `global_defer()` is new
-in 3.x; `is_top_level_global_env()` is already in 2.5.0 (`compat-defer.R:174`,
-called at `:65`). D052's reason for choosing `defer()` over `on.exit()` — that
-it also handles a global or knitr target environment — therefore stands
-unqualified.
+rewrote `defer()`'s `globalenv()` branch. `local_timeout()` hands that branch
+`globalenv()` from both top-level forms — `parent.frame()`, the default
+`.local_envir`, is `globalenv()` at the top level of an `Rscript` file and of a
+`source()`d file alike, measured `TRUE` on both versions — but only the
+`Rscript` form's undo ends up there. `withr::deferred_run(globalenv())` restores
+the caller's value at an `Rscript` top level and finds nothing to run inside a
+`source()`d file, on 2.5.0 and on 3.0.3 both: withr redirects the handler to
+`source()`'s own frame first, and both versions do it, by different routes
+(3.0.3 consults `source_exit_frame_option()` before reaching `global_defer()`;
+2.5.0 runs `exit_frame()`/`source_frame()` before `setup_handlers()` is reached
+at all). So the rewritten branch is reached from one of the two forms rather
+than both, and the `source()` form's agreement across versions is caused by a
+redirect both versions have — not by the rewritten branch behaving the same.
+Only `global_defer()` is new in 3.x; `is_top_level_global_env()` is already in
+2.5.0 (`compat-defer.R:174`, called at `:65`). D052's reason for choosing
+`defer()` over `on.exit()` — that it also handles a global or knitr target
+environment — therefore stands unqualified.
 
 Nor is the `Rscript` form's outcome the absence of an undo. Both versions
 schedule one — `reg.finalizer(globalenv(), function(env) deferred_run(env),

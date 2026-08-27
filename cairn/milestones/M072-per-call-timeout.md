@@ -1,6 +1,6 @@
 # M072: One call can carry its own time limit
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -123,7 +123,7 @@ D-entry.
 - [x] T8. Docs: `_pkgdown.yml` reference row, `NEWS.md` entry, and the timeout
       paragraph in the package landing topic (`R/tidymedia-package.R:18`).
 - [x] T9. Append the D-entry to `cairn/DECISIONS.md`.
-- [ ] T10. `devtools::test()` and `devtools::check()` clean.
+- [x] T10. `devtools::test()` and `devtools::check()` clean.
 
 ## Work log
 
@@ -151,6 +151,8 @@ D-entry.
 - 2026-08-27: T8 — `_pkgdown.yml` gains a "Bounding a run" section holding `with_timeout` (`pkgdown::check_pkgdown()` clean), NEWS.md a new-features bullet, and the landing topic a wrapped-call paragraph beside the session-wide one.
 
 - 2026-08-27: T9 — D051 appended: the per-call grain, D047's falsifier clause discharged with its rejection left standing, and the code-first argument order the gate chose.
+
+- 2026-08-27: T10 — `devtools::check()` 0 errors / 0 warnings / 0 notes (2m18s); `devtools::document()` leaves no diff; `cairn_validate` passes with the plan's 8-criteria advisory unchanged. Status to review.
 
 ## Decisions
 

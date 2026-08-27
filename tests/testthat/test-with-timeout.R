@@ -124,31 +124,12 @@ test_that("each exit path signals what its name says it does", {
 
 # What `seconds` may be -------------------------------------------------------
 #
-# The wrapper and the option must not disagree about what a usable limit is: a
-# caller who can pass 0.5 to one and not the other has two rules to learn, and
-# the one that accepted it would hand base R a value it reads as "no limit"
-# (M69/D047). So the probe vector is scored against the option's own verdict
-# rather than against a hand-written list of expectations.
-
-tm_seconds_probes <- list(
-  0, 1L, 60, 0.5, -1, NA, NA_real_, "2", c(1, 2), Inf, TRUE,
-  integer(0), factor("2")
-)
-
-tm_probe_label <- function(v) paste(class(v)[[1]], format(v)[1], length(v))
-
-tm_accepts <- function(f) {
-  tryCatch({
-    f()
-    TRUE
-  }, error = function(e) FALSE)
-}
+# The probe vector and the option's verdict on it live in
+# `helper-timeout-probes.R`, shared with `local_timeout()`'s refusal test.
 
 test_that("with_timeout() accepts exactly the values the option accepts", {
   verdicts <- vapply(tm_seconds_probes, function(v) {
-    by_option <- tm_accepts(function() {
-      withr::with_options(list(tidymedia.timeout = v), resolve_timeout())
-    })
+    by_option <- tm_option_accepts(v)
     by_call <- tm_accepts(function() with_timeout(NULL, v))
     expect_equal(by_call, by_option, info = tm_probe_label(v))
     by_option

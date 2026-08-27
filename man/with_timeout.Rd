@@ -53,6 +53,7 @@ with_timeout(extract_audio("in.mp4", "out.wav"), 300)
 
 }
 \seealso{
-\link{tidymedia-package} for the session-wide setting and what a reached
-limit does.
+\code{\link[=local_timeout]{local_timeout()}} for the statement form — bounding the rest of a
+function body rather than a wrapped expression — and \link{tidymedia-package} for
+the session-wide setting and what a reached limit does.
 }

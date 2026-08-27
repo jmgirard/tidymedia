@@ -17,7 +17,8 @@
 #     source() with its default globalenv()), each also reporting what
 #     `parent.frame()` -- local_timeout()'s default target -- actually is there;
 #   * whether the Rscript form has an undo SCHEDULED that its observation
-#     points simply run before;
+#     points simply run before, and whether the source() form's undo is on
+#     globalenv() at all or was redirected to source()'s own frame;
 #   * source(local = TRUE), the one 3.0.0 behavior change this dependency has
 #     that touches the same seam;
 #   * AC4's four documented behavioral claims;
@@ -71,6 +72,13 @@ install_withr <- function(ver) {
   if (!ok) stop("could not fetch withr ", ver, call. = FALSE)
   utils::install.packages(tgz, lib = lib, repos = NULL, type = "source",
                           INSTALL_opts = "--no-test-load", quiet = TRUE)
+  # install.packages() signals a failed source install as a warning, not an
+  # error, so a silent failure would otherwise leave an empty library that the
+  # children then fall through -- see the provenance assertion in `preamble`.
+  if (!dir.exists(file.path(lib, "withr"))) {
+    stop("install of withr ", ver, " produced no library entry in ", lib,
+         call. = FALSE)
+  }
   lib
 }
 
@@ -85,7 +93,7 @@ run_under <- function(lib, ver, script) {
   out <- suppressWarnings(system2(
     file.path(R.home("bin"), "Rscript"), shQuote(script),
     env = c(sprintf("R_LIBS=%s", lib), sprintf("WITHR_EXPECT=%s", ver),
-            "NOT_CRAN=true"),
+            sprintf("WITHR_LIB=%s", lib), "NOT_CRAN=true"),
     stdout = TRUE, stderr = TRUE
   ))
   cat(out, sep = "\n")
@@ -113,7 +121,16 @@ preamble <- c(
   '# assertion, not a printed line a human has to read -- an install that failed',
   '# to yield a loadable withr would otherwise fall through to the user library',
   '# and report a green result for the wrong version.',
+  '#',
+  '# The version string alone does not close that hole: the user library here',
+  '# holds the CURRENT release, so a failed install of the current-release arm',
+  '# would load the user copy and still match. Assert WHERE withr came from, and',
+  '# the version match becomes a redundant second check rather than the only one.',
   'stopifnot(identical(loaded, Sys.getenv("WITHR_EXPECT")))',
+  'from <- normalizePath(dirname(find.package("withr")), winslash = "/")',
+  'want <- normalizePath(Sys.getenv("WITHR_LIB"), winslash = "/")',
+  'cat("  withr loaded from:", from, "\\n")',
+  'stopifnot(identical(from, want))',
   'show <- function(label, value) cat(sprintf("  %-56s %s\\n", label, format(value)))',
   '# What local_timeout()\'s default .local_envir = parent.frame() actually is,',
   '# probed the same way local_timeout() sees it: from inside a call.',
@@ -126,6 +143,7 @@ suite <- write_script("suite.R", c(
   preamble,
   sprintf('setwd("%s")', PKG),
   'files <- c("tests/testthat/test-local-timeout.R", "tests/testthat/test-with-timeout.R")',
+  'failures <- character()',
   'for (f in files) {',
   '  cat("  ---- ", f, "\\n", sep = "")',
   '  res <- testthat::test_file(f, reporter = "silent", package = "tidymedia")',
@@ -136,7 +154,15 @@ suite <- write_script("suite.R", c(
   '    verdict <- if (any(bad)) "FAIL" else if (any(skipped)) "SKIP" else "PASS"',
   '    cat(sprintf("  %-4s  %s\\n", verdict, block$test))',
   '    for (r in block$results[bad]) cat("        > ", conditionMessage(r), "\\n", sep = "")',
+  '    if (verdict == "FAIL") failures <<- c(failures, block$test)',
   '  }',
+  '}',
+  '# AC1 is "zero failures", so a FAIL has to stop the run rather than scroll',
+  '# past in 35 lines of stdout that a human is trusted to read.',
+  'if (length(failures)) {',
+  '  stop(sprintf("%d test_that() block(s) failed under withr %s: %s",',
+  '               length(failures), Sys.getenv("WITHR_EXPECT"),',
+  '               paste(failures, collapse = "; ")), call. = FALSE)',
   '}'
 ))
 
@@ -189,6 +215,36 @@ formA_undo <- write_script("formA-undo.R", c(
   'show("A2 the limit in force at the top level", getOption("tidymedia.timeout", "UNSET"))',
   'withr::deferred_run(globalenv())',
   'show("A2 after deferred_run(globalenv()): was an undo scheduled?", getOption("tidymedia.timeout", "UNSET"))'
+))
+
+# --- WHERE did defer() register, at each of the two top-level forms? -----------
+#
+# `parent.frame() == globalenv()` is not the same fact as "defer() took the
+# globalenv() branch withr 3.0.0 rewrote", and only the first is what formA and
+# formB report. withr can accept globalenv() as the target and then redirect the
+# handler elsewhere: inside a source(), 3.0.3 consults
+# source_exit_frame_option() before global_defer(), and 2.5.0 runs
+# exit_frame()/source_frame() before setup_handlers() is reached at all.
+#
+# deferred_run(globalenv()) discriminates the two without reaching into either
+# version's internals, which differ. If the undo really is on globalenv(), it
+# runs and the caller's 99 comes back; if it was redirected to source()'s frame,
+# there is nothing on globalenv() to run and the limit stays at 30.
+# formA-undo.R above is this same probe for the Rscript form.
+
+innerBw <- write_script("formB-where-inner.R", c(
+  'local_timeout(30)',
+  'show("Bw inside the sourced file", getOption("tidymedia.timeout", "UNSET"))',
+  'ran <- tryCatch({ withr::deferred_run(globalenv()); "ran" },',
+  '                error = function(e) paste("error:", conditionMessage(e)))',
+  'show("Bw deferred_run(globalenv()) there", ran)',
+  'show("Bw after it: 99 = registered on globalenv, 30 = redirected", getOption("tidymedia.timeout", "UNSET"))'
+))
+formB_where <- write_script("formB-where.R", c(
+  preamble,
+  'options(tidymedia.timeout = 99)',
+  sprintf('source("%s")', innerBw),
+  'show("Bw after source() returns", getOption("tidymedia.timeout", "UNSET"))'
 ))
 
 # --- form C: source(local = TRUE), the one 3.0.0 change at this seam -----------
@@ -295,6 +351,7 @@ for (ver in versions) {
   cat("-- AC2 form 1: top level of an Rscript file --\n"); run_under(lib, ver, formA)
   cat("-- was an undo scheduled at that top level? --\n"); run_under(lib, ver, formA_undo)
   cat("-- AC2 form 2: top level of a source()d file --\n"); run_under(lib, ver, formB)
+  cat("-- where did defer() register in that form? --\n"); run_under(lib, ver, formB_where)
   cat("-- form C: source(local = TRUE) --\n");        run_under(lib, ver, formC)
   cat("-- AC4: the four documented claims --\n");      run_under(lib, ver, ac4)
   cat("-- the withr:: calls the docs compare against --\n"); run_under(lib, ver, withrcmp)

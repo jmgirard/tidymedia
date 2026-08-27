@@ -130,6 +130,26 @@ row asked whether the floor understates, and "it does not" answers it.
 - [x] T8 — (defect return) Fix `local_timeout()`'s roxygen and the call-site
       comment at `R/timeout.R:255-260` to say what T6 measured (F2, F1);
       `devtools::document()`.
+- [x] T10 — (defect return 2) Harness: assert the pinned library's *provenance*
+      rather than only its version string, so the 3.0.3 arm cannot fall through
+      to the user library (G4); fail the run when any `test_that()` block
+      reports FAIL, instead of printing it (G5); add an arm that measures where
+      `defer()` actually registered at each of the two top-level forms, so G1's
+      corrected mechanism claim rests on a measurement. Re-run both versions.
+- [ ] T11 — (defect return 2) Rewrite D053's mechanism paragraph from T10's
+      measurement: the branch withr 3.0.0 rewrote is reached from the `Rscript`
+      form and not from the `source()` form, which both versions redirect to
+      `source()`'s own frame first (G1); say where the harness actually fetches
+      each version from (G8).
+- [ ] T12 — (defect return 2) Fix the call-site comment at `R/timeout.R` to say
+      what T10 measured about the two forms (G1); `devtools::document()`.
+- [ ] T13 — (defect return 2) Rewrite `NEWS.md`'s withr bullet to name the two
+      files and 35 blocks actually run rather than "the whole test suite" (G2),
+      to state the one measured version difference (G3), and to stop reading as
+      six measurements where four were made (G6); correct the ROADMAP row's
+      inventory of the harness's remaining rough edges and add G9 (G7); run the
+      `verify` slot and `devtools::check()`.
+
 - [x] T9 — (defect return) Rewrite `NEWS.md`'s withr bullet to state exactly
       what was measured against the floor, with an anchored version range (F5,
       F6 — the AC3 failure); file F10's remaining harness hardening as a
@@ -160,6 +180,8 @@ row asked whether the floor understates, and "it does not" answers it.
 - 2026-08-27: T9 — NEWS's withr bullet rewritten: it now names the two versions measured, says what was re-measured on each (the test suite and the four frame claims), names the two `@details` claims that were NOT run on the floor (per spawned program, and the `parallel = TRUE` fan-out) and the unmeasured interior, and anchors its closing sentence to "resolves withr 2.5.0 rather than the current release" (F5, F6 — AC3). F10's three remaining harness rough edges appended to the `Imports`-floors candidate row. `devtools::test()` 0 failures / 6635 passing / 5 skips; `devtools::check()` 0 errors / 0 warnings / 0 notes (2m 54s).
 - 2026-08-27: defect return closed. AC3 re-ticked on the rewritten NEWS bullet; the other four criteria were re-ticked at review on fresh evidence and nothing in this round's edits touches what they measured — the harness's added arms only extend it, and its previously-reported values are unchanged on the re-run.
 - 2026-08-27: review returned M074 to in-progress a second time. AC3 fails again inside its own domain: NEWS still states other than what was measured — G2, "the whole `with_timeout()` and `local_timeout()` test suite passes" when `test-parallel-option-carry.R` (`with_timeout()` at :494, :517, :535) was not run under the floor; G3, the one measured version difference (`source(local = TRUE)`, 30 on 2.5.0 against 99 on 3.0.3) is recorded in D053 and omitted from NEWS. G1 is a second load-bearing defect: D053's mechanism paragraph and the comment at R/timeout.R:259-262 say `local_timeout()` reaches the `defer()` branch withr 3.0.0 rewrote from both top-level forms; verified against both versions' source and empirically, it reaches it from the Rscript form only — under `source()` both versions redirect to `source()`'s frame first (3.0.3 `source_exit_frame_option()`, 2.5.0 `exit_frame()`/`source_frame()`). G4-G8 also to fix; G9 to the candidate row; G10, G11 rejected. Second defect return; thrash rule trigger (b) fires — AC3 twice, same shape — and the recorded alternative to reconsider is the plan gate's choice of AC1's two-file domain.
+
+- 2026-08-27: T10 — harness re-run on both versions, exit 0, 70 PASS / 0 FAIL / 0 SKIP (35 blocks per version). The pin control is now provenance, not a version string: each of the 16 child sessions asserts that `dirname(find.package("withr"))` is the library it was handed, and `install_withr()` refuses to return a library with no `withr` in it (G4). Negative control run: an empty pinned library with the user library still on `.libPaths()` loads withr 3.0.3, passes the version assertion, and is caught by the provenance one — the exact false green G4 named. A `FAIL` verdict now stops the child (G5); negative control on a deliberately failing block exits 1 with the block named. New arm `formB-where.R` measures WHERE `defer()` registered at the `source()` top level, using `deferred_run(globalenv())` rather than either version's internals: on 2.5.0 and on 3.0.3 alike it reports "No deferred expressions to run" and leaves the limit at 30, where the same probe at an `Rscript` top level restores the caller's 99 — so the branch is reached from the `Rscript` form and redirected away from it under `source()`, on both versions (G1). No package code changed in this task, so the `verify` slot's `devtools::test()` has nothing to bite on; it runs at T12 and T13.
 
 ## Decisions
 <!-- owner: implement / review · append-only -->

@@ -1,11 +1,11 @@
 # M70: No timeout is silent
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M69
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** m070-timeout-silence
+- **Branch/PR:** m070-timeout-silence / PR #74
 
 ## Goal
 
@@ -130,6 +130,7 @@ rewrite that retires M69's disclosure; a D-entry.
 - 2026-08-26: T8 — `devtools::document()` no diff, `devtools::test()` 6331 passing, `devtools::check()` 0/0/0. PR #74 opened.
 - 2026-08-26: CI caught what local checks could not. The AC1 grid forced the timeout VERDICT, which still let the three Layer 0 hatches really shell out; CI's macOS and Windows runners install no media binaries, so `system(intern = TRUE)` raised a cmdError on "command not found" before the verdict was consulted and six cells measured the runner's PATH. The forcing now injects at `run_program()` and `guard_timeout()` — the two wrappers in front of every `system()`/`system2()` call — so no cell spawns anything. Verified locally with the binaries off PATH; a guard pins that the four spawn sites are exactly those two wrappers' reach.
 - 2026-08-26: self-review found a blame regression from T4: moving `probe_all()`'s body into `probe_all_impl()` left its own argument refusals reading "Error in `probe_all_impl()`". `call` threaded through every refusal; guard added.
+- 2026-08-26: all nine tasks done; CI green on all seven checks at 00f7bfc (macOS, Windows, Ubuntu release/devel/oldrel-1, pkgdown, test-coverage). Status → review.
 - 2026-08-26: substantive amendment (Scope In + T9 + Coverage AC1). The T1 sweep found a third no-warning path M69's hand-list missed — `ffm_batch()` absorbs every job failure into `success = FALSE` and signals nothing, leaving 17 of the 53 swept exports silent under a forced timeout. AC1 as written already binds them; Scope gains the path, T9 gains the fix (warn on timed-out jobs only; non-timeout failures unchanged).
 
 ## Decisions

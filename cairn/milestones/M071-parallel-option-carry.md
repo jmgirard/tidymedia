@@ -366,9 +366,23 @@ sequential branches are untouched" does not cover it.
 `R/tidymedia-package.R:35-37`, where the replacement was dropped in without
 rewrapping. Rewrapped, em dash restored.
 
-**Re-verification after the fix-now work.** `devtools::test()` 6396 pass / 0 fail
+**CI-1 (found red on CI after the fix-now push, fixed on the branch).** The
+AC1 site-completeness guard failed three assertions on the `test-coverage`
+runner (`length(sites)` 0 against 4), where all six `R CMD check` platforms
+passed. Cause: `covr` runs the suite from an INSTALLED copy, whose `R/`
+directory holds the lazyload database and no `.R` file, so the guard's
+`dir.exists(r_dir)` skip condition was satisfied while the grep domain was
+empty — it asserted about a domain it could not see instead of skipping. This
+is the fragility F5 named, reaching a red build. Fixed by keying the skip on
+finding the sources the guard actually greps (a non-empty `.R` listing
+containing `ffm_batch.R`) rather than on the directory. Verified both ways: the
+guard still executes under `devtools::test()` (65 assertions, 0 skips, so AC1's
+site-completeness evidence stands), and against a simulated installed layout the
+old condition would not have skipped where the new one does.
+
+**Re-verification after the fix-now work and CI-1.** `devtools::test()` 6396 pass / 0 fail
 / 5 skips (the same five hardware skips); `devtools::check()` Status: OK,
-0 errors / 0 warnings / 0 notes, 2m 38.5s; `devtools::document()` no diff;
+0 errors / 0 warnings / 0 notes; `devtools::document()` no diff;
 `cairn_validate.py` exit 0, all checks passed.
 
 F4, F5, F7, F8 and F9 go to a grouped candidate row — instrument weaknesses in
@@ -376,3 +390,4 @@ this milestone's own carry harness, none a defect in shipped behavior, and the
 same shape as the M70 guard-strength row they sit beside.
 
 - 2026-08-27: review — every acceptance criterion verified with fresh evidence and every gate check green; three-lens fan-out returned ten findings from [O] and none from the two [S] lenses. F1, F2, F6 reproduced at the gate. No finding failed a criterion, so the return floor did not fire; maintainer triaged F1/F2/F3/F6/F10 fix-now and F4/F5/F7/F8/F9 to a candidate row. Fixes committed and re-verified before the approval marker.
+- 2026-08-27: CI came back red on `test-coverage` after the fix-now push while all six `R CMD check` platforms passed — the AC1 site-completeness guard asserting over an empty domain because covr runs from an installed copy whose `R/` holds no `.R` files. Guard's skip re-keyed onto the sources it greps; suite and check re-run clean, approval re-requested.

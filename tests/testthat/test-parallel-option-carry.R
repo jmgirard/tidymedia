@@ -265,9 +265,23 @@ test_that("a limit set in the parent aborts a two-pass loudnorm worker", {
 
 test_that("every parallel fan-out in the package has a case above", {
   r_dir <- testthat::test_path("..", "..", "R")
-  skip_if_not(dir.exists(r_dir), "package sources are not on disk in this run")
+  files <- if (dir.exists(r_dir)) {
+    list.files(r_dir, pattern = "[.][Rr]$", full.names = TRUE)
+  } else {
+    character(0)
+  }
+  # dir.exists() alone is not enough to know we are looking at SOURCES. An
+  # INSTALLED package also has an `R/` directory, holding the lazyload database
+  # (`<pkg>.rdb`/`.rdx`) and no `.R` file at all -- so under covr, which runs the
+  # tests from an installed copy, the directory existed, the listing came back
+  # empty, and this guard failed three assertions about a domain it could not
+  # see rather than skipping (measured on CI 2026-08-27). Key the skip on
+  # finding the sources this guard actually greps, not on the directory.
+  skip_if(
+    !length(files) || !any(basename(files) == "ffm_batch.R"),
+    "package sources are not on disk in this run"
+  )
 
-  files <- list.files(r_dir, pattern = "[.][Rr]$", full.names = TRUE)
   sites <- unlist(lapply(files, function(f) {
     hits <- grep("furrr::future_", readLines(f, warn = FALSE), value = FALSE)
     if (!length(hits)) return(character(0))

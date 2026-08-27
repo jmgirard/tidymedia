@@ -73,7 +73,7 @@
       </dl></div><div class="section level2">
       <h2 id="bounding-a-run">Bounding a run<a class="anchor" aria-label="anchor" href="#bounding-a-run"></a></h2>
 
-      <div class="section-desc"><p>Put a wall-clock limit on one call, so a hung program stops that call rather than the session.</p></div>
+      <div class="section-desc"><p>Put a wall-clock limit on one call, or on the rest of a function, so a hung program stops that work rather than the session.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -86,6 +86,13 @@
 
         </dt>
         <dd>Bound one call's wall-clock time</dd>
+
+        <dt>
+
+          <code><a href="local_timeout.html">local_timeout()</a></code>
+
+        </dt>
+        <dd>Bound the rest of a function's wall-clock time</dd>
       </dl></div><div class="section level2">
       <h2 id="layer-escape-hatches">Layer 0: escape hatches<a class="anchor" aria-label="anchor" href="#layer-escape-hatches"></a></h2>
 

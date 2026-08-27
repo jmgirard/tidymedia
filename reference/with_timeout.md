@@ -50,6 +50,9 @@ setting the limit this way changes none of it.
 
 ## See also
 
+[`local_timeout()`](https://jmgirard.github.io/tidymedia/reference/local_timeout.md)
+for the statement form — bounding the rest of a function body rather
+than a wrapped expression — and
 [tidymedia-package](https://jmgirard.github.io/tidymedia/reference/tidymedia-package.md)
 for the session-wide setting and what a reached limit does.
 

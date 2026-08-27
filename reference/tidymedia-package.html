@@ -73,6 +73,15 @@ it. Set a wall-clock limit, in whole seconds, to bound the wait:</p>
 
 <p>That call runs under its own limit; the session's setting, or the absence of
 one, is back when it returns.</p>
+<p>To bound the rest of a function rather than an expression you wrap, say it as
+a statement with <code><a href="local_timeout.html">local_timeout()</a></code>:</p>
+<div class="sourceCode"><pre><code><span><span class="va">convert_all</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">files</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="../reference/local_timeout.html">local_timeout</a></span><span class="op">(</span><span class="fl">300</span><span class="op">)</span></span>
+<span>  <span class="kw">for</span> <span class="op">(</span><span class="va">f</span> <span class="kw">in</span> <span class="va">files</span><span class="op">)</span> <span class="fu"><a href="../reference/extract_audio.html">extract_audio</a></span><span class="op">(</span><span class="va">f</span>, <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">sub</a></span><span class="op">(</span><span class="st">"[.][^.]*$"</span>, <span class="st">".wav"</span>, <span class="va">f</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code></pre></div>
+
+<p>Every program that function starts is bounded at <code>seconds</code>, and the caller's
+setting is back once it returns.</p>
 <p>A reached limit is never silent: every call that can start one of those
 programs either aborts or warns.</p>
 <p>It <strong>aborts</strong>, naming the program and the limit, from the task verbs,

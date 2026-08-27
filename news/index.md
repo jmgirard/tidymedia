@@ -91,6 +91,33 @@
   naming `seconds`. See
   [`?with_timeout`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md).
 
+- `local_timeout(seconds)` is the statement form of the same limit: it
+  bounds the rest of the function you call it from, rather than an
+  expression you wrap. Every FFmpeg, FFprobe and MediaInfo program
+  started between the call and the end of that function is bounded by
+  `seconds`, and when the function ends — by any route — whatever the
+  caller had set before is back, an unset option included, unless that
+  function discards the undo by writing an
+  [`on.exit()`](https://rdrr.io/r/base/on.exit.html) of its own without
+  `add = TRUE`. Two calls in one function stack the way any pair of
+  `local_*()` calls does, and `seconds` is refused by the same rule
+  [`with_timeout()`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md)
+  uses. Reach for it when the thing to bound is the rest of a function
+  body, or several calls that would be awkward to wrap together. See
+  [`?local_timeout`](https://jmgirard.github.io/tidymedia/reference/local_timeout.md).
+
+- tidymedia now imports **withr**, which
+  [`local_timeout()`](https://jmgirard.github.io/tidymedia/reference/local_timeout.md)
+  uses to register its undo on the calling frame. It was already a
+  suggested package; installing tidymedia now installs it too. withr
+  itself depends on nothing outside base R.
+
+- [`with_timeout()`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md)
+  now refuses an omitted `expr` itself, saying which argument is
+  missing, instead of letting R report a missing parameter of the
+  function’s own definition. Both of its arguments are now checked the
+  same way, and neither refusal disturbs the session-wide limit.
+
 ### Breaking changes
 
 - [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)

@@ -124,31 +124,12 @@ test_that("each exit path signals what its name says it does", {
 
 # What `seconds` may be -------------------------------------------------------
 #
-# The wrapper and the option must not disagree about what a usable limit is: a
-# caller who can pass 0.5 to one and not the other has two rules to learn, and
-# the one that accepted it would hand base R a value it reads as "no limit"
-# (M69/D047). So the probe vector is scored against the option's own verdict
-# rather than against a hand-written list of expectations.
-
-tm_seconds_probes <- list(
-  0, 1L, 60, 0.5, -1, NA, NA_real_, "2", c(1, 2), Inf, TRUE,
-  integer(0), factor("2")
-)
-
-tm_probe_label <- function(v) paste(class(v)[[1]], format(v)[1], length(v))
-
-tm_accepts <- function(f) {
-  tryCatch({
-    f()
-    TRUE
-  }, error = function(e) FALSE)
-}
+# The probe vector and the option's verdict on it live in
+# `helper-timeout-probes.R`, shared with `local_timeout()`'s refusal test.
 
 test_that("with_timeout() accepts exactly the values the option accepts", {
   verdicts <- vapply(tm_seconds_probes, function(v) {
-    by_option <- tm_accepts(function() {
-      withr::with_options(list(tidymedia.timeout = v), resolve_timeout())
-    })
+    by_option <- tm_option_accepts(v)
     by_call <- tm_accepts(function() with_timeout(NULL, v))
     expect_equal(by_call, by_option, info = tm_probe_label(v))
     by_option
@@ -183,6 +164,58 @@ test_that("the refusal names seconds, not the option", {
   # The caller wrote an argument, not an option: naming the option here would
   # send them to fix something they never set.
   expect_false(grepl("tidymedia.timeout", msg, fixed = TRUE))
+})
+
+# M073 AC1/AC2 -- both formals guarded by the package, not by base R --------
+#
+# `seconds` has always been checked eagerly; `expr` was left to base R, whose
+# "argument \"expr\" is missing, with no default" names the package's internal
+# parameter at a caller who wrote a call, not a definition. The cases below are
+# derived from `formals()` rather than written out, so a third formal added
+# later is guarded or reddens this.
+
+# One valid value per formal. The map is checked against `formals()` below, so
+# it cannot silently fall behind the signature.
+tm_valid_formals <- list(expr = NULL, seconds = 2)
+
+test_that("an omitted expr is refused by the package, not by base R", {
+  err <- expect_error(with_timeout(seconds = 5), class = "rlang_error")
+  msg <- cli::ansi_strip(conditionMessage(err))
+  expect_match(msg, "expr", fixed = TRUE)
+  expect_false(
+    grepl("argument \"expr\" is missing, with no default", msg, fixed = TRUE)
+  )
+})
+
+test_that("every formal of with_timeout() is guarded alike", {
+  formal_names <- names(formals(with_timeout))
+  # Non-vacuity, both ways: the map must cover the real signature, and there
+  # must be more than one formal or "alike" compares nothing.
+  expect_setequal(formal_names, names(tm_valid_formals))
+  expect_gt(length(formal_names), 1)
+
+  for (omitted in formal_names) {
+    supplied <- tm_valid_formals[setdiff(formal_names, omitted)]
+    # Against both prior states, because the regression clause below is a claim
+    # about the caller's session and "unset" and "set" are different facts.
+    for (prior in list(NULL, 99)) {
+      withr::local_options(tidymedia.timeout = prior)
+      before <- getOption("tidymedia.timeout", default = "absent")
+      err <- expect_error(
+        do.call(with_timeout, supplied),
+        class = "rlang_error"
+      )
+      msg <- cli::ansi_strip(conditionMessage(err))
+      expect_match(msg, omitted, fixed = TRUE, info = omitted)
+      # Regression clause: holds today -- the refusals fire before the option
+      # is written -- and is pinned here so it keeps holding.
+      expect_equal(
+        getOption("tidymedia.timeout", default = "absent"),
+        before,
+        info = paste(omitted, format(prior))
+      )
+    }
+  }
 })
 
 test_that("seconds is required, and NULL is not a limit", {
@@ -292,20 +325,164 @@ test_that("ffm_batch()'s up-front limit check reads the per-call value", {
 # writing well past any limit this test allows and closes it again, so FFmpeg
 # reaches EOF and exits. The failure is then an ordinary one: no
 # `tidymedia_timeout` abort, or an elapsed time over budget.
-tm_release_fifo <- function(path, after = 90) {
+#
+# M073: the writer is CANCELLED when the frame that armed it ends. The first
+# version slept `after` seconds unconditionally, so a suite that finished in two
+# seconds still left a 90-second `sleep` behind -- one per cell, outliving the
+# process that wanted it. Killing a recorded PID does not solve it: `system(wait
+# = FALSE)` hands back the shell's exit status, not a PID, and killing the
+# subshell orphans its `sleep` anyway (measured at plan time). So the shell polls
+# for a cancel file instead and the arming frame touches that file on its way
+# out, by any exit route. What is left running is at most one second-scale
+# `sleep`, which ends on its own.
+#
+# `marker` is a token unique to this call, carried in the command line (via the
+# cancel path) so a test can find the process with `pgrep -f` and watch it go.
+# It is returned, invisibly, for exactly that purpose.
+#
+# The `[ -d <tempdir> ]` clause is the session's own deadline. The cancel file
+# lives under `tempdir()`, which R removes when the session exits -- so a
+# session that ends inside the poll's one-second window takes the cancel file
+# with it before the loop ever sees it, and the writer runs out its remaining
+# `after` seconds with nobody left to want it (reproduced 2026-08-27: an
+# Rscript that armed the helper, cancelled and exited left `sh -c (i=0; ...` in
+# the process table 5 s after R was gone). Losing the directory means the same
+# thing the cancel file means.
+tm_release_fifo <- function(path, after = 90, envir = parent.frame()) {
+  marker <- basename(tempfile("tm_fifo_"))
+  cancel <- file.path(tempdir(), paste0(marker, ".cancel"))
+  withr::defer(file.create(cancel), envir = envir)
   # No trailing `&` of our own: `wait = FALSE` is what backgrounds this, and
   # base R appends the `&` itself -- writing a second one is a shell syntax
   # error, which leaves no writer at all and the bound unarmed (measured
-  # 2026-08-27: FFmpeg was still blocked seven minutes in).
+  # 2026-08-27: FFmpeg was still blocked seven minutes in). The enclosing
+  # parentheses are load-bearing for the same reason: the appended `&` binds to
+  # the LAST command of the string, so without them the poll loop runs in the
+  # foreground and blocks R for the full `after` (measured 2026-08-27: 91.8 s
+  # against 1.1 s with them).
   system(
     sprintf(
-      "(sleep %d; [ -p %s ] && : > %s) >/dev/null 2>&1",
-      after, shQuote(path), shQuote(path)
+      paste(
+        "(i=0; while [ $i -lt %d ]; do [ -f %s ] && exit 0;",
+        "[ -d %s ] || exit 0;",
+        "i=$((i+1)); sleep 1; done; [ -p %s ] && : > %s) >/dev/null 2>&1"
+      ),
+      after, shQuote(cancel), shQuote(tempdir()), shQuote(path), shQuote(path)
     ),
     wait = FALSE
   )
-  invisible(NULL)
+  invisible(marker)
 }
+
+# tm_pgrep(): the process table, asked about one marker.
+#
+# `pgrep` exits 1 with no output when nothing matches, which system2() surfaces
+# as a `status` attribute rather than an empty result, so the two are folded
+# together here.
+#
+# The bracket is the `grep -v grep` idiom and it is load-bearing. system2() with
+# `stdout = TRUE` runs the query through `/bin/sh -c`, whose OWN command line
+# contains the pattern -- and dash does not exec away that shell, so the query
+# matches itself and can never return empty. Measured on ubuntu-latest
+# (dash, procps-ng 4.0.4) 2026-08-27: with no writer running at all,
+# `/bin/sh -c "pgrep -af tm_fifo_selfmatch_A"` returned its own PID. That is
+# what made every `present = FALSE` assertion in the cell below fail on Linux
+# CI while every `present = TRUE` one passed. Bracketing one character makes the
+# pattern an ERE that still matches the writer's literal marker but NOT the
+# pattern text sitting in the querying shell's command line.
+tm_pgrep_pattern <- function(marker) {
+  sub("^tm_f", "tm_[f]", marker)
+}
+
+tm_pgrep <- function(marker) {
+  # shQuote() is load-bearing for the same reason the bracket is. system2() does
+  # not quote its arguments and runs the query through a shell, and
+  # `tm_[f]ifo_<hex>` is a valid GLOB as well as an ERE -- so a file of that name
+  # in the working directory expands the word and hands pgrep the UNBRACKETED
+  # marker, restoring the dash self-match this whole helper exists to avoid
+  # (measured 2026-08-27: with `tm_fifo_deadbeef` present,
+  # `system2("echo", c("-f", "tm_[f]ifo_deadbeef"), stdout = TRUE)` returns
+  # `-f tm_fifo_deadbeef`). Nothing creates such a file today; quoting means
+  # nothing has to keep not creating one.
+  pattern <- shQuote(tm_pgrep_pattern(marker))
+  out <- suppressWarnings(
+    system2("pgrep", c("-f", pattern), stdout = TRUE, stderr = FALSE)
+  )
+  if (!is.null(attr(out, "status"))) character(0) else out
+}
+
+tm_wait_for_pgrep <- function(marker, present, limit = 5) {
+  start <- Sys.time()
+  repeat {
+    if ((length(tm_pgrep(marker)) > 0) == present) return(TRUE)
+    if (as.numeric(difftime(Sys.time(), start, units = "secs")) > limit) {
+      return(FALSE)
+    }
+    Sys.sleep(0.2)
+  }
+}
+
+# AC3 -- the writer is reaped with its frame -----------------------------------
+#
+# Each case arms the helper inside a frame, checks the process is really there
+# (without that the "gone" assertion below would pass against a helper that
+# started nothing at all), then leaves the frame by a different route and waits
+# for it to go.
+
+test_that("no process tm_release_fifo() starts outlives the frame", {
+  skip_on_cran()
+  skip_on_os("windows")
+  skip_if(!nzchar(Sys.which("pgrep")), "pgrep is not on the PATH")
+
+  # Never created: the shell only looks at this path after `after` seconds, and
+  # every case here cancels long before that.
+  path <- file.path(withr::local_tempdir(), "no-such-fifo")
+
+  # The query must not see itself. Without this the three cases below are
+  # unfalsifiable on any platform whose `/bin/sh` stays in the process table
+  # for the length of the query -- which is what Linux CI does (see
+  # tm_pgrep()). A marker of the real shape that nothing ever started must
+  # match nothing.
+  never_started <- basename(tempfile("tm_fifo_"))
+  expect_true(grepl("[[]", tm_pgrep_pattern(never_started)))
+  expect_length(tm_pgrep(never_started), 0L)
+
+  armed <- function(marker) {
+    expect_true(tm_wait_for_pgrep(marker, present = TRUE), info = "armed")
+  }
+
+  # Case 1: the frame returns.
+  by_return <- function() {
+    marker <- tm_release_fifo(path)
+    armed(marker)
+    marker
+  }
+  expect_true(tm_wait_for_pgrep(by_return(), present = FALSE))
+
+  # Case 2: the frame aborts.
+  aborted_marker <- NULL
+  by_abort <- function() {
+    aborted_marker <<- tm_release_fifo(path)
+    armed(aborted_marker)
+    rlang::abort("frame failed", class = "tm_test_failure")
+  }
+  expect_error(by_abort(), class = "tm_test_failure")
+  expect_true(tm_wait_for_pgrep(aborted_marker, present = FALSE))
+
+  # Case 3: one frame arms the helper twice. Two independent cancel files, both
+  # deferred on the same frame, so neither writer may survive it.
+  both_markers <- NULL
+  twice <- function() {
+    both_markers <<- c(tm_release_fifo(path), tm_release_fifo(path))
+    for (marker in both_markers) armed(marker)
+    invisible(NULL)
+  }
+  twice()
+  expect_length(unique(both_markers), 2)
+  for (marker in both_markers) {
+    expect_true(tm_wait_for_pgrep(marker, present = FALSE), info = marker)
+  }
+})
 
 test_that("a per-call limit kills a hung program with no session limit set", {
   blocked <- local_blocking_input()

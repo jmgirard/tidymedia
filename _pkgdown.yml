@@ -16,10 +16,11 @@ reference:
   - audio_stream
 - title: "Bounding a run"
   desc: >
-    Put a wall-clock limit on one call, so a hung program stops that call
-    rather than the session.
+    Put a wall-clock limit on one call, or on the rest of a function, so a
+    hung program stops that work rather than the session.
   contents:
   - with_timeout
+  - local_timeout
 - title: "Layer 0: escape hatches"
   desc: >
     Pass a raw argument string straight to the command-line tools. Use these

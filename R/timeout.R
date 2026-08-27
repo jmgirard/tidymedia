@@ -68,8 +68,9 @@ resolve_timeout <- function(call = rlang::caller_env()) {
 #' "Bounding a run that hangs" in [tidymedia-package]; setting the limit this
 #' way changes none of it.
 #'
-#' @seealso [tidymedia-package] for the session-wide setting and what a reached
-#'   limit does.
+#' @seealso [local_timeout()] for the statement form — bounding the rest of a
+#'   function body rather than a wrapped expression — and [tidymedia-package] for
+#'   the session-wide setting and what a reached limit does.
 #'
 #' @examples
 #' # Inside the call, the limit is the one you gave.
@@ -85,6 +86,14 @@ resolve_timeout <- function(call = rlang::caller_env()) {
 #'
 #' @export
 with_timeout <- function(expr, seconds) {
+  # Both formals are guarded here, and both before the option is written. Left
+  # to base R, an omitted `expr` said `argument "expr" is missing, with no
+  # default` -- naming this function's internal parameter at a caller who wrote
+  # a call, not a definition, while an omitted `seconds` already got rlang's
+  # own refusal. check_required() does not force the promise (measured
+  # 2026-08-27 on rlang 1.3.0), so `expr` is still evaluated once, later, in
+  # the caller's frame, under the option.
+  rlang::check_required(expr)
   # Eagerly, and BEFORE the option is written: a caller who passed a limit base
   # R cannot use should hear about the limit rather than watch `expr` run
   # unbounded. `arg = "seconds"` because that is the name they wrote --
@@ -107,6 +116,143 @@ with_timeout <- function(expr, seconds) {
   # frame, under the option just established -- and the restore above runs
   # after that value is in hand.
   expr
+}
+
+#' Bound the rest of a function's wall-clock time
+#'
+#' @description
+#' Set a wall-clock limit for the remainder of the function you call this from,
+#' without changing the limit the rest of the session runs under. Every FFmpeg,
+#' FFprobe or MediaInfo program started between this call and the end of that
+#' function is bounded by `seconds`; when the function ends, by any route,
+#' whatever the caller had set before is back — unless that function discards
+#' the undo itself, which is possible and is described under Details.
+#'
+#' This is the statement form of [with_timeout()]. Use `with_timeout()` when
+#' there is one expression to bound and you can wrap it; use `local_timeout()`
+#' when the thing to bound is the rest of a function body, or several calls that
+#' would be awkward to wrap together.
+#'
+#' @param seconds A whole number of seconds. `0` means no limit, so
+#'   `local_timeout(0)` lifts a session limit for the rest of the frame. A value
+#'   the underlying limit could not use — a fraction of a second, a negative
+#'   number, a string — is refused before anything is set.
+#' @param .local_envir The environment to bind the limit to. Defaults to the
+#'   calling frame, which is what you want unless you are writing your own
+#'   helper that sets a limit on behalf of *its* caller. It must be a frame that
+#'   is still on the call stack: an environment that never exits — a plain
+#'   [new.env()], or a frame that has already returned — takes the undo with it,
+#'   and the limit then stays set with no error anywhere. [withr::local_options()]
+#'   behaves the same way.
+#'
+#' @return The caller's prior setting, invisibly, as the one-element list
+#'   `options()` returns — the same shape [withr::local_options()] gives back.
+#'
+#' @details
+#' The limit applies per spawned program, not per frame: a `local_timeout()`
+#' above a 100-row batch bounds each row at `seconds`, not the batch. It reaches
+#' a `parallel = TRUE` fan-out as well, because the worker is handed the limit in
+#' force when the fan-out starts.
+#'
+#' Two calls in one frame stack the way any pair of `local_*()` calls does: the
+#' second is in force until the frame ends, and both are undone together, back
+#' to what the caller had.
+#'
+#' There are two ways the restore can be lost, and neither is this function
+#' failing quietly at something it could have done. The undo is registered as an
+#' exit handler on the calling frame, so a frame that writes `on.exit(...)` of
+#' its own *without* `add = TRUE` discards every handler already registered —
+#' this one included — and the limit stays set after the frame returns, silently
+#' and with no error anywhere. Write `on.exit(..., add = TRUE)` and it does not
+#' happen. The second is a `.local_envir` that is not a live frame, described
+#' under that argument above. This is not particular to this function:
+#' [withr::defer()] and [withr::local_options()] lose their undo both ways
+#' (measured 2026-08-27 on withr 3.0.3), because that is how R's exit handlers
+#' work. What cannot happen is the limit being set and the undo never
+#' registered: the undo goes on the frame first, and only then is the limit
+#' written.
+#'
+#' Written *directly inside* a [with_timeout()] expression, `local_timeout()`
+#' binds to the frame that wrote the call, not to the wrapper — `expr` is
+#' evaluated in the caller's frame — so its undo runs after the wrapper's, and
+#' the wrapper's limit is what the frame leaves behind. Put the inner limit in a
+#' function of its own, or use one form or the other. This is what `with_*()`
+#' and `local_*()` do together anywhere in R, not something particular to these
+#' two (measured 2026-08-27 against [withr::with_options()] and
+#' [withr::local_options()], which behave identically).
+#'
+#' `seconds` is refused by the rule `options(tidymedia.timeout = )` applies, with
+#' one deliberate exception. Setting the option to `NULL` REMOVES it, leaving the
+#' session unset and therefore unlimited; `local_timeout(NULL)` is a caller
+#' naming no limit at all, and is refused rather than read as "no limit". Write
+#' `local_timeout(0)` for that.
+#'
+#' What a reached limit does — abort or warning, by call — is described under
+#' "Bounding a run that hangs" in [tidymedia-package]; setting the limit this way
+#' changes none of it.
+#'
+#' @seealso [with_timeout()] for the expression form, and [tidymedia-package] for
+#'   the session-wide setting and what a reached limit does.
+#'
+#' @examples
+#' bounded <- function() {
+#'   local_timeout(30)
+#'   getOption("tidymedia.timeout")
+#' }
+#'
+#' # In force for the rest of that function...
+#' bounded()
+#'
+#' # ...and gone once it has returned.
+#' getOption("tidymedia.timeout", default = "unset")
+#'
+#' \dontrun{
+#' # Bound every program a whole function starts, at five minutes.
+#' convert_all <- function(files) {
+#'   local_timeout(300)
+#'   for (f in files) extract_audio(f, sub("[.][^.]*$", ".wav", f))
+#' }
+#' }
+#'
+#' @export
+local_timeout <- function(seconds, .local_envir = parent.frame()) {
+  # The same check with_timeout() applies, before anything is written, so a
+  # caller who mistyped a limit hears about it rather than running the rest of
+  # the frame under a limit they did not ask for.
+  rlang::check_number_whole(seconds, min = 0, arg = "seconds")
+  # The prior value is READ, the undo REGISTERED, and only then the new value
+  # WRITTEN -- withr::local_options()'s own order, and the reason for it is that
+  # defer() can fail. A `.local_envir` that is not an environment aborts inside
+  # defer(), and with the write already done there is nothing left to put the
+  # caller's value back: the limit would stay set for the rest of the session
+  # (measured 2026-08-27, option left at this function's value where the caller
+  # had 99, against 99 through withr::local_options() given the same bad
+  # argument). Registering first makes any failure below leave the session as it
+  # was found.
+  #
+  # `list(name = getOption(name))` is the same shape options() returns for the
+  # name being set -- length 1, the entry NULL when the option is unset
+  # (verified identical on R 4.6.1) -- and feeding a NULL entry back to
+  # options() REMOVES the name rather than storing NULL, so an unset option is
+  # unset again afterwards. Same pair with_timeout() uses.
+  prior <- list(tidymedia.timeout = getOption("tidymedia.timeout"))
+  # withr::defer() rather than base on.exit(): it PREPENDS its handler
+  # (`after = FALSE`), which is what makes two calls in one frame restore to the
+  # CALLER's state rather than to the first call's, where a plain
+  # `on.exit(add = TRUE)` appends and restores to the first call's. It also
+  # handles a global or knitr target environment, which a hand-rolled
+  # `do.call(on.exit, ..., envir = )` does not.
+  #
+  # What it does NOT buy is an unclobberable restore, and an earlier version of
+  # this comment claimed it did. defer() ends in
+  # `do.call(base::on.exit, list(thunk, TRUE, after), envir = envir)`, so a
+  # calling frame writing its own `on.exit()` without `add = TRUE` discards this
+  # exactly as it would a base one -- measured 2026-08-27 on withr 3.0.3, the
+  # option left at this function's value where the caller had 99. That hole is
+  # stated in the @details above rather than papered over.
+  withr::defer(options(prior), envir = .local_envir)
+  options(tidymedia.timeout = as.numeric(seconds))
+  invisible(prior)
 }
 
 # is_timeout(): did this result come back because the limit killed the child?

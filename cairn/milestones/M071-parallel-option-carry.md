@@ -119,7 +119,7 @@ its domain, its recorded list and its promise ship as M70 left them.
 - [x] T7 AC2's override case and its option-unset control, and AC3's warning over an
       N-row table. The override case and AC3's warning red on master; the
       option-unset control is a control, so it is green on both.
-- [ ] T8 AC4's restoration: stamp a per-worker sentinel keyed by `Sys.getpid()`
+- [x] T8 AC4's restoration: stamp a per-worker sentinel keyed by `Sys.getpid()`
       before the fan-out and assert per-PID equality after, for both options and both
       the returning and erroring mapped call. AC5's four invalid values on both paths,
       asserting the fake's log is empty.
@@ -151,6 +151,8 @@ its domain, its recorded list and its promise ship as M70 left them.
 - 2026-08-26: T5/T6 — `tests/testthat/test-parallel-option-carry.R` harness: fake `ffmpeg`/`ffprobe` that log every invocation and `sleep 30` (answering `-encoders` at once), prefixed onto `PATH`, then a fresh two-worker PSOCK cluster per test; workers assert the fake is what `Sys.which("ffmpeg")` returns, and skip unless their `carry_options` body matches the parent's. AC1's three cases green with the wiring (30 assertions, no skips) and red without it: the batch signals no `tidymedia_batch_timeout`, `probe_all()` reports unreadable rather than timed out, and the two-pass loudnorm throws something other than `tidymedia_timeout`.
 
 - 2026-08-26: T7 — AC2's override case, its option-unset control, and AC3's N-row warning. Red without the wiring: the override case sees `-encoders` in the fake's log, and AC3 gets three `success = TRUE` rows and no warning. The option-unset control is green on both, which is what a control is for — task wording amended to say so (minor).
+
+- 2026-08-27: T8 — AC4's per-PID restoration (returning and erroring mapped calls, both options) and AC5's four invalid values on both branches. 65 assertions in the file, no skips. AC5 red without `ffm_batch()`'s up-front resolve: the `parallel = TRUE, run = FALSE` call returns a tibble instead of a condition.
 
 ## Decisions
 

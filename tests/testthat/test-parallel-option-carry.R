@@ -344,3 +344,102 @@ test_that("a parallel batch warns once, naming how many jobs the limit killed", 
   expect_length(seen, 1L)
   expect_match(conditionMessage(seen[[1]]), "3 jobs timed out")
 })
+
+# AC4 -- the worker gets its own settings back --------------------------------
+
+tm_read_settings <- function(i) {
+  list(
+    pid = as.character(Sys.getpid()),
+    timeout = getOption("tidymedia.timeout"),
+    encoders = getOption("tidymedia.nvenc_encoders")
+  )
+}
+
+# tm_by_pid(): index one fan-out's readings by the process that made them, so
+# two fan-outs are compared worker-for-worker rather than position-for-position
+# -- nothing says future hands the same element to the same worker twice.
+tm_by_pid <- function(readings) {
+  out <- lapply(readings, function(r) r[c("timeout", "encoders")])
+  names(out) <- vapply(readings, function(r) r$pid, character(1))
+  out[!duplicated(names(out))]
+}
+
+test_that("a carried fan-out gives each worker its own settings back", {
+  local_carry_harness()
+  opts <- furrr::furrr_options(chunk_size = 1, seed = TRUE)
+  n <- 6L
+
+  stamp <- function(i) {
+    options(
+      tidymedia.timeout = 5,
+      tidymedia.nvenc_encoders = paste0("worker_", Sys.getpid())
+    )
+    tm_read_settings(i)
+  }
+  before <- tm_by_pid(furrr::future_map(seq_len(n), stamp, .options = opts))
+  expect_gte(length(before), 2L)
+
+  withr::local_options(
+    tidymedia.timeout = 1, tidymedia.nvenc_encoders = "parent_only"
+  )
+
+  during <- furrr::future_map(
+    seq_len(n), carry_options(tm_read_settings), .options = opts
+  )
+  # The carry has to have happened, or the restoration below is a claim about
+  # nothing: every worker read the parent's values, not its own.
+  expect_equal(unique(vapply(during, function(r) r$timeout, numeric(1))), 1)
+  expect_equal(
+    unique(vapply(during, function(r) r$encoders, character(1))), "parent_only"
+  )
+
+  after_return <- tm_by_pid(
+    furrr::future_map(seq_len(n), tm_read_settings, .options = opts)
+  )
+  shared <- intersect(names(before), names(after_return))
+  expect_gte(length(shared), 2L)
+  expect_equal(after_return[shared], before[shared])
+
+  expect_error(furrr::future_map(
+    seq_len(n),
+    carry_options(function(i) stop("the mapped call failed")),
+    .options = opts
+  ))
+  after_error <- tm_by_pid(
+    furrr::future_map(seq_len(n), tm_read_settings, .options = opts)
+  )
+  shared <- intersect(names(before), names(after_error))
+  expect_gte(length(shared), 2L)
+  expect_equal(after_error[shared], before[shared])
+})
+
+# AC5 -- a bad limit is refused before anything is dispatched ------------------
+
+test_that("an invalid limit is refused identically on both branches", {
+  fake <- local_carry_harness()
+  jobs <- tm_batch_jobs(2)
+  marker <- file.path(withr::local_tempdir(), "ran.txt")
+
+  builder <- function(input, output, ...) {
+    cat("ran\n", file = marker, append = TRUE)
+    tidymedia::ffm_files(input, output)
+  }
+
+  for (bad in list(0.5, -1, NA, "2")) {
+    withr::local_options(tidymedia.timeout = bad)
+    par <- tryCatch(
+      ffm_batch(jobs, builder, run = FALSE, parallel = TRUE),
+      error = identity
+    )
+    seql <- tryCatch(
+      ffm_batch(jobs, builder, run = TRUE, parallel = FALSE),
+      error = identity
+    )
+    expect_s3_class(par, "rlang_error")
+    expect_equal(class(par), class(seql))
+    expect_equal(conditionMessage(par), conditionMessage(seql))
+  }
+
+  expect_false(file.exists(marker))
+  expect_equal(tm_fake_calls(fake), character(0))
+})

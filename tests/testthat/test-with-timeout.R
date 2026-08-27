@@ -185,6 +185,58 @@ test_that("the refusal names seconds, not the option", {
   expect_false(grepl("tidymedia.timeout", msg, fixed = TRUE))
 })
 
+# M073 AC1/AC2 -- both formals guarded by the package, not by base R --------
+#
+# `seconds` has always been checked eagerly; `expr` was left to base R, whose
+# "argument \"expr\" is missing, with no default" names the package's internal
+# parameter at a caller who wrote a call, not a definition. The cases below are
+# derived from `formals()` rather than written out, so a third formal added
+# later is guarded or reddens this.
+
+# One valid value per formal. The map is checked against `formals()` below, so
+# it cannot silently fall behind the signature.
+tm_valid_formals <- list(expr = NULL, seconds = 2)
+
+test_that("an omitted expr is refused by the package, not by base R", {
+  err <- expect_error(with_timeout(seconds = 5), class = "rlang_error")
+  msg <- cli::ansi_strip(conditionMessage(err))
+  expect_match(msg, "expr", fixed = TRUE)
+  expect_false(
+    grepl("argument \"expr\" is missing, with no default", msg, fixed = TRUE)
+  )
+})
+
+test_that("every formal of with_timeout() is guarded alike", {
+  formal_names <- names(formals(with_timeout))
+  # Non-vacuity, both ways: the map must cover the real signature, and there
+  # must be more than one formal or "alike" compares nothing.
+  expect_setequal(formal_names, names(tm_valid_formals))
+  expect_gt(length(formal_names), 1)
+
+  for (omitted in formal_names) {
+    supplied <- tm_valid_formals[setdiff(formal_names, omitted)]
+    # Against both prior states, because the regression clause below is a claim
+    # about the caller's session and "unset" and "set" are different facts.
+    for (prior in list(NULL, 99)) {
+      withr::local_options(tidymedia.timeout = prior)
+      before <- getOption("tidymedia.timeout", default = "absent")
+      err <- expect_error(
+        do.call(with_timeout, supplied),
+        class = "rlang_error"
+      )
+      msg <- cli::ansi_strip(conditionMessage(err))
+      expect_match(msg, omitted, fixed = TRUE, info = omitted)
+      # Regression clause: holds today -- the refusals fire before the option
+      # is written -- and is pinned here so it keeps holding.
+      expect_equal(
+        getOption("tidymedia.timeout", default = "absent"),
+        before,
+        info = paste(omitted, format(prior))
+      )
+    }
+  }
+})
+
 test_that("seconds is required, and NULL is not a limit", {
   dir <- withr::local_tempdir()
   missing_marker <- file.path(dir, "missing")

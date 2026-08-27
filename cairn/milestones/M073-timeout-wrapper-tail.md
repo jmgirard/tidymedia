@@ -2,12 +2,12 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M073: The timeout wrapper's tail
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m073-timeout-wrapper-tail`
 
 ## Goal
 
@@ -93,7 +93,7 @@ where they are.
 
 ## Tasks
 
-- [ ] T1. Test-first: add the `formals()`-derived missing-argument cases and
+- [x] T1. Test-first: add the `formals()`-derived missing-argument cases and
       the unchanged-session clause to `tests/testthat/test-with-timeout.R`;
       then guard `expr` in `with_timeout()` (`R/timeout.R`) with
       `rlang::check_required(expr)`, placed **above** the `options()` write so
@@ -120,6 +120,8 @@ where they are.
 - 2026-08-27: plan gate chose a cancel-file poll over a pidfile plus process-group kill for the FIFO writer, because killing the recorded subshell leaves `sleep` orphaned (measured by the audit) and process-group signalling is the part that varies most across shells and platforms; falsified by a platform where the poll loop's own second-scale `sleep` children themselves outlive the suite. Shortening `after = 90` was rejected outright: M69's lesson puts the bound outside limit + 40 s.
 - 2026-08-27: plan gate chose to ship `local_timeout()` now over leaving it a ROADMAP candidate, on the user's call and against the row's stated trigger — no request to bound a function body without wrapping one has arrived, and D051 names exactly that report as its falsifier; the trade taken is D014's pre-0.2.0 clean break, which keeps the export withdrawable. Falsified by nobody using it before 0.2.0, at which point the export becomes permanent unused surface.
 - 2026-08-27: plan gate chose to promise the refusal's message shape over building machinery to observe the refuse-before-write ordering, because `on.exit` makes "never written" and "written and restored" indistinguishable to any caller; falsified by an ordering bug that changes what a caller sees.
+- 2026-08-27: implementation gate chose to move `withr` from Suggests to Imports and undo `local_timeout()`'s change with `withr::defer()`, on the user's selection; the base-R `on.exit` alternative was measured to lose the restore silently when the calling frame writes its own `on.exit()` without `add = TRUE` (option left at the wrapper's value after the frame exited). Dependency change; D-entry at T5.
+- 2026-08-27: T1 done — `rlang::check_required(expr)` added above the `options()` write in `with_timeout()`; `formals()`-derived guard cases plus the unchanged-session regression clause added to `tests/testthat/test-with-timeout.R`. Red first for the right reason (base R's `missingArgError`, the exact string AC1 forbids), green after. `devtools::test()` on the file: 97 pass, 0 fail.
 - 2026-08-27: sizing tripwire fired at 8 acceptance criteria (>7) and was disposed here rather than by splitting: the eighth is the mandatory profile-check criterion, the six tasks are each well under a working session, and `local_timeout()` is ~10 lines plus a topic, so a second milestone would add tracking ceremony an order larger than the work it carries.
 
 ## Decisions

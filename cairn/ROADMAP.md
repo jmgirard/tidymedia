@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-27 (M073 planned; it absorbs both of the two `with_
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M073 | The timeout wrapper's tail | planned | — | normal | milestones/M073-timeout-wrapper-tail.md |
+| M073 | The timeout wrapper's tail | in-progress | — | normal | milestones/M073-timeout-wrapper-tail.md |
 | M072 | One call can carry its own time limit | done | — | normal | milestones/archive/M072-per-call-timeout.md |
 | M071 | A parallel worker sees the settings the caller set | done | — | normal | milestones/archive/M071-parallel-option-carry.md |
 | M70 | No timeout is silent | done | M69 | normal | milestones/archive/M70-timeout-silence.md |

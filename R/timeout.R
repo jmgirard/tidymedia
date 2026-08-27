@@ -85,6 +85,14 @@ resolve_timeout <- function(call = rlang::caller_env()) {
 #'
 #' @export
 with_timeout <- function(expr, seconds) {
+  # Both formals are guarded here, and both before the option is written. Left
+  # to base R, an omitted `expr` said `argument "expr" is missing, with no
+  # default` -- naming this function's internal parameter at a caller who wrote
+  # a call, not a definition, while an omitted `seconds` already got rlang's
+  # own refusal. check_required() does not force the promise (measured
+  # 2026-08-27 on rlang 1.3.0), so `expr` is still evaluated once, later, in
+  # the caller's frame, under the option.
+  rlang::check_required(expr)
   # Eagerly, and BEFORE the option is written: a caller who passed a limit base
   # R cannot use should hear about the limit rather than watch `expr` run
   # unbounded. `arg = "seconds"` because that is the name they wrote --

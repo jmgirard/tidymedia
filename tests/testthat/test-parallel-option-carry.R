@@ -283,3 +283,64 @@ test_that("every parallel fan-out in the package has a case above", {
   expect_setequal(sub(":.*$", "", sites), unique(names(covered)))
   expect_equal(length(sites), length(covered))
 })
+
+# AC2 -- the encoder override reaches the worker -------------------------------
+
+tm_nvenc_pipeline <- function(input, output, ...) {
+  enc <- if (tidymedia::has_nvenc("h264")) {
+    tidymedia::nvenc_encoder("h264")
+  } else {
+    "libx264"
+  }
+  tidymedia::ffm_codec(tidymedia::ffm_files(input, output), video = enc)
+}
+
+test_that("an encoder override set in the parent spares the worker the probe", {
+  fake <- local_carry_harness()
+  jobs <- tm_batch_jobs(4)
+  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+
+  par <- ffm_batch(jobs, tm_nvenc_pipeline, run = FALSE, parallel = TRUE)
+  seq <- ffm_batch(jobs, tm_nvenc_pipeline, run = FALSE, parallel = FALSE)
+
+  expect_false(any(grepl("-encoders", tm_fake_calls(fake), fixed = TRUE)))
+  expect_equal(par$command, seq$command)
+  # State the answer independently of the run that produced it: the override
+  # names the nvenc encoder, so a command compiled without it would be visible.
+  expect_true(all(grepl("h264_nvenc", par$command, fixed = TRUE)))
+})
+
+test_that("without an override each worker asks its own FFmpeg once", {
+  fake <- local_carry_harness()
+  jobs <- tm_batch_jobs(4)
+  withr::local_options(tidymedia.nvenc_encoders = NULL)
+
+  par <- ffm_batch(jobs, tm_nvenc_pipeline, run = FALSE, parallel = TRUE)
+
+  probes <- grep("-encoders", tm_fake_calls(fake), fixed = TRUE, value = TRUE)
+  expect_equal(length(probes), 2L)
+  expect_true(all(grepl("h264_nvenc", par$command, fixed = TRUE)))
+})
+
+# AC3 -- one batch warning, over every row the limit killed --------------------
+
+test_that("a parallel batch warns once, naming how many jobs the limit killed", {
+  fake <- local_carry_harness()
+  jobs <- tm_batch_jobs(3)
+  withr::local_options(tidymedia.timeout = 1)
+
+  seen <- list()
+  out <- withCallingHandlers(
+    ffm_batch(jobs, function(input, output, ...) {
+      tidymedia::ffm_files(input, output)
+    }, run = TRUE, parallel = TRUE),
+    tidymedia_batch_timeout = function(w) {
+      seen[[length(seen) + 1L]] <<- w
+      invokeRestart("muffleWarning")
+    }
+  )
+
+  expect_equal(out$success, rep(FALSE, 3))
+  expect_length(seen, 1L)
+  expect_match(conditionMessage(seen[[1]]), "3 jobs timed out")
+})

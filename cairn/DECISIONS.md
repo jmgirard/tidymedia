@@ -2002,3 +2002,46 @@ with it. M46 fixed this for the test suite only, deliberately.
 
 Falsified by a report that the session-wide grain is itself the problem, or by
 a hang from a caller who had read the docs and still expected a bound.
+
+## D048 — What a reached timeout does to a reader is three rules, not one (2026-08-26, from M69's third review return, supersedes D047's readers bullet; the rest of D047 stands)
+
+D047's readers bullet said the readers "absorb it exactly as they absorb any
+other error", naming `count_audio_streams()` returning `NA` and a `probe_all()`
+row reading "unreadable". That was true when it was written and false by the
+end of the same milestone: T12 replaced it, and three review passes each found
+one more call the uniform rule did not describe.
+
+- **A timed-out probe is not an unreadable file, and `probe_one()` stops
+  pretending it is.** It returns a classed sentinel carrying the program and
+  the limit, not the bare `NULL` it returns for a corrupt file. The two
+  outcomes were indistinguishable, which is how `ffm_run(verify = )` came to
+  report a hung FFprobe as `width: expected 1920, got NA` — blaming a
+  successful encode.
+- **`probe_all()` still keeps the `NA` row and still warns once at the end**,
+  so the documented return shape is unchanged and one hung file does not
+  discard a corpus. What changed is that the warning counts timeouts apart from
+  unreadable files and says so.
+- **`verify_media()` re-raises rather than absorbing.** It asks whether a file
+  HAS given properties, and a probe that never answered is not an answer of
+  "no". It holds the probe's warnings and replays them only when it does not
+  re-raise, so a caller is told once rather than twice.
+- **Two paths absorb a timeout with no warning at all, and this milestone
+  discloses them rather than fixing them.** `count_audio_streams()`
+  (`R/ffprobe.R:199`), reached from `extract_audio()`, `convert_audio()`,
+  `separate_audio_video()` and their `_batch` siblings, and `tool_versions()`
+  (`R/ffm_manifest.R:127`), reached from `ffm_batch()`. Both return `NA` and
+  say nothing, so a bounded hang on those calls is invisible. Fixing them is
+  M70; disclosing them here is the honest reading, since a bounded silent hang
+  is still strictly better than the unbounded one that preceded it.
+- **Rejected: a fourth attempt at an exhaustive two-way partition of the
+  package.** Each of the three returns beat a hand-written list with a member
+  it omitted — and the third return's own finding named `remove_audio()`, a
+  function this package does not export. A promise whose domain is fixed by
+  what the author recalled is not repaired by recalling harder, so the docs now
+  state the calls they name and say they are not a complete partition. M70
+  replaces that with a promise bounded by a call-graph sweep over the package
+  namespace.
+
+Falsified by a caller reading the three-way description as exhaustive and being
+surprised by a fourth behavior, which is the risk the "not a complete
+partition" sentence is there to carry until M70 closes it.

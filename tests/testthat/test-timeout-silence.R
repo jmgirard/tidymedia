@@ -75,13 +75,14 @@ test_that("every swept function has a call spec", {
 
 test_that("the sweep sees a spawn reached through a function passed as a value", {
   # Why this sweep does not reuse M62's call-head graph, pinned as the
-  # discrepancy it is rather than asserted in prose. `probe_all()` reaches
+  # discrepancy it is rather than asserted in prose. `probe_all_impl()` reaches
   # FFprobe only through `purrr::map(infile, probe_one)`, where `probe_one` is
-  # an argument and never a call head -- so a head-only walk drops it, the four
-  # `probe_*()` accessors and `verify_media()` out of the domain, and the
-  # silence rule would quietly stop covering the package's main metadata reader.
-  expect_false("probe_one" %in% tm_call_graph()[["probe_all"]])
-  expect_true("probe_one" %in% tm_symbol_graph()[["probe_all"]])
+  # an argument and never a call head -- so a head-only walk drops it, its
+  # `probe_all()` wrapper, the four `probe_*()` accessors and `verify_media()`
+  # out of the domain, and the silence rule would quietly stop covering the
+  # package's main metadata reader.
+  expect_false("probe_one" %in% tm_call_graph()[["probe_all_impl"]])
+  expect_true("probe_one" %in% tm_symbol_graph()[["probe_all_impl"]])
   for (f in c("probe_all", "probe_audio", "probe_container", "probe_streams",
               "probe_video", "verify_media")) {
     expect_true(f %in% tm_timeout_domain(), info = f)
@@ -426,4 +427,90 @@ test_that("a real hung batch job warns rather than reporting a bare failure", {
     class = "tidymedia_batch_timeout"
   )
   expect_identical(res$success, FALSE)
+})
+
+# T4: no sentinel on a public return ------------------------------------------
+
+# `@param parallel` promises "Output is identical either way, rows included and
+# in the same order". A `tm_timed_out` attribute on probe_all()'s return broke
+# that the moment one path set it, and an attribute on a public return survives
+# every documented operation the caller might do to the list.
+
+test_that("probe_all() carries no timeout attribute, hung or not", {
+  local_probe_timeout(hit = "a.mkv")
+  testthat::local_mocked_bindings(
+    probe_one = function(file) {
+      if (file == "a.mkv") {
+        structure(list(program = "FFprobe", limit = 2),
+                  class = "tidymedia_absorbed_timeout")
+      } else {
+        list(container = tibble::tibble(duration = "1"),
+             streams = tibble::tibble(codec_name = "h264"))
+      }
+    },
+    .package = "tidymedia"
+  )
+  out <- suppressWarnings(probe_all(c("a.mkv", "b.mkv")))
+  expect_null(attr(out, "tm_timed_out"))
+  expect_identical(names(attributes(out)), "names")
+})
+
+test_that("the parallel and sequential returns are identical with a hung file", {
+  skip_if_not_installed("furrr")
+  testthat::local_mocked_bindings(
+    probe_one = function(file) {
+      if (file == "a.mkv") {
+        structure(list(program = "FFprobe", limit = 2),
+                  class = "tidymedia_absorbed_timeout")
+      } else {
+        list(container = tibble::tibble(duration = "1"),
+             streams = tibble::tibble(codec_name = "h264"))
+      }
+    },
+    .package = "tidymedia"
+  )
+  files <- c("a.mkv", "b.mkv")
+  seq_out <- suppressWarnings(probe_all(files, parallel = FALSE))
+  par_out <- suppressWarnings(probe_all(files, parallel = TRUE))
+  expect_identical(seq_out, par_out)
+})
+
+test_that("verify_media() still refuses on a hung probe, through its own path", {
+  # The refusal now comes from the shared probe body re-raising under
+  # `absorb = FALSE`, not from an attribute verify_media() reads off the return.
+  testthat::local_mocked_bindings(
+    probe_one = function(file) {
+      structure(list(program = "FFprobe", limit = 2),
+                class = "tidymedia_absorbed_timeout")
+    },
+    .package = "tidymedia"
+  )
+  dir <- withr::local_tempdir()
+  f <- file.path(dir, "a.mkv")
+  file.create(f)
+  err <- expect_error(verify_media(f, width = 1920),
+                      class = "tidymedia_timeout")
+  msg <- cli::ansi_strip(conditionMessage(err))
+  expect_match(msg, "FFprobe", fixed = TRUE)
+  # And it refuses rather than reporting every property as a mismatch.
+  expect_no_match(msg, "expected", fixed = TRUE)
+})
+
+test_that("probe_all() still keeps the NA row and warns for a hung file", {
+  # The absorbing half is unchanged: one hung file must not discard a corpus.
+  testthat::local_mocked_bindings(
+    probe_one = function(file) {
+      if (file == "a.mkv") {
+        structure(list(program = "FFprobe", limit = 2),
+                  class = "tidymedia_absorbed_timeout")
+      } else {
+        list(container = tibble::tibble(duration = "1"),
+             streams = tibble::tibble(codec_name = "h264"))
+      }
+    },
+    .package = "tidymedia"
+  )
+  expect_warning(out <- probe_all(c("a.mkv", "b.mkv")), "timed out")
+  expect_identical(nrow(out$container), 2L)
+  expect_true(is.na(out$container$duration[[1]]))
 })

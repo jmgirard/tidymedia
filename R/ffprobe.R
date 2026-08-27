@@ -69,6 +69,27 @@ ffprobe <- function(command) {
 #' info$streams
 #' @export
 probe_all <- function(infile, typed = TRUE, parallel = FALSE) {
+  probe_all_impl(infile, typed, parallel)
+}
+
+# probe_all_impl() --------------------------------------------------------
+
+# probe_all()'s whole body, with one internal-only knob: `absorb`.
+#
+# `absorb = FALSE` re-raises a timeout instead of turning it into an NA row, for
+# the one caller that must not absorb -- verify_media(), which asks whether a
+# file HAS given properties, and for which a probe that never answered is not an
+# answer of "no" (D048).
+#
+# A flag on the shared body rather than a second probe in verify.R: the `file`
+# column, the NA-row shape and type_columns() would then have two
+# implementations that could drift, and the two returns have to stay the same
+# tibbles. It also keeps the sentinel OFF probe_all()'s return, where it rode as
+# a `tm_timed_out` attribute until M70 -- an attribute on a public return
+# survives every documented operation and breaks `@param parallel`'s promise
+# that the two paths give identical output the moment either side sets it.
+probe_all_impl <- function(infile, typed = TRUE, parallel = FALSE,
+                           absorb = TRUE, call = rlang::caller_env()) {
   if (!rlang::is_character(infile) || length(infile) == 0) {
     cli::cli_abort(
       "{.arg infile} must be a character vector of one or more file locations."
@@ -114,6 +135,7 @@ probe_all <- function(infile, typed = TRUE, parallel = FALSE) {
     f <- infile[[i]]
     res <- probes[[i]]
     if (is_absorbed_timeout(res)) {
+      if (!absorb) reraise_absorbed(res, call = call)
       timed_out <- c(timed_out, f)
       if (is.null(hit)) hit <- res
       res <- NULL
@@ -150,13 +172,7 @@ probe_all <- function(infile, typed = TRUE, parallel = FALSE) {
     container <- type_columns(container)
     streams <- type_columns(streams)
   }
-  # The sentinel rides out on an attribute rather than in the list, so the
-  # documented `list(container, streams)` shape is unchanged and only a caller
-  # that looks for it -- verify_media() -- can act on it.
-  structure(
-    list(container = container, streams = streams),
-    tm_timed_out = if (length(timed_out)) hit
-  )
+  list(container = container, streams = streams)
 }
 
 # count_audio_streams() ---------------------------------------------------

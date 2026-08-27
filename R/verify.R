@@ -84,21 +84,24 @@ verify_media <- function(file,
   # on the timeout path the abort below reports the same event more precisely,
   # and emitting both would tell the caller twice. Held conditions are replayed
   # as themselves, not re-signalled from their text, so class and call survive.
-  held <- list()
-  probe <- withCallingHandlers(
-    probe_all(file),
-    warning = function(w) {
-      held[[length(held) + 1L]] <<- w
-      invokeRestart("muffleWarning")
-    }
-  )
+  #
   # A probe that never answered is not an answer of "no". Absorbing the timeout
   # here would mark every expectation failed with `actual = NA`, so a hung
   # FFprobe after a SUCCESSFUL encode reads as "width: expected 1920, got NA"
   # and blames the output for the probe's failure -- the one place the readers'
   # absorb-and-carry-on rule (D047) gives the wrong answer, because this
-  # function's whole job is to assert.
-  if (!is.null(hit <- attr(probe, "tm_timed_out"))) reraise_absorbed(hit)
+  # function's whole job is to assert. `absorb = FALSE` makes the shared probe
+  # body re-raise, so nothing has to ride out on probe_all()'s return to get the
+  # fact here: until M70 it did, as a `tm_timed_out` attribute, which broke
+  # `@param parallel`'s promise that both paths return identical output.
+  held <- list()
+  probe <- withCallingHandlers(
+    probe_all_impl(file, absorb = FALSE),
+    warning = function(w) {
+      held[[length(held) + 1L]] <<- w
+      invokeRestart("muffleWarning")
+    }
+  )
   for (w in held) warning(w)
   container <- probe$container
   video <- filter_streams(probe$streams, "video")

@@ -64,9 +64,9 @@ resolve_timeout <- function(call = rlang::caller_env()) {
 #' reaches a `parallel = TRUE` fan-out as well, because the worker is handed the
 #' limit in force when the fan-out starts.
 #'
-#' What a reached limit does — abort or warning, by call — is described in
-#' `vignette("tidymedia")` and under "Bounding a run that hangs" in
-#' [tidymedia-package]; setting the limit this way changes none of it.
+#' What a reached limit does — abort or warning, by call — is described under
+#' "Bounding a run that hangs" in [tidymedia-package]; setting the limit this
+#' way changes none of it.
 #'
 #' @seealso [tidymedia-package] for the session-wide setting and what a reached
 #'   limit does.
@@ -90,7 +90,10 @@ with_timeout <- function(expr, seconds) {
   # unbounded. `arg = "seconds"` because that is the name they wrote --
   # resolve_timeout() names the option instead, for the caller who set one.
   # The check is the same one resolve_timeout() applies, so this function
-  # accepts exactly the values the option accepts.
+  # accepts exactly the values the option accepts -- with one exception, and it
+  # is deliberate: `options(tidymedia.timeout = NULL)` REMOVES the name, so
+  # resolve_timeout() then reads the 0 default and accepts it, while
+  # with_timeout(expr, NULL) is a caller naming no limit at all and is refused.
   rlang::check_number_whole(seconds, min = 0, arg = "seconds")
   # options() returns the prior value of exactly the name being set, and
   # on.exit() puts it back on the erroring path as well as the returning one --

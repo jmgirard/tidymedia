@@ -2205,6 +2205,15 @@ itself stays a ROADMAP candidate under D014's pre-0.2.0 clean break, promotable
 on its own evidence — a caller needing a limit that varies per row inside one
 batch, which a wrapper around the batch cannot express.
 
+**The name is outside D014's families, deliberately.** `with_timeout` is
+neither a task verb (`verb_object`), an `ffm_*` builder, nor a
+`get_*`/`probe_*`/`mediainfo_*` reader, and `expr`/`seconds` are in none of
+D014's argument vocabulary. That is the point: this is a control-flow wrapper,
+not a media operation, and the name it wants is the one R users already have
+for the shape — `withr`'s `with_*(...)` family and `R.utils::withTimeout()`.
+Coining a tidymedia-shaped name for it would hide the idiom rather than record
+it. D014 governs the media surface; this sits beside it.
+
 **The expression comes first, the limit second.** `with_timeout(expr, seconds)`
 rather than withr's value-first `with_*(new, code)` order, matching
 `R.utils::withTimeout()`, the function an R user reaching for this already

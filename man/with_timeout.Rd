@@ -35,9 +35,9 @@ around a 100-row batch bounds each row at \code{seconds}, not the batch. It
 reaches a \code{parallel = TRUE} fan-out as well, because the worker is handed the
 limit in force when the fan-out starts.
 
-What a reached limit does — abort or warning, by call — is described in
-\code{vignette("tidymedia")} and under "Bounding a run that hangs" in
-\link{tidymedia-package}; setting the limit this way changes none of it.
+What a reached limit does — abort or warning, by call — is described under
+"Bounding a run that hangs" in \link{tidymedia-package}; setting the limit this
+way changes none of it.
 }
 \examples{
 # Inside the call, the limit is the one you gave.

@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M073: The timeout wrapper's tail
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -140,6 +140,8 @@ where they are.
 
 - 2026-08-27: AC3 green on the platform that failed it. Run 33108301183 of PR #77, all five jobs success: `ubuntu-latest (release)` reports `[ FAIL 0 | WARN 4 | SKIP 9 | PASS 6615 ]` where the returned run reported `FAIL 4`, and `ubuntu-latest` devel and oldrel-1, macOS and Windows are green too. The four warnings are the same pre-existing dropped-audio-track messages.
 - 2026-08-27: that run also surfaced a NOTE this milestone introduced, on Linux only — `checking tests` NOTE from `spelling.R`, whose `.Rout.save` comparison flagged the word `withr` in `local_timeout.Rd:53` and `NEWS.md:79`, both prose written for the F2 and F7 fixes above. The local macOS `devtools::check()` had not caught it. `withr` added to `inst/WORDLIST`; `spelling::spell_check_package(".")` now reports "No spelling errors found". AC8 is ticked against the CI run following this fix, not the one that carried the NOTE.
+
+- 2026-08-27: return-fix verification closed. Run 33109601529 (head `4ec99da`, PR #77): all five jobs `Status: OK` — `ubuntu-latest` release/devel/oldrel-1, macOS and Windows — zero notes anywhere, with `ubuntu-latest (release)` at `[ FAIL 0 | WARN 4 | SKIP 9 | PASS 6615 ]`. Local `devtools::check()`: `Status: OK`, 0 errors / 0 warnings / 0 notes, 2m 39.9s. Status back to `review`.
 
 ## Decisions
 

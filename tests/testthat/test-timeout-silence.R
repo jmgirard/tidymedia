@@ -169,3 +169,75 @@ test_that("count_audio_streams() keeps answering NA for every other failure", {
     expect_identical(count_audio_streams_all("a.mkv"), NA_integer_)
   )
 })
+
+# T3: tool_versions() ---------------------------------------------------------
+
+# ffm_batch(manifest = TRUE) records which FFmpeg built each output. A killed
+# version probe recorded NA there and said nothing, which reads in the manifest
+# exactly like a missing binary (D048).
+
+test_that("a timed-out version probe warns once and names both tools", {
+  testthat::local_mocked_bindings(
+    find_ffmpeg = function(...) "/usr/bin/ffmpeg",
+    find_ffprobe = function(...) "/usr/bin/ffprobe",
+    run_program = function(location, args, program = "the program", ...) {
+      abort_timeout(program, 2)
+    },
+    .package = "tidymedia"
+  )
+  warns <- NULL
+  versions <- withCallingHandlers(
+    tool_versions(),
+    warning = function(w) {
+      warns <<- c(warns, list(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  # One warning for two killed probes, not one per tool.
+  expect_length(warns, 1L)
+  expect_s3_class(warns[[1]], "tidymedia_probe_timeout")
+  msg <- cli::ansi_strip(conditionMessage(warns[[1]]))
+  expect_match(msg, "timed out")
+  expect_match(msg, "FFmpeg", fixed = TRUE)
+  expect_match(msg, "FFprobe", fixed = TRUE)
+
+  # The manifest's own shape is untouched: NA is what a version that could not
+  # be read has always been recorded as.
+  expect_identical(versions, list(ffmpeg = NA_character_,
+                                  ffprobe = NA_character_))
+})
+
+test_that("only the killed probe is named when one tool answers", {
+  testthat::local_mocked_bindings(
+    find_ffmpeg = function(...) "/usr/bin/ffmpeg",
+    find_ffprobe = function(...) "/usr/bin/ffprobe",
+    run_program = function(location, args, program = "the program", ...) {
+      if (program == "FFprobe") abort_timeout(program, 2)
+      "ffmpeg version 8.1.2 Copyright (c)"
+    },
+    .package = "tidymedia"
+  )
+  msg <- tryCatch({
+    v <- tool_versions()
+    NULL
+  }, warning = function(w) cli::ansi_strip(conditionMessage(w)))
+  expect_match(msg, "FFprobe", fixed = TRUE)
+  expect_no_match(msg, "FFmpeg", fixed = TRUE)
+
+  v <- suppressWarnings(tool_versions())
+  expect_identical(v$ffmpeg, "8.1.2")
+  expect_identical(v$ffprobe, NA_character_)
+})
+
+test_that("a missing binary still records NA silently", {
+  # D024's fail-open consequence, unchanged: only the limit speaks.
+  testthat::local_mocked_bindings(
+    find_ffmpeg = function(...) "",
+    find_ffprobe = function(...) "",
+    .package = "tidymedia"
+  )
+  expect_no_warning(
+    expect_identical(tool_versions(),
+                     list(ffmpeg = NA_character_, ffprobe = NA_character_))
+  )
+})

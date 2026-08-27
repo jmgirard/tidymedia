@@ -1,0 +1,37 @@
+# TEMPORARY (M073 defect return 1). Deleted before the milestone goes to review.
+# Confirms, on the same Linux image CI uses, WHICH process keeps matching
+# `pgrep -f <marker>` after the writer is cancelled.
+on: push
+
+name: tmp-m073-diag
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: shell identity
+        run: |
+          echo "sh -> $(readlink -f /bin/sh)"
+          pgrep --version || true
+
+      - name: A. does the querying shell self-match?
+        run: |
+          marker=tm_fifo_selfmatch_A
+          echo "--- /bin/sh -c 'pgrep -af MARKER 2>/dev/null' with NOTHING else running:"
+          /bin/sh -c "pgrep -af $marker 2>/dev/null"; echo "exit=$?"
+
+      - name: B. full helper emulation
+        run: |
+          marker=tm_fifo_emul_B
+          cancel=/tmp/$marker.cancel
+          path=/tmp/no-such-fifo
+          /bin/sh -c "(i=0; while [ \$i -lt 90 ]; do [ -f '$cancel' ] && exit 0; i=\$((i+1)); sleep 1; done; [ -p '$path' ] && : > '$path') >/dev/null 2>&1" &
+          sleep 1
+          echo "--- armed, pgrep -af:"
+          /bin/sh -c "pgrep -af $marker 2>/dev/null"; echo "exit=$?"
+          touch "$cancel"
+          sleep 4
+          echo "--- 4s after cancel, pgrep -af:"
+          /bin/sh -c "pgrep -af $marker 2>/dev/null"; echo "exit=$?"
+          echo "--- ps for the marker:"
+          ps -ef | grep -F "$marker" | grep -v grep || echo "(no ps lines)"

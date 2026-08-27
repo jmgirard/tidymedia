@@ -1,11 +1,11 @@
 # M70: No timeout is silent
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M69
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** m070-timeout-silence
 
 ## Goal
 
@@ -26,7 +26,11 @@ enumerates the domain the silence rule quantifies over, replacing M69's
 hand-list; J2's split program literal (`probe_one()` says `ffprobe`,
 `R/ffprobe.R:204,242`, where the Layer 0 hatch says `FFprobe`,
 `R/ffprobe.R:22`); J7's `tm_timed_out` attribute (`R/ffprobe.R:158`) leaking
-onto a public return against `@param parallel`'s identity promise; the doc
+onto a public return against `@param parallel`'s identity promise; the third
+no-warning path the T1 sweep found and M69's hand-list did not: `ffm_batch()`
+(`R/ffm_batch.R:127`) records every job failure as `success = FALSE` and signals
+no condition, so a reached limit is silent through it and through the 15
+`_batch` verbs and `segment_video()`, which fan out through it; the doc
 rewrite that retires M69's disclosure; a D-entry.
 
 **Out:**
@@ -73,7 +77,7 @@ rewrite that retires M69's disclosure; a D-entry.
 
 ## Coverage
 
-- AC1 → T1, T2, T3
+- AC1 → T1, T2, T3, T9
 - AC2 → T2
 - AC3 → T4
 - AC4 → T5
@@ -83,7 +87,7 @@ rewrite that retires M69's disclosure; a D-entry.
 
 ## Tasks
 
-- [ ] T1 Build the sweep that enumerates the silence rule's domain: deparse
+- [x] T1 Build the sweep that enumerates the silence rule's domain: deparse
       `mget(ls(asNamespace("tidymedia"), all.names = TRUE))` — M59's route, so
       it runs under `R CMD check` as well as `devtools::test()` — close the
       call graph to every function reaching `run_program()`, `system()` or
@@ -106,10 +110,17 @@ rewrite that retires M69's disclosure; a D-entry.
 - [ ] T7 Write the D-entry.
 - [ ] T8 Run the `verify` slot end to end; open the PR and confirm CI green
       before review, which is the gate that caught M69's AC3 failure.
+- [ ] T9 `ffm_batch()`: keep `run_one()`'s caught error object, test it for
+      class `tidymedia_timeout`, and warn once at the end of the run naming how
+      many jobs timed out. Non-timeout job failures keep today's silent
+      `success = FALSE`. Tests first.
 
 ## Work log
 
 - 2026-08-26: created by /milestone-plan, splitting M69 after its third defect return fired thrash trigger (a).
+- 2026-08-26: implement gate — AC1 forcing = injected `abort_timeout()` condition per swept member, with the writer-less-FIFO fixture kept for anchor paths; AC3 shape = internal `absorb=` flag on the shared `probe_all()` worker; AC4 literal = display case (`FFmpeg`/`FFprobe`/`MediaInfo`) everywhere.
+- 2026-08-26: T1 — sweep built (`tests/testthat/helper-timeout-sweep.R`, `test-timeout-silence.R`). Domain = the 53 exported functions reaching `system`/`system2` through a symbol-mention closure over the namespace; membership recorded, mutation-probed (empty seed set collapses it; `ffm_compile` and the pure builders stay out; `run_program()` is derived, not seeded), and every member carries a call spec so a member with no way to be driven fails rather than being skipped. Deliberately NOT M62's call-head graph: `probe_all()` reaches FFprobe only via `purrr::map(infile, probe_one)`, so a head-only walk drops it, the four `probe_*()` accessors and `verify_media()`. Pinned as a test.
+- 2026-08-26: substantive amendment (Scope In + T9 + Coverage AC1). The T1 sweep found a third no-warning path M69's hand-list missed — `ffm_batch()` absorbs every job failure into `success = FALSE` and signals nothing, leaving 17 of the 53 swept exports silent under a forced timeout. AC1 as written already binds them; Scope gains the path, T9 gains the fix (warn on timed-out jobs only; non-timeout failures unchanged).
 
 ## Decisions
 

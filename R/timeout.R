@@ -125,7 +125,8 @@ with_timeout <- function(expr, seconds) {
 #' without changing the limit the rest of the session runs under. Every FFmpeg,
 #' FFprobe or MediaInfo program started between this call and the end of that
 #' function is bounded by `seconds`; when the function ends, by any route,
-#' whatever the caller had set before is back.
+#' whatever the caller had set before is back — unless that function discards
+#' the undo itself, which is possible and is described under Details.
 #'
 #' This is the statement form of [with_timeout()]. Use `with_timeout()` when
 #' there is one expression to bound and you can wrap it; use `local_timeout()`
@@ -152,6 +153,16 @@ with_timeout <- function(expr, seconds) {
 #' Two calls in one frame stack the way any pair of `local_*()` calls does: the
 #' second is in force until the frame ends, and both are undone together, back
 #' to what the caller had.
+#'
+#' There is one way the restore can be lost, and it is the caller's own doing.
+#' The undo is registered as an exit handler on the calling frame, so a frame
+#' that writes `on.exit(...)` of its own *without* `add = TRUE` discards every
+#' handler already registered — this one included — and the limit stays set
+#' after the frame returns, silently and with no error anywhere. Write
+#' `on.exit(..., add = TRUE)` and it does not happen. This is not particular to
+#' this function: [withr::defer()] and [withr::local_options()] lose their undo
+#' the same way (measured 2026-08-27 on withr 3.0.3), because that is how R's
+#' exit handlers work.
 #'
 #' Written *directly inside* a [with_timeout()] expression, `local_timeout()`
 #' binds to the frame that wrote the call, not to the wrapper — `expr` is
@@ -205,12 +216,20 @@ local_timeout <- function(seconds, .local_envir = parent.frame()) {
   # entry REMOVES the name rather than storing NULL, so an unset option is unset
   # again afterwards (measured on R 4.6.1) -- the same pair with_timeout() uses.
   prior <- options(tidymedia.timeout = as.numeric(seconds))
-  # withr::defer() rather than base on.exit(): on.exit() in someone else's frame
-  # is silently discarded the moment that frame writes its own on.exit() without
-  # `add = TRUE`, which would leave the caller's limit changed for good with no
-  # error anywhere (measured 2026-08-27 on R 4.6.1). defer() keeps its own
-  # handler stack, so it cannot be clobbered, and it unwinds last-in-first-out,
-  # which is what makes two calls in one frame restore to the CALLER's state.
+  # withr::defer() rather than base on.exit(): it PREPENDS its handler
+  # (`after = FALSE`), which is what makes two calls in one frame restore to the
+  # CALLER's state rather than to the first call's, where a plain
+  # `on.exit(add = TRUE)` appends and restores to the first call's. It also
+  # handles a global or knitr target environment, which a hand-rolled
+  # `do.call(on.exit, ..., envir = )` does not.
+  #
+  # What it does NOT buy is an unclobberable restore, and an earlier version of
+  # this comment claimed it did. defer() ends in
+  # `do.call(base::on.exit, list(thunk, TRUE, after), envir = envir)`, so a
+  # calling frame writing its own `on.exit()` without `add = TRUE` discards this
+  # exactly as it would a base one -- measured 2026-08-27 on withr 3.0.3, the
+  # option left at this function's value where the caller had 99. That hole is
+  # stated in the @details above rather than papered over.
   withr::defer(options(prior), envir = .local_envir)
   invisible(prior)
 }

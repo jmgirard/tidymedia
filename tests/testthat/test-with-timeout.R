@@ -339,6 +339,15 @@ test_that("ffm_batch()'s up-front limit check reads the per-call value", {
 # `marker` is a token unique to this call, carried in the command line (via the
 # cancel path) so a test can find the process with `pgrep -f` and watch it go.
 # It is returned, invisibly, for exactly that purpose.
+#
+# The `[ -d <tempdir> ]` clause is the session's own deadline. The cancel file
+# lives under `tempdir()`, which R removes when the session exits -- so a
+# session that ends inside the poll's one-second window takes the cancel file
+# with it before the loop ever sees it, and the writer runs out its remaining
+# `after` seconds with nobody left to want it (reproduced 2026-08-27: an
+# Rscript that armed the helper, cancelled and exited left `sh -c (i=0; ...` in
+# the process table 5 s after R was gone). Losing the directory means the same
+# thing the cancel file means.
 tm_release_fifo <- function(path, after = 90, envir = parent.frame()) {
   marker <- basename(tempfile("tm_fifo_"))
   cancel <- file.path(tempdir(), paste0(marker, ".cancel"))
@@ -355,9 +364,10 @@ tm_release_fifo <- function(path, after = 90, envir = parent.frame()) {
     sprintf(
       paste(
         "(i=0; while [ $i -lt %d ]; do [ -f %s ] && exit 0;",
+        "[ -d %s ] || exit 0;",
         "i=$((i+1)); sleep 1; done; [ -p %s ] && : > %s) >/dev/null 2>&1"
       ),
-      after, shQuote(cancel), shQuote(path), shQuote(path)
+      after, shQuote(cancel), shQuote(tempdir()), shQuote(path), shQuote(path)
     ),
     wait = FALSE
   )
@@ -369,9 +379,25 @@ tm_release_fifo <- function(path, after = 90, envir = parent.frame()) {
 # `pgrep` exits 1 with no output when nothing matches, which system2() surfaces
 # as a `status` attribute rather than an empty result, so the two are folded
 # together here.
+#
+# The bracket is the `grep -v grep` idiom and it is load-bearing. system2() with
+# `stdout = TRUE` runs the query through `/bin/sh -c`, whose OWN command line
+# contains the pattern -- and dash does not exec away that shell, so the query
+# matches itself and can never return empty. Measured on ubuntu-latest
+# (dash, procps-ng 4.0.4) 2026-08-27: with no writer running at all,
+# `/bin/sh -c "pgrep -af tm_fifo_selfmatch_A"` returned its own PID. That is
+# what made every `present = FALSE` assertion in the cell below fail on Linux
+# CI while every `present = TRUE` one passed. Bracketing one character makes the
+# pattern an ERE that still matches the writer's literal marker but NOT the
+# pattern text sitting in the querying shell's command line.
+tm_pgrep_pattern <- function(marker) {
+  sub("^tm_f", "tm_[f]", marker)
+}
+
 tm_pgrep <- function(marker) {
+  pattern <- tm_pgrep_pattern(marker)
   out <- suppressWarnings(
-    system2("pgrep", c("-f", marker), stdout = TRUE, stderr = FALSE)
+    system2("pgrep", c("-f", pattern), stdout = TRUE, stderr = FALSE)
   )
   if (!is.null(attr(out, "status"))) character(0) else out
 }
@@ -402,6 +428,15 @@ test_that("no process tm_release_fifo() starts outlives the frame", {
   # Never created: the shell only looks at this path after `after` seconds, and
   # every case here cancels long before that.
   path <- file.path(withr::local_tempdir(), "no-such-fifo")
+
+  # The query must not see itself. Without this the three cases below are
+  # unfalsifiable on any platform whose `/bin/sh` stays in the process table
+  # for the length of the query -- which is what Linux CI does (see
+  # tm_pgrep()). A marker of the real shape that nothing ever started must
+  # match nothing.
+  never_started <- basename(tempfile("tm_fifo_"))
+  expect_true(grepl("[[]", tm_pgrep_pattern(never_started)))
+  expect_length(tm_pgrep(never_started), 0L)
 
   armed <- function(marker) {
     expect_true(tm_wait_for_pgrep(marker, present = TRUE), info = "armed")

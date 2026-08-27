@@ -25,7 +25,8 @@ Set a wall-clock limit for the remainder of the function you call this from,
 without changing the limit the rest of the session runs under. Every FFmpeg,
 FFprobe or MediaInfo program started between this call and the end of that
 function is bounded by \code{seconds}; when the function ends, by any route,
-whatever the caller had set before is back.
+whatever the caller had set before is back — unless that function discards
+the undo itself, which is possible and is described under Details.
 
 This is the statement form of \code{\link[=with_timeout]{with_timeout()}}. Use \code{with_timeout()} when
 there is one expression to bound and you can wrap it; use \code{local_timeout()}
@@ -41,6 +42,16 @@ force when the fan-out starts.
 Two calls in one frame stack the way any pair of \verb{local_*()} calls does: the
 second is in force until the frame ends, and both are undone together, back
 to what the caller had.
+
+There is one way the restore can be lost, and it is the caller's own doing.
+The undo is registered as an exit handler on the calling frame, so a frame
+that writes \code{on.exit(...)} of its own \emph{without} \code{add = TRUE} discards every
+handler already registered — this one included — and the limit stays set
+after the frame returns, silently and with no error anywhere. Write
+\code{on.exit(..., add = TRUE)} and it does not happen. This is not particular to
+this function: \code{\link[withr:defer]{withr::defer()}} and \code{\link[withr:local_options]{withr::local_options()}} lose their undo
+the same way (measured 2026-08-27 on withr 3.0.3), because that is how R's
+exit handlers work.
 
 Written \emph{directly inside} a \code{\link[=with_timeout]{with_timeout()}} expression, \code{local_timeout()}
 binds to the frame that wrote the call, not to the wrapper — \code{expr} is

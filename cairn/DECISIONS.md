@@ -2271,15 +2271,21 @@ and unlimited; `local_timeout(NULL)` is a caller naming no limit at all, and is
 refused. Both wrappers behave this way and both say so in their documentation.
 `local_timeout(0)` is how a caller lifts a limit.
 
-**`withr` moves from Suggests to Imports.** The undo has to survive the calling
-frame writing an `on.exit()` of its own: base R's `on.exit()` installed into
-someone else's frame is discarded, silently and with no error anywhere, the
-moment that frame writes `on.exit()` without `add = TRUE` — which would leave
-the caller's limit changed for good. `withr::defer()` keeps its own handler
-stack, so it cannot be clobbered, and it unwinds last-in-first-out, which is
-what makes two calls in one frame restore to the caller's state rather than to
-the first call's. The measurements behind both halves are in
-`cairn/milestones/M073-timeout-wrapper-tail.md`. The cost is one more package on
-every install, against a package already required to run the tests. Taken at the
-implementation gate; falsified by `withr` acquiring dependencies of its own that
-a media-tools package should not carry.
+**`withr` moves from Suggests to Imports.** The undo has to run
+last-in-first-out: two `local_timeout()` calls in one frame must restore to the
+CALLER's state, not to the first call's, and `withr::defer()` prepends its
+handler (`after = FALSE`) where a plain `on.exit(add = TRUE)` appends. It also
+handles a global or knitr target environment, which a hand-rolled call does not.
+
+It does NOT make the restore unclobberable, and an earlier draft of this entry
+said it did. `withr::defer()` ends in
+`do.call(base::on.exit, list(thunk, TRUE, after), envir = envir)`, so a calling
+frame that writes `on.exit()` without `add = TRUE` discards the restore silently
+— measured on withr 3.0.3, the option left at the wrapper's value where the
+caller had `99`. `withr::local_options()` loses it identically. That hole is
+stated in `local_timeout()`'s documentation rather than papered over.
+
+The cost is one more package on every install, against a package already
+required to run the tests and whose own Imports are `graphics` and `grDevices`.
+Falsified by `withr` acquiring dependencies of its own that a media-tools
+package should not carry.

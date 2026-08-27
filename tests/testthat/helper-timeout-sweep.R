@@ -55,15 +55,28 @@ tm_symbol_graph <- function() {
   lapply(fns, function(f) unique(all.names(body(f))))
 }
 
+# tm_spawn_sites(): the namespace functions that name a spawn primitive in
+# their OWN body -- the seed set `tm_reaches_spawn()` grows its closure from.
+#
+# Named rather than left inline (M070 wrote it as the first statement of
+# `tm_reaches_spawn()`, which returns only the closure) because M072 asks a
+# question about the seeds themselves: a per-call limit has to arrive at every
+# place a process is actually started, and that is this set, not the closure
+# around it. `seeds` stays a parameter for the same reason it is one below.
+tm_spawn_sites <- function(graph = tm_symbol_graph(),
+                           seeds = tm_spawn_primitives) {
+  sort(names(graph)[
+    vapply(graph, function(x) any(seeds %in% x), logical(1))
+  ])
+}
+
 # tm_reaches_spawn(): every namespace function from which a spawn primitive is
 # reachable. `seeds` is a parameter so a test can vary it -- passing an empty
 # seed set must collapse the result, which is what proves membership comes from
 # the closure and not from the recorded list.
 tm_reaches_spawn <- function(graph = tm_symbol_graph(),
                              seeds = tm_spawn_primitives) {
-  reaches <- names(graph)[
-    vapply(graph, function(x) any(seeds %in% x), logical(1))
-  ]
+  reaches <- tm_spawn_sites(graph, seeds)
   repeat {
     grown <- union(reaches, names(graph)[
       vapply(graph, function(x) any(reaches %in% x), logical(1))

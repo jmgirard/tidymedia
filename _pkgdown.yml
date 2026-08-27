@@ -14,6 +14,12 @@ reference:
     Background on arguments that recur across many verbs.
   contents:
   - audio_stream
+- title: "Bounding a run"
+  desc: >
+    Put a wall-clock limit on one call, so a hung program stops that call
+    rather than the session.
+  contents:
+  - with_timeout
 - title: "Layer 0: escape hatches"
   desc: >
     Pass a raw argument string straight to the command-line tools. Use these

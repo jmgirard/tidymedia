@@ -460,3 +460,122 @@ test_that("an invalid limit is refused identically on both branches", {
   expect_false(file.exists(marker))
   expect_equal(tm_fake_calls(fake), character(0))
 })
+
+# M072 -- a per-call limit reaches the worker too ------------------------------
+#
+# The carrier captures the limit in the parent at fan-out time, so a limit
+# established for one call rides into the worker exactly as a session-wide one
+# does. These cells set the SESSION limit to a value that is not the per-call
+# one and time the kill, because a fan-out that carried the session value
+# instead would still kill the job -- just 25 seconds later. The fakes sleep
+# 30 s, so both limits are observable and they cannot be confused.
+
+tm_session_limit_not_2 <- 25
+
+# Comfortably above a 2-second kill and comfortably below a 25-second one. The
+# fakes are shell scripts that die on the first signal, so the SIGINT ->
+# SIGTERM -> SIGKILL ladder (M69) does not stretch this the way a blocked
+# FFmpeg does.
+tm_per_call_budget <- 20
+
+tm_elapsed <- function(expr) {
+  start <- Sys.time()
+  force(expr)
+  as.numeric(difftime(Sys.time(), start, units = "secs"))
+}
+
+test_that("a per-call limit kills FFmpeg inside an ffm_batch worker", {
+  fake <- local_carry_harness()
+  jobs <- tm_batch_jobs(2)
+  withr::local_options(tidymedia.timeout = tm_session_limit_not_2)
+
+  took <- tm_elapsed(
+    expect_warning(
+      out <- with_timeout(
+        ffm_batch(jobs, function(input, output, ...) {
+          tidymedia::ffm_files(input, output)
+        }, run = TRUE, parallel = TRUE),
+        2
+      ),
+      class = "tidymedia_batch_timeout"
+    )
+  )
+
+  expect_lt(took, tm_per_call_budget)
+  expect_equal(out$success, rep(FALSE, 2))
+  expect_true(any(grepl("^ffmpeg ", tm_fake_calls(fake))))
+  expect_equal(getOption("tidymedia.timeout"), tm_session_limit_not_2)
+})
+
+test_that("a per-call limit kills FFprobe inside a probe_all worker", {
+  fake <- local_carry_harness()
+  files <- c(make_input(), make_input())
+  withr::local_options(tidymedia.timeout = tm_session_limit_not_2)
+
+  took <- tm_elapsed(
+    expect_warning(
+      res <- with_timeout(probe_all(files, parallel = TRUE), 2),
+      regexp = "timed out rather than being unreadable"
+    )
+  )
+
+  expect_lt(took, tm_per_call_budget)
+  expect_equal(nrow(res$container), 2L)
+  expect_true(any(grepl("^ffprobe ", tm_fake_calls(fake))))
+  expect_equal(getOption("tidymedia.timeout"), tm_session_limit_not_2)
+})
+
+test_that("a per-call limit aborts a two-pass loudnorm worker", {
+  fake <- local_carry_harness()
+  jobs <- tm_batch_jobs(2)
+  withr::local_options(tidymedia.timeout = tm_session_limit_not_2)
+
+  took <- tm_elapsed(
+    expect_error(
+      with_timeout(
+        normalize_audio_batch(jobs, two_pass = TRUE, parallel = TRUE),
+        2
+      ),
+      class = "tidymedia_timeout"
+    )
+  )
+
+  expect_lt(took, tm_per_call_budget)
+  expect_true(any(grepl("^ffmpeg ", tm_fake_calls(fake))))
+  expect_equal(getOption("tidymedia.timeout"), tm_session_limit_not_2)
+})
+
+test_that("every parallel fan-out is accounted for under a per-call limit", {
+  r_dir <- testthat::test_path("..", "..", "R")
+  files <- if (dir.exists(r_dir)) {
+    list.files(r_dir, pattern = "[.][Rr]$", full.names = TRUE)
+  } else {
+    character(0)
+  }
+  # Same skip as the AC1 guard above, for the same reason: an installed copy
+  # has an R/ directory holding a lazyload database and no sources to grep.
+  skip_if(
+    !length(files) || !any(basename(files) == "ffm_batch.R"),
+    "package sources are not on disk in this run"
+  )
+
+  sites <- unlist(lapply(files, function(f) {
+    hits <- grep("furrr::future_", readLines(f, warn = FALSE), value = FALSE)
+    if (!length(hits)) return(character(0))
+    paste0(basename(f), ":", hits)
+  }))
+  expect_gt(length(sites), 0)
+
+  # Three of the four fan-outs run jobs and are timed above. The fourth builds
+  # pipelines: its only spawn is the encoder probe, which answers at once, so
+  # there is no kill to observe there and this records that rather than
+  # implying a cell exists.
+  covered <- c(
+    "ffm_batch.R" = "pipeline build (no kill: the encoder probe answers at once)",
+    "ffm_batch.R" = "job run (timed above)",
+    "ffprobe.R" = "probe_all (timed above)",
+    "loudnorm_two_pass.R" = "loudnorm phase 1 (timed above)"
+  )
+  expect_setequal(sub(":.*$", "", sites), unique(names(covered)))
+  expect_equal(length(sites), length(covered))
+})

@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-27 (M071 done and archived; the carrier's five inst
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M072 | One call can carry its own time limit | planned | — | normal | milestones/M072-per-call-timeout.md |
+| M072 | One call can carry its own time limit | review | — | normal | milestones/M072-per-call-timeout.md |
 | M071 | A parallel worker sees the settings the caller set | done | — | normal | milestones/archive/M071-parallel-option-carry.md |
 | M70 | No timeout is silent | done | M69 | normal | milestones/archive/M70-timeout-silence.md |
 | M69 | A hung media program stops the call, not the session | done | — | normal | milestones/archive/M69-runtime-timeout.md |

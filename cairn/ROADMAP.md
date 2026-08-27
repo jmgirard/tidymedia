@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-27 (M073 planned; it absorbs both of the two `with_timeout()` candidate rows in full — M072's deferred F3/F6 findings and the `local_timeout()` row — so both are removed here rather than left as duplicates. ROADMAP.md and LESSONS.md both remain over budget and stay open for the user. `cairn_validate` passes; no release-window advisory.)_
+_Last hygiene check: 2026-08-27 (M073 done and archived; one candidate row added for the `withr` version floor its review filed rather than fixed. Terminal rows now number six, one over the five-row retention, so M68 is pruned here. ROADMAP.md and LESSONS.md both remain over budget and stay open for the user. `cairn_validate` passes; no release-window advisory.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M073 | The timeout wrapper's tail | review | — | normal | milestones/M073-timeout-wrapper-tail.md |
+| M073 | The timeout wrapper's tail | done | — | normal | milestones/archive/M073-timeout-wrapper-tail.md |
 | M072 | One call can carry its own time limit | done | — | normal | milestones/archive/M072-per-call-timeout.md |
 | M071 | A parallel worker sees the settings the caller set | done | — | normal | milestones/archive/M071-parallel-option-carry.md |
 | M70 | No timeout is silent | done | M69 | normal | milestones/archive/M70-timeout-silence.md |
 | M69 | A hung media program stops the call, not the session | done | — | normal | milestones/archive/M69-runtime-timeout.md |
-| M68 | A failed run removes the broken output it wrote | done | — | normal | milestones/archive/M68-failed-run-output-cleanup.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

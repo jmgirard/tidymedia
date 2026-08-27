@@ -105,7 +105,7 @@ where they are.
 - [x] T3. Test-first: write `local_timeout()`'s four-axis restore tests and its
       refusal tests, then implement it in `R/timeout.R` over
       `withr::defer(options(prior), envir = .local_envir)`.
-- [ ] T4. Verify the pair together — `local_timeout()` inside a
+- [x] T4. Verify the pair together — `local_timeout()` inside a
       `with_timeout()` and vice versa — so the LIFO of prior values is exercised
       rather than assumed.
 - [ ] T5. Roxygen topic + cross-links, `_pkgdown.yml` row, two NEWS bullets,
@@ -125,6 +125,8 @@ where they are.
 - 2026-08-27: T2 done — `tm_release_fifo()` now polls for a per-call cancel file that `withr::defer()` touches when the arming frame exits, and returns a unique marker so a test can watch the process. Three-case `pgrep -f` reaping test added (return, abort, twice in one frame); discriminating against the old helper, whose "armed" control passes while the "gone" assertion fails. AC4 re-run: the FIFO-anchored kill cell still reaches its `tidymedia_timeout` abort, `after = 90` unchanged and still outside 2 + 40 s. `test-with-timeout.R` with `NOT_CRAN=true`: 112 pass, 0 fail, 0 skip.
 - 2026-08-27: T2 found and fixed a shell-quoting trap while rewriting the helper: `system(wait = FALSE)` appends `&`, which binds to the LAST command of the string, so a multi-command poll loop without enclosing parentheses runs in the foreground and blocks R for the full `after` (measured 91.8 s against 1.1 s with them). The parentheses are now commented as load-bearing.
 - 2026-08-27: T3 done — `local_timeout(seconds, .local_envir = parent.frame())` added to `R/timeout.R` over `withr::defer()`, exported and documented; `withr` moved from Suggests to Imports per the gate (D-entry at T5). `tests/testthat/test-local-timeout.R` covers the four restore axes and the refusal set; the shared probe vector moved to `tests/testthat/helper-timeout-probes.R` so both refusal tests score against one list. Red first with "could not find function local_timeout". Full suite with `NOT_CRAN=true`: 6618 pass, 0 fail.
+- 2026-08-27: T4 done — three pair cells added. `local_timeout()` then `with_timeout()` in one frame unwinds cleanly (2 inside the wrapper, 5 after it, 99 after the frame). A `local_timeout()` written directly inside `with_timeout()`'s `expr` binds to the frame that wrote the call, so its undo runs after the wrapper's and leaves the wrapper's limit behind (measured: 2 after the frame, against 99 before). Pinned rather than fixed: withr's own `with_options`/`local_options` pair was measured doing the same thing, and the control is in the cell.
+- 2026-08-27: minor amendment (discovered sub-task, no criterion changed): T4's crossing case is stated in `local_timeout()`'s roxygen `@details`, with the safe shape (put the inner limit in its own function) named.
 - 2026-08-27: sizing tripwire fired at 8 acceptance criteria (>7) and was disposed here rather than by splitting: the eighth is the mandatory profile-check criterion, the six tasks are each well under a working session, and `local_timeout()` is ~10 lines plus a topic, so a second milestone would add tracking ceremony an order larger than the work it carries.
 
 ## Decisions

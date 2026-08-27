@@ -42,6 +42,15 @@ Two calls in one frame stack the way any pair of \verb{local_*()} calls does: th
 second is in force until the frame ends, and both are undone together, back
 to what the caller had.
 
+Written \emph{directly inside} a \code{\link[=with_timeout]{with_timeout()}} expression, \code{local_timeout()}
+binds to the frame that wrote the call, not to the wrapper — \code{expr} is
+evaluated in the caller's frame — so its undo runs after the wrapper's, and
+the wrapper's limit is what the frame leaves behind. Put the inner limit in a
+function of its own, or use one form or the other. This is what \verb{with_*()}
+and \verb{local_*()} do together anywhere in R, not something particular to these
+two (measured 2026-08-27 against \code{\link[withr:with_options]{withr::with_options()}} and
+\code{\link[withr:local_options]{withr::local_options()}}, which behave identically).
+
 \code{seconds} is refused by the rule \code{options(tidymedia.timeout = )} applies, with
 one deliberate exception. Setting the option to \code{NULL} REMOVES it, leaving the
 session unset and therefore unlimited; \code{local_timeout(NULL)} is a caller

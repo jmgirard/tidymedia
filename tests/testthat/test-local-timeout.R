@@ -182,3 +182,73 @@ test_that("NULL is refused, the asymmetry with the option seam intact", {
   expect_error(f(), class = "rlang_error")
   expect_true(tm_option_accepts(NULL))
 })
+
+# T4 -- the two halves in one frame, both orders ------------------------------
+#
+# `with_timeout()` restores with on.exit() in its OWN frame; `local_timeout()`
+# defers in the CALLER's. Whether the pair unwinds to the caller's state
+# therefore depends on the order they are written in, and that is measured here
+# rather than assumed.
+
+test_that("local_timeout() then with_timeout() unwinds to the caller's state", {
+  withr::local_options(tidymedia.timeout = 99)
+  f <- function() {
+    local_timeout(5)
+    c(
+      wrapped = with_timeout(getOption("tidymedia.timeout"), 2),
+      after_wrapper = getOption("tidymedia.timeout")
+    )
+  }
+  # The wrapper displaces the frame's limit and hands it back, innermost first.
+  expect_equal(f(), c(wrapped = 2, after_wrapper = 5))
+  expect_equal(getOption("tidymedia.timeout"), 99)
+})
+
+test_that("a local_timeout() inside a nested call is undone with that call", {
+  withr::local_options(tidymedia.timeout = 99)
+  f <- function() {
+    inner <- function() {
+      local_timeout(5)
+      getOption("tidymedia.timeout")
+    }
+    c(inner = with_timeout(inner(), 2), after = getOption("tidymedia.timeout"))
+  }
+  # `inner` has its own frame, so its limit ends with it and the wrapper's
+  # restore is the outermost one left. This is the shape to write.
+  expect_equal(f(), c(inner = 5, after = 99))
+  expect_equal(getOption("tidymedia.timeout"), 99)
+})
+
+test_that("local_timeout() written directly inside with_timeout()'s expr outlives it", {
+  # `expr` is a promise: it is evaluated in the frame that WROTE the call, so a
+  # `local_timeout()` there binds to that frame, not to the wrapper. The wrapper
+  # then restores on its way out and the frame undoes that restore on its own
+  # way out, leaving the wrapper's limit behind. Pinned, not fixed: this is what
+  # `with_*` and `local_*` do together anywhere in R, and the control below
+  # shows withr's own pair doing exactly the same thing.
+  withr::local_options(tidymedia.timeout = 99)
+  f <- function() {
+    with_timeout(
+      {
+        local_timeout(5)
+        getOption("tidymedia.timeout")
+      },
+      2
+    )
+  }
+  expect_equal(f(), 5)
+  expect_equal(getOption("tidymedia.timeout"), 2)
+
+  withr::local_options(tm_pair_probe = 99)
+  g <- function() {
+    withr::with_options(
+      list(tm_pair_probe = 2),
+      {
+        withr::local_options(tm_pair_probe = 5)
+        getOption("tm_pair_probe")
+      }
+    )
+  }
+  expect_equal(g(), 5)
+  expect_equal(getOption("tm_pair_probe"), 2)
+})

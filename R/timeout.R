@@ -153,6 +153,15 @@ with_timeout <- function(expr, seconds) {
 #' second is in force until the frame ends, and both are undone together, back
 #' to what the caller had.
 #'
+#' Written *directly inside* a [with_timeout()] expression, `local_timeout()`
+#' binds to the frame that wrote the call, not to the wrapper — `expr` is
+#' evaluated in the caller's frame — so its undo runs after the wrapper's, and
+#' the wrapper's limit is what the frame leaves behind. Put the inner limit in a
+#' function of its own, or use one form or the other. This is what `with_*()`
+#' and `local_*()` do together anywhere in R, not something particular to these
+#' two (measured 2026-08-27 against [withr::with_options()] and
+#' [withr::local_options()], which behave identically).
+#'
 #' `seconds` is refused by the rule `options(tidymedia.timeout = )` applies, with
 #' one deliberate exception. Setting the option to `NULL` REMOVES it, leaving the
 #' session unset and therefore unlimited; `local_timeout(NULL)` is a caller

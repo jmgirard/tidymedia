@@ -289,3 +289,71 @@ local_blocking_input <- function(env = parent.frame()) {
   }
   path
 }
+
+# tm_program_literals(): every program name a timeout refusal can be built from.
+#
+# AC4 asks that one literal names each program across every path that can abort
+# about it. The receiving functions are named because they are the ones that
+# BUILD a refusal -- run_program()/guard_timeout()/abort_timeout() take the name
+# straight into the message, and capture_version() hands it to run_program().
+# The alternative, sweeping every "ffmpeg"-ish string in the namespace, would
+# rope in find_program("ffmpeg") and set_program("mediainfo"), where the
+# lowercase form is the binary's real name and not a display literal.
+#
+# `fns` is a parameter so the mutation probe can feed a mutant body in: a guard
+# whose only falsifier is deleting it re-certifies the mock rather than the
+# code, which is the defect this task exists to fix.
+tm_program_naming_calls <- c("run_program", "guard_timeout", "abort_timeout",
+                             "capture_version")
+
+tm_program_literals <- function(fns = NULL) {
+  if (is.null(fns)) {
+    ns <- asNamespace("tidymedia")
+    objs <- mget(ls(ns, all.names = TRUE), envir = ns, ifnotfound = list(NULL))
+    fns <- objs[vapply(objs, is.function, logical(1))]
+  }
+  out <- list()
+  walk <- function(e, where) {
+    if (is.call(e)) {
+      head <- e[[1]]
+      if (is.name(head) && as.character(head) %in% tm_program_naming_calls) {
+        lit <- tm_program_arg(e, as.character(head))
+        if (!is.null(lit)) out[[length(out) + 1L]] <<- stats::setNames(lit, where)
+      }
+    }
+    if (is.call(e) || is.pairlist(e)) {
+      for (i in seq_along(e)) {
+        if (rlang::is_missing(e[[i]]) || is.null(e[[i]])) next
+        walk(e[[i]], where)
+      }
+    }
+  }
+  for (nm in names(fns)) walk(body(fns[[nm]]), nm)
+  unlist(out)
+}
+
+# The program name's position differs by callee, and three of the four take it
+# positionally at their own spawn sites -- guard_timeout("FFmpeg", limit, ...)
+# in the Layer 0 hatches especially. A named argument wins where one is given;
+# otherwise the k-th argument that carries no name is read, which is what
+# R itself would match.
+tm_program_positions <- list(
+  run_program = list(name = "program", pos = 3L),
+  guard_timeout = list(name = "program", pos = 1L),
+  abort_timeout = list(name = "program", pos = 1L),
+  capture_version = list(name = "name", pos = 2L)
+)
+
+tm_program_arg <- function(e, callee) {
+  spec <- tm_program_positions[[callee]]
+  args <- as.list(e)[-1]
+  nms <- names(args)
+  if (is.null(nms)) nms <- rep("", length(args))
+  val <- if (spec$name %in% nms) {
+    args[[which(nms == spec$name)[[1]]]]
+  } else {
+    unnamed <- which(!nzchar(nms))
+    if (length(unnamed) >= spec$pos) args[[unnamed[[spec$pos]]]] else NULL
+  }
+  if (is.character(val) && length(val) == 1L) val else NULL
+}

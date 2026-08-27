@@ -514,3 +514,55 @@ test_that("probe_all() still keeps the NA row and warns for a hung file", {
   expect_identical(nrow(out$container), 2L)
   expect_true(is.na(out$container$duration[[1]]))
 })
+
+# T5: one literal per program -------------------------------------------------
+
+test_that("each program is named by one literal across the abort paths", {
+  # probe_one() said "ffprobe" while the Layer 0 hatch said "FFprobe", so the
+  # same hung binary was named two ways depending on which door the caller came
+  # through (M69 review J2).
+  expect_identical(
+    sort(unique(unname(tm_program_literals()))),
+    c("FFmpeg", "FFprobe", "MediaInfo")
+  )
+})
+
+test_that("the literal guard reddens when a literal VARIES, not just when cut", {
+  # The mutation probe AC4 asks for. Deleting the assertion above would
+  # re-certify the reader rather than the code, which is exactly the defect J2
+  # found -- so the mutant changes the LITERAL and the reader has to see it.
+  mutant <- list(
+    faked = function(file) {
+      run_program(find_ffprobe(), c("-i", file), program = "ffprobe")
+    }
+  )
+  found <- tm_program_literals(mutant)
+  expect_identical(unname(found), "ffprobe")
+  expect_false(
+    identical(sort(unique(unname(c(tm_program_literals(), found)))),
+              c("FFmpeg", "FFprobe", "MediaInfo"))
+  )
+})
+
+test_that("the guard reads the real bodies, not a list handed to it", {
+  # Non-vacuity from the other side: the default argument must actually reach
+  # the namespace, so a `fns` that defaulted to something empty would show here.
+  found <- tm_program_literals()
+  expect_gt(length(found), 5L)
+  expect_true("probe_one" %in% names(found))
+  expect_true("ffprobe" %in% names(found))
+})
+
+test_that("a real hung FFprobe is named the same through either door", {
+  # AC4's stated evidence, against the real call path: probe_one() absorbs the
+  # timeout into a sentinel and ffprobe() aborts, and the two have to agree
+  # about what timed out.
+  blocked <- local_blocking_input()
+  withr::local_options(tidymedia.timeout = 2)
+  absorbed <- probe_one(blocked)
+  hatch <- tryCatch(ffprobe(paste("-i", shQuote(blocked))),
+                    error = function(e) e)
+  expect_true(is_absorbed_timeout(absorbed))
+  expect_s3_class(hatch, "tidymedia_timeout")
+  expect_identical(absorbed$program, hatch$tm_program)
+})

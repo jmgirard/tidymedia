@@ -77,6 +77,20 @@
   and
   [`?refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md).
 
+- `with_timeout(expr, seconds)` puts a wall-clock limit on one call
+  without changing the limit the rest of your session runs under. Every
+  FFmpeg, FFprobe and MediaInfo program started while `expr` is being
+  evaluated is bounded by `seconds`, and when the call ends — by any
+  route, a failure or a reached limit included — whatever the session
+  had set before is back, an unset option included. It reaches a
+  `parallel = TRUE` fan-out too, because the worker is handed the limit
+  in force when the fan-out starts. `0` means no limit, so
+  `with_timeout(expr, 0)` lifts a session-wide limit for one call; a
+  value the underlying limit could not use — a fraction of a second, a
+  negative number, `NA`, a string — is refused before `expr` runs,
+  naming `seconds`. See
+  [`?with_timeout`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md).
+
 ### Breaking changes
 
 - [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)

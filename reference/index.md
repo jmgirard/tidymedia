@@ -18,6 +18,14 @@ Background on arguments that recur across many verbs.
   [`audio_indices`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
   : Audio track and audio input indices
 
+## Bounding a run
+
+Put a wall-clock limit on one call, so a hung program stops that call
+rather than the session.
+
+- [`with_timeout()`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md)
+  : Bound one call's wall-clock time
+
 ## Layer 0: escape hatches
 
 Pass a raw argument string straight to the command-line tools. Use these

@@ -67,6 +67,12 @@ that program to finish, and a program that hangs blocks the R session with
 it. Set a wall-clock limit, in whole seconds, to bound the wait:</p>
 <div class="sourceCode"><pre><code><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>tidymedia.timeout <span class="op">=</span> <span class="fl">600</span><span class="op">)</span></span></code></pre></div>
 
+<p>To bound one call rather than the whole session, wrap it in
+<code><a href="with_timeout.html">with_timeout()</a></code>:</p>
+<div class="sourceCode"><pre><code><span><span class="fu"><a href="../reference/with_timeout.html">with_timeout</a></span><span class="op">(</span><span class="fu"><a href="../reference/extract_audio.html">extract_audio</a></span><span class="op">(</span><span class="st">"in.mp4"</span>, <span class="st">"out.wav"</span><span class="op">)</span>, <span class="fl">300</span><span class="op">)</span></span></code></pre></div>
+
+<p>That call runs under its own limit; the session's setting, or the absence of
+one, is back when it returns.</p>
 <p>A reached limit is never silent: every call that can start one of those
 programs either aborts or warns.</p>
 <p>It <strong>aborts</strong>, naming the program and the limit, from the task verbs,

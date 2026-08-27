@@ -36,6 +36,14 @@ with it. Set a wall-clock limit, in whole seconds, to bound the wait:
 
     options(tidymedia.timeout = 600)
 
+To bound one call rather than the whole session, wrap it in
+[`with_timeout()`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md):
+
+    with_timeout(extract_audio("in.mp4", "out.wav"), 300)
+
+That call runs under its own limit; the session's setting, or the
+absence of one, is back when it returns.
+
 A reached limit is never silent: every call that can start one of those
 programs either aborts or warns.
 

@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M074: The floor says what was measured
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate -->
 - **Driving RR:** —   <!-- owner: plan · create/amend-via-gate -->
@@ -67,7 +67,7 @@ row asked whether the floor understates, and "it does not" answers it.
       declared floor version and on 3.0.3. Where the two versions differ for
       either form, `local_timeout()`'s `@details` names the versions on which
       each behavior holds.
-- [ ] AC3 — DESCRIPTION's `withr` floor names a version on which AC1 and AC2
+- [x] AC3 — DESCRIPTION's `withr` floor names a version on which AC1 and AC2
       were measured green, and `NEWS.md` states that floor and what was measured
       against it.
 - [x] AC4 — Each of the four behavioral claims `local_timeout()`'s documentation
@@ -83,11 +83,11 @@ row asked whether the floor understates, and "it does not" answers it.
 ## Coverage
 <!-- owner: plan · create/amend-via-gate -->
 
-- AC1 → T1, T2
-- AC2 → T3
-- AC3 → T5
-- AC4 → T3, T5
-- AC5 → T5
+- AC1 → T1, T2, T6
+- AC2 → T3, T6
+- AC3 → T5, T9
+- AC4 → T3, T5, T6, T8
+- AC5 → T5, T9
 
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
@@ -130,7 +130,7 @@ row asked whether the floor understates, and "it does not" answers it.
 - [x] T8 — (defect return) Fix `local_timeout()`'s roxygen and the call-site
       comment at `R/timeout.R:255-260` to say what T6 measured (F2, F1);
       `devtools::document()`.
-- [ ] T9 — (defect return) Rewrite `NEWS.md`'s withr bullet to state exactly
+- [x] T9 — (defect return) Rewrite `NEWS.md`'s withr bullet to state exactly
       what was measured against the floor, with an anchored version range (F5,
       F6 — the AC3 failure); file F10's remaining harness hardening as a
       candidate row; run the `verify` slot and `devtools::check()`.
@@ -156,6 +156,9 @@ row asked whether the floor understates, and "it does not" answers it.
 - 2026-08-27: T7 — D053 rewritten from T6's measurements: the globalenv branch is reached rather than avoided (F1), `is_top_level_global_env()` is 2.5.0-and-later while only `global_defer()` is 3.x-only (F3), the Rscript form has an undo scheduled that its own exit hooks observe before (F4), `source(local = TRUE)` is recorded as the one measured difference (F7), D052's `defer()` justification is said to stand unqualified (F9), and the two non-frame `@details` claims are named under "What was not measured" (F5's other half).
 
 - 2026-08-27: T8 — the call-site comment at `R/timeout.R` now says the globalenv branch IS reached and that the two forms still agree, and points at the harness's withr:: arm (F1, F2). The two `@details` sentences crediting withr 2.5.0 with a `defer()`/`local_options()`/`with_options()` comparison now stand on T6's committed measurement rather than on assertion, so their wording is unchanged. `devtools::document()` produced no `man/` diff — the edit is a source comment.
+
+- 2026-08-27: T9 — NEWS's withr bullet rewritten: it now names the two versions measured, says what was re-measured on each (the test suite and the four frame claims), names the two `@details` claims that were NOT run on the floor (per spawned program, and the `parallel = TRUE` fan-out) and the unmeasured interior, and anchors its closing sentence to "resolves withr 2.5.0 rather than the current release" (F5, F6 — AC3). F10's three remaining harness rough edges appended to the `Imports`-floors candidate row. `devtools::test()` 0 failures / 6635 passing / 5 skips; `devtools::check()` 0 errors / 0 warnings / 0 notes (2m 54s).
+- 2026-08-27: defect return closed. AC3 re-ticked on the rewritten NEWS bullet; the other four criteria were re-ticked at review on fresh evidence and nothing in this round's edits touches what they measured — the harness's added arms only extend it, and its previously-reported values are unchanged on the re-run.
 
 ## Decisions
 <!-- owner: implement / review · append-only -->

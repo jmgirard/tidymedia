@@ -154,7 +154,7 @@ row asked whether the floor understates, and "it does not" answers it.
 - [x] T14 — (descope) Execute the gated AC3 amendment: drop AC3, renumber the
       four that remain, and give the retired NEWS-accuracy promise a home on
       the `Imports`-floors candidate row.
-- [ ] T15 — (defect return 3) Correct the per-spawned-program clause in NEWS
+- [x] T15 — (defect return 3) Correct the per-spawned-program clause in NEWS
       and D053: those tests are inside `test-with-timeout.R` and passed under
       the pinned 2.5.0 (O1).
 - [ ] T16 — (defect return 3) O2-O8: source D053's withr-internals reading
@@ -206,6 +206,8 @@ row asked whether the floor understates, and "it does not" answers it.
 
 - 2026-08-27: T14 — descope executed as a gated criterion amendment. AC3 is dropped; its DESCRIPTION half is not left unpromised, because AC1's own text already binds it ("it equals the floor DESCRIPTION declares"), and its NEWS half is what the thrash gate retired. `cairn_validate`'s `coverage complete` check counts criteria and demands Coverage reference exactly AC1..ACn, so the drop forced a renumber: old AC4 (the four documented claims) is now AC3 and old AC5 (`check()`/`test()` clean) is now AC4, both verbatim as written — the three Review sections above predate the renumber and their AC4/AC5 refer to the old numbering. The narrowing needs no fresh-reader audit under step 6: nothing was reworded, one criterion was deleted.
 - 2026-08-27: T14 — the retired promise absorbed into the existing `Imports`-floors candidate row rather than filed as a new one (search-first): that row already inherits `data-raw/withr-floor.R` and M074's leftovers. It now records that no criterion binds a floor's NEWS disclosure, names the three shapes AC3 failed in, and asks whoever takes it to hold the disclosure sentence to the same evidence bar as the measurement.
+
+- 2026-08-27: T15 — O1 fixed in NEWS and in D053's "What was not measured". The harness was re-run first, in this session, so the corrected sentence rests on its own measurement rather than on the review's account of one: exit 0, 70 PASS / 0 FAIL / 0 SKIP, and the four per-spawned-program blocks (`test-with-timeout.R:255`, `:279`, `:432`, `:487`) PASS under the pinned 2.5.0 library at log lines 55-58. `grep -n parallel` over both measured files still returns nothing, so only the `parallel = TRUE` half of the retired sentence was true. Both texts now say two things were unrun, not three, and say that the per-spawned-program claim was run and where its blocks live.
 
 ## Decisions
 <!-- owner: implement / review · append-only -->

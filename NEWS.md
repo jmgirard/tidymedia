@@ -89,10 +89,11 @@
   `source(file, local = TRUE)` called from a function, withr 2.5.0 keeps the
   limit in force for the rest of the sourced file where 3.0.3 has the caller's
   value back on the next line of it — either way the caller's value is back once
-  the enclosing function returns. Three things were not run on 2.5.0: the claim
-  that the limit applies per spawned program, the claim that it reaches a
-  `parallel = TRUE` fan-out — their tests live outside the two files above — and
-  every withr between 2.5.0 and 3.0.3. So an installation that resolves withr
+  the enclosing function returns. Two things were not run on 2.5.0: the claim
+  that the limit reaches a `parallel = TRUE` fan-out, which neither file above
+  mentions, and every withr between 2.5.0 and 3.0.3. The neighbouring claim —
+  that the limit applies per spawned program — was run: four of the blocks above
+  test it, and all four passed on 2.5.0. So an installation that resolves withr
   2.5.0 rather than the current release is running the frame behavior that page
   describes.
 

@@ -2358,10 +2358,13 @@ seen to part.
 **What was not measured.** The nine other `Imports` floors, the absent
 `Depends: R (>= )` line, and every `withr` between 2.5.0 and 3.0.3 — the walk
 was to be run only if a block failed, and none did. The `knitr` target
-environment. The `@details` claims that are not about frames at all — that the
-limit applies per spawned program, and that it reaches a `parallel = TRUE`
-fan-out — were not run under the floor; their tests live outside the two files
-measured. Test-side `withr` use is Suggests-side and says nothing about what a
+environment. Of the two `@details` claims that are not about frames at all,
+one was not run under the floor and one was. The `parallel = TRUE` fan-out was
+not: neither measured file mentions `parallel`. The per-spawned-program claim
+WAS — `test-with-timeout.R:255`, `:279`, `:432` and `:487` test it, and all four
+passed under the pinned 2.5.0 library with 0 skips. An earlier revision of this
+paragraph said both were unrun and located both elsewhere; it was wrong on the
+second. Test-side `withr` use is Suggests-side and says nothing about what a
 user installing tidymedia gets. Nothing verifies this floor on a schedule: CI
 installs the latest dependencies on all five jobs.
 

@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M073: The timeout wrapper's tail
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -110,7 +110,7 @@ where they are.
       rather than assumed.
 - [x] T5. Roxygen topic + cross-links, `_pkgdown.yml` row, two NEWS bullets,
       `devtools::document()`, and the D-entry extending D051.
-- [ ] T6. `devtools::check()` and `devtools::test()`; record the note delta
+- [x] T6. `devtools::check()` and `devtools::test()`; record the note delta
       against `master`.
 
 ## Work log
@@ -128,6 +128,7 @@ where they are.
 - 2026-08-27: T4 done — three pair cells added. `local_timeout()` then `with_timeout()` in one frame unwinds cleanly (2 inside the wrapper, 5 after it, 99 after the frame). A `local_timeout()` written directly inside `with_timeout()`'s `expr` binds to the frame that wrote the call, so its undo runs after the wrapper's and leaves the wrapper's limit behind (measured: 2 after the frame, against 99 before). Pinned rather than fixed: withr's own `with_options`/`local_options` pair was measured doing the same thing, and the control is in the cell.
 - 2026-08-27: minor amendment (discovered sub-task, no criterion changed): T4's crossing case is stated in `local_timeout()`'s roxygen `@details`, with the safe shape (put the inner limit in its own function) named.
 - 2026-08-27: T5 done — `local_timeout()` topic written and cross-linked both ways with `with_timeout()`, `_pkgdown.yml` row added under "Bounding a run" (`pkgdown::check_pkgdown()`: no problems found), two NEWS bullets added (the statement form; the omitted-`expr` refusal), `devtools::document()` run, and D052 appended to `cairn/DECISIONS.md` extending D051 and recording the `withr` Suggests-to-Imports move.
+- 2026-08-27: T6 done — `devtools::check()` on the branch: 0 errors, 0 warnings, 0 notes, so the note delta against `master` is empty by construction. `devtools::test()`: 6618 pass, 0 fail, 5 skip, 4 warn; all four warnings are the pre-existing dropped-audio-track messages in `test-audio-stream.R` and `test-ffmpeg.R`, files this branch does not touch.
 - 2026-08-27: sizing tripwire fired at 8 acceptance criteria (>7) and was disposed here rather than by splitting: the eighth is the mandatory profile-check criterion, the six tasks are each well under a working session, and `local_timeout()` is ~10 lines plus a topic, so a second milestone would add tracking ceremony an order larger than the work it carries.
 
 ## Decisions

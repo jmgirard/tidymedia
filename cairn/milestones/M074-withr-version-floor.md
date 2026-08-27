@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M074: The floor says what was measured
 
-- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate -->
 - **Driving RR:** —   <!-- owner: plan · create/amend-via-gate -->
@@ -190,6 +190,7 @@ row asked whether the floor understates, and "it does not" answers it.
 - 2026-08-27: T13 — NEWS's withr bullet now names what was actually run: "all 35 `test_that()` blocks of `test-local-timeout.R` and `test-with-timeout.R`" in place of "the whole `with_timeout()` and `local_timeout()` test suite" (G2); it states the one measured version difference, `source(file, local = TRUE)` from a function frame holding the limit on 2.5.0 and not on 3.0.3, with the note that either way the caller's value is back once the frame returns (G3); and the four documented claims are now enumerated as four, the two ways the undo can be lost named as part of them rather than added to them (G6). The ROADMAP harness row no longer presents its inventory as complete: it records that two of the five rough edges the reviews raised were reachable in the form M074 ran and were fixed here, lists the three that remain plus `install_withr()`'s reuse short-circuit, and says why each is a trap only for a wider run (G7, G9). `devtools::test()` 0 failures / 6635 passing / 5 skips / 4 warnings; `devtools::check()` `Status: OK`, 0 errors / 0 warnings / 0 notes (9m 23s).
 - 2026-08-27: second defect return closed. AC3 re-ticked on the rewritten NEWS bullet; AC1, AC2, AC4 and AC5 were re-ticked at review round 2 on fresh evidence and this round's harness edits change no measured value — the pin and failing-block controls only make a false green fail, and the added `formB-where.R` arm reports a new fact rather than revising one. Re-run confirms it: 70 PASS / 0 FAIL / 0 SKIP, and every previously-reported value unchanged on both versions.
 - 2026-08-27: thrash-rule gate (trigger (b), AC3 twice) — the user chose to HOLD AC1's two-file domain over widening it to include `test-parallel-option-carry.R`. No criterion changed. The recommendation was to hold under D-118 (a widening amendment on a milestone with two defect returns), and because the honest NEWS sentence is available without it: naming the two files and 35 blocks says what was measured, where "the whole test suite" was the overclaim that failed. `test-parallel-option-carry.R`'s floor coverage keeps its follow-up home on the `Imports`-floors candidate row. Falsified by a caller hitting a floor-dependent difference in the parallel fan-out that the two measured files do not reach.
+- 2026-08-27: review returned M074 to in-progress a THIRD time. Two independent gate failures. (1) Consistency gate: `cairn_validate.py` exits 1 on `weight caps` — the milestone file carries 157 plan-owned lines against a cap of 150 (Tasks 66), the accumulated cost of two defect returns; review cannot shed it, every named section is plan-owned. (2) AC3 fails inside its own domain for the third time: NEWS says the per-spawned-program claim was not run on 2.5.0 and that its tests live outside the two measured files, and both halves are false — `test-with-timeout.R:255`, `:279`, `:432`, `:487` test exactly that claim, are inside one of the two files, and all four PASSED under the pinned 2.5.0 library with 0 SKIP (O1). O2-O8 to fix; O9 rejected. AC1, AC2, AC4, AC5 all met on fresh evidence and the measurement is unchallenged. Thrash rule: trigger (a) fires (third return — descope-or-park recommended, no further retry queued under the current plan) and trigger (b) fires again (AC3 three times, same shape); (b)'s recorded alternative — widening AC1's domain — was spent at round 2's gate when the user held it, so what remains of (b) is the offered `/milestone-brief` escalation.
 
 ## Decisions
 <!-- owner: implement / review · append-only -->
@@ -788,3 +789,210 @@ user-visible entry with no milestone number in it; the one new top-level file,
 `data-raw/withr-floor.R`, sits under the existing `.Rbuildignore` entry
 `^data-raw$` (line 15) and `check()` raises no NOTE about it;
 `devtools::check()` is `Status: OK` at 0/0/0.
+
+### Acceptance criteria — AC3 (2026-08-27, round 3)
+
+- **AC3 — NOT met.** First half holds: `DESCRIPTION:29` reads
+  `withr (>= 2.5.0)`, the version AC1 and AC2 measured green above. Round 2's
+  two failures are genuinely fixed — NEWS now names the two files and 35 blocks
+  rather than "the whole test suite", and it states the one measured version
+  difference. The second half fails a third time, in a new place. NEWS's
+  disclosure sentence reads: *"Three things were not run on 2.5.0: the claim
+  that the limit applies per spawned program, the claim that it reaches a
+  `parallel = TRUE` fan-out — their tests live outside the two files above —
+  and every withr between 2.5.0 and 3.0.3."* The per-spawned-program half is
+  false on both counts. Its tests do not live outside the two measured files:
+  `test-with-timeout.R` carries "each spawn site is handed the per-call limit"
+  (`:255`), "`ffm_batch()`'s up-front limit check reads the per-call value"
+  (`:279`), "no process `tm_release_fifo()` starts outlives the frame" (`:432`)
+  and "a per-call limit kills a hung program with no session limit set"
+  (`:487`), the last of which drives a real FFmpeg process to its limit. All
+  four ran under the pinned 2.5.0 library and all four PASSED (harness log
+  lines 55-58, with 0 SKIP over the 35 blocks). So NEWS says a claim was not
+  measured on the floor when it was, and locates its tests in a file where they
+  are not. The `parallel = TRUE` half of the same sentence is correct —
+  `grep -n parallel` over both measured files returns nothing. This is a
+  failure inside the criterion's own domain and its repair widens no
+  enumeration, so it is a defect return, not an amendment.
+
+### Independent fresh-context review (2026-08-27, round 3)
+
+Declared tier is user-facing and the diff touches `R/` and a script, so the full
+three-lens fan-out ran again, each lens with its own evidence base and none
+having seen the implementation. The [O] lens had to be relaunched twice — the
+first run stalled on a stream watchdog, the second died to a machine-sleep API
+error — and the reported run is the third, given the harness's captured output
+rather than being asked to re-run it.
+
+- **[S] blame-history (Sonnet): zero defects.** M073's
+  `withr::defer()`-before-`options()` write ordering is intact at the call site,
+  untouched by this branch's comment-only edit above it; `git diff` shows D053
+  purely appended with no line of D052 changed, and D053's "stands unqualified"
+  reading of D052 is accurate now that the rewritten branch is reached from a
+  real call path. Its one non-finding was an observation that this round's
+  Review section was not yet written when it looked — it was reading the
+  implement→review handoff, which is this phase.
+- **[S] prior-review record (Sonnet): zero findings.** The
+  `gh api .../pulls/comments` probe returned `[]`, so the PR-thread walk was not
+  paid for. Against the archived `## Review` sections of M069-M073 and against
+  this milestone's own two rounds, nothing is reintroduced: it traced each of
+  G1-G5 and G7 to a real change rather than a rewording, and found no
+  `LESSONS.md` line covering withr, version floors, or
+  documentation-vs-measurement.
+- **[O] diff-bug (Opus): nine findings, ranked.** Verbatim below with
+  dispositions. O1, O3 and O6 were re-verified here against the implementation
+  rather than against the reviewer's account of them.
+
+**O1 (defect return — verified; the AC3 failure).** *"`NEWS.md:92-94` and
+`cairn/DECISIONS.md:2362-2364` — 'their tests live outside the two files.'
+NEWS: 'the claim that the limit applies per spawned program, the claim that it
+reaches a `parallel = TRUE` fan-out — their tests live outside the two files
+above'; D053 repeats it verbatim. `grep -rl local_timeout tests/testthat/`
+returns only `test-local-timeout.R`, `test-with-timeout.R` and
+`helper-timeout-probes.R` — no test outside the two measured files exercises
+`local_timeout()` at all, so the asserted elsewhere-tests do not exist; worse,
+the nearest tests of the per-spawned-program semantics (`each spawn site is
+handed the per-call limit`, `ffm_batch()'s up-front limit check reads the
+per-call value`, `a per-call limit kills a hung program…`) are inside
+`test-with-timeout.R` and are shown passing on 2.5.0 at harness-r3.log:55-58,
+i.e. a thing NEWS says was 'not run on 2.5.0' was run. This is a new
+unsupported claim introduced by the round-2 fix for G2/G3, in the same AC3 slot
+both returns fell on."* — Re-verified here: the four blocks are at
+`test-with-timeout.R:255`, `:279`, `:432` and `:487`; the harness log shows all
+four PASS under the pinned 2.5.0 library with 0 SKIP; and `grep -n parallel`
+over both measured files returns nothing, so only the per-spawned-program half
+of the sentence is wrong.
+
+**O2 (fix now — verified true, wrongly sourced).** *"`cairn/DECISIONS.md` and
+`R/timeout.R` — withr-internals mechanism stated as measurement. D053:
+'withr redirects the handler to `source()`'s own frame first, and both versions
+do it, by different routes (3.0.3 consults `source_exit_frame_option()` before
+reaching `global_defer()`; 2.5.0 runs `exit_frame()`/`source_frame()` before
+`setup_handlers()` is reached at all)' and 'Only `global_defer()` is new in
+3.x; `is_top_level_global_env()` is already in 2.5.0 (`compat-defer.R:174`,
+called at `:65`)'; the call-site comment carries the short form.
+`data-raw/withr-floor.R` never reads withr's sources or internals — its own
+comment says the probe 'discriminates the two without reaching into either
+version's internals, which differ' — and the log measures only 30 vs 99 after
+`deferred_run(globalenv())`, which cannot distinguish 'redirected to
+`source()`'s frame' from any other reason nothing is on `globalenv()`. Under
+the milestone's stated promise, this is the same class of defect as F1/G1, now
+sourced from the reviewer's own deparse rather than the harness."* — The claims
+are TRUE: round 2's Review section records them verified three ways against
+`deparse(withr::defer)` on 3.0.3, against the 2.5.0 tarball from the CRAN
+archive, and against `length(withr:::the$global_exits)`. What the finding gets
+right is provenance: nothing committed on this branch reproduces that reading,
+so a text whose whole point is "this was measured" cites an unrecorded source.
+The fix is to say in D053 where the internals reading came from, not to retract
+it.
+
+**O3 (fix now, cheap — verified).** *"`cairn/ROADMAP.md` — the rough-edge
+inventory does not add up. 'which M074 left four rough edges in after its two
+reviews. Two of the five its reviews raised were reachable … and were fixed
+there' — two fixed plus the four it then lists is six, not five; and three were
+actually fixed, since F10's fourth item ('`run_under()` ignores the child's
+exit status') was folded into F8's fix and is now `run_under()`'s `stop()` at
+`data-raw/withr-floor.R:102-105`, unlisted in either half. G7 faulted this row
+for presenting an incomplete inventory as complete; the replacement is
+internally inconsistent."* — Re-verified: the arithmetic is off, and
+`run_under()` does `stop()` on a non-zero child status.
+
+**O4 (fix now, cheap).** *"`NEWS.md` — AC2's measurement is absent from NEWS.
+AC3 as written requires NEWS to state the floor 'and what was measured against
+it'; the bullet reports the 35 test blocks (AC1), the four documented claims
+(AC4) and the `source(local = TRUE)` split, but never mentions the two
+top-level forms that AC2 names, which are the criterion most specific to the
+floor. Read uncharitably, that is the 'less' half of the promise again, in a
+place the two prior returns did not cover."* — Not counted as the AC3 failure
+on its own: AC3 asks NEWS to state what was measured, not to enumerate every
+arm. But the two forms are the measurement AC2 exists for, and a sentence
+naming them is cheap.
+
+**O5 (fix now, cheap).** *"`NEWS.md` and `cairn/DECISIONS.md` — 'for the rest
+of the sourced file.' 'withr 2.5.0 keeps the limit in force for the rest of the
+sourced file' — `formC-inner.R` reads the option once, on the line immediately
+after `local_timeout(30)`, and never again inside the file; the log shows a
+single value. The direction of the split is right; 'for the rest of the file'
+is an extrapolation from one observation point."*
+
+**O6 (fix now, cheap — verified).** *"`cairn/DECISIONS.md` — where 3.0.3 came
+from. 'the Archive for a retired version, the current `src/contrib` directory
+for the release, which is where 3.0.3 comes from' — `install_withr()` tries the
+Archive URL first for every version and records nothing about which URL
+succeeded; the log prints no provenance for the download, only for the load.
+G8 asked for this sentence to be corrected; the correction went one step
+further than the script records."* — Re-verified: `install_withr()` loops over
+Archive then `cloud.r-project.org/src/contrib` for every version and breaks on
+the first success without recording which.
+
+**O7 (fix now, cheap).** *"`NEWS.md` — 'Three things were not run on 2.5.0.' A
+closed count, while D053's own 'What was not measured' paragraph lists the
+`knitr` target environment as untested too and names it in the falsifier. The
+two texts enumerate the unmeasured set differently."*
+
+**O8 (fix now).** *"`NEWS.md` — 'which no claim on that page covers.' Not
+something the harness measures, and arguably contradicted by the page itself:
+`?local_timeout`'s description promises a limit 'for the remainder of the
+function you call this from', and on 3.0.3 the limit is gone on the next line
+inside a `source(local = TRUE)`d file while the enclosing frame is still
+running. It is a judgment call presented in the same voice as the
+measurements."*
+
+**O9 (rejected).** *"AC3's box is still `- [ ]` while the ROADMAP row now reads
+`review`; a bookkeeping mismatch, not a claim defect."* — That is AC fencing
+working as designed: review unticks every criterion at phase start and re-ticks
+only against a recorded evidence line. AC3 is unticked because it is unmet.
+
+### Gate outcome — returned to `in-progress` (third defect return)
+
+Two independent failures, either of which returns the milestone on its own.
+
+**The consistency gate fails.** `cairn_validate.py` exits 1 on `weight caps`:
+the milestone file carries 157 plan-owned lines against a cap of 150, Tasks
+alone accounting for 66. This is not a claim defect — it is the accumulated
+bookkeeping cost of two defect returns, which grew Tasks from T1-T5 to T1-T13 —
+but it is a mechanical gate failure, and review cannot shed it, because every
+section it names is plan-owned.
+
+**AC3 fails a third time, inside its own domain.** NEWS states that the
+per-spawned-program claim was not run on 2.5.0 and that its tests live outside
+the two measured files. Both halves are false: four blocks testing exactly that
+claim sit in `test-with-timeout.R`, one of the two files, and all four passed
+under the pinned floor library. Rounds 1 and 2 failed on NEWS claiming more
+coverage than it had; this round fails on NEWS claiming less, and misplacing
+the tests while it does. The failure sits in the sentence the round-2 fix
+wrote.
+
+Not in question, a third time: the measurement. AC1, AC2, AC4 and AC5 all stand
+on fresh evidence from a re-run of the harness — 70 PASS / 0 FAIL / 0 SKIP,
+`devtools::test()` 0 failures / 6635 passing, `devtools::check()` `Status: OK`
+at 0/0/0 — and the empirical result is unchanged and unchallenged: 2.5.0 and
+3.0.3 agree on every documented claim and part only at `source(local = TRUE)`,
+so the floor stays 2.5.0. What fails is still, and only, what the repo says
+about it.
+
+**Thrash rule — trigger (a) fires, and (b) fires again.**
+
+(a) This is the third defect return. It is a threshold, not a moment: no
+further retry is queued under the current plan. The recommended disposition is
+descope-or-park.
+
+(b) AC3 has now failed three times, each by a new mechanism of the same shape —
+round 1 an overclaim plus an unanchored range, round 2 an overclaim plus an
+omission, round 3 an understatement plus a misplaced test location. The
+alternative the plan gate recorded against — widening AC1's domain beyond the
+two timeout-wrapper files — was already put to the user at round 2's thrash
+gate and deliberately held (work log, 2026-08-27). That remedy is therefore
+spent, and what remains of (b) is the `/milestone-brief` escalation, offered
+per instance rather than automatically.
+
+Where they compose, (a) governs the disposition and (b)'s escalation offer
+rides into it. The work log records no re-plan or split spent on this
+milestone, so a same-objective `/milestone-plan` re-cut remains a present
+option — never the recommended one, since both downstream lineages on record
+show a re-cut buying further returns rather than a fix.
+
+Worth noting for whichever disposition is chosen: the three texts are close.
+O1 is one false clause in one NEWS sentence, and O2-O8 are seven small
+corrections to sentences that are otherwise supported. Nothing found in three
+rounds has touched the measurement, the floor, or the shipped runtime.

@@ -10,7 +10,7 @@ test_that("normalize_audio() compiles the default EBU R128 command", {
   expect_equal(
     cmd,
     sprintf(
-      paste0('-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" ',
+      paste0('-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7,asetnsamples=n=4096:p=0" ',
              '-map "0:a:0" "out.mp4"'),
       f
     )
@@ -34,7 +34,7 @@ test_that("normalize_audio() single-pass command is byte-for-byte stable (M16 ba
   expect_equal(
     cmd,
     sprintf(
-      paste0('-y -i "%s" -af "loudnorm=I=-16:TP=-1.5:LRA=11" ',
+      paste0('-y -i "%s" -af "loudnorm=I=-16:TP=-1.5:LRA=11,asetnsamples=n=4096:p=0" ',
              '-ac 1 -ar 48000 -map "0:a:0" "out.mp4"'),
       f
     )
@@ -48,7 +48,8 @@ test_that("normalize_audio() honors custom loudness targets", {
     target_loudness = -16, true_peak = -1.5, loudness_range = 11,
     run = FALSE
   )
-  expect_match(cmd, '-af "loudnorm=I=-16:TP=-1.5:LRA=11"', fixed = TRUE)
+  expect_match(cmd, '-af "loudnorm=I=-16:TP=-1.5:LRA=11,asetnsamples=n=4096:p=0"',
+               fixed = TRUE)
 })
 
 test_that("normalize_audio() adds downmix and resample when requested", {
@@ -100,7 +101,8 @@ test_that("normalize_audio_pipeline() without measured is single-pass (no linear
   f <- make_input()
   p <- normalize_audio_pipeline(f, "out.mp4")
   cmd <- ffm_compile(p)
-  expect_match(cmd, '-af "loudnorm=I=-23:TP=-1:LRA=7"', fixed = TRUE)
+  expect_match(cmd, '-af "loudnorm=I=-23:TP=-1:LRA=7,asetnsamples=n=4096:p=0"',
+               fixed = TRUE)
   expect_no_match(cmd, "linear", fixed = TRUE)
 })
 
@@ -231,7 +233,7 @@ test_that("normalize_audio() emits no -codec:a by default (NULL sentinel)", {
   expect_equal(
     cmd,
     sprintf(
-      paste0('-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" ',
+      paste0('-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7,asetnsamples=n=4096:p=0" ',
              '-map "0:a:0" "out.mp4"'),
       f
     )
@@ -246,7 +248,7 @@ test_that("normalize_audio(audio_codec = ) names the output audio encoder", {
   expect_equal(
     cmd,
     sprintf(
-      paste0('-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7" ',
+      paste0('-y -i "%s" -af "loudnorm=I=-23:TP=-1:LRA=7,asetnsamples=n=4096:p=0" ',
              '-codec:a aac -map "0:a:0" "out.mp4"'),
       f
     )

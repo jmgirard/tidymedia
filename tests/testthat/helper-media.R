@@ -454,3 +454,14 @@ probe_rotation <- function(path) {
   out <- out[nzchar(out)]
   if (length(out) == 0) NA_real_ else as.numeric(out[[1]])
 }
+
+# Probe a file's audio duration in seconds. The discriminator for "did the
+# re-chunk pad the tail": a padding frame writes up to one frame of silence past
+# the source's own length, which a file-size or exit-code assertion cannot see.
+audio_duration <- function(path) {
+  skip_if_no_ffprobe()
+  as.numeric(trimws(ffprobe(sprintf(
+    paste('-v error -select_streams a:0 -show_entries stream=duration',
+          '-of csv=p=0 "%s"'), path
+  ))))
+}

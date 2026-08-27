@@ -90,13 +90,18 @@ probe_all <- function(infile, typed = TRUE, parallel = FALSE) {
 # that the two paths give identical output the moment either side sets it.
 probe_all_impl <- function(infile, typed = TRUE, parallel = FALSE,
                            absorb = TRUE, call = rlang::caller_env()) {
+  # `call` is threaded through every refusal, not just the re-raise: this body
+  # used to BE probe_all(), and without it the front door's own argument errors
+  # would read "Error in `probe_all_impl()`" and name a function the caller has
+  # no way to reach (M64/M65's blame rule).
   if (!rlang::is_character(infile) || length(infile) == 0) {
     cli::cli_abort(
-      "{.arg infile} must be a character vector of one or more file locations."
+      "{.arg infile} must be a character vector of one or more file locations.",
+      call = call
     )
   }
-  rlang::check_bool(typed)
-  rlang::check_bool(parallel)
+  rlang::check_bool(typed, call = call)
+  rlang::check_bool(parallel, call = call)
 
   if (parallel) {
     rlang::check_installed("furrr", reason = "for parallel probing.")

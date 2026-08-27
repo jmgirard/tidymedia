@@ -626,3 +626,17 @@ test_that("the doc guard reddens on the text it fences, not on its absence", {
   expect_match(mutant, "count_audio_streams", fixed = TRUE)
   expect_no_match(mutant, "call graph", fixed = TRUE)
 })
+
+test_that("probe_all() still blames itself for its own argument refusals", {
+  # T4 moved probe_all()'s body into probe_all_impl(). Without the threaded
+  # `call`, every refusal here would read "Error in `probe_all_impl()`" and name
+  # a function no caller can reach (M64/M65).
+  # BY NAME: do.call() on the function object records the object itself as the
+  # condition call and hides the blame target this guard exists to watch
+  # (helper-blame.R).
+  for (bad in list(list(1), list("x", typed = "no"), list("x", parallel = 1))) {
+    err <- tryCatch(do.call("probe_all", bad, envir = asNamespace("tidymedia")),
+                    error = function(e) e)
+    expect_identical(blamed_verb(err), "probe_all")
+  }
+})

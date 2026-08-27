@@ -90,7 +90,7 @@ mediainfo_parameter <- function(file, section, parameter, typed = TRUE) {
     # A timeout on one file is that file's failure, not the call's: this loop
     # documents an NA per unreadable file, so an escaping abort would discard
     # the values already collected for the files before it (D047).
-    res <- absorb_timeout(run_program(loc, c(inform, f), program = "mediainfo"))
+    res <- absorb_timeout(run_program(loc, c(inform, f), program = "MediaInfo"))
     if (is_absorbed_timeout(res)) {
       failed <- c(failed, f)
       timed_out <- c(timed_out, f)
@@ -266,7 +266,7 @@ mediainfo_read <- function(file, inform) {
     if (is.null(loc)) loc <- find_mediainfo()
     # Same absorption as mediainfo_parameter(), for the same reason: this
     # reader also promises an NA row per unreadable file (D047).
-    res <- absorb_timeout(run_program(loc, c(inform, f), program = "mediainfo"))
+    res <- absorb_timeout(run_program(loc, c(inform, f), program = "MediaInfo"))
     if (is_absorbed_timeout(res)) {
       failed <- c(failed, f)
       timed_out <- c(timed_out, f)

@@ -111,23 +111,54 @@ build_manifest <- function(pipelines, commands, versions, checksums) {
 # named list with NA for a binary that cannot be located or queried. The binary
 # call lives here; parsing is factored into parse_version_line() so it can be
 # tested without a binary.
-tool_versions <- function() {
-  list(
-    ffmpeg = capture_version(find_ffmpeg(), "ffmpeg"),
-    ffprobe = capture_version(find_ffprobe(), "ffprobe")
+#
+# This is where the killed probe becomes audible, because this is where both
+# probes are assembled -- one warning naming the tools the limit killed, not one
+# per tool. M69 left an NA version in the manifest reading exactly like a
+# missing binary, so a bounded hang under ffm_batch(manifest = TRUE) was
+# invisible (D048). The RECORDED value is unchanged: NA is what a version that
+# could not be read has always been.
+tool_versions <- function(call = rlang::caller_env()) {
+  probes <- list(
+    ffmpeg = capture_version(find_ffmpeg(), "FFmpeg"),
+    ffprobe = capture_version(find_ffprobe(), "FFprobe")
   )
+  timed_out <- vapply(probes, is_absorbed_timeout, logical(1))
+  if (any(timed_out)) {
+    hit <- probes[[which(timed_out)[[1]]]]
+    programs <- vapply(probes[timed_out], function(x) x$program, character(1))
+    cli::cli_warn(
+      c(
+        "The version probe timed out after {hit$limit} second{?s}.",
+        "x" = "{programs}",
+        "i" = "The manifest records {.val {NA}} for \\
+               {cli::qty(length(programs))}{?that version/those versions}; \\
+               raise or remove \\
+               {.code options(tidymedia.timeout = )}."
+      ),
+      class = "tidymedia_probe_timeout",
+      call = call
+    )
+  }
+  lapply(probes, function(x) if (is_absorbed_timeout(x)) NA_character_ else x)
 }
 
 # capture_version() -------------------------------------------------------
 
 # Run `<tool> -version` and parse the version token; NA if the binary is absent
 # or the call fails.
+# Returns the absorbed-timeout sentinel when the limit killed the call, so
+# tool_versions() can tell that apart from every other reason a version is
+# missing. absorb_timeout() sits INSIDE the tryCatch() for the same reason it
+# does in count_audio_streams(): the outer handler catches every error, so a
+# timeout reaching it first would be flattened back into a silent NA.
 capture_version <- function(loc, name) {
   if (is.null(loc) || is.na(loc) || !nzchar(loc)) return(NA_character_)
   out <- tryCatch(
-    run_program(loc, "-version", program = name),
+    absorb_timeout(run_program(loc, "-version", program = name)),
     error = function(e) NULL
   )
+  if (is_absorbed_timeout(out)) return(out)
   parse_version_line(out)
 }
 

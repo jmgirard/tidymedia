@@ -2144,6 +2144,19 @@ the call the worker sees exactly what the parent sees. The cost is a caller who
 configures workers separately through a `future` plan hook, whose value is
 displaced for that call and returned afterwards; that is this half's falsifier.
 
+**One value here is the package's, and it is the no-limit sentinel.** The limit
+is carried *resolved* (see below), and `resolve_timeout()` answers `0` for an
+unset option — so a parent with no limit installs `tidymedia.timeout = 0` in the
+worker rather than leaving the name absent. The two seams are therefore
+asymmetric: an unset encoder override is carried as genuinely unset, an unset
+limit as the sentinel that means the same thing. For a worker with no limit of
+its own the effect is identical; for one that had a limit set through a plan
+hook it is the displacement the falsifier above already names, in its sharpest
+form — that worker's limit is removed for the duration of the call, not merely
+changed. Stated here rather than left to be inferred from "nothing here
+originates with the package", which is true of every value the caller chose and
+not of this one.
+
 **The capability memo is still not carried, and stays disclosed.** D044's
 per-process record of what the FFmpeg build reported is not an option and is not
 shipped anywhere: a worker with no override still asks its own binary once.

@@ -121,7 +121,7 @@ probe_all_impl <- function(infile, typed = TRUE, parallel = FALSE,
   # order also keeps the output rows in the INPUT vector's order, which is
   # what the preallocated `[[i]]` assignment used to guarantee.
   probes <- if (parallel) {
-    furrr::future_map(infile, carry_options(probe_one))
+    furrr::future_map(infile, carry_options(probe_one, call = call))
   } else {
     purrr::map(infile, probe_one)
   }

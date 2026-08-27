@@ -182,7 +182,14 @@ reraise_absorbed <- function(x, call = rlang::caller_env()) {
 # The timeout is carried RESOLVED rather than raw, so a value base R would
 # mishandle is refused once, here, in the process that can name the caller --
 # rather than N times inside workers, below the per-job tryCatch that turns an
-# error into a bare `success = FALSE`.
+# error into a bare `success = FALSE`. Resolving has a consequence worth naming:
+# resolve_timeout() answers 0 for an unset option, so a parent with no limit
+# carries the no-limit SENTINEL rather than the unset state. That is the one
+# value here the package chooses rather than the caller, and it makes the two
+# seams asymmetric -- an unset encoder override is carried as unset, an unset
+# limit as `0`. The effect is the same for a worker with no limit of its own,
+# and it displaces one that had its own limit set through a plan hook (D050's
+# named falsifier), which is why it is stated rather than left to be inferred.
 #
 # The encoder override is carried as-is, including its unset state. What is NOT
 # carried is the session capability memo (`R/cache.R`): a worker with no
@@ -201,9 +208,12 @@ carried_option_values <- function(call = rlang::caller_env()) {
 #
 # `options()` is the whole mechanism, in both directions: it returns the prior
 # values of exactly the names being set, and a NULL entry REMOVES an option
-# rather than storing NULL (measured on R 4.6.1). So a name unset in the parent
-# is unset in the worker for the duration of the call, and a name the worker had
-# set for itself comes back on the way out -- one rule, no split behavior.
+# rather than storing NULL (measured on R 4.6.1). So a name carried as unset is
+# unset in the worker for the duration of the call, and a name the worker had
+# set for itself comes back on the way out -- one rule, no split behavior. What
+# counts as "unset" is decided above, in carried_option_values(): the encoder
+# override is carried raw, the limit is carried resolved, so only the former can
+# reach here unset.
 #
 # on.exit() rather than a trailing restore, because the restore has to happen on
 # the error path too: a mapped call that aborts (a timeout is one) must not

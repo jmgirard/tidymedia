@@ -43,12 +43,11 @@ an \code{NA} row and one warning at the end of the call, saying how many of the
 files it names timed out rather than being unreadable. \code{\link[=ffm_batch]{ffm_batch()}} and the
 \verb{_batch} verbs mark the row \code{success = FALSE}, as they do for any failed
 job, and warn once at the end of the run saying how many jobs the limit
-killed, at \code{parallel = TRUE} no differently from sequentially. The
-dropped-track check behind
-\code{\link[=extract_audio]{extract_audio()}}, \code{\link[=convert_audio]{convert_audio()}}, \code{\link[=separate_audio_video]{separate_audio_video()}} and their
-\verb{_batch} siblings warns that it could not check, and the provenance manifest
-warns that it could not read a version; both then carry on as they would for
-any other unreadable input.
+killed — at \code{parallel = TRUE} no differently from sequentially. The
+dropped-track check behind \code{\link[=extract_audio]{extract_audio()}}, \code{\link[=convert_audio]{convert_audio()}},
+\code{\link[=separate_audio_video]{separate_audio_video()}} and their \verb{_batch} siblings warns that it could not
+check, and the provenance manifest warns that it could not read a version;
+both then carry on as they would for any other unreadable input.
 
 To handle either outcome programmatically, the abort carries the condition
 class \code{tidymedia_timeout}; the dropped-track and version-probe warnings
@@ -80,8 +79,9 @@ The limit applies per spawned program, not per batch: a 100-row batch with a
 ones: the limit you set is carried into each worker for the duration of the
 call, and whatever that worker had set for itself is put back afterwards. A
 limit the underlying \verb{timeout=} could not use — a fraction of a second, a
-negative number, a string — is refused before any job is dispatched, on
-either path.
+negative number, a string — is refused by \code{\link[=ffm_batch]{ffm_batch()}} before it dispatches
+any job, on either of its paths and whether or not it is going to run
+anything.
 
 The limit bounds the wait; it does not promise the program dies at the
 second. R asks the program to stop when the limit is reached, insists 20

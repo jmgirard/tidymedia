@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m071-parallel-option-carry`
+- **Branch/PR:** `m071-parallel-option-carry` / https://github.com/jmgirard/tidymedia/pull/75
 
 ## Goal
 
@@ -37,7 +37,7 @@ its domain, its recorded list and its promise ship as M70 left them.
 
 ## Acceptance criteria
 
-- [ ] AC1 With a two-worker `future::multisession` plan, `options(tidymedia.timeout = 1)`
+- [x] AC1 With a two-worker `future::multisession` plan, `options(tidymedia.timeout = 1)`
       set in the parent, and a media program on the workers' path that would run for
       30 seconds, the program is killed inside the worker at each of the three fan-out
       sites where a worker-side spawn is reachable, each reporting in its own
@@ -50,31 +50,31 @@ its domain, its recorded list and its promise ship as M70 left them.
       `R/ffm_batch.R:102`, is covered by AC2 instead: its only worker-side spawn is
       the encoder probe, which every `_batch` verb's front door has already answered
       in the parent.
-- [ ] AC2 With a two-worker `future::multisession` plan and a `hardware = "nvenc"`
+- [x] AC2 With a two-worker `future::multisession` plan and a `hardware = "nvenc"`
       batch built at `parallel = TRUE`: with `options(tidymedia.nvenc_encoders =
       "h264_nvenc")` set in the parent, no worker spawns FFmpeg to ask for the encoder
       list and the compiled commands equal those `parallel = FALSE` produces; with the
       option unset, the same batch shows one encoder-list spawn per worker.
-- [ ] AC3 Under a two-worker `future::multisession` plan and a limit the spawned
+- [x] AC3 Under a two-worker `future::multisession` plan and a limit the spawned
       program exceeds, `ffm_batch(parallel = TRUE, run = TRUE)` over an N-row jobs
       table marks all N rows `success = FALSE` and signals one condition of class
       `tidymedia_batch_timeout` stating that the limit killed N jobs.
-- [ ] AC4 A worker whose `tidymedia.timeout` and `tidymedia.nvenc_encoders` held
+- [x] AC4 A worker whose `tidymedia.timeout` and `tidymedia.nvenc_encoders` held
       values of their own before a carried fan-out holds those same values after it,
       in the same process, both when the mapped call returns and when it raises an
       error.
-- [ ] AC5 Each of four invalid `tidymedia.timeout` values — `0.5`, `-1`, `NA`, `"2"`
+- [x] AC5 Each of four invalid `tidymedia.timeout` values — `0.5`, `-1`, `NA`, `"2"`
       — is refused by `ffm_batch()` before any job is dispatched, with the same
       condition at `parallel = TRUE, run = FALSE` as at `parallel = FALSE,
       run = TRUE`, and with no worker having executed `.f`.
-- [ ] AC6 Neither the "Bounding a run that hangs" section of `?tidymedia` nor the
+- [x] AC6 Neither the "Bounding a run that hangs" section of `?tidymedia` nor the
       development-version entry in `NEWS.md` states that `parallel = TRUE` workers do
       not see the limit; each states instead that tidymedia's own `parallel = TRUE`
       paths are bounded by the same limit as their sequential paths.
       `refresh_ffmpeg_capabilities()`'s documentation states that the caller's encoder
       override reaches a worker, and conditions its existing "asks FFmpeg W times"
       sentence on that override being unset.
-- [ ] AC7 `Rscript -e 'devtools::test()'` is clean and `Rscript -e 'devtools::check()'`
+- [x] AC7 `Rscript -e 'devtools::test()'` is clean and `Rscript -e 'devtools::check()'`
       reports 0 errors and 0 warnings.
 
 ## Coverage
@@ -163,3 +163,216 @@ its domain, its recorded list and its promise ship as M70 left them.
 ## Decisions
 
 ## Review
+
+Reviewed 2026-08-27 on branch `m071-parallel-option-carry`, PR
+https://github.com/jmgirard/tidymedia/pull/75. Branch cut from `origin/master`
+d7e09f4 and `origin/master` has not moved since (merge-base equals its tip), so
+no merge was owed before gathering evidence.
+
+Suite-wide evidence for every criterion below comes from one
+`Rscript -e 'devtools::test()'` run: **6396 pass / 0 fail / 5 skips**, the five
+being the pre-existing `nvenc encoder not listed` hardware skips in
+`test-nvenc.R` and `test-video-codec.R`. `test-parallel-option-carry.R` run on
+its own reports **65 assertions, 0 skips**, which is T5's evidence clause met:
+AC1-AC5's cases executed rather than skipped.
+
+### Acceptance criteria
+
+- **AC1 — the limit reaches the worker at each site, in that site's own shape.**
+  Three cases, all green in the run above. `ffm_batch(parallel = TRUE,
+  run = TRUE)` over a 2-row table under `tidymedia.timeout = 1` returns
+  `success = c(FALSE, FALSE)` and the fake binary's log shows an `ffmpeg`
+  invocation, so the FALSE is a kill and not some other failure;
+  `probe_all(parallel = TRUE)` warns matching `timed out rather than being
+  unreadable` and returns a 2-row container carrying only the `file` column;
+  `normalize_audio_batch(two_pass = TRUE, parallel = TRUE)` aborts with class
+  `tidymedia_timeout`. The site-completeness guard re-derives the fan-out list
+  by grepping `furrr::future_` over `R/` at run time, asserts the list is
+  non-empty, and asserts it equals the four-entry case table — the fourth site
+  (the pipeline build) routed to AC2 exactly as the criterion says.
+
+- **AC2 — the encoder override reaches the worker.** With
+  `tidymedia.nvenc_encoders = "h264_nvenc"` set in the parent, a 4-row
+  `hardware = "nvenc"` build at `parallel = TRUE` leaves no `-encoders`
+  invocation in the fake's log, and `par$command` equals `seq$command` from the
+  same build at `parallel = FALSE`; the commands are separately asserted to
+  name `h264_nvenc`, so equality is not equality-of-two-wrong-answers. The
+  option-unset control on the same fixture logs exactly 2 `-encoders` probes on
+  a two-worker plan — one per worker.
+
+- **AC3 — one batch condition naming the count.** A 3-row table under
+  `tidymedia.timeout = 1` at `parallel = TRUE, run = TRUE` returns
+  `success = c(FALSE, FALSE, FALSE)`; a `withCallingHandlers` collector on class
+  `tidymedia_batch_timeout` catches exactly one condition, whose message matches
+  `3 jobs timed out`.
+
+- **AC4 — the worker's own settings come back.** Each worker stamps
+  `tidymedia.timeout = 5` and a PID-keyed encoder string, readings are indexed
+  by `Sys.getpid()` so two fan-outs compare worker-for-worker rather than
+  position-for-position, and at least two distinct workers are asserted present.
+  During the carried fan-out every worker reads the parent's `1` /
+  `"parent_only"` — so the restoration claim is about a carry that happened —
+  and the per-PID readings after the fan-out equal those before, both when the
+  mapped call returns and when it raises.
+
+- **AC5 — a bad limit is refused before dispatch.** All four values (`0.5`,
+  `-1`, `NA`, `"2"`) refused at `parallel = TRUE, run = FALSE` and at
+  `parallel = FALSE, run = TRUE` with identical condition class vectors and
+  identical messages. The pipeline builder writes a marker file when it runs;
+  the marker does not exist afterwards and the fake binary's log is empty, so no
+  worker executed `.f` and no program was spawned.
+
+- **AC6 — the docs no longer disclose a gap that is closed.**
+  `grep -rn` over `R/`, `NEWS.md` and `man/` finds no surviving "workers do not
+  see the limit" claim. `?tidymedia`'s two sites now read "at `parallel = TRUE`
+  no differently from sequentially" and "tidymedia's own `parallel = TRUE` paths
+  are bounded by the same limit as their sequential ones"; the `NEWS.md`
+  development entry carries the same wording plus a new bullet for the carry and
+  the up-front refusal. `?refresh_ffmpeg_capabilities` states that the caller's
+  override is carried into each worker and the worker's own value put back, and
+  its "asks FFmpeg `W` times" sentence is now conditioned on "unless you have set
+  `tidymedia.nvenc_encoders` yourself".
+
+- **AC7 — clean test and check.** `devtools::test()` 6396 pass / 0 fail /
+  5 skips (above). `Rscript -e 'devtools::check()'` — Status: OK, **0 errors /
+  0 warnings / 0 notes**, 2m 23.1s, including the vignette re-build and both
+  test files under `R CMD check`.
+
+### Consistency gate
+
+- `cairn_validate.py` — exit 0, all checks passed; no advisory fired, including
+  `release window`.
+- `cairn_impact.py` — not run: the milestone touches no DESIGN principle
+  (`Principles touched: —`), so the check no-ops.
+- `devtools::document()` — no diff (working tree clean but for this milestone
+  file).
+- `pkgdown::check_pkgdown()` — "No problems found."
+- Generated files — `NAMESPACE`, `man/` regenerate; the no-diff `document()`
+  run above is the check. `README.Rmd` untouched, so no re-knit owed.
+- `NEWS.md` — carries an entry for this milestone's user-visible changes, with
+  no milestone numbers in the user-facing text.
+- New top-level files — none; nothing owed to `.Rbuildignore`.
+- `devtools::check()` — 0 errors / 0 warnings / 0 notes (AC7 above).
+
+### Independent fresh-context review
+
+Executable surface touched and the tier is user-facing, so the full three-lens
+fan-out ran.
+
+**[S] blame-history — no findings.** D044's and D047's disclosed gaps are closed
+through a new D-entry that names itself as superseding them rather than
+silently, D044's "no worker-side option writes" objection is honored (the
+carried value originates with the caller and is withdrawn on exit, including on
+the error path), the capability memo is left untouched exactly as D044 has it,
+and all four fan-out sites are wired identically against D033's site inventory.
+
+**[S] prior-review record — no prior-review evidence contradicted.**
+`gh api .../pulls/comments` returns `[]`, so the GitHub surface holds nothing to
+walk; the archive's `## Review` sections summarize outcomes without preserving
+per-file finding text. Three `LESSONS.md` lines whose shape bears on this diff
+were checked rather than assumed clear — M53's furrr/`load_all()` trap (met by
+the harness's carrier-source fingerprint check), the M67 memo-counting trap (met
+by a fresh cluster per test), and M41's front-door guard-precedence rule (the new
+`resolve_timeout()` sits after all eight existing checks).
+
+**[O] diff-bug — ten findings**, listed below in the reviewer's own severity
+order. The reviewer also cleared a suspected serialization blow-up:
+`carry_options()`'s `call` argument stays an unforced promise on the success
+path, so the wrapper serializes to 0.065 MB with a 9 MB jobs table in scope.
+
+### Findings and dispositions
+
+Ten from [O], in the reviewer's own order. F1, F2 and F6 were reproduced at the
+gate before triage rather than taken on the reviewer's account. No finding
+demonstrated an acceptance criterion failing, so the step-5 return floor did not
+fire; the maintainer triaged at the gate and status stayed `review`.
+
+**F1 — FIXED. The carrier authors a `tidymedia.timeout` value the caller never
+set, which contradicts D050 and can silently disable a worker's own limit.**
+`carried_option_values()` carries `resolve_timeout()`, which returns `0` when the
+option is unset, so `options()` in the worker always installs a concrete
+`tidymedia.timeout = 0`. D050 states "Nothing here originates with the package:
+the value installed in the worker is the caller's own", and the comment above
+`carry_options()` states "a name unset in the parent is unset in the worker for
+the duration of the call — one rule, no split behavior". Both are false for this
+seam. Reproduced: with the option unset in the parent,
+`carried_option_values()` returns `$tidymedia.timeout: num 0` beside
+`$tidymedia.nvenc_encoders: NULL`. Fixed as a record correction rather than a
+behavior change — the displacement is what D050's falsifier already names, so
+what was wrong was the claim: D050 gains a paragraph stating that the no-limit
+sentinel is the one value the package chooses, that the two seams are therefore
+asymmetric, and that a worker's own plan-hook limit is *removed* rather than
+changed for the duration; the two carrier comments say the same.
+
+**F2 — FIXED. The new fan-out abort names an internal function, against the
+blame rule the same file guards.** `carry_options()` defaults
+`call = rlang::caller_env()`, which at `R/ffprobe.R:124` is `probe_all_impl()`'s
+frame. `R/ffprobe.R:93-95` carries an explicit comment that an error here "would
+read `Error in probe_all_impl()` and name a function the caller has no way to
+reach (M64/M65's blame rule)", and every other check in that function threads
+`call = call`. `R/loudnorm_two_pass.R:197` has the same shape. Reproduced before
+the fix: `probe_all(..., parallel = TRUE)` under `tidymedia.timeout = 0.5` gave
+`conditionCall` `probe_all_impl(infile, typed, parallel)`. Fixed by
+`carry_options(probe_one, call = call)` and a `call = rlang::caller_env()`
+parameter on `run_loudnorm_analysis_batch()`. Measured after: the two calls now
+read `probe_all(c("a.mp4", "b.mp4"), parallel = TRUE)` and
+`normalize_audio_batch(j, two_pass = TRUE, parallel = TRUE)`.
+
+**F3 — FIXED. `?tidymedia` overclaims the up-front refusal.** The new paragraph
+ended "A limit the underlying `timeout=` could not use ... is refused before any
+job is dispatched, on either path", where only `ffm_batch()` refuses before
+dispatch — `probe_all(parallel = FALSE)` still reaches the per-file spawn first.
+`NEWS.md` scopes the same claim correctly. Fixed by naming `ffm_batch()` in the
+sentence and scoping "either path" to its two branches.
+
+**F4 — FOLLOW-UP. AC2's control test hard-codes a probe count that depends on
+furrr's default chunking.** `expect_equal(length(probes), 2L)` over 4 jobs
+assumes future hands at least one job to each of the two workers. T5 promises
+`chunk_size = 1`, but `ffm_batch()`'s internal maps take no `.options`, so that
+setting reaches only the harness's own probe maps. Green today; a scheduling
+assumption, not an asserted invariant.
+
+**F5 — FOLLOW-UP. The fan-out domain guard cannot detect an unwired site.** It
+compares only the set of file basenames containing `furrr::future_` plus a total
+count of 4, so deleting `carry_options(...)` from any of the four sites leaves it
+green. Only the behavioral AC1 tests catch an unwiring, and those skip on
+Windows, on CRAN, and without furrr.
+
+**F6 — FIXED. The harness errors rather than skips when a worker cannot load the
+namespace.** `tm_carry_fingerprint()` returns `NA_character_` on a failed
+`asNamespace()`; `all(fingerprints == ...)` is then `NA`, and
+`if (!all(...))` raises "missing value where TRUE/FALSE needed" instead of taking
+the intended skip. Fixed with `isTRUE()`.
+
+**F7 — FOLLOW-UP. Weak condition assertions on the refusal paths.** Both the
+carrier-build test and the AC5 test assert only `rlang_error` plus class-and-
+message equality between the two branches, so a regression failing both branches
+identically for an unrelated reason would pass. Asserting the message or `arg`
+would close it.
+
+**F8 — FOLLOW-UP. AC1's `probe_all` case does not assert what the AC asks.** AC1
+requires "one end-of-call warning naming the file as timed out rather than
+unreadable"; the test matches only `regexp = "timed out rather than being
+unreadable"` and never checks a filename appears in the warning.
+
+**F9 — FOLLOW-UP. Under a sequential plan with `parallel = TRUE`, the carrier now
+writes options into the caller's own session.** tidymedia supports that
+combination (warn and carry on), and there `carry_options()` runs in-process: it
+installs the resolved values and reverts them on exit, so any `options(tidymedia.*)`
+the user's own `.f` sets during the batch is silently rolled back. D050's "the
+sequential branches are untouched" does not cover it.
+
+**F10 — FIXED. Ragged roxygen rewrap and a comma splice** at
+`R/tidymedia-package.R:35-37`, where the replacement was dropped in without
+rewrapping. Rewrapped, em dash restored.
+
+**Re-verification after the fix-now work.** `devtools::test()` 6396 pass / 0 fail
+/ 5 skips (the same five hardware skips); `devtools::check()` Status: OK,
+0 errors / 0 warnings / 0 notes, 2m 38.5s; `devtools::document()` no diff;
+`cairn_validate.py` exit 0, all checks passed.
+
+F4, F5, F7, F8 and F9 go to a grouped candidate row — instrument weaknesses in
+this milestone's own carry harness, none a defect in shipped behavior, and the
+same shape as the M70 guard-strength row they sit beside.
+
+- 2026-08-27: review — every acceptance criterion verified with fresh evidence and every gate check green; three-lens fan-out returned ten findings from [O] and none from the two [S] lenses. F1, F2, F6 reproduced at the gate. No finding failed a criterion, so the return floor did not fire; maintainer triaged F1/F2/F3/F6/F10 fix-now and F4/F5/F7/F8/F9 to a candidate row. Fixes committed and re-verified before the approval marker.

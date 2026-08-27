@@ -178,7 +178,9 @@ local_carry_harness <- function(env = parent.frame(), workers = 2L) {
   fingerprints <- unlist(furrr::future_map_chr(
     probes, function(i) tm_carry_fingerprint(), .options = opts
   ))
-  if (!all(fingerprints == tm_carry_fingerprint())) {
+  # isTRUE(): a worker that could not load the namespace fingerprints as NA, and
+  # a bare `if (!all(...))` on an NA raises rather than taking this skip.
+  if (!isTRUE(all(fingerprints == tm_carry_fingerprint()))) {
     testthat::skip(
       "workers load an installed tidymedia whose carrier differs from the source"
     )

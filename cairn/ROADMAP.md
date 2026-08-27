@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-27 (M074 planned, absorbing the `withr` floor candi
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M074 | The floor says what was measured | planned | — | normal | milestones/M074-withr-version-floor.md |
+| M074 | The floor says what was measured | in-progress | — | normal | milestones/M074-withr-version-floor.md |
 | M073 | The timeout wrapper's tail | done | — | normal | milestones/archive/M073-timeout-wrapper-tail.md |
 | M072 | One call can carry its own time limit | done | — | normal | milestones/archive/M072-per-call-timeout.md |
 | M071 | A parallel worker sees the settings the caller set | done | — | normal | milestones/archive/M071-parallel-option-carry.md |

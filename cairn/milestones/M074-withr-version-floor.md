@@ -2,12 +2,12 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M074: The floor says what was measured
 
-- **Status:** planned   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate -->
 - **Driving RR:** —   <!-- owner: plan · create/amend-via-gate -->
 - **Principles touched:** —   <!-- owner: plan · create/amend-via-gate -->
-- **Branch/PR:** —   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** `m074-withr-version-floor`   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 <!-- owner: plan · create -->
@@ -92,19 +92,19 @@ row asked whether the floor understates, and "it does not" answers it.
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [ ] T1 — Build the harness: a scratch script that installs a given `withr`
+- [x] T1 — Build the harness: a scratch script that installs a given `withr`
       version from the CRAN archive into an isolated `.libPaths()` entry and
       evaluates an expression under it. withr's only Imports are `graphics` and
       `grDevices`, so each install is self-contained. The harness prints
       `packageVersion("withr")` from inside the evaluating session; verify it
       reports the requested version and not the user library's 3.0.3 before
       trusting any result from it.
-- [ ] T2 — Run `test-local-timeout.R` and `test-with-timeout.R` under withr
+- [x] T2 — Run `test-local-timeout.R` and `test-with-timeout.R` under withr
       2.5.0, recording pass/fail per `test_that()` block by name. If any block
       fails, walk upward — 2.5.1, 2.5.2, 3.0.0, 3.0.1, 3.0.2, 3.0.3 — to the
       lowest version on which every block passes, recording the results at each
       step rather than only the endpoints.
-- [ ] T3 — Measure AC2's two top-level forms, and AC4's four documented claims,
+- [x] T3 — Measure AC2's two top-level forms, and AC4's four documented claims,
       on 2.5.0 and on 3.0.3; record the differences. `local_timeout()` reaches
       `withr::defer()`'s `globalenv()` branch only from these forms, and withr's
       2.5.0 NEWS claims globalenv unwinding that 3.0.3 routes through
@@ -126,6 +126,9 @@ row asked whether the floor understates, and "it does not" answers it.
 - 2026-08-27: plan gate chose the two timeout-wrapper test files as AC1's domain over the whole suite under old withr because the rest of the suite's withr use is Suggests-side and says nothing about what a user installing tidymedia gets; falsified by an old-withr failure in `helper-media.R` that reaches a user.
 - 2026-08-27: plan gate chose keeping 2.5.0 on a null result over pinning to 3.0.0 (the `defer()` mechanism change) or 3.0.3 (what M073 measured on) because a floor should exclude users for a measured reason, not a plausible one; falsified by a caller on 2.5.x hitting a difference this milestone's forms do not reach.
 - 2026-08-27: plan gate chose a one-time measurement over a minimum-dependency CI job because such a job verifies all ten floors and commits the repo to keeping them green, which is the wide audit this milestone declined; falsified by a floor regressing between this milestone and the next DESCRIPTION edit.
+- 2026-08-27: T1 — harness committed as `data-raw/withr-floor.R`; each version installs from the CRAN archive into its own library and every child session prints the `withr` it loaded (2.5.0 and 3.0.3 each reported their own, and `defer()`'s body carries `global_defer` only at 3.0.3, so the pin is real and the two versions are the two mechanisms).
+- 2026-08-27: T2 — all 35 `test_that()` blocks of `test-local-timeout.R` and `test-with-timeout.R` pass under withr 2.5.0 with `NOT_CRAN=true`; identical 35/35 under 3.0.3, 0 failures and 0 skips on both, so no upward walk was needed.
+- 2026-08-27: T3 — AC2's two top-level forms and AC4's four documented claims measured on 2.5.0 and 3.0.3 with identical results on every one; the Rscript form leaves the limit set at `.Last` and at a later finalizer on both, and the `source()` form restores the caller's value when `source()` returns on both (`parent.frame()` at a sourced file's top level is `source()`'s own eval frame, not `globalenv()`, so `defer()`'s globalenv branch — the one 3.0.0 rewrote — is not reached from either form).
 
 ## Decisions
 <!-- owner: implement / review · append-only -->

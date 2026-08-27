@@ -49,7 +49,7 @@ where they are.
       at run time, not from a written list. Regression clause (holds today,
       pinned so it keeps holding): after each such call the session limit is
       unchanged — unset beforehand reads `"absent"` after, `99` reads `99`.
-- [ ] AC3. No process started by `tm_release_fifo()` outlives the frame that
+- [x] AC3. No process started by `tm_release_fifo()` outlives the frame that
       called it. The helper's command carries a unique marker token; a test
       asserts `pgrep -f <marker>` matches inside the frame and matches nothing
       within 5 s of the frame exiting, for three cases: a frame exiting by
@@ -77,7 +77,7 @@ where they are.
       extending D051 that records the second export, its place outside D014's
       families, and that it discharges D051's own "a statement, not a wrapper"
       falsifier.
-- [ ] AC8. `devtools::check()` reports 0 errors, 0 warnings and no notes not
+- [x] AC8. `devtools::check()` reports 0 errors, 0 warnings and no notes not
       present on `master`; `devtools::test()` is green.
 
 ## Coverage
@@ -137,6 +137,9 @@ where they are.
 - 2026-08-27: implementation gate (F2) chose to keep `withr` in Imports and correct the record, on the user's selection. The premise D052 was taken on is false, measured here on withr 3.0.3: `withr::defer()` ends in `do.call(base::on.exit, list(thunk, TRUE, after), envir = envir)`, so `f <- function() { local_timeout(5); on.exit(invisible(NULL)); invisible(NULL) }` leaves the option at `5` where the caller had `99` (control without the `on.exit`: `99`). What `defer()` does buy is LIFO ordering (`after = FALSE`) and globalenv/knitr target handling, which is now what D052 and `R/timeout.R` say. The hole itself is documented in `local_timeout()`'s `@details` and the "by any route" promise is qualified in both the roxygen and NEWS.
 - 2026-08-27: F7 fixed — `NEWS.md` gains a bullet for `withr` moving Suggests → Imports, an install-surface change every user sees. F3, F5, F8 and F9 are untouched and go to the gate on the next review pass, as the return said.
 - 2026-08-27: local re-run after the fixes — `test-with-timeout.R` alone: 114 pass, 0 fail, 0 skip; `devtools::test()`: 6628 pass, 0 fail, 5 skip, 4 warn (the same pre-existing dropped-audio-track warnings in `test-audio-stream.R` and `test-ffmpeg.R`). AC3 and AC8 stay unticked until the Linux jobs of PR #77 are green.
+
+- 2026-08-27: AC3 green on the platform that failed it. Run 33108301183 of PR #77, all five jobs success: `ubuntu-latest (release)` reports `[ FAIL 0 | WARN 4 | SKIP 9 | PASS 6615 ]` where the returned run reported `FAIL 4`, and `ubuntu-latest` devel and oldrel-1, macOS and Windows are green too. The four warnings are the same pre-existing dropped-audio-track messages.
+- 2026-08-27: that run also surfaced a NOTE this milestone introduced, on Linux only — `checking tests` NOTE from `spelling.R`, whose `.Rout.save` comparison flagged the word `withr` in `local_timeout.Rd:53` and `NEWS.md:79`, both prose written for the F2 and F7 fixes above. The local macOS `devtools::check()` had not caught it. `withr` added to `inst/WORDLIST`; `spelling::spell_check_package(".")` now reports "No spelling errors found". AC8 is ticked against the CI run following this fix, not the one that carried the NOTE.
 
 ## Decisions
 

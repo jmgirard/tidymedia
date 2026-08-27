@@ -100,9 +100,9 @@ its domain, its recorded list and its promise ship as M70 left them.
       `run_program()` (`R/program_management.R:122`), below `run_one`'s `tryCatch`, so
       a bad value surfaces as a silent `success = FALSE` — and not at all when no
       binary is found (`R/program_management.R:111-113`).
-- [ ] T3 Wire the carrier at `R/ffm_batch.R:102` and `:140`, parallel branch only;
+- [x] T3 Wire the carrier at `R/ffm_batch.R:102` and `:140`, parallel branch only;
       the sequential branches are unchanged.
-- [ ] T4 Wire `R/ffprobe.R:124` and `R/loudnorm_two_pass.R:197`.
+- [x] T4 Wire `R/ffprobe.R:124` and `R/loudnorm_two_pass.R:197`.
 - [ ] T5 New `tests/testthat/test-parallel-option-carry.R` harness: fake
       `ffmpeg`/`ffprobe` shell scripts that append their invocation to a log and
       `sleep 30`, placed first on `PATH`, then a `multisession` plan booted after the
@@ -144,6 +144,8 @@ its domain, its recorded list and its promise ship as M70 left them.
 - 2026-08-26: T1 — `carry_options()` + `carried_option_values()` in `R/timeout.R`; carries the resolved limit and the encoder override, restores the worker's prior values via `on.exit(options(prior))`. An unset name is carried as unset (`options(x = NULL)` removes the entry, measured R 4.6.1). Six in-process tests, 14 assertions; all five mutants red (2, 3, 1, 1, 4 failures).
 
 - 2026-08-26: T2 — `ffm_batch()` calls `resolve_timeout()` in its validation block, before either branch maps. Measured: `tidymedia.timeout = 0.5` at `run = FALSE` now aborts with `` `tidymedia.timeout` must be a whole number, not the number 0.5 `` and `conditionCall()` naming `ffm_batch()`. Suite 6345 pass / 0 fail.
+
+- 2026-08-26: T3/T4 — carrier wired at all four sites `grep -rn "furrr::future_" R/` reports (`R/ffm_batch.R:112`, `:150`, `R/ffprobe.R:124`, `R/loudnorm_two_pass.R:197`), parallel branches only. Suite 6345 pass / 0 fail.
 
 ## Decisions
 

@@ -105,7 +105,11 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
 
   # Build one pipeline per row (columns passed to .f by name, pmap-style).
   pipelines <- if (parallel) {
-    furrr::future_pmap(jobs, .f, ...)
+    # carry_options() is what makes the worker's build match the parent's: an
+    # nvenc pipeline asks has_nvenc(), which reads the caller's encoder
+    # override. Without it the worker reads that override as unset and spawns
+    # FFmpeg to ask -- or picks a different encoder than the parent would.
+    furrr::future_pmap(jobs, carry_options(.f), ...)
   } else {
     purrr::pmap(jobs, .f, ...)
   }
@@ -143,7 +147,8 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
     }
     results <- if (parallel) {
       # furrr drives its own progress reporting over the parallel workers.
-      furrr::future_map(pipelines, run_one, .progress = progress)
+      furrr::future_map(pipelines, carry_options(run_one),
+                        .progress = progress)
     } else if (progress) {
       run_with_progress(pipelines, run_one)
     } else {

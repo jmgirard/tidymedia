@@ -194,7 +194,7 @@ run_loudnorm_analysis_batch <- function(inputs, target_loudness, true_peak,
                true_peak = true_peak, loudness_range = loudness_range,
                audio_stream = audio_stream)
   if (parallel) {
-    furrr::future_pmap(args, analyze_one)
+    furrr::future_pmap(args, carry_options(analyze_one))
   } else {
     purrr::pmap(args, analyze_one)
   }

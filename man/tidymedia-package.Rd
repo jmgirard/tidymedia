@@ -43,10 +43,20 @@ an \code{NA} row and one warning at the end of the call, saying how many of the
 files it names timed out rather than being unreadable. \code{\link[=ffm_batch]{ffm_batch()}} and the
 \verb{_batch} verbs mark the row \code{success = FALSE}, as they do for any failed
 job, and warn once at the end of the run saying how many jobs the limit
-killed. The dropped-track check behind \code{\link[=extract_audio]{extract_audio()}}, \code{\link[=convert_audio]{convert_audio()}},
-\code{\link[=separate_audio_video]{separate_audio_video()}} and their \verb{_batch} siblings warns that it could not
-check, and the provenance manifest warns that it could not read a version;
-both then carry on as they would for any other unreadable input.
+killed — at \code{parallel = TRUE} the workers never see the limit, so nothing
+there reaches it to warn about (see below). The dropped-track check behind
+\code{\link[=extract_audio]{extract_audio()}}, \code{\link[=convert_audio]{convert_audio()}}, \code{\link[=separate_audio_video]{separate_audio_video()}} and their
+\verb{_batch} siblings warns that it could not check, and the provenance manifest
+warns that it could not read a version; both then carry on as they would for
+any other unreadable input.
+
+To handle either outcome programmatically, the abort carries the condition
+class \code{tidymedia_timeout}; the dropped-track and version-probe warnings
+carry \code{tidymedia_probe_timeout}, and the batch warning
+\code{tidymedia_batch_timeout}. So the documented recipe for silencing the
+dropped-track check, \code{suppressWarnings(classes = "tidymedia_dropped_audio")},
+silences only the check itself — add \code{"tidymedia_probe_timeout"} to also
+silence the notice that the limit stopped it from running.
 
 Those two lists are not written from memory. A test derives the calls that
 can start one of these programs from the package's own call graph and drives

@@ -177,7 +177,7 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
     if (ran_out || verify_out) {
       cli::cli_warn(
         c(
-          "{.arg tidymedia.timeout} was reached during this batch.",
+          "The limit was reached during this batch.",
           if (ran_out) c("x" = "{ran_out} job{?s} timed out and did not \\
                                 run to completion."),
           if (verify_out) c("x" = "{verify_out} verification{?s} timed out."),

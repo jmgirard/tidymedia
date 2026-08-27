@@ -227,14 +227,26 @@ tm_timeout_call_specs <- function(dir) {
 # tm_force_timeout(): drive a forced timeout through one domain member and
 # report every condition it signalled.
 #
-# The timeout is INJECTED at `run_program()` rather than produced by a real hung
-# binary, and `is_timeout()` is forced TRUE for the three Layer 0 hatches, which
-# call `system()` directly rather than through `run_program()`. The injected
-# object is `abort_timeout()`'s own -- the same condition the kernel path
-# raises -- and the writer-less-FIFO tests elsewhere in this file are what tie
-# that object to what a real hung binary produces. A FIFO per member would cost
-# ~42 s each (base R's SIGINT/SIGTERM/SIGKILL ladder, M69/D047) and could not
-# reach the members that take no file argument at all.
+# The timeout is INJECTED at the package's two spawn wrappers -- `run_program()`
+# and `guard_timeout()`, which between them stand in front of every
+# `system()`/`system2()` call the package makes -- rather than produced by a
+# real hung binary. The injected object is `abort_timeout()`'s own, the same
+# condition the kernel path raises, and the writer-less-FIFO tests at the end of
+# this file are what tie that object to what a hung binary really produces. A
+# FIFO per member would cost ~42 s each (base R's SIGINT/SIGTERM/SIGKILL ladder,
+# M69/D047) and could not reach the members that take no file argument at all.
+#
+# Injecting at the wrappers rather than at `is_timeout()` is what keeps this
+# platform-independent: forcing the VERDICT would still let the three Layer 0
+# hatches really shell out, and on a machine with no media binaries
+# `system(intern = TRUE)` raises a cmdError on "command not found" before the
+# verdict is ever consulted -- so those cells would measure the runner's PATH.
+# CI's macOS and Windows runners install no media binaries at all.
+#
+# What each cell therefore asks is exactly AC1's question: given a timeout
+# signalled beneath it, does this function let the caller see it? Whether the
+# wrappers themselves detect a real kill is M69's question, answered by
+# `is_timeout()`'s own tests and by the FIFO anchors.
 tm_force_timeout <- function(name, args, limit = 2) {
   warns <- character()
   err <- NULL
@@ -243,7 +255,9 @@ tm_force_timeout <- function(name, args, limit = 2) {
       run_program = function(location, args, program = "the program", ...) {
         abort_timeout(program, limit)
       },
-      is_timeout = function(out, limit) TRUE,
+      guard_timeout = function(program, limit, expr, ...) {
+        abort_timeout(program, limit)
+      },
       .package = "tidymedia"
     )
     withCallingHandlers(
@@ -357,3 +371,4 @@ tm_program_arg <- function(e, callee) {
   }
   if (is.character(val) && length(val) == 1L) val else NULL
 }
+

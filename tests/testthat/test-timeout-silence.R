@@ -351,6 +351,30 @@ test_that("no swept function absorbs a forced timeout silently", {
   }
 })
 
+test_that("the grid spawns nothing, so it measures the package not the PATH", {
+  # CI's macOS and Windows runners install no media binaries. The forcing is
+  # injected at run_program() and guard_timeout(), the two wrappers standing in
+  # front of every system()/system2() call the package makes, so no cell runs a
+  # binary -- and a change that let one through would leave the grid measuring
+  # whether the runner happened to have ffmpeg.
+  spawners <- names(Filter(
+    function(x) any(c("system", "system2") %in% x),
+    tm_symbol_graph()
+  ))
+  expect_setequal(spawners, c("ffmpeg", "ffprobe", "mediainfo", "run_program"))
+  # Every one of those four is intercepted: run_program() directly, and the
+  # three hatches through guard_timeout(), which wraps their system() call.
+  # Read as text, not through a name walk: these are ARGUMENT NAMES in the
+  # local_mocked_bindings() call, and all.names() records call heads and
+  # symbols, never the names arguments are supplied under.
+  forcing <- paste(deparse(body(tm_force_timeout)), collapse = " ")
+  expect_match(forcing, "run_program = ", fixed = TRUE)
+  expect_match(forcing, "guard_timeout = ", fixed = TRUE)
+  for (f in c("ffmpeg", "ffprobe", "mediainfo")) {
+    expect_true("guard_timeout" %in% tm_symbol_graph()[[f]], info = f)
+  }
+})
+
 test_that("the abort half of the grid names the class D047 promises", {
   # The two halves are not interchangeable: an abort has to carry
   # `tidymedia_timeout` so a caller can catch it, and a warning has to say the
@@ -407,6 +431,7 @@ test_that("the injected condition is the one a real hung binary produces", {
 test_that("a real hung track probe warns through the verb that ran it", {
   # T2's anchor: FFprobe genuinely blocks on the FIFO's header, so this is the
   # warning a user gets, not one a mock arranged.
+  skip_if_no_ffprobe()
   blocked <- local_blocking_input()
   withr::local_options(tidymedia.timeout = 2)
   expect_warning(
@@ -557,6 +582,7 @@ test_that("a real hung FFprobe is named the same through either door", {
   # AC4's stated evidence, against the real call path: probe_one() absorbs the
   # timeout into a sentinel and ffprobe() aborts, and the two have to agree
   # about what timed out.
+  skip_if_no_ffprobe()
   blocked <- local_blocking_input()
   withr::local_options(tidymedia.timeout = 2)
   absorbed <- probe_one(blocked)

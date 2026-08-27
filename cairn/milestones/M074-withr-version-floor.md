@@ -141,7 +141,7 @@ row asked whether the floor understates, and "it does not" answers it.
       form and not from the `source()` form, which both versions redirect to
       `source()`'s own frame first (G1); say where the harness actually fetches
       each version from (G8).
-- [ ] T12 — (defect return 2) Fix the call-site comment at `R/timeout.R` to say
+- [x] T12 — (defect return 2) Fix the call-site comment at `R/timeout.R` to say
       what T10 measured about the two forms (G1); `devtools::document()`.
 - [ ] T13 — (defect return 2) Rewrite `NEWS.md`'s withr bullet to name the two
       files and 35 blocks actually run rather than "the whole test suite" (G2),
@@ -184,6 +184,8 @@ row asked whether the floor understates, and "it does not" answers it.
 - 2026-08-27: T10 — harness re-run on both versions, exit 0, 70 PASS / 0 FAIL / 0 SKIP (35 blocks per version). The pin control is now provenance, not a version string: each of the 16 child sessions asserts that `dirname(find.package("withr"))` is the library it was handed, and `install_withr()` refuses to return a library with no `withr` in it (G4). Negative control run: an empty pinned library with the user library still on `.libPaths()` loads withr 3.0.3, passes the version assertion, and is caught by the provenance one — the exact false green G4 named. A `FAIL` verdict now stops the child (G5); negative control on a deliberately failing block exits 1 with the block named. New arm `formB-where.R` measures WHERE `defer()` registered at the `source()` top level, using `deferred_run(globalenv())` rather than either version's internals: on 2.5.0 and on 3.0.3 alike it reports "No deferred expressions to run" and leaves the limit at 30, where the same probe at an `Rscript` top level restores the caller's 99 — so the branch is reached from the `Rscript` form and redirected away from it under `source()`, on both versions (G1). No package code changed in this task, so the `verify` slot's `devtools::test()` has nothing to bite on; it runs at T12 and T13.
 
 - 2026-08-27: T11 — D053's mechanism paragraph rewritten from T10's measurement: the branch withr 3.0.0 rewrote is reached from the `Rscript` form and NOT from the `source()` form, where both versions redirect the handler to `source()`'s own frame first by different routes, so the source form's cross-version agreement comes from a redirect both have rather than from the rewritten branch (G1). Round 1 replaced "never reached" with "always reached"; both went past the harness, which had measured only `parent.frame() == globalenv()`, and the new arm measures the thing itself. D053's "What was measured" paragraph now says the harness fetches the Archive for a retired version and the current `src/contrib` for the release, which is where 3.0.3 comes from (G8), and describes the pin control as provenance rather than a version string plus the new failing-block stop.
+
+- 2026-08-27: T12 — the comment at `R/timeout.R:257-269` now says what T10 measured: `local_timeout()` hands `defer()` `globalenv()` from both top-level forms, only the `Rscript` form's undo lands there, and both versions redirect the `source()` form to `source()`'s own frame first (G1). `devtools::document()` produced no `man/` diff — the edit is a source comment, and the `@details` sentences it sits under are unchanged. `devtools::test()` 0 failures / 6635 passing / 5 skips / 4 warnings.
 
 ## Decisions
 <!-- owner: implement / review · append-only -->

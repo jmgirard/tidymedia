@@ -255,10 +255,15 @@ local_timeout <- function(seconds, .local_envir = parent.frame()) {
   # rather than papered over.
   #
   # The version spread is measured, not assumed: withr 3.0.0 rewrote defer()'s
-  # globalenv() branch, and local_timeout() DOES reach it -- at the top level of
-  # a file run by Rscript and of a source()d file alike, parent.frame() is
-  # globalenv(), measured TRUE on 2.5.0 and on 3.0.3. What the caller observes
-  # from those two forms is nonetheless the same on both. data-raw/withr-floor.R
+  # globalenv() branch, and local_timeout() hands it globalenv() from both
+  # top-level forms -- parent.frame() is globalenv() at the top level of a file
+  # run by Rscript and of a source()d file alike, measured TRUE on 2.5.0 and on
+  # 3.0.3. Only the Rscript form's undo actually lands there, though:
+  # deferred_run(globalenv()) restores the caller's value at an Rscript top
+  # level and finds nothing to run inside a source()d file, on both versions,
+  # because both redirect the handler to source()'s own frame first. So the
+  # rewritten branch is reached from one of the two forms, and what the caller
+  # observes is the same on both versions either way. data-raw/withr-floor.R
   # re-runs the whole comparison -- including the withr:: calls the @details
   # above compare this one to -- and D053 records what it found, the one form
   # where the two versions part included.

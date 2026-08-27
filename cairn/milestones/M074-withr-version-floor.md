@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M074: The floor says what was measured
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate -->
 - **Driving RR:** —   <!-- owner: plan · create/amend-via-gate -->
@@ -174,6 +174,9 @@ row asked whether the floor understates, and "it does not" answers it.
 
 - 2026-08-27: T16 — O2-O8. O2: D053's mechanism paragraph now says the redirect clause is read from withr's own sources rather than from the harness, which reads no version's internals, and names the three readings and where they are recorded (review round 2 of this file); the call-site comment at `R/timeout.R` carries the same split between the measured outcome and the sourced explanation. O3: the ROADMAP row's inventory now adds up — seven rough edges raised, the three reachable in M074's form fixed (the third being `run_under()`'s ignored exit status, now a `stop()` at `data-raw/withr-floor.R:103-105`), four remaining. O4: NEWS now names AC2's two top-level forms and what each leaves behind. O5: NEWS and D053 no longer say 2.5.0 holds the limit "for the rest of the sourced file" — the harness has one observation point inside that file, so both now state the direction of the split and say so. O6: D053 says the script tries the Archive URL first for every version and records nothing about which URL answered. O7: NEWS's unmeasured set now matches D053's, the `knitr` target environment included. O8: the "which no claim on that page covers" judgment is out of NEWS; D053 keeps it as the floor rationale and now flags the tension with `?local_timeout`'s own description as a reading rather than a measurement. `devtools::document()` produced no `man/` diff — the R edit is a source comment. `devtools::test()` 0 failures / 6635 passing / 5 skips / 4 warnings.
 - 2026-08-27: T17 — Tasks compressed in one pass, the remedy tracking-rules names for the heaviest plan-owned section: 81 lines to 43, every T-id kept so the Coverage map still resolves, and the work log left carrying each task's detail. `cairn_validate.py` now passes every check including `weight caps` (was 168 plan-owned lines against a cap of 150). One advisory remains and is not a gate failure: `sizing (split tripwires)` reads 17 tasks against a >10 tripwire, which is what three defect returns and a descope cost a milestone that was planned at five.
+
+- 2026-08-27: `neighbouring` in the new NEWS sentence tripped `spelling.R` (the package's wordlist is US English), which surfaced as R CMD check's one NOTE while `devtools::check()`'s own summary line still printed 0 notes; reworded to `sibling` and re-run. `devtools::check()` `Status: OK`, 0 errors / 0 warnings / 0 notes (3m 0.5s).
+- 2026-08-27: third defect return closed, as a descope rather than a fourth attempt at AC3. The four criteria that remain (AC1, AC2 and the renumbered AC3, AC4) were all met on fresh evidence at review round 3 and nothing this session touched what they measured: no package behavior changed, the only `R/` edit is a source comment, and the harness was re-run unchanged in this session — exit 0, 70 PASS / 0 FAIL / 0 SKIP, every previously reported value identical. What changed is what the repo says: one false NEWS clause corrected and seven small texts fixed. Status to `review`.
 
 ## Decisions
 <!-- owner: implement / review · append-only -->

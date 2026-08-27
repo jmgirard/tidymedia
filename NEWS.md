@@ -97,9 +97,9 @@
   the split and not how long 2.5.0 holds on. Three things were not run on 2.5.0:
   the claim that the limit reaches a `parallel = TRUE` fan-out, which neither
   file above mentions; the `knitr` target environment the undo can also be
-  registered on; and every withr between 2.5.0 and 3.0.3. The neighbouring claim
-  — that the limit applies per spawned program — was run: four of the blocks
-  above test it, and all four passed on 2.5.0. So an installation that resolves
+  registered on; and every withr between 2.5.0 and 3.0.3. The sibling claim — that
+  the limit applies per spawned program — was run: four of the blocks above test
+  it, and all four passed on 2.5.0. So an installation that resolves
   withr 2.5.0 rather than the current release is running the frame behavior that
   page describes.
 

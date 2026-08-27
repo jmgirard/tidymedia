@@ -127,7 +127,7 @@ row asked whether the floor understates, and "it does not" answers it.
       the Rscript form's undo exists and is only observed late (F4),
       `source(local = TRUE)` is measured rather than omitted (F7), and D052's
       justification stands unqualified (F9).
-- [ ] T8 — (defect return) Fix `local_timeout()`'s roxygen and the call-site
+- [x] T8 — (defect return) Fix `local_timeout()`'s roxygen and the call-site
       comment at `R/timeout.R:255-260` to say what T6 measured (F2, F1);
       `devtools::document()`.
 - [ ] T9 — (defect return) Rewrite `NEWS.md`'s withr bullet to state exactly
@@ -154,6 +154,8 @@ row asked whether the floor understates, and "it does not" answers it.
 - 2026-08-27: T6 — harness extended and re-run on both versions. New measurements: `parent.frame()` at an `Rscript` top level AND at a `source()`d file's top level is `globalenv()` on both versions (F1 — the branch IS reached); `deferred_run(globalenv())` restores the caller's 99 on both, so the `Rscript` form does have an undo scheduled and `.Last`/a later finalizer merely observe before it (F4); the `withr::defer()`/`local_options()`/`with_options()` comparison the roxygen makes now runs against withr itself and gives 30/30/30/30 and 99-then-30 identically on both (F2); `source(file, local = TRUE)` from a function frame is the one measured DIFFERENCE — 2.5.0 holds the limit inside the sourced file, 3.0.3 has it back at the caller's value on the next line, and both are back to 99 once the frame returns (F7). A mismatched pin now aborts the child and stops the driver, verified by a negative control (F8, F10-exit).
 
 - 2026-08-27: T7 — D053 rewritten from T6's measurements: the globalenv branch is reached rather than avoided (F1), `is_top_level_global_env()` is 2.5.0-and-later while only `global_defer()` is 3.x-only (F3), the Rscript form has an undo scheduled that its own exit hooks observe before (F4), `source(local = TRUE)` is recorded as the one measured difference (F7), D052's `defer()` justification is said to stand unqualified (F9), and the two non-frame `@details` claims are named under "What was not measured" (F5's other half).
+
+- 2026-08-27: T8 — the call-site comment at `R/timeout.R` now says the globalenv branch IS reached and that the two forms still agree, and points at the harness's withr:: arm (F1, F2). The two `@details` sentences crediting withr 2.5.0 with a `defer()`/`local_options()`/`with_options()` comparison now stand on T6's committed measurement rather than on assertion, so their wording is unchanged. `devtools::document()` produced no `man/` diff — the edit is a source comment.
 
 ## Decisions
 <!-- owner: implement / review · append-only -->

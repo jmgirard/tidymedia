@@ -255,10 +255,13 @@ local_timeout <- function(seconds, .local_envir = parent.frame()) {
   # rather than papered over.
   #
   # The version spread is measured, not assumed: withr 3.0.0 rewrote defer()'s
-  # globalenv() branch, but local_timeout() does not reach it -- parent.frame()
-  # is a live function frame in an ordinary call, and at the top level of a
-  # source()d file it is source()'s own eval frame. data-raw/withr-floor.R
-  # re-runs the whole comparison; D053 records what it found.
+  # globalenv() branch, and local_timeout() DOES reach it -- at the top level of
+  # a file run by Rscript and of a source()d file alike, parent.frame() is
+  # globalenv(), measured TRUE on 2.5.0 and on 3.0.3. What the caller observes
+  # from those two forms is nonetheless the same on both. data-raw/withr-floor.R
+  # re-runs the whole comparison -- including the withr:: calls the @details
+  # above compare this one to -- and D053 records what it found, the one form
+  # where the two versions part included.
   withr::defer(options(prior), envir = .local_envir)
   options(tidymedia.timeout = as.numeric(seconds))
   invisible(prior)

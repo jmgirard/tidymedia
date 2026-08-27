@@ -2289,3 +2289,41 @@ The cost is one more package on every install, against a package already
 required to run the tests and whose own Imports are `graphics` and `grDevices`.
 Falsified by `withr` acquiring dependencies of its own that a media-tools
 package should not carry.
+
+## D053 — The `withr` floor stays 2.5.0, and now says so because it was measured (2026-08-27, from M074; extends D052's dependency bullet, leaving all of D052 standing)
+
+DESCRIPTION declared `withr (>= 2.5.0)` while every claim `local_timeout()`
+makes had only ever been measured on 3.0.3, so the floor stated a version
+nobody had run. It is measured now, and it stays.
+
+**What was measured.** `data-raw/withr-floor.R` installs a given `withr` from
+the CRAN archive into its own library, then runs — in a fresh `Rscript`
+session with that library first, each session printing the `withr` it actually
+loaded — the two timeout-wrapper test files, AC2's two top-level forms, and
+AC4's four documented claims. On 2.5.0 and on 3.0.3: all 35 `test_that()`
+blocks of `test-local-timeout.R` and `test-with-timeout.R` pass, 0 failures
+and 0 skips on either; the four documented claims read exactly as written on
+both; and the two top-level forms agree on both — the `Rscript` form leaves
+the limit set at `.Last` and at a finalizer registered after withr's own, the
+`source()` form has the caller's value back when `source()` returns.
+
+**Why there was nothing to find.** withr 3.0.0 rewrote `defer()`'s
+`globalenv()` branch — `is_top_level_global_env()` and `global_defer()` are
+3.x-only — and that rewrite is what made the floor worth checking. But
+`local_timeout()` never reaches that branch: its default `.local_envir` is
+`parent.frame()`, which is a live function frame in every ordinary call, and
+at the top level of a `source()`d file is `source()`'s own eval frame rather
+than `globalenv()`. Only a file run directly by `Rscript` reaches it, and
+there both versions leave the limit set, because there is no frame left to
+unwind. The mechanism changed; what the caller observes did not.
+
+**What was not measured.** The nine other `Imports` floors, the absent
+`Depends: R (>= )` line, and every `withr` between 2.5.0 and 3.0.3 — the
+walk was to be run only if a block failed, and none did. Test-side `withr`
+use is Suggests-side and says nothing about what a user installing tidymedia
+gets. Nothing verifies this floor on a schedule: CI installs the latest
+dependencies on all five jobs.
+
+Falsified by a caller on 2.5.x observing a `local_timeout()` behavior these
+forms do not reach — the `knitr` target environment is the untested one — or
+by `withr` 2.5.0 failing to install on a supported R.

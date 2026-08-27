@@ -110,7 +110,7 @@ row asked whether the floor understates, and "it does not" answers it.
       2.5.0 NEWS claims globalenv unwinding that 3.0.3 routes through
       `is_top_level_global_env()`/`global_defer()` instead — the point is which
       of the two the caller actually observes.
-- [ ] T4 — Settle the floor from T2/T3 and write the D-entry: the version, the
+- [x] T4 — Settle the floor from T2/T3 and write the D-entry: the version, the
       behavior that forced it (or the measurement that permits keeping 2.5.0),
       what was and was not tested, and the entry's own falsifier.
 - [ ] T5 — Update `DESCRIPTION`, `NEWS.md`, and any version-dependent wording in
@@ -129,6 +129,7 @@ row asked whether the floor understates, and "it does not" answers it.
 - 2026-08-27: T1 — harness committed as `data-raw/withr-floor.R`; each version installs from the CRAN archive into its own library and every child session prints the `withr` it loaded (2.5.0 and 3.0.3 each reported their own, and `defer()`'s body carries `global_defer` only at 3.0.3, so the pin is real and the two versions are the two mechanisms).
 - 2026-08-27: T2 — all 35 `test_that()` blocks of `test-local-timeout.R` and `test-with-timeout.R` pass under withr 2.5.0 with `NOT_CRAN=true`; identical 35/35 under 3.0.3, 0 failures and 0 skips on both, so no upward walk was needed.
 - 2026-08-27: T3 — AC2's two top-level forms and AC4's four documented claims measured on 2.5.0 and 3.0.3 with identical results on every one; the Rscript form leaves the limit set at `.Last` and at a later finalizer on both, and the `source()` form restores the caller's value when `source()` returns on both (`parent.frame()` at a sourced file's top level is `source()`'s own eval frame, not `globalenv()`, so `defer()`'s globalenv branch — the one 3.0.0 rewrote — is not reached from either form).
+- 2026-08-27: T4 — null result, so the floor stays 2.5.0 per the plan gate; promoted as D053, extending D052's dependency bullet with what was measured, why there was nothing to find, and what was not measured.
 
 ## Decisions
 <!-- owner: implement / review · append-only -->

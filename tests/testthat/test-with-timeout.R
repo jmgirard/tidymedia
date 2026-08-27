@@ -344,20 +344,120 @@ test_that("ffm_batch()'s up-front limit check reads the per-call value", {
 # writing well past any limit this test allows and closes it again, so FFmpeg
 # reaches EOF and exits. The failure is then an ordinary one: no
 # `tidymedia_timeout` abort, or an elapsed time over budget.
-tm_release_fifo <- function(path, after = 90) {
+#
+# M073: the writer is CANCELLED when the frame that armed it ends. The first
+# version slept `after` seconds unconditionally, so a suite that finished in two
+# seconds still left a 90-second `sleep` behind -- one per cell, outliving the
+# process that wanted it. Killing a recorded PID does not solve it: `system(wait
+# = FALSE)` hands back the shell's exit status, not a PID, and killing the
+# subshell orphans its `sleep` anyway (measured at plan time). So the shell polls
+# for a cancel file instead and the arming frame touches that file on its way
+# out, by any exit route. What is left running is at most one second-scale
+# `sleep`, which ends on its own.
+#
+# `marker` is a token unique to this call, carried in the command line (via the
+# cancel path) so a test can find the process with `pgrep -f` and watch it go.
+# It is returned, invisibly, for exactly that purpose.
+tm_release_fifo <- function(path, after = 90, envir = parent.frame()) {
+  marker <- basename(tempfile("tm_fifo_"))
+  cancel <- file.path(tempdir(), paste0(marker, ".cancel"))
+  withr::defer(file.create(cancel), envir = envir)
   # No trailing `&` of our own: `wait = FALSE` is what backgrounds this, and
   # base R appends the `&` itself -- writing a second one is a shell syntax
   # error, which leaves no writer at all and the bound unarmed (measured
-  # 2026-08-27: FFmpeg was still blocked seven minutes in).
+  # 2026-08-27: FFmpeg was still blocked seven minutes in). The enclosing
+  # parentheses are load-bearing for the same reason: the appended `&` binds to
+  # the LAST command of the string, so without them the poll loop runs in the
+  # foreground and blocks R for the full `after` (measured 2026-08-27: 91.8 s
+  # against 1.1 s with them).
   system(
     sprintf(
-      "(sleep %d; [ -p %s ] && : > %s) >/dev/null 2>&1",
-      after, shQuote(path), shQuote(path)
+      paste(
+        "(i=0; while [ $i -lt %d ]; do [ -f %s ] && exit 0;",
+        "i=$((i+1)); sleep 1; done; [ -p %s ] && : > %s) >/dev/null 2>&1"
+      ),
+      after, shQuote(cancel), shQuote(path), shQuote(path)
     ),
     wait = FALSE
   )
-  invisible(NULL)
+  invisible(marker)
 }
+
+# tm_pgrep(): the process table, asked about one marker.
+#
+# `pgrep` exits 1 with no output when nothing matches, which system2() surfaces
+# as a `status` attribute rather than an empty result, so the two are folded
+# together here.
+tm_pgrep <- function(marker) {
+  out <- suppressWarnings(
+    system2("pgrep", c("-f", marker), stdout = TRUE, stderr = FALSE)
+  )
+  if (!is.null(attr(out, "status"))) character(0) else out
+}
+
+tm_wait_for_pgrep <- function(marker, present, limit = 5) {
+  start <- Sys.time()
+  repeat {
+    if ((length(tm_pgrep(marker)) > 0) == present) return(TRUE)
+    if (as.numeric(difftime(Sys.time(), start, units = "secs")) > limit) {
+      return(FALSE)
+    }
+    Sys.sleep(0.2)
+  }
+}
+
+# AC3 -- the writer is reaped with its frame -----------------------------------
+#
+# Each case arms the helper inside a frame, checks the process is really there
+# (without that the "gone" assertion below would pass against a helper that
+# started nothing at all), then leaves the frame by a different route and waits
+# for it to go.
+
+test_that("no process tm_release_fifo() starts outlives the frame", {
+  skip_on_cran()
+  skip_on_os("windows")
+  skip_if(!nzchar(Sys.which("pgrep")), "pgrep is not on the PATH")
+
+  # Never created: the shell only looks at this path after `after` seconds, and
+  # every case here cancels long before that.
+  path <- file.path(withr::local_tempdir(), "no-such-fifo")
+
+  armed <- function(marker) {
+    expect_true(tm_wait_for_pgrep(marker, present = TRUE), info = "armed")
+  }
+
+  # Case 1: the frame returns.
+  by_return <- function() {
+    marker <- tm_release_fifo(path)
+    armed(marker)
+    marker
+  }
+  expect_true(tm_wait_for_pgrep(by_return(), present = FALSE))
+
+  # Case 2: the frame aborts.
+  aborted_marker <- NULL
+  by_abort <- function() {
+    aborted_marker <<- tm_release_fifo(path)
+    armed(aborted_marker)
+    rlang::abort("frame failed", class = "tm_test_failure")
+  }
+  expect_error(by_abort(), class = "tm_test_failure")
+  expect_true(tm_wait_for_pgrep(aborted_marker, present = FALSE))
+
+  # Case 3: one frame arms the helper twice. Two independent cancel files, both
+  # deferred on the same frame, so neither writer may survive it.
+  both_markers <- NULL
+  twice <- function() {
+    both_markers <<- c(tm_release_fifo(path), tm_release_fifo(path))
+    for (marker in both_markers) armed(marker)
+    invisible(NULL)
+  }
+  twice()
+  expect_length(unique(both_markers), 2)
+  for (marker in both_markers) {
+    expect_true(tm_wait_for_pgrep(marker, present = FALSE), info = marker)
+  }
+})
 
 test_that("a per-call limit kills a hung program with no session limit set", {
   blocked <- local_blocking_input()

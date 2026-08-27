@@ -98,7 +98,7 @@ where they are.
       then guard `expr` in `with_timeout()` (`R/timeout.R`) with
       `rlang::check_required(expr)`, placed **above** the `options()` write so
       no unobservable ordering is left to chance.
-- [ ] T2. Rework `tm_release_fifo()` to a cancel-file poll carrying a unique
+- [x] T2. Rework `tm_release_fifo()` to a cancel-file poll carrying a unique
       marker: a loop checking for the cancel file each second, `withr::defer`
       touching it at frame exit. Add the three-case `pgrep -f` reaping test and
       re-run the FIFO-anchored kill cell for AC4.
@@ -122,6 +122,8 @@ where they are.
 - 2026-08-27: plan gate chose to promise the refusal's message shape over building machinery to observe the refuse-before-write ordering, because `on.exit` makes "never written" and "written and restored" indistinguishable to any caller; falsified by an ordering bug that changes what a caller sees.
 - 2026-08-27: implementation gate chose to move `withr` from Suggests to Imports and undo `local_timeout()`'s change with `withr::defer()`, on the user's selection; the base-R `on.exit` alternative was measured to lose the restore silently when the calling frame writes its own `on.exit()` without `add = TRUE` (option left at the wrapper's value after the frame exited). Dependency change; D-entry at T5.
 - 2026-08-27: T1 done — `rlang::check_required(expr)` added above the `options()` write in `with_timeout()`; `formals()`-derived guard cases plus the unchanged-session regression clause added to `tests/testthat/test-with-timeout.R`. Red first for the right reason (base R's `missingArgError`, the exact string AC1 forbids), green after. `devtools::test()` on the file: 97 pass, 0 fail.
+- 2026-08-27: T2 done — `tm_release_fifo()` now polls for a per-call cancel file that `withr::defer()` touches when the arming frame exits, and returns a unique marker so a test can watch the process. Three-case `pgrep -f` reaping test added (return, abort, twice in one frame); discriminating against the old helper, whose "armed" control passes while the "gone" assertion fails. AC4 re-run: the FIFO-anchored kill cell still reaches its `tidymedia_timeout` abort, `after = 90` unchanged and still outside 2 + 40 s. `test-with-timeout.R` with `NOT_CRAN=true`: 112 pass, 0 fail, 0 skip.
+- 2026-08-27: T2 found and fixed a shell-quoting trap while rewriting the helper: `system(wait = FALSE)` appends `&`, which binds to the LAST command of the string, so a multi-command poll loop without enclosing parentheses runs in the foreground and blocks R for the full `after` (measured 91.8 s against 1.1 s with them). The parentheses are now commented as load-bearing.
 - 2026-08-27: sizing tripwire fired at 8 acceptance criteria (>7) and was disposed here rather than by splitting: the eighth is the mandatory profile-check criterion, the six tasks are each well under a working session, and `local_timeout()` is ~10 lines plus a topic, so a second milestone would add tracking ceremony an order larger than the work it carries.
 
 ## Decisions

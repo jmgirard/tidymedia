@@ -24,12 +24,13 @@ naming the program and the limit. A D-entry records the shape.
 
 **Out:**
 - Per-call `timeout =` arguments on the ~60 exported verbs and the Layer-1
-  runners → ROADMAP candidate row (an irreversible-API commitment, still open
-  under D014's pre-0.2.0 clean-break window; the option seam does not foreclose it).
+  runners → ROADMAP candidate row (an irreversible-API commitment still open
+  under D014's pre-0.2.0 window; the seam forecloses none of it).
+- Making absorption uniform — the two no-warning paths AC8 discloses, plus J2's
+  program-literal split and J7's `tm_timed_out` attribute → **M70**.
 - Making `parallel = TRUE` workers see the parent's option → ROADMAP candidate
-  row, disclosed in the D-entry. Measured 2026-08-09 on future 1.70.0: a
-  `multisession` worker reading an option set to `42` in the parent got `UNSET`.
-  Same disclosure shape as D044's per-process memo gap.
+  row, disclosed in the D-entry (measured 2026-08-09, future 1.70.0: a
+  `multisession` worker got `UNSET`). D044's disclosure shape.
 - The test-only `run_ffmpeg_fixture()` helper (`tests/testthat/helper-media.R:26`)
   keeps its own hard-coded 120 s limit and is not rewired → stays where M46 put it.
 
@@ -42,16 +43,14 @@ naming the program and the limit. A D-entry records the shape.
       the four sites named in AC1 therefore passes `timeout = 0`.
 - [x] AC3 With `options(tidymedia.timeout = 2)`, `ffmpeg()`, `ffprobe()` and
       `ffm_run()` each abort within 60 wall-clock seconds of the call on a
-      writer-less FIFO input that blocks the program indefinitely
-      (`local_blocking_input()`), and each abort names the program and the
-      limit in seconds. Linux and macOS only: the fixture cannot be built on
-      Windows, where R terminates the child directly instead of escalating
-      signals. The bound is 60 s rather than the limit, and is per spawned
-      program, because base R escalates SIGINT/SIGTERM/SIGKILL across
-      limit + 40 s (ladder and measurements in the work log, 2026-08-09) — so
-      a pipeline spawning several programs can take that long once each.
-      `mediainfo()` is covered by AC1 and the AC2 resolver test only: no
-      120-second MediaInfo invocation can be named.
+      writer-less FIFO input (`local_blocking_input()`), each naming the
+      program and the limit in seconds. Linux and macOS only: the fixture
+      cannot be built on Windows, where R terminates the child directly. The
+      bound is 60 s rather than the limit, and is per spawned program, because
+      base R escalates SIGINT/SIGTERM/SIGKILL across limit + 40 s (ladder and
+      measurements in the work log, 2026-08-09). `mediainfo()` is covered by
+      AC1 and the AC2 resolver test only: no 120-second MediaInfo invocation
+      can be named.
 - [x] AC4 The timeout branch's condition is a comparison of the `status`
       attribute to `124L` — not a match against the text of R's timeout
       warning, whose wording is translated under a non-English locale (M46).
@@ -65,22 +64,28 @@ naming the program and the limit. A D-entry records the shape.
       points of AC3 when they time out — asserted locale-free with
       `expect_no_warning()`, never by matching `timed out after`, since R's
       warning embeds the full command line and the `input=` temp path.
-- [ ] AC8 `NEWS.md` and the `?tidymedia` Rd topic both document the option's
-      name, unit (seconds), default (`0`, no limit), and — as one scoped claim,
-      not two coexisting sentences — which calls a reached limit aborts (the
-      task verbs, `ffm_run()`, and the Layer 0 hatches `ffmpeg()`, `ffprobe()`,
-      `mediainfo()`) against which absorb it as an unreadable file (the
-      metadata readers: `probe_all()` and the `probe_*()` accessors,
-      `mediainfo_parameter()/_query()/_template()`, the `get_*()` helpers, and
-      `count_audio_streams()`). Neither file states the abort as an unqualified
-      universal. Both also state that on Unix the abort can lag the limit by up
-      to 40 seconds, and that base R does not guarantee termination at all.
-      Verified by reading the section, not by substring grep: the doc guard
-      asserts the scoped sentence, and restoring the unqualified "A call that
-      reaches the limit aborts" reddens it.
-- [ ] AC9 `cairn/DECISIONS.md` gains a D-entry recording the option-seam shape
-      and the per-verb argument it rejects, off-by-default, abort-not-warn, the
-      disclosed `parallel = TRUE` worker gap, and the falsifier.
+- [ ] AC8 `?tidymedia` and `NEWS.md` both describe a reached limit as three
+      behaviors rather than two. **Abort:** the task verbs, `ffm_run()`, and the
+      Layer 0 hatches `ffmpeg()`, `ffprobe()`, `mediainfo()`. **Absorb, with an
+      NA row and one end-of-call warning naming how many timed out:**
+      `probe_all()`, the `probe_*()` accessors, `mediainfo_parameter()`,
+      `mediainfo_query()`, `mediainfo_template()`, the `get_*()` helpers.
+      **Absorb with no warning at all:** `count_audio_streams()` — reached by
+      `extract_audio()`, `convert_audio()`, `remove_audio()` and
+      `separate_audio_video()` — and the manifest's version capture. Both files
+      state that this describes the calls it names and is not a partition of
+      the package. `verify_media()` is stated as re-raising. Verified by two
+      guards: one reddens when `A call that reaches the limit aborts` is
+      restored ahead of the scoped paragraph, the other when the no-warning
+      disclosure is removed.
+- [ ] AC9 `cairn/DECISIONS.md` gains a D-entry superseding D047's readers
+      bullet and recording the shape actually shipped: `probe_one()`'s
+      sentinel, `probe_all()` keeping the NA row while its warning counts
+      timeouts apart from unreadable files, `verify_media()` re-raising rather
+      than absorbing, and the two no-warning paths disclosed rather than fixed.
+      Evidence: a sweep of the `^## D0` headings finds D047 the only entry
+      asserting the uniform-absorption shape, and the new entry's heading names
+      it superseded in that half.
 - [x] AC10 The `verify` slot of `cairn/PROFILE.md` is clean —
       `devtools::document()`, `devtools::test()` and `devtools::check()` (0
       errors, 0 warnings).
@@ -94,58 +99,35 @@ naming the program and the limit. A D-entry records the shape.
 - AC5 → T3, T4
 - AC6 → T2, T4
 - AC7 → T4
-- AC8 → T5, T10, T13
-- AC9 → T6
-- AC10 → T7
+- AC8 → T5, T10, T13, T15
+- AC9 → T6, T16
+- AC10 → T7, T17
 
 ## Tasks
 
-- [x] T1 Add the resolver (`resolve_timeout()`, new or in `R/utils.R`): reads
-      `getOption("tidymedia.timeout", 0)`, validates it is a single
-      non-negative number, returns `0` when unset. Tests first.
-- [x] T2 Thread it into the three Layer 0 sites (`R/ffmpeg.R:28`,
-      `R/ffprobe.R:21`, `R/mediainfo.R:26`) and into `run_program()`
-      (`R/program_management.R:108-122`); add the shared timeout classifier
-      that keys on `status == 124L` and is inert when the resolved limit is `0`.
-- [x] T3 Wire `ffm_run()` (`R/ffm.R:1548-1562`): a timeout aborts naming the
-      program and limit, and reaches `remove_failed_output()` on the same path
-      a non-zero exit does, so D046's disposition rule is applied unchanged.
-- [x] T4 Execution tests for AC3/AC5/AC7 (`skip_if` no binaries; a
-      `-f lavfi -i testsrc=duration=120` encode is the long command) and unit
-      tests for AC4/AC6 against the classifier. Mutation-probe each new
-      assertion — delete the guard it fences and confirm it reddens (M44).
-- [x] T5 Roxygen: document the option in `R/tidymedia-package.R`'s `@details`,
-      `devtools::document()`, add the `NEWS.md` entry.
-- [x] T6 Write the D-entry (the two candidate rows for Scope Out are already on
-      the ROADMAP, added by this plan).
-- [x] T7 Run the `verify` slot end to end; `spelling::update_wordlist()` if the
-      check NOTEs on new terms (M17).
-- [x] T8 (review return, F1/F3) Absorb `tidymedia_timeout` in the resilient
-      readers — `probe_one()`, `mediainfo_parameter()`, `mediainfo_read()` — so
-      a hung file yields the NA row and end-of-call warning each already
-      documents, per D047's readers bullet, instead of discarding the whole
-      call's results. Tests + mutation probe.
-- [x] T9 (review return, F15) Tighten the AC3 execution tests to the criterion
-      as written: a 10-second wall-clock bound on all three entry points, and
-      the limit asserted in every abort message, not just the program.
-- [x] T10 (review return, F7) Narrow the partial-output claim in `?tidymedia`
-      and `NEWS.md` to the calls that know their own output; fence the Layer 0
-      behavior with a test that a timed-out `ffmpeg()` leaves what it wrote.
-- [x] T11 (return 2, AC3) Relax every wall-clock assertion in
-      `tests/testthat/test-runtime-timeout.R` to the amended 60 s bound, and
-      keep the Linux cost of the file inside a CRAN check budget — each FIFO
-      test costs ~42 s there, and there are six.
-- [x] T12 (return 2, G2/H4) Make a timed-out probe distinguishable from an
-      unreadable file: `probe_one()` returns a timeout sentinel, `probe_all()`
-      keeps the NA row and the end-of-call warning but names the timeout, and
-      `verify_media()` re-raises rather than reporting every property as a
-      mismatch. Tests + mutation probe.
-- [x] T13 (return 2, G1 + AC8) Rewrite the abort claim in `?tidymedia` and
-      `NEWS.md` as the one scoped claim AC8 now requires, and replace the
-      substring-grep doc guard with one that reddens when the unqualified
-      sentence is restored.
-- [x] T14 (return 2, G6/P2) Add the missing `mediainfo_read()` absorber test
-      (via `mediainfo_query()`), and mutation-probe it.
+_T1-T14 are done; their detail is in the work log and in the branch's commits._
+
+- [x] T1 `resolve_timeout()` — read, validate, default `0`. Tests first.
+- [x] T2 Thread the limit into all four spawn sites; add the `status == 124L` classifier.
+- [x] T3 Wire `ffm_run()`: abort naming program and limit, reaching D046's disposition.
+- [x] T4 Execution tests (AC3/AC5/AC7) and classifier unit tests (AC4/AC6), mutation-probed.
+- [x] T5 Roxygen the option in `R/tidymedia-package.R`; `document()`; NEWS entry.
+- [x] T6 Write D047.
+- [x] T7 Run the `verify` slot end to end.
+- [x] T8 (return 1, F1/F3) `absorb_timeout()` in `probe_one()`, `mediainfo_parameter()`, `mediainfo_read()`.
+- [x] T9 (return 1, F15) Tighten the AC3 tests to the criterion as written.
+- [x] T10 (return 1, F7) Narrow the partial-output claim to calls that know their output.
+- [x] T11 (return 2, AC3) Relax every wall-clock assertion to 60 s; `skip_on_cran()` the FIFO tests.
+- [x] T12 (return 2, G2/H4) Timeout sentinel; `probe_all()` counts timeouts apart; `verify_media()` re-raises.
+- [x] T13 (return 2, G1/AC8) Rewrite the abort claim as one scoped claim; replace the substring guard.
+- [x] T14 (return 2, G6/P2) `mediainfo_read()` absorber test via `mediainfo_query()`.
+- [ ] T15 (re-plan) Rewrite both doc sections to AC8's three-way shape; keep
+      the scoping guard, add the second guard fencing the no-warning
+      disclosure. Mutation-probe both.
+- [ ] T16 (re-plan) Append the superseding D-entry per AC9; run the `^## D0`
+      heading sweep as its evidence.
+- [ ] T17 (re-plan) Re-run the `verify` slot end to end after T15/T16, and
+      confirm CI green on PR #72.
 
 ## Work log
 
@@ -204,6 +186,11 @@ naming the program and the limit. A D-entry records the shape.
 - 2026-08-09: T14 — `mediainfo_query()` test added, covering the `mediainfo_read()` absorber the first return shipped untested. Mutation probe: removing that absorber reddens it, which is the claim the corrected T8 line could not make.
 
 - 2026-08-09: review RETURN -> in-progress (third defect return). What failed: (1) J4 (90), AC8 names `count_audio_streams()` among the readers that absorb a timeout but neither doc mentions it, and measured, it absorbs with zero warnings against the docs' uniform "an NA row and one warning" — an AC8 failure and a user-facing invisible hang under `remove_audio()`; (2) J3 (95), D047 still asserts the uniform-absorption shape T12 replaced inside this same milestone, so AC9's evidence cites a stale entry. Also actioned: J2 (87), the real `verify_media()` re-raise says lowercase `ffprobe` and its fencing test asserts its own mock's literal; J7 (82), the `tm_timed_out` attribute leaks into `print()` and breaks `@param parallel`'s identity promise. AC8 and AC9 unticked; AC1-AC7 and AC10 stand, CI green on all nine checks. Sixteen sub-threshold findings logged. Thrash trigger (a) fires on the third return: no further retry under this plan, routing to `/milestone-plan`.
+
+- 2026-08-26: /milestone-plan re-cut after thrash trigger (a). Investigation found the third return's defect is wider than the review saw: `capture_version()` (`R/ffm_manifest.R:127`) also swallows a timeout into an `NA` version string with no warning, and it appears in no AC list, no doc sentence and none of the sixteen logged sub-threshold findings. AC8's hand-list has now been beaten by a fresh member on every pass, which is the bounded-promise rule's proxy-enumeration failure rather than three unrelated misses.
+- 2026-08-26: re-plan gate chose splitting — M69 ships the mechanism with docs narrowed to what is true today, M70 makes absorption uniform — over one re-cut carrying everything on this branch, because AC1-AC7 and AC10 are proven with fresh evidence and green CI on nine checks and their value does not depend on the reader family being uniform, while a single re-cut would put 13+ criteria on the milestone that already thrashed three times. Rejected also: shedding the readers entirely back to master's behavior, which would reopen F1 (one hung file discarding a 500-file corpus). Falsified by M70 finding the split boundary forces a doc rewrite in both milestones rather than one.
+- 2026-08-26: re-plan gate chose narrowing AC8 to a three-way description that states it is not a partition of the package, over a fourth attempt at an exhaustive two-way partition, because no procedure this milestone names can enumerate the partition's domain and the repair for a beaten enumeration is a narrower promise, never a longer list (M118/M130; M39's `@param jobs` lesson is the same shape). Falsified by a caller misreading the three-way description as complete.
+- 2026-08-26: criteria audit ([O] reader NOT used — this session is configured not to dispatch subagents, so the audit was self-administered by the plan author, which is weaker than the mandate and is recorded as such rather than left to imply an independent read). Full mode, user-facing tier. Eight findings across the M69 and M70 drafts; five fixed before the gate — an instrument-bound criterion over the enumerating sweep (D-118) moved to a task; a swallow-site domain defined by grepping `tryCatch|try_fetch|try(` replaced with a positive call-graph closure, since a wrapper-spelling list fixes membership by recollection; a forced-timeout universal left vacuous on Windows scoped to Linux and macOS, the omission return 2 paid for on AC3; a negative universal over doc prose narrowed to the retired sentence its guard actually fences (M50); and a bare "a D-entry exists" narrowed to a content claim over the `^## D0` headings. One became gate question 4 (the J7 disjunction, satisfiable by whichever branch was cheaper on the day). One went to an M70 task note: the J2 mutation probe must vary the program literal, not merely delete the assertion.
 
 ## Decisions
 

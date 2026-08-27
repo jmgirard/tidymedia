@@ -67,17 +67,14 @@ row asked whether the floor understates, and "it does not" answers it.
       declared floor version and on 3.0.3. Where the two versions differ for
       either form, `local_timeout()`'s `@details` names the versions on which
       each behavior holds.
-- [ ] AC3 — DESCRIPTION's `withr` floor names a version on which AC1 and AC2
-      were measured green, and `NEWS.md` states that floor and what was measured
-      against it.
-- [x] AC4 — Each of the four behavioral claims `local_timeout()`'s documentation
+- [x] AC3 — Each of the four behavioral claims `local_timeout()`'s documentation
       makes — two calls in one frame unwind to the caller's state; a frame's own
       `on.exit()` without `add = TRUE` discards the undo; a `.local_envir` that
       is not a live frame takes the undo with it; a `local_timeout()` written
       directly inside `with_timeout()`'s `expr` outlives the wrapper — reads
       true when re-measured on the declared floor version, or the documentation
       names the versions on which it holds.
-- [x] AC5 — `devtools::check()` is clean (0 errors / 0 warnings) and
+- [x] AC4 — `devtools::check()` is clean (0 errors / 0 warnings) and
       `devtools::test()` passes on the developer's current `withr`.
 
 ## Coverage
@@ -85,9 +82,8 @@ row asked whether the floor understates, and "it does not" answers it.
 
 - AC1 → T1, T2, T6
 - AC2 → T3, T6
-- AC3 → T5, T9
-- AC4 → T3, T5, T6, T8
-- AC5 → T5, T9
+- AC3 → T3, T5, T6, T8
+- AC4 → T5, T9
 
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
@@ -155,6 +151,21 @@ row asked whether the floor understates, and "it does not" answers it.
       F6 — the AC3 failure); file F10's remaining harness hardening as a
       candidate row; run the `verify` slot and `devtools::check()`.
 
+- [x] T14 — (descope) Execute the gated AC3 amendment: drop AC3, renumber the
+      four that remain, and give the retired NEWS-accuracy promise a home on
+      the `Imports`-floors candidate row.
+- [ ] T15 — (defect return 3) Correct the per-spawned-program clause in NEWS
+      and D053: those tests are inside `test-with-timeout.R` and passed under
+      the pinned 2.5.0 (O1).
+- [ ] T16 — (defect return 3) O2-O8: source D053's withr-internals reading
+      (O2), fix the ROADMAP row's arithmetic (O3), name AC2's two forms in NEWS
+      (O4), stop extrapolating "the rest of the sourced file" (O5), correct
+      where 3.0.3 is fetched from (O6), reconcile NEWS's unmeasured set with
+      D053's (O7), and drop the "no claim covers" judgment (O8).
+- [ ] T17 — Shed the weight-cap overage by compressing Tasks, the heaviest
+      plan-owned section, in one pass; re-run `cairn_validate.py`, the `verify`
+      slot and `devtools::check()`.
+
 ## Work log
 <!-- owner: any skill · append-only; one line per entry; absolute dates. -->
 
@@ -192,6 +203,9 @@ row asked whether the floor understates, and "it does not" answers it.
 - 2026-08-27: thrash-rule gate (trigger (b), AC3 twice) — the user chose to HOLD AC1's two-file domain over widening it to include `test-parallel-option-carry.R`. No criterion changed. The recommendation was to hold under D-118 (a widening amendment on a milestone with two defect returns), and because the honest NEWS sentence is available without it: naming the two files and 35 blocks says what was measured, where "the whole test suite" was the overclaim that failed. `test-parallel-option-carry.R`'s floor coverage keeps its follow-up home on the `Imports`-floors candidate row. Falsified by a caller hitting a floor-dependent difference in the parallel fan-out that the two measured files do not reach.
 - 2026-08-27: review returned M074 to in-progress a THIRD time. Two independent gate failures. (1) Consistency gate: `cairn_validate.py` exits 1 on `weight caps` — the milestone file carries 157 plan-owned lines against a cap of 150 (Tasks 66), the accumulated cost of two defect returns; review cannot shed it, every named section is plan-owned. (2) AC3 fails inside its own domain for the third time: NEWS says the per-spawned-program claim was not run on 2.5.0 and that its tests live outside the two measured files, and both halves are false — `test-with-timeout.R:255`, `:279`, `:432`, `:487` test exactly that claim, are inside one of the two files, and all four PASSED under the pinned 2.5.0 library with 0 SKIP (O1). O2-O8 to fix; O9 rejected. AC1, AC2, AC4, AC5 all met on fresh evidence and the measurement is unchallenged. Thrash rule: trigger (a) fires (third return — descope-or-park recommended, no further retry queued under the current plan) and trigger (b) fires again (AC3 three times, same shape); (b)'s recorded alternative — widening AC1's domain — was spent at round 2's gate when the user held it, so what remains of (b) is the offered `/milestone-brief` escalation.
 - 2026-08-27: thrash-rule gate (trigger (a), third defect return) — the user chose DESCOPE over parking, escalation, or a bare retry. M074 narrows to the four criteria verified green at review round 3 (AC1, AC2, AC4, AC5); AC3's second half — NEWS stating what was measured against the floor — exits the milestone. Descope runs as a gated criterion amendment at `/milestone-implement` step 6, then re-review of the narrowed set. Three things ride with it and are NOT discharged by the descope: O1's false NEWS clause must still be fixed, because narrowing a criterion does not unship a user-facing sentence that says a claim was unmeasured when it was measured and passing; O2-O8 stay logged fix-now; and the `weight caps` gate failure (157 plan-owned lines against a cap of 150) must be shed in the plan-owned sections before the next review, since review cannot touch them. The NEWS-accuracy requirement itself exits to a candidate row.
+
+- 2026-08-27: T14 — descope executed as a gated criterion amendment. AC3 is dropped; its DESCRIPTION half is not left unpromised, because AC1's own text already binds it ("it equals the floor DESCRIPTION declares"), and its NEWS half is what the thrash gate retired. `cairn_validate`'s `coverage complete` check counts criteria and demands Coverage reference exactly AC1..ACn, so the drop forced a renumber: old AC4 (the four documented claims) is now AC3 and old AC5 (`check()`/`test()` clean) is now AC4, both verbatim as written — the three Review sections above predate the renumber and their AC4/AC5 refer to the old numbering. The narrowing needs no fresh-reader audit under step 6: nothing was reworded, one criterion was deleted.
+- 2026-08-27: T14 — the retired promise absorbed into the existing `Imports`-floors candidate row rather than filed as a new one (search-first): that row already inherits `data-raw/withr-floor.R` and M074's leftovers. It now records that no criterion binds a floor's NEWS disclosure, names the three shapes AC3 failed in, and asks whoever takes it to hold the disclosure sentence to the same evidence bar as the measurement.
 
 ## Decisions
 <!-- owner: implement / review · append-only -->

@@ -74,7 +74,7 @@ row asked whether the floor understates, and "it does not" answers it.
       directly inside `with_timeout()`'s `expr` outlives the wrapper — reads
       true when re-measured on the declared floor version, or the documentation
       names the versions on which it holds.
-- [ ] AC4 — `devtools::check()` is clean (0 errors / 0 warnings) and
+- [x] AC4 — `devtools::check()` is clean (0 errors / 0 warnings) and
       `devtools::test()` passes on the developer's current `withr`.
 
 ## Coverage
@@ -1041,3 +1041,142 @@ both verbatim.
   `withr::with_options()` + `withr::local_options()` → `99` inside the frame
   and `30` left behind — identical on 2.5.0 and 3.0.3, which is what the
   roxygen claims.
+- **AC4 — met.** Fresh runs on the developer's current `withr` (3.0.3):
+  `devtools::check()` → `Status: OK`, 0 errors / 0 warnings / 0 notes
+  (2m 56.1s); `devtools::test()` → `[ FAIL 0 | WARN 4 | SKIP 5 | PASS 6635 ]`,
+  exit 0.
+
+### Consistency gate (2026-08-27, round 4) — passes
+
+Universal cairn-file checks: `cairn_validate.py` exits 0. Every PASS check
+passes, `weight caps` included — T17's compression of the Tasks section shed
+round 3's overage, and the file now sits under the cap. One advisory, not a
+gate failure: `sizing (split tripwires)` reads `M074: 17 tasks (>10 tripwire)`,
+the cost of three defect returns and a descope on a milestone planned at five.
+The `release window` advisory reads OK. No `DESIGN.md` principle changed in
+this diff, so `cairn_impact.py --changed` does not apply.
+
+Toolchain checks, from the `r-package` profile's `consistency-gate` slot — all
+pass: `devtools::document()` produces no diff (working tree clean afterward);
+`NAMESPACE`, `man/` and `data/*.rda` are generated, and the only `man/` change
+in the diff is `local_timeout.Rd` regenerated from the roxygen edit;
+`README.Rmd`/`README.md` are untouched by the diff and in sync;
+`pkgdown::check_pkgdown()` reports "No problems found"; `NEWS.md` carries the
+user-visible entry with no milestone number in it; the one new top-level file,
+`data-raw/withr-floor.R`, sits under the existing `.Rbuildignore` entry
+`^data-raw$` (line 15) and `check()` raises no NOTE about it;
+`devtools::check()` is `Status: OK` at 0/0/0.
+
+`R CMD build` still emits the two pre-existing `Added dependency on R >= …`
+warnings (check log :18, :24) at the build stage; the check itself is
+`Status: OK` with 0 warnings. They predate this diff, belong to the absent
+`Depends: R (>= )` line that this milestone put Out of scope, and are already
+on a ROADMAP candidate row.
+
+### Independent fresh-context review (2026-08-27, round 4)
+
+Declared tier is user-facing and the diff touches `R/` and a script, so the
+full three-lens fan-out ran again, each lens with its own evidence base and
+none having seen the implementation.
+
+- **[S] blame-history (Sonnet): zero findings.** M073's
+  `withr::defer()`-before-`options()` ordering is byte-identical to what
+  `4bf0b7a` wrote and `git blame` still attributes both lines to that commit;
+  M074 extended only the comment above them. `DESCRIPTION` is untouched by the
+  diff, so no accidental floor bump. D053 is append-only and overwrites no
+  clause of D052. The 16 + 19 = 35 block count in NEWS and D053 matches
+  `grep -c` on the two files, and no file under `tests/` changed.
+- **[S] prior-review record (Sonnet): zero findings.** The
+  `gh api .../pulls/comments?per_page=1` probe returned `[]`, so the PR-thread
+  walk was not paid for. Against the archived `## Review` sections and this
+  file's own three prior rounds, none of the retired phrasings reappears —
+  "never reaches that branch", "always reaches that branch from both forms",
+  "the whole test suite passes", "for the rest of the sourced file", "their
+  tests live outside the two files", "which no claim on that page covers" are
+  all absent from the current text. The ROADMAP rough-edge arithmetic O3 asked
+  for checks out (7 raised, 3 fixed, 4 remaining). No `LESSONS.md` line covers
+  withr, version floors, or documentation-vs-measurement.
+- **[O] diff-bug (Opus): eight findings, ranked.** Verbatim below with
+  dispositions. Findings 1, 2, 3, 5 and 6 were re-verified here against the
+  implementation rather than against the reviewer's account of them.
+
+**P1 (fix now — verified).** *"`NEWS.md:100-102` and `cairn/DECISIONS.md` — one
+of the four cited blocks does not test the per-spawned-program claim at all.
+NEWS: 'The sibling claim — that the limit applies per spawned program — was
+run: four of the blocks above test it, and all four passed on 2.5.0.' D053:
+'The per-spawned-program claim WAS — `test-with-timeout.R:255`, `:279`, `:432`
+and `:487` test it'. `test-with-timeout.R:432` is `test_that("no process
+tm_release_fifo() starts outlives the frame", ...)`. Verified by reading the
+whole block (lines 432-485): `grep` for `timeout` and `limit` over those 54
+lines returns nothing. It arms a FIFO-writer shell process inside a frame and
+asserts the process is reaped when the frame returns/aborts — a process-lifetime
+test, not a timeout test. It passed on 2.5.0, but it is not evidence for the
+claim. This is a new text-vs-measurement defect introduced by T15, the fix for
+O1."* — Re-verified here by reading `test-with-timeout.R:432-485`: the block
+tests process reaping across three cases (frame returns, frame aborts, two
+writers on one frame) and asserts nothing about a limit.
+
+**P2 (fix now — verified).** *"None of the cited blocks exercises
+`local_timeout()`, and none tests the documented claim as written. The claim
+lives in `local_timeout()`'s `@details` (`R/timeout.R:152-155`): 'The limit
+applies per spawned program, not per frame: a `local_timeout()` above a 100-row
+batch bounds each row at `seconds`, not the batch.' Verified: `grep -n
+"local_timeout" tests/testthat/test-with-timeout.R` returns exactly one hit, and
+it is a comment (line 128). All four cited blocks drive `with_timeout()`. No
+block puts a `local_timeout()` above a multi-row batch and checks each row is
+bounded. So 'was run' reads as coverage of a claim that was in fact covered only
+by its sibling wrapper's shared machinery — the same overclaim shape as F5/G2/O1,
+one register quieter."* — Re-verified here: the single `local_timeout` hit in
+that file is the comment at `:128`, and `test-local-timeout.R` has no
+per-spawned-program block either.
+
+**P3 (fix now, cheap — verified).** *"`NEWS.md:87-88` — 'The two top-level forms
+the call can be written at were measured on each too' reads plainly as saying
+there are exactly two top-level contexts. Fourteen lines later the same bullet
+lists 'the `knitr` target environment the undo can also be registered on' as
+unmeasured — a third top-level context, and the one D053's falsifier singles
+out. AC2's own wording is 'two *named* forms'; NEWS drops the qualifier."* —
+Re-verified against the bullet and D053's falsifier.
+
+**P4 (fix now, cheap).** *"`NEWS.md:97-100` — the 'three things' list mixes
+categories and does not match D053's set. The third item is not a thing 'not run
+on 2.5.0' — it is a version range not run at all. O7 asked for these sets to be
+reconciled; D053's 'What was not measured' paragraph still lists four more items
+(the nine other `Imports` floors, the absent `Depends: R (>= )`, test-side withr
+use, and no CI schedule) that NEWS's closed count of three excludes. Defensible
+if the intended domain is `?local_timeout`'s claims, but the sentence does not
+say so."*
+
+**P5 (rejected).** *"`R/timeout.R:229-232` — a third measurement note left
+unqualified while its two siblings were version-qualified. `grep -n 'measured
+2026-08-27' R/timeout.R` returns four hits; `:170`, `:182`, `:252` name
+versions, `:230` does not. The harness has no arm for this case either. Not a
+false claim, but an inconsistency the diff created."* — Out-of-scope taxonomy: a
+complaint about an unmodified line. Verified here — the diff's three `R/timeout.R`
+hunks start at `:167`, `:179` and `:247`; the note at `:230` is untouched, and it
+was accurate when M073 wrote it.
+
+**P6 (fix now, cheap — verified).** *"`data-raw/withr-floor.R:29-32` — the
+header understates the control D053 leans on. 'Every child session prints the
+`withr` it actually loaded AND asserts it is the one requested.' The actual
+control (`:129-133`) is two assertions, and D053 is emphatic that the
+version-string one is the redundant second. The header describes only the weaker
+half — the exact hole G4 was raised on."* — Re-verified: the header names the
+version assertion only; the provenance assertion it does not name is the one
+that closes G4.
+
+**P7 (fix now, cheap).** *"`NEWS.md:84` — 'the current release' is an undated,
+decaying claim in shipped user-facing text. It is true as of the measurement
+date and will silently become false; the roxygen notes all carry 'measured
+2026-08-27' and NEWS carries no date."* — Reported as inference, not verified;
+the fix is a date, which is cheap and correct either way.
+
+**P8 (rejected).** *"Milestone bookkeeping. AC4 arrives at review as `- [ ]`
+while AC1-AC3 are `- [x]`. Separately, the Coverage map references only T1-T9
+while the Tasks section now runs to T17, so T10-T17 map to no criterion."* — The
+first half is AC fencing working as designed: review unticks every criterion at
+phase start and re-ticks against a recorded evidence line, and AC4's line was
+recorded after the reviewer looked. The second half is not a Coverage gap:
+`cairn_validate`'s `coverage complete` check requires every criterion to map to
+≥1 existing task, not every task to map to a criterion, and it passes; T10-T17
+are return-work against criteria already mapped.

@@ -1,6 +1,6 @@
 # M69: A hung media program stops the call, not the session
 
-- **Status:** blocked
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -87,7 +87,7 @@ naming the program and the limit. A D-entry records the shape.
       Evidence: a sweep of the `^## D0` headings finds D047 the only entry
       asserting the uniform-absorption shape, and the new entry's heading names
       it superseded in that half.
-- [ ] AC10 The `verify` slot of `cairn/PROFILE.md` is clean —
+- [x] AC10 The `verify` slot of `cairn/PROFILE.md` is clean —
       `devtools::document()`, `devtools::test()` and `devtools::check()` (0
       errors, 0 warnings).
 
@@ -206,6 +206,7 @@ _T1-T14 are done; their detail is in the work log and in the branch's commits._
 
 - 2026-08-26: review pass 4 (first after the re-cut) — GATE FAILURE on AC10. What failed: `devtools::check()` reports `Status: 1 ERROR` against the criterion's "0 errors". All six failures are `test-audio-stream-normalize.R:462,463,466` twice — `normalize_audio()` to `.flac`/`.oga` under FFmpeg 9.0.1 — verified pre-existing this session on a clean `origin/master` worktree, and CI on PR #72 is green on all nine checks. AC1-AC9 hold with fresh evidence recorded in the Review section, including AC8's two mutations executed and AC9's `^## D0` sweep re-run. Nothing M69 owns fails; the blocker is the FFmpeg 9 regression already carried as a `/hotfix`-on-sight ROADMAP candidate. Thrash trigger (a) is already fired and holds, and a re-cut has been spent, so no retry under this plan is queued: the disposition goes to the user.
 - 2026-08-26: status -> blocked, at the maintainer's decision at the review gate. Blocker: `normalize_audio()` fails on `.flac` and `.oga` under FFmpeg 9 (`test-audio-stream-normalize.R:462,463,466`, exit 234), a pre-existing user-visible bug the ROADMAP already carries as `/hotfix`-on-sight work. It is not M69's and it holds AC10's `devtools::check()` at 1 ERROR on any FFmpeg 9 machine. Unblocks when that hotfix lands on master and is merged into this branch; M69 then re-enters review with AC10 the only criterion needing fresh evidence, since AC1-AC9's pass-4 evidence stands. No criterion amended and no work re-planned.
+- 2026-08-26: review override — status was `blocked` at the maintainer's decision pending the FFmpeg 9 `normalize_audio()` regression; that regression shipped to master as the hotfix in PR #73 (`3385e09`), master merged into the branch, and status set back to `review` on the maintainer's own `/milestone-review M69` invocation. Logged per the review skill's session-start rule.
 
 ## Decisions
 
@@ -665,3 +666,87 @@ is J13/H1/F17, raised and logged on all three prior passes and unchanged here.
 The pass-3 findings deferred by the re-cut — J2's lowercase `ffprobe` literal
 and J7's `tm_timed_out` attribute leaking into `print()` — remain present and
 are M70's, named in this milestone's Scope Out.
+
+---
+
+## Fifth pass (2026-08-26, branch `m69-runtime-timeout` @ post-merge, unblocked)
+
+Status was `blocked` at the maintainer's decision; the blocker — the FFmpeg 9
+`normalize_audio()` regression — landed on master as PR #73 (`3385e09`) and was
+merged into this branch before any evidence was gathered
+(`git rev-list --count HEAD..origin/master` = 0). PR #72 was already open as a
+draft. Every measurement below was re-run this session against the merged tree;
+nothing is carried over from pass 4.
+
+**Evidence** (fresh, this session; macOS 15, R 4.6.1, FFmpeg 9.0.1):
+
+- AC1 — each of `R/ffmpeg.R`, `R/ffprobe.R`, `R/mediainfo.R` and
+  `R/program_management.R` carries exactly one `resolve_timeout(`, one
+  `timeout = limit` and one `guard_timeout(`, counted per file.
+- AC2 — `resolve_timeout()` with the option unset returns `0`, run directly.
+- AC3 — measured on a writer-less FIFO under `tidymedia.timeout = 2`:
+  `ffmpeg()` **2.20 s**, `ffprobe()` **2.19 s**, `ffm_run()` **2.22 s**, all
+  inside the 60 s bound, each aborting with class `tidymedia_timeout` and a
+  message naming its program and `2 seconds` (`FFmpeg timed out after 2
+  seconds.` / `FFprobe timed out after 2 seconds.`). `mediainfo()` is covered by
+  AC1 and the AC2 resolver test, as the criterion states.
+- AC4 — the branch is
+  `!is.null(status) && identical(as.integer(status), 124L)` (`R/timeout.R:52`);
+  a grep of `R/timeout.R` for
+  `grepl|regexpr|regmatches|gsub|sub\(|startsWith|grep\(` returns nothing.
+- AC5 — `devtools::test(filter = "runtime-timeout")` is FAIL 0 / PASS 128, both
+  D046 disposition tests among them: the FIFO case leaves no output behind, and
+  the injected-kill case (call-counted mock at the `run_program()` seam,
+  `calls == 1`) reads `was removed` with the file gone. A pre-existing output
+  was independently confirmed to survive md5-identical.
+- AC6 — `is_timeout()` on a result carrying `status = 124` is `FALSE` at
+  `limit = 0` and `TRUE` at `limit = 2`.
+- AC7 — zero warnings counted under a `withCallingHandlers(warning = )` counter
+  across all three entry points in the AC3 run above, and the file's
+  `expect_no_warning()` assertions are green.
+- AC8 — the criterion's verification clause was **executed**, not cited.
+  Mutation A, restoring `A call that reaches the limit aborts` ahead of the
+  scoped paragraph in both `man/tidymedia-package.Rd` and `NEWS.md`: FAIL 2 (rd
+  + news), nothing else. Mutation B, removing `count_audio_streams` from both
+  files: FAIL 2, nothing else. Both reverted, tree clean, file re-confirmed
+  FAIL 0 / PASS 128.
+- AC9 — 48 `^## D0` headings in `cairn/DECISIONS.md`; D048 at line 2006 is
+  headed `supersedes D047's readers bullet; the rest of D047 stands` and
+  records the three-rule shape.
+- AC10 — **now clean.** `devtools::document()` produces no diff;
+  `devtools::check()` reports `Status: OK` — **0 errors / 0 warnings / 0
+  notes**, 5m 20.3s, with the full suite green under check. The pass-4 gate
+  failure (6 failures at `test-audio-stream-normalize.R:462,463,466`) is gone,
+  fixed by the merged hotfix rather than by anything M69 changed.
+
+**Consistency gate:** `cairn_validate` exit 0 — 16 PASS, 6 OK, two advisory
+warnings on the sizing tripwires (`M69: 10 acceptance criteria (>7)`,
+`M69: 17 tasks (>10)`), both inherited across three returns and a re-cut and
+recorded rather than acted on, since splitting at the merge gate would discard
+the branch. The `release window` advisory did **not** fire. `cairn_impact` not
+run — Principles touched is `—`. Toolchain slot (`r-package`
+`consistency-gate`): `document()` no diff · generated files unedited · README
+untouched by the branch and in sync · `pkgdown::check_pkgdown()` no problems ·
+NEWS.md entry present with no milestone or decision ids in user-facing text ·
+no new top-level files · `devtools::check()` clean (0/0/0).
+
+**Independent review — NOT dispatched, same constraint as pass 4.** This
+session is configured not to spawn subagents, so no fresh-context [O]/[S]/[S]
+lens ran. Recorded as such rather than left to imply an independent read. The
+delta this pass reviews is the merge commit alone — `git diff` of the merge
+against pass 4's `04ea5a2` touches only the files PR #73 changed (`R/ffm.R`,
+`inst/WORDLIST`, `man/ffm_loudnorm.Rd`, five test files), all of which were
+reviewed and merged on master under their own hotfix gate. No M69-owned source
+file changed since pass 4's read. The two low findings logged at pass 4 stand
+unchanged and unactioned: `Config/roxygen2/version` at 8.1.0, and
+`guard_timeout()` replaying held warnings as bare `simpleWarning`s
+(J13/H1/F17). The pass-3 findings the re-cut deferred — J2's lowercase
+`ffprobe` literal and J7's `tm_timed_out` attribute leaking into `print()` —
+remain M70's, named in this milestone's Scope Out.
+
+**Outcome.** All ten criteria verified with fresh evidence. No finding at or
+above the action threshold; no return. Nothing on the actioned list, so the
+return floor does not fire. The defect-return count stands at three from the
+pre-re-cut lineage and zero since; thrash trigger (a) fired at pass 3 and its
+disposition — the re-cut — was spent and has now carried the milestone to a
+clean gate.

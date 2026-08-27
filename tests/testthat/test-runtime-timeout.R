@@ -572,6 +572,37 @@ test_that("both docs scope the abort and name the readers that absorb instead", 
   }
 })
 
+# The scoped claim above names two behaviors, and for most of this milestone
+# that was believed to be all of them. It is not: count_audio_streams() and
+# tool_versions() swallow a timeout and return NA with NO warning at
+# all, so a bounded hang under remove_audio() is invisible. Three review passes
+# each found one more member of a hand-written list, which is what a promise
+# bounded by recollection rather than by a procedure does -- and the third
+# return's own finding named remove_audio(), a function this package does not
+# export. M69 therefore states
+# the no-warning paths instead of claiming a two-way partition, and M70 makes
+# absorption uniform. This guard reddens if that disclosure is dropped before
+# the behavior it discloses is fixed.
+test_that("both docs disclose the paths that absorb with no warning", {
+  src <- doc_timeout_sources()
+  skip_if(is.null(src$rd) || is.null(src$news), "docs not available")
+  for (nm in c("rd", "news")) {
+    txt <- src[[nm]]
+    expect_match(txt, "count_audio_streams", fixed = TRUE, info = nm)
+    # The verbs that reach it, so a reader can tell whether their own call is
+    # affected without reading the package source. separate_audio_video() is
+    # the discriminating one: extract_audio() and convert_audio() are already
+    # named in the absorbing paragraph above, so asserting either of those
+    # would pass on the old two-way text too.
+    expect_match(txt, "separate_audio_video", fixed = TRUE, info = nm)
+    expect_match(txt, "tool_versions", fixed = TRUE, info = nm)
+    # The claim itself: these absorb WITHOUT the warning the readers give.
+    expect_match(txt, "no warning", info = nm)
+    # And the three-way description must not be read as a partition.
+    expect_match(txt, "not a complete", info = nm)
+  }
+})
+
 test_that("both docs disclose that the abort can lag the limit", {
   src <- doc_timeout_sources()
   skip_if(is.null(src$rd) || is.null(src$news), "docs not available")

@@ -5,14 +5,23 @@
 * A hung media program no longer blocks the R session indefinitely. Setting
   `options(tidymedia.timeout = 600)` gives every FFmpeg, FFprobe and MediaInfo
   process tidymedia starts a wall-clock limit in whole seconds. What a reached
-  limit does depends on the call: the task verbs, `ffm_run()` and the raw
+  limit does depends on the call, and there are three answers rather than two.
+  The task verbs, `ffm_run()` and the raw
   `ffmpeg()`/`ffprobe()`/`mediainfo()` hatches abort, naming the program and
-  the limit, while the metadata readers — `probe_all()` and the `probe_*()`
+  the limit; `verify_media()` aborts too, since a probe that never answered is
+  not an answer. The metadata readers — `probe_all()` and the `probe_*()`
   accessors, `mediainfo_parameter()`, `mediainfo_query()`,
   `mediainfo_template()` and the `get_*()` helpers — absorb it as a file they
   could not read, yielding an `NA` row and one warning that says how many files
-  timed out, so a single hung file does not discard a whole corpus.
-  `verify_media()` aborts, since a probe that never answered is not an answer.
+  timed out, so a single hung file does not discard a whole corpus. And two
+  internal paths absorb it with **no warning** at all: the track-count probe
+  `count_audio_streams()`, used by `extract_audio()`, `convert_audio()`,
+  `separate_audio_video()` and their `_batch` siblings to decide whether to
+  report a dropped track, and `tool_versions()`, used by `ffm_batch()` to
+  record which FFmpeg built each output. On those calls a bounded hang is
+  invisible — inspect the result rather than waiting to be told. Both are known
+  gaps. These three lists describe the calls they name and are **not a complete
+  partition** of the package.
   Where the call knows its own output — the task verbs and `ffm_run()` — any
   partial file the killed run had written is removed just as it is after any
   other failed run; the raw `ffmpeg()` escape hatch does not parse the argument

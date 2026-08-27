@@ -92,6 +92,12 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
       "{.arg verify} must be a named list or a function of the job columns."
     )
   }
+  # Refuse a bad limit here, before either branch dispatches a job. It is read
+  # at the spawn site otherwise -- inside run_one()'s tryCatch, which turns the
+  # refusal into a bare `success = FALSE` -- and not at all when `run = FALSE`
+  # or when no binary is found. Resolving up front makes one condition, in the
+  # process that can name the caller, on both branches.
+  resolve_timeout()
   if (parallel) {
     rlang::check_installed("furrr", reason = "for parallel batch processing.")
     warn_if_sequential_plan()

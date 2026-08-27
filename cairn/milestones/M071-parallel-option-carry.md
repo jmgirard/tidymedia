@@ -95,7 +95,7 @@ its domain, its recorded list and its promise ship as M70 left them.
       error. In-process unit tests with five mutants shown red — drop the timeout
       restore, drop the encoder restore, restore on return but not on error (each
       option), and remove the parent-side resolve.
-- [ ] T2 Resolve `tidymedia.timeout` once in `ffm_batch()`'s validation block
+- [x] T2 Resolve `tidymedia.timeout` once in `ffm_batch()`'s validation block
       (`R/ffm_batch.R:88-98`), before either branch maps. Today it is read only inside
       `run_program()` (`R/program_management.R:122`), below `run_one`'s `tryCatch`, so
       a bad value surfaces as a silent `success = FALSE` — and not at all when no
@@ -133,8 +133,6 @@ its domain, its recorded list and its promise ship as M70 left them.
 
 ## Work log
 
-- 2026-08-26: T1 — `carry_options()` + `carried_option_values()` in `R/timeout.R`; carries the resolved limit and the encoder override, restores the worker's prior values via `on.exit(options(prior))`. An unset name is carried as unset (`options(x = NULL)` removes the entry, measured R 4.6.1). Six in-process tests, 14 assertions; all five mutants red (2, 3, 1, 1, 4 failures).
-
 - 2026-08-26: created by /milestone-plan, promoting part (b) of the "Two timeout residues M69 leaves out" candidate row.
 - 2026-08-26: premise re-measured before planning on it — future 1.75.0 / furrr 0.4.0, a multisession worker read `tidymedia.timeout` as UNSET against `42` in the parent; a parent-captured closure that sets and restores it read `42`.
 - 2026-08-26: criteria audit ran in FULL mode (user-facing tier), two passes in fresh-context [O] readers; pass 1 returned 13 findings, pass 2 returned 11 against the revised wording. Ten of pass 1 and eight of pass 2 were fixed here; three of pass 1 went to the question gate. Pass 2's blocking finding was AC5's sequential leg being unsatisfiable, which added T2.
@@ -142,6 +140,10 @@ its domain, its recorded list and its promise ship as M70 left them.
 - 2026-08-26: plan gate chose carrying the caller's option values into the worker and restoring the prior ones over threading a resolved limit through the internal spawn signatures, because the latter changes every spawn site's contract and loses the read-at-spawn-time property; falsified by a report of a worker-side option write colliding with a caller's own worker configuration.
 - 2026-08-26: plan gate chose covering both option seams over the timeout seam alone, because the carrier is the same code either way and the encoder override diverges silently by form today; falsified by a report that a worker honoring the parent's encoder override is the wrong answer for that caller.
 - 2026-08-26: plan gate chose refusing an invalid limit up front on both branches over carrying the raw value and resolving at the spawn site, because the compile-only parallel path never reads it today and so never reports it; falsified by a compile-only batch that legitimately needs to build under an invalid limit.
+
+- 2026-08-26: T1 — `carry_options()` + `carried_option_values()` in `R/timeout.R`; carries the resolved limit and the encoder override, restores the worker's prior values via `on.exit(options(prior))`. An unset name is carried as unset (`options(x = NULL)` removes the entry, measured R 4.6.1). Six in-process tests, 14 assertions; all five mutants red (2, 3, 1, 1, 4 failures).
+
+- 2026-08-26: T2 — `ffm_batch()` calls `resolve_timeout()` in its validation block, before either branch maps. Measured: `tidymedia.timeout = 0.5` at `run = FALSE` now aborts with `` `tidymedia.timeout` must be a whole number, not the number 0.5 `` and `conditionCall()` naming `ffm_batch()`. Suite 6345 pass / 0 fail.
 
 ## Decisions
 

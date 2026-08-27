@@ -123,7 +123,7 @@ its domain, its recorded list and its promise ship as M70 left them.
       before the fan-out and assert per-PID equality after, for both options and both
       the returning and erroring mapped call. AC5's four invalid values on both paths,
       asserting the fake's log is empty.
-- [ ] T9 Docs: the two `?tidymedia` sentences, the `NEWS.md` development entry, and
+- [x] T9 Docs: the two `?tidymedia` sentences, the `NEWS.md` development entry, and
       `refresh_ffmpeg_capabilities()`'s paragraph plus the internal comment at
       `R/cache.R:11`; `devtools::document()` no diff.
 - [ ] T10 D-entry: supersedes D047's "Disclosed, not fixed" bullet, and supersedes
@@ -153,6 +153,8 @@ its domain, its recorded list and its promise ship as M70 left them.
 - 2026-08-26: T7 — AC2's override case, its option-unset control, and AC3's N-row warning. Red without the wiring: the override case sees `-encoders` in the fake's log, and AC3 gets three `success = TRUE` rows and no warning. The option-unset control is green on both, which is what a control is for — task wording amended to say so (minor).
 
 - 2026-08-27: T8 — AC4's per-PID restoration (returning and erroring mapped calls, both options) and AC5's four invalid values on both branches. 65 assertions in the file, no skips. AC5 red without `ffm_batch()`'s up-front resolve: the `parallel = TRUE, run = FALSE` call returns a tibble instead of a condition.
+
+- 2026-08-27: T9 — `?tidymedia` no longer says workers miss the limit (both sentences rewritten), `NEWS.md`'s development entry likewise plus a new bullet for the carry and the up-front refusal, `refresh_ffmpeg_capabilities()` conditions its "asks FFmpeg W times" sentence on the override being unset, and `R/cache.R`'s comment separates the carried override from the uncarried memo. `devtools::document()` no diff; suite 6396 pass / 0 fail / 5 skips (the same five as before this milestone).
 
 ## Decisions
 

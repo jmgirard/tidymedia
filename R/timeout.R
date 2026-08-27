@@ -186,7 +186,7 @@ reraise_absorbed <- function(x, call = rlang::caller_env()) {
 #
 # The encoder override is carried as-is, including its unset state. What is NOT
 # carried is the session capability memo (`R/cache.R`): a worker with no
-# override still asks its own FFmpeg, which is D044's per-process gap, unchanged.
+# override still asks its own FFmpeg -- D044's per-process gap, unchanged.
 #
 # Adding a third seam is one line here; carry_options() itself is generic over
 # whatever named list it is handed.
@@ -206,8 +206,8 @@ carried_option_values <- function(call = rlang::caller_env()) {
 # set for itself comes back on the way out -- one rule, no split behavior.
 #
 # on.exit() rather than a trailing restore, because the restore has to happen on
-# the error path too: a mapped call that aborts (a timeout is one) must not leave
-# the worker holding the parent's settings for whatever the next chunk maps.
+# the error path too: a mapped call that aborts (a timeout is one) must not
+# leave the parent's settings behind for whatever the next chunk maps.
 carry_options <- function(.f, values = carried_option_values(call = call),
                           call = rlang::caller_env()) {
   force(.f)

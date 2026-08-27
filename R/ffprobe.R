@@ -196,18 +196,70 @@ count_audio_streams <- function(file) {
   # is.na(loc) return logical(0) and `if` throw on that too.
   loc <- tryCatch(suppressWarnings(find_ffprobe()), error = function(e) NULL)
   if (length(loc) != 1L || is.na(loc) || !nzchar(loc)) return(NA_integer_)
+  # absorb_timeout() sits INSIDE the blanket tryCatch(), not outside it: the
+  # outer handler catches every error, so a timeout reaching it first would be
+  # flattened back into the silent NA this milestone exists to remove. Inside,
+  # it converts the abort to the sentinel before anything else sees an error.
   out <- tryCatch(
-    run_program(
+    absorb_timeout(run_program(
       loc,
       c("-i", file, "-v", "error", "-select_streams", "a",
         "-show_entries", "stream=index", "-of", "csv=p=0"),
-      program = "ffprobe"
-    ),
+      program = "FFprobe"
+    )),
     error = function(e) NULL,
     warning = function(w) NULL
   )
+  # The sentinel travels one level up, to count_audio_streams_all(), which is
+  # where the counts are assembled and so the only place a per-CALL warning can
+  # be raised. Every other failure still answers NA and says nothing.
+  if (is_absorbed_timeout(out)) return(out)
   if (is.null(out) || !is.null(attr(out, "status"))) return(NA_integer_)
   sum(nzchar(trimws(out)))
+}
+
+# count_audio_streams_all() -----------------------------------------------
+
+# Count each input's audio streams, probing each distinct file once, and say so
+# ONCE when the limit killed one or more of those probes.
+#
+# The five call sites all route through here so the warning cannot drift and
+# cannot repeat: M69 left a bounded hang under extract_audio(), convert_audio(),
+# separate_audio_video() and their _batch siblings completely invisible, because
+# count_audio_streams() answered NA for a killed probe exactly as it does for an
+# unreadable file (D048). Per-file would be worse than silence on a large jobs
+# table -- R collapses at "There were 50 or more warnings" (M44's gate), which
+# is why warn_dropped_audio() is one-warning-whatever-the-length too.
+#
+# The RETURN is unchanged: NA for a killed probe, the same value the silent
+# version gave. D024 licenses this probe only while its outcome changes nothing
+# but whether a diagnostic is signalled, and a warning is inside that licence
+# where a changed count would not be.
+count_audio_streams_all <- function(files, call = rlang::caller_env()) {
+  uniq <- unique(files)
+  res <- lapply(uniq, count_audio_streams)
+  timed_out <- vapply(res, is_absorbed_timeout, logical(1))
+  counts <- vapply(
+    res,
+    function(x) if (is_absorbed_timeout(x)) NA_integer_ else x,
+    integer(1)
+  )
+  if (any(timed_out)) {
+    hit <- res[[which(timed_out)[[1]]]]
+    cli::cli_warn(
+      c(
+        "The audio-track check timed out on {sum(timed_out)} \\
+         input{?s} after {hit$limit} second{?s}.",
+        "x" = "{.file {uniq[timed_out]}}",
+        "i" = "{cli::qty(sum(timed_out))}{?That input is/Those inputs are} not \\
+               checked for dropped audio tracks; raise or remove \\
+               {.code options(tidymedia.timeout = )}."
+      ),
+      class = "tidymedia_probe_timeout",
+      call = call
+    )
+  }
+  counts[match(files, uniq)]
 }
 
 # probe_one() -------------------------------------------------------------
@@ -239,7 +291,7 @@ probe_one <- function(file) {
     find_ffprobe(),
     c("-i", file, "-v", "quiet", "-show_format", "-show_streams",
       "-of", "compact=print_section=1:nokey=0:escape=c"),
-    program = "ffprobe"
+    program = "FFprobe"
   ))
   if (is_absorbed_timeout(out)) return(out)
   parse_compact_probe(out)

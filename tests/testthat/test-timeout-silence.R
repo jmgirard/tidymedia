@@ -87,3 +87,85 @@ test_that("the sweep sees a spawn reached through a function passed as a value",
     expect_true(f %in% tm_timeout_domain(), info = f)
   }
 })
+
+# T2: count_audio_streams() ---------------------------------------------------
+
+# The probe D024 licenses. Its outcome may change nothing but whether a
+# diagnostic is signalled -- so a warning is inside the licence where a changed
+# count is not, and the counts below have to be the ones the silent version
+# returned.
+
+# ffprobe token vector -> the fake output. `hit` names the inputs whose probe
+# the limit kills; every other input reports `tracks` audio streams.
+local_probe_timeout <- function(hit, tracks = 3L, limit = 2,
+                                env = parent.frame()) {
+  withr::local_options(tidymedia.timeout = limit, .local_envir = env)
+  testthat::local_mocked_bindings(
+    find_ffprobe = function(...) "/usr/bin/ffprobe",
+    run_program = function(location, args, program = "the program", ...) {
+      file <- args[[which(args == "-i") + 1L]]
+      if (file %in% hit) abort_timeout(program, limit)
+      rep("0", tracks)
+    },
+    .package = "tidymedia",
+    .env = env
+  )
+}
+
+test_that("a timed-out track probe warns once per call, not once per file", {
+  files <- c("a.mkv", "b.mkv", "c.mkv")
+  local_probe_timeout(hit = c("a.mkv", "b.mkv"))
+
+  warns <- NULL
+  counts <- withCallingHandlers(
+    count_audio_streams_all(files),
+    warning = function(w) {
+      warns <<- c(warns, list(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+
+  # Exactly one warning for two timed-out inputs, and it says how many.
+  expect_length(warns, 1L)
+  expect_s3_class(warns[[1]], "tidymedia_probe_timeout")
+  expect_match(cli::ansi_strip(conditionMessage(warns[[1]])), "2")
+  expect_match(cli::ansi_strip(conditionMessage(warns[[1]])), "timed out")
+})
+
+test_that("the counts a timed-out probe returns are the silent version's", {
+  # D024's licence holds only while the probe's outcome changes nothing but
+  # whether a diagnostic fires. NA is what the pre-M70 code returned for a
+  # killed probe, and it is what has to come back now.
+  files <- c("a.mkv", "b.mkv", "c.mkv")
+  local_probe_timeout(hit = c("a.mkv", "b.mkv"))
+  counts <- suppressWarnings(count_audio_streams_all(files))
+  expect_identical(counts, c(NA_integer_, NA_integer_, 3L))
+})
+
+test_that("a timed-out probe still reports the dropped tracks it could count", {
+  # The diagnostic the probe exists for is unaffected: the input it DID read
+  # still gets its dropped-track warning, and the two it could not are skipped
+  # exactly as an unreadable file is.
+  files <- c("a.mkv", "b.mkv", "c.mkv")
+  local_probe_timeout(hit = c("a.mkv", "b.mkv"))
+  counts <- suppressWarnings(count_audio_streams_all(files))
+  msg <- tryCatch({
+    warn_dropped_audio(files, counts)
+    NULL
+  }, warning = function(w) cli::ansi_strip(conditionMessage(w)))
+  expect_match(msg, "c.mkv", fixed = TRUE)
+  expect_no_match(msg, "a.mkv", fixed = TRUE)
+})
+
+test_that("count_audio_streams() keeps answering NA for every other failure", {
+  # The sentinel is for the limit alone. An unreadable file, a missing binary
+  # and a non-zero exit all stay silent NAs -- D024's fail-open consequence.
+  testthat::local_mocked_bindings(
+    find_ffprobe = function(...) "/usr/bin/ffprobe",
+    run_program = function(...) structure("", status = 1L),
+    .package = "tidymedia"
+  )
+  expect_no_warning(
+    expect_identical(count_audio_streams_all("a.mkv"), NA_integer_)
+  )
+})

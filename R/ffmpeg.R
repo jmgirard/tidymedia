@@ -348,7 +348,7 @@ pass_through_maps <- function(audio_stream = NULL,
 
 # Emit the single classed warning for inputs carrying audio tracks the output
 # does not receive. `inputs` and `n` are parallel vectors (`n` = that input's
-# audio-stream count from count_audio_streams(), NA where it could not be had);
+# audio-stream count from count_audio_streams_all(), NA where it could not be had);
 # `rows` is the jobs-table row index per element, or NULL on the scalar path.
 #
 # ONE warning whatever the length. The batch form names every affected row
@@ -434,10 +434,8 @@ warn_dropped_audio_batch <- function(jobs, audio_stream = NULL,
   rows <- which(is.na(sel))
   if (length(rows) == 0) return(invisible(NULL))
   inputs <- jobs$input[rows]
-  uniq <- unique(inputs)
-  counts <- vapply(uniq, count_audio_streams, integer(1), USE.NAMES = FALSE)
-  warn_dropped_audio(inputs, counts[match(inputs, uniq)], rows = rows,
-                     call = call)
+  counts <- count_audio_streams_all(inputs, call = call)
+  warn_dropped_audio(inputs, counts, rows = rows, call = call)
 }
 
 # extract_audio() ---------------------------------------------------------
@@ -542,7 +540,7 @@ extract_audio <- function(infile, outfile, audio_codec = "copy",
   # than a bare `run` so a non-logical value still gets ffm_finish()'s own
   # check_bool() message.
   if (isTRUE(run) && is.null(audio_stream)) {
-    warn_dropped_audio(infile, count_audio_streams(infile))
+    warn_dropped_audio(infile, count_audio_streams_all(infile))
   }
 
   ffm_finish(
@@ -635,7 +633,7 @@ run_separation_audio <- function(pipeline, infile, outfile, audio_stream,
       # through. A test pins the coupling to that wording, so rewording
       # ffm_run()'s abort fails loudly instead of silently killing this branch.
       status <- ffmpeg_exit_status(cnd)
-      n <- if (is.na(status)) NA_integer_ else count_audio_streams(infile)
+      n <- if (is.na(status)) NA_integer_ else count_audio_streams_all(infile)
       # Fail open: no status, no probe answer, or a single-track input all
       # re-raise the ORIGINAL condition object, so its message, class and trace
       # are the ones ffm_run() raises today (D024's fail-open consequence).
@@ -744,13 +742,12 @@ warn_failed_separation_batch <- function(out, audio_stream = NULL,
   bad <- which(out$stream == "audio" & !out$success & is.na(sel))
   if (length(bad) == 0) return(invisible(NULL))
   inputs <- out$input[bad]
-  uniq <- unique(inputs)
-  counts <- vapply(uniq, count_audio_streams, integer(1), USE.NAMES = FALSE)
+  counts <- count_audio_streams_all(inputs, call = call)
   warn_failed_separation(
     rows = (bad + 1L) %/% 2L,
     inputs = inputs,
     outputs = out$output[bad],
-    n = counts[match(inputs, uniq)],
+    n = counts,
     call = call
   )
 }
@@ -1014,7 +1011,7 @@ convert_audio <- function(infile, outfile, audio_codec = NULL,
   # D024's diagnostic probe; see extract_audio() for why it is gated on `run`
   # and on a NULL audio_stream.
   if (isTRUE(run) && is.null(audio_stream)) {
-    warn_dropped_audio(infile, count_audio_streams(infile))
+    warn_dropped_audio(infile, count_audio_streams_all(infile))
   }
 
   # No `...` here, so a stale `format =` gets R's own `unused argument` error --

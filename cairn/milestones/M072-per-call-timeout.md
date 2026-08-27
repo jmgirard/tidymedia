@@ -102,7 +102,7 @@ D-entry.
       returning the seed set `tm_reaches_spawn()` computes its closure from
       (`helper-timeout-sweep.R:62-65` inlines it today and returns only the
       closure), plus the set-equality drift test against the four recorded.
-- [ ] T2. Write `with_timeout()` in `R/timeout.R`: eager
+- [x] T2. Write `with_timeout()` in `R/timeout.R`: eager
       `rlang::check_number_whole(seconds, min = 0, arg = "seconds")`, then
       `prior <- options(...)` / `on.exit(options(prior), add = TRUE)`, `expr`
       forced once in the caller's frame, its value returned. Roxygen topic with
@@ -135,6 +135,8 @@ D-entry.
 - 2026-08-27: criteria audit ran in FULL mode (user-facing tier; irreversible-api tripwire on T2), twice — a fresh-context reader on the pre-gate draft returned 13 findings plus one set-level gap, and a second reader on the post-gate wording returned 11 more; all were fixed at the gate, none escalated to a question. Load-bearing repairs: the draft's silence-grid criterion was unexercisable (mocked bindings read no limit) and re-verified D049 rather than this deliverable; the parallel criterion stood one exemplar in for four `carry_options()` sites and went degenerate when the session value equalled the per-call value; the refusal criterion specified eager and lazy validation at once; AC3 cited a procedure that returns a closure rather than the seed set (T1 now builds one); AC4's unbounded control would have hung the runner forever and was cut; AC5's FIFO anchor was inert under the fake-binary harness and became the harness's own sleeping fake; and the probe vector's `NULL` contradicted AC1, since `options(x = NULL)` removes the name.
 
 - 2026-08-27: T1 — `tm_spawn_sites()` named out of `tm_reaches_spawn()`'s inlined first statement; the recorded set is `ffmpeg`/`ffprobe`/`mediainfo`/`run_program`, and a planted fifth site reddens the drift test.
+
+- 2026-08-27: T2 — `with_timeout(expr, seconds)` exported (gate chose the code-first order over withr's value-first, matching `R.utils::withTimeout()`); measured: the option reads 30 inside the call and is unset again after, and a prior 99 comes back on both the returning and the erroring path.
 
 ## Decisions
 

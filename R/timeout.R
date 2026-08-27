@@ -34,6 +34,78 @@ resolve_timeout <- function(call = rlang::caller_env()) {
   as.numeric(limit)
 }
 
+# The caller's per-call limit ------------------------------------------------
+
+#' Bound one call's wall-clock time
+#'
+#' @description
+#' Run `expr` under a wall-clock limit of your own, without changing the limit
+#' the rest of the session runs under. Every FFmpeg, FFprobe or MediaInfo
+#' program started while `expr` is being evaluated is bounded by `seconds`; when
+#' the call ends, by any route, whatever the session had set before is back.
+#'
+#' The session-wide setting, `options(tidymedia.timeout = )`, answers "how long
+#' may anything in this session take". This answers "how long may *this* take" —
+#' a five-minute bound on one exploratory conversion in a session whose limit is
+#' an hour, or an hour for one long encode in a session bounded at five minutes.
+#'
+#' @param expr An expression to evaluate. It is evaluated once, where you wrote
+#'   it, and its value is returned.
+#' @param seconds A whole number of seconds. `0` means no limit, so
+#'   `with_timeout(expr, 0)` lifts a session limit for one call. A value the
+#'   underlying limit could not use — a fraction of a second, a negative number,
+#'   a string — is refused before `expr` runs.
+#'
+#' @return The value of `expr`.
+#'
+#' @details
+#' The limit applies per spawned program, not per call: a `with_timeout()`
+#' around a 100-row batch bounds each row at `seconds`, not the batch. It
+#' reaches a `parallel = TRUE` fan-out as well, because the worker is handed the
+#' limit in force when the fan-out starts.
+#'
+#' What a reached limit does — abort or warning, by call — is described in
+#' `vignette("tidymedia")` and under "Bounding a run that hangs" in
+#' [tidymedia-package]; setting the limit this way changes none of it.
+#'
+#' @seealso [tidymedia-package] for the session-wide setting and what a reached
+#'   limit does.
+#'
+#' @examples
+#' # Inside the call, the limit is the one you gave.
+#' with_timeout(getOption("tidymedia.timeout"), 30)
+#'
+#' # Outside it, the session's own setting is untouched.
+#' getOption("tidymedia.timeout", default = "unset")
+#'
+#' \dontrun{
+#' # Bound one conversion at five minutes, whatever the session is set to.
+#' with_timeout(extract_audio("in.mp4", "out.wav"), 300)
+#' }
+#'
+#' @export
+with_timeout <- function(expr, seconds) {
+  # Eagerly, and BEFORE the option is written: a caller who passed a limit base
+  # R cannot use should hear about the limit rather than watch `expr` run
+  # unbounded. `arg = "seconds"` because that is the name they wrote --
+  # resolve_timeout() names the option instead, for the caller who set one.
+  # The check is the same one resolve_timeout() applies, so this function
+  # accepts exactly the values the option accepts.
+  rlang::check_number_whole(seconds, min = 0, arg = "seconds")
+  # options() returns the prior value of exactly the name being set, and
+  # on.exit() puts it back on the erroring path as well as the returning one --
+  # the pair carry_options() already uses below, for the same reason. A name
+  # that was UNSET comes back as a NULL entry, and options(list(x = NULL))
+  # removes the name rather than storing NULL, so an unset option is unset
+  # again afterwards (measured on R 4.6.1).
+  prior <- options(tidymedia.timeout = as.numeric(seconds))
+  on.exit(options(prior), add = TRUE)
+  # `expr` is a promise, so forcing it here evaluates it once, in the caller's
+  # frame, under the option just established -- and the restore above runs
+  # after that value is in hand.
+  expr
+}
+
 # is_timeout(): did this result come back because the limit killed the child?
 #
 # Keyed on the `status` attribute, NEVER on the text of R's timeout warning.

@@ -1,6 +1,6 @@
 # M69: A hung media program stops the call, not the session
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -64,7 +64,7 @@ naming the program and the limit. A D-entry records the shape.
       points of AC3 when they time out — asserted locale-free with
       `expect_no_warning()`, never by matching `timed out after`, since R's
       warning embeds the full command line and the `input=` temp path.
-- [ ] AC8 `?tidymedia` and `NEWS.md` both describe a reached limit as three
+- [x] AC8 `?tidymedia` and `NEWS.md` both describe a reached limit as three
       behaviors rather than two. **Abort:** the task verbs, `ffm_run()`, and the
       Layer 0 hatches `ffmpeg()`, `ffprobe()`, `mediainfo()`. **Absorb, with an
       NA row and one end-of-call warning naming how many timed out:**
@@ -79,7 +79,7 @@ naming the program and the limit. A D-entry records the shape.
       guards: one reddens when `A call that reaches the limit aborts` is
       restored ahead of the scoped paragraph, the other when the no-warning
       disclosure is removed.
-- [ ] AC9 `cairn/DECISIONS.md` gains a D-entry superseding D047's readers
+- [x] AC9 `cairn/DECISIONS.md` gains a D-entry superseding D047's readers
       bullet and recording the shape actually shipped: `probe_one()`'s
       sentinel, `probe_all()` keeping the NA row while its warning counts
       timeouts apart from unreadable files, `verify_media()` re-raising rather
@@ -87,7 +87,7 @@ naming the program and the limit. A D-entry records the shape.
       Evidence: a sweep of the `^## D0` headings finds D047 the only entry
       asserting the uniform-absorption shape, and the new entry's heading names
       it superseded in that half.
-- [x] AC10 The `verify` slot of `cairn/PROFILE.md` is clean —
+- [ ] AC10 The `verify` slot of `cairn/PROFILE.md` is clean —
       `devtools::document()`, `devtools::test()` and `devtools::check()` (0
       errors, 0 warnings).
 
@@ -127,7 +127,7 @@ _T1-T14 are done; their detail is in the work log and in the branch's commits._
       disclosure. Mutation-probe both.
 - [x] T16 (re-plan) Append the superseding D-entry per AC9; run the `^## D0`
       heading sweep as its evidence.
-- [ ] T17 (re-plan) Re-run the `verify` slot end to end after T15/T16, and
+- [x] T17 (re-plan) Re-run the `verify` slot end to end after T15/T16, and
       confirm CI green on PR #72.
 
 ## Work log
@@ -198,6 +198,11 @@ _T1-T14 are done; their detail is in the work log and in the branch's commits._
 - 2026-08-26: environment drift since 2026-08-09, none of it M69's. `archive` (a declared Import, `R/program_management.R:253`) and `furrr` were missing from the local library and were installed. `mediainfo` is absent as a system binary, so 10 tests skip by design. Local FFmpeg is now 9.0.1, and under it `normalize_audio()` to `.flac` and `.oga` fails at exit 234 ("Could not open encoder before EOF") — 6 failures at `test-audio-stream-normalize.R:462,463,466`. Verified pre-existing by running that file on a clean `origin/master` worktree: identical 6 failures, same lines, same two extensions. Suite on the branch: FAIL 6 / WARN 6 / SKIP 15 / PASS 6139; the 6 warnings are the pre-existing 4 `warn_dropped_audio()` calls plus 2 ffprobe warnings collateral to those same two failures. `devtools::document()` also bumped `Config/roxygen2/version` 8.0.0 -> 8.1.0, a local toolchain bump kept so the recorded version matches the roxygen that generated `man/`.
 
 - 2026-08-26: T16 — D048 appended, superseding D047's readers bullet and recording the shape that actually shipped: `probe_one()`'s sentinel, `probe_all()` keeping the NA row while its warning counts timeouts apart, `verify_media()` re-raising, and the two no-warning paths disclosed rather than fixed. AC9's evidence run: 47 `^## D0` headings; the two entries whose bodies contain "absorb" are D025 and D047, and D025's use is "the milestone absorbed one verb from the pass-through candidate" — unrelated. So D047 is the only entry asserting the uniform-absorption shape, and D048's heading names it superseded in that half while leaving the rest of D047 standing.
+
+- 2026-08-26: T17 — `devtools::document()` no diff; `pkgdown::check_pkgdown()` no problems; `devtools::check()` `Status: 1 ERROR`. The ERROR is read from the check run's own `testthat.Rout.fail`, not inferred: all six failures are `test-audio-stream-normalize.R:462,463,466`, twice, which is the pre-existing FFmpeg 9.0.1 `.flac`/`.oga` regression in M49's container loop, verified earlier against a clean `origin/master` worktree. Suite under check: FAIL 6 / WARN 6 / SKIP 6 / PASS 6165, the 6 warnings being the pre-existing 4 `warn_dropped_audio()` calls plus 2 collateral to those same failures. `mediainfo` was installed at the maintainer's offer, so the 10 MediaInfo tests that had been skipping now run and pass; the remaining 6 skips are 5 nvenc plus one unrelated source-readability skip. No M69 test skipped: every timeout test, the FIFO aborts and both M51-shaped doc guards ran under `R CMD check` against the INSTALLED package and passed, which is the shape the release gate uses.
+- 2026-08-26: T17 — CI green on all nine checks of PR #72 (both codecov, macOS, Windows, pkgdown, test-coverage, Ubuntu devel/oldrel-1/release). Ubuntu is where return 2's AC3 failure surfaced and it is green. macOS CI passing the same `normalize_audio()` container loop that fails locally is independent confirmation that the six failures are local FFmpeg-version drift and not a package defect this branch introduced.
+- 2026-08-26: AC10 left UNTICKED, deliberately. Its text asks for `devtools::check()` at 0 errors and the local check reports 1. Nothing M69 owns fails, and CI is green on all nine checks — but ticking a box whose criterion says "0 errors" against a run that says "1 ERROR" would be a false record, and this milestone has already been returned three times for evidence that did not match its criteria. Whether CI's green satisfies AC10, or whether the FFmpeg 9 hotfix (now a ROADMAP candidate row) must land first, is a review judgment and is put to review rather than pre-empted here.
+- 2026-08-26: status -> review. AC1-AC9 hold with fresh evidence; AC10 open as above.
 
 ## Decisions
 

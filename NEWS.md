@@ -328,6 +328,15 @@
 
 ## Bug fixes
 
+* `normalize_audio()` and `normalize_audio_batch()` work again when the output
+  is a FLAC (`.flac`) or Ogg Vorbis (`.oga`) file. On FFmpeg 9 these failed
+  with "Could not open encoder before EOF" and left a zero-byte file: the
+  loudness filter hands its output on in very long frames, which most encoders
+  are re-framed out of but FLAC and Vorbis are not, and the frame was longer
+  than FLAC will encode. Loudness normalization now re-chunks its output, so
+  every audio container works. Commands built with `ffm_loudnorm()` carry the
+  extra `asetnsamples` filter, which is visible in the compiled command string.
+
 * A run that fails no longer leaves a broken output file behind. FFmpeg creates
   its output before it knows the command will work, so a refused encode left a
   zero-byte file sitting where a result should be — and if you were writing over

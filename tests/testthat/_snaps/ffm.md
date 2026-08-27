@@ -15,8 +15,8 @@
       standardize_video: -y | -i | <input> | -vf | crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2 | -codec:v | libx264 | -codec:a | copy | -pix_fmt | yuv420p | -movflags | +faststart | -map | 0:v? | -map | 0:a? | out.mp4
       anonymize_video: -y | -i | <input> | -vf | crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2,drawbox=x=0:y=0:w=10:h=10:c=black:t=fill | -codec:v | libx264 | -codec:a | copy | -pix_fmt | yuv420p | -map | 0:v? | -map | 0:a? | out.mp4
       format_for_web: -y | -i | <input> | -vf | crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2 | -codec:v | libx264 | -codec:a | aac | -pix_fmt | yuv420p | -movflags | +faststart | -map | 0:v? | -map | 0:a? | out.mp4
-      normalize_audio(correction): -y | -i | <input> | -af | loudnorm=I=-23:TP=-1:LRA=7 | -map | 0:a:0 | out.mp4
-      normalize_audio(analysis): -y | -i | <input> | -af | loudnorm=I=-23:TP=-1:LRA=7:print_format=json | -f | null | -map | 0:a:0 | -
+      normalize_audio(correction): -y | -i | <input> | -af | loudnorm=I=-23:TP=-1:LRA=7,asetnsamples=n=4096:p=0 | -map | 0:a:0 | out.mp4
+      normalize_audio(analysis): -y | -i | <input> | -af | loudnorm=I=-23:TP=-1:LRA=7:print_format=json,asetnsamples=n=4096:p=0 | -f | null | -map | 0:a:0 | -
 
 # compiled commands match snapshots
 

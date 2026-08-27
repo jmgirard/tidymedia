@@ -48,7 +48,8 @@
 
 normalize_command <- function(infile, maps = "-map \"0:a:0\" ", outfile = "out.mkv") {
   paste0(
-    '-y -i "', infile, '" -af "loudnorm=I=-23:TP=-1:LRA=7" ',
+    '-y -i "', infile, '" -af "loudnorm=I=-23:TP=-1:LRA=7',
+    ',asetnsamples=n=4096:p=0" ',
     maps, '"', outfile, '"'
   )
 }
@@ -56,7 +57,8 @@ normalize_command <- function(infile, maps = "-map \"0:a:0\" ", outfile = "out.m
 analysis_command <- function(infile, maps = "-map \"0:a:0\" ") {
   paste0(
     '-y -i "', infile, '"',
-    ' -af "loudnorm=I=-23:TP=-1:LRA=7:print_format=json" -f null ',
+    ' -af "loudnorm=I=-23:TP=-1:LRA=7:print_format=json',
+    ',asetnsamples=n=4096:p=0" -f null ',
     maps, '"-"'
   )
 }
@@ -512,4 +514,38 @@ test_that("the two-pass analysis pass yields exactly one measurement block", {
   out <- run_program(find_ffmpeg(), ffm_args(p), program = "FFmpeg",
                      input = "", stderr = TRUE)
   expect_identical(sum(grepl('"input_i"', out)), 1L)
+})
+
+test_that("the containers whose encoder takes the frame size it is handed work", {
+  # Regression, FFmpeg 9. Single-pass `loudnorm` resamples to 192 kHz and hands
+  # its consumer 192000-sample frames. An encoder with a FIXED frame size is
+  # re-framed by FFmpeg on the way in, which is why the fifteen other containers
+  # in the matrix above never saw this; flac and vorbis take whatever frame they
+  # are given, and 192000 is past flac's 65535-sample block ceiling, so both died
+  # at `Could not open encoder before EOF` (exit 234) leaving a zero-byte file.
+  # The matrix above turns red on this too, but only by container name -- this
+  # test names the cause, and the duration assertion fences the way the fix can
+  # go wrong.
+  skip_if_no_ffmpeg()
+  skip_if_no_ffprobe()
+  infile <- system.file("extdata", "sample.mp4", package = "tidymedia")
+  skip_if_not(nzchar(infile), "packaged sample video unavailable")
+  # The control is .wav, not the source: how much tail dynamic `loudnorm` leaves
+  # is FFmpeg-version business (1.000 s on 9.0.1, 1.022 s on 6.1.1, from a 1 s
+  # source), so a comparison against the source measures the FFmpeg build. A
+  # container that never had the bug, normalized by the same call, holds that
+  # constant and leaves only what the re-chunk did. The no-padding half is
+  # fenced in test-ffm.R, on the compiled `p=0`: padding this fixture lengthens
+  # it by 2.7 ms, which is SMALLER than the version drift above, so no tolerance
+  # here could tell the two apart.
+  control <- withr::local_tempfile(fileext = ".wav")
+  normalize_audio(infile, control)
+  control_duration <- audio_duration(control)
+  for (ext in c("flac", "oga")) {
+    out <- withr::local_tempfile(fileext = paste0(".", ext))
+    expect_no_error(normalize_audio(infile, out))
+    expect_gt(file.size(out), 0)
+    expect_equal(audio_duration(out), control_duration, tolerance = 0.005,
+                 label = paste("audio duration in", ext))
+  }
 })

@@ -1,11 +1,11 @@
 # M072: One call can carry its own time limit
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m072-per-call-timeout`
 
 ## Goal
 
@@ -98,7 +98,7 @@ D-entry.
 
 ## Tasks
 
-- [ ] T1. Add `tm_spawn_sites()` to `tests/testthat/helper-timeout-sweep.R`
+- [x] T1. Add `tm_spawn_sites()` to `tests/testthat/helper-timeout-sweep.R`
       returning the seed set `tm_reaches_spawn()` computes its closure from
       (`helper-timeout-sweep.R:62-65` inlines it today and returns only the
       closure), plus the set-equality drift test against the four recorded.
@@ -133,6 +133,8 @@ D-entry.
 - 2026-08-27: plan gate chose shipping `with_timeout()` alone over the full withr pair because `local_timeout()` is a second irreversible export for an idiom `with_timeout({ ... }, n)` already expresses; falsified by a request to bound the rest of a function body without wrapping it.
 - 2026-08-27: plan gate chose the spawn-site value check plus the FIFO anchor over the mocked silence grid because `tm_force_timeout()` (`helper-timeout-sweep.R:250`) mocks `run_program()` and `guard_timeout()` to abort unconditionally, so no limit is ever read and a `with_timeout()` that set nothing would pass every cell; falsified by the anchor proving unrunnable on enough platforms to leave the real kill unobserved.
 - 2026-08-27: criteria audit ran in FULL mode (user-facing tier; irreversible-api tripwire on T2), twice — a fresh-context reader on the pre-gate draft returned 13 findings plus one set-level gap, and a second reader on the post-gate wording returned 11 more; all were fixed at the gate, none escalated to a question. Load-bearing repairs: the draft's silence-grid criterion was unexercisable (mocked bindings read no limit) and re-verified D049 rather than this deliverable; the parallel criterion stood one exemplar in for four `carry_options()` sites and went degenerate when the session value equalled the per-call value; the refusal criterion specified eager and lazy validation at once; AC3 cited a procedure that returns a closure rather than the seed set (T1 now builds one); AC4's unbounded control would have hung the runner forever and was cut; AC5's FIFO anchor was inert under the fake-binary harness and became the harness's own sleeping fake; and the probe vector's `NULL` contradicted AC1, since `options(x = NULL)` removes the name.
+
+- 2026-08-27: T1 — `tm_spawn_sites()` named out of `tm_reaches_spawn()`'s inlined first statement; the recorded set is `ffmpeg`/`ffprobe`/`mediainfo`/`run_program`, and a planted fifth site reddens the drift test.
 
 ## Decisions
 

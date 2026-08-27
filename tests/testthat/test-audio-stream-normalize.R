@@ -530,14 +530,22 @@ test_that("the containers whose encoder takes the frame size it is handed work",
   skip_if_no_ffprobe()
   infile <- system.file("extdata", "sample.mp4", package = "tidymedia")
   skip_if_not(nzchar(infile), "packaged sample video unavailable")
-  source_duration <- audio_duration(infile)
+  # The control is .wav, not the source: how much tail dynamic `loudnorm` leaves
+  # is FFmpeg-version business (1.000 s on 9.0.1, 1.022 s on 6.1.1, from a 1 s
+  # source), so a comparison against the source measures the FFmpeg build. A
+  # container that never had the bug, normalized by the same call, holds that
+  # constant and leaves only what the re-chunk did. The no-padding half is
+  # fenced in test-ffm.R, on the compiled `p=0`: padding this fixture lengthens
+  # it by 2.7 ms, which is SMALLER than the version drift above, so no tolerance
+  # here could tell the two apart.
+  control <- withr::local_tempfile(fileext = ".wav")
+  normalize_audio(infile, control)
+  control_duration <- audio_duration(control)
   for (ext in c("flac", "oga")) {
     out <- withr::local_tempfile(fileext = paste0(".", ext))
     expect_no_error(normalize_audio(infile, out))
     expect_gt(file.size(out), 0)
-    # A re-chunk that PADS its last frame writes up to one frame of silence past
-    # the source's length, which the file-size assertion above cannot see.
-    expect_equal(audio_duration(out), source_duration, tolerance = 0.005,
+    expect_equal(audio_duration(out), control_duration, tolerance = 0.005,
                  label = paste("audio duration in", ext))
   }
 })

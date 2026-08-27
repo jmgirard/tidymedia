@@ -1366,7 +1366,10 @@ test_that("ffm_loudnorm() caps the frame size it hands the encoder", {
   # The binary-free half of the FFmpeg 9 flac/oga regression: `loudnorm` emits
   # 192000-sample frames, past what flac and vorbis will open an encoder for, so
   # every loudnorm chain re-chunks on the way out. `p=0` because padding the
-  # final frame would lengthen the output.
+  # final frame would lengthen the output -- and this pin is the ONLY fence on
+  # that half: the padding it forbids is 2.7 ms on the execution test's fixture,
+  # smaller than how much the tail moves between FFmpeg versions, so no runtime
+  # duration assertion can tell padding from the build.
   f <- make_input()
   p <- ffm_loudnorm(ffm_files(f, "out.mp4"))
   expect_equal(p$filter_audio,

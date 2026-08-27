@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M073: The timeout wrapper's tail
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -49,7 +49,7 @@ where they are.
       at run time, not from a written list. Regression clause (holds today,
       pinned so it keeps holding): after each such call the session limit is
       unchanged — unset beforehand reads `"absent"` after, `99` reads `99`.
-- [x] AC3. No process started by `tm_release_fifo()` outlives the frame that
+- [ ] AC3. No process started by `tm_release_fifo()` outlives the frame that
       called it. The helper's command carries a unique marker token; a test
       asserts `pgrep -f <marker>` matches inside the frame and matches nothing
       within 5 s of the frame exiting, for three cases: a frame exiting by
@@ -77,7 +77,7 @@ where they are.
       extending D051 that records the second export, its place outside D014's
       families, and that it discharges D051's own "a statement, not a wrapper"
       falsifier.
-- [x] AC8. `devtools::check()` reports 0 errors, 0 warnings and no notes not
+- [ ] AC8. `devtools::check()` reports 0 errors, 0 warnings and no notes not
       present on `master`; `devtools::test()` is green.
 
 ## Coverage
@@ -130,6 +130,7 @@ where they are.
 - 2026-08-27: T5 done — `local_timeout()` topic written and cross-linked both ways with `with_timeout()`, `_pkgdown.yml` row added under "Bounding a run" (`pkgdown::check_pkgdown()`: no problems found), two NEWS bullets added (the statement form; the omitted-`expr` refusal), `devtools::document()` run, and D052 appended to `cairn/DECISIONS.md` extending D051 and recording the `withr` Suggests-to-Imports move.
 - 2026-08-27: T6 done — `devtools::check()` on the branch: 0 errors, 0 warnings, 0 notes, so the note delta against `master` is empty by construction. `devtools::test()`: 6618 pass, 0 fail, 5 skip, 4 warn; all four warnings are the pre-existing dropped-audio-track messages in `test-audio-stream.R` and `test-ffmpeg.R`, files this branch does not touch.
 - 2026-08-27: sizing tripwire fired at 8 acceptance criteria (>7) and was disposed here rather than by splitting: the eighth is the mandatory profile-check criterion, the six tasks are each well under a working session, and `local_timeout()` is ~10 lines plus a topic, so a second milestone would add tracking ceremony an order larger than the work it carries.
+- 2026-08-27: review returned the milestone to in-progress (defect return 1). AC3 and AC8 failed on Linux CI: all three Ubuntu jobs of PR #77 report `Status: 1 ERROR` from `test-with-timeout.R`'s reaping cell — `[ FAIL 4 | WARN 4 | SKIP 9 | PASS 6609 ]`, the four failures being every `present = FALSE` assertion (`:416:3` return, `:426:3` abort, `:439:5` twice), while every `armed` assertion passes. macOS, Windows and the local macOS `devtools::check()` are green. AC1, AC2, AC4, AC5, AC6, AC7 stay verified. The [O] review lens's F6 (`tm_pgrep()` self-matching its own `sh -c` command line) predicts this signature and is the first thing to confirm. Two further CONFIRMED findings ride back with it: F1, the FIFO cancel file lives under `tempdir()` so a writer can outlive the R session by up to ~89 s (reproduced), and F2, D052's and `R/timeout.R:208-212`'s claim that `withr::defer()` cannot be clobbered is false — `defer` ends in `base::on.exit(thunk, TRUE, after)` and a caller's bare `on.exit()` discards the restore, measured on withr 3.0.3.
 
 ## Decisions
 
@@ -166,6 +167,15 @@ is from the branch as it stands.
   markers asserted). Guarded by `skip_on_cran()`, `skip_on_os("windows")` and a
   `pgrep`-on-PATH skip. It ran here rather than skipping: the timeout file pair
   reported 0 skips.
+  **Falsified on Linux CI — AC3 is NOT verified and its box is unticked.** All
+  three Ubuntu jobs of https://github.com/jmgirard/tidymedia/pull/77 fail this
+  test: `[ FAIL 4 | WARN 4 | SKIP 9 | PASS 6609 ]`, the four failures being
+  every `present = FALSE` assertion in the cell —
+  `test-with-timeout.R:416:3` (return), `:426:3` (abort) and `:439:5` twice
+  (both markers of the twice-in-one-frame case). Every `armed`
+  (`present = TRUE`) assertion passes. macOS and Windows are green; the local
+  macOS run above is green. This is M69's lesson shape exactly: green on the
+  dev machine, red only on Linux.
 - **AC4 — verified.** `after = 90` is unchanged at
   [test-with-timeout.R:342](tests/testthat/test-with-timeout.R:342), outside
   2 + 40 s. The FIFO-anchored cell "a per-call limit kills a hung program with
@@ -205,6 +215,10 @@ is from the branch as it stands.
   0 fail, 5 skip, 4 warn — all four warnings are the pre-existing
   dropped-audio-track messages in `test-audio-stream.R` and `test-ffmpeg.R`,
   neither file touched by this branch.
+  **Not verified: the same check is an ERROR on Linux CI.** `R CMD check` on
+  all three Ubuntu jobs reports `Status: 1 ERROR` from the AC3 test failures
+  above. AC8 names no platform, so the local macOS result does not discharge
+  it. Box unticked.
 
 ### Consistency gate
 
@@ -313,3 +327,30 @@ semantics, the `formals()`-derived AC2 cases and their non-vacuity guards, the
 shared probe helper, LIFO stacking, the abort-path restore, the `NULL`
 asymmetry, `local_timeout`'s name against D014, the `_pkgdown.yml` row, or the
 two NEWS bullets AC7 names.
+
+### Gate outcome — returned to `in-progress` (defect return 1)
+
+AC3 and AC8 fail on Linux CI. Under the return floor this is a defect return,
+not an amendment return: the failure is inside AC3's own named procedure's
+domain — the very three cases the criterion enumerates, run by the test the
+criterion names — rather than outside it. Status is back to `in-progress`,
+AC3 and AC8 are unticked, and review stops here. AC1, AC2, AC4, AC5, AC6 and
+AC7 remain verified against the evidence recorded above and are left ticked.
+
+**Leading hypothesis, for the implementer to confirm rather than assume.** The
+[O] lens's F6 predicts this failure shape precisely: `tm_pgrep()` shells out
+through `sh -c`, whose own command line contains the marker, so on a shell that
+does not `exec`-optimize the command away, `pgrep -f <marker>` matches that
+shell and never returns empty. The observed signature fits — every
+`present = TRUE` assertion passes and every `present = FALSE` assertion fails,
+on the platform whose `/bin/sh` differs from the dev machine's, and F6 called
+it "a portability flake, not a false pass" before CI ran. Confirm on a Linux
+runner before fixing; the alternative worth ruling out is the cancel file never
+being seen (a `tempdir()` visibility or timing difference), which would also
+leave the process up. Whatever the cause, `tm_pgrep()` wants a self-match guard
+(exclude the querying shell's own PID / use `pgrep -f` with a pattern the query
+itself cannot contain).
+
+**The other eight findings are not re-triaged here** — they go to the gate on
+the next review pass, with F1 and F2 (both CONFIRMED above) the ones needing a
+maintainer decision, and F1 plausibly fixable in the same edit as this return.

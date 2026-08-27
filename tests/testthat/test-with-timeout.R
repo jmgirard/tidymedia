@@ -194,3 +194,80 @@ test_that("seconds is required, and NULL is not a limit", {
   expect_false(file.exists(missing_marker))
   expect_false(file.exists(null_marker))
 })
+
+# Where the limit has to arrive ----------------------------------------------
+#
+# The wrapper writes one process-global option, so nothing is threaded and
+# every reader picks it up by construction. "By construction" is exactly the
+# kind of claim that stops being true when someone adds a fifth spawn site, so
+# each recorded site is driven and asked what limit it was handed.
+#
+# `guard_timeout()` is mocked rather than a binary run: its `expr` argument is
+# lazy, so the mock never forces the `system()`/`system2()` call underneath and
+# the cell measures the value, not the runner's PATH.
+
+tm_spawn_call_specs <- list(
+  ffmpeg = function() ffmpeg("-version"),
+  ffprobe = function() ffprobe("-version"),
+  mediainfo = function() mediainfo("--Version"),
+  run_program = function() run_program("/bin/echo", "hi", program = "FFmpeg")
+)
+
+test_that("every recorded spawn site has a call to drive it", {
+  # A new site added to the package without a cell here fails rather than
+  # being quietly skipped.
+  expect_setequal(names(tm_spawn_call_specs), tm_spawn_sites())
+})
+
+test_that("each spawn site is handed the per-call limit", {
+  withr::local_options(tidymedia.timeout = NULL)
+  seen <- NULL
+  testthat::local_mocked_bindings(
+    guard_timeout = function(program, limit, expr, ...) {
+      seen <<- limit
+      character(0)
+    },
+    .package = "tidymedia"
+  )
+  for (nm in names(tm_spawn_call_specs)) {
+    seen <- NULL
+    with_timeout(tm_spawn_call_specs[[nm]](), 7)
+    expect_identical(seen, 7, info = nm)
+
+    # The control: with the session option unset and no wrapper, the same site
+    # is handed the no-limit sentinel. Without it a site that hard-coded 7
+    # would pass the assertion above.
+    seen <- NULL
+    tm_spawn_call_specs[[nm]]()
+    expect_identical(seen, 0, info = nm)
+  }
+})
+
+test_that("ffm_batch()'s up-front limit check reads the per-call value", {
+  # ffm_batch() resolves the limit before it dispatches anything, so that a bad
+  # value is refused once in the process that can name the caller (M071/D050).
+  # That read is not a spawn site and would not be covered above.
+  withr::local_options(tidymedia.timeout = NULL)
+  real <- resolve_timeout
+  seen <- numeric()
+  testthat::local_mocked_bindings(
+    resolve_timeout = function(...) {
+      value <- real(...)
+      seen <<- c(seen, value)
+      value
+    },
+    .package = "tidymedia"
+  )
+  dir <- withr::local_tempdir()
+  input <- file.path(dir, "in.mp4")
+  file.create(input)
+  jobs <- tibble::tibble(input = input, output = file.path(dir, "out.mp4"))
+  build <- function(input, output, ...) ffm(input, output)
+
+  with_timeout(ffm_batch(jobs, build, run = FALSE), 7)
+  expect_equal(seen, 7)
+
+  seen <- numeric()
+  ffm_batch(jobs, build, run = FALSE)
+  expect_equal(seen, 0)
+})

@@ -1,6 +1,6 @@
 # M69: A hung media program stops the call, not the session
 
-- **Status:** review
+- **Status:** blocked
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -205,6 +205,7 @@ _T1-T14 are done; their detail is in the work log and in the branch's commits._
 - 2026-08-26: status -> review. AC1-AC9 hold with fresh evidence; AC10 open as above.
 
 - 2026-08-26: review pass 4 (first after the re-cut) — GATE FAILURE on AC10. What failed: `devtools::check()` reports `Status: 1 ERROR` against the criterion's "0 errors". All six failures are `test-audio-stream-normalize.R:462,463,466` twice — `normalize_audio()` to `.flac`/`.oga` under FFmpeg 9.0.1 — verified pre-existing this session on a clean `origin/master` worktree, and CI on PR #72 is green on all nine checks. AC1-AC9 hold with fresh evidence recorded in the Review section, including AC8's two mutations executed and AC9's `^## D0` sweep re-run. Nothing M69 owns fails; the blocker is the FFmpeg 9 regression already carried as a `/hotfix`-on-sight ROADMAP candidate. Thrash trigger (a) is already fired and holds, and a re-cut has been spent, so no retry under this plan is queued: the disposition goes to the user.
+- 2026-08-26: status -> blocked, at the maintainer's decision at the review gate. Blocker: `normalize_audio()` fails on `.flac` and `.oga` under FFmpeg 9 (`test-audio-stream-normalize.R:462,463,466`, exit 234), a pre-existing user-visible bug the ROADMAP already carries as `/hotfix`-on-sight work. It is not M69's and it holds AC10's `devtools::check()` at 1 ERROR on any FFmpeg 9 machine. Unblocks when that hotfix lands on master and is merged into this branch; M69 then re-enters review with AC10 the only criterion needing fresh evidence, since AC1-AC9's pass-4 evidence stands. No criterion amended and no work re-planned.
 
 ## Decisions
 

@@ -108,7 +108,7 @@ D-entry.
       forced once in the caller's frame, its value returned. Roxygen topic with
       an example that runs with no media binary. `devtools::document()`.
       (RB tripwire: irreversible-api)
-- [ ] T3. Unit tests for the payload (AC1) and the three restore paths (AC2),
+- [x] T3. Unit tests for the payload (AC1) and the three restore paths (AC2),
       covering both a previously-set and a previously-unset option.
 - [ ] T4. Refusal tests: the probe vector against `resolve_timeout()`'s verdict,
       the marker-file eagerness probe, and missing/`NULL` `seconds`.
@@ -137,6 +137,8 @@ D-entry.
 - 2026-08-27: T1 — `tm_spawn_sites()` named out of `tm_reaches_spawn()`'s inlined first statement; the recorded set is `ffmpeg`/`ffprobe`/`mediainfo`/`run_program`, and a planted fifth site reddens the drift test.
 
 - 2026-08-27: T2 — `with_timeout(expr, seconds)` exported (gate chose the code-first order over withr's value-first, matching `R.utils::withTimeout()`); measured: the option reads 30 inside the call and is unset again after, and a prior 99 comes back on both the returning and the erroring path.
+
+- 2026-08-27: T3 — payload and restore tests; deleting the `on.exit()` restore turns 7 of the 26 cells red, so the restore claim is the thing they measure.
 
 ## Decisions
 

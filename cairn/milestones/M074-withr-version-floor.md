@@ -67,7 +67,7 @@ row asked whether the floor understates, and "it does not" answers it.
       declared floor version and on 3.0.3. Where the two versions differ for
       either form, `local_timeout()`'s `@details` names the versions on which
       each behavior holds.
-- [x] AC3 — DESCRIPTION's `withr` floor names a version on which AC1 and AC2
+- [ ] AC3 — DESCRIPTION's `withr` floor names a version on which AC1 and AC2
       were measured green, and `NEWS.md` states that floor and what was measured
       against it.
 - [x] AC4 — Each of the four behavioral claims `local_timeout()`'s documentation
@@ -77,7 +77,7 @@ row asked whether the floor understates, and "it does not" answers it.
       directly inside `with_timeout()`'s `expr` outlives the wrapper — reads
       true when re-measured on the declared floor version, or the documentation
       names the versions on which it holds.
-- [x] AC5 — `devtools::check()` is clean (0 errors / 0 warnings) and
+- [ ] AC5 — `devtools::check()` is clean (0 errors / 0 warnings) and
       `devtools::test()` passes on the developer's current `withr`.
 
 ## Coverage
@@ -694,3 +694,57 @@ sentence about the floor has to carve it out. Widening AC1's domain to include
 it would let NEWS say plainly what it keeps trying to say. That widening is a
 criterion amendment and belongs at `/milestone-implement` step 6's gate, which
 is the user's decision, not review's.
+
+---
+
+## Review — round 3 (after the second defect return)
+<!-- owner: review · exclusive -->
+
+### Fencing note
+
+All five criterion checkboxes again arrived at review ticked (the implement
+phase re-ticked them closing the second defect return). Under AC fencing they
+were unticked at the start of this round and re-ticked below one at a time,
+each as its own fresh evidence line was recorded from a run made in this phase.
+Round 2's evidence is not carried forward: T10 added an arm to the harness, so
+every measurement was taken again.
+
+### Acceptance criteria — fresh evidence (2026-08-27, round 3)
+
+- **AC1 — met.** `Rscript data-raw/withr-floor.R` re-run from a clean session,
+  exit 0. Under the pinned 2.5.0 library `testthat::test_file()` reports 35
+  PASS / 0 FAIL / 0 SKIP across every `test_that()` block of
+  `test-local-timeout.R` (16 blocks) and `test-with-timeout.R` (19); the 3.0.3
+  arm reports the same 35, for 70 PASS / 0 FAIL / 0 SKIP over the whole log.
+  The control is an assertion on provenance, not a printed version: each of the
+  eight child sessions per version printed both `withr actually loaded: <ver>`
+  and `withr loaded from: <the pinned library path>`, and passed
+  `stopifnot(identical(loaded, WITHR_EXPECT))` plus
+  `stopifnot(identical(normalizePath(dirname(find.package("withr"))),
+  normalizePath(WITHR_LIB)))`. `DESCRIPTION:29` reads `withr (>= 2.5.0)` — the
+  pinned, loaded and located version equals the declared floor.
+- **AC2 — met.** Both named forms measured on 2.5.0 and on 3.0.3 in the same
+  run. `Rscript` top level: limit in force `30`; `30` at `.Last` and `30` at a
+  finalizer registered after withr's — identical on both. `source()` with its
+  default `globalenv()`: `30` inside the sourced file, `99` (the caller's value)
+  after `source()` returns — identical on both. Neither form differs between the
+  versions, so the criterion's conditional documentation clause is not
+  triggered; the `@details` name both versions anyway. Supporting arms unchanged
+  from round 2 and re-measured here: `parent.frame()` is `globalenv()` at both
+  top levels on both versions (`TRUE`), `deferred_run(globalenv())` restores the
+  caller's `99` at the `Rscript` top level on both, and the `formB-where` arm
+  reports `30` — the redirect, not a globalenv registration — inside a
+  `source()`d file on both.
+- **AC4 — met.** All four documented claims re-measured on the declared floor
+  and read true as written: two calls in one frame → `45` inside, `99` after
+  (the caller's state); a clobbering `on.exit()` without `add = TRUE` → `30`
+  after return (the documented hole); a dead `.local_envir` → `30` after return;
+  a `local_timeout()` inside `with_timeout()`'s `expr` → `99` inside the frame
+  once the wrapper returned, `30` left behind by the frame. Every value
+  identical on 3.0.3. The harness also runs the `withr::` calls the `@details`
+  compare `local_timeout()` to, so those two sentences stand on measurement:
+  `withr::defer()` + clobbering `on.exit()` → `30`, `withr::local_options()` +
+  clobbering `on.exit()` → `30`, `withr::defer()` into a dead envir → `30`,
+  `withr::local_options()` into a dead envir → `30`, `withr::with_options()` +
+  `withr::local_options()` → `99` inside the frame and `30` left behind —
+  identical on 2.5.0 and 3.0.3, which is what the roxygen claims.

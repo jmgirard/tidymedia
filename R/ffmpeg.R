@@ -348,8 +348,9 @@ pass_through_maps <- function(audio_stream = NULL,
 
 # Emit the single classed warning for inputs carrying audio tracks the output
 # does not receive. `inputs` and `n` are parallel vectors (`n` = that input's
-# audio-stream count from count_audio_streams_all(), NA where it could not be had);
-# `rows` is the jobs-table row index per element, or NULL on the scalar path.
+# audio-stream count from count_audio_streams_all(), NA where it could not
+# be had); `rows` is the jobs-table row index per element, or NULL on the
+# scalar path.
 #
 # ONE warning whatever the length. The batch form names every affected row
 # instead of warning per row, so a large jobs table cannot bury the message

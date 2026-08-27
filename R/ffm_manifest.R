@@ -131,8 +131,9 @@ tool_versions <- function(call = rlang::caller_env()) {
       c(
         "The version probe timed out after {hit$limit} second{?s}.",
         "x" = "{programs}",
-        "i" = "The manifest records {.val {NA}} for {cli::qty(length(programs))}\\
-               {?that version/those versions}; raise or remove \\
+        "i" = "The manifest records {.val {NA}} for \\
+               {cli::qty(length(programs))}{?that version/those versions}; \\
+               raise or remove \\
                {.code options(tidymedia.timeout = )}."
       ),
       class = "tidymedia_probe_timeout",

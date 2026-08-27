@@ -272,8 +272,9 @@ count_audio_streams_all <- function(files, call = rlang::caller_env()) {
         "The audio-track check timed out on {sum(timed_out)} \\
          input{?s} after {hit$limit} second{?s}.",
         "x" = "{.file {uniq[timed_out]}}",
-        "i" = "{cli::qty(sum(timed_out))}{?That input is/Those inputs are} not \\
-               checked for dropped audio tracks; raise or remove \\
+        "i" = "{cli::qty(sum(timed_out))}\\
+               {?That input is/Those inputs are} not checked for dropped \\
+               audio tracks; raise or remove \\
                {.code options(tidymedia.timeout = )}."
       ),
       class = "tidymedia_probe_timeout",

@@ -40,7 +40,8 @@ topics_documenting <- function(rd, param) {
   rd[vapply(rd, function(txt) param %in% rd_param_names(txt), logical(1))]
 }
 
-# doc_timeout_sources(): the `?tidymedia` Rd text and NEWS.md, in whichever shape
+# doc_timeout_sources(): the `?tidymedia` Rd text and NEWS.md, in whichever
+# shape
 # this run has them.
 #
 # Both are read through here rather than from the source tree because under

@@ -332,7 +332,9 @@ tm_program_literals <- function(fns = NULL) {
       head <- e[[1]]
       if (is.name(head) && as.character(head) %in% tm_program_naming_calls) {
         lit <- tm_program_arg(e, as.character(head))
-        if (!is.null(lit)) out[[length(out) + 1L]] <<- stats::setNames(lit, where)
+        if (!is.null(lit)) {
+          out[[length(out) + 1L]] <<- stats::setNames(lit, where)
+        }
       }
     }
     if (is.call(e) || is.pairlist(e)) {

@@ -2,12 +2,13 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-09 (M68 archived: validate green, M63's terminal row pruned to the five most recent, M31's fixture-gate lesson extended rather than a line added — nothing in flight, the next action is planning.)_
+_Last hygiene check: 2026-08-26 (M69 re-cut after its third defect return: docs narrow to what is true today and uniform absorption splits out as M70; the tighter-kill candidate M69's return-2 gate promised is now written. LESSONS.md is 33,163 bytes against its 20,000-byte budget, still open for the user.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
+| M70 | No timeout is silent | planned | M69 | normal | milestones/M70-timeout-silence.md |
 | M69 | A hung media program stops the call, not the session | in-progress | — | normal | milestones/M69-runtime-timeout.md |
 | M68 | A failed run removes the broken output it wrote | done | — | normal | milestones/archive/M68-failed-run-output-cleanup.md |
 | M67 | The encoder probe answers once per session, not once per row | done | — | normal | milestones/archive/M67-nvenc-probe-cache.md |
@@ -17,6 +18,7 @@ _Last hygiene check: 2026-08-09 (M68 archived: validate green, M63's terminal ro
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->
+- A tighter kill than base R's `timeout=` gives. Base R escalates SIGINT at the limit, SIGTERM at +20 s and SIGKILL at +40 s, so a program that ignores the first two outlives its limit by up to 40 seconds — measured 2026-08-09 on Linux CI at 42.0-42.1 s under a 2 s limit, which is what forced M69's AC3 from a 10 s bound to 60 s. `?system` states termination "works for typical commands, but is not guaranteed", so the lag is base R's contract and not a wiring fault. M69's return-2 gate rejected `processx` (or equivalent direct process control) because the Goal — a hung program stops the call rather than the session — is met by a bounded 42 s exactly as by a bounded 2 s, and a new dependency plus a rewiring of all four spawn sites was a fresh round of risk at a second return. That row was promised in M69's work log and never written; written here. Promote on the first report that the limit-plus-40s lag is itself the reported problem, or alongside any milestone that revisits the spawn sites. — added 2026-08-26 — M69 return 2; D047
 - Fixed-region *region blur* (no face tracking): split→crop→boxblur→overlay needs an IP2 filtergraph design call (new blessed composite verb vs Layer 0) plus a new `ffm_boxblur` filter; not plannable until that call. Box-fill half became M20/M21. Confirmed in-scope (defer) by M25. — added 2026-07-10, split 2026-07-12, reconciled 2026-07-13 — research-verbs family 4; M25 survey §3 D1
 - `burn_timecode` / drawtext text-and-timecode burn-in for coders & reliability raters; in-scope but needs a new `ffm_drawtext` Layer-1 filter + a surface-scope call. — added 2026-07-13 — M25 survey §3 D2 (defer)
 - Minor in-scope convenience verbs (grouped): split multi-view→per-person clips, orientation fix (rotate/flip), contact-sheet QC montage; each needs a small arg-shape design call. — added 2026-07-13 — M25 survey §3 D3 (defer-low)

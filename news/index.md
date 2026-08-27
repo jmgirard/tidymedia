@@ -2,6 +2,57 @@
 
 ## tidymedia (development version)
 
+### New features
+
+- A hung media program no longer blocks the R session indefinitely.
+  Setting `options(tidymedia.timeout = 600)` gives every FFmpeg, FFprobe
+  and MediaInfo process tidymedia starts a wall-clock limit in whole
+  seconds. What a reached limit does depends on the call, and there are
+  three answers rather than two. The task verbs,
+  [`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md)
+  and the raw
+  [`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)/[`ffprobe()`](https://jmgirard.github.io/tidymedia/reference/ffprobe.md)/[`mediainfo()`](https://jmgirard.github.io/tidymedia/reference/mediainfo.md)
+  hatches abort, naming the program and the limit;
+  [`verify_media()`](https://jmgirard.github.io/tidymedia/reference/verify_media.md)
+  aborts too, since a probe that never answered is not an answer. The
+  metadata readers —
+  [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
+  and the `probe_*()` accessors,
+  [`mediainfo_parameter()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_parameter.md),
+  [`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md),
+  [`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md)
+  and the `get_*()` helpers — absorb it as a file they could not read,
+  yielding an `NA` row and one warning that says how many files timed
+  out, so a single hung file does not discard a whole corpus. And two
+  internal paths absorb it with **no warning** at all: the track-count
+  probe `count_audio_streams()`, used by
+  [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
+  [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
+  [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+  and their `_batch` siblings to decide whether to report a dropped
+  track, and `tool_versions()`, used by
+  [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+  to record which FFmpeg built each output. On those calls a bounded
+  hang is invisible — inspect the result rather than waiting to be told.
+  Both are known gaps. These three lists describe the calls they name
+  and are **not a complete partition** of the package. Where the call
+  knows its own output — the task verbs and
+  [`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md)
+  — any partial file the killed run had written is removed just as it is
+  after any other failed run; the raw
+  [`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)
+  escape hatch does not parse the argument string it is given, so it
+  leaves the partial file in place. The default is `0`, meaning no
+  limit, so existing code is unaffected — a legitimate multi-hour encode
+  still runs to completion. The limit applies to each spawned program
+  rather than to a batch as a whole, and it is read in the process that
+  sets it, so `parallel = TRUE` workers do not see it. The limit bounds
+  the wait rather than promising the program dies at the second: R asks,
+  insists after 20 seconds and kills after 40, so on Unix a program that
+  does not answer can outlive its limit by up to 40 seconds, and R does
+  not guarantee termination at all. See
+  [`?tidymedia`](https://jmgirard.github.io/tidymedia/reference/tidymedia-package.md).
+
 ### Breaking changes
 
 - [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)

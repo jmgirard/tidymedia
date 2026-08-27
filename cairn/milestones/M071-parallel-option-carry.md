@@ -103,7 +103,7 @@ its domain, its recorded list and its promise ship as M70 left them.
 - [x] T3 Wire the carrier at `R/ffm_batch.R:102` and `:140`, parallel branch only;
       the sequential branches are unchanged.
 - [x] T4 Wire `R/ffprobe.R:124` and `R/loudnorm_two_pass.R:197`.
-- [ ] T5 New `tests/testthat/test-parallel-option-carry.R` harness: fake
+- [x] T5 New `tests/testthat/test-parallel-option-carry.R` harness: fake
       `ffmpeg`/`ffprobe` shell scripts that append their invocation to a log and
       `sleep 30`, placed first on `PATH`, then a `multisession` plan booted after the
       `PATH` edit — `future` caches its cluster for the session, so assert from a
@@ -113,7 +113,7 @@ its domain, its recorded list and its promise ship as M70 left them.
       loaded namespace matches the source under test, since `devtools::test()`'s
       workers load the installed package. AC1–AC5 evidence must come from a run in
       which this file's tests execute rather than skip.
-- [ ] T6 AC1's three kill cases, each asserting its own documented shape, plus a
+- [x] T6 AC1's three kill cases, each asserting its own documented shape, plus a
       guard that `grep -rn "furrr::future_" R/` returns no site absent from the case
       table. Each red on master.
 - [ ] T7 AC2's override case and its option-unset control, and AC3's warning over an
@@ -146,6 +146,8 @@ its domain, its recorded list and its promise ship as M70 left them.
 - 2026-08-26: T2 — `ffm_batch()` calls `resolve_timeout()` in its validation block, before either branch maps. Measured: `tidymedia.timeout = 0.5` at `run = FALSE` now aborts with `` `tidymedia.timeout` must be a whole number, not the number 0.5 `` and `conditionCall()` naming `ffm_batch()`. Suite 6345 pass / 0 fail.
 
 - 2026-08-26: T3/T4 — carrier wired at all four sites `grep -rn "furrr::future_" R/` reports (`R/ffm_batch.R:112`, `:150`, `R/ffprobe.R:124`, `R/loudnorm_two_pass.R:197`), parallel branches only. Suite 6345 pass / 0 fail.
+
+- 2026-08-26: T5/T6 — `tests/testthat/test-parallel-option-carry.R` harness: fake `ffmpeg`/`ffprobe` that log every invocation and `sleep 30` (answering `-encoders` at once), prefixed onto `PATH`, then a fresh two-worker PSOCK cluster per test; workers assert the fake is what `Sys.which("ffmpeg")` returns, and skip unless their `carry_options` body matches the parent's. AC1's three cases green with the wiring (30 assertions, no skips) and red without it: the batch signals no `tidymedia_batch_timeout`, `probe_all()` reports unreadable rather than timed out, and the two-pass loudnorm throws something other than `tidymedia_timeout`.
 
 ## Decisions
 

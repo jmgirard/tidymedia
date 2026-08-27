@@ -730,9 +730,13 @@ untouched by the branch and in sync · `pkgdown::check_pkgdown()` no problems ·
 NEWS.md entry present with no milestone or decision ids in user-facing text ·
 no new top-level files · `devtools::check()` clean (0/0/0).
 
-**Independent review — NOT dispatched, same constraint as pass 4.** This
-session is configured not to spawn subagents, so no fresh-context [O]/[S]/[S]
-lens ran. Recorded as such rather than left to imply an independent read. The
+**Independent review — NOT dispatched; the maintainer's explicit decision at
+the gate.** This session is configured not to spawn subagents, and the
+maintainer was asked directly, with the full fan-out and an [O]-only middle
+option both offered, and chose to skip. Recorded as such rather than left to
+imply an independent read. The grounds put to them: passes 1-3 each ran the
+full three-lens fan-out over this diff (56 findings, every one triaged and
+logged) and pass 4 added a self-read. The
 delta this pass reviews is the merge commit alone — `git diff` of the merge
 against pass 4's `04ea5a2` touches only the files PR #73 changed (`R/ffm.R`,
 `inst/WORDLIST`, `man/ffm_loudnorm.Rd`, five test files), all of which were

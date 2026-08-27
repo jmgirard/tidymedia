@@ -2231,3 +2231,55 @@ Falsified by a report that wrapping an expression is the wrong shape for a
 script — that the natural place to say "bound the rest of this function" is a
 statement, not a wrapper — or by a caller needing a limit that varies per row
 within one batch.
+
+## D052 — The limit may also be set as a statement, and `withr` becomes a hard dependency (2026-08-27, from M073; extends D051, leaving all of it standing)
+
+D051 named its own falsifier: a report that wrapping an expression is the wrong
+shape for a script — that the natural place to say "bound the rest of this
+function" is a statement, not a wrapper. The statement form now exists, so that
+clause no longer names a way D051 could be wrong. Nothing in D051 is superseded:
+`with_timeout()` keeps its argument order, its refusal rule and its reach.
+
+**The rule.** `local_timeout(seconds, .local_envir = parent.frame())`
+establishes `tidymedia.timeout` from the call to the end of the frame it is
+bound to, and puts the caller's prior state back on every exit — the returning
+path, an abort and a reached limit alike, an unset option restored as unset. It
+is the `local_*` half of the pair whose `with_*` half D051 shipped: one seam
+written twice, not two seams. Nothing is threaded and no signature changes, for
+D051's reason unchanged — the option is process-global, so every spawn site,
+`ffm_batch()`'s up-front refusal and the parallel carrier (D050) read it exactly
+where they already read the session's.
+
+**Shipped ahead of its own trigger, on the user's call.** The candidate row's
+stated trigger was a report that the wrapper is the wrong shape, and no such
+report arrived. The trade taken is D014's pre-0.2.0 clean break, which keeps the
+export withdrawable. Falsified by 0.2.0 arriving with no caller, at which point
+it becomes permanent unused surface.
+
+**The name sits outside D014's families, for D051's reason unchanged.**
+`local_timeout` is neither a task verb, an `ffm_*` builder, nor a
+`get_*`/`probe_*`/`mediainfo_*` reader, and it takes none of D014's argument
+vocabulary. It is a control-flow statement, and the name it wants is the one R
+users already have for the shape — withr's `local_*()` family, whose
+`.local_envir` spelling it also takes, dot-prefixed so it cannot collide with a
+caller's own argument. D014 governs the media surface; this sits beside it, as
+`with_timeout()` does.
+
+**The `NULL` asymmetry with the option seam is stated, not removed.**
+`options(tidymedia.timeout = NULL)` removes the name, leaving the session unset
+and unlimited; `local_timeout(NULL)` is a caller naming no limit at all, and is
+refused. Both wrappers behave this way and both say so in their documentation.
+`local_timeout(0)` is how a caller lifts a limit.
+
+**`withr` moves from Suggests to Imports.** The undo has to survive the calling
+frame writing an `on.exit()` of its own: base R's `on.exit()` installed into
+someone else's frame is discarded, silently and with no error anywhere, the
+moment that frame writes `on.exit()` without `add = TRUE` — which would leave
+the caller's limit changed for good. `withr::defer()` keeps its own handler
+stack, so it cannot be clobbered, and it unwinds last-in-first-out, which is
+what makes two calls in one frame restore to the caller's state rather than to
+the first call's. The measurements behind both halves are in
+`cairn/milestones/M073-timeout-wrapper-tail.md`. The cost is one more package on
+every install, against a package already required to run the tests. Taken at the
+implementation gate; falsified by `withr` acquiring dependencies of its own that
+a media-tools package should not carry.

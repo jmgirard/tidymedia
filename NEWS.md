@@ -64,6 +64,21 @@
   `NA`, a string — is refused before `expr` runs, naming `seconds`. See
   `?with_timeout`.
 
+* `local_timeout(seconds)` is the statement form of the same limit: it bounds
+  the rest of the function you call it from, rather than an expression you wrap.
+  Every FFmpeg, FFprobe and MediaInfo program started between the call and the
+  end of that function is bounded by `seconds`, and when the function ends — by
+  any route — whatever the caller had set before is back, an unset option
+  included. Two calls in one function stack the way any pair of `local_*()`
+  calls does, and `seconds` is refused by the same rule `with_timeout()` uses.
+  Reach for it when the thing to bound is the rest of a function body, or
+  several calls that would be awkward to wrap together. See `?local_timeout`.
+
+* `with_timeout()` now refuses an omitted `expr` itself, saying which argument
+  is missing, instead of letting R report a missing parameter of the function's
+  own definition. Both of its arguments are now checked the same way, and
+  neither refusal disturbs the session-wide limit.
+
 ## Breaking changes
 
 * `format_for_web()` and `normalize_audio()` (and their `_batch` siblings) take

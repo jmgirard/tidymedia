@@ -20,6 +20,7 @@ reference:
     rather than the session.
   contents:
   - with_timeout
+  - local_timeout
 - title: "Layer 0: escape hatches"
   desc: >
     Pass a raw argument string straight to the command-line tools. Use these

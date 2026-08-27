@@ -2045,3 +2045,71 @@ one more call the uniform rule did not describe.
 Falsified by a caller reading the three-way description as exhaustive and being
 surprised by a fourth behavior, which is the risk the "not a complete
 partition" sentence is there to carry until M70 closes it.
+
+## D049 — A reached limit is never silent, over a domain the package derives rather than recalls (2026-08-26, from M70, supersedes D048's fourth bullet and its fifth; the rest of D048 stands)
+
+D048's fourth bullet disclosed two paths that absorbed a timeout with no warning
+at all and named fixing them M70. Its fifth rejected a fourth hand-written
+partition and promised M70 "a promise bounded by a call-graph sweep over the
+package namespace." Both are discharged here.
+
+- **The rule is uniform: every call that can start FFmpeg, FFprobe or MediaInfo
+  either aborts or warns when the limit is reached.** Which of the two is
+  unchanged from D047/D048 — an abort where the call's whole job is the run or
+  the assertion, a warning where one hung file must not discard the rest of the
+  work. What is new is that there is no third answer, so the docs state a rule
+  instead of describing lists and then disclaiming them.
+
+- **The domain is derived, not recalled.** A test closes the package's own call
+  graph over `system()`/`system2()` and takes the exported functions that
+  reach one — 53 today — then drives a forced timeout through each. M69 wrote
+  that domain by hand three times and each review pass found one more member it
+  omitted, the third naming `remove_audio()`, a function this package does not
+  export. The sweep walks symbol MENTIONS rather than M62's call heads,
+  because `probe_all_impl()` reaches FFprobe only through
+  `purrr::map(infile, probe_one)`: a head-only walk drops the package's main
+  metadata reader out of the domain entirely. The two guards err in opposite
+  directions on purpose — a spurious member here costs one test cell, a missing
+  one costs the promise.
+
+- **The sweep found a third silent path M69's list never reached: the batch
+  fan-out.** `ffm_batch()` recorded every job failure as `success = FALSE` and
+  signalled nothing, so a bounded hang was invisible through it and through the
+  15 `_batch` verbs and `segment_video()`. It now warns once per run. Only the
+  limit speaks: every other failure keeps its silent `success = FALSE`, which is
+  the contract each `_batch` verb's `@return` documents. That this path was
+  found by the procedure and not by rereading the list is the evidence the
+  procedure was the right instrument.
+
+- **The warning grain is per CALL, not per file or per job.** `probe_all()`
+  already warned once at the end; `count_audio_streams_all()` and
+  `tool_versions()` now do the same, and `ffm_batch()` warns once for the whole
+  run. Per-file would be worse than silence on a large jobs table: R collapses
+  at "There were 50 or more warnings" and the message a caller needs is the one
+  that gets swallowed (M44's gate, and the reason `warn_dropped_audio()` has
+  been one-warning-whatever-the-length since it shipped).
+
+- **A warning is inside D024's licence where a changed return is not.** D024
+  licenses the dropped-track probe only while its outcome changes nothing
+  observable but whether a diagnostic condition is signalled. A warning IS that
+  diagnostic, so it is available; a changed count would be a second effect and
+  would put the probe outside the licence by its own terms. Hence
+  `count_audio_streams_all()` still returns `NA` for a killed probe — exactly
+  what the silent version returned — and only the warning is new. The same
+  reading governs the version probe: the manifest still records `NA`.
+
+- **The absorbed-timeout sentinel stays off every public return.** It travelled
+  out of `probe_all()` on a `tm_timed_out` attribute so `verify_media()` could
+  read it, which broke `@param parallel`'s promise that both paths return
+  identical output and would have survived every documented operation on the
+  list. `probe_all()`'s body is now `probe_all_impl(absorb = )`, and
+  `verify_media()` calls it with `absorb = FALSE` so the shared body re-raises.
+  One assembly path, so the `file` column, the NA-row shape and
+  `type_columns()` cannot drift between the two callers.
+
+Falsified by a silent timeout on a call the sweep's domain excludes — a spawn
+reached through a route no symbol-mention edge records (an `eval()` of a
+constructed call, a function retrieved by `get()` from a string), or a
+non-exported entry point a user reaches some other way. The sweep's seeds and
+its recorded membership are both asserted, so the drift it cannot see is the
+kind that never appears in a function body at all.

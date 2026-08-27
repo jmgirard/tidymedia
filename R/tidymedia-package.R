@@ -25,6 +25,17 @@
 #' That call runs under its own limit; the session's setting, or the absence of
 #' one, is back when it returns.
 #'
+#' To bound the rest of a function rather than an expression you wrap, say it as
+#' a statement with [local_timeout()]:
+#'
+#' \preformatted{convert_all <- function(files) {
+#'   local_timeout(300)
+#'   for (f in files) extract_audio(f, sub("[.][^.]*$", ".wav", f))
+#' }}
+#'
+#' Every program that function starts is bounded at `seconds`, and the caller's
+#' setting is back once it returns.
+#'
 #' A reached limit is never silent: every call that can start one of those
 #' programs either aborts or warns.
 #'

@@ -14,7 +14,11 @@ number, a string — is refused before anything is set.}
 
 \item{.local_envir}{The environment to bind the limit to. Defaults to the
 calling frame, which is what you want unless you are writing your own
-helper that sets a limit on behalf of \emph{its} caller.}
+helper that sets a limit on behalf of \emph{its} caller. It must be a frame that
+is still on the call stack: an environment that never exits — a plain
+\code{\link[=new.env]{new.env()}}, or a frame that has already returned — takes the undo with it,
+and the limit then stays set with no error anywhere. \code{\link[withr:local_options]{withr::local_options()}}
+behaves the same way.}
 }
 \value{
 The caller's prior setting, invisibly, as the one-element list
@@ -43,15 +47,19 @@ Two calls in one frame stack the way any pair of \verb{local_*()} calls does: th
 second is in force until the frame ends, and both are undone together, back
 to what the caller had.
 
-There is one way the restore can be lost, and it is the caller's own doing.
-The undo is registered as an exit handler on the calling frame, so a frame
-that writes \code{on.exit(...)} of its own \emph{without} \code{add = TRUE} discards every
-handler already registered — this one included — and the limit stays set
-after the frame returns, silently and with no error anywhere. Write
-\code{on.exit(..., add = TRUE)} and it does not happen. This is not particular to
-this function: \code{\link[withr:defer]{withr::defer()}} and \code{\link[withr:local_options]{withr::local_options()}} lose their undo
-the same way (measured 2026-08-27 on withr 3.0.3), because that is how R's
-exit handlers work.
+There are two ways the restore can be lost, and neither is this function
+failing quietly at something it could have done. The undo is registered as an
+exit handler on the calling frame, so a frame that writes \code{on.exit(...)} of
+its own \emph{without} \code{add = TRUE} discards every handler already registered —
+this one included — and the limit stays set after the frame returns, silently
+and with no error anywhere. Write \code{on.exit(..., add = TRUE)} and it does not
+happen. The second is a \code{.local_envir} that is not a live frame, described
+under that argument above. This is not particular to this function:
+\code{\link[withr:defer]{withr::defer()}} and \code{\link[withr:local_options]{withr::local_options()}} lose their undo both ways
+(measured 2026-08-27 on withr 3.0.3), because that is how R's exit handlers
+work. What cannot happen is the limit being set and the undo never
+registered: the undo goes on the frame first, and only then is the limit
+written.
 
 Written \emph{directly inside} a \code{\link[=with_timeout]{with_timeout()}} expression, \code{local_timeout()}
 binds to the frame that wrote the call, not to the wrapper — \code{expr} is

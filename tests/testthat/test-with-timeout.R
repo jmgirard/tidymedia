@@ -395,7 +395,16 @@ tm_pgrep_pattern <- function(marker) {
 }
 
 tm_pgrep <- function(marker) {
-  pattern <- tm_pgrep_pattern(marker)
+  # shQuote() is load-bearing for the same reason the bracket is. system2() does
+  # not quote its arguments and runs the query through a shell, and
+  # `tm_[f]ifo_<hex>` is a valid GLOB as well as an ERE -- so a file of that name
+  # in the working directory expands the word and hands pgrep the UNBRACKETED
+  # marker, restoring the dash self-match this whole helper exists to avoid
+  # (measured 2026-08-27: with `tm_fifo_deadbeef` present,
+  # `system2("echo", c("-f", "tm_[f]ifo_deadbeef"), stdout = TRUE)` returns
+  # `-f tm_fifo_deadbeef`). Nothing creates such a file today; quoting means
+  # nothing has to keep not creating one.
+  pattern <- shQuote(tm_pgrep_pattern(marker))
   out <- suppressWarnings(
     system2("pgrep", c("-f", pattern), stdout = TRUE, stderr = FALSE)
   )

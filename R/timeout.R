@@ -139,7 +139,11 @@ with_timeout <- function(expr, seconds) {
 #'   number, a string — is refused before anything is set.
 #' @param .local_envir The environment to bind the limit to. Defaults to the
 #'   calling frame, which is what you want unless you are writing your own
-#'   helper that sets a limit on behalf of *its* caller.
+#'   helper that sets a limit on behalf of *its* caller. It must be a frame that
+#'   is still on the call stack: an environment that never exits — a plain
+#'   [new.env()], or a frame that has already returned — takes the undo with it,
+#'   and the limit then stays set with no error anywhere. [withr::local_options()]
+#'   behaves the same way.
 #'
 #' @return The caller's prior setting, invisibly, as the one-element list
 #'   `options()` returns — the same shape [withr::local_options()] gives back.
@@ -154,15 +158,19 @@ with_timeout <- function(expr, seconds) {
 #' second is in force until the frame ends, and both are undone together, back
 #' to what the caller had.
 #'
-#' There is one way the restore can be lost, and it is the caller's own doing.
-#' The undo is registered as an exit handler on the calling frame, so a frame
-#' that writes `on.exit(...)` of its own *without* `add = TRUE` discards every
-#' handler already registered — this one included — and the limit stays set
-#' after the frame returns, silently and with no error anywhere. Write
-#' `on.exit(..., add = TRUE)` and it does not happen. This is not particular to
-#' this function: [withr::defer()] and [withr::local_options()] lose their undo
-#' the same way (measured 2026-08-27 on withr 3.0.3), because that is how R's
-#' exit handlers work.
+#' There are two ways the restore can be lost, and neither is this function
+#' failing quietly at something it could have done. The undo is registered as an
+#' exit handler on the calling frame, so a frame that writes `on.exit(...)` of
+#' its own *without* `add = TRUE` discards every handler already registered —
+#' this one included — and the limit stays set after the frame returns, silently
+#' and with no error anywhere. Write `on.exit(..., add = TRUE)` and it does not
+#' happen. The second is a `.local_envir` that is not a live frame, described
+#' under that argument above. This is not particular to this function:
+#' [withr::defer()] and [withr::local_options()] lose their undo both ways
+#' (measured 2026-08-27 on withr 3.0.3), because that is how R's exit handlers
+#' work. What cannot happen is the limit being set and the undo never
+#' registered: the undo goes on the frame first, and only then is the limit
+#' written.
 #'
 #' Written *directly inside* a [with_timeout()] expression, `local_timeout()`
 #' binds to the frame that wrote the call, not to the wrapper — `expr` is
@@ -212,10 +220,22 @@ local_timeout <- function(seconds, .local_envir = parent.frame()) {
   # caller who mistyped a limit hears about it rather than running the rest of
   # the frame under a limit they did not ask for.
   rlang::check_number_whole(seconds, min = 0, arg = "seconds")
-  # options() returns the prior value of exactly the name being set, and a NULL
-  # entry REMOVES the name rather than storing NULL, so an unset option is unset
-  # again afterwards (measured on R 4.6.1) -- the same pair with_timeout() uses.
-  prior <- options(tidymedia.timeout = as.numeric(seconds))
+  # The prior value is READ, the undo REGISTERED, and only then the new value
+  # WRITTEN -- withr::local_options()'s own order, and the reason for it is that
+  # defer() can fail. A `.local_envir` that is not an environment aborts inside
+  # defer(), and with the write already done there is nothing left to put the
+  # caller's value back: the limit would stay set for the rest of the session
+  # (measured 2026-08-27, option left at this function's value where the caller
+  # had 99, against 99 through withr::local_options() given the same bad
+  # argument). Registering first makes any failure below leave the session as it
+  # was found.
+  #
+  # `list(name = getOption(name))` is the same shape options() returns for the
+  # name being set -- length 1, the entry NULL when the option is unset
+  # (verified identical on R 4.6.1) -- and feeding a NULL entry back to
+  # options() REMOVES the name rather than storing NULL, so an unset option is
+  # unset again afterwards. Same pair with_timeout() uses.
+  prior <- list(tidymedia.timeout = getOption("tidymedia.timeout"))
   # withr::defer() rather than base on.exit(): it PREPENDS its handler
   # (`after = FALSE`), which is what makes two calls in one frame restore to the
   # CALLER's state rather than to the first call's, where a plain
@@ -231,6 +251,7 @@ local_timeout <- function(seconds, .local_envir = parent.frame()) {
   # option left at this function's value where the caller had 99. That hole is
   # stated in the @details above rather than papered over.
   withr::defer(options(prior), envir = .local_envir)
+  options(tidymedia.timeout = as.numeric(seconds))
   invisible(prior)
 }
 

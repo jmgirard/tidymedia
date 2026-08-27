@@ -142,6 +142,7 @@ where they are.
 - 2026-08-27: that run also surfaced a NOTE this milestone introduced, on Linux only — `checking tests` NOTE from `spelling.R`, whose `.Rout.save` comparison flagged the word `withr` in `local_timeout.Rd:53` and `NEWS.md:79`, both prose written for the F2 and F7 fixes above. The local macOS `devtools::check()` had not caught it. `withr` added to `inst/WORDLIST`; `spelling::spell_check_package(".")` now reports "No spelling errors found". AC8 is ticked against the CI run following this fix, not the one that carried the NOTE.
 
 - 2026-08-27: return-fix verification closed. Run 33109601529 (head `4ec99da`, PR #77): all five jobs `Status: OK` — `ubuntu-latest` release/devel/oldrel-1, macOS and Windows — zero notes anywhere, with `ubuntu-latest (release)` at `[ FAIL 0 | WARN 4 | SKIP 9 | PASS 6615 ]`. Local `devtools::check()`: `Status: OK`, 0 errors / 0 warnings / 0 notes, 2m 39.9s. Status back to `review`.
+- 2026-08-27: review pass 2 — all eight criteria verified with fresh evidence, all nine CI checks green on PR #77. Three lenses ran; blame-history and prior-review found nothing, the diff lens found ten. Maintainer triaged at the gate: six fixed on the branch (the option-before-undo leak in `local_timeout()`, two false doc claims about how the undo can be lost, the unquoted `pgrep` pattern, the unpinned unset-prior return shape, the pkgdown blurb, and `local_timeout()`'s absence from the package-level docs), five rejected with reasons, AC3's wording deviation recorded rather than amended, and the `withr` floor question filed as a candidate row.
 
 ## Decisions
 
@@ -359,6 +360,52 @@ depends on nothing outside base R" against withr's `Imports: graphics,
 grDevices`. Both are base-distribution packages shipped with R itself, so the
 sentence is true as a statement about the install surface, which is what the
 bullet is about. No change.
+
+### Gate triage and fix-now work
+
+The maintainer took all three questions at the gate: fix the six actionable
+findings on the branch; record AC3's wording deviation rather than amending the
+criterion; leave the `withr` floor at 2.5.0 and file P2 as a candidate.
+
+- **O1 — fixed.** `local_timeout()` now READS the prior value, REGISTERS the undo,
+  and only then WRITES the limit — `withr::local_options()`'s own order, so a
+  failure below the read leaves the session as it was found. Pinned by a new
+  cell, "a failed undo registration leaves the session as it was found", which
+  is red against the previous ordering (measured before the fix: the option was
+  left at `5` where the caller had `99`; it now reads `99`).
+- **O2, O3 — fixed.** The `@details` now says there are two loss routes, names
+  the non-live-frame one, and states what cannot happen (the limit set with no
+  undo registered). `@param .local_envir` now says the environment must be a
+  frame still on the call stack and what happens when it is not. D052 is left
+  standing: it names the `on.exit()` route without claiming exclusivity, so
+  nothing in it is false and history is not edited (IP4).
+- **O4 — fixed.** `tm_pgrep()` now `shQuote()`s the bracketed pattern, so a file
+  matching the glob in the working directory can no longer expand the bracket
+  away and restore the self-match that reddened Linux last pass.
+- **O8 — fixed.** A new cell asserts the unset-prior return shape
+  (`list(tidymedia.timeout = NULL)`, length 1, named, NULL entry) and that
+  feeding it back to `options()` really does restore the option to unset.
+- **O9 — fixed.** The `_pkgdown.yml` "Bounding a run" blurb now covers both
+  forms.
+- **P1 — fixed.** `R/tidymedia-package.R`'s "Bounding a run that hangs" section
+  now shows `local_timeout()` beside `with_timeout()`, with a worked example.
+- **O5, O6, O10, P3, B1 — rejected**, reasons recorded above with each finding:
+  cosmetic tempdir residue swept at session exit; an instrument weakness the
+  work log already concedes, with AC2 as written satisfied; a defensible NEWS
+  section placement; a low-severity coverage note nothing acts on; and a NEWS
+  sentence that is true as a statement about the install surface.
+- **O7 — recorded, not amended**, on the maintainer's decision at the gate.
+- **P2 — filed as a candidate row** rather than fixed, on the maintainer's
+  decision: raising the floor is a dependency re-pin needing its own gate.
+
+**Re-verification after the fixes.** `devtools::document()` regenerated
+`man/local_timeout.Rd` and `man/tidymedia-package.Rd` and then leaves the tree
+clean. `devtools::check()`: `Status: OK`, 0 errors / 0 warnings / 0 notes,
+2m 41.2s. `devtools::test()`: 6635 pass, 0 fail, 5 skip, 4 warn — 7 more passes
+than before the fixes, the same four pre-existing warnings.
+`pkgdown::check_pkgdown()`: no problems. `spelling::spell_check_package(".")`:
+no spelling errors. The two timeout files alone: 105 and 114 pass, 0 fail,
+0 skip.
 
 Nothing was found wrong with: `check_required(expr)`'s placement and promise
 semantics (`with_timeout({side <<- TRUE; 1}, 0.5)` refuses with `side` still

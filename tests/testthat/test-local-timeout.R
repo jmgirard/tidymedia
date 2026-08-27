@@ -109,6 +109,33 @@ test_that("the prior value comes back invisibly, as withr's local_* do", {
   expect_invisible(local_timeout(5, .local_envir = environment()))
 })
 
+test_that("an UNSET prior comes back as the shape options() returns for it", {
+  # The set case above cannot see this: options() hands back a one-element list
+  # whose entry is NULL when the name was unset, and that NULL entry is what a
+  # caller round-tripping the value through options() needs in order to leave
+  # the session unset again. A bare NULL, or a zero-length list, would not.
+  withr::local_options(tidymedia.timeout = NULL)
+  f <- function() local_timeout(5)
+  prior <- f()
+  expect_equal(prior, list(tidymedia.timeout = NULL))
+  expect_length(prior, 1L)
+  expect_named(prior, "tidymedia.timeout")
+  expect_null(prior[[1]])
+  # And it really does restore to unset when fed back.
+  withr::local_options(tidymedia.timeout = 7)
+  options(prior)
+  expect_null(getOption("tidymedia.timeout"))
+})
+
+test_that("a failed undo registration leaves the session as it was found", {
+  # The write used to come first, so a defer() that aborted left the limit set
+  # for the rest of the session with nothing to put the caller's value back.
+  withr::local_options(tidymedia.timeout = 99)
+  f <- function() local_timeout(5, .local_envir = "not an environment")
+  expect_error(f())
+  expect_equal(getOption("tidymedia.timeout"), 99)
+})
+
 # AC6 -- refused by the rule with_timeout() applies ----------------------------
 
 test_that("local_timeout() accepts exactly the values with_timeout() does", {

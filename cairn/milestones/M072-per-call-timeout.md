@@ -115,7 +115,7 @@ D-entry.
 - [x] T5. Spawn-site test: mock `guard_timeout()` to record `limit`, drive one
       call per `tm_spawn_sites()` member inside `with_timeout()` with the
       session option unset, and assert `ffm_batch()`'s up-front read too.
-- [ ] T6. FIFO anchor cell through `with_timeout()` with the session option
+- [x] T6. FIFO anchor cell through `with_timeout()` with the session option
       unset, carrying its own outer bound. Budget limit + 40 s per M69's lesson
       on base R's SIGINT/SIGTERM/SIGKILL escalation; `skip_on_cran()`.
 - [ ] T7. Parallel cells under `local_carry_harness()` for the three entry
@@ -143,6 +143,8 @@ D-entry.
 - 2026-08-27: T4 — the probe vector is scored against `resolve_timeout()`'s own verdict (3 accepted, 10 refused); deferring the check to exit makes the marker file appear and reddens the eagerness cells.
 
 - 2026-08-27: T5 — all four spawn sites plus `ffm_batch()`'s up-front read are handed 7 inside `with_timeout(expr, 7)` and 0 outside it; a wrapper that establishes nothing reddens 10 cells.
+
+- 2026-08-27: T6 — FIFO anchor through `with_timeout(expr, 2)` with the session option unset aborts in ~2 s on macOS; the cell's outer bound is a background writer that releases the FIFO at 90 s, and with the wrapper broken the run failed at 91 s instead of hanging (a first draft of that writer carried a duplicate `&` and left the bound unarmed for seven minutes).
 
 ## Decisions
 

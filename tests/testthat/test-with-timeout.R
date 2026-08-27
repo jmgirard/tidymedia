@@ -271,3 +271,62 @@ test_that("ffm_batch()'s up-front limit check reads the per-call value", {
   ffm_batch(jobs, build, run = FALSE)
   expect_equal(seen, 0)
 })
+
+# A real hung program, bounded by the call and not by the session -------------
+#
+# The cells above prove the limit is PASSED. This one proves it BITES when the
+# session sets no limit at all, which is the case the session-wide option
+# cannot cover.
+#
+# The hang is M69's FIFO nobody writes to: FFmpeg blocks on its header forever
+# rather than racing the machine's encoding speed. Slow on Linux and the
+# slowness is the feature -- base R escalates SIGINT -> SIGTERM -> SIGKILL
+# across limit + 40 s, so this costs ~42 s there against ~2 s on macOS, and
+# skips on CRAN with the rest of M69's execution cells.
+
+# tm_release_fifo(): the cell's own outer bound.
+#
+# Without it, a `with_timeout()` that established nothing would leave FFmpeg
+# blocked on a FIFO with no writer and no limit -- and the test would not fail,
+# it would hang the runner forever. A background shell opens the FIFO for
+# writing well past any limit this test allows and closes it again, so FFmpeg
+# reaches EOF and exits. The failure is then an ordinary one: no
+# `tidymedia_timeout` abort, or an elapsed time over budget.
+tm_release_fifo <- function(path, after = 90) {
+  # No trailing `&` of our own: `wait = FALSE` is what backgrounds this, and
+  # base R appends the `&` itself -- writing a second one is a shell syntax
+  # error, which leaves no writer at all and the bound unarmed (measured
+  # 2026-08-27: FFmpeg was still blocked seven minutes in).
+  system(
+    sprintf(
+      "(sleep %d; [ -p %s ] && : > %s) >/dev/null 2>&1",
+      after, shQuote(path), shQuote(path)
+    ),
+    wait = FALSE
+  )
+  invisible(NULL)
+}
+
+test_that("a per-call limit kills a hung program with no session limit set", {
+  blocked <- local_blocking_input()
+  out <- withr::local_tempfile(fileext = ".mp4")
+  withr::local_options(tidymedia.timeout = NULL)
+  tm_release_fifo(blocked)
+
+  start <- Sys.time()
+  err <- expect_error(
+    with_timeout(
+      ffmpeg(paste("-y -i", shQuote(blocked), shQuote(out))),
+      2
+    ),
+    class = "tidymedia_timeout"
+  )
+  # 2 + base R's 40-second escalation ladder, with room to spare; the outer
+  # bound above is far outside this, so a cell that reaches it fails here.
+  expect_lt(as.numeric(difftime(Sys.time(), start, units = "secs")), 60)
+  msg <- cli::ansi_strip(conditionMessage(err))
+  expect_match(msg, "FFmpeg")
+  expect_match(msg, "2 seconds")
+  # And the session is no more bounded afterwards than it was before.
+  expect_equal(getOption("tidymedia.timeout", default = "absent"), "absent")
+})

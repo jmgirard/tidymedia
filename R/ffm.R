@@ -383,6 +383,12 @@ ffm_fps <- function(object, fps) {
 #' measured per ITU-R BS.1770-4 — with \code{loudness_range = 7} (FFmpeg's own
 #' \code{loudnorm} default, EBU R128 not prescribing a single value).
 #'
+#' Two filters are appended, not one: \code{loudnorm} is followed by
+#' \code{asetnsamples}, which re-chunks the filtered audio into 4096-sample
+#' frames without padding the last one. Dynamic \code{loudnorm} resamples to
+#' 192 kHz and emits 192000-sample frames, which encoders that accept whatever
+#' frame they are handed — FLAC and Vorbis among them — refuse to open at all.
+#'
 #' @param object An ffmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
 #' @param target_loudness The target integrated loudness, in LUFS
@@ -479,7 +485,16 @@ ffm_loudnorm <- function(object,
   # commands stay byte-for-byte unchanged.
   if (linear) cmd <- paste0(cmd, ":linear=true")
   if (!is.null(print_format)) cmd <- paste0(cmd, ":print_format=", print_format)
-  object$filter_audio <- c(object$filter_audio, cmd)
+  # Re-chunk on the way out. Dynamic `loudnorm` resamples to 192 kHz and emits
+  # 192000-sample frames; an encoder with a fixed frame size is re-framed by
+  # FFmpeg on the way in, but flac and vorbis take whatever frame they are
+  # handed and 192000 is past flac's 65535-sample block ceiling -- measured on
+  # FFmpeg 9.0.1, both die at `Could not open encoder before EOF` (exit 234)
+  # leaving a zero-byte file. Unconditional rather than gated on `linear`,
+  # because FFmpeg falls back from linear to dynamic on its own whenever the
+  # linear correction would breach the true-peak target. `p=0` so the final
+  # frame is not padded: padding would lengthen the output by up to one frame.
+  object$filter_audio <- c(object$filter_audio, cmd, "asetnsamples=n=4096:p=0")
 
   object
 }

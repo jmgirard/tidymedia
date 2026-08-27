@@ -262,9 +262,9 @@ test_that("ffm_fps() accepts an FFmpeg framerate expression as a string", {
 test_that("ffm_loudnorm() appends a loudnorm filter compiling into -af", {
   f <- make_input()
   p <- ffm_loudnorm(ffm_files(f, "out.mp4"))
-  expect_equal(p$filter_audio, "loudnorm=I=-23:TP=-1:LRA=7")
+  expect_equal(p$filter_audio, c("loudnorm=I=-23:TP=-1:LRA=7", "asetnsamples=n=4096:p=0"))
   expect_match(
-    ffm_compile(p), '-af "loudnorm=I=-23:TP=-1:LRA=7"', fixed = TRUE
+    ffm_compile(p), '-af "loudnorm=I=-23:TP=-1:LRA=7,asetnsamples=n=4096:p=0"', fixed = TRUE
   )
 })
 
@@ -274,7 +274,7 @@ test_that("ffm_loudnorm() accepts custom EBU R128 targets", {
     ffm_files(f, "out.mp4"),
     target_loudness = -16, true_peak = -1.5, loudness_range = 11
   )
-  expect_equal(p$filter_audio, "loudnorm=I=-16:TP=-1.5:LRA=11")
+  expect_equal(p$filter_audio, c("loudnorm=I=-16:TP=-1.5:LRA=11", "asetnsamples=n=4096:p=0"))
 })
 
 test_that("ffm_loudnorm() coexists with a video filter (both -vf and -af)", {
@@ -282,7 +282,7 @@ test_that("ffm_loudnorm() coexists with a video filter (both -vf and -af)", {
   p <- ffm_loudnorm(ffm_scale(ffm_files(f, "out.mp4"), 640, 480))
   cmd <- ffm_compile(p)
   expect_match(cmd, '-vf "scale=w=640:h=480"', fixed = TRUE)
-  expect_match(cmd, '-af "loudnorm=I=-23:TP=-1:LRA=7"', fixed = TRUE)
+  expect_match(cmd, '-af "loudnorm=I=-23:TP=-1:LRA=7,asetnsamples=n=4096:p=0"', fixed = TRUE)
 })
 
 test_that("ffm_loudnorm() appends after an existing audio filter", {
@@ -290,7 +290,8 @@ test_that("ffm_loudnorm() appends after an existing audio filter", {
   p <- ffm_loudnorm(ffm_loudnorm(ffm_files(f, "out.mp4")), target_loudness = -16)
   expect_equal(
     p$filter_audio,
-    c("loudnorm=I=-23:TP=-1:LRA=7", "loudnorm=I=-16:TP=-1:LRA=7")
+    c("loudnorm=I=-23:TP=-1:LRA=7", "asetnsamples=n=4096:p=0",
+      "loudnorm=I=-16:TP=-1:LRA=7", "asetnsamples=n=4096:p=0")
   )
 })
 
@@ -308,7 +309,8 @@ test_that("ffm_loudnorm() rejects out-of-range or non-numeric targets", {
 test_that("ffm_loudnorm() appends print_format for the analysis pass", {
   f <- make_input()
   p <- ffm_loudnorm(ffm_files(f, "out.mp4"), print_format = "json")
-  expect_equal(p$filter_audio, "loudnorm=I=-23:TP=-1:LRA=7:print_format=json")
+  expect_equal(p$filter_audio,
+               c("loudnorm=I=-23:TP=-1:LRA=7:print_format=json", "asetnsamples=n=4096:p=0"))
 })
 
 test_that("ffm_loudnorm() builds the correction filter from measured values", {
@@ -320,8 +322,9 @@ test_that("ffm_loudnorm() builds the correction filter from measured values", {
   )
   expect_equal(
     p$filter_audio,
-    paste0("loudnorm=I=-23:TP=-1:LRA=7:measured_I=-27.61:measured_TP=-9.32:",
-           "measured_LRA=5.9:measured_thresh=-38.06:offset=0.3:linear=true")
+    c(paste0("loudnorm=I=-23:TP=-1:LRA=7:measured_I=-27.61:measured_TP=-9.32:",
+             "measured_LRA=5.9:measured_thresh=-38.06:offset=0.3:linear=true"),
+      "asetnsamples=n=4096:p=0")
   )
 })
 
@@ -1357,4 +1360,21 @@ test_that("check_token() rejects tokens with a leading dash", {
   expect_error(ffm_codec(p, video = "-vn"), "single clean token")
   expect_error(ffm_pixel_format(p, "-f"), "single clean token")
   expect_no_error(ffm_codec(p, video = "libvpx-vp9"))
+})
+
+test_that("ffm_loudnorm() caps the frame size it hands the encoder", {
+  # The binary-free half of the FFmpeg 9 flac/oga regression: `loudnorm` emits
+  # 192000-sample frames, past what flac and vorbis will open an encoder for, so
+  # every loudnorm chain re-chunks on the way out. `p=0` because padding the
+  # final frame would lengthen the output -- and this pin is the ONLY fence on
+  # that half: the padding it forbids is 2.7 ms on the execution test's fixture,
+  # smaller than how much the tail moves between FFmpeg versions, so no runtime
+  # duration assertion can tell padding from the build.
+  f <- make_input()
+  p <- ffm_loudnorm(ffm_files(f, "out.mp4"))
+  expect_equal(p$filter_audio,
+               c("loudnorm=I=-23:TP=-1:LRA=7", "asetnsamples=n=4096:p=0"))
+  expect_match(ffm_compile(p),
+               '-af "loudnorm=I=-23:TP=-1:LRA=7,asetnsamples=n=4096:p=0"',
+               fixed = TRUE)
 })

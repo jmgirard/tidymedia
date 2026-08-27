@@ -63,12 +63,12 @@ test_that("normalize_audio_batch(run = FALSE) single-pass command column is unch
   scrub <- function(cmd) gsub(f, "<in>", cmd, fixed = TRUE)
   expect_equal(
     scrub(res$command[[1]]),
-    paste0('-y -i "<in>" -af "loudnorm=I=-23:TP=-1:LRA=7" ',
+    paste0('-y -i "<in>" -af "loudnorm=I=-23:TP=-1:LRA=7,asetnsamples=n=4096:p=0" ',
            '-ac 2 -ar 48000 -map "0:a:0" "a.mp4"')
   )
   expect_equal(
     scrub(res$command[[2]]),
-    paste0('-y -i "<in>" -af "loudnorm=I=-16:TP=-1.5:LRA=11" ',
+    paste0('-y -i "<in>" -af "loudnorm=I=-16:TP=-1.5:LRA=11,asetnsamples=n=4096:p=0" ',
            '-ac 1 -ar 44100 -map "0:a:0" "b.mp4"')
   )
 })

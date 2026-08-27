@@ -70,6 +70,12 @@ measurement pass. The defaults follow EBU Recommendation R 128 (2014) —
 \code{target_loudness = -23} LUFS and \code{true_peak = -1} dBTP, loudness
 measured per ITU-R BS.1770-4 — with \code{loudness_range = 7} (FFmpeg's own
 \code{loudnorm} default, EBU R128 not prescribing a single value).
+
+Two filters are appended, not one: \code{loudnorm} is followed by
+\code{asetnsamples}, which re-chunks the filtered audio into 4096-sample
+frames without padding the last one. Dynamic \code{loudnorm} resamples to
+192 kHz and emits 192000-sample frames, which encoders that accept whatever
+frame they are handed — FLAC and Vorbis among them — refuse to open at all.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

@@ -118,7 +118,7 @@ D-entry.
 - [x] T6. FIFO anchor cell through `with_timeout()` with the session option
       unset, carrying its own outer bound. Budget limit + 40 s per M69's lesson
       on base R's SIGINT/SIGTERM/SIGKILL escalation; `skip_on_cran()`.
-- [ ] T7. Parallel cells under `local_carry_harness()` for the three entry
+- [x] T7. Parallel cells under `local_carry_harness()` for the three entry
       points, and record the pipeline-build site's no-kill status.
 - [ ] T8. Docs: `_pkgdown.yml` reference row, `NEWS.md` entry, and the timeout
       paragraph in the package landing topic (`R/tidymedia-package.R:18`).
@@ -145,6 +145,8 @@ D-entry.
 - 2026-08-27: T5 — all four spawn sites plus `ffm_batch()`'s up-front read are handed 7 inside `with_timeout(expr, 7)` and 0 outside it; a wrapper that establishes nothing reddens 10 cells.
 
 - 2026-08-27: T6 — FIFO anchor through `with_timeout(expr, 2)` with the session option unset aborts in ~2 s on macOS; the cell's outer bound is a background writer that releases the FIFO at 90 s, and with the wrapper broken the run failed at 91 s instead of hanging (a first draft of that writer carried a duplicate `&` and left the bound unarmed for seven minutes).
+
+- 2026-08-27: T7 — the three parallel entry points are killed at 2 s under a session limit of 25 s (whole file 17 s); with the wrapper broken the same three cells take the session's 25 s and go red, so the timing is what they measure. The pipeline-build fan-out is recorded as no-kill.
 
 ## Decisions
 

@@ -2174,3 +2174,51 @@ own. One condition, in the process that can name the caller, on both branches.
 Falsified by a report of a worker-side option write colliding with a caller's own
 worker configuration, or by a caller who wanted the parallel path to diverge from
 the sequential one and now cannot have it.
+
+## D051 — A limit may be set for one call, by wrapping it (2026-08-27, from M072; supersedes D047's session-grain falsifier clause on its per-verb-argument bullet, leaving that bullet's rejection standing)
+
+D047 put the wall-clock limit in an option and named what that cost: the seam's
+grain is the session, which is the wrong grain for a script that wants a
+different limit for a different call. That sentence was written as the falsifier
+for rejecting `timeout =` arguments on the verbs. The grain is now available
+without adding one.
+
+**The rule.** `with_timeout(expr, seconds)` establishes `tidymedia.timeout` for
+the dynamic extent of `expr` and puts the caller's prior state back on every
+exit — the returning path, an ordinary abort and a reached limit alike, an unset
+option restored as unset. Nothing is threaded and no signature changes: the
+option is process-global, so every spawn site, `ffm_batch()`'s up-front refusal
+and the parallel carrier (D050) read the per-call value exactly where they
+already read the session's.
+
+**Why a wrapper rather than the argument D047 rejected.** An argument can only
+reach a function that has one, and most of the exports a timeout can be seen
+through take no `run =` at all — `ffm_run()`, the Layer 0 hatches, the probe and
+MediaInfo readers, `verify_media()`. A wrapper reaches every one of them, and
+costs one irreversible export against a signature change on each verb. The
+counts are in `cairn/milestones/M072-per-call-timeout.md`.
+
+**The rejection of per-verb `timeout =` arguments stands.** Only D047's
+falsifier clause is discharged: the grain that clause said was missing is here,
+so the clause no longer names a way the rejection could be wrong. The argument
+itself stays a ROADMAP candidate under D014's pre-0.2.0 clean break, promotable
+on its own evidence — a caller needing a limit that varies per row inside one
+batch, which a wrapper around the batch cannot express.
+
+**The expression comes first, the limit second.** `with_timeout(expr, seconds)`
+rather than withr's value-first `with_*(new, code)` order, matching
+`R.utils::withTimeout()`, the function an R user reaching for this already
+knows. Chosen at the implementation gate; it is the half of this decision that
+cannot be revisited without breaking callers.
+
+**`seconds` is refused by the same rule the option is.** The wrapper applies
+`resolve_timeout()`'s own check, so a value base R would mishandle is refused
+identically whether it was written as an argument or set as an option — and it
+is refused before `expr` is evaluated, so a caller who mistyped a limit does not
+watch the call run unbounded. The message names `seconds`, since that is what
+they wrote.
+
+Falsified by a report that wrapping an expression is the wrong shape for a
+script — that the natural place to say "bound the rest of this function" is a
+statement, not a wrapper — or by a caller needing a limit that varies per row
+within one batch.

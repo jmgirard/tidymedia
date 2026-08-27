@@ -122,7 +122,7 @@ D-entry.
       points, and record the pipeline-build site's no-kill status.
 - [x] T8. Docs: `_pkgdown.yml` reference row, `NEWS.md` entry, and the timeout
       paragraph in the package landing topic (`R/tidymedia-package.R:18`).
-- [ ] T9. Append the D-entry to `cairn/DECISIONS.md`.
+- [x] T9. Append the D-entry to `cairn/DECISIONS.md`.
 - [ ] T10. `devtools::test()` and `devtools::check()` clean.
 
 ## Work log
@@ -149,6 +149,8 @@ D-entry.
 - 2026-08-27: T7 — the three parallel entry points are killed at 2 s under a session limit of 25 s (whole file 17 s); with the wrapper broken the same three cells take the session's 25 s and go red, so the timing is what they measure. The pipeline-build fan-out is recorded as no-kill.
 
 - 2026-08-27: T8 — `_pkgdown.yml` gains a "Bounding a run" section holding `with_timeout` (`pkgdown::check_pkgdown()` clean), NEWS.md a new-features bullet, and the landing topic a wrapped-call paragraph beside the session-wide one.
+
+- 2026-08-27: T9 — D051 appended: the per-call grain, D047's falsifier clause discharged with its rejection left standing, and the code-first argument order the gate chose.
 
 ## Decisions
 

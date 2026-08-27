@@ -177,6 +177,7 @@ row asked whether the floor understates, and "it does not" answers it.
 
 - 2026-08-27: `neighbouring` in the new NEWS sentence tripped `spelling.R` (the package's wordlist is US English), which surfaced as R CMD check's one NOTE while `devtools::check()`'s own summary line still printed 0 notes; reworded to `sibling` and re-run. `devtools::check()` `Status: OK`, 0 errors / 0 warnings / 0 notes (3m 0.5s).
 - 2026-08-27: third defect return closed, as a descope rather than a fourth attempt at AC3. The four criteria that remain (AC1, AC2 and the renumbered AC3, AC4) were all met on fresh evidence at review round 3 and nothing this session touched what they measured: no package behavior changed, the only `R/` edit is a source comment, and the harness was re-run unchanged in this session — exit 0, 70 PASS / 0 FAIL / 0 SKIP, every previously reported value identical. What changed is what the repo says: one false NEWS clause corrected and seven small texts fixed. Status to `review`.
+- 2026-08-27: review round 4 — all four criteria met on fresh evidence; consistency gate passes (`weight caps` shed by T17). Three-lens fan-out: blame-history and prior-review record zero findings, [O] diff-bug eight. No criterion failure, so no return. P5 and P8 rejected at review; the maintainer chose to fix the other six at the gate — P1/P2 corrected the per-spawned-program coverage sentence in NEWS and D053 (`:432` is a process-lifetime block and no test writes a `local_timeout()` above a batch), P3/P4/P7 tightened NEWS's enumerations and dated its "current release", P6 named the harness's load-bearing pin control. `devtools::check()` re-run clean over the edits. Merge approved.
 
 ## Decisions
 <!-- owner: implement / review · append-only -->
@@ -1180,3 +1181,50 @@ recorded after the reviewer looked. The second half is not a Coverage gap:
 `cairn_validate`'s `coverage complete` check requires every criterion to map to
 ≥1 existing task, not every task to map to a criterion, and it passes; T10-T17
 are return-work against criteria already mapped.
+
+### Triage at the gate (2026-08-27, round 4)
+
+Every finding above was put to the maintainer at the approval gate with its
+disposition. P5 and P8 were rejected at review under the out-of-scope taxonomy
+(an unmodified line; AC fencing working as designed) with the reasons recorded
+beside them. Of the six that remain, the maintainer chose to fix all six now —
+none binds an acceptance criterion, since the criterion that bound `NEWS.md`
+was the one the third-return descope retired, and all six are text corrections
+requiring no new measurement. What was written:
+
+- **P1, P2 (`NEWS.md`, `cairn/DECISIONS.md`).** The sentence claiming the
+  per-spawned-program claim "was run" is replaced in both texts. NEWS now says
+  neither of the two non-frame `@details` claims was run on the floor as the
+  page states it, that the per-spawned-program one is stated of a
+  `local_timeout()` above a batch which no test writes, and that what did run is
+  the same per-spawn machinery driven through `with_timeout()` in four passing
+  blocks. D053 says the same, names the three blocks that bear on it
+  (`test-with-timeout.R:255`, `:279`, `:487`), drops `:432` — the
+  process-lifetime block that asserts nothing about a limit — and records both
+  earlier revisions of the paragraph as wrong in opposite directions.
+- **P3 (`NEWS.md`).** "The two top-level forms the call can be written at" →
+  "Two of the top levels the call can be written at", so the sentence no longer
+  claims the enumeration is exhaustive while the same bullet names `knitr` as a
+  third.
+- **P4 (`NEWS.md`).** The closed "Three things were not run on 2.5.0" list is
+  gone; the unmeasured set is now stated as the two `?local_timeout` claims plus
+  `knitr` and the version range, which is D053's set restricted to the claims
+  domain rather than a count that silently differs from it.
+- **P6 (`data-raw/withr-floor.R`).** The header now names both pin controls and
+  says the provenance one is load-bearing, which is what D053 leans on and what
+  G4 was raised about.
+- **P7 (`NEWS.md`).** "the current release" → "the release current on
+  2026-08-27, when this was measured", so the claim cannot decay silently.
+
+No `R/` file changed, so no roxygen or `man/` regeneration follows.
+`devtools::check()` was re-run over the edited `NEWS.md` — `Status: OK`,
+0 errors / 0 warnings / 0 notes — because `spelling.R` reads that file and has
+reddened this milestone once before.
+
+### Gate outcome — approved
+
+All four acceptance criteria met on fresh evidence recorded above. The
+consistency gate passes, universal and toolchain halves both. No finding in the
+three-lens fan-out demonstrated a criterion failing, so the return floor is not
+reached; the six actioned findings were fixed at the gate and the two rejected
+ones carry their reasons. Merge authorized by the maintainer at the chip.

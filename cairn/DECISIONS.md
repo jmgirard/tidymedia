@@ -2370,13 +2370,20 @@ seen to part.
 **What was not measured.** The nine other `Imports` floors, the absent
 `Depends: R (>= )` line, and every `withr` between 2.5.0 and 3.0.3 — the walk
 was to be run only if a block failed, and none did. The `knitr` target
-environment. Of the two `@details` claims that are not about frames at all,
-one was not run under the floor and one was. The `parallel = TRUE` fan-out was
-not: neither measured file mentions `parallel`. The per-spawned-program claim
-WAS — `test-with-timeout.R:255`, `:279`, `:432` and `:487` test it, and all four
-passed under the pinned 2.5.0 library with 0 skips. An earlier revision of this
-paragraph said both were unrun and located both elsewhere; it was wrong on the
-second. Test-side `withr` use is Suggests-side and says nothing about what a
+environment. Neither of the two `@details` claims that are not about
+frames was run under the floor as the page states it. The `parallel = TRUE`
+fan-out is mentioned in neither measured file. The per-spawned-program claim is
+stated of a `local_timeout()` above a batch, and no test writes that:
+`grep -n local_timeout tests/testthat/test-with-timeout.R` returns one hit, a
+comment. What DID run on the floor is the same per-spawn machinery driven
+through `with_timeout()` — `test-with-timeout.R:255` (each spawn site is handed
+the per-call limit), `:279` (`ffm_batch()`'s up-front limit check reads the
+per-call value) and `:487` (a per-call limit kills a hung program) — all passing
+under the pinned 2.5.0 library with 0 skips. Two earlier revisions of this
+paragraph were wrong here in opposite directions: the first said the claim was
+unrun and located its tests outside the two measured files; the second called it
+run and counted `:432` among its tests, which is a process-lifetime block
+asserting nothing about a limit. Test-side `withr` use is Suggests-side and says nothing about what a
 user installing tidymedia gets. Nothing verifies this floor on a schedule: CI
 installs the latest dependencies on all five jobs.
 

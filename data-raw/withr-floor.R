@@ -26,10 +26,12 @@
 #     defer(), local_options(), with_options() -- so the comparison is measured
 #     on each version rather than asserted.
 #
-# Every child session prints the `withr` it actually loaded AND asserts it is
-# the one requested. That control is the point of the harness: a pinned library
-# that silently resolved the user library's version would make every result
-# below vacuous.
+# Every child session prints the `withr` it actually loaded and the library it
+# came FROM, and asserts both against what it was handed. The provenance
+# assertion is the load-bearing one: the user library holds the current release,
+# so a version-string check alone cannot catch a failed install of that arm. That
+# control is the point of the harness -- a pinned library that silently resolved
+# the user library's copy would make every result below vacuous.
 #
 # `pkgload` is a harness dependency: run this with devtools installed.
 

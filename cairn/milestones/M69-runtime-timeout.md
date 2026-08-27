@@ -204,6 +204,8 @@ _T1-T14 are done; their detail is in the work log and in the branch's commits._
 - 2026-08-26: AC10 left UNTICKED, deliberately. Its text asks for `devtools::check()` at 0 errors and the local check reports 1. Nothing M69 owns fails, and CI is green on all nine checks — but ticking a box whose criterion says "0 errors" against a run that says "1 ERROR" would be a false record, and this milestone has already been returned three times for evidence that did not match its criteria. Whether CI's green satisfies AC10, or whether the FFmpeg 9 hotfix (now a ROADMAP candidate row) must land first, is a review judgment and is put to review rather than pre-empted here.
 - 2026-08-26: status -> review. AC1-AC9 hold with fresh evidence; AC10 open as above.
 
+- 2026-08-26: review pass 4 (first after the re-cut) — GATE FAILURE on AC10. What failed: `devtools::check()` reports `Status: 1 ERROR` against the criterion's "0 errors". All six failures are `test-audio-stream-normalize.R:462,463,466` twice — `normalize_audio()` to `.flac`/`.oga` under FFmpeg 9.0.1 — verified pre-existing this session on a clean `origin/master` worktree, and CI on PR #72 is green on all nine checks. AC1-AC9 hold with fresh evidence recorded in the Review section, including AC8's two mutations executed and AC9's `^## D0` sweep re-run. Nothing M69 owns fails; the blocker is the FFmpeg 9 regression already carried as a `/hotfix`-on-sight ROADMAP candidate. Thrash trigger (a) is already fired and holds, and a re-cut has been spent, so no retry under this plan is queued: the disposition goes to the user.
+
 ## Decisions
 
 ## Review
@@ -553,3 +555,112 @@ area — the readers, then the platform, now the decision record and the doc set
 Trigger (b) fired at pass 2 on AC3's second failure; its diagnosis and its
 per-instance `/milestone-brief` escalation offer carry into that routing rather
 than being discarded.
+
+---
+
+## Fourth pass (2026-08-26, branch `m69-runtime-timeout` @ `04ea5a2`, post-re-cut)
+
+Master is fully merged (`git rev-list --count HEAD..origin/master` = 0), so the
+evidence below is against a current branch. PR #72 was already open as a draft
+at this commit.
+
+**Evidence** (fresh, this session; every measurement re-run rather than carried
+over from pass 3):
+
+- AC1 — each of `R/ffmpeg.R`, `R/ffprobe.R`, `R/mediainfo.R` and
+  `R/program_management.R` carries exactly one `resolve_timeout(`, one
+  `timeout = limit` and one `guard_timeout(`, counted per file.
+- AC2 — `resolve_timeout()` with the option unset returns `0`, run directly.
+- AC3 — measured on the writer-less FIFO under `tidymedia.timeout = 2`
+  (macOS 15, R 4.6.1, FFmpeg 9.0.1): `ffmpeg()` 2.04 s, `ffprobe()` 2.03 s,
+  `ffm_run()` 2.04 s, all inside the 60 s bound, each aborting with class
+  `tidymedia_timeout` and a message naming its program and `2 seconds`
+  (`FFmpeg timed out after 2 seconds.` / `FFprobe timed out after 2 seconds.`).
+  Linux is covered by CI, green on all three Ubuntu jobs. `mediainfo()` is
+  covered by AC1 and the AC2 resolver test, as the criterion states.
+- AC4 — the branch is
+  `!is.null(status) && identical(as.integer(status), 124L)` (`R/timeout.R:52`);
+  a grep of `R/timeout.R` for `grepl|regexpr|regmatches|gsub|sub\(|startsWith|grep\(`
+  returns nothing.
+- AC5 — both D046 dispositions observed directly. A pre-existing output
+  survived byte-identical (md5 unchanged) with
+  `was left as it was: FFmpeg never wrote to it.`; the injected-kill case
+  (call-counted mock at the `run_program()` seam, `calls == 1`) read
+  `The incomplete '…' was removed.` with the file gone.
+- AC6 — `is_timeout(status = 124, limit = 0)` is `FALSE`; `limit = 2` is `TRUE`.
+- AC7 — zero warnings escaped a timed-out `ffmpeg()` under a
+  `withCallingHandlers(warning = )` counter, and the file's four
+  `expect_no_warning()` assertions are green.
+- AC8 — both `man/tidymedia-package.Rd` and `NEWS.md` describe three behaviors.
+  The criterion's verification clause was **executed**, not cited. Mutation A,
+  restoring `A call that reaches the limit aborts` ahead of the scoped
+  paragraph in both files: reddened exactly `both docs scope the abort and name
+  the readers that absorb instead`, 2 failures (rd + news), nothing else.
+  Mutation B, deleting the no-warning paragraph from both files: reddened
+  exactly `both docs disclose the paths that absorb with no warning`,
+  3 failures, nothing else. Both reverted and the file re-confirmed green.
+  The three lists were also checked against behavior on a FIFO under a 2 s
+  limit: `ffmpeg()`/`ffprobe()`/`ffm_run()`/`extract_audio()`/`verify_media()`
+  abort with `tidymedia_timeout`; `probe_all()`, `probe_container()`,
+  `probe_streams()` and `probe_video()` return their documented shape with
+  exactly one warning naming the file; `count_audio_streams()` returns
+  `NA_integer_` and `tool_versions()` an `NA` version, both with zero warnings,
+  which is what the third paragraph discloses.
+- AC9 — 48 `^## D0` headings in `cairn/DECISIONS.md`; the entries whose bodies
+  contain "absorb" are D025, D047 and the new D048. D025's use is unrelated
+  ("the milestone absorbed one verb from the pass-through candidate",
+  line 677), so D047 is the only entry asserting the uniform-absorption shape,
+  and D048's heading names it superseded in that half
+  (`supersedes D047's readers bullet; the rest of D047 stands`). D048's body
+  records `probe_one()`'s sentinel, `probe_all()`'s NA row with the
+  timeout-counting warning, `verify_media()` re-raising, and the two no-warning
+  paths disclosed rather than fixed.
+- **AC10 — FAILS as written.** `devtools::document()` produces no diff and
+  `pkgdown::check_pkgdown()` reports no problems, but
+  `devtools::check()` reports `Status: 1 ERROR` (0 warnings, 0 notes), read
+  from the check run's own status line. Suite under check:
+  FAIL 6 / WARN 6 / SKIP 6 / PASS 6165. See the gate failure below.
+
+**Consistency gate:** `cairn_validate` exit 0 — 16 PASS, 6 OK, two advisory
+warnings on the sizing tripwires (`M69: 10 acceptance criteria (>7)`,
+`M69: 17 tasks (>10)`), both inherited across three returns and a re-cut. The
+`release window` advisory did **not** fire. `cairn_impact` not run — Principles
+touched is `—`. Toolchain slot (`r-package` `consistency-gate`):
+`document()` no diff · generated files unedited · README untouched by the
+branch and in sync · `pkgdown::check_pkgdown()` no problems · NEWS.md entry
+present with no milestone or decision ids in user-facing text · no new
+top-level files · **`devtools::check()` NOT clean — 1 ERROR.**
+
+**GATE FAILURE — AC10 fails as written.** All six failures are
+`test-audio-stream-normalize.R:462,463,466`, twice, in M49's container loop:
+`normalize_audio()` to `.flac` and `.oga` exits 234 under FFmpeg 9.0.1
+(`Could not open encoder before EOF`). Verified pre-existing this session
+against a clean `origin/master` worktree: identical 6 failures in the same
+file. No test M69 owns fails, every timeout test and both M51-shaped doc guards
+run and pass under `R CMD check` against the installed package, and CI on PR
+#72 is green on all nine checks (its FFmpeg predates 9). The criterion,
+however, asks for `devtools::check()` at 0 errors and the measured run says 1,
+so it is not ticked and is not reinterpreted: the blocker is the FFmpeg 9
+regression already sitting in the ROADMAP candidates marked "user-visible on
+any FFmpeg 9 install, so this is `/hotfix` work — promote on sight".
+
+**Independent review — NOT dispatched.** This session is configured not to
+spawn subagents, so no fresh-context [O]/[S]/[S] lens ran. The diff was read by
+the reviewing session itself, which is weaker than the mandate and is recorded
+as such rather than left to imply an independent read. What that read covered:
+the full `git diff origin/master..HEAD`, the re-cut delta since `fd988de`
+(docs, one guard, `Config/roxygen2/version`), the prior-review surface (the
+archive holds compressed `**Review:**` lines rather than `## Review` sections,
+and `gh api .../pulls/comments` returned 0, so there is no prior-review
+evidence on these files either way), and blame on the modified lines — the
+`input = ""` argument, D046's snapshot ordering and M44's brace trap are all
+intact, `guard_timeout(suppress = TRUE)` reproduces `run_program()`'s former
+`suppressWarnings()`, and no D-entry is contradicted. No new finding at or
+above the action threshold. Two low ones, both logged, neither actioned:
+`Config/roxygen2/version` moved 8.0.0 → 8.1.0 as a side effect of the local
+`document()` run, so a contributor still on 8.0.0 will see a `man/` diff; and
+`guard_timeout()` still replays held warnings as bare `simpleWarning`s, which
+is J13/H1/F17, raised and logged on all three prior passes and unchanged here.
+The pass-3 findings deferred by the re-cut — J2's lowercase `ffprobe` literal
+and J7's `tm_timed_out` attribute leaking into `print()` — remain present and
+are M70's, named in this milestone's Scope Out.

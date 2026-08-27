@@ -260,13 +260,15 @@ local_timeout <- function(seconds, .local_envir = parent.frame()) {
   # run by Rscript and of a source()d file alike, measured TRUE on 2.5.0 and on
   # 3.0.3. Only the Rscript form's undo actually lands there, though:
   # deferred_run(globalenv()) restores the caller's value at an Rscript top
-  # level and finds nothing to run inside a source()d file, on both versions,
-  # because both redirect the handler to source()'s own frame first. So the
-  # rewritten branch is reached from one of the two forms, and what the caller
-  # observes is the same on both versions either way. data-raw/withr-floor.R
-  # re-runs the whole comparison -- including the withr:: calls the @details
-  # above compare this one to -- and D053 records what it found, the one form
-  # where the two versions part included.
+  # level and finds nothing to run inside a source()d file, on both versions.
+  # That is the measured part; withr's own sources say why (both redirect the
+  # handler to source()'s own frame first, by different routes), read from those
+  # sources rather than by the harness -- D053 records the reading and where it
+  # came from. So the rewritten branch is reached from one of the two forms, and
+  # what the caller observes is the same on both versions either way.
+  # data-raw/withr-floor.R re-runs the whole comparison -- including the withr::
+  # calls the @details above compare this one to -- and D053 records what it
+  # found, the one form where the two versions part included.
   withr::defer(options(prior), envir = .local_envir)
   options(tidymedia.timeout = as.numeric(seconds))
   invisible(prior)

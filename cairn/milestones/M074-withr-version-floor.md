@@ -87,84 +87,47 @@ row asked whether the floor understates, and "it does not" answers it.
 
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
+<!-- T1-T17 compressed in one pass at the weight cap (tracking-rules): the work
+     log below carries each task's full statement, findings and result. -->
 
-- [x] T1 — Build the harness: a scratch script that installs a given `withr`
-      version from the CRAN archive into an isolated `.libPaths()` entry and
-      evaluates an expression under it. withr's only Imports are `graphics` and
-      `grDevices`, so each install is self-contained. The harness prints
-      `packageVersion("withr")` from inside the evaluating session; verify it
-      reports the requested version and not the user library's 3.0.3 before
-      trusting any result from it.
-- [x] T2 — Run `test-local-timeout.R` and `test-with-timeout.R` under withr
-      2.5.0, recording pass/fail per `test_that()` block by name. If any block
-      fails, walk upward — 2.5.1, 2.5.2, 3.0.0, 3.0.1, 3.0.2, 3.0.3 — to the
-      lowest version on which every block passes, recording the results at each
-      step rather than only the endpoints.
-- [x] T3 — Measure AC2's two top-level forms, and AC4's four documented claims,
-      on 2.5.0 and on 3.0.3; record the differences. `local_timeout()` reaches
-      `withr::defer()`'s `globalenv()` branch only from these forms, and withr's
-      2.5.0 NEWS claims globalenv unwinding that 3.0.3 routes through
-      `is_top_level_global_env()`/`global_defer()` instead — the point is which
-      of the two the caller actually observes.
-- [x] T4 — Settle the floor from T2/T3 and write the D-entry: the version, the
-      behavior that forced it (or the measurement that permits keeping 2.5.0),
-      what was and was not tested, and the entry's own falsifier.
-- [x] T5 — Update `DESCRIPTION`, `NEWS.md`, and any version-dependent wording in
-      `local_timeout()`'s roxygen at `R/timeout.R:120-200`; run
-      `devtools::document()`, then `devtools::check()` and `devtools::test()`.
-- [x] T6 — (defect return) Extend `data-raw/withr-floor.R` to measure what the
-      shipped documentation actually claims: the `withr::` calls the roxygen
-      compares `local_timeout()` to (F2), what `parent.frame()` is at each top
-      level (F1), whether an undo is scheduled at an `Rscript` top level (F4),
-      and `source(local = TRUE)` (F7). Make a wrong pin fail the run rather than
-      print (F8, and F10's exit-status half).
-- [x] T7 — (defect return) Rewrite D053 from T6's measurements: the globalenv
-      branch IS reached (F1), `is_top_level_global_env()` is not 3.x-only (F3),
-      the Rscript form's undo exists and is only observed late (F4),
-      `source(local = TRUE)` is measured rather than omitted (F7), and D052's
-      justification stands unqualified (F9).
-- [x] T8 — (defect return) Fix `local_timeout()`'s roxygen and the call-site
-      comment at `R/timeout.R:255-260` to say what T6 measured (F2, F1);
-      `devtools::document()`.
-- [x] T10 — (defect return 2) Harness: assert the pinned library's *provenance*
-      rather than only its version string, so the 3.0.3 arm cannot fall through
-      to the user library (G4); fail the run when any `test_that()` block
-      reports FAIL, instead of printing it (G5); add an arm that measures where
-      `defer()` actually registered at each of the two top-level forms, so G1's
-      corrected mechanism claim rests on a measurement. Re-run both versions.
-- [x] T11 — (defect return 2) Rewrite D053's mechanism paragraph from T10's
-      measurement: the branch withr 3.0.0 rewrote is reached from the `Rscript`
-      form and not from the `source()` form, which both versions redirect to
-      `source()`'s own frame first (G1); say where the harness actually fetches
-      each version from (G8).
-- [x] T12 — (defect return 2) Fix the call-site comment at `R/timeout.R` to say
-      what T10 measured about the two forms (G1); `devtools::document()`.
-- [x] T13 — (defect return 2) Rewrite `NEWS.md`'s withr bullet to name the two
-      files and 35 blocks actually run rather than "the whole test suite" (G2),
-      to state the one measured version difference (G3), and to stop reading as
-      six measurements where four were made (G6); correct the ROADMAP row's
-      inventory of the harness's remaining rough edges and add G9 (G7); run the
-      `verify` slot and `devtools::check()`.
-
-- [x] T9 — (defect return) Rewrite `NEWS.md`'s withr bullet to state exactly
-      what was measured against the floor, with an anchored version range (F5,
-      F6 — the AC3 failure); file F10's remaining harness hardening as a
-      candidate row; run the `verify` slot and `devtools::check()`.
-
+- [x] T1 — Build `data-raw/withr-floor.R`: install a given `withr` from CRAN
+      into an isolated library, evaluate under it, and prove the pin.
+- [x] T2 — Run both timeout-wrapper test files under 2.5.0, a verdict per
+      `test_that()` block; walk upward only on a failure.
+- [x] T3 — Measure AC2's two top-level forms and the four documented claims on
+      2.5.0 and on 3.0.3; record the differences.
+- [x] T4 — Settle the floor and write the D-entry: the version, what forced it,
+      what was and was not tested, and its own falsifier.
+- [x] T5 — Update `DESCRIPTION`, `NEWS.md` and `local_timeout()`'s roxygen;
+      `document()`, then `check()` and `test()`.
+- [x] T6 — (return 1) Extend the harness to measure what the shipped docs claim
+      — the `withr::` comparison, `parent.frame()` at each top level, the
+      `Rscript` form's undo, `source(local = TRUE)` — and fail on a wrong pin.
+- [x] T7 — (return 1) Rewrite D053 from T6: the globalenv branch IS reached,
+      `is_top_level_global_env()` is not 3.x-only, D052 stands unqualified.
+- [x] T8 — (return 1) Fix the roxygen and the call-site comment to say what T6
+      measured; `document()`.
+- [x] T9 — (return 1) Rewrite NEWS to an anchored range stating what was
+      measured; file the harness's remaining edges; `verify` slot + `check()`.
+- [x] T10 — (return 2) Harness: assert library provenance, stop on a FAIL
+      block, measure where `defer()` registered at each form; re-run both.
+- [x] T11 — (return 2) Rewrite D053's mechanism paragraph from T10, and say
+      where the harness fetches each version.
+- [x] T12 — (return 2) Fix the call-site comment to T10's measurement;
+      `document()`.
+- [x] T13 — (return 2) Rewrite NEWS to the two files and 35 blocks actually
+      run and the one version difference; correct the ROADMAP row.
 - [x] T14 — (descope) Execute the gated AC3 amendment: drop AC3, renumber the
-      four that remain, and give the retired NEWS-accuracy promise a home on
-      the `Imports`-floors candidate row.
-- [x] T15 — (defect return 3) Correct the per-spawned-program clause in NEWS
-      and D053: those tests are inside `test-with-timeout.R` and passed under
-      the pinned 2.5.0 (O1).
-- [ ] T16 — (defect return 3) O2-O8: source D053's withr-internals reading
-      (O2), fix the ROADMAP row's arithmetic (O3), name AC2's two forms in NEWS
-      (O4), stop extrapolating "the rest of the sourced file" (O5), correct
-      where 3.0.3 is fetched from (O6), reconcile NEWS's unmeasured set with
-      D053's (O7), and drop the "no claim covers" judgment (O8).
-- [ ] T17 — Shed the weight-cap overage by compressing Tasks, the heaviest
-      plan-owned section, in one pass; re-run `cairn_validate.py`, the `verify`
-      slot and `devtools::check()`.
+      four that remain, retire the NEWS-accuracy promise to a candidate row.
+- [x] T15 — (return 3) Correct the per-spawned-program clause in NEWS and D053:
+      those tests are inside `test-with-timeout.R` and passed on 2.5.0 (O1).
+- [x] T16 — (return 3) O2-O8: source D053's internals reading (O2), fix the
+      ROADMAP arithmetic (O3), name AC2's forms in NEWS (O4), stop
+      extrapolating past the one observation point (O5), correct where 3.0.3 is
+      fetched from (O6), reconcile the unmeasured sets (O7), drop the "no claim
+      covers" judgment (O8).
+- [x] T17 — Shed the weight-cap overage by compressing Tasks in one pass;
+      re-run `cairn_validate.py`, the `verify` slot and `devtools::check()`.
 
 ## Work log
 <!-- owner: any skill · append-only; one line per entry; absolute dates. -->
@@ -208,6 +171,9 @@ row asked whether the floor understates, and "it does not" answers it.
 - 2026-08-27: T14 — the retired promise absorbed into the existing `Imports`-floors candidate row rather than filed as a new one (search-first): that row already inherits `data-raw/withr-floor.R` and M074's leftovers. It now records that no criterion binds a floor's NEWS disclosure, names the three shapes AC3 failed in, and asks whoever takes it to hold the disclosure sentence to the same evidence bar as the measurement.
 
 - 2026-08-27: T15 — O1 fixed in NEWS and in D053's "What was not measured". The harness was re-run first, in this session, so the corrected sentence rests on its own measurement rather than on the review's account of one: exit 0, 70 PASS / 0 FAIL / 0 SKIP, and the four per-spawned-program blocks (`test-with-timeout.R:255`, `:279`, `:432`, `:487`) PASS under the pinned 2.5.0 library at log lines 55-58. `grep -n parallel` over both measured files still returns nothing, so only the `parallel = TRUE` half of the retired sentence was true. Both texts now say two things were unrun, not three, and say that the per-spawned-program claim was run and where its blocks live.
+
+- 2026-08-27: T16 — O2-O8. O2: D053's mechanism paragraph now says the redirect clause is read from withr's own sources rather than from the harness, which reads no version's internals, and names the three readings and where they are recorded (review round 2 of this file); the call-site comment at `R/timeout.R` carries the same split between the measured outcome and the sourced explanation. O3: the ROADMAP row's inventory now adds up — seven rough edges raised, the three reachable in M074's form fixed (the third being `run_under()`'s ignored exit status, now a `stop()` at `data-raw/withr-floor.R:103-105`), four remaining. O4: NEWS now names AC2's two top-level forms and what each leaves behind. O5: NEWS and D053 no longer say 2.5.0 holds the limit "for the rest of the sourced file" — the harness has one observation point inside that file, so both now state the direction of the split and say so. O6: D053 says the script tries the Archive URL first for every version and records nothing about which URL answered. O7: NEWS's unmeasured set now matches D053's, the `knitr` target environment included. O8: the "which no claim on that page covers" judgment is out of NEWS; D053 keeps it as the floor rationale and now flags the tension with `?local_timeout`'s own description as a reading rather than a measurement. `devtools::document()` produced no `man/` diff — the R edit is a source comment. `devtools::test()` 0 failures / 6635 passing / 5 skips / 4 warnings.
+- 2026-08-27: T17 — Tasks compressed in one pass, the remedy tracking-rules names for the heaviest plan-owned section: 81 lines to 43, every T-id kept so the Coverage map still resolves, and the work log left carrying each task's detail. `cairn_validate.py` now passes every check including `weight caps` (was 168 plan-owned lines against a cap of 150). One advisory remains and is not a gate failure: `sizing (split tripwires)` reads 17 tasks against a >10 tripwire, which is what three defect returns and a descope cost a milestone that was planned at five.
 
 ## Decisions
 <!-- owner: implement / review · append-only -->

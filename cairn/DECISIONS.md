@@ -2297,8 +2297,10 @@ makes had only ever been measured on 3.0.3, so the floor stated a version
 nobody had run. It is measured now, and it stays.
 
 **What was measured.** `data-raw/withr-floor.R` installs a given `withr` from
-CRAN into its own library — the Archive for a retired version, the current
-`src/contrib` directory for the release, which is where 3.0.3 comes from — then
+CRAN into its own library — it tries the Archive URL first for every version and
+falls back to the current `src/contrib` directory, and records nothing about
+which of the two answered, so where 3.0.3 was fetched from is not in the log —
+then
 runs, in a fresh `Rscript` session with that library first, the two
 timeout-wrapper test files, the two top-level forms, where each form's undo
 actually registered, `source(local = TRUE)`, the four documented claims about
@@ -2328,7 +2330,14 @@ the caller's value at an `Rscript` top level and finds nothing to run inside a
 `source()`'s own frame first, and both versions do it, by different routes
 (3.0.3 consults `source_exit_frame_option()` before reaching `global_defer()`;
 2.5.0 runs `exit_frame()`/`source_frame()` before `setup_handlers()` is reached
-at all). So the rewritten branch is reached from one of the two forms rather
+at all). That last clause is read from withr's own sources, not from the
+harness, which reads no version's internals and measures only the outcome, 30
+against 99. The reading was made at M074's review round 2 and is recorded in
+that section of the milestone file, three ways: `deparse(withr::defer)` on
+3.0.3; the 2.5.0 tarball from the CRAN archive (`compat-defer.R:35-49` and
+`:172-180`); and `length(withr:::the$global_exits)` on 3.0.3, which is `0`
+inside and after a `source()`d file and `1` after the same call at an `Rscript`
+top level. So the rewritten branch is reached from one of the two forms rather
 than both, and the `source()` form's agreement across versions is caused by a
 redirect both versions have — not by the rewritten branch behaving the same.
 Only `global_defer()` is new in 3.x; `is_top_level_global_env()` is already in
@@ -2348,11 +2357,14 @@ limit is still set when the script's own exit hooks look" is what was measured,
 **The one difference found.** `source(file, local = TRUE)` from inside a
 function frame — the form withr 3.0.0 made need
 `options(withr.hook_source = TRUE)`, and which 2.5.0 redirected by default —
-differs: on 2.5.0 the limit is in force for the rest of the sourced file, on
-3.0.3 it is back at the caller's value on the next line of it. Both have the
-caller's value back once the enclosing frame returns, and no claim
-`local_timeout()`'s documentation makes covers this form, so it does not move
-the floor. It is recorded because it is the one place the two versions were
+differs: the line after `local_timeout(30)` still reads the limit on 2.5.0 and
+already reads the caller's value on 3.0.3. That line is the harness's only
+observation point inside the sourced file, so what is measured is the direction
+of the split, not how long 2.5.0 holds on. Both have the caller's value back
+once the enclosing frame returns, and no `@details` claim is about this form, so
+it does not move the floor — though `?local_timeout`'s description, "for the
+remainder of the function you call this from", sits in tension with the 3.0.3
+reading, and that is a reading of the page rather than a measurement. It is recorded because it is the one place the two versions were
 seen to part.
 
 **What was not measured.** The nine other `Imports` floors, the absent

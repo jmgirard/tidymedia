@@ -108,7 +108,7 @@ rewrite that retires M69's disclosure; a D-entry.
 - [x] T6 Rewrite both doc sections to the uniform rule; retire M69's
       disclosure guard with the disclosure. Mutation-probe the new guard.
 - [x] T7 Write the D-entry.
-- [ ] T8 Run the `verify` slot end to end; open the PR and confirm CI green
+- [x] T8 Run the `verify` slot end to end; open the PR and confirm CI green
       before review, which is the gate that caught M69's AC3 failure.
 - [x] T9 `ffm_batch()`: keep `run_one()`'s caught error object, test it for
       class `tidymedia_timeout`, and warn once at the end of the run naming how
@@ -127,6 +127,9 @@ rewrite that retires M69's disclosure; a D-entry.
 - 2026-08-26: T5 — `probe_one()`/`count_audio_streams()` (`ffprobe`), the MediaInfo readers (`mediainfo`) and `capture_version()` now use the display literals the Layer 0 hatches already used. `tm_program_literals()` reads the `program` argument out of every `run_program`/`guard_timeout`/`abort_timeout`/`capture_version` call node in the namespace (named or positional) and the guard asserts exactly `FFmpeg`/`FFprobe`/`MediaInfo`; the mutation probe VARIES a literal rather than deleting the assertion. Real-path evidence: a FIFO-hung `probe_one()` and `ffprobe()` name the program identically.
 - 2026-08-26: T6 — `?tidymedia` and `NEWS.md` now state the uniform rule ("a reached limit is never silent") over two lists, and say the lists are derived from the call graph rather than recalled. M69's scoped-claim and no-warning-disclosure guards retired from `test-runtime-timeout.R`; the replacement guard in `test-timeout-silence.R` asserts the new rule, asserts the retired text is absent, and mutation-probes both against a stand-in carrying M69's sentences. `doc_timeout_sources()` moved to `helper-rd.R` so both suites share one reader.
 - 2026-08-26: T7 — D049 written, superseding D048's fourth and fifth bullets (the disclosure and the rejected fourth hand-partition); the rest of D048 stands.
+- 2026-08-26: T8 — `devtools::document()` no diff, `devtools::test()` 6331 passing, `devtools::check()` 0/0/0. PR #74 opened.
+- 2026-08-26: CI caught what local checks could not. The AC1 grid forced the timeout VERDICT, which still let the three Layer 0 hatches really shell out; CI's macOS and Windows runners install no media binaries, so `system(intern = TRUE)` raised a cmdError on "command not found" before the verdict was consulted and six cells measured the runner's PATH. The forcing now injects at `run_program()` and `guard_timeout()` — the two wrappers in front of every `system()`/`system2()` call — so no cell spawns anything. Verified locally with the binaries off PATH; a guard pins that the four spawn sites are exactly those two wrappers' reach.
+- 2026-08-26: self-review found a blame regression from T4: moving `probe_all()`'s body into `probe_all_impl()` left its own argument refusals reading "Error in `probe_all_impl()`". `call` threaded through every refusal; guard added.
 - 2026-08-26: substantive amendment (Scope In + T9 + Coverage AC1). The T1 sweep found a third no-warning path M69's hand-list missed — `ffm_batch()` absorbs every job failure into `success = FALSE` and signals nothing, leaving 17 of the 53 swept exports silent under a forced timeout. AC1 as written already binds them; Scope gains the path, T9 gains the fix (warn on timed-out jobs only; non-timeout failures unchanged).
 
 ## Decisions

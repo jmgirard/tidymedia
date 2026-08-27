@@ -8,7 +8,10 @@
 # Lifetime is the R session. It is discarded only explicitly, via the exported
 # `refresh_ffmpeg_capabilities()`, or implicitly by `set_program()`, which is the
 # one package call that can repoint us at a different binary. The memo is
-# per-process, so `parallel = TRUE` workers each keep their own (D044).
+# per-process, so `parallel = TRUE` workers each keep their own (D044). The
+# caller's `tidymedia.nvenc_encoders` override IS carried into a worker
+# (R/timeout.R, M071); this memo is not, which is why a worker with no override
+# still asks its own binary.
 .tm_capabilities <- new.env(parent = emptyenv())
 
 # cached_encoder_names(): the encoder-name pool, asked of FFmpeg at most once per
@@ -42,9 +45,15 @@ cached_encoder_names <- function() {
 #'     invalidates everything remembered about the old one.
 #' }
 #'
-#' The record is per R process. Under \code{parallel = TRUE} each worker keeps
-#' its own, so a batch running on \code{W} workers asks FFmpeg \code{W} times
-#' rather than once, and discarding it in the parent does not reach them.
+#' The record is per R process, and it does not travel to a worker. So unless
+#' you have set \code{tidymedia.nvenc_encoders} yourself, a batch running on
+#' \code{W} workers asks FFmpeg \code{W} times rather than once, and
+#' discarding the record in the parent does not reach them.
+#'
+#' Setting that option is different: the value you set is carried into each
+#' worker for the duration of the call, and the worker's own value is put back
+#' afterwards. A batch built under your override therefore asks FFmpeg
+#' for no encoder list at all, and every worker answers as the parent would.
 #'
 #' \code{\link{ffmpeg_encoders}} and \code{\link{ffmpeg_codecs}} are never
 #' remembered: they query FFmpeg on every call, so they always report the build

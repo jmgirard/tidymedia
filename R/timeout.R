@@ -161,3 +161,70 @@ is_absorbed_timeout <- function(x) inherits(x, "tidymedia_absorbed_timeout")
 reraise_absorbed <- function(x, call = rlang::caller_env()) {
   abort_timeout(x$program, x$limit, call = call)
 }
+
+# Carrying the caller's settings into a worker --------------------------------
+
+# tidymedia's two option seams are read in the process that evaluates the call,
+# and a `parallel = TRUE` fan-out evaluates its mapped call somewhere else. A
+# `future` worker starts from that worker's own options -- `future` exports the
+# closure's globals, not the parent's option list -- so a limit or an encoder
+# override the caller set was read as UNSET inside the worker and the parallel
+# path silently diverged from the sequential one (measured 2026-08-26 on future
+# 1.75.0 / furrr 0.4.0: a multisession worker read `tidymedia.timeout` as unset
+# against `42` in the parent).
+#
+# The fix is a wrapper, captured in the PARENT at fan-out time and shipped to
+# the worker as part of the mapped closure. It re-establishes values the caller
+# set; it does not author values of its own.
+
+# carried_option_values(): what a fan-out carries, resolved in the parent.
+#
+# The timeout is carried RESOLVED rather than raw, so a value base R would
+# mishandle is refused once, here, in the process that can name the caller --
+# rather than N times inside workers, below the per-job tryCatch that turns an
+# error into a bare `success = FALSE`. Resolving has a consequence worth naming:
+# resolve_timeout() answers 0 for an unset option, so a parent with no limit
+# carries the no-limit SENTINEL rather than the unset state. That is the one
+# value here the package chooses rather than the caller, and it makes the two
+# seams asymmetric -- an unset encoder override is carried as unset, an unset
+# limit as `0`. The effect is the same for a worker with no limit of its own,
+# and it displaces one that had its own limit set through a plan hook (D050's
+# named falsifier), which is why it is stated rather than left to be inferred.
+#
+# The encoder override is carried as-is, including its unset state. What is NOT
+# carried is the session capability memo (`R/cache.R`): a worker with no
+# override still asks its own FFmpeg -- D044's per-process gap, unchanged.
+#
+# Adding a third seam is one line here; carry_options() itself is generic over
+# whatever named list it is handed.
+carried_option_values <- function(call = rlang::caller_env()) {
+  list(
+    tidymedia.timeout = resolve_timeout(call = call),
+    tidymedia.nvenc_encoders = getOption("tidymedia.nvenc_encoders")
+  )
+}
+
+# carry_options(): wrap a mapped function so it runs under `values`.
+#
+# `options()` is the whole mechanism, in both directions: it returns the prior
+# values of exactly the names being set, and a NULL entry REMOVES an option
+# rather than storing NULL (measured on R 4.6.1). So a name carried as unset is
+# unset in the worker for the duration of the call, and a name the worker had
+# set for itself comes back on the way out -- one rule, no split behavior. What
+# counts as "unset" is decided above, in carried_option_values(): the encoder
+# override is carried raw, the limit is carried resolved, so only the former can
+# reach here unset.
+#
+# on.exit() rather than a trailing restore, because the restore has to happen on
+# the error path too: a mapped call that aborts (a timeout is one) must not
+# leave the parent's settings behind for whatever the next chunk maps.
+carry_options <- function(.f, values = carried_option_values(call = call),
+                          call = rlang::caller_env()) {
+  force(.f)
+  force(values)
+  function(...) {
+    prior <- options(values)
+    on.exit(options(prior), add = TRUE)
+    .f(...)
+  }
+}

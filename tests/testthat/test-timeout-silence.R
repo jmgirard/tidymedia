@@ -566,3 +566,63 @@ test_that("a real hung FFprobe is named the same through either door", {
   expect_s3_class(hatch, "tidymedia_timeout")
   expect_identical(absorbed$program, hatch$tm_program)
 })
+
+# T6: the docs state the uniform rule -----------------------------------------
+
+# These replace M69's scoped-claim and no-warning-disclosure guards, retired in
+# test-runtime-timeout.R with the disclosure they fenced. M69 had to describe
+# three behaviors and say the description was not a partition, because nothing
+# enumerated its domain. The rule is uniform now, and the sweep is what lets the
+# docs say so.
+
+test_that("both docs state that a reached limit is never silent", {
+  src <- doc_timeout_sources()
+  skip_if(is.null(src$rd) || is.null(src$news), "docs not available")
+  for (nm in c("rd", "news")) {
+    txt <- src[[nm]]
+    expect_match(txt, "never silent", info = nm)
+    # Both halves named, because a reader acting on an NA row needs the second
+    # as much as a reader catching an abort needs the first.
+    expect_match(txt, "abort", info = nm)
+    expect_match(txt, "warn", info = nm)
+    # And the claim that the lists are derived rather than recalled, which is
+    # the only reason the uniform rule can be stated at all.
+    expect_match(txt, "call graph", fixed = TRUE, info = nm)
+  }
+})
+
+test_that("M69's disclosure is gone from both docs", {
+  # The retired half. Restoring the three-way description -- or the sentence
+  # that admitted it was not a partition -- reddens here.
+  src <- doc_timeout_sources()
+  skip_if(is.null(src$rd) || is.null(src$news), "docs not available")
+  for (nm in c("rd", "news")) {
+    txt <- src[[nm]]
+    expect_no_match(txt, "no warning", info = nm)
+    expect_no_match(txt, "not a complete", info = nm)
+    expect_no_match(txt, "three answers", info = nm)
+    # The internal names M69 had to expose because it could not describe the
+    # behavior any other way. A user cannot call either of them.
+    expect_no_match(txt, "count_audio_streams", fixed = TRUE, info = nm)
+    expect_no_match(txt, "tool_versions", fixed = TRUE, info = nm)
+  }
+})
+
+test_that("the doc guard reddens on the text it fences, not on its absence", {
+  # Mutation probe. Every assertion above is a substring grep, and a substring
+  # grep is how M69's over-broad claim shipped green once already: "abort" was
+  # present the whole time the doc said EVERY timed-out call aborts. So the
+  # probe restores the retired sentences into a stand-in text and checks the
+  # same assertions fail on it.
+  mutant <- paste(
+    "What a reached limit does depends on the call, and there are three",
+    "answers rather than two. Two internal paths absorb it with no warning at",
+    "all: count_audio_streams() and tool_versions(). These lists are not a",
+    "complete partition of the package."
+  )
+  expect_no_match(mutant, "never silent")
+  expect_match(mutant, "no warning")
+  expect_match(mutant, "not a complete")
+  expect_match(mutant, "count_audio_streams", fixed = TRUE)
+  expect_no_match(mutant, "call graph", fixed = TRUE)
+})

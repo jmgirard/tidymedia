@@ -17,35 +17,30 @@
 #'
 #' \preformatted{options(tidymedia.timeout = 600)}
 #'
-#' What a reached limit does depends on which call you made, and there are
-#' three answers rather than two.
+#' A reached limit is never silent: every call that can start one of those
+#' programs either aborts or warns.
 #'
 #' It **aborts**, naming the program and the limit, from the task verbs,
 #' [ffm_run()], and the Layer 0 escape hatches [ffmpeg()], [ffprobe()] and
 #' [mediainfo()]. [verify_media()] aborts as well, because a probe that never
 #' answered is not an answer of "no".
 #'
-#' It is **absorbed as an unreadable file** by [probe_all()] and the
-#' `probe_*()` accessors, [mediainfo_parameter()], [mediainfo_query()],
-#' [mediainfo_template()] and the `get_*()` helpers: an `NA` row and one
-#' warning at the end of the call, saying how many of the files it names timed
-#' out rather than being unreadable. One hung file does not discard a whole
-#' corpus.
+#' It **warns** everywhere a single hung file must not discard the rest of the
+#' work. [probe_all()] and the `probe_*()` accessors, [mediainfo_parameter()],
+#' [mediainfo_query()], [mediainfo_template()] and the `get_*()` helpers give
+#' an `NA` row and one warning at the end of the call, saying how many of the
+#' files it names timed out rather than being unreadable. [ffm_batch()] and the
+#' `_batch` verbs mark the row `success = FALSE`, as they do for any failed
+#' job, and warn once at the end of the run saying how many jobs the limit
+#' killed. The dropped-track check behind [extract_audio()], [convert_audio()],
+#' [separate_audio_video()] and their `_batch` siblings warns that it could not
+#' check, and the provenance manifest warns that it could not read a version;
+#' both then carry on as they would for any other unreadable input.
 #'
-#' It is **absorbed with no warning at all** by two internal paths. The
-#' track-count probe `count_audio_streams()`, which [extract_audio()],
-#' [convert_audio()], [separate_audio_video()] and their `_batch` siblings use
-#' to decide whether to tell you a track was dropped, returns `NA` and says
-#' nothing; the dropped-track warning you would normally get is simply absent.
-#' `tool_versions()`, which [ffm_batch()] uses to record which FFmpeg built
-#' each output, records an `NA` version in the manifest just as it would for a
-#' missing binary. On those calls a bounded hang is invisible: inspect the
-#' result rather than waiting to be told. Both are known gaps, and closing them
-#' is why the two lists above are described rather than partitioned.
-#'
-#' Those three lists describe the calls they name. They are **not a complete
-#' partition** of the package, and a call named in none of them has not been
-#' checked either way.
+#' Those two lists are not written from memory. A test derives the calls that
+#' can start one of these programs from the package's own call graph and drives
+#' a timeout through each of them, so a call that started absorbing one
+#' silently would fail the package's own checks.
 #'
 #' For the task verbs and [ffm_run()], which know where their output goes, a
 #' partial file the killed run had written is removed just as it is after any

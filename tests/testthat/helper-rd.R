@@ -39,3 +39,27 @@ rd_param_names <- function(txt) {
 topics_documenting <- function(rd, param) {
   rd[vapply(rd, function(txt) param %in% rd_param_names(txt), logical(1))]
 }
+
+# doc_timeout_sources(): the `?tidymedia` Rd text and NEWS.md, in whichever shape
+# this run has them.
+#
+# Both are read through here rather than from the source tree because under
+# `R CMD check` the tests run against an INSTALLED package with no man/ and no
+# repo root; NEWS.md IS installed into the package root, so the guards run in
+# both shapes rather than skipping in exactly the run the release gate uses
+# (M51). Shared by M69's lag guard and M70's uniform-rule guard.
+doc_timeout_sources <- function() {
+  rd <- rd_sources()
+  hit <- if (is.null(rd)) NULL else rd[grepl("tidymedia-package", names(rd))]
+  news <- if (file.exists("../../NEWS.md")) {
+    "../../NEWS.md"
+  } else {
+    p <- system.file("NEWS.md", package = "tidymedia")
+    if (nzchar(p)) p else NULL
+  }
+  list(
+    rd = if (length(hit) == 1L) hit[[1]] else NULL,
+    news = if (is.null(news)) NULL else
+      paste(readLines(news, warn = FALSE), collapse = "\n")
+  )
+}

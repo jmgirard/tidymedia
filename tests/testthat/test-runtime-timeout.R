@@ -530,71 +530,14 @@ test_that("?tidymedia documents the option's name, unit, default and effect", {
 # the readers began absorbing. These two guards fence the scoped claim instead,
 # so restoring the unqualified sentence reddens them.
 
-doc_timeout_sources <- function() {
-  rd <- rd_sources()
-  hit <- if (is.null(rd)) NULL else rd[grepl("tidymedia-package", names(rd))]
-  news <- if (file.exists("../../NEWS.md")) {
-    "../../NEWS.md"
-  } else {
-    p <- system.file("NEWS.md", package = "tidymedia")
-    if (nzchar(p)) p else NULL
-  }
-  list(
-    rd = if (length(hit) == 1L) hit[[1]] else NULL,
-    news = if (is.null(news)) NULL else
-      paste(readLines(news, warn = FALSE), collapse = "\n")
-  )
-}
+# doc_timeout_sources() lives in helper-rd.R: M70's uniform-rule guard reads the
+# same two shapes, and a second reader is how two guards stop agreeing (M40).
 
-test_that("both docs scope the abort and name the readers that absorb instead", {
-  src <- doc_timeout_sources()
-  skip_if(is.null(src$rd) || is.null(src$news), "docs not available")
-  for (nm in c("rd", "news")) {
-    txt <- src[[nm]]
-    # The absorbing half must be stated, not merely implied by silence: it is
-    # the half a reader acting on an NA row needs.
-    expect_match(txt, "absorb", info = nm)
-    expect_match(txt, "probe_all", fixed = TRUE, info = nm)
-    expect_match(txt, "verify_media", fixed = TRUE, info = nm)
-    # And the unqualified universal must be absent. This is the assertion that
-    # reddens if the old sentence comes back.
-    expect_no_match(txt, "A call that reaches the limit aborts", fixed = TRUE,
-                    info = nm)
-    expect_no_match(txt, "a call that\nreaches it aborts", fixed = TRUE,
-                    info = nm)
-  }
-})
-
-# The scoped claim above names two behaviors, and for most of this milestone
-# that was believed to be all of them. It is not: count_audio_streams() and
-# tool_versions() swallow a timeout and return NA with NO warning at
-# all, so a bounded hang under remove_audio() is invisible. Three review passes
-# each found one more member of a hand-written list, which is what a promise
-# bounded by recollection rather than by a procedure does -- and the third
-# return's own finding named remove_audio(), a function this package does not
-# export. M69 therefore states
-# the no-warning paths instead of claiming a two-way partition, and M70 makes
-# absorption uniform. This guard reddens if that disclosure is dropped before
-# the behavior it discloses is fixed.
-test_that("both docs disclose the paths that absorb with no warning", {
-  src <- doc_timeout_sources()
-  skip_if(is.null(src$rd) || is.null(src$news), "docs not available")
-  for (nm in c("rd", "news")) {
-    txt <- src[[nm]]
-    expect_match(txt, "count_audio_streams", fixed = TRUE, info = nm)
-    # The verbs that reach it, so a reader can tell whether their own call is
-    # affected without reading the package source. separate_audio_video() is
-    # the discriminating one: extract_audio() and convert_audio() are already
-    # named in the absorbing paragraph above, so asserting either of those
-    # would pass on the old two-way text too.
-    expect_match(txt, "separate_audio_video", fixed = TRUE, info = nm)
-    expect_match(txt, "tool_versions", fixed = TRUE, info = nm)
-    # The claim itself: these absorb WITHOUT the warning the readers give.
-    expect_match(txt, "no warning", info = nm)
-    # And the three-way description must not be read as a partition.
-    expect_match(txt, "not a complete", info = nm)
-  }
-})
+# The scoped-claim guard and the no-warning disclosure guard that stood here are
+# retired with the disclosure itself (M70/T6). They fenced a three-way
+# description that M69 had to write because it could not enumerate its own
+# domain. The replacement is in test-timeout-silence.R: the uniform rule, plus
+# the sweep that derives the calls it quantifies over.
 
 test_that("both docs disclose that the abort can lag the limit", {
   src <- doc_timeout_sources()

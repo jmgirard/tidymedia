@@ -110,7 +110,7 @@ D-entry.
       (RB tripwire: irreversible-api)
 - [x] T3. Unit tests for the payload (AC1) and the three restore paths (AC2),
       covering both a previously-set and a previously-unset option.
-- [ ] T4. Refusal tests: the probe vector against `resolve_timeout()`'s verdict,
+- [x] T4. Refusal tests: the probe vector against `resolve_timeout()`'s verdict,
       the marker-file eagerness probe, and missing/`NULL` `seconds`.
 - [ ] T5. Spawn-site test: mock `guard_timeout()` to record `limit`, drive one
       call per `tm_spawn_sites()` member inside `with_timeout()` with the
@@ -139,6 +139,8 @@ D-entry.
 - 2026-08-27: T2 — `with_timeout(expr, seconds)` exported (gate chose the code-first order over withr's value-first, matching `R.utils::withTimeout()`); measured: the option reads 30 inside the call and is unset again after, and a prior 99 comes back on both the returning and the erroring path.
 
 - 2026-08-27: T3 — payload and restore tests; deleting the `on.exit()` restore turns 7 of the 26 cells red, so the restore claim is the thing they measure.
+
+- 2026-08-27: T4 — the probe vector is scored against `resolve_timeout()`'s own verdict (3 accepted, 10 refused); deferring the check to exit makes the marker file appear and reddens the eagerness cells.
 
 ## Decisions
 

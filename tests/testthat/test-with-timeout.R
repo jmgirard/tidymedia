@@ -121,3 +121,76 @@ test_that("each exit path signals what its name says it does", {
   expect_error(tm_exit_paths$aborts(), class = "tm_test_failure")
   expect_error(tm_exit_paths$times_out(), class = "tidymedia_timeout")
 })
+
+# What `seconds` may be -------------------------------------------------------
+#
+# The wrapper and the option must not disagree about what a usable limit is: a
+# caller who can pass 0.5 to one and not the other has two rules to learn, and
+# the one that accepted it would hand base R a value it reads as "no limit"
+# (M69/D047). So the probe vector is scored against the option's own verdict
+# rather than against a hand-written list of expectations.
+
+tm_seconds_probes <- list(
+  0, 1L, 60, 0.5, -1, NA, NA_real_, "2", c(1, 2), Inf, TRUE,
+  integer(0), factor("2")
+)
+
+tm_probe_label <- function(v) paste(class(v)[[1]], format(v)[1], length(v))
+
+tm_accepts <- function(f) {
+  tryCatch({
+    f()
+    TRUE
+  }, error = function(e) FALSE)
+}
+
+test_that("with_timeout() accepts exactly the values the option accepts", {
+  verdicts <- vapply(tm_seconds_probes, function(v) {
+    by_option <- tm_accepts(function() {
+      withr::with_options(list(tidymedia.timeout = v), resolve_timeout())
+    })
+    by_call <- tm_accepts(function() with_timeout(NULL, v))
+    expect_equal(by_call, by_option, info = tm_probe_label(v))
+    by_option
+  }, logical(1))
+  # Not a vacuous agreement: the probe vector has to contain both verdicts, or
+  # a wrapper that refused everything would agree with an option that refused
+  # everything.
+  expect_true(any(verdicts))
+  expect_true(any(!verdicts))
+})
+
+test_that("a refused seconds stops the call before expr is evaluated", {
+  dir <- withr::local_tempdir()
+  refused <- Filter(
+    function(v) !tm_accepts(function() with_timeout(NULL, v)),
+    tm_seconds_probes
+  )
+  # The refusal set must not be empty, or this test asserts nothing at all.
+  expect_gt(length(refused), 0)
+  for (i in seq_along(refused)) {
+    marker <- file.path(dir, sprintf("ran%d", i))
+    expect_error(with_timeout(file.create(marker), refused[[i]]))
+    expect_false(file.exists(marker))
+  }
+})
+
+test_that("the refusal names seconds, not the option", {
+  msg <- cli::ansi_strip(conditionMessage(
+    expect_error(with_timeout(NULL, 0.5))
+  ))
+  expect_match(msg, "seconds", fixed = TRUE)
+  # The caller wrote an argument, not an option: naming the option here would
+  # send them to fix something they never set.
+  expect_false(grepl("tidymedia.timeout", msg, fixed = TRUE))
+})
+
+test_that("seconds is required, and NULL is not a limit", {
+  dir <- withr::local_tempdir()
+  missing_marker <- file.path(dir, "missing")
+  null_marker <- file.path(dir, "null")
+  expect_error(with_timeout(file.create(missing_marker)))
+  expect_error(with_timeout(file.create(null_marker), NULL))
+  expect_false(file.exists(missing_marker))
+  expect_false(file.exists(null_marker))
+})

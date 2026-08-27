@@ -77,7 +77,7 @@ row asked whether the floor understates, and "it does not" answers it.
       directly inside `with_timeout()`'s `expr` outlives the wrapper — reads
       true when re-measured on the declared floor version, or the documentation
       names the versions on which it holds.
-- [ ] AC5 — `devtools::check()` is clean (0 errors / 0 warnings) and
+- [x] AC5 — `devtools::check()` is clean (0 errors / 0 warnings) and
       `devtools::test()` passes on the developer's current `withr`.
 
 ## Coverage
@@ -748,3 +748,43 @@ every measurement was taken again.
   `withr::local_options()` into a dead envir → `30`, `withr::with_options()` +
   `withr::local_options()` → `99` inside the frame and `30` left behind —
   identical on 2.5.0 and 3.0.3, which is what the roxygen claims.
+- **AC5 — met.** Fresh runs on the developer's current `withr` (3.0.3):
+  `devtools::test()` → `[ FAIL 0 | WARN 4 | SKIP 5 | PASS 6635 ]`, exit 0;
+  `devtools::check()` → `Status: OK`, 0 errors / 0 warnings / 0 notes
+  (22m 12.9s).
+
+### Consistency gate (2026-08-27, round 3) — FAILS
+
+Universal cairn-file checks: **`cairn_validate.py` exits 1.** One check FAILs:
+
+```
+FAIL  weight caps (1)
+        cairn/milestones/M074-withr-version-floor.md: 157 plan-owned lines
+        (cap <150; shed >=8)
+        heaviest first: Tasks 66 · Scope 34 · Acceptance criteria 30 ·
+        Coverage 9 · Goal 7
+```
+
+Every other PASS check passes and every advisory reads OK except one:
+`sizing (split tripwires)` warns `M074: 13 tasks (>10 tripwire)`, which is an
+advisory rather than a gate failure. The `release window` advisory reads OK.
+No `DESIGN.md` principle changed in this diff, so `cairn_impact.py --changed`
+does not apply.
+
+The failure is not caused by this review round's edits: the Review section is
+review-owned and does not count toward the plan-owned total, and the run above
+was made before any edit in this phase. It is the accumulated cost of two
+defect returns — the Tasks section grew from T1-T5 to T1-T13 — and review
+cannot shed it, because Tasks, Scope, Acceptance criteria, Coverage and Goal
+are all plan-owned sections that a review phase never rewrites.
+
+Toolchain checks, from the `r-package` profile's `consistency-gate` slot — all
+pass: `devtools::document()` produces no diff (only this review-owned file is
+dirty afterward); `NAMESPACE`, `man/` and `data/*.rda` are generated, and the
+only `man/` change in the diff is `local_timeout.Rd` regenerated from the
+roxygen edit; `README.Rmd`/`README.md` are untouched by the diff and in sync;
+`pkgdown::check_pkgdown()` reports "No problems found"; `NEWS.md` carries the
+user-visible entry with no milestone number in it; the one new top-level file,
+`data-raw/withr-floor.R`, sits under the existing `.Rbuildignore` entry
+`^data-raw$` (line 15) and `check()` raises no NOTE about it;
+`devtools::check()` is `Status: OK` at 0/0/0.

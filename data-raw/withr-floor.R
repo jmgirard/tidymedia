@@ -14,12 +14,23 @@
 #
 #   * the two timeout-wrapper test files, one verdict per test_that() block;
 #   * AC2's two top-level forms (a file run by Rscript, and a file passed to
-#     source() with its default globalenv());
-#   * AC4's four documented behavioral claims.
+#     source() with its default globalenv()), each also reporting what
+#     `parent.frame()` -- local_timeout()'s default target -- actually is there;
+#   * whether the Rscript form has an undo SCHEDULED that its observation
+#     points simply run before;
+#   * source(local = TRUE), the one 3.0.0 behavior change this dependency has
+#     that touches the same seam;
+#   * AC4's four documented behavioral claims;
+#   * the withr:: calls the documentation compares local_timeout() to --
+#     defer(), local_options(), with_options() -- so the comparison is measured
+#     on each version rather than asserted.
 #
-# Every child session prints the `withr` it actually loaded. That control is
-# the point of the harness: a pinned library that silently resolved the user
-# library's version would make every result below vacuous.
+# Every child session prints the `withr` it actually loaded AND asserts it is
+# the one requested. That control is the point of the harness: a pinned library
+# that silently resolved the user library's version would make every result
+# below vacuous.
+#
+# `pkgload` is a harness dependency: run this with devtools installed.
 
 PKG <- normalizePath(".")
 if (!file.exists(file.path(PKG, "DESCRIPTION"))) {
@@ -70,14 +81,21 @@ install_withr <- function(ver) {
 # `.libPaths()` start at the requested version. NOT_CRAN=true so the two
 # `skip_on_cran()` blocks in test-with-timeout.R actually run.
 
-run_under <- function(lib, script) {
+run_under <- function(lib, ver, script) {
   out <- suppressWarnings(system2(
     file.path(R.home("bin"), "Rscript"), shQuote(script),
-    env = c(sprintf("R_LIBS=%s", lib), "NOT_CRAN=true"),
+    env = c(sprintf("R_LIBS=%s", lib), sprintf("WITHR_EXPECT=%s", ver),
+            "NOT_CRAN=true"),
     stdout = TRUE, stderr = TRUE
   ))
   cat(out, sep = "\n")
   cat("\n")
+  status <- attr(out, "status")
+  if (!is.null(status) && !identical(as.integer(status), 0L)) {
+    stop(sprintf("%s exited %s under withr %s", basename(script), status, ver),
+         call. = FALSE)
+  }
+  invisible(out)
 }
 
 write_script <- function(name, lines) {
@@ -88,8 +106,18 @@ write_script <- function(name, lines) {
 
 preamble <- c(
   sprintf('suppressMessages(pkgload::load_all("%s", quiet = TRUE, export_all = FALSE))', PKG),
-  'cat("  withr actually loaded:", as.character(packageVersion("withr")), "\\n")',
-  'show <- function(label, value) cat(sprintf("  %-56s %s\\n", label, format(value)))'
+  'loaded <- as.character(packageVersion("withr"))',
+  'cat("  withr actually loaded:", loaded, "\\n")',
+  '# The pin is by R_LIBS PRECEDENCE, not isolation: the user library stays on',
+  '# .libPaths() because pkgload and testthat live there. So the control is an',
+  '# assertion, not a printed line a human has to read -- an install that failed',
+  '# to yield a loadable withr would otherwise fall through to the user library',
+  '# and report a green result for the wrong version.',
+  'stopifnot(identical(loaded, Sys.getenv("WITHR_EXPECT")))',
+  'show <- function(label, value) cat(sprintf("  %-56s %s\\n", label, format(value)))',
+  '# What local_timeout()\'s default .local_envir = parent.frame() actually is,',
+  '# probed the same way local_timeout() sees it: from inside a call.',
+  'caller_is_globalenv <- function() identical(parent.frame(), globalenv())'
 )
 
 # --- the suite, one verdict per test_that() block ------------------------------
@@ -124,6 +152,7 @@ formA <- write_script("formA.R", c(
   'options(tidymedia.timeout = 99)',
   'local_timeout(30)',
   'show("A during the script (the limit in force)", getOption("tidymedia.timeout", "UNSET"))',
+  'show("A parent.frame() at an Rscript top level IS globalenv()", caller_is_globalenv())',
   '.Last <- function() show("A at .Last, after the top level ended", getOption("tidymedia.timeout", "UNSET"))',
   'invisible(reg.finalizer(globalenv(), function(e)',
   '  show("A at a finalizer registered after withr\'s", getOption("tidymedia.timeout", "UNSET")),',
@@ -134,13 +163,95 @@ formA <- write_script("formA.R", c(
 
 inner <- write_script("formB-inner.R", c(
   'local_timeout(30)',
-  'show("B inside the sourced file", getOption("tidymedia.timeout", "UNSET"))'
+  'show("B inside the sourced file", getOption("tidymedia.timeout", "UNSET"))',
+  'show("B parent.frame() at a source()d top level IS globalenv()", caller_is_globalenv())'
 ))
 formB <- write_script("formB.R", c(
   preamble,
   'options(tidymedia.timeout = 99)',
   sprintf('source("%s")', inner),
   'show("B after source() returns", getOption("tidymedia.timeout", "UNSET"))'
+))
+
+# --- is there an undo SCHEDULED at an Rscript top level? -----------------------
+#
+# formA shows the limit still set at .Last and at a later finalizer. That is a
+# statement about hook ORDERING, not about the absence of an undo: both versions
+# do schedule one on globalenv() (3.x's global_defer(), 2.5.0's
+# setup_handlers(), each via reg.finalizer(globalenv(), ..., onexit = TRUE)),
+# and formA's observation points simply run first. Running the deferred handlers
+# by hand is the only way to see whether the undo is there at all.
+
+formA_undo <- write_script("formA-undo.R", c(
+  preamble,
+  'options(tidymedia.timeout = 99)',
+  'local_timeout(30)',
+  'show("A2 the limit in force at the top level", getOption("tidymedia.timeout", "UNSET"))',
+  'withr::deferred_run(globalenv())',
+  'show("A2 after deferred_run(globalenv()): was an undo scheduled?", getOption("tidymedia.timeout", "UNSET"))'
+))
+
+# --- form C: source(local = TRUE), the one 3.0.0 change at this seam -----------
+#
+# withr 3.0.0 made source() into a local environment need
+# options(withr.hook_source = TRUE), where 2.5.0 redirected by default via
+# exit_frame()/source_frame(). This is not one of AC2's two named forms -- the
+# criterion is not widened here -- but it is the neighborhood the milestone's
+# Scope flagged, so it is measured rather than disclaimed.
+
+innerC <- write_script("formC-inner.R", c(
+  'local_timeout(30)',
+  'show("C inside the source(local = TRUE)d file", getOption("tidymedia.timeout", "UNSET"))',
+  'show("C parent.frame() there is globalenv()?", caller_is_globalenv())'
+))
+formC <- write_script("formC.R", c(
+  preamble,
+  'options(tidymedia.timeout = 99)',
+  'g <- function() {',
+  sprintf('  source("%s", local = TRUE)', innerC),
+  '  show("C back in g(), after source(local = TRUE) returned", getOption("tidymedia.timeout", "UNSET"))',
+  '}',
+  'g()',
+  'show("C after g() returns", getOption("tidymedia.timeout", "UNSET"))'
+))
+
+# --- the withr:: calls the documentation compares local_timeout() to -----------
+#
+# local_timeout()'s @details tell the reader that withr::defer() and
+# withr::local_options() lose their undo the same two ways, and that
+# withr::with_options() + withr::local_options() nest the way with_timeout() +
+# local_timeout() do. Those are claims about withr on each version, so they are
+# run against withr directly -- the tidymedia values are ac4.R's job.
+
+withrcmp <- write_script("withrcmp.R", c(
+  preamble,
+  '# 1 -- a frame writing its own on.exit() WITHOUT add = TRUE.',
+  'options(tidymedia.timeout = 99)',
+  'w1 <- function() { withr::defer(options(tidymedia.timeout = 99)); options(tidymedia.timeout = 30); on.exit(invisible(NULL)); invisible(NULL) }',
+  'w1()',
+  'show("w1 withr::defer() + clobbering on.exit()", getOption("tidymedia.timeout"))',
+  'options(tidymedia.timeout = 99)',
+  'w2 <- function() { withr::local_options(tidymedia.timeout = 30); on.exit(invisible(NULL)); invisible(NULL) }',
+  'w2()',
+  'show("w2 withr::local_options() + clobbering on.exit()", getOption("tidymedia.timeout"))',
+  '# 2 -- a target environment that is not a live frame.',
+  'options(tidymedia.timeout = 99)',
+  'w3 <- function() { e <- new.env(); withr::defer(options(tidymedia.timeout = 99), envir = e); options(tidymedia.timeout = 30); invisible(NULL) }',
+  'w3()',
+  'show("w3 withr::defer() into a dead envir", getOption("tidymedia.timeout"))',
+  'options(tidymedia.timeout = 99)',
+  'w4 <- function() { e <- new.env(); withr::local_options(tidymedia.timeout = 30, .local_envir = e); invisible(NULL) }',
+  'w4()',
+  'show("w4 withr::local_options() into a dead envir", getOption("tidymedia.timeout"))',
+  '# 3 -- local_options() written directly inside with_options()\'s code.',
+  'options(tidymedia.timeout = 99)',
+  'w5 <- function() {',
+  '  withr::with_options(list(tidymedia.timeout = 30),',
+  '                      { withr::local_options(tidymedia.timeout = 45); getOption("tidymedia.timeout") })',
+  '  getOption("tidymedia.timeout")',
+  '}',
+  'show("w5 inside the frame once with_options() returned", w5())',
+  'show("w5 what that frame leaves behind", getOption("tidymedia.timeout"))'
 ))
 
 # --- AC4: the four documented behavioral claims --------------------------------
@@ -180,8 +291,11 @@ for (ver in versions) {
   lib <- install_withr(ver)
   cat("\n================ withr", ver, "================\n")
   cat("library:", lib, "\n\n")
-  cat("-- the two timeout-wrapper test files --\n");   run_under(lib, suite)
-  cat("-- AC2 form 1: top level of an Rscript file --\n"); run_under(lib, formA)
-  cat("-- AC2 form 2: top level of a source()d file --\n"); run_under(lib, formB)
-  cat("-- AC4: the four documented claims --\n");      run_under(lib, ac4)
+  cat("-- the two timeout-wrapper test files --\n");   run_under(lib, ver, suite)
+  cat("-- AC2 form 1: top level of an Rscript file --\n"); run_under(lib, ver, formA)
+  cat("-- was an undo scheduled at that top level? --\n"); run_under(lib, ver, formA_undo)
+  cat("-- AC2 form 2: top level of a source()d file --\n"); run_under(lib, ver, formB)
+  cat("-- form C: source(local = TRUE) --\n");        run_under(lib, ver, formC)
+  cat("-- AC4: the four documented claims --\n");      run_under(lib, ver, ac4)
+  cat("-- the withr:: calls the docs compare against --\n"); run_under(lib, ver, withrcmp)
 }

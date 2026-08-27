@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M074: The floor says what was measured
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate -->
 - **Driving RR:** —   <!-- owner: plan · create/amend-via-gate -->
@@ -53,31 +53,31 @@ row asked whether the floor understates, and "it does not" answers it.
 ## Acceptance criteria
 <!-- owner: plan · create/amend-via-gate; review reads, never reinterprets. -->
 
-- [ ] AC1 — Run in an isolated library against the lowest `withr` version
+- [x] AC1 — Run in an isolated library against the lowest `withr` version
       DESCRIPTION permits, `testthat::test_file()` reports zero failures over
       every `test_that()` block of `tests/testthat/test-local-timeout.R` and
       `tests/testthat/test-with-timeout.R`. The same session prints
       `packageVersion("withr")` and it equals the floor DESCRIPTION declares —
       an isolated library that silently resolved 3.0.3 makes the run vacuous,
       so the control is part of the criterion, not of its evidence.
-- [ ] AC2 — For each of two named forms — `local_timeout()` at the top level of
+- [x] AC2 — For each of two named forms — `local_timeout()` at the top level of
       a file run by `Rscript`, and at the top level of a file passed to
       `source()` with its default `globalenv()` — the value of
       `getOption("tidymedia.timeout")` after the file ends is recorded on the
       declared floor version and on 3.0.3. Where the two versions differ for
       either form, `local_timeout()`'s `@details` names the versions on which
       each behavior holds.
-- [ ] AC3 — DESCRIPTION's `withr` floor names a version on which AC1 and AC2
+- [x] AC3 — DESCRIPTION's `withr` floor names a version on which AC1 and AC2
       were measured green, and `NEWS.md` states that floor and what was measured
       against it.
-- [ ] AC4 — Each of the four behavioral claims `local_timeout()`'s documentation
+- [x] AC4 — Each of the four behavioral claims `local_timeout()`'s documentation
       makes — two calls in one frame unwind to the caller's state; a frame's own
       `on.exit()` without `add = TRUE` discards the undo; a `.local_envir` that
       is not a live frame takes the undo with it; a `local_timeout()` written
       directly inside `with_timeout()`'s `expr` outlives the wrapper — reads
       true when re-measured on the declared floor version, or the documentation
       names the versions on which it holds.
-- [ ] AC5 — `devtools::check()` is clean (0 errors / 0 warnings) and
+- [x] AC5 — `devtools::check()` is clean (0 errors / 0 warnings) and
       `devtools::test()` passes on the developer's current `withr`.
 
 ## Coverage
@@ -113,7 +113,7 @@ row asked whether the floor understates, and "it does not" answers it.
 - [x] T4 — Settle the floor from T2/T3 and write the D-entry: the version, the
       behavior that forced it (or the measurement that permits keeping 2.5.0),
       what was and was not tested, and the entry's own falsifier.
-- [ ] T5 — Update `DESCRIPTION`, `NEWS.md`, and any version-dependent wording in
+- [x] T5 — Update `DESCRIPTION`, `NEWS.md`, and any version-dependent wording in
       `local_timeout()`'s roxygen at `R/timeout.R:120-200`; run
       `devtools::document()`, then `devtools::check()` and `devtools::test()`.
 
@@ -130,6 +130,7 @@ row asked whether the floor understates, and "it does not" answers it.
 - 2026-08-27: T2 — all 35 `test_that()` blocks of `test-local-timeout.R` and `test-with-timeout.R` pass under withr 2.5.0 with `NOT_CRAN=true`; identical 35/35 under 3.0.3, 0 failures and 0 skips on both, so no upward walk was needed.
 - 2026-08-27: T3 — AC2's two top-level forms and AC4's four documented claims measured on 2.5.0 and 3.0.3 with identical results on every one; the Rscript form leaves the limit set at `.Last` and at a later finalizer on both, and the `source()` form restores the caller's value when `source()` returns on both (`parent.frame()` at a sourced file's top level is `source()`'s own eval frame, not `globalenv()`, so `defer()`'s globalenv branch — the one 3.0.0 rewrote — is not reached from either form).
 - 2026-08-27: T4 — null result, so the floor stays 2.5.0 per the plan gate; promoted as D053, extending D052's dependency bullet with what was measured, why there was nothing to find, and what was not measured.
+- 2026-08-27: T5 — DESCRIPTION needed no edit (`withr (>= 2.5.0)` is the measured floor); NEWS.md's withr bullet now states the floor and what was measured against it; `local_timeout()`'s two `@details` measurement notes and the `defer()` comment at the call site now name 2.5.0 alongside 3.0.3 and point at `data-raw/withr-floor.R` and D053. `devtools::document()` regenerated `man/local_timeout.Rd`; `devtools::test()` 0 failures / 6635 passing; `devtools::check()` 0 errors / 0 warnings / 0 notes.
 
 ## Decisions
 <!-- owner: implement / review · append-only -->

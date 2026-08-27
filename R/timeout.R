@@ -167,7 +167,8 @@ with_timeout <- function(expr, seconds) {
 #' happen. The second is a `.local_envir` that is not a live frame, described
 #' under that argument above. This is not particular to this function:
 #' [withr::defer()] and [withr::local_options()] lose their undo both ways
-#' (measured 2026-08-27 on withr 3.0.3), because that is how R's exit handlers
+#' (measured 2026-08-27 on withr 2.5.0, the oldest this package accepts, and on
+#' 3.0.3, with the same result on each), because that is how R's exit handlers
 #' work. What cannot happen is the limit being set and the undo never
 #' registered: the undo goes on the frame first, and only then is the limit
 #' written.
@@ -179,7 +180,8 @@ with_timeout <- function(expr, seconds) {
 #' function of its own, or use one form or the other. This is what `with_*()`
 #' and `local_*()` do together anywhere in R, not something particular to these
 #' two (measured 2026-08-27 against [withr::with_options()] and
-#' [withr::local_options()], which behave identically).
+#' [withr::local_options()], which behave identically, on withr 2.5.0 and 3.0.3
+#' alike).
 #'
 #' `seconds` is refused by the rule `options(tidymedia.timeout = )` applies, with
 #' one deliberate exception. Setting the option to `NULL` REMOVES it, leaving the
@@ -247,9 +249,16 @@ local_timeout <- function(seconds, .local_envir = parent.frame()) {
   # this comment claimed it did. defer() ends in
   # `do.call(base::on.exit, list(thunk, TRUE, after), envir = envir)`, so a
   # calling frame writing its own `on.exit()` without `add = TRUE` discards this
-  # exactly as it would a base one -- measured 2026-08-27 on withr 3.0.3, the
-  # option left at this function's value where the caller had 99. That hole is
-  # stated in the @details above rather than papered over.
+  # exactly as it would a base one -- measured 2026-08-27 on withr 3.0.3 and on
+  # 2.5.0, the declared floor, with the option left at this function's value
+  # where the caller had 99 on both. That hole is stated in the @details above
+  # rather than papered over.
+  #
+  # The version spread is measured, not assumed: withr 3.0.0 rewrote defer()'s
+  # globalenv() branch, but local_timeout() does not reach it -- parent.frame()
+  # is a live function frame in an ordinary call, and at the top level of a
+  # source()d file it is source()'s own eval frame. data-raw/withr-floor.R
+  # re-runs the whole comparison; D053 records what it found.
   withr::defer(options(prior), envir = .local_envir)
   options(tidymedia.timeout = as.numeric(seconds))
   invisible(prior)

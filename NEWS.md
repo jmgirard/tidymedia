@@ -79,6 +79,12 @@
 * tidymedia now imports **withr**, which `local_timeout()` uses to register its
   undo on the calling frame. It was already a suggested package; installing
   tidymedia now installs it too. withr itself depends on nothing outside base R.
+  The declared minimum is withr 2.5.0, and that is the version it was tested
+  against rather than merely the one written down: the whole `with_timeout()`
+  and `local_timeout()` test suite passes on withr 2.5.0 and on 3.0.3 alike,
+  and each behavior their documentation describes was re-measured on both and
+  agrees. So an installation that resolves an older withr is running the
+  behavior these pages describe.
 
 * `with_timeout()` now refuses an omitted `expr` itself, saying which argument
   is missing, instead of letting R report a missing parameter of the function's

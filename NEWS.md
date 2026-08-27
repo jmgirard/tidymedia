@@ -81,13 +81,18 @@
   tidymedia now installs it too. withr itself depends on nothing outside base R.
   The declared minimum is withr 2.5.0, and that is the version it was tested
   against rather than merely the one written down. On withr 2.5.0 and on 3.0.3 —
-  the oldest this package accepts and the current release — the whole
-  `with_timeout()` and `local_timeout()` test suite passes, and the four things
-  `?local_timeout` says about when the undo runs and the two ways it can be lost
-  were re-measured on each and agree. Two claims on that page were not run on
-  2.5.0, because they are not about frames at all: that the limit applies per
-  spawned program, and that it reaches a `parallel = TRUE` fan-out. Neither were
-  the versions between 2.5.0 and 3.0.3. So an installation that resolves withr
+  the oldest this package accepts and the current release — all 35 `test_that()`
+  blocks of `test-local-timeout.R` and `test-with-timeout.R` pass on each, and
+  the four things `?local_timeout` says about when the undo runs, the two ways
+  it can be lost included, read the same on each. The two versions were seen to
+  part in one place, which no claim on that page covers: inside
+  `source(file, local = TRUE)` called from a function, withr 2.5.0 keeps the
+  limit in force for the rest of the sourced file where 3.0.3 has the caller's
+  value back on the next line of it — either way the caller's value is back once
+  the enclosing function returns. Three things were not run on 2.5.0: the claim
+  that the limit applies per spawned program, the claim that it reaches a
+  `parallel = TRUE` fan-out — their tests live outside the two files above — and
+  every withr between 2.5.0 and 3.0.3. So an installation that resolves withr
   2.5.0 rather than the current release is running the frame behavior that page
   describes.
 

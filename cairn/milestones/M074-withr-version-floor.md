@@ -67,7 +67,7 @@ row asked whether the floor understates, and "it does not" answers it.
       declared floor version and on 3.0.3. Where the two versions differ for
       either form, `local_timeout()`'s `@details` names the versions on which
       each behavior holds.
-- [ ] AC3 — DESCRIPTION's `withr` floor names a version on which AC1 and AC2
+- [x] AC3 — DESCRIPTION's `withr` floor names a version on which AC1 and AC2
       were measured green, and `NEWS.md` states that floor and what was measured
       against it.
 - [x] AC4 — Each of the four behavioral claims `local_timeout()`'s documentation
@@ -143,7 +143,7 @@ row asked whether the floor understates, and "it does not" answers it.
       each version from (G8).
 - [x] T12 — (defect return 2) Fix the call-site comment at `R/timeout.R` to say
       what T10 measured about the two forms (G1); `devtools::document()`.
-- [ ] T13 — (defect return 2) Rewrite `NEWS.md`'s withr bullet to name the two
+- [x] T13 — (defect return 2) Rewrite `NEWS.md`'s withr bullet to name the two
       files and 35 blocks actually run rather than "the whole test suite" (G2),
       to state the one measured version difference (G3), and to stop reading as
       six measurements where four were made (G6); correct the ROADMAP row's
@@ -186,6 +186,10 @@ row asked whether the floor understates, and "it does not" answers it.
 - 2026-08-27: T11 — D053's mechanism paragraph rewritten from T10's measurement: the branch withr 3.0.0 rewrote is reached from the `Rscript` form and NOT from the `source()` form, where both versions redirect the handler to `source()`'s own frame first by different routes, so the source form's cross-version agreement comes from a redirect both have rather than from the rewritten branch (G1). Round 1 replaced "never reached" with "always reached"; both went past the harness, which had measured only `parent.frame() == globalenv()`, and the new arm measures the thing itself. D053's "What was measured" paragraph now says the harness fetches the Archive for a retired version and the current `src/contrib` for the release, which is where 3.0.3 comes from (G8), and describes the pin control as provenance rather than a version string plus the new failing-block stop.
 
 - 2026-08-27: T12 — the comment at `R/timeout.R:257-269` now says what T10 measured: `local_timeout()` hands `defer()` `globalenv()` from both top-level forms, only the `Rscript` form's undo lands there, and both versions redirect the `source()` form to `source()`'s own frame first (G1). `devtools::document()` produced no `man/` diff — the edit is a source comment, and the `@details` sentences it sits under are unchanged. `devtools::test()` 0 failures / 6635 passing / 5 skips / 4 warnings.
+
+- 2026-08-27: T13 — NEWS's withr bullet now names what was actually run: "all 35 `test_that()` blocks of `test-local-timeout.R` and `test-with-timeout.R`" in place of "the whole `with_timeout()` and `local_timeout()` test suite" (G2); it states the one measured version difference, `source(file, local = TRUE)` from a function frame holding the limit on 2.5.0 and not on 3.0.3, with the note that either way the caller's value is back once the frame returns (G3); and the four documented claims are now enumerated as four, the two ways the undo can be lost named as part of them rather than added to them (G6). The ROADMAP harness row no longer presents its inventory as complete: it records that two of the five rough edges the reviews raised were reachable in the form M074 ran and were fixed here, lists the three that remain plus `install_withr()`'s reuse short-circuit, and says why each is a trap only for a wider run (G7, G9). `devtools::test()` 0 failures / 6635 passing / 5 skips / 4 warnings; `devtools::check()` `Status: OK`, 0 errors / 0 warnings / 0 notes (9m 23s).
+- 2026-08-27: second defect return closed. AC3 re-ticked on the rewritten NEWS bullet; AC1, AC2, AC4 and AC5 were re-ticked at review round 2 on fresh evidence and this round's harness edits change no measured value — the pin and failing-block controls only make a false green fail, and the added `formB-where.R` arm reports a new fact rather than revising one. Re-run confirms it: 70 PASS / 0 FAIL / 0 SKIP, and every previously-reported value unchanged on both versions.
+- 2026-08-27: thrash-rule gate (trigger (b), AC3 twice) — the user chose to HOLD AC1's two-file domain over widening it to include `test-parallel-option-carry.R`. No criterion changed. The recommendation was to hold under D-118 (a widening amendment on a milestone with two defect returns), and because the honest NEWS sentence is available without it: naming the two files and 35 blocks says what was measured, where "the whole test suite" was the overclaim that failed. `test-parallel-option-carry.R`'s floor coverage keeps its follow-up home on the `Imports`-floors candidate row. Falsified by a caller hitting a floor-dependent difference in the parallel fan-out that the two measured files do not reach.
 
 ## Decisions
 <!-- owner: implement / review · append-only -->

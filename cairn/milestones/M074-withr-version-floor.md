@@ -122,7 +122,7 @@ row asked whether the floor understates, and "it does not" answers it.
       level (F1), whether an undo is scheduled at an `Rscript` top level (F4),
       and `source(local = TRUE)` (F7). Make a wrong pin fail the run rather than
       print (F8, and F10's exit-status half).
-- [ ] T7 — (defect return) Rewrite D053 from T6's measurements: the globalenv
+- [x] T7 — (defect return) Rewrite D053 from T6's measurements: the globalenv
       branch IS reached (F1), `is_top_level_global_env()` is not 3.x-only (F3),
       the Rscript form's undo exists and is only observed late (F4),
       `source(local = TRUE)` is measured rather than omitted (F7), and D052's
@@ -152,6 +152,8 @@ row asked whether the floor understates, and "it does not" answers it.
 - 2026-08-27: review returned M074 to in-progress. AC3 fails on its NEWS clause: the bullet states more than was measured (F5 — "each behavior their documentation describes was re-measured on both" is false for the per-program and parallel claims; F6 — the unanchored "an older withr"). Three load-bearing defects in what shipped, each re-verified against the implementation: F2 — the roxygen and man page credit withr 2.5.0 with a `withr::defer()`/`local_options()`/`with_options()` measurement `data-raw/withr-floor.R` never performs (zero `withr::` calls in it); F1 — D053 and the new comment at R/timeout.R:255-260 say `local_timeout()` never reaches `defer()`'s globalenv branch, but at the top level of a `source()`d file `parent.frame()` IS `globalenv()`, so it does; F3 — D053 calls `is_top_level_global_env()` 3.x-only, and it is in 2.5.0 at compat-defer.R:174. F4, F7, F8, F9 also to fix; F10 to a candidate row; F11 rejected. First defect return on this milestone.
 
 - 2026-08-27: T6 — harness extended and re-run on both versions. New measurements: `parent.frame()` at an `Rscript` top level AND at a `source()`d file's top level is `globalenv()` on both versions (F1 — the branch IS reached); `deferred_run(globalenv())` restores the caller's 99 on both, so the `Rscript` form does have an undo scheduled and `.Last`/a later finalizer merely observe before it (F4); the `withr::defer()`/`local_options()`/`with_options()` comparison the roxygen makes now runs against withr itself and gives 30/30/30/30 and 99-then-30 identically on both (F2); `source(file, local = TRUE)` from a function frame is the one measured DIFFERENCE — 2.5.0 holds the limit inside the sourced file, 3.0.3 has it back at the caller's value on the next line, and both are back to 99 once the frame returns (F7). A mismatched pin now aborts the child and stops the driver, verified by a negative control (F8, F10-exit).
+
+- 2026-08-27: T7 — D053 rewritten from T6's measurements: the globalenv branch is reached rather than avoided (F1), `is_top_level_global_env()` is 2.5.0-and-later while only `global_defer()` is 3.x-only (F3), the Rscript form has an undo scheduled that its own exit hooks observe before (F4), `source(local = TRUE)` is recorded as the one measured difference (F7), D052's `defer()` justification is said to stand unqualified (F9), and the two non-frame `@details` claims are named under "What was not measured" (F5's other half).
 
 ## Decisions
 <!-- owner: implement / review · append-only -->

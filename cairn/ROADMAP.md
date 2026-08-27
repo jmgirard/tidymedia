@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-26 (M071 planned, promoting the parallel-worker hal
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M071 | A parallel worker sees the settings the caller set | in-progress | — | normal | milestones/M071-parallel-option-carry.md |
+| M071 | A parallel worker sees the settings the caller set | review | — | normal | milestones/M071-parallel-option-carry.md |
 | M70 | No timeout is silent | done | M69 | normal | milestones/archive/M70-timeout-silence.md |
 | M69 | A hung media program stops the call, not the session | done | — | normal | milestones/archive/M69-runtime-timeout.md |
 | M68 | A failed run removes the broken output it wrote | done | — | normal | milestones/archive/M68-failed-run-output-cleanup.md |

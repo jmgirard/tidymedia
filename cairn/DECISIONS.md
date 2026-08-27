@@ -2113,3 +2113,51 @@ constructed call, a function retrieved by `get()` from a string), or a
 non-exported entry point a user reaches some other way. The sweep's seeds and
 its recorded membership are both asserted, so the drift it cannot see is the
 kind that never appears in a function body at all.
+
+## D050 — A parallel worker runs under the settings the caller set, and hands them back (2026-08-27, from M071; supersedes D047's "Disclosed, not fixed" bullet and D044's seeding rejection; leaves the rest of both standing)
+
+D047 disclosed that `parallel = TRUE` workers never see `tidymedia.timeout`, so
+a parallel batch ran unbounded while the sequential one was bounded. D044 had
+already disclosed the same shape for `tidymedia.nvenc_encoders` and rejected
+seeding workers, on the ground that it would mean the package *writing* an
+option it only ever reads. Both are now fixed, on one mechanism.
+
+**The rule.** Every fan-out in the package captures, in the parent, the caller's
+resolved `tidymedia.timeout` and their `tidymedia.nvenc_encoders`, installs both
+inside the worker for the duration of the mapped call, and puts the worker's own
+prior values back — on the returning path and on the erroring one alike. The
+carrier is one internal wrapper (`R/timeout.R`), applied at the `furrr::future_*`
+call and nowhere else; the sequential branches are untouched.
+
+**Why this is not the seeding D044 rejected.** D044's objection was to the
+package authoring a value for a seam it only reads. Nothing here originates with
+the package: the value installed in the worker is the caller's own, and it is
+withdrawn again when the call ends. A seam that is read-only from the package's
+side stays read-only — what changed is *where* the caller's value is legible,
+not who chooses it.
+
+**An unset name is carried as unset.** The alternative — copy only what the
+parent has set, leave the rest of the worker alone — makes clearing an option in
+the parent stop meaning anything for the workers, and gives the same batch two
+behaviors depending on where a row lands. One rule instead: for the duration of
+the call the worker sees exactly what the parent sees. The cost is a caller who
+configures workers separately through a `future` plan hook, whose value is
+displaced for that call and returned afterwards; that is this half's falsifier.
+
+**The capability memo is still not carried, and stays disclosed.** D044's
+per-process record of what the FFmpeg build reported is not an option and is not
+shipped anywhere: a worker with no override still asks its own binary once.
+Carrying a *memo* would mean the parent answering a question about a binary the
+worker may not even be running. That gap keeps its ROADMAP candidate row.
+
+**The limit is resolved in the parent, once.** Read at the spawn site it lands
+below the per-job `tryCatch` that turns an error into a bare `success = FALSE`,
+and is never read at all on a compile-only path — so a value base R would
+mishandle was silent where it was worst. `ffm_batch()` therefore refuses it in
+its validation block, before either branch dispatches, and the carrier refuses it
+again at capture time for the fan-outs that have no validation block of their
+own. One condition, in the process that can name the caller, on both branches.
+
+Falsified by a report of a worker-side option write colliding with a caller's own
+worker configuration, or by a caller who wanted the parallel path to diverge from
+the sequential one and now cannot have it.

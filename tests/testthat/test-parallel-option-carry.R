@@ -161,12 +161,13 @@ local_carry_harness <- function(env = parent.frame(), workers = 2L) {
   testthat::skip_on_os("windows")
   testthat::skip_if_not_installed("furrr")
   testthat::skip_if_not_installed("future")
-  testthat::skip_if_not_installed("parallelly")
 
   fake <- tm_fake_programs(env)
   withr::local_path(fake$dir, action = "prefix", .local_envir = env)
 
-  cl <- parallelly::makeClusterPSOCK(workers)
+  # base R's `parallel`, not `parallelly`: a fresh PSOCK cluster is all this
+  # needs, and `parallelly` is not among the package's declared dependencies.
+  cl <- parallel::makePSOCKcluster(workers)
   withr::defer(parallel::stopCluster(cl), envir = env)
   old_plan <- future::plan(future::cluster, workers = cl)
   withr::defer(future::plan(old_plan), envir = env)

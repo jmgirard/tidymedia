@@ -69,9 +69,14 @@ discard it:</p>
 <li><p>call <code><a href="set_program.html">set_program</a></code> (or <code><a href="set_program.html">set_ffmpeg</a></code>), which
 discards it for you, since pointing tidymedia at a different binary
 invalidates everything remembered about the old one.</p></li>
-</ul><p>The record is per R process. Under <code>parallel = TRUE</code> each worker keeps
-its own, so a batch running on <code>W</code> workers asks FFmpeg <code>W</code> times
-rather than once, and discarding it in the parent does not reach them.</p>
+</ul><p>The record is per R process, and it does not travel to a worker. So unless
+you have set <code>tidymedia.nvenc_encoders</code> yourself, a batch running on
+<code>W</code> workers asks FFmpeg <code>W</code> times rather than once, and
+discarding the record in the parent does not reach them.</p>
+<p>Setting that option is different: the value you set is carried into each
+worker for the duration of the call, and the worker's own value is put back
+afterwards. A batch built under your override therefore asks FFmpeg
+for no encoder list at all, and every worker answers as the parent would.</p>
 <p><code><a href="ffmpeg_encoders.html">ffmpeg_encoders</a></code> and <code><a href="ffmpeg_codecs.html">ffmpeg_codecs</a></code> are never
 remembered: they query FFmpeg on every call, so they always report the build
 as it is now, whether or not this function has been called.</p>

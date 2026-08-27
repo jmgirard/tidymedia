@@ -80,12 +80,11 @@ an <code>NA</code> row and one warning at the end of the call, saying how many o
 files it names timed out rather than being unreadable. <code><a href="ffm_batch.html">ffm_batch()</a></code> and the
 <code>_batch</code> verbs mark the row <code>success = FALSE</code>, as they do for any failed
 job, and warn once at the end of the run saying how many jobs the limit
-killed — at <code>parallel = TRUE</code> the workers never see the limit, so nothing
-there reaches it to warn about (see below). The dropped-track check behind
-<code><a href="extract_audio.html">extract_audio()</a></code>, <code><a href="convert_audio.html">convert_audio()</a></code>, <code><a href="separate_audio_video.html">separate_audio_video()</a></code> and their
-<code>_batch</code> siblings warns that it could not check, and the provenance manifest
-warns that it could not read a version; both then carry on as they would for
-any other unreadable input.</p>
+killed — at <code>parallel = TRUE</code> no differently from sequentially. The
+dropped-track check behind <code><a href="extract_audio.html">extract_audio()</a></code>, <code><a href="convert_audio.html">convert_audio()</a></code>,
+<code><a href="separate_audio_video.html">separate_audio_video()</a></code> and their <code>_batch</code> siblings warns that it could not
+check, and the provenance manifest warns that it could not read a version;
+both then carry on as they would for any other unreadable input.</p>
 <p>To handle either outcome programmatically, the abort carries the condition
 class <code>tidymedia_timeout</code>; the dropped-track and version-probe warnings
 carry <code>tidymedia_probe_timeout</code>, and the batch warning
@@ -108,9 +107,14 @@ what you want for a legitimate multi-hour encode. Fractional values are
 refused rather than rounded, because the underlying limit is whole seconds
 and a value below one second would otherwise be read as no limit at all.</p>
 <p>The limit applies per spawned program, not per batch: a 100-row batch with a
-600-second limit bounds each row at 600 seconds. It is also read in the
-process that sets it, so under <code>parallel = TRUE</code> the worker processes do not
-see it.</p>
+600-second limit bounds each row at 600 seconds. tidymedia's own
+<code>parallel = TRUE</code> paths are bounded by the same limit as their sequential
+ones: the limit you set is carried into each worker for the duration of the
+call, and whatever that worker had set for itself is put back afterwards. A
+limit the underlying <code>timeout=</code> could not use — a fraction of a second, a
+negative number, a string — is refused by <code><a href="ffm_batch.html">ffm_batch()</a></code> before it dispatches
+any job, on either of its paths and whether or not it is going to run
+anything.</p>
 <p>The limit bounds the wait; it does not promise the program dies at the
 second. R asks the program to stop when the limit is reached, insists 20
 seconds later, and kills it 20 seconds after that, so on Unix a program that

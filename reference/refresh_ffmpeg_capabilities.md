@@ -32,9 +32,16 @@ There are two ways to discard it:
   which discards it for you, since pointing tidymedia at a different
   binary invalidates everything remembered about the old one.
 
-The record is per R process. Under `parallel = TRUE` each worker keeps
-its own, so a batch running on `W` workers asks FFmpeg `W` times rather
-than once, and discarding it in the parent does not reach them.
+The record is per R process, and it does not travel to a worker. So
+unless you have set `tidymedia.nvenc_encoders` yourself, a batch running
+on `W` workers asks FFmpeg `W` times rather than once, and discarding
+the record in the parent does not reach them.
+
+Setting that option is different: the value you set is carried into each
+worker for the duration of the call, and the worker's own value is put
+back afterwards. A batch built under your override therefore asks FFmpeg
+for no encoder list at all, and every worker answers as the parent
+would.
 
 [`ffmpeg_encoders`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md)
 and

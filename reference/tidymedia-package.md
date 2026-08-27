@@ -63,9 +63,8 @@ being unreadable.
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
 and the `_batch` verbs mark the row `success = FALSE`, as they do for
 any failed job, and warn once at the end of the run saying how many jobs
-the limit killed — at `parallel = TRUE` the workers never see the limit,
-so nothing there reaches it to warn about (see below). The dropped-track
-check behind
+the limit killed — at `parallel = TRUE` no differently from
+sequentially. The dropped-track check behind
 [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
 [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
 [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
@@ -103,9 +102,15 @@ rounded, because the underlying limit is whole seconds and a value below
 one second would otherwise be read as no limit at all.
 
 The limit applies per spawned program, not per batch: a 100-row batch
-with a 600-second limit bounds each row at 600 seconds. It is also read
-in the process that sets it, so under `parallel = TRUE` the worker
-processes do not see it.
+with a 600-second limit bounds each row at 600 seconds. tidymedia's own
+`parallel = TRUE` paths are bounded by the same limit as their
+sequential ones: the limit you set is carried into each worker for the
+duration of the call, and whatever that worker had set for itself is put
+back afterwards. A limit the underlying `timeout=` could not use — a
+fraction of a second, a negative number, a string — is refused by
+[`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+before it dispatches any job, on either of its paths and whether or not
+it is going to run anything.
 
 The limit bounds the wait; it does not promise the program dies at the
 second. R asks the program to stop when the limit is reached, insists 20

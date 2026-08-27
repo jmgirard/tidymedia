@@ -46,13 +46,36 @@
   leaves the partial file in place. The default is `0`, meaning no
   limit, so existing code is unaffected — a legitimate multi-hour encode
   still runs to completion. The limit applies to each spawned program
-  rather than to a batch as a whole, and it is read in the process that
-  sets it, so `parallel = TRUE` workers do not see it. The limit bounds
-  the wait rather than promising the program dies at the second: R asks,
-  insists after 20 seconds and kills after 40, so on Unix a program that
-  does not answer can outlive its limit by up to 40 seconds, and R does
-  not guarantee termination at all. See
+  rather than to a batch as a whole, and tidymedia’s own
+  `parallel = TRUE` paths are bounded by the same limit as their
+  sequential ones. The limit bounds the wait rather than promising the
+  program dies at the second: R asks, insists after 20 seconds and kills
+  after 40, so on Unix a program that does not answer can outlive its
+  limit by up to 40 seconds, and R does not guarantee termination at
+  all. See
   [`?tidymedia`](https://jmgirard.github.io/tidymedia/reference/tidymedia-package.md).
+
+- A `parallel = TRUE` call now runs its workers under the tidymedia
+  settings you set in your own session. Previously each worker started
+  from its own empty option list, so `options(tidymedia.timeout = )`
+  bounded a sequential batch and left the parallel one unbounded, and
+  `options(tidymedia.nvenc_encoders = )` steered a sequential build
+  while each worker ignored it and asked FFmpeg for its own encoder
+  list. Both values are now carried into each worker for the duration of
+  the call, and whatever that worker had set for itself is put back
+  afterwards — including when the call fails.
+  [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+  also refuses a limit the underlying `timeout=` could not use — a
+  fraction of a second, a negative number, `NA`, a string — before it
+  dispatches any job, on both paths and whether or not it is going to
+  run anything; that refusal used to arrive as an unexplained
+  `success = FALSE` per row, or not at all. What is still not carried is
+  the remembered answer about your FFmpeg build itself: a worker with no
+  `tidymedia.nvenc_encoders` override still asks its own binary once.
+  See
+  [`?tidymedia`](https://jmgirard.github.io/tidymedia/reference/tidymedia-package.md)
+  and
+  [`?refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md).
 
 ### Breaking changes
 

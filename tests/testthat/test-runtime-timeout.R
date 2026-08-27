@@ -188,17 +188,10 @@ test_that("no warning at all escapes a timed-out guard (AC7, locale-free)", {
 # machines -- so they skip there. `devtools::check()` and the CI workflow both
 # set NOT_CRAN, so the release gate and every push still run them; only CRAN's
 # own submission check opts out.
-local_blocking_input <- function(env = parent.frame()) {
-  skip_on_os("windows")
-  skip_on_cran()
-  skip_if_no_ffmpeg()
-  path <- withr::local_tempfile(fileext = ".mp4", .local_envir = env)
-  ok <- suppressWarnings(system2("mkfifo", shQuote(path)))
-  if (!identical(as.integer(ok), 0L) || !file.exists(path)) {
-    skip("could not create a FIFO to block on")
-  }
-  path
-}
+# local_blocking_input() itself lives in helper-timeout-sweep.R, so M70's grid
+# can anchor against the same real hang rather than building a second fixture
+# (M40). Everything above about why it is a FIFO, and why it skips, still
+# applies to it.
 
 test_that("ffmpeg() aborts at the limit instead of blocking forever", {
   blocked <- local_blocking_input()

@@ -241,3 +241,189 @@ test_that("a missing binary still records NA silently", {
                      list(ffmpeg = NA_character_, ffprobe = NA_character_))
   )
 })
+
+# T9: ffm_batch() -------------------------------------------------------------
+
+# The third no-warning path, and the one M69's hand-list never reached: the T1
+# sweep found it. ffm_batch() records every job failure as `success = FALSE` and
+# signals nothing, so a reached limit was silent through it and through the 15
+# `_batch` verbs and segment_video(), which fan out through it.
+
+# Time out the encode for `hit` inputs only; every other job succeeds.
+local_batch_timeout <- function(hit, limit = 2, env = parent.frame()) {
+  withr::local_options(tidymedia.timeout = limit, .local_envir = env)
+  testthat::local_mocked_bindings(
+    find_ffmpeg = function(...) "/usr/bin/ffmpeg",
+    ffm_run = function(object, verify = NULL) {
+      if (object$input %in% hit) abort_timeout("FFmpeg", limit)
+      invisible(character(0))
+    },
+    .package = "tidymedia",
+    .env = env
+  )
+}
+
+test_that("a timed-out job is no longer silent in a batch", {
+  dir <- withr::local_tempdir()
+  ins <- file.path(dir, c("a.mp4", "b.mp4", "c.mp4"))
+  file.create(ins)
+  jobs <- tibble::tibble(input = ins, output = file.path(dir, c("1", "2", "3")))
+  local_batch_timeout(hit = ins[1:2])
+
+  warns <- NULL
+  out <- withCallingHandlers(
+    ffm_batch(jobs, function(input, output, ...) ffm(input, output)),
+    warning = function(w) {
+      warns <<- c(warns, list(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  hits <- Filter(function(w) inherits(w, "tidymedia_batch_timeout"), warns)
+  expect_length(hits, 1L)
+  expect_match(cli::ansi_strip(conditionMessage(hits[[1]])), "2")
+  expect_match(cli::ansi_strip(conditionMessage(hits[[1]])), "timed out")
+
+  # The documented result is unchanged: the timed-out rows are the failed ones.
+  expect_identical(out$success, c(FALSE, FALSE, TRUE))
+})
+
+test_that("a batch that fails for any other reason stays as quiet as before", {
+  # T9 is bounded to the limit. A non-zero exit, a missing binary, a bad
+  # filter -- all still record success = FALSE and signal nothing, which is the
+  # contract every _batch verb's @return documents today.
+  dir <- withr::local_tempdir()
+  ins <- file.path(dir, c("a.mp4", "b.mp4"))
+  file.create(ins)
+  jobs <- tibble::tibble(input = ins, output = file.path(dir, c("1", "2")))
+  testthat::local_mocked_bindings(
+    find_ffmpeg = function(...) "/usr/bin/ffmpeg",
+    ffm_run = function(object, verify = NULL) cli::cli_abort("nope"),
+    .package = "tidymedia"
+  )
+  out <- expect_no_warning(
+    ffm_batch(jobs, function(input, output, ...) ffm(input, output))
+  )
+  expect_identical(out$success, c(FALSE, FALSE))
+})
+
+test_that("a verification the limit kills is counted too", {
+  # verify_media() re-raises a timeout (AC3), and ffm_batch() records a verify
+  # error as `verified = NA`. Without this the encode succeeds, the probe hangs,
+  # and the batch reports an unverified row with no reason given.
+  dir <- withr::local_tempdir()
+  ins <- file.path(dir, "a.mp4")
+  file.create(ins)
+  jobs <- tibble::tibble(input = ins, output = file.path(dir, "1"))
+  withr::local_options(tidymedia.timeout = 2)
+  testthat::local_mocked_bindings(
+    find_ffmpeg = function(...) "/usr/bin/ffmpeg",
+    ffm_run = function(object, verify = NULL) invisible(character(0)),
+    verify_media = function(...) abort_timeout("FFprobe", 2),
+    .package = "tidymedia"
+  )
+  msg <- tryCatch({
+    ffm_batch(jobs, function(input, output, ...) ffm(input, output),
+              verify = list(width = 320))
+    NULL
+  }, tidymedia_batch_timeout = function(w) cli::ansi_strip(conditionMessage(w)))
+  expect_match(msg, "verification", ignore.case = TRUE)
+})
+
+# AC1: the grid ---------------------------------------------------------------
+
+test_that("no swept function absorbs a forced timeout silently", {
+  # The criterion, quantified over what the sweep returns rather than over
+  # anything written down. A new export that reaches a spawn joins this grid on
+  # its own and fails here until it is made to speak.
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  for (name in tm_timeout_domain()) {
+    res <- tm_force_timeout(name, specs[[name]])
+    expect_true(
+      res$aborted || res$warned,
+      info = paste0(
+        name, " absorbed the timeout silently: ",
+        if (is.null(res$error)) "no condition at all"
+        else paste(class(res$error), collapse = "/")
+      )
+    )
+  }
+})
+
+test_that("the abort half of the grid names the class D047 promises", {
+  # The two halves are not interchangeable: an abort has to carry
+  # `tidymedia_timeout` so a caller can catch it, and a warning has to say the
+  # limit was the reason. `expect_true(aborted || warned)` above would pass on a
+  # bare error, which is what this pins.
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  aborting <- c("extract_audio", "ffm_run", "ffmpeg", "ffprobe", "mediainfo",
+                "verify_media")
+  for (name in aborting) {
+    res <- tm_force_timeout(name, specs[[name]])
+    expect_s3_class(res$error, "tidymedia_timeout")
+  }
+})
+
+test_that("the grid would catch a function that swallows the timeout", {
+  # Mutation probe for the criterion itself. The grid asserts a disjunction, so
+  # a forcing that silently stopped working would pass 53 times and measure
+  # nothing. Standing a swallowing implementation in front of one member proves
+  # the verdict discriminates.
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  testthat::local_mocked_bindings(
+    strip_metadata = function(infile, outfile, run = TRUE) {
+      tryCatch(run_program(infile, outfile, program = "FFmpeg"),
+               error = function(e) NULL)
+    },
+    .package = "tidymedia"
+  )
+  res <- tm_force_timeout("strip_metadata", specs$strip_metadata)
+  expect_false(res$aborted || res$warned)
+})
+
+# The anchors: a real hung binary ---------------------------------------------
+
+# The grid injects `abort_timeout()`'s condition rather than hanging a binary 53
+# times -- base R's SIGINT/SIGTERM/SIGKILL ladder costs ~42 s per hang on Linux
+# (M69/D047), and the members taking no file argument cannot be reached by a
+# FIFO at all. These tie the injected object to what a binary really produces.
+
+test_that("the injected condition is the one a real hung binary produces", {
+  blocked <- local_blocking_input()
+  withr::local_options(tidymedia.timeout = 2)
+  real <- tryCatch(ffprobe(paste("-i", shQuote(blocked))),
+                   error = function(e) e)
+  injected <- tm_force_timeout("ffprobe", list(command = "-version"))$error
+
+  expect_s3_class(real, "tidymedia_timeout")
+  expect_identical(class(real), class(injected))
+  expect_identical(real$tm_program, injected$tm_program)
+  expect_identical(real$tm_limit, injected$tm_limit)
+})
+
+test_that("a real hung track probe warns through the verb that ran it", {
+  # T2's anchor: FFprobe genuinely blocks on the FIFO's header, so this is the
+  # warning a user gets, not one a mock arranged.
+  blocked <- local_blocking_input()
+  withr::local_options(tidymedia.timeout = 2)
+  expect_warning(
+    count_audio_streams_all(blocked),
+    class = "tidymedia_probe_timeout"
+  )
+})
+
+test_that("a real hung batch job warns rather than reporting a bare failure", {
+  # T9's anchor. The row still reads `success = FALSE`, as every _batch verb's
+  # @return documents; what is new is being told why.
+  blocked <- local_blocking_input()
+  out <- withr::local_tempfile(fileext = ".mp4")
+  withr::local_options(tidymedia.timeout = 2)
+  jobs <- tibble::tibble(input = blocked, output = out)
+  expect_warning(
+    res <- ffm_batch(jobs, function(input, output, ...) ffm(input, output)),
+    class = "tidymedia_batch_timeout"
+  )
+  expect_identical(res$success, FALSE)
+})

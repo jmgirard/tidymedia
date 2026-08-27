@@ -110,7 +110,7 @@ rewrite that retires M69's disclosure; a D-entry.
 - [ ] T7 Write the D-entry.
 - [ ] T8 Run the `verify` slot end to end; open the PR and confirm CI green
       before review, which is the gate that caught M69's AC3 failure.
-- [ ] T9 `ffm_batch()`: keep `run_one()`'s caught error object, test it for
+- [x] T9 `ffm_batch()`: keep `run_one()`'s caught error object, test it for
       class `tidymedia_timeout`, and warn once at the end of the run naming how
       many jobs timed out. Non-timeout job failures keep today's silent
       `success = FALSE`. Tests first.
@@ -122,6 +122,7 @@ rewrite that retires M69's disclosure; a D-entry.
 - 2026-08-26: T1 — sweep built (`tests/testthat/helper-timeout-sweep.R`, `test-timeout-silence.R`). Domain = the 53 exported functions reaching `system`/`system2` through a symbol-mention closure over the namespace; membership recorded, mutation-probed (empty seed set collapses it; `ffm_compile` and the pure builders stay out; `run_program()` is derived, not seeded), and every member carries a call spec so a member with no way to be driven fails rather than being skipped. Deliberately NOT M62's call-head graph: `probe_all()` reaches FFprobe only via `purrr::map(infile, probe_one)`, so a head-only walk drops it, the four `probe_*()` accessors and `verify_media()`. Pinned as a test.
 - 2026-08-26: T2 — `count_audio_streams()` returns the absorbed-timeout sentinel instead of a silent NA, and a new `count_audio_streams_all()` assembles the counts for all five sites (`R/ffmpeg.R:437,543,636,745,1014`), warning once per call with class `tidymedia_probe_timeout` and the count of timed-out inputs. Returned counts unchanged (NA for a killed probe), so D024's licence still holds.
 - 2026-08-26: T3 — `capture_version()` returns the sentinel; `tool_versions()` warns once per call naming which tools the limit killed (class `tidymedia_probe_timeout`). Recorded manifest value unchanged (NA). A missing binary is still a silent NA.
+- 2026-08-26: T9 — `ffm_batch()` warns once per run (class `tidymedia_batch_timeout`) naming how many jobs, and how many verifications, the limit killed; `run_one()` now returns a per-job record so the fact survives `unlist()` off the parallel workers. Non-timeout failures keep today's silent `success = FALSE`. AC1's 53-member grid now passes, with a mutation probe standing a swallowing implementation in front of one member, and three real-FIFO anchors (`ffprobe()` condition identity, `count_audio_streams_all()`, `ffm_batch()`). `local_blocking_input()` moved to `helper-timeout-sweep.R` so both suites share one fixture.
 - 2026-08-26: substantive amendment (Scope In + T9 + Coverage AC1). The T1 sweep found a third no-warning path M69's hand-list missed — `ffm_batch()` absorbs every job failure into `success = FALSE` and signals nothing, leaving 17 of the 53 swept exports silent under a forced timeout. AC1 as written already binds them; Scope gains the path, T9 gains the fix (warn on timed-out jobs only; non-timeout failures unchanged).
 
 ## Decisions

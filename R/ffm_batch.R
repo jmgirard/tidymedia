@@ -123,18 +123,29 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
     # Execute each pipeline's argument vector (shell-free, hostile-path-safe;
     # M06) rather than the display string. ffm_run()'s result carries a
     # "status" attribute on a non-zero exit; a hard failure throws.
+    # Each job reports whether it succeeded AND whether the limit is why it did
+    # not. A bare logical cannot carry the second fact: `success` is a
+    # documented logical column, and an attribute on it would not survive
+    # unlist() off the parallel workers or the preallocated assignment in
+    # run_with_progress().
     run_one <- function(pipeline) {
       res <- tryCatch(ffm_run(pipeline), error = function(e) e)
-      !inherits(res, "error") && is.null(attr(res, "status"))
+      list(
+        success = !inherits(res, "error") && is.null(attr(res, "status")),
+        timed_out = inherits(res, "tidymedia_timeout")
+      )
     }
-    out$success <- if (parallel) {
+    results <- if (parallel) {
       # furrr drives its own progress reporting over the parallel workers.
-      unlist(furrr::future_map(pipelines, run_one, .progress = progress))
+      furrr::future_map(pipelines, run_one, .progress = progress)
     } else if (progress) {
       run_with_progress(pipelines, run_one)
     } else {
-      vapply(pipelines, run_one, logical(1))
+      lapply(pipelines, run_one)
     }
+    out$success <- vapply(results, `[[`, logical(1), "success")
+    ran_out <- sum(vapply(results, `[[`, logical(1), "timed_out"))
+    verify_out <- 0L
 
     # Verification records outcomes (never aborts): collapse each job's checks
     # to a single logical, NA for jobs that did not run cleanly. A verify error
@@ -146,9 +157,35 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
           all(do.call(
             verify_media, c(list(file = pipelines[[i]]$output), specs[[i]])
           )$pass),
-          error = function(e) NA
+          # verify_media() re-raises a timeout rather than absorbing it (D048),
+          # and this handler is what would put it back to sleep: without the
+          # count, a successful encode followed by a hung probe reports an
+          # unverified row and gives no reason.
+          error = function(e) {
+            if (inherits(e, "tidymedia_timeout")) verify_out <<- verify_out + 1L
+            NA
+          }
         )
       }, logical(1))
+    }
+
+    # The one place a batch says the limit was reached. Every other failure
+    # keeps today's silent `success = FALSE` -- that is the contract each
+    # _batch verb's @return documents -- but a bounded hang has to be audible,
+    # because a timed-out row and a row FFmpeg rejected look identical in the
+    # results tibble (M70; D048's third path).
+    if (ran_out || verify_out) {
+      cli::cli_warn(
+        c(
+          "{.arg tidymedia.timeout} was reached during this batch.",
+          if (ran_out) c("x" = "{ran_out} job{?s} timed out and did not run to \\
+                                completion."),
+          if (verify_out) c("x" = "{verify_out} verification{?s} timed out."),
+          "i" = "Raise or remove {.code options(tidymedia.timeout = )}; \\
+                 {.code 0} means no limit."
+        ),
+        class = "tidymedia_batch_timeout"
+      )
     }
 
     # Provenance manifest (opt-in): capture tool versions once and assemble a
@@ -185,20 +222,20 @@ warn_if_sequential_plan <- function() {
 
 # run_with_progress() -----------------------------------------------------
 
-# Run the pipelines sequentially behind a cli progress bar, returning the
-# per-job success logical (same contract as the plain vapply path). The bar is
-# owned by this function's frame, so it is cleaned up on return; cli renders a
-# no-op in non-interactive sessions, so this never errors under `R CMD check`.
+# Run the pipelines sequentially behind a cli progress bar, returning one
+# per-job record (same contract as the plain lapply path). The bar is owned by
+# this function's frame, so it is cleaned up on return; cli renders a no-op in
+# non-interactive sessions, so this never errors under `R CMD check`.
 run_with_progress <- function(pipelines, run_one) {
   n <- length(pipelines)
-  successes <- logical(n)
+  results <- vector("list", n)
   cli::cli_progress_bar("Running FFmpeg jobs", total = n)
   for (i in seq_len(n)) {
-    successes[[i]] <- run_one(pipelines[[i]])
+    results[[i]] <- run_one(pipelines[[i]])
     cli::cli_progress_update()
   }
   cli::cli_progress_done()
-  successes
+  results
 }
 
 # resolve_batch_verify() --------------------------------------------------

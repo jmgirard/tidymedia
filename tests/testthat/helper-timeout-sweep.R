@@ -152,7 +152,7 @@ tm_timeout_call_specs <- function(dir) {
 
   jobs_v <- tibble::tibble(input = vid, output = outv)
   jobs_a <- tibble::tibble(input = vid, output = outa)
-  jobs_multi <- tibble::tibble(input = list(c(vid, vid2)), output = outv)
+  jobs_multi <- tibble::tibble(inputs = list(c(vid, vid2)), output = outv)
 
   list(
     anonymize_video = list(infile = vid, outfile = outv, regions = regions),
@@ -170,7 +170,8 @@ tm_timeout_call_specs <- function(dir) {
     extract_audio = list(infile = vid, outfile = outa),
     extract_audio_batch = list(jobs = jobs_a),
     extract_frame = list(infile = vid, outfile = png, timestamp = 1),
-    extract_frame_batch = list(jobs = tibble::tibble(input = vid, output = png)),
+    extract_frame_batch =
+      list(jobs = tibble::tibble(input = vid, output = png, timestamp = 1)),
     ffm_batch = list(jobs = jobs_v,
                      .f = function(input, output, ...) ffm(input, output)),
     ffm_run = list(object = ffm(vid, outv)),
@@ -262,4 +263,29 @@ tm_force_timeout <- function(name, args, limit = 2) {
     warned = any(grepl("timed out", warns, fixed = TRUE)),
     warnings = warns
   )
+}
+
+# local_blocking_input(): a FIFO nobody writes to, so a media program blocks on
+# its header forever and the test does not race the machine's encoding speed.
+#
+# Defined here rather than in M69's test file because two suites now anchor
+# against it: M69's execution tests and M70's grid, which needs the REAL hang to
+# tie its injected condition to what a binary actually produces. A second copy
+# is how the two stop agreeing (M40). The reasoning behind the fixture and its
+# skips is in test-runtime-timeout.R, above the tests that use it.
+#
+# Windows has no mkfifo, so the gate skips there. The fixture is built INSIDE
+# the gate -- a platform that cannot create it must not reach the creation
+# call -- and the gate skips rather than fail()s, because testthat::fail()
+# RECORDS a failure and RETURNS, falling on into the operation it guards (M68).
+local_blocking_input <- function(env = parent.frame()) {
+  skip_on_os("windows")
+  skip_on_cran()
+  skip_if_no_ffmpeg()
+  path <- withr::local_tempfile(fileext = ".mp4", .local_envir = env)
+  ok <- suppressWarnings(system2("mkfifo", shQuote(path)))
+  if (!identical(as.integer(ok), 0L) || !file.exists(path)) {
+    skip("could not create a FIFO to block on")
+  }
+  path
 }

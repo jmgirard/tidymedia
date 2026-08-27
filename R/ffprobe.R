@@ -134,7 +134,6 @@ probe_all_impl <- function(infile, typed = TRUE, parallel = FALSE,
   # same NA row. A user who set a limit precisely to catch hangs cannot act on
   # a warning that calls the two the same thing.
   timed_out <- character(0)
-  hit <- NULL
 
   for (i in seq_along(infile)) {
     f <- infile[[i]]
@@ -142,7 +141,6 @@ probe_all_impl <- function(infile, typed = TRUE, parallel = FALSE,
     if (is_absorbed_timeout(res)) {
       if (!absorb) reraise_absorbed(res, call = call)
       timed_out <- c(timed_out, f)
-      if (is.null(hit)) hit <- res
       res <- NULL
     }
     if (is.null(res)) {

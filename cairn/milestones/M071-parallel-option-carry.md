@@ -1,11 +1,11 @@
 # M071: A parallel worker sees the settings the caller set
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m071-parallel-option-carry`
 
 ## Goal
 
@@ -89,7 +89,7 @@ its domain, its recorded list and its promise ship as M70 left them.
 
 ## Tasks
 
-- [ ] T1 Carrier in `R/timeout.R`: capture the parent's resolved
+- [x] T1 Carrier in `R/timeout.R`: capture the parent's resolved
       `tidymedia.timeout` and its `tidymedia.nvenc_encoders`; the returned wrapper
       sets both inside the worker and restores the prior values on return and on
       error. In-process unit tests with five mutants shown red — drop the timeout
@@ -132,6 +132,8 @@ its domain, its recorded list and its promise ship as M70 left them.
       `devtools::check()`; NOTEs justified in this file.
 
 ## Work log
+
+- 2026-08-26: T1 — `carry_options()` + `carried_option_values()` in `R/timeout.R`; carries the resolved limit and the encoder override, restores the worker's prior values via `on.exit(options(prior))`. An unset name is carried as unset (`options(x = NULL)` removes the entry, measured R 4.6.1). Six in-process tests, 14 assertions; all five mutants red (2, 3, 1, 1, 4 failures).
 
 - 2026-08-26: created by /milestone-plan, promoting part (b) of the "Two timeout residues M69 leaves out" candidate row.
 - 2026-08-26: premise re-measured before planning on it — future 1.75.0 / furrr 0.4.0, a multisession worker read `tidymedia.timeout` as UNSET against `42` in the parent; a parent-captured closure that sets and restores it read `42`.

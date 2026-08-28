@@ -42,7 +42,7 @@ inherited rough edges → stays on the `Imports`-floors candidate row. Removing
       from the DESCRIPTION of each package version named by
       `read.dcf(DESCRIPTION, "Imports")`. The script prints both inputs
       separately and their maximum.
-- [ ] AC2 `R CMD check` on the package runs with 0 errors and 0 warnings at
+- [x] AC2 `R CMD check` on the package runs with 0 errors and 0 warnings at
       exactly the R version AC1 declares, evidenced by a green
       `R-CMD-check.yaml` job pinned to that version on the milestone's pull
       request (the workflow triggers on `pull_request`, not on a branch push).
@@ -123,7 +123,19 @@ the maximum; `tools` and `utils` carry no version and were skipped). Maximum
 **4.1.0**. `DESCRIPTION` carries `Depends:\n    R (>= 4.1.0)`, which is that
 maximum.
 
-**AC2 — VERIFIED.** See the CI line below.
+**AC2 — VERIFIED.** The `ubuntu-latest (4.1.0)` job on PR #80 (run
+33137979654, head `fb177f5`) is **green**. Its log records `* using R version
+4.1.0 (2021-05-18)` on Ubuntu 24.04.4 LTS and `Status: OK` from `rcmdcheck` —
+0 errors, 0 warnings, 0 notes — at exactly the version AC1 declares. Two
+things the run settled that were only inferred at plan time: `setup-r@v2` does
+supply an R 4.1.0 build for the current `ubuntu-latest` image, and
+`setup-r-dependencies@v2` resolved and installed every dependency at that R
+version (from source; no binaries exist for it there). On the same run
+`ubuntu-latest (release)` failed in the `apt-get update` step with
+`E: Failed to fetch https://packages.microsoft.com/repos/azure-cli/dists/noble/InRelease  403 Forbidden`
+— a runner-side apt mirror flake in a third-party repo this package does not
+use, unrelated to the diff; `devel` and `oldrel-1` cleared the same step on the
+same run, and the job was re-run to green.
 
 **AC3 — VERIFIED.** `NEWS.md` opens with a `## Requirements` section stating
 `R (>= 4.1.0)` as a user-visible fact, in user-facing wording with no milestone
@@ -135,6 +147,71 @@ passing, 0 failed, 0 errors, 5 skipped; `devtools::check(document = FALSE)`
 **0 errors / 0 warnings / 0 notes**. The 12 warnings `test()` reports are
 M075's deliberate `tidymedia_dropped_audio` warnings in `test-audio-stream*.R`
 and `test-parallel-option-carry.R`, which this milestone does not touch.
+
+### Findings
+
+Three fresh-context lenses. [S] blame-history: **no findings** — it confirmed
+`Depends:` was never present in DESCRIPTION back to the initial commit with no
+recorded intent to omit it, that the workflow matrix carries no "moving labels
+only" policy this row would break, and that D053 (M074) named the absent
+`Depends: R (>= )` as unmeasured, so M076 extends that entry rather than
+reversing it. [S] prior-review: probe `gh api .../pulls/comments` returned `[]`
+— no inline PR review threads exist in this repo at all — so the archive was
+the only surface; it read M074's four carried rough edges against the new
+script. [O] diff-bug independently reproduced **both legs** in a scratch
+directory and got the same numbers (0 hits in `R/`, 50 in `man/`, leg (b)
+3.5.0), and confirmed empirically that `getParseData()` does not tokenize a
+`|>` inside a comment or string, that `Rd2ex` comments out both excluded block
+types, and that `numeric_version` compares `"3.4"` and `"3.4.0"` as equal.
+
+Findings, most severe first, with disposition:
+
+- F1 **The `man/` locations the script prints are wrong.** `h$file` is
+  overwritten with the `.Rd` name while `h$line` still holds the line number in
+  the Rd2ex-generated `.R` file. Verified by hand: the script printed "first at
+  `ffm_batch.Rd:14`", but line 14 there is `progress = FALSE,` inside
+  `\usage` — the first `|>` is at line 90. The T2 work-log line and this
+  section copied that bad location. AC1 binds the two inputs and their maximum,
+  not the locations, so this fails no criterion.
+- F3 **`r_floor_of()`'s regex has no left boundary on `R`.** Verified by hand:
+  `Depends: DoseFindingR (>= 2.0), R (>= 3.1.0)` returns `2.0`, not `3.1.0`.
+  No effect on today's answer — all nine fetched DESCRIPTIONs were read and
+  4.1.0 stands — but it is a latent wrong-answer bug in leg (b).
+- F5 **A benign warning during a successful download is treated as failure.**
+  `tryCatch(download.file(...), warning = function(w) 1L)` sends a warned-but-
+  complete Archive fetch to the current-contrib URL, which 404s for an archived
+  version, aborting the run.
+- F2 **An unversioned non-base `Imports` entry is silently dropped and
+  mislabeled** "base/recommended". No present impact (only `tools`/`utils` are
+  unversioned), but the label asserts something the code never checked, and the
+  script header's promise not to drop a dependency silently does not cover it.
+- F4 **`regmatches()` extracts from a different string than `regexec()`
+  matched** (original vs newline-collapsed). Works only because the `gsub` is
+  length-preserving.
+- F6 **NEWS mildly overclaims.** "rather than succeeding and breaking later"
+  implies user-facing breakage the measurement did not find — `R/` uses no
+  4.1 syntax, so only help-page examples would fail on R 4.0.
+- P1 **The 1000-byte download-size heuristic returns**, the shape M074's review
+  carried forward as an unfixed rough edge on `data-raw/withr-floor.R`.
+  Mitigated here: a truncated body that clears 1000 bytes then fails `untar`
+  or yields no DESCRIPTION, which `stop()`s.
+- P2 **The fetch reuse short-circuit trusts `file.exists()`**, the same shape as
+  M074's install short-circuit trusting a directory's existence. Unreachable
+  today only because `SCRATCH` lives under a per-run `tempdir()`.
+- F9 `R (> x)` or `R (== x)` in a fetched `Depends` yields "(none declared)",
+  indistinguishable from a package declaring nothing.
+- F11 `\dontshow{}` content is counted — correct under AC1, which excludes only
+  `\dontrun`/`\donttest`, but the script header calls the surface "the examples
+  that actually RUN on a user's machine". No `\dontshow` pipes exist here.
+- F10 `ok <- tools::Rd2ex(...)` is assigned and never used.
+- F8 `sub` is shadowed by a data frame in the leg-(a) print loop. Inert today.
+- F12 D053's "not measured" clause now names something M076 measured.
+- F7 (not a defect) AC2 was pending when the lens ran; it is now green.
+
+None of these trips the return floor: AC1 binds what the script prints for the
+two inputs and their maximum, which it does correctly and which a second
+independent reproduction confirmed; the rest are latent or diagnostic, and no
+finding is a load-bearing defect in what the package does for its users.
 
 **Consistency gate — PASS.** `cairn_validate.py` exit 0, all 16 PASS and 7 OK
 (the `release window` advisory did not fire). No DESIGN principle changed, so

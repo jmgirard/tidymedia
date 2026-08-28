@@ -4731,9 +4731,22 @@ check_batch_inputs <- function(jobs, col = "input",
 # The derived-output counterpart to reject_duplicate_outputs(): with no
 # `output` column a verb derives one name per input, so two rows naming the
 # same input would derive the same output and silently overwrite. Written here
-# once instead of inline in each of the three verbs that derive names, so a
-# verb added later inherits this wording -- and this ORDER -- rather than
-# restating them.
+# once instead of inline in each of the three verbs that derive names, all of
+# which carry a single `input` column.
+#
+# WHAT A LATER VERB INHERITS, AND WHAT IT DOES NOT. The ORDER below is general
+# and a fourth verb inherits it. This WORDING is not: it reads `jobs$input` by
+# name, and a derived-output verb with more than one input column has to
+# compare each row's whole input TUPLE instead. Duplication there is a
+# property of the row, not of a column: a fan-in table whose `main` repeats
+# against distinct `overlay` values would derive distinct outputs and would be
+# legal, and a per-column check would refuse it. Such a verb writes its own row
+# comparison; it does not reach this one with a column name.
+#
+# Parameterizing this by carrier column was considered and refused for that
+# reason (M81/D059). reject_duplicate_outputs()' `col` is not the precedent it
+# looks like -- that one sweeps a VECTOR in a single call, which a scalar
+# `jobs[[col]]` is not.
 #
 # ORDER: every caller runs this BELOW check_batch_inputs(). The duplication
 # message names no path the caller can act on, while the sweep names the file

@@ -77,7 +77,7 @@ no user call reaches, which stay unfixed and undocumented.
       column whose rows all name the same absent input reports the absent
       input, not the duplication. The abort's wording lives at one site, so a
       later verb inherits the order rather than restating it.
-- [ ] AC6: `devtools::check()` clean (0 errors, 0 warnings, no new notes).
+- [x] AC6: `devtools::check()` clean (0 errors, 0 warnings, no new notes).
       NEWS.md records three user-visible changes — `check_dim()`'s NA refusal
       including the `NA_character_` compilation it closes, the per-carrier
       naming, and the new guard order — and its existing paragraph stating
@@ -165,3 +165,13 @@ PR: https://github.com/jmgirard/tidymedia/pull/84 (draft, opened 2026-08-28)
 - **AC4 — verified.** `picture_in_picture_batch()` measured on all six cells. Absent path: overlay bad alone reports `` `jobs$overlay` names 1 file that can't be found or read. ``, main bad alone reports `jobs$main` alone, both bad reports `` `jobs$main` and `jobs$overlay` name 1 file … ``. Repeated with the mode-000 fixture `tm_unreadable_path()` builds in `helper-input-paths.R` (verified `file.access(p, 4) != 0`): the same three messages, so the per-carrier filter is over D041's readability predicate and not over existence.
 
 - **AC5 — verified.** `tm_reaches(tm_call_graph(), v, "reject_duplicate_inputs")` returns 3 verbs: `anonymize_video_batch`, `normalize_audio_batch`, `standardize_video_batch`. For each, a `jobs` table with no `output` column whose two rows name the same absent input reports `` `jobs$input` names 1 file that can't be found or read. `` and the word "duplicated" does not appear. The control — the same table with a readable duplicated path — still reports `` `jobs` has duplicated input paths but no output column. ``, so the path report did not displace the duplication report. `tm_namespace_bodies()` finds the string `has duplicated` at exactly one name, `reject_duplicate_inputs`.
+
+- **AC6 — verified.** `devtools::check()` on the branch: `Status: OK`, 0 errors / 0 warnings / 0 notes, 2m 42s. `NEWS.md`'s Bug fixes section carries three new entries — the NA refusal (quoting the `crop=w=NA:h=100:x=(in_w-out_w)/2:y=(in_h-out_h)/2` command it used to compile and listing the verbs and builders the refusal covers), the per-carrier naming with both the one-carrier and both-carriers wordings, and the new guard order for the three deriving verbs. The existing ordering paragraph gained the clause the criterion names: the duplicated-input refusal on a verb deriving its own output names now reports after the path sweep. No milestone numbers appear in any of it.
+
+### Consistency gate
+
+- `python3 cairn_validate.py` — exit 0; all 16 checks PASS, all 7 advisories OK (`release window` did not fire).
+- No `DESIGN.md` principle changed on this branch, so `cairn_impact.py --changed` does not apply.
+- Toolchain checks (`r-package` profile `consistency-gate` slot): `devtools::document()` produces no diff (working tree clean apart from this milestone file); `NAMESPACE`, `man/` and `data/` are untouched by the diff, so no generated file was hand-edited; `README.Rmd`/`README.md` are untouched and in sync; `pkgdown::check_pkgdown()` reports "No problems found" and the branch exports nothing new, so no `_pkgdown.yml` row is owed; `NEWS.md` carries this milestone's user-visible changes with no milestone numbers; no new top-level file, so no `.Rbuildignore` entry is owed; `devtools::check()` clean as recorded under AC6.
+- `devtools::test()` on the branch: 0 failures, 7934 passing, 5 skips (absent hardware encoders), 12 warnings.
+

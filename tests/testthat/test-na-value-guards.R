@@ -251,3 +251,39 @@ test_that("no check_ predicate branches on an unchecked required flag", {
                  paste(names(found), collapse = ", "))
   )
 })
+
+test_that("the two flag guards refuse NA of every type, naming their flag", {
+  # The domain is the walk's, taken from AC2 rather than re-derived here: these
+  # are the predicates it flagged on the merge-base, each called directly,
+  # since no exported route reaches them with a bad flag (measured 2026-08-28
+  # -- every exported route already signals an rlang_error of its own).
+  shapes <- list(
+    list(fn = "reencode",
+         call = function(na) check_audio_codec_needs_reencode(na, "aac")),
+    list(fn = "resize",
+         call = function(na) check_resize_needs_two_inputs(na, 3))
+  )
+  vals <- na_values()
+  labs <- na_labels()
+  for (s in shapes) {
+    for (i in seq_along(vals)) {
+      where <- paste(s$fn, labs[i])
+      cnd <- tryCatch({ s$call(vals[[i]]); NULL }, error = function(e) e)
+      expect_true(inherits(cnd, "rlang_error"), info = where)
+      # WHICH refusal: the flag's own name, not a bare failure. The rest of
+      # the rendering differs per type ("not `NA`", "not an integer `NA`"),
+      # which is why the name is what is asserted across all four.
+      expect_match(conditionMessage(cnd),
+                   paste0("`", s$fn, "` must be `TRUE` or `FALSE`"),
+                   fixed = TRUE, info = where)
+    }
+  }
+  # The guards still do their own job on a good flag: TRUE with a bad partner
+  # aborts for the contradiction, and the legal call passes.
+  expect_error(check_audio_codec_needs_reencode(FALSE, "aac"),
+               "needs a re-encoding cut")
+  expect_silent(check_audio_codec_needs_reencode(FALSE, "copy"))
+  expect_error(check_resize_needs_two_inputs(TRUE, 3),
+               "exactly two inputs")
+  expect_silent(check_resize_needs_two_inputs(FALSE, 3))
+})

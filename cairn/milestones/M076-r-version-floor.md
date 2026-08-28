@@ -1,11 +1,11 @@
 # M076: The R version the package actually needs
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m076-r-version-floor`
 
 ## Goal
 
@@ -61,7 +61,7 @@ inherited rough edges → stays on the `Imports`-floors candidate row. Removing
 
 ## Tasks
 
-- [ ] T1 Write `data-raw/r-floor.R`: the two-input sweep AC1 names, printing
+- [x] T1 Write `data-raw/r-floor.R`: the two-input sweep AC1 names, printing
       each input and the maximum. Add `.Rbuildignore` coverage (`^data-raw$`
       already present — confirm, do not duplicate).
 - [ ] T2 Run it; record both inputs and the maximum in the work log. Set
@@ -84,6 +84,7 @@ inherited rough edges → stays on the `Imports`-floors candidate row. Removing
 
 - 2026-08-27: created by /milestone-plan.
 - 2026-08-27: criteria audit (full mode, user-facing tier) returned 13 findings across both milestones' drafts; 9 fixed here, 3 posed at the gate, 1 (M077 AC5) clean. Fixed for M076: AC1 bound the milestone file's prose rather than the script's output; the `\dontrun` clause was inert and ambiguously scoped; the R/ leg counted roxygen comment lines, so it could not tell package code from examples; AC2 promised a NOTE justification in the record; AC2's reachability was unverified (checked — 4.1.0 resolves); AC3 named the moving `oldrel-1` label.
+- 2026-08-27: T1 — `data-raw/r-floor.R` written. Leg (a) counts the two forms from `getParseData()` terminal tokens `PIPE` and `'\\'`, never a regex over source text, so a `|>` in a roxygen comment or a string cannot count; `man/` examples reach the parser through `tools::Rd2ex(commentDontrun = TRUE, commentDonttest = TRUE)`, which comments both excluded block types out, so AC1's exclusion is enforced by the extractor. Leg (b) fetches each `Imports` floor version's own tarball from CRAN (Archive first, then current contrib), untars only its `DESCRIPTION`, and reads `Depends: R` from it — the installed release is never consulted. `.Rbuildignore` already carries `^data-raw$` (line 15); not duplicated.
 - 2026-08-27: plan gate chose declaring `R (>= 4.1.0)` over removing `|>` from 24 help-page examples to hold a lower floor, because current `dplyr`, `glue`, `purrr`, `rappdirs` and `testthat` already force 4.1.0 on any install, so the rewrite would buy no reachable user; falsified by a report of a user on R 4.0.x who can install every current dependency.
 
 ## Decisions

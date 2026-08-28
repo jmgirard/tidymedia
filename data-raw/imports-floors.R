@@ -392,6 +392,95 @@ newest_compatible <- function(pkg, pins) {
   stop(sprintf("no version of %s is compatible with the pinned floors", pkg), call. = FALSE)
 }
 
+# --- reconciling the declared floors with what the environment requires --------
+
+gather_reqs <- function(pins) {
+  outside <- declared_reqs(names(pins))
+  outside <- outside[!outside$requirer %in% names(pins), , drop = FALSE]
+  inside <- do.call(rbind, lapply(names(pins), function(p) tarball_reqs(p, pins[[p]], names(pins))))
+  rbind(outside, inside)
+}
+
+# WHO MAY BE HELD BACK. Not "everything outside the runtime closure": that
+# definition is a description of this host, not a decision, and off the
+# container it will happily downgrade whatever unrelated package happens to
+# declare a requirement the floors miss. The set is NAMED, and it is the two
+# packages D055 item 2 records as actually held back -- `testthat` 3.1.10 and
+# `furrr` 0.3.1. A requirer outside the runtime closure and outside this set is
+# something nobody decided to hold back, so the run stops and says which
+# package it is: extending the set, or moving a floor, is a judgement about
+# what is being measured and belongs to whoever is measuring.
+HOLDBACK_SET <- c("testthat", "furrr")
+
+MAX_ROUNDS <- 5L
+
+# `gather` and `pick` are arguments rather than the globals they resolve to in
+# the run, so the two ways this can refuse -- a stray requirer, and rounds that
+# never settle -- are reachable from data-raw/floor-probes.R without a network
+# or an install. Returns the reconciled pins with the moves and holdbacks that
+# produced them; aborts rather than returning a set it has not settled.
+reconcile <- function(pins, closure, gather, pick,
+                      version_of = function(p) as.character(utils::packageVersion(p))) {
+  holdbacks <- list()
+  moves <- character()
+  settled <- FALSE
+  for (round in seq_len(MAX_ROUNDS)) {
+    reqs <- gather(pins)
+    reqs <- reqs[numeric_version(reqs$version) > numeric_version(unlist(pins)[reqs$required]), , drop = FALSE]
+    if (!nrow(reqs)) { settled <- TRUE; break }
+    rt <- reqs[reqs$requirer %in% closure, , drop = FALSE]
+    if (nrow(rt)) {
+      # A requirer inside this package's runtime closure is something a user
+      # installing tidymedia gets, so the floor below it does not work and moves.
+      for (q in unique(rt$required)) {
+        req <- rt[rt$required == q, , drop = FALSE]
+        need <- as.character(max(numeric_version(req$version)))
+        moves <- c(moves, sprintf("%s: %s -> %s (required by %s)", q, pins[[q]], need,
+                                  paste(sprintf("%s %s (>= %s)", req$requirer,
+                                                vapply(req$requirer, version_of, ""),
+                                                req$version), collapse = ", ")))
+        cat(sprintf("  MOVE     %-10s %s -> %s  (runtime closure: %s)\n", q, pins[[q]], need,
+                    paste(unique(req$requirer), collapse = ", ")))
+        pins[[q]] <- need
+      }
+      next
+    }
+    # Everything left is outside the runtime closure. No user installs it, so it
+    # is held back rather than allowed to raise a floor -- but only if it is one
+    # of the packages named above.
+    stray <- setdiff(unique(reqs$requirer), HOLDBACK_SET)
+    if (length(stray)) {
+      stop(sprintf(paste0("%s requires more of the pinned floors than they declare, ",
+                          "and is not one of the harness packages this run may hold back (%s). ",
+                          "Either it belongs in HOLDBACK_SET or a floor has to move -- ",
+                          "neither is a call this script makes on its own."),
+                   paste(stray, collapse = ", "), paste(HOLDBACK_SET, collapse = ", ")),
+           call. = FALSE)
+    }
+    for (r in unique(reqs$requirer)) {
+      req <- reqs[reqs$requirer == r, , drop = FALSE]
+      forced <- paste(sprintf("%s (>= %s)", req$required, req$version), collapse = ", ")
+      v <- pick(r, pins)
+      cat(sprintf("  HOLDBACK %-10s %s -> %s  (its current release needs %s)\n",
+                  r, version_of(r), v, forced))
+      holdbacks[[r]] <- list(version = v, forced = forced, was = version_of(r))
+    }
+    # `pick()` chose, per held-back package, a version whose own requirements
+    # the pins already satisfy, so holding them back is the last step rather
+    # than another round.
+    settled <- TRUE
+    break
+  }
+  if (!settled) {
+    # Falling out of the loop used to be indistinguishable from settling in one
+    # round: the run went on to install pins that still violated a requirement
+    # somewhere, and reported whatever the suite then did.
+    stop(sprintf("floors and requirements did not reconcile in %d rounds -- the run has not established what to pin, so it has nothing to measure",
+                 MAX_ROUNDS), call. = FALSE)
+  }
+  list(pins = pins, moves = moves, holdbacks = holdbacks)
+}
+
 # --- a package's CRAN Archive listing, oldest first -----------------------------
 #
 # Used by `newest_compatible()` to find the newest release of a held-back
@@ -598,50 +687,10 @@ dir.create(lib, recursive = TRUE, showWarnings = FALSE)
 # --- what the environment requires of the pinned floors -------------------------
 
 cat("\n---- requirements the environment places on the pinned floors ----\n")
-CLOSURE <- runtime_closure(names(pins))
-gather_reqs <- function(pins) {
-  outside <- declared_reqs(names(pins))
-  outside <- outside[!outside$requirer %in% names(pins), , drop = FALSE]
-  inside <- do.call(rbind, lapply(names(pins), function(p) tarball_reqs(p, pins[[p]], names(pins))))
-  rbind(outside, inside)
-}
-holdbacks <- list()
-moves <- character()
-for (round in 1:5) {
-  reqs <- gather_reqs(pins)
-  reqs <- reqs[numeric_version(reqs$version) > numeric_version(unlist(pins)[reqs$required]), , drop = FALSE]
-  if (!nrow(reqs)) break
-  rt <- reqs[reqs$requirer %in% CLOSURE, , drop = FALSE]
-  if (nrow(rt)) {
-    # A requirer inside this package's runtime closure is something a user
-    # installing tidymedia gets, so the floor below it does not work and moves.
-    for (q in unique(rt$required)) {
-      req <- rt[rt$required == q, , drop = FALSE]
-      need <- as.character(max(numeric_version(req$version)))
-      moves <- c(moves, sprintf("%s: %s -> %s (required by %s)", q, pins[[q]], need,
-                                paste(sprintf("%s %s (>= %s)", req$requirer,
-                                              vapply(req$requirer, function(r)
-                                                as.character(utils::packageVersion(r)), ""),
-                                              req$version), collapse = ", ")))
-      cat(sprintf("  MOVE     %-10s %s -> %s  (runtime closure: %s)\n", q, pins[[q]], need,
-                  paste(unique(req$requirer), collapse = ", ")))
-      pins[[q]] <- need
-    }
-    next
-  }
-  # Everything left is outside the runtime closure: the test harness. No user
-  # installs it, so it is held back rather than allowed to raise a floor.
-  for (r in unique(reqs$requirer)) {
-    req <- reqs[reqs$requirer == r, , drop = FALSE]
-    forced <- paste(sprintf("%s (>= %s)", req$required, req$version), collapse = ", ")
-    v <- newest_compatible(r, pins)
-    cat(sprintf("  HOLDBACK %-10s %s -> %s  (its current release needs %s)\n",
-                r, as.character(utils::packageVersion(r)), v, forced))
-    holdbacks[[r]] <- list(version = v, forced = forced,
-                           was = as.character(utils::packageVersion(r)))
-  }
-  break
-}
+rec <- reconcile(pins, runtime_closure(names(pins)), gather_reqs, newest_compatible)
+pins <- rec$pins
+moves <- rec$moves
+holdbacks <- rec$holdbacks
 if (!length(moves) && !length(holdbacks)) cat("  none -- every declared floor satisfies the environment as it stands\n")
 pins_env <- paste(sprintf("%s=%s", names(pins), unlist(pins)), collapse = ";")
 cat("\n---- installing the declared floors into", lib, "----\n")

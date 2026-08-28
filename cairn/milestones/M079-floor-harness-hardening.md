@@ -100,7 +100,7 @@ none is proposed; D053 and D055 stand untouched.
       and `:15`. Keep `--only` and make its name guard reachable (M077 F14
       was the `--only X --walk Y` bypass). Delete the M077 F18 dead code
       and its comment.
-- [ ] T2 — Redefine the holdback set (`:626-663`) as the named test-harness
+- [x] T2 — Redefine the holdback set (`:626-663`) as the named test-harness
       packages; make the `for (round in 1:5)` loop abort on non-convergence
       instead of exiting silently.
 - [ ] T3 — Make `fetch_tarball()`'s cache branch (`:124`) call the same
@@ -140,6 +140,7 @@ none is proposed; D053 and D055 stand untouched.
 - 2026-08-28: plan gate chose host-side planted defects over binding a full container run as a criterion because the internal-tier criteria standard bars a promise spanning an environment boundary and the container run costs an hour-plus; falsified by a host-side probe passing while the container run regresses, which is why T9 runs the container anyway and logs the outcome.
 - 2026-08-28: plan gate chose fixing the scripts over deleting them because the nine one-floor-at-a-time legs and the three-OS run are open candidates that would have to hand-roll the harness again; falsified by both being dropped, after which D053/D055/D056's recorded prose is the whole value.
 - 2026-08-28: T1 — `--repair` and `--walk` deleted from `imports-floors.R`: usage lines, flag parsing, the walk block and its `--only`-bypassable name guard (M077 F14), and the repair path with F18's dead `probe <- file.path(LIBROOT, "walk")` and its comment. A failed floor install now aborts naming the floors, instead of telling the reader to re-run with a mode that no longer exists. `grep -n -e '--repair' -e '--walk' data-raw/` returns no match; `--only nosuch` still stops with "nosuch is not a versioned Imports entry".
+- 2026-08-28: T2 — the holdback set is `HOLDBACK_SET <- c("testthat", "furrr")` (D055 item 2), and a requirer outside both the runtime closure and that set now stops the run naming itself rather than being downgraded; the `1:5` loop aborts on non-convergence instead of falling out silently. Both decisions moved into `reconcile(pins, closure, gather, pick, version_of)`, whose `gather`/`pick` are arguments rather than globals, so T4's probes can reach either refusal without a network or an install.
 
 ## Decisions
 

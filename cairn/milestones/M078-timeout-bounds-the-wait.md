@@ -99,7 +99,7 @@ the measurement and naming M69 return 2's falsified premise.
       (`R/timeout.R:38-100` `@description`/`@param seconds`, the file's
       opening comment at `R/timeout.R:1-10`, `R/tidymedia-package.R`),
       regenerate `man/`, and add the `NEWS.md` entry.
-- [ ] T6: Append the D-entry (AC3), and update the Linux-escalation
+- [x] T6: Append the D-entry (AC3), and update the Linux-escalation
       candidate ROADMAP row so it carries what T3 found and states what the
       fix milestone now has to decide.
 - [ ] T7: `devtools::document()`, `devtools::test()`, `devtools::check()`.
@@ -123,6 +123,8 @@ the measurement and naming M69 return 2's falsified premise.
 - 2026-08-28: T5 — corrected, in roxygen with `man/` regenerated: `R/timeout.R` file comment (the seam now says it stops the CALL, not the program, with the measured lag), `with_timeout()` and `local_timeout()` `@description` (each said a program "is bounded by `seconds`" with no lag anywhere in its own topic) and `@details` (a new paragraph giving the arithmetic and the 42.0 s measurement; "bounds each row at `seconds`" → "waits `seconds` on each row"), `R/tidymedia-package.R:36` and `:85` (same "bounded at" shape), and its disclosure paragraph, which kept its accurate "up to 40 seconds" and gained the measured number, the survivor case and the FFmpeg-build dependence. Internal comments saying the limit "killed" a child/probe/call corrected in `R/timeout.R`, `R/ffprobe.R` and `R/ffm_manifest.R` — R stops waiting either way, and whether the program died is a separate question. `NEWS.md`: the batch bullet's "how many jobs the limit killed", the `with_timeout()` and `local_timeout()` bullets' "is bounded by `seconds`", and the disclosure sentence's numbers. AC1 evidence: 195 hits reviewed; corrected by `file:line` are R/timeout.R:5-6, :62, :152, :277, :334; R/ffm_manifest.R:116, :150; R/ffprobe.R:243, :248, :253; NEWS.md:35, :48, :84, :96. The falsified sentence ITSELF contains no occurrence of "timeout" and so is not a sweep hit — corrected anyway, and reported separately rather than counted as a hit: R/tidymedia-package.R:36, :85, :94-99 and NEWS.md:63-66, :86, :98, plus their `man/` mirrors.
 - 2026-08-28: T5 — AC2 entry added to `NEWS.md`'s development version, in user-facing words and naming no milestone.
 - 2026-08-28: T5 — `tests/testthat/test-runtime-timeout.R` gains a guard on the MEASURED number. The standing guard asserts both docs contain "40 seconds", and it was green throughout the period `?with_timeout` and `?local_timeout` promised a bound with no lag mentioned in their own topics — it reads `?tidymedia`'s Rd and cannot tell which topic satisfied it. The new one fences "42.0 seconds", so dropping the arithmetic back to a bare "may be exceeded" reddens.
+
+- 2026-08-28: T6 — D056 appended to `cairn/DECISIONS.md` (the grid, both platforms, liveness per case; M69 return 2's premise recorded as CONFIRMED; D055 item 3 recorded as unreproduced rather than disproven, with D055 left unamended). The Linux-escalation ROADMAP row's "the 2026-08-28 measurement (191.8 s ...) contradicts the 'bounded 42 s' premise" sentence replaced with what was measured; the row stays open on its original promote-on trigger, per the mini gate.
 
 ## Decisions
 

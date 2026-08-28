@@ -2515,3 +2515,76 @@ Falsified by a user on a declared floor hitting a failure this joint run does
 not reach — a floor that works alongside its eight siblings and breaks against
 current ones is the shape this configuration cannot see — or by any of the
 eight standing floors failing once a sibling moves.
+
+## D056 — The limit bounds the wait, measured: limit + 40 s with a pipe, limit + 20 s and a surviving program without (2026-08-28, from M078; measures what D047 asserted and D055 item 3 reported second-hand, leaving both standing)
+
+`options(tidymedia.timeout = )` was documented as bounding the wait rather than
+the program, with a lag of "up to 40 seconds" carried in one topic only. That
+number was inherited from `?system`'s contract and one 2026-08-09 CI
+observation, never measured here. D055 item 3 then reported, as an aside to a
+floors measurement, that a 2 s limit had produced a 191.8 s run and that six
+full-suite runs never returned. This entry measures both.
+
+**Runner.** `tidymedia-floors:r443` — Ubuntu noble, aarch64, R 4.4.3, ffmpeg
+6.1.1-3ubuntu5 — rebuilt from `data-raw/Dockerfile.floors`, committed by this
+milestone so the runner D055 names can be rebuilt. Measured by
+`data-raw/timeout-bound.R`, which prints the numbers quoted below. Host figures
+are context, not a second platform under test: macOS 26.6.2, aarch64,
+R 4.6.1, ffmpeg 9.0.1.
+
+**Set limit, 2 s in every case. Observed elapsed, and whether the spawned
+program was still running when R returned.**
+
+| case | spawn form | container | host |
+|---|---|---|---|
+| A1 | signal-ignoring child, `system2(stdout = TRUE)` | 42.00 s, dead | 42.03 s, dead |
+| A2 | signal-ignoring child, `system2(stdout = "")` | 22.01 s, **alive** | 22.02 s, **alive** |
+| A3 | as A1, `input = ""` | 42.02 s, dead | 42.03 s, dead |
+| A4 | signal-ignoring child, `system(intern = TRUE)` — the Layer 0 call | 42.02 s, dead | 42.01 s, dead |
+| B1 | FFmpeg blocked on a writer-less FIFO, `system2(stdout = TRUE)` | 42.03 s, dead | 2.01 s, dead |
+| B2 | as B1, `system2(stdout = "")` | 22.01 s, **alive** | 2.01 s, dead |
+| C1 | `with_timeout(ffmpeg(<blocked FIFO>), 2)` | 42.41 s, dead | 2.37 s, dead |
+
+**What the numbers say.** R's escalation is SIGINT at the limit, SIGTERM at
++20 s, SIGKILL at +40 s. When R reads the child's stdout PIPE it stays until
+the pipe closes, which is when SIGKILL lands: limit + 40. When it does not read
+a pipe it stops waiting at the SIGTERM step, limit + 20 — **and the program is
+still running**, verified by pid and command line, with a control that spawns a
+known-live process, asserts the probe finds it, kills it and asserts the probe
+clears. The package only ever uses the reading form (`run_program()` passes
+`stdout = TRUE`; the Layer 0 hatches pass `intern = TRUE`), so no tidymedia call
+takes the surviving-program path today. The macOS/Linux split at B1 is the
+FFmpeg build, not R: 9.0.1 answers the first signal, 6.1.1 blocked on a FIFO
+does not.
+
+**M69 return 2's premise is confirmed, not falsified.** That gate rejected
+`processx` because the Goal — a hung program stops the call rather than the
+session — "is met by a bounded 42 s exactly as by a bounded 2 s". The largest
+overrun in 14 cases across two platforms is 40.41 s, and every overrunning case
+lands on limit + 40 or limit + 20. The ROADMAP row that carried this premise as
+contradicted said so on the strength of D055's 191.8 s; it now carries this
+measurement instead. Nothing here decides a replacement mechanism, and the
+rejection is untouched — the milestone that swaps the mechanism is the one with
+standing to overturn it.
+
+**D055 item 3 does not reproduce in a rebuild of the runner it names.** Its
+191.8 s under a 2 s limit was not observed in any case. Its three excluded
+fixture files — `test-with-timeout.R`, `test-runtime-timeout.R` and
+`test-timeout-silence.R`, which block a spawned FFmpeg on a `mkfifo` named pipe
+nobody writes to (`local_blocking_input()` in `helper-timeout-sweep.R`) and
+expect the package's limit to stop it — each ran to completion with
+`NOT_CRAN=true`: 45.61 s, 267.30 s and 52.11 s, exit 0, no failures and no
+skips. The full suite ran **pass=6477 fail=0 skip=22 in 445.9 s**. 267 s is
+about six bounded calls at ~42 s each, which is the shape a "191.8 s isolated
+run" most plausibly had: a file's duration, not a call's.
+
+This is recorded as **unreproduced, not disproven**, and D055 stands unamended.
+That run had the nine `Imports` floors pinned and `testthat` and `furrr` held
+back, a configuration this measurement did not reproduce; D055 also reports its
+baseline wedging identically, which this run — effectively that baseline — did
+not. What can be said is that a rebuild of the named runner, on current
+harness packages, does not wedge.
+
+Falsified by an overrun above limit + 40 s on any platform, by a tidymedia call
+returning with its spawned program still alive, or by the wedge reproducing on
+the pinned-floor configuration D055 measured.

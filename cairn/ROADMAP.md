@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-28 (M077 merged and archived after one review round
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M078 | The limit bounds the wait, not the process | planned | — | normal | milestones/M078-timeout-bounds-the-wait.md |
+| M078 | The limit bounds the wait, not the process | in-progress | — | normal | milestones/M078-timeout-bounds-the-wait.md |
 | M077 | The nine other Imports floors, measured | done | M076 | normal | milestones/archive/M077-imports-floors-measured.md |
 | M076 | The R version the package actually needs | done | — | normal | milestones/archive/M076-r-version-floor.md |
 | M075 | The silent narrowing announces itself | done | — | normal | milestones/archive/M075-normalize-audio-drop-warning.md |

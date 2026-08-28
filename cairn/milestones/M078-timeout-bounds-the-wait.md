@@ -1,11 +1,11 @@
 # M078: The limit bounds the wait, not the process
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m078-timeout-bounds-the-wait`
 
 ## Goal
 
@@ -77,7 +77,7 @@ the measurement and naming M69 return 2's falsified premise.
 
 ## Tasks
 
-- [ ] T1: Write `data-raw/Dockerfile.floors` reproducing the image D055 names
+- [x] T1: Write `data-raw/Dockerfile.floors` reproducing the image D055 names
       (Ubuntu noble, R 4.4.3, ffmpeg, the floors harness's install deps).
       Build it and confirm it comes up. `data-raw/` is already
       `.Rbuildignore`d (`^data-raw$`), so no new entry is needed.
@@ -109,6 +109,9 @@ the measurement and naming M69 return 2's falsified premise.
 - 2026-08-28: plan gate chose measure-and-document now with the fix as a promoted candidate over measuring and fixing in one milestone, because the mechanism choice is not answerable until T3 says where the 191.8 s goes, and ACs committing to a mechanism ahead of that evidence is the shape that cost M114 gated amendments; falsified by T3 returning a cause that only one mechanism can address, which would make the split pure overhead.
 - 2026-08-28: plan gate chose to record M69 return 2's premise as falsified without superseding its rejection over superseding it in this milestone's D-entry, because this milestone changes no mechanism and so has no standing to overturn a mechanism rejection; falsified by the fix milestone finding the un-superseded rejection blocks its own gate.
 - 2026-08-28: plan gate chose committing `tidymedia-floors:r443`'s Dockerfile here, absorbing F21 from the floor-script hardening candidate row, over a separate minimal repro container, because one image serves both needs and D055 already names a runner the repo cannot rebuild; falsified by the floors harness's install machinery making the image too slow or too fragile to iterate a timeout measurement in.
+- 2026-08-28: implement question gate chose pinning `data-raw/Dockerfile.floors`'s repository to a dated P3M snapshot (`ARG CRAN_SNAPSHOT=2025-04-10`, the base image's own date) over reproducing the ad-hoc image's live-CRAN override verbatim, because the ad-hoc image's `options(repos = c(CRAN = "https://cloud.r-project.org"))` makes two rebuilds free to resolve different harness versions, which is the half of F21 that matters for a floors measurement; the file says in its own header that it is therefore not byte-identical to the runner D055 names. The user declined the third option (rebuild before measuring), so T3 measures in the existing `tidymedia-floors:r443`.
+- 2026-08-28: implement question gate chose to run the T2 grid on the host as well as in the container, as explicitly-labelled context in the D-entry rather than as a second platform under AC3, because the fix milestone needs to know whether the overrun is a Linux/container property or a base-R one, and adding evidence widens no criterion.
+- 2026-08-28: T1 — `data-raw/Dockerfile.floors` written from `docker image history tidymedia-floors:r443` and built as `tidymedia-floors:r443-rebuild`; it comes up with R 4.4.3 / aarch64-unknown-linux-gnu, ffmpeg 6.1.1-3ubuntu5, MediaInfoLib v24.01 and all seventeen harness packages present.
 - 2026-08-28: plan gate chose an AC3 that states whatever the measurement found over one asserting an observed excess above limit + 40 s, because the latter is unsatisfiable if the rebuilt image behaves differently from the ad-hoc one and the only remedy would be an amendment; falsified by a measurement so equivocal that "what was found" states nothing actionable.
 
 ## Decisions

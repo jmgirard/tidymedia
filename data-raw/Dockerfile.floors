@@ -1,0 +1,39 @@
+# The runner D055's floors measurement ran in, and the runner M078 measured the
+# timeout bound in. Build it with:
+#
+#     docker build -f data-raw/Dockerfile.floors -t tidymedia-floors:r443 data-raw
+#
+# `data-raw/` is .Rbuildignore'd (`^data-raw$`), so nothing here ships.
+#
+# NOT byte-identical to the ad-hoc image D055 was measured on. That image
+# overrode the base's repository with a LIVE mirror --
+# `options(repos = c(CRAN = "https://cloud.r-project.org"), Ncpus = 6)` -- so
+# two rebuilds of it need not resolve the same harness package versions. This
+# file pins the repository to a dated Posit Package Manager snapshot instead
+# (the base image's own default date), which is what "the repo can rebuild the
+# runner" has to mean for a measurement. Everything else -- base image, system
+# packages, the R package set -- reproduces that build.
+FROM rocker/r-ver:4.4.3
+
+# The snapshot date the harness packages resolve from. rocker/r-ver:4.4.3 ships
+# with this same date in its own `CRAN` env var; raising it changes which
+# testthat/roxygen2/pkgload a rebuild gets, and so is a change to the runner.
+ARG CRAN_SNAPSHOT=2025-04-10
+
+# ffmpeg and mediainfo are what the package under test shells out to.
+# libarchive-dev is what the `archive` floor links against; the rest are the
+# usual build dependencies of the harness's own tree.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      ffmpeg mediainfo libarchive-dev libcurl4-openssl-dev libssl-dev \
+      libxml2-dev libgit2-dev libfontconfig1-dev libfreetype6-dev \
+      libharfbuzz-dev libfribidi-dev libpng-dev libtiff5-dev libjpeg-dev \
+      libuv1-dev pkg-config git \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN printf 'options(repos = c(CRAN = "https://p3m.dev/cran/__linux__/noble/%s"), Ncpus = 6)\n' \
+      "$CRAN_SNAPSHOT" > /usr/local/lib/R/etc/Rprofile.site
+
+# install.packages() warns rather than fails on a package it could not install,
+# so the second call is the one that decides whether the build succeeded.
+RUN Rscript -e 'install.packages(c("pkgload", "testthat", "archive", "cli", "dplyr", "glue", "purrr", "rappdirs", "rlang", "tibble", "withr", "furrr", "future", "knitr", "rmarkdown", "roxygen2", "spelling"))' \
+ && Rscript -e 'p <- c("pkgload","testthat","archive","cli","dplyr","glue","purrr","rappdirs","rlang","tibble","withr","furrr","future","knitr","rmarkdown","roxygen2","spelling"); miss <- setdiff(p, rownames(installed.packages())); if (length(miss)) stop("missing: ", paste(miss, collapse=", "))'

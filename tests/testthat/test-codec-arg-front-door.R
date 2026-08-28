@@ -240,24 +240,28 @@ test_that("a codec guard does not preempt a verb's other front-door checks", {
   # which type-checks this argument itself (A3r3). Every guard now sits at the
   # end of its verb's front-door validation, and these pin it there: each call
   # is wrong about two things, and must still report the non-codec one.
+  #
+  # The two verbs deriving their own output names carried a duplicated-input
+  # cell here until M80. That guard is no longer part of the front-door tier
+  # this claim is about: it moved BELOW the missing-path sweep (D057), which in
+  # turn sits below this argument's check, so on those two the codec now
+  # reports first. The new order is pinned in test-input-path-front-door.R,
+  # where the sweep's precedence lives; each verb keeps a second-tier COLUMN
+  # cell here, which is the tier the claim covers.
   input <- make_input()
   r <- data.frame(x = 0, y = 0, width = 32, height = 32)
   cases <- list(
-    list(lbl = "standardize_video_batch / duplicate input",
-         f = function() standardize_video_batch(
-           tibble::tibble(input = c(input, input)), video_codec = NA,
-           run = FALSE, parallel = FALSE),
-         want = "duplicated"),
     list(lbl = "standardize_video_batch / bad pixel_format column",
          f = function() standardize_video_batch(
            tibble::tibble(input = input, output = "o.mp4", pixel_format = 1),
            video_codec = NA, run = FALSE, parallel = FALSE),
          want = "pixel_format"),
-    list(lbl = "anonymize_video_batch / duplicate input",
+    list(lbl = "anonymize_video_batch / bad color column",
          f = function() anonymize_video_batch(
-           tibble::tibble(input = c(input, input), regions = list(r, r)),
+           tibble::tibble(input = input, output = "o.mp4",
+                          regions = list(r), color = 1),
            video_codec = NA, run = FALSE, parallel = FALSE),
-         want = "duplicated"),
+         want = "color"),
     list(lbl = "normalize_audio_batch / duplicate input",
          f = function() normalize_audio_batch(
            tibble::tibble(input = c(input, input)), audio_codec = NA,

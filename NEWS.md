@@ -486,7 +486,12 @@
   carried one path typed wrong was told its inputs were duplicated and never
   told which file was not there. The path is what you can act on, so it now
   reports first; a table of duplicated inputs that all exist still gets the
-  duplication message.
+  duplication message. One further order changes with it, on
+  `anonymize_video_batch()` and `standardize_video_batch()`: a duplicated table
+  that also carries a bad `video_codec` or `audio_stream` argument now reports
+  that argument, where it used to report the duplication. The checks a verb
+  makes on its own arguments all sit above the missing-file sweep, and the
+  duplication refusal now sits below it.
 
 * `normalize_audio()` and `normalize_audio_batch()` work again when the output
   is a FLAC (`.flac`) or Ogg Vorbis (`.oga`) file. On FFmpeg 9 these failed
@@ -592,9 +597,10 @@
   unavailable hardware encoder, an out-of-range per-row value — is now told
   about the path first, on the reasoning that a path typed wrong is the more
   likely mistake and is the one you can act on without reading further.
-  Malformed table shapes and wrong column types still report before it, since a
-  column whose type has not been checked yet cannot usefully be swept for
-  paths. The refusal of duplicated inputs on a verb deriving its own output
+  Malformed table shapes, wrong column types, and the verb's own checks on its
+  scalar arguments still report before it, since a column whose type has not
+  been checked yet cannot usefully be swept for paths. The refusal of
+  duplicated inputs on a verb deriving its own output
   names reports *after* it, so that promise about twenty rows sharing one typo
   holds whether or not you supply an `output` column.
 

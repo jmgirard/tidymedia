@@ -2624,3 +2624,31 @@ either.
 - **Falsified by** a report preferring the duplication on a table that is both
   wrong about a path and duplicated, or by a report of an explicit-output table
   whose output collision hid a missing path — the case this entry leaves alone.
+
+## D058 — The input sweep sits below a verb's shape, column-type and scalar-argument guards (2026-08-28, from M080; narrows D057 by fixing the sweep's upper bound, leaving D040 and D041 standing)
+
+D040 fixed what the input sweep reports BEFORE, and D057 added the
+derived-output duplication refusal to that list. Neither fixed what the sweep
+reports AFTER, and M080's first attempt at D057 read the gap the permissive
+way: it lifted `check_batch_inputs()` to sit directly above the derived-output
+block, which on two verbs sat above their remaining front-door checks, so the
+sweep passed those too and a wrong column type or a bad scalar argument began
+reporting after the missing path. M080's review returned the milestone on it;
+the calls and messages are recorded in that milestone file's Review section.
+
+**The rule.** A verb's own front-door checks on its jobs SHAPE, on its column
+TYPES, and on its SCALAR ARGUMENTS all report before the input sweep. The
+sweep is never lifted past them to reach something D057 puts below it: where
+that thing sits above those checks, the sweep and it move down together as a
+unit, and the sweep keeps the last position in the front-door block.
+
+**The consequence, taken deliberately.** On the two verbs carrying both, the
+duplication refusal now sits below the scalar checks as well as below the
+sweep, so a duplicated table that also carries a bad codec argument reports the
+argument. That inverts a precedence M42 pinned; the pin moved to the test file
+that owns the sweep's order rather than being deleted, because the order it
+states is still a promise, just the other way up.
+
+- **Falsified by** a report preferring the missing path over a wrong column
+  type or a bad scalar argument, or by a verb whose scalar check cannot be
+  stated above the sweep without reading a column the sweep has not validated.

@@ -412,3 +412,124 @@ test_that("the duplicated-input abort is worded at one site", {
   hits <- names(bodies)[grepl("has duplicated", bodies, fixed = TRUE)]
   expect_identical(hits, "reject_duplicate_inputs")
 })
+
+test_that("a column-type or scalar-argument error still reports before the path sweep", {
+  # M080's reorder moved check_batch_inputs() above the derived-output block so
+  # a duplicated absent path reports the path (D057). In two of the three verbs
+  # that block sat ABOVE the audio_stream column guard and the scalar
+  # video_codec/audio_stream checks, so the move carried the sweep past those
+  # too -- a precedence reassignment D057 does not license and NEWS.md's
+  # ordering paragraph denies. Pinned here, since no test held it and the
+  # baseline grid had no crossing that could see it (M080 review F1/F2/F3).
+  #
+  # The verb set is the same walk AC5 uses, so a fourth verb reaching the
+  # helper fails here rather than being skipped.
+  graph <- tm_call_graph()
+  exported <- sort(intersect(getNamespaceExports("tidymedia"), names(graph)))
+  verbs <- exported[vapply(exported, function(v)
+    tm_reaches(graph, v, "reject_duplicate_inputs"), logical(1))]
+  expect_gt(length(verbs), 0)
+
+  boxes <- data.frame(x = 0, y = 0, width = 10, height = 10)
+  # Each cell is a call that is wrong about TWO things at once: an absent input
+  # AND a guard above the sweep. The expected message is the guard's, so the
+  # cell fails if the sweep took its place.
+  cases <- list(
+    anonymize_video_batch = list(
+      list(call = function() anonymize_video_batch(
+             tibble::tibble(input = "gone.mp4", regions = list(boxes),
+                            audio_stream = "x"), run = FALSE),
+           want = "The audio_stream column of `jobs` must be numeric"),
+      list(call = function() anonymize_video_batch(
+             tibble::tibble(input = "gone.mp4", regions = list(boxes)),
+             video_codec = 123, run = FALSE),
+           want = "`video_codec` must be a single string or `NULL`"),
+      list(call = function() anonymize_video_batch(
+             tibble::tibble(input = "gone.mp4", regions = list(boxes)),
+             audio_stream = NA, run = FALSE),
+           want = "`audio_stream` must be a whole number or `NULL`")),
+    standardize_video_batch = list(
+      list(call = function() standardize_video_batch(
+             tibble::tibble(input = "gone.mp4", audio_stream = "x"),
+             run = FALSE),
+           want = "The audio_stream column of `jobs` must be numeric"),
+      list(call = function() standardize_video_batch(
+             tibble::tibble(input = "gone.mp4"), video_codec = 123,
+             run = FALSE),
+           want = "`video_codec` must be a single string or `NULL`"),
+      list(call = function() standardize_video_batch(
+             tibble::tibble(input = "gone.mp4"), audio_stream = NA,
+             run = FALSE),
+           want = "`audio_stream` must be a whole number or `NULL`")),
+    # The third verb already checked its columns and scalars above the sweep
+    # before M080 and still does: the untouched shape, so a fix that moved
+    # every verb's sweep instead of the two that flipped would show here.
+    normalize_audio_batch = list(
+      list(call = function() normalize_audio_batch(
+             tibble::tibble(input = "gone.mp4", audio_stream = "x"),
+             run = FALSE),
+           want = "The audio_stream column of `jobs` must be numeric"),
+      list(call = function() normalize_audio_batch(
+             tibble::tibble(input = "gone.mp4"), audio_stream = NA,
+             run = FALSE),
+           want = "`audio_stream` must be a whole number or `NULL`"))
+  )
+  expect_identical(sort(setdiff(verbs, names(cases))), character(0))
+
+  for (verb in verbs) {
+    for (case in cases[[verb]]) {
+      msg <- conditionMessage(rlang::catch_cnd(case$call()))
+      expect_match(msg, case$want, fixed = TRUE, info = verb)
+      expect_false(grepl("can't be found or read", msg, fixed = TRUE),
+                   info = verb)
+    }
+    # The control the pin needs: with every column and argument well formed,
+    # the same absent input IS reported by the sweep -- so the expectations
+    # above record an order and not a guard that never fires.
+    ok <- switch(
+      verb,
+      anonymize_video_batch = function() anonymize_video_batch(
+        tibble::tibble(input = "gone.mp4", regions = list(boxes)),
+        run = FALSE),
+      standardize_video_batch = function() standardize_video_batch(
+        tibble::tibble(input = "gone.mp4"), run = FALSE),
+      normalize_audio_batch = function() normalize_audio_batch(
+        tibble::tibble(input = "gone.mp4"), run = FALSE))
+    expect_match(conditionMessage(rlang::catch_cnd(ok())),
+                 "`jobs$input` names 1 file that can't be found or read.",
+                 fixed = TRUE, info = verb)
+  }
+})
+
+test_that("a scalar argument reports before the duplicated-input refusal", {
+  # The consequence of the two orders above, on the two verbs that have both a
+  # scalar codec argument and a derived-output block: the scalar checks sit
+  # above the path sweep and the duplication refusal sits below it, so a table
+  # that is duplicated AND carries a bad `video_codec` hears about the codec.
+  #
+  # It reads the other way round on `master`, where the duplication block sat
+  # above the scalar checks -- pinned there by test-codec-arg-front-door.R,
+  # whose two cells moved here when M80 put the sweep between them. Nothing
+  # else about that guard changed: the control below is the same call with a
+  # well-formed codec, and it still hears about the duplication.
+  dir <- withr::local_tempdir()
+  good <- file.path(dir, "good.mp4")
+  file.create(good)
+  boxes <- data.frame(x = 0, y = 0, width = 10, height = 10)
+  cases <- list(
+    standardize_video_batch = function(codec) standardize_video_batch(
+      tibble::tibble(input = c(good, good)), video_codec = codec,
+      run = FALSE, parallel = FALSE),
+    anonymize_video_batch = function(codec) anonymize_video_batch(
+      tibble::tibble(input = c(good, good), regions = list(boxes, boxes)),
+      video_codec = codec, run = FALSE, parallel = FALSE)
+  )
+  for (verb in names(cases)) {
+    expect_match(conditionMessage(rlang::catch_cnd(cases[[verb]](NA))),
+                 "`video_codec` must be a single string or `NULL`",
+                 fixed = TRUE, info = verb)
+    expect_match(conditionMessage(rlang::catch_cnd(cases[[verb]]("libx264"))),
+                 "duplicated input paths but no output column",
+                 fixed = TRUE, info = verb)
+  }
+})

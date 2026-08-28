@@ -152,6 +152,8 @@ the candidate row's claim about it is corrected in the same commit.
   consistency gate clean. Blame-history and prior-review lenses reported no
   findings. The diff-bug lens and CI are still outstanding.
 
+- 2026-08-28: review. All seven criteria verified with fresh evidence; consistency gate clean (16 PASS / 7 OK). Three fresh-context lenses: blame-history and prior-review reported no findings, diff-bug reported eight. Four fixed on the branch (a section header placed between another function's docs and its definition, and three branch-added prose claims that are false: the "rename of either guard empties the walk" floor comment, the "it must" coercion claim, and two guard comments naming one of the two base errors and a caller that is not the direct one). Three deferred as instrument limits outside their criteria's stated domains; one logged as a disclosure the milestone already makes. No finding meets the return floor. Suite and check re-run after the fixes: 0 failures / 8090 passing, Status OK.
+
 ## Decisions
 
 ## Review
@@ -247,3 +249,89 @@ sweep is the measurement backing that, not a judgment call.
 Three fresh-context reviewers, none having seen the implementation, each on a
 distinct evidence base. The diff touches executable surface (`R/`, `tests/`), so
 the full three-lens fan-out ran.
+
+**[S] blame-history — no findings.** Read `git log`/`git blame` on the modified
+lines. Reported that the removed `file.access()` in `check_batch_inputs()` is
+D041's residual being closed rather than a deliberate second site being undone;
+that the deleted "a verb added later inherits this wording" promise was already
+false; that M62 review F1's factor coercion survives at both ends; and that
+nothing contradicts D041, D057 or D058.
+
+**[S] prior-review record — no findings.** The archived `## Review` sections of
+M62, M63, M58 and M080 were searched for findings touching `R/ffmpeg.R`,
+`R/utils.R` and the three test files, and the diff judged against them and their
+triage. No prior lesson is reintroduced or contradicted; M62 F1 and M62/M63 N3
+in particular are intact. The probe
+`gh api repos/jmgirard/tidymedia/pulls/comments?per_page=1` returned `[]` — the
+repo has no inline PR review comments at all — so the per-PR walk was skipped.
+
+**[O] diff-bug — eight items, ranked; each verified against the code before
+triage.** The reviewer confirmed no correctness bug in shipped behavior:
+`file.access()` never returns `NA`, so `any(file.access(x, 4) != 0)` and
+`length(unreadable_paths(x)) > 0` agree on every input including
+`character(0)`, `NA_character_` and duplicates; and neither `check_bool()`
+refuses a call that previously succeeded from an exported route.
+
+1. `R/utils.R:72` — the new `# unreadable_paths() ---` section header was
+   inserted between `check_paths_readable()`'s header and its ~46-line doc
+   block's function, so each function sat under the other's header. Verified
+   independently. **Fixed now:** the whole `unreadable_paths()` section moved
+   above `# check_paths_readable() ---`, so both are header → docs →
+   definition, matching `# check_file_exists() ---` below.
+2. `test-na-value-guards.R` AC6 block — `vocab` is derived from the specs
+   themselves, so "a spec cannot declare fewer carriers than the verb accepts"
+   holds only for flag names already declared somewhere. Verified. Not an AC6
+   failure: AC6's domain is AC2's two predicates, whose flags `resize` and
+   `reencode` are both in `vocab`, and AC6's three stated failure modes were
+   each planted and seen red at T7. **Follow-up** — and the same shape as the
+   M62/M63/M64 instrument row's F8, so the new row cross-references it rather
+   than restating it.
+3. `helper-na-guards.R`, `flag_guard_verbs()` — `targets` is a hand-list, the
+   shape the milestone otherwise refuses; a third flag guard would join AC1's
+   walk but stay outside AC6's export sweep. Verified. Not an AC6 failure:
+   AC6's text scopes itself to "AC2's two predicates", which AC2 fixes by the
+   merge-base walk; what is derived there is the export set, and it is.
+   **Follow-up.**
+4. `test-na-value-guards.R` — the comment "a rename of either guard empties the
+   walk" is false: renaming one leaves the other's verbs, so `expect_gt(length(
+   verbs), 0)` still passes. Verified. **Fixed now:** the comment says both,
+   and names `setdiff(names(specs), verbs)` as what catches one.
+5. `R/utils.R` — "unreadable_paths() coerces too -- it must, since the batch
+   sweep reaches it without passing through here" is false of live callers:
+   `check_batch_inputs()` already coerces each carrier before calling it
+   (`R/ffmpeg.R`, the `paths` lapply). Verified. **Fixed now:** the comment
+   calls the coercion defensive and says no live caller needs it.
+6. `R/ffmpeg.R:2852` and `:2907` — the two new comments name only `missing
+   value where TRUE/FALSE needed`, while the merge-base measurement in AC2
+   above shows `NA_character_` raising `invalid argument type` and `invalid 'x'
+   type in 'x && y'`; "exactly as the twin above did before M80" contradicts
+   the twin's own comment at `:2825`, which names the other error. The resize
+   comment also calls `compare_videos()` a caller when the direct callers are
+   `compare_videos_pipeline()` (`:6042`) and `compare_videos_batch()`
+   (`:6525`). All verified. **Fixed now:** both comments name both errors and
+   the resize one names its direct callers, `compare_videos()` reaching the
+   guard through the pipeline.
+7. `helper-na-guards.R`, `tm_bare_flag_operands()` — a guard branching via bare
+   `if (flag)`, `while (flag)` or `isTRUE(flag)` is the same crash class and is
+   not walked. Verified; the reviewer swept the namespace and found no live
+   instance. Not an AC1 failure — AC1 names the three operators as its domain.
+   **Follow-up.**
+8. Disclosure, not a defect: AC6 exercises none of the lines M081 added, every
+   delivery form being refused earlier at each verb's own `check_bool()` or
+   column guard. This is what the AC6 amendment and D059's withheld release
+   note already record. **Logged, no action.**
+
+**Return floor.** No finding demonstrates an acceptance criterion failing inside
+the domain of the procedure it names, and none is a load-bearing defect in what
+the package does for its users — the four fixed are comment accuracy and section
+placement, the three deferred are limits of a test instrument, and 2, 3 and 7
+each fall outside the domain their criterion states. Status stays `review`.
+
+**Re-verification after the fix-now commit.** The four fixes are comment text
+and one section move; no executable line changed. `devtools::test()`: 0
+failures, 8090 passing, 12 warnings, 5 skips — identical to the pre-fix run.
+`devtools::document()` no diff. AC1 still flags 0 of 30; AC3's walk still
+returns `unreadable_paths` alone; AC6's walk still returns the same four
+members; AC2 still renders `` `resize` must be `TRUE` or `FALSE`, not `NA`. ``
+AC5's deleted-line count over the four test files is still 0.
+`devtools::check()`: `Status: OK` — 0 errors, 0 warnings, 0 notes, 2m50s.

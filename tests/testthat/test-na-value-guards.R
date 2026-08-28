@@ -296,8 +296,10 @@ test_that("every exported call reaching a flag guard refuses a non-flag, naming 
   verbs <- flag_guard_verbs()
   specs <- flag_guard_specs(p, o)
 
-  # The floor: a rename of either guard empties the walk, and every assertion
-  # below would then pass over nothing.
+  # The floor: renaming BOTH guards empties the walk, and every assertion below
+  # would then pass over nothing. Renaming one leaves the other's verbs here,
+  # so what catches that is the setdiff(names(specs), verbs) direction below,
+  # not this line.
   expect_gt(length(verbs), 0)
   # Both directions -- a verb the walk returns with no shape, and a shape for
   # a verb the walk no longer returns.

@@ -2848,9 +2848,11 @@ check_codec_needs_reencode <- function(reencode, video_codec = NULL,
 # -codec:a at all -- would be silently overwritten by ffm_copy() (M35/D017).
 check_audio_codec_needs_reencode <- function(reencode, audio_codec,
                                              call = rlang::caller_env()) {
-  # `!reencode` on anything that is not a flag raised base R's `missing value
-  # where TRUE/FALSE needed` from inside a front-door guard, exactly as the
-  # twin above did before M80 (M81). All three callers -- segment_video(),
+  # `!reencode` on anything that is not a flag raised a bare base R error from
+  # inside a front-door guard, as the twin above did before M80 (M81). WHICH
+  # error depends on the type: `missing value where TRUE/FALSE needed` for a
+  # logical NA, `invalid argument type` for a character one, which is why the
+  # twin's comment names the other of the two. All three callers -- segment_video(),
   # segment_pipeline() and segment_video_batch()'s row sweep -- run
   # check_codec_needs_reencode() on the same value first, and that one checks
   # it, so this refuses no call that was reaching here.
@@ -2904,12 +2906,13 @@ check_audio_codec_needs_audio <- function(audio, audio_codec, hint,
 # has it per row without materializing anything.
 check_resize_needs_two_inputs <- function(resize, n_inputs,
                                           call = rlang::caller_env()) {
-  # `resize &&` on anything that is not a flag raised base R's `missing value
-  # where TRUE/FALSE needed` from inside a front-door guard (M81). Both callers
-  # check `resize` first -- compare_videos() and compare_videos_batch() each
-  # call rlang::check_bool() on the scalar, and the batch verb's column guard
-  # refuses a non-logical or NA `resize` column -- so this refuses no call that
-  # was reaching here.
+  # `resize &&` on anything that is not a flag raised a bare base R error from
+  # inside a front-door guard (M81) -- `missing value where TRUE/FALSE needed`
+  # for a logical NA, `invalid 'x' type in 'x && y'` for a character one. Both
+  # direct callers check `resize` first: compare_videos_pipeline(), which
+  # compare_videos() reaches after its own rlang::check_bool() on the scalar,
+  # and compare_videos_batch(), whose column guard refuses a non-logical or NA
+  # `resize` column -- so this refuses no call that was reaching here.
   rlang::check_bool(resize, call = call)
   if (resize && n_inputs != 2) {
     cli::cli_abort(

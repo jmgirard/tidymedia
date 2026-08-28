@@ -2625,7 +2625,7 @@ either.
   wrong about a path and duplicated, or by a report of an explicit-output table
   whose output collision hid a missing path — the case this entry leaves alone.
 
-## D058 — The input sweep is never lifted past a check that already sat above it (2026-08-28, from M080; narrows D057 by fixing the sweep's upper bound, leaving D040 and D041 standing; the rule below was narrowed again on 2026-08-28 after M080's second review found its first wording claimed an invariant the package does not have)
+## D058 — The input sweep is never lifted past a check that already sat above it (2026-08-28, from M080; narrows D057 by fixing the sweep's upper bound, leaving D040 and D041 standing; the rule below was narrowed on 2026-08-28 after M080's second review found its first wording claimed an invariant the package does not have, and again after its third review found the narrowed wording forbade the one move D057 licenses)
 
 D040 fixed what the input sweep reports BEFORE, and D057 added the
 derived-output duplication refusal to that list. Neither fixed what the sweep
@@ -2637,38 +2637,62 @@ reporting after the missing path. M080's review returned the milestone on it;
 the calls and messages are recorded in that milestone file's Review section.
 
 **The rule.** The input sweep is never lifted past a check that already sat
-above it. Where the sweep must move down to reach something D057 puts below
-it, the sweep and that thing move down together as a unit, so no check that
-reported before the sweep begins reporting after it.
+above it, with one carve-out: the derived-output duplication refusal, the one
+guard D057 deliberately puts below the sweep. Where the sweep must move down to
+reach some OTHER check, the sweep and that check move down together as a unit,
+so no check that reported before the sweep begins reporting after it.
+
+The carve-out is not a loophole, it is D057 restated: `normalize_audio_batch()`
+already had every other front-door check above its sweep on `origin/master`,
+with only the derived-output block above it, so M080 lifted the sweep past that
+block and nothing else. Without the carve-out this rule forbids the very move
+D057 exists to license, and `normalize_audio_batch(tibble(input =
+c("gone.mp4", "gone.mp4")), run = FALSE)` — which reports the missing path here
+and reported the duplication on `master` — fires the falsifier below (M080
+review round 3, N1).
 
 This fixes the sweep's position RELATIVE to the checks above it. It does not
 say every check a verb makes on its own arguments is one of them, and the
 package is not shaped that way, and it splits BOTH ways on the same verb.
 Measured on 2026-08-28 by reading each sweep verb's body around its
-`check_batch_inputs()` call: `picture_in_picture_batch()` checks `scale` and
-its codec tokens above the sweep but `margin` and `position` below it;
+`check_batch_inputs()` call and measuring each cell against a readable-path
+control: `picture_in_picture_batch()` checks its codec tokens above the sweep
+but `margin` and `position` below it, and SPLITS `scale` across the sweep —
+`scale = "x"` is refused above it by the type check, `scale = 5` below it by
+`check_overlay_scale()`'s range check, so the grain is per CHECK and not even
+per argument (M080 review round 3, N2);
 `compare_videos_batch()` checks `resize` and its codec tokens above but
 `direction` below; `standardize_video_batch()` checks `video_codec` and
 `audio_stream` above but `width` below; `normalize_audio_batch()` checks
 `two_pass` above but `target_loudness` below. What sits above the sweep is per
-argument, not per verb and not per category, and NEWS.md accordingly promises
-no ordering for a verb's own arguments.
+CHECK — not per verb, not per category, and not even reliably per argument —
+and NEWS.md accordingly promises no ordering for a verb's own arguments.
 
 What IS uniform, and what the first sentence of NEWS's ordering paragraph
 rests on: no shape guard (`check_batch_jobs()`, `check_fanin_jobs()`) and no
-column-type guard (`check_batch_*_col()`) sits below the sweep in any verb —
-checked over every export reaching `check_batch_inputs()` on 2026-08-28.
+column-TYPE guard (`check_batch_audio_col()`, `check_batch_codec_col()`,
+`check_batch_string_col()`) sits below the sweep in any verb — checked over
+every export reaching `check_batch_inputs()` on 2026-08-28. Named individually
+rather than as `check_batch_*_col()`, because that glob also catches
+`check_batch_vocab_col()`, a column VALUE guard, which DOES sit below the sweep
+in `picture_in_picture_batch()` and `compare_videos_batch()` — the same
+type-versus-value split those verbs draw for their scalar arguments (M080
+review round 3, N4).
 
 **The consequence, taken deliberately.** On the two verbs carrying both, the
 duplication refusal now sits below the scalar checks as well as below the
 sweep, so a duplicated table that also carries a bad codec argument reports the
-argument. That inverts a precedence M42 pinned; the pin moved to the test file
+argument. That inverts a precedence M41 pinned (PR #43, commit `0a73edb8`; the
+entry first credited M42, which is the codec `NULL`/column-`NA` semantics
+milestone — M080 review round 3, N3); the pin moved to the test file
 that owns the sweep's order rather than being deleted, because the order it
 states is still a promise, just the other way up.
 
-- **Falsified by** a report preferring the missing path over a check that sat
-  above the sweep before the move that displaced it, or by a verb whose check
+- **Falsified by** a report preferring the missing path over a check, OTHER
+  than the derived-output duplication refusal the rule carves out, that sat
+  above the sweep before the move that displaced it; or by a verb whose check
   cannot be stated above the sweep without reading a column the sweep has not
   validated. NOT falsified by a report preferring the missing path over a check
   that was always below the sweep — that is the shape the first wording of this
-  rule wrongly forbade.
+  rule wrongly forbade — and NOT by one preferring it over the carved-out
+  duplication refusal, which is D057's whole point.

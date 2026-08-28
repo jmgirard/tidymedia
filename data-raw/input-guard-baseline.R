@@ -320,7 +320,11 @@ input_guard_crossing_parts <- function(crossing, shape) {
     # and not read from `shape`: which verbs HAVE the column is derived below
     # from the guard call itself, so the crossing needs no per-verb answer.
     "column_type:stream" = list(cols = list(audio_stream = "x")),
-    # The scalar argument the same verbs check last, before the sweep.
+    # A scalar argument the same verbs check ABOVE the sweep. Not their last
+    # such check -- `reject_duplicate_outputs()` follows it in
+    # crop_video_batch() and format_for_web_batch(), and check_bool(reencode)
+    # in segment_video_batch(). See the crossing's entry at the top of this
+    # file for what a cell here does and does not prove (M80 review N5).
     "scalar_arg" = list(args = list(audio_stream = NA)),
     # No `output` column, so the verb must derive one name per input and
     # refuses the duplicated inputs the `dup` form supplies. BELOW the sweep

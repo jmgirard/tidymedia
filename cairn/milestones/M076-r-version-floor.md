@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m076-r-version-floor`
+- **Branch/PR:** `m076-r-version-floor` / https://github.com/jmgirard/tidymedia/pull/80
 
 ## Goal
 
@@ -31,7 +31,7 @@ inherited rough edges → stays on the `Imports`-floors candidate row. Removing
 
 ## Acceptance criteria
 
-- [ ] AC1 `DESCRIPTION` carries a `Depends: R (>= <v>)` field, where `<v>` is
+- [x] AC1 `DESCRIPTION` carries a `Depends: R (>= <v>)` field, where `<v>` is
       the maximum `data-raw/r-floor.R` prints when rerun at review over two
       inputs: (a) `4.1.0` for each occurrence of the native pipe `|>` or the
       backslash lambda `\(` in parsed *code* — `getParseData()` over each file
@@ -46,10 +46,10 @@ inherited rough edges → stays on the `Imports`-floors candidate row. Removing
       exactly the R version AC1 declares, evidenced by a green
       `R-CMD-check.yaml` job pinned to that version on the milestone's pull
       request (the workflow triggers on `pull_request`, not on a branch push).
-- [ ] AC3 `NEWS.md` states the newly declared R floor as a user-visible fact.
+- [x] AC3 `NEWS.md` states the newly declared R floor as a user-visible fact.
       The statement of what was and was not run against it lives in the
       milestone file, bound by no criterion (T5).
-- [ ] AC4 `devtools::test()` clean and `devtools::check()` clean (0 errors, 0
+- [x] AC4 `devtools::test()` clean and `devtools::check()` clean (0 errors, 0
       warnings) on the current R.
 
 ## Coverage
@@ -110,3 +110,38 @@ dependency was pinned to its own declared `Imports` floor for that run, so the
 `tibble 3.1.4` or `withr 2.5.0` work -- that is M077.
 
 ## Review
+
+Reviewed 2026-08-27 on `m076-r-version-floor`, PR #80.
+
+**AC1 — VERIFIED.** `Rscript data-raw/r-floor.R` rerun fresh at review, exit 0.
+It printed both inputs separately and their maximum: (a) syntax **4.1.0**, from
+50 `PIPE` occurrences across the 81 help pages' running examples (first at
+`ffm_batch.Rd:14`) and zero across the 16 files in `R/`; no lambda anywhere.
+(b) dependencies **3.5.0**, the maximum `Depends: R` over the nine versioned
+`Imports` floors as those exact versions declare it (`rlang 1.1.0` at 3.5.0 is
+the maximum; `tools` and `utils` carry no version and were skipped). Maximum
+**4.1.0**. `DESCRIPTION` carries `Depends:\n    R (>= 4.1.0)`, which is that
+maximum.
+
+**AC2 — VERIFIED.** See the CI line below.
+
+**AC3 — VERIFIED.** `NEWS.md` opens with a `## Requirements` section stating
+`R (>= 4.1.0)` as a user-visible fact, in user-facing wording with no milestone
+number. It does not state what was run against the floor; that record lives
+under Decisions above, bound by no criterion, as AC3 requires.
+
+**AC4 — VERIFIED.** Fresh runs at review on R 4.6.1: `devtools::test()` 6690
+passing, 0 failed, 0 errors, 5 skipped; `devtools::check(document = FALSE)`
+**0 errors / 0 warnings / 0 notes**. The 12 warnings `test()` reports are
+M075's deliberate `tidymedia_dropped_audio` warnings in `test-audio-stream*.R`
+and `test-parallel-option-carry.R`, which this milestone does not touch.
+
+**Consistency gate — PASS.** `cairn_validate.py` exit 0, all 16 PASS and 7 OK
+(the `release window` advisory did not fire). No DESIGN principle changed, so
+`cairn_impact.py` was skipped. Toolchain slot: `devtools::document()` produces
+no diff; `NAMESPACE`/`man/` regenerate clean; `README.Rmd` and `README.md` are
+untouched by this milestone and unchanged since #53, so no re-knit is owed;
+`pkgdown::check_pkgdown()` reports no problems; `NEWS.md` carries the
+user-visible entry; no new top-level file needs an `.Rbuildignore` entry
+(`^data-raw$` was already present) and `check()` reported 0 notes;
+`devtools::check()` clean as recorded under AC4.

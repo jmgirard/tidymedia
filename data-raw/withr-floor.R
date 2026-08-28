@@ -42,44 +42,121 @@ if (!file.exists(file.path(PKG, "DESCRIPTION"))) {
 
 versions <- commandArgs(trailingOnly = TRUE)
 if (!length(versions)) {
-  declared <- read.dcf(file.path(PKG, "DESCRIPTION"), "Imports")[[1]]
-  floor <- sub(".*withr \\(>= ([^)]+)\\).*", "\\1", gsub("\n", " ", declared))
-  versions <- c(floor, "3.0.3")
+  declared <- gsub("\n", " ", read.dcf(file.path(PKG, "DESCRIPTION"), "Imports")[[1]])
+  # `sub()` returns its INPUT unchanged when the pattern does not match, so an
+  # `Imports` whose withr entry had lost its `(>= )` handed the whole Imports
+  # field back as "the declared floor" and the run went off to fetch a withr by
+  # that name. A match that did not happen is not a version.
+  m <- regmatches(declared,
+                  regexec("(^|[^A-Za-z0-9._])withr\\s*\\(\\s*>=\\s*([^)]+?)\\s*\\)",
+                          declared))[[1]]
+  if (!length(m)) {
+    stop("DESCRIPTION's Imports declares no `withr (>= ...)` floor to measure -- read: ",
+         declared, call. = FALSE)
+  }
+  versions <- c(m[3], "3.0.3")
 }
 
-LIBROOT <- file.path(tempdir(), "withr-floor-libs")
-SCRATCH <- file.path(tempdir(), "withr-floor-scripts")
+LIBROOT <- path.expand(file.path(tempdir(), "withr-floor-libs"))
+SCRATCH <- path.expand(file.path(tempdir(), "withr-floor-scripts"))
 dir.create(LIBROOT, recursive = TRUE, showWarnings = FALSE)
 dir.create(SCRATCH, recursive = TRUE, showWarnings = FALSE)
+
+# --- fetch one version's tarball ----------------------------------------------
+
+# THE ONE TEST OF "is this a package tarball". Three things clear a size floor
+# without being a package: a gzip truncated by an interrupted download, an HTTP
+# error body, and a well-formed tarball of something that carries no
+# `DESCRIPTION`. This fetch used to accept on size alone, so any of the three --
+# left in SCRATCH by an earlier run, or written by a download that reported
+# success -- went straight to `R CMD INSTALL`.
+is_package_tarball <- function(tgz) {
+  if (!file.exists(tgz) || file.size(tgz) <= 1000L) return(FALSE)
+  inside <- tryCatch(suppressWarnings(utils::untar(tgz, list = TRUE)),
+                     error = function(e) NULL)
+  if (is.null(inside)) return(FALSE)
+  # The listing alone is not enough: `untar(list = TRUE)` shells out to `tar`,
+  # and a gzip truncated PAST the DESCRIPTION entry still prints what it read
+  # before the end, then exits non-zero. That status is the truncation.
+  st <- attr(inside, "status")
+  if (!is.null(st) && !identical(as.integer(st), 0L)) return(FALSE)
+  any(basename(inside) == "DESCRIPTION")
+}
+
+fetch_withr_tarball <- function(ver) {
+  tgz <- file.path(SCRATCH, sprintf("withr_%s.tar.gz", ver))
+  if (file.exists(tgz)) {
+    if (is_package_tarball(tgz)) return(tgz)
+    cat(sprintf("  cached withr %s is not a readable package tarball -- refetching\n", ver))
+    unlink(tgz)
+  }
+  urls <- c(
+    sprintf("https://cran.r-project.org/src/contrib/Archive/withr/withr_%s.tar.gz", ver),
+    sprintf("https://cloud.r-project.org/src/contrib/withr_%s.tar.gz", ver)
+  )
+  for (u in urls) {
+    # Warnings are muffled rather than read as failure, as in the two sibling
+    # scripts: download.file warns on benign conditions, and a warned-but-
+    # complete Archive fetch would otherwise be unlinked and retried against the
+    # current-contrib URL, which 404s for an archived version -- so the run
+    # would report "could not fetch withr X" for a tarball it had. What a real
+    # failure looks like is checked on the result instead.
+    status <- tryCatch(
+      withCallingHandlers(
+        utils::download.file(u, tgz, quiet = TRUE, mode = "wb"),
+        warning = function(w) invokeRestart("muffleWarning")
+      ),
+      error = function(e) 1L
+    )
+    if (identical(as.integer(status), 0L) && is_package_tarball(tgz)) return(tgz)
+    unlink(tgz)
+  }
+  stop("could not fetch withr ", ver, call. = FALSE)
+}
 
 # --- install one version into its own library ---------------------------------
 
 install_withr <- function(ver) {
   lib <- file.path(LIBROOT, paste0("withr-", ver))
   dir.create(lib, recursive = TRUE, showWarnings = FALSE)
-  if (dir.exists(file.path(lib, "withr"))) return(lib)
-  tgz <- file.path(SCRATCH, sprintf("withr_%s.tar.gz", ver))
-  urls <- c(
-    sprintf("https://cran.r-project.org/src/contrib/Archive/withr/withr_%s.tar.gz", ver),
-    sprintf("https://cloud.r-project.org/src/contrib/withr_%s.tar.gz", ver)
-  )
-  ok <- FALSE
-  for (u in urls) {
-    got <- tryCatch({
-      utils::download.file(u, tgz, quiet = TRUE)
-      TRUE
-    }, error = function(e) FALSE, warning = function(w) FALSE)
-    if (isTRUE(got) && file.exists(tgz) && file.size(tgz) > 1000L) { ok <- TRUE; break }
+  desc <- file.path(lib, "withr", "DESCRIPTION")
+  # `dir.exists()` was the whole reuse guard, so a directory left by an
+  # interrupted install -- or by a run of a DIFFERENT version, since the arms
+  # differ only by directory name -- was reused as though it held this version.
+  # The installed DESCRIPTION's own `Version` is what says which version is
+  # there.
+  if (file.exists(desc) &&
+      identical(as.character(read.dcf(desc, "Version")[[1]]), ver)) {
+    # The other half of the reuse question -- whether a pinned package this one
+    # was COMPILED against has changed underneath it -- is vacuous here only
+    # because withr declares no LinkingTo and each version gets a library to
+    # itself. Vacuous is worth checking rather than assuming: if that ever stops
+    # being true, this reuse is unsafe and says so instead of being silently
+    # wrong.
+    lt <- read.dcf(desc, "LinkingTo")[[1]]
+    if (!is.na(lt)) {
+      stop(sprintf("withr %s declares LinkingTo (%s); this reuse guard checks Version only and no longer covers it",
+                   ver, gsub("\n", " ", lt)), call. = FALSE)
+    }
+    return(lib)
   }
-  if (!ok) stop("could not fetch withr ", ver, call. = FALSE)
+  unlink(file.path(lib, "withr"), recursive = TRUE)
+  tgz <- fetch_withr_tarball(ver)
+  # No `--no-test-load`: a withr that installs but will not load is a failed
+  # arm, and the children below would otherwise meet it as an unexplained
+  # failure of whatever they measured first.
   utils::install.packages(tgz, lib = lib, repos = NULL, type = "source",
-                          INSTALL_opts = "--no-test-load", quiet = TRUE)
+                          quiet = TRUE)
   # install.packages() signals a failed source install as a warning, not an
   # error, so a silent failure would otherwise leave an empty library that the
   # children then fall through -- see the provenance assertion in `preamble`.
-  if (!dir.exists(file.path(lib, "withr"))) {
+  if (!file.exists(desc)) {
     stop("install of withr ", ver, " produced no library entry in ", lib,
          call. = FALSE)
+  }
+  got <- as.character(read.dcf(desc, "Version")[[1]])
+  if (!identical(got, ver)) {
+    stop(sprintf("installed withr %s into the library for %s", got, ver), call. = FALSE)
   }
   lib
 }
@@ -342,6 +419,16 @@ ac4 <- write_script("ac4.R", c(
   'show("4 inside f4, once the wrapper has returned (documented 99)", f4())',
   'show("4 what f4\'s frame leaves behind (documented 30, the wrapper\'s)", getOption("tidymedia.timeout"))'
 ))
+
+# Everything above this line is definitions. `TM_DEFS_ONLY` stops here, so
+# data-raw/floor-probes.R can plant defects against those functions without
+# starting a measurement. A signalled condition rather than a `return()`:
+# `source()` evaluates top-level expressions one at a time, and there is no
+# function here to return from.
+if (nzchar(Sys.getenv("TM_DEFS_ONLY"))) {
+  stop(structure(class = c("tm_defs_only", "error", "condition"),
+                 list(message = "sourced for its definitions only", call = NULL)))
+}
 
 # --- drive it ------------------------------------------------------------------
 

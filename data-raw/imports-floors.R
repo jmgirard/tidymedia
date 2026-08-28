@@ -6,15 +6,8 @@
 #
 #   Rscript data-raw/imports-floors.R              # baseline, then all floors pinned
 #   Rscript data-raw/imports-floors.R --baseline   # the current-dependency run only
-#   Rscript data-raw/imports-floors.R --repair     # AC3: on a floor that will
-#                                                  # not build here, walk that
-#                                                  # package's Archive forward to
-#                                                  # the first version that does
 #   Rscript data-raw/imports-floors.R --only cli   # pin ONE floor, siblings current
 #   TM_LIBROOT=~/floor-libs Rscript data-raw/imports-floors.R   # reuse installs
-#   Rscript data-raw/imports-floors.R --walk purrr # list that package's CRAN
-#                                                  # Archive versions from the
-#                                                  # declared floor forward
 #
 # WHAT IS PINNED. Every non-base entry of `Imports` -- the entries `read.dcf`
 # enumerates, less `tools` and `utils`, which carry no floor -- is installed at
@@ -64,18 +57,21 @@ opt_value <- function(flag) {
   args[i + 1L]
 }
 BASELINE_ONLY <- "--baseline" %in% args
-REPAIR <- "--repair" %in% args
 ONLY <- opt_value("--only")
-WALK <- opt_value("--walk")
 
 # `TM_LIBROOT` persists the pinned libraries across runs, which turns a re-run
 # from a half-hour of compiling into minutes. Persisting a library is exactly
 # the shape data-raw/withr-floor.R was noted as trusting too far -- a
-# half-written install accepted because the directory exists -- so `install_pin`
-# below re-reads the INSTALLED DESCRIPTION's Version and removes anything that
-# does not match, rather than trusting `dir.exists()`.
-LIBROOT <- Sys.getenv("TM_LIBROOT", unset = file.path(tempdir(), "imports-floors-libs"))
-SCRATCH <- Sys.getenv("TM_SCRATCH", unset = file.path(tempdir(), "imports-floors-scratch"))
+# half-written install accepted because the directory exists -- so `can_reuse`
+# below re-reads the INSTALLED DESCRIPTION's Version and the linkage stamp
+# beside it, and removes anything that does not match, rather than trusting
+# `dir.exists()`.
+# `path.expand` here, not at the call site: `R CMD INSTALL -l` receives this
+# path shQuote'd (a library root may contain a space), and a `~` inside single
+# quotes is not expanded by the shell. Expanding once, at the source, is what
+# makes `TM_LIBROOT=~/floor libs` mean the directory it looks like it means.
+LIBROOT <- path.expand(Sys.getenv("TM_LIBROOT", unset = file.path(tempdir(), "imports-floors-libs")))
+SCRATCH <- path.expand(Sys.getenv("TM_SCRATCH", unset = file.path(tempdir(), "imports-floors-scratch")))
 dir.create(LIBROOT, recursive = TRUE, showWarnings = FALSE)
 dir.create(SCRATCH, recursive = TRUE, showWarnings = FALSE)
 
@@ -93,16 +89,25 @@ parse_entry <- function(e) {
 }
 parsed <- lapply(entries, parse_entry)
 
+# Still the broad set, and still right for what it is used for below: which of
+# a pinned version's own dependencies do NOT need installing (`ensure_deps`) and
+# which packages are not part of the runtime closure (`runtime_closure`).
 BASE_PKGS <- rownames(utils::installed.packages(priority = c("base", "recommended")))
+
+# THE UNVERSIONED CARVE-OUT, NAMED. `priority = c("base", "recommended")` is a
+# property of the R installation doing the measuring, not of this DESCRIPTION:
+# it waves through every one of ~30 packages, so an unversioned `MASS` -- a
+# floor nobody declared and this script cannot pin -- is skipped in silence.
+# The carve-out is the two unversioned entries DESCRIPTION actually declares.
+# Add one here when DESCRIPTION adds one, deliberately.
+UNVERSIONED_OK <- c("tools", "utils")
+
 pins <- list()
 for (p in parsed) {
   if (is.na(p$version)) {
-    # Only a base or recommended package legitimately carries no floor. Any
-    # other unversioned entry is a floor this script cannot pin, and dropping it
-    # silently would leave AC1's "every non-base entry" unmet without saying so.
-    if (!p$pkg %in% BASE_PKGS) {
-      stop(sprintf("Imports entry `%s` declares no version and is not a base or recommended package",
-                   p$pkg), call. = FALSE)
+    if (!p$pkg %in% UNVERSIONED_OK) {
+      stop(sprintf("Imports entry `%s` declares no version and is not one of the unversioned entries this script knows about (%s) -- it is a floor that cannot be pinned, and skipping it would leave `every non-base entry` unmet without saying so",
+                   p$pkg, paste(UNVERSIONED_OK, collapse = ", ")), call. = FALSE)
     }
     next
   }
@@ -119,9 +124,38 @@ if (!is.na(ONLY)) {
 
 # --- fetch + install one pinned version ----------------------------------------
 
+# THE ONE TEST OF "is this a package tarball", used by both branches of
+# `fetch_tarball()` below. Three things clear a size floor without being a
+# package: a gzip truncated by an interrupted download, an HTTP error body, and
+# a well-formed tarball of something that carries no `DESCRIPTION`. The size
+# floor recognizes none of them.
+is_package_tarball <- function(tgz) {
+  if (!file.exists(tgz) || file.size(tgz) <= 1000L) return(FALSE)
+  inside <- tryCatch(suppressWarnings(utils::untar(tgz, list = TRUE)),
+                     error = function(e) NULL)
+  if (is.null(inside)) return(FALSE)
+  # The listing alone is not enough. `untar(list = TRUE)` shells out to `tar`,
+  # and a gzip truncated PAST the DESCRIPTION entry still prints the entries
+  # read before the end -- so the listing says "package" about a file that will
+  # not extract. `tar` reports that by exiting non-zero, which is what this
+  # reads.
+  st <- attr(inside, "status")
+  if (!is.null(st) && !identical(as.integer(st), 0L)) return(FALSE)
+  any(basename(inside) == "DESCRIPTION")
+}
+
 fetch_tarball <- function(pkg, ver) {
   tgz <- file.path(SCRATCH, sprintf("%s_%s.tar.gz", pkg, ver))
-  if (file.exists(tgz) && file.size(tgz) > 1000L) return(tgz)
+  # The CACHE branch validates on the same terms as the download branch. It used
+  # to return on the size floor alone, so a defect that landed once in a
+  # persisted TM_SCRATCH was handed to every later run for as long as the
+  # directory survived.
+  if (file.exists(tgz)) {
+    if (is_package_tarball(tgz)) return(tgz)
+    cat(sprintf("      (cached %s %s is not a readable package tarball -- refetching)\n",
+                pkg, ver))
+    unlink(tgz)
+  }
   urls <- c(
     sprintf("https://cran.r-project.org/src/contrib/Archive/%s/%s_%s.tar.gz", pkg, pkg, ver),
     sprintf("https://cloud.r-project.org/src/contrib/%s_%s.tar.gz", pkg, ver)
@@ -138,34 +172,54 @@ fetch_tarball <- function(pkg, ver) {
       ),
       error = function(e) 1L
     )
-    if (identical(as.integer(status), 0L) && file.exists(tgz) && file.size(tgz) > 1000L) {
-      # A 404 body can clear the size floor, so the tarball is opened rather
-      # than trusted: a listing that yields no DESCRIPTION is not a package.
-      ok <- tryCatch({
-        inside <- utils::untar(tgz, list = TRUE)
-        any(basename(inside) == "DESCRIPTION")
-      }, error = function(e) FALSE)
-      if (isTRUE(ok)) return(tgz)
-    }
+    if (identical(as.integer(status), 0L) && is_package_tarball(tgz)) return(tgz)
     unlink(tgz)
   }
   stop(sprintf("could not fetch %s %s from CRAN", pkg, ver), call. = FALSE)
 }
 
-# Returns NULL on success, or the tail of the install log on a failed install --
-# AC3's case, which the caller records rather than aborting on. `R CMD INSTALL`
-# is driven directly rather than through `install.packages()`, because the
-# criterion asks for THE ERROR to be recorded and `install.packages()` reduces a
-# compiler error to "had non-zero exit status" in a warning.
-install_pin <- function(lib, pkg, ver) {
+# What an installed entry was compiled against: for every PINNED package this
+# one LinkingTo-depends on, the version sitting in `lib` at the moment the
+# compile ran. Written beside the installed DESCRIPTION and re-read on reuse.
+PIN_STAMP <- "tidymedia-floor-pin.dcf"
+
+linkingto_state <- function(lib, pkg, ver, pins) {
+  lt <- intersect(linkingto_of(pkg, ver), names(pins))
+  if (!length(lt)) return("(none)")
+  paste(vapply(sort(lt), function(q) {
+    d <- file.path(lib, q, "DESCRIPTION")
+    v <- if (file.exists(d)) as.character(read.dcf(d, "Version")[[1]]) else "(absent)"
+    sprintf("%s=%s", q, v)
+  }, ""), collapse = " ")
+}
+
+# `Version` alone is not enough to reuse an entry in a persisted TM_LIBROOT.
+# `archive` and `purrr` both LinkingTo `cli`: move the `cli` floor and reinstall
+# it, and those two still carry the right Version over binaries compiled against
+# the headers of the version before it -- a pin the run then reports as
+# measured. The stamp records what the entry was actually linked against, so a
+# changed LinkingTo dependency reinstalls the dependent. An entry with no stamp
+# at all -- a library from before this check existed -- is not reused either.
+can_reuse <- function(lib, pkg, ver, pins) {
   marker <- file.path(lib, pkg, "DESCRIPTION")
-  if (file.exists(marker) &&
-      identical(as.character(read.dcf(marker, "Version")[[1]]), ver)) {
-    return(NULL)
-  }
-  # A half-written install from an interrupted run must not be reused: the
-  # marker above is the installed DESCRIPTION, and anything short of it is
-  # removed rather than trusted.
+  stamp <- file.path(lib, pkg, PIN_STAMP)
+  if (!file.exists(marker) || !file.exists(stamp)) return(FALSE)
+  if (!identical(as.character(read.dcf(marker, "Version")[[1]]), ver)) return(FALSE)
+  identical(as.character(read.dcf(stamp, "LinkedAgainst")[[1]]),
+            linkingto_state(lib, pkg, ver, pins))
+}
+
+# Returns NULL on success, or the tail of the install log on a failed install,
+# which the caller prints for every floor before aborting on the set of them.
+# `R CMD INSTALL` is driven directly rather than through `install.packages()`,
+# because THE ERROR is what a failed floor has to report and
+# `install.packages()` reduces a compiler error to "had non-zero exit status"
+# in a warning.
+install_pin <- function(lib, pkg, ver, pins) {
+  if (can_reuse(lib, pkg, ver, pins)) return(NULL)
+  # A half-written install from an interrupted run must not be reused: what
+  # `can_reuse()` reads is the installed DESCRIPTION and the stamp beside it,
+  # and anything short of both is removed rather than trusted.
   unlink(file.path(lib, pkg), recursive = TRUE)
   tgz <- tryCatch(fetch_tarball(pkg, ver), error = function(e) e)
   if (inherits(tgz, "condition")) return(conditionMessage(tgz))
@@ -176,7 +230,11 @@ install_pin <- function(lib, pkg, ver) {
   ensure_deps(lib, pkg, ver)
   out <- suppressWarnings(system2(
     file.path(R.home("bin"), "R"),
-    c("CMD", "INSTALL", "--no-test-load", "-l", shQuote(lib), shQuote(tgz)),
+    # No `--no-test-load`: "installs" and "loads" are different claims, and the
+    # one this run needs is the second. A floor that compiles and then cannot
+    # be loaded is a failed floor, reported here rather than met later as a
+    # suite that will not start.
+    c("CMD", "INSTALL", "-l", shQuote(lib), shQuote(tgz)),
     # shQuote for the same reason run_child does it: system2(env = ) pastes these
   # into a `sh -c` line, so a TM_LIBROOT containing a space would end the
   # assignment and R_LIBS would never reach the install.
@@ -195,6 +253,10 @@ install_pin <- function(lib, pkg, ver) {
   if (!identical(got, ver)) {
     return(sprintf("installed %s %s where %s was asked for", pkg, got, ver))
   }
+  writeLines(c(sprintf("Package: %s", pkg),
+               sprintf("Version: %s", ver),
+               sprintf("LinkedAgainst: %s", linkingto_state(lib, pkg, ver, pins))),
+             file.path(lib, pkg, PIN_STAMP))
   NULL
 }
 
@@ -268,6 +330,24 @@ deps_of <- function(pkg, ver) {
   fields <- read.dcf(desc, c("Depends", "Imports", "LinkingTo"))
   flat <- paste(fields[!is.na(fields)], collapse = ",")
   nm <- trimws(sub("\\s*\\(.*", "", strsplit(gsub("\n", " ", flat), ",")[[1]]))
+  nm[nzchar(nm)]
+}
+
+# Just the LinkingTo field of ONE version, read from its own tarball. This is
+# the edge that makes a stale reuse dangerous: a LinkingTo dependency is
+# compiled against, so a library entry can carry the right `Version` and a
+# binary built against headers that are no longer there.
+linkingto_of <- function(pkg, ver) {
+  tgz <- fetch_tarball(pkg, ver)
+  dest <- file.path(SCRATCH, sprintf("desc-%s-%s", pkg, ver))
+  desc <- file.path(dest, pkg, "DESCRIPTION")
+  if (!file.exists(desc)) {
+    dir.create(dest, recursive = TRUE, showWarnings = FALSE)
+    utils::untar(tgz, files = file.path(pkg, "DESCRIPTION"), exdir = dest)
+  }
+  f <- read.dcf(desc, "LinkingTo")[[1]]
+  if (is.na(f)) return(character())
+  nm <- trimws(sub("\\s*\\(.*", "", strsplit(gsub("\n", " ", f), ",")[[1]]))
   nm[nzchar(nm)]
 }
 
@@ -400,36 +480,137 @@ newest_compatible <- function(pkg, pins) {
   stop(sprintf("no version of %s is compatible with the pinned floors", pkg), call. = FALSE)
 }
 
-# --- AC3: walk a package's CRAN Archive listing forward -------------------------
+# --- reconciling the declared floors with what the environment requires --------
+
+gather_reqs <- function(pins) {
+  outside <- declared_reqs(names(pins))
+  outside <- outside[!outside$requirer %in% names(pins), , drop = FALSE]
+  inside <- do.call(rbind, lapply(names(pins), function(p) tarball_reqs(p, pins[[p]], names(pins))))
+  rbind(outside, inside)
+}
+
+# WHO MAY BE HELD BACK. Not "everything outside the runtime closure": that
+# definition is a description of this host, not a decision, and off the
+# container it will happily downgrade whatever unrelated package happens to
+# declare a requirement the floors miss. The set is NAMED, and it is the two
+# packages D055 item 2 records as actually held back -- `testthat` 3.1.10 and
+# `furrr` 0.3.1. A requirer outside the runtime closure and outside this set is
+# something nobody decided to hold back, so the run stops and says which
+# package it is: extending the set, or moving a floor, is a judgement about
+# what is being measured and belongs to whoever is measuring.
+HOLDBACK_SET <- c("testthat", "furrr")
+
+MAX_ROUNDS <- 5L
+
+# `gather` and `pick` are arguments rather than the globals they resolve to in
+# the run, so the two ways this can refuse -- a stray requirer, and rounds that
+# never settle -- are reachable from data-raw/floor-probes.R without a network
+# or an install. Returns the reconciled pins with the moves and holdbacks that
+# produced them; aborts rather than returning a set it has not settled.
+reconcile <- function(pins, closure, gather, pick,
+                      version_of = function(p) as.character(utils::packageVersion(p))) {
+  holdbacks <- list()
+  moves <- character()
+  settled <- FALSE
+  for (round in seq_len(MAX_ROUNDS)) {
+    reqs <- gather(pins)
+    reqs <- reqs[numeric_version(reqs$version) > numeric_version(unlist(pins)[reqs$required]), , drop = FALSE]
+    if (!nrow(reqs)) { settled <- TRUE; break }
+    rt <- reqs[reqs$requirer %in% closure, , drop = FALSE]
+    if (nrow(rt)) {
+      # A requirer inside this package's runtime closure is something a user
+      # installing tidymedia gets, so the floor below it does not work and moves.
+      for (q in unique(rt$required)) {
+        req <- rt[rt$required == q, , drop = FALSE]
+        need <- as.character(max(numeric_version(req$version)))
+        moves <- c(moves, sprintf("%s: %s -> %s (required by %s)", q, pins[[q]], need,
+                                  paste(sprintf("%s %s (>= %s)", req$requirer,
+                                                vapply(req$requirer, version_of, ""),
+                                                req$version), collapse = ", ")))
+        cat(sprintf("  MOVE     %-10s %s -> %s  (runtime closure: %s)\n", q, pins[[q]], need,
+                    paste(unique(req$requirer), collapse = ", ")))
+        pins[[q]] <- need
+      }
+      next
+    }
+    # Everything left is outside the runtime closure. No user installs it, so it
+    # is held back rather than allowed to raise a floor -- but only if it is one
+    # of the packages named above.
+    stray <- setdiff(unique(reqs$requirer), HOLDBACK_SET)
+    if (length(stray)) {
+      stop(sprintf(paste0("%s requires more of the pinned floors than they declare, ",
+                          "and is not one of the harness packages this run may hold back (%s). ",
+                          "Either it belongs in HOLDBACK_SET or a floor has to move -- ",
+                          "neither is a call this script makes on its own."),
+                   paste(stray, collapse = ", "), paste(HOLDBACK_SET, collapse = ", ")),
+           call. = FALSE)
+    }
+    for (r in unique(reqs$requirer)) {
+      req <- reqs[reqs$requirer == r, , drop = FALSE]
+      forced <- paste(sprintf("%s (>= %s)", req$required, req$version), collapse = ", ")
+      v <- pick(r, pins)
+      cat(sprintf("  HOLDBACK %-10s %s -> %s  (its current release needs %s)\n",
+                  r, version_of(r), v, forced))
+      holdbacks[[r]] <- list(version = v, forced = forced, was = version_of(r))
+    }
+    # `pick()` chose, per held-back package, a version whose own requirements
+    # the pins already satisfy, so holding them back is the last step rather
+    # than another round.
+    settled <- TRUE
+    break
+  }
+  if (!settled) {
+    # Falling out of the loop used to be indistinguishable from settling in one
+    # round: the run went on to install pins that still violated a requirement
+    # somewhere, and reported whatever the suite then did.
+    stop(sprintf("floors and requirements did not reconcile in %d rounds -- the run has not established what to pin, so it has nothing to measure",
+                 MAX_ROUNDS), call. = FALSE)
+  }
+  list(pins = pins, moves = moves, holdbacks = holdbacks)
+}
+
+# --- a package's CRAN Archive listing, oldest first -----------------------------
+#
+# Used by `newest_compatible()` to find the newest release of a held-back
+# harness package that the pinned floors permit.
+
+# One call, named, so data-raw/floor-probes.R can hand `archive_versions()` a
+# failed fetch without a network.
+cran_db <- function() utils::available.packages(repos = "https://cloud.r-project.org")
 
 archive_versions <- function(pkg, from) {
   url <- sprintf("https://cran.r-project.org/src/contrib/Archive/%s/", pkg)
-  html <- tryCatch(readLines(url, warn = FALSE), error = function(e) character())
+  # A NETWORK FAILURE IS NOT A FACT ABOUT CRAN. Both reads below used to fall
+  # back to "nothing found", which is indistinguishable from "this package has
+  # no archived versions" and from "no version later than the floor exists" --
+  # and this list is what `newest_compatible()` searches, so an empty one there
+  # reads as "no version of %s is compatible with the pinned floors". The run
+  # stops instead, because the difference is not one it can recover.
+  html <- tryCatch(readLines(url, warn = FALSE), error = function(e) e)
+  if (inherits(html, "condition")) {
+    stop(sprintf("could not read %s's CRAN Archive listing at %s: %s",
+                 pkg, url, conditionMessage(html)), call. = FALSE)
+  }
   vers <- unique(regmatches(html, regexpr(sprintf("%s_[0-9][^\"]*?\\.tar\\.gz", pkg), html)))
   vers <- sub(sprintf("^%s_", pkg), "", sub("\\.tar\\.gz$", "", vers))
   # The Archive holds only superseded versions; the current release lives in
-  # src/contrib and would otherwise be missing from the end of the walk.
-  cur <- tryCatch({
-    db <- utils::available.packages(repos = "https://cloud.r-project.org")
-    if (pkg %in% rownames(db)) unname(db[pkg, "Version"]) else NA_character_
-  }, error = function(e) NA_character_)
+  # src/contrib and would otherwise be missing from the end of the list.
+  db <- tryCatch(cran_db(), error = function(e) e)
+  if (inherits(db, "condition")) {
+    stop(sprintf("could not fetch the CRAN package database: %s", conditionMessage(db)),
+         call. = FALSE)
+  }
+  # `available.packages()` reports a failed fetch as a WARNING and an empty
+  # matrix, not an error, so the row count is checked as well as the class.
+  if (!nrow(db)) {
+    stop("the CRAN package database came back empty -- that is a failed fetch, not a CRAN with no packages in it",
+         call. = FALSE)
+  }
+  cur <- if (pkg %in% rownames(db)) unname(db[pkg, "Version"]) else NA_character_
   if (!is.na(cur)) vers <- c(vers, cur)
   vers <- unique(vers[!is.na(vers)])
   vers <- vers[numeric_version(vers) >= numeric_version(from)]
   as.character(sort(numeric_version(vers)))
-}
-
-if (!is.na(WALK)) {
-  if (!WALK %in% names(pins) && is.na(ONLY)) {
-    # A walk is asked of a package by name, and a typo would otherwise print an
-    # empty list that reads like "no later versions exist".
-    stop(WALK, " is not a versioned Imports entry", call. = FALSE)
-  }
-  from <- pins[[WALK]]
-  vs <- archive_versions(WALK, from)
-  cat(sprintf("%s versions from the declared floor %s forward:\n", WALK, from))
-  cat(paste0("    ", vs, collapse = "\n"), "\n")
-  quit(save = "no")
 }
 
 # --- the child that runs the suite ---------------------------------------------
@@ -516,10 +697,15 @@ writeLines(c(
   '                                  error = as.integer(df$error)),',
   '                            by = list(file = df$file), FUN = sum)',
   'by_file <- by_file[order(by_file$file), ]',
-  'cat("\\n  file                                         pass fail skip\\n")',
+  '# The `error` column is PRINTED, not only summed. It was aggregated here and',
+  '# then dropped from every line the run reports, so a transcribed table read',
+  '# as a clean pass over a file whose tests had errored -- the child stopped on',
+  '# the total either way, but the table quoted afterwards said nothing about it.',
+  'cat("\\n  file                                         pass fail  err skip\\n")',
   'for (i in seq_len(nrow(by_file))) {',
   '  r <- by_file[i, ]',
-  '  cat(sprintf("  %-44s %4d %4d %4d\\n", r$file, r$nb - r$failed, r$failed, r$skipped))',
+  '  cat(sprintf("  %-44s %4d %4d %4d %4d\\n", r$file, r$nb - r$failed, r$failed,',
+  '              r$error, r$skipped))',
   '}',
   '',
   '# Provenance again, after the suite: a pinned package that was resolved',
@@ -546,8 +732,8 @@ writeLines(c(
   '}',
   'failed <- sum(by_file$failed)',
   'errored <- sum(by_file$error)',
-  'cat(sprintf("\\nTOTALS pass=%d fail=%d skip=%d files=%d\\n",',
-  '            sum(by_file$nb) - failed, failed, sum(by_file$skipped), nrow(by_file)))',
+  'cat(sprintf("\\nTOTALS pass=%d fail=%d err=%d skip=%d files=%d\\n",',
+  '            sum(by_file$nb) - failed, failed, errored, sum(by_file$skipped), nrow(by_file)))',
   'if (failed || errored) {',
   '  bad <- df[df$failed > 0 | df$error, c("file", "test")]',
   '  for (i in seq_len(nrow(bad))) cat("  FAIL ", bad$file[i], " :: ", bad$test[i], "\\n", sep = "")',
@@ -602,7 +788,17 @@ run_child <- function(label, lib) {
   line <- grep("^TOTALS ", out, value = TRUE)
   if (length(line) != 1L) stop("no TOTALS line from the ", label, " run", call. = FALSE)
   nums <- as.integer(regmatches(line, gregexpr("[0-9]+", line))[[1]])
-  stats::setNames(as.list(nums), c("pass", "fail", "skip", "files"))
+  stats::setNames(as.list(nums), c("pass", "fail", "err", "skip", "files"))
+}
+
+# Everything above this line is definitions. `TM_DEFS_ONLY` stops here, so
+# data-raw/floor-probes.R can plant defects against those functions without
+# starting a measurement. A signalled condition rather than a `return()`:
+# `source()` evaluates top-level expressions one at a time, and there is no
+# function here to return from.
+if (nzchar(Sys.getenv("TM_DEFS_ONLY"))) {
+  stop(structure(class = c("tm_defs_only", "error", "condition"),
+                 list(message = "sourced for its definitions only", call = NULL)))
 }
 
 # --- drive it ------------------------------------------------------------------
@@ -616,50 +812,10 @@ dir.create(lib, recursive = TRUE, showWarnings = FALSE)
 # --- what the environment requires of the pinned floors -------------------------
 
 cat("\n---- requirements the environment places on the pinned floors ----\n")
-CLOSURE <- runtime_closure(names(pins))
-gather_reqs <- function(pins) {
-  outside <- declared_reqs(names(pins))
-  outside <- outside[!outside$requirer %in% names(pins), , drop = FALSE]
-  inside <- do.call(rbind, lapply(names(pins), function(p) tarball_reqs(p, pins[[p]], names(pins))))
-  rbind(outside, inside)
-}
-holdbacks <- list()
-moves <- character()
-for (round in 1:5) {
-  reqs <- gather_reqs(pins)
-  reqs <- reqs[numeric_version(reqs$version) > numeric_version(unlist(pins)[reqs$required]), , drop = FALSE]
-  if (!nrow(reqs)) break
-  rt <- reqs[reqs$requirer %in% CLOSURE, , drop = FALSE]
-  if (nrow(rt)) {
-    # A requirer inside this package's runtime closure is something a user
-    # installing tidymedia gets, so the floor below it does not work and moves.
-    for (q in unique(rt$required)) {
-      req <- rt[rt$required == q, , drop = FALSE]
-      need <- as.character(max(numeric_version(req$version)))
-      moves <- c(moves, sprintf("%s: %s -> %s (required by %s)", q, pins[[q]], need,
-                                paste(sprintf("%s %s (>= %s)", req$requirer,
-                                              vapply(req$requirer, function(r)
-                                                as.character(utils::packageVersion(r)), ""),
-                                              req$version), collapse = ", ")))
-      cat(sprintf("  MOVE     %-10s %s -> %s  (runtime closure: %s)\n", q, pins[[q]], need,
-                  paste(unique(req$requirer), collapse = ", ")))
-      pins[[q]] <- need
-    }
-    next
-  }
-  # Everything left is outside the runtime closure: the test harness. No user
-  # installs it, so it is held back rather than allowed to raise a floor.
-  for (r in unique(reqs$requirer)) {
-    req <- reqs[reqs$requirer == r, , drop = FALSE]
-    forced <- paste(sprintf("%s (>= %s)", req$required, req$version), collapse = ", ")
-    v <- newest_compatible(r, pins)
-    cat(sprintf("  HOLDBACK %-10s %s -> %s  (its current release needs %s)\n",
-                r, as.character(utils::packageVersion(r)), v, forced))
-    holdbacks[[r]] <- list(version = v, forced = forced,
-                           was = as.character(utils::packageVersion(r)))
-  }
-  break
-}
+rec <- reconcile(pins, runtime_closure(names(pins)), gather_reqs, newest_compatible)
+pins <- rec$pins
+moves <- rec$moves
+holdbacks <- rec$holdbacks
 if (!length(moves) && !length(holdbacks)) cat("  none -- every declared floor satisfies the environment as it stands\n")
 pins_env <- paste(sprintf("%s=%s", names(pins), unlist(pins)), collapse = ";")
 cat("\n---- installing the declared floors into", lib, "----\n")
@@ -668,7 +824,7 @@ cat("    install order (LinkingTo/Imports among the pinned set first):",
     paste(order, collapse = " -> "), "\n")
 failures <- list()
 for (p in order) {
-  err <- install_pin(lib, p, pins[[p]])
+  err <- install_pin(lib, p, pins[[p]], pins)
   cat(sprintf("  %-10s %-8s %s\n", p, pins[[p]], if (is.null(err)) "installed" else "FAILED"))
   if (!is.null(err)) {
     cat("      ", err, "\n", sep = "")
@@ -676,45 +832,20 @@ for (p in order) {
   }
 }
 if (length(failures)) {
-  cat("\n---- AC3: walking each failed floor forward through the CRAN Archive ----\n")
-  if (!REPAIR) {
-    stop(sprintf("%d declared floor(s) do not install here: %s -- re-run with --repair to walk them forward",
-                 length(failures), paste(names(failures), collapse = ", ")), call. = FALSE)
-  }
-  probe <- file.path(LIBROOT, "walk")
-  dir.create(probe, recursive = TRUE, showWarnings = FALSE)
-  moved <- character()
-  for (p in names(failures)) {
-    # The walk library carries the ALREADY-INSTALLED pins plus the user
-    # library, so a candidate compiles against the same headers the joint run
-    # will hand it -- a `cli` candidate found against current cli headers would
-    # not be the version the joint run then measures.
-    vs <- archive_versions(p, pins[[p]])
-    vs <- vs[vs != pins[[p]]]
-    cat(sprintf("  %s: %d candidate version(s) after %s\n", p, length(vs), pins[[p]]))
-    found <- NA_character_
-    for (v in vs) {
-      e <- install_pin(lib, p, v)
-      cat(sprintf("    %-8s %s\n", v, if (is.null(e)) "INSTALLS" else "fails"))
-      if (is.null(e)) { found <- v; break }
-    }
-    if (is.na(found)) {
-      stop(sprintf("no version of %s from %s forward installs here", p, pins[[p]]), call. = FALSE)
-    }
-    moved <- c(moved, sprintf("%s: %s -> %s", p, pins[[p]], found))
-    pins[[p]] <- found
-  }
-  cat("\n  floors that moved:\n")
-  cat(paste0("    ", moved, collapse = "\n"), "\n")
-  # The pins the children assert must be the MOVED ones, or the joint run below
-  # would assert the declared floor against a library holding the moved version.
-  pins_env <- paste(sprintf("%s=%s", names(pins), unlist(pins)), collapse = ";")
+  # A floor that does not install here is a floor this run cannot measure, and
+  # the errors above are the whole of what the run has to say about it. There
+  # is no walk-it-forward mode: choosing a replacement version is a decision
+  # about what DESCRIPTION should declare, not something a measurement makes on
+  # its own.
+  stop(sprintf("%d declared floor(s) do not install here: %s",
+               length(failures), paste(names(failures), collapse = ", ")),
+       call. = FALSE)
 }
 
 if (length(holdbacks)) {
   cat("\n---- holding the test harness back to what the floors permit ----\n")
   for (r in names(holdbacks)) {
-    err <- install_pin(lib, r, holdbacks[[r]]$version)
+    err <- install_pin(lib, r, holdbacks[[r]]$version, pins)
     cat(sprintf("  %-10s %-8s %s\n", r, holdbacks[[r]]$version,
                 if (is.null(err)) "installed" else "FAILED"))
     if (!is.null(err)) stop(sprintf("could not hold %s back to %s: %s", r,
@@ -733,10 +864,10 @@ pinned <- run_child(if (is.na(ONLY)) "PINNED (all declared floors)" else sprintf
 cat("\n=================================================================\n")
 cat("comparison\n")
 cat("=================================================================\n")
-cat(sprintf("    baseline  pass=%d fail=%d skip=%d over %d files\n",
-            base$pass, base$fail, base$skip, base$files))
-cat(sprintf("    pinned    pass=%d fail=%d skip=%d over %d files\n",
-            pinned$pass, pinned$fail, pinned$skip, pinned$files))
+cat(sprintf("    baseline  pass=%d fail=%d err=%d skip=%d over %d files\n",
+            base$pass, base$fail, base$err, base$skip, base$files))
+cat(sprintf("    pinned    pass=%d fail=%d err=%d skip=%d over %d files\n",
+            pinned$pass, pinned$fail, pinned$err, pinned$skip, pinned$files))
 if (!identical(pinned$skip, base$skip)) {
   stop(sprintf("skip count moved: %d pinned vs %d baseline -- a pinned run that skips more has not exercised what the baseline did",
                pinned$skip, base$skip), call. = FALSE)

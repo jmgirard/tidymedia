@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-27 (M076 merged and archived after one review round
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M077 | The nine other Imports floors, measured | planned | M076 | normal | milestones/M077-imports-floors-measured.md |
+| M077 | The nine other Imports floors, measured | in-progress | M076 | normal | milestones/M077-imports-floors-measured.md |
 | M076 | The R version the package actually needs | done | — | normal | milestones/archive/M076-r-version-floor.md |
 | M075 | The silent narrowing announces itself | done | — | normal | milestones/archive/M075-normalize-audio-drop-warning.md |
 | M074 | The floor says what was measured | done | — | normal | milestones/archive/M074-withr-version-floor.md |

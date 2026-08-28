@@ -147,6 +147,9 @@ passing, 0 failed, 0 errors, 5 skipped; `devtools::check(document = FALSE)`
 **0 errors / 0 warnings / 0 notes**. The 12 warnings `test()` reports are
 M075's deliberate `tidymedia_dropped_audio` warnings in `test-audio-stream*.R`
 and `test-parallel-option-carry.R`, which this milestone does not touch.
+Re-verified after the gate-directed fixes: `devtools::check(document = FALSE)`
+again **0 errors / 0 warnings / 0 notes**, with `spelling.R` comparing clean
+against `spelling.Rout.save` — the check that reads the reworded `NEWS.md`.
 
 ### Findings
 

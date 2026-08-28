@@ -76,9 +76,36 @@
   function body, or several calls that would be awkward to wrap together. See
   `?local_timeout`.
 
-* tidymedia now imports **withr**, which `local_timeout()` uses to register its
-  undo on the calling frame. It was already a suggested package; installing
-  tidymedia now installs it too. withr itself depends on nothing outside base R.
+* tidymedia now imports **withr**, which `local_timeout()` uses to register
+  its undo on the calling frame. It was already a suggested package;
+  installing tidymedia now installs it too. withr itself depends on nothing
+  outside base R. The declared minimum is withr 2.5.0, and that is the version
+  it was tested against rather than merely the one written down. On withr
+  2.5.0 and on 3.0.3 — the oldest this package accepts and the release current
+  on 2026-08-27, when this was measured — all 35 `test_that()` blocks of
+  `test-local-timeout.R` and `test-with-timeout.R` pass on each, and the four
+  things `?local_timeout` says about when the undo runs, the two ways it can
+  be lost included, read the same on each. Two of the top levels the call can
+  be written at were measured on each too: at the top level of a file run by
+  `Rscript` the limit is still set when the script's own exit hooks look, and
+  at the top level of a file passed to `source()` the caller's value is back
+  once `source()` returns — identical on both versions. The versions were seen
+  to part in one place: inside `source(file, local = TRUE)` called from a
+  function, the line after `local_timeout(30)` still reads the limit on withr
+  2.5.0 and already reads the caller's value on 3.0.3 — either way the
+  caller's value is back once the enclosing function returns. That line is the
+  only point inside the sourced file the measurement looks at, so it fixes the
+  direction of the split and not how long 2.5.0 holds on. Of the two things
+  `?local_timeout` says that are not about frames, neither was run on 2.5.0 as
+  that page states it: the claim that the limit reaches a `parallel = TRUE`
+  fan-out is mentioned in neither file above, and the claim that the limit
+  applies per spawned program is stated there of a `local_timeout()` above a
+  batch, which no test writes — though four of the blocks above drive the same
+  per-spawn machinery through `with_timeout()` and all four passed on 2.5.0.
+  Also unmeasured: the `knitr` target environment the undo can be registered
+  on, and every withr between 2.5.0 and 3.0.3. So an installation that
+  resolves withr 2.5.0 rather than a later release is running the frame
+  behavior that page describes.
 
 * `with_timeout()` now refuses an omitted `expr` itself, saying which argument
   is missing, instead of letting R report a missing parameter of the function's

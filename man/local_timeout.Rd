@@ -56,7 +56,8 @@ and with no error anywhere. Write \code{on.exit(..., add = TRUE)} and it does no
 happen. The second is a \code{.local_envir} that is not a live frame, described
 under that argument above. This is not particular to this function:
 \code{\link[withr:defer]{withr::defer()}} and \code{\link[withr:local_options]{withr::local_options()}} lose their undo both ways
-(measured 2026-08-27 on withr 3.0.3), because that is how R's exit handlers
+(measured 2026-08-27 on withr 2.5.0, the oldest this package accepts, and on
+3.0.3, with the same result on each), because that is how R's exit handlers
 work. What cannot happen is the limit being set and the undo never
 registered: the undo goes on the frame first, and only then is the limit
 written.
@@ -68,7 +69,8 @@ the wrapper's limit is what the frame leaves behind. Put the inner limit in a
 function of its own, or use one form or the other. This is what \verb{with_*()}
 and \verb{local_*()} do together anywhere in R, not something particular to these
 two (measured 2026-08-27 against \code{\link[withr:with_options]{withr::with_options()}} and
-\code{\link[withr:local_options]{withr::local_options()}}, which behave identically).
+\code{\link[withr:local_options]{withr::local_options()}}, which behave identically, on withr 2.5.0 and 3.0.3
+alike).
 
 \code{seconds} is refused by the rule \code{options(tidymedia.timeout = )} applies, with
 one deliberate exception. Setting the option to \code{NULL} REMOVES it, leaving the

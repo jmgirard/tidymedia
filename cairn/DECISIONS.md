@@ -2289,3 +2289,104 @@ The cost is one more package on every install, against a package already
 required to run the tests and whose own Imports are `graphics` and `grDevices`.
 Falsified by `withr` acquiring dependencies of its own that a media-tools
 package should not carry.
+
+## D053 — The `withr` floor stays 2.5.0, and now says so because it was measured (2026-08-27, from M074; extends D052's dependency bullet, leaving all of D052 standing)
+
+DESCRIPTION declared `withr (>= 2.5.0)` while every claim `local_timeout()`
+makes had only ever been measured on 3.0.3, so the floor stated a version
+nobody had run. It is measured now, and it stays.
+
+**What was measured.** `data-raw/withr-floor.R` installs a given `withr` from
+CRAN into its own library — it tries the Archive URL first for every version and
+falls back to the current `src/contrib` directory, and records nothing about
+which of the two answered, so where 3.0.3 was fetched from is not in the log —
+then
+runs, in a fresh `Rscript` session with that library first, the two
+timeout-wrapper test files, the two top-level forms, where each form's undo
+actually registered, `source(local = TRUE)`, the four documented claims about
+`local_timeout()`, and the `withr::` calls the documentation compares it to.
+Each child session asserts that the `withr` it loaded came from the library it
+was handed, not merely that the version string matches: the user library holds
+the current release, so a version check alone could not catch a failed install
+of the 3.0.3 arm. A failing `test_that()` block stops the run. On
+2.5.0 and on 3.0.3: all 35 `test_that()` blocks of `test-local-timeout.R` and
+`test-with-timeout.R` pass, 0 failures and 0 skips on either; the four
+documented claims read exactly as written on both; `withr::defer()` and
+`withr::local_options()` lose their undo the same two ways on both, and
+`withr::with_options()` + `withr::local_options()` nest the way
+`with_timeout()` + `local_timeout()` do on both; and the two top-level forms
+agree on both — the `Rscript` form leaves the limit set at `.Last` and at a
+finalizer registered after withr's own, the `source()` form has the caller's
+value back when `source()` returns.
+
+**The mechanism changed; what these forms observe did not.** withr 3.0.0
+rewrote `defer()`'s `globalenv()` branch. `local_timeout()` hands that branch
+`globalenv()` from both top-level forms — `parent.frame()`, the default
+`.local_envir`, is `globalenv()` at the top level of an `Rscript` file and of a
+`source()`d file alike, measured `TRUE` on both versions — but only the
+`Rscript` form's undo ends up there. `withr::deferred_run(globalenv())` restores
+the caller's value at an `Rscript` top level and finds nothing to run inside a
+`source()`d file, on 2.5.0 and on 3.0.3 both: withr redirects the handler to
+`source()`'s own frame first, and both versions do it, by different routes
+(3.0.3 consults `source_exit_frame_option()` before reaching `global_defer()`;
+2.5.0 runs `exit_frame()`/`source_frame()` before `setup_handlers()` is reached
+at all). That last clause is read from withr's own sources, not from the
+harness, which reads no version's internals and measures only the outcome, 30
+against 99. The reading was made at M074's review round 2 and is recorded in
+that section of the milestone file, three ways: `deparse(withr::defer)` on
+3.0.3; the 2.5.0 tarball from the CRAN archive (`compat-defer.R:35-49` and
+`:172-180`); and `length(withr:::the$global_exits)` on 3.0.3, which is `0`
+inside and after a `source()`d file and `1` after the same call at an `Rscript`
+top level. So the rewritten branch is reached from one of the two forms rather
+than both, and the `source()` form's agreement across versions is caused by a
+redirect both versions have — not by the rewritten branch behaving the same.
+Only `global_defer()` is new in 3.x; `is_top_level_global_env()` is already in
+2.5.0 (`compat-defer.R:174`, called at `:65`). D052's reason for choosing
+`defer()` over `on.exit()` — that it also handles a global or knitr target
+environment — therefore stands unqualified.
+
+Nor is the `Rscript` form's outcome the absence of an undo. Both versions
+schedule one — `reg.finalizer(globalenv(), function(env) deferred_run(env),
+onexit = TRUE)`, from 2.5.0's `setup_handlers()` and 3.0.3's `global_defer()` —
+and `withr::deferred_run(globalenv())` puts the caller's value back on both.
+What `.Last` and a later finalizer report is that they run BEFORE withr's
+finalizer. That is hook ordering, and it is not this package's to promise: "the
+limit is still set when the script's own exit hooks look" is what was measured,
+"there is nothing left to unwind" is not.
+
+**The one difference found.** `source(file, local = TRUE)` from inside a
+function frame — the form withr 3.0.0 made need
+`options(withr.hook_source = TRUE)`, and which 2.5.0 redirected by default —
+differs: the line after `local_timeout(30)` still reads the limit on 2.5.0 and
+already reads the caller's value on 3.0.3. That line is the harness's only
+observation point inside the sourced file, so what is measured is the direction
+of the split, not how long 2.5.0 holds on. Both have the caller's value back
+once the enclosing frame returns, and no `@details` claim is about this form, so
+it does not move the floor — though `?local_timeout`'s description, "for the
+remainder of the function you call this from", sits in tension with the 3.0.3
+reading, and that is a reading of the page rather than a measurement. It is recorded because it is the one place the two versions were
+seen to part.
+
+**What was not measured.** The nine other `Imports` floors, the absent
+`Depends: R (>= )` line, and every `withr` between 2.5.0 and 3.0.3 — the walk
+was to be run only if a block failed, and none did. The `knitr` target
+environment. Neither of the two `@details` claims that are not about
+frames was run under the floor as the page states it. The `parallel = TRUE`
+fan-out is mentioned in neither measured file. The per-spawned-program claim is
+stated of a `local_timeout()` above a batch, and no test writes that:
+`grep -n local_timeout tests/testthat/test-with-timeout.R` returns one hit, a
+comment. What DID run on the floor is the same per-spawn machinery driven
+through `with_timeout()` — `test-with-timeout.R:255` (each spawn site is handed
+the per-call limit), `:279` (`ffm_batch()`'s up-front limit check reads the
+per-call value) and `:487` (a per-call limit kills a hung program) — all passing
+under the pinned 2.5.0 library with 0 skips. Two earlier revisions of this
+paragraph were wrong here in opposite directions: the first said the claim was
+unrun and located its tests outside the two measured files; the second called it
+run and counted `:432` among its tests, which is a process-lifetime block
+asserting nothing about a limit. Test-side `withr` use is Suggests-side and says nothing about what a
+user installing tidymedia gets. Nothing verifies this floor on a schedule: CI
+installs the latest dependencies on all five jobs.
+
+Falsified by a caller on 2.5.x observing a `local_timeout()` behavior these
+forms do not reach — `knitr` is the untested one — or by `withr` 2.5.0 failing
+to install on a supported R.

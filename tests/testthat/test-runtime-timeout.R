@@ -549,6 +549,20 @@ test_that("both docs disclose that the abort can lag the limit", {
   }
 })
 
+# M078 measured the lag the guard above only asserts the SHAPE of. "40 seconds"
+# was present the whole time the two per-function topics said a program is
+# "bounded by" the limit with no lag mentioned at all -- the doc carrying the
+# disclosure was `?tidymedia`, and the grep does not know which topic it read.
+# This one fences the measured number, so a future edit that drops the
+# arithmetic back to a bare "may be exceeded" reddens.
+test_that("both docs give the measured lag, not just its existence", {
+  src <- doc_timeout_sources()
+  skip_if(is.null(src$rd) || is.null(src$news), "docs not available")
+  for (nm in c("rd", "news")) {
+    expect_match(src[[nm]], "42.0 seconds", fixed = TRUE, info = nm)
+  }
+})
+
 test_that("NEWS.md carries the entry", {
   # Two shapes, for the same reason the Rd guard has two: under R CMD check the
   # tests run against an INSTALLED package with no source tree. NEWS.md IS

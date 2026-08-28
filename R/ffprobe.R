@@ -240,17 +240,17 @@ count_audio_streams <- function(file) {
 # count_audio_streams_all() -----------------------------------------------
 
 # Count each input's audio streams, probing each distinct file once, and say so
-# ONCE when the limit killed one or more of those probes.
+# ONCE when the limit ended the wait on one or more of those probes.
 #
 # The five call sites all route through here so the warning cannot drift and
 # cannot repeat: M69 left a bounded hang under extract_audio(), convert_audio(),
 # separate_audio_video() and their _batch siblings completely invisible, because
-# count_audio_streams() answered NA for a killed probe exactly as it does for an
+# count_audio_streams() answered NA for a timed-out probe exactly as it does for an
 # unreadable file (D048). Per-file would be worse than silence on a large jobs
 # table -- R collapses at "There were 50 or more warnings" (M44's gate), which
 # is why warn_dropped_audio() is one-warning-whatever-the-length too.
 #
-# The RETURN is unchanged: NA for a killed probe, the same value the silent
+# The RETURN is unchanged: NA for a timed-out probe, the same value the silent
 # version gave. D024 licenses this probe only while its outcome changes nothing
 # but whether a diagnostic is signalled, and a warning is inside that licence
 # where a changed count would not be.

@@ -45,7 +45,8 @@
   warning saying how many files timed out, so a single hung file does not
   discard a whole corpus. `ffm_batch()` and the `_batch` verbs mark the row
   `success = FALSE`, as they do for any failed job, and warn once at the end of
-  the run saying how many jobs the limit killed. The dropped-track check behind
+  the run saying how many jobs the limit gave up waiting for. The dropped-track
+  check behind
   `extract_audio()`, `convert_audio()`, `separate_audio_video()` and their
   `_batch` siblings warns that it could not check, and the provenance manifest
   warns that it could not read a version. Those two lists are not written from
@@ -61,9 +62,10 @@
   `parallel = TRUE` paths are bounded by the same limit as their sequential
   ones. The limit
   bounds the wait rather than promising the program dies at the second: R asks,
-  insists after 20 seconds and kills after 40, so on Unix a program that does
-  not answer can outlive its limit by up to 40 seconds, and R does not
-  guarantee termination at all. See `?tidymedia`.
+  insists after 20 seconds and kills after 40, so a program that does not answer
+  is waited for up to 40 seconds past its limit — measured at 42.0 seconds under
+  a 2-second limit — and R does not guarantee termination at all. See
+  `?tidymedia`.
 
 * A `parallel = TRUE` call now runs its workers under the tidymedia settings you
   set in your own session. Previously each worker started from its own empty
@@ -81,12 +83,30 @@
   no `tidymedia.nvenc_encoders` override still asks its own binary once. See
   `?tidymedia` and `?refresh_ffmpeg_capabilities`.
 
+* **A timeout limit can be exceeded, and by how much is now measured.** The
+  limit you set — with `options(tidymedia.timeout = )`, `with_timeout()` or
+  `local_timeout()` — says how long tidymedia waits for a media program, not how
+  long that program is allowed to run. When the limit is reached R asks the
+  program to stop, insists 20 seconds later, and kills it 20 seconds after that,
+  so a program that answers none of the three is waited for up to 40 seconds
+  longer than you asked. Under a 2-second limit, an FFmpeg blocked reading a pipe
+  nobody writes to returned at 42.0 seconds on Linux, and a shell child that
+  ignores both signals returned at 42.0 seconds on Linux and macOS alike. Plan
+  for it when you pick a limit: a 1-second limit across five hung files is three
+  and a half minutes of waiting, not five seconds. How much of the lag you see
+  depends on your FFmpeg — the same blocked input took 42.0 seconds against
+  FFmpeg 6.1.1 and 2.0 seconds against 9.0.1, which answers the first signal —
+  and R does not promise the program dies at all: one can be written to survive
+  every signal R sends. The documentation for `?with_timeout`, `?local_timeout`
+  and `?tidymedia` now says this where it previously said a program was
+  "bounded by" the limit.
+
 * `with_timeout(expr, seconds)` puts a wall-clock limit on one call without
   changing the limit the rest of your session runs under. Every FFmpeg, FFprobe
-  and MediaInfo program started while `expr` is being evaluated is bounded by
-  `seconds`, and when the call ends — by any route, a failure or a reached limit
-  included — whatever the session had set before is back, an unset option
-  included. It reaches a `parallel = TRUE` fan-out too, because the worker is
+  and MediaInfo program started while `expr` is being evaluated is waited for at
+  most `seconds`, plus the escalation lag `?tidymedia` describes, and when the
+  call ends — by any route, a failure or a reached limit included — whatever the
+  session had set before is back, an unset option included. It reaches a `parallel = TRUE` fan-out too, because the worker is
   handed the limit in force when the fan-out starts. `0` means no limit, so
   `with_timeout(expr, 0)` lifts a session-wide limit for one call; a value the
   underlying limit could not use — a fraction of a second, a negative number,
@@ -96,8 +116,9 @@
 * `local_timeout(seconds)` is the statement form of the same limit: it bounds
   the rest of the function you call it from, rather than an expression you wrap.
   Every FFmpeg, FFprobe and MediaInfo program started between the call and the
-  end of that function is bounded by `seconds`, and when the function ends — by
-  any route — whatever the caller had set before is back, an unset option
+  end of that function is waited for at most `seconds`, plus the same escalation
+  lag, and when the function ends — by any route — whatever the caller had set
+  before is back, an unset option
   included, unless that function discards the undo by writing an `on.exit()` of
   its own without `add = TRUE`. Two calls in one function stack the way any pair
   of `local_*()` calls does, and `seconds` is refused by the same rule

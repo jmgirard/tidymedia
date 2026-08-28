@@ -112,8 +112,8 @@ build_manifest <- function(pipelines, commands, versions, checksums) {
 # call lives here; parsing is factored into parse_version_line() so it can be
 # tested without a binary.
 #
-# This is where the killed probe becomes audible, because this is where both
-# probes are assembled -- one warning naming the tools the limit killed, not one
+# This is where the timed-out probe becomes audible, because this is where both
+# probes are assembled -- one warning naming the tools the limit gave up on, not one
 # per tool. M69 left an NA version in the manifest reading exactly like a
 # missing binary, so a bounded hang under ffm_batch(manifest = TRUE) was
 # invisible (D048). The RECORDED value is unchanged: NA is what a version that
@@ -147,7 +147,7 @@ tool_versions <- function(call = rlang::caller_env()) {
 
 # Run `<tool> -version` and parse the version token; NA if the binary is absent
 # or the call fails.
-# Returns the absorbed-timeout sentinel when the limit killed the call, so
+# Returns the absorbed-timeout sentinel when the limit ended the wait, so
 # tool_versions() can tell that apart from every other reason a version is
 # missing. absorb_timeout() sits INSIDE the tryCatch() for the same reason it
 # does in count_audio_streams(): the outer handler catches every error, so a

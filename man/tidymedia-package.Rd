@@ -44,8 +44,8 @@ a statement with \code{\link[=local_timeout]{local_timeout()}}:
   for (f in files) extract_audio(f, sub("[.][^.]*$", ".wav", f))
 }}
 
-Every program that function starts is bounded at \code{seconds}, and the caller's
-setting is back once it returns.
+Every program that function starts is waited for at most \code{seconds} — plus
+the lag described below — and the caller's setting is back once it returns.
 
 A reached limit is never silent: every call that can start one of those
 programs either aborts or warns.
@@ -61,12 +61,13 @@ work. \code{\link[=probe_all]{probe_all()}} and the \verb{probe_*()} accessors, 
 an \code{NA} row and one warning at the end of the call, saying how many of the
 files it names timed out rather than being unreadable. \code{\link[=ffm_batch]{ffm_batch()}} and the
 \verb{_batch} verbs mark the row \code{success = FALSE}, as they do for any failed
-job, and warn once at the end of the run saying how many jobs the limit
-killed — at \code{parallel = TRUE} no differently from sequentially. The
-dropped-track check behind \code{\link[=extract_audio]{extract_audio()}}, \code{\link[=convert_audio]{convert_audio()}},
-\code{\link[=separate_audio_video]{separate_audio_video()}} and their \verb{_batch} siblings warns that it could not
-check, and the provenance manifest warns that it could not read a version;
-both then carry on as they would for any other unreadable input.
+job, and warn once at the end of the run saying how many jobs timed out and
+did not run to completion — at \code{parallel = TRUE} no differently from
+sequentially. The dropped-track check behind \code{\link[=extract_audio]{extract_audio()}},
+\code{\link[=convert_audio]{convert_audio()}}, \code{\link[=separate_audio_video]{separate_audio_video()}} and their \verb{_batch} siblings
+warns that it could not check, and the provenance manifest warns that it
+could not read a version; both then carry on as they would for any other
+unreadable input.
 
 To handle either outcome programmatically, the abort carries the condition
 class \code{tidymedia_timeout}; the dropped-track and version-probe warnings
@@ -93,7 +94,8 @@ refused rather than rounded, because the underlying limit is whole seconds
 and a value below one second would otherwise be read as no limit at all.
 
 The limit applies per spawned program, not per batch: a 100-row batch with a
-600-second limit bounds each row at 600 seconds. tidymedia's own
+600-second limit waits at most 600 seconds — plus the lag described below —
+on each row. tidymedia's own
 \code{parallel = TRUE} paths are bounded by the same limit as their sequential
 ones: the limit you set is carried into each worker for the duration of the
 call, and whatever that worker had set for itself is put back afterwards. A
@@ -104,11 +106,19 @@ anything.
 
 The limit bounds the wait; it does not promise the program dies at the
 second. R asks the program to stop when the limit is reached, insists 20
-seconds later, and kills it 20 seconds after that, so on Unix a program that
-does not answer the first two can outlive its limit by up to 40 seconds — an
-FFmpeg blocked on an unresponsive input has been measured doing exactly that.
-R does not guarantee termination at all: a program can be written to survive
-the attempt.
+seconds later, and kills it 20 seconds after that, so a program that does not
+answer the first two is waited for up to 40 seconds past its limit. That is
+measured, not estimated: an FFmpeg blocked on an unresponsive input under a
+2-second limit returned at 42.0 seconds on Linux, and a shell child that
+ignores both signals did the same on macOS. Budget for it — five one-second
+limits over five hung files is three and a half minutes, not five seconds.
+
+Whether the program then dies is a separate question, and the answer is not
+always yes. R does not guarantee termination: a program can be written to
+survive the attempt, and one measured here did. Which FFmpeg build you have
+matters too — the same blocked input that took 42.0 seconds against
+FFmpeg 6.1.1 took 2.0 seconds against 9.0.1, because the newer build answers
+the first signal.
 
 See \code{vignette("tidymedia")} for the guided tour, \code{vignette("batch")} for
 running a verb over many files, \code{vignette("metadata")} for the readers, and

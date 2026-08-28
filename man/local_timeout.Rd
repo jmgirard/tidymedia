@@ -26,9 +26,11 @@ The caller's prior setting, invisibly, as the one-element list
 }
 \description{
 Set a wall-clock limit for the remainder of the function you call this from,
-without changing the limit the rest of the session runs under. Every FFmpeg,
-FFprobe or MediaInfo program started between this call and the end of that
-function is bounded by \code{seconds}; when the function ends, by any route,
+without changing the limit the rest of the session runs under. \code{seconds}
+bounds how long each FFmpeg, FFprobe or MediaInfo program started between
+this call and the end of that function is waited for — not how long it runs;
+a program that ignores the first two signals is waited for up to 40 seconds
+longer, described under Details. When the function ends, by any route,
 whatever the caller had set before is back — unless that function discards
 the undo itself, which is possible and is described under Details.
 
@@ -39,9 +41,14 @@ would be awkward to wrap together.
 }
 \details{
 The limit applies per spawned program, not per frame: a \code{local_timeout()}
-above a 100-row batch bounds each row at \code{seconds}, not the batch. It reaches
+above a 100-row batch waits \code{seconds} on each row, not on the batch. It reaches
 a \code{parallel = TRUE} fan-out as well, because the worker is handed the limit in
 force when the fan-out starts.
+
+\code{seconds} bounds the wait, and the wait can exceed it, by the same arithmetic
+\code{\link[=with_timeout]{with_timeout()}} describes: \code{seconds} + 40 for a program that answers none of
+R's three signals, measured at 42.0 s under a 2 s limit on Linux and on macOS
+alike.
 
 Two calls in one frame stack the way any pair of \verb{local_*()} calls does: the
 second is in force until the frame ends, and both are undone together, back

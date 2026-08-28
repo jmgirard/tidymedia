@@ -207,8 +207,16 @@ coerce_column <- function(col, na_strings = c("N/A", "")) {
 check_dim <- function(x, inclusive = FALSE,
                       arg = rlang::caller_arg(x),
                       call = rlang::caller_env()) {
-  ok <- rlang::is_character(x, n = 1) ||
-    (rlang::is_double(x, n = 1) && (if (inclusive) x >= 0 else x > 0))
+  # NA is refused first, and both halves need it. An NA_real_ reached the
+  # comparison, whose NA made `if (!ok)` raise base R's `missing value where
+  # TRUE/FALSE needed` with no argument name in it (M64 F4); an NA_character_
+  # satisfied is_character(n = 1) and was written into the command, so
+  # `crop_video(width = NA_character_)` compiled `crop=w=NA` (M80). NA is
+  # neither an FFmpeg expression nor a number, so the refusal below already
+  # says what is wrong and gains no second wording here.
+  ok <- !anyNA(x) &&
+    (rlang::is_character(x, n = 1) ||
+       (rlang::is_double(x, n = 1) && (if (inclusive) x >= 0 else x > 0)))
   if (!ok) {
     cli::cli_abort(
       c(
@@ -259,8 +267,13 @@ loudnorm_bounds_rd <- function(which) {
 # re-call it so the abort names the verb the caller typed (M65, D042). Range
 # only: each caller type-checks `scale` first, at its own precedence slot.
 check_overlay_scale <- function(scale, call = rlang::caller_env()) {
+  # anyNA() first, and it has to come first: an NA reached the comparison,
+  # whose NA made `if` raise base R's `missing value where TRUE/FALSE needed`
+  # with no argument name in it (M80). NA is not a number in the range, so the
+  # refusal below already says what is wrong.
   if (!is.null(scale) &&
-      (scale <= overlay_scale_range[[1]] || scale > overlay_scale_range[[2]])) {
+      (anyNA(scale) ||
+       scale <= overlay_scale_range[[1]] || scale > overlay_scale_range[[2]])) {
     cli::cli_abort(
       "{.arg scale} must be greater than {overlay_scale_range[[1]]} and at
        most {overlay_scale_range[[2]]}.",
@@ -300,6 +313,13 @@ check_loudnorm_targets <- function(target_loudness, true_peak, loudness_range,
 # are coerced to double exactly as anonymize_pipeline() does before
 # ffm_drawbox(), so an integer/integerish frame is not rejected here either.
 check_region_values <- function(regions, call = rlang::caller_env()) {
+  # The shape first, at the site that owns its wording: nrow() of a non-frame
+  # is NULL, and seq_len(NULL) raised base R's `argument must be coercible to
+  # non-negative integer` from inside a front-door guard (M80). Every caller
+  # has already run this check, so it re-refuses nothing -- it keeps this
+  # predicate from crashing when called on its own, without a second copy of
+  # the shape wording.
+  check_regions(regions, call = call)
   for (i in seq_len(nrow(regions))) {
     for (field in c("x", "y", "width", "height")) {
       value <- regions[[field]][[i]]

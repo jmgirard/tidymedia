@@ -24,6 +24,21 @@
 #                    sweep, so these cells must read `jobs_na` on both refs
 #   column_type      a knob column of the wrong type (check_batch_codec_col()),
 #                    also ABOVE the sweep -- same expectation
+#   column_type:stream  the `audio_stream` column of the wrong type
+#                    (check_batch_audio_col()), ABOVE the sweep. A second
+#                    column-type crossing because the first probes a CODEC
+#                    column, and on the two verbs M80 reordered the codec
+#                    column guard stayed above the sweep while this one did
+#                    not -- so the grid saw nothing (M80 review F3)
+#   scalar_arg       a bad scalar argument (`audio_stream = NA`), ABOVE the
+#                    sweep. It proves the sweep sits below THIS check and
+#                    nothing more: a verb's scalar checks are not one block,
+#                    and several sit below the sweep on other verbs
+#                    (`margin`, `position`, `direction`; measured 2026-08-28,
+#                    D058). A move past a scalar check this grid does not
+#                    supply would still produce no moved cell -- F3's blind
+#                    spot narrowed, not closed. The below-the-sweep cells are
+#                    pinned in test-input-path-front-door.R instead
 #   contradiction:*  the M58 argument-contradiction sweep, BELOW the sweep
 #   nvenc            check_nvenc_available(), BELOW the sweep
 #   run_guard        ffm_batch()'s own `run` guard, below everything
@@ -166,8 +181,8 @@ INPUT_GUARD_FORMS <- c("all", "one", "dup", "factor", "unreadable")
 # generated over every crossing its verb declares. Declared here rather than
 # decided in the builder, so `input_guard_uncovered()` can re-derive exactly the
 # product the grid was asked for.
-INPUT_GUARD_FORM_CROSSINGS <- list(dup = "none", factor = "none",
-                                   unreadable = "none")
+INPUT_GUARD_FORM_CROSSINGS <- list(dup = c("none", "derived_output"),
+                                   factor = "none", unreadable = "none")
 
 # Whether a (form, crossing, shape) combination is owed a cell, and if so
 # whether the shape can express it. Three answers, and the difference matters:
@@ -186,6 +201,13 @@ input_guard_form_applies <- function(form, crossing, shape) {
   if (!is.null(only) && !crossing %in% only) return(NA)
   multi <- is.null(shape) || is.null(shape$multi) || isTRUE(shape$multi)
   in_column <- is.null(shape) || !is.null(shape$path_cols)
+  # The derived-output crossing needs the duplication its guard is about, so
+  # it is generated over the `dup` form and no other: on any other form the
+  # verb derives distinct names and the guard never fires, which would be a
+  # cell measuring the grid rather than the package.
+  if (identical(crossing, "derived_output") && !identical(form, "dup")) {
+    return(NA)
+  }
   switch(form,
     one = multi,
     dup = multi,
@@ -282,7 +304,7 @@ INPUT_GUARD_CROSSINGS <- list(
 # error, which is a cell measuring the grid rather than the package.
 input_guard_crossing_parts <- function(crossing, shape) {
   base <- list(args = list(), cols = list(), na_row = FALSE, slots = NULL,
-               seam = "h264_nvenc")
+               seam = "h264_nvenc", drop_output = FALSE)
   utils::modifyList(base, switch(
     crossing,
     "none" = list(),
@@ -293,6 +315,22 @@ input_guard_crossing_parts <- function(crossing, shape) {
     "jobs_na" = list(na_row = TRUE),
     # A knob column of the wrong type, also above the sweep.
     "column_type" = list(cols = shape$type_col),
+    # The stream-index column of the wrong type, guarded by
+    # check_batch_audio_col() rather than check_batch_codec_col(). Named here
+    # and not read from `shape`: which verbs HAVE the column is derived below
+    # from the guard call itself, so the crossing needs no per-verb answer.
+    "column_type:stream" = list(cols = list(audio_stream = "x")),
+    # A scalar argument the same verbs check ABOVE the sweep. Not their last
+    # such check -- `reject_duplicate_outputs()` follows it in
+    # crop_video_batch() and format_for_web_batch(), and check_bool(reencode)
+    # in segment_video_batch(). See the crossing's entry at the top of this
+    # file for what a cell here does and does not prove (M80 review N5).
+    "scalar_arg" = list(args = list(audio_stream = NA)),
+    # No `output` column, so the verb must derive one name per input and
+    # refuses the duplicated inputs the `dup` form supplies. BELOW the sweep
+    # since M80 (D057); above it before that, which is the move this crossing
+    # exists to measure.
+    "derived_output" = list(drop_output = TRUE),
     "contradiction:copy_hardware" = list(
       args = list(video_codec = "copy", hardware = "nvenc")),
     "contradiction:reencode" = list(
@@ -341,7 +379,23 @@ input_guard_error_crossing <- function(msg) {
     # column-TYPE test below matches on.
     if (has("must not contain") || has("must be a character vector of") ||
         has("must have an") || has("must be a list-column")) return("jobs_na")
+    # The stream-index column's own type guard, ahead of the generic column
+    # branch below, whose phrase its message also carries.
+    if (has("audio_stream column of")) return("column_type:stream")
     if (has("column of")) return("column_type")
+    # The scalar argument checks, ahead of every branch below: the
+    # `audio_stream` wording carries the word `value:audio` matches on. Matched
+    # on the ARGUMENT, not on "must be a whole number" -- `margin` and `audio`
+    # are checked with the same rlang predicate and their cells belong to the
+    # `value:*` crossings, which a wording-shaped match swallowed.
+    if (has("`audio_stream` must be") ||
+        has("`video_codec` must be a single string")) return("scalar_arg")
+    # The derived-output duplication guard. Above the two codec branches
+    # below it because its message carries neither, and above nothing else it
+    # could be confused with: no other abort says "duplicated".
+    if (has("duplicated") && has("no output column")) {
+      return("derived_output")
+    }
     if (has("can't be re-encoded") || has("needs re-encoding") ||
         has("reencode")) return("contradiction:reencode")
     if (has("copy") && has("hardware")) return("contradiction:copy_hardware")
@@ -564,6 +618,60 @@ INPUT_GUARD_SHAPES <- list(
     list(infile = p[[1]], outfile = tm_out(1)), xargs))
 )
 
+# WHICH verbs carry the `derived_output` crossing is derived, never listed: a
+# verb reaching reject_duplicate_inputs() is one that derives its outputs and
+# refuses duplicated inputs to do it, which is the same walk the M80 criterion
+# quantifies over -- so the grid and that criterion cannot disagree about the
+# domain. Read from the loaded (HEAD) namespace, which is where the grid is
+# BUILT; the cells it builds are then run against both refs. The other
+# name-deriving verbs refuse the collision in reject_duplicate_outputs() AFTER
+# deriving, which M80 deliberately leaves alone, so they carry no cell here.
+local({
+  graph <- tm_call_graph()
+  for (verb in names(INPUT_GUARD_CROSSINGS)) {
+    if (verb %in% names(graph) &&
+        tm_reaches(graph, verb, "reject_duplicate_inputs")) {
+      INPUT_GUARD_CROSSINGS[[verb]] <<-
+        c(INPUT_GUARD_CROSSINGS[[verb]], "derived_output")
+    }
+  }
+})
+
+# The two stream crossings are derived the same way and for the same reason: a
+# verb carries them if its own body calls the guard, so the grid cannot declare
+# a crossing onto a verb that has no such argument, nor miss one that does.
+# Read from the HEAD namespace, where the grid is built.
+#
+# These exist because the codec `column_type` crossing was the grid's ONLY
+# above-the-sweep column probe on the two verbs M80 reordered, and the codec
+# column guard did not move -- so the reorder carrying the sweep past the
+# `audio_stream` column guard and the two scalar checks produced no moved cell
+# (M80 review F3). One probe per guard family, not one per verb.
+local({
+  bodies <- tm_namespace_bodies()
+  for (verb in names(INPUT_GUARD_CROSSINGS)) {
+    body <- bodies[[verb]]
+    if (is.null(body)) next
+    add <- character(0)
+    if (grepl('check_batch_audio_col(jobs, "audio_stream"', body,
+              fixed = TRUE)) {
+      add <- c(add, "column_type:stream")
+    }
+    # Gated on the verb having the sweep at all: several SCALAR verbs check the
+    # same argument, and there the input check is check_file_exists() rather
+    # than this sweep and has reported first since long before this milestone.
+    # A crossing declared there would state an ordering claim about a guard
+    # pair the milestone never touched.
+    if (grepl("check_number_whole(audio_stream", body, fixed = TRUE) &&
+        grepl("check_batch_inputs(", body, fixed = TRUE)) {
+      add <- c(add, "scalar_arg")
+    }
+    if (length(add)) {
+      INPUT_GUARD_CROSSINGS[[verb]] <<- c(INPUT_GUARD_CROSSINGS[[verb]], add)
+    }
+  }
+})
+
 # The domain, taken from the walk. The walk fixes membership; the declarations
 # below supply only shape and crossings, and never widen or narrow the set.
 #
@@ -676,6 +784,13 @@ input_guard_cases <- function(present, absent, unreadable,
             for (nm in shape$path_cols) {
               args$jobs[[nm]] <- factor(args$jobs[[nm]])
             }
+          }
+          # The derived-output crossing takes the `output` column away, which
+          # is the only way to reach the guard a verb runs when it must derive
+          # one name per input. Every other cell supplies an explicit output,
+          # which is why the grid never saw the case (M80).
+          if (isTRUE(parts$drop_output)) {
+            args$jobs$output <- NULL
           }
           add(verb, form, crossing, ctl, TRUE, args, parts$seam,
               if (ctl) character() else unique(setdiff(paths, present)))
@@ -883,7 +998,15 @@ INPUT_GUARD_WORDING <- c(
   "does not exist:" = "can't be found or read:",
   "that does not exist." = "that can't be found or read.",
   "that do not exist." = "that can't be found or read.",
-  "Missing:" = "Missing or unreadable:")
+  "Missing:" = "Missing or unreadable:",
+  # M80's rewrite: a multi-carrier sweep now names only the carriers actually
+  # holding a bad path, so the `one` form's cell on the two-column verb drops
+  # the carrier that was fine. Declared as a substitution for the same reason
+  # M63's was -- a blanket exemption for the input class would hide every other
+  # change to it -- and it reaches exactly the cell whose `main` is present and
+  # whose `overlay` is not.
+  "`jobs$main` and `jobs$overlay` name 1 file" =
+    "`jobs$overlay` names 1 file")
 
 # Applied to a WHITESPACE-NORMALIZED message, because cli wraps to the terminal
 # and the two wordings are different lengths: the same sentence breaks at a
@@ -986,7 +1109,8 @@ input_guard_blame <- function(before, after) {
 #
 # Read it as two blocks:
 #
-#   crossing above the sweep (`jobs_na`, `column_type`) -- every cell must read
+#   crossing above the sweep (the names INPUT_GUARD_ABOVE carries below; not
+#     re-listed here, which is how this line went stale) -- every cell must read
 #     the crossing on BOTH refs. These are invariants, not changes: a sweep
 #     hoisted above the shape and type guards would invert them silently.
 #   crossing below the sweep (`contradiction:*`, `nvenc`, `run_guard`,
@@ -1007,7 +1131,8 @@ input_guard_ordering <- function(before, after) {
 # reporting after this milestone. Declared, not derived: this is the expectation
 # the grid is measured against, and reading it off either ref's behaviour would
 # make the comparison circular.
-INPUT_GUARD_ABOVE <- c("jobs_na", "column_type")
+INPUT_GUARD_ABOVE <- c("jobs_na", "column_type", "column_type:stream",
+                       "scalar_arg")
 
 # The controls that failed to establish their crossed error. Empty is the
 # evidence; a non-empty result names cells whose ordering claim rests on

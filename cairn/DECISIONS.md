@@ -2590,3 +2590,109 @@ platform -- a different escalation, not the sub-second package frame around the
 wait that puts C1 at 42.41 s -- by a tidymedia call returning with its spawned
 program still alive, or by the wedge reproducing on the pinned-floor
 configuration D055 measured.
+
+## D057 — A derived output's duplicate-input refusal reports after the path sweep (2026-08-28, from M080; narrows D040's ordering paragraph, leaving the rest of D040 and all of D041 standing)
+
+D040 put the input sweep above the M58 contradiction sweep, and said why:
+
+> A missing input does not vary that way. It varies with the caller's own
+> data, which the caller has and the report names — `` `jobs$input` names 1
+> file that does not exist: 'clip3.mp4' `` is fully actionable by the person
+> who typed the path.
+
+That paragraph settled the sweep's position against the guards D040's own grid
+reached. It did not reach one, because every cell in that grid supplied an
+explicit `output`: the refusal three verbs make when the caller supplies no
+`output` column and the verb has to derive one name per input. Two rows naming
+the same input would derive the same output, so those verbs refuse the
+duplication — and they refused it ABOVE the sweep, so a `jobs` table whose rows
+all carried one mistyped path was told its inputs were duplicated and never
+told which file was not there. That message names no path the caller can act
+on, and D040's own argument applies to it unchanged.
+
+**The rule.** A verb that derives its outputs refuses duplicated inputs BELOW
+the input sweep, never above it. The refusal is written at one site,
+`reject_duplicate_inputs()`, so a verb that derives outputs later inherits the
+order rather than restating it — the same reason D040 gave for one abort site.
+
+**What does not move, and why.** `reject_duplicate_outputs()` stays where it
+is. It runs on outputs already derived or supplied, where two rows really do
+collide on a destination and the collision is the message the caller needs. It
+would take a different argument to move, and D040's paragraph does not reach it
+either.
+
+- **Falsified by** a report preferring the duplication on a table that is both
+  wrong about a path and duplicated, or by a report of an explicit-output table
+  whose output collision hid a missing path — the case this entry leaves alone.
+
+## D058 — The input sweep is never lifted past a check that already sat above it (2026-08-28, from M080; narrows D057 by fixing the sweep's upper bound, leaving D040 and D041 standing; the rule below was narrowed on 2026-08-28 after M080's second review found its first wording claimed an invariant the package does not have, and again after its third review found the narrowed wording forbade the one move D057 licenses)
+
+D040 fixed what the input sweep reports BEFORE, and D057 added the
+derived-output duplication refusal to that list. Neither fixed what the sweep
+reports AFTER, and M080's first attempt at D057 read the gap the permissive
+way: it lifted `check_batch_inputs()` to sit directly above the derived-output
+block, which on two verbs sat above their remaining front-door checks, so the
+sweep passed those too and a wrong column type or a bad scalar argument began
+reporting after the missing path. M080's review returned the milestone on it;
+the calls and messages are recorded in that milestone file's Review section.
+
+**The rule.** The input sweep is never lifted past a check that already sat
+above it, with one carve-out: the derived-output duplication refusal, the one
+guard D057 deliberately puts below the sweep. Where the sweep must move down to
+reach some OTHER check, the sweep and that check move down together as a unit,
+so no check that reported before the sweep begins reporting after it.
+
+The carve-out is not a loophole, it is D057 restated: `normalize_audio_batch()`
+already had every other front-door check above its sweep on `origin/master`,
+with only the derived-output block above it, so M080 lifted the sweep past that
+block and nothing else. Without the carve-out this rule forbids the very move
+D057 exists to license, and `normalize_audio_batch(tibble(input =
+c("gone.mp4", "gone.mp4")), run = FALSE)` — which reports the missing path here
+and reported the duplication on `master` — fires the falsifier below (M080
+review round 3, N1).
+
+This fixes the sweep's position RELATIVE to the checks above it. It does not
+say every check a verb makes on its own arguments is one of them, and the
+package is not shaped that way, and it splits BOTH ways on the same verb.
+Measured on 2026-08-28 by reading each sweep verb's body around its
+`check_batch_inputs()` call and measuring each cell against a readable-path
+control: `picture_in_picture_batch()` checks its codec tokens above the sweep
+but `margin` and `position` below it, and SPLITS `scale` across the sweep —
+`scale = "x"` is refused above it by the type check, `scale = 5` below it by
+`check_overlay_scale()`'s range check, so the grain is per CHECK and not even
+per argument (M080 review round 3, N2);
+`compare_videos_batch()` checks `resize` and its codec tokens above but
+`direction` below; `standardize_video_batch()` checks `video_codec` and
+`audio_stream` above but `width` below; `normalize_audio_batch()` checks
+`two_pass` above but `target_loudness` below. What sits above the sweep is per
+CHECK — not per verb, not per category, and not even reliably per argument —
+and NEWS.md accordingly promises no ordering for a verb's own arguments.
+
+What IS uniform, and what the first sentence of NEWS's ordering paragraph
+rests on: no shape guard (`check_batch_jobs()`, `check_fanin_jobs()`) and no
+column-TYPE guard (`check_batch_audio_col()`, `check_batch_codec_col()`,
+`check_batch_string_col()`) sits below the sweep in any verb — checked over
+every export reaching `check_batch_inputs()` on 2026-08-28. Named individually
+rather than as `check_batch_*_col()`, because that glob also catches
+`check_batch_vocab_col()`, a column VALUE guard, which DOES sit below the sweep
+in `picture_in_picture_batch()` and `compare_videos_batch()` — the same
+type-versus-value split those verbs draw for their scalar arguments (M080
+review round 3, N4).
+
+**The consequence, taken deliberately.** On the two verbs carrying both, the
+duplication refusal now sits below the scalar checks as well as below the
+sweep, so a duplicated table that also carries a bad codec argument reports the
+argument. That inverts a precedence M41 pinned (PR #43, commit `0a73edb8`; the
+entry first credited M42, which is the codec `NULL`/column-`NA` semantics
+milestone — M080 review round 3, N3); the pin moved to the test file
+that owns the sweep's order rather than being deleted, because the order it
+states is still a promise, just the other way up.
+
+- **Falsified by** a report preferring the missing path over a check, OTHER
+  than the derived-output duplication refusal the rule carves out, that sat
+  above the sweep before the move that displaced it; or by a verb whose check
+  cannot be stated above the sweep without reading a column the sweep has not
+  validated. NOT falsified by a report preferring the missing path over a check
+  that was always below the sweep — that is the shape the first wording of this
+  rule wrongly forbade — and NOT by one preferring it over the carved-out
+  duplication refusal, which is D057's whole point.

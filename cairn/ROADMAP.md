@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-28 (audit pass after M079 merged: all 16 `cairn_val
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M080 | The guard says what is wrong, and refuses NA | planned | — | normal | milestones/M080-shipped-guard-findings.md |
+| M080 | The guard says what is wrong, and refuses NA | in-progress | — | normal | milestones/M080-shipped-guard-findings.md |
 | M079 | The floor harness measures what it reports | done | — | normal | milestones/archive/M079-floor-harness-hardening.md |
 | M078 | The limit bounds the wait, not the process | done | — | normal | milestones/archive/M078-timeout-bounds-the-wait.md |
 | M077 | The nine other Imports floors, measured | done | M076 | normal | milestones/archive/M077-imports-floors-measured.md |

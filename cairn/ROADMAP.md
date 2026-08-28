@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-28 (M080 post-merge: all 16 `cairn_validate` checks
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M081 | The unchecked flag, and the second copy of the one predicate | in-progress | — | normal | milestones/M081-unchecked-flag-and-second-copy.md |
+| M081 | The unchecked flag, and the second copy of the one predicate | review | — | normal | milestones/M081-unchecked-flag-and-second-copy.md |
 | M080 | The guard says what is wrong, and refuses NA | done | — | normal | milestones/archive/M080-shipped-guard-findings.md |
 | M079 | The floor harness measures what it reports | done | — | normal | milestones/archive/M079-floor-harness-hardening.md |
 | M078 | The limit bounds the wait, not the process | done | — | normal | milestones/archive/M078-timeout-bounds-the-wait.md |

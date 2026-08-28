@@ -166,8 +166,8 @@ INPUT_GUARD_FORMS <- c("all", "one", "dup", "factor", "unreadable")
 # generated over every crossing its verb declares. Declared here rather than
 # decided in the builder, so `input_guard_uncovered()` can re-derive exactly the
 # product the grid was asked for.
-INPUT_GUARD_FORM_CROSSINGS <- list(dup = "none", factor = "none",
-                                   unreadable = "none")
+INPUT_GUARD_FORM_CROSSINGS <- list(dup = c("none", "derived_output"),
+                                   factor = "none", unreadable = "none")
 
 # Whether a (form, crossing, shape) combination is owed a cell, and if so
 # whether the shape can express it. Three answers, and the difference matters:
@@ -186,6 +186,13 @@ input_guard_form_applies <- function(form, crossing, shape) {
   if (!is.null(only) && !crossing %in% only) return(NA)
   multi <- is.null(shape) || is.null(shape$multi) || isTRUE(shape$multi)
   in_column <- is.null(shape) || !is.null(shape$path_cols)
+  # The derived-output crossing needs the duplication its guard is about, so
+  # it is generated over the `dup` form and no other: on any other form the
+  # verb derives distinct names and the guard never fires, which would be a
+  # cell measuring the grid rather than the package.
+  if (identical(crossing, "derived_output") && !identical(form, "dup")) {
+    return(NA)
+  }
   switch(form,
     one = multi,
     dup = multi,
@@ -282,7 +289,7 @@ INPUT_GUARD_CROSSINGS <- list(
 # error, which is a cell measuring the grid rather than the package.
 input_guard_crossing_parts <- function(crossing, shape) {
   base <- list(args = list(), cols = list(), na_row = FALSE, slots = NULL,
-               seam = "h264_nvenc")
+               seam = "h264_nvenc", drop_output = FALSE)
   utils::modifyList(base, switch(
     crossing,
     "none" = list(),
@@ -293,6 +300,11 @@ input_guard_crossing_parts <- function(crossing, shape) {
     "jobs_na" = list(na_row = TRUE),
     # A knob column of the wrong type, also above the sweep.
     "column_type" = list(cols = shape$type_col),
+    # No `output` column, so the verb must derive one name per input and
+    # refuses the duplicated inputs the `dup` form supplies. BELOW the sweep
+    # since M80 (D057); above it before that, which is the move this crossing
+    # exists to measure.
+    "derived_output" = list(drop_output = TRUE),
     "contradiction:copy_hardware" = list(
       args = list(video_codec = "copy", hardware = "nvenc")),
     "contradiction:reencode" = list(
@@ -342,6 +354,12 @@ input_guard_error_crossing <- function(msg) {
     if (has("must not contain") || has("must be a character vector of") ||
         has("must have an") || has("must be a list-column")) return("jobs_na")
     if (has("column of")) return("column_type")
+    # The derived-output duplication guard. Above the two codec branches
+    # below it because its message carries neither, and above nothing else it
+    # could be confused with: no other abort says "duplicated".
+    if (has("duplicated") && has("no output column")) {
+      return("derived_output")
+    }
     if (has("can't be re-encoded") || has("needs re-encoding") ||
         has("reencode")) return("contradiction:reencode")
     if (has("copy") && has("hardware")) return("contradiction:copy_hardware")
@@ -564,6 +582,25 @@ INPUT_GUARD_SHAPES <- list(
     list(infile = p[[1]], outfile = tm_out(1)), xargs))
 )
 
+# WHICH verbs carry the `derived_output` crossing is derived, never listed: a
+# verb reaching reject_duplicate_inputs() is one that derives its outputs and
+# refuses duplicated inputs to do it, which is the same walk the M80 criterion
+# quantifies over -- so the grid and that criterion cannot disagree about the
+# domain. Read from the loaded (HEAD) namespace, which is where the grid is
+# BUILT; the cells it builds are then run against both refs. The other
+# name-deriving verbs refuse the collision in reject_duplicate_outputs() AFTER
+# deriving, which M80 deliberately leaves alone, so they carry no cell here.
+local({
+  graph <- tm_call_graph()
+  for (verb in names(INPUT_GUARD_CROSSINGS)) {
+    if (verb %in% names(graph) &&
+        tm_reaches(graph, verb, "reject_duplicate_inputs")) {
+      INPUT_GUARD_CROSSINGS[[verb]] <<-
+        c(INPUT_GUARD_CROSSINGS[[verb]], "derived_output")
+    }
+  }
+})
+
 # The domain, taken from the walk. The walk fixes membership; the declarations
 # below supply only shape and crossings, and never widen or narrow the set.
 #
@@ -676,6 +713,13 @@ input_guard_cases <- function(present, absent, unreadable,
             for (nm in shape$path_cols) {
               args$jobs[[nm]] <- factor(args$jobs[[nm]])
             }
+          }
+          # The derived-output crossing takes the `output` column away, which
+          # is the only way to reach the guard a verb runs when it must derive
+          # one name per input. Every other cell supplies an explicit output,
+          # which is why the grid never saw the case (M80).
+          if (isTRUE(parts$drop_output)) {
+            args$jobs$output <- NULL
           }
           add(verb, form, crossing, ctl, TRUE, args, parts$seam,
               if (ctl) character() else unique(setdiff(paths, present)))
@@ -883,7 +927,15 @@ INPUT_GUARD_WORDING <- c(
   "does not exist:" = "can't be found or read:",
   "that does not exist." = "that can't be found or read.",
   "that do not exist." = "that can't be found or read.",
-  "Missing:" = "Missing or unreadable:")
+  "Missing:" = "Missing or unreadable:",
+  # M80's rewrite: a multi-carrier sweep now names only the carriers actually
+  # holding a bad path, so the `one` form's cell on the two-column verb drops
+  # the carrier that was fine. Declared as a substitution for the same reason
+  # M63's was -- a blanket exemption for the input class would hide every other
+  # change to it -- and it reaches exactly the cell whose `main` is present and
+  # whose `overlay` is not.
+  "`jobs$main` and `jobs$overlay` name 1 file" =
+    "`jobs$overlay` names 1 file")
 
 # Applied to a WHITESPACE-NORMALIZED message, because cli wraps to the terminal
 # and the two wordings are different lengths: the same sentence breaks at a

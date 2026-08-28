@@ -147,6 +147,11 @@ the candidate row's claim about it is corrected in the same commit.
 - 2026-08-28: T1/T2. `unchecked_flag_guards()` added to `helper-na-guards.R`, walking the namespace's `check_*` bodies in top-level-statement order for a required formal made the direct operand of `!`, `&&` or `||` with no earlier `rlang::check_bool()` on it. Positive controls pass: one planted predicate per operator form is flagged naming `flag`, and `!is.null(flag)`, a check-first predicate, and an unbranched second formal are all left alone; a check-AFTER-branch control is flagged, fixing "first" as positional. On the merge-base namespace the walk returns exactly `check_audio_codec_needs_reencode` (`reencode`) and `check_resize_needs_two_inputs` (`resize`) — AC2's domain, measured, not listed.
 - 2026-08-28: plan gate chose one D-entry extending D041 over none and over two. The flag-guard rule and the column-parameterization refusal are both genuine rejections needing rationale on the record; splitting them would make a future supersession read past one to reach the other. Falsified by a supersession that needs to move only half the entry.
 
+- 2026-08-28: review in progress. Master had not moved; branch pushed and draft
+  PR #85 opened. All seven criteria verified with fresh evidence and ticked;
+  consistency gate clean. Blame-history and prior-review lenses reported no
+  findings. The diff-bug lens and CI are still outstanding.
+
 ## Decisions
 
 ## Review
@@ -242,8 +247,3 @@ sweep is the measurement backing that, not a judgment call.
 Three fresh-context reviewers, none having seen the implementation, each on a
 distinct evidence base. The diff touches executable surface (`R/`, `tests/`), so
 the full three-lens fan-out ran.
-
-- 2026-08-28: review in progress. Master had not moved; branch pushed and draft
-  PR #85 opened. All seven criteria verified with fresh evidence and ticked;
-  consistency gate clean. Blame-history and prior-review lenses reported no
-  findings. The diff-bug lens and CI are still outstanding.

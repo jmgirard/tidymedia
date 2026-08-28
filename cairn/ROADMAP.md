@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-27 (M074 merged and archived after four review rounds — three defect returns and a descope, all in the one criterion binding NEWS.md, which exited to the `Imports`-floors candidate row. One lesson added; nothing retired, and the stalest line (M23's rename/un-export half, already trimmed once in 2026-07-31) pruned to hold the 50-line cap. M69's row pruned from the table under the five-row terminal retention; its archive stands. Terminal rows stand at five. Byte budgets measured by hand: ROADMAP.md 30,648 and LESSONS.md 36,588 both remain over 20,000 and stay open for the user; LESSONS.md sits at 49 of 50 lines.)_
+_Last hygiene check: 2026-08-27 (M075 merged and archived after two review rounds — one defect return on AC1, where the two-pass path warned twice because a test running only the default `two_pass` could not see it. Round 2 verified all seven criteria and actioned one of two findings at the gate: the single-pass copy-guard hoist had moved `channels`/`sample_rate` precedence, the shape M41's A3r3 backed out; fixed before merge. One lesson added; nothing retired, and the stalest line (M28's roxygen-block gotcha, which `document()` warns about loudly and the review gate's no-diff check already catches) pruned to hold the 50-line cap. M70's row pruned from the table under the five-row terminal retention; its archive stands. Terminal rows stand at five. Byte budgets measured by hand: ROADMAP.md 30,352 and LESSONS.md 37,002 both remain over 20,000 and stay open for the user; LESSONS.md sits at 49 of 50 lines.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M075 | The silent narrowing announces itself | review | — | normal | milestones/M075-normalize-audio-drop-warning.md |
+| M075 | The silent narrowing announces itself | done | — | normal | milestones/archive/M075-normalize-audio-drop-warning.md |
 | M074 | The floor says what was measured | done | — | normal | milestones/archive/M074-withr-version-floor.md |
 | M073 | The timeout wrapper's tail | done | — | normal | milestones/archive/M073-timeout-wrapper-tail.md |
 | M072 | One call can carry its own time limit | done | — | normal | milestones/archive/M072-per-call-timeout.md |
 | M071 | A parallel worker sees the settings the caller set | done | — | normal | milestones/archive/M071-parallel-option-carry.md |
-| M70 | No timeout is silent | done | M69 | normal | milestones/archive/M70-timeout-silence.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

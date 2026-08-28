@@ -298,3 +298,62 @@ unchecked_flag_guards <- function(fns = tm_check_predicates()) {
   out <- lapply(fns, tm_unchecked_flags)
   out[lengths(out) > 0]
 }
+
+# The EXPORTED half of the flag-guard criterion. The walk above finds guards
+# that branch on an unchecked flag; this one finds the exported verbs whose
+# call graph reaches those guards, so the sweep below can pin what a real
+# caller sees. Membership is the walk's, never a list: an exported verb that
+# starts reaching either guard joins the domain and the sweep fails until a
+# call shape is declared for it.
+flag_guard_verbs <- function(pkg = "tidymedia") {
+  graph <- tm_call_graph(pkg)
+  exported <- sort(intersect(getNamespaceExports(pkg), names(graph)))
+  targets <- c("check_audio_codec_needs_reencode",
+               "check_resize_needs_two_inputs")
+  exported[vapply(exported, function(v)
+    any(vapply(targets, function(t) tm_reaches(graph, v, t), logical(1))),
+    logical(1))]
+}
+
+# Call shapes, one entry per verb per DELIVERY FORM, in check_dim_specs()'
+# arg/via shape. `via` says which spelling the refusal uses: an argument is
+# refused as `` `resize` ``, a `jobs` column as `resize column` -- two
+# different guards with two different messages, and asserting only the bare
+# name would pass on either for the wrong reason.
+flag_guard_specs <- function(p, o) {
+  seg <- function(...) tibble::tibble(input = p, start = 0, end = 1, ...)
+  cmp <- function(...) tibble::tibble(inputs = list(c(p, p)), output = o, ...)
+  arg <- function(name, call) list(arg = name, via = "argument", call = call)
+  col <- function(name, call) list(arg = name, via = "column", call = call)
+
+  list(
+    compare_videos = list(
+      arg("resize", function(x) compare_videos(c(p, p), o, resize = x,
+                                               run = FALSE))
+    ),
+    compare_videos_batch = list(
+      arg("resize", function(x) compare_videos_batch(cmp(), resize = x,
+                                                     run = FALSE)),
+      col("resize", function(x) compare_videos_batch(cmp(resize = x),
+                                                     run = FALSE))
+    ),
+    segment_video = list(
+      arg("reencode", function(x) segment_video(p, 0, 1, reencode = x,
+                                                run = FALSE))
+    ),
+    segment_video_batch = list(
+      arg("reencode", function(x) segment_video_batch(seg(), reencode = x,
+                                                      run = FALSE)),
+      col("reencode", function(x) segment_video_batch(seg(reencode = x),
+                                                      run = FALSE))
+    )
+  )
+}
+
+# The value forms a flag guard must refuse. SCALAR only, and deliberately: in
+# a `jobs` column length is row count, so c(TRUE, TRUE) is a legal two-row
+# batch rather than a wrong length, and a length probe would make the
+# criterion false on half its domain.
+flag_reject_values <- function() c(na_values(), list(1L, "yes"))
+
+flag_reject_labels <- function() c(na_labels(), "1L", "\"yes\"")

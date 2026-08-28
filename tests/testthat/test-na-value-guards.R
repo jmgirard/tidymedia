@@ -287,3 +287,65 @@ test_that("the two flag guards refuse NA of every type, naming their flag", {
                "exactly two inputs")
   expect_silent(check_resize_needs_two_inputs(FALSE, 3))
 })
+
+test_that("every exported call reaching a flag guard refuses a non-flag, naming it", {
+  dir <- withr::local_tempdir()
+  p <- file.path(dir, "in.mp4")
+  file.create(p)
+  o <- file.path(dir, "out.mp4")
+  verbs <- flag_guard_verbs()
+  specs <- flag_guard_specs(p, o)
+
+  # The floor: a rename of either guard empties the walk, and every assertion
+  # below would then pass over nothing.
+  expect_gt(length(verbs), 0)
+  # Both directions -- a verb the walk returns with no shape, and a shape for
+  # a verb the walk no longer returns.
+  expect_identical(sort(setdiff(verbs, names(specs))), character(0))
+  expect_identical(sort(setdiff(names(specs), verbs)), character(0))
+
+  # Completeness, derived from each verb's own body rather than trusted: every
+  # verb whose formals carry a flag name must declare it as an argument, and
+  # every `jobs`-taking verb quoting one as a column literal must declare it
+  # as a column. A spec cannot cover less than the verb accepts.
+  vocab <- unique(unlist(lapply(specs, function(e)
+    vapply(e, function(x) x$arg, character(1)))))
+  ns <- asNamespace("tidymedia")
+  for (verb in verbs) {
+    expect_gt(length(specs[[verb]]), 0)
+    declared <- function(via) vapply(
+      Filter(function(x) identical(x$via, via), specs[[verb]]),
+      function(x) x$arg, character(1))
+    f <- get(verb, envir = ns)
+    expect_identical(
+      sort(setdiff(intersect(names(formals(f)), vocab), declared("argument"))),
+      character(0), info = paste(verb, "argument carriers"))
+    if ("jobs" %in% names(formals(f))) {
+      body_txt <- paste(deparse(body(f)), collapse = " ")
+      literals <- vocab[vapply(vocab, function(v)
+        grepl(paste0('"', v, '"'), body_txt, fixed = TRUE), logical(1))]
+      expect_identical(sort(setdiff(literals, declared("column"))),
+                       character(0), info = paste(verb, "column carriers"))
+    }
+  }
+
+  # The refusal itself: every member, every declared delivery form, every
+  # scalar value form. WHICH refusal, in the spelling that form uses.
+  vals <- flag_reject_values()
+  labs <- flag_reject_labels()
+  for (verb in verbs) {
+    for (e in specs[[verb]]) {
+      for (i in seq_along(vals)) {
+        where <- paste(verb, e$arg, e$via, labs[i])
+        cnd <- tryCatch({ e$call(vals[[i]]); NULL }, error = function(x) x)
+        expect_true(inherits(cnd, "rlang_error"), info = where)
+        wanted <- if (identical(e$via, "argument")) {
+          paste0("`", e$arg, "`")
+        } else {
+          paste(e$arg, "column")
+        }
+        expect_match(conditionMessage(cnd), wanted, fixed = TRUE, info = where)
+      }
+    }
+  }
+})

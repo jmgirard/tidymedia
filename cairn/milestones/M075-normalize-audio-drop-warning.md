@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M075: The silent narrowing announces itself
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -117,7 +117,7 @@ wording. Tests, roxygen, NEWS, and the D-entry recording what was rejected.
       what it rules out, and its falsifier — a report of a caller surprised by
       the lost picture). Absorb the dropped-track-parity candidate row and
       widen the probe-cost row from four verbs to six.
-- [ ] T8 — Gate: `devtools::document()`, `devtools::test()`,
+- [x] T8 — Gate: `devtools::document()`, `devtools::test()`,
       `devtools::check()`.
 
 ## Work log
@@ -134,6 +134,7 @@ wording. Tests, roxygen, NEWS, and the D-entry recording what was rejected.
 - 2026-08-27: T5 documented the warning on both verbs per AC6 and ran `devtools::document()`; `man/normalize_audio.Rd` and `man/normalize_audio_batch.Rd` are the only Rd files that changed.
 - 2026-08-27: T6 added one `NEWS.md` bullet naming both verbs, the shared class and wording, the one-FFprobe-call-per-distinct-input cost, and the pre-analysis ordering — every clause of it measured by a T2 test (AC1's wording match, AC2's row naming, AC3's silence cases, AC4's ordering mocks, AC5's refusals).
 - 2026-08-27: T7 appended D054 (the discarded video stays silent on all six audio-producing verbs) and widened the probe-cost/opt-out candidate row from four verbs to six. The dropped-track-parity row needed no absorbing: `/milestone-plan` had already replaced it with M075's own table row in commit 32280dc.
+- 2026-08-27: T8 gate — `devtools::document()` produces no diff, and `devtools::check()` is `Status: OK` (0 errors, 0 warnings, 0 notes; full suite run inside it in 118s). Status set to review.
 - 2026-08-27: plan gate chose a `stop()`ing mock of `run_loudnorm_analysis()` over dropping AC4 because the call site is not wrapped in `tryCatch(error =)`, the condition M44's lesson names as defeating such a mock; falsified by the mock passing with the wiring removed.
 
 ## Decisions

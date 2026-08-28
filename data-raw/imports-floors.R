@@ -62,9 +62,10 @@ ONLY <- opt_value("--only")
 # `TM_LIBROOT` persists the pinned libraries across runs, which turns a re-run
 # from a half-hour of compiling into minutes. Persisting a library is exactly
 # the shape data-raw/withr-floor.R was noted as trusting too far -- a
-# half-written install accepted because the directory exists -- so `install_pin`
-# below re-reads the INSTALLED DESCRIPTION's Version and removes anything that
-# does not match, rather than trusting `dir.exists()`.
+# half-written install accepted because the directory exists -- so `can_reuse`
+# below re-reads the INSTALLED DESCRIPTION's Version and the linkage stamp
+# beside it, and removes anything that does not match, rather than trusting
+# `dir.exists()`.
 # `path.expand` here, not at the call site: `R CMD INSTALL -l` receives this
 # path shQuote'd (a library root may contain a space), and a `~` inside single
 # quotes is not expanded by the shell. Expanding once, at the source, is what
@@ -177,12 +178,6 @@ fetch_tarball <- function(pkg, ver) {
   stop(sprintf("could not fetch %s %s from CRAN", pkg, ver), call. = FALSE)
 }
 
-# Returns NULL on success, or the tail of the install log on a failed install,
-# which the caller prints for every floor before aborting on the set of them.
-# `R CMD INSTALL` is driven directly rather than through `install.packages()`,
-# because THE ERROR is what a failed floor has to report and
-# `install.packages()` reduces a compiler error to "had non-zero exit status"
-# in a warning.
 # What an installed entry was compiled against: for every PINNED package this
 # one LinkingTo-depends on, the version sitting in `lib` at the moment the
 # compile ran. Written beside the installed DESCRIPTION and re-read on reuse.
@@ -214,11 +209,17 @@ can_reuse <- function(lib, pkg, ver, pins) {
             linkingto_state(lib, pkg, ver, pins))
 }
 
+# Returns NULL on success, or the tail of the install log on a failed install,
+# which the caller prints for every floor before aborting on the set of them.
+# `R CMD INSTALL` is driven directly rather than through `install.packages()`,
+# because THE ERROR is what a failed floor has to report and
+# `install.packages()` reduces a compiler error to "had non-zero exit status"
+# in a warning.
 install_pin <- function(lib, pkg, ver, pins) {
   if (can_reuse(lib, pkg, ver, pins)) return(NULL)
-  # A half-written install from an interrupted run must not be reused: the
-  # marker above is the installed DESCRIPTION, and anything short of it is
-  # removed rather than trusted.
+  # A half-written install from an interrupted run must not be reused: what
+  # `can_reuse()` reads is the installed DESCRIPTION and the stamp beside it,
+  # and anything short of both is removed rather than trusted.
   unlink(file.path(lib, pkg), recursive = TRUE)
   tgz <- tryCatch(fetch_tarball(pkg, ver), error = function(e) e)
   if (inherits(tgz, "condition")) return(conditionMessage(tgz))

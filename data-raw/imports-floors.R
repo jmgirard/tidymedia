@@ -436,8 +436,17 @@ pins_env <- paste(sprintf("%s=%s", names(pins), unlist(pins)), collapse = ";")
 child <- file.path(SCRATCH, "suite.R")
 writeLines(c(
   sprintf('PKG <- "%s"', PKG),
+  '# The mode is explicit, and the child refuses to run without its handles.',
+  '# An earlier revision inferred "baseline" from an EMPTY TM_LIB, and when a',
+  '# quoting bug stopped both variables from reaching the child at all, every',
+  '# assertion below silently turned itself off while the run still reported a',
+  '# green suite. A control that can quietly not run is not a control.',
+  'mode <- Sys.getenv("TM_MODE")',
+  'if (!mode %in% c("baseline", "pinned")) stop("TM_MODE must be baseline or pinned, got ", sQuote(mode), call. = FALSE)',
   'lib <- Sys.getenv("TM_LIB")',
   'pins <- Sys.getenv("TM_PINS")',
+  'if (!nzchar(pins)) stop("TM_PINS did not reach the child", call. = FALSE)',
+  'if (identical(mode, "pinned") && !nzchar(lib)) stop("TM_LIB did not reach the child", call. = FALSE)',
   'pins <- if (nzchar(pins)) {',
   '  kv <- strsplit(strsplit(pins, ";", fixed = TRUE)[[1]], "=", fixed = TRUE)',
   '  stats::setNames(vapply(kv, `[`, "", 2L), vapply(kv, `[`, "", 1L))',
@@ -453,7 +462,7 @@ writeLines(c(
   '# before anything is loaded. A failed install falls through to the user',
   '# library, and only the directory check catches that.',
   'norm <- function(p) normalizePath(p, winslash = "/", mustWork = TRUE)',
-  'if (nzchar(lib)) {',
+  'if (identical(mode, "pinned")) {',
   '  for (p in names(pins)) {',
   '    where <- norm(dirname(find.package(p)))',
   '    got <- as.character(utils::packageVersion(p))',
@@ -474,7 +483,28 @@ writeLines(c(
   '',
   'setwd(PKG)',
   'suppressMessages(pkgload::load_all(PKG, quiet = TRUE, export_all = FALSE))',
+  '# Three files build a named pipe with no writer and run a program against it,',
+  '# expecting the package\'s own limit to kill it. On this runner a blocked',
+  '# ffmpeg ignores SIGTERM (measured: survives kill -TERM, dies on kill -KILL)',
+  '# and system2(stdout = TRUE, input = , timeout = ) does not escalate: one',
+  '# isolated run took 191.8 s against a 2 s limit, and six full-suite runs never',
+  '# came back at all. Nothing about a dependency floor is involved -- the',
+  '# baseline wedges the same way -- so BOTH runs leave the same three out.',
+  '#',
+  '# By filter, not by copying the directory: a copy elsewhere on disk changes',
+  '# what the doc tests can see (`man/` sits two levels up from the test dir),',
+  '# and 15 assertions quietly turned into skips when this was tried that way.',
+  'EXCLUDE <- c("test-with-timeout.R", "test-runtime-timeout.R", "test-timeout-silence.R")',
+  'all_files <- list.files("tests/testthat", "^test-.*[.]R$")',
+  'want <- setdiff(all_files, EXCLUDE)',
+  'if (length(want) != length(all_files) - length(EXCLUDE)) {',
+  '  stop("the exclusion list names a file the suite does not have", call. = FALSE)',
+  '}',
+  'cat("  excluded from BOTH runs:", paste(EXCLUDE, collapse = ", "),',
+  '    sprintf("(%d of %d files run)\\n", length(want), length(all_files)))',
   'res <- testthat::test_dir("tests/testthat", package = "tidymedia",',
+  '                          filter = "with-timeout|runtime-timeout|timeout-silence",',
+  '                          invert = TRUE,',
   '                          reporter = "silent", stop_on_failure = FALSE,',
   '                          load_package = "none")',
   'df <- as.data.frame(res)',
@@ -493,7 +523,7 @@ writeLines(c(
   '# correctly above but LOADED from elsewhere (a namespace another package',
   '# pulled in first) would otherwise pass the up-front check and still have run',
   '# the wrong code.',
-  'if (nzchar(lib)) {',
+  'if (identical(mode, "pinned")) {',
   '  for (p in intersect(names(pins), loadedNamespaces())) {',
   '    where <- norm(dirname(getNamespaceInfo(p, "path")))',
   '    if (!identical(where, norm(lib))) {',
@@ -502,6 +532,15 @@ writeLines(c(
   '  }',
   '}',
   '',
+  '# What the filter actually selected, checked rather than trusted: an `invert`',
+  '# that stopped working would run three files fewer, or three more, in silence.',
+  'ran <- sort(unique(by_file$file))',
+  'if (!identical(ran, sort(want))) {',
+  '  stop(sprintf("ran %d files, expected %d; unexpected: %s; missing: %s",',
+  '               length(ran), length(want),',
+  '               paste(setdiff(ran, want), collapse = ", "),',
+  '               paste(setdiff(want, ran), collapse = ", ")), call. = FALSE)',
+  '}',
   'failed <- sum(by_file$failed)',
   'errored <- sum(by_file$error)',
   'cat(sprintf("\\nTOTALS pass=%d fail=%d skip=%d files=%d\\n",',
@@ -528,8 +567,14 @@ writeLines(c(
 run_child <- function(label, lib) {
   cat("\n================", label, "================\n")
   if (nzchar(lib)) cat("library:", lib, "\n")
-  env <- c(sprintf("TM_LIB=%s", lib), sprintf("TM_PINS=%s", pins_env), "NOT_CRAN=true")
-  if (nzchar(lib)) env <- c(env, sprintf("R_LIBS=%s", lib))
+  # shQuote is load-bearing: system2(env = ) pastes these into a `sh -c` line,
+  # so an unquoted `;` inside TM_PINS ends the assignment and starts a new
+  # command -- which is exactly how the assertions above came to be skipped.
+  env <- c(sprintf("TM_MODE=%s", if (nzchar(lib)) "pinned" else "baseline"),
+           sprintf("TM_LIB=%s", shQuote(lib)),
+           sprintf("TM_PINS=%s", shQuote(pins_env)),
+           "NOT_CRAN=true")
+  if (nzchar(lib)) env <- c(env, sprintf("R_LIBS=%s", shQuote(lib)))
   # A wall-clock bound on the child. Without one, a single hung spawn -- an
   # ffmpeg blocked opening a FIFO ignores SIGTERM, which is how the suite's own
   # timeout fixtures can wedge on Linux -- stops the run with no output at all,

@@ -2422,3 +2422,84 @@ message the caller can suppress by naming a track.
 **Falsified by** a report of a caller surprised by the lost picture — that is
 the observation that would show the docs channel is not reaching them, and it
 would apply to all six verbs at once, not to the normalize pair alone.
+
+## D055 — The nine `Imports` floors say what was measured, and one of them was wrong (2026-08-28, from M077; extends D053's "what was not measured" clause, leaving all of D053 standing)
+
+D053 closed the `withr` floor and named the nine others as unmeasured. They are
+measured now. Eight stand at the version they declared. One did not work at all.
+
+**`rlang (>= 1.1.0)` was a floor the package could not run on, and is now
+1.2.0.** `R/` calls `rlang::check_string()` 46 times, `check_bool()` 36,
+`check_number_whole()` 38 and `check_number_decimal()` 12 — the front-door
+checks every exported verb runs before it builds a command. rlang exports all
+four for the first time in **1.2.0**: a NAMESPACE walk over 1.0.0, 1.0.2,
+1.0.4, 1.0.6, 1.1.0 through 1.1.7 and 1.2.0 finds none of them exported before
+that release. Pinned at the declared 1.1.0, 1528 tests failed, each reading
+`'check_string' is not an exported object from 'namespace:rlang'`. A user who
+resolved the floor got a package whose every verb aborted on its own first
+line. Nothing caught it because nothing had ever run it: CI installs the latest
+dependencies on all five jobs. The same direction is forced independently by
+the environment — current `vctrs` requires `rlang (>= 1.1.7)`.
+
+**What was run against every floor.** `data-raw/imports-floors.R` installs each
+versioned `Imports` entry at the version DESCRIPTION declares into one library,
+ordered by the `LinkingTo`/`Imports` edges among the pinned set itself so
+`archive` and `purrr` compile against the pinned `cli` headers, and runs the
+package's `testthat` suite in a fresh `Rscript` whose first `.libPaths()` entry
+is that library. Per pinned package the child asserts both the version resolved
+and the DIRECTORY it resolved from, before anything loads and again for every
+pinned namespace loaded after the suite — the user library holds current
+releases, so a version check alone cannot catch a failed pin. Both binaries are
+asserted on `PATH` first, because most execution tests `skip_if` they are
+absent and "0 failures" is also true of a run where every one of them skipped.
+
+Runner: `rocker/r-ver:4.4.3` — R 4.4.3, Ubuntu noble, aarch64, `ffmpeg` 6.1.1 —
+under colima on macOS 26.5. Result, with `archive` 1.1.1, `cli` 3.4.0, `dplyr`
+1.1.0, `glue` 1.6.2, `purrr` 1.0.0, `rappdirs` 0.3.3, `rlang` 1.2.0, `tibble`
+3.1.4 and `withr` 2.5.0 all resolving from the pinned library: **6120 passing,
+0 failing, 22 skipped over 66 files**, identical file for file to the same
+suite's run on current dependencies in the same container.
+
+**Why not the host's R.** R 4.5 hid `Rf_findVar` and `ATTRIB` behind
+`ENABLE_LEGACY_NONAPI_FUNS` and dropped `SET_FORMALS`, `SET_CLOENV` and
+`PRVALUE` outright, so on the host's R 4.6.1 six of the nine floors do not
+compile at all and `archive` finds no `libarchive`. Walking each forward
+reached today's release every time. Those failures say what a 2026 toolchain
+will build, not what these floors do, and moving six floors to 2026 releases on
+that evidence would have raised what users must install for a reason no user
+has. The floors were measured on the newest R that still declares what they
+call, which is inside the package's own `R (>= 4.1.0)`.
+
+**These four things were not measured.**
+
+1. *The pinned set is the direct `Imports` only.* Every sibling and transitive
+   dependency sat at its current CRAN version, so a joint pass says the
+   declared floors work together against current everything-else, and nothing
+   more.
+2. *Two packages were held back, and neither is a floor.* Current `testthat`
+   requires `cli (>= 3.6.5)` and `withr (>= 3.0.2)`, and current `furrr`
+   requires `purrr (>= 1.2.1)`; R enforces those at load time, so with the
+   floors pinned neither would load. `testthat` was held at 3.1.10 and `furrr`
+   at 0.3.1 — the newest releases the floors permit — rather than moving three
+   runtime floors to satisfy the test harness. `withr` 2.5.0, which D053
+   measured, is one of the three that would have moved.
+3. *Three test files did not run, in either the baseline or the pinned run.*
+   `test-with-timeout.R`, `test-runtime-timeout.R` and `test-timeout-silence.R`
+   block a spawned program on a named pipe and expect the package's own limit
+   to kill it. On this runner it does not: a blocked `ffmpeg` survives
+   `SIGTERM` and dies only on `SIGKILL`, and `system2(stdout = TRUE, input = ,
+   timeout = )` — the call `R/program_management.R:125` makes — did not
+   escalate; one isolated run took 191.8 s against a 2 s limit and six
+   full-suite runs never returned. The baseline wedges identically, so no floor
+   is implicated, but the consequence stands: nothing the timeout surface does
+   was exercised under the pinned floors. That behaviour is a ROADMAP candidate
+   row of its own, not a finding about a floor.
+4. *No floor was run alone, and the run was on one operating system.* A joint
+   pass attributes nothing to any single floor; the harness's `--only` mode is
+   the attribution tool and was not needed, because the one failure named its
+   own package. macOS and Windows were not run at all.
+
+Falsified by a user on a declared floor hitting a failure this joint run does
+not reach — a floor that works alongside its eight siblings and breaks against
+current ones is the shape this configuration cannot see — or by any of the
+eight standing floors failing once a sibling moves.

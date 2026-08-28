@@ -1,6 +1,6 @@
 # M077: The nine other Imports floors, measured
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M076
 - **Driving RR:** —
@@ -33,35 +33,40 @@ on the `Imports`-floors candidate row.
 
 ## Acceptance criteria
 
-- [ ] AC1 Every non-base entry of DESCRIPTION's `Imports` field — the entries
+- [x] AC1 Every non-base entry of DESCRIPTION's `Imports` field — the entries
       `read.dcf(DESCRIPTION, "Imports")` enumerates, less `tools` and `utils`,
       which carry no floor — declares a version that AC2's run loaded and
       passed on. A floor whose run failed has moved to one that passes.
-- [ ] AC2 The package's `testthat` suite runs to completion in a fresh
-      `Rscript` session whose first `.libPaths()` entry is a library holding
+- [x] AC2 The package's `testthat` suite — less `test-with-timeout.R`,
+      `test-runtime-timeout.R` and `test-timeout-silence.R`, the three files
+      whose fixtures block a spawned program on a named pipe and which wedge on
+      the runner AC4 names, for a reason no dependency floor touches — runs to
+      completion in a fresh `Rscript` session whose first `.libPaths()` entry is a library holding
       exactly the version each of those entries declares, with 0 test failures
-      and a skip count equal to the same suite's skip count on current
-      dependencies; the session asserts `ffmpeg` and `mediainfo` are both on
+      and a skip count equal to the same three-file-less suite's skip count on
+      current dependencies; the session asserts `ffmpeg` and `mediainfo` are both on
       `PATH` before running, and asserts per pinned package both the version
       loaded and the directory it loaded FROM. A mismatch, a failing
       `test_that()` block, an absent binary, or a non-zero child exit stops the
       run.
-- [ ] AC3 Where a declared floor cannot be installed or built on the R and
+- [x] AC3 Where a declared floor cannot be installed or built on the R and
       system toolchain AC2's run uses, the error is recorded and the floor
       moves to the first version that installs and passes AC2, found by walking
       that package's CRAN Archive listing forward from the declared floor and
       attempting each in turn.
-- [ ] AC4 A `cairn/DECISIONS.md` entry states, per floor this milestone leaves
+- [x] AC4 A `cairn/DECISIONS.md` entry states, per floor this milestone leaves
       in place or moves, what was run against it — naming AC2's suite, its R
       version and its runner OS — and these three things that were not: the
       pinned set is the direct `Imports` only, so siblings and transitive
       dependencies were at their current CRAN versions, except the packages
       the run held back so the pinned floors could load at all — the entry
       names each one, the version it was held at, and the requirement that
-      forced it; no floor was run alone against
+      forced it — and except the three files AC2 excludes, so nothing the
+      timeout surface does was exercised under the pinned floors; no floor was
+      run alone against
       current siblings, so a joint pass does not attribute; and the run was on
       one operating system.
-- [ ] AC5 `NEWS.md` states as a user-visible fact that the declared dependency
+- [x] AC5 `NEWS.md` states as a user-visible fact that the declared dependency
       floors are now measured. `devtools::test()` and `devtools::check()` clean
       (0 errors, 0 warnings) on current dependencies.
 
@@ -82,17 +87,17 @@ on the `Imports`-floors candidate row.
       `data-raw/withr-floor.R:1-40` — assert per package the *directory* it
       loaded from, not only the version string, since the user library holds
       current releases and a failed pin would otherwise pass silently.
-- [ ] T2 Record the current-dependency baseline skip count first, then run the
+- [x] T2 Record the current-dependency baseline skip count first, then run the
       pinned suite. Record per-file pass / fail / skip counts in the milestone
       file. Note `archive` 1.1.1 needs `libarchive` and compiles against `cli`
       headers (`LinkingTo: cli, cpp11`), and `purrr` 1.0.0 also `LinkingTo:
       cli` — expect these two to be where an install fails, if any does.
-- [ ] T3 On a failure: bisect per package (re-run with one floor pinned and the
+- [x] T3 On a failure: bisect per package (re-run with one floor pinned and the
       rest current) to attribute it, then apply AC3's Archive walk to the
       package it attributes to.
-- [ ] T4 Apply the result to DESCRIPTION — floors left or moved.
-- [ ] T5 Draft the D-entry per AC4, including its falsifier.
-- [ ] T6 NEWS entry, `devtools::document()`, `devtools::test()`,
+- [x] T4 Apply the result to DESCRIPTION — floors left or moved.
+- [x] T5 Draft the D-entry per AC4, including its falsifier.
+- [x] T6 NEWS entry, `devtools::document()`, `devtools::test()`,
       `devtools::check()`.
 
 ## Work log
@@ -109,6 +114,90 @@ on the `Imports`-floors candidate row.
 
 - 2026-08-28: T1 — `data-raw/imports-floors.R` written. It reads the `Imports` floors by `read.dcf`, orders the installs by the LinkingTo/Imports edges among the pinned set itself (so `archive` and `purrr` compile against the PINNED `cli` headers rather than the user library's), drives `R CMD INSTALL` directly so AC3 records the compiler's own error rather than `install.packages()`'s "non-zero exit status" warning, and runs the suite in a fresh `Rscript` whose first `.libPaths()` entry is the pinned library. It carries M074's load-bearing control over: per pinned package it asserts the version AND the directory resolved, before anything loads and again for every pinned namespace loaded after the suite. Added beyond the plan: `--baseline`, `--only`, `--repair` and `--walk` modes; `TM_LIBROOT` to persist the pinned libraries across runs (whose reuse is guarded by re-reading the installed DESCRIPTION's `Version`, not by `file.exists()` — the trap M074's review left on the `Imports`-floors row); and `TM_RUN_TIMEOUT`, a wall-clock bound on each child, after two runs wedged for over half an hour on a single spawn.
 
+- 2026-08-28: amendment (substantive, gate 3) — AC2 now names the suite it runs as the suite less `test-with-timeout.R`, `test-runtime-timeout.R` and `test-timeout-silence.R`, and AC4 records that exclusion among what was not measured. Those three build a named pipe with no writer and run `ffmpeg` against it, expecting the package's limit to kill it: on this runner a blocked `ffmpeg` survives `kill -TERM` and dies only on `kill -KILL`, and `system2(stdout = TRUE, input = , timeout = )` — the call `R/program_management.R:125` makes — does not escalate. One isolated run took 191.8 s against a 2 s limit; six consecutive full-suite runs never returned. The baseline wedges identically, so no floor is implicated. Six attempts to get a green pair another way failed first: a colima VM restart, container-local I/O instead of the bind mount, and `--init` (zombies went from hundreds to zero, the wedge unchanged). User chose excluding the three from BOTH runs, named and disclosed, over retrying indefinitely or descoping the milestone. The timeout behaviour itself goes to a ROADMAP candidate row.
+- 2026-08-28: criteria audit of the amended AC2 and AC4, full mode (user-facing tier), run in-session for the reason recorded above — nothing returned. The excluded set is three named files, so the promise's domain stays enumerable; the exclusion narrows what AC2 promises rather than widening it; and AC4's added item is the disclosure that narrowing requires.
+
+- 2026-08-28: T2, T4 — measured. Runner: `rocker/r-ver:4.4.3` (R 4.4.3, Ubuntu noble, aarch64) under colima on macOS 26.5, with `ffmpeg` 6.1.1 and `mediainfo` on `PATH`. The nine floors install into one library and the suite passes on them, the baseline and pinned runs identical file for file: **pass=6120 fail=0 skip=22 over 66 files**, both. The pinned child resolved each of the nine from `/libs/all` at exactly the declared version, asserted on the DIRECTORY and not only the version string; the baseline child resolved the current releases from the site library — archive 1.1.14, cli 3.6.6, dplyr 1.2.1, glue 1.8.1, purrr 1.2.2, rappdirs 0.3.4, rlang 1.3.0, tibble 3.3.1, withr 3.0.3. Held back so the floors could load: `testthat` 3.3.2 -> 3.1.10 (its current release needs `cli (>= 3.6.5)` and `withr (>= 3.0.2)`) and `furrr` 0.4.0 -> 0.3.1 (needs `purrr (>= 1.2.1)`). Both are test-side; moving a runtime floor for them would have raised what a user must install for something the user never runs, D053's measured `withr` 2.5.0 among them.
+- 2026-08-28: T3 — attribution, and the milestone's one floor move. Pinned at the declared `rlang` 1.1.0, 1528 tests failed, every one of them reading `'check_string' is not an exported object from 'namespace:rlang'` (or `check_bool`, or `check_number_whole`). `R/` calls `rlang::check_string()` 46 times, `check_bool()` 36, `check_number_whole()` 38 and `check_number_decimal()` 12, and a NAMESPACE walk over every rlang release from 1.0.0 through 1.2.0 puts the first export of all four in **1.2.0** — so on any earlier release every verb in the package aborts at its own front door. No bisection run was needed: the failure names its own package and the walk confirms it. The environment forces the same direction independently, current `vctrs` requiring `rlang (>= 1.1.7)`. DESCRIPTION now declares `rlang (>= 1.2.0)`; the other eight floors stand, and a static sweep of every `pkg::fn` call in `R/` against each floor version's NAMESPACE finds all of them exported at the version declared.
+- 2026-08-28: a harness defect found and fixed mid-measurement, recorded because it is the exact failure this harness exists to prevent. `system2(env = )` pastes its assignments into a `sh -c` line unquoted, so the `;` separating the `TM_PINS` entries ended the assignment and began a new command: neither `TM_LIB` nor `TM_PINS` reached the child, and the child — which inferred "baseline" from an empty `TM_LIB` — skipped every provenance assertion while still reporting a green suite. `R_LIBS` survived, prefixed to the final command, so the pin itself held and the numbers were right; nothing proved it. Fixed by quoting the values and by making the mode an explicit `TM_MODE` the child refuses to run without. The counts recorded above are from the re-run with the assertions live.
+
+Per-file counts, identical in the baseline and the pinned run (66 files; `test-with-timeout.R`, `test-runtime-timeout.R` and `test-timeout-silence.R` excluded from both, per AC2):
+
+```
+  file                                         pass fail skip
+  test-anonymize-video-batch.R                   60    0    0
+  test-anonymize-video.R                         25    0    0
+  test-audio-codec.R                            177    0    0
+  test-audio-index-docs.R                        43    0    0
+  test-audio-stream-crop-segment.R               86    0    0
+  test-audio-stream-format-web.R                 30    0    0
+  test-audio-stream-normalize.R                 195    0    0
+  test-audio-stream-passthrough.R                85    0    0
+  test-audio-stream.R                            64    0    0
+  test-audio-track-drop.R                       106    0    0
+  test-builder-blame-front-door.R               631    0    0
+  test-check-batch-cell.R                        24    0    0
+  test-codec-arg-front-door.R                  1143    0    0
+  test-codec-null-na-semantics.R                140    0    0
+  test-compare-videos-batch.R                    22    0    0
+  test-concatenate-videos-batch.R                20    0    0
+  test-contradiction-front-door.R               146    0    0
+  test-convert-audio-batch.R                     36    0    0
+  test-crop-video-batch.R                        22    0    0
+  test-extract-audio-batch.R                     25    0    0
+  test-extract-frame-batch.R                     29    0    0
+  test-failed-run-cleanup.R                      54    0    2
+  test-fan-in-batch-forwarding.R                 11    0    0
+  test-ffm-batch.R                               35    0    0
+  test-ffm-manifest.R                            30    0    0
+  test-ffm.R                                    227    0    0
+  test-ffmpeg.R                                 135    0    0
+  test-ffprobe.R                                 35    0    0
+  test-fixture-helpers.R                         11    0    0
+  test-format-for-web-batch.R                    16    0    0
+  test-front-door-ordering.R                    245    0    0
+  test-input-path-front-door.R                  152    0    3
+  test-local-timeout.R                          105    0    0
+  test-loudnorm-two-pass.R                       16    0    0
+  test-mediainfo.R                               46    0    0
+  test-normalize-audio-batch.R                  104    0    0
+  test-normalize-audio.R                         43    0    0
+  test-normalize-audios-two-pass.R               66    0    0
+  test-nvenc-docs.R                              13    0    0
+  test-nvenc-front-door.R                       113    0    0
+  test-nvenc-memo-grid.R                         51    0    0
+  test-nvenc-memo.R                              34    0    0
+  test-nvenc.R                                   83    0    3
+  test-package-topic.R                            3    0    0
+  test-parallel-option-carry.R                   31    0   11
+  test-parallel-surface.R                         3    0    0
+  test-picture-in-picture-batch.R                24    0    0
+  test-probe-compact-parser.R                   100    0    0
+  test-probe-parallel.R                          28    0    0
+  test-probe-single-call.R                       10    0    0
+  test-probe-typed-resilience.R                  43    0    0
+  test-program-management.R                       3    0    0
+  test-row-locator-grid.R                       257    0    0
+  test-sample-frames-batch.R                     33    0    0
+  test-segment-video-batch.R                     39    0    0
+  test-separate-audio-video-batch.R              53    0    0
+  test-separate-av-codec.R                       79    0    0
+  test-separate-av-multitrack.R                  76    0    1
+  test-shared-range-bindings.R                   51    0    0
+  test-standardize-video-batch.R                 50    0    0
+  test-strip-metadata-batch.R                    31    0    0
+  test-strip-metadata.R                          25    0    0
+  test-utils.R                                    4    0    0
+  test-value-check-front-door.R                 287    0    0
+  test-verify.R                                  34    0    0
+  test-video-codec.R                            122    0    2
+```
+
+- 2026-08-28: T5, T6 — D055 appended to `cairn/DECISIONS.md`; NEWS entry under Requirements states the measurement and the `rlang` move; `devtools::document()` no diff, `devtools::test()` FAIL 0 / SKIP 5 / PASS 6690, `devtools::check()` 0 errors, 0 warnings, 0 notes, all on the host (macOS 26.5, R 4.6.1, current dependencies).
+- 2026-08-28: candidate row added for the timeout finding — `with_timeout()` taking 191.8 s against a 2 s limit on Linux when the spawned program ignores `SIGTERM`, with the reproducer and what a fix would owe D047's promise.
+
 ## Decisions
+
+- **D055** (promoted, `cairn/DECISIONS.md`) — the nine `Imports` floors say what was measured, and `rlang`'s was wrong. Eight stand; `rlang` moves 1.1.0 → 1.2.0. The entry names the runner, the two held-back harness packages and the four things the run did not measure.
 
 ## Review

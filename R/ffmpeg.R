@@ -1948,18 +1948,19 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   check_batch_codec_col(jobs, "video_codec")
   check_batch_codec_col(jobs, "audio_codec")
 
+  # Sweep jobs$input now that its shape/type is settled, and before the
+  # per-row regions value sweep below, so a missing input blames this verb
+  # rather than purrr::pmap() (M62). Above the derived-output block too, so a
+  # table naming one absent path in every row hears about the path (M80).
+  check_batch_inputs(jobs)
+
   # Auto-name outputs when the column is absent. One input -> one output, so a
   # duplicated input with no explicit output would map to the same file; reject
-  # that rather than silently overwrite (parity with standardize_video_batch()).
+  # that rather than silently overwrite. Below the sweep above and not above it,
+  # so a table whose rows all name the same unreadable file is told about the
+  # file rather than about the duplication (M80, D057).
   if (!"output" %in% names(jobs)) {
-    dupes <- unique(jobs$input[duplicated(jobs$input)])
-    if (length(dupes) > 0) {
-      cli::cli_abort(c(
-        "{.arg jobs} has duplicated {.field input} paths but no {.field output} column.",
-        "x" = "Duplicated input{?s}: {.val {dupes}}.",
-        "i" = "Add an {.field output} column to name each row's destination."
-      ))
-    }
+    reject_duplicate_inputs(jobs)
     jobs$output <- derive_anonymized_names(jobs$input)
   }
 
@@ -1988,11 +1989,6 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   check_batch_audio_col(jobs, "audio_stream",
                         na_means = "keep every audio track")
   rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
-
-  # Sweep jobs$input now that its shape/type is settled, and before the
-  # per-row regions value sweep below, so a missing input blames this verb
-  # rather than purrr::pmap() (M62).
-  check_batch_inputs(jobs)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output box-fill
   # pipeline per row, sharing anonymize_pipeline() with anonymize_video(). A
@@ -2816,6 +2812,11 @@ check_hardware_needs_encode <- function(video_codec, hardware = "none",
 check_codec_needs_reencode <- function(reencode, video_codec = NULL,
                                        hardware = "none",
                                        call = rlang::caller_env()) {
+  # `!reencode` on anything that is not a flag raised base R's `invalid
+  # argument type` from inside a front-door guard (M80). Every caller checks
+  # its own `reencode` first, so this refuses no call that was reaching here;
+  # it keeps the predicate from crashing when handed a non-flag.
+  rlang::check_bool(reencode, call = call)
   if (!reencode && (!is.null(video_codec) || !identical(hardware, "none"))) {
     cli::cli_abort(
       c(
@@ -3954,19 +3955,19 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
   check_batch_codec_col(jobs, "video_codec")
   check_batch_codec_col(jobs, "audio_codec")
 
+  # Sweep jobs$input now that its shape/type is settled, and before the nvenc
+  # availability sweep below, so a missing input blames this verb rather
+  # than purrr::pmap() (M62). Above the derived-output block too, so a table
+  # naming one absent path in every row hears about the path (M80).
+  check_batch_inputs(jobs)
+
   # Auto-name outputs when the column is absent. One input -> one output, so a
   # duplicated input with no explicit output would map to the same file; reject
-  # that rather than silently overwrite (the deliberate trade-off for readable
-  # `_standardized` names over sibling-style per-input numbering).
+  # that rather than silently overwrite. Below the sweep above and not above it,
+  # so a table whose rows all name the same unreadable file is told about the
+  # file rather than about the duplication (M80, D057).
   if (!"output" %in% names(jobs)) {
-    dupes <- unique(jobs$input[duplicated(jobs$input)])
-    if (length(dupes) > 0) {
-      cli::cli_abort(c(
-        "{.arg jobs} has duplicated {.field input} paths but no {.field output} column.",
-        "x" = "Duplicated input{?s}: {.val {dupes}}.",
-        "i" = "Add an {.field output} column to name each row's destination."
-      ))
-    }
+    reject_duplicate_inputs(jobs)
     jobs$output <- derive_standardized_names(jobs$input)
   }
 
@@ -3999,11 +4000,6 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
   # RESHAPES its jobs table before the fan-out, and this one is 1 row in, 1 row
   # out, so pmap's index already IS the caller's row (M45 review F4).
   rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
-
-  # Sweep jobs$input now that its shape/type is settled, and before the nvenc
-  # availability sweep below, so a missing input blames this verb rather
-  # than purrr::pmap() (M62).
-  check_batch_inputs(jobs)
 
   # Per-row geometry and pixel-format VALUES, swept here so a bad one blames
   # this verb instead of purrr::pmap() (M64). Same shape and same site as
@@ -4411,25 +4407,21 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
   # (M37/M41).
   rlang::check_number_whole(audio_stream, min = 0, allow_null = TRUE)
 
-  # Auto-name outputs when the column is absent. One input -> one output, so a
-  # duplicated input with no explicit output would map to the same file; reject
-  # that rather than silently overwrite (parity with standardize_video_batch()).
-  if (!"output" %in% names(jobs)) {
-    dupes <- unique(jobs$input[duplicated(jobs$input)])
-    if (length(dupes) > 0) {
-      cli::cli_abort(c(
-        "{.arg jobs} has duplicated {.field input} paths but no {.field output} column.",
-        "x" = "Duplicated input{?s}: {.val {dupes}}.",
-        "i" = "Add an {.field output} column to name each row's destination."
-      ))
-    }
-    jobs$output <- derive_normalized_names(jobs$input)
-  }
-
   # Sweep jobs$input here, below the shape/type guards above and before
   # Phase 1 reads any input, so a missing input blames this verb rather than
-  # purrr::pmap() (M62).
+  # purrr::pmap() (M62). Above the derived-output block too, so a table naming
+  # one absent path in every row hears about the path (M80).
   check_batch_inputs(jobs)
+
+  # Auto-name outputs when the column is absent. One input -> one output, so a
+  # duplicated input with no explicit output would map to the same file; reject
+  # that rather than silently overwrite. Below the sweep above and not above it,
+  # so a table whose rows all name the same unreadable file is told about the
+  # file rather than about the duplication (M80, D057).
+  if (!"output" %in% names(jobs)) {
+    reject_duplicate_inputs(jobs)
+    jobs$output <- derive_normalized_names(jobs$input)
+  }
 
   # Per-row loudness target VALUES, last among the value guards (M65, D042):
   # the knob loop above checks the columns' TYPE only, so an out-of-range
@@ -4695,6 +4687,30 @@ check_batch_inputs <- function(jobs, col = "input",
   check_paths_readable(unlist(paths[holding], use.names = FALSE),
                        arg = paste0("jobs$", col[holding]), multiple = TRUE,
                        call = call)
+  invisible(jobs)
+}
+
+# The derived-output counterpart to reject_duplicate_outputs(): with no
+# `output` column a verb derives one name per input, so two rows naming the
+# same input would derive the same output and silently overwrite. Written here
+# once instead of inline in each of the three verbs that derive names, so a
+# verb added later inherits this wording -- and this ORDER -- rather than
+# restating them.
+#
+# ORDER: every caller runs this BELOW check_batch_inputs(). The duplication
+# message names no path the caller can act on, while the sweep names the file
+# that is not there; a table whose twenty rows carry the same typo is one
+# missing file, which is what the explicit-output path already reported and
+# what the derived-output path now reports too (M62 N7, D057).
+reject_duplicate_inputs <- function(jobs, call = rlang::caller_env()) {
+  dupes <- unique(jobs$input[duplicated(jobs$input)])
+  if (length(dupes) > 0) {
+    cli::cli_abort(c(
+      "{.arg jobs} has duplicated {.field input} paths but no {.field output} column.",
+      "x" = "Duplicated input{?s}: {.val {dupes}}.",
+      "i" = "Add an {.field output} column to name each row's destination."
+    ), call = call)
+  }
   invisible(jobs)
 }
 

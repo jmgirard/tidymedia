@@ -42,10 +42,20 @@ no user call reaches, which stay unfixed and undocumented.
       `crop_video(f, o, NA_character_, 100, run = FALSE)`, which today returns
       `-vf "crop=w=NA:h=100:..."`, aborts instead.
 - [ ] AC2: over the exported verbs `tm_reaches(tm_call_graph(), v, "check_dim")`
-      returns, each verb given `NA` of each of the four types in each of its
-      `check_dim()`-validated arguments aborts naming that argument — the
-      argument as the caller typed it on the scalar form, the column name plus
-      `check_batch_cell()`'s row bullet on the `_batch` form.
+      returns, each verb given `NA` of each of the four types in each carrier
+      its declared call shapes name aborts with a condition inheriting
+      `rlang_error`, blamed on the verb the caller typed, whose message names
+      that carrier — the argument as the caller typed it, the `jobs` column, or
+      the column of a `regions` frame — and refuses it in one of the five
+      wordings a caller can reach: `check_dim()`'s "must be a single FFmpeg
+      expression or number"; a column's NA guard ("must not contain NA", "must
+      be numeric (no NA)"); a column's type guard ("must be numeric or
+      character", "must be numeric"); the sampling-rate resolver's "must be a
+      single positive number [or a string]"; or the scalar number checks on
+      `scale` and `margin` ("must be a number", "must be a whole number"). A
+      type-guard refusal counts only where the same call carrying a non-NA
+      value of that type is refused the same way, so a type wording can never
+      stand in for a missing NA refusal.
 - [ ] AC3: no predicate in the domain
       `ls(asNamespace("tidymedia"), all.names = TRUE, pattern = "^check_")`
       restricted to those with exactly one required formal not named `jobs`
@@ -93,15 +103,19 @@ no user call reaches, which stay unfixed and undocumented.
 - [x] T2: `check_dim()` (`R/utils.R:207`) refuses NA of every type at its one
       site; record the blame spelling on both the scalar form and the `_batch`
       form, where `check_batch_cell()` wraps it.
-- [ ] T3: the AC3 sweep test over the `ls(asNamespace(...))`-enumerated domain;
-      the declared per-verb `check_dim()` argument shapes plus a reader that
-      re-derives the verb set from `tm_call_graph()` and errors on any verb it
-      returns with no entry; fix `check_overlay_scale()`,
-      `check_region_values()` and `check_codec_needs_reencode()`.
+- [x] T3: the AC3 sweep test over the `ls(asNamespace(...))`-enumerated domain;
+      the declared per-verb `check_dim()` call shapes in
+      `tests/testthat/helper-na-guards.R` plus a reader that re-derives the
+      verb set from `tm_call_graph()`, errors on any verb it returns with no
+      entry, and — deriving the carrier vocabulary as the union of the names
+      the entries declare — errors on any verb whose formals, or whose body's
+      `jobs`-column literals, carry a vocabulary name its entry omits; fix
+      `check_overlay_scale()`, `check_region_values()` and
+      `check_codec_needs_reencode()`.
 - [x] T4: `check_batch_inputs()` (`R/ffmpeg.R:4672`) filters `col` to the
       carriers holding bad paths before calling `check_paths_readable()`,
       leaving D041's one abort site and one wording untouched.
-- [ ] T5: extract the three inline duplicated-input aborts (`R/ffmpeg.R:1958`,
+- [x] T5: extract the three inline duplicated-input aborts (`R/ffmpeg.R:1958`,
       `3965`, `4421`) into one shared helper, and move each verb's
       `check_batch_inputs()` call above its auto-name block so the path
       reports first. `reject_duplicate_outputs()` is not moved: it runs on
@@ -126,6 +140,10 @@ no user call reaches, which stay unfixed and undocumented.
 - 2026-08-28: T1 — four red tests, one per finding: `check_dim()` on all four NA types (`test-na-value-guards.R`), `crop_video(width = NA_character_)` compiling `crop=w=NA`, `picture_in_picture_batch()` reporting `` `jobs$main` and `jobs$overlay` `` when only `overlay` is bad, and `standardize_video_batch()` on a duplicated absent input reporting the duplication. Each fails as its finding describes; the suite is deliberately red at this commit.
 - 2026-08-28: T2 — `check_dim()` refuses NA of every type by testing `!anyNA(x)` ahead of both halves of its predicate, at its one site and with its existing wording. Blame recorded on both forms: the scalar form names the argument the caller typed (`crop_video()` -> `` `width` ``); on the `_batch` form an NA CELL never reaches `check_dim()` at all — `crop_video_batch()` types its dimension columns first, so the caller sees `The width column of `jobs` must not contain NA.` — while an NA delivered as the verb's own argument reaches it through `check_batch_cell()` with no row locator.
 - 2026-08-28: T4 — `check_batch_inputs()` tests each carrier separately and names only those holding a path that cannot be read, in one call, so both are still named when both are bad. `check_paths_readable()`'s predicate, wording and abort site are untouched (D041). Exercised on `picture_in_picture_batch()` over both halves of the predicate: an absent path and the verified mode-000 fixture.
+
+- 2026-08-28: AC2 amended at a mini gate, and the amended wording audited twice by fresh-context [O] readers before it was written. The `_batch` clause it replaces was unsatisfiable: measured on the branch, no `_batch` verb routes an NA CELL into `check_dim()` — each verb's own column guard refuses it first, naming the column and carrying no `check_batch_cell()` row bullet — so honouring it meant deleting shipped column guards. The amended criterion promises the carrier is named and the refusal is one of five reachable wordings, with a control proving a type complaint is about the type. Audit round one returned four findings (the `regions`-frame carrier unnamed; "names the argument" satisfiable by a column-type abort that never mentions NA; the argument axis a hand-list no procedure enumerates; two sentences binding the test harness rather than the package — those moved to T3). Round two returned three (the sampling-rate resolver's two wordings missing from the list; the type-guard branch definitionally open; `picture_in_picture()`'s `scale`/`margin` wrongly declared to carry no value). All seven are answered in the wording above and in `helper-na-guards.R`.
+- 2026-08-28: T3 — the sweep runs over the 15 formals-enumerated predicates and finds no bare `simpleError` and no warning on any of the four NA types; `check_overlay_scale()` refuses NA at its existing range wording, `check_region_values()` re-calls `check_regions()` for the shape rather than restating it, and `check_codec_needs_reencode()` takes `rlang::check_bool(reencode)`. The AC2 sweep covers 17 verbs and 44 declared carriers; its completeness reader caught six omissions in the first draft of the shapes (`crop_video_batch` height/x on both axes, `standardize_video_batch` height on both, `sample_frames_batch` interval as an argument), which is the reader working.
+- 2026-08-28: T5 — the three inline duplicated-input aborts became `reject_duplicate_inputs()`, and in each of the three verbs `check_batch_inputs()` moved above the derived-output block. Task wording said to move the sweep; the first attempt moved the block down instead, which put the codec token check ahead of the duplication check and reddened `test-codec-arg-front-door.R`'s precedence pin in two verbs — the sweep moved up, as written, leaves that precedence intact and puts the path above both.
 
 ## Decisions
 

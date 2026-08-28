@@ -62,3 +62,137 @@ test_that("the NA refusal is spelled the same way on both forms", {
                fixed = TRUE)
   expect_false(grepl("offending jobs row", conditionMessage(err), fixed = TRUE))
 })
+
+test_that("no one-argument check_ predicate signals a bare error on NA", {
+  # The domain is enumerated out of the namespace by formals, not listed here:
+  # a predicate added later joins the sweep with no edit. A bare simpleError
+  # is base R's, raised from inside a front-door guard with neither the
+  # argument's name nor the caller's frame in it.
+  ns <- asNamespace("tidymedia")
+  preds <- na_sweep_predicates()
+  expect_gt(length(preds), 0)
+  # The four this milestone reddened must be IN the domain, or the sweep runs
+  # over a set that excludes what it was built to catch.
+  expect_true(all(c("check_dim", "check_overlay_scale", "check_region_values",
+                    "check_codec_needs_reencode") %in% preds))
+
+  vals <- na_values()
+  labs <- na_labels()
+  for (nm in preds) {
+    f <- get(nm, envir = ns)
+    for (i in seq_along(vals)) {
+      where <- paste(nm, labs[i])
+      warned <- character()
+      cnd <- withCallingHandlers(
+        tryCatch({ f(vals[[i]]); NULL }, error = function(e) e),
+        warning = function(w) {
+          warned <<- c(warned, paste(class(w), collapse = "/"))
+          invokeRestart("muffleWarning")
+        })
+      # A warning would let an error through unclassified, so it is a failure
+      # in its own right rather than something to suppress.
+      expect_identical(warned, character(0), info = where)
+      # NA is a legal value for some of these (the codec sentinels), and that
+      # is a pass: what must never happen is an error that is not the
+      # package's own.
+      if (is.null(cnd)) next
+      expect_true(inherits(cnd, "rlang_error"),
+                  info = paste(where, "::", conditionMessage(cnd)))
+    }
+  }
+})
+
+test_that("every verb reaching check_dim() refuses NA naming the carrier", {
+  # The verb set is the walk's. The carriers are declared per verb in
+  # helper-na-guards.R, and the reader below fails on a verb the walk returns
+  # with no entry AND on an entry that omits a carrier the verb accepts, so a
+  # declaration cannot quietly cover less than the verb does.
+  dir <- withr::local_tempdir()
+  p <- file.path(dir, "in.mp4")
+  file.create(p)
+  o <- file.path(dir, "out.mp4")
+  verbs <- check_dim_verbs()
+  specs <- check_dim_specs(p, o)
+  expect_gt(length(verbs), 0)
+  expect_identical(sort(setdiff(verbs, names(specs))), character(0))
+
+  # Completeness: the carrier vocabulary is the union of what the entries
+  # declare, and every verb whose formals carry one of those names must
+  # declare it as an argument; every `jobs`-taking verb naming one as a column
+  # literal in its own body must declare it as a column.
+  vocab <- unique(unlist(lapply(specs, function(e)
+    vapply(e, function(x) x$arg, character(1)))))
+  ns <- asNamespace("tidymedia")
+  for (verb in verbs) {
+    declared <- function(via) vapply(
+      Filter(function(x) identical(x$via, via), specs[[verb]]),
+      function(x) x$arg, character(1))
+    f <- get(verb, envir = ns)
+    expect_identical(
+      sort(setdiff(intersect(names(formals(f)), vocab), declared("argument"))),
+      character(0), info = paste(verb, "argument carriers"))
+    if ("jobs" %in% names(formals(f))) {
+      body_txt <- paste(deparse(body(f)), collapse = " ")
+      literals <- vocab[vapply(vocab, function(v)
+        grepl(paste0('"', v, '"'), body_txt, fixed = TRUE), logical(1))]
+      expect_identical(sort(setdiff(literals, declared("column"))),
+                       character(0), info = paste(verb, "column carriers"))
+    }
+  }
+
+  # The refusal itself, over every declared carrier and all four NA types.
+  # Five wordings can reach an NA on these paths; anything else means a guard
+  # moved.
+  na_refusal <- "must be a single FFmpeg expression or number"
+  column_na <- c("must not contain NA", "must be numeric (no NA)")
+  column_type <- c("must be numeric or character", "must be numeric")
+  rate_refusal <- c("must be a single positive number or a string",
+                    "must be a single positive number")
+  number_refusal <- c("must be a number", "must be a whole number")
+  # A non-NA value of each type, for the type-guard control below.
+  typed <- list(TRUE, 1L, 1, "1")
+  vals <- na_values()
+  labs <- na_labels()
+  has <- function(msg, pats)
+    any(vapply(pats, function(r) grepl(r, msg, fixed = TRUE), logical(1)))
+
+  for (verb in verbs) {
+    for (entry in specs[[verb]]) {
+      for (i in seq_along(vals)) {
+        where <- paste(verb, entry$arg, entry$via, labs[i])
+        cnd <- tryCatch({ entry$call(vals[[i]]); NULL }, error = function(e) e)
+        expect_false(is.null(cnd), info = paste(where, ":: no abort"))
+        if (is.null(cnd)) next
+        msg <- conditionMessage(cnd)
+        expect_true(inherits(cnd, "rlang_error"), info = where)
+        # The carrier is named, either as the argument the caller typed or as
+        # the column that carried it.
+        expect_true(
+          grepl(paste0("`", entry$arg, "`"), msg, fixed = TRUE) ||
+            grepl(paste0(entry$arg, " column"), msg, fixed = TRUE),
+          info = paste(where, "::", msg))
+        expect_true(
+          has(msg, c(na_refusal, column_na, column_type, rate_refusal,
+                     number_refusal)),
+          info = paste(where, "::", msg))
+        expect_true(grepl(paste0(verb, "("),
+                          paste(deparse(conditionCall(cnd)), collapse = " "),
+                          fixed = TRUE), info = where)
+        # A TYPE refusal is admissible only where it is really about the type:
+        # the same call carrying a non-NA value of that type must be refused
+        # the same way. Without this control a column guard could answer "must
+        # be numeric or character" to an NA the column's own type accepts, and
+        # the sweep would read it as a refusal of the NA.
+        if (has(msg, column_type) && !has(msg, column_na)) {
+          ctl <- tryCatch({ entry$call(typed[[i]]); NULL },
+                          error = function(e) e)
+          expect_false(is.null(ctl),
+                       info = paste(where, ":: type control did not abort"))
+          if (is.null(ctl)) next
+          expect_identical(conditionMessage(ctl), msg,
+                           info = paste(where, ":: type control"))
+        }
+      }
+    }
+  }
+})

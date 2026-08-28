@@ -358,15 +358,57 @@ test_that("the abort names only the carriers actually holding a bad path", {
 })
 
 test_that("a duplicated absent input reports the path, not the duplication", {
-  # With no `output` column the verb derives one name per input, so it rejects
-  # duplicated inputs before it derives -- and that rejection ran ABOVE the
-  # path sweep, so a table whose rows all name the same file that is not there
-  # was told about the duplication, which names nothing the caller can fix
-  # (M62 N7). NEWS.md's "one path typed wrong the same way in twenty rows is
-  # one missing file" was observable only off the explicit-output path.
-  msg <- conditionMessage(rlang::catch_cnd(standardize_video_batch(
-    tibble::tibble(input = c("gone.mp4", "gone.mp4")), run = FALSE)))
-  expect_match(msg, "`jobs$input` names 1 file that can't be found or read.",
-               fixed = TRUE)
-  expect_false(grepl("duplicated", msg, fixed = TRUE))
+  # With no `output` column a verb derives one name per input, so it rejects
+  # duplicated inputs before deriving -- and that rejection ran ABOVE the path
+  # sweep, so a table whose rows all name the same file that is not there was
+  # told about the duplication, which names nothing the caller can fix (M62
+  # N7). NEWS.md's "one path typed wrong the same way in twenty rows is one
+  # missing file" was observable only off the explicit-output path.
+  #
+  # The verb set is the walk's, not a list: every verb reaching the shared
+  # helper is exercised, and a verb the walk returns with no call shape here
+  # fails rather than being skipped.
+  graph <- tm_call_graph()
+  exported <- sort(intersect(getNamespaceExports("tidymedia"), names(graph)))
+  verbs <- exported[vapply(exported, function(v)
+    tm_reaches(graph, v, "reject_duplicate_inputs"), logical(1))]
+  expect_gt(length(verbs), 0)
+
+  dir <- withr::local_tempdir()
+  good <- file.path(dir, "good.mp4")
+  file.create(good)
+  boxes <- data.frame(x = 0, y = 0, width = 10, height = 10)
+  shapes <- list(
+    anonymize_video_batch = function(input) anonymize_video_batch(
+      tibble::tibble(input = input,
+                     regions = lapply(input, function(...) boxes)),
+      run = FALSE),
+    standardize_video_batch = function(input) standardize_video_batch(
+      tibble::tibble(input = input), run = FALSE),
+    normalize_audio_batch = function(input) normalize_audio_batch(
+      tibble::tibble(input = input), run = FALSE)
+  )
+  expect_identical(sort(setdiff(verbs, names(shapes))), character(0))
+
+  for (verb in verbs) {
+    msg <- conditionMessage(rlang::catch_cnd(
+      shapes[[verb]](rep("gone.mp4", 2))))
+    expect_match(msg, "`jobs$input` names 1 file that can't be found or read.",
+                 fixed = TRUE, info = verb)
+    expect_false(grepl("duplicated", msg, fixed = TRUE), info = verb)
+
+    # And the case where the new report must stay silent: readable inputs,
+    # duplicated, still get the duplication message they always got.
+    msg <- conditionMessage(rlang::catch_cnd(shapes[[verb]](rep(good, 2))))
+    expect_match(msg, "duplicated input paths but no output column",
+                 fixed = TRUE, info = verb)
+  }
+})
+
+test_that("the duplicated-input abort is worded at one site", {
+  # The three verbs carried a copy each. One site, so a fourth verb inherits
+  # the wording and the order rather than restating them.
+  bodies <- tm_namespace_bodies()
+  hits <- names(bodies)[grepl("has duplicated", bodies, fixed = TRUE)]
+  expect_identical(hits, "reject_duplicate_inputs")
 })

@@ -54,13 +54,15 @@ na_labels <- function() {
 # guard reports, which is the guard that reaches an NA cell first.
 #
 # An empty entry is a positive declaration that the verb takes no such
-# argument: its path to check_dim() carries values it computes itself
-# (format_for_web()'s fixed web profile, picture_in_picture()'s overlay
-# geometry derived from `position`/`margin`), so there is no caller-supplied
-# value for an NA to arrive in.
+# carrier: its path to check_dim() carries values it computes itself
+# (format_for_web()'s fixed web profile), so there is no caller-supplied value
+# for an NA to arrive in. picture_in_picture() is NOT such a verb -- its
+# `scale` and `margin` are caller-supplied and become the overlay geometry
+# check_dim() reads -- so it declares them.
 check_dim_specs <- function(p, o) {
   pipe <- function() ffm_files(p, o)
   jobs1 <- function(...) tibble::tibble(input = p, ...)
+  pair <- function(...) tibble::tibble(main = p, overlay = p, output = o, ...)
   arg <- function(name, call) list(arg = name, via = "argument", call = call)
   col <- function(name, call) list(arg = name, via = "column", call = call)
 
@@ -90,10 +92,18 @@ check_dim_specs <- function(p, o) {
     crop_video_batch = list(
       arg("width", function(na) crop_video_batch(
         jobs1(), width = na, height = 100, run = FALSE)),
+      arg("height", function(na) crop_video_batch(
+        jobs1(), width = 100, height = na, run = FALSE)),
+      arg("x", function(na) crop_video_batch(
+        jobs1(), width = 100, height = 100, x = na, run = FALSE)),
       arg("y", function(na) crop_video_batch(
         jobs1(), width = 100, height = 100, y = na, run = FALSE)),
       col("width", function(na) crop_video_batch(
         jobs1(width = na), height = 100, run = FALSE)),
+      col("height", function(na) crop_video_batch(
+        jobs1(height = na), width = 100, run = FALSE)),
+      col("x", function(na) crop_video_batch(
+        jobs1(x = na), width = 100, height = 100, run = FALSE)),
       col("y", function(na) crop_video_batch(
         jobs1(y = na), width = 100, height = 100, run = FALSE))
     ),
@@ -115,7 +125,8 @@ check_dim_specs <- function(p, o) {
     ),
     ffm_overlay = list(
       arg("x", function(na) ffm_overlay(ffm_files(c(p, p), o), x = na)),
-      arg("y", function(na) ffm_overlay(ffm_files(c(p, p), o), y = na))
+      arg("y", function(na) ffm_overlay(ffm_files(c(p, p), o), y = na)),
+      arg("scale", function(na) ffm_overlay(ffm_files(c(p, p), o), scale = na))
     ),
     ffm_scale = list(
       arg("width", function(na) ffm_scale(pipe(), na, 100)),
@@ -123,8 +134,22 @@ check_dim_specs <- function(p, o) {
     ),
     format_for_web = list(),
     format_for_web_batch = list(),
-    picture_in_picture = list(),
-    picture_in_picture_batch = list(),
+    picture_in_picture = list(
+      arg("scale", function(na) picture_in_picture(p, p, o, scale = na,
+                                                   run = FALSE)),
+      arg("margin", function(na) picture_in_picture(p, p, o, margin = na,
+                                                    run = FALSE))
+    ),
+    picture_in_picture_batch = list(
+      arg("scale", function(na) picture_in_picture_batch(
+        pair(), scale = na, run = FALSE)),
+      arg("margin", function(na) picture_in_picture_batch(
+        pair(), margin = na, run = FALSE)),
+      col("scale", function(na) picture_in_picture_batch(
+        pair(scale = na), run = FALSE)),
+      col("margin", function(na) picture_in_picture_batch(
+        pair(margin = na), run = FALSE))
+    ),
     sample_frames = list(
       arg("fps", function(na) sample_frames(p, outdir = tempdir(), fps = na,
                                             run = FALSE)),
@@ -136,6 +161,8 @@ check_dim_specs <- function(p, o) {
         jobs1(), fps = na, outdir = tempdir(), run = FALSE)),
       col("fps", function(na) sample_frames_batch(
         jobs1(fps = na), outdir = tempdir(), run = FALSE)),
+      arg("interval", function(na) sample_frames_batch(
+        jobs1(), interval = na, outdir = tempdir(), run = FALSE)),
       col("interval", function(na) sample_frames_batch(
         jobs1(interval = na), outdir = tempdir(), run = FALSE))
     ),
@@ -149,10 +176,14 @@ check_dim_specs <- function(p, o) {
     standardize_video_batch = list(
       arg("width", function(na) standardize_video_batch(
         jobs1(), width = na, run = FALSE)),
+      arg("height", function(na) standardize_video_batch(
+        jobs1(), height = na, run = FALSE)),
       arg("fps", function(na) standardize_video_batch(
         jobs1(), fps = na, run = FALSE)),
       col("width", function(na) standardize_video_batch(
         jobs1(width = na), run = FALSE)),
+      col("height", function(na) standardize_video_batch(
+        jobs1(height = na), run = FALSE)),
       col("fps", function(na) standardize_video_batch(
         jobs1(fps = na), run = FALSE))
     )

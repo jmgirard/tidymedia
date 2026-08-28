@@ -129,6 +129,22 @@ the same \code{loudnorm} pipeline (and per-value validation) as the scalar
 verb. Set \code{two_pass = TRUE} for accurate measured/linear normalization
 across the whole table (see \code{two_pass}).
 }
+\details{
+When a row names no \code{audio_stream} and its input turns out to carry
+tracks the output will not, the verb warns \strong{once} for the whole batch,
+naming every affected row. Naming a track silences it -- the
+\code{audio_stream} argument, or an \code{audio_stream} cell on every row --
+as does \code{suppressWarnings(classes = "tidymedia_dropped_audio")}. The
+check is \strong{best-effort} and costs \strong{one FFprobe call per
+distinct input}, so a repeated input is probed once: it is emitted when
+FFprobe is available and the input can be probed, and skipped silently
+otherwise. Those probes run \strong{serially at the front door}, before the
+fan-out starts, so \code{parallel} does not reach them. The check never runs
+under \code{run = FALSE}, never changes any compiled command, and is skipped
+entirely when every row names a track. Under \code{two_pass = TRUE} it lands
+\emph{before} Phase 1, so it arrives while adding \code{audio_stream} can
+still save the analysis pass.
+}
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 jobs <- tibble::tibble(

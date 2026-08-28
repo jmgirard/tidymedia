@@ -2078,6 +2078,19 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #' source rate unless you pin it: set \code{sample_rate} to control the output
 #' rate.
 #'
+#' When no \code{audio_stream} is named and \code{infile} turns out to carry
+#' tracks the output will not, the verb warns -- the same warning
+#' \code{\link{extract_audio}} and \code{\link{convert_audio}} emit. Naming a
+#' track with \code{audio_stream} silences it, as does
+#' \code{suppressWarnings(classes = "tidymedia_dropped_audio")}. The check is
+#' \strong{best-effort} and costs \strong{one FFprobe call per distinct input}
+#' -- one, here, since this verb takes a single \code{infile}: it is emitted
+#' when FFprobe is available and the input can be probed, and skipped silently
+#' otherwise. It never runs under \code{run = FALSE}, and never changes the
+#' compiled command. Under \code{two_pass = TRUE} it lands \emph{before} the
+#' analysis pass, so it arrives while adding \code{audio_stream} can still save
+#' that pass.
+#'
 #' @param infile A string containing the path to a media file (with audio). An
 #'   input with no audio stream is an FFmpeg error, not a silent copy of the
 #'   video.
@@ -2187,6 +2200,16 @@ normalize_audio <- function(infile, outfile,
     # of hoisting is to fail before the analysis pass runs, and a malformed
     # encoder name is as fatal as "copy".
     if (!is.null(audio_codec)) check_token(audio_codec)
+    # D024's diagnostic probe, two-pass site. There are TWO sites in this verb,
+    # mutually exclusive on `two_pass`, because a single site below every guard
+    # would warn only AFTER the analysis pass had run -- while the batch verb
+    # warns before ITS Phase 1, the scalar/batch ordering divergence D039 exists
+    # to prevent. Same gates as extract_audio()'s site: `run` because a
+    # run = FALSE call stays binary-free, and a NULL audio_stream because a
+    # caller who named a track chose the drop.
+    if (isTRUE(run) && is.null(audio_stream)) {
+      warn_dropped_audio(infile, count_audio_streams_all(infile))
+    }
     measured <- run_loudnorm_analysis(infile, target_loudness, true_peak,
                                       loudness_range,
                                       audio_stream = audio_stream)
@@ -2204,6 +2227,35 @@ normalize_audio <- function(infile, outfile,
   # (review A3r3). Here the two-pass path is exactly as it was, and the
   # default path -- the one M41 is about -- is still fixed.
   rlang::check_string(audio_codec, allow_null = TRUE)
+
+  # The single-pass half of the guard-then-probe pair. Gated on `!two_pass`
+  # because the block above does NOT return -- it falls through to here -- so
+  # without this gate the two-pass path would make both calls a second time and
+  # warn TWICE about one drop (review round 1). With it the two sites are
+  # mutually exclusive on `two_pass`, and exactly one probe runs per call.
+  #
+  # The copy guard is hoisted for the probe below: the pipeline's own copy
+  # guard runs inside ffm_finish()'s argument, i.e. AFTER the probe, so a
+  # multi-track `audio_codec = "copy"` call would otherwise warn about a drop
+  # that the very next line refuses to perform. Refuse first, probe second. The
+  # message is check_audio_codec_not_copy()'s own either way (D042).
+  # The shaping knobs come first, because normalize_audio_pipeline() validates
+  # them (R/ffmpeg.R, its first two lines) BEFORE its own copy guard. Hoisting
+  # the copy guard alone would reassign their precedence: a call wrong about
+  # both channels and audio_codec would start answering with the copy complaint
+  # instead of the channels one. M41's guards were placed to reassign no other
+  # check's precedence, and its review (A3r3) backed this same hoist out of the
+  # two-pass path for exactly that reason. Re-checking here is idempotent --
+  # the pipeline still checks them -- and the two-pass block above hoists the
+  # same two in the same order.
+  if (!two_pass) {
+    rlang::check_number_whole(channels, min = 1, allow_null = TRUE)
+    rlang::check_number_whole(sample_rate, min = 1, allow_null = TRUE)
+    check_audio_codec_not_copy(audio_codec)
+    if (isTRUE(run) && is.null(audio_stream)) {
+      warn_dropped_audio(infile, count_audio_streams_all(infile))
+    }
+  }
 
   ffm_finish(
     normalize_audio_pipeline(infile, outfile, target_loudness, true_peak,
@@ -4168,6 +4220,21 @@ derive_normalized_names <- function(input) {
 #' verb. Set \code{two_pass = TRUE} for accurate measured/linear normalization
 #' across the whole table (see \code{two_pass}).
 #'
+#' When a row names no \code{audio_stream} and its input turns out to carry
+#' tracks the output will not, the verb warns \strong{once} for the whole batch,
+#' naming every affected row. Naming a track silences it -- the
+#' \code{audio_stream} argument, or an \code{audio_stream} cell on every row --
+#' as does \code{suppressWarnings(classes = "tidymedia_dropped_audio")}. The
+#' check is \strong{best-effort} and costs \strong{one FFprobe call per
+#' distinct input}, so a repeated input is probed once: it is emitted when
+#' FFprobe is available and the input can be probed, and skipped silently
+#' otherwise. Those probes run \strong{serially at the front door}, before the
+#' fan-out starts, so \code{parallel} does not reach them. The check never runs
+#' under \code{run = FALSE}, never changes any compiled command, and is skipped
+#' entirely when every row names a track. Under \code{two_pass = TRUE} it lands
+#' \emph{before} Phase 1, so it arrives while adding \code{audio_stream} can
+#' still save the analysis pass.
+#'
 #' @param jobs A data frame with one row per input and (at least) an
 #'   \code{input} column (source path). An optional \code{output} column names
 #'   the destination; when absent, one is derived per row by appending
@@ -4382,6 +4449,14 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
       check_loudnorm_targets(target_rows[[i]], peak_rows[[i]], range_rows[[i]])
     )
   }
+
+  # D024's diagnostic probe, above the two_pass block so it lands before Phase 1
+  # analyzes anything and before the fan-out encodes -- the placement the scalar
+  # verb's two sites exist to match (D039). Below the per-row target sweep, so a
+  # wrong value still refuses before anything warns. isTRUE() rather than a bare
+  # `run` so a non-logical value still gets ffm_batch()'s own check_bool()
+  # message; the per-row audio_stream decision is the batch builder's.
+  if (isTRUE(run)) warn_dropped_audio_batch(jobs, audio_stream)
 
   # Two-pass (measured/linear): the audio-side M16 analyze-then-build path fanned
   # across the jobs table (D013). Phase 1 measures every input (honoring

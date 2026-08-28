@@ -264,3 +264,246 @@ test_that("the batch verbs warn end to end", {
   )
   expect_warning(extract_audio_batch(jobs), class = "tidymedia_dropped_audio")
 })
+
+
+# M075: the loudness verbs join the family (AC1-AC5) -----------------------
+
+# Collect EVERY tidymedia_dropped_audio condition an expression signals, and the
+# expression's outcome. tryCatch(warning = ) stops at the first one, which
+# cannot tell one warning from two -- and "exactly one" is what AC1 and AC2
+# promise. Only our own class is muffled, so an unrelated warning still surfaces
+# the way it would without this handler. `value` is the expression's result, or
+# the error condition if it threw: the ordering tests need both halves of a call
+# that warns and then fails.
+catch_drop <- function(expr) {
+  caught <- list()
+  value <- tryCatch(
+    withCallingHandlers(
+      expr,
+      warning = function(w) {
+        if (inherits(w, "tidymedia_dropped_audio")) {
+          caught[[length(caught) + 1L]] <<- w
+          invokeRestart("muffleWarning")
+        }
+      }
+    ),
+    error = function(e) e
+  )
+  list(warnings = caught, value = value)
+}
+
+# AC5's shape, at its one site: a wrong value must abort with `match` in its
+# message AND signal no drop warning on the way there. Both halves matter --
+# an abort that warned first still passes expect_error() alone.
+expect_refuses_before_warning <- function(expr, match) {
+  res <- catch_drop(expr)
+  testthat::expect_s3_class(res$value, "error")
+  testthat::expect_match(cli::ansi_strip(conditionMessage(res$value)), match)
+  testthat::expect_length(res$warnings, 0L)
+}
+
+# Both two_pass values, because AC1 quantifies over every run = TRUE call and
+# the verb probes from two different sites. Round 1 of review found the
+# two-pass path warning TWICE -- a count the single-value test could not see.
+test_that("normalize_audio() warns once at both two_pass values, naming the count, the argument and the offset", {
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  for (tp in c(FALSE, TRUE)) {
+    out <- withr::local_tempfile(fileext = ".mkv")
+    res <- catch_drop(normalize_audio(infile, out, two_pass = tp))
+    expect_length(res$warnings, 1L)
+    msg <- cli::ansi_strip(conditionMessage(res$warnings[[1]]))
+    expect_match(msg, "3 audio tracks")
+    expect_match(msg, "drops 2")
+    expect_match(msg, "audio_stream")
+    expect_match(msg, "probe_audio")
+    expect_match(msg, "1, 2, 3", fixed = TRUE)
+    expect_match(msg, "0, 1, 2", fixed = TRUE)
+  }
+})
+
+test_that("normalize_audio_batch() warns once, naming every affected row", {
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  jobs <- tibble::tibble(
+    input = c(infile, infile),
+    output = c(withr::local_tempfile(fileext = ".mkv"),
+               withr::local_tempfile(fileext = ".mkv"))
+  )
+  res <- catch_drop(normalize_audio_batch(jobs))
+  expect_length(res$warnings, 1L)
+  msg <- cli::ansi_strip(conditionMessage(res$warnings[[1]]))
+  expect_match(msg, "Row 1")
+  expect_match(msg, "Row 2")
+})
+
+# AC3: the five silent cases ------------------------------------------------
+
+test_that("naming a track silences normalize_audio()", {
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  expect_no_warning(
+    normalize_audio(infile, withr::local_tempfile(fileext = ".mkv"),
+                    audio_stream = 1)
+  )
+})
+
+test_that("the audio_stream argument silences normalize_audio_batch()", {
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  jobs <- tibble::tibble(
+    input = c(infile, infile),
+    output = c(withr::local_tempfile(fileext = ".mkv"),
+               withr::local_tempfile(fileext = ".mkv"))
+  )
+  expect_no_warning(normalize_audio_batch(jobs, audio_stream = 1))
+})
+
+test_that("an audio_stream cell on every row silences normalize_audio_batch()", {
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  jobs <- tibble::tibble(
+    input = c(infile, infile),
+    output = c(withr::local_tempfile(fileext = ".mkv"),
+               withr::local_tempfile(fileext = ".mkv")),
+    audio_stream = c(1, 2)
+  )
+  expect_no_warning(normalize_audio_batch(jobs))
+})
+
+test_that("run = FALSE is silent on both verbs at both two_pass values", {
+  # run = FALSE still runs the two-pass ANALYSIS on both verbs -- what it gates
+  # is the correction command -- so this needs the binary, not just a compile.
+  skip_if_no_ffmpeg()
+  infile <- make_multitrack_video()
+  jobs <- tibble::tibble(input = infile, output = "out.mkv")
+  for (tp in c(FALSE, TRUE)) {
+    expect_no_warning(
+      normalize_audio(infile, "out.mkv", two_pass = tp, run = FALSE)
+    )
+    expect_no_warning(normalize_audio_batch(jobs, two_pass = tp, run = FALSE))
+  }
+})
+
+test_that("a single-track input warns about nothing on the loudness verbs", {
+  skip_if_no_ffprobe()
+  infile <- make_test_video()
+  expect_no_warning(
+    normalize_audio(infile, withr::local_tempfile(fileext = ".m4a"))
+  )
+})
+
+# AC4: the warning lands before the two-pass analysis ------------------------
+
+test_that("normalize_audio() warns before the analysis pass runs", {
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  # M44's lesson: a stop()ing mock only proves ordering where the call site is
+  # not wrapped in tryCatch(error = ), which this one is not -- so the error
+  # propagating is itself part of the assertion.
+  local_mocked_bindings(
+    run_loudnorm_analysis = function(...) stop("analysis pass reached")
+  )
+  res <- catch_drop(
+    normalize_audio(infile, withr::local_tempfile(fileext = ".mkv"),
+                    two_pass = TRUE)
+  )
+  expect_length(res$warnings, 1L)
+  expect_s3_class(res$value, "error")
+  expect_match(conditionMessage(res$value), "analysis pass reached")
+})
+
+test_that("normalize_audio_batch() warns before Phase 1 runs", {
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  local_mocked_bindings(
+    run_loudnorm_analysis_batch = function(...) stop("Phase 1 reached")
+  )
+  jobs <- tibble::tibble(
+    input = c(infile, infile),
+    output = c(withr::local_tempfile(fileext = ".mkv"),
+               withr::local_tempfile(fileext = ".mkv"))
+  )
+  res <- catch_drop(normalize_audio_batch(jobs, two_pass = TRUE))
+  expect_length(res$warnings, 1L)
+  expect_s3_class(res$value, "error")
+  expect_match(conditionMessage(res$value), "Phase 1 reached")
+})
+
+# AC5: a wrong value still refuses before anything warns ---------------------
+
+test_that("normalize_audio(target_loudness = 999) refuses before it probes", {
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  expect_refuses_before_warning(
+    normalize_audio(infile, withr::local_tempfile(fileext = ".mkv"),
+                    target_loudness = 999),
+    "target_loudness"
+  )
+})
+
+test_that("normalize_audio(target_loudness = 999, two_pass = TRUE) refuses before it probes", {
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  expect_refuses_before_warning(
+    normalize_audio(infile, withr::local_tempfile(fileext = ".mkv"),
+                    target_loudness = 999, two_pass = TRUE),
+    "target_loudness"
+  )
+})
+
+test_that("normalize_audio(audio_codec = 'copy') refuses before it probes", {
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  expect_refuses_before_warning(
+    normalize_audio(infile, withr::local_tempfile(fileext = ".mkv"),
+                    audio_codec = "copy"),
+    "audio_codec"
+  )
+})
+
+test_that("normalize_audio(audio_codec = 'copy', two_pass = TRUE) refuses before it probes", {
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  expect_refuses_before_warning(
+    normalize_audio(infile, withr::local_tempfile(fileext = ".mkv"),
+                    audio_codec = "copy", two_pass = TRUE),
+    "audio_codec"
+  )
+})
+
+test_that("a 999 target_loudness cell refuses before normalize_audio_batch() probes", {
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  jobs <- tibble::tibble(input = infile, output = "out.mkv",
+                         target_loudness = 999)
+  expect_refuses_before_warning(normalize_audio_batch(jobs), "target_loudness")
+})
+
+test_that("a 999 target_loudness cell refuses before two-pass batch probes", {
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  jobs <- tibble::tibble(input = infile, output = "out.mkv",
+                         target_loudness = 999)
+  expect_refuses_before_warning(
+    normalize_audio_batch(jobs, two_pass = TRUE), "target_loudness"
+  )
+})
+
+test_that("a 'copy' audio_codec cell refuses before normalize_audio_batch() probes", {
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  jobs <- tibble::tibble(input = infile, output = "out.mkv",
+                         audio_codec = "copy")
+  expect_refuses_before_warning(normalize_audio_batch(jobs), "audio_codec")
+})
+
+test_that("a 'copy' audio_codec cell refuses before two-pass batch probes", {
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  jobs <- tibble::tibble(input = infile, output = "out.mkv",
+                         audio_codec = "copy")
+  expect_refuses_before_warning(
+    normalize_audio_batch(jobs, two_pass = TRUE), "audio_codec"
+  )
+})

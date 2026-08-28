@@ -54,23 +54,64 @@ elapsed_since <- function(t0) {
   round(as.numeric(difftime(Sys.time(), t0, units = "secs")), 2)
 }
 
-# Is any process still alive whose command line contains `marker`? `pgrep -f`
-# would match this R process too if the marker appeared in its own arguments,
-# so the marker is generated here and never passed on our own command line.
-still_alive <- function(marker) {
+# Is any process still alive whose command line contains `marker`?
+#
+# R runs `pgrep` through a shell, so the command line doing the searching
+# contains the pattern too and a naive `pgrep -f <marker>` finds itself -- it
+# reports a live child on every case, including cases where the child is
+# provably dead. The pattern brackets one character of the marker: as an ERE it
+# still matches the child's literal marker, and it no longer matches the
+# command line carrying the pattern.
+blind_pattern <- function(marker) {
+  paste0(substr(marker, 1, 6), "[", substr(marker, 7, 7), "]",
+         substr(marker, 8, nchar(marker)))
+}
+
+matching_pids <- function(marker) {
   out <- suppressWarnings(
-    system2("pgrep", c("-f", shQuote(marker)), stdout = TRUE, stderr = FALSE)
+    system2("pgrep", c("-f", shQuote(blind_pattern(marker))),
+            stdout = TRUE, stderr = FALSE)
   )
   pids <- grep("^[0-9]+$", out, value = TRUE)
-  pids <- setdiff(pids, as.character(Sys.getpid()))
-  if (length(pids)) paste(pids, collapse = " ") else "no"
+  setdiff(pids, as.character(Sys.getpid()))
+}
+
+# Report the surviving processes by pid AND command line, so a self-match or a
+# stray helper is visible in the transcript rather than counted as the child.
+still_alive <- function(marker) {
+  pids <- matching_pids(marker)
+  if (!length(pids)) return("no")
+  info <- suppressWarnings(
+    system2("ps", c("-o", "pid=,args=", "-p", paste(pids, collapse = ",")),
+            stdout = TRUE, stderr = FALSE)
+  )
+  paste0("YES (", length(pids), ") | ", paste(trimws(info), collapse = " | "))
 }
 
 reap <- function(marker) {
   suppressWarnings(
-    system2("pkill", c("-9", "-f", shQuote(marker)), stdout = FALSE, stderr = FALSE)
+    system2("pkill", c("-9", "-f", shQuote(blind_pattern(marker))),
+            stdout = FALSE, stderr = FALSE)
   )
+  Sys.sleep(0.5) # let the kernel reap before asking again
   invisible(NULL)
+}
+
+# The liveness probe's own control. Without it, "child alive after: no" is also
+# what a broken probe says. This spawns a process that is certainly alive,
+# checks the probe finds it, kills it, and checks the probe then does not --
+# so a case's liveness verdict is only readable when both halves say ok.
+probe_control <- function() {
+  m <- sprintf("tmbctl%d", Sys.getpid())
+  system2("sh", c("-c", shQuote(sprintf("echo %s; sleep 30", m))),
+          wait = FALSE, stdout = FALSE, stderr = FALSE)
+  Sys.sleep(1)
+  live <- still_alive(m)
+  reap(m)
+  dead <- still_alive(m)
+  emit("probe control", sprintf("finds-a-live-process=%s  clear-after-kill=%s",
+                                if (identical(live, "no")) "FAIL" else "ok",
+                                if (identical(dead, "no")) "ok" else "FAIL"))
 }
 
 # Report whatever came back from a spawn call: system()/system2() with
@@ -196,6 +237,7 @@ run_case <- function(name) {
   emit("limit set", sprintf("%d s", LIMIT))
   emit("child would block", sprintf("%d s", BLOCK))
   emit("marker", marker)
+  probe_control()
 
   conds <- character()
   t0 <- Sys.time()
@@ -284,14 +326,24 @@ drive <- function() {
     cat(strrep("-", 76), "\n", sep = "")
     cat(sprintf("case %s -- %s\n", name, CASES[[name]]$what))
     cat(strrep("-", 76), "\n", sep = "")
+    # The child's output goes to a FILE, not a pipe.
+    #
+    # With `stdout = TRUE` R reads a pipe, and every descendant of the child
+    # inherits the write end -- so when the cap SIGKILLs the child, R goes on
+    # reading until the orphaned grandchild exits, and the cap bounds nothing.
+    # That is this script's own subject matter, met in its own driver: the
+    # first attempt sat for the full block on a case the cap had already
+    # killed. Redirection to a file leaves R waiting on the child alone.
+    log <- tempfile(paste0("tmbound-", name, "-"), fileext = ".log")
     t0 <- Sys.time()
-    out <- suppressWarnings(
-      system2(spec$cmd, spec$args, stdout = TRUE, stderr = TRUE)
+    st <- suppressWarnings(
+      system2(spec$cmd, spec$args, stdout = log, stderr = log)
     )
     wall <- elapsed_since(t0)
-    st <- attr(out, "status")
+    out <- if (file.exists(log)) readLines(log, warn = FALSE) else character()
     cat(paste(out, collapse = "\n"), "\n", sep = "")
-    hit_cap <- spec$capped && !is.null(st) && st == 137L
+    emit("child R exit status", st)
+    hit_cap <- spec$capped && !is.null(st) && identical(as.integer(st), 137L)
     emit("driver wall clock", sprintf("%.2f s", wall))
     emit("hit the cap", if (hit_cap) sprintf("YES -- killed at %d s", CAP) else "no")
     cat("\n")

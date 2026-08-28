@@ -7,7 +7,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m080-shipped-guard-findings`
+- **Branch/PR:** `m080-shipped-guard-findings` / https://github.com/jmgirard/tidymedia/pull/84
 
 ## Goal
 
@@ -36,12 +36,12 @@ no user call reaches, which stay unfixed and undocumented.
 
 ## Acceptance criteria
 
-- [ ] AC1: `check_dim()` signals a condition inheriting `rlang_error` and
+- [x] AC1: `check_dim()` signals a condition inheriting `rlang_error` and
       naming its `arg` on each of `NA`, `NA_integer_`, `NA_real_` and
       `NA_character_` — the whole of its NA domain. In particular
       `crop_video(f, o, NA_character_, 100, run = FALSE)`, which today returns
       `-vf "crop=w=NA:h=100:..."`, aborts instead.
-- [ ] AC2: over the exported verbs `tm_reaches(tm_call_graph(), v, "check_dim")`
+- [x] AC2: over the exported verbs `tm_reaches(tm_call_graph(), v, "check_dim")`
       returns, each verb given `NA` of each of the four types in each carrier
       its declared call shapes name aborts with a condition inheriting
       `rlang_error`, blamed on the verb the caller typed, whose message names
@@ -56,7 +56,7 @@ no user call reaches, which stay unfixed and undocumented.
       type-guard refusal counts only where the same call carrying a non-NA
       value of that type is refused the same way, so a type wording can never
       stand in for a missing NA refusal.
-- [ ] AC3: no predicate in the domain
+- [x] AC3: no predicate in the domain
       `ls(asNamespace("tidymedia"), all.names = TRUE, pattern = "^check_")`
       restricted to those with exactly one required formal not named `jobs`
       (15 names on 2026-08-28) signals a bare `simpleError` on `NA`,
@@ -65,14 +65,14 @@ no user call reaches, which stay unfixed and undocumented.
       `check_dim` (`NA_real_`), `check_overlay_scale` (all four),
       `check_region_values` (all four), `check_codec_needs_reencode`
       (`NA_character_`).
-- [ ] AC4: `check_batch_inputs()` names in its abort only the carriers holding
+- [x] AC4: `check_batch_inputs()` names in its abort only the carriers holding
       a path that cannot be read. `picture_in_picture_batch()` reports
       `` `jobs$overlay` names 1 file that can't be found or read. `` when only
       `overlay` is bad, `jobs$main` alone when only `main` is, and both when
       both are — each cell exercised with an absent path and with the verified
       mode-000 fixture `helper-input-paths.R` builds, since D041 made the
       predicate readability.
-- [ ] AC5: over the verbs `tm_reaches(tm_call_graph(), v, <the extracted
+- [x] AC5: over the verbs `tm_reaches(tm_call_graph(), v, <the extracted
       duplicated-input helper>)` returns, a `jobs` table with no `output`
       column whose rows all name the same absent input reports the absent
       input, not the duplication. The abort's wording lives at one site, so a
@@ -151,3 +151,17 @@ no user call reaches, which stay unfixed and undocumented.
 ## Decisions
 
 ## Review
+
+PR: https://github.com/jmgirard/tidymedia/pull/84 (draft, opened 2026-08-28)
+
+### Acceptance-criterion evidence
+
+- **AC1 — verified.** `devtools::load_all()`, then `check_dim(v, arg = "width")` on each of `NA`, `NA_integer_`, `NA_real_`, `NA_character_`: all four signal a condition whose classes are `rlang_error, error, condition` and whose message is `` `width` must be a single FFmpeg expression or number. `` — the `arg` named in every case. `crop_video(f, o, NA_character_, 100, run = FALSE)` aborts with that same condition rather than returning the `crop=w=NA:h=100:...` filter string.
+
+- **AC2 — verified.** `tm_reaches(tm_call_graph(), v, "check_dim")` over the exported verbs returns 17: `anonymize_video`, `anonymize_video_batch`, `crop_video`, `crop_video_batch`, `ffm_crop`, `ffm_drawbox`, `ffm_fps`, `ffm_overlay`, `ffm_scale`, `format_for_web`, `format_for_web_batch`, `picture_in_picture`, `picture_in_picture_batch`, `sample_frames`, `sample_frames_batch`, `standardize_video`, `standardize_video_batch`. Every one has a declared entry in `helper-na-guards.R` (`setdiff(verbs, names(specs))` empty), and the entries declare 52 carriers — 208 carrier x NA-type cells. Two of the 17, `format_for_web()` and `format_for_web_batch()`, declare zero: they reach `check_dim()` only with package-fixed dimensions and expose no caller-supplied carrier (no formal and no `jobs`-column literal in the vocabulary), which the completeness reader independently confirms. (The T3 work-log line records 44 carriers; the figure measured here at review is 52.) `test-na-value-guards.R`'s sweep runs all 208 and passes: each aborts with an `rlang_error`, blamed on the verb the caller typed (`conditionCall` matches `<verb>(`), naming the carrier as `` `arg` `` or `<arg> column`, in one of the five listed wordings. The type-guard control fires on every cell answered with a type wording alone and asserts message equality against the same call carrying a non-NA value of that type. The completeness reader — formals and `jobs`-column literals against the declared vocabulary — is green for all 17.
+
+- **AC3 — verified.** `na_sweep_predicates()` enumerates the domain from `ls(asNamespace("tidymedia"), all.names = TRUE, pattern = "^check_")` filtered to exactly one required formal not named `jobs`: 15 names on 2026-08-28 — `check_audio_codec_not_copy`, `check_codec_needs_reencode`, `check_copy_map_conflict`, `check_dim`, `check_ffm`, `check_file_exists`, `check_file_readable`, `check_hardware_needs_encode`, `check_image_format`, `check_nvenc_available`, `check_overlay_scale`, `check_paths_readable`, `check_region_values`, `check_regions`, `check_token`. All four names the criterion calls out are in it. Run over 60 predicate x NA-type cells: 0 errors that are not `rlang_error`, 0 warnings. The four that reddened at `master` (`check_dim` on `NA_real_`, `check_overlay_scale` and `check_region_values` on all four, `check_codec_needs_reencode` on `NA_character_`) are green here; commit `f427f4f` holds their red form.
+
+- **AC4 — verified.** `picture_in_picture_batch()` measured on all six cells. Absent path: overlay bad alone reports `` `jobs$overlay` names 1 file that can't be found or read. ``, main bad alone reports `jobs$main` alone, both bad reports `` `jobs$main` and `jobs$overlay` name 1 file … ``. Repeated with the mode-000 fixture `tm_unreadable_path()` builds in `helper-input-paths.R` (verified `file.access(p, 4) != 0`): the same three messages, so the per-carrier filter is over D041's readability predicate and not over existence.
+
+- **AC5 — verified.** `tm_reaches(tm_call_graph(), v, "reject_duplicate_inputs")` returns 3 verbs: `anonymize_video_batch`, `normalize_audio_batch`, `standardize_video_batch`. For each, a `jobs` table with no `output` column whose two rows name the same absent input reports `` `jobs$input` names 1 file that can't be found or read. `` and the word "duplicated" does not appear. The control — the same table with a readable duplicated path — still reports `` `jobs` has duplicated input paths but no output column. ``, so the path report did not displace the duplication report. `tm_namespace_bodies()` finds the string `has duplicated` at exactly one name, `reject_duplicate_inputs`.

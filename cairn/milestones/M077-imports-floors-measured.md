@@ -5,7 +5,7 @@
 - **Depends on:** M076
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m077-imports-floors-measured`
+- **Branch/PR:** `m077-imports-floors-measured` / https://github.com/jmgirard/tidymedia/pull/81
 
 ## Goal
 
@@ -201,3 +201,147 @@ Per-file counts, identical in the baseline and the pinned run (66 files; `test-w
 - **D055** (promoted, `cairn/DECISIONS.md`) — the nine `Imports` floors say what was measured, and `rlang`'s was wrong. Eight stand; `rlang` moves 1.1.0 → 1.2.0. The entry names the runner, the two held-back harness packages and the four things the run did not measure.
 
 ## Review
+
+### Acceptance criteria — fresh evidence (2026-08-28)
+
+Every criterion was re-executed at review against the branch as it stands; the
+harness was re-run end to end rather than read off the implementation's own
+record. Runner: `rocker/r-ver:4.4.3` (R 4.4.3, Ubuntu noble, aarch64) under
+colima on macOS 26.5, the repo bind-mounted, the pinned libraries persisted in
+a `TM_LIBROOT` volume. Script exit 0.
+
+- **AC1 — met.** `read.dcf("DESCRIPTION", "Imports")` enumerates 11 entries;
+  less `tools` and `utils` that is nine carrying a floor: `archive` 1.1.1,
+  `cli` 3.4.0, `dplyr` 1.1.0, `glue` 1.6.2, `purrr` 1.0.0, `rappdirs` 0.3.3,
+  `rlang` 1.2.0, `tibble` 3.1.4, `withr` 2.5.0. The re-run's pinned child
+  reported each of the nine resolving at exactly that version and from
+  `/libs/all`, and the suite passed on them. `rlang` is the one floor that
+  moved (1.1.0 → 1.2.0); the re-run's comparison block printed `no floor
+  moved`, i.e. nothing else needs to.
+- **AC2 — met.** Baseline `pass=6120 fail=0 skip=22 over 66 files`; pinned
+  `pass=6120 fail=0 skip=22 over 66 files` — the skip counts are equal, not
+  merely both small. Both children asserted `ffmpeg` and `mediainfo` on `PATH`
+  before starting. The pinned child asserted per pinned package the version
+  *and* the directory, up front and again over `loadedNamespaces()` after the
+  suite; the baseline child printed the current releases resolving from
+  `/usr/local/lib/R/site-library` (archive 1.1.14, cli 3.6.6, dplyr 1.2.1,
+  glue 1.8.1, purrr 1.2.2, rappdirs 0.3.4, rlang 1.3.0, tibble 3.3.1, withr
+  3.0.3), which is what makes the pinned run's `/libs/all` provenance
+  load-bearing. Both runs printed `66 of 69 files run` with the same three
+  named exclusions, and the child checks the file set it actually ran against
+  the set it intended rather than trusting the `invert` filter.
+- **AC3 — met, vacuously on this run and non-vacuously on the record.** On the
+  re-run every declared floor installed and built on the runner AC2 names, so
+  the Archive walk had nothing to repair. The criterion's procedure is
+  exercised on the record it was written for: on the host's R 4.6.1 six floors
+  do not compile and `archive` finds no `libarchive`, the errors are recorded
+  in the work log and D055, and walking each forward reached the current
+  release every time — which is why the measurement moved to an older R rather
+  than moving six floors. The `--repair` and `--walk` modes implementing the
+  walk are present in `data-raw/imports-floors.R`.
+- **AC4 — met.** D055 (`cairn/DECISIONS.md:2426`) names AC2's suite, the R
+  version (4.4.3) and the runner OS (Ubuntu noble, aarch64), and states the
+  four things not measured: direct `Imports` only with siblings and transitive
+  dependencies current; the two held-back packages with the version and the
+  requirement that forced each (`testthat` 3.3.2 → 3.1.10, forced by its `cli
+  (>= 3.6.5)` and `withr (>= 3.0.2)`; `furrr` 0.4.0 → 0.3.1, forced by its
+  `purrr (>= 1.2.1)`) — the re-run printed both holdbacks identically, so the
+  entry names what the run actually held; the three excluded files and the
+  consequence that nothing the timeout surface does was exercised; no floor run
+  alone, and one operating system.
+- **AC5 — met.** `NEWS.md` states under Requirements that the declared floors
+  are now measured and that `rlang` moved. Fresh on the host (macOS 26.5, R
+  4.6.1, current dependencies): `devtools::test()` FAIL 0 / WARN 12 / SKIP 5 /
+  PASS 6690; `devtools::check()` **0 errors, 0 warnings, 0 notes**.
+
+### Consistency gate
+
+Universal: `cairn_validate.py` passes (all checks; 70 advisory `work-log
+format` warnings, all from the fenced per-file count table embedded in the work
+log — advisory, not gate failures). No principle changed, so `cairn_impact.py`
+does not apply.
+
+Toolchain (`r-package` profile): `devtools::document()` produces no diff;
+`NAMESPACE`, `man/` and `data/` unchanged by the diff; `README.Rmd` and
+`README.md` untouched by this milestone and in sync; `pkgdown::check_pkgdown()`
+— "No problems found"; `NEWS.md` carries the user-visible entry; no new
+top-level files (`data-raw/` is already `.Rbuildignore`d, and `check()` reports
+0 notes); `devtools::check()` clean.
+
+Gate outcome: **pass**, no return.
+
+### Independent fresh-context review
+
+Executable surface touched (`data-raw/imports-floors.R`, 754 new lines) and a
+user-facing tier, so the full three-lens fan-out ran, each lens on a distinct
+evidence base and none having seen the implementation. 22 candidate findings.
+
+**[O] diff-bug lens (Opus) — 18 findings.** Verified correct by that lens and
+independently useful: the DESCRIPTION change is right (it fetched the NAMESPACE
+of rlang 1.0.6 through 1.1.7 and 1.2.0 from CRAN — none of 1.0.6–1.1.7 export
+any of the four, 1.2.0 exports all four); NEWS's "132 places" is exact
+(46+36+38+12, all namespace-qualified); the exclusion filter, the binary
+assertion, the pre- and post-suite provenance checks, the `TM_MODE` refusal,
+the exact-equality skip comparison and the child-exit checks all fire as
+claimed and none can silently no-op.
+
+**[S] blame-history lens (Sonnet) — 0 defects.** `rlang (>= 1.1.0)` was set in
+the M01 modernization commit as a routine bump and never measured; raising it
+undoes no deliberate decision. The three excluded timeout files resurrect
+nothing — D047 already discloses base R's escalation ladder; what M077 found is
+narrower and new, and went to a candidate row rather than being dropped. The
+new script repeats none of the rough edges `withr-floor.R`/`r-floor.R`'s
+reviews named. It flagged, as a process note, that both criteria amendments had
+their audits run in-session rather than by a fresh-context reader, disclosed at
+the time.
+
+**[S] prior-review lens (Sonnet) — 1 finding.** No inline PR review comments
+exist on this repo (probe returned empty), so the archive was the only surface,
+as in M076.
+
+**Findings, disposition, and where each landed.**
+
+| # | Lens | Finding | Disposition |
+|---|---|---|---|
+| F1 | O | `data-raw/imports-floors.R:208-210` claims the `-Wno-error=format-security` Makevars change "is disclosed in the D-entry"; D055 said nothing about it, so `archive` 1.1.1 and `rlang` were built with a hardening error demoted and no record said so | **fixed now** — D055 now states the one flag changed, why, and that a user compiling those versions on a hardened distro does hit the errors |
+| F2 | O | The move loop can raise a pin above the declared floor, and the closing line printed "the declared floors load, and the suite passes on them" unconditionally — reporting a version nobody declared as evidence for the one that is written down | **fixed now** — the closing line is now conditional and says the pinned set is not the declared set, with the moves to apply |
+| F3 | O | D055's "Pinned at the declared `rlang` 1.1.0" is not reproducible from the committed harness: `vctrs` is in the runtime closure and requires `rlang (>= 1.1.7)`, so the reconciliation step would move 1.1.0 to 1.1.7 before any install | **fixed now** — D055 now says the 1.1.0 pin was direct, ahead of that step, and that 1.1.7 is equally short of all four exports |
+| F4 | S(prior) | `sub <- ...` at `:634` and `:650` shadows base `sub()` — the verbatim pattern M076's review named (F8) and the ROADMAP row instructs the next milestone to sweep | **fixed now** — renamed to `req` throughout both loops |
+| F5 | O | `install_pin` passes `env=` values unquoted (`:180`) while `run_child` carefully `shQuote`s — a `TM_LIBROOT` containing a space silently drops `R_LIBS` from the install | **fixed now** — both values now `shQuote`d, with the reason named |
+| F6 | O | D055's NAMESPACE walk is stated as exhaustive but skipped rlang 1.0.1, 1.0.3, 1.0.5 | **fixed now** — all three fetched from the Archive at review and confirmed to export none of the four; D055's list is complete and now says so |
+| F7 | O | An install failure cascades: the loop continues, so `archive`/`purrr` compile against the user library's `cli` headers, and `--repair` walks only the failed package forward without reinstalling its LinkingTo dependents | follow-up — `Imports`-floors candidate row |
+| F8 | O | The library-reuse guard keys on `Version` only, so a persisted `TM_LIBROOT` can keep binaries compiled against superseded headers after a floor is raised | follow-up — same row; the *half-written-install* half of this trap is closed, the staleness half is not |
+| F9 | O | `fetch_tarball`'s cache short-circuit (`:124`) returns before the `untar`/`DESCRIPTION` validation directly beneath it, so a truncated download in a persisted `TM_SCRATCH` is reused forever | follow-up — same row; this is the enumerated 1000-byte-heuristic shape |
+| F10 | O | The hold-back set is "every installed package outside the runtime closure with an unmet requirement", not "the test harness" as D055 item 2 describes; run against a developer's own library it can downgrade unrelated packages and abort the measurement | follow-up — same row |
+| F11 | O | The move loop's `for (round in 1:5)` exits silently on non-convergence, skipping the holdback branch entirely | follow-up — same row |
+| F12 | O | `archive_versions` turns a network failure into "no later versions exist" (`:404`), so `--repair` could jump a floor straight to today's release | follow-up — same row |
+| F13 | O | `R CMD INSTALL --no-test-load` means "installs" does not mean "loads", so an unresolved symbol at dlopen is recorded as a successful install | follow-up — same row |
+| F14 | O | `--only X --walk Y` bypasses the walk's name guard (`:420`) and errors with an unrelated message | follow-up — same row |
+| F15 | O | The per-file table and TOTALS line print failures but not errors; the child still `stop()`s on either, so the control holds, but the transcribed table reads stronger than it is | follow-up — same row |
+| F16 | O | `BASE_PKGS` uses `priority = c("base", "recommended")`, wider than AC1's carve-out of `tools` and `utils` | follow-up — same row |
+| F17 | O | A `~` in `TM_LIBROOT` reaches `R CMD INSTALL -l` inside single quotes; the lens could not verify whether R path-expands internally | follow-up — same row, carrying the unverified note |
+| F18 | O | Dead `probe <- file.path(LIBROOT, "walk")` at `:681` with a comment describing behaviour that does not exist | follow-up — same row |
+| F19 | O | NEWS says "the package's test suite has been run" without naming the three-file exclusion | **rejected** — the plan gate deliberately split this: NEWS carries the user-visible fact, D055 carries the per-floor what-ran/what-did-not, and that split is a recorded decision, not an oversight. Surfaced here rather than silently dropped |
+| F20 | S(blame) | Both criteria amendments had their audits run in-session rather than by a fresh-context reader | **rejected** — a disclosed constraint of the implementing session, recorded in the work log at the time, not a defect in the diff |
+| F21 | O | The measurement container is an ad-hoc image (`tidymedia-floors:r443`) built from no committed Dockerfile, so D055's runner is not reproducible from the repo alone | follow-up — same row; raised by the reviewer at this gate |
+| F22 | O | `install_order` is computed once and not recomputed after a `--repair` walk | follow-up — same row (the recompute half of F7) |
+
+Sixteen findings deferred; all land on the existing `Imports`-floors candidate
+row, which already carries the sweep-both-scripts instruction — this extends it
+a fifth time, disposed explicitly per records-hygiene §7 rather than silently.
+
+**Return floor.** No actioned finding demonstrates an acceptance criterion
+failing. F1, F3 and F6 are accuracy gaps in the record AC4 binds and were fixed
+at the gate rather than returned, since AC4's enumeration — the three things
+not measured — is stated correctly and completely in D055 either way. No
+finding is a load-bearing defect in what the package does for its users: every
+one of F7–F18 and F21–F22 is in a developer-only script `.Rbuildignore` keeps
+out of the built package. Status stays `review`; no return.
+
+**Re-verification after the fix-now edits.** The harness was re-run end to end
+after F1–F5's code and record edits were applied. The script parses; the run
+exits 0 and reproduces the measurement exactly — baseline and pinned both
+`pass=6120 fail=0 skip=22 over 66 files`, `no floor moved`, the same two
+holdbacks — so the evidence recorded above stands against the code as merged,
+not only against the code as measured.
+

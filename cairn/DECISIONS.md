@@ -2432,10 +2432,14 @@ measured now. Eight stand at the version they declared. One did not work at all.
 1.2.0.** `R/` calls `rlang::check_string()` 46 times, `check_bool()` 36,
 `check_number_whole()` 38 and `check_number_decimal()` 12 — the front-door
 checks every exported verb runs before it builds a command. rlang exports all
-four for the first time in **1.2.0**: a NAMESPACE walk over 1.0.0, 1.0.2,
-1.0.4, 1.0.6, 1.1.0 through 1.1.7 and 1.2.0 finds none of them exported before
-that release. Pinned at the declared 1.1.0, 1528 tests failed, each reading
-`'check_string' is not an exported object from 'namespace:rlang'`. A user who
+four for the first time in **1.2.0**: a NAMESPACE walk over 1.0.0, 1.0.1, 1.0.2,
+1.0.3, 1.0.4, 1.0.5, 1.0.6, 1.1.0 through 1.1.7 and 1.2.0 — every release the
+Archive holds between 1.0.0 and 1.2.0 — finds none of them exported before that
+release. Pinned at the declared 1.1.0 — directly, ahead of the environment
+reconciliation the harness now runs first, which would itself have raised 1.1.0
+to the 1.1.7 `vctrs` requires, a version equally short of all four exports —
+1528 tests failed, each reading `'check_string' is not an exported object from
+'namespace:rlang'`. A user who
 resolved the floor got a package whose every verb aborted on its own first
 line. Nothing caught it because nothing had ever run it: CI installs the latest
 dependencies on all five jobs. The same direction is forced independently by
@@ -2454,8 +2458,16 @@ asserted on `PATH` first, because most execution tests `skip_if` they are
 absent and "0 failures" is also true of a run where every one of them skipped.
 
 Runner: `rocker/r-ver:4.4.3` — R 4.4.3, Ubuntu noble, aarch64, `ffmpeg` 6.1.1 —
-under colima on macOS 26.5. Result, with `archive` 1.1.1, `cli` 3.4.0, `dplyr`
-1.1.0, `glue` 1.6.2, `purrr` 1.0.0, `rappdirs` 0.3.3, `rlang` 1.2.0, `tibble`
+under colima on macOS 26.5. One compiler flag was changed for the measurement
+and nothing else: Debian and Ubuntu build R with `-Werror=format-security`, and
+`rlang` 1.1.0 and `archive` 1.1.1 both call `Rf_error()` with a non-literal
+format, so on this runner those two floors are a compile ERROR rather than a
+warning. The harness appends `-Wno-error=format-security` so it measures the
+floor rather than the distribution's hardening policy. The consequence for a
+user is real and is not measured away: compiling those versions from source on
+a distro that hardens this way does hit those errors.
+
+Result, with `archive` 1.1.1, `cli` 3.4.0, `dplyr` 1.1.0, `glue` 1.6.2, `purrr` 1.0.0, `rappdirs` 0.3.3, `rlang` 1.2.0, `tibble`
 3.1.4 and `withr` 2.5.0 all resolving from the pinned library: **6120 passing,
 0 failing, 22 skipped over 66 files**, identical file for file to the same
 suite's run on current dependencies in the same container.

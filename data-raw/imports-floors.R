@@ -177,7 +177,10 @@ install_pin <- function(lib, pkg, ver) {
   out <- suppressWarnings(system2(
     file.path(R.home("bin"), "R"),
     c("CMD", "INSTALL", "--no-test-load", "-l", shQuote(lib), shQuote(tgz)),
-    env = c(sprintf("R_LIBS=%s", lib), sprintf("R_MAKEVARS_USER=%s", MAKEVARS)),
+    # shQuote for the same reason run_child does it: system2(env = ) pastes these
+  # into a `sh -c` line, so a TM_LIBROOT containing a space would end the
+  # assignment and R_LIBS would never reach the install.
+  env = c(sprintf("R_LIBS=%s", shQuote(lib)), sprintf("R_MAKEVARS_USER=%s", shQuote(MAKEVARS))),
     stdout = TRUE, stderr = TRUE
   ))
   status <- attr(out, "status")
@@ -631,15 +634,15 @@ for (round in 1:5) {
     # A requirer inside this package's runtime closure is something a user
     # installing tidymedia gets, so the floor below it does not work and moves.
     for (q in unique(rt$required)) {
-      sub <- rt[rt$required == q, , drop = FALSE]
-      need <- as.character(max(numeric_version(sub$version)))
+      req <- rt[rt$required == q, , drop = FALSE]
+      need <- as.character(max(numeric_version(req$version)))
       moves <- c(moves, sprintf("%s: %s -> %s (required by %s)", q, pins[[q]], need,
-                                paste(sprintf("%s %s (>= %s)", sub$requirer,
-                                              vapply(sub$requirer, function(r)
+                                paste(sprintf("%s %s (>= %s)", req$requirer,
+                                              vapply(req$requirer, function(r)
                                                 as.character(utils::packageVersion(r)), ""),
-                                              sub$version), collapse = ", ")))
+                                              req$version), collapse = ", ")))
       cat(sprintf("  MOVE     %-10s %s -> %s  (runtime closure: %s)\n", q, pins[[q]], need,
-                  paste(unique(sub$requirer), collapse = ", ")))
+                  paste(unique(req$requirer), collapse = ", ")))
       pins[[q]] <- need
     }
     next
@@ -647,8 +650,8 @@ for (round in 1:5) {
   # Everything left is outside the runtime closure: the test harness. No user
   # installs it, so it is held back rather than allowed to raise a floor.
   for (r in unique(reqs$requirer)) {
-    sub <- reqs[reqs$requirer == r, , drop = FALSE]
-    forced <- paste(sprintf("%s (>= %s)", sub$required, sub$version), collapse = ", ")
+    req <- reqs[reqs$requirer == r, , drop = FALSE]
+    forced <- paste(sprintf("%s (>= %s)", req$required, req$version), collapse = ", ")
     v <- newest_compatible(r, pins)
     cat(sprintf("  HOLDBACK %-10s %s -> %s  (its current release needs %s)\n",
                 r, as.character(utils::packageVersion(r)), v, forced))
@@ -751,4 +754,12 @@ if (length(holdbacks)) {
                 holdbacks[[r]]$version, holdbacks[[r]]$forced))
   }
 }
-cat("\n    the declared floors load, and the suite passes on them\n")
+# What passed is what was PINNED, which is the declared set only when nothing
+# moved. Saying "the declared floors" after a MOVE would report a version
+# nobody declared as evidence for the one that is written down.
+if (length(moves)) {
+  cat("\n    the pinned floors load and the suite passes on them, but the pinned set\n")
+  cat("    is NOT the declared set -- apply the moves above to DESCRIPTION and re-run\n")
+} else {
+  cat("\n    the declared floors load, and the suite passes on them\n")
+}

@@ -69,18 +69,41 @@ pad_integers <- function(x, width = NULL, flag = "0") {
 # Pluralization is driven off the scalar `length(bad)` via cli::qty(), never
 # off the `{.file {bad}}` vector: a `{?}` governed by a `{.val {vector}}`
 # throws `length(object) == 1` with 2+ items (M18).
+# unreadable_paths() ------------------------------------------------------
+
+# The one place the package asks whether a path can be READ. D041 made
+# readability one predicate and had both the front door and the pipeline reach
+# it, but only for the ABORT: check_batch_inputs() kept a second
+# file.access(mode = 4) of its own to decide which carrier columns to name, and
+# reached the shared predicate only for the wording. Two spellings of the same
+# test drift at the first edit whether or not one of them aborts, so the filter
+# half lives here too (M81/D059).
+#
+# Non-aborting on purpose -- it answers a question, and the two callers do
+# different things with the answer: check_paths_readable() formats the result
+# into a message, check_batch_inputs() asks only whether it is empty. The
+# as.character() coercion is here rather than at each end for the same
+# one-site reason: a path carrier can arrive as a factor, and file.access()
+# raises its unattributed base error `invalid 'names' argument` on one (M62
+# review F1).
+unreadable_paths <- function(x) {
+  x <- as.character(x)
+  unique(x[file.access(x, mode = 4) != 0])
+}
+
 check_paths_readable <- function(x, arg = rlang::caller_arg(x),
                                  multiple = length(x) != 1L,
                                  call = rlang::caller_env()) {
   # A path carrier can arrive as a factor (paths as levels) or as any other
-  # atomic vector; coerce before the predicate so file.access() cannot raise its
-  # unattributed base error `invalid 'names' argument` from inside a front-door
-  # guard (M62 review F1). This is check_batch_jobs()'s coercion, at the one
-  # site every sweep reaches, so a verb that validates its table inline gets it
-  # too. Coercing here decides only what THIS guard reads: a verb whose own
-  # column contract rejects the type still rejects it downstream, unmoved.
+  # atomic vector; coerce so file.access() cannot raise its unattributed base
+  # error `invalid 'names' argument` from inside a front-door guard (M62
+  # review F1). unreadable_paths() coerces too -- it must, since the batch
+  # sweep reaches it without passing through here -- and this line stays
+  # because the coerced vector is what the message and the return value carry.
+  # Coercing decides only what THIS guard reads: a verb whose own column
+  # contract rejects the type still rejects it downstream, unmoved.
   x <- as.character(x)
-  bad <- unique(x[file.access(x, mode = 4) != 0])
+  bad <- unreadable_paths(x)
   if (length(bad) == 0) {
     return(invisible(x))
   }

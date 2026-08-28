@@ -4711,7 +4711,11 @@ check_batch_inputs <- function(jobs, col = "input",
     if (is.list(x)) x <- unlist(x, use.names = FALSE)
     as.character(x)
   })
-  holding <- vapply(paths, function(x) any(file.access(x, mode = 4) != 0),
+  # WHICH carriers hold a bad path, asked of the same predicate that formats
+  # the abort below rather than of a second file.access() spelled the same way
+  # (M81/D059). The per-carrier test is unchanged: each column is asked
+  # separately, so a call whose two carriers are both bad still names both.
+  holding <- vapply(paths, function(x) length(unreadable_paths(x)) > 0,
                     logical(1))
   # Nothing bad: the sweep passes and which carriers it would have named never
   # reaches anyone.

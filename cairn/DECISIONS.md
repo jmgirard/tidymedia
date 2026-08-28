@@ -2625,7 +2625,7 @@ either.
   wrong about a path and duplicated, or by a report of an explicit-output table
   whose output collision hid a missing path — the case this entry leaves alone.
 
-## D058 — The input sweep sits below a verb's shape, column-type and scalar-argument guards (2026-08-28, from M080; narrows D057 by fixing the sweep's upper bound, leaving D040 and D041 standing)
+## D058 — The input sweep is never lifted past a check that already sat above it (2026-08-28, from M080; narrows D057 by fixing the sweep's upper bound, leaving D040 and D041 standing; the rule below was narrowed again on 2026-08-28 after M080's second review found its first wording claimed an invariant the package does not have)
 
 D040 fixed what the input sweep reports BEFORE, and D057 added the
 derived-output duplication refusal to that list. Neither fixed what the sweep
@@ -2636,11 +2636,28 @@ sweep passed those too and a wrong column type or a bad scalar argument began
 reporting after the missing path. M080's review returned the milestone on it;
 the calls and messages are recorded in that milestone file's Review section.
 
-**The rule.** A verb's own front-door checks on its jobs SHAPE, on its column
-TYPES, and on its SCALAR ARGUMENTS all report before the input sweep. The
-sweep is never lifted past them to reach something D057 puts below it: where
-that thing sits above those checks, the sweep and it move down together as a
-unit, and the sweep keeps the last position in the front-door block.
+**The rule.** The input sweep is never lifted past a check that already sat
+above it. Where the sweep must move down to reach something D057 puts below
+it, the sweep and that thing move down together as a unit, so no check that
+reported before the sweep begins reporting after it.
+
+This fixes the sweep's position RELATIVE to the checks above it. It does not
+say every check a verb makes on its own arguments is one of them, and the
+package is not shaped that way, and it splits BOTH ways on the same verb.
+Measured on 2026-08-28 by reading each sweep verb's body around its
+`check_batch_inputs()` call: `picture_in_picture_batch()` checks `scale` and
+its codec tokens above the sweep but `margin` and `position` below it;
+`compare_videos_batch()` checks `resize` and its codec tokens above but
+`direction` below; `standardize_video_batch()` checks `video_codec` and
+`audio_stream` above but `width` below; `normalize_audio_batch()` checks
+`two_pass` above but `target_loudness` below. What sits above the sweep is per
+argument, not per verb and not per category, and NEWS.md accordingly promises
+no ordering for a verb's own arguments.
+
+What IS uniform, and what the first sentence of NEWS's ordering paragraph
+rests on: no shape guard (`check_batch_jobs()`, `check_fanin_jobs()`) and no
+column-type guard (`check_batch_*_col()`) sits below the sweep in any verb —
+checked over every export reaching `check_batch_inputs()` on 2026-08-28.
 
 **The consequence, taken deliberately.** On the two verbs carrying both, the
 duplication refusal now sits below the scalar checks as well as below the
@@ -2649,6 +2666,9 @@ argument. That inverts a precedence M42 pinned; the pin moved to the test file
 that owns the sweep's order rather than being deleted, because the order it
 states is still a promise, just the other way up.
 
-- **Falsified by** a report preferring the missing path over a wrong column
-  type or a bad scalar argument, or by a verb whose scalar check cannot be
-  stated above the sweep without reading a column the sweep has not validated.
+- **Falsified by** a report preferring the missing path over a check that sat
+  above the sweep before the move that displaced it, or by a verb whose check
+  cannot be stated above the sweep without reading a column the sweep has not
+  validated. NOT falsified by a report preferring the missing path over a check
+  that was always below the sweep — that is the shape the first wording of this
+  rule wrongly forbade.

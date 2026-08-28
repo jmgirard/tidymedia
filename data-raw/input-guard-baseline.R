@@ -31,9 +31,14 @@
 #                    column guard stayed above the sweep while this one did
 #                    not -- so the grid saw nothing (M80 review F3)
 #   scalar_arg       a bad scalar argument (`audio_stream = NA`), ABOVE the
-#                    sweep. The LAST of each verb's scalar front-door checks,
-#                    so a cell reading it proves the sweep sits below the whole
-#                    scalar block and not merely below its first member
+#                    sweep. It proves the sweep sits below THIS check and
+#                    nothing more: a verb's scalar checks are not one block,
+#                    and several sit below the sweep on other verbs
+#                    (`margin`, `position`, `direction`; measured 2026-08-28,
+#                    D058). A move past a scalar check this grid does not
+#                    supply would still produce no moved cell -- F3's blind
+#                    spot narrowed, not closed. The below-the-sweep cells are
+#                    pinned in test-input-path-front-door.R instead
 #   contradiction:*  the M58 argument-contradiction sweep, BELOW the sweep
 #   nvenc            check_nvenc_available(), BELOW the sweep
 #   run_guard        ffm_batch()'s own `run` guard, below everything
@@ -1100,7 +1105,8 @@ input_guard_blame <- function(before, after) {
 #
 # Read it as two blocks:
 #
-#   crossing above the sweep (`jobs_na`, `column_type`) -- every cell must read
+#   crossing above the sweep (the names INPUT_GUARD_ABOVE carries below; not
+#     re-listed here, which is how this line went stale) -- every cell must read
 #     the crossing on BOTH refs. These are invariants, not changes: a sweep
 #     hoisted above the shape and type guards would invert them silently.
 #   crossing below the sweep (`contradiction:*`, `nvenc`, `run_guard`,

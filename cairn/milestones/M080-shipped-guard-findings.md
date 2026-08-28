@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M080: The guard says what is wrong, and refuses NA
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -134,6 +134,14 @@ no user call reaches, which stay unfixed and undocumented.
       `data-raw/input-guard-baseline.R` that redden on the returned commit
       (F3); D058 fixing the sweep's upper bound; the NEWS ordering paragraph
       and the third bug-fix entry corrected to the shipped order.
+- [x] T9 (added 2026-08-28, review return 2): the NEWS ordering paragraph and
+      the third bug-fix entry corrected to the order measured off the package
+      (A1); D058's rule narrowed to the sweep's position relative to what was
+      already above it, with the both-ways split recorded (A2); the
+      `scalar_arg` crossing's rationale narrowed to what that crossing proves
+      (A3); the stale `input_guard_ordering()` docstring (A5) and the stale
+      "END of this verb's front-door validation" comment at both named sites
+      (A7); a below-the-sweep pin in `test-input-path-front-door.R`.
 
 ## Work log
 
@@ -159,6 +167,12 @@ no user call reaches, which stay unfixed and undocumented.
 - 2026-08-28: T8 -- in `anonymize_video_batch()` and `standardize_video_batch()` the sweep and the derived-output block moved down together, below `check_batch_audio_col()`, `check_token(video_codec)` and `check_number_whole(audio_stream)`, restoring every precedence F1 and F2 named. `normalize_audio_batch()` already had that shape and is untouched, which the new test's third verb holds. F3: two above-the-sweep crossings, `column_type:stream` and `scalar_arg`, derived from the guard calls in each verb's own body rather than listed, and gated on the verb having the sweep at all (five scalar verbs check the same argument against a different input guard). Grid re-run at `origin/master` and HEAD: every reader empty except the 30 pre-existing unreadable-cell blame rows (A10), the same three `derived_output` cells moved, 662 cells over 16 crossings. Run against the returned commit `14b0cd6` the two new crossings redden on 8 cells -- the two verbs, both crossings, the `all` and `one` forms -- so they can fail on the defect they were added for. The codec-versus-duplication cells left `test-codec-arg-front-door.R` for `test-input-path-front-door.R` and read the other way up, per the gate above. `devtools::test()`: 0 failures, 7957 passing, 5 skips, 12 warnings.
 - 2026-08-28: `devtools::check()` Status: OK, 0 errors / 0 warnings / 0 notes, 3m 4s. T8 checked; status to review (defect return 1 answered).
 - 2026-08-28: review returned M080 to in-progress (defect return 2). AC6 fails again: T8's correction to NEWS.md's ordering paragraph overshoots -- it now promises that "the verb's own checks on its scalar arguments still report before" the path sweep, and the third bug-fix entry that "the checks a verb makes on its own arguments all sit above the missing-file sweep", both false. Reproduced at review with controls: `standardize_video_batch(tibble(input = "gone.mp4"), width = NA_real_)` reports `jobs$input` where the readable-input control reports `` `width` must be a single FFmpeg expression or number. ``; likewise `anonymize_video_batch(color = 123)` and `pixel_format = 123`, `normalize_audio_batch(target_loudness = 999)`, `picture_in_picture_batch(margin = -5)` and `position = "nope"`, and `compare_videos_batch(direction = "nope")`. The same overshoot is written into D058, whose own falsifier it fires, into the `scalar_arg` crossing's rationale, and into a stale docstring and a stale comment (A1, A2, A3, A5, A7). AC1-AC5 re-verified with fresh evidence and stand; the consistency gate passed; `devtools::check()` clean and `devtools::test()` 0 failures / 7957 passing. A4, A6 and F4-F11 carry to the re-review gate. Thrash rule trigger (b) fires: AC6 has failed twice by the same shape of mechanism.
+
+- 2026-08-28: implementation gate on defect return 2. Thrash trigger (b)'s remedy — reconsidering the plan gate's recorded alternative, reverting the reorder and amending NEWS's twenty-rows claim instead — was offered and declined; the shipped reorder stands and only the prose describing it is corrected. Chosen because both failures were in composing the claim, not in the code: AC1-AC5 verify, the reorder is what D040's own argument asks for, and reverting would undo AC5 and D057 to fix a sentence. Falsified by a third return whose defect is in the shipped order rather than in a description of it.
+- 2026-08-28: gate also asked whether to pin the claim with a test. The scope offered first — a check reading NEWS.md and comparing it to measured behaviour — was withdrawn on the user's challenge: it is a new instrument built to catch a writing failure, the shape the M62/M63/M64 row already carries nine findings about, and D-064's detector-rendering doctrine warns that a guard restating the prose reads as assurance while asserting nothing. Recorded honestly: NO test catches a prose/code mismatch, and the pin added below would not have caught A1. What was pinned instead is the behaviour the corrected paragraph leaves promised.
+- 2026-08-28: T9 — the correction was derived, not composed, and the derivation falsified two drafts before one survived. Draft 1 (the review's own characterisation, "type/token checks above the sweep, value and vocabulary below") is false: `picture_in_picture_batch(margin = "x")` is a TYPE check reporting AFTER the sweep. Draft 2, taken to the gate and approved, said "every other check a verb makes on its own arguments reports after it"; deriving it over every export reaching `check_batch_inputs()` falsified it before it shipped — `compare_videos_batch()` checks `resize` and both codec tokens above the sweep, `picture_in_picture_batch()` checks `scale`, `segment_video_batch()` checks `reencode`, `sample_frames_batch()` checks `outdir`. The shipped wording therefore promises NO ordering for a verb's own arguments and gives the both-ways case on one verb (`standardize_video_batch()`: `video_codec` before, `width` after). The one uniform claim the paragraph does keep was checked the same way: no shape guard and no column-type guard sits below the sweep in any verb.
+- 2026-08-28: T9 — `devtools::test()`: 0 failures, 7967 passing (7957 before, +10 from the new pin), 5 skips, 12 warnings. `devtools::check()` Status: OK, 0 errors / 0 warnings / 0 notes, 2m 32s. T9 checked; status to review (defect return 2 answered).
+- 2026-08-28: T9 — D058 narrowed to "the sweep is never lifted past a check that already sat above it", with the per-argument split recorded on four verbs and its falsifier re-cut so a check that was always below the sweep no longer fires it. A3's crossing rationale now claims only the `audio_stream` check; A5's docstring points at `INPUT_GUARD_ABOVE` rather than re-listing it; A7's comment at `R/ffmpeg.R` both named sites says what now follows it. The third site (`normalize_audio_batch()`'s `audio_codec`) was left alone — nothing but the fan-out follows it there, so its comment is still true. New pin: five below-the-sweep cells, each with a readable-path control proving the argument check fires at all.
 
 ## Decisions
 

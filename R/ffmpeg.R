@@ -1960,13 +1960,16 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   # older spelling; its arguments' NULL semantics are D020's, not this
   # milestone's, so it is left alone rather than swept.
   #
-  # Placed at the END of this verb's front-door validation, not beside the
-  # other scalar checks: before M41 this argument was only read per row
-  # inside the fan-out, so EVERY check above it reported first on a call
-  # that was wrong about two things at once. Moving the guard up the
-  # function silently reassigned that precedence -- first past the jobs
-  # SHAPE block (review A6), then past its content checks too (review
-  # A1r3). Here it changes nothing but the message a bad codec gets.
+  # No longer the LAST of this verb's front-door checks, though it was when
+  # M41 placed it here: the audio_stream column and argument guards below it,
+  # the input sweep, and the duplicated-input refusal all now follow (M80 T8,
+  # D058). It is still deliberately AFTER the jobs shape and content checks:
+  # before M41 this argument was only read per row inside the fan-out, so
+  # EVERY check above it reported first on a call that was wrong about two
+  # things at once. Moving the guard up the function silently reassigned that
+  # precedence -- first past the jobs SHAPE block (review A6), then past its
+  # content checks too (review A1r3). Here it changes nothing but the message
+  # a bad codec gets.
   check_token(video_codec, allow_null = TRUE)
   # See standardize_video_batch() for why the hint says "every" here and why
   # check_batch_stream_values() is not needed on a verb that does not reshape.
@@ -3967,13 +3970,16 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
   # own argument name never appeared (M41). allow_null keeps NULL compiling
   # exactly as it does today: no -codec:v, the container's default encoder.
   #
-  # Placed at the END of this verb's front-door validation, not beside the
-  # other scalar checks: before M41 this argument was only read per row
-  # inside the fan-out, so EVERY check above it reported first on a call
-  # that was wrong about two things at once. Moving the guard up the
-  # function silently reassigned that precedence -- first past the jobs
-  # SHAPE block (review A6), then past its content checks too (review
-  # A1r3). Here it changes nothing but the message a bad codec gets.
+  # No longer the LAST of this verb's front-door checks, though it was when
+  # M41 placed it here: the audio_stream column and argument guards below it,
+  # the input sweep, and the duplicated-input refusal all now follow (M80 T8,
+  # D058). It is still deliberately AFTER the jobs shape and content checks:
+  # before M41 this argument was only read per row inside the fan-out, so
+  # EVERY check above it reported first on a call that was wrong about two
+  # things at once. Moving the guard up the function silently reassigned that
+  # precedence -- first past the jobs SHAPE block (review A6), then past its
+  # content checks too (review A1r3). Here it changes nothing but the message
+  # a bad codec gets.
   check_token(video_codec, allow_null = TRUE)
   # The stream-index column's own type guard, with a hint saying what NA means
   # HERE. The shared default ("drop audio") belongs to the composite verbs and

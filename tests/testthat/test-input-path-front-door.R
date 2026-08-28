@@ -533,3 +533,82 @@ test_that("a scalar argument reports before the duplicated-input refusal", {
                  fixed = TRUE, info = verb)
   }
 })
+
+test_that("a value or vocabulary argument still reports after the path sweep", {
+  # The other half of the order. What sits ABOVE the sweep package-wide is the
+  # shape and column-type guards; a verb's checks on its own ARGUMENTS split
+  # both ways and NEWS.md deliberately promises no ordering for them -- measured
+  # 2026-08-28, several verbs check a codec token or a bool above the sweep
+  # while these five report after it (D058).
+  #
+  # M080's review returned the milestone twice for a NEWS paragraph wider than
+  # the code, and a third wording drafted in this session was falsified the same
+  # way before it shipped. These are the cells that falsified those claims,
+  # pinned so a later move lifting one of them above the sweep is loud.
+  #
+  # No test can check that the paragraph and the code agree -- that is read by
+  # a person. What this holds is the behaviour those cells record.
+  dir <- withr::local_tempdir()
+  good <- file.path(dir, "good.mp4")
+  good2 <- file.path(dir, "good2.mp4")
+  file.create(good, good2)
+  out <- file.path(dir, "out.mp4")
+
+  cases <- list(
+    list(verb = "standardize_video_batch",
+         bad = function() standardize_video_batch(
+           tibble::tibble(input = "gone.mp4", output = out),
+           width = NA_real_, run = FALSE),
+         ctl = function() standardize_video_batch(
+           tibble::tibble(input = good, output = out),
+           width = NA_real_, run = FALSE),
+         swept = "`jobs$input` names 1 file that can't be found or read.",
+         want = "`width` must be a single FFmpeg expression or number."),
+    list(verb = "normalize_audio_batch",
+         bad = function() normalize_audio_batch(
+           tibble::tibble(input = "gone.mp4", output = out),
+           target_loudness = 999, run = FALSE),
+         ctl = function() normalize_audio_batch(
+           tibble::tibble(input = good, output = out),
+           target_loudness = 999, run = FALSE),
+         swept = "`jobs$input` names 1 file that can't be found or read.",
+         want = "`target_loudness` must be a number between -70 and -5"),
+    list(verb = "picture_in_picture_batch (margin)",
+         bad = function() picture_in_picture_batch(
+           tibble::tibble(main = "gone.mp4", overlay = "gone2.mp4",
+                          output = out), margin = -5, run = FALSE),
+         ctl = function() picture_in_picture_batch(
+           tibble::tibble(main = good, overlay = good2, output = out),
+           margin = -5, run = FALSE),
+         swept = "name 2 files that can't be found or read.",
+         want = "`margin` must be a whole number larger than or equal to 0"),
+    list(verb = "picture_in_picture_batch (position)",
+         bad = function() picture_in_picture_batch(
+           tibble::tibble(main = "gone.mp4", overlay = "gone2.mp4",
+                          output = out), position = "nope", run = FALSE),
+         ctl = function() picture_in_picture_batch(
+           tibble::tibble(main = good, overlay = good2, output = out),
+           position = "nope", run = FALSE),
+         swept = "name 2 files that can't be found or read.",
+         want = "`position` must be one of"),
+    list(verb = "compare_videos_batch (direction)",
+         bad = function() compare_videos_batch(
+           tibble::tibble(inputs = list(c("gone.mp4", "gone2.mp4")),
+                          output = out), direction = "nope", run = FALSE),
+         ctl = function() compare_videos_batch(
+           tibble::tibble(inputs = list(c(good, good2)), output = out),
+           direction = "nope", run = FALSE),
+         swept = "`jobs$inputs` names 2 files that can't be found or read.",
+         want = "`direction` must be one of \"horizontal\" or \"vertical\"")
+  )
+
+  for (case in cases) {
+    # Wrong about the path AND about the argument: the sweep speaks.
+    expect_match(conditionMessage(rlang::catch_cnd(case$bad())),
+                 case$swept, fixed = TRUE, info = case$verb)
+    # The control the pin needs: with the paths readable, the argument check
+    # DOES fire, so the cell records an order and not a guard that never runs.
+    expect_match(conditionMessage(rlang::catch_cnd(case$ctl())),
+                 case$want, fixed = TRUE, info = case$verb)
+  }
+})

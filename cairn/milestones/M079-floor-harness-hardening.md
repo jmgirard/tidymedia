@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m079-floor-harness-hardening`
+- **Branch/PR:** `m079-floor-harness-hardening` / https://github.com/jmgirard/tidymedia/pull/83
 
 ## Goal
 
@@ -199,3 +199,244 @@ declared floor moved.
   quotes, and carries the driver clock beside it, labelled.
 
 ## Review
+
+Reviewed 2026-08-28 on branch `m079-floor-harness-hardening`, PR
+https://github.com/jmgirard/tidymedia/pull/83. `master` had not moved since the
+branch was cut (0 behind, 9 ahead, clean tree), so no merge-and-retest was
+needed. Diffstat: 7 files, +1036 / -247; the executable surface is the four
+`data-raw` scripts plus the new `data-raw/floor-probes.R`, so the full
+three-lens fan-out applied.
+
+**The probe harness was proven able to fail before its green was trusted.**
+`data-raw/floor-probes.R` is this milestone's own instrument, so review planted
+defects in the scripts it measures and re-ran it three times. Round 1 —
+`is_package_tarball()` stubbed to `return(TRUE)` in all three scripts, the
+`can_reuse()` stamp requirement dropped, `r_floor_of()`'s comparator refusal
+disabled, and the `stray` requirer check emptied — turned 21 of 45 probes red
+(A2-A5 in all three scripts, B1-B4, C2, C3, E2, E3, G3). Round 2 — the two
+`archive_versions()` network aborts reverted to empty fallbacks and
+`observed_elapsed()`'s `(none)` reverted to a number — turned F1, F3 and F5 red.
+Round 3 — `withr-floor.R`'s `regexec` abort reverted to `sub()`, and
+`UNVERSIONED_OK` widened back to `BASE_PKGS` in both scripts — turned E5, E6-r-f
+and E6-imp red. Every planted class went red in the probe that claims it, and
+the scripts were restored to a clean `git diff` after each round.
+
+### Acceptance criteria
+
+- **AC1 — cache-path defects refused and refetched.** Fresh run of
+  `Rscript data-raw/floor-probes.R`: 45 probes, 0 failed. A1-A5 exercise
+  `is_package_tarball()` in `imports-floors.R`, `withr-floor.R` and `r-floor.R`
+  over five inputs (a real tarball accepted; gzip truncated before DESCRIPTION;
+  gzip truncated after it; an HTTP error body over the 1000-byte floor; a
+  well-formed tarball with no DESCRIPTION). B1-B4 plant each defect form at the
+  cache path and assert the fetch refuses it, unlinks it and refetches the real
+  file. Discrimination: stubbing the validator turned all twelve A2-A5 probes
+  and all four B probes red. Verified.
+- **AC2 — install reuse, `--no-test-load`, tilde-and-space root.** C1-C4:
+  matching `Version` with a matching linkage stamp reuses; a stamp naming an
+  older `cli` reinstalls; no stamp at all (a pre-M079 library) reinstalls; a
+  wrong `Version` reinstalls. Discrimination: dropping the stamp requirement
+  from `can_reuse()` turned C2 and C3 red. D1-D3: an install into a library root
+  containing both `~` and a space reports no error, lands the entry with its
+  stamp, and is reused on a second call. `grep -n 'no-test-load' data-raw/`
+  returns no match at either call site. Verified.
+- **AC3 — the three DESCRIPTION readers abort on unparseable input.** E1-E4:
+  `Depends: R (>= 4.0.0)` reads as 4.0.0; `R (> 4.0)` and `R (== 4.1.0)` are
+  each refused rather than read as "none declared"; a package name ending in `R`
+  does not become the R floor. E5: `withr-floor.R` refuses an `Imports` with no
+  `withr (>= )` instead of handing back the whole field. E6-r-f / E6-imp: an
+  unversioned `MASS` stops both scripts rather than being waved through.
+  Discrimination: disabling the comparator refusal turned E2/E3 red; reverting
+  the `sub()` and widening `UNVERSIONED_OK` back to `BASE_PKGS` turned E5, E6-r-f
+  and E6-imp red. Verified.
+- **AC4 — four sites that reported an unmeasured value.** F1/F2/F3: a failed
+  Archive listing, an empty CRAN database and a failed `available.packages()`
+  are each refused rather than read as "no later versions exist"; discrimination
+  confirmed for F1 and F3 by restoring the empty fallbacks. G4: rounds that never
+  settle stop the run instead of falling out of the loop. The per-file summary
+  prints its `error` column (`imports-floors.R`, the child's TOTALS and per-file
+  lines). Fourth site measured directly rather than through a probe — a fresh
+  `Rscript data-raw/timeout-bound.R` reports `elapsed(s)` 42.02 / 22.01 / 42.02 /
+  42.02 / 2.01 / 2.01 / 2.42 for A1-A4, B1, B2, C1 against D056's host column of
+  42.03 / 22.02 / 42.03 / 42.01 / 2.01 / 2.01 / 2.37 — every case within 0.05 s,
+  C1 the widest — while the separately labelled `driver(s)` column reads 44.28 /
+  24.28 / 44.29 / 44.29 / 4.28 / 4.28 / 4.68, i.e. 2.26 s above, which is what the
+  old single column printed. Verified.
+- **AC5 — the holdback set is the named packages.** `HOLDBACK_SET <-
+  c("testthat", "furrr")` at `data-raw/imports-floors.R:501`, read at `:539` and
+  `:545`. G2: a named harness package is held back. G3: a requirer outside both
+  the runtime closure and the named set stops the run by name; discrimination
+  confirmed by emptying the `stray` computation, which turned G3 red. The second
+  clause holds structurally — `stray` aborts before any `holdbacks[[r]]` is
+  recorded, so the returned holdback set is a subset of `HOLDBACK_SET` by
+  construction. Verified.
+- **AC6 — `--repair` and `--walk` are gone.** `grep -rn -e '--repair' -e
+  '--walk' data-raw/` exits 1 with no match. `--only` survives with its guard at
+  `imports-floors.R:118-122`, reached unconditionally above the `TM_DEFS_ONLY`
+  stop at `:799`: `Rscript data-raw/imports-floors.R --only nosuch` halts with
+  "nosuch is not a versioned Imports entry". M077 F18's `probe <-
+  file.path(LIBROOT, "walk")` and its comment are covered by the same empty
+  grep. Verified.
+- **AC7 — check and test unchanged from baseline.** `devtools::check()`:
+  0 errors / 0 warnings / 0 notes, 2m 41.8s. `devtools::test()`:
+  FAIL 0 | WARN 12 | SKIP 5 | PASS 6692 — identical to the pre-milestone
+  baseline the T9 work-log line records. Verified.
+
+### Consistency gate
+
+`cairn_validate.py` exit 0, all checks passed, every advisory clean (the
+`release window` advisory did not fire). No DESIGN principle changed
+(`Principles touched: --`), so `cairn_impact.py` was skipped. Toolchain checks
+from the `r-package` profile's `consistency-gate` slot: `devtools::document()`
+produced no diff (`git status` clean apart from this milestone file);
+`NAMESPACE`, `man/` and `data/` are untouched by the diff; `README.Rmd`,
+`_pkgdown.yml` and the package surface are untouched, and
+`pkgdown::check_pkgdown()` reports no problems; `NEWS.md` needs no entry because
+nothing user-visible changed -- `.Rbuildignore:15` (`^data-raw$`) keeps every
+file this milestone touched out of the built package; the diff adds no
+top-level file; `devtools::check()` clean as recorded under AC7.
+
+### Independent review
+
+Three fresh-context lenses, none having seen the implementation, each on a
+distinct evidence base.
+
+**[S] prior-review-record lens — no findings.** The archive carries prose
+`Review` paragraphs rather than `## Review` sections; four are relevant by
+content (M074, M076, M077, M078). It checked the current code against each named
+carried finding (M076 F8/P1/P2, M077 F7/F14/F15/F17/F18/F22) and found no
+regression. The GitHub probe `gh api repos/jmgirard/tidymedia/pulls/comments?per_page=1`
+returned `[]`, so the per-PR walk was skipped. It noted `BASE_PKGS` surviving at
+`imports-floors.R:95` and confirmed it is retained only for `ensure_deps` /
+`runtime_closure`, as the milestone states, not for the unversioned carve-out.
+
+**[S] blame-history lens — no findings.** It traced every deletion and
+behavior change to a dated acceptance criterion and cross-checked D047, D053,
+D055 and D056 plus the M077 archive and the ROADMAP carry row. It confirmed
+`archive_versions()` survives the `--walk` deletion because `newest_compatible()`
+still calls it, that `--no-test-load` is recorded nowhere as a deliberate fix,
+and that every narrowing (the named holdback set, `UNVERSIONED_OK`, the
+comparator refusal) is disclosed in M079-D1.
+
+**[O] diff-bug lens — fifteen findings, ranked as reported.** Verbatim, with
+disposition:
+
+- **F1 — `--offline` still goes to CRAN, and offline it fails.**
+  "`floor-probes.R:327-332` runs `r-floor.R` end to end at the staged root;
+  `r-floor.R`'s driver calls `fetch_description()` for all nine versioned
+  `Imports` entries *before* it reaches the appended unversioned `MASS`, so
+  E6-r-f downloads nine tarballs. The header (`floor-probes.R:8`) and the T4
+  work-log line both say `--offline` 'skip[s] the four that fetch'; with no
+  network E6-r-f never sees the abort message and reports a probe FAILURE, not a
+  skip." Confirmed by reading `floor-probes.R:36`, `:207`, `:270` and `:326-332`
+  — the E6 loop sits outside both `if (!OFFLINE)` guards.
+- **F2 — A6 is host-dependent, and the exit-status branch it justifies is dead
+  under R's internal tar.** "`attr(untar(list=TRUE), 'status')` is only ever set
+  when `untar` shells out; with `TAR` unset/empty R uses the internal reader,
+  which (measured here, fractions 0.5->0.9999) returns *zero* entries for the
+  late-truncated fixture. So `is_package_tarball` still refuses (good), but
+  `listing_only()` returns FALSE and probe A6 at `floor-probes.R:203`, which
+  asserts TRUE, fails — aborting the whole harness on a host where nothing is
+  wrong. `imports-floors.R:142-143` (and its two copies) is a no-op on that same
+  host." Reproduced at review: with `TAR=""` and `TAR="internal"`,
+  `untar(late, list = TRUE)` errors and returns NULL, so `listing_only()` is
+  FALSE and A6 would fail. `is_package_tarball()` still refuses in both modes.
+- **F3 — AC1 names `withr-floor.R`'s fetch; no probe exercises it.** "B1-B4
+  (`floor-probes.R:213-229`) plant only at `imports-floors.R`'s `fetch_tarball`
+  cache path. `withr-floor.R:88-92` and `r-floor.R:168-176` are covered only at
+  the validator (`is_package_tarball`), never at the branch that calls it,
+  unlinks and re-fetches — which is the behaviour AC1 binds for both fetches."
+  Confirmed as a coverage gap in the harness. **AC1 itself was not left
+  unverified:** review measured `fetch_withr_tarball()` directly, planting each
+  of the four defect forms at `withr-floor.R`'s own cache path, and all four were
+  refused, unlinked and refetched.
+- **F4 — `can_reuse()` can abort the run where the design says it collects a
+  failure.** "`imports-floors.R:219` calls `can_reuse` -> `linkingto_state` ->
+  `linkingto_of` -> `fetch_tarball` (`:341`, unconditional), which `stop()`s on a
+  fetch failure. Only the *later* fetch at `:224` is wrapped in `tryCatch`, so a
+  failure inside the reuse check propagates out of `install_pin` and kills the
+  run instead of joining the per-floor `failures` list the milestone's 'prints
+  every failure and stops' contract depends on. It also makes reuse require the
+  tarball, so a persisted `TM_LIBROOT` with a fresh `TM_SCRATCH` re-downloads
+  everything it was meant to skip." Confirmed by reading the call chain:
+  `linkingto_of()` calls `fetch_tarball()` unconditionally, before its own
+  `file.exists(desc)` check.
+- **F5 — `withr-floor.R` still treats a benign download warning as a failed
+  fetch.** "`withr-floor.R:98-104` keeps `warning = function(w) FALSE` and then
+  `unlink(tgz)`, which is precisely the hazard `imports-floors.R:167-172` and
+  `r-floor.R:183-187` document and muffle. A warned-but-complete Archive fetch is
+  deleted and retried against the contrib URL, which 404s for an archived
+  version, so the run reports 'could not fetch withr X' for a tarball it had."
+  Confirmed: `imports-floors.R:164-172` muffles the warning and checks the
+  status; `withr-floor.R:98-102` does not.
+- **F6 — probe D3 cannot fail for the reason it claims.**
+  "`floor-probes.R:287-288` asserts only that a second `install_pin()` returns
+  `NULL`; a full reinstall returns `NULL` too. Nothing (mtime, stamp contents,
+  timing, a log marker) distinguishes reuse from reinstall, so the 'reuses it
+  rather than reinstalling' label is untested."
+- **F7 — probe H1 has no positive control.** "`floor-probes.R:406-412` passes if
+  grep finds nothing, if grep is missing (warning suppressed, `character(0)`), or
+  if the path were wrong. The self-match trap was correctly avoided, but the
+  check's domain can silently empty; a companion assertion that the same grep for
+  `[-][-]only` *does* match would fix it."
+- **F8 — the MOVE line reports a version the run is not using.**
+  "`imports-floors.R:527-529` prints `version_of(requirer)`, the *installed*
+  version, for a requirement read out of a *pinned* tarball (`tarball_reqs`), so
+  e.g. a dplyr-1.1.0-sourced requirement is annotated with the host's dplyr
+  1.1.4. Carried over from master, but it sits inside the function this milestone
+  rewrote and is the exact 'reports what it did not measure' shape."
+- **F9 — `is_package_tarball` accepts a `DESCRIPTION` anywhere in the archive.**
+  "`imports-floors.R:144` (and twins) tests `any(basename(inside) ==
+  'DESCRIPTION')`, so a non-package tarball carrying `foo/inst/DESCRIPTION`
+  passes. Probe A5 uses a tarball with none at all, so this form of the
+  'well-formed tarball that is not a package' class is unprobed."
+- **F10 — F4/F5 are decoupled from the format they parse.**
+  "`floor-probes.R:358-363` feeds `observed_elapsed()` hand-written lines rather
+  than anything derived from `emit()` (`timeout-bound.R:49-51`), so a change to
+  the emitted key would silently restore the `(none)` substitution the fix exists
+  to prevent. Related nit: `observed_elapsed(out, name)`'s `name` argument is
+  never used (`timeout-bound.R:301`)." Independently reproduced at review: with
+  the summary's `elapsed(s)` column rewired to print `r$wall`, probe F4 stayed
+  green, so no probe covers AC4's fourth clause. That clause was verified instead
+  by the direct `timeout-bound.R` run recorded under AC4.
+- **F11 — G-probes depend on unrelated packages being installed.**
+  "`floor-probes.R:387-400` leaves `version_of` at its default, so G2 calls
+  `packageVersion('testthat')` and G4 `packageVersion('dplyr')`; on a host missing
+  either, the probe errors for a reason unrelated to what it tests. G4 also
+  hardcodes '5 rounds' while `MAX_ROUNDS` is a named constant
+  (`imports-floors.R:503`)."
+- **F12 — `run_under()` drops the shQuote the sibling scripts call
+  load-bearing.** "`withr-floor.R:165` builds `R_LIBS=%s` unquoted for
+  `system2(env=)`. Harmless with a tempdir-derived `LIBROOT`, but the
+  `path.expand()` added at `withr-floor.R:60-61` is decorative for the same reason
+  (`tempdir()` never contains `~`), so that half of the T5 change buys nothing
+  here."
+- **F13 — no probe for 'installs means loads'.** "AC2's `--no-test-load` clause
+  is verified only by the container smoke run recorded in the work log; T4's probe
+  list never plants a package that compiles and fails to load, so the criterion
+  has no host-side evidence." AC2's clause as written is that neither call site
+  passes the flag, which the empty grep settles; the missing probe is about what
+  the flag's removal buys, not about the criterion.
+- **F14 — the Decisions bullet states something D055 does not say.** "The M079
+  Decisions bullet ('D055's `TOTALS` line ... a re-run prints five counts where
+  D055 quotes four', milestone file line ~194, work-log line 151) describes a
+  quoted TOTALS line; D055 (`cairn/DECISIONS.md:2470-2474`) quotes prose ('6120
+  passing, 0 failing, 22 skipped over 66 files'), not the line. The code change is
+  right; the claim about the prior record is not." Confirmed: `grep -n TOTALS
+  cairn/DECISIONS.md` returns no match.
+- **F15 — two smaller ones.** "`stage_root()` ignores every `file.symlink()`
+  return value (`floor-probes.R:92-94`), so a partially staged root would
+  under-test silently; and `imports-floors.R:41` still names 'pkgload, testthat
+  and devtools' as the harness while `HOLDBACK_SET` is `testthat`+`furrr`, so the
+  header and the set disagree about what the harness is (a `pkgload`/`devtools`
+  requirement now stops the run — the documented consequence, but the header does
+  not say so)."
+
+**Return floor.** No finding demonstrates an acceptance criterion failing inside
+its named procedure's domain, and none is a load-bearing defect in what the
+package does for its users — nothing this milestone touches ships
+(`.Rbuildignore:15`). F3 and F10 name gaps in the *evidence instrument*, not in
+the behavior the criteria bind; review measured both clauses directly instead.
+No defect return, no amendment return.
+
+### Triage

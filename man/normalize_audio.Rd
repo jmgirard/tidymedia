@@ -104,6 +104,19 @@ source channel layout. Note that FFmpeg's \code{loudnorm} filter resamples its o
 192 kHz, capped by the encoder), so the output sample rate is \emph{not} the
 source rate unless you pin it: set \code{sample_rate} to control the output
 rate.
+
+When no \code{audio_stream} is named and \code{infile} turns out to carry
+tracks the output will not, the verb warns -- the same warning
+\code{\link{extract_audio}} and \code{\link{convert_audio}} emit. Naming a
+track with \code{audio_stream} silences it, as does
+\code{suppressWarnings(classes = "tidymedia_dropped_audio")}. The check is
+\strong{best-effort} and costs \strong{one FFprobe call per distinct input}
+-- one, here, since this verb takes a single \code{infile}: it is emitted
+when FFprobe is available and the input can be probed, and skipped silently
+otherwise. It never runs under \code{run = FALSE}, and never changes the
+compiled command. Under \code{two_pass = TRUE} it lands \emph{before} the
+analysis pass, so it arrives while adding \code{audio_stream} can still save
+that pass.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

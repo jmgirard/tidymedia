@@ -109,7 +109,7 @@ wording. Tests, roxygen, NEWS, and the D-entry recording what was rejected.
       `if (isTRUE(run)) warn_dropped_audio_batch(jobs, audio_stream)` below the
       per-row loudness-target sweep and above the `if (two_pass)` block
       (`R/ffmpeg.R:4383`), so it precedes Phase 1.
-- [ ] T5 — Roxygen for both verbs per AC6; `devtools::document()`.
+- [x] T5 — Roxygen for both verbs per AC6; `devtools::document()`.
 - [ ] T6 — One `NEWS.md` bullet naming the two verbs, the warning, and the
       probe cost — claiming only what T2's tests measure (M074's lesson).
 - [ ] T7 — Append D054 to `cairn/DECISIONS.md` (the video discard stays
@@ -131,6 +131,7 @@ wording. Tests, roxygen, NEWS, and the D-entry recording what was rejected.
 - 2026-08-27: question gate chose hoisting `check_audio_codec_not_copy()` onto the single-pass path over narrowing AC5 to `two_pass = TRUE`, because the single-pass path's only copy guard runs inside `ffm_finish()`'s argument, after the probe, so AC5's scalar `"copy"` case would otherwise warn before aborting; falsified by an existing `"copy"` guard test changing what it reads.
 - 2026-08-27: T2 wrote the 17 new tests into `tests/testthat/test-audio-track-drop.R` and confirmed red: the four wiring tests (AC1, AC2, AC4's two) fail with 0 drop warnings collected; AC3's five silence cases and AC5's eight refusal cases pass already, standing as regression guards over the wiring T3/T4 add. T2 is checked off with the wiring, since its own verify run is red by design.
 - 2026-08-27: T3/T4 wired the three sites; `devtools::test()` clean (exit 0), all 17 new tests green. T3 also hoisted `check_audio_codec_not_copy()` onto the single-pass path per the question gate. Two pre-existing tests in `test-parallel-option-carry.R` (lines 259, 533) now also emit the front-door probe's fail-open timeout warning alongside the `tidymedia_timeout` abort they assert; both still pass, and the extra warning is D024's documented fail-open, matching the noise the four existing verbs' tests already carry.
+- 2026-08-27: T5 documented the warning on both verbs per AC6 and ran `devtools::document()`; `man/normalize_audio.Rd` and `man/normalize_audio_batch.Rd` are the only Rd files that changed.
 - 2026-08-27: plan gate chose a `stop()`ing mock of `run_loudnorm_analysis()` over dropping AC4 because the call site is not wrapped in `tryCatch(error =)`, the condition M44's lesson names as defeating such a mock; falsified by the mock passing with the wiring removed.
 
 ## Decisions

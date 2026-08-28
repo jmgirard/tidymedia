@@ -190,6 +190,23 @@ with
 are present whenever requested, even when *every* row is silent – silent
 rows simply carry `NA` for those outputs.
 
+## Details
+
+When a row names no `audio_stream` and its input turns out to carry
+tracks the output will not, the verb warns **once** for the whole batch,
+naming every affected row. Naming a track silences it – the
+`audio_stream` argument, or an `audio_stream` cell on every row – as
+does `suppressWarnings(classes = "tidymedia_dropped_audio")`. The check
+is **best-effort** and costs **one FFprobe call per distinct input**, so
+a repeated input is probed once: it is emitted when FFprobe is available
+and the input can be probed, and skipped silently otherwise. Those
+probes run **serially at the front door**, before the fan-out starts, so
+`parallel` does not reach them. The check never runs under
+`run = FALSE`, never changes any compiled command, and is skipped
+entirely when every row names a track. Under `two_pass = TRUE` it lands
+*before* Phase 1, so it arrives while adding `audio_stream` can still
+save the analysis pass.
+
 ## References
 
 EBU Recommendation R 128 (2014), *Loudness normalisation and permitted

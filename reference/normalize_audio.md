@@ -160,6 +160,21 @@ output (up to 192 kHz, capped by the encoder), so the output sample rate
 is *not* the source rate unless you pin it: set `sample_rate` to control
 the output rate.
 
+When no `audio_stream` is named and `infile` turns out to carry tracks
+the output will not, the verb warns – the same warning
+[`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
+and
+[`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
+emit. Naming a track with `audio_stream` silences it, as does
+`suppressWarnings(classes = "tidymedia_dropped_audio")`. The check is
+**best-effort** and costs **one FFprobe call per distinct input** – one,
+here, since this verb takes a single `infile`: it is emitted when
+FFprobe is available and the input can be probed, and skipped silently
+otherwise. It never runs under `run = FALSE`, and never changes the
+compiled command. Under `two_pass = TRUE` it lands *before* the analysis
+pass, so it arrives while adding `audio_stream` can still save that
+pass.
+
 ## References
 
 EBU Recommendation R 128 (2014), *Loudness normalisation and permitted

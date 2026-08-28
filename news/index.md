@@ -4,6 +4,24 @@
 
 ### New features
 
+- [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
+  and
+  [`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md)
+  now warn when the file they read carries audio tracks the file they
+  write will not — the same warning
+  [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
+  and
+  [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
+  have carried, with the same `tidymedia_dropped_audio` class and the
+  same wording. Naming a track with `audio_stream` silences it, and the
+  batch form warns once for the whole table, naming every affected row.
+  The check costs one FFprobe call per distinct input, runs only on a
+  `run = TRUE` call that named no track, and lands before the two-pass
+  analysis pass — so on a multi-track input the warning arrives while
+  adding `audio_stream` can still save that pass. A wrong
+  `target_loudness` or an `audio_codec` of `"copy"` still refuses the
+  call before any of this runs.
+
 - A hung media program no longer blocks the R session indefinitely.
   Setting `options(tidymedia.timeout = 600)` gives every FFmpeg, FFprobe
   and MediaInfo process tidymedia starts a wall-clock limit in whole

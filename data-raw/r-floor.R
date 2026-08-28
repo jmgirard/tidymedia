@@ -55,16 +55,18 @@ scan_file <- function(path, surface) {
   pd <- utils::getParseData(exprs)
   if (is.null(pd) || !nrow(pd)) {
     return(data.frame(surface = character(), file = character(),
-                      line = integer(), form = character()))
+                      line = integer(), form = character(), where = character()))
   }
   hit <- pd$terminal & pd$token %in% SYNTAX_TOKENS
   if (!any(hit)) {
     return(data.frame(surface = character(), file = character(),
-                      line = integer(), form = character()))
+                      line = integer(), form = character(), where = character()))
   }
   form <- names(SYNTAX_TOKENS)[match(pd$token[hit], SYNTAX_TOKENS)]
   data.frame(surface = surface, file = basename(path),
-             line = pd$line1[hit], form = form, stringsAsFactors = FALSE)
+             line = pd$line1[hit], form = form,
+             where = sprintf("%s:%d", basename(path), pd$line1[hit]),
+             stringsAsFactors = FALSE)
 }
 
 # `R/` -- the shipped package code.
@@ -80,12 +82,17 @@ dir.create(ex_dir, recursive = TRUE, showWarnings = FALSE)
 ex_hits <- NULL
 for (rd in rd_files) {
   out <- file.path(ex_dir, sub("[.]Rd$", ".R", basename(rd)))
-  ok <- tools::Rd2ex(rd, out, commentDontrun = TRUE, commentDonttest = TRUE)
+  tools::Rd2ex(rd, out, commentDontrun = TRUE, commentDonttest = TRUE)
   # Rd2ex writes nothing for a help page with no \examples section.
   if (!file.exists(out)) next
   h <- scan_file(out, surface = "man/ examples")
   if (nrow(h)) {
-    h$file <- basename(rd)
+    # `line` is a line of the EXTRACTED example file, not of the .Rd -- the two
+    # do not correspond, since Rd2ex drops the \usage and \arguments sections
+    # above \examples. Naming the .Rd and keeping the .Rd's own line number
+    # would point at whatever text happens to sit there, so the label says
+    # which file the line belongs to.
+    h$where <- sprintf("%s (examples line %d)", basename(rd), h$line)
     ex_hits <- rbind(ex_hits, h)
   }
 }
@@ -106,8 +113,8 @@ if (is.null(syntax_hits) || !nrow(syntax_hits)) {
     sub <- sub[order(sub$file, sub$line), ]
     for (fm in unique(sub$form)) {
       one <- sub[sub$form == fm, ]
-      cat(sprintf("      %-14s %-6s %3d occurrence(s), first at %s:%d\n",
-                  s, fm, nrow(one), one$file[1], one$line[1]))
+      cat(sprintf("      %-14s %-6s %3d occurrence(s), first at %s\n",
+                  s, fm, nrow(one), one$where[1]))
     }
   }
   cat(sprintf("\n    (a) floor: %s (%d occurrence(s))\n", syntax_floor, nrow(syntax_hits)))
@@ -138,8 +145,18 @@ fetch_description <- function(pkg, ver) {
   )
   got <- FALSE
   for (u in urls) {
-    status <- tryCatch(utils::download.file(u, tgz, quiet = TRUE, mode = "wb"),
-                       error = function(e) 1L, warning = function(w) 1L)
+    # Warnings are muffled rather than treated as failure: `download.file`
+    # warns on benign conditions (a content-length mismatch, say), and a
+    # warned-but-complete Archive fetch would otherwise fall through to the
+    # current-contrib URL, which 404s for an archived version and aborts the
+    # run. What a real failure looks like is checked below instead.
+    status <- tryCatch(
+      withCallingHandlers(
+        utils::download.file(u, tgz, quiet = TRUE, mode = "wb"),
+        warning = function(w) invokeRestart("muffleWarning")
+      ),
+      error = function(e) 1L
+    )
     # A 404 can arrive as a nonzero status, a condition, or a short HTML body,
     # so all three are checked rather than trusting any one of them.
     if (identical(as.integer(status), 0L) && file.exists(tgz) && file.size(tgz) > 1000L) {
@@ -158,16 +175,31 @@ fetch_description <- function(pkg, ver) {
 r_floor_of <- function(desc_path) {
   dep <- read.dcf(desc_path, "Depends")[[1]]
   if (is.na(dep)) return(NA_character_)
-  m <- regmatches(dep, regexec("R\\s*\\(\\s*>=\\s*([0-9][^)]*?)\\s*\\)", gsub("\n", " ", dep)))[[1]]
-  if (!length(m)) NA_character_ else m[2]
+  # Match and extract from the SAME string -- `regexec` returns offsets into
+  # whatever it was handed, and `regmatches` must be handed that same value.
+  flat <- gsub("\n", " ", dep)
+  # `R` needs a left boundary: without one the pattern also matches the tail of
+  # any package name ending in a capital R, and `DoseFindingR (>= 2.0), R (>=
+  # 3.1.0)` would report 2.0 as the R floor.
+  m <- regmatches(flat, regexec("(^|[^A-Za-z0-9._])R\\s*\\(\\s*>=\\s*([0-9][^)]*?)\\s*\\)", flat))[[1]]
+  if (!length(m)) NA_character_ else m[3]
 }
 
 cat("\n=================================================================\n")
 cat("(b) `Depends: R` of each declared Imports floor version\n")
 cat("=================================================================\n")
 dep_floors <- character()
+BASE_PKGS <- rownames(utils::installed.packages(priority = c("base", "recommended")))
 for (p in parsed) {
   if (is.na(p$version)) {
+    # Only a base or recommended package legitimately carries no version here.
+    # Any OTHER unversioned entry names a package whose floor this script cannot
+    # determine, and dropping it from the maximum would break the promise the
+    # header makes about never silently losing a dependency.
+    if (!p$pkg %in% BASE_PKGS) {
+      stop(sprintf("Imports entry `%s` declares no version and is not a base or recommended package -- its R floor cannot be read",
+                   p$pkg), call. = FALSE)
+    }
     cat(sprintf("    %-12s %-10s base/recommended, no version declared -- skipped\n",
                 p$pkg, "--"))
     next

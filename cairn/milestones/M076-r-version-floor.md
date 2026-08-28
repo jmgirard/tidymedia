@@ -85,7 +85,7 @@ inherited rough edges → stays on the `Imports`-floors candidate row. Removing
 - 2026-08-27: created by /milestone-plan.
 - 2026-08-27: criteria audit (full mode, user-facing tier) returned 13 findings across both milestones' drafts; 9 fixed here, 3 posed at the gate, 1 (M077 AC5) clean. Fixed for M076: AC1 bound the milestone file's prose rather than the script's output; the `\dontrun` clause was inert and ambiguously scoped; the R/ leg counted roxygen comment lines, so it could not tell package code from examples; AC2 promised a NOTE justification in the record; AC2's reachability was unverified (checked — 4.1.0 resolves); AC3 named the moving `oldrel-1` label.
 - 2026-08-27: T1 — `data-raw/r-floor.R` written. Leg (a) counts the two forms from `getParseData()` terminal tokens `PIPE` and `'\\'`, never a regex over source text, so a `|>` in a roxygen comment or a string cannot count; `man/` examples reach the parser through `tools::Rd2ex(commentDontrun = TRUE, commentDonttest = TRUE)`, which comments both excluded block types out, so AC1's exclusion is enforced by the extractor. Leg (b) fetches each `Imports` floor version's own tarball from CRAN (Archive first, then current contrib), untars only its `DESCRIPTION`, and reads `Depends: R` from it — the installed release is never consulted. `.Rbuildignore` already carries `^data-raw$` (line 15); not duplicated.
-- 2026-08-27: T2 — ran it. (a) syntax: **4.1.0**, from 50 `PIPE` occurrences across `man/`'s running examples (first at `ffm_batch.Rd:14`) and zero in `R/` — the package's own code uses neither form, so the floor is set entirely by what the help pages run; no `\\(` lambda anywhere. (b) dependencies: **3.5.0**, the maximum `Depends: R` across the nine versioned `Imports` floors as those exact versions declare it — `rlang 1.1.0` at 3.5.0, then `dplyr 1.1.0` and `glue 1.6.2`/`cli 3.4.0` at 3.4, `withr 2.5.0` at 3.2.0, `purrr 1.0.0` at 3.2.3, `rappdirs 0.3.3` at 3.2, `archive 1.1.1` and `tibble 3.1.4` at 3.1.0; `tools` and `utils` carry no version and were skipped. Maximum = **4.1.0**, written to DESCRIPTION as `Depends: R (>= 4.1.0)`.
+- 2026-08-27: T2 — ran it. (a) syntax: **4.1.0**, from 50 `PIPE` occurrences across `man/`'s running examples (first at `ffm_batch.Rd`, examples line 14) and zero in `R/` — the package's own code uses neither form, so the floor is set entirely by what the help pages run; no `\\(` lambda anywhere. (b) dependencies: **3.5.0**, the maximum `Depends: R` across the nine versioned `Imports` floors as those exact versions declare it — `rlang 1.1.0` at 3.5.0, then `dplyr 1.1.0` and `glue 1.6.2`/`cli 3.4.0` at 3.4, `withr 2.5.0` at 3.2.0, `purrr 1.0.0` at 3.2.3, `rappdirs 0.3.3` at 3.2, `archive 1.1.1` and `tibble 3.1.4` at 3.1.0; `tools` and `utils` carry no version and were skipped. Maximum = **4.1.0**, written to DESCRIPTION as `Depends: R (>= 4.1.0)`.
 - 2026-08-27: T3 — added `{os: ubuntu-latest, r: '4.1.0'}` to `R-CMD-check.yaml`'s matrix, the exact version rather than a moving label. Re-confirmed at implement time that the job can resolve: the highest `R (>= )` any *current* release of a declared `Imports` or `Suggests` package asks for is 4.1.0 — `dplyr` 1.2.1, `testthat` 3.3.2 and `furrr` 0.4.0 at `4.1.0`, `glue` 1.8.1, `purrr` 1.2.2, `rappdirs` 0.3.4 and `roxygen2` 8.1.0 at `4.1`, everything else lower — so 4.1.0 sits exactly at the boundary and the next release of any of those seven can push the job out from under the declared floor.
 - 2026-08-27: T4 — NEWS entry under a new `## Requirements` heading, stating the declared floor and where it comes from. It does not state what was run against the floor; that is T5's record, which no criterion binds.
 - 2026-08-27: T5 — recorded below, under Decisions, what the declared floor was and was not measured against. `oldrel-1` resolved to the concrete 4.5.3 on 2026-08-27 (r-hub rversions API), so the unexercised band is 4.2.x-4.4.x.
@@ -116,7 +116,7 @@ Reviewed 2026-08-27 on `m076-r-version-floor`, PR #80.
 **AC1 — VERIFIED.** `Rscript data-raw/r-floor.R` rerun fresh at review, exit 0.
 It printed both inputs separately and their maximum: (a) syntax **4.1.0**, from
 50 `PIPE` occurrences across the 81 help pages' running examples (first at
-`ffm_batch.Rd:14`) and zero across the 16 files in `R/`; no lambda anywhere.
+`ffm_batch.Rd`, examples line 14) and zero across the 16 files in `R/`; no lambda anywhere.
 (b) dependencies **3.5.0**, the maximum `Depends: R` over the nine versioned
 `Imports` floors as those exact versions declare it (`rlang 1.1.0` at 3.5.0 is
 the maximum; `tools` and `utils` carry no version and were skipped). Maximum
@@ -207,6 +207,19 @@ Findings, most severe first, with disposition:
 - F8 `sub` is shadowed by a data frame in the leg-(a) print loop. Inert today.
 - F12 D053's "not measured" clause now names something M076 measured.
 - F7 (not a defect) AC2 was pending when the lens ran; it is now green.
+
+**Dispositions, decided at the approval gate.** Fixed now on the branch: F1,
+F3, F5, F2, F4, F10, F6. F1's repair labels the location for what it is
+(`ffm_batch.Rd (examples line 14)`) rather than inventing an `.Rd` line the
+extracted file cannot supply, and the two places this file had copied the bad
+citation are corrected above. F3's repair was verified against the adversarial
+input the finding named: `Depends: DoseFindingR (>= 2.0), R (>= 3.1.0)` now
+returns `3.1.0`. F2 now stops on an unversioned entry that is not a base or
+recommended package instead of labelling it one. Rerun after the fixes: the
+same nine floors, the same (a) 4.1.0 / (b) 3.5.0 / max 4.1.0. Follow-up on the
+`Imports`-floors candidate row, alongside M074's four inherited rough edges:
+P1, P2, F9, F11, F8. Records: D053's stale "not measured" clause is amended in
+the hygiene pass (F12).
 
 None of these trips the return floor: AC1 binds what the script prints for the
 two inputs and their maximum, which it does correctly and which a second

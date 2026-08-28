@@ -73,7 +73,7 @@ inherited rough edges → stays on the `Imports`-floors candidate row. Removing
       already declare `R (>= 4.1.0)`, so 4.1.0 sits exactly at the boundary and
       a later dependency release could push it up.
 - [x] T4 NEWS entry: the declared floor, user-visible wording only.
-- [ ] T5 Record in the milestone file what was run against the floor (T3's job,
+- [x] T5 Record in the milestone file what was run against the floor (T3's job,
       with its runner OS and the concrete R version) and what was not: no R
       version between the declared floor and the concrete oldest version the
       matrix ran at the time of writing (name it, never the moving `oldrel-1`
@@ -88,8 +88,24 @@ inherited rough edges → stays on the `Imports`-floors candidate row. Removing
 - 2026-08-27: T2 — ran it. (a) syntax: **4.1.0**, from 50 `PIPE` occurrences across `man/`'s running examples (first at `ffm_batch.Rd:14`) and zero in `R/` — the package's own code uses neither form, so the floor is set entirely by what the help pages run; no `\\(` lambda anywhere. (b) dependencies: **3.5.0**, the maximum `Depends: R` across the nine versioned `Imports` floors as those exact versions declare it — `rlang 1.1.0` at 3.5.0, then `dplyr 1.1.0` and `glue 1.6.2`/`cli 3.4.0` at 3.4, `withr 2.5.0` at 3.2.0, `purrr 1.0.0` at 3.2.3, `rappdirs 0.3.3` at 3.2, `archive 1.1.1` and `tibble 3.1.4` at 3.1.0; `tools` and `utils` carry no version and were skipped. Maximum = **4.1.0**, written to DESCRIPTION as `Depends: R (>= 4.1.0)`.
 - 2026-08-27: T3 — added `{os: ubuntu-latest, r: '4.1.0'}` to `R-CMD-check.yaml`'s matrix, the exact version rather than a moving label. Re-confirmed at implement time that the job can resolve: the highest `R (>= )` any *current* release of a declared `Imports` or `Suggests` package asks for is 4.1.0 — `dplyr` 1.2.1, `testthat` 3.3.2 and `furrr` 0.4.0 at `4.1.0`, `glue` 1.8.1, `purrr` 1.2.2, `rappdirs` 0.3.4 and `roxygen2` 8.1.0 at `4.1`, everything else lower — so 4.1.0 sits exactly at the boundary and the next release of any of those seven can push the job out from under the declared floor.
 - 2026-08-27: T4 — NEWS entry under a new `## Requirements` heading, stating the declared floor and where it comes from. It does not state what was run against the floor; that is T5's record, which no criterion binds.
+- 2026-08-27: T5 — recorded below, under Decisions, what the declared floor was and was not measured against. `oldrel-1` resolved to the concrete 4.5.3 on 2026-08-27 (r-hub rversions API), so the unexercised band is 4.2.x-4.4.x.
 - 2026-08-27: plan gate chose declaring `R (>= 4.1.0)` over removing `|>` from 24 help-page examples to hold a lower floor, because current `dplyr`, `glue`, `purrr`, `rappdirs` and `testthat` already force 4.1.0 on any install, so the rewrite would buy no reachable user; falsified by a report of a user on R 4.0.x who can install every current dependency.
 
 ## Decisions
+
+**What the declared `R (>= 4.1.0)` floor was measured against.**
+
+*Run:* one job — `R-CMD-check.yaml`'s `{os: ubuntu-latest, r: '4.1.0'}` row, on
+the milestone's pull request. That is `R CMD check` on Ubuntu at R 4.1.0
+exactly, against whatever version of each dependency CRAN resolves on the day
+the job runs.
+
+*Not run:* no R version strictly between the declared floor and **4.5.3** --
+the concrete version `oldrel-1` resolved to on 2026-08-27 -- so 4.2.x, 4.3.x
+and 4.4.x are unexercised, and a break confined to them would ship. And no
+dependency was pinned to its own declared `Imports` floor for that run, so the
+4.1.0 job says nothing about whether `archive 1.1.1`, `cli 3.4.0`,
+`dplyr 1.1.0`, `glue 1.6.2`, `purrr 1.0.0`, `rappdirs 0.3.3`, `rlang 1.1.0`,
+`tibble 3.1.4` or `withr 2.5.0` work -- that is M077.
 
 ## Review

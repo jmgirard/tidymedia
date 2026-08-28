@@ -116,7 +116,7 @@ none is proposed; D053 and D055 stand untouched.
       provenance (`:162`, `withr-floor.R:57`); drop `--no-test-load` from
       both call sites; verify the `~`-and-space library root reaches
       `R CMD INSTALL -l` intact (M077 F17 left this unverified).
-- [ ] T6 — Fix the three DESCRIPTION readers: `withr-floor.R:46`'s `sub()`
+- [x] T6 — Fix the three DESCRIPTION readers: `withr-floor.R:46`'s `sub()`
       to abort on no match, `r_floor_of()` to handle or refuse `>`/`==`
       comparators, and the carve-out at `imports-floors.R:96` and its
       `r-floor.R` twin.
@@ -145,6 +145,8 @@ none is proposed; D053 and D055 stand untouched.
 - 2026-08-28: task order — T5/T6/T7/T8 taken before T4 so the probe harness exercises the final code rather than code it would then have to be rewritten against. Minor amendment; no criterion or scope text changed.
 - 2026-08-28: T5 — `install_pin()` writes a `tidymedia-floor-pin.dcf` stamp beside each installed DESCRIPTION recording, per PINNED package the entry LinkingTo-depends on, the version in the library at compile time; reuse now needs the `Version` AND that stamp to match. `install_withr()`'s guard was `dir.exists()` alone and is now the installed `Version`, with withr's LinkingTo-vacuity checked rather than assumed. `--no-test-load` dropped from both call sites.
 - 2026-08-28: T5 — M077 F17 measured rather than left unverified: `R CMD INSTALL -l '~/tm floor probe/lib'` (tilde AND space, shQuote'd exactly as `install_pin()` passes it) installed a probe package with status=0, as did the `path.expand()`ed form — R expands the tilde itself, so F17's concern does not materialize on macOS 26.5 / R 4.6.1. `path.expand()` on `TM_LIBROOT`/`TM_SCRATCH` is kept anyway: it makes the result independent of R continuing to do that.
+- 2026-08-28: T6 — `withr-floor.R`'s `sub()` replaced by a `regexec()` that aborts when `Imports` declares no `withr (>= ...)`, instead of returning the whole field as the floor. `r_floor_of()` now captures the version spec whole and reads the comparator out of it, aborting on anything but `>=`, so `R (> 4.0)` and `R (== 4.1.0)` stop the run rather than reading as "none declared" and dropping that dependency from the maximum. The unversioned carve-out in both scripts is `UNVERSIONED_OK <- c("tools", "utils")` — the entries DESCRIPTION declares — not `priority = c("base", "recommended")`, which waved through ~30 packages including `MASS`. `BASE_PKGS` stays broad where it is still right for what it does (`ensure_deps`, `runtime_closure`).
+- 2026-08-28: T6 — `r-floor.R`'s `fetch_description()` given the same `is_package_tarball()` validator, on its cache path and its download. Not named by AC1, which binds the two fetches in `imports-floors.R` and `withr-floor.R`; it is the third copy of the one shape Scope's In lists (M076 P1), and leaving it accepting on size alone would have left the shape half-fixed. `Rscript data-raw/r-floor.R` runs end to end and still reports (a) 4.1.0, (b) 4.0.0, maximum 4.1.0 — M076's result unchanged.
 
 ## Decisions
 

@@ -133,12 +133,41 @@ parse_entry <- function(e) {
 }
 parsed <- lapply(entries, parse_entry)
 
+# THE ONE TEST OF "is this a package tarball" -- the same one
+# data-raw/imports-floors.R and data-raw/withr-floor.R apply. Three things clear
+# a size floor without being a package: a gzip truncated by an interrupted
+# download, an HTTP error body, and a well-formed tarball of something that
+# carries no `DESCRIPTION`.
+is_package_tarball <- function(tgz) {
+  if (!file.exists(tgz) || file.size(tgz) <= 1000L) return(FALSE)
+  inside <- tryCatch(suppressWarnings(utils::untar(tgz, list = TRUE)),
+                     error = function(e) NULL)
+  if (is.null(inside)) return(FALSE)
+  # The listing alone is not enough: `untar(list = TRUE)` shells out to `tar`,
+  # and a gzip truncated PAST the DESCRIPTION entry still prints what it read
+  # before the end, then exits non-zero. That status is the truncation.
+  st <- attr(inside, "status")
+  if (!is.null(st) && !identical(as.integer(st), 0L)) return(FALSE)
+  any(basename(inside) == "DESCRIPTION")
+}
+
 fetch_description <- function(pkg, ver) {
   dest <- file.path(SCRATCH, sprintf("%s_%s", pkg, ver))
   desc <- file.path(dest, pkg, "DESCRIPTION")
   if (file.exists(desc)) return(desc)
   dir.create(dest, recursive = TRUE, showWarnings = FALSE)
   tgz <- file.path(SCRATCH, sprintf("%s_%s.tar.gz", pkg, ver))
+  # The cached tarball is validated rather than assumed, on the same terms as a
+  # freshly downloaded one.
+  if (file.exists(tgz) && !is_package_tarball(tgz)) {
+    cat(sprintf("    (cached %s %s is not a readable package tarball -- refetching)\n",
+                pkg, ver))
+    unlink(tgz)
+  }
+  if (is_package_tarball(tgz)) {
+    utils::untar(tgz, files = file.path(pkg, "DESCRIPTION"), exdir = dest)
+    if (file.exists(desc)) return(desc)
+  }
   urls <- c(
     sprintf("https://cran.r-project.org/src/contrib/Archive/%s/%s_%s.tar.gz", pkg, pkg, ver),
     sprintf("https://cloud.r-project.org/src/contrib/%s_%s.tar.gz", pkg, ver)
@@ -158,11 +187,13 @@ fetch_description <- function(pkg, ver) {
       error = function(e) 1L
     )
     # A 404 can arrive as a nonzero status, a condition, or a short HTML body,
-    # so all three are checked rather than trusting any one of them.
-    if (identical(as.integer(status), 0L) && file.exists(tgz) && file.size(tgz) > 1000L) {
+    # so all three are checked rather than trusting any one of them -- the size
+    # floor recognizes only the crudest, which is why the body is opened.
+    if (identical(as.integer(status), 0L) && is_package_tarball(tgz)) {
       got <- TRUE
       break
     }
+    unlink(tgz)
   }
   if (!got) stop(sprintf("could not fetch %s %s from CRAN", pkg, ver), call. = FALSE)
   utils::untar(tgz, files = file.path(pkg, "DESCRIPTION"), exdir = dest)
@@ -181,26 +212,43 @@ r_floor_of <- function(desc_path) {
   # `R` needs a left boundary: without one the pattern also matches the tail of
   # any package name ending in a capital R, and `DoseFindingR (>= 2.0), R (>=
   # 3.1.0)` would report 2.0 as the R floor.
-  m <- regmatches(flat, regexec("(^|[^A-Za-z0-9._])R\\s*\\(\\s*>=\\s*([0-9][^)]*?)\\s*\\)", flat))[[1]]
-  if (!length(m)) NA_character_ else m[3]
+  #
+  # The version spec is captured WHOLE and the comparator read out of it
+  # afterwards. A `>=`-only pattern does not fail on `Depends: R (> 4.0)` or
+  # `R (== 4.1.0)` -- it simply does not match, and a non-match here reads as
+  # "this dependency declares no R floor", which drops it from the maximum. The
+  # header promises a fetch that fails stops the run rather than silently
+  # dropping a dependency; a spec that cannot be read is the same event.
+  m <- regmatches(flat, regexec("(^|[^A-Za-z0-9._])R\\s*\\(([^)]*)\\)", flat))[[1]]
+  if (!length(m)) return(NA_character_)
+  spec <- trimws(m[3])
+  op <- regmatches(spec, regexec("^([<>=!]+)\\s*(.+)$", spec))[[1]]
+  if (!length(op) || !identical(op[2], ">=")) {
+    stop(sprintf("%s declares `Depends: R (%s)`, which is not a `>=` floor -- what version that admits as the minimum is a judgement, not a read",
+                 desc_path, spec), call. = FALSE)
+  }
+  trimws(op[3])
 }
 
 cat("\n=================================================================\n")
 cat("(b) `Depends: R` of each declared Imports floor version\n")
 cat("=================================================================\n")
 dep_floors <- character()
-BASE_PKGS <- rownames(utils::installed.packages(priority = c("base", "recommended")))
+# THE UNVERSIONED CARVE-OUT, NAMED. `priority = c("base", "recommended")` is a
+# property of the R installation doing the measuring, not of this DESCRIPTION:
+# it waves through every one of ~30 packages, so an unversioned `MASS` -- a
+# floor nobody declared and this script cannot pin -- is skipped in silence.
+# The carve-out is the two unversioned entries DESCRIPTION actually declares.
+# Add one here when DESCRIPTION adds one, deliberately.
+UNVERSIONED_OK <- c("tools", "utils")
+
 for (p in parsed) {
   if (is.na(p$version)) {
-    # Only a base or recommended package legitimately carries no version here.
-    # Any OTHER unversioned entry names a package whose floor this script cannot
-    # determine, and dropping it from the maximum would break the promise the
-    # header makes about never silently losing a dependency.
-    if (!p$pkg %in% BASE_PKGS) {
-      stop(sprintf("Imports entry `%s` declares no version and is not a base or recommended package -- its R floor cannot be read",
-                   p$pkg), call. = FALSE)
+    if (!p$pkg %in% UNVERSIONED_OK) {
+      stop(sprintf("Imports entry `%s` declares no version and is not one of the unversioned entries this script knows about (%s) -- its R floor cannot be read, and dropping it from the maximum would break the promise the header makes about never silently losing a dependency",
+                   p$pkg, paste(UNVERSIONED_OK, collapse = ", ")), call. = FALSE)
     }
-    cat(sprintf("    %-12s %-10s base/recommended, no version declared -- skipped\n",
+    cat(sprintf("    %-12s %-10s no version declared -- skipped\n",
                 p$pkg, "--"))
     next
   }

@@ -42,9 +42,19 @@ if (!file.exists(file.path(PKG, "DESCRIPTION"))) {
 
 versions <- commandArgs(trailingOnly = TRUE)
 if (!length(versions)) {
-  declared <- read.dcf(file.path(PKG, "DESCRIPTION"), "Imports")[[1]]
-  floor <- sub(".*withr \\(>= ([^)]+)\\).*", "\\1", gsub("\n", " ", declared))
-  versions <- c(floor, "3.0.3")
+  declared <- gsub("\n", " ", read.dcf(file.path(PKG, "DESCRIPTION"), "Imports")[[1]])
+  # `sub()` returns its INPUT unchanged when the pattern does not match, so an
+  # `Imports` whose withr entry had lost its `(>= )` handed the whole Imports
+  # field back as "the declared floor" and the run went off to fetch a withr by
+  # that name. A match that did not happen is not a version.
+  m <- regmatches(declared,
+                  regexec("(^|[^A-Za-z0-9._])withr\\s*\\(\\s*>=\\s*([^)]+?)\\s*\\)",
+                          declared))[[1]]
+  if (!length(m)) {
+    stop("DESCRIPTION's Imports declares no `withr (>= ...)` floor to measure -- read: ",
+         declared, call. = FALSE)
+  }
+  versions <- c(m[3], "3.0.3")
 }
 
 LIBROOT <- path.expand(file.path(tempdir(), "withr-floor-libs"))

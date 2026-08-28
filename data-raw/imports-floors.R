@@ -88,16 +88,25 @@ parse_entry <- function(e) {
 }
 parsed <- lapply(entries, parse_entry)
 
+# Still the broad set, and still right for what it is used for below: which of
+# a pinned version's own dependencies do NOT need installing (`ensure_deps`) and
+# which packages are not part of the runtime closure (`runtime_closure`).
 BASE_PKGS <- rownames(utils::installed.packages(priority = c("base", "recommended")))
+
+# THE UNVERSIONED CARVE-OUT, NAMED. `priority = c("base", "recommended")` is a
+# property of the R installation doing the measuring, not of this DESCRIPTION:
+# it waves through every one of ~30 packages, so an unversioned `MASS` -- a
+# floor nobody declared and this script cannot pin -- is skipped in silence.
+# The carve-out is the two unversioned entries DESCRIPTION actually declares.
+# Add one here when DESCRIPTION adds one, deliberately.
+UNVERSIONED_OK <- c("tools", "utils")
+
 pins <- list()
 for (p in parsed) {
   if (is.na(p$version)) {
-    # Only a base or recommended package legitimately carries no floor. Any
-    # other unversioned entry is a floor this script cannot pin, and dropping it
-    # silently would leave AC1's "every non-base entry" unmet without saying so.
-    if (!p$pkg %in% BASE_PKGS) {
-      stop(sprintf("Imports entry `%s` declares no version and is not a base or recommended package",
-                   p$pkg), call. = FALSE)
+    if (!p$pkg %in% UNVERSIONED_OK) {
+      stop(sprintf("Imports entry `%s` declares no version and is not one of the unversioned entries this script knows about (%s) -- it is a floor that cannot be pinned, and skipping it would leave `every non-base entry` unmet without saying so",
+                   p$pkg, paste(UNVERSIONED_OK, collapse = ", ")), call. = FALSE)
     }
     next
   }

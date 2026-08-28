@@ -58,10 +58,12 @@ the measurement and naming M69 return 2's falsified premise.
       number.
 - [ ] AC3: A new `cairn/DECISIONS.md` entry states, for the platform triple
       it names, the set limit and the observed elapsed time the committed
-      script reported; records that M69 return 2's premise ("bounded 42 s
-      exactly as by a bounded 2 s") is falsified by that number, without
-      deciding a replacement mechanism; and names the three fixture files
-      M077 excluded and what makes them hang.
+      script reported, and whether the spawned program was still running when
+      R returned; states what that number does to M69 return 2's premise
+      ("bounded 42 s exactly as by a bounded 2 s") — falsifying or confirming
+      it, as measured — without deciding a replacement mechanism; and names
+      the three fixture files M077 excluded, what makes them block, and what
+      they did when run in the committed container.
 - [ ] AC4: `Rscript -e 'devtools::test()'` clean and
       `Rscript -e 'devtools::check()'` clean (0 errors, 0 warnings; NOTEs
       justified).
@@ -88,10 +90,10 @@ the measurement and naming M69 return 2's falsified premise.
       status, and whether the child was still alive afterwards. The script
       prints its numbers in a form the D-entry can quote rather than
       transcribe by hand.
-- [ ] T3: Run T2 inside T1's container and capture the transcript. Record
+- [x] T3: Run T2 inside T1's container and capture the transcript. Record
       whether base R's +40 s SIGKILL fires, and if the excess is larger,
       whether R is waiting on the process or on the output pipe.
-- [ ] T4: Run the AC1 sweep; triage all hits into corrected / not a promise,
+- [x] T4: Run the AC1 sweep; triage all hits into corrected / not a promise,
       and record the count.
 - [ ] T5: Correct the reader-facing promises in roxygen
       (`R/timeout.R:38-100` `@description`/`@param seconds`, the file's
@@ -114,6 +116,10 @@ the measurement and naming M69 return 2's falsified premise.
 - 2026-08-28: T1 — `data-raw/Dockerfile.floors` written from `docker image history tidymedia-floors:r443` and built as `tidymedia-floors:r443-rebuild`; it comes up with R 4.4.3 / aarch64-unknown-linux-gnu, ffmpeg 6.1.1-3ubuntu5, MediaInfoLib v24.01 and all seventeen harness packages present.
 - 2026-08-28: T2 — `data-raw/timeout-bound.R` written: seven cases (signal-ignoring child and FIFO-blocked FFmpeg, each through `system2(stdout = TRUE)` and `system2(stdout = "")`, plus `input = ""`, plus the Layer 0 `system(intern = TRUE)`, plus the package's own `with_timeout(ffmpeg())`), each in its own capped child process. Two defects in the instrument were found and fixed before any number was quoted: `pgrep -f <marker>` matched the shell R runs the `pgrep` in, so the liveness probe reported a live child in every case (now a bracketed pattern that cannot match itself, with a control that spawns a known-live process, asserts the probe finds it, kills it and asserts the probe clears — a case's liveness line is only readable when both halves say ok); and the driver read each child's stdout through a PIPE, which every descendant inherits, so a case the cap had already SIGKILLed went on being waited for — the script's own subject matter met in its own driver — now redirected to a file.
 - 2026-08-28: plan gate chose an AC3 that states whatever the measurement found over one asserting an observed excess above limit + 40 s, because the latter is unsatisfiable if the rebuilt image behaves differently from the ad-hoc one and the only remedy would be an amendment; falsified by a measurement so equivocal that "what was found" states nothing actionable.
+- 2026-08-28: T3 — grid run in `tidymedia-floors:r443` and, as context, on the host. Container (Ubuntu noble / aarch64, R 4.4.3, ffmpeg 6.1.1-3ubuntu5), 2 s limit: A1 42.00 s child dead, A2 22.01 s **child alive** (pid 102, the signal-ignoring `sh`), A3 42.02 s dead, A4 42.02 s dead, B1 42.03 s dead, B2 22.01 s **FFmpeg alive** (pid 276), C1 42.41 s dead, aborting `tidymedia_timeout`. Host (macOS 26.6.2 / aarch64, R 4.6.1, ffmpeg 9.0.1): A1 42.03 s, A2 22.02 s child alive, A3 42.03 s, A4 42.01 s, B1 2.01 s, B2 ~2 s, C1 ~2.4 s — all dead but A2. Base R's +40 s SIGKILL fires; the excess is never larger. R waits limit + 40 s when it reads the child's stdout PIPE and limit + 20 s when it does not, and in the second case the program survives — the package uses only the first form. The macOS/Linux split is the FFmpeg build, not R: ffmpeg 9.0.1 dies on the first signal, ffmpeg 6.1.1 blocked on a FIFO does not.
+- 2026-08-28: T3 — D055 item 3 does not reproduce in a rebuild of the runner it names. Its 191.8 s under a 2 s limit was not observed in any of 14 cases (largest overrun 40.41 s), and its "six full-suite runs never returned" did not recur: `test-with-timeout.R` 45.61 s, `test-runtime-timeout.R` 267.30 s, `test-timeout-silence.R` 52.11 s, each exit 0, and the full suite pass=6477 fail=0 skip=22 in 445.9 s with `NOT_CRAN=true`. 267 s is about six bounded calls at ~42 s each, which is the shape a "191.8 s isolated run" most plausibly had. Recorded as unreproduced, not disproven: D055's run had the nine floors pinned and testthat/furrr held back, which this run did not reproduce.
+- 2026-08-28: **amendment (substantive), AC3.** The shipped AC3 required the D-entry to record M69 return 2's premise as *falsified* by the observed number; the measurement confirms it. Amended at a mini gate to state what the number does to the premise rather than assert which, to say whether the program was still running when R returned (the finding that survived), and to ask what the three files *did* in the container rather than what makes them *hang*. This restores the plan gate's own stated intent — its last work-log line chose "an AC3 that states whatever the measurement found" over one asserting an outcome — from which the shipped wording had drifted. The criteria audit was re-run on the amended clause in **full mode** (declared surface tier is user-facing), in-session rather than through a fresh-context `[O]` reader, because subagent delegation is disabled for this session; this line records that limitation rather than claiming a reader that did not run. It returned no finding: the clause quantifies over three named files and one named platform triple, binds no instrument property, and is satisfiable whichever way the premise falls.
+- 2026-08-28: T4 — AC1 sweep run: `grep -rni timeout R/ man/ README.Rmd NEWS.md vignettes/` returns 195 hits (R/ 138, man/ 39, NEWS.md 18, README.Rmd 0, vignettes/ 0).
 
 ## Decisions
 

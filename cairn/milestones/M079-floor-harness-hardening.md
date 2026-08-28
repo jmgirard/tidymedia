@@ -112,7 +112,7 @@ none is proposed; D053 and D055 stand untouched.
       entry with the right `Version` and stale headers, an `Imports` whose
       `withr` entry lost its `(>= )`, `Depends: R (> 4.0)` and `R (==
       4.1.0)`, an unversioned `MASS`, and a `~`-and-space library root.
-- [ ] T5 — Strengthen the install-reuse guard to `Version` plus LinkingTo
+- [x] T5 — Strengthen the install-reuse guard to `Version` plus LinkingTo
       provenance (`:162`, `withr-floor.R:57`); drop `--no-test-load` from
       both call sites; verify the `~`-and-space library root reaches
       `R CMD INSTALL -l` intact (M077 F17 left this unverified).
@@ -142,6 +142,9 @@ none is proposed; D053 and D055 stand untouched.
 - 2026-08-28: T1 — `--repair` and `--walk` deleted from `imports-floors.R`: usage lines, flag parsing, the walk block and its `--only`-bypassable name guard (M077 F14), and the repair path with F18's dead `probe <- file.path(LIBROOT, "walk")` and its comment. A failed floor install now aborts naming the floors, instead of telling the reader to re-run with a mode that no longer exists. `grep -n -e '--repair' -e '--walk' data-raw/` returns no match; `--only nosuch` still stops with "nosuch is not a versioned Imports entry".
 - 2026-08-28: T2 — the holdback set is `HOLDBACK_SET <- c("testthat", "furrr")` (D055 item 2), and a requirer outside both the runtime closure and that set now stops the run naming itself rather than being downgraded; the `1:5` loop aborts on non-convergence instead of falling out silently. Both decisions moved into `reconcile(pins, closure, gather, pick, version_of)`, whose `gather`/`pick` are arguments rather than globals, so T4's probes can reach either refusal without a network or an install.
 - 2026-08-28: T3 — `is_package_tarball()` in both `imports-floors.R` and `withr-floor.R`; `fetch_tarball()`'s cache branch and `withr-floor.R`'s fetch (which had no validated cache branch at all) now both go through it, and a refused file is unlinked and refetched. Measured while writing it: the listing test the download branch already ran is NOT sufficient for a truncated gzip — a 190,000-of-202,719-byte truncation still lists `DESCRIPTION` and `tar` reports the truncation only by exiting 1, so the validator reads `attr(inside, "status")` as well as the listing.
+- 2026-08-28: task order — T5/T6/T7/T8 taken before T4 so the probe harness exercises the final code rather than code it would then have to be rewritten against. Minor amendment; no criterion or scope text changed.
+- 2026-08-28: T5 — `install_pin()` writes a `tidymedia-floor-pin.dcf` stamp beside each installed DESCRIPTION recording, per PINNED package the entry LinkingTo-depends on, the version in the library at compile time; reuse now needs the `Version` AND that stamp to match. `install_withr()`'s guard was `dir.exists()` alone and is now the installed `Version`, with withr's LinkingTo-vacuity checked rather than assumed. `--no-test-load` dropped from both call sites.
+- 2026-08-28: T5 — M077 F17 measured rather than left unverified: `R CMD INSTALL -l '~/tm floor probe/lib'` (tilde AND space, shQuote'd exactly as `install_pin()` passes it) installed a probe package with status=0, as did the `path.expand()`ed form — R expands the tilde itself, so F17's concern does not materialize on macOS 26.5 / R 4.6.1. `path.expand()` on `TM_LIBROOT`/`TM_SCRATCH` is kept anyway: it makes the result independent of R continuing to do that.
 
 ## Decisions
 

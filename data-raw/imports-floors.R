@@ -65,8 +65,12 @@ ONLY <- opt_value("--only")
 # half-written install accepted because the directory exists -- so `install_pin`
 # below re-reads the INSTALLED DESCRIPTION's Version and removes anything that
 # does not match, rather than trusting `dir.exists()`.
-LIBROOT <- Sys.getenv("TM_LIBROOT", unset = file.path(tempdir(), "imports-floors-libs"))
-SCRATCH <- Sys.getenv("TM_SCRATCH", unset = file.path(tempdir(), "imports-floors-scratch"))
+# `path.expand` here, not at the call site: `R CMD INSTALL -l` receives this
+# path shQuote'd (a library root may contain a space), and a `~` inside single
+# quotes is not expanded by the shell. Expanding once, at the source, is what
+# makes `TM_LIBROOT=~/floor libs` mean the directory it looks like it means.
+LIBROOT <- path.expand(Sys.getenv("TM_LIBROOT", unset = file.path(tempdir(), "imports-floors-libs")))
+SCRATCH <- path.expand(Sys.getenv("TM_SCRATCH", unset = file.path(tempdir(), "imports-floors-scratch")))
 dir.create(LIBROOT, recursive = TRUE, showWarnings = FALSE)
 dir.create(SCRATCH, recursive = TRUE, showWarnings = FALSE)
 
@@ -170,10 +174,35 @@ fetch_tarball <- function(pkg, ver) {
 # because THE ERROR is what a failed floor has to report and
 # `install.packages()` reduces a compiler error to "had non-zero exit status"
 # in a warning.
-install_pin <- function(lib, pkg, ver) {
+# What an installed entry was compiled against: for every PINNED package this
+# one LinkingTo-depends on, the version sitting in `lib` at the moment the
+# compile ran. Written beside the installed DESCRIPTION and re-read on reuse.
+PIN_STAMP <- "tidymedia-floor-pin.dcf"
+
+linkingto_state <- function(lib, pkg, ver, pins) {
+  lt <- intersect(linkingto_of(pkg, ver), names(pins))
+  if (!length(lt)) return("(none)")
+  paste(vapply(sort(lt), function(q) {
+    d <- file.path(lib, q, "DESCRIPTION")
+    v <- if (file.exists(d)) as.character(read.dcf(d, "Version")[[1]]) else "(absent)"
+    sprintf("%s=%s", q, v)
+  }, ""), collapse = " ")
+}
+
+install_pin <- function(lib, pkg, ver, pins) {
   marker <- file.path(lib, pkg, "DESCRIPTION")
+  stamp <- file.path(lib, pkg, PIN_STAMP)
+  # `Version` alone is not enough to reuse an entry in a persisted TM_LIBROOT.
+  # `archive` and `purrr` both LinkingTo `cli`: move the `cli` floor and
+  # reinstall it, and those two still carry the right Version over binaries
+  # compiled against the headers of the version before it -- a pin the run then
+  # reports as measured. The stamp records what was actually linked against, so
+  # a changed LinkingTo dependency reinstalls the dependent.
+  want <- linkingto_state(lib, pkg, ver, pins)
   if (file.exists(marker) &&
-      identical(as.character(read.dcf(marker, "Version")[[1]]), ver)) {
+      identical(as.character(read.dcf(marker, "Version")[[1]]), ver) &&
+      file.exists(stamp) &&
+      identical(as.character(read.dcf(stamp, "LinkedAgainst")[[1]]), want)) {
     return(NULL)
   }
   # A half-written install from an interrupted run must not be reused: the
@@ -189,7 +218,11 @@ install_pin <- function(lib, pkg, ver) {
   ensure_deps(lib, pkg, ver)
   out <- suppressWarnings(system2(
     file.path(R.home("bin"), "R"),
-    c("CMD", "INSTALL", "--no-test-load", "-l", shQuote(lib), shQuote(tgz)),
+    # No `--no-test-load`: "installs" and "loads" are different claims, and the
+    # one this run needs is the second. A floor that compiles and then cannot
+    # be loaded is a failed floor, reported here rather than met later as a
+    # suite that will not start.
+    c("CMD", "INSTALL", "-l", shQuote(lib), shQuote(tgz)),
     # shQuote for the same reason run_child does it: system2(env = ) pastes these
   # into a `sh -c` line, so a TM_LIBROOT containing a space would end the
   # assignment and R_LIBS would never reach the install.
@@ -208,6 +241,10 @@ install_pin <- function(lib, pkg, ver) {
   if (!identical(got, ver)) {
     return(sprintf("installed %s %s where %s was asked for", pkg, got, ver))
   }
+  writeLines(c(sprintf("Package: %s", pkg),
+               sprintf("Version: %s", ver),
+               sprintf("LinkedAgainst: %s", linkingto_state(lib, pkg, ver, pins))),
+             file.path(lib, pkg, PIN_STAMP))
   NULL
 }
 
@@ -281,6 +318,24 @@ deps_of <- function(pkg, ver) {
   fields <- read.dcf(desc, c("Depends", "Imports", "LinkingTo"))
   flat <- paste(fields[!is.na(fields)], collapse = ",")
   nm <- trimws(sub("\\s*\\(.*", "", strsplit(gsub("\n", " ", flat), ",")[[1]]))
+  nm[nzchar(nm)]
+}
+
+# Just the LinkingTo field of ONE version, read from its own tarball. This is
+# the edge that makes a stale reuse dangerous: a LinkingTo dependency is
+# compiled against, so a library entry can carry the right `Version` and a
+# binary built against headers that are no longer there.
+linkingto_of <- function(pkg, ver) {
+  tgz <- fetch_tarball(pkg, ver)
+  dest <- file.path(SCRATCH, sprintf("desc-%s-%s", pkg, ver))
+  desc <- file.path(dest, pkg, "DESCRIPTION")
+  if (!file.exists(desc)) {
+    dir.create(dest, recursive = TRUE, showWarnings = FALSE)
+    utils::untar(tgz, files = file.path(pkg, "DESCRIPTION"), exdir = dest)
+  }
+  f <- read.dcf(desc, "LinkingTo")[[1]]
+  if (is.na(f)) return(character())
+  nm <- trimws(sub("\\s*\\(.*", "", strsplit(gsub("\n", " ", f), ",")[[1]]))
   nm[nzchar(nm)]
 }
 
@@ -720,7 +775,7 @@ cat("    install order (LinkingTo/Imports among the pinned set first):",
     paste(order, collapse = " -> "), "\n")
 failures <- list()
 for (p in order) {
-  err <- install_pin(lib, p, pins[[p]])
+  err <- install_pin(lib, p, pins[[p]], pins)
   cat(sprintf("  %-10s %-8s %s\n", p, pins[[p]], if (is.null(err)) "installed" else "FAILED"))
   if (!is.null(err)) {
     cat("      ", err, "\n", sep = "")
@@ -741,7 +796,7 @@ if (length(failures)) {
 if (length(holdbacks)) {
   cat("\n---- holding the test harness back to what the floors permit ----\n")
   for (r in names(holdbacks)) {
-    err <- install_pin(lib, r, holdbacks[[r]]$version)
+    err <- install_pin(lib, r, holdbacks[[r]]$version, pins)
     cat(sprintf("  %-10s %-8s %s\n", r, holdbacks[[r]]$version,
                 if (is.null(err)) "installed" else "FAILED"))
     if (!is.null(err)) stop(sprintf("could not hold %s back to %s: %s", r,

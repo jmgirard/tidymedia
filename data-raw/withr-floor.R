@@ -47,8 +47,8 @@ if (!length(versions)) {
   versions <- c(floor, "3.0.3")
 }
 
-LIBROOT <- file.path(tempdir(), "withr-floor-libs")
-SCRATCH <- file.path(tempdir(), "withr-floor-scripts")
+LIBROOT <- path.expand(file.path(tempdir(), "withr-floor-libs"))
+SCRATCH <- path.expand(file.path(tempdir(), "withr-floor-scripts"))
 dir.create(LIBROOT, recursive = TRUE, showWarnings = FALSE)
 dir.create(SCRATCH, recursive = TRUE, showWarnings = FALSE)
 
@@ -100,16 +100,44 @@ fetch_withr_tarball <- function(ver) {
 install_withr <- function(ver) {
   lib <- file.path(LIBROOT, paste0("withr-", ver))
   dir.create(lib, recursive = TRUE, showWarnings = FALSE)
-  if (dir.exists(file.path(lib, "withr"))) return(lib)
+  desc <- file.path(lib, "withr", "DESCRIPTION")
+  # `dir.exists()` was the whole reuse guard, so a directory left by an
+  # interrupted install -- or by a run of a DIFFERENT version, since the arms
+  # differ only by directory name -- was reused as though it held this version.
+  # The installed DESCRIPTION's own `Version` is what says which version is
+  # there.
+  if (file.exists(desc) &&
+      identical(as.character(read.dcf(desc, "Version")[[1]]), ver)) {
+    # The other half of the reuse question -- whether a pinned package this one
+    # was COMPILED against has changed underneath it -- is vacuous here only
+    # because withr declares no LinkingTo and each version gets a library to
+    # itself. Vacuous is worth checking rather than assuming: if that ever stops
+    # being true, this reuse is unsafe and says so instead of being silently
+    # wrong.
+    lt <- read.dcf(desc, "LinkingTo")[[1]]
+    if (!is.na(lt)) {
+      stop(sprintf("withr %s declares LinkingTo (%s); this reuse guard checks Version only and no longer covers it",
+                   ver, gsub("\n", " ", lt)), call. = FALSE)
+    }
+    return(lib)
+  }
+  unlink(file.path(lib, "withr"), recursive = TRUE)
   tgz <- fetch_withr_tarball(ver)
+  # No `--no-test-load`: a withr that installs but will not load is a failed
+  # arm, and the children below would otherwise meet it as an unexplained
+  # failure of whatever they measured first.
   utils::install.packages(tgz, lib = lib, repos = NULL, type = "source",
-                          INSTALL_opts = "--no-test-load", quiet = TRUE)
+                          quiet = TRUE)
   # install.packages() signals a failed source install as a warning, not an
   # error, so a silent failure would otherwise leave an empty library that the
   # children then fall through -- see the provenance assertion in `preamble`.
-  if (!dir.exists(file.path(lib, "withr"))) {
+  if (!file.exists(desc)) {
     stop("install of withr ", ver, " produced no library entry in ", lib,
          call. = FALSE)
+  }
+  got <- as.character(read.dcf(desc, "Version")[[1]])
+  if (!identical(got, ver)) {
+    stop(sprintf("installed withr %s into the library for %s", got, ver), call. = FALSE)
   }
   lib
 }

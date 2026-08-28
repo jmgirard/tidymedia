@@ -1,6 +1,6 @@
 # M078: The limit bounds the wait, not the process
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -47,16 +47,16 @@ the measurement and naming M69 return 2's falsified premise.
 
 ## Acceptance criteria
 
-- [ ] AC1: Every hit of `grep -rni timeout` over `R/`, `man/`, `README.Rmd`,
+- [x] AC1: Every hit of `grep -rni timeout` over `R/`, `man/`, `README.Rmd`,
       `NEWS.md` and `vignettes/` that states or implies the limit terminates
       the spawned program is corrected to say the limit bounds R's wait and
       may be exceeded; the evidence lists the total hit count reviewed and
       each corrected hit by `file:line`. Corrections are made in roxygen and
       `man/` regenerated, never hand-edited.
-- [ ] AC2: `NEWS.md` carries a development-version entry stating that the
+- [x] AC2: `NEWS.md` carries a development-version entry stating that the
       timeout may be exceeded, in user-facing words and with no milestone
       number.
-- [ ] AC3: A new `cairn/DECISIONS.md` entry states, for the platform triple
+- [x] AC3: A new `cairn/DECISIONS.md` entry states, for the platform triple
       it names, the set limit and the observed elapsed time the committed
       script reported, and whether the spawned program was still running when
       R returned; states what that number does to M69 return 2's premise
@@ -64,10 +64,10 @@ the measurement and naming M69 return 2's falsified premise.
       it, as measured — without deciding a replacement mechanism; and names
       the three fixture files M077 excluded, what makes them block, and what
       they did when run in the committed container.
-- [ ] AC4: `Rscript -e 'devtools::test()'` clean and
+- [x] AC4: `Rscript -e 'devtools::test()'` clean and
       `Rscript -e 'devtools::check()'` clean (0 errors, 0 warnings; NOTEs
       justified).
-- [ ] AC5: `Rscript -e 'devtools::document()'` produces no diff.
+- [x] AC5: `Rscript -e 'devtools::document()'` produces no diff.
 
 ## Coverage
 
@@ -102,7 +102,7 @@ the measurement and naming M69 return 2's falsified premise.
 - [x] T6: Append the D-entry (AC3), and update the Linux-escalation
       candidate ROADMAP row so it carries what T3 found and states what the
       fix milestone now has to decide.
-- [ ] T7: `devtools::document()`, `devtools::test()`, `devtools::check()`.
+- [x] T7: `devtools::document()`, `devtools::test()`, `devtools::check()`.
 
 ## Work log
 
@@ -125,6 +125,8 @@ the measurement and naming M69 return 2's falsified premise.
 - 2026-08-28: T5 — `tests/testthat/test-runtime-timeout.R` gains a guard on the MEASURED number. The standing guard asserts both docs contain "40 seconds", and it was green throughout the period `?with_timeout` and `?local_timeout` promised a bound with no lag mentioned in their own topics — it reads `?tidymedia`'s Rd and cannot tell which topic satisfied it. The new one fences "42.0 seconds", so dropping the arithmetic back to a bare "may be exceeded" reddens.
 
 - 2026-08-28: T6 — D056 appended to `cairn/DECISIONS.md` (the grid, both platforms, liveness per case; M69 return 2's premise recorded as CONFIRMED; D055 item 3 recorded as unreproduced rather than disproven, with D055 left unamended). The Linux-escalation ROADMAP row's "the 2026-08-28 measurement (191.8 s ...) contradicts the 'bounded 42 s' premise" sentence replaced with what was measured; the row stays open on its original promote-on trigger, per the mini gate.
+
+- 2026-08-28: T7 — `devtools::document()` produces no diff (AC5, run after the last roxygen edit and `git status` on `man/`/`NAMESPACE` clean). `devtools::test()` on the host: **FAIL 0 | WARN 12 | SKIP 5 | PASS 6692**; the 12 warnings are the pre-existing dropped-audio-track messages and the 5 skips are the nvenc and video-codec hardware gates, none touched here. `devtools::check()`: **0 errors, 0 warnings, 0 notes**, 2m 42s.
 
 ## Decisions
 

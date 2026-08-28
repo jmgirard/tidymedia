@@ -1,6 +1,6 @@
 # M079: The floor harness measures what it reports
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -36,14 +36,14 @@ none is proposed; D053 and D055 stand untouched.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Planted at the cache path, each of three defect forms is
+- [x] AC1 — Planted at the cache path, each of three defect forms is
       refused and re-fetched by `imports-floors.R`'s `fetch_tarball()` and
       by `withr-floor.R`'s fetch: a truncated gzip, an HTTP error body
       above the 1000-byte size floor, and a well-formed tarball carrying no
       `DESCRIPTION`. Today `imports-floors.R:124` returns the first two and
       `withr-floor.R:61-72` returns all three, because both short-circuit
       before the validation the download branch runs at `:145`.
-- [ ] AC2 — `install_pin()` (`imports-floors.R:162`) and `install_withr()`
+- [x] AC2 — `install_pin()` (`imports-floors.R:162`) and `install_withr()`
       (`withr-floor.R:57`) reuse an installed library entry only when its
       `DESCRIPTION` `Version` matches AND no pinned package it
       LinkingTo-depends on has been installed since; otherwise they
@@ -51,7 +51,7 @@ none is proposed; D053 and D055 stand untouched.
       install that cannot be loaded is a reported failure rather than a
       pass. A library root whose path contains `~` and a space installs
       successfully.
-- [ ] AC3 — Each of the three DESCRIPTION readers aborts rather than
+- [x] AC3 — Each of the three DESCRIPTION readers aborts rather than
       returning a wrong value on input it cannot parse: `withr-floor.R:46`
       on an `Imports` whose `withr` entry lost its `(>= )`, where today
       `sub()` returns the whole `Imports` field; `r-floor.R`'s
@@ -61,7 +61,7 @@ none is proposed; D053 and D055 stand untouched.
       from `priority = c("base", "recommended")` to the unversioned entries
       DESCRIPTION actually declares, so an unversioned `MASS` aborts
       instead of being silently skipped.
-- [ ] AC4 — Four sites that today report a value the run did not measure
+- [x] AC4 — Four sites that today report a value the run did not measure
       are corrected: a failed `available.packages()` fetch
       (`imports-floors.R:413`) is distinguished from "no later versions
       exist"; the reconciliation loop (`:628`) aborts on non-convergence
@@ -70,17 +70,17 @@ none is proposed; D053 and D055 stand untouched.
       `timeout-bound.R:360`'s `elapsed(s)` column reports the per-case
       `observed elapsed` of `:267` that D056 quotes, not the driver wall
       clock of `:342`, ~2.2 s above it.
-- [ ] AC5 — `imports-floors.R`'s holdback set is the named test-harness
+- [x] AC5 — `imports-floors.R`'s holdback set is the named test-harness
       packages the pinned floors cannot satisfy (`testthat`, `furrr` — D055
       item 2), replacing the "everything outside the runtime closure"
       definition at `:626-663`; the computation returns no package outside
       that named set.
-- [ ] AC6 — `--repair` and `--walk` are gone from `imports-floors.R` —
+- [x] AC6 — `--repair` and `--walk` are gone from `imports-floors.R` —
       flags, `opt_value()` reads, code paths, and the header's usage lines
       — such that `grep -n -e '--repair' -e '--walk' data-raw/` returns no
       match; `--only` survives with its name guard reachable; and the dead
       code M077 F18 names, with its comment, is deleted.
-- [ ] AC7 — `devtools::check()` clean (0 errors / 0 warnings) and
+- [x] AC7 — `devtools::check()` clean (0 errors / 0 warnings) and
       `devtools::test()` green, unchanged from the pre-milestone baseline.
 
 ## Coverage
@@ -125,7 +125,7 @@ none is proposed; D053 and D055 stand untouched.
       table (M077 F15).
 - [x] T8 — Fix `timeout-bound.R:360` to report `observed elapsed`; confirm
       the corrected column reproduces D056's quoted per-case numbers.
-- [ ] T9 — `devtools::check()` and `devtools::test()`. Then a smoke run of
+- [x] T9 — `devtools::check()` and `devtools::test()`. Then a smoke run of
       `imports-floors.R` end to end in `Dockerfile.floors` — NOT an
       acceptance criterion (it crosses an environment boundary, which the
       internal-tier criteria standard bars a promise from spanning) — and
@@ -152,7 +152,50 @@ none is proposed; D053 and D055 stand untouched.
 - 2026-08-28: T8 — `timeout-bound.R`'s summary reports each case's own `observed elapsed` and carries the driver stopwatch in a second, separately labelled column. Re-run on the host: A1 42.02, A2 22.01, A3 42.02, A4 42.02, B1 2.02, B2 2.02, C1 2.50 against D056's host column of 42.03/22.02/42.03/42.01/2.01/2.01/2.37 — every case within 0.13 s, C1 the widest. The driver column read 44.35/24.39/44.37/44.36/4.37/4.36/4.83, i.e. 2.33 s above, which is the number the old single column was printing.
 - 2026-08-28: T4 — `data-raw/floor-probes.R`: 45 probes, 0 failed (`--offline` runs 38 of them). Each of the four scripts is sourced under `TM_DEFS_ONLY`, a guard that stops it just above its driver; `defs_of()` refuses to return if a script runs past that guard, so the harness cannot silently start a measurement. Probes needing a DESCRIPTION the repo does not have run the real script from a staged package root of symlinks with one modified DESCRIPTION — nothing writes to the repo.
 - 2026-08-28: T4 — the late-truncation probe (A3/A6) is the one that earned its place: a gzip truncated PAST the DESCRIPTION entry still lists it, so the listing check the download branch had always run accepts it (A6 asserts exactly that), and only `tar`'s exit status refuses it. The fixture asserts it still lists DESCRIPTION before the probes run, so it cannot degrade into passing for the wrong reason. Two probes failed while being written and were real: a non-settling `gather` that in fact settled, and an H1 whose own label was the only match its grep found.
+- 2026-08-28: T9 — `devtools::check()` 0 errors / 0 warnings / 0 notes (3m 26.6s); `devtools::test()` FAIL 0 | WARN 12 | SKIP 5 | PASS 6692, identical to the pre-milestone baseline taken on this branch before any edit. Nothing under `R/`, `man/`, `tests/` or `NAMESPACE` was touched by this milestone, so the profile's per-task `devtools::test()` trigger ("after code changes") never fired between tasks; it was run at the start and at the end instead, and that is stated here rather than implied.
+- 2026-08-28: T9 — container smoke run, `docker run --rm -v $PWD:/pkg -w /pkg tidymedia-floors:r443 Rscript data-raw/imports-floors.R`, exit 0. It reproduces D055's measurement on the hardened script: baseline and pinned both **pass=6120 fail=0 err=0 skip=22 over 66 files**, no floor moved, holdbacks exactly `furrr` 0.4.0 → 0.3.1 and `testthat` 3.3.2 → 3.1.10 — D055 item 2's pair, now reached by the named `HOLDBACK_SET` rather than by the runtime-closure complement. All nine floors installed and test-loaded with `--no-test-load` gone. A FIRST container run aborted at its closing report with a parse error: the file was edited on the mounted repo while `Rscript` was still reading it, which shifted the byte offsets mid-parse. That is an artifact of the edit, not of the script; the run above is on the committed file with no concurrent edit, and it is the one reported.
 
 ## Decisions
+
+**M079-D1 — the floor harness refuses rather than reports, and two of its modes
+are gone.** Milestone-local; D053, D055 and D056 stand untouched, and no
+declared floor moved.
+
+- **`--repair` and `--walk` are deleted, not fixed.** A floor that will not
+  install here now prints every failure and stops. Walking a package's Archive
+  forward to something that does build chooses a version for DESCRIPTION to
+  declare, and that is a decision, not a measurement — the two modes carried
+  three of the fourteen shapes (M077 F7, F22, F14) between them and had no
+  other caller. `--only` survives: D055 item 4 reserves it for the
+  one-floor-at-a-time legs, which stay plannable.
+- **The holdback set is named, not derived.** `HOLDBACK_SET <- c("testthat",
+  "furrr")` — D055 item 2's pair. The old definition, "everything outside the
+  runtime closure", described the container it was measured in; on another host
+  it would downgrade whatever unrelated package happened to declare a
+  requirement the floors miss, and report the result as a floor measurement. A
+  requirer outside the closure and outside the set now stops the run by name.
+  **Consequence:** a future host that legitimately needs a third harness package
+  held back will stop rather than proceed, and someone must decide whether to
+  add it or move a floor.
+- **"Installs" now means "loads".** `--no-test-load` is gone from both install
+  sites, so a floor that compiles and cannot be loaded is a reported failure.
+  All nine declared floors install and test-load in `Dockerfile.floors` under
+  this change.
+- **The unversioned carve-out is a literal list.** `UNVERSIONED_OK <-
+  c("tools", "utils")`, not `priority = c("base", "recommended")` — the latter
+  is a property of the R installation doing the measuring and waved through ~30
+  packages. **Consequence:** adding an unversioned `Imports` entry to
+  DESCRIPTION now requires editing both scripts, deliberately.
+- **M077 F17 is measured, not carried.** `R CMD INSTALL -l` was given a
+  `~`-and-space library root, shQuote'd exactly as `install_pin()` passes it,
+  and installed at status 0 — R expands the tilde itself, so the concern does
+  not materialize on macOS 26.5 / R 4.6.1. `path.expand()` on `TM_LIBROOT` and
+  `TM_SCRATCH` is kept so the result stops depending on R continuing to do that.
+- **Two recorded numbers now read differently.** D055's `TOTALS` line gains an
+  `err` field, so a re-run prints five counts where D055 quotes four; its
+  numbers are unchanged. D056's per-case figures were always the child's
+  `observed elapsed`, but `timeout-bound.R`'s summary column printed the
+  driver's stopwatch, ~2.3 s above them — the column now reports what D056
+  quotes, and carries the driver clock beside it, labelled.
 
 ## Review

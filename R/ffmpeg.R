@@ -4669,15 +4669,32 @@ check_batch_jobs <- function(jobs, require_output = FALSE, verb = NULL,
 # hide the second, so a picture-in-picture row missing both files named only
 # `main` (M62 review F2). One call sweeps the union and names every missing
 # path, which is what "names every missing path, not the first" asks for.
+#
+# Sweeping the union in one call is not the same as blaming the union: `arg`
+# was the whole `col` vector, so a picture-in-picture row whose `main` is fine
+# and whose `overlay` is missing still read `` `jobs$main` and `jobs$overlay`
+# name 1 file ``, sending the caller to a column with nothing wrong in it (M62
+# N3). The carriers are therefore tested separately and only those actually
+# holding a bad path are named — one call still, so both are named when both
+# are bad, and the predicate, the wording and the abort site are D041's
+# unchanged.
 check_batch_inputs <- function(jobs, col = "input",
                                call = rlang::caller_env()) {
-  paths <- unlist(lapply(col, function(nm) {
+  paths <- lapply(col, function(nm) {
     x <- jobs[[nm]]
     if (is.list(x)) x <- unlist(x, use.names = FALSE)
     as.character(x)
-  }), use.names = FALSE)
-  check_paths_readable(paths, arg = paste0("jobs$", col), multiple = TRUE,
-                    call = call)
+  })
+  holding <- vapply(paths, function(x) any(file.access(x, mode = 4) != 0),
+                    logical(1))
+  # Nothing bad: the sweep passes and which carriers it would have named never
+  # reaches anyone.
+  if (!any(holding)) {
+    return(invisible(jobs))
+  }
+  check_paths_readable(unlist(paths[holding], use.names = FALSE),
+                       arg = paste0("jobs$", col[holding]), multiple = TRUE,
+                       call = call)
   invisible(jobs)
 }
 

@@ -207,8 +207,16 @@ coerce_column <- function(col, na_strings = c("N/A", "")) {
 check_dim <- function(x, inclusive = FALSE,
                       arg = rlang::caller_arg(x),
                       call = rlang::caller_env()) {
-  ok <- rlang::is_character(x, n = 1) ||
-    (rlang::is_double(x, n = 1) && (if (inclusive) x >= 0 else x > 0))
+  # NA is refused first, and both halves need it. An NA_real_ reached the
+  # comparison, whose NA made `if (!ok)` raise base R's `missing value where
+  # TRUE/FALSE needed` with no argument name in it (M64 F4); an NA_character_
+  # satisfied is_character(n = 1) and was written into the command, so
+  # `crop_video(width = NA_character_)` compiled `crop=w=NA` (M80). NA is
+  # neither an FFmpeg expression nor a number, so the refusal below already
+  # says what is wrong and gains no second wording here.
+  ok <- !anyNA(x) &&
+    (rlang::is_character(x, n = 1) ||
+       (rlang::is_double(x, n = 1) && (if (inclusive) x >= 0 else x > 0)))
   if (!ok) {
     cli::cli_abort(
       c(

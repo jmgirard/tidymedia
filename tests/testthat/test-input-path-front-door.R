@@ -326,23 +326,35 @@ test_that("the abort names only the carriers actually holding a bad path", {
   # `arg` was the whole `col` vector, so a row whose `main` is fine and whose
   # `overlay` is missing still read `` `jobs$main` and `jobs$overlay` `` (M62
   # N3).
-  good <- withr::local_tempfile(fileext = ".mp4")
+  dir <- withr::local_tempdir()
+  good <- file.path(dir, "good.mp4")
   file.create(good)
-  out <- withr::local_tempfile(fileext = ".mp4")
+  out <- file.path(dir, "out.mp4")
+  unreadable <- tm_unreadable_path(dir)
+  tm_require_unreadable(unreadable)
 
-  msg <- conditionMessage(rlang::catch_cnd(picture_in_picture_batch(
-    tibble::tibble(main = good, overlay = "gone.mp4", output = out),
-    run = FALSE)))
-  expect_match(msg, "`jobs$overlay` names 1 file that can't be found or read.",
-               fixed = TRUE)
-  expect_false(grepl("jobs$main", msg, fixed = TRUE))
+  # Both halves of D041's predicate: a path that is not there, and one that is
+  # there and cannot be opened. The blame must not depend on which it is.
+  for (bad in list(absent = "gone.mp4", unreadable = unreadable)) {
+    msg <- conditionMessage(rlang::catch_cnd(picture_in_picture_batch(
+      tibble::tibble(main = good, overlay = bad, output = out), run = FALSE)))
+    expect_match(msg,
+                 "`jobs$overlay` names 1 file that can't be found or read.",
+                 fixed = TRUE)
+    expect_false(grepl("jobs$main", msg, fixed = TRUE))
 
-  msg <- conditionMessage(rlang::catch_cnd(picture_in_picture_batch(
-    tibble::tibble(main = "gone.mp4", overlay = good, output = out),
-    run = FALSE)))
-  expect_match(msg, "`jobs$main` names 1 file that can't be found or read.",
-               fixed = TRUE)
-  expect_false(grepl("jobs$overlay", msg, fixed = TRUE))
+    msg <- conditionMessage(rlang::catch_cnd(picture_in_picture_batch(
+      tibble::tibble(main = bad, overlay = good, output = out), run = FALSE)))
+    expect_match(msg, "`jobs$main` names 1 file that can't be found or read.",
+                 fixed = TRUE)
+    expect_false(grepl("jobs$overlay", msg, fixed = TRUE))
+
+    # Both bad: the one call still names both carriers, which is what the
+    # single-call sweep exists for.
+    msg <- conditionMessage(rlang::catch_cnd(picture_in_picture_batch(
+      tibble::tibble(main = bad, overlay = bad, output = out), run = FALSE)))
+    expect_match(msg, "`jobs$main` and `jobs$overlay` name 1 file", fixed = TRUE)
+  }
 })
 
 test_that("a duplicated absent input reports the path, not the duplication", {

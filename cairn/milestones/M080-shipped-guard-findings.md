@@ -90,7 +90,7 @@ no user call reaches, which stay unfixed and undocumented.
       compilation, `picture_in_picture_batch()`'s over-naming, and a
       derived-output table whose duplicated absent input reports the
       duplication rather than the path.
-- [ ] T2: `check_dim()` (`R/utils.R:207`) refuses NA of every type at its one
+- [x] T2: `check_dim()` (`R/utils.R:207`) refuses NA of every type at its one
       site; record the blame spelling on both the scalar form and the `_batch`
       form, where `check_batch_cell()` wraps it.
 - [ ] T3: the AC3 sweep test over the `ls(asNamespace(...))`-enumerated domain;
@@ -98,7 +98,7 @@ no user call reaches, which stay unfixed and undocumented.
       re-derives the verb set from `tm_call_graph()` and errors on any verb it
       returns with no entry; fix `check_overlay_scale()`,
       `check_region_values()` and `check_codec_needs_reencode()`.
-- [ ] T4: `check_batch_inputs()` (`R/ffmpeg.R:4672`) filters `col` to the
+- [x] T4: `check_batch_inputs()` (`R/ffmpeg.R:4672`) filters `col` to the
       carriers holding bad paths before calling `check_paths_readable()`,
       leaving D041's one abort site and one wording untouched.
 - [ ] T5: extract the three inline duplicated-input aborts (`R/ffmpeg.R:1958`,
@@ -124,6 +124,8 @@ no user call reaches, which stay unfixed and undocumented.
 - 2026-08-28: plan gate chose one milestone over splitting the NA family from the input-path items, because both are the front-door guard family and the baseline grid is re-run once; falsified by the plan-owned body or the review outgrowing one reviewable PR.
 - 2026-08-28: implementation gate chose, for the three NA fixes the sweep reddens: the region-value checker re-calls `check_regions()` rather than restating a shape refusal; `check_codec_needs_reencode()` takes `rlang::check_bool(reencode)` rather than reading a non-flag as FALSE; and `check_dim()`/`check_overlay_scale()` reuse their existing refusal wording for NA rather than adding a second message each.
 - 2026-08-28: T1 — four red tests, one per finding: `check_dim()` on all four NA types (`test-na-value-guards.R`), `crop_video(width = NA_character_)` compiling `crop=w=NA`, `picture_in_picture_batch()` reporting `` `jobs$main` and `jobs$overlay` `` when only `overlay` is bad, and `standardize_video_batch()` on a duplicated absent input reporting the duplication. Each fails as its finding describes; the suite is deliberately red at this commit.
+- 2026-08-28: T2 — `check_dim()` refuses NA of every type by testing `!anyNA(x)` ahead of both halves of its predicate, at its one site and with its existing wording. Blame recorded on both forms: the scalar form names the argument the caller typed (`crop_video()` -> `` `width` ``); on the `_batch` form an NA CELL never reaches `check_dim()` at all — `crop_video_batch()` types its dimension columns first, so the caller sees `The width column of `jobs` must not contain NA.` — while an NA delivered as the verb's own argument reaches it through `check_batch_cell()` with no row locator.
+- 2026-08-28: T4 — `check_batch_inputs()` tests each carrier separately and names only those holding a path that cannot be read, in one call, so both are still named when both are bad. `check_paths_readable()`'s predicate, wording and abort site are untouched (D041). Exercised on `picture_in_picture_batch()` over both halves of the predicate: an absent path and the verified mode-000 fixture.
 
 ## Decisions
 

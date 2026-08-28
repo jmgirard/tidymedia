@@ -25,3 +25,40 @@ test_that("a scalar verb refuses an NA dimension instead of compiling it", {
   expect_s3_class(err, "rlang_error")
   expect_match(conditionMessage(err), "`width`", fixed = TRUE)
 })
+
+test_that("the NA refusal is spelled the same way on both forms", {
+  f <- withr::local_tempfile(fileext = ".mp4")
+  file.create(f)
+  o <- withr::local_tempfile(fileext = ".mp4")
+
+  # Scalar form: the argument as the caller typed it, blamed on the verb.
+  err <- rlang::catch_cnd(crop_video(f, o, NA_real_, 100, run = FALSE))
+  expect_match(conditionMessage(err),
+               "`width` must be a single FFmpeg expression or number.",
+               fixed = TRUE)
+  expect_match(paste(deparse(conditionCall(err)), collapse = " "),
+               "crop_video(", fixed = TRUE)
+
+  # `_batch` form: the COLUMN name. An NA CELL never reaches check_dim() —
+  # crop_video_batch() types its dimension columns up front, and that guard
+  # refuses NA first — so the blame the caller sees is the column guard's, and
+  # it names the column rather than a row.
+  err <- rlang::catch_cnd(crop_video_batch(
+    tibble::tibble(input = c(f, f), width = c(100, NA_real_)),
+    height = 100, run = FALSE))
+  expect_s3_class(err, "rlang_error")
+  expect_match(conditionMessage(err),
+               "The width column of `jobs` must not contain NA.", fixed = TRUE)
+  expect_match(paste(deparse(conditionCall(err)), collapse = " "),
+               "crop_video_batch(", fixed = TRUE)
+
+  # An NA delivered as the verb's own ARGUMENT does reach check_dim(), through
+  # check_batch_cell() with no row locator: an argument applies to every row,
+  # so naming one would mislead (M66).
+  err <- rlang::catch_cnd(crop_video_batch(
+    tibble::tibble(input = f), width = NA_real_, height = 100, run = FALSE))
+  expect_match(conditionMessage(err),
+               "`width` must be a single FFmpeg expression or number.",
+               fixed = TRUE)
+  expect_false(grepl("offending jobs row", conditionMessage(err), fixed = TRUE))
+})

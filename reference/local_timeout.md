@@ -2,11 +2,13 @@
 
 Set a wall-clock limit for the remainder of the function you call this
 from, without changing the limit the rest of the session runs under.
-Every FFmpeg, FFprobe or MediaInfo program started between this call and
-the end of that function is bounded by `seconds`; when the function
-ends, by any route, whatever the caller had set before is back — unless
-that function discards the undo itself, which is possible and is
-described under Details.
+`seconds` bounds how long each FFmpeg, FFprobe or MediaInfo program
+started between this call and the end of that function is waited for —
+not how long it runs; a program that ignores the first two signals is
+waited for up to 40 seconds longer, described under Details. When the
+function ends, by any route, whatever the caller had set before is back
+— unless that function discards the undo itself, which is possible and
+is described under Details.
 
 This is the statement form of
 [`with_timeout()`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md).
@@ -54,9 +56,16 @@ gives back.
 ## Details
 
 The limit applies per spawned program, not per frame: a
-`local_timeout()` above a 100-row batch bounds each row at `seconds`,
-not the batch. It reaches a `parallel = TRUE` fan-out as well, because
+`local_timeout()` above a 100-row batch waits `seconds` on each row, not
+on the batch. It reaches a `parallel = TRUE` fan-out as well, because
 the worker is handed the limit in force when the fan-out starts.
+
+`seconds` bounds the wait, and the wait can exceed it, by the same
+arithmetic
+[`with_timeout()`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md)
+describes: `seconds` + 40 for a program that answers none of R's three
+signals, measured at 42.0 s under a 2 s limit on Linux and on macOS
+alike.
 
 Two calls in one frame stack the way any pair of `local_*()` calls does:
 the second is in force until the frame ends, and both are undone

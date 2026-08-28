@@ -53,8 +53,9 @@ it as a statement with
       for (f in files) extract_audio(f, sub("[.][^.]*$", ".wav", f))
     }
 
-Every program that function starts is bounded at `seconds`, and the
-caller's setting is back once it returns.
+Every program that function starts is waited for at most `seconds` —
+plus the lag described below — and the caller's setting is back once it
+returns.
 
 A reached limit is never silent: every call that can start one of those
 programs either aborts or warns.
@@ -83,8 +84,8 @@ being unreadable.
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
 and the `_batch` verbs mark the row `success = FALSE`, as they do for
 any failed job, and warn once at the end of the run saying how many jobs
-the limit killed — at `parallel = TRUE` no differently from
-sequentially. The dropped-track check behind
+timed out and did not run to completion — at `parallel = TRUE` no
+differently from sequentially. The dropped-track check behind
 [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
 [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
 [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
@@ -122,23 +123,33 @@ rounded, because the underlying limit is whole seconds and a value below
 one second would otherwise be read as no limit at all.
 
 The limit applies per spawned program, not per batch: a 100-row batch
-with a 600-second limit bounds each row at 600 seconds. tidymedia's own
-`parallel = TRUE` paths are bounded by the same limit as their
-sequential ones: the limit you set is carried into each worker for the
-duration of the call, and whatever that worker had set for itself is put
-back afterwards. A limit the underlying `timeout=` could not use — a
-fraction of a second, a negative number, a string — is refused by
+with a 600-second limit waits at most 600 seconds — plus the lag
+described below — on each row. tidymedia's own `parallel = TRUE` paths
+are bounded by the same limit as their sequential ones: the limit you
+set is carried into each worker for the duration of the call, and
+whatever that worker had set for itself is put back afterwards. A limit
+the underlying `timeout=` could not use — a fraction of a second, a
+negative number, a string — is refused by
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
 before it dispatches any job, on either of its paths and whether or not
 it is going to run anything.
 
 The limit bounds the wait; it does not promise the program dies at the
 second. R asks the program to stop when the limit is reached, insists 20
-seconds later, and kills it 20 seconds after that, so on Unix a program
-that does not answer the first two can outlive its limit by up to 40
-seconds — an FFmpeg blocked on an unresponsive input has been measured
-doing exactly that. R does not guarantee termination at all: a program
-can be written to survive the attempt.
+seconds later, and kills it 20 seconds after that, so a program that
+does not answer the first two is waited for up to 40 seconds past its
+limit. That is measured, not estimated: an FFmpeg blocked on an
+unresponsive input under a 2-second limit returned at 42.0 seconds on
+Linux, and a shell child that ignores both signals did the same on
+macOS. Budget for it — five one-second limits over five hung files is
+three and a half minutes, not five seconds.
+
+Whether the program then dies is a separate question, and the answer is
+not always yes. R does not guarantee termination: a program can be
+written to survive the attempt, and one measured here did. Which FFmpeg
+build you have matters too — the same blocked input that took 42.0
+seconds against FFmpeg 6.1.1 took 2.0 seconds against 9.0.1, because the
+newer build answers the first signal.
 
 See
 [`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)

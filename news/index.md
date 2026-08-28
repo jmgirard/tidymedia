@@ -2,6 +2,15 @@
 
 ## tidymedia (development version)
 
+### Requirements
+
+- tidymedia now states the R version it needs: `R (>= 4.1.0)`. An
+  installer on an older R refuses the package and says why, instead of
+  installing something whose help-page examples will not run. That
+  version is what those examples require — they use the native pipe
+  `|>`, a form R gained in 4.1.0 — and it sits above the highest R
+  version any declared dependency floor asks for.
+
 ### New features
 
 - [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)

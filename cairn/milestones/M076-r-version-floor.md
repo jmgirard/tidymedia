@@ -1,6 +1,6 @@
 # M076: The R version the package actually needs
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -78,7 +78,7 @@ inherited rough edges → stays on the `Imports`-floors candidate row. Removing
       version between the declared floor and the concrete oldest version the
       matrix ran at the time of writing (name it, never the moving `oldrel-1`
       label), and no dependency pinned to its own declared floor for that run.
-- [ ] T6 `devtools::document()`, `devtools::test()`, `devtools::check()`.
+- [x] T6 `devtools::document()`, `devtools::test()`, `devtools::check()`.
 
 ## Work log
 
@@ -89,6 +89,7 @@ inherited rough edges → stays on the `Imports`-floors candidate row. Removing
 - 2026-08-27: T3 — added `{os: ubuntu-latest, r: '4.1.0'}` to `R-CMD-check.yaml`'s matrix, the exact version rather than a moving label. Re-confirmed at implement time that the job can resolve: the highest `R (>= )` any *current* release of a declared `Imports` or `Suggests` package asks for is 4.1.0 — `dplyr` 1.2.1, `testthat` 3.3.2 and `furrr` 0.4.0 at `4.1.0`, `glue` 1.8.1, `purrr` 1.2.2, `rappdirs` 0.3.4 and `roxygen2` 8.1.0 at `4.1`, everything else lower — so 4.1.0 sits exactly at the boundary and the next release of any of those seven can push the job out from under the declared floor.
 - 2026-08-27: T4 — NEWS entry under a new `## Requirements` heading, stating the declared floor and where it comes from. It does not state what was run against the floor; that is T5's record, which no criterion binds.
 - 2026-08-27: T5 — recorded below, under Decisions, what the declared floor was and was not measured against. `oldrel-1` resolved to the concrete 4.5.3 on 2026-08-27 (r-hub rversions API), so the unexercised band is 4.2.x-4.4.x.
+- 2026-08-27: T6 — `devtools::document()` produces no diff; `devtools::test()` 6690 passing, 0 failed, 0 errors, 5 skipped (the 12 reported warnings are M075's deliberate `tidymedia_dropped_audio` warnings in `test-audio-stream*.R` and `test-parallel-option-carry.R`, unchanged by this milestone); `devtools::check()` 0 errors / 0 warnings / 0 notes in 2m 37.6s on R 4.6.1. AC2 is the one criterion no local run can close: it needs the pinned 4.1.0 job green on the pull request, and the workflow triggers on `pull_request`, not on a branch push — so review opens the PR first.
 - 2026-08-27: plan gate chose declaring `R (>= 4.1.0)` over removing `|>` from 24 help-page examples to hold a lower floor, because current `dplyr`, `glue`, `purrr`, `rappdirs` and `testthat` already force 4.1.0 on any install, so the rewrite would buy no reachable user; falsified by a report of a user on R 4.0.x who can install every current dependency.
 
 ## Decisions

@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-27 (M074 merged and archived after four review roun
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M075 | The silent narrowing announces itself | review | — | normal | milestones/M075-normalize-audio-drop-warning.md |
+| M075 | The silent narrowing announces itself | in-progress | — | normal | milestones/M075-normalize-audio-drop-warning.md |
 | M074 | The floor says what was measured | done | — | normal | milestones/archive/M074-withr-version-floor.md |
 | M073 | The timeout wrapper's tail | done | — | normal | milestones/archive/M073-timeout-wrapper-tail.md |
 | M072 | One call can carry its own time limit | done | — | normal | milestones/archive/M072-per-call-timeout.md |

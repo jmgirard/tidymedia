@@ -2,12 +2,12 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M075: The silent narrowing announces itself
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m075-normalize-audio-drop-warning`
+- **Branch/PR:** `m075-normalize-audio-drop-warning` / [#79](https://github.com/jmgirard/tidymedia/pull/79)
 
 ## Goal
 
@@ -136,6 +136,7 @@ wording. Tests, roxygen, NEWS, and the D-entry recording what was rejected.
 - 2026-08-27: T7 appended D054 (the discarded video stays silent on all six audio-producing verbs) and widened the probe-cost/opt-out candidate row from four verbs to six. The dropped-track-parity row needed no absorbing: `/milestone-plan` had already replaced it with M075's own table row in commit 32280dc.
 - 2026-08-27: T8 gate — `devtools::document()` produces no diff, and `devtools::check()` is `Status: OK` (0 errors, 0 warnings, 0 notes; full suite run inside it in 118s). Status set to review.
 - 2026-08-27: plan gate chose a `stop()`ing mock of `run_loudnorm_analysis()` over dropping AC4 because the call site is not wrapped in `tryCatch(error =)`, the condition M44's lesson names as defeating such a mock; falsified by the mock passing with the wiring removed.
+- 2026-08-27: review round 1 returned M075 to `in-progress` on an AC1 failure: `normalize_audio(infile, out, two_pass = TRUE)` on a multi-track input signals two `tidymedia_dropped_audio` conditions, not one, because the `if (two_pass)` block falls through to the single-pass probe site. AC2-AC5 verified green; AC6/AC7, the consistency gate and the review lenses were not reached.
 
 ## Decisions
 
@@ -162,3 +163,47 @@ wording. Tests, roxygen, NEWS, and the D-entry recording what was rejected.
   Falsified by an existing `"copy"` guard test changing what it reads.
 
 ## Review
+
+**Round 1 — 2026-08-27. Returned to `in-progress` on an AC1 failure.**
+PR [#79](https://github.com/jmgirard/tidymedia/pull/79) (draft). `origin/master`
+had not moved since the branch was cut (`git rev-list --left-right --count
+origin/master...HEAD` = `0 7`), so no merge was needed before gathering
+evidence.
+
+- **AC1 — FAILS.** `testthat::test_local(filter = "audio-track-drop")` is green
+  (35 tests, 99 assertions, 0 failures, 0 skips), and its AC1 test collects
+  exactly one condition with every required substring. But that test calls the
+  default `two_pass = FALSE`, and AC1 quantifies over every `run = TRUE` call
+  naming no `audio_stream`. Measured directly on `make_multitrack_video()` with
+  a counting `withCallingHandlers()`: scalar `two_pass = FALSE` 1 condition,
+  scalar `two_pass = TRUE` **2**, batch `two_pass = FALSE` 1, batch
+  `two_pass = TRUE` 1. The scalar verb's two sites are not mutually exclusive —
+  the `if (two_pass)` block at `R/ffmpeg.R:2189` falls through rather than
+  returning, so the single-pass site at `R/ffmpeg.R:2237` runs a second time on
+  the two-pass path. AC4's two-pass test does not catch it because its
+  `run_loudnorm_analysis()` mock `stop()`s before control reaches the second
+  site. Same root cause, no behavioral effect: the hoisted
+  `check_audio_codec_not_copy()` at `R/ffmpeg.R:2233` also runs on both paths,
+  and its comment's "on the single-pass path only" and the probe comment's "so
+  exactly one runs" are both false as written.
+- **AC2 — evidence recorded, not ticked.** `normalize_audio_batch()` on a
+  two-row multi-track jobs table signals one condition matching `Row 1` and
+  `Row 2` (3 assertions, green).
+- **AC3 — evidence recorded, not ticked.** All five silence cases green
+  (`audio_stream` scalar; `audio_stream` batch argument; a cell on every row;
+  `run = FALSE` at both `two_pass` values; single-track input).
+- **AC4 — evidence recorded, not ticked.** Both mocked ordering tests green
+  (3 assertions each): the warning arrives and the mock's error propagates.
+- **AC5 — evidence recorded, not ticked.** All eight refusal cases green; the
+  asserted strings (`target_loudness`, `audio_codec`) are the ones the existing
+  guard tests assert (`test-normalize-audio-batch.R:180`,
+  `test-normalize-audio.R:264`).
+- **AC6, AC7 — not reached.** Round 1 stopped at the AC1 failure before the
+  Rd excerpts and the full `devtools::check()` were re-run.
+
+Consistency gate and the fresh-context review lenses were not reached.
+
+**Fix directed to `/milestone-implement`:** make the two probe sites actually
+mutually exclusive (gate the single-pass site on `!two_pass`, or return from the
+two-pass branch), correct the two comments that claim exclusivity, and extend
+AC1's coverage to `two_pass = TRUE` so the case that failed is asserted.

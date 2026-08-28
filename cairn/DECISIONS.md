@@ -2367,9 +2367,13 @@ remainder of the function you call this from", sits in tension with the 3.0.3
 reading, and that is a reading of the page rather than a measurement. It is recorded because it is the one place the two versions were
 seen to part.
 
-**What was not measured.** The nine other `Imports` floors, the absent
-`Depends: R (>= )` line, and every `withr` between 2.5.0 and 3.0.3 — the walk
-was to be run only if a block failed, and none did. The `knitr` target
+**What was not measured.** The nine other `Imports` floors and every `withr`
+between 2.5.0 and 3.0.3 — the walk
+was to be run only if a block failed, and none did. The absent
+`Depends: R (>= )` line was also unmeasured here; **M076 closed that** on
+2026-08-27, declaring `R (>= 4.1.0)` as the measured maximum of the shipped
+surface's R-version-gated syntax and the ten `Imports` floor versions' own
+`Depends: R` fields, and checking the package at exactly that version in CI. The `knitr` target
 environment. Neither of the two `@details` claims that are not about
 frames was run under the floor as the page states it. The `parallel = TRUE`
 fan-out is mentioned in neither measured file. The per-spawned-program claim is

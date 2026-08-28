@@ -73,10 +73,11 @@ the frame returns, silently and with no error anywhere. Write
 above. This is not particular to this function:
 [`withr::defer()`](https://withr.r-lib.org/reference/defer.html) and
 [`withr::local_options()`](https://withr.r-lib.org/reference/with_options.html)
-lose their undo both ways (measured 2026-08-27 on withr 3.0.3), because
-that is how R's exit handlers work. What cannot happen is the limit
-being set and the undo never registered: the undo goes on the frame
-first, and only then is the limit written.
+lose their undo both ways (measured 2026-08-27 on withr 2.5.0, the
+oldest this package accepts, and on 3.0.3, with the same result on
+each), because that is how R's exit handlers work. What cannot happen is
+the limit being set and the undo never registered: the undo goes on the
+frame first, and only then is the limit written.
 
 Written *directly inside* a
 [`with_timeout()`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md)
@@ -90,7 +91,7 @@ anywhere in R, not something particular to these two (measured
 [`withr::with_options()`](https://withr.r-lib.org/reference/with_options.html)
 and
 [`withr::local_options()`](https://withr.r-lib.org/reference/with_options.html),
-which behave identically).
+which behave identically, on withr 2.5.0 and 3.0.3 alike).
 
 `seconds` is refused by the rule `options(tidymedia.timeout = )`
 applies, with one deliberate exception. Setting the option to `NULL`

@@ -120,7 +120,8 @@ and with no error anywhere. Write <code>on.exit(..., add = TRUE)</code> and it d
 happen. The second is a <code>.local_envir</code> that is not a live frame, described
 under that argument above. This is not particular to this function:
 <code><a href="https://withr.r-lib.org/reference/defer.html" class="external-link">withr::defer()</a></code> and <code><a href="https://withr.r-lib.org/reference/with_options.html" class="external-link">withr::local_options()</a></code> lose their undo both ways
-(measured 2026-08-27 on withr 3.0.3), because that is how R's exit handlers
+(measured 2026-08-27 on withr 2.5.0, the oldest this package accepts, and on
+3.0.3, with the same result on each), because that is how R's exit handlers
 work. What cannot happen is the limit being set and the undo never
 registered: the undo goes on the frame first, and only then is the limit
 written.</p>
@@ -131,7 +132,8 @@ the wrapper's limit is what the frame leaves behind. Put the inner limit in a
 function of its own, or use one form or the other. This is what <code>with_*()</code>
 and <code>local_*()</code> do together anywhere in R, not something particular to these
 two (measured 2026-08-27 against <code><a href="https://withr.r-lib.org/reference/with_options.html" class="external-link">withr::with_options()</a></code> and
-<code><a href="https://withr.r-lib.org/reference/with_options.html" class="external-link">withr::local_options()</a></code>, which behave identically).</p>
+<code><a href="https://withr.r-lib.org/reference/with_options.html" class="external-link">withr::local_options()</a></code>, which behave identically, on withr 2.5.0 and 3.0.3
+alike).</p>
 <p><code>seconds</code> is refused by the rule <code>options(tidymedia.timeout = )</code> applies, with
 one deliberate exception. Setting the option to <code>NULL</code> REMOVES it, leaving the
 session unset and therefore unlimited; <code>local_timeout(NULL)</code> is a caller

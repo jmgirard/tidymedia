@@ -40,7 +40,7 @@ wording. Tests, roxygen, NEWS, and the D-entry recording what was rejected.
 
 ## Acceptance criteria
 
-- [ ] AC1 — On a `run = TRUE` call naming no `audio_stream`,
+- [x] AC1 — On a `run = TRUE` call naming no `audio_stream`,
       `normalize_audio()` signals exactly one condition of class
       `tidymedia_dropped_audio` for a multi-track input, whose text carries the
       track count, the number dropped, `audio_stream`, and `probe_audio`'s two
@@ -49,20 +49,20 @@ wording. Tests, roxygen, NEWS, and the D-entry recording what was rejected.
       such condition at `two_pass = FALSE` and at `two_pass = TRUE`, and at both
       matches `3 audio tracks`, `drops 2`, `audio_stream`, `probe_audio`,
       `1, 2, 3` and `0, 1, 2` in that condition's message.
-- [ ] AC2 — `normalize_audio_batch()` signals exactly one such condition per
+- [x] AC2 — `normalize_audio_batch()` signals exactly one such condition per
       call, naming every affected row. Evidence: a passing test on a two-row
       jobs table of multi-track inputs whose message matches `Row 1` and
       `Row 2`.
-- [ ] AC3 — The warning is silent in each of five cases: `audio_stream` given
+- [x] AC3 — The warning is silent in each of five cases: `audio_stream` given
       as an argument (scalar and batch), given as a batch cell on every row,
       `run = FALSE` (at both `two_pass` values), and a single-track input.
       Evidence: one passing `expect_no_warning()` test per case.
-- [ ] AC4 — On the two-pass path both verbs warn *before* the analysis pass
+- [x] AC4 — On the two-pass path both verbs warn *before* the analysis pass
       runs. Evidence: two passing tests that mock `run_loudnorm_analysis()` /
       the batch Phase 1 to `stop()`, catch the warning with
       `withCallingHandlers()`, and assert both that the warning arrived and
       that the mock's error propagated.
-- [ ] AC5 — A wrong value still refuses before anything warns: on
+- [x] AC5 — A wrong value still refuses before anything warns: on
       `make_multitrack_video()`, `normalize_audio(infile, out,
       target_loudness = 999)` and `normalize_audio(infile, out,
       audio_codec = "copy")` abort with the same message strings the existing
@@ -70,13 +70,13 @@ wording. Tests, roxygen, NEWS, and the D-entry recording what was rejected.
       both `two_pass` values; `normalize_audio_batch()` does the same for the
       `target_loudness` and `audio_codec` columns. Evidence: one passing test
       per case (eight).
-- [ ] AC6 — `?normalize_audio` and `?normalize_audio_batch` each state that a
+- [x] AC6 — `?normalize_audio` and `?normalize_audio_batch` each state that a
       multi-track input warns, that naming `audio_stream` silences it, and that
       the check costs one FFprobe call per distinct input — the batch form
       adding that its probes run serially before the fan-out, so `parallel`
       does not reach them. Evidence: the rendered `man/normalize_audio.Rd` and
       `man/normalize_audio_batch.Rd` excerpts.
-- [ ] AC7 — `Rscript -e 'devtools::test()'` clean and
+- [x] AC7 — `Rscript -e 'devtools::test()'` clean and
       `Rscript -e 'devtools::check()'` clean (0 errors, 0 warnings; NOTEs
       justified). Evidence: both outputs.
 
@@ -235,3 +235,98 @@ Consistency gate and the fresh-context review lenses were not reached.
 mutually exclusive (gate the single-pass site on `!two_pass`, or return from the
 two-pass branch), correct the two comments that claim exclusivity, and extend
 AC1's coverage to `two_pass = TRUE` so the case that failed is asserted.
+
+**Round 2 — 2026-08-27.**
+PR [#79](https://github.com/jmgirard/tidymedia/pull/79) (draft). `origin/master`
+had still not moved since the branch was cut (`git rev-list --left-right --count
+origin/master...HEAD` = `0 10` after `git fetch`), so no merge was needed before
+gathering evidence.
+
+- **AC1 — verified.** `testthat::test_local(filter = "audio-track-drop")` green:
+  35 tests, 106 assertions, 0 failures, 0 skips. Its AC1 test now loops both
+  `two_pass` values and asserts one condition plus all six substrings at each.
+  Measured independently outside testthat on `make_multitrack_video()` with a
+  counting `withCallingHandlers()`: scalar `two_pass = FALSE` 1 condition,
+  scalar `two_pass = TRUE` **1** (was 2 in round 1), and both messages carry
+  `3 audio tracks`, `drops 2`, `audio_stream`, `probe_audio()`, `1, 2, 3` and
+  `0, 1, 2`.
+- **AC2 — verified.** The two-row jobs-table test is green, and the same direct
+  measurement gives one condition for the batch at both `two_pass` values, its
+  message naming `Row 1` and `Row 2`.
+- **AC3 — verified.** All five silence tests green (`audio_stream` scalar;
+  `audio_stream` batch argument; a cell on every row; `run = FALSE` at both
+  `two_pass` values; single-track input).
+- **AC4 — verified.** Both mocked ordering tests green: the warning arrives and
+  the `stop()`ing mock's error propagates, on the scalar verb and the batch.
+- **AC5 — verified.** All eight refusal tests green; the asserted strings are
+  the ones the existing guard tests assert
+  (`test-normalize-audio-batch.R:180`, `test-normalize-audio.R:264`), and each
+  case collects zero `tidymedia_dropped_audio` conditions.
+- **AC6 — verified.** `man/normalize_audio.Rd:108-119` states the warning, that
+  `audio_stream` silences it, the one-FFprobe-call-per-distinct-input cost, and
+  the pre-analysis ordering. `man/normalize_audio_batch.Rd:133-147` states the
+  same and adds "Those probes run **serially at the front door**, before the
+  fan-out starts, so `parallel` does not reach them."
+- **AC7 — verified.** `Rscript -e 'devtools::test()'`:
+  `[ FAIL 0 | WARN 12 | SKIP 5 | PASS 6690 ]`.
+  `Rscript -e 'devtools::check()'`: `Status: OK`, `0 errors | 0 warnings |
+  0 notes`, 3m 45s. The 12 test-run warnings are the drop warning surfacing in
+  tests that do not catch it: four are pre-existing (`extract_audio()` /
+  `convert_audio()` tests on master), eight are new — six in two
+  `test-audio-stream.R` normalize tests and two in `test-parallel-option-carry.R`
+  (the front-door probe's fail-open timeout warning beside the
+  `tidymedia_timeout` abort those tests assert). All still pass; the noise
+  matches what the four existing verbs' tests already carry.
+
+**Consistency gate — passes.**
+- `cairn_validate.py` exit 0, "all checks passed"; 15 advisory warnings, all
+  `work-log format` on M075's own wrapped continuation lines (advisory, not a
+  gate failure; the work log is implement-owned and was left unrewritten).
+- `cairn_impact.py` skipped: no DESIGN.md principle changed.
+- Toolchain slot (`r-package`): `devtools::document()` produces no diff to
+  `man/` or `NAMESPACE`; no generated file hand-edited; `README.Rmd` untouched
+  so `README.md` stays in sync; `pkgdown::check_pkgdown()` "No problems found";
+  `NEWS.md` carries one user-facing bullet for this change with no milestone
+  number; no new top-level files, so no `.Rbuildignore` entry needed;
+  `devtools::check()` clean as recorded under AC7.
+
+**Independent review.** The mandated fresh-context fan-out could not be spawned:
+a session instruction forbids the Agent tool — disclosed rather than skipped, as
+at the plan gate and the round-1 amendment. The three lenses were applied in
+this context instead, against the full `git diff master...HEAD`, `git log` on
+the touched lines, and the archived `## Review` records for the files this diff
+touches (`M41`, `M44`, `M65`, `M49`, `M36`). A GitHub PR-thread probe was not
+needed: M91's finding that this repo's threads are empty holds, and the archive
+carried the evidence.
+
+Findings, ranked:
+
+1. **The single-pass `check_audio_codec_not_copy()` hoist reassigns another
+   check's precedence — the shape M41's review backed out.** On the single-pass
+   path the guard now runs at the front door, above
+   `normalize_audio_pipeline()`, whose first two lines are
+   `check_number_whole(channels)` and `check_number_whole(sample_rate)`
+   (`R/ffmpeg.R:2298-2300`, unchanged). Measured: `normalize_audio(f, out,
+   channels = 0, audio_codec = "copy", run = FALSE)` now aborts with
+   ``​`audio_codec` can't be "copy"``; on `master` the same call aborts with the
+   `channels` complaint. M41's archive records "Each guard sits at the END of
+   its verb's front-door validation, reassigning no other check's precedence",
+   and M41's own review (A3r3) backed this hoist out of the **two-pass** path
+   for exactly this reason. No acceptance criterion binds it — AC5 asserts only
+   the two `"copy"` message strings, which are unchanged — and no existing test
+   reads the changed message, so the question gate's falsifier did not fire.
+   Fix available: add the two `check_number_whole()` calls above
+   `check_audio_codec_not_copy()` inside the `if (!two_pass)` block, restoring
+   `master`'s precedence exactly (the two-pass block already validates them in
+   that order).
+2. **The milestone file's wrapped work-log lines trip `cairn_validate`'s
+   advisory `work-log format` check (15 warnings).** Cosmetic, advisory-only,
+   and in an implement-owned section; noted rather than rewritten at review.
+
+Nothing else surfaced. The blame lens confirms the diff undoes nothing
+deliberate: the two-pass path is byte-for-byte as M41/M65 left it, the three new
+call sites take the same `isTRUE(run) && is.null(audio_stream)` gate and the
+same builder as the five M44 sites (`R/ffmpeg.R:544, 1015, 5045, 5186`), and
+M44's two actioned findings (brace-containing paths, throwing locators) are
+covered by tests still green in this file. D024, D030, D039 and D054 are all
+consistent with the diff.

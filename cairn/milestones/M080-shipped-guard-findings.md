@@ -85,7 +85,7 @@ no user call reaches, which stay unfixed and undocumented.
 
 ## Tasks
 
-- [ ] T1: red first — one failing test per finding: `check_dim(NA_real_)`'s
+- [x] T1: red first — one failing test per finding: `check_dim(NA_real_)`'s
       bare `missing value where TRUE/FALSE needed`, the `crop=w=NA`
       compilation, `picture_in_picture_batch()`'s over-naming, and a
       derived-output table whose duplicated absent input reports the
@@ -123,6 +123,7 @@ no user call reaches, which stay unfixed and undocumented.
 - 2026-08-28: plan gate chose the NA sweep domain "one required formal not named `jobs`" over an explicit list of scalar-value predicates, because a hand-list is not a procedure (M118) while the formal's name is mechanical; falsified by a table-taking predicate whose required formal is spelled something other than `jobs`.
 - 2026-08-28: plan gate chose one milestone over splitting the NA family from the input-path items, because both are the front-door guard family and the baseline grid is re-run once; falsified by the plan-owned body or the review outgrowing one reviewable PR.
 - 2026-08-28: implementation gate chose, for the three NA fixes the sweep reddens: the region-value checker re-calls `check_regions()` rather than restating a shape refusal; `check_codec_needs_reencode()` takes `rlang::check_bool(reencode)` rather than reading a non-flag as FALSE; and `check_dim()`/`check_overlay_scale()` reuse their existing refusal wording for NA rather than adding a second message each.
+- 2026-08-28: T1 — four red tests, one per finding: `check_dim()` on all four NA types (`test-na-value-guards.R`), `crop_video(width = NA_character_)` compiling `crop=w=NA`, `picture_in_picture_batch()` reporting `` `jobs$main` and `jobs$overlay` `` when only `overlay` is bad, and `standardize_video_batch()` on a duplicated absent input reporting the duplication. Each fails as its finding describes; the suite is deliberately red at this commit.
 
 ## Decisions
 

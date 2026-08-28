@@ -317,3 +317,44 @@ test_that("the checker blames its caller, not itself", {
   expect_match(paste(deparse(conditionCall(err)), collapse = " "),
                "caller(", fixed = TRUE)
 })
+
+# M080 -------------------------------------------------------------------
+
+test_that("the abort names only the carriers actually holding a bad path", {
+  # `col` may name several carriers, swept in ONE call so a row missing both
+  # names both (M62 review F2). The count was right and the blame was not:
+  # `arg` was the whole `col` vector, so a row whose `main` is fine and whose
+  # `overlay` is missing still read `` `jobs$main` and `jobs$overlay` `` (M62
+  # N3).
+  good <- withr::local_tempfile(fileext = ".mp4")
+  file.create(good)
+  out <- withr::local_tempfile(fileext = ".mp4")
+
+  msg <- conditionMessage(rlang::catch_cnd(picture_in_picture_batch(
+    tibble::tibble(main = good, overlay = "gone.mp4", output = out),
+    run = FALSE)))
+  expect_match(msg, "`jobs$overlay` names 1 file that can't be found or read.",
+               fixed = TRUE)
+  expect_false(grepl("jobs$main", msg, fixed = TRUE))
+
+  msg <- conditionMessage(rlang::catch_cnd(picture_in_picture_batch(
+    tibble::tibble(main = "gone.mp4", overlay = good, output = out),
+    run = FALSE)))
+  expect_match(msg, "`jobs$main` names 1 file that can't be found or read.",
+               fixed = TRUE)
+  expect_false(grepl("jobs$overlay", msg, fixed = TRUE))
+})
+
+test_that("a duplicated absent input reports the path, not the duplication", {
+  # With no `output` column the verb derives one name per input, so it rejects
+  # duplicated inputs before it derives -- and that rejection ran ABOVE the
+  # path sweep, so a table whose rows all name the same file that is not there
+  # was told about the duplication, which names nothing the caller can fix
+  # (M62 N7). NEWS.md's "one path typed wrong the same way in twenty rows is
+  # one missing file" was observable only off the explicit-output path.
+  msg <- conditionMessage(rlang::catch_cnd(standardize_video_batch(
+    tibble::tibble(input = c("gone.mp4", "gone.mp4")), run = FALSE)))
+  expect_match(msg, "`jobs$input` names 1 file that can't be found or read.",
+               fixed = TRUE)
+  expect_false(grepl("duplicated", msg, fixed = TRUE))
+})

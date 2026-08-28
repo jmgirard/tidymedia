@@ -1,11 +1,11 @@
 # M079: The floor harness measures what it reports
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m079-floor-harness-hardening`
 
 ## Goal
 
@@ -95,7 +95,7 @@ none is proposed; D053 and D055 stand untouched.
 
 ## Tasks
 
-- [ ] T1 — Delete `--repair` and `--walk` from `imports-floors.R`: the flag
+- [x] T1 — Delete `--repair` and `--walk` from `imports-floors.R`: the flag
       parsing at `:67-69`, their code paths, and the usage lines at `:9`
       and `:15`. Keep `--only` and make its name guard reachable (M077 F14
       was the `--only X --walk Y` bypass). Delete the M077 F18 dead code
@@ -139,6 +139,7 @@ none is proposed; D053 and D055 stand untouched.
 - 2026-08-28: plan gate chose to keep `--only` over deleting it alongside `--repair`/`--walk` because D055 item 4 names it "the attribution tool" and reserves it for the still-open one-floor legs; falsified by those legs being dropped, which would leave `--only` with no caller.
 - 2026-08-28: plan gate chose host-side planted defects over binding a full container run as a criterion because the internal-tier criteria standard bars a promise spanning an environment boundary and the container run costs an hour-plus; falsified by a host-side probe passing while the container run regresses, which is why T9 runs the container anyway and logs the outcome.
 - 2026-08-28: plan gate chose fixing the scripts over deleting them because the nine one-floor-at-a-time legs and the three-OS run are open candidates that would have to hand-roll the harness again; falsified by both being dropped, after which D053/D055/D056's recorded prose is the whole value.
+- 2026-08-28: T1 — `--repair` and `--walk` deleted from `imports-floors.R`: usage lines, flag parsing, the walk block and its `--only`-bypassable name guard (M077 F14), and the repair path with F18's dead `probe <- file.path(LIBROOT, "walk")` and its comment. A failed floor install now aborts naming the floors, instead of telling the reader to re-run with a mode that no longer exists. `grep -n -e '--repair' -e '--walk' data-raw/` returns no match; `--only nosuch` still stops with "nosuch is not a versioned Imports entry".
 
 ## Decisions
 

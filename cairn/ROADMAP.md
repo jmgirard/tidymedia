@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-28 (M078 merged and archived after one review round
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M079 | The floor harness measures what it reports | planned | — | normal | milestones/M079-floor-harness-hardening.md |
+| M079 | The floor harness measures what it reports | in-progress | — | normal | milestones/M079-floor-harness-hardening.md |
 | M078 | The limit bounds the wait, not the process | done | — | normal | milestones/archive/M078-timeout-bounds-the-wait.md |
 | M077 | The nine other Imports floors, measured | done | M076 | normal | milestones/archive/M077-imports-floors-measured.md |
 | M076 | The R version the package actually needs | done | — | normal | milestones/archive/M076-r-version-floor.md |

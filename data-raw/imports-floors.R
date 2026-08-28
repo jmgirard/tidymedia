@@ -6,15 +6,8 @@
 #
 #   Rscript data-raw/imports-floors.R              # baseline, then all floors pinned
 #   Rscript data-raw/imports-floors.R --baseline   # the current-dependency run only
-#   Rscript data-raw/imports-floors.R --repair     # AC3: on a floor that will
-#                                                  # not build here, walk that
-#                                                  # package's Archive forward to
-#                                                  # the first version that does
 #   Rscript data-raw/imports-floors.R --only cli   # pin ONE floor, siblings current
 #   TM_LIBROOT=~/floor-libs Rscript data-raw/imports-floors.R   # reuse installs
-#   Rscript data-raw/imports-floors.R --walk purrr # list that package's CRAN
-#                                                  # Archive versions from the
-#                                                  # declared floor forward
 #
 # WHAT IS PINNED. Every non-base entry of `Imports` -- the entries `read.dcf`
 # enumerates, less `tools` and `utils`, which carry no floor -- is installed at
@@ -64,9 +57,7 @@ opt_value <- function(flag) {
   args[i + 1L]
 }
 BASELINE_ONLY <- "--baseline" %in% args
-REPAIR <- "--repair" %in% args
 ONLY <- opt_value("--only")
-WALK <- opt_value("--walk")
 
 # `TM_LIBROOT` persists the pinned libraries across runs, which turns a re-run
 # from a half-hour of compiling into minutes. Persisting a library is exactly
@@ -152,11 +143,12 @@ fetch_tarball <- function(pkg, ver) {
   stop(sprintf("could not fetch %s %s from CRAN", pkg, ver), call. = FALSE)
 }
 
-# Returns NULL on success, or the tail of the install log on a failed install --
-# AC3's case, which the caller records rather than aborting on. `R CMD INSTALL`
-# is driven directly rather than through `install.packages()`, because the
-# criterion asks for THE ERROR to be recorded and `install.packages()` reduces a
-# compiler error to "had non-zero exit status" in a warning.
+# Returns NULL on success, or the tail of the install log on a failed install,
+# which the caller prints for every floor before aborting on the set of them.
+# `R CMD INSTALL` is driven directly rather than through `install.packages()`,
+# because THE ERROR is what a failed floor has to report and
+# `install.packages()` reduces a compiler error to "had non-zero exit status"
+# in a warning.
 install_pin <- function(lib, pkg, ver) {
   marker <- file.path(lib, pkg, "DESCRIPTION")
   if (file.exists(marker) &&
@@ -400,7 +392,10 @@ newest_compatible <- function(pkg, pins) {
   stop(sprintf("no version of %s is compatible with the pinned floors", pkg), call. = FALSE)
 }
 
-# --- AC3: walk a package's CRAN Archive listing forward -------------------------
+# --- a package's CRAN Archive listing, oldest first -----------------------------
+#
+# Used by `newest_compatible()` to find the newest release of a held-back
+# harness package that the pinned floors permit.
 
 archive_versions <- function(pkg, from) {
   url <- sprintf("https://cran.r-project.org/src/contrib/Archive/%s/", pkg)
@@ -408,7 +403,7 @@ archive_versions <- function(pkg, from) {
   vers <- unique(regmatches(html, regexpr(sprintf("%s_[0-9][^\"]*?\\.tar\\.gz", pkg), html)))
   vers <- sub(sprintf("^%s_", pkg), "", sub("\\.tar\\.gz$", "", vers))
   # The Archive holds only superseded versions; the current release lives in
-  # src/contrib and would otherwise be missing from the end of the walk.
+  # src/contrib and would otherwise be missing from the end of the list.
   cur <- tryCatch({
     db <- utils::available.packages(repos = "https://cloud.r-project.org")
     if (pkg %in% rownames(db)) unname(db[pkg, "Version"]) else NA_character_
@@ -417,19 +412,6 @@ archive_versions <- function(pkg, from) {
   vers <- unique(vers[!is.na(vers)])
   vers <- vers[numeric_version(vers) >= numeric_version(from)]
   as.character(sort(numeric_version(vers)))
-}
-
-if (!is.na(WALK)) {
-  if (!WALK %in% names(pins) && is.na(ONLY)) {
-    # A walk is asked of a package by name, and a typo would otherwise print an
-    # empty list that reads like "no later versions exist".
-    stop(WALK, " is not a versioned Imports entry", call. = FALSE)
-  }
-  from <- pins[[WALK]]
-  vs <- archive_versions(WALK, from)
-  cat(sprintf("%s versions from the declared floor %s forward:\n", WALK, from))
-  cat(paste0("    ", vs, collapse = "\n"), "\n")
-  quit(save = "no")
 }
 
 # --- the child that runs the suite ---------------------------------------------
@@ -676,39 +658,14 @@ for (p in order) {
   }
 }
 if (length(failures)) {
-  cat("\n---- AC3: walking each failed floor forward through the CRAN Archive ----\n")
-  if (!REPAIR) {
-    stop(sprintf("%d declared floor(s) do not install here: %s -- re-run with --repair to walk them forward",
-                 length(failures), paste(names(failures), collapse = ", ")), call. = FALSE)
-  }
-  probe <- file.path(LIBROOT, "walk")
-  dir.create(probe, recursive = TRUE, showWarnings = FALSE)
-  moved <- character()
-  for (p in names(failures)) {
-    # The walk library carries the ALREADY-INSTALLED pins plus the user
-    # library, so a candidate compiles against the same headers the joint run
-    # will hand it -- a `cli` candidate found against current cli headers would
-    # not be the version the joint run then measures.
-    vs <- archive_versions(p, pins[[p]])
-    vs <- vs[vs != pins[[p]]]
-    cat(sprintf("  %s: %d candidate version(s) after %s\n", p, length(vs), pins[[p]]))
-    found <- NA_character_
-    for (v in vs) {
-      e <- install_pin(lib, p, v)
-      cat(sprintf("    %-8s %s\n", v, if (is.null(e)) "INSTALLS" else "fails"))
-      if (is.null(e)) { found <- v; break }
-    }
-    if (is.na(found)) {
-      stop(sprintf("no version of %s from %s forward installs here", p, pins[[p]]), call. = FALSE)
-    }
-    moved <- c(moved, sprintf("%s: %s -> %s", p, pins[[p]], found))
-    pins[[p]] <- found
-  }
-  cat("\n  floors that moved:\n")
-  cat(paste0("    ", moved, collapse = "\n"), "\n")
-  # The pins the children assert must be the MOVED ones, or the joint run below
-  # would assert the declared floor against a library holding the moved version.
-  pins_env <- paste(sprintf("%s=%s", names(pins), unlist(pins)), collapse = ";")
+  # A floor that does not install here is a floor this run cannot measure, and
+  # the errors above are the whole of what the run has to say about it. There
+  # is no walk-it-forward mode: choosing a replacement version is a decision
+  # about what DESCRIPTION should declare, not something a measurement makes on
+  # its own.
+  stop(sprintf("%d declared floor(s) do not install here: %s",
+               length(failures), paste(names(failures), collapse = ", ")),
+       call. = FALSE)
 }
 
 if (length(holdbacks)) {

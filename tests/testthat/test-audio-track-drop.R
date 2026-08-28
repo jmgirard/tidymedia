@@ -302,19 +302,24 @@ expect_refuses_before_warning <- function(expr, match) {
   testthat::expect_length(res$warnings, 0L)
 }
 
-test_that("normalize_audio() warns once, naming the count, the argument and the offset", {
+# Both two_pass values, because AC1 quantifies over every run = TRUE call and
+# the verb probes from two different sites. Round 1 of review found the
+# two-pass path warning TWICE -- a count the single-value test could not see.
+test_that("normalize_audio() warns once at both two_pass values, naming the count, the argument and the offset", {
   skip_if_no_ffprobe()
   infile <- make_multitrack_video()
-  out <- withr::local_tempfile(fileext = ".mkv")
-  res <- catch_drop(normalize_audio(infile, out))
-  expect_length(res$warnings, 1L)
-  msg <- cli::ansi_strip(conditionMessage(res$warnings[[1]]))
-  expect_match(msg, "3 audio tracks")
-  expect_match(msg, "drops 2")
-  expect_match(msg, "audio_stream")
-  expect_match(msg, "probe_audio")
-  expect_match(msg, "1, 2, 3", fixed = TRUE)
-  expect_match(msg, "0, 1, 2", fixed = TRUE)
+  for (tp in c(FALSE, TRUE)) {
+    out <- withr::local_tempfile(fileext = ".mkv")
+    res <- catch_drop(normalize_audio(infile, out, two_pass = tp))
+    expect_length(res$warnings, 1L)
+    msg <- cli::ansi_strip(conditionMessage(res$warnings[[1]]))
+    expect_match(msg, "3 audio tracks")
+    expect_match(msg, "drops 2")
+    expect_match(msg, "audio_stream")
+    expect_match(msg, "probe_audio")
+    expect_match(msg, "1, 2, 3", fixed = TRUE)
+    expect_match(msg, "0, 1, 2", fixed = TRUE)
+  }
 })
 
 test_that("normalize_audio_batch() warns once, naming every affected row", {

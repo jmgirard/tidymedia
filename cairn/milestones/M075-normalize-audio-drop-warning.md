@@ -45,9 +45,10 @@ wording. Tests, roxygen, NEWS, and the D-entry recording what was rejected.
       `tidymedia_dropped_audio` for a multi-track input, whose text carries the
       track count, the number dropped, `audio_stream`, and `probe_audio`'s two
       readings. Evidence: `devtools::test(filter = "audio-track-drop")` output
-      with a passing test that, on `make_multitrack_video()`, matches
-      `3 audio tracks`, `drops 2`, `audio_stream`, `probe_audio`, `1, 2, 3` and
-      `0, 1, 2`.
+      with a passing test that, on `make_multitrack_video()`, counts exactly one
+      such condition at `two_pass = FALSE` and at `two_pass = TRUE`, and at both
+      matches `3 audio tracks`, `drops 2`, `audio_stream`, `probe_audio`,
+      `1, 2, 3` and `0, 1, 2` in that condition's message.
 - [ ] AC2 — `normalize_audio_batch()` signals exactly one such condition per
       call, naming every affected row. Evidence: a passing test on a two-row
       jobs table of multi-track inputs whose message matches `Row 1` and
@@ -119,6 +120,13 @@ wording. Tests, roxygen, NEWS, and the D-entry recording what was rejected.
       widen the probe-cost row from four verbs to six.
 - [x] T8 — Gate: `devtools::document()`, `devtools::test()`,
       `devtools::check()`.
+- [x] T9 — Round-1 return, tests first: extend AC1's test to loop over both
+      `two_pass` values, counting the conditions at each. Confirm red at
+      `two_pass = TRUE`.
+- [x] T10 — Round-1 return, fix: gate the single-pass
+      `check_audio_codec_not_copy()` + probe pair on `!two_pass` so the two
+      sites are actually mutually exclusive, and correct the comments that
+      claimed an exclusivity the fall-through did not give. Re-run the T8 gate.
 
 ## Work log
 
@@ -137,6 +145,23 @@ wording. Tests, roxygen, NEWS, and the D-entry recording what was rejected.
 - 2026-08-27: T8 gate — `devtools::document()` produces no diff, and `devtools::check()` is `Status: OK` (0 errors, 0 warnings, 0 notes; full suite run inside it in 118s). Status set to review.
 - 2026-08-27: plan gate chose a `stop()`ing mock of `run_loudnorm_analysis()` over dropping AC4 because the call site is not wrapped in `tryCatch(error =)`, the condition M44's lesson names as defeating such a mock; falsified by the mock passing with the wiring removed.
 - 2026-08-27: review round 1 returned M075 to `in-progress` on an AC1 failure: `normalize_audio(infile, out, two_pass = TRUE)` on a multi-track input signals two `tidymedia_dropped_audio` conditions, not one, because the `if (two_pass)` block falls through to the single-pass probe site. AC2-AC5 verified green; AC6/AC7, the consistency gate and the review lenses were not reached.
+- 2026-08-27: amendment (substantive) — AC1's Evidence clause now names both
+  `two_pass` values, executing review round 1's direction. The promise sentence
+  is unchanged and already bound every `run = TRUE` call, so the criteria set
+  neither widens nor narrows (D-118). The mandated fresh-context [O] audit of
+  the amended wording could not run: a session instruction forbids the Agent
+  tool — disclosed rather than skipped, as at the plan gate.
+- 2026-08-27: question gate chose gating the single-pass guard-and-probe pair on
+  `!two_pass` over an early `return()` from the two-pass branch or a single
+  probe site above the block, because the early return duplicates the shared
+  `ffm_finish()` tail and the single site requires the
+  `check_audio_codec_not_copy()` hoist A3r3 backed out; falsified by a caller
+  needing the probe on a path this gate now skips.
+- 2026-08-27: T9 extended AC1's test to both `two_pass` values and confirmed
+  red: `two_pass = TRUE` collected 2 conditions, `two_pass = FALSE` 1.
+- 2026-08-27: T10 gated the pair on `!two_pass`; `test_local(filter =
+  "audio-track-drop")` green (35 tests, 106 assertions, 0 failures, 0 skips),
+  up from 99 assertions on the added loop iteration.
 
 ## Decisions
 

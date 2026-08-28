@@ -2227,18 +2227,23 @@ normalize_audio <- function(infile, outfile,
   # (review A3r3). Here the two-pass path is exactly as it was, and the
   # default path -- the one M41 is about -- is still fixed.
   rlang::check_string(audio_codec, allow_null = TRUE)
-  # Hoisted for the probe below, on the single-pass path only (the two_pass
-  # block above makes this same call for its own analysis pass). The pipeline's
-  # copy guard runs inside ffm_finish()'s argument, i.e. AFTER the probe, so a
-  # multi-track `audio_codec = "copy"` call would warn about a drop that the
-  # very next line refuses to perform. Refuse first, probe second. The message
-  # is check_audio_codec_not_copy()'s own either way (D042).
-  check_audio_codec_not_copy(audio_codec)
 
-  # D024's diagnostic probe, single-pass site -- the other half of the pair
-  # above; the two are mutually exclusive on `two_pass`, so exactly one runs.
-  if (isTRUE(run) && is.null(audio_stream)) {
-    warn_dropped_audio(infile, count_audio_streams_all(infile))
+  # The single-pass half of the guard-then-probe pair. Gated on `!two_pass`
+  # because the block above does NOT return -- it falls through to here -- so
+  # without this gate the two-pass path would make both calls a second time and
+  # warn TWICE about one drop (review round 1). With it the two sites are
+  # mutually exclusive on `two_pass`, and exactly one probe runs per call.
+  #
+  # The copy guard is hoisted for the probe below: the pipeline's own copy
+  # guard runs inside ffm_finish()'s argument, i.e. AFTER the probe, so a
+  # multi-track `audio_codec = "copy"` call would otherwise warn about a drop
+  # that the very next line refuses to perform. Refuse first, probe second. The
+  # message is check_audio_codec_not_copy()'s own either way (D042).
+  if (!two_pass) {
+    check_audio_codec_not_copy(audio_codec)
+    if (isTRUE(run) && is.null(audio_stream)) {
+      warn_dropped_audio(infile, count_audio_streams_all(infile))
+    }
   }
 
   ffm_finish(

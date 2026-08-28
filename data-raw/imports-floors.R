@@ -573,15 +573,34 @@ reconcile <- function(pins, closure, gather, pick,
 
 archive_versions <- function(pkg, from) {
   url <- sprintf("https://cran.r-project.org/src/contrib/Archive/%s/", pkg)
-  html <- tryCatch(readLines(url, warn = FALSE), error = function(e) character())
+  # A NETWORK FAILURE IS NOT A FACT ABOUT CRAN. Both reads below used to fall
+  # back to "nothing found", which is indistinguishable from "this package has
+  # no archived versions" and from "no version later than the floor exists" --
+  # and this list is what `newest_compatible()` searches, so an empty one there
+  # reads as "no version of %s is compatible with the pinned floors". The run
+  # stops instead, because the difference is not one it can recover.
+  html <- tryCatch(readLines(url, warn = FALSE), error = function(e) e)
+  if (inherits(html, "condition")) {
+    stop(sprintf("could not read %s's CRAN Archive listing at %s: %s",
+                 pkg, url, conditionMessage(html)), call. = FALSE)
+  }
   vers <- unique(regmatches(html, regexpr(sprintf("%s_[0-9][^\"]*?\\.tar\\.gz", pkg), html)))
   vers <- sub(sprintf("^%s_", pkg), "", sub("\\.tar\\.gz$", "", vers))
   # The Archive holds only superseded versions; the current release lives in
   # src/contrib and would otherwise be missing from the end of the list.
-  cur <- tryCatch({
-    db <- utils::available.packages(repos = "https://cloud.r-project.org")
-    if (pkg %in% rownames(db)) unname(db[pkg, "Version"]) else NA_character_
-  }, error = function(e) NA_character_)
+  db <- tryCatch(utils::available.packages(repos = "https://cloud.r-project.org"),
+                 error = function(e) e)
+  if (inherits(db, "condition")) {
+    stop(sprintf("could not fetch the CRAN package database: %s", conditionMessage(db)),
+         call. = FALSE)
+  }
+  # `available.packages()` reports a failed fetch as a WARNING and an empty
+  # matrix, not an error, so the row count is checked as well as the class.
+  if (!nrow(db)) {
+    stop("the CRAN package database came back empty -- that is a failed fetch, not a CRAN with no packages in it",
+         call. = FALSE)
+  }
+  cur <- if (pkg %in% rownames(db)) unname(db[pkg, "Version"]) else NA_character_
   if (!is.na(cur)) vers <- c(vers, cur)
   vers <- unique(vers[!is.na(vers)])
   vers <- vers[numeric_version(vers) >= numeric_version(from)]
@@ -672,10 +691,15 @@ writeLines(c(
   '                                  error = as.integer(df$error)),',
   '                            by = list(file = df$file), FUN = sum)',
   'by_file <- by_file[order(by_file$file), ]',
-  'cat("\\n  file                                         pass fail skip\\n")',
+  '# The `error` column is PRINTED, not only summed. It was aggregated here and',
+  '# then dropped from every line the run reports, so a transcribed table read',
+  '# as a clean pass over a file whose tests had errored -- the child stopped on',
+  '# the total either way, but the table quoted afterwards said nothing about it.',
+  'cat("\\n  file                                         pass fail  err skip\\n")',
   'for (i in seq_len(nrow(by_file))) {',
   '  r <- by_file[i, ]',
-  '  cat(sprintf("  %-44s %4d %4d %4d\\n", r$file, r$nb - r$failed, r$failed, r$skipped))',
+  '  cat(sprintf("  %-44s %4d %4d %4d %4d\\n", r$file, r$nb - r$failed, r$failed,',
+  '              r$error, r$skipped))',
   '}',
   '',
   '# Provenance again, after the suite: a pinned package that was resolved',
@@ -702,8 +726,8 @@ writeLines(c(
   '}',
   'failed <- sum(by_file$failed)',
   'errored <- sum(by_file$error)',
-  'cat(sprintf("\\nTOTALS pass=%d fail=%d skip=%d files=%d\\n",',
-  '            sum(by_file$nb) - failed, failed, sum(by_file$skipped), nrow(by_file)))',
+  'cat(sprintf("\\nTOTALS pass=%d fail=%d err=%d skip=%d files=%d\\n",',
+  '            sum(by_file$nb) - failed, failed, errored, sum(by_file$skipped), nrow(by_file)))',
   'if (failed || errored) {',
   '  bad <- df[df$failed > 0 | df$error, c("file", "test")]',
   '  for (i in seq_len(nrow(bad))) cat("  FAIL ", bad$file[i], " :: ", bad$test[i], "\\n", sep = "")',
@@ -758,7 +782,7 @@ run_child <- function(label, lib) {
   line <- grep("^TOTALS ", out, value = TRUE)
   if (length(line) != 1L) stop("no TOTALS line from the ", label, " run", call. = FALSE)
   nums <- as.integer(regmatches(line, gregexpr("[0-9]+", line))[[1]])
-  stats::setNames(as.list(nums), c("pass", "fail", "skip", "files"))
+  stats::setNames(as.list(nums), c("pass", "fail", "err", "skip", "files"))
 }
 
 # --- drive it ------------------------------------------------------------------
@@ -824,10 +848,10 @@ pinned <- run_child(if (is.na(ONLY)) "PINNED (all declared floors)" else sprintf
 cat("\n=================================================================\n")
 cat("comparison\n")
 cat("=================================================================\n")
-cat(sprintf("    baseline  pass=%d fail=%d skip=%d over %d files\n",
-            base$pass, base$fail, base$skip, base$files))
-cat(sprintf("    pinned    pass=%d fail=%d skip=%d over %d files\n",
-            pinned$pass, pinned$fail, pinned$skip, pinned$files))
+cat(sprintf("    baseline  pass=%d fail=%d err=%d skip=%d over %d files\n",
+            base$pass, base$fail, base$err, base$skip, base$files))
+cat(sprintf("    pinned    pass=%d fail=%d err=%d skip=%d over %d files\n",
+            pinned$pass, pinned$fail, pinned$err, pinned$skip, pinned$files))
 if (!identical(pinned$skip, base$skip)) {
   stop(sprintf("skip count moved: %d pinned vs %d baseline -- a pinned run that skips more has not exercised what the baseline did",
                pinned$skip, base$skip), call. = FALSE)

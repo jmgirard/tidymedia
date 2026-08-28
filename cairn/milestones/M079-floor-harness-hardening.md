@@ -120,7 +120,7 @@ none is proposed; D053 and D055 stand untouched.
       to abort on no match, `r_floor_of()` to handle or refuse `>`/`==`
       comparators, and the carve-out at `imports-floors.R:96` and its
       `r-floor.R` twin.
-- [ ] T7 — Distinguish an `available.packages()` failure from an empty
+- [x] T7 — Distinguish an `available.packages()` failure from an empty
       result (`:413`); print the aggregated per-file errors in the summary
       table (M077 F15).
 - [ ] T8 — Fix `timeout-bound.R:360` to report `observed elapsed`; confirm
@@ -147,6 +147,8 @@ none is proposed; D053 and D055 stand untouched.
 - 2026-08-28: T5 — M077 F17 measured rather than left unverified: `R CMD INSTALL -l '~/tm floor probe/lib'` (tilde AND space, shQuote'd exactly as `install_pin()` passes it) installed a probe package with status=0, as did the `path.expand()`ed form — R expands the tilde itself, so F17's concern does not materialize on macOS 26.5 / R 4.6.1. `path.expand()` on `TM_LIBROOT`/`TM_SCRATCH` is kept anyway: it makes the result independent of R continuing to do that.
 - 2026-08-28: T6 — `withr-floor.R`'s `sub()` replaced by a `regexec()` that aborts when `Imports` declares no `withr (>= ...)`, instead of returning the whole field as the floor. `r_floor_of()` now captures the version spec whole and reads the comparator out of it, aborting on anything but `>=`, so `R (> 4.0)` and `R (== 4.1.0)` stop the run rather than reading as "none declared" and dropping that dependency from the maximum. The unversioned carve-out in both scripts is `UNVERSIONED_OK <- c("tools", "utils")` — the entries DESCRIPTION declares — not `priority = c("base", "recommended")`, which waved through ~30 packages including `MASS`. `BASE_PKGS` stays broad where it is still right for what it does (`ensure_deps`, `runtime_closure`).
 - 2026-08-28: T6 — `r-floor.R`'s `fetch_description()` given the same `is_package_tarball()` validator, on its cache path and its download. Not named by AC1, which binds the two fetches in `imports-floors.R` and `withr-floor.R`; it is the third copy of the one shape Scope's In lists (M076 P1), and leaving it accepting on size alone would have left the shape half-fixed. `Rscript data-raw/r-floor.R` runs end to end and still reports (a) 4.1.0, (b) 4.0.0, maximum 4.1.0 — M076's result unchanged.
+- 2026-08-28: T7 — `archive_versions()` aborts on both of its network reads rather than falling back to an empty list: a failed Archive listing and a failed `available.packages()` were indistinguishable from "no later versions exist", and that list is what `newest_compatible()` searches, so an empty one surfaced as "no version of X is compatible with the pinned floors". `available.packages()` reports a failed fetch as a warning and a zero-row matrix rather than an error, so the row count is checked too, not only the class.
+- 2026-08-28: T7 — the per-file table and the TOTALS line now print the `error` column they were already aggregating (M077 F15); the driver's TOTALS parser and the baseline/pinned comparison lines carry `err` with them. This changes the shape of the TOTALS line D055 quotes — a re-run now prints `pass=... fail=... err=... skip=... files=...` where D055 recorded four fields. D055's numbers stand; only the line's field count moves.
 
 ## Decisions
 

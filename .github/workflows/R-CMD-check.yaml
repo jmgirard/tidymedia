@@ -24,6 +24,10 @@ jobs:
           - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
           - {os: ubuntu-latest,   r: 'release'}
           - {os: ubuntu-latest,   r: 'oldrel-1'}
+          # The declared `Depends: R (>= 4.1.0)` floor, pinned to the exact
+          # version rather than to a moving label, so the field DESCRIPTION
+          # states is the version something actually ran at.
+          - {os: ubuntu-latest,   r: '4.1.0'}
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}

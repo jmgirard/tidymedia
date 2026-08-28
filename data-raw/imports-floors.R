@@ -110,9 +110,38 @@ if (!is.na(ONLY)) {
 
 # --- fetch + install one pinned version ----------------------------------------
 
+# THE ONE TEST OF "is this a package tarball", used by both branches of
+# `fetch_tarball()` below. Three things clear a size floor without being a
+# package: a gzip truncated by an interrupted download, an HTTP error body, and
+# a well-formed tarball of something that carries no `DESCRIPTION`. The size
+# floor recognizes none of them.
+is_package_tarball <- function(tgz) {
+  if (!file.exists(tgz) || file.size(tgz) <= 1000L) return(FALSE)
+  inside <- tryCatch(suppressWarnings(utils::untar(tgz, list = TRUE)),
+                     error = function(e) NULL)
+  if (is.null(inside)) return(FALSE)
+  # The listing alone is not enough. `untar(list = TRUE)` shells out to `tar`,
+  # and a gzip truncated PAST the DESCRIPTION entry still prints the entries
+  # read before the end -- so the listing says "package" about a file that will
+  # not extract. `tar` reports that by exiting non-zero, which is what this
+  # reads.
+  st <- attr(inside, "status")
+  if (!is.null(st) && !identical(as.integer(st), 0L)) return(FALSE)
+  any(basename(inside) == "DESCRIPTION")
+}
+
 fetch_tarball <- function(pkg, ver) {
   tgz <- file.path(SCRATCH, sprintf("%s_%s.tar.gz", pkg, ver))
-  if (file.exists(tgz) && file.size(tgz) > 1000L) return(tgz)
+  # The CACHE branch validates on the same terms as the download branch. It used
+  # to return on the size floor alone, so a defect that landed once in a
+  # persisted TM_SCRATCH was handed to every later run for as long as the
+  # directory survived.
+  if (file.exists(tgz)) {
+    if (is_package_tarball(tgz)) return(tgz)
+    cat(sprintf("      (cached %s %s is not a readable package tarball -- refetching)\n",
+                pkg, ver))
+    unlink(tgz)
+  }
   urls <- c(
     sprintf("https://cran.r-project.org/src/contrib/Archive/%s/%s_%s.tar.gz", pkg, pkg, ver),
     sprintf("https://cloud.r-project.org/src/contrib/%s_%s.tar.gz", pkg, ver)
@@ -129,15 +158,7 @@ fetch_tarball <- function(pkg, ver) {
       ),
       error = function(e) 1L
     )
-    if (identical(as.integer(status), 0L) && file.exists(tgz) && file.size(tgz) > 1000L) {
-      # A 404 body can clear the size floor, so the tarball is opened rather
-      # than trusted: a listing that yields no DESCRIPTION is not a package.
-      ok <- tryCatch({
-        inside <- utils::untar(tgz, list = TRUE)
-        any(basename(inside) == "DESCRIPTION")
-      }, error = function(e) FALSE)
-      if (isTRUE(ok)) return(tgz)
-    }
+    if (identical(as.integer(status), 0L) && is_package_tarball(tgz)) return(tgz)
     unlink(tgz)
   }
   stop(sprintf("could not fetch %s %s from CRAN", pkg, ver), call. = FALSE)

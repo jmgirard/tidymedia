@@ -103,7 +103,7 @@ none is proposed; D053 and D055 stand untouched.
 - [x] T2 — Redefine the holdback set (`:626-663`) as the named test-harness
       packages; make the `for (round in 1:5)` loop abort on non-convergence
       instead of exiting silently.
-- [ ] T3 — Make `fetch_tarball()`'s cache branch (`:124`) call the same
+- [x] T3 — Make `fetch_tarball()`'s cache branch (`:124`) call the same
       validator as its download branch (`:145`); give `withr-floor.R`'s
       fetch (`:61-72`) that validator too.
 - [ ] T4 — Build the planted-defect harness under `data-raw/`. Per the M52
@@ -141,6 +141,7 @@ none is proposed; D053 and D055 stand untouched.
 - 2026-08-28: plan gate chose fixing the scripts over deleting them because the nine one-floor-at-a-time legs and the three-OS run are open candidates that would have to hand-roll the harness again; falsified by both being dropped, after which D053/D055/D056's recorded prose is the whole value.
 - 2026-08-28: T1 — `--repair` and `--walk` deleted from `imports-floors.R`: usage lines, flag parsing, the walk block and its `--only`-bypassable name guard (M077 F14), and the repair path with F18's dead `probe <- file.path(LIBROOT, "walk")` and its comment. A failed floor install now aborts naming the floors, instead of telling the reader to re-run with a mode that no longer exists. `grep -n -e '--repair' -e '--walk' data-raw/` returns no match; `--only nosuch` still stops with "nosuch is not a versioned Imports entry".
 - 2026-08-28: T2 — the holdback set is `HOLDBACK_SET <- c("testthat", "furrr")` (D055 item 2), and a requirer outside both the runtime closure and that set now stops the run naming itself rather than being downgraded; the `1:5` loop aborts on non-convergence instead of falling out silently. Both decisions moved into `reconcile(pins, closure, gather, pick, version_of)`, whose `gather`/`pick` are arguments rather than globals, so T4's probes can reach either refusal without a network or an install.
+- 2026-08-28: T3 — `is_package_tarball()` in both `imports-floors.R` and `withr-floor.R`; `fetch_tarball()`'s cache branch and `withr-floor.R`'s fetch (which had no validated cache branch at all) now both go through it, and a refused file is unlinked and refetched. Measured while writing it: the listing test the download branch already ran is NOT sufficient for a truncated gzip — a 190,000-of-202,719-byte truncation still lists `DESCRIPTION` and `tar` reports the truncation only by exiting 1, so the validator reads `attr(inside, "status")` as well as the listing.
 
 ## Decisions
 

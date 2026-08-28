@@ -52,26 +52,56 @@ SCRATCH <- file.path(tempdir(), "withr-floor-scripts")
 dir.create(LIBROOT, recursive = TRUE, showWarnings = FALSE)
 dir.create(SCRATCH, recursive = TRUE, showWarnings = FALSE)
 
+# --- fetch one version's tarball ----------------------------------------------
+
+# THE ONE TEST OF "is this a package tarball". Three things clear a size floor
+# without being a package: a gzip truncated by an interrupted download, an HTTP
+# error body, and a well-formed tarball of something that carries no
+# `DESCRIPTION`. This fetch used to accept on size alone, so any of the three --
+# left in SCRATCH by an earlier run, or written by a download that reported
+# success -- went straight to `R CMD INSTALL`.
+is_package_tarball <- function(tgz) {
+  if (!file.exists(tgz) || file.size(tgz) <= 1000L) return(FALSE)
+  inside <- tryCatch(suppressWarnings(utils::untar(tgz, list = TRUE)),
+                     error = function(e) NULL)
+  if (is.null(inside)) return(FALSE)
+  # The listing alone is not enough: `untar(list = TRUE)` shells out to `tar`,
+  # and a gzip truncated PAST the DESCRIPTION entry still prints what it read
+  # before the end, then exits non-zero. That status is the truncation.
+  st <- attr(inside, "status")
+  if (!is.null(st) && !identical(as.integer(st), 0L)) return(FALSE)
+  any(basename(inside) == "DESCRIPTION")
+}
+
+fetch_withr_tarball <- function(ver) {
+  tgz <- file.path(SCRATCH, sprintf("withr_%s.tar.gz", ver))
+  if (file.exists(tgz)) {
+    if (is_package_tarball(tgz)) return(tgz)
+    cat(sprintf("  cached withr %s is not a readable package tarball -- refetching\n", ver))
+    unlink(tgz)
+  }
+  urls <- c(
+    sprintf("https://cran.r-project.org/src/contrib/Archive/withr/withr_%s.tar.gz", ver),
+    sprintf("https://cloud.r-project.org/src/contrib/withr_%s.tar.gz", ver)
+  )
+  for (u in urls) {
+    got <- tryCatch({
+      utils::download.file(u, tgz, quiet = TRUE, mode = "wb")
+      TRUE
+    }, error = function(e) FALSE, warning = function(w) FALSE)
+    if (isTRUE(got) && is_package_tarball(tgz)) return(tgz)
+    unlink(tgz)
+  }
+  stop("could not fetch withr ", ver, call. = FALSE)
+}
+
 # --- install one version into its own library ---------------------------------
 
 install_withr <- function(ver) {
   lib <- file.path(LIBROOT, paste0("withr-", ver))
   dir.create(lib, recursive = TRUE, showWarnings = FALSE)
   if (dir.exists(file.path(lib, "withr"))) return(lib)
-  tgz <- file.path(SCRATCH, sprintf("withr_%s.tar.gz", ver))
-  urls <- c(
-    sprintf("https://cran.r-project.org/src/contrib/Archive/withr/withr_%s.tar.gz", ver),
-    sprintf("https://cloud.r-project.org/src/contrib/withr_%s.tar.gz", ver)
-  )
-  ok <- FALSE
-  for (u in urls) {
-    got <- tryCatch({
-      utils::download.file(u, tgz, quiet = TRUE)
-      TRUE
-    }, error = function(e) FALSE, warning = function(w) FALSE)
-    if (isTRUE(got) && file.exists(tgz) && file.size(tgz) > 1000L) { ok <- TRUE; break }
-  }
-  if (!ok) stop("could not fetch withr ", ver, call. = FALSE)
+  tgz <- fetch_withr_tarball(ver)
   utils::install.packages(tgz, lib = lib, repos = NULL, type = "source",
                           INSTALL_opts = "--no-test-load", quiet = TRUE)
   # install.packages() signals a failed source install as a warning, not an

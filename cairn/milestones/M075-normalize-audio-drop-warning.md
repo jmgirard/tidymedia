@@ -2,12 +2,12 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M075: The silent narrowing announces itself
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m075-normalize-audio-drop-warning`
 
 ## Goal
 
@@ -91,7 +91,7 @@ wording. Tests, roxygen, NEWS, and the D-entry recording what was rejected.
 
 ## Tasks
 
-- [ ] T1 — Pin the three call sites against the family: `warn_dropped_audio()`
+- [x] T1 — Pin the three call sites against the family: `warn_dropped_audio()`
       (`R/ffmpeg.R:366`), `warn_dropped_audio_batch()` (`R/ffmpeg.R:427`), and
       the five existing sites (`R/ffmpeg.R:544`, `1015`, `637`, `4981`,
       `5122`). Record the chosen lines in this file's Decisions section.
@@ -127,7 +127,32 @@ wording. Tests, roxygen, NEWS, and the D-entry recording what was rejected.
 - 2026-08-27: plan gate chose no video signal over a second video-discard warning because the two verbs this parity restores (`extract_audio()`, `convert_audio()`) also discard video silently and D030 already states the discard in the verb's first sentence; falsified by a report of a caller surprised by the lost picture.
 - 2026-08-27: plan gate chose two mutually exclusive call sites in `normalize_audio()` over one site below every guard because one site warns after the analysis pass on `two_pass = TRUE` while the batch form warns before Phase 1, a scalar/batch ordering divergence of the kind D039 exists to prevent; the third option, hoisting `check_string(audio_codec)`, was rejected because M41's own review (A3r3) backed that hoist out for changing which complaint a doubly-wrong two-pass call gets. Falsified by a maintainer finding the two sites drift apart in gating.
 - 2026-08-27: plan gate chose accepting the added FFprobe spawn over designing an opt-out here because the opt-out's open question is API shape across six verbs and its lazy-per-row option reopens the `ffm_batch()` hook D024/RR02 Q3 rejected; falsified by a measured batch stall attributable to these two verbs' probes.
+- 2026-08-27: T1 pinned the builder, its batch form and the five existing call sites; recorded in Decisions.
+- 2026-08-27: question gate chose hoisting `check_audio_codec_not_copy()` onto the single-pass path over narrowing AC5 to `two_pass = TRUE`, because the single-pass path's only copy guard runs inside `ffm_finish()`'s argument, after the probe, so AC5's scalar `"copy"` case would otherwise warn before aborting; falsified by an existing `"copy"` guard test changing what it reads.
 - 2026-08-27: plan gate chose a `stop()`ing mock of `run_loudnorm_analysis()` over dropping AC4 because the call site is not wrapped in `tryCatch(error =)`, the condition M44's lesson names as defeating such a mock; falsified by the mock passing with the wiring removed.
 
 ## Decisions
+
+- **T1 — the three call sites, pinned against the family.** The builder is
+  `warn_dropped_audio()` (`R/ffmpeg.R:366`) and its batch form
+  `warn_dropped_audio_batch()` (`R/ffmpeg.R:407`, calling the builder at `439`).
+  The five existing sites are `extract_audio()` `R/ffmpeg.R:544`,
+  `convert_audio()` `R/ffmpeg.R:1015`, `ffm_run()`'s fail-open re-raise
+  `R/ffmpeg.R:637`, `extract_audio_batch()` `R/ffmpeg.R:4981`, and
+  `convert_audio_batch()` `R/ffmpeg.R:5122`. The scalar sites gate on
+  `isTRUE(run) && is.null(audio_stream)`; the batch sites gate on `isTRUE(run)`
+  alone and leave the per-row `audio_stream` decision to the batch builder.
+  M075's three new sites take the same two gates.
+- **Question gate — the single-pass copy guard is hoisted.** AC5 asks a
+  `"copy"` call to refuse before anything warns at both `two_pass` values.
+  `two_pass = TRUE` already did (`check_audio_codec_not_copy()` at
+  `R/ffmpeg.R:2185`); the single-pass path's only copy guard is inside
+  `normalize_audio_pipeline()` (`R/ffmpeg.R:2259`), evaluated as an argument
+  to `ffm_finish()` and therefore after the probe. The guard is hoisted to the
+  front door on that path too, below `rlang::check_string(audio_codec)`.
+  Rejected: narrowing AC5 to `two_pass = TRUE`, which would leave the scalar
+  verb warning about a drop that never happens while the batch verb (whose
+  copy guards sit at `R/ffmpeg.R:4325-4328`, above its probe) refuses first.
+  Falsified by an existing `"copy"` guard test changing what it reads.
+
 ## Review

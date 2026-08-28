@@ -29,7 +29,7 @@ duplicated-input guard reports after the path sweep, so NEWS.md:552's
 "one path typed wrong the same way in twenty rows is one missing file" is
 observable off the explicit-output path (M62 N7).
 
-**Out:** the ten instrument findings still in that candidate row — M62 N2,
+**Out:** the nine instrument findings still in that candidate row — M62 N2,
 M63 C1/A5/A8/A9, M64 F5/F7/F10/F11 — which stay there; the table-taking
 `check_*` predicates the NA sweep's domain filter excludes, whose bare errors
 no user call reaches, which stay unfixed and undocumented.
@@ -116,7 +116,7 @@ no user call reaches, which stay unfixed and undocumented.
 
 ## Work log
 
-- 2026-08-28: created by /milestone-plan; promotes the four shipped-behavior items from the M62/M63/M64 finding row, leaving its ten instrument findings in place.
+- 2026-08-28: created by /milestone-plan; promotes the four shipped-behavior items from the M62/M63/M64 finding row, leaving its nine instrument findings in place.
 - 2026-08-28: criteria audit ran in FULL mode (user-facing tier), fresh-context [O] reader over the step-2 draft. Returned findings on all five drafted criteria: AC1's `grep -n "check_dim(" R/*.R` domain was a proxy (7 comment hits, blind to the indirect `arg = dim` sites, and `R/` is absent under `R CMD check`) — replaced with the `tm_call_graph()` walk; AC1 probed only `NA_real_` where the promise said any NA — all four types now probed, which is how the `NA_character_` passthrough was found; AC1 left the `_batch` blame spelling undetermined — now stated per form; AC2's `ls()` lacked `all.names = TRUE` and its pass condition did not classify warnings — both fixed; AC2's domain mandated an unreachable refusal in `check_batch_inputs` — narrowed at the gate; AC3 never probed its own noun "unreadable" — mode-000 cell added; AC4's second sentence bound the baseline grid rather than the package — moved to T6; AC5 bound a D-entry's existence — moved to T7; and no task recorded the NA refusals in NEWS — AC6 now does.
 - 2026-08-28: plan gate chose reordering the guards over amending NEWS.md's twenty-rows claim, because the duplication message never mentions the typo the caller can act on, which is D040's own argument for the path reporting first; falsified by a report preferring the duplication on a table that is both wrong about a path and duplicated.
 - 2026-08-28: the gate's reorder option named `reject_duplicate_outputs()`; the reproduced case is refused by the three inline derived-output blocks instead, so T5 was scoped to those and `reject_duplicate_outputs()` left alone. Chosen over moving both, because that guard runs on already-derived outputs where the collision is the correct message; falsified by a report of an explicit-output table whose collision hid a missing path.

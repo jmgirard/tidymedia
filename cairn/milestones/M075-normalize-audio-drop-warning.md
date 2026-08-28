@@ -129,6 +129,7 @@ wording. Tests, roxygen, NEWS, and the D-entry recording what was rejected.
 - 2026-08-27: plan gate chose accepting the added FFprobe spawn over designing an opt-out here because the opt-out's open question is API shape across six verbs and its lazy-per-row option reopens the `ffm_batch()` hook D024/RR02 Q3 rejected; falsified by a measured batch stall attributable to these two verbs' probes.
 - 2026-08-27: T1 pinned the builder, its batch form and the five existing call sites; recorded in Decisions.
 - 2026-08-27: question gate chose hoisting `check_audio_codec_not_copy()` onto the single-pass path over narrowing AC5 to `two_pass = TRUE`, because the single-pass path's only copy guard runs inside `ffm_finish()`'s argument, after the probe, so AC5's scalar `"copy"` case would otherwise warn before aborting; falsified by an existing `"copy"` guard test changing what it reads.
+- 2026-08-27: T2 wrote the 17 new tests into `tests/testthat/test-audio-track-drop.R` and confirmed red: the four wiring tests (AC1, AC2, AC4's two) fail with 0 drop warnings collected; AC3's five silence cases and AC5's eight refusal cases pass already, standing as regression guards over the wiring T3/T4 add. T2 is checked off with the wiring, since its own verify run is red by design.
 - 2026-08-27: plan gate chose a `stop()`ing mock of `run_loudnorm_analysis()` over dropping AC4 because the call site is not wrapped in `tryCatch(error =)`, the condition M44's lesson names as defeating such a mock; falsified by the mock passing with the wiring removed.
 
 ## Decisions

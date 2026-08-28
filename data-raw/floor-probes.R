@@ -5,7 +5,7 @@
 # Reproduce (from the package root):
 #
 #   Rscript data-raw/floor-probes.R            # every probe
-#   Rscript data-raw/floor-probes.R --offline  # skip the four that fetch
+#   Rscript data-raw/floor-probes.R --offline  # skip every probe that needs CRAN
 #
 # WHY PROBES AND NOT A READING. Every fault these scripts had been carrying was
 # a branch that returned a plausible value on input it could not handle -- a
@@ -200,8 +200,25 @@ listing_only <- function(tgz) {
   if (is.null(inside)) return(FALSE)
   any(basename(inside) == "DESCRIPTION")
 }
-probe("A6", "a listing-only check WOULD accept the late truncation", TRUE,
-      listing_only(TB$trunc_late))
+# A6 is a statement about `tar`, not about this package: it holds only where
+# `untar(list = TRUE)` shells out to a tar that PRINTS the entries it read
+# before the truncation and reports the truncation by exiting non-zero. R's
+# internal reader instead errors outright, and there the exit-status branch
+# `is_package_tarball()` adds is not what does the refusing -- the listing
+# already fails. Asserting A6 there would fail the whole harness on a host
+# where nothing is wrong, so it says which host it is on rather than pretending
+# the question does not arise.
+listing_reader_reports_entries <- !is.null(
+  tryCatch(suppressWarnings(utils::untar(TB$trunc_late, list = TRUE)),
+           error = function(e) NULL))
+if (listing_reader_reports_entries) {
+  probe("A6", "a listing-only check WOULD accept the late truncation", TRUE,
+        listing_only(TB$trunc_late))
+} else {
+  cat("  A6    not applicable: this host's untar() refuses the late truncation\n")
+  cat("        outright, so the listing never accepts it and the exit-status\n")
+  cat("        branch is not what refuses here.\n")
+}
 
 # ===============================================================================
 if (!OFFLINE) {
@@ -324,7 +341,13 @@ d <- read.dcf(file.path(PKG, "DESCRIPTION"))
 d[1, "Imports"] <- paste0(d[1, "Imports"], ",\n    MASS")
 f <- file.path(SCRATCH, "desc-mass"); write.dcf(d, f)
 staged_mass <- stage_root(readLines(f))
-for (sc in c("r-floor.R", "imports-floors.R")) {
+# `imports-floors.R` reaches its carve-out before it fetches anything, so it
+# runs offline. `r-floor.R` reads each versioned entry's DESCRIPTION out of its
+# tarball FIRST and only then reaches the appended `MASS`, so it needs CRAN --
+# offline it would fail for want of a network rather than pass or skip.
+scripts <- if (OFFLINE) "imports-floors.R" else c("r-floor.R", "imports-floors.R")
+if (OFFLINE) cat("  (skipping E6-r-f: r-floor.R fetches nine DESCRIPTIONs before it reaches MASS)\n")
+for (sc in scripts) {
   out <- run_script_at(staged_mass, sc)
   probe(paste0("E6-", substr(sc, 1, 3)),
         sprintf("%s refuses an unversioned MASS instead of skipping it", sc), TRUE,
@@ -409,6 +432,14 @@ hits <- suppressWarnings(system2("grep", c("-rn", "-e", shQuote("[-][-]repair"),
                                  stdout = TRUE, stderr = FALSE))
 # The label deliberately does not spell the two flags: the criterion is a grep
 # over data-raw/, and a probe that named them would be its own only match.
+# THE POSITIVE CONTROL. `length(hits) == 0` is also what a grep that never ran
+# returns -- a missing binary, a wrong path, a pattern that cannot match. The
+# same call over a flag that IS still there has to find it before the empty
+# result above means anything.
+kept <- suppressWarnings(system2("grep", c("-rn", "-e", shQuote("[-][-]only"),
+                                           shQuote(file.path(PKG, "data-raw"))),
+                                 stdout = TRUE, stderr = FALSE))
+probe("H0", "the same grep over a flag that survives does find it", TRUE, length(kept) > 0L)
 probe("H1", "neither deleted mode's flag appears anywhere under data-raw/", 0L, length(hits))
 probe("H2", "--only still refuses a name that is not a versioned Imports entry", TRUE,
       any(grepl("is not a versioned Imports entry",

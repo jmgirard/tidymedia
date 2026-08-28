@@ -95,11 +95,20 @@ fetch_withr_tarball <- function(ver) {
     sprintf("https://cloud.r-project.org/src/contrib/withr_%s.tar.gz", ver)
   )
   for (u in urls) {
-    got <- tryCatch({
-      utils::download.file(u, tgz, quiet = TRUE, mode = "wb")
-      TRUE
-    }, error = function(e) FALSE, warning = function(w) FALSE)
-    if (isTRUE(got) && is_package_tarball(tgz)) return(tgz)
+    # Warnings are muffled rather than read as failure, as in the two sibling
+    # scripts: download.file warns on benign conditions, and a warned-but-
+    # complete Archive fetch would otherwise be unlinked and retried against the
+    # current-contrib URL, which 404s for an archived version -- so the run
+    # would report "could not fetch withr X" for a tarball it had. What a real
+    # failure looks like is checked on the result instead.
+    status <- tryCatch(
+      withCallingHandlers(
+        utils::download.file(u, tgz, quiet = TRUE, mode = "wb"),
+        warning = function(w) invokeRestart("muffleWarning")
+      ),
+      error = function(e) 1L
+    )
+    if (identical(as.integer(status), 0L) && is_package_tarball(tgz)) return(tgz)
     unlink(tgz)
   }
   stop("could not fetch withr ", ver, call. = FALSE)

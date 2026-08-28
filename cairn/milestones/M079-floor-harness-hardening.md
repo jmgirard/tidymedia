@@ -155,6 +155,8 @@ none is proposed; D053 and D055 stand untouched.
 - 2026-08-28: T9 — `devtools::check()` 0 errors / 0 warnings / 0 notes (3m 26.6s); `devtools::test()` FAIL 0 | WARN 12 | SKIP 5 | PASS 6692, identical to the pre-milestone baseline taken on this branch before any edit. Nothing under `R/`, `man/`, `tests/` or `NAMESPACE` was touched by this milestone, so the profile's per-task `devtools::test()` trigger ("after code changes") never fired between tasks; it was run at the start and at the end instead, and that is stated here rather than implied.
 - 2026-08-28: T9 — container smoke run, `docker run --rm -v $PWD:/pkg -w /pkg tidymedia-floors:r443 Rscript data-raw/imports-floors.R`, exit 0. It reproduces D055's measurement on the hardened script: baseline and pinned both **pass=6120 fail=0 err=0 skip=22 over 66 files**, no floor moved, holdbacks exactly `furrr` 0.4.0 → 0.3.1 and `testthat` 3.3.2 → 3.1.10 — D055 item 2's pair, now reached by the named `HOLDBACK_SET` rather than by the runtime-closure complement. All nine floors installed and test-loaded with `--no-test-load` gone. A FIRST container run aborted at its closing report with a parse error: the file was edited on the mounted repo while `Rscript` was still reading it, which shifted the byte offsets mid-parse. That is an artifact of the edit, not of the script; the run above is on the committed file with no concurrent edit, and it is the one reported.
 
+- 2026-08-28: review correction, superseding the T7 work-log line above and the "Two recorded numbers now read differently" Decisions bullet on one point only. Both say D055 quotes a `TOTALS` line whose field count this milestone changes. D055 quotes no such line: `grep -n TOTALS cairn/DECISIONS.md` returns no match, and what D055 records is prose -- "6120 passing, 0 failing, 22 skipped over 66 files". The code change stands and D055's numbers stand; what was wrong is the claim about the shape of the prior record, not about the script. Raised by the review's diff lens (F14).
+
 ## Decisions
 
 **M079-D1 — the floor harness refuses rather than reports, and two of its modes
@@ -440,3 +442,44 @@ the behavior the criteria bind; review measured both clauses directly instead.
 No defect return, no amendment return.
 
 ### Triage
+
+Fifteen findings, all from the diff lens, presented at the approval gate; the
+maintainer chose fix-now for five and a candidate row for ten, and rejected
+none.
+
+**Fixed at the gate (five).**
+- **F14** — one work-log line appended above supersedes the T7 line and the
+  Decisions bullet on the false claim about D055's shape. History is superseded,
+  not edited (IP4).
+- **F5** — `withr-floor.R`'s fetch now muffles benign `download.file()` warnings
+  and checks the returned status, as `imports-floors.R:164-172` and
+  `r-floor.R` already did, instead of reading any warning as failure and
+  unlinking the file. Measured: a stub whose Archive fetch completes but warns,
+  and whose contrib URL errors, now returns the tarball; before the fix the same
+  stub reported "could not fetch withr 2.5.0".
+- **F2** — A6 now runs only where `untar(list = TRUE)` shells out to a tar that
+  prints the entries it read before the truncation; where R's internal reader
+  errors outright the probe prints why it does not apply rather than failing the
+  harness on a host where nothing is wrong.
+- **F1** — the `MASS` carve-out probe now runs `r-floor.R` only when a network is
+  available, and says so when it does not; `imports-floors.R` reaches its
+  carve-out before it fetches anything and still runs offline. The header's
+  `--offline` line no longer carries a stale count. Measured:
+  `--offline` runs 38 probes, 0 failed.
+- **F7** — H0 added as H1's positive control: the same `grep` invocation over
+  `--only`, a flag that survives, must find it before H1's empty result means
+  anything. Measured: 46 probes online, 0 failed, H0 green.
+
+**Deferred to one candidate row (ten).** F3, F4, F6, F8, F9, F10, F11, F12, F13
+and F15 — the coverage gaps and script robustness issues listed verbatim above —
+go to a new ROADMAP candidate row grouping them as findings about the
+INSTRUMENT rather than the floors it measures, in the shape M070's and M071's
+rows already use. Search-first: the floor-script hardening row that had carried
+this family was retired into this milestone, and the D055-gaps row covers
+different content, so no existing row absorbs them.
+
+**Post-fix re-verification.** `Rscript data-raw/floor-probes.R` 46 probes /
+0 failed, `--offline` 38 / 0. `devtools::check()` re-run after the fixes: 0
+errors / 0 warnings / 0 notes. Nothing under `R/`, `man/`, `tests/` or
+`NAMESPACE` was touched at the gate, so `devtools::test()` was not re-run;
+`.Rbuildignore:15` keeps every file the fixes touched out of the built package.

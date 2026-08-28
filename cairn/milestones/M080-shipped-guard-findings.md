@@ -278,3 +278,17 @@ The [O] lens also recorded what it found sound: T8's own claims all verify at th
 This is **defect return 2** for M080.
 
 **Thrash rule, trigger (b) fires.** AC6 has now failed twice, each by a new mechanism of the same shape — the NEWS ordering paragraph not describing the shipped order. Its remedy is to reconsider the alternative the plan gate recorded against: the 2026-08-28 gate line "chose reordering the guards over amending NEWS.md's twenty-rows claim". That alternative is unspent. Trigger (a) has NOT fired — a third return would reach it, at which point descope-or-park becomes the recommended disposition.
+
+---
+
+## Re-review (round 3, 2026-08-28)
+
+PR: https://github.com/jmgirard/tidymedia/pull/84 (draft). Branch synced: `git fetch` then `git rev-list --count HEAD..origin/master` = 0 — `origin/master` still at `7a6f634`, unmoved since the branch was cut, so no merge was owed; local `master` has no unpushed commits and the branch has none unpushed. Evidence below is off tip `ea72905`.
+
+### Acceptance-criterion evidence (fresh, this round)
+
+- **AC1 — verified.** `devtools::load_all()`, then `check_dim(v, arg = "width")` on `NA`, `NA_integer_`, `NA_real_`, `NA_character_`: all four signal classes `rlang_error, error, condition`, message `` `width` must be a single FFmpeg expression or number. `` — the `arg` named every time. `crop_video(f, o, NA_character_, 100, run = FALSE)` aborts with that same condition rather than returning the `crop=w=NA:h=100:...` filter string.
+- **AC2 — verified.** The `tm_call_graph()` walk over the exports returns 17 verbs reaching `check_dim()`; `check_dim_specs()` declares an entry for all 17 (`setdiff` empty both ways) and 52 carriers = 208 carrier x NA-type cells, with `format_for_web`/`format_for_web_batch` the two positive zero-carrier declarations. `test-na-value-guards.R` runs green.
+- **AC3 — verified.** `na_sweep_predicates()` re-derived at review from `ls(asNamespace("tidymedia"), all.names = TRUE, pattern = "^check_")` filtered to exactly one required formal not named `jobs`: the same 15 names as rounds 1 and 2, including all four the criterion calls out. The sweep over 60 predicate x NA-type cells is green — no bare `simpleError`, no warning.
+- **AC4 — verified.** `picture_in_picture_batch()` measured on all six cells. Absent path: overlay-only → `` `jobs$overlay` names 1 file that can't be found or read. ``; main-only → `` `jobs$main` names 1 file … ``; both → `` `jobs$main` and `jobs$overlay` name 1 file … ``. Repeated with `tm_unreadable_path(tempdir())` (fixture verified `file.access(p, 4) == -1`): the identical three messages, so the filter is over D041's readability predicate, not over existence.
+- **AC5 — verified.** `tm_reaches(tm_call_graph(), v, "reject_duplicate_inputs")` returns 3 verbs — `anonymize_video_batch`, `normalize_audio_batch`, `standardize_video_batch`. For each, a no-`output` table whose two rows name the same absent input reports `` `jobs$input` names 1 file that can't be found or read. `` with no mention of duplication; the readable-path control still reports `` `jobs` has duplicated input paths but no output column. `` `tm_namespace_bodies()` finds the string `has duplicated` at exactly one name, `reject_duplicate_inputs`.

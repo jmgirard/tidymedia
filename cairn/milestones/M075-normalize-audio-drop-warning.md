@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M075: The silent narrowing announces itself
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -162,6 +162,9 @@ wording. Tests, roxygen, NEWS, and the D-entry recording what was rejected.
 - 2026-08-27: T10 gated the pair on `!two_pass`; `test_local(filter =
   "audio-track-drop")` green (35 tests, 106 assertions, 0 failures, 0 skips),
   up from 99 assertions on the added loop iteration.
+- 2026-08-27: T8 gate re-run after the round-1 fix — `devtools::document()`
+  produces no diff and `devtools::check()` is `Status: OK` (0 errors, 0 warnings,
+  0 notes; full suite run inside it, 158s). Status set back to review.
 
 ## Decisions
 

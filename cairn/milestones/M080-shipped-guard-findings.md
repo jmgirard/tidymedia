@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M080: The guard says what is wrong, and refuses NA
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -124,7 +124,7 @@ no user call reaches, which stay unfixed and undocumented.
       form set — every cell today supplies an explicit `output`, which is why
       the grid never saw N7 — and re-run at both refs, recording which cells
       moved.
-- [ ] T7: D057 narrowing D040's ordering paragraph for the derived-output
+- [x] T7: D057 narrowing D040's ordering paragraph for the derived-output
       duplication guard, with its falsifier; the NEWS entries and the
       correction AC6 names; `devtools::document()`; `devtools::check()`.
 
@@ -145,6 +145,8 @@ no user call reaches, which stay unfixed and undocumented.
 - 2026-08-28: T3 — the sweep runs over the 15 formals-enumerated predicates and finds no bare `simpleError` and no warning on any of the four NA types; `check_overlay_scale()` refuses NA at its existing range wording, `check_region_values()` re-calls `check_regions()` for the shape rather than restating it, and `check_codec_needs_reencode()` takes `rlang::check_bool(reencode)`. The AC2 sweep covers 17 verbs and 44 declared carriers; its completeness reader caught six omissions in the first draft of the shapes (`crop_video_batch` height/x on both axes, `standardize_video_batch` height on both, `sample_frames_batch` interval as an argument), which is the reader working.
 - 2026-08-28: T5 — the three inline duplicated-input aborts became `reject_duplicate_inputs()`, and in each of the three verbs `check_batch_inputs()` moved above the derived-output block. Task wording said to move the sweep; the first attempt moved the block down instead, which put the codec token check ahead of the duplication check and reddened `test-codec-arg-front-door.R`'s precedence pin in two verbs — the sweep moved up, as written, leaves that precedence intact and puts the path above both.
 - 2026-08-28: T6 — the derived-output axis went into `data-raw/input-guard-baseline.R` as a CROSSING (`derived_output`, generated over the `dup` form) rather than a form: with no `output` column the control necessarily duplicates a present path and is refused by the duplication guard, which is a crossed cell's shape, not a `none` cell's. Which verbs carry it is derived from the same call-graph walk AC5 uses (reaching `reject_duplicate_inputs()`), not listed. Re-run at `origin/master` and HEAD: every reader empty — vacuous, refusals, message regressions, blame regressions, missing call, dead controls, misordered, unreported, unnamed, uncovered — and exactly three cells moved, `anonymize_video_batch`, `standardize_video_batch` and `normalize_audio_batch` at `dup`/`derived_output`, from `derived_output` to `input`. `picture_in_picture_batch`'s `one` cell changed wording (both carriers named to one), declared as an `INPUT_GUARD_WORDING` substitution the way M63's was. `input_guard_blame_unexpected()` reports all 30 unreadable cells on this ref pair: its expectation is M63's about the M62->M63 pair, an instrument limit filed as A10 on the finding row, not a regression here.
+- 2026-08-28: T7 — D057 appended, narrowing D040's ordering paragraph for the derived-output duplication guard and stating what does not move (`reject_duplicate_outputs()`), with its falsifier. Three NEWS entries under Bug fixes — the NA refusal including the `crop=w=NA:h=100:x=(in_w-out_w)/2:y=(in_h-out_h)/2` command it used to compile (read off `origin/master`, not recalled), the per-carrier naming with both wordings, and the new guard order — and the existing ordering paragraph gained the clause AC6 asks for. `devtools::document()` clean; `devtools::check()` Status: OK, 0 errors / 0 warnings / 0 notes (one spelling NOTE appeared first, on a word this milestone introduced; the sentence was reworded rather than the wordlist widened).
+- 2026-08-28: all tasks done, status to review.
 
 ## Decisions
 

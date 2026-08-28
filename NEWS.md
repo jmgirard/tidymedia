@@ -455,6 +455,39 @@
 
 ## Bug fixes
 
+* A missing value in a size, position or rate argument is now refused instead
+  of reaching FFmpeg. `crop_video(f, o, width = NA_real_, height = 100)` used
+  to fail with R's own `missing value where TRUE/FALSE needed`, which names
+  neither the argument nor the function you called; `width = NA_character_`
+  was worse, because it was accepted and compiled `crop=w=NA:h=100` into the
+  command — `-vf "crop=w=NA:h=100:x=(in_w-out_w)/2:y=(in_h-out_h)/2"` — so a
+  `run = FALSE` call returned a command string FFmpeg would have rejected
+  later. Both now abort with `` `width` must be a single FFmpeg
+  expression or number. `` against the verb you called. The same refusal covers
+  the size and position arguments of `crop_video()` and `standardize_video()`,
+  the region values `anonymize_video()` takes, the same values passed as
+  arguments to their `_batch` siblings, and the `ffm_crop()` / `ffm_scale()` /
+  `ffm_fps()` / `ffm_overlay()` / `ffm_drawbox()` builders. A missing value in
+  a `jobs` column is refused as before, by the column's own guard, which names
+  the column.
+
+* `picture_in_picture_batch()` names only the column that actually holds a bad
+  path. A row whose `main` is fine and whose `overlay` is missing used to read
+  `` `jobs$main` and `jobs$overlay` name 1 file that can't be found or read. ``,
+  sending you to a column with nothing wrong in it. It now reads
+  `` `jobs$overlay` names 1 file that can't be found or read. ``, and still
+  names both when both are bad.
+
+* `anonymize_video_batch()`, `standardize_video_batch()` and
+  `normalize_audio_batch()` report a missing input file before they report
+  duplicated inputs. Called without an `output` column, these verbs derive one
+  output name per input, so two rows naming the same input would collide and
+  are refused — but that refusal ran first, so a table whose twenty rows all
+  carried one path typed wrong was told its inputs were duplicated and never
+  told which file was not there. The path is what you can act on, so it now
+  reports first; a table of duplicated inputs that all exist still gets the
+  duplication message.
+
 * `normalize_audio()` and `normalize_audio_batch()` work again when the output
   is a FLAC (`.flac`) or Ogg Vorbis (`.oga`) file. On FFmpeg 9 these failed
   with "Could not open encoder before EOF" and left a zero-byte file: the
@@ -561,7 +594,9 @@
   likely mistake and is the one you can act on without reading further.
   Malformed table shapes and wrong column types still report before it, since a
   column whose type has not been checked yet cannot usefully be swept for
-  paths.
+  paths. The refusal of duplicated inputs on a verb deriving its own output
+  names reports *after* it, so that promise about twenty rows sharing one typo
+  holds whether or not you supply an `output` column.
 
   A file that *exists* but cannot be opened for reading is refused the same
   way, and by the same test the pipeline has always applied: there is now one

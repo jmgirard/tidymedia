@@ -2590,3 +2590,37 @@ platform -- a different escalation, not the sub-second package frame around the
 wait that puts C1 at 42.41 s -- by a tidymedia call returning with its spawned
 program still alive, or by the wedge reproducing on the pinned-floor
 configuration D055 measured.
+
+## D057 — A derived output's duplicate-input refusal reports after the path sweep (2026-08-28, from M080; narrows D040's ordering paragraph, leaving the rest of D040 and all of D041 standing)
+
+D040 put the input sweep above the M58 contradiction sweep, and said why:
+
+> A missing input does not vary that way. It varies with the caller's own
+> data, which the caller has and the report names — `` `jobs$input` names 1
+> file that does not exist: 'clip3.mp4' `` is fully actionable by the person
+> who typed the path.
+
+That paragraph settled the sweep's position against the guards D040's own grid
+reached. It did not reach one, because every cell in that grid supplied an
+explicit `output`: the refusal three verbs make when the caller supplies no
+`output` column and the verb has to derive one name per input. Two rows naming
+the same input would derive the same output, so those verbs refuse the
+duplication — and they refused it ABOVE the sweep, so a `jobs` table whose rows
+all carried one mistyped path was told its inputs were duplicated and never
+told which file was not there. That message names no path the caller can act
+on, and D040's own argument applies to it unchanged.
+
+**The rule.** A verb that derives its outputs refuses duplicated inputs BELOW
+the input sweep, never above it. The refusal is written at one site,
+`reject_duplicate_inputs()`, so a verb that derives outputs later inherits the
+order rather than restating it — the same reason D040 gave for one abort site.
+
+**What does not move, and why.** `reject_duplicate_outputs()` stays where it
+is. It runs on outputs already derived or supplied, where two rows really do
+collide on a destination and the collision is the message the caller needs. It
+would take a different argument to move, and D040's paragraph does not reach it
+either.
+
+- **Falsified by** a report preferring the duplication on a table that is both
+  wrong about a path and duplicated, or by a report of an explicit-output table
+  whose output collision hid a missing path — the case this entry leaves alone.

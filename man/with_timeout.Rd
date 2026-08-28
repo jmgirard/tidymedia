@@ -20,8 +20,10 @@ The value of \code{expr}.
 }
 \description{
 Run \code{expr} under a wall-clock limit of your own, without changing the limit
-the rest of the session runs under. Every FFmpeg, FFprobe or MediaInfo
-program started while \code{expr} is being evaluated is bounded by \code{seconds}; when
+the rest of the session runs under. \code{seconds} bounds how long each FFmpeg,
+FFprobe or MediaInfo program started while \code{expr} is being evaluated is
+waited for — not how long it runs; a program that ignores the first two
+signals is waited for up to 40 seconds longer, described under Details. When
 the call ends, by any route, whatever the session had set before is back.
 
 The session-wide setting, \code{options(tidymedia.timeout = )}, answers "how long
@@ -31,9 +33,16 @@ an hour, or an hour for one long encode in a session bounded at five minutes.
 }
 \details{
 The limit applies per spawned program, not per call: a \code{with_timeout()}
-around a 100-row batch bounds each row at \code{seconds}, not the batch. It
+around a 100-row batch waits \code{seconds} on each row, not on the batch. It
 reaches a \code{parallel = TRUE} fan-out as well, because the worker is handed the
 limit in force when the fan-out starts.
+
+\code{seconds} bounds the wait, and the wait can exceed it. R asks the program to
+stop when the limit is reached, insists 20 seconds later and kills it 20
+seconds after that, so a program that answers none of the three is waited for
+\code{seconds} + 40 — measured at 42.0 s under a 2 s limit on Linux and on macOS
+alike. Budget for that when you choose a limit: five one-second limits over
+five hung files is three and a half minutes, not five seconds.
 
 What a reached limit does — abort or warning, by call — is described under
 "Bounding a run that hangs" in \link{tidymedia-package}; setting the limit this

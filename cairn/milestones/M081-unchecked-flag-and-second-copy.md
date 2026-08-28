@@ -1,11 +1,11 @@
 # M081: The unchecked flag, and the second copy of the one predicate
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m081-unchecked-flag-and-second-copy`
 
 ## Goal
 
@@ -80,7 +80,7 @@ the candidate row's claim about it is corrected in the same commit.
 
 ## Tasks
 
-- [ ] T1: Write `unchecked_flag_guards()` in
+- [x] T1: Write `unchecked_flag_guards()` in
       `tests/testthat/helper-na-guards.R`, walking parsed bodies for `!`, `&&`,
       `||` applied to a required formal with no prior `rlang::check_bool()` on
       it. Reuse the recursive call-node walk shape of `tm_callees()`
@@ -88,7 +88,7 @@ the candidate row's claim about it is corrected in the same commit.
       `R/` so it survives `R CMD check`. Add the AC1 positive controls: a
       planted predicate per operator form that must be flagged, and a
       check-first predicate that must not be.
-- [ ] T2: Test-first. Assert `unchecked_flag_guards()` returns empty; confirm it
+- [x] T2: Test-first. Assert `unchecked_flag_guards()` returns empty; confirm it
       fails on the merge-base naming exactly
       `check_audio_codec_needs_reencode` and `check_resize_needs_two_inputs`,
       and record that list as AC2's domain.
@@ -113,6 +113,7 @@ the candidate row's claim about it is corrected in the same commit.
 - 2026-08-28: criteria audit ran in FULL mode (surface tier user-facing); returned eight findings over five drafted criteria. Five fixed here: the F10 criterion dropped as a no-op (verified `check_bool`'s `arg` already resolves to `reencode`); AC1's NA probes widened from two types to the four `na_values()` declares, since `check_bool` renders a different message per type; AC3's cited snapshot evidence replaced with the `expect_match` at `test-input-path-front-door.R:401` (`_snaps/` holds only `ffm.md` and records no guard abort); AC4's substring search replaced with `tm_call_graph()`'s parsed walk; AC5 restated over the four test files' renderings after it was found to bind instrument state (snapshot mtimes, `git status`) and to be vacuous. Three went to the gate as questions. The audit also found a live third instance of F4's class the row's hand-list missed, `check_resize_needs_two_inputs(NA, 3)`.
 - 2026-08-28: plan gate chose a parsed-body walk over hand-fixing the three known flag guards, and over widening `na_sweep_predicates()`' formals filter to two required arguments; the hand-list is the shape that shipped this gap (it missed `check_resize_needs_two_inputs`), and the formals widening pulls in `check_batch_cell`, whose `NA_integer_` row is deliberate (`R/ffmpeg.R:3395`), so it would need an exemption registry. Falsified by a flag guard the walk passes that still crashes on `NA`, or by the walk flagging a predicate whose bare branch is correct.
 - 2026-08-28: plan gate chose correcting `reject_duplicate_inputs()`' comment over parameterizing it by carrier column. Duplication on a fan-in derived-output verb is a property of the row's whole input tuple, so a per-column check would refuse a legal table whose `main` repeats with distinct `overlay`; the sibling's `col` is a vector swept in one call, which a scalar `jobs[[col]]` is not; GP1 prefers refusing scope. Falsified by a derived-output verb arriving whose duplication really is per-column.
+- 2026-08-28: T1/T2. `unchecked_flag_guards()` added to `helper-na-guards.R`, walking the namespace's `check_*` bodies in top-level-statement order for a required formal made the direct operand of `!`, `&&` or `||` with no earlier `rlang::check_bool()` on it. Positive controls pass: one planted predicate per operator form is flagged naming `flag`, and `!is.null(flag)`, a check-first predicate, and an unbranched second formal are all left alone; a check-AFTER-branch control is flagged, fixing "first" as positional. On the merge-base namespace the walk returns exactly `check_audio_codec_needs_reencode` (`reencode`) and `check_resize_needs_two_inputs` (`resize`) — AC2's domain, measured, not listed.
 - 2026-08-28: plan gate chose one D-entry extending D041 over none and over two. The flag-guard rule and the column-parameterization refusal are both genuine rejections needing rationale on the record; splitting them would make a future supersession read past one to reach the other. Falsified by a supersession that needs to move only half the entry.
 
 ## Decisions

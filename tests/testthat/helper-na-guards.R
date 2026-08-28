@@ -189,3 +189,112 @@ check_dim_specs <- function(p, o) {
     )
   )
 }
+
+# M081 — the DOMAIN of the flag-guard criterion, derived rather than listed.
+#
+# `na_sweep_predicates()` above filters on ONE required formal, so a guard that
+# takes a flag AND something else -- check_audio_codec_needs_reencode(),
+# check_resize_needs_two_inputs() -- falls outside it and kept branching on an
+# unchecked flag after M080 fixed the one-argument twin. Widening that filter
+# was rejected: it pulls in check_batch_cell(), whose NA_integer_ row is
+# deliberate (R/ffmpeg.R:3395), so it would need an exemption registry. The
+# walk below decides membership instead, by SHAPE: a `check_*` predicate that
+# makes a required formal the direct operand of `!`, `&&` or `||` without
+# first passing it to rlang::check_bool() is branching on a value base R will
+# raise `argument is not interpretable as logical` or `missing value where
+# TRUE/FALSE needed` on -- a bare simpleError from inside a front-door guard.
+#
+# Reading the namespace rather than `R/` keeps this alive under `R CMD check`,
+# where there is no source tree (M51/M59), and it is the same parsed-call-node
+# walk helper-input-paths.R uses: a formal name inside a cli message string is
+# text, not an operand, and only operands are read here.
+
+# Every `check_*` function of the namespace, as a named list.
+tm_check_predicates <- function(pkg = "tidymedia") {
+  ns <- asNamespace(pkg)
+  fns <- mget(ls(ns, all.names = TRUE, pattern = "^check_"), envir = ns,
+              ifnotfound = list(NULL))
+  fns[vapply(fns, is.function, logical(1))]
+}
+
+# The names in `required` used as a DIRECT operand of `!`, `&&` or `||`
+# anywhere in `e`. `!is.null(x)` does not count: the operand there is the
+# is.null() call, and the guard is reading a property of `x`, not `x` itself
+# as a flag.
+tm_bare_flag_operands <- function(e, required) {
+  out <- character()
+  walk <- function(e) {
+    if (is.call(e)) {
+      if (deparse1(e[[1]]) %in% c("!", "&&", "||")) {
+        for (i in seq_along(e)[-1]) {
+          if (rlang::is_missing(e[[i]]) || is.null(e[[i]])) next
+          if (is.name(e[[i]]) && as.character(e[[i]]) %in% required) {
+            out <<- c(out, as.character(e[[i]]))
+          }
+        }
+      }
+    }
+    if (is.call(e) || is.pairlist(e)) {
+      for (i in seq_along(e)) {
+        if (rlang::is_missing(e[[i]]) || is.null(e[[i]])) next
+        walk(e[[i]])
+      }
+    }
+  }
+  walk(e)
+  unique(out)
+}
+
+# The names handed to rlang::check_bool() (either spelling) anywhere in `e`.
+tm_check_bool_targets <- function(e) {
+  out <- character()
+  walk <- function(e) {
+    if (is.call(e)) {
+      if (deparse1(e[[1]]) %in% c("check_bool", "rlang::check_bool") &&
+          length(e) >= 2 && is.name(e[[2]])) {
+        out <<- c(out, as.character(e[[2]]))
+      }
+    }
+    if (is.call(e) || is.pairlist(e)) {
+      for (i in seq_along(e)) {
+        if (rlang::is_missing(e[[i]]) || is.null(e[[i]])) next
+        walk(e[[i]])
+      }
+    }
+  }
+  walk(e)
+  unique(out)
+}
+
+# `f`'s required formals branched on before anything checked them. The body's
+# top-level statements are read IN ORDER, so a check_bool() below the branch
+# does not excuse it -- "first" in the criterion is positional, and a guard
+# that checks after it has already branched has already crashed.
+tm_unchecked_flags <- function(f) {
+  fo <- formals(f)
+  required <- names(fo)[vapply(fo, function(a) identical(a, quote(expr = )),
+                               logical(1))]
+  if (length(required) == 0) return(character())
+  b <- body(f)
+  stmts <- if (is.call(b) && identical(b[[1]], as.name("{"))) {
+    as.list(b)[-1]
+  } else {
+    list(b)
+  }
+  checked <- character()
+  flagged <- character()
+  for (s in stmts) {
+    flagged <- c(flagged,
+                 setdiff(tm_bare_flag_operands(s, required), checked))
+    checked <- c(checked, tm_check_bool_targets(s))
+  }
+  unique(flagged)
+}
+
+# The criterion's domain: every predicate the walk flags, and which of its
+# formals. `fns` is a parameter so the positive controls can be walked with
+# the same code the namespace is.
+unchecked_flag_guards <- function(fns = tm_check_predicates()) {
+  out <- lapply(fns, tm_unchecked_flags)
+  out[lengths(out) > 0]
+}

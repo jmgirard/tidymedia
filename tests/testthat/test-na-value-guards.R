@@ -196,3 +196,58 @@ test_that("every verb reaching check_dim() refuses NA naming the carrier", {
     }
   }
 })
+
+# M081 -- the flag guards na_sweep_predicates() cannot see -------------------
+
+test_that("the flag-guard walk flags each operator form and only unchecked flags", {
+  # Positive controls, walked with the same code the namespace is: one planted
+  # predicate per operator form that MUST be flagged, one that checks first and
+  # must not be, and one that checks AFTER it has already branched -- which is
+  # still a crash, and is what fixes "first" as positional rather than
+  # "somewhere in the body".
+  controls <- list(
+    check_planted_not = function(flag, n) if (!flag) n else NULL,
+    check_planted_and = function(flag, n) if (flag && n != 2) NULL,
+    check_planted_or = function(flag, n) if (flag || n != 2) NULL,
+    check_planted_indirect = function(flag, n) if (!is.null(flag)) n else NULL,
+    check_planted_checked = function(flag, n) {
+      rlang::check_bool(flag)
+      if (!flag) n else NULL
+    },
+    check_planted_late = function(flag, n) {
+      out <- if (!flag) n else NULL
+      rlang::check_bool(flag)
+      out
+    }
+  )
+  found <- unchecked_flag_guards(controls)
+  expect_identical(
+    sort(names(found)),
+    c("check_planted_and", "check_planted_late", "check_planted_not",
+      "check_planted_or")
+  )
+  # WHICH formal, not just that something was flagged.
+  for (nm in names(found)) expect_identical(found[[nm]], "flag", info = nm)
+  # `!is.null(flag)` reads a property OF the flag and is not a bare branch, so
+  # the walk must stay silent on it; `n` is a required formal of every control
+  # and is branched on by none of them, so it must never appear.
+  expect_false("check_planted_indirect" %in% names(found))
+  expect_false("check_planted_checked" %in% names(found))
+  expect_false("n" %in% unlist(found, use.names = FALSE))
+})
+
+test_that("no check_ predicate branches on an unchecked required flag", {
+  preds <- tm_check_predicates()
+  # The domain is walked out of the namespace, never listed here. Shown
+  # non-empty, and shown to contain the two predicates M081 repaired -- a walk
+  # over a set that excluded them would pass for the wrong reason.
+  expect_gt(length(preds), 0)
+  expect_true(all(c("check_audio_codec_needs_reencode",
+                    "check_resize_needs_two_inputs") %in% names(preds)))
+  found <- unchecked_flag_guards(preds)
+  expect_identical(
+    as.character(names(found)), character(0),
+    info = paste("branching on an unchecked flag:",
+                 paste(names(found), collapse = ", "))
+  )
+})

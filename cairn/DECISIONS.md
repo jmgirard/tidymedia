@@ -2390,3 +2390,31 @@ installs the latest dependencies on all five jobs.
 Falsified by a caller on 2.5.x observing a `local_timeout()` behavior these
 forms do not reach — `knitr` is the untested one — or by `withr` 2.5.0 failing
 to install on a supported R.
+
+## D054 — The discarded VIDEO stays silent, on all six audio-producing verbs (2026-08-27, from M075; extends D024's diagnostic-probe licence and D030's audio-only contract, leaving both standing)
+
+`normalize_audio()` and `normalize_audio_batch()` now warn about the audio
+tracks their output does not receive, the way `extract_audio()` and
+`convert_audio()` and their `_batch` siblings already did. All six also discard
+the input's **video**, and about that they stay silent. That silence is the
+rule, not an omission M075 ran out of room for.
+
+**Why.** The parity M075 restores is with two verbs that discard video silently
+themselves, so a video signal here would create a new divergence in the act of
+closing an old one — and it would fire on the common, correct case: an
+audio-producing verb given a video file is doing exactly what it says. D030
+already states the discard in the first sentence of `?normalize_audio` ("The
+output holds **one audio stream and no video**"), which is the disclosure
+channel this package uses for a contract, where the warning channel is for the
+case where the caller had a choice and did not know they were making it. A
+caller who names no `audio_stream` had that choice; a caller who calls an
+audio-producing verb did not.
+
+**What this rules out.** A second condition class for the dropped picture; a
+`video` field on `tidymedia_dropped_audio`; and adding the video note to the
+existing warning's bullets, which would put text about a contract into a
+message the caller can suppress by naming a track.
+
+**Falsified by** a report of a caller surprised by the lost picture — that is
+the observation that would show the docs channel is not reaching them, and it
+would apply to all six verbs at once, not to the normalize pair alone.

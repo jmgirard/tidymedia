@@ -2239,7 +2239,18 @@ normalize_audio <- function(infile, outfile,
   # multi-track `audio_codec = "copy"` call would otherwise warn about a drop
   # that the very next line refuses to perform. Refuse first, probe second. The
   # message is check_audio_codec_not_copy()'s own either way (D042).
+  # The shaping knobs come first, because normalize_audio_pipeline() validates
+  # them (R/ffmpeg.R, its first two lines) BEFORE its own copy guard. Hoisting
+  # the copy guard alone would reassign their precedence: a call wrong about
+  # both channels and audio_codec would start answering with the copy complaint
+  # instead of the channels one. M41's guards were placed to reassign no other
+  # check's precedence, and its review (A3r3) backed this same hoist out of the
+  # two-pass path for exactly that reason. Re-checking here is idempotent --
+  # the pipeline still checks them -- and the two-pass block above hoists the
+  # same two in the same order.
   if (!two_pass) {
+    rlang::check_number_whole(channels, min = 1, allow_null = TRUE)
+    rlang::check_number_whole(sample_rate, min = 1, allow_null = TRUE)
     check_audio_codec_not_copy(audio_codec)
     if (isTRUE(run) && is.null(audio_stream)) {
       warn_dropped_audio(infile, count_audio_streams_all(infile))

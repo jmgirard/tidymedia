@@ -330,3 +330,15 @@ same builder as the five M44 sites (`R/ffmpeg.R:544, 1015, 5045, 5186`), and
 M44's two actioned findings (brace-containing paths, throwing locators) are
 covered by tests still green in this file. D024, D030, D039 and D054 are all
 consistent with the diff.
+
+**Fix-now at the gate (2026-08-27).** The maintainer triaged finding 1 fix-now.
+`rlang::check_number_whole(channels)` and `check_number_whole(sample_rate)` now
+sit above `check_audio_codec_not_copy()` inside the `if (!two_pass)` block,
+matching the order the two-pass block and `normalize_audio_pipeline()` both use.
+Measured after the fix: `normalize_audio(f, out, channels = 0, audio_codec =
+"copy", run = FALSE)` aborts with the `channels` complaint again, as on
+`master`. Gate re-run clean: `devtools::document()` no diff,
+`devtools::test()` `[ FAIL 0 | WARN 12 | SKIP 5 | PASS 6690 ]`,
+`devtools::check()` `Status: OK` (0/0/0), `cairn_validate` exit 0. AC1-AC7
+evidence above is unchanged by the fix (no criterion reads the affected
+message). Finding 2 was logged and left as-is.

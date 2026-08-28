@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M080: The guard says what is wrong, and refuses NA
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -127,7 +127,7 @@ no user call reaches, which stay unfixed and undocumented.
 - [x] T7: D057 narrowing D040's ordering paragraph for the derived-output
       duplication guard, with its falsifier; the NEWS entries and the
       correction AC6 names; `devtools::document()`; `devtools::check()`.
-- [ ] T8 (added 2026-08-28, review return 1): the sweep and the derived-output
+- [x] T8 (added 2026-08-28, review return 1): the sweep and the derived-output
       block move down as a unit in `anonymize_video_batch()` and
       `standardize_video_batch()`, below the `audio_stream` column guard and
       the two scalar checks (F1, F2); two above-the-sweep crossings added to
@@ -157,6 +157,7 @@ no user call reaches, which stay unfixed and undocumented.
 - 2026-08-28: review returned M080 to in-progress (defect return 1). AC6 fails: T5's move of `check_batch_inputs()` above the auto-name block also carried it above `check_batch_audio_col(jobs, "audio_stream")` and above `check_token(video_codec)`/`check_number_whole(audio_stream)` in `anonymize_video_batch()` and `standardize_video_batch()`, so a column-type error and a scalar-argument error now report AFTER the path sweep, while `NEWS.md:594` still states that wrong column types report before it — the paragraph AC6 requires to be corrected to match. Reproduced at review on both refs. AC1-AC5 verified with fresh evidence and stand; the consistency gate passed; `devtools::check()` clean. Eight further findings (F4-F11) logged in the Review section, none falsifying a criterion.
 - 2026-08-28: implementation gate on the returned defect chose restoring both guards above the sweep -- the sweep and the derived-output block move DOWN as a unit -- over restoring the column guard alone, because the alternative leaves a scalar-argument-versus-path reassignment standing on an axis this milestone never set out to touch. The cost, taken deliberately: on the two verbs carrying both, the duplication refusal is now below the scalar checks too, so a duplicated table with a bad `video_codec` reports the codec where it reported the duplication; recorded as D058, in NEWS, and re-pinned in `test-input-path-front-door.R`. Falsified by a report preferring the duplication on such a table.
 - 2026-08-28: T8 -- in `anonymize_video_batch()` and `standardize_video_batch()` the sweep and the derived-output block moved down together, below `check_batch_audio_col()`, `check_token(video_codec)` and `check_number_whole(audio_stream)`, restoring every precedence F1 and F2 named. `normalize_audio_batch()` already had that shape and is untouched, which the new test's third verb holds. F3: two above-the-sweep crossings, `column_type:stream` and `scalar_arg`, derived from the guard calls in each verb's own body rather than listed, and gated on the verb having the sweep at all (five scalar verbs check the same argument against a different input guard). Grid re-run at `origin/master` and HEAD: every reader empty except the 30 pre-existing unreadable-cell blame rows (A10), the same three `derived_output` cells moved, 662 cells over 16 crossings. Run against the returned commit `14b0cd6` the two new crossings redden on 8 cells -- the two verbs, both crossings, the `all` and `one` forms -- so they can fail on the defect they were added for. The codec-versus-duplication cells left `test-codec-arg-front-door.R` for `test-input-path-front-door.R` and read the other way up, per the gate above. `devtools::test()`: 0 failures, 7957 passing, 5 skips, 12 warnings.
+- 2026-08-28: `devtools::check()` Status: OK, 0 errors / 0 warnings / 0 notes, 3m 4s. T8 checked; status to review (defect return 1 answered).
 
 ## Decisions
 

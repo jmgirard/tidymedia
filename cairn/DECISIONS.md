@@ -2585,6 +2585,8 @@ baseline wedging identically, which this run — effectively that baseline — d
 not. What can be said is that a rebuild of the named runner, on current
 harness packages, does not wedge.
 
-Falsified by an overrun above limit + 40 s on any platform, by a tidymedia call
-returning with its spawned program still alive, or by the wedge reproducing on
-the pinned-floor configuration D055 measured.
+Falsified by a spawn returning materially later than limit + 40 s on any
+platform -- a different escalation, not the sub-second package frame around the
+wait that puts C1 at 42.41 s -- by a tidymedia call returning with its spawned
+program still alive, or by the wedge reproducing on the pinned-floor
+configuration D055 measured.

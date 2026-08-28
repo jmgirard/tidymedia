@@ -50,12 +50,13 @@
 #' an `NA` row and one warning at the end of the call, saying how many of the
 #' files it names timed out rather than being unreadable. [ffm_batch()] and the
 #' `_batch` verbs mark the row `success = FALSE`, as they do for any failed
-#' job, and warn once at the end of the run saying how many jobs the limit
-#' killed — at `parallel = TRUE` no differently from sequentially. The
-#' dropped-track check behind [extract_audio()], [convert_audio()],
-#' [separate_audio_video()] and their `_batch` siblings warns that it could not
-#' check, and the provenance manifest warns that it could not read a version;
-#' both then carry on as they would for any other unreadable input.
+#' job, and warn once at the end of the run saying how many jobs timed out and
+#' did not run to completion — at `parallel = TRUE` no differently from
+#' sequentially. The dropped-track check behind [extract_audio()],
+#' [convert_audio()], [separate_audio_video()] and their `_batch` siblings
+#' warns that it could not check, and the provenance manifest warns that it
+#' could not read a version; both then carry on as they would for any other
+#' unreadable input.
 #'
 #' To handle either outcome programmatically, the abort carries the condition
 #' class `tidymedia_timeout`; the dropped-track and version-probe warnings

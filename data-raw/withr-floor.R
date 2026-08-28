@@ -411,6 +411,16 @@ ac4 <- write_script("ac4.R", c(
   'show("4 what f4\'s frame leaves behind (documented 30, the wrapper\'s)", getOption("tidymedia.timeout"))'
 ))
 
+# Everything above this line is definitions. `TM_DEFS_ONLY` stops here, so
+# data-raw/floor-probes.R can plant defects against those functions without
+# starting a measurement. A signalled condition rather than a `return()`:
+# `source()` evaluates top-level expressions one at a time, and there is no
+# function here to return from.
+if (nzchar(Sys.getenv("TM_DEFS_ONLY"))) {
+  stop(structure(class = c("tm_defs_only", "error", "condition"),
+                 list(message = "sourced for its definitions only", call = NULL)))
+}
+
 # --- drive it ------------------------------------------------------------------
 
 for (ver in versions) {

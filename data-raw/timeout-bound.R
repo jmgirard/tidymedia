@@ -295,6 +295,17 @@ capped_argv <- function(self, name) {
   }
 }
 
+# The case's own number, read back out of its log. A case that produced no
+# `observed elapsed` line did not reach its own measurement, and the summary
+# says that rather than substituting a number from somewhere else.
+observed_elapsed <- function(out, name) {
+  line <- grep("^observed elapsed:", out, value = TRUE)
+  if (length(line) != 1L) return("(none)")
+  m <- regmatches(line, regexec("([0-9.]+) s", line))[[1]]
+  if (length(m) != 2L) return("(unparsed)")
+  m[2]
+}
+
 this_file <- function() {
   a <- commandArgs(trailingOnly = FALSE)
   f <- sub("^--file=", "", grep("^--file=", a, value = TRUE))
@@ -347,9 +358,16 @@ drive <- function() {
     emit("driver wall clock", sprintf("%.2f s", wall))
     emit("hit the cap", if (hit_cap) sprintf("YES -- killed at %d s", CAP) else "no")
     cat("\n")
+    # THE SUMMARY REPORTS WHAT THE CASE MEASURED, NOT WHAT THE DRIVER WATCHED.
+    # `wall` is this loop's own stopwatch around `system2`, and it carries an
+    # R startup, the package load and the fixture build on top of the interval
+    # the case is about -- about 2.2 s of it here. The number each case
+    # measures is `observed elapsed`, timed around the call itself at the top
+    # of `run_case()`, and that is the number quoted from these runs.
     rows[[name]] <- list(
       case = name,
-      elapsed = if (hit_cap) sprintf(">%d", CAP) else sprintf("%.2f", wall),
+      elapsed = if (hit_cap) sprintf(">%d", CAP) else observed_elapsed(out, name),
+      wall = sprintf("%.2f", wall),
       capped = hit_cap
     )
   }
@@ -357,10 +375,13 @@ drive <- function() {
   cat(strrep("=", 76), "\n", sep = "")
   cat("summary -- limit set to ", LIMIT, " s in every case\n", sep = "")
   cat(strrep("=", 76), "\n", sep = "")
-  cat(sprintf("%-5s %-12s %s\n", "case", "elapsed(s)", "what"))
+  cat(sprintf("%-5s %-12s %-12s %s\n", "case", "elapsed(s)", "driver(s)", "what"))
   for (r in rows) {
-    cat(sprintf("%-5s %-12s %s\n", r$case, r$elapsed, CASES[[r$case]]$what))
+    cat(sprintf("%-5s %-12s %-12s %s\n", r$case, r$elapsed, r$wall, CASES[[r$case]]$what))
   }
+  cat("\nelapsed(s) is the case's own `observed elapsed`, timed around the call.\n")
+  cat("driver(s) is this script's stopwatch around the child process, which also\n")
+  cat("carries an R startup and the fixture build -- it is not what the case measures.\n")
   cat("\nRead the pairs: A1 vs A2 and B1 vs B2 differ only in whether R reads\n")
   cat("the child's stdout pipe. If the overrun is present in the stdout = TRUE\n")
   cat("member and absent in the other, R was waiting on the pipe, not on the\n")
@@ -369,6 +390,15 @@ drive <- function() {
 }
 
 # ---------------------------------------------------------------------------
+
+# Everything above this line is definitions. `TM_DEFS_ONLY` stops here, so
+# data-raw/floor-probes.R can call them without starting a measurement. A
+# signalled condition rather than a `return()`: `source()` evaluates top-level
+# expressions one at a time, and there is no function here to return from.
+if (nzchar(Sys.getenv("TM_DEFS_ONLY"))) {
+  stop(structure(class = c("tm_defs_only", "error", "condition"),
+                 list(message = "sourced for its definitions only", call = NULL)))
+}
 
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) >= 2L && args[[1]] == "--case") {

@@ -198,22 +198,24 @@ linkingto_state <- function(lib, pkg, ver, pins) {
   }, ""), collapse = " ")
 }
 
-install_pin <- function(lib, pkg, ver, pins) {
+# `Version` alone is not enough to reuse an entry in a persisted TM_LIBROOT.
+# `archive` and `purrr` both LinkingTo `cli`: move the `cli` floor and reinstall
+# it, and those two still carry the right Version over binaries compiled against
+# the headers of the version before it -- a pin the run then reports as
+# measured. The stamp records what the entry was actually linked against, so a
+# changed LinkingTo dependency reinstalls the dependent. An entry with no stamp
+# at all -- a library from before this check existed -- is not reused either.
+can_reuse <- function(lib, pkg, ver, pins) {
   marker <- file.path(lib, pkg, "DESCRIPTION")
   stamp <- file.path(lib, pkg, PIN_STAMP)
-  # `Version` alone is not enough to reuse an entry in a persisted TM_LIBROOT.
-  # `archive` and `purrr` both LinkingTo `cli`: move the `cli` floor and
-  # reinstall it, and those two still carry the right Version over binaries
-  # compiled against the headers of the version before it -- a pin the run then
-  # reports as measured. The stamp records what was actually linked against, so
-  # a changed LinkingTo dependency reinstalls the dependent.
-  want <- linkingto_state(lib, pkg, ver, pins)
-  if (file.exists(marker) &&
-      identical(as.character(read.dcf(marker, "Version")[[1]]), ver) &&
-      file.exists(stamp) &&
-      identical(as.character(read.dcf(stamp, "LinkedAgainst")[[1]]), want)) {
-    return(NULL)
-  }
+  if (!file.exists(marker) || !file.exists(stamp)) return(FALSE)
+  if (!identical(as.character(read.dcf(marker, "Version")[[1]]), ver)) return(FALSE)
+  identical(as.character(read.dcf(stamp, "LinkedAgainst")[[1]]),
+            linkingto_state(lib, pkg, ver, pins))
+}
+
+install_pin <- function(lib, pkg, ver, pins) {
+  if (can_reuse(lib, pkg, ver, pins)) return(NULL)
   # A half-written install from an interrupted run must not be reused: the
   # marker above is the installed DESCRIPTION, and anything short of it is
   # removed rather than trusted.
@@ -571,6 +573,10 @@ reconcile <- function(pins, closure, gather, pick,
 # Used by `newest_compatible()` to find the newest release of a held-back
 # harness package that the pinned floors permit.
 
+# One call, named, so data-raw/floor-probes.R can hand `archive_versions()` a
+# failed fetch without a network.
+cran_db <- function() utils::available.packages(repos = "https://cloud.r-project.org")
+
 archive_versions <- function(pkg, from) {
   url <- sprintf("https://cran.r-project.org/src/contrib/Archive/%s/", pkg)
   # A NETWORK FAILURE IS NOT A FACT ABOUT CRAN. Both reads below used to fall
@@ -588,8 +594,7 @@ archive_versions <- function(pkg, from) {
   vers <- sub(sprintf("^%s_", pkg), "", sub("\\.tar\\.gz$", "", vers))
   # The Archive holds only superseded versions; the current release lives in
   # src/contrib and would otherwise be missing from the end of the list.
-  db <- tryCatch(utils::available.packages(repos = "https://cloud.r-project.org"),
-                 error = function(e) e)
+  db <- tryCatch(cran_db(), error = function(e) e)
   if (inherits(db, "condition")) {
     stop(sprintf("could not fetch the CRAN package database: %s", conditionMessage(db)),
          call. = FALSE)
@@ -783,6 +788,16 @@ run_child <- function(label, lib) {
   if (length(line) != 1L) stop("no TOTALS line from the ", label, " run", call. = FALSE)
   nums <- as.integer(regmatches(line, gregexpr("[0-9]+", line))[[1]])
   stats::setNames(as.list(nums), c("pass", "fail", "err", "skip", "files"))
+}
+
+# Everything above this line is definitions. `TM_DEFS_ONLY` stops here, so
+# data-raw/floor-probes.R can plant defects against those functions without
+# starting a measurement. A signalled condition rather than a `return()`:
+# `source()` evaluates top-level expressions one at a time, and there is no
+# function here to return from.
+if (nzchar(Sys.getenv("TM_DEFS_ONLY"))) {
+  stop(structure(class = c("tm_defs_only", "error", "condition"),
+                 list(message = "sourced for its definitions only", call = NULL)))
 }
 
 # --- drive it ------------------------------------------------------------------

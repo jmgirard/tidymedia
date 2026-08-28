@@ -106,7 +106,7 @@ none is proposed; D053 and D055 stand untouched.
 - [x] T3 — Make `fetch_tarball()`'s cache branch (`:124`) call the same
       validator as its download branch (`:145`); give `withr-floor.R`'s
       fetch (`:61-72`) that validator too.
-- [ ] T4 — Build the planted-defect harness under `data-raw/`. Per the M52
+- [x] T4 — Build the planted-defect harness under `data-raw/`. Per the M52
       lesson, plant one probe per INPUT CLASS the code distinguishes and
       vary FORM, not only location: three cache defect forms, a library
       entry with the right `Version` and stale headers, an `Imports` whose
@@ -123,7 +123,7 @@ none is proposed; D053 and D055 stand untouched.
 - [x] T7 — Distinguish an `available.packages()` failure from an empty
       result (`:413`); print the aggregated per-file errors in the summary
       table (M077 F15).
-- [ ] T8 — Fix `timeout-bound.R:360` to report `observed elapsed`; confirm
+- [x] T8 — Fix `timeout-bound.R:360` to report `observed elapsed`; confirm
       the corrected column reproduces D056's quoted per-case numbers.
 - [ ] T9 — `devtools::check()` and `devtools::test()`. Then a smoke run of
       `imports-floors.R` end to end in `Dockerfile.floors` — NOT an
@@ -149,6 +149,9 @@ none is proposed; D053 and D055 stand untouched.
 - 2026-08-28: T6 — `r-floor.R`'s `fetch_description()` given the same `is_package_tarball()` validator, on its cache path and its download. Not named by AC1, which binds the two fetches in `imports-floors.R` and `withr-floor.R`; it is the third copy of the one shape Scope's In lists (M076 P1), and leaving it accepting on size alone would have left the shape half-fixed. `Rscript data-raw/r-floor.R` runs end to end and still reports (a) 4.1.0, (b) 4.0.0, maximum 4.1.0 — M076's result unchanged.
 - 2026-08-28: T7 — `archive_versions()` aborts on both of its network reads rather than falling back to an empty list: a failed Archive listing and a failed `available.packages()` were indistinguishable from "no later versions exist", and that list is what `newest_compatible()` searches, so an empty one surfaced as "no version of X is compatible with the pinned floors". `available.packages()` reports a failed fetch as a warning and a zero-row matrix rather than an error, so the row count is checked too, not only the class.
 - 2026-08-28: T7 — the per-file table and the TOTALS line now print the `error` column they were already aggregating (M077 F15); the driver's TOTALS parser and the baseline/pinned comparison lines carry `err` with them. This changes the shape of the TOTALS line D055 quotes — a re-run now prints `pass=... fail=... err=... skip=... files=...` where D055 recorded four fields. D055's numbers stand; only the line's field count moves.
+- 2026-08-28: T8 — `timeout-bound.R`'s summary reports each case's own `observed elapsed` and carries the driver stopwatch in a second, separately labelled column. Re-run on the host: A1 42.02, A2 22.01, A3 42.02, A4 42.02, B1 2.02, B2 2.02, C1 2.50 against D056's host column of 42.03/22.02/42.03/42.01/2.01/2.01/2.37 — every case within 0.13 s, C1 the widest. The driver column read 44.35/24.39/44.37/44.36/4.37/4.36/4.83, i.e. 2.33 s above, which is the number the old single column was printing.
+- 2026-08-28: T4 — `data-raw/floor-probes.R`: 45 probes, 0 failed (`--offline` runs 38 of them). Each of the four scripts is sourced under `TM_DEFS_ONLY`, a guard that stops it just above its driver; `defs_of()` refuses to return if a script runs past that guard, so the harness cannot silently start a measurement. Probes needing a DESCRIPTION the repo does not have run the real script from a staged package root of symlinks with one modified DESCRIPTION — nothing writes to the repo.
+- 2026-08-28: T4 — the late-truncation probe (A3/A6) is the one that earned its place: a gzip truncated PAST the DESCRIPTION entry still lists it, so the listing check the download branch had always run accepts it (A6 asserts exactly that), and only `tar`'s exit status refuses it. The fixture asserts it still lists DESCRIPTION before the probes run, so it cannot degrade into passing for the wrong reason. Two probes failed while being written and were real: a non-settling `gather` that in fact settled, and an H1 whose own label was the only match its grep found.
 
 ## Decisions
 

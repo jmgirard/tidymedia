@@ -69,55 +69,61 @@ scan_file <- function(path, surface) {
              stringsAsFactors = FALSE)
 }
 
-# `R/` -- the shipped package code.
-r_files <- file.path(PKG, "R", list.files(file.path(PKG, "R"), "[.]R$"))
-code_hits <- do.call(rbind, lapply(r_files, scan_file, surface = "R/"))
+# The whole of (a), as one call: the two surfaces swept, the table printed, and
+# the floor those occurrences imply returned. A function so that everything
+# above the driver below is a definition.
+syntax_sweep <- function() {
+  # `R/` -- the shipped package code.
+  r_files <- file.path(PKG, "R", list.files(file.path(PKG, "R"), "[.]R$"))
+  code_hits <- do.call(rbind, lapply(r_files, scan_file, surface = "R/"))
 
-# `man/` -- the examples that run. Rd2ex writes one .R file per help page with
-# \dontrun and \donttest COMMENTED OUT, so the parser never sees them and the
-# criterion's exclusion is enforced by the extractor rather than by a regex.
-rd_files <- file.path(PKG, "man", list.files(file.path(PKG, "man"), "[.]Rd$"))
-ex_dir <- file.path(SCRATCH, "examples")
-dir.create(ex_dir, recursive = TRUE, showWarnings = FALSE)
-ex_hits <- NULL
-for (rd in rd_files) {
-  out <- file.path(ex_dir, sub("[.]Rd$", ".R", basename(rd)))
-  tools::Rd2ex(rd, out, commentDontrun = TRUE, commentDonttest = TRUE)
-  # Rd2ex writes nothing for a help page with no \examples section.
-  if (!file.exists(out)) next
-  h <- scan_file(out, surface = "man/ examples")
-  if (nrow(h)) {
-    # `line` is a line of the EXTRACTED example file, not of the .Rd -- the two
-    # do not correspond, since Rd2ex drops the \usage and \arguments sections
-    # above \examples. Naming the .Rd and keeping the .Rd's own line number
-    # would point at whatever text happens to sit there, so the label says
-    # which file the line belongs to.
-    h$where <- sprintf("%s (examples line %d)", basename(rd), h$line)
-    ex_hits <- rbind(ex_hits, h)
-  }
-}
-
-syntax_hits <- rbind(code_hits, ex_hits)
-syntax_floor <- if (!is.null(syntax_hits) && nrow(syntax_hits)) SYNTAX_FLOOR else NA_character_
-
-cat("=================================================================\n")
-cat("(a) R-version-gated syntax in the shipped surface\n")
-cat("=================================================================\n")
-cat(sprintf("    swept: %d file(s) in R/, %d help page(s) in man/\n",
-            length(r_files), length(rd_files)))
-if (is.null(syntax_hits) || !nrow(syntax_hits)) {
-  cat("    no `|>` and no `\\(` in parsed code -- this input sets no floor\n")
-} else {
-  for (s in unique(syntax_hits$surface)) {
-    sub <- syntax_hits[syntax_hits$surface == s, ]
-    sub <- sub[order(sub$file, sub$line), ]
-    for (fm in unique(sub$form)) {
-      one <- sub[sub$form == fm, ]
-      cat(sprintf("      %-14s %-6s %3d occurrence(s), first at %s\n",
-                  s, fm, nrow(one), one$where[1]))
+  # `man/` -- the examples that run. Rd2ex writes one .R file per help page with
+  # \dontrun and \donttest COMMENTED OUT, so the parser never sees them and the
+  # criterion's exclusion is enforced by the extractor rather than by a regex.
+  rd_files <- file.path(PKG, "man", list.files(file.path(PKG, "man"), "[.]Rd$"))
+  ex_dir <- file.path(SCRATCH, "examples")
+  dir.create(ex_dir, recursive = TRUE, showWarnings = FALSE)
+  ex_hits <- NULL
+  for (rd in rd_files) {
+    out <- file.path(ex_dir, sub("[.]Rd$", ".R", basename(rd)))
+    tools::Rd2ex(rd, out, commentDontrun = TRUE, commentDonttest = TRUE)
+    # Rd2ex writes nothing for a help page with no \examples section.
+    if (!file.exists(out)) next
+    h <- scan_file(out, surface = "man/ examples")
+    if (nrow(h)) {
+      # `line` is a line of the EXTRACTED example file, not of the .Rd -- the two
+      # do not correspond, since Rd2ex drops the \usage and \arguments sections
+      # above \examples. Naming the .Rd and keeping the .Rd's own line number
+      # would point at whatever text happens to sit there, so the label says
+      # which file the line belongs to.
+      h$where <- sprintf("%s (examples line %d)", basename(rd), h$line)
+      ex_hits <- rbind(ex_hits, h)
     }
   }
-  cat(sprintf("\n    (a) floor: %s (%d occurrence(s))\n", syntax_floor, nrow(syntax_hits)))
+
+  syntax_hits <- rbind(code_hits, ex_hits)
+  syntax_floor <- if (!is.null(syntax_hits) && nrow(syntax_hits)) SYNTAX_FLOOR else NA_character_
+
+  cat("=================================================================\n")
+  cat("(a) R-version-gated syntax in the shipped surface\n")
+  cat("=================================================================\n")
+  cat(sprintf("    swept: %d file(s) in R/, %d help page(s) in man/\n",
+              length(r_files), length(rd_files)))
+  if (is.null(syntax_hits) || !nrow(syntax_hits)) {
+    cat("    no `|>` and no `\\(` in parsed code -- this input sets no floor\n")
+  } else {
+    for (s in unique(syntax_hits$surface)) {
+      sub <- syntax_hits[syntax_hits$surface == s, ]
+      sub <- sub[order(sub$file, sub$line), ]
+      for (fm in unique(sub$form)) {
+        one <- sub[sub$form == fm, ]
+        cat(sprintf("      %-14s %-6s %3d occurrence(s), first at %s\n",
+                    s, fm, nrow(one), one$where[1]))
+      }
+    }
+    cat(sprintf("\n    (a) floor: %s (%d occurrence(s))\n", syntax_floor, nrow(syntax_hits)))
+  }
+  syntax_floor
 }
 
 # --- (b) the declared dependency floors ----------------------------------------
@@ -229,6 +235,20 @@ r_floor_of <- function(desc_path) {
   }
   trimws(op[3])
 }
+
+# Everything above this line is definitions. `TM_DEFS_ONLY` stops here, so
+# data-raw/floor-probes.R can plant defects against those functions without
+# starting a measurement. A signalled condition rather than a `return()`:
+# `source()` evaluates top-level expressions one at a time, and there is no
+# function here to return from.
+if (nzchar(Sys.getenv("TM_DEFS_ONLY"))) {
+  stop(structure(class = c("tm_defs_only", "error", "condition"),
+                 list(message = "sourced for its definitions only", call = NULL)))
+}
+
+# --- drive it ------------------------------------------------------------------
+
+syntax_floor <- syntax_sweep()
 
 cat("\n=================================================================\n")
 cat("(b) `Depends: R` of each declared Imports floor version\n")

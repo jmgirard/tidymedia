@@ -95,17 +95,17 @@ wording. Tests, roxygen, NEWS, and the D-entry recording what was rejected.
       (`R/ffmpeg.R:366`), `warn_dropped_audio_batch()` (`R/ffmpeg.R:427`), and
       the five existing sites (`R/ffmpeg.R:544`, `1015`, `637`, `4981`,
       `5122`). Record the chosen lines in this file's Decisions section.
-- [ ] T2 — Tests first, extending `tests/testthat/test-audio-track-drop.R` so
+- [x] T2 — Tests first, extending `tests/testthat/test-audio-track-drop.R` so
       every wording assertion in the package stays in one file: AC1's message
       test, AC2's row-naming test, AC3's five silence cases, AC4's two mocked
       ordering tests, AC5's eight refusal-before-warning cases. Confirm red.
-- [ ] T3 — Wire `normalize_audio()`: two mutually exclusive calls, each gated
+- [x] T3 — Wire `normalize_audio()`: two mutually exclusive calls, each gated
       `isTRUE(run) && is.null(audio_stream)` — one inside the `if (two_pass)`
       block below `check_token(audio_codec)` and above
       `run_loudnorm_analysis()` (`R/ffmpeg.R:2189-2192`), one on the
       single-pass path below `rlang::check_string(audio_codec,
       allow_null = TRUE)` (`R/ffmpeg.R:2207`). Comment why there are two.
-- [ ] T4 — Wire `normalize_audio_batch()`: one
+- [x] T4 — Wire `normalize_audio_batch()`: one
       `if (isTRUE(run)) warn_dropped_audio_batch(jobs, audio_stream)` below the
       per-row loudness-target sweep and above the `if (two_pass)` block
       (`R/ffmpeg.R:4383`), so it precedes Phase 1.
@@ -130,6 +130,7 @@ wording. Tests, roxygen, NEWS, and the D-entry recording what was rejected.
 - 2026-08-27: T1 pinned the builder, its batch form and the five existing call sites; recorded in Decisions.
 - 2026-08-27: question gate chose hoisting `check_audio_codec_not_copy()` onto the single-pass path over narrowing AC5 to `two_pass = TRUE`, because the single-pass path's only copy guard runs inside `ffm_finish()`'s argument, after the probe, so AC5's scalar `"copy"` case would otherwise warn before aborting; falsified by an existing `"copy"` guard test changing what it reads.
 - 2026-08-27: T2 wrote the 17 new tests into `tests/testthat/test-audio-track-drop.R` and confirmed red: the four wiring tests (AC1, AC2, AC4's two) fail with 0 drop warnings collected; AC3's five silence cases and AC5's eight refusal cases pass already, standing as regression guards over the wiring T3/T4 add. T2 is checked off with the wiring, since its own verify run is red by design.
+- 2026-08-27: T3/T4 wired the three sites; `devtools::test()` clean (exit 0), all 17 new tests green. T3 also hoisted `check_audio_codec_not_copy()` onto the single-pass path per the question gate. Two pre-existing tests in `test-parallel-option-carry.R` (lines 259, 533) now also emit the front-door probe's fail-open timeout warning alongside the `tidymedia_timeout` abort they assert; both still pass, and the extra warning is D024's documented fail-open, matching the noise the four existing verbs' tests already carry.
 - 2026-08-27: plan gate chose a `stop()`ing mock of `run_loudnorm_analysis()` over dropping AC4 because the call site is not wrapped in `tryCatch(error =)`, the condition M44's lesson names as defeating such a mock; falsified by the mock passing with the wiring removed.
 
 ## Decisions

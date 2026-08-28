@@ -2187,6 +2187,16 @@ normalize_audio <- function(infile, outfile,
     # of hoisting is to fail before the analysis pass runs, and a malformed
     # encoder name is as fatal as "copy".
     if (!is.null(audio_codec)) check_token(audio_codec)
+    # D024's diagnostic probe, two-pass site. There are TWO sites in this verb,
+    # mutually exclusive on `two_pass`, because a single site below every guard
+    # would warn only AFTER the analysis pass had run -- while the batch verb
+    # warns before ITS Phase 1, the scalar/batch ordering divergence D039 exists
+    # to prevent. Same gates as extract_audio()'s site: `run` because a
+    # run = FALSE call stays binary-free, and a NULL audio_stream because a
+    # caller who named a track chose the drop.
+    if (isTRUE(run) && is.null(audio_stream)) {
+      warn_dropped_audio(infile, count_audio_streams_all(infile))
+    }
     measured <- run_loudnorm_analysis(infile, target_loudness, true_peak,
                                       loudness_range,
                                       audio_stream = audio_stream)
@@ -2204,6 +2214,19 @@ normalize_audio <- function(infile, outfile,
   # (review A3r3). Here the two-pass path is exactly as it was, and the
   # default path -- the one M41 is about -- is still fixed.
   rlang::check_string(audio_codec, allow_null = TRUE)
+  # Hoisted for the probe below, on the single-pass path only (the two_pass
+  # block above makes this same call for its own analysis pass). The pipeline's
+  # copy guard runs inside ffm_finish()'s argument, i.e. AFTER the probe, so a
+  # multi-track `audio_codec = "copy"` call would warn about a drop that the
+  # very next line refuses to perform. Refuse first, probe second. The message
+  # is check_audio_codec_not_copy()'s own either way (D042).
+  check_audio_codec_not_copy(audio_codec)
+
+  # D024's diagnostic probe, single-pass site -- the other half of the pair
+  # above; the two are mutually exclusive on `two_pass`, so exactly one runs.
+  if (isTRUE(run) && is.null(audio_stream)) {
+    warn_dropped_audio(infile, count_audio_streams_all(infile))
+  }
 
   ffm_finish(
     normalize_audio_pipeline(infile, outfile, target_loudness, true_peak,
@@ -4382,6 +4405,14 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
       check_loudnorm_targets(target_rows[[i]], peak_rows[[i]], range_rows[[i]])
     )
   }
+
+  # D024's diagnostic probe, above the two_pass block so it lands before Phase 1
+  # analyzes anything and before the fan-out encodes -- the placement the scalar
+  # verb's two sites exist to match (D039). Below the per-row target sweep, so a
+  # wrong value still refuses before anything warns. isTRUE() rather than a bare
+  # `run` so a non-logical value still gets ffm_batch()'s own check_bool()
+  # message; the per-row audio_stream decision is the batch builder's.
+  if (isTRUE(run)) warn_dropped_audio_batch(jobs, audio_stream)
 
   # Two-pass (measured/linear): the audio-side M16 analyze-then-build path fanned
   # across the jobs table (D013). Phase 1 measures every input (honoring

@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m081-unchecked-flag-and-second-copy`
+- **Branch/PR:** `m081-unchecked-flag-and-second-copy` / [PR #85](https://github.com/jmgirard/tidymedia/pull/85)
 
 ## Goal
 
@@ -35,37 +35,37 @@ the candidate row's claim about it is corrected in the same commit.
 
 ## Acceptance criteria
 
-- [ ] AC1: A walk over the installed namespace's parsed function bodies returns
+- [x] AC1: A walk over the installed namespace's parsed function bodies returns
       no `check_*` predicate that applies `!`, `&&`, or `||` to a required
       formal it has not first passed to `rlang::check_bool()`. Membership is
       decided by the walk over the namespace, never by a list edited to add or
       exempt a predicate. The walk carries positive controls: it flags a planted
       predicate that branches on a bare required formal, in each of the three
       operator forms, and does not flag one that checks the formal first.
-- [ ] AC2: Every predicate AC1's walk flags on the merge-base ref —
+- [x] AC2: Every predicate AC1's walk flags on the merge-base ref —
       `check_audio_codec_needs_reencode()` (`R/ffmpeg.R:2849`) and
       `check_resize_needs_two_inputs()` (`R/ffmpeg.R:2898`) — signals an
       rlang/cli condition naming its own flag formal, for each of the four types
       `na_values()` declares (`NA`, `NA_integer_`, `NA_real_`, `NA_character_`),
       where the merge-base signals a bare `simpleError`.
-- [ ] AC3: `file.access` is called from exactly one function of the installed
+- [x] AC3: `file.access` is called from exactly one function of the installed
       namespace, decided by `tm_call_graph()`'s parsed-call-node walk and never
       by a substring search over deparsed bodies (helper-input-paths.R:1-9). That
       function is a non-aborting predicate; `check_paths_readable()`
       (`R/utils.R:83`) and `check_batch_inputs()` (`R/ffmpeg.R:4700`) both call
       it, and `check_batch_inputs()` keeps its per-carrier test, so the union
       sweep that names both bad carriers in one call (M62 F2/N3) is unchanged.
-- [ ] AC4: The comment over `reject_duplicate_inputs()` (`R/ffmpeg.R:4718`)
+- [x] AC4: The comment over `reject_duplicate_inputs()` (`R/ffmpeg.R:4718`)
       states that a later derived-output verb with more than one input column
       must compare each row's whole input tuple, not one column, and no longer
       promises such a verb inherits this wording. The function's formals and
       body are unchanged.
-- [ ] AC5: No abort rendering changes except AC2's. Every wording expectation in
+- [x] AC5: No abort rendering changes except AC2's. Every wording expectation in
       `test-input-path-front-door.R`, `test-contradiction-front-door.R`,
       `test-na-value-guards.R` and `test-front-door-ordering.R` passes with its
       expected string unedited: `git diff` over those four files against the
       merge-base deletes no expectation line.
-- [ ] AC6: Every exported call that can hand a non-flag to a flag guard
+- [x] AC6: Every exported call that can hand a non-flag to a flag guard
       refuses it on this ref, naming the flag. Membership is derived, never
       listed: the exports transitively reaching AC2's two predicates come
       from `getNamespaceExports()` and `tm_call_graph()`'s parsed-call-node
@@ -80,7 +80,7 @@ the candidate row's claim about it is corrected in the same commit.
       column. Non-scalar values are out of the domain, since in a `jobs`
       column length is row count. Whether these renderings are unchanged from
       the merge-base is AC5's `git diff`, not this criterion's.
-- [ ] AC7: `Rscript -e 'devtools::test()'` clean; `Rscript -e
+- [x] AC7: `Rscript -e 'devtools::test()'` clean; `Rscript -e
       'devtools::check()'` 0 errors, 0 warnings; `devtools::document()`
       produces no diff.
 
@@ -150,3 +150,100 @@ the candidate row's claim about it is corrected in the same commit.
 ## Decisions
 
 ## Review
+
+Fresh evidence, 2026-08-28, on `m081-unchecked-flag-and-second-copy` at `b38fd76`
+against merge-base `origin/master`. PR #85 (draft while this ran).
+
+**AC1 — the walk returns nothing, and discriminates.** `tm_check_predicates()`
+walks 30 `check_*` functions out of the installed namespace;
+`unchecked_flag_guards()` flags 0 of them. Membership is the walk's: the domain
+is read from `asNamespace()`, and no list names or exempts a predicate. Positive
+controls in `test-na-value-guards.R` pass on the same code path: the three
+planted operator forms (`!flag`, `flag &&`, `flag ||`) are each flagged naming
+`flag`, the check-after-branch control is flagged too (fixing "first" as
+positional), and `!is.null(flag)`, the check-first predicate and the unbranched
+second formal `n` are all left alone.
+
+**AC2 — both flagged predicates now name their own flag, all four types.**
+Measured on this ref and on the merge-base, called directly. Merge-base: all
+four `na_values()` types on both predicates raise `simpleError` — `missing value
+where TRUE/FALSE needed` for `NA`/`NA_integer_`/`NA_real_`, and `invalid
+argument type` / `invalid 'x' type in 'x && y'` for `NA_character_`. This ref:
+all eight raise `rlang_error` reading `` `reencode` must be `TRUE` or `FALSE`,
+not … `` and `` `resize` must be `TRUE` or `FALSE`, not … ``, the trailing
+clause differing per type. The guards' own contradiction aborts and legal calls
+are unchanged.
+
+**AC3 — one `file.access` site, both ends reaching it.** `tm_call_graph()`'s
+parsed-call-node walk over the installed namespace (235 nodes) returns exactly
+one caller of `file.access`: `unreadable_paths`. The same walk run over the
+merge-base sources returns two — `check_batch_inputs` and `check_paths_readable`
+— so the assertion is red there and green here. `tm_reaches()` confirms both
+`check_paths_readable` and `check_batch_inputs` reach `unreadable_paths`. The
+predicate is non-aborting (it returns the unique unreadable paths; a factor
+carrier is coerced at this site). `check_batch_inputs()` still asks each carrier
+column separately, and `test-input-path-front-door.R` — including the M62 F2/N3
+union sweep that names both bad carriers in one call — is green with no
+expectation edited.
+
+**AC4 — the comment says what is inherited and what is not; the function is
+untouched.** `deparse()` of `reject_duplicate_inputs` on this ref is identical
+to `deparse()` of the merge-base definition, so formals and body are unchanged.
+The rewritten comment states that the ORDER is general and a fourth verb
+inherits it, that this WORDING is not — it reads `jobs$input` by name — and that
+a derived-output verb with more than one input column must compare each row's
+whole input tuple; the "so a verb added later inherits this wording" promise is
+gone. D059 is cited for the refused parameterization, D057 for the order.
+
+**AC5 — no expectation line deleted.** `git diff origin/master...HEAD` over
+`test-input-path-front-door.R`, `test-contradiction-front-door.R`,
+`test-na-value-guards.R` and `test-front-door-ordering.R` deletes 0 lines. All
+four run green with their expected strings unedited: 1336, 353, 146 and 245
+passing, 0 failures, 0 errors, 0 warnings, 0 skips.
+
+**AC6 — every exported route refuses a non-flag, in its own spelling.**
+`flag_guard_verbs()` derives four members from `getNamespaceExports()` plus
+`tm_call_graph()`: `compare_videos`, `compare_videos_batch`, `segment_video`,
+`segment_video_batch`. `flag_guard_specs()` declares 6 delivery forms across
+them; the sweep runs 6 scalar value forms (the four `na_values()` types, `1L`,
+`"yes"`) against each, and every one signals an `rlang_error` naming the flag as
+`` `resize` ``/`` `reencode` `` on an argument route and as `resize column`/
+`reencode column` on a column route. All three guard clauses hold: no member
+lacks a spec, no spec lacks a member, and the member set is non-empty. Column
+carriers are derived from each verb's own body literals rather than declared.
+The whole file is green (1336 passing).
+
+**AC7 — toolchain clean.** `Rscript -e 'devtools::test()'`: 0 failures, 8090
+passing, 12 warnings, 5 skips (the warning count is unchanged from the pre-T4
+run). `Rscript -e 'devtools::check()'`: `Status: OK` — 0 errors, 0 warnings,
+0 notes, 2m53s. `devtools::document()` produces no diff (`git status` after the
+run shows only this milestone file, which review is writing).
+
+### Consistency gate
+
+Universal cairn-file checks: `cairn_validate.py` exits 0 — all 16 checks PASS,
+all 7 advisories OK; `release window` did not fire. No `DESIGN.md` principle
+changed (`Principles touched: —`, and the diff does not touch `DESIGN.md`), so
+`cairn_impact.py` is skipped.
+
+Toolchain checks, from the `r-package` profile's `consistency-gate` slot:
+`devtools::document()` no diff; `NAMESPACE`, `man/` and `data/` unchanged
+against the merge-base, so no generated file was hand-edited; `README.Rmd` and
+`README.md` untouched, nothing to re-knit; `pkgdown::check_pkgdown()` reports no
+problems; no new top-level files, and `check()` raises no `.Rbuildignore` NOTE;
+`devtools::check()` clean (0/0/0). The `NEWS.md` clause: the declared changelog
+is unchanged against the merge-base, deliberately — D059 records that every
+exported verb reaching either guard already refused a non-flag at its own
+`rlang::check_bool()`, so the repair changes nothing a caller can observe. AC6's
+sweep is the measurement backing that, not a judgment call.
+
+### Independent review
+
+Three fresh-context reviewers, none having seen the implementation, each on a
+distinct evidence base. The diff touches executable surface (`R/`, `tests/`), so
+the full three-lens fan-out ran.
+
+- 2026-08-28: review in progress. Master had not moved; branch pushed and draft
+  PR #85 opened. All seven criteria verified with fresh evidence and ticked;
+  consistency gate clean. Blame-history and prior-review lenses reported no
+  findings. The diff-bug lens and CI are still outstanding.

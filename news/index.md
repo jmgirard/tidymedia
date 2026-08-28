@@ -4,6 +4,18 @@
 
 ### Requirements
 
+- The dependency versions tidymedia declares are now measured rather
+  than assumed: the package’s test suite has been run against the exact
+  version of each package `Imports` names. One of them was wrong.
+  `rlang` is now `(>= 1.2.0)`, up from `1.1.0`: tidymedia checks its
+  arguments with
+  [`rlang::check_string()`](https://rlang.r-lib.org/reference/check_type_scalar.html),
+  `check_bool()` and their siblings in 132 places, and rlang first
+  exports those functions in 1.2.0 — so on an earlier rlang the
+  package’s verbs failed at their own front doors. The other eight
+  declared floors were exercised at the version they name and stand
+  unchanged.
+
 - tidymedia now states the R version it needs: `R (>= 4.1.0)`. An
   installer on an older R refuses the package and says why, instead of
   installing something whose help-page examples will not run. That

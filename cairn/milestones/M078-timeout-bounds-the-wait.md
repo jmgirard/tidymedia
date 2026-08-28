@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m078-timeout-bounds-the-wait`
+- **Branch/PR:** `m078-timeout-bounds-the-wait` / https://github.com/jmgirard/tidymedia/pull/82
 
 ## Goal
 
@@ -131,3 +131,148 @@ the measurement and naming M69 return 2's falsified premise.
 ## Decisions
 
 ## Review
+
+Fresh evidence, 2026-08-28, on the branch at `18ec465` (PR #82). `master` had
+not moved since the branch was cut (`origin/master` = `6bcf477`, an ancestor of
+HEAD), so nothing was merged in and no evidence is stale.
+
+- **AC1 — verified.** `grep -rni timeout R/ man/ README.Rmd NEWS.md vignettes/`
+  re-run at review: **202 hits** (R/ 140, man/ 40, NEWS.md 22, README.Rmd 0,
+  vignettes/ 0). The count is above T4's pre-correction 195 because the
+  corrections themselves add occurrences. Triage re-run at review over the whole
+  202: no surviving hit states or implies the limit terminates the spawned
+  program. The remaining termination words are all correct as written — the
+  three-signal escalation (`R/timeout.R:73`, `R/tidymedia-package.R:97`, their
+  `man/` mirrors, `NEWS.md:65`), the explicit denial that termination is
+  promised (`R/timeout.R:298`, `R/tidymedia-package.R:105`), and the
+  partial-output paragraph's "the killed run"
+  (`R/tidymedia-package.R:74,:77`), which describes the case where the program
+  did die. The surviving "bound"/"bounded" hits are titles, the per-call vs
+  session framing, and the sequential-vs-parallel parity claim — none a
+  termination promise. Corrections are in roxygen with `man/` regenerated:
+  `devtools::document()` leaves `man/` and `NAMESPACE` clean (AC5), which no
+  hand-edited `.Rd` would survive.
+- **AC2 — verified.** `NEWS.md:86-101`, inside the `# tidymedia (development
+  version)` heading at line 1 (the next `# ` heading is `tidymedia 0.1.0` at
+  line 1382). It opens "A timeout limit can be exceeded, and by how much is now
+  measured", says the limit is how long tidymedia waits and not how long the
+  program may run, gives the escalation and the up-to-40-seconds figure with the
+  42.0 s measurement, and says R does not promise the program dies.
+  `grep -nE 'M[0-9]{2,3}\b' NEWS.md` returns nothing, so no milestone number.
+- **AC4 — verified.** `NOT_CRAN=true Rscript -e 'devtools::test()'`:
+  **FAIL 0 | WARN 12 | SKIP 5 | PASS 6692**. The 12 warnings are the
+  pre-existing dropped-audio-track messages, the 5 skips the nvenc and
+  video-codec hardware gates; neither is touched here.
+  `Rscript -e 'devtools::check()'`: **Status OK — 0 errors, 0 warnings, 0
+  notes**, 3m 22.1s. No NOTE to justify.
+- **AC5 — verified.** `Rscript -e 'devtools::document()'` exit 0, and
+  `git status --porcelain` afterwards shows only this milestone file (edited by
+  review). `man/` and `NAMESPACE` are unchanged, so no `.Rd` was hand-edited.
+- **AC3 — verified, with the measurement re-run at review rather than read off
+  the implementation's record.** The entry is `cairn/DECISIONS.md` D056. Taking
+  its four required clauses in turn:
+  - *Platform triple, set limit, observed elapsed.* D056 names
+    `tidymedia-floors:r443` — Ubuntu noble, aarch64, R 4.4.3, ffmpeg
+    6.1.1-3ubuntu5 — and gives a seven-case table at a 2 s limit. The whole grid
+    was re-run at review in that image
+    (`docker run --rm -v "$PWD":/pkg -w /pkg tidymedia-floors:r443 Rscript
+    data-raw/timeout-bound.R`), and the container header printed exactly that
+    triple. Re-measured against D056: A1 42.01 (42.00), A3 42.02 (42.02), A4
+    42.01 (42.02), B1 42.01 (42.03), B2 22.01 (22.01), C1 42.61 (42.41). A2 came
+    back 29.20 against D056's 22.01 on the grid run, which overlapped the host's
+    `devtools::check()`; re-run alone it gave **22.02**. Six of seven within
+    0.2 s first time, the seventh within 0.01 s once the host was quiet.
+  - *Whether the spawned program was still running when R returned.* Reproduced
+    case for case: dead in A1, A3, A4, B1, C1; **alive** in A2 (pid 33,
+    `sh -c trap '' INT TERM; …`) and B2 (pid 276, the blocked `ffmpeg`). The
+    script's own liveness control printed `finds-a-live-process=ok
+    clear-after-kill=ok` in all eight runs, so each verdict is readable.
+  - *What the number does to M69 return 2's premise.* D056 records it
+    **confirmed, not falsified** — the premise being that the Goal is "met by a
+    bounded 42 s exactly as by a bounded 2 s" — and states no replacement
+    mechanism, saying in terms that the rejection is untouched and belongs to
+    the milestone that swaps the mechanism. Consistent with the re-run: every
+    overrunning case lands on limit + 40 or limit + 20.
+  - *The three fixture files M077 excluded.* D056 names `test-with-timeout.R`,
+    `test-runtime-timeout.R` and `test-timeout-silence.R`, says what makes them
+    block (`local_blocking_input()` at `helper-timeout-sweep.R:308` builds a
+    `mkfifo` FIFO nobody writes to — verified in the file), and reports what
+    they did in the container. Re-run at review in the same image with
+    `NOT_CRAN=true`: **45.82 s / 267.82 s / 52.96 s, fail 0 error 0 skip 0**
+    (D056: 45.61 / 267.30 / 52.11, exit 0). None wedged.
+
+### Consistency gate
+
+Universal cairn-file checks: `cairn_validate.py` exit 0, all 16 PASS and 7
+advisory OK — including `coverage complete`, `binding criteria` and
+`release window` (not fired, so nothing to park at the close). No `DESIGN.md`
+principle changed (`Principles touched: —`), so `cairn_impact.py` is skipped.
+
+Toolchain checks, from the `r-package` profile's `consistency-gate` slot:
+`devtools::document()` no diff; `NAMESPACE`/`man/`/`data/*.rda` regenerate
+clean, so nothing generated was hand-edited; `README.Rmd` is untouched by the
+diff, so no re-knit is due; `pkgdown::check_pkgdown()` — "No problems found";
+`NEWS.md` carries the user-visible entry with no milestone number; no new
+top-level file (both new files are under the already-`.Rbuildignore`d
+`data-raw/`, `^data-raw$` at `.Rbuildignore:15`), and `check()` reports 0
+notes; `devtools::check()` clean.
+
+### Independent review
+
+Delegation to fresh-context subagents is disabled for this session, so the
+three lenses were run in-session against the diff, `git log`/`blame`, and the
+archived review record. This line states that limitation rather than claiming
+readers that did not run; the implement phase records the same limitation for
+its criteria audit. Five findings, ranked.
+
+**F1 [O] — `?tidymedia` still says the limit killed the batch jobs, and its
+NEWS twin was corrected in this same diff.** `R/tidymedia-package.R:53-54`
+(mirror `man/tidymedia-package.Rd:64-65`) reads "warn once at the end of the
+run saying how many jobs the limit killed". The identical sentence at
+`NEWS.md:47-48` was changed by this branch to "how many jobs the limit gave up
+waiting for". It also misreports the code: the warning at `R/ffm_batch.R:192`
+says "{ran_out} job{?s} timed out and did not run to completion". So the topic
+this milestone's Goal names still tells the reader the limit killed the jobs,
+forty lines above the new paragraph saying the limit promises no such thing.
+Not an AC1 failure: neither line carries the string `timeout`
+(`:51` has "timed out"), so neither is a hit of the sweep AC1 quantifies over,
+and the return floor is not reached.
+
+**F2 [O] — D056's falsifier clause is met by D056's own data.** The entry ends
+"Falsified by an overrun above limit + 40 s on any platform", and its own C1 row
+is 42.41 s under a 2 s limit — an overrun of 40.41 s. The review re-run gave
+42.61 s. The excess is the package's own frame around the wait (C1 goes through
+`with_timeout(ffmpeg())`), not a different escalation, which is plainly what the
+clause means; as written it records the entry as falsified on arrival. D056 is
+on this branch and unmerged, so tightening the clause before the squash is not
+an edit to history.
+
+**F3 [S/blame] — the measurement script's summary table is headed with a number
+it does not hold.** `data-raw/timeout-bound.R:353` prints the column as
+`elapsed(s)` and fills it with `wall`, the driver's wall clock including the
+child R process's startup — the review run's summary reads A1 44.20 where the
+case block reads `observed elapsed: 42.01`. A future reader quoting the summary
+gets numbers ~2.2 s above the ones D056 quotes. Instrument-only: the Scope
+section states that no criterion binds a property of the script.
+
+**F4 [O] — ragged rewrap in `NEWS.md`.** The edits left a three-word line at
+`NEWS.md:48-49` ("The dropped-track / check behind") and a line past the
+paragraph's width at `:127`. Renders identically; a formatter's business.
+
+**F5 [O] — two comment lines pushed past 80 columns.** `R/ffm_manifest.R:116`
+(84) and `R/ffprobe.R:248` (83), both from the wording change. The repo already
+carries such lines on unmodified rows in the same files, so no stated convention
+is broken.
+
+**[S/prior-review] — no regression of a prior review's lesson.** The GitHub
+thread surface is empty (`gh api repos/jmgirard/tidymedia/pulls/comments` →
+0 comments), as M91 measured for this repo, so the evidence is the archived
+`## Review` sections on the touched files: M46, M55, M69, M70, M071, M072,
+M073, M074, M077. The nearest lessons are M46's (never key a guard on R's
+translated warning text) and M70's O7 (a guard keyed on cli-FORMATTED output):
+`is_timeout()` still keys on `status == 124L` and the new guard at
+`test-runtime-timeout.R:556-562` greps `.Rd` and `NEWS.md` SOURCE text, so
+neither is reintroduced. M69's disclosure retirement (D049) is not undone. The
+new guard does inherit the standing guard's topic-blindness — it reads
+`?tidymedia`'s Rd and cannot tell which topic satisfied it — which the test's
+own comment states rather than hides. No finding.

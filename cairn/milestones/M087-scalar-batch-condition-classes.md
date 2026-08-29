@@ -104,7 +104,7 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
       (lines 41, 63) in place so users meet one name. Gate against M075's
       fall-through — the `if (two_pass)` block in `normalize_audio()` does not
       return — so nothing signals twice. Update every test asserting either name.
-- [ ] **T3.** Add the stated reasons AC2 and AC3 require to
+- [x] **T3.** Add the stated reasons AC2 and AC3 require to
       `?normalize_audio_batch` and `?separate_audio_video_batch`, the latter
       naming what the per-row result does record. While in the two normalize
       topics, add one sentence on the silence asymmetry (RR05 B2).
@@ -146,6 +146,8 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
 - 2026-08-29: T2 + T6 done in ONE commit, a minor task-ordering amendment: T6's "red before trusted" evidence has to be taken against pre-milestone code, so the new assertions were written and run first (three red: the scalar exit site, the scalar unparseable site, the batch site each escaped a `tidymedia_loudnorm_no_measurement` handler), then T2's code landed and turned them green.
 - 2026-08-29: T2 — `tidymedia_loudnorm_no_measurement` applied at `R/loudnorm_two_pass.R:112` (alone, no `tm_status`), `:151` (with `tidymedia_ffmpeg_exit`, keeping `tm_status`) and `:253` (alone, keeping `tm_rows`/`tm_row_status`); `tidymedia_loudnorm_analysis` renamed out of NEWS.md, three roxygen sites, their `man/` counterparts and eight test lines. M075's fall-through checked: `run_loudnorm_analysis()` aborts, so the non-returning `if (two_pass)` block cannot reach a second signalling site.
 - 2026-08-29: T6 — full class-vector identity assertions added at all four sites plus the silence boundary; M085's flat-vector assertion at `test-ffmpeg-exit-condition.R:52` corrected, since M087 deliberately makes that site carry two classes. `devtools::test()`: 0 failures, 8353 passing, 5 skips (all nvenc-absent).
+
+- 2026-08-29: T3 — `?normalize_audio_batch` now states the abort carries no `tm_status` and is not `tidymedia_ffmpeg_exit` because a batch mixes causes (rows that exited zero included); `?separate_audio_video_batch` now states the warning carries no exit status because `ffm_batch()`'s `run_one()` returns `list(success =, timed_out =)` and discards the condition (verified at `R/ffm_batch.R:141-147`). The silence asymmetry is stated from both sides in `?normalize_audio` and `?normalize_audio_batch`. Four Rd-text assertions added, each confirmed absent from the pre-T3 `man/` files.
 
 ## Decisions
 

@@ -474,3 +474,32 @@ test_that("the batch separation warning carries the event class and no exit", {
   expect_false(inherits(w, "tidymedia_ffmpeg_exit"))
   expect_null(w$tm_status)
 })
+
+test_that("the two batch topics state why their diagnostic has no exit status", {
+  # AC2/AC3, the documented halves. Each reason is a claim about the code's
+  # behaviour, so it is locked here rather than left to prose drift: the
+  # loudnorm batch abort has no single status because a batch mixes causes, and
+  # the separation batch warning has none because the runner records whether a
+  # row succeeded, not how FFmpeg exited.
+  rd <- rd_sources()
+  skip_if(is.null(rd), "no Rd source available")
+  pick <- function(topic) {
+    hit <- rd[grepl(topic, names(rd), fixed = TRUE)]
+    skip_if(length(hit) == 0, paste("no Rd for", topic))
+    paste(hit, collapse = "\n")
+  }
+
+  nb <- pick("normalize_audio_batch.Rd")
+  expect_match(nb, "carries no single exit status", fixed = TRUE)
+  expect_match(nb, "rows that exited zero", fixed = TRUE)
+
+  sb <- pick("separate_audio_video_batch.Rd")
+  expect_match(sb, "carries no exit status", fixed = TRUE)
+  expect_match(sb, "success", fixed = TRUE)
+  expect_match(sb, "not \\emph{how} FFmpeg exited", fixed = TRUE)
+
+  # The silence asymmetry, stated from both sides (RR05 B2).
+  expect_match(pick("normalize_audio.Rd"), "does not abort on a silent row",
+               fixed = TRUE)
+  expect_match(nb, "aborts on a silent", fixed = TRUE)
+})

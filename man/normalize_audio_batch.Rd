@@ -79,16 +79,24 @@ five measured values are surfaced on the result as columns \code{measured_I},
 and readable inputs), even when \code{run = FALSE}. If any row's analysis
 fails or yields no parseable measurement, the call aborts — naming the
 offending row(s) — before any correction command is built. That abort is
-classed \code{tidymedia_loudnorm_no_measurement} and carries the same row numbers
-on \code{tm_rows}, alongside \code{tm_row_status}: each row's FFmpeg exit
-status, or \code{NA} where the row exited zero but printed nothing
-parseable. \strong{Silent}
+classed \code{tidymedia_loudnorm_no_measurement} — the same class the scalar
+\code{\link{normalize_audio}} raises for this event — and carries the same
+row numbers on \code{tm_rows}, alongside \code{tm_row_status}: each row's
+FFmpeg exit status, or \code{NA} where the row exited zero but printed
+nothing parseable. It carries no single exit status on \code{tm_status},
+and is not classed \code{tidymedia_ffmpeg_exit}, because it also fires for
+rows that exited zero: a batch can mix causes, so there is no one number to
+report. The scalar form, where exactly one run failed, does carry both.
+\strong{Silent}
 rows are the exception: a silent input (analysis loudness \code{-inf})
 cannot be normalized to a target, but one silent row does not abort the
 batch — the non-silent rows are normalized, the silent rows are marked in a
 logical \code{silent} column (with \code{success = FALSE} and no output
-written), and a warning names them. The single-pass default touches no
-binary under \code{run = FALSE}.}
+written), and a warning names them. This is where the batch form and the
+scalar form differ: \code{\link{normalize_audio}} aborts on a silent
+input, because one silent input is the whole call, while here the other
+rows still have work to do. The single-pass default touches no binary under
+\code{run = FALSE}.}
 
 \item{audio_stream}{The 0-based index of the audio track to normalize, counted \emph{among that row's input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) normalizes the \strong{first} audio track. The argument applies to every row lacking an \code{audio_stream} column; an \code{NA} cell in that column means the same as \code{NULL} for that row, rather than falling back to the argument. The first-track family reads \code{NULL} this way -- \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus their \code{_batch} siblings. The every-track family keeps them all instead: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus theirs. This verb reads \code{NULL} the first-track way because the two-pass analysis produces one measurement per audio track while the correction takes a single set, so normalizing several tracks at once would apply one track's measurements to all of them. Under \code{two_pass = TRUE} the analysis pass measures this same track. Only the named track reaches the output, and no video does -- whatever the container, so an output name that keeps a video extension yields a video file carrying audio alone. An input with no audio at all is an FFmpeg error. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 

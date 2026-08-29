@@ -2199,7 +2199,10 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #'   binary under \code{run = FALSE}. If the input is \strong{silent}, the
 #'   analysis pass measures its loudness as \code{-inf}; normalizing silence to
 #'   a target is undefined, so two-pass aborts with a clear error (the
-#'   single-pass default leaves silence untouched).
+#'   single-pass default leaves silence untouched). The batch form differs here:
+#'   \code{\link{normalize_audio_batch}} does not abort on a silent row — it
+#'   sets that row aside, marks it in a \code{silent} column, and normalizes the
+#'   rest.
 #' @param audio_stream `r audio_stream_param("normalize", "normalizes", "first", extra = audio_stream_extras$normalize_one_track)`
 #' @param run A logical: run the (correction) command through FFmpeg
 #'   (\code{TRUE}, default) or return the compiled command without running it
@@ -4390,16 +4393,24 @@ derive_normalized_names <- function(input) {
 #'   and readable inputs), even when \code{run = FALSE}. If any row's analysis
 #'   fails or yields no parseable measurement, the call aborts — naming the
 #'   offending row(s) — before any correction command is built. That abort is
-#'   classed \code{tidymedia_loudnorm_no_measurement} and carries the same row numbers
-#'   on \code{tm_rows}, alongside \code{tm_row_status}: each row's FFmpeg exit
-#'   status, or \code{NA} where the row exited zero but printed nothing
-#'   parseable. \strong{Silent}
+#'   classed \code{tidymedia_loudnorm_no_measurement} — the same class the scalar
+#'   \code{\link{normalize_audio}} raises for this event — and carries the same
+#'   row numbers on \code{tm_rows}, alongside \code{tm_row_status}: each row's
+#'   FFmpeg exit status, or \code{NA} where the row exited zero but printed
+#'   nothing parseable. It carries no single exit status on \code{tm_status},
+#'   and is not classed \code{tidymedia_ffmpeg_exit}, because it also fires for
+#'   rows that exited zero: a batch can mix causes, so there is no one number to
+#'   report. The scalar form, where exactly one run failed, does carry both.
+#'   \strong{Silent}
 #'   rows are the exception: a silent input (analysis loudness \code{-inf})
 #'   cannot be normalized to a target, but one silent row does not abort the
 #'   batch — the non-silent rows are normalized, the silent rows are marked in a
 #'   logical \code{silent} column (with \code{success = FALSE} and no output
-#'   written), and a warning names them. The single-pass default touches no
-#'   binary under \code{run = FALSE}.
+#'   written), and a warning names them. This is where the batch form and the
+#'   scalar form differ: \code{\link{normalize_audio}} aborts on a silent
+#'   input, because one silent input is the whole call, while here the other
+#'   rows still have work to do. The single-pass default touches no binary under
+#'   \code{run = FALSE}.
 #' @param audio_stream `r audio_stream_param("normalize", "normalizes", "first", batch = TRUE, extra = audio_stream_extras$normalize_one_track)`
 #' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
 #'   default) or only compile them for inspection (\code{FALSE}). Under
@@ -5808,6 +5819,14 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #' silently otherwise; it never runs under \code{run = FALSE} and never changes
 #' any compiled command. Suppress it with \code{suppressWarnings(classes =
 #' "tidymedia_multitrack_separation")}.
+#'
+#' The warning names the same event as \code{\link{separate_audio_video}}'s
+#' error and answers to the same class, but it carries no exit status: no
+#' \code{tm_status} field, and no \code{tidymedia_ffmpeg_exit} class. The batch
+#' runner records, per row, \emph{whether} the row succeeded — the
+#' \code{success} column — not \emph{how} FFmpeg exited, so by the time this
+#' warning is assembled the exit number is gone. Catch a specific row's exit
+#' status with the scalar verb instead.
 #' @family task verb functions
 #' @family audio selection functions
 #' @examples

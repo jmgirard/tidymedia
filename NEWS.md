@@ -553,6 +553,18 @@
 
 ## Bug fixes
 
+* A failed audio output no longer costs you the video in
+  `separate_audio_video()`. The verb compiles two commands and runs the audio
+  one first; when that command failed, the call aborted before the video
+  command ran at all, so a caller whose multi-track input would not fit the
+  requested audio container lost the video half too and had to run the whole
+  separation again. The video command now runs either way. The audio failure is
+  still what aborts the call, and its error gains one line — `The video output
+  was written to 'video.mp4'.` — so it is clear the video half survived. If the
+  video command fails as well, both outputs are absent, that line is not shown,
+  and the audio failure is still the error you get.
+  `separate_audio_video_batch()` is unchanged: it already ran both rows.
+
 * A missing value in a size, position or rate argument is now refused instead
   of reaching FFmpeg. `crop_video(f, o, width = NA_real_, height = 100)` used
   to fail with R's own `missing value where TRUE/FALSE needed`, which names

@@ -580,7 +580,7 @@ test_that("a failed audio command still leaves the video file behind", {
   expect_s3_class(cnd, "error")            # AC1: the call still aborts
   expect_true(file.exists(video))          # AC1: the video was written anyway
   expect_gt(file.size(video), 0)
-  expect_equal(nrow(probe_video(video)), 1L)
+  expect_equal(nrow(probe_video(infile = video)), 1L)
 })
 
 test_that("the enriched abort keeps its class vector and status", {

@@ -48,10 +48,17 @@ test_that("the absorber partition is the reaching functions that can swallow", {
   # functions installing a handler from R's own condition API in their own body,
   # so they are where a silence can come from. A new one appearing here without
   # a guard below is the thing to look at.
+  #
+  # separate_audio_video() joined the partition in M088: it HOLDS the audio
+  # run's condition so the video command can still run, and holds the video
+  # run's own so the audio failure is the one reported. A held timeout is not a
+  # swallowed one -- the audio condition is re-raised unchanged -- and the guard
+  # for that is this file's abort half, which requires this verb's forced
+  # timeout to reach the caller carrying `tidymedia_timeout`.
   expect_identical(
     tm_timeout_absorbers(),
     c("capture_version", "count_audio_streams", "ffm_batch", "ffm_run",
-      "run_separation_audio", "verify_media")
+      "run_separation_audio", "separate_audio_video", "verify_media")
   )
 })
 
@@ -382,8 +389,12 @@ test_that("the abort half of the grid names the class D047 promises", {
   # bare error, which is what this pins.
   dir <- withr::local_tempdir()
   specs <- tm_timeout_call_specs(dir)
+  # separate_audio_video() is here from M088 on: it is the one member that
+  # catches a timeout and re-raises it, so "aborted" alone would pass on a
+  # rebuilt bare error and the class is what says the held condition is the
+  # condition the caller gets.
   aborting <- c("extract_audio", "ffm_run", "ffmpeg", "ffprobe", "mediainfo",
-                "verify_media")
+                "separate_audio_video", "verify_media")
   for (name in aborting) {
     res <- tm_force_timeout(name, specs[[name]])
     expect_s3_class(res$error, "tidymedia_timeout")

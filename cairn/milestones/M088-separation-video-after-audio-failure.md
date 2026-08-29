@@ -73,27 +73,32 @@ Layer 1's failed-output removal → unchanged, relied on here (D046).
 
 ## Tasks
 
-- [ ] T1: Tests first, in `tests/testthat/test-separate-av-multitrack.R`: the
+- [x] T1: Tests first, in `tests/testthat/test-separate-av-multitrack.R`: the
       AC1 path (multi-track input into a single-stream audio container, valid
       `videofile` at a fresh path), the AC3 path (same, plus an unknown
       `video_codec`), and the AC4 message assertions. Record `master`'s class
       vector and `tm_status` for AC2's two branches before touching `R/`.
-- [ ] T2: Reorder `separate_audio_video()`'s `run = TRUE` block
+- [x] T2: Reorder `separate_audio_video()`'s `run = TRUE` block
       (`R/ffmpeg.R:938-945`): capture the condition `run_separation_audio()`
       raises, run `ffm_run(video)`, then raise.
-- [ ] T3: The both-fail branch — the video run's own condition is discarded
+- [x] T3: The both-fail branch — the video run's own condition is discarded
       after Layer 1 has removed what that run wrote (D046), and the captured
       audio condition is the one raised.
-- [ ] T4: Raise the captured condition with the AC4 bullet appended, preserving
+- [x] T4: Raise the captured condition with the AC4 bullet appended, preserving
       the class vector and `tm_status` exactly (AC2); route `videofile` through
       a cli field so a brace-bearing path cannot be interpolated (M44's lesson).
-- [ ] T5: Roxygen "When the audio output fails" section and `@return`;
+- [x] T5: Roxygen "When the audio output fails" section and `@return`;
       `devtools::document()`; `NEWS.md` entry. Prose derived from an executed
       call, never composed.
 - [ ] T6: `devtools::test()` and `devtools::check()`; confirm the AC6 batch
       sites are absent from the diff.
-- [ ] T7: Append the D-entry recording the run-order choice and its falsifier;
+- [x] T7: Append the D-entry recording the run-order choice and its falsifier;
       narrow the ROADMAP candidate row to its two remaining halves.
+- [x] T8 (discovered): the new handler makes `separate_audio_video()` a member
+      of the derived timeout-absorber partition, so
+      `tests/testthat/test-timeout-silence.R` records it there and adds it to
+      that file's abort half, which requires its forced timeout to reach the
+      caller still carrying `tidymedia_timeout`.
 
 ## Work log
 
@@ -104,6 +109,10 @@ Layer 1's failed-output removal → unchanged, relied on here (D046).
 - 2026-08-29: plan gate chose raising the audio condition alone in the both-fail case over naming both failures; one message correct across every combination of two failures is more surface than the case earns. Falsified by a report of a caller who could not tell the video command had also failed.
 - 2026-08-29: plan gate chose keeping audio-first ordering over swapping to video-first; swapping changes which command runs first on every successful call too. Falsified by a failure whose diagnosis depends on the video command having already run.
 - 2026-08-29: implement gate chose appending one formatted bullet to the audio condition's own body over rebuilding the condition (the rebuild re-runs cli's formatter over already-formatted text, M44's brace trap, and copies fields by hand); and chose letting ANY audio-run failure fall through to the video command over only a non-zero FFmpeg exit (one rule to document, and the excluded causes are ones the video command fails on too).
+- 2026-08-29: T2-T4 landed — the audio run's condition is held, `ffm_run(video)` runs either way, and the held condition is re-raised with one formatted bullet appended to its body when the video was written; the both-fail branch discards the video condition. All six T1 tests green.
+- 2026-08-29: T8 (discovered sub-task, minor amendment): `devtools::test()` reddened the derived timeout-absorber pin — the new handler makes `separate_audio_video()` an absorber. Recorded there with why a held timeout is not a swallowed one, and added to the same file's abort half so its forced timeout must still carry `tidymedia_timeout`.
+- 2026-08-29: T5 roxygen `@return` and "When the audio output fails" section rewritten from two executed calls (the AC1 and AC3 messages, both read off a real run); `devtools::document()`; NEWS.md entry under Bug fixes.
+- 2026-08-29: T7 D065 appended; the M45-leftovers ROADMAP row narrowed to its two remaining halves.
 - 2026-08-29: T1 tests written first and confirmed red against unchanged `R/` — six new tests in `test-separate-av-multitrack.R`; `master`'s class vectors and `tm_status` for AC2's two branches recorded in the file's own comment (ffmpeg 9.0.1, macOS arm64, status 234).
 
 ## Decisions

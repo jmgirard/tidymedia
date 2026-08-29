@@ -106,7 +106,7 @@ there; NEWS.
 
 ## Tasks
 
-- [ ] T1: Add `class = "tidymedia_ffmpeg_exit"` and `tm_status =
+- [x] T1: Add `class = "tidymedia_ffmpeg_exit"` and `tm_status =
       as.integer(status)` to the abort at `R/ffm.R:1588-1595`, following the
       field convention `R/timeout.R:372` sets (`tm_program`, `tm_limit`); message
       text unchanged. The coercion is a no-op today — the attribute `system2()`
@@ -141,6 +141,7 @@ there; NEWS.
 - 2026-08-29: amendment gate adopted RR04's class name over the plan's `tidymedia_ffmpeg_error`, amending AC1, AC3, AC4 and AC6; widened AC6 to require the docs to name the `loudnorm` path and say what the status means when FFmpeg is signal-terminated; and added `R/tidymedia-package.R`'s condition-handling paragraph to Scope In. Coverage gains `AC2 → T5`; T1, T2, T5 and T6 took minor edits.
 - 2026-08-29: criteria audit ran in FULL mode (declared tier user-facing) over the amended wording, twice, each in a fresh-context [O] reader that did not author what it read. The first returned eight findings: T1 still naming the rejected class; AC1 constraining the class present rather than the class vector; AC6 omitting the `loudnorm` documentation clause; AC1's oracle testing value but not type; AC6's universal quantified over all shipped prose but enumerated four sites; AC3's domain being reads-of-the-condition, not lines-of-the-function; four line-number anchors T3's own edits invalidate; and an undefined field-absent case. All eight were fixed. The fixed wording re-entered with a second fresh reader, which returned seven more: T5's type probe was dead, because `system2()`'s `"status"` attribute is already integer (measured this session), so `as.integer()` could not be falsified; AC3 forbade the `inherits()` call it required; AC6 forbade the NEWS sentence describing the change and missed prose using neither search term (`R/ffmpeg.R:850`, shipped as `man/separate_audio_video.Rd`); AC1's oracle re-ran FFmpeg without pinning a fresh output; "no other `tidymedia_*` class" permitted an unprefixed parent; T5 varied form but not site; and the classed-but-fieldless return was unpinned. All seven were fixed at the user's selection; no criterion took a third pass.
 - 2026-08-29: RB04/RR04 archived; status back to in-progress.
+- 2026-08-29: T1 — `ffm_run()`'s non-zero-exit `cli_abort()` now passes `class = "tidymedia_ffmpeg_exit"` and `tm_status = as.integer(status)`; the message vector is byte-identical, only its indentation changed with the reformat. `devtools::test()`: 0 failures, 8223 passing, 5 skips.
 
 ## Decisions
 

@@ -1586,12 +1586,16 @@ ffm_run <- function(object, verify = NULL) {
   status <- attr(out, "status")
   if (!is.null(status)) {
     disposition <- remove_failed_output(output, object$overwrite, before)
-    cli::cli_abort(c(
-      "FFmpeg exited with status {status}.",
-      "i" = "FFmpeg's error output is printed above.",
-      disposition,
-      "i" = "The failing command was: {.code ffmpeg {ffm_compile(object)}}"
-    ))
+    cli::cli_abort(
+      c(
+        "FFmpeg exited with status {status}.",
+        "i" = "FFmpeg's error output is printed above.",
+        disposition,
+        "i" = "The failing command was: {.code ffmpeg {ffm_compile(object)}}"
+      ),
+      class = "tidymedia_ffmpeg_exit",
+      tm_status = as.integer(status)
+    )
   }
   if (!is.null(verify)) verify_output(object$output, verify)
   invisible(out)

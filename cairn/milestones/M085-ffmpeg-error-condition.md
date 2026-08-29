@@ -117,7 +117,7 @@ there; NEWS.
       field only; restate the comment blocks at `R/ffmpeg.R:650-660` and
       `776-778`; delete the wording-coupling test at
       `tests/testthat/test-separate-av-multitrack.R:132-146`.
-- [ ] T4: Tests for AC1, AC2, AC4 and AC5; run the existing multi-track suite.
+- [x] T4: Tests for AC1, AC2, AC4 and AC5; run the existing multi-track suite.
 - [ ] T5: Planted-defect run, one probe per axis the condition is free in:
       (a) drop `tm_status` from the T1 abort; (b) drop its class, keeping the
       field; (c) store the status as `as.character(status)`; (d) drop the class
@@ -144,6 +144,7 @@ there; NEWS.
 - 2026-08-29: T1 — `ffm_run()`'s non-zero-exit `cli_abort()` now passes `class = "tidymedia_ffmpeg_exit"` and `tm_status = as.integer(status)`; the message vector is byte-identical, only its indentation changed with the reformat. `devtools::test()`: 0 failures, 8223 passing, 5 skips.
 - 2026-08-29: T2 — the `loudnorm` analysis pass's abort now passes the same `class` and `tm_status` arguments; its rendered message is unchanged (both lines re-rendered under the new indentation and compared against the text above). `devtools::test()`: 0 failures, 8223 passing.
 - 2026-08-29: T3 — `ffmpeg_exit_status()`'s body is now `inherits(cnd, "tidymedia_ffmpeg_exit")`, a read of `cnd$tm_status`, and a `NULL` guard; no regex, no `conditionMessage()`. Both comment blocks (`R/ffmpeg.R:649-654` and the block above the helper) restate the class-and-field read, and the wording-coupling test in `tests/testthat/test-separate-av-multitrack.R` is deleted. `devtools::test()`: 0 failures, 8221 passing (2 fewer expectations, the deleted test's).
+- 2026-08-29: T4 — `tests/testthat/test-ffmpeg-exit-condition.R` adds four tests: AC1 (class vector `identical()`, integer scalar non-zero `tm_status`, and the value `identical()` to the `"status"` attribute of the same command re-spawned `run_program()`-style against a fresh `tempfile()`); AC2 (the `loudnorm` pass on an undemuxable input, caught by class alone, message text pinned `fixed = TRUE`); AC4 (all six cases, the missing-binary one caught from a real `run_program(NULL, ...)`); and AC5's missing-binary fall-open with `find_ffmpeg` mocked to `NULL`. 19 passing in the new file; full `devtools::test()` 0 failures, 8240 passing, 5 skips, the existing multi-track suite included.
 
 ## Decisions
 

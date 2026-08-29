@@ -116,7 +116,14 @@ _No `Driving RR:` on this milestone, so the projection-vs-outcome record no-ops.
 - Toolchain checks (`r-package` profile `consistency-gate` slot): the diff is six
   `cairn/` markdown files and touches no `R/`, `man/`, `NAMESPACE`, `README*`,
   `NEWS.md`, `_pkgdown.yml`, `DESCRIPTION`, `tests/` or `data-raw/` path, and adds
-  no new top-level file. Run anyway: <PLACEHOLDER_TOOLCHAIN>
+  no new top-level file. Run anyway:
+  `devtools::document()` exits 0 and leaves `git status --porcelain` empty (no
+  diff, so `NAMESPACE`/`man/` are not hand-edited); `pkgdown::check_pkgdown()`
+  reports "No problems found"; `devtools::check()` is clean — 0 errors,
+  0 warnings, 0 notes, with `testthat.R` OK in 110s. `NEWS.md` needs no entry:
+  the milestone changes only the repo's own `cairn/` tracking records and ships
+  no user-visible change. No new top-level file, so `.Rbuildignore` is unchanged
+  (`cairn/` is already covered by `^cairn$`).
 
 ### Independent fresh-context review
 
@@ -133,3 +140,4 @@ _No `Driving RR:` on this milestone, so the projection-vs-outcome record no-ops.
 - 2026-08-28: T3 — six partly-covered entries trimmed to their remainders; the FFmpeg-version, error-precedence and two-pass halves moved into the module as three new lines, the front-door-guard half dropped to `tests/testthat/test-builder-blame-front-door.R`, the blame-config half to `CLAUDE.md` and the timeout escalation figures to D056. `LESSONS.md` 19,372 bytes / 32 lines (under 20,000 / 50, 628 bytes of room); module 24,124 bytes / 49 lines (under its own 26,000 / 60). Partition re-checked: 27 / 17 / 0 both / 0 neither. `devtools::test()`: 0 failures, 8223 pass, 5 skip.
 - 2026-08-28: T4 — `Last hygiene check` stamp replaced with M084's figures: `LESSONS.md` 19,372 bytes / 32 lines, `false-greens.md` 24,846 bytes / 52 lines against its own < 26,000 / < 60 budget, `ROADMAP.md` 22,365 bytes / 45 lines. Both new `references/` pages carry provenance blocks; all 16 `cairn_validate` checks PASS, all 7 advisories OK.
 - 2026-08-28: review in progress — AC1–AC4 verified with fresh evidence and ticked; universal cairn gate clean (16/16 PASS, 7/7 advisories OK). `devtools::check()` and the fresh-context diff-bug reviewer still running; their results and the triage fill the two placeholders in the Review section.
+- 2026-08-28: review checkpoint — toolchain consistency gate clean (`devtools::check()` 0/0/0, `document()` no diff, `pkgdown::check_pkgdown()` no problems). Fresh-context diff-bug reviewer still running; its findings and triage remain the one open placeholder.

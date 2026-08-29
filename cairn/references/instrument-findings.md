@@ -1,7 +1,7 @@
 # Deferred review findings on the repo's own test instruments
 
-_Working artifact produced by M083. Holds the five grouped ROADMAP candidate
-rows that carried review findings about tidymedia's own **instruments** — the
+_Working artifact produced by M083. Holds the grouped ROADMAP candidate rows
+that carried review findings about tidymedia's own **instruments** — the
 guards, sweeps, grids and harnesses that measure the package — rather than
 about the runtime they measure. No finding here is a defect in shipped
 behavior; every one was logged rather than actioned at its own review._
@@ -24,11 +24,15 @@ of this repo's own records, not an external source. The five rows are the ones
 enumerates at that commit. Pagination: —.
 Extraction: copied verbatim from the frozen blob, which git still holds, so the
 text here is checkable against its origin at any time and there is nothing to
-re-verify against a moving source — observed 2026-08-28.
+re-verify against a moving source — observed 2026-08-28. The M086 section below
+was not part of that move: it was authored here on 2026-08-29 at M086's
+post-merge pass, first-hand from that milestone's review, and has no ROADMAP
+blob behind it — observed 2026-08-29.
 
 ## What is here
 
-Five rows, in the order `cairn/ROADMAP.md` carried them:
+Six sections. The first five are the rows `cairn/ROADMAP.md` carried, in its
+order; the sixth was added directly here at a later hygiene pass:
 
 - **M081 — the flag-guard sweep.** Filed by the M081 review.
 - **M079 — the floor-measurement harness under `data-raw/`.** Filed by the M079 review.
@@ -37,6 +41,9 @@ Five rows, in the order `cairn/ROADMAP.md` carried them:
 - **M62 / M63 / M64 / M080 — the input-guard blame grid.** Accumulated across
   four reviews; the row records which of its items were promoted out to M080
   and which stayed, and carries the §7 disposition the M080 post-merge pass made.
+- **M086 — the two-pass batch analysis grid.** Added 2026-08-29 by M086's
+  post-merge pass under its own §7 disposition; one finding kept, two pruned
+  and recorded as pruned.
 
 Each row below names its own finding ids; they are not restated here, so this
 list can never drift from them.
@@ -66,3 +73,37 @@ list can never drift from them.
 _Corrected M083: "the candidate row below" named the struck M080 SHIPPED-predicate row, which M083 deleted from `cairn/ROADMAP.md` after its promotion to M081. The row's own text is unchanged below._
 
 - The M62 and M63 review findings logged below the action threshold, grouped because they are about the same instrument rather than the runtime. **N1 is closed (M63, corrected here 2026-08-08):** it read that the AC1 site test matched `"does not exist"`, a string the multi-path abort's literal did not contain, so a copy of that branch alone would not turn it red — M63's uniform wording puts `can't be found or read` in both literals and the test is now red against either branch alone. Still open from M62: for the eleven `slots = 1L` verbs the grid's `all` form is still a one-row cell, so the only cell carrying two DISTINCT absent paths on a plain character `input` column is the factor-typed one (N2, 79); `check_batch_inputs(jobs, c("main", "overlay"))` builds its `arg` from every declared carrier, so one missing column of two renders "`jobs$main` and `jobs$overlay` name 1 file that does not exist", over-naming a carrier that is correct, and no reader checks attribution (N3, 68); and `reject_duplicate_outputs()` sits above the sweep, so NEWS's "one path typed wrong in twenty rows is one missing file" is observable only when outputs are explicit — with derived outputs the colliding-output guard reports first (N7, 74). M63 added four of its own on the same grid: the new `unreadable` form inherits N2's one-row-cell limit for the `slots = 1L` verbs (C1, 70); `tm_refused_input()` uses `rlang::catch_cnd()`'s default `classes = "condition"`, so a condition signalled before the abort would read as "not refused" (A5, 68); the site-uniqueness test now asserts only that the retired wordings are gone and fences no new third wording (A8, 68); and `input_guard_reword()` applies its substitutions to every message rather than keying on the `input` class, so an unrelated guard containing `"Missing:"` could be waved through as wording-only (A9, 68). Promote on the first report of one of these messages misleading a caller, or alongside the next milestone touching this grid. — added 2026-08-08, corrected + extended 2026-08-08 — M62 review round 2 N2/N3/N7 (79/68/74) and M63 review C1/A5/A8/A9 (70/68/68/68), all logged; M64's review adds five on the sibling blame instruments, all logged 2026-08-08: the mutation harness's controls-neutered check passes vacuously if Rscript crashes (F5, 78); the precedence crossing list omits S1 codec-token, S2 x-column and S6 outdir/interval-type crossings, none flip-bearing (F10, 72); the nvenc-ordering test carries no guard-liveness control (F11, 62); the baseline/precedence usage docs say `origin/master` where the ACs say merge-base, equal today (F7, 55); `check_dim(NA_real_)` crashes bare, pre-existing but now fronted (F4, 25). **Four items promoted to M080 on 2026-08-28** — the ones that are defects in SHIPPED behavior rather than in the instrument: N3's carrier over-naming, N7's derived-output duplication guard hiding the path, F4's bare `check_dim(NA_real_)` crash, and a fourth this plan's criteria audit found and the row never filed — `check_dim(NA_character_)` is ACCEPTED and compiles `crop=w=NA` into the command. The nine instrument findings stay here, unchanged: M62 N2, M63 C1/A5/A8/A9, M64 F5/F7/F10/F11. M080 adds a tenth, found by re-running the grid: `input_guard_blame_unexpected()` asserts the cells whose blame moved are exactly the unreadable ones, which was M63's claim about the M62->M63 ref pair, so on any later pair it reports all 30 unreadable cells and cannot be read as pass/fail (A10, 2026-08-28). **§7 disposition, 2026-08-28 (M080 post-merge):** the row was dispositioned rather than extended again — M080's four SHIPPED-predicate findings left it for the candidate row below, and six instrument findings joined it as the explicit extension the user chose. Those six: the `scalar_arg` and `column_type:stream` crossings gate verb membership on a `grepl(..., fixed = TRUE)` over deparsed bodies, so a reformat or a named-argument reorder drops a verb with no reader complaining, since `input_guard_uncovered()` re-derives from the same declaration (N6, 2026-08-28); `input_guard_error_crossing()`'s `scalar_arg` classifier matches a bad scalar `video_codec` that no crossing supplies, so that half can never fire and reads as coverage the grid lacks (N7); M080's Scope Out called the NA sweep's excluded set "the table-taking `check_*` predicates" when the filter excludes only >1 required formal or a formal named `jobs` — `check_regions()` and `check_region_values()` are table-taking and IN the domain, so the plan gate's own falsifier for that choice has already fired (F5); the sweep probes `f(vals[[i]])` positionally after deriving the required formal by name and discarding it, so a predicate whose required formal is not first would pass vacuously (F6); 12 of the 60 sweep cells accept all four NA types silently and assert nothing (F7); and the carrier-completeness reader derives its vocabulary from what the entries themselves declare, so a carrier omitted from every entry is undetectable (F8). — extended 2026-08-08, dispositioned 2026-08-28 — M62/M63 reviews; M64 review; D040; D041; M080
+
+
+## M086 — the two-pass batch analysis grid
+
+_Added 2026-08-29 at M086's post-merge hygiene pass, under the §7 disposition
+its ROADMAP row records. M086's review filed three instrument findings and
+only this one was kept; the other two were pruned, and what they were is
+recorded here so the pruning is legible rather than silent._
+
+- M086's AC4 grid asserts `tm_rows` and `tm_row_status` against a **mocked**
+  Phase 1: `tests/testthat/test-normalize-audios-two-pass.R:355-361` replaces
+  `run_loudnorm_analysis_batch()` wholesale, and the failed-row fixtures are
+  hand-built `structure("some ffmpeg error", status = 1L)`. Nothing in the
+  suite ties `assemble_measured()`'s expected input shape to what
+  `run_program()` actually returns, so a change to that return shape would
+  leave `tm_row_status` silently all-`NA` with the grid still green. M086's
+  review checked the real path by hand — a corrupt input gave `tm_rows = 1L`,
+  `tm_row_status = 183L` on ffmpeg 9.0.1 — so this is a coverage gap, not a
+  defect. Promote on a `tm_row_status` that is wrong or all-`NA` in a real
+  batch, or alongside the next milestone touching Phase 1's return contract.
+  — added 2026-08-29 — M086 review F9 (`[O]` 7)
+
+_Pruned at the same disposition, recorded rather than carried._ **(i)** The AC1
+loop's `expect_gt(length(unique(statuses)), 1L)`
+(`tests/testthat/test-ffmpeg-exit-condition.R:198`) rests on FFmpeg's exit
+numbering — 234 for a muxer refusal against 254 for a failed output open — and
+so could redden on correct code on a build that returns one number for both.
+Pruned because CI measured it green on **ffmpeg 6.1.1-3ubuntu5** as well as the
+local **9.0.1**, three majors apart, at commit d095a1d. **(ii)**
+`adts_refuses_multistream()` (same file, lines 135-147) calls
+`system2("ffmpeg", ...)` directly instead of through `find_ffmpeg()`, and its
+`tryCatch(..., error = function(e) 1L)` makes "could not run ffmpeg at all"
+read as "the muxer refuses". Pruned because it misfires only with FFmpeg
+configured off-PATH via `set_ffmpeg()`, which no supported path exercises.

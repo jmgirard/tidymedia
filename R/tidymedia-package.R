@@ -117,7 +117,7 @@
 #' failed audio output are all classed `tidymedia_ffmpeg_exit` and carry the
 #' exit status in their `tm_status` field. The batch two-pass analysis phase
 #' reports every offending row at once and fires for rows that exited zero as
-#' well, so it raises `tidymedia_loudnorm_analysis` instead, carrying `tm_rows`
+#' well, so it raises `tidymedia_loudnorm_no_measurement` instead, carrying `tm_rows`
 #' and `tm_row_status`.
 #'
 #' @section Session options:

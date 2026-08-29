@@ -1,11 +1,11 @@
 # M087: A diagnostic answers to the same class from the scalar verb and its batch sibling
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** — (RR05 is advisory; no binding criteria)
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m087-scalar-batch-condition-classes`
 
 ## Goal
 
@@ -98,7 +98,7 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
 - [x] **T1.** Settle the shared event class's name through the escalated review
       (`/milestone-brief`). Done 2026-08-29 by RR05; the answer and its reasoning
       are in `## Decisions` below. (RB tripwire: irreversible-api — discharged)
-- [ ] **T2.** Apply `tidymedia_loudnorm_no_measurement` at all three sites per
+- [x] **T2.** Apply `tidymedia_loudnorm_no_measurement` at all three sites per
       AC1 (`R/loudnorm_two_pass.R:151`, `:112`, `:253`), retiring
       `tidymedia_loudnorm_analysis`; edit the two unreleased `NEWS.md` entries
       (lines 41, 63) in place so users meet one name. Gate against M075's
@@ -120,7 +120,7 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
 - [ ] **T5.** Move `?tidymedia`'s closing `See vignette(…)` paragraph
       (`R/tidymedia-package.R:159-161`) above the `@section` tags so it renders
       outside every section.
-- [ ] **T6.** Tests: assert the full class vector by identity at each of the four
+- [x] **T6.** Tests: assert the full class vector by identity at each of the four
       sites, including AC2's and AC3's absence assertions; each new assertion
       red against pre-milestone code before it is trusted.
 - [ ] **T7.** Append the `DECISIONS.md` entry annotating D062, carrying the five
@@ -142,6 +142,10 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
 - 2026-08-29: RB05 drafted and M087 blocked on it; the escalated question was the shared class's NAME, not whether a shared class exists. RB05 carried the second-escalation removal option, this being the second brief on the package's condition-class naming after RB04.
 - 2026-08-29: RR05 ingested (advisory, no binding criteria). T1 discharged. Amendments this ingestion made to plan-owned sections: Scope In corrected — the multi-track asymmetry is NOT D062's falsifier, which RR05 Q6 shows requires two names for one event where the code has one name at both severities; Scope In and AC1 gained a fifth site, `R/loudnorm_two_pass.R:112`, whose abort carries no class at all and sits inside the shared event (RR05 B1); AC1 fixed the name and dropped its deferral clause; AC4 paired the new site; T2/T3/T4/T7 extended.
 - 2026-08-29: ingest chose to leave the D062 annotation to T7 rather than append it now, because the entry states what the code establishes and would otherwise be written twice; RR05 §6's five required points are recorded in `## Decisions` below so the content survives this milestone being abandoned. Falsified by M087 being dropped with D062 still unannotated.
+
+- 2026-08-29: T2 + T6 done in ONE commit, a minor task-ordering amendment: T6's "red before trusted" evidence has to be taken against pre-milestone code, so the new assertions were written and run first (three red: the scalar exit site, the scalar unparseable site, the batch site each escaped a `tidymedia_loudnorm_no_measurement` handler), then T2's code landed and turned them green.
+- 2026-08-29: T2 — `tidymedia_loudnorm_no_measurement` applied at `R/loudnorm_two_pass.R:112` (alone, no `tm_status`), `:151` (with `tidymedia_ffmpeg_exit`, keeping `tm_status`) and `:253` (alone, keeping `tm_rows`/`tm_row_status`); `tidymedia_loudnorm_analysis` renamed out of NEWS.md, three roxygen sites, their `man/` counterparts and eight test lines. M075's fall-through checked: `run_loudnorm_analysis()` aborts, so the non-returning `if (two_pass)` block cannot reach a second signalling site.
+- 2026-08-29: T6 — full class-vector identity assertions added at all four sites plus the silence boundary; M085's flat-vector assertion at `test-ffmpeg-exit-condition.R:52` corrected, since M087 deliberately makes that site carry two classes. `devtools::test()`: 0 failures, 8353 passing, 5 skips (all nvenc-absent).
 
 ## Decisions
 

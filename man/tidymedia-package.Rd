@@ -128,7 +128,7 @@ and from the multi-track diagnostic \code{\link[=separate_audio_video]{separate_
 failed audio output are all classed \code{tidymedia_ffmpeg_exit} and carry the
 exit status in their \code{tm_status} field. The batch two-pass analysis phase
 reports every offending row at once and fires for rows that exited zero as
-well, so it raises \code{tidymedia_loudnorm_analysis} instead, carrying \code{tm_rows}
+well, so it raises \code{tidymedia_loudnorm_no_measurement} instead, carrying \code{tm_rows}
 and \code{tm_row_status}.
 }
 

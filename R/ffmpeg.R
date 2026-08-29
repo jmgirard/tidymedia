@@ -4390,7 +4390,7 @@ derive_normalized_names <- function(input) {
 #'   and readable inputs), even when \code{run = FALSE}. If any row's analysis
 #'   fails or yields no parseable measurement, the call aborts — naming the
 #'   offending row(s) — before any correction command is built. That abort is
-#'   classed \code{tidymedia_loudnorm_analysis} and carries the same row numbers
+#'   classed \code{tidymedia_loudnorm_no_measurement} and carries the same row numbers
 #'   on \code{tm_rows}, alongside \code{tm_row_status}: each row's FFmpeg exit
 #'   status, or \code{NA} where the row exited zero but printed nothing
 #'   parseable. \strong{Silent}

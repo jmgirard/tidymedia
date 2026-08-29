@@ -38,7 +38,7 @@
   rather than a value FFmpeg chose. Two paths still do not signal it:
   the `ffm_batch()` family records `success = FALSE` for a failed row instead
   of aborting, and `normalize_audio_batch(two_pass = TRUE)` raises
-  `tidymedia_loudnorm_analysis` instead, for the reason the next entry gives.
+  `tidymedia_loudnorm_no_measurement` instead, for the reason the next entry gives.
   Internally the package now reads the number off that field; it used to
   recover it by matching a regular expression against the error message,
   which could not tell the wording of one abort from the wording of another
@@ -60,7 +60,7 @@
   ```
 
   `normalize_audio_batch(two_pass = TRUE)`'s analysis phase gets a class of its
-  own, `tidymedia_loudnorm_analysis`, because it reports every offending row at
+  own, `tidymedia_loudnorm_no_measurement`, because it reports every offending row at
   once and fires for a row that exited zero and printed nothing usable as well
   as for a row FFmpeg refused. The condition carries `tm_rows`, the 1-indexed
   offending rows the message names, and `tm_row_status`, their exit statuses

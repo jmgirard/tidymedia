@@ -51,7 +51,7 @@ handler covers all three: the \code{loudnorm} analysis pass behind
 The batch two-pass form is the exception. \code{normalize_audio_batch(two_pass
 = TRUE)} reports every offending row of its analysis phase in one error, and
 fires for rows that exited zero and printed nothing usable as well as for rows
-FFmpeg refused, so it raises \code{tidymedia_loudnorm_analysis} rather than
+FFmpeg refused, so it raises \code{tidymedia_loudnorm_no_measurement} rather than
 this class. That condition carries \code{tm_rows}, the 1-indexed offending
 rows, and \code{tm_row_status}, their exit statuses aligned to it, with
 \code{NA} where the row exited zero.

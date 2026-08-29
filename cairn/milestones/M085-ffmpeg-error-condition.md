@@ -113,7 +113,7 @@ there; NEWS.
       sets is already integer — and is kept so the field's contract is the
       coercion rather than the attribute plumbing (RR04 rec 3).
 - [x] T2: Same at `R/loudnorm_two_pass.R:143-150`.
-- [ ] T3: Rewrite `ffmpeg_exit_status()` (`R/ffmpeg.R:779-784`) to read class and
+- [x] T3: Rewrite `ffmpeg_exit_status()` (`R/ffmpeg.R:779-784`) to read class and
       field only; restate the comment blocks at `R/ffmpeg.R:650-660` and
       `776-778`; delete the wording-coupling test at
       `tests/testthat/test-separate-av-multitrack.R:132-146`.
@@ -143,6 +143,7 @@ there; NEWS.
 - 2026-08-29: RB04/RR04 archived; status back to in-progress.
 - 2026-08-29: T1 — `ffm_run()`'s non-zero-exit `cli_abort()` now passes `class = "tidymedia_ffmpeg_exit"` and `tm_status = as.integer(status)`; the message vector is byte-identical, only its indentation changed with the reformat. `devtools::test()`: 0 failures, 8223 passing, 5 skips.
 - 2026-08-29: T2 — the `loudnorm` analysis pass's abort now passes the same `class` and `tm_status` arguments; its rendered message is unchanged (both lines re-rendered under the new indentation and compared against the text above). `devtools::test()`: 0 failures, 8223 passing.
+- 2026-08-29: T3 — `ffmpeg_exit_status()`'s body is now `inherits(cnd, "tidymedia_ffmpeg_exit")`, a read of `cnd$tm_status`, and a `NULL` guard; no regex, no `conditionMessage()`. Both comment blocks (`R/ffmpeg.R:649-654` and the block above the helper) restate the class-and-field read, and the wording-coupling test in `tests/testthat/test-separate-av-multitrack.R` is deleted. `devtools::test()`: 0 failures, 8221 passing (2 fewer expectations, the deleted test's).
 
 ## Decisions
 

@@ -646,13 +646,12 @@ run_separation_audio <- function(pipeline, infile, outfile, audio_stream,
   tryCatch(
     ffm_run(pipeline),
     error = function(cnd) {
-      # Parsing the status out of ffm_run()'s own message is also what tells a
-      # non-zero EXIT apart from every other way the run can fail: a missing
-      # ffmpeg binary aborts in run_program() with no status at all, and a track
-      # count would be a nonsense answer to that. NA therefore means "not the
-      # failure this diagnostic is about" as well as "no status", and both fall
-      # through. A test pins the coupling to that wording, so rewording
-      # ffm_run()'s abort fails loudly instead of silently killing this branch.
+      # The `tidymedia_ffmpeg_exit` class is also what tells a non-zero EXIT
+      # apart from every other way the run can fail: a missing ffmpeg binary
+      # aborts in run_program() carrying no class and no status at all, and a
+      # track count would be a nonsense answer to that. NA therefore means "not
+      # the failure this diagnostic is about" as well as "no status", and both
+      # fall through.
       status <- ffmpeg_exit_status(cnd)
       n <- if (is.na(status)) NA_integer_ else count_audio_streams_all(infile)
       # Fail open: no status, no probe answer, or a single-track input all
@@ -773,14 +772,17 @@ warn_failed_separation_batch <- function(out, audio_stream = NULL,
   )
 }
 
-# Pull FFmpeg's exit status out of the abort ffm_run() raises on a non-zero exit
-# ("FFmpeg exited with status 234."), or NA when the condition is not that abort.
-# cli styles the message, so strip the ANSI first.
+# Read FFmpeg's exit status off a `tidymedia_ffmpeg_exit` condition -- the class
+# ffm_run() and the loudnorm analysis pass both raise on a non-zero exit -- or NA
+# for any other condition, and for one carrying the class but no `tm_status`.
+# The message is never consulted: the class answers WHICH failure this is and
+# the field carries the number, so rewording either abort cannot change what
+# this returns.
 ffmpeg_exit_status <- function(cnd) {
-  msg <- cli::ansi_strip(conditionMessage(cnd))
-  hit <- regmatches(msg, regexpr("exited with status -?[0-9]+", msg))
-  if (length(hit) == 0L) return(NA_integer_)
-  as.integer(sub("^exited with status ", "", hit[[1]]))
+  if (!inherits(cnd, "tidymedia_ffmpeg_exit")) return(NA_integer_)
+  status <- cnd$tm_status
+  if (is.null(status)) return(NA_integer_)
+  status
 }
 
 

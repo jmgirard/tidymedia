@@ -129,22 +129,6 @@ skip_unless_adts_refuses_multistream <- function(infile) {
   )
 }
 
-test_that("ffm_run() still words its non-zero exit as the enrichment reads it", {
-  # The coupling pin. run_separation_audio() tells a non-zero EXIT apart from
-  # every other failure (a missing binary, an unreadable path) by parsing
-  # ffm_run()'s own message, so a reword there would silently retire the
-  # enrichment. This fails loudly instead.
-  skip_if_no_ffmpeg()
-  infile <- make_test_video()
-  out <- withr::local_tempfile(fileext = ".mp3")
-  # Copying AAC into an MP3 container is a guaranteed non-zero exit; leaving the
-  # codec unset would simply re-encode and succeed.
-  p <- ffm_codec(ffm_map(ffm_files(infile, out), "0:a"), audio = "copy")
-  cnd <- tryCatch(ffm_run(p), error = function(e) e)
-  expect_match(cli::ansi_strip(conditionMessage(cnd)), "exited with status -?[0-9]+")
-  expect_false(is.na(ffmpeg_exit_status(cnd)))
-})
-
 test_that("a failed audio command on a multi-track input names the way out", {
   # Triggered by an AAC-to-MP3 stream copy, which fails on every FFmpeg build --
   # NOT by the .aac stream-count refusal, which only ffmpeg >= 8 performs. AC2

@@ -1,6 +1,6 @@
 # M082: The track check has an off switch, and says what it costs
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -110,7 +110,7 @@ cost; the stale verb list at `R/tidymedia-package.R:55`; NEWS.
       matching the wording M075 shipped at `R/ffmpeg.R:2092` and `:4262`; the
       seam on all six; `R/tidymedia-package.R:55`'s verb list and options
       section. `devtools::document()`, then the installed-help test.
-- [ ] T7 — `devtools::document()`, `devtools::document()`, `devtools::test()`,
+- [x] T7 — `devtools::document()`, `devtools::document()`, `devtools::test()`,
       `devtools::check()`. (NEWS entry moved into T6, where the documentation
       guard that reads it lives.)
 
@@ -131,6 +131,7 @@ cost; the stale verb list at `R/tidymedia-package.R:55`; NEWS.
 - 2026-08-28: T5 — the sweep in `count_audio_streams_all()` takes an optional `progress` argument, `TRUE` at the batch dropped-track site and nowhere else; one loop serves both cases rather than an `lapply()` beside a `for()`. Four tests read the bar through `cli`'s `logger` progress handler: four rows over three distinct inputs give `0/3 created` and `3/3 terminated (done)`, and no bar exists with the seam off, with every row naming a track, or at the scalar sites. Discrimination checked: dropping `progress = TRUE` turns the first red. The open D024 question is settled in `cairn/DECISIONS.md` as D060.
 - 2026-08-28: T6 — the four verbs that never stated the probe's cost now do, in M075's wording; all six state the seam and the `withr` form; the three `_batch` verbs state the serial front-door sweep and the bar. `?tidymedia` gained a *Session options* section covering all three seams, and its dropped-track sentence — which named `separate_audio_video()` and omitted the loudness pair — now names the three verbs that run the check and says the separation verb runs a different diagnostic after a failed run. A new guard walks the namespace for exported functions reaching `warn_dropped_audio` (it finds exactly the six) and reads their Rd, squishing whitespace because Rd hard-wraps. Discrimination checked: deleting one verb's seam sentence and adding the serial-sweep sentence to a scalar verb each turn it red. The first spelling of the seam assertion was not discriminating — `local_options(tidymedia.check_tracks = FALSE)` contains the session form as a substring, so it passed with the session sentence deleted; both forms are now matched separately.
 - 2026-08-28: minor amendment — the NEWS entry moved from T7 to T6, because the documentation guard that reads it is T6's and a task is not checked off with its own verify slot red.
+- 2026-08-28: T7 — `devtools::document()` leaves no diff, `devtools::test()` is clean, and `devtools::check()` reports 0 errors, 0 warnings, 0 notes (2m 54s). The documentation guard was additionally run against the INSTALLED help by hand, after `devtools::install()`: `tools::Rd_db("tidymedia")` reports the cost sentence, both seam forms and the serial-sweep sentence on exactly the verbs that should carry each, and `Session options` on the package topic. That path is what the guard takes under `R CMD check`, where the installed package has no `man/` directory (confirmed: `dir.exists()` on the installed `man/` is FALSE). No exported object was added, so `_pkgdown.yml` needs no row; README.Rmd names no option and is unchanged.
 - 2026-08-28: implement gate chose the probe sweep's bar independent of the batch verbs' `progress =` argument, because that argument governs `ffm_batch()`'s run-time bar while this sweep is a front-door cost the caller has not declined, and `cli.progress_show_after` already hides the bar on sweeps under two seconds; falsified by a report of the bar appearing on a batch whose caller had switched progress off and did not want it.
 - 2026-08-28: open for implement — AC4's progress bar makes the probe's HAVING RUN observable as something other than a condition, which D024's operative rule ("changes nothing observable except whether a diagnostic condition is signalled") does not obviously cover. `cli`'s progress mechanism does signal conditions, but that was not verified here. Settle it in the milestone's decision log before T5 ships, and promote to `cairn/DECISIONS.md` alongside the seam entry.
 

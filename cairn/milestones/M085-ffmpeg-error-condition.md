@@ -1,6 +1,6 @@
 # M085: A failed FFmpeg run is a condition you can catch
 
-- **Status:** in-progress
+- **Status:** blocked
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -109,6 +109,7 @@ describes the retired parse; `ffm_run()`'s roxygen; NEWS.
 - 2026-08-29: criteria audit ran in FULL mode (declared tier user-facing) in a fresh-context [O] reader that authored none of the criteria. Returned seven findings, all fixed at the gate, none re-gated: a call-name blacklist that could not enumerate "parses text" (AC3, restated positively); a missing-binary case asserted by a class that abort does not carry (AC4); an unmarked live return-value change on `tidymedia_multitrack_separation` (AC4, named as intended); the dead wording-coupling test and two now-false comment blocks left unretired (new AC6); a NEWS provenance clause binding an authoring act rather than the deliverable (dropped); no criterion putting the class in the documentation despite the user-facing tier (AC6); and an AC1 oracle whose `system2()` form was unnamed and would not have run the same command (pinned).
 - 2026-08-29: implementation gate chose a single class over a second, broader parent class shared with the package's other aborts, because the other aborts stay unclassed after this milestone and a parent they do not answer to promises a handler that would not fire; falsified by a later milestone classing those aborts and wanting one handler over all of them.
 - 2026-08-29: implementation gate escalated the class name to /milestone-brief at the user's selection (AC1's irreversible-api tripwire); the name a caller writes into tryCatch() cannot be changed once shipped.
+- 2026-08-29: blocked on RB04 (`cairn/reviews/RB04-ffmpeg-error-class-name.md`), six questions on the class name, the class-vector shape, the `tm_status` field name and type, the second abort site, the documentation minimum, and what the design forecloses; advisory, no binding criteria requested.
 
 ## Decisions
 

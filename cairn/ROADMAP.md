@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-28 (M084 post-merge: `cairn/LESSONS.md` 19,860 byte
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M085 | A failed FFmpeg run is a condition you can catch | in-progress | — | normal | milestones/M085-ffmpeg-error-condition.md |
+| M085 | A failed FFmpeg run is a condition you can catch | blocked | — | normal | milestones/M085-ffmpeg-error-condition.md |
 | M083 | The ROADMAP gets back under its byte budget | done | — | normal | milestones/archive/M083-roadmap-byte-budget.md |
 | M084 | LESSONS gets back under its budget, and its biggest family graduates | done | M083 | normal | milestones/archive/M084-lessons-budget-doctrine.md |
 | M082 | The track check has an off switch, and says what it costs | done | — | normal | milestones/archive/M082-track-check-opt-out.md |

@@ -1,11 +1,11 @@
 # M085: A failed FFmpeg run is a condition you can catch
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m085-ffmpeg-error-condition`
 
 ## Goal
 

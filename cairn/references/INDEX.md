@@ -10,3 +10,5 @@ _Source materials live in `references/sources/` (gitignored); summaries are `ref
 - `naming-docs-audit-M22.md` — API naming & documentation audit — produced by M22.
 - `verb-coverage-survey-M25.md` — Layer 2 task-verb coverage & scoped gap analysis — produced by M25.
 - `instrument-findings.md` — deferred review findings on the repo's own test instruments — entombed by M083.
+- `lessons-baseline-M084.md` — the `LESSONS.md` entry enumeration and exit classification — the ledger M084 committed.
+- `false-greens.md` — doctrine module: a test or control that reads green for the wrong reason — graduated by M084.

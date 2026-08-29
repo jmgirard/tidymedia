@@ -1,11 +1,11 @@
 # M082: The track check has an off switch, and says what it costs
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m082-track-check-opt-out`
+- **Branch/PR:** `m082-track-check-opt-out` / https://github.com/jmgirard/tidymedia/pull/86
 
 ## Goal
 
@@ -41,7 +41,7 @@ cost; the stale verb list at `R/tidymedia-package.R:55`; NEWS.
 
 ## Acceptance criteria
 
-- [ ] AC1 — Every dropped-track probe site in `R/ffmpeg.R`, the set
+- [x] AC1 — Every dropped-track probe site in `R/ffmpeg.R`, the set
       `grep -n 'warn_dropped_audio' R/ffmpeg.R` returns, is gated on the seam.
       For each site, a test on a multi-track input counts calls to
       `count_audio_streams_all()`: zero under
@@ -51,11 +51,11 @@ cost; the stale verb list at `R/tidymedia-package.R:55`; NEWS.
       sites a value that is not a length-1 non-`NA` logical (`"yes"`, `NA`,
       `c(TRUE, TRUE)`, `1`) aborts naming `tidymedia.check_tracks` as the
       offending argument.
-- [ ] AC2 — With the option unset, every verb the AC1 procedure enumerates
+- [x] AC2 — With the option unset, every verb the AC1 procedure enumerates
       signals the same conditions on the same inputs as it does on `master`,
       including `normalize_audio()` under both `two_pass = TRUE` and
       `two_pass = FALSE` signalling exactly one warning for one drop (M075).
-- [ ] AC3 — A `parallel = TRUE` batch run under
+- [x] AC3 — A `parallel = TRUE` batch run under
       `options(tidymedia.check_tracks = FALSE)` leaves the option unset in the
       parent afterwards, and a worker sees `FALSE` — the same round trip
       `carried_option_values()` already makes for `tidymedia.timeout`.
@@ -63,17 +63,17 @@ cost; the stale verb list at `R/tidymedia-package.R:55`; NEWS.
       sweep: on a jobs table of N distinct inputs the sweep drives one `cli`
       progress bar whose total is N and which reaches N/N; with the seam
       `FALSE` no bar is created.
-- [ ] AC5 — Every verb the AC1 procedure enumerates documents, in its own
+- [x] AC5 — Every verb the AC1 procedure enumerates documents, in its own
       help topic, that the check costs one FFprobe call per distinct input and
       how to turn it off; the three `_batch` verbs also state that those probes
       run serially at the front door before the fan-out. Verified against the
       **installed** help, not `man/*.Rd` in the source tree (M51/M59 lesson).
-- [ ] AC6 — `?tidymedia-package` names `normalize_audio()` and
+- [x] AC6 — `?tidymedia-package` names `normalize_audio()` and
       `normalize_audio_batch()` among the verbs behind the dropped-track check
       (stale since M075) and documents `tidymedia.check_tracks` beside the
       other two seams; NEWS.md gains an entry naming the option, its default,
       and the cost it lets a caller decline.
-- [ ] AC7 — `devtools::check()` clean: 0 errors, 0 warnings, 0 notes beyond
+- [x] AC7 — `devtools::check()` clean: 0 errors, 0 warnings, 0 notes beyond
       those already on `master`.
 
 ## Coverage
@@ -135,8 +135,175 @@ cost; the stale verb list at `R/tidymedia-package.R:55`; NEWS.
 - 2026-08-28: implement gate chose the probe sweep's bar independent of the batch verbs' `progress =` argument, because that argument governs `ffm_batch()`'s run-time bar while this sweep is a front-door cost the caller has not declined, and `cli.progress_show_after` already hides the bar on sweeps under two seconds; falsified by a report of the bar appearing on a batch whose caller had switched progress off and did not want it.
 - 2026-08-28: open for implement — AC4's progress bar makes the probe's HAVING RUN observable as something other than a condition, which D024's operative rule ("changes nothing observable except whether a diagnostic condition is signalled") does not obviously cover. `cli`'s progress mechanism does signal conditions, but that was not verified here. Settle it in the milestone's decision log before T5 ships, and promote to `cairn/DECISIONS.md` alongside the seam entry.
 
+- 2026-08-28: review — evidence gathered for all seven criteria on PR #86; AC1, AC2, AC3, AC5, AC6, AC7 pass, consistency gate clean (cairn_validate exit 0, document() no diff, pkgdown clean, check 0/0/0). Three fresh-context lenses ran; the two Sonnet lenses reported zero defects, the Opus diff lens nine findings, all logged with dispositions in the Review section.
+- 2026-08-28: amendment return: AC4 — "`warn_dropped_audio_batch()` reports progress across its probe sweep: on a jobs table of N distinct inputs the sweep drives one `cli` progress bar whose total is N and which reaches N/N; with the seam `FALSE` no bar is created." Falsified on a mixed jobs table: three distinct inputs, one row naming an `audio_stream`, bar total 2 against N = 3. The criterion names no procedure bounding "N distinct inputs"; the shipped behaviour (counting the inputs the sweep visits) is correct.
+
 ## Decisions
 
 - 2026-08-28: the question the plan left open — whether a progress bar over the probe sweep breaks D024's rule that the probe may change nothing observable except whether a diagnostic condition is signalled — is settled as **inside the licence**, and promoted to `cairn/DECISIONS.md` D060 alongside the seam itself, since both extend D024/D047 rather than deciding anything local to this milestone.
 
 ## Review
+
+Reviewed 2026-08-28 on branch `m082-track-check-opt-out`, PR
+https://github.com/jmgirard/tidymedia/pull/86. `master` had not moved since the
+branch was cut (`git merge-base --is-ancestor origin/master HEAD` succeeded), so
+no merge was needed before gathering evidence. Diffstat: 20 files, +814 / -102.
+
+### Acceptance-criteria evidence
+
+- **AC1 — pass.** `grep -n 'warn_dropped_audio' R/ffmpeg.R` returns seven probe
+  sites: four scalar (`:564`, `:1041`, `:2248`, `:2293`) and three `_batch` call
+  sites (`:4525`, `:5188`, `:5337`) all reaching `warn_dropped_audio_batch()`
+  (`:427`). Read at those lines: each scalar site carries
+  `resolve_check_tracks()` as the last conjunct of
+  `isTRUE(run) && is.null(audio_stream) && …`; the batch form returns early on
+  `!resolve_check_tracks()` below its rows check. `test-check-tracks-seam.R`
+  drives all seven through a named site table: 12 tests, 76 passing, 0 failing.
+  The counter is `local_mocked_bindings(count_audio_streams_all = …)`
+  incrementing an integer, not a `stop()`ing mock. Zero calls and zero warnings
+  with the seam `FALSE`; ≥1 call and exactly one `tidymedia_dropped_audio`
+  warning with it unset; each of `"yes"`, `NA`, `c(TRUE, TRUE)` and `1` aborts
+  with "`tidymedia.check_tracks` must be `TRUE` or `FALSE`" at every site.
+- **AC2 — pass.** The same site table's default-behaviour test covers every verb
+  the AC1 procedure enumerates, `normalize_audio()` at both `two_pass = TRUE`
+  and `two_pass = FALSE`, each signalling exactly one warning for one drop. The
+  pre-existing `test-audio-track-drop.R` (35 tests, 106 passing) is green
+  unchanged in substance, and the full suite is 0 failures / 8222 passing /
+  5 skips (all binary-capability skips).
+- **AC3 — pass.** `test-parallel-option-carry.R`: 22 tests, 96 passing,
+  0 failing, 0 skipped (the file's fingerprint guard did not fire — the package
+  was installed before the run). `carried_option_values()` carries
+  `tidymedia.check_tracks` raw, present in the list whether set or unset. A
+  six-element `furrr` fan-out under `options(tidymedia.check_tracks = FALSE)`
+  spans ≥2 worker PIDs and every worker reads `FALSE`, against an unset-parent
+  control where every worker reads its own default. A `parallel = TRUE`
+  `ffm_batch()` run leaves the parent's setting exactly as it found it under
+  both the `FALSE` and the unset cell — so the criterion holds on either
+  reading of its "leaves the option unset in the parent" clause.
+- **AC4 — FAIL as written; the work is right and the criterion is not.** The
+  milestone's own cell passes: four rows over three distinct inputs, none
+  naming a track, yield exactly `c("0/3 created", "3/3 terminated (done)")` —
+  one bar, total 3, reaching 3/3; no bar with the seam `FALSE`, none when every
+  row names a track, none at the scalar sites. But the criterion quantifies
+  over any "jobs table of N distinct inputs", and a *mixed* table falsifies it:
+  measured on a three-row table of three distinct inputs, one of which names an
+  `audio_stream`, the bar reads `c("0/2 created", "2/2 terminated (done)")` —
+  total 2 against N = 3. The bar counts `unique(jobs$input[rows])`, the inputs
+  the sweep actually visits, which is the behaviour that ought to ship; the
+  criterion names no procedure bounding "N distinct inputs" and so is
+  falsified inside its own quantification. Routed as an amendment return
+  (finding F4 below), not a defect return.
+- **AC5 — pass.** Verified against the **installed** help, not `man/`: the doc
+  guard was run from a scratch directory outside the source tree, where
+  `rd_sources()` falls through to `tools::Rd_db("tidymedia")` (81 topics) —
+  6 tests, 45 passing, 0 failing, 0 skipped. The guard walks the namespace for
+  exported functions reaching `warn_dropped_audio` (finds exactly the six) and
+  asserts on each verb's own topic: "one FFprobe call per distinct input", the
+  session form `options(tidymedia.check_tracks = FALSE)` and the `withr` form
+  matched separately, and "serially at the front door" present on exactly the
+  three `_batch` verbs and absent from the three scalar ones.
+- **AC6 — pass.** Same installed-help run: the `tidymedia-package` topic's
+  dropped-track sentence names `extract_audio()`, `convert_audio()` and
+  `normalize_audio()` and says `separate_audio_video()` runs a different
+  multi-track diagnostic; a `Session options` section documents
+  `options(tidymedia.timeout`, `options(tidymedia.check_tracks` and
+  `options(tidymedia.nvenc_encoders`. NEWS.md's entry names the option, states
+  it "defaults to TRUE", and names "one FFprobe call per distinct input" as the
+  cost declined. No milestone number appears in NEWS.md.
+- **AC7 — pass.** `devtools::check()` on the branch: **0 errors, 0 warnings,
+  0 notes**, `Status: OK`, 2m 57.5s. Nothing to compare against `master`'s
+  note list, since this branch carries none.
+
+### Consistency gate
+
+`cairn_validate.py` exit 0 — all 16 checks PASS, all 7 advisories OK
+(`release window` did not fire). No `DESIGN.md` principle changed
+(`Principles touched: —`), so `cairn_impact.py` was skipped. Toolchain checks
+from the `r-package` profile's `consistency-gate` slot: `devtools::document()`
+leaves no diff; `NAMESPACE`, `man/` and `data/` show no hand edits (no
+`NAMESPACE` diff at all — the milestone exports nothing new);
+`README.Rmd`/`README.md` untouched and in sync; `pkgdown::check_pkgdown()`
+reports no problems; NEWS.md carries the entry and names no milestone number;
+no new top-level files, so no `.Rbuildignore` entry is owed; full
+`devtools::check()` clean as recorded under AC7.
+
+### Independent fresh-context review
+
+Three lenses, distinct evidence bases, none having seen the implementation.
+The blame-history [S] lens and the prior-review [S] lens each reported zero
+defects: the M075 two-pass fix is preserved at both `normalize_audio()` sites,
+the seam's last-conjunct ordering matches the timeout seam's precedent, the
+raw carry follows the encoder override's rule rather than the limit's, and the
+M44 counting-mock and M51/M59 installed-help lessons are both honoured. The
+prior-review lens additionally probed
+`gh api repos/jmgirard/tidymedia/pulls/comments` and found no inline review
+comments on any PR in this repo, so the GitHub thread surface was skipped per
+its gating rule. The diff-bug [O] lens reported nine findings, ranked below in
+its order, each verified against the implementation before disposition.
+
+- **F4 — the bar's total is not "one per distinct input" on a mixed jobs
+  table.** *Amendment return.* Verified: `0/2` on a three-distinct-input table
+  where one row names a track. Falsifies AC4 as written and makes the verbs'
+  "one FFprobe call per distinct input" sentence an overstatement by the count
+  of rows that named a stream. The shipped behaviour is right; AC4's wording
+  is what needs the gated amendment.
+- **F1 — the documented motivating case for the switch is the one case where
+  it buys nothing.** *Fix now (proposed).* Verified: `warn_dropped_audio_batch()`
+  returns at `length(rows) == 0` *above* the seam, and the scalar sites gate on
+  `is.null(audio_stream)`, so a table whose every row names an `audio_stream`
+  already costs zero FFprobe calls on `master`. NEWS.md's "That is worth
+  declining on a large jobs table whose rows all name an `audio_stream`
+  already", `R/tidymedia-package.R`'s "it is worth having on a large jobs table
+  whose rows all name an `audio_stream` anyway" (also ambiguous about what "it"
+  is), and `R/timeout.R`'s "one a caller who always names an `audio_stream`
+  never gets anything for" all point at the wrong population — the switch helps
+  a large table whose rows do *not* name a track.
+- **F3 — D060's "the rule's 'outcome' clause is not reached" is overbroad.**
+  *Fix now (proposed), by a superseding entry.* Verified: D024's outcome clause
+  enumerates ran / skipped / succeeded / failed; D060 rebuts only
+  succeeded-vs-failed, while the milestone's own tests pin that no bar exists
+  when the sweep is *skipped* — so ran-vs-skipped is observable through the bar.
+  D060's load-bearing defence (cli progress signals `cli_message`/`cliMessage`,
+  the same mechanism as the warning) survives intact; the one sentence does not.
+  History is append-only, so this takes a superseding entry, not an edit.
+- **F5 — `res[[i]] <- count_audio_streams(...)` would shrink the list on a
+  `NULL`.** *Fix now (proposed), one line.* Verified latent, not live:
+  `count_audio_streams()` returns a count, `NA_integer_`, or a timeout
+  sentinel, never `NULL`. `lapply()` preserved a `NULL`; the rewritten `for`
+  does not, and the following `vapply(res, …, integer(1))` would then be
+  length-mismatched against `uniq`.
+- **F9 — the two deferred shapes have no candidate rows.** *Fix at hygiene
+  (proposed).* Verified: Scope says a per-verb `check_tracks =` argument and
+  probing inside the fan-out each "stays a candidate row", but both live only
+  in the prose of the *retired* M44 row in `cairn/ROADMAP.md`, which itself
+  says they "need their own row".
+- **F6 — the `See vignette(…)` navigation paragraph now closes the new
+  *Session options* section.** *Follow-up candidate (proposed).* Verified in
+  `man/tidymedia-package.Rd`: the paragraph falls inside `\section{Session
+  options}`. It was already section-captured on `master` (inside *Bounding a
+  run that hangs*), so the diff moved a pre-existing defect rather than
+  introducing one.
+- **F2 — the sweep's bar is not gated on the batch verbs' own `progress`
+  argument.** *Reject, with the falsifier standing.* The design point is
+  correct and deliberate: D060 states it and records "a report of the bar
+  appearing on a batch whose caller had switched progress off and did not want
+  it" as a named falsifier. The finding's magnitude claim did not reproduce
+  here: a real four-input `extract_audio_batch()` swept in 0.26 s and rendered
+  no bar, and `Checking audio tracks` appears zero times in the whole
+  `R CMD check` log. Promote the falsifier on a real report.
+- **F7 — NEWS's "carried into `parallel = TRUE` workers" implies a worker-side
+  effect that does not exist yet.** *Reject.* Verified: the sentence is true of
+  the carrier, which is what it claims; no package code reads the option in a
+  worker today because the probe runs at the front door, which the same
+  paragraph says.
+- **F8 — new console noise in the test suite.** *Reject; did not reproduce.*
+  `Checking audio tracks` appears zero times in the `R CMD check` log and zero
+  times in the `devtools::test()` run.
+
+### Outcome
+
+AC1, AC2, AC3, AC5, AC6 and AC7 verified with fresh evidence. AC4 fails as
+written on a mixed jobs table while the shipped behaviour is correct, which is
+evidence about the promise rather than the work — so this is an amendment
+return, and the milestone goes back to `in-progress` for that amendment alone.
+Every finding above is logged with its disposition; none was dropped.

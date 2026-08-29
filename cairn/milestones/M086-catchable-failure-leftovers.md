@@ -1,0 +1,123 @@
+<!-- Section ownership + write-modes: see tracking-rules.md "Milestone-file
+     section ownership". A phase skill never rewrites another phase's section. -->
+# M086: The catchable failure reaches the two paths M085 left behind
+
+- **Status:** planned
+- **Priority:** normal
+- **Depends on:** —
+- **Driving RR:** —
+- **Principles touched:** —
+- **Branch/PR:** —
+
+## Goal
+
+`?tidymedia` promises that a failed FFmpeg run raises `tidymedia_ffmpeg_exit`
+carrying `tm_status`; two shipped paths break that promise, and this milestone
+makes both honour it.
+
+## Scope
+
+**Surface tier: user-facing** — the deliverable is condition classes and help
+text that package callers write `tryCatch()` handlers against.
+
+**In:** (a) `separate_audio_video()`'s multi-track diagnostic
+(`R/ffmpeg.R:668-687`) gains `tidymedia_ffmpeg_exit` in its class vector and
+the `tm_status` field, keeping its enrichment and its `parent` chain intact;
+(b) `normalize_audio_batch(two_pass = TRUE)`'s analysis-pass abort stops
+discarding the exit number at `R/loudnorm_two_pass.R:219` and gains its own
+event class at `R/loudnorm_two_pass.R:234`; (c) the roxygen and NEWS that
+tell a caller which class catches what.
+
+**Out:**
+- The package-wide class sweep — 160 of 173 `cli_abort()` sites carry no
+  class → ROADMAP candidate row. It needs an enumeration procedure that a
+  grep does not provide, and the mixed-cause sites cannot honestly carry
+  `tidymedia_ffmpeg_exit` at all.
+- `separate_audio_video_batch()`'s post-fan-out warning carrying a status →
+  ROADMAP candidate row. `ffm_batch()`'s `run_one()` reduces each row to
+  `list(success =, timed_out =)` and discards the condition, so no status
+  exists at that site; the warning also fires for any failure cause, which
+  D062's event rule forbids classing as an exit, and a `tryCatch()` on it
+  would unwind the batch against D007.
+- Renaming `tm_status` or reshaping `ffm_run()`'s documented length-one field.
+
+## Acceptance criteria
+
+- [ ] AC1 A `separate_audio_video()` call whose audio output FFmpeg refuses on
+      a multi-track input with no `audio_stream` named raises a condition that
+      (i) a `tryCatch(tidymedia_ffmpeg_exit = ...)` handler catches, (ii) still
+      inherits `tidymedia_multitrack_separation`, (iii) still renders the track
+      count and both ways out in its message, and (iv) carries `tm_status`
+      equal to the integer status of its `parent` condition.
+      (RB tripwire: irreversible-api)
+- [ ] AC2 For each case `tests/testthat/test-ffmpeg-exit-condition.R` runs
+      under the fail-open and not-this-failure headings — the three
+      `run_separation_audio()` fail-open branches (`is.na(status)`,
+      `is.na(n)`, `n <= 1L`), a missing-binary abort from `run_program()`, and
+      a reached timeout — the raised condition does not inherit
+      `tidymedia_ffmpeg_exit`, and the fail-open cases re-raise the original
+      condition object unchanged in class and message.
+- [ ] AC3 `?separate_audio_video`'s *When the audio output fails* section
+      states both class names, says which one an exit-status handler catches
+      and which the enriched diagnostic answers to, and shows a handler that
+      fires on this path; the claim is verified by running that handler against
+      a real failing call, not by inspection.
+- [ ] AC4 `normalize_audio_batch(two_pass = TRUE)` aborting on offending rows
+      raises class `tidymedia_loudnorm_analysis` carrying `tm_rows` (the
+      1-indexed offending rows, in the order the message names them) and
+      `tm_row_status` (an integer vector aligned to `tm_rows`, the row's FFmpeg
+      exit status, `NA_integer_` where the row exited zero but printed no
+      parseable block). Asserted over three batches: exit-failures only,
+      unparseable only, and one of each.
+- [ ] AC5 `?ffm_run`, `?tidymedia`'s exit-class paragraph
+      (`R/tidymedia-package.R:113-117`) and `NEWS.md` each name the two paths
+      AC1 and AC4 change and the class each now signals; `?tidymedia` no longer
+      states a promise that the `separate_audio_video()` path contradicts.
+- [ ] AC6 `devtools::check()` reports 0 errors and 0 warnings, and the AC1–AC4
+      tests are recorded as having RUN (not skipped) on a machine with ffmpeg
+      and ffprobe present — the skip count for those files is quoted in review.
+
+## Coverage
+
+- AC1 → T1, T2
+- AC2 → T1, T2
+- AC3 → T5
+- AC4 → T3, T4
+- AC5 → T5, T6
+- AC6 → T7
+
+## Tasks
+
+- [ ] T1 Extend `tests/testthat/test-ffmpeg-exit-condition.R` with the scalar
+      separation grid, red before T2: the enriched path varied over container
+      (`.aac`, `.mp3`, `.wav`) and over at least two distinct exit statuses,
+      plus the three fail-open branches and the two not-this-failure cases of
+      AC2. Fixture via `make_multitrack_video()`
+      (`tests/testthat/helper-media.R:197`); `skip_if` the binaries are absent.
+- [ ] T2 `R/ffmpeg.R:675` — class vector becomes
+      `c("tidymedia_multitrack_separation", "tidymedia_ffmpeg_exit")` and the
+      abort gains `tm_status = status`, which the branch already holds
+      non-`NA` at `R/ffmpeg.R:653`. Message text unchanged.
+- [ ] T3 New tests for the two-pass batch abort, red before T4: the three
+      batches of AC4, asserting class, `tm_rows`, and `tm_row_status`
+      including the `NA_integer_` element.
+- [ ] T4 `R/loudnorm_two_pass.R:219` — carry the status instead of collapsing
+      to `list(status = "error")`; `R/loudnorm_two_pass.R:234` — the abort
+      gains `class = "tidymedia_loudnorm_analysis"`, `tm_rows` and
+      `tm_row_status`. Message text unchanged.
+- [ ] T5 Roxygen: `R/ffmpeg.R:846` (the scalar *When the audio output fails*
+      section, per AC3), `R/ffm.R:1539-1549` (`ffm_run()`'s class paragraph),
+      `R/tidymedia-package.R:113-117`; then `devtools::document()`.
+- [ ] T6 `NEWS.md` bullet under the development version naming the two paths.
+- [ ] T7 `devtools::check()`; record the run/skip counts AC6 asks for.
+
+## Work log
+
+- 2026-08-29: created by /milestone-plan. Promoted from the standing `M45 review F1/F5` candidate row (M085 Out; M085 review F4); that row is narrowed, not deleted, and keeps its unpromoted gaps.
+- 2026-08-29: criteria audit ran in FULL mode (user-facing tier plus an `irreversible-api` tripwire on AC1), fresh-context `[O]` reader over seven drafted criteria. It returned findings on all seven. Cut at the gate: the draft AC2 (batch warning) as unsatisfiable — no status exists at that site under D007 — and the draft AC5 ("every abort site") as an unbounded promise over a domain no named procedure enumerates. Fixed at the gate: the draft AC1 was satisfiable by deleting the diagnostic and by rewording the message, its probe was one exemplar for a four-axis family, and its "pre-change test failing" clause bound a harness-history property; the draft AC3 anchored to generated `man/*.Rd` line numbers and to a warning recipe on an error path; the draft AC7 was green-compatible with zero evidence on a binary-less machine.
+- 2026-08-29: plan gate chose adding `tidymedia_ffmpeg_exit` to the multi-track abort's class vector over documenting the `cnd$parent` chain, because it makes `?tidymedia`'s shipped promise true rather than walking it back, and D062 leaves class hierarchies open; falsified by a caller needing the two sites — the error and the batch warning — to answer to one handler pair, which this deliberately breaks.
+- 2026-08-29: plan gate chose a new `tidymedia_loudnorm_analysis` event class for the two-pass batch abort over narrowing `tidymedia_ffmpeg_exit` to the exit-only case, because the abort also fires on rows that exited zero and D062 requires a class to name the fact that occurred; falsified by the package finding a second site with the same mixed-cause shape where one class per cause reads better than one per event.
+
+## Decisions
+
+## Review

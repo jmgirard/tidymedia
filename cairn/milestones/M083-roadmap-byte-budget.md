@@ -1,11 +1,11 @@
 # M083: The ROADMAP gets back under its byte budget
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m083-roadmap-byte-budget`
 
 ## Goal
 
@@ -65,7 +65,7 @@ milestone changes how rows are stored and worded, never whether an idea stands.
 
 ## Tasks
 
-- [ ] T1 Record the branch-point baseline: run AC2–AC4's four enumerations,
+- [x] T1 Record the branch-point baseline: run AC2–AC4's four enumerations,
       save each row's bytes, its `— added` trailer and its `Promote ` match to
       the branch as the comparison surface AC2–AC4 read, and record the counts.
       (At bd4d545 these were 32 / 3 / 5 / 21; this plan's own commit adds one
@@ -79,8 +79,10 @@ milestone changes how rows are stored and worded, never whether an idea stands.
       delete AC2's three struck-through rows. Check the D055-gaps row's stated
       dependence on the retired floor-harness row before deleting that one.
 - [ ] T4 Compress the surviving rows over 1,000 bytes at the branch point
-      (nine at bd4d545) to hook + promote-on + trailer, each keeping the citations its narrative
-      is moving to. Re-measure after each; stop when AC1 clears with headroom.
+      (eleven at 8021df1) to hook + promote-on + trailer, each keeping the citations its
+      narrative is moving to. Before dropping a sentence, confirm the entry or
+      milestone file it cites actually holds it; anything with no home stays.
+      Re-measure after each; stop when AC1 clears with headroom.
 - [ ] T5 Refresh the `Last hygiene check` stamp with the new byte figures; run
       `cairn_validate.py`.
 
@@ -89,4 +91,7 @@ milestone changes how rows are stored and worded, never whether an idea stands.
 - 2026-08-28: created by /milestone-plan.
 - 2026-08-28: criteria audit ran in REDUCED mode (internal tier, no RB-tripwire tags). Round 1 returned five findings on this milestone's criteria: AC3's "the five instrument-findings rows" was a recalled count (the case-sensitive grep returns four; `tolower` returns five), AC5 named a `cairn_validate.py` path with no target, and AC2/AC4 routed their domain through a work-log disposition ledger (recording instrument, D-120). Round 2 on the revised wording passed AC1/AC2/AC3/AC5 and returned one finding: AC4's `-- added` literal matches nothing (the file uses an em dash) and its promote-on sub-domain named no procedure. All fixed before writing.
 - 2026-08-28: plan gate chose entombing the instrument rows into `cairn/references/` over pruning them outright, because a pruned finding surfaces at no later plan gate; falsified by a hygiene pass finding the page itself over budget with nothing having consulted it.
+- 2026-08-28: T1 branch-point baseline at `8021df1`: `cairn/ROADMAP.md` 42,552 bytes / 53 lines; 33 candidate rows, 3 struck, 5 matching `instrument` (13,303 bytes), 22 carrying `Promote `. Frozen in `cairn/references/roadmap-candidates-baseline-M083.md` as a convenience record; the criteria read git and the post-merge files, not that page.
+- 2026-08-28: minor amendment to T4 — the branch point has eleven surviving rows over 1,000 bytes, not the nine the plan recorded at `bd4d545`; T4's parenthetical corrected and its citation-check step (the implement gate's choice) written in.
+- 2026-08-28: implement gate chose one shared promote-on clause for the grouped instrument row over restating all five (the five stay verbatim on the entombed page), checking each row's citations before dropping narrative over trusting them, and compressing all eleven wide rows rather than stopping at the first pass under 24,000.
 - 2026-08-28: plan gate chose compressing live rows in place over deferring the whole cut to entombment and pruning, because the arithmetic does not reach 24,000 without it (41,509 less 13,303 less 3,429 leaves ~24,800, before this plan's own additions); falsified by a measured pass where entombment alone clears the budget with headroom.

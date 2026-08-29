@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-28 (M082 post-merge: all 16 `cairn_validate` checks
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M083 | The ROADMAP gets back under its byte budget | planned | — | normal | milestones/M083-roadmap-byte-budget.md |
+| M083 | The ROADMAP gets back under its byte budget | in-progress | — | normal | milestones/M083-roadmap-byte-budget.md |
 | M084 | LESSONS gets back under its budget, and its biggest family graduates | planned | M083 | normal | milestones/M084-lessons-budget-doctrine.md |
 | M082 | The track check has an off switch, and says what it costs | done | — | normal | milestones/archive/M082-track-check-opt-out.md |
 | M081 | The unchecked flag, and the second copy of the one predicate | done | — | normal | milestones/archive/M081-unchecked-flag-and-second-copy.md |

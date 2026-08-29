@@ -5,7 +5,7 @@
 - **Depends on:** M083
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m084-lessons-budget-doctrine`
+- **Branch/PR:** `m084-lessons-budget-doctrine` — https://github.com/jmgirard/tidymedia/pull/88
 
 ## Goal
 
@@ -38,16 +38,16 @@ retired.
 
 ## Acceptance criteria
 
-- [ ] AC1 On the merge commit, `wc -c cairn/LESSONS.md` reports fewer than
+- [x] AC1 On the merge commit, `wc -c cairn/LESSONS.md` reports fewer than
       20,000 bytes and `wc -l` fewer than 50 lines.
-- [ ] AC2 Each entry `grep '^- ' cairn/LESSONS.md` enumerates at M084's branch
+- [x] AC2 Each entry `grep '^- ' cairn/LESSONS.md` enumerates at M084's branch
       point (`git merge-base <branch> master`) is, after the merge, in exactly
       one observable state: present in `cairn/LESSONS.md` whole or trimmed, present in
       `cairn/references/false-greens.md`, or absent from both.
-- [ ] AC3 `cairn/references/false-greens.md` exists, is listed in
+- [x] AC3 `cairn/references/false-greens.md` exists, is listed in
       `cairn/references/INDEX.md`, states a line budget and a byte budget in
       its own header, and `wc -l -c` reports it inside both figures.
-- [ ] AC4 No entry AC2 finds in `cairn/references/false-greens.md` is also in
+- [x] AC4 No entry AC2 finds in `cairn/references/false-greens.md` is also in
       `cairn/LESSONS.md`: for each, `grep -F` of the first 120 bytes of its
       branch-point text (`cut -c1-120`) over `cairn/LESSONS.md` returns no match;
       T1 records that the key is unique across the enumeration.
@@ -82,6 +82,46 @@ retired.
 
 - 2026-08-28 (T1): the 44 entries at the branch point (`31a8e4f`) classify as 17 `graduate`, 6 `trim`, 21 `keep`. The 17 graduating entries are one family — a test or control that reads green for the wrong reason: a fixture or grid that measures nothing, a skip or gate that never runs, a mock or control the call site swallows, a coverage or non-vacuity floor blind to the loss it exists to catch. They hold 21,171 bytes of entry text and were extended or consolidated across M52, M31/M63/M68, M35, M39, M41/M61/M62/M64, M42, M43, M44/M63/M67, M47, M50, M51/M59, M54/M58, M70, M071, M072/M073/M078 and M074/M076/M077/M079/M081, well past the maturation exit's twice; neither other exit applies, since no test fails on the mistake and no other tracking file's slot owns test-discrimination craft. The 6 `trim` entries each carry one half now covered elsewhere: the FFmpeg-version entry's `.aac`-muxer clause, the error-precedence entry's otherwise-valid-grid clause and the two-pass entry's half-domain clause belong to the graduating family; the front-door-ordering entry's front-door-guard half is enforced by `tests/testthat/test-builder-blame-front-door.R`, which reddens on the verb whose guard is removed; the line-endings entry's blame-config half is owned by `CLAUDE.md`'s development conventions; the timeout-wait entry's limit + 40 s measurement is owned by D056. The remaining 21 keep FFmpeg, R and package-shape facts no exit reaches. Per-entry rows with byte lengths and keys: `cairn/references/lessons-baseline-M084.md`.
 
+## Review
+
+_PR: https://github.com/jmgirard/tidymedia/pull/88 — reviewed 2026-08-28 on `m084-lessons-budget-doctrine` at branch point `31a8e4f`._
+
+### Acceptance criteria — fresh evidence
+
+- **AC1 — pass.** `wc -c cairn/LESSONS.md` reports 19,372 bytes and `wc -l` reports
+  32 lines, under the 20,000-byte budget (628 bytes of room) and well inside the
+  50-line cap. Measured on the branch head, the tree the squash-merge commit will carry.
+- **AC2 — pass.** `git show 31a8e4f:cairn/LESSONS.md | grep '^- '` enumerates 44
+  entries; `cut -c1-120` over them yields 44 keys with `sort | uniq -d` empty.
+  Testing each key with `grep -F` against both files partitions the enumeration
+  27 present in `cairn/LESSONS.md` / 17 present in `cairn/references/false-greens.md`
+  / 0 in both / 0 in neither — every entry in exactly one observable state.
+- **AC3 — pass.** `cairn/references/false-greens.md` exists; `cairn/references/INDEX.md:14`
+  lists it; its header states "Budget: fewer than 26,000 bytes and fewer than 60
+  lines"; `wc -l -c` reports 52 lines / 24,846 bytes, inside both figures.
+- **AC4 — pass.** The same partition run records 0 entries present in both files:
+  for each of the 17 keys AC2 finds in the module, `grep -F` over
+  `cairn/LESSONS.md` returns no match. Key uniqueness across the 44-entry
+  enumeration is recorded by T1 in `cairn/references/lessons-baseline-M084.md` and
+  re-verified here (`sort | uniq -d` returns nothing).
+
+_No `Driving RR:` on this milestone, so the projection-vs-outcome record no-ops._
+
+### Consistency gate
+
+- `cairn_validate.py` — exit 0; all 16 checks PASS, all 7 advisories OK
+  (`release window` OK, so step 10's displacement clause does not fire).
+- `cairn_impact.py` — skipped; the diff touches no `cairn/DESIGN.md` principle
+  (`git diff master..HEAD -- cairn/DESIGN.md` is empty).
+- Toolchain checks (`r-package` profile `consistency-gate` slot): the diff is six
+  `cairn/` markdown files and touches no `R/`, `man/`, `NAMESPACE`, `README*`,
+  `NEWS.md`, `_pkgdown.yml`, `DESCRIPTION`, `tests/` or `data-raw/` path, and adds
+  no new top-level file. Run anyway: <PLACEHOLDER_TOOLCHAIN>
+
+### Independent fresh-context review
+
+<PLACEHOLDER_REVIEW>
+
 ## Work log
 
 - 2026-08-28: created by /milestone-plan.
@@ -92,3 +132,4 @@ retired.
 - 2026-08-28: T2 — `cairn/references/false-greens.md` authored (46 lines, 22,780 bytes; budget < 60 lines / < 26,000 bytes, chosen at the implement gate), holding the 17 graduated entries verbatim under five themed headings; the same 17 deleted from `LESSONS.md`, which is now 32 lines / 21,044 bytes. Partition checked against the branch point: 27 in `LESSONS.md` only, 17 in the module only, 0 in both, 0 in neither.
 - 2026-08-28: T3 — six partly-covered entries trimmed to their remainders; the FFmpeg-version, error-precedence and two-pass halves moved into the module as three new lines, the front-door-guard half dropped to `tests/testthat/test-builder-blame-front-door.R`, the blame-config half to `CLAUDE.md` and the timeout escalation figures to D056. `LESSONS.md` 19,372 bytes / 32 lines (under 20,000 / 50, 628 bytes of room); module 24,124 bytes / 49 lines (under its own 26,000 / 60). Partition re-checked: 27 / 17 / 0 both / 0 neither. `devtools::test()`: 0 failures, 8223 pass, 5 skip.
 - 2026-08-28: T4 — `Last hygiene check` stamp replaced with M084's figures: `LESSONS.md` 19,372 bytes / 32 lines, `false-greens.md` 24,846 bytes / 52 lines against its own < 26,000 / < 60 budget, `ROADMAP.md` 22,365 bytes / 45 lines. Both new `references/` pages carry provenance blocks; all 16 `cairn_validate` checks PASS, all 7 advisories OK.
+- 2026-08-28: review in progress — AC1–AC4 verified with fresh evidence and ticked; universal cairn gate clean (16/16 PASS, 7/7 advisories OK). `devtools::check()` and the fresh-context diff-bug reviewer still running; their results and the triage fill the two placeholders in the Review section.

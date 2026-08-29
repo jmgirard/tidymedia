@@ -175,6 +175,11 @@ compiled command. Under `two_pass = TRUE` it lands *before* the analysis
 pass, so it arrives while adding `audio_stream` can still save that
 pass.
 
+Switch the check off – and skip its FFprobe call – with
+`options(tidymedia.check_tracks = FALSE)` for the session, or
+`withr::local_options(tidymedia.check_tracks = FALSE)` for the rest of
+one function.
+
 ## References
 
 EBU Recommendation R 128 (2014), *Loudness normalisation and permitted

@@ -79,12 +79,18 @@ When `infile` carries more than one audio track, `audio_stream` names
 which one to take; with no selector the **first** one is taken.
 
 When no `audio_stream` is named and the input turns out to carry tracks
-the output will not, the verb warns. That check is **best-effort**: it
-runs FFprobe, so it is emitted when FFprobe is available and the input
-can be probed, and is skipped silently otherwise. It never runs under
-`run = FALSE`, and never changes the compiled command. Suppress it by
-naming a track with `audio_stream`, or by class with
+the output will not, the verb warns. That check is **best-effort** and
+costs **one FFprobe call per distinct input** – one, here, since this
+verb takes a single `infile`: it is emitted when FFprobe is available
+and the input can be probed, and is skipped silently otherwise. It never
+runs under `run = FALSE`, and never changes the compiled command.
+Suppress it by naming a track with `audio_stream`, or by class with
 `suppressWarnings(classes = "tidymedia_dropped_audio")`.
+
+Switch the check off – and skip its FFprobe call – with
+`options(tidymedia.check_tracks = FALSE)` for the session, or
+`withr::local_options(tidymedia.check_tracks = FALSE)` for the rest of
+one function.
 
 ## See also
 

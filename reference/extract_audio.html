@@ -97,12 +97,17 @@ or return the compiled command without running it (<code>FALSE</code>).</p></dd>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>When no <code>audio_stream</code> is named and the input turns out to carry tracks
-the output will not, the verb warns. That check is <strong>best-effort</strong>: it
-runs FFprobe, so it is emitted when FFprobe is available and the input can be
-probed, and is skipped silently otherwise. It never runs under <code>run =
-FALSE</code>, and never changes the compiled command. Suppress it by naming a track
-with <code>audio_stream</code>, or by class with
+the output will not, the verb warns. That check is <strong>best-effort</strong> and
+costs <strong>one FFprobe call per distinct input</strong> – one, here, since this
+verb takes a single <code>infile</code>: it is emitted when FFprobe is available
+and the input can be probed, and is skipped silently otherwise. It never runs
+under <code>run = FALSE</code>, and never changes the compiled command. Suppress it
+by naming a track with <code>audio_stream</code>, or by class with
 <code>suppressWarnings(classes = "tidymedia_dropped_audio")</code>.</p>
+<p>Switch the check off – and skip its FFprobe call – with
+<code>options(tidymedia.check_tracks = FALSE)</code> for the session, or
+<code>withr::local_options(tidymedia.check_tracks = FALSE)</code> for the rest of
+one function.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

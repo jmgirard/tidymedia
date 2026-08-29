@@ -105,12 +105,21 @@ via `...`). See
 
 When a row names no `audio_stream` and its input turns out to carry
 tracks the output will not, the verb warns **once** for the whole batch,
-naming every affected row. That check is **best-effort**: it runs
-FFprobe, so it is emitted when FFprobe is available and the input can be
-probed, and is skipped silently otherwise. It never runs under
-`run = FALSE`, never changes any compiled command, and is skipped
-entirely when every row names a track. Suppress it by class with
-`suppressWarnings(classes = "tidymedia_dropped_audio")`.
+naming every affected row. That check is **best-effort** and costs **one
+FFprobe call per distinct input** it has to probe, so a repeated input
+is probed once and a row that names a track is not probed at all: it is
+emitted when FFprobe is available and the input can be probed, and is
+skipped silently otherwise. Those probes run **serially at the front
+door**, before the fan-out starts, so `parallel` does not reach them; a
+sweep long enough to look like a hang reports its progress. The check
+never runs under `run = FALSE`, never changes any compiled command, and
+is skipped entirely when every row names a track. Suppress it by class
+with `suppressWarnings(classes = "tidymedia_dropped_audio")`.
+
+Switch the check off – and skip the whole sweep – with
+`options(tidymedia.check_tracks = FALSE)` for the session, or
+`withr::local_options(tidymedia.check_tracks = FALSE)` for the rest of
+one function.
 
 ## See also
 

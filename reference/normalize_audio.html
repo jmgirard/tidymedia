@@ -197,6 +197,10 @@ otherwise. It never runs under <code>run = FALSE</code>, and never changes the
 compiled command. Under <code>two_pass = TRUE</code> it lands <em>before</em> the
 analysis pass, so it arrives while adding <code>audio_stream</code> can still save
 that pass.</p>
+<p>Switch the check off – and skip its FFprobe call – with
+<code>options(tidymedia.check_tracks = FALSE)</code> for the session, or
+<code>withr::local_options(tidymedia.check_tracks = FALSE)</code> for the rest of
+one function.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

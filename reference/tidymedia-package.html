@@ -97,10 +97,11 @@ files it names timed out rather than being unreadable. <code><a href="ffm_batch.
 job, and warn once at the end of the run saying how many jobs timed out and
 did not run to completion — at <code>parallel = TRUE</code> no differently from
 sequentially. The dropped-track check behind <code><a href="extract_audio.html">extract_audio()</a></code>,
-<code><a href="convert_audio.html">convert_audio()</a></code>, <code><a href="separate_audio_video.html">separate_audio_video()</a></code> and their <code>_batch</code> siblings
-warns that it could not check, and the provenance manifest warns that it
-could not read a version; both then carry on as they would for any other
-unreadable input.</p>
+<code><a href="convert_audio.html">convert_audio()</a></code>, <code><a href="normalize_audio.html">normalize_audio()</a></code> and their <code>_batch</code> siblings warns
+that it could not check, as does the multi-track diagnostic
+<code><a href="separate_audio_video.html">separate_audio_video()</a></code> reaches after a run has already failed; and the
+provenance manifest warns that it could not read a version. All then carry
+on as they would for any other unreadable input.</p>
 <p>To handle either outcome programmatically, the abort carries the condition
 class <code>tidymedia_timeout</code>; the dropped-track and version-probe warnings
 carry <code>tidymedia_probe_timeout</code>, and the batch warning
@@ -146,6 +147,41 @@ survive the attempt, and one measured here did. Which FFmpeg build you have
 matters too — the same blocked input that took 42.0 seconds against
 FFmpeg 6.1.1 took 2.0 seconds against 9.0.1, because the newer build answers
 the first signal.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="session-options">Session options<a class="anchor" aria-label="anchor" href="#session-options"></a></h2>
+
+
+<p>Three options change how the package behaves for the rest of the session.
+Each is read where it is needed rather than at load time, so setting one
+takes effect on the next call. The first two refuse a value they cannot use,
+naming the option, at the first call that reads it.</p>
+<div class="sourceCode"><pre><code><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>tidymedia.timeout <span class="op">=</span> <span class="fl">600</span><span class="op">)</span></span></code></pre></div>
+
+<p>A wall-clock limit, in whole seconds, on how long each spawned program is
+waited for. <code>0</code> (the default) means no limit. Described in full under
+<em>Bounding a run that hangs</em> above, with <code><a href="with_timeout.html">with_timeout()</a></code> and
+<code><a href="local_timeout.html">local_timeout()</a></code> for one call and one function.</p>
+<div class="sourceCode"><pre><code><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>tidymedia.check_tracks <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+
+<p>Switches off the dropped-track check — the warning <code><a href="extract_audio.html">extract_audio()</a></code>,
+<code><a href="convert_audio.html">convert_audio()</a></code>, <code><a href="normalize_audio.html">normalize_audio()</a></code> and their <code>_batch</code> siblings signal
+when an input carries audio tracks the output will not. The default is
+<code>TRUE</code>. The check costs one FFprobe call per distinct input, run before the
+work starts and, on the <code>_batch</code> verbs, serially before the fan-out; that
+cost is what switching the check off buys back. It is worth declining on a
+large jobs table whose inputs you already know the tracks of. A row that
+names an <code>audio_stream</code> is not probed at all, so a table whose rows all name
+one pays nothing either way.</p>
+<div class="sourceCode"><pre><code><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>tidymedia.nvenc_encoders <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"h264_nvenc"</span>, <span class="st">"hevc_nvenc"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+
+<p>Names the NVIDIA hardware encoders this machine has, instead of asking
+FFmpeg. Set it to <code>character(0)</code> to declare there are none. Unset (the
+default), the package asks once per session and remembers the answer.</p>
+<p>All three are carried into <code>parallel = TRUE</code> workers, which run under the
+settings the calling session had and hand their own back afterwards, and all
+three can be set for one call with <code><a href="https://withr.r-lib.org/reference/with_options.html" class="external-link">withr::with_options()</a></code> or for the rest of
+a function with <code><a href="https://withr.r-lib.org/reference/with_options.html" class="external-link">withr::local_options()</a></code>.</p>
 <p>See <code><a href="../articles/tidymedia.html">vignette("tidymedia")</a></code> for the guided tour, <code><a href="../articles/batch.html">vignette("batch")</a></code> for
 running a verb over many files, <code><a href="../articles/metadata.html">vignette("metadata")</a></code> for the readers, and
 <code><a href="../articles/workflow.html">vignette("workflow")</a></code> for an end-to-end research preprocessing pipeline.

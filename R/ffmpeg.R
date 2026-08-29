@@ -441,7 +441,9 @@ warn_dropped_audio_batch <- function(jobs, audio_stream = NULL,
   # and so cannot be aborted by a malformed one.
   if (!resolve_check_tracks(call = call)) return(invisible(NULL))
   inputs <- jobs$input[rows]
-  counts <- count_audio_streams_all(inputs, call = call)
+  # progress = TRUE here and nowhere else: this is the one sweep that visits
+  # many files, serially, before the caller's work starts (M082).
+  counts <- count_audio_streams_all(inputs, call = call, progress = TRUE)
   warn_dropped_audio(inputs, counts, rows = rows, call = call)
 }
 

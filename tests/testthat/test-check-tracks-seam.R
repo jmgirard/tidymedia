@@ -161,3 +161,57 @@ test_that("a call that names a track, or does not run, reads no option", {
     )
   )
 })
+
+
+# The bar over the batch probe sweep (AC4) ---------------------------------
+
+# Read the sweep's progress bar through cli's own `logger` progress handler,
+# which reports a bar's totals as text on stdout: "0/N created" and
+# "N/N terminated (done)". That is the deterministic channel. Counting progress
+# CONDITIONS is not: measured on this machine, the same bar signalled 3
+# conditions over 5 instant updates, 0 over 3 updates delayed 50 ms each, and
+# one per update only when every update forces a redraw -- which also defeats
+# cli.progress_show_after, the delay that keeps a fast sweep silent.
+progress_ticks <- function(expr) {
+  lines <- withr::with_options(
+    list(cli.progress_handlers_only = "logger"),
+    utils::capture.output(suppressWarnings(expr))
+  )
+  sub("^.* cli-[0-9-]+ ", "", lines)
+}
+
+test_that("the sweep drives one bar counting the DISTINCT inputs", {
+  # Four rows, three distinct inputs: the bar's total is what the sweep visits,
+  # not how many rows asked for it. A bar totalling 4 would fail here.
+  local_mocked_bindings(count_audio_streams = function(file) 3L)
+  jobs <- tibble::tibble(input = c("a.mkv", "b.mkv", "a.mkv", "c.mkv"),
+                         output = c("w", "x", "y", "z"))
+  expect_identical(progress_ticks(warn_dropped_audio_batch(jobs)),
+                   c("0/3 created", "3/3 terminated (done)"))
+})
+
+test_that("no bar is created when the seam is switched off", {
+  local_mocked_bindings(count_audio_streams = function(file) 3L)
+  jobs <- tibble::tibble(input = c("a.mkv", "b.mkv"), output = c("x", "y"))
+  withr::local_options(list(tidymedia.check_tracks = FALSE))
+  expect_identical(progress_ticks(warn_dropped_audio_batch(jobs)), character(0))
+})
+
+test_that("no bar is created when every row named a track", {
+  # The other way the sweep does not happen. Without this the test above could
+  # pass on a bar that is never created at all.
+  local_mocked_bindings(count_audio_streams = function(file) 3L)
+  jobs <- tibble::tibble(input = c("a.mkv", "b.mkv"), output = c("x", "y"),
+                         audio_stream = c(0, 1))
+  expect_identical(progress_ticks(warn_dropped_audio_batch(jobs)), character(0))
+})
+
+test_that("the scalar sites draw no bar", {
+  # count_audio_streams_all() is shared with the separation diagnostic and the
+  # four scalar drop sites, all of which sweep exactly one file; only the batch
+  # site asks for the bar.
+  local_mocked_bindings(count_audio_streams = function(file) 3L)
+  expect_identical(progress_ticks(warn_dropped_audio("a.mkv",
+                                                     count_audio_streams_all("a.mkv"))),
+                   character(0))
+})

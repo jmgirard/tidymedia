@@ -2755,3 +2755,60 @@ shipping a generalization that is wrong for the case it was generalized for.
   report of a call the carrier sweep names and the abort does not, or the
   reverse; or by a derived-output verb arriving whose duplication really is
   per-column.
+
+## D060 — The dropped-track check gets a session-wide off switch, and a progress bar over its batch sweep stays inside D024's licence (2026-08-28, from M082; extends D047's seam precedent and D024's diagnostic-probe licence, leaving both standing)
+
+Two rules in one entry, because the second is only asked once the first has
+shipped: the check that can now be switched off is also the check whose cost a
+caller has to be able to see before deciding to.
+
+**The switch is a third option seam, not a per-verb argument.**
+`options(tidymedia.check_tracks = FALSE)` stops D024's dropped-audio-track
+probe, and with it the one FFprobe call that probe costs per distinct input.
+`resolve_check_tracks()` reads it with `rlang::check_bool()`, so a value that is
+not one non-`NA` logical is refused once, naming the option — `isTRUE()` would
+read `"yes"` as `FALSE` and silently remove the check from a session that asked
+to keep it. The default is `TRUE`, the opposite of `resolve_timeout()`'s `0` and
+for the opposite reason: this seam turns an existing behavior off, so the
+reversible default is the behavior already shipped.
+
+D047 declined a per-verb argument for the timeout on reasoning that holds here
+unchanged — a seam commits no exported signature, so D014's pre-0.2.0 clean
+break stays unspent — and `withr::local_options()` already gives the one-call
+form that D052's hard dependency pays for. The seam is read LAST at the four
+scalar sites, after `run` and after the caller's `audio_stream`, and once inside
+`warn_dropped_audio_batch()` below its rows check: a call that declined the
+probe on either of the other two grounds reads no option and so cannot be
+aborted by a stale one in a startup file. It is carried into parallel workers
+raw, unset state included, rather than resolved as the limit is, because the
+front-door probe has already refused a malformed value in the parent.
+
+**A progress bar over the batch sweep is inside D024's licence, not an
+exception to it.** D024 permits a probe on a `run = TRUE` path while its outcome
+— ran, skipped, succeeded, failed — changes nothing observable except whether a
+diagnostic condition is signalled, and names four exclusions. A `cli` bar over
+`warn_dropped_audio_batch()`'s serial sweep engages none of them: the compiled
+command, every resolved default, whether execution proceeds and which pipeline
+executes are identical whether the bar is drawn or not. Nor does the bar report
+the probe's outcome — the same bar is drawn when every probe fails as when every
+one answers, so the rule's "outcome" clause is not reached. What it reports is
+that the sweep is running, which is the whole point: the cost this seam lets a
+caller decline was previously indistinguishable from a hang.
+
+Two properties keep it a report rather than a second channel. `cli`'s progress
+mechanism signals conditions of class `cli_message`/`cliMessage` — the same
+mechanism `cli_warn()` uses for the dropped-track warning itself. And under
+`cli.progress_show_after`, whose default is two seconds, a sweep that finishes
+sooner signals nothing at all. The bar counts DISTINCT inputs, matching what the
+sweep visits, and is not gated on the batch verbs' own `progress` argument,
+which governs `ffm_batch()`'s run-time bar over work the caller asked for rather
+than a front-door cost the caller has not declined.
+
+- **Falsified by** a report of a caller needing two different answers to the
+  check inside one script, which is the case a session-wide switch cannot serve
+  and D051 shipped `with_timeout()` for; by the seam growing a value that has to
+  be refused before it is set, which would owe it the `with_*`/`local_*` pair
+  this entry declined; by anything downstream reading the bar as data rather
+  than as a report, which would give the probe the second effect D024 excludes;
+  or by a report of the bar appearing on a batch whose caller had switched
+  progress off and did not want it.

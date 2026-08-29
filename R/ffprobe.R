@@ -254,9 +254,30 @@ count_audio_streams <- function(file) {
 # version gave. D024 licenses this probe only while its outcome changes nothing
 # but whether a diagnostic is signalled, and a warning is inside that licence
 # where a changed count would not be.
-count_audio_streams_all <- function(files, call = rlang::caller_env()) {
+#
+# `progress` puts a cli bar over the sweep (M082), for the one caller whose
+# sweep is long enough to look like a hang: warn_dropped_audio_batch(), which
+# probes every distinct input in a jobs table serially at the front door before
+# the fan-out starts. It is off for every other caller, whose sweep is one file.
+# The bar counts DISTINCT inputs, because that is what the sweep visits. cli
+# renders nothing until a bar has been alive two seconds, so a fast sweep still
+# shows nothing at all; the bar is not gated on the batch verbs' own `progress`
+# argument, which governs ffm_batch()'s run-time bar rather than this front-door
+# cost.
+count_audio_streams_all <- function(files, call = rlang::caller_env(),
+                                    progress = FALSE) {
   uniq <- unique(files)
-  res <- lapply(uniq, count_audio_streams)
+  # One sweep whether or not the bar is drawn: an lapply() for the silent case
+  # beside a for() for the other would be two copies of the one loop.
+  if (isTRUE(progress)) {
+    cli::cli_progress_bar("Checking audio tracks", total = length(uniq))
+  }
+  res <- vector("list", length(uniq))
+  for (i in seq_along(uniq)) {
+    res[[i]] <- count_audio_streams(uniq[[i]])
+    if (isTRUE(progress)) cli::cli_progress_update()
+  }
+  if (isTRUE(progress)) cli::cli_progress_done()
   timed_out <- vapply(res, is_absorbed_timeout, logical(1))
   counts <- vapply(
     res,

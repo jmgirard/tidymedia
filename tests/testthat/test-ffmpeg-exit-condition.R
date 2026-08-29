@@ -109,16 +109,169 @@ test_that("ffmpeg_exit_status() reads the class and the field, nothing else", {
   )
 })
 
-test_that("a missing FFmpeg binary still falls open past the enrichment", {
-  # The enrichment's fail-open (D024): no status means "not the failure this
-  # diagnostic is about", so the original condition is re-raised untouched.
+# M086 AC1: the enriched multi-track abort is itself catchable by exit class ---
+
+# The three phrases the enrichment -- and nothing else in the package -- puts in
+# a message. AC2 asserts their ABSENCE on the near-miss cases, so they are named
+# as literal strings rather than by referent: "the track count" is a bare integer
+# that ffm_run()'s own message can carry by accident, which is how a negative
+# test on it would pass for the wrong reason.
+enrichment_phrases <- c("audio tracks", "audio_stream", ".mka")
+
+expect_no_enrichment <- function(cnd) {
+  expect_false(inherits(cnd, "tidymedia_multitrack_separation"))
+  msg <- cli::ansi_strip(conditionMessage(cnd))
+  for (phrase in enrichment_phrases) {
+    expect_false(grepl(phrase, msg, fixed = TRUE),
+                 label = paste0("message carries ", phrase))
+  }
+}
+
+# Skip unless THIS FFmpeg's single-stream audio muxer actually refuses several
+# audio streams; only ffmpeg >= 8's adts muxer does. Asserting the environment's
+# own property beats assuming the local build's behavior is universal (M43).
+adts_refuses_multistream <- function(infile) {
+  out <- withr::local_tempfile(fileext = ".aac")
+  st <- suppressWarnings(tryCatch(
+    system2("ffmpeg",
+            c("-y", "-loglevel", "error", "-i", infile, "-map", "0:a",
+              "-c:a", "copy", out),
+            stdout = FALSE, stderr = FALSE),
+    error = function(e) 1L
+  ))
+  !identical(as.integer(st), 0L)
+}
+
+test_that("the multi-track separation abort is catchable by exit class", {
+  # AC1. Varied over the output container and over the FAILURE CAUSE, because
+  # the criterion promises `tm_status` tracks the parent's status rather than a
+  # constant: a container refusal and a missing output directory exit with
+  # different numbers on the same build.
   skip_if_no_ffprobe()
   infile <- make_multitrack_video()
-  audio <- withr::local_tempfile(fileext = ".mp3")
-  video <- withr::local_tempfile(fileext = ".mp4")
+  dir <- withr::local_tempdir()
+  video <- file.path(dir, "v.mp4")
+
+  cases <- list(
+    # AAC copied into MP3 or WAV: refused by every FFmpeg build.
+    list(name = ".mp3", out = file.path(dir, "a.mp3")),
+    list(name = ".wav", out = file.path(dir, "a.wav")),
+    # A directory that does not exist: a different exit number, same enrichment.
+    list(name = "missing directory", out = file.path(dir, "nope", "a.mp3"))
+  )
+  if (adts_refuses_multistream(infile)) {
+    cases <- c(cases, list(list(name = ".aac", out = file.path(dir, "a.aac"))))
+  }
+
+  statuses <- integer()
+  for (case in cases) {
+    # (i) an exit-status handler catches it -- the whole point of the milestone.
+    cnd <- tryCatch(separate_audio_video(infile, case$out, video),
+                    tidymedia_ffmpeg_exit = function(e) e)
+    expect_s3_class(cnd, "tidymedia_ffmpeg_exit")
+    # (ii) the enriched class is still there, and still first.
+    expect_identical(
+      class(cnd),
+      c("tidymedia_multitrack_separation", "tidymedia_ffmpeg_exit",
+        "rlang_error", "error", "condition")
+    )
+    # (iii) the diagnostic still renders the count and both ways out.
+    msg <- cli::ansi_strip(conditionMessage(cnd))
+    expect_match(msg, "3 audio tracks", info = case$name)
+    expect_match(msg, "audio_stream", info = case$name)
+    expect_match(msg, ".mka", fixed = TRUE, info = case$name)
+    # (iv) `tm_status` is the parent's status, not a re-parse of the message.
+    expect_true(is.integer(cnd$tm_status))
+    expect_length(cnd$tm_status, 1L)
+    expect_identical(cnd$tm_status, cnd$parent$tm_status)
+    expect_false(identical(cnd$tm_status, 0L))
+    statuses <- c(statuses, cnd$tm_status)
+  }
+  # The status varies with the cause: a field pinned to one number would pass
+  # every per-case check above and fail here.
+  expect_gt(length(unique(statuses)), 1L)
+})
+
+# M086 AC2: the four near misses, none of which gets the enrichment ----------
+
+test_that("an unresolvable FFmpeg falls open to run_program()'s own abort", {
+  # AC2 (a): no status means "not the failure this diagnostic is about", so the
+  # original condition is re-raised untouched (D024's fail-open consequence).
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  dir <- withr::local_tempdir()
   local_mocked_bindings(find_ffmpeg = function() NULL)
-  cnd <- tryCatch(separate_audio_video(infile, audio, video),
-                  error = function(e) e)
-  expect_false(inherits(cnd, "tidymedia_multitrack_separation"))
-  expect_match(cli::ansi_strip(conditionMessage(cnd)), "Could not locate FFmpeg")
+  cnd <- tryCatch(
+    separate_audio_video(infile, file.path(dir, "a.mp3"), file.path(dir, "v.mp4")),
+    error = function(e) e
+  )
+  expect_no_enrichment(cnd)
+  expect_false(inherits(cnd, "tidymedia_ffmpeg_exit"))
+  expect_null(cnd$tm_status)
+  expect_false(any(grepl("^tidymedia_", class(cnd))))
+  # Unchanged in class and message: the same abort run_program() raises when it
+  # is handed no location, captured independently of the call above.
+  direct <- tryCatch(run_program(NULL, "-version", program = "FFmpeg"),
+                     error = function(e) e)
+  expect_identical(class(cnd), class(direct))
+  expect_identical(cli::ansi_strip(conditionMessage(cnd)),
+                   cli::ansi_strip(conditionMessage(direct)))
+})
+
+test_that("an unanswerable track count falls open to ffm_run()'s abort", {
+  # AC2 (b): FFprobe cannot say how many tracks there are, so there is nothing
+  # to add and the exit condition passes through as it is.
+  skip_if_no_ffmpeg()
+  infile <- make_multitrack_video()
+  dir <- withr::local_tempdir()
+  local_mocked_bindings(find_ffprobe = function() NULL)
+  cnd <- tryCatch(
+    separate_audio_video(infile, file.path(dir, "a.mp3"), file.path(dir, "v.mp4")),
+    error = function(e) e
+  )
+  expect_no_enrichment(cnd)
+  # It IS a non-zero exit, and re-raising it unchanged means it keeps the class
+  # ffm_run() gave it -- the clause the milestone's first AC2 wording denied.
+  expect_identical(
+    class(cnd),
+    c("tidymedia_ffmpeg_exit", "rlang_error", "error", "condition")
+  )
+  expect_true(is.integer(cnd$tm_status))
+  expect_false(identical(cnd$tm_status, 0L))
+})
+
+test_that("a single-track input falls open to ffm_run()'s abort", {
+  # AC2 (c): one track mapped, so a track count answers nothing.
+  skip_if_no_ffprobe()
+  infile <- make_test_video()
+  dir <- withr::local_tempdir()
+  cnd <- tryCatch(
+    separate_audio_video(infile, file.path(dir, "a.mp3"), file.path(dir, "v.mp4")),
+    error = function(e) e
+  )
+  expect_no_enrichment(cnd)
+  expect_identical(
+    class(cnd),
+    c("tidymedia_ffmpeg_exit", "rlang_error", "error", "condition")
+  )
+  expect_true(is.integer(cnd$tm_status))
+  expect_false(identical(cnd$tm_status, 0L))
+})
+
+test_that("a reached timeout falls open with its own class intact", {
+  # AC2 (d): forced at the spawn site so the condition travels a real
+  # separate_audio_video() call rather than being constructed and asserted on.
+  skip_if_no_ffmpeg()
+  infile <- make_multitrack_video()
+  dir <- withr::local_tempdir()
+  res <- tm_force_timeout(
+    "separate_audio_video",
+    list(infile = infile,
+         audiofile = file.path(dir, "a.mp3"),
+         videofile = file.path(dir, "v.mp4"))
+  )
+  expect_no_enrichment(res$error)
+  expect_s3_class(res$error, "tidymedia_timeout")
+  expect_false(inherits(res$error, "tidymedia_ffmpeg_exit"))
+  expect_null(res$error$tm_status)
 })

@@ -672,7 +672,14 @@ run_separation_audio <- function(pipeline, infile, outfile, audio_stream,
           "i" = "Or keep all {n} by writing a container that holds several --
                  Matroska ({.file .mka}) or {.file .m4a}."
         ),
-        class = "tidymedia_multitrack_separation",
+        # Both classes, most specific first: the enriched diagnostic keeps the
+        # name handlers were written against, and the exit class makes
+        # ?tidymedia's promise -- a failed FFmpeg run is catchable by one class
+        # -- true on this path too (M086). D062 leaves hierarchies open, and
+        # this branch only runs when `status` is a real non-NA exit number, so
+        # the class names the event that actually occurred.
+        class = c("tidymedia_multitrack_separation", "tidymedia_ffmpeg_exit"),
+        tm_status = as.integer(status),
         parent = cnd,
         call = call
       )

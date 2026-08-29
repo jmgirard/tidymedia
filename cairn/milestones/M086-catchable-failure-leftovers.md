@@ -96,13 +96,13 @@ tell a caller which class catches what.
 
 ## Tasks
 
-- [ ] T1 Extend `tests/testthat/test-ffmpeg-exit-condition.R` with the scalar
+- [x] T1 Extend `tests/testthat/test-ffmpeg-exit-condition.R` with the scalar
       separation grid, red before T2: the enriched path varied over container
       (`.aac`, `.mp3`, `.wav`) and over at least two distinct exit statuses,
       plus AC2's four near-miss cases (the three fail-open branches and a
       forced timeout). Fixture via `make_multitrack_video()`
       (`tests/testthat/helper-media.R:197`); `skip_if` the binaries are absent.
-- [ ] T2 `R/ffmpeg.R:675` — class vector becomes
+- [x] T2 `R/ffmpeg.R:675` — class vector becomes
       `c("tidymedia_multitrack_separation", "tidymedia_ffmpeg_exit")` and the
       abort gains `tm_status = status`, which the branch already holds
       non-`NA` at `R/ffmpeg.R:653`. Message text unchanged.
@@ -128,6 +128,7 @@ tell a caller which class catches what.
 - 2026-08-29: plan gate chose adding `tidymedia_ffmpeg_exit` to the multi-track abort's class vector over documenting the `cnd$parent` chain, because it makes `?tidymedia`'s shipped promise true rather than walking it back, and D062 leaves class hierarchies open; falsified by a caller needing the two sites — the error and the batch warning — to answer to one handler pair, which this deliberately breaks.
 - 2026-08-29: plan gate chose a new `tidymedia_loudnorm_analysis` event class for the two-pass batch abort over narrowing `tidymedia_ffmpeg_exit` to the exit-only case, because the abort also fires on rows that exited zero and D062 requires a class to name the fact that occurred; falsified by the package finding a second site with the same mixed-cause shape where one class per cause reads better than one per event.
 
+- 2026-08-29: T1+T2 in one commit so the branch never checkpoints red. T1's AC1 grid was red first (the `tidymedia_ffmpeg_exit` handler did not catch the enriched abort); T2 added the class and `tm_status`, and `devtools::test()` is clean at 8306 passes, 0 failures, 5 skips.
 ## Decisions
 
 ## Review

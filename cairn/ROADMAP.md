@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-29 (M087 plan: M087 added as `planned`. Three candi
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M087 | A diagnostic answers to the same class from the scalar verb and its batch sibling | blocked | — | normal | milestones/M087-scalar-batch-condition-classes.md |
+| M087 | A diagnostic answers to the same class from the scalar verb and its batch sibling | planned | — | normal | milestones/M087-scalar-batch-condition-classes.md |
 | M086 | The catchable failure reaches the two paths M085 left behind | done | — | normal | milestones/archive/M086-catchable-failure-leftovers.md |
 | M085 | A failed FFmpeg run is a condition you can catch | done | — | normal | milestones/archive/M085-ffmpeg-error-condition.md |
 | M083 | The ROADMAP gets back under its byte budget | done | — | normal | milestones/archive/M083-roadmap-byte-budget.md |

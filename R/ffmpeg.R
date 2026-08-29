@@ -434,6 +434,12 @@ warn_dropped_audio_batch <- function(jobs, audio_stream = NULL,
   }
   rows <- which(is.na(sel))
   if (length(rows) == 0) return(invisible(NULL))
+  # The M082 seam, read here rather than at the three call sites so one return
+  # covers all three verbs. Below the rows check, not above it, so the batch
+  # form consults the option exactly when the scalar form does -- when a probe
+  # would otherwise run. A batch whose every row named a track reads no option
+  # and so cannot be aborted by a malformed one.
+  if (!resolve_check_tracks(call = call)) return(invisible(NULL))
   inputs <- jobs$input[rows]
   counts <- count_audio_streams_all(inputs, call = call)
   warn_dropped_audio(inputs, counts, rows = rows, call = call)
@@ -540,7 +546,13 @@ extract_audio <- function(infile, outfile, audio_codec = "copy",
   # below is byte-identical whether it runs, succeeds, or fails. isTRUE() rather
   # than a bare `run` so a non-logical value still gets ffm_finish()'s own
   # check_bool() message.
-  if (isTRUE(run) && is.null(audio_stream)) {
+  #
+  # resolve_check_tracks() is LAST in the chain (M082). A caller who switched
+  # the check off is spared the FFprobe call, and the two conditions before it
+  # keep their existing precedence: a `run = FALSE` call still consults no
+  # option, so it cannot be aborted by a malformed one, and a call that named
+  # an `audio_stream` still reads nothing it has no use for.
+  if (isTRUE(run) && is.null(audio_stream) && resolve_check_tracks()) {
     warn_dropped_audio(infile, count_audio_streams_all(infile))
   }
 
@@ -1011,7 +1023,7 @@ convert_audio <- function(infile, outfile, audio_codec = NULL,
 
   # D024's diagnostic probe; see extract_audio() for why it is gated on `run`
   # and on a NULL audio_stream.
-  if (isTRUE(run) && is.null(audio_stream)) {
+  if (isTRUE(run) && is.null(audio_stream) && resolve_check_tracks()) {
     warn_dropped_audio(infile, count_audio_streams_all(infile))
   }
 
@@ -2213,7 +2225,7 @@ normalize_audio <- function(infile, outfile,
     # to prevent. Same gates as extract_audio()'s site: `run` because a
     # run = FALSE call stays binary-free, and a NULL audio_stream because a
     # caller who named a track chose the drop.
-    if (isTRUE(run) && is.null(audio_stream)) {
+    if (isTRUE(run) && is.null(audio_stream) && resolve_check_tracks()) {
       warn_dropped_audio(infile, count_audio_streams_all(infile))
     }
     measured <- run_loudnorm_analysis(infile, target_loudness, true_peak,
@@ -2258,7 +2270,7 @@ normalize_audio <- function(infile, outfile,
     rlang::check_number_whole(channels, min = 1, allow_null = TRUE)
     rlang::check_number_whole(sample_rate, min = 1, allow_null = TRUE)
     check_audio_codec_not_copy(audio_codec)
-    if (isTRUE(run) && is.null(audio_stream)) {
+    if (isTRUE(run) && is.null(audio_stream) && resolve_check_tracks()) {
       warn_dropped_audio(infile, count_audio_streams_all(infile))
     }
   }

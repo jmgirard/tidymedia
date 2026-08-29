@@ -221,7 +221,13 @@ run_loudnorm_analysis_batch <- function(inputs, target_loudness, true_peak,
 # offending row before any correction command is built.
 assemble_measured <- function(outputs, call = rlang::caller_env()) {
   cls <- lapply(outputs, function(out) {
-    if (!is.null(attr(out, "status"))) return(list(status = "error"))
+    # Carry the exit number rather than collapsing every failure to one word:
+    # it is the only place a caller can learn WHY a row failed to run, and the
+    # abort below hands it back on `tm_row_status` (M086).
+    status <- attr(out, "status")
+    if (!is.null(status)) {
+      return(list(status = "error", exit = as.integer(status)))
+    }
     classify_loudnorm_output(out)
   })
   status <- vapply(cls, `[[`, character(1), "status")
@@ -238,7 +244,20 @@ assemble_measured <- function(outputs, call = rlang::caller_env()) {
       "i" = "Offending rows (1-indexed): {.val {bad}}.",
       "i" = "Every row must produce a finite JSON measurement block (or be \\
              silent) before the correction pass can be built."
-    ), call = call)
+    ),
+    # Its own event class, not `tidymedia_ffmpeg_exit`: this abort also fires
+    # for rows that exited ZERO and printed nothing parseable, so an exit is
+    # one of its causes rather than the fact it reports (D062, M086). The class
+    # is the same whatever mix of causes a batch happens to carry; the causes
+    # are on `tm_row_status`, NA where the row exited zero.
+    class = "tidymedia_loudnorm_analysis",
+    tm_rows = unname(as.integer(bad)),
+    tm_row_status = unname(vapply(
+      cls[bad],
+      function(x) if (is.null(x$exit)) NA_integer_ else x$exit,
+      integer(1)
+    )),
+    call = call)
   }
   silent <- status == "silent"
   # Silent rows have no measured values; pull them from the classifier's

@@ -672,7 +672,14 @@ run_separation_audio <- function(pipeline, infile, outfile, audio_stream,
           "i" = "Or keep all {n} by writing a container that holds several --
                  Matroska ({.file .mka}) or {.file .m4a}."
         ),
-        class = "tidymedia_multitrack_separation",
+        # Both classes, most specific first: the enriched diagnostic keeps the
+        # name handlers were written against, and the exit class makes
+        # ?tidymedia's promise -- a failed FFmpeg run is catchable by one class
+        # -- true on this path too (M086). D062 leaves hierarchies open, and
+        # this branch only runs when `status` is a real non-NA exit number, so
+        # the class names the event that actually occurred.
+        class = c("tidymedia_multitrack_separation", "tidymedia_ffmpeg_exit"),
+        tm_status = as.integer(status),
         parent = cnd,
         call = call
       )
@@ -773,7 +780,8 @@ warn_failed_separation_batch <- function(out, audio_stream = NULL,
 }
 
 # Read FFmpeg's exit status off a `tidymedia_ffmpeg_exit` condition -- the class
-# ffm_run() and the loudnorm analysis pass both raise on a non-zero exit -- or NA
+# ffm_run(), the loudnorm analysis pass and the multi-track separation
+# diagnostic all raise on a non-zero exit -- or NA
 # for any other condition, and for one carrying the class but no `tm_status`.
 # The message is never consulted: the class answers WHICH failure this is and
 # the field carries the number, so rewording either abort cannot change what
@@ -853,6 +861,27 @@ ffmpeg_exit_status <- function(cnd) {
 #' are still reported beneath it, and remain the authority on why the command
 #' failed: the extra report is attached to \emph{any} failing audio command on a
 #' multi-track input, not only to a container refusal.
+#'
+#' The condition carries two class names, so a caller can catch it at either
+#' width. It is \code{tidymedia_ffmpeg_exit}, the class every non-zero FFmpeg
+#' exit raises, which is what an exit-status handler catches — the number is on
+#' the condition's \code{tm_status} field. It is also
+#' \code{tidymedia_multitrack_separation}, the class of the enriched diagnostic
+#' itself, which is what to catch when it is this failure in particular you want:
+#'
+#' \preformatted{
+#' tryCatch(
+#'   separate_audio_video("three-tracks.mkv", "audio.mp3", "video.mp4"),
+#'   tidymedia_ffmpeg_exit = function(cnd) cnd$tm_status
+#' )
+#' }
+#'
+#' When the report is omitted, the error that reaches the caller is the one the
+#' run itself raised, unchanged: a non-zero exit still answers to
+#' \code{tidymedia_ffmpeg_exit}, and a failure that is not an exit at all answers
+#' to neither class here: an FFmpeg the package cannot locate raises an error
+#' carrying no \code{tidymedia_} class at all, and a reached limit raises
+#' \code{tidymedia_timeout}.
 #'
 #' Counting the tracks means running FFprobe, so this is \strong{best-effort}: it
 #' is added when FFprobe is available and \code{infile} can be probed, and
@@ -4360,7 +4389,11 @@ derive_normalized_names <- function(input) {
 #'   \strong{always runs the analysis pass through FFmpeg} (it needs the binary
 #'   and readable inputs), even when \code{run = FALSE}. If any row's analysis
 #'   fails or yields no parseable measurement, the call aborts — naming the
-#'   offending row(s) — before any correction command is built. \strong{Silent}
+#'   offending row(s) — before any correction command is built. That abort is
+#'   classed \code{tidymedia_loudnorm_analysis} and carries the same row numbers
+#'   on \code{tm_rows}, alongside \code{tm_row_status}: each row's FFmpeg exit
+#'   status, or \code{NA} where the row exited zero but printed nothing
+#'   parseable. \strong{Silent}
 #'   rows are the exception: a silent input (analysis loudness \code{-inf})
 #'   cannot be normalized to a target, but one silent row does not abort the
 #'   batch — the non-silent rows are normalized, the silent rows are marked in a

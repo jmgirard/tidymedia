@@ -90,6 +90,27 @@ are still reported beneath it, and remain the authority on why the command
 failed: the extra report is attached to \emph{any} failing audio command on a
 multi-track input, not only to a container refusal.
 
+The condition carries two class names, so a caller can catch it at either
+width. It is \code{tidymedia_ffmpeg_exit}, the class every non-zero FFmpeg
+exit raises, which is what an exit-status handler catches — the number is on
+the condition's \code{tm_status} field. It is also
+\code{tidymedia_multitrack_separation}, the class of the enriched diagnostic
+itself, which is what to catch when it is this failure in particular you want:
+
+\preformatted{
+tryCatch(
+  separate_audio_video("three-tracks.mkv", "audio.mp3", "video.mp4"),
+  tidymedia_ffmpeg_exit = function(cnd) cnd$tm_status
+)
+}
+
+When the report is omitted, the error that reaches the caller is the one the
+run itself raised, unchanged: a non-zero exit still answers to
+\code{tidymedia_ffmpeg_exit}, and a failure that is not an exit at all answers
+to neither class here: an FFmpeg the package cannot locate raises an error
+carrying no \code{tidymedia_} class at all, and a reached limit raises
+\code{tidymedia_timeout}.
+
 Counting the tracks means running FFprobe, so this is \strong{best-effort}: it
 is added when FFprobe is available and \code{infile} can be probed, and
 omitted silently otherwise, leaving FFmpeg's own error alone. It never runs

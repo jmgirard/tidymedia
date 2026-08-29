@@ -136,6 +136,7 @@ Layer 1's failed-output removal → unchanged, relied on here (D046).
 
 - 2026-08-29: return fix verified — `devtools::test()` FAIL 0 | WARN 12 | SKIP 5 | PASS 8434 (was 8422 at the first review), `devtools::check()` 0 errors / 0 warnings / 0 notes (3m 30s). AC5 re-checked and now passing; status back to review.
 - 2026-08-29: second review pass — all seven criteria re-executed with fresh evidence and all pass, AC5 included; consistency gate clean (one sizing advisory at 12 tasks). Three lenses returned six findings, five of them from [O]: F1 (the corrected AC5 sentence's "its own error says which" clause is false for the video half on the both-fail path) triaged fix-now and put to the maintainer at the gate; F2 and F3 to the deferred-findings candidate row; F4 and F5 rejected. Both [S] lenses reported no findings.
+- 2026-08-29: gate fix — the maintainer chose fix-now for F1; the false "its own error says which" clause removed from the roxygen section (`R/ffmpeg.R`) and the `NEWS.md` entry, replaced by what the two errors actually report, derived from the executed both-fail run. `devtools::document()`; `devtools::check()` 0 errors / 0 warnings / 0 notes.
 
 ## Decisions
 
@@ -378,7 +379,12 @@ new top-level files (0 check notes); `devtools::check()` clean.
   rendered message never mentions its basename — no "was removed", no "was left
   as it was". FFmpeg's own stderr for the failed video command is printed, but
   it reports the encoder failure, not the file's fate. **Disposition: fix now**
-  — a one-clause correction on the branch, put to the maintainer at the gate.
+  — the maintainer chose the fix at the gate; landed on the branch before the
+  approval marker. The roxygen section and `NEWS.md` now state the disk rule
+  without the "its own error says which" clause and say instead that the audio
+  failure's error names which of the two happened to `audiofile` while nothing
+  reports `videofile`'s fate on the both-fail path. `devtools::document()`
+  re-run; `devtools::check()` re-run clean (0/0/0, 3m 20.8s).
 - F2 — *The video-written bullet is inferred from exit status, never from the
   file.* `abort_after_video(held, videofile, wrote)` sets `wrote = TRUE` on a
   zero exit alone; nothing stats `videofile`. A video command exiting 0 without

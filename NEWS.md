@@ -563,8 +563,10 @@
   was written to 'video.mp4'.` — so it is clear the video half survived. If the
   video command fails as well, that line is not shown and the audio failure is
   still the error you get. What each failed command leaves at its own output
-  path is unchanged and is stated in its own error: a partial file that run
-  wrote is removed, a file it never wrote to is left as it was.
+  path is unchanged: a partial file that run wrote is removed, a file it never
+  wrote to is left as it was. The audio failure's error says which of the two
+  happened to `audiofile`; nothing reports `videofile`'s fate when the video
+  command failed too, since its error is not the one raised.
   `separate_audio_video_batch()` is unchanged: it already ran both rows.
 
 * A missing value in a size, position or rate argument is now refused instead

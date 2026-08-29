@@ -902,11 +902,14 @@ ffmpeg_exit_status <- function(cnd) {
 #' there, the audio failure is still the error you get, and FFmpeg's own output
 #' for the failed video command is printed above it.
 #'
-#' What a failed command leaves at its own output path is the same on either
-#' path, and its own error says which: a partial file that run wrote is removed,
-#' while a file that was already at that path and that FFmpeg never wrote to is
-#' left exactly as it was. So neither failure path promises the path is empty
-#' afterwards — only that nothing half-written is left there.
+#' What a failed command leaves at its own output path is the same rule on
+#' either path: a partial file that run wrote is removed, while a file that was
+#' already at that path and that FFmpeg never wrote to is left exactly as it
+#' was. So neither failure path promises the path is empty afterwards — only
+#' that nothing half-written is left there. The audio failure's own error says
+#' which of the two happened to \code{audiofile}; nothing reports
+#' \code{videofile}'s fate on the both-fail path, because the video command's
+#' error is not the one you get.
 #'
 #' Because the default keeps every audio track, writing a multi-track input to a
 #' container that holds only one (\code{.aac}, \code{.mp3}, \code{.wav}) makes

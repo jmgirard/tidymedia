@@ -1534,6 +1534,25 @@ n_files <- function(x) {
 #'   side effect of writing the output file. The pipeline is executed as an
 #'   argument vector (never through a shell), so paths containing spaces or
 #'   special characters are safe.
+#' @section When FFmpeg exits non-zero:
+#' A run FFmpeg refuses aborts with a condition of class
+#' \code{tidymedia_ffmpeg_exit}, so a caller can catch a failed run without
+#' reading the error text:
+#'
+#' \preformatted{
+#' tryCatch(
+#'   ffm_run(pipeline),
+#'   tidymedia_ffmpeg_exit = function(cnd) cnd$tm_status
+#' )
+#' }
+#'
+#' The \code{tm_status} field is a length-one integer holding the exit status
+#' exactly as \code{system2()} reported it — including, for a
+#' signal-terminated FFmpeg, the shell's 128-plus-signal number passed through
+#' unchanged, which encodes the signal rather than anything FFmpeg chose to
+#' return. The \code{loudnorm} analysis pass behind
+#' \code{normalize_audio(two_pass = TRUE)} raises the same class and carries the
+#' same field, so one handler covers both.
 #' @seealso [ffm_compile()] to get the command without running it, [ffm_batch()]
 #'   for the many-file runner, and [verify_media()] for the \code{verify =} spec.
 #' @family builder functions
@@ -1586,12 +1605,16 @@ ffm_run <- function(object, verify = NULL) {
   status <- attr(out, "status")
   if (!is.null(status)) {
     disposition <- remove_failed_output(output, object$overwrite, before)
-    cli::cli_abort(c(
-      "FFmpeg exited with status {status}.",
-      "i" = "FFmpeg's error output is printed above.",
-      disposition,
-      "i" = "The failing command was: {.code ffmpeg {ffm_compile(object)}}"
-    ))
+    cli::cli_abort(
+      c(
+        "FFmpeg exited with status {status}.",
+        "i" = "FFmpeg's error output is printed above.",
+        disposition,
+        "i" = "The failing command was: {.code ffmpeg {ffm_compile(object)}}"
+      ),
+      class = "tidymedia_ffmpeg_exit",
+      tm_status = as.integer(status)
+    )
   }
   if (!is.null(verify)) verify_output(object$output, verify)
   invisible(out)

@@ -2839,3 +2839,46 @@ cannot be weighed. The bar stays, and so does every other rule D060 states.
   report, which would give the probe the second effect D024 excludes; or by the
   bar's presence being used to infer a probe's RESULT rather than its having
   run, which is the axis this entry still holds it silent on.
+
+## D062 — Condition classes name the event, not the severity, and their data fields carry the `tm_` prefix (2026-08-29, from M085/RR04; states a convention that was unowned prose, and settles the naming question AC1's irreversible-api tripwire raised)
+
+M085 gives `ffm_run()`'s non-zero-exit abort a catchable class, and the plan
+proposed `tidymedia_ffmpeg_error`. An independent review (RR04) rejected that
+name, and the rejection generalizes past the one class, so the convention is
+recorded here rather than left to the next milestone to rediscover.
+
+**The rule, in two parts.**
+
+- A condition class is `tidymedia_<event>` — it names the fact that occurred,
+  never the severity. Severity is already carried by the base classes
+  R supplies (`error`, `warning`, `condition`), so repeating it in the package
+  class buys a handler nothing and costs reuse: the package already signals
+  `tidymedia_multitrack_separation` as an error at one site and a warning at
+  another, which a name containing `error` could not do without lying. The
+  class M085 ships is `tidymedia_ffmpeg_exit`, and it names the narrow event —
+  FFmpeg was found, ran, and returned non-zero — not the category, because two
+  other FFmpeg failure modes (an unresolvable binary, a reached timeout) are
+  outside it. The package's existing narrow-name precedent is the same:
+  `tidymedia_probe_timeout` and `tidymedia_batch_timeout` deliberately do not
+  answer to `tidymedia_timeout`.
+- A condition's data fields carry the `tm_` prefix. `cli::cli_abort()` passes
+  `...` through to `rlang::abort()`, whose field namespace it shares with
+  `message`, `call`, `trace`, `parent`, `body`, `footer` and `use_cli_format`;
+  the prefix is the package's defence against that namespace growing. M085's
+  `tm_status` is the second family to use it, after `tm_program`/`tm_limit`.
+
+**What this does not decide.** The rlang/tidyverse house style is
+`pkg_error_detail`, with the severity word in second position. Adopting it
+would mean renaming every class the package ships, in one sweep, and is a
+larger decision than any single milestone; it is not taken here, and the
+reasoning above is why the package's own shape was preferred rather than that
+the ecosystem's was never considered. Class hierarchies are also left open:
+M085 ships one flat class because a parent would have exactly one member
+today, and a parent class can be appended later without breaking a handler
+written against the child.
+
+- **Falsified by** the package wanting to signal one recorded event at two
+  severities under two names, which would mean the event-naming rule is not
+  what keeps `tidymedia_multitrack_separation` honest; or by a field name
+  collision surviving the `tm_` prefix; or by a decision, before the first
+  release, to sweep every class into the ecosystem's `pkg_error_*` shape.

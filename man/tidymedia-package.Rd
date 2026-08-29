@@ -120,6 +120,12 @@ survive the attempt, and one measured here did. Which FFmpeg build you have
 matters too — the same blocked input that took 42.0 seconds against
 FFmpeg 6.1.1 took 2.0 seconds against 9.0.1, because the newer build answers
 the first signal.
+
+A run that FFmpeg itself refused is a different outcome from a run the
+limit killed, and carries a different class: the abort from \code{\link[=ffm_run]{ffm_run()}},
+and from the \code{loudnorm} analysis pass behind
+\code{normalize_audio(two_pass = TRUE)}, is classed \code{tidymedia_ffmpeg_exit}
+and carries the exit status in its \code{tm_status} field.
 }
 
 \section{Session options}{

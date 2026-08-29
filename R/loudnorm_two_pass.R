@@ -141,12 +141,17 @@ run_loudnorm_analysis <- function(input,
                      input = "", stderr = TRUE, call = call)
   status <- attr(out, "status")
   if (!is.null(status)) {
-    cli::cli_abort(c(
-      "The {.code loudnorm} analysis pass failed \\
-       (FFmpeg exited with status {status}).",
-      "i" = "The failing command was: \\
-             {.code ffmpeg {ffm_compile(p)}}"
-    ), call = call)
+    cli::cli_abort(
+      c(
+        "The {.code loudnorm} analysis pass failed \\
+         (FFmpeg exited with status {status}).",
+        "i" = "The failing command was: \\
+               {.code ffmpeg {ffm_compile(p)}}"
+      ),
+      class = "tidymedia_ffmpeg_exit",
+      tm_status = as.integer(status),
+      call = call
+    )
   }
   parse_loudnorm_measurements(out, call = call)
 }

@@ -589,22 +589,26 @@ test_that("every topic names the classes its site actually raises", {
   # AC1's sweep: the retired name survives nowhere outside the tracking files.
   # Assembled rather than written out, so this file does not match itself.
   retired <- paste0("tidymedia_loudnorm_", "analysis")
+  # `git grep` searches from its own working directory downward, and testthat
+  # runs with the wd set to tests/testthat -- so the sweep must be aimed at the
+  # package root explicitly or it reaches only this directory and can never see
+  # the name come back in R/, man/ or NEWS.md (M087 re-review F3).
+  root <- normalizePath(test_path("..", ".."), mustWork = FALSE)
+  git_at_root <- function(...) suppressWarnings(system2(
+    "git", c("-C", root, ...), stdout = TRUE, stderr = FALSE))
   in_git <- nzchar(Sys.which("git")) && identical(
     suppressWarnings(tryCatch(
-      system2("git", c("rev-parse", "--is-inside-work-tree"),
-              stdout = TRUE, stderr = FALSE),
+      git_at_root("rev-parse", "--is-inside-work-tree"),
       error = function(e) NA_character_)),
     "true")
   skip_if(!in_git, "not in a git checkout")
-  # The sweep must be shown to run over a non-empty domain: the CURRENT name is
-  # in the tracked files this grep reaches, so a grep that finds nothing at all
-  # is a broken instrument rather than a clean repo.
-  control <- suppressWarnings(system2(
-    "git", c("grep", "-l", "tidymedia_loudnorm_no_measurement", "--", ":!cairn/"),
-    stdout = TRUE, stderr = FALSE))
+  # The sweep must be shown to run over a non-empty domain, and over the domain
+  # it CLAIMS: the current name lives in R/, man/ and NEWS.md as well as here,
+  # so requiring a hit outside tests/ proves the grep reaches past its own wd.
+  control <- git_at_root(
+    "grep", "-l", "tidymedia_loudnorm_no_measurement", "--", ":!cairn/")
   expect_gt(length(control), 0L)
-  hits <- suppressWarnings(system2(
-    "git", c("grep", "-l", retired, "--", ":!cairn/"),
-    stdout = TRUE, stderr = FALSE))
+  expect_true(any(!startsWith(as.character(control), "tests/")))
+  hits <- git_at_root("grep", "-l", retired, "--", ":!cairn/")
   expect_identical(as.character(hits), character(0))
 })

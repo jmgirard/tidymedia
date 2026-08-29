@@ -40,8 +40,8 @@
   `success = FALSE` for a failed row instead of aborting, and the analysis
   pass raises `tidymedia_loudnorm_no_measurement` instead both when
   `normalize_audio(two_pass = TRUE)` exits zero and prints nothing parseable
-  and on every `normalize_audio_batch(two_pass = TRUE)` failure, for the
-  reason the entry after next gives.
+  and whenever a `normalize_audio_batch(two_pass = TRUE)` row yields no usable
+  measurement, for the reason the entry after next gives.
   Internally the package now reads the number off that field; it used to
   recover it by matching a regular expression against the error message,
   which could not tell the wording of one abort from the wording of another

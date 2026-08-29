@@ -1559,13 +1559,16 @@ n_files <- function(x) {
 #' \code{tidymedia_multitrack_separation} respectively — which is what to catch
 #' when it is that failure in particular you want.
 #'
-#' Two paths in the same family do \strong{not} raise this class, because no
-#' non-zero exit happened there. \code{normalize_audio(two_pass = TRUE)} also
+#' Two paths in the same family do \strong{not} raise this class, each for its
+#' own reason. \code{normalize_audio(two_pass = TRUE)} also
 #' aborts when the analysis pass exits zero and prints no parseable measurement
-#' block; that abort is \code{tidymedia_loudnorm_no_measurement} alone, with no
+#' block; no non-zero exit happened there, so that abort is
+#' \code{tidymedia_loudnorm_no_measurement} alone, with no
 #' \code{tm_status}. And \code{normalize_audio_batch(two_pass = TRUE)} reports
 #' every offending row of its analysis phase in one error, firing for rows that
-#' exited zero as well as for rows FFmpeg refused, so it too raises
+#' exited zero as well as for rows FFmpeg refused — so an exit is one of its
+#' causes rather than the fact it reports, and no single status could stand for
+#' the mix. It too raises
 #' \code{tidymedia_loudnorm_no_measurement} alone — carrying \code{tm_rows},
 #' the 1-indexed offending rows, and \code{tm_row_status}, their exit statuses
 #' aligned to it, with \code{NA} where the row exited zero. That shared class is

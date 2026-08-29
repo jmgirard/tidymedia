@@ -86,7 +86,9 @@ FFmpeg exit status, or \code{NA} where the row exited zero but printed
 nothing parseable. It carries no single exit status on \code{tm_status},
 and is not classed \code{tidymedia_ffmpeg_exit}, because it also fires for
 rows that exited zero: a batch can mix causes, so there is no one number to
-report. The scalar form, where exactly one run failed, does carry both.
+report. The scalar form carries both only where FFmpeg exited non-zero;
+where it exited zero and printed nothing parseable the scalar abort
+carries the shared class alone, with no \code{tm_status} either.
 \strong{Silent}
 rows are the exception: a silent input (analysis loudness \code{-inf})
 cannot be normalized to a target, but one silent row does not abort the

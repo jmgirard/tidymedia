@@ -1,6 +1,6 @@
 # M087: A diagnostic answers to the same class from the scalar verb and its batch sibling
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** — (RR05 is advisory; no binding criteria)
@@ -123,7 +123,7 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
 - [x] **T6.** Tests: assert the full class vector by identity at each of the four
       sites, including AC2's and AC3's absence assertions; each new assertion
       red against pre-milestone code before it is trusted.
-- [ ] **T7.** Append the `DECISIONS.md` entry annotating D062, carrying the five
+- [x] **T7.** Append the `DECISIONS.md` entry annotating D062, carrying the five
       points RR05 §6 requires (verbatim in `## Decisions` below): the rule held;
       a site's vector asserts every fact established there; "same event, same
       class vector" is NOT the convention; D007 is what forces it; the sharpened
@@ -153,6 +153,8 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
 - 2026-08-29: T4 — `?ffm_run` and `?tidymedia` corrected (the "two other paths raise the same class" sentence now says both also carry a narrower class of their own, and both topics now state which paths raise the shared loudnorm class WITHOUT the exit class); `?normalize_audio` gained the class names for its two sites; `?separate_audio_video` and `?separate_audio_video_batch` already matched. A pairing test executes all five sites and requires every observed `tidymedia_*` class to appear in each paired topic; planting `tidymedia_PLANTED_DRIFT` into `man/ffm_run.Rd` turned it red at the two expected pairings.
 
 - 2026-08-29: T5 — the `See vignette(…)` navigation paragraph moved from the end of `@section Session options:` to the end of `@details`, so it now renders inside `\details{}` and before the first `\section{}` in `man/tidymedia-package.Rd`. Guarded by a test that locates it against the first `\section{` offset; restoring the old placement in the generated Rd turned it red.
+
+- 2026-08-29: T7 — D063 appended, annotating D062 with RR05 §6's five points and sharpening its falsifier; `R/ffmpeg.R:681` and `:742` left as they are. `NEWS.md` gained the M087 entry and the unreleased M086 paragraph lost its now-false "a class of its own" phrasing. `devtools::document()` no diff; `devtools::test()` 0 failures / 8388 passing / 5 skips (all nvenc-absent); `devtools::check()` 0 errors, 0 warnings, 0 notes. `git grep tidymedia_loudnorm_analysis -- ':!cairn/'` returns nothing.
 
 ## Decisions
 

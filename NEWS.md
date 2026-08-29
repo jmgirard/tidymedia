@@ -59,13 +59,41 @@
   )
   ```
 
-  `normalize_audio_batch(two_pass = TRUE)`'s analysis phase gets a class of its
-  own, `tidymedia_loudnorm_no_measurement`, because it reports every offending row at
-  once and fires for a row that exited zero and printed nothing usable as well
-  as for a row FFmpeg refused. The condition carries `tm_rows`, the 1-indexed
-  offending rows the message names, and `tm_row_status`, their exit statuses
-  aligned to it — `NA` where the row exited zero. That number used to be
-  discarded, so the only account of why a row failed was the prose.
+  `normalize_audio_batch(two_pass = TRUE)`'s analysis phase answers to
+  `tidymedia_loudnorm_no_measurement` rather than to the exit class, because it
+  reports every offending row at once and fires for a row that exited zero and
+  printed nothing usable as well as for a row FFmpeg refused. The condition
+  carries `tm_rows`, the 1-indexed offending rows the message names, and
+  `tm_row_status`, their exit statuses aligned to it — `NA` where the row
+  exited zero. That number used to be discarded, so the only account of why a
+  row failed was the prose.
+
+* One handler now covers the `loudnorm` analysis pass in both of its forms.
+  `tidymedia_loudnorm_no_measurement` means the analysis pass yielded no usable
+  measurement, so no correction could be built — and
+  `normalize_audio(two_pass = TRUE)` raises it as well as
+  `normalize_audio_batch(two_pass = TRUE)`, so a handler written from either
+  help page fires on the other:
+
+  ```r
+  tryCatch(
+    normalize_audio("input.wav", "out.m4a", two_pass = TRUE),
+    tidymedia_loudnorm_no_measurement = function(cnd) NA_character_
+  )
+  ```
+
+  One path that raises it could not be caught by any name before: a scalar
+  analysis pass that exits zero and prints no parseable measurement block. The
+  class rides alongside `tidymedia_ffmpeg_exit` where FFmpeg exited non-zero,
+  and alone where it did not, so an exit-status handler still sees exactly the
+  runs FFmpeg refused. A silent input is deliberately not this event — it was
+  measured, at `-inf` — and keeps its own abort.
+
+  Both `_batch` verbs now say why their diagnostic carries no exit status.
+  `?normalize_audio_batch` explains that its abort fires for rows that exited
+  zero too, so there is no one number to report; `?separate_audio_video_batch`
+  explains that the batch runner records whether a row succeeded, not how
+  FFmpeg exited, so the number is gone by the time the warning is assembled.
 
 * The dropped-track check now has an off switch, and every verb that runs it
   says what it costs. `options(tidymedia.check_tracks = FALSE)` stops the check

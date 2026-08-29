@@ -2882,3 +2882,57 @@ written against the child.
   what keeps `tidymedia_multitrack_separation` honest; or by a field name
   collision surviving the `tm_` prefix; or by a decision, before the first
   release, to sweep every class into the ecosystem's `pkg_error_*` shape.
+
+## D063 — A site's class vector asserts every fact established at that site, so one event's vectors may differ across severities (2026-08-29, from M087/RR05; annotates D062 and sharpens its falsifier, leaving the rest of that entry standing)
+
+D062 said a condition class names the event, not the severity, and cited
+`tidymedia_multitrack_separation` — signalled as an error at
+`R/ffmpeg.R:681` and as a warning at `R/ffmpeg.R:742` — as the case the rule
+keeps honest. M086 then gave the error site a second class,
+`tidymedia_ffmpeg_exit`, and could not give it to the warning site. That looks
+like D062's falsifier and is not one. This entry says why, and states the rule
+D062 left implicit.
+
+**The rule held.** D062's falsifier is one recorded event carried at two
+severities under *two names* — an event forced to rename because severity
+changed. What shipped is one event under **one** name at both severities: the
+shared class appears at the error site and at the warning site alike. The
+event-naming rule is exactly what kept that name the same across the two.
+
+**What the code has established, which D062 did not state.** A site's class
+vector asserts every event established *at that site*. So the vectors at two
+severities of one event may differ — by additional classes naming additional
+facts, never by the shared event's own name. The error site additionally
+carries `tidymedia_ffmpeg_exit` because a second fact is established there, a
+specific known non-zero exit; that branch runs only when a real exit number is
+in hand.
+
+**The concession.** "Same event, same class *vector*" is therefore **not** the
+convention. A handler written on a mechanism class does not see
+batch-severity signals of events whose scalar form carries that mechanism:
+`tryCatch(tidymedia_ffmpeg_exit = )` catches the scalar separation error and
+does not catch the batch separation warning, though both report the same
+event. Bridging that gap is documentation's job — `?separate_audio_video_batch`
+and `?normalize_audio_batch` now say the diagnostic carries no exit status and
+why — not the class system's.
+
+**The constraint that forces it.** D007 makes the batch runner reduce each row
+to whether it succeeded and discard the condition, so the warning site can
+evidence neither a non-zero exit nor a `tm_status`. Adding
+`tidymedia_ffmpeg_exit` there would assert a mechanism the site cannot show,
+false for any row that failed for a non-exit reason, and would attach a class
+without the field it has carried everywhere since M085. Dropping the class from
+the error site instead would undo M086, whose point is that a refused run
+answers to one class on every path. The asymmetry is recorded, not repaired;
+repairing it is the `ffm_batch()` per-row result contract, which has its own
+ROADMAP row.
+
+The same reading is what let M087 give the `loudnorm` analysis pass one shared
+class, `tidymedia_loudnorm_no_measurement`, at three sites whose vectors are
+not identical: the scalar non-zero-exit abort carries the exit class and its
+field as well, the scalar zero-exit abort and the batch abort carry the shared
+class alone. M087's milestone file records the observed vectors.
+
+- **Falsified by** the shared event's own name ever differing across
+  severities; or by a class being attached at a site that cannot carry that
+  class's contractual fields.

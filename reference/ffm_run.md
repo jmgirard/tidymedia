@@ -33,6 +33,26 @@ writing the output file. The pipeline is executed as an argument vector
 (never through a shell), so paths containing spaces or special
 characters are safe.
 
+## When FFmpeg exits non-zero
+
+A run FFmpeg refuses aborts with a condition of class
+`tidymedia_ffmpeg_exit`, so a caller can catch a failed run without
+reading the error text:
+
+
+    tryCatch(
+      ffm_run(pipeline),
+      tidymedia_ffmpeg_exit = function(cnd) cnd$tm_status
+    )
+
+The `tm_status` field is a length-one integer holding the exit status
+exactly as [`system2()`](https://rdrr.io/r/base/system2.html) reported
+it — including, for a signal-terminated FFmpeg, the shell's
+128-plus-signal number passed through unchanged, which encodes the
+signal rather than anything FFmpeg chose to return. The `loudnorm`
+analysis pass behind `normalize_audio(two_pass = TRUE)` raises the same
+class and carries the same field, so one handler covers both.
+
 ## See also
 
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md)

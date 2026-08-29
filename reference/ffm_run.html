@@ -75,6 +75,27 @@ argument vector (never through a shell), so paths containing spaces or
 special characters are safe.</p>
     </div>
     <div class="section level2">
+    <h2 id="when-ffmpeg-exits-non-zero">When FFmpeg exits non-zero<a class="anchor" aria-label="anchor" href="#when-ffmpeg-exits-non-zero"></a></h2>
+
+
+<p>A run FFmpeg refuses aborts with a condition of class
+<code>tidymedia_ffmpeg_exit</code>, so a caller can catch a failed run without
+reading the error text:</p>
+<div class="sourceCode"><pre><code><span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/ffm_run.html">ffm_run</a></span><span class="op">(</span><span class="va">pipeline</span><span class="op">)</span>,</span>
+<span>  tidymedia_ffmpeg_exit <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">cnd</span><span class="op">)</span> <span class="va">cnd</span><span class="op">$</span><span class="va">tm_status</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+
+<p>The <code>tm_status</code> field is a length-one integer holding the exit status
+exactly as <code><a href="https://rdrr.io/r/base/system2.html" class="external-link">system2()</a></code> reported it — including, for a
+signal-terminated FFmpeg, the shell's 128-plus-signal number passed through
+unchanged, which encodes the signal rather than anything FFmpeg chose to
+return. The <code>loudnorm</code> analysis pass behind
+<code>normalize_audio(two_pass = TRUE)</code> raises the same class and carries the
+same field, so one handler covers both.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="ffm_compile.html">ffm_compile()</a></code> to get the command without running it, <code><a href="ffm_batch.html">ffm_batch()</a></code>
 for the many-file runner, and <code><a href="verify_media.html">verify_media()</a></code> for the <code>verify =</code> spec.</p>

@@ -154,6 +154,13 @@ build you have matters too — the same blocked input that took 42.0
 seconds against FFmpeg 6.1.1 took 2.0 seconds against 9.0.1, because the
 newer build answers the first signal.
 
+A run that FFmpeg itself refused is a different outcome from a run the
+limit killed, and carries a different class: the abort from
+[`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md),
+and from the `loudnorm` analysis pass behind
+`normalize_audio(two_pass = TRUE)`, is classed `tidymedia_ffmpeg_exit`
+and carries the exit status in its `tm_status` field.
+
 ## Session options
 
 Three options change how the package behaves for the rest of the

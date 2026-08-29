@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-28 (M081 post-merge: all 16 `cairn_validate` checks
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M082 | The track check has an off switch, and says what it costs | planned | — | normal | milestones/M082-track-check-opt-out.md |
+| M082 | The track check has an off switch, and says what it costs | in-progress | — | normal | milestones/M082-track-check-opt-out.md |
 | M081 | The unchecked flag, and the second copy of the one predicate | done | — | normal | milestones/archive/M081-unchecked-flag-and-second-copy.md |
 | M080 | The guard says what is wrong, and refuses NA | done | — | normal | milestones/archive/M080-shipped-guard-findings.md |
 | M079 | The floor harness measures what it reports | done | — | normal | milestones/archive/M079-floor-harness-hardening.md |

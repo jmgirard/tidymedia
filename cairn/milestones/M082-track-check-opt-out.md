@@ -1,11 +1,11 @@
 # M082: The track check has an off switch, and says what it costs
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m082-track-check-opt-out`
 
 ## Goal
 
@@ -60,8 +60,9 @@ cost; the stale verb list at `R/tidymedia-package.R:55`; NEWS.
       parent afterwards, and a worker sees `FALSE` — the same round trip
       `carried_option_values()` already makes for `tidymedia.timeout`.
 - [ ] AC4 — `warn_dropped_audio_batch()` reports progress across its probe
-      sweep: a jobs table of N distinct inputs emits a `cli` progress
-      condition per input probed, and none when the seam is `FALSE`.
+      sweep: on a jobs table of N distinct inputs the sweep drives one `cli`
+      progress bar whose total is N and which reaches N/N; with the seam
+      `FALSE` no bar is created.
 - [ ] AC5 — Every verb the AC1 procedure enumerates documents, in its own
       help topic, that the check costs one FFprobe call per distinct input and
       how to turn it off; the three `_batch` verbs also state that those probes
@@ -103,7 +104,7 @@ cost; the stale verb list at `R/tidymedia-package.R:55`; NEWS.
       (`R/timeout.R:462`), carried raw like the encoder override rather than
       resolved like the timeout, plus the round-trip test.
 - [ ] T5 — Progress bar over the `count_audio_streams_all()` sweep in
-      `warn_dropped_audio_batch()`, with the per-input and seam-off tests.
+      `warn_dropped_audio_batch()`, with the bar-total and seam-off tests.
 - [ ] T6 — Roxygen: the cost and the seam on `extract_audio()`,
       `convert_audio()`, `extract_audio_batch()`, `convert_audio_batch()`,
       matching the wording M075 shipped at `R/ffmpeg.R:2092` and `:4262`; the
@@ -120,6 +121,9 @@ cost; the stale verb list at `R/tidymedia-package.R:55`; NEWS.
 - 2026-08-28: plan gate chose a progress bar over relocating the batch probe into the fan-out because the latter needs the `ffm_batch()` hook D024/RR02 Q3 rejected; falsified by a measured batch where the serial sweep, not the encoding, dominates wall clock even with progress shown.
 - 2026-08-28: plan gate chose aborting on a malformed option value over falling back to `TRUE`, following `resolve_timeout()`; falsified by a report of a stale option in a startup file breaking calls unrelated to the check.
 - 2026-08-28: criteria audit ran in **full** mode (user-facing tier), inline rather than in a fresh-context [O] subagent — subagents are disabled in this session, so the instrument was weaker than the skill specifies. Two findings, both fixed before the gate: the seam-gating and the verb-documentation criteria quantified over "all six verbs" as a hand-list, repaired to quantify over the set the stated `grep` returns (bounded-promise rule); the unchanged-default criterion promised "the existing dropped-track test file passes unmodified", an instrument property, narrowed to the verbs' default behaviour. Nine drafted criteria then tripped the >7 sizing advisory and were merged to seven — option validation folded into the gating criterion, the package topic and NEWS into one documentation criterion — rather than split into a second milestone: the code and the contract it documents are one deliverable, and D024 requires a diagnostic that can silently not run to say so.
+- 2026-08-28: amendment (substantive, AC4) — the per-input-condition instrument is not reproducible: measured on R 4.6.1, the same `cli` bar signalled 3 conditions over 5 instant updates, 0 over 3 updates delayed 50 ms each, and N+1 only when every update forces a redraw, which also bypasses `cli.progress_show_after` and would render a bar on every batch call. AC4 narrowed at the mini gate to the bar's own totals (N distinct inputs, reaching N/N; no bar when the seam is `FALSE`), which `cli`'s `logger` progress handler reports deterministically.
+- 2026-08-28: the amended AC4 wording took the criteria audit's full-mode questions inline rather than in a fresh-context [O] reader — subagents are disabled in this session, so the instrument was weaker than the skill specifies. One repair before the gate: the first draft named `cli`'s `logger` handler in the criterion itself, an instrument property, and was rewritten to state the bar's behaviour and leave the observation channel to the test.
+- 2026-08-28: implement gate chose the probe sweep's bar independent of the batch verbs' `progress =` argument, because that argument governs `ffm_batch()`'s run-time bar while this sweep is a front-door cost the caller has not declined, and `cli.progress_show_after` already hides the bar on sweeps under two seconds; falsified by a report of the bar appearing on a batch whose caller had switched progress off and did not want it.
 - 2026-08-28: open for implement — AC4's progress bar makes the probe's HAVING RUN observable as something other than a condition, which D024's operative rule ("changes nothing observable except whether a diagnostic condition is signalled") does not obviously cover. `cli`'s progress mechanism does signal conditions, but that was not verified here. Settle it in the milestone's decision log before T5 ships, and promote to `cairn/DECISIONS.md` alongside the seam entry.
 
 ## Decisions

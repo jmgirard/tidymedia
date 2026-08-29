@@ -224,3 +224,14 @@ milestone. All twelve are triaged below; the ranking is the reviewer's.
     own in-flight work, landing in its checkpoint commit.
 12. **Reject.** Double blank lines between rows on the entombed page — a style
     nitpick.
+
+### Re-verification after the fix-now work
+
+Findings 2–6 were applied on the branch (finding 1 is carried into the archive
+summary at the post-merge hygiene pass). `cairn/ROADMAP.md` is 22,256 bytes over
+46 lines, still under 24,000 / 60. Re-run of the AC2/AC3/AC4 enumerations: 26
+rows; 0 struck-set rows byte-identical anywhere; all 5 instrument-set rows
+byte-identical on the entombed page (the repair note sits under the heading, not
+in a row line) and absent from the ROADMAP; 26/26 `— added` trailers; the
+`Promote ` pattern unchanged position by position. `cairn_validate.py` again 16
+PASS / 7 OK.

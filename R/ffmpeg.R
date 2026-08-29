@@ -687,6 +687,44 @@ run_separation_audio <- function(pipeline, infile, outfile, audio_stream,
   )
 }
 
+# abort_after_video() -----------------------------------------------------
+
+# Re-raise the condition separate_audio_video()'s AUDIO half raised, after the
+# video half has had its turn, adding one bullet when the video file was written.
+#
+# The condition object is the one the audio run produced -- not a rebuilt copy.
+# Rebuilding would have to re-run cli's formatter over text it has already
+# formatted, which is M44's brace trap on a path the caller chose, and would
+# copy the class vector and `tm_status` across by hand, so any field left out
+# would vanish silently. Appending to the condition's own body leaves both
+# branches of run_separation_audio() -- the enriched multi-track diagnostic and
+# the fall-open re-raise -- carrying exactly the classes and status they carry
+# when the video command is not run at all.
+#
+# The bullet's path is formatted HERE, once, and attached as a finished string:
+# an unattached "{.file {videofile}}" would leave a second glue pass to run over
+# the caller's path, so an output named `v{n}.mp4` would name a local of
+# whatever frame rendered the message (M44).
+abort_after_video <- function(cnd, videofile, wrote) {
+  if (wrote) {
+    note <- cli::format_inline(
+      "The video output was written to {.file {videofile}}."
+    )
+    # cli_abort() and rlang conditions carry their bullets in `body`; a bare
+    # error (a missing binary aborts in run_program() with neither) has only
+    # `message`. Today no bare error can reach this line with `wrote` TRUE --
+    # the causes that raise one stop the video command too -- so the second
+    # branch is a floor rather than a live path: it keeps a condition shape this
+    # function has not met from swallowing the note without trace.
+    if (inherits(cnd, "rlang_error")) {
+      cnd$body <- c(cnd$body, "i" = note)
+    } else {
+      cnd$message <- paste0(cnd$message, "\n", note)
+    }
+  }
+  stop(cnd)
+}
+
 # warn_failed_separation() ------------------------------------------------
 
 # The batch form of T2's abort. separate_audio_video_batch() cannot abort on a
@@ -846,12 +884,33 @@ ffmpeg_exit_status <- function(cnd) {
 #' @param run A logical: run the commands through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled commands without running them (\code{FALSE}).
 #' @return A named character vector of the two compiled commands
-#'   (\code{audio}, \code{video}); invisible when \code{run = TRUE}.
+#'   (\code{audio}, \code{video}); invisible when \code{run = TRUE}. Under
+#'   \code{run = TRUE} the audio command runs first and the video command runs
+#'   second, whether or not the audio command succeeded. A failed audio command
+#'   still aborts the call, and the video command has written \code{videofile}
+#'   by then unless it failed too; see \emph{When the audio output fails}.
 #' @seealso [ffm_map()] and [ffm_codec()], the builders it wraps;
 #'   [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
 #'   [extract_audio()] to pull out just the audio;
 #'   [probe_audio()] to list an input's audio tracks.
 #' @section When the audio output fails:
+#' The two commands run in order — audio first, video second — and the video
+#' command runs even when the audio one has already failed, so a failed audio
+#' half does not cost you the video. On that path the call still aborts with the
+#' audio failure, and that error carries one added line naming the video file
+#' that was written. When the video command fails as well, the added line is not
+#' there, the audio failure is still the error you get, and FFmpeg's own output
+#' for the failed video command is printed above it.
+#'
+#' What a failed command leaves at its own output path is the same rule on
+#' either path: a partial file that run wrote is removed, while a file that was
+#' already at that path and that FFmpeg never wrote to is left exactly as it
+#' was. So neither failure path promises the path is empty afterwards — only
+#' that nothing half-written is left there. The audio failure's own error says
+#' which of the two happened to \code{audiofile}; nothing reports
+#' \code{videofile}'s fate on the both-fail path, because the video command's
+#' error is not the one you get.
+#'
 #' Because the default keeps every audio track, writing a multi-track input to a
 #' container that holds only one (\code{.aac}, \code{.mp3}, \code{.wav}) makes
 #' FFmpeg fail. When that happens and no \code{audio_stream} was named, the error
@@ -936,11 +995,34 @@ separate_audio_video <- function(infile, audiofile, videofile,
   commands <- c(audio = ffm_compile(audio), video = ffm_compile(video))
 
   if (run) {
-    # The audio command runs first and aborts the verb when it fails, so the
-    # video file is not written either -- unchanged behavior, and a ROADMAP
-    # candidate rather than this milestone's business (M45 Out).
-    run_separation_audio(audio, infile, audiofile, audio_stream)
-    ffm_run(video)
+    # The audio command still runs FIRST and its failure is still what aborts
+    # the verb -- but the video command now runs either way, so a failed audio
+    # half no longer costs the caller the video (M088). Any failure of the audio
+    # run is held, not just a non-zero exit: one rule to state and one to
+    # document. A reached limit is held like the rest, and the video command then
+    # runs on a FRESH budget and can well succeed, so a timed-out audio half can
+    # reach the caller as `tidymedia_timeout` carrying the video-written bullet
+    # -- measured, and the cost is a second spawn past the caller's limit, which
+    # is the limit's documented per-spawned-program scope (D066 supersedes the
+    # claim D065 made here). Layer 1 removes what a failed run WROTE, on either
+    # half, and leaves a file it never wrote to as it found it (D046).
+    held <- tryCatch({
+      run_separation_audio(audio, infile, audiofile, audio_stream)
+      NULL
+    }, error = function(cnd) cnd)
+    if (is.null(held)) {
+      ffm_run(video)
+    } else {
+      # The video run's own condition is discarded rather than reported beside
+      # the audio one: FFmpeg has already printed its error, ffm_run() has
+      # already removed what that run wrote, and one message correct across
+      # every combination of two failures is more surface than the case earns.
+      wrote <- tryCatch({
+        ffm_run(video)
+        TRUE
+      }, error = function(cnd) FALSE)
+      abort_after_video(held, videofile, wrote)
+    }
     invisible(commands)
   } else {
     commands

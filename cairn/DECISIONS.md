@@ -2975,3 +2975,83 @@ released version has shipped.
   or by the decision D062 leaves open — sweeping every class into the
   ecosystem's `pkg_error_*` shape — being taken, which would rename this one
   along with the rest.
+
+## D065 — A failed audio half no longer stops the video half, and the audio failure is still the one raised (2026-08-29, from M088; applies D046 unchanged, narrows the sequencing M45 left in place, and leaves D007's batch contract untouched)
+
+`separate_audio_video()` compiles two independent single-output pipelines and,
+under `run = TRUE`, ran them in sequence: audio, then video. A failed audio
+command aborted the verb where it stood, so the video command never ran and the
+caller was left with neither output. The verb now runs the video command either
+way. The audio failure is still what aborts the call.
+
+**Why the early abort was not a promise.** One input to two outputs is a
+fan-out, not a transaction: nothing the video command does depends on the audio
+command having succeeded, and the two share no state beyond the input file. The
+early abort was a consequence of writing the two calls one after the other, and
+no docs, test or decision ever stated it as behavior. The batch sibling has
+always run both rows — `ffm_batch()` records a row's failure and carries on
+(D007) — so the scalar verb was the one out of step, with the divergence
+unexplained.
+
+**Why the audio condition, unrebuilt.** The condition object the audio run
+raised is the one re-raised, with one formatted bullet appended to its body.
+Rebuilding it would re-run cli's formatter over already-formatted text — the
+brace trap a caller's own output path can spring — and would copy the class
+vector and `tm_status` across by hand, so a field left out would vanish without
+trace. Appending leaves both branches of the audio run, the enriched
+multi-track diagnostic and the fall-open re-raise, carrying exactly the classes
+and status they carry when the video command is not run at all.
+
+**Why the added line, and why only when the video was written.** Without it the
+error describes a situation it no longer covers: the caller is told the audio
+output failed and is left to guess whether anything else was produced. The line
+is added only when the video command succeeded, so its presence is the answer.
+
+**Why the both-fail case names one failure.** When the video command fails too,
+the audio condition is raised alone and the video run's own condition is
+discarded. FFmpeg has already printed its error for that command, Layer 1 has
+already removed what the failed run wrote (D046), and one message that stays
+correct across every combination of two failures is more surface than the case
+earns.
+
+**Why any audio failure falls through, not only a non-zero exit.** It is one
+rule to state and one rule to document; and the failures that are not an exit —
+no FFmpeg on the machine, a reached limit — stop the video command too, so
+nothing is written and no line is added.
+
+- **Falsified by** a report of a caller who needed the split to be
+  all-or-nothing, for whom a video written beside a missing audio file is worse
+  than neither; or a report of a caller matching on the audio error's rendered
+  text who is broken by the added line; or a report of a caller who could not
+  tell, from the condition alone, that the video command had also failed.
+
+## D066 — A held audio failure of any kind still lets the video command run, a reached limit included (2026-08-29, from M088's first defect return; supersedes D065's "Why any audio failure falls through" section, keeps every other part of D065 in force)
+
+D065 chose to hold *any* audio-run failure, not only a non-zero FFmpeg exit,
+and justified it partly on a claim that is false: that the causes which are not
+an exit "stop the video command too, so nothing is written and no line is
+added". A reached limit does not stop it. Measured on this branch (ffmpeg
+9.0.1, macOS arm64): a 7,200-second input under
+`options(tidymedia.timeout = 2)` with `audio_codec = "libopus"`, whose audio
+encode needs about 23 seconds. The audio half times out at 2 s; the video half
+then runs on a **fresh** 2-second budget, its stream copy finishes well inside
+it, and the caller gets a `tidymedia_timeout` condition carrying the
+video-written line. The call took 2.5 s.
+
+**The rule is kept, on the reason that survives the measurement.** One rule —
+every audio failure is held and the video command runs — is one rule to state
+and one to document, and the behavior it produces on a timeout is the behavior
+the milestone wants: a video the caller would otherwise have had to re-run for.
+Splitting the rule by condition class would add a second path, its own test, and
+a caveat to the docs, to withhold an output the caller asked for.
+
+**The cost, stated rather than denied.** A caller who set a wall-clock limit can
+pay up to a second full limit past it, because the video command's budget is its
+own. That is the limit's documented scope, not a new exception:
+`?with_timeout` states it applies "per spawned program, not per call", and a
+limit around a 100-row batch already waits `seconds` on every row.
+
+- **Falsified by** a report of a caller for whom the second spawn past the limit
+  is itself the reported problem; or by `options(tidymedia.timeout = )` being
+  redefined as a per-call budget, which would make this verb one of the sites
+  that has to change.

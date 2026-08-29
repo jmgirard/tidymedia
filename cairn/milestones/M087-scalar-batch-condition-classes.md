@@ -165,6 +165,8 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
 
 - 2026-08-29: re-review pass 2. `master` unmoved since the branch was cut. All six criteria verified with fresh evidence from a new review-side probe; consistency gate clean. Three lenses: blame-history and prior-review-record returned no defects; diff-bug returned eight findings. F1/F2/F4 (false reasons beside correct class names, in `?normalize_audio_batch`, `?ffm_run` and `NEWS.md`) and F3 (AC1's sweep guard grepping only `tests/testthat`) fixed at the gate; F5/F6/F7 are follow-ups; F8 rejected. No criterion failed, so no second defect return.
 
+- 2026-08-29: CI red on all four Ubuntu jobs at bc8c658 — the F3 gate fix broke its own skip guard. Under `R CMD check` the tests run from a copy at `<pkg>.Rcheck/tests/testthat`, whose root is the untracked `.Rcheck` dir; on CI that dir sits INSIDE the workspace checkout, so `--is-inside-work-tree` said true while `git grep` saw no tracked file and the non-empty-domain control failed (FAIL 2, `test-ffmpeg-exit-condition.R:610-611`). macOS and Windows passed because their check dir is outside any checkout. The guard now requires the root to BE the checkout's own top level (`rev-parse --show-toplevel` identical to it), so it runs in the source tree and skips in a check copy. Locally: runs (SKIP 0), still red on planted drift, `check()` 0/0/0, `test()` 0 failures / 8392 passing.
+
 ## Decisions
 
 - 2026-08-29 (RR05 Q1/Q2): the scalar and batch analysis-pass aborts report ONE event — the loudnorm analysis pass yielded no usable measurement, so no correction could be built — and share one class. The scalar site establishes a second, narrower fact (a known non-zero exit) and carries it as a second class. The docs-only alternative was rejected: it leaves the moved-handler trap armed and cannot reach `R/loudnorm_two_pass.R:112`, which has no class to document. Would change on evidence that callers of the two forms need different recoveries; none exists, the correction pass being unreachable either way.
@@ -472,3 +474,10 @@ not met and no second defect return is due — the defect-return count stands at
 one. F1-F4 were triaged fix-now and committed on the branch before the approval
 marker; F5, F6 and F7 are follow-ups for the hygiene pass; F8 is rejected with
 the reason above.
+
+#### CI
+
+Green on macOS, Windows, codecov, pkgdown and test-coverage at bc8c658; red on all four
+Ubuntu jobs, because the F3 fix's own skip guard misfired inside the `R CMD check`
+copy when that copy sits within a checkout. Repaired on the branch (see the work
+log); the guard now runs only in the package's own top-level checkout.

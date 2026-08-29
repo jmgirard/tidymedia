@@ -596,12 +596,17 @@ test_that("every topic names the classes its site actually raises", {
   root <- normalizePath(test_path("..", ".."), mustWork = FALSE)
   git_at_root <- function(...) suppressWarnings(system2(
     "git", c("-C", root, ...), stdout = TRUE, stderr = FALSE))
-  in_git <- nzchar(Sys.which("git")) && identical(
-    suppressWarnings(tryCatch(
-      git_at_root("rev-parse", "--is-inside-work-tree"),
-      error = function(e) NA_character_)),
-    "true")
-  skip_if(!in_git, "not in a git checkout")
+  # `root` must be the checkout's OWN top level, not merely somewhere inside a
+  # work tree: under `R CMD check` the tests run from a copy at
+  # <pkg>.Rcheck/tests/testthat, whose root is the untracked <pkg>.Rcheck dir --
+  # inside the workspace repo on CI, so `--is-inside-work-tree` says true while
+  # `git grep` sees no tracked file there and the sweep would fail vacuously.
+  top <- suppressWarnings(tryCatch(
+    git_at_root("rev-parse", "--show-toplevel"), error = function(e) character(0)))
+  in_source_checkout <- nzchar(Sys.which("git")) &&
+    length(top) == 1L && nzchar(top) &&
+    identical(normalizePath(top, mustWork = FALSE), root)
+  skip_if(!in_source_checkout, "not in the package's own git checkout")
   # The sweep must be shown to run over a non-empty domain, and over the domain
   # it CLAIMS: the current name lives in R/, man/ and NEWS.md as well as here,
   # so requiring a hit outside tests/ proves the grep reaches past its own wd.

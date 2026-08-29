@@ -53,10 +53,11 @@
 #' job, and warn once at the end of the run saying how many jobs timed out and
 #' did not run to completion — at `parallel = TRUE` no differently from
 #' sequentially. The dropped-track check behind [extract_audio()],
-#' [convert_audio()], [separate_audio_video()] and their `_batch` siblings
-#' warns that it could not check, and the provenance manifest warns that it
-#' could not read a version; both then carry on as they would for any other
-#' unreadable input.
+#' [convert_audio()], [normalize_audio()] and their `_batch` siblings warns
+#' that it could not check, as does the multi-track diagnostic
+#' [separate_audio_video()] reaches after a run has already failed; and the
+#' provenance manifest warns that it could not read a version. All then carry
+#' on as they would for any other unreadable input.
 #'
 #' To handle either outcome programmatically, the abort carries the condition
 #' class `tidymedia_timeout`; the dropped-track and version-probe warnings
@@ -108,6 +109,42 @@
 #' matters too — the same blocked input that took 42.0 seconds against
 #' FFmpeg 6.1.1 took 2.0 seconds against 9.0.1, because the newer build answers
 #' the first signal.
+#'
+#' @section Session options:
+#' Three options change how the package behaves for the rest of the session.
+#' Each is read where it is needed rather than at load time, so setting one
+#' takes effect on the next call. The first two refuse a value they cannot use,
+#' naming the option, at the first call that reads it.
+#'
+#' \preformatted{options(tidymedia.timeout = 600)}
+#'
+#' A wall-clock limit, in whole seconds, on how long each spawned program is
+#' waited for. `0` (the default) means no limit. Described in full under
+#' *Bounding a run that hangs* above, with [with_timeout()] and
+#' [local_timeout()] for one call and one function.
+#'
+#' \preformatted{options(tidymedia.check_tracks = FALSE)}
+#'
+#' Switches off the dropped-track check — the warning [extract_audio()],
+#' [convert_audio()], [normalize_audio()] and their `_batch` siblings signal
+#' when an input carries audio tracks the output will not. The default is
+#' `TRUE`. The check costs one FFprobe call per distinct input, run before the
+#' work starts and, on the `_batch` verbs, serially before the fan-out; that
+#' cost is what switching the check off buys back. It is worth declining on a
+#' large jobs table whose inputs you already know the tracks of. A row that
+#' names an `audio_stream` is not probed at all, so a table whose rows all name
+#' one pays nothing either way.
+#'
+#' \preformatted{options(tidymedia.nvenc_encoders = c("h264_nvenc", "hevc_nvenc"))}
+#'
+#' Names the NVIDIA hardware encoders this machine has, instead of asking
+#' FFmpeg. Set it to `character(0)` to declare there are none. Unset (the
+#' default), the package asks once per session and remembers the answer.
+#'
+#' All three are carried into `parallel = TRUE` workers, which run under the
+#' settings the calling session had and hand their own back afterwards, and all
+#' three can be set for one call with `withr::with_options()` or for the rest of
+#' a function with `withr::local_options()`.
 #'
 #' See `vignette("tidymedia")` for the guided tour, `vignette("batch")` for
 #' running a verb over many files, `vignette("metadata")` for the readers, and

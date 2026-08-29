@@ -19,6 +19,27 @@
 
 ## New features
 
+* The dropped-track check now has an off switch, and every verb that runs it
+  says what it costs. `options(tidymedia.check_tracks = FALSE)` stops the check
+  — the warning `extract_audio()`, `convert_audio()`, `normalize_audio()` and
+  their `_batch` siblings signal when an input carries audio tracks the output
+  will not — for the rest of the session; it defaults to TRUE, so nothing
+  changes until you set it. What you get back is the check's only cost: one
+  FFprobe call per distinct input, run before the work starts and, on the
+  `_batch` verbs, serially at the front door before the fan-out. That is worth
+  declining on a large batch whose inputs you already know the tracks of, where
+  the warning has nothing to tell you; a row that names an `audio_stream` is
+  never probed, so a table whose rows all name one costs nothing either way.
+  Use `withr::local_options(tidymedia.check_tracks = FALSE)` to switch
+  it off for the rest of one function instead of the session. The option is
+  carried into `parallel = TRUE` workers alongside the other two, and a value
+  that is not `TRUE` or `FALSE` is refused, naming the option, rather than read
+  as one or the other. The six verbs' help pages now state the cost, the
+  switch, and — on the `_batch` verbs — that those probes run serially before
+  the fan-out; a batch sweep long enough to look like a hang now reports its
+  progress. `?tidymedia` gained a *Session options* section covering all three
+  session options in one place.
+
 * `normalize_audio()` and `normalize_audio_batch()` now warn when the file they
   read carries audio tracks the file they write will not — the same warning
   `extract_audio()` and `convert_audio()` have carried, with the same

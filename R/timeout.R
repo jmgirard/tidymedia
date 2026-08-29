@@ -1,9 +1,10 @@
 # Runtime timeout seam -------------------------------------------------------
 
 # The package's second option seam (after `tidymedia.nvenc_encoders`), and the
-# only one that changes what happens rather than what is reported. Every process
-# tidymedia spawns passes resolve_timeout() to base R's `timeout=`, so a hung
-# FFmpeg stops the CALL instead of the session (M69/D047). What it does not do
+# first that changes what happens rather than what is reported --
+# `tidymedia.check_tracks`, below, is the second. Every process tidymedia spawns
+# passes resolve_timeout() to base R's `timeout=`, so a hung FFmpeg stops the
+# CALL instead of the session (M69/D047). What it does not do
 # is bound the program: base R's `timeout=` bounds how long R waits, and the
 # program outlives the limit by up to 40 s -- measured at 42.0 s under a 2 s
 # limit on Linux and on macOS alike (M078/D056).
@@ -35,6 +36,32 @@ resolve_timeout <- function(call = rlang::caller_env()) {
     call = call
   )
   as.numeric(limit)
+}
+
+# Dropped-track check seam ---------------------------------------------------
+
+# The package's third option seam. `options(tidymedia.check_tracks = FALSE)`
+# switches off D024's dropped-audio-track probe, and with it the one FFprobe
+# call that probe costs per distinct input -- the only cost the diagnostic has,
+# and one a caller who already knows their inputs' tracks gets nothing for. A
+# call that names an `audio_stream` pays nothing either way: the scalar sites
+# gate on is.null(audio_stream) and the batch form returns above the seam when
+# every row named a track, so those calls never reach the probe at all.
+#
+# The default is TRUE, so every existing call behaves exactly as it did. That is
+# the opposite default from resolve_timeout()'s 0, and for the opposite reason:
+# this seam turns an existing behavior OFF, so the reversible default is the
+# behavior already shipped.
+#
+# check_bool() rather than isTRUE(), following resolve_timeout()'s refusal
+# rather than base R's coercion. isTRUE() reads every malformed value as FALSE,
+# so `options(tidymedia.check_tracks = "yes")` would silently REMOVE the check
+# from a session that asked to keep it; check_bool() refuses once, naming the
+# option, in the process that can name the caller.
+resolve_check_tracks <- function(call = rlang::caller_env()) {
+  check <- getOption("tidymedia.check_tracks", default = TRUE)
+  rlang::check_bool(check, arg = "tidymedia.check_tracks", call = call)
+  check
 }
 
 # The caller's per-call limit ------------------------------------------------
@@ -457,12 +484,19 @@ reraise_absorbed <- function(x, call = rlang::caller_env()) {
 # carried is the session capability memo (`R/cache.R`): a worker with no
 # override still asks its own FFmpeg -- D044's per-process gap, unchanged.
 #
-# Adding a third seam is one line here; carry_options() itself is generic over
-# whatever named list it is handed.
+# The track check joins as the third seam (M082), carried RAW like the encoder
+# override rather than resolved like the limit. Resolving buys nothing here:
+# the dropped-track probe runs at the front door, in this very process, so a
+# malformed value has already been refused by the time a worker could see one --
+# and on the one path that skips the front-door probe entirely (a batch whose
+# every row named a track) no worker reads the option at all. Carrying it raw
+# also keeps the unset state unset, so a worker that has its own answer through
+# a plan hook keeps it, which the resolved limit cannot do.
 carried_option_values <- function(call = rlang::caller_env()) {
   list(
     tidymedia.timeout = resolve_timeout(call = call),
-    tidymedia.nvenc_encoders = getOption("tidymedia.nvenc_encoders")
+    tidymedia.nvenc_encoders = getOption("tidymedia.nvenc_encoders"),
+    tidymedia.check_tracks = getOption("tidymedia.check_tracks")
   )
 }
 

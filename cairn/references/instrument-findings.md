@@ -107,3 +107,48 @@ local **9.0.1**, three majors apart, at commit d095a1d. **(ii)**
 `tryCatch(..., error = function(e) 1L)` makes "could not run ffmpeg at all"
 read as "the muxer refuses". Pruned because it misfires only with FFmpeg
 configured off-PATH via `set_ffmpeg()`, which no supported path exercises.
+
+## M087 — the condition-class pairing and topic guards
+
+_Added 2026-08-29 at M087's post-merge hygiene pass, under the §7 disposition
+its ROADMAP row records. M087's two review passes filed five instrument
+findings; two were kept and three pruned, and what those were is recorded here
+so the pruning is legible rather than silent._
+
+- The AC4 pairing test binds a class claim to a **topic**, not to a **site**:
+  `tests/testthat/test-ffmpeg-exit-condition.R` asserts only that every class a
+  site observes appears in each paired help topic, never that a topic omits a
+  class its paired sites do not raise. That is why the same over-attribution
+  shipped green twice — `?tidymedia` naming `tidymedia_ffmpeg_exit` for
+  `R/loudnorm_two_pass.R:112`, caught by a human reader at pass 1, and
+  `?normalize_audio_batch` doing the same, caught at pass 2. The obvious
+  strengthening (over the union of a topic's paired sites) would catch neither,
+  since both topics are also paired with `:151`, which does raise the exit
+  class. A test that would catch them must bind a claim to a site, which is a
+  design call of its own. Promote on a third topic over-attributing a class, or
+  alongside a milestone reworking the topic-pairing instrument.
+  — added 2026-08-29 — M087 review pass 1 F5, pass 2 F1/F2
+- The pairing probe catches with `condition = function(e) e` at three **error**
+  sites (`scalar_exit`, `batch_loudnorm`, `scalar_sep`, same file), so a
+  `tidymedia_`-classed *warning* signalled before the abort would be captured
+  instead and asserted against topics for a site nobody tested — passing the
+  probe's non-empty-class guard while testing the wrong condition. `error =`
+  binds each probe to its site. Latent today; the dropped-track check on the
+  `normalize_audio` sites is the live candidate. Promote alongside any milestone
+  adding a warning to one of the five sites.
+  — added 2026-08-29 — M087 review pass 2 F5
+
+_Pruned at the same disposition, recorded rather than carried._ **(i)** The AC5
+guard (`tests/testthat/test-package-topic.R`) asserts the vignette paragraph
+precedes the first `\section{`, which `\description{}` would also satisfy, where
+AC5 says outside every section; pruned because AC5 itself holds and the
+paragraph's real offset was measured inside `\details{}`. **(ii)** Four Rd-text
+assertions match strings sitting at roxygen wrap boundaries, so a benign reflow
+by `document()` would fail them with no behaviour change; pruned as a
+maintenance cost rather than a blind spot — a reflow failure is loud and
+self-explaining. **(iii)** Two mocked tests in
+`test-ffmpeg-exit-condition.R` substitute `run_program` but leave
+`find_ffmpeg()`/`find_ffprobe()` live, so with no binaries present they pass
+while emitting "Failed to find ffmpeg" warnings instead of skipping; pruned as
+cosmetic, since `find_program()` warns rather than aborting and the assertions
+under test never reach a binary.

@@ -67,7 +67,7 @@ retired.
       the enumeration (it is across the 44 entries at bd4d545). Classify every
       entry against the three exits and write the classification into the
       milestone's Decisions section.
-- [ ] T2 Author `cairn/references/false-greens.md`: the graduated family under
+- [x] T2 Author `cairn/references/false-greens.md`: the graduated family under
       themed headings, a header stating its line and byte budget set from the
       graduated size plus stated headroom, and an `INDEX.md` line. Delete every
       graduated entry from `LESSONS.md`, leaving no line behind.
@@ -89,3 +89,4 @@ retired.
 - 2026-08-28: plan gate chose `cairn/references/false-greens.md` over a new `cairn/doctrine/` directory, because references/ exists with an INDEX and this repo has no doctrine-directory convention; falsified by a second family graduating and the two modules reading as source summaries in the index. Round 2's reader flagged the boundary: the module is doctrine-shaped and the plugin sites its own under `skills/shared/`, so the choice is a repo-local convention, not the plugin's.
 - 2026-08-28: plan gate chose one module holding the family whole over splitting it into false-greens plus front-door-ordering, because the maturation exit requires a family to graduate whole and the second group has been extended twice at most; falsified by AC1 failing to clear with the one module out.
 - 2026-08-28: T1 — branch cut; ledger `cairn/references/lessons-baseline-M084.md` committed with all 44 entries, their byte lengths and `cut -c1-120` keys (unique: `sort | uniq -d` returns nothing); classification in Decisions.
+- 2026-08-28: T2 — `cairn/references/false-greens.md` authored (46 lines, 22,780 bytes; budget < 60 lines / < 26,000 bytes, chosen at the implement gate), holding the 17 graduated entries verbatim under five themed headings; the same 17 deleted from `LESSONS.md`, which is now 32 lines / 21,044 bytes. Partition checked against the branch point: 27 in `LESSONS.md` only, 17 in the module only, 0 in both, 0 in neither.

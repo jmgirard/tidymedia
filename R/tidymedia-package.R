@@ -10,6 +10,11 @@
 #' [mediainfo_query()] and the `get_*()` helpers such as [get_duration()], which
 #' return a single value.
 #'
+#' See `vignette("tidymedia")` for the guided tour, `vignette("batch")` for
+#' running a verb over many files, `vignette("metadata")` for the readers, and
+#' `vignette("workflow")` for an end-to-end research preprocessing pipeline.
+#' The full function list is on the package's reference index.
+#'
 #' @section Bounding a run that hangs:
 #' Every tidymedia call that touches FFmpeg, FFprobe or MediaInfo waits for
 #' that program to finish, and a program that hangs blocks the R session with
@@ -111,14 +116,23 @@
 #' the first signal.
 #'
 #' A run that FFmpeg itself refused is a different outcome from a run the
-#' limit killed, and carries a different class. The aborts from [ffm_run()],
-#' from the `loudnorm` analysis pass behind `normalize_audio(two_pass = TRUE)`,
-#' and from the multi-track diagnostic [separate_audio_video()] adds to a
-#' failed audio output are all classed `tidymedia_ffmpeg_exit` and carry the
-#' exit status in their `tm_status` field. The batch two-pass analysis phase
-#' reports every offending row at once and fires for rows that exited zero as
-#' well, so it raises `tidymedia_loudnorm_analysis` instead, carrying `tm_rows`
-#' and `tm_row_status`.
+#' limit killed, and carries a different class. The abort from [ffm_run()], the
+#' abort from the `loudnorm` analysis pass behind
+#' `normalize_audio(two_pass = TRUE)` when FFmpeg exits non-zero, and the
+#' multi-track diagnostic [separate_audio_video()] adds to a failed audio
+#' output are classed `tidymedia_ffmpeg_exit` and carry the exit status in their
+#' `tm_status` field. The last two name what failed as well as how, each
+#' carrying a second class ahead of that one:
+#' `tidymedia_loudnorm_no_measurement` and `tidymedia_multitrack_separation`.
+#'
+#' Those two names are the ones that hold across a verb's scalar and `_batch`
+#' forms, where `tidymedia_ffmpeg_exit` cannot. The batch two-pass analysis
+#' phase reports every offending row at once and fires for rows that exited zero
+#' as well, so it raises `tidymedia_loudnorm_no_measurement` alone, carrying
+#' `tm_rows` and `tm_row_status` and no exit status. The scalar abort for an
+#' analysis pass that exited zero and printed nothing parseable raises that
+#' class alone as well, carrying no fields at all. The batch separation warning
+#' is `tidymedia_multitrack_separation` alone, with no exit status either.
 #'
 #' @section Session options:
 #' Three options change how the package behaves for the rest of the session.
@@ -155,11 +169,6 @@
 #' settings the calling session had and hand their own back afterwards, and all
 #' three can be set for one call with `withr::with_options()` or for the rest of
 #' a function with `withr::local_options()`.
-#'
-#' See `vignette("tidymedia")` for the guided tour, `vignette("batch")` for
-#' running a verb over many files, `vignette("metadata")` for the readers, and
-#' `vignette("workflow")` for an end-to-end research preprocessing pipeline.
-#' The full function list is on the package's reference index.
 "_PACKAGE"
 
 ## usethis namespace: start

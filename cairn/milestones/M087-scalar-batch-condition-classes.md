@@ -1,11 +1,11 @@
 # M087: A diagnostic answers to the same class from the scalar verb and its batch sibling
 
-- **Status:** planned
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** — (RR05 is advisory; no binding criteria)
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m087-scalar-batch-condition-classes` / https://github.com/jmgirard/tidymedia/pull/91
 
 ## Goal
 
@@ -46,7 +46,7 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
 
 ## Acceptance criteria
 
-- [ ] **AC1.** The three loudnorm analysis-pass abort sites raise the shared
+- [x] **AC1.** The three loudnorm analysis-pass abort sites raise the shared
       event class `tidymedia_loudnorm_no_measurement`: the scalar non-zero-exit
       abort (`R/loudnorm_two_pass.R:151`) as
       `c("tidymedia_loudnorm_no_measurement", "tidymedia_ffmpeg_exit")` carrying
@@ -55,20 +55,20 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
       carrying `tm_rows` and `tm_row_status`. A repo-wide
       `grep -r tidymedia_loudnorm_analysis` over tracked files returns no hit
       outside `cairn/`. (Settled by RR05 Q1/Q3/Q4/Q5 and B1.)
-- [ ] **AC2.** A `normalize_audio_batch(two_pass = TRUE)` call carrying at least
+- [x] **AC2.** A `normalize_audio_batch(two_pass = TRUE)` call carrying at least
       one row that failed to run or printed no parseable measurement block raises
       a condition inheriting AC1's shared class and not inheriting
       `tidymedia_ffmpeg_exit`, carrying `tm_rows` and `tm_row_status`; and
       `?normalize_audio_batch` states that this abort carries no single exit
       status, because it also fires for rows that exited zero. (The class and
       field half is a regression lock on today's behaviour; the reason is new.)
-- [ ] **AC3.** `separate_audio_video_batch()`'s post-fan-out warning
+- [x] **AC3.** `separate_audio_video_batch()`'s post-fan-out warning
       (`R/ffmpeg.R:742`) inherits `tidymedia_multitrack_separation` and not
       `tidymedia_ffmpeg_exit`, and `?separate_audio_video_batch` states that this
       warning carries no exit status because the batch runner's per-row result
       records whether the row succeeded, not how FFmpeg exited. (First clause is
       a regression lock; the reason is new.)
-- [ ] **AC4.** Each site's class names, as stated in the topics paired with it
+- [x] **AC4.** Each site's class names, as stated in the topics paired with it
       here, are the class names an executed call observes at that site:
       `R/loudnorm_two_pass.R:151` and `:112` → `?normalize_audio`, `?ffm_run`,
       `?tidymedia`;
@@ -76,11 +76,11 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
       `R/ffmpeg.R:681` → `?separate_audio_video`, `?ffm_run`, `?tidymedia`;
       `R/ffmpeg.R:742` → `?separate_audio_video_batch`. `?tidymedia`'s names are
       those in its `Bounding a run that hangs` section.
-- [ ] **AC5.** `?tidymedia`'s closing `See vignette(…)` navigation paragraph
+- [x] **AC5.** `?tidymedia`'s closing `See vignette(…)` navigation paragraph
       renders outside every `\section{}` block in the generated
       `man/tidymedia-package.Rd` (it opens inside `\section{Session options}`
       today).
-- [ ] **AC6.** `Rscript -e 'devtools::check()'` reports 0 errors and 0 warnings,
+- [x] **AC6.** `Rscript -e 'devtools::check()'` reports 0 errors and 0 warnings,
       and `Rscript -e 'devtools::test()'` passes with the FFmpeg-dependent tests
       covering AC1–AC4 running rather than skipping.
 
@@ -98,17 +98,17 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
 - [x] **T1.** Settle the shared event class's name through the escalated review
       (`/milestone-brief`). Done 2026-08-29 by RR05; the answer and its reasoning
       are in `## Decisions` below. (RB tripwire: irreversible-api — discharged)
-- [ ] **T2.** Apply `tidymedia_loudnorm_no_measurement` at all three sites per
+- [x] **T2.** Apply `tidymedia_loudnorm_no_measurement` at all three sites per
       AC1 (`R/loudnorm_two_pass.R:151`, `:112`, `:253`), retiring
       `tidymedia_loudnorm_analysis`; edit the two unreleased `NEWS.md` entries
       (lines 41, 63) in place so users meet one name. Gate against M075's
       fall-through — the `if (two_pass)` block in `normalize_audio()` does not
       return — so nothing signals twice. Update every test asserting either name.
-- [ ] **T3.** Add the stated reasons AC2 and AC3 require to
+- [x] **T3.** Add the stated reasons AC2 and AC3 require to
       `?normalize_audio_batch` and `?separate_audio_video_batch`, the latter
       naming what the per-row result does record. While in the two normalize
       topics, add one sentence on the silence asymmetry (RR05 B2).
-- [ ] **T4.** Re-derive the class enumerations in the six topics AC4 pairs by
+- [x] **T4.** Re-derive the class enumerations in the six topics AC4 pairs by
       *running* each of the four sites and reading the observed class vector —
       never by reading `class =` off the source (M041/M080: such prose is
       derived, never composed). Record the four observed vectors in the work
@@ -117,13 +117,13 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
       The probe input must EXIST and be unreadable as media — `nonexistent.wav`
       dies unclassed in `check_file_readable()` (`R/ffmpeg.R:2240`) and never
       reaches FFmpeg (RR05 B3).
-- [ ] **T5.** Move `?tidymedia`'s closing `See vignette(…)` paragraph
+- [x] **T5.** Move `?tidymedia`'s closing `See vignette(…)` paragraph
       (`R/tidymedia-package.R:159-161`) above the `@section` tags so it renders
       outside every section.
-- [ ] **T6.** Tests: assert the full class vector by identity at each of the four
+- [x] **T6.** Tests: assert the full class vector by identity at each of the four
       sites, including AC2's and AC3's absence assertions; each new assertion
       red against pre-milestone code before it is trusted.
-- [ ] **T7.** Append the `DECISIONS.md` entry annotating D062, carrying the five
+- [x] **T7.** Append the `DECISIONS.md` entry annotating D062, carrying the five
       points RR05 §6 requires (verbatim in `## Decisions` below): the rule held;
       a site's vector asserts every fact established there; "same event, same
       class vector" is NOT the convention; D007 is what forces it; the sharpened
@@ -143,6 +143,30 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
 - 2026-08-29: RR05 ingested (advisory, no binding criteria). T1 discharged. Amendments this ingestion made to plan-owned sections: Scope In corrected — the multi-track asymmetry is NOT D062's falsifier, which RR05 Q6 shows requires two names for one event where the code has one name at both severities; Scope In and AC1 gained a fifth site, `R/loudnorm_two_pass.R:112`, whose abort carries no class at all and sits inside the shared event (RR05 B1); AC1 fixed the name and dropped its deferral clause; AC4 paired the new site; T2/T3/T4/T7 extended.
 - 2026-08-29: ingest chose to leave the D062 annotation to T7 rather than append it now, because the entry states what the code establishes and would otherwise be written twice; RR05 §6's five required points are recorded in `## Decisions` below so the content survives this milestone being abandoned. Falsified by M087 being dropped with D062 still unannotated.
 
+- 2026-08-29: T2 + T6 done in ONE commit, a minor task-ordering amendment: T6's "red before trusted" evidence has to be taken against pre-milestone code, so the new assertions were written and run first (three red: the scalar exit site, the scalar unparseable site, the batch site each escaped a `tidymedia_loudnorm_no_measurement` handler), then T2's code landed and turned them green.
+- 2026-08-29: T2 — `tidymedia_loudnorm_no_measurement` applied at `R/loudnorm_two_pass.R:112` (alone, no `tm_status`), `:151` (with `tidymedia_ffmpeg_exit`, keeping `tm_status`) and `:253` (alone, keeping `tm_rows`/`tm_row_status`); `tidymedia_loudnorm_analysis` renamed out of NEWS.md, three roxygen sites, their `man/` counterparts and eight test lines. M075's fall-through checked: `run_loudnorm_analysis()` aborts, so the non-returning `if (two_pass)` block cannot reach a second signalling site.
+- 2026-08-29: T6 — full class-vector identity assertions added at all four sites plus the silence boundary; M085's flat-vector assertion at `test-ffmpeg-exit-condition.R:52` corrected, since M087 deliberately makes that site carry two classes. `devtools::test()`: 0 failures, 8353 passing, 5 skips (all nvenc-absent).
+
+- 2026-08-29: T3 — `?normalize_audio_batch` now states the abort carries no `tm_status` and is not `tidymedia_ffmpeg_exit` because a batch mixes causes (rows that exited zero included); `?separate_audio_video_batch` now states the warning carries no exit status because `ffm_batch()`'s `run_one()` returns `list(success =, timed_out =)` and discards the condition (verified at `R/ffm_batch.R:141-147`). The silence asymmetry is stated from both sides in `?normalize_audio` and `?normalize_audio_batch`. Four Rd-text assertions added, each confirmed absent from the pre-T3 `man/` files.
+
+- 2026-08-29: T4 — the five class vectors, read off EXECUTED calls (garbage `.wav` probe, FFmpeg 9.0.1, macOS): `:151` `c("tidymedia_loudnorm_no_measurement", "tidymedia_ffmpeg_exit", "rlang_error", "error", "condition")` with `tm_status = 183L`; `:112` `c("tidymedia_loudnorm_no_measurement", "rlang_error", "error", "condition")` with no fields; `:253` the same four with `tm_rows = 1L`, `tm_row_status = 183L`; `R/ffmpeg.R:681` `c("tidymedia_multitrack_separation", "tidymedia_ffmpeg_exit", "rlang_error", "error", "condition")` with `tm_status = 234L`; `R/ffmpeg.R:742` `c("tidymedia_multitrack_separation", "rlang_warning", "warning", "condition")` with no fields.
+- 2026-08-29: T4 — `?ffm_run` and `?tidymedia` corrected (the "two other paths raise the same class" sentence now says both also carry a narrower class of their own, and both topics now state which paths raise the shared loudnorm class WITHOUT the exit class); `?normalize_audio` gained the class names for its two sites; `?separate_audio_video` and `?separate_audio_video_batch` already matched. A pairing test executes all five sites and requires every observed `tidymedia_*` class to appear in each paired topic; planting `tidymedia_PLANTED_DRIFT` into `man/ffm_run.Rd` turned it red at the two expected pairings.
+
+- 2026-08-29: T5 — the `See vignette(…)` navigation paragraph moved from the end of `@section Session options:` to the end of `@details`, so it now renders inside `\details{}` and before the first `\section{}` in `man/tidymedia-package.Rd`. Guarded by a test that locates it against the first `\section{` offset; restoring the old placement in the generated Rd turned it red.
+
+- 2026-08-29: T7 — D063 appended, annotating D062 with RR05 §6's five points and sharpening its falsifier; `R/ffmpeg.R:681` and `:742` left as they are. `NEWS.md` gained the M087 entry and the unreleased M086 paragraph lost its now-false "a class of its own" phrasing. `devtools::document()` no diff; `devtools::test()` 0 failures / 8388 passing / 5 skips (all nvenc-absent); `devtools::check()` 0 errors, 0 warnings, 0 notes. `git grep tidymedia_loudnorm_analysis -- ':!cairn/'` returns nothing.
+- 2026-08-29: review returned M087 to `in-progress` on the return floor. AC4 failed: `?tidymedia`'s `Bounding a run that hangs` section states the loudnorm analysis abort is classed `tidymedia_ffmpeg_exit` with no "when FFmpeg exits non-zero" qualifier (`man/tidymedia-package.Rd:103-107`), so the topic AC4 pairs with `R/loudnorm_two_pass.R:112` names a class an executed call at that site does not raise. AC1, AC2, AC3, AC5 and AC6 verified with fresh evidence; consistency gate clean. Fix-now findings riding the return: F2 (NEWS.md's "raises the same class ... one handler covers both" and "Two paths still do not signal it", both false of the zero-exit path), F3 (`?tidymedia`'s "so does" attaching `tm_rows`/`tm_row_status` to the fieldless scalar abort), F8 (no `DECISIONS.md` record of the class rename or the chosen name), F9/F10 (NEWS.md redundancy and an 83-character line). First defect return.
+
+- 2026-08-29: return fix F1 (AC4) — `?tidymedia`'s exit-class sentence now qualifies the loudnorm analysis pass with "when FFmpeg exits non-zero", matching `?ffm_run`'s wording, so no topic paired with `R/loudnorm_two_pass.R:112` names a class an executed call there does not raise. Guarded by a new assertion in `test-package-topic.R` that reads the attribution window between the loudnorm mention and the class name and requires the qualifier; run against the pre-fix `man/tidymedia-package.Rd` it fails on the old "all classed" sentence, so the guard is red before it is trusted. This binds an attribution rather than an enumeration, which is why the T4 pairing test could not see the defect — F5's point, still carried as a follow-up.
+- 2026-08-29: return fix F3 — `?tidymedia`'s "so does the scalar abort" replaced; the scalar zero-exit abort now says it raises the shared class alone "carrying no fields at all", which is the observed vector T4 recorded (no `tm_status`, no `tm_rows`, no `tm_row_status`).
+- 2026-08-29: return fixes F2/F9/F10 — `NEWS.md`'s first condition bullet now qualifies "raises the same class ... when FFmpeg exits non-zero" and counts three non-signalling paths rather than two, naming the scalar zero-exit path; the second bullet's duplicate account of why the batch phase answers to the shared class is cut to a forward pointer, leaving the reason stated once in the third bullet (F9); line 41's 83-character line is gone with that rewrite (F10).
+- 2026-08-29: return fix F8 — D064 appended, recording the retirement of `tidymedia_loudnorm_analysis` and the choice of `tidymedia_loudnorm_no_measurement`. Appended rather than folded into D063, which states the class-vector rule; the rename is a naming decision under D062 and would be lost when this milestone file compresses to an archive summary. The entry is shown verbatim in the close block.
+- 2026-08-29: return verified — `devtools::document()` no diff after the run; `devtools::test()` 0 failures / 8391 passing / 5 skips (all nvenc-absent); `devtools::check()` Status: OK, 0 errors / 0 warnings / 0 notes (3m 22.6s).
+
+- 2026-08-29: re-review pass 2. `master` unmoved since the branch was cut. All six criteria verified with fresh evidence from a new review-side probe; consistency gate clean. Three lenses: blame-history and prior-review-record returned no defects; diff-bug returned eight findings. F1/F2/F4 (false reasons beside correct class names, in `?normalize_audio_batch`, `?ffm_run` and `NEWS.md`) and F3 (AC1's sweep guard grepping only `tests/testthat`) fixed at the gate; F5/F6/F7 are follow-ups; F8 rejected. No criterion failed, so no second defect return.
+
+- 2026-08-29: CI red on all four Ubuntu jobs at bc8c658 — the F3 gate fix broke its own skip guard. Under `R CMD check` the tests run from a copy at `<pkg>.Rcheck/tests/testthat`, whose root is the untracked `.Rcheck` dir; on CI that dir sits INSIDE the workspace checkout, so `--is-inside-work-tree` said true while `git grep` saw no tracked file and the non-empty-domain control failed (FAIL 2, `test-ffmpeg-exit-condition.R:610-611`). macOS and Windows passed because their check dir is outside any checkout. The guard now requires the root to BE the checkout's own top level (`rev-parse --show-toplevel` identical to it), so it runs in the source tree and skips in a check copy. Locally: runs (SKIP 0), still red on planted drift, `check()` 0/0/0, `test()` 0 failures / 8392 passing.
+
 ## Decisions
 
 - 2026-08-29 (RR05 Q1/Q2): the scalar and batch analysis-pass aborts report ONE event — the loudnorm analysis pass yielded no usable measurement, so no correction could be built — and share one class. The scalar site establishes a second, narrower fact (a known non-zero exit) and carries it as a second class. The docs-only alternative was rejected: it leaves the moved-handler trap armed and cannot reach `R/loudnorm_two_pass.R:112`, which has no class to document. Would change on evidence that callers of the two forms need different recoveries; none exists, the correction pass being unreachable either way.
@@ -152,3 +176,308 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
 - 2026-08-29 (RR05 recommendations triage): 1-5 applied (shared class; the name; the vector shapes; classing `:112`; recording via T7). 6 applied rather than merely considered — the silence sentence is one line inside a topic T3 already edits; its second half, a distinct class for the silent abort, stays on the unclassed-aborts candidate row. 7 and 8 are RR05's own rejections of alternatives this plan had already declined. 9 accepted, and it is what AC2 and AC3 already lock.
 
 ## Review
+
+_Reviewed 2026-08-29 on `m087-scalar-batch-condition-classes` at 4bdebd9, PR #91.
+Evidence taken fresh: every class vector below was read off an EXECUTED call in
+a review-side probe script, independent of the branch's own tests (FFmpeg 9.0.1,
+macOS 25.6.0)._
+
+### Acceptance criteria
+
+- **AC1 — verified.** A review-side probe executed all three loudnorm
+  analysis-pass abort sites and printed the observed `class()` vector and
+  fields. `R/loudnorm_two_pass.R:151` (scalar, unreadable `.wav`):
+  `c("tidymedia_loudnorm_no_measurement", "tidymedia_ffmpeg_exit",
+  "rlang_error", "error", "condition")` with `tm_status = 183`. `:112` (scalar
+  zero-exit, reachable only with `run_program()` substituted, since a real
+  FFmpeg exiting zero always prints the block): the shared class alone, no
+  `tm_status`, message "Could not parse the `loudnorm` measurement". `:253`
+  (batch): the shared class alone, `tm_status` NULL, `tm_rows = 1`,
+  `tm_row_status = 183`. `git grep -n tidymedia_loudnorm_analysis -- ':!cairn/'`
+  exits 1 with no hit; the five remaining hits are all under `cairn/`.
+- **AC2 — verified.** The batch probe above raised the shared class, did not
+  inherit `tidymedia_ffmpeg_exit`, and carried `tm_rows`/`tm_row_status`.
+  `man/normalize_audio_batch.Rd:86-88` states the abort "carries no single exit
+  status on `tm_status`, and is not classed `tidymedia_ffmpeg_exit`, because it
+  also fires for rows that exited zero".
+- **AC3 — verified.** The probe ran `separate_audio_video_batch()` over a
+  3-audio-track `.mkv` written to `.mp3`; the post-fan-out warning's observed
+  vector is `c("tidymedia_multitrack_separation", "rlang_warning", "warning",
+  "condition")`, `tm_status` NULL. `man/separate_audio_video_batch.Rd:118-124`
+  states the warning carries no exit status because the batch runner records
+  whether a row succeeded, not how FFmpeg exited. That reason checks out against
+  the code: `run_one()` reduces a row to `list(success =, timed_out =)`
+  (`R/ffm_batch.R:143-147`) and `out$success` is the logical column
+  (`R/ffm_batch.R:157`).
+- **AC4 — FAILED.** Five sites executed; in the direction the branch's own
+  test checks — every observed class appears in each paired topic — the pairings
+  hold: `:151`/`:112` → `man/normalize_audio.Rd`, `man/ffm_run.Rd`,
+  `man/tidymedia-package.Rd`; `:253` → `man/normalize_audio_batch.Rd`,
+  `man/tidymedia-package.Rd`; `R/ffmpeg.R:681` → `man/separate_audio_video.Rd`,
+  `man/ffm_run.Rd`, `man/tidymedia-package.Rd`; `R/ffmpeg.R:742` →
+  `man/separate_audio_video_batch.Rd`. The criterion is a biconditional, and the
+  other direction fails at one pairing. `man/tidymedia-package.Rd:106-107`, in
+  the `Bounding a run that hangs` section the criterion names, states that the
+  aborts "from the `loudnorm` analysis pass behind
+  `normalize_audio(two_pass = TRUE)`" are "all classed `tidymedia_ffmpeg_exit`",
+  with no qualifier. An executed call at `R/loudnorm_two_pass.R:112` observes
+  `c("tidymedia_loudnorm_no_measurement", "rlang_error", "error", "condition")`
+  and no `tidymedia_ffmpeg_exit`. `?ffm_run`'s parallel sentence
+  (`R/ffm.R:1554-1556`) carries the qualifier "when FFmpeg exits non-zero";
+  `?tidymedia`'s does not. A later paragraph in the same section states the
+  zero-exit case correctly, so the section contradicts itself rather than
+  omitting the fact — but the class name stated for that site is not the class
+  name the site raises, which is what AC4 requires. Reported as finding F1.
+- **AC5 — verified.** In the generated `man/tidymedia-package.Rd` the
+  `See \code{vignette("tidymedia")}` paragraph begins at byte offset 1372 and
+  the first `\section{` opens at 1677, so it renders inside `\details{}` and
+  outside every section block.
+- **AC6 — verified.** `Rscript -e 'devtools::check()'`: `Status: OK`, 0 errors,
+  0 warnings, 0 notes (3m 17.2s). `Rscript -e 'devtools::test()'`:
+  FAIL 0 | WARN 12 | SKIP 5 | PASS 8388, and all five skips report
+  "nvenc encoder not listed" — none is an absent FFmpeg or FFprobe. Re-run over
+  the two files carrying the AC1-AC4 assertions
+  (`test-ffmpeg-exit-condition.R`, `test-package-topic.R`):
+  FAIL 0 | WARN 0 | SKIP 0 | PASS 158, so those tests ran rather than skipped.
+
+### Consistency gate
+
+Universal cairn-file checks: `cairn_validate.py` exits 0 — 16 PASS, 7 advisory
+OK, none firing. No `DESIGN.md` principle changed, so `cairn_impact.py` is not
+run.
+
+Toolchain checks (the `r-package` profile's `consistency-gate` slot):
+`devtools::document()` produces no diff (`git status` clean apart from this
+milestone file). `NAMESPACE`, `man/` and `data/` are generated, and the no-diff
+`document()` run covers them. `README.Rmd`/`README.md` are untouched by the
+branch, so no re-knit is due. `pkgdown::check_pkgdown()` — "No problems found."
+`NEWS.md` carries this milestone's user-visible changes and names no milestone
+numbers. No new top-level files, so no `.Rbuildignore` entry is due.
+`devtools::check()` — 0 errors, 0 warnings, 0 notes, 3m 17s.
+
+### Independent review
+
+Three fresh-context reviewers ran in parallel on distinct evidence bases. The
+[S] blame-history lens and the [S] prior-PR-comments lens each returned zero
+findings: history shows the one history-sensitive move — breaking M085's flat
+single-class shape at `R/loudnorm_two_pass.R:151` — is the exact question RB05
+escalated and D063 records, and the GitHub inline-comment probe
+(`gh api repos/jmgirard/tidymedia/pulls/comments?per_page=1`) returned `[]`, so
+that lens's per-PR walk was correctly skipped. The [O] diff-bug lens found no
+functional bug and ten prose, record and test-strength findings, ranked below
+with their dispositions. Each was verified against the implementation, not
+against the reviewer's account of it.
+
+- **F1 — return.** `?tidymedia` still states the loudnorm analysis abort is
+  classed `tidymedia_ffmpeg_exit` without the "when FFmpeg exits non-zero"
+  qualifier `?ffm_run` carries, so the topic AC4 pairs with
+  `R/loudnorm_two_pass.R:112` names a class that site does not raise. Confirmed
+  in the generated Rd at `man/tidymedia-package.Rd:103-107`. This is the silent
+  miss the milestone exists to remove, on the landing topic a caller reads
+  first. Fails AC4 — see the criterion above.
+- **F2 — fix.** `NEWS.md:34-36` states without qualification that the analysis
+  pass "raises the same class and carries the same field, so one handler covers
+  both", which is false of the zero-exit path this milestone added a class to;
+  and `NEWS.md:38-42`'s "Two paths still do not signal it" is now three, the
+  scalar zero-exit path being the third. Same defect shape as F1, in unreleased
+  user-facing text.
+- **F3 — fix.** `R/tidymedia-package.R:130-132`: "so it raises … alone, carrying
+  `tm_rows` and `tm_row_status` and no exit status; so does the scalar abort for
+  an analysis pass that exited zero". Read strictly, "so does" carries the whole
+  predicate, but the scalar `:112` abort carries no fields at all — the probe
+  above observed none.
+- **F8 — fix.** The retirement of `tidymedia_loudnorm_analysis` and the choice
+  of `no_measurement` are recorded only in this milestone file's `## Decisions`.
+  D062 owns class naming and is unamended on the rename; D063 states only the
+  class-vector rule. The milestone file is replaced by a ≤25-line summary at
+  archive, so a reader of `DECISIONS.md` alone could not reconstruct why a
+  public class name changed.
+- **F9/F10 — fix, folded into F2.** The two `NEWS.md` bullets both explain that
+  the batch analysis phase raises the shared class rather than the exit class,
+  for the same stated reason (`NEWS.md:62-69` and `71-97`); and `NEWS.md:41`,
+  the line T2 edited, runs to 83 characters against the file's ~80-column wrap.
+- **F5 — follow-up.** The AC4 pairing test
+  (`tests/testthat/test-ffmpeg-exit-condition.R:564-587`) asserts only that
+  every observed class appears in each paired topic, never that a topic omits a
+  class its paired sites do not raise — which is why F1 shipped green, and why
+  the planted-drift check only exercised the covered direction. Not fixed here:
+  the obvious strengthening (over the union of a topic's paired sites) would
+  still not catch F1, since `?tidymedia` is also paired with `:151`, which does
+  raise the exit class. A test that would catch it needs to bind a claim to a
+  site rather than to a topic, which is a design call of its own. Carried to
+  the post-merge hygiene pass of the re-review, where the instrument-findings
+  page takes it under its own disposition rule.
+- **F6 — follow-up.** The AC5 guard
+  (`tests/testthat/test-package-topic.R:52-58`) asserts the paragraph precedes
+  the first `\section{`, which `\description{}` would also satisfy; AC5 says
+  outside every section. AC5 itself holds — the paragraph sits at offset 1405,
+  inside `\details{` (420) and before the first `\section{` (1677) — so this is
+  test strength, not behaviour. Carried alongside F5.
+- **F4 — rejected.** `?ffm_run` calling the event classes "narrower" is read by
+  the reviewer as set inclusion, which D063 denies. In context the sentence is
+  "a second, narrower class ahead of this one … which is what to catch when it
+  is that failure in particular you want" — narrower in what it names, which is
+  the same "most specific context first" ordering the code comments state. A
+  reading nitpick, not a false claim.
+- **F7 — rejected.** AC1's `git grep` sweep skipping outside a git checkout is
+  correct guarding, not a gap: the criterion's evidence is the review-side grep
+  recorded under AC1 above, and a test that shelled out to `git` from an
+  `R CMD check` tarball would be the defect.
+
+### Disposition
+
+Returned to `in-progress` on the return floor: F1 demonstrates AC4 failing.
+F2, F3, F8, F9 and F10 ride the same return as fix-now work; F5 and F6 are
+follow-ups; F4 and F7 are rejected with the reasons above. First defect return
+for this milestone.
+
+### Second pass — 2026-08-29 (re-review after the first defect return)
+
+_Reviewed on `m087-scalar-batch-condition-classes` at 21f5f1f, PR #91. `master`
+had not moved since the branch was cut (`git log origin/master..HEAD` = 7
+commits, `HEAD..origin/master` empty), so no merge was due. Evidence taken
+fresh again: every class vector below was read off an EXECUTED call in a new
+review-side probe script, independent of the branch's own tests (FFmpeg 9.0.1,
+macOS 25.6.0). The AC4 checkbox had been re-ticked implement-side by the return
+fix rather than review-side against evidence; it is re-ticked here against the
+evidence recorded below._
+
+#### Acceptance criteria
+
+- **AC1 — verified.** The probe executed all three loudnorm analysis-pass abort
+  sites. `R/loudnorm_two_pass.R:151` (scalar, unreadable `.wav`):
+  `c("tidymedia_loudnorm_no_measurement", "tidymedia_ffmpeg_exit",
+  "rlang_error", "error", "condition")`, `tm_status = 183`. `:112` (scalar
+  zero-exit, reached with `run_program()` substituted): the shared class alone,
+  no `tm_status`/`tm_rows`/`tm_row_status`, message "Could not parse the
+  `loudnorm` measurement …". `:253` (batch): the shared class alone,
+  `tm_status` NULL, `tm_rows = 1`, `tm_row_status = 183`. The silence abort at
+  `:103` was executed too and carries no `tidymedia_` class, so it is outside
+  the shared event as RR05 B2 requires. `git grep -n tidymedia_loudnorm_analysis
+  -- ':!cairn/'` run from the repo root exits 1 with no hit; the 23 remaining
+  hits are all under `cairn/`.
+- **AC2 — verified.** The batch probe raised the shared class, did not inherit
+  `tidymedia_ffmpeg_exit`, and carried `tm_rows`/`tm_row_status`.
+  `man/normalize_audio_batch.Rd:86-88` states the abort "carries no single exit
+  status on `tm_status`, and is not classed `tidymedia_ffmpeg_exit`, because it
+  also fires for rows that exited zero".
+- **AC3 — verified.** The probe ran `separate_audio_video_batch()` over a
+  3-audio-track `.mkv` written to `.mp3`; the post-fan-out warning's observed
+  vector is `c("tidymedia_multitrack_separation", "rlang_warning", "warning",
+  "condition")`, `tm_status` NULL, `inherits(w, "tidymedia_ffmpeg_exit")` FALSE.
+  `man/separate_audio_video_batch.Rd:118-124` states the warning carries no exit
+  status because the batch runner records whether a row succeeded, not how
+  FFmpeg exited — which holds against `R/ffm_batch.R:143-147`.
+- **AC4 — verified.** Five sites executed; both directions checked at every
+  pairing. Forward: every observed `tidymedia_*` class appears in each paired
+  topic. Backward, the direction the first pass failed on: no paired topic
+  attributes to a site a class that site does not raise.
+  `man/tidymedia-package.Rd:131-137` now qualifies the exit-class sentence with
+  "when FFmpeg exits non-zero", so nothing attributes `tidymedia_ffmpeg_exit` to
+  `R/loudnorm_two_pass.R:112`, and `:141-146` states that site raises the shared
+  class alone "carrying no fields at all" — which is the observed vector.
+  `?ffm_run`, `?normalize_audio`, `?normalize_audio_batch`,
+  `?separate_audio_video` and `?separate_audio_video_batch` were each read
+  against their paired sites' observed vectors and match. Two false *reasons*
+  found beside correct class names (F2, F1 below) were fixed at the gate; they
+  do not bear on AC4, which binds class names.
+- **AC5 — verified.** In the generated `man/tidymedia-package.Rd` the
+  `See \code{vignette("tidymedia")}` paragraph begins at byte offset 1372,
+  `\details{` opens at 420, and the first `\section{` opens at 1677 — so it
+  renders inside `\details{}` and outside every section block.
+- **AC6 — verified.** `Rscript -e 'devtools::check()'`: `Status: OK`, 0 errors,
+  0 warnings, 0 notes (3m 19.3s, re-run after the gate fixes).
+  `Rscript -e 'devtools::test()'`: FAIL 0 | WARN 12 | SKIP 5 | PASS 8392, and
+  all five skips report "nvenc encoder not listed" — none is an absent FFmpeg or
+  FFprobe. Re-run over the two files carrying the AC1-AC4 assertions
+  (`test-ffmpeg-exit-condition.R`, `test-package-topic.R`):
+  FAIL 0 | WARN 0 | SKIP 0 | PASS 161, so those tests ran rather than skipped.
+
+#### Consistency gate
+
+Universal cairn-file checks: `cairn_validate.py` exits 0 — 16 PASS, 7 advisory
+OK, none firing (`release window` did not fire). No `DESIGN.md` principle
+changed, so `cairn_impact.py` is not run.
+
+Toolchain checks (the `r-package` profile's `consistency-gate` slot):
+`devtools::document()` produces no diff after the gate fixes. `NAMESPACE`,
+`man/` and `data/` are generated and covered by that run. `README.Rmd`/`README.md`
+are untouched by the branch. `pkgdown::check_pkgdown()` — "No problems found."
+`NEWS.md` carries this milestone's user-visible changes and names no milestone
+numbers. No new top-level files, so no `.Rbuildignore` entry is due.
+`devtools::check()` — 0 errors, 0 warnings, 0 notes.
+
+#### Independent review
+
+Three fresh-context reviewers ran in parallel on distinct evidence bases. The
+[S] blame-history lens returned no defects: the one history-sensitive move —
+breaking M085-D2's flat single-class shape at `R/loudnorm_two_pass.R:151` — is
+the question RB05 escalated and D063 records, and the rename is swept clean.
+The [S] prior-review-record lens found no regression of a lesson the archived
+M085/M086 `## Review` sections taught, and its GitHub inline-comment probe
+(`gh api repos/jmgirard/tidymedia/pulls/comments?per_page=1`) returned `[]`, so
+the per-PR walk was correctly skipped. The [O] diff-bug lens found no functional
+bug and eight findings, ranked below with their dispositions. Each was verified
+against the implementation, not against the reviewer's account of it.
+
+- **F1 — fixed at the gate.** `R/ffmpeg.R:4409` → `man/normalize_audio_batch.Rd`:
+  "The scalar form, where exactly one run failed, does carry both" attributed
+  `tidymedia_ffmpeg_exit` and `tm_status` to the scalar analysis abort without
+  qualification, which is false of `R/loudnorm_two_pass.R:112` — the same
+  over-attribution shape the first pass returned on, on a different topic. Not
+  an AC4 failure: AC4 pairs `?normalize_audio_batch` with `:253` only, and the
+  class it states for `:253` is right. Fixed to name both scalar paths.
+- **F2 — fixed at the gate.** `R/ffm.R:1563` → `man/ffm_run.Rd`: "Two paths in
+  the same family do **not** raise this class, because no non-zero exit happened
+  there" gives a reason false of the second path, which the next sentence says
+  fires "for rows that exited zero as well as for rows FFmpeg refused".
+  Self-contradicting inside one paragraph; the class attribution itself was
+  correct, so AC4 holds. Fixed to give each path its own reason.
+- **F3 — fixed at the gate.** `tests/testthat/test-ffmpeg-exit-condition.R:591`:
+  AC1's repo-wide sweep guard ran `git grep` from testthat's working directory,
+  `tests/testthat`, so it reached only that directory. Demonstrated: the same
+  grep returns 3 files from `tests/testthat` and 10 from the repo root — a
+  reintroduction of the retired name in `R/`, `man/` or `NEWS.md` could not turn
+  it red, and its non-empty-domain control passed vacuously off the three test
+  files. AC1 itself holds; its evidence is the root-level grep above. Fixed to
+  grep with `git -C <package root>` and to require a hit outside `tests/`;
+  planting the retired name in `R/ffm.R` turns it red (FAIL 1), so the guard is
+  red before it is trusted.
+- **F4 — fixed at the gate.** `NEWS.md:41`: "on every
+  `normalize_audio_batch(two_pass = TRUE)` failure" overstates — the shared class
+  is raised by the analysis phase only, and only for rows yielding no usable
+  measurement; a silent row is set aside rather than aborting, and a
+  correction-phase failure records `success = FALSE`. Narrowed to that.
+- **F5 — follow-up.** The AC4 pairing probe
+  (`tests/testthat/test-ffmpeg-exit-condition.R:528-560`) catches with
+  `condition = function(e) e` at three error sites, so a `tidymedia_`-classed
+  warning signalled before the abort would be captured instead and asserted
+  against topics for a site nobody tested; `error =` would bind each probe to
+  its site. Latent, not live today. Carried to the instrument-findings page.
+- **F6 — follow-up.** Four Rd-text assertions match strings that sit at roxygen
+  wrap boundaries, so a benign reflow by `document()` fails them with no
+  behaviour change. They pass today. Carried alongside F5.
+- **F7 — follow-up.** The two mocked tests in `test-ffmpeg-exit-condition.R`
+  substitute `run_program` but leave `find_ffmpeg()`/`find_ffprobe()` live, so
+  on a machine with no binaries they pass while emitting "Failed to find ffmpeg"
+  warnings rather than skipping. Cosmetic. Carried alongside F5.
+- **F8 — rejected.** That the first pass's F5 and F6 follow-ups have no ROADMAP
+  row yet is not a defect: the first pass's own disposition routed them to this
+  re-review's post-merge hygiene pass, where the instrument-findings page takes
+  them under its §7 disposition rule. That is step 9 of this pass.
+
+#### Disposition
+
+Every acceptance criterion verified with fresh evidence; consistency gate clean.
+No finding demonstrates an acceptance criterion failing, so the return floor is
+not met and no second defect return is due — the defect-return count stands at
+one. F1-F4 were triaged fix-now and committed on the branch before the approval
+marker; F5, F6 and F7 are follow-ups for the hygiene pass; F8 is rejected with
+the reason above.
+
+#### CI
+
+Green on macOS, Windows, codecov, pkgdown and test-coverage at bc8c658; red on all four
+Ubuntu jobs, because the F3 fix's own skip guard misfired inside the `R CMD check`
+copy when that copy sits within a checkout. Repaired on the branch (see the work
+log); the guard now runs only in the package's own top-level checkout.

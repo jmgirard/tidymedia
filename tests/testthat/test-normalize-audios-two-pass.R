@@ -365,7 +365,7 @@ two_pass_abort <- function(outputs) {
                          output = paste0("out", seq_along(outputs), ".m4a"))
   tryCatch(
     normalize_audio_batch(jobs, two_pass = TRUE, run = FALSE),
-    tidymedia_loudnorm_analysis = function(e) e
+    tidymedia_loudnorm_no_measurement = function(e) e
   )
 }
 
@@ -383,21 +383,21 @@ test_that("the two-pass analysis abort names its rows and their exit statuses", 
   # Batch 1: exit failures only, with two DIFFERENT statuses, so a field pinned
   # to one number cannot pass.
   cnd <- two_pass_abort(list(failed(1L), good, failed(234L)))
-  expect_s3_class(cnd, "tidymedia_loudnorm_analysis")
+  expect_s3_class(cnd, "tidymedia_loudnorm_no_measurement")
   expect_identical(cnd$tm_rows, c(1L, 3L))
   expect_identical(cnd$tm_row_status, c(1L, 234L))
 
   # Batch 2: unparseable only. These rows exited zero, so there is no status to
   # report and the field says so rather than inventing one.
   cnd <- two_pass_abort(list(good, malformed, malformed))
-  expect_s3_class(cnd, "tidymedia_loudnorm_analysis")
+  expect_s3_class(cnd, "tidymedia_loudnorm_no_measurement")
   expect_identical(cnd$tm_rows, c(2L, 3L))
   expect_identical(cnd$tm_row_status, c(NA_integer_, NA_integer_))
 
   # Batch 3: one of each, which is the only batch that can show the two causes
   # are aligned to their own rows rather than to the row order.
   cnd <- two_pass_abort(list(malformed, good, failed(69L)))
-  expect_s3_class(cnd, "tidymedia_loudnorm_analysis")
+  expect_s3_class(cnd, "tidymedia_loudnorm_no_measurement")
   expect_identical(cnd$tm_rows, c(1L, 3L))
   expect_identical(cnd$tm_row_status, c(NA_integer_, 69L))
   # `tm_rows` is 1-indexed on the CALLER's table and matches what the message

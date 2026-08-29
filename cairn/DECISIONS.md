@@ -2882,3 +2882,96 @@ written against the child.
   what keeps `tidymedia_multitrack_separation` honest; or by a field name
   collision surviving the `tm_` prefix; or by a decision, before the first
   release, to sweep every class into the ecosystem's `pkg_error_*` shape.
+
+## D063 — A site's class vector asserts every fact established at that site, so one event's vectors may differ across severities (2026-08-29, from M087/RR05; annotates D062 and sharpens its falsifier, leaving the rest of that entry standing)
+
+D062 said a condition class names the event, not the severity, and cited
+`tidymedia_multitrack_separation` — signalled as an error at
+`R/ffmpeg.R:681` and as a warning at `R/ffmpeg.R:742` — as the case the rule
+keeps honest. M086 then gave the error site a second class,
+`tidymedia_ffmpeg_exit`, and could not give it to the warning site. That looks
+like D062's falsifier and is not one. This entry says why, and states the rule
+D062 left implicit.
+
+**The rule held.** D062's falsifier is one recorded event carried at two
+severities under *two names* — an event forced to rename because severity
+changed. What shipped is one event under **one** name at both severities: the
+shared class appears at the error site and at the warning site alike. The
+event-naming rule is exactly what kept that name the same across the two.
+
+**What the code has established, which D062 did not state.** A site's class
+vector asserts every event established *at that site*. So the vectors at two
+severities of one event may differ — by additional classes naming additional
+facts, never by the shared event's own name. The error site additionally
+carries `tidymedia_ffmpeg_exit` because a second fact is established there, a
+specific known non-zero exit; that branch runs only when a real exit number is
+in hand.
+
+**The concession.** "Same event, same class *vector*" is therefore **not** the
+convention. A handler written on a mechanism class does not see
+batch-severity signals of events whose scalar form carries that mechanism:
+`tryCatch(tidymedia_ffmpeg_exit = )` catches the scalar separation error and
+does not catch the batch separation warning, though both report the same
+event. Bridging that gap is documentation's job — `?separate_audio_video_batch`
+and `?normalize_audio_batch` now say the diagnostic carries no exit status and
+why — not the class system's.
+
+**The constraint that forces it.** D007 makes the batch runner reduce each row
+to whether it succeeded and discard the condition, so the warning site can
+evidence neither a non-zero exit nor a `tm_status`. Adding
+`tidymedia_ffmpeg_exit` there would assert a mechanism the site cannot show,
+false for any row that failed for a non-exit reason, and would attach a class
+without the field it has carried everywhere since M085. Dropping the class from
+the error site instead would undo M086, whose point is that a refused run
+answers to one class on every path. The asymmetry is recorded, not repaired;
+repairing it is the `ffm_batch()` per-row result contract, which has its own
+ROADMAP row.
+
+The same reading is what let M087 give the `loudnorm` analysis pass one shared
+class, `tidymedia_loudnorm_no_measurement`, at three sites whose vectors are
+not identical: the scalar non-zero-exit abort carries the exit class and its
+field as well, the scalar zero-exit abort and the batch abort carry the shared
+class alone. M087's milestone file records the observed vectors.
+
+- **Falsified by** the shared event's own name ever differing across
+  severities; or by a class being attached at a site that cannot carry that
+  class's contractual fields.
+
+## D064 — The `loudnorm` analysis-pass class is `tidymedia_loudnorm_no_measurement`; `tidymedia_loudnorm_analysis` is retired (2026-08-29, from M087/RR05; applies D062's naming rule to a public class that changed name before first release)
+
+M087 gave the `loudnorm` analysis pass one shared condition class across its
+scalar and batch forms. The class that already existed at one of those sites
+was `tidymedia_loudnorm_analysis`; the class that shipped is
+`tidymedia_loudnorm_no_measurement`. A public class name changed, so the
+reasoning belongs here rather than only in a milestone file that is compressed
+to a summary at archive.
+
+**Why the incumbent was rejected.** `tidymedia_loudnorm_analysis` names a
+*phase*, not an event, and so promises more than it delivers: three failures
+inside that same phase escape it — a reached limit aborts `tidymedia_timeout`,
+an unresolvable binary aborts unclassed, and a silent input aborts unclassed
+from its own branch. A caller reading the name would write a handler expecting
+to cover the analysis pass and would silently miss all three. That is D062's
+event-naming rule failing in a second dress: RR04 rejected `tidymedia_ffmpeg_error`
+for naming a category, and a phase name is a category by another route.
+
+**Why `no_measurement`.** It names the fact that occurred — the analysis pass
+yielded no usable measurement, so no correction could be built — and it
+truthfully excludes silence, because a silent input *was* measured, at `-inf`.
+`tidymedia_loudnorm_unmeasured` was set aside: what would be unmeasured is the
+input, not the pass. Dropping the `loudnorm_` scope was rejected on the same
+narrow-name precedent D062 records for `tidymedia_probe_timeout` and
+`tidymedia_batch_timeout`.
+
+**Why the rename is taken now.** The package is unreleased and pre-0.2.0
+(D014), and the only handlers written on the incumbent are this repo's own
+tests. After the first release the calculus inverts permanently: a class name
+callers match on cannot be changed quietly, and the package would be stuck
+with a name that overpromises. No deprecation cycle is owed for a class no
+released version has shipped.
+
+- **Falsified by** a failure being found inside the `loudnorm` analysis pass
+  that yields no usable measurement and yet must *not* answer to this class;
+  or by the decision D062 leaves open — sweeping every class into the
+  ecosystem's `pkg_error_*` shape — being taken, which would rename this one
+  along with the rest.

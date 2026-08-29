@@ -47,11 +47,13 @@ test_that("the loudnorm analysis pass raises the same class and field", {
   cnd <- tryCatch(run_loudnorm_analysis(bad),
                   tidymedia_ffmpeg_exit = function(e) e)
 
-  # Exactly as at the ffm_run() site: one flat class, no parent or sibling
-  # (M085-D2), enforced at both sites rather than one (M085 review F5).
+  # The exit class and its field are the ones the ffm_run() site raises, and
+  # they arrive alongside the event class M087 gave this site: the analysis
+  # pass yielded no usable measurement, and FFmpeg exited non-zero saying so.
   expect_identical(
     class(cnd),
-    c("tidymedia_ffmpeg_exit", "rlang_error", "error", "condition")
+    c("tidymedia_loudnorm_no_measurement", "tidymedia_ffmpeg_exit",
+      "rlang_error", "error", "condition")
   )
   expect_true(is.integer(cnd$tm_status))
   expect_length(cnd$tm_status, 1L)
@@ -317,15 +319,15 @@ test_that("the exit-class docs name both classes and both changed paths", {
 
   run <- pick("ffm_run.Rd")
   expect_match(run, "separate_audio_video", fixed = TRUE)
-  expect_match(run, "tidymedia_loudnorm_analysis", fixed = TRUE)
+  expect_match(run, "tidymedia_loudnorm_no_measurement", fixed = TRUE)
   expect_match(run, "tm_row_status", fixed = TRUE)
 
   pkg <- pick("tidymedia-package.Rd")
   expect_match(pkg, "separate_audio_video", fixed = TRUE)
-  expect_match(pkg, "tidymedia_loudnorm_analysis", fixed = TRUE)
+  expect_match(pkg, "tidymedia_loudnorm_no_measurement", fixed = TRUE)
 
   batch <- pick("normalize_audio_batch.Rd")
-  expect_match(batch, "tidymedia_loudnorm_analysis", fixed = TRUE)
+  expect_match(batch, "tidymedia_loudnorm_no_measurement", fixed = TRUE)
   expect_match(batch, "tm_rows", fixed = TRUE)
 
   # NEWS carries the same two names, and no longer says the separation path
@@ -337,7 +339,281 @@ test_that("the exit-class docs name both classes and both changed paths", {
   }
   skip_if(!nzchar(news) || !file.exists(news), "no NEWS.md available")
   txt <- paste(readLines(news, warn = FALSE), collapse = "\n")
-  expect_match(txt, "tidymedia_loudnorm_analysis", fixed = TRUE)
+  expect_match(txt, "tidymedia_loudnorm_no_measurement", fixed = TRUE)
   expect_match(txt, "tm_row_status", fixed = TRUE)
   expect_no_match(txt, "Two paths deliberately do not signal it", fixed = TRUE)
+})
+
+# M087 AC1-AC3: one event, one class name, at every severity and both forms ---
+
+# A file that EXISTS and is readable but is not media. `nonexistent.wav` never
+# reaches FFmpeg -- check_file_readable() refuses it first (R/ffmpeg.R:2240) and
+# aborts unclassed -- so a probe built on a missing path demonstrates a
+# different site than the one under test (RR05 B3).
+make_unreadable_media <- function(env = parent.frame()) {
+  path <- withr::local_tempfile(fileext = ".wav", .local_envir = env)
+  writeLines("this is text, not a RIFF header", path)
+  path
+}
+
+test_that("the scalar analysis abort names the event and the exit alike", {
+  # AC1, scalar non-zero-exit site (R/loudnorm_two_pass.R:151). Both facts are
+  # true here -- no usable measurement, and a known non-zero exit -- so both
+  # classes ride, context first, and `tm_status` comes with the exit class as it
+  # does everywhere that class appears.
+  skip_if_no_ffmpeg()
+  bad <- make_unreadable_media()
+  out <- withr::local_tempfile(fileext = ".m4a")
+  cnd <- tryCatch(
+    normalize_audio(bad, out, two_pass = TRUE, run = FALSE),
+    tidymedia_loudnorm_no_measurement = function(e) e
+  )
+  expect_identical(
+    class(cnd),
+    c("tidymedia_loudnorm_no_measurement", "tidymedia_ffmpeg_exit",
+      "rlang_error", "error", "condition")
+  )
+  expect_true(is.integer(cnd$tm_status))
+  expect_length(cnd$tm_status, 1L)
+  expect_false(identical(cnd$tm_status, 0L))
+})
+
+test_that("the scalar unparseable abort answers to the event class alone", {
+  # AC1, scalar zero-exit site (R/loudnorm_two_pass.R:112). FFmpeg ran and
+  # exited zero but printed no finite measurement block, so the event holds and
+  # the exit class does not: there is no non-zero status to assert. Driven with
+  # a recorded analysis output rather than a real spawn, because a real FFmpeg
+  # that exits zero always prints the block -- the mock is what makes the
+  # zero-exit half of the event reachable at all.
+  local_mocked_bindings(
+    run_program = function(...) "ffmpeg printed nothing parseable",
+    .package = "tidymedia"
+  )
+  f <- make_input("wav")
+  out <- withr::local_tempfile(fileext = ".m4a")
+  cnd <- tryCatch(
+    normalize_audio(f, out, two_pass = TRUE, run = FALSE),
+    tidymedia_loudnorm_no_measurement = function(e) e
+  )
+  expect_identical(
+    class(cnd),
+    c("tidymedia_loudnorm_no_measurement", "rlang_error", "error", "condition")
+  )
+  expect_false(inherits(cnd, "tidymedia_ffmpeg_exit"))
+  expect_null(cnd$tm_status)
+  # The site, not merely the class: this is the parse abort, not the run abort.
+  expect_match(cli::ansi_strip(conditionMessage(cnd)),
+               "Could not parse", fixed = TRUE)
+})
+
+test_that("a silent input still aborts under its own name, not the event class", {
+  # The boundary that earns the name. A silent input WAS measured -- at -inf --
+  # so "no measurement" would be false of it, and the abort three lines above
+  # the parse abort must not answer to the shared class (RR05 B2). It is
+  # unclassed today; what this locks is that M087 did not sweep it in.
+  local_mocked_bindings(
+    run_program = function(...) c('  "input_i" : "-inf",',
+                                  '  "input_tp" : "-inf",',
+                                  '  "input_lra" : "0.00",',
+                                  '  "input_thresh" : "-inf",',
+                                  '  "target_offset" : "0.00"'),
+    .package = "tidymedia"
+  )
+  f <- make_input("wav")
+  out <- withr::local_tempfile(fileext = ".m4a")
+  cnd <- tryCatch(normalize_audio(f, out, two_pass = TRUE, run = FALSE),
+                  error = function(e) e)
+  expect_match(cli::ansi_strip(conditionMessage(cnd)),
+               "appears to be silent", fixed = TRUE)
+  expect_false(inherits(cnd, "tidymedia_loudnorm_no_measurement"))
+  expect_identical(class(cnd), c("rlang_error", "error", "condition"))
+})
+
+test_that("the batch analysis abort answers to the same event class", {
+  # AC1/AC2, batch site (R/loudnorm_two_pass.R:253). The same name the scalar
+  # form raises, so a handler written from either topic fires on both; and NOT
+  # the exit class, which would be false for any row that exited zero.
+  skip_if_no_ffmpeg()
+  bad <- make_unreadable_media()
+  dir <- withr::local_tempdir()
+  jobs <- tibble::tibble(input = bad, output = file.path(dir, "a.m4a"))
+  cnd <- tryCatch(
+    normalize_audio_batch(jobs, two_pass = TRUE, run = FALSE),
+    tidymedia_loudnorm_no_measurement = function(e) e
+  )
+  expect_identical(
+    class(cnd),
+    c("tidymedia_loudnorm_no_measurement", "rlang_error", "error", "condition")
+  )
+  expect_false(inherits(cnd, "tidymedia_ffmpeg_exit"))
+  expect_null(cnd$tm_status)
+  expect_identical(cnd$tm_rows, 1L)
+  expect_true(is.integer(cnd$tm_row_status))
+})
+
+test_that("the batch separation warning carries the event class and no exit", {
+  # AC3, batch warning site (R/ffmpeg.R:742). One event, one name at both
+  # severities -- the error site at R/ffmpeg.R:681 adds the exit class for a
+  # second fact it can evidence, and this site cannot: ffm_batch() reduces a row
+  # to whether it succeeded and discards the condition (D007), so no exit number
+  # and no `tm_status` exist here.
+  skip_if_no_ffprobe()
+  multi <- make_multitrack_video()
+  dir <- withr::local_tempdir()
+  jobs <- tibble::tibble(
+    input     = multi,
+    audiofile = file.path(dir, "bad.mp3"),
+    videofile = file.path(dir, "v.mkv")
+  )
+  w <- tryCatch(separate_audio_video_batch(jobs), warning = function(w) w)
+  expect_identical(
+    class(w),
+    c("tidymedia_multitrack_separation", "rlang_warning", "warning",
+      "condition")
+  )
+  expect_false(inherits(w, "tidymedia_ffmpeg_exit"))
+  expect_null(w$tm_status)
+})
+
+test_that("the two batch topics state why their diagnostic has no exit status", {
+  # AC2/AC3, the documented halves. Each reason is a claim about the code's
+  # behaviour, so it is locked here rather than left to prose drift: the
+  # loudnorm batch abort has no single status because a batch mixes causes, and
+  # the separation batch warning has none because the runner records whether a
+  # row succeeded, not how FFmpeg exited.
+  rd <- rd_sources()
+  skip_if(is.null(rd), "no Rd source available")
+  pick <- function(topic) {
+    hit <- rd[grepl(topic, names(rd), fixed = TRUE)]
+    skip_if(length(hit) == 0, paste("no Rd for", topic))
+    paste(hit, collapse = "\n")
+  }
+
+  nb <- pick("normalize_audio_batch.Rd")
+  expect_match(nb, "carries no single exit status", fixed = TRUE)
+  expect_match(nb, "rows that exited zero", fixed = TRUE)
+
+  sb <- pick("separate_audio_video_batch.Rd")
+  expect_match(sb, "carries no exit status", fixed = TRUE)
+  expect_match(sb, "success", fixed = TRUE)
+  expect_match(sb, "not \\emph{how} FFmpeg exited", fixed = TRUE)
+
+  # The silence asymmetry, stated from both sides (RR05 B2).
+  expect_match(pick("normalize_audio.Rd"), "does not abort on a silent row",
+               fixed = TRUE)
+  expect_match(nb, "aborts on a silent", fixed = TRUE)
+})
+
+test_that("every topic names the classes its site actually raises", {
+  # AC4. The pairing is checked from the OBSERVED side: each site is executed,
+  # its `tidymedia_*` classes are read off the condition object, and every one
+  # of them must appear in each topic the milestone pairs with that site. A
+  # topic that names a class by hand and drifts from the code fails here.
+  skip_if_no_ffmpeg()
+  skip_if_no_ffprobe()
+  rd <- rd_sources()
+  skip_if(is.null(rd), "no Rd source available")
+  pick <- function(topic) {
+    hit <- rd[grepl(topic, names(rd), fixed = TRUE)]
+    skip_if(length(hit) == 0, paste("no Rd for", topic))
+    paste(hit, collapse = "\n")
+  }
+  tm_classes <- function(cnd) grep("^tidymedia_", class(cnd), value = TRUE)
+
+  dir <- withr::local_tempdir()
+  bad <- make_unreadable_media()
+  multi <- make_multitrack_video()
+
+  observed <- list(
+    # R/loudnorm_two_pass.R:151 -- scalar analysis, non-zero exit.
+    scalar_exit = tryCatch(
+      normalize_audio(bad, file.path(dir, "a.m4a"), two_pass = TRUE,
+                      run = FALSE),
+      condition = function(e) e),
+    # R/loudnorm_two_pass.R:253 -- batch analysis.
+    batch_loudnorm = tryCatch(
+      normalize_audio_batch(
+        tibble::tibble(input = bad, output = file.path(dir, "c.m4a")),
+        two_pass = TRUE, run = FALSE),
+      condition = function(e) e),
+    # R/ffmpeg.R:681 -- scalar multi-track separation error.
+    scalar_sep = tryCatch(
+      separate_audio_video(multi, file.path(dir, "s.mp3"),
+                           file.path(dir, "s.mkv")),
+      condition = function(e) e),
+    # R/ffmpeg.R:742 -- batch multi-track separation warning.
+    batch_sep = tryCatch(
+      separate_audio_video_batch(tibble::tibble(
+        input = multi,
+        audiofile = file.path(dir, "b.mp3"),
+        videofile = file.path(dir, "b.mkv"))),
+      warning = function(w) w)
+  )
+  # R/loudnorm_two_pass.R:112 -- scalar analysis, zero exit, unparseable. Its
+  # own block, because the mock must not be live for the four real spawns.
+  observed$scalar_unparseable <- local({
+    local_mocked_bindings(
+      run_program = function(...) "ffmpeg printed nothing parseable",
+      .package = "tidymedia")
+    tryCatch(
+      normalize_audio(make_input("wav"), file.path(dir, "d.m4a"),
+                      two_pass = TRUE, run = FALSE),
+      condition = function(e) e)
+  })
+
+  pairing <- list(
+    scalar_exit        = c("normalize_audio.Rd", "ffm_run.Rd",
+                           "tidymedia-package.Rd"),
+    scalar_unparseable = c("normalize_audio.Rd", "ffm_run.Rd",
+                           "tidymedia-package.Rd"),
+    batch_loudnorm     = c("normalize_audio_batch.Rd", "tidymedia-package.Rd"),
+    scalar_sep         = c("separate_audio_video.Rd", "ffm_run.Rd",
+                           "tidymedia-package.Rd"),
+    batch_sep          = c("separate_audio_video_batch.Rd")
+  )
+
+  for (site in names(pairing)) {
+    classes <- tm_classes(observed[[site]])
+    # The site really signalled, and really carries package classes: an empty
+    # vector here would let every assertion below pass vacuously.
+    expect_gt(length(classes), 0L)
+    for (topic in pairing[[site]]) {
+      txt <- pick(topic)
+      for (cls in classes) {
+        expect_match(txt, cls, fixed = TRUE,
+                     info = paste(site, "->", topic, "::", cls))
+      }
+    }
+  }
+
+  # AC1's sweep: the retired name survives nowhere outside the tracking files.
+  # Assembled rather than written out, so this file does not match itself.
+  retired <- paste0("tidymedia_loudnorm_", "analysis")
+  # `git grep` searches from its own working directory downward, and testthat
+  # runs with the wd set to tests/testthat -- so the sweep must be aimed at the
+  # package root explicitly or it reaches only this directory and can never see
+  # the name come back in R/, man/ or NEWS.md (M087 re-review F3).
+  root <- normalizePath(test_path("..", ".."), mustWork = FALSE)
+  git_at_root <- function(...) suppressWarnings(system2(
+    "git", c("-C", root, ...), stdout = TRUE, stderr = FALSE))
+  # `root` must be the checkout's OWN top level, not merely somewhere inside a
+  # work tree: under `R CMD check` the tests run from a copy at
+  # <pkg>.Rcheck/tests/testthat, whose root is the untracked <pkg>.Rcheck dir --
+  # inside the workspace repo on CI, so `--is-inside-work-tree` says true while
+  # `git grep` sees no tracked file there and the sweep would fail vacuously.
+  top <- suppressWarnings(tryCatch(
+    git_at_root("rev-parse", "--show-toplevel"), error = function(e) character(0)))
+  in_source_checkout <- nzchar(Sys.which("git")) &&
+    length(top) == 1L && nzchar(top) &&
+    identical(normalizePath(top, mustWork = FALSE), root)
+  skip_if(!in_source_checkout, "not in the package's own git checkout")
+  # The sweep must be shown to run over a non-empty domain, and over the domain
+  # it CLAIMS: the current name lives in R/, man/ and NEWS.md as well as here,
+  # so requiring a hit outside tests/ proves the grep reaches past its own wd.
+  control <- git_at_root(
+    "grep", "-l", "tidymedia_loudnorm_no_measurement", "--", ":!cairn/")
+  expect_gt(length(control), 0L)
+  expect_true(any(!startsWith(as.character(control), "tests/")))
+  hits <- git_at_root("grep", "-l", retired, "--", ":!cairn/")
+  expect_identical(as.character(hits), character(0))
 })

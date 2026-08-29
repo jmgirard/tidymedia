@@ -1550,18 +1550,29 @@ n_files <- function(x) {
 #' exactly as \code{system2()} reported it — including, for a
 #' signal-terminated FFmpeg, the shell's 128-plus-signal number passed through
 #' unchanged, which encodes the signal rather than anything FFmpeg chose to
-#' return. Two other paths raise the same class and carry the same field, so one
-#' handler covers all three: the \code{loudnorm} analysis pass behind
-#' \code{normalize_audio(two_pass = TRUE)}, and the multi-track diagnostic
-#' \code{\link{separate_audio_video}} adds to a failed audio output.
+#' return. Two other paths raise this class and carry this field, so one handler
+#' covers all three: the \code{loudnorm} analysis pass behind
+#' \code{normalize_audio(two_pass = TRUE)} when FFmpeg exits non-zero, and the
+#' multi-track diagnostic \code{\link{separate_audio_video}} adds to a failed
+#' audio output. Each of those two names a second, narrower class ahead of this
+#' one — \code{tidymedia_loudnorm_no_measurement} and
+#' \code{tidymedia_multitrack_separation} respectively — which is what to catch
+#' when it is that failure in particular you want.
 #'
-#' The batch two-pass form is the exception. \code{normalize_audio_batch(two_pass
-#' = TRUE)} reports every offending row of its analysis phase in one error, and
-#' fires for rows that exited zero and printed nothing usable as well as for rows
-#' FFmpeg refused, so it raises \code{tidymedia_loudnorm_analysis} rather than
-#' this class. That condition carries \code{tm_rows}, the 1-indexed offending
-#' rows, and \code{tm_row_status}, their exit statuses aligned to it, with
-#' \code{NA} where the row exited zero.
+#' Two paths in the same family do \strong{not} raise this class, each for its
+#' own reason. \code{normalize_audio(two_pass = TRUE)} also
+#' aborts when the analysis pass exits zero and prints no parseable measurement
+#' block; no non-zero exit happened there, so that abort is
+#' \code{tidymedia_loudnorm_no_measurement} alone, with no
+#' \code{tm_status}. And \code{normalize_audio_batch(two_pass = TRUE)} reports
+#' every offending row of its analysis phase in one error, firing for rows that
+#' exited zero as well as for rows FFmpeg refused — so an exit is one of its
+#' causes rather than the fact it reports, and no single status could stand for
+#' the mix. It too raises
+#' \code{tidymedia_loudnorm_no_measurement} alone — carrying \code{tm_rows},
+#' the 1-indexed offending rows, and \code{tm_row_status}, their exit statuses
+#' aligned to it, with \code{NA} where the row exited zero. That shared class is
+#' therefore the one handler that covers the analysis pass in both forms.
 #' @seealso [ffm_compile()] to get the command without running it, [ffm_batch()]
 #'   for the many-file runner, and [verify_media()] for the \code{verify =} spec.
 #' @family builder functions

@@ -115,7 +115,15 @@ parse_loudnorm_measurements <- function(output, call = rlang::caller_env()) {
       "x" = "Missing or non-finite value{?s}: {.field {cls$bad}}.",
       "i" = "The analysis pass must print a JSON measurement block \\
              ({.code print_format=json})."
-    ), call = call)
+    ),
+    # The shared event class, alone. The analysis pass yielded no usable
+    # measurement, which is the fact both forms of this verb report; but FFmpeg
+    # exited ZERO on this path, so `tidymedia_ffmpeg_exit` would be false here
+    # and there is no `tm_status` to carry with it (M087, RR05 B1). The silence
+    # abort above must NOT share this class: a silent input WAS measured, at
+    # -inf, so "no measurement" is false of it (RR05 B2).
+    class = "tidymedia_loudnorm_no_measurement",
+    call = call)
   }
   cls$measured
 }
@@ -148,7 +156,12 @@ run_loudnorm_analysis <- function(input,
         "i" = "The failing command was: \\
                {.code ffmpeg {ffm_compile(p)}}"
       ),
-      class = "tidymedia_ffmpeg_exit",
+      # Both facts are true here, most specific context first: the analysis
+      # pass yielded no usable measurement (the event the batch abort also
+      # reports), and a known non-zero FFmpeg exit (the mechanism). Carrying
+      # both keeps ?tidymedia's promise that a refused run answers to one class
+      # true on this path, the shape M086 established at R/ffmpeg.R:681.
+      class = c("tidymedia_loudnorm_no_measurement", "tidymedia_ffmpeg_exit"),
       tm_status = as.integer(status),
       call = call
     )
@@ -245,12 +258,14 @@ assemble_measured <- function(outputs, call = rlang::caller_env()) {
       "i" = "Every row must produce a finite JSON measurement block (or be \\
              silent) before the correction pass can be built."
     ),
-    # Its own event class, not `tidymedia_ffmpeg_exit`: this abort also fires
+    # The shared event class, not `tidymedia_ffmpeg_exit`: this abort also fires
     # for rows that exited ZERO and printed nothing parseable, so an exit is
     # one of its causes rather than the fact it reports (D062, M086). The class
     # is the same whatever mix of causes a batch happens to carry; the causes
-    # are on `tm_row_status`, NA where the row exited zero.
-    class = "tidymedia_loudnorm_analysis",
+    # are on `tm_row_status`, NA where the row exited zero. It is the same name
+    # the scalar form raises, so a handler written from either topic fires on
+    # both (M087).
+    class = "tidymedia_loudnorm_no_measurement",
     tm_rows = unname(as.integer(bad)),
     tm_row_status = unname(vapply(
       cls[bad],

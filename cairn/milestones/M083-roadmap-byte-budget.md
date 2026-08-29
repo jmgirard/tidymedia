@@ -70,7 +70,7 @@ milestone changes how rows are stored and worded, never whether an idea stands.
       the branch as the comparison surface AC2–AC4 read, and record the counts.
       (At bd4d545 these were 32 / 3 / 5 / 21; this plan's own commit adds one
       candidate row, so the baseline is re-measured, never carried over.)
-- [ ] T2 Create `cairn/references/instrument-findings.md` holding AC3's five
+- [x] T2 Create `cairn/references/instrument-findings.md` holding AC3's five
       rows verbatim under per-row headings; add its `INDEX.md` line
       under "Working artifacts"; replace the five rows with one grouped
       candidate row pointing at the page.
@@ -94,4 +94,5 @@ milestone changes how rows are stored and worded, never whether an idea stands.
 - 2026-08-28: T1 branch-point baseline at `8021df1`: `cairn/ROADMAP.md` 42,552 bytes / 53 lines; 33 candidate rows, 3 struck, 5 matching `instrument` (13,303 bytes), 22 carrying `Promote `. Frozen in `cairn/references/roadmap-candidates-baseline-M083.md` as a convenience record; the criteria read git and the post-merge files, not that page.
 - 2026-08-28: minor amendment to T4 — the branch point has eleven surviving rows over 1,000 bytes, not the nine the plan recorded at `bd4d545`; T4's parenthetical corrected and its citation-check step (the implement gate's choice) written in.
 - 2026-08-28: implement gate chose one shared promote-on clause for the grouped instrument row over restating all five (the five stay verbatim on the entombed page), checking each row's citations before dropping narrative over trusting them, and compressing all eleven wide rows rather than stopping at the first pass under 24,000.
+- 2026-08-28: T2 — the five instrument rows moved verbatim into `cairn/references/instrument-findings.md` (15,878 bytes, indexed), replaced in `cairn/ROADMAP.md` by one grouped row with a shared promote-on clause; verified each of the five is byte-identical on the page and absent from the ROADMAP. ROADMAP 42,552 → 30,013 bytes, 53 → 49 lines, 33 → 29 candidate rows.
 - 2026-08-28: plan gate chose compressing live rows in place over deferring the whole cut to entombment and pruning, because the arithmetic does not reach 24,000 without it (41,509 less 13,303 less 3,429 leaves ~24,800, before this plan's own additions); falsified by a measured pass where entombment alone clears the budget with headroom.

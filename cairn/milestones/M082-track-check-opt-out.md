@@ -59,7 +59,7 @@ cost; the stale verb list at `R/tidymedia-package.R:55`; NEWS.
       `options(tidymedia.check_tracks = FALSE)` leaves the option unset in the
       parent afterwards, and a worker sees `FALSE` — the same round trip
       `carried_option_values()` already makes for `tidymedia.timeout`.
-- [ ] AC4 — `warn_dropped_audio_batch()` reports progress across the inputs
+- [x] AC4 — `warn_dropped_audio_batch()` reports progress across the inputs
       its sweep visits: on a jobs table whose rows naming no `audio_stream`
       cover N distinct inputs, the sweep drives one `cli` progress bar whose
       total is N and which reaches N/N. Measured on a table that also carries
@@ -148,6 +148,7 @@ cost; the stale verb list at `R/tidymedia-package.R:55`; NEWS.
 - 2026-08-28: review finding F3 fixed by superseding entry D061 rather than an edit (history is append-only): D060's sentence that the bar does not reach D024's outcome clause is wrong on the ran-vs-skipped axis, which the milestone's own no-bar tests pin as observable. D060's load-bearing defence — the bar rides `cli_message`/`cliMessage`, the same channel as the warning — stands unchanged, as does the bar.
 - 2026-08-28: review findings F9 and F6 took two ROADMAP candidate rows: the two shapes M082 left behind (per-verb argument, probing inside the fan-out), cross-referencing the retired M44 row that states them and their promotion conditions rather than restating it; and the `See vignette(…)` paragraph captured by whatever `\section{}` precedes it in `?tidymedia`, pre-existing on `master` and moved rather than introduced here.
 - 2026-08-28: amendment round complete — `devtools::document()` leaves no diff, `devtools::test()` is 0 failures / 8223 passing / 5 skips (all binary-capability skips), and `devtools::check()` reports 0 errors, 0 warnings, 0 notes (2m 42s). Status back to review; AC4 is the one criterion needing fresh evidence, against its amended wording.
+- 2026-08-28: re-review after the AC4 amendment — amended AC4 passes on its named mixed-table cell (bar total 2 against the table's own 3 distinct inputs, reaching 2/2; no bar with the seam `FALSE` or with every row naming a track), so all seven criteria now carry fresh evidence. Consistency gate re-run clean: `cairn_validate` exit 0, `document()` no diff, `pkgdown` clean, suite 8223 passing / 0 failing / 5 skips, `check()` 0/0/0. Three lenses re-ran over the incremental diff; the two Sonnet lenses reported zero findings, the Opus diff lens four (F10-F13), all logged with dispositions.
 
 ## Decisions
 
@@ -191,19 +192,19 @@ no merge was needed before gathering evidence. Diffstat: 20 files, +814 / -102.
   `ffm_batch()` run leaves the parent's setting exactly as it found it under
   both the `FALSE` and the unset cell — so the criterion holds on either
   reading of its "leaves the option unset in the parent" clause.
-- **AC4 — FAIL as written; the work is right and the criterion is not.** The
-  milestone's own cell passes: four rows over three distinct inputs, none
-  naming a track, yield exactly `c("0/3 created", "3/3 terminated (done)")` —
-  one bar, total 3, reaching 3/3; no bar with the seam `FALSE`, none when every
-  row names a track, none at the scalar sites. But the criterion quantifies
-  over any "jobs table of N distinct inputs", and a *mixed* table falsifies it:
-  measured on a three-row table of three distinct inputs, one of which names an
-  `audio_stream`, the bar reads `c("0/2 created", "2/2 terminated (done)")` —
-  total 2 against N = 3. The bar counts `unique(jobs$input[rows])`, the inputs
-  the sweep actually visits, which is the behaviour that ought to ship; the
-  criterion names no procedure bounding "N distinct inputs" and so is
-  falsified inside its own quantification. Routed as an amendment return
-  (finding F4 below), not a defect return.
+- **AC4 — pass (re-review, against the amended wording).** Measured directly,
+  not only through the suite: on a three-row jobs table of three distinct
+  inputs, one row naming an `audio_stream`, the sweep's rows cover N = 2
+  distinct inputs and `cli`'s `logger` handler reports exactly
+  `c("0/2 created", "2/2 terminated (done)")` — one bar, total 2, reaching 2/2,
+  with N smaller than the table's own distinct-input count of 3. The two
+  further cells draw no bar at all: the seam `FALSE` and every row naming a
+  track both yield `character(0)`. `test-check-tracks-seam.R` now carries the
+  mixed-table cell alongside the original: 13 tests, 77 passing, 0 failing,
+  0 skipped (was 12/76 before the amendment round). The earlier round's failure
+  — a bar totalling 2 against a criterion that quantified over the table's own
+  three distinct inputs — is exactly the cell the amended criterion now names,
+  and the shipped code is unchanged by the amendment.
 - **AC5 — pass.** Verified against the **installed** help, not `man/`: the doc
   guard was run from a scratch directory outside the source tree, where
   `rd_sources()` falls through to `tools::Rd_db("tidymedia")` (81 topics) —
@@ -225,18 +226,25 @@ no merge was needed before gathering evidence. Diffstat: 20 files, +814 / -102.
   0 notes**, `Status: OK`, 2m 57.5s. Nothing to compare against `master`'s
   note list, since this branch carries none.
 
+### Re-review after the AC4 amendment
+
+The consistency gate, the three lenses and the outcome below are the re-review
+round's. The pre-amendment round's evidence for AC1-AC3 and AC5-AC7 stands
+above unchanged; every check below was re-run fresh on the amended branch.
+
 ### Consistency gate
 
 `cairn_validate.py` exit 0 — all 16 checks PASS, all 7 advisories OK
-(`release window` did not fire). No `DESIGN.md` principle changed
-(`Principles touched: —`), so `cairn_impact.py` was skipped. Toolchain checks
-from the `r-package` profile's `consistency-gate` slot: `devtools::document()`
-leaves no diff; `NAMESPACE`, `man/` and `data/` show no hand edits (no
-`NAMESPACE` diff at all — the milestone exports nothing new);
-`README.Rmd`/`README.md` untouched and in sync; `pkgdown::check_pkgdown()`
-reports no problems; NEWS.md carries the entry and names no milestone number;
-no new top-level files, so no `.Rbuildignore` entry is owed; full
-`devtools::check()` clean as recorded under AC7.
+(`release window` did not fire), re-run on the amended branch. No `DESIGN.md`
+principle changed (`Principles touched: —`), so `cairn_impact.py` was skipped.
+Toolchain checks from the `r-package` profile's `consistency-gate` slot, all
+re-run fresh: `devtools::document()` leaves no diff in `man/`, `NAMESPACE` or
+`DESCRIPTION`; `pkgdown::check_pkgdown()` reports "No problems found";
+`README.Rmd`/`README.md` untouched; NEWS.md carries the entry and names no
+milestone number; the diff adds no top-level file, so no `.Rbuildignore` entry
+is owed; `devtools::test()` is 1283 tests / 8223 passing / 0 failing / 5 skips
+(all binary-capability skips); `devtools::check()` is **0 errors, 0 warnings,
+0 notes**, `Status: OK`, 2m 36.2s.
 
 ### Independent fresh-context review
 
@@ -311,10 +319,64 @@ its order, each verified against the implementation before disposition.
   `Checking audio tracks` appears zero times in the `R CMD check` log and zero
   times in the `devtools::test()` run.
 
+### Independent fresh-context review (re-review round)
+
+The full three-lens fan-out ran again — user-facing tier, executable surface
+touched — this time over the incremental diff `git diff b3088fa..HEAD` (9
+files, +80 / -14), the amendment round's changes, which no reviewer had seen.
+The blame-history [S] lens and the prior-review [S] lens each reported zero
+findings: the `res[i] <- list(...)` form restores exactly what the `lapply()`
+it replaced did, D061 appends rather than editing D060 per the repo's
+append-only convention, and the reworded seam claims check out against
+`R/ffmpeg.R`'s gating. The prior-review lens re-probed
+`gh api repos/jmgirard/tidymedia/pulls/comments`, found it empty again, and
+skipped the GitHub thread surface. The diff-bug [O] lens reported four
+findings, ranked below in its order.
+
+- **F10 — the three `_batch` verb topics still overstate the cost on a mixed
+  jobs table.** *Fix now (proposed).* Verified: `R/ffmpeg.R:4293`, `:5095` and
+  `:5227` each read "costs **one FFprobe call per distinct input**, so a
+  repeated input is probed once", and each says the check is skipped only when
+  *every* row names a track — none carries the per-row exemption. This is the
+  same misstatement F1 repaired at its three sites (`NEWS.md`,
+  `R/tidymedia-package.R:134`, `R/timeout.R:47` each now say a row naming an
+  `audio_stream` is not probed at all); the round missed these three. It
+  overstates in the harmless direction — a caller reading it budgets more
+  probes than run — so it is not a return-floor defect, but it is the one
+  place the shipped documentation is still wrong about the thing this
+  milestone documents. AC5's guard matches the fixed substring "one FFprobe
+  call per distinct input", so the qualifier can be appended without touching
+  the criterion.
+- **F11 — D061 concedes D024's clause is reached without naming the exception
+  that still licenses the bar.** *Reject.* Verified against
+  `cairn/DECISIONS.md:588-596` and `:2816-2841`: the finding is right that
+  D061's "What still stands" paragraph makes the channel-identity argument
+  rather than spelling out that a `cli` progress condition *is* a signalled
+  diagnostic condition and so falls under the clause's own exception. But that
+  is the same argument one step earlier, and D060 — which D061 leaves standing
+  and re-states — carries it. A superseding entry to add one restating sentence
+  costs more than it buys.
+- **F12 — the F5 fix restores an abort rather than a fail-open.** *Reject.*
+  Verified: mocking `count_audio_streams()` to return `NULL` makes
+  `vapply()` at `R/ffprobe.R:283` abort. But that is the behaviour on `master`
+  too, so the diff neither introduced nor worsened it, and the finding itself
+  records the case as unreachable — `count_audio_streams()` returns a count,
+  `NA_integer_` or a timeout sentinel. A pre-existing issue the diff did not
+  introduce.
+- **F13 — the mixed-table cell does not by itself separate "distinct inputs"
+  from "rows swept".** *Reject.* Verified: its table has three rows, three
+  distinct inputs and two swept, so `length(rows)` and
+  `length(unique(inputs))` coincide at 2 and a `length(rows)` mutant would
+  pass it. The sibling cell at `test-check-tracks-seam.R:183` (four rows, three
+  distinct inputs) pins distinctness, and the lens confirms the two cells
+  together cover AC4's wording. A coverage nit on a criterion that passes.
+
 ### Outcome
 
-AC1, AC2, AC3, AC5, AC6 and AC7 verified with fresh evidence. AC4 fails as
-written on a mixed jobs table while the shipped behaviour is correct, which is
-evidence about the promise rather than the work — so this is an amendment
-return, and the milestone goes back to `in-progress` for that amendment alone.
-Every finding above is logged with its disposition; none was dropped.
+All seven acceptance criteria verified with fresh evidence. AC4's amended
+wording passes on the cell it names — a mixed table where N = 2 is smaller
+than the table's own three distinct inputs — with the shipped code unchanged
+by the amendment. The consistency gate is clean. Thirteen findings across two
+review rounds are logged with their dispositions; none was dropped. No finding
+meets the return floor: F10 is a documentation overstatement in the
+conservative direction, and F11-F13 are rejected on the reasons recorded above.

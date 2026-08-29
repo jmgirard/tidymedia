@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-28 (M081 post-merge: all 16 `cairn_validate` checks PASS, all 7 advisories OK — `release window` did not fire; PR #85 squash-merged green on ten checks. M076's row dropped at the 5-row terminal retention (its archive file stays), so M077's `Depends on: M076` now points at an archived row — dependency resolution still passes. M081's three deferred instrument findings took a new candidate row rather than extending the M62/M63/M64 row, which had just taken its §7 disposition; the new row cross-references that row's F8 rather than restating it. M081's lesson was folded into the M074/M079 control-liveness line, keeping LESSONS.md at 49 lines against the under-50 cap. Byte budgets by hand: ROADMAP.md 40,215 and LESSONS.md 42,232 — both still far over the 24,000/20,000 caps and still open for the user, and both grew this pass. No doctrine modules; two `references/` working artifacts state no budgets of their own. Nothing retired: M081 shipped no guard that covers an existing lesson.)_
+_Last hygiene check: 2026-08-28 (M082 post-merge: all 16 `cairn_validate` checks PASS, all 7 advisories OK — `release window` did not fire; PR #86 squash-merged green on ten checks. M082 took two review rounds: an amendment return on AC4, whose "N distinct inputs" named no procedure bounding the count, then a clean re-review. Thirteen findings across the two rounds, all logged: F1/F3/F5/F10 fixed, F9/F6 to the two candidate rows added last round, F2/F7/F8/F11-F13 rejected. M077's row dropped at the 5-row terminal retention (its archive file stays). No lesson added: the round's one testing gotcha — a namespace mutation that `testthat::test_file` does not pick up — is the M44 line's M63 extension already. Nothing retired: M082 shipped no guard covering an existing lesson. Byte budgets by hand: ROADMAP.md 41,509 and LESSONS.md 42,232 — both still far over the 24,000/20,000 caps and still open for the user; ROADMAP grew, LESSONS is unchanged. No doctrine modules; two `references/` working artifacts state no budgets of their own.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M082 | The track check has an off switch, and says what it costs | review | — | normal | milestones/M082-track-check-opt-out.md |
+| M082 | The track check has an off switch, and says what it costs | done | — | normal | milestones/archive/M082-track-check-opt-out.md |
 | M081 | The unchecked flag, and the second copy of the one predicate | done | — | normal | milestones/archive/M081-unchecked-flag-and-second-copy.md |
 | M080 | The guard says what is wrong, and refuses NA | done | — | normal | milestones/archive/M080-shipped-guard-findings.md |
 | M079 | The floor harness measures what it reports | done | — | normal | milestones/archive/M079-floor-harness-hardening.md |
 | M078 | The limit bounds the wait, not the process | done | — | normal | milestones/archive/M078-timeout-bounds-the-wait.md |
-| M077 | The nine other Imports floors, measured | done | M076 | normal | milestones/archive/M077-imports-floors-measured.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

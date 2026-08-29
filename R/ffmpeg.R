@@ -2848,6 +2848,15 @@ check_codec_needs_reencode <- function(reencode, video_codec = NULL,
 # -codec:a at all -- would be silently overwritten by ffm_copy() (M35/D017).
 check_audio_codec_needs_reencode <- function(reencode, audio_codec,
                                              call = rlang::caller_env()) {
+  # `!reencode` on anything that is not a flag raised a bare base R error from
+  # inside a front-door guard, as the twin above did before M80 (M81). WHICH
+  # error depends on the type: `missing value where TRUE/FALSE needed` for a
+  # logical NA, `invalid argument type` for a character one, which is why the
+  # twin's comment names the other of the two. All three callers -- segment_video(),
+  # segment_pipeline() and segment_video_batch()'s row sweep -- run
+  # check_codec_needs_reencode() on the same value first, and that one checks
+  # it, so this refuses no call that was reaching here.
+  rlang::check_bool(reencode, call = call)
   if (!reencode && !identical(audio_codec, "copy")) {
     cli::cli_abort(
       c(
@@ -2897,6 +2906,14 @@ check_audio_codec_needs_audio <- function(audio, audio_codec, hint,
 # has it per row without materializing anything.
 check_resize_needs_two_inputs <- function(resize, n_inputs,
                                           call = rlang::caller_env()) {
+  # `resize &&` on anything that is not a flag raised a bare base R error from
+  # inside a front-door guard (M81) -- `missing value where TRUE/FALSE needed`
+  # for a logical NA, `invalid 'x' type in 'x && y'` for a character one. Both
+  # direct callers check `resize` first: compare_videos_pipeline(), which
+  # compare_videos() reaches after its own rlang::check_bool() on the scalar,
+  # and compare_videos_batch(), whose column guard refuses a non-logical or NA
+  # `resize` column -- so this refuses no call that was reaching here.
+  rlang::check_bool(resize, call = call)
   if (resize && n_inputs != 2) {
     cli::cli_abort(
       c(
@@ -4697,7 +4714,11 @@ check_batch_inputs <- function(jobs, col = "input",
     if (is.list(x)) x <- unlist(x, use.names = FALSE)
     as.character(x)
   })
-  holding <- vapply(paths, function(x) any(file.access(x, mode = 4) != 0),
+  # WHICH carriers hold a bad path, asked of the same predicate that formats
+  # the abort below rather than of a second file.access() spelled the same way
+  # (M81/D059). The per-carrier test is unchanged: each column is asked
+  # separately, so a call whose two carriers are both bad still names both.
+  holding <- vapply(paths, function(x) length(unreadable_paths(x)) > 0,
                     logical(1))
   # Nothing bad: the sweep passes and which carriers it would have named never
   # reaches anyone.
@@ -4713,9 +4734,22 @@ check_batch_inputs <- function(jobs, col = "input",
 # The derived-output counterpart to reject_duplicate_outputs(): with no
 # `output` column a verb derives one name per input, so two rows naming the
 # same input would derive the same output and silently overwrite. Written here
-# once instead of inline in each of the three verbs that derive names, so a
-# verb added later inherits this wording -- and this ORDER -- rather than
-# restating them.
+# once instead of inline in each of the three verbs that derive names, all of
+# which carry a single `input` column.
+#
+# WHAT A LATER VERB INHERITS, AND WHAT IT DOES NOT. The ORDER below is general
+# and a fourth verb inherits it. This WORDING is not: it reads `jobs$input` by
+# name, and a derived-output verb with more than one input column has to
+# compare each row's whole input TUPLE instead. Duplication there is a
+# property of the row, not of a column: a fan-in table whose `main` repeats
+# against distinct `overlay` values would derive distinct outputs and would be
+# legal, and a per-column check would refuse it. Such a verb writes its own row
+# comparison; it does not reach this one with a column name.
+#
+# Parameterizing this by carrier column was considered and refused for that
+# reason (M81/D059). reject_duplicate_outputs()' `col` is not the precedent it
+# looks like -- that one sweeps a VECTOR in a single call, which a scalar
+# `jobs[[col]]` is not.
 #
 # ORDER: every caller runs this BELOW check_batch_inputs(). The duplication
 # message names no path the caller can act on, while the sweep names the file

@@ -2696,3 +2696,62 @@ states is still a promise, just the other way up.
   that was always below the sweep — that is the shape the first wording of this
   rule wrongly forbade — and NOT by one preferring it over the carved-out
   duplication refusal, which is D057's whole point.
+
+## D059 — A guard checks the flag it branches on, one predicate holds the filter as well as the abort, and a fan-in duplicate check stays whole-row (2026-08-28, from M081; extends D041's one-predicate rule to the non-aborting half and closes the residual that half left; leaves all of D041 and D057 standing)
+
+Three rules in one entry, because a supersession of any of them has to read
+the other two: all three answer the same question — where does the package
+keep the one copy of a test, and what does it refuse to generalize.
+
+**A guard checks the flag it branches on.** A `check_*` predicate that makes a
+required formal the direct operand of `!`, `&&` or `||` without first passing
+it to `rlang::check_bool()` lets base R raise `missing value where TRUE/FALSE
+needed` from inside a front-door guard — a bare `simpleError` carrying neither
+the argument's name nor the caller's frame, the M41 shape every other argument
+on these verbs avoids. M80 fixed one such guard by hand.
+`check_audio_codec_needs_reencode()` and `check_resize_needs_two_inputs()`
+were the same defect and survived it, because the sweep that found the first
+filters on ONE required formal and both of these take two.
+
+The rule is not the fix, it is how membership is decided: a walk over the
+installed namespace's parsed bodies, statement by statement in order, so a
+guard added later joins the domain with no list edited. Widening the
+one-formal filter instead was rejected — it admits `check_batch_cell()`, whose
+`NA_integer_` row argument is deliberate, and would need an exemption
+registry, which is the hand-list this rule exists to avoid.
+
+**No release note is owed for that repair.** Every exported verb reaching
+either guard already refused a non-flag at its own `rlang::check_bool()`, so
+the repair changes nothing a caller can observe and a `NEWS.md` entry would
+assert a behavior no test can fail without. M80 made the same call on the
+twin. What the exported surface does render is fenced by M081's own criteria
+rather than left to that judgment.
+
+**Both ends of a shared predicate reach the filter, not just the abort.** D041
+made readability one predicate and had the front door and the pipeline reach
+it. `check_batch_inputs()` then kept a second `file.access(mode = 4)` of its
+own to decide WHICH carrier columns to name, and reached the shared predicate
+only for the wording. Two spellings of the same test drift at the first edit
+whether or not one of them aborts, so the filter half moves to the same site:
+one non-aborting function returns the unreadable paths, the abort formats
+them, and the carrier sweep asks whether its result is empty. The per-carrier
+test and the union call that names both bad carriers at once are unchanged.
+
+**A duplicate-input refusal on a fan-in verb compares the row, not a column.**
+`reject_duplicate_inputs()` reads `jobs$input` by name, and its comment
+promised a later multi-input derived-output verb would inherit that wording.
+It would not. Duplication on such a verb is a property of the whole input
+tuple, so a per-column check would refuse a legal table whose `main` repeats
+against distinct `overlay` values. `reject_duplicate_outputs()`' `col` is not
+the precedent it looks like — that one sweeps a vector in a single call, which
+a scalar `jobs[[col]]` is not. The function stays as it is and the comment now
+says what a later verb must write instead. GP1: refusing the scope beats
+shipping a generalization that is wrong for the case it was generalized for.
+
+- **Falsified by** a flag guard the walk passes that still crashes on a
+  non-flag, or by the walk flagging a predicate whose bare branch is correct;
+  by an exported route reaching either guard on a path with no prior flag
+  check, which would make the withheld release note owed after all; by a
+  report of a call the carrier sweep names and the abort does not, or the
+  reverse; or by a derived-output verb arriving whose duplication really is
+  per-column.

@@ -196,3 +196,158 @@ test_that("every verb reaching check_dim() refuses NA naming the carrier", {
     }
   }
 })
+
+# M081 -- the flag guards na_sweep_predicates() cannot see -------------------
+
+test_that("the flag-guard walk flags each operator form and only unchecked flags", {
+  # Positive controls, walked with the same code the namespace is: one planted
+  # predicate per operator form that MUST be flagged, one that checks first and
+  # must not be, and one that checks AFTER it has already branched -- which is
+  # still a crash, and is what fixes "first" as positional rather than
+  # "somewhere in the body".
+  controls <- list(
+    check_planted_not = function(flag, n) if (!flag) n else NULL,
+    check_planted_and = function(flag, n) if (flag && n != 2) NULL,
+    check_planted_or = function(flag, n) if (flag || n != 2) NULL,
+    check_planted_indirect = function(flag, n) if (!is.null(flag)) n else NULL,
+    check_planted_checked = function(flag, n) {
+      rlang::check_bool(flag)
+      if (!flag) n else NULL
+    },
+    check_planted_late = function(flag, n) {
+      out <- if (!flag) n else NULL
+      rlang::check_bool(flag)
+      out
+    }
+  )
+  found <- unchecked_flag_guards(controls)
+  expect_identical(
+    sort(names(found)),
+    c("check_planted_and", "check_planted_late", "check_planted_not",
+      "check_planted_or")
+  )
+  # WHICH formal, not just that something was flagged.
+  for (nm in names(found)) expect_identical(found[[nm]], "flag", info = nm)
+  # `!is.null(flag)` reads a property OF the flag and is not a bare branch, so
+  # the walk must stay silent on it; `n` is a required formal of every control
+  # and is branched on by none of them, so it must never appear.
+  expect_false("check_planted_indirect" %in% names(found))
+  expect_false("check_planted_checked" %in% names(found))
+  expect_false("n" %in% unlist(found, use.names = FALSE))
+})
+
+test_that("no check_ predicate branches on an unchecked required flag", {
+  preds <- tm_check_predicates()
+  # The domain is walked out of the namespace, never listed here. Shown
+  # non-empty, and shown to contain the two predicates M081 repaired -- a walk
+  # over a set that excluded them would pass for the wrong reason.
+  expect_gt(length(preds), 0)
+  expect_true(all(c("check_audio_codec_needs_reencode",
+                    "check_resize_needs_two_inputs") %in% names(preds)))
+  found <- unchecked_flag_guards(preds)
+  expect_identical(
+    as.character(names(found)), character(0),
+    info = paste("branching on an unchecked flag:",
+                 paste(names(found), collapse = ", "))
+  )
+})
+
+test_that("the two flag guards refuse NA of every type, naming their flag", {
+  # The domain is the walk's, taken from AC2 rather than re-derived here: these
+  # are the predicates it flagged on the merge-base, each called directly,
+  # since no exported route reaches them with a bad flag (measured 2026-08-28
+  # -- every exported route already signals an rlang_error of its own).
+  shapes <- list(
+    list(fn = "reencode",
+         call = function(na) check_audio_codec_needs_reencode(na, "aac")),
+    list(fn = "resize",
+         call = function(na) check_resize_needs_two_inputs(na, 3))
+  )
+  vals <- na_values()
+  labs <- na_labels()
+  for (s in shapes) {
+    for (i in seq_along(vals)) {
+      where <- paste(s$fn, labs[i])
+      cnd <- tryCatch({ s$call(vals[[i]]); NULL }, error = function(e) e)
+      expect_true(inherits(cnd, "rlang_error"), info = where)
+      # WHICH refusal: the flag's own name, not a bare failure. The rest of
+      # the rendering differs per type ("not `NA`", "not an integer `NA`"),
+      # which is why the name is what is asserted across all four.
+      expect_match(conditionMessage(cnd),
+                   paste0("`", s$fn, "` must be `TRUE` or `FALSE`"),
+                   fixed = TRUE, info = where)
+    }
+  }
+  # The guards still do their own job on a good flag: TRUE with a bad partner
+  # aborts for the contradiction, and the legal call passes.
+  expect_error(check_audio_codec_needs_reencode(FALSE, "aac"),
+               "needs a re-encoding cut")
+  expect_silent(check_audio_codec_needs_reencode(FALSE, "copy"))
+  expect_error(check_resize_needs_two_inputs(TRUE, 3),
+               "exactly two inputs")
+  expect_silent(check_resize_needs_two_inputs(FALSE, 3))
+})
+
+test_that("every exported call reaching a flag guard refuses a non-flag, naming it", {
+  dir <- withr::local_tempdir()
+  p <- file.path(dir, "in.mp4")
+  file.create(p)
+  o <- file.path(dir, "out.mp4")
+  verbs <- flag_guard_verbs()
+  specs <- flag_guard_specs(p, o)
+
+  # The floor: renaming BOTH guards empties the walk, and every assertion below
+  # would then pass over nothing. Renaming one leaves the other's verbs here,
+  # so what catches that is the setdiff(names(specs), verbs) direction below,
+  # not this line.
+  expect_gt(length(verbs), 0)
+  # Both directions -- a verb the walk returns with no shape, and a shape for
+  # a verb the walk no longer returns.
+  expect_identical(sort(setdiff(verbs, names(specs))), character(0))
+  expect_identical(sort(setdiff(names(specs), verbs)), character(0))
+
+  # Completeness, derived from each verb's own body rather than trusted: every
+  # verb whose formals carry a flag name must declare it as an argument, and
+  # every `jobs`-taking verb quoting one as a column literal must declare it
+  # as a column. A spec cannot cover less than the verb accepts.
+  vocab <- unique(unlist(lapply(specs, function(e)
+    vapply(e, function(x) x$arg, character(1)))))
+  ns <- asNamespace("tidymedia")
+  for (verb in verbs) {
+    expect_gt(length(specs[[verb]]), 0)
+    declared <- function(via) vapply(
+      Filter(function(x) identical(x$via, via), specs[[verb]]),
+      function(x) x$arg, character(1))
+    f <- get(verb, envir = ns)
+    expect_identical(
+      sort(setdiff(intersect(names(formals(f)), vocab), declared("argument"))),
+      character(0), info = paste(verb, "argument carriers"))
+    if ("jobs" %in% names(formals(f))) {
+      body_txt <- paste(deparse(body(f)), collapse = " ")
+      literals <- vocab[vapply(vocab, function(v)
+        grepl(paste0('"', v, '"'), body_txt, fixed = TRUE), logical(1))]
+      expect_identical(sort(setdiff(literals, declared("column"))),
+                       character(0), info = paste(verb, "column carriers"))
+    }
+  }
+
+  # The refusal itself: every member, every declared delivery form, every
+  # scalar value form. WHICH refusal, in the spelling that form uses.
+  vals <- flag_reject_values()
+  labs <- flag_reject_labels()
+  for (verb in verbs) {
+    for (e in specs[[verb]]) {
+      for (i in seq_along(vals)) {
+        where <- paste(verb, e$arg, e$via, labs[i])
+        cnd <- tryCatch({ e$call(vals[[i]]); NULL }, error = function(x) x)
+        expect_true(inherits(cnd, "rlang_error"), info = where)
+        wanted <- if (identical(e$via, "argument")) {
+          paste0("`", e$arg, "`")
+        } else {
+          paste(e$arg, "column")
+        }
+        expect_match(conditionMessage(cnd), wanted, fixed = TRUE, info = where)
+      }
+    }
+  }
+})

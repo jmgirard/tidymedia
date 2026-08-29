@@ -413,6 +413,35 @@ test_that("the duplicated-input abort is worded at one site", {
   expect_identical(hits, "reject_duplicate_inputs")
 })
 
+test_that("readability is tested at one site, for the filter as well as the abort", {
+  # D041 made readability one predicate and had both ends reach it, but only
+  # for the ABORT: check_batch_inputs() kept a second file.access(mode = 4) of
+  # its own to pick which carrier columns to name (M81/D059). Membership is
+  # decided by the parsed CALL-NODE walk, never by a substring search of the
+  # deparsed text -- `file.access` inside a comment or a message string is not
+  # a call, which is the confusion helper-input-paths.R exists to avoid.
+  graph <- tm_call_graph()
+  callers <- names(graph)[vapply(graph, function(c) "file.access" %in% c,
+                                 logical(1))]
+  expect_identical(callers, "unreadable_paths")
+
+  # The domain is non-empty and the one site is reached from both ends, so a
+  # green here cannot mean the walk found nothing.
+  expect_gt(length(graph), 0)
+  expect_true(tm_reaches(graph, "check_paths_readable", "unreadable_paths"))
+  expect_true(tm_reaches(graph, "check_batch_inputs", "unreadable_paths"))
+
+  # The predicate answers rather than aborts, and answers with WHICH paths.
+  good <- withr::local_tempfile(fileext = ".mp4")
+  file.create(good)
+  expect_identical(unreadable_paths(good), character(0))
+  expect_identical(unreadable_paths(c(good, "gone.mp4", "gone.mp4")),
+                   "gone.mp4")
+  # A factor carrier reaches file.access() coerced, at this site, whether or
+  # not the caller coerced first (M62 review F1).
+  expect_identical(unreadable_paths(factor("gone.mp4")), "gone.mp4")
+})
+
 test_that("a column-type or scalar-argument error still reports before the path sweep", {
   # M080's reorder moved check_batch_inputs() above the derived-output block so
   # a duplicated absent path reports the path (D057). In two of the three verbs

@@ -319,3 +319,28 @@ stands at 23,990 bytes against its 24,000 cap, and search-first puts each of
 these inside an existing row — F5 in the unclassed-aborts row, F6 in the
 batch-warning row, and the test-instrument findings in
 `cairn/references/instrument-findings.md` under its grouped row.
+
+### Cross-build evidence on F3 and F4
+
+The implementation commit d095a1d passed the full CI matrix. The Ubuntu
+runners install FFmpeg from apt, so `R-CMD-check` there ran the new tests
+against **ffmpeg 6.1.1-3ubuntu5**, three major versions below the local
+9.0.1: `Status: OK`, `[ FAIL 0 | WARN 12 | SKIP 9 | PASS 8312 ]`. The AC1
+loop's `expect_gt(length(unique(statuses)), 1L)` is not among the skips —
+that test skips only when ffprobe is absent, and it is installed — so the
+status-variation assertion F3 called build-dependent holds on both builds
+measured. F3 is therefore not a live defect; it remains a latent dependency
+on FFmpeg's exit numbering. F4's scenario needs FFmpeg configured off-PATH
+via `set_ffmpeg()`, which CI does not exercise, so it stays latent too. Both
+route to `cairn/references/instrument-findings.md` at hygiene rather than
+blocking the merge.
+
+### Gate disposition
+
+No finding demonstrates an acceptance criterion failing, and none is a
+load-bearing defect in shipped behavior: the two user-facing documentation
+defects (F1, F2) plus F7 were fixed on the branch before the approval marker.
+The return floor is therefore not met and the milestone does not return to
+`in-progress`. This is the milestone's first review; no defect returns are on
+its record, and the one amendment return it carries (AC2, logged 2026-08-29)
+is on the separate amendment track.

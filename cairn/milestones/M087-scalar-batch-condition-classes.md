@@ -1,6 +1,6 @@
 # M087: A diagnostic answers to the same class from the scalar verb and its batch sibling
 
-- **Status:** planned
+- **Status:** blocked
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -123,6 +123,7 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
 - 2026-08-29: plan gate chose making both loudnorm sites share one event class over leaving the divergence documented-only, because a handler written from `?normalize_audio_batch` silently catches nothing on the scalar form; falsified by the escalated review returning that the two sites report distinct events that must keep distinct names with no shared parent.
 - 2026-08-29: plan gate chose documenting the batch warning's missing exit status over changing `ffm_batch()`'s per-row result contract, because that contract is relied on by every `_batch` verb and is its own milestone; falsified by a batch caller needing a failed row's exit status, the condition already on that row.
 - 2026-08-29: plan gate chose escalating the class NAME rather than settling it here, because renaming a class callers match on cannot be undone quietly after release; falsified by the review declining to rule, which returns the naming to T1 as an in-milestone call.
+- 2026-08-29: blocked on RB05 — AC1's shared class name and T1 escalated to independent review; every other task is unblocked, but T2 must not start before the RR lands.
 
 ## Decisions
 

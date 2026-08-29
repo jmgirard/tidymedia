@@ -105,13 +105,14 @@ cost; the stale verb list at `R/tidymedia-package.R:55`; NEWS.
       resolved like the timeout, plus the round-trip test.
 - [x] T5 — Progress bar over the `count_audio_streams_all()` sweep in
       `warn_dropped_audio_batch()`, with the bar-total and seam-off tests.
-- [ ] T6 — Roxygen: the cost and the seam on `extract_audio()`,
+- [x] T6 — Roxygen: the cost and the seam on `extract_audio()`,
       `convert_audio()`, `extract_audio_batch()`, `convert_audio_batch()`,
       matching the wording M075 shipped at `R/ffmpeg.R:2092` and `:4262`; the
       seam on all six; `R/tidymedia-package.R:55`'s verb list and options
       section. `devtools::document()`, then the installed-help test.
-- [ ] T7 — NEWS entry; `devtools::document()`, `devtools::test()`,
-      `devtools::check()`.
+- [ ] T7 — `devtools::document()`, `devtools::document()`, `devtools::test()`,
+      `devtools::check()`. (NEWS entry moved into T6, where the documentation
+      guard that reads it lives.)
 
 ## Work log
 
@@ -128,6 +129,8 @@ cost; the stale verb list at `R/tidymedia-package.R:55`; NEWS.
 - 2026-08-28: T3 — a named site table drives three tests over all seven probe sites (the four scalar sites plus the shared batch site through each `_batch` verb): zero `count_audio_streams_all()` calls and no warning with the seam `FALSE`; at least one call and exactly one warning with it unset, normalize's two `two_pass` branches included; and an abort naming the option at every site on a malformed value, which needs no binary. A fourth test pins that a `run = FALSE` or track-naming call reads no option at all. Discrimination checked: deleting the scalar conjunct turns 10 assertions red, deleting the batch return 8. `catch_drop()` moved from test-audio-track-drop.R to helper-audio-track-drop.R rather than copied.
 - 2026-08-28: T4 — `tidymedia.check_tracks` joins `carried_option_values()` carried raw, so an unset seam stays unset in the worker; resolving buys nothing because the front-door probe already refuses a malformed value in this process. Three tests: the carrier's own list, a six-element fan-out where every worker reads the parent's `FALSE` with an unset-parent control, and a `parallel = TRUE` `ffm_batch()` run that leaves the parent's setting exactly as it found it under both `FALSE` and unset. Discrimination checked: deleting the carried line turns the in-process test red. The worker-side tests needed `devtools::install()` first — the file's fingerprint guard skips them while the installed carrier differs from the source, which it did until the install.
 - 2026-08-28: T5 — the sweep in `count_audio_streams_all()` takes an optional `progress` argument, `TRUE` at the batch dropped-track site and nowhere else; one loop serves both cases rather than an `lapply()` beside a `for()`. Four tests read the bar through `cli`'s `logger` progress handler: four rows over three distinct inputs give `0/3 created` and `3/3 terminated (done)`, and no bar exists with the seam off, with every row naming a track, or at the scalar sites. Discrimination checked: dropping `progress = TRUE` turns the first red. The open D024 question is settled in `cairn/DECISIONS.md` as D060.
+- 2026-08-28: T6 — the four verbs that never stated the probe's cost now do, in M075's wording; all six state the seam and the `withr` form; the three `_batch` verbs state the serial front-door sweep and the bar. `?tidymedia` gained a *Session options* section covering all three seams, and its dropped-track sentence — which named `separate_audio_video()` and omitted the loudness pair — now names the three verbs that run the check and says the separation verb runs a different diagnostic after a failed run. A new guard walks the namespace for exported functions reaching `warn_dropped_audio` (it finds exactly the six) and reads their Rd, squishing whitespace because Rd hard-wraps. Discrimination checked: deleting one verb's seam sentence and adding the serial-sweep sentence to a scalar verb each turn it red. The first spelling of the seam assertion was not discriminating — `local_options(tidymedia.check_tracks = FALSE)` contains the session form as a substring, so it passed with the session sentence deleted; both forms are now matched separately.
+- 2026-08-28: minor amendment — the NEWS entry moved from T7 to T6, because the documentation guard that reads it is T6's and a task is not checked off with its own verify slot red.
 - 2026-08-28: implement gate chose the probe sweep's bar independent of the batch verbs' `progress =` argument, because that argument governs `ffm_batch()`'s run-time bar while this sweep is a front-door cost the caller has not declined, and `cli.progress_show_after` already hides the bar on sweeps under two seconds; falsified by a report of the bar appearing on a batch whose caller had switched progress off and did not want it.
 - 2026-08-28: open for implement — AC4's progress bar makes the probe's HAVING RUN observable as something other than a condition, which D024's operative rule ("changes nothing observable except whether a diagnostic condition is signalled") does not obviously cover. `cli`'s progress mechanism does signal conditions, but that was not verified here. Settle it in the milestone's decision log before T5 ships, and promote to `cairn/DECISIONS.md` alongside the seam entry.
 

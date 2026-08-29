@@ -62,12 +62,20 @@ the scalar verb.
 \details{
 When a row names no \code{audio_stream} and its input turns out to carry
 tracks the output will not, the verb warns \strong{once} for the whole batch,
-naming every affected row. That check is \strong{best-effort}: it runs
-FFprobe, so it is emitted when FFprobe is available and the input can be
-probed, and is skipped silently otherwise. It never runs under \code{run =
-FALSE}, never changes any compiled command, and is skipped entirely when
-every row names a track. Suppress it by class with
+naming every affected row. That check is \strong{best-effort} and costs
+\strong{one FFprobe call per distinct input}, so a repeated input is probed
+once: it is emitted when FFprobe is available and the input can be probed,
+and is skipped silently otherwise. Those probes run \strong{serially at the
+front door}, before the fan-out starts, so \code{parallel} does not reach
+them; a sweep long enough to look like a hang reports its progress. The check
+never runs under \code{run = FALSE}, never changes any compiled command, and
+is skipped entirely when every row names a track. Suppress it by class with
 \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
+
+Switch the check off -- and skip the whole sweep -- with
+\code{options(tidymedia.check_tracks = FALSE)} for the session, or
+\code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of
+one function.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

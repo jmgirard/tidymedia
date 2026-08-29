@@ -494,12 +494,18 @@ extract_audio_pipeline <- function(input, output, audio_codec = "copy",
 #' to take; with no selector the \strong{first} audio track is taken.
 #'
 #' When no \code{audio_stream} is named and the input turns out to carry tracks
-#' the output will not, the verb warns. That check is \strong{best-effort}: it
-#' runs FFprobe, so it is emitted when FFprobe is available and the input can be
-#' probed, and is skipped silently otherwise. It never runs under \code{run =
-#' FALSE}, and never changes the compiled command. Suppress it by naming a track
-#' with \code{audio_stream}, or by class with
+#' the output will not, the verb warns. That check is \strong{best-effort} and
+#' costs \strong{one FFprobe call per distinct input} -- one, here, since this
+#' verb takes a single \code{infile}: it is emitted when FFprobe is available
+#' and the input can be probed, and is skipped silently otherwise. It never runs
+#' under \code{run = FALSE}, and never changes the compiled command. Suppress it
+#' by naming a track with \code{audio_stream}, or by class with
 #' \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
+#'
+#' Switch the check off -- and skip its FFprobe call -- with
+#' \code{options(tidymedia.check_tracks = FALSE)} for the session, or
+#' \code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of
+#' one function.
 #'
 #' @param infile A string containing the path to a media file.
 #' @param outfile A string containing the path of the audio file to write.
@@ -962,12 +968,18 @@ convert_audio_pipeline <- function(input, output, audio_codec = NULL,
 #' names which one to take; with no selector the \strong{first} one is taken.
 #'
 #' When no \code{audio_stream} is named and the input turns out to carry tracks
-#' the output will not, the verb warns. That check is \strong{best-effort}: it
-#' runs FFprobe, so it is emitted when FFprobe is available and the input can be
-#' probed, and is skipped silently otherwise. It never runs under \code{run =
-#' FALSE}, and never changes the compiled command. Suppress it by naming a track
-#' with \code{audio_stream}, or by class with
+#' the output will not, the verb warns. That check is \strong{best-effort} and
+#' costs \strong{one FFprobe call per distinct input} -- one, here, since this
+#' verb takes a single \code{infile}: it is emitted when FFprobe is available
+#' and the input can be probed, and is skipped silently otherwise. It never runs
+#' under \code{run = FALSE}, and never changes the compiled command. Suppress it
+#' by naming a track with \code{audio_stream}, or by class with
 #' \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
+#'
+#' Switch the check off -- and skip its FFprobe call -- with
+#' \code{options(tidymedia.check_tracks = FALSE)} for the session, or
+#' \code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of
+#' one function.
 #'
 #' @param infile A string containing the path to a media file.
 #' @param outfile A string containing the path of the audio file to write.
@@ -2110,6 +2122,11 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #' compiled command. Under \code{two_pass = TRUE} it lands \emph{before} the
 #' analysis pass, so it arrives while adding \code{audio_stream} can still save
 #' that pass.
+#'
+#' Switch the check off -- and skip its FFprobe call -- with
+#' \code{options(tidymedia.check_tracks = FALSE)} for the session, or
+#' \code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of
+#' one function.
 #'
 #' @param infile A string containing the path to a media file (with audio). An
 #'   input with no audio stream is an FFmpeg error, not a silent copy of the
@@ -4276,11 +4293,17 @@ derive_normalized_names <- function(input) {
 #' distinct input}, so a repeated input is probed once: it is emitted when
 #' FFprobe is available and the input can be probed, and skipped silently
 #' otherwise. Those probes run \strong{serially at the front door}, before the
-#' fan-out starts, so \code{parallel} does not reach them. The check never runs
-#' under \code{run = FALSE}, never changes any compiled command, and is skipped
+#' fan-out starts, so \code{parallel} does not reach them; a sweep long enough
+#' to look like a hang reports its progress. The check never runs under
+#' \code{run = FALSE}, never changes any compiled command, and is skipped
 #' entirely when every row names a track. Under \code{two_pass = TRUE} it lands
 #' \emph{before} Phase 1, so it arrives while adding \code{audio_stream} can
 #' still save the analysis pass.
+#'
+#' Switch the check off -- and skip the whole sweep -- with
+#' \code{options(tidymedia.check_tracks = FALSE)} for the session, or
+#' \code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of
+#' one function.
 #'
 #' @param jobs A data frame with one row per input and (at least) an
 #'   \code{input} column (source path). An optional \code{output} column names
@@ -5068,12 +5091,20 @@ check_fanin_jobs <- function(jobs, min_inputs = 1L, verb = NULL,
 #'
 #' When a row names no \code{audio_stream} and its input turns out to carry
 #' tracks the output will not, the verb warns \strong{once} for the whole batch,
-#' naming every affected row. That check is \strong{best-effort}: it runs
-#' FFprobe, so it is emitted when FFprobe is available and the input can be
-#' probed, and is skipped silently otherwise. It never runs under \code{run =
-#' FALSE}, never changes any compiled command, and is skipped entirely when
-#' every row names a track. Suppress it by class with
+#' naming every affected row. That check is \strong{best-effort} and costs
+#' \strong{one FFprobe call per distinct input}, so a repeated input is probed
+#' once: it is emitted when FFprobe is available and the input can be probed,
+#' and is skipped silently otherwise. Those probes run \strong{serially at the
+#' front door}, before the fan-out starts, so \code{parallel} does not reach
+#' them; a sweep long enough to look like a hang reports its progress. The check
+#' never runs under \code{run = FALSE}, never changes any compiled command, and
+#' is skipped entirely when every row names a track. Suppress it by class with
 #' \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
+#'
+#' Switch the check off -- and skip the whole sweep -- with
+#' \code{options(tidymedia.check_tracks = FALSE)} for the session, or
+#' \code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of
+#' one function.
 #'
 #' @param jobs A data frame with one row per input and (at least) an
 #'   \code{input} column (source path) and an \code{output} column (destination
@@ -5192,12 +5223,20 @@ extract_audio_batch <- function(jobs, audio_codec = "copy",
 #'
 #' When a row names no \code{audio_stream} and its input turns out to carry
 #' tracks the output will not, the verb warns \strong{once} for the whole batch,
-#' naming every affected row. That check is \strong{best-effort}: it runs
-#' FFprobe, so it is emitted when FFprobe is available and the input can be
-#' probed, and is skipped silently otherwise. It never runs under \code{run =
-#' FALSE}, never changes any compiled command, and is skipped entirely when
-#' every row names a track. Suppress it by class with
+#' naming every affected row. That check is \strong{best-effort} and costs
+#' \strong{one FFprobe call per distinct input}, so a repeated input is probed
+#' once: it is emitted when FFprobe is available and the input can be probed,
+#' and is skipped silently otherwise. Those probes run \strong{serially at the
+#' front door}, before the fan-out starts, so \code{parallel} does not reach
+#' them; a sweep long enough to look like a hang reports its progress. The check
+#' never runs under \code{run = FALSE}, never changes any compiled command, and
+#' is skipped entirely when every row names a track. Suppress it by class with
 #' \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
+#'
+#' Switch the check off -- and skip the whole sweep -- with
+#' \code{options(tidymedia.check_tracks = FALSE)} for the session, or
+#' \code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of
+#' one function.
 #'
 #' @param jobs A data frame with one row per input and (at least) an
 #'   \code{input} column (source path) and an \code{output} column (destination

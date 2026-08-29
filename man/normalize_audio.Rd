@@ -117,6 +117,11 @@ otherwise. It never runs under \code{run = FALSE}, and never changes the
 compiled command. Under \code{two_pass = TRUE} it lands \emph{before} the
 analysis pass, so it arrives while adding \code{audio_stream} can still save
 that pass.
+
+Switch the check off -- and skip its FFprobe call -- with
+\code{options(tidymedia.check_tracks = FALSE)} for the session, or
+\code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of
+one function.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

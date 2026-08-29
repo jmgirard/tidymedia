@@ -1,6 +1,6 @@
 # M083: The ROADMAP gets back under its byte budget
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -38,12 +38,22 @@ milestone changes how rows are stored and worded, never whether an idea stands.
 
 - [ ] AC1 On the merge commit, `wc -c cairn/ROADMAP.md` reports fewer than
       24,000 bytes and `wc -l` fewer than 60 lines.
-- [ ] AC2 Each row `awk '/^## Candidates/,0' cairn/ROADMAP.md | grep '^- '`
-      enumerates at M083's branch point (`git merge-base <branch> master`) is,
-      after the merge, in exactly one observable state: present in
-      `cairn/ROADMAP.md`, present in `cairn/references/instrument-findings.md`,
-      or absent from both — and the rows in the third state are exactly those
-      the same pipe with `grep '^- ~~'` enumerates at that commit.
+- [ ] AC2 Let the branch-point rows be what `awk '/^## Candidates/,0'
+      cairn/ROADMAP.md | grep '^- '` enumerates at M083's branch point
+      (`git merge-base <branch> master`), the struck set what the same pipe
+      with `grep '^- ~~'` enumerates there, and the instrument set what the
+      same pipe with `grep -i 'instrument'` enumerates there; those two sets
+      are disjoint. After the merge: no line of `cairn/ROADMAP.md` or of
+      `cairn/references/instrument-findings.md` is byte-identical to any
+      struck-set row; every instrument-set row appears as a byte-identical
+      line in `cairn/references/instrument-findings.md`, and no line of
+      `cairn/ROADMAP.md` is byte-identical to it; and the first pipe
+      enumerates exactly (branch-point rows) − (struck set) − (instrument
+      set) + 1 lines, the one being the grouped row that replaces the
+      entombed set. This count is a count only: T4 rewrites surviving rows,
+      so no claim is made here that any individual surviving row is still
+      present in its branch-point form (AC4 governs what the surviving rows
+      must retain).
 - [ ] AC3 `cairn/references/instrument-findings.md` exists and is listed in
       `cairn/references/INDEX.md`, and each row the same pipe with
       `grep -i 'instrument'` enumerates at M083's branch point is present in it
@@ -99,4 +109,7 @@ milestone changes how rows are stored and worded, never whether an idea stands.
 - 2026-08-28: T4 — an [S] subagent checked all eleven wide rows against the entries, archives, reviews and source lines each cites (row 17 it skipped; checked inline); every fact it could not find a home for stayed in the row, which is why the rows land near 1,000 bytes rather than the ~700 a pure hook-plus-trigger rewrite would give. Orphans kept: the container reproduce recipe and the macOS pass time; the two M077 plan-gate declines; the 42.0-42.1 s CI figure, the 10 s→60 s bound and the `?system` quote; the `multicore` copy-on-write parenthetical; the 53/32/22 domain counts; M67's rejection reasoning; `format_for_web()`'s exit 234; the "roughly doubling" speculative magnitude; and four review-finding scores. Eleven rows 16,706 → 11,124 bytes; ROADMAP 27,140 → 22,212 bytes, 46 lines. All 26 rows keep an `— added` trailer; the 17 surviving branch-point rows that carried `Promote ` still carry it.
 - 2026-08-28: T5 — hygiene stamp replaced with M083's own figures (`cairn/ROADMAP.md` 22,102 bytes over 46 lines, from 42,552 over 53 at the branch point; `cairn/LESSONS.md` unchanged at 42,232 against its 20,000 cap); the stamp's self-referential byte figure was settled by iterating the rewrite until it matched `wc -c`. `cairn_validate.py`: 16 checks PASS, 7 advisories OK.
 - 2026-08-28: AC2 reading surfaced before review. A byte-for-byte comparison against the branch point puts the eleven T4-compressed rows and the folded M082-leftovers row in AC2's "absent from both" state, which T4 exists to produce and the Coverage map (AC2 → T4) already anticipates; AC2's three states are about where each row's idea ended up, not about its bytes. Verified under that reading: 25 branch-point rows carried in `cairn/ROADMAP.md` (plus one new grouped row, 26 total), 5 on the entombed page byte-identical, 3 absent — and the 3 are exactly the struck-through set. Put to the user as a mini amendment gate rather than left for review to interpret.
+- 2026-08-28: substantive amendment to AC2, accepted at a mini gate. The original wording put each branch-point row in one of three states — present in the ROADMAP, present on the entombed page, or absent from both — without fixing what "present" meant; compared byte-for-byte the eleven rows T4 rewrites read as absent, which is the opposite of what happens to them. Amended so the criterion claims only what a procedure decides.
+- 2026-08-28: criteria audit on the amended AC2 ran in REDUCED mode (internal tier, no RB-tripwire tags), two fresh-context [O] readers, neither the author of what it read. Reader 1 returned one bounded-promise finding: "a row there proposes the same idea, however reworded" substituted a reader's judgment for a procedure, and the repair was to keep only the states a procedure decides plus a count identity. Reader 2, on that repaired text, returned two more: the count cannot carry a "no other row is dropped" promise (a deletion plus an unrelated addition satisfies the arithmetic), and "present"/"absent" were undecidable between a line and a substring reading — under the substring reading the criterion is false on T3's own fold, since the folded conditions still match `cairn/ROADMAP.md`. Reader 2's wording adopted: the unit is a byte-identical line, and the count is stated as a count only.
+- 2026-08-28: all five tasks done; status → review. `cairn/ROADMAP.md` 22,097 bytes over 46 lines (from 42,552 over 53 at the branch point), 26 candidate rows. `cairn_validate.py`: 16 checks PASS, 7 advisories OK. No R sources changed, so the profile's verify slot has nothing to run.
 - 2026-08-28: plan gate chose compressing live rows in place over deferring the whole cut to entombment and pruning, because the arithmetic does not reach 24,000 without it (41,509 less 13,303 less 3,429 leaves ~24,800, before this plan's own additions); falsified by a measured pass where entombment alone clears the budget with headroom.

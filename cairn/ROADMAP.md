@@ -2,13 +2,13 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-28 (M083 branch, pre-merge: `cairn/ROADMAP.md` cut from 42,552 bytes over 53 lines at the branch point to 22,102 over 46 lines, back under its 24,000-byte budget. The five instrument-findings rows were entombed verbatim at `cairn/references/instrument-findings.md`; the three fully-promoted struck-through rows were pruned, after folding the retired M44 row's two promotion conditions forward into the M082-leftovers row; the eleven surviving rows over 1,000 bytes were compressed, keeping every fact no cited entry, archive or review holds. 26 candidate rows remain, each with its `— added` trailer, and every row that carried a promote-on clause still carries one. `cairn/LESSONS.md` is untouched at 42,232 bytes against its 20,000 cap — M084's subject. All 16 `cairn_validate` checks PASS and all 7 advisories OK. No doctrine modules; four `references/` working artifacts state no budgets of their own.)_
+_Last hygiene check: 2026-08-28 (M083 branch, pre-merge: `cairn/ROADMAP.md` cut from 42,552 bytes over 53 lines at the branch point to 22,097 over 46 lines, back under its 24,000-byte budget. The five instrument-findings rows were entombed verbatim at `cairn/references/instrument-findings.md`; the three fully-promoted struck-through rows were pruned, after folding the retired M44 row's two promotion conditions forward into the M082-leftovers row; the eleven surviving rows over 1,000 bytes were compressed, keeping every fact no cited entry, archive or review holds. 26 candidate rows remain, each with its `— added` trailer, and every row that carried a promote-on clause still carries one. `cairn/LESSONS.md` is untouched at 42,232 bytes against its 20,000 cap — M084's subject. All 16 `cairn_validate` checks PASS and all 7 advisories OK. No doctrine modules; four `references/` working artifacts state no budgets of their own.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M083 | The ROADMAP gets back under its byte budget | in-progress | — | normal | milestones/M083-roadmap-byte-budget.md |
+| M083 | The ROADMAP gets back under its byte budget | review | — | normal | milestones/M083-roadmap-byte-budget.md |
 | M084 | LESSONS gets back under its budget, and its biggest family graduates | planned | M083 | normal | milestones/M084-lessons-budget-doctrine.md |
 | M082 | The track check has an off switch, and says what it costs | done | — | normal | milestones/archive/M082-track-check-opt-out.md |
 | M081 | The unchecked flag, and the second copy of the one predicate | done | — | normal | milestones/archive/M081-unchecked-flag-and-second-copy.md |

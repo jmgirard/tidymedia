@@ -481,12 +481,19 @@ reraise_absorbed <- function(x, call = rlang::caller_env()) {
 # carried is the session capability memo (`R/cache.R`): a worker with no
 # override still asks its own FFmpeg -- D044's per-process gap, unchanged.
 #
-# Adding a third seam is one line here; carry_options() itself is generic over
-# whatever named list it is handed.
+# The track check joins as the third seam (M082), carried RAW like the encoder
+# override rather than resolved like the limit. Resolving buys nothing here:
+# the dropped-track probe runs at the front door, in this very process, so a
+# malformed value has already been refused by the time a worker could see one --
+# and on the one path that skips the front-door probe entirely (a batch whose
+# every row named a track) no worker reads the option at all. Carrying it raw
+# also keeps the unset state unset, so a worker that has its own answer through
+# a plan hook keeps it, which the resolved limit cannot do.
 carried_option_values <- function(call = rlang::caller_env()) {
   list(
     tidymedia.timeout = resolve_timeout(call = call),
-    tidymedia.nvenc_encoders = getOption("tidymedia.nvenc_encoders")
+    tidymedia.nvenc_encoders = getOption("tidymedia.nvenc_encoders"),
+    tidymedia.check_tracks = getOption("tidymedia.check_tracks")
   )
 }
 

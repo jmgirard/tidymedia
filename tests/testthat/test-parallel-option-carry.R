@@ -579,3 +579,57 @@ test_that("every parallel fan-out is accounted for under a per-call limit", {
   expect_setequal(sub(":.*$", "", sites), unique(names(covered)))
   expect_equal(length(sites), length(covered))
 })
+
+
+# M082 -- the third seam makes the same round trip ---------------------------
+
+test_that("the track check is carried raw, its unset state included", {
+  # Raw, not resolved: an unset seam is carried as ABSENT, so a worker with its
+  # own answer keeps it. That is the encoder override's rule; the limit's rule
+  # would carry TRUE here and displace the worker's setting.
+  withr::local_options(list(tidymedia.check_tracks = FALSE))
+  expect_false(carried_option_values()$tidymedia.check_tracks)
+  withr::local_options(list(tidymedia.check_tracks = NULL))
+  expect_null(carried_option_values()$tidymedia.check_tracks)
+  # And the name is in the list at all, unset or not, so `options()` can remove
+  # it in the worker rather than leaving the worker's own value standing.
+  expect_true("tidymedia.check_tracks" %in% names(carried_option_values()))
+})
+
+test_that("a switched-off track check reaches every worker, and the parent keeps its setting", {
+  local_carry_harness()
+  opts <- furrr::furrr_options(chunk_size = 1, seed = TRUE)
+  read <- function(i) {
+    list(pid = as.character(Sys.getpid()),
+         check = getOption("tidymedia.check_tracks", default = "absent"))
+  }
+
+  withr::local_options(list(tidymedia.check_tracks = FALSE))
+  seen <- furrr::future_map(seq_len(6L), carry_options(read), .options = opts)
+  # More than one worker read it, or "every worker" is a claim about one.
+  expect_gte(length(unique(vapply(seen, function(r) r$pid, character(1)))), 2L)
+  expect_identical(unique(vapply(seen, function(r) r$check, logical(1))), FALSE)
+  expect_false(getOption("tidymedia.check_tracks"))
+
+  # The control: with the parent unset the workers read their own default, so
+  # the FALSE above came from the carry rather than from a worker that had it
+  # anyway.
+  withr::local_options(list(tidymedia.check_tracks = NULL))
+  seen <- furrr::future_map(seq_len(6L), carry_options(read), .options = opts)
+  expect_identical(unique(vapply(seen, function(r) r$check, character(1))),
+                   "absent")
+})
+
+test_that("a parallel batch leaves the parent's track-check setting as it found it", {
+  local_carry_harness()
+  jobs <- tm_batch_jobs(4)
+
+  withr::local_options(list(tidymedia.check_tracks = FALSE))
+  ffm_batch(jobs, tm_nvenc_pipeline, run = FALSE, parallel = TRUE)
+  expect_false(getOption("tidymedia.check_tracks"))
+
+  withr::local_options(list(tidymedia.check_tracks = NULL))
+  ffm_batch(jobs, tm_nvenc_pipeline, run = FALSE, parallel = TRUE)
+  expect_identical(getOption("tidymedia.check_tracks", default = "absent"),
+                   "absent")
+})

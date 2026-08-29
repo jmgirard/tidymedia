@@ -1,11 +1,11 @@
 # M088: A failed audio half no longer costs the caller the video
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1
-- **Branch/PR:** —
+- **Branch/PR:** `m088-separation-video-after-audio-failure`
 
 ## Goal
 
@@ -103,6 +103,8 @@ Layer 1's failed-output removal → unchanged, relied on here (D046).
 - 2026-08-29: plan gate chose adding a bullet naming the written video over leaving the message byte-identical; the message otherwise describes a situation it no longer covers. Falsified by a report of a caller matching on that message's text.
 - 2026-08-29: plan gate chose raising the audio condition alone in the both-fail case over naming both failures; one message correct across every combination of two failures is more surface than the case earns. Falsified by a report of a caller who could not tell the video command had also failed.
 - 2026-08-29: plan gate chose keeping audio-first ordering over swapping to video-first; swapping changes which command runs first on every successful call too. Falsified by a failure whose diagnosis depends on the video command having already run.
+- 2026-08-29: implement gate chose appending one formatted bullet to the audio condition's own body over rebuilding the condition (the rebuild re-runs cli's formatter over already-formatted text, M44's brace trap, and copies fields by hand); and chose letting ANY audio-run failure fall through to the video command over only a non-zero FFmpeg exit (one rule to document, and the excluded causes are ones the video command fails on too).
+- 2026-08-29: T1 tests written first and confirmed red against unchanged `R/` — six new tests in `test-separate-av-multitrack.R`; `master`'s class vectors and `tm_status` for AC2's two branches recorded in the file's own comment (ffmpeg 9.0.1, macOS arm64, status 234).
 
 ## Decisions
 

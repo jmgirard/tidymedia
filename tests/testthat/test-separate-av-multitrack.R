@@ -529,3 +529,149 @@ test_that("the extraction verbs' NULL still means the first track", {
   expect_match(convert_audio(infile, "a.mp3", run = FALSE), "-map \"0:a:0\"",
                fixed = TRUE)
 })
+
+
+# M088: the video command runs even after the audio command fails ------------
+
+# What `master` raised on these two paths, recorded on 2026-08-29 before any
+# R/ change on this branch, with ffmpeg 9.0.1 on macOS (arm64):
+#
+#   enriched multi-track branch:
+#     class     tidymedia_multitrack_separation, tidymedia_ffmpeg_exit,
+#               rlang_error, error, condition
+#     tm_status 234
+#   n <= 1 fall-open branch:
+#     class     tidymedia_ffmpeg_exit, rlang_error, error, condition
+#     tm_status 234
+#
+# The class vectors are pinned literally below; the STATUS is not, because 234
+# is this FFmpeg build's number for an AAC-into-MP3 stream copy and another
+# build may answer differently. What the criterion needs is that `tm_status`
+# still carries the exit status the run reported, so the tests read the number
+# out of the rendered message and require the field to equal it -- a fact
+# stated independently of the field being checked.
+sep_status_in_message <- function(cnd) {
+  msg <- cli::ansi_strip(conditionMessage(cnd))
+  hit <- regmatches(msg, regexpr("exited with status (-?[0-9]+)", msg))
+  expect_length(hit, 1L)
+  as.integer(sub("exited with status ", "", hit, fixed = TRUE))
+}
+
+# The audio failure every one of these tests is built on: an AAC-into-MP3 stream
+# copy, which no FFmpeg build can perform (the .aac stream-count refusal is
+# version-dependent, per this file's PORTABILITY note). The VIDEO command beside
+# it is the default `-codec:v copy` into .mp4, which succeeds on the same inputs.
+sep_fresh_video <- function(ext = ".mp4", env = parent.frame()) {
+  path <- withr::local_tempfile(fileext = ext, .local_envir = env)
+  # withr::local_tempfile() only reserves the name, but the criterion is about a
+  # path that did not exist BEFORE the call, so assert that rather than assume it.
+  expect_false(file.exists(path))
+  path
+}
+
+test_that("a failed audio command still leaves the video file behind", {
+  # AC1, on the enriched multi-track branch.
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  audio <- withr::local_tempfile(fileext = ".mp3")
+  video <- sep_fresh_video()
+  cnd <- tryCatch(separate_audio_video(infile, audio, video),
+                  error = function(e) e)
+  expect_s3_class(cnd, "error")            # AC1: the call still aborts
+  expect_true(file.exists(video))          # AC1: the video was written anyway
+  expect_gt(file.size(video), 0)
+  expect_equal(nrow(probe_video(video)), 1L)
+})
+
+test_that("the enriched abort keeps its class vector and status", {
+  # AC2, branch one: the enriched multi-track diagnostic.
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  audio <- withr::local_tempfile(fileext = ".mp3")
+  video <- sep_fresh_video()
+  cnd <- tryCatch(separate_audio_video(infile, audio, video),
+                  error = function(e) e)
+  expect_identical(
+    class(cnd),
+    c("tidymedia_multitrack_separation", "tidymedia_ffmpeg_exit",
+      "rlang_error", "error", "condition")
+  )
+  expect_identical(cnd$tm_status, sep_status_in_message(cnd))
+})
+
+test_that("the fall-open re-raise keeps its class vector and status", {
+  # AC2, branch two: a single-track input takes the `n <= 1L` fall-open, which
+  # re-raises ffm_run()'s own condition -- so the multi-track class must be
+  # ABSENT here, and the video must still be written.
+  skip_if_no_ffprobe()
+  infile <- make_test_video()
+  audio <- withr::local_tempfile(fileext = ".mp3")
+  video <- sep_fresh_video()
+  cnd <- tryCatch(separate_audio_video(infile, audio, video),
+                  error = function(e) e)
+  expect_identical(
+    class(cnd),
+    c("tidymedia_ffmpeg_exit", "rlang_error", "error", "condition")
+  )
+  expect_identical(cnd$tm_status, sep_status_in_message(cnd))
+  expect_true(file.exists(video))          # AC1 on this branch too
+})
+
+test_that("the abort names the video file it wrote", {
+  # AC4, both branches: the added line is what tells the caller the video half
+  # survived. Asserted on the rendered message, since that is what a caller
+  # reads; basename() alone, because the temp path is not stable.
+  skip_if_no_ffprobe()
+  multi <- make_multitrack_video()
+  single <- make_test_video()
+  for (infile in c(multi, single)) {
+    audio <- withr::local_tempfile(fileext = ".mp3")
+    video <- sep_fresh_video()
+    cnd <- tryCatch(separate_audio_video(infile, audio, video),
+                    error = function(e) e)
+    msg <- cli::ansi_strip(conditionMessage(cnd))
+    expect_match(msg, "The video output was written to", fixed = TRUE)
+    expect_match(msg, basename(video), fixed = TRUE)
+  }
+})
+
+test_that("a brace-bearing video path is not interpolated into the abort", {
+  # M44's lesson on the new line: the path goes through a cli field and is
+  # formatted once, so `{n}` reaches the reader as text rather than naming a
+  # local of the message builder (or aborting the abort).
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  dir <- withr::local_tempdir()
+  audio <- withr::local_tempfile(fileext = ".mp3")
+  video <- file.path(dir, "v{n}.mp4")
+  cnd <- tryCatch(separate_audio_video(infile, audio, video),
+                  error = function(e) e)
+  expect_s3_class(cnd, "tidymedia_multitrack_separation")
+  expect_match(cli::ansi_strip(conditionMessage(cnd)), "v{n}.mp4", fixed = TRUE)
+  expect_true(file.exists(video))
+})
+
+test_that("when both commands fail the audio failure is what aborts", {
+  # AC3 and AC4's silent half. An unknown video encoder is a token the builder
+  # accepts and FFmpeg rejects, so the video command fails at run time -- after
+  # the audio command has already failed.
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  audio <- withr::local_tempfile(fileext = ".mp3")
+  video <- sep_fresh_video()
+  cnd <- tryCatch(
+    separate_audio_video(infile, audio, video, video_codec = "nosuchcodec"),
+    error = function(e) e
+  )
+  # AC3: the AUDIO command's condition, not the video one's -- the video run
+  # fails on an unknown encoder and never reaches a multi-track diagnostic.
+  expect_identical(
+    class(cnd),
+    c("tidymedia_multitrack_separation", "tidymedia_ffmpeg_exit",
+      "rlang_error", "error", "condition")
+  )
+  expect_identical(cnd$tm_status, sep_status_in_message(cnd))
+  expect_false(file.exists(video))         # AC3: nothing left behind
+  expect_no_match(cli::ansi_strip(conditionMessage(cnd)),
+                  "The video output was written to", fixed = TRUE)
+})

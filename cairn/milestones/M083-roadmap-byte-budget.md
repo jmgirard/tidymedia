@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m083-roadmap-byte-budget`
+- **Branch/PR:** `m083-roadmap-byte-budget` — https://github.com/jmgirard/tidymedia/pull/87
 
 ## Goal
 
@@ -36,9 +36,9 @@ milestone changes how rows are stored and worded, never whether an idea stands.
 
 ## Acceptance criteria
 
-- [ ] AC1 On the merge commit, `wc -c cairn/ROADMAP.md` reports fewer than
+- [x] AC1 On the merge commit, `wc -c cairn/ROADMAP.md` reports fewer than
       24,000 bytes and `wc -l` fewer than 60 lines.
-- [ ] AC2 Let the branch-point rows be what `awk '/^## Candidates/,0'
+- [x] AC2 Let the branch-point rows be what `awk '/^## Candidates/,0'
       cairn/ROADMAP.md | grep '^- '` enumerates at M083's branch point
       (`git merge-base <branch> master`), the struck set what the same pipe
       with `grep '^- ~~'` enumerates there, and the instrument set what the
@@ -54,15 +54,15 @@ milestone changes how rows are stored and worded, never whether an idea stands.
       so no claim is made here that any individual surviving row is still
       present in its branch-point form (AC4 governs what the surviving rows
       must retain).
-- [ ] AC3 `cairn/references/instrument-findings.md` exists and is listed in
+- [x] AC3 `cairn/references/instrument-findings.md` exists and is listed in
       `cairn/references/INDEX.md`, and each row the same pipe with
       `grep -i 'instrument'` enumerates at M083's branch point is present in it
       carrying that row's finding ids and its promote-on clause, and absent
       from `cairn/ROADMAP.md`.
-- [ ] AC4 Each row AC2 finds present in `cairn/ROADMAP.md` after the merge
+- [x] AC4 Each row AC2 finds present in `cairn/ROADMAP.md` after the merge
       retains its `— added` trailer, and retains a promote-on clause wherever
       its branch-point text matched `grep 'Promote '`.
-- [ ] AC5 `python3 ~/.claude/skills/cairn/scripts/cairn_validate.py` reports
+- [x] AC5 `python3 ~/.claude/skills/cairn/scripts/cairn_validate.py` reports
       all 16 checks PASS and all 7 advisories OK.
 
 ## Coverage
@@ -113,3 +113,114 @@ milestone changes how rows are stored and worded, never whether an idea stands.
 - 2026-08-28: criteria audit on the amended AC2 ran in REDUCED mode (internal tier, no RB-tripwire tags), two fresh-context [O] readers, neither the author of what it read. Reader 1 returned one bounded-promise finding: "a row there proposes the same idea, however reworded" substituted a reader's judgment for a procedure, and the repair was to keep only the states a procedure decides plus a count identity. Reader 2, on that repaired text, returned two more: the count cannot carry a "no other row is dropped" promise (a deletion plus an unrelated addition satisfies the arithmetic), and "present"/"absent" were undecidable between a line and a substring reading — under the substring reading the criterion is false on T3's own fold, since the folded conditions still match `cairn/ROADMAP.md`. Reader 2's wording adopted: the unit is a byte-identical line, and the count is stated as a count only.
 - 2026-08-28: all five tasks done; status → review. `cairn/ROADMAP.md` 22,097 bytes over 46 lines (from 42,552 over 53 at the branch point), 26 candidate rows. `cairn_validate.py`: 16 checks PASS, 7 advisories OK. No R sources changed, so the profile's verify slot has nothing to run.
 - 2026-08-28: plan gate chose compressing live rows in place over deferring the whole cut to entombment and pruning, because the arithmetic does not reach 24,000 without it (41,509 less 13,303 less 3,429 leaves ~24,800, before this plan's own additions); falsified by a measured pass where entombment alone clears the budget with headroom.
+
+## Review
+
+PR: https://github.com/jmgirard/tidymedia/pull/87 (docs-only diff; internal
+tier). Branch point `8021df1`; `master` was level with `origin/master` at
+review time, so no merge-forward was needed. Driving RR: none, so no
+projection-vs-outcome pairs apply.
+
+### Acceptance-criteria evidence (2026-08-28, branch tip)
+
+- **AC1 — pass.** `wc -c cairn/ROADMAP.md` = 22,097 bytes (< 24,000);
+  `wc -l` = 46 lines (< 60). Measured on the branch tip, whose tree the
+  squash-merge reproduces byte for byte.
+- **AC2 — pass.** At `git merge-base m083-roadmap-byte-budget master`
+  (`8021df1`) the three enumerations return 33 rows, 3 struck, 5 matching
+  `instrument`; `comm -12` over the sorted struck and instrument sets returns
+  0 lines, so they are disjoint. After the change: no struck-set row is
+  byte-identical to any line of `cairn/ROADMAP.md` or of
+  `cairn/references/instrument-findings.md` (`grep -Fxq` per row, 0 hits);
+  each of the 5 instrument-set rows is a byte-identical line of
+  `cairn/references/instrument-findings.md` and matches no line of
+  `cairn/ROADMAP.md`. The post pipe enumerates 26 rows against the required
+  33 − 3 − 5 + 1 = 26.
+- **AC3 — pass.** `cairn/references/instrument-findings.md` exists (15,885
+  bytes) and is listed at `cairn/references/INDEX.md:12` under Working
+  artifacts. Each of the 5 branch-point instrument rows is present on the page
+  as a byte-identical line — so each carries its own finding ids and its
+  promote-on clause unchanged (all 5 matched `Promote ` at the branch point) —
+  and none matches a line of `cairn/ROADMAP.md`.
+- **AC4 — pass.** All 26 post rows carry a `— added` trailer (`grep -v
+  '— added'` over the enumerated rows returns nothing). Of the 25 branch-point
+  survivors, 17 matched `Promote `; removing the one new grouped instrument
+  row from the 26 post rows leaves 25 that align in file order with the 25
+  survivors, and the per-row present/absent pattern of `Promote ` is identical
+  position by position. 18 post rows carry a promote-on clause: the 17
+  survivors plus the grouped row.
+- **AC5 — pass.** `python3 ~/.claude/skills/cairn/scripts/cairn_validate.py`
+  exits 0 with 16 PASS and 7 OK.
+
+### Consistency gate
+
+Universal: `cairn_validate.py` as above, all 16 checks PASS (its `coverage
+complete` and `scaffold present` checks among them) and all 7 advisories OK.
+No `DESIGN.md` principle changed, so `cairn_impact.py` does not apply.
+
+Toolchain (`r-package` profile `consistency-gate` slot):
+`devtools::document()` exits 0 and leaves no diff in `NAMESPACE`, `man/` or
+`data/`; `pkgdown::check_pkgdown()` reports no problems; `README.md` and
+`README.Rmd` are unchanged by this branch and in sync; the diff makes no
+user-visible change, so `NEWS.md` needs no entry; the two new files are under
+`cairn/`, already covered by the `^cairn$` `.Rbuildignore` entry, so no new
+top-level file was added; `devtools::check()` — see below.
+`devtools::check()`: 0 errors, 0 warnings, 0 notes (7m23s, full suite).
+
+### Independent review
+
+Routing: internal tier, `git diff origin/master...HEAD --name-only` shows only
+markdown under `cairn/`, so one fresh-context [O] diff-bug reviewer was spawned
+and the other two lenses skipped. It re-derived all five criteria independently
+and reached the same verdicts, and added that exactly 13 branch-point rows
+survive byte-identical, so the 11 compressed rows plus the 1 folded row are the
+only surviving rows touched.
+
+Return floor: no finding demonstrates an acceptance criterion failing, and none
+is a defect in what the R package does for its users, so none returns the
+milestone. All twelve are triaged below; the ranking is the reviewer's.
+
+1. **Fix now.** The pruned struck M080 row carried the reasoning for withdrawing
+   its F10 — that `rlang::caller_arg()` resolves at the guard's own frame, so
+   `check_bool(reencode, call = call)` already aborts naming `reencode` — and no
+   `cairn/` file holds it (`grep -rn caller_arg cairn/` returns nothing).
+   T3 checked only the D055-gaps row's dependence before deleting, so the struck
+   rows' bodies went unchecked. Carried into M083's archive summary.
+2. **Fix now.** `cairn/references/roadmap-candidates-baseline-M083.md` is neither
+   of the two page types `references/` owns; its own header calls it a
+   convenience record and disclaims being a verification surface, and it is
+   re-derivable from `git show 8021df1:cairn/ROADMAP.md`. Deleted with its
+   `INDEX.md` line.
+3. **Fix now.** On `cairn/references/instrument-findings.md` the M62/M63 row
+   says M080's findings "left it for the candidate row below"; that row is the
+   struck M080 row T3 deleted, so the reference now points at nothing. Repaired
+   by a note under the row's heading rather than in the row line, which AC3
+   requires to stay byte-identical.
+4. **Fix now.** The `(corrected M078: …)` marker was dropped from the
+   `with_timeout()` row while its "minutes, not seconds" hook stayed, so the
+   ROADMAP now reads as an uncorrected claim. Marker restored.
+5. **Fix now.** `R/ffmpeg.R:882-891` is that verb's front-door `check_*` block;
+   the audio-then-video sequencing the row claims is at `R/ffmpeg.R:911-912`.
+   Loose at the branch point, precise-looking and wrong after the rewrite.
+   Citation corrected.
+6. **Fix now.** The `tm_timeout_domain()` row's `53 / 32 / 22` does not add up.
+   Measured by running the helper: the domain is 53, of which 31 take `run =`
+   and 22 do not. Pre-existing at the branch point, one character to fix.
+   Corrected to 31.
+7. **Reject.** The Scope says the tracking-rules remedy was applied "in its
+   stated order" when M083 ran entomb → prune → compress rather than
+   compress-first. Real, but Scope is plan-owned text in a file the archive
+   replaces at merge; the archive summary states the order actually run.
+8. **Reject.** T1's "the comparison surface AC2–AC4 read" contradicts the
+   settled position that the criteria read git; superseded by the T1 work-log
+   line, and the same transient-text reason as 7.
+9. **Reject.** The Scope's opening figures (41,509 / 50 / 32) are plan-time and
+   were re-measured by T1 to 42,552 / 53 / 33, which T1's parenthetical says
+   outright. Same reason as 7.
+10. **Reject.** The T2 work-log line's 15,878 bytes was accurate when written; a
+    later T2 commit grew the page to 15,885. Work logs are append-only history,
+    never edited; the archive summary carries the shipped figure.
+11. **Reject.** The unticked criterion boxes in `HEAD` are this review session's
+    own in-flight work, landing in its checkpoint commit.
+12. **Reject.** Double blank lines between rows on the entombed page — a style
+    nitpick.

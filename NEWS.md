@@ -20,9 +20,9 @@
 ## New features
 
 * A failed FFmpeg run is now something you can catch. When FFmpeg exits
-  non-zero, `ffm_run()` — and every task verb that runs through it — aborts
-  with a condition of class `tidymedia_ffmpeg_exit`, carrying the exit status
-  as a length-one integer in its `tm_status` field:
+  non-zero, `ffm_run()` aborts with a condition of class
+  `tidymedia_ffmpeg_exit`, carrying the exit status as a length-one integer in
+  its `tm_status` field:
 
   ```r
   tryCatch(
@@ -33,9 +33,14 @@
 
   The `loudnorm` analysis pass behind `normalize_audio(two_pass = TRUE)`
   raises the same class and carries the same field, so one handler covers
-  both. The status is whatever `system2()` reported, which for a
-  signal-terminated FFmpeg encodes the signal rather than a value FFmpeg
-  chose. Internally the package now reads the number off that field; it used
+  both. The status is whatever `system2()` reported: for a signal-terminated
+  FFmpeg that is the shell's 128-plus-signal number, passed through unchanged,
+  rather than a value FFmpeg chose. Two paths deliberately do not signal it:
+  `separate_audio_video()` replaces it with its own multi-track diagnostic when
+  a multi-track input was written to a single-stream container without naming a
+  track, keeping the original condition as that error's parent, and the
+  `ffm_batch()` family records `success = FALSE` for a failed row instead of
+  aborting. Internally the package now reads the number off that field; it used
   to recover it by matching a regular expression against the error message,
   which could not tell the wording of one abort from the wording of another
   and gave callers nothing to catch.

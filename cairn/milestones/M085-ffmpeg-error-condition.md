@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** — (RR04 is advisory; no binding criteria requested)
 - **Principles touched:** —
-- **Branch/PR:** `m085-ffmpeg-error-condition`
+- **Branch/PR:** `m085-ffmpeg-error-condition` / https://github.com/jmgirard/tidymedia/pull/89
 
 ## Goal
 
@@ -37,7 +37,7 @@ there; NEWS.
 
 ## Acceptance criteria
 
-- [ ] AC1: A non-zero FFmpeg exit from `ffm_run()` raises a condition whose class
+- [x] AC1: A non-zero FFmpeg exit from `ffm_run()` raises a condition whose class
       vector is exactly `c("tidymedia_ffmpeg_exit", "rlang_error", "error",
       "condition")` — no parent or sibling class of any prefix (RB tripwire:
       irreversible-api; name settled by RR04) — carrying field `tm_status`. A
@@ -51,15 +51,15 @@ there; NEWS.
       `run_program()` uses (`R/program_management.R:117-127`) — that oracle call
       writing to a fresh `tempfile()`, so the first run's leftovers cannot change
       the status it returns.
-- [ ] AC2: The `loudnorm` analysis pass's non-zero-exit abort carries the same
+- [x] AC2: The `loudnorm` analysis pass's non-zero-exit abort carries the same
       class and the same `tm_status` field, its message text unchanged. A test
       asserts both on a failing analysis pass, catching by class alone.
-- [ ] AC3: `ffmpeg_exit_status()`'s only inputs are `inherits(cnd,
+- [x] AC3: `ffmpeg_exit_status()`'s only inputs are `inherits(cnd,
       "tidymedia_ffmpeg_exit")` and `cnd$tm_status`; it reads no other property
       of the condition and passes `cnd` to no function other than `inherits()`.
       Verified by reading the function, whose body is the whole domain of this
       claim.
-- [ ] AC4: `ffmpeg_exit_status()` returns the status for a
+- [x] AC4: `ffmpeg_exit_status()` returns the status for a
       `tidymedia_ffmpeg_exit` constructed directly with no message at all, and
       `NA_integer_` for: a `tidymedia_ffmpeg_exit` carrying no `tm_status`; the
       condition an actual `run_program()` call raises with an unresolvable binary
@@ -70,11 +70,11 @@ there; NEWS.
       phrase, so the helper returns a status for it today — and is unobservable
       outside the package, the helper being unexported and called only from
       `run_separation_audio()`.
-- [ ] AC5: The multi-track enrichment in `run_separation_audio()` still fires on
+- [x] AC5: The multi-track enrichment in `run_separation_audio()` still fires on
       a failed audio command over a multi-track input naming no track, and still
       fails open — re-raising the original condition with its message, class and
       trace unchanged — on a single-track input and on a missing-binary failure.
-- [ ] AC6: No shipped prose asserts that the exit status is obtained by parsing a
+- [x] AC6: No shipped prose asserts that the exit status is obtained by parsing a
       message, except the NEWS entry's description of the change itself.
       `ffm_run()`'s roxygen names `tidymedia_ffmpeg_exit` and `tm_status`, states
       that the `loudnorm` analysis pass behind `normalize_audio(two_pass = TRUE)`
@@ -91,7 +91,7 @@ there; NEWS.
       `ffmpeg_exit_status`, `exit status`, `parse`, `regexpr` and `regmatches`
       over `R/`, `man/`, `tests/`, `vignettes/`, `NEWS.md`, `README.Rmd` and
       `README.md`, confirming no further site describes the status as parsed.
-- [ ] AC7: `devtools::document()` leaves `man/` in sync; `devtools::check()`
+- [x] AC7: `devtools::document()` leaves `man/` in sync; `devtools::check()`
       reports 0 errors and 0 warnings; `devtools::test()` passes.
 
 ## Coverage
@@ -179,3 +179,159 @@ there; NEWS.
   a second caller, at which point the branch is the thing being duplicated.
 
 ## Review
+
+Reviewed 2026-08-29 on `m085-ffmpeg-error-condition` at `a0988c2`, PR #89.
+`master` had not moved since the branch was cut, so no merge was needed and the
+evidence below is from the branch tip.
+
+### Acceptance-criterion evidence
+
+- **AC1** — `tests/testthat/test-ffmpeg-exit-condition.R`, "a non-zero exit from
+  `ffm_run()` is catchable by class alone", run fresh this session: caught with
+  `tryCatch(tidymedia_ffmpeg_exit = )` alone; `identical(class(cnd), c(...))`
+  against the exact four-element vector; `tm_status` integer, length one,
+  non-zero; and `identical()` to the `"status"` attribute of the same command
+  respawned `run_program()`-style (`shQuote(..., type = "sh")`, `stdout = TRUE`,
+  `stderr = ""`, `input = ""`, `timeout = 0`) writing to a fresh `tempfile()`.
+  0 failures.
+- **AC2** — same file, "the `loudnorm` analysis pass raises the same class and
+  field": caught by class alone off an undemuxable input; integer length-one
+  non-zero `tm_status`; message text pinned `fixed = TRUE`. Class vector measured
+  directly this session as `tidymedia_ffmpeg_exit / rlang_error / error /
+  condition`. 0 failures.
+- **AC3** — `R/ffmpeg.R:781-786` read whole. The body is
+  `inherits(cnd, "tidymedia_ffmpeg_exit")`, `status <- cnd$tm_status`, an
+  `is.null(status)` guard, and `status`. No other property of `cnd` is read and
+  `cnd` is passed to no function but `inherits()`; no `conditionMessage()`, no
+  regex.
+- **AC4** — same file, "`ffmpeg_exit_status()` reads the class and the field,
+  nothing else": all six cases pass — the message-less constructed condition
+  returns `3L`; the classed-but-fieldless one, a real `run_program(NULL, ...)`
+  missing-binary abort caught from the call, a `tidymedia_timeout`, a
+  `tidymedia_multitrack_separation` whose own message carries the phrase, and a
+  bare `simpleError` carrying it all return `NA_integer_`.
+- **AC5** — `tests/testthat/test-separate-av-multitrack.R` plus the new
+  missing-binary fall-open test, run together fresh: 94 passing, 0 failures,
+  0 skips. The enrichment still fires on a failed audio command over a
+  multi-track input naming no track, and re-raises the original condition
+  untouched on a single-track input and with `find_ffmpeg` mocked to `NULL`.
+- **AC6** — the six sites read: `ffm_run()`'s "When FFmpeg exits non-zero"
+  roxygen (names the class and field, shows the `tryCatch()` form, names the
+  `loudnorm` path, states the status is `system2()`'s including a
+  signal-terminated FFmpeg); `?tidymedia`'s closing timeout paragraph; the NEWS
+  entry; the comment in `run_separation_audio()`'s handler; the comment above
+  `ffmpeg_exit_status()`; and the deleted wording-coupling test. Repo-wide sweep
+  re-run this session for `exited with status`, `ffmpeg_exit_status`,
+  `exit status`, `parse`, `regexpr` and `regmatches` over `R/`, `man/`, `tests/`,
+  `vignettes/`, `NEWS.md`, `README.Rmd` and `README.md`: no site describes the
+  exit status as parsed. The surviving `regexpr`/`regmatches` hits are the
+  codec-table readers, the ffprobe key parser, the `-version` token reader and
+  `volumedetect`; the surviving "parse" prose is the `loudnorm` measurement
+  block. Only the NEWS entry mentions the retired parse, describing the change.
+- **AC7** — `devtools::document()` rewrote nothing (working tree clean but for
+  this milestone file); `devtools::check()`: 0 errors, 0 warnings, 0 notes;
+  `devtools::test()`: 0 failures, 8240 passing, 5 skips. Re-run after the
+  fix-now work below: `document()` rewrote `man/ffm_run.Rd` for the corrected
+  roxygen and a second run produced no further diff; `check()` 0 errors,
+  0 warnings, 0 notes; `test()` 0 failures, 8241 passing, 5 skips.
+
+No Driving RR is declared (RR04 was advisory, no binding criteria requested), so
+the projection-vs-outcome record is empty.
+
+### Consistency gate
+
+`cairn_validate.py`: 16 checks PASS, 7 advisories OK — the `release window`
+advisory did not fire. No DESIGN principle changed, so `cairn_impact.py` was not
+run. Toolchain checks from the `r-package` profile's `consistency-gate` slot:
+`document()` produces no diff; `NAMESPACE`/`man/` regenerate cleanly;
+`README.Rmd` untouched by the branch and in sync; `pkgdown::check_pkgdown()`
+reports no problems; `NEWS.md` carries an entry for the user-visible change with
+no milestone number in it; no new top-level files; `check()` clean.
+
+### Independent review
+
+Three fresh-context reviewers, none having seen the implementation, each on a
+distinct evidence base. The blame-history [S] lens reported no defects: the
+deleted wording-coupling test is replaced rather than lost, the two abort sites
+are purely additive to message text and to D046's cleanup wiring, and D062 does
+not contradict a prior entry. The prior-review [S] lens found no regression —
+the GitHub inline-comment probe returned empty, and the archived reviews on the
+touched files (M68's cleanup contract, M44's brace trap, M46/M69's ban on
+classifying failures by matching text) are resolved rather than reintroduced by
+retiring the regex parse. The diff-bug [O] lens returned nine ranked findings.
+
+
+### Findings and disposition
+
+Every finding the [O] lens reported is listed, ranked as it ranked them, with
+the disposition taken. Each was verified against the implementation, not against
+the reviewer's account of it.
+
+- **F1 — the NEWS entry overclaims the class's reach.** It says `ffm_run()`
+  "and every task verb that runs through it" aborts with `tidymedia_ffmpeg_exit`.
+  False on two live paths: `run_separation_audio()` (`R/ffmpeg.R:656-679`)
+  catches the exit condition and re-signals `tidymedia_multitrack_separation`
+  with the original as `parent`, so a `tryCatch(tidymedia_ffmpeg_exit = )` around
+  `separate_audio_video()` on a multi-track input naming no track does not fire;
+  and the `*_batch()` verbs record `success = FALSE` per D007 rather than
+  propagating. Verified by reading both sites. **Fixed** — the sentence now names
+  what actually raises the class and what does not.
+- **F2 — `ffmpeg_exit_status()`'s class guard is unfalsifiable by the suite.**
+  Every AC4 case that expects `NA_integer_` also has a `NULL` `tm_status`, so
+  deleting the `inherits()` line leaves all of them green via the `is.null()`
+  guard. Measured this session: `rlang::error_cnd("tidymedia_timeout",
+  tm_status = 3L)` returns `NA_integer_` today and would return `3L` without the
+  guard. **Fixed** — that condition is added to the AC4 test as a discriminating
+  case.
+- **F3 — the helper no longer guarantees a length-one integer return.** It
+  returns `cnd$tm_status` verbatim, and its only caller interpolates it into a
+  message after an `is.na()` test. **Rejected**: both in-package construction
+  sites coerce with `as.integer()`, the helper is unexported, and no path
+  reaches it with a malformed field. A speculative contract about conditions
+  nothing constructs.
+- **F4 — `separate_audio_video()`'s "When the audio output fails" Rd section
+  was not updated.** A reader of the new promise is not told that this path's
+  condition is `tidymedia_multitrack_separation`. `R/ffmpeg.R:846-856` is not in
+  this milestone's Scope In. **Follow-up** — absorbed into the standing M45
+  review F1/F5 candidate row, which already covers this verb's failure path.
+- **F5 — the `loudnorm` site's class vector exactness is unpinned.** AC2's test
+  uses `expect_s3_class()`, so a prepended parent there would redden nothing,
+  where the same change at `ffm_run()` is caught. Measured this session: the
+  vector is already exactly the four M085-D2 requires. **Fixed** — the AC2 test
+  now pins it with `identical()`, so M085-D2 is enforced at both sites.
+- **F6 — the signal-termination wording attributes the encoding to the wrong
+  layer.** `R/ffm.R` said "the values R uses for a signal-terminated FFmpeg";
+  the 128-plus-signal encoding is the shell's, which `system2()` passes through.
+  **Fixed** at both the roxygen and NEWS sites.
+- **F7 — the AC1 oracle hardcodes `timeout = 0` where `run_program()` passes
+  `resolve_timeout()`.** They agree today (`resolve_timeout()` returns 0 by
+  default, measured this session) and diverge only under a set
+  `tidymedia.timeout`. AC1 specified `timeout = 0`, so the test is faithful to
+  the criterion. **Fixed** in the test rather than the criterion — the test now
+  pins the option to 0 for its duration, making the specified form the same form
+  `run_program()` uses in every session.
+- **F8 — `cnd$tm_status` partial-matches.** Confirmed: a condition carrying only
+  `tm_status_source` returns that value. **Rejected**: `$` on condition fields is
+  this package's idiom (`cnd$tm_program`, `cnd$tm_limit` at the timeout site) and
+  is the exact expression AC3 names; `[[` would also pass `cnd` to a second
+  function, which AC3 forbids.
+- **F9 — no test composes a real `ffm_run()` condition with the helper.** The
+  integration is covered transitively by the multi-track enrichment suite, which
+  cannot enrich unless the helper returns a non-NA status off a real condition —
+  which is what T5's probes (a) and (b) measured. **Noted, no action**; the
+  reviewer raised it to name the coupling, not to report a gap.
+
+The five fixes were verified after the fact: F2's new expectation was confirmed
+discriminating by dropping `ffmpeg_exit_status()`'s class guard, which reddens
+the file, and restoring it; F1's two claims were confirmed by execution before
+the prose was written — a `tryCatch(tidymedia_ffmpeg_exit = )` around
+`separate_audio_video()` on a three-track input written to `.mp3` does not fire
+and the condition is `tidymedia_multitrack_separation` with the exit condition as
+its parent, and `ffm_batch()` on a refused row returns a tibble with
+`success = FALSE` and signals nothing. F4's candidate-row extension is left to
+the post-merge hygiene pass, where the row's disposition and the ROADMAP's byte
+budget are judged together.
+
+No finding demonstrated an acceptance criterion failing, and none showed a
+criterion itself to be wrong, so the return floor was not reached and no
+amendment return was convened.

@@ -24,6 +24,10 @@ test_that("a non-zero exit from ffm_run() is catchable by class alone", {
   # Oracle: the same command, spawned the way run_program() spawns it
   # (R/program_management.R), writing to a FRESH output path so the first run's
   # leftovers cannot change the status this returns.
+  # run_program() passes resolve_timeout(), which is 0 only while the option is
+  # unset; pinning it makes the oracle's `timeout = 0` the same call in any
+  # session (M085 review F7).
+  withr::local_options(tidymedia.timeout = 0)
   oracle_out <- withr::local_tempfile(fileext = ".mp3")
   q <- ffm_codec(ffm_map(ffm_files(infile, oracle_out), "0:a"), audio = "copy")
   quote_type <- if (.Platform$OS.type == "windows") "cmd" else "sh"
@@ -43,7 +47,12 @@ test_that("the loudnorm analysis pass raises the same class and field", {
   cnd <- tryCatch(run_loudnorm_analysis(bad),
                   tidymedia_ffmpeg_exit = function(e) e)
 
-  expect_s3_class(cnd, "tidymedia_ffmpeg_exit")
+  # Exactly as at the ffm_run() site: one flat class, no parent or sibling
+  # (M085-D2), enforced at both sites rather than one (M085 review F5).
+  expect_identical(
+    class(cnd),
+    c("tidymedia_ffmpeg_exit", "rlang_error", "error", "condition")
+  )
   expect_true(is.integer(cnd$tm_status))
   expect_length(cnd$tm_status, 1L)
   expect_false(identical(cnd$tm_status, 0L))
@@ -82,6 +91,13 @@ test_that("ffmpeg_exit_status() reads the class and the field, nothing else", {
       "tidymedia_multitrack_separation",
       message = "Can't write out.mp3: FFmpeg exited with status 3."
     )),
+    NA_integer_
+  )
+  # A foreign condition that DOES carry a `tm_status` field: the only case that
+  # falsifies the class guard, since every case above also lacks the field and
+  # so would pass on the is.null() guard alone (M085 review F2).
+  expect_identical(
+    ffmpeg_exit_status(rlang::error_cnd("tidymedia_timeout", tm_status = 3L)),
     NA_integer_
   )
   # An unclassed condition whose message carries the phrase. The old parse

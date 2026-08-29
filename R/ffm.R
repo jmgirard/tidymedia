@@ -1547,9 +1547,10 @@ n_files <- function(x) {
 #' }
 #'
 #' The \code{tm_status} field is a length-one integer holding the exit status
-#' exactly as \code{system2()} reported it — including the values R uses for a
-#' signal-terminated FFmpeg, where the number encodes the signal rather than
-#' anything FFmpeg chose to return. The \code{loudnorm} analysis pass behind
+#' exactly as \code{system2()} reported it — including, for a
+#' signal-terminated FFmpeg, the shell's 128-plus-signal number passed through
+#' unchanged, which encodes the signal rather than anything FFmpeg chose to
+#' return. The \code{loudnorm} analysis pass behind
 #' \code{normalize_audio(two_pass = TRUE)} raises the same class and carries the
 #' same field, so one handler covers both.
 #' @seealso [ffm_compile()] to get the command without running it, [ffm_batch()]

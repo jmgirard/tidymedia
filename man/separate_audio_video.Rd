@@ -68,8 +68,8 @@ A named character vector of the two compiled commands
 (\code{audio}, \code{video}); invisible when \code{run = TRUE}. Under
 \code{run = TRUE} the audio command runs first and the video command runs
 second, whether or not the audio command succeeded. A failed audio command
-still aborts the call, and \code{videofile} is on disk afterwards unless
-the video command failed too; see \emph{When the audio output fails}.
+still aborts the call, and the video command has written \code{videofile}
+by then unless it failed too; see \emph{When the audio output fails}.
 }
 \description{
 By default each stream is copied, not re-encoded (\code{audio_codec =
@@ -86,13 +86,17 @@ GPU; the audio output is never affected.
 
 The two commands run in order — audio first, video second — and the video
 command runs even when the audio one has already failed, so a failed audio
-half does not cost you the video. On that path \code{audiofile} is absent,
-because the incomplete file the failed run wrote is removed;
-\code{videofile} is on disk; the call still aborts with the audio failure;
-and that error carries one added line naming the video file that was
-written. When the video command fails as well, both outputs are absent, the
-added line is not there, and the audio failure is still the error you get —
-FFmpeg's own output for the failed video command is printed above it.
+half does not cost you the video. On that path the call still aborts with the
+audio failure, and that error carries one added line naming the video file
+that was written. When the video command fails as well, the added line is not
+there, the audio failure is still the error you get, and FFmpeg's own output
+for the failed video command is printed above it.
+
+What a failed command leaves at its own output path is the same on either
+path, and its own error says which: a partial file that run wrote is removed,
+while a file that was already at that path and that FFmpeg never wrote to is
+left exactly as it was. So neither failure path promises the path is empty
+afterwards — only that nothing half-written is left there.
 
 Because the default keeps every audio track, writing a multi-track input to a
 container that holds only one (\code{.aac}, \code{.mp3}, \code{.wav}) makes

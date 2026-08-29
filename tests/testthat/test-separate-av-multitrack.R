@@ -622,16 +622,23 @@ test_that("the abort names the video file it wrote", {
   # survived. Asserted on the rendered message, since that is what a caller
   # reads; basename() alone, because the temp path is not stable.
   skip_if_no_ffprobe()
-  multi <- make_multitrack_video()
-  single <- make_test_video()
-  for (infile in c(multi, single)) {
+  # Named, so a failure says WHICH branch failed: the two go through different
+  # halves of run_separation_audio() and only the label separates them here.
+  cases <- list("enriched multi-track" = make_multitrack_video(),
+                "n <= 1 fall-open" = make_test_video())
+  for (branch in names(cases)) {
+    infile <- cases[[branch]]
     audio <- withr::local_tempfile(fileext = ".mp3")
     video <- sep_fresh_video()
     cnd <- tryCatch(separate_audio_video(infile, audio, video),
                     error = function(e) e)
     msg <- cli::ansi_strip(conditionMessage(cnd))
-    expect_match(msg, "The video output was written to", fixed = TRUE)
-    expect_match(msg, basename(video), fixed = TRUE)
+    expect_match(msg, "The video output was written to", fixed = TRUE,
+                 info = branch)
+    expect_match(msg, basename(video), fixed = TRUE, info = branch)
+    # The audio half's own output: this failure is a stream copy, so FFmpeg
+    # opened the file before giving up and Layer 1 removed what it wrote (D046).
+    expect_false(file.exists(audio), info = branch)
   }
 })
 
@@ -672,6 +679,57 @@ test_that("when both commands fail the audio failure is what aborts", {
   )
   expect_identical(cnd$tm_status, sep_status_in_message(cnd))
   expect_false(file.exists(video))         # AC3: nothing left behind
+  expect_no_match(cli::ansi_strip(conditionMessage(cnd)),
+                  "The video output was written to", fixed = TRUE)
+})
+
+
+# What a failed command leaves at ITS OWN output path is a per-run fact, not a
+# per-path one: D046 removes what a run WROTE, and a file the run never wrote to
+# is left as it was. The docs say so as of M088's first defect return, and these
+# two tests are what hold that wording honest -- every other test in this block
+# uses a fresh path, where the distinction cannot show.
+
+test_that("a pre-existing audiofile the failed command never wrote is kept", {
+  # An unknown audio encoder fails before FFmpeg opens the output, so the file
+  # already sitting at `audiofile` survives byte-for-byte -- and the error says
+  # so rather than claiming the path is empty.
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  audio <- withr::local_tempfile(fileext = ".mp3")
+  video <- sep_fresh_video()
+  writeLines("not audio", audio)
+  before <- unname(tools::md5sum(audio))
+  cnd <- tryCatch(
+    separate_audio_video(infile, audio, video, audio_codec = "nosuchcodec"),
+    error = function(e) e
+  )
+  expect_s3_class(cnd, "tidymedia_ffmpeg_exit")
+  expect_true(file.exists(audio))
+  expect_identical(unname(tools::md5sum(audio)), before)
+  expect_match(cli::ansi_strip(conditionMessage(cnd)),
+               "was left as it was", fixed = TRUE)
+  expect_true(file.exists(video))          # the video half still ran
+})
+
+test_that("a pre-existing videofile survives the both-fail path", {
+  # The both-fail path with an unknown VIDEO encoder: that run never writes, so
+  # a file already at `videofile` is still there afterwards. AC3's own promise
+  # is about what the run created or changed, and is unaffected.
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  audio <- withr::local_tempfile(fileext = ".mp3")
+  video <- withr::local_tempfile(fileext = ".mp4")
+  writeLines("not video", video)
+  before <- unname(tools::md5sum(video))
+  cnd <- tryCatch(
+    separate_audio_video(infile, audio, video, video_codec = "nosuchcodec"),
+    error = function(e) e
+  )
+  expect_s3_class(cnd, "tidymedia_multitrack_separation")
+  expect_true(file.exists(video))
+  expect_identical(unname(tools::md5sum(video)), before)
+  # No bullet: the video command failed, whatever was already at that path.
   expect_no_match(cli::ansi_strip(conditionMessage(cnd)),
                   "The video output was written to", fixed = TRUE)
 })

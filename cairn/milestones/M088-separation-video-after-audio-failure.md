@@ -1,6 +1,6 @@
 # M088: A failed audio half no longer costs the caller the video
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -48,7 +48,7 @@ Layer 1's failed-output removal → unchanged, relied on here (D046).
 - [x] AC4: On the AC1 path the abort's rendered message contains the string
       `The video output was written to` followed by `videofile`'s basename; on
       the AC3 path that string does not appear in the rendered message.
-- [ ] AC5: `?separate_audio_video`'s "When the audio output fails" section, its
+- [x] AC5: `?separate_audio_video`'s "When the audio output fails" section, its
       `@return` text, and the `NEWS.md` entry each state the run order and what
       each of the two failure paths leaves on disk.
 - [x] AC6: The batch run path — `separate_audio_video_batch()`
@@ -66,8 +66,8 @@ Layer 1's failed-output removal → unchanged, relied on here (D046).
 - AC1 → T1, T2
 - AC2 → T1, T4
 - AC3 → T1, T3
-- AC4 → T1, T4
-- AC5 → T5
+- AC4 → T1, T4, T9
+- AC5 → T5, T9, T10
 - AC6 → T6
 - AC7 → T6
 
@@ -99,6 +99,18 @@ Layer 1's failed-output removal → unchanged, relied on here (D046).
       `tests/testthat/test-timeout-silence.R` records it there and adds it to
       that file's abort half, which requires its forced timeout to reach the
       caller still carrying `tidymedia_timeout`.
+- [x] T9 (return fix, F7): the pre-existing-output guards behind AC5's
+      corrected prose — an `audiofile` an unknown audio codec never wrote to,
+      and a `videofile` the both-fail path never wrote to — plus the missing
+      `audiofile` assertion and per-branch labels in AC4's loop.
+- [x] T10 (return fix, F2): the roxygen "When the audio output fails" section,
+      `@return` and the `NEWS.md` entry corrected to what D046 actually
+      promises, derived from executed calls that include a pre-existing output
+      file; `devtools::document()`.
+- [x] T11 (return fix, F1): the `run = TRUE` comment's timeout claim corrected
+      in place against a measured run; D066 appended superseding D065's
+      "Why any audio failure falls through" section.
+- [x] T12 (return fix, F5): the `.gitignore` line named in the work log.
 
 ## Work log
 
@@ -116,6 +128,13 @@ Layer 1's failed-output removal → unchanged, relied on here (D046).
 - 2026-08-29: T6 `devtools::test()` clean (0 failures) and `devtools::check()` at 0 errors / 0 warnings / 0 notes; the branch diff touches `R/ffmpeg.R` in three hunks, none of them reaching `warn_failed_separation_batch()` or `separate_audio_video_batch()`. Status to review.
 - 2026-08-29: T1 tests written first and confirmed red against unchanged `R/` — six new tests in `test-separate-av-multitrack.R`; `master`'s class vectors and `tm_status` for AC2's two branches recorded in the file's own comment (ffmpeg 9.0.1, macOS arm64, status 234).
 - 2026-08-29: review returned M088 to in-progress — AC5 fails. The roxygen "When the audio output fails" section and the `NEWS.md` entry state that a failed run leaves its output absent, which is false when the output path already held a file: reproduced on this branch, a pre-existing `videofile` survives the both-fail path byte-for-byte while the prose says both outputs are absent, and a pre-existing `audiofile` survives an `audio_codec = "nosuchcodec"` failure while the prose says it is absent (D046 removes what a run wrote, not what it found). AC1-AC4, AC6, AC7 pass with fresh evidence; consistency gate clean; the three review lenses and their dispositions are in the Review section. First defect return.
+
+- 2026-08-29: T12 — the `.gitignore` line `tests/testthat/testthat-problems.rds`, added in the T6 commit and untraced until review F5, is recorded here: it is a local testthat artifact and its sibling `tests/testthat/_problems/` was already ignored. Kept, not reverted; the AC6-style "the diff touches only X" claims now account for it.
+- 2026-08-29: T11 — the fall-through comment's timeout claim was measured and is false: a 7,200 s input under `options(tidymedia.timeout = 2)` with `audio_codec = "libopus"` times out on the audio half, then the video half runs on a fresh 2 s budget, succeeds, and the caller gets `tidymedia_timeout` carrying the video-written line (call took 2.5 s). Implement gate chose keeping the behavior and fixing the record over special-casing `tidymedia_timeout`; `?with_timeout` already documents the limit as per spawned program, not per call. Comment corrected in place, D066 appended superseding D065's last section.
+- 2026-08-29: T10 — AC5's prose corrected in all three places. The old wording said a failed path leaves its output "absent"; D046 removes what a run *wrote*, so a file the run never wrote to is left as it was. Derived from executed calls: `audio_codec = "nosuchcodec"` over a pre-existing `audiofile` leaves it byte-for-byte with the error saying "was left as it was: FFmpeg never wrote to it", and the both-fail path leaves a pre-existing `videofile` likewise. (The stream-copy audio failure, which the tests use, *does* remove a pre-existing `audiofile` — FFmpeg opened it — so the honest rule is per run, not per path, and that is what the docs now state.)
+- 2026-08-29: T9 — two tests added for the pre-existing-output cases the milestone's fresh-path tests could not reach; AC4's loop now names its two branches and asserts the audio half's own output is gone on the stream-copy failure.
+
+- 2026-08-29: return fix verified — `devtools::test()` FAIL 0 | WARN 12 | SKIP 5 | PASS 8434 (was 8422 at the first review), `devtools::check()` 0 errors / 0 warnings / 0 notes (3m 30s). AC5 re-checked and now passing; status back to review.
 
 ## Decisions
 

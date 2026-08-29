@@ -3024,3 +3024,34 @@ nothing is written and no line is added.
   than neither; or a report of a caller matching on the audio error's rendered
   text who is broken by the added line; or a report of a caller who could not
   tell, from the condition alone, that the video command had also failed.
+
+## D066 — A held audio failure of any kind still lets the video command run, a reached limit included (2026-08-29, from M088's first defect return; supersedes D065's "Why any audio failure falls through" section, keeps every other part of D065 in force)
+
+D065 chose to hold *any* audio-run failure, not only a non-zero FFmpeg exit,
+and justified it partly on a claim that is false: that the causes which are not
+an exit "stop the video command too, so nothing is written and no line is
+added". A reached limit does not stop it. Measured on this branch (ffmpeg
+9.0.1, macOS arm64): a 7,200-second input under
+`options(tidymedia.timeout = 2)` with `audio_codec = "libopus"`, whose audio
+encode needs about 23 seconds. The audio half times out at 2 s; the video half
+then runs on a **fresh** 2-second budget, its stream copy finishes well inside
+it, and the caller gets a `tidymedia_timeout` condition carrying the
+video-written line. The call took 2.5 s.
+
+**The rule is kept, on the reason that survives the measurement.** One rule —
+every audio failure is held and the video command runs — is one rule to state
+and one to document, and the behavior it produces on a timeout is the behavior
+the milestone wants: a video the caller would otherwise have had to re-run for.
+Splitting the rule by condition class would add a second path, its own test, and
+a caveat to the docs, to withhold an output the caller asked for.
+
+**The cost, stated rather than denied.** A caller who set a wall-clock limit can
+pay up to a second full limit past it, because the video command's budget is its
+own. That is the limit's documented scope, not a new exception:
+`?with_timeout` states it applies "per spawned program, not per call", and a
+limit around a 100-row batch already waits `seconds` on every row.
+
+- **Falsified by** a report of a caller for whom the second spawn past the limit
+  is itself the reported problem; or by `options(tidymedia.timeout = )` being
+  redefined as a per-call budget, which would make this verb one of the sites
+  that has to change.

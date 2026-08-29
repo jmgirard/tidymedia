@@ -561,8 +561,10 @@
   separation again. The video command now runs either way. The audio failure is
   still what aborts the call, and its error gains one line — `The video output
   was written to 'video.mp4'.` — so it is clear the video half survived. If the
-  video command fails as well, both outputs are absent, that line is not shown,
-  and the audio failure is still the error you get.
+  video command fails as well, that line is not shown and the audio failure is
+  still the error you get. What each failed command leaves at its own output
+  path is unchanged and is stated in its own error: a partial file that run
+  wrote is removed, a file it never wrote to is left as it was.
   `separate_audio_video_batch()` is unchanged: it already ran both rows.
 
 * A missing value in a size, position or rate argument is now refused instead

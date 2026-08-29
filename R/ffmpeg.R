@@ -887,8 +887,8 @@ ffmpeg_exit_status <- function(cnd) {
 #'   (\code{audio}, \code{video}); invisible when \code{run = TRUE}. Under
 #'   \code{run = TRUE} the audio command runs first and the video command runs
 #'   second, whether or not the audio command succeeded. A failed audio command
-#'   still aborts the call, and \code{videofile} is on disk afterwards unless
-#'   the video command failed too; see \emph{When the audio output fails}.
+#'   still aborts the call, and the video command has written \code{videofile}
+#'   by then unless it failed too; see \emph{When the audio output fails}.
 #' @seealso [ffm_map()] and [ffm_codec()], the builders it wraps;
 #'   [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
 #'   [extract_audio()] to pull out just the audio;
@@ -896,13 +896,17 @@ ffmpeg_exit_status <- function(cnd) {
 #' @section When the audio output fails:
 #' The two commands run in order — audio first, video second — and the video
 #' command runs even when the audio one has already failed, so a failed audio
-#' half does not cost you the video. On that path \code{audiofile} is absent,
-#' because the incomplete file the failed run wrote is removed;
-#' \code{videofile} is on disk; the call still aborts with the audio failure;
-#' and that error carries one added line naming the video file that was
-#' written. When the video command fails as well, both outputs are absent, the
-#' added line is not there, and the audio failure is still the error you get —
-#' FFmpeg's own output for the failed video command is printed above it.
+#' half does not cost you the video. On that path the call still aborts with the
+#' audio failure, and that error carries one added line naming the video file
+#' that was written. When the video command fails as well, the added line is not
+#' there, the audio failure is still the error you get, and FFmpeg's own output
+#' for the failed video command is printed above it.
+#'
+#' What a failed command leaves at its own output path is the same on either
+#' path, and its own error says which: a partial file that run wrote is removed,
+#' while a file that was already at that path and that FFmpeg never wrote to is
+#' left exactly as it was. So neither failure path promises the path is empty
+#' afterwards — only that nothing half-written is left there.
 #'
 #' Because the default keeps every audio track, writing a multi-track input to a
 #' container that holds only one (\code{.aac}, \code{.mp3}, \code{.wav}) makes
@@ -991,10 +995,14 @@ separate_audio_video <- function(infile, audiofile, videofile,
     # The audio command still runs FIRST and its failure is still what aborts
     # the verb -- but the video command now runs either way, so a failed audio
     # half no longer costs the caller the video (M088). Any failure of the audio
-    # run is held, not just a non-zero exit: one rule to state, and the causes
-    # that are not an exit (no FFmpeg on the machine, a reached limit) are ones
-    # the video command fails on too, so nothing is written and no bullet is
-    # added. Layer 1 removes whatever a failed run wrote, on either half (D046).
+    # run is held, not just a non-zero exit: one rule to state and one to
+    # document. A reached limit is held like the rest, and the video command then
+    # runs on a FRESH budget and can well succeed, so a timed-out audio half can
+    # reach the caller as `tidymedia_timeout` carrying the video-written bullet
+    # -- measured, and the cost is a second spawn past the caller's limit, which
+    # is the limit's documented per-spawned-program scope (D066 supersedes the
+    # claim D065 made here). Layer 1 removes what a failed run WROTE, on either
+    # half, and leaves a file it never wrote to as it found it (D046).
     held <- tryCatch({
       run_separation_audio(audio, infile, audiofile, audio_stream)
       NULL

@@ -23,8 +23,8 @@ of this repo's own records, not an external source. The five rows are the ones
 `awk '/^## Candidates/,0' cairn/ROADMAP.md | grep '^- ' | grep -i 'instrument'`
 enumerates at that commit. Pagination: —.
 Extraction: copied verbatim from the frozen blob, which git still holds, so the
-text here is checkable against its origin at any time and there is no moving
-source to re-verify against — observed 2026-08-28.
+text here is checkable against its origin at any time and there is nothing to
+re-verify against a moving source — observed 2026-08-28.
 
 ## What is here
 

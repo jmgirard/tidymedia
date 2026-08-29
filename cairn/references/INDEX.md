@@ -9,3 +9,4 @@ _Source materials live in `references/sources/` (gitignored); summaries are `ref
 
 - `naming-docs-audit-M22.md` — API naming & documentation audit — produced by M22.
 - `verb-coverage-survey-M25.md` — Layer 2 task-verb coverage & scoped gap analysis — produced by M25.
+- `instrument-findings.md` — deferred review findings on the repo's own test instruments — entombed by M083.

@@ -70,7 +70,13 @@ a target is undefined, so two-pass aborts with a clear error (the
 single-pass default leaves silence untouched). The batch form differs here:
 \code{\link{normalize_audio_batch}} does not abort on a silent row — it
 sets that row aside, marks it in a \code{silent} column, and normalizes the
-rest.}
+rest. When the analysis pass yields no usable measurement at all, the abort
+is classed \code{tidymedia_loudnorm_no_measurement} — the same class the
+batch form raises, so one handler covers both. Where FFmpeg exited non-zero
+it also carries \code{tidymedia_ffmpeg_exit} and the exit number on
+\code{tm_status}; where FFmpeg exited zero but printed no parseable
+measurement block it carries the shared class alone. The silence abort
+above is neither: a silent input \emph{was} measured.}
 
 \item{audio_stream}{The 0-based index of the audio track to normalize, counted \emph{among the input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) normalizes the \strong{first} audio track. The first-track family reads \code{NULL} this way -- \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus their \code{_batch} siblings. The every-track family keeps them all instead: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus theirs. This verb reads \code{NULL} the first-track way because the two-pass analysis produces one measurement per audio track while the correction takes a single set, so normalizing several tracks at once would apply one track's measurements to all of them. Under \code{two_pass = TRUE} the analysis pass measures this same track. Only the named track reaches the output, and no video does -- whatever the container, so an output name that keeps a video extension yields a video file carrying audio alone. An input with no audio at all is an FFmpeg error. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 

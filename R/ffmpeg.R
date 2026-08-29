@@ -2202,7 +2202,13 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #'   single-pass default leaves silence untouched). The batch form differs here:
 #'   \code{\link{normalize_audio_batch}} does not abort on a silent row — it
 #'   sets that row aside, marks it in a \code{silent} column, and normalizes the
-#'   rest.
+#'   rest. When the analysis pass yields no usable measurement at all, the abort
+#'   is classed \code{tidymedia_loudnorm_no_measurement} — the same class the
+#'   batch form raises, so one handler covers both. Where FFmpeg exited non-zero
+#'   it also carries \code{tidymedia_ffmpeg_exit} and the exit number on
+#'   \code{tm_status}; where FFmpeg exited zero but printed no parseable
+#'   measurement block it carries the shared class alone. The silence abort
+#'   above is neither: a silent input \emph{was} measured.
 #' @param audio_stream `r audio_stream_param("normalize", "normalizes", "first", extra = audio_stream_extras$normalize_one_track)`
 #' @param run A logical: run the (correction) command through FFmpeg
 #'   (\code{TRUE}, default) or return the compiled command without running it

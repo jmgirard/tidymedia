@@ -126,10 +126,18 @@ limit killed, and carries a different class. The aborts from \code{\link[=ffm_ru
 from the \code{loudnorm} analysis pass behind \code{normalize_audio(two_pass = TRUE)},
 and from the multi-track diagnostic \code{\link[=separate_audio_video]{separate_audio_video()}} adds to a
 failed audio output are all classed \code{tidymedia_ffmpeg_exit} and carry the
-exit status in their \code{tm_status} field. The batch two-pass analysis phase
-reports every offending row at once and fires for rows that exited zero as
-well, so it raises \code{tidymedia_loudnorm_no_measurement} instead, carrying \code{tm_rows}
-and \code{tm_row_status}.
+exit status in their \code{tm_status} field. The last two name what failed as well
+as how, each carrying a second class ahead of that one:
+\code{tidymedia_loudnorm_no_measurement} and \code{tidymedia_multitrack_separation}.
+
+Those two names are the ones that hold across a verb's scalar and \verb{_batch}
+forms, where \code{tidymedia_ffmpeg_exit} cannot. The batch two-pass analysis
+phase reports every offending row at once and fires for rows that exited zero
+as well, so it raises \code{tidymedia_loudnorm_no_measurement} alone, carrying
+\code{tm_rows} and \code{tm_row_status} and no exit status; so does the scalar abort
+for an analysis pass that exited zero and printed nothing parseable. The
+batch separation warning is \code{tidymedia_multitrack_separation} alone, with no
+exit status either.
 }
 
 \section{Session options}{

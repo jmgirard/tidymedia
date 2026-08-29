@@ -503,3 +503,108 @@ test_that("the two batch topics state why their diagnostic has no exit status", 
                fixed = TRUE)
   expect_match(nb, "aborts on a silent", fixed = TRUE)
 })
+
+test_that("every topic names the classes its site actually raises", {
+  # AC4. The pairing is checked from the OBSERVED side: each site is executed,
+  # its `tidymedia_*` classes are read off the condition object, and every one
+  # of them must appear in each topic the milestone pairs with that site. A
+  # topic that names a class by hand and drifts from the code fails here.
+  skip_if_no_ffmpeg()
+  skip_if_no_ffprobe()
+  rd <- rd_sources()
+  skip_if(is.null(rd), "no Rd source available")
+  pick <- function(topic) {
+    hit <- rd[grepl(topic, names(rd), fixed = TRUE)]
+    skip_if(length(hit) == 0, paste("no Rd for", topic))
+    paste(hit, collapse = "\n")
+  }
+  tm_classes <- function(cnd) grep("^tidymedia_", class(cnd), value = TRUE)
+
+  dir <- withr::local_tempdir()
+  bad <- make_unreadable_media()
+  multi <- make_multitrack_video()
+
+  observed <- list(
+    # R/loudnorm_two_pass.R:151 -- scalar analysis, non-zero exit.
+    scalar_exit = tryCatch(
+      normalize_audio(bad, file.path(dir, "a.m4a"), two_pass = TRUE,
+                      run = FALSE),
+      condition = function(e) e),
+    # R/loudnorm_two_pass.R:253 -- batch analysis.
+    batch_loudnorm = tryCatch(
+      normalize_audio_batch(
+        tibble::tibble(input = bad, output = file.path(dir, "c.m4a")),
+        two_pass = TRUE, run = FALSE),
+      condition = function(e) e),
+    # R/ffmpeg.R:681 -- scalar multi-track separation error.
+    scalar_sep = tryCatch(
+      separate_audio_video(multi, file.path(dir, "s.mp3"),
+                           file.path(dir, "s.mkv")),
+      condition = function(e) e),
+    # R/ffmpeg.R:742 -- batch multi-track separation warning.
+    batch_sep = tryCatch(
+      separate_audio_video_batch(tibble::tibble(
+        input = multi,
+        audiofile = file.path(dir, "b.mp3"),
+        videofile = file.path(dir, "b.mkv"))),
+      warning = function(w) w)
+  )
+  # R/loudnorm_two_pass.R:112 -- scalar analysis, zero exit, unparseable. Its
+  # own block, because the mock must not be live for the four real spawns.
+  observed$scalar_unparseable <- local({
+    local_mocked_bindings(
+      run_program = function(...) "ffmpeg printed nothing parseable",
+      .package = "tidymedia")
+    tryCatch(
+      normalize_audio(make_input("wav"), file.path(dir, "d.m4a"),
+                      two_pass = TRUE, run = FALSE),
+      condition = function(e) e)
+  })
+
+  pairing <- list(
+    scalar_exit        = c("normalize_audio.Rd", "ffm_run.Rd",
+                           "tidymedia-package.Rd"),
+    scalar_unparseable = c("normalize_audio.Rd", "ffm_run.Rd",
+                           "tidymedia-package.Rd"),
+    batch_loudnorm     = c("normalize_audio_batch.Rd", "tidymedia-package.Rd"),
+    scalar_sep         = c("separate_audio_video.Rd", "ffm_run.Rd",
+                           "tidymedia-package.Rd"),
+    batch_sep          = c("separate_audio_video_batch.Rd")
+  )
+
+  for (site in names(pairing)) {
+    classes <- tm_classes(observed[[site]])
+    # The site really signalled, and really carries package classes: an empty
+    # vector here would let every assertion below pass vacuously.
+    expect_gt(length(classes), 0L)
+    for (topic in pairing[[site]]) {
+      txt <- pick(topic)
+      for (cls in classes) {
+        expect_match(txt, cls, fixed = TRUE,
+                     info = paste(site, "->", topic, "::", cls))
+      }
+    }
+  }
+
+  # AC1's sweep: the retired name survives nowhere outside the tracking files.
+  # Assembled rather than written out, so this file does not match itself.
+  retired <- paste0("tidymedia_loudnorm_", "analysis")
+  in_git <- nzchar(Sys.which("git")) && identical(
+    suppressWarnings(tryCatch(
+      system2("git", c("rev-parse", "--is-inside-work-tree"),
+              stdout = TRUE, stderr = FALSE),
+      error = function(e) NA_character_)),
+    "true")
+  skip_if(!in_git, "not in a git checkout")
+  # The sweep must be shown to run over a non-empty domain: the CURRENT name is
+  # in the tracked files this grep reaches, so a grep that finds nothing at all
+  # is a broken instrument rather than a clean repo.
+  control <- suppressWarnings(system2(
+    "git", c("grep", "-l", "tidymedia_loudnorm_no_measurement", "--", ":!cairn/"),
+    stdout = TRUE, stderr = FALSE))
+  expect_gt(length(control), 0L)
+  hits <- suppressWarnings(system2(
+    "git", c("grep", "-l", retired, "--", ":!cairn/"),
+    stdout = TRUE, stderr = FALSE))
+  expect_identical(as.character(hits), character(0))
+})

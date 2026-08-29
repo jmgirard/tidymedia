@@ -108,7 +108,7 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
       `?normalize_audio_batch` and `?separate_audio_video_batch`, the latter
       naming what the per-row result does record. While in the two normalize
       topics, add one sentence on the silence asymmetry (RR05 B2).
-- [ ] **T4.** Re-derive the class enumerations in the six topics AC4 pairs by
+- [x] **T4.** Re-derive the class enumerations in the six topics AC4 pairs by
       *running* each of the four sites and reading the observed class vector —
       never by reading `class =` off the source (M041/M080: such prose is
       derived, never composed). Record the four observed vectors in the work
@@ -148,6 +148,9 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
 - 2026-08-29: T6 — full class-vector identity assertions added at all four sites plus the silence boundary; M085's flat-vector assertion at `test-ffmpeg-exit-condition.R:52` corrected, since M087 deliberately makes that site carry two classes. `devtools::test()`: 0 failures, 8353 passing, 5 skips (all nvenc-absent).
 
 - 2026-08-29: T3 — `?normalize_audio_batch` now states the abort carries no `tm_status` and is not `tidymedia_ffmpeg_exit` because a batch mixes causes (rows that exited zero included); `?separate_audio_video_batch` now states the warning carries no exit status because `ffm_batch()`'s `run_one()` returns `list(success =, timed_out =)` and discards the condition (verified at `R/ffm_batch.R:141-147`). The silence asymmetry is stated from both sides in `?normalize_audio` and `?normalize_audio_batch`. Four Rd-text assertions added, each confirmed absent from the pre-T3 `man/` files.
+
+- 2026-08-29: T4 — the five class vectors, read off EXECUTED calls (garbage `.wav` probe, FFmpeg 9.0.1, macOS): `:151` `c("tidymedia_loudnorm_no_measurement", "tidymedia_ffmpeg_exit", "rlang_error", "error", "condition")` with `tm_status = 183L`; `:112` `c("tidymedia_loudnorm_no_measurement", "rlang_error", "error", "condition")` with no fields; `:253` the same four with `tm_rows = 1L`, `tm_row_status = 183L`; `R/ffmpeg.R:681` `c("tidymedia_multitrack_separation", "tidymedia_ffmpeg_exit", "rlang_error", "error", "condition")` with `tm_status = 234L`; `R/ffmpeg.R:742` `c("tidymedia_multitrack_separation", "rlang_warning", "warning", "condition")` with no fields.
+- 2026-08-29: T4 — `?ffm_run` and `?tidymedia` corrected (the "two other paths raise the same class" sentence now says both also carry a narrower class of their own, and both topics now state which paths raise the shared loudnorm class WITHOUT the exit class); `?normalize_audio` gained the class names for its two sites; `?separate_audio_video` and `?separate_audio_video_batch` already matched. A pairing test executes all five sites and requires every observed `tidymedia_*` class to appear in each paired topic; planting `tidymedia_PLANTED_DRIFT` into `man/ffm_run.Rd` turned it red at the two expected pairings.
 
 ## Decisions
 

@@ -102,15 +102,28 @@ normalize_audio_batch(
   the binary and readable inputs), even when `run = FALSE`. If any row's
   analysis fails or yields no parseable measurement, the call aborts —
   naming the offending row(s) — before any correction command is built.
-  That abort is classed `tidymedia_loudnorm_analysis` and carries the
-  same row numbers on `tm_rows`, alongside `tm_row_status`: each row's
-  FFmpeg exit status, or `NA` where the row exited zero but printed
-  nothing parseable. **Silent** rows are the exception: a silent input
-  (analysis loudness `-inf`) cannot be normalized to a target, but one
-  silent row does not abort the batch — the non-silent rows are
-  normalized, the silent rows are marked in a logical `silent` column
-  (with `success = FALSE` and no output written), and a warning names
-  them. The single-pass default touches no binary under `run = FALSE`.
+  That abort is classed `tidymedia_loudnorm_no_measurement` — the same
+  class the scalar
+  [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
+  raises for this event — and carries the same row numbers on `tm_rows`,
+  alongside `tm_row_status`: each row's FFmpeg exit status, or `NA`
+  where the row exited zero but printed nothing parseable. It carries no
+  single exit status on `tm_status`, and is not classed
+  `tidymedia_ffmpeg_exit`, because it also fires for rows that exited
+  zero: a batch can mix causes, so there is no one number to report. The
+  scalar form carries both only where FFmpeg exited non-zero; where it
+  exited zero and printed nothing parseable the scalar abort carries the
+  shared class alone, with no `tm_status` either. **Silent** rows are
+  the exception: a silent input (analysis loudness `-inf`) cannot be
+  normalized to a target, but one silent row does not abort the batch —
+  the non-silent rows are normalized, the silent rows are marked in a
+  logical `silent` column (with `success = FALSE` and no output
+  written), and a warning names them. This is where the batch form and
+  the scalar form differ:
+  [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
+  aborts on a silent input, because one silent input is the whole call,
+  while here the other rows still have work to do. The single-pass
+  default touches no binary under `run = FALSE`.
 
 - audio_stream:
 

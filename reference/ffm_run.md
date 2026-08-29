@@ -50,19 +50,29 @@ exactly as [`system2()`](https://rdrr.io/r/base/system2.html) reported
 it — including, for a signal-terminated FFmpeg, the shell's
 128-plus-signal number passed through unchanged, which encodes the
 signal rather than anything FFmpeg chose to return. Two other paths
-raise the same class and carry the same field, so one handler covers all
-three: the `loudnorm` analysis pass behind
-`normalize_audio(two_pass = TRUE)`, and the multi-track diagnostic
+raise this class and carry this field, so one handler covers all three:
+the `loudnorm` analysis pass behind `normalize_audio(two_pass = TRUE)`
+when FFmpeg exits non-zero, and the multi-track diagnostic
 [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
-adds to a failed audio output.
+adds to a failed audio output. Each of those two names a second,
+narrower class ahead of this one — `tidymedia_loudnorm_no_measurement`
+and `tidymedia_multitrack_separation` respectively — which is what to
+catch when it is that failure in particular you want.
 
-The batch two-pass form is the exception.
+Two paths in the same family do **not** raise this class, each for its
+own reason. `normalize_audio(two_pass = TRUE)` also aborts when the
+analysis pass exits zero and prints no parseable measurement block; no
+non-zero exit happened there, so that abort is
+`tidymedia_loudnorm_no_measurement` alone, with no `tm_status`. And
 `normalize_audio_batch(two_pass = TRUE)` reports every offending row of
-its analysis phase in one error, and fires for rows that exited zero and
-printed nothing usable as well as for rows FFmpeg refused, so it raises
-`tidymedia_loudnorm_analysis` rather than this class. That condition
-carries `tm_rows`, the 1-indexed offending rows, and `tm_row_status`,
-their exit statuses aligned to it, with `NA` where the row exited zero.
+its analysis phase in one error, firing for rows that exited zero as
+well as for rows FFmpeg refused — so an exit is one of its causes rather
+than the fact it reports, and no single status could stand for the mix.
+It too raises `tidymedia_loudnorm_no_measurement` alone — carrying
+`tm_rows`, the 1-indexed offending rows, and `tm_row_status`, their exit
+statuses aligned to it, with `NA` where the row exited zero. That shared
+class is therefore the one handler that covers the analysis pass in both
+forms.
 
 ## See also
 

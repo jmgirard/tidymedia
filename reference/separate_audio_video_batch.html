@@ -192,6 +192,13 @@ emitted when FFprobe is available and the input can be probed, and skipped
 silently otherwise; it never runs under <code>run = FALSE</code> and never changes
 any compiled command. Suppress it with <code>suppressWarnings(classes =
 "tidymedia_multitrack_separation")</code>.</p>
+<p>The warning names the same event as <code><a href="separate_audio_video.html">separate_audio_video</a></code>'s
+error and answers to the same class, but it carries no exit status: no
+<code>tm_status</code> field, and no <code>tidymedia_ffmpeg_exit</code> class. The batch
+runner records, per row, <em>whether</em> the row succeeded — the
+<code>success</code> column — not <em>how</em> FFmpeg exited, so by the time this
+warning is assembled the exit number is gone. Catch a specific row's exit
+status with the scalar verb instead.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

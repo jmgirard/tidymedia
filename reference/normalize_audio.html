@@ -151,7 +151,16 @@ correction command, left unexecuted. The single-pass default touches no
 binary under <code>run = FALSE</code>. If the input is <strong>silent</strong>, the
 analysis pass measures its loudness as <code>-inf</code>; normalizing silence to
 a target is undefined, so two-pass aborts with a clear error (the
-single-pass default leaves silence untouched).</p></dd>
+single-pass default leaves silence untouched). The batch form differs here:
+<code><a href="normalize_audio_batch.html">normalize_audio_batch</a></code> does not abort on a silent row — it
+sets that row aside, marks it in a <code>silent</code> column, and normalizes the
+rest. When the analysis pass yields no usable measurement at all, the abort
+is classed <code>tidymedia_loudnorm_no_measurement</code> — the same class the
+batch form raises, so one handler covers both. Where FFmpeg exited non-zero
+it also carries <code>tidymedia_ffmpeg_exit</code> and the exit number on
+<code>tm_status</code>; where FFmpeg exited zero but printed no parseable
+measurement block it carries the shared class alone. The silence abort
+above is neither: a silent input <em>was</em> measured.</p></dd>
 
 
 <dt id="arg-audio-stream">audio_stream<a class="anchor" aria-label="anchor" href="#arg-audio-stream"></a></dt>

@@ -57,6 +57,10 @@ back ends: FFprobe, through <code><a href="probe_all.html">probe_all()</a></code
 which return container and stream tibbles; and MediaInfo, through
 <code><a href="mediainfo_query.html">mediainfo_query()</a></code> and the <code>get_*()</code> helpers such as <code><a href="get_duration.html">get_duration()</a></code>, which
 return a single value.</p>
+<p>See <code><a href="../articles/tidymedia.html">vignette("tidymedia")</a></code> for the guided tour, <code><a href="../articles/batch.html">vignette("batch")</a></code> for
+running a verb over many files, <code><a href="../articles/metadata.html">vignette("metadata")</a></code> for the readers, and
+<code><a href="../articles/workflow.html">vignette("workflow")</a></code> for an end-to-end research preprocessing pipeline.
+The full function list is on the package's reference index.</p>
     </div>
     <div class="section level2">
     <h2 id="bounding-a-run-that-hangs">Bounding a run that hangs<a class="anchor" aria-label="anchor" href="#bounding-a-run-that-hangs"></a></h2>
@@ -148,14 +152,22 @@ matters too — the same blocked input that took 42.0 seconds against
 FFmpeg 6.1.1 took 2.0 seconds against 9.0.1, because the newer build answers
 the first signal.</p>
 <p>A run that FFmpeg itself refused is a different outcome from a run the
-limit killed, and carries a different class. The aborts from <code><a href="ffm_run.html">ffm_run()</a></code>,
-from the <code>loudnorm</code> analysis pass behind <code>normalize_audio(two_pass = TRUE)</code>,
-and from the multi-track diagnostic <code><a href="separate_audio_video.html">separate_audio_video()</a></code> adds to a
-failed audio output are all classed <code>tidymedia_ffmpeg_exit</code> and carry the
-exit status in their <code>tm_status</code> field. The batch two-pass analysis phase
-reports every offending row at once and fires for rows that exited zero as
-well, so it raises <code>tidymedia_loudnorm_analysis</code> instead, carrying <code>tm_rows</code>
-and <code>tm_row_status</code>.</p>
+limit killed, and carries a different class. The abort from <code><a href="ffm_run.html">ffm_run()</a></code>, the
+abort from the <code>loudnorm</code> analysis pass behind
+<code>normalize_audio(two_pass = TRUE)</code> when FFmpeg exits non-zero, and the
+multi-track diagnostic <code><a href="separate_audio_video.html">separate_audio_video()</a></code> adds to a failed audio
+output are classed <code>tidymedia_ffmpeg_exit</code> and carry the exit status in their
+<code>tm_status</code> field. The last two name what failed as well as how, each
+carrying a second class ahead of that one:
+<code>tidymedia_loudnorm_no_measurement</code> and <code>tidymedia_multitrack_separation</code>.</p>
+<p>Those two names are the ones that hold across a verb's scalar and <code>_batch</code>
+forms, where <code>tidymedia_ffmpeg_exit</code> cannot. The batch two-pass analysis
+phase reports every offending row at once and fires for rows that exited zero
+as well, so it raises <code>tidymedia_loudnorm_no_measurement</code> alone, carrying
+<code>tm_rows</code> and <code>tm_row_status</code> and no exit status. The scalar abort for an
+analysis pass that exited zero and printed nothing parseable raises that
+class alone as well, carrying no fields at all. The batch separation warning
+is <code>tidymedia_multitrack_separation</code> alone, with no exit status either.</p>
     </div>
     <div class="section level2">
     <h2 id="session-options">Session options<a class="anchor" aria-label="anchor" href="#session-options"></a></h2>
@@ -191,10 +203,6 @@ default), the package asks once per session and remembers the answer.</p>
 settings the calling session had and hand their own back afterwards, and all
 three can be set for one call with <code><a href="https://withr.r-lib.org/reference/with_options.html" class="external-link">withr::with_options()</a></code> or for the rest of
 a function with <code><a href="https://withr.r-lib.org/reference/with_options.html" class="external-link">withr::local_options()</a></code>.</p>
-<p>See <code><a href="../articles/tidymedia.html">vignette("tidymedia")</a></code> for the guided tour, <code><a href="../articles/batch.html">vignette("batch")</a></code> for
-running a verb over many files, <code><a href="../articles/metadata.html">vignette("metadata")</a></code> for the readers, and
-<code><a href="../articles/workflow.html">vignette("workflow")</a></code> for an end-to-end research preprocessing pipeline.
-The full function list is on the package's reference index.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

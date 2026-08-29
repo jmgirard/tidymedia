@@ -28,6 +28,17 @@ and the `get_*()` helpers such as
 [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md),
 which return a single value.
 
+See
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+for the guided tour,
+[`vignette("batch")`](https://jmgirard.github.io/tidymedia/articles/batch.md)
+for running a verb over many files,
+[`vignette("metadata")`](https://jmgirard.github.io/tidymedia/articles/metadata.md)
+for the readers, and
+[`vignette("workflow")`](https://jmgirard.github.io/tidymedia/articles/workflow.md)
+for an end-to-end research preprocessing pipeline. The full function
+list is on the package's reference index.
+
 ## Bounding a run that hangs
 
 Every tidymedia call that touches FFmpeg, FFprobe or MediaInfo waits for
@@ -155,16 +166,27 @@ seconds against FFmpeg 6.1.1 took 2.0 seconds against 9.0.1, because the
 newer build answers the first signal.
 
 A run that FFmpeg itself refused is a different outcome from a run the
-limit killed, and carries a different class. The aborts from
+limit killed, and carries a different class. The abort from
 [`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md),
-from the `loudnorm` analysis pass behind
-`normalize_audio(two_pass = TRUE)`, and from the multi-track diagnostic
+the abort from the `loudnorm` analysis pass behind
+`normalize_audio(two_pass = TRUE)` when FFmpeg exits non-zero, and the
+multi-track diagnostic
 [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
-adds to a failed audio output are all classed `tidymedia_ffmpeg_exit`
-and carry the exit status in their `tm_status` field. The batch two-pass
+adds to a failed audio output are classed `tidymedia_ffmpeg_exit` and
+carry the exit status in their `tm_status` field. The last two name what
+failed as well as how, each carrying a second class ahead of that one:
+`tidymedia_loudnorm_no_measurement` and
+`tidymedia_multitrack_separation`.
+
+Those two names are the ones that hold across a verb's scalar and
+`_batch` forms, where `tidymedia_ffmpeg_exit` cannot. The batch two-pass
 analysis phase reports every offending row at once and fires for rows
-that exited zero as well, so it raises `tidymedia_loudnorm_analysis`
-instead, carrying `tm_rows` and `tm_row_status`.
+that exited zero as well, so it raises
+`tidymedia_loudnorm_no_measurement` alone, carrying `tm_rows` and
+`tm_row_status` and no exit status. The scalar abort for an analysis
+pass that exited zero and printed nothing parseable raises that class
+alone as well, carrying no fields at all. The batch separation warning
+is `tidymedia_multitrack_separation` alone, with no exit status either.
 
 ## Session options
 
@@ -210,17 +232,6 @@ and all three can be set for one call with
 [`withr::with_options()`](https://withr.r-lib.org/reference/with_options.html)
 or for the rest of a function with
 [`withr::local_options()`](https://withr.r-lib.org/reference/with_options.html).
-
-See
-[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
-for the guided tour,
-[`vignette("batch")`](https://jmgirard.github.io/tidymedia/articles/batch.md)
-for running a verb over many files,
-[`vignette("metadata")`](https://jmgirard.github.io/tidymedia/articles/metadata.md)
-for the readers, and
-[`vignette("workflow")`](https://jmgirard.github.io/tidymedia/articles/workflow.md)
-for an end-to-end research preprocessing pipeline. The full function
-list is on the package's reference index.
 
 ## See also
 

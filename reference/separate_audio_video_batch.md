@@ -172,6 +172,15 @@ otherwise; it never runs under `run = FALSE` and never changes any
 compiled command. Suppress it with
 `suppressWarnings(classes = "tidymedia_multitrack_separation")`.
 
+The warning names the same event as
+[`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)'s
+error and answers to the same class, but it carries no exit status: no
+`tm_status` field, and no `tidymedia_ffmpeg_exit` class. The batch
+runner records, per row, *whether* the row succeeded — the `success`
+column — not *how* FFmpeg exited, so by the time this warning is
+assembled the exit number is gone. Catch a specific row's exit status
+with the scalar verb instead.
+
 ## See also
 
 [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),

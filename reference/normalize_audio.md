@@ -95,7 +95,17 @@ normalize_audio(
   under `run = FALSE`. If the input is **silent**, the analysis pass
   measures its loudness as `-inf`; normalizing silence to a target is
   undefined, so two-pass aborts with a clear error (the single-pass
-  default leaves silence untouched).
+  default leaves silence untouched). The batch form differs here:
+  [`normalize_audio_batch`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md)
+  does not abort on a silent row — it sets that row aside, marks it in a
+  `silent` column, and normalizes the rest. When the analysis pass
+  yields no usable measurement at all, the abort is classed
+  `tidymedia_loudnorm_no_measurement` — the same class the batch form
+  raises, so one handler covers both. Where FFmpeg exited non-zero it
+  also carries `tidymedia_ffmpeg_exit` and the exit number on
+  `tm_status`; where FFmpeg exited zero but printed no parseable
+  measurement block it carries the shared class alone. The silence abort
+  above is neither: a silent input *was* measured.
 
 - audio_stream:
 

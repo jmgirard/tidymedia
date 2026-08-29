@@ -91,17 +91,28 @@ reading the error text:</p>
 exactly as <code><a href="https://rdrr.io/r/base/system2.html" class="external-link">system2()</a></code> reported it — including, for a
 signal-terminated FFmpeg, the shell's 128-plus-signal number passed through
 unchanged, which encodes the signal rather than anything FFmpeg chose to
-return. Two other paths raise the same class and carry the same field, so one
-handler covers all three: the <code>loudnorm</code> analysis pass behind
-<code>normalize_audio(two_pass = TRUE)</code>, and the multi-track diagnostic
-<code><a href="separate_audio_video.html">separate_audio_video</a></code> adds to a failed audio output.</p>
-<p>The batch two-pass form is the exception. <code>normalize_audio_batch(two_pass
-= TRUE)</code> reports every offending row of its analysis phase in one error, and
-fires for rows that exited zero and printed nothing usable as well as for rows
-FFmpeg refused, so it raises <code>tidymedia_loudnorm_analysis</code> rather than
-this class. That condition carries <code>tm_rows</code>, the 1-indexed offending
-rows, and <code>tm_row_status</code>, their exit statuses aligned to it, with
-<code>NA</code> where the row exited zero.</p>
+return. Two other paths raise this class and carry this field, so one handler
+covers all three: the <code>loudnorm</code> analysis pass behind
+<code>normalize_audio(two_pass = TRUE)</code> when FFmpeg exits non-zero, and the
+multi-track diagnostic <code><a href="separate_audio_video.html">separate_audio_video</a></code> adds to a failed
+audio output. Each of those two names a second, narrower class ahead of this
+one — <code>tidymedia_loudnorm_no_measurement</code> and
+<code>tidymedia_multitrack_separation</code> respectively — which is what to catch
+when it is that failure in particular you want.</p>
+<p>Two paths in the same family do <strong>not</strong> raise this class, each for its
+own reason. <code>normalize_audio(two_pass = TRUE)</code> also
+aborts when the analysis pass exits zero and prints no parseable measurement
+block; no non-zero exit happened there, so that abort is
+<code>tidymedia_loudnorm_no_measurement</code> alone, with no
+<code>tm_status</code>. And <code>normalize_audio_batch(two_pass = TRUE)</code> reports
+every offending row of its analysis phase in one error, firing for rows that
+exited zero as well as for rows FFmpeg refused — so an exit is one of its
+causes rather than the fact it reports, and no single status could stand for
+the mix. It too raises
+<code>tidymedia_loudnorm_no_measurement</code> alone — carrying <code>tm_rows</code>,
+the 1-indexed offending rows, and <code>tm_row_status</code>, their exit statuses
+aligned to it, with <code>NA</code> where the row exited zero. That shared class is
+therefore the one handler that covers the analysis pass in both forms.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

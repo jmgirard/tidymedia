@@ -35,10 +35,12 @@
   raises the same class and carries the same field, so one handler covers
   both. The status is whatever `system2()` reported: for a signal-terminated
   FFmpeg that is the shell's 128-plus-signal number, passed through unchanged,
-  rather than a value FFmpeg chose. One path deliberately does not signal it:
+  rather than a value FFmpeg chose. Two paths still do not signal it:
   the `ffm_batch()` family records `success = FALSE` for a failed row instead
-  of aborting. Internally the package now reads the number off that field; it
-  used to recover it by matching a regular expression against the error message,
+  of aborting, and `normalize_audio_batch(two_pass = TRUE)` raises
+  `tidymedia_loudnorm_analysis` instead, for the reason the next entry gives.
+  Internally the package now reads the number off that field; it used to
+  recover it by matching a regular expression against the error message,
   which could not tell the wording of one abort from the wording of another
   and gave callers nothing to catch.
 

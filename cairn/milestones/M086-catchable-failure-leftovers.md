@@ -209,3 +209,113 @@ projection-vs-outcome pairs are owed.
   problems; `NEWS.md` carries the user-visible entry with no milestone numbers;
   no new top-level files, and `check()` raised no `.Rbuildignore` note;
   `devtools::check()` clean as recorded under AC6.
+
+### Independent review
+
+Three fresh-context lenses, none having seen the implementation, each on a
+distinct evidence base. The `[S]` prior-review lens ran its probe
+(`gh api .../pulls/comments?per_page=1`) and found no real inline PR threads,
+so it worked from the archived `## Review` sections, `cairn/LESSONS.md` and
+`cairn/references/false-greens.md`; it reported no prior-review evidence
+regressed and contributed zero findings. The `[S]` blame-history lens
+confirmed the change is additive — message text byte-for-byte unchanged from
+`master` at both sites — and found no undone milestone work and no
+contradicted D-entry. The `[O]` diff-bug lens returned ten findings.
+
+Every finding and its disposition:
+
+- F1 (`[O]` 1, `[S]` blame 1 — the same defect from two lenses) Stale comments
+  that state the contract the branch just deleted.
+  `tests/testthat/test-ffmpeg-exit-condition.R:85-86` says "A timeout, and the
+  multi-track diagnostic: both are tidymedia conditions and neither is a
+  non-zero exit"; the real diagnostic now is one. The assertion below it still
+  holds — it builds a bare `tidymedia_multitrack_separation` condition with no
+  `tm_status`, which is a valid probe of `ffmpeg_exit_status()`'s class guard —
+  but the comment names it as the shipped diagnostic, which it no longer is.
+  `R/ffmpeg.R:781-782` has the same shape: it lists `ffm_run()` and the
+  loudnorm analysis pass as the raisers of `tidymedia_ffmpeg_exit`, and this
+  branch made the separation diagnostic a third. Verified by reading both
+  sites. Disposition: fix now.
+- F2 (`[O]` 4) `NEWS.md:38` contradicts the bullet two lines below it. The
+  M085 bullet was amended from "Two paths deliberately do not signal it" to
+  "One path", naming only the `ffm_batch()` family — but the same commit
+  created a second such path, `normalize_audio_batch(two_pass = TRUE)`, whose
+  new test asserts it does not inherit `tidymedia_ffmpeg_exit` even when every
+  offending row is an exit failure. Verified by reading `NEWS.md:30-48`
+  against `test-normalize-audios-two-pass.R`. A caller who reads the first
+  bullet and wraps a two-pass batch in one exit handler is not caught.
+  Disposition: fix now.
+- F3 (`[O]` 2) `tests/testthat/test-ffmpeg-exit-condition.R:198`'s
+  `expect_gt(length(unique(statuses)), 1L)` asserts a property of the local
+  FFmpeg build, not of the package: it holds here only because ffmpeg 9.0.1
+  exits 234 on a muxer refusal and 254 on a failed output open. A build that
+  returns the same number for both makes the test red on correct code.
+  Disposition: see the CI evidence line below.
+- F4 (`[O]` 3) `adts_refuses_multistream()`
+  (`test-ffmpeg-exit-condition.R:135-147`) calls `system2("ffmpeg", ...)`
+  directly rather than through `find_ffmpeg()`, and reads any non-zero result
+  — including "could not run ffmpeg at all" — as "the muxer refuses". On a
+  machine with FFmpeg configured off-PATH via `set_ffmpeg()`, the guard
+  wrongly appends the `.aac` case, the call succeeds, and the failure surfaces
+  as a class assertion against a character vector. Disposition: see below.
+- F5 (`[O]` 5) `tidymedia_loudnorm_analysis` names a phase rather than an
+  event, and the scalar `normalize_audio(two_pass = TRUE)` analysis abort
+  (`R/loudnorm_two_pass.R:151`) does not carry it — so the obvious handler
+  written on the class name fires only for the batch. Real ergonomics gap, but
+  the batch/scalar split is what the plan gate chose and Scope In names only
+  the batch site. Disposition: follow-up candidate row.
+- F6 (`[O]` 9) The scalar error site now carries two classes while the batch
+  warning site (`R/ffmpeg.R:742`) still carries one, and
+  `?separate_audio_video_batch` still tells callers to suppress by the single
+  name. Correct as shipped, but this is the severity split D062 named as its
+  own falsifier, and nothing records that the branch widened it. Disposition:
+  fold into the existing batch-warning candidate row.
+- F7 (`[O]` 8) The new `?separate_audio_video` paragraph says a reached limit
+  "answers to neither class" without naming `tidymedia_timeout`, which is the
+  class it does answer to and which AC2(d) tests. Disposition: fix now (one
+  clause).
+- F8 (`[O]` 6) `as.integer(status)` at `R/loudnorm_two_pass.R:228` is
+  unguarded, so a non-coercible `status` attribute would land `NA` in
+  `tm_row_status` and be indistinguishable from the documented "exited zero"
+  meaning. Latent: `run_program()` returns an integer `status` today, verified.
+  Disposition: reject — a pre-existing property of `run_program()`'s contract
+  the diff did not introduce.
+- F9 (`[O]` 7) AC4's grid runs against a mocked Phase 1, so nothing in the
+  suite ties `assemble_measured()`'s expected input shape to what
+  `run_program()` actually returns. The `[O]` lens checked it by hand against
+  real binaries (a corrupt input gave `tm_rows = 1L`, `tm_row_status = 183L`),
+  so this is a coverage gap, not a defect. Disposition: follow-up candidate row.
+- F10 (`[O]` 10) `bad` keeps `which()`'s names in the message while `tm_rows`
+  is `unname()`d, so a named `outputs` would make the two disagree.
+  Theoretical: `purrr::pmap()` over unnamed vectors returns an unnamed list.
+  Disposition: reject — unreachable on any current call path, and the message
+  side is pre-existing.
+
+### Fix-now work at the gate
+
+F1, F2 and F7 were fixed on the branch before the approval marker:
+
+- `R/ffmpeg.R:781-782` now names all three raisers of `tidymedia_ffmpeg_exit`.
+- `tests/testthat/test-ffmpeg-exit-condition.R:85` now says what its two probes
+  are — a timeout and a hand-built bare `tidymedia_multitrack_separation` — and
+  why the second is hand-built rather than the shipped diagnostic.
+- `NEWS.md:38` now names both non-signalling paths. The sentence deliberately
+  reads "Two paths still do not signal it" rather than the "Two paths
+  deliberately do not signal it" wording the AC5 guard forbids: that guard
+  exists to catch the stale M085 claim naming `separate_audio_video()`, and it
+  stays discriminating.
+- `R/ffmpeg.R:880-883` now names `tidymedia_timeout` as the class a reached
+  limit answers to, instead of leaving it as "neither class".
+
+Re-verified after the fixes: `devtools::document()` rewrote
+`man/separate_audio_video.Rd` and nothing else; the three files still run
+101 / 78 / 75 passes with 0 skips; full suite
+`[ FAIL 0 | WARN 12 | SKIP 5 | PASS 8334 ]`; `devtools::check()` `Status: OK`,
+0 errors / 0 warnings / 0 notes, 2m 34.5s.
+
+Follow-ups (F5, F6, F9, and F3/F4 if CI does not settle them) are routed at the
+post-merge hygiene pass. No new ROADMAP row is proposed: `cairn/ROADMAP.md`
+stands at 23,990 bytes against its 24,000 cap, and search-first puts each of
+these inside an existing row — F5 in the unclassed-aborts row, F6 in the
+batch-warning row, and the test-instrument findings in
+`cairn/references/instrument-findings.md` under its grouped row.

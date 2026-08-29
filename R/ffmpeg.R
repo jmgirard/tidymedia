@@ -780,7 +780,8 @@ warn_failed_separation_batch <- function(out, audio_stream = NULL,
 }
 
 # Read FFmpeg's exit status off a `tidymedia_ffmpeg_exit` condition -- the class
-# ffm_run() and the loudnorm analysis pass both raise on a non-zero exit -- or NA
+# ffm_run(), the loudnorm analysis pass and the multi-track separation
+# diagnostic all raise on a non-zero exit -- or NA
 # for any other condition, and for one carrying the class but no `tm_status`.
 # The message is never consulted: the class answers WHICH failure this is and
 # the field carries the number, so rewording either abort cannot change what
@@ -877,8 +878,10 @@ ffmpeg_exit_status <- function(cnd) {
 #'
 #' When the report is omitted, the error that reaches the caller is the one the
 #' run itself raised, unchanged: a non-zero exit still answers to
-#' \code{tidymedia_ffmpeg_exit}, and a failure that is not an exit at all — an
-#' FFmpeg the package cannot locate, a reached limit — answers to neither class.
+#' \code{tidymedia_ffmpeg_exit}, and a failure that is not an exit at all answers
+#' to neither class here: an FFmpeg the package cannot locate raises an error
+#' carrying no \code{tidymedia_} class at all, and a reached limit raises
+#' \code{tidymedia_timeout}.
 #'
 #' Counting the tracks means running FFprobe, so this is \strong{best-effort}: it
 #' is added when FFprobe is available and \code{infile} can be probed, and

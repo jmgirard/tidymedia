@@ -106,8 +106,10 @@ tryCatch(
 
 When the report is omitted, the error that reaches the caller is the one the
 run itself raised, unchanged: a non-zero exit still answers to
-\code{tidymedia_ffmpeg_exit}, and a failure that is not an exit at all — an
-FFmpeg the package cannot locate, a reached limit — answers to neither class.
+\code{tidymedia_ffmpeg_exit}, and a failure that is not an exit at all answers
+to neither class here: an FFmpeg the package cannot locate raises an error
+carrying no \code{tidymedia_} class at all, and a reached limit raises
+\code{tidymedia_timeout}.
 
 Counting the tracks means running FFprobe, so this is \strong{best-effort}: it
 is added when FFprobe is available and \code{infile} can be probed, and

@@ -81,8 +81,11 @@ test_that("ffmpeg_exit_status() reads the class and the field, nothing else", {
   no_binary <- tryCatch(run_program(NULL, "-version", program = "FFmpeg"),
                         error = function(e) e)
   expect_identical(ffmpeg_exit_status(no_binary), NA_integer_)
-  # A timeout, and the multi-track diagnostic: both are tidymedia conditions
-  # and neither is a non-zero exit.
+  # Two tidymedia conditions carrying neither the exit class nor the field: a
+  # timeout, and a bare `tidymedia_multitrack_separation` whose MESSAGE names a
+  # status. The shipped multi-track diagnostic carries both since M086, so the
+  # second probe is a hand-built condition rather than that error -- what it
+  # tests is that the class guard, not the message text, decides.
   timed_out <- tryCatch(abort_timeout("FFmpeg", 5), error = function(e) e)
   expect_s3_class(timed_out, "tidymedia_timeout")
   expect_identical(ffmpeg_exit_status(timed_out), NA_integer_)

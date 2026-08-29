@@ -7,7 +7,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m086-catchable-failure-leftovers`
+- **Branch/PR:** `m086-catchable-failure-leftovers` / https://github.com/jmgirard/tidymedia/pull/90
 
 ## Goal
 
@@ -43,14 +43,14 @@ tell a caller which class catches what.
 
 ## Acceptance criteria
 
-- [ ] AC1 A `separate_audio_video()` call whose audio output FFmpeg refuses on
+- [x] AC1 A `separate_audio_video()` call whose audio output FFmpeg refuses on
       a multi-track input with no `audio_stream` named raises a condition that
       (i) a `tryCatch(tidymedia_ffmpeg_exit = ...)` handler catches, (ii) still
       inherits `tidymedia_multitrack_separation`, (iii) still renders the track
       count and both ways out in its message, and (iv) carries `tm_status`
       equal to the integer status of its `parent` condition.
       (RB tripwire: irreversible-api)
-- [ ] AC2 Each of these four failures, provoked through a real
+- [x] AC2 Each of these four failures, provoked through a real
       `separate_audio_video()` call rather than by constructing a condition
       and asserting on it, raises a condition that does not inherit
       `tidymedia_multitrack_separation`, whose message matches none of
@@ -65,23 +65,23 @@ tell a caller which class catches what.
       inheriting `tidymedia_timeout`. Cases (b) and (c) re-raise
       `ffm_run()`'s non-zero-exit condition and so do inherit
       `tidymedia_ffmpeg_exit`; cases (a) and (d) do not.
-- [ ] AC3 `?separate_audio_video`'s *When the audio output fails* section
+- [x] AC3 `?separate_audio_video`'s *When the audio output fails* section
       states both class names, says which one an exit-status handler catches
       and which the enriched diagnostic answers to, and shows a handler that
       fires on this path; the claim is verified by running that handler against
       a real failing call, not by inspection.
-- [ ] AC4 `normalize_audio_batch(two_pass = TRUE)` aborting on offending rows
+- [x] AC4 `normalize_audio_batch(two_pass = TRUE)` aborting on offending rows
       raises class `tidymedia_loudnorm_analysis` carrying `tm_rows` (the
       1-indexed offending rows, in the order the message names them) and
       `tm_row_status` (an integer vector aligned to `tm_rows`, the row's FFmpeg
       exit status, `NA_integer_` where the row exited zero but printed no
       parseable block). Asserted over three batches: exit-failures only,
       unparseable only, and one of each.
-- [ ] AC5 `?ffm_run`, `?tidymedia`'s exit-class paragraph
+- [x] AC5 `?ffm_run`, `?tidymedia`'s exit-class paragraph
       (`R/tidymedia-package.R:113-117`) and `NEWS.md` each name the two paths
       AC1 and AC4 change and the class each now signals; `?tidymedia` no longer
       states a promise that the `separate_audio_video()` path contradicts.
-- [ ] AC6 `devtools::check()` reports 0 errors and 0 warnings, and the AC1–AC4
+- [x] AC6 `devtools::check()` reports 0 errors and 0 warnings, and the AC1–AC4
       tests are recorded as having RUN (not skipped) on a machine with ffmpeg
       and ffprobe present — the skip count for those files is quoted in review.
 
@@ -137,3 +137,75 @@ tell a caller which class catches what.
 ## Decisions
 
 ## Review
+
+Reviewed 2026-08-29 on branch `m086-catchable-failure-leftovers` at d095a1d,
+PR https://github.com/jmgirard/tidymedia/pull/90. `origin/master` had not moved
+since the branch was cut, so no merge was needed. Machine: macOS 26.5 / arm64,
+R 4.6.1, ffmpeg 9.0.1 and ffprobe both on PATH. No Driving RR, so no
+projection-vs-outcome pairs are owed.
+
+### Acceptance-criteria evidence
+
+- AC1 — verified. A 3-track `.mkv` separated into `.mp3` and into `.wav` was
+  caught by `tryCatch(tidymedia_ffmpeg_exit = )` in both cases; the class
+  vector was `tidymedia_multitrack_separation, tidymedia_ffmpeg_exit,
+  rlang_error, error, condition`; the message carried `3 audio tracks`,
+  `audio_stream` and `.mka`; `tm_status` was 234 and identical to
+  `cnd$parent$tm_status`. A fourth cause on the same path — a non-existent
+  output directory — gave `tm_status` 254, so the field tracks the parent
+  rather than a pinned constant. Run outside the harness as well as in
+  `test-ffmpeg-exit-condition.R`.
+- AC2 — verified, all four cases provoked through real `separate_audio_video()`
+  calls. None inherited `tidymedia_multitrack_separation` and none of the three
+  phrases appeared in any message. (a) FFmpeg unresolvable: class
+  `rlang_error, error, condition`, no `tidymedia_*` class, `tm_status` NULL,
+  and both class vector and message identical to `run_program()`'s own abort
+  captured independently. (b) FFprobe unresolvable and (c) single-track input:
+  class exactly `tidymedia_ffmpeg_exit, rlang_error, error, condition` with
+  integer `tm_status` 234 — the per-case exit-class split the criterion states.
+  (d) `tm_force_timeout()`: class `tidymedia_timeout, rlang_error, error,
+  condition`, no exit class, `tm_status` NULL.
+- AC3 — verified by execution, not inspection. The handler printed in
+  `?separate_audio_video`'s *When the audio output fails* section was run
+  verbatim against a real failing call and returned integer 234, length 1. The
+  section names both `tidymedia_ffmpeg_exit` (the exit-status handler's class,
+  with the number on `tm_status`) and `tidymedia_multitrack_separation` (the
+  enriched diagnostic's own), and says which catches which.
+- AC4 — verified over the three batches, driving the exported
+  `normalize_audio_batch(two_pass = TRUE)` with Phase 1 mocked to recorded
+  outputs. Exit-failures only: `tm_rows` 1, 3 and `tm_row_status` 1L, 234L.
+  Unparseable only: `tm_rows` 2, 3 and `tm_row_status` NA, NA. One of each:
+  `tm_rows` 1, 3 and `tm_row_status` NA, 69L. Both fields are integer vectors,
+  aligned, and `tm_rows` matches the rows the message names
+  (`Offending rows (1-indexed): 1 and 3`). The condition does not inherit
+  `tidymedia_ffmpeg_exit` and carries no `tm_status`, including on the
+  exit-only batch.
+- AC5 — verified against the generated Rd files and NEWS. `man/ffm_run.Rd`
+  names `separate_audio_video`, `tidymedia_loudnorm_analysis` and
+  `tm_row_status`; `man/tidymedia-package.Rd` names `separate_audio_video` and
+  `tidymedia_loudnorm_analysis`; `man/normalize_audio_batch.Rd` names the
+  class and `tm_rows`; `man/separate_audio_video.Rd` names both classes and
+  `tm_status`. `NEWS.md` carries both new class names, and no longer says
+  "Two paths deliberately do not signal it" — the promise the separation path
+  now contradicts. No milestone numbers appear in NEWS.
+- AC6 — verified. `devtools::check()` on this branch: `Status: OK`, 0 errors,
+  0 warnings, 0 notes, 2m 40.1s. The AC1–AC4 test files were RUN, not skipped,
+  on this machine (ffmpeg 9.0.1 and ffprobe on PATH), each run on its own:
+  `test-ffmpeg-exit-condition.R` 101 passes / 0 skips,
+  `test-normalize-audios-two-pass.R` 78 / 0, `test-separate-av-multitrack.R`
+  75 / 0. Full suite `[ FAIL 0 | WARN 12 | SKIP 5 | PASS 8334 ]`; none of the
+  five skips falls in those three files. The suite's 12 testthat warnings are
+  pre-existing: the three files above report `warn=0` when run individually,
+  and `check()` itself reports 0 warnings.
+
+### Consistency gate
+
+- `cairn_validate.py` — exit 0, all checks passed; no advisory fired, the
+  `release window` advisory included.
+- No `DESIGN.md` principle changed, so `cairn_impact.py` was not run.
+- `r-package` profile `consistency-gate` slot: `devtools::document()` produced
+  no diff; no generated file was hand-edited; `README.Rmd` is untouched by this
+  branch so `README.md` is in sync; `pkgdown::check_pkgdown()` reported no
+  problems; `NEWS.md` carries the user-visible entry with no milestone numbers;
+  no new top-level files, and `check()` raised no `.Rbuildignore` note;
+  `devtools::check()` clean as recorded under AC6.

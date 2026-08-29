@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-29 (M086 plan: `cairn/ROADMAP.md` breached its 24,0
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M086 | The catchable failure reaches the two paths M085 left behind | planned | — | normal | milestones/M086-catchable-failure-leftovers.md |
+| M086 | The catchable failure reaches the two paths M085 left behind | in-progress | — | normal | milestones/M086-catchable-failure-leftovers.md |
 | M085 | A failed FFmpeg run is a condition you can catch | done | — | normal | milestones/archive/M085-ffmpeg-error-condition.md |
 | M083 | The ROADMAP gets back under its byte budget | done | — | normal | milestones/archive/M083-roadmap-byte-budget.md |
 | M084 | LESSONS gets back under its budget, and its biggest family graduates | done | M083 | normal | milestones/archive/M084-lessons-budget-doctrine.md |

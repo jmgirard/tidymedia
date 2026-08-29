@@ -2,12 +2,12 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M086: The catchable failure reaches the two paths M085 left behind
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m086-catchable-failure-leftovers`
 
 ## Goal
 
@@ -50,13 +50,21 @@ tell a caller which class catches what.
       count and both ways out in its message, and (iv) carries `tm_status`
       equal to the integer status of its `parent` condition.
       (RB tripwire: irreversible-api)
-- [ ] AC2 For each case `tests/testthat/test-ffmpeg-exit-condition.R` runs
-      under the fail-open and not-this-failure headings — the three
-      `run_separation_audio()` fail-open branches (`is.na(status)`,
-      `is.na(n)`, `n <= 1L`), a missing-binary abort from `run_program()`, and
-      a reached timeout — the raised condition does not inherit
-      `tidymedia_ffmpeg_exit`, and the fail-open cases re-raise the original
-      condition object unchanged in class and message.
+- [ ] AC2 Each of these four failures, provoked through a real
+      `separate_audio_video()` call rather than by constructing a condition
+      and asserting on it, raises a condition that does not inherit
+      `tidymedia_multitrack_separation`, whose message matches none of
+      `audio tracks`, `audio_stream` or `.mka`, and which is the original
+      condition object re-raised unchanged in class and message: (a) FFmpeg
+      unresolvable on a multi-track input, taking `run_separation_audio()`'s
+      `is.na(status)` fail-open branch, whose condition is `run_program()`'s
+      own abort carrying no `tidymedia_*` class and no `tm_status`;
+      (b) FFprobe unresolvable (`is.na(n)`); (c) a single-track input
+      (`n <= 1L`); (d) a timeout forced at the spawn site
+      (`tm_force_timeout()`), whose condition is `abort_timeout()`'s,
+      inheriting `tidymedia_timeout`. Cases (b) and (c) re-raise
+      `ffm_run()`'s non-zero-exit condition and so do inherit
+      `tidymedia_ffmpeg_exit`; cases (a) and (d) do not.
 - [ ] AC3 `?separate_audio_video`'s *When the audio output fails* section
       states both class names, says which one an exit-status handler catches
       and which the enriched diagnostic answers to, and shows a handler that
@@ -91,8 +99,8 @@ tell a caller which class catches what.
 - [ ] T1 Extend `tests/testthat/test-ffmpeg-exit-condition.R` with the scalar
       separation grid, red before T2: the enriched path varied over container
       (`.aac`, `.mp3`, `.wav`) and over at least two distinct exit statuses,
-      plus the three fail-open branches and the two not-this-failure cases of
-      AC2. Fixture via `make_multitrack_video()`
+      plus AC2's four near-miss cases (the three fail-open branches and a
+      forced timeout). Fixture via `make_multitrack_video()`
       (`tests/testthat/helper-media.R:197`); `skip_if` the binaries are absent.
 - [ ] T2 `R/ffmpeg.R:675` — class vector becomes
       `c("tidymedia_multitrack_separation", "tidymedia_ffmpeg_exit")` and the
@@ -115,6 +123,8 @@ tell a caller which class catches what.
 
 - 2026-08-29: created by /milestone-plan. Promoted from the standing `M45 review F1/F5` candidate row (M085 Out; M085 review F4); that row is narrowed, not deleted, and keeps its unpromoted gaps.
 - 2026-08-29: criteria audit ran in FULL mode (user-facing tier plus an `irreversible-api` tripwire on AC1), fresh-context `[O]` reader over seven drafted criteria. It returned findings on all seven. Cut at the gate: the draft AC2 (batch warning) as unsatisfiable — no status exists at that site under D007 — and the draft AC5 ("every abort site") as an unbounded promise over a domain no named procedure enumerates. Fixed at the gate: the draft AC1 was satisfiable by deleting the diagnostic and by rewording the message, its probe was one exemplar for a four-axis family, and its "pre-change test failing" clause bound a harness-history property; the draft AC3 anchored to generated `man/*.Rd` line numbers and to a warning recipe on an error path; the draft AC7 was green-compatible with zero evidence on a binary-less machine.
+- 2026-08-29: amendment (AC2, substantive, user-approved at the mini gate). The shipped AC2 demanded that all five near-miss cases not inherit `tidymedia_ffmpeg_exit` while also demanding the fail-open cases re-raise the original condition unchanged in class; measured on ffmpeg 9.0.1, the `is.na(n)` and `n <= 1L` branches re-raise `ffm_run()`'s abort, whose class vector is `c("tidymedia_ffmpeg_exit","rlang_error","error","condition")`, so those two clauses contradicted each other. Amended text: `amendment: AC2 — "Each of these four failures, provoked through a real separate_audio_video() call rather than by constructing a condition and asserting on it, raises a condition that does not inherit tidymedia_multitrack_separation, whose message matches none of `audio tracks`, `audio_stream` or `.mka`, and which is the original condition object re-raised unchanged in class and message"`, with the four cases enumerated in the criterion and the exit-class claim split per case. T1's wording follows (minor).
+- 2026-08-29: criteria audit re-ran in FULL mode over the amended AC2, two fresh-context `[O]` readers (the second over the wording repaired from the first). First reader: the criterion bound an instrument (a test file's contents and comment headings) rather than the deliverable, left the domain open at the top, stood one exemplar in for the `is.na(status)` family, and left the two not-this-failure cases constrained only negatively. Second reader over the repair: the "enrichment's three clauses" phrasing was unsatisfiable by referent and is now three literal strings; "unchanged in class and message" was restored after the repair had weakened it to a class-vector comparison, which D024's fail-open consequence requires; the direct `run_program()` case was folded into (a) as below the user-facing tier and duplicative; the timeout case now travels a real `separate_audio_video()` call via `tm_force_timeout()` instead of asserting on a constructed condition; "unclassed" became "no `tidymedia_*` class". Both readers' remaining findings were fixed before the gate.
 - 2026-08-29: plan gate chose adding `tidymedia_ffmpeg_exit` to the multi-track abort's class vector over documenting the `cnd$parent` chain, because it makes `?tidymedia`'s shipped promise true rather than walking it back, and D062 leaves class hierarchies open; falsified by a caller needing the two sites — the error and the batch warning — to answer to one handler pair, which this deliberately breaks.
 - 2026-08-29: plan gate chose a new `tidymedia_loudnorm_analysis` event class for the two-pass batch abort over narrowing `tidymedia_ffmpeg_exit` to the exit-only case, because the abort also fires on rows that exited zero and D062 requires a class to name the fact that occurred; falsified by the package finding a second site with the same mixed-cause shape where one class per cause reads better than one per event.
 

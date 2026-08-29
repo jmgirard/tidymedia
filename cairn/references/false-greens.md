@@ -1,7 +1,8 @@
 # False greens: a test or control that reads green for the wrong reason
 
 _Doctrine module, graduated from `cairn/LESSONS.md` by M084 under the maturation exit (tracking-rules, "Retiring a lesson"). Every entry below left
-`LESSONS.md` verbatim, keeping its date and originating milestones; the enumeration and exit classification it came from are in `lessons-baseline-M084.md`.
+`LESSONS.md` verbatim, keeping its date and originating milestones — apart from the three lines marked `moved M084`, halves of trimmed
+entries that were rewritten to stand alone; the enumeration and exit classification it came from are in `lessons-baseline-M084.md`.
 Read at plan time alongside `LESSONS.md`, and whenever a milestone writes a new check._
 
 _**Budget: fewer than 26,000 bytes and fewer than 60 lines.** Set from the graduated size plus room for a few more members; hand-checked with `wc -l -c` at

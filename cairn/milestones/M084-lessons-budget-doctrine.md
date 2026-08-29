@@ -88,9 +88,12 @@ _PR: https://github.com/jmgirard/tidymedia/pull/88 — reviewed 2026-08-28 on `m
 
 ### Acceptance criteria — fresh evidence
 
-- **AC1 — pass.** `wc -c cairn/LESSONS.md` reports 19,372 bytes and `wc -l` reports
-  32 lines, under the 20,000-byte budget (628 bytes of room) and well inside the
-  50-line cap. Measured on the branch head, the tree the squash-merge commit will carry.
+- **AC1 — pass.** `wc -c cairn/LESSONS.md` reports 19,860 bytes and `wc -l` reports
+  33 lines, under the 20,000-byte budget and well inside the 50-line cap. Measured
+  on the branch head after the gate-directed fixes, the tree the squash-merge
+  commit carries — those fixes restored 488 bytes of trimmed content, so the room
+  is 140 bytes, and that is what the F4/F5 candidate row records. Pre-fix the file
+  was 19,372 over 32 lines.
 - **AC2 — pass.** `git show 31a8e4f:cairn/LESSONS.md | grep '^- '` enumerates 44
   entries; `cut -c1-120` over them yields 44 keys with `sort | uniq -d` empty.
   Testing each key with `grep -F` against both files partitions the enumeration
@@ -98,7 +101,8 @@ _PR: https://github.com/jmgirard/tidymedia/pull/88 — reviewed 2026-08-28 on `m
   / 0 in both / 0 in neither — every entry in exactly one observable state.
 - **AC3 — pass.** `cairn/references/false-greens.md` exists; `cairn/references/INDEX.md:14`
   lists it; its header states "Budget: fewer than 26,000 bytes and fewer than 60
-  lines"; `wc -l -c` reports 52 lines / 24,846 bytes, inside both figures.
+  lines"; `wc -l -c` reports 53 lines / 24,959 bytes, inside both figures (52 /
+  24,846 before the F11 header correction).
 - **AC4 — pass.** The same partition run records 0 entries present in both files:
   for each of the 17 keys AC2 finds in the module, `grep -F` over
   `cairn/LESSONS.md` returns no match. Key uniqueness across the 44-entry
@@ -127,7 +131,80 @@ _No `Driving RR:` on this milestone, so the projection-vs-outcome record no-ops.
 
 ### Independent fresh-context review
 
-<PLACEHOLDER_REVIEW>
+Routing: the declared surface tier is **internal** and
+`git diff master..HEAD --name-only` shows six `cairn/` markdown files and no
+executable surface, so one fresh-context reviewer was spawned — the [O] diff-bug
+lens — and the blame-history and prior-PR-comments lenses were skipped per the
+docs-only route.
+
+The reviewer independently re-derived every criterion rather than reading the
+implementer's figures: it recomputed the 44 branch-point keys, re-ran the
+partition (27 / 17 / 0 / 0), string-compared all 17 graduated entries against
+their branch-point text (byte-identical), recomputed all 44 byte lengths in
+`lessons-baseline-M084.md`, and confirmed each named trim owner actually holds
+the content (`D056`, `CLAUDE.md`, `test-builder-blame-front-door.R`). It also
+re-verified every figure in the ROADMAP stamp. Fourteen findings, ranked:
+
+1. **Truncated, ungrammatical residual on the M075 entry** — `cairn/LESSONS.md:32`. The trim cut mid-sentence and left a comma splice: "…signalled two warnings for one drop on the two-pass path, The two ways M075's suite failed to see it are in `references/false-greens.md`." The original clause "and the test could not see it:" was removed but its comma was not. Severity: it is the only outright broken sentence in a durable record, and it reads as an unfinished edit.
+2. **The M47 entry's trim removed content no exit covers** — `cairn/LESSONS.md:25`. Dropped: the M48-F1 correction ("the converse M47 drew — 'if the pipeline threads `call`, the front-door copy buys no blame, so omit it' — holds ONLY where the verb calls its pipeline DIRECTLY"), and M45's reshaped-index observation (a 2-row table blamed "In index: 3"). The named owner is a test file, i.e. the *enforcement* exit — but a test cannot fail on a lost historical correction, and the reshaped-index fact is nowhere in `test-builder-blame-front-door.R`. The entry's own attribution line still reads "absorbs M45's reshaped-index line" while the absorbed line is gone.
+3. **Dangling ordinal on the FFmpeg-version entry** — `cairn/LESSONS.md:9`. The trim correctly changed "Two instances paid for" to "One instance paid for", but the sentence three clauses later still begins "A third platform failure is not the package at all". With one instance enumerated, "a third" has no referent.
+4. **The module's budget has less headroom than one member** — `cairn/references/false-greens.md:7`. Header: "Budget: fewer than 26,000 bytes… Set from the graduated size plus room for a few more members." Actual 24,846 bytes leaves 1,154, while the module's 20 entries average 1,242 bytes — the next single graduate overflows it.
+5. **`LESSONS.md` clears its byte budget by 628 bytes, under one average entry.** T3's stop rule was "when AC1 clears with headroom"; 628 bytes is 3.1%, and the 27 surviving entries average 717 bytes, so the next lesson captured re-breaks the budget.
+6. **The module is not discoverable from the file it was cut out of** — `cairn/LESSONS.md:1-5`. Its header still says only "surfaced at plan time… Capped at 50 lines (D-015)"; it does not point at `references/false-greens.md`, and `CLAUDE.md` mentions it zero times. The module's own line "Read at plan time alongside `LESSONS.md`" only reaches a reader who already found it.
+7. **The M41 entry's M080 clause was rewritten past the trim** — `cairn/LESSONS.md:17`. Beyond moving the otherwise-valid-grid half to the module, the trim also deleted the record that M080's NEWS paragraph "was returned twice, round 1 understating the reorder and round 2 overstating it" plus the quoted bad draft, replacing it with "falsified four earlier drafts, two of them mis-stating how far the reorder reached". No exit in the Decisions section covers that deletion.
+8. **The hygiene stamp is written pre-merge and pins a figure the merge invalidates** — `cairn/ROADMAP.md:5`. It opens "M084 branch:" (M083's opened "M083 post-merge:") and states `cairn/ROADMAP.md` "22,360 bytes over 45 lines" — a number that changes the moment review flips the row to `done` and repoints it at `milestones/archive/`.
+9. **Borderline keep: the M47 `-map` entry retains a false-green clause** — branch-point entry 27, classified `keep`. It contains "The suite caught only the video-only half, via one test that happened to use a silent fixture" — a fixture-coincidence false green whose near-twin (branch-point entry 29) graduated. Under the milestone's own partly-covered rule this was a trim candidate.
+10. **Enforcement pointer silently reassigned** — `cairn/LESSONS.md:25`. The original credited "M57's nine-verb sweep"; the trim credits `tests/testthat/test-builder-blame-front-door.R`, whose header comments date it to M64/M65. The `purrr::pmap` / `caller_env` mechanism and the explicit "LESSONS M47/M48-F1" citation actually live in `tests/testthat/test-value-check-front-door.R:11-15` (the M59 sweep). The named file does redden, so the exit holds, but the pointer moved without a note.
+11. **Module header overstates verbatimness** — `cairn/references/false-greens.md:3-4`: "Every entry below left `LESSONS.md` verbatim". Three of the 20 lines (`moved M084`) were rewritten to stand alone. The provenance block eight lines down says so correctly; the flat claim above it does not.
+12. **Stale candidate row** — `cairn/ROADMAP.md:20`. The second-doctrine-module candidate cites "`cairn/LESSONS.md` lines 21, 33 and 41 at bd4d545"; line 41 ("a blame-reading test passing for the wrong reason") is one of the 17 M084 just graduated, so the candidate now proposes a module overlapping the one that shipped.
+13. **Work-log figure off by 5 bytes** — T4's line reads "`ROADMAP.md` 22,365 bytes"; actual and the stamp both say 22,360.
+14. **Scope estimate never reconciled** — Scope says the family is "roughly fifteen entries and ~20,100 bytes"; it turned out 17 entries / 21,171 bytes. Recorded accurately in Decisions, but Scope reads as if unamended.
+
+**Return floor.** No finding demonstrates an acceptance criterion failing — the
+reviewer confirms all four hold as written — and none is a load-bearing defect in
+what this repo ships to its users (the R package's verbs and their behavior);
+every finding is a defect in the `cairn/` record. So none returns the milestone,
+and each takes ordinary triage at the gate.
+
+**Triage** (maintainer at the approval gate, 2026-08-28): fix now 1, 2, 3, 6, 7,
+10, 11, 12, 13; follow-up 4 and 5; reject 9 and 14; 8 discharged by this pass.
+
+- **Fixed on the branch, before the approval marker.**
+  **1** — the comma became a full stop, so the sentence closes.
+  **2 and 10 together** (one clause, `cairn/LESSONS.md:25`) — the M48-F1 converse
+  limit and M45's reshaped-index observation are restored in compressed form, and
+  the clause now names `test-value-check-front-door.R` (M59) as the file carrying
+  the M47/M48-F1 citation alongside `test-builder-blame-front-door.R` as the file
+  that reddens, so the attribution line "absorbs M45's reshaped-index line" is
+  true again.
+  **3** — "A third platform failure" → "A separate platform failure".
+  **6** — the `LESSONS.md` header now points at `references/false-greens.md`.
+  **7** — the record that M080's NEWS paragraph was returned twice, with the
+  round-2 draft quoted, is restored.
+  **11** — the module header's verbatim claim now excepts the three `moved M084`
+  lines, agreeing with the provenance block below it.
+  **12** — the second-doctrine-module candidate row is narrowed: it now cites the
+  two entries that remain and records that line 41 was graduated by M084.
+  **13** — 22,365 → 22,360.
+  Re-verified after the fixes: AC1 33 lines / 19,860 bytes; AC2 and AC4 partition
+  unchanged at 27 / 17 / 0 / 0 (no key disturbed); AC3 53 lines / 24,959 bytes;
+  `cairn_validate.py` exit 0.
+- **Follow-up — 4 and 5**, filed as one candidate row in `cairn/ROADMAP.md`:
+  both files clear their budgets by less than one average entry (`LESSONS.md`
+  140 bytes of room against a 735-byte average entry; the module 1,041 against
+  1,248), so the next lesson captured re-breaks one of them. The row carries the
+  merge-commit figures and the open call — compress, raise a budget with a stated
+  reason, or graduate a second family.
+- **Rejected — 9**, the borderline `keep` on the M47 `-map` entry: the clause the
+  reviewer points at is one sentence of evidence inside an entry whose subject is
+  `-map`'s stream selection, not test discrimination, so it is a defensible
+  classification call rather than a defect; recorded here rather than acted on.
+- **Rejected — 14**, the unreconciled Scope estimate: Scope is plan-owned and may
+  not be edited at review (the never-reinterpret rule); Decisions carries the
+  measured 17 / 21,171 accurately.
+- **Discharged — 8**: the stamp is rewritten in the post-merge hygiene pass with
+  the merge-commit figures and a `post-merge` opening, which is what the finding
+  asks for.
 
 ## Work log
 
@@ -138,6 +215,7 @@ _No `Driving RR:` on this milestone, so the projection-vs-outcome record no-ops.
 - 2026-08-28: T1 — branch cut; ledger `cairn/references/lessons-baseline-M084.md` committed with all 44 entries, their byte lengths and `cut -c1-120` keys (unique: `sort | uniq -d` returns nothing); classification in Decisions.
 - 2026-08-28: T2 — `cairn/references/false-greens.md` authored (46 lines, 22,780 bytes; budget < 60 lines / < 26,000 bytes, chosen at the implement gate), holding the 17 graduated entries verbatim under five themed headings; the same 17 deleted from `LESSONS.md`, which is now 32 lines / 21,044 bytes. Partition checked against the branch point: 27 in `LESSONS.md` only, 17 in the module only, 0 in both, 0 in neither.
 - 2026-08-28: T3 — six partly-covered entries trimmed to their remainders; the FFmpeg-version, error-precedence and two-pass halves moved into the module as three new lines, the front-door-guard half dropped to `tests/testthat/test-builder-blame-front-door.R`, the blame-config half to `CLAUDE.md` and the timeout escalation figures to D056. `LESSONS.md` 19,372 bytes / 32 lines (under 20,000 / 50, 628 bytes of room); module 24,124 bytes / 49 lines (under its own 26,000 / 60). Partition re-checked: 27 / 17 / 0 both / 0 neither. `devtools::test()`: 0 failures, 8223 pass, 5 skip.
-- 2026-08-28: T4 — `Last hygiene check` stamp replaced with M084's figures: `LESSONS.md` 19,372 bytes / 32 lines, `false-greens.md` 24,846 bytes / 52 lines against its own < 26,000 / < 60 budget, `ROADMAP.md` 22,365 bytes / 45 lines. Both new `references/` pages carry provenance blocks; all 16 `cairn_validate` checks PASS, all 7 advisories OK.
+- 2026-08-28: T4 — `Last hygiene check` stamp replaced with M084's figures: `LESSONS.md` 19,372 bytes / 32 lines, `false-greens.md` 24,846 bytes / 52 lines against its own < 26,000 / < 60 budget, `ROADMAP.md` 22,360 bytes / 45 lines. Both new `references/` pages carry provenance blocks; all 16 `cairn_validate` checks PASS, all 7 advisories OK.
 - 2026-08-28: review in progress — AC1–AC4 verified with fresh evidence and ticked; universal cairn gate clean (16/16 PASS, 7/7 advisories OK). `devtools::check()` and the fresh-context diff-bug reviewer still running; their results and the triage fill the two placeholders in the Review section.
 - 2026-08-28: review checkpoint — toolchain consistency gate clean (`devtools::check()` 0/0/0, `document()` no diff, `pkgdown::check_pkgdown()` no problems). Fresh-context diff-bug reviewer still running; its findings and triage remain the one open placeholder.
+- 2026-08-28: review — one fresh-context reviewer (docs-only internal route) returned 14 findings, none a criterion failure and none a defect in shipped behavior, so no return floor fired. Maintainer triage at the gate: nine fixed on the branch, 4 and 5 filed as one candidate row, 9 and 14 rejected with reason, 8 discharged by the hygiene pass. Every criterion re-verified after the fixes.

@@ -1,6 +1,6 @@
 # M087: A diagnostic answers to the same class from the scalar verb and its batch sibling
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** — (RR05 is advisory; no binding criteria)
@@ -68,7 +68,7 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
       warning carries no exit status because the batch runner's per-row result
       records whether the row succeeded, not how FFmpeg exited. (First clause is
       a regression lock; the reason is new.)
-- [ ] **AC4.** Each site's class names, as stated in the topics paired with it
+- [x] **AC4.** Each site's class names, as stated in the topics paired with it
       here, are the class names an executed call observes at that site:
       `R/loudnorm_two_pass.R:151` and `:112` → `?normalize_audio`, `?ffm_run`,
       `?tidymedia`;
@@ -156,6 +156,12 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
 
 - 2026-08-29: T7 — D063 appended, annotating D062 with RR05 §6's five points and sharpening its falsifier; `R/ffmpeg.R:681` and `:742` left as they are. `NEWS.md` gained the M087 entry and the unreleased M086 paragraph lost its now-false "a class of its own" phrasing. `devtools::document()` no diff; `devtools::test()` 0 failures / 8388 passing / 5 skips (all nvenc-absent); `devtools::check()` 0 errors, 0 warnings, 0 notes. `git grep tidymedia_loudnorm_analysis -- ':!cairn/'` returns nothing.
 - 2026-08-29: review returned M087 to `in-progress` on the return floor. AC4 failed: `?tidymedia`'s `Bounding a run that hangs` section states the loudnorm analysis abort is classed `tidymedia_ffmpeg_exit` with no "when FFmpeg exits non-zero" qualifier (`man/tidymedia-package.Rd:103-107`), so the topic AC4 pairs with `R/loudnorm_two_pass.R:112` names a class an executed call at that site does not raise. AC1, AC2, AC3, AC5 and AC6 verified with fresh evidence; consistency gate clean. Fix-now findings riding the return: F2 (NEWS.md's "raises the same class ... one handler covers both" and "Two paths still do not signal it", both false of the zero-exit path), F3 (`?tidymedia`'s "so does" attaching `tm_rows`/`tm_row_status` to the fieldless scalar abort), F8 (no `DECISIONS.md` record of the class rename or the chosen name), F9/F10 (NEWS.md redundancy and an 83-character line). First defect return.
+
+- 2026-08-29: return fix F1 (AC4) — `?tidymedia`'s exit-class sentence now qualifies the loudnorm analysis pass with "when FFmpeg exits non-zero", matching `?ffm_run`'s wording, so no topic paired with `R/loudnorm_two_pass.R:112` names a class an executed call there does not raise. Guarded by a new assertion in `test-package-topic.R` that reads the attribution window between the loudnorm mention and the class name and requires the qualifier; run against the pre-fix `man/tidymedia-package.Rd` it fails on the old "all classed" sentence, so the guard is red before it is trusted. This binds an attribution rather than an enumeration, which is why the T4 pairing test could not see the defect — F5's point, still carried as a follow-up.
+- 2026-08-29: return fix F3 — `?tidymedia`'s "so does the scalar abort" replaced; the scalar zero-exit abort now says it raises the shared class alone "carrying no fields at all", which is the observed vector T4 recorded (no `tm_status`, no `tm_rows`, no `tm_row_status`).
+- 2026-08-29: return fixes F2/F9/F10 — `NEWS.md`'s first condition bullet now qualifies "raises the same class ... when FFmpeg exits non-zero" and counts three non-signalling paths rather than two, naming the scalar zero-exit path; the second bullet's duplicate account of why the batch phase answers to the shared class is cut to a forward pointer, leaving the reason stated once in the third bullet (F9); line 41's 83-character line is gone with that rewrite (F10).
+- 2026-08-29: return fix F8 — D064 appended, recording the retirement of `tidymedia_loudnorm_analysis` and the choice of `tidymedia_loudnorm_no_measurement`. Appended rather than folded into D063, which states the class-vector rule; the rename is a naming decision under D062 and would be lost when this milestone file compresses to an archive summary. The entry is shown verbatim in the close block.
+- 2026-08-29: return verified — `devtools::document()` no diff after the run; `devtools::test()` 0 failures / 8391 passing / 5 skips (all nvenc-absent); `devtools::check()` Status: OK, 0 errors / 0 warnings / 0 notes (3m 22.6s).
 
 ## Decisions
 

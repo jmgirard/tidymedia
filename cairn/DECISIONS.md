@@ -2936,3 +2936,42 @@ class alone. M087's milestone file records the observed vectors.
 - **Falsified by** the shared event's own name ever differing across
   severities; or by a class being attached at a site that cannot carry that
   class's contractual fields.
+
+## D064 — The `loudnorm` analysis-pass class is `tidymedia_loudnorm_no_measurement`; `tidymedia_loudnorm_analysis` is retired (2026-08-29, from M087/RR05; applies D062's naming rule to a public class that changed name before first release)
+
+M087 gave the `loudnorm` analysis pass one shared condition class across its
+scalar and batch forms. The class that already existed at one of those sites
+was `tidymedia_loudnorm_analysis`; the class that shipped is
+`tidymedia_loudnorm_no_measurement`. A public class name changed, so the
+reasoning belongs here rather than only in a milestone file that is compressed
+to a summary at archive.
+
+**Why the incumbent was rejected.** `tidymedia_loudnorm_analysis` names a
+*phase*, not an event, and so promises more than it delivers: three failures
+inside that same phase escape it — a reached limit aborts `tidymedia_timeout`,
+an unresolvable binary aborts unclassed, and a silent input aborts unclassed
+from its own branch. A caller reading the name would write a handler expecting
+to cover the analysis pass and would silently miss all three. That is D062's
+event-naming rule failing in a second dress: RR04 rejected `tidymedia_ffmpeg_error`
+for naming a category, and a phase name is a category by another route.
+
+**Why `no_measurement`.** It names the fact that occurred — the analysis pass
+yielded no usable measurement, so no correction could be built — and it
+truthfully excludes silence, because a silent input *was* measured, at `-inf`.
+`tidymedia_loudnorm_unmeasured` was set aside: what would be unmeasured is the
+input, not the pass. Dropping the `loudnorm_` scope was rejected on the same
+narrow-name precedent D062 records for `tidymedia_probe_timeout` and
+`tidymedia_batch_timeout`.
+
+**Why the rename is taken now.** The package is unreleased and pre-0.2.0
+(D014), and the only handlers written on the incumbent are this repo's own
+tests. After the first release the calculus inverts permanently: a class name
+callers match on cannot be changed quietly, and the package would be stuck
+with a name that overpromises. No deprecation cycle is owed for a class no
+released version has shipped.
+
+- **Falsified by** a failure being found inside the `loudnorm` analysis pass
+  that yields no usable measurement and yet must *not* answer to this class;
+  or by the decision D062 leaves open — sweeping every class into the
+  ecosystem's `pkg_error_*` shape — being taken, which would rename this one
+  along with the rest.

@@ -116,22 +116,23 @@
 #' the first signal.
 #'
 #' A run that FFmpeg itself refused is a different outcome from a run the
-#' limit killed, and carries a different class. The aborts from [ffm_run()],
-#' from the `loudnorm` analysis pass behind `normalize_audio(two_pass = TRUE)`,
-#' and from the multi-track diagnostic [separate_audio_video()] adds to a
-#' failed audio output are all classed `tidymedia_ffmpeg_exit` and carry the
-#' exit status in their `tm_status` field. The last two name what failed as well
-#' as how, each carrying a second class ahead of that one:
+#' limit killed, and carries a different class. The abort from [ffm_run()], the
+#' abort from the `loudnorm` analysis pass behind
+#' `normalize_audio(two_pass = TRUE)` when FFmpeg exits non-zero, and the
+#' multi-track diagnostic [separate_audio_video()] adds to a failed audio
+#' output are classed `tidymedia_ffmpeg_exit` and carry the exit status in their
+#' `tm_status` field. The last two name what failed as well as how, each
+#' carrying a second class ahead of that one:
 #' `tidymedia_loudnorm_no_measurement` and `tidymedia_multitrack_separation`.
 #'
 #' Those two names are the ones that hold across a verb's scalar and `_batch`
 #' forms, where `tidymedia_ffmpeg_exit` cannot. The batch two-pass analysis
 #' phase reports every offending row at once and fires for rows that exited zero
 #' as well, so it raises `tidymedia_loudnorm_no_measurement` alone, carrying
-#' `tm_rows` and `tm_row_status` and no exit status; so does the scalar abort
-#' for an analysis pass that exited zero and printed nothing parseable. The
-#' batch separation warning is `tidymedia_multitrack_separation` alone, with no
-#' exit status either.
+#' `tm_rows` and `tm_row_status` and no exit status. The scalar abort for an
+#' analysis pass that exited zero and printed nothing parseable raises that
+#' class alone as well, carrying no fields at all. The batch separation warning
+#' is `tidymedia_multitrack_separation` alone, with no exit status either.
 #'
 #' @section Session options:
 #' Three options change how the package behaves for the rest of the session.

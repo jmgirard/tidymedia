@@ -32,13 +32,16 @@
   ```
 
   The `loudnorm` analysis pass behind `normalize_audio(two_pass = TRUE)`
-  raises the same class and carries the same field, so one handler covers
-  both. The status is whatever `system2()` reported: for a signal-terminated
-  FFmpeg that is the shell's 128-plus-signal number, passed through unchanged,
-  rather than a value FFmpeg chose. Two paths still do not signal it:
-  the `ffm_batch()` family records `success = FALSE` for a failed row instead
-  of aborting, and `normalize_audio_batch(two_pass = TRUE)` raises
-  `tidymedia_loudnorm_no_measurement` instead, for the reason the next entry gives.
+  raises the same class and carries the same field when FFmpeg exits non-zero,
+  so one handler covers both of those runs. The status is whatever
+  `system2()` reported: for a signal-terminated FFmpeg that is the shell's
+  128-plus-signal number, passed through unchanged, rather than a value FFmpeg
+  chose. Three paths still do not signal it: the `ffm_batch()` family records
+  `success = FALSE` for a failed row instead of aborting, and the analysis
+  pass raises `tidymedia_loudnorm_no_measurement` instead both when
+  `normalize_audio(two_pass = TRUE)` exits zero and prints nothing parseable
+  and on every `normalize_audio_batch(two_pass = TRUE)` failure, for the
+  reason the entry after next gives.
   Internally the package now reads the number off that field; it used to
   recover it by matching a regular expression against the error message,
   which could not tell the wording of one abort from the wording of another
@@ -59,14 +62,12 @@
   )
   ```
 
-  `normalize_audio_batch(two_pass = TRUE)`'s analysis phase answers to
-  `tidymedia_loudnorm_no_measurement` rather than to the exit class, because it
-  reports every offending row at once and fires for a row that exited zero and
-  printed nothing usable as well as for a row FFmpeg refused. The condition
-  carries `tm_rows`, the 1-indexed offending rows the message names, and
+  `normalize_audio_batch(two_pass = TRUE)`'s analysis phase does not answer to
+  the exit class — the next entry says why — but its condition now carries
+  `tm_rows`, the 1-indexed offending rows the message names, and
   `tm_row_status`, their exit statuses aligned to it — `NA` where the row
-  exited zero. That number used to be discarded, so the only account of why a
-  row failed was the prose.
+  exited zero. Those numbers used to be discarded, so the only account of why
+  a row failed was the prose.
 
 * One handler now covers the `loudnorm` analysis pass in both of its forms.
   `tidymedia_loudnorm_no_measurement` means the analysis pass yielded no usable

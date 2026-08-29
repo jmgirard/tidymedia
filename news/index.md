@@ -45,17 +45,43 @@
   [`system2()`](https://rdrr.io/r/base/system2.html) reported: for a
   signal-terminated FFmpeg that is the shell’s 128-plus-signal number,
   passed through unchanged, rather than a value FFmpeg chose. Two paths
-  deliberately do not signal it:
-  [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
-  replaces it with its own multi-track diagnostic when a multi-track
-  input was written to a single-stream container without naming a track,
-  keeping the original condition as that error’s parent, and the
+  still do not signal it: the
   [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
-  family records `success = FALSE` for a failed row instead of aborting.
-  Internally the package now reads the number off that field; it used to
-  recover it by matching a regular expression against the error message,
-  which could not tell the wording of one abort from the wording of
-  another and gave callers nothing to catch.
+  family records `success = FALSE` for a failed row instead of aborting,
+  and `normalize_audio_batch(two_pass = TRUE)` raises
+  `tidymedia_loudnorm_analysis` instead, for the reason the next entry
+  gives. Internally the package now reads the number off that field; it
+  used to recover it by matching a regular expression against the error
+  message, which could not tell the wording of one abort from the
+  wording of another and gave callers nothing to catch.
+
+- Two more failures now say what they are, so a handler can tell them
+  apart.
+  [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)’s
+  multi-track diagnostic — the error that reports how many audio tracks
+  the input carries when FFmpeg refuses the audio output and no
+  `audio_stream` was named — is now classed `tidymedia_ffmpeg_exit` as
+  well as `tidymedia_multitrack_separation`, and carries the exit number
+  on `tm_status`. An exit-status handler catches it like any other
+  refused run; a handler written for the multi-track case still catches
+  only that.
+
+  ``` r
+
+  tryCatch(
+    separate_audio_video("three-tracks.mkv", "audio.mp3", "video.mp4"),
+    tidymedia_ffmpeg_exit = function(cnd) cnd$tm_status
+  )
+  ```
+
+  `normalize_audio_batch(two_pass = TRUE)`’s analysis phase gets a class
+  of its own, `tidymedia_loudnorm_analysis`, because it reports every
+  offending row at once and fires for a row that exited zero and printed
+  nothing usable as well as for a row FFmpeg refused. The condition
+  carries `tm_rows`, the 1-indexed offending rows the message names, and
+  `tm_row_status`, their exit statuses aligned to it — `NA` where the
+  row exited zero. That number used to be discarded, so the only account
+  of why a row failed was the prose.
 
 - The dropped-track check now has an off switch, and every verb that
   runs it says what it costs. `options(tidymedia.check_tracks = FALSE)`

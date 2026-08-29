@@ -148,10 +148,14 @@ matters too — the same blocked input that took 42.0 seconds against
 FFmpeg 6.1.1 took 2.0 seconds against 9.0.1, because the newer build answers
 the first signal.</p>
 <p>A run that FFmpeg itself refused is a different outcome from a run the
-limit killed, and carries a different class: the abort from <code><a href="ffm_run.html">ffm_run()</a></code>,
-and from the <code>loudnorm</code> analysis pass behind
-<code>normalize_audio(two_pass = TRUE)</code>, is classed <code>tidymedia_ffmpeg_exit</code>
-and carries the exit status in its <code>tm_status</code> field.</p>
+limit killed, and carries a different class. The aborts from <code><a href="ffm_run.html">ffm_run()</a></code>,
+from the <code>loudnorm</code> analysis pass behind <code>normalize_audio(two_pass = TRUE)</code>,
+and from the multi-track diagnostic <code><a href="separate_audio_video.html">separate_audio_video()</a></code> adds to a
+failed audio output are all classed <code>tidymedia_ffmpeg_exit</code> and carry the
+exit status in their <code>tm_status</code> field. The batch two-pass analysis phase
+reports every offending row at once and fires for rows that exited zero as
+well, so it raises <code>tidymedia_loudnorm_analysis</code> instead, carrying <code>tm_rows</code>
+and <code>tm_row_status</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="session-options">Session options<a class="anchor" aria-label="anchor" href="#session-options"></a></h2>

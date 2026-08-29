@@ -155,11 +155,16 @@ seconds against FFmpeg 6.1.1 took 2.0 seconds against 9.0.1, because the
 newer build answers the first signal.
 
 A run that FFmpeg itself refused is a different outcome from a run the
-limit killed, and carries a different class: the abort from
+limit killed, and carries a different class. The aborts from
 [`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md),
-and from the `loudnorm` analysis pass behind
-`normalize_audio(two_pass = TRUE)`, is classed `tidymedia_ffmpeg_exit`
-and carries the exit status in its `tm_status` field.
+from the `loudnorm` analysis pass behind
+`normalize_audio(two_pass = TRUE)`, and from the multi-track diagnostic
+[`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+adds to a failed audio output are all classed `tidymedia_ffmpeg_exit`
+and carry the exit status in their `tm_status` field. The batch two-pass
+analysis phase reports every offending row at once and fires for rows
+that exited zero as well, so it raises `tidymedia_loudnorm_analysis`
+instead, carrying `tm_rows` and `tm_row_status`.
 
 ## Session options
 

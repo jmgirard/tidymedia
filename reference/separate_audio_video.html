@@ -169,6 +169,24 @@ two ways out — <code>audio_stream</code> to write one track, or a container su
 are still reported beneath it, and remain the authority on why the command
 failed: the extra report is attached to <em>any</em> failing audio command on a
 multi-track input, not only to a container refusal.</p>
+<p>The condition carries two class names, so a caller can catch it at either
+width. It is <code>tidymedia_ffmpeg_exit</code>, the class every non-zero FFmpeg
+exit raises, which is what an exit-status handler catches — the number is on
+the condition's <code>tm_status</code> field. It is also
+<code>tidymedia_multitrack_separation</code>, the class of the enriched diagnostic
+itself, which is what to catch when it is this failure in particular you want:</p>
+<div class="sourceCode"><pre><code><span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/separate_audio_video.html">separate_audio_video</a></span><span class="op">(</span><span class="st">"three-tracks.mkv"</span>, <span class="st">"audio.mp3"</span>, <span class="st">"video.mp4"</span><span class="op">)</span>,</span>
+<span>  tidymedia_ffmpeg_exit <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">cnd</span><span class="op">)</span> <span class="va">cnd</span><span class="op">$</span><span class="va">tm_status</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+
+<p>When the report is omitted, the error that reaches the caller is the one the
+run itself raised, unchanged: a non-zero exit still answers to
+<code>tidymedia_ffmpeg_exit</code>, and a failure that is not an exit at all answers
+to neither class here: an FFmpeg the package cannot locate raises an error
+carrying no <code>tidymedia_</code> class at all, and a reached limit raises
+<code>tidymedia_timeout</code>.</p>
 <p>Counting the tracks means running FFprobe, so this is <strong>best-effort</strong>: it
 is added when FFprobe is available and <code>infile</code> can be probed, and
 omitted silently otherwise, leaving FFmpeg's own error alone. It never runs

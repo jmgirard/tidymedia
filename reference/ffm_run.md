@@ -49,9 +49,20 @@ The `tm_status` field is a length-one integer holding the exit status
 exactly as [`system2()`](https://rdrr.io/r/base/system2.html) reported
 it — including, for a signal-terminated FFmpeg, the shell's
 128-plus-signal number passed through unchanged, which encodes the
-signal rather than anything FFmpeg chose to return. The `loudnorm`
-analysis pass behind `normalize_audio(two_pass = TRUE)` raises the same
-class and carries the same field, so one handler covers both.
+signal rather than anything FFmpeg chose to return. Two other paths
+raise the same class and carry the same field, so one handler covers all
+three: the `loudnorm` analysis pass behind
+`normalize_audio(two_pass = TRUE)`, and the multi-track diagnostic
+[`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+adds to a failed audio output.
+
+The batch two-pass form is the exception.
+`normalize_audio_batch(two_pass = TRUE)` reports every offending row of
+its analysis phase in one error, and fires for rows that exited zero and
+printed nothing usable as well as for rows FFmpeg refused, so it raises
+`tidymedia_loudnorm_analysis` rather than this class. That condition
+carries `tm_rows`, the 1-indexed offending rows, and `tm_row_status`,
+their exit statuses aligned to it, with `NA` where the row exited zero.
 
 ## See also
 

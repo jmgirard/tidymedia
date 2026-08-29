@@ -91,9 +91,17 @@ reading the error text:</p>
 exactly as <code><a href="https://rdrr.io/r/base/system2.html" class="external-link">system2()</a></code> reported it — including, for a
 signal-terminated FFmpeg, the shell's 128-plus-signal number passed through
 unchanged, which encodes the signal rather than anything FFmpeg chose to
-return. The <code>loudnorm</code> analysis pass behind
-<code>normalize_audio(two_pass = TRUE)</code> raises the same class and carries the
-same field, so one handler covers both.</p>
+return. Two other paths raise the same class and carry the same field, so one
+handler covers all three: the <code>loudnorm</code> analysis pass behind
+<code>normalize_audio(two_pass = TRUE)</code>, and the multi-track diagnostic
+<code><a href="separate_audio_video.html">separate_audio_video</a></code> adds to a failed audio output.</p>
+<p>The batch two-pass form is the exception. <code>normalize_audio_batch(two_pass
+= TRUE)</code> reports every offending row of its analysis phase in one error, and
+fires for rows that exited zero and printed nothing usable as well as for rows
+FFmpeg refused, so it raises <code>tidymedia_loudnorm_analysis</code> rather than
+this class. That condition carries <code>tm_rows</code>, the 1-indexed offending
+rows, and <code>tm_row_status</code>, their exit statuses aligned to it, with
+<code>NA</code> where the row exited zero.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

@@ -1,6 +1,6 @@
 # M088: A failed audio half no longer costs the caller the video
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -90,7 +90,7 @@ Layer 1's failed-output removal → unchanged, relied on here (D046).
 - [x] T5: Roxygen "When the audio output fails" section and `@return`;
       `devtools::document()`; `NEWS.md` entry. Prose derived from an executed
       call, never composed.
-- [ ] T6: `devtools::test()` and `devtools::check()`; confirm the AC6 batch
+- [x] T6: `devtools::test()` and `devtools::check()`; confirm the AC6 batch
       sites are absent from the diff.
 - [x] T7: Append the D-entry recording the run-order choice and its falsifier;
       narrow the ROADMAP candidate row to its two remaining halves.
@@ -113,6 +113,7 @@ Layer 1's failed-output removal → unchanged, relied on here (D046).
 - 2026-08-29: T8 (discovered sub-task, minor amendment): `devtools::test()` reddened the derived timeout-absorber pin — the new handler makes `separate_audio_video()` an absorber. Recorded there with why a held timeout is not a swallowed one, and added to the same file's abort half so its forced timeout must still carry `tidymedia_timeout`.
 - 2026-08-29: T5 roxygen `@return` and "When the audio output fails" section rewritten from two executed calls (the AC1 and AC3 messages, both read off a real run); `devtools::document()`; NEWS.md entry under Bug fixes.
 - 2026-08-29: T7 D065 appended; the M45-leftovers ROADMAP row narrowed to its two remaining halves.
+- 2026-08-29: T6 `devtools::test()` clean (0 failures) and `devtools::check()` at 0 errors / 0 warnings / 0 notes; the branch diff touches `R/ffmpeg.R` in three hunks, none of them reaching `warn_failed_separation_batch()` or `separate_audio_video_batch()`. Status to review.
 - 2026-08-29: T1 tests written first and confirmed red against unchanged `R/` — six new tests in `test-separate-av-multitrack.R`; `master`'s class vectors and `tm_status` for AC2's two branches recorded in the file's own comment (ffmpeg 9.0.1, macOS arm64, status 234).
 
 ## Decisions

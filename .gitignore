@@ -21,3 +21,4 @@ cairn/.merge-approved.pending
 
 # built package tarballs
 *.tar.gz
+tests/testthat/testthat-problems.rds

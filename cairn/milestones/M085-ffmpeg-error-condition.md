@@ -1,6 +1,6 @@
 # M085: A failed FFmpeg run is a condition you can catch
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** — (RR04 is advisory; no binding criteria requested)
@@ -126,7 +126,7 @@ there; NEWS.
       measurement — see the work log). Confirm (a)-(c) redden the AC1 test, (d)
       the AC2 test and (e) the AC4 test. Restore; record all five outcomes in
       one work-log line.
-- [ ] T6: `ffm_run()` roxygen; the package-level help-page sentence; NEWS entry;
+- [x] T6: `ffm_run()` roxygen; the package-level help-page sentence; NEWS entry;
       `devtools::document()`;
       `devtools::check()` and `devtools::test()`.
 
@@ -148,6 +148,8 @@ there; NEWS.
 - 2026-08-29: T3 — `ffmpeg_exit_status()`'s body is now `inherits(cnd, "tidymedia_ffmpeg_exit")`, a read of `cnd$tm_status`, and a `NULL` guard; no regex, no `conditionMessage()`. Both comment blocks (`R/ffmpeg.R:649-654` and the block above the helper) restate the class-and-field read, and the wording-coupling test in `tests/testthat/test-separate-av-multitrack.R` is deleted. `devtools::test()`: 0 failures, 8221 passing (2 fewer expectations, the deleted test's).
 - 2026-08-29: T4 — `tests/testthat/test-ffmpeg-exit-condition.R` adds four tests: AC1 (class vector `identical()`, integer scalar non-zero `tm_status`, and the value `identical()` to the `"status"` attribute of the same command re-spawned `run_program()`-style against a fresh `tempfile()`); AC2 (the `loudnorm` pass on an undemuxable input, caught by class alone, message text pinned `fixed = TRUE`); AC4 (all six cases, the missing-binary one caught from a real `run_program(NULL, ...)`); and AC5's missing-binary fall-open with `find_ffmpeg` mocked to `NULL`. 19 passing in the new file; full `devtools::test()` 0 failures, 8240 passing, 5 skips, the existing multi-track suite included.
 - 2026-08-29: T5 — five planted defects, each applied alone and reverted, the tree restored clean between runs. (a) `tm_status` dropped from the `ffm_run()` abort: 5 failures — 3 in the AC1 test, 2 in the multi-track enrichment suite. (b) the class dropped, field kept: 8 failures — the AC1 test errors at its own `tryCatch()` (nothing catches it), and the enrichment falls open on every site that reads a status. (c) the status stored as `as.character(status)`: 2 failures, the AC1 type assertion and the oracle comparison. (d) the class dropped from the `loudnorm` abort: 1 error, the AC2 test's `tryCatch()`. (e) `ffmpeg_exit_status()`'s `is.null()` guard dropped: 1 failure, AC4's classed-but-fieldless case. Probe (e) was added after measuring that (a)-(c) do not reach the AC4 test, whose conditions are all constructed directly or caught from `run_program()` and so are unaffected by the `ffm_run()` abort — the plan's expectation that they would redden AC4 is false, and what they redden besides AC1 is the AC5 enrichment suite, which reads the status off a real `ffm_run()` condition. Minor task amendment: T5 gains probe (e), which keeps `AC4 → T5` true without a Coverage amendment.
+- 2026-08-29: T6 — `ffm_run()` gains a `When FFmpeg exits non-zero` roxygen section naming the class and the field, showing the `tryCatch()` form, stating that the status is `system2()`'s and that a signal-terminated FFmpeg encodes the signal there, and naming the `loudnorm` path; `?tidymedia`'s timeout section gains a closing paragraph distinguishing a refused run from a killed one and naming the class and field; NEWS gains a New features entry. `devtools::document()` rewrote `man/ffm_run.Rd` and `man/tidymedia-package.Rd` and a second run produced no further diff. `devtools::check()`: 0 errors, 0 warnings, 0 notes. `devtools::test()`: 0 failures, 8240 passing, 5 skips. AC6's repo-wide sweep over `R/`, `man/`, `tests/`, `vignettes/`, `NEWS.md` and both READMEs for `exited with status`, `ffmpeg_exit_status`, `exit status`, `parse`, `regexpr` and `regmatches` leaves no site describing the status as parsed; the surviving `regexpr`/`regmatches` hits are the codec-table and `volumedetect` readers.
+- 2026-08-29: all tasks complete; status → review.
 
 ## Decisions
 

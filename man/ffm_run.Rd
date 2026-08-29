@@ -26,6 +26,27 @@ special characters are safe.
 \description{
 Compile the instructions in the pipeline and run them all through FFmpeg.
 }
+\section{When FFmpeg exits non-zero}{
+
+A run FFmpeg refuses aborts with a condition of class
+\code{tidymedia_ffmpeg_exit}, so a caller can catch a failed run without
+reading the error text:
+
+\preformatted{
+tryCatch(
+  ffm_run(pipeline),
+  tidymedia_ffmpeg_exit = function(cnd) cnd$tm_status
+)
+}
+
+The \code{tm_status} field is a length-one integer holding the exit status
+exactly as \code{system2()} reported it — including the values R uses for a
+signal-terminated FFmpeg, where the number encodes the signal rather than
+anything FFmpeg chose to return. The \code{loudnorm} analysis pass behind
+\code{normalize_audio(two_pass = TRUE)} raises the same class and carries the
+same field, so one handler covers both.
+}
+
 \examples{
 \dontshow{if (nzchar(Sys.which("ffmpeg"))) withAutoprint(\{ # examplesIf}
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

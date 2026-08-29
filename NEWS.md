@@ -19,6 +19,27 @@
 
 ## New features
 
+* A failed FFmpeg run is now something you can catch. When FFmpeg exits
+  non-zero, `ffm_run()` — and every task verb that runs through it — aborts
+  with a condition of class `tidymedia_ffmpeg_exit`, carrying the exit status
+  as a length-one integer in its `tm_status` field:
+
+  ```r
+  tryCatch(
+    ffm_run(pipeline),
+    tidymedia_ffmpeg_exit = function(cnd) cnd$tm_status
+  )
+  ```
+
+  The `loudnorm` analysis pass behind `normalize_audio(two_pass = TRUE)`
+  raises the same class and carries the same field, so one handler covers
+  both. The status is whatever `system2()` reported, which for a
+  signal-terminated FFmpeg encodes the signal rather than a value FFmpeg
+  chose. Internally the package now reads the number off that field; it used
+  to recover it by matching a regular expression against the error message,
+  which could not tell the wording of one abort from the wording of another
+  and gave callers nothing to catch.
+
 * The dropped-track check now has an off switch, and every verb that runs it
   says what it costs. `options(tidymedia.check_tracks = FALSE)` stops the check
   — the warning `extract_audio()`, `convert_audio()`, `normalize_audio()` and

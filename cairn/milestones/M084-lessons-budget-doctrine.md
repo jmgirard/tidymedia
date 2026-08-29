@@ -71,7 +71,7 @@ retired.
       themed headings, a header stating its line and byte budget set from the
       graduated size plus stated headroom, and an `INDEX.md` line. Delete every
       graduated entry from `LESSONS.md`, leaving no line behind.
-- [ ] T3 Apply the remaining exits: trim each partly-covered lesson to its
+- [x] T3 Apply the remaining exits: trim each partly-covered lesson to its
       remainder; retire under enforcement or ownership only where the exit's
       test or owning slot is named in T1's classification. Re-measure; stop when
       AC1 clears with headroom.
@@ -90,3 +90,4 @@ retired.
 - 2026-08-28: plan gate chose one module holding the family whole over splitting it into false-greens plus front-door-ordering, because the maturation exit requires a family to graduate whole and the second group has been extended twice at most; falsified by AC1 failing to clear with the one module out.
 - 2026-08-28: T1 — branch cut; ledger `cairn/references/lessons-baseline-M084.md` committed with all 44 entries, their byte lengths and `cut -c1-120` keys (unique: `sort | uniq -d` returns nothing); classification in Decisions.
 - 2026-08-28: T2 — `cairn/references/false-greens.md` authored (46 lines, 22,780 bytes; budget < 60 lines / < 26,000 bytes, chosen at the implement gate), holding the 17 graduated entries verbatim under five themed headings; the same 17 deleted from `LESSONS.md`, which is now 32 lines / 21,044 bytes. Partition checked against the branch point: 27 in `LESSONS.md` only, 17 in the module only, 0 in both, 0 in neither.
+- 2026-08-28: T3 — six partly-covered entries trimmed to their remainders; the FFmpeg-version, error-precedence and two-pass halves moved into the module as three new lines, the front-door-guard half dropped to `tests/testthat/test-builder-blame-front-door.R`, the blame-config half to `CLAUDE.md` and the timeout escalation figures to D056. `LESSONS.md` 19,372 bytes / 32 lines (under 20,000 / 50, 628 bytes of room); module 24,124 bytes / 49 lines (under its own 26,000 / 60). Partition re-checked: 27 / 17 / 0 both / 0 neither. `devtools::test()`: 0 failures, 8223 pass, 5 skip.

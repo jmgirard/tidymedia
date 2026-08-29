@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M086: The catchable failure reaches the two paths M085 left behind
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -117,7 +117,7 @@ tell a caller which class catches what.
       section, per AC3), `R/ffm.R:1539-1549` (`ffm_run()`'s class paragraph),
       `R/tidymedia-package.R:113-117`; then `devtools::document()`.
 - [x] T6 `NEWS.md` bullet under the development version naming the two paths.
-- [ ] T7 `devtools::check()`; record the run/skip counts AC6 asks for.
+- [x] T7 `devtools::check()`; record the run/skip counts AC6 asks for.
 
 ## Work log
 
@@ -132,6 +132,8 @@ tell a caller which class catches what.
 - 2026-08-29: T3+T4 in one commit, same red-then-green shape. The three AC4 batches drive the exported `normalize_audio_batch(two_pass = TRUE)` with `run_loudnorm_analysis_batch()` mocked to recorded stderr, so the abort under test is the verb's own and no binary is needed; `devtools::test()` clean at 8318 passes.
 - 2026-08-29: T5+T6. Roxygen on `?separate_audio_video`, `?ffm_run`, `?tidymedia` and `?normalize_audio_batch` (the last is where AC4's class is user-visible, added under Scope In (c)); `devtools::document()` rewrote four Rd files. AC3's handler is verified by executing it against a real failing call, not by reading the page; the Rd/NEWS guard was proven able to fail by planting `tidymedia_PLANTED_DEFECT` over the class name in `man/ffm_run.Rd` and watching it go red, then restoring the file.
 - 2026-08-29: `NEWS.md`'s M085 bullet said "Two paths deliberately do not signal it", naming `separate_audio_video()` as one; that became false on this branch and was corrected in place (the changelog describes an unreleased development version). The new bullet names both changed paths and their classes. `devtools::test()` clean at 8334 passes, 0 failures, 5 skips.
+- 2026-08-29: T7. First `devtools::check()` came back `Status: 1 NOTE` — the spelling test flagged "unresolvable" in the new `separate_audio_video` prose; reworded to "an FFmpeg the package cannot locate" rather than growing `inst/WORDLIST`, re-documented, re-checked. Second run: `Status: OK` (0 errors, 0 warnings, 0 notes).
+- 2026-08-29: AC6 counts on this machine (ffmpeg 9.0.1 and ffprobe both on PATH), each file run on its own: `test-ffmpeg-exit-condition.R` 101 passes / 0 skips, `test-normalize-audios-two-pass.R` 78 / 0, `test-separate-av-multitrack.R` 75 / 0. Full suite 8334 passes, 0 failures, 5 skips (none in those three files). Status set to review.
 ## Decisions
 
 ## Review

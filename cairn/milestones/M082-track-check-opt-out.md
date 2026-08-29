@@ -1,6 +1,6 @@
 # M082: The track check has an off switch, and says what it costs
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -147,6 +147,7 @@ cost; the stale verb list at `R/tidymedia-package.R:55`; NEWS.
 - 2026-08-28: review finding F1 fixed at all three sites — NEWS.md, the `?tidymedia` options section and `R/timeout.R`'s seam comment named the switch's beneficiary as a jobs table whose rows all name an `audio_stream`, which is the one population that pays nothing for the check either way: the scalar sites gate on `is.null(audio_stream)` and the batch form returns above the seam when no row asked to be probed. Each now names a large batch whose tracks the caller already knows, and says plainly that a row naming a track is never probed.
 - 2026-08-28: review finding F3 fixed by superseding entry D061 rather than an edit (history is append-only): D060's sentence that the bar does not reach D024's outcome clause is wrong on the ran-vs-skipped axis, which the milestone's own no-bar tests pin as observable. D060's load-bearing defence — the bar rides `cli_message`/`cliMessage`, the same channel as the warning — stands unchanged, as does the bar.
 - 2026-08-28: review findings F9 and F6 took two ROADMAP candidate rows: the two shapes M082 left behind (per-verb argument, probing inside the fan-out), cross-referencing the retired M44 row that states them and their promotion conditions rather than restating it; and the `See vignette(…)` paragraph captured by whatever `\section{}` precedes it in `?tidymedia`, pre-existing on `master` and moved rather than introduced here.
+- 2026-08-28: amendment round complete — `devtools::document()` leaves no diff, `devtools::test()` is 0 failures / 8223 passing / 5 skips (all binary-capability skips), and `devtools::check()` reports 0 errors, 0 warnings, 0 notes (2m 42s). Status back to review; AC4 is the one criterion needing fresh evidence, against its amended wording.
 
 ## Decisions
 

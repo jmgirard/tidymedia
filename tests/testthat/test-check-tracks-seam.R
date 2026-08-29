@@ -190,6 +190,19 @@ test_that("the sweep drives one bar counting the DISTINCT inputs", {
                    c("0/3 created", "3/3 terminated (done)"))
 })
 
+test_that("on a mixed table the bar counts only the inputs swept", {
+  # Three distinct inputs, one of whose rows names a track: that row is not
+  # probed, so the bar totals 2 rather than the table's own 3. The sweep's
+  # domain is the rows that named nothing, and the bar reports that domain --
+  # a bar totalling 3 would overstate the work by the rows it never visits.
+  local_mocked_bindings(count_audio_streams = function(file) 3L)
+  jobs <- tibble::tibble(input = c("a.mkv", "b.mkv", "c.mkv"),
+                         output = c("x", "y", "z"),
+                         audio_stream = c(NA, NA, 0))
+  expect_identical(progress_ticks(warn_dropped_audio_batch(jobs)),
+                   c("0/2 created", "2/2 terminated (done)"))
+})
+
 test_that("no bar is created when the seam is switched off", {
   local_mocked_bindings(count_audio_streams = function(file) 3L)
   jobs <- tibble::tibble(input = c("a.mkv", "b.mkv"), output = c("x", "y"))

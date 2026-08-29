@@ -59,10 +59,13 @@ cost; the stale verb list at `R/tidymedia-package.R:55`; NEWS.
       `options(tidymedia.check_tracks = FALSE)` leaves the option unset in the
       parent afterwards, and a worker sees `FALSE` — the same round trip
       `carried_option_values()` already makes for `tidymedia.timeout`.
-- [ ] AC4 — `warn_dropped_audio_batch()` reports progress across its probe
-      sweep: on a jobs table of N distinct inputs the sweep drives one `cli`
-      progress bar whose total is N and which reaches N/N; with the seam
-      `FALSE` no bar is created.
+- [ ] AC4 — `warn_dropped_audio_batch()` reports progress across the inputs
+      its sweep visits: on a jobs table whose rows naming no `audio_stream`
+      cover N distinct inputs, the sweep drives one `cli` progress bar whose
+      total is N and which reaches N/N. Measured on a table that also carries
+      at least one row naming a track, so that N is smaller than the table's
+      own distinct-input count. No bar is created in either of two further
+      cells: the seam `FALSE`, and every row naming a track.
 - [x] AC5 — Every verb the AC1 procedure enumerates documents, in its own
       help topic, that the check costs one FFprobe call per distinct input and
       how to turn it off; the three `_batch` verbs also state that those probes
@@ -137,6 +140,9 @@ cost; the stale verb list at `R/tidymedia-package.R:55`; NEWS.
 
 - 2026-08-28: review — evidence gathered for all seven criteria on PR #86; AC1, AC2, AC3, AC5, AC6, AC7 pass, consistency gate clean (cairn_validate exit 0, document() no diff, pkgdown clean, check 0/0/0). Three fresh-context lenses ran; the two Sonnet lenses reported zero defects, the Opus diff lens nine findings, all logged with dispositions in the Review section.
 - 2026-08-28: amendment return: AC4 — "`warn_dropped_audio_batch()` reports progress across its probe sweep: on a jobs table of N distinct inputs the sweep drives one `cli` progress bar whose total is N and which reaches N/N; with the seam `FALSE` no bar is created." Falsified on a mixed jobs table: three distinct inputs, one row naming an `audio_stream`, bar total 2 against N = 3. The criterion names no procedure bounding "N distinct inputs"; the shipped behaviour (counting the inputs the sweep visits) is correct.
+- 2026-08-28: amendment return: AC4 — "`warn_dropped_audio_batch()` reports progress across the inputs its sweep visits: on a jobs table whose rows naming no `audio_stream` cover N distinct inputs, the sweep drives one `cli` progress bar whose total is N and which reaches N/N. Measured on a table that also carries at least one row naming a track, so that N is smaller than the table's own distinct-input count. No bar is created in either of two further cells: the seam `FALSE`, and every row naming a track." This line executes the return logged above rather than opening a second one — one amendment return on AC4, not two. Narrowing chosen at the mini gate: the shipped bar counts the inputs the sweep visits, which is the behaviour that should ship, so the promise moved to that domain rather than the code moving to the promise.
+- 2026-08-28: the amended AC4 wording took the criteria audit's full-mode questions (user-facing tier) inline rather than in a fresh-context [O] reader — subagents are unavailable in this session, so the instrument was weaker than the skill specifies. Two repairs before the gate: the first draft bounded the domain as "whose track-naming rows are excluded", a procedure description rather than a promise, rewritten to name the rows the count is taken over; and the negative clause "no bar is created" was rewritten as two named measured cells, since as a bare universal it quantified over every jobs table.
+- 2026-08-28: T5 (amended AC4) — a fourth bar cell added: three distinct inputs, one row naming a track, bar reads `0/2 created` / `2/2 terminated (done)`. Discrimination checked: swapping the sweep's `jobs$input[rows]` for `jobs$input` turns exactly this test red and leaves the other 76 assertions green.
 
 ## Decisions
 

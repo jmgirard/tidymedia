@@ -4290,9 +4290,9 @@ derive_normalized_names <- function(input) {
 #' \code{audio_stream} argument, or an \code{audio_stream} cell on every row --
 #' as does \code{suppressWarnings(classes = "tidymedia_dropped_audio")}. The
 #' check is \strong{best-effort} and costs \strong{one FFprobe call per
-#' distinct input}, so a repeated input is probed once: it is emitted when
-#' FFprobe is available and the input can be probed, and skipped silently
-#' otherwise. Those probes run \strong{serially at the front door}, before the
+#' distinct input} it has to probe, so a repeated input is probed once and a
+#' row that names a track is not probed at all: it is emitted when FFprobe is
+#' available and the input can be probed, and skipped silently otherwise. Those probes run \strong{serially at the front door}, before the
 #' fan-out starts, so \code{parallel} does not reach them; a sweep long enough
 #' to look like a hang reports its progress. The check never runs under
 #' \code{run = FALSE}, never changes any compiled command, and is skipped
@@ -5092,9 +5092,10 @@ check_fanin_jobs <- function(jobs, min_inputs = 1L, verb = NULL,
 #' When a row names no \code{audio_stream} and its input turns out to carry
 #' tracks the output will not, the verb warns \strong{once} for the whole batch,
 #' naming every affected row. That check is \strong{best-effort} and costs
-#' \strong{one FFprobe call per distinct input}, so a repeated input is probed
-#' once: it is emitted when FFprobe is available and the input can be probed,
-#' and is skipped silently otherwise. Those probes run \strong{serially at the
+#' \strong{one FFprobe call per distinct input} it has to probe, so a repeated
+#' input is probed once and a row that names a track is not probed at all: it
+#' is emitted when FFprobe is available and the input can be probed, and is
+#' skipped silently otherwise. Those probes run \strong{serially at the
 #' front door}, before the fan-out starts, so \code{parallel} does not reach
 #' them; a sweep long enough to look like a hang reports its progress. The check
 #' never runs under \code{run = FALSE}, never changes any compiled command, and
@@ -5224,9 +5225,10 @@ extract_audio_batch <- function(jobs, audio_codec = "copy",
 #' When a row names no \code{audio_stream} and its input turns out to carry
 #' tracks the output will not, the verb warns \strong{once} for the whole batch,
 #' naming every affected row. That check is \strong{best-effort} and costs
-#' \strong{one FFprobe call per distinct input}, so a repeated input is probed
-#' once: it is emitted when FFprobe is available and the input can be probed,
-#' and is skipped silently otherwise. Those probes run \strong{serially at the
+#' \strong{one FFprobe call per distinct input} it has to probe, so a repeated
+#' input is probed once and a row that names a track is not probed at all: it
+#' is emitted when FFprobe is available and the input can be probed, and is
+#' skipped silently otherwise. Those probes run \strong{serially at the
 #' front door}, before the fan-out starts, so \code{parallel} does not reach
 #' them; a sweep long enough to look like a hang reports its progress. The check
 #' never runs under \code{run = FALSE}, never changes any compiled command, and

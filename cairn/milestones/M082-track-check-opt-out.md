@@ -149,6 +149,7 @@ cost; the stale verb list at `R/tidymedia-package.R:55`; NEWS.
 - 2026-08-28: review findings F9 and F6 took two ROADMAP candidate rows: the two shapes M082 left behind (per-verb argument, probing inside the fan-out), cross-referencing the retired M44 row that states them and their promotion conditions rather than restating it; and the `See vignette(…)` paragraph captured by whatever `\section{}` precedes it in `?tidymedia`, pre-existing on `master` and moved rather than introduced here.
 - 2026-08-28: amendment round complete — `devtools::document()` leaves no diff, `devtools::test()` is 0 failures / 8223 passing / 5 skips (all binary-capability skips), and `devtools::check()` reports 0 errors, 0 warnings, 0 notes (2m 42s). Status back to review; AC4 is the one criterion needing fresh evidence, against its amended wording.
 - 2026-08-28: re-review after the AC4 amendment — amended AC4 passes on its named mixed-table cell (bar total 2 against the table's own 3 distinct inputs, reaching 2/2; no bar with the seam `FALSE` or with every row naming a track), so all seven criteria now carry fresh evidence. Consistency gate re-run clean: `cairn_validate` exit 0, `document()` no diff, `pkgdown` clean, suite 8223 passing / 0 failing / 5 skips, `check()` 0/0/0. Three lenses re-ran over the incremental diff; the two Sonnet lenses reported zero findings, the Opus diff lens four (F10-F13), all logged with dispositions.
+- 2026-08-28: review finding F10 fixed at the gate — the three `_batch` verb topics (`R/ffmpeg.R:4293`, `:5095`, `:5227`) said the check costs "one FFprobe call per distinct input" with no per-row exemption, the same overstatement F1 repaired at its three sites; each now says "per distinct input it has to probe" and that a row naming a track is not probed at all. AC5's guard matches the unchanged substring and stays green: 19 tests / 122 passing against the installed help, `devtools::check()` 0/0/0. F11, F12 and F13 rejected with the maintainer's agreement.
 
 ## Decisions
 
@@ -346,9 +347,17 @@ findings, ranked below in its order.
   place the shipped documentation is still wrong about the thing this
   milestone documents. AC5's guard matches the fixed substring "one FFprobe
   call per distinct input", so the qualifier can be appended without touching
-  the criterion.
+  the criterion. **Fixed at the gate:** all three now read "costs one FFprobe
+  call per distinct input *it has to probe*, so a repeated input is probed once
+  *and a row that names a track is not probed at all*". Re-verified against the
+  **installed** help after `devtools::install()`: the cost phrase, the new
+  qualifier, "serially at the front door" and both seam forms are present on
+  exactly the three `_batch` topics, and the qualifier is absent from the three
+  scalar ones, which probe one input and already say the check is skipped when
+  `audio_stream` names a track. Doc guard and seam tests 19 tests / 122 passing
+  / 0 failing; `devtools::check()` re-run 0/0/0 (2m 38.2s).
 - **F11 — D061 concedes D024's clause is reached without naming the exception
-  that still licenses the bar.** *Reject.* Verified against
+  that still licenses the bar.** *Reject* (accepted by the maintainer at the gate). Verified against
   `cairn/DECISIONS.md:588-596` and `:2816-2841`: the finding is right that
   D061's "What still stands" paragraph makes the channel-identity argument
   rather than spelling out that a `cli` progress condition *is* a signalled
@@ -364,7 +373,7 @@ findings, ranked below in its order.
   `NA_integer_` or a timeout sentinel. A pre-existing issue the diff did not
   introduce.
 - **F13 — the mixed-table cell does not by itself separate "distinct inputs"
-  from "rows swept".** *Reject.* Verified: its table has three rows, three
+  from "rows swept".** *Reject* (accepted by the maintainer at the gate). Verified: its table has three rows, three
   distinct inputs and two swept, so `length(rows)` and
   `length(unique(inputs))` coincide at 2 and a `length(rows)` mutant would
   pass it. The sibling cell at `test-check-tracks-seam.R:183` (four rows, three
@@ -378,5 +387,6 @@ wording passes on the cell it names — a mixed table where N = 2 is smaller
 than the table's own three distinct inputs — with the shipped code unchanged
 by the amendment. The consistency gate is clean. Thirteen findings across two
 review rounds are logged with their dispositions; none was dropped. No finding
-meets the return floor: F10 is a documentation overstatement in the
-conservative direction, and F11-F13 are rejected on the reasons recorded above.
+meets the return floor: F10 was a documentation overstatement in the
+conservative direction, fixed at the gate on the maintainer's direction, and
+F11-F13 are rejected with the maintainer's agreement on the reasons above.

@@ -74,7 +74,7 @@ milestone changes how rows are stored and worded, never whether an idea stands.
       rows verbatim under per-row headings; add its `INDEX.md` line
       under "Working artifacts"; replace the five rows with one grouped
       candidate row pointing at the page.
-- [ ] T3 Fold the retired M44 row's `(a)`/`(b)` promotion conditions into the
+- [x] T3 Fold the retired M44 row's `(a)`/`(b)` promotion conditions into the
       M082-leftovers row (which says "read them there rather than here"), then
       delete AC2's three struck-through rows. Check the D055-gaps row's stated
       dependence on the retired floor-harness row before deleting that one.
@@ -95,4 +95,5 @@ milestone changes how rows are stored and worded, never whether an idea stands.
 - 2026-08-28: minor amendment to T4 — the branch point has eleven surviving rows over 1,000 bytes, not the nine the plan recorded at `bd4d545`; T4's parenthetical corrected and its citation-check step (the implement gate's choice) written in.
 - 2026-08-28: implement gate chose one shared promote-on clause for the grouped instrument row over restating all five (the five stay verbatim on the entombed page), checking each row's citations before dropping narrative over trusting them, and compressing all eleven wide rows rather than stopping at the first pass under 24,000.
 - 2026-08-28: T2 — the five instrument rows moved verbatim into `cairn/references/instrument-findings.md` (15,878 bytes, indexed), replaced in `cairn/ROADMAP.md` by one grouped row with a shared promote-on clause; verified each of the five is byte-identical on the page and absent from the ROADMAP. ROADMAP 42,552 → 30,013 bytes, 53 → 49 lines, 33 → 29 candidate rows.
+- 2026-08-28: T3 — the retired M44 row's (a)/(b) promotion conditions folded verbatim into the M082-leftovers row, then the three struck-through rows deleted. Checked the D055-gaps row first: it states its own gaps in full and says outright that retiring the carry row does not lose them, and the carry row agreed, so nothing was lost. ROADMAP 30,013 → 27,140 bytes, 49 → 46 lines, 29 → 26 candidate rows.
 - 2026-08-28: plan gate chose compressing live rows in place over deferring the whole cut to entombment and pruning, because the arithmetic does not reach 24,000 without it (41,509 less 13,303 less 3,429 leaves ~24,800, before this plan's own additions); falsified by a measured pass where entombment alone clears the budget with headroom.

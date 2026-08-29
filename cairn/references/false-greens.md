@@ -1,17 +1,20 @@
 # False greens: a test or control that reads green for the wrong reason
 
-_Doctrine module, graduated from `cairn/LESSONS.md` by M084 under the maturation
-exit (tracking-rules, "Retiring a lesson"). Every entry below left `LESSONS.md`
-verbatim, keeping its date and originating milestones; the enumeration and exit
-classification it came from are in `lessons-baseline-M084.md`. Read at plan time
-alongside `LESSONS.md`, and whenever a milestone writes a new check._
+_Doctrine module, graduated from `cairn/LESSONS.md` by M084 under the maturation exit (tracking-rules, "Retiring a lesson"). Every entry below left
+`LESSONS.md` verbatim, keeping its date and originating milestones; the enumeration and exit classification it came from are in `lessons-baseline-M084.md`.
+Read at plan time alongside `LESSONS.md`, and whenever a milestone writes a new check._
 
-_**Budget: fewer than 26,000 bytes and fewer than 60 lines.** Set from the
-graduated size plus room for a few more members; hand-checked with `wc -l -c` at
-hygiene passes, covered by no validator. Over either figure the remedy is
-compressing or retiring content here, never letting the file grow._
+_**Budget: fewer than 26,000 bytes and fewer than 60 lines.** Set from the graduated size plus room for a few more members; hand-checked with `wc -l -c` at
+hygiene passes, covered by no validator. Over either figure the remedy is compressing or retiring content here, never letting the file grow._
 
 _One entry per line, as in `LESSONS.md`; never split an entry across lines._
+
+**Provenance.** Ingested 2026-08-28 by M084 from `cairn/LESSONS.md` at commit `31a8e4f`, the branch point of `m084-lessons-budget-doctrine` — a first-hand
+move of this repo's own records, not an external source. The seventeen graduated entries are rows marked `graduate` in `lessons-baseline-M084.md`; the
+three lines marked `moved M084` are halves trimmed from entries marked `trim` there. Pagination: —.
+Extraction: the seventeen are copied verbatim from the frozen blob, which git still holds, so they are checkable against their origin at any time; the three
+moved halves were rewritten to stand alone and are checkable the same way. There is nothing to re-verify against a moving source — observed
+2026-08-28.
 
 ## Fixtures that measure nothing — the fixture is built, the test is green, and the property under test was never varied.
 

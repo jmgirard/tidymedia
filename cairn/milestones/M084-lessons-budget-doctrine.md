@@ -1,6 +1,6 @@
 # M084: LESSONS gets back under its budget, and its biggest family graduates
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M083
 - **Driving RR:** —
@@ -75,7 +75,7 @@ retired.
       remainder; retire under enforcement or ownership only where the exit's
       test or owning slot is named in T1's classification. Re-measure; stop when
       AC1 clears with headroom.
-- [ ] T4 Refresh the `Last hygiene check` stamp with the new byte and line
+- [x] T4 Refresh the `Last hygiene check` stamp with the new byte and line
       figures for both files and the module's own budget.
 
 ## Decisions
@@ -91,3 +91,4 @@ retired.
 - 2026-08-28: T1 — branch cut; ledger `cairn/references/lessons-baseline-M084.md` committed with all 44 entries, their byte lengths and `cut -c1-120` keys (unique: `sort | uniq -d` returns nothing); classification in Decisions.
 - 2026-08-28: T2 — `cairn/references/false-greens.md` authored (46 lines, 22,780 bytes; budget < 60 lines / < 26,000 bytes, chosen at the implement gate), holding the 17 graduated entries verbatim under five themed headings; the same 17 deleted from `LESSONS.md`, which is now 32 lines / 21,044 bytes. Partition checked against the branch point: 27 in `LESSONS.md` only, 17 in the module only, 0 in both, 0 in neither.
 - 2026-08-28: T3 — six partly-covered entries trimmed to their remainders; the FFmpeg-version, error-precedence and two-pass halves moved into the module as three new lines, the front-door-guard half dropped to `tests/testthat/test-builder-blame-front-door.R`, the blame-config half to `CLAUDE.md` and the timeout escalation figures to D056. `LESSONS.md` 19,372 bytes / 32 lines (under 20,000 / 50, 628 bytes of room); module 24,124 bytes / 49 lines (under its own 26,000 / 60). Partition re-checked: 27 / 17 / 0 both / 0 neither. `devtools::test()`: 0 failures, 8223 pass, 5 skip.
+- 2026-08-28: T4 — `Last hygiene check` stamp replaced with M084's figures: `LESSONS.md` 19,372 bytes / 32 lines, `false-greens.md` 24,846 bytes / 52 lines against its own < 26,000 / < 60 budget, `ROADMAP.md` 22,365 bytes / 45 lines. Both new `references/` pages carry provenance blocks; all 16 `cairn_validate` checks PASS, all 7 advisories OK.

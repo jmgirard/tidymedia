@@ -2,14 +2,14 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-28 (M083 post-merge: `cairn/ROADMAP.md` 22,106 bytes over 45 lines, from 42,552 over 53 at M083's branch point, back under its 24,000-byte budget; 26 candidate rows, each with its `— added` trailer and, where it had one, its promote-on clause. The five instrument-findings rows are entombed verbatim at `cairn/references/instrument-findings.md`; three fully-promoted struck-through rows are pruned. `cairn/LESSONS.md` untouched at 42,232 bytes over 49 lines — over its 20,000-byte budget, under its 50-line cap, and M084's subject; no lesson was added, since M083's one durable lesson is plugin doctrine rather than a repo lesson and the file is one line from its cap. M078's terminal row pruned to keep the five-row retention. All 16 `cairn_validate` checks PASS and all 7 advisories OK. No doctrine modules; three `references/` working artifacts state no budgets of their own.)_
+_Last hygiene check: 2026-08-28 (M084 branch: `cairn/LESSONS.md` 19,372 bytes over 32 lines, from 42,232 over 49 at M084's branch point, back under its 20,000-byte budget and well inside its 50-line cap. Seventeen entries — the family "a test or control that reads green for the wrong reason" — graduated whole into `cairn/references/false-greens.md`, 24,846 bytes over 52 lines against the budget its own header states, fewer than 26,000 bytes and fewer than 60 lines. Six more entries were trimmed to the remainder each still owns: three of those halves moved into the module, the other three to the slot that owns them — the front-door blame sweep, `CLAUDE.md`'s blame config, D056's timeout figures. The 44-entry branch-point enumeration and its exit classification are at `cairn/references/lessons-baseline-M084.md`; every entry is in exactly one of the two files (27 / 17). `cairn/ROADMAP.md` itself is unchanged apart from this stamp and M084's status, 22,360 bytes over 45 lines, under its 24,000-byte budget and 60-line cap; 26 candidate rows and the five-row terminal retention both stand. All 16 `cairn_validate` checks PASS and all 7 advisories OK.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M083 | The ROADMAP gets back under its byte budget | done | — | normal | milestones/archive/M083-roadmap-byte-budget.md |
-| M084 | LESSONS gets back under its budget, and its biggest family graduates | in-progress | M083 | normal | milestones/M084-lessons-budget-doctrine.md |
+| M084 | LESSONS gets back under its budget, and its biggest family graduates | review | M083 | normal | milestones/M084-lessons-budget-doctrine.md |
 | M082 | The track check has an off switch, and says what it costs | done | — | normal | milestones/archive/M082-track-check-opt-out.md |
 | M081 | The unchecked flag, and the second copy of the one predicate | done | — | normal | milestones/archive/M081-unchecked-flag-and-second-copy.md |
 | M080 | The guard says what is wrong, and refuses NA | done | — | normal | milestones/archive/M080-shipped-guard-findings.md |

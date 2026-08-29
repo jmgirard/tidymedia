@@ -1,16 +1,28 @@
 # LESSONS baseline and exit classification (M084)
 
 _The classification ledger M084 committed: every `- ` entry in `cairn/LESSONS.md`
-at M084's branch point, with its byte length, its `cut -c1-120` key, and the exit
-it was classified under. The keys are unique across the enumeration (`sort | uniq -d`
-returns nothing), so each key identifies one entry. Produced 2026-08-28 by M084 from
-commit 31a8e4f; the file it enumerates has changed since._
+at M084's branch point, with its byte length, its key, and the exit it was
+classified under. The key is the entry's first 120 bytes — what `cut -c1-120`
+returns here, `cut -c` counting bytes on this platform — with a trailing partial
+character dropped so this file stays valid UTF-8; that shortening never affects a
+`grep -F` match. The 44 keys are unique, so each identifies one entry. Produced
+2026-08-28 by M084 from commit 31a8e4f; the file it enumerates has changed since._
 
-**Dispositions.** `graduate` — moved whole into `cairn/references/false-greens.md`
-under the maturation exit. `trim` — the covered half moved to that module, the
-remainder left in `cairn/LESSONS.md`. `keep` — left whole in `cairn/LESSONS.md`.
+_**Dispositions.** `graduate` — moved whole into `cairn/references/false-greens.md`
+under the maturation exit. `trim` — the covered half moved to that module or to the
+slot that owns it, the remainder left in `cairn/LESSONS.md`. `keep` — left whole in
+`cairn/LESSONS.md`._
 
-| # | bytes | disposition | key (`cut -c1-120`) |
+**Provenance.** Ingested 2026-08-28 by M084 from `cairn/LESSONS.md` at commit
+`31a8e4f`, the branch point of `m084-lessons-budget-doctrine` — a first-hand
+record of this repo's own files, not an external source. The rows are what
+`grep '^- ' cairn/LESSONS.md` enumerates at that commit, in file order.
+Pagination: —.
+Extraction: byte lengths and keys were computed from the frozen blob, which git
+still holds, so every row is recomputable from its origin at any time and there
+is nothing to re-verify against a moving source — observed 2026-08-28.
+
+| # | bytes | disposition | key |
 |---|---|---|---|
 | 1 | 706 | graduate | `- 2026-08-06 (M52): a parity baseline is only as good as the fixture family under it. Five fixtures built from lavfi sou` |
 | 2 | 710 | keep | `- 2026-08-06 (M52): FFprobe's two writers disagree about nested-section keys in more than casing. `default=nw=1` prints ` |
@@ -44,7 +56,7 @@ remainder left in `cairn/LESSONS.md`. `keep` — left whole in `cairn/LESSONS.md
 | 30 | 713 | keep | `- 2026-07-30 (M48): a verb's BRANCHES need not emit the same command shape, and writing about "the verb" hides it — `s` |
 | 31 | 557 | graduate | `- 2026-07-31 (M50): re-baselining a rendered form across the suite silently voids NEGATIVE assertions. `expect_false(gre` |
 | 32 | 724 | keep | `- 2026-07-31 (M50): a scripted sweep over test files must parse the value with a GRAMMAR, never as "the next token". `[^` |
-| 33 | 426 | graduate | `- 2026-07-31 (M50): snapshot expectations are NOT compared under `testthat::test_file()` after `devtools::load_all()` �` |
+| 33 | 426 | graduate | `- 2026-07-31 (M50): snapshot expectations are NOT compared under `testthat::test_file()` after `devtools::load_all()` ` |
 | 34 | 1785 | graduate | `- 2026-07-31 (M51, extended M59): a test that reads `man/*.Rd` from the source tree SKIPS under `R CMD check`, where tes` |
 | 35 | 1045 | keep | `- 2026-08-06 (M53): fanning a NON-EXPORTED function out with furrr is correct in the shipped package and broken under `d` |
 | 36 | 1460 | graduate | `- 2026-08-07 (M54, extended M58): a test that reads an error to prove WHICH call is blamed passes for the wrong reason o` |

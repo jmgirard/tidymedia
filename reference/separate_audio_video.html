@@ -154,12 +154,31 @@ or return the compiled commands without running them (<code>FALSE</code>).</p></
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A named character vector of the two compiled commands
-(<code>audio</code>, <code>video</code>); invisible when <code>run = TRUE</code>.</p>
+(<code>audio</code>, <code>video</code>); invisible when <code>run = TRUE</code>. Under
+<code>run = TRUE</code> the audio command runs first and the video command runs
+second, whether or not the audio command succeeded. A failed audio command
+still aborts the call, and the video command has written <code>videofile</code>
+by then unless it failed too; see <em>When the audio output fails</em>.</p>
     </div>
     <div class="section level2">
     <h2 id="when-the-audio-output-fails">When the audio output fails<a class="anchor" aria-label="anchor" href="#when-the-audio-output-fails"></a></h2>
 
 
+<p>The two commands run in order — audio first, video second — and the video
+command runs even when the audio one has already failed, so a failed audio
+half does not cost you the video. On that path the call still aborts with the
+audio failure, and that error carries one added line naming the video file
+that was written. When the video command fails as well, the added line is not
+there, the audio failure is still the error you get, and FFmpeg's own output
+for the failed video command is printed above it.</p>
+<p>What a failed command leaves at its own output path is the same rule on
+either path: a partial file that run wrote is removed, while a file that was
+already at that path and that FFmpeg never wrote to is left exactly as it
+was. So neither failure path promises the path is empty afterwards — only
+that nothing half-written is left there. The audio failure's own error says
+which of the two happened to <code>audiofile</code>; nothing reports
+<code>videofile</code>'s fate on the both-fail path, because the video command's
+error is not the one you get.</p>
 <p>Because the default keeps every audio track, writing a multi-track input to a
 container that holds only one (<code>.aac</code>, <code>.mp3</code>, <code>.wav</code>) makes
 FFmpeg fail. When that happens and no <code>audio_stream</code> was named, the error

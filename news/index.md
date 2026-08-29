@@ -733,6 +733,25 @@
 
 ### Bug fixes
 
+- A failed audio output no longer costs you the video in
+  [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md).
+  The verb compiles two commands and runs the audio one first; when that
+  command failed, the call aborted before the video command ran at all,
+  so a caller whose multi-track input would not fit the requested audio
+  container lost the video half too and had to run the whole separation
+  again. The video command now runs either way. The audio failure is
+  still what aborts the call, and its error gains one line —
+  `The video output was written to 'video.mp4'.` — so it is clear the
+  video half survived. If the video command fails as well, that line is
+  not shown and the audio failure is still the error you get. What each
+  failed command leaves at its own output path is unchanged: a partial
+  file that run wrote is removed, a file it never wrote to is left as it
+  was. The audio failure’s error says which of the two happened to
+  `audiofile`; nothing reports `videofile`’s fate when the video command
+  failed too, since its error is not the one raised.
+  [`separate_audio_video_batch()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video_batch.md)
+  is unchanged: it already ran both rows.
+
 - A missing value in a size, position or rate argument is now refused
   instead of reaching FFmpeg.
   `crop_video(f, o, width = NA_real_, height = 100)` used to fail with

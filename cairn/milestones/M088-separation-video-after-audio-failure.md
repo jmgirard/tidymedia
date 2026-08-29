@@ -135,10 +135,13 @@ Layer 1's failed-output removal → unchanged, relied on here (D046).
 - 2026-08-29: T9 — two tests added for the pre-existing-output cases the milestone's fresh-path tests could not reach; AC4's loop now names its two branches and asserts the audio half's own output is gone on the stream-copy failure.
 
 - 2026-08-29: return fix verified — `devtools::test()` FAIL 0 | WARN 12 | SKIP 5 | PASS 8434 (was 8422 at the first review), `devtools::check()` 0 errors / 0 warnings / 0 notes (3m 30s). AC5 re-checked and now passing; status back to review.
+- 2026-08-29: second review pass — all seven criteria re-executed with fresh evidence and all pass, AC5 included; consistency gate clean (one sizing advisory at 12 tasks). Three lenses returned six findings, five of them from [O]: F1 (the corrected AC5 sentence's "its own error says which" clause is false for the video half on the both-fail path) triaged fix-now and put to the maintainer at the gate; F2 and F3 to the deferred-findings candidate row; F4 and F5 rejected. Both [S] lenses reported no findings.
 
 ## Decisions
 
 ## Review
+
+### First pass — returned
 
 Reviewed 2026-08-29 against PR #92. Environment: ffmpeg 9.0.1, macOS arm64,
 R CMD check on tidymedia 0.1.0.9000.
@@ -286,3 +289,152 @@ file), F7's `audiofile` guard and loop label, F1 (the code comment corrected,
 D065 superseded), and F5's work-log line. F3/F6/F8 become one candidate row at
 the hygiene pass that follows a passing review; F4 and F7's width point are
 rejected.
+
+### Second pass — after the return fix
+
+Reviewed 2026-08-29 against PR #92 at `b800124`. Environment: ffmpeg 9.0.1,
+macOS arm64, R CMD check on tidymedia 0.1.0.9000. Branch in sync with
+`origin/master` (0 commits either way). All seven criteria re-executed from
+scratch; the first-pass evidence above is superseded by what follows.
+
+#### Acceptance-criteria evidence
+
+- **AC1 — pass.** `testthat::test_local(filter = "separate-av-multitrack")`:
+  "a failed audio command still leaves the video file behind" (5 assertions)
+  and "the fall-open re-raise keeps its class vector and status" (5) each call
+  `sep_fresh_video()`, whose `expect_false(file.exists(path))` proves the path
+  was absent before the call, then assert the call aborted, `videofile` exists,
+  is non-empty, and probes as one video stream. File total: 116 pass / 0 fail /
+  0 skip across 36 tests.
+- **AC2 — pass.** Same run. The enriched branch pins
+  `c("tidymedia_multitrack_separation", "tidymedia_ffmpeg_exit",
+  "rlang_error", "error", "condition")`; the `n <= 1L` fall-open branch pins
+  `c("tidymedia_ffmpeg_exit", "rlang_error", "error", "condition")`. Both
+  require `tm_status` to equal the status parsed out of the rendered message —
+  a fact stated independently of the field under test. These are the vectors
+  the test file's header records from `master`.
+- **AC3 — pass.** "when both commands fail the audio failure is what aborts"
+  (6 assertions) passes. Reproduced independently outside the suite on a fresh
+  `videofile` with `video_codec = "nosuchcodec"`: the raised condition is the
+  audio command's `tidymedia_multitrack_separation` vector, and `videofile` is
+  absent afterwards.
+- **AC4 — pass.** "the abort names the video file it wrote" (8 assertions)
+  matches `The video output was written to` and `basename(videofile)` on both
+  branches, each iteration labelled by branch; the both-fail test's
+  `expect_no_match` covers the silent half. Reproduced independently: the
+  both-fail message contains no reference to the video basename.
+- **AC5 — pass.** All three surfaces state the run order — roxygen "The two
+  commands run in order — audio first, video second"; `@return` "the audio
+  command runs first and the video command runs second"; `NEWS.md` "runs the
+  audio one first … The video command now runs either way". All three now state
+  the disk rule correctly for both failure paths: a partial file the failed run
+  wrote is removed, a file it never wrote to is left as it was. Verified by
+  execution, not by reading: with a pre-existing `audiofile` and
+  `audio_codec = "nosuchcodec"`, the file survives byte-identical (md5 match)
+  and the error says "was left as it was"; with a pre-existing `videofile` on
+  the both-fail path, that file likewise survives byte-identical; the
+  stream-copy audio failure, where FFmpeg does open the output, reports "The
+  incomplete … was removed." The first pass's failure — prose promising the
+  output is "absent" — is gone from all three surfaces. One clause in this same
+  sentence is separately false and is finding F1 below; it is not part of what
+  AC5 requires the surfaces to state.
+- **AC6 — pass.** `git diff master...HEAD -U0 -- R/ffmpeg.R` yields four hunks
+  at 690, 887, 897 and 995; `warn_failed_separation_batch()` begins at
+  `R/ffmpeg.R:798` and `separate_audio_video_batch()` at `R/ffmpeg.R:5929`, so
+  no hunk falls inside either. `test-separate-audio-video-batch.R` is absent
+  from the diff and runs 53 pass / 0 fail; `test-separate-av-multitrack.R` is
+  +204/-0, append-only, and runs 116 pass / 0 fail.
+- **AC7 — pass.** `devtools::test()`: FAIL 0 | WARN 12 | SKIP 5 | PASS 8434.
+  `devtools::check()`: 0 errors / 0 warnings / 0 notes (3m 21.6s). Every new
+  execution test opens with `skip_if_no_ffprobe()` and builds its input through
+  `make_test_video()` or `make_multitrack_video()`, whose first statement is
+  `skip_if_no_ffmpeg()`.
+
+No Driving RR, so no projection-vs-outcome pairs.
+
+#### Consistency gate
+
+`cairn_validate.py` exit 0, all checks passed; one advisory — M088 at 12 tasks
+against the >10 split tripwire, which is the four return-fix tasks and not a
+gate failure. The `release window` advisory did not fire. No `DESIGN.md`
+principle changed on this branch, so `cairn_impact.py` was not run. Toolchain
+slot (`r-package`): `devtools::document()` leaves a clean tree;
+`NAMESPACE`/`man/` regenerate with no diff; `README.Rmd` untouched;
+`pkgdown::check_pkgdown()` reports no problems; `NEWS.md` carries the entry; no
+new top-level files (0 check notes); `devtools::check()` clean.
+
+#### Independent review — three lenses, ranked findings and disposition
+
+**[O] diff-bug (Opus).**
+
+- F1 — *The corrected AC5 sentence carries a new false clause: "its own error
+  says which".* The roxygen section says the disk-state rule is "the same on
+  either path, and its own error says which", and `NEWS.md` says it "is stated
+  in its own error". True for the audio half. False for the video half on the
+  both-fail path, where the video run's condition is discarded
+  (`R/ffmpeg.R:1015-1018`), so nothing in the error the caller receives names
+  `videofile` at all. Reproduced independently at review: on the both-fail path
+  with a pre-existing `videofile`, the file survives byte-identical and the
+  rendered message never mentions its basename — no "was removed", no "was left
+  as it was". FFmpeg's own stderr for the failed video command is printed, but
+  it reports the encoder failure, not the file's fate. **Disposition: fix now**
+  — a one-clause correction on the branch, put to the maintainer at the gate.
+- F2 — *The video-written bullet is inferred from exit status, never from the
+  file.* `abort_after_video(held, videofile, wrote)` sets `wrote = TRUE` on a
+  zero exit alone; nothing stats `videofile`. A video command exiting 0 without
+  producing the named path would make the error assert the file was written
+  when it is not there. Not demonstrated against the current `-map 0:v`
+  pipeline. **Disposition: follow-up** — folded into the first pass's F3/F6/F8
+  candidate row at the hygiene pass.
+- F3 — *The doubled timeout budget is recorded in D066 but not in user-facing
+  docs.* Reproduced: a 3,600 s input under `tidymedia.timeout = 2` with
+  `audio_codec = "libopus"` times out on the audio half, the video half runs on
+  a fresh 2 s budget and succeeds, and the caller gets `tidymedia_timeout`
+  carrying the video-written bullet at 2.31 s wall clock. The code comment and
+  D066 are true; neither `?separate_audio_video` nor `NEWS.md` says a limit can
+  now cost a second spawn. **Disposition: follow-up** — same candidate row.
+- F4 — *`options(warn = 2)` widens the fall-through:* `tryCatch(error = )`
+  holds any error, so a promoted dropped-track warning from the audio half also
+  reaches the video command. Untested, very low impact, and the "hold any audio
+  failure" rule is the implement gate's recorded choice. **Disposition: reject**
+  — an intentional change the plan called for.
+- F5 — *The added bullet renders after `ffm_run()`'s closing "The failing
+  command was:" line on the fall-open branch,* while landing before the
+  `Caused by` chain on the enriched branch. Cosmetic. **Disposition: reject** —
+  style nitpick, and the same point the first pass rejected as F4.
+- F6 — *The out-of-scope `.gitignore` line is now logged rather than removed.*
+  Not a finding; confirms T12's disposition landed. **Disposition: no action.**
+
+What the [O] lens confirmed clean: the corrected disk-state rule is true on
+both surfaces it was executed against; the condition is re-raised rather than
+rebuilt, so class vector, `tm_status` and the `Caused by` chain survive
+intact; M44's brace trap is handled and its `v{n}.mp4` test is a real guard;
+AC6's batch sites are absent from the diff; the success and `run = FALSE` paths
+are byte-identical to `master`; IP1–IP3 hold — `abort_after_video()` assembles
+no command strings; `man/separate_audio_video.Rd` matches the roxygen exactly.
+
+**[S] blame-history (Sonnet).** No findings. M45's sequencing comment was the
+planned resolution of an item M45 deferred on purpose, and the ROADMAP row was
+narrowed in the same diff; D066 supersedes exactly the one D065 clause a
+measurement falsified, and the code matches D066's rule; `abort_after_video()`
+always ends in `stop(cnd)`, so a held timeout is re-raised rather than absorbed
+(D047–D049); `tm_timeout_absorbers()` is computed structurally, so
+`separate_audio_video()` joining the partition is the drift detection working,
+not a hand-edited list; D007's batch contract and D062's naming convention are
+untouched. **Disposition: no action.**
+
+**[S] prior-PR-comments (Sonnet).** No prior-review regression; zero findings.
+Primary surface: `## Review` sections in `cairn/milestones/archive/` touching
+these files (M44, M45, M85, M86, M87, M70, M38, M58) — M44's brace trap,
+M85/M86's class-vector and `tm_status` rules, M87/D063's class-vector rule,
+D046, and M70/D049's absorber guard all clear. Secondary surface probed once
+(`gh api repos/jmgirard/tidymedia/pulls/comments?per_page=1`) and returned
+empty, so the per-PR walk was skipped. **Disposition: no action.**
+
+#### Return floor
+
+No finding demonstrates an acceptance criterion failing. F1 is a false
+user-facing claim this branch adds, in the same sentence AC5 governs but
+outside what AC5 requires that sentence to state; whether it is a load-bearing
+defect is the maintainer's judgment at the gate, and the proportionate
+disposition is the one-clause fix recorded above.

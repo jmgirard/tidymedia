@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-29 (M087 review: merged as PR #91 and archived; the
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M088 | A failed audio half no longer costs the caller the video | review | — | normal | milestones/M088-separation-video-after-audio-failure.md |
+| M088 | A failed audio half no longer costs the caller the video | in-progress | — | normal | milestones/M088-separation-video-after-audio-failure.md |
 | M087 | A diagnostic answers to the same class from the scalar verb and its batch sibling | done | — | normal | milestones/archive/M087-scalar-batch-condition-classes.md |
 | M086 | The catchable failure reaches the two paths M085 left behind | done | — | normal | milestones/archive/M086-catchable-failure-leftovers.md |
 | M085 | A failed FFmpeg run is a condition you can catch | done | — | normal | milestones/archive/M085-ffmpeg-error-condition.md |

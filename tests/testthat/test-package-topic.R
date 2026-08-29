@@ -36,3 +36,24 @@ test_that("the landing topic is not keyworded internal", {
   # is there.
   expect_false(grepl("\\keyword{internal}", topic[[1]], fixed = TRUE))
 })
+
+test_that("the vignette navigation paragraph is outside every section", {
+  # M087 AC5. The paragraph pointing readers at the four vignettes is the
+  # landing topic's closing navigation, not part of any one subject; it opened
+  # inside \section{Session options} until M087 moved it. \section{} blocks are
+  # top-level and come after \details{}, so appearing before the first one is
+  # what "outside every section" means in a generated Rd.
+  rd <- rd_sources()
+  skip_if(is.null(rd), "no Rd source available")
+  topic <- rd[names(rd) %in% c("tidymedia-package.Rd", "tidymedia-package")]
+  skip_if(length(topic) != 1L, "no landing topic")
+  txt <- topic[[1]]
+
+  needle <- "for the guided tour"
+  expect_match(txt, needle, fixed = TRUE)
+  first_section <- regexpr("\\section{", txt, fixed = TRUE)
+  # The topic really has sections: without one, "before the first section" is
+  # vacuously true and this guard would pass on an Rd it cannot judge.
+  expect_gt(first_section, 0L)
+  expect_lt(regexpr(needle, txt, fixed = TRUE), first_section)
+})

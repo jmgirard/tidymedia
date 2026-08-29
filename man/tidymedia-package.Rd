@@ -19,6 +19,11 @@ back ends: FFprobe, through \code{\link[=probe_all]{probe_all()}} and the other 
 which return container and stream tibbles; and MediaInfo, through
 \code{\link[=mediainfo_query]{mediainfo_query()}} and the \verb{get_*()} helpers such as \code{\link[=get_duration]{get_duration()}}, which
 return a single value.
+
+See \code{vignette("tidymedia")} for the guided tour, \code{vignette("batch")} for
+running a verb over many files, \code{vignette("metadata")} for the readers, and
+\code{vignette("workflow")} for an end-to-end research preprocessing pipeline.
+The full function list is on the package's reference index.
 }
 \section{Bounding a run that hangs}{
 
@@ -176,11 +181,6 @@ All three are carried into \code{parallel = TRUE} workers, which run under the
 settings the calling session had and hand their own back afterwards, and all
 three can be set for one call with \code{withr::with_options()} or for the rest of
 a function with \code{withr::local_options()}.
-
-See \code{vignette("tidymedia")} for the guided tour, \code{vignette("batch")} for
-running a verb over many files, \code{vignette("metadata")} for the readers, and
-\code{vignette("workflow")} for an end-to-end research preprocessing pipeline.
-The full function list is on the package's reference index.
 }
 
 \seealso{

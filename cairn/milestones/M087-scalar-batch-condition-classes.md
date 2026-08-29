@@ -117,7 +117,7 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
       The probe input must EXIST and be unreadable as media — `nonexistent.wav`
       dies unclassed in `check_file_readable()` (`R/ffmpeg.R:2240`) and never
       reaches FFmpeg (RR05 B3).
-- [ ] **T5.** Move `?tidymedia`'s closing `See vignette(…)` paragraph
+- [x] **T5.** Move `?tidymedia`'s closing `See vignette(…)` paragraph
       (`R/tidymedia-package.R:159-161`) above the `@section` tags so it renders
       outside every section.
 - [x] **T6.** Tests: assert the full class vector by identity at each of the four
@@ -151,6 +151,8 @@ Adopting the ecosystem's `pkg_error_*` shape across every class → D062's
 
 - 2026-08-29: T4 — the five class vectors, read off EXECUTED calls (garbage `.wav` probe, FFmpeg 9.0.1, macOS): `:151` `c("tidymedia_loudnorm_no_measurement", "tidymedia_ffmpeg_exit", "rlang_error", "error", "condition")` with `tm_status = 183L`; `:112` `c("tidymedia_loudnorm_no_measurement", "rlang_error", "error", "condition")` with no fields; `:253` the same four with `tm_rows = 1L`, `tm_row_status = 183L`; `R/ffmpeg.R:681` `c("tidymedia_multitrack_separation", "tidymedia_ffmpeg_exit", "rlang_error", "error", "condition")` with `tm_status = 234L`; `R/ffmpeg.R:742` `c("tidymedia_multitrack_separation", "rlang_warning", "warning", "condition")` with no fields.
 - 2026-08-29: T4 — `?ffm_run` and `?tidymedia` corrected (the "two other paths raise the same class" sentence now says both also carry a narrower class of their own, and both topics now state which paths raise the shared loudnorm class WITHOUT the exit class); `?normalize_audio` gained the class names for its two sites; `?separate_audio_video` and `?separate_audio_video_batch` already matched. A pairing test executes all five sites and requires every observed `tidymedia_*` class to appear in each paired topic; planting `tidymedia_PLANTED_DRIFT` into `man/ffm_run.Rd` turned it red at the two expected pairings.
+
+- 2026-08-29: T5 — the `See vignette(…)` navigation paragraph moved from the end of `@section Session options:` to the end of `@details`, so it now renders inside `\details{}` and before the first `\section{}` in `man/tidymedia-package.Rd`. Guarded by a test that locates it against the first `\section{` offset; restoring the old placement in the generated Rd turned it red.
 
 ## Decisions
 

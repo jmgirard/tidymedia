@@ -10,6 +10,11 @@
 #' [mediainfo_query()] and the `get_*()` helpers such as [get_duration()], which
 #' return a single value.
 #'
+#' See `vignette("tidymedia")` for the guided tour, `vignette("batch")` for
+#' running a verb over many files, `vignette("metadata")` for the readers, and
+#' `vignette("workflow")` for an end-to-end research preprocessing pipeline.
+#' The full function list is on the package's reference index.
+#'
 #' @section Bounding a run that hangs:
 #' Every tidymedia call that touches FFmpeg, FFprobe or MediaInfo waits for
 #' that program to finish, and a program that hangs blocks the R session with
@@ -163,11 +168,6 @@
 #' settings the calling session had and hand their own back afterwards, and all
 #' three can be set for one call with `withr::with_options()` or for the rest of
 #' a function with `withr::local_options()`.
-#'
-#' See `vignette("tidymedia")` for the guided tour, `vignette("batch")` for
-#' running a verb over many files, `vignette("metadata")` for the readers, and
-#' `vignette("workflow")` for an end-to-end research preprocessing pipeline.
-#' The full function list is on the package's reference index.
 "_PACKAGE"
 
 ## usethis namespace: start

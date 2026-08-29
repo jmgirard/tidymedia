@@ -342,3 +342,76 @@ test_that("normalize_audio(two_pass = TRUE) carries audio_codec into the correct
   expect_match(cmd, "-codec:a aac", fixed = TRUE)
   expect_match(cmd, "linear=true", fixed = TRUE)
 })
+
+# M086 AC4: the Phase 1 abort is catchable, and says which rows and why --------
+
+# Drive the exported verb with recorded Phase 1 outputs. Phase 1 is the only
+# phase that touches a binary before this abort, so mocking it makes the three
+# batches deterministic and binary-free; the abort under test is raised by
+# assemble_measured() on the way out of Phase 1, before any correction command
+# is built.
+local_analysis_outputs <- function(outputs, env = parent.frame()) {
+  testthat::local_mocked_bindings(
+    run_loudnorm_analysis_batch = function(...) outputs,
+    .package = "tidymedia",
+    .env = env
+  )
+}
+
+two_pass_abort <- function(outputs) {
+  local_analysis_outputs(outputs)
+  f <- make_input()
+  jobs <- tibble::tibble(input = rep(f, length(outputs)),
+                         output = paste0("out", seq_along(outputs), ".m4a"))
+  tryCatch(
+    normalize_audio_batch(jobs, two_pass = TRUE, run = FALSE),
+    tidymedia_loudnorm_analysis = function(e) e
+  )
+}
+
+test_that("the two-pass analysis abort names its rows and their exit statuses", {
+  good <- readLines(test_path("fixtures", "loudnorm-analysis.txt"))
+  malformed <- c(
+    '\t"input_i" : "-21.85",',
+    '\t"input_tp" : "n/a",',
+    '\t"input_lra" : "0.00",',
+    '\t"input_thresh" : "-31.85",',
+    '\t"target_offset" : "-0.02"'
+  )
+  failed <- function(status) structure("some ffmpeg error", status = status)
+
+  # Batch 1: exit failures only, with two DIFFERENT statuses, so a field pinned
+  # to one number cannot pass.
+  cnd <- two_pass_abort(list(failed(1L), good, failed(234L)))
+  expect_s3_class(cnd, "tidymedia_loudnorm_analysis")
+  expect_identical(cnd$tm_rows, c(1L, 3L))
+  expect_identical(cnd$tm_row_status, c(1L, 234L))
+
+  # Batch 2: unparseable only. These rows exited zero, so there is no status to
+  # report and the field says so rather than inventing one.
+  cnd <- two_pass_abort(list(good, malformed, malformed))
+  expect_s3_class(cnd, "tidymedia_loudnorm_analysis")
+  expect_identical(cnd$tm_rows, c(2L, 3L))
+  expect_identical(cnd$tm_row_status, c(NA_integer_, NA_integer_))
+
+  # Batch 3: one of each, which is the only batch that can show the two causes
+  # are aligned to their own rows rather than to the row order.
+  cnd <- two_pass_abort(list(malformed, good, failed(69L)))
+  expect_s3_class(cnd, "tidymedia_loudnorm_analysis")
+  expect_identical(cnd$tm_rows, c(1L, 3L))
+  expect_identical(cnd$tm_row_status, c(NA_integer_, 69L))
+  # `tm_rows` is 1-indexed on the CALLER's table and matches what the message
+  # names, which is what a handler reading the field instead of the text needs.
+  expect_match(cli::ansi_strip(conditionMessage(cnd)),
+               "Offending rows (1-indexed): 1 and 3", fixed = TRUE)
+})
+
+test_that("the two-pass analysis abort is not an FFmpeg-exit condition", {
+  # It fires for rows that exited ZERO as well, so it names the analysis event
+  # rather than the exit -- and a handler for a non-zero exit must not swallow
+  # it even on a batch where every offending row happens to be an exit failure.
+  good <- readLines(test_path("fixtures", "loudnorm-analysis.txt"))
+  cnd <- two_pass_abort(list(structure("boom", status = 1L), good))
+  expect_false(inherits(cnd, "tidymedia_ffmpeg_exit"))
+  expect_null(cnd$tm_status)
+})

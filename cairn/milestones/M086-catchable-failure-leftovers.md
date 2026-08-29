@@ -106,10 +106,10 @@ tell a caller which class catches what.
       `c("tidymedia_multitrack_separation", "tidymedia_ffmpeg_exit")` and the
       abort gains `tm_status = status`, which the branch already holds
       non-`NA` at `R/ffmpeg.R:653`. Message text unchanged.
-- [ ] T3 New tests for the two-pass batch abort, red before T4: the three
+- [x] T3 New tests for the two-pass batch abort, red before T4: the three
       batches of AC4, asserting class, `tm_rows`, and `tm_row_status`
       including the `NA_integer_` element.
-- [ ] T4 `R/loudnorm_two_pass.R:219` — carry the status instead of collapsing
+- [x] T4 `R/loudnorm_two_pass.R:219` — carry the status instead of collapsing
       to `list(status = "error")`; `R/loudnorm_two_pass.R:234` — the abort
       gains `class = "tidymedia_loudnorm_analysis"`, `tm_rows` and
       `tm_row_status`. Message text unchanged.
@@ -129,6 +129,7 @@ tell a caller which class catches what.
 - 2026-08-29: plan gate chose a new `tidymedia_loudnorm_analysis` event class for the two-pass batch abort over narrowing `tidymedia_ffmpeg_exit` to the exit-only case, because the abort also fires on rows that exited zero and D062 requires a class to name the fact that occurred; falsified by the package finding a second site with the same mixed-cause shape where one class per cause reads better than one per event.
 
 - 2026-08-29: T1+T2 in one commit so the branch never checkpoints red. T1's AC1 grid was red first (the `tidymedia_ffmpeg_exit` handler did not catch the enriched abort); T2 added the class and `tm_status`, and `devtools::test()` is clean at 8306 passes, 0 failures, 5 skips.
+- 2026-08-29: T3+T4 in one commit, same red-then-green shape. The three AC4 batches drive the exported `normalize_audio_batch(two_pass = TRUE)` with `run_loudnorm_analysis_batch()` mocked to recorded stderr, so the abort under test is the verb's own and no binary is needed; `devtools::test()` clean at 8318 passes.
 ## Decisions
 
 ## Review

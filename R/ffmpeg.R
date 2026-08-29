@@ -861,6 +861,25 @@ ffmpeg_exit_status <- function(cnd) {
 #' failed: the extra report is attached to \emph{any} failing audio command on a
 #' multi-track input, not only to a container refusal.
 #'
+#' The condition carries two class names, so a caller can catch it at either
+#' width. It is \code{tidymedia_ffmpeg_exit}, the class every non-zero FFmpeg
+#' exit raises, which is what an exit-status handler catches — the number is on
+#' the condition's \code{tm_status} field. It is also
+#' \code{tidymedia_multitrack_separation}, the class of the enriched diagnostic
+#' itself, which is what to catch when it is this failure in particular you want:
+#'
+#' \preformatted{
+#' tryCatch(
+#'   separate_audio_video("three-tracks.mkv", "audio.mp3", "video.mp4"),
+#'   tidymedia_ffmpeg_exit = function(cnd) cnd$tm_status
+#' )
+#' }
+#'
+#' When the report is omitted, the error that reaches the caller is the one the
+#' run itself raised, unchanged: a non-zero exit still answers to
+#' \code{tidymedia_ffmpeg_exit}, and a failure that is not an exit at all — an
+#' unresolvable binary, a reached limit — answers to neither class.
+#'
 #' Counting the tracks means running FFprobe, so this is \strong{best-effort}: it
 #' is added when FFprobe is available and \code{infile} can be probed, and
 #' omitted silently otherwise, leaving FFmpeg's own error alone. It never runs
@@ -4367,7 +4386,11 @@ derive_normalized_names <- function(input) {
 #'   \strong{always runs the analysis pass through FFmpeg} (it needs the binary
 #'   and readable inputs), even when \code{run = FALSE}. If any row's analysis
 #'   fails or yields no parseable measurement, the call aborts — naming the
-#'   offending row(s) — before any correction command is built. \strong{Silent}
+#'   offending row(s) — before any correction command is built. That abort is
+#'   classed \code{tidymedia_loudnorm_analysis} and carries the same row numbers
+#'   on \code{tm_rows}, alongside \code{tm_row_status}: each row's FFmpeg exit
+#'   status, or \code{NA} where the row exited zero but printed nothing
+#'   parseable. \strong{Silent}
 #'   rows are the exception: a silent input (analysis loudness \code{-inf})
 #'   cannot be normalized to a target, but one silent row does not abort the
 #'   batch — the non-silent rows are normalized, the silent rows are marked in a

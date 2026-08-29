@@ -113,10 +113,10 @@ tell a caller which class catches what.
       to `list(status = "error")`; `R/loudnorm_two_pass.R:234` — the abort
       gains `class = "tidymedia_loudnorm_analysis"`, `tm_rows` and
       `tm_row_status`. Message text unchanged.
-- [ ] T5 Roxygen: `R/ffmpeg.R:846` (the scalar *When the audio output fails*
+- [x] T5 Roxygen: `R/ffmpeg.R:846` (the scalar *When the audio output fails*
       section, per AC3), `R/ffm.R:1539-1549` (`ffm_run()`'s class paragraph),
       `R/tidymedia-package.R:113-117`; then `devtools::document()`.
-- [ ] T6 `NEWS.md` bullet under the development version naming the two paths.
+- [x] T6 `NEWS.md` bullet under the development version naming the two paths.
 - [ ] T7 `devtools::check()`; record the run/skip counts AC6 asks for.
 
 ## Work log
@@ -130,6 +130,8 @@ tell a caller which class catches what.
 
 - 2026-08-29: T1+T2 in one commit so the branch never checkpoints red. T1's AC1 grid was red first (the `tidymedia_ffmpeg_exit` handler did not catch the enriched abort); T2 added the class and `tm_status`, and `devtools::test()` is clean at 8306 passes, 0 failures, 5 skips.
 - 2026-08-29: T3+T4 in one commit, same red-then-green shape. The three AC4 batches drive the exported `normalize_audio_batch(two_pass = TRUE)` with `run_loudnorm_analysis_batch()` mocked to recorded stderr, so the abort under test is the verb's own and no binary is needed; `devtools::test()` clean at 8318 passes.
+- 2026-08-29: T5+T6. Roxygen on `?separate_audio_video`, `?ffm_run`, `?tidymedia` and `?normalize_audio_batch` (the last is where AC4's class is user-visible, added under Scope In (c)); `devtools::document()` rewrote four Rd files. AC3's handler is verified by executing it against a real failing call, not by reading the page; the Rd/NEWS guard was proven able to fail by planting `tidymedia_PLANTED_DEFECT` over the class name in `man/ffm_run.Rd` and watching it go red, then restoring the file.
+- 2026-08-29: `NEWS.md`'s M085 bullet said "Two paths deliberately do not signal it", naming `separate_audio_video()` as one; that became false on this branch and was corrected in place (the changelog describes an unreleased development version). The new bullet names both changed paths and their classes. `devtools::test()` clean at 8334 passes, 0 failures, 5 skips.
 ## Decisions
 
 ## Review

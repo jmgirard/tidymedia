@@ -275,3 +275,66 @@ test_that("a reached timeout falls open with its own class intact", {
   expect_false(inherits(res$error, "tidymedia_ffmpeg_exit"))
   expect_null(res$error$tm_status)
 })
+
+# M086 AC3/AC5: the docs' claims, run rather than read -----------------------
+
+test_that("the handler ?separate_audio_video shows fires on that path", {
+  # AC3. The recipe in the *When the audio output fails* section, executed
+  # verbatim against a call that really fails: a documented handler that has
+  # never been run is a claim, not a guarantee.
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  dir <- withr::local_tempdir()
+  status <- tryCatch(
+    separate_audio_video(infile, file.path(dir, "audio.mp3"),
+                         file.path(dir, "video.mp4")),
+    tidymedia_ffmpeg_exit = function(cnd) cnd$tm_status
+  )
+  expect_true(is.integer(status))
+  expect_length(status, 1L)
+  expect_false(identical(status, 0L))
+})
+
+test_that("the exit-class docs name both classes and both changed paths", {
+  # AC3/AC5. Read from whichever Rd shape this run has (source tree under
+  # devtools::test(), the installed Rd database under R CMD check), so the
+  # guard runs in the check the release gate uses rather than skipping there.
+  rd <- rd_sources()
+  skip_if(is.null(rd), "no Rd source available")
+  pick <- function(topic) {
+    hit <- rd[grepl(topic, names(rd), fixed = TRUE)]
+    skip_if(length(hit) == 0, paste("no Rd for", topic))
+    paste(hit, collapse = "\n")
+  }
+
+  sep <- pick("separate_audio_video.Rd")
+  expect_match(sep, "tidymedia_ffmpeg_exit", fixed = TRUE)
+  expect_match(sep, "tidymedia_multitrack_separation", fixed = TRUE)
+  expect_match(sep, "tm_status", fixed = TRUE)
+
+  run <- pick("ffm_run.Rd")
+  expect_match(run, "separate_audio_video", fixed = TRUE)
+  expect_match(run, "tidymedia_loudnorm_analysis", fixed = TRUE)
+  expect_match(run, "tm_row_status", fixed = TRUE)
+
+  pkg <- pick("tidymedia-package.Rd")
+  expect_match(pkg, "separate_audio_video", fixed = TRUE)
+  expect_match(pkg, "tidymedia_loudnorm_analysis", fixed = TRUE)
+
+  batch <- pick("normalize_audio_batch.Rd")
+  expect_match(batch, "tidymedia_loudnorm_analysis", fixed = TRUE)
+  expect_match(batch, "tm_rows", fixed = TRUE)
+
+  # NEWS carries the same two names, and no longer says the separation path
+  # deliberately withholds the exit class -- which is what it did say.
+  news <- if (file.exists("../../NEWS.md")) {
+    "../../NEWS.md"
+  } else {
+    system.file("NEWS.md", package = "tidymedia")
+  }
+  skip_if(!nzchar(news) || !file.exists(news), "no NEWS.md available")
+  txt <- paste(readLines(news, warn = FALSE), collapse = "\n")
+  expect_match(txt, "tidymedia_loudnorm_analysis", fixed = TRUE)
+  expect_match(txt, "tm_row_status", fixed = TRUE)
+  expect_no_match(txt, "Two paths deliberately do not signal it", fixed = TRUE)
+})

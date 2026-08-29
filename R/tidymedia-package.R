@@ -130,8 +130,10 @@
 #' when an input carries audio tracks the output will not. The default is
 #' `TRUE`. The check costs one FFprobe call per distinct input, run before the
 #' work starts and, on the `_batch` verbs, serially before the fan-out; that
-#' cost is what switching it off buys back, and it is worth having on a large
-#' jobs table whose rows all name an `audio_stream` anyway.
+#' cost is what switching the check off buys back. It is worth declining on a
+#' large jobs table whose inputs you already know the tracks of. A row that
+#' names an `audio_stream` is not probed at all, so a table whose rows all name
+#' one pays nothing either way.
 #'
 #' \preformatted{options(tidymedia.nvenc_encoders = c("h264_nvenc", "hevc_nvenc"))}
 #'

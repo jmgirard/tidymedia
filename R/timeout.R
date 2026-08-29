@@ -43,7 +43,10 @@ resolve_timeout <- function(call = rlang::caller_env()) {
 # The package's third option seam. `options(tidymedia.check_tracks = FALSE)`
 # switches off D024's dropped-audio-track probe, and with it the one FFprobe
 # call that probe costs per distinct input -- the only cost the diagnostic has,
-# and one a caller who always names an `audio_stream` never gets anything for.
+# and one a caller who already knows their inputs' tracks gets nothing for. A
+# call that names an `audio_stream` pays nothing either way: the scalar sites
+# gate on is.null(audio_stream) and the batch form returns above the seam when
+# every row named a track, so those calls never reach the probe at all.
 #
 # The default is TRUE, so every existing call behaves exactly as it did. That is
 # the opposite default from resolve_timeout()'s 0, and for the opposite reason:

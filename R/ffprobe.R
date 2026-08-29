@@ -274,7 +274,11 @@ count_audio_streams_all <- function(files, call = rlang::caller_env(),
   }
   res <- vector("list", length(uniq))
   for (i in seq_along(uniq)) {
-    res[[i]] <- count_audio_streams(uniq[[i]])
+    # res[i] <- list(x), not res[[i]] <- x: the double-bracket form DELETES the
+    # element on a NULL, shortening the list and length-mismatching the vapply()
+    # below against `uniq`. count_audio_streams() answers no NULL today; the
+    # lapply() this loop replaced preserved one, and this keeps that property.
+    res[i] <- list(count_audio_streams(uniq[[i]]))
     if (isTRUE(progress)) cli::cli_progress_update()
   }
   if (isTRUE(progress)) cli::cli_progress_done()

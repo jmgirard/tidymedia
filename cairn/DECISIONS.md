@@ -2812,3 +2812,30 @@ than a front-door cost the caller has not declined.
   than as a report, which would give the probe the second effect D024 excludes;
   or by a report of the bar appearing on a batch whose caller had switched
   progress off and did not want it.
+
+## D061 — The batch sweep's progress bar does reach D024's "outcome" clause, on the ran-vs-skipped axis (2026-08-28, from M082 review; supersedes one sentence of D060, leaving the rest of that entry standing)
+
+D060 defended the `cli` bar over `warn_dropped_audio_batch()`'s probe sweep in
+part with this: "the same bar is drawn when every probe fails as when every one
+answers, so the rule's 'outcome' clause is not reached." The conclusion does not
+follow from the premise. D024's clause enumerates four outcomes — ran, skipped,
+succeeded, failed — and the bar is silent about only the last two. About the
+first two it is as loud as it can be: M082's own tests pin that no bar exists
+when the seam is `FALSE`, and none when every row names a track. The bar
+distinguishes a sweep that ran from one that was skipped, which is inside the
+clause, not outside it.
+
+**What still stands.** D060's load-bearing defence is untouched. `cli`'s
+progress mechanism signals conditions of class `cli_message`/`cliMessage` — the
+same mechanism `cli_warn()` uses for the dropped-track warning itself — so the
+bar rides the diagnostic's own channel rather than opening a second one, and
+under `cli.progress_show_after` a sweep finishing inside two seconds signals
+nothing at all. The ran-vs-skipped visibility conceded here is also the point
+of the bar rather than a leak from it: the cost this seam lets a caller decline
+was previously indistinguishable from a hang, and a cost that cannot be seen
+cannot be weighed. The bar stays, and so does every other rule D060 states.
+
+- **Falsified by** anything downstream reading the bar as data rather than as a
+  report, which would give the probe the second effect D024 excludes; or by the
+  bar's presence being used to infer a probe's RESULT rather than its having
+  run, which is the axis this entry still holds it silent on.

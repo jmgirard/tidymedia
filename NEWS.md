@@ -27,8 +27,10 @@
   changes until you set it. What you get back is the check's only cost: one
   FFprobe call per distinct input, run before the work starts and, on the
   `_batch` verbs, serially at the front door before the fan-out. That is worth
-  declining on a large jobs table whose rows all name an `audio_stream`
-  already. Use `withr::local_options(tidymedia.check_tracks = FALSE)` to switch
+  declining on a large batch whose inputs you already know the tracks of, where
+  the warning has nothing to tell you; a row that names an `audio_stream` is
+  never probed, so a table whose rows all name one costs nothing either way.
+  Use `withr::local_options(tidymedia.check_tracks = FALSE)` to switch
   it off for the rest of one function instead of the session. The option is
   carried into `parallel = TRUE` workers alongside the other two, and a value
   that is not `TRUE` or `FALSE` is refused, naming the option, rather than read

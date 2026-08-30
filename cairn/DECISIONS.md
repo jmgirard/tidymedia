@@ -3055,3 +3055,51 @@ limit around a 100-row batch already waits `seconds` on every row.
   is itself the reported problem; or by `options(tidymedia.timeout = )` being
   redefined as a per-call budget, which would make this verb one of the sites
   that has to change.
+
+## D067 — Two of the three tracked-file budgets are the plugin's, not this repo's; each got the remedy its own owner states (2026-08-29, from M089; applies the maturation exit and the Weight-caps remedies in the plugin's tracking-rules, and supersedes nothing)
+
+`cairn/ROADMAP.md` had needed compressing on four consecutive milestone commits
+and `cairn/LESSONS.md` sat 21 bytes under its budget, so the standing candidate
+row asked for a call: compress, raise a budget, or graduate a family. The call
+is that raising a budget was never this repo's to make for two of the three
+files, and the third file's owner forbids it.
+
+**Which budget belongs to whom, and what each file got here.**
+
+- `cairn/ROADMAP.md` — **budget is the plugin's**: `< 24,000` bytes over
+  `< 60` lines, stated in `skills/shared/tracking-rules.md` ("Weight caps") as
+  the line cap × 400. A D-entry in this repo cannot supersede plugin doctrine.
+  **Remedy: the plugin's own** — absorb the two candidate rows this milestone
+  promotes, cluster the backlog into grouped rows, compress the widest rows.
+  48 lines / 23,989 bytes → 43 / 21,773.
+- `cairn/LESSONS.md` — **budget is the plugin's**: `< 20,000` bytes over
+  `< 50` lines, same section, same arithmetic. **Remedy: the plugin's own** —
+  retire entries, here by the maturation exit rather than by pruning, which
+  tracking-rules names the last resort. 30 lines / 19,979 bytes → 28 / 16,835.
+- `cairn/references/false-greens.md` — **budget is repo-owned**, set by M084 in
+  the module's own header under the maturation exit's rule that a graduating
+  milestone writes the module's budget. **Remedy: none needed, and growth was
+  never available** — the header states that over either figure the remedy is
+  compressing or retiring its content. Untouched by this milestone: 55 lines /
+  25,810 bytes, unchanged from the base commit.
+
+**Why the family graduated instead of the stalest entries being pruned.** The
+front-door guard-ordering pair carries 6 extension/consolidation/correction
+marks against the exit's requirement of 2, and it teaches transferable craft.
+The ownership exit does not apply — no other tracking file's slot owns craft.
+The enforcement exit was measured and ruled not to apply: `test-codec-arg-front-door.R`
+freezes a 17-cell precedence table for the codec family, but nothing fails on
+the rule the entries state, and one entry says so itself.
+
+**What a repo-owned budget looks like, now that there are two.**
+`references/guard-ordering.md` states its own — fewer than 10,000 bytes and
+fewer than 27 lines, measured whole-file with `wc -l -c` as `false-greens.md`'s
+is, so one command per module serves a hygiene pass. Set from the graduated
+3,219 bytes plus room for about three more members. Its remedy over budget is
+`false-greens.md`'s: compress or retire, never grow.
+
+- **Falsified by** the user changing the "Weight caps" section of the cairn
+  plugin's `skills/shared/tracking-rules.md`, which would move the first two
+  budgets into a figure this repo could then argue about; or by a hygiene pass
+  finding the ROADMAP back at its budget with no candidate row left worth
+  grouping, which would mean clustering had reached its limit as a remedy.

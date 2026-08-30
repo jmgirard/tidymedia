@@ -101,9 +101,9 @@ and what remedy each of the three tracked files got.
 - [x] T6 Compress the widest remaining candidate rows until `wc -c` is under
       22,000 and `wc -l` is 44 or fewer, checking each edited row after the
       edit that its promote trigger survived.
-- [ ] T7 Confirm `cairn/references/false-greens.md` is untouched: `git diff`
+- [x] T7 Confirm `cairn/references/false-greens.md` is untouched: `git diff`
       empty for that path, `wc -l -c` under its header's figures.
-- [ ] T8 Append the D-entry (next free id) recording the call and the
+- [x] T8 Append the D-entry (next free id) recording the call and the
       repo-owned/plugin-owned split.
 - [ ] T9 Run `cairn_validate.py`; fix what it reports; confirm clean.
 
@@ -127,6 +127,9 @@ and what remedy each of the three tracked files got.
 
 - 2026-08-29: T5 — the second-doctrine-module row and the budget row deleted from `cairn/ROADMAP.md` (both absorbed by this milestone); the M089 row was already present from planning; the hygiene stamp replaced and resolved to its own byte count by fixed point.
 - 2026-08-29: T6 — grouped the memoization pair (`find_ffmpeg()` unmemoized; M67's per-process memo) into one row and the M31 encoder-surface trio (quality/rate-control knob; GPU decode + `-hwaccel`; other hardware backends) into another, and compressed the instrument-findings row. `wc -l -c` reports 43 lines / 21,773 bytes (AC4's 44 / 22,000). The trio's three source rows named blockers but no promote trigger; the grouped row supplies one. AC7 checked by `git diff --unified=0` against `056fd63`: three rows show as edited, each names a promote trigger.
+
+- 2026-08-29: T7 — `cairn/references/false-greens.md` untouched: `git diff 056fd63` for that path is empty, so its header figures are unchanged; `wc -l -c` reports 55 lines / 25,810 bytes, under the header's 60 / 26,000.
+- 2026-08-29: T8 — D067 appended, naming for each of the three tracked files whether its budget is repo-owned or the plugin's and which remedy it got here, plus the maturation-exit ruling and the new module's repo-owned budget. Shown verbatim at the durable-record preview before it was written.
 
 ## Decisions
 

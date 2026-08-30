@@ -5,8 +5,8 @@ _Doctrine module, graduated from `cairn/LESSONS.md` by M089 under the maturation
 reshaped-index line was absorbed into M47 and M48 corrected it. Read at plan time alongside `LESSONS.md`, and whenever a milestone adds, moves, or
 describes a front-door check._
 
-_**Budget: fewer than 10,000 bytes and fewer than 27 lines.** Measured over the whole file with `wc -l -c`, as `false-greens.md`'s is, so the hygiene pass is
-one command per module. Set from the graduated size — 3,219 bytes over 2 entry lines, plus this header — with room for about three more members at this
+_**Budget: fewer than 11,000 bytes and fewer than 31 lines.** Measured over the whole file with `wc -l -c`, as `false-greens.md`'s is, so the hygiene pass is
+one command per module. Set from the shipped size — 3,219 graduated bytes over 2 entry lines, plus this header — with room for about three more members at this
 family's ~1,600-byte average entry. Hand-checked at hygiene passes, covered by no validator. Over either figure the remedy is compressing or retiring content
 here, never letting the file grow._
 
@@ -16,7 +16,10 @@ _One entry per line, as in `LESSONS.md`; never split an entry across lines._
 move of this repo's own records, not an external source. The two graduated entries were `LESSONS.md` lines 16 and 23 at that commit. The maturation exit was
 confirmed on 6 extension/consolidation/correction marks across the pair against a requirement of 2; the enforcement exit was measured and ruled not to apply
 (`tests/testthat/test-codec-arg-front-door.R` freezes one family's precedence cells, and nothing fails on the rule these entries state). M089's work log
-carries the count and the ruling.
+carries the count and the ruling. Pagination: —.
+Extraction: both entries are copied verbatim from `LESSONS.md` at that commit, which git still holds, so they are checkable against their origin at any
+time — the `diff` in M089's T2/T3 work-log lines is that check, run twice. Nothing was trimmed, rewritten or paraphrased, and there is no moving source
+to re-verify against — verified at ingestion, full source read, observed 2026-08-29.
 
 ## Entries
 

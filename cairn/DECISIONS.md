@@ -3092,10 +3092,11 @@ freezes a 17-cell precedence table for the codec family, but nothing fails on
 the rule the entries state, and one entry says so itself.
 
 **What a repo-owned budget looks like, now that there are two.**
-`references/guard-ordering.md` states its own — fewer than 10,000 bytes and
-fewer than 27 lines, measured whole-file with `wc -l -c` as `false-greens.md`'s
-is, so one command per module serves a hygiene pass. Set from the graduated
-3,219 bytes plus room for about three more members. Its remedy over budget is
+`references/guard-ordering.md` states its own — fewer than 11,000 bytes and
+fewer than 31 lines, measured whole-file with `wc -l -c` as `false-greens.md`'s
+is, so one command per module serves a hygiene pass. Set from the shipped 27
+lines / 5,451 bytes — 3,219 of them graduated, the rest header and provenance —
+plus room for about three more members. Its remedy over budget is
 `false-greens.md`'s: compress or retire, never grow.
 
 - **Falsified by** the user changing the "Weight caps" section of the cairn

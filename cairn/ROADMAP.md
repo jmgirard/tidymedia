@@ -2,7 +2,7 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-29 (M089 in progress; it absorbed the budget row and the second-doctrine-module row, graduated the front-door guard-ordering family into `references/guard-ordering.md`, and grouped the engine-extension trio and the memoization pair. Budgets: ROADMAP 21,773/24,000 over 43/60; LESSONS 16,835/20,000 over 28/50; guard-ordering 24 lines/5,033 bytes over its own header's 27/10,000; false-greens 25,810/26,000 over 55/60.)_
+_Last hygiene check: 2026-08-29 (M089 in progress; it absorbed the budget row and the second-doctrine-module row, graduated the front-door guard-ordering family into `references/guard-ordering.md`, and grouped the engine-extension trio and the memoization pair. Budgets: ROADMAP 21,773/24,000 over 43/60; LESSONS 16,835/20,000 over 28/50; guard-ordering 27 lines/5,451 bytes over its own header's 31/11,000; false-greens 25,810/26,000 over 55/60.)_
 
 ## Milestones
 

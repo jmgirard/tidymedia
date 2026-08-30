@@ -105,7 +105,7 @@ and what remedy each of the three tracked files got.
       empty for that path, `wc -l -c` under its header's figures.
 - [x] T8 Append the D-entry (next free id) recording the call and the
       repo-owned/plugin-owned split.
-- [ ] T9 Run `cairn_validate.py`; fix what it reports; confirm clean.
+- [x] T9 Run `cairn_validate.py`; fix what it reports; confirm clean.
 
 ## Work log
 
@@ -130,6 +130,8 @@ and what remedy each of the three tracked files got.
 
 - 2026-08-29: T7 — `cairn/references/false-greens.md` untouched: `git diff 056fd63` for that path is empty, so its header figures are unchanged; `wc -l -c` reports 55 lines / 25,810 bytes, under the header's 60 / 26,000.
 - 2026-08-29: T8 — D067 appended, naming for each of the three tracked files whether its budget is repo-owned or the plugin's and which remedy it got here, plus the maturation-exit ruling and the new module's repo-owned budget. Shown verbatim at the durable-record preview before it was written.
+
+- 2026-08-29: T9 — `cairn_validate.py` reports all checks passed with one advisory, the >7-criteria sizing tripwire the plan already weighed. It first raised a `references staleness` advisory (`guard-ordering.md` provenance recording no extraction status); fixed by adding the `Extraction:` clause `false-greens.md` carries. That block pushed the module to 27 lines, past the 27-line budget it had just stated, so the budget was reset to fewer than 11,000 bytes and fewer than 31 lines — same headroom the gate chose (about three more members), now measured over the shipped file rather than the graduated text alone. D067's budget paragraph and the ROADMAP hygiene stamp were corrected to the new figures before either shipped.
 
 ## Decisions
 

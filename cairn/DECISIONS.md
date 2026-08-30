@@ -3071,7 +3071,7 @@ files, and the third file's owner forbids it.
   the line cap × 400. A D-entry in this repo cannot supersede plugin doctrine.
   **Remedy: the plugin's own** — absorb the two candidate rows this milestone
   promotes, cluster the backlog into grouped rows, compress the widest rows.
-  48 lines / 23,989 bytes → 43 / 21,773.
+  48 lines / 23,989 bytes → 43 / 21,766.
 - `cairn/LESSONS.md` — **budget is the plugin's**: `< 20,000` bytes over
   `< 50` lines, same section, same arithmetic. **Remedy: the plugin's own** —
   retire entries, here by the maturation exit rather than by pruning, which

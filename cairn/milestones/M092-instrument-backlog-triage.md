@@ -7,7 +7,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m092-instrument-findings-triage`
+- **Branch/PR:** `m092-instrument-findings-triage` / [#96](https://github.com/jmgirard/tidymedia/pull/96)
 
 ## Goal
 
@@ -225,6 +225,7 @@ F1, F2) carried forward as candidate ROADMAP rows at T7.
 - 2026-08-30: T8 — appended D072 to `cairn/DECISIONS.md`, stating the triage rule, the four closures with each one's path to a user, where the pruned findings went, and the page's retirement. It supersedes nothing: D040, D041, D049, D050 and D059 all stay in force; what it retires is the working artifact those five accumulated onto.
 - 2026-08-30: T9 — `devtools::document()` (no diff), `devtools::test()` FAIL 0 / WARN 12 / SKIP 5 / PASS 8815, `devtools::check()` 0 errors / 0 warnings / 0 notes. The suite's 12 warnings are pre-existing: the four files this milestone touched report 0 warnings between them (477 + 47 + 156 + 83 passes).
 - 2026-08-30: T9, AC4 repair — the sweep returned 2, not 0, both hits inside T5's own probe: its explanatory comment and its deliberate counter-example, which spelled the retired handler literally. Reworded the comment (the literal is now described, not typed, the way the retired class name in the same file is assembled rather than written) and respelled the counter-example `condition = identity`, which behaves identically. The sweep returns 0 and the file stays green at PASS 156.
+- 2026-08-30: review checkpoint — PR #96 opened as draft. Consistency gate FAILED on weight caps: this file's plan-owned body is 206 lines against the <150 cap (Triage ledger 96, Acceptance criteria 38, Tasks 25). Evidence gathering was already in flight and is being completed before the return so it lands in one pass.
 
 ## Decisions
 

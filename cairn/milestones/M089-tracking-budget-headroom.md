@@ -1,6 +1,6 @@
 # M089: The guard-ordering family graduates and the tracking files get headroom
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -132,6 +132,8 @@ and what remedy each of the three tracked files got.
 - 2026-08-29: T8 — D067 appended, naming for each of the three tracked files whether its budget is repo-owned or the plugin's and which remedy it got here, plus the maturation-exit ruling and the new module's repo-owned budget. Shown verbatim at the durable-record preview before it was written.
 
 - 2026-08-29: T9 — `cairn_validate.py` reports all checks passed with one advisory, the >7-criteria sizing tripwire the plan already weighed. It first raised a `references staleness` advisory (`guard-ordering.md` provenance recording no extraction status); fixed by adding the `Extraction:` clause `false-greens.md` carries. That block pushed the module to 27 lines, past the 27-line budget it had just stated, so the budget was reset to fewer than 11,000 bytes and fewer than 31 lines — same headroom the gate chose (about three more members), now measured over the shipped file rather than the graduated text alone. D067's budget paragraph and the ROADMAP hygiene stamp were corrected to the new figures before either shipped.
+
+- 2026-08-29: completion — `devtools::test()` clean: FAIL 0 | WARN 12 | SKIP 5 | PASS 8434 (no R source, test, man, NAMESPACE or DESCRIPTION file is in this milestone's diff; the warnings and skips are the suite's standing FFmpeg-banner and nvenc-absent set). `cairn_validate.py` all checks passed, one advisory (the >7-criteria sizing tripwire weighed at plan time). Status → review.
 
 ## Decisions
 

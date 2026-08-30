@@ -194,14 +194,14 @@ them all.</p>
 <code>audio_stream</code> was named, FFmpeg returned a non-zero exit status,
 <code>infile</code> carries more than one audio track, and <code>audiofile</code>'s
 extension is not among the containers named here as holding several —
-<code>.mka</code>, <code>.m4a</code>, <code>.mp4</code>, <code>.mov</code>, <code>.mkv</code>,
-<code>.webm</code>, <code>.ogg</code>, <code>.opus</code> and <code>.ts</code>. Those nine are an
-exclusion list and not a
-survey: FFmpeg writes several audio streams into other containers too
+<code>.mka</code>, <code>.m4a</code>, <code>.mp4</code>, <code>.mov</code>, <code>.mkv</code>, <code>.webm</code>, <code>.ogg</code>, <code>.opus</code> and <code>.ts</code>. Those nine
+are an exclusion list and not a survey: FFmpeg writes several audio streams
+into other containers too
 (<code>.avi</code> and <code>.nut</code> among them), and a failure on one of those still
 gets the report. The container condition keeps the report off a call that is
-already doing what the report would advise: writing to one of the nine, the
-failure cannot be the container refusing a second audio stream, so whatever
+already doing what the report would advise: writing to one of the
+nine, the failure cannot be the container refusing a
+second audio stream, so whatever
 FFmpeg did object to would go unnamed. Fail any of the four and the error you
 get is the one the run itself raised, whatever that error is — same class,
 same status field, same message, but for the line saying the video output was

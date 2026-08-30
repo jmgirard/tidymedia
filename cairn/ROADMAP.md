@@ -2,12 +2,13 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-29 (M088 merged as PR #92 and archived; reviewed twice, the first pass returned on AC5. Five deferred findings filed as one new candidate row. One lesson captured, the stalest two (M26, M37) pruned for it; nothing graduated. M083's terminal row pruned under the 5-row cap. Budgets: ROADMAP 23,979/24,000 over 47/60, met only by compressing this pass's own additions; LESSONS 19,979/20,000 over 30/50, 21 bytes spare — the standing budget row's case in one figure; `references/false-greens.md` unchanged at 25,810/26,000 over 55/60.)_
+_Last hygiene check: 2026-08-29 (M089 planned; it absorbs the budget row and the second-doctrine-module row, which stay listed until M089's own commit deletes them. This stamp was cut to fit M089's row under the cap without editing a candidate row — the fourth consecutive commit needing compression, which is M089's Goal. Budgets: ROADMAP 23,989/24,000 over 48/60; LESSONS 19,979/20,000; false-greens 25,810/26,000.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
+| M089 | The guard-ordering family graduates and the tracking files get headroom | planned | — | normal | milestones/M089-tracking-budget-headroom.md |
 | M088 | A failed audio half no longer costs the caller the video | done | — | normal | milestones/archive/M088-separation-video-after-audio-failure.md |
 | M087 | A diagnostic answers to the same class from the scalar verb and its batch sibling | done | — | normal | milestones/archive/M087-scalar-batch-condition-classes.md |
 | M086 | The catchable failure reaches the two paths M085 left behind | done | — | normal | milestones/archive/M086-catchable-failure-leftovers.md |

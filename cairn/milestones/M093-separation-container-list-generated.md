@@ -4,7 +4,7 @@
      cairn_validate's <150 over the plan-owned body. -->
 # M093: The separation help pages render their container list from the vector
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -103,7 +103,7 @@ guarantees. Promotable on that removal → ROADMAP candidate row.
       `\code{.opus}` token with whitespace collapsed, floor of 2, assert the
       renderer's returned string appears verbatim in each, plus the
       `test-nvenc-docs.R:56-65` converse. `skip_if` no Rd source.
-- [ ] T4. Run AC2's grow and shrink mutations, capture the four diffs, confirm
+- [x] T4. Run AC2's grow and shrink mutations, capture the four diffs, confirm
       both reverts are byte-identical; then `devtools::test()`,
       `devtools::document()` (no diff) and `devtools::check()`.
 
@@ -121,6 +121,9 @@ guarantees. Promotable on that removal → ROADMAP candidate row.
 - 2026-08-30: T2 — both roxygen blocks now paste the enumeration and both count words in through inline `r` calls; the `:649` source comment reworded to "Each container above". `document()` rewrapped both Rd files with no change to the rendered wording. Suite: 8826 pass, 0 fail.
 
 - 2026-08-30: T3 — Rd guard added: the two `\code{.opus}` topics must each carry the renderer's string verbatim (whitespace-collapsed), plus the converse over the shared marker clause, both with a floor of 2. Discrimination shown by planting a stale hand copy (`.ts` dropped from the batch block): both guards red, then reverted. A *faithful* hand copy passes — the property asserted is that the prose matches the vector, which is what AC3 promises.
+
+- 2026-08-30: T4 — mutation probes run. Grow (append `"xyz"`): each Rd file gains one `\code{.xyz}`, `nine` word-count 0, `ten` word-count 2 (committed `nine` count was 2 apiece). Shrink (drop `"ts"`): `\code{.ts}` count 0 in both, `nine` 0, `eight` 2 apiece. Both reverts restored the two files to their committed md5s with an empty `git diff man/`.
+- 2026-08-30: T4 — final checks: `devtools::test()` 8830 pass / 0 fail / 12 warn / 5 skip; `devtools::document()` no diff; `devtools::check()` 0 errors, 0 warnings, 0 notes. Status → review. No `NEWS.md` entry: the rendered help text is unchanged (the Rd diff is line rewrapping only), so nothing user-visible changed.
 
 ## Decisions
 

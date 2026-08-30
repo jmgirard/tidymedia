@@ -681,6 +681,11 @@ multi_audio_rd_list <- function(exts = multi_audio_extensions) {
 # an exclusion list"). A lookup, not a number-speller: past its last entry it
 # aborts, so a vector grown out of its vocabulary stops document() with the
 # length named rather than rendering `NA` into a help page.
+#
+# The first entry is the word for length TWO, not one -- the renderers refuse a
+# vector under 2 members, so a word for one would never be reachable. Both the
+# `n - 1L` index below and its bound read that offset; prepending "one" here
+# would shift every word by a position.
 multi_audio_count_words <- c("two", "three", "four", "five", "six", "seven",
                              "eight", "nine", "ten", "eleven", "twelve")
 

@@ -45,7 +45,7 @@ guarantees. Promotable on that removal → ROADMAP candidate row.
 
 ## Acceptance criteria
 
-- [ ] AC1. `R/ffmpeg.R` carries two renderers beside `multi_audio_extensions`,
+- [x] AC1. `R/ffmpeg.R` carries two renderers beside `multi_audio_extensions`,
       each taking the vector as its sole argument and defaulting to it. Given a
       3-member stand-in, the first returns
       `\code{.a}, \code{.b} and \code{.c}` — items comma-joined, one `and`
@@ -54,7 +54,7 @@ guarantees. Promotable on that removal → ROADMAP candidate row.
       vanish silently from the rendered text; and the word renderer aborts on any
       length it cannot name rather than returning `NA` or `character(0)`, probed
       at one length past its last nameable value.
-- [ ] AC2. Both roxygen blocks call those renderers with no argument, shown by
+- [x] AC2. Both roxygen blocks call those renderers with no argument, shown by
       two mutations of the vector, each followed by `devtools::document()` and
       then reverted:
       **grow** — appending `"xyz"` makes `man/separate_audio_video.Rd` and
@@ -66,14 +66,14 @@ guarantees. Promotable on that removal → ROADMAP candidate row.
       to that same committed count.
       After both reverts, `devtools::document()` restores the two files
       byte-identical to their committed state. Evidence: the four diffs.
-- [ ] AC3. Every Rd topic naming a member of `multi_audio_extensions` — the
+- [x] AC3. Every Rd topic naming a member of `multi_audio_extensions` — the
       topics a search of the whole Rd corpus (`rd_sources()`, whitespace
       collapsed) for the token `\code{.opus}` returns, of which there are at
       least 2 — contains, verbatim, the string AC1's enumeration renderer
       returns for the committed vector. No topic in that corpus carries the
       enumeration's surrounding marker clause without also containing that
       string.
-- [ ] AC4. `Rscript -e 'devtools::test()'` clean; `devtools::document()` leaves
+- [x] AC4. `Rscript -e 'devtools::test()'` clean; `devtools::document()` leaves
       no uncommitted diff; `Rscript -e 'devtools::check()'` clean (0 errors,
       0 warnings; NOTEs justified).
 
@@ -124,7 +124,121 @@ guarantees. Promotable on that removal → ROADMAP candidate row.
 
 - 2026-08-30: T4 — mutation probes run. Grow (append `"xyz"`): each Rd file gains one `\code{.xyz}`, `nine` word-count 0, `ten` word-count 2 (committed `nine` count was 2 apiece). Shrink (drop `"ts"`): `\code{.ts}` count 0 in both, `nine` 0, `eight` 2 apiece. Both reverts restored the two files to their committed md5s with an empty `git diff man/`.
 - 2026-08-30: T4 — final checks: `devtools::test()` 8830 pass / 0 fail / 12 warn / 5 skip; `devtools::document()` no diff; `devtools::check()` 0 errors, 0 warnings, 0 notes. Status → review. No `NEWS.md` entry: the rendered help text is unchanged (the Rd diff is line rewrapping only), so nothing user-visible changed.
+- 2026-08-30: review — PR #97 opened; every criterion executed with fresh evidence and the consistency gate clean. Three-lens fan-out returned six minor findings, all from the diff lens: one fixed now (the count-vocabulary offset comment), one filed as a follow-up at hygiene, one logged as a task-text divergence, three rejected with reasons. No return.
 
 ## Decisions
 
 ## Review
+
+**AC1 — verified 2026-08-30.** Both renderers exercised from a loaded package.
+`formals()` gives each exactly one argument, `exts`, and calling with no
+argument is `identical()` to calling with `multi_audio_extensions`. On the
+3-member stand-in `c("a","b","c")` the list renderer returns
+`\code{.a}, \code{.b} and \code{.c}` and the word renderer returns `three`.
+Both refuse length 0 and length 1 (`length(exts) >= 2 is not TRUE` /
+`n >= 2 is not TRUE`). The word renderer names length 12 (`twelve`, its last
+nameable value) and at 13 aborts with
+`multi_audio_rd_count() cannot name a length of 13; extend
+multi_audio_count_words` — no `NA`, no `character(0)`.
+
+**AC2 — verified 2026-08-30.** Committed baseline: `nine` word-count 2 in each
+of the two Rd files, `ten` 0, `eight` 0; md5 `9714a5c9…` and `775a83e9…`.
+*Grow* (append `"xyz"`, `document()`): each file gains one `\code{.xyz}` inside
+its enumeration; `nine` 0 in both; `ten` 2 in both, equal to the committed
+`nine` count. *Revert* (`document()`): both md5s restored, `git diff man/`
+empty. *Shrink* (drop `"ts"`, `document()`): `\code{.ts}` 0 in both; `nine` 0
+in both; `eight` 2 in both, again equal to the committed count. *Revert*: both
+md5s restored, `git diff man/` empty. The four diffs show the enumeration and
+both count-word occurrences per file moving together and nothing else changing.
+
+**AC3 — verified 2026-08-30.** Over the whole Rd corpus read through
+`rd_sources()` (81 topics), whitespace collapsed: the token `\code{.opus}`
+returns exactly 2 topics — `separate_audio_video.Rd` and
+`separate_audio_video_batch.Rd`, meeting the floor of 2 — and both contain,
+verbatim, the string `multi_audio_rd_list()` returns for the committed vector
+(`\code{.mka}, … \code{.opus} and \code{.ts}`). The marker clause
+"containers named here as holding several" appears in exactly those same 2
+topics, and 0 of them carry it without the renderer's string.
+
+**AC4 — verified 2026-08-30.** `devtools::test()`: FAIL 0, WARN 12, SKIP 5,
+PASS 8830. `devtools::check()`: Status OK — 0 errors, 0 warnings, 0 notes
+(2m 54s). `devtools::document()` leaves `NAMESPACE`, `man/` and `data/` with no
+uncommitted diff. All three re-run after the review's one fix-now edit below;
+the targeted guard file is 15 pass / 0 fail.
+
+### Consistency gate — 2026-08-30
+
+Universal: `cairn_validate.py` exit 0, all checks passed, no advisories fired
+(`release window` included). No `DESIGN.md` principle changed
+(`Principles touched: —`), so `cairn_impact.py` does not apply.
+
+Toolchain (`r-package` profile's `consistency-gate` slot): `document()` no diff;
+no hand-edited generated file (the no-diff run covers `NAMESPACE`, `man/`,
+`data/`); `README.Rmd`/`README.md` untouched by the diff; `pkgdown::check_pkgdown()`
+"No problems found"; no `NEWS.md` entry — the rendered help wording is unchanged
+(the Rd diff is line rewrapping only, confirmed independently by the diff lens),
+so nothing user-visible changed; the one added file is under `tests/testthat/`,
+so no new `.Rbuildignore` entry is due and `check()` raises no NOTE;
+`check()` clean as recorded above.
+
+### Independent review — 2026-08-30
+
+Declared tier user-facing and the diff touches R source, so the full three-lens
+fan-out ran, each lens fresh-context with a distinct evidence base.
+
+**[S] blame-history:** no findings. Confirmed the `` `r fn()` `` mechanism is
+M51's own precedent, that D069/D070/D071 and the gate logic are untouched, that
+the reworded `:649` comment still credits D071, and that the Scope Out
+exclusions (`NEWS.md`, the two exemplars) are absent from the diff.
+
+**[S] prior-review record:** no prior-review evidence of a reintroduced or
+contradicted finding; zero findings. `gh api .../pulls/comments?per_page=1`
+returned `[]`, so the GitHub walk was skipped; the archive is the record here,
+and M091's review is what this milestone closes rather than repeats.
+
+**[O] diff-bug:** no correctness defects; six ranked minor findings, verbatim
+below with disposition.
+
+1. *"The AC3 domain token is a plausible future false positive."* The guard's
+   topic set is every Rd containing `\code{.opus}`; a later help page mentioning
+   `.opus` as an example would be pulled into the domain and required to carry
+   the whole enumeration, reddening for an Rd-shape reason rather than for
+   drift. Latent only: today the domain is the two intended topics.
+   **Rejected** — this is verbatim the falsifier the plan gate recorded against
+   shipping the guard ("falsified by the guard reddening for Rd-shape reasons
+   rather than for drift"). The condition has not fired; recording it a second
+   time as a candidate would duplicate the gate's own line.
+2. *"T2's stated re-wrap was not performed; the test solves it differently."*
+   `are an exclusion list and not a survey` is still split across lines in both
+   blocks; `collapsed_rd()` collapsing whitespace makes the guard
+   wrap-independent instead. **Logged, no change** — AC3 is met and the shipped
+   route is the stronger one (a guard that cannot be broken by rewrapping), but
+   the task text reads as done-as-written when the approach changed. Recorded
+   here so the divergence is on the record rather than in the diff alone.
+3. *"`stop()` instead of `cli::cli_abort()`"* at the one new error site, against
+   CLAUDE.md's convention. **Rejected** — the site fires only inside
+   `devtools::document()` and can never reach a caller, and the sibling renderer
+   this one was told to follow (`rd_verb_list()`) uses base `stopifnot`. The
+   convention governs user-facing conditions.
+4. *"The vocabulary's 'starts at two' offset is implicit and duplicated."*
+   `n - 1L` and `length(...) + 1L` both encode it and nothing at
+   `multi_audio_count_words` says the vector begins at two. **Fixed now** — a
+   four-line comment at the vector names the offset and warns that prepending
+   `"one"` shifts every word. Guard file re-run: 15 pass / 0 fail;
+   `document()` no diff.
+5. *"Two drift paths the milestone leaves open."* Both blocks hand-write
+   `\code{.avi}` and `\code{.nut}` as containers NOT in the vector; adding
+   either to `multi_audio_extensions` would make each page contradict itself,
+   and no guard notices. **Follow-up** — filed at the post-merge hygiene pass
+   onto the existing two-container-exemplar candidate row, whose subject is the
+   same class of hand-written container name left outside the enumeration. Its
+   promotion condition is the mirror of that row's: an ADDITION of `avi` or
+   `nut` to the vector, where the exemplar half promotes on a removal.
+6. *"Cosmetic: the re-wrap left ragged roxygen lines."* **Rejected** — the help
+   renderer reflows, nothing user-visible changes, and formatter-class nits are
+   out of scope at review.
+
+Return floor: none of the six demonstrates an acceptance criterion failing, and
+none is a load-bearing defect in what the package does for a caller. No status
+change; every finding logged above.
+

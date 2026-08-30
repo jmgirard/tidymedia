@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M092: The deferred-findings backlog is triaged and the page retired
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -36,7 +36,7 @@ The help-topic over-attribution needs a design call and stays a row.
 
 ## Acceptance criteria
 
-- [ ] AC1 — The Triage ledger in this file has one entry per `## M` heading of
+- [x] AC1 — The Triage ledger in this file has one entry per `## M` heading of
       `cairn/references/instrument-findings.md`, as `grep -c '^## M'` over that
       file enumerates them after T1 (eight). Each entry names, for its section,
       which finding ids close and which are pruned, with one reason per id.
@@ -49,21 +49,21 @@ The help-topic over-attribution needs a design call and stays a row.
       `run_one` and asserts each returned element carries `success` and
       `timed_out` as length-1 logicals. It carries no `skip_if_no_ffmpeg()` and
       reddens when the stub returns a shape violating that contract.
-- [ ] AC4 — `grep -c 'condition = function(e) e'` over
+- [x] AC4 — `grep -c 'condition = function(e) e'` over
       `tests/testthat/test-ffmpeg-exit-condition.R` returns 0, and a probe whose
       site signals a `tidymedia_`-classed warning before its abort captures the
       abort, asserted by its condition class.
-- [ ] AC5 — `cairn/references/instrument-findings.md` is deleted along with its
+- [x] AC5 — `cairn/references/instrument-findings.md` is deleted along with its
       `cairn/references/INDEX.md` line, and the ROADMAP candidate row pointing at
       it is gone: `git grep -l instrument-findings -- cairn/ROADMAP.md
       cairn/references/` returns no hits. A D-entry states the triage rule
       applied (a finding closes only where the gap lets a defect in shipped
       behaviour reach a user; every other finding is pruned with its reason in
       the ledger) and records the page's retirement.
-- [ ] AC6 — Every finding the AC1 ledger classes as runtime rather than
+- [x] AC6 — Every finding the AC1 ledger classes as runtime rather than
       instrument holds a candidate ROADMAP row stating the class of evidence
       that would promote it.
-- [ ] AC7 — `devtools::check()` clean (0 errors / 0 warnings) and
+- [x] AC7 — `devtools::check()` clean (0 errors / 0 warnings) and
       `devtools::test()` green.
 - [ ] AC8 — A test drives `normalize_audio_batch(two_pass = TRUE)` through a
       real failing Phase 1 row — no `run_loudnorm_analysis_batch()` mock — and
@@ -226,6 +226,7 @@ F1, F2) carried forward as candidate ROADMAP rows at T7.
 - 2026-08-30: T9 — `devtools::document()` (no diff), `devtools::test()` FAIL 0 / WARN 12 / SKIP 5 / PASS 8815, `devtools::check()` 0 errors / 0 warnings / 0 notes. The suite's 12 warnings are pre-existing: the four files this milestone touched report 0 warnings between them (477 + 47 + 156 + 83 passes).
 - 2026-08-30: T9, AC4 repair — the sweep returned 2, not 0, both hits inside T5's own probe: its explanatory comment and its deliberate counter-example, which spelled the retired handler literally. Reworded the comment (the literal is now described, not typed, the way the retired class name in the same file is assembled rather than written) and respelled the counter-example `condition = identity`, which behaves identically. The sweep returns 0 and the file stays green at PASS 156.
 - 2026-08-30: review checkpoint — PR #96 opened as draft. Consistency gate FAILED on weight caps: this file's plan-owned body is 206 lines against the <150 cap (Triage ledger 96, Acceptance criteria 38, Tasks 25). Evidence gathering was already in flight and is being completed before the return so it lands in one pass.
+- 2026-08-30: review returned M092 to in-progress. Consistency gate FAILED: `cairn_validate.py` weight caps — this file's plan-owned body is 206 lines against the <150 cap, shed >=57 (Triage ledger 96, Acceptance criteria 38, Tasks 25). Every other cairn check and the whole r-package toolchain slot are green (test FAIL 0 / PASS 8815; check Status: OK; document() no diff; pkgdown clean). Five criteria verified and ticked (AC1, AC4-AC7); AC2, AC3 and AC8 stay unticked because the gate stopped the phase before their mutation-redness clauses were re-executed. Review fan-out: blame-history 0 findings, prior-review 0 findings, diff-bug 9, all recorded in the Review section, none hitting the return floor on its own.
 
 ## Decisions
 
@@ -237,3 +238,173 @@ F1, F2) carried forward as candidate ROADMAP rows at T7.
   Falsified by a defect reaching a user through a gap this triage pruned.
 
 ## Review
+
+Reviewed 2026-08-30 on `m092-instrument-findings-triage` at 695a8a4, PR
+[#96](https://github.com/jmgirard/tidymedia/pull/96) (draft). **Outcome: returned
+to `in-progress`** — the consistency gate failed on the milestone file's line cap.
+Criterion verification below is therefore partial: the gate stopped the phase
+before the three mutation-redness clauses were re-executed.
+
+### Acceptance criteria
+
+- **AC1 — verified.** `git show f9fda86^:cairn/references/instrument-findings.md
+  | grep -c '^## M'` returns 8; the Triage ledger carries 8 `###` entries whose
+  titles match those headings verbatim. Ids reconcile section by section against
+  the page blob: M081 F3/F7/F2; M079's ten; M071 F4/F5/F7/F8/F9; M70
+  O2/O3/O4/O5/O6/O7/O8/O11; the grid's 16 (M62 N2 · M63 C1/A5/A8/A9 · M64
+  F5/F7/F10/F11 · M080 A10/N6/N7/F5/F6/F7/F8), which is exactly the live set the
+  page's own text declares stays there; M086 F9 + (i)(ii); M087 pass-1 F5 /
+  pass-2 F1/F2/F5 + (i)(ii)(iii); M091's round-4 finding. No id invented, none
+  dropped from a section's live set. One reason per id.
+- **AC2 — partially verified.** The test exists at
+  `tests/testthat/test-separate-av-multitrack.R:412-445` and passes in the fresh
+  suite run. The `R/ffmpeg.R:899` exact-case mutation was **not** re-planted this
+  pass; the redness half rests on T3's recorded measurement, not on fresh
+  evidence. Not ticked.
+- **AC3 — partially verified.** The test exists at
+  `tests/testthat/test-ffm-batch.R:248-274`, carries no `skip_if_no_ffmpeg()`,
+  and passes. The stub mutation was not re-planted this pass. Not ticked; see
+  finding 1, which questions what the criterion binds.
+- **AC4 — verified.** `grep -c 'condition = function(e) e'
+  tests/testthat/test-ffmpeg-exit-condition.R` returns 0. The probe at
+  `:507-545` mocks `run_program` to signal a `tidymedia_probe_warning` before the
+  site's abort and asserts, by condition class, that `error =` captures
+  `tidymedia_loudnorm_no_measurement` while the catch-first handler captures the
+  warning instead. File green in the suite run. See finding 3 on the sweep's
+  strength.
+- **AC5 — verified.** `git grep -l instrument-findings -- cairn/ROADMAP.md
+  cairn/references/` returns no hits (exit 1). `cairn/references/instrument-findings.md`
+  is absent from the tree; its `INDEX.md` line is gone; the grouped ROADMAP row is
+  deleted. D072 is at `cairn/DECISIONS.md:3283` and states the triage rule in the
+  words AC5 requires, plus the retirement.
+- **AC6 — verified.** Both runtime-classed ids hold their own candidate row:
+  M071 F9 ("Promote on a report of an option set during a batch not surviving
+  it") and M70 O11 ("Promote on any change letting `verify_media()` refuse before
+  the file-existence check, or on a report of such a refusal"). Each states a
+  class of evidence, not a count.
+- **AC7 — verified.** `devtools::test()` FAIL 0 / WARN 12 / SKIP 5 / PASS 8815.
+  `devtools::check()` `Status: OK` (0 errors / 0 warnings / 0 notes), 3m 2.2s.
+  The 12 warnings are pre-existing and none is in a file this milestone touched.
+- **AC8 — partially verified.** The test exists at
+  `tests/testthat/test-normalize-audios-two-pass.R:423-451`, carries
+  `skip_if_no_ffmpeg()`, uses no `run_loudnorm_analysis_batch()` mock, and
+  passes. The `assemble_measured()` mutation was not re-planted this pass. Not
+  ticked; see finding 7 on what the criterion asserts.
+
+### Consistency gate
+
+- `cairn_validate.py` — **FAIL**, exit 1. `weight caps`:
+  `cairn/milestones/M092-instrument-backlog-triage.md` at 206 plan-owned lines
+  against the `<150` cap, shed ≥57. Heaviest first: Triage ledger 96 ·
+  Acceptance criteria 38 · Tasks 25 · Scope 19 · Coverage 11 · Goal 6. Every
+  other check PASS, including `coverage complete`, `binding criteria`,
+  `scaffold present`, `roadmap<->disk orphans` and `references index<->disk`.
+  One advisory: `sizing` WARNs at 8 acceptance criteria against the >7 tripwire.
+- Byte and line budgets by hand: `cairn/ROADMAP.md` 23,827 bytes / 47 lines
+  (`<24,000` / `<60`); `cairn/LESSONS.md` 19,102 bytes / 31 lines (`<20,000` /
+  `<50`). Both inside budget.
+- `cairn_impact.py` — skipped, no DESIGN principle changed (`Principles
+  touched: —`; `cairn/DESIGN.md` is not in the diff).
+- Toolchain slot (`r-package`) — all green. `devtools::document()` leaves no
+  diff (`git status` clean after). `pkgdown::check_pkgdown()` "No problems
+  found." `devtools::check()` clean, above. `NEWS.md` untouched, correct: the
+  diff changes tests and tracking only, with no user-visible behaviour change.
+  No new top-level files, so no `.Rbuildignore` entry is owed.
+
+### Independent fresh-context review
+
+Internal tier, but the diff touches `tests/` — executable surface — so the full
+three-lens fan-out ran, each lens fresh-context and none having seen the
+implementation.
+
+**[S] blame-history — 0 findings.** Traced the `condition =` → `error =` swap to
+93e88ca (M087 T4) and confirmed the catch-first handler was not a deliberate
+design choice but the bug M087's own pass-2 F5 filed; the one site that raises a
+warning by design (`batch_sep`, `:590`) is correctly left on `warning =`. No
+dangling pointer to the deleted page in a live tracking file, no decision
+contradicted, no fixed bug resurrected.
+
+**[S] prior-review — 0 findings.** Archived `## Review` sections on the touched
+files (M083, M085, M086, M087, M091) reconcile with what the diff closes and
+carries forward; no wording drift in the two runtime rows. The GitHub probe
+(`gh api repos/jmgirard/tidymedia/pulls/comments?per_page=1`) returned `[]`, so
+that surface was skipped.
+
+**[O] diff-bug — 9 findings, ranked.** Verified against the implementation, not
+the reviewer's account; verification result noted per finding. None is a defect
+in shipped package behaviour.
+
+1. *(confirmed)* **`tests/testthat/test-ffm-batch.R` — the AC3 test asserts the
+   properties of its own stub, not of anything shipped.** `run_with_progress()`
+   (`R/ffm_batch.R:240-250`) is a bare loop assigning `run_one(pipelines[[i]])`
+   into a list, so `expect_named`, both `rlang::is_bool()` calls and the two
+   replayed `vapply()` expressions are satisfied by construction from the stub
+   the test wrote three lines earlier. M70 O6's real exposure is the `run_one`
+   closure defined inline in `ffm_batch()` (`R/ffm_batch.R:141-147`), which this
+   test never enters. Non-vacuous content is limited to length preservation,
+   ordering, and `cli_progress_bar()` not erroring non-interactively. AC3's own
+   redness clause places the mutation in the stub, so the criterion as written
+   passes — the criterion, not the work, is what does not bind the defect.
+2. *(confirmed)* **D072's motivating measurement is wrong.** The entry says the
+   page "grew by one section at each of five later hygiene passes" and that "five
+   filings in three weeks" is the measurement. `git log --follow` on the deleted
+   path shows five commits total: creation at M083 (94f6c77) and three later
+   filings (M086 a9d5ec0, M087 dea2821, M092's T1 3414982), then the deletion.
+   Three later passes, not five.
+3. *(confirmed)* **AC4's grep is a sweep the file is written to evade, and the
+   four repaired probes carry no suite-level regression guard.** The new probe at
+   `:507-545` exercises a synthetic replica, so reverting any of `:572/578/583/601`
+   to the catch-first form leaves the suite green. `condition = identity` at
+   `:537` is semantically identical to the retired literal, and the test's own
+   comment states it is spelled that way to keep AC4's count at 0. AC4 as written
+   holds; what it measures is a lexical spelling.
+4. *(confirmed)* **AC5's evidence was produced partly by renaming the artifact the
+   sweep measures.** T7 renamed the milestone file from
+   `M092-instrument-findings-triage.md` because the sweep matched its own path in
+   the ROADMAP table. Substantively benign — a milestone filename is not the
+   retired page — but the criterion no longer means only what it claims to have
+   measured.
+5. *(not sustained as an AC1 failure)* **Four grid ids absent from the ledger.**
+   M62 N1, N3, N7 and M64 F4 have no ledger row. Verified: the page's own grid
+   text records N1 as closed at M63 and N3/N7/F4 as promoted to M080 on
+   2026-08-28, and declares the live set as exactly the 16 the ledger carries. So
+   AC1's domain is met. The inconsistency is presentational — every other section
+   records already-handled ids explicitly ("prune (already discharged)", "prune
+   (already pruned)") and this one does not.
+6. *(confirmed)* **`tests/testthat/test-separate-av-multitrack.R:412-445` asserts
+   "no warning at all" where AC2 asks that the multi-track advice be absent from
+   the warning.** The discriminator is `expect_s3_class(upper, "tbl_df")`, which
+   holds only because the `tryCatch(warning = )` returned the tibble; the premise
+   that the multi-track warning is the verb's only warning sits in a comment, not
+   an assertion. Correct under today's mutation, brittle to any future warning on
+   the batch path.
+7. *(confirmed)* **`tests/testthat/test-normalize-audios-two-pass.R:423-451`
+   cannot distinguish a correct status from a wrong one.** It asserts type,
+   length and non-`NA`, never the value, while M086 F9's promote condition names
+   "a `tm_row_status` that is **wrong** or all-`NA`". AC8's own text asks only for
+   a non-`NA` integer, so the criterion passes; half the defect class is
+   unguarded. The reviewer's reading of `tm_rows` as row indices, making the
+   `2L` assertion sound, checks out.
+8. *(confirmed)* **Two archive summaries still point at the deleted page with no
+   forwarding note** — `archive/M083-roadmap-byte-budget.md` and
+   `archive/M087-scalar-batch-condition-classes.md`. Both are historical
+   narration, so nothing live breaks, but M083's text tells a reader to consult
+   the page and no surviving pointer says where the content went. (IP4 forbids
+   editing an archive; a forwarding note belongs in D072 or nowhere.)
+9. *(confirmed, minor, grouped)* D072 says "roughly forty" findings where the
+   ledger enumerates 53 ids; D072 and T1 call M091's entry "M091's eighth
+   finding" when it is the page's eighth *section*; the compressed M45 candidate
+   row's promote clause still names "(c)'s missing-directory case" after the
+   compression stopped naming that case in (c); the T7 work-log line records
+   23,832 bytes where the file measures 23,827.
+
+### Disposition
+
+Returned to `in-progress` on the `cairn_validate` weight-caps failure. Under the
+return floor none of the nine findings independently returns the milestone — none
+demonstrates an acceptance criterion failing inside its named procedure's domain,
+and none is a defect in shipped package behaviour — so they ride the gate's
+return and are triaged at the maintainer's gate on re-review. Findings 1 and 3
+are evidence about the promises rather than the work, and route to the gated
+criterion-amendment protocol if the maintainer agrees the two closures should
+bind the defects the Goal names.

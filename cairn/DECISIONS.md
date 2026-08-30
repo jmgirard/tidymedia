@@ -3234,3 +3234,48 @@ outputs survived, and it is exactly as relevant when the audio half failed for a
 cause this diagnostic declines to name.
 
 M091's AC1 was written against D069's wording, and was amended to this one.
+
+## D071 — A container's refusal under one codec is not evidence it holds one stream; the measurement re-runs under a codec that container takes (2026-08-30, from M091's second amendment return; annotates D069's "the instrument is a static measured list" paragraph, keeps every other part of D069 and all of D070 in force; supersedes nothing)
+
+M091 built `multi_audio_extensions` by writing the suite's three-audio-track
+fixture — three AAC streams — out to each candidate extension with `-map 0:a
+-c:a copy` and reading the exit status. Twelve extensions exited 234. Eleven
+were recorded as containers that hold one audio stream; `webm` was recognised as
+a codec refusal, because its message says so in words ("Only VP8 or VP9 or AV1
+video and Vorbis or Opus audio ... are supported for WebM"), re-measured under
+`-c:a libopus`, found to take three streams at exit 0, and listed.
+
+`ogg` and `opus` refuse the same copy with a terser message — "Unsupported codec
+id in stream 0" — and were read as capacity refusals on the strength of the exit
+status. They are not. Under `-c:a libopus` each takes three distinct audio
+streams at exit 0, exactly as `webm` does. So the diagnostic this milestone
+exists to silence went on firing on two containers that hold several: at M091's
+review, `separate_audio_video(3-track.mkv, "a.ogg", "v.mp4")` at the defaults
+still advised writing "a container that holds several" — into one that does.
+
+**The rule.** A measurement that concludes a container holds one audio stream
+re-runs the refusal under a codec that container takes. One codec's refusal
+measures the pair, never the container. The conclusion is admissible only from a
+refusal that survives that second run, or from a muxer message that names
+capacity in its own words rather than a codec — and where the message names a
+codec, the second run decides, not the message: `wv` says "wv muxer supports
+only codec wavpack for type audio" and still exits 234 under `-c:a wavpack`,
+which is what makes it a capacity refusal.
+
+**Where it bites.** This is the procedure behind D069's static measured list,
+and the only procedure anyone growing that list has to follow. The exit status
+alone is the cheap reading, it is what the first pass took, and it is wrong in
+the one direction that matters here — it leaves a multi-stream container off an
+exclusion list, so the false blame D069 exists to remove keeps arriving. The
+comment above `multi_audio_extensions` in `R/ffmpeg.R` now records both the
+per-container encoders and the capacity wording of each deliberately absent
+extension, so the evidence is readable without re-running anything.
+
+**What it does not touch.** D069's exclusion-list shape is unchanged: an
+unmeasured container still keeps the diagnostic it has today. This rule governs
+what counts as having measured one.
+
+- **Falsified by** a container this procedure clears as a capacity refusal that
+  is later shown to take several audio streams under some codec neither run
+  tried — which would say the second run is not enough and the measurement needs
+  the muxer's own declared stream limits instead of a witness.

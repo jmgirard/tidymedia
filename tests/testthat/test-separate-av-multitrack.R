@@ -1038,12 +1038,16 @@ test_that("an rlang condition through the same call does get the note", {
 # that advice is false blame -- the failure cannot be the capacity refusal the
 # message describes -- so the diagnostic fails open there instead.
 
-# The encoder each listed container is measured with (T1, 2026-08-30). Six take
-# the verb's own default stream copy of the fixture's AAC; `webm` holds no AAC
-# at all ("Only VP8 or VP9 or AV1 video and Vorbis or Opus audio ... are
-# supported for WebM", exit 234) and takes libopus, which is what separates its
-# CODEC refusal from a capacity one.
-gate_capacity_codec <- function(ext) if (identical(ext, "webm")) "libopus" else "copy"
+# The encoder each listed container is measured with (T1 and T8). Six take the
+# verb's own default stream copy of the fixture's AAC; `webm`, `ogg` and `opus`
+# hold no AAC at all -- "Only VP8 or VP9 or AV1 video and Vorbis or Opus audio
+# ... are supported for WebM" and "Unsupported codec id in stream 0", exit 234
+# each -- and take libopus, which is what separates their CODEC refusal from a
+# capacity one (D071).
+gate_codec_refusers <- c("webm", "ogg", "opus")
+gate_capacity_codec <- function(ext) {
+  if (ext %in% gate_codec_refusers) "libopus" else "copy"
+}
 
 # Distinct audio stream indices in `path`. count_audio_streams() would do, but
 # MPEG-TS lists its streams once per program, so a three-track `.ts` reports six
@@ -1066,15 +1070,21 @@ test_that("every listed container carries three mapped audio streams", {
   exts <- tidymedia:::multi_audio_extensions
   # AC4's membership floor, and the guard against the domain silently emptying:
   # every assertion below is inside a loop over `exts`.
-  expect_true(all(c("mka", "m4a", "mp4", "mov", "mkv", "webm", "ts") %in% exts))
+  expect_true(all(c("mka", "m4a", "mp4", "mov", "mkv", "webm", "ogg", "opus",
+                    "ts") %in% exts))
   infile <- make_multitrack_video()
   for (ext in exts) {
     audio <- withr::local_tempfile(fileext = paste0(".", ext))
     video <- withr::local_tempfile(fileext = ".mp4")
-    expect_no_error(
+    # Not expect_no_error(): it takes no `info`, so a red here would name no
+    # extension (review F7). Capturing the message keeps the label AND puts
+    # FFmpeg's own complaint in the failure output.
+    err <- tryCatch({
       separate_audio_video(infile, audio, video,
                            audio_codec = gate_capacity_codec(ext))
-    )
+      NULL
+    }, error = function(e) conditionMessage(e))
+    expect_null(err, info = ext)
     expect_identical(distinct_audio_streams(audio), 3L, info = ext)
   }
 })
@@ -1196,23 +1206,29 @@ test_that("the container gate reads the extension without regard to case", {
   expect_false(inherits(cnd, "tidymedia_multitrack_separation"))
 })
 
-test_that("a stream copy into .webm no longer blames the track count", {
+test_that("a stream copy into a codec-refusing container blames no track count", {
   # The case the gate exists for, reached through the verb's own defaults rather
-  # than a planted encoder: WebM holds three audio streams but no AAC one, so
-  # the default copy fails for a reason the multi-track message would misname --
-  # while telling the caller to write a container that holds several, which
-  # `.webm` already is.
+  # than a planted encoder: each of these holds three audio streams but no AAC
+  # one, so the default copy fails for a reason the multi-track message would
+  # misname -- while telling the caller to write a container that holds several,
+  # which the output already is.
+  #
+  # All three, not `.webm` alone: reading `.ogg`'s and `.opus`'s identical
+  # refusal as a capacity one is what left them ungated until review measured
+  # them under libopus (D071), and this loop is what would have caught it.
   skip_if_no_ffprobe()
   infile <- make_multitrack_video()
-  audio <- withr::local_tempfile(fileext = ".webm")
-  video <- withr::local_tempfile(fileext = ".mp4")
-  cnd <- tryCatch(separate_audio_video(infile, audio, video),
-                  error = function(e) e)
-  expect_s3_class(cnd, "tidymedia_ffmpeg_exit")
-  expect_false(inherits(cnd, "tidymedia_multitrack_separation"))
-  msg <- cli::ansi_strip(conditionMessage(cnd))
-  expect_false(grepl("audio tracks", msg, fixed = TRUE))
-  expect_false(grepl(".mka", msg, fixed = TRUE))
+  for (ext in gate_codec_refusers) {
+    audio <- withr::local_tempfile(fileext = paste0(".", ext))
+    video <- withr::local_tempfile(fileext = ".mp4")
+    cnd <- tryCatch(separate_audio_video(infile, audio, video),
+                    error = function(e) e)
+    expect_s3_class(cnd, "tidymedia_ffmpeg_exit")
+    expect_false(inherits(cnd, "tidymedia_multitrack_separation"), info = ext)
+    msg <- cli::ansi_strip(conditionMessage(cnd))
+    expect_false(grepl("audio tracks", msg, fixed = TRUE), info = ext)
+    expect_false(grepl(".mka", msg, fixed = TRUE), info = ext)
+  }
 })
 
 test_that("a failed batch row on a listed container contributes no bullet", {
@@ -1261,18 +1277,53 @@ test_that("a batch whose failed rows are all listed containers warns not at all"
   expect_false(res$success[[3]])
 })
 
+test_that("every unlisted container keeps the batch warning's per-row bullet", {
+  # AC3's batch half, which had one extension behind it (`.mp3`, in the
+  # contributes-no-bullet test above) while the criterion names nine. The bullet
+  # is built by one sprintf() with no extension branch, so the nine were always
+  # going to agree -- but "always going to agree" is what the container list was
+  # said to be too, so the loop asserts it rather than reasoning about it.
+  skip_if_no_ffprobe()
+  exts <- c("mp3", "wav", "aac", "flac", "wv", "caf", "aiff", "au", "w64")
+  multi <- make_multitrack_video()
+  dir <- withr::local_tempdir()
+  for (ext in exts) {
+    audio <- file.path(dir, paste0("blamed.", ext))
+    jobs <- tibble::tibble(
+      input       = multi,
+      audiofile   = audio,
+      videofile   = file.path(dir, paste0("v-", ext, ".mkv")),
+      audio_codec = "notanencoder"
+    )
+    w <- tryCatch(separate_audio_video_batch(jobs), warning = function(w) w)
+    expect_s3_class(w, "tidymedia_multitrack_separation")
+    msg <- cli::ansi_strip(conditionMessage(w))
+    expect_match(msg, "1 audio output failed on a multi-track input",
+                 fixed = TRUE, info = ext)
+    expect_match(
+      msg,
+      sprintf("Input row 1 (%s) carries 3 audio tracks, all 3 mapped into %s, which failed.",
+              basename(multi), basename(audio)),
+      fixed = TRUE, info = ext
+    )
+  }
+})
+
 test_that("every measured refusing container keeps the enriched abort as worded", {
   # AC3, held by the suite rather than by a review script (review F7). The two
   # extensions the tests above exercise are `.mp3` and `.aac`; the criterion
-  # names eleven, and the other nine had only hand verification behind them.
+  # names nine, and the other seven had only hand verification behind them.
+  #
+  # `ogg` and `opus` were in this loop until D071: they refuse the fixture's AAC
+  # copy like the nine, but for a codec reason, and they are on the gate list
+  # now, so their subject is AC1/AC2 rather than AC3.
   #
   # The trigger is an encoder no FFmpeg build has, not the container's own
-  # refusal: the failure is then identical across all eleven, the extension is
+  # refusal: the failure is then identical across all nine, the extension is
   # the only thing that varies, and the version-dependence this file's header
   # warns about stays out of it.
   skip_if_no_ffprobe()
-  exts <- c("mp3", "wav", "aac", "flac", "ogg", "opus", "wv", "caf", "aiff",
-            "au", "w64")
+  exts <- c("mp3", "wav", "aac", "flac", "wv", "caf", "aiff", "au", "w64")
   infile <- make_multitrack_video()
   for (ext in exts) {
     audio <- withr::local_tempfile(fileext = paste0(".", ext))

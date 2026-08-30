@@ -558,17 +558,20 @@
   input's audio into a container that holds only one stream makes FFmpeg fail,
   and the error then reports how many tracks the input carries and offers two
   ways out: name one track with `audio_stream`, or write a container that holds
-  several. That report was attached to *any* failing audio command on a
+  several. That report was attached to any audio command FFmpeg ended at a
+  non-zero exit status on a
   multi-track input — including one whose output was already `.mka`, `.m4a`,
-  `.mp4`, `.mov`, `.mkv`, `.webm` or `.ts`, every one of which holds three audio
-  tracks (`.webm` under an encoder it accepts, such as `audio_codec = "libopus"`;
-  it has no room for AAC). On those the container is not what FFmpeg objected
+  `.mp4`, `.mov`, `.mkv`, `.webm`, `.ogg`, `.opus` or `.ts`, every one of which
+  holds three audio
+  tracks (`.webm`, `.ogg` and `.opus` under an encoder they accept, such as
+  `audio_codec = "libopus"`; none has room for AAC). On those the container is
+  not what FFmpeg objected
   to, so the report named a cause that was not the cause while telling you to do
-  the thing you had already done. Writing to one of those seven, the error you
+  the thing you had already done. Writing to one of those nine, the error you
   get is now the one the run itself raised — same class, same exit status, same
   message, but for the line saying the video output was written, which a failing
   audio half carries when the video command wrote its file and the failure is an
-  rlang condition. Those seven are the containers the package knows about, not
+  rlang condition. Those nine are the containers the package knows about, not
   every one FFmpeg can write several audio streams into (`.avi` and `.nut` take
   three too), so on an output outside the list the report still appears.
   `separate_audio_video_batch()` does the same: such a row is dropped from the

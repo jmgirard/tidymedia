@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M091: The multi-track advice stops arriving when the caller is already following it
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -57,15 +57,15 @@ that it reports what the call did rather than why FFmpeg refused.
       extension is held by the list contributes no bullet to the post-fan-out
       warning, and a batch whose failed audio rows all have such outputs signals
       no warning at all.
-- [ ] AC3: On the extensions measured 2026-08-30 as refusing three mapped audio
-      streams (`mp3`, `wav`, `aac`, `flac`, `ogg`, `opus`, `wv`, `caf`, `aiff`,
-      `au`, `w64`), the scalar abort keeps the class vector
+- [x] AC3: On `mp3`, `wav`, `aac`, `flac`, `wv`, `caf`, `aiff`, `au` and `w64` —
+      the extensions T1 measured at a non-zero exit status that this milestone
+      leaves off the list — the scalar abort keeps the class vector
       `c("tidymedia_multitrack_separation", "tidymedia_ffmpeg_exit")`, its
       `tm_status` field and its five bullets as currently worded, and the batch
       warning keeps its class and its per-row bullet form.
-- [ ] AC4: The list holds at least `mka`, `m4a`, `mp4`, `mov`, `mkv`, `webm` and
-      `ts`, and every extension it holds names a container FFmpeg writes three
-      mapped audio streams into at exit 0, never one it refuses for capacity.
+- [x] AC4: The list holds at least `mka`, `m4a`, `mp4`, `mov`, `mkv`, `webm`,
+      `ogg`, `opus` and `ts`, and every extension it holds names a container
+      FFmpeg writes three mapped audio streams into at exit 0.
 - [x] AC5: `?separate_audio_video` states that the diagnostic fires only when no
       `audio_stream` was named, FFmpeg returned a non-zero exit status, the input
       carries more than one audio track, and the output extension is not on the
@@ -84,12 +84,12 @@ that it reports what the call did rather than why FFmpeg refused.
 
 ## Coverage
 
-- AC1 → T2, T3, T5
-- AC2 → T2, T4, T5
-- AC3 → T3, T4, T5
-- AC4 → T1, T2, T5
-- AC5 → T6
-- AC6 → T7
+- AC1 → T2, T3, T5, T8
+- AC2 → T2, T4, T5, T8
+- AC3 → T3, T4, T5, T8
+- AC4 → T1, T2, T5, T8
+- AC5 → T6, T8
+- AC6 → T7, T8
 
 ## Tasks
 
@@ -110,9 +110,9 @@ that it reports what the call did rather than why FFmpeg refused.
       suppression case per extension, iterating the list itself rather than a
       hand-written copy; the batch row-drop and the no-warning-at-all case; the
       AC3 unchanged-behavior cases. AC4's capacity check runs `-c:a copy` on
-      every listed extension except `webm`, which holds no AAC and takes
-      `-c:a libopus` — the encoders T1 measured, named here so the criterion is
-      decidable without them. The suppression case runs twice per extension:
+      every listed extension except `webm`, `ogg` and `opus`, which hold no AAC
+      and take `-c:a libopus` — the encoders measured for each, named here so
+      the criterion is decidable without them. The suppression case runs twice per extension:
       once with the video half failing too, once with it left at its default so
       it succeeds and writes, which is the sub-case AC1's video-written
       exception covers.
@@ -120,6 +120,12 @@ that it reports what the call did rather than why FFmpeg refused.
       sentence needs it; `devtools::document()`; `NEWS.md` entry.
 - [x] T7: D-entry recording the gate, its measured basis, the rejected
       alternatives and the causes left indistinguishable; `devtools::check()`.
+- [x] T8: Re-measure the twelve refusing extensions under a codec each container
+      takes, separating a codec refusal from a capacity one; add `ogg` and
+      `opus` to the list on that measurement; correct the source comment, both
+      help pages and `NEWS.md`, which enumerate the list by hand; record the
+      measurement rule as a D-entry. Review's F2, F3 and F7 land in the same
+      round.
 
 ## Work log
 
@@ -151,6 +157,13 @@ that it reports what the call did rather than why FFmpeg refused.
 - 2026-08-30: the amendment landed, with review's F2, F3, F4 and F7 fix-now work in the same round. The batch help page dropped its exit-status condition and gained the runner's own; both pages now name the seven as an exclusion list rather than a survey (F2), citing `.avi` and `.nut`, re-measured here at exit 0 with three distinct audio streams on ffmpeg 9.0.1; the scalar page's video-bullet clause gained AC1's rlang qualifier (F4); `NEWS.md` gained `.webm`'s encoder caveat, the same rlang qualifier and the exclusion-list clause (F3); D069's falsifier was reworded, since "an unlisted one that accepts several" was satisfied on the day it was written — `.avi`, `.nut`, `.m4b`, `.3gp`, `.wma` and `.asf` all take three mapped AAC streams at exit 0, measured here — and now names the one direction the list can fail in that leaves a caller worse off. T5 gained an eleven-extension AC3 test (F7), where two of the eleven had suite coverage before. Check discrimination both ways: rewording one abort bullet turns 11 tests red, dropping `tidymedia_ffmpeg_exit` from the class vector turns 15 red, and neither plant leaves the new test green.
 
 - 2026-08-30: amendment return: AC3 — "On the extensions measured 2026-08-30 as refusing three mapped audio streams (`mp3`, `wav`, `aac`, `flac`, `ogg`, `opus`, `wv`, `caf`, `aiff`, `au`, `w64`)"; AC4 — "The list holds at least `mka`, `m4a`, `mp4`, `mov`, `mkv`, `webm` and `ts`, and every extension it holds names a container FFmpeg writes three mapped audio streams into at exit 0, never one it refuses for capacity." Measured at review on ffmpeg 9.0.1: `.ogg` and `.opus` refuse the three-AAC-track copy for a CODEC reason ("Unsupported codec id in stream 0"), not a capacity one, and take three distinct audio streams at exit 0 under `-c:a libopus` — the same shape as `.webm`, which the milestone measured, named a codec refusal, and listed. `separate_audio_video(3-track.mkv, "a.ogg", "v.mp4")` at the defaults still raises `tidymedia_multitrack_separation` advising a container that holds several, into one that does; the identical `.webm` call does not. Neither criterion is false as written — AC4 sets a membership floor and AC3 binds only that behaviour on the eleven is unchanged, both verified — but the repair the Goal demands puts `.ogg` and `.opus` in the list, which falsifies AC3's enumerated domain and AC4's seven. Maintainer's decision at the gate, over correcting the comment alone or filing the gap to the M45-F1 candidate row: return and gate them. Review's other four criteria verified as written; consistency gate clean; PR #95 open as a draft. Findings F2 (NEWS' "any failing audio command"), F3 (the false half of the batch-gate comment) and F7 (a missing `info = ext`) are directed fix-now into the same round; F4 and F5 are follow-ups; F6 rejected.
+- 2026-08-30: T8 re-measured all twelve refusing extensions on ffmpeg 9.0.1 before touching source. `.ogg` and `.opus` refuse the three-AAC-track copy at exit 234 with "Unsupported codec id in stream 0" and take three distinct audio streams at exit 0 under `-c:a libopus` -- `.webm`'s shape, not the nine's. The other nine name capacity in their own words ("Exactly one MP3 audio stream is required", "wav muxer does not support more than one stream of type audio", "AIFF allows only one audio stream and a picture", and so on), and `.wv`, whose message names a codec, still exits 234 under `-c:a wavpack`, the one codec it holds.
+- 2026-08-30: AMENDMENT (substantive, AC3 and AC4), executing the AC3/AC4 amendment return above. AC3's domain drops `ogg` and `opus`, leaving nine, and its gloss stops asserting WHY FFmpeg refused -- it now names the non-zero exit status T1 recorded, which is a fact of the record rather than a classification the milestone cannot make. AC4's membership floor grows from seven to nine. WIDENING under D-118, recorded per that rule: AC4 is the criterion widened, and because AC1 and AC2 quantify over "each extension the list holds", `ogg` and `opus` enter their domains too. The direction was the user's selection at the review gate, over filing the gap to the M45-F1 candidate row.
+- 2026-08-30: the amended AC3 and AC4 went to two fresh-context [O] FULL criteria audits before they were written. The first returned six findings and a WIDENS verdict; four were taken -- T5's encoder sentence (AC4 is undecidable for two of nine without it), AC4's trailing "never one it refuses for capacity" dropped as a stderr-derived property the Scope's Out section excludes reading and the earlier round had already ruled non-binding, AC3's batch half given nine-extension coverage rather than the one it had, and a new T8 rather than a rewrite of executed T1. Its optional AC5 extension binding the help-page enumeration was declined at the mini gate. The revised bytes went to a second reader, which returned HOLDS (tilting narrow) with no criterion-wording finding and two repairs outside the criteria, both taken: T5's encoder sentence in its own words, and the source comment above `multi_audio_extensions`, false on two of the extensions it named.
+- 2026-08-30: mini gate chose a numbered D071 over a milestone-local entry or a source comment alone, because D069 is what anyone growing `multi_audio_extensions` reads and the measurement procedure is the thing that failed; falsified by nothing outside this milestone ever growing the list.
+- 2026-08-30: mini gate chose correcting the two help pages and `NEWS.md` to nine over interpolating the list into roxygen or binding the enumeration in a criterion, because this milestone already carries three defect returns and a criteria-set widening after a return is what D-118 exists to hold off, while the correction ships either way; falsified by the enumeration drifting a second time, which review's F4 follow-up now has a demonstrated trigger for.
+- 2026-08-30: T8 landed. `ogg` and `opus` added to `multi_audio_extensions`; the comment above it corrected and given each absent extension's capacity wording; both roxygen blocks and `NEWS.md` corrected from seven to nine; D071 recorded. Review's fix-now items in the same round: F2 (`NEWS.md`'s "any failing audio command", false of the pre-change code, now the non-zero exit the branch gated), F3 (the batch-gate comment's false headline-count clause, dropped -- `warn_failed_separation()` applies its own `keep` filter and counts what survives it, so FFprobe cost carries the placement alone), F7 (the unlabelled `expect_no_error`, which takes no `info`, so the assertion became an explicit capture that labels the extension and shows FFmpeg's complaint). Tests: the codec-refuser defaults-path case generalized from `.webm` to all three, and a nine-extension batch per-row-bullet test added. Check discrimination three ways: reverting `ogg`/`opus` from the list turns 7 assertions red across the AC4 floor and the codec-refuser loop, forcing the gate TRUE turns 15 tests red including both new ones, and rewording the batch bullet turns the new batch test red at 9. None of the three leaves a new test green.
+- 2026-08-30: amendment complete. `Rscript -e 'devtools::test()'` 0 failures / 8792 passing / 12 warnings / 5 skips (before this round: 0 / 8743 / 12 / 5; the +49 is the nine-extension batch bullet test, the codec-refuser loop's two new extensions and the two extensions AC4's loop gained, less the two AC3's loop shed). `Rscript -e 'devtools::check()'` Status: OK -- 0 errors, 0 warnings, 0 notes, 3m 36s. `devtools::document()` rewrote the two separation `.Rd` files alone. `cairn_validate` exit 0. Status -> review.
 
 ## Decisions
 

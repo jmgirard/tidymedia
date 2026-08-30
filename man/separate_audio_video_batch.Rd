@@ -114,17 +114,18 @@ A row reaches that warning only when all four of these hold: it named no
 \code{audio_stream}, the row is recorded \code{success = FALSE}, its input
 carries more than one audio track, and its \code{audiofile}'s extension is not
 among the containers named here as holding several — \code{.mka},
-\code{.m4a}, \code{.mp4}, \code{.mov}, \code{.mkv}, \code{.webm} and
+\code{.m4a}, \code{.mp4}, \code{.mov}, \code{.mkv}, \code{.webm},
+\code{.ogg}, \code{.opus} and
 \code{.ts}. No exit status is among those conditions, and the difference from
 \code{\link{separate_audio_video}} is deliberate: the batch runner records
 \emph{whether} a row succeeded and not how, so a non-zero exit, a hard error
 and a reached limit are all recorded the same way, and a row put here by any
-of them is treated alike. The seven are an exclusion list and not a survey:
+of them is treated alike. The nine are an exclusion list and not a survey:
 FFmpeg writes several audio streams into other containers too (\code{.avi} and
 \code{.nut} among them), and a row failing on one of those is still named. The
 container condition keeps a row off the list when it is already doing what the
 warning would advise; such a row is silently not named, and a batch whose
-failed audio rows all write to those seven warns not at all. The headline
+failed audio rows all write to those nine warns not at all. The headline
 count follows the rows actually named.
 
 What each bullet states is what that row \emph{did} — its track count, and

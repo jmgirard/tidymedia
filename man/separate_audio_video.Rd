@@ -119,11 +119,12 @@ That extra report is attached only when all four of these hold: no
 \code{infile} carries more than one audio track, and \code{audiofile}'s
 extension is not among the containers named here as holding several —
 \code{.mka}, \code{.m4a}, \code{.mp4}, \code{.mov}, \code{.mkv},
-\code{.webm} and \code{.ts}. Those seven are an exclusion list and not a
+\code{.webm}, \code{.ogg}, \code{.opus} and \code{.ts}. Those nine are an
+exclusion list and not a
 survey: FFmpeg writes several audio streams into other containers too
 (\code{.avi} and \code{.nut} among them), and a failure on one of those still
 gets the report. The container condition keeps the report off a call that is
-already doing what the report would advise: writing to one of the seven, the
+already doing what the report would advise: writing to one of the nine, the
 failure cannot be the container refusing a second audio stream, so whatever
 FFmpeg did object to would go unnamed. Fail any of the four and the error you
 get is the one the run itself raised — same class, same exit status, same

@@ -44,7 +44,7 @@ that it reports what the call did rather than why FFmpeg refused.
 
 ## Acceptance criteria
 
-- [ ] AC1: A `separate_audio_video()` audio command that FFmpeg ends at a non-zero
+- [x] AC1: A `separate_audio_video()` audio command that FFmpeg ends at a non-zero
       exit status, with a >1-audio-track input, no `audio_stream`, and an
       `audiofile` extension held by the new list, re-raises the condition
       `ffm_run()` raised for that pipeline with no enrichment from the multi-track
@@ -142,178 +142,185 @@ that it reports what the call did rather than why FFmpeg refused.
 
 ## Review
 
-Reviewed 2026-08-30 against PR #95 (draft). `master` had not moved since the
-branch was cut, so no merge-forward was needed. Evidence below is fresh, by
-command, in this session.
+Re-reviewed 2026-08-30 against PR #95 (draft), after the AC1 amendment. This
+section replaces the previous round's, whose outcome was the amendment return
+recorded in the work log; findings that round raised and left for the gate are
+carried forward below rather than dropped. `master` had not moved since the
+branch was cut (`git rev-list --count origin/master ^HEAD` = 0), so no
+merge-forward was needed. All evidence below is fresh, by command, in this
+session.
 
 ### Acceptance-criterion evidence
 
-- **AC1** — **NOT VERIFIED.** The per-extension test is green (35 assertions,
-  five per extension over all seven of `multi_audio_extensions`): class vector
-  identical to the reference `ffm_run()` condition and `tidymedia_multitrack_separation`
-  absent, `tm_status` identical, `conditionMessage()` identical, the reference
-  itself asserted `tidymedia_ffmpeg_exit`. But that test gives BOTH halves the
-  missing encoder, so the video half fails too. Measured at review with the video
-  half succeeding — the ordinary case — into `.mka` with
-  `audio_codec = "notanencoder"`: class vector identical, `tm_status` identical,
-  message NOT identical. The verb's condition carries one extra bullet,
-  "The video output was written to '.../v.mp4'", which `abort_after_video()`
-  appends whenever the video half wrote a file. So AC1's "same message" clause is
-  false across the ordinary half of its own domain.
-
-  The code is right and the criterion is wrong. That bullet is M090's deliberate
-  contract: `abort_after_video()` appends it to whatever condition the audio half
-  raised, agnostic to which branch produced it, and it already rides the two
-  pre-existing fail-open branches (`is.na(status)`, `n <= 1L`) the same way.
-  Stripping it on the new container branch would silently undo M090. AC1 was
-  written without accounting for a note a different function adds downstream of
-  the branch AC1 is about. This routes as an amendment return under the
-  never-reinterpret rule, not as a defect return.
-
-- **AC2** — same file, two tests, 11 assertions green. "a failed batch row on a
-  listed container contributes no bullet": a two-row batch whose `.mka` row and
-  `.mp3` row both fail warns naming only `blamed.mp3` and "Input row 2", with
-  the headline reading "1 audio output failed", and both rows confirmed
-  `success = FALSE` so the silence is a drop and not a success. "a batch whose
-  failed rows are all listed containers warns not at all": `expect_no_warning`
-  green with both rows failed.
-- **AC3** — verified at review across all eleven refusing extensions, not only
-  the two the committed tests exercise. A review-side script ran
-  `separate_audio_video()` with a missing encoder on a three-track input into
-  `mp3`, `wav`, `aac`, `flac`, `ogg`, `opus`, `wv`, `caf`, `aiff`, `au` and
-  `w64`: every one kept the class vector
-  `c("tidymedia_multitrack_separation", "tidymedia_ffmpeg_exit")`, an integer
-  `tm_status` of 8, and all five bullets, at 18 message lines each. The batch
-  form over the same eleven rows warned with class
-  `tidymedia_multitrack_separation`, headline "11 audio outputs failed", every
-  output named and "Input row 1".."Input row 11" present. The wording is
-  unchanged by construction: `git diff master..HEAD -- R/ffmpeg.R` shows the
-  `cli_abort()` message body untouched, the only code changes being the new
-  vector, the predicate, and three gate lines.
-- **AC4** — same test file, test "every listed container carries three mapped
-  audio streams": 15 assertions green. It asserts the membership floor
-  (`mka`, `m4a`, `mp4`, `mov`, `mkv`, `webm`, `ts` all present) and then, for
-  each member of `multi_audio_extensions` itself, that
-  `separate_audio_video()` raises no error and the written output carries three
-  distinct audio stream indices — `copy` for six, `libopus` for `webm`, the
-  encoders T1 measured.
+- **AC1** — verified in both sub-cases across all seven listed extensions.
+  Committed suite: "a listed container falls open to `ffm_run()`'s own
+  condition" 35 assertions green (video half also failing, so no bullet is
+  appended) and "a listed container falls open with the video half succeeding
+  too" 70 assertions green, each iterating `multi_audio_extensions` itself and
+  asserting the class vector identical to a reference `ffm_run()` condition,
+  `tidymedia_multitrack_separation` absent, `tm_status` identical, and the
+  message equal to `ffm_run()`'s plus exactly one trailing line matching "The
+  video output was written to" and the video's basename. Re-measured live at
+  review on `.mka` with `audio_codec = "notanencoder"` and the video half at its
+  default: video file written, class vector identical, `tm_status` identical,
+  message 8 lines against the reference's 6 — prefix identical, the extra line
+  the video-written note. The amended clause holds; the pre-amendment "same
+  message" clause is the one that did not.
+- **AC2** — two tests, 11 assertions green. "a failed batch row on a listed
+  container contributes no bullet" (8): a two-row batch whose `.mka` and `.mp3`
+  rows both fail warns naming only the `.mp3` output and "Input row 2", headline
+  "1 audio output failed", both rows confirmed `success = FALSE` so the silence
+  is a drop and not a success. "a batch whose failed rows are all listed
+  containers warns not at all" (3): `expect_no_warning` green with both rows
+  failed.
+- **AC3** — re-verified live at review across all eleven refusing extensions,
+  not only the two the committed suite exercises. `separate_audio_video()` with
+  a missing encoder on a three-audio-track input into `mp3`, `wav`, `aac`,
+  `flac`, `ogg`, `opus`, `wv`, `caf`, `aiff`, `au` and `w64`: every one kept the
+  class vector `c("tidymedia_multitrack_separation", "tidymedia_ffmpeg_exit")`,
+  `tm_status` 8, and 18 message lines — the five bullets plus FFmpeg's own
+  report, unchanged. The wording is unchanged by construction:
+  `git diff master..HEAD -- R/ffmpeg.R` leaves the `cli_abort()` message body
+  untouched. Batch form unchanged likewise (its per-row bullet form is what AC2's
+  `.mp3` row exercises).
+- **AC4** — test "every listed container carries three mapped audio streams", 15
+  assertions green: the membership floor (`mka`, `m4a`, `mp4`, `mov`, `mkv`,
+  `webm`, `ts` all present), then for each member of `multi_audio_extensions`
+  that `separate_audio_video()` raises no error and the output carries three
+  distinct audio stream indices — `copy` for six, `libopus` for `webm`.
 - **AC5** — read from the generated `.Rd` on this branch. Both
-  `man/separate_audio_video.Rd` and `man/separate_audio_video_batch.Rd` state
-  the four conditions as a conjunction (no `audio_stream`, non-zero exit, more
-  than one audio track, extension not among the seven, which each page lists);
-  both state the silent-omission clause ("the report may simply not appear, and
-  its absence is never itself a second failure" / the batch equivalent); and
-  both state that the report says what the call did, never why FFmpeg refused,
-  naming the copy-into-incompatible-container, unknown-encoder and
+  `man/separate_audio_video.Rd` and `man/separate_audio_video_batch.Rd` state the
+  four conditions as a conjunction (no `audio_stream`, non-zero exit, more than
+  one audio track, extension not among the seven, which each page lists); both
+  state the silent-omission clause and its "never itself a second failure"
+  half; both state that the report says what the call did, never why FFmpeg
+  refused, naming the copy-into-incompatible-container, unknown-encoder and
   missing-directory causes that look alike from there. The scalar page's prior
   claim that the report attaches to "any failing audio command on a multi-track
-  input" is gone, which this branch falsifies.
-- **AC6** — `Rscript -e 'devtools::test()'`: 0 failures, 8563 passing, 12
-  warnings, 5 skips (baseline on `master` before the branch: 0 / 8493 / 12 / 5;
-  the +70 is exactly the seven new tests' assertion counts).
+  input" is gone. (Finding F1 below concerns the truth of the exit-status
+  condition on the batch page, not whether AC5's required sentence is present.)
+- **AC6** — `Rscript -e 'devtools::test()'`: 0 failures, 8633 passing, 12
+  warnings, 5 skips (baseline on `master` before the branch: 0 / 8493 / 12 / 5).
   `Rscript -e 'devtools::check()'`: `Status: OK` — 0 errors, 0 warnings, 0
-  notes, 6m 23s. Nothing to justify.
+  notes, 7m 24s. Nothing to justify.
 
 ### Consistency gate
 
 - `cairn_validate.py`: exit 0, all checks passed; the `release window` advisory
   did not fire.
 - `cairn_impact.py`: skipped — no `DESIGN.md` principle changed on this branch.
-- Toolchain slot (`r-package`): `devtools::document()` produced no diff;
-  `pkgdown::check_pkgdown()` "No problems found"; `README.md` is newer than
-  `README.Rmd` and neither was touched; `NEWS.md` carries a user-facing entry
-  with no milestone numbers; no new top-level files, and `check()` reports no
-  NOTEs.
+- Toolchain slot (`r-package`): `devtools::document()` produced no diff
+  (`git status --porcelain` empty after running it); `pkgdown::check_pkgdown()`
+  "No problems found"; `README.md` newer than `README.Rmd`, neither touched;
+  `NEWS.md` carries a user-facing entry with no milestone numbers; no files
+  added at top level; `check()` reports no NOTEs.
 
 ### Independent review — three fresh-context lenses
 
 Full three-lens fan-out (the diff touches executable surface and the declared
 tier is user-facing). Findings ranked as reported, with dispositions.
 
-**[O] diff-bug lens** — seven findings.
+**[O] diff-bug lens** — no new correctness defect in the executable code; it
+confirmed the gate is logically equivalent to the old single `if` on the paths
+it does not change, that `(bad + 1L) %/% 2L` still yields the right input-row
+numbers after filtering, and that `holds_multiple_audio()` degrades correctly on
+`character(0)`, `NA` and a path with no extension. Ten findings, all on the
+documentary and records surface.
 
-- **O1 (routes the amendment return).** "the error you get is the one the run
-  itself raised, unchanged" is false on the common sub-case, and the AC1 test is
-  built to avoid it. `abort_after_video()` still appends the video-written
-  bullet on the fail-open path; the AC1 test gives both halves the bad encoder
-  specifically so that bullet is absent. Reproduced at review — see the AC1
-  evidence above. **Disposition: routes the amendment return on AC1.** The code
-  stands; the criterion is amended.
-- **O2.** The goal is not met for unlisted containers that do hold several audio
-  streams, and D069 presents that as a hypothesis rather than a measured fact.
-  Verified at review on ffmpeg 9.0.1 with the suite's three-AAC fixture and
+- **F1.** The batch help page asserts a necessary condition the batch code does
+  not enforce. `man/separate_audio_video_batch.Rd` (roxygen at `R/ffmpeg.R:6039`)
+  says a row reaches the warning "only when ... FFmpeg returned a non-zero exit
+  status", but `warn_failed_separation_batch()` (`R/ffmpeg.R:877`) selects on
+  `out$stream == "audio" & !out$success & is.na(sel)` alone, and `ffm_batch()`'s
+  `run_one()` (`R/ffm_batch.R:144`) sets `success = FALSE` for a hard error or a
+  reached limit too. Verified at review by reading both functions: a timed-out
+  audio row on a multi-track input into an unlisted container does reach the
+  warning and does get a track-count bullet. The claim is NEW in this diff — the
+  pre-change page made no exit-status claim — and the scalar page's identical
+  claim, which *is* backed by `ffmpeg_exit_status(cnd)`, makes the pair read as
+  deliberate parity that is not there. The ROADMAP already records the
+  underlying behaviour ("the warning fires for any failure cause"). AC5 requires
+  the batch page to state that very condition, so no repair of the page leaves
+  AC5 satisfied as written. **Disposition: to the maintainer at the gate.**
+- **F2.** D069's stated falsifier is already satisfied on the day it is written,
+  and both help pages read as exhaustive. `cairn/DECISIONS.md:3199` names "an
+  unlisted one that accepts several" as what would falsify the entry.
+  Re-measured live at review on ffmpeg 9.0.1 with a three-AAC-track fixture and
   `-map 0:a -c:a copy`: `avi`, `nut`, `m4b`, `3gp`, `wma` and `asf` all exit 0
   carrying three distinct audio streams, and none is in
-  `multi_audio_extensions`; `.m4b` is `.m4a`'s own sibling. AC4 sets a
-  membership floor, so this is not a criterion failure, but D069's falsifier is
-  written as a future possibility while it is true today for six measured
-  extensions, and neither help page tells a caller the list is not exhaustive.
+  `multi_audio_extensions`; `.m4b` is `.m4a`'s own sibling. The new prose calls
+  the seven "the containers that hold several", which reads as exhaustive rather
+  than as the exclusion list the code comment correctly says it is, so a caller
+  writing to `.avi` still gets the false blame. AC4 sets only a membership floor,
+  so no criterion fails. **Disposition: to the maintainer at the gate.**
+- **F3.** `NEWS.md` overstates `.webm`, calling the seven containers "every one
+  of which takes three audio tracks without complaint". Re-measured at review:
+  `.webm` refuses the three AAC tracks at exit 234 under `-c:a copy` and takes
+  three only under `libopus` (exit 0). The code comment, the work log and the
+  test helper all state this; NEWS does not, so a reader of NEWS alone would
+  conclude a default `separate_audio_video(x, "a.webm", ...)` succeeds.
   **Disposition: to the maintainer at the gate.**
-- **O3.** The batch help page states a condition the batch code does not
-  implement: it promises a row reaches the warning "only when ... FFmpeg
-  returned a non-zero exit status", but `warn_failed_separation_batch()` selects
-  on `!out$success` alone and `ffm_batch()`'s `run_one()` sets
-  `success = FALSE` for any row error — a missing binary, a reached limit —
-  via `!inherits(res, "error") && is.null(attr(res, "status"))`
-  (`R/ffm_batch.R:144`). Verified at review by reading that function. The
-  ROADMAP already records the underlying fact ("the warning fires for any
-  failure cause"). The claim is NEW in this diff — the pre-change page made no
-  exit-status claim. The scalar page's identical claim is backed by code.
-  **Disposition: to the maintainer at the gate.**
-- **O4.** NEWS overstates `.webm`: it calls the seven "every one of which takes
-  three audio tracks without complaint", but `.webm` refuses the fixture's three
-  AAC tracks at exit 234 and takes three only under opus or vorbis — which the
-  code comment, the work log and the test helper all state and NEWS does not. A
-  reader of NEWS alone would conclude a default
-  `separate_audio_video(x, "a.webm", ...)` succeeds; it does not.
-  **Disposition: to the maintainer at the gate.**
-- **O5.** AC3 quantifies over eleven extensions and the committed suite
-  exercises two (`.mp3` and `.aac`). Confirmed. Review verified all eleven
-  directly (see AC3 above), so the criterion holds, but the durable suite does
-  not carry that coverage. **Disposition: to the maintainer at the gate.**
-- **O6.** The FFprobe-timeout warning becomes unreachable from these two sites
-  for listed outputs, since both gates were deliberately moved ahead of
-  `count_audio_streams_all()`, the function that emits it. The reviewer notes it
-  does not break D049 — no probe starts, so no limit is reached. **Disposition:
-  reject.** The gate ordering is what T3 and T4 planned, and their comments state
-  the reason; a real defect inside an intentional change would still count, and
-  this is the intended consequence rather than a flaw in carrying it out.
-- **O7.** A missing `output` column would now silently suppress the warning
-  instead of erroring: `out$output[bad]` is `NULL` when the column is absent, so
-  the filter yields `integer(0)` and the next line returns early. Only reachable
-  if `ffm_batch()`'s contract changes. **Disposition: reject** — latent
-  robustness note on a contract the package controls, not a live defect.
-- Nits, no action implied: `holds_multiple_audio()` reads as a capacity claim
-  only conditionally true for `.webm`; the scalar page's opening sentence drops
-  the "and no `audio_stream` was named" qualifier the following paragraph
-  reinstates.
+- **F4.** The scalar page's video-bullet clause drops the rlang qualifier the
+  amended AC1 was careful to add: `R/ffmpeg.R:1017` says the note is one "which
+  any failing audio half carries when the video command wrote its file", while
+  `abort_after_video()` appends it only under `inherits(cnd, "rlang_error")`
+  (`R/ffmpeg.R:792`). Verified by reading that guard. Not reachable today — the
+  causes raising a bare condition stop the video command too, as the comment
+  there states — but the page promises unconditionally what the code refuses
+  conditionally. **Disposition: to the maintainer at the gate.**
+- **F5.** The same sentence promises "same class, same exit status, same
+  message" for cases that have no exit status. **Disposition: reject.** The
+  sentence's subject is "the error you get is the one the run itself raised"; the
+  identity clauses are about that same condition, so they hold vacuously where
+  there is no status, and the paragraph below states the no-status case outright.
+- **F6.** D069 ships pre-superseded by D070 from the same branch, neither having
+  reached `master`; consolidating would have cost one id instead of two.
+  **Disposition: reject.** The append-only convention is served, and the pair
+  records a real sequence — what the milestone believed at T7 and what review
+  measured — which a rewrite would erase.
+- **F7.** AC3's durable coverage is two extensions of eleven (`.mp3` and
+  `.aac`); review verified all eleven by hand, twice now, but nothing in
+  `tests/testthat/` holds the other nine. Confirmed. **Disposition: to the
+  maintainer at the gate.**
+- **F8.** The ROADMAP hygiene stamp's byte figure is stale — it records "ROADMAP
+  21,612/24,000 over 43/60" where `wc -c -l` measures 22,838 over 44.
+  Pre-existing on `master`. **Disposition: resolved by this review's own hygiene
+  pass**, which rewrites the stamp from measured figures.
+- **F9.** T1's measurement left no committed artifact beyond the work-log
+  paragraph and the comment above the vector, where this repo elsewhere keeps
+  such baselines as `data-raw/` scripts. **Disposition: reject** — task-level, no
+  criterion binds it, and the AC4 test is a durable instrument for the seven that
+  are listed; the refusals are what F7 covers.
+- **F10.** A missing `output` column would silently suppress the batch warning
+  instead of erroring, reachable only if `ffm_batch()`'s contract changes.
+  **Disposition: reject** — latent robustness note on a contract the package
+  controls, as in the prior round.
+- Nits, no action implied: the scalar page's opening sentence still drops the
+  "and no `audio_stream` was named" qualifier the following paragraph reinstates;
+  `holds_multiple_audio()` reads as an unconditional capacity claim that is
+  codec-conditional for `.webm`; the batch test at line 1210 runs
+  `separate_audio_video_batch(jobs)` twice where capturing the first result would
+  do.
 
-**[S] blame-history lens** — no defects. It traced the touched regions through
-M45, M085-M088 and M090 and D024/D029/D030/D069 and found nothing that undoes a
-past milestone's guard, resurrects a fixed bug, or contradicts a decision entry.
-One low-severity pattern note: `multi_audio_extensions` is the hand-enumerated
-extension-keyed container list D030 retired for `normalize_audio()` after two
-misses — but here it is an exclusion list that fails toward the safe direction on
-an omission, which D069 states outright, so it is not a silent repeat. **Reject
-(no action).** It also verified that the reordering of the status check, the
-container gate and the track probe is logically equivalent to the old single
-`if`, and that M090's contract is untouched.
+**[S] blame-history lens** — no defect that undoes a past milestone's guard,
+resurrects a fixed bug, or contradicts a decision entry. It traced the touched
+regions through M45, M85–M88, M90 and D024/D029/D030/D068/D069 and confirmed
+M090's `abort_after_video()` contract is untouched. One pattern finding:
+`multi_audio_extensions` reuses the hand-enumerated extension-keyed container
+shape D030 retired for `normalize_audio()` after a second miss, and F2's six
+unlisted-but-accepting containers are that pattern recurring. **Disposition:
+reject as a repeat** — here it is an exclusion list failing toward the safe
+direction on an omission, which D069 states outright and D030's case did not
+have; the sharp edge it does leave is the exhaustive-sounding prose, which is
+F2's.
 
-**[S] prior-review-record lens** — one finding. The test "a stream copy into
-.webm no longer blames the track count" triggers FFmpeg's failure through the
-default codec behaviour with no version-conditional skip, which the archived M45
-lesson (now in `cairn/references/false-greens.md`) warns against where the
-refusal itself is the subject; CI runs macOS and several Ubuntu builds, the same
-split that produced M45's original failure. The rest of the new suite avoids this
-by using an encoder no build has. **Disposition: to the maintainer at the gate,
-noting that the failure mode here is a red rather than a false green** — if a
-build accepted AAC into WebM the test's first assertion would fail loudly, which
-is the opposite of the silent pass M45's lesson guards against. The
-`gh api .../pulls/comments` probe returned empty, so no PR-thread walk ran.
-
-### Outcome
-
-Review returns M091 to `in-progress` for a criterion amendment on AC1 alone.
-Every other criterion is verified with fresh evidence, the consistency gate is
-clean, and no reported finding demonstrates a defect in what the code does.
-
+**[S] prior-review-record lens** — one finding, and it is the one this lens
+raised in the prior round rather than a new one: the test "a stream copy into
+.webm no longer blames the track count" triggers FFmpeg's refusal through
+default codec behaviour with no version-conditional skip, which the M45 lesson
+in `cairn/references/false-greens.md` warns against where the refusal itself is
+the subject. The amendment commit did not touch that test. **Disposition: reject
+with reason** — the failure mode here is a loud red, not the silent green M45's
+lesson guards against: if a build accepted AAC into WebM the test's first
+assertion would fail. The `gh api .../pulls/comments` probe returned empty, so no
+PR-thread walk ran, on this round as on the last.

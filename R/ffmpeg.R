@@ -621,6 +621,48 @@ separate_stream_pipeline <- function(input, output, stream, codec = "copy",
 }
 
 
+# multi_audio_extensions -------------------------------------------------
+
+# Output extensions naming a container that holds SEVERAL audio streams.
+#
+# The multi-track diagnostic below tells a caller to keep every track by
+# writing a container that holds several. When their `audiofile` extension
+# already names one, that advice is not merely unhelpful -- it is false blame:
+# the failure cannot be the capacity refusal the message describes, so whatever
+# FFmpeg did object to goes unnamed while the caller is told to do the thing
+# they already did. The gate below therefore fails the diagnostic open on these
+# extensions (M091).
+#
+# The list is STATIC and measured, never probed. FFmpeg exposes no "how many
+# audio streams will this muxer accept" query, and settling it per call would
+# mean spawning FFmpeg a second time on a call that has already failed.
+#
+# Measured 2026-08-30 against ffmpeg 9.0.1, writing the suite's three-audio-
+# track fixture (make_multitrack_video(): three AAC streams) out with
+# `-map 0:a`. Every extension here exited 0 carrying three audio streams --
+# under `-c:a copy` for all but `webm`, which holds no AAC and took
+# `-c:a libopus`. Refused with exit 234, and so deliberately absent: mp3, wav,
+# aac, flac, ogg, opus, wv, caf, aiff, au, w64.
+#
+# Layer-2 knowledge, kept beside the other separation helpers rather than in
+# the engine: what a task verb's output container implies about that verb's own
+# diagnostic is no business of ffm_run() (IP1/D002).
+multi_audio_extensions <- c("mka", "m4a", "mp4", "mov", "mkv", "webm", "ts")
+
+# TRUE for each path whose extension names one of those containers.
+#
+# Case-insensitive: FFmpeg picks the output muxer from the extension without
+# regard to case, so `out.MKA` is the same container as `out.mka` and an exact
+# match would leave the false blame alive in an uppercase spelling (M091).
+#
+# The list is an EXCLUSION list, so everything else is FALSE -- a path with no
+# extension, and any container nobody has measured, keep the diagnostic they
+# have today rather than losing it to an omission.
+holds_multiple_audio <- function(path) {
+  tolower(tools::file_ext(path)) %in% multi_audio_extensions
+}
+
+
 # run_separation_audio() --------------------------------------------------
 
 # Run separate_audio_video()'s AUDIO command and, when FFmpeg refuses it on a
@@ -634,6 +676,11 @@ separate_stream_pipeline <- function(input, output, stream, codec = "copy",
 # failure is something else (a codec the container will not hold, a bad path) and
 # "take one track with audio_stream" would be false under the branch that fired
 # it -- M38's lesson, which this repo has now paid for twice.
+#
+# It is narrow in a second direction too: the message's other way out is "write
+# a container that holds several", so on an `outfile` whose extension already
+# names one the advice is false blame -- the failure cannot be the capacity
+# refusal the message describes. Those extensions fail open as well (M091).
 #
 # The probe is D024's diagnostic licence at its narrowest: it runs only after
 # FFmpeg has ALREADY failed, so the call aborts under every outcome and the probe
@@ -653,11 +700,22 @@ run_separation_audio <- function(pipeline, infile, outfile, audio_stream,
       # the failure this diagnostic is about" as well as "no status", and both
       # fall through.
       status <- ffmpeg_exit_status(cnd)
-      n <- if (is.na(status)) NA_integer_ else count_audio_streams_all(infile)
-      # Fail open: no status, no probe answer, or a single-track input all
-      # re-raise the ORIGINAL condition object, so its message, class and trace
-      # are the ones ffm_run() raises today (D024's fail-open consequence).
-      if (is.na(status) || is.na(n) || n <= 1L) stop(cnd)
+      # Fail open: no status, or an `outfile` that already holds several audio
+      # streams, re-raises the ORIGINAL condition object, so its message, class
+      # and trace are the ones ffm_run() raises today (D024's fail-open
+      # consequence).
+      #
+      # The container gate is asked BEFORE the probe, unlike the track count
+      # below: on such an output the diagnostic cannot fire whatever the count
+      # turns out to be, so probing first would spawn FFprobe for an answer
+      # nothing reads. It is asked AFTER the status check for the same reason
+      # that one comes first -- a failure that is not an exit is not the failure
+      # this diagnostic is about, whatever the extension says (M091).
+      if (is.na(status) || holds_multiple_audio(outfile)) stop(cnd)
+      # A single-track input fails open too: with one stream mapped, the count
+      # is not what FFmpeg objected to.
+      n <- count_audio_streams_all(infile)
+      if (is.na(n) || n <= 1L) stop(cnd)
       cli::cli_abort(
         c(
           "Can't write {.file {outfile}}: FFmpeg exited with status {status}.",
@@ -814,6 +872,16 @@ warn_failed_separation_batch <- function(out, audio_stream = NULL,
         nrow(out))
   }
   bad <- which(out$stream == "audio" & !out$success & is.na(sel))
+  # A row whose own `audiofile` already names a container holding several audio
+  # streams is dropped here, the batch counterpart of the scalar verb's gate:
+  # the warning's way out is "write a container that holds several", which that
+  # row already did, so the bullet would be false blame (M091).
+  #
+  # Dropped BEFORE the probe and before warn_failed_separation() sees the row,
+  # for two reasons at once. The probe is an FFprobe spawn per failed row whose
+  # answer nothing would read; and the headline counts the rows handed in, so
+  # filtering later would leave "3 audio outputs failed" above one bullet.
+  bad <- bad[!holds_multiple_audio(out$output[bad])]
   if (length(bad) == 0) return(invisible(NULL))
   inputs <- out$input[bad]
   counts <- count_audio_streams_all(inputs, call = call)

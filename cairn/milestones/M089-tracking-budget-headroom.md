@@ -91,7 +91,7 @@ and what remedy each of the three tracked files got.
       `false-greens.md`'s (provenance naming M089 and the originating
       milestones, the stated budget with its headroom, the one-entry-per-line
       rule), then the two entries pasted verbatim.
-- [ ] T3 Delete those two lines from `cairn/LESSONS.md`; verify byte-identity
+- [x] T3 Delete those two lines from `cairn/LESSONS.md`; verify byte-identity
       of the moved text by `diff` against the base commit; check `wc -l -c`.
 - [ ] T4 Add the module to `cairn/references/INDEX.md` under "Working
       artifacts", in the form the other five rows use.
@@ -120,6 +120,8 @@ and what remedy each of the three tracked files got.
 
 - 2026-08-29: T2 — `cairn/references/guard-ordering.md` created (24 lines, 5,033 bytes); the two entries pasted verbatim and `diff`-verified byte-identical against `056fd63:cairn/LESSONS.md` lines 16 and 23. Budget restated on the whole-file basis `false-greens.md` uses (`wc -l -c` over the file, one command per module at a hygiene pass) rather than the per-entry basis the gate's option was phrased in: fewer than 10,000 bytes and fewer than 27 lines, carrying the same headroom the gate chose — room for about three more members at this family's ~1,600-byte average.
 - 2026-08-29: repaired a plan-authoring defect — the file had no `## Work log` header, so the dated lines sat under `## Tasks` and counted against the 150-line plan-owned cap. Header added; no line moved.
+
+- 2026-08-29: T3 — both lines deleted from `cairn/LESSONS.md`; the header's pointer now names `references/guard-ordering.md` alongside `references/false-greens.md`. `wc -l -c` reports 28 lines / 16,835 bytes (AC3's 28 / 17,500); `grep -F` for a distinctive phrase from each graduated entry returns 0 hits; `diff` against `056fd63` re-confirms the moved text byte-identical.
 
 ## Decisions
 

@@ -87,7 +87,7 @@ and what remedy each of the three tracked files got.
       lines 16 and 23, count the extension/consolidation/correction marks each
       carries, and confirm neither the enforcement nor the ownership exit
       applies. Record the count.
-- [ ] T2 Create `cairn/references/guard-ordering.md` — header modelled on
+- [x] T2 Create `cairn/references/guard-ordering.md` — header modelled on
       `false-greens.md`'s (provenance naming M089 and the originating
       milestones, the stated budget with its headroom, the one-entry-per-line
       rule), then the two entries pasted verbatim.
@@ -107,6 +107,7 @@ and what remedy each of the three tracked files got.
       repo-owned/plugin-owned split.
 - [ ] T9 Run `cairn_validate.py`; fix what it reports; confirm clean.
 
+## Work log
 
 - 2026-08-29: created by /milestone-plan.
 - 2026-08-29: criteria audit ran in REDUCED mode (surface tier internal, no RB-tripwire tag on any criterion or task). Deviation from the skill's fresh-context [O] reader: this session's standing instruction forbids spawning subagents unrequested, so the audit was run inline by the plan author. Returned two findings, both fixed here. (1) Bounded-promise: a draft AC3 read "no lesson is lost in the graduation" — universal over "lessons" as content, which no procedure enumerates; narrowed to byte-identity of two named lines plus a `grep -F` absence check. (2) Proportionality: a draft AC4 read "the ROADMAP never needs compressing at a milestone commit again" — quantified over all future commits, unenumerable and disproportionate to an internal-tier deliverable; narrowed to a byte figure with stated headroom. AC6's D-entry was weighed against D-118/D-120's instrument question and kept as deliverable-bound: this milestone's deliverable IS the call, and the D-entry is the call's durable form, not a record of the milestone's own verification.
@@ -116,6 +117,9 @@ and what remedy each of the three tracked files got.
 
 - 2026-08-29: T1 — maturation exit confirmed for the family: 6 extension/consolidation/correction marks across the two lines (L16 `Extended M080`; L23 `extends M41`, `absorbs M45`, `corrected M48`, `Extended M57`, `Extended M56`) against a requirement of 2. Ownership exit does not apply. Enforcement exit found PARTIALLY met and ruled not to apply: `test-codec-arg-front-door.R:166` freezes a 17-cell codec-family precedence table that reddens when a codec guard crosses the `jobs` check, but nothing fails on the lesson's rule (guard placement, pipeline-validated arguments, reshaped-index blame, derived prose) — L16 states as much itself. Gate: user chose proceed-under-maturation over trim-to-remainder.
 - 2026-08-29: gate — module budget set to fewer than 8,000 bytes and fewer than 6 lines (graduated 3,219 bytes over 2 lines, plus room for ~3 more members at this family's ~1,600-byte average); ROADMAP line reduction takes two groupings, the engine-extension trio and the memoization pair, landing at 43 lines.
+
+- 2026-08-29: T2 — `cairn/references/guard-ordering.md` created (24 lines, 5,033 bytes); the two entries pasted verbatim and `diff`-verified byte-identical against `056fd63:cairn/LESSONS.md` lines 16 and 23. Budget restated on the whole-file basis `false-greens.md` uses (`wc -l -c` over the file, one command per module at a hygiene pass) rather than the per-entry basis the gate's option was phrased in: fewer than 10,000 bytes and fewer than 27 lines, carrying the same headroom the gate chose — room for about three more members at this family's ~1,600-byte average.
+- 2026-08-29: repaired a plan-authoring defect — the file had no `## Work log` header, so the dated lines sat under `## Tasks` and counted against the 150-line plan-owned cap. Header added; no line moved.
 
 ## Decisions
 

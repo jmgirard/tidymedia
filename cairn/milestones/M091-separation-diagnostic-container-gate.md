@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M091: The multi-track advice stops arriving when the caller is already following it
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -57,13 +57,13 @@ that it reports what the call did rather than why FFmpeg refused.
       extension is held by the list contributes no bullet to the post-fan-out
       warning, and a batch whose failed audio rows all have such outputs signals
       no warning at all.
-- [x] AC3: On the extensions measured 2026-08-30 as refusing three mapped audio
+- [ ] AC3: On the extensions measured 2026-08-30 as refusing three mapped audio
       streams (`mp3`, `wav`, `aac`, `flac`, `ogg`, `opus`, `wv`, `caf`, `aiff`,
       `au`, `w64`), the scalar abort keeps the class vector
       `c("tidymedia_multitrack_separation", "tidymedia_ffmpeg_exit")`, its
       `tm_status` field and its five bullets as currently worded, and the batch
       warning keeps its class and its per-row bullet form.
-- [x] AC4: The list holds at least `mka`, `m4a`, `mp4`, `mov`, `mkv`, `webm` and
+- [ ] AC4: The list holds at least `mka`, `m4a`, `mp4`, `mov`, `mkv`, `webm` and
       `ts`, and every extension it holds names a container FFmpeg writes three
       mapped audio streams into at exit 0, never one it refuses for capacity.
 - [x] AC5: `?separate_audio_video` states that the diagnostic fires only when no
@@ -149,6 +149,8 @@ that it reports what the call did rather than why FFmpeg refused.
 - 2026-08-30: the amended AC5 went to two fresh-context [O] FULL criteria audits before it was written, both returning NARROWS. The first found the batch half self-contradictory — "the same four conditions ... rather than as a non-zero exit" withdraws mid-sentence one of the four it just named — and its repair, enumerating the batch conjunction outright, was taken. The revised bytes went to a second reader, which returned three findings, all taken verbatim: the negative clause was decided against paraphrase, so it now binds the page's condition list and names the section opener; the three causes read as an exhaustive enumeration of a domain `run_one()` leaves open, so they are stated as examples; and "alike" carried a sufficiency reading the necessary-condition frame does not support, so it is gone. Questions 2, 4, 5 and 6 returned nothing in both readings.
 - 2026-08-30: mini gate chose narrowing AC5 to the condition the batch verb enforces over accepting the mismatch or narrowing the batch code, because the batch runner records whether a row succeeded and not how, so no per-row exit status survives `ffm_batch()` and making the page's claim true is an `ffm_batch()` contract change outside this milestone; falsified by a caller reading the two pages side by side and taking the difference for an oversight rather than the runner's own limit, which the amended page now states outright.
 - 2026-08-30: the amendment landed, with review's F2, F3, F4 and F7 fix-now work in the same round. The batch help page dropped its exit-status condition and gained the runner's own; both pages now name the seven as an exclusion list rather than a survey (F2), citing `.avi` and `.nut`, re-measured here at exit 0 with three distinct audio streams on ffmpeg 9.0.1; the scalar page's video-bullet clause gained AC1's rlang qualifier (F4); `NEWS.md` gained `.webm`'s encoder caveat, the same rlang qualifier and the exclusion-list clause (F3); D069's falsifier was reworded, since "an unlisted one that accepts several" was satisfied on the day it was written — `.avi`, `.nut`, `.m4b`, `.3gp`, `.wma` and `.asf` all take three mapped AAC streams at exit 0, measured here — and now names the one direction the list can fail in that leaves a caller worse off. T5 gained an eleven-extension AC3 test (F7), where two of the eleven had suite coverage before. Check discrimination both ways: rewording one abort bullet turns 11 tests red, dropping `tidymedia_ffmpeg_exit` from the class vector turns 15 red, and neither plant leaves the new test green.
+
+- 2026-08-30: amendment return: AC3 — "On the extensions measured 2026-08-30 as refusing three mapped audio streams (`mp3`, `wav`, `aac`, `flac`, `ogg`, `opus`, `wv`, `caf`, `aiff`, `au`, `w64`)"; AC4 — "The list holds at least `mka`, `m4a`, `mp4`, `mov`, `mkv`, `webm` and `ts`, and every extension it holds names a container FFmpeg writes three mapped audio streams into at exit 0, never one it refuses for capacity." Measured at review on ffmpeg 9.0.1: `.ogg` and `.opus` refuse the three-AAC-track copy for a CODEC reason ("Unsupported codec id in stream 0"), not a capacity one, and take three distinct audio streams at exit 0 under `-c:a libopus` — the same shape as `.webm`, which the milestone measured, named a codec refusal, and listed. `separate_audio_video(3-track.mkv, "a.ogg", "v.mp4")` at the defaults still raises `tidymedia_multitrack_separation` advising a container that holds several, into one that does; the identical `.webm` call does not. Neither criterion is false as written — AC4 sets a membership floor and AC3 binds only that behaviour on the eleven is unchanged, both verified — but the repair the Goal demands puts `.ogg` and `.opus` in the list, which falsifies AC3's enumerated domain and AC4's seven. Maintainer's decision at the gate, over correcting the comment alone or filing the gap to the M45-F1 candidate row: return and gate them. Review's other four criteria verified as written; consistency gate clean; PR #95 open as a draft. Findings F2 (NEWS' "any failing audio command"), F3 (the false half of the batch-gate comment) and F7 (a missing `info = ext`) are directed fix-now into the same round; F4 and F5 are follow-ups; F6 rejected.
 
 ## Decisions
 
@@ -351,3 +353,10 @@ and misclassified, and the repair falsifies AC3's enumerated domain and AC4's
 seven — so it is fix-now-under-amendment or follow-up, and that is the
 maintainer's call. F2, F3 and F7 are mechanical fix-now corrections; F4 and F5
 are follow-ups; F6 is rejected.
+
+**Gate decision, 2026-08-30:** return, gating `.ogg` and `.opus` too. M091 goes
+back to `in-progress` for the AC3/AC4 criterion amendment under
+`/milestone-implement` step 6 — that amendment and F2/F3/F7's fix-now work are
+the only work convened — and then re-review. AC3 and AC4 lose their
+verification marks here because their wording is what changes; AC1, AC2, AC5 and
+AC6 keep theirs on the evidence above. Not merged; no approval marker written.

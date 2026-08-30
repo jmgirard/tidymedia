@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-30 (M091 planned; the M45-F1 candidate row narrowed
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M091 | The multi-track advice stops arriving when the caller is already following it | review | — | normal | milestones/M091-separation-diagnostic-container-gate.md |
+| M091 | The multi-track advice stops arriving when the caller is already following it | in-progress | — | normal | milestones/M091-separation-diagnostic-container-gate.md |
 | M090 | The both-fail path stops throwing away what it knows | done | — | normal | milestones/archive/M090-separation-failure-path-leftovers.md |
 | M089 | The guard-ordering family graduates and the tracking files get headroom | done | — | normal | milestones/archive/M089-tracking-budget-headroom.md |
 | M088 | A failed audio half no longer costs the caller the video | done | — | normal | milestones/archive/M088-separation-video-after-audio-failure.md |

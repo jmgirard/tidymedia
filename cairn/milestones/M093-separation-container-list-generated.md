@@ -4,12 +4,12 @@
      cairn_validate's <150 over the plan-owned body. -->
 # M093: The separation help pages render their container list from the vector
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m093-separation-container-list-generated`
 
 ## Goal
 
@@ -86,7 +86,7 @@ guarantees. Promotable on that removal → ROADMAP candidate row.
 
 ## Tasks
 
-- [ ] T1. Add `multi_audio_rd_list()` and `multi_audio_rd_count()` beside
+- [x] T1. Add `multi_audio_rd_list()` and `multi_audio_rd_count()` beside
       `multi_audio_extensions` (`R/ffmpeg.R:658`), each `function(exts =
       multi_audio_extensions)`, following `rd_verb_list()`
       (`R/audio-stream-doc.R:28`) for the join and the under-2 refusal. Unit-test
@@ -115,6 +115,8 @@ guarantees. Promotable on that removal → ROADMAP candidate row.
 - 2026-08-30: plan gate chose leaving the two-container exemplars hand-written over binding them to the vector, because an exemplar makes no claim about the whole list and binding one would make a cli abort's wording depend on a vector order nothing guarantees; falsified by a removal from `multi_audio_extensions` leaving an exemplar naming a container the list no longer holds.
 - 2026-08-30: plan gate chose shipping the Rd guard (AC3) over M51's renderer-tests-only precedent, because generation prevents drift only while the blocks stay wired to the renderers and a block reverted to hand-written prose would otherwise ship green; falsified by the guard reddening for Rd-shape reasons rather than for drift.
 - 2026-08-30: criteria audit ran in **full** mode (declared tier: user-facing), [O] fresh-context reader, over the step-2 criteria. Returned 7 findings. Six fixed here and reported at the gate: AC1's argument contradiction; AC1's missing upper bound on the count renderer (could render `NA` into help); AC2 covering one of the two count-word occurrences per topic; AC3 asserting set equality over the wrong sentence (the marker sentence contains `.avi` and `.nut`, so it was unsatisfiable); AC3's marker grep returning one file not two on the current tree, because the clause is wrapped; AC3's domain resting on a recalled prose marker rather than a vector-derived token. The seventh — mutation-probe range — went to the gate and returned append+shrink; AC2's shrink half was re-run through the full audit's six questions before being written and passed all six.
+
+- 2026-08-30: T1 — `multi_audio_rd_list()` and `multi_audio_rd_count()` added beside `multi_audio_extensions`; count vocabulary set to two–twelve at the implement gate (a length past it aborts `document()` naming the length). Unit tests in `tests/testthat/test-separation-container-docs.R`, 11 passing.
 
 ## Decisions
 

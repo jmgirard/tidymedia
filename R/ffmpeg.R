@@ -658,6 +658,42 @@ separate_stream_pipeline <- function(input, output, stream, codec = "copy",
 multi_audio_extensions <- c("mka", "m4a", "mp4", "mov", "mkv", "webm", "ogg",
                             "opus", "ts")
 
+# The two renderers the separation help pages paste that vector in through.
+# Same mechanism as `rd_verb_list()` in R/audio-stream-doc.R and for the same
+# reason: roxygen evaluates them at document() time, so the prose cannot name a
+# container list the vector does not hold. Before M93 both pages spelled the
+# nine out by hand and said "nine" twice each, and the hand copies went stale
+# on each of the two occasions the vector grew (M91).
+
+# "\code{.mka}, \code{.m4a} and \code{.ts}" -- the extensions dotted the way
+# the prose writes them, comma-joined with one `and` before the last.
+multi_audio_rd_list <- function(exts = multi_audio_extensions) {
+  # An emptied vector would otherwise return character(0) and vanish silently
+  # from both blocks -- the one way this mechanism could lose the enumeration
+  # it exists to keep correct (rd_verb_list()'s reason, unchanged).
+  stopifnot(length(exts) >= 2)
+  items <- sprintf("\\code{.%s}", exts)
+  paste0(paste(items[-length(items)], collapse = ", "), " and ",
+         items[length(items)])
+}
+
+# The vector's length as the English word the prose reads with ("Those nine are
+# an exclusion list"). A lookup, not a number-speller: past its last entry it
+# aborts, so a vector grown out of its vocabulary stops document() with the
+# length named rather than rendering `NA` into a help page.
+multi_audio_count_words <- c("two", "three", "four", "five", "six", "seven",
+                             "eight", "nine", "ten", "eleven", "twelve")
+
+multi_audio_rd_count <- function(exts = multi_audio_extensions) {
+  n <- length(exts)
+  stopifnot(n >= 2)
+  if (n > length(multi_audio_count_words) + 1L) {
+    stop("multi_audio_rd_count() cannot name a length of ", n,
+         "; extend multi_audio_count_words")
+  }
+  multi_audio_count_words[[n - 1L]]
+}
+
 # TRUE for each path whose extension names one of those containers.
 #
 # Case-insensitive: FFmpeg picks the output muxer from the extension without

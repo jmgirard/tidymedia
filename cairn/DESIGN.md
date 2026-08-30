@@ -100,3 +100,15 @@ over a jobs tibble; scalar verbs stay scalar and fan-out verbs (e.g.
   is proposed as draft D014; renames + gap-fill land in the M22 execution
   follow-up under a clean-break policy. Naming conventions will be added here when
   D014 is ratified.
+- Four of M092's instrument tests bind less than the gap they close. `test-ffm-batch.R`'s
+  `run_with_progress()` contract test asserts the properties of its own stub, never the
+  `run_one` closure defined inline in `ffm_batch()`; the batch case-fold test in
+  `test-separate-av-multitrack.R` asserts that no warning arrives rather than that the
+  multi-track advice is absent from one; the two-pass status test in
+  `test-normalize-audios-two-pass.R` asserts `tm_row_status` is a non-`NA` integer but
+  never its value, so a wrong-but-non-`NA` status passes; and AC4's sweep over
+  `test-ffmpeg-exit-condition.R` counts a lexical spelling, with the four repaired
+  handlers carrying no suite-level regression guard. Each satisfies its acceptance
+  criterion as written and each was raised at both of M092's review gates; the
+  maintainer chose to hold the criteria rather than widen them. Accepted, not deferred
+  — there is no candidate row and no fix planned (M092 review, findings 1-5; D072).

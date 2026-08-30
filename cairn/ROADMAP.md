@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-30 (M092: the grouped deferred-findings row is deleted with the working page it pointed at; three carry-forward rows replace it — two findings its triage classed runtime, one design call. Terminal rows unchanged at five.)_
+_Last hygiene check: 2026-08-30 (M092 done and archived; the instrument-findings page is retired and three carry-forward rows stand in its place. ROADMAP 23,698 bytes / 46 lines, LESSONS 19,696 / 32, both inside budget; terminal rows trimmed back to five, M087 dropping off.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M092 | The deferred-findings backlog is triaged and the page retired | review | — | normal | milestones/M092-instrument-backlog-triage.md |
+| M092 | The deferred-findings backlog is triaged and the page retired | done | — | normal | milestones/archive/M092-instrument-backlog-triage.md |
 | M091 | The multi-track advice stops arriving when the caller is already following it | done | — | normal | milestones/archive/M091-separation-diagnostic-container-gate.md |
 | M090 | The both-fail path stops throwing away what it knows | done | — | normal | milestones/archive/M090-separation-failure-path-leftovers.md |
 | M089 | The guard-ordering family graduates and the tracking files get headroom | done | — | normal | milestones/archive/M089-tracking-budget-headroom.md |
 | M088 | A failed audio half no longer costs the caller the video | done | — | normal | milestones/archive/M088-separation-video-after-audio-failure.md |
-| M087 | A diagnostic answers to the same class from the scalar verb and its batch sibling | done | — | normal | milestones/archive/M087-scalar-batch-condition-classes.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

@@ -1,11 +1,11 @@
 # M090: The both-fail path stops throwing away what it knows
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m090-separation-failure-path-leftovers`
 
 ## Goal
 
@@ -82,7 +82,7 @@ here; D065's one-message reasoning stands.
 
 ## Tasks
 
-- [ ] T1 Append the D-entry superseding **only** D065's "Why the both-fail case
+- [x] T1 Append the D-entry superseding **only** D065's "Why the both-fail case
       names one failure" section: the video condition is stashed, not reported;
       the rendered message is unchanged; the field is `tm_video_error` per D062.
       Record D065's met falsifier as the reason.
@@ -121,6 +121,8 @@ here; D065's one-message reasoning stands.
 - 2026-08-29: plan gate chose an authorship predicate for `wrote` — D046's pre/post size-and-mtime comparison — over `file.exists(videofile)`, because existence is satisfied by a pre-existing file the run never opened, the case `test-separate-av-multitrack.R:718-740` already pins; falsified by a measured cost for the extra `file.info()` pair, or by a snapshot that cannot tell a rewrite from an untouched file.
 - 2026-08-29: plan gate chose deleting `abort_after_video()`'s bare-condition fallback over testing it, because the source records that nothing can reach it and a test of an unobservable path sits below this milestone's surface tier; falsified by a bare condition reaching the note with a written video, which would arrive with the note dropped.
 - 2026-08-29: plan gate chose leaving the SIGINT finding on the candidate row over a timeboxed reproduce-attempt task, because an unreproduced Ctrl-C interaction has no bounded investigation and M078 is the precedent for what that costs; falsified by a report of Ctrl-C failing to return to the prompt.
+- 2026-08-29: implement gate — chose the snapshot comparison alone on both video-run outcomes over an exit-status short-circuit, and attaching `tm_video_error` unconditionally over guarding it with the note's `rlang_error` check. Both recommendations; both taken.
+- 2026-08-29: T1 — D068 appended, superseding only D065's "Why the both-fail case names one failure" section. Reason recorded: D065's own falsifier — a caller who could not tell from the condition alone that the video command had also failed — is met.
 
 ## Decisions
 

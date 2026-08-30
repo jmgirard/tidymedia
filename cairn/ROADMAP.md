@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-29 (M090 planned from the M088-findings candidate row: four of its five findings promoted, the SIGINT one narrowed back onto the row. Budgets: ROADMAP 21,632/24,000 over 44/60; LESSONS 17,349/20,000 over 29/50; guard-ordering 5,451/11,000 over 27/31; false-greens 25,810/26,000 over 55/60.)_
+_Last hygiene check: 2026-08-30 (M090 merged and archived; its review found and fixed a gate that named a destroyed file as written, and corrected the M088 LESSONS line its work falsifies. M085's row pruned to hold terminal-row retention at five. Budgets measured after this edit: ROADMAP 21,612/24,000 over 43/60; LESSONS 18,102/20,000 over 30/50; guard-ordering 5,451/11,000 over 27/31; false-greens 25,810/26,000 over 55/60.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M090 | The both-fail path stops throwing away what it knows | review | — | normal | milestones/M090-separation-failure-path-leftovers.md |
+| M090 | The both-fail path stops throwing away what it knows | done | — | normal | milestones/archive/M090-separation-failure-path-leftovers.md |
 | M089 | The guard-ordering family graduates and the tracking files get headroom | done | — | normal | milestones/archive/M089-tracking-budget-headroom.md |
 | M088 | A failed audio half no longer costs the caller the video | done | — | normal | milestones/archive/M088-separation-video-after-audio-failure.md |
 | M087 | A diagnostic answers to the same class from the scalar verb and its batch sibling | done | — | normal | milestones/archive/M087-scalar-batch-condition-classes.md |
 | M086 | The catchable failure reaches the two paths M085 left behind | done | — | normal | milestones/archive/M086-catchable-failure-leftovers.md |
-| M085 | A failed FFmpeg run is a condition you can catch | done | — | normal | milestones/archive/M085-ffmpeg-error-condition.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

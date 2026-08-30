@@ -646,7 +646,7 @@ separate_stream_pipeline <- function(input, output, stream, codec = "copy",
 # evidence the paragraph below gives.
 #
 # A refusal under ONE codec is not a capacity refusal, and reading it as one is
-# how `ogg` and `opus` were first left off this list (D071). Each of the nine
+# how `ogg` and `opus` were first left off this list (D071). Each container
 # above says capacity in its own words ("Exactly one MP3 audio stream is
 # required", "wav muxer does not support more than one stream of type audio",
 # "AIFF allows only one audio stream and a picture"); `wv`'s message names a
@@ -1056,14 +1056,14 @@ ffmpeg_exit_status <- function(cnd) {
 #' \code{audio_stream} was named, FFmpeg returned a non-zero exit status,
 #' \code{infile} carries more than one audio track, and \code{audiofile}'s
 #' extension is not among the containers named here as holding several —
-#' \code{.mka}, \code{.m4a}, \code{.mp4}, \code{.mov}, \code{.mkv},
-#' \code{.webm}, \code{.ogg}, \code{.opus} and \code{.ts}. Those nine are an
-#' exclusion list and not a
-#' survey: FFmpeg writes several audio streams into other containers too
+#' `r multi_audio_rd_list()`. Those `r multi_audio_rd_count()`
+#' are an exclusion list and not a survey: FFmpeg writes several audio streams
+#' into other containers too
 #' (\code{.avi} and \code{.nut} among them), and a failure on one of those still
 #' gets the report. The container condition keeps the report off a call that is
-#' already doing what the report would advise: writing to one of the nine, the
-#' failure cannot be the container refusing a second audio stream, so whatever
+#' already doing what the report would advise: writing to one of the
+#' `r multi_audio_rd_count()`, the failure cannot be the container refusing a
+#' second audio stream, so whatever
 #' FFmpeg did object to would go unnamed. Fail any of the four and the error you
 #' get is the one the run itself raised, whatever that error is — same class,
 #' same status field, same message, but for the line saying the video output was
@@ -6091,19 +6091,20 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #' A row reaches that warning only when all four of these hold: it named no
 #' \code{audio_stream}, the row is recorded \code{success = FALSE}, its input
 #' carries more than one audio track, and its \code{audiofile}'s extension is not
-#' among the containers named here as holding several — \code{.mka},
-#' \code{.m4a}, \code{.mp4}, \code{.mov}, \code{.mkv}, \code{.webm},
-#' \code{.ogg}, \code{.opus} and
-#' \code{.ts}. No exit status is among those conditions, and the difference from
+#' among the containers named here as holding several —
+#' `r multi_audio_rd_list()`.
+#' No exit status is among those conditions, and the difference from
 #' \code{\link{separate_audio_video}} is deliberate: the batch runner records
 #' \emph{whether} a row succeeded and not how, so a non-zero exit, a hard error
 #' and a reached limit are all recorded the same way, and a row put here by any
-#' of them is treated alike. The nine are an exclusion list and not a survey:
+#' of them is treated alike. The `r multi_audio_rd_count()`
+#' are an exclusion list and not a survey:
 #' FFmpeg writes several audio streams into other containers too (\code{.avi} and
 #' \code{.nut} among them), and a row failing on one of those is still named. The
 #' container condition keeps a row off the list when it is already doing what the
 #' warning would advise; such a row is silently not named, and a batch whose
-#' failed audio rows all write to those nine warns not at all. The headline
+#' failed audio rows all write to those `r multi_audio_rd_count()` warns not at
+#' all. The headline
 #' count follows the rows actually named.
 #'
 #' What each bullet states is what that row \emph{did} — its track count, and

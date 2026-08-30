@@ -92,7 +92,7 @@ guarantees. Promotable on that removal → ROADMAP candidate row.
       (`R/audio-stream-doc.R:28`) for the join and the under-2 refusal. Unit-test
       both on stand-in vectors: the 3-member form, the under-2 refusal, and the
       word renderer one past its last nameable length.
-- [ ] T2. Replace the enumeration and both count words in each block with
+- [x] T2. Replace the enumeration and both count words in each block with
       inline `` `r ` `` calls (`R/ffmpeg.R:1023-1024`, `:1029`; `:6058-6060`,
       `:6065`, `:6070`); reword the `:649` comment off its count. Re-wrap so no
       marker clause AC3 matches on is split across roxygen lines — it is today
@@ -117,6 +117,8 @@ guarantees. Promotable on that removal → ROADMAP candidate row.
 - 2026-08-30: criteria audit ran in **full** mode (declared tier: user-facing), [O] fresh-context reader, over the step-2 criteria. Returned 7 findings. Six fixed here and reported at the gate: AC1's argument contradiction; AC1's missing upper bound on the count renderer (could render `NA` into help); AC2 covering one of the two count-word occurrences per topic; AC3 asserting set equality over the wrong sentence (the marker sentence contains `.avi` and `.nut`, so it was unsatisfiable); AC3's marker grep returning one file not two on the current tree, because the clause is wrapped; AC3's domain resting on a recalled prose marker rather than a vector-derived token. The seventh — mutation-probe range — went to the gate and returned append+shrink; AC2's shrink half was re-run through the full audit's six questions before being written and passed all six.
 
 - 2026-08-30: T1 — `multi_audio_rd_list()` and `multi_audio_rd_count()` added beside `multi_audio_extensions`; count vocabulary set to two–twelve at the implement gate (a length past it aborts `document()` naming the length). Unit tests in `tests/testthat/test-separation-container-docs.R`, 11 passing.
+
+- 2026-08-30: T2 — both roxygen blocks now paste the enumeration and both count words in through inline `r` calls; the `:649` source comment reworded to "Each container above". `document()` rewrapped both Rd files with no change to the rendered wording. Suite: 8826 pass, 0 fail.
 
 ## Decisions
 

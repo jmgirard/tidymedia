@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-30 (M092 done and archived; the instrument-findings
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M093 | The separation help pages render their container list from the vector | planned | — | normal | milestones/M093-separation-container-list-generated.md |
+| M093 | The separation help pages render their container list from the vector | review | — | normal | milestones/M093-separation-container-list-generated.md |
 | M092 | The deferred-findings backlog is triaged and the page retired | done | — | normal | milestones/archive/M092-instrument-backlog-triage.md |
 | M091 | The multi-track advice stops arriving when the caller is already following it | done | — | normal | milestones/archive/M091-separation-diagnostic-container-gate.md |
 | M090 | The both-fail path stops throwing away what it knows | done | — | normal | milestones/archive/M090-separation-failure-path-leftovers.md |

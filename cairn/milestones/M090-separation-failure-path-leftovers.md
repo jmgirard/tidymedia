@@ -190,3 +190,62 @@ window` advisory did not fire. No `DESIGN.md` principle changed
 "No problems found"; the unreleased `NEWS.md` separation entry amended for
 this milestone's user-visible changes with no milestone number in it; no new
 top-level files, so no `.Rbuildignore` entry owed; `check()` clean above.
+
+### Independent fresh-context review
+
+Three lenses, distinct evidence bases, none having seen the implementation.
+**[S] blame-history** and **[S] prior-review-record** each returned no findings
+(the second confirming the GitHub inline-comment probe came back empty, so the
+archived `## Review` sections were the whole surface; it read M088's and M68's
+findings as resolved rather than reintroduced). **[O] diff-bug** returned six,
+ranked; verbatim summaries and dispositions below.
+
+**F1 (ranked 1) — "The new `wrote` gate emits 'The video output was written to
+…' on the both-fail path when the failed video run rewrote a pre-existing
+`videofile` — and the file is gone by then."** `wrote <-
+!identical(output_snapshot(videofile), before_video)` is read on both video
+outcomes; when the video run wrote over a file the caller already had and then
+failed, Layer 1's `remove_failed_output()` unlinks it (D046), so the post
+snapshot is empty, the two differ, and `wrote` is TRUE. Confirmed this review
+against the implementation, end to end with real FFmpeg and no mocks: an AAC/
+h264 input separated to a `.mp3` audio path and a pre-existing `.wav` video
+path fails on both halves; `file.exists(videofile)` is FALSE and the rendered
+message still carries "The video output was written to '…wav'". Master's
+exit-status gate got this case right, so the branch introduces it. It also
+contradicts the unchanged roxygen ("When the video command fails as well, the
+added line is not there"), the amended `NEWS.md` entry ("If the video command
+fails as well, the line is not shown"), and the branch's own source comment.
+
+**F2 (2) — "Same gate, second shape: a failed video run whose partial output
+could not be removed also flips `wrote` TRUE."** `remove_failed_output()`'s
+read-only-directory branch returns with the partial file still there; the post
+snapshot then differs from the pre one, so the caller is told the video "was
+written to" a path holding a half-written file. Source read confirms the
+branch (`R/ffm.R`, the `stuck` return).
+
+**F3 (3) — "Test blindness that let #1 through."** All three AC2 mocked cases
+use a video call that succeeds; no test drives the both-fail path with a
+`videofile` the failing video run touched, and M088's `:733` case uses an
+unknown-codec failure FFmpeg refuses before opening the output.
+
+**F4 (4) — "`test_that("a succeeded video command leaves tm_video_error
+NULL")` passes unchanged on master."** `cnd$tm_video_error` on a condition
+without the field is `NULL`, so that test is a control rather than a
+red-on-master test; the paired both-fail test is what is load-bearing for AC1.
+
+**F5 (5) — "`@return` still says the video command 'has written `videofile` by
+then unless it failed too.'"** With the authorship gate a zero-exit run that
+leaves a pre-existing file untouched now yields no line, which the `@return`
+prose does not describe.
+
+**F6 (6) — "The leak sentinel couples to `ffm_run`'s implementation."**
+`expect_true("try_fetch" %in% all.names(body(ffm_run)))` goes red on any
+refactor off `rlang::try_fetch`, and guards only the tests above it in the
+file.
+
+The reviewer also recorded as clean: the unguarded `tm_video_error`
+assignment against D068/D062, the `rlang_error` note guard and its
+discriminating test pair against AC3, D068 superseding only D065's named
+section with D066 intact, the `NEWS.md` edit sitting in the development-version
+section, the mocked tests being binary-free, and the Layer 2 filesystem read
+against D024/D037.

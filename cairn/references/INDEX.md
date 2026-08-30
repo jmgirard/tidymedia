@@ -12,3 +12,4 @@ _Source materials live in `references/sources/` (gitignored); summaries are `ref
 - `instrument-findings.md` — deferred review findings on the repo's own test instruments — entombed by M083.
 - `lessons-baseline-M084.md` — the `LESSONS.md` entry enumeration and exit classification — the ledger M084 committed.
 - `false-greens.md` — doctrine module: a test or control that reads green for the wrong reason — graduated by M084.
+- `guard-ordering.md` — doctrine module: where a front-door guard goes, and what moving it costs — graduated by M089.

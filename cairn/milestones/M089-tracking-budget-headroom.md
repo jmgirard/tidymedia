@@ -93,7 +93,7 @@ and what remedy each of the three tracked files got.
       rule), then the two entries pasted verbatim.
 - [x] T3 Delete those two lines from `cairn/LESSONS.md`; verify byte-identity
       of the moved text by `diff` against the base commit; check `wc -l -c`.
-- [ ] T4 Add the module to `cairn/references/INDEX.md` under "Working
+- [x] T4 Add the module to `cairn/references/INDEX.md` under "Working
       artifacts", in the form the other five rows use.
 - [ ] T5 In `cairn/ROADMAP.md`: delete the two candidate rows this milestone
       absorbs (the second-doctrine-module row and the budget row), add the M089
@@ -122,6 +122,8 @@ and what remedy each of the three tracked files got.
 - 2026-08-29: repaired a plan-authoring defect — the file had no `## Work log` header, so the dated lines sat under `## Tasks` and counted against the 150-line plan-owned cap. Header added; no line moved.
 
 - 2026-08-29: T3 — both lines deleted from `cairn/LESSONS.md`; the header's pointer now names `references/guard-ordering.md` alongside `references/false-greens.md`. `wc -l -c` reports 28 lines / 16,835 bytes (AC3's 28 / 17,500); `grep -F` for a distinctive phrase from each graduated entry returns 0 hits; `diff` against `056fd63` re-confirms the moved text byte-identical.
+
+- 2026-08-29: T4 — `guard-ordering.md` listed in `cairn/references/INDEX.md` under "Working artifacts", in the same `citekey — short title — produced/graduated by M<NN>` form the other five rows use.
 
 ## Decisions
 

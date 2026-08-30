@@ -1,6 +1,6 @@
 # M094: An invalid `tidymedia.timeout` is refused by the function the caller typed
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -32,35 +32,35 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
 
 ## Acceptance criteria
 
-- [x] AC1. With an invalid `tidymedia.timeout` set, every member of
+- [ ] AC1. With an invalid `tidymedia.timeout` set, every member of
       `tm_timeout_domain()` (computed at `tests/testthat/helper-timeout-sweep.R:104`),
       invoked through its own `tm_timeout_call_specs()` cell, raises a condition
       whose `conditionCall()` head is that member's own name. One carve-out: a
       call that never reads the limit — `has_nvenc()` under a set
       `tidymedia.nvenc_encoders`, where D044's memo sits above the read — raises
       nothing and is not required to. Master baseline (2026-08-30): 6 of 53.
-- [x] AC2. AC1 holds for each invalid form `resolve_timeout()`'s own comment
+- [ ] AC2. AC1 holds for each invalid form `resolve_timeout()`'s own comment
       names (`R/timeout.R:19-26`) — `-1`, `0.5`, `NA`, `"2"`, `c(1, 2)` — not for
       one form alone.
-- [x] AC3. AC1 holds at `run = FALSE` as well as `run = TRUE`, and at
+- [ ] AC3. AC1 holds at `run = FALSE` as well as `run = TRUE`, and at
       `parallel = TRUE` as well as the default, at every domain member carrying
       that argument. This closes the asymmetry measured on master, where
       `extract_audio(v, o, run = FALSE)` raises nothing and
       `extract_audio_batch(jobs, run = FALSE)` aborts.
-- [x] AC4. The wording does not fork: for each AC2 form, `conditionMessage()`
+- [ ] AC4. The wording does not fork: for each AC2 form, `conditionMessage()`
       under a pinned `cli.width` is identical across all 53 members and equals
       what `resolve_timeout()`'s single `rlang::check_number_whole()` site
       (`R/timeout.R:31`) produces for that form. At the six members that blame
       `purrr::map(infile, probe_one)` today, the `purrr_error_indexed` class and
       its `In index: 1. / Caused by error in .f()` prefix are gone.
-- [x] AC5. Blame changes and nothing else (D042's siting rule): with the option
+- [ ] AC5. Blame changes and nothing else (D042's siting rule): with the option
       unset or set to a valid whole number, every domain member's return value
       and its `system`/`system2` count are unchanged from the T1 baseline; and
       under an invalid limit no domain member reaches `system()`/`system2()`.
-- [x] AC6. D049's rule is unchanged: with the limit forced to be reached, every
+- [ ] AC6. D049's rule is unchanged: with the limit forced to be reached, every
       member of `tm_timeout_domain()` still either aborts or warns, and which of
       the two each member does matches T1's per-member table.
-- [x] AC7. `devtools::test()` passes and `devtools::check()` reports 0 errors and
+- [ ] AC7. `devtools::test()` passes and `devtools::check()` reports 0 errors and
       0 warnings.
 
 ## Coverage
@@ -119,6 +119,8 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
 - 2026-08-30: T6 appended D074 — the refusal is sited at the verb the caller typed, it fires at `run = FALSE`, why that leaves D024 untouched, and the `has_nvenc()` carve-out.
 - 2026-08-30: T7 added the NEWS entry and a paragraph to `tidymedia-package`'s "Bounding a run that hangs" section saying the refusal names the function you called, arrives on a `run = FALSE` call, and that `has_nvenc()` under a set encoder override refuses nothing. `devtools::document()`, `devtools::test()` (0 failures, 10,379 pass) and `devtools::check()` (0 errors, 0 warnings, 0 notes) all clean.
 - 2026-08-30: all tasks done; status set to review.
+- 2026-08-30: review returned M094 to in-progress. AC7 fails: CI on PR #98 is red on macos-latest and windows-latest with 10 failures at `test-timeout-refusal-blame.R:133`, `devtools::check()` 1 ERROR on both — on a runner with no media binaries `ffm_run` and `mediainfo_parameter` hit `run_program()`'s `Could not locate` check (`R/program_management.R:111`) before `resolve_timeout()` at `:122`, so the AC4 wording sweep measures the runner's PATH. AC1-AC6 verified locally and their evidence is recorded in the Review section; every checkbox is unticked again because the gate did not pass. Nine further findings (F1-F7, F9, F10) are recorded there, F1-F5 being defects in the deliverable.
+
 ## Decisions
 
 ## Review
@@ -270,3 +272,42 @@ implementation before being recorded.
   `tm_spawn_trace()`'s current digest format, so a later edit to that helper
   invalidates it with no signal beyond a wall of mismatches.
 
+#### Disposition
+
+**Returned to `in-progress` under the return floor.** CI on PR #98 is red on
+`macos-latest (release)` and `windows-latest (release)` — 10 failures, all at
+`test-timeout-refusal-blame.R:133` (the AC4 wording sweep) — so **AC7 fails**
+inside its own named procedure's domain: `devtools::check()` reports 1 ERROR on
+two of the five check platforms. It passes locally (Status: OK) only because
+this machine has FFmpeg and MediaInfo installed. The three Ubuntu legs,
+`pkgdown` and `test-coverage` are green.
+
+The mechanism is **F8**, made fatal: on a runner with no media binaries, the
+members with no front-door site — `ffm_run` and `mediainfo_parameter`, two of
+the six counted "already correct" — reach `run_program()`'s `Could not locate
+FFmpeg.` / `Could not locate MediaInfo.` check (`R/program_management.R:111`),
+which precedes `resolve_timeout()` at `:122`. So the sweep measures the
+runner's PATH rather than the package — the exact failure mode
+`helper-timeout-sweep.R`'s own comments say the forcing design exists to avoid
+("CI's macOS and Windows runners install no media binaries at all"), reproduced
+in the new file, which spawns for real instead of injecting.
+
+Findings carried into the return, all re-measured against the implementation:
+**F1** (masked argument errors at four verbs, falsifying D074's first property),
+**F2** (`hardware = "nvenc"` blames `has_nvenc(family)` at eight batch verbs),
+**F3** (`normalize_audio_batch(two_pass = TRUE)` blames `purrr::pmap`, with the
+`purrr_error_indexed` wrapper `NEWS.md` says is gone), **F4**
+(`extract_frame(frame =)` blames `get_frame_rate`), **F5** (`has_nvenc()`
+refuses on a warm memo that spawns nothing), **F6** (help text and `NEWS.md`
+overclaim), **F7** (siting not uniform relative to pipeline construction, and no
+rule decides it), **F8** (the CI cause above), **F9** and **F10** (instrument:
+the AC1 test discriminates on the call head alone; the fixture's provenance is
+recorded but never asserted).
+
+F1–F5 and F8 are defects in the deliverable. F6 follows from them. F7 is the
+design call F1 exposes — whether the site goes before or after pipeline
+construction — and settling it is what makes F1's fix a rule rather than four
+patches. F9/F10 are instrument work and can ride along or become candidate rows.
+
+Nothing was fixed at the gate; no merge approval was requested and no
+`cairn/.merge-approved` marker was written. Defect returns on M094: 1.

@@ -299,3 +299,8 @@ against D024/D037.
 test), 12 warnings and 5 skips unchanged from the baseline. The three AC2
 mocked cases and both M088 tests remain green — none of them drives a failing
 video command, which is the only branch the predicate narrows.
+
+`devtools::check()` re-run after the fix: `Status: OK`, 0 errors, 0 warnings,
+0 notes, 2m58s. `cairn_validate.py` re-run over the completed branch: all
+checks pass, every advisory OK, `release window` silent. AC5 holds on the
+fixed branch.

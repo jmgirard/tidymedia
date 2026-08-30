@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-30 (M092 planned: the grouped instrument-findings r
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M092 | The deferred-findings backlog is triaged and the page retired | planned | — | normal | milestones/M092-instrument-findings-triage.md |
+| M092 | The deferred-findings backlog is triaged and the page retired | in-progress | — | normal | milestones/M092-instrument-findings-triage.md |
 | M091 | The multi-track advice stops arriving when the caller is already following it | done | — | normal | milestones/archive/M091-separation-diagnostic-container-gate.md |
 | M090 | The both-fail path stops throwing away what it knows | done | — | normal | milestones/archive/M090-separation-failure-path-leftovers.md |
 | M089 | The guard-ordering family graduates and the tracking files get headroom | done | — | normal | milestones/archive/M089-tracking-budget-headroom.md |

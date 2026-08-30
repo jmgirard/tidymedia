@@ -3386,3 +3386,51 @@ load-bearing and under a sequential one it is redundant rather than harmful.
 - **Falsified by** a `future` release that stops restoring `options()` across a
   future's boundary, which would make the sequential-plan write escape and put
   the carrier back in the caller's way.
+
+## D074 — An invalid session limit is refused by the verb the caller typed, on the dry-run path as well (2026-08-30, from M094; applies D042's siting rule to the timeout seam and states why the `run = FALSE` half leaves D024 untouched; leaves D042, D044, D047 and D049 standing)
+
+`resolve_timeout()` has refused a `tidymedia.timeout` value base R would
+mishandle since D047, and it blames `rlang::caller_env()`. It was reached only
+at the spawn site, so the frame that named the refusal was whichever one
+happened to read the limit first: most of the exports in the timeout domain
+aborted naming `ffm_run(object)`, `ffm_batch(jobs, <the deparsed builder>)`,
+`mediainfo_read(file, inform)` or `purrr::map(infile, probe_one)` — functions
+the caller never typed. The per-member table and the counts are in M094's
+milestone file and in `tests/testthat/helper-timeout-sweep.R`.
+
+**The siting.** D042's rule applied unchanged: the export re-calls the shared
+checker at its own front door, rather than a `call` argument being threaded
+through an exported builder. Three properties fix where "front door" is, and
+they are stated once beside the checker in `R/timeout.R` rather than at each
+site — last among each front door's guards, so every refusal that fired before
+it still fires first and only this blame moves; above the `run` gate; and never
+sited where nothing reads the limit.
+
+Threading `call` was available at the two internal readers `mediainfo_read()`
+and `probe_one()`, and D042's carve-out allows it there. It was rejected because
+those two also build the reached-limit condition, so the same plumbing would
+have moved D049's blame — which M094 put out of scope. Where an internal helper
+already threads `call` and does NOT build that condition — `probe_all_impl()`
+and `resolve_probe()`'s infile branch — it carries the re-call on its callers'
+behalf, which is this same rule reaching six exports through two sites.
+
+**Why the `run = FALSE` half leaves D024 untouched.** D024's `run = FALSE`
+promise is that the call runs no binary, and this refusal runs none: it reads an
+option and aborts. D024's four exclusions are about probes — a binary whose
+outcome does more than signal a diagnostic — and an option read is not a probe.
+The compiled command is identical under every outcome, and `ffm_compile()` and
+the builders it walks are not touched. What does change is that a dry-run
+compile now refuses a limit that run would never have read. That was chosen, not
+incurred: `ffm_batch()` has refused on the `run = FALSE` path since D047, and
+the scalar/batch split was itself the defect being closed.
+
+**The one carve-out.** `has_nvenc()` reads `tidymedia.nvenc_encoders` above
+D044's memo, so a call answered by that override asks FFmpeg nothing and reads
+no limit. The re-call therefore sits inside the fall-through branch, and a call
+answered by the override refuses nothing. Siting it higher would abort a call
+that spawns nothing, which the third property above forbids.
+
+- **Falsified by** a report of a dry-run compile refused on a limit the run
+  would never have read, or by a reader whose refusal wording must diverge
+  between the verb and the internal helper below it — which would break the
+  one-site-one-wording premise D042's shape rests on.

@@ -94,7 +94,7 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
       `call` through the internal helper, which D042's carve-out allows.
 - [x] T5. Assert AC4 (one wording, pinned `cli.width`, the `purrr` wrapper gone)
       and AC5 (valid/unset path and spawn counts unchanged against T1).
-- [ ] T6. Append the D-entry: the refusal is sited at the verb the caller typed
+- [x] T6. Append the D-entry: the refusal is sited at the verb the caller typed
       per D042; it fires at `run = FALSE` too, and why that is not a D024 breach;
       the `has_nvenc()` carve-out.
 - [ ] T7. `NEWS.md`, `devtools::document()`, `devtools::test()`, `devtools::check()`.
@@ -116,6 +116,7 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
 - 2026-08-30: T4 closed the last four classes. Front-door calls at `ffmpeg_codecs()`, `ffmpeg_encoders()` and the five `get_*` scalars; at `mediainfo_query()` and `mediainfo_template()` (whose alias `mediainfo_summary()` inherits the right name, since the refusal is built from the frame's own call). `has_nvenc()` takes its call INSIDE the `is.null(pool)` branch, so a call answered by the override refuses nothing. The six FFprobe readers take two internal sites rather than six front doors — `probe_all_impl()` (covering `probe_all()` and `verify_media()`) and `resolve_probe()`'s infile branch (covering the four `probe_*` shortcuts) — both of which already thread `call`, neither of which builds the reached-limit condition, so no reached-limit blame moves; the `probe = ` path, which reprobes nothing, still reads no limit. Sweep now reports 0 of 53 members wrong; full suite 0 failures, 9376 pass.
 - 2026-08-30: T5 asserted AC4 and AC5. Every member's message is compared to what `resolve_timeout()`'s own site writes for that form under a pinned output context, not to the other members, so 53 copies of a drifted wording could not pass; the `purrr_error_indexed` class and its `In index:` prefix are gone at the six readers named by the recorded master table rather than by a retyped list.
 - 2026-08-30: T5's AC5 half added a third master baseline the plan had not named — per-member return value and spawn count under an unset and a valid limit — recorded as `tests/testthat/fixtures/timeout-valid-baseline.rds` from ae5ff1c by `data-raw/timeout-valid-baseline.R`, which runs the suite's own `tm_spawn_trace()` against a worktree of that ref rather than a second copy of the reading. 53 members x 2 limit states compare identical, over 61 exercised spawns; under all five invalid forms every member's spawn count is 0. Spawn interception is at `guard_timeout()`, which `tm_spawn_interception_complete()` proves sufficient from the computed spawn-site set, and which is itself shown able to return FALSE on a planted unguarded spawn.
+- 2026-08-30: T6 appended D074 — the refusal is sited at the verb the caller typed, it fires at `run = FALSE`, why that leaves D024 untouched, and the `has_nvenc()` carve-out.
 ## Decisions
 
 ## Review

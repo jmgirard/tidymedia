@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M092: The deferred-findings backlog is triaged and the page retired
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -111,98 +111,25 @@ The help-topic over-attribution needs a design call and stays a row.
 ## Triage ledger
 <!-- owner: plan (heading) / implement (entries, T2) -->
 
-One entry per `## M` heading of `cairn/references/instrument-findings.md`
-(eight, as `grep -c '^## M'` reports after T1). **The rule:** a finding closes
-only where the gap lets a defect in shipped behaviour reach a user. Every other
-finding is pruned — not deferred — with its reason below. Each id is also
-classed **instrument** (it is about a guard, sweep, grid or harness that
-measures the package) or **runtime** (it is about the package's own shipped
-behaviour and was misfiled here); a runtime-classed id gets a candidate ROADMAP
-row at T7 rather than a fix, per AC6.
+One row per `## M` heading of `cairn/references/instrument-findings.md` (eight, as
+`grep -c '^## M'` reported after T1), naming every finding id that section holds
+with its own reason. **The rule** (D072): a finding closes only where the gap lets
+a defect in shipped behaviour reach a user; every other id is pruned — not
+deferred. Each id is also classed **instrument** (it grades the package) or
+**runtime** (it is the package's own shipped behaviour, misfiled here); a runtime
+id gets a candidate ROADMAP row at T7 rather than a fix, per AC6. Eight sections,
+53 ids, four closures, three ids carried forward.
 
-### `## M081` — the flag-guard sweep
-
-| id | class | disposition | reason |
-|---|---|---|---|
-| F3 | instrument | prune | A third flag guard would sit outside the exported-route sweep. The gap is in what `flag_guard_verbs()` enumerates, not in any shipped guard; the two live guards are checked. No shipped defect passes through it. |
-| F7 | instrument | prune | `tm_bare_flag_operands()` reads three operators and AC1 names those three as its domain. The row records the namespace as swept with no live instance, so nothing shipped is unguarded today. |
-| F2 | instrument | prune | The AC6 completeness reader derives its vocabulary from the entries it reads. A self-referential reader is weak, but its weakness reaches no shipped behaviour — it is the same shape as the blame grid's F8 below, pruned for the same reason. |
-
-### `## M079` — the floor-measurement harness
-
-| id | class | disposition | reason |
-|---|---|---|---|
-| F3, F4, F6, F8, F9, F10, F11, F12, F13, F15 | instrument | prune (all ten) | Nothing under `data-raw/` ships: the harness is run by hand at a floor audit and is absent from the built package. A wrong or unattributable floor measurement is a wrong *record*, corrected by re-running the harness; no path leads from any of these ten to a defect a user meets. The five coverage gaps and five script defects are pruned together because they share that one reason. |
-
-### `## M071` — the parallel-carry harness
-
-| id | class | disposition | reason |
-|---|---|---|---|
-| F4 | instrument | prune | AC2's option-unset control assumes a scheduling `future` does not promise. It weakens the control's meaning, not the carry it controls. |
-| F5 | instrument | prune | The fan-out domain guard compares a basename set and a count, so an unwiring inside one file passes it. The behavioural AC1 tests catch the unwiring; that they skip on Windows and without furrr is a coverage limit on an instrument, not a shipped defect. |
-| F7 | instrument | prune | Both refusal tests assert class-and-message equality between branches, so a shared unrelated regression passes. A weak equality assertion; no shipped path depends on it. |
-| F8 | instrument | prune | AC1's `probe_all` case never checks a filename appears. The criterion asked for it and the test under-asserts — an instrument gap, closed by nothing a user would observe. |
-| F9 | **runtime** | prune (→ ROADMAP row, T7) | Not an instrument finding at all: under a sequential plan with `parallel = TRUE`, a caller's own `options(tidymedia.*)` set inside `.f` is rolled back. That is shipped behaviour reaching a user, and it is outside this milestone's Scope, which fixes instrument gaps. Carried forward as a candidate row with its promote-on clause. |
-
-### `## M70` — the timeout-silence guards
-
-| id | class | disposition | reason |
-|---|---|---|---|
-| O2 | instrument | prune | `tm_condition_api` cannot see `absorb_timeout()`, so three absorbers go unlisted. The row itself records that AC1's grid is unaffected; the loss is explanatory. |
-| O3 | instrument | prune | `tm_program_arg()` needs a character literal, so a future call omitting `program` would slip the set assertion. No site omits it (grepped at that review) and the mutation probe varies rather than removes — a latent instrument gap with no shipped caller behind it. |
-| O4 | instrument | prune (already discharged) | Taken by M071 on 2026-08-26, whose AC3 drives a real timeout through `ffm_batch(parallel = TRUE, run = TRUE)`. Nothing left to close. |
-| O5 | instrument | prune | AC2's "exactly one warning" is asserted away from the `_batch` verbs and AC1's grid asserts at-least-one. A refactor could satisfy both — an assertion-strength gap on the sweep. |
-| **O6** | instrument | **close (AC3, T4)** | The one entry on this page whose gap lets a shipped defect reach a user: `run_with_progress()`'s return contract is covered only behind `skip_if_no_ffmpeg()`, and CI's macOS and Windows runners install no media binaries, so a contract mismatch surfaces as a hard `vapply` type error on a user's machine rather than red on CI. A binary-free contract test closes it. |
-| O7 | instrument | prune | The `warned` verdict greps cli-formatted text that wraps at narrow `cli.width`. A brittle verdict on an instrument; the conditions it could assert instead carry classes, which is a strengthening, not a defect. |
-| O8 | instrument | prune | The doc guards grep all of `NEWS.md` rather than its timeout paragraph, so an unrelated future release note could redden them. A false-red risk on a guard — loud and self-explaining when it fires. |
-| O11 | **runtime** | prune (→ ROADMAP row, T7) | Not an instrument finding: `probe_all_impl()`'s threaded `call` would make an argument refusal name `infile` through `verify_media()`, which has no such argument. That is a shipped message naming a wrong argument. Unreachable today because `check_file_exists()` refuses first, so it is not a defect a user can meet now — carried forward as a candidate row with the reachability condition as its promote-on clause. |
-
-### `## M62 / M63 / M64 / M080` — the input-guard blame grid
-
-| id | class | disposition | reason |
-|---|---|---|---|
-| M62 N2 | instrument | prune | For the eleven `slots = 1L` verbs the `all` form is a one-row cell, so only the factor-typed cell carries two distinct absent paths. A grid-shape gap; the guards it grades are correct. |
-| M63 C1 | instrument | prune | The `unreadable` form inherits N2's one-row-cell limit — same gap, same reason. |
-| M63 A5 | instrument | prune | `tm_refused_input()` uses `catch_cnd()`'s default `classes = "condition"`, so an earlier condition reads as "not refused". The same shape M087's pass-2 F5 carries; that one closes because a live candidate for the earlier condition exists on its sites, and this one does not. |
-| M63 A8 | instrument | prune | The site-uniqueness test fences no new third wording. It asserts less than it could; no shipped message is wrong. |
-| M63 A9 | instrument | prune | `input_guard_reword()` substitutes on every message rather than keying on the `input` class, so an unrelated guard could be waved through as wording-only. A classifier gap inside the grid. |
-| M64 F5 | instrument | prune | The mutation harness's controls-neutered check passes vacuously if `Rscript` crashes. A vacuous-pass risk on a control — the false-greens shape, and confined to the harness. |
-| M64 F7 | instrument | prune | The usage docs say `origin/master` where the ACs say merge-base, equal today. Prose drift in a harness's own documentation. |
-| M64 F10 | instrument | prune | The precedence crossing list omits three crossings, none flip-bearing. Coverage the grid does not have, with no flip behind it. |
-| M64 F11 | instrument | prune | The nvenc-ordering test carries no guard-liveness control. A missing control on a passing test. |
-| M080 A10 | instrument | prune | `input_guard_blame_unexpected()` reports all 30 unreadable cells on any ref pair other than M62→M63, so it cannot be read as pass/fail. The instrument is uninterpretable off its original pair; it grades nothing shipped. |
-| M080 N6 | instrument | prune | Verb membership is gated on `grepl(..., fixed = TRUE)` over deparsed bodies, so a reformat drops a verb silently and `input_guard_uncovered()` re-derives from the same declaration. Self-referential coverage — the F2/F8 shape again. |
-| M080 N7 | instrument | prune | The `scalar_arg` classifier matches a bad scalar `video_codec` no crossing supplies, so that half can never fire. Dead coverage inside the grid. |
-| M080 F5 | instrument | prune | M080's Scope Out mis-described the NA sweep's excluded set, and the row records the plan gate's own falsifier as already fired. A retrospective scoping error on a shipped-and-merged milestone's prose; there is no artifact left to correct here. |
-| M080 F6 | instrument | prune | The sweep probes `f(vals[[i]])` positionally after deriving the required formal by name, so a predicate whose required formal is not first passes vacuously. No such predicate exists; a vacuous-pass risk on the sweep. |
-| M080 F7 | instrument | prune | 12 of 60 sweep cells accept all four NA types silently and assert nothing. Cells that grade nothing — the four SHIPPED-predicate findings this row carried were promoted to M080 in 2026-08-28 and are already fixed. |
-| M080 F8 | instrument | prune | The carrier-completeness reader derives its vocabulary from the entries. Same self-referential shape as M081 F2 and M080 N6; pruned identically. |
-
-### `## M086` — the two-pass batch analysis grid
-
-| id | class | disposition | reason |
-|---|---|---|---|
-| **F9** | instrument | **close (AC8, T6)** | AC4's grid mocks `run_loudnorm_analysis_batch()` wholesale and hand-builds its failed-row fixtures, so nothing ties `assemble_measured()`'s expected input to what `run_program()` returns. A change to that return shape leaves `tm_row_status` all-`NA` in a real batch with the grid still green — the wrong status a user reads. A test through a real failing Phase 1 row closes it. |
-| (i), (ii) | instrument | prune (already pruned) | Pruned at M086's own §7 disposition on 2026-08-29 with reasons recorded on the page: (i) the exit-numbering assertion measured green three FFmpeg majors apart; (ii) the direct `system2()` call misfires only under `set_ffmpeg()` off-PATH, which no supported path exercises. This triage re-reads both against its rule and reaches the same disposition. |
-
-### `## M087` — the condition-class pairing and topic guards
-
-| id | class | disposition | reason |
-|---|---|---|---|
-| pass 1 F5 / pass 2 F1, F2 | instrument | prune (→ ROADMAP row, T7) | The AC4 pairing test binds a class claim to a topic, not a site, which is why the same over-attribution shipped green twice. A test that would catch it must bind a claim to a site — a design call, which this milestone's Scope puts out. Not runtime-classed (the over-attributed claim lives in a help page the instrument grades, not in a code path), but the design call is worth keeping plannable, so the finding carries forward as its own candidate row per Scope Out. |
-| **pass 2 F5** | instrument | **close (AC4, T5)** | The pairing probe catches with `condition = function(e) e` at three error sites, so a `tidymedia_`-classed *warning* signalled before the abort is captured instead and asserted against topics for a site nobody tested — passing the probe's non-empty-class guard while testing the wrong condition. The row names the live candidate (the dropped-track check on the `normalize_audio` sites), so this is the gap through which a wrong class claim reaches a user's help page. `error =` binds each probe to its site. |
-| (i), (ii), (iii) | instrument | prune (already pruned) | Pruned at M087's own §7 disposition on 2026-08-29 with reasons recorded on the page: (i) AC5 itself holds and the paragraph's real offset was measured; (ii) a reflow failure is loud and self-explaining; (iii) `find_program()` warns rather than aborting and the assertions never reach a binary. Re-read against this triage's rule, all three prune again. |
-
-### `## M091` — the container gate's case fold on the batch path
-
-| id | class | disposition | reason |
-|---|---|---|---|
-| M091 review round 4 (batch case fold) | instrument | **close (AC2, T3)** | `holds_multiple_audio()`'s fold is exercised only at the scalar site; no test passes an uppercase extension through `separate_audio_video_batch()`. Replacing the batch site's call with an exact-case match leaves the suite green while the false blame M091 exists to remove keeps arriving on any batch row whose `audiofile` is spelled `.MKA`. The defect the gap admits is one a user reads. |
-
-**Tally.** Eight sections; four closures (M70 O6, M086 F9, M087 pass-2 F5, M091's
-batch case fold); every other id pruned with its reason above; two ids classed
-runtime (M071 F9, M70 O11) and one design-call finding (M087 pass-1 F5 / pass-2
-F1, F2) carried forward as candidate ROADMAP rows at T7.
+| section | closes | pruned — one reason per id (all **instrument** unless marked) |
+|---|---|---|
+| `## M081` — the flag-guard sweep | — | **F3, F7** the gap is in what the sweep enumerates (a third flag guard; a fourth operator), not in a live guard: the two live guards and the three read operators are checked, and the namespace sweep found no live instance. **F2** the AC6 completeness reader derives its vocabulary from the entries it reads — self-referential and weak, but reaching no shipped behaviour (the M080 N6/F8 shape). |
+| `## M079` — the floor-measurement harness | — | **F3, F4, F6, F8, F9, F10, F11, F12, F13, F15** (ten, one shared reason) nothing under `data-raw/` ships: the harness is run by hand at a floor audit and is absent from the built package, so a wrong or unattributable floor measurement is a wrong *record*, corrected by re-running it. No path leads from any of the five coverage gaps or five script defects to a defect a user meets. |
+| `## M071` — the parallel-carry harness | — | **F4** the option-unset control assumes a scheduling `future` does not promise — it weakens the control, not the carry it controls. **F5** the fan-out domain guard compares a basename set and a count, so an unwiring inside one file passes it; the behavioural AC1 tests catch that, and their Windows/furrr skips are a coverage limit on an instrument. **F7** both refusal tests assert class-and-message equality between branches, so a shared unrelated regression passes. **F8** AC1's `probe_all` case never checks a filename appears — the criterion asked for it and the test under-asserts. **F9 — runtime**, not an instrument finding: under a sequential plan with `parallel = TRUE` a caller's own `options(tidymedia.*)` set inside `.f` is rolled back. Shipped behaviour, outside this milestone's Scope; carried to a candidate ROADMAP row at T7 with its promote-on clause. |
+| `## M70` — the timeout-silence guards | **O6 (AC3, T4)** — `run_with_progress()`'s return contract was covered only behind `skip_if_no_ffmpeg()`, and CI's macOS and Windows runners install no media binaries, so a contract mismatch surfaces as a hard `vapply` type error on a user's machine rather than red on CI. A binary-free contract test closes it. | **O2** `tm_condition_api` cannot see `absorb_timeout()`, so three absorbers go unlisted; the row itself records AC1's grid as unaffected and the loss as explanatory. **O3** `tm_program_arg()` needs a character literal, so a future call omitting `program` would slip the set assertion; no site omits it (grepped at that review) and the mutation probe varies rather than removes. **O4** already discharged — taken by M071 on 2026-08-26, whose AC3 drives a real timeout through `ffm_batch(parallel = TRUE, run = TRUE)`. **O5** AC2's "exactly one warning" is asserted away from the `_batch` verbs while AC1's grid asserts at-least-one, so a refactor could satisfy both — an assertion-strength gap. **O7** the `warned` verdict greps cli-formatted text that wraps at narrow `cli.width`; brittle, and the conditions it could assert instead carry classes. **O8** the doc guards grep all of `NEWS.md` rather than its timeout paragraph, so an unrelated release note could redden them — a false-red risk that is loud and self-explaining when it fires. **O11 — runtime**: `probe_all_impl()`'s threaded `call` would make an argument refusal name `infile` through `verify_media()`, which has no such argument — a wrong shipped message, unreachable today because `check_file_exists()` refuses first; candidate row at T7 with that reachability as its promote-on clause. |
+| `## M62 / M63 / M64 / M080` — the input-guard blame grid | — | The 16 ids the page's own text declares live (M62 N1 closed at M63; M62 N3, N7 and M64 F4 were promoted to M080 on 2026-08-28, so they are off that set). **M62 N2** for the eleven `slots = 1L` verbs the `all` form is a one-row cell, so only the factor-typed cell carries two distinct absent paths — a grid-shape gap over guards that are correct. **M63 C1** the `unreadable` form inherits that one-row-cell limit. **M63 A5** `tm_refused_input()` uses `catch_cnd()`'s default `classes = "condition"`, so an earlier condition reads as "not refused"; M087's pass-2 F5 shares the shape and closes only because a live candidate exists on its sites, and this one has none. **M63 A8** the site-uniqueness test fences no new third wording. **M63 A9** `input_guard_reword()` substitutes on every message rather than keying on the `input` class, so an unrelated guard could be waved through as wording-only. **M64 F5** the controls-neutered check passes vacuously if `Rscript` crashes. **M64 F7** the usage docs say `origin/master` where the ACs say merge-base, equal today. **M64 F10** the precedence crossing list omits three crossings, none flip-bearing. **M64 F11** the nvenc-ordering test carries no guard-liveness control. **M080 A10** `input_guard_blame_unexpected()` reports all 30 unreadable cells on any ref pair other than M62→M63, so it cannot be read as pass/fail. **M080 N6** verb membership is gated on `grepl(..., fixed = TRUE)` over deparsed bodies and `input_guard_uncovered()` re-derives from the same declaration — self-referential. **M080 N7** the `scalar_arg` classifier matches a bad scalar `video_codec` no crossing supplies, so that half can never fire. **M080 F5** a retrospective scoping error in a shipped milestone's prose, with no artifact left to correct. **M080 F6** the sweep probes `f(vals[[i]])` positionally after deriving the required formal by name; no such predicate exists. **M080 F7** 12 of 60 sweep cells accept all four NA types silently and assert nothing — the four SHIPPED-predicate findings this row carried were promoted to M080 on 2026-08-28 and are already fixed. **M080 F8** the carrier-completeness reader derives its vocabulary from the entries — the M081 F2 / M080 N6 shape again. |
+| `## M086` — the two-pass batch analysis grid | **F9 (AC8, T6)** — AC4's grid mocks `run_loudnorm_analysis_batch()` wholesale and hand-builds its failed-row fixtures, so nothing ties `assemble_measured()`'s expected input to what `run_program()` returns: a change to that return shape leaves `tm_row_status` all-`NA` in a real batch with the grid still green, which is the wrong status a user reads. | **(i), (ii)** already pruned at M086's own §7 on 2026-08-29 with reasons recorded on the page — (i) the exit-numbering assertion measured green three FFmpeg majors apart; (ii) the direct `system2()` call misfires only under `set_ffmpeg()` off-PATH, which no supported path exercises. Re-read against this triage's rule, both prune again. |
+| `## M087` — the condition-class pairing and topic guards | **pass-2 F5 (AC4, T5)** — the pairing probes catch with `condition = function(e) e` at three error sites, so a `tidymedia_`-classed *warning* signalled before the abort is captured instead and asserted against topics for a site nobody tested, passing the probe's non-empty-class guard while testing the wrong condition. The row names the live candidate (the dropped-track check on the `normalize_audio` sites), so this is the gap through which a wrong class claim reaches a user's help page; `error =` binds each probe to its site. | **pass-1 F5 / pass-2 F1, F2** the AC4 pairing test binds a class claim to a topic, not a site, which is why the same over-attribution shipped green twice; a test that binds a claim to a site is a design call, which this milestone's Scope puts out. Instrument-classed, not runtime — the over-attributed claim lives in a help page the instrument grades, not in a code path — but carried to a candidate ROADMAP row at T7 under Scope Out's design-call clause. **(i), (ii), (iii)** already pruned at M087's own §7 on 2026-08-29 — (i) AC5 itself holds and the paragraph's real offset was measured; (ii) a reflow failure is loud and self-explaining; (iii) `find_program()` warns rather than aborting and the assertions never reach a binary. All three prune again. |
+| `## M091` — the container gate's case fold on the batch path | **the round-4 batch case fold (AC2, T3)** — `holds_multiple_audio()`'s fold is exercised only at the scalar site; no test passes an uppercase extension through `separate_audio_video_batch()`, so replacing the batch site's call with an exact-case match leaves the suite green while the false blame M091 exists to remove keeps arriving on any batch row whose `audiofile` is spelled `.MKA`. The defect the gap admits is one a user reads. | — |
 
 ## Work log
 
@@ -227,6 +154,11 @@ F1, F2) carried forward as candidate ROADMAP rows at T7.
 - 2026-08-30: T9, AC4 repair — the sweep returned 2, not 0, both hits inside T5's own probe: its explanatory comment and its deliberate counter-example, which spelled the retired handler literally. Reworded the comment (the literal is now described, not typed, the way the retired class name in the same file is assembled rather than written) and respelled the counter-example `condition = identity`, which behaves identically. The sweep returns 0 and the file stays green at PASS 156.
 - 2026-08-30: review checkpoint — PR #96 opened as draft. Consistency gate FAILED on weight caps: this file's plan-owned body is 206 lines against the <150 cap (Triage ledger 96, Acceptance criteria 38, Tasks 25). Evidence gathering was already in flight and is being completed before the return so it lands in one pass.
 - 2026-08-30: review returned M092 to in-progress. Consistency gate FAILED: `cairn_validate.py` weight caps — this file's plan-owned body is 206 lines against the <150 cap, shed >=57 (Triage ledger 96, Acceptance criteria 38, Tasks 25). Every other cairn check and the whole r-package toolchain slot are green (test FAIL 0 / PASS 8815; check Status: OK; document() no diff; pkgdown clean). Five criteria verified and ticked (AC1, AC4-AC7); AC2, AC3 and AC8 stay unticked because the gate stopped the phase before their mutation-redness clauses were re-executed. Review fan-out: blame-history 0 findings, prior-review 0 findings, diff-bug 9, all recorded in the Review section, none hitting the return floor on its own.
+- 2026-08-30: return repair, cap — compressed the Triage ledger, the heaviest plan-owned section, in one rewrite per tracking-rules: 96 lines to 22. Eight `###` sub-headings and eight tables collapse to one table with one row per `## M` heading, so AC1's "one entry per heading" is now literally one row per heading; every id and its own reason survive verbatim in the row's cells, the rule statement cross-references D072 rather than restating it, and the derivable Tally folds into the preamble. Plan-owned body 206 → 133 lines against the <150 cap; `cairn_validate.py` now reports all checks passed, with the pre-existing `sizing` advisory (8 ACs > 7) unchanged.
+- 2026-08-30: return gate — the review's three test-strength findings (1, 6, 7: AC3's test asserts its own stub rather than `ffm_batch()`'s inline `run_one`; AC2's test asserts no warning at all rather than the advice being absent; AC8 asserts a non-`NA` status but never its value) were put to the user with holding the criteria recommended, since each criterion passes as written and strengthening one widens its promise. Chosen: compression and the D072 correction only; no criterion or test changed.
+- 2026-08-30: D072 correction — the entry's motivating measurement was wrong. `git log --follow` on the deleted path shows five commits: creation at M083 (94f6c77, 2026-08-28), filings at M086 (a9d5ec0) and M087 (dea2821) on 2026-08-29 and M092's T1 (3414982) on 2026-08-30, then the deletion. "Five later hygiene passes" and "five filings in three weeks" become "created 2026-08-28, grown by a section at each of three later passes, and drained by none of them" — the same conclusion on the numbers that hold. Also "roughly forty" findings → 53, the count the ledger enumerates, in both places; and "M091's eighth finding" → "M091's round-4 finding, the page's eighth *section*".
+- 2026-08-30: ROADMAP repair — the M45 multi-track row's promote clause named "(c)'s missing-directory case" after T7's compression stopped naming that case inside (c); it now reads "the missing-directory cause among (c)'s three", which (c)'s "the three causes D069 enumerates" resolves. 23,849 bytes, 151 under D067's budget. The review's paired sub-finding about T7's byte figure does not hold: `git show f9fda86:cairn/ROADMAP.md | wc -c` is 23,832, exactly what T7 recorded; the review's 23,827 was measured at 695a8a4, after its own checkpoint edit.
+- 2026-08-30: verify slot re-run after the return repair — no R or test file changed, and `devtools::test()` reports FAIL 0 / WARN 12 / SKIP 5 / PASS 8815, identical to T9. `origin/master` has not moved since the branch was cut, so no merge was owed.
 
 ## Decisions
 

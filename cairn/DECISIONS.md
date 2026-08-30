@@ -3282,14 +3282,14 @@ what counts as having measured one.
 
 ## D072 — A deferred finding about an instrument closes only where the gap lets a defect in shipped behaviour reach a user; the page that carried them is retired (2026-08-30, from M092; retires the working artifact D040/D041/D049/D050/D059 accumulated onto, and supersedes nothing — every entry those five state stays in force)
 
-`cairn/references/instrument-findings.md` held eight sections and roughly forty
-review findings about tidymedia's own **instruments** — the guards, sweeps,
-grids and harnesses that measure the package, rather than the runtime they
-measure. Every one had been logged rather than actioned at its own review, and
-the page grew by one section at each of five later hygiene passes. Its own
-header said no finding on it was a defect in shipped behaviour. A backlog whose
-entry condition is "not a defect" has no exit condition, and five filings in
-three weeks is the measurement that it had stopped being a queue.
+`cairn/references/instrument-findings.md` held eight sections and 53 review
+findings about tidymedia's own **instruments** — the guards, sweeps, grids and
+harnesses that measure the package, rather than the runtime they measure. Every
+one had been logged rather than actioned at its own review. Its own header said
+no finding on it was a defect in shipped behaviour. A backlog whose entry
+condition is "not a defect" has no exit condition, and the page's own history is
+the measurement that it had stopped being a queue: created 2026-08-28, grown by
+a section at each of three later passes, and drained by none of them.
 
 **The rule.** A deferred finding about an instrument closes only where the gap
 lets a defect in shipped behaviour reach a user. Every other finding is pruned
@@ -3300,8 +3300,8 @@ reason its author did not intend is a weaker instrument and not a defect,
 because the artifact it grades is correct. What closes is the gap with a path
 from it to something a user observes.
 
-**What that rule closed here, and why each one has that path.** Four of the
-forty. M70's O6: `run_with_progress()`'s return contract was covered only behind
+**What that rule closed here, and why each one has that path.** Four of the 53.
+M70's O6: `run_with_progress()`'s return contract was covered only behind
 `skip_if_no_ffmpeg()`, and CI's macOS and Windows runners install no media
 binaries, so a mismatch surfaced as a hard `vapply()` type error on a user's
 machine instead of red on CI — reproduced here, verbatim, from a stub returning
@@ -3311,8 +3311,8 @@ wholesale, so a change to `run_program()`'s return shape would leave
 status a caller reads. M087's pass-2 F5: the class-pairing probes caught with
 `condition = function(e) e`, taking the first condition a site signalled, so a
 `tidymedia_`-classed warning raised before the abort would be asserted against
-help topics for a site nobody tested. M091's eighth finding: the container gate's
-case fold was exercised at the scalar site only, so an exact-case match at the
+help topics for a site nobody tested. M091's round-4 finding, the page's eighth
+*section*: the container gate's case fold was exercised at the scalar site only, so an exact-case match at the
 batch site would leave the suite green while `.MKA` rows kept drawing the false
 blame D069 exists to remove.
 

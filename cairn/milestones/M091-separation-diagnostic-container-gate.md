@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M091: The multi-track advice stops arriving when the caller is already following it
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -44,11 +44,15 @@ that it reports what the call did rather than why FFmpeg refused.
 
 ## Acceptance criteria
 
-- [ ] AC1: A failing `separate_audio_video()` audio command with a >1-audio-track
-      input, no `audio_stream`, and an `audiofile` extension held by the new list
-      raises the condition `ffm_run()` raises for that pipeline — same message,
-      same class vector (no `tidymedia_multitrack_separation`), same `tm_status`
-      — for each extension the list holds.
+- [ ] AC1: A `separate_audio_video()` audio command that FFmpeg ends at a non-zero
+      exit status, with a >1-audio-track input, no `audio_stream`, and an
+      `audiofile` extension held by the new list, re-raises the condition
+      `ffm_run()` raised for that pipeline with no enrichment from the multi-track
+      diagnostic — same class vector (no `tidymedia_multitrack_separation`), same
+      `tm_status`, and a message equal to `ffm_run()`'s, save for the one
+      video-written bullet `abort_after_video()` appends when the video half wrote
+      a file and the audio condition is an rlang condition — for each extension the
+      list holds.
 - [x] AC2: In `separate_audio_video_batch()`, a failed audio row whose output
       extension is held by the list contributes no bullet to the post-fan-out
       warning, and a batch whose failed audio rows all have such outputs signals
@@ -101,7 +105,10 @@ that it reports what the call did rather than why FFmpeg refused.
       AC3 unchanged-behavior cases. AC4's capacity check runs `-c:a copy` on
       every listed extension except `webm`, which holds no AAC and takes
       `-c:a libopus` — the encoders T1 measured, named here so the criterion is
-      decidable without them.
+      decidable without them. The suppression case runs twice per extension:
+      once with the video half failing too, once with it left at its default so
+      it succeeds and writes, which is the sub-case AC1's video-written
+      exception covers.
 - [x] T6: Roxygen on both verbs plus `R/audio-stream-doc.R` if its shared
       sentence needs it; `devtools::document()`; `NEWS.md` entry.
 - [x] T7: D-entry recording the gate, its measured basis, the rejected
@@ -125,6 +132,11 @@ that it reports what the call did rather than why FFmpeg refused.
 - 2026-08-30: T7 recorded D069 in `cairn/DECISIONS.md`. Its heading cross-reference was corrected before commit: the multi-track report's own reasoning is milestone-local (M45-D1/M45-D2), not the D026 first drafted, which is about the pass-through verbs.
 - 2026-08-30: all seven tasks done. `Rscript -e 'devtools::test()'` 0 failures / 8563 passing / 12 warnings / 5 skips (baseline before this branch: 0 / 8493 / 12 / 5). `Rscript -e 'devtools::check()'` Status: OK -- 0 errors, 0 warnings, 0 notes. `devtools::document()` rewrote only the two separation `.Rd` files. Status -> review. Open concern for the hygiene pass: the `Last hygiene check` stamp's ROADMAP figure (21,612) does not match the file, which measured 22,833 bytes on master before this branch touched it; the branch adds 10 bytes (a `D069` cross-reference on the M45-F1 candidate row) for 22,843 of 24,000 over 44 of 60 lines.
 - 2026-08-30: amendment return: AC1 — "raises the condition `ffm_run()` raises for that pipeline — same message, same class vector (no `tidymedia_multitrack_separation`), same `tm_status`". Measured at review: with the video half succeeding, the condition carries one extra bullet that `abort_after_video()` appends (M090's contract, already on the two pre-existing fail-open branches), so "same message" is false across the ordinary half of AC1's domain while the code is correct. Review's other five criteria verified; consistency gate clean; PR #95 open as a draft.
+- 2026-08-30: amendment return: AC1 — "A `separate_audio_video()` audio command that FFmpeg ends at a non-zero exit status, with a >1-audio-track input, no `audio_stream`, and an `audiofile` extension held by the new list, re-raises the condition `ffm_run()` raised for that pipeline with no enrichment from the multi-track diagnostic — same class vector (no `tidymedia_multitrack_separation`), same `tm_status`, and a message equal to `ffm_run()`'s, save for the one video-written bullet `abort_after_video()` appends when the video half wrote a file and the audio condition is an rlang condition — for each extension the list holds."
+- 2026-08-30: the amended AC1 went to two fresh-context [O] FULL criteria audits before it was written. The first returned four findings: "nothing added by the diagnostic" was false of the `tm_video_error` field `abort_after_video()` also assigns; the bullet was demanded unconditionally though it is appended only to rlang conditions; no committed test drove the video-succeeds sub-case; and the falsified "unchanged" claim stands in prose elsewhere. The first two were fixed and the revised bytes went to a second reader, which returned NARROWS with five findings — three mechanical repairs taken verbatim ("object" dropped, since what reaches the caller is a modified copy; the rlang predicate stated as the code's `inherits(cnd, "rlang_error")`; the trigger narrowed from any failure to the non-zero exit the branch actually gates) and the two already routed to the gate.
+- 2026-08-30: mini gate chose correcting the falsified "unchanged" prose without binding it in a criterion over also extending AC5 to cover the corrected sentence, because this milestone already carries one return and widening the criteria set after a return is how one return becomes three, while the correction ships either way; falsified by the same sentence drifting false again with no criterion holding it.
+- 2026-08-30: the amendment landed. AC1 amended as above; `R/ffmpeg.R:689`, the two scalar help-page sentences and the `NEWS.md` entry corrected, all of which said the caller gets the run's own error "unchanged"; D070 recorded, superseding D069's rule paragraph alone. T5 gained a per-extension video-succeeds test asserting the message is `ffm_run()`'s plus exactly one trailing line. Check discrimination both ways: suppressing the video bullet turns that test red at 21 assertions, forcing the container gate FALSE turns it red at 42, and neither plant leaves it green.
+- 2026-08-30: amendment complete. `Rscript -e 'devtools::test()'` 0 failures / 8633 passing / 12 warnings / 5 skips (before the amendment: 0 / 8563 / 12 / 5; the +70 is the seven-extension video-succeeds test). `Rscript -e 'devtools::check()'` Status: OK -- 0 errors, 0 warnings, 0 notes. `devtools::document()` rewrote `man/separate_audio_video.Rd` alone. `cairn_validate` exit 0. Status -> review.
 
 ## Decisions
 

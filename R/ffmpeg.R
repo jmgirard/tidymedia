@@ -686,7 +686,12 @@ holds_multiple_audio <- function(path) {
 # FFmpeg has ALREADY failed, so the call aborts under every outcome and the probe
 # decides only WHICH abort is signalled -- never whether execution proceeds
 # (D024's third exclusion), never what was compiled, never a default, never a
-# pipeline. It fails open to ffm_run()'s own abort, unchanged in text and class.
+# pipeline. It fails open to ffm_run()'s own abort, unchanged in class and
+# status. Its MESSAGE is unchanged too as far as this function goes; what the
+# caller finally reads carries one more bullet whenever the video half wrote its
+# file, appended downstream by abort_after_video() to whichever condition the
+# audio half raised -- this branch, the two beside it, and the enriched
+# diagnostic alike (M090's contract, measured on this branch 2026-08-30).
 run_separation_audio <- function(pipeline, infile, outfile, audio_stream,
                                  call = rlang::caller_env()) {
   if (!is.null(audio_stream)) return(invisible(ffm_run(pipeline)))
@@ -1010,7 +1015,9 @@ ffmpeg_exit_status <- function(cnd) {
 #' doing what the report would advise: writing to one of those, the failure
 #' cannot be the container refusing a second audio stream, so whatever FFmpeg
 #' did object to would go unnamed. Fail any of the four and the error you get is
-#' the one the run itself raised, unchanged.
+#' the one the run itself raised — same class, same exit status, same message,
+#' but for the line saying the video output was written, which any failing audio
+#' half carries when the video command wrote its file.
 #'
 #' What the report states is what the call \emph{did} — the track count, and that
 #' every track was mapped into one output — never why FFmpeg refused. FFmpeg's
@@ -1036,9 +1043,9 @@ ffmpeg_exit_status <- function(cnd) {
 #' }
 #'
 #' When the report is omitted, the error that reaches the caller is the one the
-#' run itself raised, unchanged: a non-zero exit still answers to
-#' \code{tidymedia_ffmpeg_exit}, and a failure that is not an exit at all answers
-#' to neither class here: an FFmpeg the package cannot locate raises an error
+#' run itself raised, but for that video-output line: a non-zero exit still
+#' answers to \code{tidymedia_ffmpeg_exit}, and a failure that is not an exit at
+#' all answers to neither class here: an FFmpeg the package cannot locate raises an error
 #' carrying no \code{tidymedia_} class at all, and a reached limit raises
 #' \code{tidymedia_timeout}.
 #'

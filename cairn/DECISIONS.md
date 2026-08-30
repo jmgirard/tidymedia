@@ -3201,3 +3201,29 @@ rejected for an `ffm_batch()` hook.
   refuses a second audio stream in some FFmpeg build, or an unlisted one that
   accepts several. A report about the three causes above falsifies nothing here;
   it promotes the candidate row that holds them.
+
+## D070 — The fail-open adds nothing of its own; the video-written note the caller may still read is the verb's, not the diagnostic's (2026-08-30, from M091's amendment return; supersedes D069's "The rule" paragraph, keeps every other part of D069 in force; leaves D068 and the note's own contract untouched)
+
+D069's rule says a diagnostic that finds its remedy already in force fails open
+to the condition the run itself raised, "unchanged in message, class vector and
+`tm_status`". The message clause is false, and was measured false at M091's
+review on the ordinary case. `separate_audio_video()` runs its video half after
+the audio half has failed, and `abort_after_video()` appends one bullet naming
+the video file whenever that half wrote one. It appends that bullet to whichever
+condition the audio half raised — the fail-open branches and the enriched
+diagnostic alike — so the note is the verb's, not the diagnostic's, and it rode
+the two pre-existing fail-open branches before M091 added a third.
+
+**The rule, restated.** A diagnostic that names a remedy checks, before it
+fires, that the remedy is not already in force. Where it is, the diagnostic
+fails open by adding nothing of its own: the condition the run raised reaches
+the caller with its class vector and `tm_status` intact, and with its message
+intact save for what the verb appends downstream on every one of its branches
+alike.
+
+**Why the note is not stripped on this branch.** Suppressing it would make
+D069's sentence true and undo M090: the note tells a caller which of the two
+outputs survived, and it is exactly as relevant when the audio half failed for a
+cause this diagnostic declines to name.
+
+M091's AC1 was written against D069's wording, and was amended to this one.

@@ -564,9 +564,11 @@
   audio tracks without complaint. On those the failure is something else
   entirely, so the report named a cause that was not the cause while telling
   you to do the thing you had already done. Writing to one of those seven, the
-  error you get is now the one the run itself raised, unchanged in message,
-  class and exit status. `separate_audio_video_batch()` does the same: such a
-  row is dropped from the post-fan-out warning rather than listed in it, the
+  error you get is now the one the run itself raised — same class, same exit
+  status, same message, but for the line saying the video output was written,
+  which any failing audio half carries when the video command wrote its file.
+  `separate_audio_video_batch()` does the same: such a row is dropped from the
+  post-fan-out warning rather than listed in it, the
   headline count follows the rows actually listed, and a batch whose failed
   audio rows all write to those containers warns not at all. The extension is
   read without regard to case, so `OUT.MKA` counts. What the report says when

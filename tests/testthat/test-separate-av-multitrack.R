@@ -1116,6 +1116,48 @@ test_that("a listed container falls open to ffm_run()'s own condition", {
   }
 })
 
+test_that("a listed container falls open with the video half succeeding too", {
+  # AC1's other sub-case, and the ordinary one: the video command is left at its
+  # default `-codec:v copy` into .mp4, so it succeeds and writes, and
+  # abort_after_video() appends its one video-written bullet to whatever the
+  # audio half raised. That bullet is M090's contract and rides every fall-open
+  # branch alike, so the criterion admits it and nothing else -- which is why the
+  # comparison below is ref's message plus exactly one trailing line rather than
+  # a substring match, and why the line count is asserted rather than only the
+  # presence of the note.
+  skip_if_no_ffprobe()
+  infile <- make_multitrack_video()
+  for (ext in tidymedia:::multi_audio_extensions) {
+    audio <- withr::local_tempfile(fileext = paste0(".", ext))
+    video <- sep_fresh_video()
+    cnd <- tryCatch(
+      separate_audio_video(infile, audio, video,
+                           audio_codec = "notanencoder"),
+      error = function(e) e
+    )
+    ref <- tryCatch(
+      ffm_run(tidymedia:::separate_stream_pipeline(infile, audio, "audio",
+                                                  "notanencoder")),
+      error = function(e) e
+    )
+    # The sub-case is only what it says if the video half really wrote: with no
+    # file written there is no bullet and this test would collapse into the one
+    # above without saying so.
+    expect_true(file.exists(video), info = ext)
+    expect_s3_class(ref, "tidymedia_ffmpeg_exit")
+    expect_false(inherits(cnd, "tidymedia_multitrack_separation"), info = ext)
+    expect_identical(class(cnd), class(ref), info = ext)
+    expect_identical(cnd$tm_status, ref$tm_status, info = ext)
+    got <- strsplit(cli::ansi_strip(conditionMessage(cnd)), "\n", fixed = TRUE)[[1]]
+    want <- strsplit(cli::ansi_strip(conditionMessage(ref)), "\n", fixed = TRUE)[[1]]
+    expect_length(got, length(want) + 1L)
+    expect_identical(got[seq_along(want)], want, info = ext)
+    expect_match(got[length(got)], "The video output was written to",
+                 fixed = TRUE, info = ext)
+    expect_match(got[length(got)], basename(video), fixed = TRUE, info = ext)
+  }
+})
+
 test_that("an unlisted container still gets the diagnostic on the same trigger", {
   # The discriminating control for the test above: same input, same missing
   # encoder, same video half, everything but the extension. A gate that

@@ -169,29 +169,28 @@ that it reports what the call did rather than why FFmpeg refused.
 
 ## Review
 
-Re-reviewed 2026-08-30 against PR #95 (draft), after the AC5 amendment. This
-section replaces the previous round's, whose outcome was the amendment return
-recorded in the work log. `master` had not moved since the branch was cut
-(`git fetch`; `git rev-list --count origin/master ^HEAD` = 0), the branch is
-pushed and its tip matches `origin`, and the working tree is clean. All
-evidence below is fresh, by command, in this session.
+Re-reviewed 2026-08-30 against PR #95 (draft), after the AC3/AC4 amendment
+(T8). This section replaces the previous round's, whose outcome was the
+amendment return recorded in the work log. `master` had not moved since the
+branch was cut (`git fetch`; `git rev-list --count origin/master ^HEAD` = 0),
+the branch is pushed and its tip matches `origin`, and the working tree is
+clean. All evidence below is fresh, by command, in this session.
 
 ### Acceptance-criterion evidence
 
-- **AC1** — verified in both sub-cases across all seven listed extensions.
+- **AC1** — verified in both sub-cases across all nine listed extensions.
   Committed suite, run this session: "a listed container falls open to
-  `ffm_run()`'s own condition" 35 assertions green (video half also failing, so
+  `ffm_run()`'s own condition" 45 assertions green (video half also failing, so
   no bullet is appended) and "a listed container falls open with the video half
-  succeeding too" 70 assertions green. Each iterates `multi_audio_extensions`
+  succeeding too" 90 assertions green. Each iterates `multi_audio_extensions`
   itself and asserts, against a reference condition from
   `ffm_run(separate_stream_pipeline(...))`: `tidymedia_multitrack_separation`
   absent, class vector identical, `tm_status` identical, and the message equal
-  to the reference's plus exactly one trailing line matching "The video output
-  was written to" and the video's basename. Re-measured live at review on
-  `.mka` with `audio_codec = "notanencoder"` and the video half at its default:
-  video file written, class vector `tidymedia_ffmpeg_exit, rlang_error, error,
-  condition` identical to the reference's, `tm_status` 8 identical, reference
-  message a prefix of the raised one, the remainder the video-written note.
+  to the reference's plus exactly one trailing video-written bullet. Re-measured
+  live at review on `.opus` with `audio_codec = "notanencoder"` and the video
+  half at its default: video file written, class vector identical to the
+  reference's, `tm_status` identical, and the only message difference the one
+  "The video output was written to" bullet.
 - **AC2** — two committed tests, 11 assertions green this session. "a failed
   batch row on a listed container contributes no bullet" (8): a two-row batch
   whose `.mka` and `.mp3` audio rows both fail warns naming only the `.mp3`
@@ -199,48 +198,53 @@ evidence below is fresh, by command, in this session.
   confirmed `success = FALSE` so the silence is a drop and not a success. "a
   batch whose failed rows are all listed containers warns not at all" (3):
   `expect_no_warning` green with both rows failed.
-- **AC3** — committed test "every measured refusing container keeps the enriched
-  abort as worded", 110 assertions green this session, iterating all eleven
-  extensions (`mp3`, `wav`, `aac`, `flac`, `ogg`, `opus`, `wv`, `caf`, `aiff`,
-  `au`, `w64`) — the F7 repair from the previous round, where the suite covered
-  two of the eleven. Each keeps the class vector
-  `c("tidymedia_multitrack_separation", "tidymedia_ffmpeg_exit")`, its
-  `tm_status` and its five bullets. The wording is unchanged by construction:
-  `git diff master..HEAD -- R/ffmpeg.R` leaves the `cli_abort()` message body
-  and `warn_failed_separation()`'s bullet form untouched; the batch per-row
-  bullet form is what AC2's `.mp3` row exercises. (Finding F1 below concerns
-  whether two of these eleven belong in the domain at all, not whether the
-  behaviour on them is unchanged.)
+- **AC3** — two committed tests over exactly the nine the criterion names
+  (`mp3`, `wav`, `aac`, `flac`, `wv`, `caf`, `aiff`, `au`, `w64`), 117
+  assertions green this session. The scalar half, "every measured refusing
+  container keeps the enriched abort as worded" (90): per extension, the class
+  vector `c("tidymedia_multitrack_separation", "tidymedia_ffmpeg_exit")` at the
+  head, `tm_status` equal to the status in the message, and the five bullets in
+  order, each pinned by the phrase carrying its meaning. The batch half, "every
+  unlisted container keeps the batch warning's per-row bullet" (27): the
+  warning's class, its "1 audio output failed on a multi-track input" headline
+  and the per-row bullet's exact sprintf form, per extension. The wording is
+  also unchanged by construction: `git diff master..HEAD -- R/ffmpeg.R` adds
+  only `multi_audio_extensions`, `holds_multiple_audio()`, the two gate lines
+  and comments — no `cli_abort()` message body and no bullet form is touched.
 - **AC4** — committed test "every listed container carries three mapped audio
-  streams", 15 assertions green this session: the membership floor (`mka`,
-  `m4a`, `mp4`, `mov`, `mkv`, `webm`, `ts` all present in
+  streams", 19 assertions green this session: the membership floor (all nine of
+  `mka`, `m4a`, `mp4`, `mov`, `mkv`, `webm`, `ogg`, `opus`, `ts` present in
   `multi_audio_extensions`), then, for each member of the vector itself,
   `separate_audio_video()` raising no error and the output carrying three
-  distinct audio stream indices — `copy` for six, `libopus` for `webm`. The
-  criterion quantifies over the extensions the list HOLDS, and every one of the
-  seven satisfies it; it sets no completeness requirement, which is what F1
-  below is about.
-- **AC5** — read from the generated `.Rd` on this branch. `man/separate_audio_video.Rd`
-  states the four conditions as a conjunction, the non-zero exit status among
-  them. `man/separate_audio_video_batch.Rd` states its own four — named no
-  `audio_stream`, recorded `success = FALSE`, more than one audio track,
-  extension not among the seven — and then "No exit status is among those
-  conditions", giving a non-zero exit, a hard error and a reached limit as
-  causes recorded alike. `grep -n -i exit man/separate_audio_video_batch.Rd`
-  returns five lines: two are that denial and its explanation, three are about
-  the condition object's own fields (`tm_status`, `tidymedia_ffmpeg_exit`), and
-  none names an exit status among the conditions under which the warning fires.
-  The section's opening sentence reads "A row whose audio command does not
-  finish cleanly is recorded as `success = FALSE`" — no exit status. Both pages
-  carry the silent-omission clause with its "never itself a second failure"
-  half, and both state the report says what the call did, never why FFmpeg
-  refused, naming the copy-into-incompatible-container, unknown-encoder and
-  missing-directory causes.
-- **AC6** — `Rscript -e 'devtools::test()'`: 0 failures, 8743 passing, 12
+  distinct audio stream indices — `copy` for six, `libopus` for `webm`, `ogg`
+  and `opus`. Re-measured independently at review outside the suite, on a
+  three-AAC-track fixture with `-map 0:a` on ffmpeg 9.0.1: `mka`, `m4a`, `mp4`,
+  `mov`, `mkv` and `ts` exit 0 under `-c:a copy`, `webm`, `ogg` and `opus` exit
+  0 under `-c:a libopus`, each output carrying three distinct audio stream
+  indices (`ts` lists each stream twice, once per program and once globally,
+  and the three distinct indices are what survives deduplication).
+- **AC5** — read from the generated `.Rd` on this branch.
+  `man/separate_audio_video.Rd` states the four conditions as a conjunction —
+  no `audio_stream` named, a non-zero exit status, more than one audio track,
+  and an extension not among the nine it then lists. `man/separate_audio_video_batch.Rd`
+  states its own four — named no `audio_stream`, recorded `success = FALSE`,
+  more than one audio track, extension not among the nine — and then "No exit
+  status is among those conditions", giving a non-zero exit, a hard error and a
+  reached limit as causes recorded the same way. `grep -n -i exit
+  man/separate_audio_video_batch.Rd` returns five lines: two are that denial and
+  its explanation, three are about the condition object's own fields
+  (`tm_status`, `tidymedia_ffmpeg_exit`, and where to catch an exit status
+  instead), and none names an exit status among the conditions under which the
+  warning fires. The section's opening sentence reads "A row whose audio command
+  does not finish cleanly is recorded as `success = FALSE`" — no exit status.
+  Both pages carry the silent-omission clause with its "never itself a second
+  failure" half, and both state the report says what the call did, never why
+  FFmpeg refused, naming the copy-into-incompatible-container, unknown-encoder
+  and missing-directory causes.
+- **AC6** — `Rscript -e 'devtools::test()'`: 0 failures, 8792 passing, 12
   warnings, 5 skips (baseline on `master` before the branch: 0 / 8493 / 12 / 5;
-  previous review round: 8633, the +110 being AC3's eleven-extension test).
-  `Rscript -e 'devtools::check()'`: `Status: OK` — 0 errors, 0 warnings, 0
-  notes, 11m 1s. Nothing to justify.
+  previous review round: 8743). `Rscript -e 'devtools::check()'`: `Status: OK` —
+  0 errors, 0 warnings, 0 notes, 4m 56s. Nothing to justify.
 
 ### Consistency gate
 
@@ -259,117 +263,76 @@ evidence below is fresh, by command, in this session.
 Full three-lens fan-out (the diff touches executable surface and the declared
 tier is user-facing). Findings ranked as reported, with dispositions.
 
-**[O] diff-bug lens** — no bug in the gate logic itself. It confirmed
-`holds_multiple_audio()` is `NA`- and zero-length-safe (`NA_character_` →
-`FALSE`; `character(0)` → `logical(0)`, so `bad[!logical(0)]` is `integer(0)`),
-that the reordered branch is behaviourally equivalent to the old single `if` on
-the paths it does not change, that `(bad + 1L) %/% 2L` still names the caller's
-input rows after the drop, and that `tools` is already in Imports, no assertthat
-was added, the helpers are unexported Layer-2 code (IP1/D002), and `man/`
-regenerates identically. Seven findings, all on the list's evidence and on prose.
+**[O] diff-bug lens** — no correctness bug. It re-measured all nine listed
+extensions at exit 0 with three mapped audio streams and all nine absent ones at
+exit 234 under a codec each container natively holds, confirmed `.avi`, `.nut`,
+`.m4b`, `.3gp`, `.wma` and `.asf` take three (so the "exclusion list, not a
+survey" claim is true), confirmed `separate_stream_pipeline()` emits `-map 0:a`
+so the measurement matches the verb's own command, and confirmed
+`holds_multiple_audio()` is `NA`-, no-extension- and zero-length-safe while
+`(bad + 1L) %/% 2L` still names the caller's row after the drop. Check
+discrimination independently: with the predicate forced FALSE in an exported
+copy of HEAD, 95 assertions fail across all six new gate tests. Also confirmed
+`man/` regenerates byte-identically, no assertthat, nothing exported, and no
+command-string gluing (IP1/D002). Five findings, all prose or coverage.
 
-- **F1.** Two of the eleven extensions the milestone recorded as refusing three
-  mapped audio streams — `.ogg` and `.opus` — refuse for a **codec** reason, not
-  a capacity one, so the false blame this milestone exists to remove still fires
-  on them. Re-measured live at review on ffmpeg 9.0.1 with the three-AAC-track
-  fixture: `-c:a copy` into `.ogg` and `.opus` fails with "Unsupported codec id
-  in stream 0", while `-c:a libopus` into either exits 0 carrying three distinct
-  audio streams — the same shape as `.webm`, which the milestone measured, named
-  as a codec refusal in the work log, and put in the list. The other nine say so
-  in their own words and are genuine capacity refusals ("Exactly one MP3 audio
-  stream is required", "wav muxer does not support more than one stream of type
-  audio", "AIFF allows only one audio stream", and so on; `.wv` refuses three
-  even under `wavpack`). Verified end-to-end through the verb:
-  `separate_audio_video(3-track.mkv, "a.ogg", "v.mp4")` at the defaults still
-  raises `tidymedia_multitrack_separation` saying "keep all 3 by writing a
-  container that holds several" — into a container that holds three. `.webm`
-  through the identical call does not. The source comment at `R/ffmpeg.R:644`
-  ("Refused with exit 234, and so deliberately absent: mp3, wav, aac, flac, ogg,
-  opus, …") is therefore false of two of the eleven it lists. **No criterion
-  fails:** AC4 quantifies over the extensions the list *holds* and sets a
-  membership floor, not completeness; AC3's binding content is that behaviour on
-  those eleven is unchanged, which it is. But adding `.ogg` and `.opus` to
-  `multi_audio_extensions` — the repair the milestone's own `.webm` reasoning
-  demands — would falsify AC3's enumerated domain and AC4's seven, so it cannot
-  be a plain fix-now. **Disposition: maintainer's decision at the gate** — fix
-  now under an AC3/AC4 amendment return, or follow-up onto the M45-F1 candidate
-  row. Recommended: fix now.
-- **F2.** `NEWS.md:561` says the old report "was attached to *any* failing audio
-  command on a multi-track input". False of the pre-change code:
-  `git show master:R/ffmpeg.R` line 659 fell open on `is.na(status)`, so a
-  timeout or a missing binary never got the report. This is the same claim the
-  AC1 amendment round removed from `?separate_audio_video`; it survived in NEWS
-  as a statement about past behaviour. **Disposition: fix now** — one clause.
-- **F3.** The second half of the batch-gate comment is wrong. `R/ffmpeg.R:887`
-  says filtering later "would leave '3 audio outputs failed' above one bullet",
-  but `warn_failed_separation()` applies its own `keep <- !is.na(n) & n > 1` and
-  builds the headline from `length(rows)` *after* it (`R/ffmpeg.R:819-841`), so
-  a later filter would have kept the count consistent. The FFprobe-cost reason
-  above it is sound and carries the placement on its own. **Disposition: fix
-  now** — drop the false clause.
-- **F4.** The seven extensions are hand-enumerated in three places
-  (`R/ffmpeg.R:1015` scalar roxygen, `R/ffmpeg.R:6043` batch roxygen,
-  `NEWS.md:562`) with nothing binding them to `multi_audio_extensions`; the AC4
-  test asserts the vector *contains* the seven but never that the pages *equal*
-  it, so adding a container leaves both help pages short. The package already
-  interpolates R into roxygen (`audio_stream_param()`, `R/ffmpeg.R:965`).
-  **Disposition: follow-up** — a maintenance hazard, not a defect in shipped
-  behaviour, and its trigger is exactly F1's repair.
-- **F5.** The AC4 test drives `webm` through `libopus`, an external encoder a
-  build need not carry, with no `skip_if_not`; only the Linux CI jobs install
-  ffmpeg (`.github/workflows/R-CMD-check.yaml`, distro ffmpeg), and this test
-  file's own header records M27's lesson about assuming CI's older ffmpeg.
-  **Disposition: follow-up** — a real portability bet, but CI on this PR is the
-  measurement that settles it, and a guard added blind is a guess.
-- **F6.** Work-log line 132 says the shared `separation_container` sentence is
-  "pasted into fourteen verbs' `@param audio_stream` text"; `grep -rn
-  separation_container R/` returns two sites. Fourteen is the reach of
-  `audio_stream_param()`, not of this extra. **Disposition: reject** — the work
-  log is an append-only record of what the gate believed at the time, the
-  decision's outcome does not turn on the number, and rewriting past entries is
-  what the append-only convention forbids.
-- **F7.** `tests/testthat/test-separate-av-multitrack.R:1074`'s
-  `expect_no_error` is the one assertion in the new loops without `info = ext`.
-  **Disposition: fix now** — one argument.
+- **F1.** Two test comments still say *seven* where the list now holds nine:
+  `tests/testthat/test-separate-av-multitrack.R:1055` ("reads the same 3 out of
+  every one of the seven") and `:1094` ("the same failure reaches all seven").
+  T8 corrected the source comment, both help pages and `NEWS.md` and missed
+  these two — the same hand-enumeration drift class this milestone has now
+  shipped twice. **Disposition: fix now.**
+- **F2.** The source comment above `multi_audio_extensions` says the nine absent
+  extensions were "Refused with exit 234 under every codec the container holds".
+  T8's record measures one second run per container, not every codec; the lens
+  spot-checked three more (`caf`/`alac`, `caf`/`pcm_s16be`, `w64`/`pcm_f32le`)
+  and all still refuse, so the claim is likely true but is stronger than the
+  evidence recorded. **Disposition: fix now** — narrow the comment to what was
+  measured.
+- **F3.** `?separate_audio_video`'s "Fail any of the four and the error you get
+  is the one the run itself raised — same class, same exit status, same
+  message…" is loose on one of the four legs it enumerates: when the failing leg
+  is the non-zero exit itself (a missing binary), there is no exit status to be
+  the same. The next paragraph states this correctly, so the page self-corrects,
+  but the sentence is inaccurate for a case it names. **Disposition: fix now** —
+  one clause.
+- **F4.** Batch-side case-insensitivity is untested: `tolower()` is exercised
+  only through the scalar path, and AC2's two batch tests use lowercase
+  extensions. The predicate is shared, so the behaviour follows, but a
+  batch-side regression on the extension read would not go red.
+  **Disposition: follow-up** — a coverage gap, not a defect in shipped
+  behaviour.
+- **F5.** Milestone work-log lines still say "seven" (98, 141, 143, 146, 152,
+  157). **Disposition: reject** — those are dated history entries recording what
+  T1–T5 did before T8 added the two, and the work log is append-only.
 
-**[S] blame-history lens** — no defect. It traced the touched regions through
-M45, M85–M090 and D024/D062/D065/D068/D069/D070 and confirmed in code, not only
-in comments, that `abort_after_video()` (`R/ffmpeg.R:772-798`) is untouched and
-that the new branch falls through to the same `stop(cnd)` the pre-existing
-`is.na(status)` branch uses, so M090's video-written bullet and `tm_video_error`
-attach identically on all three fail-open branches. It read the narrowing of
-M45's diagnostic as documented and intentional (D069 plus the M45-F1 candidate
-row updated in the same commit), and found no contradiction with D024's
-diagnostic licence or D062's class-naming rule. No findings.
+**[S] blame-history lens** — no findings. It traced the M45 → M085 → M090 → M091
+lineage against D024, D045/D046, D062, D065/D066, D068, D069, D070 and D071,
+`LESSONS.md`'s M38 entry, the M45-F1 candidate row and M090's archive summary,
+and confirmed in code that `stop(cnd)` re-raises the original condition so
+`abort_after_video()`'s bullet and `tm_video_error` attach identically on all
+three fail-open branches. It read the narrowing of M45's diagnostic as
+documented and intentional and found no contradiction with D024's diagnostic
+licence or D062's class-naming rule.
 
-**[S] prior-review-record lens** — no findings. It traced every review-directed
-item from the previous round against `master..HEAD` and found each addressed:
-F1 (batch page's unenforced exit-status condition) by the AC5 narrowing, F2
-(D069's already-satisfied falsifier, exhaustive-sounding prose) by the reworded
-falsifier and the "exclusion list and not a survey" clause on both pages, F3
-(`NEWS.md` overstating `.webm`) by the encoder caveat, F4 (missing rlang
-qualifier) on the scalar page, F7 (AC3 covered two of eleven) by the
-eleven-extension test. It re-raised nothing. The `.webm` codec-refusal test's
-missing version-conditional skip was noted as already adjudicated last round
-(reject with reason: a loud red, not M45's silent green) and left there. The
+**[S] prior-review-record lens** — no findings. It verified every fix-now item
+from the previous round landed in this diff: the `.ogg`/`.opus` gate (previous
+F1), `NEWS.md`'s "any failing audio command" (F2), the false headline-count
+clause in the batch-gate comment (F3), and the unlabelled `expect_no_error`
+(F7). It confirmed the rejected F6 work-log line was correctly left untouched
+and that F4 and F5, triaged follow-up last round, are still open by disposition
+rather than newly reintroduced. The
 `gh api repos/jmgirard/tidymedia/pulls/comments?per_page=1` probe returned `[]`,
-so no PR-thread walk ran, as on the previous two rounds.
+so no PR-thread walk ran, as on the previous three rounds.
 
 ### Outcome
 
 All six criteria verified as written with fresh evidence; the consistency gate
-is clean; the AC5 amendment holds. No finding demonstrates a criterion failing,
-so review does not return the milestone on the floor. F1 is the open question
-for the gate: it is not a criterion failure, but it is an instance of the very
-false blame the Goal names, on two containers the milestone's own T1 measured
-and misclassified, and the repair falsifies AC3's enumerated domain and AC4's
-seven — so it is fix-now-under-amendment or follow-up, and that is the
-maintainer's call. F2, F3 and F7 are mechanical fix-now corrections; F4 and F5
-are follow-ups; F6 is rejected.
-
-**Gate decision, 2026-08-30:** return, gating `.ogg` and `.opus` too. M091 goes
-back to `in-progress` for the AC3/AC4 criterion amendment under
-`/milestone-implement` step 6 — that amendment and F2/F3/F7's fix-now work are
-the only work convened — and then re-review. AC3 and AC4 lose their
-verification marks here because their wording is what changes; AC1, AC2, AC5 and
-AC6 keep theirs on the evidence above. Not merged; no approval marker written.
+is clean; the AC3/AC4 amendment holds, and the behaviour it was returned for is
+fixed — `separate_audio_video()` on a three-track input into `.ogg` or `.opus`
+at the defaults now raises FFmpeg's own condition rather than the multi-track
+diagnostic, measured live at review, while `.mp3` keeps it. No driving RR, so no
+projection to measure against. No finding demonstrates a criterion failing and
+none is a load-bearing defect in shipped behaviour, so review does not return
+the milestone on the floor. F1, F2 and F3 are mechanical prose corrections
+proposed fix-now; F4 is a follow-up; F5 is rejected.

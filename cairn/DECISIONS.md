@@ -3282,10 +3282,12 @@ what counts as having measured one.
 
 ## D072 — A deferred finding about an instrument closes only where the gap lets a defect in shipped behaviour reach a user; the page that carried them is retired (2026-08-30, from M092; retires the working artifact D040/D041/D049/D050/D059 accumulated onto, and supersedes nothing — every entry those five state stays in force)
 
-`cairn/references/instrument-findings.md` held eight sections and 53 review
-findings about tidymedia's own **instruments** — the guards, sweeps, grids and
-harnesses that measure the package, rather than the runtime they measure. Every
-one had been logged rather than actioned at its own review. Its own header said
+`cairn/references/instrument-findings.md` held eight sections and 53 still-open
+review findings about tidymedia's own **instruments** — the guards, sweeps,
+grids and harnesses that measure the package, rather than the runtime they
+measure. (Its text carries 57 finding ids; four of them it already records as
+closed or promoted, so 53 is the live set this triage inherited.) Every one had
+been logged rather than actioned at its own review. Its own header said
 no finding on it was a defect in shipped behaviour. A backlog whose entry
 condition is "not a defect" has no exit condition, and the page's own history is
 the measurement that it had stopped being a queue: created 2026-08-28, grown by
@@ -3312,7 +3314,8 @@ status a caller reads. M087's pass-2 F5: the class-pairing probes caught with
 `condition = function(e) e`, taking the first condition a site signalled, so a
 `tidymedia_`-classed warning raised before the abort would be asserted against
 help topics for a site nobody tested. M091's round-4 finding, the page's eighth
-*section*: the container gate's case fold was exercised at the scalar site only, so an exact-case match at the
+*section*: the container gate's case fold was exercised at the scalar site
+only, so an exact-case match at the
 batch site would leave the suite green while `.MKA` rows kept drawing the false
 blame D069 exists to remove.
 
@@ -3331,7 +3334,7 @@ too.
 review still files what it finds, and a finding still gets logged rather than
 actioned where the score says so. This governs what happens to one afterwards —
 that a logged instrument finding is triaged to close or prune at the next pass
-over it, never carried a sixth time. And it settles no future finding in
+over it, never carried forward a second time. And it settles no future finding in
 advance: the ledger records a reason per id because the rule needs applying, not
 looking up.
 

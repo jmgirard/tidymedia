@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-29 (M089 in review; it absorbed the budget row and the second-doctrine-module row, graduated the front-door guard-ordering family into `references/guard-ordering.md`, grouped the engine-extension trio and the memoization pair, and filed the review's false-greens headroom row. Budgets: ROADMAP 21,981/24,000 over 44/60; LESSONS 16,835/20,000 over 28/50; guard-ordering 5,451/11,000 over 27/31; false-greens 25,810/26,000 over 55/60.)_
+_Last hygiene check: 2026-08-29 (M089 done and archived; it graduated the front-door guard-ordering pair into `references/guard-ordering.md`, absorbed the budget and second-doctrine-module rows, grouped the engine-extension trio and the memoization pair, filed the false-greens headroom row, and pruned M084's terminal row. Budgets: ROADMAP 21,849/24,000 over 43/60; LESSONS 17,349/20,000 over 29/50; guard-ordering 5,451/11,000 over 27/31; false-greens 25,810/26,000 over 55/60.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M089 | The guard-ordering family graduates and the tracking files get headroom | review | — | normal | milestones/M089-tracking-budget-headroom.md |
+| M089 | The guard-ordering family graduates and the tracking files get headroom | done | — | normal | milestones/archive/M089-tracking-budget-headroom.md |
 | M088 | A failed audio half no longer costs the caller the video | done | — | normal | milestones/archive/M088-separation-video-after-audio-failure.md |
 | M087 | A diagnostic answers to the same class from the scalar verb and its batch sibling | done | — | normal | milestones/archive/M087-scalar-batch-condition-classes.md |
 | M086 | The catchable failure reaches the two paths M085 left behind | done | — | normal | milestones/archive/M086-catchable-failure-leftovers.md |
 | M085 | A failed FFmpeg run is a condition you can catch | done | — | normal | milestones/archive/M085-ffmpeg-error-condition.md |
-| M084 | LESSONS gets back under its budget, and its biggest family graduates | done | M083 | normal | milestones/archive/M084-lessons-budget-doctrine.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

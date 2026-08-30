@@ -1,11 +1,11 @@
 # M094: An invalid `tidymedia.timeout` is refused by the function the caller typed
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m094-timeout-refusal-blame`
 
 ## Goal
 
@@ -106,6 +106,7 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
 - 2026-08-30: plan gate chose D042's front-door re-call over a `call` argument on the exported builders (`ffm_run()`, `ffm_batch()`, `ffmpeg()`, `mediainfo_parameter()`) because D042 already rejected that shape as API surface with an audience of one, and its carve-out still allows threading `call` through the internal `mediainfo_read()`/`probe_one()`; falsified by a shared checker whose abort cannot be aimed at a Layer-2 caller from the verb's own frame.
 - 2026-08-30: plan gate chose refusing at `run = FALSE` on both forms over keeping `run = FALSE` a pure compile, because `R/ffm_batch.R:96-99` already made that choice for the batch form and the scalar/batch split is itself the defect; falsified by a report of a dry-run compile refused on a limit that run would never have read.
 - 2026-08-30: plan gate chose this scope over the M071 F9 option-rollback fix because the rollback was measured to be `future`'s own (it restores `options()` at every future boundary, sequential plan included), leaving nothing for the package to fix; falsified by a `future` release that stops restoring options across the boundary. Recorded as D073.
+- 2026-08-30: implement started on `m094-timeout-refusal-blame`; master blame baseline re-measured at 53 domain members, 6 already correct (`ffm_batch`, `ffm_run`, `ffmpeg`, `ffprobe`, `mediainfo`, `mediainfo_parameter`).
 
 ## Decisions
 

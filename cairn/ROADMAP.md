@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-30 (M094 planned; the M071 F9 option-rollback candi
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M094 | An invalid `tidymedia.timeout` is refused by the function the caller typed | planned | — | normal | milestones/M094-timeout-refusal-blame.md |
+| M094 | An invalid `tidymedia.timeout` is refused by the function the caller typed | in-progress | — | normal | milestones/M094-timeout-refusal-blame.md |
 | M093 | The separation help pages render their container list from the vector | done | — | normal | milestones/archive/M093-separation-container-list-generated.md |
 | M092 | The deferred-findings backlog is triaged and the page retired | done | — | normal | milestones/archive/M092-instrument-backlog-triage.md |
 | M091 | The multi-track advice stops arriving when the caller is already following it | done | — | normal | milestones/archive/M091-separation-diagnostic-container-gate.md |

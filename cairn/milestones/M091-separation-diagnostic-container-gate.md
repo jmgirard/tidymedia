@@ -336,3 +336,15 @@ projection to measure against. No finding demonstrates a criterion failing and
 none is a load-bearing defect in shipped behaviour, so review does not return
 the milestone on the floor. F1, F2 and F3 are mechanical prose corrections
 proposed fix-now; F4 is a follow-up; F5 is rejected.
+
+**Gate decision, 2026-08-30:** approved for merge with F1, F2 and F3 fixed
+first. F1: both test comments now say nine. F2: the source comment's "under
+every codec the container holds" replaced by a pointer to the paragraph below,
+which is where the per-container evidence actually is. F3: the scalar page's
+fail-open sentence now says "same status field" and adds that a run which never
+reached FFmpeg carries no exit status. All three are comment and roxygen text —
+`git diff -- R/ffmpeg.R` contains no non-comment line — and
+`test-separate-av-multitrack.R` re-ran green afterwards, 474 assertions, 0
+failures, 0 skips; `devtools::document()` rewrote `man/separate_audio_video.Rd`
+alone; `cairn_validate` exit 0. F4 goes to a candidate row at the hygiene pass;
+F5 stands rejected.

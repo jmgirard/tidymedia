@@ -127,10 +127,12 @@ gets the report. The container condition keeps the report off a call that is
 already doing what the report would advise: writing to one of the nine, the
 failure cannot be the container refusing a second audio stream, so whatever
 FFmpeg did object to would go unnamed. Fail any of the four and the error you
-get is the one the run itself raised — same class, same exit status, same
-message, but for the line saying the video output was written, which a failing
-audio half carries when the video command wrote its file and the audio failure
-is an rlang condition.
+get is the one the run itself raised, whatever that error is — same class,
+same status field, same message, but for the line saying the video output was
+written, which a failing audio half carries when the video command wrote its
+file and the audio failure is an rlang condition. (When the leg that fails is
+the exit status itself, there is no exit status to carry: a run that never
+reached FFmpeg has none.)
 
 What the report states is what the call \emph{did} — the track count, and that
 every track was mapped into one output — never why FFmpeg refused. FFmpeg's

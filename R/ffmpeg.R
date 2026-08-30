@@ -641,9 +641,9 @@ separate_stream_pipeline <- function(input, output, stream, codec = "copy",
 # track fixture (make_multitrack_video(): three AAC streams) out with
 # `-map 0:a`. Every extension here exited 0 carrying three audio streams --
 # under `-c:a copy` for all but `webm`, `ogg` and `opus`, which hold no AAC and
-# took `-c:a libopus`. Refused with exit 234 under every codec the container
-# holds, and so deliberately absent: mp3, wav, aac, flac, wv, caf, aiff, au,
-# w64.
+# took `-c:a libopus`. Refused with exit 234, and so deliberately absent: mp3,
+# wav, aac, flac, wv, caf, aiff, au, w64 -- each for a capacity reason, on the
+# evidence the paragraph below gives.
 #
 # A refusal under ONE codec is not a capacity refusal, and reading it as one is
 # how `ogg` and `opus` were first left off this list (D071). Each of the nine
@@ -1029,10 +1029,12 @@ ffmpeg_exit_status <- function(cnd) {
 #' already doing what the report would advise: writing to one of the nine, the
 #' failure cannot be the container refusing a second audio stream, so whatever
 #' FFmpeg did object to would go unnamed. Fail any of the four and the error you
-#' get is the one the run itself raised — same class, same exit status, same
-#' message, but for the line saying the video output was written, which a failing
-#' audio half carries when the video command wrote its file and the audio failure
-#' is an rlang condition.
+#' get is the one the run itself raised, whatever that error is — same class,
+#' same status field, same message, but for the line saying the video output was
+#' written, which a failing audio half carries when the video command wrote its
+#' file and the audio failure is an rlang condition. (When the leg that fails is
+#' the exit status itself, there is no exit status to carry: a run that never
+#' reached FFmpeg has none.)
 #'
 #' What the report states is what the call \emph{did} — the track count, and that
 #' every track was mapped into one output — never why FFmpeg refused. FFmpeg's

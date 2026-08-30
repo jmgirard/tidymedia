@@ -1052,7 +1052,7 @@ gate_capacity_codec <- function(ext) {
 # Distinct audio stream indices in `path`. count_audio_streams() would do, but
 # MPEG-TS lists its streams once per program, so a three-track `.ts` reports six
 # there -- a property of ffprobe's listing, not of the container. Counting
-# distinct indices reads the same 3 out of every one of the seven.
+# distinct indices reads the same 3 out of every one of the nine.
 distinct_audio_streams <- function(path) {
   skip_if_no_ffprobe()
   idx <- trimws(ffprobe(sprintf(
@@ -1091,7 +1091,7 @@ test_that("every listed container carries three mapped audio streams", {
 
 test_that("a listed container falls open to ffm_run()'s own condition", {
   # AC1, per listed extension. The trigger is an encoder no FFmpeg build has,
-  # which fails whatever the container -- so the same failure reaches all seven
+  # which fails whatever the container -- so the same failure reaches all nine
   # and the extension is the only thing that varies.
   #
   # BOTH halves are given that encoder on purpose. With the video half failing

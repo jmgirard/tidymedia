@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M091: The multi-track advice stops arriving when the caller is already following it
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -137,6 +137,7 @@ that it reports what the call did rather than why FFmpeg refused.
 - 2026-08-30: mini gate chose correcting the falsified "unchanged" prose without binding it in a criterion over also extending AC5 to cover the corrected sentence, because this milestone already carries one return and widening the criteria set after a return is how one return becomes three, while the correction ships either way; falsified by the same sentence drifting false again with no criterion holding it.
 - 2026-08-30: the amendment landed. AC1 amended as above; `R/ffmpeg.R:689`, the two scalar help-page sentences and the `NEWS.md` entry corrected, all of which said the caller gets the run's own error "unchanged"; D070 recorded, superseding D069's rule paragraph alone. T5 gained a per-extension video-succeeds test asserting the message is `ffm_run()`'s plus exactly one trailing line. Check discrimination both ways: suppressing the video bullet turns that test red at 21 assertions, forcing the container gate FALSE turns it red at 42, and neither plant leaves it green.
 - 2026-08-30: amendment complete. `Rscript -e 'devtools::test()'` 0 failures / 8633 passing / 12 warnings / 5 skips (before the amendment: 0 / 8563 / 12 / 5; the +70 is the seven-extension video-succeeds test). `Rscript -e 'devtools::check()'` Status: OK -- 0 errors, 0 warnings, 0 notes. `devtools::document()` rewrote `man/separate_audio_video.Rd` alone. `cairn_validate` exit 0. Status -> review.
+- 2026-08-30: amendment return: AC5 — "each state that the diagnostic fires only when no `audio_stream` was named, FFmpeg returned a non-zero exit, the input carries more than one audio track, and the output extension is not on the list". Measured at review: `warn_failed_separation_batch()` selects on `!out$success` alone and `ffm_batch()`'s `run_one()` sets `success = FALSE` for a hard error or a reached limit too, so the exit-status condition AC5 requires the BATCH page to state is not one the batch verb enforces — a timed-out audio row on a multi-track input into an unlisted container does reach the warning. The scalar half of AC5 is sound; the batch half is the clause to narrow. Maintainer's decision at the gate, over accepting the mismatch or narrowing the batch code (not cheaply implementable: no per-row exit status survives `ffm_batch()`). Review's other findings F2, F3, F4 and F7 were directed fix-now into the same round. All six criteria verified as written; consistency gate clean; PR #95 open as a draft.
 
 ## Decisions
 
@@ -241,7 +242,9 @@ documentary and records surface.
   deliberate parity that is not there. The ROADMAP already records the
   underlying behaviour ("the warning fires for any failure cause"). AC5 requires
   the batch page to state that very condition, so no repair of the page leaves
-  AC5 satisfied as written. **Disposition: to the maintainer at the gate.**
+  AC5 satisfied as written. **Disposition: amendment return on AC5** (maintainer's
+  decision at the gate). AC5 is wrong: it requires the batch page to document a
+  condition the batch verb does not implement. Review stops here.
 - **F2.** D069's stated falsifier is already satisfied on the day it is written,
   and both help pages read as exhaustive. `cairn/DECISIONS.md:3199` names "an
   unlisted one that accepts several" as what would falsify the entry.
@@ -252,14 +255,16 @@ documentary and records surface.
   the seven "the containers that hold several", which reads as exhaustive rather
   than as the exclusion list the code comment correctly says it is, so a caller
   writing to `.avi` still gets the false blame. AC4 sets only a membership floor,
-  so no criterion fails. **Disposition: to the maintainer at the gate.**
+  so no criterion fails. **Disposition: fix now, in the amendment round** — reword
+  D069's falsifier, and name the list as non-exhaustive on both pages.
 - **F3.** `NEWS.md` overstates `.webm`, calling the seven containers "every one
   of which takes three audio tracks without complaint". Re-measured at review:
   `.webm` refuses the three AAC tracks at exit 234 under `-c:a copy` and takes
   three only under `libopus` (exit 0). The code comment, the work log and the
   test helper all state this; NEWS does not, so a reader of NEWS alone would
   conclude a default `separate_audio_video(x, "a.webm", ...)` succeeds.
-  **Disposition: to the maintainer at the gate.**
+  **Disposition: fix now, in the amendment round** — one clause naming the
+  encoder `.webm` needs.
 - **F4.** The scalar page's video-bullet clause drops the rlang qualifier the
   amended AC1 was careful to add: `R/ffmpeg.R:1017` says the note is one "which
   any failing audio half carries when the video command wrote its file", while
@@ -267,7 +272,8 @@ documentary and records surface.
   (`R/ffmpeg.R:792`). Verified by reading that guard. Not reachable today — the
   causes raising a bare condition stop the video command too, as the comment
   there states — but the page promises unconditionally what the code refuses
-  conditionally. **Disposition: to the maintainer at the gate.**
+  conditionally. **Disposition: fix now, in the amendment round** — carry AC1's own
+  rlang qualifier onto the page.
 - **F5.** The same sentence promises "same class, same exit status, same
   message" for cases that have no exit status. **Disposition: reject.** The
   sentence's subject is "the error you get is the one the run itself raised"; the
@@ -280,8 +286,9 @@ documentary and records surface.
   measured — which a rewrite would erase.
 - **F7.** AC3's durable coverage is two extensions of eleven (`.mp3` and
   `.aac`); review verified all eleven by hand, twice now, but nothing in
-  `tests/testthat/` holds the other nine. Confirmed. **Disposition: to the
-  maintainer at the gate.**
+  `tests/testthat/` holds the other nine. Confirmed. **Disposition: fix now, in
+  the amendment round** — a vector of the eleven, iterated in the test file, so the
+  unchanged-wording guarantee is held by the suite rather than by a review script.
 - **F8.** The ROADMAP hygiene stamp's byte figure is stale — it records "ROADMAP
   21,612/24,000 over 43/60" where `wc -c -l` measures 22,838 over 44.
   Pre-existing on `master`. **Disposition: resolved by this review's own hygiene
@@ -324,3 +331,14 @@ with reason** — the failure mode here is a loud red, not the silent green M45'
 lesson guards against: if a build accepted AAC into WebM the test's first
 assertion would fail. The `gh api .../pulls/comments` probe returned empty, so no
 PR-thread walk ran, on this round as on the last.
+
+### Outcome
+
+Review returns M091 to `in-progress` for a criterion amendment on AC5 alone,
+the maintainer's decision at the gate over accepting the mismatch or narrowing
+the batch code. Every criterion including AC5 is verified as written with fresh
+evidence, the consistency gate is clean, and no finding demonstrates a defect in
+what the code does — F1 is a defect in what a criterion made the docs promise.
+The amendment round also carries the F2, F3, F4 and F7 fix-now work directed
+here, all of it in the roxygen, `NEWS.md`, `DECISIONS.md` and test surfaces the
+AC5 repair already touches.

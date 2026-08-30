@@ -95,10 +95,10 @@ and what remedy each of the three tracked files got.
       of the moved text by `diff` against the base commit; check `wc -l -c`.
 - [x] T4 Add the module to `cairn/references/INDEX.md` under "Working
       artifacts", in the form the other five rows use.
-- [ ] T5 In `cairn/ROADMAP.md`: delete the two candidate rows this milestone
+- [x] T5 In `cairn/ROADMAP.md`: delete the two candidate rows this milestone
       absorbs (the second-doctrine-module row and the budget row), add the M089
       row, replace the hygiene stamp.
-- [ ] T6 Compress the widest remaining candidate rows until `wc -c` is under
+- [x] T6 Compress the widest remaining candidate rows until `wc -c` is under
       22,000 and `wc -l` is 44 or fewer, checking each edited row after the
       edit that its promote trigger survived.
 - [ ] T7 Confirm `cairn/references/false-greens.md` is untouched: `git diff`
@@ -124,6 +124,9 @@ and what remedy each of the three tracked files got.
 - 2026-08-29: T3 — both lines deleted from `cairn/LESSONS.md`; the header's pointer now names `references/guard-ordering.md` alongside `references/false-greens.md`. `wc -l -c` reports 28 lines / 16,835 bytes (AC3's 28 / 17,500); `grep -F` for a distinctive phrase from each graduated entry returns 0 hits; `diff` against `056fd63` re-confirms the moved text byte-identical.
 
 - 2026-08-29: T4 — `guard-ordering.md` listed in `cairn/references/INDEX.md` under "Working artifacts", in the same `citekey — short title — produced/graduated by M<NN>` form the other five rows use.
+
+- 2026-08-29: T5 — the second-doctrine-module row and the budget row deleted from `cairn/ROADMAP.md` (both absorbed by this milestone); the M089 row was already present from planning; the hygiene stamp replaced and resolved to its own byte count by fixed point.
+- 2026-08-29: T6 — grouped the memoization pair (`find_ffmpeg()` unmemoized; M67's per-process memo) into one row and the M31 encoder-surface trio (quality/rate-control knob; GPU decode + `-hwaccel`; other hardware backends) into another, and compressed the instrument-findings row. `wc -l -c` reports 43 lines / 21,773 bytes (AC4's 44 / 22,000). The trio's three source rows named blockers but no promote trigger; the grouped row supplies one. AC7 checked by `git diff --unified=0` against `056fd63`: three rows show as edited, each names a promote trigger.
 
 ## Decisions
 

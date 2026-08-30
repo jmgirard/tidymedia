@@ -348,3 +348,12 @@ reached FFmpeg carries no exit status. All three are comment and roxygen text â€
 failures, 0 skips; `devtools::document()` rewrote `man/separate_audio_video.Rd`
 alone; `cairn_validate` exit 0. F4 goes to a candidate row at the hygiene pass;
 F5 stands rejected.
+
+**CI, 2026-08-30:** every build and test job green (macOS, Windows, Ubuntu
+release / devel / oldrel-1 / 4.1.0, pkgdown, test-coverage) and `codecov/patch`
+pass at 100% of the diff hit. `codecov/project` red: 96.65% against 96.67% on
+`master`, one more missed line in `R/ffmpeg.R` (117 â†’ 118 of ~3,525) on the CI
+runner's distro ffmpeg, which the local suite covers. The repo carries no
+`codecov.yml`, so the failing bar is codecov's default "no decrease at all".
+User override at the gate, logged here and in the work log: merge, treating that
+check as advisory.

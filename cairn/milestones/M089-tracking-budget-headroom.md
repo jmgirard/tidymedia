@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m089-tracking-budget-headroom`
+- **Branch/PR:** `m089-tracking-budget-headroom` — https://github.com/jmgirard/tidymedia/pull/93
 
 ## Goal
 
@@ -44,30 +44,30 @@ and what remedy each of the three tracked files got.
 
 ## Acceptance criteria
 
-- [ ] AC1 `cairn/references/guard-ordering.md` exists, carries exactly the two
+- [x] AC1 `cairn/references/guard-ordering.md` exists, carries exactly the two
       graduated entries one per line, and its header states a line budget and a
       byte budget set from the graduated size plus headroom the header itself
       states (the maturation exit's rule).
-- [ ] AC2 Each of the module's two entry lines is byte-identical to the
+- [x] AC2 Each of the module's two entry lines is byte-identical to the
       `cairn/LESSONS.md` line it left: `diff` between the module's entry lines
       and those same lines extracted from `cairn/LESSONS.md` at this
       milestone's base commit reports no difference.
-- [ ] AC3 `wc -c cairn/LESSONS.md` reports fewer than 17,500 bytes and
+- [x] AC3 `wc -c cairn/LESSONS.md` reports fewer than 17,500 bytes and
       `wc -l` reports 28 or fewer, and `grep -F` for a distinctive phrase from
       each graduated entry finds neither in the file.
-- [ ] AC4 `wc -c cairn/ROADMAP.md` reports fewer than 22,000 bytes and `wc -l`
+- [x] AC4 `wc -c cairn/ROADMAP.md` reports fewer than 22,000 bytes and `wc -l`
       reports 44 or fewer, measured after this milestone's own row and its
       replacement hygiene stamp are in the file.
-- [ ] AC5 `wc -l -c cairn/references/false-greens.md` reports fewer than 60
+- [x] AC5 `wc -l -c cairn/references/false-greens.md` reports fewer than 60
       lines and fewer than 26,000 bytes, and the figures in the module's own
       header are unchanged from the base commit.
-- [ ] AC6 `cairn/DECISIONS.md` gains one entry naming, for each of the three
+- [x] AC6 `cairn/DECISIONS.md` gains one entry naming, for each of the three
       tracked files, whether its budget is repo-owned or the plugin's and which
       remedy it got here.
-- [ ] AC7 Every ROADMAP candidate row this milestone's diff shows as edited
+- [x] AC7 Every ROADMAP candidate row this milestone's diff shows as edited
       (enumerated by `git diff --unified=0` against the base commit) still
       names a promote trigger in its post-change text.
-- [ ] AC8 `python3 .../cairn_validate.py` exits clean, and every plan-owned
+- [x] AC8 `python3 .../cairn_validate.py` exits clean, and every plan-owned
       section of this file is under the 150-line cap it reports.
 
 ## Coverage
@@ -138,3 +138,37 @@ and what remedy each of the three tracked files got.
 ## Decisions
 
 ## Review
+
+_Reviewed 2026-08-29 on branch `m089-tracking-budget-headroom`, PR #93, against base `056fd63`. Default branch `master` is at `056fd63` and the branch contains it, so no merge was needed and no evidence is stale._
+
+### Acceptance-criteria evidence
+- **AC1 — pass.** `cairn/references/guard-ordering.md` exists at 27 lines / 5,451 bytes. Its `## Entries` section holds exactly two lines (file lines 26 and 27), one graduated entry each. The header states both figures — "fewer than 11,000 bytes and fewer than 31 lines" — and states the headroom they were set from: the shipped size (3,219 graduated bytes over 2 entry lines, plus the header) plus room for about three more members at this family's ~1,600-byte average.
+- **AC2 — pass.** `git show 056fd63:cairn/LESSONS.md | sed -n '16p;23p'` (3,219 bytes) diffed against `sed -n '26,27p' cairn/references/guard-ordering.md`: no difference, exit 0.
+- **AC3 — pass.** `wc -l -c cairn/LESSONS.md` reports 28 lines / 16,835 bytes, against the criterion's 28 and 17,500. `grep -c -F 'silently reassigns error PRECEDENCE'` and `grep -c -F '"last in the front door" is not "last overall"'` each return 0.
+- **AC4 — pass.** `wc -l -c cairn/ROADMAP.md` reports 43 lines / 21,766 bytes, against the criterion's 44 and 22,000, measured with the M089 row and the replacement hygiene stamp both in the file.
+- **AC5 — pass.** `wc -l -c cairn/references/false-greens.md` reports 55 lines / 25,810 bytes, against its header's 60 and 26,000. `git diff 056fd63 -- cairn/references/false-greens.md` is empty, so the header figures are unchanged from the base commit.
+- **AC6 — pass.** `cairn/DECISIONS.md` gains exactly one entry, D067, whose "Which budget belongs to whom" list names all three tracked files: `ROADMAP.md` (plugin-owned, remedy absorb/group/compress), `LESSONS.md` (plugin-owned, remedy retire via the maturation exit), `references/false-greens.md` (repo-owned, remedy none needed and growth unavailable).
+- **AC7 — pass.** `git diff --unified=0 056fd63 -- cairn/ROADMAP.md` shows three candidate rows edited rather than deleted: the instrument-findings row, the grouped memoization pair, and the grouped M31 encoder-surface trio. Each post-change row contains a promote clause — "Promote on a bug reaching a user through one of these gaps…", "Promote (a) on a measured batch stall…; promote (b) on a measured parallel batch…", "Promote any part on the first request naming that part's knob, platform, or backend…".
+- **AC8 — pass.** `python3 cairn_validate.py` exits 0, "all checks passed", with one advisory (the >7-criteria sizing tripwire the plan already weighed). The plan-owned body — everything above `## Work log` — is 109 lines, under the 150-line cap the validator's weight-caps check reports on.
+
+### Independent review
+
+Routing: surface tier internal and `git diff master...HEAD --name-only` lists six paths, all markdown under `cairn/` — no script, hook or other executable surface — so the skill's single-reviewer route applies and only the diff-bug [O] lens was in scope. Deviation from the fresh-context spawn, the same one this milestone's plan phase logged and the user accepted at the plan gate: this session's standing instruction forbids spawning subagents unrequested, so the [O] lens was run inline by this session against `git diff 056fd63..HEAD`, the acceptance criteria, `DESIGN.md` and `DECISIONS.md`. Nothing was filtered before reporting; both candidate findings are below, most severe first.
+
+- **F1 — D067's ROADMAP after-figure is 7 bytes stale.** D067 records the ROADMAP going "48 lines / 23,989 bytes → 43 / 21,773". The base figures check out (`git show 056fd63:cairn/ROADMAP.md | wc -l -c` reports 48 / 23,989), but the shipped file is 43 lines / 21,766 bytes. The T9 work-log line says the module's budget change was carried into "D067's budget paragraph and the ROADMAP hygiene stamp"; the stamp was corrected to 21,766 and this figure was not. No acceptance criterion asks for the figure — AC6 asks only that the entry name each file's owner and remedy, which it does — so this is not a floor return. **Disposition: TBD at the gate.**
+- **F2 — the deleted budget row's one live condition has no successor row.** The absorbed candidate row watched all three tracked files. Two are now clear by wide margins (ROADMAP 2,234 bytes, LESSONS 3,165). `references/false-greens.md` is not: 25,810 of its own header's 26,000, 190 bytes of headroom, and this milestone deliberately left it untouched. This file's Scope/Out block says superseding that budget is "its own milestone, promotable if the module ever breaches 26,000 bytes" — but with the budget row deleted there is no candidate row for that condition to promote from. The figure survives only on the ROADMAP hygiene stamp, which every pass overwrites. No criterion covers it (AC5 asks only that the file be under budget and its header unchanged), so this is not a floor return either. **Disposition: TBD at the gate.**
+
+### Consistency gate
+
+**Universal cairn-file checks.** `cairn_validate.py` exits 0 — all checks passed, one advisory (`sizing`: M089's 8 acceptance criteria against the >7 tripwire, weighed and dismissed at plan time; the `release window` advisory did not fire). No `DESIGN.md` principle is in the diff, so `cairn_impact.py --changed` was skipped.
+
+**Toolchain checks (`r-package` profile's `consistency-gate` slot).**
+- `devtools::check()` — `Status: OK`: 0 errors, 0 warnings, 0 notes.
+- `devtools::document()` — exit 0, no diff in `man/`, `NAMESPACE` or any generated file. No roxygen source is in the diff.
+- `pkgdown::check_pkgdown()` — "No problems found."
+- `devtools::build_readme()` — re-knits cleanly. It reports a diff, but only in two `temp_libpath` strings inside knitted `ffm_compile()` output: `system.file()` resolves to a per-session temporary library, so `README.md` is non-deterministic across machines and sessions in exactly those two lines. Substantively in sync; the churn was reverted rather than committed. Pre-existing and unrelated to this diff.
+- Changelog (`NEWS.md`) — no entry required: no user-visible change. Every path in the diff is markdown under `cairn/`.
+- `.Rbuildignore` — the one new file, `cairn/references/guard-ordering.md`, is covered by the existing `^cairn$` entry; no new top-level file.
+
+**CI.** Draft PR #93 opened at review start so CI ran alongside; state re-derived before merge.
+

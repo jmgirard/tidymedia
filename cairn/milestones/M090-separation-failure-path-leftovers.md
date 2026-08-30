@@ -5,7 +5,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m090-separation-failure-path-leftovers`
+- **Branch/PR:** `m090-separation-failure-path-leftovers` / https://github.com/jmgirard/tidymedia/pull/94
 
 ## Goal
 
@@ -41,14 +41,14 @@ here; D065's one-message reasoning stands.
 
 ## Acceptance criteria
 
-- [ ] AC1 On the both-fail path of `separate_audio_video(run = TRUE)`,
+- [x] AC1 On the both-fail path of `separate_audio_video(run = TRUE)`,
       `cnd$tm_video_error` returns the video run's own condition object; when
       the video command succeeded, `cnd$tm_video_error` returns `NULL`. On both
       of the audio run's two branches — the enriched multi-track diagnostic and
       the `n <= 1L` fall-open — the condition's class vector and `tm_status` are
       the ones the audio run itself raised, and the rendered message names no
       video failure.
-- [ ] AC2 `separate_audio_video()` decides the "The video output was written to"
+- [x] AC2 `separate_audio_video()` decides the "The video output was written to"
       line by comparing an `output_snapshot()` of `videofile` taken before the
       video run against one taken after, not by the run's exit status alone.
       Three tests that mock `ffm_run()` per call, dispatching on `object$output`:
@@ -58,11 +58,11 @@ here; D065's one-message reasoning stands.
       rewrites a `videofile` that already existed — the line is there. The two
       M088 tests that expect the line on a fresh path
       (`test-separate-av-multitrack.R:620` and `:645`) still pass.
-- [ ] AC3 The video-written note reaches the caller as an `i` bullet on every
+- [x] AC3 The video-written note reaches the caller as an `i` bullet on every
       path that renders it, there being one such path; a condition that is not
       an `rlang_error` reaches `stop()` unchanged and without the note, refused
       by an explicit guard rather than by an append `stop()` would discard.
-- [ ] AC4 `?separate_audio_video`'s "When the audio output fails" section states
+- [x] AC4 `?separate_audio_video`'s "When the audio output fails" section states
       that a reached wall-clock limit on the audio command still lets the video
       command run on its own fresh budget, so such a call can wait up to two
       limits rather than one — the behavior D066 measured — and no longer
@@ -130,7 +130,46 @@ here; D065's one-message reasoning stands.
 - 2026-08-30: defect found and fixed in this milestone's own test helper. `local_mocked_bindings(.env = )` names the SCOPE the mock is undone at, not the namespace it is installed in; passing `asNamespace(\"tidymedia\")` scoped the undo to an environment that never exits, so the mocked `ffm_run()` outlived the three T4 cases and 60 tests across six unrelated files failed — the timeout-silence sweep reads the live namespace, where a mocked `ffm_run()` reaches no spawn. Scope is now the calling `test_that()` frame, and a sentinel test asserts the real `ffm_run()` is back; the sentinel was shown red against the planted leak.
 - 2026-08-30: T9 — the unreleased `NEWS.md` separation entry amended in place rather than contradicted: it had stated that nothing reports `videofile`'s fate when the video command failed too, which this milestone falsifies. It now carries the authorship gate, `tm_video_error`, and the second-spawn cost. The second-spawn sentence asserted a behavior no test enforced, so a mocked test now pins that a timed-out audio half still spawns the video command; shown red against a planted pre-M088 early abort.
 - 2026-08-30: T9 — `devtools::test()` 8,489 pass / 0 fail / 12 warn (the 12 are the pre-change baseline) and `devtools::check()` Status: OK (0 errors, 0 warnings, 0 notes). `devtools::document()` produces no diff.
+- 2026-08-30: review opened; PR #94 (draft). AC1-AC4 verified with fresh evidence and ticked; AC5 pending the running `devtools::check()`. Consistency gate so far: `cairn_validate` all-pass, `document()` no diff, `pkgdown::check_pkgdown()` clean, NEWS entry present, no new top-level files. Three review lenses spawned; blame-history and prior-review both returned no findings.
 
 ## Decisions
 
 ## Review
+
+Reviewed 2026-08-30 on `m090-separation-failure-path-leftovers`
+(https://github.com/jmgirard/tidymedia/pull/94), branch merge-clean against
+`origin/master` (nothing in `HEAD..origin/master`).
+
+### Acceptance-criterion evidence
+
+- **AC1** — `test-separate-av-multitrack.R` "the both-fail path carries the
+  video run's own condition" and "a succeeded video command leaves
+  `tm_video_error` NULL", both looping the two audio branches: green in a fresh
+  `test_file()` run. The first pins the class vector per branch
+  (`tidymedia_multitrack_separation`/`tidymedia_ffmpeg_exit`/`rlang_error`/…),
+  `tm_status` against the status in the rendered message, that
+  `cnd$tm_video_error` is a `tidymedia_ffmpeg_exit` naming the encoder and
+  output only the video command was given, and that the caller's message names
+  neither. The second pins `NULL` with the written video file as its control.
+- **AC2** — three mocked-`ffm_run()` cases green ("a video command that
+  succeeds without writing gets no line" on a fresh path, "a pre-existing
+  videofile the run never touched gets no line", "a video run that rewrites an
+  existing videofile gets the line"); source read confirms
+  `before_video <- output_snapshot(videofile)` before `ffm_run(video)` and
+  `wrote <- !identical(output_snapshot(videofile), before_video)` after, with
+  the exit status feeding nothing (`R/ffmpeg.R:1039-1053`). The two M088 tests
+  at master's `:620` and `:645` ("the abort names the video file it wrote", "a
+  brace-bearing video path is not interpolated into the abort") both green.
+- **AC3** — one render path in source: `grep` finds a single
+  `cnd$body <- c(cnd$body, "i" = note)` (`R/ffmpeg.R:731`) and a single
+  "written to" note site (`:718`); the deleted `else` branch is gone. Executed
+  directly this review: `abort_after_video()` on an rlang condition yields
+  `names(out$body) == "i"` and the rendered note. The paired tests are green —
+  bare `simpleError` reaches `stop()` with the same class vector, same message,
+  `body` NULL and no note, while the rlang control through identical arguments
+  does get it.
+- **AC4** — `R/ffmpeg.R:905` `@section When the audio output fails:` now carries
+  the paragraph on the audio limit being held like any other failure, the video
+  command running on a fresh limit of its own, and a call therefore waiting up
+  to two limits rather than one. `grep -c "nothing reports"` returns 0 in both
+  `R/ffmpeg.R` and `man/separate_audio_video.Rd`.

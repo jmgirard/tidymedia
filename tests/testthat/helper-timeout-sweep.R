@@ -387,3 +387,113 @@ tm_program_arg <- function(e, callee) {
   if (is.character(val) && length(val) == 1L) val else NULL
 }
 
+
+# M094: what an invalid `tidymedia.timeout` did on master, recorded ----------
+
+# tm_timeout_bad_forms(): the invalid values `resolve_timeout()`'s own comment
+# names (R/timeout.R:19-26) -- the negative, the fractional, the missing, the
+# string and the length-2 forms. Recorded here rather than at each test site so
+# the sweep and the wording test quantify over the same set, and so a form
+# added to the checker's comment has one place to join.
+tm_timeout_bad_forms <- function() {
+  list(
+    negative = -1,
+    fractional = 0.5,
+    missing = NA,
+    string = "2",
+    length_two = c(1, 2)
+  )
+}
+
+# tm_blame_head(): drive one domain member under `limit` and report the head of
+# whatever condition it raised.
+#
+# The member is called BY NAME, for helper-blame.R's reason: do.call() on a
+# function OBJECT records the anonymous object as the condition call and hides
+# the blame target this sweep exists to watch. `"<none>"` is a real answer, not
+# a failure -- AC1's `has_nvenc()` carve-out is exactly that cell.
+tm_blame_head <- function(name, args, limit) {
+  withr::with_options(list(tidymedia.timeout = limit), {
+    cnd <- tryCatch(
+      do.call(name, args, envir = asNamespace("tidymedia")),
+      error = function(e) e
+    )
+    if (!inherits(cnd, "error")) "<none>" else blamed_verb(cnd)
+  })
+}
+
+# tm_timeout_blame_master(): the head of the condition each domain member raised
+# on master under an invalid limit -- measured 2026-08-30 at ae5ff1c, identical
+# across all five `tm_timeout_bad_forms()` values at every member.
+#
+# Recorded because AC1's claim is a CHANGE, and the repo held no referent for
+# what the blame was before. Six members already named themselves; the other 47
+# named a function the caller never typed, which is the defect. `tm_blame_head()`
+# regenerates any cell of this table.
+tm_timeout_blame_master <- function() {
+  ffm_run_class <- c(
+    "anonymize_video", "compare_videos", "concatenate_videos", "convert_audio",
+    "crop_video", "extract_audio", "extract_frame", "format_for_web",
+    "normalize_audio", "picture_in_picture", "sample_frames",
+    "separate_audio_video", "standardize_video", "strip_metadata"
+  )
+  ffm_batch_class <- c(
+    "anonymize_video_batch", "compare_videos_batch", "concatenate_videos_batch",
+    "convert_audio_batch", "crop_video_batch", "extract_audio_batch",
+    "extract_frame_batch", "format_for_web_batch", "normalize_audio_batch",
+    "picture_in_picture_batch", "sample_frames_batch", "segment_video",
+    "segment_video_batch", "separate_audio_video_batch",
+    "standardize_video_batch", "strip_metadata_batch"
+  )
+  ffmpeg_class <- c("ffmpeg_codecs", "ffmpeg_encoders", "has_nvenc")
+  mediainfo_parameter_class <- c(
+    "get_duration", "get_frame_rate", "get_height", "get_sample_rate",
+    "get_width"
+  )
+  mediainfo_read_class <- c(
+    "mediainfo_query", "mediainfo_summary", "mediainfo_template"
+  )
+  probe_map_class <- c(
+    "probe_all", "probe_audio", "probe_container", "probe_streams",
+    "probe_video", "verify_media"
+  )
+  # The six that already named themselves.
+  correct <- c("ffm_batch", "ffm_run", "ffmpeg", "ffprobe", "mediainfo",
+               "mediainfo_parameter")
+  out <- c(
+    stats::setNames(rep("ffm_run", length(ffm_run_class)), ffm_run_class),
+    stats::setNames(rep("ffm_batch", length(ffm_batch_class)),
+                    ffm_batch_class),
+    stats::setNames(rep("ffmpeg", length(ffmpeg_class)), ffmpeg_class),
+    stats::setNames(rep("mediainfo_parameter",
+                        length(mediainfo_parameter_class)),
+                    mediainfo_parameter_class),
+    stats::setNames(rep("mediainfo_read", length(mediainfo_read_class)),
+                    mediainfo_read_class),
+    stats::setNames(rep("purrr::map", length(probe_map_class)),
+                    probe_map_class),
+    stats::setNames(correct, correct)
+  )
+  out[order(names(out))]
+}
+
+# tm_timeout_reached_master(): what each domain member did when the limit was
+# actually REACHED, on master -- "abort" or "warn", measured 2026-08-30 at
+# ae5ff1c through `tm_force_timeout()`.
+#
+# D049 promises only that a reached limit is never SILENT, so the grid at
+# test-timeout-silence.R records the disjunction and nothing finer. This table
+# records which of the two each member does, so AC6 can say the blame sweep left
+# that choice alone rather than only that it left some condition behind.
+tm_timeout_reached_master <- function() {
+  aborts <- c(
+    "anonymize_video", "compare_videos", "concatenate_videos", "convert_audio",
+    "crop_video", "extract_audio", "extract_frame", "ffm_run", "ffmpeg",
+    "ffmpeg_codecs", "ffmpeg_encoders", "ffprobe", "format_for_web",
+    "has_nvenc", "mediainfo", "normalize_audio", "picture_in_picture",
+    "sample_frames", "separate_audio_video", "standardize_video",
+    "strip_metadata", "verify_media"
+  )
+  dom <- tm_timeout_domain()
+  stats::setNames(ifelse(dom %in% aborts, "abort", "warn"), dom)
+}

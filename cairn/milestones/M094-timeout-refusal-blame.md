@@ -75,7 +75,7 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
 
 ## Tasks
 
-- [ ] T1. Capture two master baselines into `tests/testthat/helper-timeout-sweep.R`
+- [x] T1. Capture two master baselines into `tests/testthat/helper-timeout-sweep.R`
       as recorded tables, so AC1/AC5/AC6 have a referent the repo does not hold
       today: per-member blame under each AC2 form, and per-member abort-vs-warn
       under a reached limit (the grid at `test-timeout-silence.R:342` records
@@ -107,6 +107,9 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
 - 2026-08-30: plan gate chose refusing at `run = FALSE` on both forms over keeping `run = FALSE` a pure compile, because `R/ffm_batch.R:96-99` already made that choice for the batch form and the scalar/batch split is itself the defect; falsified by a report of a dry-run compile refused on a limit that run would never have read.
 - 2026-08-30: plan gate chose this scope over the M071 F9 option-rollback fix because the rollback was measured to be `future`'s own (it restores `options()` at every future boundary, sequential plan included), leaving nothing for the package to fix; falsified by a `future` release that stops restoring options across the boundary. Recorded as D073.
 - 2026-08-30: implement started on `m094-timeout-refusal-blame`; master blame baseline re-measured at 53 domain members, 6 already correct (`ffm_batch`, `ffm_run`, `ffmpeg`, `ffprobe`, `mediainfo`, `mediainfo_parameter`).
+- 2026-08-30: gate chose the same front-door re-call at the six metadata readers over threading `call` into `mediainfo_read()`/`probe_one()`, because that plumbing also renames the blame on a REACHED limit, which Scope puts out of bounds; and chose the timeout check last among each front door's guards, so every refusal that fires today still fires first.
+- 2026-08-30: T1 recorded both master baselines in `helper-timeout-sweep.R` (`tm_timeout_blame_master()`, `tm_timeout_reached_master()`), each verified cell-by-cell against a live measurement at ae5ff1c: 6 of 53 members already named themselves, and the blame head is identical across all five invalid forms at every member.
+- 2026-08-30: measured per-class wrong-blame counts are `ffm_run` 14, `ffm_batch` 16, `ffmpeg` 3, `mediainfo_parameter` 5, `mediainfo_read` 3, `purrr::map` 6 (47 total). Scope's `×15/×17/×4/×6/×3/×6` counts each class INCLUDING its own leader, which already blames itself correctly; the six classes and the 47-of-53 total are unchanged.
 
 ## Decisions
 

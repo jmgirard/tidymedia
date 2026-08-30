@@ -243,3 +243,32 @@ test_that("ffm_batch() runs jobs whose paths contain hostile characters", {
   expect_true(all(res$success))
   expect_true(file.exists(jobs$output))
 })
+
+
+# M092 AC3: run_with_progress()'s return contract, without a binary ----------
+
+test_that("run_with_progress() returns one success/timed_out record per job", {
+  # M70's O6: this contract was covered only behind skip_if_no_ffmpeg(), and
+  # CI's macOS and Windows runners install no media binaries -- so a mismatch
+  # surfaced as a hard vapply() type error on a user's machine rather than red
+  # on CI. The stub keeps the check binary-free, and the two vapply() calls
+  # below are the exact expressions ffm_batch() applies to this return
+  # (R/ffm_batch.R:157-158): they are what a violating shape breaks.
+  run_one <- function(pipeline) {
+    list(success = !grepl("bad", pipeline), timed_out = FALSE)
+  }
+  pipelines <- c("good-1", "bad-2", "good-3")
+
+  results <- run_with_progress(pipelines, run_one)
+
+  expect_length(results, length(pipelines))
+  for (r in results) {
+    expect_named(r, c("success", "timed_out"))
+    expect_true(rlang::is_bool(r$success))
+    expect_true(rlang::is_bool(r$timed_out))
+  }
+  # The consumer expressions themselves, in order.
+  expect_identical(vapply(results, `[[`, logical(1), "success"),
+                   c(TRUE, FALSE, TRUE))
+  expect_identical(sum(vapply(results, `[[`, logical(1), "timed_out")), 0L)
+})

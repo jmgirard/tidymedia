@@ -24,6 +24,25 @@
 # alternative, rounding up, silently substitutes a limit the caller did not ask
 # for. Nothing downstream will catch a bad value for us either: system2()
 # accepts both "2" and c(1, 2) without complaint.
+#
+# Where it is called from is the second half of the rule (M094). This checker
+# used to be reached from wherever the limit happened to be read first, which is
+# the spawn site -- so `extract_audio()` aborted naming `ffm_run(object)` and
+# `probe_all()` naming `purrr::map(infile, probe_one)`, functions the caller
+# never typed. Every export in the timeout domain now re-calls it at its own
+# front door, D042's rule for a builder-bound value: the shared checker is
+# called again from the frame that can name the caller, rather than a `call`
+# argument being threaded through an exported builder. Three properties come
+# with that siting and are worth stating once here rather than at each site:
+#
+#   * It goes LAST among the front door's guards, so every refusal that fired
+#     before it still fires first and only the blame for this one moves.
+#   * It goes ABOVE the `run` gate, so a `run = FALSE` compile is refused too --
+#     the batch form already did this (R/ffm_batch.R) and the scalar/batch split
+#     was itself the defect.
+#   * It is not sited where nothing reads the limit. `has_nvenc()` under a set
+#     `tidymedia.nvenc_encoders` answers from the override, above D044's memo and
+#     above any spawn, so it refuses nothing -- the one carve-out.
 resolve_timeout <- function(call = rlang::caller_env()) {
   limit <- getOption("tidymedia.timeout", default = 0)
   # `min = 0` covers the negative case; check_number_whole() covers NA, the

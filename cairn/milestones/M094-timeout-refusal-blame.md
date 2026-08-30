@@ -80,10 +80,10 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
       today: per-member blame under each AC2 form, and per-member abort-vs-warn
       under a reached limit (the grid at `test-timeout-silence.R:342` records
       only the disjunction).
-- [ ] T2. Write the failing sweep over `tm_timeout_domain()` × AC2's forms for
+- [x] T2. Write the failing sweep over `tm_timeout_domain()` × AC2's forms for
       AC1, including the `has_nvenc()` carve-out and AC3's `run = FALSE` /
       `parallel = TRUE` cells. Expect red at 47 of 53.
-- [ ] T3. Site the re-call per D042 at the Layer-2 callers of the two exported
+- [x] T3. Site the re-call per D042 at the Layer-2 callers of the two exported
       builders: the 15 verbs blaming `ffm_run(object)` and the 17 blaming
       `ffm_batch(...)` (`R/ffmpeg.R`), above each verb's `run` gate so AC3 holds.
 - [ ] T4. Site the remaining four classes: the 4 blaming `ffmpeg(...)`
@@ -111,6 +111,8 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
 - 2026-08-30: T1 recorded both master baselines in `helper-timeout-sweep.R` (`tm_timeout_blame_master()`, `tm_timeout_reached_master()`), each verified cell-by-cell against a live measurement at ae5ff1c: 6 of 53 members already named themselves, and the blame head is identical across all five invalid forms at every member.
 - 2026-08-30: measured per-class wrong-blame counts are `ffm_run` 14, `ffm_batch` 16, `ffmpeg` 3, `mediainfo_parameter` 5, `mediainfo_read` 3, `purrr::map` 6 (47 total). Scope's `×15/×17/×4/×6/×3/×6` counts each class INCLUDING its own leader, which already blames itself correctly; the six classes and the 47-of-53 total are unchanged.
 
+- 2026-08-30: T2 added `test-timeout-refusal-blame.R` — the domain x invalid-form sweep plus the `run = FALSE` and `parallel = TRUE` axes and the `has_nvenc()` carve-out. Red on master at 47 of 53 members (235 of 265 blame cells), green on the 6 that already named themselves.
+- 2026-08-30: T3 sited `resolve_timeout()` at the front door of the 30 verbs in the `ffm_run` and `ffm_batch` classes, last among each front door's guards and above the `run` gate; the siting rule and its three properties are stated once above `resolve_timeout()` in `R/timeout.R` and cross-referenced at each site. Delegated to one [S] subagent; diff verified site by site. Sweep now leaves exactly the 17 members T4 owns, and the rest of the suite is clean (105 failures, all in the new file; 9271 pass).
 ## Decisions
 
 ## Review

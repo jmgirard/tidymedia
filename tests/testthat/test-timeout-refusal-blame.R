@@ -115,3 +115,98 @@ test_that("the refusal does not wait for the fan-out (AC3)", {
     }
   }
 })
+
+test_that("one wording reaches every member, from the one checker site (AC4)", {
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  withr::local_options(list(tidymedia.nvenc_encoders = NULL, cli.width = 80))
+
+  for (form in names(tm_timeout_bad_forms())) {
+    limit <- tm_timeout_bad_forms()[[form]]
+    reference <- tm_resolve_timeout_message(limit)
+    # The referent has to say something: an empty or missing reference would
+    # make every comparison below pass against nothing.
+    expect_match(reference, "must be a whole number")
+    for (name in tm_timeout_domain()) {
+      cnd <- tm_blame_condition(name, specs[[name]], limit)
+      expect_false(is.null(cnd), info = paste(name, form))
+      expect_identical(cnd$message, reference, info = paste(name, form))
+    }
+  }
+})
+
+test_that("the FFprobe readers no longer arrive wrapped by purrr (AC4)", {
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  withr::local_options(list(cli.width = 80))
+  wrapped <- c("probe_all", "probe_audio", "probe_container", "probe_streams",
+               "probe_video", "verify_media")
+  # These six are exactly the members `tm_timeout_blame_master()` records as
+  # blaming purrr::map() -- read from the recorded table, not retyped, so the
+  # two cannot drift.
+  master <- tm_timeout_blame_master()
+  expect_setequal(wrapped, names(master)[master == "purrr::map"])
+
+  for (name in wrapped) {
+    for (form in names(tm_timeout_bad_forms())) {
+      cnd <- tm_blame_condition(name, specs[[name]], tm_timeout_bad_forms()[[form]])
+      expect_false("purrr_error_indexed" %in% cnd$classes,
+                   info = paste(name, form))
+      expect_no_match(cnd$message, "In index:", fixed = TRUE)
+      expect_no_match(cnd$message, "Caused by error", fixed = TRUE)
+    }
+  }
+})
+
+test_that("the valid and unset paths are byte-for-byte the pre-change ones (AC5)", {
+  # The interception this reading rests on is complete: every function that
+  # names a spawn primitive reaches it as an argument of guard_timeout(), which
+  # the mock never forces. Asserted rather than assumed, because a spawn added
+  # outside that wrapper would make every count below read 0 while a process ran.
+  expect_true(tm_spawn_interception_complete())
+
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  withr::local_options(list(tidymedia.nvenc_encoders = NULL))
+  recorded <- tm_timeout_valid_baseline()
+  expect_setequal(names(recorded), tm_timeout_domain())
+  # The recorded table must describe calls that actually spawned, or "the spawn
+  # count is unchanged" would be a claim about a column of zeros.
+  expect_gt(sum(vapply(recorded, function(x) x$unset$spawns, integer(1))), 0)
+
+  for (name in tm_timeout_domain()) {
+    expect_identical(tm_spawn_trace(name, specs[[name]], NULL, dir),
+                     recorded[[name]]$unset, info = paste(name, "unset"))
+    expect_identical(tm_spawn_trace(name, specs[[name]], 30, dir),
+                     recorded[[name]]$valid, info = paste(name, "valid"))
+  }
+})
+
+test_that("an invalid limit reaches no spawn at all (AC5)", {
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  withr::local_options(list(tidymedia.nvenc_encoders = NULL))
+  for (name in tm_timeout_domain()) {
+    for (form in names(tm_timeout_bad_forms())) {
+      trace <- tm_spawn_trace(name, specs[[name]], tm_timeout_bad_forms()[[form]],
+                              dir)
+      expect_identical(trace$spawns, 0L, info = paste(name, form))
+    }
+  }
+})
+
+test_that("the interception check can say no (AC5)", {
+  # The planted defect is the one the check exists to catch: a spawn that is not
+  # an argument of guard_timeout(). Without this the check's only falsifier
+  # would be deleting it, which certifies nothing.
+  outside <- function() system2("ffmpeg", "-version")
+  inside <- function() guard_timeout("FFmpeg", 0, system2("ffmpeg", "-version"))
+  expect_false(tm_spawn_interception_complete(fns = list(bad = outside)))
+  expect_true(tm_spawn_interception_complete(fns = list(good = inside)))
+  # And one guarded spawn does not vouch for an unguarded one beside it.
+  both <- function() {
+    guard_timeout("FFmpeg", 0, system2("ffmpeg", "-version"))
+    system2("ffprobe", "-version")
+  }
+  expect_false(tm_spawn_interception_complete(fns = list(both = both)))
+})

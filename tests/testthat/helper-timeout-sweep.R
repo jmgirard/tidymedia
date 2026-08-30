@@ -497,3 +497,191 @@ tm_timeout_reached_master <- function() {
   dom <- tm_timeout_domain()
   stats::setNames(ifelse(dom %in% aborts, "abort", "warn"), dom)
 }
+
+# M094: what the valid and unset paths did on master, recorded ---------------
+
+# tm_spawn_interception_complete(): is mocking `guard_timeout()` enough to see
+# every spawn the package makes?
+#
+# `tm_spawn_sites()` computes which namespace functions name `system`/`system2`
+# in their own body. This asks the next question about that same computed set:
+# at every one of them, is the spawn call syntactically an ARGUMENT of a
+# `guard_timeout(...)` call? It is an argument, and `guard_timeout()` evaluates
+# it lazily inside its own handler, so a mocked `guard_timeout()` that never
+# forces `expr` intercepts the spawn rather than counting it after the fact.
+#
+# Without this the counter below would be trusted for a reason nobody checked:
+# a new spawn added OUTSIDE the wrapper would be invisible to it and the AC5
+# assertion would read "0 spawns" while a process ran.
+#
+# `fns` is a parameter for `tm_program_literals()`'s reason, a few lines below:
+# a guard whose only falsifier is deleting it re-certifies nothing. Feeding it a
+# mutant body that spawns outside the wrapper is what shows it can say FALSE.
+tm_spawn_interception_complete <- function(graph = tm_symbol_graph(),
+                                           fns = NULL) {
+  if (is.null(fns)) {
+    ns <- asNamespace("tidymedia")
+    sites <- tm_spawn_sites(graph)
+    fns <- stats::setNames(lapply(sites, get, envir = ns), sites)
+  }
+  all(vapply(fns, function(f) {
+    ok <- TRUE
+    walk <- function(e, guarded) {
+      if (!is.call(e)) return(invisible(NULL))
+      head <- e[[1]]
+      if (is.name(head) && as.character(head) %in% tm_spawn_primitives &&
+          !guarded) {
+        ok <<- FALSE
+      }
+      is_guard <- is.name(head) && identical(as.character(head),
+                                             "guard_timeout")
+      for (i in seq_along(e)) {
+        if (rlang::is_missing(e[[i]]) || is.null(e[[i]])) next
+        # Every ARGUMENT of guard_timeout() is guarded, its head is not: R
+        # binds arguments lazily, and the mock that stands in for the wrapper
+        # returns without forcing any of them.
+        walk(e[[i]], guarded || (is_guard && i > 1L))
+      }
+    }
+    walk(body(f), FALSE)
+    ok
+  }, logical(1)))
+}
+
+
+# tm_scrub_paths(): make one digest comparable across sessions and checkouts.
+#
+# Two volatile paths reach a compiled command. The fixture directory is the
+# caller's, passed in. The other is the session temp dir, where
+# `concatenate_videos()` writes the `-f concat` list file under a name randomized
+# per CALL -- so two runs of the same code in one session already differ there,
+# and comparing that string would compare R's RNG rather than the package.
+tm_scrub_paths <- function(x, dir) {
+  x <- gsub(dir, "<dir>", x, fixed = TRUE)
+  x <- gsub(normalizePath(tempdir(), winslash = "/", mustWork = FALSE),
+            "<tmp>", x, fixed = TRUE)
+  x <- gsub(tempdir(), "<tmp>", x, fixed = TRUE)
+  gsub("ffm-concat[0-9a-f]+(\\.txt)?", "<concat-list>", x)
+}
+
+# tm_spawn_trace(): run one domain member under `limit` with every spawn
+# intercepted, and report what came back and how many spawns it took.
+#
+# `guard_timeout()` is the single mock, which `tm_spawn_interception_complete()`
+# above proves is enough. It returns a fixed empty-output vector rather than
+# anything a real program would print: the question here is whether the two refs
+# do the SAME thing, not what FFmpeg says, and a canned answer keeps the reading
+# off the runner's PATH and its media binaries (M070's reason for injecting at
+# the wrappers rather than at a real hang).
+#
+# The return value is reduced to a printed digest with the fixture directory
+# scrubbed, so two refs measured in two checkouts compare as values rather than
+# as two temp paths.
+tm_spawn_trace <- function(name, args, limit, dir) {
+  # The digest is printed output, so it has to be printed under the same
+  # conventions everywhere. Without this the recorded table and the live reading
+  # disagree on tibble's dimension glyph alone -- testthat runs with
+  # `cli.unicode = FALSE` and a plain Rscript does not, so the same value prints
+  # `1 x 5` in one and `1 <times> 5` in the other.
+  testthat::local_reproducible_output()
+  spawns <- 0L
+  warns <- character()
+  err <- NULL
+  value <- NULL
+  opts <- if (is.null(limit)) {
+    list(tidymedia.timeout = NULL)
+  } else {
+    list(tidymedia.timeout = limit)
+  }
+  withr::with_options(opts, {
+    testthat::local_mocked_bindings(
+      guard_timeout = function(program, limit, expr, ...) {
+        spawns <<- spawns + 1L
+        character(0)
+      },
+      # The three locators are pinned too, so the reading is the package's and
+      # not the runner's PATH: without this a machine with no media binaries
+      # measures `Could not locate FFmpeg` for half the domain and the recorded
+      # table stops being comparable anywhere else. CI's macOS and Windows
+      # runners install no media binaries at all (M070's reason, same trap).
+      find_ffmpeg = function() "/nonexistent/ffmpeg",
+      find_ffprobe = function() "/nonexistent/ffprobe",
+      find_mediainfo = function() "/nonexistent/mediainfo",
+      .package = "tidymedia"
+    )
+    withCallingHandlers(
+      tryCatch(
+        value <- do.call(name, args, envir = asNamespace("tidymedia")),
+        error = function(e) err <<- e
+      ),
+      warning = function(w) {
+        warns <<- c(warns, cli::ansi_strip(conditionMessage(w)))
+        invokeRestart("muffleWarning")
+      }
+    )
+  })
+  digest <- paste(
+    utils::capture.output(utils::str(
+      value, max.level = 2L, give.attr = FALSE,
+      # str()'s 128-character default truncates a compiled FFmpeg command well
+      # before its output path, which would leave the digest unable to tell two
+      # different commands apart -- the dimension this comparison exists to
+      # watch.
+      nchar.max = 4000L, vec.len = 20L
+    )),
+    collapse = " | "
+  )
+  list(
+    spawns = spawns,
+    value = tm_scrub_paths(digest, dir),
+    error = if (is.null(err)) NA_character_ else class(err)[[1]],
+    warnings = length(warns)
+  )
+}
+
+# tm_blame_condition(): the whole condition one domain member raised under
+# `limit`, message and class vector both.
+#
+# Separate from `tm_blame_head()` because AC4 asks two things that
+# conditionCall() cannot answer: whether every member says the SAME sentence,
+# and whether the six FFprobe readers still arrive wrapped in purrr's indexed
+# error. The message is ansi-stripped, and the caller pins `cli.width` -- cli
+# wraps to the console, so an unpinned width compares two terminals.
+tm_blame_condition <- function(name, args, limit) {
+  # Same reason as tm_spawn_trace(): cli wraps and decorates to the console, and
+  # this compares message text across 53 members and one reference.
+  testthat::local_reproducible_output()
+  withr::with_options(list(tidymedia.timeout = limit), {
+    cnd <- tryCatch(
+      do.call(name, args, envir = asNamespace("tidymedia")),
+      error = function(e) e
+    )
+    if (!inherits(cnd, "error")) return(NULL)
+    list(
+      message = cli::ansi_strip(conditionMessage(cnd)),
+      classes = class(cnd)
+    )
+  })
+}
+
+# tm_resolve_timeout_message(): the sentence the ONE checker site writes for a
+# given invalid value, read from that site rather than from any verb.
+#
+# This is AC4's referent. Comparing the 53 members only to each other would go
+# green on 53 copies of a second, drifted wording; comparing them to what
+# `resolve_timeout()` itself produces is what pins them to the single
+# `rlang::check_number_whole()` call in R/timeout.R.
+tm_resolve_timeout_message <- function(limit) {
+  testthat::local_reproducible_output()
+  withr::with_options(list(tidymedia.timeout = limit), {
+    cli::ansi_strip(
+      tryCatch(resolve_timeout(), error = function(e) conditionMessage(e))
+    )
+  })
+}
+
+# tm_timeout_valid_baseline(): the recorded pre-change return values and spawn
+# counts. Regenerate with data-raw/timeout-valid-baseline.R.
+tm_timeout_valid_baseline <- function() {
+  readRDS(testthat::test_path("fixtures", "timeout-valid-baseline.rds"))
+}

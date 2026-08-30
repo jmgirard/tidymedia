@@ -69,7 +69,7 @@ here; D065's one-message reasoning stands.
       contains the sentence "nothing reports `videofile`'s fate on the both-fail
       path, because the video command's error is not the one you get"
       (`R/ffmpeg.R:909-913`), which AC1 falsifies.
-- [ ] AC5 `devtools::test()` and `devtools::check()` are clean (0 errors,
+- [x] AC5 `devtools::test()` and `devtools::check()` are clean (0 errors,
       0 warnings; NOTEs justified) and `devtools::document()` produces no diff.
 
 ## Coverage
@@ -173,3 +173,20 @@ Reviewed 2026-08-30 on `m090-separation-failure-path-leftovers`
   command running on a fresh limit of its own, and a call therefore waiting up
   to two limits rather than one. `grep -c "nothing reports"` returns 0 in both
   `R/ffmpeg.R` and `man/separate_audio_video.Rd`.
+- **AC5** — `devtools::test()` fresh this review: 0 failures, 12 warnings, 5
+  skips, 8,489 passes (the 12 warnings and 5 skips are the pre-change
+  baseline). `devtools::check()`: `Status: OK`, 0 errors, 0 warnings, 0 notes,
+  2m49s. `devtools::document()` re-run leaves the tree clean of generated-file
+  diffs.
+
+### Consistency gate
+
+`cairn_validate.py` exit 0 — every check PASS, every advisory OK, including
+`coverage complete`, `binding criteria`, and `weight caps`; the `release
+window` advisory did not fire. No `DESIGN.md` principle changed
+(`Principles touched: —`), so `cairn_impact.py` is skipped. Toolchain slot
+(`r-package`): `document()` no diff; no hand-edited generated files;
+`README.Rmd` untouched so `README.md` is in sync; `pkgdown::check_pkgdown()`
+"No problems found"; the unreleased `NEWS.md` separation entry amended for
+this milestone's user-visible changes with no milestone number in it; no new
+top-level files, so no `.Rbuildignore` entry owed; `check()` clean above.

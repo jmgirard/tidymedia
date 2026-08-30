@@ -3104,3 +3104,37 @@ plus room for about three more members. Its remedy over budget is
   budgets into a figure this repo could then argue about; or by a hygiene pass
   finding the ROADMAP back at its budget with no candidate row left worth
   grouping, which would mean clustering had reached its limit as a remedy.
+
+## D068 — The both-fail path stashes the video run's condition on the audio one, and reports nothing new (2026-08-29, from M090; supersedes D065's "Why the both-fail case names one failure" section, keeps every other part of D065 and all of D066 in force)
+
+D065 discarded the video run's condition when both halves failed, reasoning that
+FFmpeg has already printed that command's error, that Layer 1 has already removed
+what the run wrote, and that one message correct across every combination of two
+failures is more surface than the case earns. Its own falsifier is met: a caller
+who could not tell, from the condition alone, that the video command had also
+failed. From the raised condition a caller could tell only that the audio command
+failed, and had to read FFmpeg's console output -- a side effect, not a value --
+to learn the other half's fate.
+
+The video run's condition object is now attached to the audio condition at
+`tm_video_error`, D062's prefix for a condition's data fields. It is `NULL` when
+the video command succeeded, so the field's presence is the answer, the way the
+video-written bullet is the answer on the path where the audio half is the only
+failure.
+
+**Why a field and not the message.** The reasoning D065 gave for one message
+survives a field, because a field changes no rendered text: on both branches of
+the audio run -- the enriched multi-track diagnostic and the fall-open re-raise --
+the class vector, `tm_status`, and message a caller matches on stay the ones that
+branch raises when the video command is not run at all. What is superseded is only
+D065's decision to throw the object away; what a human reads is unchanged.
+
+**Why the field is attached whatever the audio condition's shape.** Every R
+condition is a list, so the assignment needs no class guard -- unlike the
+video-written bullet, which lives in `body` and so reaches only an rlang
+condition. Holding the two to separate rules means a condition shape this verb has
+not met loses the bullet and still carries the video failure.
+
+- **Falsified by** a report of a caller who needed the video failure in the text a
+  human reads rather than on a field, which would reopen D065's one-message
+  question with a case behind it.

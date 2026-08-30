@@ -131,8 +131,24 @@ here; D065's one-message reasoning stands.
 - 2026-08-30: T9 — the unreleased `NEWS.md` separation entry amended in place rather than contradicted: it had stated that nothing reports `videofile`'s fate when the video command failed too, which this milestone falsifies. It now carries the authorship gate, `tm_video_error`, and the second-spawn cost. The second-spawn sentence asserted a behavior no test enforced, so a mocked test now pins that a timed-out audio half still spawns the video command; shown red against a planted pre-M088 early abort.
 - 2026-08-30: T9 — `devtools::test()` 8,489 pass / 0 fail / 12 warn (the 12 are the pre-change baseline) and `devtools::check()` Status: OK (0 errors, 0 warnings, 0 notes). `devtools::document()` produces no diff.
 - 2026-08-30: review opened; PR #94 (draft). AC1-AC4 verified with fresh evidence and ticked; AC5 pending the running `devtools::check()`. Consistency gate so far: `cairn_validate` all-pass, `document()` no diff, `pkgdown::check_pkgdown()` clean, NEWS entry present, no new top-level files. Three review lenses spawned; blame-history and prior-review both returned no findings.
+- 2026-08-30: review found and fixed F1/F2 on the branch — the `wrote` gate now requires the video run to have succeeded as well as to have changed the path. Regression test added from the end-to-end reproduction (AAC/h264 input, `.mp3` audio out, pre-existing `.wav` video out), shown red on the branch's own gate at the exact claim with its case-establishing assertions passing first. Suite 8,493 pass / 0 fail.
 
 ## Decisions
+
+- 2026-08-30 (review): the `wrote` gate takes the video run's outcome AND the
+  snapshot comparison together, superseding this milestone's implement-gate
+  choice of "the snapshot comparison alone on both video-run outcomes". The
+  reason that choice gave — that on a failed run the two snapshots already
+  agree, because Layer 1 removed what the run wrote — holds only where
+  `videofile` did not already exist; where it did, Layer 1's removal takes the
+  caller's file with it and the snapshots differ with nothing left to name.
+  `is.null(video_error) &&` restores what the roxygen and the changelog both
+  promise (no line when the video command failed) and covers the read-only
+  removal shape in the same predicate. AC2 is unaffected: it forbids the line
+  being decided by the exit status *alone*, and the comparison still decides it
+  on the video-succeeded path, which is the case the criterion's three tests
+  name. Falsified by a video command that fails while leaving a usable output
+  at `videofile`, which this predicate would then refuse to report.
 
 ## Review
 
@@ -249,3 +265,37 @@ discriminating test pair against AC3, D068 superseding only D065's named
 section with D066 intact, the `NEWS.md` edit sitting in the development-version
 section, the mocked tests being binary-free, and the Layer 2 filesystem read
 against D024/D037.
+
+### Finding dispositions
+
+- **F1 — fixed now, on the branch.** `wrote <- is.null(video_error) &&
+  !identical(output_snapshot(videofile), before_video)`, with the source
+  comment rewritten to say why neither answer settles it alone. A regression
+  test built from the reproduction above was shown red against the branch's own
+  gate — failing on the "written to" claim with its both-fail and
+  file-is-gone assertions passing first — and green after.
+- **F2 — fixed now, by the same predicate.** A failed video run is refused the
+  line whatever the removal left behind, so the read-only-directory shape can
+  no longer report a half-written file as a video output.
+- **F3 — fixed now.** The new test is the missing case: a both-fail path whose
+  failing video run had written over a pre-existing `videofile`. It uses real
+  FFmpeg rather than a mock, since the behavior under test is Layer 1's
+  removal.
+- **F4 — rejected, not a defect.** The test is a declared control and says so
+  in its own comment; AC1's load-bearing assertion is the paired both-fail
+  test, which was red on the pre-change code at the attachment (recorded at
+  T2/T3).
+- **F5 — rejected, out of scope.** The `@return` sentence is an unmodified line
+  this diff does not touch, and the reviewer records the case as one real
+  FFmpeg does not produce.
+- **F6 — rejected, out of scope.** The sentinel discriminates the leak it
+  exists for (the mock's body has no `try_fetch`), and its coupling is to a
+  helper in this same package, so a refactor away from `rlang::try_fetch`
+  updates it in that refactor's own commit.
+
+### Post-fix re-verification
+
+`devtools::test()` 0 failures / 8,493 passes (the four added by the regression
+test), 12 warnings and 5 skips unchanged from the baseline. The three AC2
+mocked cases and both M088 tests remain green — none of them drives a failing
+video command, which is the only branch the predicate narrows.

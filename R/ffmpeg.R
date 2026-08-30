@@ -1029,14 +1029,20 @@ separate_audio_video <- function(infile, audiofile, videofile,
       ffm_run(video)
     } else {
       # What the added line answers is "did this run write videofile?", and the
-      # video run's exit status does not answer it: a command can return 0
-      # having left a pre-existing file untouched, and one that fails on an
-      # unknown encoder never opens the output at all. So the same pre/post
-      # comparison Layer 1 uses to decide what a failed run WROTE (D046,
-      # output_snapshot()) decides the line here -- read on both outcomes, so
-      # the exit status feeds the line on no path. On a failed run the two
-      # snapshots already agree, because Layer 1 has removed whatever that run
-      # wrote before its condition reaches this frame.
+      # video run's exit status does not answer it on its own: a command can
+      # return 0 having left a pre-existing file untouched, which is the case
+      # the same pre/post comparison Layer 1 uses to decide what a failed run
+      # WROTE (D046, output_snapshot()) is here to settle.
+      #
+      # It does not answer it alone either. A failed run that had already
+      # written over a file the caller kept at that path leaves the two
+      # snapshots DIFFERENT, because Layer 1 removed what that run wrote and
+      # the caller's file went with it -- so a changed snapshot would name a
+      # path now holding nothing, and the read-only-directory branch of the
+      # removal would name a path holding a half-written file. Neither is a
+      # video output. So the two answers are taken together: the run has to
+      # have succeeded AND to have changed what is at the path (M090 review,
+      # superseding this milestone's implement gate; reproduced end to end).
       before_video <- output_snapshot(videofile)
       # The video run's own condition is HELD the same way the audio one is,
       # and travels to the caller on the raised condition's `tm_video_error`
@@ -1049,7 +1055,8 @@ separate_audio_video <- function(infile, audiofile, videofile,
         ffm_run(video)
         NULL
       }, error = function(cnd) cnd)
-      wrote <- !identical(output_snapshot(videofile), before_video)
+      wrote <- is.null(video_error) &&
+        !identical(output_snapshot(videofile), before_video)
       abort_after_video(held, videofile, wrote, video_error)
     }
     invisible(commands)

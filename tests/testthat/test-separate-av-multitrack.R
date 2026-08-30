@@ -735,6 +735,33 @@ test_that("a pre-existing videofile survives the both-fail path", {
 })
 
 
+test_that("a both-fail run that destroyed a pre-existing videofile claims no line", {
+  # The case the pre/post comparison alone cannot decide, and the one the
+  # sibling above does NOT reach: an unknown encoder is refused before the
+  # output is opened, so nothing at `videofile` moves. Here the video command
+  # opens the file, writes to it, and only then fails, so Layer 1 removes what
+  # that run wrote (D046) -- and the caller's own file goes with it. The two
+  # snapshots therefore differ while nothing survives to be named, which is the
+  # one shape a changed-snapshot gate reads as "written".
+  skip_if_no_ffprobe()
+  infile <- make_test_video()
+  audio <- withr::local_tempfile(fileext = ".mp3")
+  # .wav cannot carry h264, and the video command is a stream copy, so the
+  # muxer accepts the file and rejects the stream.
+  video <- withr::local_tempfile(fileext = ".wav")
+  writeLines("a file the caller already had", video)
+  cnd <- tryCatch(separate_audio_video(infile, audio, video, audio_stream = 0),
+                  error = function(e) e)
+  # The case under test is the both-fail one, and the pre-existing file is
+  # gone -- without these the silence below could be any other outcome.
+  expect_s3_class(cnd, "tidymedia_ffmpeg_exit")
+  expect_s3_class(cnd$tm_video_error, "tidymedia_ffmpeg_exit")
+  expect_false(file.exists(video))
+  expect_no_match(cli::ansi_strip(conditionMessage(cnd)),
+                  "The video output was written to", fixed = TRUE)
+})
+
+
 # M090: the both-fail path stops throwing away what it knows -----------------
 #
 # D068: the video run's condition is attached to the raised audio condition at

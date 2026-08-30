@@ -1260,3 +1260,48 @@ test_that("a batch whose failed rows are all listed containers warns not at all"
   expect_false(res$success[[1]])
   expect_false(res$success[[3]])
 })
+
+test_that("every measured refusing container keeps the enriched abort as worded", {
+  # AC3, held by the suite rather than by a review script (review F7). The two
+  # extensions the tests above exercise are `.mp3` and `.aac`; the criterion
+  # names eleven, and the other nine had only hand verification behind them.
+  #
+  # The trigger is an encoder no FFmpeg build has, not the container's own
+  # refusal: the failure is then identical across all eleven, the extension is
+  # the only thing that varies, and the version-dependence this file's header
+  # warns about stays out of it.
+  skip_if_no_ffprobe()
+  exts <- c("mp3", "wav", "aac", "flac", "ogg", "opus", "wv", "caf", "aiff",
+            "au", "w64")
+  infile <- make_multitrack_video()
+  for (ext in exts) {
+    audio <- withr::local_tempfile(fileext = paste0(".", ext))
+    video <- sep_fresh_video()
+    cnd <- tryCatch(
+      separate_audio_video(infile, audio, video, audio_codec = "notanencoder",
+                           video_codec = "notanencoder"),
+      error = function(e) e
+    )
+    expect_identical(
+      class(cnd),
+      c("tidymedia_multitrack_separation", "tidymedia_ffmpeg_exit",
+        "rlang_error", "error", "condition"),
+      info = ext
+    )
+    expect_identical(cnd$tm_status, sep_status_in_message(cnd), info = ext)
+    # The five bullets as worded: the headline plus a four-bullet body, in
+    # order, each pinned by the phrase that carries its meaning. The video half
+    # is failed too so that the body is those four alone -- the video-written
+    # note abort_after_video() would otherwise append is AC1's subject, not
+    # AC3's, and pinning the body's length here would be measuring it.
+    body <- gsub("\\s+", " ", cnd$body)
+    expect_match(conditionMessage(cnd), "FFmpeg exited with status", info = ext)
+    expect_identical(names(cnd$body), c("x", "i", "i", "i"), info = ext)
+    expect_match(body[[1]], "audio tracks and no `audio_stream` was named",
+                 info = ext)
+    expect_match(body[[2]], "Most audio containers hold exactly one stream",
+                 info = ext)
+    expect_match(body[[3]], "Take one track with", info = ext)
+    expect_match(body[[4]], "a container that holds several", info = ext)
+  }
+})

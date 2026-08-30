@@ -3196,11 +3196,18 @@ own diagnostic is no business of `ffm_run()` — the same IP1/D002 reasoning tha
 kept the report itself out of the engine, and the same inversion D024/RR02 Q3
 rejected for an `ffm_batch()` hook.
 
-- **Falsified by** a report of the diagnostic naming a cause that is not the
-  cause on an output the container list *can* see — a listed extension that
-  refuses a second audio stream in some FFmpeg build, or an unlisted one that
-  accepts several. A report about the three causes above falsifies nothing here;
-  it promotes the candidate row that holds them.
+- **Falsified by** a report of the diagnostic staying silent where the container
+  *was* the cause — a listed extension that refuses a second audio stream in
+  some FFmpeg build, which is the one direction this list can fail in that
+  leaves a caller worse off than before it existed. An unlisted container that
+  accepts several falsifies nothing: the list is an exclusion list, so its
+  omissions leave the diagnostic exactly where it already was, and several such
+  containers were already known when this entry was written (`.avi`, `.nut`,
+  `.m4b`, `.3gp`, `.wma` and `.asf` each take three mapped AAC streams at exit 0
+  — measured 2026-08-30 on ffmpeg 9.0.1, re-measured at M091's review). A report
+  of one of those grows the list rather than overturning the entry. A report
+  about the three causes above falsifies nothing here either; it promotes the
+  candidate row that holds them.
 
 ## D070 — The fail-open adds nothing of its own; the video-written note the caller may still read is the verb's, not the diagnostic's (2026-08-30, from M091's amendment return; supersedes D069's "The rule" paragraph, keeps every other part of D069 in force; leaves D068 and the note's own contract untouched)
 

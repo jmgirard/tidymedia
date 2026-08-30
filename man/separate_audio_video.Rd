@@ -117,15 +117,19 @@ them all.
 That extra report is attached only when all four of these hold: no
 \code{audio_stream} was named, FFmpeg returned a non-zero exit status,
 \code{infile} carries more than one audio track, and \code{audiofile}'s
-extension is not itself one of the containers that hold several — \code{.mka},
-\code{.m4a}, \code{.mp4}, \code{.mov}, \code{.mkv}, \code{.webm} and
-\code{.ts}. The last of those keeps the report off a call that is already
-doing what the report would advise: writing to one of those, the failure
-cannot be the container refusing a second audio stream, so whatever FFmpeg
-did object to would go unnamed. Fail any of the four and the error you get is
-the one the run itself raised — same class, same exit status, same message,
-but for the line saying the video output was written, which any failing audio
-half carries when the video command wrote its file.
+extension is not among the containers named here as holding several —
+\code{.mka}, \code{.m4a}, \code{.mp4}, \code{.mov}, \code{.mkv},
+\code{.webm} and \code{.ts}. Those seven are an exclusion list and not a
+survey: FFmpeg writes several audio streams into other containers too
+(\code{.avi} and \code{.nut} among them), and a failure on one of those still
+gets the report. The container condition keeps the report off a call that is
+already doing what the report would advise: writing to one of the seven, the
+failure cannot be the container refusing a second audio stream, so whatever
+FFmpeg did object to would go unnamed. Fail any of the four and the error you
+get is the one the run itself raised — same class, same exit status, same
+message, but for the line saying the video output was written, which a failing
+audio half carries when the video command wrote its file and the audio failure
+is an rlang condition.
 
 What the report states is what the call \emph{did} — the track count, and that
 every track was mapped into one output — never why FFmpeg refused. FFmpeg's

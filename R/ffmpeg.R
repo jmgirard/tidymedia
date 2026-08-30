@@ -1009,15 +1009,19 @@ ffmpeg_exit_status <- function(cnd) {
 #' That extra report is attached only when all four of these hold: no
 #' \code{audio_stream} was named, FFmpeg returned a non-zero exit status,
 #' \code{infile} carries more than one audio track, and \code{audiofile}'s
-#' extension is not itself one of the containers that hold several — \code{.mka},
-#' \code{.m4a}, \code{.mp4}, \code{.mov}, \code{.mkv}, \code{.webm} and
-#' \code{.ts}. The last of those keeps the report off a call that is already
-#' doing what the report would advise: writing to one of those, the failure
-#' cannot be the container refusing a second audio stream, so whatever FFmpeg
-#' did object to would go unnamed. Fail any of the four and the error you get is
-#' the one the run itself raised — same class, same exit status, same message,
-#' but for the line saying the video output was written, which any failing audio
-#' half carries when the video command wrote its file.
+#' extension is not among the containers named here as holding several —
+#' \code{.mka}, \code{.m4a}, \code{.mp4}, \code{.mov}, \code{.mkv},
+#' \code{.webm} and \code{.ts}. Those seven are an exclusion list and not a
+#' survey: FFmpeg writes several audio streams into other containers too
+#' (\code{.avi} and \code{.nut} among them), and a failure on one of those still
+#' gets the report. The container condition keeps the report off a call that is
+#' already doing what the report would advise: writing to one of the seven, the
+#' failure cannot be the container refusing a second audio stream, so whatever
+#' FFmpeg did object to would go unnamed. Fail any of the four and the error you
+#' get is the one the run itself raised — same class, same exit status, same
+#' message, but for the line saying the video output was written, which a failing
+#' audio half carries when the video command wrote its file and the audio failure
+#' is an rlang condition.
 #'
 #' What the report states is what the call \emph{did} — the track count, and that
 #' every track was mapped into one output — never why FFmpeg refused. FFmpeg's
@@ -6030,20 +6034,27 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #'   the batch runner; [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
 #'   [segment_video_batch()] for the other fan-out batch verb.
 #' @section Failed audio outputs:
-#' A row whose \code{audiofile} FFmpeg refuses is recorded as \code{success =
-#' FALSE} rather than aborting the batch. Such a row is named in a warning
-#' emitted \strong{once} for the whole batch, listing every affected input row
-#' and the ways out.
+#' A row whose audio command does not finish cleanly is recorded as
+#' \code{success = FALSE} rather than aborting the batch. Such a row is named in
+#' a warning emitted \strong{once} for the whole batch, listing every affected
+#' input row and the ways out.
 #'
 #' A row reaches that warning only when all four of these hold: it named no
-#' \code{audio_stream}, FFmpeg returned a non-zero exit status, its input carries
-#' more than one audio track, and its \code{audiofile}'s extension is not itself
-#' one of the containers that hold several — \code{.mka}, \code{.m4a},
-#' \code{.mp4}, \code{.mov}, \code{.mkv}, \code{.webm} and \code{.ts}. The last
-#' of those keeps a row off the list when it is already doing what the warning
-#' would advise; a row failing on such an output is silently not named, and a
-#' batch whose failed audio rows all write to those containers warns not at all.
-#' The headline count follows the rows actually named.
+#' \code{audio_stream}, the row is recorded \code{success = FALSE}, its input
+#' carries more than one audio track, and its \code{audiofile}'s extension is not
+#' among the containers named here as holding several — \code{.mka},
+#' \code{.m4a}, \code{.mp4}, \code{.mov}, \code{.mkv}, \code{.webm} and
+#' \code{.ts}. No exit status is among those conditions, and the difference from
+#' \code{\link{separate_audio_video}} is deliberate: the batch runner records
+#' \emph{whether} a row succeeded and not how, so a non-zero exit, a hard error
+#' and a reached limit are all recorded the same way, and a row put here by any
+#' of them is treated alike. The seven are an exclusion list and not a survey:
+#' FFmpeg writes several audio streams into other containers too (\code{.avi} and
+#' \code{.nut} among them), and a row failing on one of those is still named. The
+#' container condition keeps a row off the list when it is already doing what the
+#' warning would advise; such a row is silently not named, and a batch whose
+#' failed audio rows all write to those seven warns not at all. The headline
+#' count follows the rows actually named.
 #'
 #' What each bullet states is what that row \emph{did} — its track count, and
 #' that every track was mapped into one output — never why FFmpeg refused. A

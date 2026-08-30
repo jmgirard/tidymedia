@@ -3279,3 +3279,63 @@ what counts as having measured one.
   is later shown to take several audio streams under some codec neither run
   tried — which would say the second run is not enough and the measurement needs
   the muxer's own declared stream limits instead of a witness.
+
+## D072 — A deferred finding about an instrument closes only where the gap lets a defect in shipped behaviour reach a user; the page that carried them is retired (2026-08-30, from M092; retires the working artifact D040/D041/D049/D050/D059 accumulated onto, and supersedes nothing — every entry those five state stays in force)
+
+`cairn/references/instrument-findings.md` held eight sections and roughly forty
+review findings about tidymedia's own **instruments** — the guards, sweeps,
+grids and harnesses that measure the package, rather than the runtime they
+measure. Every one had been logged rather than actioned at its own review, and
+the page grew by one section at each of five later hygiene passes. Its own
+header said no finding on it was a defect in shipped behaviour. A backlog whose
+entry condition is "not a defect" has no exit condition, and five filings in
+three weeks is the measurement that it had stopped being a queue.
+
+**The rule.** A deferred finding about an instrument closes only where the gap
+lets a defect in shipped behaviour reach a user. Every other finding is pruned
+— not deferred again — with its reason recorded. "Reaches a user" is the whole
+test: an instrument that asserts less than it could, grades a cell vacuously,
+derives its own vocabulary from the entries it reads, or reads green for a
+reason its author did not intend is a weaker instrument and not a defect,
+because the artifact it grades is correct. What closes is the gap with a path
+from it to something a user observes.
+
+**What that rule closed here, and why each one has that path.** Four of the
+forty. M70's O6: `run_with_progress()`'s return contract was covered only behind
+`skip_if_no_ffmpeg()`, and CI's macOS and Windows runners install no media
+binaries, so a mismatch surfaced as a hard `vapply()` type error on a user's
+machine instead of red on CI — reproduced here, verbatim, from a stub returning
+`success` as an integer. M086's F9: the two-pass batch grid mocked Phase 1
+wholesale, so a change to `run_program()`'s return shape would leave
+`tm_row_status` all-`NA` in a real batch with the grid still green — the wrong
+status a caller reads. M087's pass-2 F5: the class-pairing probes caught with
+`condition = function(e) e`, taking the first condition a site signalled, so a
+`tidymedia_`-classed warning raised before the abort would be asserted against
+help topics for a site nobody tested. M091's eighth finding: the container gate's
+case fold was exercised at the scalar site only, so an exact-case match at the
+batch site would leave the suite green while `.MKA` rows kept drawing the false
+blame D069 exists to remove.
+
+**Where the rest went.** Pruned, each with its reason, in M092's Triage ledger,
+which is the durable record the page was and is archived with the milestone.
+Two ids were classed **runtime** rather than instrument — they were about the
+package's own shipped behaviour and had been misfiled — and left as candidate
+ROADMAP rows with their own promote-on clauses: M071's F9 (a caller's
+`options(tidymedia.*)` set inside `.f` rolled back under a sequential plan at
+`parallel = TRUE`) and M70's O11 (a `probe_all_impl()` refusal that would name
+`infile` through a frame without it, unreachable today). M087's topic-vs-site
+pairing finding prunes as instrument but needs a design call, so it keeps a row
+too.
+
+**What this does not touch.** Nothing about how findings are *produced*: a
+review still files what it finds, and a finding still gets logged rather than
+actioned where the score says so. This governs what happens to one afterwards —
+that a logged instrument finding is triaged to close or prune at the next pass
+over it, never carried a sixth time. And it settles no future finding in
+advance: the ledger records a reason per id because the rule needs applying, not
+looking up.
+
+- **Falsified by** a defect reaching a user through a gap this triage pruned —
+  which would say the rule's "reaches a user" test is not decidable at triage
+  time from the finding's own text, and that the instrument findings need
+  keeping until the runtime they grade changes under them.

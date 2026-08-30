@@ -105,7 +105,7 @@ The help-topic over-attribution needs a design call and stays a row.
 - [x] T7 — Write the carry-forward candidate ROADMAP rows the ledger's
       classification calls for, then delete the page, its `INDEX.md` line and
       the grouped ROADMAP row.
-- [ ] T8 — Append the D-entry.
+- [x] T8 — Append the D-entry.
 - [ ] T9 — Run `devtools::document()`, `devtools::test()`, `devtools::check()`.
 
 ## Triage ledger
@@ -222,7 +222,15 @@ F1, F2) carried forward as candidate ROADMAP rows at T7.
 - 2026-08-30: T6 — added "a real failing Phase 1 row carries its exit status on tm_row_status" to `tests/testthat/test-normalize-audios-two-pass.R`: no mock anywhere, a real `make_dynamic_audio()` row beside a readable-but-not-media `.wav`, asserting `tm_rows` is `2L` (so the good row measured and the batch did not fail wholesale) and `tm_row_status` is a length-1 non-`NA` integer. Measured on ffmpeg 9.0.1: the bad row exits 183, matching the by-hand check M086's review recorded. Mutation planted — `assemble_measured()`'s `function(x) if (is.null(x$exit)) NA_integer_ else x$exit` → `function(x) NA_integer_` — and the new test reddens with `Expected is.na(cnd$tm_row_status) to be FALSE`, F9's all-NA symptom itself (FAIL 3 / PASS 80; the two other failures are the mocked grid's exact-status assertions). Restored: FAIL 0 / PASS 83.
 - 2026-08-30: T7 — wrote the three carry-forward candidate ROADMAP rows the ledger calls for (M071 F9 and M70 O11, both classed runtime; M087's topic-vs-site design call), deleted `cairn/references/instrument-findings.md`, its `cairn/references/INDEX.md` line and the grouped ROADMAP row. Renamed this milestone file to `M092-instrument-backlog-triage.md`: AC5's sweep also matched the file's own path in the ROADMAP table, and a rename clears it without amending the criterion. `git grep -l instrument-findings -- cairn/ROADMAP.md cairn/references/` now returns no hits.
 - 2026-08-30: T7, budget — the swap took `cairn/ROADMAP.md` to 24,337 bytes, over D067's plugin-owned `< 24,000`. Compressed the heaviest candidate row (the multi-track blind-abort row, 1,531 → 1,318 bytes) by cutting what D069/D071 and M091's archive already hold, then tightened the three new rows, whose full text the Triage ledger carries. 23,832 bytes, 168 under budget.
+- 2026-08-30: T8 — appended D072 to `cairn/DECISIONS.md`, stating the triage rule, the four closures with each one's path to a user, where the pruned findings went, and the page's retirement. It supersedes nothing: D040, D041, D049, D050 and D059 all stay in force; what it retires is the working artifact those five accumulated onto.
 
 ## Decisions
+
+- **D072** (promoted, `cairn/DECISIONS.md`) — a deferred finding about an
+  instrument closes only where the gap lets a defect in shipped behaviour reach
+  a user; every other finding is pruned with its reason in the Triage ledger.
+  Records the four closures and their paths to a user, the two ids reclassed
+  runtime, and the retirement of `cairn/references/instrument-findings.md`.
+  Falsified by a defect reaching a user through a gap this triage pruned.
 
 ## Review

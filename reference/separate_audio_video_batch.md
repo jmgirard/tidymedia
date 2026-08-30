@@ -162,14 +162,39 @@ the `stream` marker. See
 
 ## Failed audio outputs
 
-A row whose `audiofile` FFmpeg refuses is recorded as `success = FALSE`
-rather than aborting the batch. When such a row named no `audio_stream`
-and its input carries more than one audio track, the verb warns **once**
-for the whole batch, naming every affected input row and the ways out.
-That check runs FFprobe on the failed rows only, so it is emitted when
+A row whose audio command does not finish cleanly is recorded as
+`success = FALSE` rather than aborting the batch. Such a row is named in
+a warning emitted **once** for the whole batch, listing every affected
+input row and the ways out.
+
+A row reaches that warning only when all four of these hold: it named no
+`audio_stream`, the row is recorded `success = FALSE`, its input carries
+more than one audio track, and its `audiofile`'s extension is not among
+the containers named here as holding several — `.mka`, `.m4a`, `.mp4`,
+`.mov`, `.mkv`, `.webm`, `.ogg`, `.opus` and `.ts`. No exit status is
+among those conditions, and the difference from
+[`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+is deliberate: the batch runner records *whether* a row succeeded and
+not how, so a non-zero exit, a hard error and a reached limit are all
+recorded the same way, and a row put here by any of them is treated
+alike. The nine are an exclusion list and not a survey: FFmpeg writes
+several audio streams into other containers too (`.avi` and `.nut` among
+them), and a row failing on one of those is still named. The container
+condition keeps a row off the list when it is already doing what the
+warning would advise; such a row is silently not named, and a batch
+whose failed audio rows all write to those nine warns not at all. The
+headline count follows the rows actually named.
+
+What each bullet states is what that row *did* — its track count, and
+that every track was mapped into one output — never why FFmpeg refused.
+A stream copy into a container that will not hold the source codec, an
+unknown encoder and a missing output directory all look alike from here.
+
+The check runs FFprobe on the failed rows only, so it is emitted when
 FFprobe is available and the input can be probed, and skipped silently
-otherwise; it never runs under `run = FALSE` and never changes any
-compiled command. Suppress it with
+otherwise — so the warning may simply not appear, and its absence is
+never itself a second failure. It never runs under `run = FALSE` and
+never changes any compiled command. Suppress it with
 `suppressWarnings(classes = "tidymedia_multitrack_separation")`.
 
 The warning names the same event as

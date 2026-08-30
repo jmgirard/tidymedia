@@ -733,6 +733,39 @@
 
 ### Bug fixes
 
+- The advice
+  [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+  gives when an audio output fails no longer arrives when you are
+  already following it. Writing a multi-track input’s audio into a
+  container that holds only one stream makes FFmpeg fail, and the error
+  then reports how many tracks the input carries and offers two ways
+  out: name one track with `audio_stream`, or write a container that
+  holds several. That report was attached to any audio command FFmpeg
+  ended at a non-zero exit status on a multi-track input — including one
+  whose output was already `.mka`, `.m4a`, `.mp4`, `.mov`, `.mkv`,
+  `.webm`, `.ogg`, `.opus` or `.ts`, every one of which holds three
+  audio tracks (`.webm`, `.ogg` and `.opus` under an encoder they
+  accept, such as `audio_codec = "libopus"`; none has room for AAC). On
+  those the container is not what FFmpeg objected to, so the report
+  named a cause that was not the cause while telling you to do the thing
+  you had already done. Writing to one of those nine, the error you get
+  is now the one the run itself raised — same class, same exit status,
+  same message, but for the line saying the video output was written,
+  which a failing audio half carries when the video command wrote its
+  file and the failure is an rlang condition. Those nine are the
+  containers the package knows about, not every one FFmpeg can write
+  several audio streams into (`.avi` and `.nut` take three too), so on
+  an output outside the list the report still appears.
+  [`separate_audio_video_batch()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video_batch.md)
+  does the same: such a row is dropped from the post-fan-out warning
+  rather than listed in it, the headline count follows the rows actually
+  listed, and a batch whose failed audio rows all write to those
+  containers warns not at all. The extension is read without regard to
+  case, so `OUT.MKA` counts. What the report says when it does appear is
+  unchanged, and it still tells you what the call did rather than why
+  FFmpeg refused — a stream copy into a container that will not hold the
+  source codec still looks the same from there.
+
 - A failed audio output no longer costs you the video in
   [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md).
   The verb compiles two commands and runs the audio one first; when that

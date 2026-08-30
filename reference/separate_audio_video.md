@@ -163,13 +163,38 @@ succeeded.
 
 Because the default keeps every audio track, writing a multi-track input
 to a container that holds only one (`.aac`, `.mp3`, `.wav`) makes FFmpeg
-fail. When that happens and no `audio_stream` was named, the error
-additionally reports how many audio tracks `infile` carries and names
-the two ways out — `audio_stream` to write one track, or a container
-such as `.mka` or `.m4a` to keep them all. FFmpeg's own error and exit
-status are still reported beneath it, and remain the authority on why
-the command failed: the extra report is attached to *any* failing audio
-command on a multi-track input, not only to a container refusal.
+fail. When that happens the error additionally reports how many audio
+tracks `infile` carries and names the two ways out — `audio_stream` to
+write one track, or a container such as `.mka` or `.m4a` to keep them
+all.
+
+That extra report is attached only when all four of these hold: no
+`audio_stream` was named, FFmpeg returned a non-zero exit status,
+`infile` carries more than one audio track, and `audiofile`'s extension
+is not among the containers named here as holding several — `.mka`,
+`.m4a`, `.mp4`, `.mov`, `.mkv`, `.webm`, `.ogg`, `.opus` and `.ts`.
+Those nine are an exclusion list and not a survey: FFmpeg writes several
+audio streams into other containers too (`.avi` and `.nut` among them),
+and a failure on one of those still gets the report. The container
+condition keeps the report off a call that is already doing what the
+report would advise: writing to one of the nine, the failure cannot be
+the container refusing a second audio stream, so whatever FFmpeg did
+object to would go unnamed. Fail any of the four and the error you get
+is the one the run itself raised, whatever that error is — same class,
+same status field, same message, but for the line saying the video
+output was written, which a failing audio half carries when the video
+command wrote its file and the audio failure is an rlang condition.
+(When the leg that fails is the exit status itself, there is no exit
+status to carry: a run that never reached FFmpeg has none.)
+
+What the report states is what the call *did* — the track count, and
+that every track was mapped into one output — never why FFmpeg refused.
+FFmpeg's own error and exit status are printed beneath it and carried on
+the condition, and they remain the only authority on the cause. Several
+causes look alike from here: a stream copy into a container that will
+not hold the source codec (the default `audio_codec = "copy"` into
+`.mp3`, say) fails on a multi-track input too, and so do an unknown
+encoder and a missing output directory.
 
 The condition carries two class names, so a caller can catch it at
 either width. It is `tidymedia_ffmpeg_exit`, the class every non-zero
@@ -186,18 +211,20 @@ want:
     )
 
 When the report is omitted, the error that reaches the caller is the one
-the run itself raised, unchanged: a non-zero exit still answers to
-`tidymedia_ffmpeg_exit`, and a failure that is not an exit at all
-answers to neither class here: an FFmpeg the package cannot locate
-raises an error carrying no `tidymedia_` class at all, and a reached
-limit raises `tidymedia_timeout`.
+the run itself raised, but for that video-output line: a non-zero exit
+still answers to `tidymedia_ffmpeg_exit`, and a failure that is not an
+exit at all answers to neither class here: an FFmpeg the package cannot
+locate raises an error carrying no `tidymedia_` class at all, and a
+reached limit raises `tidymedia_timeout`.
 
 Counting the tracks means running FFprobe, so this is **best-effort**:
 it is added when FFprobe is available and `infile` can be probed, and
-omitted silently otherwise, leaving FFmpeg's own error alone. It never
-runs under `run = FALSE`, never changes the compiled commands, and is
-skipped entirely when `audio_stream` names a track — with one track
-mapped, the track count cannot be what FFmpeg objected to.
+omitted silently otherwise, leaving FFmpeg's own error alone — so the
+report may simply not appear, and its absence is never itself a second
+failure. It never runs under `run = FALSE`, never changes the compiled
+commands, and is skipped entirely when `audio_stream` names a track
+(with one track mapped, the track count cannot be what FFmpeg objected
+to) or when `audiofile` names one of the multi-stream containers above.
 
 ## See also
 

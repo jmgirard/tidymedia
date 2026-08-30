@@ -103,6 +103,13 @@ probe_all_impl <- function(infile, typed = TRUE, parallel = FALSE,
   rlang::check_bool(typed, call = call)
   rlang::check_bool(parallel, call = call)
 
+  # D042: `call` is already threaded here, so the refusal names probe_all() or
+  # verify_media() -- whichever the caller typed -- rather than the
+  # purrr::map(infile, probe_one) below. Above the `parallel` branch, so a
+  # machine-independent refusal still reports before a machine-dependent one
+  # (D036) and the fan-out is never dispatched under a limit base R cannot use.
+  resolve_timeout(call = call)
+
   if (parallel) {
     rlang::check_installed("furrr", reason = "for parallel probing.")
     # probe_all() is a terminal entry point -- unlike loudnorm's Phase 1
@@ -437,6 +444,12 @@ resolve_probe <- function(probe, infile, typed, parallel = FALSE,
   # `parallel` is consumed exactly where `typed` is -- on the infile branch.
   # A probe object has nothing left to fan out, so both are ignored there.
   if (!is.null(infile)) {
+    # D042, on the infile branch ONLY: this is the branch that probes, so it is
+    # the branch that reads the limit. `call` is the shortcut the caller typed,
+    # which is why the refusal has to happen here rather than inside probe_all()
+    # below. A `probe =` call reprobes nothing and reads no limit, so it has
+    # nothing to refuse.
+    resolve_timeout(call = call)
     probe <- probe_all(infile, typed = typed, parallel = parallel)
   }
   probe

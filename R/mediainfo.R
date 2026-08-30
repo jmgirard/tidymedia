@@ -167,6 +167,8 @@ mediainfo_query <- function(file, section, parameters, names = parameters,
     "--Inform=", section, ";", paste(names, collapse = ", "), "\\n",
     paste(paste0("%", parameters, "%"), collapse = ", ")
   )
+  # D042: the verb the caller typed names a bad limit, not the reader below.
+  resolve_timeout()
   out <- mediainfo_read(file, inform)
   if (typed) type_columns(out) else out
 }
@@ -232,6 +234,8 @@ mediainfo_template <- function(file,
     )
   }
   inform <- paste0("--Inform=file://", templatefile)
+  # D042: the verb the caller typed names a bad limit, not the reader below.
+  resolve_timeout()
   out <- mediainfo_read(file, inform)
   if (typed) type_columns(out) else out
 }
@@ -345,6 +349,8 @@ get_duration <- function(file,
 
   section <- rlang::arg_match(section)
   unit <- rlang::arg_match(unit)
+  # D042: the verb the caller typed names a bad limit, not the reader below.
+  resolve_timeout()
   duration <- mediainfo_parameter(
     file = file,
     section = section,
@@ -377,6 +383,8 @@ get_duration <- function(file,
 #' get_frame_rate(video)
 #' @export
 get_frame_rate <- function(file) {
+  # D042: the verb the caller typed names a bad limit, not the reader below.
+  resolve_timeout()
   mediainfo_parameter(file = file, section = "Video", parameter = "FrameRate")
 }
 
@@ -402,6 +410,8 @@ get_frame_rate <- function(file) {
 #' get_width(video)
 #' @export
 get_width <- function(file) {
+  # D042: the verb the caller typed names a bad limit, not the reader below.
+  resolve_timeout()
   mediainfo_parameter(file = file, section = "Video", parameter = "Width")
 }
 
@@ -427,6 +437,8 @@ get_width <- function(file) {
 #' get_height(video)
 #' @export
 get_height <- function(file) {
+  # D042: the verb the caller typed names a bad limit, not the reader below.
+  resolve_timeout()
   mediainfo_parameter(file = file, section = "Video", parameter = "Height")
 }
 
@@ -452,5 +464,7 @@ get_height <- function(file) {
 #' get_sample_rate(video)
 #' @export
 get_sample_rate <- function(file) {
+  # D042: the verb the caller typed names a bad limit, not the reader below.
+  resolve_timeout()
   mediainfo_parameter(file = file, section = "Audio", parameter = "SamplingRate")
 }

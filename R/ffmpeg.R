@@ -2770,6 +2770,8 @@ normalize_audio_pipeline <- function(input, output,
 #' ffmpeg_codecs(sort_by_type = FALSE)
 #' @export
 ffmpeg_codecs <- function(sort_by_type = TRUE) {
+  # D042: the verb the caller typed names a bad limit, not the hatch below.
+  resolve_timeout()
   output <- ffmpeg("-codecs")
   output2 <- output[-(1:which(output == " -------"))]
   key <- regmatches(
@@ -2854,6 +2856,8 @@ ffmpeg_encoders <- function(sort_by_type = TRUE) {
 
   rlang::check_bool(sort_by_type)
 
+  # D042: the verb the caller typed names a bad limit, not the hatch below.
+  resolve_timeout()
   output <- ffmpeg("-encoders")
   output2 <- output[-(1:which(output == " ------"))]
   key <- regmatches(
@@ -2961,7 +2965,14 @@ has_nvenc <- function(codec = c("h264", "hevc", "av1")) {
   pool <- getOption("tidymedia.nvenc_encoders", default = NULL)
   # The option seam is read first on every call, so setting it mid-session takes
   # effect at once; only the fall-through consults the session memo (D044).
-  if (is.null(pool)) pool <- cached_encoder_names()
+  if (is.null(pool)) {
+    # D042, INSIDE the fall-through: this is the only branch that can read the
+    # limit at all. A call answered by the override above asks FFmpeg nothing,
+    # so there is no bad limit to refuse and refusing one would abort a call
+    # that spawns nothing (M094's one carve-out).
+    resolve_timeout()
+    pool <- cached_encoder_names()
+  }
   enc %in% pool
 }
 

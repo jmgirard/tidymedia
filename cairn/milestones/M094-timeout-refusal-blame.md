@@ -86,7 +86,7 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
 - [x] T3. Site the re-call per D042 at the Layer-2 callers of the two exported
       builders: the 15 verbs blaming `ffm_run(object)` and the 17 blaming
       `ffm_batch(...)` (`R/ffmpeg.R`), above each verb's `run` gate so AC3 holds.
-- [ ] T4. Site the remaining four classes: the 4 blaming `ffmpeg(...)`
+- [x] T4. Site the remaining four classes: the 4 blaming `ffmpeg(...)`
       (`ffmpeg_codecs`, `ffmpeg_encoders`, `has_nvenc` — below D044's memo), the
       6 `get_*` blaming `mediainfo_parameter(...)`, the 3 `mediainfo_*` blaming
       `mediainfo_read(file, inform)`, and the 6 `probe_*`/`verify_media` blaming
@@ -113,6 +113,7 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
 
 - 2026-08-30: T2 added `test-timeout-refusal-blame.R` — the domain x invalid-form sweep plus the `run = FALSE` and `parallel = TRUE` axes and the `has_nvenc()` carve-out. Red on master at 47 of 53 members (235 of 265 blame cells), green on the 6 that already named themselves.
 - 2026-08-30: T3 sited `resolve_timeout()` at the front door of the 30 verbs in the `ffm_run` and `ffm_batch` classes, last among each front door's guards and above the `run` gate; the siting rule and its three properties are stated once above `resolve_timeout()` in `R/timeout.R` and cross-referenced at each site. Delegated to one [S] subagent; diff verified site by site. Sweep now leaves exactly the 17 members T4 owns, and the rest of the suite is clean (105 failures, all in the new file; 9271 pass).
+- 2026-08-30: T4 closed the last four classes. Front-door calls at `ffmpeg_codecs()`, `ffmpeg_encoders()` and the five `get_*` scalars; at `mediainfo_query()` and `mediainfo_template()` (whose alias `mediainfo_summary()` inherits the right name, since the refusal is built from the frame's own call). `has_nvenc()` takes its call INSIDE the `is.null(pool)` branch, so a call answered by the override refuses nothing. The six FFprobe readers take two internal sites rather than six front doors — `probe_all_impl()` (covering `probe_all()` and `verify_media()`) and `resolve_probe()`'s infile branch (covering the four `probe_*` shortcuts) — both of which already thread `call`, neither of which builds the reached-limit condition, so no reached-limit blame moves; the `probe = ` path, which reprobes nothing, still reads no limit. Sweep now reports 0 of 53 members wrong; full suite 0 failures, 9376 pass.
 ## Decisions
 
 ## Review

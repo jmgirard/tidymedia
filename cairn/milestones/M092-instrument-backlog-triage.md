@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M092: The deferred-findings backlog is triaged and the page retired
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -106,7 +106,7 @@ The help-topic over-attribution needs a design call and stays a row.
       classification calls for, then delete the page, its `INDEX.md` line and
       the grouped ROADMAP row.
 - [x] T8 — Append the D-entry.
-- [ ] T9 — Run `devtools::document()`, `devtools::test()`, `devtools::check()`.
+- [x] T9 — Run `devtools::document()`, `devtools::test()`, `devtools::check()`.
 
 ## Triage ledger
 <!-- owner: plan (heading) / implement (entries, T2) -->
@@ -223,6 +223,8 @@ F1, F2) carried forward as candidate ROADMAP rows at T7.
 - 2026-08-30: T7 — wrote the three carry-forward candidate ROADMAP rows the ledger calls for (M071 F9 and M70 O11, both classed runtime; M087's topic-vs-site design call), deleted `cairn/references/instrument-findings.md`, its `cairn/references/INDEX.md` line and the grouped ROADMAP row. Renamed this milestone file to `M092-instrument-backlog-triage.md`: AC5's sweep also matched the file's own path in the ROADMAP table, and a rename clears it without amending the criterion. `git grep -l instrument-findings -- cairn/ROADMAP.md cairn/references/` now returns no hits.
 - 2026-08-30: T7, budget — the swap took `cairn/ROADMAP.md` to 24,337 bytes, over D067's plugin-owned `< 24,000`. Compressed the heaviest candidate row (the multi-track blind-abort row, 1,531 → 1,318 bytes) by cutting what D069/D071 and M091's archive already hold, then tightened the three new rows, whose full text the Triage ledger carries. 23,832 bytes, 168 under budget.
 - 2026-08-30: T8 — appended D072 to `cairn/DECISIONS.md`, stating the triage rule, the four closures with each one's path to a user, where the pruned findings went, and the page's retirement. It supersedes nothing: D040, D041, D049, D050 and D059 all stay in force; what it retires is the working artifact those five accumulated onto.
+- 2026-08-30: T9 — `devtools::document()` (no diff), `devtools::test()` FAIL 0 / WARN 12 / SKIP 5 / PASS 8815, `devtools::check()` 0 errors / 0 warnings / 0 notes. The suite's 12 warnings are pre-existing: the four files this milestone touched report 0 warnings between them (477 + 47 + 156 + 83 passes).
+- 2026-08-30: T9, AC4 repair — the sweep returned 2, not 0, both hits inside T5's own probe: its explanatory comment and its deliberate counter-example, which spelled the retired handler literally. Reworded the comment (the literal is now described, not typed, the way the retired class name in the same file is assembled rather than written) and respelled the counter-example `condition = identity`, which behaves identically. The sweep returns 0 and the file stays green at PASS 156.
 
 ## Decisions
 

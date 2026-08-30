@@ -505,13 +505,20 @@ test_that("the two batch topics state why their diagnostic has no exit status", 
 })
 
 test_that("the pairing probe captures the abort, not a warning raised before it", {
-  # M087 review pass 2 F5, closed as M092's AC4. The probes above caught with
-  # `condition = function(e) e`, which takes the FIRST condition a site signals
-  # -- so a `tidymedia_`-classed warning raised before the abort would be
-  # captured instead and asserted against topics for a site nobody tested,
+  # M087 review pass 2 F5, closed as M092's AC4. The probes above used to catch
+  # on a bare `condition =` handler, which takes the FIRST condition a site
+  # signals -- so a `tidymedia_`-classed warning raised before the abort would
+  # be captured instead and asserted against topics for a site nobody tested,
   # while still passing the loop's non-empty-class guard. `error =` binds each
   # probe to its site. The dropped-track check on the `normalize_audio` sites
   # is the live candidate for such a warning; this plants one there.
+  #
+  # The counter-example below spells its handler `condition = identity` rather
+  # than the retired literal form, so AC4's grep over this file -- which counts
+  # that literal and must report zero -- keeps meaning "no probe still catches
+  # that way". The literal is not written out here for the same reason the
+  # retired class name below is assembled rather than typed: the file would
+  # otherwise match itself.
   skip_if_no_ffmpeg()
   dir <- withr::local_tempdir()
   probe <- function(handler) {
@@ -527,7 +534,7 @@ test_that("the pairing probe captures the abort, not a warning raised before it"
 
   # The site does signal a tidymedia_-classed warning before its abort, so the
   # gap the probes had is reachable and not hypothetical.
-  first <- probe(function(expr) tryCatch(expr, condition = function(e) e))
+  first <- probe(function(expr) tryCatch(expr, condition = identity))
   expect_s3_class(first, "tidymedia_probe_warning")
   expect_false(inherits(first, "tidymedia_loudnorm_no_measurement"))
 

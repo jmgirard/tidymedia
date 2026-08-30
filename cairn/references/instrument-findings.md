@@ -31,8 +31,8 @@ blob behind it — observed 2026-08-29.
 
 ## What is here
 
-Six sections. The first five are the rows `cairn/ROADMAP.md` carried, in its
-order; the sixth was added directly here at a later hygiene pass:
+Eight sections. The first five are the rows `cairn/ROADMAP.md` carried, in its
+order; the last three were added directly here at later hygiene passes:
 
 - **M081 — the flag-guard sweep.** Filed by the M081 review.
 - **M079 — the floor-measurement harness under `data-raw/`.** Filed by the M079 review.
@@ -44,6 +44,10 @@ order; the sixth was added directly here at a later hygiene pass:
 - **M086 — the two-pass batch analysis grid.** Added 2026-08-29 by M086's
   post-merge pass under its own §7 disposition; one finding kept, two pruned
   and recorded as pruned.
+- **M087 — the condition-class pairing and topic guards.** Added 2026-08-29 by
+  M087's post-merge pass; two findings kept, three pruned and recorded as pruned.
+- **M091 — the container gate's case fold on the batch path.** Added
+  2026-08-30 by M092's T1, so the triage ledger's domain covers it.
 
 Each row below names its own finding ids; they are not restated here, so this
 list can never drift from them.
@@ -152,3 +156,24 @@ self-explaining. **(iii)** Two mocked tests in
 while emitting "Failed to find ffmpeg" warnings instead of skipping; pruned as
 cosmetic, since `find_program()` warns rather than aborting and the assertions
 under test never reach a binary.
+
+## M091 — the container gate's case fold on the batch path
+
+_Added 2026-08-30 by M092's T1 — the eighth filing, and the reason the page's
+triage covers eight sections rather than seven. M091's final review round sent
+this one to a candidate row; M092 absorbs that disposition and files the
+finding's own text here, where the ledger can reach it._
+
+- `holds_multiple_audio()` folds case (`tolower(tools::file_ext(path))`,
+  `R/ffmpeg.R:670-671`) and both call sites depend on that fold — the scalar
+  fail-open at `R/ffmpeg.R:728` and the batch row-drop at `R/ffmpeg.R:899`.
+  Only the scalar one is exercised: `tests/testthat/test-separate-av-multitrack.R:1191`
+  drives `separate_audio_video()` into `OUT.MKA` and asserts no multi-track
+  blame, and no test anywhere passes an uppercase extension through
+  `separate_audio_video_batch()`. So replacing the batch site's call with an
+  exact-case extension match leaves the suite green while the false blame M091
+  exists to remove keeps arriving on any batch row whose `audiofile` is spelled
+  `.MKA`, `.MP4` or `.MOV` — a case FFmpeg itself reads as the same muxer.
+  Promote on a batch caller receiving the multi-track advice for an output that
+  already holds several audio streams. — added 2026-08-30 — M091 review round 4;
+  D069; D071

@@ -105,14 +105,39 @@ the scalar verb.
 }
 \section{Failed audio outputs}{
 
-A row whose \code{audiofile} FFmpeg refuses is recorded as \code{success =
-FALSE} rather than aborting the batch. When such a row named no
-\code{audio_stream} and its input carries more than one audio track, the verb
-warns \strong{once} for the whole batch, naming every affected input row and
-the ways out. That check runs FFprobe on the failed rows only, so it is
-emitted when FFprobe is available and the input can be probed, and skipped
-silently otherwise; it never runs under \code{run = FALSE} and never changes
-any compiled command. Suppress it with \code{suppressWarnings(classes =
+A row whose audio command does not finish cleanly is recorded as
+\code{success = FALSE} rather than aborting the batch. Such a row is named in
+a warning emitted \strong{once} for the whole batch, listing every affected
+input row and the ways out.
+
+A row reaches that warning only when all four of these hold: it named no
+\code{audio_stream}, the row is recorded \code{success = FALSE}, its input
+carries more than one audio track, and its \code{audiofile}'s extension is not
+among the containers named here as holding several — \code{.mka},
+\code{.m4a}, \code{.mp4}, \code{.mov}, \code{.mkv}, \code{.webm},
+\code{.ogg}, \code{.opus} and
+\code{.ts}. No exit status is among those conditions, and the difference from
+\code{\link{separate_audio_video}} is deliberate: the batch runner records
+\emph{whether} a row succeeded and not how, so a non-zero exit, a hard error
+and a reached limit are all recorded the same way, and a row put here by any
+of them is treated alike. The nine are an exclusion list and not a survey:
+FFmpeg writes several audio streams into other containers too (\code{.avi} and
+\code{.nut} among them), and a row failing on one of those is still named. The
+container condition keeps a row off the list when it is already doing what the
+warning would advise; such a row is silently not named, and a batch whose
+failed audio rows all write to those nine warns not at all. The headline
+count follows the rows actually named.
+
+What each bullet states is what that row \emph{did} — its track count, and
+that every track was mapped into one output — never why FFmpeg refused. A
+stream copy into a container that will not hold the source codec, an unknown
+encoder and a missing output directory all look alike from here.
+
+The check runs FFprobe on the failed rows only, so it is emitted when FFprobe
+is available and the input can be probed, and skipped silently otherwise — so
+the warning may simply not appear, and its absence is never itself a second
+failure. It never runs under \code{run = FALSE} and never changes any compiled
+command. Suppress it with \code{suppressWarnings(classes =
 "tidymedia_multitrack_separation")}.
 
 The warning names the same event as \code{\link{separate_audio_video}}'s

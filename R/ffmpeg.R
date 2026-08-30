@@ -621,6 +621,57 @@ separate_stream_pipeline <- function(input, output, stream, codec = "copy",
 }
 
 
+# multi_audio_extensions -------------------------------------------------
+
+# Output extensions naming a container that holds SEVERAL audio streams.
+#
+# The multi-track diagnostic below tells a caller to keep every track by
+# writing a container that holds several. When their `audiofile` extension
+# already names one, that advice is not merely unhelpful -- it is false blame:
+# the failure cannot be the capacity refusal the message describes, so whatever
+# FFmpeg did object to goes unnamed while the caller is told to do the thing
+# they already did. The gate below therefore fails the diagnostic open on these
+# extensions (M091).
+#
+# The list is STATIC and measured, never probed. FFmpeg exposes no "how many
+# audio streams will this muxer accept" query, and settling it per call would
+# mean spawning FFmpeg a second time on a call that has already failed.
+#
+# Measured 2026-08-30 against ffmpeg 9.0.1, writing the suite's three-audio-
+# track fixture (make_multitrack_video(): three AAC streams) out with
+# `-map 0:a`. Every extension here exited 0 carrying three audio streams --
+# under `-c:a copy` for all but `webm`, `ogg` and `opus`, which hold no AAC and
+# took `-c:a libopus`. Refused with exit 234, and so deliberately absent: mp3,
+# wav, aac, flac, wv, caf, aiff, au, w64 -- each for a capacity reason, on the
+# evidence the paragraph below gives.
+#
+# A refusal under ONE codec is not a capacity refusal, and reading it as one is
+# how `ogg` and `opus` were first left off this list (D071). Each of the nine
+# above says capacity in its own words ("Exactly one MP3 audio stream is
+# required", "wav muxer does not support more than one stream of type audio",
+# "AIFF allows only one audio stream and a picture"); `wv`'s message names a
+# codec, but it still exits 234 under `-c:a wavpack`, the one codec it holds.
+#
+# Layer-2 knowledge, kept beside the other separation helpers rather than in
+# the engine: what a task verb's output container implies about that verb's own
+# diagnostic is no business of ffm_run() (IP1/D002).
+multi_audio_extensions <- c("mka", "m4a", "mp4", "mov", "mkv", "webm", "ogg",
+                            "opus", "ts")
+
+# TRUE for each path whose extension names one of those containers.
+#
+# Case-insensitive: FFmpeg picks the output muxer from the extension without
+# regard to case, so `out.MKA` is the same container as `out.mka` and an exact
+# match would leave the false blame alive in an uppercase spelling (M091).
+#
+# The list is an EXCLUSION list, so everything else is FALSE -- a path with no
+# extension, and any container nobody has measured, keep the diagnostic they
+# have today rather than losing it to an omission.
+holds_multiple_audio <- function(path) {
+  tolower(tools::file_ext(path)) %in% multi_audio_extensions
+}
+
+
 # run_separation_audio() --------------------------------------------------
 
 # Run separate_audio_video()'s AUDIO command and, when FFmpeg refuses it on a
@@ -635,11 +686,21 @@ separate_stream_pipeline <- function(input, output, stream, codec = "copy",
 # "take one track with audio_stream" would be false under the branch that fired
 # it -- M38's lesson, which this repo has now paid for twice.
 #
+# It is narrow in a second direction too: the message's other way out is "write
+# a container that holds several", so on an `outfile` whose extension already
+# names one the advice is false blame -- the failure cannot be the capacity
+# refusal the message describes. Those extensions fail open as well (M091).
+#
 # The probe is D024's diagnostic licence at its narrowest: it runs only after
 # FFmpeg has ALREADY failed, so the call aborts under every outcome and the probe
 # decides only WHICH abort is signalled -- never whether execution proceeds
 # (D024's third exclusion), never what was compiled, never a default, never a
-# pipeline. It fails open to ffm_run()'s own abort, unchanged in text and class.
+# pipeline. It fails open to ffm_run()'s own abort, unchanged in class and
+# status. Its MESSAGE is unchanged too as far as this function goes; what the
+# caller finally reads carries one more bullet whenever the video half wrote its
+# file, appended downstream by abort_after_video() to whichever condition the
+# audio half raised -- this branch, the two beside it, and the enriched
+# diagnostic alike (M090's contract, measured on this branch 2026-08-30).
 run_separation_audio <- function(pipeline, infile, outfile, audio_stream,
                                  call = rlang::caller_env()) {
   if (!is.null(audio_stream)) return(invisible(ffm_run(pipeline)))
@@ -653,11 +714,22 @@ run_separation_audio <- function(pipeline, infile, outfile, audio_stream,
       # the failure this diagnostic is about" as well as "no status", and both
       # fall through.
       status <- ffmpeg_exit_status(cnd)
-      n <- if (is.na(status)) NA_integer_ else count_audio_streams_all(infile)
-      # Fail open: no status, no probe answer, or a single-track input all
-      # re-raise the ORIGINAL condition object, so its message, class and trace
-      # are the ones ffm_run() raises today (D024's fail-open consequence).
-      if (is.na(status) || is.na(n) || n <= 1L) stop(cnd)
+      # Fail open: no status, or an `outfile` that already holds several audio
+      # streams, re-raises the ORIGINAL condition object, so its message, class
+      # and trace are the ones ffm_run() raises today (D024's fail-open
+      # consequence).
+      #
+      # The container gate is asked BEFORE the probe, unlike the track count
+      # below: on such an output the diagnostic cannot fire whatever the count
+      # turns out to be, so probing first would spawn FFprobe for an answer
+      # nothing reads. It is asked AFTER the status check for the same reason
+      # that one comes first -- a failure that is not an exit is not the failure
+      # this diagnostic is about, whatever the extension says (M091).
+      if (is.na(status) || holds_multiple_audio(outfile)) stop(cnd)
+      # A single-track input fails open too: with one stream mapped, the count
+      # is not what FFmpeg objected to.
+      n <- count_audio_streams_all(infile)
+      if (is.na(n) || n <= 1L) stop(cnd)
       cli::cli_abort(
         c(
           "Can't write {.file {outfile}}: FFmpeg exited with status {status}.",
@@ -814,6 +886,17 @@ warn_failed_separation_batch <- function(out, audio_stream = NULL,
         nrow(out))
   }
   bad <- which(out$stream == "audio" & !out$success & is.na(sel))
+  # A row whose own `audiofile` already names a container holding several audio
+  # streams is dropped here, the batch counterpart of the scalar verb's gate:
+  # the warning's way out is "write a container that holds several", which that
+  # row already did, so the bullet would be false blame (M091).
+  #
+  # Dropped BEFORE the probe and before warn_failed_separation() sees the row:
+  # the probe is an FFprobe spawn per failed row whose answer nothing would
+  # read. The headline stays consistent either way -- warn_failed_separation()
+  # applies its own `keep` filter and counts what survives it -- so cost is the
+  # whole reason, not half of it.
+  bad <- bad[!holds_multiple_audio(out$output[bad])]
   if (length(bad) == 0) return(invisible(NULL))
   inputs <- out$input[bad]
   counts <- count_audio_streams_all(inputs, call = call)
@@ -928,13 +1011,39 @@ ffmpeg_exit_status <- function(cnd) {
 #'
 #' Because the default keeps every audio track, writing a multi-track input to a
 #' container that holds only one (\code{.aac}, \code{.mp3}, \code{.wav}) makes
-#' FFmpeg fail. When that happens and no \code{audio_stream} was named, the error
-#' additionally reports how many audio tracks \code{infile} carries and names the
-#' two ways out — \code{audio_stream} to write one track, or a container such as
-#' \code{.mka} or \code{.m4a} to keep them all. FFmpeg's own error and exit status
-#' are still reported beneath it, and remain the authority on why the command
-#' failed: the extra report is attached to \emph{any} failing audio command on a
-#' multi-track input, not only to a container refusal.
+#' FFmpeg fail. When that happens the error additionally reports how many audio
+#' tracks \code{infile} carries and names the two ways out — \code{audio_stream}
+#' to write one track, or a container such as \code{.mka} or \code{.m4a} to keep
+#' them all.
+#'
+#' That extra report is attached only when all four of these hold: no
+#' \code{audio_stream} was named, FFmpeg returned a non-zero exit status,
+#' \code{infile} carries more than one audio track, and \code{audiofile}'s
+#' extension is not among the containers named here as holding several —
+#' \code{.mka}, \code{.m4a}, \code{.mp4}, \code{.mov}, \code{.mkv},
+#' \code{.webm}, \code{.ogg}, \code{.opus} and \code{.ts}. Those nine are an
+#' exclusion list and not a
+#' survey: FFmpeg writes several audio streams into other containers too
+#' (\code{.avi} and \code{.nut} among them), and a failure on one of those still
+#' gets the report. The container condition keeps the report off a call that is
+#' already doing what the report would advise: writing to one of the nine, the
+#' failure cannot be the container refusing a second audio stream, so whatever
+#' FFmpeg did object to would go unnamed. Fail any of the four and the error you
+#' get is the one the run itself raised, whatever that error is — same class,
+#' same status field, same message, but for the line saying the video output was
+#' written, which a failing audio half carries when the video command wrote its
+#' file and the audio failure is an rlang condition. (When the leg that fails is
+#' the exit status itself, there is no exit status to carry: a run that never
+#' reached FFmpeg has none.)
+#'
+#' What the report states is what the call \emph{did} — the track count, and that
+#' every track was mapped into one output — never why FFmpeg refused. FFmpeg's
+#' own error and exit status are printed beneath it and carried on the condition,
+#' and they remain the only authority on the cause. Several causes look alike
+#' from here: a stream copy into a container that will not hold the source codec
+#' (the default \code{audio_codec = "copy"} into \code{.mp3}, say) fails on a
+#' multi-track input too, and so do an unknown encoder and a missing output
+#' directory.
 #'
 #' The condition carries two class names, so a caller can catch it at either
 #' width. It is \code{tidymedia_ffmpeg_exit}, the class every non-zero FFmpeg
@@ -951,18 +1060,20 @@ ffmpeg_exit_status <- function(cnd) {
 #' }
 #'
 #' When the report is omitted, the error that reaches the caller is the one the
-#' run itself raised, unchanged: a non-zero exit still answers to
-#' \code{tidymedia_ffmpeg_exit}, and a failure that is not an exit at all answers
-#' to neither class here: an FFmpeg the package cannot locate raises an error
+#' run itself raised, but for that video-output line: a non-zero exit still
+#' answers to \code{tidymedia_ffmpeg_exit}, and a failure that is not an exit at
+#' all answers to neither class here: an FFmpeg the package cannot locate raises an error
 #' carrying no \code{tidymedia_} class at all, and a reached limit raises
 #' \code{tidymedia_timeout}.
 #'
 #' Counting the tracks means running FFprobe, so this is \strong{best-effort}: it
 #' is added when FFprobe is available and \code{infile} can be probed, and
-#' omitted silently otherwise, leaving FFmpeg's own error alone. It never runs
-#' under \code{run = FALSE}, never changes the compiled commands, and is skipped
-#' entirely when \code{audio_stream} names a track — with one track mapped, the
-#' track count cannot be what FFmpeg objected to.
+#' omitted silently otherwise, leaving FFmpeg's own error alone — so the report
+#' may simply not appear, and its absence is never itself a second failure. It
+#' never runs under \code{run = FALSE}, never changes the compiled commands, and
+#' is skipped entirely when \code{audio_stream} names a track (with one track
+#' mapped, the track count cannot be what FFmpeg objected to) or when
+#' \code{audiofile} names one of the multi-stream containers above.
 #' @family task verb functions
 #' @family audio selection functions
 #' @examples
@@ -5936,14 +6047,39 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #'   the batch runner; [has_nvenc()] for the \code{hardware = "nvenc"} toggle;
 #'   [segment_video_batch()] for the other fan-out batch verb.
 #' @section Failed audio outputs:
-#' A row whose \code{audiofile} FFmpeg refuses is recorded as \code{success =
-#' FALSE} rather than aborting the batch. When such a row named no
-#' \code{audio_stream} and its input carries more than one audio track, the verb
-#' warns \strong{once} for the whole batch, naming every affected input row and
-#' the ways out. That check runs FFprobe on the failed rows only, so it is
-#' emitted when FFprobe is available and the input can be probed, and skipped
-#' silently otherwise; it never runs under \code{run = FALSE} and never changes
-#' any compiled command. Suppress it with \code{suppressWarnings(classes =
+#' A row whose audio command does not finish cleanly is recorded as
+#' \code{success = FALSE} rather than aborting the batch. Such a row is named in
+#' a warning emitted \strong{once} for the whole batch, listing every affected
+#' input row and the ways out.
+#'
+#' A row reaches that warning only when all four of these hold: it named no
+#' \code{audio_stream}, the row is recorded \code{success = FALSE}, its input
+#' carries more than one audio track, and its \code{audiofile}'s extension is not
+#' among the containers named here as holding several — \code{.mka},
+#' \code{.m4a}, \code{.mp4}, \code{.mov}, \code{.mkv}, \code{.webm},
+#' \code{.ogg}, \code{.opus} and
+#' \code{.ts}. No exit status is among those conditions, and the difference from
+#' \code{\link{separate_audio_video}} is deliberate: the batch runner records
+#' \emph{whether} a row succeeded and not how, so a non-zero exit, a hard error
+#' and a reached limit are all recorded the same way, and a row put here by any
+#' of them is treated alike. The nine are an exclusion list and not a survey:
+#' FFmpeg writes several audio streams into other containers too (\code{.avi} and
+#' \code{.nut} among them), and a row failing on one of those is still named. The
+#' container condition keeps a row off the list when it is already doing what the
+#' warning would advise; such a row is silently not named, and a batch whose
+#' failed audio rows all write to those nine warns not at all. The headline
+#' count follows the rows actually named.
+#'
+#' What each bullet states is what that row \emph{did} — its track count, and
+#' that every track was mapped into one output — never why FFmpeg refused. A
+#' stream copy into a container that will not hold the source codec, an unknown
+#' encoder and a missing output directory all look alike from here.
+#'
+#' The check runs FFprobe on the failed rows only, so it is emitted when FFprobe
+#' is available and the input can be probed, and skipped silently otherwise — so
+#' the warning may simply not appear, and its absence is never itself a second
+#' failure. It never runs under \code{run = FALSE} and never changes any compiled
+#' command. Suppress it with \code{suppressWarnings(classes =
 #' "tidymedia_multitrack_separation")}.
 #'
 #' The warning names the same event as \code{\link{separate_audio_video}}'s

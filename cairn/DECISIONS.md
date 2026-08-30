@@ -3138,3 +3138,144 @@ not met loses the bullet and still carries the video failure.
 - **Falsified by** a report of a caller who needed the video failure in the text a
   human reads rather than on a field, which would reopen D065's one-message
   question with a case behind it.
+
+## D069 — A diagnostic stays silent where the caller is already doing what it would advise; the multi-track separation report is gated on the output container (2026-08-30, from M091; annotates D024's diagnostic licence and narrows the domain of the multi-track separation report M45 introduced, whose own reasoning is milestone-local as M45-D1/M45-D2; supersedes nothing)
+
+`separate_audio_video()`'s multi-track report and its batch sibling's warning
+offer two ways out of a failed audio output: name one track with
+`audio_stream`, or write a container that holds several. The second way out was
+offered whatever the caller had already written to. On an `audiofile` whose
+extension already names a multi-stream container the report was therefore false
+blame — the failure cannot be the capacity refusal the message describes, so
+whatever FFmpeg did object to went unnamed while the caller was told to do the
+thing they had done.
+
+**The rule.** A diagnostic that names a remedy checks, before it fires, that the
+remedy is not already in force. Where it is, the diagnostic fails open to the
+condition the run itself raised, unchanged in message, class vector and
+`tm_status` — the same fail-open shape D024's licence already requires of an
+unanswerable probe, reached for a different reason.
+
+**The instrument is a static measured list, not a probe.** `R/ffmpeg.R` carries
+`multi_audio_extensions` and the case-insensitive `holds_multiple_audio()`
+beside the other Layer-2 separation helpers; the comment above the vector
+records the measurement behind each member and the extensions deliberately
+absent, and M091's work log records the run. FFmpeg exposes no query for how
+many audio streams a muxer will take, so the alternative was settling it per
+call, and the shapes that could were rejected: reading FFmpeg's stderr, which
+`ffm_run()` does not capture and could not capture without stopping the live
+console output; and re-running the pipeline with one track mapped into a
+temporary path, which is decisive across every cause but spends a second FFmpeg
+spawn on a call that has already failed and would be this package's first probe
+to execute FFmpeg and write a file — D024 licenses the effect, not that shape.
+Both stay open as candidate work.
+
+**The gate is asked before the probe, and after the status check.** On a listed
+output the report cannot fire whatever the track count turns out to be, so
+counting first would spawn FFprobe for an answer nothing reads. It is asked
+after the exit-status check for the reason that check comes first: a failure
+that is not a non-zero exit is not the failure this diagnostic is about,
+whatever the extension says.
+
+**The list is an exclusion list.** An extension nobody has measured keeps the
+report it has today rather than losing it to an omission, and a path with no
+extension likewise.
+
+**What this does not fix, and says so instead.** Three causes still reach the
+report and are still named as a track-count problem: a stream copy into a
+container that will not hold the source codec — the DEFAULT `audio_codec =
+"copy"` path, and the largest of the three — an unknown encoder, and a missing
+output directory. The gate cannot see any of them, because each fails with one
+track mapped too. Both help pages now state that the report says what the call
+did and never why FFmpeg refused, and name those causes. Excluding the
+missing-directory case alone with `dir.exists(dirname(outfile))` was declined at
+M091's plan gate: it reaches one cause while leaving the larger one untouched.
+
+**Why Layer 2.** What a task verb's output container implies about that verb's
+own diagnostic is no business of `ffm_run()` — the same IP1/D002 reasoning that
+kept the report itself out of the engine, and the same inversion D024/RR02 Q3
+rejected for an `ffm_batch()` hook.
+
+- **Falsified by** a report of the diagnostic staying silent where the container
+  *was* the cause — a listed extension that refuses a second audio stream in
+  some FFmpeg build, which is the one direction this list can fail in that
+  leaves a caller worse off than before it existed. An unlisted container that
+  accepts several falsifies nothing: the list is an exclusion list, so its
+  omissions leave the diagnostic exactly where it already was, and several such
+  containers were already known when this entry was written (`.avi`, `.nut`,
+  `.m4b`, `.3gp`, `.wma` and `.asf` each take three mapped AAC streams at exit 0
+  — measured 2026-08-30 on ffmpeg 9.0.1, re-measured at M091's review). A report
+  of one of those grows the list rather than overturning the entry. A report
+  about the three causes above falsifies nothing here either; it promotes the
+  candidate row that holds them.
+
+## D070 — The fail-open adds nothing of its own; the video-written note the caller may still read is the verb's, not the diagnostic's (2026-08-30, from M091's amendment return; supersedes D069's "The rule" paragraph, keeps every other part of D069 in force; leaves D068 and the note's own contract untouched)
+
+D069's rule says a diagnostic that finds its remedy already in force fails open
+to the condition the run itself raised, "unchanged in message, class vector and
+`tm_status`". The message clause is false, and was measured false at M091's
+review on the ordinary case. `separate_audio_video()` runs its video half after
+the audio half has failed, and `abort_after_video()` appends one bullet naming
+the video file whenever that half wrote one. It appends that bullet to whichever
+condition the audio half raised — the fail-open branches and the enriched
+diagnostic alike — so the note is the verb's, not the diagnostic's, and it rode
+the two pre-existing fail-open branches before M091 added a third.
+
+**The rule, restated.** A diagnostic that names a remedy checks, before it
+fires, that the remedy is not already in force. Where it is, the diagnostic
+fails open by adding nothing of its own: the condition the run raised reaches
+the caller with its class vector and `tm_status` intact, and with its message
+intact save for what the verb appends downstream on every one of its branches
+alike.
+
+**Why the note is not stripped on this branch.** Suppressing it would make
+D069's sentence true and undo M090: the note tells a caller which of the two
+outputs survived, and it is exactly as relevant when the audio half failed for a
+cause this diagnostic declines to name.
+
+M091's AC1 was written against D069's wording, and was amended to this one.
+
+## D071 — A container's refusal under one codec is not evidence it holds one stream; the measurement re-runs under a codec that container takes (2026-08-30, from M091's second amendment return; annotates D069's "the instrument is a static measured list" paragraph, keeps every other part of D069 and all of D070 in force; supersedes nothing)
+
+M091 built `multi_audio_extensions` by writing the suite's three-audio-track
+fixture — three AAC streams — out to each candidate extension with `-map 0:a
+-c:a copy` and reading the exit status. Twelve extensions exited 234. Eleven
+were recorded as containers that hold one audio stream; `webm` was recognised as
+a codec refusal, because its message says so in words ("Only VP8 or VP9 or AV1
+video and Vorbis or Opus audio ... are supported for WebM"), re-measured under
+`-c:a libopus`, found to take three streams at exit 0, and listed.
+
+`ogg` and `opus` refuse the same copy with a terser message — "Unsupported codec
+id in stream 0" — and were read as capacity refusals on the strength of the exit
+status. They are not. Under `-c:a libopus` each takes three distinct audio
+streams at exit 0, exactly as `webm` does. So the diagnostic this milestone
+exists to silence went on firing on two containers that hold several: at M091's
+review, `separate_audio_video(3-track.mkv, "a.ogg", "v.mp4")` at the defaults
+still advised writing "a container that holds several" — into one that does.
+
+**The rule.** A measurement that concludes a container holds one audio stream
+re-runs the refusal under a codec that container takes. One codec's refusal
+measures the pair, never the container. The conclusion is admissible only from a
+refusal that survives that second run, or from a muxer message that names
+capacity in its own words rather than a codec — and where the message names a
+codec, the second run decides, not the message: `wv` says "wv muxer supports
+only codec wavpack for type audio" and still exits 234 under `-c:a wavpack`,
+which is what makes it a capacity refusal.
+
+**Where it bites.** This is the procedure behind D069's static measured list,
+and the only procedure anyone growing that list has to follow. The exit status
+alone is the cheap reading, it is what the first pass took, and it is wrong in
+the one direction that matters here — it leaves a multi-stream container off an
+exclusion list, so the false blame D069 exists to remove keeps arriving. The
+comment above `multi_audio_extensions` in `R/ffmpeg.R` now records both the
+per-container encoders and the capacity wording of each deliberately absent
+extension, so the evidence is readable without re-running anything.
+
+**What it does not touch.** D069's exclusion-list shape is unchanged: an
+unmeasured container still keeps the diagnostic it has today. This rule governs
+what counts as having measured one.
+
+- **Falsified by** a container this procedure clears as a capacity refusal that
+  is later shown to take several audio streams under some codec neither run
+  tried — which would say the second run is not enough and the measurement needs
+  the muxer's own declared stream limits instead of a witness.

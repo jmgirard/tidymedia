@@ -109,13 +109,39 @@ that command raised when it failed too, and \code{NULL} when it succeeded.
 
 Because the default keeps every audio track, writing a multi-track input to a
 container that holds only one (\code{.aac}, \code{.mp3}, \code{.wav}) makes
-FFmpeg fail. When that happens and no \code{audio_stream} was named, the error
-additionally reports how many audio tracks \code{infile} carries and names the
-two ways out — \code{audio_stream} to write one track, or a container such as
-\code{.mka} or \code{.m4a} to keep them all. FFmpeg's own error and exit status
-are still reported beneath it, and remain the authority on why the command
-failed: the extra report is attached to \emph{any} failing audio command on a
-multi-track input, not only to a container refusal.
+FFmpeg fail. When that happens the error additionally reports how many audio
+tracks \code{infile} carries and names the two ways out — \code{audio_stream}
+to write one track, or a container such as \code{.mka} or \code{.m4a} to keep
+them all.
+
+That extra report is attached only when all four of these hold: no
+\code{audio_stream} was named, FFmpeg returned a non-zero exit status,
+\code{infile} carries more than one audio track, and \code{audiofile}'s
+extension is not among the containers named here as holding several —
+\code{.mka}, \code{.m4a}, \code{.mp4}, \code{.mov}, \code{.mkv},
+\code{.webm}, \code{.ogg}, \code{.opus} and \code{.ts}. Those nine are an
+exclusion list and not a
+survey: FFmpeg writes several audio streams into other containers too
+(\code{.avi} and \code{.nut} among them), and a failure on one of those still
+gets the report. The container condition keeps the report off a call that is
+already doing what the report would advise: writing to one of the nine, the
+failure cannot be the container refusing a second audio stream, so whatever
+FFmpeg did object to would go unnamed. Fail any of the four and the error you
+get is the one the run itself raised, whatever that error is — same class,
+same status field, same message, but for the line saying the video output was
+written, which a failing audio half carries when the video command wrote its
+file and the audio failure is an rlang condition. (When the leg that fails is
+the exit status itself, there is no exit status to carry: a run that never
+reached FFmpeg has none.)
+
+What the report states is what the call \emph{did} — the track count, and that
+every track was mapped into one output — never why FFmpeg refused. FFmpeg's
+own error and exit status are printed beneath it and carried on the condition,
+and they remain the only authority on the cause. Several causes look alike
+from here: a stream copy into a container that will not hold the source codec
+(the default \code{audio_codec = "copy"} into \code{.mp3}, say) fails on a
+multi-track input too, and so do an unknown encoder and a missing output
+directory.
 
 The condition carries two class names, so a caller can catch it at either
 width. It is \code{tidymedia_ffmpeg_exit}, the class every non-zero FFmpeg
@@ -132,18 +158,20 @@ tryCatch(
 }
 
 When the report is omitted, the error that reaches the caller is the one the
-run itself raised, unchanged: a non-zero exit still answers to
-\code{tidymedia_ffmpeg_exit}, and a failure that is not an exit at all answers
-to neither class here: an FFmpeg the package cannot locate raises an error
+run itself raised, but for that video-output line: a non-zero exit still
+answers to \code{tidymedia_ffmpeg_exit}, and a failure that is not an exit at
+all answers to neither class here: an FFmpeg the package cannot locate raises an error
 carrying no \code{tidymedia_} class at all, and a reached limit raises
 \code{tidymedia_timeout}.
 
 Counting the tracks means running FFprobe, so this is \strong{best-effort}: it
 is added when FFprobe is available and \code{infile} can be probed, and
-omitted silently otherwise, leaving FFmpeg's own error alone. It never runs
-under \code{run = FALSE}, never changes the compiled commands, and is skipped
-entirely when \code{audio_stream} names a track — with one track mapped, the
-track count cannot be what FFmpeg objected to.
+omitted silently otherwise, leaving FFmpeg's own error alone — so the report
+may simply not appear, and its absence is never itself a second failure. It
+never runs under \code{run = FALSE}, never changes the compiled commands, and
+is skipped entirely when \code{audio_stream} names a track (with one track
+mapped, the track count cannot be what FFmpeg objected to) or when
+\code{audiofile} names one of the multi-stream containers above.
 }
 
 \examples{

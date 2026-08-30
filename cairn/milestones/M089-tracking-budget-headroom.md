@@ -1,11 +1,11 @@
 # M089: The guard-ordering family graduates and the tracking files get headroom
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m089-tracking-budget-headroom`
 
 ## Goal
 
@@ -83,7 +83,7 @@ and what remedy each of the three tracked files got.
 
 ## Tasks
 
-- [ ] T1 Confirm the maturation exit for the family: read `cairn/LESSONS.md`
+- [x] T1 Confirm the maturation exit for the family: read `cairn/LESSONS.md`
       lines 16 and 23, count the extension/consolidation/correction marks each
       carries, and confirm neither the enforcement nor the ownership exit
       applies. Record the count.
@@ -113,6 +113,9 @@ and what remedy each of the three tracked files got.
 - 2026-08-29: plan gate chose graduating the family plus compressing over raising the budgets, because `ROADMAP.md`'s 24,000 and `LESSONS.md`'s 20,000 live in the cairn plugin's `skills/shared/tracking-rules.md` as line cap × 400 and no repo D-entry supersedes plugin doctrine, and because `false-greens.md`'s repo-owned budget is stated by its own header to be met by compressing, never growth; falsified by the user changing the plugin's Weight caps section, or by M084's module header being superseded.
 - 2026-08-29: plan gate chose the maturation exit over pruning the stalest `LESSONS.md` entries, because tracking-rules names prune-the-stalest "the last resort" and the family clears the twice-extended test (6 marks measured across the two lines against a requirement of 2); falsified by T1 finding fewer than two extension marks, or by the enforcement or ownership exit turning out to apply.
 - 2026-08-29: split tripwires weighed and none fired decisively — 8 criteria and 9 tasks sit at the >~7 / >~10 edges without crossing, and a second milestone would add a ROADMAP row consuming the headroom the first one makes, so this stays one milestone.
+
+- 2026-08-29: T1 — maturation exit confirmed for the family: 6 extension/consolidation/correction marks across the two lines (L16 `Extended M080`; L23 `extends M41`, `absorbs M45`, `corrected M48`, `Extended M57`, `Extended M56`) against a requirement of 2. Ownership exit does not apply. Enforcement exit found PARTIALLY met and ruled not to apply: `test-codec-arg-front-door.R:166` freezes a 17-cell codec-family precedence table that reddens when a codec guard crosses the `jobs` check, but nothing fails on the lesson's rule (guard placement, pipeline-validated arguments, reshaped-index blame, derived prose) — L16 states as much itself. Gate: user chose proceed-under-maturation over trim-to-remainder.
+- 2026-08-29: gate — module budget set to fewer than 8,000 bytes and fewer than 6 lines (graduated 3,219 bytes over 2 lines, plus room for ~3 more members at this family's ~1,600-byte average); ROADMAP line reduction takes two groupings, the engine-extension trio and the memoization pair, landing at 43 lines.
 
 ## Decisions
 

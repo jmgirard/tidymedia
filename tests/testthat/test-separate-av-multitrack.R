@@ -409,6 +409,42 @@ test_that("a brace-bearing path does not execute in the batch warning either", {
   expect_match(cli::ansi_strip(conditionMessage(w)), "my{n}.mp3", fixed = TRUE)
 })
 
+test_that("the batch gate reads the extension without regard to case", {
+  # The scalar site (R/ffmpeg.R:728) and the batch site (R/ffmpeg.R:899) call
+  # holds_multiple_audio() independently, so the scalar OUT.MKA test above does
+  # not cover this one: replacing the batch call with an exact-case extension
+  # match leaves that test green while `.MKA` rows keep drawing the false blame
+  # (M091 review round 4, closed here as M092's AC2).
+  skip_if_no_ffmpeg()
+  multi <- make_multitrack_video()
+  dir <- withr::local_tempdir()
+  fail_into <- function(audiofile) {
+    jobs <- tibble::tibble(
+      input     = multi,
+      audiofile = file.path(dir, audiofile),
+      videofile = file.path(dir, paste0(tools::file_path_sans_ext(audiofile),
+                                        "-v.mp4"))
+    )
+    tryCatch(
+      separate_audio_video_batch(jobs, audio_codec = "notanencoder",
+                                 video_codec = "notanencoder"),
+      warning = function(w) w
+    )
+  }
+  # The row fails either way -- an unknown encoder -- and the multi-track
+  # warning is the only warning this verb raises, so a dropped row leaves the
+  # batch silent (M091: "an all-listed batch warns not at all").
+  upper <- fail_into("OUT.MKA")
+  expect_s3_class(upper, "tbl_df")
+  expect_false(all(upper$success))
+
+  # Control: the same failure into a container that does NOT hold several audio
+  # streams still warns, so the assertion above is about the case fold and not
+  # about the row having quietly succeeded.
+  lower <- fail_into("out.mp3")
+  expect_s3_class(lower, "tidymedia_multitrack_separation")
+})
+
 test_that("a batch where every row names a track probes nothing", {
   skip_if_no_ffmpeg()
   multi <- make_multitrack_video()

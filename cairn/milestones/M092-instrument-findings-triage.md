@@ -91,8 +91,8 @@ The help-topic over-attribution needs a design call and stays a row.
 - [x] T2 — Author the Triage ledger in this file: one entry per `## M` section,
       each finding id marked close/prune with one reason, and each marked
       instrument or runtime.
-- [ ] T3 — Add the uppercase-container batch test
-      (`tests/testthat/test-separate-audio-video-batch.R`); plant the exact-case
+- [x] T3 — Add the uppercase-container batch test
+      (`tests/testthat/test-separate-av-multitrack.R`); plant the exact-case
       mutation at `R/ffmpeg.R:899` and record it red before the fix.
 - [ ] T4 — Add the binary-free `run_with_progress()` contract test; plant a
       contract-violating stub return and record it red.
@@ -215,6 +215,8 @@ F1, F2) carried forward as candidate ROADMAP rows at T7.
 - 2026-08-30: T1 — filed M091's eighth finding (the batch path never exercises `holds_multiple_audio()`'s case fold; only the scalar site at `R/ffmpeg.R:728` is covered, by `test-separate-av-multitrack.R:1191`) as the page's `## M091` section, and corrected the page's stale "Six sections" header, which had never listed M087. `grep -c '^## M'` now reports eight.
 - 2026-08-30: T2 — authored the Triage ledger: eight entries, one per `## M` section, every finding id classed instrument or runtime and marked close or prune with one reason. Four close (M70 O6, M086 F9, M087 pass-2 F5, M091's batch case fold) — the four the plan gate named. Two ids class runtime (M071 F9's rolled-back caller options under a sequential plan, M70 O11's wrong argument name in a `probe_all_impl()` refusal); M087's pass-1 F5 / pass-2 F1-F2 prunes as instrument but carries forward under Scope Out's design-call clause.
 - 2026-08-30: amendment (minor, T7 wording): T7 said "the two carry-forward candidate ROADMAP rows", written before the triage ran. The ledger yields three rows — the two runtime-classed ids AC6 binds, plus the help-topic design call Scope Out sends to a row. T7 now reads "the carry-forward candidate ROADMAP rows the ledger's classification calls for". No criterion changed; AC6 was already bound to the ledger's own classification.
+- 2026-08-30: T3 — added "the batch gate reads the extension without regard to case" to `tests/testthat/test-separate-av-multitrack.R`, beside its scalar sibling. Measured first (ffmpeg 9.0.1): the batch verb raises no generic per-row failure warning, so a dropped `.MKA` row leaves the batch silent and the test asserts a returned tibble with `success` FALSE, plus a lowercase `.mp3` control that does warn, so the green is not the row having quietly succeeded. Mutation planted at `R/ffmpeg.R:899` (`holds_multiple_audio()` → an exact-case `tools::file_ext() %in% multi_audio_extensions`): FAIL 2 / PASS 475, both failures in the new test, `upper` arriving as a `tidymedia_multitrack_separation` warning — the false blame itself. Restored: FAIL 0 / PASS 477.
+- 2026-08-30: amendment (minor, T3 file name): T3 named `tests/testthat/test-separate-audio-video-batch.R`; the batch multi-track warning tests all live in `test-separate-av-multitrack.R`, and the new test's whole point is that the scalar `OUT.MKA` test in that file does not cover the batch site. T3 now names the file the test went into. AC2 names no file.
 
 ## Decisions
 

@@ -48,3 +48,57 @@ test_that("multi_audio_rd_count() aborts on a length it cannot name", {
   expect_error(multi_audio_rd_count(rep("x", last + 1L)),
                "cannot name a length of 13")
 })
+
+# The help pages -------------------------------------------------------------
+
+# Whitespace-collapsed Rd text, keyed by topic. Collapsed because the
+# enumeration is one long generated string that roxygen pastes in unbroken
+# while the prose around it is wrapped: a verbatim match has to see the same
+# single spaces the renderer emits, whatever the source wrapping.
+collapsed_rd <- function() {
+  rd <- rd_sources()
+  if (is.null(rd)) return(NULL)
+  out <- gsub("[[:space:]]+", " ", rd)
+  names(out) <- names(rd)
+  out
+}
+
+# The topic set, derived from the vector rather than recalled: a topic that
+# names one member of `multi_audio_extensions` is claiming the list.
+opus_token <- "\\code{.opus}"
+
+# The clause the enumeration is embedded in, on both pages. Matched on the part
+# both blocks share, so the leading "Those"/"The" can differ.
+marker_clause <- "are an exclusion list and not a survey"
+
+test_that("every topic naming a separation container carries the whole list", {
+  rd <- collapsed_rd()
+  skip_if(is.null(rd), "no Rd source available")
+  topics <- rd[grepl(opus_token, rd, fixed = TRUE)]
+
+  # A floor, not a count: it fails if the enumeration silently collapses (an
+  # unreadable man/, an empty Rd_db) and reports a vacuous pass. Two is the
+  # measured count at M93 -- the scalar verb and its batch sibling.
+  expect_gte(length(topics), 2L)
+
+  missing <- names(topics)[!grepl(multi_audio_rd_list(), topics, fixed = TRUE)]
+  expect_identical(missing, character())
+})
+
+test_that("the list is not claimed where the enumeration is absent", {
+  # The other direction, so the guard above cannot pass by saying nothing. What
+  # both guards catch is a block whose enumeration stops matching the vector --
+  # a faithful hand copy passes them, a stale one does not: dropping `.ts` from
+  # the batch block's prose reddens both (M93). A copy that also loses the
+  # `.opus` token drops out of the guard above's domain and is caught only
+  # here.
+  rd <- collapsed_rd()
+  skip_if(is.null(rd), "no Rd source available")
+  carrying <- names(rd)[grepl(marker_clause, rd, fixed = TRUE)]
+
+  # The clause's own domain, shown non-empty for the same reason as above.
+  expect_gte(length(carrying), 2L)
+
+  listing <- names(rd)[grepl(multi_audio_rd_list(), rd, fixed = TRUE)]
+  expect_identical(sort(setdiff(carrying, listing)), character())
+})

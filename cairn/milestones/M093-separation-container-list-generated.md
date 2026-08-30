@@ -98,7 +98,7 @@ guarantees. Promotable on that removal → ROADMAP candidate row.
       marker clause AC3 matches on is split across roxygen lines — it is today
       (`:1024-1025`), which is why a grep for it currently returns one file, not
       two. Run `devtools::document()`.
-- [ ] T3. Add `tests/testthat/test-separation-container-docs.R`: enumerate
+- [x] T3. Add `tests/testthat/test-separation-container-docs.R`: enumerate
       topics via `rd_sources()` (`tests/testthat/helper-rd.R`) on the
       `\code{.opus}` token with whitespace collapsed, floor of 2, assert the
       renderer's returned string appears verbatim in each, plus the
@@ -119,6 +119,8 @@ guarantees. Promotable on that removal → ROADMAP candidate row.
 - 2026-08-30: T1 — `multi_audio_rd_list()` and `multi_audio_rd_count()` added beside `multi_audio_extensions`; count vocabulary set to two–twelve at the implement gate (a length past it aborts `document()` naming the length). Unit tests in `tests/testthat/test-separation-container-docs.R`, 11 passing.
 
 - 2026-08-30: T2 — both roxygen blocks now paste the enumeration and both count words in through inline `r` calls; the `:649` source comment reworded to "Each container above". `document()` rewrapped both Rd files with no change to the rendered wording. Suite: 8826 pass, 0 fail.
+
+- 2026-08-30: T3 — Rd guard added: the two `\code{.opus}` topics must each carry the renderer's string verbatim (whitespace-collapsed), plus the converse over the shared marker clause, both with a floor of 2. Discrimination shown by planting a stale hand copy (`.ts` dropped from the batch block): both guards red, then reverted. A *faithful* hand copy passes — the property asserted is that the prose matches the vector, which is what AC3 promises.
 
 ## Decisions
 

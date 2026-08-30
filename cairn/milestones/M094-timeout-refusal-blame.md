@@ -1,0 +1,112 @@
+# M094: An invalid `tidymedia.timeout` is refused by the function the caller typed
+
+- **Status:** planned
+- **Priority:** normal
+- **Depends on:** —
+- **Driving RR:** —
+- **Principles touched:** —
+- **Branch/PR:** —
+
+## Goal
+
+`options(tidymedia.timeout = <invalid>)` makes 47 of the 53 exports in
+`tm_timeout_domain()` abort naming a function the caller never typed; the
+refusal fires instead from the frame that can name the caller.
+
+## Scope
+
+Surface tier: **user-facing** — the deliverable is the condition every exported
+timeout-domain verb raises for an invalid option value.
+
+**In:** siting the refusal per D042 (the export re-calls `resolve_timeout()` at
+its own front door) across the six wrong-blame classes measured on master
+2026-08-30 — `ffm_run(object)` ×15, `ffm_batch(jobs, <deparsed builder>)` ×17,
+`ffmpeg(...)` ×4, `mediainfo_parameter(...)` ×6, `mediainfo_read(file, inform)`
+×3, `purrr::map(infile, probe_one)` ×6. A sweep test over the computed domain.
+The D-entry, NEWS.
+
+**Out:** the blame of any condition other than this refusal — a reached limit's
+own condition is D049's and is unchanged (AC6). `resolve_timeout()`'s message
+wording, which must not fork (AC4). A `call` argument on the exported builders,
+which D042 rejected → stays rejected; superseding it is its own milestone.
+
+## Acceptance criteria
+
+- [ ] AC1. With an invalid `tidymedia.timeout` set, every member of
+      `tm_timeout_domain()` (computed at `tests/testthat/helper-timeout-sweep.R:104`),
+      invoked through its own `tm_timeout_call_specs()` cell, raises a condition
+      whose `conditionCall()` head is that member's own name. One carve-out: a
+      call that never reads the limit — `has_nvenc()` under a set
+      `tidymedia.nvenc_encoders`, where D044's memo sits above the read — raises
+      nothing and is not required to. Master baseline (2026-08-30): 6 of 53.
+- [ ] AC2. AC1 holds for each invalid form `resolve_timeout()`'s own comment
+      names (`R/timeout.R:19-26`) — `-1`, `0.5`, `NA`, `"2"`, `c(1, 2)` — not for
+      one form alone.
+- [ ] AC3. AC1 holds at `run = FALSE` as well as `run = TRUE`, and at
+      `parallel = TRUE` as well as the default, at every domain member carrying
+      that argument. This closes the asymmetry measured on master, where
+      `extract_audio(v, o, run = FALSE)` raises nothing and
+      `extract_audio_batch(jobs, run = FALSE)` aborts.
+- [ ] AC4. The wording does not fork: for each AC2 form, `conditionMessage()`
+      under a pinned `cli.width` is identical across all 53 members and equals
+      what `resolve_timeout()`'s single `rlang::check_number_whole()` site
+      (`R/timeout.R:31`) produces for that form. At the six members that blame
+      `purrr::map(infile, probe_one)` today, the `purrr_error_indexed` class and
+      its `In index: 1. / Caused by error in .f()` prefix are gone.
+- [ ] AC5. Blame changes and nothing else (D042's siting rule): with the option
+      unset or set to a valid whole number, every domain member's return value
+      and its `system`/`system2` count are unchanged from the T1 baseline; and
+      under an invalid limit no domain member reaches `system()`/`system2()`.
+- [ ] AC6. D049's rule is unchanged: with the limit forced to be reached, every
+      member of `tm_timeout_domain()` still either aborts or warns, and which of
+      the two each member does matches T1's per-member table.
+- [ ] AC7. `devtools::test()` passes and `devtools::check()` reports 0 errors and
+      0 warnings.
+
+## Coverage
+
+- AC1 → T2, T3, T4
+- AC2 → T1, T2
+- AC3 → T2, T3, T4
+- AC4 → T4, T5
+- AC5 → T1, T3, T4, T5
+- AC6 → T1, T7
+- AC7 → T7
+
+## Tasks
+
+- [ ] T1. Capture two master baselines into `tests/testthat/helper-timeout-sweep.R`
+      as recorded tables, so AC1/AC5/AC6 have a referent the repo does not hold
+      today: per-member blame under each AC2 form, and per-member abort-vs-warn
+      under a reached limit (the grid at `test-timeout-silence.R:342` records
+      only the disjunction).
+- [ ] T2. Write the failing sweep over `tm_timeout_domain()` × AC2's forms for
+      AC1, including the `has_nvenc()` carve-out and AC3's `run = FALSE` /
+      `parallel = TRUE` cells. Expect red at 47 of 53.
+- [ ] T3. Site the re-call per D042 at the Layer-2 callers of the two exported
+      builders: the 15 verbs blaming `ffm_run(object)` and the 17 blaming
+      `ffm_batch(...)` (`R/ffmpeg.R`), above each verb's `run` gate so AC3 holds.
+- [ ] T4. Site the remaining four classes: the 4 blaming `ffmpeg(...)`
+      (`ffmpeg_codecs`, `ffmpeg_encoders`, `has_nvenc` — below D044's memo), the
+      6 `get_*` blaming `mediainfo_parameter(...)`, the 3 `mediainfo_*` blaming
+      `mediainfo_read(file, inform)`, and the 6 `probe_*`/`verify_media` blaming
+      `purrr::map(infile, probe_one)`. The last two classes may instead thread
+      `call` through the internal helper, which D042's carve-out allows.
+- [ ] T5. Assert AC4 (one wording, pinned `cli.width`, the `purrr` wrapper gone)
+      and AC5 (valid/unset path and spawn counts unchanged against T1).
+- [ ] T6. Append the D-entry: the refusal is sited at the verb the caller typed
+      per D042; it fires at `run = FALSE` too, and why that is not a D024 breach;
+      the `has_nvenc()` carve-out.
+- [ ] T7. `NEWS.md`, `devtools::document()`, `devtools::test()`, `devtools::check()`.
+
+## Work log
+
+- 2026-08-30: created by /milestone-plan.
+- 2026-08-30: criteria audit ran in FULL mode (declared tier user-facing); a fresh-context reader that authored none of the criteria returned 8 findings. Six fixed here and reported in chat: AC4's master-baseline referent contradicted AC1 (rewritten to state the property directly); AC3 was instrument-bound on a spawn interceptor that does not exist (narrowed to the deliverable, folded into AC5); AC1's member-vs-cell quantifier was ambiguous and false at `has_nvenc()` (quantifier stated, carve-out added); no criterion pinned the valid-limit path unchanged (AC5); AC6 compared against a per-member abort/warn table the repo does not hold (T1 captures it); AC2's form set omitted the length-2 form its own checker comment names (added). The seventh — whether `run = FALSE` should start refusing — went to the gate and is AC3. The eighth (one spec cell per member) is accepted: the cross-product has no enumerating table, so AC3 varies the axes that matter instead of widening AC1.
+- 2026-08-30: plan gate chose D042's front-door re-call over a `call` argument on the exported builders (`ffm_run()`, `ffm_batch()`, `ffmpeg()`, `mediainfo_parameter()`) because D042 already rejected that shape as API surface with an audience of one, and its carve-out still allows threading `call` through the internal `mediainfo_read()`/`probe_one()`; falsified by a shared checker whose abort cannot be aimed at a Layer-2 caller from the verb's own frame.
+- 2026-08-30: plan gate chose refusing at `run = FALSE` on both forms over keeping `run = FALSE` a pure compile, because `R/ffm_batch.R:96-99` already made that choice for the batch form and the scalar/batch split is itself the defect; falsified by a report of a dry-run compile refused on a limit that run would never have read.
+- 2026-08-30: plan gate chose this scope over the M071 F9 option-rollback fix because the rollback was measured to be `future`'s own (it restores `options()` at every future boundary, sequential plan included), leaving nothing for the package to fix; falsified by a `future` release that stops restoring options across the boundary. Recorded as D073.
+
+## Decisions
+
+## Review

@@ -3342,3 +3342,47 @@ looking up.
   which would say the rule's "reaches a user" test is not decidable at triage
   time from the finding's own text, and that the instrument findings need
   keeping until the runtime they grade changes under them.
+
+## D073 — The option rollback a caller sees under a sequential plan is `future`'s, not the carrier's (2026-08-30, from M094's plan gate; annotates D050's falsifier and retires the ROADMAP row that read the rollback as the package's, keeping every part of D050 in force)
+
+M071's F9 read `carry_options()` (`R/timeout.R:517`) as discarding a caller's own
+`options(tidymedia.*)` written inside `.f`: under `parallel = TRUE` with the
+default sequential plan the wrapper runs in the caller's process, so its
+`on.exit(options(prior))` restores over the caller's write rather than over a
+worker's. The mechanism is real and the conclusion was wrong.
+
+**What was measured** (2026-08-30, future 1.75.0 / furrr 0.4.0, this checkout).
+`future` saves and restores `options()` across every future's boundary, the
+sequential plan included:
+
+```
+plan(sequential); options(tm.z = TRUE)
+future_map(1:3, \(i) { if (i == 1) options(tm.z = FALSE); getOption("tm.z") })
+#> seen: FALSE FALSE FALSE   after: TRUE
+purrr::pmap(list(i = 1:3), <same .f>)
+#> seen: FALSE FALSE FALSE   after: FALSE
+```
+
+So the caller's write never escapes the call whether or not the carrier wraps
+`.f`. Removing or gating `carry_options()` changes nothing a caller can observe
+after the call returns.
+
+**The one residue, and why it is not a contract.** With the carrier, each mapped
+call starts from the parent's captured values, so row 2 is blind to row 1's
+write; without it, row 2 sees the write. That difference is `future`'s chunking,
+not the package's: `.options = furrr_options(chunk_size = 1)` — reachable,
+because `ffm_batch()` forwards `...` straight into `future_pmap()`
+(`R/ffm_batch.R:112`) — gives `FALSE TRUE TRUE` with the carrier gone. Nothing
+can rely on either answer, so there is nothing here to promise.
+
+**What this does to D050.** Nothing, except to sharpen its falsifier. D050's
+"the sequential branches are untouched" means the `parallel = FALSE` branches,
+and that stays true. Its named falsifier — "a worker-side option write colliding
+with a caller's own worker configuration" — is not this case, and this case is
+now measured not to exist. The carrier stays applied at all four
+`furrr::future_*` calls unconditionally, where under a real plan its restore is
+load-bearing and under a sequential one it is redundant rather than harmful.
+
+- **Falsified by** a `future` release that stops restoring `options()` across a
+  future's boundary, which would make the sequential-plan write escape and put
+  the carrier back in the caller's way.

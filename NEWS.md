@@ -561,10 +561,11 @@
   separation again. The video command now runs either way. The audio failure is
   still what aborts the call, and its error gains one line — `The video output
   was written to 'video.mp4'.` — so it is clear the video half survived. That
-  line is shown when the run actually wrote `videofile`, decided by comparing
-  the file before the video command against the file after it rather than by
-  that command's exit status: a command that returns zero having left a file
-  already at that path untouched does not claim to have written it. If the
+  line is shown when the video command succeeded and that run actually wrote
+  `videofile`, decided by comparing the file before the video command against
+  the file after it rather than by that command's exit status alone: a command
+  that returns zero having left a file already at that path untouched does not
+  claim to have written it. If the
   video command fails as well, the line is not shown and the audio failure is
   still the error you get — and that error carries the video command's own
   condition on its `tm_video_error` field, so the second failure is available

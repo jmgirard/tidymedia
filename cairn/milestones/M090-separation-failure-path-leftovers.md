@@ -132,6 +132,7 @@ here; D065's one-message reasoning stands.
 - 2026-08-30: T9 — `devtools::test()` 8,489 pass / 0 fail / 12 warn (the 12 are the pre-change baseline) and `devtools::check()` Status: OK (0 errors, 0 warnings, 0 notes). `devtools::document()` produces no diff.
 - 2026-08-30: review opened; PR #94 (draft). AC1-AC4 verified with fresh evidence and ticked; AC5 pending the running `devtools::check()`. Consistency gate so far: `cairn_validate` all-pass, `document()` no diff, `pkgdown::check_pkgdown()` clean, NEWS entry present, no new top-level files. Three review lenses spawned; blame-history and prior-review both returned no findings.
 - 2026-08-30: review found and fixed F1/F2 on the branch — the `wrote` gate now requires the video run to have succeeded as well as to have changed the path. Regression test added from the end-to-end reproduction (AAC/h264 input, `.mp3` audio out, pre-existing `.wav` video out), shown red on the branch's own gate at the exact claim with its case-establishing assertions passing first. Suite 8,493 pass / 0 fail.
+- 2026-08-30: the `NEWS.md` sentence describing the gate corrected in the same pass — it had said the line is decided by the before/after comparison "rather than by that command's exit status", which the fix makes false; it now says the video command must have succeeded and names the exit status as not deciding it *alone*. `NEWS.md` is unreleased, so the entry is amended in place.
 
 ## Decisions
 
@@ -304,3 +305,7 @@ video command, which is the only branch the predicate narrows.
 0 notes, 2m58s. `cairn_validate.py` re-run over the completed branch: all
 checks pass, every advisory OK, `release window` silent. AC5 holds on the
 fixed branch.
+
+The `NEWS.md` sentence describing the gate was corrected in the same pass, so
+the changelog states the fixed predicate rather than the one the branch shipped
+before this review.

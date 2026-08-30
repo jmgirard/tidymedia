@@ -504,6 +504,39 @@ test_that("the two batch topics state why their diagnostic has no exit status", 
   expect_match(nb, "aborts on a silent", fixed = TRUE)
 })
 
+test_that("the pairing probe captures the abort, not a warning raised before it", {
+  # M087 review pass 2 F5, closed as M092's AC4. The probes above caught with
+  # `condition = function(e) e`, which takes the FIRST condition a site signals
+  # -- so a `tidymedia_`-classed warning raised before the abort would be
+  # captured instead and asserted against topics for a site nobody tested,
+  # while still passing the loop's non-empty-class guard. `error =` binds each
+  # probe to its site. The dropped-track check on the `normalize_audio` sites
+  # is the live candidate for such a warning; this plants one there.
+  skip_if_no_ffmpeg()
+  dir <- withr::local_tempdir()
+  probe <- function(handler) {
+    local_mocked_bindings(
+      run_program = function(...) {
+        rlang::warn("a track was dropped", class = "tidymedia_probe_warning")
+        "ffmpeg printed nothing parseable"
+      },
+      .package = "tidymedia")
+    handler(normalize_audio(make_input("wav"), file.path(dir, "d.m4a"),
+                            two_pass = TRUE, run = FALSE))
+  }
+
+  # The site does signal a tidymedia_-classed warning before its abort, so the
+  # gap the probes had is reachable and not hypothetical.
+  first <- probe(function(expr) tryCatch(expr, condition = function(e) e))
+  expect_s3_class(first, "tidymedia_probe_warning")
+  expect_false(inherits(first, "tidymedia_loudnorm_no_measurement"))
+
+  # `error =` reaches past it to the abort the pairing is about.
+  caught <- probe(function(expr)
+    suppressWarnings(tryCatch(expr, error = function(e) e)))
+  expect_s3_class(caught, "tidymedia_loudnorm_no_measurement")
+})
+
 test_that("every topic names the classes its site actually raises", {
   # AC4. The pairing is checked from the OBSERVED side: each site is executed,
   # its `tidymedia_*` classes are read off the condition object, and every one
@@ -529,18 +562,18 @@ test_that("every topic names the classes its site actually raises", {
     scalar_exit = tryCatch(
       normalize_audio(bad, file.path(dir, "a.m4a"), two_pass = TRUE,
                       run = FALSE),
-      condition = function(e) e),
+      error = function(e) e),
     # R/loudnorm_two_pass.R:253 -- batch analysis.
     batch_loudnorm = tryCatch(
       normalize_audio_batch(
         tibble::tibble(input = bad, output = file.path(dir, "c.m4a")),
         two_pass = TRUE, run = FALSE),
-      condition = function(e) e),
+      error = function(e) e),
     # R/ffmpeg.R:681 -- scalar multi-track separation error.
     scalar_sep = tryCatch(
       separate_audio_video(multi, file.path(dir, "s.mp3"),
                            file.path(dir, "s.mkv")),
-      condition = function(e) e),
+      error = function(e) e),
     # R/ffmpeg.R:742 -- batch multi-track separation warning.
     batch_sep = tryCatch(
       separate_audio_video_batch(tibble::tibble(
@@ -558,7 +591,7 @@ test_that("every topic names the classes its site actually raises", {
     tryCatch(
       normalize_audio(make_input("wav"), file.path(dir, "d.m4a"),
                       two_pass = TRUE, run = FALSE),
-      condition = function(e) e)
+      error = function(e) e)
   })
 
   pairing <- list(

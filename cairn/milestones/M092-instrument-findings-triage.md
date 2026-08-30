@@ -96,7 +96,7 @@ The help-topic over-attribution needs a design call and stays a row.
       mutation at `R/ffmpeg.R:899` and record it red before the fix.
 - [x] T4 — Add the binary-free `run_with_progress()` contract test; plant a
       contract-violating stub return and record it red.
-- [ ] T5 — Change the four `condition = function(e) e` handlers
+- [x] T5 — Change the four `condition = function(e) e` handlers
       (`tests/testthat/test-ffmpeg-exit-condition.R:532,538,543,561`) to
       `error =`, and add the warning-before-abort probe.
 - [ ] T6 — Close the two-pass batch status gap: drive `tm_row_status` through a
@@ -218,6 +218,7 @@ F1, F2) carried forward as candidate ROADMAP rows at T7.
 - 2026-08-30: T3 — added "the batch gate reads the extension without regard to case" to `tests/testthat/test-separate-av-multitrack.R`, beside its scalar sibling. Measured first (ffmpeg 9.0.1): the batch verb raises no generic per-row failure warning, so a dropped `.MKA` row leaves the batch silent and the test asserts a returned tibble with `success` FALSE, plus a lowercase `.mp3` control that does warn, so the green is not the row having quietly succeeded. Mutation planted at `R/ffmpeg.R:899` (`holds_multiple_audio()` → an exact-case `tools::file_ext() %in% multi_audio_extensions`): FAIL 2 / PASS 475, both failures in the new test, `upper` arriving as a `tidymedia_multitrack_separation` warning — the false blame itself. Restored: FAIL 0 / PASS 477.
 - 2026-08-30: amendment (minor, T3 file name): T3 named `tests/testthat/test-separate-audio-video-batch.R`; the batch multi-track warning tests all live in `test-separate-av-multitrack.R`, and the new test's whole point is that the scalar `OUT.MKA` test in that file does not cover the batch site. T3 now names the file the test went into. AC2 names no file.
 - 2026-08-30: T4 — added "run_with_progress() returns one success/timed_out record per job" to `tests/testthat/test-ffm-batch.R`, with no `skip_if_no_ffmpeg()`: a stub `run_one` over three pipelines, per-element `expect_named` + `rlang::is_bool`, and the two `vapply()` expressions `ffm_batch()` itself applies to this return (`R/ffm_batch.R:157-158`). Two contract-violating stubs recorded red — dropping `timed_out` (FAIL on the names and the bool assertions) and returning `success` as an integer, which reproduces M70 O6's own failure mode verbatim: `Error in vapply(results, [[, logical(1), "success"): values must be type 'logical'`, FAIL 4 / PASS 7. Restored: FAIL 0 / PASS 47 over the file.
+- 2026-08-30: T5 — swapped all four `condition = function(e) e` handlers in `tests/testthat/test-ffmpeg-exit-condition.R` for `error = function(e) e` (`grep -c` now returns 0) and added "the pairing probe captures the abort, not a warning raised before it". The probe mocks `run_program` to signal a `tidymedia_probe_warning` before returning unparseable output, then asserts both halves permanently rather than by a transient mutation: under `condition =` the captured object is the warning and is NOT `tidymedia_loudnorm_no_measurement`; under `error =` it is. File green afterwards, FAIL 0 / PASS 156, so the four swapped probes still observe non-empty class vectors and the AC4 loop's non-vacuity guard still holds.
 
 ## Decisions
 

@@ -719,14 +719,16 @@ abort_after_video <- function(cnd, videofile, wrote, video_error = NULL) {
     )
     # cli_abort() and rlang conditions carry their bullets in `body`; a bare
     # error (a missing binary aborts in run_program() with neither) has only
-    # `message`. Today no bare error can reach this line with `wrote` TRUE --
-    # the causes that raise one stop the video command too -- so the second
-    # branch is a floor rather than a live path: it keeps a condition shape this
-    # function has not met from swallowing the note without trace.
+    # `message`, and stop() renders `message` alone -- an appended `body` rides
+    # along on the object and never reaches the reader (measured 2026-08-30 on
+    # a `simpleError`). So the guard is explicit and the note is REFUSED on a
+    # shape this function has not met, rather than assigned into a field
+    # nothing would print. Today none can reach this line with `wrote` TRUE --
+    # the causes that raise a bare condition stop the video command too, so
+    # nothing is written -- which is why the loss is left visible here instead
+    # of being papered over with a second formatting rule (M090).
     if (inherits(cnd, "rlang_error")) {
       cnd$body <- c(cnd$body, "i" = note)
-    } else {
-      cnd$message <- paste0(cnd$message, "\n", note)
     }
   }
   stop(cnd)
@@ -909,14 +911,20 @@ ffmpeg_exit_status <- function(cnd) {
 #' there, the audio failure is still the error you get, and FFmpeg's own output
 #' for the failed video command is printed above it.
 #'
+#' A reached wall-clock limit on the audio command is held like any other audio
+#' failure, so the video command still runs — on a fresh limit of its own, since
+#' \code{\link{with_timeout}()} bounds each spawned program rather than the
+#' call. A call whose audio half reaches the limit can therefore wait up to two
+#' limits rather than one.
+#'
 #' What a failed command leaves at its own output path is the same rule on
 #' either path: a partial file that run wrote is removed, while a file that was
 #' already at that path and that FFmpeg never wrote to is left exactly as it
 #' was. So neither failure path promises the path is empty afterwards — only
 #' that nothing half-written is left there. The audio failure's own error says
-#' which of the two happened to \code{audiofile}; nothing reports
-#' \code{videofile}'s fate on the both-fail path, because the video command's
-#' error is not the one you get.
+#' which of the two happened to \code{audiofile}. What became of the video
+#' command is on the same error's \code{tm_video_error} field: the condition
+#' that command raised when it failed too, and \code{NULL} when it succeeded.
 #'
 #' Because the default keeps every audio track, writing a multi-track input to a
 #' container that holds only one (\code{.aac}, \code{.mp3}, \code{.wav}) makes
@@ -1020,6 +1028,16 @@ separate_audio_video <- function(infile, audiofile, videofile,
     if (is.null(held)) {
       ffm_run(video)
     } else {
+      # What the added line answers is "did this run write videofile?", and the
+      # video run's exit status does not answer it: a command can return 0
+      # having left a pre-existing file untouched, and one that fails on an
+      # unknown encoder never opens the output at all. So the same pre/post
+      # comparison Layer 1 uses to decide what a failed run WROTE (D046,
+      # output_snapshot()) decides the line here -- read on both outcomes, so
+      # the exit status feeds the line on no path. On a failed run the two
+      # snapshots already agree, because Layer 1 has removed whatever that run
+      # wrote before its condition reaches this frame.
+      before_video <- output_snapshot(videofile)
       # The video run's own condition is HELD the same way the audio one is,
       # and travels to the caller on the raised condition's `tm_video_error`
       # field (D068). It is still not reported: no rendered text changes on any
@@ -1031,7 +1049,7 @@ separate_audio_video <- function(infile, audiofile, videofile,
         ffm_run(video)
         NULL
       }, error = function(cnd) cnd)
-      wrote <- is.null(video_error)
+      wrote <- !identical(output_snapshot(videofile), before_video)
       abort_after_video(held, videofile, wrote, video_error)
     }
     invisible(commands)

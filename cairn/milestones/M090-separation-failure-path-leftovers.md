@@ -95,20 +95,20 @@ here; D065's one-message reasoning stands.
 - [x] T3 Carry the video condition out of the `tryCatch()` at
       `R/ffmpeg.R:1019-1023` and attach it in `abort_after_video()`
       (`R/ffmpeg.R:708`).
-- [ ] T4 Tests first for the `wrote` gate: three mocked-`ffm_run()` cases per
+- [x] T4 Tests first for the `wrote` gate: three mocked-`ffm_run()` cases per
       AC2, dispatching on `object$output`. The mocked audio error must be
       status-free (so `run_separation_audio()` takes the fall-open at
       `R/ffmpeg.R:660`) or the call must name `audio_stream`, otherwise the verb
       shells out to real FFprobe at `R/ffmpeg.R:658`; `infile` must exist on
       disk for `check_file_readable()` at `R/ffmpeg.R:968`.
-- [ ] T5 Snapshot `videofile` before `ffm_run(video)` and again after, and gate
+- [x] T5 Snapshot `videofile` before `ffm_run(video)` and again after, and gate
       `wrote` on the comparison (`output_snapshot()`, `R/ffm.R:1421`).
-- [ ] T6 Test that a bare `simpleError` passed to `abort_after_video()` with a
+- [x] T6 Test that a bare `simpleError` passed to `abort_after_video()` with a
       written video reaches the caller unchanged and without the note.
-- [ ] T7 Delete the `else` branch at `R/ffmpeg.R:722-723` and guard the `body`
+- [x] T7 Delete the `else` branch at `R/ffmpeg.R:722-723` and guard the `body`
       append on `inherits(cnd, "rlang_error")`; replace the source comment with
       one recording that a bare condition now loses the note.
-- [ ] T8 Roxygen: add the second-spawn sentence to "When the audio output
+- [x] T8 Roxygen: add the second-spawn sentence to "When the audio output
       fails", remove the sentence AC4 names, and state that the video failure is
       on `tm_video_error`. `devtools::document()`.
 - [ ] T9 `NEWS.md` entry; full `devtools::test()` and `devtools::check()`.
@@ -124,6 +124,10 @@ here; D065's one-message reasoning stands.
 - 2026-08-29: implement gate — chose the snapshot comparison alone on both video-run outcomes over an exit-status short-circuit, and attaching `tm_video_error` unconditionally over guarding it with the note's `rlang_error` check. Both recommendations; both taken.
 - 2026-08-29: T1 — D068 appended, superseding only D065's "Why the both-fail case names one failure" section. Reason recorded: D065's own falsifier — a caller who could not tell from the condition alone that the video command had also failed — is met.
 - 2026-08-30: T2/T3 — the video run's condition is held beside the audio one and attached at `tm_video_error`; NULL when the video command succeeded. Two tests over both audio branches (both-fail and video-succeeded); the field tests were red on the pre-change code at the attachment, and the whole suite is 8,460 pass / 0 fail.
+- 2026-08-30: T4/T5 — `wrote` is now `!identical(output_snapshot(videofile), before)` across pre/post the video run, read on both outcomes so the exit status feeds the line on no path. Three mocked-`ffm_run()` cases; the two negative ones (fresh path, and a pre-existing file the run never touched) were red on the exit-status gate, the rewrite control green throughout.
+- 2026-08-30: T6/T7 — `abort_after_video()`'s bare-condition fallback deleted; the note's `body` append is guarded on `inherits(cnd, \"rlang_error\")` and a bare condition now loses the note visibly in the source. Measured first that `stop()` renders `message` alone and ignores an appended `body`, so the deleted branch was the only thing that had been delivering the note on that shape. Direct test plus an rlang control.
+- 2026-08-30: T8 — roxygen states the second-spawn cost D066 measured (an audio half that reaches the limit still lets the video command run on a fresh limit, so up to two limits), drops the sentence AC4 names, and points at `tm_video_error`. `devtools::document()` run.
+- 2026-08-30: defect found and fixed in this milestone's own test helper. `local_mocked_bindings(.env = )` names the SCOPE the mock is undone at, not the namespace it is installed in; passing `asNamespace(\"tidymedia\")` scoped the undo to an environment that never exits, so the mocked `ffm_run()` outlived the three T4 cases and 60 tests across six unrelated files failed — the timeout-silence sweep reads the live namespace, where a mocked `ffm_run()` reaches no spawn. Scope is now the calling `test_that()` frame, and a sentinel test asserts the real `ffm_run()` is back; the sentinel was shown red against the planted leak.
 
 ## Decisions
 

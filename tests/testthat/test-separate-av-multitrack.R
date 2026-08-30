@@ -809,3 +809,163 @@ test_that("a succeeded video command leaves tm_video_error NULL", {
     expect_null(cnd$tm_video_error, info = branch)
   }
 })
+
+
+# The `wrote` gate ----------------------------------------------------------
+#
+# AC2: the video-written line answers "did this run write videofile?", and a
+# zero exit does not answer it. FFmpeg refuses an unknown encoder, filter or
+# option value BEFORE opening the output, and the mirror case is a command that
+# returns 0 having left a pre-existing file untouched -- D046's own distinction,
+# read here at Layer 2 rather than in the removal path.
+#
+# These three cases cannot be staged with a real FFmpeg: the point is a video
+# command that SUCCEEDS without writing, which no real invocation does. So
+# `ffm_run()` is mocked and dispatches on `object$output` -- the audio pipeline
+# gets the failure, the video pipeline gets the behavior each case is named
+# after. `audio_stream` is named so run_separation_audio() returns ffm_run()'s
+# condition directly instead of probing the input's track count.
+
+# `.env` is the SCOPE the mock is undone at, not the namespace it is installed
+# in -- testthat installs it in the package under test on its own. Passing
+# `asNamespace("tidymedia")` here scopes the undo to an environment that never
+# exits, so the mocked `ffm_run()` outlives the test and every later file runs
+# against it: the timeout-silence sweep then reads a namespace whose `ffm_run()`
+# reaches no spawn, and 60 tests across six files fail (seen 2026-08-30). The
+# scope wanted is the calling test_that() block, which is `parent.frame()` from
+# inside this helper.
+sep_mock_runs <- function(audiofile, videofile, on_video,
+                          scope = parent.frame()) {
+  testthat::local_mocked_bindings(
+    ffm_run = function(object, verify = NULL) {
+      if (identical(object$output, audiofile)) {
+        rlang::abort("Mocked audio failure.", class = "tidymedia_ffmpeg_exit")
+      }
+      # Anything else must be the video pipeline; say so rather than silently
+      # treating an unexpected output as the video half.
+      expect_identical(object$output, videofile)
+      on_video()
+      invisible(NULL)
+    },
+    .env = scope
+  )
+}
+
+# One input file the three cases share: check_file_readable() reads it before
+# either pipeline is built, and the mock never opens it.
+sep_mock_infile <- function(env = parent.frame()) {
+  path <- withr::local_tempfile(fileext = ".mp4", .local_envir = env)
+  writeLines("not really a video", path)
+  path
+}
+
+sep_mock_abort <- function(infile, audiofile, videofile) {
+  cnd <- tryCatch(
+    separate_audio_video(infile, audiofile, videofile, audio_stream = 0),
+    error = function(e) e
+  )
+  # The failure under test is the mocked AUDIO one, not a check firing earlier:
+  # without this the three cases below could all pass on the wrong condition.
+  expect_s3_class(cnd, "tidymedia_ffmpeg_exit")
+  expect_match(conditionMessage(cnd), "Mocked audio failure.", fixed = TRUE)
+  cli::ansi_strip(conditionMessage(cnd))
+}
+
+test_that("a video command that succeeds without writing gets no line", {
+  # Case one: a fresh path the video run never creates. A zero exit alone would
+  # claim the file was written and name a path with nothing at it.
+  infile <- sep_mock_infile()
+  audio <- withr::local_tempfile(fileext = ".mp3")
+  video <- sep_fresh_video()
+  sep_mock_runs(audio, video, on_video = function() NULL)
+  msg <- sep_mock_abort(infile, audio, video)
+  expect_false(file.exists(video))
+  expect_no_match(msg, "The video output was written to", fixed = TRUE)
+})
+
+test_that("a pre-existing videofile the run never touched gets no line", {
+  # Case two: the same zero exit over a path that already holds a file. This is
+  # the case existence cannot decide -- file.exists() is TRUE both before and
+  # after -- and the one the pre/post comparison is for.
+  infile <- sep_mock_infile()
+  audio <- withr::local_tempfile(fileext = ".mp3")
+  video <- withr::local_tempfile(fileext = ".mp4")
+  writeLines("a file the caller already had", video)
+  before <- unname(tools::md5sum(video))
+  sep_mock_runs(audio, video, on_video = function() NULL)
+  msg <- sep_mock_abort(infile, audio, video)
+  expect_identical(unname(tools::md5sum(video)), before)
+  expect_no_match(msg, "The video output was written to", fixed = TRUE)
+})
+
+test_that("a video run that rewrites an existing videofile gets the line", {
+  # Case three, the passing control: the same starting state as case two and
+  # the same zero exit, differing only in that this run WROTE. The line has to
+  # be here, or the gate is refusing every pre-existing path rather than
+  # distinguishing rewritten from untouched.
+  infile <- sep_mock_infile()
+  audio <- withr::local_tempfile(fileext = ".mp3")
+  video <- withr::local_tempfile(fileext = ".mp4")
+  writeLines("a file the caller already had", video)
+  before <- unname(tools::md5sum(video))
+  sep_mock_runs(audio, video, on_video = function() {
+    # A different length as well as different content: where a filesystem's
+    # timestamp resolution hides the mtime move, the size still shows it.
+    writeLines("the video this run wrote, longer than what it replaced", video)
+  })
+  msg <- sep_mock_abort(infile, audio, video)
+  expect_false(identical(unname(tools::md5sum(video)), before))
+  expect_match(msg, "The video output was written to", fixed = TRUE)
+  expect_match(msg, basename(video), fixed = TRUE)
+})
+
+
+test_that("the mocked ffm_run() did not outlive the three cases above", {
+  # The sentinel for the scope bug the helper's comment records. A leaked mock
+  # is silent HERE and loud somewhere else -- it surfaced as 60 failures across
+  # six unrelated files, because the timeout-silence sweep reads the live
+  # namespace and a mocked `ffm_run()` reaches no spawn. Asserted on the body,
+  # which is what that sweep reads, rather than on a call.
+  expect_true("try_fetch" %in% all.names(body(ffm_run)))
+})
+
+test_that("a bare condition reaches stop() unchanged and without the note", {
+  # AC3. `abort_after_video()` is internal and this branch is unreachable from
+  # the verb -- every cause that raises a condition without `body` (a missing
+  # FFmpeg binary, say) stops the video command too, so `wrote` is FALSE there.
+  # Called directly for that reason: the guard is a floor for a shape this
+  # function has not met, and a floor no test stands on is a floor no one knows
+  # the shape of.
+  bare <- simpleError("bare and shapeless")
+  video_cnd <- rlang::catch_cnd(rlang::abort("the video half also failed",
+                                             class = "tidymedia_ffmpeg_exit"))
+  out <- tryCatch(
+    abort_after_video(bare, "/nowhere/v.mp4", wrote = TRUE,
+                      video_error = video_cnd),
+    error = function(e) e
+  )
+  # Unchanged: same class vector, same rendered message, no bullet anywhere.
+  expect_identical(class(out), c("simpleError", "error", "condition"))
+  expect_identical(conditionMessage(out), "bare and shapeless")
+  expect_null(out$body)
+  expect_no_match(conditionMessage(out), "The video output was written to",
+                  fixed = TRUE)
+  # The video failure still travels, though: D068 attaches the field on any
+  # condition shape, and only the note needs `body`.
+  expect_identical(out$tm_video_error, video_cnd)
+})
+
+test_that("an rlang condition through the same call does get the note", {
+  # The discriminating control for the test above: identical arguments but for
+  # the condition's shape, so a green pair means the guard is reading the shape
+  # rather than the note having been dropped for everyone.
+  rich <- rlang::catch_cnd(rlang::abort("the audio half failed",
+                                        class = "tidymedia_ffmpeg_exit"))
+  out <- tryCatch(
+    abort_after_video(rich, "/nowhere/v.mp4", wrote = TRUE, video_error = NULL),
+    error = function(e) e
+  )
+  expect_match(cli::ansi_strip(conditionMessage(out)),
+               "The video output was written to", fixed = TRUE)
+  expect_null(out$tm_video_error)
+})

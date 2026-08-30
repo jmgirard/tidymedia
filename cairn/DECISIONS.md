@@ -3138,3 +3138,66 @@ not met loses the bullet and still carries the video failure.
 - **Falsified by** a report of a caller who needed the video failure in the text a
   human reads rather than on a field, which would reopen D065's one-message
   question with a case behind it.
+
+## D069 — A diagnostic stays silent where the caller is already doing what it would advise; the multi-track separation report is gated on the output container (2026-08-30, from M091; annotates D024's diagnostic licence and narrows the domain of the multi-track separation report M45 introduced, whose own reasoning is milestone-local as M45-D1/M45-D2; supersedes nothing)
+
+`separate_audio_video()`'s multi-track report and its batch sibling's warning
+offer two ways out of a failed audio output: name one track with
+`audio_stream`, or write a container that holds several. The second way out was
+offered whatever the caller had already written to. On an `audiofile` whose
+extension already names a multi-stream container the report was therefore false
+blame — the failure cannot be the capacity refusal the message describes, so
+whatever FFmpeg did object to went unnamed while the caller was told to do the
+thing they had done.
+
+**The rule.** A diagnostic that names a remedy checks, before it fires, that the
+remedy is not already in force. Where it is, the diagnostic fails open to the
+condition the run itself raised, unchanged in message, class vector and
+`tm_status` — the same fail-open shape D024's licence already requires of an
+unanswerable probe, reached for a different reason.
+
+**The instrument is a static measured list, not a probe.** `R/ffmpeg.R` carries
+`multi_audio_extensions` and the case-insensitive `holds_multiple_audio()`
+beside the other Layer-2 separation helpers; the comment above the vector
+records the measurement behind each member and the extensions deliberately
+absent, and M091's work log records the run. FFmpeg exposes no query for how
+many audio streams a muxer will take, so the alternative was settling it per
+call, and the shapes that could were rejected: reading FFmpeg's stderr, which
+`ffm_run()` does not capture and could not capture without stopping the live
+console output; and re-running the pipeline with one track mapped into a
+temporary path, which is decisive across every cause but spends a second FFmpeg
+spawn on a call that has already failed and would be this package's first probe
+to execute FFmpeg and write a file — D024 licenses the effect, not that shape.
+Both stay open as candidate work.
+
+**The gate is asked before the probe, and after the status check.** On a listed
+output the report cannot fire whatever the track count turns out to be, so
+counting first would spawn FFprobe for an answer nothing reads. It is asked
+after the exit-status check for the reason that check comes first: a failure
+that is not a non-zero exit is not the failure this diagnostic is about,
+whatever the extension says.
+
+**The list is an exclusion list.** An extension nobody has measured keeps the
+report it has today rather than losing it to an omission, and a path with no
+extension likewise.
+
+**What this does not fix, and says so instead.** Three causes still reach the
+report and are still named as a track-count problem: a stream copy into a
+container that will not hold the source codec — the DEFAULT `audio_codec =
+"copy"` path, and the largest of the three — an unknown encoder, and a missing
+output directory. The gate cannot see any of them, because each fails with one
+track mapped too. Both help pages now state that the report says what the call
+did and never why FFmpeg refused, and name those causes. Excluding the
+missing-directory case alone with `dir.exists(dirname(outfile))` was declined at
+M091's plan gate: it reaches one cause while leaving the larger one untouched.
+
+**Why Layer 2.** What a task verb's output container implies about that verb's
+own diagnostic is no business of `ffm_run()` — the same IP1/D002 reasoning that
+kept the report itself out of the engine, and the same inversion D024/RR02 Q3
+rejected for an `ffm_batch()` hook.
+
+- **Falsified by** a report of the diagnostic naming a cause that is not the
+  cause on an output the container list *can* see — a listed extension that
+  refuses a second audio stream in some FFmpeg build, or an unlisted one that
+  accepts several. A report about the three causes above falsifies nothing here;
+  it promotes the candidate row that holds them.

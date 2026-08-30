@@ -95,16 +95,16 @@ that it reports what the call did rather than why FFmpeg refused.
 - [x] T4: Drop list-held rows in `warn_failed_separation_batch()` before it calls
       `warn_failed_separation()`, so the count in the headline matches the
       bullets shown.
-- [ ] T5: Tests in `tests/testthat/test-separate-av-multitrack.R` — the
+- [x] T5: Tests in `tests/testthat/test-separate-av-multitrack.R` — the
       suppression case per extension, iterating the list itself rather than a
       hand-written copy; the batch row-drop and the no-warning-at-all case; the
       AC3 unchanged-behavior cases. AC4's capacity check runs `-c:a copy` on
       every listed extension except `webm`, which holds no AAC and takes
       `-c:a libopus` — the encoders T1 measured, named here so the criterion is
       decidable without them.
-- [ ] T6: Roxygen on both verbs plus `R/audio-stream-doc.R` if its shared
+- [x] T6: Roxygen on both verbs plus `R/audio-stream-doc.R` if its shared
       sentence needs it; `devtools::document()`; `NEWS.md` entry.
-- [ ] T7: D-entry recording the gate, its measured basis, the rejected
+- [x] T7: D-entry recording the gate, its measured basis, the rejected
       alternatives and the causes left indistinguishable; `devtools::check()`.
 
 ## Work log
@@ -120,6 +120,9 @@ that it reports what the call did rather than why FFmpeg refused.
 - 2026-08-30: implement gate chose a numbered `DECISIONS.md` entry over a milestone-local one, because two candidate ROADMAP rows cite this reasoning for future work and it narrows D024's diagnostic-probe licence, which needs a stable id readable from D024's own file; falsified by nothing outside this milestone ever citing it.
 - 2026-08-30: T2 added `multi_audio_extensions` (the seven measured extensions) and the case-insensitive `holds_multiple_audio()` beside the separation helpers in `R/ffmpeg.R`, with T1's measurement and its per-container encoders cited in the comment above the vector. The list is an exclusion list, so an unmeasured container keeps the diagnostic it has today.
 - 2026-08-30: T3 gated `run_separation_audio()`'s enrichment, and T4 dropped list-held rows in `warn_failed_separation_batch()` before the FFprobe sweep and before `warn_failed_separation()` builds a bullet, so the headline count matches the bullets shown. Both gates sit ahead of their probe: on a listed output the diagnostic cannot fire whatever the count is, so probing would spawn FFprobe for an answer nothing reads. Suite after T2-T4: 0 failures, 8493 passing, unchanged from baseline -- no existing test drove a failing audio command into a listed container, which is what T5 adds.
+- 2026-08-30: T5 added seven tests iterating `multi_audio_extensions` itself. Check discrimination run both ways: with the predicate forced FALSE (the pre-gate behaviour) five of the seven go red, 29 assertions across them; with it forced TRUE 13 tests go red, including the new unlisted-container control and the existing unchanged-behaviour tests for the enriched abort, the batch warning and the both-fail path. Neither plant leaves the new tests green. `.ts` needed its own counting instrument: MPEG-TS lists its streams once per program, so `count_audio_streams()` reads 6 on a three-track `.ts` -- a property of ffprobe's listing, not the container -- and the test counts distinct stream indices instead.
+- 2026-08-30: T6 corrected the scalar help page's claim that the report attaches to "any failing audio command on a multi-track input", which this branch falsifies, and gave both pages the four conditions, the silent-omission clause and the reports-what-the-call-did clause. `audio_stream_extras$separation_container` left untouched per the gate. `NEWS.md` entry added; `devtools::document()` rewrote the two `.Rd` files and nothing else.
+- 2026-08-30: T7 recorded D069 in `cairn/DECISIONS.md`. Its heading cross-reference was corrected before commit: the multi-track report's own reasoning is milestone-local (M45-D1/M45-D2), not the D026 first drafted, which is about the pass-through verbs.
 
 ## Decisions
 

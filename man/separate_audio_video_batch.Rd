@@ -106,13 +106,30 @@ the scalar verb.
 \section{Failed audio outputs}{
 
 A row whose \code{audiofile} FFmpeg refuses is recorded as \code{success =
-FALSE} rather than aborting the batch. When such a row named no
-\code{audio_stream} and its input carries more than one audio track, the verb
-warns \strong{once} for the whole batch, naming every affected input row and
-the ways out. That check runs FFprobe on the failed rows only, so it is
-emitted when FFprobe is available and the input can be probed, and skipped
-silently otherwise; it never runs under \code{run = FALSE} and never changes
-any compiled command. Suppress it with \code{suppressWarnings(classes =
+FALSE} rather than aborting the batch. Such a row is named in a warning
+emitted \strong{once} for the whole batch, listing every affected input row
+and the ways out.
+
+A row reaches that warning only when all four of these hold: it named no
+\code{audio_stream}, FFmpeg returned a non-zero exit status, its input carries
+more than one audio track, and its \code{audiofile}'s extension is not itself
+one of the containers that hold several — \code{.mka}, \code{.m4a},
+\code{.mp4}, \code{.mov}, \code{.mkv}, \code{.webm} and \code{.ts}. The last
+of those keeps a row off the list when it is already doing what the warning
+would advise; a row failing on such an output is silently not named, and a
+batch whose failed audio rows all write to those containers warns not at all.
+The headline count follows the rows actually named.
+
+What each bullet states is what that row \emph{did} — its track count, and
+that every track was mapped into one output — never why FFmpeg refused. A
+stream copy into a container that will not hold the source codec, an unknown
+encoder and a missing output directory all look alike from here.
+
+The check runs FFprobe on the failed rows only, so it is emitted when FFprobe
+is available and the input can be probed, and skipped silently otherwise — so
+the warning may simply not appear, and its absence is never itself a second
+failure. It never runs under \code{run = FALSE} and never changes any compiled
+command. Suppress it with \code{suppressWarnings(classes =
 "tidymedia_multitrack_separation")}.
 
 The warning names the same event as \code{\link{separate_audio_video}}'s

@@ -1,6 +1,6 @@
 # M094: An invalid `tidymedia.timeout` is refused by the function the caller typed
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -97,7 +97,7 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
 - [x] T6. Append the D-entry: the refusal is sited at the verb the caller typed
       per D042; it fires at `run = FALSE` too, and why that is not a D024 breach;
       the `has_nvenc()` carve-out.
-- [ ] T7. `NEWS.md`, `devtools::document()`, `devtools::test()`, `devtools::check()`.
+- [x] T7. `NEWS.md`, `devtools::document()`, `devtools::test()`, `devtools::check()`.
 
 ## Work log
 
@@ -117,6 +117,8 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
 - 2026-08-30: T5 asserted AC4 and AC5. Every member's message is compared to what `resolve_timeout()`'s own site writes for that form under a pinned output context, not to the other members, so 53 copies of a drifted wording could not pass; the `purrr_error_indexed` class and its `In index:` prefix are gone at the six readers named by the recorded master table rather than by a retyped list.
 - 2026-08-30: T5's AC5 half added a third master baseline the plan had not named — per-member return value and spawn count under an unset and a valid limit — recorded as `tests/testthat/fixtures/timeout-valid-baseline.rds` from ae5ff1c by `data-raw/timeout-valid-baseline.R`, which runs the suite's own `tm_spawn_trace()` against a worktree of that ref rather than a second copy of the reading. 53 members x 2 limit states compare identical, over 61 exercised spawns; under all five invalid forms every member's spawn count is 0. Spawn interception is at `guard_timeout()`, which `tm_spawn_interception_complete()` proves sufficient from the computed spawn-site set, and which is itself shown able to return FALSE on a planted unguarded spawn.
 - 2026-08-30: T6 appended D074 — the refusal is sited at the verb the caller typed, it fires at `run = FALSE`, why that leaves D024 untouched, and the `has_nvenc()` carve-out.
+- 2026-08-30: T7 added the NEWS entry and a paragraph to `tidymedia-package`'s "Bounding a run that hangs" section saying the refusal names the function you called, arrives on a `run = FALSE` call, and that `has_nvenc()` under a set encoder override refuses nothing. `devtools::document()`, `devtools::test()` (0 failures, 10,379 pass) and `devtools::check()` (0 errors, 0 warnings, 0 notes) all clean.
+- 2026-08-30: all tasks done; status set to review.
 ## Decisions
 
 ## Review

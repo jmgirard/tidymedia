@@ -553,6 +553,20 @@
 
 ## Bug fixes
 
+* A `tidymedia.timeout` the underlying limit could not use — a fraction of a
+  second, a negative number, `NA`, a string, more than one number — is now
+  refused by the function you called. It was refused by whatever read the
+  option first, so `extract_audio()` reported the failure as `ffm_run()`,
+  `extract_audio_batch()` as `ffm_batch()` followed by the whole deparsed
+  builder it had been handed, and `probe_all()` as
+  `purrr::map(infile, probe_one)`, wrapped in an indexed error from `purrr` —
+  none of them a function you had typed. The message itself is unchanged, and every
+  call now gives the same one. The refusal also arrives on a `run = FALSE`
+  call, which used to compile a command under a limit it could never have used;
+  the `_batch` verbs already behaved this way. `has_nvenc()` answering from a
+  `tidymedia.nvenc_encoders` you set is the one call that refuses nothing,
+  because it reads no limit.
+
 * The advice `separate_audio_video()` gives when an audio output fails no
   longer arrives when you are already following it. Writing a multi-track
   input's audio into a container that holds only one stream makes FFmpeg fail,

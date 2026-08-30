@@ -86,13 +86,13 @@ here; D065's one-message reasoning stands.
       names one failure" section: the video condition is stashed, not reported;
       the rendered message is unchanged; the field is `tm_video_error` per D062.
       Record D065's met falsifier as the reason.
-- [ ] T2 Tests first: on the both-fail path assert `cnd$tm_video_error` is the
+- [x] T2 Tests first: on the both-fail path assert `cnd$tm_video_error` is the
       video run's condition, and on the video-succeeded path assert it is
       `NULL`; assert the class vector, `tm_status` and message text are
       unchanged on both of the audio branches
       (`tests/testthat/test-separate-av-multitrack.R`, beside the existing
       both-fail test at `:660`).
-- [ ] T3 Carry the video condition out of the `tryCatch()` at
+- [x] T3 Carry the video condition out of the `tryCatch()` at
       `R/ffmpeg.R:1019-1023` and attach it in `abort_after_video()`
       (`R/ffmpeg.R:708`).
 - [ ] T4 Tests first for the `wrote` gate: three mocked-`ffm_run()` cases per
@@ -123,6 +123,7 @@ here; D065's one-message reasoning stands.
 - 2026-08-29: plan gate chose leaving the SIGINT finding on the candidate row over a timeboxed reproduce-attempt task, because an unreproduced Ctrl-C interaction has no bounded investigation and M078 is the precedent for what that costs; falsified by a report of Ctrl-C failing to return to the prompt.
 - 2026-08-29: implement gate — chose the snapshot comparison alone on both video-run outcomes over an exit-status short-circuit, and attaching `tm_video_error` unconditionally over guarding it with the note's `rlang_error` check. Both recommendations; both taken.
 - 2026-08-29: T1 — D068 appended, superseding only D065's "Why the both-fail case names one failure" section. Reason recorded: D065's own falsifier — a caller who could not tell from the condition alone that the video command had also failed — is met.
+- 2026-08-30: T2/T3 — the video run's condition is held beside the audio one and attached at `tm_video_error`; NULL when the video command succeeded. Two tests over both audio branches (both-fail and video-succeeded); the field tests were red on the pre-change code at the attachment, and the whole suite is 8,460 pass / 0 fail.
 
 ## Decisions
 

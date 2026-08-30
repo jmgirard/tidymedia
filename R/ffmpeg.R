@@ -690,7 +690,8 @@ run_separation_audio <- function(pipeline, infile, outfile, audio_stream,
 # abort_after_video() -----------------------------------------------------
 
 # Re-raise the condition separate_audio_video()'s AUDIO half raised, after the
-# video half has had its turn, adding one bullet when the video file was written.
+# video half has had its turn, adding one bullet when the video file was written
+# and the video run's own condition on `tm_video_error` when there was one.
 #
 # The condition object is the one the audio run produced -- not a rebuilt copy.
 # Rebuilding would have to re-run cli's formatter over text it has already
@@ -705,7 +706,13 @@ run_separation_audio <- function(pipeline, infile, outfile, audio_stream,
 # an unattached "{.file {videofile}}" would leave a second glue pass to run over
 # the caller's path, so an output named `v{n}.mp4` would name a local of
 # whatever frame rendered the message (M44).
-abort_after_video <- function(cnd, videofile, wrote) {
+abort_after_video <- function(cnd, videofile, wrote, video_error = NULL) {
+  # The video run's condition, or NULL when that command succeeded, so the
+  # field's presence is the answer (D068). Every R condition is a list, so this
+  # needs no class guard -- unlike the note below, which lives in `body` and so
+  # reaches only an rlang condition. Assigning NULL adds no field, which is the
+  # same thing a caller reading `cnd$tm_video_error` sees.
+  cnd$tm_video_error <- video_error
   if (wrote) {
     note <- cli::format_inline(
       "The video output was written to {.file {videofile}}."
@@ -1013,15 +1020,19 @@ separate_audio_video <- function(infile, audiofile, videofile,
     if (is.null(held)) {
       ffm_run(video)
     } else {
-      # The video run's own condition is discarded rather than reported beside
-      # the audio one: FFmpeg has already printed its error, ffm_run() has
-      # already removed what that run wrote, and one message correct across
-      # every combination of two failures is more surface than the case earns.
-      wrote <- tryCatch({
+      # The video run's own condition is HELD the same way the audio one is,
+      # and travels to the caller on the raised condition's `tm_video_error`
+      # field (D068). It is still not reported: no rendered text changes on any
+      # path, so D065's reasoning for one message survives -- what is superseded
+      # is only D065's decision to throw the object away, which left a caller
+      # who could read FFmpeg's console output, and nothing else, to learn that
+      # the video half had failed too.
+      video_error <- tryCatch({
         ffm_run(video)
-        TRUE
-      }, error = function(cnd) FALSE)
-      abort_after_video(held, videofile, wrote)
+        NULL
+      }, error = function(cnd) cnd)
+      wrote <- is.null(video_error)
+      abort_after_video(held, videofile, wrote, video_error)
     }
     invisible(commands)
   } else {

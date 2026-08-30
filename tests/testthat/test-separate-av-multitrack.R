@@ -733,3 +733,79 @@ test_that("a pre-existing videofile survives the both-fail path", {
   expect_no_match(cli::ansi_strip(conditionMessage(cnd)),
                   "The video output was written to", fixed = TRUE)
 })
+
+
+# M090: the both-fail path stops throwing away what it knows -----------------
+#
+# D068: the video run's condition is attached to the raised audio condition at
+# `tm_video_error` rather than discarded. Nothing a human reads changes, so
+# these tests assert the field's identity on one side and the message's silence
+# about the video failure on the other.
+#
+# The two conditions are told apart by what each one's message names: the video
+# run fails on `video_codec = "nosuchcodec"`, so ffm_run()'s "The failing command
+# was:" bullet carries that token and `videofile`, while the audio failure -- an
+# AAC-into-MP3 stream copy -- names neither on either of its branches.
+
+test_that("the both-fail path carries the video run's own condition", {
+  # AC1, both audio branches. The class vector and `tm_status` the audio run
+  # raised are unchanged by the attachment, and the rendered message still names
+  # no video failure -- D068 supersedes what D065 DID with the object, not what
+  # D065 said the reader should see.
+  skip_if_no_ffprobe()
+  cases <- list("enriched multi-track" = make_multitrack_video(),
+                "n <= 1 fall-open" = make_test_video())
+  expected <- list(
+    "enriched multi-track" = c("tidymedia_multitrack_separation",
+                               "tidymedia_ffmpeg_exit", "rlang_error", "error",
+                               "condition"),
+    "n <= 1 fall-open" = c("tidymedia_ffmpeg_exit", "rlang_error", "error",
+                           "condition")
+  )
+  for (branch in names(cases)) {
+    audio <- withr::local_tempfile(fileext = ".mp3")
+    video <- sep_fresh_video()
+    cnd <- tryCatch(
+      separate_audio_video(cases[[branch]], audio, video,
+                           video_codec = "nosuchcodec"),
+      error = function(e) e
+    )
+    expect_identical(class(cnd), expected[[branch]], info = branch)
+    expect_identical(cnd$tm_status, sep_status_in_message(cnd), info = branch)
+
+    # The field holds the VIDEO run's condition: its message names the encoder
+    # only that command was given, and the output only that command wrote to.
+    vcnd <- cnd$tm_video_error
+    expect_s3_class(vcnd, "tidymedia_ffmpeg_exit")
+    vmsg <- cli::ansi_strip(conditionMessage(vcnd))
+    expect_match(vmsg, "nosuchcodec", fixed = TRUE, info = branch)
+    expect_match(vmsg, basename(video), fixed = TRUE, info = branch)
+
+    # ... and the message the caller reads names no video failure at all.
+    msg <- cli::ansi_strip(conditionMessage(cnd))
+    expect_no_match(msg, "nosuchcodec", fixed = TRUE, info = branch)
+    expect_no_match(msg, basename(video), fixed = TRUE, info = branch)
+  }
+})
+
+test_that("a succeeded video command leaves tm_video_error NULL", {
+  # AC1's other half: the field's ABSENCE is what says the video half survived,
+  # the way the video-written bullet does in the rendered message. Both branches
+  # again, since either can reach the caller with the video command intact.
+  skip_if_no_ffprobe()
+  cases <- list("enriched multi-track" = make_multitrack_video(),
+                "n <= 1 fall-open" = make_test_video())
+  for (branch in names(cases)) {
+    audio <- withr::local_tempfile(fileext = ".mp3")
+    video <- sep_fresh_video()
+    cnd <- tryCatch(separate_audio_video(cases[[branch]], audio, video),
+                    error = function(e) e)
+    # The control: this is the same audio failure, and the video half ran and
+    # wrote -- so a NULL field here is the video command's success, not a
+    # missing attachment.
+    expect_true(file.exists(video), info = branch)
+    expect_match(cli::ansi_strip(conditionMessage(cnd)),
+                 "The video output was written to", fixed = TRUE, info = branch)
+    expect_null(cnd$tm_video_error, info = branch)
+  }
+})

@@ -920,6 +920,40 @@ test_that("a video run that rewrites an existing videofile gets the line", {
 })
 
 
+test_that("a timed-out audio half still lets the video command run", {
+  # D066's behavior, and the claim the changelog makes about it: a reached
+  # wall-clock limit is held like any other audio failure, so the video command
+  # is spawned afterwards -- on its own fresh budget, which is what makes such
+  # a call able to wait up to two limits. The second spawn HAPPENING is the
+  # half a test can pin without spending two real limits of wall clock; the
+  # budget being fresh is `with_timeout()`'s documented per-spawned-program
+  # scope, tested where that scope lives.
+  infile <- sep_mock_infile()
+  audio <- withr::local_tempfile(fileext = ".mp3")
+  video <- withr::local_tempfile(fileext = ".mp4")
+  writeLines("a file the caller already had", video)
+  video_ran <- FALSE
+  testthat::local_mocked_bindings(
+    ffm_run = function(object, verify = NULL) {
+      if (identical(object$output, audio)) {
+        abort_timeout("FFmpeg", 2)
+      }
+      expect_identical(object$output, video)
+      video_ran <<- TRUE
+      invisible(NULL)
+    }
+  )
+  cnd <- tryCatch(
+    separate_audio_video(infile, audio, video, audio_stream = 0),
+    error = function(e) e
+  )
+  # The failure raised is the TIMEOUT, unchanged in class and limit by the video
+  # half having had its turn.
+  expect_s3_class(cnd, "tidymedia_timeout")
+  expect_identical(cnd$tm_limit, 2)
+  expect_true(video_ran)
+})
+
 test_that("the mocked ffm_run() did not outlive the three cases above", {
   # The sentinel for the scope bug the helper's comment records. A leaked mock
   # is silent HERE and loud somewhere else -- it surfaced as 60 failures across

@@ -1,6 +1,6 @@
 # M090: The both-fail path stops throwing away what it knows
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -111,7 +111,7 @@ here; D065's one-message reasoning stands.
 - [x] T8 Roxygen: add the second-spawn sentence to "When the audio output
       fails", remove the sentence AC4 names, and state that the video failure is
       on `tm_video_error`. `devtools::document()`.
-- [ ] T9 `NEWS.md` entry; full `devtools::test()` and `devtools::check()`.
+- [x] T9 `NEWS.md` entry; full `devtools::test()` and `devtools::check()`.
 
 ## Work log
 
@@ -128,6 +128,8 @@ here; D065's one-message reasoning stands.
 - 2026-08-30: T6/T7 — `abort_after_video()`'s bare-condition fallback deleted; the note's `body` append is guarded on `inherits(cnd, \"rlang_error\")` and a bare condition now loses the note visibly in the source. Measured first that `stop()` renders `message` alone and ignores an appended `body`, so the deleted branch was the only thing that had been delivering the note on that shape. Direct test plus an rlang control.
 - 2026-08-30: T8 — roxygen states the second-spawn cost D066 measured (an audio half that reaches the limit still lets the video command run on a fresh limit, so up to two limits), drops the sentence AC4 names, and points at `tm_video_error`. `devtools::document()` run.
 - 2026-08-30: defect found and fixed in this milestone's own test helper. `local_mocked_bindings(.env = )` names the SCOPE the mock is undone at, not the namespace it is installed in; passing `asNamespace(\"tidymedia\")` scoped the undo to an environment that never exits, so the mocked `ffm_run()` outlived the three T4 cases and 60 tests across six unrelated files failed — the timeout-silence sweep reads the live namespace, where a mocked `ffm_run()` reaches no spawn. Scope is now the calling `test_that()` frame, and a sentinel test asserts the real `ffm_run()` is back; the sentinel was shown red against the planted leak.
+- 2026-08-30: T9 — the unreleased `NEWS.md` separation entry amended in place rather than contradicted: it had stated that nothing reports `videofile`'s fate when the video command failed too, which this milestone falsifies. It now carries the authorship gate, `tm_video_error`, and the second-spawn cost. The second-spawn sentence asserted a behavior no test enforced, so a mocked test now pins that a timed-out audio half still spawns the video command; shown red against a planted pre-M088 early abort.
+- 2026-08-30: T9 — `devtools::test()` 8,489 pass / 0 fail / 12 warn (the 12 are the pre-change baseline) and `devtools::check()` Status: OK (0 errors, 0 warnings, 0 notes). `devtools::document()` produces no diff.
 
 ## Decisions
 

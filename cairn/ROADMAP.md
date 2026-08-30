@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-29 (M090 planned from the M088-findings candidate r
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M090 | The both-fail path stops throwing away what it knows | in-progress | — | normal | milestones/M090-separation-failure-path-leftovers.md |
+| M090 | The both-fail path stops throwing away what it knows | review | — | normal | milestones/M090-separation-failure-path-leftovers.md |
 | M089 | The guard-ordering family graduates and the tracking files get headroom | done | — | normal | milestones/archive/M089-tracking-budget-headroom.md |
 | M088 | A failed audio half no longer costs the caller the video | done | — | normal | milestones/archive/M088-separation-video-after-audio-failure.md |
 | M087 | A diagnostic answers to the same class from the scalar verb and its batch sibling | done | — | normal | milestones/archive/M087-scalar-batch-condition-classes.md |

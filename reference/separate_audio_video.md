@@ -143,14 +143,23 @@ fails as well, the added line is not there, the audio failure is still
 the error you get, and FFmpeg's own output for the failed video command
 is printed above it.
 
+A reached wall-clock limit on the audio command is held like any other
+audio failure, so the video command still runs — on a fresh limit of its
+own, since
+[`with_timeout()`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md)
+bounds each spawned program rather than the call. A call whose audio
+half reaches the limit can therefore wait up to two limits rather than
+one.
+
 What a failed command leaves at its own output path is the same rule on
 either path: a partial file that run wrote is removed, while a file that
 was already at that path and that FFmpeg never wrote to is left exactly
 as it was. So neither failure path promises the path is empty afterwards
 — only that nothing half-written is left there. The audio failure's own
-error says which of the two happened to `audiofile`; nothing reports
-`videofile`'s fate on the both-fail path, because the video command's
-error is not the one you get.
+error says which of the two happened to `audiofile`. What became of the
+video command is on the same error's `tm_video_error` field: the
+condition that command raised when it failed too, and `NULL` when it
+succeeded.
 
 Because the default keeps every audio track, writing a multi-track input
 to a container that holds only one (`.aac`, `.mp3`, `.wav`) makes FFmpeg

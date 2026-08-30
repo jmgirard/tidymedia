@@ -742,13 +742,25 @@
   again. The video command now runs either way. The audio failure is
   still what aborts the call, and its error gains one line —
   `The video output was written to 'video.mp4'.` — so it is clear the
-  video half survived. If the video command fails as well, that line is
-  not shown and the audio failure is still the error you get. What each
-  failed command leaves at its own output path is unchanged: a partial
-  file that run wrote is removed, a file it never wrote to is left as it
-  was. The audio failure’s error says which of the two happened to
-  `audiofile`; nothing reports `videofile`’s fate when the video command
-  failed too, since its error is not the one raised.
+  video half survived. That line is shown when the video command
+  succeeded and that run actually wrote `videofile`, decided by
+  comparing the file before the video command against the file after it
+  rather than by that command’s exit status alone: a command that
+  returns zero having left a file already at that path untouched does
+  not claim to have written it. If the video command fails as well, the
+  line is not shown and the audio failure is still the error you get —
+  and that error carries the video command’s own condition on its
+  `tm_video_error` field, so the second failure is available to a
+  handler instead of only to a human reading FFmpeg’s console output.
+  The field is `NULL` when the video command succeeded. What each failed
+  command leaves at its own output path is unchanged: a partial file
+  that run wrote is removed, a file it never wrote to is left as it was;
+  the audio failure’s error says which of the two happened to
+  `audiofile`. A wall-clock limit set with
+  [`with_timeout()`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md)
+  bounds each spawned program, so an audio half that reaches the limit
+  still lets the video command run on a fresh limit of its own, and such
+  a call can wait up to two limits rather than one.
   [`separate_audio_video_batch()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video_batch.md)
   is unchanged: it already ran both rows.
 

@@ -415,3 +415,37 @@ test_that("the two-pass analysis abort is not an FFmpeg-exit condition", {
   expect_false(inherits(cnd, "tidymedia_ffmpeg_exit"))
   expect_null(cnd$tm_status)
 })
+
+
+# M092 AC8: tm_row_status through a REAL failing Phase 1 row -----------------
+
+test_that("a real failing Phase 1 row carries its exit status on tm_row_status", {
+  # M086's F9: the AC4 grid above mocks run_loudnorm_analysis_batch() wholesale
+  # and hand-builds `structure("some ffmpeg error", status = 1L)` fixtures, so
+  # nothing ties assemble_measured()'s expected input to what run_program()
+  # actually returns -- a change to that return shape would leave tm_row_status
+  # silently all-NA in a real batch with the grid still green. This drives the
+  # real Phase 1: no mock anywhere.
+  skip_if_no_ffmpeg()
+  dir <- withr::local_tempdir()
+  # Exists and is readable but is not media, so check_file_readable() passes it
+  # through and FFmpeg is the thing that refuses it.
+  bad <- file.path(dir, "bad.wav")
+  writeLines("this is text, not a RIFF header", bad)
+  good <- make_dynamic_audio()
+
+  cnd <- tryCatch(
+    normalize_audio_batch(
+      tibble::tibble(input = c(good, bad),
+                     output = file.path(dir, c("g.m4a", "b.m4a"))),
+      two_pass = TRUE, run = FALSE),
+    tidymedia_loudnorm_no_measurement = function(e) e
+  )
+  expect_s3_class(cnd, "tidymedia_loudnorm_no_measurement")
+  # The good row measured, so only the second is named -- without it the status
+  # assertion below would hold just as well on a batch that failed wholesale.
+  expect_identical(cnd$tm_rows, 2L)
+  expect_type(cnd$tm_row_status, "integer")
+  expect_length(cnd$tm_row_status, 1L)
+  expect_false(is.na(cnd$tm_row_status))
+})

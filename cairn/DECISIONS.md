@@ -3502,3 +3502,48 @@ machine.
   one-site-one-wording premise D042's shape rests on; or by a verb whose pipeline
   builder probes before it validates, which would leave property 1 with nowhere
   to put the call.
+
+## D075 — A build-time capability probe runs below every check that cannot depend on its answer (2026-08-31, from M095; carries D036/D039's front-door rule into the pipeline builder, and supersedes D074 property 1's disposition of the build-time-probe class as disclosed-not-fixed; D074's per-row fan-out class stands, as does every other part of D074, D036, D039, D042 and D049)
+
+**The rule.** Where a pipeline builder both asks the machine a question and
+checks a value the machine's answer cannot affect, the question goes last. A
+capability probe — today only the nvenc encoder lookup, the one probe that runs
+while a command is being built — is sited below every machine-independent check
+in the same builder, so a caller wrong about an argument is told about the
+argument and never about the machine.
+
+**Why.** D036 put a verb's argument checks at its front door so the caller is
+blamed rather than the builder, and D039 made a wrongly-valued argument report
+uniformly across the verbs that share one. Neither reached inside a builder,
+and three builders resolved the nvenc encoder above checks on `audio_codec`,
+`pixel_format` and `audio_stream`. The result was a machine deciding which
+error a caller sees: the same wrong `pixel_format` reported as a bad pixel
+format on a build with nvenc and as "nvenc is not available" on a build
+without. That is the failure D036 exists to prevent, arriving one layer lower
+down. D074 property 1 measured this class and disclosed it rather than fixing
+it, on the ground that where a build-time probe's refusal sits was a design
+call of its own; this entry is that call.
+
+Two consequences the rule buys and one it costs. It fixes the invalid-session-
+limit displacement in the same move, because the limit is read inside the probe
+(D074 property 1's second half): with the probe last, the argument error fires
+before the limit is ever read. It leaves the compiled command untouched, because
+the engine emits by group rather than by call order — the property that makes
+the reorder safe at all, and the one whose falsification would sink it. The
+cost is that `fallback`, checked inside the resolver, moves down with it, so a
+call wrong about both `fallback` and `pixel_format` now hears about the pixel
+format; both are still refused, and neither answer depends on the machine.
+
+**Scope.** The rule binds a probe inside a builder. It says nothing about the
+fan-out verbs that probe at their own front doors through
+`check_nvenc_available()`, where the probe is the front-door guard and there is
+nothing below it to sink under, and nothing about a check that runs inside the
+per-row fan-out rather than at the verb — D074's other disclosed class, which
+stays disclosed and stays on the ROADMAP.
+
+**Falsifier.** A compiled command that differs under the reorder — the engine
+emitting by call order rather than by group would make the rule a behavior
+change rather than a blame change, and it would have to be withdrawn or paid
+for. Or a probe whose answer a machine-independent check legitimately depends
+on, which would make "below every such check" unsatisfiable. M095's acceptance
+criteria hold the measurements on both counts.

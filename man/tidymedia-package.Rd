@@ -106,13 +106,20 @@ run does not hand you a command compiled under a limit it could never have
 used. An argument your call got wrong is reported first wherever the verb
 itself can see it is wrong: the limit is checked after the verb's own guards
 and after the command has been assembled, so a bad \code{regions}, \code{pixel_format}
-or \code{video_codec} reports as itself whether or not a limit is set. Where the
-check runs somewhere the verb reaches only later, the limit is reported
-instead — asking your FFmpeg build what hardware encoders it has happens
-before the command is assembled, so a \code{hardware = "nvenc"} call with a bad
-\code{video_codec} reports the limit; so does a value only the per-row fan-out
-validates, such as \code{\link[=segment_video]{segment_video()}}'s \code{outfiles} or a \verb{_batch} job table's
-\code{output} column. Two calls read no limit and so refuse nothing: \code{\link[=has_nvenc]{has_nvenc()}}
+or \code{video_codec} reports as itself whether or not a limit is set. Asking for
+\code{hardware = "nvenc"} no longer changes that: your FFmpeg build is asked what
+encoders it has after every check the verb itself makes, so a bad
+\code{audio_codec}, \code{pixel_format} or \code{audio_stream} reports as itself there too —
+whether or not a limit is set, and whether or not that build has nvenc.
+\code{fallback} is checked where that question is asked and so moved down with it:
+a call wrong about both \code{fallback} and \code{pixel_format} now hears about the
+pixel format. Where the check runs somewhere the verb reaches only later, it
+loses to both the limit and the encoder question: \code{\link[=segment_video]{segment_video()}}'s
+\code{outfiles}, a \verb{_batch} job table's \code{output} column, and
+\code{\link[=anonymize_video_batch]{anonymize_video_batch()}}'s \code{pixel_format} and \code{color} are validated inside
+the per-row fan-out, so a set limit is reported instead of them, and so is a
+missing nvenc encoder under \code{hardware = "nvenc"} on a build without one.
+Two calls read no limit and so refuse nothing: \code{\link[=has_nvenc]{has_nvenc()}}
 answering from a \code{tidymedia.nvenc_encoders} you set, which asks FFmpeg
 nothing, and a \verb{probe_*()} shortcut handed a \code{probe} object instead of an
 \code{infile}, which reprobes nothing.

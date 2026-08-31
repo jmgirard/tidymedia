@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-30 (M094 planned; the M071 F9 option-rollback candidate row retired into D073 after the rollback was measured to be `future`'s own, not the package's. ROADMAP 23,484 bytes / 46 lines, LESSONS 19,696 / 32, both inside budget; terminal rows held at five, M088 off. No lesson learned or retired.)_
+_Last hygiene check: 2026-08-31 (M094 merged as PR #98 and archived; its round-3 findings split — the doc half fixed at the gate, the rest into one new candidate row for where a timeout refusal sits relative to a check the verb reaches only later. ROADMAP 25,627 bytes / 46 lines, LESSONS 19,608 / 32, both inside budget; the M50 test-sweep-grammar lesson pruned to make room for M094's, and the two doctrine modules untouched (false-greens 25,810/55, guard-ordering 5,451/27, both inside their headers' budgets). Terminal rows trimmed to five, M089 rolled off (archive holds it).)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M094 | An invalid `tidymedia.timeout` is refused by the function the caller typed | review | — | normal | milestones/M094-timeout-refusal-blame.md |
+| M094 | An invalid `tidymedia.timeout` is refused by the function the caller typed | done | — | normal | milestones/archive/M094-timeout-refusal-blame.md |
 | M093 | The separation help pages render their container list from the vector | done | — | normal | milestones/archive/M093-separation-container-list-generated.md |
 | M092 | The deferred-findings backlog is triaged and the page retired | done | — | normal | milestones/archive/M092-instrument-backlog-triage.md |
 | M091 | The multi-track advice stops arriving when the caller is already following it | done | — | normal | milestones/archive/M091-separation-diagnostic-container-gate.md |
 | M090 | The both-fail path stops throwing away what it knows | done | — | normal | milestones/archive/M090-separation-failure-path-leftovers.md |
-| M089 | The guard-ordering family graduates and the tracking files get headroom | done | — | normal | milestones/archive/M089-tracking-budget-headroom.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

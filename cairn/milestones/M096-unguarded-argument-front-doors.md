@@ -21,10 +21,10 @@ Surface tier: **user-facing** — the condition two exported verbs raise changes
 
 ## Acceptance criteria
 
-- [ ] AC1 The corrupt-argument sweep runs over every formal of every member of `tm_timeout_domain()`, not the first alone, each corrupted in turn by the five wrong forms M095's sweep uses (a number, a token-invalid string, `NA`, a length-2 vector, a list). A cell is kept where the member's no-limit reference refuses **from the member's own frame**, and dropped by that measurement — never by a list — where the refusal comes from a frame below the member or does not come; every dropped formal is named in the evidence with the frame that refused it. Under each form in `tm_timeout_bad_forms()` the condition — blamed frame and message — is identical to that cell's no-limit reference. Evidence: kept-cell and dropped-cell counts, the dropped formals and frames named, 0 mismatches.
-- [ ] AC2 `segment_video()` refuses, from its own frame and above `check_nvenc_available()` (`R/ffmpeg.R:3605`) — and so above its `resolve_timeout()` call (`R/ffmpeg.R:3619`) and `ffm_batch()` — each of the seven `outfiles` probes named here, the seven the fan-out's `ffm_files()` refuses today: with `start` of length 1, the number (`123`), the `NA`, and the list (`list(1)`) forms of the five wrong forms above; and with `start` of length 2, `c("a.mp4", NA)`, `c(NA, "b.mp4")`, `c(1, 2)`, and `list(1, 2)`. The length-2 form of the five at `start` of length 1 stays refused by the existing length check (`R/ffmpeg.R:3572`). `segment_video()`'s `outfiles` thereby leaves D074's per-row fan-out class; that class's remaining member, `ffm_batch()`'s `output` column, stays disclosed. Two `outfiles` values the fan-out compiles today stay compiled: the token form (`"bad fmt!"`, a legal filename) and `list("a.mp4")`. Evidence: per probe, the whole condition — blamed frame and message — names `segment_video` and contains neither `pmap` nor `In index:`; and the two compiled values' commands, byte-identical to the same calls at the merge base.
-- [ ] AC3 `ffmpeg_codecs(sort_by_type =)` gives, for each of the five wrong forms above, the message `ffmpeg_encoders()` gives for that same form, and spawns nothing on any of them. Evidence: a test comparing the two messages string-for-string per form and pinning the spawn count at 0.
-- [ ] AC4 The change refuses no call either verb compiled before: over `segment_video()`'s valid-argument cell × `outfiles` ∈ {`NULL`, a supplied character vector} and `ffmpeg_codecs()` × `sort_by_type` ∈ {`TRUE`, `FALSE`}, every cell succeeding at the merge-base succeeds at HEAD with a byte-identical compiled command (`segment_video(run = FALSE)`) or an identical return value (`ffmpeg_codecs()`). Evidence: the recorded merge-base table and 0 differences.
+- [x] AC1 The corrupt-argument sweep runs over every formal of every member of `tm_timeout_domain()`, not the first alone, each corrupted in turn by the five wrong forms M095's sweep uses (a number, a token-invalid string, `NA`, a length-2 vector, a list). A cell is kept where the member's no-limit reference refuses **from the member's own frame**, and dropped by that measurement — never by a list — where the refusal comes from a frame below the member or does not come; every dropped formal is named in the evidence with the frame that refused it. Under each form in `tm_timeout_bad_forms()` the condition — blamed frame and message — is identical to that cell's no-limit reference. Evidence: kept-cell and dropped-cell counts, the dropped formals and frames named, 0 mismatches.
+- [x] AC2 `segment_video()` refuses, from its own frame and above `check_nvenc_available()` (`R/ffmpeg.R:3605`) — and so above its `resolve_timeout()` call (`R/ffmpeg.R:3619`) and `ffm_batch()` — each of the seven `outfiles` probes named here, the seven the fan-out's `ffm_files()` refuses today: with `start` of length 1, the number (`123`), the `NA`, and the list (`list(1)`) forms of the five wrong forms above; and with `start` of length 2, `c("a.mp4", NA)`, `c(NA, "b.mp4")`, `c(1, 2)`, and `list(1, 2)`. The length-2 form of the five at `start` of length 1 stays refused by the existing length check (`R/ffmpeg.R:3572`). `segment_video()`'s `outfiles` thereby leaves D074's per-row fan-out class; that class's remaining member, `ffm_batch()`'s `output` column, stays disclosed. Two `outfiles` values the fan-out compiles today stay compiled: the token form (`"bad fmt!"`, a legal filename) and `list("a.mp4")`. Evidence: per probe, the whole condition — blamed frame and message — names `segment_video` and contains neither `pmap` nor `In index:`; and the two compiled values' commands, byte-identical to the same calls at the merge base.
+- [x] AC3 `ffmpeg_codecs(sort_by_type =)` gives, for each of the five wrong forms above, the message `ffmpeg_encoders()` gives for that same form, and spawns nothing on any of them. Evidence: a test comparing the two messages string-for-string per form and pinning the spawn count at 0.
+- [x] AC4 The change refuses no call either verb compiled before: over `segment_video()`'s valid-argument cell × `outfiles` ∈ {`NULL`, a supplied character vector} and `ffmpeg_codecs()` × `sort_by_type` ∈ {`TRUE`, `FALSE`}, every cell succeeding at the merge-base succeeds at HEAD with a byte-identical compiled command (`segment_video(run = FALSE)`) or an identical return value (`ffmpeg_codecs()`). Evidence: the recorded merge-base table and 0 differences.
 - [ ] AC5 `cairn/PROFILE.md`'s verify slot clean: `devtools::test()` green and `devtools::check()` 0 errors / 0 warnings.
 
 ## Coverage
@@ -63,3 +63,119 @@ Surface tier: **user-facing** — the condition two exported verbs raise changes
 - 2026-08-31: AC5 measured - `devtools::test()` 11185 passing / 0 failing / 0 errors, and `devtools::check()` 0 errors / 0 warnings / 0 notes. Status to review.
 - 2026-08-31: /milestone-review opened draft PR #100; acceptance evidence and the review fan-out are in flight.
 - 2026-08-31: review fix-now work committed - the `ffmpeg_codecs()` NEWS entry corrected (a numeric `sort_by_type` never failed at the merge base; `if (123)` is `TRUE`, so the guard breaks that call and the entry now says so), the `outfiles` message indexed once there is more than one, `@param outfiles` widened to the list form D076 makes load-bearing, the census counts pinned at 1530/1093/437, the AC3 test given a blamed-frame assertion, and two comments corrected that misattributed the domain collapse and the `-> :` census drop.
+
+## Review
+
+Reviewed 2026-08-31 on branch `m096-unguarded-argument-front-doors`, PR #100.
+`master` had not moved since the branch was cut, so no merge was needed. Merge
+base `4063faa`. Driving RR: none, so the projection-vs-outcome pairing no-ops.
+
+### Acceptance criteria
+
+- **AC1 — verified.** Fresh sweep at HEAD: 1530 cells (53 members x their
+  formals x five wrong forms), 1093 kept, 437 dropped, **0 mismatches**. The
+  437 drops resolve to 164 distinct member/argument/frame entries, each naming
+  the frame that refused it: `<none>` 140, `ffm_batch` 160, `ffm_finish` 65,
+  `purrr::pmap` 57, `<-` 6, `nvenc_encoder` 5, `if` 4. The live dropped list
+  differs from the recorded merge-base census in exactly one direction, by
+  exactly the two cells this milestone closed (`ffmpeg_codecs/sort_by_type ->
+  :` and `segment_video/outfiles -> purrr::pmap`); nothing joined it. The
+  sweep's own discrimination leg plants one cell refused by its member and one
+  refused below it and requires them on opposite sides.
+- **AC2 — verified.** All seven named `outfiles` probes abort from
+  `segment_video`'s own frame, with no `pmap` and no `In index:` anywhere in
+  the condition. The length-2-at-`start`-length-1 form still reads "must have
+  the same length as `start`", so the length check above the guard is
+  undisturbed. The siting leg passes with `cached_encoder_names()` mocked to a
+  build with no nvenc: `outfiles = 123` reports `outfiles`, and its control
+  with `outfiles` put right reports the missing encoder, so the guard is
+  outranking a live abort.
+- **AC3 — verified.** All five wrong forms give a message identical
+  string-for-string to `ffmpeg_encoders()`'s, with the spawn count pinned at 0
+  in each. Fix-now finding F9 added the blame assertion the criterion is really
+  about: the conditions come from `ffmpeg_codecs` and `ffmpeg_encoders`
+  respectively, not a shared helper.
+- **AC4 — verified independently of the recorded tables.** A worktree at
+  `4063faa` was built at review and both halves re-measured against it:
+  `segment_video(run = FALSE)` compiles byte-identical commands at both refs
+  for `outfiles = list("a.mp4")` and `outfiles = "bad fmt!"`, and
+  `ffmpeg_codecs(TRUE)` / `ffmpeg_codecs(FALSE)` are `identical()` to the
+  merge-base objects (539 rows each). `tm_outfiles_commands()` also matches
+  `tm_outfiles_baseline()` at all four cells.
+- **AC5 — see below.**
+
+### Consistency gate
+
+`cairn_validate.py`: all 16 checks PASS, 7 advisories OK (the `release window`
+advisory did not fire). No DESIGN.md principle changed, so `cairn_impact.py`
+was not run. Toolchain slot: `devtools::document()` produces no diff;
+`NAMESPACE`, `man/` and `data/` regenerate clean; README.Rmd/README.md
+untouched and in sync; `pkgdown::check_pkgdown()` reports no problems; `NEWS.md`
+carries entries for both changed refusals; no new top-level files.
+
+### Review fan-out and triage
+
+Three fresh-context reviewers, distinct evidence bases. The `[S]`
+blame-history lens and the `[S]` prior-review lens each returned **zero
+findings** (the latter confirmed the repo has no inline PR review comments at
+all, so that surface was skipped per its probe gate). The `[O]` diff-bug lens
+returned nine, ranked; each was verified against the implementation before
+disposition.
+
+- **F1 (fix-now, committed).** The `ffmpeg_codecs()` NEWS entry said the call
+  "used to run the binary ... and only then fail on the internal `if`". False
+  for a truthy non-logical value, and it hid a real break: measured at
+  `4063faa`, `ffmpeg_codecs(sort_by_type = 123)` returned a sorted 539-row
+  tibble, and at HEAD it aborts. Not an AC failure — AC3 demands the refusal
+  and AC4's grid is `{TRUE, FALSE}` — and the break is covered by D014's
+  pre-0.2.0 clean-break policy at version 0.1.0.9000, so no deprecation cycle
+  is owed. The entry now names the numeric case and says the call is an error.
+- **F2 (fix-now, committed).** `rlang::check_string(..., arg = "outfiles")`
+  told a caller who correctly passed two names for two segments that
+  `outfiles` "must be a single string", three lines after a check requiring it
+  to be as long as `start`, and named no element on a long call. `arg` now
+  indexes the element once there is more than one: ``outfiles[[2]]``.
+- **F3 (fix-now, committed).** The census compared unique
+  member/argument/frame strings in both directions, which discards
+  multiplicity — 11 pairs in the master census carry two frames each, so a cell
+  regressing onto an already-present string would have been absorbed by both
+  `setdiff()` calls. The counts are now pinned at 1530/1093/437, as M095's
+  sibling sweep pins its own.
+- **F4 (fix-now, committed).** The `force(cells)` comment attributed the
+  1530-to-705 domain collapse to the working directory. Measured: forcing from
+  another directory with no mocks still yields 1530; forcing inside the mocked
+  bindings yields 705, because the domain is computed by reading each body for
+  a spawn primitive and the mocks name none. `force(cells)` is still correct
+  and load-bearing; the recorded reason was not.
+- **F5 (rejected — pre-existing).** `?tidymedia`'s per-row fan-out disclosure
+  omits `normalize_audio_batch()`'s `channels` and `sample_rate`, which the
+  census confirms are still `purrr::pmap`-blamed. Master's text omitted them
+  too, so the diff did not introduce it, and the candidate row this milestone
+  wrote already carries the class as its item (c).
+- **F6 (fix-now, committed).** `@param outfiles` said "a character vector"
+  while D076 makes accepting a list of strings load-bearing. The parameter now
+  documents the list form and the per-element requirement; `man/` regenerated.
+- **F7 (follow-up).** `tm_outfiles_baseline()` records the merge-base commands
+  as constants in a helper, with provenance in a comment and no committed
+  generator, unlike M095's `data-raw/nvenc-probe-order-baseline.R` — so the
+  suite alone cannot distinguish a table recorded at the merge base from one
+  recorded at HEAD. AC4 is not weakened at review, because the comparison was
+  re-run live against a `4063faa` worktree above; the durable gap gets a
+  candidate row.
+- **F8 (fix-now, committed).** The `ffmpeg_codecs/sort_by_type -> :` census
+  entry does not mean what its comment claimed. Measured at the merge base
+  under the sweep's mocks, `TRUE`, `FALSE` and `123` all abort with "argument
+  of length 0", so the drop is form-independent and is no evidence that
+  `sort_by_type` was unguarded. AC1 is unaffected — the cell is dropped by
+  measurement and named with its frame, which is all the criterion asks — and
+  AC3's defect is shown by the spawn-count and message-parity test. The comment
+  now says so.
+- **F9 (fix-now, committed).** The AC3 test compared messages and spawn counts
+  but never asserted the blamed frame, so a guard moved into a self-naming
+  shared helper would have passed it. Both frames are now asserted.
+
+Return floor: no finding demonstrated an acceptance criterion failing, and none
+of the fix-now items was a plan defect, so the milestone did not return to
+`in-progress`. All fix-now work is committed on the branch and pushed before
+the approval marker.
+- 2026-08-31: Review section written; AC1-AC4 ticked against fresh evidence, AC5's `devtools::check()` half still running.

@@ -682,8 +682,33 @@ tm_resolve_timeout_message <- function(limit) {
 
 # tm_timeout_valid_baseline(): the recorded pre-change return values and spawn
 # counts. Regenerate with data-raw/timeout-valid-baseline.R.
+#
+# The provenance the generator attaches is CHECKED here, not merely carried.
+# Recording it and never reading it makes the reproducibility rule an attribute
+# nobody consults: a blob regenerated from the wrong ref, or by hand, would keep
+# comparing green against the wrong reading (M094 review F10). The ref is pinned
+# to the sha this milestone branched from, so a re-record against a later master
+# has to be a deliberate edit here.
+tm_timeout_valid_baseline_ref <- "ae5ff1c"
+
 tm_timeout_valid_baseline <- function() {
-  readRDS(testthat::test_path("fixtures", "timeout-valid-baseline.rds"))
+  table <- readRDS(testthat::test_path("fixtures", "timeout-valid-baseline.rds"))
+  if (!tm_provenance_ok(table)) {
+    testthat::fail(
+      "the recorded baseline's provenance is missing or names another source"
+    )
+  }
+  table
+}
+
+# tm_provenance_ok(): the provenance predicate, separate so it can be shown to
+# say NO. A checker whose only falsifier is deleting it certifies nothing.
+tm_provenance_ok <- function(table, ref = tm_timeout_valid_baseline_ref) {
+  prov <- attr(table, "provenance")
+  is.list(prov) &&
+    all(c("source", "generator", "seed", "recorded") %in% names(prov)) &&
+    grepl(ref, prov$source, fixed = TRUE) &&
+    identical(prov$generator, "data-raw/timeout-valid-baseline.R")
 }
 
 # tm_timeout_variant_specs(): the argument cells the one-cell-per-member table

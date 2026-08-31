@@ -119,7 +119,7 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
       `normalize_audio_batch(two_pass = TRUE)` — and add a binary-less-PATH leg
       so the runner-dependent failure the review found on CI is reproducible
       locally. Test coverage under AC1/AC4; no criterion widens.
-- [ ] T11. Instrument (F9, F10): make the AC1 test discriminate on the
+- [x] T11. Instrument (F9, F10): make the AC1 test discriminate on the
       condition's identity, not only `conditionCall()`'s head; assert the
       `.rds` fixture's recorded `source`/`generator`/`recorded` provenance in
       `tm_timeout_valid_baseline()`, pinning the sha to `ae5ff1c`.
@@ -212,6 +212,13 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
   `normalize_audio_batch`'s two-pass branch takes its own call before Phase 1's
   analysis, having `return()`ed above the verb's only site (F3). All 19 variant
   cells now blame the verb the caller typed; full suite 0 failures, 10,745 pass.
+- 2026-08-30: T11 closed both instrument findings. AC1's sweep now calls
+  `tm_refusal_head()`, which compares the message to what the one checker site
+  writes before reporting the call head, so a member aborting on something else
+  in its own frame names what it raised instead of passing (F9). The fixture's
+  provenance is read rather than carried: `tm_provenance_ok()` requires the four
+  recorded fields, the generator path, and the `ae5ff1c` sha in `source`, and is
+  shown to say no on a stripped blob, another ref and another generator (F10).
 
 ## Decisions
 

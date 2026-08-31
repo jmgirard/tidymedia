@@ -240,6 +240,23 @@ test_that("the valid and unset paths are byte-for-byte the pre-change ones (AC5)
   }
 })
 
+test_that("the recorded baseline's provenance is read, not just carried (AC5)", {
+  # The fixture's `source`/`generator`/`seed`/`recorded` fields were attached and
+  # never consulted, so a blob regenerated from the wrong ref -- or by hand --
+  # would go on comparing green against the wrong reading (review F10).
+  recorded <- tm_timeout_valid_baseline()
+  expect_true(tm_provenance_ok(recorded))
+  # And the check can say no: a stripped blob, a blob from another ref, and a
+  # blob from another generator each fail it.
+  expect_false(tm_provenance_ok(structure(list(), provenance = NULL)))
+  expect_false(tm_provenance_ok(recorded, ref = "0000000"))
+  bad <- recorded
+  prov <- attr(bad, "provenance")
+  prov$generator <- "by hand"
+  attr(bad, "provenance") <- prov
+  expect_false(tm_provenance_ok(bad))
+})
+
 test_that("an invalid limit reaches no spawn at all (AC5)", {
   dir <- withr::local_tempdir()
   specs <- tm_timeout_call_specs(dir)

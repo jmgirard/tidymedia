@@ -30,10 +30,14 @@ test_that("every domain member blames itself for an invalid limit (AC1, AC2)", {
   # that reads the limit and is held to the same rule as everything else.
   withr::local_options(list(tidymedia.nvenc_encoders = NULL))
 
+  # `tm_refusal_head()` rather than `tm_blame_head()`: the head alone cannot
+  # tell this refusal from any other error raised in the same frame, so a member
+  # aborting on something else entirely would read as a pass (review F9). The
+  # identity is checked against what the one checker site writes for that value.
   for (name in tm_timeout_domain()) {
     for (form in names(forms)) {
       expect_identical(
-        tm_blame_head(name, specs[[name]], forms[[form]]), name,
+        tm_refusal_head(name, specs[[name]], forms[[form]]), name,
         info = paste(name, form)
       )
     }
@@ -154,6 +158,60 @@ test_that("the FFprobe readers no longer arrive wrapped by purrr (AC4)", {
                    info = paste(name, form))
       expect_no_match(cnd$message, "In index:", fixed = TRUE)
       expect_no_match(cnd$message, "Caused by error", fixed = TRUE)
+    }
+  }
+})
+
+test_that("the paths one argument cell cannot reach blame themselves too (AC1)", {
+  # M094's review found three members still blaming a function the caller never
+  # typed, each on a path `tm_timeout_call_specs()`'s single cell does not take:
+  # a GPU encode reached `check_nvenc_available()` before the verb's own site
+  # (F2), `extract_frame(frame = )` divided by `get_frame_rate()` first (F4),
+  # and `normalize_audio_batch(two_pass = TRUE)` returned above its site (F3).
+  dir <- withr::local_tempdir()
+  variants <- tm_timeout_variant_specs(dir)
+  withr::local_options(list(tidymedia.nvenc_encoders = NULL))
+  # Guards on the guard: an empty variant table, or one that lost the three
+  # axes the review named, would make every expectation below vacuous.
+  expect_gt(length(variants), 0)
+  expect_true("extract_frame [frame = ]" %in% names(variants))
+  expect_true("normalize_audio_batch [two_pass = TRUE]" %in% names(variants))
+  expect_gt(sum(grepl("hardware = nvenc", names(variants), fixed = TRUE)), 0)
+
+  for (label in names(variants)) {
+    cell <- variants[[label]]
+    for (form in names(tm_timeout_bad_forms())) {
+      expect_identical(
+        tm_refusal_head(cell$name, cell$args, tm_timeout_bad_forms()[[form]]),
+        cell$name,
+        info = paste(label, form)
+      )
+    }
+  }
+})
+
+test_that("a machine with no media binaries gets the same refusal (AC4)", {
+  # The failure this closes was invisible on a developer machine and red on CI:
+  # a member with no site of its own reached `run_program()`'s `Could not locate`
+  # check (R/program_management.R) before `resolve_timeout()`, so the sweep
+  # measured the runner's PATH instead of the package (review F8). D036 orders
+  # the machine-independent refusal first, and that is what this asserts.
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  withr::local_options(list(tidymedia.nvenc_encoders = NULL, cli.width = 80))
+  withr::local_envvar(list(PATH = ""))
+  # The emptied PATH has to actually hide the binaries, or this leg asserts
+  # nothing beyond the sweep above.
+  expect_identical(unname(Sys.which("ffmpeg")), "")
+  expect_identical(unname(Sys.which("mediainfo")), "")
+
+  for (form in names(tm_timeout_bad_forms())) {
+    limit <- tm_timeout_bad_forms()[[form]]
+    for (name in tm_timeout_domain()) {
+      expect_identical(
+        suppressWarnings(tm_refusal_head(name, specs[[name]], limit)), name,
+        info = paste(name, form, "PATH = \"\"")
+      )
     }
   }
 })

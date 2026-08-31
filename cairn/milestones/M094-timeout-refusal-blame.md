@@ -71,7 +71,8 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
 - AC4 → T4, T5
 - AC5 → T1, T3, T4, T5
 - AC6 → T1, T7
-- AC7 → T7
+- AC7 → T7, T13
+- F-returns → T8 (F1, F2, F3, F4, F7), T9 (F8), T10, T11 (F9, F10), T12 (F5, F6)
 
 ## Tasks
 
@@ -98,6 +99,36 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
       per D042; it fires at `run = FALSE` too, and why that is not a D024 breach;
       the `has_nvenc()` carve-out.
 - [x] T7. `NEWS.md`, `devtools::document()`, `devtools::test()`, `devtools::check()`.
+- [ ] T8. Re-site the calls per the amended siting rule: after every check that
+      decides identically on every machine (front-door guards AND the pipeline
+      builder's argument validation), immediately before the first probe or
+      spawn on each path, above the `run` gate. Closes F1 (four verbs whose
+      pipeline checks are masked), F2 (`hardware = "nvenc"` blaming
+      `has_nvenc(family)` at eight batch verbs), F4 (`extract_frame(frame =)`
+      blaming `get_frame_rate`), F7 (the ordering was per-verb) and F3
+      (`normalize_audio_batch(two_pass = TRUE)` returning above its only site —
+      the two-pass path takes its own call).
+- [ ] T9. Give `ffm_run()` and `mediainfo_parameter()` front-door calls, matching
+      `ffmpeg()`/`ffprobe()`/`mediainfo()`, which already resolve before
+      `find_*()`. This is F8 and the CI blocker: it puts the machine-independent
+      refusal ahead of `run_program()`'s `Could not locate` check
+      (`R/program_management.R:111`) per D036, and stops
+      `mediainfo_parameter(<nonexistent>)` raising nothing.
+- [x] T10. Widen `tm_timeout_call_specs()` with the cells the sweep could not
+      see — `hardware = "nvenc"`, `extract_frame(frame =)`,
+      `normalize_audio_batch(two_pass = TRUE)` — and add a binary-less-PATH leg
+      so the runner-dependent failure the review found on CI is reproducible
+      locally. Test coverage under AC1/AC4; no criterion widens.
+- [ ] T11. Instrument (F9, F10): make the AC1 test discriminate on the
+      condition's identity, not only `conditionCall()`'s head; assert the
+      `.rds` fixture's recorded `source`/`generator`/`recorded` provenance in
+      `tm_timeout_valid_baseline()`, pinning the sha to `ae5ff1c`.
+- [ ] T12. Amend D074's first and third properties and the matching comment
+      block above `resolve_timeout()` (`R/timeout.R:29-45`); correct
+      `R/tidymedia-package.R:91-97` and the `NEWS.md` entry, which overclaim
+      (F6).
+- [ ] T13. `devtools::document()`, `devtools::test()`, `devtools::check()`, then
+      push and confirm CI green on all five platforms — the leg AC7 failed on.
 
 ## Work log
 
@@ -120,6 +151,43 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
 - 2026-08-30: T7 added the NEWS entry and a paragraph to `tidymedia-package`'s "Bounding a run that hangs" section saying the refusal names the function you called, arrives on a `run = FALSE` call, and that `has_nvenc()` under a set encoder override refuses nothing. `devtools::document()`, `devtools::test()` (0 failures, 10,379 pass) and `devtools::check()` (0 errors, 0 warnings, 0 notes) all clean.
 - 2026-08-30: all tasks done; status set to review.
 - 2026-08-30: review returned M094 to in-progress. AC7 fails: CI on PR #98 is red on macos-latest and windows-latest with 10 failures at `test-timeout-refusal-blame.R:133`, `devtools::check()` 1 ERROR on both — on a runner with no media binaries `ffm_run` and `mediainfo_parameter` hit `run_program()`'s `Could not locate` check (`R/program_management.R:111`) before `resolve_timeout()` at `:122`, so the AC4 wording sweep measures the runner's PATH. AC1-AC6 verified locally and their evidence is recorded in the Review section; every checkbox is unticked again because the gate did not pass. Nine further findings (F1-F7, F9, F10) are recorded there, F1-F5 being defects in the deliverable.
+- 2026-08-30: return gate chose one siting rule over four patches — the refusal
+  fires after every check that decides identically on every machine (front-door
+  guards and the pipeline builder's argument validation alike) and immediately
+  before the first probe or spawn on each path, still above the `run` gate, with
+  a call per spawn-bearing path where a verb has several. This is D036's
+  machine-independent-first ordering applied to the seam, and it replaces D074's
+  first property ("last among the front door's guards"), which F1 falsified.
+  Decides F1, F2, F3, F4 and F7 together; falsified by a verb whose pipeline
+  builder probes before it validates, which would leave nowhere to put the call.
+- 2026-08-30: return gate chose front-door calls at `ffm_run()` and
+  `mediainfo_parameter()` over hoisting the resolve inside `run_program()`,
+  because `mediainfo_parameter()`'s loop `next`s past `run_program()` on a
+  missing file and so would stay silent (F8's second half); and over relaxing
+  the sweep, which would green CI while leaving both gaps in the deliverable.
+- 2026-08-30: return gate chose keeping `has_nvenc()`'s call above D044's memo
+  and amending D074's third property to carve out only a caller-set
+  `tidymedia.nvenc_encoders` override, over moving it below the memo — which
+  would make the refusal depend on whether the memo happened to be warm, so the
+  first `has_nvenc()` of a session refuses and the second does not (F5).
+- 2026-08-30: return gate chose fixing F9 and F10 here over deferring them to
+  candidate rows; both guard work this milestone just did.
+- 2026-08-30: no acceptance criterion is amended. AC1-AC7 stand as written and
+  the cells T10 adds (`hardware = "nvenc"`, `frame =`, `two_pass = TRUE`, a
+  binary-less PATH) enter as test coverage under AC1/AC4, not as new promises
+  (D-118's direction rule: the criteria set neither widens nor narrows).
+- 2026-08-30: T10 added `tm_timeout_variant_specs()` (axes computed from
+  `formals()`, not listed) and two sweep legs — the variant cells and a
+  `PATH = ""` leg. Red by design, like T2: 70 of 99 variant assertions and 10 of
+  267 binary-less assertions fail. The 14 wrong cells are 12 `hardware = "nvenc"`
+  paths blaming `has_nvenc`, `normalize_audio_batch(two_pass = TRUE)` blaming
+  `purrr::pmap` under `purrr_error_indexed`, and `extract_frame(frame = )`
+  blaming `get_frame_rate` — F2, F3 and F4 reproduced. The binary-less 10 are
+  `ffm_run` and `mediainfo_parameter` x 5 forms, which is F8 and exactly the two
+  members CI failed on. The nvenc cells name `video_codec = "libx264"` where the
+  verb has one, because the `"copy"` default plus `hardware` is a contradiction
+  the verb correctly refuses first (D036), which would have left those cells
+  testing something else.
 
 ## Decisions
 

@@ -685,3 +685,75 @@ tm_resolve_timeout_message <- function(limit) {
 tm_timeout_valid_baseline <- function() {
   readRDS(testthat::test_path("fixtures", "timeout-valid-baseline.rds"))
 }
+
+# tm_timeout_variant_specs(): the argument cells the one-cell-per-member table
+# above cannot carry, and where M094's review found the refusal still missing.
+#
+# `tm_timeout_call_specs()` holds exactly one valid argument set per member, so
+# an argument that steers the verb down a DIFFERENT path -- a GPU encode, the
+# frame half of extract_frame()'s "provide exactly one of" pair, a two-pass
+# normalization -- is invisible to every sweep built on it. Each of those three
+# hid a member that went on blaming a function the caller never typed (M094
+# review F2, F4, F3).
+#
+# The axes are computed from `formals()`, not listed, for the reason the domain
+# itself is computed (M70): a verb that gains `hardware` joins this table on its
+# own. `extract_frame` is named because its pair is a documented argument
+# contract, not a formal a sweep can see.
+#
+# Every cell here is exercised under an INVALID limit only, where AC5 pins the
+# spawn count at 0 -- so `hardware = "nvenc"` never asks a real FFmpeg anything.
+tm_timeout_variant_specs <- function(dir) {
+  specs <- tm_timeout_call_specs(dir)
+  out <- list()
+  for (nm in tm_timeout_domain()) {
+    fmls <- names(formals(get(nm, envir = asNamespace("tidymedia"))))
+    if ("hardware" %in% fmls) {
+      args <- specs[[nm]]
+      args$hardware <- "nvenc"
+      # A re-encoding codec is named where the verb has one, because a
+      # `video_codec = "copy"` default plus `hardware = "nvenc"` is a
+      # contradiction the verb refuses on its own (D036) -- a correct refusal
+      # that would leave this cell testing that instead of the limit.
+      if ("video_codec" %in% fmls) args$video_codec <- "libx264"
+      out[[paste0(nm, " [hardware = nvenc]")]] <- list(name = nm, args = args)
+    }
+    if ("two_pass" %in% fmls) {
+      args <- specs[[nm]]
+      args$two_pass <- TRUE
+      out[[paste0(nm, " [two_pass = TRUE]")]] <- list(name = nm, args = args)
+    }
+  }
+  frame_args <- specs$extract_frame
+  frame_args$timestamp <- NULL
+  frame_args$frame <- 1
+  out[["extract_frame [frame = ]"]] <-
+    list(name = "extract_frame", args = frame_args)
+  out
+}
+
+# tm_refusal_head(): `tm_blame_head()` with the condition's IDENTITY checked
+# too.
+#
+# The head alone cannot tell M094's refusal from any other error raised in the
+# same frame, so a member that aborted on something else entirely would read as
+# a pass (M094 review F9). This compares the message to what the one checker
+# site writes for that value before reporting the head, and names what it saw
+# otherwise -- so a wrong-condition cell fails with the wrong condition in the
+# message rather than going quietly green.
+tm_refusal_head <- function(name, args, limit) {
+  reference <- tm_resolve_timeout_message(limit)
+  testthat::local_reproducible_output()
+  withr::with_options(list(tidymedia.timeout = limit), {
+    cnd <- tryCatch(
+      do.call(name, args, envir = asNamespace("tidymedia")),
+      error = function(e) e
+    )
+    if (!inherits(cnd, "error")) return("<none>")
+    msg <- cli::ansi_strip(conditionMessage(cnd))
+    if (!identical(msg, reference)) {
+      return(paste0("<other: ", blamed_verb(cnd), ": ", msg, ">"))
+    }
+    blamed_verb(cnd)
+  })
+}

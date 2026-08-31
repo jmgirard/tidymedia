@@ -1,6 +1,6 @@
 # M094: An invalid `tidymedia.timeout` is refused by the function the caller typed
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -127,7 +127,7 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
       block above `resolve_timeout()` (`R/timeout.R:29-45`); correct
       `R/tidymedia-package.R:91-97` and the `NEWS.md` entry, which overclaim
       (F6).
-- [ ] T13. `devtools::document()`, `devtools::test()`, `devtools::check()`, then
+- [x] T13. `devtools::document()`, `devtools::test()`, `devtools::check()`, then
       push and confirm CI green on all five platforms — the leg AC7 failed on.
 
 ## Work log
@@ -261,6 +261,14 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
   `<concat-list>` survives both substitutions and is the platform's, since that
   path is built with `file.path()`. Normalized like the separators inside each
   path. Timeout files green locally either way (2,511 pass).
+- 2026-08-30: T13 green everywhere. `devtools::document()` no diff,
+  `devtools::test()` 0 failures / 10,844 pass / 5 skips (absent nvenc encoder) /
+  12 warnings all pre-existing in unrelated files, `devtools::check()`
+  **Status: OK** (0 errors, 0 warnings, 0 notes), and CI on PR #98 all ten checks
+  pass — including `macos-latest (release)` and `windows-latest (release)`, the
+  two legs AC7 failed on at review. The suite also runs green with the media
+  binaries off `PATH`, which is what those runners are.
+- 2026-08-30: all tasks done; status set to review. Defect returns on M094: 1.
 
 ## Decisions
 

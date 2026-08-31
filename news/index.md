@@ -703,8 +703,8 @@
   and the `probe_*()` shortcuts take a new `parallel` argument (default
   `FALSE`). With `parallel = TRUE` the per-file probes are spread across
   workers with the optional **furrr** package, following whatever
-  [`future::plan()`](https://future.futureverse.org/reference/plan.html)
-  is active — the same mechanism
+  [`future::plan()`](https://rdrr.io/pkg/future/man/plan.html) is active
+  — the same mechanism
   [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
   already uses, so one plan configures both. The output is unchanged
   either way: the same tibbles, the same types, and rows in the order
@@ -2045,8 +2045,8 @@ and soaking).
   [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
   / `segment_videos()`) now warns when parallel processing is requested
   but no parallel
-  [`future::plan()`](https://future.futureverse.org/reference/plan.html)
-  is active. Previously such calls ran one job at a time with no speedup
+  [`future::plan()`](https://rdrr.io/pkg/future/man/plan.html) is
+  active. Previously such calls ran one job at a time with no speedup
   and no indication; the warning points to
   `future::plan(future::multisession)`.
 

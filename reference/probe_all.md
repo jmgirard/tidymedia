@@ -29,11 +29,11 @@ probe_all(infile, typed = TRUE, parallel = FALSE)
 
   A logical: probe the files in parallel with furrr (`TRUE`) or one at a
   time (`FALSE`, the default). The parallel path honors the active
-  [`future::plan()`](https://future.futureverse.org/reference/plan.html)
-  and warns when that plan is sequential, since it would then give no
-  speedup. Output is identical either way, rows included and in the same
-  order. Requires the optional furrr package, which is checked for only
-  when `parallel` is `TRUE`.
+  [`future::plan()`](https://rdrr.io/pkg/future/man/plan.html) and warns
+  when that plan is sequential, since it would then give no speedup.
+  Output is identical either way, rows included and in the same order.
+  Requires the optional furrr package, which is checked for only when
+  `parallel` is `TRUE`.
 
 ## Value
 

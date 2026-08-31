@@ -63,8 +63,8 @@ sample_frames_batch(
   [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
   sample in parallel with furrr (`TRUE`) or sequentially (`FALSE`,
   default). Parallelism follows the active
-  [`future`](https://future.futureverse.org/reference/plan.html) plan;
-  `TRUE` under the default sequential plan runs one at a time and warns.
+  [`future`](https://rdrr.io/pkg/future/man/plan.html) plan; `TRUE`
+  under the default sequential plan runs one at a time and warns.
 
 - ...:
 

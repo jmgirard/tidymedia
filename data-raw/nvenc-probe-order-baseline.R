@@ -57,7 +57,9 @@
 #   after  <- nvenc_order_baseline()          # the working tree
 #   nvenc_order_vacuous(before)               # empty: every `valid` cell compiled
 #   nvenc_order_vacuous(after)
-#   nvenc_order_diff(before, after)           # AC2: must be empty
+#   nvenc_order_contract_diff(before, after)  # AC2: must be empty
+#   nvenc_order_diff(before, after)           # the widest view: the 27 message
+#                                             #   moves this milestone makes
 
 source(file.path("data-raw", "codec-guard-baseline.R"))
 # For `tm_nvenc_wrong_forms()` and `tm_timeout_call_specs()` alone, so the five
@@ -251,14 +253,45 @@ nvenc_order_vacuous <- function(baseline) {
              baseline$kind != "compiled", , drop = FALSE]
 }
 
-# Rows whose kind, compiled command, blamed frame or message differs. AC2 asks
-# that this be EMPTY: the refused set is the same and every compiled command is
-# byte-identical.
+# Rows whose kind, compiled command, blamed frame or message differs -- the
+# widest comparison, reported for the reader rather than for AC2.
+#
+# On this milestone it is NOT empty and must not be: the 27 rows it returns are
+# the defect being fixed, each an abort whose message changed from "nvenc is not
+# available" to the caller's own argument error, with the blamed frame unmoved.
+# That it sees them is also this grid's discrimination check -- an instrument
+# that reported nothing here would be reporting nothing anywhere.
 #
 # The two baselines must cover the same cells. Matching runs over `after`'s keys,
 # so a row present only in `before` would vanish silently -- and "empty" is the
-# whole claim, which a silently dropped row would satisfy without appearing.
+# whole claim of the narrower comparison below, which a silently dropped row
+# would satisfy without appearing.
 nvenc_order_diff <- function(before, after) {
+  b <- nvenc_order_align(before, after)
+  ne <- function(x, y) xor(is.na(x), is.na(y)) | (!is.na(x) & !is.na(y) & x != y)
+  changed <- b$kind != after$kind | ne(b$outcome, after$outcome) |
+    ne(b$call, after$call)
+  nvenc_order_report(b, after, changed)
+}
+
+# AC2's comparison, and only AC2's: the two conditions the criterion states.
+#
+#   1  every cell that compiled at the merge-base compiles the same bytes now
+#   2  the refused set is the same at both refs
+#
+# A message change on a cell refused at both refs is neither of those -- it is
+# AC1's subject, and `nvenc_order_diff()` above is where it is read. This
+# function must return zero rows.
+nvenc_order_contract_diff <- function(before, after) {
+  b <- nvenc_order_align(before, after)
+  ne <- function(x, y) xor(is.na(x), is.na(y)) | (!is.na(x) & !is.na(y) & x != y)
+  both_compiled <- b$kind == "compiled" & after$kind == "compiled"
+  changed <- b$kind != after$kind | (both_compiled & ne(b$outcome, after$outcome))
+  nvenc_order_report(b, after, changed)
+}
+
+# Line `before` up with `after`, refusing a comparison over mismatched grids.
+nvenc_order_align <- function(before, after) {
   key <- function(d) {
     paste(d$member, d$cell, d$hardware, d$fallback, d$pool, sep = "\037")
   }
@@ -269,10 +302,10 @@ nvenc_order_diff <- function(before, after) {
          length(only_before), " only in `before`, ",
          length(only_after), " only in `after`.")
   }
-  b <- before[match(key(after), key(before)), , drop = FALSE]
-  ne <- function(x, y) xor(is.na(x), is.na(y)) | (!is.na(x) & !is.na(y) & x != y)
-  changed <- b$kind != after$kind | ne(b$outcome, after$outcome) |
-    ne(b$call, after$call)
+  before[match(key(after), key(before)), , drop = FALSE]
+}
+
+nvenc_order_report <- function(b, after, changed) {
   changed[is.na(changed)] <- TRUE
   data.frame(
     member = after$member[changed], cell = after$cell[changed],

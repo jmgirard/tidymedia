@@ -84,19 +84,26 @@ test_that("a dropped cell is dropped by measurement, naming its refusing frame",
   expect_equal(sub(" \\|\\| .*$", "", kept$none), kept$member)
 })
 
-test_that("the wrong-argument cells the probe outranks are the recorded ones", {
-  # The BEFORE measurement, kept green on master so the instrument is shown able
-  # to see the defect before the fix removes it. T3 replaces this expectation
-  # with the zero-mismatch one AC1 states.
+test_that("asking for nvenc changes nothing a caller is told about an argument", {
+  # AC1. For every kept cell -- every (member, argument, wrong form) the member
+  # itself refuses -- the condition under `hardware = "nvenc"` is identical to
+  # the one under `hardware = "none"`, blamed frame and message alike, whether
+  # the mocked build lists the nvenc encoders or lists none.
+  #
+  # The `absent` pool is the one that matters and the one a machine cannot be
+  # trusted to supply: with the encoders present the probe succeeds and the
+  # argument error is reached anyway, so a sweep run only against a real
+  # nvenc-capable FFmpeg would measure nothing. `tm_nvenc_mismatch_master()`
+  # records the 27 cells that failed this on the merge-base, which is what shows
+  # the sweep able to see the defect it now reports absent.
   dir <- withr::local_tempdir()
   cells <- tm_nvenc_wrong_arg_cells(dir)
+  expect_gt(length(tm_nvenc_mismatch_master()), 0)
 
-  present <- tm_nvenc_sweep(cells, tm_nvenc_encoder_pools()$present)
-  expect_equal(sum(present$kept & !present$match), 0L)
-
-  absent <- tm_nvenc_sweep(cells, tm_nvenc_encoder_pools()$absent)
-  expect_equal(
-    tm_sort_c(absent$cell[absent$kept & !absent$match]),
-    tm_nvenc_mismatch_master()
-  )
+  for (pool in names(tm_nvenc_encoder_pools())) {
+    sweep <- tm_nvenc_sweep(cells, tm_nvenc_encoder_pools()[[pool]])
+    bad <- sweep[sweep$kept & !sweep$match, ]
+    expect_equal(nrow(bad), 0L, info = paste(pool, paste(bad$cell,
+                                                         collapse = ", ")))
+  }
 })

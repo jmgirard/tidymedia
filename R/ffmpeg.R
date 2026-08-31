@@ -1507,9 +1507,6 @@ crop_video <- function(infile, outfile, width, height,
 format_for_web_pipeline <- function(input, output, hardware = "none",
                                     fallback = FALSE, audio_stream = NULL,
                                     call = rlang::caller_env()) {
-  # The recipe stays H.264 (family fixed); hardware = "nvenc" swaps libx264 for
-  # h264_nvenc when available. Layer 2 only computes the codec name (D009, IP1).
-  video_codec <- resolve_hw_encoder("libx264", hardware, fallback, call = call)
   p <- ffm_files(input, output)
   p <- ffm_crop(p, width = "floor(in_w/2)*2", height = "floor(in_h/2)*2")
   # This verb emitted NO map until M49, so FFmpeg's implicit selection picked
@@ -1519,6 +1516,18 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
   # and writes .mp4, a container that holds many audio tracks, so the
   # unselected case has no reason to narrow (D028).
   p <- ffm_map(p, pass_through_maps(audio_stream, call = call))
+  # The recipe stays H.264 (family fixed); hardware = "nvenc" swaps libx264 for
+  # h264_nvenc when available. Layer 2 only computes the codec name (D009, IP1).
+  #
+  # Resolved HERE rather than at the top of this function (M095). Under
+  # hardware = "nvenc" the resolution asks this FFmpeg build what encoders it
+  # has, and asking first meant a malformed `audio_stream` came back as "nvenc
+  # is not available" -- the machine deciding which error the caller sees. This
+  # verb's only machine-independent check is pass_through_maps()' track check
+  # above, so one line below it is as late as the resolution can go. The
+  # compiled command is unchanged: ffm_groups() emits by group, not by call
+  # order (measured over every cell by data-raw/nvenc-probe-order-baseline.R).
+  video_codec <- resolve_hw_encoder("libx264", hardware, fallback, call = call)
   p <- ffm_codec(p, video = video_codec, audio = "aac")
   p <- ffm_pixel_format(p, "yuv420p")
   ffm_output_options(p, "-movflags +faststart")
@@ -1844,7 +1853,19 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
   # promises. The cost is precedence: the nvenc-unavailable abort now fires
   # after ffm_scale()'s dimension checks rather than before them, matching
   # crop_video().
-  p <- apply_video_codec(p, video_codec, hardware, fallback, call = call)
+  # M095 splits the seam here. The TOKEN check stays exactly where the combined
+  # apply_video_codec() call sat, so a malformed `video_codec` still reports
+  # before `audio_codec` and `pixel_format` as it always has; the encoder
+  # RESOLUTION moves to the bottom of this function, below every check that
+  # cannot depend on what this FFmpeg build has. Under hardware = "nvenc" the
+  # resolution asks the build for its encoder list, and asking used to outrank a
+  # malformed `audio_codec`, `pixel_format` or `audio_stream`: the caller was
+  # told nvenc was missing when what was wrong was their own argument (M094
+  # review H1/H3, and D036's front-door rule reaching the builder). The compiled
+  # command is unchanged by the move -- ffm_groups() emits by group, not by call
+  # order -- and data-raw/nvenc-probe-order-baseline.R measures that over every
+  # cell rather than asserting it.
+  check_video_codec(video_codec, call = call)
   p <- apply_audio_codec(p, audio_codec, call = call)
   # State the stream selection instead of inheriting FFmpeg's (M47). One
   # ffm_map() call with both specifiers, never two: ffm_map() appends, so two
@@ -1859,6 +1880,13 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
   check_token(pixel_format, call = call)
   p <- ffm_pixel_format(p, pixel_format)
   p <- ffm_map(p, pass_through_maps(audio_stream, call = call))
+  # The other half of the split above: every machine-independent check has now
+  # run, so the build-time probe is free to run last. `fallback` is checked
+  # inside resolve_hw_encoder() and moves down with it, which reorders it
+  # against `pixel_format` -- both are still refused, and the refusal is
+  # identical with and without hardware = "nvenc", which is what this milestone
+  # promises (M095 gate).
+  p <- emit_video_codec(p, video_codec, hardware, fallback, call = call)
   ffm_output_options(p, "-movflags +faststart")
 }
 
@@ -2046,14 +2074,22 @@ anonymize_pipeline <- function(input, output, regions, color, video_codec,
   # hatch for the D017 trap (a source codec the output container cannot hold),
   # and reuses M35's apply_audio_codec() seam, so NULL emits no -codec:a
   # (M39/D017).
-  # hardware = "nvenc" swaps the software video_codec for its nvenc encoder;
-  # Layer 2 computes the name here, Layer 1 assembles it unchanged (IP1; D-M31).
-  video_codec <- resolve_hw_encoder(video_codec, hardware, fallback, call = call)
-  p <- ffm_codec(p, video = video_codec)
   p <- apply_audio_codec(p, audio_codec, call = call)
   # State the stream selection instead of inheriting FFmpeg's (M47); see
   # standardize_pipeline() for why this is one ffm_map() call and not two.
   p <- ffm_map(p, pass_through_maps(audio_stream, call = call))
+  # hardware = "nvenc" swaps the software video_codec for its nvenc encoder;
+  # Layer 2 computes the name here, Layer 1 assembles it unchanged (IP1; D-M31).
+  #
+  # Resolved BELOW the two checks above rather than before them (M095). The
+  # resolution asks this FFmpeg build what encoders it has, so asking first made
+  # a malformed `audio_codec` or `audio_stream` come back as "nvenc is not
+  # available". `video_codec` and `pixel_format` were already checked at the top
+  # of this function and keep their positions; the compiled command is unchanged
+  # either way, since ffm_groups() emits by group and not by call order
+  # (measured over every cell by data-raw/nvenc-probe-order-baseline.R).
+  video_codec <- resolve_hw_encoder(video_codec, hardware, fallback, call = call)
+  p <- ffm_codec(p, video = video_codec)
   ffm_pixel_format(p, pixel_format)
 }
 
@@ -3155,9 +3191,34 @@ check_nvenc_available <- function(video_codec, hardware = "none",
 # computing an argument, not engine surface (D014, IP1).
 apply_video_codec <- function(object, video_codec, hardware = "none",
                               fallback = FALSE, call = rlang::caller_env()) {
-  # Validate the user's token before family inference so the error is the same
-  # under hardware = "none" and "nvenc" (parity with anonymize_pipeline()).
+  check_video_codec(video_codec, call = call)
+  emit_video_codec(object, video_codec, hardware, fallback, call = call)
+}
+
+# The two halves, separately callable (M095). They are one call at the three
+# pipelines that can keep them together; the three M095 reorders cannot, because
+# the second half ASKS THE MACHINE something -- resolve_hw_encoder() consults
+# this FFmpeg build's encoder list under hardware = "nvenc" -- and a question
+# about the machine must not outrank a complaint about the caller's own
+# arguments. Splitting the seam is what lets standardize_pipeline() check the
+# token where the pair used to sit and emit the codec after its last
+# machine-independent check, with neither half moving relative to anything else.
+
+# check_video_codec(): the user's token, validated before family inference so
+# the error is the same under hardware = "none" and "nvenc" (parity with
+# anonymize_pipeline()). NULL is M34/D016's "leave the codec alone" sentinel and
+# is not a token.
+check_video_codec <- function(video_codec, call = rlang::caller_env()) {
   if (!is.null(video_codec)) check_token(video_codec, call = call)
+  invisible(NULL)
+}
+
+# emit_video_codec(): resolve the encoder for the verb's hardware= choice and
+# add it to the pipeline. Under hardware = "nvenc" this is where the build-time
+# capability probe runs, so this half is what a pipeline sinks below its
+# argument checks. The NULL sentinel emits nothing at all.
+emit_video_codec <- function(object, video_codec, hardware = "none",
+                             fallback = FALSE, call = rlang::caller_env()) {
   video_codec <- resolve_hw_encoder(video_codec, hardware, fallback, call = call)
   if (is.null(video_codec)) {
     return(object)

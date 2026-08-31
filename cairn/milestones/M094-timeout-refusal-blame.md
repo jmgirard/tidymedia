@@ -231,6 +231,18 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
   page and `NEWS.md` gain the sentence F6 said they were missing — an argument
   your call got wrong is still reported first — and their `has_nvenc()` exception
   is now the only one, which the code makes true.
+- 2026-08-30: T13's first CI run was red on macOS and Windows on one cell —
+  `normalize_audio [two_pass = TRUE]` reporting `Could not locate FFmpeg.`,
+  confirmed by reading the failing job's log rather than inferred. Same shape as
+  F3 on the scalar half: the two-pass block probes (D024's drop check) and then
+  spawns the analysis pass, both above the verb's site, so the limit was read
+  inside `run_program()`, which refuses a missing binary first. Reproduced
+  locally by running the suite with the media binaries off `PATH`, fixed with the
+  branch's own call above the probe, and the binary-less leg widened to run the
+  variant cells too — the base cell passed while the two-pass cell failed, which
+  is exactly the gap that let this reach CI. Green both ways afterwards: 0
+  failures with the binaries present (10,844 pass) and 0 without (2,453 pass over
+  the timeout files).
 
 ## Decisions
 

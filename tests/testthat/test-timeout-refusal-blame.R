@@ -205,12 +205,25 @@ test_that("a machine with no media binaries gets the same refusal (AC4)", {
   expect_identical(unname(Sys.which("ffmpeg")), "")
   expect_identical(unname(Sys.which("mediainfo")), "")
 
+  # The variant cells run here too. A member whose ONE argument cell never takes
+  # the path that probes would otherwise hide the same defect on the other path:
+  # `normalize_audio(two_pass = TRUE)` did exactly that, passing here on the base
+  # cell and reporting `Could not locate FFmpeg.` on the two-pass one.
+  variants <- tm_timeout_variant_specs(dir)
+  cells <- c(
+    lapply(stats::setNames(tm_timeout_domain(), tm_timeout_domain()),
+           function(nm) list(name = nm, args = specs[[nm]])),
+    variants
+  )
   for (form in names(tm_timeout_bad_forms())) {
     limit <- tm_timeout_bad_forms()[[form]]
-    for (name in tm_timeout_domain()) {
+    for (label in names(cells)) {
       expect_identical(
-        suppressWarnings(tm_refusal_head(name, specs[[name]], limit)), name,
-        info = paste(name, form, "PATH = \"\"")
+        suppressWarnings(
+          tm_refusal_head(cells[[label]]$name, cells[[label]]$args, limit)
+        ),
+        cells[[label]]$name,
+        info = paste(label, form, "PATH = \"\"")
       )
     }
   }

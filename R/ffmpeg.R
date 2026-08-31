@@ -2578,6 +2578,15 @@ normalize_audio <- function(infile, outfile,
     # of hoisting is to fail before the analysis pass runs, and a malformed
     # encoder name is as fatal as "copy".
     if (!is.null(audio_codec)) check_token(audio_codec)
+    # D074, on the two-pass path, for the same reason the batch sibling has its
+    # own: this branch probes (the D024 drop check below) and then spawns the
+    # analysis pass, both above the site at the bottom of this verb -- so a
+    # two-pass call read the limit inside run_program(), which refuses a missing
+    # binary BEFORE it resolves one. On a machine with no FFmpeg the caller was
+    # told about the PATH rather than about the option they set (M094 review F3,
+    # measured again on CI). Sited here it is after every check above, all
+    # machine-independent, and before the first probe (D036).
+    resolve_timeout()
     # D024's diagnostic probe, two-pass site. There are TWO sites in this verb,
     # mutually exclusive on `two_pass`, because a single site below every guard
     # would warn only AFTER the analysis pass had run -- while the batch verb

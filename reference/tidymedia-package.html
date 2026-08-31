@@ -134,13 +134,20 @@ run does not hand you a command compiled under a limit it could never have
 used. An argument your call got wrong is reported first wherever the verb
 itself can see it is wrong: the limit is checked after the verb's own guards
 and after the command has been assembled, so a bad <code>regions</code>, <code>pixel_format</code>
-or <code>video_codec</code> reports as itself whether or not a limit is set. Where the
-check runs somewhere the verb reaches only later, the limit is reported
-instead — asking your FFmpeg build what hardware encoders it has happens
-before the command is assembled, so a <code>hardware = "nvenc"</code> call with a bad
-<code>video_codec</code> reports the limit; so does a value only the per-row fan-out
-validates, such as <code><a href="segment_video.html">segment_video()</a></code>'s <code>outfiles</code> or a <code>_batch</code> job table's
-<code>output</code> column. Two calls read no limit and so refuse nothing: <code><a href="nvenc_encoder.html">has_nvenc()</a></code>
+or <code>video_codec</code> reports as itself whether or not a limit is set. Asking for
+<code>hardware = "nvenc"</code> no longer changes that: your FFmpeg build is asked what
+encoders it has after every check the verb itself makes, so a bad
+<code>audio_codec</code>, <code>pixel_format</code> or <code>audio_stream</code> reports as itself there too —
+whether or not a limit is set, and whether or not that build has nvenc.
+<code>fallback</code> is checked where that question is asked and so moved down with it:
+a call wrong about both <code>fallback</code> and <code>pixel_format</code> now hears about the
+pixel format. Where the check runs somewhere the verb reaches only later, it
+loses to both the limit and the encoder question: <code><a href="segment_video.html">segment_video()</a></code>'s
+<code>outfiles</code>, a <code>_batch</code> job table's <code>output</code> column, and
+<code><a href="anonymize_video_batch.html">anonymize_video_batch()</a></code>'s <code>pixel_format</code> and <code>color</code> are validated inside
+the per-row fan-out, so a set limit is reported instead of them, and so is a
+missing nvenc encoder under <code>hardware = "nvenc"</code> on a build without one.
+Two calls read no limit and so refuse nothing: <code><a href="nvenc_encoder.html">has_nvenc()</a></code>
 answering from a <code>tidymedia.nvenc_encoders</code> you set, which asks FFmpeg
 nothing, and a <code>probe_*()</code> shortcut handed a <code>probe</code> object instead of an
 <code>infile</code>, which reprobes nothing.</p>

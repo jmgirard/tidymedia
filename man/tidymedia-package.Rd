@@ -106,9 +106,10 @@ run does not hand you a command compiled under a limit it could never have
 used. An argument your call got wrong is still reported first: the limit is
 checked after everything the verb can decide without asking FFmpeg anything,
 so a bad \code{regions} or \code{video_codec} reports as itself whether or not a limit
-is set. The one call that reads no limit and so refuses nothing is
-\code{\link[=has_nvenc]{has_nvenc()}} answering from a \code{tidymedia.nvenc_encoders} you set, which asks
-FFmpeg nothing.
+is set. Two calls read no limit and so refuse nothing: \code{\link[=has_nvenc]{has_nvenc()}}
+answering from a \code{tidymedia.nvenc_encoders} you set, which asks FFmpeg
+nothing, and a \verb{probe_*()} shortcut handed a \code{probe} object instead of an
+\code{infile}, which reprobes nothing.
 
 The limit applies per spawned program, not per batch: a 100-row batch with a
 600-second limit waits at most 600 seconds — plus the lag described below —

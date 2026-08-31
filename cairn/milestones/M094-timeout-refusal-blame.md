@@ -136,7 +136,7 @@ rejected; superseding it is its own milestone.
       check lives in `mediainfo_parameter()`) and `resolve_probe()`'s infile
       branch (whose `infile` check lives in `probe_all_impl()`) — above the
       refusal, through one shared checker each rather than a copy per verb.
-- [ ] T16. G2 and G6: the help page, `NEWS.md` and D074 name both calls that
+- [x] T16. G2 and G6: the help page, `NEWS.md` and D074 name both calls that
       refuse nothing — `has_nvenc()` under a set `tidymedia.nvenc_encoders`, and
       a `probe_*(probe = )` call, which reprobes nothing and reads no limit —
       and the comment sites citing `D042` for the siting rule cite `D074`, the
@@ -338,6 +338,18 @@ rejected; superseding it is its own milestone.
   form used to name `mediainfo_parameter(file = file, ...)` and
   `probe_all(infile, typed = typed, parallel = parallel)`. Full suite 0
   failures, 11,154 pass.
+- 2026-08-30: T16 corrected the count and the citation. The help page, the
+  `NEWS.md` entry, D074 and the comment above `resolve_timeout()` now name both
+  calls that read no limit — `has_nvenc()` under a set
+  `tidymedia.nvenc_encoders`, and a `probe_*()` shortcut handed a `probe` object
+  rather than an `infile`, which reprobes nothing — where all four said "the one
+  exception" (G2). A committed test drives all four shortcuts x five forms
+  through the `probe = ` branch and asserts each raises nothing and still
+  returns its tibble, so the second carve-out is measured rather than asserted.
+  The 22 site comments that cited `D042` for the siting rule cite `D074`, the
+  entry that decides it (G6); the D042 citations left standing are about D042's
+  own subject, `call`-threading in a shared checker. D074's property 1 and the
+  matching comment gain the delegated-check case G1 measured.
 
 ## Decisions
 

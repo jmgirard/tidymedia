@@ -1174,7 +1174,7 @@ separate_audio_video <- function(infile, audiofile, videofile,
                                     hardware, fallback)
   commands <- c(audio = ffm_compile(audio), video = ffm_compile(video))
 
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  # D074: the verb the caller typed names a bad limit, not the builder below.
   resolve_timeout()
   if (run) {
     # The audio command still runs FIRST and its failure is still what aborts
@@ -2386,7 +2386,7 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
                         fallback)
 
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  # D074: the verb the caller typed names a bad limit, not the builder below.
   resolve_timeout()
   ffm_batch(
     jobs,
@@ -2788,7 +2788,7 @@ normalize_audio_pipeline <- function(input, output,
 #' ffmpeg_codecs(sort_by_type = FALSE)
 #' @export
 ffmpeg_codecs <- function(sort_by_type = TRUE) {
-  # D042: the verb the caller typed names a bad limit, not the hatch below.
+  # D074: the verb the caller typed names a bad limit, not the hatch below.
   resolve_timeout()
   output <- ffmpeg("-codecs")
   output2 <- output[-(1:which(output == " -------"))]
@@ -2874,7 +2874,7 @@ ffmpeg_encoders <- function(sort_by_type = TRUE) {
 
   rlang::check_bool(sort_by_type)
 
-  # D042: the verb the caller typed names a bad limit, not the hatch below.
+  # D074: the verb the caller typed names a bad limit, not the hatch below.
   resolve_timeout()
   output <- ffmpeg("-encoders")
   output2 <- output[-(1:which(output == " ------"))]
@@ -3549,7 +3549,7 @@ segment_video <- function(infile,
   jobs <- tibble::tibble(
     input = infile, output = outfiles, start = start, end = end
   )
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  # D074: the verb the caller typed names a bad limit, not the builder below.
   resolve_timeout()
   ffm_batch(
     jobs,
@@ -3846,7 +3846,7 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
   check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
                         fallback)
 
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  # D074: the verb the caller typed names a bad limit, not the builder below.
   resolve_timeout()
   ffm_batch(
     jobs,
@@ -4001,7 +4001,7 @@ extract_frame_batch <- function(jobs, format = "png", run = TRUE,
   # row, sharing frame_pipeline() with extract_frame(). frame->timestamp
   # resolution happens per row (via the input's frame rate); `...` forwards
   # ffm_batch options (verify/manifest/...) to the runner, never to the builder.
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  # D074: the verb the caller typed names a bad limit, not the builder below.
   resolve_timeout()
   ffm_batch(
     jobs,
@@ -4203,7 +4203,7 @@ sample_frames_batch <- function(jobs, fps = NULL, interval = NULL,
   # A per-row rate column (arriving via `...` from pmap) overrides the scalar
   # arg of the same name; `...` also forwards ffm_batch options
   # (verify/manifest/...) to the runner, never to the pipeline builder.
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  # D074: the verb the caller typed names a bad limit, not the builder below.
   resolve_timeout()
   ffm_batch(
     jobs,
@@ -4501,7 +4501,7 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
   check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
                         fallback)
 
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  # D074: the verb the caller typed names a bad limit, not the builder below.
   resolve_timeout()
   ffm_batch(
     jobs,
@@ -4639,7 +4639,7 @@ strip_metadata_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
   # per row, sharing strip_metadata_pipeline() with strip_metadata(). `...`
   # forwards ffm_batch options (verify/manifest/...) to the runner; the scrub
   # itself has no per-row knobs, so extra job columns are ignored.
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  # D074: the verb the caller typed names a bad limit, not the builder below.
   resolve_timeout()
   ffm_batch(
     jobs,
@@ -5055,7 +5055,7 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
   # arg of the same name; `...` also forwards ffm_batch options
   # (verify/manifest/...) to the runner, never to the pipeline builder (the
   # runner's params sit after `...` and bind by name — M09 lesson).
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  # D074: the verb the caller typed names a bad limit, not the builder below.
   resolve_timeout()
   ffm_batch(
     jobs,
@@ -5609,7 +5609,7 @@ extract_audio_batch <- function(jobs, audio_codec = "copy",
   # row, sharing extract_audio_pipeline() with extract_audio(). A per-row
   # `audio_codec` or `audio_stream` column (via `...` from pmap) overrides the
   # scalar arg; `...` also forwards ffm_batch options to the runner.
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  # D074: the verb the caller typed names a bad limit, not the builder below.
   resolve_timeout()
   ffm_batch(
     jobs,
@@ -5762,7 +5762,7 @@ convert_audio_batch <- function(jobs, audio_codec = NULL,
   # `audio_codec` or `audio_stream` column overrides the scalar arg; the
   # per-value check_string(audio_codec) and check_number_whole(audio_stream) are
   # inherited from the shared pipeline.
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  # D074: the verb the caller typed names a bad limit, not the builder below.
   resolve_timeout()
   ffm_batch(
     jobs,
@@ -5963,7 +5963,7 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
   check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
                         fallback)
 
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  # D074: the verb the caller typed names a bad limit, not the builder below.
   resolve_timeout()
   ffm_batch(
     jobs,
@@ -6087,7 +6087,7 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
   # format_for_web_pipeline() hands resolve_hw_encoder().
   check_nvenc_available("libx264", hardware, fallback)
 
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  # D074: the verb the caller typed names a bad limit, not the builder below.
   resolve_timeout()
   ffm_batch(
     jobs,
@@ -6441,7 +6441,7 @@ separate_audio_video_batch <- function(jobs, audio_codec = "copy",
   # column-over-argument resolution; without it each row takes its stream's
   # argument. `...` also forwards ffm_batch options (verify/manifest/...) to the
   # runner.
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  # D074: the verb the caller typed names a bad limit, not the builder below.
   resolve_timeout()
   out <- ffm_batch(
     long,
@@ -6903,7 +6903,7 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
   # per row, sharing concatenate_pipeline() with concatenate_videos(). pmap
   # passes each `inputs` list cell as a character vector; `...` forwards
   # ffm_batch options (verify/manifest/...) to the runner.
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  # D074: the verb the caller typed names a bad limit, not the builder below.
   resolve_timeout()
   ffm_batch(
     jobs,
@@ -7111,7 +7111,7 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
   check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
                         fallback)
 
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  # D074: the verb the caller typed names a bad limit, not the builder below.
   resolve_timeout()
   ffm_batch(
     jobs,
@@ -7375,7 +7375,7 @@ picture_in_picture_batch <- function(jobs,
   check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
                         fallback)
 
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  # D074: the verb the caller typed names a bad limit, not the builder below.
   resolve_timeout()
   ffm_batch(
     jobs,

@@ -566,9 +566,10 @@
   the `_batch` verbs already behaved this way. An argument your call got wrong
   is still reported first: the limit is checked after everything a verb can
   decide without asking FFmpeg anything, so a bad `regions` or `video_codec`
-  reports as itself whether or not a limit is set. `has_nvenc()` answering from
-  a `tidymedia.nvenc_encoders` you set is the one call that refuses nothing,
-  because it reads no limit.
+  reports as itself whether or not a limit is set. Two calls refuse nothing,
+  because neither reads a limit: `has_nvenc()` answering from a
+  `tidymedia.nvenc_encoders` you set, and a `probe_*()` shortcut handed a
+  `probe` object instead of an `infile`, which reprobes nothing.
 
 * The advice `separate_audio_video()` gives when an audio output fails no
   longer arrives when you are already following it. Writing a multi-track

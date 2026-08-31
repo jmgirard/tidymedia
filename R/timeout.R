@@ -30,10 +30,12 @@
 # the spawn site -- so `extract_audio()` aborted naming `ffm_run(object)` and
 # `probe_all()` naming `purrr::map(infile, probe_one)`, functions the caller
 # never typed. Every export in the timeout domain now re-calls it at its own
-# front door, D042's rule for a builder-bound value: the shared checker is
-# called again from the frame that can name the caller, rather than a `call`
-# argument being threaded through an exported builder. Three properties come
-# with that siting and are worth stating once here rather than at each site:
+# front door, applying D042's rule for a builder-bound value: the shared checker
+# is called again from the frame that can name the caller, rather than a `call`
+# argument being threaded through an exported builder. D074 is where that siting
+# is decided, and the `D074:` comment at each site points there rather than at
+# its premise (M094 review G6). Three properties come with the siting and are
+# worth stating once here rather than at each site:
 #
 #   * It goes as LATE as the verb allows, but never after a probe or a spawn.
 #     In practice that is after the front-door guards and, where the verb builds
@@ -45,15 +47,24 @@
 #     above ffm_finish() reported the limit where the argument error used to be.
 #     A verb reaching a spawn by more than one path carries a call on each
 #     (normalize_audio_batch()'s two-pass branch returns above the other).
+#     Where the check that has to report first lives in a CALLEE, below the
+#     callee's own site, the verb runs that check itself -- the five get_*()
+#     scalars call check_path_vector() and resolve_probe()'s infile branch runs
+#     probe_all_impl()'s three checks, both above the re-call. That is the same
+#     measurement one round later (M094 review G1), at nine exports the first
+#     fix did not reach.
 #   * It goes ABOVE the `run` gate, so a `run = FALSE` compile is refused too --
 #     the batch form already did this (R/ffm_batch.R) and the scalar/batch split
 #     was itself the defect.
-#   * It is not sited where a caller-set OVERRIDE answers without reading the
-#     limit. `has_nvenc()` under a set `tidymedia.nvenc_encoders` answers from
-#     that option and refuses nothing -- the one carve-out. The memo is not part
-#     of it: inside the fall-through the call sits above cached_encoder_names(),
-#     so a warm session memo still refuses and the answer does not depend on
-#     what this session happened to ask earlier (M094 review F5).
+#   * It is not sited on a path that reads no limit. Two such paths exist, and
+#     neither refuses. `has_nvenc()` under a set `tidymedia.nvenc_encoders`
+#     answers from that option; the memo is NOT part of the carve-out, since
+#     inside the fall-through the call sits above cached_encoder_names(), so a
+#     warm session memo still refuses and the answer does not depend on what
+#     this session happened to ask earlier (M094 review F5). A probe_*()
+#     shortcut handed a `probe` object rather than an `infile` reprobes nothing,
+#     which is why resolve_probe()'s call sits inside the infile branch. Calling
+#     these two the ONE carve-out was measured wrong (M094 review G2).
 #
 # One probe runs while a command is BUILT rather than at a front door -- the
 # nvenc capability lookup, reached from resolve_hw_encoder() inside the pipeline

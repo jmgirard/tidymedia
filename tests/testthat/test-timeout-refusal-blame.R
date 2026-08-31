@@ -341,3 +341,32 @@ test_that("the comparator these sweeps use can tell a different error apart", {
   expect_no_match(got, "^strip_metadata$")
   expect_match(got, "Something else entirely")
 })
+
+test_that("a `probe = ` shortcut reprobes nothing and so refuses nothing", {
+  # The second carve-out, and the reason the docs' "one exception" was wrong a
+  # second time (review G2). `resolve_probe()` reads the limit only on the
+  # branch that probes, so a shortcut handed a probe object has nothing to
+  # refuse -- and nothing here spawns, so the leg is the same on a runner with
+  # no media binaries.
+  probe <- list(
+    container = tibble::tibble(filename = "x.mp4"),
+    streams = tibble::tibble(file = "x.mp4", codec_type = c("video", "audio"))
+  )
+  shortcuts <- c("probe_container", "probe_streams", "probe_video", "probe_audio")
+  for (name in shortcuts) {
+    for (form in names(tm_timeout_bad_forms())) {
+      limit <- tm_timeout_bad_forms()[[form]]
+      expect_identical(
+        tm_blame_head(name, list(probe = probe), limit), "<none>",
+        info = paste(name, form)
+      )
+      # And the answer is the probe object's own, not a refusal swallowed
+      # somewhere quieter.
+      got <- withr::with_options(
+        list(tidymedia.timeout = limit),
+        do.call(name, list(probe = probe), envir = asNamespace("tidymedia"))
+      )
+      expect_s3_class(got, "tbl_df")
+    }
+  }
+})

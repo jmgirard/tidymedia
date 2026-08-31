@@ -3409,7 +3409,14 @@ site:
    pipeline before running anything, after the builder's argument validation too
    — so every refusal that fired before it still fires first and only this blame
    moves. Where a verb reaches a spawn by more than one path, each path carries
-   its own call.
+   its own call. Where the check the verb has to report first lives in a CALLEE,
+   below the callee's own site, the verb runs that check itself: the five
+   `get_*` scalars call `check_path_vector()` on `file` and `resolve_probe()`'s
+   infile branch runs `probe_all_impl()`'s three checks, both above the re-call.
+   That is the second thing M094's review measured false — nine exports where an
+   invalid limit displaced the caller's own argument error, F1's class at verbs
+   the first return never touched — and it is why the check is a shared function
+   rather than a copy per verb.
 2. **Above the `run` gate,** so a `run = FALSE` compile is refused too.
 3. **Not sited where a caller-set override answers without reading the limit.**
 
@@ -3450,7 +3457,15 @@ compile now refuses a limit that run would never have read. That was chosen, not
 incurred: `ffm_batch()` has refused on the `run = FALSE` path since D047, and
 the scalar/batch split was itself the defect being closed.
 
-**The one carve-out.** `has_nvenc()` reads `tidymedia.nvenc_encoders` above
+**The carve-outs.** Two calls read no limit, and neither refuses. The second is
+a `probe_*()` shortcut handed a `probe` object rather than an `infile`:
+`resolve_probe()` reprobes nothing on that branch, so it reads no limit and has
+nothing to refuse — which is why the re-call sits inside the infile branch and
+not above it. M094's first round wrote "the one carve-out" and named only the
+first below; the review measured the second and the count was wrong in the code
+comments, the help page and `NEWS.md` alike.
+
+`has_nvenc()` reads `tidymedia.nvenc_encoders` above
 D044's memo, so a call answered by that override asks FFmpeg nothing and reads
 no limit. The re-call therefore sits inside the fall-through branch, and a call
 answered by the override refuses nothing. Siting it higher would abort a call

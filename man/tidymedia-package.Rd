@@ -106,12 +106,14 @@ run does not hand you a command compiled under a limit it could never have
 used. An argument your call got wrong is reported first wherever the verb
 itself can see it is wrong: the limit is checked after the verb's own guards
 and after the command has been assembled, so a bad \code{regions}, \code{pixel_format}
-or \code{video_codec} reports as itself whether or not a limit is set. Where the
-check runs somewhere the verb reaches only later, the limit is reported
-instead — asking your FFmpeg build what hardware encoders it has happens
-before the command is assembled, so a \code{hardware = "nvenc"} call with a bad
-\code{video_codec} reports the limit; so does a value only the per-row fan-out
-validates, such as \code{\link[=segment_video]{segment_video()}}'s \code{outfiles} or a \verb{_batch} job table's
+or \code{video_codec} reports as itself whether or not a limit is set. Asking for
+\code{hardware = "nvenc"} does not change that. Asking your FFmpeg build what
+encoders it has now happens after every check whose answer cannot depend on
+it, so a bad \code{audio_codec}, \code{pixel_format} or \code{audio_stream} reports as
+itself there too — whether or not a limit is set, and whether or not that
+build has nvenc. Where the check runs somewhere the verb reaches only later,
+the limit is reported instead: a value only the per-row fan-out validates,
+such as \code{\link[=segment_video]{segment_video()}}'s \code{outfiles} or a \verb{_batch} job table's
 \code{output} column. Two calls read no limit and so refuse nothing: \code{\link[=has_nvenc]{has_nvenc()}}
 answering from a \code{tidymedia.nvenc_encoders} you set, which asks FFmpeg
 nothing, and a \verb{probe_*()} shortcut handed a \code{probe} object instead of an

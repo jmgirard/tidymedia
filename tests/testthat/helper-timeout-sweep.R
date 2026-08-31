@@ -1523,3 +1523,83 @@ tm_nvenc_mismatch_master <- function() {
     "standardize_video [pixel_format = token]"
   )
 }
+
+# M096: what `segment_video()` COMPILED at the merge base -----------------------
+
+# tm_outfiles_cells(): the `outfiles` values AC4's grid and AC2's two
+# compiled-today controls name, as one table of calls.
+#
+# `run = FALSE` throughout: the question is what the verb compiles, not what
+# FFmpeg does with it, and a compiled command is the same on a runner with no
+# media binaries. `"bad fmt!"` is a legal output filename -- a space and a bang
+# are nothing an output path may not contain -- and `list("a.mp4")` is a
+# one-element list whose element is a string, which is what the per-row fan-out
+# actually receives. Both are here because a front-door guard written as a check
+# on `outfiles` AS A WHOLE would refuse them, and neither is refused today.
+tm_outfiles_cells <- function(dir) {
+  vid <- file.path(dir, "in.mp4")
+  if (!file.exists(vid)) file.create(vid)
+  list(
+    "outfiles = NULL, start len 2" =
+      list(infile = vid, start = c(0, 0.5), end = c(0.5, 1), outfiles = NULL),
+    "outfiles = character vector, start len 2" =
+      list(infile = vid, start = c(0, 0.5), end = c(0.5, 1),
+           outfiles = c(file.path(dir, "a.mp4"), file.path(dir, "b.mp4"))),
+    "outfiles = 'bad fmt!', start len 1" =
+      list(infile = vid, start = 0, end = 1, outfiles = "bad fmt!"),
+    "outfiles = list('a.mp4'), start len 1" =
+      list(infile = vid, start = 0, end = 1,
+           outfiles = list(file.path(dir, "a.mp4")))
+  )
+}
+
+# tm_outfiles_commands(): drive those cells and return one scrubbed string per
+# cell -- the segments' commands joined, or the message if the call was refused.
+#
+# The fixture directory is scrubbed to `<dir>` for `tm_spawn_trace()`'s reason:
+# two checkouts measured in two temp directories would differ in the path and in
+# nothing else, and this comparison exists to see everything else.
+tm_outfiles_commands <- function(dir) {
+  testthat::local_reproducible_output()
+  cells <- tm_outfiles_cells(dir)
+  vapply(names(cells), function(k) {
+    res <- tryCatch(
+      do.call("segment_video", c(cells[[k]], list(run = FALSE)),
+              envir = asNamespace("tidymedia")),
+      error = function(e) e
+    )
+    if (inherits(res, "error")) {
+      return(paste0("<error: ", cli::ansi_strip(conditionMessage(res)), ">"))
+    }
+    tm_scrub_paths(paste(res$command, collapse = " ;; "), dir)
+  }, character(1))
+}
+
+# tm_outfiles_baseline(): what those cells compiled at `tm_corrupt_master_ref`,
+# measured 2026-08-31 in a worktree at that commit.
+#
+# Recorded because AC4's claim is that the guard refuses nothing the verb
+# compiled before, and a comparison against the same checkout cannot see a
+# change both sides make. `tm_outfiles_commands()` regenerates any cell.
+tm_outfiles_baseline <- function() {
+  c(
+    "outfiles = NULL, start len 2" = paste(
+      '-y -i "<dir>/in.mp4" -codec:a copy -ss 0 -to 0.5 -map "0:v?" -map',
+      '"0:a?" "<dir>/in_1.mp4" ;; -y -i "<dir>/in.mp4" -codec:a copy -ss 0.5',
+      '-to 1 -map "0:v?" -map "0:a?" "<dir>/in_2.mp4"'
+    ),
+    "outfiles = character vector, start len 2" = paste(
+      '-y -i "<dir>/in.mp4" -codec:a copy -ss 0 -to 0.5 -map "0:v?" -map',
+      '"0:a?" "<dir>/a.mp4" ;; -y -i "<dir>/in.mp4" -codec:a copy -ss 0.5 -to',
+      '1 -map "0:v?" -map "0:a?" "<dir>/b.mp4"'
+    ),
+    "outfiles = 'bad fmt!', start len 1" = paste(
+      '-y -i "<dir>/in.mp4" -codec:a copy -ss 0 -to 1 -map "0:v?" -map "0:a?"',
+      '"bad fmt!"'
+    ),
+    "outfiles = list('a.mp4'), start len 1" = paste(
+      '-y -i "<dir>/in.mp4" -codec:a copy -ss 0 -to 1 -map "0:v?" -map "0:a?"',
+      '"<dir>/a.mp4"'
+    )
+  )
+}

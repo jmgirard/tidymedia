@@ -114,11 +114,11 @@ whether or not a limit is set, and whether or not that build has nvenc.
 \code{fallback} is checked where that question is asked and so moved down with it:
 a call wrong about both \code{fallback} and \code{pixel_format} now hears about the
 pixel format. Where the check runs somewhere the verb reaches only later, it
-loses to both the limit and the encoder question: \code{\link[=segment_video]{segment_video()}}'s
-\code{outfiles}, a \verb{_batch} job table's \code{output} column, and
-\code{\link[=anonymize_video_batch]{anonymize_video_batch()}}'s \code{pixel_format} and \code{color} are validated inside
-the per-row fan-out, so a set limit is reported instead of them, and so is a
-missing nvenc encoder under \code{hardware = "nvenc"} on a build without one.
+loses to both the limit and the encoder question: a \verb{_batch} job table's
+\code{output} column and \code{\link[=anonymize_video_batch]{anonymize_video_batch()}}'s \code{pixel_format} and \code{color}
+are validated inside the per-row fan-out, so a set limit is reported instead
+of them, and so is a missing nvenc encoder under \code{hardware = "nvenc"} on a
+build without one.
 Two calls read no limit and so refuse nothing: \code{\link[=has_nvenc]{has_nvenc()}}
 answering from a \code{tidymedia.nvenc_encoders} you set, which asks FFmpeg
 nothing, and a \verb{probe_*()} shortcut handed a \code{probe} object instead of an

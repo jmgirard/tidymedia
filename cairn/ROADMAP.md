@@ -2,7 +2,7 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-08-31 (M095 merged as PR #99 and archived; its two deferred review findings became one new candidate row for the codec seam it split. `ROADMAP.md` was found 2,852 bytes over its 24,000-byte budget — an overrun the M094 stamp recorded as inside it — and fifteen candidate rows were compressed against their durable records to clear it: now 23,956 bytes / 49 lines. LESSONS 19,608 / 32, inside budget; doctrine modules untouched (false-greens 25,810/55, guard-ordering 5,451/27). Terminal rows back to five, M090 rolled off. Nothing retired.)_
+_Last hygiene check: 2026-08-31 (M095 merged as PR #99 and archived; its two deferred review findings became one new candidate row for the codec seam it split. `ROADMAP.md` was found 2,852 bytes over its 24,000-byte budget — an overrun the M094 stamp recorded as inside it — and fifteen candidate rows were compressed against their durable records to clear it: now 23,985 bytes / 49 lines. LESSONS 19,608 / 32, inside budget; doctrine modules untouched (false-greens 25,810/55, guard-ordering 5,451/27). Terminal rows back to five, M090 rolled off. Nothing retired.)_
 
 ## Milestones
 

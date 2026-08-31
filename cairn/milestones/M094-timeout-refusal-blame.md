@@ -1,6 +1,6 @@
 # M094: An invalid `tidymedia.timeout` is refused by the function the caller typed
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -36,35 +36,35 @@ rejected; superseding it is its own milestone.
 
 ## Acceptance criteria
 
-- [ ] AC1. With an invalid `tidymedia.timeout` set, every member of
+- [x] AC1. With an invalid `tidymedia.timeout` set, every member of
       `tm_timeout_domain()` (computed at `tests/testthat/helper-timeout-sweep.R:104`),
       invoked through its own `tm_timeout_call_specs()` cell, raises a condition
       whose `conditionCall()` head is that member's own name. One carve-out: a
       call that never reads the limit — `has_nvenc()` under a set
       `tidymedia.nvenc_encoders`, where D044's memo sits above the read — raises
       nothing and is not required to. Master baseline (2026-08-30): 6 of 53.
-- [ ] AC2. AC1 holds for each invalid form `resolve_timeout()`'s own comment
+- [x] AC2. AC1 holds for each invalid form `resolve_timeout()`'s own comment
       names (`R/timeout.R:19-26`) — `-1`, `0.5`, `NA`, `"2"`, `c(1, 2)` — not for
       one form alone.
-- [ ] AC3. AC1 holds at `run = FALSE` as well as `run = TRUE`, and at
+- [x] AC3. AC1 holds at `run = FALSE` as well as `run = TRUE`, and at
       `parallel = TRUE` as well as the default, at every domain member carrying
       that argument. This closes the asymmetry measured on master, where
       `extract_audio(v, o, run = FALSE)` raises nothing and
       `extract_audio_batch(jobs, run = FALSE)` aborts.
-- [ ] AC4. The wording does not fork: for each AC2 form, `conditionMessage()`
+- [x] AC4. The wording does not fork: for each AC2 form, `conditionMessage()`
       under a pinned `cli.width` is identical across all 53 members and equals
       what `resolve_timeout()`'s single `rlang::check_number_whole()` site
       (`R/timeout.R:31`) produces for that form. At the six members that blame
       `purrr::map(infile, probe_one)` today, the `purrr_error_indexed` class and
       its `In index: 1. / Caused by error in .f()` prefix are gone.
-- [ ] AC5. Blame changes and nothing else (D042's siting rule): with the option
+- [x] AC5. Blame changes and nothing else (D042's siting rule): with the option
       unset or set to a valid whole number, every domain member's return value
       and its `system`/`system2` count are unchanged from the T1 baseline; and
       under an invalid limit no domain member reaches `system()`/`system2()`.
-- [ ] AC6. D049's rule is unchanged: with the limit forced to be reached, every
+- [x] AC6. D049's rule is unchanged: with the limit forced to be reached, every
       member of `tm_timeout_domain()` still either aborts or warns, and which of
       the two each member does matches T1's per-member table.
-- [ ] AC7. `devtools::test()` passes and `devtools::check()` reports 0 errors and
+- [x] AC7. `devtools::test()` passes and `devtools::check()` reports 0 errors and
       0 warnings.
 
 ## Coverage
@@ -144,7 +144,7 @@ rejected; superseding it is its own milestone.
       (G5); drop `nvenc_available()`'s unexercised `call` default (G7); build
       `data-raw/timeout-valid-baseline.R`'s worktree under `tempdir()` instead
       of the package root (G8).
-- [ ] T18. `devtools::document()`, `devtools::test()`, `devtools::check()`, then
+- [x] T18. `devtools::document()`, `devtools::test()`, `devtools::check()`, then
       push and confirm CI green on all ten checks.
 
 ## Work log
@@ -365,6 +365,16 @@ rejected; superseding it is its own milestone.
   test also pins its `default_ref` to the helper's accepted ref, which had been
   two copies of a sha with nothing tying them. Full suite 0 failures, 11,310
   pass.
+- 2026-08-30: T18 green everywhere. `devtools::document()` no diff,
+  `devtools::test()` 0 failures / 11,310 pass / 5 skips (absent nvenc encoder) /
+  12 warnings all pre-existing in unrelated files, `devtools::check()`
+  **Status: OK** (0 errors, 0 warnings, 0 notes), `pkgdown::check_pkgdown()` no
+  problems, and CI on PR #98 all ten checks pass at `149f87e` — macOS and
+  Windows among them. The suite also runs green with the media binaries off
+  `PATH` (10,013 pass, 270 skips), which is what those runners are: T13 learned
+  that a cell passing here can fail there, so the whole suite is measured both
+  ways before the push rather than the timeout files alone.
+- 2026-08-30: all tasks done; status set to review. Defect returns on M094: 2.
 
 ## Decisions
 

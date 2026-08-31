@@ -142,11 +142,11 @@ whether or not a limit is set, and whether or not that build has nvenc.
 <code>fallback</code> is checked where that question is asked and so moved down with it:
 a call wrong about both <code>fallback</code> and <code>pixel_format</code> now hears about the
 pixel format. Where the check runs somewhere the verb reaches only later, it
-loses to both the limit and the encoder question: <code><a href="segment_video.html">segment_video()</a></code>'s
-<code>outfiles</code>, a <code>_batch</code> job table's <code>output</code> column, and
-<code><a href="anonymize_video_batch.html">anonymize_video_batch()</a></code>'s <code>pixel_format</code> and <code>color</code> are validated inside
-the per-row fan-out, so a set limit is reported instead of them, and so is a
-missing nvenc encoder under <code>hardware = "nvenc"</code> on a build without one.
+loses to both the limit and the encoder question: a <code>_batch</code> job table's
+<code>output</code> column and <code><a href="anonymize_video_batch.html">anonymize_video_batch()</a></code>'s <code>pixel_format</code> and <code>color</code>
+are validated inside the per-row fan-out, so a set limit is reported instead
+of them, and so is a missing nvenc encoder under <code>hardware = "nvenc"</code> on a
+build without one.
 Two calls read no limit and so refuse nothing: <code><a href="nvenc_encoder.html">has_nvenc()</a></code>
 answering from a <code>tidymedia.nvenc_encoders</code> you set, which asks FFmpeg
 nothing, and a <code>probe_*()</code> shortcut handed a <code>probe</code> object instead of an

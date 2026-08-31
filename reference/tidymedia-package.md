@@ -155,9 +155,8 @@ or not a limit is set, and whether or not that build has nvenc.
 `fallback` is checked where that question is asked and so moved down
 with it: a call wrong about both `fallback` and `pixel_format` now hears
 about the pixel format. Where the check runs somewhere the verb reaches
-only later, it loses to both the limit and the encoder question:
-[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)'s
-`outfiles`, a `_batch` job table's `output` column, and
+only later, it loses to both the limit and the encoder question: a
+`_batch` job table's `output` column and
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md)'s
 `pixel_format` and `color` are validated inside the per-row fan-out, so
 a set limit is reported instead of them, and so is a missing nvenc

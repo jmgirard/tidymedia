@@ -51,7 +51,10 @@ segment_video(
   Either NULL or a character vector indicating the filename (with
   extension) for each segment to create. If NULL, will append a
   zero-padded integer to `infile`. If not NULL, must have the same
-  length as `start`.
+  length as `start`, and each element must be a single string – so a
+  list of strings is accepted as well as a character vector, and a
+  missing value or a number in any position is refused by this function
+  rather than by the per-segment fan-out below it.
 
 - reencode:
 

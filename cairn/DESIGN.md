@@ -92,6 +92,19 @@ over a jobs tibble; scalar verbs stay scalar and fan-out verbs (e.g.
 
 ## Known issues
 
+- Eleven arguments are refused below the verb the caller typed, and that position is
+  accepted rather than pending a fix. `fallback` at the eight fan-out verbs is checked
+  where the encoder question is asked, which D075 records as an accepted cost;
+  `anonymize_video_batch()`'s `pixel_format` and `color`, and
+  `normalize_audio_batch()`'s `channels` and `sample_rate`, are validated inside the
+  per-row fan-out, so `purrr::pmap()` is blamed and a set `tidymedia.timeout` displaces
+  them; `has_nvenc()`'s `codec` reads no limit and refuses nothing; and six
+  `verify_media()` arguments are refused by an assignment rather than a guard. Measured
+  cell by cell by M096's member x formal x wrong-form census, each named with the frame
+  that refused it; accepted at M096's post-merge hygiene pass rather than carried as
+  planned work. `?tidymedia` discloses the fan-out members it names. The gate booleans
+  and `ffm_batch()`'s `output` column are NOT here — they stay a ROADMAP candidate row.
+
 - `check_dim()` accepts any `x`/`y` expression string across all dim verbs
   (noted as future hardening in the M07 review) — not a regression.
 - API naming & docs assessed by M22 (`cairn/references/naming-docs-audit-M22.md`):

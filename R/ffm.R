@@ -1589,6 +1589,12 @@ ffm_run <- function(object, verify = NULL) {
   if (!is.null(verify) && !(rlang::is_list(verify) && rlang::is_named(verify))) {
     cli::cli_abort("{.arg verify} must be a named list of expected properties.")
   }
+  # D074, and the reason the site is HERE rather than left to run_program():
+  # that helper refuses a missing binary (`Could not locate FFmpeg.`) before it
+  # resolves the limit, so on a machine with no FFmpeg this abort used to be the
+  # PATH's rather than the option's. A machine-independent refusal reports before
+  # a machine-dependent one (D036), so it is read at the front door.
+  resolve_timeout()
   # Execute the argument vector directly (one shell-free token per argument),
   # so paths containing spaces, quotes, `$`, or backticks reach FFmpeg
   # verbatim (M06). stdin is redirected from an empty input so FFmpeg cannot

@@ -108,7 +108,7 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
       blaming `get_frame_rate`), F7 (the ordering was per-verb) and F3
       (`normalize_audio_batch(two_pass = TRUE)` returning above its only site —
       the two-pass path takes its own call).
-- [ ] T9. Give `ffm_run()` and `mediainfo_parameter()` front-door calls, matching
+- [x] T9. Give `ffm_run()` and `mediainfo_parameter()` front-door calls, matching
       `ffmpeg()`/`ffprobe()`/`mediainfo()`, which already resolve before
       `find_*()`. This is F8 and the CI blocker: it puts the machine-independent
       refusal ahead of `run_program()`'s `Could not locate` check
@@ -188,6 +188,13 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
   verb has one, because the `"copy"` default plus `hardware` is a contradiction
   the verb correctly refuses first (D036), which would have left those cells
   testing something else.
+- 2026-08-30: T9 gave `ffm_run()` and `mediainfo_parameter()` front-door calls.
+  The binary-less leg is green — the 10 assertions that stood for CI's macOS and
+  Windows failures now pass under `PATH = ""` — and
+  `mediainfo_parameter("/nope/x.mp4", "Video", "Width")` under an invalid limit
+  now names itself where it raised nothing before, because its loop `next`s past
+  a missing file without reaching `run_program()`. Full suite: 10,675 pass, 70
+  failures, all of them T10's variant cells, which T8 owns.
 
 ## Decisions
 

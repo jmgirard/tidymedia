@@ -73,6 +73,12 @@ mediainfo_parameter <- function(file, section, parameter, typed = TRUE) {
   rlang::check_string(section)
   rlang::check_string(parameter)
   rlang::check_bool(typed)
+  # D074, at the front door rather than left to the loop below: that loop `next`s
+  # past an unreadable file without reaching run_program() at all, so a call
+  # naming only missing files used to accept an invalid limit in silence -- and
+  # run_program() refuses a missing MediaInfo binary before it resolves the
+  # limit, which made the refusal the PATH's on a machine without one (D036).
+  resolve_timeout()
 
   inform <- paste0("--Inform=", section, ";%", parameter, "%")
   loc <- NULL

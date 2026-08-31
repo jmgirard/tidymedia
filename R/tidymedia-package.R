@@ -96,14 +96,19 @@
 #' itself can see it is wrong: the limit is checked after the verb's own guards
 #' and after the command has been assembled, so a bad `regions`, `pixel_format`
 #' or `video_codec` reports as itself whether or not a limit is set. Asking for
-#' `hardware = "nvenc"` does not change that. Asking your FFmpeg build what
-#' encoders it has now happens after every check whose answer cannot depend on
-#' it, so a bad `audio_codec`, `pixel_format` or `audio_stream` reports as
-#' itself there too — whether or not a limit is set, and whether or not that
-#' build has nvenc. Where the check runs somewhere the verb reaches only later,
-#' the limit is reported instead: a value only the per-row fan-out validates,
-#' such as [segment_video()]'s `outfiles` or a `_batch` job table's
-#' `output` column. Two calls read no limit and so refuse nothing: [has_nvenc()]
+#' `hardware = "nvenc"` no longer changes that: your FFmpeg build is asked what
+#' encoders it has after every check the verb itself makes, so a bad
+#' `audio_codec`, `pixel_format` or `audio_stream` reports as itself there too —
+#' whether or not a limit is set, and whether or not that build has nvenc.
+#' `fallback` is checked where that question is asked and so moved down with it:
+#' a call wrong about both `fallback` and `pixel_format` now hears about the
+#' pixel format. Where the check runs somewhere the verb reaches only later, it
+#' loses to both the limit and the encoder question: [segment_video()]'s
+#' `outfiles`, a `_batch` job table's `output` column, and
+#' [anonymize_video_batch()]'s `pixel_format` and `color` are validated inside
+#' the per-row fan-out, so a set limit is reported instead of them, and so is a
+#' missing nvenc encoder under `hardware = "nvenc"` on a build without one.
+#' Two calls read no limit and so refuse nothing: [has_nvenc()]
 #' answering from a `tidymedia.nvenc_encoders` you set, which asks FFmpeg
 #' nothing, and a `probe_*()` shortcut handed a `probe` object instead of an
 #' `infile`, which reprobes nothing.

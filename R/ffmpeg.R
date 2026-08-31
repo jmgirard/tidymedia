@@ -1850,9 +1850,10 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
   # as h264 and handed the seam "h264_nvenc", which is a clean token, so the
   # malformed value compiled (measured at M56 review, F2/F3 -- and on master
   # too). Checking before family inference is what the seam's own comment
-  # promises. The cost is precedence: the nvenc-unavailable abort now fires
-  # after ffm_scale()'s dimension checks rather than before them, matching
-  # crop_video().
+  # promises. The cost was precedence: the nvenc-unavailable abort fired after
+  # ffm_scale()'s dimension checks rather than before them, matching
+  # crop_video(). M095 moved it further still -- see the next paragraph, which
+  # supersedes this one on where the abort now sits.
   # M095 splits the seam here. The TOKEN check stays exactly where the combined
   # apply_video_codec() call sat, so a malformed `video_codec` still reports
   # before `audio_codec` and `pixel_format` as it always has; the encoder

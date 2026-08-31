@@ -69,7 +69,14 @@ test_that("a dropped cell is dropped by measurement, naming its refusing frame",
   sweep <- tm_nvenc_sweep(cells, tm_nvenc_encoder_pools()$present)
 
   expect_equal(nrow(sweep), length(cells))
-  expect_gt(sum(sweep$kept), 0)
+  # The counts themselves, not only the de-duplicated strings below: where an
+  # argument already contributes a dropped string, a further wrong form of that
+  # same argument moving from kept to dropped by the same frame would change
+  # nothing the string comparison sees (`anonymize_video_batch/color` and
+  # `segment_video/outfiles` each already appear twice, so those two are exactly
+  # where such a move could hide).
+  expect_equal(sum(sweep$kept), 496L)
+  expect_equal(sum(!sweep$kept), 234L)
 
   dropped <- tm_sort_c(unique(paste0(
     sweep$member[!sweep$kept], "/", sweep$arg[!sweep$kept],
@@ -98,10 +105,27 @@ test_that("asking for nvenc changes nothing a caller is told about an argument",
   # the sweep able to see the defect it now reports absent.
   dir <- withr::local_tempdir()
   cells <- tm_nvenc_wrong_arg_cells(dir)
-  expect_gt(length(tm_nvenc_mismatch_master()), 0)
+
+  # The recorded merge-base set, BOUND rather than merely printed (M095 review
+  # F3): a list nothing compares against is a list that cannot fail, and a
+  # `expect_gt(length(...), 0)` on a hardcoded vector is exactly that. Every
+  # cell it names is still a cell this sweep drives, is still KEPT (refused by
+  # the member itself, so the comparison below really quantifies over it), and
+  # still sits in one of the three pipelines M095 reordered. A stale or garbled
+  # record now fails here instead of passing silently.
+  mism <- tm_nvenc_mismatch_master()
+  expect_length(mism, 27L)
+  expect_true(all(mism %in% names(cells)))
+  expect_setequal(
+    unique(sub(" \\[.*$", "", mism)),
+    c("standardize_video", "format_for_web", "anonymize_video")
+  )
 
   for (pool in names(tm_nvenc_encoder_pools())) {
     sweep <- tm_nvenc_sweep(cells, tm_nvenc_encoder_pools()[[pool]])
+    if (identical(pool, "absent")) {
+      expect_true(all(sweep$kept[match(mism, sweep$cell)]))
+    }
     bad <- sweep[sweep$kept & !sweep$match, ]
     expect_equal(nrow(bad), 0L, info = paste(pool, paste(bad$cell,
                                                          collapse = ", ")))

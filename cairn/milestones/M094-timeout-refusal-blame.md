@@ -749,3 +749,184 @@ mutates the shared clone and nothing runs (G8).
 Nothing was fixed at the gate; no merge approval was given and no
 `cairn/.merge-approved` marker was written. PR #98 stays a draft. Defect returns
 on M094: 2.
+
+### Round 3 — 2026-08-30
+
+Same PR [#98](https://github.com/jmgirard/tidymedia/pull/98). Re-reviewed
+2026-08-30 after the round-2 return. `git fetch` first: `origin/master` is still
+`ae5ff1c`, the commit the branch was cut from, so no merge was needed before
+measuring; the branch is pushed and `origin/m094-timeout-refusal-blame` is at
+HEAD (`37786ec`), 28 commits ahead of master.
+
+#### Acceptance criteria — fresh evidence
+
+- **AC1 ✓** Measured at review by a script written here, not by the suite's
+  assertions: each of the 53 members of `tm_timeout_domain()` (computed, and
+  `identical()` to the recorded domain) was driven through its own
+  `tm_timeout_call_specs()` cell under each invalid form, and `conditionCall()`'s
+  head compared to the member's name. **265 cells, 0 wrong-blame**, against the
+  recorded master baseline's 47 of 53. The `has_nvenc()` carve-out was exercised
+  separately: under a set `tidymedia.nvenc_encoders` it raises nothing and still
+  answers `TRUE` from the override. The 19 `tm_timeout_variant_specs()` cells
+  (`hardware = "nvenc"`, `two_pass = TRUE`, `extract_frame(frame = )`) were
+  driven the same way — 95 cells, 0 wrong.
+- **AC2 ✓** The same 265 cells span all five forms `resolve_timeout()`'s comment
+  names (`-1`, `0.5`, `NA`, `"2"`, `c(1, 2)`), 53 members each; no form is a
+  special case.
+- **AC3 ✓** Measured at review over the axes computed from `formals()`: 31
+  members carry `run` and 22 carry `parallel`. All 31 at `run = FALSE` × 5 forms
+  and all 22 at `parallel = TRUE` × 5 forms blame themselves — **0 wrong** of
+  265. `extract_audio` and `extract_audio_batch` are both in the `run` set, so
+  master's asymmetry cannot vanish silently.
+- **AC4 ✓** Measured at review under a pinned reproducible output context: for
+  each of the five forms the 53 members produce exactly **1** distinct
+  `conditionMessage()`, and that string is `identical()` to what
+  `resolve_timeout()`'s own site writes for that form. Across the six
+  `purrr::map` members the recorded master table names (`probe_all`,
+  `probe_audio`, `probe_container`, `probe_streams`, `probe_video`,
+  `verify_media`), **0 of 30** cells carry `purrr_error_indexed` and 0 carry an
+  `In index:` prefix.
+- **AC5 ✓** Measured at review against the recorded fixture: provenance reads
+  back as `ae5ff1c` / `data-raw/timeout-valid-baseline.R` / recorded 2026-08-30,
+  the recorded names are setequal to the computed domain,
+  `tm_spawn_interception_complete()` is TRUE and `tm_baseline_shape_ok()` passes
+  against a live trace. **53 members × 2 limit states (unset, 30) = 106
+  comparisons, 0 mismatches**, over 122 exercised spawns. Under all five invalid
+  forms, **0** members reach `system()`/`system2()` (265 traces).
+- **AC6 ✓** Measured at review by driving a forced timeout through all 53
+  members via `tm_force_timeout()` and classifying each abort/warn against
+  `tm_timeout_reached_master()`: **22 abort, 31 warn, 0 mismatches, 0 silent
+  members**. Both answers are present in the recorded table, so the comparison
+  is not a claim about a column of one value. This is now also a committed test
+  (`test-timeout-refusal-blame.R:419-446`), which round 2 recorded as absent.
+- **AC7 ✓** `devtools::test()` at HEAD: **0 failures**, 11,310 passing, 5 skips
+  (absent nvenc encoder), 12 warnings, all pre-existing in unrelated files.
+  `devtools::check()`: **Status: OK** — 0 errors, 0 warnings, 0 notes. CI on PR
+  #98 at `37786ec`: all ten checks pass, `macos-latest (release)` and
+  `windows-latest (release)` among them.
+
+The seven checkboxes arrived at this review already ticked — `37786ec`, the
+implement-side close, re-ticked them after round 2 unticked every one. Under AC
+fencing that is not a pass; each was treated as unverified and re-earned by the
+evidence above.
+
+#### Consistency gate
+
+`cairn_validate.py` exit 0, **all checks pass**; 183 advisory warnings in two
+categories carried from round 2 (a `sizing` tripwire at 18 tasks, and
+`work-log format` on the multi-line entries), neither a gate failure, and the
+`release window` advisory did not fire. No DESIGN principle changed
+(`Principles touched: —`, and `cairn/DESIGN.md` is absent from the diff), so
+`cairn_impact.py` was skipped.
+
+`r-package` profile `consistency-gate` slot, each run here: `devtools::document()`
+produces no diff in `man/` or `NAMESPACE`; generated files are unedited by hand;
+`README.Rmd`/`README.md` are untouched by the diff; `pkgdown::check_pkgdown()`
+reports no problems; `NEWS.md` carries a Bug-fixes entry with no milestone
+numbers; the one new top-level file is under `data-raw/`, already in
+`.Rbuildignore`, and `devtools::check()` reports no NOTEs; `devtools::check()`
+clean (0/0/0).
+
+#### Independent review
+
+Three fresh-context lenses, distinct evidence bases, none having seen the
+implementation. **Blame-history lens: no findings** — it re-verified each round-1
+and round-2 fix against the current source and found no contradiction with D024,
+D036, D042, D043, D044 or D049, and no silently reverted past intent; it noted
+`check_path_vector()`'s wording is byte-identical at both `R/ffprobe.R` sites, so
+the hoist introduced no drift of the kind M62/M63 guarded against.
+**Prior-review lens: no findings** — the `gh api .../pulls/comments` probe
+returned `[]`, so archived `## Review` sections were the surface; it cleared
+M31/M33/M57/M64/M65/M67/M69/M70/M072/M073/M078/M086/M091 by name and reported one
+soft item below its own bar (the pre-existing "Immediately before `ffm_batch()`"
+comment is now one line stale) rather than a reintroduced lesson.
+**Diff-bug lens: eight findings.** Every one was re-measured against the
+implementation at review before being recorded below.
+
+##### Findings, ranked (each re-measured at review; disposition at the gate)
+
+- **H1. On a machine that HAS nvenc, `hardware = "nvenc"` masks the caller's own
+  argument error at three of the four verbs round-1 F1 named — a regression
+  against master.** `nvenc_available()` (`R/ffmpeg.R:3004-3020`) calls
+  `resolve_timeout(call = call)` inside the fall-through branch, and that branch
+  is reached from `resolve_hw_encoder()` at the HEAD of the pipeline builder —
+  above the builder's own argument validation, so T8's fix (site the verb's call
+  below `p <- <verb>_pipeline(...)`) is bypassed on the nvenc path. On this
+  machine the displaced condition is the machine-dependent "nvenc encoder is not
+  available" abort, which is correct under D036, which is why every suite leg and
+  all ten CI checks pass. Re-measured at review with `cached_encoder_names()`
+  mocked to report nvenc present — i.e. what a real nvenc box does — under
+  `tidymedia.timeout = 0.5` against unset:
+  `standardize_video(hardware = "nvenc", video_codec = "libx264",
+  pixel_format = "bad fmt!", run = FALSE)` reports ``` `pixel_format` must be a
+  single clean token.``` unset and ``` `tidymedia.timeout` must be a whole
+  number, not the number 0.5.``` under the limit; same substitution at
+  `standardize_video(audio_codec = "bad codec!")`,
+  `format_for_web(audio_stream = "bad stream!")` and
+  `anonymize_video(audio_codec = "bad codec!")`. The same call WITHOUT
+  `hardware = "nvenc"` reports the argument error under both, so the nvenc path
+  is what differs. `git show master:R/ffmpeg.R` has no `resolve_timeout()` in
+  `has_nvenc()`, so master reported the argument error here. This falsifies
+  D074's property 1 as written, the shipped `NEWS.md` sentence and
+  `R/tidymedia-package.R:93-96` — the same three artefacts G1 falsified, at verbs
+  neither return gate touched. No acceptance criterion fails: AC1's blame head is
+  still the verb's own name.
+- **H2. The instrument added to catch exactly this still pins two axes.**
+  `tm_timeout_corrupt_specs()` (`helper-timeout-sweep.R:859-871`) replaces only
+  `args[[1]]`, and derives from `tm_timeout_call_specs()` and never from
+  `tm_timeout_variant_specs()`. So no cell in the suite carries an invalid
+  argument other than the first, and no cell carries an invalid argument together
+  with `hardware = "nvenc"`, `two_pass = TRUE` or `frame = `. H1 lives precisely
+  in the cell that product excludes. Third round running that the argument table
+  hid the defect it was widened to catch.
+- **H3. `segment_video(outfiles = 123)` reports the limit where the caller's
+  argument error used to fire — a new displacement at a verb this diff touched.**
+  The `outfiles` validation runs inside the `ffm_batch()` fan-out, below the
+  front-door site the diff added at `R/ffmpeg.R:3553`. Re-measured:
+  `segment_video(v, start = 0, end = 5, outfiles = 123, run = FALSE)` reports
+  `purrr::pmap` / `In index: 1.` unset, and the refusal from `segment_video`
+  under `0.5` — although the verb's own comments three lines above the new site
+  record M58 hoisting checks for exactly this reason. `ffm_batch(jobs, ...)` with
+  a bad `output` column shows the same substitution; there the displacement is
+  pre-existing (`R/ffm_batch.R:100` has resolved at the front door since D047 and
+  is untouched by this diff), but the `NEWS.md` sentence this branch ships newly
+  asserts it cannot happen.
+- **H4. "the eight fan-out front doors" is nine, and contradicts a comment 90
+  lines away in the same file.** D074's "The one probe that runs while a command
+  is BUILT" paragraph and the new `nvenc_available()` header
+  (`R/ffmpeg.R:2993-2994`) both say eight. `check_nvenc_available()` is called at
+  nine verb front doors (`R/ffmpeg.R:2386, 3543, 3850, 4505, 5967, 6092, 6439,
+  7115, 7379`), and the pre-existing comment at `R/ffmpeg.R:3080` says "the nine
+  fan-out verbs". Verified by grep at review.
+- **H5. D074's numbered property 3 states only one of the two carve-outs.** It
+  reads "Not sited where a caller-set override answers without reading the
+  limit", which does not cover the `probe_*(probe = )` branch — described only in
+  D074's later prose. `R/timeout.R:59-67` states the property in the wider form
+  ("It is not sited on a path that reads no limit. Two such paths exist"). The
+  two renderings of "the same three properties, stated once" are not the same.
+- **H6. `test-timeout-refusal-blame.R:381` reads a form name that does not
+  exist.** `tm_timeout_bad_forms()$fraction` — the element is `fractional`. It
+  resolves to `0.5` only through `$` partial matching on a list; adding any second
+  form whose name starts `fraction` makes it `NULL` and silently turns the
+  comparator's own falsification test into an unset-limit test.
+- **H7. `ffmpeg_codecs()` and `ffmpeg_encoders()` are sited asymmetrically.**
+  `ffmpeg_encoders()` puts `resolve_timeout()` after `rlang::check_bool(sort_by_type)`;
+  `ffmpeg_codecs()` puts it first because that verb has no guard at all.
+  Re-measured: `ffmpeg_codecs(sort_by_type = 123)` returns normally with the limit
+  unset and aborts on the limit under `0.5`, while `ffmpeg_encoders(sort_by_type = 123)`
+  reports the argument error under both. The missing guard is pre-existing and
+  there is no argument error to displace, but "as late as the verb allows" means
+  two different things at two adjacent exports of identical shape.
+- **H8. G7's fix is asserted but not exercised.** `nvenc_available()`'s `call`
+  now has no default (`R/ffmpeg.R:3004`), which is right, but no test plants a
+  site that omits it; the property rests on all three current call sites happening
+  to pass it. Same category as the finding it replaced.
+
+Checked by the diff-bug lens and clean: `check_path_vector()` reproduces both
+families' wordings and `conditionCall()` byte-for-byte at all seven call sites;
+`tm_baseline_shape_ok()` parses as intended and says no on all four planted
+tampers; `tm_provenance_ok()`'s field names match what the generator attaches;
+the generator writes only under `tempdir()`; the missing-input axis (every domain
+member given a nonexistent path) shows no displacement at any of the 53 members;
+and the `run = FALSE`, `parallel = TRUE`, `probe = ` and warm-memo behaviours all
+measure as documented.

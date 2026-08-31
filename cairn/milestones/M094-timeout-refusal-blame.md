@@ -26,9 +26,13 @@ its own front door) across the six wrong-blame classes measured on master
 The D-entry, NEWS.
 
 **Out:** the blame of any condition other than this refusal — a reached limit's
-own condition is D049's and is unchanged (AC6). `resolve_timeout()`'s message
-wording, which must not fork (AC4). A `call` argument on the exported builders,
-which D042 rejected → stays rejected; superseding it is its own milestone.
+own condition is D049's and is unchanged (AC6). One carve-out, forced by the
+round-2 return: where an export's machine-independent argument check lives in a
+callee and so cannot fire before the refusal, hoisting it to that export's own
+front door moves that argument error's `conditionCall()` onto the verb the
+caller typed. `resolve_timeout()`'s message wording, which must not fork (AC4).
+A `call` argument on the exported builders, which D042 rejected → stays
+rejected; superseding it is its own milestone.
 
 ## Acceptance criteria
 
@@ -73,6 +77,7 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
 - AC6 → T1, T7
 - AC7 → T7, T13
 - F-returns → T8 (F1, F2, F3, F4, F7), T9 (F8), T10, T11 (F9, F10), T12 (F5, F6)
+- G-returns → T14 (G3), T15 (G1), T16 (G2, G6), T17 (G4, G5, G7, G8), T18
 
 ## Tasks
 
@@ -99,36 +104,51 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
       per D042; it fires at `run = FALSE` too, and why that is not a D024 breach;
       the `has_nvenc()` carve-out.
 - [x] T7. `NEWS.md`, `devtools::document()`, `devtools::test()`, `devtools::check()`.
-- [x] T8. Re-site the calls per the amended siting rule: after every check that
-      decides identically on every machine (front-door guards AND the pipeline
-      builder's argument validation), immediately before the first probe or
-      spawn on each path, above the `run` gate. Closes F1 (four verbs whose
-      pipeline checks are masked), F2 (`hardware = "nvenc"` blaming
-      `has_nvenc(family)` at eight batch verbs), F4 (`extract_frame(frame =)`
-      blaming `get_frame_rate`), F7 (the ordering was per-verb) and F3
-      (`normalize_audio_batch(two_pass = TRUE)` returning above its only site —
-      the two-pass path takes its own call).
+- [x] T8. Re-site every call per the amended siting rule: after every check that
+      decides identically on every machine (front-door guards and the pipeline
+      builder's argument validation alike), immediately before the first probe or
+      spawn on each path, above the `run` gate. Closes F1, F2, F3, F4, F7.
 - [x] T9. Give `ffm_run()` and `mediainfo_parameter()` front-door calls, matching
-      `ffmpeg()`/`ffprobe()`/`mediainfo()`, which already resolve before
-      `find_*()`. This is F8 and the CI blocker: it puts the machine-independent
-      refusal ahead of `run_program()`'s `Could not locate` check
-      (`R/program_management.R:111`) per D036, and stops
-      `mediainfo_parameter(<nonexistent>)` raising nothing.
-- [x] T10. Widen `tm_timeout_call_specs()` with the cells the sweep could not
-      see — `hardware = "nvenc"`, `extract_frame(frame =)`,
-      `normalize_audio_batch(two_pass = TRUE)` — and add a binary-less-PATH leg
-      so the runner-dependent failure the review found on CI is reproducible
-      locally. Test coverage under AC1/AC4; no criterion widens.
-- [x] T11. Instrument (F9, F10): make the AC1 test discriminate on the
-      condition's identity, not only `conditionCall()`'s head; assert the
-      `.rds` fixture's recorded `source`/`generator`/`recorded` provenance in
-      `tm_timeout_valid_baseline()`, pinning the sha to `ae5ff1c`.
+      the three Layer 0 hatches. This is F8 and the CI blocker: it puts the
+      machine-independent refusal ahead of `run_program()`'s `Could not locate`
+      check (`R/program_management.R:111`) per D036.
+- [x] T10. Widen the spec table with the cells the sweep could not see
+      (`hardware = "nvenc"`, `frame =`, `two_pass = TRUE`) and add a
+      binary-less-PATH leg. Coverage under AC1/AC4; no criterion widens.
+- [x] T11. Instrument (F9, F10): the AC1 test discriminates on the condition's
+      identity, not only `conditionCall()`'s head; the `.rds` fixture's recorded
+      provenance is asserted, pinning the sha to `ae5ff1c`.
 - [x] T12. Amend D074's first and third properties and the matching comment
       block above `resolve_timeout()` (`R/timeout.R:29-45`); correct
       `R/tidymedia-package.R:91-97` and the `NEWS.md` entry, which overclaim
       (F6).
 - [x] T13. `devtools::document()`, `devtools::test()`, `devtools::check()`, then
       push and confirm CI green on all five platforms — the leg AC7 failed on.
+- [ ] T14. Instrument first, the gap that let G1 recur: no sweep cell carries an
+      INVALID argument, so no leg can see a masked argument error. Add
+      `tm_timeout_corrupt_specs()` — each member's own spec cell with its first
+      argument replaced by `123`, a value every front door refuses
+      machine-independently — and assert the condition raised is identical with
+      the limit unset and under each invalid form. Swap `tm_blame_head()` for
+      `tm_refusal_head()` at AC3's two legs (G3). Expect red at 9 of 53.
+- [ ] T15. G1: hoist the machine-independent argument check to the front door of
+      the nine exports that delegate it — the five `get_*` scalars (whose `file`
+      check lives in `mediainfo_parameter()`) and `resolve_probe()`'s infile
+      branch (whose `infile` check lives in `probe_all_impl()`) — above the
+      refusal, through one shared checker each rather than a copy per verb.
+- [ ] T16. G2 and G6: the help page, `NEWS.md` and D074 name both calls that
+      refuse nothing — `has_nvenc()` under a set `tidymedia.nvenc_encoders`, and
+      a `probe_*(probe = )` call, which reprobes nothing and reads no limit —
+      and the comment sites citing `D042` for the siting rule cite `D074`, the
+      entry that states it.
+- [ ] T17. The carried triage: commit AC6's comparison against
+      `tm_timeout_reached_master()` through `tm_force_timeout()` (G4); make
+      `tm_provenance_ok()` read the blob's own shape, not only its attribute
+      (G5); drop `nvenc_available()`'s unexercised `call` default (G7); build
+      `data-raw/timeout-valid-baseline.R`'s worktree under `tempdir()` instead
+      of the package root (G8).
+- [ ] T18. `devtools::document()`, `devtools::test()`, `devtools::check()`, then
+      push and confirm CI green on all ten checks.
 
 ## Work log
 
@@ -270,6 +290,28 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
   binaries off `PATH`, which is what those runners are.
 - 2026-08-30: all tasks done; status set to review. Defect returns on M094: 1.
 - 2026-08-30: review round 2 returned M094 to in-progress by maintainer judgment at the gate, not on a criterion failure — AC1-AC7 all verified with fresh evidence and CI green on all ten checks. G1: at nine exports (the five `get_*` scalars and the four `probe_*` shortcuts) an invalid limit displaces the caller's own argument error, which is round-1 F1's class at verbs the return gate never touched, and which falsifies D074's amended property 1 and the shipped `NEWS.md`/help sentence. G2: the same paragraph's "one exception" claim is false again, since `probe_*(probe = )` reads no limit either. G3: AC3's two sweeps still use the head-only comparator. G4-G8 carried in for triage. Every criterion checkbox is unticked. Defect returns on M094: 2.
+- 2026-08-30: return gate chose hoisting the machine-independent argument check
+  to the front door of the nine G1 exports over retreating the docs, and amended
+  Scope's Out clause for its one forced consequence: the argument error's
+  `conditionCall()` moves onto the verb the caller typed. Measured today, the
+  displaced errors blame `mediainfo_parameter(file = file, ...)` and
+  `probe_all(infile, typed = typed, parallel = parallel)` — two functions the
+  caller never typed — so the hoist puts both conditions on the same frame
+  rather than trading one wrong blame for another. Falsified by an export whose
+  callee-side check is not machine-independent, which would have to stay below
+  the refusal.
+- 2026-08-30: amendment (Substantive). Scope's Out clause now reads: "the blame
+  of any condition other than this refusal — a reached limit's own condition is
+  D049's and is unchanged (AC6). One carve-out, forced by the round-2 return:
+  where an export's machine-independent argument check lives in a callee and so
+  cannot fire before the refusal, hoisting it to that export's own front door
+  moves that argument error's `conditionCall()` onto the verb the caller typed."
+  No acceptance criterion is amended; AC1–AC7 stand as written and G1's fix is
+  measured under AC1 with T14's new cells (D-118: the criteria set neither
+  widens nor narrows).
+- 2026-08-30: return gate chose fixing G4–G8 on this branch over candidate rows;
+  all five guard work this milestone did, and G4's comparison is cheap because
+  `tm_force_timeout()` injects the timeout rather than waiting on a hang.
 
 ## Decisions
 

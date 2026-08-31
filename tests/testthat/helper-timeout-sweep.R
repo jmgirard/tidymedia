@@ -581,7 +581,14 @@ tm_scrub_paths <- function(x, dir) {
   x <- gsub(tm_dir_pattern(normalizePath(tempdir(), winslash = "/",
                                          mustWork = FALSE)), "<tmp>", x)
   x <- gsub(tm_dir_pattern(tempdir()), "<tmp>", x)
-  gsub("ffm-concat[0-9a-f]+(\\.txt)?", "<concat-list>", x)
+  x <- gsub("ffm-concat[0-9a-f]+(\\.txt)?", "<concat-list>", x)
+  # The separator JOINING the two placeholders survives both substitutions, and
+  # it is the platform's: `concatenate_videos()` builds this path with
+  # file.path(), so Windows writes `<tmp>\<concat-list>` where POSIX writes
+  # `<tmp>/<concat-list>`. That is the runner showing through a digest that is
+  # meant to compare the package, so it is normalized like the separators inside
+  # each path (M094 T13).
+  gsub("<tmp>[/\\\\]+<concat-list>", "<tmp>/<concat-list>", x)
 }
 
 # tm_spawn_trace(): run one domain member under `limit` with every spawn

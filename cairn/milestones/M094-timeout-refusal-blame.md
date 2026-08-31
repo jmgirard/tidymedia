@@ -256,6 +256,11 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
   `\"` escapes alone: a Windows-shaped and a POSIX-shaped digest redact to the
   identical string, and a reading where the separator is already `/` is
   byte-for-byte what it was, so the fixture recorded on macOS stays valid.
+- 2026-08-30: T13's third CI run took Windows from 106 failures to 4, all
+  `concatenate_videos`/`_batch`: the separator JOINING `<tmp>` to
+  `<concat-list>` survives both substitutions and is the platform's, since that
+  path is built with `file.path()`. Normalized like the separators inside each
+  path. Timeout files green locally either way (2,511 pass).
 
 ## Decisions
 

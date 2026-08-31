@@ -243,6 +243,19 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
   is exactly the gap that let this reach CI. Green both ways afterwards: 0
   failures with the binaries present (10,844 pass) and 0 without (2,453 pass over
   the timeout files).
+- 2026-08-30: T13's second CI run turned macOS green and left Windows red on a
+  DIFFERENT failure, read from the job log: the AC5 baseline comparison, not the
+  blame sweep. `tm_scrub_paths()` redacted the fixture directory with
+  `fixed = TRUE`, and on Windows that directory reaches the digest with a mix of
+  separators (R's `tempdir()` gives forward slashes, the verbs concatenate
+  backslashes, and `str()` prints each backslash doubled) — so the substitution
+  matched nothing and every member's digest carried the runner's absolute path.
+  A pre-existing instrument defect, invisible until now because the earlier
+  failure in the same file stopped testthat before this comparison ran.
+  `tm_dir_pattern()` makes only the SEPARATORS flexible, leaving the digest's own
+  `\"` escapes alone: a Windows-shaped and a POSIX-shaped digest redact to the
+  identical string, and a reading where the separator is already `/` is
+  byte-for-byte what it was, so the fixture recorded on macOS stays valid.
 
 ## Decisions
 

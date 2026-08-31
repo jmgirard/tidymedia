@@ -556,11 +556,31 @@ tm_spawn_interception_complete <- function(graph = tm_symbol_graph(),
 # `concatenate_videos()` writes the `-f concat` list file under a name randomized
 # per CALL -- so two runs of the same code in one session already differ there,
 # and comparing that string would compare R's RNG rather than the package.
+# tm_dir_pattern(): `dir` as a regex matching it with EITHER path separator at
+# every position.
+#
+# On Windows one directory reaches the digest with a MIX of them -- R's
+# tempdir() hands back forward slashes and the verbs concatenate Windows'
+# backslashes onto it -- and str() prints each backslash doubled. A `fixed =
+# TRUE` substitution of `dir` therefore matched nothing there, so every member's
+# digest carried the runner's absolute path and no comparison against the
+# recorded table could pass. It went unseen while an earlier failure in the same
+# file stopped testthat before this comparison ran (M094 T13).
+#
+# Only the SEPARATORS are made flexible. The digest's own `\"` escapes are left
+# alone, so a reading taken where the separator is already "/" is byte-identical
+# to what it was -- which is why the fixture recorded on macOS stays valid.
+tm_dir_pattern <- function(dir) {
+  parts <- strsplit(gsub("\\\\", "/", dir), "/+")[[1]]
+  escaped <- gsub("([][{}()+*^$|?.\\\\])", "\\\\\\1", parts)
+  paste(escaped, collapse = "[/\\\\]+")
+}
+
 tm_scrub_paths <- function(x, dir) {
-  x <- gsub(dir, "<dir>", x, fixed = TRUE)
-  x <- gsub(normalizePath(tempdir(), winslash = "/", mustWork = FALSE),
-            "<tmp>", x, fixed = TRUE)
-  x <- gsub(tempdir(), "<tmp>", x, fixed = TRUE)
+  x <- gsub(tm_dir_pattern(dir), "<dir>", x)
+  x <- gsub(tm_dir_pattern(normalizePath(tempdir(), winslash = "/",
+                                         mustWork = FALSE)), "<tmp>", x)
+  x <- gsub(tm_dir_pattern(tempdir()), "<tmp>", x)
   gsub("ffm-concat[0-9a-f]+(\\.txt)?", "<concat-list>", x)
 }
 

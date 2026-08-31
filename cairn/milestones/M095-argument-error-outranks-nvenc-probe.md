@@ -1,11 +1,11 @@
 # M095: A wrong argument outranks the nvenc availability probe
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m095-argument-error-outranks-nvenc-probe`
 
 ## Goal
 
@@ -39,7 +39,7 @@ Surface tier: **user-facing** — the condition three exported verbs raise chang
 
 ## Tasks
 
-- [ ] T1 Build the sweep of AC1 in `tests/testthat/helper-timeout-sweep.R` and record the baseline it reports on master — the kept cells, the dropped formals, and which cells mismatch today. Instrument before fix: M094's three review rounds each found a new instance of this class by hand because `tm_timeout_corrupt_specs()` corrupts only `args[[1]]` and never crosses the variant table.
+- [x] T1 Build the sweep of AC1 in `tests/testthat/helper-timeout-sweep.R` and record the baseline it reports on master — the kept cells, the dropped formals, and which cells mismatch today. Instrument before fix: M094's three review rounds each found a new instance of this class by hand because `tm_timeout_corrupt_specs()` corrupts only `args[[1]]` and never crosses the variant table.
 - [ ] T2 Record the AC2 merge-base table (compiled command and refusal per cell) into `data-raw/`, following `data-raw/contradiction-guard-baseline.R`'s shape from M58.
 - [ ] T3 Reorder the three pipelines: hoist `apply_video_codec()`'s `check_token()` to where the probe now sits, sink the encoder resolution and `ffm_codec()` emission below the last machine-independent check. Re-run T1's sweep and T2's table.
 - [ ] T4 Add the AC3 leg — the same kept cells under each invalid limit form, with `cached_encoder_names()` mocked present, which is the only way the nvenc-available branch executes anywhere (the M094 lesson).
@@ -50,3 +50,4 @@ Surface tier: **user-facing** — the condition three exported verbs raise chang
 - 2026-08-31: created by /milestone-plan.
 - 2026-08-31: plan gate chose sinking the encoder resolution below the machine-independent checks (hoisting only `apply_video_codec()`'s token check) over hoisting those checks above the probe, because hoisting would move `pixel_format` ahead of the codec seams -- the precedence M41's and M64's reviews each caught moving -- while sinking leaves every machine-independent check in its current relative order; falsified by a compiled command that changes under the reorder (measured 2026-08-31 as invariant: `ffm_groups()` emits by group, not call order).
 - 2026-08-31: [O] criteria audit ran (FULL mode, user-facing tier); findings and disposition recorded in M096's work log, which the same audit covered.
+- 2026-08-31: T1 -- AC1's sweep built (`helper-timeout-sweep.R`) with its master baseline recorded and asserted (`test-nvenc-probe-blame.R`): 730 cells over the 16 `hardware`-carrying domain members, 496 kept, 234 dropped (each named with its refusing frame), and 27 kept cells whose `hardware = "nvenc"` condition differs from its `hardware = "none"` reference -- only under the absent-encoder mock, only in the three pipelines Scope names, and none of them on `video_codec`. Spawns are intercepted at `run_program()`/`guard_timeout()`, so no cell's answer depends on the runner's FFmpeg.

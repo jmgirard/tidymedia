@@ -888,3 +888,310 @@ tm_masked_condition <- function(name, args, limit) {
     paste0(blamed_verb(cnd), " || ", cli::ansi_strip(conditionMessage(cnd)))
   })
 }
+
+# M095: a wrong argument, crossed with the nvenc availability probe -----------
+
+# tm_nvenc_wrong_forms(): five wrong values spanning the axes an argument is
+# free in -- type, token shape, missingness, length, and container.
+#
+# Five rather than one because `tm_timeout_corrupt_specs()` above corrupts with
+# `123` alone, and a number is refused by a type check at the top of every front
+# door. An argument whose only guard is a token check (`pixel_format`), a
+# missingness check (`NA`), a length check, or a shape check is invisible to
+# that single form, and each of those guards sits at a different depth -- which
+# is the depth this milestone is measuring against the probe.
+tm_nvenc_wrong_forms <- function() {
+  list(
+    number = 123,
+    token = "bad fmt!",
+    missing = NA,
+    length_two = c(1, 2),
+    list = list(1)
+  )
+}
+
+# tm_nvenc_wrong_arg_cells(): every (member, other formal, wrong form) cell.
+#
+# The members are computed -- `tm_timeout_domain()` filtered to the ones whose
+# `formals()` carry `hardware` -- for the reason the domain itself is computed
+# (M70): a verb that gains `hardware` joins this sweep on its own. The ARGUMENTS
+# are computed the same way, off each member's own `formals()`, so an argument
+# added to a verb joins too.
+#
+# `hardware` is excluded because it is the axis being crossed, and `...` because
+# it is not an argument a caller can hand a wrong value to by name. `video_codec`
+# is set to a re-encoding token in the base cell for `tm_timeout_variant_specs()`'s
+# reason: the `"copy"` default plus `hardware = "nvenc"` is a contradiction the
+# verb refuses on its own (D036), which would leave every cell of that member
+# measuring the contradiction instead of its own argument. `run = FALSE` and
+# `parallel = FALSE` keep a cell that IS refused from spawning anything.
+tm_nvenc_wrong_arg_cells <- function(dir) {
+  specs <- tm_timeout_call_specs(dir)
+  forms <- tm_nvenc_wrong_forms()
+  ns <- asNamespace("tidymedia")
+  out <- list()
+  for (nm in tm_timeout_domain()) {
+    fmls <- names(formals(get(nm, envir = ns)))
+    if (!"hardware" %in% fmls) next
+    base <- specs[[nm]]
+    if ("video_codec" %in% fmls) base$video_codec <- "libx264"
+    if ("parallel" %in% fmls) base$parallel <- FALSE
+    if ("run" %in% fmls) base$run <- FALSE
+    for (arg in setdiff(fmls, c("hardware", "..."))) {
+      for (form in names(forms)) {
+        args <- base
+        args[[arg]] <- forms[[form]]
+        out[[paste0(nm, " [", arg, " = ", form, "]")]] <-
+          list(name = nm, arg = arg, form = form, args = args)
+      }
+    }
+  }
+  out
+}
+
+# tm_nvenc_condition(): one call's condition as a single comparable string --
+# the frame that was blamed and the sentence it carried.
+#
+# Both halves, for `tm_masked_condition()`'s reason: a cell that keeps naming
+# the member but starts saying something else has still changed what the caller
+# reads. `"<none>"` is a real answer -- a cell the member does not refuse at all.
+tm_nvenc_condition <- function(name, args) {
+  cnd <- tryCatch(
+    do.call(name, args, envir = asNamespace("tidymedia")),
+    error = function(e) e
+  )
+  if (!inherits(cnd, "error")) return("<none>")
+  paste0(blamed_verb(cnd), " || ", cli::ansi_strip(conditionMessage(cnd)))
+}
+
+# tm_nvenc_sweep(): drive every cell under `hardware = "none"` and again under
+# `hardware = "nvenc"`, with the encoder pool fixed to `encoders`.
+#
+# The mock is installed ONCE around the whole loop rather than per cell, and
+# `tidymedia.nvenc_encoders` is unset inside it: `nvenc_available()` reads that
+# option seam FIRST and only falls through to `cached_encoder_names()` when it
+# is NULL, so an option left set by another file would answer every cell and
+# the mock -- the thing that makes `encoders = character()` mean "this build has
+# no nvenc" -- would never be consulted.
+#
+# The `hardware = "none"` reference is re-measured inside each mock state rather
+# than once outside, so the pair being compared differs in `hardware` and in
+# nothing else.
+#
+# Returns one row per cell: the reference condition, the nvenc condition,
+# whether the reference was refused BY THE MEMBER ITSELF (`kept`), and the frame
+# that refused it when it was not.
+tm_nvenc_sweep <- function(cells, encoders) {
+  testthat::local_reproducible_output()
+  withr::local_options(tidymedia.nvenc_encoders = NULL)
+  # Every spawn is intercepted too, at the two wrappers `tm_force_timeout()` uses
+  # -- `run_program()` and `guard_timeout()` stand in front of every
+  # `system()`/`system2()` call the package makes. Without this, a cell whose
+  # wrong value happens to be TRUTHY (`run = 123`) really executes FFmpeg on an
+  # empty placeholder file, so the frame that refused it is FFmpeg's exit status
+  # on this machine and a missing binary on a runner with none -- a cell whose
+  # answer is the runner's PATH, not the package's behavior. `character(0)` is a
+  # clean exit with no output, so such a cell reads as "not refused", which is
+  # what it is.
+  testthat::local_mocked_bindings(
+    cached_encoder_names = function() encoders,
+    run_program = function(location, args, program = "the program", ...) {
+      character(0)
+    },
+    guard_timeout = function(program, limit, expr, ...) character(0),
+    .package = "tidymedia"
+  )
+  # `spec`, never `cell`: tibble() evaluates its arguments in sequence with the
+  # earlier columns in scope, so a `cell =` column would shadow the loop
+  # variable for every column after it.
+  rows <- lapply(names(cells), function(key) {
+    spec <- cells[[key]]
+    none_args <- spec$args
+    none_args$hardware <- "none"
+    nvenc_args <- spec$args
+    nvenc_args$hardware <- "nvenc"
+    ref <- tm_nvenc_condition(spec$name, none_args)
+    got <- tm_nvenc_condition(spec$name, nvenc_args)
+    head <- sub(" \\|\\| .*$", "", ref)
+    tibble::tibble(
+      cell = key, member = spec$name, arg = spec$arg, form = spec$form,
+      none = ref, nvenc = got,
+      kept = identical(head, spec$name),
+      refused_by = head
+    )
+  })
+  out <- do.call(rbind, rows)
+  out$match <- out$none == out$nvenc
+  out
+}
+
+# tm_nvenc_encoder_pools(): the two mocked answers AC1 crosses every kept cell
+# with -- a build that has the nvenc encoders and one that has none. The second
+# is what makes the availability abort fire, and so what a cell must survive for
+# the argument error to have outranked the probe.
+tm_nvenc_encoder_pools <- function() {
+  list(
+    present = c("h264_nvenc", "hevc_nvenc", "av1_nvenc"),
+    absent = character()
+  )
+}
+
+# tm_sort_c(): sort in C collation, never the session's locale.
+#
+# The recorded tables below are compared element-by-element against a live
+# sweep, and R's default sort follows LC_COLLATE -- which orders "segment/x"
+# against "segment_video/x" differently on a C runner than on this machine. A
+# table recorded under one collation and compared under another fails for a
+# reason that has nothing to do with the behavior under test.
+tm_sort_c <- function(x) sort(x, method = "radix")
+
+# tm_nvenc_probe_master_ref: the commit the tables below were measured at -- the
+# tip of master when this branch was cut, so a reader can regenerate them.
+tm_nvenc_probe_master_ref <- "b538e63"
+
+# tm_nvenc_dropped_master(): every (member, argument) the AC1 sweep DROPS,
+# named with the frame that refused it -- measured 2026-08-31 at
+# `tm_nvenc_probe_master_ref` and identical under both encoder pools.
+#
+# Recorded because AC1 drops a cell BY MEASUREMENT and never by a list, and a
+# measurement nobody can see is indistinguishable from a list nobody wrote down.
+# Three frames appear. `<none>` is an argument no front door refuses at all --
+# a path string that is only ever opened, or a value that is legal (`123` is a
+# perfectly good `audio_stream`). `ffm_finish`/`ffm_batch` are the gate booleans
+# `run` and `parallel`, refused by the runner rather than the verb. `purrr::pmap`
+# is the per-row fan-out. The last two are the two classes the ROADMAP carries
+# and this milestone does not close; they are here so they stay visible.
+#
+# A pair whose two entries name different frames (`segment_video/outfiles`,
+# `anonymize_video_batch/color`) is not an inconsistency: different wrong forms
+# of one argument are caught at different depths.
+tm_nvenc_dropped_master <- function() {
+  c(
+    "anonymize_video/audio_stream -> <none>",
+    "anonymize_video/color -> <none>",
+    "anonymize_video/outfile -> <none>",
+    "anonymize_video/run -> ffm_finish",
+    "anonymize_video_batch/audio_stream -> <none>",
+    "anonymize_video_batch/color -> <none>",
+    "anonymize_video_batch/color -> purrr::pmap",
+    "anonymize_video_batch/fallback -> purrr::pmap",
+    "anonymize_video_batch/parallel -> ffm_batch",
+    "anonymize_video_batch/pixel_format -> purrr::pmap",
+    "anonymize_video_batch/run -> ffm_batch",
+    "compare_videos/outfile -> <none>",
+    "compare_videos/run -> ffm_finish",
+    "compare_videos_batch/fallback -> purrr::pmap",
+    "compare_videos_batch/parallel -> ffm_batch",
+    "compare_videos_batch/run -> ffm_batch",
+    "crop_video/audio_stream -> <none>",
+    "crop_video/height -> <none>",
+    "crop_video/outfile -> <none>",
+    "crop_video/run -> ffm_finish",
+    "crop_video/width -> <none>",
+    "crop_video/x -> <none>",
+    "crop_video/y -> <none>",
+    "crop_video_batch/audio_stream -> <none>",
+    "crop_video_batch/fallback -> purrr::pmap",
+    "crop_video_batch/height -> <none>",
+    "crop_video_batch/parallel -> ffm_batch",
+    "crop_video_batch/run -> ffm_batch",
+    "crop_video_batch/width -> <none>",
+    "crop_video_batch/x -> <none>",
+    "crop_video_batch/y -> <none>",
+    "format_for_web/audio_stream -> <none>",
+    "format_for_web/outfile -> <none>",
+    "format_for_web/run -> ffm_finish",
+    "format_for_web_batch/audio_stream -> <none>",
+    "format_for_web_batch/fallback -> purrr::pmap",
+    "format_for_web_batch/parallel -> ffm_batch",
+    "format_for_web_batch/run -> ffm_batch",
+    "picture_in_picture/margin -> <none>",
+    "picture_in_picture/outfile -> <none>",
+    "picture_in_picture/run -> ffm_finish",
+    "picture_in_picture_batch/fallback -> purrr::pmap",
+    "picture_in_picture_batch/margin -> <none>",
+    "picture_in_picture_batch/parallel -> ffm_batch",
+    "picture_in_picture_batch/run -> ffm_batch",
+    "segment_video/audio_stream -> <none>",
+    "segment_video/end -> <none>",
+    "segment_video/fallback -> purrr::pmap",
+    "segment_video/outfiles -> <none>",
+    "segment_video/outfiles -> purrr::pmap",
+    "segment_video/parallel -> ffm_batch",
+    "segment_video/run -> ffm_batch",
+    "segment_video/start -> <none>",
+    "segment_video_batch/audio_stream -> <none>",
+    "segment_video_batch/fallback -> purrr::pmap",
+    "segment_video_batch/parallel -> ffm_batch",
+    "segment_video_batch/run -> ffm_batch",
+    "separate_audio_video/audio_stream -> <none>",
+    "separate_audio_video/audiofile -> <none>",
+    "separate_audio_video/run -> <none>",
+    "separate_audio_video/run -> if",
+    "separate_audio_video/videofile -> <none>",
+    "separate_audio_video_batch/audio_stream -> <none>",
+    "separate_audio_video_batch/parallel -> ffm_batch",
+    "separate_audio_video_batch/run -> ffm_batch",
+    "standardize_video/audio_stream -> <none>",
+    "standardize_video/fps -> <none>",
+    "standardize_video/height -> <none>",
+    "standardize_video/outfile -> <none>",
+    "standardize_video/run -> ffm_finish",
+    "standardize_video/width -> <none>",
+    "standardize_video_batch/audio_stream -> <none>",
+    "standardize_video_batch/fallback -> purrr::pmap",
+    "standardize_video_batch/fps -> <none>",
+    "standardize_video_batch/height -> <none>",
+    "standardize_video_batch/parallel -> ffm_batch",
+    "standardize_video_batch/run -> ffm_batch",
+    "standardize_video_batch/width -> <none>"
+  )
+}
+
+# tm_nvenc_mismatch_master(): the kept cells whose condition under
+# `hardware = "nvenc"` did NOT match its `hardware = "none"` reference on
+# master -- the defect this milestone fixes, measured 2026-08-31 at
+# `tm_nvenc_probe_master_ref`.
+#
+# 27 cells, all of them in the three pipelines that resolve the encoder above a
+# machine-independent check, and every one of them reports the nvenc
+# availability abort where the caller's own argument error belongs. They appear
+# only under the `absent` pool: with the encoders present the probe succeeds and
+# the argument error is reached anyway, which is why a sweep run on a machine
+# whose FFmpeg happens to have nvenc would have measured nothing.
+#
+# `video_codec` is absent from this list. It is the one argument of the three
+# verbs that already reported first, because its token check sits above the
+# resolution -- which is why the disclosure that named it as the example was
+# wrong (AC5).
+tm_nvenc_mismatch_master <- function() {
+  c(
+    "anonymize_video [audio_codec = length_two]",
+    "anonymize_video [audio_codec = list]",
+    "anonymize_video [audio_codec = missing]",
+    "anonymize_video [audio_codec = number]",
+    "anonymize_video [audio_codec = token]",
+    "anonymize_video [audio_stream = length_two]",
+    "anonymize_video [audio_stream = list]",
+    "anonymize_video [audio_stream = missing]",
+    "anonymize_video [audio_stream = token]",
+    "format_for_web [audio_stream = length_two]",
+    "format_for_web [audio_stream = list]",
+    "format_for_web [audio_stream = missing]",
+    "format_for_web [audio_stream = token]",
+    "standardize_video [audio_codec = length_two]",
+    "standardize_video [audio_codec = list]",
+    "standardize_video [audio_codec = missing]",
+    "standardize_video [audio_codec = number]",
+    "standardize_video [audio_codec = token]",
+    "standardize_video [audio_stream = length_two]",
+    "standardize_video [audio_stream = list]",
+    "standardize_video [audio_stream = missing]",
+    "standardize_video [audio_stream = token]",
+    "standardize_video [pixel_format = length_two]",
+    "standardize_video [pixel_format = list]",
+    "standardize_video [pixel_format = missing]",
+    "standardize_video [pixel_format = number]",
+    "standardize_video [pixel_format = token]"
+  )
+}

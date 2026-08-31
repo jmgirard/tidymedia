@@ -5,7 +5,7 @@
 - **Depends on:** M095
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m096-unguarded-argument-front-doors`
+- **Branch/PR:** `m096-unguarded-argument-front-doors` / [PR #100](https://github.com/jmgirard/tidymedia/pull/100)
 
 ## Goal
 
@@ -61,3 +61,4 @@ Surface tier: **user-facing** — the condition two exported verbs raise changes
 - 2026-08-31: M095's `test-nvenc-probe-blame.R` census updated to the same two-way-difference shape rather than re-recording its table: `tm_nvenc_dropped_master()` stays the merge-base measurement it says it is (IP4), and the one entry M096 closed is named where the sweep is compared to it. Its kept/dropped counts move 496/234 to 499/231.
 - 2026-08-31: T4 done - two `NEWS.md` bug-fix entries for the changed refusals, each backed by a test that fails without the guard; `?tidymedia` and the matching `NEWS.md` sentence narrowed to drop `segment_video()`'s `outfiles` from the per-row fan-out residual, leaving `ffm_batch()`'s `output` column and `anonymize_video_batch()`'s `pixel_format`/`color`; D076 appended, annotating D074 property 1 and narrowing D075's Scope sentence; the M094-review candidate row rewritten to carry the census's five further classes as (c), and the M095 codec-seam row compressed to hold `ROADMAP.md` under its byte budget (23,971 / 24,000).
 - 2026-08-31: AC5 measured - `devtools::test()` 11185 passing / 0 failing / 0 errors, and `devtools::check()` 0 errors / 0 warnings / 0 notes. Status to review.
+- 2026-08-31: /milestone-review opened draft PR #100; acceptance evidence and the review fan-out are in flight.

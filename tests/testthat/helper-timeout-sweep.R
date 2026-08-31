@@ -809,3 +809,54 @@ tm_refusal_head <- function(name, args, limit) {
     blamed_verb(cnd)
   })
 }
+
+# M094 review round 2: the cells that carry a WRONG argument -----------------
+
+# tm_timeout_corrupt_specs(): each member's own cell with its FIRST argument
+# replaced by `123`.
+#
+# Every cell in `tm_timeout_call_specs()` and `tm_timeout_variant_specs()`
+# carries VALID arguments, so no leg built on them can see the refusal DISPLACE
+# an error the caller's own call earned -- which is how one class of that defect
+# survived round 1 at four verbs and recurred at nine more (review F1, G1). This
+# is the missing axis, and it is generic rather than hand-written: `123` is a
+# number where every member's first argument wants a path, a job table or a
+# pipeline, and each front door refuses it on argument shape alone -- no file is
+# read, no binary is looked up, and nothing is spawned, so the answer is the
+# same on a runner with no media binaries as it is here.
+#
+# The three members that take no arguments at all (`ffmpeg_codecs`,
+# `ffmpeg_encoders`, `has_nvenc`) have nothing to corrupt and are absent; the
+# caller checks the count rather than trusting the table's length.
+tm_timeout_corrupt_specs <- function(dir) {
+  specs <- tm_timeout_call_specs(dir)
+  out <- list()
+  for (nm in names(specs)) {
+    args <- specs[[nm]]
+    if (length(args) == 0) next
+    args[[1]] <- 123
+    out[[nm]] <- args
+  }
+  out
+}
+
+# tm_masked_condition(): the whole condition one call raised, as one comparable
+# string -- the head that was blamed and the sentence it carried.
+#
+# Both halves matter here. A member whose argument error survives the limit but
+# starts naming a different frame has moved blame the milestone did not intend
+# to move, and a member that reports the limit's sentence instead has masked the
+# argument error outright; comparing head and message together catches each.
+# `"<none>"` is a real answer and a failing one for this leg: the call was given
+# an argument every front door refuses.
+tm_masked_condition <- function(name, args, limit) {
+  testthat::local_reproducible_output()
+  withr::with_options(list(tidymedia.timeout = limit), {
+    cnd <- tryCatch(
+      do.call(name, args, envir = asNamespace("tidymedia")),
+      error = function(e) e
+    )
+    if (!inherits(cnd, "error")) return("<none>")
+    paste0(blamed_verb(cnd), " || ", cli::ansi_strip(conditionMessage(cnd)))
+  })
+}

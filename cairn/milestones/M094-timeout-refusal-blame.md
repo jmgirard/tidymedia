@@ -124,7 +124,7 @@ rejected; superseding it is its own milestone.
       (F6).
 - [x] T13. `devtools::document()`, `devtools::test()`, `devtools::check()`, then
       push and confirm CI green on all five platforms — the leg AC7 failed on.
-- [ ] T14. Instrument first, the gap that let G1 recur: no sweep cell carries an
+- [x] T14. Instrument first, the gap that let G1 recur: no sweep cell carries an
       INVALID argument, so no leg can see a masked argument error. Add
       `tm_timeout_corrupt_specs()` — each member's own spec cell with its first
       argument replaced by `123`, a value every front door refuses
@@ -312,6 +312,18 @@ rejected; superseding it is its own milestone.
 - 2026-08-30: return gate chose fixing G4–G8 on this branch over candidate rows;
   all five guard work this milestone did, and G4's comparison is cheap because
   `tm_force_timeout()` injects the timeout rather than waiting on a hang.
+- 2026-08-30: T14 added the missing axis. `tm_timeout_corrupt_specs()` replaces
+  the FIRST argument of each member's own cell with `123`, and the leg compares
+  the whole condition — blamed head and sentence — against what the same call
+  reports with no limit set at all, so the referent is measured rather than a
+  retyped copy of 50 verbs' wordings. Every one of the 50 arg-carrying members
+  refuses `123` on argument shape alone: no file read, no binary lookup, no
+  spawn, so the leg answers the same on a runner with no media binaries. Red by
+  design, like T2 and T10: 45 of 250 cells fail, which is exactly G1's nine
+  exports x five forms and nothing else. G3's two AC3 legs now call
+  `tm_refusal_head()`, and a new test plants an unrelated abort inside
+  `strip_metadata()`'s own frame and shows the comparator names it instead of
+  passing — the property `tm_blame_head()` did not have.
 
 ## Decisions
 

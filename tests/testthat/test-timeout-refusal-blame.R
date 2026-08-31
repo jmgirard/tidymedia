@@ -83,7 +83,7 @@ test_that("the refusal does not wait for `run = TRUE` (AC3)", {
       args <- specs[[name]]
       args$run <- FALSE
       expect_identical(
-        tm_blame_head(name, args, tm_timeout_bad_forms()[[form]]), name,
+        tm_refusal_head(name, args, tm_timeout_bad_forms()[[form]]), name,
         info = paste(name, "run = FALSE", form)
       )
     }
@@ -113,7 +113,7 @@ test_that("the refusal does not wait for the fan-out (AC3)", {
       args <- specs[[name]]
       args$parallel <- TRUE
       expect_identical(
-        tm_blame_head(name, args, tm_timeout_bad_forms()[[form]]), name,
+        tm_refusal_head(name, args, tm_timeout_bad_forms()[[form]]), name,
         info = paste(name, "parallel = TRUE", form)
       )
     }
@@ -297,4 +297,47 @@ test_that("the interception check can say no (AC5)", {
     system2("ffprobe", "-version")
   }
   expect_false(tm_spawn_interception_complete(fns = list(both = both)))
+})
+
+test_that("an invalid limit displaces no argument error the call earned", {
+  dir <- withr::local_tempdir()
+  corrupt <- tm_timeout_corrupt_specs(dir)
+  withr::local_options(list(tidymedia.nvenc_encoders = NULL))
+  # Three of the 53 members take no arguments, so 50 cells is the whole of the
+  # rest; a table that quietly shrank would make the sweep below vacuous.
+  expect_identical(length(corrupt), length(tm_timeout_domain()) - 3L)
+
+  for (name in names(corrupt)) {
+    # The referent is measured, not recorded: what this call reports with no
+    # limit set at all is what it must still report under one base R cannot
+    # use. That keeps the leg indifferent to each verb's own wording and to any
+    # later change in it.
+    reference <- tm_masked_condition(name, corrupt[[name]], NULL)
+    # A member that stopped refusing `123` outright would otherwise pass by
+    # agreeing with itself.
+    expect_false(identical(reference, "<none>"), info = name)
+    for (form in names(tm_timeout_bad_forms())) {
+      expect_identical(
+        tm_masked_condition(name, corrupt[[name]], tm_timeout_bad_forms()[[form]]),
+        reference,
+        info = paste(name, form)
+      )
+    }
+  }
+})
+
+test_that("the comparator these sweeps use can tell a different error apart", {
+  # The guard on every leg above: `tm_refusal_head()` reports a member's own
+  # name only for THIS refusal. Planting an unrelated abort in a member's own
+  # frame -- which is what `tm_blame_head()` used to accept, and what left the
+  # two AC3 legs green until this round (review G3) -- has to come back named.
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  limit <- tm_timeout_bad_forms()$fraction
+  testthat::local_mocked_bindings(
+    strip_metadata = function(...) cli::cli_abort("Something else entirely.")
+  )
+  got <- tm_refusal_head("strip_metadata", specs$strip_metadata, limit)
+  expect_no_match(got, "^strip_metadata$")
+  expect_match(got, "Something else entirely")
 })

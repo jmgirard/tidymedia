@@ -34,17 +34,28 @@ timeout_valid_baseline <- function(ref = default_ref, root = ".") {
   root <- normalizePath(root, mustWork = TRUE)
   helpers <- file.path(root, "tests", "testthat")
   wt <- file.path(tempfile("timeout-baseline-"))
-  # A worktree rather than codec-guard-baseline.R's sys.source() of one ref's
-  # R/*.R: `tm_spawn_trace()` mocks bindings inside the tidymedia NAMESPACE, and
-  # a sourced environment is not a namespace. A worktree gives pkgload a real
-  # package to load.
-  status <- system2("git", c("-C", shQuote(root), "worktree", "add", "--quiet",
-                             shQuote(wt), shQuote(ref)))
+  dir.create(wt, recursive = TRUE)
+  on.exit(unlink(wt, recursive = TRUE), add = TRUE)
+  # A checkout of the ref rather than codec-guard-baseline.R's sys.source() of
+  # one ref's R/*.R: `tm_spawn_trace()` mocks bindings inside the tidymedia
+  # NAMESPACE, and a sourced environment is not a namespace. pkgload needs a
+  # real package directory.
+  #
+  # `git archive | tar -x` rather than `git worktree add`, which the first
+  # version used: a worktree is REGISTERED in the shared clone's .git, so a run
+  # that died between add and remove left a stale registration behind, and two
+  # runs (or a run beside an agent's own worktree) mutated state they did not
+  # own (M094 review G8). An archive extract reads the object database and
+  # writes only into this temp directory.
+  status <- system2(
+    "git", c("-C", shQuote(root), "archive", "--format=tar", shQuote(ref)),
+    stdout = file.path(wt, "ref.tar")
+  )
   if (!identical(as.integer(status), 0L)) {
-    stop("git worktree add failed for ref ", ref)
+    stop("git archive failed for ref ", ref)
   }
-  on.exit(system2("git", c("-C", shQuote(root), "worktree", "remove", "--force",
-                           shQuote(wt))), add = TRUE)
+  utils::untar(file.path(wt, "ref.tar"), exdir = wt)
+  unlink(file.path(wt, "ref.tar"))
 
   out <- file.path(tempfile("timeout-baseline-out-"), "table.rds")
   dir.create(dirname(out), recursive = TRUE)

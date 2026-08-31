@@ -2997,7 +2997,11 @@ has_nvenc <- function(codec = c("h264", "hevc", "av1")) {
 # review F2). D042's carve-out covers the shape: an internal helper threads
 # `call`, and this one does not build the reached-limit condition, so D049's
 # blame is untouched.
-nvenc_available <- function(codec, call = rlang::caller_env()) {
+# `call` carries no default on purpose. Every site has one to pass -- the verb
+# the caller typed -- and a default would hand a site that forgot it this
+# helper's own frame, which is the blame this split exists to remove (M094
+# review G7).
+nvenc_available <- function(codec, call) {
   enc <- nvenc_encoder(codec)
   pool <- getOption("tidymedia.nvenc_encoders", default = NULL)
   # The option seam is read first on every call, so setting it mid-session takes

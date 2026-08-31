@@ -241,6 +241,12 @@ test_that("the valid and unset paths are byte-for-byte the pre-change ones (AC5)
   withr::local_options(list(tidymedia.nvenc_encoders = NULL))
   recorded <- tm_timeout_valid_baseline()
   expect_setequal(names(recorded), tm_timeout_domain())
+  # The blob still describes what this helper measures. Checked once, before the
+  # 106 comparisons below, so a tm_spawn_trace() edit that invalidates the
+  # fixture says so instead of arriving as 106 unexplained diffs (review G5).
+  expect_true(tm_baseline_shape_ok(
+    recorded, tm_spawn_trace("ffmpeg", specs$ffmpeg, NULL, dir)
+  ))
   # The recorded table must describe calls that actually spawned, or "the spawn
   # count is unchanged" would be a claim about a column of zeros.
   expect_gt(sum(vapply(recorded, function(x) x$unset$spawns, integer(1))), 0)
@@ -268,6 +274,45 @@ test_that("the recorded baseline's provenance is read, not just carried (AC5)", 
   prov$generator <- "by hand"
   attr(bad, "provenance") <- prov
   expect_false(tm_provenance_ok(bad))
+})
+
+test_that("the recorded baseline's own contents are checked too (AC5)", {
+  # The provenance attribute travels with the blob, so it cannot notice the
+  # blob's coupling to `tm_spawn_trace()`'s output (review G5). These are the
+  # tampers the shape check has to catch, and none of them touches the
+  # attribute.
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  recorded <- tm_timeout_valid_baseline()
+  live <- tm_spawn_trace("ffmpeg", specs$ffmpeg, NULL, dir)
+  expect_true(tm_baseline_shape_ok(recorded, live))
+
+  # A helper that gained, lost or renamed a field.
+  expect_false(tm_baseline_shape_ok(recorded, c(live, list(extra = 1L))))
+  # A cell whose digest was emptied by hand.
+  hollow <- recorded
+  hollow[[1]]$unset$value <- ""
+  expect_false(tm_baseline_shape_ok(hollow, live))
+  # A cell whose spawn count stopped being an integer.
+  retyped <- recorded
+  retyped[[1]]$valid$spawns <- "1"
+  expect_false(tm_baseline_shape_ok(retyped, live))
+  # And a blob that is not a table of cells at all.
+  expect_false(tm_baseline_shape_ok(list(), live))
+})
+
+test_that("the committed baseline and its generator name the same ref (AC5)", {
+  # `data-raw/timeout-valid-baseline.R` pins the ref it re-derives from and the
+  # helper pins the ref it will accept; nothing ran the generator, so the two
+  # could drift apart silently and "regenerate with this script" would produce a
+  # blob the suite then refuses (review G8).
+  gen <- testthat::test_path("..", "..", "data-raw", "timeout-valid-baseline.R")
+  skip_if_not(file.exists(gen), "generator not in the built package")
+  src <- readLines(gen, warn = FALSE)
+  ref <- sub('^default_ref <- "([^"]+)".*$', "\\1",
+             grep("^default_ref <- ", src, value = TRUE))
+  expect_length(ref, 1L)
+  expect_identical(ref, tm_timeout_valid_baseline_ref)
 })
 
 test_that("an invalid limit reaches no spawn at all (AC5)", {
@@ -368,5 +413,35 @@ test_that("a `probe = ` shortcut reprobes nothing and so refuses nothing", {
       )
       expect_s3_class(got, "tbl_df")
     }
+  }
+})
+
+test_that("a REACHED limit still aborts or warns exactly as it did (AC6)", {
+  # AC6's referent was recorded at T1 and then read by nobody: nothing in
+  # `tests/`, `data-raw/` or `R/` called `tm_timeout_reached_master()`, so the
+  # criterion held only as long as someone re-measured it by hand at review
+  # (review G4). This is that comparison, committed.
+  #
+  # The timeout is INJECTED at the two spawn wrappers, so no cell waits on a
+  # real hang and none of this reads the runner's PATH -- see
+  # `tm_force_timeout()`'s own comment for why that is the platform-independent
+  # way to ask.
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  withr::local_options(list(tidymedia.nvenc_encoders = NULL))
+  recorded <- tm_timeout_reached_master()
+  expect_setequal(names(recorded), tm_timeout_domain())
+  # Both answers have to be present, or "matches the recorded table" would be a
+  # claim about a column of one value.
+  expect_true(all(c("abort", "warn") %in% recorded))
+
+  for (name in tm_timeout_domain()) {
+    got <- tm_force_timeout(name, specs[[name]])
+    # D049's rule first: a reached limit is never silent.
+    expect_true(got$aborted || got$warned, info = name)
+    expect_identical(
+      if (got$aborted) "abort" else "warn", recorded[[name]],
+      info = name
+    )
   }
 })

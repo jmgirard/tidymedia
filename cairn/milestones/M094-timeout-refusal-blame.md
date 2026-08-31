@@ -141,7 +141,7 @@ rejected; superseding it is its own milestone.
       a `probe_*(probe = )` call, which reprobes nothing and reads no limit —
       and the comment sites citing `D042` for the siting rule cite `D074`, the
       entry that states it.
-- [ ] T17. The carried triage: commit AC6's comparison against
+- [x] T17. The carried triage: commit AC6's comparison against
       `tm_timeout_reached_master()` through `tm_force_timeout()` (G4); make
       `tm_provenance_ok()` read the blob's own shape, not only its attribute
       (G5); drop `nvenc_available()`'s unexercised `call` default (G7); build
@@ -350,6 +350,24 @@ rejected; superseding it is its own milestone.
   entry that decides it (G6); the D042 citations left standing are about D042's
   own subject, `call`-threading in a shared checker. D074's property 1 and the
   matching comment gain the delegated-check case G1 measured.
+- 2026-08-30: T17 closed the four carried findings. G4: AC6's comparison is
+  committed — all 53 members driven through `tm_force_timeout()` and classified
+  abort/warn against `tm_timeout_reached_master()`, which nothing had read; the
+  test asserts both answers appear in the recorded table first, so a table
+  flattened to one value could not pass. G5: `tm_baseline_shape_ok()` compares
+  every recorded cell's field names and types against a LIVE `tm_spawn_trace()`
+  reading and is asserted before the 106 value comparisons, so an edit to that
+  helper fails once and says why instead of producing 106 diffs; shown to say no
+  on a gained field, an emptied digest, a retyped spawn count and a blob that is
+  not a table. G7: `nvenc_available()`'s `call` has no default, so a site that
+  forgets it fails rather than getting internal blame. G8: the generator
+  extracts the ref with `git archive | untar` into its own temp directory
+  instead of registering a worktree in the shared clone — and running it now
+  rewrites `timeout-valid-baseline.rds` byte-for-byte identical, so
+  "regenerate with this script" is measured rather than claimed; a committed
+  test also pins its `default_ref` to the helper's accepted ref, which had been
+  two copies of a sha with nothing tying them. Full suite 0 failures, 11,310
+  pass.
 
 ## Decisions
 

@@ -738,6 +738,34 @@ tm_provenance_ok <- function(table, ref = tm_timeout_valid_baseline_ref) {
     identical(prov$generator, "data-raw/timeout-valid-baseline.R")
 }
 
+# tm_baseline_shape_ok(): does the recorded BLOB still describe what
+# tm_spawn_trace() measures?
+#
+# The provenance predicate above reads the attribute, so a blob whose contents
+# no longer match the helper that produced them passes it (M094 review G5). The
+# coupling is real: `value` is `str()` output, and an edit to tm_spawn_trace()'s
+# print conventions or its returned fields would leave 106 cells mismatching
+# with nothing to say WHY. This compares one live trace's shape -- its field
+# names and their types -- against every recorded cell, so that edit fails once
+# and names itself instead of arriving as a wall of diffs.
+#
+# Shape only, deliberately: the VALUES are what the AC5 comparison is for, and a
+# predicate that recomputed them would be that comparison written twice.
+tm_baseline_shape_ok <- function(table, live) {
+  shape <- function(x) {
+    is.list(x) &&
+      identical(names(x), names(live)) &&
+      vapply(names(live), function(f) identical(class(x[[f]]), class(live[[f]])),
+             logical(1)) |> all() &&
+      is.character(x$value) && length(x$value) == 1L && nzchar(x$value)
+  }
+  is.list(table) && length(table) > 0 &&
+    all(vapply(table, function(cell) {
+      is.list(cell) && identical(names(cell), c("unset", "valid")) &&
+        shape(cell$unset) && shape(cell$valid)
+    }, logical(1)))
+}
+
 # tm_timeout_variant_specs(): the argument cells the one-cell-per-member table
 # above cannot carry, and where M094's review found the refusal still missing.
 #

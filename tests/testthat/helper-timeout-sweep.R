@@ -387,3 +387,504 @@ tm_program_arg <- function(e, callee) {
   if (is.character(val) && length(val) == 1L) val else NULL
 }
 
+
+# M094: what an invalid `tidymedia.timeout` did on master, recorded ----------
+
+# tm_timeout_bad_forms(): the invalid values `resolve_timeout()`'s own comment
+# names (R/timeout.R:19-26) -- the negative, the fractional, the missing, the
+# string and the length-2 forms. Recorded here rather than at each test site so
+# the sweep and the wording test quantify over the same set, and so a form
+# added to the checker's comment has one place to join.
+tm_timeout_bad_forms <- function() {
+  list(
+    negative = -1,
+    fractional = 0.5,
+    missing = NA,
+    string = "2",
+    length_two = c(1, 2)
+  )
+}
+
+# tm_blame_head(): drive one domain member under `limit` and report the head of
+# whatever condition it raised.
+#
+# The member is called BY NAME, for helper-blame.R's reason: do.call() on a
+# function OBJECT records the anonymous object as the condition call and hides
+# the blame target this sweep exists to watch. `"<none>"` is a real answer, not
+# a failure -- AC1's `has_nvenc()` carve-out is exactly that cell.
+tm_blame_head <- function(name, args, limit) {
+  withr::with_options(list(tidymedia.timeout = limit), {
+    cnd <- tryCatch(
+      do.call(name, args, envir = asNamespace("tidymedia")),
+      error = function(e) e
+    )
+    if (!inherits(cnd, "error")) "<none>" else blamed_verb(cnd)
+  })
+}
+
+# tm_timeout_blame_master(): the head of the condition each domain member raised
+# on master under an invalid limit -- measured 2026-08-30 at ae5ff1c, identical
+# across all five `tm_timeout_bad_forms()` values at every member.
+#
+# Recorded because AC1's claim is a CHANGE, and the repo held no referent for
+# what the blame was before. Six members already named themselves; the other 47
+# named a function the caller never typed, which is the defect. `tm_blame_head()`
+# regenerates any cell of this table.
+tm_timeout_blame_master <- function() {
+  ffm_run_class <- c(
+    "anonymize_video", "compare_videos", "concatenate_videos", "convert_audio",
+    "crop_video", "extract_audio", "extract_frame", "format_for_web",
+    "normalize_audio", "picture_in_picture", "sample_frames",
+    "separate_audio_video", "standardize_video", "strip_metadata"
+  )
+  ffm_batch_class <- c(
+    "anonymize_video_batch", "compare_videos_batch", "concatenate_videos_batch",
+    "convert_audio_batch", "crop_video_batch", "extract_audio_batch",
+    "extract_frame_batch", "format_for_web_batch", "normalize_audio_batch",
+    "picture_in_picture_batch", "sample_frames_batch", "segment_video",
+    "segment_video_batch", "separate_audio_video_batch",
+    "standardize_video_batch", "strip_metadata_batch"
+  )
+  ffmpeg_class <- c("ffmpeg_codecs", "ffmpeg_encoders", "has_nvenc")
+  mediainfo_parameter_class <- c(
+    "get_duration", "get_frame_rate", "get_height", "get_sample_rate",
+    "get_width"
+  )
+  mediainfo_read_class <- c(
+    "mediainfo_query", "mediainfo_summary", "mediainfo_template"
+  )
+  probe_map_class <- c(
+    "probe_all", "probe_audio", "probe_container", "probe_streams",
+    "probe_video", "verify_media"
+  )
+  # The six that already named themselves.
+  correct <- c("ffm_batch", "ffm_run", "ffmpeg", "ffprobe", "mediainfo",
+               "mediainfo_parameter")
+  out <- c(
+    stats::setNames(rep("ffm_run", length(ffm_run_class)), ffm_run_class),
+    stats::setNames(rep("ffm_batch", length(ffm_batch_class)),
+                    ffm_batch_class),
+    stats::setNames(rep("ffmpeg", length(ffmpeg_class)), ffmpeg_class),
+    stats::setNames(rep("mediainfo_parameter",
+                        length(mediainfo_parameter_class)),
+                    mediainfo_parameter_class),
+    stats::setNames(rep("mediainfo_read", length(mediainfo_read_class)),
+                    mediainfo_read_class),
+    stats::setNames(rep("purrr::map", length(probe_map_class)),
+                    probe_map_class),
+    stats::setNames(correct, correct)
+  )
+  out[order(names(out))]
+}
+
+# tm_timeout_reached_master(): what each domain member did when the limit was
+# actually REACHED, on master -- "abort" or "warn", measured 2026-08-30 at
+# ae5ff1c through `tm_force_timeout()`.
+#
+# D049 promises only that a reached limit is never SILENT, so the grid at
+# test-timeout-silence.R records the disjunction and nothing finer. This table
+# records which of the two each member does, so AC6 can say the blame sweep left
+# that choice alone rather than only that it left some condition behind.
+tm_timeout_reached_master <- function() {
+  aborts <- c(
+    "anonymize_video", "compare_videos", "concatenate_videos", "convert_audio",
+    "crop_video", "extract_audio", "extract_frame", "ffm_run", "ffmpeg",
+    "ffmpeg_codecs", "ffmpeg_encoders", "ffprobe", "format_for_web",
+    "has_nvenc", "mediainfo", "normalize_audio", "picture_in_picture",
+    "sample_frames", "separate_audio_video", "standardize_video",
+    "strip_metadata", "verify_media"
+  )
+  dom <- tm_timeout_domain()
+  stats::setNames(ifelse(dom %in% aborts, "abort", "warn"), dom)
+}
+
+# M094: what the valid and unset paths did on master, recorded ---------------
+
+# tm_spawn_interception_complete(): is mocking `guard_timeout()` enough to see
+# every spawn the package makes?
+#
+# `tm_spawn_sites()` computes which namespace functions name `system`/`system2`
+# in their own body. This asks the next question about that same computed set:
+# at every one of them, is the spawn call syntactically an ARGUMENT of a
+# `guard_timeout(...)` call? It is an argument, and `guard_timeout()` evaluates
+# it lazily inside its own handler, so a mocked `guard_timeout()` that never
+# forces `expr` intercepts the spawn rather than counting it after the fact.
+#
+# Without this the counter below would be trusted for a reason nobody checked:
+# a new spawn added OUTSIDE the wrapper would be invisible to it and the AC5
+# assertion would read "0 spawns" while a process ran.
+#
+# `fns` is a parameter for `tm_program_literals()`'s reason, a few lines below:
+# a guard whose only falsifier is deleting it re-certifies nothing. Feeding it a
+# mutant body that spawns outside the wrapper is what shows it can say FALSE.
+tm_spawn_interception_complete <- function(graph = tm_symbol_graph(),
+                                           fns = NULL) {
+  if (is.null(fns)) {
+    ns <- asNamespace("tidymedia")
+    sites <- tm_spawn_sites(graph)
+    fns <- stats::setNames(lapply(sites, get, envir = ns), sites)
+  }
+  all(vapply(fns, function(f) {
+    ok <- TRUE
+    walk <- function(e, guarded) {
+      if (!is.call(e)) return(invisible(NULL))
+      head <- e[[1]]
+      if (is.name(head) && as.character(head) %in% tm_spawn_primitives &&
+          !guarded) {
+        ok <<- FALSE
+      }
+      is_guard <- is.name(head) && identical(as.character(head),
+                                             "guard_timeout")
+      for (i in seq_along(e)) {
+        if (rlang::is_missing(e[[i]]) || is.null(e[[i]])) next
+        # Every ARGUMENT of guard_timeout() is guarded, its head is not: R
+        # binds arguments lazily, and the mock that stands in for the wrapper
+        # returns without forcing any of them.
+        walk(e[[i]], guarded || (is_guard && i > 1L))
+      }
+    }
+    walk(body(f), FALSE)
+    ok
+  }, logical(1)))
+}
+
+
+# tm_scrub_paths(): make one digest comparable across sessions and checkouts.
+#
+# Two volatile paths reach a compiled command. The fixture directory is the
+# caller's, passed in. The other is the session temp dir, where
+# `concatenate_videos()` writes the `-f concat` list file under a name randomized
+# per CALL -- so two runs of the same code in one session already differ there,
+# and comparing that string would compare R's RNG rather than the package.
+# tm_dir_pattern(): `dir` as a regex matching it with EITHER path separator at
+# every position.
+#
+# On Windows one directory reaches the digest with a MIX of them -- R's
+# tempdir() hands back forward slashes and the verbs concatenate Windows'
+# backslashes onto it -- and str() prints each backslash doubled. A `fixed =
+# TRUE` substitution of `dir` therefore matched nothing there, so every member's
+# digest carried the runner's absolute path and no comparison against the
+# recorded table could pass. It went unseen while an earlier failure in the same
+# file stopped testthat before this comparison ran (M094 T13).
+#
+# Only the SEPARATORS are made flexible. The digest's own `\"` escapes are left
+# alone, so a reading taken where the separator is already "/" is byte-identical
+# to what it was -- which is why the fixture recorded on macOS stays valid.
+tm_dir_pattern <- function(dir) {
+  parts <- strsplit(gsub("\\\\", "/", dir), "/+")[[1]]
+  escaped <- gsub("([][{}()+*^$|?.\\\\])", "\\\\\\1", parts)
+  paste(escaped, collapse = "[/\\\\]+")
+}
+
+tm_scrub_paths <- function(x, dir) {
+  x <- gsub(tm_dir_pattern(dir), "<dir>", x)
+  x <- gsub(tm_dir_pattern(normalizePath(tempdir(), winslash = "/",
+                                         mustWork = FALSE)), "<tmp>", x)
+  x <- gsub(tm_dir_pattern(tempdir()), "<tmp>", x)
+  x <- gsub("ffm-concat[0-9a-f]+(\\.txt)?", "<concat-list>", x)
+  # The separator JOINING the two placeholders survives both substitutions, and
+  # it is the platform's: `concatenate_videos()` builds this path with
+  # file.path(), so Windows writes `<tmp>\<concat-list>` where POSIX writes
+  # `<tmp>/<concat-list>`. That is the runner showing through a digest that is
+  # meant to compare the package, so it is normalized like the separators inside
+  # each path (M094 T13).
+  gsub("<tmp>[/\\\\]+<concat-list>", "<tmp>/<concat-list>", x)
+}
+
+# tm_spawn_trace(): run one domain member under `limit` with every spawn
+# intercepted, and report what came back and how many spawns it took.
+#
+# `guard_timeout()` is the single mock, which `tm_spawn_interception_complete()`
+# above proves is enough. It returns a fixed empty-output vector rather than
+# anything a real program would print: the question here is whether the two refs
+# do the SAME thing, not what FFmpeg says, and a canned answer keeps the reading
+# off the runner's PATH and its media binaries (M070's reason for injecting at
+# the wrappers rather than at a real hang).
+#
+# The return value is reduced to a printed digest with the fixture directory
+# scrubbed, so two refs measured in two checkouts compare as values rather than
+# as two temp paths.
+tm_spawn_trace <- function(name, args, limit, dir) {
+  # The digest is printed output, so it has to be printed under the same
+  # conventions everywhere. Without this the recorded table and the live reading
+  # disagree on tibble's dimension glyph alone -- testthat runs with
+  # `cli.unicode = FALSE` and a plain Rscript does not, so the same value prints
+  # `1 x 5` in one and `1 <times> 5` in the other.
+  testthat::local_reproducible_output()
+  spawns <- 0L
+  warns <- character()
+  err <- NULL
+  value <- NULL
+  opts <- if (is.null(limit)) {
+    list(tidymedia.timeout = NULL)
+  } else {
+    list(tidymedia.timeout = limit)
+  }
+  withr::with_options(opts, {
+    testthat::local_mocked_bindings(
+      guard_timeout = function(program, limit, expr, ...) {
+        spawns <<- spawns + 1L
+        character(0)
+      },
+      # The three locators are pinned too, so the reading is the package's and
+      # not the runner's PATH: without this a machine with no media binaries
+      # measures `Could not locate FFmpeg` for half the domain and the recorded
+      # table stops being comparable anywhere else. CI's macOS and Windows
+      # runners install no media binaries at all (M070's reason, same trap).
+      find_ffmpeg = function() "/nonexistent/ffmpeg",
+      find_ffprobe = function() "/nonexistent/ffprobe",
+      find_mediainfo = function() "/nonexistent/mediainfo",
+      .package = "tidymedia"
+    )
+    withCallingHandlers(
+      tryCatch(
+        value <- do.call(name, args, envir = asNamespace("tidymedia")),
+        error = function(e) err <<- e
+      ),
+      warning = function(w) {
+        warns <<- c(warns, cli::ansi_strip(conditionMessage(w)))
+        invokeRestart("muffleWarning")
+      }
+    )
+  })
+  digest <- paste(
+    utils::capture.output(utils::str(
+      value, max.level = 2L, give.attr = FALSE,
+      # str()'s 128-character default truncates a compiled FFmpeg command well
+      # before its output path, which would leave the digest unable to tell two
+      # different commands apart -- the dimension this comparison exists to
+      # watch.
+      nchar.max = 4000L, vec.len = 20L
+    )),
+    collapse = " | "
+  )
+  list(
+    spawns = spawns,
+    value = tm_scrub_paths(digest, dir),
+    error = if (is.null(err)) NA_character_ else class(err)[[1]],
+    warnings = length(warns)
+  )
+}
+
+# tm_blame_condition(): the whole condition one domain member raised under
+# `limit`, message and class vector both.
+#
+# Separate from `tm_blame_head()` because AC4 asks two things that
+# conditionCall() cannot answer: whether every member says the SAME sentence,
+# and whether the six FFprobe readers still arrive wrapped in purrr's indexed
+# error. The message is ansi-stripped, and the caller pins `cli.width` -- cli
+# wraps to the console, so an unpinned width compares two terminals.
+tm_blame_condition <- function(name, args, limit) {
+  # Same reason as tm_spawn_trace(): cli wraps and decorates to the console, and
+  # this compares message text across 53 members and one reference.
+  testthat::local_reproducible_output()
+  withr::with_options(list(tidymedia.timeout = limit), {
+    cnd <- tryCatch(
+      do.call(name, args, envir = asNamespace("tidymedia")),
+      error = function(e) e
+    )
+    if (!inherits(cnd, "error")) return(NULL)
+    list(
+      message = cli::ansi_strip(conditionMessage(cnd)),
+      classes = class(cnd)
+    )
+  })
+}
+
+# tm_resolve_timeout_message(): the sentence the ONE checker site writes for a
+# given invalid value, read from that site rather than from any verb.
+#
+# This is AC4's referent. Comparing the 53 members only to each other would go
+# green on 53 copies of a second, drifted wording; comparing them to what
+# `resolve_timeout()` itself produces is what pins them to the single
+# `rlang::check_number_whole()` call in R/timeout.R.
+tm_resolve_timeout_message <- function(limit) {
+  testthat::local_reproducible_output()
+  withr::with_options(list(tidymedia.timeout = limit), {
+    cli::ansi_strip(
+      tryCatch(resolve_timeout(), error = function(e) conditionMessage(e))
+    )
+  })
+}
+
+# tm_timeout_valid_baseline(): the recorded pre-change return values and spawn
+# counts. Regenerate with data-raw/timeout-valid-baseline.R.
+#
+# The provenance the generator attaches is CHECKED here, not merely carried.
+# Recording it and never reading it makes the reproducibility rule an attribute
+# nobody consults: a blob regenerated from the wrong ref, or by hand, would keep
+# comparing green against the wrong reading (M094 review F10). The ref is pinned
+# to the sha this milestone branched from, so a re-record against a later master
+# has to be a deliberate edit here.
+tm_timeout_valid_baseline_ref <- "ae5ff1c"
+
+tm_timeout_valid_baseline <- function() {
+  table <- readRDS(testthat::test_path("fixtures", "timeout-valid-baseline.rds"))
+  if (!tm_provenance_ok(table)) {
+    testthat::fail(
+      "the recorded baseline's provenance is missing or names another source"
+    )
+  }
+  table
+}
+
+# tm_provenance_ok(): the provenance predicate, separate so it can be shown to
+# say NO. A checker whose only falsifier is deleting it certifies nothing.
+tm_provenance_ok <- function(table, ref = tm_timeout_valid_baseline_ref) {
+  prov <- attr(table, "provenance")
+  is.list(prov) &&
+    all(c("source", "generator", "seed", "recorded") %in% names(prov)) &&
+    grepl(ref, prov$source, fixed = TRUE) &&
+    identical(prov$generator, "data-raw/timeout-valid-baseline.R")
+}
+
+# tm_baseline_shape_ok(): does the recorded BLOB still describe what
+# tm_spawn_trace() measures?
+#
+# The provenance predicate above reads the attribute, so a blob whose contents
+# no longer match the helper that produced them passes it (M094 review G5). The
+# coupling is real: `value` is `str()` output, and an edit to tm_spawn_trace()'s
+# print conventions or its returned fields would leave 106 cells mismatching
+# with nothing to say WHY. This compares one live trace's shape -- its field
+# names and their types -- against every recorded cell, so that edit fails once
+# and names itself instead of arriving as a wall of diffs.
+#
+# Shape only, deliberately: the VALUES are what the AC5 comparison is for, and a
+# predicate that recomputed them would be that comparison written twice.
+tm_baseline_shape_ok <- function(table, live) {
+  shape <- function(x) {
+    is.list(x) &&
+      identical(names(x), names(live)) &&
+      vapply(names(live), function(f) identical(class(x[[f]]), class(live[[f]])),
+             logical(1)) |> all() &&
+      is.character(x$value) && length(x$value) == 1L && nzchar(x$value)
+  }
+  is.list(table) && length(table) > 0 &&
+    all(vapply(table, function(cell) {
+      is.list(cell) && identical(names(cell), c("unset", "valid")) &&
+        shape(cell$unset) && shape(cell$valid)
+    }, logical(1)))
+}
+
+# tm_timeout_variant_specs(): the argument cells the one-cell-per-member table
+# above cannot carry, and where M094's review found the refusal still missing.
+#
+# `tm_timeout_call_specs()` holds exactly one valid argument set per member, so
+# an argument that steers the verb down a DIFFERENT path -- a GPU encode, the
+# frame half of extract_frame()'s "provide exactly one of" pair, a two-pass
+# normalization -- is invisible to every sweep built on it. Each of those three
+# hid a member that went on blaming a function the caller never typed (M094
+# review F2, F4, F3).
+#
+# The axes are computed from `formals()`, not listed, for the reason the domain
+# itself is computed (M70): a verb that gains `hardware` joins this table on its
+# own. `extract_frame` is named because its pair is a documented argument
+# contract, not a formal a sweep can see.
+#
+# Every cell here is exercised under an INVALID limit only, where AC5 pins the
+# spawn count at 0 -- so `hardware = "nvenc"` never asks a real FFmpeg anything.
+tm_timeout_variant_specs <- function(dir) {
+  specs <- tm_timeout_call_specs(dir)
+  out <- list()
+  for (nm in tm_timeout_domain()) {
+    fmls <- names(formals(get(nm, envir = asNamespace("tidymedia"))))
+    if ("hardware" %in% fmls) {
+      args <- specs[[nm]]
+      args$hardware <- "nvenc"
+      # A re-encoding codec is named where the verb has one, because a
+      # `video_codec = "copy"` default plus `hardware = "nvenc"` is a
+      # contradiction the verb refuses on its own (D036) -- a correct refusal
+      # that would leave this cell testing that instead of the limit.
+      if ("video_codec" %in% fmls) args$video_codec <- "libx264"
+      out[[paste0(nm, " [hardware = nvenc]")]] <- list(name = nm, args = args)
+    }
+    if ("two_pass" %in% fmls) {
+      args <- specs[[nm]]
+      args$two_pass <- TRUE
+      out[[paste0(nm, " [two_pass = TRUE]")]] <- list(name = nm, args = args)
+    }
+  }
+  frame_args <- specs$extract_frame
+  frame_args$timestamp <- NULL
+  frame_args$frame <- 1
+  out[["extract_frame [frame = ]"]] <-
+    list(name = "extract_frame", args = frame_args)
+  out
+}
+
+# tm_refusal_head(): `tm_blame_head()` with the condition's IDENTITY checked
+# too.
+#
+# The head alone cannot tell M094's refusal from any other error raised in the
+# same frame, so a member that aborted on something else entirely would read as
+# a pass (M094 review F9). This compares the message to what the one checker
+# site writes for that value before reporting the head, and names what it saw
+# otherwise -- so a wrong-condition cell fails with the wrong condition in the
+# message rather than going quietly green.
+tm_refusal_head <- function(name, args, limit) {
+  reference <- tm_resolve_timeout_message(limit)
+  testthat::local_reproducible_output()
+  withr::with_options(list(tidymedia.timeout = limit), {
+    cnd <- tryCatch(
+      do.call(name, args, envir = asNamespace("tidymedia")),
+      error = function(e) e
+    )
+    if (!inherits(cnd, "error")) return("<none>")
+    msg <- cli::ansi_strip(conditionMessage(cnd))
+    if (!identical(msg, reference)) {
+      return(paste0("<other: ", blamed_verb(cnd), ": ", msg, ">"))
+    }
+    blamed_verb(cnd)
+  })
+}
+
+# M094 review round 2: the cells that carry a WRONG argument -----------------
+
+# tm_timeout_corrupt_specs(): each member's own cell with its FIRST argument
+# replaced by `123`.
+#
+# Every cell in `tm_timeout_call_specs()` and `tm_timeout_variant_specs()`
+# carries VALID arguments, so no leg built on them can see the refusal DISPLACE
+# an error the caller's own call earned -- which is how one class of that defect
+# survived round 1 at four verbs and recurred at nine more (review F1, G1). This
+# is the missing axis, and it is generic rather than hand-written: `123` is a
+# number where every member's first argument wants a path, a job table or a
+# pipeline, and each front door refuses it on argument shape alone -- no file is
+# read, no binary is looked up, and nothing is spawned, so the answer is the
+# same on a runner with no media binaries as it is here.
+#
+# The three members that take no arguments at all (`ffmpeg_codecs`,
+# `ffmpeg_encoders`, `has_nvenc`) have nothing to corrupt and are absent; the
+# caller checks the count rather than trusting the table's length.
+tm_timeout_corrupt_specs <- function(dir) {
+  specs <- tm_timeout_call_specs(dir)
+  out <- list()
+  for (nm in names(specs)) {
+    args <- specs[[nm]]
+    if (length(args) == 0) next
+    args[[1]] <- 123
+    out[[nm]] <- args
+  }
+  out
+}
+
+# tm_masked_condition(): the whole condition one call raised, as one comparable
+# string -- the head that was blamed and the sentence it carried.
+#
+# Both halves matter here. A member whose argument error survives the limit but
+# starts naming a different frame has moved blame the milestone did not intend
+# to move, and a member that reports the limit's sentence instead has masked the
+# argument error outright; comparing head and message together catches each.
+# `"<none>"` is a real answer and a failing one for this leg: the call was given
+# an argument every front door refuses.
+tm_masked_condition <- function(name, args, limit) {
+  testthat::local_reproducible_output()
+  withr::with_options(list(tidymedia.timeout = limit), {
+    cnd <- tryCatch(
+      do.call(name, args, envir = asNamespace("tidymedia")),
+      error = function(e) e
+    )
+    if (!inherits(cnd, "error")) return("<none>")
+    paste0(blamed_verb(cnd), " || ", cli::ansi_strip(conditionMessage(cnd)))
+  })
+}

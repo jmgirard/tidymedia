@@ -1,0 +1,447 @@
+# M094: an invalid `tidymedia.timeout` is refused by the function the caller
+# typed.
+#
+# `resolve_timeout()` has always refused a value base R would mishandle, but it
+# was reached from wherever the limit happened to be read first -- so 47 of the
+# 53 exports in `tm_timeout_domain()` aborted naming `ffm_run(object)`,
+# `ffm_batch(jobs, <the whole deparsed builder>)`, `mediainfo_read(file, inform)`
+# or `purrr::map(infile, probe_one)`. `tm_timeout_blame_master()` records that
+# state (measured at ae5ff1c); this file is the sweep that closes it.
+#
+# The domain is COMPUTED (`tm_timeout_domain()`), not recalled, for M70's
+# reason: an export that starts reaching a spawn joins the sweep on its own.
+
+test_that("the sweep runs over a non-empty domain with a cell for each member", {
+  dir <- withr::local_tempdir()
+  dom <- tm_timeout_domain()
+  specs <- tm_timeout_call_specs(dir)
+  # Guards on the guard: a domain that silently emptied, or a member with no
+  # argument cell, would make every expectation below vacuously true.
+  expect_gt(length(dom), 0)
+  expect_setequal(names(tm_timeout_blame_master()), dom)
+  expect_true(all(dom %in% names(specs)))
+})
+
+test_that("every domain member blames itself for an invalid limit (AC1, AC2)", {
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  forms <- tm_timeout_bad_forms()
+  # The override stays UNSET for this sweep, so `has_nvenc()` takes the branch
+  # that reads the limit and is held to the same rule as everything else.
+  withr::local_options(list(tidymedia.nvenc_encoders = NULL))
+
+  # `tm_refusal_head()` rather than `tm_blame_head()`: the head alone cannot
+  # tell this refusal from any other error raised in the same frame, so a member
+  # aborting on something else entirely would read as a pass (review F9). The
+  # identity is checked against what the one checker site writes for that value.
+  for (name in tm_timeout_domain()) {
+    for (form in names(forms)) {
+      expect_identical(
+        tm_refusal_head(name, specs[[name]], forms[[form]]), name,
+        info = paste(name, form)
+      )
+    }
+  }
+})
+
+test_that("a set encoder override leaves `has_nvenc()` nothing to refuse", {
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  withr::local_options(list(tidymedia.nvenc_encoders = "h264_nvenc"))
+  for (form in names(tm_timeout_bad_forms())) {
+    limit <- tm_timeout_bad_forms()[[form]]
+    expect_identical(
+      tm_blame_head("has_nvenc", specs$has_nvenc, limit), "<none>",
+      info = form
+    )
+    # And the answer is still the override's, not a stale or spawned one.
+    expect_true(
+      withr::with_options(list(tidymedia.timeout = limit), has_nvenc("h264"))
+    )
+  }
+})
+
+test_that("the refusal does not wait for `run = TRUE` (AC3)", {
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  withr::local_options(list(tidymedia.nvenc_encoders = NULL))
+  carries_run <- Filter(
+    function(nm) {
+      "run" %in% names(formals(get(nm, envir = asNamespace("tidymedia"))))
+    },
+    tm_timeout_domain()
+  )
+  # The asymmetry this closes was measured on master: `extract_audio(run =
+  # FALSE)` raised nothing while `extract_audio_batch(run = FALSE)` aborted, so
+  # a domain that lost the scalar half would leave the sweep green on the wrong
+  # thing.
+  expect_true("extract_audio" %in% carries_run)
+  expect_true("extract_audio_batch" %in% carries_run)
+
+  for (name in carries_run) {
+    for (form in names(tm_timeout_bad_forms())) {
+      args <- specs[[name]]
+      args$run <- FALSE
+      expect_identical(
+        tm_refusal_head(name, args, tm_timeout_bad_forms()[[form]]), name,
+        info = paste(name, "run = FALSE", form)
+      )
+    }
+  }
+})
+
+test_that("the refusal does not wait for the fan-out (AC3)", {
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  withr::local_options(list(tidymedia.nvenc_encoders = NULL))
+  carries_parallel <- Filter(
+    function(nm) {
+      "parallel" %in%
+        names(formals(get(nm, envir = asNamespace("tidymedia"))))
+    },
+    tm_timeout_domain()
+  )
+  expect_gt(length(carries_parallel), 0)
+
+  # No `skip_if_not_installed("furrr")` here on purpose. A machine-independent
+  # refusal reports before a machine-dependent one (D036), and `furrr` is what
+  # every one of these checks next -- so a correct front door never reaches
+  # `check_installed()`, and a cell that DID reach it would fail here rather
+  # than skip, which is the point.
+  for (name in carries_parallel) {
+    for (form in names(tm_timeout_bad_forms())) {
+      args <- specs[[name]]
+      args$parallel <- TRUE
+      expect_identical(
+        tm_refusal_head(name, args, tm_timeout_bad_forms()[[form]]), name,
+        info = paste(name, "parallel = TRUE", form)
+      )
+    }
+  }
+})
+
+test_that("one wording reaches every member, from the one checker site (AC4)", {
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  withr::local_options(list(tidymedia.nvenc_encoders = NULL, cli.width = 80))
+
+  for (form in names(tm_timeout_bad_forms())) {
+    limit <- tm_timeout_bad_forms()[[form]]
+    reference <- tm_resolve_timeout_message(limit)
+    # The referent has to say something: an empty or missing reference would
+    # make every comparison below pass against nothing.
+    expect_match(reference, "must be a whole number")
+    for (name in tm_timeout_domain()) {
+      cnd <- tm_blame_condition(name, specs[[name]], limit)
+      expect_false(is.null(cnd), info = paste(name, form))
+      expect_identical(cnd$message, reference, info = paste(name, form))
+    }
+  }
+})
+
+test_that("the FFprobe readers no longer arrive wrapped by purrr (AC4)", {
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  withr::local_options(list(cli.width = 80))
+  wrapped <- c("probe_all", "probe_audio", "probe_container", "probe_streams",
+               "probe_video", "verify_media")
+  # These six are exactly the members `tm_timeout_blame_master()` records as
+  # blaming purrr::map() -- read from the recorded table, not retyped, so the
+  # two cannot drift.
+  master <- tm_timeout_blame_master()
+  expect_setequal(wrapped, names(master)[master == "purrr::map"])
+
+  for (name in wrapped) {
+    for (form in names(tm_timeout_bad_forms())) {
+      cnd <- tm_blame_condition(name, specs[[name]], tm_timeout_bad_forms()[[form]])
+      expect_false("purrr_error_indexed" %in% cnd$classes,
+                   info = paste(name, form))
+      expect_no_match(cnd$message, "In index:", fixed = TRUE)
+      expect_no_match(cnd$message, "Caused by error", fixed = TRUE)
+    }
+  }
+})
+
+test_that("the paths one argument cell cannot reach blame themselves too (AC1)", {
+  # M094's review found three members still blaming a function the caller never
+  # typed, each on a path `tm_timeout_call_specs()`'s single cell does not take:
+  # a GPU encode reached `check_nvenc_available()` before the verb's own site
+  # (F2), `extract_frame(frame = )` divided by `get_frame_rate()` first (F4),
+  # and `normalize_audio_batch(two_pass = TRUE)` returned above its site (F3).
+  dir <- withr::local_tempdir()
+  variants <- tm_timeout_variant_specs(dir)
+  withr::local_options(list(tidymedia.nvenc_encoders = NULL))
+  # Guards on the guard: an empty variant table, or one that lost the three
+  # axes the review named, would make every expectation below vacuous.
+  expect_gt(length(variants), 0)
+  expect_true("extract_frame [frame = ]" %in% names(variants))
+  expect_true("normalize_audio_batch [two_pass = TRUE]" %in% names(variants))
+  expect_gt(sum(grepl("hardware = nvenc", names(variants), fixed = TRUE)), 0)
+
+  for (label in names(variants)) {
+    cell <- variants[[label]]
+    for (form in names(tm_timeout_bad_forms())) {
+      expect_identical(
+        tm_refusal_head(cell$name, cell$args, tm_timeout_bad_forms()[[form]]),
+        cell$name,
+        info = paste(label, form)
+      )
+    }
+  }
+})
+
+test_that("a machine with no media binaries gets the same refusal (AC4)", {
+  # The failure this closes was invisible on a developer machine and red on CI:
+  # a member with no site of its own reached `run_program()`'s `Could not locate`
+  # check (R/program_management.R) before `resolve_timeout()`, so the sweep
+  # measured the runner's PATH instead of the package (review F8). D036 orders
+  # the machine-independent refusal first, and that is what this asserts.
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  withr::local_options(list(tidymedia.nvenc_encoders = NULL, cli.width = 80))
+  withr::local_envvar(list(PATH = ""))
+  # The emptied PATH has to actually hide the binaries, or this leg asserts
+  # nothing beyond the sweep above.
+  expect_identical(unname(Sys.which("ffmpeg")), "")
+  expect_identical(unname(Sys.which("mediainfo")), "")
+
+  # The variant cells run here too. A member whose ONE argument cell never takes
+  # the path that probes would otherwise hide the same defect on the other path:
+  # `normalize_audio(two_pass = TRUE)` did exactly that, passing here on the base
+  # cell and reporting `Could not locate FFmpeg.` on the two-pass one.
+  variants <- tm_timeout_variant_specs(dir)
+  cells <- c(
+    lapply(stats::setNames(tm_timeout_domain(), tm_timeout_domain()),
+           function(nm) list(name = nm, args = specs[[nm]])),
+    variants
+  )
+  for (form in names(tm_timeout_bad_forms())) {
+    limit <- tm_timeout_bad_forms()[[form]]
+    for (label in names(cells)) {
+      expect_identical(
+        suppressWarnings(
+          tm_refusal_head(cells[[label]]$name, cells[[label]]$args, limit)
+        ),
+        cells[[label]]$name,
+        info = paste(label, form, "PATH = \"\"")
+      )
+    }
+  }
+})
+
+test_that("the valid and unset paths are byte-for-byte the pre-change ones (AC5)", {
+  # The interception this reading rests on is complete: every function that
+  # names a spawn primitive reaches it as an argument of guard_timeout(), which
+  # the mock never forces. Asserted rather than assumed, because a spawn added
+  # outside that wrapper would make every count below read 0 while a process ran.
+  expect_true(tm_spawn_interception_complete())
+
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  withr::local_options(list(tidymedia.nvenc_encoders = NULL))
+  recorded <- tm_timeout_valid_baseline()
+  expect_setequal(names(recorded), tm_timeout_domain())
+  # The blob still describes what this helper measures. Checked once, before the
+  # 106 comparisons below, so a tm_spawn_trace() edit that invalidates the
+  # fixture says so instead of arriving as 106 unexplained diffs (review G5).
+  expect_true(tm_baseline_shape_ok(
+    recorded, tm_spawn_trace("ffmpeg", specs$ffmpeg, NULL, dir)
+  ))
+  # The recorded table must describe calls that actually spawned, or "the spawn
+  # count is unchanged" would be a claim about a column of zeros.
+  expect_gt(sum(vapply(recorded, function(x) x$unset$spawns, integer(1))), 0)
+
+  for (name in tm_timeout_domain()) {
+    expect_identical(tm_spawn_trace(name, specs[[name]], NULL, dir),
+                     recorded[[name]]$unset, info = paste(name, "unset"))
+    expect_identical(tm_spawn_trace(name, specs[[name]], 30, dir),
+                     recorded[[name]]$valid, info = paste(name, "valid"))
+  }
+})
+
+test_that("the recorded baseline's provenance is read, not just carried (AC5)", {
+  # The fixture's `source`/`generator`/`seed`/`recorded` fields were attached and
+  # never consulted, so a blob regenerated from the wrong ref -- or by hand --
+  # would go on comparing green against the wrong reading (review F10).
+  recorded <- tm_timeout_valid_baseline()
+  expect_true(tm_provenance_ok(recorded))
+  # And the check can say no: a stripped blob, a blob from another ref, and a
+  # blob from another generator each fail it.
+  expect_false(tm_provenance_ok(structure(list(), provenance = NULL)))
+  expect_false(tm_provenance_ok(recorded, ref = "0000000"))
+  bad <- recorded
+  prov <- attr(bad, "provenance")
+  prov$generator <- "by hand"
+  attr(bad, "provenance") <- prov
+  expect_false(tm_provenance_ok(bad))
+})
+
+test_that("the recorded baseline's own contents are checked too (AC5)", {
+  # The provenance attribute travels with the blob, so it cannot notice the
+  # blob's coupling to `tm_spawn_trace()`'s output (review G5). These are the
+  # tampers the shape check has to catch, and none of them touches the
+  # attribute.
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  recorded <- tm_timeout_valid_baseline()
+  live <- tm_spawn_trace("ffmpeg", specs$ffmpeg, NULL, dir)
+  expect_true(tm_baseline_shape_ok(recorded, live))
+
+  # A helper that gained, lost or renamed a field.
+  expect_false(tm_baseline_shape_ok(recorded, c(live, list(extra = 1L))))
+  # A cell whose digest was emptied by hand.
+  hollow <- recorded
+  hollow[[1]]$unset$value <- ""
+  expect_false(tm_baseline_shape_ok(hollow, live))
+  # A cell whose spawn count stopped being an integer.
+  retyped <- recorded
+  retyped[[1]]$valid$spawns <- "1"
+  expect_false(tm_baseline_shape_ok(retyped, live))
+  # And a blob that is not a table of cells at all.
+  expect_false(tm_baseline_shape_ok(list(), live))
+})
+
+test_that("the committed baseline and its generator name the same ref (AC5)", {
+  # `data-raw/timeout-valid-baseline.R` pins the ref it re-derives from and the
+  # helper pins the ref it will accept; nothing ran the generator, so the two
+  # could drift apart silently and "regenerate with this script" would produce a
+  # blob the suite then refuses (review G8).
+  gen <- testthat::test_path("..", "..", "data-raw", "timeout-valid-baseline.R")
+  skip_if_not(file.exists(gen), "generator not in the built package")
+  src <- readLines(gen, warn = FALSE)
+  ref <- sub('^default_ref <- "([^"]+)".*$', "\\1",
+             grep("^default_ref <- ", src, value = TRUE))
+  expect_length(ref, 1L)
+  expect_identical(ref, tm_timeout_valid_baseline_ref)
+})
+
+test_that("an invalid limit reaches no spawn at all (AC5)", {
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  withr::local_options(list(tidymedia.nvenc_encoders = NULL))
+  for (name in tm_timeout_domain()) {
+    for (form in names(tm_timeout_bad_forms())) {
+      trace <- tm_spawn_trace(name, specs[[name]], tm_timeout_bad_forms()[[form]],
+                              dir)
+      expect_identical(trace$spawns, 0L, info = paste(name, form))
+    }
+  }
+})
+
+test_that("the interception check can say no (AC5)", {
+  # The planted defect is the one the check exists to catch: a spawn that is not
+  # an argument of guard_timeout(). Without this the check's only falsifier
+  # would be deleting it, which certifies nothing.
+  outside <- function() system2("ffmpeg", "-version")
+  inside <- function() guard_timeout("FFmpeg", 0, system2("ffmpeg", "-version"))
+  expect_false(tm_spawn_interception_complete(fns = list(bad = outside)))
+  expect_true(tm_spawn_interception_complete(fns = list(good = inside)))
+  # And one guarded spawn does not vouch for an unguarded one beside it.
+  both <- function() {
+    guard_timeout("FFmpeg", 0, system2("ffmpeg", "-version"))
+    system2("ffprobe", "-version")
+  }
+  expect_false(tm_spawn_interception_complete(fns = list(both = both)))
+})
+
+test_that("an invalid limit displaces no argument error the call earned", {
+  dir <- withr::local_tempdir()
+  corrupt <- tm_timeout_corrupt_specs(dir)
+  withr::local_options(list(tidymedia.nvenc_encoders = NULL))
+  # Three of the 53 members take no arguments, so 50 cells is the whole of the
+  # rest; a table that quietly shrank would make the sweep below vacuous.
+  expect_identical(length(corrupt), length(tm_timeout_domain()) - 3L)
+
+  for (name in names(corrupt)) {
+    # The referent is measured, not recorded: what this call reports with no
+    # limit set at all is what it must still report under one base R cannot
+    # use. That keeps the leg indifferent to each verb's own wording and to any
+    # later change in it.
+    reference <- tm_masked_condition(name, corrupt[[name]], NULL)
+    # A member that stopped refusing `123` outright would otherwise pass by
+    # agreeing with itself.
+    expect_false(identical(reference, "<none>"), info = name)
+    for (form in names(tm_timeout_bad_forms())) {
+      expect_identical(
+        tm_masked_condition(name, corrupt[[name]], tm_timeout_bad_forms()[[form]]),
+        reference,
+        info = paste(name, form)
+      )
+    }
+  }
+})
+
+test_that("the comparator these sweeps use can tell a different error apart", {
+  # The guard on every leg above: `tm_refusal_head()` reports a member's own
+  # name only for THIS refusal. Planting an unrelated abort in a member's own
+  # frame -- which is what `tm_blame_head()` used to accept, and what left the
+  # two AC3 legs green until this round (review G3) -- has to come back named.
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  limit <- tm_timeout_bad_forms()$fractional
+  testthat::local_mocked_bindings(
+    strip_metadata = function(...) cli::cli_abort("Something else entirely.")
+  )
+  got <- tm_refusal_head("strip_metadata", specs$strip_metadata, limit)
+  expect_no_match(got, "^strip_metadata$")
+  expect_match(got, "Something else entirely")
+})
+
+test_that("a `probe = ` shortcut reprobes nothing and so refuses nothing", {
+  # The second carve-out, and the reason the docs' "one exception" was wrong a
+  # second time (review G2). `resolve_probe()` reads the limit only on the
+  # branch that probes, so a shortcut handed a probe object has nothing to
+  # refuse -- and nothing here spawns, so the leg is the same on a runner with
+  # no media binaries.
+  probe <- list(
+    container = tibble::tibble(filename = "x.mp4"),
+    streams = tibble::tibble(file = "x.mp4", codec_type = c("video", "audio"))
+  )
+  shortcuts <- c("probe_container", "probe_streams", "probe_video", "probe_audio")
+  for (name in shortcuts) {
+    for (form in names(tm_timeout_bad_forms())) {
+      limit <- tm_timeout_bad_forms()[[form]]
+      expect_identical(
+        tm_blame_head(name, list(probe = probe), limit), "<none>",
+        info = paste(name, form)
+      )
+      # And the answer is the probe object's own, not a refusal swallowed
+      # somewhere quieter.
+      got <- withr::with_options(
+        list(tidymedia.timeout = limit),
+        do.call(name, list(probe = probe), envir = asNamespace("tidymedia"))
+      )
+      expect_s3_class(got, "tbl_df")
+    }
+  }
+})
+
+test_that("a REACHED limit still aborts or warns exactly as it did (AC6)", {
+  # AC6's referent was recorded at T1 and then read by nobody: nothing in
+  # `tests/`, `data-raw/` or `R/` called `tm_timeout_reached_master()`, so the
+  # criterion held only as long as someone re-measured it by hand at review
+  # (review G4). This is that comparison, committed.
+  #
+  # The timeout is INJECTED at the two spawn wrappers, so no cell waits on a
+  # real hang and none of this reads the runner's PATH -- see
+  # `tm_force_timeout()`'s own comment for why that is the platform-independent
+  # way to ask.
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  withr::local_options(list(tidymedia.nvenc_encoders = NULL))
+  recorded <- tm_timeout_reached_master()
+  expect_setequal(names(recorded), tm_timeout_domain())
+  # Both answers have to be present, or "matches the recorded table" would be a
+  # claim about a column of one value.
+  expect_true(all(c("abort", "warn") %in% recorded))
+
+  for (name in tm_timeout_domain()) {
+    got <- tm_force_timeout(name, specs[[name]])
+    # D049's rule first: a reached limit is never silent.
+    expect_true(got$aborted || got$warned, info = name)
+    expect_identical(
+      if (got$aborted) "abort" else "warn", recorded[[name]],
+      info = name
+    )
+  }
+})

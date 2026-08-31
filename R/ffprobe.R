@@ -94,14 +94,16 @@ probe_all_impl <- function(infile, typed = TRUE, parallel = FALSE,
   # used to BE probe_all(), and without it the front door's own argument errors
   # would read "Error in `probe_all_impl()`" and name a function the caller has
   # no way to reach (M64/M65's blame rule).
-  if (!rlang::is_character(infile) || length(infile) == 0) {
-    cli::cli_abort(
-      "{.arg infile} must be a character vector of one or more file locations.",
-      call = call
-    )
-  }
+  check_path_vector(infile, what = "file locations", call = call)
   rlang::check_bool(typed, call = call)
   rlang::check_bool(parallel, call = call)
+
+  # D074: `call` is already threaded here, so the refusal names probe_all() or
+  # verify_media() -- whichever the caller typed -- rather than the
+  # purrr::map(infile, probe_one) below. Above the `parallel` branch, so a
+  # machine-independent refusal still reports before a machine-dependent one
+  # (D036) and the fan-out is never dispatched under a limit base R cannot use.
+  resolve_timeout(call = call)
 
   if (parallel) {
     rlang::check_installed("furrr", reason = "for parallel probing.")
@@ -437,6 +439,20 @@ resolve_probe <- function(probe, infile, typed, parallel = FALSE,
   # `parallel` is consumed exactly where `typed` is -- on the infile branch.
   # A probe object has nothing left to fan out, so both are ignored there.
   if (!is.null(infile)) {
+    # D074, on the infile branch ONLY: this is the branch that probes, so it is
+    # the branch that reads the limit. `call` is the shortcut the caller typed,
+    # which is why the refusal has to happen here rather than inside probe_all()
+    # below. A `probe =` call reprobes nothing and reads no limit, so it has
+    # nothing to refuse.
+    # The same three checks probe_all_impl() runs, hoisted for D074's ordering:
+    # down there they sit below the refusal, so leaving them to it made an
+    # invalid limit displace the caller's own argument error at all four
+    # shortcuts (M94 review G1). Repeated rather than moved -- probe_all() is
+    # reachable without passing through here.
+    check_path_vector(infile, what = "file locations", call = call)
+    rlang::check_bool(typed, call = call)
+    rlang::check_bool(parallel, call = call)
+    resolve_timeout(call = call)
     probe <- probe_all(infile, typed = typed, parallel = parallel)
   }
   probe

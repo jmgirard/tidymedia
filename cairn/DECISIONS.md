@@ -3386,3 +3386,119 @@ load-bearing and under a sequential one it is redundant rather than harmful.
 - **Falsified by** a `future` release that stops restoring `options()` across a
   future's boundary, which would make the sequential-plan write escape and put
   the carrier back in the caller's way.
+
+## D074 — An invalid session limit is refused by the verb the caller typed, on the dry-run path as well (2026-08-30, from M094; applies D042's siting rule to the timeout seam and states why the `run = FALSE` half leaves D024 untouched; leaves D042, D044, D047 and D049 standing)
+
+`resolve_timeout()` has refused a `tidymedia.timeout` value base R would
+mishandle since D047, and it blames `rlang::caller_env()`. It was reached only
+at the spawn site, so the frame that named the refusal was whichever one
+happened to read the limit first: most of the exports in the timeout domain
+aborted naming `ffm_run(object)`, `ffm_batch(jobs, <the deparsed builder>)`,
+`mediainfo_read(file, inform)` or `purrr::map(infile, probe_one)` — functions
+the caller never typed. The per-member table and the counts are in M094's
+milestone file and in `tests/testthat/helper-timeout-sweep.R`.
+
+**The siting.** D042's rule applied unchanged: the export re-calls the shared
+checker at its own front door, rather than a `call` argument being threaded
+through an exported builder. Three properties fix where "front door" is, and
+they are stated once beside the checker in `R/timeout.R` rather than at each
+site:
+
+1. **As late as the verb allows, but never after a probe or a spawn.** In
+   practice that is after the front-door guards and, where the verb builds its
+   pipeline before running anything, after the builder's argument validation too
+   — so a refusal the verb itself can reach still fires first and only this blame
+   moves. It is NOT true that every refusal that fired before it still fires
+   first, and M094's third review round measured the two remaining classes: a
+   check that runs below a probe the verb must make first (`hardware = "nvenc"`
+   asks the build what encoders it has BEFORE the pipeline is assembled, so a bad
+   `pixel_format` under `hardware = "nvenc"` reports the limit on a machine that
+   has nvenc), and a check that runs inside the per-row fan-out rather than at the
+   verb (`segment_video()`'s `outfiles`, a `_batch` job table's `output` column,
+   both of which report `purrr::pmap` with the limit unset). Both are disclosed
+   in `NEWS.md` and `?tidymedia` rather than fixed: deciding where a build-time
+   probe's refusal sits relative to the builder's own checks is a design call of
+   its own, and it is on the ROADMAP as a candidate row. Where a verb reaches a
+   spawn by more than one path, each path carries
+   its own call. Where the check the verb has to report first lives in a CALLEE,
+   below the callee's own site, the verb runs that check itself: the five
+   `get_*` scalars call `check_path_vector()` on `file` and `resolve_probe()`'s
+   infile branch runs `probe_all_impl()`'s three checks, both above the re-call.
+   That is the second thing M094's review measured false — nine exports where an
+   invalid limit displaced the caller's own argument error, F1's class at verbs
+   the first return never touched — and it is why the check is a shared function
+   rather than a copy per verb.
+2. **Above the `run` gate,** so a `run = FALSE` compile is refused too.
+3. **Not sited on a path that reads no limit.** Two such paths exist and
+   neither refuses: a caller-set override that answers without reading the
+   limit, and a `probe_*()` shortcut handed a `probe` object. Both are stated
+   under **The carve-outs** below, and `R/timeout.R` states this property in the
+   same two-path form.
+
+Property 1 first read "last among the front door's guards", and M094's review
+measured that false: four verbs (`crop_video`, `format_for_web`,
+`standardize_video`, `anonymize_video`) deliberately keep no front-door guard for
+`video_codec` / `pixel_format` / `regions`, so a call sited above `ffm_finish()`
+reported the limit where the argument error used to be. Ordering it against
+*every* machine-independent check rather than against the front door alone is
+D036's rule reaching this seam, and it is what makes the property true as
+stated.
+
+**The one probe that runs while a command is BUILT.** `hardware = "nvenc"` asks
+this FFmpeg build what encoders it has, from inside `resolve_hw_encoder()` while
+the pipeline is assembled and from `check_nvenc_available()` at the nine
+fan-out front doors. That probe therefore reads the limit before any verb-level
+site could, and reading it through the exported `has_nvenc()` refused every such
+call in `has_nvenc()`'s name. `nvenc_available()` is that body with `call`
+threaded — D042's carve-out shape, and it builds no reached-limit condition, so
+D049's blame is untouched. `has_nvenc()` is now a one-line wrapper naming its own
+frame.
+
+Threading `call` was available at the two internal readers `mediainfo_read()`
+and `probe_one()`, and D042's carve-out allows it there. It was rejected because
+those two also build the reached-limit condition, so the same plumbing would
+have moved D049's blame — which M094 put out of scope. Where an internal helper
+already threads `call` and does NOT build that condition — `probe_all_impl()`
+and `resolve_probe()`'s infile branch — it carries the re-call on its callers'
+behalf, which is this same rule reaching six exports through two sites.
+
+**Why the `run = FALSE` half leaves D024 untouched.** D024's `run = FALSE`
+promise is that the call runs no binary, and this refusal runs none: it reads an
+option and aborts. D024's four exclusions are about probes — a binary whose
+outcome does more than signal a diagnostic — and an option read is not a probe.
+The compiled command is identical under every outcome, and `ffm_compile()` and
+the builders it walks are not touched. What does change is that a dry-run
+compile now refuses a limit that run would never have read. That was chosen, not
+incurred: `ffm_batch()` has refused on the `run = FALSE` path since D047, and
+the scalar/batch split was itself the defect being closed.
+
+**The carve-outs.** Two calls read no limit, and neither refuses. The second is
+a `probe_*()` shortcut handed a `probe` object rather than an `infile`:
+`resolve_probe()` reprobes nothing on that branch, so it reads no limit and has
+nothing to refuse — which is why the re-call sits inside the infile branch and
+not above it. M094's first round wrote "the one carve-out" and named only the
+first below; the review measured the second and the count was wrong in the code
+comments, the help page and `NEWS.md` alike.
+
+`has_nvenc()` reads `tidymedia.nvenc_encoders` above
+D044's memo, so a call answered by that override asks FFmpeg nothing and reads
+no limit. The re-call therefore sits inside the fall-through branch, and a call
+answered by the override refuses nothing. Siting it higher would abort a call
+the caller has already answered from their own option, which the third property
+above forbids.
+
+The carve-out is the OVERRIDE, not the memo. Inside the fall-through the call
+sits above `cached_encoder_names()`, so a warm session memo still refuses. The
+alternative — refusing only when the probe actually spawns — was rejected at
+M094's return gate because it makes the answer depend on session history: the
+first `has_nvenc()` of a session would refuse and the second would not, for the
+same call and the same option. An error whose identity depends on what the
+session happened to do earlier is the same failure mode D036 removed for the
+machine.
+
+- **Falsified by** a report of a dry-run compile refused on a limit the run
+  would never have read; by a reader whose refusal wording must diverge between
+  the verb and the internal helper below it — which would break the
+  one-site-one-wording premise D042's shape rests on; or by a verb whose pipeline
+  builder probes before it validates, which would leave property 1 with nowhere
+  to put the call.

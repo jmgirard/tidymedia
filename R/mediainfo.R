@@ -65,14 +65,16 @@ mediainfo <- function(command) {
 #' mediainfo_parameter(video, section = "Video", parameter = "Width")
 #' @export
 mediainfo_parameter <- function(file, section, parameter, typed = TRUE) {
-  if (!rlang::is_character(file) || length(file) == 0) {
-    cli::cli_abort(
-      "{.arg file} must be a character vector of one or more file paths."
-    )
-  }
+  check_path_vector(file)
   rlang::check_string(section)
   rlang::check_string(parameter)
   rlang::check_bool(typed)
+  # D074, at the front door rather than left to the loop below: that loop `next`s
+  # past an unreadable file without reaching run_program() at all, so a call
+  # naming only missing files used to accept an invalid limit in silence -- and
+  # run_program() refuses a missing MediaInfo binary before it resolves the
+  # limit, which made the refusal the PATH's on a machine without one (D036).
+  resolve_timeout()
 
   inform <- paste0("--Inform=", section, ";%", parameter, "%")
   loc <- NULL
@@ -140,11 +142,7 @@ mediainfo_parameter <- function(file, section, parameter, typed = TRUE) {
 #' @export
 mediainfo_query <- function(file, section, parameters, names = parameters,
                             typed = TRUE) {
-  if (!rlang::is_character(file) || length(file) == 0) {
-    cli::cli_abort(
-      "{.arg file} must be a character vector of one or more file paths."
-    )
-  }
+  check_path_vector(file)
   rlang::check_string(section)
   if (!rlang::is_character(parameters) || length(parameters) == 0) {
     cli::cli_abort(
@@ -167,6 +165,8 @@ mediainfo_query <- function(file, section, parameters, names = parameters,
     "--Inform=", section, ";", paste(names, collapse = ", "), "\\n",
     paste(paste0("%", parameters, "%"), collapse = ", ")
   )
+  # D074: the verb the caller typed names a bad limit, not the reader below.
+  resolve_timeout()
   out <- mediainfo_read(file, inform)
   if (typed) type_columns(out) else out
 }
@@ -210,11 +210,7 @@ mediainfo_template <- function(file,
                                templatefile = NULL,
                                typed = TRUE) {
   template <- rlang::arg_match(template)
-  if (!rlang::is_character(file) || length(file) == 0) {
-    cli::cli_abort(
-      "{.arg file} must be a character vector of one or more file paths."
-    )
-  }
+  check_path_vector(file)
   if (!is.null(templatefile)) check_file_exists(templatefile)
   if ((template == "custom") != !is.null(templatefile)) {
     cli::cli_abort(c(
@@ -232,6 +228,8 @@ mediainfo_template <- function(file,
     )
   }
   inform <- paste0("--Inform=file://", templatefile)
+  # D074: the verb the caller typed names a bad limit, not the reader below.
+  resolve_timeout()
   out <- mediainfo_read(file, inform)
   if (typed) type_columns(out) else out
 }
@@ -345,6 +343,13 @@ get_duration <- function(file,
 
   section <- rlang::arg_match(section)
   unit <- rlang::arg_match(unit)
+  # D074, both lines: `file` is checked HERE and not left to
+  # mediainfo_parameter() below, because a check the caller's own call fails has
+  # to report before the limit refusal does -- delegating it put the refusal
+  # first whenever the limit was invalid (M94 review G1). Then the refusal, so
+  # the verb the caller typed names a bad limit, not the reader.
+  check_path_vector(file)
+  resolve_timeout()
   duration <- mediainfo_parameter(
     file = file,
     section = section,
@@ -377,6 +382,13 @@ get_duration <- function(file,
 #' get_frame_rate(video)
 #' @export
 get_frame_rate <- function(file) {
+  # D074, both lines: `file` is checked HERE and not left to
+  # mediainfo_parameter() below, because a check the caller's own call fails has
+  # to report before the limit refusal does -- delegating it put the refusal
+  # first whenever the limit was invalid (M94 review G1). Then the refusal, so
+  # the verb the caller typed names a bad limit, not the reader.
+  check_path_vector(file)
+  resolve_timeout()
   mediainfo_parameter(file = file, section = "Video", parameter = "FrameRate")
 }
 
@@ -402,6 +414,13 @@ get_frame_rate <- function(file) {
 #' get_width(video)
 #' @export
 get_width <- function(file) {
+  # D074, both lines: `file` is checked HERE and not left to
+  # mediainfo_parameter() below, because a check the caller's own call fails has
+  # to report before the limit refusal does -- delegating it put the refusal
+  # first whenever the limit was invalid (M94 review G1). Then the refusal, so
+  # the verb the caller typed names a bad limit, not the reader.
+  check_path_vector(file)
+  resolve_timeout()
   mediainfo_parameter(file = file, section = "Video", parameter = "Width")
 }
 
@@ -427,6 +446,13 @@ get_width <- function(file) {
 #' get_height(video)
 #' @export
 get_height <- function(file) {
+  # D074, both lines: `file` is checked HERE and not left to
+  # mediainfo_parameter() below, because a check the caller's own call fails has
+  # to report before the limit refusal does -- delegating it put the refusal
+  # first whenever the limit was invalid (M94 review G1). Then the refusal, so
+  # the verb the caller typed names a bad limit, not the reader.
+  check_path_vector(file)
+  resolve_timeout()
   mediainfo_parameter(file = file, section = "Video", parameter = "Height")
 }
 
@@ -452,5 +478,12 @@ get_height <- function(file) {
 #' get_sample_rate(video)
 #' @export
 get_sample_rate <- function(file) {
+  # D074, both lines: `file` is checked HERE and not left to
+  # mediainfo_parameter() below, because a check the caller's own call fails has
+  # to report before the limit refusal does -- delegating it put the refusal
+  # first whenever the limit was invalid (M94 review G1). Then the refusal, so
+  # the verb the caller typed names a bad limit, not the reader.
+  check_path_vector(file)
+  resolve_timeout()
   mediainfo_parameter(file = file, section = "Audio", parameter = "SamplingRate")
 }

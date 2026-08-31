@@ -99,6 +99,24 @@ what you want for a legitimate multi-hour encode. Fractional values are
 refused rather than rounded, because the underlying limit is whole seconds
 and a value below one second would otherwise be read as no limit at all.
 
+A refused value is refused by the function you called. Set the option to
+\code{0.5} and \code{extract_audio()} says so as \code{extract_audio()}, not as the builder
+underneath it. It says so on a \code{run = FALSE} call as well as a run, so a dry
+run does not hand you a command compiled under a limit it could never have
+used. An argument your call got wrong is reported first wherever the verb
+itself can see it is wrong: the limit is checked after the verb's own guards
+and after the command has been assembled, so a bad \code{regions}, \code{pixel_format}
+or \code{video_codec} reports as itself whether or not a limit is set. Where the
+check runs somewhere the verb reaches only later, the limit is reported
+instead — asking your FFmpeg build what hardware encoders it has happens
+before the command is assembled, so a \code{hardware = "nvenc"} call with a bad
+\code{video_codec} reports the limit; so does a value only the per-row fan-out
+validates, such as \code{\link[=segment_video]{segment_video()}}'s \code{outfiles} or a \verb{_batch} job table's
+\code{output} column. Two calls read no limit and so refuse nothing: \code{\link[=has_nvenc]{has_nvenc()}}
+answering from a \code{tidymedia.nvenc_encoders} you set, which asks FFmpeg
+nothing, and a \verb{probe_*()} shortcut handed a \code{probe} object instead of an
+\code{infile}, which reprobes nothing.
+
 The limit applies per spawned program, not per batch: a 100-row batch with a
 600-second limit waits at most 600 seconds — plus the lag described below —
 on each row. tidymedia's own

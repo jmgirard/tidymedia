@@ -74,10 +74,14 @@ extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL,
     cli::cli_abort("Provide exactly one of {.arg timestamp} or {.arg frame}.")
   }
 
+  # D074, ABOVE the frame->timestamp conversion rather than below the pipeline
+  # like its siblings: get_frame_rate() runs FFprobe, and it has a front door of
+  # its own now, so `frame = ` used to be refused in ITS name (M094 review F4).
+  # The rule is the same one -- as late as the verb allows, but never after a
+  # probe (D036).
+  resolve_timeout()
   if (rlang::is_null(timestamp)) timestamp <- frame / get_frame_rate(infile)
 
-  # D042: the verb the caller typed names a bad limit, not the builder below.
-  resolve_timeout()
   ffm_finish(frame_pipeline(infile, outfile, timestamp), run)
 }
 
@@ -151,9 +155,12 @@ sample_frames <- function(infile, outdir, fps = NULL, interval = NULL,
   outdir <- ensure_dir(outdir)
 
   pattern <- derive_frame_pattern(infile, outdir, prefix, format)
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  p <- sample_frames_pipeline(infile, pattern, fps)
+  # D074: the verb the caller typed names a bad limit, not the builder below.
+  # Below the pipeline, so the builder's own argument checks keep reporting
+  # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(sample_frames_pipeline(infile, pattern, fps), run)
+  ffm_finish(p, run)
 }
 
 
@@ -568,12 +575,12 @@ extract_audio <- function(infile, outfile, audio_codec = "copy",
     warn_dropped_audio(infile, count_audio_streams_all(infile))
   }
 
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  p <- extract_audio_pipeline(infile, outfile, audio_codec, audio_stream)
+  # D074: the verb the caller typed names a bad limit, not the builder below.
+  # Below the pipeline, so the builder's own argument checks keep reporting
+  # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(
-    extract_audio_pipeline(infile, outfile, audio_codec, audio_stream),
-    run
-  )
+  ffm_finish(p, run)
 }
 
 
@@ -1353,12 +1360,12 @@ convert_audio <- function(infile, outfile, audio_codec = NULL,
   # No `...` here, so a stale `format =` gets R's own `unused argument` error --
   # no guard needed (M37 lesson; the batch sibling, which has `...`, does need
   # one).
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  p <- convert_audio_pipeline(infile, outfile, audio_codec, audio_stream)
+  # D074: the verb the caller typed names a bad limit, not the builder below.
+  # Below the pipeline, so the builder's own argument checks keep reporting
+  # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(
-    convert_audio_pipeline(infile, outfile, audio_codec, audio_stream),
-    run
-  )
+  ffm_finish(p, run)
 }
 
 # crop_video() ------------------------------------------------------------
@@ -1480,14 +1487,14 @@ crop_video <- function(infile, outfile, width, height,
   # to this frame, so the blame is unchanged. The BATCH sibling keeps its own,
   # where it is load-bearing.
 
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  p <- crop_video_pipeline(infile, outfile, width, height, x, y,
+                      video_codec, audio_codec, hardware, fallback,
+                      audio_stream)
+  # D074: the verb the caller typed names a bad limit, not the builder below.
+  # Below the pipeline, so the builder's own argument checks keep reporting
+  # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(
-    crop_video_pipeline(infile, outfile, width, height, x, y,
-                        video_codec, audio_codec, hardware, fallback,
-                        audio_stream),
-    run
-  )
+  ffm_finish(p, run)
 }
 
 
@@ -1562,12 +1569,12 @@ format_for_web <- function(infile, outfile, hardware = c("none", "nvenc"),
   # unchanged and this verb gains no guard that reorders its complaints. The
   # BATCH sibling keeps its own, where it is load-bearing.
 
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  p <- format_for_web_pipeline(infile, outfile, hardware, fallback, audio_stream)
+  # D074: the verb the caller typed names a bad limit, not the builder below.
+  # Below the pipeline, so the builder's own argument checks keep reporting
+  # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(
-    format_for_web_pipeline(infile, outfile, hardware, fallback, audio_stream),
-    run
-  )
+  ffm_finish(p, run)
 }
 
 
@@ -1637,7 +1644,9 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
   rlang::check_string(outfile)
 
   p <- strip_metadata_pipeline(infile, outfile)
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  # D074: the verb the caller typed names a bad limit, not the builder below.
+  # Below the pipeline, so the builder's own argument checks keep reporting
+  # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
   ffm_finish(p, run)
 }
@@ -1769,14 +1778,14 @@ standardize_video <- function(infile, outfile,
   # (M42/M43: such a guard is unpinnable anyway). The BATCH sibling keeps its
   # own, where it is load-bearing (M47 review F8).
 
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  p <- standardize_pipeline(infile, outfile, width, height, fps, video_codec,
+                       audio_codec, pixel_format, hardware, fallback,
+                       audio_stream)
+  # D074: the verb the caller typed names a bad limit, not the builder below.
+  # Below the pipeline, so the builder's own argument checks keep reporting
+  # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(
-    standardize_pipeline(infile, outfile, width, height, fps, video_codec,
-                         audio_codec, pixel_format, hardware, fallback,
-                         audio_stream),
-    run
-  )
+  ffm_finish(p, run)
 }
 
 
@@ -1953,14 +1962,14 @@ anonymize_video <- function(infile, outfile, regions,
   # guard reported before `regions` -- the argument a caller is likeliest to
   # get wrong, and one they pass positionally (M47 review F8).
 
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  p <- anonymize_pipeline(infile, outfile, regions, color, video_codec,
+                     audio_codec, pixel_format, hardware, fallback,
+                     audio_stream)
+  # D074: the verb the caller typed names a bad limit, not the builder below.
+  # Below the pipeline, so the builder's own argument checks keep reporting
+  # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(
-    anonymize_pipeline(infile, outfile, regions, color, video_codec,
-                       audio_codec, pixel_format, hardware, fallback,
-                       audio_stream),
-    run
-  )
+  ffm_finish(p, run)
 }
 
 
@@ -2626,15 +2635,15 @@ normalize_audio <- function(infile, outfile,
     }
   }
 
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  p <- normalize_audio_pipeline(infile, outfile, target_loudness, true_peak,
+                           loudness_range, channels, sample_rate,
+                           audio_codec = audio_codec, measured = measured,
+                           audio_stream = audio_stream)
+  # D074: the verb the caller typed names a bad limit, not the builder below.
+  # Below the pipeline, so the builder's own argument checks keep reporting
+  # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(
-    normalize_audio_pipeline(infile, outfile, target_loudness, true_peak,
-                             loudness_range, channels, sample_rate,
-                             audio_codec = audio_codec, measured = measured,
-                             audio_stream = audio_stream),
-    run
-  )
+  ffm_finish(p, run)
 }
 
 # check_audio_codec_not_copy(): refuse audio_codec = "copy" on the loudness
@@ -2961,16 +2970,36 @@ nvenc_encoder <- function(codec = c("h264", "hevc", "av1")) {
 #' @rdname nvenc_encoder
 #' @export
 has_nvenc <- function(codec = c("h264", "hevc", "av1")) {
+  # `call` is this frame, so the refusal below names has_nvenc() when the caller
+  # typed it. Internal callers pass their own verb's frame instead.
+  nvenc_available(codec, call = rlang::current_env())
+}
+
+# nvenc_available(): has_nvenc()'s body with `call` threaded, so the probe can
+# be reached from inside a verb without that verb's caller being told about
+# has_nvenc().
+#
+# The split exists for D074's siting. This is the one capability probe that runs
+# while a command is being BUILT -- resolve_hw_encoder() consults it from inside
+# the pipeline, and the eight fan-out verbs consult it at their front doors
+# through check_nvenc_available() -- so it is where a `hardware = "nvenc"` call
+# first reads the limit. Left calling the exported has_nvenc(), every such call
+# was refused in has_nvenc()'s name, a function the caller never typed (M094
+# review F2). D042's carve-out covers the shape: an internal helper threads
+# `call`, and this one does not build the reached-limit condition, so D049's
+# blame is untouched.
+nvenc_available <- function(codec, call = rlang::caller_env()) {
   enc <- nvenc_encoder(codec)
   pool <- getOption("tidymedia.nvenc_encoders", default = NULL)
   # The option seam is read first on every call, so setting it mid-session takes
   # effect at once; only the fall-through consults the session memo (D044).
   if (is.null(pool)) {
-    # D042, INSIDE the fall-through: this is the only branch that can read the
-    # limit at all. A call answered by the override above asks FFmpeg nothing,
-    # so there is no bad limit to refuse and refusing one would abort a call
-    # that spawns nothing (M094's one carve-out).
-    resolve_timeout()
+    # D074, INSIDE the fall-through and ABOVE the memo. The override branch
+    # above asks FFmpeg nothing and reads no limit, which is the one carve-out.
+    # The memo is a different matter: siting the call below cached_encoder_names()
+    # would make the refusal depend on whether this session had already asked,
+    # so the first call refused and the second did not (M094 review F5).
+    resolve_timeout(call = call)
     pool <- cached_encoder_names()
   }
   enc %in% pool
@@ -3021,7 +3050,7 @@ resolve_hw_encoder <- function(video_codec, hardware = c("none", "nvenc"),
   } else {
     codec_family(video_codec, call = call)
   }
-  if (fallback && !has_nvenc(family)) {
+  if (fallback && !nvenc_available(family, call = call)) {
     cli::cli_inform(c(
       "!" = if (is.null(video_codec)) {
         # Falling back from the sentinel keeps the sentinel -- never a silently
@@ -3090,7 +3119,7 @@ check_nvenc_available <- function(video_codec, hardware = "none",
     }
   }, character(1)))
   for (family in families) {
-    if (!has_nvenc(family)) {
+    if (!nvenc_available(family, call = call)) {
       cli::cli_abort(
         c(
           "nvenc encoder {.val {nvenc_encoder(family)}} is not available.",
@@ -4931,6 +4960,12 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
     col_or <- function(nm, default) {
       if (nm %in% names(jobs)) jobs[[nm]] else rep(default, nrow(jobs))
     }
+    # D074, on the two-pass path: this branch `return()`s below, so the site at
+    # the bottom of the verb was never reached and Phase 1's analysis spawned
+    # under an invalid limit, blaming purrr::pmap() (M094 review F3). Here it
+    # sits after the shaping-knob checks above -- all machine-independent -- and
+    # immediately before the first spawn.
+    resolve_timeout()
     outputs <- run_loudnorm_analysis_batch(
       jobs$input,
       col_or("target_loudness", target_loudness),
@@ -6484,9 +6519,12 @@ concatenate_videos <- function(infiles, outfile, run = TRUE) {
   # missing input blames this verb rather than ffm_files() (M62).
   check_paths_readable(infiles, arg = "infiles", multiple = TRUE)
 
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  p <- concatenate_pipeline(infiles, outfile)
+  # D074: the verb the caller typed names a bad limit, not the builder below.
+  # Below the pipeline, so the builder's own argument checks keep reporting
+  # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(concatenate_pipeline(infiles, outfile), run)
+  ffm_finish(p, run)
 }
 
 
@@ -6636,7 +6674,9 @@ compare_videos <- function(infiles, outfile,
                                video_codec = video_codec,
                                audio_codec = audio_codec,
                                hardware = hardware, fallback = fallback)
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  # D074: the verb the caller typed names a bad limit, not the builder below.
+  # Below the pipeline, so the builder's own argument checks keep reporting
+  # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
   ffm_finish(p, run)
 }
@@ -6793,7 +6833,9 @@ picture_in_picture <- function(main, overlay, outfile,
     video_codec = video_codec, audio_codec = audio_codec,
     hardware = hardware, fallback = fallback
   )
-  # D042: the verb the caller typed names a bad limit, not the builder below.
+  # D074: the verb the caller typed names a bad limit, not the builder below.
+  # Below the pipeline, so the builder's own argument checks keep reporting
+  # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
   ffm_finish(p, run)
 }

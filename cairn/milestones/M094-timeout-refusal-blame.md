@@ -99,7 +99,7 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
       per D042; it fires at `run = FALSE` too, and why that is not a D024 breach;
       the `has_nvenc()` carve-out.
 - [x] T7. `NEWS.md`, `devtools::document()`, `devtools::test()`, `devtools::check()`.
-- [ ] T8. Re-site the calls per the amended siting rule: after every check that
+- [x] T8. Re-site the calls per the amended siting rule: after every check that
       decides identically on every machine (front-door guards AND the pipeline
       builder's argument validation), immediately before the first probe or
       spawn on each path, above the `run` gate. Closes F1 (four verbs whose
@@ -195,6 +195,23 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
   now names itself where it raised nothing before, because its loop `next`s past
   a missing file without reaching `run_program()`. Full suite: 10,675 pass, 70
   failures, all of them T10's variant cells, which T8 owns.
+- 2026-08-30: T8 re-sited per the amended rule. Ten scalar verbs moved their
+  call BELOW pipeline construction (`p <- <verb>_pipeline(...)`, then the call,
+  then `ffm_finish(p, run)`), so the builder's argument checks report first
+  again: measured at all four verbs F1 named, a bad `regions` / `pixel_format` /
+  `video_codec` now gives the same error under an unset limit and under `0.5`,
+  and a clean call under `0.5` names the verb. Three verbs already built `p`
+  first and only gained the comment. `nvenc_available()` was split out of
+  `has_nvenc()` with `call` threaded, so the one probe that runs while a command
+  is BUILT — reached from `resolve_hw_encoder()` inside the pipeline and from
+  `check_nvenc_available()` at eight fan-out front doors — refuses in the verb's
+  name instead of `has_nvenc`'s (F2); the site stays above D044's memo, so the
+  refusal does not depend on whether this session already asked (F5).
+  `extract_frame` takes its call above the `frame / get_frame_rate()` conversion,
+  the one place a probe precedes the pipeline (F4), and
+  `normalize_audio_batch`'s two-pass branch takes its own call before Phase 1's
+  analysis, having `return()`ed above the verb's only site (F3). All 19 variant
+  cells now blame the verb the caller typed; full suite 0 failures, 10,745 pass.
 
 ## Decisions
 

@@ -81,23 +81,20 @@ rejected; superseding it is its own milestone.
 
 ## Tasks
 
-- [x] T1. Capture two master baselines into `tests/testthat/helper-timeout-sweep.R`
-      as recorded tables, so AC1/AC5/AC6 have a referent the repo does not hold
-      today: per-member blame under each AC2 form, and per-member abort-vs-warn
-      under a reached limit (the grid at `test-timeout-silence.R:342` records
-      only the disjunction).
+- [x] T1. Capture two master baselines into
+      `tests/testthat/helper-timeout-sweep.R` as recorded tables, so AC1/AC5/AC6
+      have a referent the repo does not hold today: per-member blame under each
+      AC2 form, and per-member abort-vs-warn under a reached limit.
 - [x] T2. Write the failing sweep over `tm_timeout_domain()` × AC2's forms for
       AC1, including the `has_nvenc()` carve-out and AC3's `run = FALSE` /
       `parallel = TRUE` cells. Expect red at 47 of 53.
 - [x] T3. Site the re-call per D042 at the Layer-2 callers of the two exported
-      builders: the 15 verbs blaming `ffm_run(object)` and the 17 blaming
-      `ffm_batch(...)` (`R/ffmpeg.R`), above each verb's `run` gate so AC3 holds.
-- [x] T4. Site the remaining four classes: the 4 blaming `ffmpeg(...)`
-      (`ffmpeg_codecs`, `ffmpeg_encoders`, `has_nvenc` — below D044's memo), the
-      6 `get_*` blaming `mediainfo_parameter(...)`, the 3 `mediainfo_*` blaming
-      `mediainfo_read(file, inform)`, and the 6 `probe_*`/`verify_media` blaming
-      `purrr::map(infile, probe_one)`. The last two classes may instead thread
-      `call` through the internal helper, which D042's carve-out allows.
+      builders — the 15 verbs blaming `ffm_run(object)` and the 17 blaming
+      `ffm_batch(...)` — above each verb's `run` gate, so AC3 holds.
+- [x] T4. Site the remaining four classes: the 4 blaming `ffmpeg(...)`, the 6
+      `get_*`, the 3 `mediainfo_*`, and the 6 `probe_*`/`verify_media` blaming
+      `purrr::map(infile, probe_one)` — the last two may instead thread `call`
+      through the internal helper, which D042's carve-out allows.
 - [x] T5. Assert AC4 (one wording, pinned `cli.width`, the `purrr` wrapper gone)
       and AC5 (valid/unset path and spawn counts unchanged against T1).
 - [x] T6. Append the D-entry: the refusal is sited at the verb the caller typed

@@ -2825,6 +2825,13 @@ normalize_audio_pipeline <- function(input, output,
 #' ffmpeg_codecs(sort_by_type = FALSE)
 #' @export
 ffmpeg_codecs <- function(sort_by_type = TRUE) {
+
+  # The check `ffmpeg_encoders()` has had all along. Without it this verb alone
+  # of the pair ran FFmpeg, parsed its output, and only then failed on the `if`
+  # in the sort branch below -- so a call it should have refused outright cost a
+  # process, and the message came from `if` rather than from the verb (M96 AC3).
+  rlang::check_bool(sort_by_type)
+
   # D074: the verb the caller typed names a bad limit, not the hatch below.
   resolve_timeout()
   output <- ffmpeg("-codecs")
@@ -3571,6 +3578,25 @@ segment_video <- function(infile,
   }
   if (!is.null(outfiles) && length(outfiles) != length(start)) {
     cli::cli_abort("{.arg outfiles} must have the same length as {.arg start}.")
+  }
+  # Each element must be what `ffm_files()` will be handed for that segment: a
+  # single string. Written per ELEMENT rather than as a check on `outfiles` as a
+  # whole because the fan-out receives one cell of the jobs table at a time, so
+  # `list("a.mp4")` is a call this verb compiles today and a whole-object
+  # `is_character()` test would refuse it (M96 AC4).
+  #
+  # Without this the refusal came from `ffm_files()` inside
+  # `ffm_batch()` -> `purrr::pmap()`, so a caller who mistyped an output name
+  # read "Error in `purrr::pmap(jobs, .f, ...)` / In index: 1" -- a dependency's
+  # name and an internal row number in place of the verb they called, the M41
+  # shape every other argument on this verb already avoids (M48 review F1).
+  #
+  # Sited here, below the length check so a miscounted call still reads about
+  # its count, and above `check_nvenc_available()` below so a build without
+  # nvenc cannot decide whether a wrong `outfiles` is reported as a wrong
+  # `outfiles` or as a missing encoder (D075).
+  for (i in seq_along(outfiles)) {
+    rlang::check_string(outfiles[[i]], arg = "outfiles")
   }
   rlang::check_bool(reencode)
   check_token(video_codec, allow_null = TRUE)

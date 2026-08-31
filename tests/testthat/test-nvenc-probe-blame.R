@@ -107,3 +107,33 @@ test_that("asking for nvenc changes nothing a caller is told about an argument",
                                                          collapse = ", ")))
   }
 })
+
+test_that("an invalid session limit does not displace the argument error either", {
+  # AC3, the class D074 disclosed as unfixed and M094's review measured. With a
+  # `tidymedia.timeout` the option cannot use, `nvenc_available()` refuses the
+  # limit -- and it did so before the argument checks the resolution sat above,
+  # so a bad `pixel_format` came back as a bad limit. Sinking the resolution
+  # fixes both displacements at once, which is why this leg reuses AC1's cells
+  # rather than a set of its own.
+  #
+  # The pool is mocked PRESENT deliberately. Absent, the availability abort
+  # would be a second reason the cell could fail and the leg would no longer be
+  # about the limit; present is also the only state in which the
+  # nvenc-available branch executes at all (the M094 lesson).
+  #
+  # Measured on the merge-base b538e63: 27 mismatching cells under every one of
+  # the five invalid forms, the same 27 AC1 records.
+  dir <- withr::local_tempdir()
+  cells <- tm_nvenc_wrong_arg_cells(dir)
+  pool <- tm_nvenc_encoder_pools()$present
+
+  forms <- tm_timeout_bad_forms()
+  expect_gt(length(forms), 0)
+  for (nm in names(forms)) {
+    sweep <- tm_nvenc_sweep(cells, pool, limit = forms[[nm]])
+    expect_gt(sum(sweep$kept), 0)
+    bad <- sweep[sweep$kept & !sweep$match, ]
+    expect_equal(nrow(bad), 0L,
+                 info = paste(nm, paste(bad$cell, collapse = ", ")))
+  }
+})

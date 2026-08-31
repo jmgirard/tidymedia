@@ -978,10 +978,16 @@ tm_nvenc_condition <- function(name, args) {
 # than once outside, so the pair being compared differs in `hardware` and in
 # nothing else.
 #
+# `limit` is AC3's axis: a `tidymedia.timeout` value the option refuses, set for
+# the `hardware = "nvenc"` arm ONLY. The reference arm stays unlimited on
+# purpose -- the question is whether a session limit changes what a caller is
+# told about their argument, so the thing it is compared against must be the
+# answer with no limit at all. `NULL` means no limit is set on either arm.
+#
 # Returns one row per cell: the reference condition, the nvenc condition,
 # whether the reference was refused BY THE MEMBER ITSELF (`kept`), and the frame
 # that refused it when it was not.
-tm_nvenc_sweep <- function(cells, encoders) {
+tm_nvenc_sweep <- function(cells, encoders, limit = NULL) {
   testthat::local_reproducible_output()
   withr::local_options(tidymedia.nvenc_encoders = NULL)
   # Every spawn is intercepted too, at the two wrappers `tm_force_timeout()` uses
@@ -1011,7 +1017,14 @@ tm_nvenc_sweep <- function(cells, encoders) {
     nvenc_args <- spec$args
     nvenc_args$hardware <- "nvenc"
     ref <- tm_nvenc_condition(spec$name, none_args)
-    got <- tm_nvenc_condition(spec$name, nvenc_args)
+    got <- if (is.null(limit)) {
+      tm_nvenc_condition(spec$name, nvenc_args)
+    } else {
+      withr::with_options(
+        list(tidymedia.timeout = limit),
+        tm_nvenc_condition(spec$name, nvenc_args)
+      )
+    }
     head <- sub(" \\|\\| .*$", "", ref)
     tibble::tibble(
       cell = key, member = spec$name, arg = spec$arg, form = spec$form,

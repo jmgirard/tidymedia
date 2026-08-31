@@ -543,3 +543,75 @@ changed, so `cairn_impact.py` was skipped. `r-package` profile slot:
 entry with no milestone numbers; `README.md`/`README.Rmd` untouched; the one new
 top-level file is under `data-raw/`, already in `.Rbuildignore`;
 `devtools::check()` clean.
+
+#### Independent review
+
+Three fresh-context lenses, distinct evidence bases. The blame-history lens
+returned no findings: it re-verified each round-1 fix against the current source
+and found no contradiction with D024, D036, D042 or D044. The prior-review lens
+found no regression of any past finding — the GitHub inline-comment probe
+returned `[]`, so the archived `## Review` sections were the surface, and it
+cleared M64/M65's blame rule, M78's wording rule and D043's ordering by name.
+The diff-bug lens returned eight findings. Every one below was re-measured
+against the implementation at review before being recorded.
+
+##### Findings, ranked (each re-measured at review; disposition at the gate)
+
+- **G1. Nine exported verbs now report the limit where the caller's own argument
+  error used to fire — round-1 F1's class, at verbs the return gate never
+  touched.** The five `get_*` scalars (`R/mediainfo.R:359, 393, 420, 447, 474`)
+  place `resolve_timeout()` above the `file` validation, which lives inside
+  `mediainfo_parameter()`; `resolve_probe()`'s infile branch (`R/ffprobe.R:452`)
+  places it above the `infile` validation, which lives inside
+  `probe_all_impl()`, covering `probe_video`, `probe_container`, `probe_streams`
+  and `probe_audio`. Measured: with the option unset, `get_width(123)` reports
+  ``` `file` must be a character vector of one or more file paths.``` from
+  `mediainfo_parameter`; under `tidymedia.timeout = 0.5` the same call reports
+  ``` `tidymedia.timeout` must be a whole number, not the number 0.5.``` from
+  `get_width`. Same substitution at all five `get_*` and at
+  `probe_video(infile = 123)`, whose unset form names `probe_all`. `probe_all()`
+  itself is correct — `probe_all_impl()` resolves below its own validation. This
+  falsifies D074's amended property 1 ("every refusal that fired before it still
+  fires first"), the `NEWS.md` sentence "An argument your call got wrong is still
+  reported first", and `R/tidymedia-package.R:93-95`. No acceptance criterion
+  fails: every `tm_timeout_call_specs()` and `tm_timeout_variant_specs()` cell
+  carries VALID arguments, so no sweep leg can see a masked argument error —
+  which is the instrument gap that let F1's class recur.
+- **G2. The docs' "one exception" is still false in a second way: the four
+  `probe = ` shortcuts read no limit and refuse nothing.** Measured under
+  `tidymedia.timeout = 0.5`: `probe_video(probe = info)`,
+  `probe_container(probe = info)`, `probe_streams(probe = info)` and
+  `probe_audio(probe = info)` all return normally. That is correct behaviour by
+  `resolve_probe()`'s own comment — a `probe =` call reprobes nothing — but
+  `R/tidymedia-package.R:95-97`, the `NEWS.md` entry and D074's "The one
+  carve-out" all say `has_nvenc()` under a set `tidymedia.nvenc_encoders` is the
+  only call that refuses nothing.
+- **G3. AC3's two sweeps still use the head-only comparator F9 replaced.**
+  `test-timeout-refusal-blame.R:86` (`run = FALSE`) and `:116`
+  (`parallel = TRUE`) call `tm_blame_head()` where the AC1 and variant sweeps
+  call `tm_refusal_head()`, so any error raised from the member's own frame
+  passes those two legs. The reviewer measured it: a planted unrelated abort in
+  `strip_metadata()` on the `run = FALSE` path leaves the whole file green.
+- **G4. AC6 has no committed test and its recorded referent is dead code.**
+  `tm_timeout_reached_master()` (`helper-timeout-sweep.R:488`) is documented as
+  AC6's per-member abort/warn table; nothing in `tests/`, `data-raw/` or `R/`
+  calls it. AC6 held when measured at review (0 mismatches, above), but nothing
+  in the repo guards it.
+- **G5. `tm_provenance_ok()` checks the attribute, not the blob.**
+  `helper-timeout-sweep.R:733` verifies four field names, the `ae5ff1c`
+  substring and the generator path; the three `expect_false` cases all tamper
+  with the attribute. A hand-edited `.rds` that keeps the attribute passes, and
+  the fixture's coupling to `tm_spawn_trace()`'s digest format — round-1 F10's
+  second half — is still unguarded.
+- **G6. The same decision is cited two ways at the new sites.** 28 added comment
+  lines cite `D042` and 18 cite `D074`; D074 is the entry that states the siting
+  rule, so a reader following a `D042` comment lands on the rule's premise.
+- **G7. `nvenc_available()`'s `call` default is never exercised.**
+  `R/ffmpeg.R:3000` defaults `call = rlang::caller_env()` and all three call
+  sites pass `call` explicitly, so a future site that forgets gets internal
+  blame silently rather than an error.
+- **G8. `data-raw/timeout-valid-baseline.R` is unexercised and mutates the
+  shared clone.** It runs `git worktree add` / `worktree remove --force` against
+  the package root (`:41-51`); nothing runs it in CI or tests, so "regenerate
+  with this script" is an untested claim, and running it beside another agent or
+  worktree on the same clone is not safe.

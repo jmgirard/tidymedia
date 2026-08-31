@@ -25,7 +25,7 @@ Surface tier: **user-facing** — the condition two exported verbs raise changes
 - [x] AC2 `segment_video()` refuses, from its own frame and above `check_nvenc_available()` (`R/ffmpeg.R:3605`) — and so above its `resolve_timeout()` call (`R/ffmpeg.R:3619`) and `ffm_batch()` — each of the seven `outfiles` probes named here, the seven the fan-out's `ffm_files()` refuses today: with `start` of length 1, the number (`123`), the `NA`, and the list (`list(1)`) forms of the five wrong forms above; and with `start` of length 2, `c("a.mp4", NA)`, `c(NA, "b.mp4")`, `c(1, 2)`, and `list(1, 2)`. The length-2 form of the five at `start` of length 1 stays refused by the existing length check (`R/ffmpeg.R:3572`). `segment_video()`'s `outfiles` thereby leaves D074's per-row fan-out class; that class's remaining member, `ffm_batch()`'s `output` column, stays disclosed. Two `outfiles` values the fan-out compiles today stay compiled: the token form (`"bad fmt!"`, a legal filename) and `list("a.mp4")`. Evidence: per probe, the whole condition — blamed frame and message — names `segment_video` and contains neither `pmap` nor `In index:`; and the two compiled values' commands, byte-identical to the same calls at the merge base.
 - [x] AC3 `ffmpeg_codecs(sort_by_type =)` gives, for each of the five wrong forms above, the message `ffmpeg_encoders()` gives for that same form, and spawns nothing on any of them. Evidence: a test comparing the two messages string-for-string per form and pinning the spawn count at 0.
 - [x] AC4 The change refuses no call either verb compiled before: over `segment_video()`'s valid-argument cell × `outfiles` ∈ {`NULL`, a supplied character vector} and `ffmpeg_codecs()` × `sort_by_type` ∈ {`TRUE`, `FALSE`}, every cell succeeding at the merge-base succeeds at HEAD with a byte-identical compiled command (`segment_video(run = FALSE)`) or an identical return value (`ffmpeg_codecs()`). Evidence: the recorded merge-base table and 0 differences.
-- [ ] AC5 `cairn/PROFILE.md`'s verify slot clean: `devtools::test()` green and `devtools::check()` 0 errors / 0 warnings.
+- [x] AC5 `cairn/PROFILE.md`'s verify slot clean: `devtools::test()` green and `devtools::check()` 0 errors / 0 warnings.
 
 ## Coverage
 
@@ -102,7 +102,11 @@ base `4063faa`. Driving RR: none, so the projection-vs-outcome pairing no-ops.
   `ffmpeg_codecs(TRUE)` / `ffmpeg_codecs(FALSE)` are `identical()` to the
   merge-base objects (539 rows each). `tm_outfiles_commands()` also matches
   `tm_outfiles_baseline()` at all four cells.
-- **AC5 — see below.**
+- **AC5 — verified.** On the fixed tree: `devtools::test()`
+  **FAIL 0 | WARN 12 | SKIP 5 | PASS 11198**, and `devtools::check()`
+  **Status: OK** — 0 errors, 0 warnings, 0 notes, 8m 16s. (The 12 warnings and 5
+  skips are the suite's standing ffmpeg-availability and interrupt noise, not
+  check conditions.)
 
 ### Consistency gate
 
@@ -179,3 +183,4 @@ of the fix-now items was a plan defect, so the milestone did not return to
 `in-progress`. All fix-now work is committed on the branch and pushed before
 the approval marker.
 - 2026-08-31: Review section written; AC1-AC4 ticked against fresh evidence, AC5's `devtools::check()` half still running.
+- 2026-08-31: AC5 re-measured on the fixed tree - `devtools::test()` 11198 passing / 0 failing, `devtools::check()` Status: OK. All five criteria verified; merge approval pending.

@@ -912,10 +912,14 @@ tm_timeout_corrupt_specs <- function(dir) {
 # runner with none. `character(0)` is a clean exit with no output, so such a
 # cell reads as "not refused", which is what it is.
 tm_corrupt_limit_sweep <- function(cells) {
-  # Before the working directory moves, never after: `tm_timeout_corrupt_specs()`
-  # reads the package to compute its own domain, and a promise forced inside the
-  # scratch directory below builds a smaller one (measured: 705 cells instead of
-  # 1530).
+  # Before the mocked bindings below, never after. `tm_timeout_corrupt_specs()`
+  # computes its own domain by reading each function's `body()` off the
+  # namespace and asking which of them reach a spawn primitive; once
+  # `run_program()` and `guard_timeout()` are mocked, no body names one, the
+  # domain halves, and the census silently runs over half of what it claims.
+  # Measured: 1530 cells forced here, 705 forced inside the mocks. The working
+  # directory is NOT what matters -- forcing from another directory with no
+  # mocks in force still yields 1530 (corrected M96 review F4).
   force(cells)
   testthat::local_reproducible_output()
   # The sweep runs from a scratch directory, and this is load-bearing rather
@@ -1008,6 +1012,18 @@ tm_corrupt_master_ref <- "4063faa"
 # visible. `:` is the sixth and the one that does not stay: `ffmpeg_codecs()`
 # reaching its own output parsing with an unchecked `sort_by_type`, which is
 # what AC3 closes.
+#
+# What that `:` entry does and does NOT prove (M96 review F8). Under this
+# sweep's mocks `ffmpeg("-codecs")` returns `character(0)`, so the parse below
+# it aborts at `1:integer(0)` for EVERY value -- measured at
+# `tm_corrupt_master_ref`: `TRUE`, `FALSE` and `123` all give "argument of
+# length 0". So the drop says only that no front door refused the cell; it is
+# form-independent and is NOT evidence that `sort_by_type` was unguarded. AC3's
+# defect is shown by the spawn-count and message-parity test in
+# test-unguarded-argument-front-doors.R, not by this entry. What the entry is
+# good for is the two-way difference: the cell is refused by `ffmpeg_codecs`
+# itself at HEAD and so leaves this list, which a guard sited BELOW
+# `resolve_timeout()` would not have achieved.
 #
 # A pair whose two entries name different frames (`segment_video/outfiles`,
 # `anonymize_video_batch/color`) is not an inconsistency: different wrong forms

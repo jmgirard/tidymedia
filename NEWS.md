@@ -566,10 +566,14 @@
 
 * `ffmpeg_codecs(sort_by_type = )` now refuses a value that is not `TRUE` or
   `FALSE`, with the message `ffmpeg_encoders()` has always given for it, and
-  without running FFmpeg first. It used to run the binary, parse the whole
-  codec list, and only then fail on the internal `if` that does the sorting —
-  so a call it could have refused outright cost a process, and the failure
-  named no argument.
+  without running FFmpeg first. What it did before depended on the value. A
+  string, `NA`, or more than one value ran the binary, parsed the whole codec
+  list, and only then failed on the internal `if` that does the sorting — so a
+  call it could have refused outright cost a process, and the failure named no
+  argument. A number, though, never failed at all: `if (123)` is `TRUE` in R,
+  so `ffmpeg_codecs(sort_by_type = 1)` returned the sorted table. **That call
+  is now an error**, matching what `ffmpeg_encoders()` has always done with it.
+  Pass `TRUE` or `FALSE`.
 
 * A `tidymedia.timeout` the underlying limit could not use — a fraction of a
   second, a negative number, `NA`, a string, more than one number — is now

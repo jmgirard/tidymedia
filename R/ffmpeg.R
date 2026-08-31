@@ -3487,7 +3487,10 @@ check_vocab_arg <- function(value, values, arg, call = rlang::caller_env()) {
 #' @param outfiles Either NULL or a character vector indicating the filename
 #'   (with extension) for each segment to create. If NULL, will append a
 #'   zero-padded integer to \code{infile}. If not NULL, must have the same
-#'   length as \code{start}.
+#'   length as \code{start}, and each element must be a single string -- so a
+#'   list of strings is accepted as well as a character vector, and a missing
+#'   value or a number in any position is refused by this function rather than
+#'   by the per-segment fan-out below it.
 #' @param reencode A logical passed to \code{\link{ffm_seek}}: cut each segment
 #'   frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
 #'   lossless copy that snaps to keyframes (\code{FALSE}). See \code{ffm_seek}
@@ -3595,8 +3598,19 @@ segment_video <- function(infile,
   # its count, and above `check_nvenc_available()` below so a build without
   # nvenc cannot decide whether a wrong `outfiles` is reported as a wrong
   # `outfiles` or as a missing encoder (D075).
+  #
+  # `arg` names the ELEMENT once there is more than one, because the message
+  # `rlang::check_string()` writes is "must be a single string" -- true of the
+  # element it was handed and false of `outfiles`, which the length check three
+  # lines up has just required to be as long as `start`. A caller who correctly
+  # passed forty output names and mistyped the thirty-first would otherwise be
+  # told `outfiles` must be a single string, with no way to tell which one is
+  # wrong (M96 review F2).
   for (i in seq_along(outfiles)) {
-    rlang::check_string(outfiles[[i]], arg = "outfiles")
+    rlang::check_string(
+      outfiles[[i]],
+      arg = if (length(outfiles) == 1L) "outfiles" else paste0("outfiles[[", i, "]]")
+    )
   }
   rlang::check_bool(reencode)
   check_token(video_codec, allow_null = TRUE)

@@ -35,7 +35,10 @@ length as \code{start}.}
 \item{outfiles}{Either NULL or a character vector indicating the filename
 (with extension) for each segment to create. If NULL, will append a
 zero-padded integer to \code{infile}. If not NULL, must have the same
-length as \code{start}.}
+length as \code{start}, and each element must be a single string -- so a
+list of strings is accepted as well as a character vector, and a missing
+value or a number in any position is refused by this function rather than
+by the per-segment fan-out below it.}
 
 \item{reencode}{A logical passed to \code{\link{ffm_seek}}: cut each segment
 frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,

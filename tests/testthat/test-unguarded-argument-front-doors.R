@@ -100,6 +100,17 @@ test_that("an invalid limit displaces no argument error, at every formal", {
   )
   expect_equal(setdiff(dropped, tm_corrupt_dropped_master()), character())
 
+  # The counts, pinned as M095's sibling sweep pins its own. The two `setdiff()`
+  # calls above compare UNIQUE member/argument/frame strings, which discards
+  # multiplicity: eleven pairs in the master census carry two frames each, so a
+  # cell that stopped being refused by its verb and started being refused below
+  # it -- landing on a string the list already holds -- would leave both
+  # differences empty and slip through. The totals cannot absorb that
+  # (M96 review F3).
+  expect_identical(nrow(res), 1530L)
+  expect_identical(sum(res$kept), 1093L)
+  expect_identical(sum(!res$kept), 437L)
+
   # `segment_video/outfiles -> <none>` survives in both, and correctly: it is
   # the token form, the legal filename `"bad fmt!"`, which the verb compiled
   # before this milestone and still compiles (AC4).
@@ -231,6 +242,12 @@ test_that("ffmpeg_codecs() refuses a wrong `sort_by_type` as its sibling does, s
     # only then failed on an `if`, so a call it should have refused outright
     # cost a process; `ffmpeg_encoders()` never did.
     expect_identical(spawns, 0L, info = form)
+    # AC3 is a claim about BLAME, so the frame is asserted and not only the
+    # wording: a guard moved into a shared helper that named itself would give
+    # a message identical to `ffmpeg_encoders()`'s and still be the defect
+    # D074/D075 exist for (M96 review F9).
+    expect_identical(blamed_verb(codecs), "ffmpeg_codecs", info = form)
+    expect_identical(blamed_verb(encoders), "ffmpeg_encoders", info = form)
   }
 })
 

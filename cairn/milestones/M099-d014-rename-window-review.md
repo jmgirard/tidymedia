@@ -45,18 +45,25 @@ exported surface, taken under D014's clean break with no `lifecycle` shim.
 ## Acceptance criteria
 
 - [ ] AC1 Each of the four candidates leaves the surface in one of exactly two
-      states, and a procedure says which. Candidates (a)-(c) rename or add a
-      **formal**: the sweep walks `getNamespaceExports("tidymedia")` and tests
-      `names(formals())` for a name `N`, enumerating the domain rather than
-      recalling it (at HEAD it returns 18 verbs for `audio_stream`, matching
-      D032's count). Candidate (d) renames **exported objects** and one
-      **option string**: the procedures are `getNamespaceExports("tidymedia")`
-      for `has_nvenc` / `nvenc_encoder`, and
-      `grep -rn "tidymedia.nvenc_encoders" R/ man/ tests/ vignettes/` for the
-      option, which at HEAD returns hits in three help topics including the
-      package landing page. **Shipped:** each procedure returns the new name and
-      the old name is absent — no `lifecycle` shim, per D014. **Unchanged:**
-      each returns exactly what it returns at the branch point.
+      states, and a procedure says which — each procedure scoped to the names
+      that candidate puts under test, never to a whole grep output or the whole
+      89-name export vector, which other candidates' work moves for unrelated
+      reasons. Candidates (a)-(c) rename or add a **formal**: the sweep walks
+      `getNamespaceExports("tidymedia")` and tests `names(formals())` for a name
+      `N`, enumerating the domain rather than recalling it (at HEAD it returns
+      18 verbs for `audio_stream`, matching D032's count). Candidate (d) renames
+      **exported objects** and one **option string**: the exported domain is
+      enumerated by pattern, not recalled —
+      `grep("nvenc|cuda|gpu|videotoolbox|qsv|vaapi|amf", getNamespaceExports("tidymedia"), ignore.case = TRUE)`,
+      which at HEAD returns exactly `has_nvenc` and `nvenc_encoder` — and the
+      option by `grep -rn "<pattern>" R/ man/ tests/ vignettes/ _pkgdown.yml`,
+      deliberately excluding `NEWS.md`, whose four hits are historical release
+      prose that must not be rewritten. **Shipped:** the NEW-name pattern
+      returns the read site and the docs, and the OLD-name pattern returns
+      nothing — two greps, since a pattern fixed to the old name can never
+      return the new one. No `lifecycle` shim, per D014. **Unchanged:** each
+      procedure returns for those names exactly what it returns at the branch
+      point.
 - [ ] AC2 Candidate (a) may also ship as a behavior change with no surface
       change — unifying the two `NULL` readings, which alters what
       `audio_stream = NULL` selects without touching any `formals()`. Where it
@@ -64,8 +71,9 @@ exported surface, taken under D014's clean break with no `lifecycle` shim.
       AC1 sweep returns for `audio_stream`, and D025 and D026 are superseded,
       since each states the split reading this would remove.
 - [ ] AC3 For every candidate that ships in any form, its documentation matches
-      the surface: `devtools::document()` produces no diff, `_pkgdown.yml` has a
-      row for any newly exported object, and the vignettes and `README.Rmd`
+      the surface: `devtools::document()` produces no diff, `_pkgdown.yml` gains
+      a row for any newly exported object AND loses the row for any name removed
+      — a rename is both, and a stale row fails `pkgdown::check_pkgdown()`, and the vignettes and `README.Rmd`
       compile against the shipped names.
 - [ ] AC4 `NEWS.md` names every change that shipped, in user-facing wording; a
       candidate that did not ship produces no entry.
@@ -94,7 +102,7 @@ exported surface, taken under D014's clean break with no `lifecycle` shim.
 
 ## Coverage
 
-- AC1 → T1, T2, T3, T4, T7
+- AC1 → T1, T2, T4, T7
 - AC2 → T4
 - AC3 → T5, T7
 - AC4 → T5
@@ -107,3 +115,5 @@ exported surface, taken under D014's clean break with no `lifecycle` shim.
 - 2026-08-31 plan: alternative rejected — superseding D014 with a `lifecycle` deprecation policy, which would keep renames available after 0.2.0. Declined at the question gate in favor of reviewing the three candidates while the clean break is still free. Falsified by a rename becoming necessary after 0.2.0 ships, which is exactly the cost this milestone exists to price.
 - 2026-08-31 plan: alternative rejected — leaving the three rows as candidates and letting the release close D014's window unexamined. Lost at the question gate; the maintainer chose to review them before any release.
 - 2026-08-31 plan amendment: candidate (d), backend-neutral naming for the hardware-encoder surface, added at the user's request after the status audit surfaced that `hardware=` has only ever accepted `"none"` and `"nvenc"` — measured at 16 exported verb signatures, ~118 nvenc-named internal call sites and 8 dedicated test files, with `has_nvenc()`/`nvenc_encoder()` exported and `tidymedia.nvenc_encoders` documented in three help topics. Alternative rejected: folding the videotoolbox implementation into this milestone, which would put it well past the >7 criteria / >10 task advisories and mix a decide milestone with a build one; it became M100, depending on this milestone's (d) call. Falsified by (d) proving unanswerable without first building a second backend, which would invert the dependency.
+- 2026-08-31 plan: criteria audit re-ran in FULL mode over the (d) amendment and M100 together, fresh-context [O] reader. On this file it returned four findings, all fixed here: AC1's shipped-state test for (d) named a grep pattern fixed to the OLD name, which by construction can never return the new one (now two greps — the same defect the log above records fixing for candidate (a), reintroduced in the amendment); the unchanged-state test compared whole grep output and the whole 89-name export vector, which candidate (c)'s own work moves via `helper-timeout-sweep.R` (now scoped to the names under test); (d)'s domain was a two-name hand-list where (a)-(c) enumerate (now a pattern grep over the export list, returning exactly `has_nvenc` and `nvenc_encoder` at HEAD); and AC3's pkgdown clause was addition-only, though a rename is a removal too and a stale row fails `check_pkgdown()`. Coverage AC1 no longer routes to T3, the record-writing task, which cannot satisfy a surface-bound criterion.
+- 2026-08-31 plan: (d)'s gate inherits one consequence from M100 — declining (d) leaves the exported availability helper shipping as `has_nvenc(codec, backend = )`, since M100 gives it a backend argument either way. Recorded here so the disposition is taken with that surface in view.

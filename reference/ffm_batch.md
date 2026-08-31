@@ -46,10 +46,10 @@ ffm_batch(
 
   A logical: map over jobs in parallel with furrr (`TRUE`) or
   sequentially (`FALSE`, default). Parallelism follows the
-  [`future`](https://rdrr.io/pkg/future/man/plan.html) plan the caller
-  has set; with `TRUE` but the default sequential plan, jobs still run
-  one at a time and a warning is issued. Set a plan first, e.g.
-  `future::plan(future::multisession)`.
+  [`future`](https://future.futureverse.org/reference/plan.html) plan
+  the caller has set; with `TRUE` but the default sequential plan, jobs
+  still run one at a time and a warning is issued. Set a plan first,
+  e.g. `future::plan(future::multisession)`.
 
 - verify:
 

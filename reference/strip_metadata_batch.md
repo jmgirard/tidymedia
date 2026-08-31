@@ -41,9 +41,9 @@ strip_metadata_batch(jobs, run = TRUE, parallel = FALSE, ...)
   [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
   scrub in parallel with furrr (`TRUE`) or sequentially (`FALSE`,
   default). Parallelism follows the active
-  [`future`](https://rdrr.io/pkg/future/man/plan.html) plan; `TRUE`
-  under the default sequential plan runs one input at a time and warns.
-  Set a plan first, e.g. `future::plan(future::multisession)`.
+  [`future`](https://future.futureverse.org/reference/plan.html) plan;
+  `TRUE` under the default sequential plan runs one input at a time and
+  warns. Set a plan first, e.g. `future::plan(future::multisession)`.
 
 - ...:
 

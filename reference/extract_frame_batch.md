@@ -46,8 +46,9 @@ extract_frame_batch(jobs, format = "png", run = TRUE, parallel = FALSE, ...)
   [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
   grab frames in parallel with furrr (`TRUE`) or sequentially (`FALSE`,
   default). Parallelism follows the active
-  [`future`](https://rdrr.io/pkg/future/man/plan.html) plan; `TRUE`
-  under the default sequential plan runs one frame at a time and warns.
+  [`future`](https://future.futureverse.org/reference/plan.html) plan;
+  `TRUE` under the default sequential plan runs one frame at a time and
+  warns.
 
 - ...:
 

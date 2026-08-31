@@ -8,7 +8,7 @@ _Last hygiene check: 2026-08-31 (M095 and M096 planned from the M094 review row,
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M095 | A wrong argument outranks the nvenc availability probe | in-progress | — | normal | milestones/M095-argument-error-outranks-nvenc-probe.md |
+| M095 | A wrong argument outranks the nvenc availability probe | review | — | normal | milestones/M095-argument-error-outranks-nvenc-probe.md |
 | M096 | A wrong argument is refused by the verb, not by `purrr::pmap()` or after FFmpeg runs | planned | M095 | normal | milestones/M096-unguarded-argument-front-doors.md |
 | M094 | An invalid `tidymedia.timeout` is refused by the function the caller typed | done | — | normal | milestones/archive/M094-timeout-refusal-blame.md |
 | M093 | The separation help pages render their container list from the vector | done | — | normal | milestones/archive/M093-separation-container-list-generated.md |

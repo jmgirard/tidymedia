@@ -1,6 +1,6 @@
 # M095: A wrong argument outranks the nvenc availability probe
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -56,3 +56,4 @@ Surface tier: **user-facing** — the condition three exported verbs raise chang
 - 2026-08-31: T4 -- AC3's leg added: the same 496 kept cells under each of the five `tm_timeout_bad_forms()` values, with `cached_encoder_names()` mocked to list the nvenc encoders, compared against each cell's no-limit `hardware = "none"` condition. 0 mismatches at HEAD; 27 per form measured against b538e63's `R/ffmpeg.R` in the same harness, the same 27 cells AC1 records, so the leg is shown able to see the displacement it reports absent. `devtools::test()` 0 failures / 11,358 passes.
 - 2026-08-31: T5 -- D075 appended (the build-time probe runs below every check whose answer cannot depend on it; supersedes D074 property 1's disposition of that class, leaves D074's per-row fan-out class in force). AC5's sweep corrected at three sites -- the `NEWS.md` development-version bug-fix entry (in place, per the gate), `?tidymedia` (`R/tidymedia-package.R`) and `R/timeout.R`'s siting comment -- and `man/tidymedia-package.Rd` regenerated. `devtools::document()` no diff; `devtools::test()` 0 failures / 11,358 passes; `devtools::check()` 0 errors / 0 warnings / 0 notes.
 - 2026-08-31: AC5 disposition for its one remaining hit. `cairn/DECISIONS.md:3415-3416` still describes the build-time-probe class as disclosed-not-fixed, and is left unedited: DECISIONS.md is append-only history (IP4), so the criterion is met there by supersession -- D075 names the clause it supersedes, and the bounded-DECISIONS read back-references D074 to it. No amendment taken; recorded here so review judges the reading rather than inferring it.
+- 2026-08-31: all five tasks done; `devtools::test()` 0 failures / 11,358 passes and `devtools::check()` 0 errors / 0 warnings / 0 notes; status to review.

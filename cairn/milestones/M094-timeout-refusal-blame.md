@@ -930,3 +930,45 @@ the generator writes only under `tempdir()`; the missing-input axis (every domai
 member given a nonexistent path) shows no displacement at any of the 53 members;
 and the `run = FALSE`, `parallel = TRUE`, `probe = ` and warm-memo behaviours all
 measure as documented.
+
+##### Disposition
+
+**Approved at the gate; fixed here and merged.** No acceptance criterion fails —
+AC1–AC7 were all verified with fresh evidence above and CI is green on all ten
+checks. What H1 and H3 falsify is a secondary prose promise this branch added
+about itself ("An argument your call got wrong is still reported first"), not the
+Goal, which measures 0 wrong-blame over 265 base cells, 95 variant cells and 265
+axis cells. The maintainer chose to make the prose true rather than take a third
+defect return, and to carry the ordering work as a candidate row.
+
+**Fixed now, on the branch, before the approval marker:**
+
+- **H4** — D074 and `R/ffmpeg.R:2993` now say "the nine fan-out front doors",
+  agreeing with the pre-existing comment at `R/ffmpeg.R:3081`.
+- **H5** — D074's numbered property 3 is restated in the two-path form
+  `R/timeout.R` already used, and points at **The carve-outs** for both.
+- **H6** — `test-timeout-refusal-blame.R:381` reads
+  `tm_timeout_bad_forms()$fractional`; the `$` partial match is gone.
+- **H1/H3's doc half** — `NEWS.md`, `R/tidymedia-package.R`, D074's property 1
+  and `R/timeout.R`'s matching comment no longer claim a wrong argument is
+  always reported first. All four now name the two classes where it is not: a
+  check below a probe the verb must make first (`hardware = "nvenc"` asks the
+  build what encoders it has before the pipeline exists) and a check inside the
+  per-row fan-out (`segment_video()`'s `outfiles`, a `_batch` job table's
+  `output` column). D074 and `R/timeout.R` say the classes are disclosed rather
+  than fixed and name the ROADMAP row that carries them.
+
+**Deferred to one candidate row** (added 2026-08-31, "Where a timeout refusal
+sits relative to a check the verb reaches only later"): **H1** and **H3**'s code
+half — deciding where a build-time probe's refusal sits relative to the builder's
+own checks is a design call, and it needs an argument-validation slot above
+`resolve_hw_encoder()` that the engine does not have; **H2**, the cross-product
+instrument (member × argument × variant axis) that would have seen H1, and which
+the row names as the reason three rounds each found a new instance of one class;
+**H7**, `ffmpeg_codecs()`'s missing `sort_by_type` guard; **H8**,
+`nvenc_available()`'s unexercised no-default `call`.
+
+Nothing was rejected. After the fixes: `devtools::document()` regenerated
+`man/tidymedia-package.Rd`, `devtools::test(filter = "timeout")` 0 failures /
+2,970 pass, `cairn_validate.py` exit 0 with all checks passing. Defect returns on
+M094 stay at 2.

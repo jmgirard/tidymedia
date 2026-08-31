@@ -2990,7 +2990,7 @@ has_nvenc <- function(codec = c("h264", "hevc", "av1")) {
 #
 # The split exists for D074's siting. This is the one capability probe that runs
 # while a command is being BUILT -- resolve_hw_encoder() consults it from inside
-# the pipeline, and the eight fan-out verbs consult it at their front doors
+# the pipeline, and the nine fan-out verbs consult it at their front doors
 # through check_nvenc_available() -- so it is where a `hardware = "nvenc"` call
 # first reads the limit. Left calling the exported has_nvenc(), every such call
 # was refused in has_nvenc()'s name, a function the caller never typed (M094

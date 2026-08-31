@@ -378,7 +378,7 @@ test_that("the comparator these sweeps use can tell a different error apart", {
   # two AC3 legs green until this round (review G3) -- has to come back named.
   dir <- withr::local_tempdir()
   specs <- tm_timeout_call_specs(dir)
-  limit <- tm_timeout_bad_forms()$fraction
+  limit <- tm_timeout_bad_forms()$fractional
   testthat::local_mocked_bindings(
     strip_metadata = function(...) cli::cli_abort("Something else entirely.")
   )

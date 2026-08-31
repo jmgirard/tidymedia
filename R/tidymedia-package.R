@@ -92,10 +92,16 @@
 #' `0.5` and `extract_audio()` says so as `extract_audio()`, not as the builder
 #' underneath it. It says so on a `run = FALSE` call as well as a run, so a dry
 #' run does not hand you a command compiled under a limit it could never have
-#' used. An argument your call got wrong is still reported first: the limit is
-#' checked after everything the verb can decide without asking FFmpeg anything,
-#' so a bad `regions` or `video_codec` reports as itself whether or not a limit
-#' is set. Two calls read no limit and so refuse nothing: [has_nvenc()]
+#' used. An argument your call got wrong is reported first wherever the verb
+#' itself can see it is wrong: the limit is checked after the verb's own guards
+#' and after the command has been assembled, so a bad `regions`, `pixel_format`
+#' or `video_codec` reports as itself whether or not a limit is set. Where the
+#' check runs somewhere the verb reaches only later, the limit is reported
+#' instead — asking your FFmpeg build what hardware encoders it has happens
+#' before the command is assembled, so a `hardware = "nvenc"` call with a bad
+#' `video_codec` reports the limit; so does a value only the per-row fan-out
+#' validates, such as [segment_video()]'s `outfiles` or a `_batch` job table's
+#' `output` column. Two calls read no limit and so refuse nothing: [has_nvenc()]
 #' answering from a `tidymedia.nvenc_encoders` you set, which asks FFmpeg
 #' nothing, and a `probe_*()` shortcut handed a `probe` object instead of an
 #' `infile`, which reprobes nothing.

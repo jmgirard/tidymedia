@@ -40,8 +40,14 @@
 #   * It goes as LATE as the verb allows, but never after a probe or a spawn.
 #     In practice that is after the front-door guards and, where the verb builds
 #     its pipeline before running anything, after the builder's argument
-#     validation too -- so every refusal that fired before it still fires first
-#     and only the blame for this one moves. Ordering it against the front door
+#     validation too -- so a refusal the VERB itself can reach still fires first
+#     and only the blame for this one moves. Not every refusal that fired before
+#     it does: a check below a probe the verb must make first (hardware =
+#     "nvenc" asks the build what encoders it has before the pipeline exists) or
+#     inside the per-row fan-out (segment_video()'s outfiles, a _batch job
+#     table's output column) still loses to the limit. Both are disclosed in
+#     NEWS.md and ?tidymedia and carried on the ROADMAP, not fixed here (M094
+#     review H1/H3). Ordering it against the front door
 #     ALONE was measured wrong (M094 review F1): four verbs deliberately keep no
 #     front-door guard for `video_codec`/`pixel_format`/`regions`, and a call
 #     above ffm_finish() reported the limit where the argument error used to be.

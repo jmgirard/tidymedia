@@ -564,9 +564,15 @@
   call now gives the same one. The refusal also arrives on a `run = FALSE`
   call, which used to compile a command under a limit it could never have used;
   the `_batch` verbs already behaved this way. An argument your call got wrong
-  is still reported first: the limit is checked after everything a verb can
-  decide without asking FFmpeg anything, so a bad `regions` or `video_codec`
-  reports as itself whether or not a limit is set. Two calls refuse nothing,
+  is reported first wherever the verb itself can see it is wrong: the limit is
+  checked after the verb's own guards and after the command has been assembled,
+  so a bad `regions`, `pixel_format` or `video_codec` reports as itself whether
+  or not a limit is set. Where the check runs somewhere the verb reaches only
+  later, the limit is reported instead — asking your FFmpeg build what hardware
+  encoders it has happens before the command is assembled, so a
+  `hardware = "nvenc"` call with a bad `video_codec` reports the limit; so does
+  a value only the per-row fan-out validates, such as `segment_video()`'s
+  `outfiles` or a `_batch` job table's `output` column. Two calls refuse nothing,
   because neither reads a limit: `has_nvenc()` answering from a
   `tidymedia.nvenc_encoders` you set, and a `probe_*()` shortcut handed a
   `probe` object instead of an `infile`, which reprobes nothing.

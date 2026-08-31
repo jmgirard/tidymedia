@@ -3407,8 +3407,19 @@ site:
 1. **As late as the verb allows, but never after a probe or a spawn.** In
    practice that is after the front-door guards and, where the verb builds its
    pipeline before running anything, after the builder's argument validation too
-   — so every refusal that fired before it still fires first and only this blame
-   moves. Where a verb reaches a spawn by more than one path, each path carries
+   — so a refusal the verb itself can reach still fires first and only this blame
+   moves. It is NOT true that every refusal that fired before it still fires
+   first, and M094's third review round measured the two remaining classes: a
+   check that runs below a probe the verb must make first (`hardware = "nvenc"`
+   asks the build what encoders it has BEFORE the pipeline is assembled, so a bad
+   `pixel_format` under `hardware = "nvenc"` reports the limit on a machine that
+   has nvenc), and a check that runs inside the per-row fan-out rather than at the
+   verb (`segment_video()`'s `outfiles`, a `_batch` job table's `output` column,
+   both of which report `purrr::pmap` with the limit unset). Both are disclosed
+   in `NEWS.md` and `?tidymedia` rather than fixed: deciding where a build-time
+   probe's refusal sits relative to the builder's own checks is a design call of
+   its own, and it is on the ROADMAP as a candidate row. Where a verb reaches a
+   spawn by more than one path, each path carries
    its own call. Where the check the verb has to report first lives in a CALLEE,
    below the callee's own site, the verb runs that check itself: the five
    `get_*` scalars call `check_path_vector()` on `file` and `resolve_probe()`'s
@@ -3418,7 +3429,11 @@ site:
    the first return never touched — and it is why the check is a shared function
    rather than a copy per verb.
 2. **Above the `run` gate,** so a `run = FALSE` compile is refused too.
-3. **Not sited where a caller-set override answers without reading the limit.**
+3. **Not sited on a path that reads no limit.** Two such paths exist and
+   neither refuses: a caller-set override that answers without reading the
+   limit, and a `probe_*()` shortcut handed a `probe` object. Both are stated
+   under **The carve-outs** below, and `R/timeout.R` states this property in the
+   same two-path form.
 
 Property 1 first read "last among the front door's guards", and M094's review
 measured that false: four verbs (`crop_video`, `format_for_web`,
@@ -3431,7 +3446,7 @@ stated.
 
 **The one probe that runs while a command is BUILT.** `hardware = "nvenc"` asks
 this FFmpeg build what encoders it has, from inside `resolve_hw_encoder()` while
-the pipeline is assembled and from `check_nvenc_available()` at the eight
+the pipeline is assembled and from `check_nvenc_available()` at the nine
 fan-out front doors. That probe therefore reads the limit before any verb-level
 site could, and reading it through the exported `has_nvenc()` refused every such
 call in `has_nvenc()`'s name. `nvenc_available()` is that body with `call`

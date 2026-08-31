@@ -3547,3 +3547,37 @@ change rather than a blame change, and it would have to be withdrawn or paid
 for. Or a probe whose answer a machine-independent check legitimately depends
 on, which would make "below every such check" unsatisfiable. M095's acceptance
 criteria hold the measurements on both counts.
+
+## D076 — A fan-out verb's own argument is checked at that verb's front door (2026-08-31, from M096; annotates D074 property 1 and narrows D075's Scope sentence that the per-row fan-out class stays disclosed; D074, D075, D036, D039 and D042 otherwise stand)
+
+**The rule.** A scalar argument of a fan-out verb is checked at that verb's
+front door, even where the value is consumed one row at a time inside the
+fan-out. `segment_video()`'s `outfiles` is checked there now — one
+`rlang::check_string()` per element — so a caller who mistyped an output name
+is blamed rather than `purrr::pmap()`. D074's per-row class keeps its remaining
+member, `ffm_batch()`'s `output` column: that is a column of a table the caller
+supplies, not an argument of the verb, and it stays disclosed.
+
+**Why.** D074 property 1 measured this class and disclosed it rather than
+fixing it, on the ground that the check runs where the value is used. That
+ground holds for a jobs-table column, whose contract names no column at all. It
+does not hold for `outfiles`, which is an argument of `segment_video()` with a
+documented type that the verb already length-checks at its own front door — the
+disclosure listed an argument the verb validates and a column it does not as
+one class.
+
+**Siting.** Above `check_nvenc_available()`, for D075's reason one layer up: a
+guard below the probe would let a build without nvenc decide whether a wrong
+`outfiles` is reported as a wrong `outfiles` or as a missing encoder, which is
+the failure D075 exists to prevent. Below the existing length check, so a
+caller who miscounted their segments still reads about the count.
+
+**Cost.** The check is per element rather than on `outfiles` as a whole,
+because the fan-out receives one cell of the jobs table at a time: a
+whole-object character test would refuse `list("a.mp4")`, which the verb
+compiles today, and a token test would refuse output filenames containing
+spaces. So the guard is narrower than the argument's documented type, and a
+caller can still pass a list of strings.
+
+**Falsifier.** A call the verb compiled before this entry that it now refuses.
+M096's acceptance criteria hold the merge-base comparison.

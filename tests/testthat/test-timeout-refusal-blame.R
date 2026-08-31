@@ -344,32 +344,12 @@ test_that("the interception check can say no (AC5)", {
   expect_false(tm_spawn_interception_complete(fns = list(both = both)))
 })
 
-test_that("an invalid limit displaces no argument error the call earned", {
-  dir <- withr::local_tempdir()
-  corrupt <- tm_timeout_corrupt_specs(dir)
-  withr::local_options(list(tidymedia.nvenc_encoders = NULL))
-  # Three of the 53 members take no arguments, so 50 cells is the whole of the
-  # rest; a table that quietly shrank would make the sweep below vacuous.
-  expect_identical(length(corrupt), length(tm_timeout_domain()) - 3L)
-
-  for (name in names(corrupt)) {
-    # The referent is measured, not recorded: what this call reports with no
-    # limit set at all is what it must still report under one base R cannot
-    # use. That keeps the leg indifferent to each verb's own wording and to any
-    # later change in it.
-    reference <- tm_masked_condition(name, corrupt[[name]], NULL)
-    # A member that stopped refusing `123` outright would otherwise pass by
-    # agreeing with itself.
-    expect_false(identical(reference, "<none>"), info = name)
-    for (form in names(tm_timeout_bad_forms())) {
-      expect_identical(
-        tm_masked_condition(name, corrupt[[name]], tm_timeout_bad_forms()[[form]]),
-        reference,
-        info = paste(name, form)
-      )
-    }
-  }
-})
+# The leg that used to sit here -- "an invalid limit displaces no argument error
+# the call earned" -- moved to test-unguarded-argument-front-doors.R at M096,
+# where `tm_timeout_corrupt_specs()` was widened from each member's FIRST
+# argument corrupted by `123` to every formal crossed with all five wrong forms.
+# The widened leg is a strict superset of this one and runs the sweep once, so
+# keeping a narrow copy here would only pay the sweep's cost twice.
 
 test_that("the comparator these sweeps use can tell a different error apart", {
   # The guard on every leg above: `tm_refusal_head()` reports a member's own

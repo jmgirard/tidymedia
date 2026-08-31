@@ -838,34 +838,365 @@ tm_refusal_head <- function(name, args, limit) {
   })
 }
 
-# M094 review round 2: the cells that carry a WRONG argument -----------------
+# M094 review round 2, widened at M096: the cells that carry a WRONG argument --
 
-# tm_timeout_corrupt_specs(): each member's own cell with its FIRST argument
-# replaced by `123`.
+# tm_timeout_corrupt_specs(): every (member, formal, wrong form) cell -- each
+# member of the domain with ONE of its own formals replaced by one of the five
+# wrong forms `tm_nvenc_wrong_forms()` names.
 #
 # Every cell in `tm_timeout_call_specs()` and `tm_timeout_variant_specs()`
 # carries VALID arguments, so no leg built on them can see the refusal DISPLACE
 # an error the caller's own call earned -- which is how one class of that defect
-# survived round 1 at four verbs and recurred at nine more (review F1, G1). This
-# is the missing axis, and it is generic rather than hand-written: `123` is a
-# number where every member's first argument wants a path, a job table or a
-# pipeline, and each front door refuses it on argument shape alone -- no file is
-# read, no binary is looked up, and nothing is spawned, so the answer is the
-# same on a runner with no media binaries as it is here.
+# survived round 1 at four verbs and recurred at nine more (review F1, G1).
 #
-# The three members that take no arguments at all (`ffmpeg_codecs`,
-# `ffmpeg_encoders`, `has_nvenc`) have nothing to corrupt and are absent; the
-# caller checks the count rather than trusting the table's length.
+# M094 corrupted `args[[1]]` with `123` alone. That single form on a single
+# formal is what let two front doors through three review rounds: `123` is a
+# number where every member's FIRST argument wants a path, a job table or a
+# pipeline, so the narrow instrument saw only the guards that sit at the top of
+# each verb. An argument whose only guard is a token check, a missingness
+# check, a length check or a shape check is invisible to it, and an argument
+# that is not the first is invisible to it entirely. The cross-product is the
+# widening: every formal, and the five forms M095 crossed the nvenc probe with,
+# which between them span type, token shape, missingness, length and container.
+#
+# `...` is excluded because it is not an argument a caller can hand a wrong
+# value to by name. `run = FALSE` and `parallel = FALSE` go into the base cell
+# so a cell that IS refused spawns nothing on the way there; the sweep below
+# intercepts the spawns a truthy wrong value would otherwise reach.
+#
+# Every member is present, including the three that take no arguments in
+# `tm_timeout_call_specs()` -- `ffmpeg_codecs`, `ffmpeg_encoders` and
+# `has_nvenc` all have formals to corrupt even though their valid cell is empty,
+# and `ffmpeg_codecs`'s is the argument M096 exists to guard.
 tm_timeout_corrupt_specs <- function(dir) {
   specs <- tm_timeout_call_specs(dir)
+  forms <- tm_nvenc_wrong_forms()
+  ns <- asNamespace("tidymedia")
   out <- list()
-  for (nm in names(specs)) {
-    args <- specs[[nm]]
-    if (length(args) == 0) next
-    args[[1]] <- 123
-    out[[nm]] <- args
+  for (nm in tm_timeout_domain()) {
+    fmls <- names(formals(get(nm, envir = ns)))
+    base <- specs[[nm]]
+    if ("parallel" %in% fmls) base$parallel <- FALSE
+    if ("run" %in% fmls) base$run <- FALSE
+    for (arg in setdiff(fmls, "...")) {
+      for (form in names(forms)) {
+        args <- base
+        args[[arg]] <- forms[[form]]
+        out[[paste0(nm, " [", arg, " = ", form, "]")]] <-
+          list(name = nm, arg = arg, form = form, args = args)
+      }
+    }
   }
   out
+}
+
+# tm_corrupt_limit_sweep(): drive every cell with no limit set, and again under
+# each invalid `tidymedia.timeout` in `tm_timeout_bad_forms()`.
+#
+# The no-limit reading is the referent, measured rather than recorded: what a
+# call reports with no limit set at all is what it must still report under one
+# base R cannot use. That keeps the leg indifferent to each verb's own wording
+# and to any later change in it.
+#
+# A cell is KEPT when that referent was refused by the member ITSELF -- the
+# blamed frame is the member's own name -- and dropped otherwise, whether the
+# refusal came from a frame below the member or never came. Dropping is a
+# measurement here and never a list: `tm_corrupt_dropped_master()` records what
+# the measurement returned so a reader can see it, but the sweep consults no
+# list to decide.
+#
+# Spawns are intercepted at the two wrappers `tm_force_timeout()` uses, for
+# `tm_nvenc_sweep()`'s reason: without it a cell whose wrong value happens to be
+# TRUTHY really executes FFmpeg on an empty placeholder file, so the frame that
+# refused it is FFmpeg's exit status on this machine and a missing binary on a
+# runner with none. `character(0)` is a clean exit with no output, so such a
+# cell reads as "not refused", which is what it is.
+tm_corrupt_limit_sweep <- function(cells) {
+  # Before the mocked bindings below, never after. `tm_timeout_corrupt_specs()`
+  # computes its own domain by reading each function's `body()` off the
+  # namespace and asking which of them reach a spawn primitive; once
+  # `run_program()` and `guard_timeout()` are mocked, no body names one, the
+  # domain halves, and the census silently runs over half of what it claims.
+  # Measured: 1530 cells forced here, 705 forced inside the mocks. The working
+  # directory is NOT what matters -- forcing from another directory with no
+  # mocks in force still yields 1530 (corrected M96 review F4).
+  force(cells)
+  testthat::local_reproducible_output()
+  # The sweep runs from a scratch directory, and this is load-bearing rather
+  # than tidy. A cell that corrupts a path argument with the token form hands a
+  # verb the RELATIVE path "bad fmt!", and `sample_frames()`'s `outdir` creates
+  # what it is given -- so a sweep run from the package root leaves a directory
+  # called "bad fmt!" behind it, and from then on `file.exists("bad fmt!")` is
+  # TRUE and every later path cell reads that token as a perfectly good path.
+  # Measured: a sweep run twice from the working tree turned eight of M095's
+  # kept cells into dropped ones the second time, and reddened
+  # test-nvenc-probe-blame.R, which measures the same paths.
+  scratch <- withr::local_tempdir()
+  withr::local_dir(scratch)
+  withr::local_options(tidymedia.nvenc_encoders = NULL)
+  testthat::local_mocked_bindings(
+    run_program = function(location, args, program = "the program", ...) {
+      character(0)
+    },
+    guard_timeout = function(program, limit, expr, ...) character(0),
+    # The encoder pool and the three locators are pinned for the same reason,
+    # one layer up: without them a cell that reaches the nvenc probe or a
+    # binary lookup measures the runner's FFmpeg build and its PATH, and the
+    # census below stops being the same table on two machines -- and the
+    # encoder pool is remembered for the session, so it need not even be the
+    # same table twice on one. `character()` is the build with no nvenc
+    # encoders -- the
+    # pool that makes an availability abort fire, so a cell reading as kept
+    # under it is kept everywhere.
+    cached_encoder_names = function() character(),
+    find_ffmpeg = function() "/nonexistent/ffmpeg",
+    find_ffprobe = function() "/nonexistent/ffprobe",
+    find_mediainfo = function() "/nonexistent/mediainfo",
+    .package = "tidymedia"
+  )
+  forms <- tm_timeout_bad_forms()
+  # Warnings are muffled, not measured. What this sweep reads is the condition
+  # that ABORTS a call; a cell whose mocked spawn returns `character(0)` makes
+  # the six `probe_*()` readers warn that they could not probe the file, which
+  # is an artifact of the interception and not of any behavior under test.
+  muffled <- function(expr) {
+    withCallingHandlers(expr, warning = function(w) invokeRestart("muffleWarning"))
+  }
+  rows <- lapply(names(cells), function(key) {
+    spec <- cells[[key]]
+    ref <- muffled(withr::with_options(
+      list(tidymedia.timeout = NULL),
+      tm_nvenc_condition(spec$name, spec$args)
+    ))
+    head <- sub(" \\|\\| .*$", "", ref)
+    kept <- identical(head, spec$name)
+    bad <- character()
+    if (kept) {
+      for (fm in names(forms)) {
+        got <- muffled(withr::with_options(
+          list(tidymedia.timeout = forms[[fm]]),
+          tm_nvenc_condition(spec$name, spec$args)
+        ))
+        if (!identical(got, ref)) bad <- c(bad, fm)
+      }
+    }
+    tibble::tibble(
+      cell = key, member = spec$name, arg = spec$arg, form = spec$form,
+      none = ref, kept = kept, refused_by = head,
+      mismatch = paste(bad, collapse = ",")
+    )
+  })
+  do.call(rbind, rows)
+}
+
+# tm_corrupt_master_ref: the commit the census below was measured at -- the tip
+# of the default branch when this branch was cut, so a reader can regenerate it.
+tm_corrupt_master_ref <- "4063faa"
+
+# tm_corrupt_dropped_master(): every (member, argument) the widened sweep DROPS,
+# named with the frame that refused it -- measured 2026-08-31 at
+# `tm_corrupt_master_ref`, before either M096 guard landed.
+#
+# Recorded for `tm_nvenc_dropped_master()`'s reason: AC1 drops a cell BY
+# MEASUREMENT and never by a list, and a measurement nobody can see is
+# indistinguishable from a list nobody wrote down. It is compared to a live
+# sweep rather than consulted by one.
+#
+# Eight frames appear. `<none>` is a cell no front door refuses at all, and most
+# often means the wrong form is not wrong for that formal -- `123` is a
+# perfectly good `fps`, `width` or `tolerance`. `ffm_finish`, `ffm_batch` and
+# `if` are the gate booleans `run` and `parallel`, refused by the runner rather
+# than the verb; `purrr::pmap` is the per-row fan-out; `nvenc_encoder` and `<-`
+# are two single-member classes. Those five classes are named in this
+# milestone's Scope Out and carried by a ROADMAP row; they are here so they stay
+# visible. `:` is the sixth and the one that does not stay: `ffmpeg_codecs()`
+# reaching its own output parsing with an unchecked `sort_by_type`, which is
+# what AC3 closes.
+#
+# What that `:` entry does and does NOT prove (M96 review F8). Under this
+# sweep's mocks `ffmpeg("-codecs")` returns `character(0)`, so the parse below
+# it aborts at `1:integer(0)` for EVERY value -- measured at
+# `tm_corrupt_master_ref`: `TRUE`, `FALSE` and `123` all give "argument of
+# length 0". So the drop says only that no front door refused the cell; it is
+# form-independent and is NOT evidence that `sort_by_type` was unguarded. AC3's
+# defect is shown by the spawn-count and message-parity test in
+# test-unguarded-argument-front-doors.R, not by this entry. What the entry is
+# good for is the two-way difference: the cell is refused by `ffmpeg_codecs`
+# itself at HEAD and so leaves this list, which a guard sited BELOW
+# `resolve_timeout()` would not have achieved.
+#
+# A pair whose two entries name different frames (`segment_video/outfiles`,
+# `anonymize_video_batch/color`) is not an inconsistency: different wrong forms
+# of one argument are caught at different depths.
+tm_corrupt_dropped_master <- function() {
+  tm_sort_c(c(
+    "anonymize_video/audio_stream -> <none>",
+    "anonymize_video/color -> <none>",
+    "anonymize_video/outfile -> <none>",
+    "anonymize_video/run -> ffm_finish",
+    "anonymize_video_batch/audio_stream -> <none>",
+    "anonymize_video_batch/color -> <none>",
+    "anonymize_video_batch/color -> purrr::pmap",
+    "anonymize_video_batch/fallback -> purrr::pmap",
+    "anonymize_video_batch/parallel -> ffm_batch",
+    "anonymize_video_batch/pixel_format -> purrr::pmap",
+    "anonymize_video_batch/run -> ffm_batch",
+    "compare_videos/outfile -> <none>",
+    "compare_videos/run -> ffm_finish",
+    "compare_videos_batch/fallback -> purrr::pmap",
+    "compare_videos_batch/parallel -> ffm_batch",
+    "compare_videos_batch/run -> ffm_batch",
+    "concatenate_videos/outfile -> <none>",
+    "concatenate_videos/run -> ffm_finish",
+    "concatenate_videos_batch/parallel -> ffm_batch",
+    "concatenate_videos_batch/run -> ffm_batch",
+    "convert_audio/audio_stream -> <none>",
+    "convert_audio/outfile -> <none>",
+    "convert_audio/run -> ffm_finish",
+    "convert_audio_batch/audio_stream -> <none>",
+    "convert_audio_batch/parallel -> ffm_batch",
+    "convert_audio_batch/run -> ffm_batch",
+    "crop_video/audio_stream -> <none>",
+    "crop_video/height -> <none>",
+    "crop_video/outfile -> <none>",
+    "crop_video/run -> ffm_finish",
+    "crop_video/width -> <none>",
+    "crop_video/x -> <none>",
+    "crop_video/y -> <none>",
+    "crop_video_batch/audio_stream -> <none>",
+    "crop_video_batch/fallback -> purrr::pmap",
+    "crop_video_batch/height -> <none>",
+    "crop_video_batch/parallel -> ffm_batch",
+    "crop_video_batch/run -> ffm_batch",
+    "crop_video_batch/width -> <none>",
+    "crop_video_batch/x -> <none>",
+    "crop_video_batch/y -> <none>",
+    "extract_audio/audio_stream -> <none>",
+    "extract_audio/outfile -> <none>",
+    "extract_audio/run -> ffm_finish",
+    "extract_audio_batch/audio_stream -> <none>",
+    "extract_audio_batch/parallel -> ffm_batch",
+    "extract_audio_batch/run -> ffm_batch",
+    "extract_frame/outfile -> <none>",
+    "extract_frame/run -> ffm_finish",
+    "extract_frame/timestamp -> <none>",
+    "extract_frame_batch/format -> <none>",
+    "extract_frame_batch/parallel -> ffm_batch",
+    "extract_frame_batch/run -> ffm_batch",
+    "ffmpeg/command -> <none>",
+    "ffmpeg_codecs/sort_by_type -> :",
+    "ffprobe/command -> <none>",
+    "format_for_web/audio_stream -> <none>",
+    "format_for_web/outfile -> <none>",
+    "format_for_web/run -> ffm_finish",
+    "format_for_web_batch/audio_stream -> <none>",
+    "format_for_web_batch/fallback -> purrr::pmap",
+    "format_for_web_batch/parallel -> ffm_batch",
+    "format_for_web_batch/run -> ffm_batch",
+    "get_duration/file -> <none>",
+    "get_frame_rate/file -> <none>",
+    "get_height/file -> <none>",
+    "get_sample_rate/file -> <none>",
+    "get_width/file -> <none>",
+    "has_nvenc/codec -> nvenc_encoder",
+    "mediainfo/command -> <none>",
+    "mediainfo_parameter/file -> <none>",
+    "mediainfo_parameter/parameter -> <none>",
+    "mediainfo_parameter/section -> <none>",
+    "mediainfo_query/file -> <none>",
+    "mediainfo_query/names -> <none>",
+    "mediainfo_query/parameters -> <none>",
+    "mediainfo_query/section -> <none>",
+    "mediainfo_summary/file -> <none>",
+    "mediainfo_template/file -> <none>",
+    "normalize_audio/audio_stream -> <none>",
+    "normalize_audio/channels -> <none>",
+    "normalize_audio/outfile -> <none>",
+    "normalize_audio/run -> ffm_finish",
+    "normalize_audio/sample_rate -> <none>",
+    "normalize_audio_batch/audio_stream -> <none>",
+    "normalize_audio_batch/channels -> <none>",
+    "normalize_audio_batch/channels -> purrr::pmap",
+    "normalize_audio_batch/parallel -> ffm_batch",
+    "normalize_audio_batch/run -> ffm_batch",
+    "normalize_audio_batch/sample_rate -> <none>",
+    "normalize_audio_batch/sample_rate -> purrr::pmap",
+    "picture_in_picture/margin -> <none>",
+    "picture_in_picture/outfile -> <none>",
+    "picture_in_picture/run -> ffm_finish",
+    "picture_in_picture_batch/fallback -> purrr::pmap",
+    "picture_in_picture_batch/margin -> <none>",
+    "picture_in_picture_batch/parallel -> ffm_batch",
+    "picture_in_picture_batch/run -> ffm_batch",
+    "probe_all/infile -> <none>",
+    "probe_audio/infile -> <none>",
+    "probe_container/infile -> <none>",
+    "probe_streams/infile -> <none>",
+    "probe_video/infile -> <none>",
+    "sample_frames/fps -> <none>",
+    "sample_frames/outdir -> <none>",
+    "sample_frames/prefix -> <none>",
+    "sample_frames/run -> ffm_finish",
+    "sample_frames_batch/fps -> <none>",
+    "sample_frames_batch/outdir -> <none>",
+    "sample_frames_batch/parallel -> ffm_batch",
+    "sample_frames_batch/run -> ffm_batch",
+    "segment_video/audio_stream -> <none>",
+    "segment_video/end -> <none>",
+    "segment_video/fallback -> purrr::pmap",
+    "segment_video/infile -> <none>",
+    "segment_video/outfiles -> <none>",
+    "segment_video/outfiles -> purrr::pmap",
+    "segment_video/parallel -> ffm_batch",
+    "segment_video/run -> ffm_batch",
+    "segment_video/start -> <none>",
+    "segment_video_batch/audio_stream -> <none>",
+    "segment_video_batch/fallback -> purrr::pmap",
+    "segment_video_batch/parallel -> ffm_batch",
+    "segment_video_batch/run -> ffm_batch",
+    "separate_audio_video/audio_stream -> <none>",
+    "separate_audio_video/audiofile -> <none>",
+    "separate_audio_video/infile -> <none>",
+    "separate_audio_video/run -> <none>",
+    "separate_audio_video/run -> if",
+    "separate_audio_video/videofile -> <none>",
+    "separate_audio_video_batch/audio_stream -> <none>",
+    "separate_audio_video_batch/parallel -> ffm_batch",
+    "separate_audio_video_batch/run -> ffm_batch",
+    "standardize_video/audio_stream -> <none>",
+    "standardize_video/fps -> <none>",
+    "standardize_video/height -> <none>",
+    "standardize_video/infile -> <none>",
+    "standardize_video/outfile -> <none>",
+    "standardize_video/run -> ffm_finish",
+    "standardize_video/width -> <none>",
+    "standardize_video_batch/audio_stream -> <none>",
+    "standardize_video_batch/fallback -> purrr::pmap",
+    "standardize_video_batch/fps -> <none>",
+    "standardize_video_batch/height -> <none>",
+    "standardize_video_batch/parallel -> ffm_batch",
+    "standardize_video_batch/run -> ffm_batch",
+    "standardize_video_batch/width -> <none>",
+    "strip_metadata/infile -> <none>",
+    "strip_metadata/outfile -> <none>",
+    "strip_metadata/run -> ffm_finish",
+    "strip_metadata_batch/parallel -> ffm_batch",
+    "strip_metadata_batch/run -> ffm_batch",
+    "verify_media/audio_codec -> <-",
+    "verify_media/audio_codec -> <none>",
+    "verify_media/duration -> <-",
+    "verify_media/duration -> <none>",
+    "verify_media/file -> <none>",
+    "verify_media/height -> <-",
+    "verify_media/height -> <none>",
+    "verify_media/sample_rate -> <-",
+    "verify_media/sample_rate -> <none>",
+    "verify_media/tolerance -> <none>",
+    "verify_media/video_codec -> <-",
+    "verify_media/video_codec -> <none>",
+    "verify_media/width -> <-",
+    "verify_media/width -> <none>"
+  ))
 }
 
 # tm_masked_condition(): the whole condition one call raised, as one comparable
@@ -1206,5 +1537,85 @@ tm_nvenc_mismatch_master <- function() {
     "standardize_video [pixel_format = missing]",
     "standardize_video [pixel_format = number]",
     "standardize_video [pixel_format = token]"
+  )
+}
+
+# M096: what `segment_video()` COMPILED at the merge base -----------------------
+
+# tm_outfiles_cells(): the `outfiles` values AC4's grid and AC2's two
+# compiled-today controls name, as one table of calls.
+#
+# `run = FALSE` throughout: the question is what the verb compiles, not what
+# FFmpeg does with it, and a compiled command is the same on a runner with no
+# media binaries. `"bad fmt!"` is a legal output filename -- a space and a bang
+# are nothing an output path may not contain -- and `list("a.mp4")` is a
+# one-element list whose element is a string, which is what the per-row fan-out
+# actually receives. Both are here because a front-door guard written as a check
+# on `outfiles` AS A WHOLE would refuse them, and neither is refused today.
+tm_outfiles_cells <- function(dir) {
+  vid <- file.path(dir, "in.mp4")
+  if (!file.exists(vid)) file.create(vid)
+  list(
+    "outfiles = NULL, start len 2" =
+      list(infile = vid, start = c(0, 0.5), end = c(0.5, 1), outfiles = NULL),
+    "outfiles = character vector, start len 2" =
+      list(infile = vid, start = c(0, 0.5), end = c(0.5, 1),
+           outfiles = c(file.path(dir, "a.mp4"), file.path(dir, "b.mp4"))),
+    "outfiles = 'bad fmt!', start len 1" =
+      list(infile = vid, start = 0, end = 1, outfiles = "bad fmt!"),
+    "outfiles = list('a.mp4'), start len 1" =
+      list(infile = vid, start = 0, end = 1,
+           outfiles = list(file.path(dir, "a.mp4")))
+  )
+}
+
+# tm_outfiles_commands(): drive those cells and return one scrubbed string per
+# cell -- the segments' commands joined, or the message if the call was refused.
+#
+# The fixture directory is scrubbed to `<dir>` for `tm_spawn_trace()`'s reason:
+# two checkouts measured in two temp directories would differ in the path and in
+# nothing else, and this comparison exists to see everything else.
+tm_outfiles_commands <- function(dir) {
+  testthat::local_reproducible_output()
+  cells <- tm_outfiles_cells(dir)
+  vapply(names(cells), function(k) {
+    res <- tryCatch(
+      do.call("segment_video", c(cells[[k]], list(run = FALSE)),
+              envir = asNamespace("tidymedia")),
+      error = function(e) e
+    )
+    if (inherits(res, "error")) {
+      return(paste0("<error: ", cli::ansi_strip(conditionMessage(res)), ">"))
+    }
+    tm_scrub_paths(paste(res$command, collapse = " ;; "), dir)
+  }, character(1))
+}
+
+# tm_outfiles_baseline(): what those cells compiled at `tm_corrupt_master_ref`,
+# measured 2026-08-31 in a worktree at that commit.
+#
+# Recorded because AC4's claim is that the guard refuses nothing the verb
+# compiled before, and a comparison against the same checkout cannot see a
+# change both sides make. `tm_outfiles_commands()` regenerates any cell.
+tm_outfiles_baseline <- function() {
+  c(
+    "outfiles = NULL, start len 2" = paste(
+      '-y -i "<dir>/in.mp4" -codec:a copy -ss 0 -to 0.5 -map "0:v?" -map',
+      '"0:a?" "<dir>/in_1.mp4" ;; -y -i "<dir>/in.mp4" -codec:a copy -ss 0.5',
+      '-to 1 -map "0:v?" -map "0:a?" "<dir>/in_2.mp4"'
+    ),
+    "outfiles = character vector, start len 2" = paste(
+      '-y -i "<dir>/in.mp4" -codec:a copy -ss 0 -to 0.5 -map "0:v?" -map',
+      '"0:a?" "<dir>/a.mp4" ;; -y -i "<dir>/in.mp4" -codec:a copy -ss 0.5 -to',
+      '1 -map "0:v?" -map "0:a?" "<dir>/b.mp4"'
+    ),
+    "outfiles = 'bad fmt!', start len 1" = paste(
+      '-y -i "<dir>/in.mp4" -codec:a copy -ss 0 -to 1 -map "0:v?" -map "0:a?"',
+      '"bad fmt!"'
+    ),
+    "outfiles = list('a.mp4'), start len 1" = paste(
+      '-y -i "<dir>/in.mp4" -codec:a copy -ss 0 -to 1 -map "0:v?" -map "0:a?"',
+      '"<dir>/a.mp4"'
+    )
   )
 }

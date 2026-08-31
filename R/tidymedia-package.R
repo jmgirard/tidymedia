@@ -103,11 +103,11 @@
 #' `fallback` is checked where that question is asked and so moved down with it:
 #' a call wrong about both `fallback` and `pixel_format` now hears about the
 #' pixel format. Where the check runs somewhere the verb reaches only later, it
-#' loses to both the limit and the encoder question: [segment_video()]'s
-#' `outfiles`, a `_batch` job table's `output` column, and
-#' [anonymize_video_batch()]'s `pixel_format` and `color` are validated inside
-#' the per-row fan-out, so a set limit is reported instead of them, and so is a
-#' missing nvenc encoder under `hardware = "nvenc"` on a build without one.
+#' loses to both the limit and the encoder question: a `_batch` job table's
+#' `output` column and [anonymize_video_batch()]'s `pixel_format` and `color`
+#' are validated inside the per-row fan-out, so a set limit is reported instead
+#' of them, and so is a missing nvenc encoder under `hardware = "nvenc"` on a
+#' build without one.
 #' Two calls read no limit and so refuse nothing: [has_nvenc()]
 #' answering from a `tidymedia.nvenc_encoders` you set, which asks FFmpeg
 #' nothing, and a `probe_*()` shortcut handed a `probe` object instead of an

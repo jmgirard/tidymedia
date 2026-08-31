@@ -553,6 +553,28 @@
 
 ## Bug fixes
 
+* `segment_video()` now refuses an `outfiles` value it cannot use — a number,
+  `NA`, a list holding one, or a character vector with a missing value in it —
+  and names itself when it does. The value used to travel into the per-segment
+  fan-out, so the failure came back as ``Error in `purrr::pmap(jobs, .f, ...)` ``
+  with `In index: 1` beneath it: a dependency's name and an internal row number
+  in place of the function you called. The check is on each element, so an
+  output name with a space in it, and a list of output names, both still
+  compile exactly the command they compiled before. It also runs before your
+  FFmpeg build is asked whether it has an nvenc encoder, so a wrong `outfiles`
+  is reported as a wrong `outfiles` on a machine with nvenc and on one without.
+
+* `ffmpeg_codecs(sort_by_type = )` now refuses a value that is not `TRUE` or
+  `FALSE`, with the message `ffmpeg_encoders()` has always given for it, and
+  without running FFmpeg first. What it did before depended on the value. A
+  string, `NA`, or more than one value ran the binary, parsed the whole codec
+  list, and only then failed on the internal `if` that does the sorting — so a
+  call it could have refused outright cost a process, and the failure named no
+  argument. A number, though, never failed at all: `if (123)` is `TRUE` in R,
+  so `ffmpeg_codecs(sort_by_type = 1)` returned the sorted table. **That call
+  is now an error**, matching what `ffmpeg_encoders()` has always done with it.
+  Pass `TRUE` or `FALSE`.
+
 * A `tidymedia.timeout` the underlying limit could not use — a fraction of a
   second, a negative number, `NA`, a string, more than one number — is now
   refused by the function you called. It was refused by whatever read the
@@ -575,9 +597,9 @@
   and so moved down with it: a call wrong about both `fallback` and
   `pixel_format` now hears about the pixel format. Where the check runs
   somewhere the verb reaches only later, it loses to both the limit and the
-  encoder question: `segment_video()`'s `outfiles`, a `_batch` job table's
-  `output` column, and `anonymize_video_batch()`'s `pixel_format` and `color`
-  are validated inside the per-row fan-out, so a set limit is reported instead
+  encoder question: a `_batch` job table's `output`
+  column and `anonymize_video_batch()`'s `pixel_format` and `color` are
+  validated inside the per-row fan-out, so a set limit is reported instead
   of them, and so is a missing nvenc encoder under `hardware = "nvenc"` on a
   build without one. Two calls refuse nothing,
   because neither reads a limit: `has_nvenc()` answering from a

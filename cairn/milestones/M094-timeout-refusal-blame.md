@@ -131,7 +131,7 @@ rejected; superseding it is its own milestone.
       machine-independently — and assert the condition raised is identical with
       the limit unset and under each invalid form. Swap `tm_blame_head()` for
       `tm_refusal_head()` at AC3's two legs (G3). Expect red at 9 of 53.
-- [ ] T15. G1: hoist the machine-independent argument check to the front door of
+- [x] T15. G1: hoist the machine-independent argument check to the front door of
       the nine exports that delegate it — the five `get_*` scalars (whose `file`
       check lives in `mediainfo_parameter()`) and `resolve_probe()`'s infile
       branch (whose `infile` check lives in `probe_all_impl()`) — above the
@@ -324,6 +324,20 @@ rejected; superseding it is its own milestone.
   `tm_refusal_head()`, and a new test plants an unrelated abort inside
   `strip_metadata()`'s own frame and shows the comparator names it instead of
   passing — the property `tm_blame_head()` did not have.
+- 2026-08-30: T15 closed G1. `check_path_vector()` (`R/utils.R`) is the
+  `is_character(x) || length(x) == 0` pair the readers each held a copy of,
+  extracted with `arg`/`what`/`call` so the two families keep their own wording
+  byte-for-byte — MediaInfo's "file paths", FFprobe's "file locations". The five
+  `get_*` scalars call it on `file` above their re-call, and `resolve_probe()`'s
+  infile branch runs `probe_all_impl()`'s three checks above its own; both
+  callees keep their copies, since `mediainfo_parameter()` and `probe_all()` are
+  reachable without passing through a verb. The 45 red cells are green and the
+  measured referent moved with them: `get_width(123)` and
+  `probe_video(infile = 123)` now report their argument error from the verb the
+  caller typed under an invalid limit and with none set alike, where the unset
+  form used to name `mediainfo_parameter(file = file, ...)` and
+  `probe_all(infile, typed = typed, parallel = parallel)`. Full suite 0
+  failures, 11,154 pass.
 
 ## Decisions
 

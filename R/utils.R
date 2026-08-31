@@ -120,6 +120,33 @@ check_paths_readable <- function(x, arg = rlang::caller_arg(x),
   ), call = call)
 }
 
+# check_path_vector() -----------------------------------------------------
+
+# Validate that `x` is a character vector naming at least one path. The
+# recurring `is_character(x) || length(x) == 0` pair at every reader whose
+# argument is a WHOLE vector of files, as check_file_readable() is the pair at
+# every site whose argument is a single one.
+#
+# Extracted at M94's second review round for a blame reason rather than a
+# tidiness one (review G1). A verb that delegates this check to a callee cannot
+# report it before the timeout refusal at its own front door, so the caller's
+# own argument error arrives only when the limit happens to be valid; calling
+# this from the front door is what lets the refusal sit after it (D074). `what`
+# names the trailing noun because the two families word it differently and
+# neither wording moves: MediaInfo's readers say "file paths", FFprobe's say
+# "file locations".
+check_path_vector <- function(x, arg = rlang::caller_arg(x),
+                              what = "file paths",
+                              call = rlang::caller_env()) {
+  if (!rlang::is_character(x) || length(x) == 0) {
+    cli::cli_abort(
+      "{.arg {arg}} must be a character vector of one or more {what}.",
+      call = call
+    )
+  }
+  invisible(x)
+}
+
 # check_file_readable() ---------------------------------------------------
 
 # Validate that `x` is a single string naming a readable file. Replaces the

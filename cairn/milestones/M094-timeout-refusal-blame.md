@@ -32,35 +32,35 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
 
 ## Acceptance criteria
 
-- [ ] AC1. With an invalid `tidymedia.timeout` set, every member of
+- [x] AC1. With an invalid `tidymedia.timeout` set, every member of
       `tm_timeout_domain()` (computed at `tests/testthat/helper-timeout-sweep.R:104`),
       invoked through its own `tm_timeout_call_specs()` cell, raises a condition
       whose `conditionCall()` head is that member's own name. One carve-out: a
       call that never reads the limit — `has_nvenc()` under a set
       `tidymedia.nvenc_encoders`, where D044's memo sits above the read — raises
       nothing and is not required to. Master baseline (2026-08-30): 6 of 53.
-- [ ] AC2. AC1 holds for each invalid form `resolve_timeout()`'s own comment
+- [x] AC2. AC1 holds for each invalid form `resolve_timeout()`'s own comment
       names (`R/timeout.R:19-26`) — `-1`, `0.5`, `NA`, `"2"`, `c(1, 2)` — not for
       one form alone.
-- [ ] AC3. AC1 holds at `run = FALSE` as well as `run = TRUE`, and at
+- [x] AC3. AC1 holds at `run = FALSE` as well as `run = TRUE`, and at
       `parallel = TRUE` as well as the default, at every domain member carrying
       that argument. This closes the asymmetry measured on master, where
       `extract_audio(v, o, run = FALSE)` raises nothing and
       `extract_audio_batch(jobs, run = FALSE)` aborts.
-- [ ] AC4. The wording does not fork: for each AC2 form, `conditionMessage()`
+- [x] AC4. The wording does not fork: for each AC2 form, `conditionMessage()`
       under a pinned `cli.width` is identical across all 53 members and equals
       what `resolve_timeout()`'s single `rlang::check_number_whole()` site
       (`R/timeout.R:31`) produces for that form. At the six members that blame
       `purrr::map(infile, probe_one)` today, the `purrr_error_indexed` class and
       its `In index: 1. / Caused by error in .f()` prefix are gone.
-- [ ] AC5. Blame changes and nothing else (D042's siting rule): with the option
+- [x] AC5. Blame changes and nothing else (D042's siting rule): with the option
       unset or set to a valid whole number, every domain member's return value
       and its `system`/`system2` count are unchanged from the T1 baseline; and
       under an invalid limit no domain member reaches `system()`/`system2()`.
-- [ ] AC6. D049's rule is unchanged: with the limit forced to be reached, every
+- [x] AC6. D049's rule is unchanged: with the limit forced to be reached, every
       member of `tm_timeout_domain()` still either aborts or warns, and which of
       the two each member does matches T1's per-member table.
-- [ ] AC7. `devtools::test()` passes and `devtools::check()` reports 0 errors and
+- [x] AC7. `devtools::test()` passes and `devtools::check()` reports 0 errors and
       0 warnings.
 
 ## Coverage
@@ -274,11 +274,13 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
 
 ## Review
 
+### Round 1 — returned 2026-08-30
+
 PR [#98](https://github.com/jmgirard/tidymedia/pull/98). Reviewed 2026-08-30 on
 `m094-timeout-refusal-blame`; `origin/master` had not moved since the branch was
 cut (`ae5ff1c`), so no merge was needed before measuring.
 
-### Acceptance criteria — fresh evidence
+#### Acceptance criteria — fresh evidence
 
 - **AC1 ✓** Measured at review by a script written here, not by the suite's own
   `tm_blame_head()`: for each of the 53 members of `tm_timeout_domain()`,
@@ -315,7 +317,7 @@ cut (`ae5ff1c`), so no merge was needed before measuring.
   nvenc encoder), 12 warnings all pre-existing in unrelated files.
   `devtools::check()`: **Status: OK** — 0 errors, 0 warnings, 0 notes.
 
-### Consistency gate
+#### Consistency gate
 
 `cairn_validate.py` exit 0, all checks pass (`release window` advisory did not
 fire). No DESIGN principle changed, so `cairn_impact.py` was skipped.
@@ -324,7 +326,7 @@ fire). No DESIGN principle changed, so `cairn_impact.py` was skipped.
 a Bug-fixes entry with no milestone numbers; no new top-level files and no new
 exports; `devtools::check()` clean.
 
-### Independent review
+#### Independent review
 
 Three fresh-context lenses. The prior-review lens found no regression of any
 past finding (the GitHub inline-comment probe returned empty, so the archived
@@ -332,7 +334,7 @@ past finding (the GitHub inline-comment probe returned empty, so the archived
 returned overlapping findings; every one below was re-measured against the
 implementation before being recorded.
 
-#### Findings, ranked (each re-measured at review; disposition at the gate)
+##### Findings, ranked (each re-measured at review; disposition at the gate)
 
 - **F1. The new front-door call masks argument errors that used to fire first,
   at the four verbs whose own comments forbid exactly that.** `crop_video`
@@ -421,7 +423,7 @@ implementation before being recorded.
   `tm_spawn_trace()`'s current digest format, so a later edit to that helper
   invalidates it with no signal beyond a wall of mismatches.
 
-#### Disposition
+##### Disposition
 
 **Returned to `in-progress` under the return floor.** CI on PR #98 is red on
 `macos-latest (release)` and `windows-latest (release)` — 10 failures, all at
@@ -460,3 +462,84 @@ patches. F9/F10 are instrument work and can ride along or become candidate rows.
 
 Nothing was fixed at the gate; no merge approval was requested and no
 `cairn/.merge-approved` marker was written. Defect returns on M094: 1.
+
+### Round 2 — 2026-08-30
+
+Same PR [#98](https://github.com/jmgirard/tidymedia/pull/98). Re-reviewed
+2026-08-30 after the round-1 return. `origin/master` is still `ae5ff1c`, the
+commit the branch was cut from, so no merge was needed before measuring. CI on
+PR #98 is green on all ten checks, including `macos-latest (release)` and
+`windows-latest (release)`, the two legs AC7 failed on in round 1.
+
+#### Acceptance criteria — fresh evidence
+
+- **AC1 ✓** Measured at review by a script written here, not by the suite: each
+  of the 53 members of `tm_timeout_domain()` was driven through its own
+  `tm_timeout_call_specs()` cell under each invalid form, and `conditionCall()`'s
+  head compared to the member's name. 265 cells, **0 wrong-blame**, against the
+  recorded master baseline's 47 of 53. The `has_nvenc()` carve-out was exercised
+  separately: under a set `tidymedia.nvenc_encoders` it raises nothing and still
+  answers `TRUE` from the override.
+- **AC2 ✓** The same 265 cells span all five forms `resolve_timeout()`'s comment
+  names (`-1`, `0.5`, `NA`, `"2"`, `c(1, 2)`), 53 members each.
+- **AC3 ✓** Measured at review over the axes computed from `formals()`: 31
+  members carry `run` and 22 carry `parallel`; every one of the 31 at
+  `run = FALSE` and every one of the 22 at `parallel = TRUE` blames itself — 0
+  wrong. `extract_audio` and `extract_audio_batch` are both in the `run` set, so
+  master's asymmetry cannot vanish silently.
+- **AC4 ✓** Measured at review under a pinned `cli.width = 80`: for each of the
+  five forms the 53 members produce exactly **1** distinct `conditionMessage()`,
+  and that string is `identical()` to what `resolve_timeout()`'s own site writes
+  for that form. Across the six `purrr::map` members the recorded master table
+  names, 0 of 30 cells carry `purrr_error_indexed` and 0 carry an `In index:`
+  prefix.
+- **AC5 ✓** The suite's baseline comparison ran clean: 53 members x 2 limit
+  states (unset, 30) identical to `fixtures/timeout-valid-baseline.rds`, over 61
+  exercised spawns in each state, with `tm_spawn_interception_complete()`
+  asserted true first and shown able to return FALSE on a planted unguarded
+  spawn. Under all five invalid forms every member's spawn count is 0. The
+  fixture's provenance now reads back as recorded: source `ae5ff1c`, generator
+  `data-raw/timeout-valid-baseline.R`, recorded 2026-08-30.
+- **AC6 ✓** Measured at review (no committed test compares against
+  `tm_timeout_reached_master()`): a forced timeout was driven through all 53
+  members and each classified abort/warn — 22 abort, 31 warn, **0 mismatches**
+  against T1's recorded master table and 0 silent members.
+- **AC7 ✓** `devtools::test()`: 0 failures, 10,844 passing, 5 skips (absent nvenc
+  encoder), 12 warnings all pre-existing in unrelated files.
+  `devtools::check()`: **Status: OK** — 0 errors, 0 warnings, 0 notes. CI on PR
+  #98: all ten checks pass, the two round-1 failing legs among them.
+
+#### Round-1 findings, re-measured
+
+- **F1 fixed.** At all four verbs the finding named, the argument error reports
+  first again: with `tidymedia.timeout = 0.5` and with it unset,
+  `anonymize_video(regions = "nope")`, `standardize_video(pixel_format = "bad
+  fmt!")`, `crop_video(video_codec = "bad codec!")` and
+  `format_for_web(audio_stream = "bad stream!")` each raise the identical
+  condition, and a clean call under `0.5` names the verb.
+- **F2, F3, F4 fixed.** The 19 cells of `tm_timeout_variant_specs()` —
+  `hardware = "nvenc"`, `two_pass = TRUE`, `extract_frame(frame = )` — all blame
+  the verb the caller typed; 0 wrong.
+- **F5 fixed.** A warm-memo `has_nvenc("h264")` under an invalid limit and no
+  override still blames `has_nvenc`, so the refusal does not depend on session
+  history; only a caller-set `tidymedia.nvenc_encoders` silences it.
+- **F8 fixed.** Verified by the suite's `PATH = ""` leg, which asserts the
+  binaries are actually hidden before measuring, and now runs the variant cells
+  as well as the base ones.
+- **F6, F7, F9, F10 fixed.** D074's first and third properties are rewritten,
+  the help page and `NEWS.md` sentence added; `tm_refusal_head()` checks the
+  condition's identity before reporting its head; `tm_provenance_ok()` is
+  asserted and shown to say no on a stripped blob, another ref and another
+  generator.
+
+#### Consistency gate
+
+`cairn_validate.py` — all checks pass; two advisory WARNs (a `sizing` tripwire at
+13 tasks, and `work-log format` on the multi-line entries), neither a gate
+failure, and the `release window` advisory did not fire. No DESIGN principle
+changed, so `cairn_impact.py` was skipped. `r-package` profile slot:
+`devtools::document()` produces no diff in `man/` or `NAMESPACE`;
+`pkgdown::check_pkgdown()` reports no problems; `NEWS.md` carries a Bug-fixes
+entry with no milestone numbers; `README.md`/`README.Rmd` untouched; the one new
+top-level file is under `data-raw/`, already in `.Rbuildignore`;
+`devtools::check()` clean.

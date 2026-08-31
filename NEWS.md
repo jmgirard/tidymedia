@@ -563,8 +563,11 @@
   none of them a function you had typed. The message itself is unchanged, and every
   call now gives the same one. The refusal also arrives on a `run = FALSE`
   call, which used to compile a command under a limit it could never have used;
-  the `_batch` verbs already behaved this way. `has_nvenc()` answering from a
-  `tidymedia.nvenc_encoders` you set is the one call that refuses nothing,
+  the `_batch` verbs already behaved this way. An argument your call got wrong
+  is still reported first: the limit is checked after everything a verb can
+  decide without asking FFmpeg anything, so a bad `regions` or `video_codec`
+  reports as itself whether or not a limit is set. `has_nvenc()` answering from
+  a `tidymedia.nvenc_encoders` you set is the one call that refuses nothing,
   because it reads no limit.
 
 * The advice `separate_audio_video()` gives when an audio output fails no

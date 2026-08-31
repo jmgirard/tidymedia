@@ -123,7 +123,7 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
       condition's identity, not only `conditionCall()`'s head; assert the
       `.rds` fixture's recorded `source`/`generator`/`recorded` provenance in
       `tm_timeout_valid_baseline()`, pinning the sha to `ae5ff1c`.
-- [ ] T12. Amend D074's first and third properties and the matching comment
+- [x] T12. Amend D074's first and third properties and the matching comment
       block above `resolve_timeout()` (`R/timeout.R:29-45`); correct
       `R/tidymedia-package.R:91-97` and the `NEWS.md` entry, which overclaim
       (F6).
@@ -219,6 +219,18 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
   provenance is read rather than carried: `tm_provenance_ok()` requires the four
   recorded fields, the generator path, and the `ae5ff1c` sha in `source`, and is
   shown to say no on a stripped blob, another ref and another generator (F10).
+- 2026-08-30: T12 amended D074. Property 1 is rewritten from "last among the
+  front door's guards" to "as late as the verb allows, but never after a probe or
+  a spawn", with the four verbs that falsified the old wording named; property 3
+  is narrowed to a caller-set override, with the memo explicitly outside the
+  carve-out and the reason stated (an error whose identity depends on session
+  history is D036's failure mode moved from the machine to the session). A new
+  paragraph records the build-time nvenc probe and `nvenc_available()`, and the
+  falsifier list gains a verb whose pipeline builder probes before it validates.
+  The same three properties are restated once above `resolve_timeout()`. The help
+  page and `NEWS.md` gain the sentence F6 said they were missing — an argument
+  your call got wrong is still reported first — and their `has_nvenc()` exception
+  is now the only one, which the code makes true.
 
 ## Decisions
 

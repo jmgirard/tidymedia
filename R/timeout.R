@@ -35,14 +35,31 @@
 # argument being threaded through an exported builder. Three properties come
 # with that siting and are worth stating once here rather than at each site:
 #
-#   * It goes LAST among the front door's guards, so every refusal that fired
-#     before it still fires first and only the blame for this one moves.
+#   * It goes as LATE as the verb allows, but never after a probe or a spawn.
+#     In practice that is after the front-door guards and, where the verb builds
+#     its pipeline before running anything, after the builder's argument
+#     validation too -- so every refusal that fired before it still fires first
+#     and only the blame for this one moves. Ordering it against the front door
+#     ALONE was measured wrong (M094 review F1): four verbs deliberately keep no
+#     front-door guard for `video_codec`/`pixel_format`/`regions`, and a call
+#     above ffm_finish() reported the limit where the argument error used to be.
+#     A verb reaching a spawn by more than one path carries a call on each
+#     (normalize_audio_batch()'s two-pass branch returns above the other).
 #   * It goes ABOVE the `run` gate, so a `run = FALSE` compile is refused too --
 #     the batch form already did this (R/ffm_batch.R) and the scalar/batch split
 #     was itself the defect.
-#   * It is not sited where nothing reads the limit. `has_nvenc()` under a set
-#     `tidymedia.nvenc_encoders` answers from the override, above D044's memo and
-#     above any spawn, so it refuses nothing -- the one carve-out.
+#   * It is not sited where a caller-set OVERRIDE answers without reading the
+#     limit. `has_nvenc()` under a set `tidymedia.nvenc_encoders` answers from
+#     that option and refuses nothing -- the one carve-out. The memo is not part
+#     of it: inside the fall-through the call sits above cached_encoder_names(),
+#     so a warm session memo still refuses and the answer does not depend on
+#     what this session happened to ask earlier (M094 review F5).
+#
+# One probe runs while a command is BUILT rather than at a front door -- the
+# nvenc capability lookup, reached from resolve_hw_encoder() inside the pipeline
+# and from check_nvenc_available() at the fan-out verbs. nvenc_available()
+# (R/ffmpeg.R) is has_nvenc()'s body with `call` threaded so that probe refuses
+# in the VERB's name; it builds no reached-limit condition, so D049 is untouched.
 resolve_timeout <- function(call = rlang::caller_env()) {
   limit <- getOption("tidymedia.timeout", default = 0)
   # `min = 0` covers the negative case; check_number_whole() covers NA, the

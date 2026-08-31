@@ -103,7 +103,10 @@ A refused value is refused by the function you called. Set the option to
 \code{0.5} and \code{extract_audio()} says so as \code{extract_audio()}, not as the builder
 underneath it. It says so on a \code{run = FALSE} call as well as a run, so a dry
 run does not hand you a command compiled under a limit it could never have
-used. The one call that reads no limit and so refuses nothing is
+used. An argument your call got wrong is still reported first: the limit is
+checked after everything the verb can decide without asking FFmpeg anything,
+so a bad \code{regions} or \code{video_codec} reports as itself whether or not a limit
+is set. The one call that reads no limit and so refuses nothing is
 \code{\link[=has_nvenc]{has_nvenc()}} answering from a \code{tidymedia.nvenc_encoders} you set, which asks
 FFmpeg nothing.
 

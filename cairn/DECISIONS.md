@@ -3402,9 +3402,35 @@ milestone file and in `tests/testthat/helper-timeout-sweep.R`.
 checker at its own front door, rather than a `call` argument being threaded
 through an exported builder. Three properties fix where "front door" is, and
 they are stated once beside the checker in `R/timeout.R` rather than at each
-site — last among each front door's guards, so every refusal that fired before
-it still fires first and only this blame moves; above the `run` gate; and never
-sited where nothing reads the limit.
+site:
+
+1. **As late as the verb allows, but never after a probe or a spawn.** In
+   practice that is after the front-door guards and, where the verb builds its
+   pipeline before running anything, after the builder's argument validation too
+   — so every refusal that fired before it still fires first and only this blame
+   moves. Where a verb reaches a spawn by more than one path, each path carries
+   its own call.
+2. **Above the `run` gate,** so a `run = FALSE` compile is refused too.
+3. **Not sited where a caller-set override answers without reading the limit.**
+
+Property 1 first read "last among the front door's guards", and M094's review
+measured that false: four verbs (`crop_video`, `format_for_web`,
+`standardize_video`, `anonymize_video`) deliberately keep no front-door guard for
+`video_codec` / `pixel_format` / `regions`, so a call sited above `ffm_finish()`
+reported the limit where the argument error used to be. Ordering it against
+*every* machine-independent check rather than against the front door alone is
+D036's rule reaching this seam, and it is what makes the property true as
+stated.
+
+**The one probe that runs while a command is BUILT.** `hardware = "nvenc"` asks
+this FFmpeg build what encoders it has, from inside `resolve_hw_encoder()` while
+the pipeline is assembled and from `check_nvenc_available()` at the eight
+fan-out front doors. That probe therefore reads the limit before any verb-level
+site could, and reading it through the exported `has_nvenc()` refused every such
+call in `has_nvenc()`'s name. `nvenc_available()` is that body with `call`
+threaded — D042's carve-out shape, and it builds no reached-limit condition, so
+D049's blame is untouched. `has_nvenc()` is now a one-line wrapper naming its own
+frame.
 
 Threading `call` was available at the two internal readers `mediainfo_read()`
 and `probe_one()`, and D042's carve-out allows it there. It was rejected because
@@ -3428,9 +3454,21 @@ the scalar/batch split was itself the defect being closed.
 D044's memo, so a call answered by that override asks FFmpeg nothing and reads
 no limit. The re-call therefore sits inside the fall-through branch, and a call
 answered by the override refuses nothing. Siting it higher would abort a call
-that spawns nothing, which the third property above forbids.
+the caller has already answered from their own option, which the third property
+above forbids.
+
+The carve-out is the OVERRIDE, not the memo. Inside the fall-through the call
+sits above `cached_encoder_names()`, so a warm session memo still refuses. The
+alternative — refusing only when the probe actually spawns — was rejected at
+M094's return gate because it makes the answer depend on session history: the
+first `has_nvenc()` of a session would refuse and the second would not, for the
+same call and the same option. An error whose identity depends on what the
+session happened to do earlier is the same failure mode D036 removed for the
+machine.
 
 - **Falsified by** a report of a dry-run compile refused on a limit the run
-  would never have read, or by a reader whose refusal wording must diverge
-  between the verb and the internal helper below it — which would break the
-  one-site-one-wording premise D042's shape rests on.
+  would never have read; by a reader whose refusal wording must diverge between
+  the verb and the internal helper below it — which would break the
+  one-site-one-wording premise D042's shape rests on; or by a verb whose pipeline
+  builder probes before it validates, which would leave property 1 with nowhere
+  to put the call.

@@ -92,7 +92,10 @@
 #' `0.5` and `extract_audio()` says so as `extract_audio()`, not as the builder
 #' underneath it. It says so on a `run = FALSE` call as well as a run, so a dry
 #' run does not hand you a command compiled under a limit it could never have
-#' used. The one call that reads no limit and so refuses nothing is
+#' used. An argument your call got wrong is still reported first: the limit is
+#' checked after everything the verb can decide without asking FFmpeg anything,
+#' so a bad `regions` or `video_codec` reports as itself whether or not a limit
+#' is set. The one call that reads no limit and so refuses nothing is
 #' [has_nvenc()] answering from a `tidymedia.nvenc_encoders` you set, which asks
 #' FFmpeg nothing.
 #'

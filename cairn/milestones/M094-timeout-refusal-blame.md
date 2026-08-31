@@ -1,6 +1,6 @@
 # M094: An invalid `tidymedia.timeout` is refused by the function the caller typed
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -32,35 +32,35 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
 
 ## Acceptance criteria
 
-- [x] AC1. With an invalid `tidymedia.timeout` set, every member of
+- [ ] AC1. With an invalid `tidymedia.timeout` set, every member of
       `tm_timeout_domain()` (computed at `tests/testthat/helper-timeout-sweep.R:104`),
       invoked through its own `tm_timeout_call_specs()` cell, raises a condition
       whose `conditionCall()` head is that member's own name. One carve-out: a
       call that never reads the limit — `has_nvenc()` under a set
       `tidymedia.nvenc_encoders`, where D044's memo sits above the read — raises
       nothing and is not required to. Master baseline (2026-08-30): 6 of 53.
-- [x] AC2. AC1 holds for each invalid form `resolve_timeout()`'s own comment
+- [ ] AC2. AC1 holds for each invalid form `resolve_timeout()`'s own comment
       names (`R/timeout.R:19-26`) — `-1`, `0.5`, `NA`, `"2"`, `c(1, 2)` — not for
       one form alone.
-- [x] AC3. AC1 holds at `run = FALSE` as well as `run = TRUE`, and at
+- [ ] AC3. AC1 holds at `run = FALSE` as well as `run = TRUE`, and at
       `parallel = TRUE` as well as the default, at every domain member carrying
       that argument. This closes the asymmetry measured on master, where
       `extract_audio(v, o, run = FALSE)` raises nothing and
       `extract_audio_batch(jobs, run = FALSE)` aborts.
-- [x] AC4. The wording does not fork: for each AC2 form, `conditionMessage()`
+- [ ] AC4. The wording does not fork: for each AC2 form, `conditionMessage()`
       under a pinned `cli.width` is identical across all 53 members and equals
       what `resolve_timeout()`'s single `rlang::check_number_whole()` site
       (`R/timeout.R:31`) produces for that form. At the six members that blame
       `purrr::map(infile, probe_one)` today, the `purrr_error_indexed` class and
       its `In index: 1. / Caused by error in .f()` prefix are gone.
-- [x] AC5. Blame changes and nothing else (D042's siting rule): with the option
+- [ ] AC5. Blame changes and nothing else (D042's siting rule): with the option
       unset or set to a valid whole number, every domain member's return value
       and its `system`/`system2` count are unchanged from the T1 baseline; and
       under an invalid limit no domain member reaches `system()`/`system2()`.
-- [x] AC6. D049's rule is unchanged: with the limit forced to be reached, every
+- [ ] AC6. D049's rule is unchanged: with the limit forced to be reached, every
       member of `tm_timeout_domain()` still either aborts or warns, and which of
       the two each member does matches T1's per-member table.
-- [x] AC7. `devtools::test()` passes and `devtools::check()` reports 0 errors and
+- [ ] AC7. `devtools::test()` passes and `devtools::check()` reports 0 errors and
       0 warnings.
 
 ## Coverage
@@ -269,6 +269,7 @@ which D042 rejected → stays rejected; superseding it is its own milestone.
   two legs AC7 failed on at review. The suite also runs green with the media
   binaries off `PATH`, which is what those runners are.
 - 2026-08-30: all tasks done; status set to review. Defect returns on M094: 1.
+- 2026-08-30: review round 2 returned M094 to in-progress by maintainer judgment at the gate, not on a criterion failure — AC1-AC7 all verified with fresh evidence and CI green on all ten checks. G1: at nine exports (the five `get_*` scalars and the four `probe_*` shortcuts) an invalid limit displaces the caller's own argument error, which is round-1 F1's class at verbs the return gate never touched, and which falsifies D074's amended property 1 and the shipped `NEWS.md`/help sentence. G2: the same paragraph's "one exception" claim is false again, since `probe_*(probe = )` reads no limit either. G3: AC3's two sweeps still use the head-only comparator. G4-G8 carried in for triage. Every criterion checkbox is unticked. Defect returns on M094: 2.
 
 ## Decisions
 
@@ -615,3 +616,31 @@ against the implementation at review before being recorded.
   the package root (`:41-51`); nothing runs it in CI or tests, so "regenerate
   with this script" is an untested claim, and running it beside another agent or
   worktree on the same clone is not safe.
+
+##### Disposition
+
+**Returned to `in-progress` under the return floor, by maintainer judgment at
+the gate.** No acceptance criterion fails — AC1–AC7 were all verified with fresh
+evidence above and CI is green on all ten checks — but **G1** is a load-bearing
+defect in what the deliverable does for its users: at nine exports (`get_duration`,
+`get_frame_rate`, `get_width`, `get_height`, `get_sample_rate`, `probe_video`,
+`probe_container`, `probe_streams`, `probe_audio`) an invalid limit now displaces
+the caller's own argument error, which is round-1 F1's class at verbs the return
+gate never touched, and which makes the shipped `NEWS.md` and help-page sentence
+"An argument your call got wrong is still reported first" false. **G2** makes the
+same paragraph's "one exception" claim false a second way. Every criterion
+checkbox is unticked again because the gate did not pass.
+
+Actioned: **G1** and **G2** as defects in the deliverable; **G3** as the
+instrument that would have caught G1 had any sweep leg driven an INVALID
+argument under an invalid limit — no cell in `tm_timeout_call_specs()` or
+`tm_timeout_variant_specs()` does, which is why the class recurred silently.
+**G4**–**G8** carried into the return for triage at the next gate: an
+uncommitted AC6 comparison against dead recorded code (G4), a provenance check
+that reads the attribute rather than the blob (G5), two decision ids cited for
+one rule (G6), an unexercised `call` default (G7), and a baseline generator that
+mutates the shared clone and nothing runs (G8).
+
+Nothing was fixed at the gate; no merge approval was given and no
+`cairn/.merge-approved` marker was written. PR #98 stays a draft. Defect returns
+on M094: 2.

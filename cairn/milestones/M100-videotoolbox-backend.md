@@ -24,8 +24,9 @@ internal `resolve_hw_encoder()`, which runs its own `arg_match()` against the
 same default; a per-backend codec-family table (nvenc: h264/hevc/av1;
 videotoolbox: h264/hevc); backend-aware availability probing over both routes
 the probe already has; the abort and `fallback = TRUE` paths per backend; and a
-`backend` argument on the exported availability helper, which today can answer
-only for nvenc. The helper's NAME is M099's (d) call; its SIGNATURE is this
+`hardware` argument on the exported availability helper, which today can answer
+only for nvenc — spelled `hardware =`, the word the 16 verbs already use for the
+same values, never `backend =` (RR06 Q5, amended 2026-09-01). The helper's NAME is M099's (d) call; its SIGNATURE is this
 milestone's, since adding an argument is additive and outside D014.
 
 **Out:**
@@ -38,9 +39,8 @@ milestone's, since adding an argument is additive and outside D014.
   this milestone builds, and none is testable on hardware this project reaches.
 - GPU *decode* / `-hwaccel` input acceleration → the standing M31 candidate row.
 - Renaming `has_nvenc()`, `nvenc_encoder()`, or `tidymedia.nvenc_encoders` →
-  M099 candidate (d), which this milestone depends on. If M099 declines (d),
-  this milestone's helper ships as `has_nvenc(codec, backend = )` — an outcome
-  M099's own gate should weigh.
+  M099 candidate (d), decided 2026-09-01 (D077): this milestone builds against
+  `has_hardware_encoder()`, `hardware_encoder()` and `tidymedia.hardware_encoders`.
 
 ## Acceptance criteria
 
@@ -142,3 +142,4 @@ milestone's, since adding an argument is additive and outside D014.
 - 2026-08-31 plan: alternative rejected — adding `hardware = "videotoolbox"` as a special case beside nvenc with no backend abstraction. Lost at the question gate: it leaves a second special case for the next backend to trip over. Falsified by the abstraction costing more than the two special cases it replaces.
 - 2026-08-31 plan: alternative rejected — shipping prores with a container guard in this milestone. Lost at the user's gate to shipping h264/hevc first: those two behave exactly as nvenc's families do, so the backend abstraction lands without introducing a new user-facing failure mode. Falsified by a caller needing ProRes output badly enough that the guard is cheaper than the wait.
 - 2026-08-31 plan: the audit found a scope hole neither milestone owned — `has_nvenc()`/`nvenc_encoder()` are exported and structurally answer only for nvenc, so a user could request videotoolbox at 16 verbs with no exported way to ask whether it is available, while `vignettes/workflow.Rmd:79` teaches `has_nvenc("h264")` as the check. Resolved without a user gate: the helper's NAME stays M099's (d) call and its SIGNATURE becomes this milestone's, since adding a `backend` argument is additive and outside D014's rename policy. The consequence of declining (d) is recorded in M099's work log so its gate weighs it.
+- 2026-09-01 plan amendment (from M099's RR06 ingest, user-accepted at that gate): Scope In's helper argument is spelled `hardware =`, not `backend =` — RR06 Q5 found `backend =` would put one value set under two argument names where the verbs' `@param hardware` already reads "The encoder backend". Scope Out's declined-(d) contingency replaced by the D077 names this milestone now builds against. Plan-owned body re-checked against the 150-line cap after the edit.

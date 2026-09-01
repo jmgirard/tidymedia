@@ -2,10 +2,10 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M099: D014's pre-0.2.0 rename window is reviewed before it closes
 
-- **Status:** blocked
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
-- **Driving RR:** —
+- **Driving RR:** RR06 (advisory, no binding criteria)
 - **Principles touched:** —
 - **Branch/PR:** `m099-d014-rename-window-review`
 
@@ -89,7 +89,7 @@ exported surface, taken under D014's clean break with no `lifecycle` shim.
 2. Question gate: put the four dispositions to the user, one option set each,
    stating that the choice is permanent once 0.2.0 reaches CRAN, and that (d)
    decides the vocabulary M100 then builds against.
-3. Write the D-entry recording the four dispositions, each naming the verb set
+3. [x] Write the D-entry recording the four dispositions, each naming the verb set
    the AC1 sweep must return and the evidence class that would reopen it; where
    a candidate is declined, state that D014's window closes at 0.2.0.
 4. For each shipped disposition: write its tests first, then make the change.
@@ -108,6 +108,14 @@ exported surface, taken under D014's clean break with no `lifecycle` shim.
 - AC4 → T5
 - AC5 → T7
 
+## Decisions
+<!-- owner: implement/review; append-only -->
+
+- 2026-09-01 M099-D1 (from RR06 Q1/Q2, promoted to D077): candidate (a) ships as `audio` → `audio_input` on `compare_videos`, `compare_videos_batch`, `picture_in_picture`, `picture_in_picture_batch`; `audio_stream`, `ffm_codec(audio =)`, `ffm_copy(audio =)` unchanged; the `NULL` readings stay. AC1's sweep for (a) therefore returns `audio_input` on exactly those four and `audio` on the two `ffm_*` builders; `audio_stream` stays at 18.
+- 2026-09-01 M099-D2 (from RR06 Q3/Q4, promoted to D077): candidates (b) and (c) declined permanently; AC1's `check_tracks` and `timeout` sweeps return 0 at review as at the branch point. RR06's per-row shape (a `jobs` column carried on the pipeline object) is the recorded reopening route.
+- 2026-09-01 M099-D3 (from RR06 Q5/Q6, promoted to D077): candidate (d) ships as `has_hardware_encoder()`, `hardware_encoder()`, `tidymedia.hardware_encoders`, both helpers exported; the AC1 hardware pattern gains `hardware` and returns exactly those two names, the option grep the new string only. RR06 R9-R10 (`tidymedia.available_encoders`, `has_hw_encoder`, `encoder_name`, `tidymedia.encoders`) rejected for the reasons D077 records.
+- 2026-09-01 M099-D4 (from RR06 Q7, promoted to D078): the naming-and-seams principle is recorded once so the next seam or capability name is decided by rule.
+
 ## Work log
 <!-- owner: implement/review -->
 
@@ -120,3 +128,4 @@ exported surface, taken under D014's clean break with no `lifecycle` shim.
 - 2026-09-01 implement: branch `m099-d014-rename-window-review` cut from master at a654f9b; status in-progress. T1: AC1 sweep at the branch point over 89 exports — `audio_stream` formal on 18 verbs, `audio` on 6 (`compare_videos`, `picture_in_picture`, their `_batch` siblings, `ffm_codec`, `ffm_copy`), `check_tracks` and `timeout` on 0; the hardware pattern grep returns exactly `has_nvenc`, `nvenc_encoder`; `tidymedia.nvenc_encoders` appears in 4 files under `R/`, 3 under `man/`, 25 under `tests/`, none in `vignettes/` or `_pkgdown.yml`. Sweep script kept out of the repo (scratchpad); its output is reproducible from the AC1 procedure.
 - 2026-09-01 implement: T2 question gate posed with all four dispositions; the user asked whether any had been briefed (none — RB01-RB05 cover other questions, the four were settled at in-session gates) and chose **Escalate via `/milestone-brief`** on every candidate (a)-(d). No disposition recorded; the D-entry (T3) waits on the RR. Handing off to `/milestone-brief`.
 - 2026-09-01 brief: blocked on RB06 (`cairn/reviews/RB06-d014-rename-window.md`), one brief covering candidates (a)-(d); advisory, no binding criteria requested. Second-escalation removal options listed for (a) and (d), since RB02/RB03 named `audio_stream` and RB01 named the nvenc helpers. Committed on the milestone branch rather than master, since the milestone was already in-progress on its branch.
+- 2026-09-01 ingest RR06: all seven questions answered; the maintainer took every disposition at the ingest gate — ship (a) as `audio_input` (overturning the session's decline; D032's docs-not-API half superseded, quoted to the user first), ship (d) with both helpers exported, decline (a)-`NULL`, (b), (c) permanently, spell M100's helper argument `hardware =`, record the Q7 principle. Written as D077 and D078 and M099-D1..D4; T3 ticked. Recommendations triaged: R1-R8 apply, R9-R10 reject-with-reason (D077), R11 (a generic `has_encoder(name)`) to the M100-out candidate row as additive later work. RR06 Beyond-the-brief items 2-6 (rename mechanics, `codec_family()`/`check_nvenc_available()` abort text, `?tidymedia` Session options sentence, `_pkgdown.yml` section prose, `refresh_ffmpeg_capabilities()` `@seealso`) fold into T4/T5. RB06/RR06 archived; status in-progress.

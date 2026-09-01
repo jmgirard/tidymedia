@@ -83,7 +83,7 @@ copy of its platform layout — the failure a single-platform test cannot catch.
 - [x] AC6 `NEWS.md` states that a location set with `set_ffmpeg()` and its
       siblings now lives under `tools::R_user_dir()`, and that a location set
       before the change is still found.
-- [ ] AC7 `devtools::test()` clean, `devtools::document()` produces no diff,
+- [x] AC7 `devtools::test()` clean, `devtools::document()` produces no diff,
       `devtools::check()` reports 0 errors and 0 warnings with every NOTE
       justified (PROFILE `verify` and `consistency-gate` slots).
 
@@ -137,3 +137,20 @@ copy of its platform layout — the failure a single-platform test cannot catch.
 - AC4 — grep run at review: two config-writing call sites in `tests/` (`test-nvenc-memo.R:103`, `test-program-management.R:56`); the other hits are comments (`helper-timeout-sweep.R:327`, `test-audio-track-drop.R:151`, `test-program-management.R:26,45`). Both call sites run under `withr::local_envvar(R_USER_CONFIG_DIR = <tempdir>)`; the `rappdirs` mock is gone from `test-nvenc-memo.R`. **Verified.**
 - AC5 — grep run at review: `grep -rn "rappdirs\|user_config_dir" R/` returns exactly `R/program_management.R:17` (the helper's body, read: the single call `rappdirs::user_config_dir("tidymedia", "R")`) and `:258` (`install_on_win()`'s `user_data_dir()` default, M098's). Disclosed, per the criterion: a hand-built path with neither token is outside the grep; the [O] reviewer's read of `R/program_management.R` found none. **Verified.**
 - AC6 — `NEWS.md:20-29` ("Configuration"): names `set_ffmpeg()` and the three siblings, `tools::R_user_dir("tidymedia", "config")`, and that a location set before the change is still found. **Verified.**
+- AC7 — run at review on HEAD: `devtools::document()` no diff (the only dirty path after it was this file's PR-URL edit); `devtools::test()` no failures, 18 skipped (the nvenc-hardware and parallel-worker gates, as at M099), 5 warnings all from `test-audio-stream-normalize.R`, a file this diff does not touch; `devtools::check()` 0 errors / 0 warnings / 0 notes (5m 24s). **Verified.**
+
+Consistency gate: `cairn_validate.py` all checks passed (exit 0). No `DESIGN.md` principle changed → `cairn_impact` skipped. PROFILE `consistency-gate`: `document()` no diff (above); README not touched by the diff; `pkgdown::check_pkgdown()` "No problems found", no new exports (`NAMESPACE` unchanged); `NEWS.md` carries the entry (AC6); no new top-level files; check 0/0/0. Driving RR: none → no projection-vs-outcome pairs.
+
+Fresh-context review, full three-lens fan-out (surface tier user-facing, `R/` and `tests/` touched):
+- [S] blame-history: zero findings. The fallback is additive around the warning/`NULL` semantics of `b768c18`; `set_program()`'s `forget_ffmpeg_capabilities()` call (M67, D044) is untouched; `rappdirs` stays at D055's measured floor; no archived milestone had touched the config path.
+- [S] prior-review record: no prior-review evidence contradicted. Archive `## Review` sections on the touched files (M67, M69) hold one bearing finding — the unconditional memo discard in `set_program()` — preserved; the GitHub probe returned no inline review comments at all.
+- [O] diff-bug: nine findings, ranked by the reviewer; triage at the approval gate below.
+  - F1 The AC2/AC3 tests compute the legacy path from `tm_legacy_config_dir()`, the function under test, so a wrong helper body (e.g. dropping the `"R"` appauthor) keeps the suite green while the pre-M097 Windows file goes unfound; AC5's human read is the only defense.
+  - F2 A stale `R_user_dir()` file shadows a valid legacy file: the fallback keys on file existence, never on validation failure, so `find_program()` warns and returns `NULL` without consulting the legacy file, while `NEWS.md` says the siblings "fall back to the old one".
+  - F3 The new location is documented only in `NEWS.md`; neither `?find_program` nor `?set_program` says where the file lives or that the old file is ignored once `set_ffmpeg()` is re-run.
+  - F4 The Windows behavior of the stub instrument (`Sys.which()` on an absolute `.bat`; `Sys.which("ffmpeg")` empty under `PATH = ""`) is unverified locally and load-bearing on the `windows-latest` CI leg.
+  - F5 Four `tm_*` test helpers are defined at the top of a test file rather than a `helper-*.R` file, against the suite's convention.
+  - F6 AC1's `list.files(config, recursive = TRUE)` omits `all.files = TRUE`, so a write into a dot-directory under the redirected root would be invisible to the equality assertion.
+  - F7 Pre-existing, untouched: `set_program()`'s roxygen `@return` promises a logical, but the function returns `forget_ffmpeg_capabilities()`'s `invisible(NULL)`.
+  - F8 Pre-existing, marginally widened: `readLines(config)` has no length guard, so an empty or multi-line file throws at the `Sys.which()` test; the fallback makes the abandoned legacy file reachable by that path too.
+  - F9 Cosmetic: `tm_config_file()` uses `glue()` where `paste0()` would do.

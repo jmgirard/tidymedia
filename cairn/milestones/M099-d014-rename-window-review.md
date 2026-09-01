@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M099: D014's pre-0.2.0 rename window is reviewed before it closes
 
-- **Status:** in-progress
+- **Status:** blocked
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -119,3 +119,4 @@ exported surface, taken under D014's clean break with no `lifecycle` shim.
 - 2026-08-31 plan: (d)'s gate inherits one consequence from M100 — declining (d) leaves the exported availability helper shipping as `has_nvenc(codec, backend = )`, since M100 gives it a backend argument either way. Recorded here so the disposition is taken with that surface in view.
 - 2026-09-01 implement: branch `m099-d014-rename-window-review` cut from master at a654f9b; status in-progress. T1: AC1 sweep at the branch point over 89 exports — `audio_stream` formal on 18 verbs, `audio` on 6 (`compare_videos`, `picture_in_picture`, their `_batch` siblings, `ffm_codec`, `ffm_copy`), `check_tracks` and `timeout` on 0; the hardware pattern grep returns exactly `has_nvenc`, `nvenc_encoder`; `tidymedia.nvenc_encoders` appears in 4 files under `R/`, 3 under `man/`, 25 under `tests/`, none in `vignettes/` or `_pkgdown.yml`. Sweep script kept out of the repo (scratchpad); its output is reproducible from the AC1 procedure.
 - 2026-09-01 implement: T2 question gate posed with all four dispositions; the user asked whether any had been briefed (none — RB01-RB05 cover other questions, the four were settled at in-session gates) and chose **Escalate via `/milestone-brief`** on every candidate (a)-(d). No disposition recorded; the D-entry (T3) waits on the RR. Handing off to `/milestone-brief`.
+- 2026-09-01 brief: blocked on RB06 (`cairn/reviews/RB06-d014-rename-window.md`), one brief covering candidates (a)-(d); advisory, no binding criteria requested. Second-escalation removal options listed for (a) and (d), since RB02/RB03 named `audio_stream` and RB01 named the nvenc helpers. Committed on the milestone branch rather than master, since the milestone was already in-progress on its branch.

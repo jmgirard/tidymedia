@@ -59,7 +59,7 @@ test_that("set_program() writes exactly at tools::R_user_dir(\"tidymedia\", \"co
     tools::R_user_dir("tidymedia", "config"),
     paste0(tm_program_vocabulary, "_location.txt")
   )
-  written <- list.files(config, recursive = TRUE, full.names = TRUE)
+  written <- list.files(config, recursive = TRUE, full.names = TRUE, all.files = TRUE)
   expect_setequal(normalizePath(written), normalizePath(expected))
   for (file in expected) expect_identical(readLines(file), stub)
 })
@@ -90,6 +90,11 @@ test_that("both config directories are redirected, and differ", {
   # make the both-present state assert nothing).
   dirs <- tm_redirect_config()
   root <- normalizePath(Sys.getenv("R_USER_CONFIG_DIR"))
+  # The legacy dir is pinned to the library that WROTE the pre-M097 file, not
+  # to the helper under test: a helper body that drifts (say, dropping the "R"
+  # appauthor) would otherwise write and read its own wrong path and stay green.
+  expect_identical(dirs$legacy, rappdirs::user_config_dir("tidymedia", "R"))
+  expect_identical(dirs$new, tools::R_user_dir("tidymedia", "config"))
   expect_false(identical(normalizePath(dirs$new), normalizePath(dirs$legacy)))
   expect_true(startsWith(normalizePath(dirs$new), root))
   expect_true(startsWith(normalizePath(dirs$legacy), root))

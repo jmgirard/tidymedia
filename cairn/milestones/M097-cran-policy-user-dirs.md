@@ -154,3 +154,15 @@ Fresh-context review, full three-lens fan-out (surface tier user-facing, `R/` an
   - F7 Pre-existing, untouched: `set_program()`'s roxygen `@return` promises a logical, but the function returns `forget_ffmpeg_capabilities()`'s `invisible(NULL)`.
   - F8 Pre-existing, marginally widened: `readLines(config)` has no length guard, so an empty or multi-line file throws at the `Sys.which()` test; the fallback makes the abandoned legacy file reachable by that path too.
   - F9 Cosmetic: `tm_config_file()` uses `glue()` where `paste0()` would do.
+
+Gate triage (2026-09-01, maintainer's chip choice: fix F1, F2 wording, F3, F6; merge PR #102 on green CI):
+- F1 fix now — `test-program-management.R` pins `dirs$legacy` to `rappdirs::user_config_dir("tidymedia", "R")` and `dirs$new` to `tools::R_user_dir("tidymedia", "config")` directly, so a drifted helper body fails the suite.
+- F2 fix now (wording) — behavior kept existence-based: the file the user wrote last is authoritative and the stale branch warns. `NEWS.md` now says the old file is read "only when no file exists there" and that re-running `set_ffmpeg()` retires it even if the new file names a binary that has since gone.
+- F3 fix now — `?find_program` and `?set_program` state the directory, the file name, and that the pre-0.2.0 file is read only when no current file exists; `document()` regenerated both `.Rd`.
+- F4 rejected as a separate action — step 8's merge requires the full CI matrix green, including `windows-latest`, which is the verification the finding asks for.
+- F5 rejected — style; nothing else in the suite needs the helpers.
+- F6 fix now — `all.files = TRUE` on AC1's `list.files()`.
+- F7 rejected — pre-existing on an unmodified line; a trivial-tier docs edit on `master` if wanted.
+- F8 rejected — pre-existing; documented at `R/ffprobe.R:212` and contained by M44's `tryCatch` at the callers.
+- F9 rejected — cosmetic.
+Fix-now work re-tested (`program-management`, `nvenc-memo` files pass) and re-pushed before the approval marker.

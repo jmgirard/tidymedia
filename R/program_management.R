@@ -27,6 +27,13 @@ tm_config_file <- function(program, dir = tm_config_dir()) {
 #'
 #' Returns the location of the requested program as a string.
 #'
+#' The program is looked up on the `PATH` first. When it is not there, the
+#' location remembered by [set_program()] is read from
+#' `tools::R_user_dir("tidymedia", "config")`; a location remembered by a
+#' version of tidymedia before 0.2.0 was written to
+#' `rappdirs::user_config_dir("tidymedia", "R")`, and that file is read only
+#' when no file exists in the current directory.
+#'
 #' @param program A string indicating which program to find
 #' @return Either a string indicating whether the requested program was found or
 #'   `NULL` if the program could not be found.
@@ -156,6 +163,12 @@ run_program <- function(location, args, program = "the program",
 # set_program() ------------------------------------------------------------
 
 #' Set the location of a dependency program
+#'
+#' The location is remembered across sessions in a file named
+#' `<program>_location.txt` under `tools::R_user_dir("tidymedia", "config")`,
+#' which [find_program()] reads whenever the program is not on the `PATH`.
+#' Once this file exists, a location remembered by a version of tidymedia
+#' before 0.2.0 is no longer read.
 #'
 #' @param program A string indicating which program to set the location for.
 #' @param location A string containing the location of the program.

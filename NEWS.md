@@ -24,9 +24,10 @@
   `tools::R_user_dir("tidymedia", "config")`, the user configuration directory
   CRAN policy sanctions, in a file named `<program>_location.txt`. A location
   set before this change is still found: `find_ffmpeg()` and its siblings read
-  the new directory first and fall back to the old one, and nothing is moved or
-  copied. Calling `set_ffmpeg()` again writes the new file, after which the old
-  one is no longer read.
+  the new directory first and, only when no file exists there, the old one;
+  nothing is moved or copied. Calling `set_ffmpeg()` again writes the new file,
+  after which the old one is no longer read, even if the new file names a
+  binary that has since gone.
 
 ## New features
 

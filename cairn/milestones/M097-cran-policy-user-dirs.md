@@ -40,7 +40,7 @@ copy of its platform layout — the failure a single-platform test cannot catch.
 
 ## Acceptance criteria
 
-- [ ] AC1 `set_program()` writes its location file at exactly
+- [x] AC1 `set_program()` writes its location file at exactly
       `file.path(tools::R_user_dir("tidymedia", "config"), "<program>_location.txt")`.
       A test redirects `R_USER_CONFIG_DIR` to a temp dir with
       `withr::local_envvar()`, calls `set_program()` for each of the four
@@ -49,7 +49,7 @@ copy of its platform layout — the failure a single-platform test cannot catch.
       is non-empty), and asserts **path equality**, not containment: `rappdirs`
       honors `R_USER_CONFIG_DIR` too, so a containment assertion passes against
       the unchanged function.
-- [ ] AC2 A location written before this milestone is still returned after it.
+- [x] AC2 A location written before this milestone is still returned after it.
       For each of the four programs, under `withr::local_envvar(PATH = "")` so
       the `Sys.which(program)` branch cannot short-circuit — never by mocking
       `Sys.which`, which `find_program()` calls again at
@@ -61,17 +61,17 @@ copy of its platform layout — the failure a single-platform test cannot catch.
       stub, which `Sys.which()` still resolves under an empty `PATH`. Both
       directories are redirected in-test and asserted to differ, so neither
       library reaches the user's real config dir.
-- [ ] AC3 `find_program()`'s stale-location branch fires from the legacy path
+- [x] AC3 `find_program()`'s stale-location branch fires from the legacy path
       too: a legacy file naming a binary that no longer exists produces the
       existing warning and a `NULL` location.
-- [ ] AC4 No test in the suite writes to the user's real config directory.
+- [x] AC4 No test in the suite writes to the user's real config directory.
       `tests/testthat/test-nvenc-memo.R:87-106` redirects `set_program()`'s write
       by mocking `rappdirs::user_config_dir`; once AC1 lands that mock still
       resolves and redirects nothing. The domain is the config-writing call
       sites in `tests/`, enumerated by
       `grep -rn "set_program(\|set_ffmpeg(\|set_ffprobe(\|set_ffplay(\|set_mediainfo(" tests/`;
       every hit runs under a redirected `R_USER_CONFIG_DIR`.
-- [ ] AC5 No file under `R/` computes the legacy config directory outside
+- [x] AC5 No file under `R/` computes the legacy config directory outside
       `tm_legacy_config_dir()`, and that helper's body is a call to
       `rappdirs::user_config_dir("tidymedia", "R")`, not a platform layout
       reconstructed by hand. Evidence: `grep -rn "rappdirs\|user_config_dir" R/`
@@ -80,7 +80,7 @@ copy of its platform layout — the failure a single-platform test cannot catch.
       criterion does not bind, plus a read of the helper's body (T7). A legacy
       path built by hand with neither token is outside what the grep can see
       and is disclosed, not asserted away.
-- [ ] AC6 `NEWS.md` states that a location set with `set_ffmpeg()` and its
+- [x] AC6 `NEWS.md` states that a location set with `set_ffmpeg()` and its
       siblings now lives under `tools::R_user_dir()`, and that a location set
       before the change is still found.
 - [ ] AC7 `devtools::test()` clean, `devtools::document()` produces no diff,
@@ -125,3 +125,15 @@ copy of its platform layout — the failure a single-platform test cannot catch.
 - 2026-09-01 implement checkpoint: T1–T3, T6, T8 done (helpers, AC1 equality test — failed against the unchanged write at the rappdirs layout, passes after the move — write moved, nvenc-memo redirect on `R_USER_CONFIG_DIR`, NEWS); T5's fallback read is in `R/` with T4's tests drafted but not yet in the suite; full-suite result pending.
 - 2026-09-01 implement: T4, T5, T7 done. AC2/AC3 tests: four programs x three file states under `PATH = ""`, distinct stubs at the two paths so the value says which file was read; against a mutant with the fallback removed, exactly the legacy-alone cells fail (wrong value + the stale warning) and the other two states stay green. AC5 grep returns two hits: the helper's body and `install_on_win()`'s data-dir default; the body is the single `rappdirs::user_config_dir("tidymedia", "R")` call. `document()` no diff. T9 pending.
 - 2026-09-01 implement: T9 done at `4f8613e` — `devtools::document()` no diff, `devtools::test()` 0 failures / 18 skipped (the nvenc-hardware and parallel-worker gates, as at M099), `devtools::check()` 0 errors / 0 warnings / 0 notes. All tasks checked; status review.
+
+## Review
+<!-- owner: review -->
+
+2026-09-01, PR #102 (draft, CI running). `master` had not moved since the branch was cut (fetch confirmed `master` is an ancestor of HEAD; no unpushed `master` commits). Fresh evidence by command, never recall.
+
+- AC1 — `tests/testthat/test-program-management.R:45-66`: four programs, redirected `R_USER_CONFIG_DIR`, `expect_setequal()` over the whole set of files written under the redirected root against `file.path(tools::R_user_dir("tidymedia", "config"), "<program>_location.txt")`, plus the vocabulary pinned to `set_program()`'s own `formals()`. Passes in the full suite run (below); the implement log records it failing against the unchanged write. **Verified.**
+- AC2 — `test-program-management.R:87-116`: under `PATH = ""` (asserted: `Sys.which("ffmpeg")` is `""`), four programs x three states with distinct stubs at the two paths; both dirs redirected under one tempdir root and asserted to differ. Passes. The implement log's mutant (fallback removed) failed exactly the legacy-alone cells. **Verified.**
+- AC3 — `test-program-management.R:118-131`: legacy file naming a missing binary → existing "no longer seems to exist" warning and `NULL`, all four programs. Passes. **Verified.**
+- AC4 — grep run at review: two config-writing call sites in `tests/` (`test-nvenc-memo.R:103`, `test-program-management.R:56`); the other hits are comments (`helper-timeout-sweep.R:327`, `test-audio-track-drop.R:151`, `test-program-management.R:26,45`). Both call sites run under `withr::local_envvar(R_USER_CONFIG_DIR = <tempdir>)`; the `rappdirs` mock is gone from `test-nvenc-memo.R`. **Verified.**
+- AC5 — grep run at review: `grep -rn "rappdirs\|user_config_dir" R/` returns exactly `R/program_management.R:17` (the helper's body, read: the single call `rappdirs::user_config_dir("tidymedia", "R")`) and `:258` (`install_on_win()`'s `user_data_dir()` default, M098's). Disclosed, per the criterion: a hand-built path with neither token is outside the grep; the [O] reviewer's read of `R/program_management.R` found none. **Verified.**
+- AC6 — `NEWS.md:20-29` ("Configuration"): names `set_ffmpeg()` and the three siblings, `tools::R_user_dir("tidymedia", "config")`, and that a location set before the change is still found. **Verified.**

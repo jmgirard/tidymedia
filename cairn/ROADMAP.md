@@ -10,7 +10,7 @@ _Last hygiene check: 2026-08-31 (status audit: all checks green, inboxes empty, 
 |---|---|---|---|---|---|
 | M097 | A remembered binary location lives where CRAN policy sanctions | planned | — | normal | milestones/M097-cran-policy-user-dirs.md |
 | M098 | `DESCRIPTION` declares the tools the package interfaces, and the data dir follows policy | planned | — | normal | milestones/M098-system-requirements-and-data-dir.md |
-| M099 | D014's pre-0.2.0 rename window is reviewed before it closes | planned | — | normal | milestones/M099-d014-rename-window-review.md |
+| M099 | D014's pre-0.2.0 rename window is reviewed before it closes | in-progress | — | normal | milestones/M099-d014-rename-window-review.md |
 | M100 | Hardware encoding is a backend vocabulary, and videotoolbox is the second member | planned | M099 | normal | milestones/M100-videotoolbox-backend.md |
 | M095 | A wrong argument outranks the nvenc availability probe | done | — | normal | milestones/archive/M095-argument-error-outranks-nvenc-probe.md |
 | M096 | A wrong argument is refused by the verb, not by `purrr::pmap()` or after FFmpeg runs | done | M095 | normal | milestones/archive/M096-unguarded-argument-front-doors.md |

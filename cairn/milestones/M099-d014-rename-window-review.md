@@ -2,12 +2,12 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M099: D014's pre-0.2.0 rename window is reviewed before it closes
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m099-d014-rename-window-review`
 
 ## Goal
 
@@ -83,7 +83,7 @@ exported surface, taken under D014's clean break with no `lifecycle` shim.
 
 ## Tasks
 
-1. Read the four candidates and every D-entry they cite; write up what each
+1. [x] Read the four candidates and every D-entry they cite; write up what each
    change would look like at the call site, and run the AC1 sweep at the branch
    point to record each candidate's starting verb set.
 2. Question gate: put the four dispositions to the user, one option set each,
@@ -117,3 +117,4 @@ exported surface, taken under D014's clean break with no `lifecycle` shim.
 - 2026-08-31 plan amendment: candidate (d), backend-neutral naming for the hardware-encoder surface, added at the user's request after the status audit surfaced that `hardware=` has only ever accepted `"none"` and `"nvenc"` — measured at 16 exported verb signatures, ~118 nvenc-named internal call sites and 8 dedicated test files, with `has_nvenc()`/`nvenc_encoder()` exported and `tidymedia.nvenc_encoders` documented in three help topics. Alternative rejected: folding the videotoolbox implementation into this milestone, which would put it well past the >7 criteria / >10 task advisories and mix a decide milestone with a build one; it became M100, depending on this milestone's (d) call. Falsified by (d) proving unanswerable without first building a second backend, which would invert the dependency.
 - 2026-08-31 plan: criteria audit re-ran in FULL mode over the (d) amendment and M100 together, fresh-context [O] reader. On this file it returned four findings, all fixed here: AC1's shipped-state test for (d) named a grep pattern fixed to the OLD name, which by construction can never return the new one (now two greps — the same defect the log above records fixing for candidate (a), reintroduced in the amendment); the unchanged-state test compared whole grep output and the whole 89-name export vector, which candidate (c)'s own work moves via `helper-timeout-sweep.R` (now scoped to the names under test); (d)'s domain was a two-name hand-list where (a)-(c) enumerate (now a pattern grep over the export list, returning exactly `has_nvenc` and `nvenc_encoder` at HEAD); and AC3's pkgdown clause was addition-only, though a rename is a removal too and a stale row fails `check_pkgdown()`. Coverage AC1 no longer routes to T3, the record-writing task, which cannot satisfy a surface-bound criterion.
 - 2026-08-31 plan: (d)'s gate inherits one consequence from M100 — declining (d) leaves the exported availability helper shipping as `has_nvenc(codec, backend = )`, since M100 gives it a backend argument either way. Recorded here so the disposition is taken with that surface in view.
+- 2026-09-01 implement: branch `m099-d014-rename-window-review` cut from master at a654f9b; status in-progress. T1: AC1 sweep at the branch point over 89 exports — `audio_stream` formal on 18 verbs, `audio` on 6 (`compare_videos`, `picture_in_picture`, their `_batch` siblings, `ffm_codec`, `ffm_copy`), `check_tracks` and `timeout` on 0; the hardware pattern grep returns exactly `has_nvenc`, `nvenc_encoder`; `tidymedia.nvenc_encoders` appears in 4 files under `R/`, 3 under `man/`, 25 under `tests/`, none in `vignettes/` or `_pkgdown.yml`. Sweep script kept out of the repo (scratchpad); its output is reproducible from the AC1 procedure.

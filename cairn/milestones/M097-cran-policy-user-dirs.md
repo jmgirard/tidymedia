@@ -7,7 +7,7 @@
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m097-cran-policy-user-dirs`
+- **Branch/PR:** `m097-cran-policy-user-dirs` · https://github.com/jmgirard/tidymedia/pull/102
 
 ## Goal
 

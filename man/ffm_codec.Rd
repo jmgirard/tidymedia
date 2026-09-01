@@ -12,8 +12,8 @@ ffm_codec(object, audio = NULL, video = NULL)
 
 \item{audio}{A string indicating which audio codec to use or \code{NULL} to
 only set the video codec (default = \code{NULL}). See
-\code{\link{audio_stream}} for the three unrelated things \code{audio}
-names across tidymedia.}
+\code{\link{audio_stream}} for the two things the bare name \code{audio}
+means at Layer 1, and for the input index \code{audio_input}.}
 
 \item{video}{A string indicating which video codec to use or \code{NULL} to
 only set the audio codec. default = \code{NULL}}

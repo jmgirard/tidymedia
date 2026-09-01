@@ -338,7 +338,7 @@ test_that("the nvenc path refuses a malformed token the same as the software pat
   # seam `hardware` and let it check first, the shape crop_video() already had.
   # The encoder pool is pinned so the cell does not depend on this machine.
   input <- make_input()
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   cases <- list(
     list(lbl = "standardize_video", f = function() standardize_video(
       input, "o.mp4", video_codec = "libx264 -evil", hardware = "nvenc",

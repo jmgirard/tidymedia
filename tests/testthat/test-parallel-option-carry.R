@@ -6,58 +6,58 @@
 
 test_that("carry_options() runs .f under the values captured in the parent", {
   withr::local_options(
-    tidymedia.timeout = 42, tidymedia.nvenc_encoders = "h264_nvenc"
+    tidymedia.timeout = 42, tidymedia.hardware_encoders = "h264_nvenc"
   )
   seen <- carry_options(function() {
     list(
       timeout = getOption("tidymedia.timeout"),
-      encoders = getOption("tidymedia.nvenc_encoders")
+      encoders = getOption("tidymedia.hardware_encoders")
     )
   })
   # Change the parent AFTER the wrap: what the wrapper installs must be what
   # was captured, not what happens to be set when the mapped call runs.
-  options(tidymedia.timeout = 7, tidymedia.nvenc_encoders = "hevc_nvenc")
+  options(tidymedia.timeout = 7, tidymedia.hardware_encoders = "hevc_nvenc")
   expect_equal(seen(), list(timeout = 42, encoders = "h264_nvenc"))
 })
 
 test_that("carry_options() restores the prior values when .f returns", {
   withr::local_options(
-    tidymedia.timeout = 42, tidymedia.nvenc_encoders = "h264_nvenc"
+    tidymedia.timeout = 42, tidymedia.hardware_encoders = "h264_nvenc"
   )
   wrapped <- carry_options(function() NULL)
   withr::local_options(
-    tidymedia.timeout = 7, tidymedia.nvenc_encoders = "hevc_nvenc"
+    tidymedia.timeout = 7, tidymedia.hardware_encoders = "hevc_nvenc"
   )
   wrapped()
   expect_equal(getOption("tidymedia.timeout"), 7)
-  expect_equal(getOption("tidymedia.nvenc_encoders"), "hevc_nvenc")
+  expect_equal(getOption("tidymedia.hardware_encoders"), "hevc_nvenc")
 })
 
 test_that("carry_options() restores the prior values when .f aborts", {
   withr::local_options(
-    tidymedia.timeout = 42, tidymedia.nvenc_encoders = "h264_nvenc"
+    tidymedia.timeout = 42, tidymedia.hardware_encoders = "h264_nvenc"
   )
   wrapped <- carry_options(function() {
     cli::cli_abort("mapped call failed", class = "tm_test_failure")
   })
   withr::local_options(
-    tidymedia.timeout = 7, tidymedia.nvenc_encoders = "hevc_nvenc"
+    tidymedia.timeout = 7, tidymedia.hardware_encoders = "hevc_nvenc"
   )
   expect_error(wrapped(), class = "tm_test_failure")
   expect_equal(getOption("tidymedia.timeout"), 7)
-  expect_equal(getOption("tidymedia.nvenc_encoders"), "hevc_nvenc")
+  expect_equal(getOption("tidymedia.hardware_encoders"), "hevc_nvenc")
 })
 
 test_that("an option unset in the parent is unset for the mapped call", {
-  withr::local_options(tidymedia.nvenc_encoders = NULL)
+  withr::local_options(tidymedia.hardware_encoders = NULL)
   wrapped <- carry_options(function() {
     # getOption()'s default only applies when the name is absent from the
     # option list, so this distinguishes "unset" from "set to NULL".
-    getOption("tidymedia.nvenc_encoders", default = "absent")
+    getOption("tidymedia.hardware_encoders", default = "absent")
   })
-  withr::local_options(tidymedia.nvenc_encoders = "hevc_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "hevc_nvenc")
   expect_equal(wrapped(), "absent")
-  expect_equal(getOption("tidymedia.nvenc_encoders"), "hevc_nvenc")
+  expect_equal(getOption("tidymedia.hardware_encoders"), "hevc_nvenc")
 })
 
 test_that("an unset timeout is carried as the no-limit sentinel", {
@@ -304,8 +304,8 @@ test_that("every parallel fan-out in the package has a case above", {
 # AC2 -- the encoder override reaches the worker -------------------------------
 
 tm_nvenc_pipeline <- function(input, output, ...) {
-  enc <- if (tidymedia::has_nvenc("h264")) {
-    tidymedia::nvenc_encoder("h264")
+  enc <- if (tidymedia::has_hardware_encoder("h264")) {
+    tidymedia::hardware_encoder("h264")
   } else {
     "libx264"
   }
@@ -315,7 +315,7 @@ tm_nvenc_pipeline <- function(input, output, ...) {
 test_that("an encoder override set in the parent spares the worker the probe", {
   fake <- local_carry_harness()
   jobs <- tm_batch_jobs(4)
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
 
   par <- ffm_batch(jobs, tm_nvenc_pipeline, run = FALSE, parallel = TRUE)
   seq <- ffm_batch(jobs, tm_nvenc_pipeline, run = FALSE, parallel = FALSE)
@@ -330,7 +330,7 @@ test_that("an encoder override set in the parent spares the worker the probe", {
 test_that("without an override each worker asks its own FFmpeg once", {
   fake <- local_carry_harness()
   jobs <- tm_batch_jobs(4)
-  withr::local_options(tidymedia.nvenc_encoders = NULL)
+  withr::local_options(tidymedia.hardware_encoders = NULL)
 
   par <- ffm_batch(jobs, tm_nvenc_pipeline, run = FALSE, parallel = TRUE)
 
@@ -368,7 +368,7 @@ tm_read_settings <- function(i) {
   list(
     pid = as.character(Sys.getpid()),
     timeout = getOption("tidymedia.timeout"),
-    encoders = getOption("tidymedia.nvenc_encoders")
+    encoders = getOption("tidymedia.hardware_encoders")
   )
 }
 
@@ -389,7 +389,7 @@ test_that("a carried fan-out gives each worker its own settings back", {
   stamp <- function(i) {
     options(
       tidymedia.timeout = 5,
-      tidymedia.nvenc_encoders = paste0("worker_", Sys.getpid())
+      tidymedia.hardware_encoders = paste0("worker_", Sys.getpid())
     )
     tm_read_settings(i)
   }
@@ -397,7 +397,7 @@ test_that("a carried fan-out gives each worker its own settings back", {
   expect_gte(length(before), 2L)
 
   withr::local_options(
-    tidymedia.timeout = 1, tidymedia.nvenc_encoders = "parent_only"
+    tidymedia.timeout = 1, tidymedia.hardware_encoders = "parent_only"
   )
 
   during <- furrr::future_map(

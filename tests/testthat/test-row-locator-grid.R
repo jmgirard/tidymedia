@@ -155,7 +155,7 @@ locator_specs <- function(input3) {
       own = vocab_msg)
   add(id = "compare/audio-bound", verb = "compare_videos_batch", row = 2,
       args = list(jobs = one(inputs = list(c(i1, i2), c(i2, i3)),
-                             output = c("a.mp4", "b.mp4"), audio = c(0, 5))),
+                             output = c("a.mp4", "b.mp4"), audio_input = c(0, 5))),
       own = whole_msg)
   add(id = "pip/position", verb = "picture_in_picture_batch", row = 2,
       args = list(jobs = one(main = c(i1, i2), overlay = c(i2, i3),
@@ -168,7 +168,7 @@ locator_specs <- function(input3) {
       own = whole_msg)
   add(id = "pip/audio", verb = "picture_in_picture_batch", row = 2,
       args = list(jobs = one(main = c(i1, i2), overlay = c(i2, i3),
-                             output = c("a.mp4", "b.mp4"), audio = c(0, 5))),
+                             output = c("a.mp4", "b.mp4"), audio_input = c(0, 5))),
       own = whole_msg)
 
   # --- the shared codec-column token loop, per calling verb and column ------
@@ -190,7 +190,7 @@ locator_specs <- function(input3) {
     list("compare_videos_batch", "audio_codec",
          function(ac) list(jobs = one(inputs = list(c(i1, i2), c(i2, i3)),
                                       output = c("a.mp4", "b.mp4"),
-                                      audio = 0, audio_codec = ac))),
+                                      audio_input = 0, audio_codec = ac))),
     list("convert_audio_batch", "audio_codec",
          function(ac) list(jobs = one(input = c(i1, i2),
                                       output = c("a.mp3", "b.mp3"),
@@ -217,7 +217,7 @@ locator_specs <- function(input3) {
     list("picture_in_picture_batch", "audio_codec",
          function(ac) list(jobs = one(main = c(i1, i2), overlay = c(i2, i3),
                                       output = c("a.mp4", "b.mp4"),
-                                      audio = 0, audio_codec = ac))),
+                                      audio_input = 0, audio_codec = ac))),
     list("segment_video_batch", "video_codec",
          function(vc) list(jobs = one(input = c(i1, i2), start = 0, end = 1,
                                       video_codec = vc))),
@@ -270,13 +270,13 @@ locator_specs <- function(input3) {
                   direction = "diagonal"),
       own = vocab_msg)
   # The two sites M66's review found violating the complement (F1/F2): a
-  # scalar `audio` or `resize` against a uniform table offends on every row,
+  # scalar `audio_input` or `resize` against a uniform table offends on every row,
   # so no row may be named.
   add(id = "arg/compare-audio-bound", verb = "compare_videos_batch",
       locator = FALSE,
       args = list(jobs = one(inputs = list(c(i1, i2), c(i2, i3)),
                              output = c("a.mp4", "b.mp4")),
-                  audio = 5),
+                  audio_input = 5),
       own = whole_msg)
   add(id = "arg/compare-resize", verb = "compare_videos_batch",
       locator = FALSE,
@@ -289,7 +289,7 @@ locator_specs <- function(input3) {
 }
 
 test_that("every swept site names the offending row; argument delivery does not", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input3 <- make_locator_input(3)
   specs <- locator_specs(input3)
   ids <- vapply(specs, `[[`, character(1), "id")

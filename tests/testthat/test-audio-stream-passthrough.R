@@ -205,7 +205,7 @@ test_that("hardware = 'nvenc' probes FFmpeg while building, though run = FALSE",
   # ffmpeg_encoders() rather than find_ffmpeg(): ffmpeg() shells out through
   # system(), not run_program(), so the purity block's mock above cannot see it.
   f <- make_input()
-  withr::local_options(tidymedia.nvenc_encoders = NULL) # force the real probe
+  withr::local_options(tidymedia.hardware_encoders = NULL) # force the real probe
   probes <- 0L
   local_mocked_bindings(
     ffmpeg_encoders = function(...) {
@@ -213,7 +213,7 @@ test_that("hardware = 'nvenc' probes FFmpeg while building, though run = FALSE",
       tibble::tibble(name = "h264_nvenc")
     }
   )
-  # Default hardware: resolve_hw_encoder() returns before reaching has_nvenc().
+  # Default hardware: resolve_hw_encoder() returns before reaching has_hardware_encoder().
   standardize_video(f, "out.mp4", run = FALSE)
   anonymize_video(f, "out.mp4", regions = regions_1(), run = FALSE)
   expect_identical(probes, 0L)

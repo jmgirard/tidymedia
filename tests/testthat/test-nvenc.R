@@ -1,34 +1,34 @@
 # nvenc hardware-encoding helpers, resolver, and verb toggles (M31).
 #
-# Availability is simulated with the `tidymedia.nvenc_encoders` option seam that
-# has_nvenc() consults, so every compile test here is binary-free (no GPU). The
+# Availability is simulated with the `tidymedia.hardware_encoders` option seam that
+# has_hardware_encoder() consults, so every compile test here is binary-free (no GPU). The
 # one real GPU encode is guarded by skip_if_no_nvenc().
 
-# nvenc_encoder() -------------------------------------------------------------
+# hardware_encoder() -------------------------------------------------------------
 
-test_that("nvenc_encoder() maps each family to its encoder name", {
-  expect_equal(nvenc_encoder("h264"), "h264_nvenc")
-  expect_equal(nvenc_encoder("hevc"), "hevc_nvenc")
-  expect_equal(nvenc_encoder("av1"), "av1_nvenc")
-  expect_equal(nvenc_encoder(), "h264_nvenc") # default is the first choice
+test_that("hardware_encoder() maps each family to its encoder name", {
+  expect_equal(hardware_encoder("h264"), "h264_nvenc")
+  expect_equal(hardware_encoder("hevc"), "hevc_nvenc")
+  expect_equal(hardware_encoder("av1"), "av1_nvenc")
+  expect_equal(hardware_encoder(), "h264_nvenc") # default is the first choice
 })
 
-test_that("nvenc_encoder() rejects an unknown family", {
-  expect_error(nvenc_encoder("vp9"), class = "rlang_error")
+test_that("hardware_encoder() rejects an unknown family", {
+  expect_error(hardware_encoder("vp9"), class = "rlang_error")
 })
 
-# has_nvenc() -----------------------------------------------------------------
+# has_hardware_encoder() -----------------------------------------------------------------
 
-test_that("has_nvenc() reads the option-seam pool when set", {
-  withr::local_options(tidymedia.nvenc_encoders = c("h264_nvenc", "av1_nvenc"))
-  expect_true(has_nvenc("h264"))
-  expect_false(has_nvenc("hevc"))
-  expect_true(has_nvenc("av1"))
+test_that("has_hardware_encoder() reads the option-seam pool when set", {
+  withr::local_options(tidymedia.hardware_encoders = c("h264_nvenc", "av1_nvenc"))
+  expect_true(has_hardware_encoder("h264"))
+  expect_false(has_hardware_encoder("hevc"))
+  expect_true(has_hardware_encoder("av1"))
 })
 
-test_that("has_nvenc() returns a length-one logical against real FFmpeg", {
+test_that("has_hardware_encoder() returns a length-one logical against real FFmpeg", {
   skip_if_no_ffmpeg()
-  out <- has_nvenc("h264")
+  out <- has_hardware_encoder("h264")
   expect_type(out, "logical")
   expect_length(out, 1)
   expect_false(is.na(out))
@@ -51,18 +51,18 @@ test_that("resolve_hw_encoder() leaves the codec untouched for hardware none", {
 })
 
 test_that("resolve_hw_encoder() returns the nvenc encoder when available", {
-  withr::local_options(tidymedia.nvenc_encoders = c("h264_nvenc", "hevc_nvenc"))
+  withr::local_options(tidymedia.hardware_encoders = c("h264_nvenc", "hevc_nvenc"))
   expect_equal(resolve_hw_encoder("libx264", "nvenc"), "h264_nvenc")
   expect_equal(resolve_hw_encoder("libx265", "nvenc"), "hevc_nvenc")
 })
 
 test_that("resolve_hw_encoder() aborts when nvenc is unavailable", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   expect_error(resolve_hw_encoder("libx264", "nvenc"), "not available")
 })
 
 test_that("resolve_hw_encoder() falls back to software with a message", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   expect_message(
     out <- resolve_hw_encoder("libx264", "nvenc", fallback = TRUE),
     "falling back"
@@ -83,7 +83,7 @@ test_that("resolve_hw_encoder() falls back to software with a message", {
 # pass while pinning nothing.
 
 test_that("an nvenc-unavailable abort names the verb, not its pipeline helper", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   infile <- withr::local_tempfile(fileext = ".mp4")
   file.create(infile)
 
@@ -135,7 +135,7 @@ test_that("a fan-out call blames the verb, not the fan-out", {
   # malformed jobs table aborts at the schema check, before any fan-out, and
   # reads as correct blame attribution if the message goes unchecked. That is
   # exactly how this test's previous control passed while pinning nothing.
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   infile <- withr::local_tempfile(fileext = ".mp4")
   file.create(infile)
 
@@ -184,17 +184,17 @@ test_that("resolve_hw_encoder() passes the NULL sentinel through for hardware no
 })
 
 test_that("resolve_hw_encoder() resolves the NULL sentinel to the h264 family", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   expect_equal(resolve_hw_encoder(NULL, "nvenc"), "h264_nvenc")
 })
 
 test_that("resolve_hw_encoder() aborts on the NULL sentinel when nvenc is unavailable", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   expect_error(resolve_hw_encoder(NULL, "nvenc"), "not available")
 })
 
 test_that("resolve_hw_encoder() falls back from the NULL sentinel to the container default", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   expect_message(
     out <- resolve_hw_encoder(NULL, "nvenc", fallback = TRUE),
     "container"
@@ -206,7 +206,7 @@ test_that("resolve_hw_encoder() falls back from the NULL sentinel to the contain
 # standardize_video() ----------------------------------------------------------
 
 test_that("standardize_video(hardware = 'nvenc') compiles to the nvenc encoder", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f <- make_input()
   cmd <- standardize_video(f, "out.mp4", hardware = "nvenc", run = FALSE)
   expect_match(cmd, "-codec:v h264_nvenc", fixed = TRUE)
@@ -221,7 +221,7 @@ test_that("standardize_video() default is software and free of nvenc", {
 })
 
 test_that("standardize_video(hardware = 'nvenc') aborts when unavailable", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   f <- make_input()
   expect_error(
     standardize_video(f, "out.mp4", hardware = "nvenc", run = FALSE),
@@ -230,7 +230,7 @@ test_that("standardize_video(hardware = 'nvenc') aborts when unavailable", {
 })
 
 test_that("standardize_video() fallback re-encodes with the software codec", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   f <- make_input()
   expect_message(
     cmd <- standardize_video(
@@ -253,7 +253,7 @@ test_that("standardize_video() rejects an unknown hardware value", {
 # format_for_web() -------------------------------------------------------------
 
 test_that("format_for_web(hardware = 'nvenc') compiles to h264_nvenc", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f <- make_input()
   cmd <- format_for_web(f, "out.mp4", hardware = "nvenc", run = FALSE)
   expect_match(cmd, "-codec:v h264_nvenc -codec:a aac", fixed = TRUE)
@@ -261,7 +261,7 @@ test_that("format_for_web(hardware = 'nvenc') compiles to h264_nvenc", {
 })
 
 test_that("format_for_web() fallback re-encodes with libx264", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   f <- make_input()
   expect_message(
     cmd <- format_for_web(
@@ -276,7 +276,7 @@ test_that("format_for_web() fallback re-encodes with libx264", {
 # anonymize_video() ------------------------------------------------------------
 
 test_that("anonymize_video(hardware = 'nvenc') compiles to the nvenc encoder", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f <- make_input()
   regions <- data.frame(x = 10, y = 10, width = 20, height = 20)
   cmd <- anonymize_video(f, "out.mp4", regions, hardware = "nvenc", run = FALSE)
@@ -293,7 +293,7 @@ test_that("anonymize_video() default is software and free of nvenc", {
 })
 
 test_that("anonymize_video(hardware = 'nvenc') respects the video_codec family", {
-  withr::local_options(tidymedia.nvenc_encoders = c("h264_nvenc", "hevc_nvenc"))
+  withr::local_options(tidymedia.hardware_encoders = c("h264_nvenc", "hevc_nvenc"))
   f <- make_input()
   regions <- data.frame(x = 10, y = 10, width = 20, height = 20)
   cmd <- anonymize_video(f, "out.mp4", regions, video_codec = "libx265",
@@ -302,7 +302,7 @@ test_that("anonymize_video(hardware = 'nvenc') respects the video_codec family",
 })
 
 test_that("anonymize_video(hardware = 'nvenc') aborts for a non-nvenc codec family", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f <- make_input()
   regions <- data.frame(x = 10, y = 10, width = 20, height = 20)
   expect_error(
@@ -313,7 +313,7 @@ test_that("anonymize_video(hardware = 'nvenc') aborts for a non-nvenc codec fami
 })
 
 test_that("anonymize_video(hardware = 'nvenc') aborts when unavailable", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   f <- make_input()
   regions <- data.frame(x = 10, y = 10, width = 20, height = 20)
   expect_error(
@@ -323,7 +323,7 @@ test_that("anonymize_video(hardware = 'nvenc') aborts when unavailable", {
 })
 
 test_that("anonymize_video() fallback re-encodes with the software codec", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   f <- make_input()
   regions <- data.frame(x = 10, y = 10, width = 20, height = 20)
   expect_message(
@@ -346,7 +346,7 @@ test_that("anonymize_video() rejects an unknown hardware value", {
 # batch siblings ---------------------------------------------------------------
 
 test_that("standardize_video_batch(hardware = 'nvenc') applies nvenc per row", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f <- make_input()
   jobs <- tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"))
   res <- standardize_video_batch(jobs, hardware = "nvenc", run = FALSE)
@@ -354,7 +354,7 @@ test_that("standardize_video_batch(hardware = 'nvenc') applies nvenc per row", {
 })
 
 test_that("format_for_web_batch(hardware = 'nvenc') applies nvenc per row", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f <- make_input()
   jobs <- tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"))
   res <- format_for_web_batch(jobs, hardware = "nvenc", run = FALSE)
@@ -362,7 +362,7 @@ test_that("format_for_web_batch(hardware = 'nvenc') applies nvenc per row", {
 })
 
 test_that("anonymize_video_batch(hardware = 'nvenc') applies nvenc per row", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f <- make_input()
   jobs <- tibble::tibble(
     input   = c(f, f),
@@ -377,7 +377,7 @@ test_that("anonymize_video_batch(hardware = 'nvenc') applies nvenc per row", {
 })
 
 test_that("anonymize_video_batch() ignores a per-row hardware column (batch-wide)", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f <- make_input()
   jobs <- tibble::tibble(
     input    = c(f, f),

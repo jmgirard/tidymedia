@@ -55,7 +55,7 @@ let the container's default encoder decide.}
 \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
 \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
 (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); see
-\code{\link{has_nvenc}} for availability and its caveats. Applies to video
+\code{\link{has_hardware_encoder}} for availability and its caveats. Applies to video
 only: \code{audio_codec} is never hardware-accelerated.
 Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 the first \code{"nvenc"} call that re-encodes the video runs the binary
@@ -68,7 +68,7 @@ unavailable, re-encode with the software \code{video_codec} and a message
 (\code{TRUE}) instead of aborting (\code{FALSE}, default). Keeps output
 reproducible by never changing the codec silently.}
 
-\item{audio_stream}{The 0-based index of the audio track to carry into the output, counted \emph{among the input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) carries \strong{every} audio track. The every-track family reads \code{NULL} this way -- \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus their \code{_batch} siblings. The first-track family takes one track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus theirs. Subtitle and data streams are not carried either way. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
+\item{audio_stream}{The 0-based index of the audio track to carry into the output, counted \emph{among the input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) carries \strong{every} audio track. The every-track family reads \code{NULL} this way -- \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus their \code{_batch} siblings. The first-track family takes one track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus theirs. Subtitle and data streams are not carried either way. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
 \item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
 or return the compiled command without running it (\code{FALSE}).}
@@ -112,7 +112,7 @@ standardize_video(video, "std.mp4", audio_stream = 1, run = FALSE)
 }
 \seealso{
 \code{\link[=ffm_scale]{ffm_scale()}}, \code{\link[=ffm_codec]{ffm_codec()}}, and \code{\link[=ffm_pixel_format]{ffm_pixel_format()}}, among the
-builders it wraps; \code{\link[=has_nvenc]{has_nvenc()}} for the \code{hardware = "nvenc"} toggle;
+builders it wraps; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware = "nvenc"} toggle;
 \code{\link[=standardize_video_batch]{standardize_video_batch()}} for the many-file form.
 
 Other task verb functions:

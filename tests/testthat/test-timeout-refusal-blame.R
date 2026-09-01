@@ -26,9 +26,9 @@ test_that("every domain member blames itself for an invalid limit (AC1, AC2)", {
   dir <- withr::local_tempdir()
   specs <- tm_timeout_call_specs(dir)
   forms <- tm_timeout_bad_forms()
-  # The override stays UNSET for this sweep, so `has_nvenc()` takes the branch
+  # The override stays UNSET for this sweep, so `has_hardware_encoder()` takes the branch
   # that reads the limit and is held to the same rule as everything else.
-  withr::local_options(list(tidymedia.nvenc_encoders = NULL))
+  withr::local_options(list(tidymedia.hardware_encoders = NULL))
 
   # `tm_refusal_head()` rather than `tm_blame_head()`: the head alone cannot
   # tell this refusal from any other error raised in the same frame, so a member
@@ -44,19 +44,19 @@ test_that("every domain member blames itself for an invalid limit (AC1, AC2)", {
   }
 })
 
-test_that("a set encoder override leaves `has_nvenc()` nothing to refuse", {
+test_that("a set encoder override leaves `has_hardware_encoder()` nothing to refuse", {
   dir <- withr::local_tempdir()
   specs <- tm_timeout_call_specs(dir)
-  withr::local_options(list(tidymedia.nvenc_encoders = "h264_nvenc"))
+  withr::local_options(list(tidymedia.hardware_encoders = "h264_nvenc"))
   for (form in names(tm_timeout_bad_forms())) {
     limit <- tm_timeout_bad_forms()[[form]]
     expect_identical(
-      tm_blame_head("has_nvenc", specs$has_nvenc, limit), "<none>",
+      tm_blame_head("has_hardware_encoder", specs$has_hardware_encoder, limit), "<none>",
       info = form
     )
     # And the answer is still the override's, not a stale or spawned one.
     expect_true(
-      withr::with_options(list(tidymedia.timeout = limit), has_nvenc("h264"))
+      withr::with_options(list(tidymedia.timeout = limit), has_hardware_encoder("h264"))
     )
   }
 })
@@ -64,7 +64,7 @@ test_that("a set encoder override leaves `has_nvenc()` nothing to refuse", {
 test_that("the refusal does not wait for `run = TRUE` (AC3)", {
   dir <- withr::local_tempdir()
   specs <- tm_timeout_call_specs(dir)
-  withr::local_options(list(tidymedia.nvenc_encoders = NULL))
+  withr::local_options(list(tidymedia.hardware_encoders = NULL))
   carries_run <- Filter(
     function(nm) {
       "run" %in% names(formals(get(nm, envir = asNamespace("tidymedia"))))
@@ -93,7 +93,7 @@ test_that("the refusal does not wait for `run = TRUE` (AC3)", {
 test_that("the refusal does not wait for the fan-out (AC3)", {
   dir <- withr::local_tempdir()
   specs <- tm_timeout_call_specs(dir)
-  withr::local_options(list(tidymedia.nvenc_encoders = NULL))
+  withr::local_options(list(tidymedia.hardware_encoders = NULL))
   carries_parallel <- Filter(
     function(nm) {
       "parallel" %in%
@@ -123,7 +123,7 @@ test_that("the refusal does not wait for the fan-out (AC3)", {
 test_that("one wording reaches every member, from the one checker site (AC4)", {
   dir <- withr::local_tempdir()
   specs <- tm_timeout_call_specs(dir)
-  withr::local_options(list(tidymedia.nvenc_encoders = NULL, cli.width = 80))
+  withr::local_options(list(tidymedia.hardware_encoders = NULL, cli.width = 80))
 
   for (form in names(tm_timeout_bad_forms())) {
     limit <- tm_timeout_bad_forms()[[form]]
@@ -170,7 +170,7 @@ test_that("the paths one argument cell cannot reach blame themselves too (AC1)",
   # and `normalize_audio_batch(two_pass = TRUE)` returned above its site (F3).
   dir <- withr::local_tempdir()
   variants <- tm_timeout_variant_specs(dir)
-  withr::local_options(list(tidymedia.nvenc_encoders = NULL))
+  withr::local_options(list(tidymedia.hardware_encoders = NULL))
   # Guards on the guard: an empty variant table, or one that lost the three
   # axes the review named, would make every expectation below vacuous.
   expect_gt(length(variants), 0)
@@ -198,7 +198,7 @@ test_that("a machine with no media binaries gets the same refusal (AC4)", {
   # the machine-independent refusal first, and that is what this asserts.
   dir <- withr::local_tempdir()
   specs <- tm_timeout_call_specs(dir)
-  withr::local_options(list(tidymedia.nvenc_encoders = NULL, cli.width = 80))
+  withr::local_options(list(tidymedia.hardware_encoders = NULL, cli.width = 80))
   withr::local_envvar(list(PATH = ""))
   # The emptied PATH has to actually hide the binaries, or this leg asserts
   # nothing beyond the sweep above.
@@ -238,7 +238,7 @@ test_that("the valid and unset paths are byte-for-byte the pre-change ones (AC5)
 
   dir <- withr::local_tempdir()
   specs <- tm_timeout_call_specs(dir)
-  withr::local_options(list(tidymedia.nvenc_encoders = NULL))
+  withr::local_options(list(tidymedia.hardware_encoders = NULL))
   recorded <- tm_timeout_valid_baseline()
   expect_setequal(names(recorded), tm_timeout_domain())
   # The blob still describes what this helper measures. Checked once, before the
@@ -318,7 +318,7 @@ test_that("the committed baseline and its generator name the same ref (AC5)", {
 test_that("an invalid limit reaches no spawn at all (AC5)", {
   dir <- withr::local_tempdir()
   specs <- tm_timeout_call_specs(dir)
-  withr::local_options(list(tidymedia.nvenc_encoders = NULL))
+  withr::local_options(list(tidymedia.hardware_encoders = NULL))
   for (name in tm_timeout_domain()) {
     for (form in names(tm_timeout_bad_forms())) {
       trace <- tm_spawn_trace(name, specs[[name]], tm_timeout_bad_forms()[[form]],
@@ -408,7 +408,7 @@ test_that("a REACHED limit still aborts or warns exactly as it did (AC6)", {
   # way to ask.
   dir <- withr::local_tempdir()
   specs <- tm_timeout_call_specs(dir)
-  withr::local_options(list(tidymedia.nvenc_encoders = NULL))
+  withr::local_options(list(tidymedia.hardware_encoders = NULL))
   recorded <- tm_timeout_reached_master()
   expect_setequal(names(recorded), tm_timeout_domain())
   # Both answers have to be present, or "matches the recorded table" would be a

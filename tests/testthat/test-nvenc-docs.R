@@ -87,10 +87,10 @@ test_that("the stream-copy exception is stated on exactly the topics it applies 
 
 test_that("a stream-copy nvenc call aborts without probing, as documented", {
   # Counting at ffmpeg_encoders() for the reason the D034 purity blocks give:
-  # it is the seam has_nvenc() reaches once the option seam is unset, and the
+  # it is the seam has_hardware_encoder() reaches once the option seam is unset, and the
   # one place the binary would actually be consulted.
   f <- make_input()
-  withr::local_options(tidymedia.nvenc_encoders = NULL)
+  withr::local_options(tidymedia.hardware_encoders = NULL)
   probes <- 0L
   local_mocked_bindings(
     ffmpeg_encoders = function(...) {
@@ -105,7 +105,7 @@ test_that("a stream-copy nvenc call aborts without probing, as documented", {
 
   # M67: the control above warms the session memo, so without this discard the
   # four calls below could never reach ffmpeg_encoders() whether or not they
-  # reach has_nvenc() -- `probes == 0L` would hold even if the codec-conflict
+  # reach has_hardware_encoder() -- `probes == 0L` would hold even if the codec-conflict
   # guard regressed to run AFTER resolve_hw_encoder(), which is the whole
   # regression this test exists to catch.
   forget_ffmpeg_capabilities()

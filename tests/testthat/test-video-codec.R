@@ -10,7 +10,7 @@
 # moved to test-audio-codec.R. The composite pins are untouched: those verbs map
 # no audio by default, so they emit no -codec:a either way and stay
 # byte-identical to pre-M34. nvenc availability is simulated
-# with the `tidymedia.nvenc_encoders` option seam that has_nvenc() consults, so
+# with the `tidymedia.hardware_encoders` option seam that has_hardware_encoder() consults, so
 # every compile test here is binary-free (no GPU); the execution tests are
 # guarded by skip_if_no_nvenc().
 
@@ -44,7 +44,7 @@ test_that("crop_video() rejects a non-token video_codec", {
                video_codec = "libx264 -evil", run = FALSE)
   )
   # Same rejection under nvenc, where family inference runs first.
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   expect_error(
     crop_video(f, "out.mp4", width = 100, height = 50,
                video_codec = "libx264 -evil", hardware = "nvenc", run = FALSE)
@@ -52,7 +52,7 @@ test_that("crop_video() rejects a non-token video_codec", {
 })
 
 test_that("crop_video(hardware = 'nvenc') resolves the sentinel to h264_nvenc", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f <- make_input()
   cmd <- crop_video(f, "out.mp4", width = 100, height = 50,
                     hardware = "nvenc", run = FALSE)
@@ -60,7 +60,7 @@ test_that("crop_video(hardware = 'nvenc') resolves the sentinel to h264_nvenc", 
 })
 
 test_that("crop_video(hardware = 'nvenc') follows an explicit codec's family", {
-  withr::local_options(tidymedia.nvenc_encoders = "hevc_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "hevc_nvenc")
   f <- make_input()
   cmd <- crop_video(f, "out.mp4", width = 100, height = 50,
                     video_codec = "libx265", hardware = "nvenc", run = FALSE)
@@ -68,7 +68,7 @@ test_that("crop_video(hardware = 'nvenc') follows an explicit codec's family", {
 })
 
 test_that("crop_video(hardware = 'nvenc') aborts when nvenc is unavailable", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   f <- make_input()
   expect_error(
     crop_video(f, "out.mp4", width = 100, height = 50, hardware = "nvenc",
@@ -78,7 +78,7 @@ test_that("crop_video(hardware = 'nvenc') aborts when nvenc is unavailable", {
 })
 
 test_that("crop_video() fallback from the sentinel emits no codec at all", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   f <- make_input()
   expect_message(
     cmd <- crop_video(f, "out.mp4", width = 100, height = 50,
@@ -89,7 +89,7 @@ test_that("crop_video() fallback from the sentinel emits no codec at all", {
 })
 
 test_that("crop_video() fallback with an explicit codec keeps that codec", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   f <- make_input()
   expect_message(
     cmd <- crop_video(f, "out.mp4", width = 100, height = 50,
@@ -134,13 +134,13 @@ test_that("compare_videos(video_codec = ) rides alongside the filtergraph", {
 test_that("compare_videos(hardware = 'nvenc') resolves per family", {
   f1 <- make_input()
   f2 <- make_input()
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   expect_match(
     as.character(compare_videos(c(f1, f2), "out.mp4", hardware = "nvenc",
                                 run = FALSE)),
     "-codec:v h264_nvenc", fixed = TRUE
   )
-  withr::local_options(tidymedia.nvenc_encoders = "hevc_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "hevc_nvenc")
   expect_match(
     as.character(compare_videos(c(f1, f2), "out.mp4", video_codec = "libx265",
                                 hardware = "nvenc", run = FALSE)),
@@ -151,7 +151,7 @@ test_that("compare_videos(hardware = 'nvenc') resolves per family", {
 test_that("compare_videos() honors the nvenc abort and fallback branches", {
   f1 <- make_input()
   f2 <- make_input()
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   expect_error(
     compare_videos(c(f1, f2), "out.mp4", hardware = "nvenc", run = FALSE),
     "not available"
@@ -187,13 +187,13 @@ test_that("segment_video(video_codec = ) sets the codec on every segment", {
 
 test_that("segment_video(hardware = 'nvenc') resolves per family", {
   f <- make_input()
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   expect_match(
     as.character(segment_video(f, 0, 1, "seg.mp4", hardware = "nvenc",
                                run = FALSE)$command),
     "-codec:v h264_nvenc", fixed = TRUE
   )
-  withr::local_options(tidymedia.nvenc_encoders = "hevc_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "hevc_nvenc")
   expect_match(
     as.character(segment_video(f, 0, 1, "seg.mp4", video_codec = "libx265",
                                hardware = "nvenc", run = FALSE)$command),
@@ -261,13 +261,13 @@ test_that("picture_in_picture(video_codec = ) rides alongside the filtergraph", 
 test_that("picture_in_picture(hardware = 'nvenc') resolves per family", {
   f1 <- make_input()
   f2 <- make_input()
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   expect_match(
     as.character(picture_in_picture(f1, f2, "pip.mp4", hardware = "nvenc",
                                     run = FALSE)),
     "-codec:v h264_nvenc", fixed = TRUE
   )
-  withr::local_options(tidymedia.nvenc_encoders = "hevc_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "hevc_nvenc")
   expect_match(
     as.character(picture_in_picture(f1, f2, "pip.mp4", video_codec = "libx265",
                                     hardware = "nvenc", run = FALSE)),
@@ -278,7 +278,7 @@ test_that("picture_in_picture(hardware = 'nvenc') resolves per family", {
 test_that("picture_in_picture() honors the nvenc abort and fallback branches", {
   f1 <- make_input()
   f2 <- make_input()
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   expect_error(
     picture_in_picture(f1, f2, "pip.mp4", hardware = "nvenc", run = FALSE),
     "not available"
@@ -338,7 +338,7 @@ test_that("crop_video_batch() rejects a numeric video_codec column up front", {
 })
 
 test_that("crop_video_batch() honors hardware only as a formal, not a column", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f <- make_input()
   # A `hardware` column is an ordinary ignored column: it must not touch the
   # compiled commands (hardware is a machine property, D016).
@@ -419,7 +419,7 @@ test_that("picture_in_picture_batch() takes a per-row video_codec column", {
 })
 
 test_that("picture_in_picture_batch() applies hardware batch-wide", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f1 <- make_input()
   f2 <- make_input()
   jobs <- tibble::tibble(main = f1, overlay = f2, output = "a.mp4")

@@ -76,7 +76,7 @@ NVIDIA GPU and an nvenc-capable FFmpeg, `standardize_video()` and
 
 ```{r, eval = FALSE}
 # Check availability first (reflects the FFmpeg build, not a guaranteed GPU)
-has_nvenc("h264")
+has_hardware_encoder("h264")
 
 standardize_video_batch(
   jobs, width = 1280, height = 720, fps = 30,

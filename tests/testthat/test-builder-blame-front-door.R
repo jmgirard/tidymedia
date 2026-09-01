@@ -50,7 +50,7 @@ test_that("the completeness reader detects the defects it exists for", {
 })
 
 test_that("a builder-bound value blames the verb the user called", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
   outdir <- withr::local_tempdir()
   for (cell in blame_specs(input, outdir)) {
@@ -83,7 +83,7 @@ test_that("a bad batch value reports before a missing nvenc encoder", {
   # encoder missing on this one -- the answer crop_video_batch() has given its
   # width/height since M59. The encoder pool is EMPTY, so the nvenc abort is
   # live on every one of these calls and losing is the finding.
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
   jobs <- tibble::tibble(input = input, output = "o.mp4")
 
@@ -165,7 +165,7 @@ expect_blames_verb_m65 <- function(cell) {
 }
 
 test_that("a region, overlay or loudness value blames the verb the user called", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   for (cell in blame_specs_m65(make_input())) {
     if (isTRUE(cell$needs_ffmpeg)) next  # the two-pass block below
     expect_blames_verb_m65(cell)
@@ -178,7 +178,7 @@ test_that("a two-pass loudness value blames the verb, before the analysis pass",
   # calls DO reach it (D034's shape), so they run only where the binary exists
   # and their evidence is local-only (the milestone's evidence note; T5).
   skip_if_no_ffmpeg()
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   for (cell in blame_specs_m65(make_input())) {
     if (!isTRUE(cell$needs_ffmpeg)) next
     expect_blames_verb_m65(cell)
@@ -191,7 +191,7 @@ test_that("a bad region or scale value reports before a missing nvenc encoder", 
   # machine outranks an encoder missing on this one. The encoder pool is EMPTY,
   # so the nvenc abort is live on both calls and losing is the finding.
   # (normalize_audio_batch() has no hardware argument, so it has no such cell.)
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
 
   cnd <- catch_call("anonymize_video_batch", list(
@@ -212,7 +212,7 @@ test_that("a bad region or scale value reports before a missing nvenc encoder", 
 test_that("both forms refuse the same value with the same guard", {
   # AC2: compared cell-for-cell rather than asserted independently, so a fix
   # landing on one form only is red here even when both forms abort.
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
   outdir <- withr::local_tempdir()
   specs <- blame_specs(input, outdir)

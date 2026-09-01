@@ -1,6 +1,6 @@
 # Tests for compare_videos_batch(): the fan-in batch sibling of compare_videos().
 # Each row carries an `inputs` list-column (>= 2 paths) and one `output`, plus
-# optional per-row `direction`/`resize`/`audio` override columns that fall back
+# optional per-row `direction`/`resize`/`audio_input` override columns that fall back
 # to the scalar argument. Command construction is tested purely (run = FALSE);
 # execution + ffm_batch forwarding are binary-gated.
 
@@ -50,7 +50,7 @@ test_that("compare_videos_batch() audio column carries one input's audio; NA dro
   jobs <- tibble::tibble(
     inputs = list(c(f1, f2), c(f1, f2)),
     output = c("a.mp4", "s.mp4"),
-    audio  = c(1, NA)
+    audio_input = c(1, NA)
   )
   res <- compare_videos_batch(jobs, run = FALSE)
   expect_match(res$command[[1]], "-map \"1:a\"", fixed = TRUE)      # keep input 1's audio

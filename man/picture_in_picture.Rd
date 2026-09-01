@@ -11,7 +11,7 @@ picture_in_picture(
   position = c("topright", "topleft", "bottomright", "bottomleft", "center"),
   scale = 0.25,
   margin = 16,
-  audio = NULL,
+  audio_input = NULL,
   video_codec = NULL,
   audio_codec = "copy",
   hardware = c("none", "nvenc"),
@@ -36,7 +36,7 @@ preserved (\code{0 < scale <= 1}). (default = \code{0.25})}
 \item{margin}{The gap in pixels between the inset and the video edges (ignored
 for \code{position = "center"}). (default = \code{16})}
 
-\item{audio}{The 0-based index of the \emph{input} whose audio to keep -- \code{0} is the first file passed in, \code{1} the second. This counts the verb's inputs, not one input's audio streams, so it is a different index from \code{audio_stream} on the single-input verbs. \code{NULL} (default) maps no audio at all, so the output is silent -- unlike \code{audio_stream = NULL}, which always maps something. Naming an input the call does not have is an R error, raised before FFmpeg runs. See \code{\link{audio_stream}}. (default = \code{NULL})}
+\item{audio_input}{The 0-based index of the \emph{input} whose audio to keep -- \code{0} is the first file passed in, \code{1} the second. This counts the verb's inputs, not one input's audio streams, so it is a different index from \code{audio_stream} on the single-input verbs. \code{NULL} (default) maps no audio at all, so the output is silent -- unlike \code{audio_stream = NULL}, which always maps something. Naming an input the call does not have is an R error, raised before FFmpeg runs. See \code{\link{audio_stream}}. (default = \code{NULL})}
 
 \item{video_codec}{A string naming the output video codec, or \code{NULL}
 (default) to leave it unset, so the output container's default encoder is
@@ -47,7 +47,7 @@ codec.}
 \code{"copy"} (default) stream-copies it through untouched; name an encoder
 (e.g. \code{"aac"}) to transcode it, or pass \code{NULL} to leave the codec
 unset so the output container's default encoder is used. Nothing is emitted
-when \code{audio} is \code{NULL}, since no audio reaches the output; naming
+when \code{audio_input} is \code{NULL}, since no audio reaches the output; naming
 an encoder in that case is an error.}
 
 \item{hardware}{The encoder backend: \code{"none"} (default, the software
@@ -56,7 +56,7 @@ an encoder in that case is an error.}
 (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); with the default
 \code{video_codec = NULL} the H.264 family is assumed, so a non-H.264
 container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
-\code{video_codec}. See \code{\link{has_nvenc}} for availability and its
+\code{video_codec}. See \code{\link{has_hardware_encoder}} for availability and its
 caveats.
 Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 the first \code{"nvenc"} call that re-encodes the video runs the binary
@@ -84,7 +84,7 @@ blessed \code{\link{ffm_overlay}} verb, which resizes the overlay to a
 fraction of the main video's width and positions it.
 }
 \details{
-Audio is dropped unless \code{audio} names an input to carry (\code{0} = the
+Audio is dropped unless \code{audio_input} names an input to carry (\code{0} = the
 main video, \code{1} = the overlay). A carried track is
 stream-copied unless \code{audio_codec} names an encoder.
 }
@@ -93,7 +93,7 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 picture_in_picture(video, video, "pip.mp4", run = FALSE)
 }
 \seealso{
-\code{\link[=ffm_overlay]{ffm_overlay()}}, the builder it wraps; \code{\link[=has_nvenc]{has_nvenc()}} for the
+\code{\link[=ffm_overlay]{ffm_overlay()}}, the builder it wraps; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the
 \code{hardware = "nvenc"} toggle; \code{\link[=compare_videos]{compare_videos()}} for
 side-by-side stacking.
 

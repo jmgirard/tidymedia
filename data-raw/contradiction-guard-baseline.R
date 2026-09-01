@@ -302,7 +302,7 @@ contradiction_guard_baseline <- function(ref = NULL, root = ".") {
   env <- codec_guard_env(ref, root)
   sample <- system.file("extdata", "sample.mp4", package = "tidymedia")
   if (!nzchar(sample)) stop("sample.mp4 not found; install the package first")
-  old <- options(tidymedia.nvenc_encoders = "h264_nvenc")
+  old <- options(tidymedia.nvenc_encoders = "h264_nvenc", tidymedia.hardware_encoders = "h264_nvenc")
   on.exit(options(old), add = TRUE)
 
   rows <- lapply(contradiction_guard_cases(sample), function(case) {

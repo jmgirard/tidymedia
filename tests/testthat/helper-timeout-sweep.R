@@ -131,7 +131,7 @@ tm_timeout_recorded_domain <- function() {
     "extract_frame_batch", "ffm_batch", "ffm_run", "ffmpeg", "ffmpeg_codecs",
     "ffmpeg_encoders", "ffprobe", "format_for_web", "format_for_web_batch",
     "get_duration", "get_frame_rate", "get_height", "get_sample_rate",
-    "get_width", "has_nvenc", "mediainfo", "mediainfo_parameter",
+    "get_width", "has_hardware_encoder", "mediainfo", "mediainfo_parameter",
     "mediainfo_query", "mediainfo_summary", "mediainfo_template",
     "normalize_audio", "normalize_audio_batch", "picture_in_picture",
     "picture_in_picture_batch", "probe_all", "probe_audio", "probe_container",
@@ -199,7 +199,7 @@ tm_timeout_call_specs <- function(dir) {
     get_height = list(file = vid),
     get_sample_rate = list(file = vid),
     get_width = list(file = vid),
-    has_nvenc = list(),
+    has_hardware_encoder = list(),
     mediainfo = list(command = "--Version"),
     mediainfo_parameter =
       list(file = vid, section = "General", parameter = "Duration"),
@@ -411,7 +411,7 @@ tm_timeout_bad_forms <- function() {
 # The member is called BY NAME, for helper-blame.R's reason: do.call() on a
 # function OBJECT records the anonymous object as the condition call and hides
 # the blame target this sweep exists to watch. `"<none>"` is a real answer, not
-# a failure -- AC1's `has_nvenc()` carve-out is exactly that cell.
+# a failure -- AC1's `has_hardware_encoder()` carve-out is exactly that cell.
 tm_blame_head <- function(name, args, limit) {
   withr::with_options(list(tidymedia.timeout = limit), {
     cnd <- tryCatch(
@@ -445,7 +445,7 @@ tm_timeout_blame_master <- function() {
     "segment_video_batch", "separate_audio_video_batch",
     "standardize_video_batch", "strip_metadata_batch"
   )
-  ffmpeg_class <- c("ffmpeg_codecs", "ffmpeg_encoders", "has_nvenc")
+  ffmpeg_class <- c("ffmpeg_codecs", "ffmpeg_encoders", "has_hardware_encoder")
   mediainfo_parameter_class <- c(
     "get_duration", "get_frame_rate", "get_height", "get_sample_rate",
     "get_width"
@@ -490,7 +490,7 @@ tm_timeout_reached_master <- function() {
     "anonymize_video", "compare_videos", "concatenate_videos", "convert_audio",
     "crop_video", "extract_audio", "extract_frame", "ffm_run", "ffmpeg",
     "ffmpeg_codecs", "ffmpeg_encoders", "ffprobe", "format_for_web",
-    "has_nvenc", "mediainfo", "normalize_audio", "picture_in_picture",
+    "has_hardware_encoder", "mediainfo", "normalize_audio", "picture_in_picture",
     "sample_frames", "separate_audio_video", "standardize_video",
     "strip_metadata", "verify_media"
   )
@@ -725,6 +725,14 @@ tm_timeout_valid_baseline <- function() {
       "the recorded baseline's provenance is missing or names another source"
     )
   }
+  # The blob was recorded at ae5ff1c, where the availability predicate was
+  # exported as `has_nvenc()`; the rename to `has_hardware_encoder()` changed
+  # the export's name and nothing it spawns or returns, so the recorded cell is
+  # read under the current name rather than re-recorded from a ref that cannot
+  # name it. The blob itself stays as its generator wrote it. A re-recorded
+  # blob carries the new key, at which point this remap is dead and must go.
+  stopifnot("has_nvenc" %in% names(table))
+  names(table)[names(table) == "has_nvenc"] <- "has_hardware_encoder"
   table
 }
 
@@ -866,7 +874,7 @@ tm_refusal_head <- function(name, args, limit) {
 #
 # Every member is present, including the three that take no arguments in
 # `tm_timeout_call_specs()` -- `ffmpeg_codecs`, `ffmpeg_encoders` and
-# `has_nvenc` all have formals to corrupt even though their valid cell is empty,
+# `has_hardware_encoder` all have formals to corrupt even though their valid cell is empty,
 # and `ffmpeg_codecs`'s is the argument M096 exists to guard.
 tm_timeout_corrupt_specs <- function(dir) {
   specs <- tm_timeout_call_specs(dir)
@@ -933,7 +941,7 @@ tm_corrupt_limit_sweep <- function(cells) {
   # test-nvenc-probe-blame.R, which measures the same paths.
   scratch <- withr::local_tempdir()
   withr::local_dir(scratch)
-  withr::local_options(tidymedia.nvenc_encoders = NULL)
+  withr::local_options(tidymedia.hardware_encoders = NULL)
   testthat::local_mocked_bindings(
     run_program = function(location, args, program = "the program", ...) {
       character(0)
@@ -1006,7 +1014,7 @@ tm_corrupt_master_ref <- "4063faa"
 # often means the wrong form is not wrong for that formal -- `123` is a
 # perfectly good `fps`, `width` or `tolerance`. `ffm_finish`, `ffm_batch` and
 # `if` are the gate booleans `run` and `parallel`, refused by the runner rather
-# than the verb; `purrr::pmap` is the per-row fan-out; `nvenc_encoder` and `<-`
+# than the verb; `purrr::pmap` is the per-row fan-out; `hardware_encoder` and `<-`
 # are two single-member classes. Those five classes are named in this
 # milestone's Scope Out and carried by a ROADMAP row; they are here so they stay
 # visible. `:` is the sixth and the one that does not stay: `ffmpeg_codecs()`
@@ -1098,7 +1106,7 @@ tm_corrupt_dropped_master <- function() {
     "get_height/file -> <none>",
     "get_sample_rate/file -> <none>",
     "get_width/file -> <none>",
-    "has_nvenc/codec -> nvenc_encoder",
+    "has_hardware_encoder/codec -> hardware_encoder",
     "mediainfo/command -> <none>",
     "mediainfo_parameter/file -> <none>",
     "mediainfo_parameter/parameter -> <none>",
@@ -1299,7 +1307,7 @@ tm_nvenc_condition <- function(name, args) {
 # `hardware = "nvenc"`, with the encoder pool fixed to `encoders`.
 #
 # The mock is installed ONCE around the whole loop rather than per cell, and
-# `tidymedia.nvenc_encoders` is unset inside it: `nvenc_available()` reads that
+# `tidymedia.hardware_encoders` is unset inside it: `nvenc_available()` reads that
 # option seam FIRST and only falls through to `cached_encoder_names()` when it
 # is NULL, so an option left set by another file would answer every cell and
 # the mock -- the thing that makes `encoders = character()` mean "this build has
@@ -1320,7 +1328,7 @@ tm_nvenc_condition <- function(name, args) {
 # that refused it when it was not.
 tm_nvenc_sweep <- function(cells, encoders, limit = NULL) {
   testthat::local_reproducible_output()
-  withr::local_options(tidymedia.nvenc_encoders = NULL)
+  withr::local_options(tidymedia.hardware_encoders = NULL)
   # Every spawn is intercepted too, at the two wrappers `tm_force_timeout()` uses
   # -- `run_program()` and `guard_timeout()` stand in front of every
   # `system()`/`system2()` call the package makes. Without this, a cell whose

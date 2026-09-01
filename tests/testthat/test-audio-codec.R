@@ -154,16 +154,16 @@ test_that("segment_video_batch() takes a per-row audio_codec column", {
 test_that("compare_videos() emits no -codec:a when no audio is mapped", {
   f1 <- make_input()
   f2 <- make_input()
-  # Default audio = NULL drops audio entirely, so there is no stream for a
+  # Default audio_input = NULL drops audio entirely, so there is no stream for a
   # -codec:a to apply to and the pre-M35 command is unchanged.
   cmd <- compare_videos(c(f1, f2), "out.mp4", run = FALSE)
   expect_no_match(as.character(cmd), "-codec:a", fixed = TRUE)
 })
 
-test_that("compare_videos(audio = ) stream-copies the carried track", {
+test_that("compare_videos(audio_input = ) stream-copies the carried track", {
   f1 <- make_input()
   f2 <- make_input()
-  cmd <- compare_videos(c(f1, f2), "out.mp4", audio = 0, run = FALSE)
+  cmd <- compare_videos(c(f1, f2), "out.mp4", audio_input = 0, run = FALSE)
   expect_match(as.character(cmd), "-codec:a copy", fixed = TRUE)
   expect_match(as.character(cmd), "-map \"0:a\"", fixed = TRUE)
 })
@@ -171,7 +171,7 @@ test_that("compare_videos(audio = ) stream-copies the carried track", {
 test_that("compare_videos() carries a named audio codec into the complex path", {
   f1 <- make_input()
   f2 <- make_input()
-  cmd <- compare_videos(c(f1, f2), "out.mp4", audio = 1,
+  cmd <- compare_videos(c(f1, f2), "out.mp4", audio_input = 1,
                         video_codec = "libx264", audio_codec = "aac",
                         run = FALSE)
   # One command carrying the filtergraph, its [vout] label and map, and both
@@ -208,10 +208,10 @@ test_that("picture_in_picture() emits no -codec:a when no audio is mapped", {
   expect_no_match(as.character(cmd), "-codec:a", fixed = TRUE)
 })
 
-test_that("picture_in_picture(audio = ) stream-copies the carried track", {
+test_that("picture_in_picture(audio_input = ) stream-copies the carried track", {
   f1 <- make_input()
   f2 <- make_input()
-  cmd <- picture_in_picture(f1, f2, "out.mp4", audio = 0, run = FALSE)
+  cmd <- picture_in_picture(f1, f2, "out.mp4", audio_input = 0, run = FALSE)
   expect_match(as.character(cmd), "-codec:a copy", fixed = TRUE)
   expect_match(as.character(cmd), "-map \"0:a\"", fixed = TRUE)
 })
@@ -220,7 +220,7 @@ test_that("picture_in_picture() carries a named audio codec into the complex pat
   f1 <- make_input()
   f2 <- make_input()
   cmd <- as.character(
-    picture_in_picture(f1, f2, "out.mp4", audio = 1, video_codec = "libx264",
+    picture_in_picture(f1, f2, "out.mp4", audio_input = 1, video_codec = "libx264",
                        audio_codec = "aac", run = FALSE)
   )
   expect_match(cmd, "-filter_complex", fixed = TRUE)
@@ -277,14 +277,14 @@ test_that("the batch siblings accept an all-NA (logical) audio_codec column", {
   cmp <- compare_videos_batch(
     tibble::tibble(inputs = list(c(f, f), c(f, f)),
                    output = c("a.mp4", "b.mp4"), audio_codec = NA),
-    audio = 0, run = FALSE
+    audio_input = 0, run = FALSE
   )
   expect_false(any(grepl("-codec:a", cmp$command, fixed = TRUE)))
 
   pip <- picture_in_picture_batch(
     tibble::tibble(main = c(f, f), overlay = c(f, f),
                    output = c("a.mp4", "b.mp4"), audio_codec = NA),
-    audio = 0, run = FALSE
+    audio_input = 0, run = FALSE
   )
   expect_false(any(grepl("-codec:a", pip$command, fixed = TRUE)))
 
@@ -403,7 +403,7 @@ test_that("the composite batch siblings take a per-row audio_codec column", {
     tibble::tibble(inputs = list(c(f, f), c(f, f)),
                    output = c("a.mp4", "b.mp4"),
                    audio_codec = c("aac", NA_character_)),
-    audio = 0, run = FALSE
+    audio_input = 0, run = FALSE
   )
   expect_match(as.character(cmp$command[[1]]), "-codec:a aac", fixed = TRUE)
   expect_no_match(as.character(cmp$command[[2]]), "-codec:a", fixed = TRUE)
@@ -412,7 +412,7 @@ test_that("the composite batch siblings take a per-row audio_codec column", {
     tibble::tibble(main = c(f, f), overlay = c(f, f),
                    output = c("a.mp4", "b.mp4"),
                    audio_codec = c("aac", NA_character_)),
-    audio = 1, run = FALSE
+    audio_input = 1, run = FALSE
   )
   expect_match(as.character(pip$command[[1]]), "-codec:a aac", fixed = TRUE)
   expect_no_match(as.character(pip$command[[2]]), "-codec:a", fixed = TRUE)
@@ -424,16 +424,16 @@ test_that("the composite batch siblings take a per-row audio_codec column", {
 
 test_that("both composite batch verbs accept an all-NA audio column", {
   f <- make_input()
-  # R types `audio = NA` logical while the column must otherwise be numeric; the
+  # R types `audio_input = NA` logical while the column must otherwise be numeric; the
   # roxygen documents NA as "drop audio", so it has to be accepted (M34 lesson).
   cmp <- compare_videos_batch(
-    tibble::tibble(inputs = list(c(f, f)), output = "a.mp4", audio = NA),
+    tibble::tibble(inputs = list(c(f, f)), output = "a.mp4", audio_input = NA),
     run = FALSE
   )
   expect_no_match(as.character(cmp$command[[1]]), ":a", fixed = TRUE)
 
   pip <- picture_in_picture_batch(
-    tibble::tibble(main = f, overlay = f, output = "a.mp4", audio = NA),
+    tibble::tibble(main = f, overlay = f, output = "a.mp4", audio_input = NA),
     run = FALSE
   )
   expect_no_match(as.character(pip$command[[1]]), ":a", fixed = TRUE)
@@ -441,7 +441,7 @@ test_that("both composite batch verbs accept an all-NA audio column", {
   # An all-NA *numeric* column is a well-typed "drop audio everywhere" too.
   pip2 <- picture_in_picture_batch(
     tibble::tibble(main = f, overlay = f, output = "a.mp4",
-                   audio = NA_real_),
+                   audio_input = NA_real_),
     run = FALSE
   )
   expect_no_match(as.character(pip2$command[[1]]), ":a", fixed = TRUE)
@@ -453,36 +453,36 @@ test_that("both composite batch verbs reject a wrongly typed audio column", {
   # column only failed later, per row.
   expect_error(
     compare_videos_batch(
-      tibble::tibble(inputs = list(c(f, f)), output = "a.mp4", audio = "0"),
+      tibble::tibble(inputs = list(c(f, f)), output = "a.mp4", audio_input = "0"),
       run = FALSE
     ),
-    "audio"
+    "audio_input"
   )
   expect_error(
     picture_in_picture_batch(
-      tibble::tibble(main = f, overlay = f, output = "a.mp4", audio = "0"),
+      tibble::tibble(main = f, overlay = f, output = "a.mp4", audio_input = "0"),
       run = FALSE
     ),
-    "audio"
+    "audio_input"
   )
   # An all-NA character column is not the logical one R produces, so the
   # tightened guard rejects it rather than reading it as "drop audio".
   expect_error(
     picture_in_picture_batch(
       tibble::tibble(main = f, overlay = f, output = "a.mp4",
-                     audio = NA_character_),
+                     audio_input = NA_character_),
       run = FALSE
     ),
-    "audio"
+    "audio_input"
   )
   # A real logical column is not an all-NA one either.
   expect_error(
     picture_in_picture_batch(
       tibble::tibble(main = c(f, f), overlay = c(f, f),
-                     output = c("a.mp4", "b.mp4"), audio = c(TRUE, FALSE)),
+                     output = c("a.mp4", "b.mp4"), audio_input = c(TRUE, FALSE)),
       run = FALSE
     ),
-    "audio"
+    "audio_input"
   )
 })
 
@@ -604,7 +604,7 @@ test_that("audio_codec is independent of the hardware toggle on both verbs", {
   f <- make_input()
   # hardware = "nvenc" swaps the *video* encoder only; the audio token is the
   # caller's regardless (M39 scope: audio is never hardware-accelerated).
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   std <- as.character(standardize_video(f, "out.mp4", audio_codec = "aac",
                                         hardware = "nvenc", run = FALSE))
   expect_match(std, "-codec:v h264_nvenc", fixed = TRUE)
@@ -733,7 +733,7 @@ test_that("the M39 batch verbs reject a non-token audio_codec per row", {
 
 test_that("hardware stays batch-wide and never reads an audio_codec row", {
   f <- make_input()
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   jobs <- tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"),
                          audio_codec = c("aac", NA_character_))
   out <- standardize_video_batch(jobs, hardware = "nvenc", run = FALSE)

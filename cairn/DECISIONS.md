@@ -3581,3 +3581,117 @@ caller can still pass a list of strings.
 
 **Falsifier.** A call the verb compiled before this entry that it now refuses.
 M096's acceptance criteria hold the merge-base comparison.
+
+## D077 — The pre-0.2.0 window closes on four candidates: `audio` becomes `audio_input`, the hardware helpers and option take backend-neutral names, and the `NULL`-unification, `check_tracks =` and `timeout =` changes are declined for good (2026-09-01, from M099/RR06; applies D014; supersedes D032's "the docs, not the API, carry the disambiguation" half while its two-names bullet stands; leaves D047's, D051's and D060's per-verb-argument rejections standing and narrows each one's reopening clause to a per-row shape)
+
+D014 lets a name change outright until 0.2.0 reaches CRAN. Four changes had
+been carried as candidates against that window, each declined at an in-session
+gate with a user-report falsifier that never fired. RB06/RR06 reviewed them
+together, and the maintainer took every RR06 disposition at the ingest gate.
+The dispositions, in RR06's words:
+
+- **(a) names, `audio_stream`:** declined permanently; reopened by a Layer 2
+  verb that must select both an input and a track in one call.
+- **(a) names, `audio`:** ship as `audio_input` on `compare_videos`,
+  `compare_videos_batch`, `picture_in_picture`, `picture_in_picture_batch`;
+  `ffm_codec(audio =)` and `ffm_copy(audio =)` unchanged.
+- **(a) `NULL`:** declined permanently; reopened by a verb whose product can be
+  one stream or many, which would be a third family rather than a unification.
+- **(b):** declined permanently; reopened by a caller needing the check to vary
+  per row for rows that name no track — a `jobs` column, never a scalar
+  argument.
+- **(c):** declined permanently; reopened by a caller needing a limit that
+  varies per row within one batch — a `jobs` column carried on the pipeline
+  object, never a scalar argument.
+- **(d) names:** ship as `has_hardware_encoder()`, `hardware_encoder()`,
+  `tidymedia.hardware_encoders`; M100's helper argument spelled `hardware =`.
+- **(d) removal:** declined permanently (both stay exported); reopened by a
+  measured report that `hardware_encoder()` is used only through the
+  predicate, at which point GP1 unexports it under a deprecation cycle.
+
+**Why `audio` moves and `audio_stream` does not.** The two indices differ in
+what they count, and one name says so while the other does not: `audio_stream
+= 1` announces its base, `audio = 1` admits three readings at the call site
+(a truthy flag, the second track, the second file) and only the third is
+right. The repair is the one the package already made for the other index: put
+the base in the compound. `input` is those verbs' own vocabulary — the batch
+column is `inputs` — and `audio_input = NULL` reads as "no audio input", which
+is the silent output the verbs already produce. `audio_stream` keeps FFmpeg's
+word, the full-word compound D014 requires, and the pattern the pending
+`subtitle_stream`/`video_stream` selector row will follow.
+
+**What this supersedes in D032.** D032 answered the two-name confusion with a
+`?audio_stream` topic and generated `@param` text and said the API would not
+carry the disambiguation; its closing argument was that a rename paid for by a
+headcount is paid by every existing caller. That argument prices a rename
+after 0.2.0. Before it the caller count is approximately the maintainer, which
+is what D014's window exists to exploit, and what fires here is not the
+headcount D032 rightly ruled out but one of two names failing the test the
+other passes. D032's re-confirmation of D023's two-names bullet stands and is
+strengthened: the second base now has its own compound. D009's sentence that
+the fan-in verbs "expose an `audio =` index" reads as `audio_input` from here
+on (IP4: the entry itself is not edited).
+
+**Why the hardware names move.** A function named for one backend answering
+for another is the defect D014 already retired in `audio_as_mp3()` and
+`acodec`, arriving in the capability family; `options(tidymedia.nvenc_encoders
+= "h264_videotoolbox")` is false on its face, and that seam is the one carried
+into every parallel worker (D050). `has_hardware_encoder()` keeps the `has_*`
+predicate shape, outside D014's `get_*` reservation; `hardware_encoder()` pairs
+with the `hardware =` argument at the 16 verbs and with the predicate by
+exactly the word that says which one asks the machine; the option holds
+hardware-encoder names treated as available, so the word is accurate, where
+`tidymedia.encoders` would appear to govern `ffmpeg_encoders()`, which never
+reads it (D044). Rejected names: `has_hw_encoder` (the abbreviation D014
+retired), `encoder_name` (loses the hardware scope), `tidymedia.encoders`
+(overclaims); `tidymedia.available_encoders` is the accurate runner-up. D044's
+read order — option before memo — is unchanged under the new string. Both
+helpers stay exported: the predicate is the one honest pre-flight check and
+the vignette teaches it; the mapper is the pure half, the way to set the
+option without hand-typing FFmpeg names, and after M100 the only exported
+view of the per-backend family table.
+
+**Why the three declines are permanent rather than deferred.** The `NULL`
+readings are each forced by what the verb writes (D023, D025, D026), and the
+one clean-looking alternative — an `audio_stream = 0` default on the extraction
+verbs — breaks D024's dropped-track probe, which is gated on `is.null()` and
+cannot survive the `_batch` fan-out on `missing()`. A `check_tracks =` argument
+duplicates a per-call form that exists twice (`withr::with_options()`, and
+`suppressWarnings(classes = "tidymedia_dropped_audio")`) and a per-row form the
+`audio_stream` column already gives. A scalar `timeout =` cannot express the
+per-row residual that was its only justification, and would add a second
+spelling of a value `with_timeout()`'s `seconds` already names. Each row's
+reopening condition is now a per-row shape, never a user report.
+
+**Falsified by** the reopening clauses above, each of which reopens under a
+deprecation cycle once 0.2.0 ships, never under a free rename.
+
+## D078 — Names carry the category, session options never grow verb arguments, and an unfireable falsifier decides nothing (2026-09-01, from RR06 Q7; widens D014's no-member-in-a-name rule from task verbs to every export and argument; states D047, D051 and D060 once, leaving each standing)
+
+RR06 found that the four D077 candidates were two questions asked four times,
+and that the plugin's gates had been deciding each by hand. Three rules, so the
+next one is decided by rule:
+
+- **An exported name carries the category and never one member of an open
+  vocabulary** (a backend, a codec, a container), **and a compound argument name
+  states what it counts.** This is D014's "no verb hard-codes a fixed
+  format/codec in its name", widened from task verbs to every export, option
+  and argument. D077's `audio_input` and `has_hardware_encoder()` are
+  applications of this sentence, not new calls.
+- **A session option never grows a per-call argument on the verbs.** The
+  per-call grain is a `with_*()`/`local_*()` pair, added only when the option's
+  value must be refused before it is set (D051, D052; D060 declined the pair for
+  a logical on exactly that ground), and a per-row grain, if ever needed, is a
+  `jobs` column carried on the pipeline object, never a scalar argument. The
+  two exceptions the package has already found — `with_timeout()` for a
+  validated value, per-row control through the `audio_stream` column — are both
+  inside the sentence.
+- **Before 0.2.0, a candidate whose only falsifier is a user report is decided
+  on design grounds.** The package has no user base, so such a falsifier cannot
+  fire before D014's window closes, and its silence carries no information. All
+  four D077 rows carried unfireable falsifiers and had been declined at gates
+  partly on that silence.
+
+**Falsified by** an export or argument this rule forces into a name that hides
+what it does, or by a seam whose one-call form cannot be a wrapper — a value
+that must be set differently per row and cannot ride on the pipeline object.

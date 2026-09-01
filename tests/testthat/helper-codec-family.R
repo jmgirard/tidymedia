@@ -109,5 +109,5 @@ codec_family_col_value <- function(arg) {
 codec_family_extra <- function(verb, arg) {
   fanin <- c("compare_videos", "compare_videos_batch",
              "picture_in_picture", "picture_in_picture_batch")
-  if (arg == "audio_codec" && verb %in% fanin) list(audio = 0) else list()
+  if (arg == "audio_codec" && verb %in% fanin) list(audio_input = 0) else list()
 }

@@ -31,7 +31,7 @@ video, AAC audio). For per-row codecs use a verb that exposes them, such as
 
 \item{hardware}{The encoder backend applied to every row: \code{"none"}
 (default, software libx264) or \code{"nvenc"} for NVIDIA GPU H.264 encoding.
-Batch-wide (not a per-row column). See \code{\link{has_nvenc}}.
+Batch-wide (not a per-row column). See \code{\link{has_hardware_encoder}}.
 Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 the first \code{"nvenc"} call that re-encodes the video runs the binary
 while the command is built, even under \code{run = FALSE}. The answer is
@@ -45,7 +45,7 @@ the internal fan-out it would otherwise be reported against.}
 unavailable, re-encode with software libx264 and a message (\code{TRUE})
 instead of aborting (\code{FALSE}, default).}
 
-\item{audio_stream}{The 0-based index of the audio track to carry into each output, counted \emph{among that row's input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) carries \strong{every} audio track. The argument applies to every row lacking an \code{audio_stream} column; an \code{NA} cell in that column means the same as \code{NULL} for that row, rather than falling back to the argument. The every-track family reads \code{NULL} this way -- \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus their \code{_batch} siblings. The first-track family takes one track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus theirs. Subtitle and data streams are not carried either way. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
+\item{audio_stream}{The 0-based index of the audio track to carry into each output, counted \emph{among that row's input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) carries \strong{every} audio track. The argument applies to every row lacking an \code{audio_stream} column; an \code{NA} cell in that column means the same as \code{NULL} for that row, rather than falling back to the argument. The every-track family reads \code{NULL} this way -- \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus their \code{_batch} siblings. The first-track family takes one track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus theirs. Subtitle and data streams are not carried either way. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}

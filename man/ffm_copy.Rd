@@ -11,8 +11,9 @@ ffm_copy(object, audio = TRUE, video = TRUE, streams = TRUE)
 \code{ffm_files()}.}
 
 \item{audio}{A logical indicating whether to copy the audio codec
-(default = \code{TRUE}). See \code{\link{audio_stream}} for the three
-unrelated things \code{audio} names across tidymedia.}
+(default = \code{TRUE}). See \code{\link{audio_stream}} for the two
+things the bare name \code{audio} means at Layer 1, and for the input
+index \code{audio_input}.}
 
 \item{video}{A logical indicating whether to copy the video codec.
 (default = \code{TRUE})}

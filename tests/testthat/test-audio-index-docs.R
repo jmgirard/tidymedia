@@ -1,6 +1,6 @@
 # Guards the cross-link between the two 0-based audio indices and the concept
 # topic that disambiguates them (M51). The package exposes `audio_stream` (a
-# 0-based index among ONE input's audio streams) and `audio` (a 0-based index
+# 0-based index among ONE input's audio streams) and `audio_input` (a 0-based index
 # among a verb's INPUTS, plus two unrelated Layer-1 meanings), and a reader who
 # meets both needs one page saying so. These tests fail when a topic documents
 # either parameter without linking to that page -- so a verb that gains the
@@ -36,16 +36,19 @@ test_that("every topic documenting audio_stream links to the concept topic", {
   expect_equal(missing, character(0))
 })
 
-test_that("every topic documenting an `audio` argument links to the concept topic", {
+test_that("every topic documenting `audio_input` or `audio` links to the concept topic", {
   rd <- rd_sources()
   skip_if(is.null(rd), "no Rd source available")
-  topics <- topics_documenting(rd, "audio")
-  # compare_videos() / picture_in_picture() and their _batch siblings, where
-  # `audio` is an input index, plus ffm_codec() and ffm_copy(), where it means a
-  # codec string and a logical. All four meanings are what the topic
-  # disambiguates, so every one of them links to it -- an allowlist of the
-  # non-index cases would just be a second place to keep in step.
-  expect_gte(length(topics), 6L)
+  # compare_videos() / picture_in_picture() and their _batch siblings carry the
+  # input index as `audio_input`; ffm_codec() and ffm_copy() keep the bare
+  # `audio` for a codec string and a logical. All three meanings are what the
+  # topic disambiguates, so every one of them links to it -- an allowlist of
+  # the non-index cases would just be a second place to keep in step.
+  index <- topics_documenting(rd, "audio_input")
+  expect_gte(length(index), 4L)
+  bare <- topics_documenting(rd, "audio")
+  expect_gte(length(bare), 2L)
+  topics <- c(index, bare)
   missing <- names(topics)[!vapply(topics, links_to_topic, logical(1))]
   expect_equal(missing, character(0))
 })

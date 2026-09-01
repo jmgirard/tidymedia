@@ -9,14 +9,14 @@
 # `refresh_ffmpeg_capabilities()`, or implicitly by `set_program()`, which is the
 # one package call that can repoint us at a different binary. The memo is
 # per-process, so `parallel = TRUE` workers each keep their own (D044). The
-# caller's `tidymedia.nvenc_encoders` override IS carried into a worker
+# caller's `tidymedia.hardware_encoders` override IS carried into a worker
 # (R/timeout.R, M071); this memo is not, which is why a worker with no override
 # still asks its own binary.
 .tm_capabilities <- new.env(parent = emptyenv())
 
 # cached_encoder_names(): the encoder-name pool, asked of FFmpeg at most once per
-# session. Deliberately sited BELOW has_nvenc()'s getOption() seam: ~80 test call
-# sites set `tidymedia.nvenc_encoders` to control the answer, and a memo above
+# session. Deliberately sited BELOW has_hardware_encoder()'s getOption() seam: ~80 test call
+# sites set `tidymedia.hardware_encoders` to control the answer, and a memo above
 # the seam would make them order-dependent.
 cached_encoder_names <- function() {
   if (is.null(.tm_capabilities$encoder_names)) {
@@ -46,7 +46,7 @@ cached_encoder_names <- function() {
 #' }
 #'
 #' The record is per R process, and it does not travel to a worker. So unless
-#' you have set \code{tidymedia.nvenc_encoders} yourself, a batch running on
+#' you have set \code{tidymedia.hardware_encoders} yourself, a batch running on
 #' \code{W} workers asks FFmpeg \code{W} times rather than once, and
 #' discarding the record in the parent does not reach them.
 #'
@@ -60,7 +60,7 @@ cached_encoder_names <- function() {
 #' as it is now, whether or not this function has been called.
 #'
 #' @return \code{NULL}, invisibly. Called for its side effect.
-#' @seealso \code{\link{has_nvenc}} and \code{\link{nvenc_encoder}} for the
+#' @seealso \code{\link{has_hardware_encoder}} and \code{\link{hardware_encoder}} for the
 #'   queries that use the remembered answer, \code{\link{ffmpeg_encoders}} for
 #'   an always-fresh encoder list, and \code{\link{set_program}} to point
 #'   tidymedia at a different binary.

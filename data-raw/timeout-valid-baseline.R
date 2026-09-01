@@ -71,7 +71,7 @@ timeout_valid_baseline <- function(ref = default_ref, root = ".") {
     "dir <- file.path(tempfile('timeout-baseline-fix-'))",
     "dir.create(dir, recursive = TRUE)",
     "specs <- tm_timeout_call_specs(dir)",
-    "options(tidymedia.nvenc_encoders = NULL)",
+    "options(tidymedia.nvenc_encoders = NULL, tidymedia.hardware_encoders = NULL)",
     "res <- list()",
     "for (nm in tm_timeout_domain()) {",
     "  res[[nm]] <- list(",

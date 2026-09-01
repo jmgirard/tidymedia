@@ -44,7 +44,7 @@ test_that("the sweep quantifies over a domain it computes, not a list", {
 
 test_that("the encoder pool is mocked, and the mock is what the sweep reads", {
   # The instrument's own load-bearing claim. `nvenc_available()` reads the
-  # `tidymedia.nvenc_encoders` option seam before it falls through to
+  # `tidymedia.hardware_encoders` option seam before it falls through to
   # `cached_encoder_names()`, so a sweep that left that option set would measure
   # the option and never the mock -- and the `absent` pool, the whole reason the
   # defect is visible at all, would silently answer "present".

@@ -18,7 +18,7 @@ local_encoder_probe_counter <- function(
     },
     .env = env
   )
-  withr::local_options(tidymedia.nvenc_encoders = NULL, .local_envir = env)
+  withr::local_options(tidymedia.hardware_encoders = NULL, .local_envir = env)
   forget_ffmpeg_capabilities()
   withr::defer(forget_ffmpeg_capabilities(), envir = env)
   function() count

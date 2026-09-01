@@ -120,7 +120,7 @@ contradiction_pairs <- function(input) {
 }
 
 test_that("every (condition, verb) pair blames the verb the user called", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
   for (pair in contradiction_pairs(input)) {
     cnd <- catch_call(pair$verb, pair$args)
@@ -196,12 +196,12 @@ contradiction_columns <- function(input) {
     list(id = "4/audio column", verb = "compare_videos_batch",
          own = "needs an audio stream to encode",
          base = list(audio_codec = "aac"),
-         # An NA `audio` cell drops that row's audio, which is exactly what
+         # An NA `audio_input` cell drops that row's audio, which is exactly what
          # leaves its named encoder with nothing to act on.
          jobs_bad = two(inputs = list(c(input, input), c(input, input)),
-                        output = c("a.mp4", "b.mp4"), audio = c(0, NA)),
+                        output = c("a.mp4", "b.mp4"), audio_input = c(0, NA)),
          jobs_ok = two(inputs = list(c(input, input), c(input, input)),
-                       output = c("a.mp4", "b.mp4"), audio = c(0, 0))),
+                       output = c("a.mp4", "b.mp4"), audio_input = c(0, 0))),
     list(id = "4/audio_codec column", verb = "compare_videos_batch",
          own = "needs an audio stream to encode",
          base = list(),
@@ -236,9 +236,9 @@ contradiction_columns <- function(input) {
          own = "needs an audio stream to encode",
          base = list(audio_codec = "aac"),
          jobs_bad = two(main = c(input, input), overlay = c(input, input),
-                        output = c("a.mp4", "b.mp4"), audio = c(0, NA)),
+                        output = c("a.mp4", "b.mp4"), audio_input = c(0, NA)),
          jobs_ok = two(main = c(input, input), overlay = c(input, input),
-                       output = c("a.mp4", "b.mp4"), audio = c(0, 0)))
+                       output = c("a.mp4", "b.mp4"), audio_input = c(0, 0)))
   )
 }
 
@@ -250,7 +250,7 @@ test_that("one violating row is refused and a clean column compiles", {
   # half is unaffected: a contradiction is settled without the encoder list, and
   # the empty-seam half of that same table is pinned in
   # test-nvenc-front-door.R's mixed-copy-column test.
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   input <- make_input()
   for (case in contradiction_columns(input)) {
     bad <- catch_call(case$verb, c(case$base, list(jobs = case$jobs_bad)))
@@ -282,7 +282,7 @@ test_that("one violating row is refused and a clean column compiles", {
 # precedence claim would rest on nothing.
 
 test_that("a contradiction reports before errors raised inside the fan-out", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
   two <- function(...) tibble::tibble(...)
   cases <- list(
@@ -290,14 +290,14 @@ test_that("a contradiction reports before errors raised inside the fan-out", {
          second = "must be a whole number",
          args = list(jobs = two(inputs = list(c(input, input), c(input, input)),
                                 output = c("a.mp4", "b.mp4"),
-                                audio = c(7, NA)),
+                                audio_input = c(7, NA)),
                      audio_codec = "aac"),
          # Row 2's NA is what drops the audio and makes the encoder a
          # contradiction; giving it an index leaves only the range error.
          control = list(jobs = two(inputs = list(c(input, input),
                                                  c(input, input)),
                                    output = c("a.mp4", "b.mp4"),
-                                   audio = c(7, 0)),
+                                   audio_input = c(7, 0)),
                         audio_codec = "aac")),
     list(id = "direction vocabulary", verb = "compare_videos_batch",
          second = "must be one of",
@@ -351,7 +351,7 @@ test_that("a contradiction reports before errors raised inside the fan-out", {
 # displayed `compare_videos_pipeline()`.
 
 test_that("the scalar siblings still blame themselves", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
   cases <- list(
     list(id = "1/separate_audio_video", verb = "separate_audio_video",

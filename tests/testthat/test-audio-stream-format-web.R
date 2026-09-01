@@ -165,7 +165,7 @@ test_that("hardware = 'nvenc' probes FFmpeg while building, though run = FALSE",
   # at ffmpeg_encoders() because ffmpeg() shells out through system(), which the
   # run_program()/find_ffmpeg() mock in the block above cannot intercept.
   f <- make_input()
-  withr::local_options(tidymedia.nvenc_encoders = NULL) # force the real probe
+  withr::local_options(tidymedia.hardware_encoders = NULL) # force the real probe
   probes <- 0L
   local_mocked_bindings(
     ffmpeg_encoders = function(...) {

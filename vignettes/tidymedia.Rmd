@@ -81,9 +81,9 @@ crop_video(video, "cropped.mp4", width = 160, height = 120, run = FALSE)
 ```
 
 `?audio_stream` lists which verbs read it each way and is the one place that
-list is maintained. It also covers `audio` — a *different* 0-based index, over
-a verb's inputs rather than over one file's tracks, on the multi-input verbs
-below.
+list is maintained. It also covers `audio_input` — a *different* 0-based
+index, over a verb's inputs rather than over one file's tracks, on the
+multi-input verbs below.
 
 For preprocessing a whole folder of files at once, every task verb has a batch
 sibling (`extract_audio_batch()`, `crop_video_batch()`, …); see
@@ -171,12 +171,12 @@ drop audio unless you map it back with `ffm_map("0:a")` — the single-input
 pass-through verbs above are the opposite, keeping every audio track by
 default. The task-verb layer wraps the common cases:
 `compare_videos()` for a side-by-side (or stacked) comparison and
-`picture_in_picture()` for an inset overlay. Both take an `audio` index naming
-the input whose track to carry, and stream-copy that track through untouched
+`picture_in_picture()` for an inset overlay. Both take an `audio_input` index
+naming the input whose track to carry, and stream-copy that track through untouched
 unless you name an encoder with `audio_codec`.
 
 ```{r}
-compare_videos(c(video, video), "compare.mp4", audio = 0, run = FALSE)
+compare_videos(c(video, video), "compare.mp4", audio_input = 0, run = FALSE)
 ```
 
 The builder stays deliberately linear — one input chain, sequential filters,

@@ -1,6 +1,6 @@
 # Runtime timeout seam -------------------------------------------------------
 
-# The package's second option seam (after `tidymedia.nvenc_encoders`), and the
+# The package's second option seam (after `tidymedia.hardware_encoders`), and the
 # first that changes what happens rather than what is reported --
 # `tidymedia.check_tracks`, below, is the second. Every process tidymedia spawns
 # passes resolve_timeout() to base R's `timeout=`, so a hung FFmpeg stops the
@@ -65,7 +65,7 @@
 #     the batch form already did this (R/ffm_batch.R) and the scalar/batch split
 #     was itself the defect.
 #   * It is not sited on a path that reads no limit. Two such paths exist, and
-#     neither refuses. `has_nvenc()` under a set `tidymedia.nvenc_encoders`
+#     neither refuses. `has_hardware_encoder()` under a set `tidymedia.hardware_encoders`
 #     answers from that option; the memo is NOT part of the carve-out, since
 #     inside the fall-through the call sits above cached_encoder_names(), so a
 #     warm session memo still refuses and the answer does not depend on what
@@ -77,7 +77,7 @@
 # One probe runs while a command is BUILT rather than at a front door -- the
 # nvenc capability lookup, reached from resolve_hw_encoder() inside the pipeline
 # and from check_nvenc_available() at the fan-out verbs. nvenc_available()
-# (R/ffmpeg.R) is has_nvenc()'s body with `call` threaded so that probe refuses
+# (R/ffmpeg.R) is has_hardware_encoder()'s body with `call` threaded so that probe refuses
 # in the VERB's name; it builds no reached-limit condition, so D049 is untouched.
 resolve_timeout <- function(call = rlang::caller_env()) {
   limit <- getOption("tidymedia.timeout", default = 0)
@@ -550,7 +550,7 @@ reraise_absorbed <- function(x, call = rlang::caller_env()) {
 carried_option_values <- function(call = rlang::caller_env()) {
   list(
     tidymedia.timeout = resolve_timeout(call = call),
-    tidymedia.nvenc_encoders = getOption("tidymedia.nvenc_encoders"),
+    tidymedia.hardware_encoders = getOption("tidymedia.hardware_encoders"),
     tidymedia.check_tracks = getOption("tidymedia.check_tracks")
   )
 }

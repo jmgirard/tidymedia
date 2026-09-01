@@ -115,12 +115,12 @@ reference:
 - title: "FFmpeg capabilities"
   desc: >
     Discover the codecs and encoders available in your FFmpeg build, including
-    opt-in NVIDIA nvenc GPU encoding.
+    opt-in hardware (GPU) encoding.
   contents:
   - ffmpeg_codecs
   - ffmpeg_encoders
-  - nvenc_encoder
-  - has_nvenc
+  - hardware_encoder
+  - has_hardware_encoder
   - refresh_ffmpeg_capabilities
 - title: "Program management"
   desc: >

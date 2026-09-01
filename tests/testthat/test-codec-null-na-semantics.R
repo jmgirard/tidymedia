@@ -455,9 +455,9 @@ test_that("a NULL video_codec still resolves to the nvenc H.264 family (D016)", 
   # under hardware = "nvenc" a NULL assumes H.264 rather than emitting nothing.
   # anonymize_video reached that branch only for non-NULL values before M42,
   # because check_token() refused NULL first, so this pins the branch it now
-  # reaches. Availability is simulated through the option seam has_nvenc()
+  # reaches. Availability is simulated through the option seam has_hardware_encoder()
   # consults, so this stays a binary-free compile test (test-video-codec.R).
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   input <- make_input()
   regions <- data.frame(x = 0, y = 0, width = 32, height = 32)
   expect_match(

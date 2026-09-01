@@ -30,7 +30,7 @@ invalidates everything remembered about the old one.
 }
 
 The record is per R process, and it does not travel to a worker. So unless
-you have set \code{tidymedia.nvenc_encoders} yourself, a batch running on
+you have set \code{tidymedia.hardware_encoders} yourself, a batch running on
 \code{W} workers asks FFmpeg \code{W} times rather than once, and
 discarding the record in the parent does not reach them.
 
@@ -48,7 +48,7 @@ as it is now, whether or not this function has been called.
 refresh_ffmpeg_capabilities()
 }
 \seealso{
-\code{\link{has_nvenc}} and \code{\link{nvenc_encoder}} for the
+\code{\link{has_hardware_encoder}} and \code{\link{hardware_encoder}} for the
 queries that use the remembered answer, \code{\link{ffmpeg_encoders}} for
 an always-fresh encoder list, and \code{\link{set_program}} to point
 tidymedia at a different binary.
@@ -56,6 +56,6 @@ tidymedia at a different binary.
 Other capability functions:
 \code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}},
 \code{\link[=ffmpeg_encoders]{ffmpeg_encoders()}},
-\code{\link[=nvenc_encoder]{nvenc_encoder()}}
+\code{\link[=hardware_encoder]{hardware_encoder()}}
 }
 \concept{capability functions}

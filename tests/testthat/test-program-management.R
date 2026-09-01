@@ -70,13 +70,31 @@ test_that("set_program() writes exactly at tools::R_user_dir(\"tidymedia\", \"co
 # empties it makes all three states below return NULL. An absolute path to an
 # executable still resolves under PATH = "" (measured at T4).
 #
-# One envvar redirects BOTH libraries -- tools::R_user_dir() and rappdirs each
-# honor R_USER_CONFIG_DIR -- into different subdirectories of the same tempdir.
+# R_USER_CONFIG_DIR redirects tools::R_user_dir(); the legacy library is
+# redirected by a mock of rappdirs::user_config_dir() that records what the
+# helper asked it for. One envvar cannot redirect both: rappdirs honors
+# R_USER_CONFIG_DIR too, and on Windows the two libraries then collapse onto
+# the same `<root>/R/tidymedia` (measured on the windows-latest CI leg at
+# M097's review), which made the both-present state assert nothing and the
+# third state delete the only file.
 tm_redirect_config <- function(env = parent.frame()) {
   root <- withr::local_tempdir(.local_envir = env)
   withr::local_envvar(R_USER_CONFIG_DIR = root, PATH = "", .local_envir = env)
-  dirs <- list(new = tm_config_dir(), legacy = tm_legacy_config_dir())
-  for (d in dirs) dir.create(d, recursive = TRUE, showWarnings = FALSE)
+  testthat::local_mocked_bindings(
+    user_config_dir = function(appname, appauthor = appname, ...) {
+      file.path(root, "legacy", appauthor, appname)
+    },
+    .package = "rappdirs",
+    .env = env
+  )
+  dirs <- list(
+    root = root,
+    new = tm_config_dir(),
+    legacy = tm_legacy_config_dir()
+  )
+  for (d in dirs[c("new", "legacy")]) {
+    dir.create(d, recursive = TRUE, showWarnings = FALSE)
+  }
   dirs
 }
 
@@ -89,11 +107,14 @@ test_that("both config directories are redirected, and differ", {
   # real config dir, and the two must not collapse onto one path (which would
   # make the both-present state assert nothing).
   dirs <- tm_redirect_config()
-  root <- normalizePath(Sys.getenv("R_USER_CONFIG_DIR"))
-  # The legacy dir is pinned to the library that WROTE the pre-M097 file, not
-  # to the helper under test: a helper body that drifts (say, dropping the "R"
-  # appauthor) would otherwise write and read its own wrong path and stay green.
-  expect_identical(dirs$legacy, rappdirs::user_config_dir("tidymedia", "R"))
+  root <- normalizePath(dirs$root)
+  # The legacy dir is pinned to what the helper ASKED rappdirs for, not to the
+  # helper's own answer: a helper body that drifts (say, dropping the "R"
+  # appauthor, the pre-M097 Windows layout) would otherwise write and read its
+  # own wrong path and stay green. The mock's return value encodes the call.
+  expect_identical(
+    dirs$legacy, file.path(dirs$root, "legacy", "R", "tidymedia")
+  )
   expect_identical(dirs$new, tools::R_user_dir("tidymedia", "config"))
   expect_false(identical(normalizePath(dirs$new), normalizePath(dirs$legacy)))
   expect_true(startsWith(normalizePath(dirs$new), root))

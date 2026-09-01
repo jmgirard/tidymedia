@@ -16,7 +16,7 @@ compare_videos(
   outfile,
   direction = c("horizontal", "vertical"),
   resize = TRUE,
-  audio = NULL,
+  audio_input = NULL,
   video_codec = NULL,
   audio_codec = "copy",
   hardware = c("none", "nvenc"),
@@ -49,7 +49,7 @@ compare_videos(
   A logical indicating whether to resize the inputs to share an edge.
   Only supported for exactly two inputs. (default = `TRUE`)
 
-- audio:
+- audio_input:
 
   The 0-based index of the *input* whose audio to keep – `0` is the
   first file passed in, `1` the second. This counts the verb's inputs,
@@ -73,8 +73,8 @@ compare_videos(
   (default) stream-copies it through untouched; name an encoder (e.g.
   `"aac"`) to transcode it, or pass `NULL` to leave the codec unset so
   the output container's default encoder is used. Nothing is emitted
-  when `audio` is `NULL`, since no audio reaches the output; naming an
-  encoder in that case is an error.
+  when `audio_input` is `NULL`, since no audio reaches the output;
+  naming an encoder in that case is an error.
 
 - hardware:
 
@@ -84,7 +84,7 @@ compare_videos(
   `"h264_nvenc"`); with the default `video_codec = NULL` the H.264
   family is assumed, so a non-H.264 container (e.g. `.webm`) needs an
   explicit HEVC- or AV1-family `video_codec`. See
-  [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+  [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
   for availability and its caveats. Resolving `"nvenc"` asks this FFmpeg
   build which encoders it has, so the first `"nvenc"` call that
   re-encodes the video runs the binary while the command is built, even
@@ -114,8 +114,9 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 By default the two inputs are resized to share an edge (equal heights
 for a horizontal stack, equal widths for a vertical one); resizing
 currently supports exactly two inputs, so pass `resize = FALSE` to
-compare more. Audio is dropped unless `audio` names an input to carry; a
-carried track is stream-copied unless `audio_codec` names an encoder.
+compare more. Audio is dropped unless `audio_input` names an input to
+carry; a carried track is stream-copied unless `audio_codec` names an
+encoder.
 
 ## See also
 
@@ -123,7 +124,7 @@ carried track is stream-copied unless `audio_codec` names an encoder.
 and
 [`ffm_vstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_vstack.md),
 the builders it wraps;
-[`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+[`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
 for the `hardware = "nvenc"` toggle;
 [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
 for insetting instead of stacking.

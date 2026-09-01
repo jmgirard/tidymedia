@@ -48,7 +48,7 @@ format_for_web_batch(
   The encoder backend applied to every row: `"none"` (default, software
   libx264) or `"nvenc"` for NVIDIA GPU H.264 encoding. Batch-wide (not a
   per-row column). See
-  [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md).
+  [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md).
   Resolving `"nvenc"` asks this FFmpeg build which encoders it has, so
   the first `"nvenc"` call that re-encodes the video runs the binary
   while the command is built, even under `run = FALSE`. The answer is
@@ -91,7 +91,7 @@ format_for_web_batch(
   Naming a track the input does not have is an FFmpeg error, not an R
   one. See
   [`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
-  for how this differs from `audio`, the input index on
+  for how this differs from `audio_input`, the input index on
   [`compare_videos`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
   and
   [`picture_in_picture`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md).

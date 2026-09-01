@@ -33,9 +33,9 @@ There are two ways to discard it:
   binary invalidates everything remembered about the old one.
 
 The record is per R process, and it does not travel to a worker. So
-unless you have set `tidymedia.nvenc_encoders` yourself, a batch running
-on `W` workers asks FFmpeg `W` times rather than once, and discarding
-the record in the parent does not reach them.
+unless you have set `tidymedia.hardware_encoders` yourself, a batch
+running on `W` workers asks FFmpeg `W` times rather than once, and
+discarding the record in the parent does not reach them.
 
 Setting that option is different: the value you set is carried into each
 worker for the duration of the call, and the worker's own value is put
@@ -52,9 +52,9 @@ called.
 
 ## See also
 
-[`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+[`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
 and
-[`nvenc_encoder`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+[`hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
 for the queries that use the remembered answer,
 [`ffmpeg_encoders`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md)
 for an always-fresh encoder list, and
@@ -64,7 +64,7 @@ to point tidymedia at a different binary.
 Other capability functions:
 [`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md),
 [`ffmpeg_encoders()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md),
-[`nvenc_encoder()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+[`hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
 
 ## Examples
 

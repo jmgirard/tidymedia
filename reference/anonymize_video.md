@@ -71,7 +71,7 @@ anonymize_video(
   `"nvenc"` for NVIDIA GPU encoding. When `"nvenc"`, the nvenc encoder
   for `video_codec`'s family is used (e.g. `"libx264"` becomes
   `"h264_nvenc"`); see
-  [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+  [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
   for availability and its caveats. Applies to video only: `audio_codec`
   is never hardware-accelerated. Resolving `"nvenc"` asks this FFmpeg
   build which encoders it has, so the first `"nvenc"` call that
@@ -112,7 +112,7 @@ anonymize_video(
   Naming a track the input does not have is an FFmpeg error, not an R
   one. See
   [`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
-  for how this differs from `audio`, the input index on
+  for how this differs from `audio_input`, the input index on
   [`compare_videos`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
   and
   [`picture_in_picture`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md).
@@ -151,7 +151,7 @@ https://ffmpeg.org/ffmpeg-filters.html#drawbox
 
 [`ffm_drawbox()`](https://jmgirard.github.io/tidymedia/reference/ffm_drawbox.md),
 the builder filter it wraps;
-[`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+[`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
 for the `hardware = "nvenc"` toggle;
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md)
 for the many-file (batch) form.

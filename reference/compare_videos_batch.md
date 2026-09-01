@@ -17,7 +17,7 @@ compare_videos_batch(
   jobs,
   direction = c("horizontal", "vertical"),
   resize = TRUE,
-  audio = NULL,
+  audio_input = NULL,
   video_codec = NULL,
   audio_codec = "copy",
   hardware = c("none", "nvenc"),
@@ -35,10 +35,10 @@ compare_videos_batch(
   A data frame with one row per output and (at least) an `inputs`
   list-column — each cell a character vector of **two or more** video
   paths — and an `output` column (destination path). Optional
-  `direction`, `resize`, `audio`, `video_codec`, and `audio_codec`
+  `direction`, `resize`, `audio_input`, `video_codec`, and `audio_codec`
   columns override the like-named arguments per row (a row omitting one
-  falls back to the argument). In an `audio` column, `NA` means "drop
-  audio" (the column's way of writing the scalar's `NULL`); in a
+  falls back to the argument). In an `audio_input` column, `NA` means
+  "drop audio" (the column's way of writing the scalar's `NULL`); in a
   `video_codec` or `audio_codec` column it means "leave the codec
   unset". Any two rows resolving to the same output path are rejected;
   other columns are ignored.
@@ -51,7 +51,7 @@ compare_videos_batch(
   [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
   for their fuller meaning.
 
-- audio:
+- audio_input:
 
   The 0-based index of the *input* whose audio to keep – `0` is the
   first file passed in, `1` the second. This counts the verb's inputs,
@@ -60,8 +60,8 @@ compare_videos_batch(
   audio at all, so the output is silent – unlike `audio_stream = NULL`,
   which always maps something. Naming an input the call does not have is
   an R error, raised before FFmpeg runs. Applied to every row lacking an
-  `audio` column; an `NA` cell in that column means the same as `NULL`
-  for that row, dropping that output's audio. Each row's value is
+  `audio_input` column; an `NA` cell in that column means the same as
+  `NULL` for that row, dropping that output's audio. Each row's value is
   validated against that row's input count. See
   [`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md).
   (default = `NULL`)
@@ -97,11 +97,11 @@ compare_videos_batch(
   reported against. A call that also contradicts itself — naming an
   `audio_codec` with no audio carried into the output — is refused for
   the contradiction first, whether or not this machine has the encoder.
-  A per-row value error — an `audio` index past that row's input count,
-  a `direction` outside the two accepted values — likewise reports ahead
-  of the encoder check. A value error and a contradiction resolve the
-  same way whether the value arrived as an argument or in a `jobs`
-  column; the contradiction reports first.
+  A per-row value error — an `audio_input` index past that row's input
+  count, a `direction` outside the two accepted values — likewise
+  reports ahead of the encoder check. A value error and a contradiction
+  resolve the same way whether the value arrived as an argument or in a
+  `jobs` column; the contradiction reports first.
 
 - run:
 
@@ -134,7 +134,7 @@ via `...`). See
 the scalar verb it wraps;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 the batch runner;
-[`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+[`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
 for the `hardware = "nvenc"` toggle;
 [`concatenate_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos_batch.md)
 and

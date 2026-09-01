@@ -77,7 +77,7 @@ accept `hardware = "nvenc"` to encode on the GPU:
 ``` r
 
 # Check availability first (reflects the FFmpeg build, not a guaranteed GPU)
-has_nvenc("h264")
+has_hardware_encoder("h264")
 
 standardize_video_batch(
   jobs, width = 1280, height = 720, fps = 30,

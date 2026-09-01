@@ -123,7 +123,7 @@ segment_video_batch(
   Naming a track the input does not have is an FFmpeg error, not an R
   one. See
   [`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
-  for how this differs from `audio`, the input index on
+  for how this differs from `audio_input`, the input index on
   [`compare_videos`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
   and
   [`picture_in_picture`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md).
@@ -170,7 +170,7 @@ https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 for the single-input, parallel-vector form;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
 for the batch runner and the arguments forwarded through `...`;
-[`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+[`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
 for the `hardware = "nvenc"` toggle;
 [`ffm_seek()`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md)
 for the cut trade-off.

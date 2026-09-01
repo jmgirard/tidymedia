@@ -341,6 +341,34 @@
 
 ### Breaking changes
 
+- [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
+  [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
+  and their `_batch` siblings now call the argument that picks whose
+  sound to keep `audio_input`, not `audio`. It is the same argument: the
+  0-based index of the *input* whose audio is carried, `NULL` for a
+  silent output, and a `jobs` column of the same name overriding it row
+  by row. Only the name changes, so that it says what it counts the way
+  `audio_stream` says it counts one input’s tracks.
+  `ffm_codec(audio = )` and `ffm_copy(audio = )` are unchanged. No alias
+  is kept: a call still spelling `audio =` on these four verbs is an
+  error, which R reports as the argument matching more than one formal
+  (`audio` is a prefix of both `audio_input` and `audio_codec`). A
+  `jobs` table still carrying an `audio` column is not refused: the
+  column is unread, so those rows fall back to the verb’s `audio_input`
+  default and write a silent output. Rename the column.
+
+- The hardware-encoder helpers no longer name one vendor. `has_nvenc()`
+  is now
+  [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md),
+  `nvenc_encoder()` is now
+  [`hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md),
+  and the option that overrides detection is now
+  `tidymedia.hardware_encoders`. Each does what it did: nvenc is the one
+  hardware backend, so `hardware_encoder("h264")` is still
+  `"h264_nvenc"` and `hardware = "nvenc"` at the verbs is unchanged. The
+  old names are gone, and an `options(tidymedia.nvenc_encoders = )` you
+  set is no longer read.
+
 - [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
   and
   [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
@@ -796,11 +824,10 @@
   `pixel_format` and `color` are validated inside the per-row fan-out,
   so a set limit is reported instead of them, and so is a missing nvenc
   encoder under `hardware = "nvenc"` on a build without one. Two calls
-  refuse nothing, because neither reads a limit:
-  [`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
-  answering from a `tidymedia.nvenc_encoders` you set, and a `probe_*()`
-  shortcut handed a `probe` object instead of an `infile`, which
-  reprobes nothing.
+  refuse nothing, because neither reads a limit: `has_nvenc()` answering
+  from a `tidymedia.nvenc_encoders` you set, and a `probe_*()` shortcut
+  handed a `probe` object instead of an `infile`, which reprobes
+  nothing.
 
 - The advice
   [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
@@ -1686,12 +1713,10 @@
   `hardware = "nvenc"` re-encodes on the GPU, choosing the nvenc encoder
   for the codec family (e.g. `h264_nvenc`). By default an unavailable
   GPU is an error (so output stays reproducible); `fallback = TRUE`
-  re-encodes in software with a message instead.
-  [`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
-  reports whether an nvenc encoder is available in your FFmpeg build and
-  [`nvenc_encoder()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
-  names it. Hardware *decoding* and GPU filter pipelines remain out of
-  scope — use
+  re-encodes in software with a message instead. `has_nvenc()` reports
+  whether an nvenc encoder is available in your FFmpeg build and
+  `nvenc_encoder()` names it. Hardware *decoding* and GPU filter
+  pipelines remain out of scope — use
   [`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)
   for those.
 

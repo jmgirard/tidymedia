@@ -22,7 +22,8 @@ ffm_copy(object, audio = TRUE, video = TRUE, streams = TRUE)
   A logical indicating whether to copy the audio codec (default =
   `TRUE`). See
   [`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
-  for the three unrelated things `audio` names across tidymedia.
+  for the two things the bare name `audio` means at Layer 1, and for the
+  input index `audio_input`.
 
 - video:
 

@@ -121,7 +121,7 @@ an NVIDIA GPU and an nvenc-capable FFmpeg,
 accept <code>hardware = "nvenc"</code> to encode on the GPU:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Check availability first (reflects the FFmpeg build, not a guaranteed GPU)</span></span>
-<span><span class="fu"><a href="../reference/nvenc_encoder.html">has_nvenc</a></span><span class="op">(</span><span class="st">"h264"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/hardware_encoder.html">has_hardware_encoder</a></span><span class="op">(</span><span class="st">"h264"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/standardize_video_batch.html">standardize_video_batch</a></span><span class="op">(</span></span>
 <span>  <span class="va">jobs</span>, width <span class="op">=</span> <span class="fl">1280</span>, height <span class="op">=</span> <span class="fl">720</span>, fps <span class="op">=</span> <span class="fl">30</span>,</span>

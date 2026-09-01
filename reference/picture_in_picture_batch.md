@@ -18,7 +18,7 @@ picture_in_picture_batch(
   position = c("topright", "topleft", "bottomright", "bottomleft", "center"),
   scale = 0.25,
   margin = 16,
-  audio = NULL,
+  audio_input = NULL,
   video_codec = NULL,
   audio_codec = "copy",
   hardware = c("none", "nvenc"),
@@ -35,10 +35,10 @@ picture_in_picture_batch(
 
   A data frame with one row per output and (at least) `main` (background
   path), `overlay` (inset path), and `output` (destination path)
-  columns. Optional `position`, `scale`, `margin`, `audio`,
+  columns. Optional `position`, `scale`, `margin`, `audio_input`,
   `video_codec`, and `audio_codec` columns override the like-named
   arguments per row (a row omitting one falls back to the argument). In
-  an `audio` column, `NA` means "drop audio" (the column's way of
+  an `audio_input` column, `NA` means "drop audio" (the column's way of
   writing the scalar's `NULL`); in a `video_codec` or `audio_codec`
   column it means "leave the codec unset". Any two rows resolving to the
   same output path are rejected; other columns are ignored.
@@ -52,7 +52,7 @@ picture_in_picture_batch(
   [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
   for their fuller meaning.
 
-- audio:
+- audio_input:
 
   The 0-based index of the *input* whose audio to keep – `0` is the
   first file passed in, `1` the second. This counts the verb's inputs,
@@ -61,8 +61,8 @@ picture_in_picture_batch(
   audio at all, so the output is silent – unlike `audio_stream = NULL`,
   which always maps something. Naming an input the call does not have is
   an R error, raised before FFmpeg runs. Applied to every row lacking an
-  `audio` column; an `NA` cell in that column means the same as `NULL`
-  for that row, dropping that output's audio. See
+  `audio_input` column; an `NA` cell in that column means the same as
+  `NULL` for that row, dropping that output's audio. See
   [`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md).
   (default = `NULL`)
 
@@ -97,9 +97,9 @@ picture_in_picture_batch(
   reported against. A call that also contradicts itself — naming an
   `audio_codec` with no audio carried into the output — is refused for
   the contradiction first, whether or not this machine has the encoder.
-  A per-row value error — a negative `margin`, an `audio` index outside
-  the two inputs, a `position` outside the five accepted values —
-  likewise reports ahead of the encoder check. A value error and a
+  A per-row value error — a negative `margin`, an `audio_input` index
+  outside the two inputs, a `position` outside the five accepted values
+  — likewise reports ahead of the encoder check. A value error and a
   contradiction resolve the same way whether the value arrived as an
   argument or in a `jobs` column; the contradiction reports first.
 
@@ -134,7 +134,7 @@ via `...`). See
 the scalar verb it wraps;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 the batch runner;
-[`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+[`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
 for the `hardware = "nvenc"` toggle;
 [`concatenate_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos_batch.md)
 and

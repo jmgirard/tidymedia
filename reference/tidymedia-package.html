@@ -147,8 +147,8 @@ loses to both the limit and the encoder question: a <code>_batch</code> job tabl
 are validated inside the per-row fan-out, so a set limit is reported instead
 of them, and so is a missing nvenc encoder under <code>hardware = "nvenc"</code> on a
 build without one.
-Two calls read no limit and so refuse nothing: <code><a href="nvenc_encoder.html">has_nvenc()</a></code>
-answering from a <code>tidymedia.nvenc_encoders</code> you set, which asks FFmpeg
+Two calls read no limit and so refuse nothing: <code><a href="hardware_encoder.html">has_hardware_encoder()</a></code>
+answering from a <code>tidymedia.hardware_encoders</code> you set, which asks FFmpeg
 nothing, and a <code>probe_*()</code> shortcut handed a <code>probe</code> object instead of an
 <code>infile</code>, which reprobes nothing.</p>
 <p>The limit applies per spawned program, not per batch: a 100-row batch with a
@@ -218,9 +218,9 @@ cost is what switching the check off buys back. It is worth declining on a
 large jobs table whose inputs you already know the tracks of. A row that
 names an <code>audio_stream</code> is not probed at all, so a table whose rows all name
 one pays nothing either way.</p>
-<div class="sourceCode"><pre><code><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>tidymedia.nvenc_encoders <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"h264_nvenc"</span>, <span class="st">"hevc_nvenc"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode"><pre><code><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>tidymedia.hardware_encoders <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"h264_nvenc"</span>, <span class="st">"hevc_nvenc"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 
-<p>Names the NVIDIA hardware encoders this machine has, instead of asking
+<p>Names the hardware video encoders this machine has, instead of asking
 FFmpeg. Set it to <code>character(0)</code> to declare there are none. Unset (the
 default), the package asks once per session and remembers the answer.</p>
 <p>All three are carried into <code>parallel = TRUE</code> workers, which run under the

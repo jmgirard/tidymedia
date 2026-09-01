@@ -55,10 +55,10 @@ page says which is which, so that meeting one after the other is not a trap.</p>
 audio track, whatever position it holds among the file's streams overall (it
 is not the <code>index</code> column of <code><a href="probe_container.html">probe_audio</a></code>, which counts
 every stream, audio or not).</p>
-<p><code>audio</code> counts <strong>a verb's inputs</strong>. On
+<p><code>audio_input</code> counts <strong>a verb's inputs</strong>. On
 <code><a href="compare_videos.html">compare_videos</a></code> and <code><a href="picture_in_picture.html">picture_in_picture</a></code>, which
 combine several files into one output and must choose whose sound to keep,
-<code>audio = 1</code> is the second <em>file</em>, and says nothing about which of
+<code>audio_input = 1</code> is the second <em>file</em>, and says nothing about which of
 its tracks is taken.</p>
 <p>Neither can be computed from the other, which is why they stay separate
 names rather than one argument meaning two things depending on the verb's
@@ -76,11 +76,11 @@ that it matches nothing rather than failing, so an input with no audio at
 all simply yields an output with none. On
 <code><a href="separate_audio_video.html">separate_audio_video</a></code> and <code><a href="normalize_audio.html">normalize_audio</a></code>,
 whose product <em>is</em> audio, that same case is an FFmpeg error.</p></li>
-</ul><p><code>audio = NULL</code> is different in kind: it emits no audio map at all, so
+</ul><p><code>audio_input = NULL</code> is different in kind: it emits no audio map at all, so
 the output carries <strong>no audio</strong>. A silent output is the default for
 <code><a href="compare_videos.html">compare_videos</a></code> and <code><a href="picture_in_picture.html">picture_in_picture</a></code>, because
 there is no non-arbitrary answer to which of several inputs should be heard.</p>
-<p>Out of range, the two also fail differently. An <code>audio</code> beyond the
+<p>Out of range, the two also fail differently. An <code>audio_input</code> beyond the
 inputs you passed is an R error raised before FFmpeg runs; an
 <code>audio_stream</code> beyond the input's tracks is an FFmpeg error, because
 the track count is a property of the file rather than of the call.</p>
@@ -99,15 +99,14 @@ overrides it row by row, and an <code>NA</code> cell is that column's spelling o
 puts that row on its family's <code>NULL</code> reading, not on track 2.</p>
     </div>
     <div class="section level2">
-    <h2 id="audio-names-three-things"><code>audio</code> names three things<a class="anchor" aria-label="anchor" href="#audio-names-three-things"></a></h2>
-    <p>The name is reused across layers, and only the first of these is an index:</p><ul><li><p>an input index on <code><a href="compare_videos.html">compare_videos</a></code> and
-<code><a href="picture_in_picture.html">picture_in_picture</a></code> (and their <code>_batch</code> siblings), as
-above;</p></li>
-<li><p>an audio <em>codec</em> string on <code><a href="ffm_codec.html">ffm_codec</a></code>, where
+    <h2 id="the-bare-name-audio-is-not-an-index">The bare name <code>audio</code> is not an index<a class="anchor" aria-label="anchor" href="#the-bare-name-audio-is-not-an-index"></a></h2>
+    <p>Layer 1 keeps <code>audio</code> for two things that count nothing:</p><ul><li><p>an audio <em>codec</em> string on <code><a href="ffm_codec.html">ffm_codec</a></code>, where
 <code>audio = "aac"</code> names an encoder;</p></li>
 <li><p>a <em>logical</em> on <code><a href="ffm_copy.html">ffm_copy</a></code>, where <code>audio = TRUE</code>
 stream-copies the audio instead of re-encoding it.</p></li>
-</ul></div>
+</ul><p>The input index is <code>audio_input</code>, so that its name says what it counts,
+as <code>audio_stream</code> does.</p>
+    </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="extract_audio.html">extract_audio</a></code>, <code><a href="convert_audio.html">convert_audio</a></code> and <code><a href="normalize_audio.html">normalize_audio</a></code> for the first-track

@@ -56,5 +56,5 @@ ffm_manifest(res)
 #> # A tibble: 1 × 7
 #>   command      input output output_size ffmpeg_version ffprobe_version timestamp
 #>   <chr>        <chr> <chr>        <dbl> <chr>          <chr>           <chr>    
-#> 1 "-y -i \"/h… /hom… /tmp/…        8898 6.1.1-3ubuntu5 6.1.1-3ubuntu5  2026-08-…
+#> 1 "-y -i \"/h… /hom… /tmp/…        8898 6.1.1-3ubuntu5 6.1.1-3ubuntu5  2026-09-…
 ```

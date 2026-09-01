@@ -18,7 +18,7 @@ picture_in_picture(
   position = c("topright", "topleft", "bottomright", "bottomleft", "center"),
   scale = 0.25,
   margin = 16,
-  audio = NULL,
+  audio_input = NULL,
   video_codec = NULL,
   audio_codec = "copy",
   hardware = c("none", "nvenc"),
@@ -56,7 +56,7 @@ picture_in_picture(
   The gap in pixels between the inset and the video edges (ignored for
   `position = "center"`). (default = `16`)
 
-- audio:
+- audio_input:
 
   The 0-based index of the *input* whose audio to keep – `0` is the
   first file passed in, `1` the second. This counts the verb's inputs,
@@ -80,8 +80,8 @@ picture_in_picture(
   (default) stream-copies it through untouched; name an encoder (e.g.
   `"aac"`) to transcode it, or pass `NULL` to leave the codec unset so
   the output container's default encoder is used. Nothing is emitted
-  when `audio` is `NULL`, since no audio reaches the output; naming an
-  encoder in that case is an error.
+  when `audio_input` is `NULL`, since no audio reaches the output;
+  naming an encoder in that case is an error.
 
 - hardware:
 
@@ -91,7 +91,7 @@ picture_in_picture(
   `"h264_nvenc"`); with the default `video_codec = NULL` the H.264
   family is assumed, so a non-H.264 container (e.g. `.webm`) needs an
   explicit HEVC- or AV1-family `video_codec`. See
-  [`has_nvenc`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+  [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
   for availability and its caveats. Resolving `"nvenc"` asks this FFmpeg
   build which encoders it has, so the first `"nvenc"` call that
   re-encodes the video runs the binary while the command is built, even
@@ -118,15 +118,15 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 
 ## Details
 
-Audio is dropped unless `audio` names an input to carry (`0` = the main
-video, `1` = the overlay). A carried track is stream-copied unless
+Audio is dropped unless `audio_input` names an input to carry (`0` = the
+main video, `1` = the overlay). A carried track is stream-copied unless
 `audio_codec` names an encoder.
 
 ## See also
 
 [`ffm_overlay()`](https://jmgirard.github.io/tidymedia/reference/ffm_overlay.md),
 the builder it wraps;
-[`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
+[`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
 for the `hardware = "nvenc"` toggle;
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
 for side-by-side stacking.

@@ -162,10 +162,10 @@ only later, it loses to both the limit and the encoder question: a
 a set limit is reported instead of them, and so is a missing nvenc
 encoder under `hardware = "nvenc"` on a build without one. Two calls
 read no limit and so refuse nothing:
-[`has_nvenc()`](https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.md)
-answering from a `tidymedia.nvenc_encoders` you set, which asks FFmpeg
-nothing, and a `probe_*()` shortcut handed a `probe` object instead of
-an `infile`, which reprobes nothing.
+[`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
+answering from a `tidymedia.hardware_encoders` you set, which asks
+FFmpeg nothing, and a `probe_*()` shortcut handed a `probe` object
+instead of an `infile`, which reprobes nothing.
 
 The limit applies per spawned program, not per batch: a 100-row batch
 with a 600-second limit waits at most 600 seconds — plus the lag
@@ -251,9 +251,9 @@ inputs you already know the tracks of. A row that names an
 `audio_stream` is not probed at all, so a table whose rows all name one
 pays nothing either way.
 
-    options(tidymedia.nvenc_encoders = c("h264_nvenc", "hevc_nvenc"))
+    options(tidymedia.hardware_encoders = c("h264_nvenc", "hevc_nvenc"))
 
-Names the NVIDIA hardware encoders this machine has, instead of asking
+Names the hardware video encoders this machine has, instead of asking
 FFmpeg. Set it to `character(0)` to declare there are none. Unset (the
 default), the package asks once per session and remembers the answer.
 

@@ -63,6 +63,7 @@
 <url><loc>https://jmgirard.github.io/tidymedia/reference/get_height.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/get_sample_rate.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/get_width.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/hardware_encoder.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/index.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/install_on_win.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/local_timeout.html</loc></url>
@@ -73,7 +74,6 @@
 <url><loc>https://jmgirard.github.io/tidymedia/reference/mediainfo_template.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/normalize_audio.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.html</loc></url>
-<url><loc>https://jmgirard.github.io/tidymedia/reference/nvenc_encoder.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/picture_in_picture.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/picture_in_picture_batch.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/print.tidymedia_ffm.html</loc></url>

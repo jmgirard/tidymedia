@@ -14,13 +14,13 @@ of
 [`probe_audio`](https://jmgirard.github.io/tidymedia/reference/probe_container.md),
 which counts every stream, audio or not).
 
-`audio` counts **a verb's inputs**. On
+`audio_input` counts **a verb's inputs**. On
 [`compare_videos`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
 and
 [`picture_in_picture`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
 which combine several files into one output and must choose whose sound
-to keep, `audio = 1` is the second *file*, and says nothing about which
-of its tracks is taken.
+to keep, `audio_input = 1` is the second *file*, and says nothing about
+which of its tracks is taken.
 
 Neither can be computed from the other, which is why they stay separate
 names rather than one argument meaning two things depending on the
@@ -59,15 +59,15 @@ still emits a stream map. What differs is how much it selects.
   [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
   whose product *is* audio, that same case is an FFmpeg error.
 
-`audio = NULL` is different in kind: it emits no audio map at all, so
-the output carries **no audio**. A silent output is the default for
+`audio_input = NULL` is different in kind: it emits no audio map at all,
+so the output carries **no audio**. A silent output is the default for
 [`compare_videos`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
 and
 [`picture_in_picture`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
 because there is no non-arbitrary answer to which of several inputs
 should be heard.
 
-Out of range, the two also fail differently. An `audio` beyond the
+Out of range, the two also fail differently. An `audio_input` beyond the
 inputs you passed is an R error raised before FFmpeg runs; an
 `audio_stream` beyond the input's tracks is an FFmpeg error, because the
 track count is a property of the file rather than of the call.
@@ -85,16 +85,9 @@ to the scalar argument. So `audio_stream = 2` with an `audio_stream`
 column holding `NA` puts that row on its family's `NULL` reading, not on
 track 2.
 
-## `audio` names three things
+## The bare name `audio` is not an index
 
-The name is reused across layers, and only the first of these is an
-index:
-
-- an input index on
-  [`compare_videos`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
-  and
-  [`picture_in_picture`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
-  (and their `_batch` siblings), as above;
+Layer 1 keeps `audio` for two things that count nothing:
 
 - an audio *codec* string on
   [`ffm_codec`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
@@ -104,6 +97,9 @@ index:
   [`ffm_copy`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md),
   where `audio = TRUE` stream-copies the audio instead of re-encoding
   it.
+
+The input index is `audio_input`, so that its name says what it counts,
+as `audio_stream` does.
 
 ## See also
 

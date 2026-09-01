@@ -125,9 +125,10 @@ named track above, all of them here:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/crop_video.html">crop_video</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"cropped.mp4"</span>, width <span class="op">=</span> <span class="fl">160</span>, height <span class="op">=</span> <span class="fl">120</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:a copy -map \"0:v?\" -map \"0:a?\" \"cropped.mp4\""</span></span></code></pre></div>
 <p><code><a href="../reference/audio_stream.html">?audio_stream</a></code> lists which verbs read it each way and is
-the one place that list is maintained. It also covers <code>audio</code>
-— a <em>different</em> 0-based index, over a verb’s inputs rather than
-over one file’s tracks, on the multi-input verbs below.</p>
+the one place that list is maintained. It also covers
+<code>audio_input</code> — a <em>different</em> 0-based index, over a
+verb’s inputs rather than over one file’s tracks, on the multi-input
+verbs below.</p>
 <p>For preprocessing a whole folder of files at once, every task verb
 has a batch sibling (<code><a href="../reference/extract_audio_batch.html">extract_audio_batch()</a></code>,
 <code><a href="../reference/crop_video_batch.html">crop_video_batch()</a></code>, …); see <code><a href="../articles/batch.html">vignette("batch")</a></code>.
@@ -231,11 +232,11 @@ are the opposite, keeping every audio track by default. The task-verb
 layer wraps the common cases: <code><a href="../reference/compare_videos.html">compare_videos()</a></code> for a
 side-by-side (or stacked) comparison and
 <code><a href="../reference/picture_in_picture.html">picture_in_picture()</a></code> for an inset overlay. Both take an
-<code>audio</code> index naming the input whose track to carry, and
-stream-copy that track through untouched unless you name an encoder with
-<code>audio_codec</code>.</p>
+<code>audio_input</code> index naming the input whose track to carry,
+and stream-copy that track through untouched unless you name an encoder
+with <code>audio_codec</code>.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/compare_videos.html">compare_videos</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">video</span>, <span class="va">video</span><span class="op">)</span>, <span class="st">"compare.mp4"</span>, audio <span class="op">=</span> <span class="fl">0</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/compare_videos.html">compare_videos</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">video</span>, <span class="va">video</span><span class="op">)</span>, <span class="st">"compare.mp4"</span>, audio_input <span class="op">=</span> <span class="fl">0</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -filter_complex \"[0:v][1:v]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[0s][1s];[1s][0s]scale2ref='oh*mdar':'if(lt(main_h,ih),ih,main_h)'[1s][0s];[0s][1s]hstack,setsar=1[vout]\" -codec:a copy -map \"[vout]\" -map \"0:a\" \"compare.mp4\""</span></span></code></pre></div>
 <p>The builder stays deliberately linear — one input chain, sequential
 filters, one output — so full FFmpeg filtergraphs are out of scope. When

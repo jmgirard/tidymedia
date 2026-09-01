@@ -70,7 +70,7 @@ discard it:</p>
 discards it for you, since pointing tidymedia at a different binary
 invalidates everything remembered about the old one.</p></li>
 </ul><p>The record is per R process, and it does not travel to a worker. So unless
-you have set <code>tidymedia.nvenc_encoders</code> yourself, a batch running on
+you have set <code>tidymedia.hardware_encoders</code> yourself, a batch running on
 <code>W</code> workers asks FFmpeg <code>W</code> times rather than once, and
 discarding the record in the parent does not reach them.</p>
 <p>Setting that option is different: the value you set is carried into each
@@ -83,14 +83,14 @@ as it is now, whether or not this function has been called.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="nvenc_encoder.html">has_nvenc</a></code> and <code><a href="nvenc_encoder.html">nvenc_encoder</a></code> for the
+    <div class="dont-index"><p><code><a href="hardware_encoder.html">has_hardware_encoder</a></code> and <code><a href="hardware_encoder.html">hardware_encoder</a></code> for the
 queries that use the remembered answer, <code><a href="ffmpeg_encoders.html">ffmpeg_encoders</a></code> for
 an always-fresh encoder list, and <code><a href="set_program.html">set_program</a></code> to point
 tidymedia at a different binary.</p>
 <p>Other capability functions:
 <code><a href="ffmpeg_codecs.html">ffmpeg_codecs()</a></code>,
 <code><a href="ffmpeg_encoders.html">ffmpeg_encoders()</a></code>,
-<code><a href="nvenc_encoder.html">nvenc_encoder()</a></code></p></div>
+<code><a href="hardware_encoder.html">hardware_encoder()</a></code></p></div>
     </div>
 
     <div class="section level2">

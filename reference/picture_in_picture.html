@@ -65,7 +65,7 @@ fraction of the main video's width and positions it.</p>
 <span>  position <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"topright"</span>, <span class="st">"topleft"</span>, <span class="st">"bottomright"</span>, <span class="st">"bottomleft"</span>, <span class="st">"center"</span><span class="op">)</span>,</span>
 <span>  scale <span class="op">=</span> <span class="fl">0.25</span>,</span>
 <span>  margin <span class="op">=</span> <span class="fl">16</span>,</span>
-<span>  audio <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  audio_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  video_codec <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  audio_codec <span class="op">=</span> <span class="st">"copy"</span>,</span>
 <span>  hardware <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"nvenc"</span><span class="op">)</span>,</span>
@@ -106,7 +106,7 @@ preserved (<code>0 &lt; scale &lt;= 1</code>). (default = <code>0.25</code>)</p>
 for <code>position = "center"</code>). (default = <code>16</code>)</p></dd>
 
 
-<dt id="arg-audio">audio<a class="anchor" aria-label="anchor" href="#arg-audio"></a></dt>
+<dt id="arg-audio-input">audio_input<a class="anchor" aria-label="anchor" href="#arg-audio-input"></a></dt>
 <dd><p>The 0-based index of the <em>input</em> whose audio to keep – <code>0</code> is the first file passed in, <code>1</code> the second. This counts the verb's inputs, not one input's audio streams, so it is a different index from <code>audio_stream</code> on the single-input verbs. <code>NULL</code> (default) maps no audio at all, so the output is silent – unlike <code>audio_stream = NULL</code>, which always maps something. Naming an input the call does not have is an R error, raised before FFmpeg runs. See <code><a href="audio_stream.html">audio_stream</a></code>. (default = <code>NULL</code>)</p></dd>
 
 
@@ -122,7 +122,7 @@ codec.</p></dd>
 <code>"copy"</code> (default) stream-copies it through untouched; name an encoder
 (e.g. <code>"aac"</code>) to transcode it, or pass <code>NULL</code> to leave the codec
 unset so the output container's default encoder is used. Nothing is emitted
-when <code>audio</code> is <code>NULL</code>, since no audio reaches the output; naming
+when <code>audio_input</code> is <code>NULL</code>, since no audio reaches the output; naming
 an encoder in that case is an error.</p></dd>
 
 
@@ -133,7 +133,7 @@ an encoder in that case is an error.</p></dd>
 (e.g. <code>"libx264"</code> becomes <code>"h264_nvenc"</code>); with the default
 <code>video_codec = NULL</code> the H.264 family is assumed, so a non-H.264
 container (e.g. <code>.webm</code>) needs an explicit HEVC- or AV1-family
-<code>video_codec</code>. See <code><a href="nvenc_encoder.html">has_nvenc</a></code> for availability and its
+<code>video_codec</code>. See <code><a href="hardware_encoder.html">has_hardware_encoder</a></code> for availability and its
 caveats.
 Resolving <code>"nvenc"</code> asks this FFmpeg build which encoders it has, so
 the first <code>"nvenc"</code> call that re-encodes the video runs the binary
@@ -161,13 +161,13 @@ or return the compiled command without running it (<code>FALSE</code>).</p></dd>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Audio is dropped unless <code>audio</code> names an input to carry (<code>0</code> = the
+    <p>Audio is dropped unless <code>audio_input</code> names an input to carry (<code>0</code> = the
 main video, <code>1</code> = the overlay). A carried track is
 stream-copied unless <code>audio_codec</code> names an encoder.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="ffm_overlay.html">ffm_overlay()</a></code>, the builder it wraps; <code><a href="nvenc_encoder.html">has_nvenc()</a></code> for the
+    <div class="dont-index"><p><code><a href="ffm_overlay.html">ffm_overlay()</a></code>, the builder it wraps; <code><a href="hardware_encoder.html">has_hardware_encoder()</a></code> for the
 <code>hardware = "nvenc"</code> toggle; <code><a href="compare_videos.html">compare_videos()</a></code> for
 side-by-side stacking.</p>
 <p>Other task verb functions:

@@ -125,6 +125,7 @@ copy of its platform layout — the failure a single-platform test cannot catch.
 - 2026-09-01 implement checkpoint: T1–T3, T6, T8 done (helpers, AC1 equality test — failed against the unchanged write at the rappdirs layout, passes after the move — write moved, nvenc-memo redirect on `R_USER_CONFIG_DIR`, NEWS); T5's fallback read is in `R/` with T4's tests drafted but not yet in the suite; full-suite result pending.
 - 2026-09-01 implement: T4, T5, T7 done. AC2/AC3 tests: four programs x three file states under `PATH = ""`, distinct stubs at the two paths so the value says which file was read; against a mutant with the fallback removed, exactly the legacy-alone cells fail (wrong value + the stale warning) and the other two states stay green. AC5 grep returns two hits: the helper's body and `install_on_win()`'s data-dir default; the body is the single `rappdirs::user_config_dir("tidymedia", "R")` call. `document()` no diff. T9 pending.
 - 2026-09-01 implement: T9 done at `4f8613e` — `devtools::document()` no diff, `devtools::test()` 0 failures / 18 skipped (the nvenc-hardware and parallel-worker gates, as at M099), `devtools::check()` 0 errors / 0 warnings / 0 notes. All tasks checked; status review.
+- 2026-09-01 review: approval given at the gate (fix F1, F2 wording, F3, F6; merge PR #102 on green CI); fixes committed at `adf305b`, marker written, PR marked ready. CI wait timed out at 10 min with every leg but pkgdown still pending; resume re-derives from `gh pr checks 102` and merges when green.
 
 ## Review
 <!-- owner: review -->

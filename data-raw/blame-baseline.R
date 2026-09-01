@@ -60,7 +60,7 @@ blame_baseline <- function(ref = NULL, root = ".") {
   sample <- system.file("extdata", "sample.mp4", package = "tidymedia")
   if (!nzchar(sample)) stop("sample.mp4 not found; install the package first")
   outdir <- file.path(tempdir(), "blame-frames")
-  old <- options(tidymedia.nvenc_encoders = character(0))
+  old <- options(tidymedia.hardware_encoders = character(0))
   on.exit(options(old), add = TRUE)
 
   rows <- lapply(blame_cells(sample, outdir, root), function(cell) {

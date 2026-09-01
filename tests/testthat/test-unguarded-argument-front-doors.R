@@ -180,7 +180,7 @@ test_that("a wrong `outfiles` outranks the nvenc availability probe", {
   dir <- withr::local_tempdir()
   vid <- file.path(dir, "in.mp4")
   file.create(vid)
-  withr::local_options(tidymedia.nvenc_encoders = NULL)
+  withr::local_options(tidymedia.hardware_encoders = NULL)
   local_mocked_bindings(cached_encoder_names = function() character(),
                         .package = "tidymedia")
   cnd <- tryCatch(

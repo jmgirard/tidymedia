@@ -9,7 +9,7 @@ compare_videos(
   outfile,
   direction = c("horizontal", "vertical"),
   resize = TRUE,
-  audio = NULL,
+  audio_input = NULL,
   video_codec = NULL,
   audio_codec = "copy",
   hardware = c("none", "nvenc"),
@@ -32,7 +32,7 @@ reach.}
 \item{resize}{A logical indicating whether to resize the inputs to share an
 edge. Only supported for exactly two inputs. (default = \code{TRUE})}
 
-\item{audio}{The 0-based index of the \emph{input} whose audio to keep -- \code{0} is the first file passed in, \code{1} the second. This counts the verb's inputs, not one input's audio streams, so it is a different index from \code{audio_stream} on the single-input verbs. \code{NULL} (default) maps no audio at all, so the output is silent -- unlike \code{audio_stream = NULL}, which always maps something. Naming an input the call does not have is an R error, raised before FFmpeg runs. See \code{\link{audio_stream}}. (default = \code{NULL})}
+\item{audio_input}{The 0-based index of the \emph{input} whose audio to keep -- \code{0} is the first file passed in, \code{1} the second. This counts the verb's inputs, not one input's audio streams, so it is a different index from \code{audio_stream} on the single-input verbs. \code{NULL} (default) maps no audio at all, so the output is silent -- unlike \code{audio_stream = NULL}, which always maps something. Naming an input the call does not have is an R error, raised before FFmpeg runs. See \code{\link{audio_stream}}. (default = \code{NULL})}
 
 \item{video_codec}{A string naming the output video codec, or \code{NULL}
 (default) to leave it unset, so the output container's default encoder is
@@ -43,7 +43,7 @@ codec.}
 \code{"copy"} (default) stream-copies it through untouched; name an encoder
 (e.g. \code{"aac"}) to transcode it, or pass \code{NULL} to leave the codec
 unset so the output container's default encoder is used. Nothing is emitted
-when \code{audio} is \code{NULL}, since no audio reaches the output; naming
+when \code{audio_input} is \code{NULL}, since no audio reaches the output; naming
 an encoder in that case is an error.}
 
 \item{hardware}{The encoder backend: \code{"none"} (default, the software
@@ -52,7 +52,7 @@ an encoder in that case is an error.}
 (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); with the default
 \code{video_codec = NULL} the H.264 family is assumed, so a non-H.264
 container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
-\code{video_codec}. See \code{\link{has_nvenc}} for availability and its
+\code{video_codec}. See \code{\link{has_hardware_encoder}} for availability and its
 caveats.
 Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
 the first \code{"nvenc"} call that re-encodes the video runs the binary
@@ -83,7 +83,7 @@ before/after processing. Built on the blessed stacking verbs
 By default the two inputs are resized to share an edge (equal heights for a
 horizontal stack, equal widths for a vertical one); resizing currently
 supports exactly two inputs, so pass \code{resize = FALSE} to compare more.
-Audio is dropped unless \code{audio} names an input to carry; a carried
+Audio is dropped unless \code{audio_input} names an input to carry; a carried
 track is stream-copied unless \code{audio_codec} names an encoder.
 }
 \examples{
@@ -92,7 +92,7 @@ compare_videos(c(video, video), "compare.mp4", run = FALSE)
 }
 \seealso{
 \code{\link[=ffm_hstack]{ffm_hstack()}} and \code{\link[=ffm_vstack]{ffm_vstack()}}, the builders it wraps;
-\code{\link[=has_nvenc]{has_nvenc()}} for the \code{hardware = "nvenc"} toggle;
+\code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware = "nvenc"} toggle;
 \code{\link[=picture_in_picture]{picture_in_picture()}} for insetting instead of stacking.
 
 Other task verb functions:

@@ -303,7 +303,7 @@ blame_precedence <- function(ref = NULL, root = ".",
   env <- codec_guard_env(ref, root)
   sample <- normalizePath(
     file.path(root, "inst", "extdata", "sample.mp4"), mustWork = TRUE)
-  old <- options(tidymedia.nvenc_encoders = character(0))
+  old <- options(tidymedia.hardware_encoders = character(0))
   on.exit(options(old), add = TRUE)
 
   apply_overlay <- function(args, overlay) {

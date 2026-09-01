@@ -86,7 +86,7 @@ exported surface, taken under D014's clean break with no `lifecycle` shim.
 1. [x] Read the four candidates and every D-entry they cite; write up what each
    change would look like at the call site, and run the AC1 sweep at the branch
    point to record each candidate's starting verb set.
-2. Question gate: put the four dispositions to the user, one option set each,
+2. [x] Question gate: put the four dispositions to the user, one option set each,
    stating that the choice is permanent once 0.2.0 reaches CRAN, and that (d)
    decides the vocabulary M100 then builds against.
 3. [x] Write the D-entry recording the four dispositions, each naming the verb set
@@ -96,7 +96,7 @@ exported surface, taken under D014's clean break with no `lifecycle` shim.
    Supersede D025 and D026 if candidate (a) ships as a `NULL`-reading change.
 5. Update `man/`, `_pkgdown.yml`, vignettes, `README.Rmd`, and `NEWS.md` for
    what shipped.
-6. Update the ROADMAP rows: remove a row whose change shipped; on a declined
+6. [x] Update the ROADMAP rows: remove a row whose change shipped; on a declined
    row, replace the promotion condition that assumed the window was open.
 7. Run the AC1 sweep, `devtools::document()`, `devtools::test()`, `devtools::check()`.
 
@@ -129,3 +129,4 @@ exported surface, taken under D014's clean break with no `lifecycle` shim.
 - 2026-09-01 implement: T2 question gate posed with all four dispositions; the user asked whether any had been briefed (none — RB01-RB05 cover other questions, the four were settled at in-session gates) and chose **Escalate via `/milestone-brief`** on every candidate (a)-(d). No disposition recorded; the D-entry (T3) waits on the RR. Handing off to `/milestone-brief`.
 - 2026-09-01 brief: blocked on RB06 (`cairn/reviews/RB06-d014-rename-window.md`), one brief covering candidates (a)-(d); advisory, no binding criteria requested. Second-escalation removal options listed for (a) and (d), since RB02/RB03 named `audio_stream` and RB01 named the nvenc helpers. Committed on the milestone branch rather than master, since the milestone was already in-progress on its branch.
 - 2026-09-01 ingest RR06: all seven questions answered; the maintainer took every disposition at the ingest gate — ship (a) as `audio_input` (overturning the session's decline; D032's docs-not-API half superseded, quoted to the user first), ship (d) with both helpers exported, decline (a)-`NULL`, (b), (c) permanently, spell M100's helper argument `hardware =`, record the Q7 principle. Written as D077 and D078 and M099-D1..D4; T3 ticked. Recommendations triaged: R1-R8 apply, R9-R10 reject-with-reason (D077), R11 (a generic `has_encoder(name)`) to the M100-out candidate row as additive later work. RR06 Beyond-the-brief items 2-6 (rename mechanics, `codec_family()`/`check_nvenc_available()` abort text, `?tidymedia` Session options sentence, `_pkgdown.yml` section prose, `refresh_ffmpeg_capabilities()` `@seealso`) fold into T4/T5. RB06/RR06 archived; status in-progress.
+- 2026-09-01 implement (checkpoint, suite result pending): T2 ticked — every disposition settled at the RR06 ingest gate. T4/T5 edits landed: (a) `audio` → `audio_input` on the four fan-in verbs, their pipelines, `check_audio_codec_needs_audio()`'s abort text, `check_batch_audio_col()`'s default column, the `?audio_stream` topic (its "names three things" section now says the bare name is not an index), 14 test files and `vignettes/tidymedia.Rmd`; spelling `audio =` on those verbs now fails as an R partial-match error, since `audio` prefixes both `audio_input` and `audio_codec` (observed, not composed). (d) `has_nvenc`/`nvenc_encoder`/`tidymedia.nvenc_encoders` → `has_hardware_encoder`/`hardware_encoder`/`tidymedia.hardware_encoders` by word-boundary replacement over `R/`, `tests/`, `vignettes/`, `_pkgdown.yml`, `data-raw/` and `DESIGN.md`; helper topic retitled, `_pkgdown.yml` section prose and `?tidymedia` option sentence reworded (RR06 items 2, 5, 6); `man/nvenc_encoder.Rd` removed, `document()` idempotent, `check_pkgdown()` clean. Internal `nvenc_available()`/`check_nvenc_available()` and their abort text left for M100 (RR06 item 4). New `test-d014-rename-window.R` runs the AC1 sweep; it failed six ways before the rename. T6 ticked: ROADMAP rows for (a)-`audio_stream`/`NULL`, (b), (c) now carry D077's per-row reopening shapes; 23,775 bytes. Two NEWS entries under Breaking changes. M100's plan text still spells the old names; it depends on this milestone and is amended at its own gate.

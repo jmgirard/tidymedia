@@ -511,10 +511,10 @@ test_that("compare_videos(resize = FALSE) accepts more than two inputs", {
   expect_match(cmd, "hstack=inputs=3:shortest=0[vout]", fixed = TRUE)
 })
 
-test_that("compare_videos(audio = ) carries that input's audio via -map", {
+test_that("compare_videos(audio_input = ) carries that input's audio via -map", {
   f1 <- make_input()
   f2 <- make_input()
-  cmd <- compare_videos(c(f1, f2), "out.mp4", audio = 1, run = FALSE)
+  cmd <- compare_videos(c(f1, f2), "out.mp4", audio_input = 1, run = FALSE)
   expect_match(cmd, '-map "[vout]" -map "1:a"', fixed = TRUE)
 })
 
@@ -534,7 +534,7 @@ test_that("compare_videos() validates inputs, resize arity, and audio index", {
     "exactly two"
   )
   expect_error(
-    compare_videos(c(f1, f2), "out.mp4", audio = 5, run = FALSE)
+    compare_videos(c(f1, f2), "out.mp4", audio_input = 5, run = FALSE)
   )
 })
 
@@ -543,7 +543,7 @@ test_that("compare_videos() runs through ffmpeg (binary-gated)", {
   a <- make_test_video()
   b <- make_test_video()
   out <- withr::local_tempfile(fileext = ".mp4")
-  compare_videos(c(a, b), out, audio = 0)
+  compare_videos(c(a, b), out, audio_input = 0)
   expect_true(file.exists(out))
   expect_gt(file.size(out), 0)
 })
@@ -584,10 +584,10 @@ test_that("picture_in_picture() honours scale and margin", {
   expect_match(cmd, "overlay=x=main_w-overlay_w-8:y=8", fixed = TRUE)
 })
 
-test_that("picture_in_picture(audio = ) carries that input's audio", {
+test_that("picture_in_picture(audio_input = ) carries that input's audio", {
   m <- make_input()
   o <- make_input()
-  cmd <- picture_in_picture(m, o, "out.mp4", audio = 0, run = FALSE)
+  cmd <- picture_in_picture(m, o, "out.mp4", audio_input = 0, run = FALSE)
   expect_match(cmd, '-map "[vout]" -map "0:a"', fixed = TRUE)
 })
 
@@ -595,7 +595,7 @@ test_that("picture_in_picture() validates scale, margin, and audio", {
   m <- make_input()
   o <- make_input()
   expect_error(picture_in_picture(m, o, "out.mp4", scale = 2, run = FALSE))
-  expect_error(picture_in_picture(m, o, "out.mp4", audio = 2, run = FALSE))
+  expect_error(picture_in_picture(m, o, "out.mp4", audio_input = 2, run = FALSE))
   missing <- withr::local_tempfile(fileext = ".mp4")
   expect_error(picture_in_picture(missing, o, "out.mp4", run = FALSE))
 })
@@ -605,7 +605,7 @@ test_that("picture_in_picture() runs through ffmpeg (binary-gated)", {
   a <- make_test_video()
   b <- make_test_video()
   out <- withr::local_tempfile(fileext = ".mp4")
-  picture_in_picture(a, b, out, audio = 0)
+  picture_in_picture(a, b, out, audio_input = 0)
   expect_true(file.exists(out))
   expect_gt(file.size(out), 0)
 })

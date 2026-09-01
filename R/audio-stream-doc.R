@@ -90,7 +90,7 @@ audio_stream_param <- function(action,
     extra,
     paste0("Naming a track the input does not have is an FFmpeg error, not an ",
            "R one. See \\code{\\link{audio_stream}} for how this differs from ",
-           "\\code{audio}, the input index on \\code{\\link{compare_videos}} ",
+           "\\code{audio_input}, the input index on \\code{\\link{compare_videos}} ",
            "and \\code{\\link{picture_in_picture}}."),
     "(default = \\code{NULL})"
   )
@@ -112,7 +112,7 @@ audio_input_param <- function(batch = FALSE, extra = NULL) {
              "something. Naming an input the call does not have is an R ",
              "error, raised before FFmpeg runs."),
       if (batch) {
-        paste0("Applied to every row lacking an \\code{audio} column; an ",
+        paste0("Applied to every row lacking an \\code{audio_input} column; an ",
                "\\code{NA} cell in that column means the same as \\code{NULL} ",
                "for that row, dropping that output's audio.")
       },
@@ -167,10 +167,10 @@ audio_stream_extras <- list(
 #' is not the \code{index} column of \code{\link{probe_audio}}, which counts
 #' every stream, audio or not).
 #'
-#' \code{audio} counts \strong{a verb's inputs}. On
+#' \code{audio_input} counts \strong{a verb's inputs}. On
 #' \code{\link{compare_videos}} and \code{\link{picture_in_picture}}, which
 #' combine several files into one output and must choose whose sound to keep,
-#' \code{audio = 1} is the second \emph{file}, and says nothing about which of
+#' \code{audio_input = 1} is the second \emph{file}, and says nothing about which of
 #' its tracks is taken.
 #'
 #' Neither can be computed from the other, which is why they stay separate
@@ -192,12 +192,12 @@ audio_stream_extras <- list(
 #'   \code{\link{separate_audio_video}} and \code{\link{normalize_audio}},
 #'   whose product \emph{is} audio, that same case is an FFmpeg error.
 #'
-#' \code{audio = NULL} is different in kind: it emits no audio map at all, so
+#' \code{audio_input = NULL} is different in kind: it emits no audio map at all, so
 #' the output carries \strong{no audio}. A silent output is the default for
 #' \code{\link{compare_videos}} and \code{\link{picture_in_picture}}, because
 #' there is no non-arbitrary answer to which of several inputs should be heard.
 #'
-#' Out of range, the two also fail differently. An \code{audio} beyond the
+#' Out of range, the two also fail differently. An \code{audio_input} beyond the
 #' inputs you passed is an R error raised before FFmpeg runs; an
 #' \code{audio_stream} beyond the input's tracks is an FFmpeg error, because
 #' the track count is a property of the file rather than of the call.
@@ -215,17 +215,17 @@ audio_stream_extras <- list(
 #' \code{audio_stream = 2} with an \code{audio_stream} column holding \code{NA}
 #' puts that row on its family's \code{NULL} reading, not on track 2.
 #'
-#' # `audio` names three things
+#' # The bare name `audio` is not an index
 #'
-#' The name is reused across layers, and only the first of these is an index:
+#' Layer 1 keeps \code{audio} for two things that count nothing:
 #'
-#' * an input index on \code{\link{compare_videos}} and
-#'   \code{\link{picture_in_picture}} (and their \code{_batch} siblings), as
-#'   above;
 #' * an audio \emph{codec} string on \code{\link{ffm_codec}}, where
 #'   \code{audio = "aac"} names an encoder;
 #' * a \emph{logical} on \code{\link{ffm_copy}}, where \code{audio = TRUE}
 #'   stream-copies the audio instead of re-encoding it.
+#'
+#' The input index is \code{audio_input}, so that its name says what it counts,
+#' as \code{audio_stream} does.
 #'
 #' @seealso `r rd_verb_list(audio_stream_families$first)` for the first-track
 #'   reading; `r rd_verb_list(audio_stream_families$every)` for the every-track

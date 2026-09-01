@@ -110,7 +110,7 @@ test_that("the package topic documents the seam beside the other two", {
   txt <- rd_for(rd, "tidymedia-package")
   expect_match(txt, "Session options", fixed = TRUE)
   for (opt in c("tidymedia.timeout", "tidymedia.check_tracks",
-                "tidymedia.nvenc_encoders")) {
+                "tidymedia.hardware_encoders")) {
     expect_match(txt, paste0("options(", opt), fixed = TRUE)
   }
 })

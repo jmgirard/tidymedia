@@ -176,7 +176,7 @@ the input whose track to carry, and stream-copy that track through untouched
 unless you name an encoder with `audio_codec`.
 
 ```{r}
-compare_videos(c(video, video), "compare.mp4", audio = 0, run = FALSE)
+compare_videos(c(video, video), "compare.mp4", audio_input = 0, run = FALSE)
 ```
 
 The builder stays deliberately linear — one input chain, sequential filters,

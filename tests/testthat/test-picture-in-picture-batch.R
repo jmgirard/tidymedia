@@ -1,7 +1,7 @@
 # Tests for picture_in_picture_batch(): the fan-in batch sibling of
 # picture_in_picture(). Its two inputs have distinct roles, so jobs carries fixed
 # `main`/`overlay` columns (not a list-column; D015) plus `output`, with optional
-# per-row `position`/`scale`/`margin`/`audio` override columns falling back to the
+# per-row `position`/`scale`/`margin`/`audio_input` override columns falling back to the
 # arguments. Command construction is tested purely (run = FALSE); execution +
 # ffm_batch forwarding are binary-gated.
 
@@ -45,7 +45,7 @@ test_that("picture_in_picture_batch() audio column carries an input's audio; NA 
   m1 <- make_input(); o1 <- make_input(); m2 <- make_input(); o2 <- make_input()
   jobs <- tibble::tibble(
     main = c(m1, m2), overlay = c(o1, o2),
-    output = c("a.mp4", "s.mp4"), audio = c(1, NA)
+    output = c("a.mp4", "s.mp4"), audio_input = c(1, NA)
   )
   res <- picture_in_picture_batch(jobs, run = FALSE)
   expect_match(res$command[[1]], "-map \"1:a\"", fixed = TRUE)
@@ -107,10 +107,10 @@ test_that("picture_in_picture_batch() enforces the scalar's margin contract per 
 })
 
 test_that("picture_in_picture_batch() accepts an all-NA audio column as 'drop audio'", {
-  # `audio = NA` is logical, not numeric; the roxygen documents it as "drop
+  # `audio_input = NA` is logical, not numeric; the roxygen documents it as "drop
   # audio", so it must be accepted (parity with compare_videos_batch).
   m <- make_input(); o <- make_input()
-  jobs <- tibble::tibble(main = m, overlay = o, output = "o.mp4", audio = NA)
+  jobs <- tibble::tibble(main = m, overlay = o, output = "o.mp4", audio_input = NA)
   res <- picture_in_picture_batch(jobs, run = FALSE)
   expect_no_match(res$command[[1]], ":a", fixed = TRUE)   # audio dropped
 })

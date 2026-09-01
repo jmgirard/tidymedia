@@ -22,7 +22,7 @@ skip_if_no_mediainfo <- function() {
   )
 }
 
-# Skip unless this FFmpeg can actually nvenc-encode at run time. has_nvenc() is
+# Skip unless this FFmpeg can actually nvenc-encode at run time. has_hardware_encoder() is
 # only a cheap "is the encoder listed" check: a CI image can list h264_nvenc yet
 # have no libcuda / GPU (the encode then dies mid-run). So probe with a tiny real
 # encode and skip unless it exits 0 -- guarding execution tests against a listed-
@@ -32,7 +32,7 @@ skip_if_no_nvenc <- function() {
     nzchar(Sys.which("ffmpeg")),
     message = "ffmpeg binary not available"
   )
-  testthat::skip_if_not(has_nvenc("h264"), message = "nvenc encoder not listed")
+  testthat::skip_if_not(has_hardware_encoder("h264"), message = "nvenc encoder not listed")
   probe <- suppressWarnings(tryCatch(
     system2(
       "ffmpeg",

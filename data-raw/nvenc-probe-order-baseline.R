@@ -39,7 +39,7 @@
 # `ffm_finish()` afterwards, and including it can only strengthen the claim.
 #
 # `cached_encoder_names()` is replaced in the ref's own environment rather than
-# the `tidymedia.nvenc_encoders` option being set, so the grid exercises the
+# the `tidymedia.hardware_encoders` option being set, so the grid exercises the
 # fall-through branch AC1 exercises -- the option seam returns above it and would
 # leave the memo path unmeasured. `run_program()` is replaced too: a wrong value
 # that happens to be TRUTHY (`run = 123`) would otherwise really execute FFmpeg
@@ -162,7 +162,7 @@ nvenc_order_baseline <- function(ref = NULL, root = ".", sample = NULL) {
 
   # The nvenc option seam stays UNSET so `nvenc_available()` falls through to
   # `cached_encoder_names()`, which is what the pool below replaces.
-  old <- options(tidymedia.nvenc_encoders = NULL,
+  old <- options(tidymedia.hardware_encoders = NULL,
                  tidymedia.check_tracks = FALSE)
   on.exit(options(old), add = TRUE)
 

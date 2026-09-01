@@ -247,7 +247,7 @@ test_that("separate_audio_video_batch() validates its codec args whether or not 
 #
 # nvenc encodes video, so `hardware`/`fallback` reach the video branch of
 # separate_stream_pipeline() and never the audio one. Availability is simulated
-# through the `tidymedia.nvenc_encoders` option seam has_nvenc() consults, so
+# through the `tidymedia.hardware_encoders` option seam has_hardware_encoder() consults, so
 # every compile test here is GPU-free; the real encode is skip-gated below.
 
 test_that("separate_audio_video() defaults compile no hardware options", {
@@ -272,7 +272,7 @@ test_that("separate_audio_video(hardware = 'none') matches the argument-free cal
 })
 
 test_that("separate_audio_video(hardware = 'nvenc') compiles to the nvenc encoder", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f <- make_input()
   cmds <- separate_audio_video(f, "a.aac", "v.mp4", video_codec = NULL,
                                hardware = "nvenc", run = FALSE)
@@ -280,7 +280,7 @@ test_that("separate_audio_video(hardware = 'nvenc') compiles to the nvenc encode
 })
 
 test_that("separate_audio_video(hardware = 'nvenc') respects the video_codec family", {
-  withr::local_options(tidymedia.nvenc_encoders = c("h264_nvenc", "hevc_nvenc"))
+  withr::local_options(tidymedia.hardware_encoders = c("h264_nvenc", "hevc_nvenc"))
   f <- make_input()
   cmds <- separate_audio_video(f, "a.aac", "v.mp4", video_codec = "libx265",
                                hardware = "nvenc", run = FALSE)
@@ -288,7 +288,7 @@ test_that("separate_audio_video(hardware = 'nvenc') respects the video_codec fam
 })
 
 test_that("separate_audio_video() hardware never reaches the audio command", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f <- make_input()
   ref <- pre_m37(f)
   # nvenc encodes video only, so the audio output stays byte-identical across
@@ -304,7 +304,7 @@ test_that("separate_audio_video() hardware never reaches the audio command", {
 })
 
 test_that("separate_audio_video(hardware = 'nvenc') aborts when unavailable", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   f <- make_input()
   expect_error(
     separate_audio_video(f, "a.aac", "v.mp4", video_codec = NULL,
@@ -314,7 +314,7 @@ test_that("separate_audio_video(hardware = 'nvenc') aborts when unavailable", {
 })
 
 test_that("separate_audio_video() fallback keeps the sentinel, never injects a codec", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   f <- make_input()
   expect_message(
     cmds <- separate_audio_video(f, "a.aac", "v.mp4", video_codec = NULL,
@@ -335,7 +335,7 @@ test_that("separate_audio_video() rejects an unknown hardware value", {
 })
 
 test_that("separate_audio_video_batch(hardware = 'nvenc') applies nvenc to video rows only", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f <- make_input()
   jobs <- tibble::tibble(input = c(f, f), audiofile = c("a1.aac", "a2.aac"),
                          videofile = c("v1.mp4", "v2.mp4"))
@@ -348,7 +348,7 @@ test_that("separate_audio_video_batch(hardware = 'nvenc') applies nvenc to video
 })
 
 test_that("separate_audio_video_batch() ignores a per-row hardware column (batch-wide)", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f <- make_input()
   jobs <- tibble::tibble(input = c(f, f), audiofile = c("a1.aac", "a2.aac"),
                          videofile = c("v1.mp4", "v2.mp4"),
@@ -367,7 +367,7 @@ test_that("separate_audio_video_batch() ignores a per-row hardware column (batch
 # codec_family("copy"), which would blame the codec name instead of the copy.
 
 test_that("separate_audio_video(hardware = 'nvenc') aborts on the copy default", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f <- make_input()
   # The message names the cause and the fix, not codec_family()'s "No nvenc
   # encoder maps to that codec", which points at the wrong thing entirely.
@@ -392,7 +392,7 @@ test_that("separate_audio_video(hardware = 'nvenc') aborts on the copy default",
 })
 
 test_that("separate_audio_video(hardware = 'nvenc') aborts on an explicit copy", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f <- make_input()
   expect_error(
     separate_audio_video(f, "a.aac", "v.mp4", video_codec = "copy",
@@ -402,7 +402,7 @@ test_that("separate_audio_video(hardware = 'nvenc') aborts on an explicit copy",
 })
 
 test_that("separate_audio_video() copies audio happily under nvenc", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f <- make_input()
   # Only the VIDEO copy conflicts: the audio stream is never encoded on the GPU,
   # so the default audio_codec = "copy" stays legal alongside hardware = "nvenc".
@@ -421,7 +421,7 @@ test_that("separate_audio_video() copy is fine without a hardware request", {
 })
 
 test_that("separate_audio_video_batch(hardware = 'nvenc') aborts on the copy default", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f <- make_input()
   jobs <- tibble::tibble(input = f, audiofile = "a.aac", videofile = "v.mp4")
   expect_error(
@@ -431,7 +431,7 @@ test_that("separate_audio_video_batch(hardware = 'nvenc') aborts on the copy def
 })
 
 test_that("separate_audio_video_batch() fires the copy guard per row", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f <- make_input()
   # hardware is batch-wide, so one stream-copy row conflicts with it on its own:
   # a table mixing copy and re-encode rows must be split into separate calls.
@@ -453,7 +453,7 @@ test_that("separate_audio_video_batch() fires the copy guard per row", {
 })
 
 test_that("separate_audio_video_batch() treats an NA codec cell as the sentinel under nvenc", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f <- make_input()
   # NA is the column form of the NULL sentinel, not a copy, so it resolves to
   # the h264 nvenc encoder rather than tripping the guard.

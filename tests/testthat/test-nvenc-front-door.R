@@ -6,7 +6,7 @@
 # as "Error in `purrr::pmap(jobs, .f, ...)`" (LESSONS M47/M48-F1). D035
 # licenses re-running the availability check at each such verb's front door.
 #
-# Availability is simulated with the `tidymedia.nvenc_encoders` option seam, so
+# Availability is simulated with the `tidymedia.hardware_encoders` option seam, so
 # these tests need no GPU and no nvenc-capable FFmpeg build.
 
 # --- AC2: one abort site -----------------------------------------------------
@@ -17,7 +17,7 @@
 # right up until someone edited one of the two.
 
 test_that("the front-door guard and resolve_hw_encoder() word the abort identically", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   front <- tryCatch(
     tidymedia:::check_nvenc_available("libx264", "nvenc", FALSE),
     condition = function(cnd) cnd
@@ -122,7 +122,7 @@ test_that("the two lists together are every hardware-bearing exported verb", {
 # --- AC1: the abort names the verb ------------------------------------------
 
 test_that("an unavailable nvenc encoder blames the fan-out verb, not purrr::pmap()", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
   for (verb in nvenc_fanout_verbs()) {
     cnd <- nvenc_fanout_catch(verb, input)
@@ -138,7 +138,7 @@ test_that("an unavailable nvenc encoder blames the fan-out verb, not purrr::pmap
 
 test_that("the abort names the verb at parallel = TRUE too", {
   skip_if_not_installed("furrr")
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   old <- future::plan(future::sequential)
   withr::defer(future::plan(old))
   input <- make_input()
@@ -157,7 +157,7 @@ test_that("the abort names the verb at parallel = TRUE too", {
 # encode.
 
 test_that("the guard checks every family a video_codec column spells", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   input <- make_input()
   jobs <- tibble::tibble(input = c(input, input), output = c("a.mp4", "b.mp4"),
                          video_codec = c("libx264", "libaom-av1"))
@@ -171,7 +171,7 @@ test_that("the guard checks every family a video_codec column spells", {
 })
 
 test_that("the same column compiles when every family is available", {
-  withr::local_options(tidymedia.nvenc_encoders = c("h264_nvenc", "av1_nvenc"))
+  withr::local_options(tidymedia.hardware_encoders = c("h264_nvenc", "av1_nvenc"))
   input <- make_input()
   jobs <- tibble::tibble(input = c(input, input), output = c("a.mp4", "b.mp4"),
                          video_codec = c("libx264", "libaom-av1"))
@@ -184,7 +184,7 @@ test_that("an NA cell and an absent column both read as the h264 family", {
   # NA is the column form of the NULL sentinel (D022), which
   # resolve_hw_encoder() resolves to h264 -- so a seam holding only av1_nvenc
   # must refuse both shapes, naming h264_nvenc.
-  withr::local_options(tidymedia.nvenc_encoders = "av1_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "av1_nvenc")
   cnd <- nvenc_fanout_catch("segment_video_batch", input,
                             extra = list(jobs = tibble::tibble(
                               input = input, output = "a.mp4",
@@ -199,7 +199,7 @@ test_that("an NA cell and an absent column both read as the h264 family", {
 })
 
 test_that("format_for_web_batch checks h264, the codec its recipe fixes", {
-  withr::local_options(tidymedia.nvenc_encoders = "av1_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "av1_nvenc")
   input <- make_input()
   cnd <- nvenc_fanout_catch("format_for_web_batch", input)
   expect_match(conditionMessage(cnd), "h264_nvenc", fixed = TRUE)
@@ -209,7 +209,7 @@ test_that("format_for_web_batch checks h264, the codec its recipe fixes", {
 # --- AC4: fallback = TRUE reaches no front-door guard -----------------------
 
 test_that("fallback = TRUE still falls back, once per row", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
   jobs <- tibble::tibble(input = c(input, input), output = c("a.mp4", "b.mp4"))
   n <- 0
@@ -230,7 +230,7 @@ test_that("fallback = TRUE still falls back, once per row", {
 })
 
 test_that("fallback = TRUE never lets the front door refuse an unmappable codec", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
   # codec_family() aborts on "prores" regardless of `fallback`, so a front-door
   # column sweep would refuse this call. The guard's early return is what keeps
@@ -253,7 +253,7 @@ test_that("fallback = TRUE never lets the front door refuse an unmappable codec"
 # dropped -- without them, widening it reads as green everywhere else.
 
 test_that("a non-re-encoding cut still reports the cut, not availability", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
   for (verb in c("segment_video", "segment_video_batch")) {
     cnd <- nvenc_fanout_catch(verb, input,
@@ -265,7 +265,7 @@ test_that("a non-re-encoding cut still reports the cut, not availability", {
 })
 
 test_that("an all-FALSE reencode column reaches no front-door guard", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
   # The column form of the scalar case above: every row copies, so no row has an
   # encoder to check and segment_pipeline()'s own cut error must survive.
@@ -280,7 +280,7 @@ test_that("an all-FALSE reencode column reaches no front-door guard", {
 })
 
 test_that("a MIXED reencode column is refused at the front door", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
   # `reencode` is per row, and M57's all-or-nothing gate skipped the availability
   # guard entirely here, sending the re-encoding row back to blaming
@@ -298,7 +298,7 @@ test_that("a MIXED reencode column is refused at the front door", {
 })
 
 test_that("a copying row's own error reports rather than its family", {
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   input <- make_input()
   # The AV1 row copies, so it names no encoder and the h264-only seam must not
   # refuse the table: a guard reading the whole column would abort on av1_nvenc.
@@ -330,14 +330,14 @@ test_that("on a mixed column the cut contradiction reports before availability",
                          reencode = c(TRUE, FALSE))
   # Encoder present: row 2's cut error, at the verb -- where M57 left it inside
   # the fan-out, blaming purrr::pmap().
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   present <- nvenc_fanout_catch("segment_video_batch", input,
                                 extra = list(jobs = jobs))
   expect_match(conditionMessage(present), "need a re-encoding cut")
   expect_identical(nvenc_blamed(present), "segment_video_batch")
   # Encoder absent: the SAME error, not the availability one M57 raised here.
   # The set of failing calls is unchanged; what moves is which error reports.
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   absent <- nvenc_fanout_catch("segment_video_batch", input,
                                extra = list(jobs = jobs))
   expect_match(conditionMessage(absent), "need a re-encoding cut")
@@ -347,7 +347,7 @@ test_that("on a mixed column the cut contradiction reports before availability",
 })
 
 test_that("a copy video_codec still reports the copy, not availability", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
   cnd <- nvenc_fanout_catch("separate_audio_video_batch", input,
                             extra = list(video_codec = "copy"))
@@ -357,7 +357,7 @@ test_that("a copy video_codec still reports the copy, not availability", {
 })
 
 test_that("a within-row output collision still reports the collision", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
   # separate_audio_video_batch reshapes N rows -> 2N before pooling the duplicate
   # check, so audiofile == videofile is a collision only the reshaped table can
@@ -384,12 +384,12 @@ test_that("a mixed copy column reports the copy conflict before availability", {
                          audiofile = c("a1.aac", "a2.aac"),
                          videofile = c("v1.mp4", "v2.mp4"),
                          video_codec = c("copy", "libx264"))
-  withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   present <- nvenc_fanout_catch("separate_audio_video_batch", input,
                                 extra = list(jobs = jobs))
   expect_match(conditionMessage(present), "needs a re-encoding")
   expect_identical(nvenc_blamed(present), "separate_audio_video_batch")
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   absent <- nvenc_fanout_catch("separate_audio_video_batch", input,
                                extra = list(jobs = jobs))
   expect_match(conditionMessage(absent), "needs a re-encoding")
@@ -458,9 +458,9 @@ test_that("a contradiction reports before availability on the fan-in verbs", {
     # Both seams, and the assertion is that they agree: a contradiction between
     # two arguments is settled without consulting the local FFmpeg build, so the
     # same wrong call must be diagnosed identically on any machine (M54).
-    withr::local_options(tidymedia.nvenc_encoders = "h264_nvenc")
+    withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
     present <- call_it()
-    withr::local_options(tidymedia.nvenc_encoders = character(0))
+    withr::local_options(tidymedia.hardware_encoders = character(0))
     absent <- call_it()
     expect_match(conditionMessage(present), case$own, info = case$verb)
     expect_match(conditionMessage(absent), case$own, info = case$verb)
@@ -481,7 +481,7 @@ test_that("a malformed fallback reports its own type error, on any machine", {
   # so one wrong call had two diagnoses depending on the machine (review F1).
   # Both seams must now give the type error resolve_hw_encoder() would give.
   for (seam in list("h264_nvenc", character(0))) {
-    withr::local_options(tidymedia.nvenc_encoders = seam)
+    withr::local_options(tidymedia.hardware_encoders = seam)
     cnd <- tryCatch(
       standardize_video_batch(jobs, hardware = "nvenc", fallback = NA,
                               run = FALSE),
@@ -495,7 +495,7 @@ test_that("a malformed fallback reports its own type error, on any machine", {
 })
 
 test_that("hardware = \"none\" reaches no fallback check at the front door", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
   jobs <- tibble::tibble(input = input, output = "a.mp4")
   # The validation sits after the hardware test on purpose: a hardware = "none"

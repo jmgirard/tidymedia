@@ -108,8 +108,8 @@
 #' are validated inside the per-row fan-out, so a set limit is reported instead
 #' of them, and so is a missing nvenc encoder under `hardware = "nvenc"` on a
 #' build without one.
-#' Two calls read no limit and so refuse nothing: [has_nvenc()]
-#' answering from a `tidymedia.nvenc_encoders` you set, which asks FFmpeg
+#' Two calls read no limit and so refuse nothing: [has_hardware_encoder()]
+#' answering from a `tidymedia.hardware_encoders` you set, which asks FFmpeg
 #' nothing, and a `probe_*()` shortcut handed a `probe` object instead of an
 #' `infile`, which reprobes nothing.
 #'
@@ -184,9 +184,9 @@
 #' names an `audio_stream` is not probed at all, so a table whose rows all name
 #' one pays nothing either way.
 #'
-#' \preformatted{options(tidymedia.nvenc_encoders = c("h264_nvenc", "hevc_nvenc"))}
+#' \preformatted{options(tidymedia.hardware_encoders = c("h264_nvenc", "hevc_nvenc"))}
 #'
-#' Names the NVIDIA hardware encoders this machine has, instead of asking
+#' Names the hardware video encoders this machine has, instead of asking
 #' FFmpeg. Set it to `character(0)` to declare there are none. Unset (the
 #' default), the package asks once per session and remembers the answer.
 #'

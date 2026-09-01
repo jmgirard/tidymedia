@@ -262,6 +262,25 @@
 
 ## Breaking changes
 
+* `compare_videos()`, `picture_in_picture()` and their `_batch` siblings now
+  call the argument that picks whose sound to keep `audio_input`, not `audio`.
+  It is the same argument: the 0-based index of the *input* whose audio is
+  carried, `NULL` for a silent output, and a `jobs` column of the same name
+  overriding it row by row. Only the name changes, so that it says what it
+  counts the way `audio_stream` says it counts one input's tracks.
+  `ffm_codec(audio = )` and `ffm_copy(audio = )` are unchanged. No alias is
+  kept: a call still spelling `audio =` on these four verbs is an error, which
+  R reports as the argument matching more than one formal (`audio` is a prefix
+  of both `audio_input` and `audio_codec`).
+
+* The hardware-encoder helpers no longer name one vendor. `has_nvenc()` is now
+  `has_hardware_encoder()`, `nvenc_encoder()` is now `hardware_encoder()`, and
+  the option that overrides detection is now `tidymedia.hardware_encoders`.
+  Each does what it did: nvenc is the one hardware backend, so
+  `hardware_encoder("h264")` is still `"h264_nvenc"` and `hardware = "nvenc"`
+  at the verbs is unchanged. The old names are gone, and an
+  `options(tidymedia.nvenc_encoders = )` you set is no longer read.
+
 * `format_for_web()` and `normalize_audio()` (and their `_batch` siblings) take
   a new `audio_stream` argument naming which audio track to work on, and now
   state that selection on every call. Both previously emitted no stream mapping

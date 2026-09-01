@@ -68,7 +68,7 @@ value_check_pairs <- function(input) {
          verb = "compare_videos_batch",
          own = "must be a whole number",
          args = list(jobs = two(inputs = list(c(input, input)),
-                                output = "o.mp4", audio = 7))),
+                                output = "o.mp4", audio_input = 7))),
     list(id = "5/compare_videos_batch/direction",
          verb = "compare_videos_batch",
          own = "must be one of",
@@ -83,7 +83,7 @@ value_check_pairs <- function(input) {
 }
 
 test_that("every (value check, verb) pair blames the verb the user called", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
   for (parallel in c(FALSE, TRUE)) {
     for (pair in value_check_pairs(input)) {
@@ -281,7 +281,7 @@ test_that("a reordered vocabulary default still selects its own first element", 
 # this is the test it has to turn red.
 
 test_that("the scalar siblings refuse the same values and blame themselves", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
   cases <- list(
     # `blame` is now the scalar verb everywhere. Site 1 used to name the
@@ -306,7 +306,7 @@ test_that("the scalar siblings refuse the same values and blame themselves", {
                      regions = data.frame(x = 0, y = 0, width = 10))),
     list(id = "4/compare_videos", verb = "compare_videos",
          own = "must be a whole number",
-         args = list(infiles = c(input, input), outfile = "o.mp4", audio = 7)),
+         args = list(infiles = c(input, input), outfile = "o.mp4", audio_input = 7)),
     list(id = "5/compare_videos", verb = "compare_videos",
          own = "must be one of",
          args = list(infiles = c(input, input), outfile = "o.mp4",
@@ -369,12 +369,12 @@ value_check_columns <- function(input) {
          # Both rows carry two inputs, so 7 is out of range for the ROW rather
          # than for the argument -- the bound the scalar check cannot express.
          jobs_bad = two(inputs = list(c(input, input), c(input, input)),
-                        output = c("a.mp4", "b.mp4"), audio = c(0, 7)),
+                        output = c("a.mp4", "b.mp4"), audio_input = c(0, 7)),
          jobs_ok = two(inputs = list(c(input, input), c(input, input)),
-                       output = c("a.mp4", "b.mp4"), audio = c(0, 1))),
+                       output = c("a.mp4", "b.mp4"), audio_input = c(0, 1))),
     list(id = "4/per-row input count", verb = "compare_videos_batch",
          own = "must be a whole number",
-         base = list(audio = 2, resize = FALSE),
+         base = list(audio_input = 2, resize = FALSE),
          # The SAME index is legal on a three-input row and out of range on a
          # two-input one, which is what "against each row's own inputs" means.
          jobs_bad = two(inputs = list(rep(input, 3), c(input, input)),
@@ -403,7 +403,7 @@ value_check_columns <- function(input) {
 }
 
 test_that("one violating row is refused and a clean column compiles", {
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
   for (case in value_check_columns(input)) {
     bad <- catch_call(case$verb, c(case$base, list(jobs = case$jobs_bad)))
@@ -449,7 +449,7 @@ test_that("a contradiction reports before a value check, in the column form", {
   # after failing twice as an overbroad statement about the ARGUMENT form, which
   # answers the other way. M61 owns the ordering and makes both forms agree; the
   # column half is kept pinned here meanwhile because D036 still requires it.
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
   two <- function(...) tibble::tibble(...)
   cases <- list(
@@ -480,7 +480,7 @@ test_that("AC5(a): a value check reports before nvenc availability", {
   # The seam is held EMPTY, so `hardware = "nvenc"` is genuinely unavailable and
   # the control's availability abort is real rather than assumed. Driving it
   # through the option seam is what makes this machine-independent (M54/D035).
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
   two <- function(...) tibble::tibble(...)
   good_regions <- data.frame(x = 0, y = 0, width = 10, height = 10)
@@ -529,7 +529,7 @@ test_that("AC5(b): a value check reports before ffm_batch's own guards", {
   # ffm_batch() is called at all, so a call wrong in both is told about the
   # value. The jobs-SHAPE guards at :75-80 are NOT in this set: all four verbs
   # already pre-empt them, so they are never displaced.
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
   two <- function(...) tibble::tibble(...)
   good_regions <- data.frame(x = 0, y = 0, width = 10, height = 10)
@@ -553,10 +553,10 @@ test_that("AC5(b): a value check reports before ffm_batch's own guards", {
     list(id = "compare audio index", verb = "compare_videos_batch",
          wins = "must be a whole number", other = "`run` must be",
          args = list(jobs = two(inputs = list(c(input, input)),
-                                output = "o.mp4", audio = 7),
+                                output = "o.mp4", audio_input = 7),
                      run = "yes"),
          control = list(jobs = two(inputs = list(c(input, input)),
-                                   output = "o.mp4", audio = 0),
+                                   output = "o.mp4", audio_input = 0),
                         run = "yes")),
     list(id = "pip margin", verb = "picture_in_picture_batch",
          wins = "must be a whole number", other = "`run` must be",

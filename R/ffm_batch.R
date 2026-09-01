@@ -106,7 +106,7 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
   # Build one pipeline per row (columns passed to .f by name, pmap-style).
   pipelines <- if (parallel) {
     # carry_options() is what makes the worker's build match the parent's: an
-    # nvenc pipeline asks has_nvenc(), which reads the caller's encoder
+    # nvenc pipeline asks has_hardware_encoder(), which reads the caller's encoder
     # override. Without it the worker reads that override as unset and spawns
     # FFmpeg to ask -- or picks a different encoder than the parent would.
     furrr::future_pmap(jobs, carry_options(.f), ...)

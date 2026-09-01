@@ -9,7 +9,7 @@ picture_in_picture_batch(
   position = c("topright", "topleft", "bottomright", "bottomleft", "center"),
   scale = 0.25,
   margin = 16,
-  audio = NULL,
+  audio_input = NULL,
   video_codec = NULL,
   audio_codec = "copy",
   hardware = c("none", "nvenc"),
@@ -23,10 +23,10 @@ picture_in_picture_batch(
 \item{jobs}{A data frame with one row per output and (at least) \code{main}
 (background path), \code{overlay} (inset path), and \code{output}
 (destination path) columns. Optional \code{position}, \code{scale},
-\code{margin}, \code{audio}, \code{video_codec}, and \code{audio_codec}
+\code{margin}, \code{audio_input}, \code{video_codec}, and \code{audio_codec}
 columns override the
 like-named arguments
-per row (a row omitting one falls back to the argument). In an \code{audio}
+per row (a row omitting one falls back to the argument). In an \code{audio_input}
 column, \code{NA} means "drop audio" (the column's way of writing the
 scalar's \code{NULL}); in a \code{video_codec} or \code{audio_codec} column
 it means "leave the codec unset". Any two rows resolving to the same output
@@ -38,7 +38,7 @@ default), \code{"topleft"}, \code{"bottomright"}, \code{"bottomleft"} or
 \code{"center"}; a \code{position} column is held to those same five
 values, per row. See \code{\link[=picture_in_picture]{picture_in_picture()}} for their fuller meaning.}
 
-\item{audio}{The 0-based index of the \emph{input} whose audio to keep -- \code{0} is the first file passed in, \code{1} the second. This counts the verb's inputs, not one input's audio streams, so it is a different index from \code{audio_stream} on the single-input verbs. \code{NULL} (default) maps no audio at all, so the output is silent -- unlike \code{audio_stream = NULL}, which always maps something. Naming an input the call does not have is an R error, raised before FFmpeg runs. Applied to every row lacking an \code{audio} column; an \code{NA} cell in that column means the same as \code{NULL} for that row, dropping that output's audio. See \code{\link{audio_stream}}. (default = \code{NULL})}
+\item{audio_input}{The 0-based index of the \emph{input} whose audio to keep -- \code{0} is the first file passed in, \code{1} the second. This counts the verb's inputs, not one input's audio streams, so it is a different index from \code{audio_stream} on the single-input verbs. \code{NULL} (default) maps no audio at all, so the output is silent -- unlike \code{audio_stream = NULL}, which always maps something. Naming an input the call does not have is an R error, raised before FFmpeg runs. Applied to every row lacking an \code{audio_input} column; an \code{NA} cell in that column means the same as \code{NULL} for that row, dropping that output's audio. See \code{\link{audio_stream}}. (default = \code{NULL})}
 
 \item{video_codec}{A string naming the output video codec, applied to every
 row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
@@ -64,7 +64,7 @@ the internal fan-out it would otherwise be reported against. A call that
 also contradicts itself — naming an \code{audio_codec} with no audio carried into the output —
 is refused for the contradiction first, whether or not this machine has
 the encoder.
-A per-row value error — a negative \code{margin}, an \code{audio} index
+A per-row value error — a negative \code{margin}, an \code{audio_input} index
 outside the two inputs, a \code{position} outside the five accepted values
 — likewise reports ahead of the encoder check.
 A value error and a contradiction resolve the same way whether the value
@@ -103,7 +103,7 @@ picture_in_picture_batch(jobs, run = FALSE)
 }
 \seealso{
 \code{\link[=picture_in_picture]{picture_in_picture()}}, the scalar verb it wraps; \code{\link[=ffm_batch]{ffm_batch()}}, the
-batch runner; \code{\link[=has_nvenc]{has_nvenc()}} for the \code{hardware = "nvenc"} toggle;
+batch runner; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware = "nvenc"} toggle;
 \code{\link[=concatenate_videos_batch]{concatenate_videos_batch()}} and \code{\link[=compare_videos_batch]{compare_videos_batch()}},
 the other fan-in batch siblings.
 

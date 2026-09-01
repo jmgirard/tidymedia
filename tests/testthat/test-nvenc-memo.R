@@ -8,7 +8,7 @@ test_that("the encoder pool is asked for once per session, across codecs", {
   # not re-ask, and the repeated h264 must not either.
   forget_ffmpeg_capabilities()
   withr::defer(forget_ffmpeg_capabilities())
-  withr::local_options(tidymedia.nvenc_encoders = NULL) # force the real probe
+  withr::local_options(tidymedia.hardware_encoders = NULL) # force the real probe
   probes <- 0L
   local_mocked_bindings(
     ffmpeg_encoders = function(...) {
@@ -17,11 +17,11 @@ test_that("the encoder pool is asked for once per session, across codecs", {
     }
   )
 
-  expect_true(has_nvenc("h264"))
+  expect_true(has_hardware_encoder("h264"))
   expect_identical(probes, 1L)
-  expect_true(has_nvenc("hevc"))
+  expect_true(has_hardware_encoder("hevc"))
   expect_identical(probes, 1L)
-  expect_true(has_nvenc("h264"))
+  expect_true(has_hardware_encoder("h264"))
   expect_identical(probes, 1L)
 })
 
@@ -30,7 +30,7 @@ test_that("a cold memo still reaches FFmpeg", {
   # never "the mock never bound". A discarded memo re-asks.
   forget_ffmpeg_capabilities()
   withr::defer(forget_ffmpeg_capabilities())
-  withr::local_options(tidymedia.nvenc_encoders = NULL)
+  withr::local_options(tidymedia.hardware_encoders = NULL)
   probes <- 0L
   local_mocked_bindings(
     ffmpeg_encoders = function(...) {
@@ -39,10 +39,10 @@ test_that("a cold memo still reaches FFmpeg", {
     }
   )
 
-  has_nvenc("h264")
+  has_hardware_encoder("h264")
   expect_identical(probes, 1L)
   forget_ffmpeg_capabilities()
-  has_nvenc("h264")
+  has_hardware_encoder("h264")
   expect_identical(probes, 2L)
 })
 
@@ -52,7 +52,7 @@ test_that("the option seam is read before the memo, so it wins mid-session", {
   # must not consult -- or populate -- the memo.
   forget_ffmpeg_capabilities()
   withr::defer(forget_ffmpeg_capabilities())
-  withr::local_options(tidymedia.nvenc_encoders = NULL)
+  withr::local_options(tidymedia.hardware_encoders = NULL)
   probes <- 0L
   local_mocked_bindings(
     ffmpeg_encoders = function(...) {
@@ -61,11 +61,11 @@ test_that("the option seam is read before the memo, so it wins mid-session", {
     }
   )
 
-  expect_true(has_nvenc("h264")) # warms the memo
+  expect_true(has_hardware_encoder("h264")) # warms the memo
   expect_identical(probes, 1L)
 
-  withr::local_options(tidymedia.nvenc_encoders = character(0))
-  expect_false(has_nvenc("h264"))
+  withr::local_options(tidymedia.hardware_encoders = character(0))
+  expect_false(has_hardware_encoder("h264"))
   expect_identical(probes, 1L)
 })
 
@@ -73,13 +73,13 @@ test_that("refresh_ffmpeg_capabilities() sends the next call back to FFmpeg", {
   # AC4, route one: the exported discard.
   probes <- local_encoder_probe_counter()
 
-  expect_true(has_nvenc("h264"))
+  expect_true(has_hardware_encoder("h264"))
   expect_identical(probes(), 1L)
-  expect_true(has_nvenc("h264"))
+  expect_true(has_hardware_encoder("h264"))
   expect_identical(probes(), 1L)
 
   expect_null(refresh_ffmpeg_capabilities())
-  expect_true(has_nvenc("h264"))
+  expect_true(has_hardware_encoder("h264"))
   expect_identical(probes(), 2L)
 })
 
@@ -97,18 +97,18 @@ test_that("set_program() sends the next call back to FFmpeg", {
   )
   probes <- local_encoder_probe_counter()
 
-  expect_true(has_nvenc("h264"))
+  expect_true(has_hardware_encoder("h264"))
   expect_identical(probes(), 1L)
-  expect_true(has_nvenc("h264"))
+  expect_true(has_hardware_encoder("h264"))
   expect_identical(probes(), 1L)
 
   set_program("ffmpeg", unname(ffmpeg_path))
-  expect_true(has_nvenc("h264"))
+  expect_true(has_hardware_encoder("h264"))
   expect_identical(probes(), 2L)
 })
 
 test_that("ffmpeg_encoders() itself stays uncached", {
-  # AC5. The memo is has_nvenc()'s, not ffmpeg_encoders()'. A caller who wants a
+  # AC5. The memo is has_hardware_encoder()'s, not ffmpeg_encoders()'. A caller who wants a
   # fresh answer about this build always has one: the exported query reaches the
   # binary every time it is called. Counted by mocking ffmpeg() -- the execution
   # seam ffmpeg_encoders() actually reaches, which shells out via system() and
@@ -145,13 +145,13 @@ test_that("an option set before the memo is warmed never warms it", {
   )
 
   withr::with_options(
-    list(tidymedia.nvenc_encoders = "h264_nvenc"),
-    expect_true(has_nvenc("h264"))
+    list(tidymedia.hardware_encoders = "h264_nvenc"),
+    expect_true(has_hardware_encoder("h264"))
   )
   expect_identical(probes, 0L)
   expect_identical(ls(.tm_capabilities), character())
 
-  withr::local_options(tidymedia.nvenc_encoders = NULL)
-  expect_true(has_nvenc("h264"))
+  withr::local_options(tidymedia.hardware_encoders = NULL)
+  expect_true(has_hardware_encoder("h264"))
   expect_identical(probes, 1L)
 })

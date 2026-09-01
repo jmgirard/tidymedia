@@ -368,8 +368,8 @@ test_that("picture_in_picture_batch's `audio_input` index is refused at its fron
                    info = id)
       expect_identical(blamed_verb(cnd), "picture_in_picture_batch", info = id)
       # `pmap` covers purrr::pmap and furrr::future_pmap alike; `aud` is the
-      # retired closure local, matched with word boundaries so `audio_input` does not
-      # satisfy it.
+      # retired closure local, matched with word boundaries so the `aud` inside
+      # `audio_input` and `audio_codec` does not satisfy it.
       expect_no_match(conditionMessage(cnd), "pmap", fixed = TRUE, info = id)
       expect_no_match(conditionMessage(cnd), "In index:", fixed = TRUE, info = id)
       expect_no_match(conditionMessage(cnd), "\\baud\\b", info = id)

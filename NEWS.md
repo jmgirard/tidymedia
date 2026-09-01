@@ -271,7 +271,10 @@
   `ffm_codec(audio = )` and `ffm_copy(audio = )` are unchanged. No alias is
   kept: a call still spelling `audio =` on these four verbs is an error, which
   R reports as the argument matching more than one formal (`audio` is a prefix
-  of both `audio_input` and `audio_codec`).
+  of both `audio_input` and `audio_codec`). A `jobs` table still carrying an
+  `audio` column is not refused: the column is unread, so those rows fall back
+  to the verb's `audio_input` default and write a silent output. Rename the
+  column.
 
 * The hardware-encoder helpers no longer name one vendor. `has_nvenc()` is now
   `has_hardware_encoder()`, `nvenc_encoder()` is now `hardware_encoder()`, and

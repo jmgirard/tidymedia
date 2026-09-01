@@ -62,7 +62,27 @@ test_that("(d) has_hardware_encoder() answers from `tidymedia.hardware_encoders`
 })
 
 test_that("(d) the old option name is no longer read", {
+  # Only the retired name is set, so a read of it would answer TRUE.
   withr::local_options(tidymedia.hardware_encoders = character(0),
-                       tidymedia.hardware_encoders = "h264_nvenc")
+                       tidymedia.nvenc_encoders = "h264_nvenc")
   expect_false(has_hardware_encoder("h264"))
+})
+
+test_that("(a) a leftover `audio` jobs column is unread, so its rows fall back to the default", {
+  # The NEWS entry's claim: no shim reads the old column name, and the batch
+  # verb does not refuse it; both rows compile as `audio_input = NULL` would.
+  f1 <- make_input(); f2 <- make_input()
+  jobs <- tibble::tibble(
+    inputs = list(c(f1, f2), c(f1, f2)),
+    output = c("a.mp4", "b.mp4"),
+    audio = c(1, 1)
+  )
+  res <- compare_videos_batch(jobs, run = FALSE)
+  expect_no_match(res$command[[1]], ":a", fixed = TRUE)
+  expect_no_match(res$command[[2]], ":a", fixed = TRUE)
+  # The same table under the shipped column name carries the audio.
+  jobs$audio_input <- jobs$audio
+  jobs$audio <- NULL
+  expect_match(compare_videos_batch(jobs, run = FALSE)$command[[1]],
+               "-map \"1:a\"", fixed = TRUE)
 })

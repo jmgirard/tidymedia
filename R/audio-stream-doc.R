@@ -97,7 +97,7 @@ audio_stream_param <- function(action,
   paste(parts, collapse = " ")
 }
 
-# The `@param audio` text for the two fan-in verbs, which count inputs rather
+# The `@param audio_input` text for the two fan-in verbs, which count inputs rather
 # than streams. Shared for the same reason the block above is.
 audio_input_param <- function(batch = FALSE, extra = NULL) {
   paste(

@@ -729,7 +729,9 @@ tm_timeout_valid_baseline <- function() {
   # exported as `has_nvenc()`; the rename to `has_hardware_encoder()` changed
   # the export's name and nothing it spawns or returns, so the recorded cell is
   # read under the current name rather than re-recorded from a ref that cannot
-  # name it. The blob itself stays as its generator wrote it.
+  # name it. The blob itself stays as its generator wrote it. A re-recorded
+  # blob carries the new key, at which point this remap is dead and must go.
+  stopifnot("has_nvenc" %in% names(table))
   names(table)[names(table) == "has_nvenc"] <- "has_hardware_encoder"
   table
 }

@@ -70,14 +70,14 @@ exported surface, taken under D014's clean break with no `lifecycle` shim.
       ships in that form, a test asserts the unified reading at each verb the
       AC1 sweep returns for `audio_stream`, and D025 and D026 are superseded,
       since each states the split reading this would remove.
-- [ ] AC3 For every candidate that ships in any form, its documentation matches
+- [x] AC3 For every candidate that ships in any form, its documentation matches
       the surface: `devtools::document()` produces no diff, `_pkgdown.yml` gains
       a row for any newly exported object AND loses the row for any name removed
       — a rename is both, and a stale row fails `pkgdown::check_pkgdown()`, and the vignettes and `README.Rmd`
       compile against the shipped names.
 - [x] AC4 `NEWS.md` names every change that shipped, in user-facing wording; a
       candidate that did not ship produces no entry.
-- [ ] AC5 `devtools::test()` clean and `devtools::check()` reports 0 errors and
+- [x] AC5 `devtools::test()` clean and `devtools::check()` reports 0 errors and
       0 warnings with every NOTE justified (PROFILE `verify` and
       `consistency-gate` slots).
 
@@ -139,3 +139,7 @@ exported surface, taken under D014's clean break with no `lifecycle` shim.
 - AC1 evidence: the formals sweep was run fresh against the branch point (a `git archive a654f9b` tree loaded with `pkgload`) and HEAD, 89 exports at both. `audio_stream` 18 verbs at both ends; `audio` 6 at the branch point (the four fan-in verbs plus `ffm_codec`, `ffm_copy`) and 2 at HEAD (`ffm_codec`, `ffm_copy`); `audio_input` 0 at the branch point, 4 at HEAD (`compare_videos`, `compare_videos_batch`, `picture_in_picture`, `picture_in_picture_batch`); `check_tracks` and `timeout` 0 at both ends. The hardware pattern grep over the export list returns exactly `has_nvenc`, `nvenc_encoder` at the branch point and exactly `hardware_encoder`, `has_hardware_encoder` at HEAD. Option greps over `R/ man/ tests/ vignettes/ _pkgdown.yml`: old string 0 hits; new string in 4/3/25/0/0 files. Old export names: 39 files at the branch point, 0 uses at HEAD (the two remaining strings are the fixture-key remap comment and line in `helper-timeout-sweep.R`, reading recorded data). No `lifecycle` call in the branch's `R/` diff. `NEWS.md` still carries its 5 historical old-option hits, untouched. Every candidate is in one of the two states with (a) and (d) shipped, (b) and (c) unchanged. PASS.
 - AC2 evidence: candidate (a) did not ship in the behavior-only form (D077 declines the `NULL` unification permanently); the branch's `R/` diff touches `is.null()` only at the three `audio` → `audio_input` sites, the `audio_stream` `NULL` handling is unchanged, and D025/D026 are not superseded in the `DECISIONS.md` diff. The criterion's conditional does not fire. PASS (vacuous by its own "where it ships in that form").
 - AC4 evidence: the `NEWS.md` diff adds exactly two entries under Breaking changes — the `audio` → `audio_input` rename on the four verbs and the hardware helper/option rename — in user-facing wording naming no milestone; nothing for (b), (c), or the `NULL` unification. PASS.
+- AC3 evidence: `devtools::document()` at HEAD produces no diff; `pkgdown::check_pkgdown()` reports no problems (`_pkgdown.yml` carries `has_hardware_encoder`/`hardware_encoder`, no row for the removed names, `man/nvenc_encoder.Rd` gone); `devtools::check()` re-builds both vignettes OK; `devtools::build_readme()` regenerates `README.md` with only the two temp-path lines in the sample output differing, no content drift. PASS.
+- AC5 evidence: `devtools::test()` with ffmpeg/ffprobe/mediainfo on PATH — 0 failures, 10 warnings, 18 skips, 11140 passes; the 10 warnings are `tidymedia_dropped_audio` warnings raised by tests in `test-audio-stream.R`, `test-audio-stream-normalize.R` and `test-ffmpeg.R:178` at lines outside every hunk this branch changes. `devtools::check()` 0 errors / 0 warnings / 0 notes (8m 38s). PASS.
+- Consistency gate: `cairn_validate.py` all checks passed (exit 0), coverage complete; no principle changed (`Principles touched: —`) so `cairn_impact` skipped. Toolchain slot: `document()` no diff, generated files untouched by hand, `README.md` in sync, `check_pkgdown()` clean, `NEWS.md` carries both shipped changes with no milestone number, no new top-level file and 0 check NOTEs, `check()` 0/0/0. Gate PASS.
+- Driving RR: RR06 is advisory with no numeric projection, so projection-vs-outcome no-ops.

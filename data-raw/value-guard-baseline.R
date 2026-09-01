@@ -537,7 +537,7 @@ value_guard_baseline <- function(ref = NULL, root = ".") {
   env <- codec_guard_env(ref, root)
   sample <- system.file("extdata", "sample.mp4", package = "tidymedia")
   if (!nzchar(sample)) stop("sample.mp4 not found; install the package first")
-  old <- options(tidymedia.hardware_encoders = "h264_nvenc")
+  old <- options(tidymedia.nvenc_encoders = "h264_nvenc", tidymedia.hardware_encoders = "h264_nvenc")
   on.exit(options(old), add = TRUE)
 
   rows <- lapply(value_guard_cases(sample), function(case) {
@@ -554,7 +554,7 @@ value_guard_baseline <- function(ref = NULL, root = ".") {
     # Per case, because the ordering cells crossed with availability need the
     # seam EMPTY while every other cell needs it full; `old` above restores
     # whatever the caller had.
-    options(tidymedia.hardware_encoders = case$seam)
+    options(tidymedia.nvenc_encoders = case$seam, tidymedia.hardware_encoders = case$seam)
     args <- case$args
     # `run` is forced FALSE so no cell needs FFmpeg -- except a cell that is
     # ABOUT ffm_batch()'s own `run` guard, which supplies its own bad value and

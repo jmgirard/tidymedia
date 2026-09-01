@@ -830,7 +830,7 @@ input_guard_baseline <- function(ref = NULL, root = ".") {
          paste(unreadable, collapse = ", "))
   }
   on.exit(Sys.chmod(unreadable, "600"), add = TRUE)
-  old <- options(tidymedia.hardware_encoders = "h264_nvenc")
+  old <- options(tidymedia.nvenc_encoders = "h264_nvenc", tidymedia.hardware_encoders = "h264_nvenc")
   on.exit(options(old), add = TRUE)
 
   rows <- lapply(input_guard_cases(present, absent, unreadable), function(case) {
@@ -845,7 +845,7 @@ input_guard_baseline <- function(ref = NULL, root = ".") {
       blank$kind <- "nonexistent"
       return(blank)
     }
-    options(tidymedia.hardware_encoders = case$seam)
+    options(tidymedia.nvenc_encoders = case$seam, tidymedia.hardware_encoders = case$seam)
     args <- case$args
     if (!"run" %in% names(args)) args$run <- FALSE
     obs <- tryCatch(

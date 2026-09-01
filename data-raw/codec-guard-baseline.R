@@ -380,7 +380,7 @@ codec_guard_baseline <- function(ref = NULL, root = ".", sample = NULL,
   # possibility that one ever does and makes the baseline depend on whether the
   # machine running it has an nvenc-capable FFmpeg. The default, an empty pool,
   # is "this build lists no nvenc encoder", which is deterministic everywhere.
-  old_opt <- options(tidymedia.hardware_encoders = nvenc)
+  old_opt <- options(tidymedia.nvenc_encoders = nvenc, tidymedia.hardware_encoders = nvenc)
   on.exit(options(old_opt), add = TRUE)
   if (is.null(sample)) sample <- normalizePath(
     file.path(root, "inst", "extdata", "sample.mp4"), mustWork = TRUE)

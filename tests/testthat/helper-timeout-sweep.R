@@ -725,6 +725,12 @@ tm_timeout_valid_baseline <- function() {
       "the recorded baseline's provenance is missing or names another source"
     )
   }
+  # The blob was recorded at ae5ff1c, where the availability predicate was
+  # exported as `has_nvenc()`; the rename to `has_hardware_encoder()` changed
+  # the export's name and nothing it spawns or returns, so the recorded cell is
+  # read under the current name rather than re-recorded from a ref that cannot
+  # name it. The blob itself stays as its generator wrote it.
+  names(table)[names(table) == "has_nvenc"] <- "has_hardware_encoder"
   table
 }
 

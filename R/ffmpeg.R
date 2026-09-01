@@ -5452,11 +5452,11 @@ batch_video_codecs <- function(jobs, video_codec) {
 # up-front guard at all -- and by the two audio verbs' `audio_stream` (M43).
 #
 # `col` and `na_means` are parameters because M43 added a caller whose NA means
-# something else: on the composite verbs an NA `audio` cell drops audio, while
+# something else: on the composite verbs an NA `audio_input` cell drops audio, while
 # an NA `audio_stream` cell leaves that row on the first audio track. The
 # inherited wording would be false for the new caller -- the failure M40 hit by
 # ADDING a caller to a shared guard rather than by writing a wrong branch.
-check_batch_audio_col <- function(jobs, col = "audio",
+check_batch_audio_col <- function(jobs, col = "audio_input",
                                   na_means = "drop audio",
                                   call = rlang::caller_env()) {
   ok <- function(x) is.numeric(x) || (is.logical(x) && all(is.na(x)))

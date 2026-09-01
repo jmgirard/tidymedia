@@ -95,12 +95,12 @@ copy of its platform layout — the failure a single-platform test cannot catch.
 2. [x] Write AC1's four-program equality test with its executable stub; confirm it
    fails against the unchanged `set_program()`.
 3. [x] Move `set_program()`'s write to `tm_config_dir()`.
-4. Write AC2's and AC3's tests — four programs x three file states under
+4. [x] Write AC2's and AC3's tests — four programs x three file states under
    `PATH = ""`, plus the stale-location branch reached from the legacy path.
-5. Add the legacy read fallback to `find_program()`, new path preferred.
+5. [x] Add the legacy read fallback to `find_program()`, new path preferred.
 6. [x] Run AC4's grep; move `test-nvenc-memo.R`'s redirect off the `rappdirs` mock
    onto `R_USER_CONFIG_DIR`; cover every other hit the grep returns.
-7. Run AC5's grep and read `tm_legacy_config_dir()`.
+7. [x] Run AC5's grep and read `tm_legacy_config_dir()`.
 8. [x] Add the `NEWS.md` entry.
 9. Run `devtools::document()`, `devtools::test()`, `devtools::check()`.
 
@@ -123,3 +123,4 @@ copy of its platform layout — the failure a single-platform test cannot catch.
 - 2026-09-01 implement: branch `m097-cran-policy-user-dirs` cut from synced `master`; question gate chose to narrow AC5 (its grep could not pass while `install_on_win()`'s `rappdirs::user_data_dir()` call stays, M098's) and a silent legacy read (no migration message).
 - 2026-09-01 implement: Substantive amendment — AC5 reworded and its Coverage row widened to T1, T3, T5, T7. Fresh-context [O] reader, FULL mode, twice: round 1 on the gate wording returned three medium findings (Coverage named no task removing the old calls; the "reviewer read" clause bound an instrument; the grep saw a token proxy) and two low ("layout" vs directory; the carve-out goes stale when M098 lands), all folded into the wording above; round 2 on that wording returned one medium (the helper's comment header carried the `rappdirs` token above the body), resolved by rewording the comments rather than the criterion, and one low (a redundant negative), kept.
 - 2026-09-01 implement checkpoint: T1–T3, T6, T8 done (helpers, AC1 equality test — failed against the unchanged write at the rappdirs layout, passes after the move — write moved, nvenc-memo redirect on `R_USER_CONFIG_DIR`, NEWS); T5's fallback read is in `R/` with T4's tests drafted but not yet in the suite; full-suite result pending.
+- 2026-09-01 implement: T4, T5, T7 done. AC2/AC3 tests: four programs x three file states under `PATH = ""`, distinct stubs at the two paths so the value says which file was read; against a mutant with the fallback removed, exactly the legacy-alone cells fail (wrong value + the stale warning) and the other two states stay green. AC5 grep returns two hits: the helper's body and `install_on_win()`'s data-dir default; the body is the single `rappdirs::user_config_dir("tidymedia", "R")` call. `document()` no diff. T9 pending.

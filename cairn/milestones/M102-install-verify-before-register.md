@@ -191,7 +191,7 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
 
 - 2026-09-02: status `review`. CI on `b624f12` is green on all ten checks — the eight build legs, `windows-latest (release)` among them, plus `codecov/patch` and `codecov/project`, both of which the previous head failed on the three uncovered branches. `devtools::check()` re-run against the final tree: Status OK, 0 errors / 0 warnings / 0 notes. AC4 and AC7 ticked on the evidence above; every criterion is now ticked.
 
-- 2026-09-02: review pass 3 — checkpoint, verification still in flight. `origin/master` has not moved; suite at `152461f` clean (FAIL 0, WARN 10, SKIP 18, PASS 11588, the 10 warnings pre-existing and none on a touched file); `cairn_validate` all 16 checks PASS; CI on `152461f` green on all ten checks. Three-lens fan-out returned 12 findings, all from the [O] lens ([S] blame 0, [S] prior-review 0). Six fixed on the branch at this commit — the `tidymedia_program_not_extracted` message asserting "did not contain" about programs an archive DID produce but not at `bin/<p>.exe` (reproduced: a top-level-`bin` archive loses `bin` to `strip_components = 1`, so the abort named a cause that was not the cause and said nothing about the debris left behind); `install_on_win()`'s two path-shaped arguments reaching `dir.create()`/`download.file()` unchecked and leaving through a bare `simpleError` (reproduced on `install_dir = 5` and `c("a","b")`; now `rlang::check_string()` at the front door, which is where AC6 already names such exits); the AC4 registration gate verified only against a mock that hard-coded `archive_extract()`'s return shape (a test now asks libarchive itself, over a real wrapper-directory archive); `tm_extracted_programs()`'s Windows path normalization executed by nothing (direct test over a backslash separator, a `./` prefix and a capitalized name, plus a negative control one directory deeper); the fixture generator's false byte-reproducibility claim (7z records per-entry mtimes the seed does not fix — measured 10416 and 10418 bytes against the committed 10410 — so the header now claims reproducible BEHAVIOUR, which the self-check is what guarantees); and the second `tidymedia_download_unavailable` site saying "can't download" about a file that did download. One deferred to a new candidate row ([O]11, partial registration when `set_program()` aborts mid-loop on a listed-but-not-executable binary; measured that `set_program()` does abort there, and M102's Scope puts its aborts Out). Four rejected with reason. Full suite, `devtools::check()` and the `--only digest` floor leg re-running against this tree; Review section not yet rewritten.
+- 2026-09-02: review pass 3 complete; status stays `review`. `origin/master` unmoved. Three-lens fan-out returned 12 findings, all from the [O] lens ([S] blame 0, [S] prior-review 0): 6 fixed at the gate, 1 deferred to a new candidate row, 4 rejected with reason, 1 recorded as sound. The return floor is NOT met — [O]2 (an abort saying "did not contain" about programs a top-level-`bin` archive did produce, reproduced at review) and [O]3 (`install_dir`/`download_url` unchecked, leaving through a bare `simpleError`, reproduced at review) both fail on behaviour `master` shares, so each fix corrects a message and a front-door gap rather than a promise the criteria make; [O]11 falls inside the declared Scope Out. Fixes: the abort now names the `bin/<program>.exe` paths it looked for and the debris it left; `rlang::check_string()` on both path arguments; a test asking libarchive itself what `archive_extract()` returns, so the AC4 gate no longer rests only on a mock that hard-codes it; a direct test of the Windows path normalization nothing had executed; the fixture generator's false byte-reproducibility claim corrected to a behaviour claim with the mtime mechanism measured; `*.7z binary` in `.gitattributes`; and the unreadable-download abort distinguished from the network one. Fresh evidence recorded for all seven criteria against the fixed tree: suite FAIL 0, WARN 10, SKIP 18, PASS 11592; `devtools::document()` no diff; `devtools::check()` Status OK 0/0/0 (11m 53s); `--only digest` pinned at `digest 0.6.37` from the pinned library directory, `pinned pass=11228 fail=0 err=0 skip=18` against an identical baseline; `cairn_validate` all 16 checks PASS; CI green on all ten checks at `152461f`. Defect-return count stands at two.
 
 ## Decisions
 
@@ -519,3 +519,219 @@ domain (use the extraction's file list) rather than a widening of an
 author-recalled enumeration — so this is a defect return, not an amendment
 return. Second defect return on M102; the thrash rule's third-return threshold
 is not reached.
+
+### Third pass — 2026-09-02, at `a037485`
+
+Re-entered under the session-start resume route (d): PR #106 open, every box
+ticked, no recorded step-7 approval. `origin/master` has still not moved (0
+commits ahead of the branch), so no merge was needed. The gate fixes below
+changed code, so every criterion is re-evidenced against the fixed tree rather
+than carried forward. Suite run fresh after those fixes:
+`devtools::test()` — FAIL 0, WARN 10, SKIP 18, PASS 11592. The 10 warnings are
+the same pre-existing ones, in `test-audio-stream-normalize.R`,
+`test-audio-stream.R` and `test-ffmpeg.R`; none is on a file this milestone
+touched.
+
+- AC1 — verified. `test-program-management.R:600` runs the default source
+  through all three sidecar body shapes and asserts one sidecar fetch each, at
+  `<archive url>.sha256`, reaching the extraction. `:635` asserts the prompt
+  names the fetch; `:683` and `:727` drive the four unreadable routes — an HTML
+  body, a signalling fetch, a non-zero status, and a status-0 fetch delivering
+  nothing — each `tidymedia_checksum_unavailable` with the archive never
+  fetched; `:748` asserts the mismatch class, both digests in the message, and
+  a byte-identical before/after snapshot of `tm_config_dir()`.
+- AC2 — verified. `:771` runs a caller-supplied digest on both sources, asserts
+  no sidecar fetch on the default source and a mismatch still aborting
+  `tidymedia_checksum_mismatch` with nothing registered; `:635` covers the
+  no-fetch prompts and the one unverified-source message, now asserted as
+  firing above the prompt; `:799` drives the four rejected shapes with
+  `download.file()` mocked to abort if reached, each an `rlang_error` naming
+  `archive_checksum` and carrying no `tidymedia_*` class.
+- AC3 — verified. `:837` drives both libarchive failure routes: each aborts
+  `tidymedia_archive_unreadable` naming the archive and the install directory,
+  the whole `$parent` chain is free of `archive_extract.cpp`, nothing is
+  registered, and `file.exists(destfile)` is FALSE on both failing paths and on
+  the succeeding control — with a `showConnections()` before/after assertion on
+  all three, which is what makes T9's connection fix visible off Windows. CI on
+  `152461f` reports all ten checks green, `windows-latest (release)` included —
+  the leg that was red at `9ae0bfe` on exactly this assertion.
+- AC4 — verified. `:952` drives the four builds: all three unpacked registers
+  three and returns `TRUE`; `ffmpeg` + `ffprobe` registers those two, writes no
+  `ffplay` config, messages naming `ffplay`, returns `TRUE`; each
+  missing-required build aborts `tidymedia_program_not_extracted` naming the
+  absent program with nothing set. `:996` is the repeat-install probe pass 2
+  returned on: a `bin/` pre-seeded with a previous run's `ffmpeg.exe` and
+  `ffplay.exe`, an extraction producing only `ffprobe.exe`, aborting and
+  registering nothing. `:1064` reads what an install remembers back off disk
+  through the real `set_program()`. New this pass, `:901` asks libarchive
+  itself rather than the mock: a real wrapper-directory 7z built at run time
+  extracts to exactly `bin/<program>.exe` after `strip_components`, which is
+  the string the registration gate matches, and `:930` exercises that match
+  over a backslash separator, a `./` prefix and a capitalized name, with a
+  negative control one directory deeper.
+- AC5 — verified. `:1167` covers both signalling shapes of a `download.file()`
+  that does not deliver — raising, and returning `1L` — each
+  `tidymedia_download_unavailable` naming the URL with the base condition
+  retained as `parent` and nothing registered. `:1038` and `:1138` cover the
+  status-0-with-no-file shape routed to the same class.
+- AC6 — verified. `:1279` walks `body(install_on_win)` for `return()` and
+  `cli_abort()` nodes, seeing through `pkg::fn`, and asserts of each that it
+  hands back a literal `TRUE`/`FALSE` or passes a `class =` beginning
+  `tidymedia_`; the anti-vacuity floor asserts the collected classes hold all
+  five AC1/AC3/AC4/AC5 name. `:1301` keeps the discrimination re-runnable over
+  a planted unclassed abort, a planted non-literal `return()`, a bare
+  `return()`, a vector `class =` and a compliant control. `@return` in
+  `man/install_on_win.Rd` names all five aborting outcomes plus the declined
+  confirmation. The two exits this pass added to the front door are inside the
+  set AC6 names as unreachable by the walk, not new blind spots.
+- AC7 — verified. `digest (>= 0.6.37)` in `DESCRIPTION` `Imports`;
+  `Rscript data-raw/imports-floors.R --only digest` resolved `digest 0.6.37`
+  from the pinned library directory — the version and the DIRECTORY, the
+  script's control against a failed install falling through to the user
+  library — and reported `pinned pass=11228 fail=0 err=0 skip=18` against an
+  identical baseline, so no floor moved and the pinned run skipped no more than
+  the baseline. `NEWS.md` carries the verification, classed-failures and
+  `digest` Requirements entries; `README.Rmd`'s Windows step names the digest
+  fetch and `archive_checksum`. `devtools::document()` produces no diff;
+  `devtools::test()` as above; `devtools::check()` Status OK, 0 errors / 0
+  warnings / 0 notes (11m 53s).
+
+### Consistency gate — third pass
+
+- `cairn_validate.py`: all 16 checks PASS, exit 0; advisories clean, including
+  `weight caps` (the pass-2 failure, cleared by the amendment) and `release
+  window`.
+- No `DESIGN.md` principle changed, so `cairn_impact.py` was not run.
+- Profile (`r-package`) toolchain checks: `devtools::document()` no diff;
+  `NAMESPACE`, `man/` and `data/*.rda` unedited by hand; `README.md` in sync
+  with `README.Rmd`; `pkgdown::check_pkgdown()` clean; `NEWS.md` carries this
+  milestone's user-visible changes with no milestone numbers; no new top-level
+  file, so no `.Rbuildignore` entry needed; `devtools::check()` Status OK.
+
+### Independent review — third pass
+
+Full three-lens fan-out over `git diff origin/master..HEAD`. Findings verbatim
+where reported; nothing dropped.
+
+**[S] blame-history lens — 0 findings.** Walked `git log`/`git show` on
+`tm_unpack`, `tm_fetch`, `tm_archive_digest`, the registration loop and the
+`@param confirm` block back through `798c5ab` (M101); every change traces to a
+recorded decision or a prior finding, the `cli_warn()`/`return(FALSE)` →
+classed `cli_abort()` move is the convention `DESIGN.md` already states, and
+`archive_checksum = NULL` and the `digest` add match D079 and D081.
+
+**[S] prior-review-record lens — 0 findings.** No archived `## Review` section
+on the touched files bears on this diff (M101, M097, M094, M081, M62, M63, M66
+checked), and the `gh api .../pulls/comments` probe returned empty again, so
+the live pass-1 and pass-2 records were the only prior-review surface. Each of
+their fixes was confirmed still applied: "may overwrite" everywhere with no
+stray "will overwrite", the extraction-list registration gate, the guarded
+`tm_archive_digest()`, the notice above the prompt, the per-iteration tempdir,
+and the guarded sidecar `readLines()`.
+
+**[O] diff-bug lens — 12 findings.** Six actioned and fixed at the gate, one
+deferred to a candidate row, four rejected, one recorded as a checked-and-sound
+note. In the lens's own ranking:
+
+1. *"The one fact the whole AC4 fix rests on is asserted only by the mock that
+   encodes it — no test ever runs the real `archive::archive_extract()` on a
+   succeeding extraction."* The extract mock hard-codes
+   `file.path("bin", paste0(unpack, ".exe"))` from a one-time measurement, so
+   a change in what `archive_extract()` returns would leave every mocked test
+   green and abort every real Windows install. The lens measured that the
+   assumption does hold on archive 1.1.14/macOS. **Actioned — fixed:**
+   `:901` builds a real wrapper-directory archive at run time and asserts the
+   returned list is exactly `bin/<program>.exe`, then feeds it to
+   `tm_extracted_programs()`.
+2. *"`tidymedia_program_not_extracted` states a falsehood on the
+   caller-supplied-URL path, and leaves the binaries it says are missing on
+   disk."* An archive whose `bin/` is at the top level loses `bin` to
+   `strip_components = 1`, so the exes land at the install root and the abort
+   says "The archive did not contain 'ffmpeg' and 'ffprobe'" while
+   `list.files()` shows all three. **Reproduced independently at review**
+   (`tm_unpack()` returned `ffmpeg.exe, ffprobe.exe, ffplay.exe`,
+   `tm_extracted_programs()` returned nothing). **Actioned — fixed:** the
+   abort now reads "did not produce", names the `bin/<program>.exe` paths it
+   looked for under the install directory, and says the unpacked contents are
+   still there. The layout requirement itself is pre-existing and unchanged —
+   `master` fails the same archive through an unclassed `set_program()` abort —
+   so what was fixed is the message naming a cause that was not the cause.
+3. *"Bare `simpleError` still escapes `install_on_win()` — third instance of
+   the shape both prior passes returned."* `install_dir` and `download_url`
+   have no front-door check, so a non-string reaches `dir.create()` or
+   `download.file()` directly. **Reproduced independently at review**
+   (`install_dir = 5` → `simpleError`, "invalid filename argument";
+   `c("a","b")` → "the condition has length > 1"). Pre-existing — `master`
+   has the same gap — but M102 added `check_sha256()` to that front door and
+   did not extend it here. **Actioned — fixed:** `rlang::check_string(...,
+   allow_null = TRUE)` on both, verified to produce an `rlang_error` naming
+   the argument and carrying no `tidymedia_*` class, which is the exit AC6
+   already names as unreachable by the census.
+4. *"`data-raw/corrupt-archive-fixtures.R`'s PROVENANCE claim is false."* The
+   header claims the committed bytes are reproducible from the file alone
+   under `set.seed(102)`; 7z records per-entry mtimes the seed does not fix,
+   and two runs a second apart produced 10416 and 10418 bytes against the
+   committed 10410. **Actioned — fixed:** the header now claims reproducible
+   behaviour, states the mtime mechanism and the measured figures, and names
+   the self-check as what makes committed bytes and a fresh run
+   interchangeable. The profile's fixture-provenance rule is satisfied by an
+   accurate claim, not by a byte-identical one.
+5. *"`tm_extracted_programs()`'s path normalization is entirely unexercised."*
+   The backslash, `./` and case handling exist for Windows and every test fed
+   it exactly `bin/<p>.exe`. **Actioned — fixed:** `:930` drives all three
+   shapes plus a negative control.
+6. *"`.gitattributes` `* text=auto` leaves the two fixtures' bytes unpinned."*
+   `not-an-archive.7z` is pure text, so a Windows checkout with `autocrlf`
+   would rewrite its line endings. Latent — no test depends on the committed
+   digests. **Actioned — fixed:** `*.7z binary` added; both fixtures now report
+   `text: unset`.
+7. *"A UTF-8 BOM on the sidecar refuses a good archive."* `^[[:space:]]*` does
+   not cover a BOM, so `tm_parse_sidecar()` returns `NULL` and the call
+   refuses. **Rejected:** AC1's three shapes were measured against the one
+   source a sidecar is ever fetched from, which emits no BOM; widening the
+   parser to a shape no measurement supports is how a parser stops describing
+   its source.
+8. *"`tm_close()` always operates on a destroyed connection handle after a
+   successful extract."* `isOpen()` raises after `archive_extract()` succeeds,
+   so the close is saved by its `tryCatch`; if anything ever opened a
+   connection in between, R's slot reuse could close an unrelated one.
+   **Rejected:** nothing does today, the handler is deliberate and documented,
+   and the proposed description comparison adds a second failure mode to guard
+   a hypothetical.
+9. *"The second `tidymedia_download_unavailable` says 'Can't download' about a
+   file that did download."* Reached when the fetch reported success but the
+   digest could not be computed, with a message identical to the genuine
+   network failure. The class was a recorded gate decision; the message was
+   not. **Actioned — fixed:** the abort keeps the class and the URL and gains
+   a line saying the download reported success but nothing readable arrived.
+10. *"`body <- tryCatch(readLines(sidecar_file, …))` shadows `base::body()`."*
+    **Rejected:** a style nitpick — `body()` is not called in that function,
+    and the AC6 census walks `body(install_on_win)` from outside it.
+11. *"Partial registration is still reachable, via `set_program()` aborting
+    mid-loop."* `tm_extracted_programs()` asks whether the extraction listed
+    the file; `set_program()` asks whether it is executable, one program at a
+    time, so a quarantined or zero-byte second binary leaves the first
+    registered and aborts unclassed. **Measured at review** that
+    `set_program()` does abort on a non-executable path; not reproduced on
+    Windows. **Actioned — deferred** to a new ROADMAP candidate row: M102's
+    Scope puts classing `set_program()`'s aborts Out, and the repair is a
+    pre-loop executability pass, which is a design call of its own.
+12. *"Both prompt lines are labelled `Download:`."* **Rejected:** AC1 requires
+    the fetch be named and it is; the label is a wording preference, and M101
+    fixed the prompt's shape deliberately.
+
+The lens also records checking and finding sound: the sidecar-before-archive
+ordering and its resolved-URL gate, `archive_checksum` precedence over the
+sidecar, case-insensitive comparison on both sides, `parent =` retention on the
+download refusal and its absence on the extraction refusal, the optional-program
+`setdiff`, both `on.exit()` cleanups, the census walker's empty-symbol handling,
+and `check_sha256()`'s four rejected shapes.
+
+**Return floor.** Not met. No finding demonstrates an acceptance criterion
+failing inside its named procedure's domain: [O]2 and [O]3 both fail on
+pre-existing behaviour `master` shares — an archive layout `install_on_win()`
+has never supported, and two arguments it has never checked — and what each
+actioned fix corrects is a message that named the wrong cause and a hole in the
+front-door family, not a promise the criteria make. [O]11 falls inside the
+Scope the plan declared Out. Status stays `review`; the defect-return count
+stands at two.

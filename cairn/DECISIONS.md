@@ -3797,3 +3797,40 @@ differently spelled escape hatch inherits no wrong hint (M38/M40).
 that the default is wrong; or a second confirmation-bearing argument whose safe
 position is genuinely arguable, which would say this rule mistook one clear
 case for a general one.
+
+## D081 — SHA-256 comes from `digest`, and the measured R floor is not spent on a hash (2026-09-02, from M102; a dependency add under the universal dependency gate, deciding nothing about any other package's inclusion)
+
+M102 needs a SHA-256 over a downloaded file so `install_on_win()` can check an
+archive against the digest its source publishes. Three implementations were
+available and the maintainer took the disposition at the plan gate.
+
+**The choice.** `digest` enters `Imports`. It is a small package with no system
+libraries behind it, and it declares an R floor well below this package's own,
+so taking it costs nothing that the package does not already spend.
+
+**Why not base R.** `tools::sha256sum()` would be free of any new dependency,
+and it is the option that looks cheapest. It first ships in R 4.5.0, and this
+package declares `R (>= 4.1.0)` — a floor M076 arrived at by measuring the two
+inputs that set it rather than by guessing, and M077 then measured every
+`Imports` floor the same way. Spending four R releases of reach to avoid one
+small dependency inverts what that measurement is for: the floor states what
+the package needs, and a hash the ecosystem has provided for a decade is not a
+reason for every user below 4.5.0 to lose the package. The trade is also
+asymmetric in time — a dependency can be dropped later if the floor rises for
+its own reasons, while a raised floor cannot be lowered without re-auditing
+what raised it.
+
+**Why not `openssl`.** It is equally a new dependency and additionally links a
+system SSL library, so it can fail to install where `digest` cannot. The
+package already carries one system-library dependency in `archive`; a second
+buys nothing a pure-C hash does not already give.
+
+**What this does not decide.** Nothing about hashing anywhere else in the
+package, and nothing about `digest` as a general-purpose utility — the entry
+licenses one use, and a second caller reaching for it is a fresh judgment
+rather than a settled one.
+
+**Falsified by** the package's R floor rising to 4.5.0 or beyond for a reason
+of its own, which makes `tools::sha256sum()` free and leaves `digest`'s line in
+`Imports` unearned; or by `digest` acquiring a system dependency or an install
+failure mode of the kind that ruled `openssl` out.

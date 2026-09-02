@@ -1,6 +1,6 @@
 # M102: `install_on_win()` verifies the archive and the unpacked programs before it registers anything
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -96,7 +96,7 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
       outcomes: a declined confirmation, a download that did not deliver, a
       checksum that did not match, an archive that could not be unpacked, and a
       required program that was not produced.
-- [ ] AC7: `digest` appears in `DESCRIPTION` `Imports` with a floor version the
+- [x] AC7: `digest` appears in `DESCRIPTION` `Imports` with a floor version the
       `--only digest` leg of `data-raw/imports-floors.R` passes at, `NEWS.md`
       and `README.Rmd`'s installer paragraph name the verification and the new
       argument, and the profile's checks are clean: `devtools::document()`
@@ -188,6 +188,8 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
 - 2026-09-02: T10 — the AC4 defect fixed at its root: `tm_unpack()` returns the file list `archive::archive_extract()` produces (measured 2026-09-02 against a three-program control archive: `bin/ffmpeg.exe`, `bin/ffprobe.exe`, `bin/ffplay.exe`, relative to the directory and after `strip_components`), and `tm_extracted_programs()` intersects that list with the three registers, so a previous install's binaries in the stable default `install_dir` can no longer stand in for this build's. Planting the old `file.exists()` reading back turned the new repeat-install test red — the reviewer's own reproduction, `bin/` pre-seeded with `ffmpeg.exe` and `ffplay.exe` and the extraction producing only `ffprobe.exe`, which now aborts `tidymedia_program_not_extracted` naming `ffmpeg` and registers nothing. [O]1 fixed where the promise is: `tm_fetch()` returns TRUE only where the file arrived and `tm_archive_digest()` returns NULL rather than a bare `simpleError`, both routing to AC5's existing download refusal; planted back, the new test went red. The unverified notice now fires above the prompt, asserted as a two-event sequence rather than by where the message appears, and red when the notice is moved back below. Also [O]4 (a fresh install dir per loop iteration in the AC1/AC2 tests), [O]5 (the census reads a bare `return()` and a vector `class =`, both kept as controls) and [P]1 (`@param confirm`'s "will overwrite" -> "may overwrite", regenerated into `man/`). Suite FAIL 0, WARN 10, SKIP 18, PASS 11583.
 
 - 2026-09-02: T10 verified on CI and the coverage gate closed. All eight R-CMD-check legs green on `d7600f6`, `windows-latest (release)` included, as are `pkgdown` and `test-coverage`; `codecov/patch` came back 95.89% against a 98.19% target, on three new branches no test reached — `tm_archive_digest()`'s error handler, the `is.null(found)` refusal behind it, and `tm_unpack()`'s unopenable-archive return. Each now has a test: the digest helper returns NULL for a missing file, an `install_on_win()` run whose digest cannot be computed refuses `tidymedia_download_unavailable` and extracts nothing, and `tm_unpack()` on a path that is not there returns NULL. Suite FAIL 0, WARN 10, SKIP 18, PASS 11588. One earlier full run reported FAIL 1 amid `ffmpeg` "Interrupted system call" noise from the timeout tests and did not reproduce on two subsequent full runs; recorded rather than attributed. AC7's evidence: `devtools::document()` no diff, `devtools::check()` Status OK 0/0/0, and `Rscript data-raw/imports-floors.R --only digest` pinned at `digest 0.6.37` reporting `pinned pass=11219 fail=0 err=0 skip=18` against an identical baseline — no floor moved, and the pinned run skipped no more than the baseline.
+
+- 2026-09-02: status `review`. CI on `b624f12` is green on all ten checks — the eight build legs, `windows-latest (release)` among them, plus `codecov/patch` and `codecov/project`, both of which the previous head failed on the three uncovered branches. `devtools::check()` re-run against the final tree: Status OK, 0 errors / 0 warnings / 0 notes. AC4 and AC7 ticked on the evidence above; every criterion is now ticked.
 
 ## Decisions
 

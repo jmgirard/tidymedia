@@ -170,6 +170,8 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
 
 - 2026-09-02: review checkpoint — PR #106 opened as a draft; `master` had not moved since the branch was cut. `devtools::test()` fresh: FAIL 0, WARN 10, SKIP 18, PASS 11547 (the 10 warnings pre-existing, none on a touched file). AC1–AC6 verified and ticked. `cairn_validate.py` passes all 16 checks; `document()` no diff; `pkgdown::check_pkgdown()` clean; README.md in sync (a rebuild changes only the embedded tempdir paths). AC7 still open: the `--only digest` floor run and `devtools::check()` are still running, and the diff-bug review lens has not yet reported.
 
+- 2026-09-02: review gate fixes — the three-lens fan-out returned 18 findings; 11 fixed on the branch, 6 rejected with reason, 3 deferred to candidate rows (one finding split across two dispositions). The load-bearing one was an unguarded `readLines()` on the sidecar: a `download.file()` reporting status 0 without leaving a readable file left `install_on_win()` through a bare `cannot open connection`, unclassed and invisible to AC6's census. Guarded, with a test proven red without the guard. Guarding it also exposed a latent bug in the AC6 census walker — the inline `function(cnd)` handlers put an empty symbol in a formals pairlist, and binding one in a `for` made the variable missing; the walker now traverses by index. AC4's on-disk claim is now asserted through the real `set_program()` (`tm_mock_install(real_set = TRUE)`), and `tm_archive_digest()` is pinned to a known answer. No finding demonstrated an acceptance criterion failing, so the return floor is not met and status stays `review`.
+
 ## Decisions
 
 - 2026-09-02: `archive_checksum` takes `NULL` as its default. D079 forbids a
@@ -241,3 +243,114 @@ file this milestone touched.
   a compliant control reads TRUE, and each is asserted to have a non-empty
   collected domain. `@return` in `man/install_on_win.Rd` names all five
   aborting outcomes plus the declined confirmation.
+
+### Consistency gate
+
+- `cairn_validate.py`: all 16 checks PASS, exit 0; the advisories are clean.
+- No `DESIGN.md` principle changed, so `cairn_impact.py` was not run.
+- Profile (`r-package`) toolchain checks: `devtools::document()` produces no
+  diff; `NAMESPACE`, `man/` and `data/*.rda` are unedited by hand;
+  `README.md` rebuilt from `README.Rmd` and committed; `pkgdown::check_pkgdown()`
+  reports no problems; `NEWS.md` carries three entries for this milestone's
+  user-visible changes, none naming a milestone number; no new top-level file
+  was added, so no `.Rbuildignore` entry was needed;
+  `devtools::check()` — recorded under AC7.
+
+### Independent review
+
+Full three-lens fan-out (the diff touches `R/`, `tests/` and `data-raw/`, so the
+docs-only single-lens route does not apply). Findings and disposition, verbatim
+where reported; nothing dropped.
+
+**[O] diff-bug lens — 15 findings.**
+
+1. *"`readLines(sidecar_file, warn = FALSE)` is unguarded — a real hole in the
+   milestone Goal."* A `download.file()` returning status 0 without leaving a
+   readable file sends the read into a bare `cannot open connection`, unclassed
+   and invisible to AC6's census. **Fixed at the gate:** the read is wrapped the
+   way `tm_fetch()`/`tm_unpack()` wrap theirs, `tm_parse_sidecar()` takes `NULL`,
+   and a new test drives a status-0 fetch that delivers nothing. Proven red
+   without the guard (`cannot open the connection`).
+2. *"AC4's config-file claims are never asserted on disk."* Every AC4 build
+   mocks `set_program()`, so the criterion's claim about config FILES was
+   verified against recorded calls. **Fixed at the gate:** `tm_mock_install()`
+   gained `real_set =`, which leaves the real `set_program()` in place (and
+   makes the extracted stubs executable so `Sys.which()` accepts them); a new
+   test reads the three written files back, asserts no `ffplay` file on the
+   optional-absent build, and snapshots the config root across both
+   required-missing builds.
+3. *"A failed digest fetch leaves a newly created empty install directory
+   behind."* **Rejected, with reason:** `dir.create()` sits above the fetch in
+   `master` too, so the diff did not introduce it, and moving it below would
+   trade fail-fast on an unwritable `install_dir` for a several-hundred-megabyte
+   download before the same refusal. Filed as a candidate row instead.
+4. *"Nothing pins the digest to a known-answer SHA-256."* Both sides of every
+   comparison come from `tm_archive_digest()`. **Fixed at the gate:** a test
+   pins `"abc"` to its published SHA-256.
+5. *"AC1's 'case-insensitively' is only partly implemented for the OpenSSL
+   shape."* The `SHA256` tag was matched case-sensitively. **Fixed at the
+   gate** (`[Ss][Hh][Aa]256`). Not read as an AC1 failure: the criterion writes
+   the tag in that case and the hex, which is what varies in the wild, was
+   already case-insensitive — so this is a widening, not a repair.
+6. *"Four pre-M102 tests now leak an uncaptured `will not be verified`
+   message."* **Fixed at the gate:** the four calls are wrapped in
+   `suppressMessages()` with a comment pointing at the tests that do assert the
+   message.
+7. *"The AC1 three-shapes test's ordering comment overclaims."* **Fixed at the
+   gate:** the comment now says where the ordering IS asserted.
+8. *"A 109-character comment line, from an unre-wrapped edit."* **Fixed at the
+   gate**, along with the two other new lines over 80; every remaining long line
+   in the file predates the branch.
+9. *"The `tidymedia_archive_unreadable` message names a file `on.exit()` has
+   already deleted."* **Rejected:** AC3 requires the message name the archive
+   path, and it is the path the failure was about.
+10. *"`tm_unpack()` leaves partial extraction debris."* **Deferred to a
+    candidate row** — no AC covers it and the reviewer filed it as an
+    observation.
+11. *"Dead term in the optional-program computation."* **Fixed at the gate:**
+    `setdiff(tm_install_registers, unpacked)`.
+12. *"`tm_parse_sidecar()` takes the first digest on any line."* **Deferred to a
+    candidate row** — out of scope for gyan.dev's single-digest sidecar.
+13. *"AC6's `@return` clause has no test."* **Rejected:** the criterion asks
+    that `@return` name five outcomes; that was verified by reading
+    `man/install_on_win.Rd`, and it does (a superset).
+14. *"Minor style/hygiene."* The stray double blank line in `R/utils.R` is
+    **fixed**; `check_sha256()`'s `allow_null &&` is **rejected** — it is
+    verbatim the `check_token()` idiom two functions above it; the `class`
+    binding and the probe-then-remock pattern are test-local and **rejected**.
+15. *"Uppercase hex is exercised on only one of the three sidecar shapes."*
+    **Rejected** — the reviewer's own note: coverage, not a defect.
+
+**[S] blame-history lens — 2 findings.**
+
+1. *"The consent prompt now can promise a write that never happens"* — M101's
+   property was that the prompt names every fetch AND write the call makes, and
+   `ffplay`'s write is now conditional while the prompt still names all three.
+   **Partly fixed at the gate.** The prompt itself is left alone: which programs
+   the archive contains is not knowable before it is unpacked, so naming all
+   three and saying afterwards which was skipped is the honest forecast. What
+   was wrong was the wording around it — `tm_install_details()`'s docblock now
+   states the may-write reading explicitly instead of dropping M101's clause,
+   `NEWS.md`'s M101 entry says "the remembered program locations it may
+   overwrite", and `README.Rmd`/`README.md` say "may overwrite".
+2. *"Stale documentation"* — the same root cause; **fixed** by the same edit.
+
+**[S] prior-review-record lens — 1 finding, 1 informational.**
+
+1. *"Tests re-derive an expected value using the same construction logic the
+   code under test uses, echoing M101's P1 finding."* **Rejected, with reason:**
+   the expected sidecar URL is built from `rec$download[[1]]$url` — the
+   recorder's observation of the archive URL — not from `tm_sidecar_url()`, so
+   the two sides do not share a helper; hard-coding the full URL instead would
+   re-pin what M097 F1 already moved off hand-lists.
+2. The `tm_archive_digest()` observation was the reviewer's own non-finding;
+   it is answered anyway by [O]4's known-answer test.
+
+The lens also reports `gh api .../pulls/comments` returning `[]` — this repo has
+no inline PR review threads, so the secondary surface contributed nothing, as in
+M091 and M097.
+
+**Return floor.** No actioned finding demonstrates an acceptance criterion
+failing, and none is a load-bearing defect in what `install_on_win()` does for
+its callers: [O]1 is a hole against the Goal's wording rather than any
+criterion's, and it is closed. Status stays `review`.

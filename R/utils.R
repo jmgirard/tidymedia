@@ -260,7 +260,6 @@ check_sha256 <- function(x, arg = rlang::caller_arg(x), allow_null = FALSE,
   invisible(x)
 }
 
-
 # type_columns() ----------------------------------------------------------
 
 # Coerce every column of a character metadata tibble to its natural R type,

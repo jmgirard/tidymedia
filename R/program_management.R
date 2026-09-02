@@ -334,10 +334,11 @@ tm_sidecar_url <- function(download_url) {
 # raises all of its classed refusals in its own body, which is what makes the
 # census AC6 derives from that body's exits exactly true rather than nearly so.
 tm_parse_sidecar <- function(lines) {
+  if (is.null(lines)) return(NULL)
   patterns <- c(
     # A digest alone, or first of two whitespace-separated fields.
     "^[[:space:]]*([0-9a-fA-F]{64})([[:space:]]|$)",
-    "SHA256[[:space:]]*\\([^)]*\\)[[:space:]]*=[[:space:]]*([0-9a-fA-F]{64})"
+    "[Ss][Hh][Aa]256[[:space:]]*\\([^)]*\\)[[:space:]]*=[[:space:]]*([0-9a-fA-F]{64})"
   )
   for (line in lines) {
     for (pattern in patterns) {
@@ -395,9 +396,13 @@ tm_install_binary <- function(install_dir, program) {
 
 # What the install would do, one item per line: the published digest where
 # one will be fetched, the archive to be fetched, the directory it unpacks
-# into, and each remembered-location file it overwrites. `sidecar_url` is NULL
-# on the paths that fetch no digest, so the prompt names every fetch the call
-# makes and only those (M101; M102 AC1/AC2). Every caller-supplied value goes through a cli field, which does
+# into, and each remembered-location file it may overwrite. `sidecar_url` is
+# NULL on the paths that fetch no digest, so the prompt names every fetch the
+# call makes and only those (M101; M102 AC1/AC2). The overwrite lines are what
+# the call MAY write: which of the three the archive turns out to contain is
+# not knowable before it is unpacked, so the prompt names all three and the
+# install says out loud which one it skipped (M102 AC4).
+# Every caller-supplied value goes through a cli field, which does
 # not recurse into the value, so a directory containing braces is shown rather
 # than evaluated (M44); the result is stripped of styling and hyperlinks so
 # what reaches `menu()` is the plain text a test can read back.
@@ -524,7 +529,9 @@ install_on_win <- function(download_url = NULL,
       download_url, install_dir, tm_install_registers, sidecar_url
     )
     approved <- tm_confirm(
-      tm_install_prompt(download_url, install_dir, tm_install_registers, sidecar_url),
+      tm_install_prompt(
+        download_url, install_dir, tm_install_registers, sidecar_url
+      ),
       "i" = "This install would have done the following:",
       rlang::set_names(tm_cli_escape(details), rep("*", length(details))),
       "i" = "Pass {.code confirm = FALSE} to install without being asked."
@@ -537,7 +544,8 @@ install_on_win <- function(download_url = NULL,
   if (is.null(archive_checksum) && is.null(sidecar_url)) {
     cli::cli_inform(c(
       "!" = "The archive at {.url {download_url}} will not be verified.",
-      "i" = "Pass {.arg archive_checksum} to check it against a digest you have."
+      "i" = "Pass {.arg archive_checksum} to check it against a digest you
+             have."
     ))
   }
   if (!dir.exists(install_dir)) {
@@ -561,7 +569,16 @@ install_on_win <- function(download_url = NULL,
         parent = if (rlang::is_condition(fetched)) fetched
       )
     }
-    archive_checksum <- tm_parse_sidecar(readLines(sidecar_file, warn = FALSE))
+    # The read is guarded for the same reason the fetch is: `download.file()`
+    # reporting status 0 is not a promise that a readable file arrived, and a
+    # bare "cannot open connection" here would be the one exit on this path
+    # carrying no class of its own.
+    body <- tryCatch(
+      readLines(sidecar_file, warn = FALSE),
+      error = function(cnd) NULL,
+      warning = function(cnd) NULL
+    )
+    archive_checksum <- tm_parse_sidecar(body)
     if (is.null(archive_checksum)) {
       cli::cli_abort(
         c(
@@ -625,7 +642,7 @@ install_on_win <- function(download_url = NULL,
       class = "tidymedia_program_not_extracted"
     )
   }
-  absent_optional <- setdiff(tm_install_registers, c(unpacked, absent_required))
+  absent_optional <- setdiff(tm_install_registers, unpacked)
   if (length(absent_optional)) {
     cli::cli_inform(c(
       "i" = "The archive did not contain {.and {.file {absent_optional}}};

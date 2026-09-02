@@ -54,7 +54,7 @@
 
 * `install_on_win()` now asks before it downloads or installs anything. The
   prompt names the archive it will fetch, the directory it will unpack into,
-  and the three remembered program locations it will overwrite; declining
+  and the remembered program locations it may overwrite; declining
   returns `FALSE` and leaves every one of them untouched — no directory is
   created, nothing is downloaded, and no remembered location changes. In a
   session with no one to ask, the call now aborts rather than proceed as if

@@ -34,7 +34,7 @@ function's argument and the metadata an installer reads.
 
 - [x] AC1 `DESCRIPTION` carries a `SystemRequirements` field naming FFmpeg and
       MediaInfo, each with its project URL.
-- [ ] AC2 `install_on_win()`'s own default — the value `install_dir` takes when
+- [x] AC2 `install_on_win()`'s own default — the value `install_dir` takes when
       the caller passes none — is the `ffmpeg` subdirectory of
       `tools::R_user_dir("tidymedia", "data")`. The subdirectory is preserved,
       not dropped: `archive_extract(strip_components = 1)` unpacks into it and
@@ -43,7 +43,7 @@ function's argument and the metadata an installer reads.
       the function's own default resolution while performing no download.
 - [x] AC3 `install_on_win()`'s `@param install_dir` text names the new default
       location, replacing "the user data directory".
-- [ ] AC4 `devtools::test()` clean, `devtools::document()` produces no diff,
+- [x] AC4 `devtools::test()` clean, `devtools::document()` produces no diff,
       `devtools::check()` reports 0 errors and 0 warnings with every NOTE
       justified (PROFILE `verify` and `consistency-gate` slots). A URL-check
       NOTE on the new `SystemRequirements` URLs is justified by naming it.
@@ -98,3 +98,77 @@ function's argument and the metadata an installer reads.
 - **AC5 — met.** `NEWS.md`'s Configuration section states the new default
   install location, that a passed `install_dir` is unaffected, and that an
   FFmpeg installed by an earlier version keeps working.
+- **AC2 — met.** `R/program_management.R` resolves `install_on_win()`'s `NULL`
+  branch through `tm_install_dir()` =
+  `file.path(tools::R_user_dir("tidymedia", "data"), "ffmpeg")`; the same
+  function's later lines extract with `archive_extract(strip_components = 1)`
+  into `install_dir` and register `file.path(install_dir, "bin", "ffmpeg.exe")`,
+  so the subdirectory is preserved rather than dropped. The test at
+  `tests/testthat/test-program-management.R:180` calls `install_on_win()` with
+  no `install_dir` under a `withr::local_envvar(R_USER_DATA_DIR = )` temp root
+  and a `file://` URL, touching no network; re-run fresh at review, the file's
+  55 tests pass with no failures and no skips.
+- **AC4 — met.** `devtools::document()` left the working tree clean of
+  generated-file changes (the only modified file was this milestone file, being
+  edited at the time). `devtools::test()`: 0 failures, 11195 passing, 18 skipped,
+  10 warnings. `devtools::check()`: **0 errors, 0 warnings, 0 notes** in
+  7m 14.5s — no NOTE to justify, so AC4's URL-check clause has nothing to
+  discharge. Toolchain consistency-gate slot also run: `pkgdown::check_pkgdown()`
+  reports no problems; `README.Rmd` is unmodified by the branch so `README.md`
+  stays in sync; `NEWS.md` (the declared changelog) carries entries for both
+  user-visible changes; the branch adds no top-level file, so no
+  `.Rbuildignore` entry is owed.
+
+### Consistency gate
+
+`cairn_validate.py` exit 0 — every check PASS, every advisory OK, including
+`coverage complete` and `binding criteria`; the `release window` advisory did
+not fire. No `DESIGN.md` principle changed, so `cairn_impact.py` was not run.
+Toolchain checks (PROFILE `consistency-gate`) recorded under AC4 above.
+
+### Independent review — three lenses, fresh context
+
+Full three-lens fan-out (user-facing tier, executable surface touched).
+**[S] blame-history:** no findings — the replaced `rappdirs::user_data_dir()`
+line was set once at introduction and changed once here, nothing deliberate is
+undone, and no D-entry governs the data directory. **[S] prior-PR-comments:**
+no findings; the GitHub inline-comment probe returned empty so the thread walk
+was skipped, and M097's archived review findings (F1 helper-vs-default, F3
+NEWS-only documentation, F4 Windows envvar collapse, F6 `list.files()`) are each
+avoided here. **[O] diff-bug:** the change itself correct; nine findings, all in
+the test and the margins. Ranked, with disposition:
+
+1. **Fix now.** The test's final assertion is tautological: it checks
+   `bin/ffmpeg.exe` is absent inside a directory `dir.create()`d empty moments
+   earlier, so it cannot fail; its comment describes a config-directory write
+   the test never inspects.
+2. **Fix now.** The test redirects `R_USER_DATA_DIR` but not
+   `R_USER_CONFIG_DIR`, dropping half the file's own `tm_redirect_config()`
+   convention; if the download ever succeeded, `set_ffmpeg()` and siblings would
+   write into the developer's real config directory.
+3. **Rejected.** AC2's second clause (extraction and registration beneath the
+   subdirectory) is said to be unasserted by the test. AC2's verification clause
+   ends "while performing no download", so it never asked the test to assert
+   extraction; the code half is verified by inspection and recorded under AC2.
+4. **Fix now.** Raw string path comparison where the sibling test at line 63
+   normalizes both sides — the Windows-only, locally-green failure shape
+   `LESSONS.md` records from M097's review.
+5. **Fix now.** `paste0("file:///", <POSIX path>)` yields four slashes on
+   Unix, so the test errors partly on a malformed URL; the bare `expect_error()`
+   also names no failure, against the failure-identity rule.
+6. **Rejected.** The test couples to `dir.create()` running before
+   `download.file()`. That ordering is exactly what lets the default resolve
+   with no download, and the full-directory-set assertion is the discrimination
+   AC2 wants; `dir.exists()` alone would weaken it.
+7. **Fix now.** `NEWS.md` does not say that re-running `install_on_win()` now
+   writes a second FFmpeg tree and leaves the old one orphaned on disk.
+8. **Rejected.** `SystemRequirements` field placement differs from `desc`'s
+   canonical order — formatter-class nitpick; it parses and `R CMD check` is
+   silent.
+9. **Follow-up.** `install_on_win()`'s `@description` and `@param download_url`
+   say "zip" while the default is a `.7z` extracted with
+   `archive::archive_extract()`. Pre-existing, not introduced by this diff →
+   ROADMAP candidate row.
+
+No finding demonstrates an acceptance criterion failing, so the return floor is
+not reached and the milestone stays in `review`.

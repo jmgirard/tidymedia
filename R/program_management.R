@@ -1,9 +1,38 @@
 
+# Config directory ---------------------------------------------------------
+
+# Where a remembered program location lives. `tools::R_user_dir()` is the one
+# user config location CRAN policy sanctions (M097); it honors
+# `R_USER_CONFIG_DIR`, which is how the suite keeps its writes out of the
+# user's real configuration.
+tm_config_dir <- function() {
+  tools::R_user_dir("tidymedia", "config")
+}
+
+# Where a location set before M097 was written. Delegated to the library that
+# wrote it rather than reconstructed by hand: the legacy layout differs per
+# platform, and a single-platform suite cannot catch a second copy of those
+# rules drifting. The only place the package computes it (M097 AC5).
+tm_legacy_config_dir <- function() {
+  rappdirs::user_config_dir("tidymedia", "R")
+}
+
+tm_config_file <- function(program, dir = tm_config_dir()) {
+  file.path(dir, glue("{program}_location.txt"))
+}
+
 # find_program() ----------------------------------------------------------
 
 #' Find the location of a dependency program
 #'
 #' Returns the location of the requested program as a string.
+#'
+#' The program is looked up on the `PATH` first. When it is not there, the
+#' location remembered by [set_program()] is read from
+#' `tools::R_user_dir("tidymedia", "config")`; a location remembered by a
+#' version of tidymedia before 0.2.0 was written to
+#' `rappdirs::user_config_dir("tidymedia", "R")`, and that file is read only
+#' when no file exists in the current directory.
 #'
 #' @param program A string indicating which program to find
 #' @return Either a string indicating whether the requested program was found or
@@ -24,11 +53,13 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
   location <- Sys.which(program)
   
   if (location == "") {
-    # If program not found, look for a user config file
-    config <- file.path(
-      rappdirs::user_config_dir("tidymedia", "R"),
-      glue("{program}_location.txt")
-    )
+    # If program not found, look for a user config file: the R_user_dir()
+    # location first, then the pre-M097 one, so a location set before
+    # the move is still found. The read falls back; nothing is migrated.
+    config <- tm_config_file(program)
+    if (!file.exists(config)) {
+      config <- tm_config_file(program, tm_legacy_config_dir())
+    }
     # If a user config file exists, read it in
     if (file.exists(config)) {
       location <- readLines(config)
@@ -133,6 +164,12 @@ run_program <- function(location, args, program = "the program",
 
 #' Set the location of a dependency program
 #'
+#' The location is remembered across sessions in a file named
+#' `<program>_location.txt` under `tools::R_user_dir("tidymedia", "config")`,
+#' which [find_program()] reads whenever the program is not on the `PATH`.
+#' Once this file exists, a location remembered by a version of tidymedia
+#' before 0.2.0 is no longer read.
+#'
 #' @param program A string indicating which program to set the location for.
 #' @param location A string containing the location of the program.
 #' @return A logical indicating whether the program location was set properly.
@@ -156,9 +193,9 @@ set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"),
     cli::cli_abort("Can't find an executable at {.file {location}}.")
   }
   
-  # Find where to save user configuration data
-  config_dir <- rappdirs::user_config_dir("tidymedia", "R")
-  config_file <- file.path(config_dir, glue("{program}_location.txt"))
+  # Find where to save user configuration data (tools::R_user_dir(), M097)
+  config_dir <- tm_config_dir()
+  config_file <- tm_config_file(program, config_dir)
   
   # Create configuration directory if needed
   if (!dir.exists(config_dir)) dir.create(config_dir, recursive = TRUE)

@@ -27,7 +27,11 @@ set_ffplay(location)
 A logical indicating whether the program location was set properly.
 }
 \description{
-Set the location of a dependency program
+The location is remembered across sessions in a file named
+\verb{<program>_location.txt} under \code{tools::R_user_dir("tidymedia", "config")},
+which \code{\link[=find_program]{find_program()}} reads whenever the program is not on the \code{PATH}.
+Once this file exists, a location remembered by a version of tidymedia
+before 0.2.0 is no longer read.
 }
 \examples{
 \dontrun{

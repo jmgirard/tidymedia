@@ -86,15 +86,13 @@ test_that("refresh_ffmpeg_capabilities() sends the next call back to FFmpeg", {
 test_that("set_program() sends the next call back to FFmpeg", {
   # AC4, route two: repointing tidymedia at a binary discards what was
   # remembered about the previous one. The config dir is redirected to a
-  # tempdir so the test never writes to the user's real configuration.
+  # tempdir so the test never writes to the user's real configuration:
+  # R_USER_CONFIG_DIR is what tools::R_user_dir() reads (M097), where the
+  # rappdirs mock this once used would still resolve and redirect nothing.
   ffmpeg_path <- Sys.which("ffmpeg")
   skip_if(!nzchar(ffmpeg_path), "ffmpeg not available")
 
-  config <- withr::local_tempdir()
-  local_mocked_bindings(
-    user_config_dir = function(...) config,
-    .package = "rappdirs"
-  )
+  withr::local_envvar(R_USER_CONFIG_DIR = withr::local_tempdir())
   probes <- local_encoder_probe_counter()
 
   expect_true(has_hardware_encoder("h264"))

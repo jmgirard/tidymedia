@@ -17,6 +17,18 @@
   require — they use the native pipe `|>`, a form R gained in 4.1.0 — and it
   sits above the highest R version any declared dependency floor asks for.
 
+## Configuration
+
+* A binary location remembered with `set_ffmpeg()`, `set_ffprobe()`,
+  `set_ffplay()` or `set_mediainfo()` now lives under
+  `tools::R_user_dir("tidymedia", "config")`, the user configuration directory
+  CRAN policy sanctions, in a file named `<program>_location.txt`. A location
+  set before this change is still found: `find_ffmpeg()` and its siblings read
+  the new directory first and, only when no file exists there, the old one;
+  nothing is moved or copied. Calling `set_ffmpeg()` again writes the new file,
+  after which the old one is no longer read, even if the new file names a
+  binary that has since gone.
+
 ## New features
 
 * A failed FFmpeg run is now something you can catch. When FFmpeg exits

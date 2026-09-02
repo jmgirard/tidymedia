@@ -24,7 +24,7 @@ policy sanctions.}
 \item{confirm}{A logical indicating whether to ask for confirmation before
 downloading and installing anything. Defaults to \code{TRUE}. The prompt names
 the archive to be downloaded, the directory it will be unpacked into, and
-the remembered program locations it will overwrite. Where there is no one
+the remembered program locations it may overwrite. Where there is no one
 to ask, the call aborts rather than assume consent, naming those same
 items; pass \code{confirm = FALSE} to install without being asked.}
 

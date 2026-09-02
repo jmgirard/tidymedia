@@ -351,8 +351,15 @@ tm_parse_sidecar <- function(lines) {
 
 # The SHA-256 of a file on disk. `digest` reads the file in chunks rather than
 # into memory, which matters for a several-hundred-megabyte build (D081).
+# Returns NULL where the file cannot be read. `digest()` aborts with a bare
+# simpleError on a path that is not there, which would leave install_on_win()
+# through an exit carrying no class of its own -- and one AC6's census cannot
+# see, since it is neither a return() nor a cli_abort() node.
 tm_archive_digest <- function(path) {
-  tolower(digest::digest(path, algo = "sha256", file = TRUE))
+  tryCatch(
+    tolower(digest::digest(path, algo = "sha256", file = TRUE)),
+    error = function(cnd) NULL
+  )
 }
 
 # Fetch `url` to `destfile`. `utils::download.file()`'s contract allows two
@@ -366,13 +373,28 @@ tm_fetch <- function(url, destfile) {
   tryCatch(
     {
       status <- utils::download.file(url = url, destfile = destfile, mode = "wb")
-      if (identical(as.integer(status), 0L)) TRUE else NULL
+      # Status 0 is not a promise that a readable file arrived: a mirror can
+      # report success and leave nothing behind, and the caller downstream
+      # would then meet a bare simpleError from whatever reads the file. The
+      # existence test is what makes the TRUE above mean what this comment
+      # says it means.
+      if (identical(as.integer(status), 0L) && file.exists(destfile)) {
+        TRUE
+      } else {
+        NULL
+      }
     },
     error = function(cnd) cnd
   )
 }
 
-# Unpack `archive` into `dir`. TRUE, or FALSE where libarchive refused.
+# Unpack `archive` into `dir`. The paths the extraction produced, relative to
+# `dir`, or NULL where libarchive refused.
+#
+# The file list is returned rather than dropped because it is the only honest
+# answer to what THIS extraction produced: `archive_extract()` writes into a
+# directory it does not clear, so a later look at `dir` sees a previous
+# install's files as readily as this one's (M102 AC4).
 #
 # The condition is dropped rather than returned, which is the one place this
 # milestone deliberately loses information: libarchive's message is a C++
@@ -390,15 +412,24 @@ tm_unpack <- function(archive, dir) {
   # will not delete a file something still holds open, so that leak is what
   # left the downloaded archive behind after a failed unpack (M102 AC3).
   con <- tryCatch(file(archive, "rb"), error = function(cnd) NULL)
-  if (is.null(con)) return(FALSE)
+  if (is.null(con)) return(NULL)
   on.exit(tm_close(con), add = TRUE)
   tryCatch(
-    {
-      archive::archive_extract(con, dir = dir, strip_components = 1)
-      TRUE
-    },
-    error = function(cnd) FALSE
+    as.character(archive::archive_extract(con, dir = dir, strip_components = 1)),
+    error = function(cnd) NULL
   )
+}
+
+# Which of `programs` the extraction produced, read off the file list
+# `tm_unpack()` returned rather than off the install directory. The paths are
+# matched where the install will look for them -- `bin/<program>.exe` under
+# the install directory, which is what tm_install_binary() builds -- with
+# separators normalized, because a path is what libarchive reports and the
+# comparison should not turn on which slash it used, and case folded, because
+# the target filesystem does not distinguish them either.
+tm_extracted_programs <- function(files, programs) {
+  found <- tolower(sub("^[.]/", "", gsub("\\\\", "/", as.character(files))))
+  programs[tolower(paste0("bin/", programs, ".exe")) %in% found]
 }
 
 # Close `con` where it is still open, and do nothing where the callee already
@@ -483,7 +514,7 @@ tm_install_prompt <- function(download_url, install_dir, programs,
 #' @param confirm A logical indicating whether to ask for confirmation before
 #'   downloading and installing anything. Defaults to `TRUE`. The prompt names
 #'   the archive to be downloaded, the directory it will be unpacked into, and
-#'   the remembered program locations it will overwrite. Where there is no one
+#'   the remembered program locations it may overwrite. Where there is no one
 #'   to ask, the call aborts rather than assume consent, naming those same
 #'   items; pass `confirm = FALSE` to install without being asked.
 #' @param archive_checksum A string giving the archive's expected SHA-256
@@ -536,6 +567,17 @@ install_on_win <- function(download_url = NULL,
       identical(download_url, tm_default_download_url)) {
     sidecar_url <- tm_sidecar_url(download_url)
   }
+  # A caller-named source with no digest to check against is installed anyway
+  # -- refusing would leave such a caller no route at all -- but never
+  # silently, and never after the fact: it is said above the prompt, so what
+  # a caller approves includes knowing that nothing will check the download.
+  if (is.null(archive_checksum) && is.null(sidecar_url)) {
+    cli::cli_inform(c(
+      "!" = "The archive at {.url {download_url}} will not be verified.",
+      "i" = "Pass {.arg archive_checksum} to check it against a digest you
+             have."
+    ))
+  }
   # The consent sits above the first write, so a declined call creates no
   # directory, downloads nothing, and overwrites no remembered location
   # (D080). It asks about the RESOLVED values: a caller who named neither
@@ -555,16 +597,6 @@ install_on_win <- function(download_url = NULL,
       "i" = "Pass {.code confirm = FALSE} to install without being asked."
     )
     if (!approved) return(FALSE)
-  }
-  # A caller-named source with no digest to check against is installed anyway
-  # -- refusing would leave such a caller no route at all -- but never
-  # silently: what is unverified is said once, before anything is fetched.
-  if (is.null(archive_checksum) && is.null(sidecar_url)) {
-    cli::cli_inform(c(
-      "!" = "The archive at {.url {download_url}} will not be verified.",
-      "i" = "Pass {.arg archive_checksum} to check it against a digest you
-             have."
-    ))
   }
   if (!dir.exists(install_dir)) {
     status <- dir.create(install_dir, recursive = TRUE)
@@ -620,6 +652,15 @@ install_on_win <- function(download_url = NULL,
   }
   if (!is.null(archive_checksum)) {
     found <- tm_archive_digest(tf)
+    # A download that cannot be read is a download that did not deliver, and
+    # it refuses as one: reporting a mismatch against a digest that could not
+    # be computed would name a cause that is not the cause.
+    if (is.null(found)) {
+      cli::cli_abort(
+        "Can't download the archive at {.url {download_url}}.",
+        class = "tidymedia_download_unavailable"
+      )
+    }
     if (!identical(found, tolower(archive_checksum))) {
       cli::cli_abort(
         c(
@@ -631,7 +672,8 @@ install_on_win <- function(download_url = NULL,
       )
     }
   }
-  if (!tm_unpack(tf, install_dir)) {
+  produced <- tm_unpack(tf, install_dir)
+  if (is.null(produced)) {
     cli::cli_abort(
       c(
         "Can't unpack the downloaded archive.",
@@ -643,18 +685,20 @@ install_on_win <- function(download_url = NULL,
   }
   # Register what the extraction actually produced, and nothing else: a
   # remembered location pointing at a file the archive never contained is a
-  # worse state than no remembered location at all. The required programs are
+  # worse state than no remembered location at all. What THIS extraction
+  # produced is read off its own file list, never off the install directory:
+  # `install_dir` defaults to one stable path across installs and the
+  # extraction does not clear it, so a directory listing would count a
+  # previous run's binaries as this build's. The required programs are
   # checked before the first write, so a build missing one leaves every
   # existing remembered location as it was.
-  unpacked <- tm_install_registers[
-    file.exists(tm_install_binary(install_dir, tm_install_registers))
-  ]
+  unpacked <- tm_extracted_programs(produced, tm_install_registers)
   absent_required <- setdiff(tm_install_required, unpacked)
   if (length(absent_required)) {
     cli::cli_abort(
       c(
         "The archive did not contain {.and {.file {absent_required}}}.",
-        "i" = "Looked in {.file {file.path(install_dir, \"bin\")}}.",
+        "i" = "Unpacked into {.file {install_dir}}.",
         "i" = "Nothing was registered."
       ),
       class = "tidymedia_program_not_extracted"

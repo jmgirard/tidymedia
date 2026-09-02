@@ -193,3 +193,9 @@ component from `tm_install_dir()` fails the test at the directory-set
 comparison, naming the missing `.../R/tidymedia/ffmpeg` path. Finding 9 was
 absorbed into the existing `install_on_win()` ROADMAP candidate row rather than
 filed as a new one (search-first).
+
+Re-verified on the fixed branch: `devtools::document()` no diff,
+`devtools::check()` **0 errors, 0 warnings, 0 notes** (7m 14.8s),
+`devtools::test()` 0 failures / 11195 passing / 18 skipped / 10 warnings —
+the same figures as before the fixes, since the edit swapped one assertion for
+another.

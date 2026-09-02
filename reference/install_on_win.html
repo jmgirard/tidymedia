@@ -55,7 +55,12 @@ it asks for confirmation first and does nothing at all until it has it.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">install_on_win</span><span class="op">(</span>download_url <span class="op">=</span> <span class="cn">NULL</span>, install_dir <span class="op">=</span> <span class="cn">NULL</span>, confirm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">install_on_win</span><span class="op">(</span></span>
+<span>  download_url <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  install_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  confirm <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  archive_checksum <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -79,17 +84,42 @@ policy sanctions.</p></dd>
 <dd><p>A logical indicating whether to ask for confirmation before
 downloading and installing anything. Defaults to <code>TRUE</code>. The prompt names
 the archive to be downloaded, the directory it will be unpacked into, and
-the remembered program locations it will overwrite. Where there is no one
+the remembered program locations it may overwrite. Where there is no one
 to ask, the call aborts rather than assume consent, naming those same
 items; pass <code>confirm = FALSE</code> to install without being asked.</p></dd>
+
+
+<dt id="arg-archive-checksum">archive_checksum<a class="anchor" aria-label="anchor" href="#arg-archive-checksum"></a></dt>
+<dd><p>A string giving the archive's expected SHA-256
+digest as 64 hexadecimal characters, in either case. Defaults to <code>NULL</code>.
+A digest supplied here is used on every source, and no digest is fetched.
+Where it is <code>NULL</code> and <code>download_url</code> is not the package's own default,
+nothing is verified and the call says so.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A logical indicating whether the installation was successful.
-<code>FALSE</code> is also what a declined confirmation returns, alongside the
-existing failures to create the install directory or download the
-archive.</p>
+<code>FALSE</code> is returned by a declined confirmation and by a failure to create
+the install directory. Five other outcomes abort with a condition of their
+own rather than returning: a download that did not deliver
+(<code>tidymedia_download_unavailable</code>), a published digest that could not be
+fetched or read (<code>tidymedia_checksum_unavailable</code>), a digest that did not
+match the downloaded archive (<code>tidymedia_checksum_mismatch</code>), an archive
+that could not be unpacked (<code>tidymedia_archive_unreadable</code>), and a
+required program the archive did not contain
+(<code>tidymedia_program_not_extracted</code>).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>The archive is checked against a SHA-256 digest before anything is unpacked,
+and no program location is remembered unless the extraction actually
+produced that program. For the package's own default source the digest is
+fetched from <code>&lt;download_url&gt;.sha256</code>, which is what gyan.dev publishes
+beside each build; for any other source, pass <code>archive_checksum</code>. Because
+the digest travels from the same host over the same connection as the
+archive, this catches a corrupted or truncated download, not a compromised
+source.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

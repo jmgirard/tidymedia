@@ -70,9 +70,14 @@ several popular platforms.
 1.  Install the `tidymedia` package in R.
 2.  Run
     [`tidymedia::install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
-    in R and confirm the prompt, which names the archive it will
-    download, the directory it will unpack into, and the program
-    locations it will overwrite.
+    in R and confirm the prompt, which names the digest and the archive
+    it will download, the directory it will unpack into, and the program
+    locations it may overwrite. The archive is checked against the
+    SHA-256 digest gyan.dev publishes beside it before anything is
+    unpacked, and no program location is remembered unless the
+    extraction produced that program. To install from a different build,
+    pass its address and its digest:
+    `install_on_win(download_url = ..., archive_checksum = ...)`.
 
 **macOS Homebrew Install**
 
@@ -124,7 +129,7 @@ ffm(video, "output.mp4") |>
   ffm_codec(video = "libx264") |>
   ffm_drop(streams = "audio") |>
   ffm_compile()
-#> [1] "-y -i \"/private/var/folders/px/frfvbz4n0sx90__c62fwwzz40000gn/T/RtmpNMDiUc/temp_libpath103b676beeeff/tidymedia/extdata/sample.mp4\" -vf \"trim=start=1:end=5,setpts=PTS-STARTPTS,crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -an \"output.mp4\""
+#> [1] "-y -i \"/private/var/folders/px/frfvbz4n0sx90__c62fwwzz40000gn/T/RtmprcJIaC/temp_libpath4da96721ddb1/tidymedia/extdata/sample.mp4\" -vf \"trim=start=1:end=5,setpts=PTS-STARTPTS,crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -an \"output.mp4\""
 ```
 
 Common tasks have their own verbs (Layer 2). Pass `run = FALSE` to see
@@ -133,7 +138,7 @@ the command without executing it:
 ``` r
 
 extract_audio(video, "audio.aac", run = FALSE)
-#> [1] "-y -i \"/private/var/folders/px/frfvbz4n0sx90__c62fwwzz40000gn/T/RtmpNMDiUc/temp_libpath103b676beeeff/tidymedia/extdata/sample.mp4\" -codec:a copy -vn -map \"0:a:0\" \"audio.aac\""
+#> [1] "-y -i \"/private/var/folders/px/frfvbz4n0sx90__c62fwwzz40000gn/T/RtmprcJIaC/temp_libpath4da96721ddb1/tidymedia/extdata/sample.mp4\" -codec:a copy -vn -map \"0:a:0\" \"audio.aac\""
 ```
 
 ### Read metadata as tibbles

@@ -898,6 +898,57 @@ test_that("an archive libarchive cannot read aborts without libarchive's text", 
   expect_false(file.exists(ok$destfile))
 })
 
+test_that("the real archive_extract() returns the paths the mock stands in for", {
+  # The whole AC4 registration gate reads `tm_unpack()`'s file list, and every
+  # test above reaches that list through a mock which hard-codes its shape.
+  # This is the one test that asks libarchive itself, so a change in what
+  # `archive_extract()` returns -- absolute paths, a `./` prefix, paths before
+  # `strip_components` rather than after -- fails here instead of shipping and
+  # aborting on every real Windows install.
+  skip_if_not_installed("archive")
+  # The upstream layout: one wrapper directory named for the build, holding
+  # `bin/`. `strip_components = 1` is what removes the wrapper.
+  root <- withr::local_tempdir()
+  wrapper <- "ffmpeg-8.0-essentials_build"
+  dir.create(file.path(root, wrapper, "bin"), recursive = TRUE)
+  members <- file.path(wrapper, "bin", paste0(tm_install_registers, ".exe"))
+  for (member in members) writeLines("stub", file.path(root, member))
+  arch <- file.path(withr::local_tempdir(), "control.7z")
+  withr::with_dir(root, archive::archive_write_files(arch, members))
+
+  d <- withr::local_tempdir()
+  produced <- tm_unpack(arch, d)
+  # Relative to the directory, after strip_components -- which is exactly the
+  # string tm_extracted_programs() matches against.
+  expect_setequal(produced, file.path("bin", paste0(tm_install_registers, ".exe")))
+  expect_setequal(
+    tm_extracted_programs(produced, tm_install_registers),
+    tm_install_registers
+  )
+})
+
+test_that("tm_extracted_programs() reads the path shapes libarchive can report", {
+  # The normalization exists for Windows, where a backslash separator and a
+  # capitalized name are both ordinary -- and where no test on this machine
+  # would otherwise execute it.
+  expect_setequal(
+    tm_extracted_programs(
+      c("bin\\ffmpeg.exe", "./bin/FFprobe.EXE", "bin/ffplay.exe"),
+      tm_install_registers
+    ),
+    tm_install_registers
+  )
+  # And it stays a match on the install's own layout, not a name search: the
+  # same three programs one directory deeper are not what the install reads.
+  expect_identical(
+    tm_extracted_programs(
+      file.path("tools", "bin", paste0(tm_install_registers, ".exe")),
+      tm_install_registers
+    ),
+    character(0)
+  )
+})
+
 test_that("only the programs the extraction produced are registered", {
   # AC4. Four builds, told apart by what the extraction leaves behind.
   tm_redirect_config()

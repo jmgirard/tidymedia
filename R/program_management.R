@@ -547,6 +547,13 @@ install_on_win <- function(download_url = NULL,
                            archive_checksum = NULL) {
 
   rlang::check_bool(confirm)
+  # The two path-shaped arguments are checked here for the same reason the
+  # other two are: without it a non-string reaches `dir.create()` or
+  # `download.file()` and leaves through a bare `simpleError`, which is an
+  # exit carrying no class of its own and one the AC6 census cannot see --
+  # it is neither a `return()` nor a `cli_abort()` node (M102).
+  rlang::check_string(download_url, allow_null = TRUE)
+  rlang::check_string(install_dir, allow_null = TRUE)
   check_sha256(archive_checksum, allow_null = TRUE)
 
   if (is.null(download_url)) {
@@ -657,7 +664,11 @@ install_on_win <- function(download_url = NULL,
     # be computed would name a cause that is not the cause.
     if (is.null(found)) {
       cli::cli_abort(
-        "Can't download the archive at {.url {download_url}}.",
+        c(
+          "Can't download the archive at {.url {download_url}}.",
+          "i" = "The download reported success but nothing readable arrived,
+                 so its digest could not be computed."
+        ),
         class = "tidymedia_download_unavailable"
       )
     }
@@ -697,9 +708,11 @@ install_on_win <- function(download_url = NULL,
   if (length(absent_required)) {
     cli::cli_abort(
       c(
-        "The archive did not contain {.and {.file {absent_required}}}.",
-        "i" = "Unpacked into {.file {install_dir}}.",
-        "i" = "Nothing was registered."
+        "The archive did not produce {.and {.file {absent_required}}}.",
+        "i" = "Looked for {.and {.file {paste0(\"bin/\", absent_required,
+               \".exe\")}}} under {.file {install_dir}}.",
+        "i" = "Nothing was registered; whatever the archive did unpack is
+               still in that directory."
       ),
       class = "tidymedia_program_not_extracted"
     )
@@ -707,7 +720,7 @@ install_on_win <- function(download_url = NULL,
   absent_optional <- setdiff(tm_install_registers, unpacked)
   if (length(absent_optional)) {
     cli::cli_inform(c(
-      "i" = "The archive did not contain {.and {.file {absent_optional}}};
+      "i" = "The archive did not produce {.and {.file {absent_optional}}};
              no location was remembered for {cli::qty(length(absent_optional))}
              {?it/them}."
     ))

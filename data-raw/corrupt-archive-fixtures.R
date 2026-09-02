@@ -6,11 +6,21 @@
 #   Rscript data-raw/corrupt-archive-fixtures.R
 #
 # PROVENANCE. Neither fixture is downloaded from anywhere. Both are built here
-# from a payload this script generates under `set.seed(102)`, so the committed
-# bytes are reproducible from this file alone and carry no third-party content.
-# The starting point is a real 7z archive written by `archive::archive_write_files()`
+# from a payload this script generates under `set.seed(102)`, so each fixture
+# is regenerable from this file alone and carries no third-party content. The
+# starting point is a real 7z archive written by `archive::archive_write_files()`
 # (libarchive), holding one text file; the two fixtures are that archive damaged
 # in the two different places libarchive fails at.
+#
+# What is reproducible is the fixture's BEHAVIOUR, not its bytes: 7z records a
+# per-entry modification time, which the seed does not fix, so a re-run writes
+# a byte-different archive that fails at the same place. Measured 2026-09-02 --
+# two runs one second apart produced 10416- and 10418-byte archives against the
+# committed 10410. The self-check below is what makes that safe: no fixture is
+# written unless this script has just watched it fail the way it is meant to,
+# so the committed bytes and a fresh run are interchangeable for every use the
+# suite puts them to. Re-run this script only when a fixture must change; a
+# gratuitous re-run churns the committed bytes for no gain.
 #
 # WHY TWO. `install_on_win()` must turn any extraction failure into one classed
 # refusal, and libarchive reaches its failure by two different routes:

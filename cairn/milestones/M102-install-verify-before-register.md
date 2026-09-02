@@ -6,7 +6,7 @@
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
-- **Branch/PR:** `m102-install-verify-before-register`
+- **Branch/PR:** `m102-install-verify-before-register` / https://github.com/jmgirard/tidymedia/pull/106
 
 ## Goal
 
@@ -38,7 +38,7 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
 
 ## Acceptance criteria
 
-- [ ] AC1: With `download_url` at its default and `archive_checksum` at `NULL`,
+- [x] AC1: With `download_url` at its default and `archive_checksum` at `NULL`,
       `install_on_win()` fetches `<download_url>.sha256` before it unpacks, and
       the consent prompt names that fetch beside the archive download. It reads
       a sidecar body that is a bare 64-hex digest, a `sha256sum` two-field line,
@@ -50,7 +50,7 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
       `tidymedia_checksum_mismatch` naming both digests and leaves
       `tm_config_dir()`'s contents unchanged; a matching one reaches the
       extraction step.
-- [ ] AC2: `install_on_win(archive_checksum = <64-hex string>)` verifies the
+- [x] AC2: `install_on_win(archive_checksum = <64-hex string>)` verifies the
       download against that digest, case-insensitively, and fetches no sidecar
       on any source, the package's own default included; the consent prompt
       names a sidecar fetch only where one happens, and a mismatch aborts with
@@ -63,7 +63,7 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
       over a wrong-length, a non-hex, an `NA` and a length-2 value — and like
       the other front-door checks that refusal carries no `tidymedia_*` class.
       (RB tripwire: irreversible-api)
-- [ ] AC3: A failure inside `archive::archive_extract()` aborts with class
+- [x] AC3: A failure inside `archive::archive_extract()` aborts with class
       `tidymedia_archive_unreadable` naming the archive path and the install
       directory, and neither that condition's message nor any `parent` it
       carries contains `archive_extract.cpp` — libarchive's text is replaced by
@@ -71,7 +71,7 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
       shapes are covered — a body it does not recognize as an archive at all,
       and a well-formed 7z header over a corrupt payload — and the downloaded
       temporary file is removed on the failing path as on the succeeding one.
-- [ ] AC4: No remembered location is written for a program the extraction did
+- [x] AC4: No remembered location is written for a program the extraction did
       not produce; `ffmpeg` and `ffprobe` are required, `ffplay` optional. An
       extraction yielding all three writes three config files and returns
       `TRUE`; one yielding `ffmpeg` and `ffprobe` only writes those two, leaves
@@ -79,11 +79,11 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
       `TRUE`; one yielding no `ffmpeg`, and one yielding no `ffprobe`, each
       write no config file at all and abort with class
       `tidymedia_program_not_extracted` naming the absent program.
-- [ ] AC5: A `utils::download.file()` call that does not deliver the archive
+- [x] AC5: A `utils::download.file()` call that does not deliver the archive
       aborts with class `tidymedia_download_unavailable` naming the URL, for
       both shapes its signalling contract allows — its own error, and a non-zero
       return status — retaining the base condition as the abort's `parent`.
-- [ ] AC6: Every `return()` and every `cli::cli_abort()` call in
+- [x] AC6: Every `return()` and every `cli::cli_abort()` call in
       `install_on_win()`'s own body returns `TRUE`/`FALSE` or passes a `class =`
       beginning `tidymedia_`. The domain is derived, not listed: a test walks
       the function's `body()`, collects those two node types, and asserts the
@@ -168,6 +168,8 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
 - 2026-09-02: T7 — the derived-exit census walks `body(install_on_win)` for `return()` and `cli_abort()` nodes, seeing through `pkg::fn`, and asserts of each that it hands back a literal `TRUE`/`FALSE` or passes a `class =` beginning `tidymedia_`; the floor asserts the collected classes hold all five AC1, AC3, AC4 and AC5 name, so a walk that found nothing cannot pass vacuously. Both planted defects went red in the real function — an unclassed `cli::cli_abort()` and a `return()` of a non-literal, one failure each — and both are also kept as permanent negative controls beside a compliant one, so a later reader can re-run the discrimination instead of trusting this one-time check. Suite 11547.
 - 2026-09-02: T8 — roxygen documents `archive_checksum` and names all five aborting outcomes in `@return`; `NEWS.md` gains the verification entry, the classed-failures entry and a Requirements line for `digest`; `README.Rmd`'s Windows step names the digest fetch and the new argument, and `README.md` was rebuilt. The declared floor was WRONG as first guessed: `digest (>= 0.6.29)` does not compile on R 4.6 — `Calloc`/`Free` were removed from R's headers, and 0.6.37 (2024-08) is the first release using the `R_`-prefixed allocators — so the floor is `digest (>= 0.6.37)`, measured. `--only digest` then passed: no floor moved, and the pinned run's skip count matched the baseline's 18, so it exercised what the baseline did. `devtools::check()` first returned one NOTE, the spelling check flagging `SHA` and `libarchive`; `spelling::update_wordlist()` added both and the re-run is Status OK, 0 errors / 0 warnings / 0 notes. `devtools::document()` produces no diff; no new object is exported, so `_pkgdown.yml` is unchanged.
 
+- 2026-09-02: review checkpoint — PR #106 opened as a draft; `master` had not moved since the branch was cut. `devtools::test()` fresh: FAIL 0, WARN 10, SKIP 18, PASS 11547 (the 10 warnings pre-existing, none on a touched file). AC1–AC6 verified and ticked. `cairn_validate.py` passes all 16 checks; `document()` no diff; `pkgdown::check_pkgdown()` clean; README.md in sync (a rebuild changes only the embedded tempdir paths). AC7 still open: the `--only digest` floor run and `devtools::check()` are still running, and the diff-bug review lens has not yet reported.
+
 ## Decisions
 
 - 2026-09-02: `archive_checksum` takes `NULL` as its default. D079 forbids a
@@ -184,3 +186,58 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
   argument on this function outside it too.
 
 ## Review
+
+Reviewed 2026-09-02 on branch `m102-install-verify-before-register`, PR #106,
+against `origin/master` at 9ae0bfe's merge base (master had not moved since the
+branch was cut, so no merge was needed). Suite run fresh:
+`devtools::test()` — FAIL 0, WARN 10, SKIP 18, PASS 11547. The 10 warnings are
+pre-existing, all in `test-audio-stream*.R` and `test-ffmpeg.R`; none is on a
+file this milestone touched.
+
+### Acceptance criteria
+
+- AC1 — verified. `test-program-management.R:563` runs the default source
+  through all three sidecar body shapes (bare, `sha256sum`, `SHA256(file)=`,
+  the last upper-cased) and asserts for each that exactly one sidecar fetch
+  happened, at `<archive url>.sha256`, and that the extraction step was
+  reached. `:592` asserts the prompt names the sidecar URL. `:626` drives the
+  three unreadable routes — an HTML 404 body, a signalling fetch, a non-zero
+  status — each aborting `tidymedia_checksum_unavailable`, with the archive
+  download never attempted and the redirected config root left empty. `:670`
+  asserts a mismatch aborts `tidymedia_checksum_mismatch`, that the message
+  carries both the published and the computed digest, and that a before/after
+  snapshot of `tm_config_dir()` is identical.
+- AC2 — verified. `:693` runs a caller-supplied digest in both cases, asserts
+  no sidecar was fetched on the default source, and asserts a wrong supplied
+  digest still aborts `tidymedia_checksum_mismatch` with nothing registered.
+  `:592` covers the two no-fetch paths' prompts and the one message on the
+  unverified caller-named path (observed live in the targeted run). `:720`
+  drives all four rejected shapes — 63 chars, a trailing `z`, `NA_character_`,
+  length 2 — with `utils::download.file()` mocked to abort if reached; each is
+  an `rlang_error` naming `archive_checksum` and carrying no `tidymedia_*`
+  class.
+- AC3 — verified. `:758` uses both committed fixtures with the real
+  `archive::archive_extract()` in place. Each aborts
+  `tidymedia_archive_unreadable`; the message names the archive path and the
+  install directory; the test walks the whole `$parent` chain asserting
+  `archive_extract.cpp` appears nowhere; and `file.exists(destfile)` is FALSE
+  on both failing paths and on the succeeding control.
+- AC4 — verified. `:806` drives four builds. All three unpacked registers
+  `ffmpeg`, `ffprobe`, `ffplay` and returns `TRUE`; `ffmpeg` + `ffprobe` only
+  registers those two, emits a message naming `ffplay`, returns `TRUE`; each
+  of the two missing-required builds aborts `tidymedia_program_not_extracted`
+  naming the absent program with `rec$set` empty.
+- AC5 — verified. `test-program-management.R:~845` covers both signalling
+  shapes: `download.file()` raising (asserted `tidymedia_download_unavailable`,
+  URL in the message, `$parent` a condition carrying base R's
+  `cannot open URL`) and returning `1L` (same class), with nothing registered
+  in either case.
+- AC6 — verified. `:939` collects every `return()` and `cli_abort()` node from
+  `body(install_on_win)` — seeing through `pkg::fn` — and asserts of each that
+  it hands back a literal `TRUE`/`FALSE` or passes a `class =` beginning
+  `tidymedia_`. The anti-vacuity floor asserts the collected classes contain
+  all five AC1/AC3/AC4/AC5 name. `:968` keeps the discrimination re-runnable:
+  a planted unclassed `cli_abort()` and a planted `return(x)` each read FALSE,
+  a compliant control reads TRUE, and each is asserted to have a non-empty
+  collected domain. `@return` in `man/install_on_win.Rd` names all five
+  aborting outcomes plus the declined confirmation.

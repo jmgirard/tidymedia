@@ -1077,6 +1077,40 @@ test_that("tm_archive_digest() computes SHA-256, pinned to a known answer", {
     tm_archive_digest(f),
     "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
   )
+
+  # And a file that is not there is NULL, not a bare simpleError: the caller
+  # turns that NULL into a classed refusal, which it cannot do for a condition
+  # raised out from under it.
+  expect_null(tm_archive_digest(file.path(tempdir(), "no-such-archive")))
+})
+
+test_that("an archive that vanishes between the fetch and the digest refuses classed", {
+  # The second line of defense behind tm_fetch()'s existence test: whatever
+  # the reason the digest cannot be computed, the refusal is AC5's classed
+  # one naming the URL rather than whatever `digest` happened to raise.
+  tm_redirect_config()
+  tm_redirect_data()
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+
+  rec <- tm_mock_install(confirm = function(prompt) TRUE)
+  testthat::local_mocked_bindings(tm_archive_digest = function(path) NULL)
+  cnd <- tryCatch(install_on_win(install_dir = d), error = function(cnd) cnd)
+  expect_s3_class(cnd, "tidymedia_download_unavailable")
+  expect_identical(rec$extract, list())
+  expect_identical(rec$set, list())
+})
+
+test_that("tm_unpack() returns NULL where the archive cannot even be opened", {
+  # The connection is opened by tm_unpack() itself (T9), so a path that is not
+  # there fails before libarchive is reached -- and has to read as the same
+  # refusal, since the caller only asks whether the unpack produced anything.
+  # `file()` warns on its way to the error it raises; the warning is base R's
+  # and says the same thing, so it is suppressed rather than asserted.
+  expect_null(
+    suppressWarnings(
+      tm_unpack(file.path(tempdir(), "no-such-archive"), tempdir())
+    )
+  )
 })
 
 test_that("a download that does not deliver aborts, keeping the base condition underneath", {

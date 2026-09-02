@@ -200,9 +200,12 @@ test_that("install_on_win()'s own default install dir is R_user_dir()'s ffmpeg s
     "file:///",
     sub("^/", "", chartr("\\", "/", file.path(withr::local_tempdir(), "no-such-build.7z")))
   )
+  # `confirm = FALSE`: this test is about where the default install directory
+  # resolves to, and M101 put a consent gate above the resolution's first
+  # write. The gate has its own tests below.
   suppressWarnings(
     expect_error(
-      install_on_win(download_url = missing_archive),
+      install_on_win(download_url = missing_archive, confirm = FALSE),
       "cannot open URL"
     )
   )
@@ -279,4 +282,189 @@ test_that("tm_confirm() refuses, with the caller's bullets, when no one can be a
   expect_error(tm_confirm("proceed?", "i" = "Pass somehow = FALSE."), "somehow = FALSE")
   # Nothing of the helper's own is asserted about a hatch it was not given.
   expect_error(tm_confirm("proceed?"), "non-interactive session")
+})
+
+
+# install_on_win() asks before it writes (M101) ------------------------------
+
+# The two directories an install can touch, as AC1 states them: every file and
+# every directory beneath each redirected root. A declined or refused call must
+# leave both exactly as it found them.
+tm_dir_snapshot <- function(...) {
+  lapply(c(...), function(r) {
+    list(
+      files = list.files(r, recursive = TRUE, all.files = TRUE),
+      dirs = list.dirs(r)
+    )
+  })
+}
+
+# Records every write install_on_win() would make instead of making it, so a
+# test asserts WHICH calls happened rather than only that the function
+# returned. `confirm` is a function of the prompt returning the answer to
+# give; `NULL` leaves the real tm_confirm() in place.
+tm_mock_install <- function(confirm = NULL, env = parent.frame()) {
+  rec <- new.env(parent = emptyenv())
+  rec$download <- list()
+  rec$extract <- list()
+  rec$set <- list()
+  rec$prompts <- character(0)
+  add <- function(slot, value) rec[[slot]] <- c(rec[[slot]], list(value))
+
+  testthat::local_mocked_bindings(
+    download.file = function(url, destfile, ...) {
+      # The destfile is a fresh tempfile() on every call, so it is held aside
+      # rather than recorded: two runs of the same install must produce equal
+      # records. The extract mock below checks the linkage instead.
+      rec$destfile <- destfile
+      add("download", list(url = url))
+      writeLines("stub archive", destfile)
+      0L
+    },
+    .package = "utils", .env = env
+  )
+  testthat::local_mocked_bindings(
+    archive_extract = function(archive, dir, ...) {
+      add("extract", list(
+        dir = dir,
+        from_download = identical(archive, rec$destfile)
+      ))
+      invisible(NULL)
+    },
+    .package = "archive", .env = env
+  )
+  testthat::local_mocked_bindings(
+    set_program = function(program, location) {
+      add("set", list(program = program, location = location))
+      invisible(NULL)
+    },
+    .env = env
+  )
+  if (!is.null(confirm)) {
+    testthat::local_mocked_bindings(
+      tm_confirm = function(prompt, ...) {
+        rec$prompts <- c(rec$prompts, prompt)
+        confirm(prompt)
+      },
+      .env = env
+    )
+  }
+  rec
+}
+
+test_that("install_on_win() refuses rather than assume consent when no one can be asked", {
+  # AC1. Nothing is mocked below tm_confirm(): the refusal has to happen
+  # before the first write, so the real download and extraction are simply
+  # never reached, and the two snapshots are what says so.
+  config <- tm_redirect_config()
+  data_root <- tm_redirect_data()
+  withr::local_options(rlang_interactive = FALSE)
+  expect_false(rlang::is_interactive())
+
+  before <- tm_dir_snapshot(data_root, config$root)
+  expect_error(install_on_win(), class = "tidymedia_confirmation_unavailable")
+  # The escape hatch is named by install_on_win(), not by the seam, so the
+  # message says the argument this caller actually has.
+  expect_error(install_on_win(), "confirm = FALSE")
+  expect_identical(tm_dir_snapshot(data_root, config$root), before)
+})
+
+test_that("a declined install creates, downloads, extracts and registers nothing", {
+  # AC2. The three mocks would record a call if one were made, so zero
+  # records is evidence about the calls themselves and not only about the
+  # directories they would have written to.
+  config <- tm_redirect_config()
+  data_root <- tm_redirect_data()
+  rec <- tm_mock_install(confirm = function(prompt) FALSE)
+
+  before <- tm_dir_snapshot(data_root, config$root)
+  expect_false(install_on_win())
+  expect_identical(rec$download, list())
+  expect_identical(rec$extract, list())
+  expect_identical(rec$set, list())
+  expect_identical(tm_dir_snapshot(data_root, config$root), before)
+})
+
+test_that("an accepted install downloads, extracts and registers; confirm = FALSE does the same without asking", {
+  # AC3 and AC5, in one block so AC5's "identical to AC3's record" is asserted
+  # against the very record AC3 pinned, over the same URL and directory.
+  tm_redirect_config()
+  tm_redirect_data()
+  u <- "https://example.invalid/ffmpeg-release-essentials.7z"
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+
+  accepted <- tm_mock_install(confirm = function(prompt) TRUE)
+  expect_true(install_on_win(download_url = u, install_dir = d, confirm = TRUE))
+
+  expect_identical(length(accepted$download), 1L)
+  expect_identical(accepted$download[[1]]$url, u)
+  expect_identical(length(accepted$extract), 1L)
+  expect_identical(accepted$extract[[1]]$dir, d)
+  # What is unpacked is what was just downloaded, not some other file.
+  expect_true(accepted$extract[[1]]$from_download)
+  expect_identical(
+    vapply(accepted$set, function(x) x$program, character(1)),
+    c("ffmpeg", "ffprobe", "ffplay")
+  )
+  expect_identical(
+    vapply(accepted$set, function(x) x$location, character(1)),
+    file.path(d, "bin", c("ffmpeg.exe", "ffprobe.exe", "ffplay.exe"))
+  )
+
+  # AC5: someone IS there to ask, and the call still must not ask. The mock
+  # aborts rather than returning a value, so reaching it fails the test
+  # instead of quietly changing what is asserted below.
+  rlang::local_interactive()
+  skipped <- tm_mock_install(
+    confirm = function(prompt) stop("tm_confirm() must not be reached")
+  )
+  expect_true(install_on_win(download_url = u, install_dir = d, confirm = FALSE))
+  expect_identical(skipped$prompts, character(0))
+  expect_identical(skipped$download, accepted$download)
+  expect_identical(skipped$extract, accepted$extract)
+  expect_identical(skipped$set, accepted$set)
+})
+
+test_that("the prompt names the archive, the directory, and every location it overwrites", {
+  # AC4. The prompt is read as the caller handed it over, before menu() ever
+  # formats it, and at a width no wrapping can reach.
+  config <- tm_redirect_config()
+  data_root <- tm_redirect_data()
+  withr::local_options(cli.width = 1000)
+  rec <- tm_mock_install(confirm = function(prompt) TRUE)
+
+  default_url <- "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.7z"
+  default_dir <- file.path(tools::R_user_dir("tidymedia", "data"), "ffmpeg")
+  named_url <- "https://example.invalid/build.7z"
+  named_dir <- file.path(withr::local_tempdir(), "plain")
+  # A directory whose name contains a space and a brace: cli interpolates
+  # every bullet in the calling frame, so a raw `{...}` in a value would abort
+  # the prompt or print a name that does not exist (M44).
+  odd_dir <- file.path(withr::local_tempdir(), "an install {dir}")
+
+  expect_true(install_on_win())
+  expect_true(install_on_win(download_url = named_url, install_dir = named_dir))
+  expect_true(install_on_win(download_url = named_url, install_dir = odd_dir))
+  expect_identical(length(rec$prompts), 3L)
+
+  # The set of files the prompt must name is read off the record of what the
+  # call actually registered, never hand-listed here.
+  registered <- unique(vapply(rec$set, function(x) x$program, character(1)))
+  expect_identical(registered, c("ffmpeg", "ffprobe", "ffplay"))
+  config_files <- vapply(registered, tm_config_file, character(1), USE.NAMES = FALSE)
+  expect_true(all(startsWith(config_files, config$new)))
+
+  expected <- list(
+    c(default_url, default_dir, config_files),
+    c(named_url, named_dir, config_files),
+    c(named_url, odd_dir, config_files)
+  )
+  for (i in seq_along(expected)) {
+    for (needle in expected[[i]]) {
+      expect_true(
+        grepl(needle, rec$prompts[[i]], fixed = TRUE),
+        label = paste0("prompt ", i, " contains ", needle)
+      )
+    }
+  }
 })

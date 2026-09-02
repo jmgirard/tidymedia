@@ -95,15 +95,15 @@ in a non-interactive session; the roxygen correction from candidate (b); a
       branches with `utils::menu` mocked (`.package = "utils"`);
       `rlang::local_interactive()` does not move `base::interactive()`, which
       is what `menu()` gates on, so the mock is the only route to the ask.
-- [ ] T2: Add `confirm = TRUE` to `install_on_win()`'s signature with
+- [x] T2: Add `confirm = TRUE` to `install_on_win()`'s signature with
       `rlang::check_bool()` at the front door (D080), and call `tm_confirm()`
       above the `dir.create()` at `R/program_management.R:286`, so a declined
       call creates nothing; return `FALSE` on decline.
       (RB tripwire: irreversible-api)
-- [ ] T3: Compose the prompt from the resolved `download_url`, the resolved
+- [x] T3: Compose the prompt from the resolved `download_url`, the resolved
       `install_dir`, and the `tm_config_file()` path of each program the call
       registers, routing every user value through a cli field (M44).
-- [ ] T4: Tests for AC1–AC5 in `tests/testthat/test-program-management.R`
+- [x] T4: Tests for AC1–AC5 in `tests/testthat/test-program-management.R`
       beside the M098 block at `:169`, reusing `tm_redirect_config()` /
       `tm_redirect_data()`. Every mock is in-process, so none carries a
       `skip_if` on a binary.
@@ -121,6 +121,8 @@ in a non-interactive session; the roxygen correction from candidate (b); a
 - 2026-09-02: plan gate chose refusing a non-interactive default call over proceeding silently in one, because a scripted install is exactly the case the CRAN policy concern is about and the refusal names its own escape hatch; falsified by a report of the refusal breaking an unattended workflow that has no way to pass `confirm = FALSE`.
 - 2026-09-02: T1 — `tm_confirm()` added: `rlang::is_interactive()` gates the ask, `utils::menu()` asks, no-selection (0) counts as a decline, and the refusal takes the caller's own bullets. Both branches tested with `utils::menu` mocked; each shown red against a planted defect (never-refuses; no-selection-as-approval).
 - 2026-09-02: implement gate chose `confirm` last in the signature over first or a shorter `ask`, because an existing positional `install_on_win(url)` call keeps its meaning; escalation was offered on the tripwire and declined. Prompt shape chosen as an itemized list naming the URL, the directory, and each remembered-location file.
+- 2026-09-02: T2/T3 — `confirm = TRUE` added last in the signature with `rlang::check_bool()`, the consent check sited above `dir.create()`, and a decline returning `FALSE`. The three registrations now loop over one `tm_install_registers` vector, so the prompt cannot promise a different set of writes from the one the call makes.
+- 2026-09-02: T4 — AC1–AC5 tested with in-process mocks (`utils::download.file`, `archive::archive_extract`, `set_program`, `tm_confirm`); no binary, no network. Each shown red against a planted defect: consent below the first write, a prompt dropping the overwritten locations, a decline proceeding anyway, and `confirm = FALSE` still asking. The M098 default-install-dir test now passes `confirm = FALSE`, since it is about where the default resolves, not about consent.
 - 2026-09-02: D079's letter reaches `confirm`'s default and its toggle exemption does not (both `TRUE` and `FALSE` are members of the set the argument ranges over, and `TRUE` is the on position, not the off one); D080 states that exemption rather than the plan ignoring the rule.
 
 ## Decisions

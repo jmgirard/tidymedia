@@ -3749,3 +3749,51 @@ infer at all.
 ships, which gives the removed default a victim and makes the compatible
 default the cheaper answer; or a consumer for which a backend-free default has
 a defined meaning, none of which exists in the repository today.
+
+## D080 — A safety confirmation defaults to its safe position, and a session with no one to ask is refused rather than assumed to consent (2026-09-02, from M101; narrows D079's no-default rule by adding a second exemption beside its toggle-off clause, and leaves D014, D077, D078 and every other part of D079 standing)
+
+`install_on_win()` downloads a third-party archive from a hardcoded URL and
+unpacks it into a persistent user directory, then overwrites three remembered
+program locations — with no confirmation and no `interactive()` gate. M097 and
+M098 moved where it writes; neither changed what it does. M101 adds a
+`confirm =` argument and a consent check above the first write.
+
+**Why D079's exemption does not cover it.** D079 says an exported argument
+added inside D014's window takes no default "where every candidate default is
+one member of the set the argument ranges over", and exempts "an argument whose
+natural default is the off position of a toggle rather than a member". A
+logical `confirm` fails that exemption twice: `TRUE` and `FALSE` are both
+members of `{TRUE, FALSE}`, and `TRUE` is the *on* position, not the off one.
+Read literally, D079 forbids the default. Planning around that silently is what
+the collision rule forbids, so this entry states the exemption instead.
+
+**The rule.** An argument whose two values are *do the safe thing* and *do the
+unsafe thing* takes the safe one as its default. D079's own reasoning is what
+licenses this: its objection to a member-default is that the function then does
+one thing unless the caller says otherwise, and the thing it does is a guess at
+what the caller wanted. A safety confirmation has no guess in it — the safe
+position is not one candidate among equals but the position from which the
+other is reachable by typing it, and the unsafe position is never reachable by
+forgetting. D079's asymmetry argument also inverts here: a defaultless
+`confirm` would make every existing scripted call an error rather than a
+prompt, which is a cost paid for no gain, since the argument's meaning is
+already fixed by what it guards and will not need to change after 0.2.0.
+
+**Refusal, not assumed consent.** Where `rlang::is_interactive()` is `FALSE`
+and `confirm` is at its default, the call aborts with class
+`tidymedia_confirmation_unavailable` and names `confirm = FALSE` as the way
+through. Proceeding would read "nobody objected" as "somebody agreed", which is
+the whole defect; prompting would hang or error. The abort is classed by its
+event, not its severity (D062): what happened is that consent could not be
+obtained, which is true whether it would have been granted or not.
+
+**Where the seam sits.** `tm_confirm()` decides interactivity and asks; it
+carries no caller's argument name of its own, and the bullets naming
+`confirm = FALSE` come from `install_on_win()`, so a second caller with a
+differently spelled escape hatch inherits no wrong hint (M38/M40).
+
+**Falsified by** an unattended workflow that must install and cannot pass
+`confirm = FALSE` — which would say the escape hatch is at the wrong grain, not
+that the default is wrong; or a second confirmation-bearing argument whose safe
+position is genuinely arguable, which would say this rule mistook one clear
+case for a general one.

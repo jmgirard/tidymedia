@@ -1,0 +1,11 @@
+# M098: DESCRIPTION declares the tools the package interfaces, and the data dir follows policy
+
+**Status:** done (2026-09-01, PR #103 https://github.com/jmgirard/tidymedia/pull/103)
+
+**Goal:** Declare FFmpeg and MediaInfo in `DESCRIPTION`'s `SystemRequirements`, and move `install_on_win()`'s default install directory to `tools::R_user_dir()`.
+
+**Outcome:** `DESCRIPTION` gained `SystemRequirements: FFmpeg (https://ffmpeg.org/), MediaInfo (https://mediaarea.net/en/MediaInfo)`, wrapped over two lines and parsing back as one field via `read.dcf()`. `install_on_win()`'s `NULL` branch resolves through a new internal `tm_install_dir()` = `file.path(tools::R_user_dir("tidymedia", "data"), "ffmpeg")`, replacing the inline `rappdirs::user_data_dir()` expression; `rappdirs` stays in `Imports` for `tm_legacy_config_dir()`. The `ffmpeg` subdirectory is preserved: `archive_extract(strip_components = 1)` unpacks into it and the three `set_*()` calls register `bin/*.exe` beneath it. A passed `install_dir` is unaffected, and an FFmpeg installed by an earlier version keeps working — its absolute path was recorded at install time and is what `find_ffmpeg()` reads; its directory is left on disk, so re-running installs a second copy. The new test reaches the exported function's own default under a redirected `R_USER_DATA_DIR`, pinning the directory set created beneath the root and touching no network. `@param install_dir` and `NEWS.md` name the new location.
+
+**Decisions:** none.
+
+**Review:** three-lens fan-out; blame-history and prior-review lenses found nothing. Diff-bug lens: the change itself correct, nine findings in the test and margins — five fixed on the branch (tautological final assertion, config dir not redirected, unnormalized path comparison, malformed `file://` URL and unnamed expected error, NEWS silent on the orphaned old install), three rejected (a criterion clause that never asked the test to assert extraction, an intentional ordering dependency, a field-order nitpick), one absorbed into the `install_on_win()` candidate row (help text says "zip" where the default is a `.7z`). Every criterion verified with fresh evidence; `devtools::check()` 0/0/0, suite 0 failures / 11195 passing / 18 skipped, CI green on all ten legs. Nothing retired or graduated.

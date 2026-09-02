@@ -880,3 +880,110 @@ test_that("a download that does not deliver aborts, keeping the base condition u
   )
   expect_identical(status$set, list())
 })
+
+
+# install_on_win()'s exits are all accounted for (M102 AC6) -------------------
+
+# Collect every `return()` and every `cli::cli_abort()` call in a function's
+# own body. The DOMAIN is derived rather than listed: a new exit added to
+# install_on_win() is collected the day it is written, so the census cannot go
+# stale the way a hand-kept list of sites would.
+#
+# Two node types only, and deliberately: a call to a helper is neither, so the
+# front-door checks and the aborts that originate inside tm_confirm() and
+# set_program() are outside what this can see. AC6 names those rather than
+# claiming them, and T2 sites every classed abort in the body itself so that
+# what the walk cannot see is only what is named.
+tm_collect_exits <- function(fn) {
+  found <- list()
+  walk <- function(node) {
+    if (is.call(node)) {
+      if (identical(tm_call_name(node), "return") ||
+          identical(tm_call_name(node), "cli_abort")) {
+        found[[length(found) + 1L]] <<- node
+      }
+    }
+    if (is.call(node) || is.pairlist(node)) {
+      for (part in as.list(node)) {
+        # A call can hold empty arguments (`x[, 1]`); recursing into one errors.
+        if (!identical(part, quote(expr = ))) walk(part)
+      }
+    }
+  }
+  walk(body(fn))
+  found
+}
+
+# The name a call calls, seeing through `pkg::fn`.
+tm_call_name <- function(node) {
+  head <- node[[1]]
+  if (is.name(head)) return(as.character(head))
+  if (is.call(head) && identical(as.character(head[[1]]), "::")) {
+    return(as.character(head[[3]]))
+  }
+  NA_character_
+}
+
+# The property AC6 asserts of each collected exit: a `return()` hands back a
+# literal TRUE or FALSE, and a `cli_abort()` passes a class beginning
+# `tidymedia_`.
+tm_exit_ok <- function(node) {
+  if (identical(tm_call_name(node), "return")) {
+    value <- node[[2]]
+    return(is.logical(value) && length(value) == 1L && !is.na(value))
+  }
+  class <- node[["class"]]
+  is.character(class) && length(class) == 1L && startsWith(class, "tidymedia_")
+}
+
+test_that("every exit install_on_win() takes in its own body is TRUE/FALSE or classed", {
+  # AC6. The claim is exactly the collected set.
+  exits <- tm_collect_exits(install_on_win)
+  for (node in exits) {
+    expect_true(tm_exit_ok(node), label = deparse1(node))
+  }
+
+  # The floor against a collector that silently under-reads the body: the set
+  # holds the five abort sites AC1, AC3, AC4 and AC5 name. Without this, a
+  # walk that found nothing would satisfy the loop above vacuously.
+  classes <- vapply(
+    exits,
+    function(node) {
+      class <- node[["class"]]
+      if (is.character(class)) class else NA_character_
+    },
+    character(1)
+  )
+  expect_true(all(
+    c(
+      "tidymedia_checksum_unavailable",
+      "tidymedia_checksum_mismatch",
+      "tidymedia_download_unavailable",
+      "tidymedia_archive_unreadable",
+      "tidymedia_program_not_extracted"
+    ) %in% classes
+  ))
+})
+
+test_that("the exit census can fail", {
+  # The collector and the property are only worth their green if they go red
+  # on the two defects they exist to catch, so both are planted here rather
+  # than left to a one-time check that no later reader can re-run.
+  unclassed <- function() cli::cli_abort("something went wrong")
+  non_literal <- function(x) return(x)
+  compliant <- function(x) {
+    if (x) return(FALSE)
+    cli::cli_abort("no", class = "tidymedia_planted")
+  }
+
+  ok <- function(fn) all(vapply(tm_collect_exits(fn), tm_exit_ok, logical(1)))
+  expect_false(ok(unclassed))
+  expect_false(ok(non_literal))
+  expect_true(ok(compliant))
+
+  # And the collector reads a non-empty domain in each case, so "no exits
+  # found" can never be what makes a function look compliant.
+  expect_identical(length(tm_collect_exits(unclassed)), 1L)
+  expect_identical(length(tm_collect_exits(non_literal)), 1L)
+  expect_identical(length(tm_collect_exits(compliant)), 2L)
+})

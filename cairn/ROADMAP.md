@@ -13,7 +13,7 @@ _Last hygiene check: 2026-09-02 (M102 planned: `install_on_win()` verifies the a
 | M100 | Hardware encoding is a backend vocabulary, and videotoolbox is the second member | done | M099 | normal | milestones/archive/M100-videotoolbox-backend.md |
 | M099 | D014's pre-0.2.0 rename window is reviewed before it closes | done | — | normal | milestones/archive/M099-d014-rename-window-review.md |
 | M101 | `install_on_win()` asks before it downloads and installs | done | — | normal | milestones/archive/M101-install-on-win-confirmation.md |
-| M102 | `install_on_win()` verifies the archive and the unpacked programs before it registers anything | review | — | normal | milestones/M102-install-verify-before-register.md |
+| M102 | `install_on_win()` verifies the archive and the unpacked programs before it registers anything | in-progress | — | normal | milestones/M102-install-verify-before-register.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

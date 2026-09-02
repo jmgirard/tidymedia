@@ -1,6 +1,6 @@
 # M102: `install_on_win()` verifies the archive and the unpacked programs before it registers anything
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -71,7 +71,7 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
       shapes are covered — a body it does not recognize as an archive at all,
       and a well-formed 7z header over a corrupt payload — and the downloaded
       temporary file is removed on the failing path as on the succeeding one.
-- [x] AC4: No remembered location is written for a program the extraction did
+- [ ] AC4: No remembered location is written for a program the extraction did
       not produce; `ffmpeg` and `ffprobe` are required, `ffplay` optional. An
       extraction yielding all three writes three config files and returns
       `TRUE`; one yielding `ffmpeg` and `ffprobe` only writes those two, leaves
@@ -97,7 +97,7 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
       outcomes: a declined confirmation, a download that did not deliver, a
       checksum that did not match, an archive that could not be unpacked, and a
       required program that was not produced.
-- [x] AC7: `digest` appears in `DESCRIPTION` `Imports` with a floor version the
+- [ ] AC7: `digest` appears in `DESCRIPTION` `Imports` with a floor version the
       `--only digest` leg of `data-raw/imports-floors.R` passes at, `NEWS.md`
       and `README.Rmd`'s installer paragraph name the verification and the new
       argument, and the profile's checks are clean: `devtools::document()`
@@ -182,6 +182,8 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
 
 - 2026-09-02: T9 verified where the defect lived. CI on 59dc788 is green on all ten checks, `windows-latest (release)` included (14m20s) — the leg that was red on 9ae0bfe at `expect_false(file.exists(rec$destfile))` for `corrupt-payload.7z`. macOS, the four Ubuntu legs, pkgdown and coverage are green alongside it. AC3 ticked on that run.
 - 2026-09-02: AC7's evidence re-produced end to end, the floor leg this time run to completion: `Rscript data-raw/imports-floors.R --only digest` resolved `digest 0.6.37` from `~/floor-libs/digest` — the version and the DIRECTORY, which is the script's load-bearing control against a failed install falling through to the user library — and reported `pinned pass=11206 fail=0 err=0 skip=18` against an identical baseline, so no floor moved and the pinned run skipped no more than the baseline. `devtools::document()` produces no diff; `devtools::test()` FAIL 0, WARN 10, SKIP 18, PASS 11570 (the 10 warnings pre-existing, none on a touched file); `devtools::check()` Status OK, 0 errors / 0 warnings / 0 notes. AC7 ticked.
+
+- 2026-09-02: review pass 2 returns M102 to `in-progress`. Two gate failures. (1) The consistency gate: `cairn_validate` `weight caps` FAILs at 153 plan-owned lines against the <150 cap — T9's addition crossed it after pass 1 recorded all 16 checks passing — and the remedy, compressing the heaviest plan-owned section, is amend-via-gate, not review-side. (2) The return floor: the [O] lens demonstrated AC4 failing, `unpacked` being computed by `file.exists()` over the install dir after extraction rather than from what the extraction produced, so on a re-install into the stable default `install_dir` the previous run's binaries satisfy the check and a build missing `ffmpeg` returns `TRUE` — reproduced, and confirmed against `R/program_management.R:649`. AC4 unticked; AC7 unticked for carrying a tick with no evidence line. AC3 verified and ticked on CI at `59dc788`, all ten checks green including `windows-latest (release)`. Fan-out returned 8 findings across three lenses: 5 actioned and returned ([O]1 the unguarded `tm_archive_digest()` escaping unclassed, [O]2, [O]4, [O]5, [P]1 the stale `@param confirm` "will overwrite"), 1 actioned as a question for the fix pass ([O]3), 2 rejected with reason. Second defect return on this milestone.
 
 ## Decisions
 
@@ -377,3 +379,135 @@ M091 and M097.
 failing, and none is a load-bearing defect in what `install_on_win()` does for
 its callers: [O]1 is a hole against the Goal's wording rather than any
 criterion's, and it is closed. Status stays `review`.
+
+### Second pass — 2026-09-02, at `fc5c2df`
+
+Re-entered under the session-start resume route: PR #106 open, no recorded
+step-7 approval. `origin/master` had still not moved (0 commits ahead of the
+branch), so no merge was needed. Suite run fresh at `fc5c2df`:
+`devtools::test()` — FAIL 0, WARN 10, SKIP 18, PASS 11570; the 10 warnings are
+the same pre-existing ones, none on a touched file. That run re-covers the AC1,
+AC2, AC5 and AC6 tests whose first-pass evidence was recorded at `9ae0bfe`.
+
+- AC3 — verified, ticked. The Windows failure the first pass recorded is fixed
+  by T9 and verified where it lived: `gh api repos/jmgirard/tidymedia/commits/
+  59dc788/check-runs` reports all ten checks `success`, `windows-latest
+  (release)` included — the leg red at `9ae0bfe` on
+  `expect_false(file.exists(rec$destfile))` for `corrupt-payload.7z`. `fc5c2df`
+  is docs-only on top of that commit. Locally the AC3 test also asserts the
+  mechanism directly (`showConnections()` before/after on both fixtures and the
+  succeeding control), which is what makes the fix visible off Windows.
+- AC4 — **FAILED**, unticked. See [O]2 below: `unpacked` is computed by
+  `file.exists()` over `<install_dir>/bin/*.exe` after extraction
+  (`R/program_management.R:649`), not from what the extraction produced, and
+  `archive_extract()` does not clear the directory. `install_dir` defaults to
+  the stable `tm_install_dir()`, so on any re-install the previous run's
+  binaries satisfy the check. Reproduced by the reviewer with `bin/`
+  pre-seeded with `ffmpeg.exe` and `ffplay.exe` and the extraction mock
+  producing only `ffprobe.exe`: the call returned `TRUE` and registered all
+  three. AC4's first clause — "No remembered location is written for a program
+  the extraction did not produce" — is false in the ordinary repeat-install
+  case. Confirmed against the implementation at `R/program_management.R:
+  649-652` and the `install_dir = NULL` default at `:514`, `:525`.
+- AC7 — unticked. It carried a tick with no evidence line in this section,
+  which AC fencing treats as unverified; the AC4 fix changes the registration
+  path, so `devtools::check()` and the `--only digest` floor leg have to be
+  re-run against the corrected tree regardless.
+
+### Consistency gate — second pass
+
+- `cairn_validate.py`: **FAIL**, exit 1. `weight caps (1)` —
+  `cairn/milestones/M102-install-verify-before-register.md: 153 plan-owned
+  lines (cap <150; shed >=4)`; heaviest first: Acceptance criteria 68 · Tasks
+  37 · Scope 20 · Coverage 10 · Goal 8. T9's addition after the first pass
+  (which recorded all 16 checks passing) is what crossed the line. The remedy —
+  compressing the single heaviest plan-owned section in one rewrite — is
+  plan-owned and amend-via-gate, so it cannot be done review-side; it returns
+  to `/milestone-implement` step 6 with the AC4 fix.
+- The other 15 checks PASS; advisories clean. No `DESIGN.md` principle changed,
+  so `cairn_impact.py` was not run.
+- Profile toolchain checks not re-run past `devtools::test()`: the gate had
+  already failed and the code is about to change.
+
+### Independent review — second pass
+
+Full three-lens fan-out over `git diff origin/master..HEAD`. The first pass ran
+at `9ae0bfe`; `59dc788` (T9) is code no lens had seen. Findings verbatim where
+reported; nothing dropped.
+
+**[O] diff-bug lens — 7 findings.**
+
+1. *"`tm_archive_digest(tf)` is unguarded — an unclassed `simpleError` escapes
+   `install_on_win()`"* (`R/program_management.R:622`). `digest::digest(path,
+   file = TRUE)` aborts with a bare `simpleError` when the file is not there,
+   and `tm_fetch()` returns `TRUE` on `download.file()` status 0, which is not
+   a promise a readable file arrived — the same premise the first pass accepted
+   when it closed the identical hole on the sidecar `readLines()`. Reproduced
+   with `download.file` mocked to return `0L` and write nothing: classes
+   `simpleError, error, condition`. Falsifies the Goal's "every failure ...
+   returns `FALSE` or carries a `tidymedia_*` class"; invisible to AC6's census
+   because it is neither a `return()` nor a `cli_abort()` node. **Actioned —
+   returned with the AC4 fix**, same shape as the first pass's [O]1.
+2. *"Registration reads the disk, not the extraction — a previous install's
+   leftovers count as 'produced'"* — see AC4 above. **Return-floor finding.**
+   The reviewer notes the information is already free: `archive_extract()`
+   returns the extracted file list and `tm_unpack()` discards it
+   (`R/program_management.R:396-399`); returning it and intersecting with
+   `tm_install_registers` makes the implementation match AC4's wording.
+3. *"The 'will not be verified' notice comes after the consent prompt"*
+   (`:562-567`) — the user consents before being told this install verifies
+   nothing. **Actioned as a follow-up question for the fix pass**; no AC covers
+   it (AC2 asks only for "one message"), so it is not a floor finding.
+4. *"Test-side: `install_dir` is reused across loop iterations, weakening
+   AC1/AC2 evidence."* The three-sidecar-shapes and case-insensitive-digest
+   tests bind `d` once outside the loop; combined with [O]2 the on-disk half of
+   later iterations is contaminated. **Actioned — returned**: one
+   `local_tempdir()` per iteration.
+5. *"`tm_collect_exits()`/`tm_exit_ok()` are brittle on two node shapes."* A
+   bare `return()` would throw *subscript out of bounds* rather than fail the
+   assertion, and `class = c("tidymedia_x", "y")` would read as non-compliant.
+   Test-only, neither shape exists today. **Actioned — returned** as a small
+   hardening with the AC6 test.
+6. *"`readLines()`'s warning handler turns any warning into
+   `tidymedia_checksum_unavailable`."* `warn = FALSE` already covers the
+   incomplete-final-line case, so what remains (embedded nul, encoding)
+   converts a partly-read body into a refusal. **Rejected:** the net is wider
+   than the comment describes but errs safe, and AC1 requires exactly this
+   class on an unreadable body.
+7. *"`check_sha256()` has no direct unit test"* (`R/utils.R:227-259`); the
+   `allow_null = FALSE` branch is unreached. **Rejected:** the four-shape
+   front-door test covers the criterion, and the repo tests helpers indirectly
+   by doctrine.
+
+The lens also reports trying and failing to break T9: `archive_extract()`'s
+path form had the identical leak, the connection form is the same read
+mechanism, and after a successful extraction the connection is destroyed, which
+`tm_close()`'s `tryCatch` handles. No defect found in T9.
+
+**[S] blame-history lens — 0 findings.** Every change traces to a recorded
+decision or a prior finding; the `cli_warn()`/`return(FALSE)` → classed
+`cli_abort()` move is documented in `NEWS.md` and `@return` and follows
+`DESIGN.md`'s own convention; the conditional registration fixes a latent bug
+on `master` rather than removing intended behavior; D080/D081 are cited
+accurately; T9 repairs the AC3 regression without resurrecting anything; and
+`tm_unpack()` has no other call site.
+
+**[S] prior-review-record lens — 1 finding.**
+
+1. *"The 'will overwrite' → 'may overwrite' fix from the first pass's [S]1 was
+   applied inconsistently."* `install_on_win()`'s own `@param confirm` block
+   (`R/program_management.R:483-488`) still reads "the remembered program
+   locations it **will** overwrite" — the exact wording that pass called wrong
+   — and it is regenerated into `man/install_on_win.Rd:24-27`, which this diff
+   touches. The shipped help page therefore contradicts the corrected
+   `tm_install_details()` docblock a few lines below it. **Actioned —
+   returned.** No archived `## Review` section touches these files, and
+   `gh api .../pulls/comments` returned `[]` again, so the live first-pass
+   record was the only prior-review surface.
+
+**Return floor.** Met. [O]2 demonstrates AC4 failing inside its own domain, on
+the ordinary repeat-install path, and the repair is a procedure over that
+domain (use the extraction's file list) rather than a widening of an
+author-recalled enumeration — so this is a defect return, not an amendment
+return. Second defect return on M102; the thrash rule's third-return threshold
+is not reached.

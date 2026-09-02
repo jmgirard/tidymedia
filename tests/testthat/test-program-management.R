@@ -229,3 +229,54 @@ test_that("install_on_win()'s own default install dir is R_user_dir()'s ffmpeg s
     character(0)
   )
 })
+
+
+# tm_confirm() (M101) --------------------------------------------------------
+
+test_that("tm_confirm() returns the reader's answer when someone can be asked", {
+  # T1's ask branch. `rlang::local_interactive()` moves what tm_confirm()
+  # gates on but not `base::interactive()`, which is what menu() itself
+  # refuses on, so the mock is the only route into this branch.
+  rlang::local_interactive()
+  answers <- c(1L, 2L, 0L)
+  seen <- list()
+  testthat::local_mocked_bindings(
+    menu = function(choices, graphics = FALSE, title = NULL) {
+      seen[[length(seen) + 1L]] <<- list(choices = choices, title = title)
+      answers[[length(seen)]]
+    },
+    .package = "utils"
+  )
+
+  expect_true(tm_confirm("proceed?"))
+  expect_false(tm_confirm("proceed?"))
+  # 0 is what menu() returns when the reader answers nothing: a decline, not
+  # an approval.
+  expect_false(tm_confirm("proceed?"))
+
+  expect_identical(length(seen), 3L)
+  for (call in seen) {
+    expect_identical(call$choices, c("Yes", "No"))
+    expect_identical(call$title, "proceed?")
+  }
+})
+
+test_that("tm_confirm() refuses, with the caller's bullets, when no one can be asked", {
+  # T1's refusal branch, and the seam property D080 states: the message names
+  # the escape hatch its CALLER supplied, so the helper carries no argument
+  # name of its own. A menu() mock that aborts proves the ask is never
+  # reached rather than merely that the abort happened first.
+  testthat::local_mocked_bindings(
+    menu = function(...) stop("menu() must not be reached"),
+    .package = "utils"
+  )
+  withr::local_options(rlang_interactive = FALSE)
+
+  expect_error(
+    tm_confirm("proceed?", "i" = "Pass {.code somehow = FALSE} to skip."),
+    class = "tidymedia_confirmation_unavailable"
+  )
+  expect_error(tm_confirm("proceed?", "i" = "Pass somehow = FALSE."), "somehow = FALSE")
+  # Nothing of the helper's own is asserted about a hatch it was not given.
+  expect_error(tm_confirm("proceed?"), "non-interactive session")
+})

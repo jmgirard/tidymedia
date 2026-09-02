@@ -251,6 +251,35 @@ set_ffplay <- function(location) {
 }
 
 
+# tm_confirm() ------------------------------------------------------------
+
+# Ask the caller to approve an action before it happens, and refuse rather
+# than assume consent where there is no one to ask (D080). The seam carries no
+# caller's argument name of its own: the caller supplies the bullets that name
+# its own escape hatch, so a second caller whose hatch is spelled differently
+# inherits no wrong hint (M38/M40).
+#
+# `prompt` arrives already formatted -- the caller runs its own values through
+# cli, so a path containing braces cannot be re-interpolated here (M44).
+#
+# `rlang::is_interactive()` decides whether anyone can be asked; it honors
+# `rlang::local_interactive()` and the `rlang_interactive` option, which is how
+# the suite reaches the refusal branch. `utils::menu()` gates on
+# `base::interactive()` instead, which those do not move, so the ask branch is
+# reachable in a test only through a mock of `menu()`.
+tm_confirm <- function(prompt, ..., call = rlang::caller_env()) {
+  if (!rlang::is_interactive()) {
+    cli::cli_abort(
+      c("Can't ask for confirmation in a non-interactive session.", ...),
+      class = "tidymedia_confirmation_unavailable",
+      call = call
+    )
+  }
+  # menu() returns 0 when the reader answers nothing, which is a decline.
+  utils::menu(c("Yes", "No"), title = prompt) == 1L
+}
+
+
 # install_on_win() --------------------------------------------------------
 
 #' Install FFmpeg on Windows

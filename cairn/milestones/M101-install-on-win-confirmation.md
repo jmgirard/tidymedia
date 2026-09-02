@@ -1,12 +1,12 @@
 # M101: `install_on_win()` asks before it downloads and installs
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m101-install-on-win-confirmation`
 
 ## Goal
 
@@ -86,7 +86,7 @@ in a non-interactive session; the roxygen correction from candidate (b); a
 
 ## Tasks
 
-- [ ] T1: Add internal `tm_confirm(prompt, ..., call)` to
+- [x] T1: Add internal `tm_confirm(prompt, ..., call)` to
       `R/program_management.R`: under `rlang::is_interactive()` ask via
       `utils::menu(c("Yes", "No"), title = prompt)` and return the answer as a
       logical; otherwise `cli::cli_abort()` with class
@@ -119,6 +119,8 @@ in a non-interactive session; the roxygen correction from candidate (b); a
 - 2026-09-02: criteria audit ran in FULL mode (user-facing tier) and returned 17 findings, all disposed here and none deferred. Fixed without a question: AC1's ungrammatical snapshot clause and its wrong `tm_redirect_config()` return shape (that helper returns a list, so `$root`), the unpinned condition class, `tm_confirm()`'s missing message slot, AC2's uncovered `dir.create()`, AC3's unpinned `download.file()` return, AC4's hand-listed config paths and its console-width and brace-form gaps, AC5's delegated assertions, AC6's `grep -c 'zip'` (which failed a correct "7zip" and passed a wrong "ZIP installer"), AC7's "Status: OK plus justified NOTEs" contradiction and its review-write-up clause (an instrument property under D-118), and Coverage's missing T1 on AC3 and AC5. Verified at the machine: under `rlang::local_interactive()`, `base::interactive()` stays `FALSE`, so `utils::menu()` refuses — AC2/AC3/AC5 name the mock rather than that helper, and T1 says why.
 - 2026-09-02: plan gate chose a `confirm =` argument defaulting to its safe position over a session option carrying the consent, because consent is per-call and an option would let one `options()` call at the top of a script silently authorize every later install; falsified by a caller for whom the consent is genuinely a session-wide setting rather than a per-call answer.
 - 2026-09-02: plan gate chose refusing a non-interactive default call over proceeding silently in one, because a scripted install is exactly the case the CRAN policy concern is about and the refusal names its own escape hatch; falsified by a report of the refusal breaking an unattended workflow that has no way to pass `confirm = FALSE`.
+- 2026-09-02: T1 — `tm_confirm()` added: `rlang::is_interactive()` gates the ask, `utils::menu()` asks, no-selection (0) counts as a decline, and the refusal takes the caller's own bullets. Both branches tested with `utils::menu` mocked; each shown red against a planted defect (never-refuses; no-selection-as-approval).
+- 2026-09-02: implement gate chose `confirm` last in the signature over first or a shorter `ask`, because an existing positional `install_on_win(url)` call keeps its meaning; escalation was offered on the tripwire and declined. Prompt shape chosen as an itemized list naming the URL, the directory, and each remembered-location file.
 - 2026-09-02: D079's letter reaches `confirm`'s default and its toggle exemption does not (both `TRUE` and `FALSE` are members of the set the argument ranges over, and `TRUE` is the on position, not the off one); D080 states that exemption rather than the plan ignoring the rule.
 
 ## Decisions

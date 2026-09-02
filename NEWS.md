@@ -2,6 +2,12 @@
 
 ## Requirements
 
+* tidymedia now imports `digest`, which is what computes the SHA-256 of a
+  downloaded FFmpeg archive. Base R gained `tools::sha256sum()` in 4.5.0, four
+  releases above the `R (>= 4.1.0)` this package declares; taking a small,
+  pure-C dependency rather than asking everyone below 4.5.0 to give up the
+  package was the trade made.
+
 * The dependency versions tidymedia declares are now measured rather than
   assumed: the package's test suite has been run against the exact version of
   each package `Imports` names. One of them was wrong. `rlang` is now
@@ -24,6 +30,27 @@
   sits above the highest R version any declared dependency floor asks for.
 
 ## Configuration
+
+* `install_on_win()` now checks what it downloaded before it changes anything,
+  and remembers a program's location only if the archive actually contained
+  that program. On the build tidymedia fetches by default, it downloads the
+  SHA-256 digest gyan.dev publishes beside the archive — before the archive
+  itself, so a source that cannot produce one refuses in a second rather than
+  after a long download — and refuses to unpack anything whose digest does not
+  match. For a build you name yourself, pass its digest as the new
+  `archive_checksum`; without one, the call installs as before but says the
+  archive was not verified. Note that the digest travels from the same host
+  over the same connection as the archive, so this catches a corrupted or
+  truncated download, not a substituted one.
+
+* `install_on_win()`'s failures now carry conditions you can catch by class,
+  where they used to escape as base R and libarchive text: a download that did
+  not deliver, a digest that could not be fetched or read, a digest that did
+  not match, an archive that could not be unpacked, and a required program the
+  archive did not contain. `ffmpeg` and `ffprobe` are required — a build
+  missing either leaves every remembered location untouched — while `ffplay`
+  is optional, and an install without it succeeds and says so. The temporary
+  download is removed whether the install succeeds or fails.
 
 * `install_on_win()` now asks before it downloads or installs anything. The
   prompt names the archive it will fetch, the directory it will unpack into,

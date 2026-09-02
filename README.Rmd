@@ -64,7 +64,7 @@ devtools::install_github("jmgirard/tidymedia")
 **Windows**
 
 1. Install the `tidymedia` package in R.
-2. Run `tidymedia::install_on_win()` in R and confirm the prompt, which names the archive it will download, the directory it will unpack into, and the program locations it will overwrite.
+2. Run `tidymedia::install_on_win()` in R and confirm the prompt, which names the digest and the archive it will download, the directory it will unpack into, and the program locations it will overwrite. The archive is checked against the SHA-256 digest gyan.dev publishes beside it before anything is unpacked, and no program location is remembered unless the extraction produced that program. To install from a different build, pass its address and its digest: `install_on_win(download_url = ..., archive_checksum = ...)`.
 
 **macOS Homebrew Install**
 

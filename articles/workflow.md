@@ -67,28 +67,34 @@ jobs <- tibble::tibble(
 standardize_video_batch(jobs, width = 1280, height = 720, fps = 30)
 ```
 
-Re-encoding a large study can be slow on the CPU. If the machine has an
-NVIDIA GPU and an nvenc-capable FFmpeg,
-[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
-and
+Re-encoding a large study can be slow on the CPU.
+[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
 [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
-accept `hardware = "nvenc"` to encode on the GPU:
+and the other verbs that re-encode video accept `hardware =` to move
+that encode onto the machine’s video hardware. There are two backends:
+`"nvenc"` for an NVIDIA GPU with an nvenc-capable FFmpeg, and
+`"videotoolbox"` for Apple hardware on macOS. Name the one this machine
+has, and check for it under the same name first:
 
 ``` r
 
-# Check availability first (reflects the FFmpeg build, not a guaranteed GPU)
-has_hardware_encoder("h264")
+# Check availability first: this reflects the FFmpeg build, not a guarantee
+# that the hardware behind it works at run time
+has_hardware_encoder("h264", "videotoolbox")
 
 standardize_video_batch(
   jobs, width = 1280, height = 720, fps = 30,
-  hardware = "nvenc"
+  hardware = "videotoolbox"
 )
 ```
 
-If nvenc is unavailable this errors by default, so a shared script never
-silently changes codec; pass `fallback = TRUE` to re-encode in software
-instead. Hardware *decoding* (`-hwaccel`) and GPU filter pipelines are
-out of scope — reach for the
+If the backend you named is unavailable this errors by default, so a
+shared script never silently changes codec; pass `fallback = TRUE` to
+re-encode in software instead. The two backends cover different codec
+families — nvenc h264, hevc and av1, videotoolbox h264 and hevc — and
+asking one for a family it has no encoder for is an error naming that
+backend and that family. Hardware *decoding* (`-hwaccel`) and GPU filter
+pipelines are out of scope — reach for the
 [`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)
 escape hatch there.
 

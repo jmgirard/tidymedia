@@ -6,16 +6,16 @@ from an MP4 to .aac or .m4a, not .mp3). Name an encoder
 instead (audio_codec = "libmp3lame") to transcode that stream, or pass
 NULL to emit no codec option at all and let the output extension pick
 the encoder. Each argument governs only its own output file. Where the video
-is re-encoded, hardware = "nvenc" moves that encode onto an NVIDIA
-GPU; the audio output is never affected.'><meta property="og:description" content='By default each stream is copied, not re-encoded (audio_codec =
+is re-encoded, hardware = "nvenc" or "videotoolbox" moves
+that encode onto a GPU; the audio output is never affected.'><meta property="og:description" content='By default each stream is copied, not re-encoded (audio_codec =
 "copy", video_codec = "copy"): separation is lossless and fast, but
 each output container must support the source codec (e.g. write AAC audio
 from an MP4 to .aac or .m4a, not .mp3). Name an encoder
 instead (audio_codec = "libmp3lame") to transcode that stream, or pass
 NULL to emit no codec option at all and let the output extension pick
 the encoder. Each argument governs only its own output file. Where the video
-is re-encoded, hardware = "nvenc" moves that encode onto an NVIDIA
-GPU; the audio output is never affected.'></head><body>
+is re-encoded, hardware = "nvenc" or "videotoolbox" moves
+that encode onto a GPU; the audio output is never affected.'></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -64,8 +64,8 @@ from an MP4 to <code>.aac</code> or <code>.m4a</code>, not <code>.mp3</code>). N
 instead (<code>audio_codec = "libmp3lame"</code>) to transcode that stream, or pass
 <code>NULL</code> to emit no codec option at all and let the output extension pick
 the encoder. Each argument governs only its own output file. Where the video
-is re-encoded, <code>hardware = "nvenc"</code> moves that encode onto an NVIDIA
-GPU; the audio output is never affected.</p>
+is re-encoded, <code>hardware = "nvenc"</code> or <code>"videotoolbox"</code> moves
+that encode onto a GPU; the audio output is never affected.</p>
     </div>
 
     <div class="section level2">
@@ -76,7 +76,7 @@ GPU; the audio output is never affected.</p>
 <span>  <span class="va">videofile</span>,</span>
 <span>  audio_codec <span class="op">=</span> <span class="st">"copy"</span>,</span>
 <span>  video_codec <span class="op">=</span> <span class="st">"copy"</span>,</span>
-<span>  hardware <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"nvenc"</span><span class="op">)</span>,</span>
+<span>  hardware <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"nvenc"</span>, <span class="st">"videotoolbox"</span><span class="op">)</span>,</span>
 <span>  fallback <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  audio_stream <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -117,17 +117,19 @@ video losslessly; a codec name (e.g. <code>"libx264"</code>) transcodes it;
 
 <dt id="arg-hardware">hardware<a class="anchor" aria-label="anchor" href="#arg-hardware"></a></dt>
 <dd><p>The encoder backend for <code>videofile</code>: <code>"none"</code>
-(default, the software <code>video_codec</code>) or <code>"nvenc"</code> for NVIDIA GPU
-encoding, which uses the nvenc encoder for <code>video_codec</code>'s family
-(e.g. <code>"libx264"</code> becomes <code>"h264_nvenc"</code>), assuming the H.264
-family when <code>video_codec = NULL</code>. Only video is encoded on the GPU, so
-this never affects <code>audiofile</code>. Because this verb's video default is a
-stream copy, which runs no encoder at all, <code>hardware = "nvenc"</code>
-alongside <code>video_codec = "copy"</code> is an error: name an encoder or pass
-<code>video_codec = NULL</code>. See <code><a href="hardware_encoder.html">has_hardware_encoder</a></code> for availability and
-its caveats.
-Resolving <code>"nvenc"</code> asks this FFmpeg build which encoders it has, so
-the first <code>"nvenc"</code> call that re-encodes the video runs the binary
+(default, the software <code>video_codec</code>), <code>"nvenc"</code> for NVIDIA
+GPU encoding, or <code>"videotoolbox"</code> for Apple GPU encoding, each
+using that backend's encoder for <code>video_codec</code>'s family (e.g.
+<code>"libx264"</code> becomes <code>"h264_nvenc"</code> or
+<code>"h264_videotoolbox"</code>), assuming the H.264 family when
+<code>video_codec = NULL</code>. Only video is encoded on the GPU, so this
+never affects <code>audiofile</code>. Because this verb's video default is a
+stream copy, which runs no encoder at all, a non-<code>"none"</code>
+<code>hardware</code> alongside <code>video_codec = "copy"</code> is an error: name
+an encoder or pass <code>video_codec = NULL</code>. See
+<code><a href="hardware_encoder.html">has_hardware_encoder</a></code> for availability and its caveats.
+Resolving a hardware backend asks this FFmpeg build which encoders it has,
+so the first such call that re-encodes the video runs the binary
 while the command is built, even under <code>run = FALSE</code>. The answer is
 remembered for the rest of the R session; see
 <code><a href="refresh_ffmpeg_capabilities.html">refresh_ffmpeg_capabilities</a></code> to discard it.
@@ -136,10 +138,14 @@ without probing.</p></dd>
 
 
 <dt id="arg-fallback">fallback<a class="anchor" aria-label="anchor" href="#arg-fallback"></a></dt>
-<dd><p>A logical: when <code>hardware = "nvenc"</code> but nvenc is
-unavailable, encode in software with a message (<code>TRUE</code>) instead of
-aborting (<code>FALSE</code>, default). With <code>video_codec = NULL</code> the
-fallback leaves the codec unset rather than injecting one.</p></dd>
+<dd><p>A logical: when a non-<code>"none"</code> <code>hardware</code> is
+requested but its encoder is unavailable, encode in software with a
+message (<code>TRUE</code>) instead of aborting (<code>FALSE</code>, default). With
+<code>video_codec = NULL</code> the fallback leaves the codec unset rather
+than injecting one.
+A <code>video_codec</code> in a family that backend has no encoder for is a
+wrong argument rather than an absent encoder, so it aborts whatever
+<code>fallback</code> says.</p></dd>
 
 
 <dt id="arg-audio-stream">audio_stream<a class="anchor" aria-label="anchor" href="#arg-audio-stream"></a></dt>
@@ -247,7 +253,7 @@ mapped, the track count cannot be what FFmpeg objected to) or when
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="ffm_map.html">ffm_map()</a></code> and <code><a href="ffm_codec.html">ffm_codec()</a></code>, the builders it wraps;
-<code><a href="hardware_encoder.html">has_hardware_encoder()</a></code> for the <code>hardware = "nvenc"</code> toggle;
+<code><a href="hardware_encoder.html">has_hardware_encoder()</a></code> for the <code>hardware</code> toggle;
 <code><a href="extract_audio.html">extract_audio()</a></code> to pull out just the audio;
 <code><a href="probe_container.html">probe_audio()</a></code> to list an input's audio tracks.</p>
 <p>Other task verb functions:

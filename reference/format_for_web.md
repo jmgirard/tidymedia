@@ -10,7 +10,7 @@ dimensions down to even values as required by the codec.
 format_for_web(
   infile,
   outfile,
-  hardware = c("none", "nvenc"),
+  hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
   audio_stream = NULL,
   run = TRUE
@@ -29,11 +29,14 @@ format_for_web(
 
 - hardware:
 
-  The encoder backend: `"none"` (default, software libx264) or `"nvenc"`
-  for NVIDIA GPU H.264 encoding (`"h264_nvenc"`) when available. See
+  The encoder backend: `"none"` (default, software libx264), `"nvenc"`
+  for NVIDIA GPU H.264 encoding (`"h264_nvenc"`), or `"videotoolbox"`
+  for Apple GPU H.264 encoding (`"h264_videotoolbox"`). The backend you
+  name is the one used; an unavailable one aborts unless
+  `fallback = TRUE`. See
   [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md).
-  Resolving `"nvenc"` asks this FFmpeg build which encoders it has, so
-  the first `"nvenc"` call that re-encodes the video runs the binary
+  Resolving a hardware backend asks this FFmpeg build which encoders it
+  has, so the first such call that re-encodes the video runs the binary
   while the command is built, even under `run = FALSE`. The answer is
   remembered for the rest of the R session; see
   [`refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
@@ -41,9 +44,11 @@ format_for_web(
 
 - fallback:
 
-  A logical: when `hardware = "nvenc"` but nvenc is unavailable,
-  re-encode with software libx264 and a message (`TRUE`) instead of
-  aborting (`FALSE`, default).
+  A logical: when a non-`"none"` `hardware` is requested but its encoder
+  is unavailable, re-encode with software libx264 and a message (`TRUE`)
+  instead of aborting (`FALSE`, default). A `video_codec` in a family
+  that backend has no encoder for is a wrong argument rather than an
+  absent encoder, so it aborts whatever `fallback` says.
 
 - audio_stream:
 
@@ -89,7 +94,7 @@ and
 [`ffm_pixel_format()`](https://jmgirard.github.io/tidymedia/reference/ffm_pixel_format.md),
 among the builders it wraps;
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-for the `hardware = "nvenc"` toggle;
+for the `hardware` toggle;
 [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
 for a configurable re-encode;
 [`format_for_web_batch()`](https://jmgirard.github.io/tidymedia/reference/format_for_web_batch.md)

@@ -115,23 +115,31 @@ a <code>*_batch()</code> companion like this one:</p>
 <span>  output <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">sub</a></span><span class="op">(</span><span class="st">"/raw/"</span>, <span class="st">"/std/"</span>, <span class="va">recordings</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/standardize_video_batch.html">standardize_video_batch</a></span><span class="op">(</span><span class="va">jobs</span>, width <span class="op">=</span> <span class="fl">1280</span>, height <span class="op">=</span> <span class="fl">720</span>, fps <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span></code></pre></div>
-<p>Re-encoding a large study can be slow on the CPU. If the machine has
-an NVIDIA GPU and an nvenc-capable FFmpeg,
-<code><a href="../reference/standardize_video.html">standardize_video()</a></code> and <code><a href="../reference/format_for_web.html">format_for_web()</a></code>
-accept <code>hardware = "nvenc"</code> to encode on the GPU:</p>
+<p>Re-encoding a large study can be slow on the CPU.
+<code><a href="../reference/standardize_video.html">standardize_video()</a></code>, <code><a href="../reference/format_for_web.html">format_for_web()</a></code> and the
+other verbs that re-encode video accept <code>hardware =</code> to move
+that encode onto the machine’s video hardware. There are two backends:
+<code>"nvenc"</code> for an NVIDIA GPU with an nvenc-capable FFmpeg, and
+<code>"videotoolbox"</code> for Apple hardware on macOS. Name the one
+this machine has, and check for it under the same name first:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Check availability first (reflects the FFmpeg build, not a guaranteed GPU)</span></span>
-<span><span class="fu"><a href="../reference/hardware_encoder.html">has_hardware_encoder</a></span><span class="op">(</span><span class="st">"h264"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Check availability first: this reflects the FFmpeg build, not a guarantee</span></span>
+<span><span class="co"># that the hardware behind it works at run time</span></span>
+<span><span class="fu"><a href="../reference/hardware_encoder.html">has_hardware_encoder</a></span><span class="op">(</span><span class="st">"h264"</span>, <span class="st">"videotoolbox"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/standardize_video_batch.html">standardize_video_batch</a></span><span class="op">(</span></span>
 <span>  <span class="va">jobs</span>, width <span class="op">=</span> <span class="fl">1280</span>, height <span class="op">=</span> <span class="fl">720</span>, fps <span class="op">=</span> <span class="fl">30</span>,</span>
-<span>  hardware <span class="op">=</span> <span class="st">"nvenc"</span></span>
+<span>  hardware <span class="op">=</span> <span class="st">"videotoolbox"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>If nvenc is unavailable this errors by default, so a shared script
-never silently changes codec; pass <code>fallback = TRUE</code> to
-re-encode in software instead. Hardware <em>decoding</em>
-(<code>-hwaccel</code>) and GPU filter pipelines are out of scope —
-reach for the <code><a href="../reference/ffmpeg.html">ffmpeg()</a></code> escape hatch there.</p>
+<p>If the backend you named is unavailable this errors by default, so a
+shared script never silently changes codec; pass
+<code>fallback = TRUE</code> to re-encode in software instead. The two
+backends cover different codec families — nvenc h264, hevc and av1,
+videotoolbox h264 and hevc — and asking one for a family it has no
+encoder for is an error naming that backend and that family. Hardware
+<em>decoding</em> (<code>-hwaccel</code>) and GPU filter pipelines are
+out of scope — reach for the <code><a href="../reference/ffmpeg.html">ffmpeg()</a></code> escape hatch
+there.</p>
 </div>
 <div class="section level2">
 <h2 id="prepare-the-audio">2. Prepare the audio<a class="anchor" aria-label="anchor" href="#prepare-the-audio"></a>

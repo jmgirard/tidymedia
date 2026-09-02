@@ -74,7 +74,7 @@ the scalar verb.</p>
 <span>  <span class="va">jobs</span>,</span>
 <span>  audio_codec <span class="op">=</span> <span class="st">"copy"</span>,</span>
 <span>  video_codec <span class="op">=</span> <span class="st">"copy"</span>,</span>
-<span>  hardware <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"nvenc"</span><span class="op">)</span>,</span>
+<span>  hardware <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"nvenc"</span>, <span class="st">"videotoolbox"</span><span class="op">)</span>,</span>
 <span>  fallback <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  audio_stream <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -122,12 +122,12 @@ unless <code>jobs</code> carries a <code>video_codec</code> column. The default
 its fallback behavior, applied to the whole batch (a property of the
 machine, not of a row, so neither is read as a <code>jobs</code> column). See
 <code><a href="separate_audio_video.html">separate_audio_video()</a></code>. Because <code>hardware</code> is batch-wide, and a
-stream copy runs no encoder, <code>hardware = "nvenc"</code> conflicts with any
-row whose video codec resolves to <code>"copy"</code> — including the default —
-so a jobs table mixing copied and re-encoded video must be split into
-separate calls.
-Resolving <code>"nvenc"</code> asks this FFmpeg build which encoders it has, so
-the first <code>"nvenc"</code> call that re-encodes the video runs the binary
+stream copy runs no encoder, a non-<code>"none"</code> <code>hardware</code>
+conflicts with any row whose video codec resolves to <code>"copy"</code> —
+including the default — so a jobs table mixing copied and re-encoded
+video must be split into separate calls.
+Resolving a hardware backend asks this FFmpeg build which encoders it has,
+so the first such call that re-encodes the video runs the binary
 while the command is built, even under <code>run = FALSE</code>. The answer is
 remembered for the rest of the R session; see
 <code><a href="refresh_ffmpeg_capabilities.html">refresh_ffmpeg_capabilities</a></code> to discard it.
@@ -226,7 +226,7 @@ status with the scalar verb instead.</p>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="separate_audio_video.html">separate_audio_video()</a></code>, the scalar verb it wraps; <code><a href="ffm_batch.html">ffm_batch()</a></code>,
-the batch runner; <code><a href="hardware_encoder.html">has_hardware_encoder()</a></code> for the <code>hardware = "nvenc"</code> toggle;
+the batch runner; <code><a href="hardware_encoder.html">has_hardware_encoder()</a></code> for the <code>hardware</code> toggle;
 <code><a href="segment_video_batch.html">segment_video_batch()</a></code> for the other fan-out batch verb.</p>
 <p>Other task verb functions:
 <code><a href="anonymize_video.html">anonymize_video()</a></code>,

@@ -22,7 +22,7 @@ crop_video_batch(
   y = "(in_h-out_h)/2",
   video_codec = NULL,
   audio_codec = "copy",
-  hardware = c("none", "nvenc"),
+  hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
   audio_stream = NULL,
   run = TRUE,
@@ -80,8 +80,8 @@ crop_video_batch(
   batch (a property of the machine, not of a row, so neither is read as
   a `jobs` column). See
   [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md).
-  Resolving `"nvenc"` asks this FFmpeg build which encoders it has, so
-  the first `"nvenc"` call that re-encodes the video runs the binary
+  Resolving a hardware backend asks this FFmpeg build which encoders it
+  has, so the first such call that re-encodes the video runs the binary
   while the command is built, even under `run = FALSE`. The answer is
   remembered for the rest of the R session; see
   [`refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
@@ -157,7 +157,7 @@ the scalar verb it wraps;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 the batch runner;
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-for the `hardware = "nvenc"` toggle;
+for the `hardware` toggle;
 [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
 to re-encode in batch.
 

@@ -17,7 +17,7 @@ segment_video_batch(
   reencode = TRUE,
   video_codec = NULL,
   audio_codec = "copy",
-  hardware = c("none", "nvenc"),
+  hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
   audio_stream = NULL,
   run = TRUE,
@@ -80,13 +80,14 @@ segment_video_batch(
   batch (a property of the machine, not of a row, so neither is read as
   a `jobs` column). See
   [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md).
-  Because `hardware` is batch-wide, `hardware = "nvenc"` conflicts with
+  Because `hardware` is batch-wide, a non-`"none"` value conflicts with
   a stream-copy row on its own — even one naming no codec — so a jobs
   table mixing `reencode = FALSE` rows with GPU encoding must be split
-  into separate calls. Resolving `"nvenc"` asks this FFmpeg build which
-  encoders it has, so the first `"nvenc"` call that re-encodes the video
-  runs the binary while the command is built, even under `run = FALSE`.
-  The answer is remembered for the rest of the R session; see
+  into separate calls. Resolving a hardware backend asks this FFmpeg
+  build which encoders it has, so the first such call that re-encodes
+  the video runs the binary while the command is built, even under
+  `run = FALSE`. The answer is remembered for the rest of the R session;
+  see
   [`refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
   to discard it. Availability is checked at this verb's own front door,
   before any row runs, so an unavailable encoder aborts naming this
@@ -171,7 +172,7 @@ for the single-input, parallel-vector form;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
 for the batch runner and the arguments forwarded through `...`;
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-for the `hardware = "nvenc"` toggle;
+for the `hardware` toggle;
 [`ffm_seek()`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md)
 for the cut trade-off.
 

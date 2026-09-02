@@ -20,7 +20,7 @@ standardize_video_batch(
   video_codec = "libx264",
   audio_codec = "copy",
   pixel_format = "yuv420p",
-  hardware = c("none", "nvenc"),
+  hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
   audio_stream = NULL,
   run = TRUE,
@@ -90,14 +90,15 @@ standardize_video_batch(
 
 - hardware:
 
-  The encoder backend applied to every row: `"none"` (default) or
-  `"nvenc"` for NVIDIA GPU encoding. Batch-wide (not a per-row column).
-  See
+  The encoder backend applied to every row: `"none"` (default),
+  `"nvenc"` for NVIDIA GPU encoding (H.264, HEVC and AV1), or
+  `"videotoolbox"` for Apple GPU encoding (H.264 and HEVC). Batch-wide
+  (not a per-row column). See
   [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
   and
   [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md).
-  Resolving `"nvenc"` asks this FFmpeg build which encoders it has, so
-  the first `"nvenc"` call that re-encodes the video runs the binary
+  Resolving a hardware backend asks this FFmpeg build which encoders it
+  has, so the first such call that re-encodes the video runs the binary
   while the command is built, even under `run = FALSE`. The answer is
   remembered for the rest of the R session; see
   [`refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
@@ -108,9 +109,12 @@ standardize_video_batch(
 
 - fallback:
 
-  A logical: when `hardware = "nvenc"` but nvenc is unavailable,
-  re-encode with the software `video_codec` and a message (`TRUE`)
-  instead of aborting (`FALSE`, default).
+  A logical: when a non-`"none"` `hardware` is requested but its encoder
+  is unavailable, re-encode with the software `video_codec` and a
+  message (`TRUE`) instead of aborting (`FALSE`, default). A
+  `video_codec` in a family that backend has no encoder for is a wrong
+  argument rather than an absent encoder, so it aborts whatever
+  `fallback` says.
 
 - audio_stream:
 

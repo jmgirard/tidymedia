@@ -20,7 +20,7 @@ compare_videos_batch(
   audio_input = NULL,
   video_codec = NULL,
   audio_codec = "copy",
-  hardware = c("none", "nvenc"),
+  hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
   run = TRUE,
   parallel = FALSE,
@@ -86,8 +86,8 @@ compare_videos_batch(
   batch (a property of the machine, not of a row, so neither is read as
   a `jobs` column). See
   [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md).
-  Resolving `"nvenc"` asks this FFmpeg build which encoders it has, so
-  the first `"nvenc"` call that re-encodes the video runs the binary
+  Resolving a hardware backend asks this FFmpeg build which encoders it
+  has, so the first such call that re-encodes the video runs the binary
   while the command is built, even under `run = FALSE`. The answer is
   remembered for the rest of the R session; see
   [`refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
@@ -135,7 +135,7 @@ the scalar verb it wraps;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 the batch runner;
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-for the `hardware = "nvenc"` toggle;
+for the `hardware` toggle;
 [`concatenate_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos_batch.md)
 and
 [`picture_in_picture_batch()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture_batch.md),

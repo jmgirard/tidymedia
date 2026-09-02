@@ -66,7 +66,7 @@ before/after processing. Built on the blessed stacking verbs
 <span>  audio_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  video_codec <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  audio_codec <span class="op">=</span> <span class="st">"copy"</span>,</span>
-<span>  hardware <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"nvenc"</span><span class="op">)</span>,</span>
+<span>  hardware <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"nvenc"</span>, <span class="st">"videotoolbox"</span><span class="op">)</span>,</span>
 <span>  fallback <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -119,27 +119,32 @@ an encoder in that case is an error.</p></dd>
 
 
 <dt id="arg-hardware">hardware<a class="anchor" aria-label="anchor" href="#arg-hardware"></a></dt>
-<dd><p>The encoder backend: <code>"none"</code> (default, the software
-<code>video_codec</code>) or <code>"nvenc"</code> for NVIDIA GPU encoding. When
-<code>"nvenc"</code>, the nvenc encoder for <code>video_codec</code>'s family is used
-(e.g. <code>"libx264"</code> becomes <code>"h264_nvenc"</code>); with the default
-<code>video_codec = NULL</code> the H.264 family is assumed, so a non-H.264
-container (e.g. <code>.webm</code>) needs an explicit HEVC- or AV1-family
-<code>video_codec</code>. See <code><a href="hardware_encoder.html">has_hardware_encoder</a></code> for availability and its
-caveats.
-Resolving <code>"nvenc"</code> asks this FFmpeg build which encoders it has, so
-the first <code>"nvenc"</code> call that re-encodes the video runs the binary
+<dd><p>The encoder backend: <code>"none"</code> (default, the
+software <code>video_codec</code>), <code>"nvenc"</code> for NVIDIA GPU encoding
+(H.264, HEVC and AV1), or <code>"videotoolbox"</code> for Apple GPU encoding
+(H.264 and HEVC). Uses that backend's encoder for <code>video_codec</code>'s
+family (e.g. <code>"libx264"</code> becomes <code>"h264_nvenc"</code> or
+<code>"h264_videotoolbox"</code>); with the default <code>video_codec = NULL</code>
+the H.264 family is assumed, so a non-H.264 container (e.g.
+<code>.webm</code>) needs an explicit HEVC- or AV1-family <code>video_codec</code>
+(AV1 only under <code>"nvenc"</code>). See <code><a href="hardware_encoder.html">has_hardware_encoder</a></code>
+for availability and its caveats.
+Resolving a hardware backend asks this FFmpeg build which encoders it has,
+so the first such call that re-encodes the video runs the binary
 while the command is built, even under <code>run = FALSE</code>. The answer is
 remembered for the rest of the R session; see
 <code><a href="refresh_ffmpeg_capabilities.html">refresh_ffmpeg_capabilities</a></code> to discard it.</p></dd>
 
 
 <dt id="arg-fallback">fallback<a class="anchor" aria-label="anchor" href="#arg-fallback"></a></dt>
-<dd><p>A logical: when <code>hardware = "nvenc"</code> but nvenc is
-unavailable, encode in software with a message (<code>TRUE</code>) instead of
-aborting (<code>FALSE</code>, default). With <code>video_codec = NULL</code> the
-fallback leaves the codec unset rather than picking one, so the codec never
-changes silently.</p></dd>
+<dd><p>A logical: when a non-<code>"none"</code> <code>hardware</code> is
+requested but its encoder is unavailable, encode in software with a
+message (<code>TRUE</code>) instead of aborting (<code>FALSE</code>, default). With
+<code>video_codec = NULL</code> the fallback leaves the codec unset rather
+than picking one, so the codec never changes silently.
+A <code>video_codec</code> in a family that backend has no encoder for is a
+wrong argument rather than an absent encoder, so it aborts whatever
+<code>fallback</code> says.</p></dd>
 
 
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>
@@ -162,7 +167,7 @@ track is stream-copied unless <code>audio_codec</code> names an encoder.</p>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="ffm_hstack.html">ffm_hstack()</a></code> and <code><a href="ffm_vstack.html">ffm_vstack()</a></code>, the builders it wraps;
-<code><a href="hardware_encoder.html">has_hardware_encoder()</a></code> for the <code>hardware = "nvenc"</code> toggle;
+<code><a href="hardware_encoder.html">has_hardware_encoder()</a></code> for the <code>hardware</code> toggle;
 <code><a href="picture_in_picture.html">picture_in_picture()</a></code> for insetting instead of stacking.</p>
 <p>Other task verb functions:
 <code><a href="anonymize_video.html">anonymize_video()</a></code>,

@@ -7,8 +7,9 @@ write AAC audio from an MP4 to `.aac` or `.m4a`, not `.mp3`). Name an
 encoder instead (`audio_codec = "libmp3lame"`) to transcode that stream,
 or pass `NULL` to emit no codec option at all and let the output
 extension pick the encoder. Each argument governs only its own output
-file. Where the video is re-encoded, `hardware = "nvenc"` moves that
-encode onto an NVIDIA GPU; the audio output is never affected.
+file. Where the video is re-encoded, `hardware = "nvenc"` or
+`"videotoolbox"` moves that encode onto a GPU; the audio output is never
+affected.
 
 ## Usage
 
@@ -19,7 +20,7 @@ separate_audio_video(
   videofile,
   audio_codec = "copy",
   video_codec = "copy",
-  hardware = c("none", "nvenc"),
+  hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
   audio_stream = NULL,
   run = TRUE
@@ -57,16 +58,18 @@ separate_audio_video(
 - hardware:
 
   The encoder backend for `videofile`: `"none"` (default, the software
-  `video_codec`) or `"nvenc"` for NVIDIA GPU encoding, which uses the
-  nvenc encoder for `video_codec`'s family (e.g. `"libx264"` becomes
-  `"h264_nvenc"`), assuming the H.264 family when `video_codec = NULL`.
-  Only video is encoded on the GPU, so this never affects `audiofile`.
-  Because this verb's video default is a stream copy, which runs no
-  encoder at all, `hardware = "nvenc"` alongside `video_codec = "copy"`
-  is an error: name an encoder or pass `video_codec = NULL`. See
+  `video_codec`), `"nvenc"` for NVIDIA GPU encoding, or `"videotoolbox"`
+  for Apple GPU encoding, each using that backend's encoder for
+  `video_codec`'s family (e.g. `"libx264"` becomes `"h264_nvenc"` or
+  `"h264_videotoolbox"`), assuming the H.264 family when
+  `video_codec = NULL`. Only video is encoded on the GPU, so this never
+  affects `audiofile`. Because this verb's video default is a stream
+  copy, which runs no encoder at all, a non-`"none"` `hardware`
+  alongside `video_codec = "copy"` is an error: name an encoder or pass
+  `video_codec = NULL`. See
   [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-  for availability and its caveats. Resolving `"nvenc"` asks this FFmpeg
-  build which encoders it has, so the first `"nvenc"` call that
+  for availability and its caveats. Resolving a hardware backend asks
+  this FFmpeg build which encoders it has, so the first such call that
   re-encodes the video runs the binary while the command is built, even
   under `run = FALSE`. The answer is remembered for the rest of the R
   session; see
@@ -76,10 +79,12 @@ separate_audio_video(
 
 - fallback:
 
-  A logical: when `hardware = "nvenc"` but nvenc is unavailable, encode
-  in software with a message (`TRUE`) instead of aborting (`FALSE`,
-  default). With `video_codec = NULL` the fallback leaves the codec
-  unset rather than injecting one.
+  A logical: when a non-`"none"` `hardware` is requested but its encoder
+  is unavailable, encode in software with a message (`TRUE`) instead of
+  aborting (`FALSE`, default). With `video_codec = NULL` the fallback
+  leaves the codec unset rather than injecting one. A `video_codec` in a
+  family that backend has no encoder for is a wrong argument rather than
+  an absent encoder, so it aborts whatever `fallback` says.
 
 - audio_stream:
 
@@ -233,7 +238,7 @@ and
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
 the builders it wraps;
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-for the `hardware = "nvenc"` toggle;
+for the `hardware` toggle;
 [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
 to pull out just the audio;
 [`probe_audio()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md)

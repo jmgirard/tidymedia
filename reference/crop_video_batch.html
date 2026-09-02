@@ -72,7 +72,7 @@ this function – before any command runs.</p>
 <span>  y <span class="op">=</span> <span class="st">"(in_h-out_h)/2"</span>,</span>
 <span>  video_codec <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  audio_codec <span class="op">=</span> <span class="st">"copy"</span>,</span>
-<span>  hardware <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"nvenc"</span><span class="op">)</span>,</span>
+<span>  hardware <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"nvenc"</span>, <span class="st">"videotoolbox"</span><span class="op">)</span>,</span>
 <span>  fallback <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  audio_stream <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -131,8 +131,8 @@ leave the codec unset so each output keeps its container's default encoder.</p><
 <dd><p>The encoder backend and its fallback behavior,
 applied to the whole batch (a property of the machine, not of a row, so
 neither is read as a <code>jobs</code> column). See <code><a href="crop_video.html">crop_video()</a></code>.
-Resolving <code>"nvenc"</code> asks this FFmpeg build which encoders it has, so
-the first <code>"nvenc"</code> call that re-encodes the video runs the binary
+Resolving a hardware backend asks this FFmpeg build which encoders it has,
+so the first such call that re-encodes the video runs the binary
 while the command is built, even under <code>run = FALSE</code>. The answer is
 remembered for the rest of the R session; see
 <code><a href="refresh_ffmpeg_capabilities.html">refresh_ffmpeg_capabilities</a></code> to discard it.
@@ -175,7 +175,7 @@ provenance manifest when requested via <code>...</code>). See
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="crop_video.html">crop_video()</a></code>, the scalar verb it wraps; <code><a href="ffm_batch.html">ffm_batch()</a></code>, the batch
-runner; <code><a href="hardware_encoder.html">has_hardware_encoder()</a></code> for the <code>hardware = "nvenc"</code> toggle;
+runner; <code><a href="hardware_encoder.html">has_hardware_encoder()</a></code> for the <code>hardware</code> toggle;
 <code><a href="standardize_video_batch.html">standardize_video_batch()</a></code> to re-encode in batch.</p>
 <p>Other task verb functions:
 <code><a href="anonymize_video.html">anonymize_video()</a></code>,

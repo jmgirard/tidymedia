@@ -17,7 +17,7 @@ anonymize_video(
   video_codec = "libx264",
   audio_codec = "copy",
   pixel_format = "yuv420p",
-  hardware = c("none", "nvenc"),
+  hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
   audio_stream = NULL,
   run = TRUE
@@ -67,14 +67,15 @@ anonymize_video(
 
 - hardware:
 
-  The encoder backend: `"none"` (default, the software `video_codec`) or
-  `"nvenc"` for NVIDIA GPU encoding. When `"nvenc"`, the nvenc encoder
-  for `video_codec`'s family is used (e.g. `"libx264"` becomes
-  `"h264_nvenc"`); see
+  The encoder backend: `"none"` (default, the software `video_codec`),
+  `"nvenc"` for NVIDIA GPU encoding (H.264, HEVC and AV1), or
+  `"videotoolbox"` for Apple GPU encoding (H.264 and HEVC). Uses that
+  backend's encoder for `video_codec`'s family (e.g. `"libx264"` becomes
+  `"h264_nvenc"` or `"h264_videotoolbox"`); see
   [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
   for availability and its caveats. Applies to video only: `audio_codec`
-  is never hardware-accelerated. Resolving `"nvenc"` asks this FFmpeg
-  build which encoders it has, so the first `"nvenc"` call that
+  is never hardware-accelerated. Resolving a hardware backend asks this
+  FFmpeg build which encoders it has, so the first such call that
   re-encodes the video runs the binary while the command is built, even
   under `run = FALSE`. The answer is remembered for the rest of the R
   session; see
@@ -83,10 +84,12 @@ anonymize_video(
 
 - fallback:
 
-  A logical: when `hardware = "nvenc"` but nvenc is unavailable,
-  re-encode with the software `video_codec` and a message (`TRUE`)
-  instead of aborting (`FALSE`, default). Keeps output reproducible by
-  never changing the codec silently.
+  A logical: when a non-`"none"` `hardware` is requested but its encoder
+  is unavailable, re-encode with the software `video_codec` and a
+  message (`TRUE`) instead of aborting (`FALSE`, default). Keeps output
+  reproducible by never changing the codec silently. A `video_codec` in
+  a family that backend has no encoder for is a wrong argument rather
+  than an absent encoder, so it aborts whatever `fallback` says.
 
 - audio_stream:
 
@@ -152,7 +155,7 @@ https://ffmpeg.org/ffmpeg-filters.html#drawbox
 [`ffm_drawbox()`](https://jmgirard.github.io/tidymedia/reference/ffm_drawbox.md),
 the builder filter it wraps;
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-for the `hardware = "nvenc"` toggle;
+for the `hardware` toggle;
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md)
 for the many-file (batch) form.
 

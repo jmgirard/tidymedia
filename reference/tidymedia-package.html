@@ -135,18 +135,20 @@ used. An argument your call got wrong is reported first wherever the verb
 itself can see it is wrong: the limit is checked after the verb's own guards
 and after the command has been assembled, so a bad <code>regions</code>, <code>pixel_format</code>
 or <code>video_codec</code> reports as itself whether or not a limit is set. Asking for
-<code>hardware = "nvenc"</code> no longer changes that: your FFmpeg build is asked what
+a hardware backend (<code>hardware = "nvenc"</code> or <code>"videotoolbox"</code>) no longer
+changes that: your FFmpeg build is asked what
 encoders it has after every check the verb itself makes, so a bad
 <code>audio_codec</code>, <code>pixel_format</code> or <code>audio_stream</code> reports as itself there too —
-whether or not a limit is set, and whether or not that build has nvenc.
+whether or not a limit is set, and whether or not that build has the
+backend's encoder.
 <code>fallback</code> is checked where that question is asked and so moved down with it:
 a call wrong about both <code>fallback</code> and <code>pixel_format</code> now hears about the
 pixel format. Where the check runs somewhere the verb reaches only later, it
 loses to both the limit and the encoder question: a <code>_batch</code> job table's
 <code>output</code> column and <code><a href="anonymize_video_batch.html">anonymize_video_batch()</a></code>'s <code>pixel_format</code> and <code>color</code>
 are validated inside the per-row fan-out, so a set limit is reported instead
-of them, and so is a missing nvenc encoder under <code>hardware = "nvenc"</code> on a
-build without one.
+of them, and so is a missing hardware encoder under a named <code>hardware</code>
+backend on a build without one.
 Two calls read no limit and so refuse nothing: <code><a href="hardware_encoder.html">has_hardware_encoder()</a></code>
 answering from a <code>tidymedia.hardware_encoders</code> you set, which asks FFmpeg
 nothing, and a <code>probe_*()</code> shortcut handed a <code>probe</code> object instead of an
@@ -218,7 +220,7 @@ cost is what switching the check off buys back. It is worth declining on a
 large jobs table whose inputs you already know the tracks of. A row that
 names an <code>audio_stream</code> is not probed at all, so a table whose rows all name
 one pays nothing either way.</p>
-<div class="sourceCode"><pre><code><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>tidymedia.hardware_encoders <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"h264_nvenc"</span>, <span class="st">"hevc_nvenc"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode"><pre><code><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>tidymedia.hardware_encoders <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"h264_nvenc"</span>, <span class="st">"h264_videotoolbox"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 
 <p>Names the hardware video encoders this machine has, instead of asking
 FFmpeg. Set it to <code>character(0)</code> to declare there are none. Unset (the

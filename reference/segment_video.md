@@ -18,7 +18,7 @@ segment_video(
   reencode = TRUE,
   video_codec = NULL,
   audio_codec = "copy",
-  hardware = c("none", "nvenc"),
+  hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
   audio_stream = NULL,
   run = TRUE,
@@ -85,15 +85,17 @@ segment_video(
 
 - hardware:
 
-  The encoder backend: `"none"` (default, the software `video_codec`) or
-  `"nvenc"` for NVIDIA GPU encoding. When `"nvenc"`, the nvenc encoder
-  for `video_codec`'s family is used (e.g. `"libx264"` becomes
-  `"h264_nvenc"`); with the default `video_codec = NULL` the H.264
-  family is assumed, so a non-H.264 container (e.g. `.webm`) needs an
-  explicit HEVC- or AV1-family `video_codec`. See
+  The encoder backend: `"none"` (default, the software `video_codec`),
+  `"nvenc"` for NVIDIA GPU encoding (H.264, HEVC and AV1), or
+  `"videotoolbox"` for Apple GPU encoding (H.264 and HEVC). Uses that
+  backend's encoder for `video_codec`'s family (e.g. `"libx264"` becomes
+  `"h264_nvenc"` or `"h264_videotoolbox"`); with the default
+  `video_codec = NULL` the H.264 family is assumed, so a non-H.264
+  container (e.g. `.webm`) needs an explicit HEVC- or AV1-family
+  `video_codec` (AV1 only under `"nvenc"`). See
   [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-  for availability and its caveats. Resolving `"nvenc"` asks this FFmpeg
-  build which encoders it has, so the first `"nvenc"` call that
+  for availability and its caveats. Resolving a hardware backend asks
+  this FFmpeg build which encoders it has, so the first such call that
   re-encodes the video runs the binary while the command is built, even
   under `run = FALSE`. The answer is remembered for the rest of the R
   session; see
@@ -109,10 +111,13 @@ segment_video(
 
 - fallback:
 
-  A logical: when `hardware = "nvenc"` but nvenc is unavailable, encode
-  in software with a message (`TRUE`) instead of aborting (`FALSE`,
-  default). With `video_codec = NULL` the fallback leaves the codec
-  unset rather than picking one, so the codec never changes silently.
+  A logical: when a non-`"none"` `hardware` is requested but its encoder
+  is unavailable, encode in software with a message (`TRUE`) instead of
+  aborting (`FALSE`, default). With `video_codec = NULL` the fallback
+  leaves the codec unset rather than picking one, so the codec never
+  changes silently. A `video_codec` in a family that backend has no
+  encoder for is a wrong argument rather than an absent encoder, so it
+  aborts whatever `fallback` says.
 
 - audio_stream:
 
@@ -178,7 +183,7 @@ the builder it uses to cut;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 the runner;
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-for the `hardware = "nvenc"` toggle;
+for the `hardware` toggle;
 [`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md)
 for the many-file form.
 

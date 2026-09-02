@@ -15,13 +15,14 @@ refresh_ffmpeg_capabilities()
 
 ## Details
 
-The first `hardware = "nvenc"` call in an R session asks FFmpeg which
-encoders it has; later calls reuse that answer rather than starting a
-new FFmpeg process per call, which is what makes a large batch
-practical. The answer is remembered for the rest of the session, so a
-build that changes underneath you – a fresh FFmpeg install, a new GPU
-driver, a different binary – is not seen until the record is discarded.
-There are two ways to discard it:
+The first hardware-encoding call in an R session – `hardware = "nvenc"`
+or `hardware = "videotoolbox"`, whichever comes first – asks FFmpeg
+which encoders it has; later calls reuse that answer rather than
+starting a new FFmpeg process per call, which is what makes a large
+batch practical. The answer is remembered for the rest of the session,
+so a build that changes underneath you – a fresh FFmpeg install, a new
+GPU driver, a different binary – is not seen until the record is
+discarded. There are two ways to discard it:
 
 - call `refresh_ffmpeg_capabilities()` yourself, at any time;
 
@@ -69,6 +70,6 @@ Other capability functions:
 ## Examples
 
 ``` r
-# After installing FFmpeg or an NVIDIA driver mid-session:
+# After installing FFmpeg, or a GPU driver or OS update mid-session:
 refresh_ffmpeg_capabilities()
 ```

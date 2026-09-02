@@ -31,8 +31,9 @@
   returns `FALSE` and leaves every one of them untouched — no directory is
   created, nothing is downloaded, and no remembered location changes. In a
   session with no one to ask, the call now aborts rather than proceed as if
-  consent had been given; pass the new `confirm = FALSE` to install without
-  being asked, which is what an unattended script wants.
+  consent had been given, and the abort names the same archive, directory and
+  locations the prompt would have; pass the new `confirm = FALSE` to install
+  without being asked, which is what an unattended script wants.
 
 * `install_on_win()` now installs FFmpeg under
   `tools::R_user_dir("tidymedia", "data")`, the user data directory CRAN policy

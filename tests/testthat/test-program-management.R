@@ -284,6 +284,24 @@ test_that("tm_confirm() refuses, with the caller's bullets, when no one can be a
   expect_error(tm_confirm("proceed?"), "non-interactive session")
 })
 
+test_that("tm_confirm() refuses the same way when menu() itself cannot ask", {
+  # The two predicates can disagree: `rlang_interactive = TRUE` in a session
+  # with no console leaves rlang::is_interactive() TRUE while menu() still
+  # refuses. Before this was routed through the refusal, that reached the
+  # caller as menu()'s own unclassed error with no escape hatch named.
+  rlang::local_interactive()
+  testthat::local_mocked_bindings(
+    menu = function(...) stop("menu() cannot be used non-interactively"),
+    .package = "utils"
+  )
+
+  expect_error(
+    tm_confirm("proceed?", "i" = "Pass {.code somehow = FALSE} to skip."),
+    class = "tidymedia_confirmation_unavailable"
+  )
+  expect_error(tm_confirm("proceed?", "i" = "Pass somehow = FALSE."), "somehow = FALSE")
+})
+
 
 # install_on_win() asks before it writes (M101) ------------------------------
 
@@ -366,6 +384,18 @@ test_that("install_on_win() refuses rather than assume consent when no one can b
   # The escape hatch is named by install_on_win(), not by the seam, so the
   # message says the argument this caller actually has.
   expect_error(install_on_win(), "confirm = FALSE")
+  # The refusal names what the call would have done, so a caller told to pass
+  # `confirm = FALSE` has seen what that authorizes.
+  withr::local_options(cli.width = 1000)
+  u <- "https://example.invalid/build.7z"
+  d <- file.path(withr::local_tempdir(), "an install {dir}")
+  msg <- tryCatch(
+    install_on_win(download_url = u, install_dir = d),
+    tidymedia_confirmation_unavailable = function(cnd) cli::ansi_strip(conditionMessage(cnd))
+  )
+  for (needle in c(u, d, vapply(tm_install_registers, tm_config_file, character(1), USE.NAMES = FALSE))) {
+    expect_true(grepl(needle, msg, fixed = TRUE), label = paste("refusal names", needle))
+  }
   expect_identical(tm_dir_snapshot(data_root, config$root), before)
 })
 
@@ -427,7 +457,9 @@ test_that("an accepted install downloads, extracts and registers; confirm = FALS
 
 test_that("the prompt names the archive, the directory, and every location it overwrites", {
   # AC4. The prompt is read as the caller handed it over, before menu() ever
-  # formats it, and at a width no wrapping can reach.
+  # formats it. `cli.width` is pinned because AC4 names it, not because
+  # anything here wraps: cli::format_inline() emits one line whatever the
+  # width, so the option fences a formatter change rather than today's.
   config <- tm_redirect_config()
   data_root <- tm_redirect_data()
   withr::local_options(cli.width = 1000)
@@ -453,6 +485,9 @@ test_that("the prompt names the archive, the directory, and every location it ov
   expect_identical(registered, c("ffmpeg", "ffprobe", "ffplay"))
   config_files <- vapply(registered, tm_config_file, character(1), USE.NAMES = FALSE)
   expect_true(all(startsWith(config_files, config$new)))
+  # tm_config_file() is what builds the prompt's paths too, so pin the names
+  # AC4 states rather than leave both sides free to move together (M097 F1).
+  expect_identical(basename(config_files), paste0(registered, "_location.txt"))
 
   expected <- list(
     c(default_url, default_dir, config_files),

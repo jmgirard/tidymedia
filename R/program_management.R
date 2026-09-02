@@ -268,15 +268,33 @@ set_ffplay <- function(location) {
 # `base::interactive()` instead, which those do not move, so the ask branch is
 # reachable in a test only through a mock of `menu()`.
 tm_confirm <- function(prompt, ..., call = rlang::caller_env()) {
-  if (!rlang::is_interactive()) {
+  refuse <- function() {
     cli::cli_abort(
       c("Can't ask for confirmation in a non-interactive session.", ...),
       class = "tidymedia_confirmation_unavailable",
       call = call
     )
   }
+  if (!rlang::is_interactive()) refuse()
+  # The two predicates can disagree: `rlang::is_interactive()` honors the
+  # `rlang_interactive` option, `base::interactive()` does not, and `menu()`
+  # refuses on the latter. A caller who has set that option in a session with
+  # no console reaches this line and would otherwise get menu()'s own
+  # unclassed error, with none of the refusal's information; routing that
+  # failure through refuse() keeps one contract for "no one can be asked".
+  answer <- tryCatch(
+    utils::menu(c("Yes", "No"), title = prompt),
+    error = function(cnd) refuse()
+  )
   # menu() returns 0 when the reader answers nothing, which is a decline.
-  utils::menu(c("Yes", "No"), title = prompt) == 1L
+  answer == 1L
+}
+
+# Make a string safe to hand to cli as message text: cli interpolates `{...}`
+# in every bullet, so a path containing braces is escaped rather than
+# evaluated (M44).
+tm_cli_escape <- function(x) {
+  gsub("}", "}}", gsub("{", "{{", x, fixed = TRUE), fixed = TRUE)
 }
 
 
@@ -291,26 +309,36 @@ tm_install_binary <- function(install_dir, program) {
   file.path(install_dir, "bin", paste0(program, ".exe"))
 }
 
-# The consent prompt: the archive to be fetched, the directory it unpacks
-# into, and each remembered-location file the install overwrites, one per
-# line. Every caller-supplied value goes through a cli field, which does not
-# recurse into the value, so a directory containing braces is shown rather
+# What the install would do, one item per line: the archive to be fetched,
+# the directory it unpacks into, and each remembered-location file it
+# overwrites. Every caller-supplied value goes through a cli field, which does
+# not recurse into the value, so a directory containing braces is shown rather
 # than evaluated (M44); the result is stripped of styling and hyperlinks so
 # what reaches `menu()` is the plain text a test can read back.
-tm_install_prompt <- function(download_url, install_dir, programs) {
+#
+# Both the prompt and the non-interactive refusal are built from this, so a
+# caller who is told to pass `confirm = FALSE` has been shown the same items
+# the prompt would have named.
+tm_install_details <- function(download_url, install_dir, programs) {
   line <- function(...) cli::ansi_strip(cli::format_inline(..., .envir = parent.frame()))
+  c(
+    line("Download: {.url {download_url}}"),
+    line("Unpack into: {.file {install_dir}}"),
+    vapply(
+      programs,
+      function(p) line("Overwrite remembered location: {.file {tm_config_file(p)}}"),
+      character(1),
+      USE.NAMES = FALSE
+    )
+  )
+}
+
+# The consent prompt: the question, then the items, one per line.
+tm_install_prompt <- function(download_url, install_dir, programs) {
   paste(
     c(
       "tidymedia is about to install FFmpeg. Proceed?",
-      line("* Download: {.url {download_url}}"),
-      line("* Unpack into: {.file {install_dir}}"),
-      "* Overwrite these remembered locations:",
-      vapply(
-        programs,
-        function(p) paste0("    - ", line("{.file {tm_config_file(p)}}")),
-        character(1),
-        USE.NAMES = FALSE
-      )
+      paste0("* ", tm_install_details(download_url, install_dir, programs))
     ),
     collapse = "\n"
   )
@@ -333,9 +361,9 @@ tm_install_prompt <- function(download_url, install_dir, programs) {
 #' @param confirm A logical indicating whether to ask for confirmation before
 #'   downloading and installing anything. Defaults to `TRUE`. The prompt names
 #'   the archive to be downloaded, the directory it will be unpacked into, and
-#'   the remembered program locations it will overwrite. In a non-interactive
-#'   session there is no one to ask, so the call aborts rather than assume
-#'   consent; pass `confirm = FALSE` to install without being asked.
+#'   the remembered program locations it will overwrite. Where there is no one
+#'   to ask, the call aborts rather than assume consent, naming those same
+#'   items; pass `confirm = FALSE` to install without being asked.
 #' @return A logical indicating whether the installation was successful.
 #'   `FALSE` is also what a declined confirmation returns, alongside the
 #'   existing failures to create the install directory or download the
@@ -366,8 +394,11 @@ install_on_win <- function(download_url = NULL,
   # (D080). It asks about the RESOLVED values: a caller who named neither
   # argument is told what the defaults came out to.
   if (confirm) {
+    details <- tm_install_details(download_url, install_dir, tm_install_registers)
     approved <- tm_confirm(
       tm_install_prompt(download_url, install_dir, tm_install_registers),
+      "i" = "This install would have done the following:",
+      rlang::set_names(tm_cli_escape(details), rep("*", length(details))),
       "i" = "Pass {.code confirm = FALSE} to install without being asked."
     )
     if (!approved) return(FALSE)

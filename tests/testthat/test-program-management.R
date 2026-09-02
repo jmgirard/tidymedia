@@ -202,11 +202,13 @@ test_that("install_on_win()'s own default install dir is R_user_dir()'s ffmpeg s
   )
   # `confirm = FALSE`: this test is about where the default install directory
   # resolves to, and M101 put a consent gate above the resolution's first
-  # write. The gate has its own tests below.
+  # write. The gate has its own tests below. The URL is not the package's own
+  # default, so M102 fetches no digest and says so before it refuses the
+  # download; the refusal is asserted by class, not by base R's wording.
   suppressWarnings(
     expect_error(
-      install_on_win(download_url = missing_archive, confirm = FALSE),
-      "cannot open URL"
+      suppressMessages(install_on_win(download_url = missing_archive, confirm = FALSE)),
+      class = "tidymedia_download_unavailable"
     )
   )
 
@@ -321,43 +323,104 @@ tm_dir_snapshot <- function(...) {
 # test asserts WHICH calls happened rather than only that the function
 # returned. `confirm` is a function of the prompt returning the answer to
 # give; `NULL` leaves the real tm_confirm() in place.
-tm_mock_install <- function(confirm = NULL, env = parent.frame()) {
+tm_mock_install <- function(confirm = NULL,
+                            unpack = tm_install_registers,
+                            sidecar = NULL,
+                            archive = NULL,
+                            download = NULL,
+                            real_set = FALSE,
+                            env = parent.frame()) {
   rec <- new.env(parent = emptyenv())
   rec$download <- list()
+  rec$sidecar <- list()
   rec$extract <- list()
   rec$set <- list()
   rec$prompts <- character(0)
   add <- function(slot, value) rec[[slot]] <- c(rec[[slot]], list(value))
 
+  # What the download mock delivers. The body is fixed, so its digest can be
+  # computed here and published by the sidecar mock below: a verifying run
+  # passes because the two agree, not because verification was skipped. A test
+  # wanting a mismatch publishes its own `sidecar` body, and a test wanting a
+  # real extraction failure passes its own `archive` file.
+  if (is.null(archive)) {
+    archive <- withr::local_tempfile(.local_envir = env)
+    writeLines("stub archive", archive)
+  }
+  rec$digest <- tm_archive_digest(archive)
+
+  # `download` overrides the whole download.file() mock, which is how the two
+  # shapes of a failed fetch are reached: signalling, and a non-zero status.
   testthat::local_mocked_bindings(
     download.file = function(url, destfile, ...) {
+      # The digest and the archive are two calls to one function, told apart
+      # here the way install_on_win() builds them: the digest's URL is the
+      # archive's with `.sha256` appended.
+      is_sidecar <- grepl("[.]sha256$", url)
+      add(if (is_sidecar) "sidecar" else "download", list(url = url))
+      if (!is.null(download)) return(download(url, destfile, is_sidecar))
+      if (is_sidecar) {
+        writeLines(if (is.null(sidecar)) rec$digest else sidecar, destfile)
+        return(0L)
+      }
       # The destfile is a fresh tempfile() on every call, so it is held aside
       # rather than recorded: two runs of the same install must produce equal
       # records. The extract mock below checks the linkage instead.
       rec$destfile <- destfile
-      add("download", list(url = url))
-      writeLines("stub archive", destfile)
+      file.copy(archive, destfile, overwrite = TRUE)
       0L
     },
     .package = "utils", .env = env
   )
-  testthat::local_mocked_bindings(
-    archive_extract = function(archive, dir, ...) {
-      add("extract", list(
-        dir = dir,
-        from_download = identical(archive, rec$destfile)
-      ))
-      invisible(NULL)
-    },
-    .package = "archive", .env = env
-  )
-  testthat::local_mocked_bindings(
-    set_program = function(program, location) {
-      add("set", list(program = program, location = location))
-      invisible(NULL)
-    },
-    .env = env
-  )
+  # `unpack = NULL` leaves the REAL archive::archive_extract() in place, which
+  # is how the corrupt-archive fixtures reach libarchive rather than a stub.
+  if (!is.null(unpack)) {
+    testthat::local_mocked_bindings(
+      archive_extract = function(archive, dir, ...) {
+        # tm_unpack() hands archive_extract() an open connection rather than
+        # a path -- it owns the connection so the failing path can close it
+        # (M102 AC3) -- so the linkage back to the download is read off the
+        # connection's description.
+        from <- if (inherits(archive, "connection")) {
+          summary(archive)$description
+        } else {
+          archive
+        }
+        add("extract", list(dir = dir, from_download = identical(from, rec$destfile)))
+        # What the extraction PRODUCES is what install_on_win() registers, so
+        # the mock has to leave files behind: `unpack` is how a test says
+        # which programs this build contained.
+        bin <- file.path(dir, "bin")
+        dir.create(bin, recursive = TRUE, showWarnings = FALSE)
+        for (program in unpack) {
+          exe <- file.path(bin, paste0(program, ".exe"))
+          file.create(exe)
+          # `real_set = TRUE` sends the run through the REAL set_program(),
+          # which asks Sys.which() whether the path is executable -- so the
+          # stub has to be, or AC4's on-disk claim could not be reached.
+          if (real_set) Sys.chmod(exe, "0755")
+        }
+        # The real archive_extract() returns the paths it wrote, relative to
+        # `dir` and after strip_components -- measured 2026-09-02 against a
+        # three-program control archive, which returned exactly these three
+        # strings. install_on_win() registers off that list, so a mock that
+        # returned nothing would make every AC4 assertion vacuous.
+        invisible(file.path("bin", paste0(unpack, ".exe")))
+      },
+      .package = "archive", .env = env
+    )
+  }
+  # `real_set = TRUE` leaves the real set_program() in place, so what the
+  # install writes can be read back off disk rather than off the record.
+  if (!real_set) {
+    testthat::local_mocked_bindings(
+      set_program = function(program, location) {
+        add("set", list(program = program, location = location))
+        invisible(NULL)
+      },
+      .env = env
+    )
+  }
   if (!is.null(confirm)) {
     testthat::local_mocked_bindings(
       tm_confirm = function(prompt, ...) {
@@ -389,10 +452,13 @@ test_that("install_on_win() refuses rather than assume consent when no one can b
   withr::local_options(cli.width = 1000)
   u <- "https://example.invalid/build.7z"
   d <- file.path(withr::local_tempdir(), "an install {dir}")
-  msg <- tryCatch(
+  # Suppressed rather than asserted here: this source is caller-named, so the
+  # unverified notice now fires above the confirmation, and the ordering it
+  # belongs to is asserted with the prompt tests below.
+  msg <- suppressMessages(tryCatch(
     install_on_win(download_url = u, install_dir = d),
     tidymedia_confirmation_unavailable = function(cnd) cli::ansi_strip(conditionMessage(cnd))
-  )
+  ))
   for (needle in c(u, d, vapply(tm_install_registers, tm_config_file, character(1), USE.NAMES = FALSE))) {
     expect_true(grepl(needle, msg, fixed = TRUE), label = paste("refusal names", needle))
   }
@@ -424,7 +490,12 @@ test_that("an accepted install downloads, extracts and registers; confirm = FALS
   d <- file.path(withr::local_tempdir(), "ffmpeg")
 
   accepted <- tm_mock_install(confirm = function(prompt) TRUE)
-  expect_true(install_on_win(download_url = u, install_dir = d, confirm = TRUE))
+  # A caller-named source is unverified, so M102's message fires on every call
+  # in this test. It is asserted where it belongs -- the prompt/verification
+  # tests below -- and only muted here, where it is not what is being tested.
+  expect_true(suppressMessages(
+    install_on_win(download_url = u, install_dir = d, confirm = TRUE)
+  ))
 
   expect_identical(length(accepted$download), 1L)
   expect_identical(accepted$download[[1]]$url, u)
@@ -448,7 +519,9 @@ test_that("an accepted install downloads, extracts and registers; confirm = FALS
   skipped <- tm_mock_install(
     confirm = function(prompt) stop("tm_confirm() must not be reached")
   )
-  expect_true(install_on_win(download_url = u, install_dir = d, confirm = FALSE))
+  expect_true(suppressMessages(
+    install_on_win(download_url = u, install_dir = d, confirm = FALSE)
+  ))
   expect_identical(skipped$prompts, character(0))
   expect_identical(skipped$download, accepted$download)
   expect_identical(skipped$extract, accepted$extract)
@@ -475,8 +548,14 @@ test_that("the prompt names the archive, the directory, and every location it ov
   odd_dir <- file.path(withr::local_tempdir(), "an install {dir}")
 
   expect_true(install_on_win())
-  expect_true(install_on_win(download_url = named_url, install_dir = named_dir))
-  expect_true(install_on_win(download_url = named_url, install_dir = odd_dir))
+  # As above: the two caller-named sources are unverified, and that message is
+  # asserted in the verification tests rather than here.
+  expect_true(suppressMessages(
+    install_on_win(download_url = named_url, install_dir = named_dir)
+  ))
+  expect_true(suppressMessages(
+    install_on_win(download_url = named_url, install_dir = odd_dir)
+  ))
   expect_identical(length(rec$prompts), 3L)
 
   # The set of files the prompt must name is read off the record of what the
@@ -502,4 +581,756 @@ test_that("the prompt names the archive, the directory, and every location it ov
       )
     }
   }
+})
+
+
+# install_on_win() verifies before it registers (M102) ------------------------
+
+# The digest of the stub archive tm_mock_install() delivers, written the three
+# ways a source can publish one. Built from the record's own digest rather than
+# hard-coded, so the fixture cannot drift from the file it describes.
+tm_sidecar_bodies <- function(digest) {
+  c(
+    bare = digest,
+    sha256sum = paste0(digest, "  ffmpeg-release-essentials.7z"),
+    openssl = paste0("SHA256(ffmpeg-release-essentials.7z)= ", toupper(digest))
+  )
+}
+
+test_that("the default source's published digest is fetched, parsed three ways, and checked", {
+  # AC1. The URL is left at its default, so it is install_on_win()'s own
+  # resolution that decides a sidecar is available -- not the test naming one.
+  tm_redirect_config()
+  tm_redirect_data()
+
+  for (shape in names(tm_sidecar_bodies("x"))) {
+    # A fresh install dir per iteration: the shapes are meant to be
+    # independent runs, and a shared directory would let one iteration's
+    # extraction stand in for the next one's.
+    d <- file.path(withr::local_tempdir(), "ffmpeg")
+    rec <- tm_mock_install(confirm = function(prompt) TRUE)
+    body <- tm_sidecar_bodies(rec$digest)[[shape]]
+    # Re-mock with the body this shape wants, now that the digest is known.
+    rec <- tm_mock_install(confirm = function(prompt) TRUE, sidecar = body)
+    expect_true(install_on_win(install_dir = d), label = shape)
+
+    # The digest was fetched, from the archive's URL plus `.sha256`. That it
+    # was fetched BEFORE the archive is not visible here -- the two records
+    # are separate lists -- and is asserted where it IS visible: the
+    # unreadable-digest test below finds `download` empty after the sidecar
+    # fetch failed.
+    expect_identical(length(rec$sidecar), 1L, label = shape)
+    expect_identical(
+      rec$sidecar[[1]]$url,
+      paste0(rec$download[[1]]$url, ".sha256"),
+      label = shape
+    )
+    # The matching-digest control reaches the extraction step, which is what
+    # says the three shapes were understood rather than skipped.
+    expect_identical(length(rec$extract), 1L, label = shape)
+    expect_identical(rec$extract[[1]]$dir, d, label = shape)
+  }
+})
+
+test_that("the consent prompt names the digest fetch, and only where one happens", {
+  # AC1 and AC2 together: M101's property is that the prompt names every fetch
+  # the call makes, so the sidecar line has to appear on the path that fetches
+  # one and be absent on the two paths that do not.
+  tm_redirect_config()
+  tm_redirect_data()
+  withr::local_options(cli.width = 1000)
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+  sidecar_url <- paste0(tm_default_download_url, ".sha256")
+
+  rec <- tm_mock_install(confirm = function(prompt) TRUE)
+  expect_true(install_on_win(install_dir = d))
+  expect_true(grepl(sidecar_url, rec$prompts[[1]], fixed = TRUE))
+
+  # Same source, but the caller brought a digest: no fetch, so no line.
+  supplied <- tm_mock_install(confirm = function(prompt) TRUE)
+  digest <- supplied$digest
+  supplied <- tm_mock_install(confirm = function(prompt) TRUE)
+  expect_true(install_on_win(install_dir = d, archive_checksum = digest))
+  expect_identical(supplied$sidecar, list())
+  expect_false(grepl(sidecar_url, supplied$prompts[[1]], fixed = TRUE))
+
+  # A caller-named source has no sidecar to fetch either. It says so, and it
+  # says so BEFORE the prompt: what a caller approves includes knowing that
+  # nothing will check this download, which an after-the-fact notice does not
+  # give them. The two events are recorded into one sequence, so the ordering
+  # is asserted rather than inferred from where the message appears.
+  order <- character(0)
+  named <- tm_mock_install(confirm = function(prompt) {
+    order <<- c(order, "prompt")
+    TRUE
+  })
+  withCallingHandlers(
+    expect_true(install_on_win(
+      download_url = "https://example.invalid/build.7z", install_dir = d
+    )),
+    message = function(cnd) {
+      if (grepl("will not be verified", conditionMessage(cnd), fixed = TRUE)) {
+        order <<- c(order, "notice")
+      }
+      invokeRestart("muffleMessage")
+    }
+  )
+  expect_identical(order, c("notice", "prompt"))
+  expect_identical(named$sidecar, list())
+  expect_false(grepl(".sha256", named$prompts[[1]], fixed = TRUE))
+})
+
+test_that("an unreadable published digest aborts before anything is unpacked", {
+  # AC1. Three routes to the same class: a body that is not a digest, a fetch
+  # that signals, and a fetch that returns a non-zero status.
+  config <- tm_redirect_config()
+  tm_redirect_data()
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+
+  garbage <- tm_mock_install(confirm = function(prompt) TRUE,
+                             sidecar = "<html>404 Not Found</html>")
+  expect_error(
+    install_on_win(install_dir = d),
+    class = "tidymedia_checksum_unavailable"
+  )
+  expect_identical(garbage$extract, list())
+  expect_identical(garbage$set, list())
+
+  signalled <- tm_mock_install(
+    confirm = function(prompt) TRUE,
+    download = function(url, destfile, is_sidecar) {
+      if (is_sidecar) stop("cannot open URL") else 0L
+    }
+  )
+  expect_error(
+    install_on_win(install_dir = d),
+    class = "tidymedia_checksum_unavailable"
+  )
+  # The digest is fetched first, so the archive was never downloaded either.
+  expect_identical(signalled$download, list())
+
+  status <- tm_mock_install(
+    confirm = function(prompt) TRUE,
+    download = function(url, destfile, is_sidecar) if (is_sidecar) 1L else 0L
+  )
+  expect_error(
+    install_on_win(install_dir = d),
+    class = "tidymedia_checksum_unavailable"
+  )
+  expect_identical(status$download, list())
+  expect_identical(
+    list.files(config$root, recursive = TRUE, all.files = TRUE),
+    character(0)
+  )
+})
+
+test_that("a sidecar the fetch reported but did not deliver aborts classed", {
+  # `download.file()` reporting status 0 is not a promise that a readable file
+  # arrived. Without a guard on the read, this path leaves install_on_win()
+  # through a bare "cannot open connection" -- unclassed, and invisible to the
+  # AC6 census, which sees only `return()` and `cli_abort()` nodes.
+  tm_redirect_config()
+  tm_redirect_data()
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+
+  rec <- tm_mock_install(
+    confirm = function(prompt) TRUE,
+    download = function(url, destfile, is_sidecar) 0L
+  )
+  expect_error(
+    install_on_win(install_dir = d),
+    class = "tidymedia_checksum_unavailable"
+  )
+  expect_identical(rec$extract, list())
+  expect_identical(rec$set, list())
+})
+
+test_that("a digest that does not match aborts, names both digests, and registers nothing", {
+  # AC1. The config directory is compared before and after, so the claim is
+  # about the remembered locations rather than about the return value.
+  config <- tm_redirect_config()
+  tm_redirect_data()
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+  wrong <- paste(rep("a", 64), collapse = "")
+
+  rec <- tm_mock_install(confirm = function(prompt) TRUE, sidecar = wrong)
+  before <- tm_dir_snapshot(config$root)
+  msg <- tryCatch(
+    install_on_win(install_dir = d),
+    tidymedia_checksum_mismatch = function(cnd) cli::ansi_strip(conditionMessage(cnd))
+  )
+  # Both digests are named: the one that was published, and the one the
+  # downloaded file actually has.
+  expect_true(grepl(wrong, msg, fixed = TRUE))
+  expect_true(grepl(rec$digest, msg, fixed = TRUE))
+  expect_identical(rec$extract, list())
+  expect_identical(rec$set, list())
+  expect_identical(tm_dir_snapshot(config$root), before)
+})
+
+test_that("a caller-supplied digest is checked case-insensitively and fetches nothing", {
+  # AC2. Both cases of the same digest are accepted, and neither one sends the
+  # call to fetch a second copy of a digest it was already handed.
+  tm_redirect_config()
+  tm_redirect_data()
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+
+  probe <- tm_mock_install(confirm = function(prompt) TRUE)
+  digest <- probe$digest
+
+  for (value in c(digest, toupper(digest))) {
+    d <- file.path(withr::local_tempdir(), "ffmpeg")
+    rec <- tm_mock_install(confirm = function(prompt) TRUE)
+    expect_true(install_on_win(install_dir = d, archive_checksum = value))
+    expect_identical(rec$sidecar, list())
+    expect_identical(length(rec$extract), 1L)
+  }
+
+  # And a supplied digest that is wrong still refuses, on this path as on the
+  # published one -- the class is the same failure.
+  wrong <- tm_mock_install(confirm = function(prompt) TRUE)
+  expect_error(
+    install_on_win(install_dir = d, archive_checksum = paste(rep("a", 64), collapse = "")),
+    class = "tidymedia_checksum_mismatch"
+  )
+  expect_identical(wrong$set, list())
+})
+
+test_that("archive_checksum is refused at the front door, unclassed, before any fetch", {
+  # AC2. The four rejected shapes, and the ordering: the download mock aborts
+  # rather than returning, so a value that got past the check would fail here
+  # instead of quietly passing the test.
+  tm_redirect_config()
+  tm_redirect_data()
+  testthat::local_mocked_bindings(
+    download.file = function(...) stop("download.file() must not be reached"),
+    .package = "utils"
+  )
+  hex <- paste(rep("a", 64), collapse = "")
+  bad <- list(
+    short = substr(hex, 1, 63),
+    non_hex = paste0(substr(hex, 1, 63), "z"),
+    missing = NA_character_,
+    two = c(hex, hex)
+  )
+  for (name in names(bad)) {
+    cnd <- tryCatch(
+      install_on_win(archive_checksum = bad[[name]], confirm = FALSE),
+      error = function(cnd) cnd
+    )
+    expect_s3_class(cnd, "rlang_error")
+    # The argument is named, so the caller is told which one to fix.
+    expect_true(
+      grepl("archive_checksum", cli::ansi_strip(conditionMessage(cnd)), fixed = TRUE),
+      label = paste(name, "names the argument")
+    )
+    # And, like the package's other front-door checks, it is unclassed: the
+    # tidymedia_* classes describe an install that went wrong, and here none
+    # was attempted.
+    expect_false(
+      any(grepl("^tidymedia_", class(cnd))),
+      label = paste(name, "carries no tidymedia_ class")
+    )
+  }
+})
+
+test_that("an archive libarchive cannot read aborts without libarchive's text", {
+  # AC3. `unpack = NULL` leaves the real archive::archive_extract() in place,
+  # so these two fixtures reach libarchive itself. They cover its two failure
+  # routes: refusing to open at all, and failing to decompress an archive it
+  # did open (data-raw/corrupt-archive-fixtures.R).
+  tm_redirect_config()
+  tm_redirect_data()
+
+  for (fixture in c("not-an-archive.7z", "corrupt-payload.7z")) {
+    d <- file.path(withr::local_tempdir(), "ffmpeg")
+    rec <- tm_mock_install(
+      confirm = function(prompt) TRUE,
+      unpack = NULL,
+      archive = testthat::test_path("fixtures", fixture)
+    )
+    open_before <- nrow(showConnections(all = FALSE))
+    cnd <- tryCatch(
+      install_on_win(install_dir = d, archive_checksum = rec$digest),
+      error = function(cnd) cnd
+    )
+    expect_s3_class(cnd, "tidymedia_archive_unreadable")
+
+    # The mechanism the surviving download was made of, asserted where every
+    # platform can see it: archive_extract() opens its own connection to the
+    # archive and, on a failure inside archive_read_data_block(), leaves it
+    # open -- and Windows will not delete a file something still holds open.
+    # The file.exists() line below is the criterion, but it can only go red on
+    # Windows, so this one is what a developer running the suite anywhere else
+    # would see if tm_unpack() stopped owning the connection.
+    expect_identical(
+      nrow(showConnections(all = FALSE)), open_before,
+      label = paste(fixture, "leaves no connection open")
+    )
+
+    # The abort names its own two facts: the archive, and where it was going.
+    msg <- cli::ansi_strip(conditionMessage(cnd))
+    expect_true(grepl(rec$destfile, msg, fixed = TRUE), label = fixture)
+    expect_true(grepl(d, msg, fixed = TRUE), label = fixture)
+
+    # And libarchive's own text reaches the caller nowhere -- not in this
+    # message, and not in any condition carried underneath it.
+    walk <- cnd
+    while (!is.null(walk)) {
+      expect_false(
+        grepl("archive_extract.cpp", cli::ansi_strip(conditionMessage(walk)), fixed = TRUE),
+        label = paste(fixture, "chain is free of libarchive's source location")
+      )
+      walk <- walk$parent
+    }
+    # Nothing was registered, and the download did not survive the failure.
+    expect_identical(rec$set, list())
+    expect_false(file.exists(rec$destfile), label = fixture)
+  }
+
+  # The control: the same path, succeeding, also leaves no download behind and
+  # no connection open.
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+  ok <- tm_mock_install(confirm = function(prompt) TRUE)
+  open_before <- nrow(showConnections(all = FALSE))
+  expect_true(install_on_win(install_dir = d, archive_checksum = ok$digest))
+  expect_identical(nrow(showConnections(all = FALSE)), open_before)
+  expect_false(file.exists(ok$destfile))
+})
+
+test_that("the real archive_extract() returns the paths the mock stands in for", {
+  # The whole AC4 registration gate reads `tm_unpack()`'s file list, and every
+  # test above reaches that list through a mock which hard-codes its shape.
+  # This is the one test that asks libarchive itself, so a change in what
+  # `archive_extract()` returns -- absolute paths, a `./` prefix, paths before
+  # `strip_components` rather than after -- fails here instead of shipping and
+  # aborting on every real Windows install.
+  skip_if_not_installed("archive")
+  # The upstream layout: one wrapper directory named for the build, holding
+  # `bin/`. `strip_components = 1` is what removes the wrapper.
+  root <- withr::local_tempdir()
+  wrapper <- "ffmpeg-8.0-essentials_build"
+  dir.create(file.path(root, wrapper, "bin"), recursive = TRUE)
+  members <- file.path(wrapper, "bin", paste0(tm_install_registers, ".exe"))
+  for (member in members) writeLines("stub", file.path(root, member))
+  arch <- file.path(withr::local_tempdir(), "control.7z")
+  withr::with_dir(root, archive::archive_write_files(arch, members))
+
+  d <- withr::local_tempdir()
+  produced <- tm_unpack(arch, d)
+  # Relative to the directory, after strip_components -- which is exactly the
+  # string tm_extracted_programs() matches against.
+  expect_setequal(produced, file.path("bin", paste0(tm_install_registers, ".exe")))
+  expect_setequal(
+    tm_extracted_programs(produced, tm_install_registers),
+    tm_install_registers
+  )
+})
+
+test_that("tm_extracted_programs() reads the path shapes libarchive can report", {
+  # The normalization exists for Windows, where a backslash separator and a
+  # capitalized name are both ordinary -- and where no test on this machine
+  # would otherwise execute it.
+  expect_setequal(
+    tm_extracted_programs(
+      c("bin\\ffmpeg.exe", "./bin/FFprobe.EXE", "bin/ffplay.exe"),
+      tm_install_registers
+    ),
+    tm_install_registers
+  )
+  # And it stays a match on the install's own layout, not a name search: the
+  # same three programs one directory deeper are not what the install reads.
+  expect_identical(
+    tm_extracted_programs(
+      file.path("tools", "bin", paste0(tm_install_registers, ".exe")),
+      tm_install_registers
+    ),
+    character(0)
+  )
+})
+
+test_that("only the programs the extraction produced are registered", {
+  # AC4. Four builds, told apart by what the extraction leaves behind.
+  tm_redirect_config()
+  tm_redirect_data()
+  registered <- function(rec) vapply(rec$set, function(x) x$program, character(1))
+
+  all_three <- tm_mock_install(confirm = function(prompt) TRUE)
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+  expect_true(install_on_win(install_dir = d, archive_checksum = all_three$digest))
+  expect_identical(registered(all_three), c("ffmpeg", "ffprobe", "ffplay"))
+
+  # ffplay is optional: its absence is said out loud and the install still
+  # succeeds, but no location is remembered for it.
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+  no_ffplay <- tm_mock_install(
+    confirm = function(prompt) TRUE, unpack = c("ffmpeg", "ffprobe")
+  )
+  expect_message(
+    expect_true(install_on_win(install_dir = d, archive_checksum = no_ffplay$digest)),
+    "ffplay"
+  )
+  expect_identical(registered(no_ffplay), c("ffmpeg", "ffprobe"))
+
+  # Either required program missing refuses, names it, and writes nothing at
+  # all -- not even the one that WAS unpacked.
+  for (absent in c("ffmpeg", "ffprobe")) {
+    d <- file.path(withr::local_tempdir(), "ffmpeg")
+    rec <- tm_mock_install(
+      confirm = function(prompt) TRUE,
+      unpack = setdiff(tm_install_registers, absent)
+    )
+    cnd <- tryCatch(
+      install_on_win(install_dir = d, archive_checksum = rec$digest),
+      error = function(cnd) cnd
+    )
+    expect_s3_class(cnd, "tidymedia_program_not_extracted")
+    expect_true(
+      grepl(absent, cli::ansi_strip(conditionMessage(cnd)), fixed = TRUE),
+      label = paste("names", absent)
+    )
+    expect_identical(rec$set, list())
+  }
+})
+
+test_that("a re-install into a used directory counts only what THIS extraction produced", {
+  # AC4, on the path the default `install_dir` puts every caller on: the same
+  # directory, install after install, never cleared by the extraction. A
+  # directory listing cannot tell this build's binaries from the last one's,
+  # so a build missing a required program has to refuse even where the file
+  # it did not produce is sitting there from before.
+  tm_redirect_config()
+  tm_redirect_data()
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+  bin <- file.path(d, "bin")
+  dir.create(bin, recursive = TRUE)
+  for (program in c("ffmpeg", "ffplay")) {
+    file.create(file.path(bin, paste0(program, ".exe")))
+  }
+
+  rec <- tm_mock_install(confirm = function(prompt) TRUE, unpack = "ffprobe")
+  cnd <- tryCatch(
+    install_on_win(install_dir = d, archive_checksum = rec$digest),
+    error = function(cnd) cnd
+  )
+  expect_s3_class(cnd, "tidymedia_program_not_extracted")
+  expect_true(
+    grepl("ffmpeg", cli::ansi_strip(conditionMessage(cnd)), fixed = TRUE)
+  )
+  expect_identical(rec$set, list())
+
+  # And the optional half of the same reading: a build producing the two
+  # required programs and no ffplay says so and remembers no ffplay location,
+  # even with a previous run's ffplay.exe still in the directory.
+  leftover <- tm_mock_install(
+    confirm = function(prompt) TRUE, unpack = c("ffmpeg", "ffprobe")
+  )
+  expect_message(
+    expect_true(install_on_win(install_dir = d, archive_checksum = leftover$digest)),
+    "ffplay"
+  )
+  expect_identical(
+    vapply(leftover$set, function(x) x$program, character(1)),
+    c("ffmpeg", "ffprobe")
+  )
+})
+
+test_that("an archive the fetch reported but did not deliver aborts classed", {
+  # The archive-side counterpart of the sidecar guard above: status 0 with no
+  # file left behind. Without it, tm_archive_digest() aborts with a bare
+  # simpleError -- unclassed, and invisible to AC6's census, which sees only
+  # `return()` and `cli_abort()` nodes (AC5).
+  tm_redirect_config()
+  tm_redirect_data()
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+
+  rec <- tm_mock_install(
+    confirm = function(prompt) TRUE,
+    download = function(url, destfile, is_sidecar) {
+      # The sidecar arrives, so the run reaches the archive fetch and fails
+      # there rather than one step earlier.
+      if (is_sidecar) {
+        writeLines(paste(rep("a", 64), collapse = ""), destfile)
+      }
+      0L
+    }
+  )
+  cnd <- tryCatch(install_on_win(install_dir = d), error = function(cnd) cnd)
+  expect_s3_class(cnd, "tidymedia_download_unavailable")
+  expect_identical(rec$extract, list())
+  expect_identical(rec$set, list())
+})
+
+test_that("what an install remembers is read back off disk, not off the record", {
+  # AC4 again, with the REAL set_program() in place: the criterion's claim is
+  # about config FILES, and every assertion above it reads the recorded calls
+  # instead. This one asks the config directory what is actually there, so a
+  # write reaching it by some route other than set_program() is visible too.
+  config <- tm_redirect_config()
+  tm_redirect_data()
+  file_for <- function(p) tm_config_file(p)
+
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+  all_three <- tm_mock_install(confirm = function(prompt) TRUE, real_set = TRUE)
+  expect_true(install_on_win(install_dir = d, archive_checksum = all_three$digest))
+  for (program in tm_install_registers) {
+    expect_true(file.exists(file_for(program)), label = paste(program, "written"))
+    expect_identical(
+      readLines(file_for(program)),
+      tm_install_binary(d, program),
+      label = paste(program, "contents")
+    )
+  }
+
+  # ffplay optional: two files, and no third.
+  config <- tm_redirect_config()
+  file_for <- function(p) tm_config_file(p)
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+  no_ffplay <- tm_mock_install(
+    confirm = function(prompt) TRUE, unpack = c("ffmpeg", "ffprobe"),
+    real_set = TRUE
+  )
+  expect_message(
+    expect_true(install_on_win(install_dir = d, archive_checksum = no_ffplay$digest)),
+    "ffplay"
+  )
+  expect_true(file.exists(file_for("ffmpeg")))
+  expect_true(file.exists(file_for("ffprobe")))
+  expect_false(file.exists(file_for("ffplay")))
+
+  # A required program missing writes nothing at all: the config directory is
+  # byte-for-byte what it was, not merely missing the absent program's file.
+  for (absent in tm_install_required) {
+    config <- tm_redirect_config()
+    d <- file.path(withr::local_tempdir(), "ffmpeg")
+    rec <- tm_mock_install(
+      confirm = function(prompt) TRUE,
+      unpack = setdiff(tm_install_registers, absent),
+      real_set = TRUE
+    )
+    before <- tm_dir_snapshot(config$root)
+    expect_error(
+      install_on_win(install_dir = d, archive_checksum = rec$digest),
+      class = "tidymedia_program_not_extracted"
+    )
+    expect_identical(tm_dir_snapshot(config$root), before, label = absent)
+  }
+})
+
+test_that("tm_archive_digest() computes SHA-256, pinned to a known answer", {
+  # Every verifying test above compares tm_archive_digest() against itself:
+  # the published digest and the downloaded file's digest both come from it,
+  # so `algo = "sha256"` quietly becoming another 64-hex algorithm would leave
+  # all of them green. This pins one file to the digest `shasum -a 256` gives.
+  f <- withr::local_tempfile()
+  writeBin(charToRaw("abc"), f)
+  expect_identical(
+    tm_archive_digest(f),
+    "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+  )
+
+  # And a file that is not there is NULL, not a bare simpleError: the caller
+  # turns that NULL into a classed refusal, which it cannot do for a condition
+  # raised out from under it.
+  expect_null(tm_archive_digest(file.path(tempdir(), "no-such-archive")))
+})
+
+test_that("an archive that vanishes between the fetch and the digest refuses classed", {
+  # The second line of defense behind tm_fetch()'s existence test: whatever
+  # the reason the digest cannot be computed, the refusal is AC5's classed
+  # one naming the URL rather than whatever `digest` happened to raise.
+  tm_redirect_config()
+  tm_redirect_data()
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+
+  rec <- tm_mock_install(confirm = function(prompt) TRUE)
+  testthat::local_mocked_bindings(tm_archive_digest = function(path) NULL)
+  cnd <- tryCatch(install_on_win(install_dir = d), error = function(cnd) cnd)
+  expect_s3_class(cnd, "tidymedia_download_unavailable")
+  expect_identical(rec$extract, list())
+  expect_identical(rec$set, list())
+})
+
+test_that("tm_unpack() returns NULL where the archive cannot even be opened", {
+  # The connection is opened by tm_unpack() itself (T9), so a path that is not
+  # there fails before libarchive is reached -- and has to read as the same
+  # refusal, since the caller only asks whether the unpack produced anything.
+  # `file()` warns on its way to the error it raises; the warning is base R's
+  # and says the same thing, so it is suppressed rather than asserted.
+  expect_null(
+    suppressWarnings(
+      tm_unpack(file.path(tempdir(), "no-such-archive"), tempdir())
+    )
+  )
+})
+
+test_that("a download that does not deliver aborts, keeping the base condition underneath", {
+  # AC5. Both shapes download.file()'s contract allows, asserted by class.
+  tm_redirect_config()
+  tm_redirect_data()
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+  u <- "https://example.invalid/build.7z"
+
+  signalled <- tm_mock_install(
+    confirm = function(prompt) TRUE,
+    download = function(url, destfile, is_sidecar) stop("cannot open URL '", url, "'")
+  )
+  cnd <- tryCatch(
+    suppressMessages(install_on_win(download_url = u, install_dir = d)),
+    error = function(cnd) cnd
+  )
+  expect_s3_class(cnd, "tidymedia_download_unavailable")
+  expect_true(grepl(u, cli::ansi_strip(conditionMessage(cnd)), fixed = TRUE))
+  # The base condition is kept, so a caller who wants base R's wording can
+  # still reach it -- it just is not what the top-level message says.
+  expect_s3_class(cnd$parent, "condition")
+  expect_true(grepl("cannot open URL", conditionMessage(cnd$parent), fixed = TRUE))
+  expect_identical(signalled$set, list())
+
+  status <- tm_mock_install(
+    confirm = function(prompt) TRUE,
+    download = function(url, destfile, is_sidecar) 1L
+  )
+  expect_error(
+    suppressMessages(install_on_win(download_url = u, install_dir = d)),
+    class = "tidymedia_download_unavailable"
+  )
+  expect_identical(status$set, list())
+})
+
+
+# install_on_win()'s exits are all accounted for (M102 AC6) -------------------
+
+# Collect every `return()` and every `cli::cli_abort()` call in a function's
+# own body. The DOMAIN is derived rather than listed: a new exit added to
+# install_on_win() is collected the day it is written, so the census cannot go
+# stale the way a hand-kept list of sites would.
+#
+# Two node types only, and deliberately: a call to a helper is neither, so the
+# front-door checks and the aborts that originate inside tm_confirm() and
+# set_program() are outside what this can see. AC6 names those rather than
+# claiming them, and T2 sites every classed abort in the body itself so that
+# what the walk cannot see is only what is named.
+tm_collect_exits <- function(fn) {
+  found <- list()
+  walk <- function(node) {
+    if (is.call(node)) {
+      if (identical(tm_call_name(node), "return") ||
+          identical(tm_call_name(node), "cli_abort")) {
+        found[[length(found) + 1L]] <<- node
+      }
+    }
+    if (is.call(node) || is.pairlist(node)) {
+      parts <- as.list(node)
+      # Two node kinds hold the empty symbol: a call with a blank argument
+      # (`x[, 1]`), and the formals of an inline `function(x) ...`, whose
+      # arguments without defaults are empty. Binding one to a variable makes
+      # that variable missing, so the parts are reached by index and the empty
+      # ones skipped before they are ever forced.
+      for (i in seq_along(parts)) {
+        if (identical(parts[[i]], quote(expr = ))) next
+        walk(parts[[i]])
+      }
+    }
+  }
+  walk(body(fn))
+  found
+}
+
+# The name a call calls, seeing through `pkg::fn`.
+tm_call_name <- function(node) {
+  head <- node[[1]]
+  if (is.name(head)) return(as.character(head))
+  if (is.call(head) && identical(as.character(head[[1]]), "::")) {
+    return(as.character(head[[3]]))
+  }
+  NA_character_
+}
+
+# The classes a collected `cli_abort()` passes, as a character vector, or
+# none. `class = c("tidymedia_x", "y")` reaches here as an unevaluated call to
+# `c()` rather than as a vector, which a plain is.character() test would read
+# as no class at all; a vector holding the class IS catchable by it, so the
+# constant form is unwrapped instead.
+tm_exit_classes <- function(node) {
+  class <- node[["class"]]
+  if (is.null(class)) return(character(0))
+  if (is.call(class) && identical(tm_call_name(class), "c")) {
+    parts <- as.list(class)[-1]
+    if (!all(vapply(parts, is.character, logical(1)))) return(character(0))
+    class <- unlist(parts)
+  }
+  if (is.character(class)) class else character(0)
+}
+
+# The property AC6 asserts of each collected exit: a `return()` hands back a
+# literal TRUE or FALSE, and a `cli_abort()` passes a class beginning
+# `tidymedia_`. A bare `return()` -- which hands back NULL -- is read as
+# non-compliant rather than left to throw a subscript error out of the walk.
+tm_exit_ok <- function(node) {
+  if (identical(tm_call_name(node), "return")) {
+    if (length(node) < 2L) return(FALSE)
+    value <- node[[2]]
+    return(is.logical(value) && length(value) == 1L && !is.na(value))
+  }
+  any(startsWith(tm_exit_classes(node), "tidymedia_"))
+}
+
+test_that("every exit install_on_win() takes in its own body is TRUE/FALSE or classed", {
+  # AC6. The claim is exactly the collected set.
+  exits <- tm_collect_exits(install_on_win)
+  for (node in exits) {
+    expect_true(tm_exit_ok(node), label = deparse1(node))
+  }
+
+  # The floor against a collector that silently under-reads the body: the set
+  # holds the five abort sites AC1, AC3, AC4 and AC5 name. Without this, a
+  # walk that found nothing would satisfy the loop above vacuously.
+  classes <- unlist(lapply(exits, tm_exit_classes))
+  expect_true(all(
+    c(
+      "tidymedia_checksum_unavailable",
+      "tidymedia_checksum_mismatch",
+      "tidymedia_download_unavailable",
+      "tidymedia_archive_unreadable",
+      "tidymedia_program_not_extracted"
+    ) %in% classes
+  ))
+})
+
+test_that("the exit census can fail", {
+  # The collector and the property are only worth their green if they go red
+  # on the two defects they exist to catch, so both are planted here rather
+  # than left to a one-time check that no later reader can re-run.
+  unclassed <- function() cli::cli_abort("something went wrong")
+  non_literal <- function(x) return(x)
+  compliant <- function(x) {
+    if (x) return(FALSE)
+    cli::cli_abort("no", class = "tidymedia_planted")
+  }
+  # Two shapes the property has to READ rather than break on: a bare
+  # `return()`, whose value node does not exist, and a class passed as a
+  # vector, which is catchable and so compliant. Neither shape is in
+  # install_on_win() today, which is why they are asserted here.
+  bare <- function() return()
+  vector_class <- function() {
+    cli::cli_abort("no", class = c("tidymedia_planted", "extra"))
+  }
+
+  ok <- function(fn) all(vapply(tm_collect_exits(fn), tm_exit_ok, logical(1)))
+  expect_false(ok(unclassed))
+  expect_false(ok(non_literal))
+  expect_true(ok(compliant))
+  expect_false(ok(bare))
+  expect_true(ok(vector_class))
+  expect_identical(
+    tm_exit_classes(tm_collect_exits(vector_class)[[1]]),
+    c("tidymedia_planted", "extra")
+  )
+
+  # And the collector reads a non-empty domain in each case, so "no exits
+  # found" can never be what makes a function look compliant.
+  expect_identical(length(tm_collect_exits(unclassed)), 1L)
+  expect_identical(length(tm_collect_exits(non_literal)), 1L)
+  expect_identical(length(tm_collect_exits(compliant)), 2L)
 })

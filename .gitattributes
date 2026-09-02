@@ -1,1 +1,4 @@
 * text=auto
+
+# The corrupt-archive fixtures are exact bytes: never line-ending-normalized.
+*.7z binary

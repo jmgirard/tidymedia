@@ -29,6 +29,7 @@ NTSC
 ORCID
 Ogg
 README
+SHA
 VBR
 Vorbis
 WebM
@@ -67,6 +68,7 @@ integerish
 intra
 keyframe
 keyframes
+libarchive
 libx
 losslessly
 lossy

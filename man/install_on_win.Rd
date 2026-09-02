@@ -4,7 +4,12 @@
 \alias{install_on_win}
 \title{Install FFmpeg on Windows}
 \usage{
-install_on_win(download_url = NULL, install_dir = NULL, confirm = TRUE)
+install_on_win(
+  download_url = NULL,
+  install_dir = NULL,
+  confirm = TRUE,
+  archive_checksum = NULL
+)
 }
 \arguments{
 \item{download_url}{A string indicating the location of the FFmpeg
@@ -19,21 +24,43 @@ policy sanctions.}
 \item{confirm}{A logical indicating whether to ask for confirmation before
 downloading and installing anything. Defaults to \code{TRUE}. The prompt names
 the archive to be downloaded, the directory it will be unpacked into, and
-the remembered program locations it will overwrite. Where there is no one
+the remembered program locations it may overwrite. Where there is no one
 to ask, the call aborts rather than assume consent, naming those same
 items; pass \code{confirm = FALSE} to install without being asked.}
+
+\item{archive_checksum}{A string giving the archive's expected SHA-256
+digest as 64 hexadecimal characters, in either case. Defaults to \code{NULL}.
+A digest supplied here is used on every source, and no digest is fetched.
+Where it is \code{NULL} and \code{download_url} is not the package's own default,
+nothing is verified and the call says so.}
 }
 \value{
 A logical indicating whether the installation was successful.
-\code{FALSE} is also what a declined confirmation returns, alongside the
-existing failures to create the install directory or download the
-archive.
+\code{FALSE} is returned by a declined confirmation and by a failure to create
+the install directory. Five other outcomes abort with a condition of their
+own rather than returning: a download that did not deliver
+(\code{tidymedia_download_unavailable}), a published digest that could not be
+fetched or read (\code{tidymedia_checksum_unavailable}), a digest that did not
+match the downloaded archive (\code{tidymedia_checksum_mismatch}), an archive
+that could not be unpacked (\code{tidymedia_archive_unreadable}), and a
+required program the archive did not contain
+(\code{tidymedia_program_not_extracted}).
 }
 \description{
 Downloads an FFmpeg archive, extracts it, and updates the package's user
 config files to point to the component executable files. Because the call
 downloads a third-party build and overwrites remembered program locations,
 it asks for confirmation first and does nothing at all until it has it.
+}
+\details{
+The archive is checked against a SHA-256 digest before anything is unpacked,
+and no program location is remembered unless the extraction actually
+produced that program. For the package's own default source the digest is
+fetched from \verb{<download_url>.sha256}, which is what gyan.dev publishes
+beside each build; for any other source, pass \code{archive_checksum}. Because
+the digest travels from the same host over the same connection as the
+archive, this catches a corrupted or truncated download, not a compromised
+source.
 }
 \examples{
 \dontrun{

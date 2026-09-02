@@ -104,5 +104,5 @@ concatenate_videos_batch(jobs, run = FALSE)
 #> # A tibble: 1 × 3
 #>   inputs    output     command                                                  
 #>   <list>    <chr>      <chr>                                                    
-#> 1 <chr [2]> joined.mp4 "-y -f concat -safe 0 -i \"/tmp/Rtmp0sBsK5/ffm-concat21d…
+#> 1 <chr [2]> joined.mp4 "-y -f concat -safe 0 -i \"/tmp/RtmpOGlNRt/ffm-concat25e…
 ```

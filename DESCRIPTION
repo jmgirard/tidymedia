@@ -20,6 +20,7 @@ Depends:
 Imports:
     archive (>= 1.1.1),
     cli (>= 3.4.0),
+    digest (>= 0.6.29),
     dplyr (>= 1.1.0),
     glue (>= 1.6.2),
     purrr (>= 1.0.0),

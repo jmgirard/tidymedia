@@ -116,9 +116,9 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
 
 ## Tasks
 
-- [ ] T1: Add `digest` to `DESCRIPTION` `Imports`; measure the floor with
-      `Rscript data-raw/imports-floors.R --only digest`. D081 is already
-      appended.
+- [ ] T1: Add `digest` to `DESCRIPTION` `Imports` (D081 is already appended).
+      The floor measurement moves to T8, where the package actually calls
+      `digest` and the run has something to exercise.
 - [ ] T2: Add the sidecar-URL, sidecar-parse and archive-digest helpers, each
       returning a value rather than aborting so AC6's census holds; add the
       `archive_checksum` shape check as a `check_*()` helper in `R/utils.R`; add
@@ -143,8 +143,9 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
 - [ ] T7: Write the derived-exit test for AC6; prove it can fail by planting,
       one at a time, an unclassed `cli::cli_abort()` and a `return()` of a
       non-literal, and seeing each red.
-- [ ] T8: Roxygen, `NEWS.md`, `README.Rmd`; then `devtools::document()`,
-      `devtools::test()`, `devtools::check()`.
+- [ ] T8: Roxygen, `NEWS.md`, `README.Rmd`; measure the declared `digest` floor
+      with `Rscript data-raw/imports-floors.R --only digest`; then
+      `devtools::document()`, `devtools::test()`, `devtools::check()`.
 
 ## Work log
 
@@ -161,6 +162,7 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
 - 2026-09-02: the amended AC2/AC6 wording re-entered the full criteria audit with a second fresh-context [O] reader that authored none of it. Six findings, four fixed at the gate — AC1 and AC2 both claimed the (default URL, digest supplied) case with opposite requirements, so AC1 gained its `archive_checksum` antecedent and AC2 a precedence sentence; AC6's closed exit list rested on an unstated siting rule, now stated in AC6 and carried out by T2; AC2's `check_*()` siting sentence was an implementation constraint, moved to T2; AC2's mock-observability sentence bound an instrument rather than the deliverable, moved to T6. Declined: renaming the two checksum condition classes (a vocabulary tidy that would drag AC1 along) and a fifth rejected-value probe of a non-character type (`rlang::check_string()` owns that branch, and AC2's domain says "string").
 
 - 2026-09-02: the amendment pushed the plan-owned body over the 150-line cap, so the Acceptance criteria section was compressed in one pass, with the Scope and Tasks sections tightened alongside it when the criteria alone could not carry the cut (159 -> 148 lines). A third fresh-context [O] reader diffed the compressed sections against the pre-amendment file and returned promise-preserving; the instrument clauses the compression lifted out of AC1, AC3 and AC5 landed in T6, and five hyphenated words the re-wrap had broken were rejoined.
+- 2026-09-02: T1 checkpoint (not yet ticked, the profile's `verify` run is still in flight) — `digest (>= 0.6.29)` declared in `Imports`, and `data-raw/corrupt-archive-fixtures.R` written for T6. Minor amendment: T1's floor measurement moved to T8, since `--only digest` pins the declared version and runs the suite twice, and until T2 lands nothing in the package calls `digest` for that run to exercise.
 
 ## Decisions
 

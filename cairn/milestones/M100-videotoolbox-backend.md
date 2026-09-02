@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M100: Hardware encoding is a backend vocabulary, and videotoolbox is the second member
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M099
 - **Driving RR:** —
@@ -55,7 +55,7 @@ milestone's, since adding an argument is additive and outside D014.
       `resolve_hw_encoder()` (`R/ffmpeg.R:3095`) carries the same default and is
       widened with them: widening only the exported 16 leaves every
       `hardware = "videotoolbox"` call aborting inside the resolver.
-- [ ] AC2 A backend's codec-family table decides both what it emits and what it
+- [x] AC2 A backend's codec-family table decides both what it emits and what it
       refuses. Under `hardware = "videotoolbox"` the compiled command names
       `<family>_videotoolbox` for each family that table declares, and under
       `hardware = "nvenc"` names `<family>_nvenc` for its own; the test iterates
@@ -67,7 +67,7 @@ milestone's, since adding an argument is additive and outside D014.
       assertions set an available pool (AC3's mechanism); `run = FALSE` does not
       license them, since D034 runs the probe when the pipeline is built,
       `run` notwithstanding.
-- [ ] AC3 An unavailable backend aborts, and `fallback = TRUE` falls back, and
+- [x] AC3 An unavailable backend aborts, and `fallback = TRUE` falls back, and
       both routes to the probe's answer agree. The memo route: with
       `withr::local_options(tidymedia.hardware_encoders = NULL)` — required,
       because the option is read before the memo and leaves a mock inert — and
@@ -79,7 +79,7 @@ milestone's, since adding an argument is additive and outside D014.
       the one carried into `parallel = TRUE` workers. Under `fallback = TRUE`
       each unavailable case instead falls back to the software encoder and says
       which backend it fell back from.
-- [ ] AC4 The videotoolbox path is executed for real, not only compiled: one
+- [x] AC4 The videotoolbox path is executed for real, not only compiled: one
       verb writes a file under `hardware = "videotoolbox"` that exists, is
       non-empty, and reports the requested width. Its skip runs a one-frame
       encode and skips on non-zero exit, never on the encoder list —
@@ -88,7 +88,7 @@ milestone's, since adding an argument is additive and outside D014.
       including virtualized runners. This is the first hardware path the suite
       can execute at all; every nvenc behavior is decided by hardware no runner
       has (M094).
-- [ ] AC5 The exported availability helper answers for either backend, not only
+- [x] AC5 The exported availability helper answers for either backend, not only
       nvenc: under AC3's pools it reports videotoolbox available and nvenc not,
       and the reverse, under whatever name M099 settled.
 - [ ] AC6 The user-facing text describes a vocabulary, not one backend, over a
@@ -102,7 +102,7 @@ milestone's, since adding an argument is additive and outside D014.
       rewrites; and a `NEWS.md` entry naming videotoolbox and the families each
       backend covers. `devtools::check()` reaches none of these, so AC7 does not
       backstop it.
-- [ ] AC7 `devtools::test()` clean, `devtools::document()` produces no diff,
+- [x] AC7 `devtools::test()` clean, `devtools::document()` produces no diff,
       `pkgdown::check_pkgdown()` passes, and `devtools::check()` reports 0
       errors and 0 warnings with every NOTE justified (PROFILE `verify` and
       `consistency-gate` slots).
@@ -235,3 +235,160 @@ milestone's, since adding an argument is additive and outside D014.
 - 2026-09-02 implement T8: `NEWS.md` gains a new-features entry for the vocabulary and a breaking-changes entry for the helpers' required `hardware`, and M099's "nvenc is the one hardware backend" sentence is edited rather than contradicted (RR07 point 4). `vignettes/workflow.Rmd` teaches naming a backend and checking under the same name. `_pkgdown.yml`'s "FFmpeg capabilities" prose was re-checked and needs no edit: it already reads "opt-in hardware (GPU) encoding", which is backend-neutral.
 - 2026-09-02 implement T9: `devtools::document()` produces no diff, `pkgdown::check_pkgdown()` reports no problems, `devtools::test()` is 0 failures / 11271 passing / 18 skipped (the 10 warnings are the pre-existing dropped-audio-track warnings from execution tests, none in this milestone's files), and `devtools::check()` is Status: OK -- 0 errors, 0 warnings, 0 notes. One spelling NOTE fired first and was closed by `spelling::update_wordlist()` adding `backend's`, `hevc` and `videotoolbox` to `inst/WORDLIST`. `README.Rmd` names neither `hardware` nor nvenc, so it needs no re-knit.
 - 2026-09-02 review: branch pushed; draft PR #104 opened so CI runs during the review; PR URL recorded in the header. Evidence gathering in progress — `cairn_validate` passes (exit 0, no release-window advisory), AC1 and AC6 instruments measured, blame-history and prior-review lenses returned; `devtools::test()` and the [O] diff reviewer still outstanding.
+- 2026-09-02 review: RETURNED to in-progress. AC6 fails -- two of the three `man/` topics its grep names were never touched and still read nvenc-only (`refresh_ffmpeg_capabilities.Rd:17`, `tidymedia-package.Rd:110,113,120,200`), though T8 records the three help topics as done. AC1 fails -- the sweep it names (T5: extend `nvenc_hardware_exports()` into it) is absent; the property holds at all 16 verbs and the resolver, but the only default assertion in the suite is `test-video-codec.R:518` over eight hand-listed verbs. AC2-AC5 and AC7 verified and ticked. Nine further findings actioned in the Review section, the first being a blame regression: the (family, backend) refusal names `hardware_encoder()` where master named the verb. Draft PR #104 stays open. First defect return.
+
+## Review
+
+Reviewed 2026-09-02 against `origin/master` (level with local `master`; no merge
+needed). Draft PR #104. Evidence below is this session's own, by command.
+
+### Acceptance criteria
+
+- **AC1 — FAILS.** The property holds: all 16 members of
+  `nvenc_hardware_exports()` carry `hardware = c("none", "nvenc",
+  "videotoolbox")` with `"none"` first, every one calls bare
+  `rlang::arg_match(hardware)` with no `values=`, and `resolve_hw_encoder()`
+  carries the same default (measured this session over the namespace). But the
+  criterion names a sweep — "the sweep asserts that too" — and T5 says to build
+  it. No test enumerates the domain through `nvenc_hardware_exports()` and
+  asserts each member's default or the bare `arg_match`. The only default
+  assertion in the suite is `test-video-codec.R:518`, over eight hand-listed
+  verbs; the other eight and the resolver have none. The sweep AC1 names is
+  absent, so the criterion's own procedure was never committed.
+- [x] **AC2.** `test-hardware-backends.R` iterates
+  `hardware_backend_families()` and asserts `-codec:v <family>_<backend>` in the
+  compiled command for all five declared cells, with the software codec absent;
+  a second test pins h264 and hevc in both rows by name. Both refusals
+  measured: `videotoolbox` + `libaom-av1` gives `videotoolbox has no "av1"
+  encoder.`, `nvenc` + `prores` gives `nvenc has no "prores" encoder.`, neither
+  naming the other backend. Each assertion sets a pool, never `run = FALSE`
+  alone.
+- [x] **AC3.** Both routes assert the same four outcomes and pass. Memo route:
+  option unset via `withr::local_options(tidymedia.hardware_encoders = NULL)`
+  with `cached_encoder_names()` mocked, both pools and their inverses. Option
+  route: the same four with the option set and no mock. `fallback = TRUE` falls
+  back to `-codec:v libx264` for each backend with a message naming it.
+- [x] **AC4.** Executed for real on this machine, not only compiled:
+  `standardize_video(infile, outfile, width = 160, height = 120, hardware =
+  "videotoolbox")` produced an existing 19,952-byte file reporting width 160,
+  FFmpeg mapping `h264 (native) -> h264 (h264_videotoolbox)`. The suite's test
+  ran rather than skipped (no `test-hardware-backends.R` entry among the 18
+  skips). `skip_if_no_videotoolbox()` runs a one-frame encode and skips on
+  non-zero exit, consulting no encoder list.
+- [x] **AC5.** `has_hardware_encoder()` reports videotoolbox available and
+  nvenc not under the first pool, and the reverse under the second.
+- **AC6 — FAILS.** Its domain is the three topics
+  `grep -rln "tidymedia.hardware_encoders" man/` returns, the same three at
+  master and HEAD. Only `man/hardware_encoder.Rd` was rewritten.
+  `man/refresh_ffmpeg_capabilities.Rd:17` (from `R/cache.R:33`) still reads
+  "The first `hardware = "nvenc"` call in an R session asks FFmpeg which
+  encoders it has", and `man/tidymedia-package.Rd:110,113,120,200` still puts
+  the probe and the override option in nvenc-only terms. T8 records "the three
+  help topics" as done. The rest of AC6's domain does pass: the vignette
+  paragraph and chunk teach naming a backend and checking under the same name;
+  `_pkgdown.yml`'s section prose reads "opt-in hardware (GPU) encoding" and
+  needs no rewrite; `NEWS.md` names videotoolbox and both backends' families.
+  AC6's own last sentence is the reason this is not backstopped.
+- [x] **AC7.** `devtools::test()` 0 failures / 11,271 passing / 18 skipped (all
+  pre-existing, in `test-nvenc.R`, `test-parallel-option-carry.R` and
+  `test-video-codec.R`; the 10 warnings are in untouched audio-stream and
+  ffmpeg files). `devtools::document()` produced no diff.
+  `pkgdown::check_pkgdown()` reported no problems. `devtools::check()` Status:
+  OK — 0 errors, 0 warnings, 0 notes, 8m 29s.
+
+### Consistency gate
+
+`cairn_validate.py` exit 0, all 16 checks PASS, no `release window` advisory.
+No principle change, so `cairn_impact.py` does not apply. Toolchain slot: the
+four `consistency-gate` commands are recorded under AC7; `README.md` is
+unaffected (`README.Rmd` names neither `hardware` nor either backend); the
+`NEWS.md` changelog entries are present; no new top-level files.
+
+### Findings
+
+Three fresh-context lenses. [S] blame-history: no findings — D035, D044, D074
+and D075's orderings survive the rename. [S] prior-review record: no
+regression; `gh api .../pulls/comments` returned `[]`, so the PR-thread walk was
+skipped. [O] diff-bug returned 14; every finding and its disposition follows.
+Each was verified against the implementation before disposition.
+
+1. **The (family, backend) refusal is blamed on an internal frame** —
+   CONFIRMED, and a regression. `hardware_encoder()`'s `cli_abort()`
+   (`R/ffmpeg.R:3101`) takes no `call =`, and `hardware_encoder_available()`
+   (`:3134`) accepts a `call` it never threads in. Measured:
+   `standardize_video(f, "o.mp4", video_codec = "libaom-av1", hardware =
+   "videotoolbox")` reports `Error in hardware_encoder(codec, hardware)`. At
+   master the same class of refusal came from `codec_family(video_codec, call =
+   call)` and named the verb the caller typed. This is M094 F2 / D074's defect
+   one layer down. `test-hardware-backends.R`'s covering test is named "refused
+   at the verb" but asserts only class and message, never `conditionCall`.
+   → **fix on the branch.**
+2. **AC6's two untouched topics** — CONFIRMED. See AC6 above. → **returns the
+   milestone.**
+3. **AC1's sweep does not exist** — CONFIRMED. See AC1 above. → **returns the
+   milestone.**
+4. **`has_hardware_encoder()` aborts where `@return` promises a logical** —
+   CONFIRMED. `has_hardware_encoder("av1", "videotoolbox")` raises
+   `videotoolbox has no "av1" encoder.` rather than returning `FALSE`, against
+   `man/hardware_encoder.Rd:26`. The abort also offers `video_codec` and
+   `hardware = "none"` advice from a frame with neither argument. → **fix on
+   the branch** (decide return-vs-abort, then make the doc and the message
+   agree).
+5. **`fallback = TRUE` + a `_batch` column the backend lacks is blamed on
+   `purrr::pmap()`** — CONFIRMED as behavior, REJECTED as a finding. Measured:
+   `conditionCall` is `purrr::pmap(jobs, .f, ...)`. But master behaves
+   identically for `prores` under nvenc, and
+   `test-nvenc-front-door.R:236` pins that placement deliberately as "unchanged
+   from master". The diff widens which pairs reach it, not the shape.
+   Pre-existing → out-of-scope taxonomy.
+6. **The fallback test's backend assertion cannot fail** — CONFIRMED. The
+   message is `videotoolbox encoder "h264_videotoolbox" is not available; …`,
+   so `expect_match(conditionMessage(msg), backend)`
+   (`test-hardware-backends.R:141`) matches inside the interpolated encoder
+   name; deleting the leading `{hardware}` token leaves it green. Fails the
+   check-discrimination rule. → **fix on the branch.**
+7. **`has_hardware_encoder("h264")`'s missing-argument error names
+   `hardware_encoder()`** — CONFIRMED, knowingly taken: the census records it
+   at `test-unguarded-argument-front-doors.R:107` and the work log narrates it.
+   → **rejected**, intentional and disclosed; but see finding 8.
+8. **`DESIGN.md:101` undercounts** — CONFIRMED. It says "Eleven arguments are
+   refused below the verb the caller typed" and names
+   `has_hardware_encoder()`'s `codec`; finding 7 makes it twelve. Current
+   knowledge, corrected where it sits. → **fix on the branch.**
+9. **`format_for_web()` claims a behavior the code does not have** —
+   CONFIRMED. `R/ffmpeg.R:1552` / `man/format_for_web.Rd:24` says the backends
+   are used "whichever is available"; the verb uses the named backend and
+   aborts otherwise. Fails the derived-claims rule. → **fix on the branch.**
+10. **The Rd usage line names an unexported function** — CONFIRMED.
+    `man/hardware_encoder.Rd:8-10` publishes
+    `hardware_encoder(codec = hardware_codec_families(), hardware)` where
+    master showed `c("h264", "hevc", "av1")`; `hardware_codec_families()` is
+    not exported, so a reader cannot evaluate it. This is the objection the
+    diff's own comment at `R/ffmpeg.R:3017-3020` uses to justify literal
+    defaults at the verbs. → **fix on the branch.**
+11. **`"prores"` is a documented `codec` value that can never succeed** —
+    CONFIRMED as described, REJECTED. The milestone's Decisions entry of
+    2026-09-02 (T2/T3) chose exactly this so the nvenc refusal could name the
+    family, and `man/hardware_encoder.Rd:19` discloses it. Intentional change
+    the plan called for.
+12. **AC4's skip probes `nullsrc` while the test encodes a `testsrc`-derived
+    H.264 file** — CONFIRMED. AC4's stated shape (one-frame encode, skip on
+    non-zero exit, never the encoder list) is met, so this is not a criterion
+    failure. → **candidate row** if it ever mis-skips; no fix now.
+13. **Six added comment lines exceed 80 columns** (`R/ffmpeg.R:3120`, `:3232`,
+    `R/timeout.R:79`, …) — → **rejected**, formatter-class.
+14. **`NEWS.md:56` overclaims a contrast** — "instead of a command that dies
+    inside FFmpeg". At master `hardware = "videotoolbox"` was not accepted at
+    all, and `prores` under nvenc already aborted. → **fix on the branch**
+    (drop the contrast clause).
+15. From the prior-review lens: the vignette's "an error naming both" is
+    ambiguous about what "both" denotes. → **fix on the branch**, one word.
+
+### Outcome
+
+Returned to `in-progress`. Two criteria fail inside their own named
+procedures' domains — AC6's grep and AC1's sweep — which is a defect return
+under the return floor, not an amendment return: both are satisfiable as
+written, and the gap is work not yet done rather than a wrong promise. Nine
+further findings are actioned above. This is M100's first defect return; no
+thrash threshold fires.

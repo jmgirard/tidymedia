@@ -7,7 +7,7 @@
 - **Depends on:** M099
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** `m100-videotoolbox-backend`
+- **Branch/PR:** `m100-videotoolbox-backend` · [PR #104](https://github.com/jmgirard/tidymedia/pull/104)
 
 ## Goal
 
@@ -234,3 +234,4 @@ milestone's, since adding an argument is additive and outside D014.
 - 2026-09-02 census: the corrupt-argument sweep's master census is a merge-base measurement and was left untouched (IP4). `has_hardware_encoder()`'s new required `hardware` formal adds five dropped cells refused inside `hardware_encoder()` -- the frame that already refuses a wrong `codec` -- so the live totals move 1530/437 to 1535/442 with `kept` unchanged, and the one new entry is named in the test's two-way difference rather than added to the frozen list.
 - 2026-09-02 implement T8: `NEWS.md` gains a new-features entry for the vocabulary and a breaking-changes entry for the helpers' required `hardware`, and M099's "nvenc is the one hardware backend" sentence is edited rather than contradicted (RR07 point 4). `vignettes/workflow.Rmd` teaches naming a backend and checking under the same name. `_pkgdown.yml`'s "FFmpeg capabilities" prose was re-checked and needs no edit: it already reads "opt-in hardware (GPU) encoding", which is backend-neutral.
 - 2026-09-02 implement T9: `devtools::document()` produces no diff, `pkgdown::check_pkgdown()` reports no problems, `devtools::test()` is 0 failures / 11271 passing / 18 skipped (the 10 warnings are the pre-existing dropped-audio-track warnings from execution tests, none in this milestone's files), and `devtools::check()` is Status: OK -- 0 errors, 0 warnings, 0 notes. One spelling NOTE fired first and was closed by `spelling::update_wordlist()` adding `backend's`, `hevc` and `videotoolbox` to `inst/WORDLIST`. `README.Rmd` names neither `hardware` nor nvenc, so it needs no re-knit.
+- 2026-09-02 review: branch pushed; draft PR #104 opened so CI runs during the review; PR URL recorded in the header. Evidence gathering in progress — `cairn_validate` passes (exit 0, no release-window advisory), AC1 and AC6 instruments measured, blame-history and prior-review lenses returned; `devtools::test()` and the [O] diff reviewer still outstanding.

@@ -33,6 +33,18 @@
 ### Configuration
 
 - [`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
+  now asks before it downloads or installs anything. The prompt names
+  the archive it will fetch, the directory it will unpack into, and the
+  three remembered program locations it will overwrite; declining
+  returns `FALSE` and leaves every one of them untouched — no directory
+  is created, nothing is downloaded, and no remembered location changes.
+  In a session with no one to ask, the call now aborts rather than
+  proceed as if consent had been given, and the abort names the same
+  archive, directory and locations the prompt would have; pass the new
+  `confirm = FALSE` to install without being asked, which is what an
+  unattended script wants.
+
+- [`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
   now installs FFmpeg under `tools::R_user_dir("tidymedia", "data")`,
   the user data directory CRAN policy sanctions, in an `ffmpeg`
   subdirectory — replacing the old `rappdirs` location. This is the

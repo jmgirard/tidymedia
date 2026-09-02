@@ -56,7 +56,7 @@ test_that("a set encoder override leaves `has_hardware_encoder()` nothing to ref
     )
     # And the answer is still the override's, not a stale or spawned one.
     expect_true(
-      withr::with_options(list(tidymedia.timeout = limit), has_hardware_encoder("h264"))
+      withr::with_options(list(tidymedia.timeout = limit), has_hardware_encoder("h264", "nvenc"))
     )
   }
 })

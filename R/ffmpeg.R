@@ -989,8 +989,8 @@ ffmpeg_exit_status <- function(cnd) {
 #' instead (\code{audio_codec = "libmp3lame"}) to transcode that stream, or pass
 #' \code{NULL} to emit no codec option at all and let the output extension pick
 #' the encoder. Each argument governs only its own output file. Where the video
-#' is re-encoded, \code{hardware = "nvenc"} moves that encode onto an NVIDIA
-#' GPU; the audio output is never affected.
+#' is re-encoded, \code{hardware = "nvenc"} or \code{"videotoolbox"} moves
+#' that encode onto a GPU; the audio output is never affected.
 #'
 #' @param infile A string containing the path to a media file.
 #' @param audiofile A string containing the path of the audio file to write.
@@ -1006,26 +1006,29 @@ ffmpeg_exit_status <- function(cnd) {
 #'   \code{NULL} emits no \code{-codec:v}, leaving the encoder to the
 #'   \code{videofile} extension.
 #' @param hardware The encoder backend for \code{videofile}: \code{"none"}
-#'   (default, the software \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU
-#'   encoding, which uses the nvenc encoder for \code{video_codec}'s family
-#'   (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}), assuming the H.264
-#'   family when \code{video_codec = NULL}. Only video is encoded on the GPU, so
-#'   this never affects \code{audiofile}. Because this verb's video default is a
-#'   stream copy, which runs no encoder at all, \code{hardware = "nvenc"}
-#'   alongside \code{video_codec = "copy"} is an error: name an encoder or pass
-#'   \code{video_codec = NULL}. See \code{\link{has_hardware_encoder}} for availability and
-#'   its caveats.
-#'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   (default, the software \code{video_codec}), \code{"nvenc"} for NVIDIA
+#'   GPU encoding, or \code{"videotoolbox"} for Apple GPU encoding, each
+#'   using that backend's encoder for \code{video_codec}'s family (e.g.
+#'   \code{"libx264"} becomes \code{"h264_nvenc"} or
+#'   \code{"h264_videotoolbox"}), assuming the H.264 family when
+#'   \code{video_codec = NULL}. Only video is encoded on the GPU, so this
+#'   never affects \code{audiofile}. Because this verb's video default is a
+#'   stream copy, which runs no encoder at all, a non-\code{"none"}
+#'   \code{hardware} alongside \code{video_codec = "copy"} is an error: name
+#'   an encoder or pass \code{video_codec = NULL}. See
+#'   \code{\link{has_hardware_encoder}} for availability and its caveats.
+#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
+#'   so the first such call that re-encodes the video runs the binary
 #'   while the command is built, even under \code{run = FALSE}. The answer is
 #'   remembered for the rest of the R session; see
 #'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 #'   The stream-copy conflict above is caught first, so such a call aborts
 #'   without probing.
-#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
-#'   unavailable, encode in software with a message (\code{TRUE}) instead of
-#'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
-#'   fallback leaves the codec unset rather than injecting one.
+#' @param fallback A logical: when a non-\code{"none"} \code{hardware} is
+#'   requested but its encoder is unavailable, encode in software with a
+#'   message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
+#'   \code{video_codec = NULL} the fallback leaves the codec unset rather
+#'   than injecting one.
 #' @param audio_stream `r audio_stream_param("write to \\code{audiofile}", "keeps", "every", extra = audio_stream_extras$separation_container)`
 #' @param run A logical: run the commands through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled commands without running them (\code{FALSE}).
@@ -1036,7 +1039,7 @@ ffmpeg_exit_status <- function(cnd) {
 #'   still aborts the call, and the video command has written \code{videofile}
 #'   by then unless it failed too; see \emph{When the audio output fails}.
 #' @seealso [ffm_map()] and [ffm_codec()], the builders it wraps;
-#'   [has_hardware_encoder()] for the \code{hardware = "nvenc"} toggle;
+#'   [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [extract_audio()] to pull out just the audio;
 #'   [probe_audio()] to list an input's audio tracks.
 #' @section When the audio output fails:
@@ -1142,7 +1145,7 @@ ffmpeg_exit_status <- function(cnd) {
 #' @export
 separate_audio_video <- function(infile, audiofile, videofile,
                                  audio_codec = "copy", video_codec = "copy",
-                                 hardware = c("none", "nvenc"),
+                                 hardware = c("none", "nvenc", "videotoolbox"),
                                  fallback = FALSE, audio_stream = NULL,
                                  run = TRUE) {
 
@@ -1422,30 +1425,32 @@ crop_video_pipeline <- function(input, output, width, height,
 #'   so the output container's default encoder is used. Stream-copying fails if
 #'   the output container cannot hold the source audio codec (e.g. FLAC in
 #'   \code{.mp4}) — name an encoder in that case.
-#' @param hardware The encoder backend: \code{"none"} (default, the software
-#'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
-#'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
-#'   (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); with the default
-#'   \code{video_codec = NULL} the H.264 family is assumed, so a non-H.264
-#'   container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
-#'   \code{video_codec}. See \code{\link{has_hardware_encoder}} for availability and its
-#'   caveats.
-#'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#' @param hardware The encoder backend: \code{"none"} (default, the
+#'   software \code{video_codec}), \code{"nvenc"} for NVIDIA GPU encoding
+#'   (H.264, HEVC and AV1), or \code{"videotoolbox"} for Apple GPU encoding
+#'   (H.264 and HEVC). Uses that backend's encoder for \code{video_codec}'s
+#'   family (e.g. \code{"libx264"} becomes \code{"h264_nvenc"} or
+#'   \code{"h264_videotoolbox"}); with the default \code{video_codec = NULL}
+#'   the H.264 family is assumed, so a non-H.264 container (e.g.
+#'   \code{.webm}) needs an explicit HEVC- or AV1-family \code{video_codec}
+#'   (AV1 only under \code{"nvenc"}). See \code{\link{has_hardware_encoder}}
+#'   for availability and its caveats.
+#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
+#'   so the first such call that re-encodes the video runs the binary
 #'   while the command is built, even under \code{run = FALSE}. The answer is
 #'   remembered for the rest of the R session; see
 #'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
-#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
-#'   unavailable, encode in software with a message (\code{TRUE}) instead of
-#'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
-#'   fallback leaves the codec unset rather than picking one, so the codec never
-#'   changes silently.
+#' @param fallback A logical: when a non-\code{"none"} \code{hardware} is
+#'   requested but its encoder is unavailable, encode in software with a
+#'   message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
+#'   \code{video_codec = NULL} the fallback leaves the codec unset rather
+#'   than picking one, so the codec never changes silently.
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @seealso [ffm_crop()], the builder it wraps; [has_hardware_encoder()] for the
-#'   \code{hardware = "nvenc"} toggle;
+#'   \code{hardware} toggle;
 #'   [crop_video_batch()] for the many-file form.
 #' @family task verb functions
 #' @family audio selection functions
@@ -1456,7 +1461,7 @@ crop_video_pipeline <- function(input, output, width, height,
 crop_video <- function(infile, outfile, width, height,
                        x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
                        video_codec = NULL, audio_codec = "copy",
-                       hardware = c("none", "nvenc"),
+                       hardware = c("none", "nvenc", "videotoolbox"),
                        fallback = FALSE, audio_stream = NULL, run = TRUE) {
 
   check_file_readable(infile)
@@ -1542,22 +1547,25 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
 #' @param infile A string containing the path to a video file.
 #' @param outfile A string containing the path of the video file to write.
 #' @param hardware The encoder backend: \code{"none"} (default, software
-#'   libx264) or \code{"nvenc"} for NVIDIA GPU H.264 encoding
-#'   (\code{"h264_nvenc"}) when available. See \code{\link{has_hardware_encoder}}.
-#'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   libx264), \code{"nvenc"} for NVIDIA GPU H.264 encoding
+#'   (\code{"h264_nvenc"}), or \code{"videotoolbox"} for Apple GPU H.264
+#'   encoding (\code{"h264_videotoolbox"}), whichever is available. See
+#'   \code{\link{has_hardware_encoder}}.
+#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
+#'   so the first such call that re-encodes the video runs the binary
 #'   while the command is built, even under \code{run = FALSE}. The answer is
 #'   remembered for the rest of the R session; see
 #'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
-#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
-#'   unavailable, re-encode with software libx264 and a message (\code{TRUE})
-#'   instead of aborting (\code{FALSE}, default).
+#' @param fallback A logical: when a non-\code{"none"} \code{hardware} is
+#'   requested but its encoder is unavailable, re-encode with software
+#'   libx264 and a message (\code{TRUE}) instead of aborting (\code{FALSE},
+#'   default).
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @seealso [ffm_codec()] and [ffm_pixel_format()], among the builders it wraps;
-#'   [has_hardware_encoder()] for the \code{hardware = "nvenc"} toggle;
+#'   [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [standardize_video()] for a configurable re-encode;
 #'   [format_for_web_batch()] for the many-file form.
 #' @family task verb functions
@@ -1566,7 +1574,8 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' format_for_web(video, "web.mp4", run = FALSE)
 #' @export
-format_for_web <- function(infile, outfile, hardware = c("none", "nvenc"),
+format_for_web <- function(infile, outfile,
+                           hardware = c("none", "nvenc", "videotoolbox"),
                            fallback = FALSE, audio_stream = NULL, run = TRUE) {
 
   check_file_readable(infile)
@@ -1711,27 +1720,31 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #'   let the container's default encoder decide.
 #' @param pixel_format A string naming the output pixel format (default
 #'   \code{"yuv420p"}).
-#' @param hardware The encoder backend: \code{"none"} (default, the software
-#'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
-#'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
-#'   (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); see
-#'   \code{\link{has_hardware_encoder}} for availability and its caveats. Applies to video
-#'   only: \code{audio_codec} is never hardware-accelerated.
-#'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#' @param hardware The encoder backend: \code{"none"} (default, the
+#'   software \code{video_codec}), \code{"nvenc"} for NVIDIA GPU encoding
+#'   (H.264, HEVC and AV1), or \code{"videotoolbox"} for Apple GPU encoding
+#'   (H.264 and HEVC). Uses that backend's encoder for \code{video_codec}'s
+#'   family (e.g. \code{"libx264"} becomes \code{"h264_nvenc"} or
+#'   \code{"h264_videotoolbox"}); see \code{\link{has_hardware_encoder}} for
+#'   availability and its caveats. Applies to video only: \code{audio_codec}
+#'   is never hardware-accelerated.
+#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
+#'   so the first such call that re-encodes the video runs the binary
 #'   while the command is built, even under \code{run = FALSE}. The answer is
 #'   remembered for the rest of the R session; see
 #'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
-#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
-#'   unavailable, re-encode with the software \code{video_codec} and a message
-#'   (\code{TRUE}) instead of aborting (\code{FALSE}, default). Keeps output
-#'   reproducible by never changing the codec silently.
+#' @param fallback A logical: when a non-\code{"none"} \code{hardware} is
+#'   requested but its encoder is unavailable, re-encode with the software
+#'   \code{video_codec} and a message (\code{TRUE}) instead of aborting
+#'   (\code{FALSE}, default). Keeps output reproducible by never changing the
+#'   codec silently.
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @seealso [ffm_scale()], [ffm_codec()], and [ffm_pixel_format()], among the
-#'   builders it wraps; [has_hardware_encoder()] for the \code{hardware = "nvenc"} toggle;
+#'   builders it wraps; [has_hardware_encoder()] for the \code{hardware}
+#'   toggle;
 #'   [standardize_video_batch()] for the many-file form.
 #' @family task verb functions
 #' @family audio selection functions
@@ -1749,7 +1762,8 @@ standardize_video <- function(infile, outfile,
                               width = NULL, height = NULL, fps = NULL,
                               video_codec = "libx264", audio_codec = "copy",
                               pixel_format = "yuv420p",
-                              hardware = c("none", "nvenc"), fallback = FALSE,
+                              hardware = c("none", "nvenc", "videotoolbox"),
+                              fallback = FALSE,
                               audio_stream = NULL, run = TRUE) {
 
   check_file_readable(infile)
@@ -1940,27 +1954,30 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
 #'   let the container's default encoder decide.
 #' @param pixel_format A string naming the output pixel format (default
 #'   \code{"yuv420p"}).
-#' @param hardware The encoder backend: \code{"none"} (default, the software
-#'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
-#'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
-#'   (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); see
-#'   \code{\link{has_hardware_encoder}} for availability and its caveats. Applies to video
-#'   only: \code{audio_codec} is never hardware-accelerated.
-#'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#' @param hardware The encoder backend: \code{"none"} (default, the
+#'   software \code{video_codec}), \code{"nvenc"} for NVIDIA GPU encoding
+#'   (H.264, HEVC and AV1), or \code{"videotoolbox"} for Apple GPU encoding
+#'   (H.264 and HEVC). Uses that backend's encoder for \code{video_codec}'s
+#'   family (e.g. \code{"libx264"} becomes \code{"h264_nvenc"} or
+#'   \code{"h264_videotoolbox"}); see \code{\link{has_hardware_encoder}} for
+#'   availability and its caveats. Applies to video only: \code{audio_codec}
+#'   is never hardware-accelerated.
+#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
+#'   so the first such call that re-encodes the video runs the binary
 #'   while the command is built, even under \code{run = FALSE}. The answer is
 #'   remembered for the rest of the R session; see
 #'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
-#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
-#'   unavailable, re-encode with the software \code{video_codec} and a message
-#'   (\code{TRUE}) instead of aborting (\code{FALSE}, default). Keeps output
-#'   reproducible by never changing the codec silently.
+#' @param fallback A logical: when a non-\code{"none"} \code{hardware} is
+#'   requested but its encoder is unavailable, re-encode with the software
+#'   \code{video_codec} and a message (\code{TRUE}) instead of aborting
+#'   (\code{FALSE}, default). Keeps output reproducible by never changing the
+#'   codec silently.
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @seealso [ffm_drawbox()], the builder filter it wraps; [has_hardware_encoder()] for the
-#'   \code{hardware = "nvenc"} toggle; [anonymize_video_batch()]
+#'   \code{hardware} toggle; [anonymize_video_batch()]
 #'   for the many-file (batch) form.
 #' @references https://ffmpeg.org/ffmpeg-filters.html#drawbox
 #' @family task verb functions
@@ -1980,7 +1997,8 @@ anonymize_video <- function(infile, outfile, regions,
                             color = "black",
                             video_codec = "libx264", audio_codec = "copy",
                             pixel_format = "yuv420p",
-                            hardware = c("none", "nvenc"), fallback = FALSE,
+                            hardware = c("none", "nvenc", "videotoolbox"),
+                            fallback = FALSE,
                             audio_stream = NULL, run = TRUE) {
 
   check_file_readable(infile)
@@ -2217,11 +2235,13 @@ derive_anonymized_names <- function(input) {
 #'   row, unless \code{jobs} carries a \code{pixel_format} column.
 #'   (default = \code{"yuv420p"})
 #' @param hardware The encoder backend applied to every row: \code{"none"}
-#'   (default, the software \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU
-#'   encoding. Batch-wide (a machine property), not a per-row column; a
-#'   \code{hardware} column in \code{jobs} is ignored. See \code{\link{has_hardware_encoder}}.
-#'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   (default, the software \code{video_codec}), \code{"nvenc"} for NVIDIA
+#'   GPU encoding (H.264, HEVC and AV1), or \code{"videotoolbox"} for Apple
+#'   GPU encoding (H.264 and HEVC). Batch-wide (a machine property), not a
+#'   per-row column; a \code{hardware} column in \code{jobs} is ignored. See
+#'   \code{\link{has_hardware_encoder}}.
+#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
+#'   so the first such call that re-encodes the video runs the binary
 #'   while the command is built, even under \code{run = FALSE}. The answer is
 #'   remembered for the rest of the R session; see
 #'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
@@ -2231,10 +2251,11 @@ derive_anonymized_names <- function(input) {
 #'   A call that is also wrong about a per-row value — a \code{regions}
 #'   table missing a required column, say — is refused for the value first,
 #'   whether or not this machine has the encoder.
-#' @param fallback A logical applied to every row: when \code{hardware = "nvenc"}
-#'   but nvenc is unavailable, re-encode with the software \code{video_codec} and
-#'   a message (\code{TRUE}) instead of aborting (\code{FALSE}, default).
-#'   Batch-wide, not a per-row column.
+#' @param fallback A logical applied to every row: when a non-\code{"none"}
+#'   \code{hardware} is requested but its encoder is unavailable, re-encode
+#'   with the software \code{video_codec} and a message (\code{TRUE})
+#'   instead of aborting (\code{FALSE}, default). Batch-wide, not a per-row
+#'   column.
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
 #'   default) or only compile them for inspection (\code{FALSE}).
@@ -2252,7 +2273,7 @@ derive_anonymized_names <- function(input) {
 #'   when \code{run = TRUE}, a \code{success} column, plus any columns the
 #'   forwarded arguments add, e.g. \code{verified}).
 #' @seealso [anonymize_video()] for the single-input form; [has_hardware_encoder()] for the
-#'   \code{hardware = "nvenc"} toggle; [ffm_batch()] for the
+#'   \code{hardware} toggle; [ffm_batch()] for the
 #'   batch runner and the arguments forwarded through \code{...};
 #'   [standardize_video_batch()] and [segment_video_batch()] for the other
 #'   table-driven siblings.
@@ -2273,7 +2294,8 @@ derive_anonymized_names <- function(input) {
 #' @export
 anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264",
                              audio_codec = "copy", pixel_format = "yuv420p",
-                             hardware = c("none", "nvenc"), fallback = FALSE,
+                             hardware = c("none", "nvenc", "videotoolbox"),
+                             fallback = FALSE,
                              audio_stream = NULL,
                              run = TRUE, parallel = FALSE, ...) {
 
@@ -2420,7 +2442,7 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   # which is where M41 puts a guard added for blame, so every check above still
   # reports first. The sweep covers each distinct family a `video_codec` column
   # spells, never only the argument's.
-  check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
+  check_hardware_available(batch_video_codecs(jobs, video_codec), hardware,
                         fallback)
 
   # D074: the verb the caller typed names a bad limit, not the builder below.
@@ -2972,37 +2994,83 @@ ffmpeg_encoders <- function(sort_by_type = TRUE) {
 
 # hardware_encoder() / has_hardware_encoder() ------------------------------------------------
 
+# hardware_backend_families(): the per-backend codec-family table, and the one
+# place either backend's coverage is written down. The encoder name is the
+# family and the backend joined by "_", which is how FFmpeg spells every member
+# of both rows (h264_nvenc, hevc_videotoolbox).
+#
+# prores is deliberately in NEITHER row. `prores_videotoolbox` exists and runs,
+# but it cannot mux into `.mp4` -- measured 2026-08-31: a 0-byte output and
+# "Could not find tag for codec prores in stream #0", while `.mov` and `.mkv`
+# take it -- so shipping it needs a container guard it does not have (M100
+# scope, ROADMAP candidate). codec_family() still infers "prores", so a prores
+# codec is refused by the lookup below, which knows which backend was asked
+# for, rather than by a family inference that does not.
+hardware_backend_families <- function() {
+  list(
+    nvenc = c("h264", "hevc", "av1"),
+    videotoolbox = c("h264", "hevc")
+  )
+}
+
+# hardware_backends(): the backend vocabulary, read off the table so the two can
+# never drift. The two exported helpers arg_match() against this; the 16 verbs
+# and resolve_hw_encoder() keep a literal c("none", "nvenc", "videotoolbox")
+# default instead, because their accepted set is read off the formal's own
+# default and a computed default reads as a call, not a vector (RR07 Q2).
+hardware_backends <- function() {
+  names(hardware_backend_families())
+}
+
+# hardware_codec_families(): every family codec_family() can infer, which is the
+# mapper's `codec` vocabulary. Wider than any one backend's row on purpose: a
+# family this list omits is refused as an unknown family, naming no backend,
+# while a family a BACKEND omits is refused by hardware_encoder() naming both.
+hardware_codec_families <- function() {
+  c("h264", "hevc", "av1", "prores")
+}
+
 #' Hardware video encoders
 #'
 #' Helpers for opt-in hardware video encoding. \code{hardware_encoder()} maps a
 #' codec family to its hardware encoder name; \code{has_hardware_encoder()}
-#' reports whether that encoder is available in the local FFmpeg build. NVIDIA
-#' nvenc is the one backend, so \code{hardware_encoder("h264")} is
-#' \code{"h264_nvenc"}.
+#' reports whether that encoder is available in the local FFmpeg build. Two
+#' backends are supported: NVIDIA nvenc (H.264, HEVC and AV1) and Apple
+#' videotoolbox (H.264 and HEVC), so \code{hardware_encoder("h264", "nvenc")}
+#' is \code{"h264_nvenc"} and \code{hardware_encoder("h264",
+#' "videotoolbox")} is \code{"h264_videotoolbox"}.
 #'
 #' \code{has_hardware_encoder()} is a \emph{cheap} check: it asks whether FFmpeg lists the
 #' encoder (via \code{\link{ffmpeg_encoders}}), which reflects how FFmpeg was
-#' built, not whether a working NVIDIA GPU and driver are present at run time. An
-#' encode can still fail at run time on a machine with no capable GPU. To
+#' built, not whether working hardware and a driver are present at run time.
+#' An encode can still fail at run time on a machine with no capable GPU. To
 #' override detection in a known environment (or in tests), set
 #' \code{options(tidymedia.hardware_encoders = )} to a character vector of encoder
 #' names to treat as available.
 #'
-#' These back the \code{hardware = "nvenc"} toggle on
+#' These back the \code{hardware} toggle on
 #' \code{\link{standardize_video}}, \code{\link{format_for_web}},
 #' \code{\link{anonymize_video}}, \code{\link{crop_video}},
 #' \code{\link{segment_video}}, \code{\link{compare_videos}},
 #' \code{\link{picture_in_picture}}, and \code{\link{separate_audio_video}}
 #' (and their \code{_batch} siblings). On the
 #' verbs whose \code{video_codec} defaults to \code{NULL} (no codec named), the
-#' H.264 family is assumed under \code{hardware = "nvenc"}, so a non-H.264
+#' H.264 family is assumed, so a non-H.264
 #' container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
-#' \code{video_codec}. Hardware
+#' \code{video_codec} (AV1 only under \code{"nvenc"}). Hardware
 #' \emph{decoding} (\code{-hwaccel}) and GPU filter pipelines are out of scope;
 #' use the \code{\link{ffmpeg}} escape hatch for those.
 #'
-#' @param codec The video codec family: one of \code{"h264"}, \code{"hevc"}, or
-#'   \code{"av1"}.
+#' @param codec The video codec family: one of \code{"h264"}, \code{"hevc"},
+#'   \code{"av1"}, or \code{"prores"}. These are the families the package
+#'   recognizes, not the families a given backend covers: a family the chosen
+#'   \code{hardware} backend has no encoder for is refused naming both the
+#'   backend and the family (e.g. \code{"av1"} under \code{"videotoolbox"}).
+#'   \code{"prores"} is refused by both backends today.
+#' @param hardware The backend: \code{"nvenc"} or \code{"videotoolbox"}.
+#'   Required, with no default. Narrower than the verbs' \code{hardware}
+#'   argument: \code{"none"} is the verbs' off position, meaning "use no
+#'   backend", which has no meaning here, so it is refused.
 #' @return \code{hardware_encoder()} a single encoder-name string (e.g.
 #'   \code{"h264_nvenc"}); \code{has_hardware_encoder()} a length-one logical.
 #' @seealso \code{\link{ffmpeg_encoders}} for the full encoder list,
@@ -3011,33 +3079,49 @@ ffmpeg_encoders <- function(sort_by_type = TRUE) {
 #'   \code{\link{segment_video}}, \code{\link{compare_videos}},
 #'   \code{\link{picture_in_picture}}, and
 #'   \code{\link{separate_audio_video}} for the
-#'   \code{hardware = "nvenc"} toggle that uses these.
+#'   \code{hardware} toggle that uses these.
 #' @family capability functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
-#' hardware_encoder("h264")
-#' has_hardware_encoder("h264")
+#' hardware_encoder("h264", "nvenc")
+#' has_hardware_encoder("h264", "nvenc")
 #' @export
-hardware_encoder <- function(codec = c("h264", "hevc", "av1")) {
+hardware_encoder <- function(codec = hardware_codec_families(), hardware) {
   codec <- rlang::arg_match(codec)
-  paste0(codec, "_nvenc")
+  hardware <- rlang::arg_match(hardware, hardware_backends())
+  families <- hardware_backend_families()[[hardware]]
+  # The (family, backend)-not-in-table refusal, sited here and nowhere else: a
+  # lookup into a two-key table is where a missing pair is refused, and the
+  # predicate and resolve_hw_encoder() both reach it through this call (D079).
+  # It fires under `fallback = TRUE` too -- a pair no backend can encode is a
+  # wrong argument, not a machine that lacks something, which is the reading
+  # codec_family() has always had for a codec it cannot place at all.
+  if (!codec %in% families) {
+    cli::cli_abort(c(
+      "{hardware} has no {.val {codec}} encoder.",
+      "i" = "{hardware} covers the {.val {families}} famil{?y/ies}.",
+      "i" = "Name a {.arg video_codec} in one of those families, or use
+             {.code hardware = \"none\"} to encode in software."
+    ))
+  }
+  paste0(codec, "_", hardware)
 }
 
 #' @rdname hardware_encoder
 #' @export
-has_hardware_encoder <- function(codec = c("h264", "hevc", "av1")) {
+has_hardware_encoder <- function(codec = hardware_codec_families(), hardware) {
   # `call` is this frame, so the refusal below names has_hardware_encoder() when the caller
   # typed it. Internal callers pass their own verb's frame instead.
-  nvenc_available(codec, call = rlang::current_env())
+  hardware_encoder_available(codec, hardware, call = rlang::current_env())
 }
 
-# nvenc_available(): has_hardware_encoder()'s body with `call` threaded, so the probe can
-# be reached from inside a verb without that verb's caller being told about
-# has_hardware_encoder().
+# hardware_encoder_available(): has_hardware_encoder()'s body with `call` threaded, so the
+# probe can be reached from inside a verb without that verb's caller being told
+# about has_hardware_encoder().
 #
 # The split exists for D074's siting. This is the one capability probe that runs
 # while a command is being BUILT -- resolve_hw_encoder() consults it from inside
 # the pipeline, and the nine fan-out verbs consult it at their front doors
-# through check_nvenc_available() -- so it is where a `hardware = "nvenc"` call
+# through check_hardware_available() -- so it is where a `hardware = "nvenc"` call
 # first reads the limit. Left calling the exported has_hardware_encoder(), every such call
 # was refused in has_hardware_encoder()'s name, a function the caller never typed (M094
 # review F2). D042's carve-out covers the shape: an internal helper threads
@@ -3047,8 +3131,8 @@ has_hardware_encoder <- function(codec = c("h264", "hevc", "av1")) {
 # the caller typed -- and a default would hand a site that forgot it this
 # helper's own frame, which is the blame this split exists to remove (M094
 # review G7).
-nvenc_available <- function(codec, call) {
-  enc <- hardware_encoder(codec)
+hardware_encoder_available <- function(codec, hardware, call) {
+  enc <- hardware_encoder(codec, hardware)
   pool <- getOption("tidymedia.hardware_encoders", default = NULL)
   # The option seam is read first on every call, so setting it mid-session takes
   # effect at once; only the fall-through consults the session memo (D044).
@@ -3064,19 +3148,24 @@ nvenc_available <- function(codec, call) {
   enc %in% pool
 }
 
-# codec_family(): infer the nvenc codec family from a software codec name, so a
-# user can flip hardware = "nvenc" while keeping a familiar video_codec (e.g.
-# "libx264" -> "h264"). Aborts when no nvenc family matches.
+# codec_family(): infer the codec family from a software codec name, so a user
+# can turn `hardware` on while keeping a familiar video_codec (e.g. "libx264"
+# -> "h264"). Backend-free by design (D079): "libx264" is the h264 family under
+# every backend, and WHICH backend has an encoder for a family is the table's
+# question, refused in hardware_encoder(). So this abort fires only when no
+# family matches at all, and it names no backend -- a codec this cannot place
+# is not a backend's fault.
 codec_family <- function(video_codec, call = rlang::caller_env()) {
   if (grepl("264|avc", video_codec, ignore.case = TRUE)) return("h264")
   if (grepl("265|hevc", video_codec, ignore.case = TRUE)) return("hevc")
   if (grepl("av1", video_codec, ignore.case = TRUE)) return("av1")
+  if (grepl("prores", video_codec, ignore.case = TRUE)) return("prores")
   cli::cli_abort(
     c(
-      "Cannot use {.code hardware = \"nvenc\"} with
+      "Cannot use {.arg hardware} with
        {.arg video_codec} = {.val {video_codec}}.",
-      "x" = "No nvenc encoder maps to that codec.",
-      "i" = "nvenc supports the h264, hevc, and av1 families (e.g.
+      "x" = "No hardware encoder family maps to that codec.",
+      "i" = "The families are {.val {hardware_codec_families()}} (e.g.
              {.val libx264}, {.val libx265}, {.val libaom-av1})."
     ),
     call = call
@@ -3084,8 +3173,9 @@ codec_family <- function(video_codec, call = rlang::caller_env()) {
 }
 
 # resolve_hw_encoder(): pick the encoder name for a verb's hardware= choice.
-# hardware = "none" returns the software video_codec unchanged; "nvenc" returns
-# the nvenc encoder for video_codec's family when available, otherwise aborts
+# hardware = "none" returns the software video_codec unchanged; a backend
+# returns that backend's encoder for video_codec's family when available,
+# otherwise aborts
 # (fallback = FALSE) or returns the software video_codec with a message
 # (fallback = TRUE). Layer 2 only computes the argument here; Layer 1 assembles
 # the command (D009, IP1).
@@ -3094,7 +3184,8 @@ codec_family <- function(video_codec, call = rlang::caller_env()) {
 # codec-less re-encode verbs (M34/D016): no -codec:v is emitted, so the output
 # keeps its container's default encoder. It is resolved here, in the one
 # resolver seam, rather than in a second per-verb fork.
-resolve_hw_encoder <- function(video_codec, hardware = c("none", "nvenc"),
+resolve_hw_encoder <- function(video_codec,
+                               hardware = c("none", "nvenc", "videotoolbox"),
                                fallback = FALSE, call = rlang::caller_env()) {
   hardware <- rlang::arg_match(hardware)
   rlang::check_bool(fallback, call = call)
@@ -3102,38 +3193,43 @@ resolve_hw_encoder <- function(video_codec, hardware = c("none", "nvenc"),
     return(video_codec)
   }
   # The sentinel branch sits BEFORE codec_family(), which cannot infer a family
-  # from nothing (it errors on NULL): under nvenc the sentinel assumes H.264,
-  # the family every common container accepts.
+  # from nothing (it errors on NULL): under either backend the sentinel assumes
+  # H.264, the one family both backends encode and every common container
+  # accepts.
   family <- if (is.null(video_codec)) {
     "h264"
   } else {
     codec_family(video_codec, call = call)
   }
-  if (fallback && !nvenc_available(family, call = call)) {
+  # hardware_encoder_available() goes through the mapper, so a (family, backend)
+  # pair the table lacks is refused here rather than falling back: that is a
+  # wrong argument, not an absent encoder (see hardware_encoder()).
+  if (fallback && !hardware_encoder_available(family, hardware, call = call)) {
     cli::cli_inform(c(
       "!" = if (is.null(video_codec)) {
         # Falling back from the sentinel keeps the sentinel -- never a silently
         # injected libx264, which would change the codec behind the user's back.
-        "nvenc encoder {.val {hardware_encoder(family)}} is not available;
-         falling back to the output container's default video encoder."
+        "{hardware} encoder {.val {hardware_encoder(family, hardware)}} is not
+         available; falling back to the output container's default video
+         encoder."
       } else {
-        "nvenc encoder {.val {hardware_encoder(family)}} is not available;
-         falling back to {.arg video_codec} = {.val {video_codec}}."
+        "{hardware} encoder {.val {hardware_encoder(family, hardware)}} is not
+         available; falling back to {.arg video_codec} = {.val {video_codec}}."
       }
     ))
     return(video_codec)
   }
-  # The abort lives in check_nvenc_available(), never in a copy here: the nine
+  # The abort lives in check_hardware_available(), never in a copy here: the nine
   # fan-out verbs call that same function at their front doors (M57/D035), and
   # two copies of the wording and the firing condition is exactly the drift the
   # single site exists to make impossible. `fallback = TRUE` returns above, so
   # this call can only pass (encoder available) or abort.
-  check_nvenc_available(video_codec, hardware, fallback, call = call)
-  hardware_encoder(family)
+  check_hardware_available(video_codec, hardware, fallback, call = call)
+  hardware_encoder(family, hardware)
 }
 
-# check_nvenc_available(): the nvenc availability gate, and the only place its
-# abort is worded. Called twice per verb by design (D035) -- once at the front
+# check_hardware_available(): the hardware-encoder availability gate, and the
+# only place its abort is worded. Called twice per verb by design (D035) -- once at the front
 # door of each verb that fans out through ffm_batch(), so the abort names the
 # verb rather than purrr::pmap(), and once from resolve_hw_encoder() while the
 # pipeline is built, which is where it has fired since M31.
@@ -3159,10 +3255,15 @@ resolve_hw_encoder <- function(video_codec, hardware = c("none", "nvenc"),
 # pipeline would have raised, at the verb instead of inside purrr::pmap().
 # It sits AFTER the hardware test: a hardware = "none" call never consults
 # fallback here, and refusing one at the front door would be a new refusal.
-check_nvenc_available <- function(video_codec, hardware = "none",
-                                  fallback = FALSE,
-                                  call = rlang::caller_env()) {
-  if (!identical(hardware, "nvenc")) {
+check_hardware_available <- function(video_codec, hardware = "none",
+                                     fallback = FALSE,
+                                     call = rlang::caller_env()) {
+  # Membership in the backend set, never `identical(hardware, "nvenc")`: that
+  # gate let a `hardware = "videotoolbox"` call return early, so a missing
+  # encoder in a _batch call was blamed on purrr::pmap() instead of the verb --
+  # the defect the front-door call exists to prevent (D035, RR07). isTRUE()
+  # keeps a non-scalar value from reaching `if`, as identical() did.
+  if (!isTRUE(hardware %in% hardware_backends())) {
     return(invisible(NULL))
   }
   rlang::check_bool(fallback, call = call)
@@ -3178,12 +3279,13 @@ check_nvenc_available <- function(video_codec, hardware = "none",
     }
   }, character(1)))
   for (family in families) {
-    if (!nvenc_available(family, call = call)) {
+    if (!hardware_encoder_available(family, hardware, call = call)) {
       cli::cli_abort(
         c(
-          "nvenc encoder {.val {hardware_encoder(family)}} is not available.",
+          "{hardware} encoder {.val {hardware_encoder(family, hardware)}} is
+           not available.",
           "x" = "This FFmpeg build does not list it (see {.fn ffmpeg_encoders}).",
-          "i" = "Use a machine with an nvenc-capable FFmpeg + NVIDIA GPU, or set
+          "i" = "Use a machine whose FFmpeg build has it, or set
                  {.code fallback = TRUE} to encode in software instead."
         ),
         call = call
@@ -3509,16 +3611,18 @@ check_vocab_arg <- function(value, values, arg, call = rlang::caller_env()) {
 #'   (\code{reencode = FALSE}) always copies the audio, so any other value is an
 #'   error there. Stream-copying fails if the output container cannot hold the
 #'   source audio codec (e.g. FLAC in \code{.mp4}) — name an encoder instead.
-#' @param hardware The encoder backend: \code{"none"} (default, the software
-#'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
-#'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
-#'   (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); with the default
-#'   \code{video_codec = NULL} the H.264 family is assumed, so a non-H.264
-#'   container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
-#'   \code{video_codec}. See \code{\link{has_hardware_encoder}} for availability and its
-#'   caveats.
-#'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#' @param hardware The encoder backend: \code{"none"} (default, the
+#'   software \code{video_codec}), \code{"nvenc"} for NVIDIA GPU encoding
+#'   (H.264, HEVC and AV1), or \code{"videotoolbox"} for Apple GPU encoding
+#'   (H.264 and HEVC). Uses that backend's encoder for \code{video_codec}'s
+#'   family (e.g. \code{"libx264"} becomes \code{"h264_nvenc"} or
+#'   \code{"h264_videotoolbox"}); with the default \code{video_codec = NULL}
+#'   the H.264 family is assumed, so a non-H.264 container (e.g.
+#'   \code{.webm}) needs an explicit HEVC- or AV1-family \code{video_codec}
+#'   (AV1 only under \code{"nvenc"}). See \code{\link{has_hardware_encoder}}
+#'   for availability and its caveats.
+#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
+#'   so the first such call that re-encodes the video runs the binary
 #'   while the command is built, even under \code{run = FALSE}. The answer is
 #'   remembered for the rest of the R session; see
 #'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
@@ -3530,11 +3634,11 @@ check_vocab_arg <- function(value, values, arg, call = rlang::caller_env()) {
 #'   the encoder.
 #'   The stream-copy conflict named under \code{reencode} is caught first, so
 #'   such a call aborts without probing.
-#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
-#'   unavailable, encode in software with a message (\code{TRUE}) instead of
-#'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
-#'   fallback leaves the codec unset rather than picking one, so the codec never
-#'   changes silently.
+#' @param fallback A logical: when a non-\code{"none"} \code{hardware} is
+#'   requested but its encoder is unavailable, encode in software with a
+#'   message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
+#'   \code{video_codec = NULL} the fallback leaves the codec unset rather
+#'   than picking one, so the codec never changes silently.
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each segment's command (\code{TRUE}, default) or
 #'   only compile them (\code{FALSE}).
@@ -3548,7 +3652,7 @@ check_vocab_arg <- function(value, values, arg, call = rlang::caller_env()) {
 #'   \code{\link{ffm_batch}}: one row per segment with its \code{command} (and,
 #'   when \code{run = TRUE}, \code{success}).
 #' @seealso [ffm_seek()], the builder it uses to cut; [ffm_batch()], the runner;
-#'   [has_hardware_encoder()] for the \code{hardware = "nvenc"} toggle;
+#'   [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [segment_video_batch()] for the many-file form.
 #' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 #' @family task verb functions
@@ -3565,7 +3669,7 @@ segment_video <- function(infile,
                           reencode = TRUE,
                           video_codec = NULL,
                           audio_codec = "copy",
-                          hardware = c("none", "nvenc"),
+                          hardware = c("none", "nvenc", "videotoolbox"),
                           fallback = FALSE,
                           audio_stream = NULL,
                           run = TRUE,
@@ -3597,7 +3701,7 @@ segment_video <- function(infile,
   # shape every other argument on this verb already avoids (M48 review F1).
   #
   # Sited here, below the length check so a miscounted call still reads about
-  # its count, and above `check_nvenc_available()` below so a build without
+  # its count, and above `check_hardware_available()` below so a build without
   # nvenc cannot decide whether a wrong `outfiles` is reported as a wrong
   # `outfiles` or as a missing encoder (D075).
   #
@@ -3644,7 +3748,7 @@ segment_video <- function(infile,
   # impossible: this guard only ever acts on `hardware = "nvenc"`, and a
   # `reencode = FALSE` call naming nvenc has already been refused above. The
   # gate is dead code, not a live protection (M58 T2).
-  check_nvenc_available(video_codec, hardware, fallback)
+  check_hardware_available(video_codec, hardware, fallback)
 
   # If no names are provided, derive per-segment names from the input file.
   if (is.null(outfiles)) {
@@ -3793,12 +3897,12 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #' @param hardware,fallback The encoder backend and its fallback behavior,
 #'   applied to the whole batch (a property of the machine, not of a row, so
 #'   neither is read as a \code{jobs} column). See [segment_video()].
-#'   Because \code{hardware} is batch-wide, \code{hardware = "nvenc"} conflicts
-#'   with a stream-copy row on its own — even one naming no codec — so a jobs
-#'   table mixing \code{reencode = FALSE} rows with GPU encoding must be split
-#'   into separate calls.
-#'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   Because \code{hardware} is batch-wide, a non-\code{"none"} value
+#'   conflicts with a stream-copy row on its own — even one naming no codec —
+#'   so a jobs table mixing \code{reencode = FALSE} rows with GPU encoding
+#'   must be split into separate calls.
+#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
+#'   so the first such call that re-encodes the video runs the binary
 #'   while the command is built, even under \code{run = FALSE}. The answer is
 #'   remembered for the rest of the R session; see
 #'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
@@ -3828,7 +3932,7 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #'   forwarded arguments add, e.g. \code{verified}).
 #' @seealso [segment_video()] for the single-input, parallel-vector form;
 #'   [ffm_batch()] for the batch runner and the arguments forwarded through
-#'   \code{...}; [has_hardware_encoder()] for the \code{hardware = "nvenc"} toggle;
+#'   \code{...}; [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [ffm_seek()] for the cut trade-off.
 #' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 #' @family task verb functions
@@ -3846,7 +3950,8 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #' @export
 segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
                            audio_codec = "copy",
-                           hardware = c("none", "nvenc"), fallback = FALSE,
+                           hardware = c("none", "nvenc", "videotoolbox"),
+                           fallback = FALSE,
                            audio_stream = NULL,
                            run = TRUE, parallel = FALSE, ...) {
 
@@ -3951,7 +4056,7 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
   # this guard only ever acts on `hardware = "nvenc"`, which contradicts EVERY
   # copying row, so any table reaching this line re-encodes on every row. The
   # scoping is dead code, not a live protection (M58 T2).
-  check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
+  check_hardware_available(batch_video_codecs(jobs, video_codec), hardware,
                         fallback)
 
   # D074: the verb the caller typed names a bad limit, not the builder below.
@@ -4402,20 +4507,22 @@ derive_standardized_names <- function(input) {
 #'   unless \code{jobs} carries a \code{pixel_format} column.
 #'   (default = \code{"yuv420p"})
 #' @param hardware The encoder backend applied to every row: \code{"none"}
-#'   (default) or \code{"nvenc"} for NVIDIA GPU encoding. Batch-wide (not a
-#'   per-row column). See \code{\link{standardize_video}} and
-#'   \code{\link{has_hardware_encoder}}.
-#'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   (default), \code{"nvenc"} for NVIDIA GPU encoding (H.264, HEVC and
+#'   AV1), or \code{"videotoolbox"} for Apple GPU encoding (H.264 and
+#'   HEVC). Batch-wide (not a per-row column). See
+#'   \code{\link{standardize_video}} and \code{\link{has_hardware_encoder}}.
+#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
+#'   so the first such call that re-encodes the video runs the binary
 #'   while the command is built, even under \code{run = FALSE}. The answer is
 #'   remembered for the rest of the R session; see
 #'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
 #'   the internal fan-out it would otherwise be reported against.
-#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
-#'   unavailable, re-encode with the software \code{video_codec} and a message
-#'   (\code{TRUE}) instead of aborting (\code{FALSE}, default).
+#' @param fallback A logical: when a non-\code{"none"} \code{hardware} is
+#'   requested but its encoder is unavailable, re-encode with the software
+#'   \code{video_codec} and a message (\code{TRUE}) instead of aborting
+#'   (\code{FALSE}, default).
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
 #'   default) or only compile them for inspection (\code{FALSE}).
@@ -4451,7 +4558,8 @@ derive_standardized_names <- function(input) {
 standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NULL,
                                video_codec = "libx264", audio_codec = "copy",
                                pixel_format = "yuv420p",
-                               hardware = c("none", "nvenc"), fallback = FALSE,
+                               hardware = c("none", "nvenc", "videotoolbox"),
+                               fallback = FALSE,
                                audio_stream = NULL,
                                run = TRUE, parallel = FALSE, ...) {
 
@@ -4606,7 +4714,7 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
   # which is where M41 puts a guard added for blame, so every check above still
   # reports first. The sweep covers each distinct family a `video_codec` column
   # spells, never only the argument's.
-  check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
+  check_hardware_available(batch_video_codecs(jobs, video_codec), hardware,
                         fallback)
 
   # D074: the verb the caller typed names a bad limit, not the builder below.
@@ -5433,7 +5541,7 @@ batch_arg_rows <- function(jobs, col, arg, resolve = identity) {
 # eight _batch verbs do; format_for_web_batch fixes its codecs by identity), and
 # the scalar argument otherwise. This is what the front-door nvenc guard sweeps,
 # because one call's column may spell several families and each needs its own
-# encoder. NA stays NA here and check_nvenc_available() reads it as the h264
+# encoder. NA stays NA here and check_hardware_available() reads it as the h264
 # sentinel, the same reading batch_codec_cell() gives the pipeline (D022).
 batch_video_codecs <- function(jobs, video_codec) {
   if (!"video_codec" %in% names(jobs)) {
@@ -5949,8 +6057,8 @@ derive_web_names <- function(input) {
 #' @param hardware,fallback The encoder backend and its fallback behavior,
 #'   applied to the whole batch (a property of the machine, not of a row, so
 #'   neither is read as a \code{jobs} column). See [crop_video()].
-#'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
+#'   so the first such call that re-encodes the video runs the binary
 #'   while the command is built, even under \code{run = FALSE}. The answer is
 #'   remembered for the rest of the R session; see
 #'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
@@ -5974,7 +6082,7 @@ derive_web_names <- function(input) {
 #'   provenance manifest when requested via \code{...}). See
 #'   \code{\link{ffm_batch}}.
 #' @seealso [crop_video()], the scalar verb it wraps; [ffm_batch()], the batch
-#'   runner; [has_hardware_encoder()] for the \code{hardware = "nvenc"} toggle;
+#'   runner; [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [standardize_video_batch()] to re-encode in batch.
 #' @family task verb functions
 #' @family audio selection functions
@@ -5987,7 +6095,8 @@ derive_web_names <- function(input) {
 crop_video_batch <- function(jobs, width = NULL, height = NULL,
                              x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
                              video_codec = NULL, audio_codec = "copy",
-                             hardware = c("none", "nvenc"), fallback = FALSE,
+                             hardware = c("none", "nvenc", "videotoolbox"),
+                             fallback = FALSE,
                              audio_stream = NULL,
                              run = TRUE, parallel = FALSE, ...) {
 
@@ -6068,7 +6177,7 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
   # which is where M41 puts a guard added for blame, so every check above still
   # reports first. The sweep covers each distinct family a `video_codec` column
   # spells, never only the argument's.
-  check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
+  check_hardware_available(batch_video_codecs(jobs, video_codec), hardware,
                         fallback)
 
   # D074: the verb the caller typed names a bad limit, not the builder below.
@@ -6123,19 +6232,21 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #'   video, AAC audio). For per-row codecs use a verb that exposes them, such as
 #'   \code{\link{standardize_video_batch}} or \code{\link{crop_video_batch}}.
 #' @param hardware The encoder backend applied to every row: \code{"none"}
-#'   (default, software libx264) or \code{"nvenc"} for NVIDIA GPU H.264 encoding.
+#'   (default, software libx264), \code{"nvenc"} for NVIDIA GPU H.264
+#'   encoding, or \code{"videotoolbox"} for Apple GPU H.264 encoding.
 #'   Batch-wide (not a per-row column). See \code{\link{has_hardware_encoder}}.
-#'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
+#'   so the first such call that re-encodes the video runs the binary
 #'   while the command is built, even under \code{run = FALSE}. The answer is
 #'   remembered for the rest of the R session; see
 #'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 #'   Availability is checked at this verb's own front door, before any row
 #'   runs, so an unavailable encoder aborts naming this function rather than
 #'   the internal fan-out it would otherwise be reported against.
-#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
-#'   unavailable, re-encode with software libx264 and a message (\code{TRUE})
-#'   instead of aborting (\code{FALSE}, default).
+#' @param fallback A logical: when a non-\code{"none"} \code{hardware} is
+#'   requested but its encoder is unavailable, re-encode with software
+#'   libx264 and a message (\code{TRUE}) instead of aborting (\code{FALSE},
+#'   default).
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
@@ -6157,7 +6268,8 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #' jobs <- tibble::tibble(input = c(video, video), output = c("a.mp4", "b.mp4"))
 #' format_for_web_batch(jobs, run = FALSE)
 #' @export
-format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
+format_for_web_batch <- function(jobs,
+                                 hardware = c("none", "nvenc", "videotoolbox"),
                                  fallback = FALSE, audio_stream = NULL,
                                  run = TRUE, parallel = FALSE,
                                  ...) {
@@ -6193,7 +6305,7 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
   # every check above still reports first (M41). The web recipe fixes the codec
   # by identity, so the family is always h264 -- the same "libx264"
   # format_for_web_pipeline() hands resolve_hw_encoder().
-  check_nvenc_available("libx264", hardware, fallback)
+  check_hardware_available("libx264", hardware, fallback)
 
   # D074: the verb the caller typed names a bad limit, not the builder below.
   resolve_timeout()
@@ -6253,12 +6365,12 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #'   its fallback behavior, applied to the whole batch (a property of the
 #'   machine, not of a row, so neither is read as a \code{jobs} column). See
 #'   [separate_audio_video()]. Because \code{hardware} is batch-wide, and a
-#'   stream copy runs no encoder, \code{hardware = "nvenc"} conflicts with any
-#'   row whose video codec resolves to \code{"copy"} — including the default —
-#'   so a jobs table mixing copied and re-encoded video must be split into
-#'   separate calls.
-#'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   stream copy runs no encoder, a non-\code{"none"} \code{hardware}
+#'   conflicts with any row whose video codec resolves to \code{"copy"} —
+#'   including the default — so a jobs table mixing copied and re-encoded
+#'   video must be split into separate calls.
+#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
+#'   so the first such call that re-encodes the video runs the binary
 #'   while the command is built, even under \code{run = FALSE}. The answer is
 #'   remembered for the rest of the R session; see
 #'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
@@ -6294,7 +6406,7 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #'   \code{_batch} verbs' output plus the \code{stream} marker. See
 #'   \code{\link{ffm_batch}}.
 #' @seealso [separate_audio_video()], the scalar verb it wraps; [ffm_batch()],
-#'   the batch runner; [has_hardware_encoder()] for the \code{hardware = "nvenc"} toggle;
+#'   the batch runner; [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [segment_video_batch()] for the other fan-out batch verb.
 #' @section Failed audio outputs:
 #' A row whose audio command does not finish cleanly is recorded as
@@ -6354,7 +6466,8 @@ format_for_web_batch <- function(jobs, hardware = c("none", "nvenc"),
 #' @export
 separate_audio_video_batch <- function(jobs, audio_codec = "copy",
                                        video_codec = "copy",
-                                       hardware = c("none", "nvenc"),
+                                       hardware = c("none", "nvenc",
+                                                    "videotoolbox"),
                                        fallback = FALSE, audio_stream = NULL,
                                        run = TRUE,
                                        parallel = FALSE, ...) {
@@ -6540,7 +6653,7 @@ separate_audio_video_batch <- function(jobs, audio_codec = "copy",
   # own error had to report instead; the sweep above now refuses every such cell
   # whenever `hardware = "nvenc"`, which is the only setting under which this
   # guard acts at all, so no copy cell can reach it.
-  check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
+  check_hardware_available(batch_video_codecs(jobs, video_codec), hardware,
                         fallback)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output pipeline per
@@ -6733,29 +6846,31 @@ compare_videos_pipeline <- function(infiles, outfile,
 #'   unset so the output container's default encoder is used. Nothing is emitted
 #'   when \code{audio_input} is \code{NULL}, since no audio reaches the output; naming
 #'   an encoder in that case is an error.
-#' @param hardware The encoder backend: \code{"none"} (default, the software
-#'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
-#'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
-#'   (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); with the default
-#'   \code{video_codec = NULL} the H.264 family is assumed, so a non-H.264
-#'   container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
-#'   \code{video_codec}. See \code{\link{has_hardware_encoder}} for availability and its
-#'   caveats.
-#'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#' @param hardware The encoder backend: \code{"none"} (default, the
+#'   software \code{video_codec}), \code{"nvenc"} for NVIDIA GPU encoding
+#'   (H.264, HEVC and AV1), or \code{"videotoolbox"} for Apple GPU encoding
+#'   (H.264 and HEVC). Uses that backend's encoder for \code{video_codec}'s
+#'   family (e.g. \code{"libx264"} becomes \code{"h264_nvenc"} or
+#'   \code{"h264_videotoolbox"}); with the default \code{video_codec = NULL}
+#'   the H.264 family is assumed, so a non-H.264 container (e.g.
+#'   \code{.webm}) needs an explicit HEVC- or AV1-family \code{video_codec}
+#'   (AV1 only under \code{"nvenc"}). See \code{\link{has_hardware_encoder}}
+#'   for availability and its caveats.
+#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
+#'   so the first such call that re-encodes the video runs the binary
 #'   while the command is built, even under \code{run = FALSE}. The answer is
 #'   remembered for the rest of the R session; see
 #'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
-#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
-#'   unavailable, encode in software with a message (\code{TRUE}) instead of
-#'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
-#'   fallback leaves the codec unset rather than picking one, so the codec never
-#'   changes silently.
+#' @param fallback A logical: when a non-\code{"none"} \code{hardware} is
+#'   requested but its encoder is unavailable, encode in software with a
+#'   message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
+#'   \code{video_codec = NULL} the fallback leaves the codec unset rather
+#'   than picking one, so the codec never changes silently.
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @seealso [ffm_hstack()] and [ffm_vstack()], the builders it wraps;
-#'   [has_hardware_encoder()] for the \code{hardware = "nvenc"} toggle;
+#'   [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [picture_in_picture()] for insetting instead of stacking.
 #' @family task verb functions
 #' @family audio selection functions
@@ -6767,7 +6882,8 @@ compare_videos <- function(infiles, outfile,
                            direction = c("horizontal", "vertical"),
                            resize = TRUE, audio_input = NULL, video_codec = NULL,
                            audio_codec = "copy",
-                           hardware = c("none", "nvenc"), fallback = FALSE,
+                           hardware = c("none", "nvenc", "videotoolbox"),
+                           fallback = FALSE,
                            run = TRUE) {
 
   if (!rlang::is_character(infiles) || length(infiles) < 2) {
@@ -6896,29 +7012,31 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
 #'   unset so the output container's default encoder is used. Nothing is emitted
 #'   when \code{audio_input} is \code{NULL}, since no audio reaches the output; naming
 #'   an encoder in that case is an error.
-#' @param hardware The encoder backend: \code{"none"} (default, the software
-#'   \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
-#'   \code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
-#'   (e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); with the default
-#'   \code{video_codec = NULL} the H.264 family is assumed, so a non-H.264
-#'   container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
-#'   \code{video_codec}. See \code{\link{has_hardware_encoder}} for availability and its
-#'   caveats.
-#'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#' @param hardware The encoder backend: \code{"none"} (default, the
+#'   software \code{video_codec}), \code{"nvenc"} for NVIDIA GPU encoding
+#'   (H.264, HEVC and AV1), or \code{"videotoolbox"} for Apple GPU encoding
+#'   (H.264 and HEVC). Uses that backend's encoder for \code{video_codec}'s
+#'   family (e.g. \code{"libx264"} becomes \code{"h264_nvenc"} or
+#'   \code{"h264_videotoolbox"}); with the default \code{video_codec = NULL}
+#'   the H.264 family is assumed, so a non-H.264 container (e.g.
+#'   \code{.webm}) needs an explicit HEVC- or AV1-family \code{video_codec}
+#'   (AV1 only under \code{"nvenc"}). See \code{\link{has_hardware_encoder}}
+#'   for availability and its caveats.
+#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
+#'   so the first such call that re-encodes the video runs the binary
 #'   while the command is built, even under \code{run = FALSE}. The answer is
 #'   remembered for the rest of the R session; see
 #'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
-#' @param fallback A logical: when \code{hardware = "nvenc"} but nvenc is
-#'   unavailable, encode in software with a message (\code{TRUE}) instead of
-#'   aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
-#'   fallback leaves the codec unset rather than picking one, so the codec never
-#'   changes silently.
+#' @param fallback A logical: when a non-\code{"none"} \code{hardware} is
+#'   requested but its encoder is unavailable, encode in software with a
+#'   message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
+#'   \code{video_codec = NULL} the fallback leaves the codec unset rather
+#'   than picking one, so the codec never changes silently.
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 #' @seealso [ffm_overlay()], the builder it wraps; [has_hardware_encoder()] for the
-#'   \code{hardware = "nvenc"} toggle; [compare_videos()] for
+#'   \code{hardware} toggle; [compare_videos()] for
 #'   side-by-side stacking.
 #' @family task verb functions
 #' @family audio selection functions
@@ -6932,7 +7050,8 @@ picture_in_picture <- function(main, overlay, outfile,
                                             "center"),
                                scale = 0.25, margin = 16, audio_input = NULL,
                                video_codec = NULL, audio_codec = "copy",
-                               hardware = c("none", "nvenc"), fallback = FALSE,
+                               hardware = c("none", "nvenc", "videotoolbox"),
+                               fallback = FALSE,
                                run = TRUE) {
 
   check_file_readable(main)
@@ -7060,8 +7179,8 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #' @param hardware,fallback The encoder backend and its fallback behavior,
 #'   applied to the whole batch (a property of the machine, not of a row, so
 #'   neither is read as a \code{jobs} column). See [compare_videos()].
-#'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
+#'   so the first such call that re-encodes the video runs the binary
 #'   while the command is built, even under \code{run = FALSE}. The answer is
 #'   remembered for the rest of the R session; see
 #'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
@@ -7089,7 +7208,7 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #'   provenance manifest when requested via \code{...}). See
 #'   \code{\link{ffm_batch}}.
 #' @seealso [compare_videos()], the scalar verb it wraps; [ffm_batch()], the
-#'   batch runner; [has_hardware_encoder()] for the \code{hardware = "nvenc"} toggle;
+#'   batch runner; [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [concatenate_videos_batch()] and [picture_in_picture_batch()],
 #'   the other fan-in batch siblings.
 #' @family task verb functions
@@ -7102,7 +7221,7 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
                                  resize = TRUE, audio_input = NULL,
                                  video_codec = NULL, audio_codec = "copy",
-                                 hardware = c("none", "nvenc"),
+                                 hardware = c("none", "nvenc", "videotoolbox"),
                                  fallback = FALSE,
                                  run = TRUE, parallel = FALSE, ...) {
 
@@ -7216,7 +7335,7 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
   # which is where M41 puts a guard added for blame, so every check above still
   # reports first. The sweep covers each distinct family a `video_codec` column
   # spells, never only the argument's.
-  check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
+  check_hardware_available(batch_video_codecs(jobs, video_codec), hardware,
                         fallback)
 
   # D074: the verb the caller typed names a bad limit, not the builder below.
@@ -7288,8 +7407,8 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #' @param hardware,fallback The encoder backend and its fallback behavior,
 #'   applied to the whole batch (a property of the machine, not of a row, so
 #'   neither is read as a \code{jobs} column). See [picture_in_picture()].
-#'   Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-#'   the first \code{"nvenc"} call that re-encodes the video runs the binary
+#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
+#'   so the first such call that re-encodes the video runs the binary
 #'   while the command is built, even under \code{run = FALSE}. The answer is
 #'   remembered for the rest of the R session; see
 #'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
@@ -7317,7 +7436,7 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #'   provenance manifest when requested via \code{...}). See
 #'   \code{\link{ffm_batch}}.
 #' @seealso [picture_in_picture()], the scalar verb it wraps; [ffm_batch()], the
-#'   batch runner; [has_hardware_encoder()] for the \code{hardware = "nvenc"} toggle;
+#'   batch runner; [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [concatenate_videos_batch()] and [compare_videos_batch()],
 #'   the other fan-in batch siblings.
 #' @family task verb functions
@@ -7333,7 +7452,8 @@ picture_in_picture_batch <- function(jobs,
                                                   "center"),
                                      scale = 0.25, margin = 16, audio_input = NULL,
                                      video_codec = NULL, audio_codec = "copy",
-                                     hardware = c("none", "nvenc"),
+                                     hardware = c("none", "nvenc",
+                                                  "videotoolbox"),
                                      fallback = FALSE,
                                      run = TRUE, parallel = FALSE, ...) {
 
@@ -7480,7 +7600,7 @@ picture_in_picture_batch <- function(jobs,
   # which is where M41 puts a guard added for blame, so every check above still
   # reports first. The sweep covers each distinct family a `video_codec` column
   # spells, never only the argument's.
-  check_nvenc_available(batch_video_codecs(jobs, video_codec), hardware,
+  check_hardware_available(batch_video_codecs(jobs, video_codec), hardware,
                         fallback)
 
   # D074: the verb the caller typed names a bad limit, not the builder below.

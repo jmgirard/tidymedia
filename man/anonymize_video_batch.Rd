@@ -10,7 +10,7 @@ anonymize_video_batch(
   video_codec = "libx264",
   audio_codec = "copy",
   pixel_format = "yuv420p",
-  hardware = c("none", "nvenc"),
+  hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
   audio_stream = NULL,
   run = TRUE,
@@ -64,11 +64,13 @@ row, unless \code{jobs} carries a \code{pixel_format} column.
 (default = \code{"yuv420p"})}
 
 \item{hardware}{The encoder backend applied to every row: \code{"none"}
-(default, the software \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU
-encoding. Batch-wide (a machine property), not a per-row column; a
-\code{hardware} column in \code{jobs} is ignored. See \code{\link{has_hardware_encoder}}.
-Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-the first \code{"nvenc"} call that re-encodes the video runs the binary
+(default, the software \code{video_codec}), \code{"nvenc"} for NVIDIA
+GPU encoding (H.264, HEVC and AV1), or \code{"videotoolbox"} for Apple
+GPU encoding (H.264 and HEVC). Batch-wide (a machine property), not a
+per-row column; a \code{hardware} column in \code{jobs} is ignored. See
+\code{\link{has_hardware_encoder}}.
+Resolving a hardware backend asks this FFmpeg build which encoders it has,
+so the first such call that re-encodes the video runs the binary
 while the command is built, even under \code{run = FALSE}. The answer is
 remembered for the rest of the R session; see
 \code{\link{refresh_ffmpeg_capabilities}} to discard it.
@@ -79,10 +81,11 @@ A call that is also wrong about a per-row value — a \code{regions}
 table missing a required column, say — is refused for the value first,
 whether or not this machine has the encoder.}
 
-\item{fallback}{A logical applied to every row: when \code{hardware = "nvenc"}
-but nvenc is unavailable, re-encode with the software \code{video_codec} and
-a message (\code{TRUE}) instead of aborting (\code{FALSE}, default).
-Batch-wide, not a per-row column.}
+\item{fallback}{A logical applied to every row: when a non-\code{"none"}
+\code{hardware} is requested but its encoder is unavailable, re-encode
+with the software \code{video_codec} and a message (\code{TRUE})
+instead of aborting (\code{FALSE}, default). Batch-wide, not a per-row
+column.}
 
 \item{audio_stream}{The 0-based index of the audio track to carry into each output, counted \emph{among that row's input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) carries \strong{every} audio track. The argument applies to every row lacking an \code{audio_stream} column; an \code{NA} cell in that column means the same as \code{NULL} for that row, rather than falling back to the argument. The every-track family reads \code{NULL} this way -- \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus their \code{_batch} siblings. The first-track family takes one track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus theirs. Subtitle and data streams are not carried either way. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
@@ -131,7 +134,7 @@ anonymize_video_batch(jobs, run = FALSE)
 }
 \seealso{
 \code{\link[=anonymize_video]{anonymize_video()}} for the single-input form; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the
-\code{hardware = "nvenc"} toggle; \code{\link[=ffm_batch]{ffm_batch()}} for the
+\code{hardware} toggle; \code{\link[=ffm_batch]{ffm_batch()}} for the
 batch runner and the arguments forwarded through \code{...};
 \code{\link[=standardize_video_batch]{standardize_video_batch()}} and \code{\link[=segment_video_batch]{segment_video_batch()}} for the other
 table-driven siblings.

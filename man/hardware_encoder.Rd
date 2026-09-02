@@ -5,13 +5,22 @@
 \alias{has_hardware_encoder}
 \title{Hardware video encoders}
 \usage{
-hardware_encoder(codec = c("h264", "hevc", "av1"))
+hardware_encoder(codec = hardware_codec_families(), hardware)
 
-has_hardware_encoder(codec = c("h264", "hevc", "av1"))
+has_hardware_encoder(codec = hardware_codec_families(), hardware)
 }
 \arguments{
-\item{codec}{The video codec family: one of \code{"h264"}, \code{"hevc"}, or
-\code{"av1"}.}
+\item{codec}{The video codec family: one of \code{"h264"}, \code{"hevc"},
+\code{"av1"}, or \code{"prores"}. These are the families the package
+recognizes, not the families a given backend covers: a family the chosen
+\code{hardware} backend has no encoder for is refused naming both the
+backend and the family (e.g. \code{"av1"} under \code{"videotoolbox"}).
+\code{"prores"} is refused by both backends today.}
+
+\item{hardware}{The backend: \code{"nvenc"} or \code{"videotoolbox"}.
+Required, with no default. Narrower than the verbs' \code{hardware}
+argument: \code{"none"} is the verbs' off position, meaning "use no
+backend", which has no meaning here, so it is refused.}
 }
 \value{
 \code{hardware_encoder()} a single encoder-name string (e.g.
@@ -20,36 +29,38 @@ has_hardware_encoder(codec = c("h264", "hevc", "av1"))
 \description{
 Helpers for opt-in hardware video encoding. \code{hardware_encoder()} maps a
 codec family to its hardware encoder name; \code{has_hardware_encoder()}
-reports whether that encoder is available in the local FFmpeg build. NVIDIA
-nvenc is the one backend, so \code{hardware_encoder("h264")} is
-\code{"h264_nvenc"}.
+reports whether that encoder is available in the local FFmpeg build. Two
+backends are supported: NVIDIA nvenc (H.264, HEVC and AV1) and Apple
+videotoolbox (H.264 and HEVC), so \code{hardware_encoder("h264", "nvenc")}
+is \code{"h264_nvenc"} and \code{hardware_encoder("h264",
+"videotoolbox")} is \code{"h264_videotoolbox"}.
 }
 \details{
 \code{has_hardware_encoder()} is a \emph{cheap} check: it asks whether FFmpeg lists the
 encoder (via \code{\link{ffmpeg_encoders}}), which reflects how FFmpeg was
-built, not whether a working NVIDIA GPU and driver are present at run time. An
-encode can still fail at run time on a machine with no capable GPU. To
+built, not whether working hardware and a driver are present at run time.
+An encode can still fail at run time on a machine with no capable GPU. To
 override detection in a known environment (or in tests), set
 \code{options(tidymedia.hardware_encoders = )} to a character vector of encoder
 names to treat as available.
 
-These back the \code{hardware = "nvenc"} toggle on
+These back the \code{hardware} toggle on
 \code{\link{standardize_video}}, \code{\link{format_for_web}},
 \code{\link{anonymize_video}}, \code{\link{crop_video}},
 \code{\link{segment_video}}, \code{\link{compare_videos}},
 \code{\link{picture_in_picture}}, and \code{\link{separate_audio_video}}
 (and their \code{_batch} siblings). On the
 verbs whose \code{video_codec} defaults to \code{NULL} (no codec named), the
-H.264 family is assumed under \code{hardware = "nvenc"}, so a non-H.264
+H.264 family is assumed, so a non-H.264
 container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
-\code{video_codec}. Hardware
+\code{video_codec} (AV1 only under \code{"nvenc"}). Hardware
 \emph{decoding} (\code{-hwaccel}) and GPU filter pipelines are out of scope;
 use the \code{\link{ffmpeg}} escape hatch for those.
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("ffmpeg"))) withAutoprint(\{ # examplesIf}
-hardware_encoder("h264")
-has_hardware_encoder("h264")
+hardware_encoder("h264", "nvenc")
+has_hardware_encoder("h264", "nvenc")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
@@ -59,7 +70,7 @@ has_hardware_encoder("h264")
 \code{\link{segment_video}}, \code{\link{compare_videos}},
 \code{\link{picture_in_picture}}, and
 \code{\link{separate_audio_video}} for the
-\code{hardware = "nvenc"} toggle that uses these.
+\code{hardware} toggle that uses these.
 
 Other capability functions:
 \code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}},

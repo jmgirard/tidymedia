@@ -7,28 +7,54 @@
 # hardware_encoder() -------------------------------------------------------------
 
 test_that("hardware_encoder() maps each family to its encoder name", {
-  expect_equal(hardware_encoder("h264"), "h264_nvenc")
-  expect_equal(hardware_encoder("hevc"), "hevc_nvenc")
-  expect_equal(hardware_encoder("av1"), "av1_nvenc")
-  expect_equal(hardware_encoder(), "h264_nvenc") # default is the first choice
+  expect_equal(hardware_encoder("h264", "nvenc"), "h264_nvenc")
+  expect_equal(hardware_encoder("hevc", "nvenc"), "hevc_nvenc")
+  expect_equal(hardware_encoder("av1", "nvenc"), "av1_nvenc")
+  expect_equal(hardware_encoder("h264", "videotoolbox"), "h264_videotoolbox")
+  expect_equal(hardware_encoder("hevc", "videotoolbox"), "hevc_videotoolbox")
 })
 
 test_that("hardware_encoder() rejects an unknown family", {
-  expect_error(hardware_encoder("vp9"), class = "rlang_error")
+  expect_error(hardware_encoder("vp9", "nvenc"), class = "rlang_error")
+})
+
+test_that("hardware_encoder() requires a backend and refuses the off position", {
+  # `hardware` has no default: every candidate default is one member of the set
+  # it ranges over, and a member as a silent default is the same defect the
+  # backend-neutral NAME removed, moved into a value (D079).
+  expect_error(hardware_encoder("h264"), class = "rlang_error")
+  expect_error(hardware_encoder("h264", "none"), "must be one of")
+})
+
+test_that("hardware_encoder() refuses a family its backend has no encoder for", {
+  # The (family, backend) refusal, sited in the mapper and nowhere else. Each
+  # abort names the backend the caller asked for and the family, and neither
+  # names the other backend.
+  vt <- rlang::catch_cnd(hardware_encoder("av1", "videotoolbox"))
+  expect_s3_class(vt, "rlang_error")
+  expect_match(conditionMessage(vt), "videotoolbox", fixed = TRUE)
+  expect_match(conditionMessage(vt), "av1", fixed = TRUE)
+  expect_no_match(conditionMessage(vt), "nvenc", fixed = TRUE)
+
+  nv <- rlang::catch_cnd(hardware_encoder("prores", "nvenc"))
+  expect_s3_class(nv, "rlang_error")
+  expect_match(conditionMessage(nv), "nvenc", fixed = TRUE)
+  expect_match(conditionMessage(nv), "prores", fixed = TRUE)
+  expect_no_match(conditionMessage(nv), "videotoolbox", fixed = TRUE)
 })
 
 # has_hardware_encoder() -----------------------------------------------------------------
 
 test_that("has_hardware_encoder() reads the option-seam pool when set", {
   withr::local_options(tidymedia.hardware_encoders = c("h264_nvenc", "av1_nvenc"))
-  expect_true(has_hardware_encoder("h264"))
-  expect_false(has_hardware_encoder("hevc"))
-  expect_true(has_hardware_encoder("av1"))
+  expect_true(has_hardware_encoder("h264", "nvenc"))
+  expect_false(has_hardware_encoder("hevc", "nvenc"))
+  expect_true(has_hardware_encoder("av1", "nvenc"))
 })
 
 test_that("has_hardware_encoder() returns a length-one logical against real FFmpeg", {
   skip_if_no_ffmpeg()
-  out <- has_hardware_encoder("h264")
+  out <- has_hardware_encoder("h264", "nvenc")
   expect_type(out, "logical")
   expect_length(out, 1)
   expect_false(is.na(out))
@@ -42,7 +68,15 @@ test_that("codec_family() infers the family from common codec names", {
   expect_equal(codec_family("libx265"), "hevc")
   expect_equal(codec_family("hevc"), "hevc")
   expect_equal(codec_family("libaom-av1"), "av1")
-  expect_error(codec_family("prores"), "No nvenc encoder")
+  # Backend-free: prores IS a family, and whether a backend encodes it is the
+  # table's question, refused in hardware_encoder(). The abort here fires only
+  # when no family matches at all, and names no backend.
+  expect_equal(codec_family("prores"), "prores")
+  cnd <- rlang::catch_cnd(codec_family("vp9"))
+  expect_s3_class(cnd, "rlang_error")
+  expect_match(conditionMessage(cnd), "No hardware encoder family")
+  expect_no_match(conditionMessage(cnd), "nvenc", fixed = TRUE)
+  expect_no_match(conditionMessage(cnd), "videotoolbox", fixed = TRUE)
 })
 
 test_that("resolve_hw_encoder() leaves the codec untouched for hardware none", {
@@ -301,14 +335,14 @@ test_that("anonymize_video(hardware = 'nvenc') respects the video_codec family",
   expect_match(cmd, "-codec:v hevc_nvenc", fixed = TRUE)
 })
 
-test_that("anonymize_video(hardware = 'nvenc') aborts for a non-nvenc codec family", {
+test_that("anonymize_video(hardware = 'nvenc') aborts for a family nvenc lacks", {
   withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
   f <- make_input()
   regions <- data.frame(x = 10, y = 10, width = 20, height = 20)
   expect_error(
     anonymize_video(f, "out.mp4", regions, video_codec = "prores",
                     hardware = "nvenc", run = FALSE),
-    "No nvenc encoder"
+    'nvenc has no "prores" encoder'
   )
 })
 

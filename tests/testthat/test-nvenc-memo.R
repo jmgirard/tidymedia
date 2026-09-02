@@ -17,11 +17,11 @@ test_that("the encoder pool is asked for once per session, across codecs", {
     }
   )
 
-  expect_true(has_hardware_encoder("h264"))
+  expect_true(has_hardware_encoder("h264", "nvenc"))
   expect_identical(probes, 1L)
-  expect_true(has_hardware_encoder("hevc"))
+  expect_true(has_hardware_encoder("hevc", "nvenc"))
   expect_identical(probes, 1L)
-  expect_true(has_hardware_encoder("h264"))
+  expect_true(has_hardware_encoder("h264", "nvenc"))
   expect_identical(probes, 1L)
 })
 
@@ -39,10 +39,10 @@ test_that("a cold memo still reaches FFmpeg", {
     }
   )
 
-  has_hardware_encoder("h264")
+  has_hardware_encoder("h264", "nvenc")
   expect_identical(probes, 1L)
   forget_ffmpeg_capabilities()
-  has_hardware_encoder("h264")
+  has_hardware_encoder("h264", "nvenc")
   expect_identical(probes, 2L)
 })
 
@@ -61,11 +61,11 @@ test_that("the option seam is read before the memo, so it wins mid-session", {
     }
   )
 
-  expect_true(has_hardware_encoder("h264")) # warms the memo
+  expect_true(has_hardware_encoder("h264", "nvenc")) # warms the memo
   expect_identical(probes, 1L)
 
   withr::local_options(tidymedia.hardware_encoders = character(0))
-  expect_false(has_hardware_encoder("h264"))
+  expect_false(has_hardware_encoder("h264", "nvenc"))
   expect_identical(probes, 1L)
 })
 
@@ -73,13 +73,13 @@ test_that("refresh_ffmpeg_capabilities() sends the next call back to FFmpeg", {
   # AC4, route one: the exported discard.
   probes <- local_encoder_probe_counter()
 
-  expect_true(has_hardware_encoder("h264"))
+  expect_true(has_hardware_encoder("h264", "nvenc"))
   expect_identical(probes(), 1L)
-  expect_true(has_hardware_encoder("h264"))
+  expect_true(has_hardware_encoder("h264", "nvenc"))
   expect_identical(probes(), 1L)
 
   expect_null(refresh_ffmpeg_capabilities())
-  expect_true(has_hardware_encoder("h264"))
+  expect_true(has_hardware_encoder("h264", "nvenc"))
   expect_identical(probes(), 2L)
 })
 
@@ -95,13 +95,13 @@ test_that("set_program() sends the next call back to FFmpeg", {
   withr::local_envvar(R_USER_CONFIG_DIR = withr::local_tempdir())
   probes <- local_encoder_probe_counter()
 
-  expect_true(has_hardware_encoder("h264"))
+  expect_true(has_hardware_encoder("h264", "nvenc"))
   expect_identical(probes(), 1L)
-  expect_true(has_hardware_encoder("h264"))
+  expect_true(has_hardware_encoder("h264", "nvenc"))
   expect_identical(probes(), 1L)
 
   set_program("ffmpeg", unname(ffmpeg_path))
-  expect_true(has_hardware_encoder("h264"))
+  expect_true(has_hardware_encoder("h264", "nvenc"))
   expect_identical(probes(), 2L)
 })
 
@@ -144,12 +144,12 @@ test_that("an option set before the memo is warmed never warms it", {
 
   withr::with_options(
     list(tidymedia.hardware_encoders = "h264_nvenc"),
-    expect_true(has_hardware_encoder("h264"))
+    expect_true(has_hardware_encoder("h264", "nvenc"))
   )
   expect_identical(probes, 0L)
   expect_identical(ls(.tm_capabilities), character())
 
   withr::local_options(tidymedia.hardware_encoders = NULL)
-  expect_true(has_hardware_encoder("h264"))
+  expect_true(has_hardware_encoder("h264", "nvenc"))
   expect_identical(probes, 1L)
 })

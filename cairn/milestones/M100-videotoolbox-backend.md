@@ -69,7 +69,7 @@ milestone's, since adding an argument is additive and outside D014.
       `run` notwithstanding.
 - [ ] AC3 An unavailable backend aborts, and `fallback = TRUE` falls back, and
       both routes to the probe's answer agree. The memo route: with
-      `withr::local_options(tidymedia.nvenc_encoders = NULL)` — required,
+      `withr::local_options(tidymedia.hardware_encoders = NULL)` — required,
       because the option is read before the memo and leaves a mock inert — and
       `cached_encoder_names()` mocked to a pool holding `h264_videotoolbox` and
       not `h264_nvenc`, `hardware = "videotoolbox"` proceeds and
@@ -111,25 +111,25 @@ milestone's, since adding an argument is additive and outside D014.
 
 1. [x] Take the helpers' names from D077 — `has_hardware_encoder()`,
    `hardware_encoder()`, `tidymedia.hardware_encoders`, argument `hardware =`.
-2. [ ] Add the per-backend codec-family table and the backend-aware
+2. [x] Add the per-backend codec-family table and the backend-aware
    encoder-name builder, replacing `hardware_encoder()`'s
    `paste0(codec, "_nvenc")`, and site the (family, backend)-not-in-table
    refusal there (Decisions, RR07 R4).
-3. [ ] Keep `codec_family()` backend-free; stop its abort naming nvenc for a
+3. [x] Keep `codec_family()` backend-free; stop its abort naming nvenc for a
    family it cannot infer.
-4. [ ] Generalize the probe, its abort and both helpers over the backend —
+4. [x] Generalize the probe, its abort and both helpers over the backend —
    required `hardware =` over the backend set only (D079) — keeping
    `resolve_timeout()` above the memo (D074, M094 F5) and the option seam above
    both (D044); widen `check_nvenc_available()`'s gate so a videotoolbox
    `_batch` call is refused at the verb (Decisions, D035).
-5. [ ] Widen `hardware=` at the 16 exported verbs and at
+5. [x] Widen `hardware=` at the 16 exported verbs and at
    `resolve_hw_encoder()`; extend `nvenc_hardware_exports()` into AC1's sweep,
    excluding the two helpers from its domain (Decisions, RR07 R8).
-6. [ ] Write AC2's and AC3's tests — compiled-command, mocked-pool and
+6. [x] Write AC2's and AC3's tests — compiled-command, mocked-pool and
    option-seam assertions, plus the batch-verb blame assertion; no hardware
    needed.
-7. [ ] Write AC4's executing test with its one-frame-encode skip.
-8. [ ] Update the three help topics, the 16 verbs' `@param hardware` and
+7. [x] Write AC4's executing test with its one-frame-encode skip.
+8. [x] Update the three help topics, the 16 verbs' `@param hardware` and
    `@seealso` text, the ~31 helper call sites the required argument reaches,
    `vignettes/workflow.Rmd`, `_pkgdown.yml` and `NEWS.md` (M099's "nvenc is the
    one hardware backend" sentence is edited, not contradicted).
@@ -191,6 +191,24 @@ milestone's, since adding an argument is additive and outside D014.
   and that closing it inside AC6 would be the widening the test forbids; it
   went to T8 at the maintainer's gate instead.
 
+- 2026-09-02 (implement, T2/T3). **`prores` is a family the package infers and
+  no backend's table holds.** AC2 requires the `"nvenc"`-with-a-`prores`-codec
+  refusal to name the backend and the family, and only the table lookup knows
+  which backend was asked for. So `codec_family()` gained a `prores` branch and
+  the family vocabulary `hardware_encoder()` accepts is
+  `c("h264", "hevc", "av1", "prores")`, wider than either backend's row. Both
+  backends refuse `prores`; that is the scope-out decision showing through as a
+  refusal rather than as an inference failure, and `codec_family()`'s abort now
+  fires only when no family matches at all and names no backend.
+- 2026-09-02 (implement, T4; the question gate's second question, which the
+  maintainer folded into `/milestone-review`). **The internals that now serve
+  both backends are renamed:** `nvenc_available()` is
+  `hardware_encoder_available()` and `check_nvenc_available()` is
+  `check_hardware_available()`. The nvenc-named test files and test helpers
+  (`test-nvenc*.R`, `helper-nvenc-memo.R`, `skip_if_no_nvenc()`,
+  `nvenc_hardware_exports()`) keep their names, as the gate's recommended
+  option said. Review adjudicates the split.
+
 ## Work log
 <!-- owner: implement/review -->
 
@@ -208,3 +226,10 @@ milestone's, since adding an argument is additive and outside D014.
 - 2026-09-01 plan amendment (substantive, mini gate, maintainer-accepted): AC6's wording. Amended text shown verbatim in chat at the gate and carried in the Decisions section's rationale; the criteria set is unchanged in size and in what it promises.
 - 2026-09-01 minor amendments: T1 checked off (the helpers' names come from D077); T3 narrowed to keeping `codec_family()` backend-free; T4 gained the required-argument and front-door-gate work; T5 gained the sweep exclusion; T8 gained the 16 verbs' roxygen and the helper call sites. Tasks compressed in one pass to shed the two lines the amendments put over the 150-line plan-owned cap — Acceptance criteria is the heavier section but cannot be reworded outside the amendment gate, and Tasks is the section that grew.
 - 2026-09-01 candidate row: RR07's backend-vector export (R13) absorbed as item (d) of the existing "What M100 leaves out of the hardware surface" row rather than added as a new row; that row and the `install_on_win()` row were compressed in the same pass to keep ROADMAP.md under its byte budget.
+- 2026-09-02 plan amendment (substantive, mini gate, maintainer-accepted): AC3's option name, `tidymedia.nvenc_encoders` -> `tidymedia.hardware_encoders`, which M099 renamed between this plan and its implementation, leaving AC3's named procedure setting an option no code path reads. Amended text shown verbatim in chat at the gate. Cleared before writing by a fresh-context [O] reader that did not author it, FULL mode (surface tier user-facing), asked the criteria audit's three questions plus the probe, instrument, proportionality and widening tests and joint satisfiability across AC1-AC7: ADMISSIBLE, not a widening, no required edits. The criteria set is unchanged in size and in what it promises.
+- 2026-09-02 implement T2-T5: `hardware_backend_families()` (nvenc h264/hevc/av1, videotoolbox h264/hevc), `hardware_backends()` read off it, `hardware_encoder(codec, hardware)` with the (family, backend) refusal sited there once, `codec_family()` backend-free, `hardware_encoder_available()`/`check_hardware_available()` generalized with the front-door gate widened to backend-set membership, and `hardware = c("none", "nvenc", "videotoolbox")` at the 16 verbs and the resolver. Verify slot clean.
+- 2026-09-02 delegation [S], T8's roxygen half: the 16 verbs' `@param hardware`, `@param fallback` and `@seealso` text plus the shared helper topic, ~390 roxygen lines in `R/ffmpeg.R`. Diff verified by this session: code-line hunks were all this session's own, and one repair was needed -- the rewrite wrapped the probe sentence across a line break, which `test-nvenc-docs.R` matches as a contiguous clause over 16 topics.
+- 2026-09-02 implement T6/T7: `tests/testthat/test-hardware-backends.R` -- the table-iterating compile assertions, the two (family, backend) refusals, the memo and option routes in both directions, the fallback message per backend, the `_batch` blame assertion, AC5's helper pools, and AC4's executing test behind `skip_if_no_videotoolbox()`. AC4 ran for real on this machine: `h264 (native) -> h264 (h264_videotoolbox)`, a 160x120 output of 19 KiB.
+- 2026-09-02 enumeration correction, extending RR07 R8's disposition to the three further sweeps that quantify over "everything documenting or carrying `hardware`": `nvenc_hardware_exports()`, the probe-blame cell builder, `test-nvenc-front-door.R`'s completeness test, and `test-nvenc-docs.R`'s Rd-topic enumeration all exclude the two capability helpers by name, through one shared `nvenc_hardware_helpers()`. Same correction, same reason; AC1's and AC5's domains are unchanged.
+- 2026-09-02 census: the corrupt-argument sweep's master census is a merge-base measurement and was left untouched (IP4). `has_hardware_encoder()`'s new required `hardware` formal adds five dropped cells refused inside `hardware_encoder()` -- the frame that already refuses a wrong `codec` -- so the live totals move 1530/437 to 1535/442 with `kept` unchanged, and the one new entry is named in the test's two-way difference rather than added to the frozen list.
+- 2026-09-02 implement T8: `NEWS.md` gains a new-features entry for the vocabulary and a breaking-changes entry for the helpers' required `hardware`, and M099's "nvenc is the one hardware backend" sentence is edited rather than contradicted (RR07 point 4). `vignettes/workflow.Rmd` teaches naming a backend and checking under the same name. `_pkgdown.yml`'s "FFmpeg capabilities" prose was re-checked and needs no edit: it already reads "opt-in hardware (GPU) encoding", which is backend-neutral.

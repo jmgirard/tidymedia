@@ -76,7 +76,7 @@
 #
 # One probe runs while a command is BUILT rather than at a front door -- the
 # nvenc capability lookup, reached from resolve_hw_encoder() inside the pipeline
-# and from check_nvenc_available() at the fan-out verbs. nvenc_available()
+# and from check_hardware_available() at the fan-out verbs. hardware_encoder_available()
 # (R/ffmpeg.R) is has_hardware_encoder()'s body with `call` threaded so that probe refuses
 # in the VERB's name; it builds no reached-limit condition, so D049 is untouched.
 resolve_timeout <- function(call = rlang::caller_env()) {

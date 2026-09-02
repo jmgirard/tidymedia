@@ -8,7 +8,7 @@ separate_audio_video_batch(
   jobs,
   audio_codec = "copy",
   video_codec = "copy",
-  hardware = c("none", "nvenc"),
+  hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
   audio_stream = NULL,
   run = TRUE,
@@ -45,12 +45,12 @@ unless \code{jobs} carries a \code{video_codec} column. The default
 its fallback behavior, applied to the whole batch (a property of the
 machine, not of a row, so neither is read as a \code{jobs} column). See
 \code{\link[=separate_audio_video]{separate_audio_video()}}. Because \code{hardware} is batch-wide, and a
-stream copy runs no encoder, \code{hardware = "nvenc"} conflicts with any
-row whose video codec resolves to \code{"copy"} — including the default —
-so a jobs table mixing copied and re-encoded video must be split into
-separate calls.
-Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-the first \code{"nvenc"} call that re-encodes the video runs the binary
+stream copy runs no encoder, a non-\code{"none"} \code{hardware}
+conflicts with any row whose video codec resolves to \code{"copy"} —
+including the default — so a jobs table mixing copied and re-encoded
+video must be split into separate calls.
+Resolving a hardware backend asks this FFmpeg build which encoders it has,
+so the first such call that re-encodes the video runs the binary
 while the command is built, even under \code{run = FALSE}. The answer is
 remembered for the rest of the R session; see
 \code{\link{refresh_ffmpeg_capabilities}} to discard it.
@@ -162,7 +162,7 @@ separate_audio_video_batch(jobs, run = FALSE)
 }
 \seealso{
 \code{\link[=separate_audio_video]{separate_audio_video()}}, the scalar verb it wraps; \code{\link[=ffm_batch]{ffm_batch()}},
-the batch runner; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware = "nvenc"} toggle;
+the batch runner; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
 \code{\link[=segment_video_batch]{segment_video_batch()}} for the other fan-out batch verb.
 
 Other task verb functions:

@@ -515,7 +515,7 @@ test_that("all eight verbs carry the D014 argument spellings", {
     fo <- formals(get(verb))
     expect_true("video_codec" %in% names(fo), label = verb)
     expect_null(fo$video_codec)
-    expect_equal(eval(fo$hardware), c("none", "nvenc"))
+    expect_equal(eval(fo$hardware), c("none", "nvenc", "videotoolbox"))
     expect_false(fo$fallback)
     expect_false(any(c("vcodec", "codec") %in% names(fo)), label = verb)
   }

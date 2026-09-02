@@ -32,7 +32,8 @@ skip_if_no_nvenc <- function() {
     nzchar(Sys.which("ffmpeg")),
     message = "ffmpeg binary not available"
   )
-  testthat::skip_if_not(has_hardware_encoder("h264"), message = "nvenc encoder not listed")
+  testthat::skip_if_not(has_hardware_encoder("h264", "nvenc"),
+                        message = "nvenc encoder not listed")
   probe <- suppressWarnings(tryCatch(
     system2(
       "ffmpeg",
@@ -110,4 +111,30 @@ tm_require_wildcard_name <- function(path) {
     testthat::skip("Windows filenames cannot contain `*`")
   }
   testthat::fail(paste0("could not create the fixture file: ", path))
+}
+
+# Skip unless this FFmpeg can actually videotoolbox-encode at run time. The
+# shape is skip_if_no_nvenc()'s and for the same reason, but the encoder-list
+# check is deliberately absent: VideoToolbox is listed on every macOS build,
+# virtualized runners included, so the list answers nothing here and the
+# one-frame encode is the whole question.
+skip_if_no_videotoolbox <- function() {
+  testthat::skip_if_not(
+    nzchar(Sys.which("ffmpeg")),
+    message = "ffmpeg binary not available"
+  )
+  probe <- suppressWarnings(tryCatch(
+    system2(
+      "ffmpeg",
+      c("-hide_banner", "-loglevel", "error", "-f", "lavfi",
+        "-i", "nullsrc=s=64x48:d=0.1", "-c:v", "h264_videotoolbox",
+        "-frames:v", "1", "-f", "null", "-"),
+      stdout = FALSE, stderr = FALSE
+    ),
+    error = function(e) 1L
+  ))
+  testthat::skip_if_not(
+    identical(as.integer(probe), 0L),
+    message = "videotoolbox not usable at run time"
+  )
 }

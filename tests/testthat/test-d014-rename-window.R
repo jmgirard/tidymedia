@@ -45,27 +45,27 @@ test_that("(d) the hardware-encoder exports carry backend-neutral names", {
 })
 
 test_that("(d) hardware_encoder() maps a family to its encoder name", {
-  expect_identical(hardware_encoder("h264"), "h264_nvenc")
-  expect_identical(hardware_encoder("hevc"), "hevc_nvenc")
-  expect_identical(hardware_encoder("av1"), "av1_nvenc")
-  expect_error(hardware_encoder("vp9"), "must be one of")
+  expect_identical(hardware_encoder("h264", "nvenc"), "h264_nvenc")
+  expect_identical(hardware_encoder("hevc", "nvenc"), "hevc_nvenc")
+  expect_identical(hardware_encoder("av1", "nvenc"), "av1_nvenc")
+  expect_error(hardware_encoder("vp9", "nvenc"), "must be one of")
 })
 
 test_that("(d) has_hardware_encoder() answers from `tidymedia.hardware_encoders`", {
   # The option seam is read before FFmpeg is asked (D044), so no binary is
   # needed to exercise it.
   withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
-  expect_true(has_hardware_encoder("h264"))
-  expect_false(has_hardware_encoder("hevc"))
+  expect_true(has_hardware_encoder("h264", "nvenc"))
+  expect_false(has_hardware_encoder("hevc", "nvenc"))
   withr::local_options(tidymedia.hardware_encoders = character(0))
-  expect_false(has_hardware_encoder("h264"))
+  expect_false(has_hardware_encoder("h264", "nvenc"))
 })
 
 test_that("(d) the old option name is no longer read", {
   # Only the retired name is set, so a read of it would answer TRUE.
   withr::local_options(tidymedia.hardware_encoders = character(0),
                        tidymedia.nvenc_encoders = "h264_nvenc")
-  expect_false(has_hardware_encoder("h264"))
+  expect_false(has_hardware_encoder("h264", "nvenc"))
 })
 
 test_that("(a) a leftover `audio` jobs column is unread, so its rows fall back to the default", {

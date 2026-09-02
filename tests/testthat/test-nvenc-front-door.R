@@ -19,7 +19,7 @@
 test_that("the front-door guard and resolve_hw_encoder() word the abort identically", {
   withr::local_options(tidymedia.hardware_encoders = character(0))
   front <- tryCatch(
-    tidymedia:::check_nvenc_available("libx264", "nvenc", FALSE),
+    tidymedia:::check_hardware_available("libx264", "nvenc", FALSE),
     condition = function(cnd) cnd
   )
   pipeline <- tryCatch(
@@ -116,7 +116,11 @@ test_that("the two lists together are every hardware-bearing exported verb", {
     obj <- get(nm, envir = asNamespace("tidymedia"))
     is.function(obj) && "hardware" %in% names(formals(obj))
   }, exported)
-  expect_setequal(hw, c(nvenc_fanout_verbs(), nvenc_direct_verbs()))
+  # The two capability helpers carry `hardware` but are not verbs and have no
+  # front door to mirror; nvenc_hardware_exports() excludes them for the same
+  # reason.
+  expect_setequal(setdiff(hw, nvenc_hardware_helpers()),
+                  c(nvenc_fanout_verbs(), nvenc_direct_verbs()))
 })
 
 # --- AC1: the abort names the verb ------------------------------------------
@@ -232,15 +236,17 @@ test_that("fallback = TRUE still falls back, once per row", {
 test_that("fallback = TRUE never lets the front door refuse an unmappable codec", {
   withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
-  # codec_family() aborts on "prores" regardless of `fallback`, so a front-door
-  # column sweep would refuse this call. The guard's early return is what keeps
-  # the failure where it was -- inside the fan-out, unchanged from master.
+  # A prores codec under nvenc is refused regardless of `fallback` -- the
+  # (family, backend) pair is not in the table -- so a front-door column sweep
+  # would refuse this call. The guard's early return is what keeps the failure
+  # where it was: inside the fan-out, unchanged from master.
   jobs <- tibble::tibble(input = input, output = "a.mp4",
                          video_codec = "prores")
   cnd <- nvenc_fanout_catch("standardize_video_batch", input,
                             extra = list(jobs = jobs, fallback = TRUE))
   expect_s3_class(cnd, "rlang_error")
-  expect_match(conditionMessage(cnd), "No nvenc encoder")
+  expect_match(conditionMessage(cnd), 'nvenc has no "prores" encoder',
+               fixed = TRUE)
   expect_false(identical(nvenc_blamed(cnd), "standardize_video_batch"))
 })
 
@@ -516,7 +522,7 @@ test_that("resolve_hw_encoder() reaches the abort by calling the shared guard", 
   # the package root SKIPS under R CMD check, which runs against an installed
   # package with no R/ dir, and so looks healthy while never running (M51).
   src <- deparse(body(tidymedia:::resolve_hw_encoder))
-  expect_true(any(grepl("check_nvenc_available", src, fixed = TRUE)))
+  expect_true(any(grepl("check_hardware_available", src, fixed = TRUE)))
   # cli_inform() stays -- that is the fallback message, not the abort.
   expect_false(any(grepl("cli_abort", src, fixed = TRUE)))
 })

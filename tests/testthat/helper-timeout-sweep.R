@@ -199,7 +199,7 @@ tm_timeout_call_specs <- function(dir) {
     get_height = list(file = vid),
     get_sample_rate = list(file = vid),
     get_width = list(file = vid),
-    has_hardware_encoder = list(),
+    has_hardware_encoder = list(hardware = "nvenc"),
     mediainfo = list(command = "--Version"),
     mediainfo_parameter =
       list(file = vid, section = "General", parameter = "Duration"),
@@ -872,10 +872,12 @@ tm_refusal_head <- function(name, args, limit) {
 # so a cell that IS refused spawns nothing on the way there; the sweep below
 # intercepts the spawns a truthy wrong value would otherwise reach.
 #
-# Every member is present, including the three that take no arguments in
-# `tm_timeout_call_specs()` -- `ffmpeg_codecs`, `ffmpeg_encoders` and
-# `has_hardware_encoder` all have formals to corrupt even though their valid cell is empty,
-# and `ffmpeg_codecs`'s is the argument M096 exists to guard.
+# Every member is present, including the three whose valid cell in
+# `tm_timeout_call_specs()` holds no user-chosen value -- `ffmpeg_codecs`,
+# `ffmpeg_encoders` and `has_hardware_encoder` all have formals to corrupt even
+# though their cell is empty (or, for `has_hardware_encoder`, holds only the
+# backend its required `hardware` argument has no default for), and
+# `ffmpeg_codecs`'s is the argument M096 exists to guard.
 tm_timeout_corrupt_specs <- function(dir) {
   specs <- tm_timeout_call_specs(dir)
   forms <- tm_nvenc_wrong_forms()
@@ -1269,7 +1271,11 @@ tm_nvenc_wrong_arg_cells <- function(dir) {
   forms <- tm_nvenc_wrong_forms()
   ns <- asNamespace("tidymedia")
   out <- list()
-  for (nm in tm_timeout_domain()) {
+  # The two capability helpers are out of this domain for the reason
+  # nvenc_hardware_exports() states: they grew a `hardware` argument too, but
+  # this sweep crosses each member's OTHER formals with wrong forms and asks
+  # which frame refused them, and the helpers have no pipeline to blame.
+  for (nm in setdiff(tm_timeout_domain(), nvenc_hardware_helpers())) {
     fmls <- names(formals(get(nm, envir = ns)))
     if (!"hardware" %in% fmls) next
     base <- specs[[nm]]

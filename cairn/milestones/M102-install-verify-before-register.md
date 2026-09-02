@@ -1,6 +1,6 @@
 # M102: `install_on_win()` verifies the archive and the unpacked programs before it registers anything
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -97,7 +97,7 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
       outcomes: a declined confirmation, a download that did not deliver, a
       checksum that did not match, an archive that could not be unpacked, and a
       required program that was not produced.
-- [ ] AC7: `digest` appears in `DESCRIPTION` `Imports` with a floor version the
+- [x] AC7: `digest` appears in `DESCRIPTION` `Imports` with a floor version the
       `--only digest` leg of `data-raw/imports-floors.R` passes at, `NEWS.md`
       and `README.Rmd`'s installer paragraph name the verification and the new
       argument, and the profile's checks are clean: `devtools::document()`
@@ -179,6 +179,9 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
 - 2026-09-02: review returns M102 to `in-progress` under the return floor. AC3 fails on Windows CI: `windows-latest (release)` on 9ae0bfe red at `test-program-management.R:796:5`, `expect_false(file.exists(rec$destfile))` FALSE-expected but TRUE for the `corrupt-payload.7z` fixture — the downloaded temporary file survives the failing path, which is exactly what AC3's last clause forbids, on the only platform `install_on_win()` runs on. Green everywhere else (macOS, four Ubuntu legs, pkgdown, coverage) and green locally, so the defect is Windows-specific; `not-an-archive.7z` passes and the payload fixture does not, which points at libarchive holding the archive open after a mid-read failure. Everything else this review found stands and is committed on the branch: 18 findings from the three-lens fan-out, 11 fixed, 6 rejected, 3 deferred. AC1, AC2, AC4, AC5 and AC6 stay ticked on their own evidence; AC3 is unticked; AC7 was never reached (local `devtools::test()` 11567 pass and `devtools::check()` Status OK, but the `--only digest` floor leg was not run to completion and CI is red regardless). First defect return on this milestone.
 
 - 2026-09-02: T9 — AC3's Windows failure MEASURED rather than inferred: `archive::archive_extract()` opens `file(archive, "rb")` in its own R body and closes it only on the paths reaching the end of the read, so a libarchive failure inside `archive_read_data_block()` leaves it open. Counted on macOS, one leaked open connection for `corrupt-payload.7z`, zero for `not-an-archive.7z`, zero on the succeeding path — the same split Windows CI showed, since POSIX unlinks an open file and Windows refuses to. `tm_unpack()` now opens the connection itself and closes it through `on.exit(tm_close(con))`; extraction through a connection produces a file list identical to the path form (`ffmpeg.exe`, `ffplay.exe`, `ffprobe.exe` from a three-program control). The AC3 test gained a before/after `showConnections()` assertion on both fixtures and on the succeeding control, per the implement gate: `file.exists(destfile)` can only go red on Windows, so the mechanism is asserted where a local run can see it. Planting the old `tm_unpack()` back turned it red on macOS, one failure, on `corrupt-payload.7z` only. `tm_mock_install()`'s extract recorder reads the download linkage off the connection's description now that it is handed one.
+
+- 2026-09-02: T9 verified where the defect lived. CI on 59dc788 is green on all ten checks, `windows-latest (release)` included (14m20s) — the leg that was red on 9ae0bfe at `expect_false(file.exists(rec$destfile))` for `corrupt-payload.7z`. macOS, the four Ubuntu legs, pkgdown and coverage are green alongside it. AC3 ticked on that run.
+- 2026-09-02: AC7's evidence re-produced end to end, the floor leg this time run to completion: `Rscript data-raw/imports-floors.R --only digest` resolved `digest 0.6.37` from `~/floor-libs/digest` — the version and the DIRECTORY, which is the script's load-bearing control against a failed install falling through to the user library — and reported `pinned pass=11206 fail=0 err=0 skip=18` against an identical baseline, so no floor moved and the pinned run skipped no more than the baseline. `devtools::document()` produces no diff; `devtools::test()` FAIL 0, WARN 10, SKIP 18, PASS 11570 (the 10 warnings pre-existing, none on a touched file); `devtools::check()` Status OK, 0 errors / 0 warnings / 0 notes. AC7 ticked.
 
 ## Decisions
 

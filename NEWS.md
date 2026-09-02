@@ -11,6 +11,12 @@
   the package's verbs failed at their own front doors. The other eight
   declared floors were exercised at the version they name and stand unchanged.
 
+* tidymedia now declares the external tools it interfaces. `DESCRIPTION` names
+  FFmpeg and MediaInfo in `SystemRequirements`, each with its project URL, so
+  the tools the package shells out to are visible to anyone reading the
+  package's metadata rather than only to someone who runs it and gets an
+  error. Nothing about how the package finds those tools has changed.
+
 * tidymedia now states the R version it needs: `R (>= 4.1.0)`. An installer on
   an older R refuses the package and says why, instead of installing something
   whose help-page examples will not run. That version is what those examples
@@ -18,6 +24,14 @@
   sits above the highest R version any declared dependency floor asks for.
 
 ## Configuration
+
+* `install_on_win()` now installs FFmpeg under
+  `tools::R_user_dir("tidymedia", "data")`, the user data directory CRAN policy
+  sanctions, in an `ffmpeg` subdirectory — replacing the old `rappdirs`
+  location. This is the default only: an `install_dir` you pass yourself is
+  used as before. An FFmpeg installed by an earlier version keeps working and
+  is not moved; its location was recorded when it was installed, and that
+  record is what `find_ffmpeg()` reads.
 
 * A binary location remembered with `set_ffmpeg()`, `set_ffprobe()`,
   `set_ffplay()` or `set_mediainfo()` now lives under

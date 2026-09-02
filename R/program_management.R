@@ -262,7 +262,9 @@ set_ffplay <- function(location) {
 #'   installation zip file. If `NULL`, will default to the latest static
 #'   essentials release from gyan.dev.
 #' @param install_dir A string indicating a directory to install FFmpeg to. If
-#'   `NULL`, will default to installing to the user data directory.
+#'   `NULL`, will default to the `ffmpeg` subdirectory of
+#'   `tools::R_user_dir("tidymedia", "data")`, the user data directory CRAN
+#'   policy sanctions.
 #' @return A logical indicating whether the installation was successful.
 #' @seealso [set_program()] to register an existing binary, and [find_ffmpeg()]
 #'   to check what is currently configured.

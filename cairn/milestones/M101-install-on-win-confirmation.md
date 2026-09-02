@@ -6,7 +6,7 @@
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
-- **Branch/PR:** `m101-install-on-win-confirmation`
+- **Branch/PR:** `m101-install-on-win-confirmation` / https://github.com/jmgirard/tidymedia/pull/105
 
 ## Goal
 
@@ -38,24 +38,24 @@ in a non-interactive session; the roxygen correction from candidate (b); a
 
 ## Acceptance criteria
 
-- [ ] AC1: In a session where `rlang::is_interactive()` is `FALSE` and `confirm`
+- [x] AC1: In a session where `rlang::is_interactive()` is `FALSE` and `confirm`
       is left at its default, `install_on_win()` aborts with condition class
       `tidymedia_confirmation_unavailable` (asserted by `expect_error(class =)`)
       and a message naming `confirm = FALSE`; and
       `list.files(r, recursive = TRUE, all.files = TRUE)` and `list.dirs(r)`
       for `r = tm_redirect_data()` and `r = tm_redirect_config()$root` return
       values identical to those captured immediately before the call.
-- [ ] AC2: With `tm_confirm()` mocked to decline, `install_on_win()` returns
+- [x] AC2: With `tm_confirm()` mocked to decline, `install_on_win()` returns
       `FALSE`; mocked bindings for `utils::download.file()`,
       `archive::archive_extract()` and `set_program()` each record zero calls;
       and AC1's two directory snapshots are unchanged across the call.
-- [ ] AC3: With `tm_confirm()` mocked to accept and `download.file()` mocked to
+- [x] AC3: With `tm_confirm()` mocked to accept and `download.file()` mocked to
       return `0L`, `install_on_win(download_url = u, install_dir = d)` returns
       `TRUE`, and the mocks record exactly one `download.file()` whose `url` is
       `u`, one `archive_extract()` whose `dir` is `d`, and three `set_program()`
       calls whose `program` values are `"ffmpeg"`, `"ffprobe"`, `"ffplay"` and
       whose `location` values are the `bin/` paths beneath `d`.
-- [ ] AC4: The `prompt` string `install_on_win()` hands `tm_confirm()` —
+- [x] AC4: The `prompt` string `install_on_win()` hands `tm_confirm()` —
       captured by the mock before formatting, read under
       `withr::local_options(cli.width = 1000)` — contains as fixed substrings
       the resolved download URL, the resolved install directory, and every path
@@ -63,15 +63,15 @@ in a non-interactive session; the roxygen correction from candidate (b); a
       record shows the call writes. Asserted three times: for a call naming
       neither argument, for one naming both, and for one whose `install_dir`
       contains a space and a `{` (M44).
-- [ ] AC5: With `rlang::local_interactive()` in force, `confirm = FALSE`, and
+- [x] AC5: With `rlang::local_interactive()` in force, `confirm = FALSE`, and
       `tm_confirm()` mocked to abort if called, that mock records no call and
       the `download.file()` / `archive_extract()` / `set_program()` record is
       identical to AC3's.
-- [ ] AC6: `man/install_on_win.Rd` names the `.7z` format its default
+- [x] AC6: `man/install_on_win.Rd` names the `.7z` format its default
       `download_url` points at; `grep -ci 'zip file\|zip installer\|zip archive'`
       over that file reports 0; and the file documents a `confirm` parameter
       and a `@return` stating what a declined call returns.
-- [ ] AC7: `Rscript -e 'devtools::test()'` reports 0 failures and 0 errors, and
+- [x] AC7: `Rscript -e 'devtools::test()'` reports 0 failures and 0 errors, and
       `Rscript -e 'devtools::check()'` reports 0 errors and 0 warnings.
 
 ## Coverage
@@ -132,3 +132,77 @@ in a non-interactive session; the roxygen correction from candidate (b); a
 ## Decisions
 
 ## Review
+
+PR: https://github.com/jmgirard/tidymedia/pull/105 (draft). Reviewed at d25943b.
+
+### Acceptance-criteria evidence
+- AC1 verified 2026-09-02 at d25943b. Under `options(rlang_interactive = FALSE)` with `confirm` at its default, `install_on_win()` aborted with condition classes `tidymedia_confirmation_unavailable / rlang_error / error / condition`; the message read "Can't ask for confirmation in a non-interactive session." plus the bullet naming `confirm = FALSE` (`grepl(fixed = TRUE)` TRUE). `list.files(recursive, all.files)` and `list.dirs()` over the redirected data root and config root were `identical()` to the snapshot taken immediately before the call. Run twice: standalone at the console against redirected `R_USER_DATA_DIR`/`R_USER_CONFIG_DIR`, and as the suite's "refuses rather than assume consent" test.
+- AC2 verified 2026-09-02. Suite test "a declined install creates, downloads, extracts and registers nothing": with `tm_confirm()` mocked to return `FALSE`, the call returned `FALSE`; the recorders for `utils::download.file()`, `archive::archive_extract()` and `set_program()` each held `list()` (zero calls); both directory snapshots `identical()` across the call.
+- AC3 verified 2026-09-02. Suite test "an accepted install downloads, extracts and registers…": returned `TRUE`; exactly one `download.file()` whose `url` was the passed `u`, one `archive_extract()` whose `dir` was the passed `d` (and whose archive was the file the download mock had just written), and three `set_program()` calls with `program` `c("ffmpeg", "ffprobe", "ffplay")` and `location` `file.path(d, "bin", c("ffmpeg.exe", "ffprobe.exe", "ffplay.exe"))`.
+- AC4 verified 2026-09-02. Suite test "the prompt names the archive, the directory, and every location it overwrites": three prompts captured by the `tm_confirm()` mock before formatting, under `withr::local_options(cli.width = 1000)` — one call naming neither argument, one naming both, one whose `install_dir` was `"an install {dir}"`. Each prompt contained, as `fixed = TRUE` substrings, its resolved URL, its resolved directory, and each config path read off the call's own `set_program()` record. The brace-bearing directory was reproduced verbatim rather than interpolated (M44). The `<program>_location.txt` filenames AC4 names were confirmed independently at the console: `basename(tm_config_file(p))` for the three programs returned `ffmpeg_location.txt`, `ffprobe_location.txt`, `ffplay_location.txt` (see P1 below, which is about the test's own derivation, not this criterion).
+- AC5 verified 2026-09-02, asserted in AC3's block against AC3's own record. Under `rlang::local_interactive()` with `confirm = FALSE` and `tm_confirm()` mocked to `stop()` if reached: the mock recorded no prompt, and the `download.file()` / `archive_extract()` / `set_program()` records were each `identical()` to AC3's.
+- AC6 verified 2026-09-02 by reading `man/install_on_win.Rd`. Line 12 names the default as "a \verb{.7z} archive"; `grep -ci 'zip file\|zip installer\|zip archive'` over the file printed `0`; `\item{confirm}` is documented at line 19; the `\value{}` block states "`FALSE` is also what a declined confirmation returns".
+- AC7 verified 2026-09-02 on this branch. `Rscript -e 'devtools::test()'` → `[ FAIL 0 | WARN 10 | SKIP 18 | PASS 11427 ]`, exit 0. `Rscript -e 'devtools::check()'` → `Status: OK` (0 errors, 0 warnings, 0 notes).
+
+### Consistency gate
+
+- `cairn_validate.py` exit 0, all checks passed (2026-09-02).
+- No principle changed (`Principles touched: —`), so `cairn_impact.py` did not run.
+- `r-package` profile `consistency-gate`: `devtools::document()` produced no
+  diff (only the milestone file was modified afterward); `NAMESPACE`, `man/`
+  and `data/*.rda` unedited by hand; `README.md` rebuilt from `README.Rmd`;
+  `pkgdown::check_pkgdown()` "No problems found"; `NEWS.md` carries a
+  Configuration entry for the behaviour change and the new argument, with no
+  milestone number in it; no new top-level files, so no `.Rbuildignore`
+  entries were needed; `devtools::check()` `Status: OK`.
+
+### Independent fresh-context review
+
+Full three-lens fan-out (user-facing tier, executable diff). Nine findings.
+
+**[O] diff-bug lens — 8 findings, ranked.**
+
+- O1: `tm_confirm()` gates on `rlang::is_interactive()` but asks with
+  `utils::menu()`, which gates on `base::interactive()`. Reproduced at the
+  machine: `options(rlang_interactive = TRUE)` in an `Rscript` session gives
+  `simpleError: menu() cannot be used non-interactively` — unclassed, with no
+  `confirm = FALSE` hint — where the documented contract promises the classed
+  refusal.
+- O2: the refusal message never names the archive, directory or remembered
+  locations the call would have touched; `prompt` is a promise never forced on
+  that branch. A caller who sees only "pass `confirm = FALSE`" passes it
+  without having been shown what it authorizes.
+- O3: `tm_confirm()`'s `...` is used only in the abort, silently dropped on the
+  ask branch — the signature promises more than the seam does.
+- O4: a decline returns `FALSE`, the same value as the `dir.create` and
+  download failures, and prints nothing; an existing wrapper reading `FALSE`
+  as failure now misreports a deliberate "No".
+- O5: `tm_install_prompt()`'s `line()` helper resolves values through
+  `parent.frame()` inside `cli::format_inline()`; verified working at cli
+  3.6.6, but a frame off would abort the whole prompt.
+- O6: the prompt promises three overwrites the call may not make, since
+  `set_program()` aborts where the extracted binary is absent.
+- O7: `README.md` carries two lines of temp-library-path churn from
+  `build_readme()`, unrelated to this change.
+- O8: AC4's `cli.width = 1000` is not load-bearing — `format_inline()` does not
+  wrap — and the test comment asserts a wrapping property it does not have.
+
+**[S] blame-history lens — no findings.** Checked the branch against D080,
+D079, M097 (the `set_ffmpeg`/`set_ffprobe`/`set_ffplay` calls became a loop
+over `tm_install_registers` with identical programs, order, paths and
+`forget_ffmpeg_capabilities()` count), M098 (the default-install-dir test's
+`confirm = FALSE` is correctly scoped) and M44 (every caller value routed
+through a cli field). Nothing undone, resurrected or contradicted.
+
+**[S] prior-review lens — 1 finding.** Probe
+`gh api repos/jmgirard/tidymedia/pulls/comments?per_page=1` returned `[]`, so
+no PR-thread walk; archived `## Review` sections were the evidence.
+
+- P1: AC4's test derives its expected config paths by calling
+  `tm_config_file()`, the same helper `tm_install_prompt()` calls — the shape
+  M097's review flagged as F1. A wrong `tm_config_file()` moves both sides
+  together. Partly fenced by the existing `startsWith(config_files,
+  config$new)` assertion, but the `<program>_location.txt` filename AC4 names
+  is never pinned.
+
+### Triage

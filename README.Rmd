@@ -64,7 +64,7 @@ devtools::install_github("jmgirard/tidymedia")
 **Windows**
 
 1. Install the `tidymedia` package in R.
-2. Run `tidymedia::install_on_win()` in R.
+2. Run `tidymedia::install_on_win()` in R and confirm the prompt, which names the archive it will download, the directory it will unpack into, and the program locations it will overwrite.
 
 **macOS Homebrew Install**
 

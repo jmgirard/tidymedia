@@ -13,7 +13,7 @@ _Last hygiene check: 2026-09-02 (M101 planned: `install_on_win()` gains a consen
 | M100 | Hardware encoding is a backend vocabulary, and videotoolbox is the second member | done | M099 | normal | milestones/archive/M100-videotoolbox-backend.md |
 | M099 | D014's pre-0.2.0 rename window is reviewed before it closes | done | — | normal | milestones/archive/M099-d014-rename-window-review.md |
 | M096 | A wrong argument is refused by the verb, not by `purrr::pmap()` or after FFmpeg runs | done | M095 | normal | milestones/archive/M096-unguarded-argument-front-doors.md |
-| M101 | `install_on_win()` asks before it downloads and installs | planned | — | normal | milestones/M101-install-on-win-confirmation.md |
+| M101 | `install_on_win()` asks before it downloads and installs | review | — | normal | milestones/M101-install-on-win-confirmation.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

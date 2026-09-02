@@ -251,21 +251,123 @@ set_ffplay <- function(location) {
 }
 
 
+# tm_confirm() ------------------------------------------------------------
+
+# Ask the caller to approve an action before it happens, and refuse rather
+# than assume consent where there is no one to ask (D080). The seam carries no
+# caller's argument name of its own: the caller supplies the bullets that name
+# its own escape hatch, so a second caller whose hatch is spelled differently
+# inherits no wrong hint (M38/M40).
+#
+# `prompt` arrives already formatted -- the caller runs its own values through
+# cli, so a path containing braces cannot be re-interpolated here (M44).
+#
+# `rlang::is_interactive()` decides whether anyone can be asked; it honors
+# `rlang::local_interactive()` and the `rlang_interactive` option, which is how
+# the suite reaches the refusal branch. `utils::menu()` gates on
+# `base::interactive()` instead, which those do not move, so the ask branch is
+# reachable in a test only through a mock of `menu()`.
+tm_confirm <- function(prompt, ..., call = rlang::caller_env()) {
+  refuse <- function() {
+    cli::cli_abort(
+      c("Can't ask for confirmation in a non-interactive session.", ...),
+      class = "tidymedia_confirmation_unavailable",
+      call = call
+    )
+  }
+  if (!rlang::is_interactive()) refuse()
+  # The two predicates can disagree: `rlang::is_interactive()` honors the
+  # `rlang_interactive` option, `base::interactive()` does not, and `menu()`
+  # refuses on the latter. A caller who has set that option in a session with
+  # no console reaches this line and would otherwise get menu()'s own
+  # unclassed error, with none of the refusal's information; routing that
+  # failure through refuse() keeps one contract for "no one can be asked".
+  answer <- tryCatch(
+    utils::menu(c("Yes", "No"), title = prompt),
+    error = function(cnd) refuse()
+  )
+  # menu() returns 0 when the reader answers nothing, which is a decline.
+  answer == 1L
+}
+
+# Make a string safe to hand to cli as message text: cli interpolates `{...}`
+# in every bullet, so a path containing braces is escaped rather than
+# evaluated (M44).
+tm_cli_escape <- function(x) {
+  gsub("}", "}}", gsub("{", "{{", x, fixed = TRUE), fixed = TRUE)
+}
+
+
 # install_on_win() --------------------------------------------------------
+
+# The programs an install registers, and where the extracted build puts each
+# one. Named once so the prompt cannot promise a different set of writes from
+# the one the call makes.
+tm_install_registers <- c("ffmpeg", "ffprobe", "ffplay")
+
+tm_install_binary <- function(install_dir, program) {
+  file.path(install_dir, "bin", paste0(program, ".exe"))
+}
+
+# What the install would do, one item per line: the archive to be fetched,
+# the directory it unpacks into, and each remembered-location file it
+# overwrites. Every caller-supplied value goes through a cli field, which does
+# not recurse into the value, so a directory containing braces is shown rather
+# than evaluated (M44); the result is stripped of styling and hyperlinks so
+# what reaches `menu()` is the plain text a test can read back.
+#
+# Both the prompt and the non-interactive refusal are built from this, so a
+# caller who is told to pass `confirm = FALSE` has been shown the same items
+# the prompt would have named.
+tm_install_details <- function(download_url, install_dir, programs) {
+  line <- function(...) cli::ansi_strip(cli::format_inline(..., .envir = parent.frame()))
+  c(
+    line("Download: {.url {download_url}}"),
+    line("Unpack into: {.file {install_dir}}"),
+    vapply(
+      programs,
+      function(p) line("Overwrite remembered location: {.file {tm_config_file(p)}}"),
+      character(1),
+      USE.NAMES = FALSE
+    )
+  )
+}
+
+# The consent prompt: the question, then the items, one per line.
+tm_install_prompt <- function(download_url, install_dir, programs) {
+  paste(
+    c(
+      "tidymedia is about to install FFmpeg. Proceed?",
+      paste0("* ", tm_install_details(download_url, install_dir, programs))
+    ),
+    collapse = "\n"
+  )
+}
 
 #' Install FFmpeg on Windows
 #'
-#' Downloads an FFmpeg zip installer, extracts it, and updates the package's
-#' user config files to point to the component executable files.
+#' Downloads an FFmpeg archive, extracts it, and updates the package's user
+#' config files to point to the component executable files. Because the call
+#' downloads a third-party build and overwrites remembered program locations,
+#' it asks for confirmation first and does nothing at all until it has it.
 #'
 #' @param download_url A string indicating the location of the FFmpeg
-#'   installation zip file. If `NULL`, will default to the latest static
-#'   essentials release from gyan.dev.
+#'   installation archive. If `NULL`, will default to the latest static
+#'   essentials release from gyan.dev, a `.7z` archive.
 #' @param install_dir A string indicating a directory to install FFmpeg to. If
 #'   `NULL`, will default to the `ffmpeg` subdirectory of
 #'   `tools::R_user_dir("tidymedia", "data")`, the user data directory CRAN
 #'   policy sanctions.
+#' @param confirm A logical indicating whether to ask for confirmation before
+#'   downloading and installing anything. Defaults to `TRUE`. The prompt names
+#'   the archive to be downloaded, the directory it will be unpacked into, and
+#'   the remembered program locations it will overwrite. Where there is no one
+#'   to ask, the call aborts rather than assume consent, naming those same
+#'   items; pass `confirm = FALSE` to install without being asked.
 #' @return A logical indicating whether the installation was successful.
+#'   `FALSE` is also what a declined confirmation returns, alongside the
+#'   existing failures to create the install directory or download the
+#'   archive.
 #' @seealso [set_program()] to register an existing binary, and [find_ffmpeg()]
 #'   to check what is currently configured.
 #' @family program management functions
@@ -276,13 +378,30 @@ set_ffplay <- function(location) {
 #' }
 #' @export
 install_on_win <- function(download_url = NULL,
-                           install_dir = NULL) {
-  
+                           install_dir = NULL,
+                           confirm = TRUE) {
+
+  rlang::check_bool(confirm)
+
   if (is.null(download_url)) {
     download_url <- "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.7z"
   }
   if (is.null(install_dir)) {
     install_dir <- tm_install_dir()
+  }
+  # The consent sits above the first write, so a declined call creates no
+  # directory, downloads nothing, and overwrites no remembered location
+  # (D080). It asks about the RESOLVED values: a caller who named neither
+  # argument is told what the defaults came out to.
+  if (confirm) {
+    details <- tm_install_details(download_url, install_dir, tm_install_registers)
+    approved <- tm_confirm(
+      tm_install_prompt(download_url, install_dir, tm_install_registers),
+      "i" = "This install would have done the following:",
+      rlang::set_names(tm_cli_escape(details), rep("*", length(details))),
+      "i" = "Pass {.code confirm = FALSE} to install without being asked."
+    )
+    if (!approved) return(FALSE)
   }
   if (!dir.exists(install_dir)) {
     status <- dir.create(install_dir, recursive = TRUE)
@@ -305,9 +424,9 @@ install_on_win <- function(download_url = NULL,
   # Delete the temporary file
   unlink(tf)
   # Update the user config files with the locations of the installed files
-  set_ffmpeg(file.path(install_dir, "bin", "ffmpeg.exe"))
-  set_ffprobe(file.path(install_dir, "bin", "ffprobe.exe"))
-  set_ffplay(file.path(install_dir, "bin", "ffplay.exe"))
+  for (program in tm_install_registers) {
+    set_program(program, tm_install_binary(install_dir, program))
+  }
   
   TRUE
 }

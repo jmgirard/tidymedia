@@ -4,24 +4,36 @@
 \alias{install_on_win}
 \title{Install FFmpeg on Windows}
 \usage{
-install_on_win(download_url = NULL, install_dir = NULL)
+install_on_win(download_url = NULL, install_dir = NULL, confirm = TRUE)
 }
 \arguments{
 \item{download_url}{A string indicating the location of the FFmpeg
-installation zip file. If \code{NULL}, will default to the latest static
-essentials release from gyan.dev.}
+installation archive. If \code{NULL}, will default to the latest static
+essentials release from gyan.dev, a \verb{.7z} archive.}
 
 \item{install_dir}{A string indicating a directory to install FFmpeg to. If
 \code{NULL}, will default to the \code{ffmpeg} subdirectory of
 \code{tools::R_user_dir("tidymedia", "data")}, the user data directory CRAN
 policy sanctions.}
+
+\item{confirm}{A logical indicating whether to ask for confirmation before
+downloading and installing anything. Defaults to \code{TRUE}. The prompt names
+the archive to be downloaded, the directory it will be unpacked into, and
+the remembered program locations it will overwrite. Where there is no one
+to ask, the call aborts rather than assume consent, naming those same
+items; pass \code{confirm = FALSE} to install without being asked.}
 }
 \value{
 A logical indicating whether the installation was successful.
+\code{FALSE} is also what a declined confirmation returns, alongside the
+existing failures to create the install directory or download the
+archive.
 }
 \description{
-Downloads an FFmpeg zip installer, extracts it, and updates the package's
-user config files to point to the component executable files.
+Downloads an FFmpeg archive, extracts it, and updates the package's user
+config files to point to the component executable files. Because the call
+downloads a third-party build and overwrites remembered program locations,
+it asks for confirmation first and does nothing at all until it has it.
 }
 \examples{
 \dontrun{

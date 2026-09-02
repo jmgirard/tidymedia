@@ -63,7 +63,7 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
       over a wrong-length, a non-hex, an `NA` and a length-2 value — and like
       the other front-door checks that refusal carries no `tidymedia_*` class.
       (RB tripwire: irreversible-api)
-- [ ] AC3: A failure inside `archive::archive_extract()` aborts with class
+- [x] AC3: A failure inside `archive::archive_extract()` aborts with class
       `tidymedia_archive_unreadable` naming the archive path and the install
       directory, and neither that condition's message nor any `parent` it
       carries contains `archive_extract.cpp` — libarchive's text is replaced by
@@ -108,7 +108,7 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
 
 - AC1 → T2, T3, T6
 - AC2 → T2, T6
-- AC3 → T4, T6
+- AC3 → T4, T6, T9
 - AC4 → T5, T6
 - AC5 → T4, T6
 - AC6 → T7, T8
@@ -146,6 +146,10 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
 - [x] T8: Roxygen, `NEWS.md`, `README.Rmd`; measure the declared `digest` floor
       with `Rscript data-raw/imports-floors.R --only digest`; then
       `devtools::document()`, `devtools::test()`, `devtools::check()`.
+- [x] T9: Give `tm_unpack()` ownership of the connection
+      `archive::archive_extract()` opens and never closes on a mid-read
+      failure, so the downloaded archive is unlinkable on Windows; assert the
+      leak itself in the AC3 test, where every platform can see it.
 
 ## Work log
 
@@ -173,6 +177,8 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
 - 2026-09-02: review gate fixes — the three-lens fan-out returned 18 findings; 11 fixed on the branch, 6 rejected with reason, 3 deferred to candidate rows (one finding split across two dispositions). The load-bearing one was an unguarded `readLines()` on the sidecar: a `download.file()` reporting status 0 without leaving a readable file left `install_on_win()` through a bare `cannot open connection`, unclassed and invisible to AC6's census. Guarded, with a test proven red without the guard. Guarding it also exposed a latent bug in the AC6 census walker — the inline `function(cnd)` handlers put an empty symbol in a formals pairlist, and binding one in a `for` made the variable missing; the walker now traverses by index. AC4's on-disk claim is now asserted through the real `set_program()` (`tm_mock_install(real_set = TRUE)`), and `tm_archive_digest()` is pinned to a known answer. No finding demonstrated an acceptance criterion failing, so the return floor is not met and status stays `review`.
 
 - 2026-09-02: review returns M102 to `in-progress` under the return floor. AC3 fails on Windows CI: `windows-latest (release)` on 9ae0bfe red at `test-program-management.R:796:5`, `expect_false(file.exists(rec$destfile))` FALSE-expected but TRUE for the `corrupt-payload.7z` fixture — the downloaded temporary file survives the failing path, which is exactly what AC3's last clause forbids, on the only platform `install_on_win()` runs on. Green everywhere else (macOS, four Ubuntu legs, pkgdown, coverage) and green locally, so the defect is Windows-specific; `not-an-archive.7z` passes and the payload fixture does not, which points at libarchive holding the archive open after a mid-read failure. Everything else this review found stands and is committed on the branch: 18 findings from the three-lens fan-out, 11 fixed, 6 rejected, 3 deferred. AC1, AC2, AC4, AC5 and AC6 stay ticked on their own evidence; AC3 is unticked; AC7 was never reached (local `devtools::test()` 11567 pass and `devtools::check()` Status OK, but the `--only digest` floor leg was not run to completion and CI is red regardless). First defect return on this milestone.
+
+- 2026-09-02: T9 — AC3's Windows failure MEASURED rather than inferred: `archive::archive_extract()` opens `file(archive, "rb")` in its own R body and closes it only on the paths reaching the end of the read, so a libarchive failure inside `archive_read_data_block()` leaves it open. Counted on macOS, one leaked open connection for `corrupt-payload.7z`, zero for `not-an-archive.7z`, zero on the succeeding path — the same split Windows CI showed, since POSIX unlinks an open file and Windows refuses to. `tm_unpack()` now opens the connection itself and closes it through `on.exit(tm_close(con))`; extraction through a connection produces a file list identical to the path form (`ffmpeg.exe`, `ffplay.exe`, `ffprobe.exe` from a three-program control). The AC3 test gained a before/after `showConnections()` assertion on both fixtures and on the succeeding control, per the implement gate: `file.exists(destfile)` can only go red on Windows, so the mechanism is asserted where a local run can see it. Planting the old `tm_unpack()` back turned it red on macOS, one failure, on `corrupt-payload.7z` only. `tm_mock_install()`'s extract recorder reads the download linkage off the connection's description now that it is handed one.
 
 ## Decisions
 

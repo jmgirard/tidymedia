@@ -377,10 +377,16 @@ tm_mock_install <- function(confirm = NULL,
   if (!is.null(unpack)) {
     testthat::local_mocked_bindings(
       archive_extract = function(archive, dir, ...) {
-        add("extract", list(
-          dir = dir,
-          from_download = identical(archive, rec$destfile)
-        ))
+        # tm_unpack() hands archive_extract() an open connection rather than
+        # a path -- it owns the connection so the failing path can close it
+        # (M102 AC3) -- so the linkage back to the download is read off the
+        # connection's description.
+        from <- if (inherits(archive, "connection")) {
+          summary(archive)$description
+        } else {
+          archive
+        }
+        add("extract", list(dir = dir, from_download = identical(from, rec$destfile)))
         # What the extraction PRODUCES is what install_on_win() registers, so
         # the mock has to leave files behind: `unpack` is how a test says
         # which programs this build contained.
@@ -817,11 +823,24 @@ test_that("an archive libarchive cannot read aborts without libarchive's text", 
       unpack = NULL,
       archive = testthat::test_path("fixtures", fixture)
     )
+    open_before <- nrow(showConnections(all = FALSE))
     cnd <- tryCatch(
       install_on_win(install_dir = d, archive_checksum = rec$digest),
       error = function(cnd) cnd
     )
     expect_s3_class(cnd, "tidymedia_archive_unreadable")
+
+    # The mechanism the surviving download was made of, asserted where every
+    # platform can see it: archive_extract() opens its own connection to the
+    # archive and, on a failure inside archive_read_data_block(), leaves it
+    # open -- and Windows will not delete a file something still holds open.
+    # The file.exists() line below is the criterion, but it can only go red on
+    # Windows, so this one is what a developer running the suite anywhere else
+    # would see if tm_unpack() stopped owning the connection.
+    expect_identical(
+      nrow(showConnections(all = FALSE)), open_before,
+      label = paste(fixture, "leaves no connection open")
+    )
 
     # The abort names its own two facts: the archive, and where it was going.
     msg <- cli::ansi_strip(conditionMessage(cnd))
@@ -843,10 +862,13 @@ test_that("an archive libarchive cannot read aborts without libarchive's text", 
     expect_false(file.exists(rec$destfile), label = fixture)
   }
 
-  # The control: the same path, succeeding, also leaves no download behind.
+  # The control: the same path, succeeding, also leaves no download behind and
+  # no connection open.
   d <- file.path(withr::local_tempdir(), "ffmpeg")
   ok <- tm_mock_install(confirm = function(prompt) TRUE)
+  open_before <- nrow(showConnections(all = FALSE))
   expect_true(install_on_win(install_dir = d, archive_checksum = ok$digest))
+  expect_identical(nrow(showConnections(all = FALSE)), open_before)
   expect_false(file.exists(ok$destfile))
 })
 

@@ -381,13 +381,31 @@ tm_fetch <- function(url, destfile) {
 # of an R error nothing they can act on. The caller's refusal names the archive
 # and the directory instead (M102 AC3).
 tm_unpack <- function(archive, dir) {
+  # The connection is opened here rather than left to `archive_extract()`,
+  # which opens `file(archive, "rb")` itself and closes it only on the paths
+  # that reach the end of the read. A libarchive failure inside
+  # `archive_read_data_block()` leaves it open -- measured 2026-09-02, one
+  # leaked connection for the corrupt-payload fixture, none for the
+  # unrecognized-format one and none on the succeeding path -- and Windows
+  # will not delete a file something still holds open, so that leak is what
+  # left the downloaded archive behind after a failed unpack (M102 AC3).
+  con <- tryCatch(file(archive, "rb"), error = function(cnd) NULL)
+  if (is.null(con)) return(FALSE)
+  on.exit(tm_close(con), add = TRUE)
   tryCatch(
     {
-      archive::archive_extract(archive, dir = dir, strip_components = 1)
+      archive::archive_extract(con, dir = dir, strip_components = 1)
       TRUE
     },
     error = function(cnd) FALSE
   )
+}
+
+# Close `con` where it is still open, and do nothing where the callee already
+# closed it: `isOpen()` itself errors on a connection that has been destroyed,
+# so the test and the close share one handler.
+tm_close <- function(con) {
+  invisible(tryCatch(if (isOpen(con)) close(con), error = function(cnd) NULL))
 }
 
 tm_install_binary <- function(install_dir, program) {

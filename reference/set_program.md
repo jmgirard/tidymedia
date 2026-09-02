@@ -1,6 +1,12 @@
 # Set the location of a dependency program
 
-Set the location of a dependency program
+The location is remembered across sessions in a file named
+`<program>_location.txt` under
+`tools::R_user_dir("tidymedia", "config")`, which
+[`find_program()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
+reads whenever the program is not on the `PATH`. Once this file exists,
+a location remembered by a version of tidymedia before 0.2.0 is no
+longer read.
 
 ## Usage
 

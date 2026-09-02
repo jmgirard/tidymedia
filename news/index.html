@@ -47,6 +47,10 @@
 <li><p>tidymedia now states the R version it needs: <code>R (&gt;= 4.1.0)</code>. An installer on an older R refuses the package and says why, instead of installing something whose help-page examples will not run. That version is what those examples require — they use the native pipe <code>|&gt;</code>, a form R gained in 4.1.0 — and it sits above the highest R version any declared dependency floor asks for.</p></li>
 </ul></div>
 <div class="section level3">
+<h3 id="configuration-development-version">Configuration<a class="anchor" aria-label="anchor" href="#configuration-development-version"></a></h3>
+<ul><li>A binary location remembered with <code><a href="../reference/set_program.html">set_ffmpeg()</a></code>, <code><a href="../reference/set_program.html">set_ffprobe()</a></code>, <code><a href="../reference/set_program.html">set_ffplay()</a></code> or <code><a href="../reference/set_program.html">set_mediainfo()</a></code> now lives under <code>tools::R_user_dir("tidymedia", "config")</code>, the user configuration directory CRAN policy sanctions, in a file named <code>&lt;program&gt;_location.txt</code>. A location set before this change is still found: <code><a href="../reference/find_program.html">find_ffmpeg()</a></code> and its siblings read the new directory first and, only when no file exists there, the old one; nothing is moved or copied. Calling <code><a href="../reference/set_program.html">set_ffmpeg()</a></code> again writes the new file, after which the old one is no longer read, even if the new file names a binary that has since gone.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="new-features-development-version">New features<a class="anchor" aria-label="anchor" href="#new-features-development-version"></a></h3>
 <ul><li>
 <p>A failed FFmpeg run is now something you can catch. When FFmpeg exits non-zero, <code><a href="../reference/ffm_run.html">ffm_run()</a></code> aborts with a condition of class <code>tidymedia_ffmpeg_exit</code>, carrying the exit status as a length-one integer in its <code>tm_status</code> field:</p>

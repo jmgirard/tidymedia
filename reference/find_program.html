@@ -71,6 +71,15 @@
 <code>NULL</code> if the program could not be found.</p>
     </div>
     <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>The program is looked up on the <code>PATH</code> first. When it is not there, the
+location remembered by <code><a href="set_program.html">set_program()</a></code> is read from
+<code>tools::R_user_dir("tidymedia", "config")</code>; a location remembered by a
+version of tidymedia before 0.2.0 was written to
+<code>rappdirs::user_config_dir("tidymedia", "R")</code>, and that file is read only
+when no file exists in the current directory.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="set_program.html">set_program()</a></code> to point tidymedia at a binary in a non-standard
 location, and <code><a href="install_on_win.html">install_on_win()</a></code> to download FFmpeg on Windows.</p>

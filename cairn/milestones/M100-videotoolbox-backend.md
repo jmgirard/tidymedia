@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M100: Hardware encoding is a backend vocabulary, and videotoolbox is the second member
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M099
 - **Driving RR:** —
@@ -286,6 +286,15 @@ milestone's, since adding an argument is additive and outside D014.
   refused, not run. (15) the vignette's "an error naming both" now names what
   both are. Findings 5, 7, 11, 12 and 13 stand rejected as the review
   dispositioned them.
+- 2026-09-02 implement T9 re-run after the repairs: `devtools::document()`
+  produces no diff, `pkgdown::check_pkgdown()` reports no problems,
+  `devtools::test()` is 0 failures / 11365 passing / 18 skipped (the same 18
+  skips and 10 pre-existing dropped-audio-track warnings the review recorded;
+  the 94 added assertions are AC1's sweep, the literal-vocabulary pin, the two
+  `conditionCall` assertions and the predicate-blame test), and
+  `devtools::check()` is Status: OK -- 0 errors, 0 warnings, 0 notes, 6m 11s.
+  Status back to review. AC1's and AC6's checkboxes are left for review to tick
+  from its own evidence.
 
 ## Review
 

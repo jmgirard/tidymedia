@@ -30,8 +30,9 @@ cached_encoder_names <- function() {
 #' Discard the session-scoped record of which encoders your FFmpeg build
 #' provides, so the next capability query asks FFmpeg again.
 #'
-#' The first \code{hardware = "nvenc"} call in an R session asks FFmpeg which
-#' encoders it has; later calls reuse that answer rather than starting a new
+#' The first hardware-encoding call in an R session -- \code{hardware =
+#' "nvenc"} or \code{hardware = "videotoolbox"}, whichever comes first --
+#' asks FFmpeg which encoders it has; later calls reuse that answer rather than starting a new
 #' FFmpeg process per call, which is what makes a large batch practical. The
 #' answer is remembered for the rest of the session, so a build that changes
 #' underneath you -- a fresh FFmpeg install, a new GPU driver, a different

@@ -92,7 +92,7 @@ If the backend you named is unavailable this errors by default, so a shared
 script never silently changes codec; pass `fallback = TRUE` to re-encode in
 software instead. The two backends cover different codec families — nvenc
 h264, hevc and av1, videotoolbox h264 and hevc — and asking one for a family
-it has no encoder for is an error naming both. Hardware *decoding*
+it has no encoder for is an error naming that backend and that family. Hardware *decoding*
 (`-hwaccel`) and GPU filter pipelines are out of scope — reach for the
 `ffmpeg()` escape hatch there.
 

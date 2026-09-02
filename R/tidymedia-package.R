@@ -96,18 +96,20 @@
 #' itself can see it is wrong: the limit is checked after the verb's own guards
 #' and after the command has been assembled, so a bad `regions`, `pixel_format`
 #' or `video_codec` reports as itself whether or not a limit is set. Asking for
-#' `hardware = "nvenc"` no longer changes that: your FFmpeg build is asked what
+#' a hardware backend (`hardware = "nvenc"` or `"videotoolbox"`) no longer
+#' changes that: your FFmpeg build is asked what
 #' encoders it has after every check the verb itself makes, so a bad
 #' `audio_codec`, `pixel_format` or `audio_stream` reports as itself there too —
-#' whether or not a limit is set, and whether or not that build has nvenc.
+#' whether or not a limit is set, and whether or not that build has the
+#' backend's encoder.
 #' `fallback` is checked where that question is asked and so moved down with it:
 #' a call wrong about both `fallback` and `pixel_format` now hears about the
 #' pixel format. Where the check runs somewhere the verb reaches only later, it
 #' loses to both the limit and the encoder question: a `_batch` job table's
 #' `output` column and [anonymize_video_batch()]'s `pixel_format` and `color`
 #' are validated inside the per-row fan-out, so a set limit is reported instead
-#' of them, and so is a missing nvenc encoder under `hardware = "nvenc"` on a
-#' build without one.
+#' of them, and so is a missing hardware encoder under a named `hardware`
+#' backend on a build without one.
 #' Two calls read no limit and so refuse nothing: [has_hardware_encoder()]
 #' answering from a `tidymedia.hardware_encoders` you set, which asks FFmpeg
 #' nothing, and a `probe_*()` shortcut handed a `probe` object instead of an
@@ -184,7 +186,7 @@
 #' names an `audio_stream` is not probed at all, so a table whose rows all name
 #' one pays nothing either way.
 #'
-#' \preformatted{options(tidymedia.hardware_encoders = c("h264_nvenc", "hevc_nvenc"))}
+#' \preformatted{options(tidymedia.hardware_encoders = c("h264_nvenc", "h264_videotoolbox"))}
 #'
 #' Names the hardware video encoders this machine has, instead of asking
 #' FFmpeg. Set it to `character(0)` to declare there are none. Unset (the

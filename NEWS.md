@@ -54,9 +54,8 @@
   h264, hevc and av1; videotoolbox covers h264 and hevc. The encoder is named
   from the family and the backend, so `video_codec = "libx264"` resolves to
   `h264_nvenc` under one and `h264_videotoolbox` under the other. Asking a
-  backend for a family it has no encoder for — av1 under videotoolbox — is now
-  an error naming the backend and the family, instead of a command that dies
-  inside FFmpeg. `hardware = "none"` is still the default, so a call that does
+  backend for a family it has no encoder for — av1 under videotoolbox — is an
+  error naming the backend and the family. `hardware = "none"` is still the default, so a call that does
   not ask for hardware is unchanged, and `fallback = TRUE` still re-encodes in
   software when the requested backend is missing, now saying which backend it
   fell back from.

@@ -1549,7 +1549,8 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
 #' @param hardware The encoder backend: \code{"none"} (default, software
 #'   libx264), \code{"nvenc"} for NVIDIA GPU H.264 encoding
 #'   (\code{"h264_nvenc"}), or \code{"videotoolbox"} for Apple GPU H.264
-#'   encoding (\code{"h264_videotoolbox"}), whichever is available. See
+#'   encoding (\code{"h264_videotoolbox"}). The backend you name is the one
+#'   used; an unavailable one aborts unless \code{fallback = TRUE}. See
 #'   \code{\link{has_hardware_encoder}}.
 #'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
 #'   so the first such call that re-encodes the video runs the binary
@@ -3071,8 +3072,16 @@ hardware_codec_families <- function() {
 #'   Required, with no default. Narrower than the verbs' \code{hardware}
 #'   argument: \code{"none"} is the verbs' off position, meaning "use no
 #'   backend", which has no meaning here, so it is refused.
+#' @param call The environment a refusal is reported from, so a verb that
+#'   consults these internally is blamed rather than the helper. Rarely set
+#'   directly.
 #' @return \code{hardware_encoder()} a single encoder-name string (e.g.
 #'   \code{"h264_nvenc"}); \code{has_hardware_encoder()} a length-one logical.
+#'   Neither returns for a \code{codec} the chosen \code{hardware} backend has
+#'   no encoder for: that pair is a wrong argument rather than a machine
+#'   without something, so both raise the error \code{codec} describes above.
+#'   \code{has_hardware_encoder()} returns \code{FALSE} only for a pair the
+#'   table holds and this FFmpeg build does not list.
 #' @seealso \code{\link{ffmpeg_encoders}} for the full encoder list,
 #'   \code{\link{standardize_video}}, \code{\link{format_for_web}},
 #'   \code{\link{anonymize_video}}, \code{\link{crop_video}},
@@ -3085,7 +3094,13 @@ hardware_codec_families <- function() {
 #' hardware_encoder("h264", "nvenc")
 #' has_hardware_encoder("h264", "nvenc")
 #' @export
-hardware_encoder <- function(codec = hardware_codec_families(), hardware) {
+hardware_encoder <- function(codec = c("h264", "hevc", "av1", "prores"),
+                             hardware, call = rlang::caller_env()) {
+  # Literal defaults, not hardware_codec_families()/hardware_backends(): the Rd
+  # usage line publishes a formal's default verbatim, and a reader cannot
+  # evaluate an unexported call there. The same reason the 16 verbs spell their
+  # `hardware` vocabulary out (RR07 Q2); the sweep in test-hardware-backends.R
+  # asserts both literals against the tables they mirror.
   codec <- rlang::arg_match(codec)
   hardware <- rlang::arg_match(hardware, hardware_backends())
   families <- hardware_backend_families()[[hardware]]
@@ -3096,19 +3111,30 @@ hardware_encoder <- function(codec = hardware_codec_families(), hardware) {
   # wrong argument, not a machine that lacks something, which is the reading
   # codec_family() has always had for a codec it cannot place at all.
   if (!codec %in% families) {
-    cli::cli_abort(c(
-      "{hardware} has no {.val {codec}} encoder.",
-      "i" = "{hardware} covers the {.val {families}} famil{?y/ies}.",
-      "i" = "Name a {.arg video_codec} in one of those families, or use
-             {.code hardware = \"none\"} to encode in software."
-    ))
+    cli::cli_abort(
+      c(
+        "{hardware} has no {.val {codec}} encoder.",
+        "i" = "{hardware} covers the {.val {families}} famil{?y/ies}.",
+        # No {.arg video_codec} or `hardware = "none"` advice here: this frame
+        # is reached from the exported helpers too, which have neither
+        # argument, and naming the backend that DOES cover the family would
+        # break the refusal's promise to name only the backend asked for.
+        "i" = "Name a codec in one of those families, or encode in software."
+      ),
+      # Threaded, never left to default to this frame: master blamed this class
+      # of refusal on the verb the caller typed, through
+      # `codec_family(video_codec, call = call)`, and losing that is M094 F2 /
+      # D074's defect one layer down (M100 review finding 1).
+      call = call
+    )
   }
   paste0(codec, "_", hardware)
 }
 
 #' @rdname hardware_encoder
 #' @export
-has_hardware_encoder <- function(codec = hardware_codec_families(), hardware) {
+has_hardware_encoder <- function(codec = c("h264", "hevc", "av1", "prores"),
+                                hardware) {
   # `call` is this frame, so the refusal below names has_hardware_encoder() when the caller
   # typed it. Internal callers pass their own verb's frame instead.
   hardware_encoder_available(codec, hardware, call = rlang::current_env())
@@ -3132,7 +3158,7 @@ has_hardware_encoder <- function(codec = hardware_codec_families(), hardware) {
 # helper's own frame, which is the blame this split exists to remove (M094
 # review G7).
 hardware_encoder_available <- function(codec, hardware, call) {
-  enc <- hardware_encoder(codec, hardware)
+  enc <- hardware_encoder(codec, hardware, call = call)
   pool <- getOption("tidymedia.hardware_encoders", default = NULL)
   # The option seam is read first on every call, so setting it mid-session takes
   # effect at once; only the fall-through consults the session memo (D044).
@@ -3225,7 +3251,7 @@ resolve_hw_encoder <- function(video_codec,
   # single site exists to make impossible. `fallback = TRUE` returns above, so
   # this call can only pass (encoder available) or abort.
   check_hardware_available(video_codec, hardware, fallback, call = call)
-  hardware_encoder(family, hardware)
+  hardware_encoder(family, hardware, call = call)
 }
 
 # check_hardware_available(): the hardware-encoder availability gate, and the

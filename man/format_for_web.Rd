@@ -21,7 +21,8 @@ format_for_web(
 \item{hardware}{The encoder backend: \code{"none"} (default, software
 libx264), \code{"nvenc"} for NVIDIA GPU H.264 encoding
 (\code{"h264_nvenc"}), or \code{"videotoolbox"} for Apple GPU H.264
-encoding (\code{"h264_videotoolbox"}), whichever is available. See
+encoding (\code{"h264_videotoolbox"}). The backend you name is the one
+used; an unavailable one aborts unless \code{fallback = TRUE}. See
 \code{\link{has_hardware_encoder}}.
 Resolving a hardware backend asks this FFmpeg build which encoders it has,
 so the first such call that re-encodes the video runs the binary

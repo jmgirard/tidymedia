@@ -5,9 +5,13 @@
 \alias{has_hardware_encoder}
 \title{Hardware video encoders}
 \usage{
-hardware_encoder(codec = hardware_codec_families(), hardware)
+hardware_encoder(
+  codec = c("h264", "hevc", "av1", "prores"),
+  hardware,
+  call = rlang::caller_env()
+)
 
-has_hardware_encoder(codec = hardware_codec_families(), hardware)
+has_hardware_encoder(codec = c("h264", "hevc", "av1", "prores"), hardware)
 }
 \arguments{
 \item{codec}{The video codec family: one of \code{"h264"}, \code{"hevc"},
@@ -21,10 +25,19 @@ backend and the family (e.g. \code{"av1"} under \code{"videotoolbox"}).
 Required, with no default. Narrower than the verbs' \code{hardware}
 argument: \code{"none"} is the verbs' off position, meaning "use no
 backend", which has no meaning here, so it is refused.}
+
+\item{call}{The environment a refusal is reported from, so a verb that
+consults these internally is blamed rather than the helper. Rarely set
+directly.}
 }
 \value{
 \code{hardware_encoder()} a single encoder-name string (e.g.
 \code{"h264_nvenc"}); \code{has_hardware_encoder()} a length-one logical.
+Neither returns for a \code{codec} the chosen \code{hardware} backend has
+no encoder for: that pair is a wrong argument rather than a machine
+without something, so both raise the error \code{codec} describes above.
+\code{has_hardware_encoder()} returns \code{FALSE} only for a pair the
+table holds and this FFmpeg build does not list.
 }
 \description{
 Helpers for opt-in hardware video encoding. \code{hardware_encoder()} maps a

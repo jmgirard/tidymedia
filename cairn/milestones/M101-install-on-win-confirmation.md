@@ -128,6 +128,7 @@ in a non-interactive session; the roxygen correction from candidate (b); a
 - 2026-09-02: minor amendment (discovered sub-task, folded into T5): `README.Rmd`'s Windows install step said only to run the function, which after this change is no longer the whole instruction; it now says to confirm the prompt and what the prompt names. `README.md` rebuilt with `devtools::build_readme()`.
 - 2026-09-02: T7 — `devtools::test()` 0 failures / 11427 passing / 18 skipped; `devtools::check()` Status: OK (0 errors, 0 warnings, 0 notes); `devtools::document()` no diff; `pkgdown::check_pkgdown()` no problems. Tasks complete, status to review.
 - 2026-09-02: review gate — nine findings from three lenses; O1, O2, P1, O8 fixed on the branch, O3/O4/O5/O6/O7 rejected with reasons in the Review section. All seven criteria re-verified at the post-fix head.
+- 2026-09-02: merge approved for PR #105 and the marker written; the CI watcher hit the harness ceiling and was stopped. Fresh `gh pr checks` at that point: macos-latest (release), windows-latest (release) and pkgdown pass; ubuntu-latest release/devel/4.1.0/oldrel-1 and test-coverage still pending, none red. Not merged — the session stops here rather than merge past pending CI.
 - 2026-09-02: D079's letter reaches `confirm`'s default and its toggle exemption does not (both `TRUE` and `FALSE` are members of the set the argument ranges over, and `TRUE` is the on position, not the off one); D080 states that exemption rather than the plan ignoring the rule.
 
 ## Decisions

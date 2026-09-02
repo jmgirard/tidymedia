@@ -2,12 +2,12 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M100: Hardware encoding is a backend vocabulary, and videotoolbox is the second member
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M099
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m100-videotoolbox-backend`
 
 ## Goal
 
@@ -142,4 +142,6 @@ milestone's, since adding an argument is additive and outside D014.
 - 2026-08-31 plan: alternative rejected — adding `hardware = "videotoolbox"` as a special case beside nvenc with no backend abstraction. Lost at the question gate: it leaves a second special case for the next backend to trip over. Falsified by the abstraction costing more than the two special cases it replaces.
 - 2026-08-31 plan: alternative rejected — shipping prores with a container guard in this milestone. Lost at the user's gate to shipping h264/hevc first: those two behave exactly as nvenc's families do, so the backend abstraction lands without introducing a new user-facing failure mode. Falsified by a caller needing ProRes output badly enough that the guard is cheaper than the wait.
 - 2026-08-31 plan: the audit found a scope hole neither milestone owned — `has_nvenc()`/`nvenc_encoder()` are exported and structurally answer only for nvenc, so a user could request videotoolbox at 16 verbs with no exported way to ask whether it is available, while `vignettes/workflow.Rmd:79` teaches `has_nvenc("h264")` as the check. Resolved without a user gate: the helper's NAME stays M099's (d) call and its SIGNATURE becomes this milestone's, since adding a `backend` argument is additive and outside D014's rename policy. The consequence of declining (d) is recorded in M099's work log so its gate weighs it.
+- 2026-09-01 implement: branch `m100-videotoolbox-backend` cut from `master` at 0436981; status set in-progress in ROADMAP and the header mirror.
+- 2026-09-01 implement question gate, three questions, all three deferred by the user. (1) What `hardware =` defaults to on the two exported helpers -- nvenc, any-available, or no default -- escalated to `/milestone-brief`; the recommendation had been keeping nvenc, which changes no existing call and keeps `hardware_encoder()` a pure lookup (D077). (2) How far the backend-neutral naming carries into internal helpers still spelled for nvenc: the user folded this into `/milestone-review`, so implementation takes the recommended option -- rename the internals that now serve both backends, leave the nvenc-named test files and test helpers -- and review adjudicates it. (3) AC6's wording, whose two named instruments moved under M099 (`tidymedia.nvenc_encoders` now returns no `man/` topics; `_pkgdown.yml`'s section prose already reads "opt-in hardware (GPU) encoding"): the user folded the wording question into the same brief, so AC6 is NOT amended here and the amendment gate runs on the brief's answer.
 - 2026-09-01 plan amendment (from M099's RR06 ingest, user-accepted at that gate): Scope In's helper argument is spelled `hardware =`, not `backend =` — RR06 Q5 found `backend =` would put one value set under two argument names where the verbs' `@param hardware` already reads "The encoder backend". Scope Out's declined-(d) contingency replaced by the D077 names this milestone now builds against. Plan-owned body re-checked against the 150-line cap after the edit.

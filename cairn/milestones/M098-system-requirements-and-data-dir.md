@@ -199,3 +199,4 @@ Re-verified on the fixed branch: `devtools::document()` no diff,
 `devtools::test()` 0 failures / 11195 passing / 18 skipped / 10 warnings —
 the same figures as before the fixes, since the edit swapped one assertion for
 another.
+- 2026-09-01 review: merge approved at the gate with the five fixes directed first; fixes committed and pushed, PR #103 marked ready. CI re-triggered by the push — `pkgdown` pass, the seven `R CMD check` legs and `test-coverage` pending; one blocking `gh pr checks --watch` is running out its wait. Merge follows green.

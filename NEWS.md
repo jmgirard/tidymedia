@@ -47,6 +47,19 @@
 
 ## New features
 
+* Hardware encoding is a vocabulary of backends rather than one vendor.
+  `hardware =` accepts `"videotoolbox"` wherever it accepted `"nvenc"`, on all
+  sixteen verbs that carry the argument, so a Mac encodes on the hardware it
+  has. Each backend covers the codec families it has encoders for: nvenc covers
+  h264, hevc and av1; videotoolbox covers h264 and hevc. The encoder is named
+  from the family and the backend, so `video_codec = "libx264"` resolves to
+  `h264_nvenc` under one and `h264_videotoolbox` under the other. Asking a
+  backend for a family it has no encoder for — av1 under videotoolbox — is an
+  error naming the backend and the family. `hardware = "none"` is still the default, so a call that does
+  not ask for hardware is unchanged, and `fallback = TRUE` still re-encodes in
+  software when the requested backend is missing, now saying which backend it
+  fell back from.
+
 * A failed FFmpeg run is now something you can catch. When FFmpeg exits
   non-zero, `ffm_run()` aborts with a condition of class
   `tidymedia_ffmpeg_exit`, carrying the exit status as a length-one integer in
@@ -304,12 +317,23 @@
   to the verb's `audio_input` default and write a silent output. Rename the
   column.
 
+* `hardware_encoder()` and `has_hardware_encoder()` take a second argument
+  naming which backend to answer for, and it has no default:
+  `has_hardware_encoder("h264", "nvenc")`, `hardware_encoder("h264",
+  "videotoolbox")`. With two backends a helper that silently answered for one
+  of them reports on a machine you did not ask about — on a Mac,
+  `options(tidymedia.hardware_encoders = hardware_encoder("h264"))` would have
+  declared the NVIDIA encoder available. The argument accepts `"nvenc"` and
+  `"videotoolbox"` only: `"none"` is the verbs' off position, and neither
+  helper has an answer for it. An argument with no default can be given one
+  later; one with a default cannot lose it.
+
 * The hardware-encoder helpers no longer name one vendor. `has_nvenc()` is now
   `has_hardware_encoder()`, `nvenc_encoder()` is now `hardware_encoder()`, and
   the option that overrides detection is now `tidymedia.hardware_encoders`.
-  Each does what it did: nvenc is the one hardware backend, so
-  `hardware_encoder("h264")` is still `"h264_nvenc"` and `hardware = "nvenc"`
-  at the verbs is unchanged. The old names are gone, and an
+  Each still answers the question it answered, under a name that survives the
+  second backend arriving — see the entry above for the argument both helpers
+  now take. The old names are gone, and an
   `options(tidymedia.nvenc_encoders = )` you set is no longer read.
 
 * `format_for_web()` and `normalize_audio()` (and their `_batch` siblings) take

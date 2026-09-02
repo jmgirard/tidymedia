@@ -9,7 +9,7 @@ segment_video_batch(
   reencode = TRUE,
   video_codec = NULL,
   audio_codec = "copy",
-  hardware = c("none", "nvenc"),
+  hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
   audio_stream = NULL,
   run = TRUE,
@@ -56,12 +56,12 @@ transcoding \code{audio_codec} must be split into separate calls.}
 \item{hardware, fallback}{The encoder backend and its fallback behavior,
 applied to the whole batch (a property of the machine, not of a row, so
 neither is read as a \code{jobs} column). See \code{\link[=segment_video]{segment_video()}}.
-Because \code{hardware} is batch-wide, \code{hardware = "nvenc"} conflicts
-with a stream-copy row on its own — even one naming no codec — so a jobs
-table mixing \code{reencode = FALSE} rows with GPU encoding must be split
-into separate calls.
-Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-the first \code{"nvenc"} call that re-encodes the video runs the binary
+Because \code{hardware} is batch-wide, a non-\code{"none"} value
+conflicts with a stream-copy row on its own — even one naming no codec —
+so a jobs table mixing \code{reencode = FALSE} rows with GPU encoding
+must be split into separate calls.
+Resolving a hardware backend asks this FFmpeg build which encoders it has,
+so the first such call that re-encodes the video runs the binary
 while the command is built, even under \code{run = FALSE}. The answer is
 remembered for the rest of the R session; see
 \code{\link{refresh_ffmpeg_capabilities}} to discard it.
@@ -120,7 +120,7 @@ https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 \seealso{
 \code{\link[=segment_video]{segment_video()}} for the single-input, parallel-vector form;
 \code{\link[=ffm_batch]{ffm_batch()}} for the batch runner and the arguments forwarded through
-\code{...}; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware = "nvenc"} toggle;
+\code{...}; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
 \code{\link[=ffm_seek]{ffm_seek()}} for the cut trade-off.
 
 Other task verb functions:

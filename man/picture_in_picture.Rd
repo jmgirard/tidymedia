@@ -14,7 +14,7 @@ picture_in_picture(
   audio_input = NULL,
   video_codec = NULL,
   audio_codec = "copy",
-  hardware = c("none", "nvenc"),
+  hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
   run = TRUE
 )
@@ -50,25 +50,30 @@ unset so the output container's default encoder is used. Nothing is emitted
 when \code{audio_input} is \code{NULL}, since no audio reaches the output; naming
 an encoder in that case is an error.}
 
-\item{hardware}{The encoder backend: \code{"none"} (default, the software
-\code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
-\code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
-(e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); with the default
-\code{video_codec = NULL} the H.264 family is assumed, so a non-H.264
-container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
-\code{video_codec}. See \code{\link{has_hardware_encoder}} for availability and its
-caveats.
-Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-the first \code{"nvenc"} call that re-encodes the video runs the binary
+\item{hardware}{The encoder backend: \code{"none"} (default, the
+software \code{video_codec}), \code{"nvenc"} for NVIDIA GPU encoding
+(H.264, HEVC and AV1), or \code{"videotoolbox"} for Apple GPU encoding
+(H.264 and HEVC). Uses that backend's encoder for \code{video_codec}'s
+family (e.g. \code{"libx264"} becomes \code{"h264_nvenc"} or
+\code{"h264_videotoolbox"}); with the default \code{video_codec = NULL}
+the H.264 family is assumed, so a non-H.264 container (e.g.
+\code{.webm}) needs an explicit HEVC- or AV1-family \code{video_codec}
+(AV1 only under \code{"nvenc"}). See \code{\link{has_hardware_encoder}}
+for availability and its caveats.
+Resolving a hardware backend asks this FFmpeg build which encoders it has,
+so the first such call that re-encodes the video runs the binary
 while the command is built, even under \code{run = FALSE}. The answer is
 remembered for the rest of the R session; see
 \code{\link{refresh_ffmpeg_capabilities}} to discard it.}
 
-\item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
-unavailable, encode in software with a message (\code{TRUE}) instead of
-aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
-fallback leaves the codec unset rather than picking one, so the codec never
-changes silently.}
+\item{fallback}{A logical: when a non-\code{"none"} \code{hardware} is
+requested but its encoder is unavailable, encode in software with a
+message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
+\code{video_codec = NULL} the fallback leaves the codec unset rather
+than picking one, so the codec never changes silently.
+A \code{video_codec} in a family that backend has no encoder for is a
+wrong argument rather than an absent encoder, so it aborts whatever
+\code{fallback} says.}
 
 \item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
 or return the compiled command without running it (\code{FALSE}).}
@@ -94,7 +99,7 @@ picture_in_picture(video, video, "pip.mp4", run = FALSE)
 }
 \seealso{
 \code{\link[=ffm_overlay]{ffm_overlay()}}, the builder it wraps; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the
-\code{hardware = "nvenc"} toggle; \code{\link[=compare_videos]{compare_videos()}} for
+\code{hardware} toggle; \code{\link[=compare_videos]{compare_videos()}} for
 side-by-side stacking.
 
 Other task verb functions:

@@ -3695,3 +3695,57 @@ next one is decided by rule:
 **Falsified by** an export or argument this rule forces into a name that hides
 what it does, or by a seam whose one-call form cannot be a wrapper — a value
 that must be set differently per row and cannot ride on the pipeline object.
+
+## D079 — An exported argument added inside the pre-0.2.0 window takes no default when every candidate default is one member of the set it ranges over; the hardware helpers accept the backends only (2026-09-01, from M100/RR07; applies D014's window and D077's naming reasoning to default VALUES, which neither reached; leaves D014, D077 and D078 standing, and confirms D077's `(d) removal` decline unchanged)
+
+M100 gives the two exported hardware-capability helpers a `hardware =`
+argument naming which backend they answer for. Three defaults were available:
+the backend that shipped first, an "any available backend" reading, or none.
+RB07/RR07 reviewed the choice and the maintainer took every disposition at the
+ingest gate.
+
+**The rule.** While D014's free-rename window is open, an argument added to an
+exported function takes no default where every candidate default is one member
+of the set the argument ranges over. Two reasons, and the second is what
+decides it. A member promoted to default is the defect D077 removed from these
+helpers' names, relocated from the name into a value: under a vendor-free name
+the function still answers for one vendor unless the caller says otherwise, and
+the composition D077 rests on —
+`options(tidymedia.hardware_encoders = hardware_encoder("h264"))` — silently
+declares the wrong encoder available on hardware that has the other. And the
+choice is asymmetric in time: an argument with no default can gain one later as
+an additive change, while an argument with a default cannot lose it or change
+its meaning without a deprecation cycle once 0.2.0 ships. Required is the only
+choice from which both other answers stay reachable after release.
+
+**What the rule does not reach.** An argument whose natural default is the off
+position of a toggle rather than a member — which is what the 16 verbs'
+`hardware = "none"` is, and why those verbs keep their default. Nor an argument
+added after the window closes: there the caller count is no longer
+approximately the maintainer, and RR07's own answer inverts to the compatible
+default, a vendor default being the least bad of three costs paid by strangers.
+
+**What the helpers accept.** The backends only; `"none"` is refused, so the
+helpers' set is narrower than the verbs' by exactly the off position. Neither
+helper has an off position to report: for the predicate, "available" is false
+on a build without the software encoder and "unavailable" would mark the
+setting that always works at the verbs as unusable, and the mapper has no
+string to return that is not a guess at the caller's software codec. A value
+with no defined answer is refused rather than given one picked to avoid an
+error, and `arg_match()`'s refusal names the members, so a caller who typed
+`"none"` by analogy with the verbs is told the set in the same message.
+
+**Where the (family, backend) refusal lives.** In the mapper, once: after M100
+it is the lookup into the per-backend family table, and a lookup into a
+two-key table is where a missing pair is refused. The predicate and the
+internal resolver reach it through the mapper, which keeps the predicate one
+expression over the mapper and keeps the mapper pure — it reads the table and
+asks the machine nothing, the property D077 rests on. `codec_family()` stays
+backend-free, since inferring `h264` from `libx264` is true under every
+backend, and only its abort stops naming one backend for a family it cannot
+infer at all.
+
+**Falsified by** an outside caller of either helper appearing before 0.2.0
+ships, which gives the removed default a victim and makes the compatible
+default the cheaper answer; or a consumer for which a backend-free default has
+a defined meaning, none of which exists in the repository today.

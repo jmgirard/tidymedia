@@ -98,7 +98,14 @@ test_that("an invalid limit displaces no argument error, at every formal", {
     setdiff(tm_corrupt_dropped_master(), dropped),
     c("ffmpeg_codecs/sort_by_type -> :", "segment_video/outfiles -> purrr::pmap")
   )
-  expect_equal(setdiff(dropped, tm_corrupt_dropped_master()), character())
+  # One entry has joined the census since it was measured, and it is this
+  # milestone's: `has_hardware_encoder()` gained a required `hardware`
+  # argument, and a wrong value for it is refused inside `hardware_encoder()` --
+  # the same frame that already refuses a wrong `codec` on the line above it in
+  # the master list, not a new blame path. The census itself is the merge-base
+  # measurement and is not rewritten.
+  expect_equal(setdiff(dropped, tm_corrupt_dropped_master()),
+               "has_hardware_encoder/hardware -> hardware_encoder")
 
   # The counts, pinned as M095's sibling sweep pins its own. The two `setdiff()`
   # calls above compare UNIQUE member/argument/frame strings, which discards
@@ -107,9 +114,12 @@ test_that("an invalid limit displaces no argument error, at every formal", {
   # it -- landing on a string the list already holds -- would leave both
   # differences empty and slip through. The totals cannot absorb that
   # (M96 review F3).
-  expect_identical(nrow(res), 1530L)
+  # 1530/1093/437 at `tm_corrupt_master_ref`; five cells joined when
+  # `has_hardware_encoder()` gained a fifth formal to corrupt, and all five are
+  # dropped (the entry named above), so `kept` is unchanged.
+  expect_identical(nrow(res), 1535L)
   expect_identical(sum(res$kept), 1093L)
-  expect_identical(sum(!res$kept), 437L)
+  expect_identical(sum(!res$kept), 442L)
 
   # `segment_video/outfiles -> <none>` survives in both, and correctly: it is
   # the token form, the legal filename `"bad fmt!"`, which the verb compiled

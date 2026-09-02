@@ -107,18 +107,20 @@ used. An argument your call got wrong is reported first wherever the verb
 itself can see it is wrong: the limit is checked after the verb's own guards
 and after the command has been assembled, so a bad \code{regions}, \code{pixel_format}
 or \code{video_codec} reports as itself whether or not a limit is set. Asking for
-\code{hardware = "nvenc"} no longer changes that: your FFmpeg build is asked what
+a hardware backend (\code{hardware = "nvenc"} or \code{"videotoolbox"}) no longer
+changes that: your FFmpeg build is asked what
 encoders it has after every check the verb itself makes, so a bad
 \code{audio_codec}, \code{pixel_format} or \code{audio_stream} reports as itself there too —
-whether or not a limit is set, and whether or not that build has nvenc.
+whether or not a limit is set, and whether or not that build has the
+backend's encoder.
 \code{fallback} is checked where that question is asked and so moved down with it:
 a call wrong about both \code{fallback} and \code{pixel_format} now hears about the
 pixel format. Where the check runs somewhere the verb reaches only later, it
 loses to both the limit and the encoder question: a \verb{_batch} job table's
 \code{output} column and \code{\link[=anonymize_video_batch]{anonymize_video_batch()}}'s \code{pixel_format} and \code{color}
 are validated inside the per-row fan-out, so a set limit is reported instead
-of them, and so is a missing nvenc encoder under \code{hardware = "nvenc"} on a
-build without one.
+of them, and so is a missing hardware encoder under a named \code{hardware}
+backend on a build without one.
 Two calls read no limit and so refuse nothing: \code{\link[=has_hardware_encoder]{has_hardware_encoder()}}
 answering from a \code{tidymedia.hardware_encoders} you set, which asks FFmpeg
 nothing, and a \verb{probe_*()} shortcut handed a \code{probe} object instead of an
@@ -197,7 +199,7 @@ large jobs table whose inputs you already know the tracks of. A row that
 names an \code{audio_stream} is not probed at all, so a table whose rows all name
 one pays nothing either way.
 
-\preformatted{options(tidymedia.hardware_encoders = c("h264_nvenc", "hevc_nvenc"))}
+\preformatted{options(tidymedia.hardware_encoders = c("h264_nvenc", "h264_videotoolbox"))}
 
 Names the hardware video encoders this machine has, instead of asking
 FFmpeg. Set it to \code{character(0)} to declare there are none. Unset (the

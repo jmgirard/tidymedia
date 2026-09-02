@@ -10,7 +10,7 @@ separate_audio_video(
   videofile,
   audio_codec = "copy",
   video_codec = "copy",
-  hardware = c("none", "nvenc"),
+  hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
   audio_stream = NULL,
   run = TRUE
@@ -36,27 +36,33 @@ video losslessly; a codec name (e.g. \code{"libx264"}) transcodes it;
 \code{videofile} extension.}
 
 \item{hardware}{The encoder backend for \code{videofile}: \code{"none"}
-(default, the software \code{video_codec}) or \code{"nvenc"} for NVIDIA GPU
-encoding, which uses the nvenc encoder for \code{video_codec}'s family
-(e.g. \code{"libx264"} becomes \code{"h264_nvenc"}), assuming the H.264
-family when \code{video_codec = NULL}. Only video is encoded on the GPU, so
-this never affects \code{audiofile}. Because this verb's video default is a
-stream copy, which runs no encoder at all, \code{hardware = "nvenc"}
-alongside \code{video_codec = "copy"} is an error: name an encoder or pass
-\code{video_codec = NULL}. See \code{\link{has_hardware_encoder}} for availability and
-its caveats.
-Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-the first \code{"nvenc"} call that re-encodes the video runs the binary
+(default, the software \code{video_codec}), \code{"nvenc"} for NVIDIA
+GPU encoding, or \code{"videotoolbox"} for Apple GPU encoding, each
+using that backend's encoder for \code{video_codec}'s family (e.g.
+\code{"libx264"} becomes \code{"h264_nvenc"} or
+\code{"h264_videotoolbox"}), assuming the H.264 family when
+\code{video_codec = NULL}. Only video is encoded on the GPU, so this
+never affects \code{audiofile}. Because this verb's video default is a
+stream copy, which runs no encoder at all, a non-\code{"none"}
+\code{hardware} alongside \code{video_codec = "copy"} is an error: name
+an encoder or pass \code{video_codec = NULL}. See
+\code{\link{has_hardware_encoder}} for availability and its caveats.
+Resolving a hardware backend asks this FFmpeg build which encoders it has,
+so the first such call that re-encodes the video runs the binary
 while the command is built, even under \code{run = FALSE}. The answer is
 remembered for the rest of the R session; see
 \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 The stream-copy conflict above is caught first, so such a call aborts
 without probing.}
 
-\item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
-unavailable, encode in software with a message (\code{TRUE}) instead of
-aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
-fallback leaves the codec unset rather than injecting one.}
+\item{fallback}{A logical: when a non-\code{"none"} \code{hardware} is
+requested but its encoder is unavailable, encode in software with a
+message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
+\code{video_codec = NULL} the fallback leaves the codec unset rather
+than injecting one.
+A \code{video_codec} in a family that backend has no encoder for is a
+wrong argument rather than an absent encoder, so it aborts whatever
+\code{fallback} says.}
 
 \item{audio_stream}{The 0-based index of the audio track to write to \code{audiofile}, counted \emph{among the input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) keeps \strong{every} audio track. The every-track family reads \code{NULL} this way -- \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus their \code{_batch} siblings. The first-track family takes one track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus theirs. A container that holds several audio streams (\code{.mka}, \code{.m4a}) receives them all, while a single-stream container (\code{.aac}, \code{.mp3}, \code{.wav}) makes FFmpeg fail -- name a track to write one of those. Count among the input's \emph{audio} streams, not the \code{index} column of \code{\link{probe_audio}}, which counts every stream. Unlike the verbs that pass video through, an input carrying no audio at all is an FFmpeg error here, because this verb's product is the audio file. \code{videofile} is never affected. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
@@ -79,8 +85,8 @@ from an MP4 to \code{.aac} or \code{.m4a}, not \code{.mp3}). Name an encoder
 instead (\code{audio_codec = "libmp3lame"}) to transcode that stream, or pass
 \code{NULL} to emit no codec option at all and let the output extension pick
 the encoder. Each argument governs only its own output file. Where the video
-is re-encoded, \code{hardware = "nvenc"} moves that encode onto an NVIDIA
-GPU; the audio output is never affected.
+is re-encoded, \code{hardware = "nvenc"} or \code{"videotoolbox"} moves
+that encode onto a GPU; the audio output is never affected.
 }
 \section{When the audio output fails}{
 
@@ -186,7 +192,7 @@ separate_audio_video(video, "audio.aac", "video.mp4",
 }
 \seealso{
 \code{\link[=ffm_map]{ffm_map()}} and \code{\link[=ffm_codec]{ffm_codec()}}, the builders it wraps;
-\code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware = "nvenc"} toggle;
+\code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
 \code{\link[=extract_audio]{extract_audio()}} to pull out just the audio;
 \code{\link[=probe_audio]{probe_audio()}} to list an input's audio tracks.
 

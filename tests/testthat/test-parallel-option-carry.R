@@ -304,8 +304,8 @@ test_that("every parallel fan-out in the package has a case above", {
 # AC2 -- the encoder override reaches the worker -------------------------------
 
 tm_nvenc_pipeline <- function(input, output, ...) {
-  enc <- if (tidymedia::has_hardware_encoder("h264")) {
-    tidymedia::hardware_encoder("h264")
+  enc <- if (tidymedia::has_hardware_encoder("h264", "nvenc")) {
+    tidymedia::hardware_encoder("h264", "nvenc")
   } else {
     "libx264"
   }

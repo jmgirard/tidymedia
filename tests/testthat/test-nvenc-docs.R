@@ -10,6 +10,16 @@
 #
 # rd_sources() / rd_param_names() / topics_documenting() come from helper-rd.R.
 
+# The VERB topics: every topic documenting `hardware` less the shared topic of
+# the two capability helpers, which grew a `hardware` argument of their own
+# (M100). The helpers document a backend name, not a verb's toggle: nothing
+# there is built into a command, so "even under run = FALSE" has no referent.
+# The same enumeration correction nvenc_hardware_exports() makes.
+hardware_verb_topics <- function(rd) {
+  topics <- topics_documenting(rd, "hardware")
+  topics[!names(topics) %in% paste0(nvenc_hardware_helpers(), ".Rd")]
+}
+
 # The claim, in the wording the roxygen carries. Matched on a distinctive clause
 # rather than the whole sentence, so rewrapping the block cannot break the test
 # while removing the sentence still does.
@@ -18,7 +28,7 @@ probe_sentence <- "asks this FFmpeg build which encoders it has"
 test_that("every topic documenting `hardware` states that nvenc probes FFmpeg", {
   rd <- rd_sources()
   skip_if(is.null(rd), "no Rd source available")
-  topics <- topics_documenting(rd, "hardware")
+  topics <- hardware_verb_topics(rd)
 
   # A floor, not a count: it fails if the enumeration silently collapses (an
   # unreadable man/, an empty Rd_db) and reports a vacuous pass. Sixteen is the
@@ -37,7 +47,7 @@ memo_sentence <- "remembered for the rest of the R session"
 test_that("every topic documenting `hardware` states the answer is remembered", {
   rd <- rd_sources()
   skip_if(is.null(rd), "no Rd source available")
-  topics <- topics_documenting(rd, "hardware")
+  topics <- hardware_verb_topics(rd)
   expect_gte(length(topics), 16L)
 
   missing <- names(topics)[!grepl(memo_sentence, topics, fixed = TRUE)]
@@ -47,7 +57,7 @@ test_that("every topic documenting `hardware` states the answer is remembered", 
 test_that("every topic documenting `hardware` points at the discard call", {
   rd <- rd_sources()
   skip_if(is.null(rd), "no Rd source available")
-  topics <- topics_documenting(rd, "hardware")
+  topics <- hardware_verb_topics(rd)
   missing <- names(topics)[!grepl("refresh_ffmpeg_capabilities", topics,
                                   fixed = TRUE)]
   expect_identical(missing, character())

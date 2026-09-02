@@ -12,7 +12,7 @@ segment_video(
   reencode = TRUE,
   video_codec = NULL,
   audio_codec = "copy",
-  hardware = c("none", "nvenc"),
+  hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
   audio_stream = NULL,
   run = TRUE,
@@ -59,16 +59,18 @@ so the output container's default encoder is used. A stream copy
 error there. Stream-copying fails if the output container cannot hold the
 source audio codec (e.g. FLAC in \code{.mp4}) — name an encoder instead.}
 
-\item{hardware}{The encoder backend: \code{"none"} (default, the software
-\code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
-\code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
-(e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); with the default
-\code{video_codec = NULL} the H.264 family is assumed, so a non-H.264
-container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
-\code{video_codec}. See \code{\link{has_hardware_encoder}} for availability and its
-caveats.
-Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-the first \code{"nvenc"} call that re-encodes the video runs the binary
+\item{hardware}{The encoder backend: \code{"none"} (default, the
+software \code{video_codec}), \code{"nvenc"} for NVIDIA GPU encoding
+(H.264, HEVC and AV1), or \code{"videotoolbox"} for Apple GPU encoding
+(H.264 and HEVC). Uses that backend's encoder for \code{video_codec}'s
+family (e.g. \code{"libx264"} becomes \code{"h264_nvenc"} or
+\code{"h264_videotoolbox"}); with the default \code{video_codec = NULL}
+the H.264 family is assumed, so a non-H.264 container (e.g.
+\code{.webm}) needs an explicit HEVC- or AV1-family \code{video_codec}
+(AV1 only under \code{"nvenc"}). See \code{\link{has_hardware_encoder}}
+for availability and its caveats.
+Resolving a hardware backend asks this FFmpeg build which encoders it has,
+so the first such call that re-encodes the video runs the binary
 while the command is built, even under \code{run = FALSE}. The answer is
 remembered for the rest of the R session; see
 \code{\link{refresh_ffmpeg_capabilities}} to discard it.
@@ -81,11 +83,14 @@ the encoder.
 The stream-copy conflict named under \code{reencode} is caught first, so
 such a call aborts without probing.}
 
-\item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
-unavailable, encode in software with a message (\code{TRUE}) instead of
-aborting (\code{FALSE}, default). With \code{video_codec = NULL} the
-fallback leaves the codec unset rather than picking one, so the codec never
-changes silently.}
+\item{fallback}{A logical: when a non-\code{"none"} \code{hardware} is
+requested but its encoder is unavailable, encode in software with a
+message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
+\code{video_codec = NULL} the fallback leaves the codec unset rather
+than picking one, so the codec never changes silently.
+A \code{video_codec} in a family that backend has no encoder for is a
+wrong argument rather than an absent encoder, so it aborts whatever
+\code{fallback} says.}
 
 \item{audio_stream}{The 0-based index of the audio track to carry into the output, counted \emph{among the input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) carries \strong{every} audio track. The every-track family reads \code{NULL} this way -- \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus their \code{_batch} siblings. The first-track family takes one track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus theirs. Subtitle and data streams are not carried either way. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
@@ -121,7 +126,7 @@ https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 }
 \seealso{
 \code{\link[=ffm_seek]{ffm_seek()}}, the builder it uses to cut; \code{\link[=ffm_batch]{ffm_batch()}}, the runner;
-\code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware = "nvenc"} toggle;
+\code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
 \code{\link[=segment_video_batch]{segment_video_batch()}} for the many-file form.
 
 Other task verb functions:

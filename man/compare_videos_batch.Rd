@@ -11,7 +11,7 @@ compare_videos_batch(
   audio_input = NULL,
   video_codec = NULL,
   audio_codec = "copy",
-  hardware = c("none", "nvenc"),
+  hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
   run = TRUE,
   parallel = FALSE,
@@ -50,8 +50,8 @@ naming an encoder on such a row is an error.}
 \item{hardware, fallback}{The encoder backend and its fallback behavior,
 applied to the whole batch (a property of the machine, not of a row, so
 neither is read as a \code{jobs} column). See \code{\link[=compare_videos]{compare_videos()}}.
-Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-the first \code{"nvenc"} call that re-encodes the video runs the binary
+Resolving a hardware backend asks this FFmpeg build which encoders it has,
+so the first such call that re-encodes the video runs the binary
 while the command is built, even under \code{run = FALSE}. The answer is
 remembered for the rest of the R session; see
 \code{\link{refresh_ffmpeg_capabilities}} to discard it.
@@ -99,7 +99,7 @@ compare_videos_batch(jobs, run = FALSE)
 }
 \seealso{
 \code{\link[=compare_videos]{compare_videos()}}, the scalar verb it wraps; \code{\link[=ffm_batch]{ffm_batch()}}, the
-batch runner; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware = "nvenc"} toggle;
+batch runner; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
 \code{\link[=concatenate_videos_batch]{concatenate_videos_batch()}} and \code{\link[=picture_in_picture_batch]{picture_in_picture_batch()}},
 the other fan-in batch siblings.
 

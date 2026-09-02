@@ -26,17 +26,32 @@ local_encoder_probe_counter <- function(
 
 # The nvenc grid (M67 AC2/AC3) ------------------------------------------------
 
-# H: every exported function taking a `hardware` argument. Read from the
-# namespace at test time, never hand-listed -- a seventeenth verb gaining
-# `hardware` joins the grid without anyone remembering to add it.
+# H: every exported VERB taking a `hardware` argument. Read from the namespace
+# at test time, never hand-listed -- a seventeenth verb gaining `hardware`
+# joins the grid without anyone remembering to add it.
+#
+# The two capability helpers are excluded by name (M100). They grew a
+# `hardware` argument too, so the enumeration catches them, but they were never
+# in this domain: the grid asserts one probe per cell (hardware_encoder() is
+# pure and probes zero times), the AC1 sweep reads each member's accepted set
+# off a `hardware` default the helpers deliberately do not have, and the
+# probe-blame sweep crosses members with wrong `codec` forms. The helpers are
+# tested on their own terms in test-nvenc.R.
+nvenc_hardware_helpers <- function() {
+  c("hardware_encoder", "has_hardware_encoder")
+}
+
 nvenc_hardware_exports <- function() {
   ns <- asNamespace("tidymedia")
-  sort(Filter(
-    function(nm) {
-      obj <- get(nm, envir = ns)
-      is.function(obj) && "hardware" %in% names(formals(obj))
-    },
-    getNamespaceExports("tidymedia")
+  sort(setdiff(
+    Filter(
+      function(nm) {
+        obj <- get(nm, envir = ns)
+        is.function(obj) && "hardware" %in% names(formals(obj))
+      },
+      getNamespaceExports("tidymedia")
+    ),
+    nvenc_hardware_helpers()
   ))
 }
 

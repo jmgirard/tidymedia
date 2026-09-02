@@ -13,7 +13,7 @@ standardize_video(
   video_codec = "libx264",
   audio_codec = "copy",
   pixel_format = "yuv420p",
-  hardware = c("none", "nvenc"),
+  hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
   audio_stream = NULL,
   run = TRUE
@@ -51,22 +51,28 @@ let the container's default encoder decide.}
 \item{pixel_format}{A string naming the output pixel format (default
 \code{"yuv420p"}).}
 
-\item{hardware}{The encoder backend: \code{"none"} (default, the software
-\code{video_codec}) or \code{"nvenc"} for NVIDIA GPU encoding. When
-\code{"nvenc"}, the nvenc encoder for \code{video_codec}'s family is used
-(e.g. \code{"libx264"} becomes \code{"h264_nvenc"}); see
-\code{\link{has_hardware_encoder}} for availability and its caveats. Applies to video
-only: \code{audio_codec} is never hardware-accelerated.
-Resolving \code{"nvenc"} asks this FFmpeg build which encoders it has, so
-the first \code{"nvenc"} call that re-encodes the video runs the binary
+\item{hardware}{The encoder backend: \code{"none"} (default, the
+software \code{video_codec}), \code{"nvenc"} for NVIDIA GPU encoding
+(H.264, HEVC and AV1), or \code{"videotoolbox"} for Apple GPU encoding
+(H.264 and HEVC). Uses that backend's encoder for \code{video_codec}'s
+family (e.g. \code{"libx264"} becomes \code{"h264_nvenc"} or
+\code{"h264_videotoolbox"}); see \code{\link{has_hardware_encoder}} for
+availability and its caveats. Applies to video only: \code{audio_codec}
+is never hardware-accelerated.
+Resolving a hardware backend asks this FFmpeg build which encoders it has,
+so the first such call that re-encodes the video runs the binary
 while the command is built, even under \code{run = FALSE}. The answer is
 remembered for the rest of the R session; see
 \code{\link{refresh_ffmpeg_capabilities}} to discard it.}
 
-\item{fallback}{A logical: when \code{hardware = "nvenc"} but nvenc is
-unavailable, re-encode with the software \code{video_codec} and a message
-(\code{TRUE}) instead of aborting (\code{FALSE}, default). Keeps output
-reproducible by never changing the codec silently.}
+\item{fallback}{A logical: when a non-\code{"none"} \code{hardware} is
+requested but its encoder is unavailable, re-encode with the software
+\code{video_codec} and a message (\code{TRUE}) instead of aborting
+(\code{FALSE}, default). Keeps output reproducible by never changing the
+codec silently.
+A \code{video_codec} in a family that backend has no encoder for is a
+wrong argument rather than an absent encoder, so it aborts whatever
+\code{fallback} says.}
 
 \item{audio_stream}{The 0-based index of the audio track to carry into the output, counted \emph{among the input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) carries \strong{every} audio track. The every-track family reads \code{NULL} this way -- \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus their \code{_batch} siblings. The first-track family takes one track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus theirs. Subtitle and data streams are not carried either way. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
@@ -112,7 +118,8 @@ standardize_video(video, "std.mp4", audio_stream = 1, run = FALSE)
 }
 \seealso{
 \code{\link[=ffm_scale]{ffm_scale()}}, \code{\link[=ffm_codec]{ffm_codec()}}, and \code{\link[=ffm_pixel_format]{ffm_pixel_format()}}, among the
-builders it wraps; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware = "nvenc"} toggle;
+builders it wraps; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware}
+toggle;
 \code{\link[=standardize_video_batch]{standardize_video_batch()}} for the many-file form.
 
 Other task verb functions:

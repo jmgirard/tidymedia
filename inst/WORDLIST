@@ -37,6 +37,7 @@ anonymize
 arity
 assertthat
 auditable
+backend's
 bitstream
 checksums
 cli
@@ -59,6 +60,7 @@ framerate
 furrr
 getters
 gyan
+hevc
 horiz
 https
 integerish
@@ -109,5 +111,6 @@ transcode
 transcodes
 transcoding
 unexecuted
+videotoolbox
 withr
 zsh

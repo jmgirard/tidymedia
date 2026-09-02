@@ -92,13 +92,16 @@ over a jobs tibble; scalar verbs stay scalar and fan-out verbs (e.g.
 
 ## Known issues
 
-- Eleven arguments are refused below the verb the caller typed, and that position is
+- Twelve arguments are refused below the verb the caller typed, and that position is
   accepted rather than pending a fix. `fallback` at the eight fan-out verbs is checked
   where the encoder question is asked, which D075 records as an accepted cost;
   `anonymize_video_batch()`'s `pixel_format` and `color`, and
   `normalize_audio_batch()`'s `channels` and `sample_rate`, are validated inside the
   per-row fan-out, so `purrr::pmap()` is blamed and a set `tidymedia.timeout` displaces
-  them; `has_hardware_encoder()`'s `codec` reads no limit and refuses nothing; and six
+  them; a wrong-form `codec` or `hardware` at
+  `has_hardware_encoder()` reads no limit and is refused by the `arg_match()` inside
+  `hardware_encoder()`, the mapper it consults (a pair both arguments spell correctly
+  and no backend's table holds is refused in `has_hardware_encoder()`'s own name); and six
   `verify_media()` arguments are refused by an assignment rather than a guard. Measured
   cell by cell by M096's member x formal x wrong-form census, each named with the frame
   that refused it; accepted at M096's post-merge hygiene pass rather than carried as

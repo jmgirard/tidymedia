@@ -20,7 +20,9 @@ install_on_win(download_url = NULL, install_dir = NULL)
 - install_dir:
 
   A string indicating a directory to install FFmpeg to. If `NULL`, will
-  default to installing to the user data directory.
+  default to the `ffmpeg` subdirectory of
+  `tools::R_user_dir("tidymedia", "data")`, the user data directory CRAN
+  policy sanctions.
 
 ## Value
 

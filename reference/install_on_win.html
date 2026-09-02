@@ -64,7 +64,9 @@ essentials release from gyan.dev.</p></dd>
 
 <dt id="arg-install-dir">install_dir<a class="anchor" aria-label="anchor" href="#arg-install-dir"></a></dt>
 <dd><p>A string indicating a directory to install FFmpeg to. If
-<code>NULL</code>, will default to installing to the user data directory.</p></dd>
+<code>NULL</code>, will default to the <code>ffmpeg</code> subdirectory of
+<code>tools::R_user_dir("tidymedia", "data")</code>, the user data directory CRAN
+policy sanctions.</p></dd>
 
 </dl></div>
     <div class="section level2">

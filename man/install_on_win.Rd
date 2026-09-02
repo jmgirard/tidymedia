@@ -12,7 +12,9 @@ installation zip file. If \code{NULL}, will default to the latest static
 essentials release from gyan.dev.}
 
 \item{install_dir}{A string indicating a directory to install FFmpeg to. If
-\code{NULL}, will default to installing to the user data directory.}
+\code{NULL}, will default to the \code{ffmpeg} subdirectory of
+\code{tools::R_user_dir("tidymedia", "data")}, the user data directory CRAN
+policy sanctions.}
 }
 \value{
 A logical indicating whether the installation was successful.

@@ -21,6 +21,18 @@ tm_config_file <- function(program, dir = tm_config_dir()) {
   file.path(dir, glue("{program}_location.txt"))
 }
 
+# Data directory -----------------------------------------------------------
+
+# Where `install_on_win()` puts a downloaded FFmpeg build when the caller names
+# no directory. `tools::R_user_dir()` is the one user data location CRAN policy
+# sanctions (M098); it honors `R_USER_DATA_DIR`, which is how the suite keeps
+# its writes out of the user's real data directory. The `ffmpeg` subdirectory
+# is the extraction root: `archive_extract(strip_components = 1)` unpacks the
+# build's contents into it, so the binaries land under `bin/` beneath it.
+tm_install_dir <- function() {
+  file.path(tools::R_user_dir("tidymedia", "data"), "ffmpeg")
+}
+
 # find_program() ----------------------------------------------------------
 
 #' Find the location of a dependency program
@@ -250,7 +262,9 @@ set_ffplay <- function(location) {
 #'   installation zip file. If `NULL`, will default to the latest static
 #'   essentials release from gyan.dev.
 #' @param install_dir A string indicating a directory to install FFmpeg to. If
-#'   `NULL`, will default to installing to the user data directory.
+#'   `NULL`, will default to the `ffmpeg` subdirectory of
+#'   `tools::R_user_dir("tidymedia", "data")`, the user data directory CRAN
+#'   policy sanctions.
 #' @return A logical indicating whether the installation was successful.
 #' @seealso [set_program()] to register an existing binary, and [find_ffmpeg()]
 #'   to check what is currently configured.
@@ -268,7 +282,7 @@ install_on_win <- function(download_url = NULL,
     download_url <- "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.7z"
   }
   if (is.null(install_dir)) {
-    install_dir <- file.path(rappdirs::user_data_dir("tidymedia", "R"), "ffmpeg")
+    install_dir <- tm_install_dir()
   }
   if (!dir.exists(install_dir)) {
     status <- dir.create(install_dir, recursive = TRUE)

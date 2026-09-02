@@ -2,7 +2,7 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-09-02 (M102 planned: `install_on_win()` verifies the archive and the unpacked programs before it registers anything — sidecar SHA-256 against the source's published digest, an optional `sha256 =`, classed refusals for the download/checksum/extraction/missing-program failures, and registration gated on what the extraction produced; D081 adds `digest` to Imports. The M101-Out integrity row is absorbed; a new candidate holds the authenticity remainder the sidecar cannot reach. Criteria audit ran full mode, findings on all six drafts, all fixed at the gate. No release window.)_
+_Last hygiene check: 2026-09-02 (M102 planned: `install_on_win()` verifies the archive and the unpacked programs before it registers anything — sidecar SHA-256 against the source's published digest, an optional `archive_checksum =` (corrected M102), classed refusals for the download/checksum/extraction/missing-program failures, and registration gated on what the extraction produced; D081 adds `digest` to Imports. The M101-Out integrity row is absorbed; a new candidate holds the authenticity remainder the sidecar cannot reach. Criteria audit ran full mode, findings on all six drafts, all fixed at the gate. No release window.)_
 
 ## Milestones
 
@@ -13,7 +13,7 @@ _Last hygiene check: 2026-09-02 (M102 planned: `install_on_win()` verifies the a
 | M100 | Hardware encoding is a backend vocabulary, and videotoolbox is the second member | done | M099 | normal | milestones/archive/M100-videotoolbox-backend.md |
 | M099 | D014's pre-0.2.0 rename window is reviewed before it closes | done | — | normal | milestones/archive/M099-d014-rename-window-review.md |
 | M101 | `install_on_win()` asks before it downloads and installs | done | — | normal | milestones/archive/M101-install-on-win-confirmation.md |
-| M102 | `install_on_win()` verifies the archive and the unpacked programs before it registers anything | planned | — | normal | milestones/M102-install-verify-before-register.md |
+| M102 | `install_on_win()` verifies the archive and the unpacked programs before it registers anything | in-progress | — | normal | milestones/M102-install-verify-before-register.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

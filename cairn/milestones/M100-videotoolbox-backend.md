@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M100: Hardware encoding is a backend vocabulary, and videotoolbox is the second member
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M099
 - **Driving RR:** —
@@ -133,7 +133,7 @@ milestone's, since adding an argument is additive and outside D014.
    `@seealso` text, the ~31 helper call sites the required argument reaches,
    `vignettes/workflow.Rmd`, `_pkgdown.yml` and `NEWS.md` (M099's "nvenc is the
    one hardware backend" sentence is edited, not contradicted).
-9. [ ] Run `devtools::document()`, `pkgdown::check_pkgdown()`,
+9. [x] Run `devtools::document()`, `pkgdown::check_pkgdown()`,
    `devtools::test()`, `devtools::check()`.
 
 ## Coverage
@@ -233,3 +233,4 @@ milestone's, since adding an argument is additive and outside D014.
 - 2026-09-02 enumeration correction, extending RR07 R8's disposition to the three further sweeps that quantify over "everything documenting or carrying `hardware`": `nvenc_hardware_exports()`, the probe-blame cell builder, `test-nvenc-front-door.R`'s completeness test, and `test-nvenc-docs.R`'s Rd-topic enumeration all exclude the two capability helpers by name, through one shared `nvenc_hardware_helpers()`. Same correction, same reason; AC1's and AC5's domains are unchanged.
 - 2026-09-02 census: the corrupt-argument sweep's master census is a merge-base measurement and was left untouched (IP4). `has_hardware_encoder()`'s new required `hardware` formal adds five dropped cells refused inside `hardware_encoder()` -- the frame that already refuses a wrong `codec` -- so the live totals move 1530/437 to 1535/442 with `kept` unchanged, and the one new entry is named in the test's two-way difference rather than added to the frozen list.
 - 2026-09-02 implement T8: `NEWS.md` gains a new-features entry for the vocabulary and a breaking-changes entry for the helpers' required `hardware`, and M099's "nvenc is the one hardware backend" sentence is edited rather than contradicted (RR07 point 4). `vignettes/workflow.Rmd` teaches naming a backend and checking under the same name. `_pkgdown.yml`'s "FFmpeg capabilities" prose was re-checked and needs no edit: it already reads "opt-in hardware (GPU) encoding", which is backend-neutral.
+- 2026-09-02 implement T9: `devtools::document()` produces no diff, `pkgdown::check_pkgdown()` reports no problems, `devtools::test()` is 0 failures / 11271 passing / 18 skipped (the 10 warnings are the pre-existing dropped-audio-track warnings from execution tests, none in this milestone's files), and `devtools::check()` is Status: OK -- 0 errors, 0 warnings, 0 notes. One spelling NOTE fired first and was closed by `spelling::update_wordlist()` adding `backend's`, `hevc` and `videotoolbox` to `inst/WORDLIST`. `README.Rmd` names neither `hardware` nor nvenc, so it needs no re-knit.

@@ -12,9 +12,9 @@
 
 `install_on_win()` verifies the archive it downloaded against the digest its
 source publishes and confirms the programs the package needs were unpacked
-before it writes any remembered location, and every way the call can fail
-returns `FALSE` or carries a `tidymedia_*` condition class, for every failure
-on that path after the front-door argument checks.
+before it writes any remembered location, and every failure on that path past
+the front-door argument checks returns `FALSE` or carries a `tidymedia_*`
+condition class.
 
 ## Scope
 

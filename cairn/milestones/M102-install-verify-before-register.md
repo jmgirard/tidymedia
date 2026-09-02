@@ -1,6 +1,6 @@
 # M102: `install_on_win()` verifies the archive and the unpacked programs before it registers anything
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -63,7 +63,7 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
       over a wrong-length, a non-hex, an `NA` and a length-2 value — and like
       the other front-door checks that refusal carries no `tidymedia_*` class.
       (RB tripwire: irreversible-api)
-- [x] AC3: A failure inside `archive::archive_extract()` aborts with class
+- [ ] AC3: A failure inside `archive::archive_extract()` aborts with class
       `tidymedia_archive_unreadable` naming the archive path and the install
       directory, and neither that condition's message nor any `parent` it
       carries contains `archive_extract.cpp` — libarchive's text is replaced by
@@ -172,6 +172,8 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
 
 - 2026-09-02: review gate fixes — the three-lens fan-out returned 18 findings; 11 fixed on the branch, 6 rejected with reason, 3 deferred to candidate rows (one finding split across two dispositions). The load-bearing one was an unguarded `readLines()` on the sidecar: a `download.file()` reporting status 0 without leaving a readable file left `install_on_win()` through a bare `cannot open connection`, unclassed and invisible to AC6's census. Guarded, with a test proven red without the guard. Guarding it also exposed a latent bug in the AC6 census walker — the inline `function(cnd)` handlers put an empty symbol in a formals pairlist, and binding one in a `for` made the variable missing; the walker now traverses by index. AC4's on-disk claim is now asserted through the real `set_program()` (`tm_mock_install(real_set = TRUE)`), and `tm_archive_digest()` is pinned to a known answer. No finding demonstrated an acceptance criterion failing, so the return floor is not met and status stays `review`.
 
+- 2026-09-02: review returns M102 to `in-progress` under the return floor. AC3 fails on Windows CI: `windows-latest (release)` on 9ae0bfe red at `test-program-management.R:796:5`, `expect_false(file.exists(rec$destfile))` FALSE-expected but TRUE for the `corrupt-payload.7z` fixture — the downloaded temporary file survives the failing path, which is exactly what AC3's last clause forbids, on the only platform `install_on_win()` runs on. Green everywhere else (macOS, four Ubuntu legs, pkgdown, coverage) and green locally, so the defect is Windows-specific; `not-an-archive.7z` passes and the payload fixture does not, which points at libarchive holding the archive open after a mid-read failure. Everything else this review found stands and is committed on the branch: 18 findings from the three-lens fan-out, 11 fixed, 6 rejected, 3 deferred. AC1, AC2, AC4, AC5 and AC6 stay ticked on their own evidence; AC3 is unticked; AC7 was never reached (local `devtools::test()` 11567 pass and `devtools::check()` Status OK, but the `--only digest` floor leg was not run to completion and CI is red regardless). First defect return on this milestone.
+
 ## Decisions
 
 - 2026-09-02: `archive_checksum` takes `NULL` as its default. D079 forbids a
@@ -218,12 +220,24 @@ file this milestone touched.
   length 2 — with `utils::download.file()` mocked to abort if reached; each is
   an `rlang_error` naming `archive_checksum` and carrying no `tidymedia_*`
   class.
-- AC3 — verified. `:758` uses both committed fixtures with the real
-  `archive::archive_extract()` in place. Each aborts
-  `tidymedia_archive_unreadable`; the message names the archive path and the
-  install directory; the test walks the whole `$parent` chain asserting
-  `archive_extract.cpp` appears nowhere; and `file.exists(destfile)` is FALSE
-  on both failing paths and on the succeeding control.
+- AC3 — **FAILED.** Verified on macOS (`test-program-management.R:758`: both
+  fixtures abort `tidymedia_archive_unreadable`, the message names the archive
+  path and the install directory, the whole `$parent` chain is free of
+  `archive_extract.cpp`, and `file.exists(destfile)` is FALSE on both failing
+  paths and on the succeeding control) — but red on Windows CI, which is the
+  only platform `install_on_win()` runs on. `windows-latest (release)` on
+  9ae0bfe:
+  `Failure ('test-program-management.R:796:5') ... Expected corrupt-payload.7z
+  to be FALSE`, i.e. `expect_false(file.exists(rec$destfile))`. AC3's last
+  clause — "the downloaded temporary file is removed on the failing path as on
+  the succeeding one" — does not hold on Windows for the corrupt-payload
+  fixture. `not-an-archive.7z` passes, which points at the difference between
+  libarchive's two failure routes: the payload fixture fails inside
+  `archive_read_data_block()`, after the file was opened, so a handle is
+  plausibly still open when `on.exit(unlink(tf))` runs and Windows refuses to
+  delete an open file. That is a hypothesis, not a measurement — the
+  measurement is the assertion above.
+
 - AC4 — verified. `:806` drives four builds. All three unpacked registers
   `ffmpeg`, `ffprobe`, `ffplay` and returns `TRUE`; `ffmpeg` + `ffprobe` only
   registers those two, emits a message naming `ffplay`, returns `TRUE`; each

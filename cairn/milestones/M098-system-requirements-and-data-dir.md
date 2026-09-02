@@ -2,12 +2,12 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M098: DESCRIPTION declares the tools the package interfaces, and the data dir follows policy
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m098-system-requirements-and-data-dir`
 
 ## Goal
 
@@ -32,7 +32,7 @@ function's argument and the metadata an installer reads.
 
 ## Acceptance criteria
 
-- [ ] AC1 `DESCRIPTION` carries a `SystemRequirements` field naming FFmpeg and
+- [x] AC1 `DESCRIPTION` carries a `SystemRequirements` field naming FFmpeg and
       MediaInfo, each with its project URL.
 - [ ] AC2 `install_on_win()`'s own default — the value `install_dir` takes when
       the caller passes none — is the `ffmpeg` subdirectory of
@@ -72,3 +72,4 @@ function's argument and the metadata an installer reads.
 
 - 2026-08-31 plan: criteria audit ran in FULL mode (surface tier user-facing), fresh-context [O] reader, over the wording split out of M097's draft. It returned two findings on this material: the draft target state was ambiguous between the data dir exactly and today's `ffmpeg` subdirectory (fixed — the subdirectory is preserved, since `archive_extract(strip_components = 1)` unpacks into it), and the stated verification named mocking `tools::R_user_dir()`, which is a locked base-priority namespace testthat cannot mock (fixed — `withr::local_envvar(R_USER_DATA_DIR = )`, verified working). It also flagged that AC2 bound a helper rather than the exported function's own default; AC2 now names the default.
 - 2026-08-31 plan: alternative rejected — hardening `install_on_win()`'s download posture in this milestone (interactive confirmation before fetching third-party software). Lost at the question gate as a larger change to an exported function's behavior; it became a ROADMAP candidate row. Falsified by a CRAN reviewer raising it on submission.
+- 2026-09-01 implement (T1): `DESCRIPTION` gained `SystemRequirements: FFmpeg (https://ffmpeg.org/), MediaInfo (https://mediaarea.net/en/MediaInfo)`, wrapped over two lines and verified to parse back as one field via `read.dcf()`. Both names are already in `inst/WORDLIST`. Suite clean (0 failures, 18 skipped). AC1 met.

@@ -9,7 +9,7 @@ _Last hygiene check: 2026-09-01 (M097 done: the remembered binary location moved
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
 | M097 | A remembered binary location lives where CRAN policy sanctions | done | — | normal | milestones/archive/M097-cran-policy-user-dirs.md |
-| M098 | `DESCRIPTION` declares the tools the package interfaces, and the data dir follows policy | planned | — | normal | milestones/M098-system-requirements-and-data-dir.md |
+| M098 | `DESCRIPTION` declares the tools the package interfaces, and the data dir follows policy | in-progress | — | normal | milestones/M098-system-requirements-and-data-dir.md |
 | M100 | Hardware encoding is a backend vocabulary, and videotoolbox is the second member | planned | M099 | normal | milestones/M100-videotoolbox-backend.md |
 | M099 | D014's pre-0.2.0 rename window is reviewed before it closes | done | — | normal | milestones/archive/M099-d014-rename-window-review.md |
 | M095 | A wrong argument outranks the nvenc availability probe | done | — | normal | milestones/archive/M095-argument-error-outranks-nvenc-probe.md |

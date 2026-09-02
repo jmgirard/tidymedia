@@ -37,6 +37,8 @@ Suggests:
     roxygen2 (>= 7.2.0),
     spelling (>= 2.2),
     testthat (>= 3.0.0)
+SystemRequirements: FFmpeg (https://ffmpeg.org/),
+    MediaInfo (https://mediaarea.net/en/MediaInfo)
 VignetteBuilder: knitr
 Encoding: UTF-8
 Language: en-US

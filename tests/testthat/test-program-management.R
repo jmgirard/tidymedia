@@ -184,27 +184,48 @@ test_that("install_on_win()'s own default install dir is R_user_dir()'s ffmpeg s
   # download is aimed at a `file://` URL that does not exist: no network is
   # touched, and `download.file()` fails only AFTER the default has resolved
   # and the directory has been created, which is the state being asserted.
+  # The config directory is redirected too, so the registration this call never
+  # reaches could not touch the developer's real one even if it did.
+  config <- tm_redirect_config()
   root <- tm_redirect_data()
   expected <- file.path(tools::R_user_dir("tidymedia", "data"), "ffmpeg")
   # tools::R_user_dir() interposes an `R` component under the envvar's root.
   expect_identical(expected, file.path(root, "R", "tidymedia", "ffmpeg"))
 
+  # `file:///` + a path with its leading separator removed is the absolute-path
+  # form on both families: `file:///var/...` on Unix, `file:///C:/...` on
+  # Windows. Built this way so the call fails because the archive is missing,
+  # not because the URL is malformed.
   missing_archive <- paste0(
     "file:///",
-    file.path(withr::local_tempdir(), "no-such-build.7z")
+    sub("^/", "", chartr("\\", "/", file.path(withr::local_tempdir(), "no-such-build.7z")))
   )
   suppressWarnings(
-    expect_error(install_on_win(download_url = missing_archive))
+    expect_error(
+      install_on_win(download_url = missing_archive),
+      "cannot open URL"
+    )
   )
 
   # The `ffmpeg` subdirectory is preserved, not dropped: the data directory
   # itself is not the extraction root. Pinned as the full set of directories
   # created beneath the redirected root, so a write anywhere else fails here.
+  # Both sides normalized: `list.dirs()` and `file.path()` disagree on the
+  # separator under a Windows `tempdir()`.
   expect_identical(
-    setdiff(list.dirs(root), root),
-    c(file.path(root, "R"), file.path(root, "R", "tidymedia"), expected)
+    normalizePath(setdiff(list.dirs(root), root)),
+    normalizePath(c(
+      file.path(root, "R"),
+      file.path(root, "R", "tidymedia"),
+      expected
+    ))
   )
 
-  # Nothing was registered: the config write happens only after extraction.
-  expect_false(file.exists(file.path(expected, "bin", "ffmpeg.exe")))
+  # Nothing was registered: the three set_*() calls run only after extraction,
+  # so a failed download must leave the config directory empty. This is what
+  # fails if that ordering is ever inverted.
+  expect_identical(
+    list.files(config$root, recursive = TRUE, all.files = TRUE),
+    character(0)
+  )
 })

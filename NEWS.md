@@ -31,7 +31,9 @@
   location. This is the default only: an `install_dir` you pass yourself is
   used as before. An FFmpeg installed by an earlier version keeps working and
   is not moved; its location was recorded when it was installed, and that
-  record is what `find_ffmpeg()` reads.
+  record is what `find_ffmpeg()` reads. Running `install_on_win()` again does
+  install a second copy, in the new location, and leaves the old one on disk;
+  the old directory is yours to delete once nothing points at it.
 
 * A binary location remembered with `set_ffmpeg()`, `set_ffprobe()`,
   `set_ffplay()` or `set_mediainfo()` now lives under

@@ -172,3 +172,24 @@ the test and the margins. Ranked, with disposition:
 
 No finding demonstrates an acceptance criterion failing, so the return floor is
 not reached and the milestone stays in `review`.
+
+### Fix-now work directed at the gate (2026-09-01)
+
+Findings 1, 2, 4, 5 and 7 were fixed on the branch before the approval marker.
+In `tests/testthat/test-program-management.R`: the AC2 test now also calls
+`tm_redirect_config()`, so a registration write could not reach the developer's
+real config directory; the `file://` URL is built as `"file:///"` plus the path
+with its leading separator stripped and backslashes turned to `/`, well-formed
+on both families; `expect_error()` now names the failure (`"cannot open URL"`)
+rather than accepting any error; the directory-set comparison normalizes both
+sides, the Windows separator trap `LESSONS.md` records from M097; and the
+tautological `bin/ffmpeg.exe` assertion is replaced by one that the config
+directory is still empty — which fails if the three `set_*()` calls ever move
+ahead of the download. `NEWS.md` now says re-running `install_on_win()` installs
+a second copy in the new location and leaves the old one on disk.
+
+Negative control re-run on the changed assertion: dropping the `ffmpeg`
+component from `tm_install_dir()` fails the test at the directory-set
+comparison, naming the missing `.../R/tidymedia/ffmpeg` path. Finding 9 was
+absorbed into the existing `install_on_win()` ROADMAP candidate row rather than
+filed as a new one (search-first).

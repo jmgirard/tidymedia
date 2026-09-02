@@ -1029,6 +1029,9 @@ ffmpeg_exit_status <- function(cnd) {
 #'   message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
 #'   \code{video_codec = NULL} the fallback leaves the codec unset rather
 #'   than injecting one.
+#'   A \code{video_codec} in a family that backend has no encoder for is a
+#'   wrong argument rather than an absent encoder, so it aborts whatever
+#'   \code{fallback} says.
 #' @param audio_stream `r audio_stream_param("write to \\code{audiofile}", "keeps", "every", extra = audio_stream_extras$separation_container)`
 #' @param run A logical: run the commands through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled commands without running them (\code{FALSE}).
@@ -1445,6 +1448,9 @@ crop_video_pipeline <- function(input, output, width, height,
 #'   message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
 #'   \code{video_codec = NULL} the fallback leaves the codec unset rather
 #'   than picking one, so the codec never changes silently.
+#'   A \code{video_codec} in a family that backend has no encoder for is a
+#'   wrong argument rather than an absent encoder, so it aborts whatever
+#'   \code{fallback} says.
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
@@ -1561,6 +1567,9 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
 #'   requested but its encoder is unavailable, re-encode with software
 #'   libx264 and a message (\code{TRUE}) instead of aborting (\code{FALSE},
 #'   default).
+#'   A \code{video_codec} in a family that backend has no encoder for is a
+#'   wrong argument rather than an absent encoder, so it aborts whatever
+#'   \code{fallback} says.
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
@@ -1739,6 +1748,9 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #'   \code{video_codec} and a message (\code{TRUE}) instead of aborting
 #'   (\code{FALSE}, default). Keeps output reproducible by never changing the
 #'   codec silently.
+#'   A \code{video_codec} in a family that backend has no encoder for is a
+#'   wrong argument rather than an absent encoder, so it aborts whatever
+#'   \code{fallback} says.
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
@@ -1973,6 +1985,9 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
 #'   \code{video_codec} and a message (\code{TRUE}) instead of aborting
 #'   (\code{FALSE}, default). Keeps output reproducible by never changing the
 #'   codec silently.
+#'   A \code{video_codec} in a family that backend has no encoder for is a
+#'   wrong argument rather than an absent encoder, so it aborts whatever
+#'   \code{fallback} says.
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
@@ -2257,6 +2272,9 @@ derive_anonymized_names <- function(input) {
 #'   with the software \code{video_codec} and a message (\code{TRUE})
 #'   instead of aborting (\code{FALSE}, default). Batch-wide, not a per-row
 #'   column.
+#'   A \code{video_codec} in a family that backend has no encoder for is a
+#'   wrong argument rather than an absent encoder, so it aborts whatever
+#'   \code{fallback} says.
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
 #'   default) or only compile them for inspection (\code{FALSE}).
@@ -3095,7 +3113,7 @@ hardware_codec_families <- function() {
 #' has_hardware_encoder("h264", "nvenc")
 #' @export
 hardware_encoder <- function(codec = c("h264", "hevc", "av1", "prores"),
-                             hardware, call = rlang::caller_env()) {
+                             hardware, call = rlang::current_env()) {
   # Literal defaults, not hardware_codec_families()/hardware_backends(): the Rd
   # usage line publishes a formal's default verbatim, and a reader cannot
   # evaluate an unexported call there. The same reason the 16 verbs spell their
@@ -3121,10 +3139,13 @@ hardware_encoder <- function(codec = c("h264", "hevc", "av1", "prores"),
         # break the refusal's promise to name only the backend asked for.
         "i" = "Name a codec in one of those families, or encode in software."
       ),
-      # Threaded, never left to default to this frame: master blamed this class
-      # of refusal on the verb the caller typed, through
+      # Threaded by every internal caller, never left to default: master blamed
+      # this class of refusal on the verb the caller typed, through
       # `codec_family(video_codec, call = call)`, and losing that is M094 F2 /
-      # D074's defect one layer down (M100 review finding 1).
+      # D074's defect one layer down (M100 review pass 1, finding 1). The
+      # DEFAULT is this frame, not `caller_env()`: the only call reaching it is
+      # a direct one, and an exported function refusing its own argument names
+      # itself (pass 2, finding 1).
       call = call
     )
   }
@@ -3191,8 +3212,13 @@ codec_family <- function(video_codec, call = rlang::caller_env()) {
       "Cannot use {.arg hardware} with
        {.arg video_codec} = {.val {video_codec}}.",
       "x" = "No hardware encoder family maps to that codec.",
-      "i" = "The families are {.val {hardware_codec_families()}} (e.g.
-             {.val libx264}, {.val libx265}, {.val libaom-av1})."
+      # The families some backend actually encodes, not hardware_codec_families():
+      # that vector holds "prores" so the nvenc refusal can name the family
+      # (Decisions, T2/T3), and a hint naming it would send the caller to a
+      # value every backend then refuses (pass 2, finding 4).
+      "i" = "The families are
+             {.val {unique(unlist(hardware_backend_families(), use.names = FALSE))}}
+             (e.g. {.val libx264}, {.val libx265}, {.val libaom-av1})."
     ),
     call = call
   )
@@ -3665,6 +3691,9 @@ check_vocab_arg <- function(value, values, arg, call = rlang::caller_env()) {
 #'   message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
 #'   \code{video_codec = NULL} the fallback leaves the codec unset rather
 #'   than picking one, so the codec never changes silently.
+#'   A \code{video_codec} in a family that backend has no encoder for is a
+#'   wrong argument rather than an absent encoder, so it aborts whatever
+#'   \code{fallback} says.
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each segment's command (\code{TRUE}, default) or
 #'   only compile them (\code{FALSE}).
@@ -4549,6 +4578,9 @@ derive_standardized_names <- function(input) {
 #'   requested but its encoder is unavailable, re-encode with the software
 #'   \code{video_codec} and a message (\code{TRUE}) instead of aborting
 #'   (\code{FALSE}, default).
+#'   A \code{video_codec} in a family that backend has no encoder for is a
+#'   wrong argument rather than an absent encoder, so it aborts whatever
+#'   \code{fallback} says.
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
 #'   default) or only compile them for inspection (\code{FALSE}).
@@ -6273,6 +6305,9 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #'   requested but its encoder is unavailable, re-encode with software
 #'   libx264 and a message (\code{TRUE}) instead of aborting (\code{FALSE},
 #'   default).
+#'   A \code{video_codec} in a family that backend has no encoder for is a
+#'   wrong argument rather than an absent encoder, so it aborts whatever
+#'   \code{fallback} says.
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
@@ -6892,6 +6927,9 @@ compare_videos_pipeline <- function(infiles, outfile,
 #'   message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
 #'   \code{video_codec = NULL} the fallback leaves the codec unset rather
 #'   than picking one, so the codec never changes silently.
+#'   A \code{video_codec} in a family that backend has no encoder for is a
+#'   wrong argument rather than an absent encoder, so it aborts whatever
+#'   \code{fallback} says.
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
@@ -7058,6 +7096,9 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
 #'   message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
 #'   \code{video_codec = NULL} the fallback leaves the codec unset rather
 #'   than picking one, so the codec never changes silently.
+#'   A \code{video_codec} in a family that backend has no encoder for is a
+#'   wrong argument rather than an absent encoder, so it aborts whatever
+#'   \code{fallback} says.
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).

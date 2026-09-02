@@ -67,7 +67,7 @@ cached_encoder_names <- function() {
 #'   tidymedia at a different binary.
 #' @family capability functions
 #' @examples
-#' # After installing FFmpeg or an NVIDIA driver mid-session:
+#' # After installing FFmpeg, or a GPU driver or OS update mid-session:
 #' refresh_ffmpeg_capabilities()
 #' @export
 refresh_ffmpeg_capabilities <- function() {

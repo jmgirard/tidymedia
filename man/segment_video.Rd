@@ -87,7 +87,10 @@ such a call aborts without probing.}
 requested but its encoder is unavailable, encode in software with a
 message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
 \code{video_codec = NULL} the fallback leaves the codec unset rather
-than picking one, so the codec never changes silently.}
+than picking one, so the codec never changes silently.
+A \code{video_codec} in a family that backend has no encoder for is a
+wrong argument rather than an absent encoder, so it aborts whatever
+\code{fallback} says.}
 
 \item{audio_stream}{The 0-based index of the audio track to carry into the output, counted \emph{among the input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) carries \strong{every} audio track. The every-track family reads \code{NULL} this way -- \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus their \code{_batch} siblings. The first-track family takes one track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus theirs. Subtitle and data streams are not carried either way. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 

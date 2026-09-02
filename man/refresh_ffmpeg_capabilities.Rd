@@ -45,7 +45,7 @@ remembered: they query FFmpeg on every call, so they always report the build
 as it is now, whether or not this function has been called.
 }
 \examples{
-# After installing FFmpeg or an NVIDIA driver mid-session:
+# After installing FFmpeg, or a GPU driver or OS update mid-session:
 refresh_ffmpeg_capabilities()
 }
 \seealso{

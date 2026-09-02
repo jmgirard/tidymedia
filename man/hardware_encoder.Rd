@@ -8,7 +8,7 @@
 hardware_encoder(
   codec = c("h264", "hevc", "av1", "prores"),
   hardware,
-  call = rlang::caller_env()
+  call = rlang::current_env()
 )
 
 has_hardware_encoder(codec = c("h264", "hevc", "av1", "prores"), hardware)

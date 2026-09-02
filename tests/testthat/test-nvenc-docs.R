@@ -17,7 +17,7 @@
 # The same enumeration correction nvenc_hardware_exports() makes.
 hardware_verb_topics <- function(rd) {
   topics <- topics_documenting(rd, "hardware")
-  topics[names(topics) != "hardware_encoder.Rd"]
+  topics[!names(topics) %in% paste0(nvenc_hardware_helpers(), ".Rd")]
 }
 
 # The claim, in the wording the roxygen carries. Matched on a distinctive clause

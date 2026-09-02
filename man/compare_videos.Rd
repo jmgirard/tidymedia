@@ -66,7 +66,10 @@ remembered for the rest of the R session; see
 requested but its encoder is unavailable, encode in software with a
 message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
 \code{video_codec = NULL} the fallback leaves the codec unset rather
-than picking one, so the codec never changes silently.}
+than picking one, so the codec never changes silently.
+A \code{video_codec} in a family that backend has no encoder for is a
+wrong argument rather than an absent encoder, so it aborts whatever
+\code{fallback} says.}
 
 \item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
 or return the compiled command without running it (\code{FALSE}).}

@@ -17,7 +17,8 @@ hw_software_codec <- function(family) {
 # The sweep AC1 names. The domain is `nvenc_hardware_exports()` -- every export
 # carrying a `hardware` formal, less the two capability helpers, whose
 # `hardware` is a different argument over a narrower set (RR07 R8) -- so a
-# seventeenth verb gaining the argument joins this sweep by existing.
+# seventeenth verb gaining the argument is swept the moment the count below is
+# updated to admit it, rather than being missed silently.
 #
 # Each verb's ACCEPTED set is its `hardware` formal's own default, and that is
 # true only because every one of them calls bare `rlang::arg_match(hardware)`
@@ -170,6 +171,31 @@ test_that("the exported predicate is blamed for its own out-of-table pair", {
   expect_match(conditionMessage(cnd), "videotoolbox", fixed = TRUE)
   expect_match(rlang::expr_deparse(conditionCall(cnd))[[1]],
                "^has_hardware_encoder\\(")
+})
+
+test_that("the exported mapper is blamed for its own out-of-table pair", {
+  # The sibling of the test above, and the reason `call` defaults to this
+  # function's own frame rather than `caller_env()`. Every internal caller
+  # threads a verb's frame, so the default is reached only by a direct call --
+  # where `caller_env()` named the user's own frame, or nothing at all at the
+  # console, and the refusal arrived with no function attached to it.
+  cnd <- rlang::catch_cnd(hardware_encoder("av1", "videotoolbox"))
+  expect_s3_class(cnd, "rlang_error")
+  expect_match(rlang::expr_deparse(conditionCall(cnd))[[1]],
+               "^hardware_encoder\\(")
+})
+
+test_that("the unmappable-codec hint names only families a backend encodes", {
+  # `hardware_codec_families()` holds "prores" so the nvenc refusal can name the
+  # family it was asked for; a hint drawn from it would send the caller to a
+  # value every backend then refuses.
+  cnd <- rlang::catch_cnd(tidymedia:::codec_family("libvpx-vp9"))
+  msg <- conditionMessage(cnd)
+  for (fam in unique(unlist(tidymedia:::hardware_backend_families(),
+                            use.names = FALSE))) {
+    expect_match(msg, fam, fixed = TRUE)
+  }
+  expect_no_match(msg, "prores", fixed = TRUE)
 })
 
 # AC3 -- the two routes to the probe's answer -----------------------------------

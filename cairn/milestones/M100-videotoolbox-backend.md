@@ -44,7 +44,7 @@ milestone's, since adding an argument is additive and outside D014.
 
 ## Acceptance criteria
 
-- [ ] AC1 `hardware=` accepts `"videotoolbox"` wherever it accepts `"nvenc"`,
+- [x] AC1 `hardware=` accepts `"videotoolbox"` wherever it accepts `"nvenc"`,
       with `"none"` still first so the default is unchanged. The exported domain
       is enumerated by the suite's existing `nvenc_hardware_exports()`
       (`tests/testthat/helper-nvenc-memo.R`) — 16 at HEAD — and each verb's
@@ -91,7 +91,7 @@ milestone's, since adding an argument is additive and outside D014.
 - [x] AC5 The exported availability helper answers for either backend, not only
       nvenc: under AC3's pools it reports videotoolbox available and nvenc not,
       and the reverse, under whatever name M099 settled.
-- [ ] AC6 The user-facing text describes a vocabulary, not one backend, over a
+- [x] AC6 The user-facing text describes a vocabulary, not one backend, over a
       domain wider than `man/`: the three topics
       `grep -rln "tidymedia.hardware_encoders" man/` returns, which are the same
       three at HEAD; the paragraph and chunk in `vignettes/workflow.Rmd` under
@@ -250,53 +250,14 @@ milestone's, since adding an argument is additive and outside D014.
 - 2026-09-02 implement T9: `devtools::document()` produces no diff, `pkgdown::check_pkgdown()` reports no problems, `devtools::test()` is 0 failures / 11271 passing / 18 skipped (the 10 warnings are the pre-existing dropped-audio-track warnings from execution tests, none in this milestone's files), and `devtools::check()` is Status: OK -- 0 errors, 0 warnings, 0 notes. One spelling NOTE fired first and was closed by `spelling::update_wordlist()` adding `backend's`, `hevc` and `videotoolbox` to `inst/WORDLIST`. `README.Rmd` names neither `hardware` nor nvenc, so it needs no re-knit.
 - 2026-09-02 review: branch pushed; draft PR #104 opened so CI runs during the review; PR URL recorded in the header. Evidence gathering in progress — `cairn_validate` passes (exit 0, no release-window advisory), AC1 and AC6 instruments measured, blame-history and prior-review lenses returned; `devtools::test()` and the [O] diff reviewer still outstanding.
 - 2026-09-02 review: RETURNED to in-progress. AC6 fails -- two of the three `man/` topics its grep names were never touched and still read nvenc-only (`refresh_ffmpeg_capabilities.Rd:17`, `tidymedia-package.Rd:110,113,120,200`), though T8 records the three help topics as done. AC1 fails -- the sweep it names (T5: extend `nvenc_hardware_exports()` into it) is absent; the property holds at all 16 verbs and the resolver, but the only default assertion in the suite is `test-video-codec.R:518` over eight hand-listed verbs. AC2-AC5 and AC7 verified and ticked. Nine further findings actioned in the Review section, the first being a blame regression: the (family, backend) refusal names `hardware_encoder()` where master named the verb. Draft PR #104 stays open. First defect return.
-- 2026-09-02 implement, defect-return repairs. AC1's missing sweep written:
-  `test-hardware-backends.R` now enumerates `nvenc_hardware_exports()` (16) plus
-  `resolve_hw_encoder()` and asserts each one's `hardware` default is
-  `c("none", "nvenc", "videotoolbox")` with `"none"` first AND that its single
-  `arg_match(hardware)` call is bare -- one argument, no `values=` -- since the
-  formal's default is the accepted set only under that condition. The
-  instrument was discriminated before it was trusted: a `values=` variant gives
-  a length-3 call with names, a verb with no `arg_match` gives zero calls, and
-  both fail the sweep. AC6's two untouched topics rewritten: `R/cache.R`'s
-  "The first `hardware = \"nvenc\"` call in an R session" now names either
-  backend, and `R/tidymedia-package.R`'s three nvenc-only passages (the
-  refusal-ordering paragraph, the fan-out paragraph, and the
-  `tidymedia.hardware_encoders` example) now read over the vocabulary.
-- 2026-09-02 implement, defect-return repairs, the eight branch findings.
-  (1) `hardware_encoder()` takes `call = rlang::caller_env()` and threads it to
-  the (family, backend) refusal, so `standardize_video(video_codec =
-  "libaom-av1", hardware = "videotoolbox")` is blamed on the verb again as
-  master's `codec_family(video_codec, call = call)` was; both refusal tests now
-  assert `conditionCall`, which is what "refused at the verb" claimed.
-  `arg_match()` is deliberately NOT given `error_call`: that would move the
-  census cell `has_hardware_encoder/hardware -> hardware_encoder` the review
-  dispositioned as intentional. (4) see this file's Decisions entry.
-  (6) the fallback test matched `backend` where the interpolated encoder name
-  already contains it, so deleting the leading token left it green; it now
-  matches `paste0(backend, " encoder")`. (8) `DESIGN.md`'s "Eleven arguments"
-  is twelve, naming `has_hardware_encoder()`'s `hardware` beside its `codec`.
-  (9) `format_for_web()`'s `@param hardware` said the backends are used
-  "whichever is available"; it now says the named backend is used and an
-  unavailable one aborts unless `fallback = TRUE`. (10) both helpers spell
-  their `codec` default literally, since an Rd usage line publishes a default
-  verbatim and `hardware_codec_families()` is not exported; a new test pins the
-  literals against the tables they mirror. (14) `NEWS.md`'s "instead of a
-  command that dies inside FFmpeg" contrast dropped -- at master the pair was
-  refused, not run. (15) the vignette's "an error naming both" now names what
-  both are. Findings 5, 7, 11, 12 and 13 stand rejected as the review
-  dispositioned them.
-- 2026-09-02 implement T9 re-run after the repairs: `devtools::document()`
-  produces no diff, `pkgdown::check_pkgdown()` reports no problems,
-  `devtools::test()` is 0 failures / 11365 passing / 18 skipped (the same 18
-  skips and 10 pre-existing dropped-audio-track warnings the review recorded;
-  the 94 added assertions are AC1's sweep, the literal-vocabulary pin, the two
-  `conditionCall` assertions and the predicate-blame test), and
-  `devtools::check()` is Status: OK -- 0 errors, 0 warnings, 0 notes, 6m 11s.
-  Status back to review. AC1's and AC6's checkboxes are left for review to tick
-  from its own evidence.
+- 2026-09-02 implement, defect-return repairs. AC1's missing sweep written: `test-hardware-backends.R` now enumerates `nvenc_hardware_exports()` (16) plus `resolve_hw_encoder()` and asserts each one's `hardware` default is `c("none", "nvenc", "videotoolbox")` with `"none"` first AND that its single `arg_match(hardware)` call is bare -- one argument, no `values=` -- since the formal's default is the accepted set only under that condition. The instrument was discriminated before it was trusted: a `values=` variant gives a length-3 call with names, a verb with no `arg_match` gives zero calls, and both fail the sweep. AC6's two untouched topics rewritten: `R/cache.R`'s "The first `hardware = \"nvenc\"` call in an R session" now names either backend, and `R/tidymedia-package.R`'s three nvenc-only passages (the refusal-ordering paragraph, the fan-out paragraph, and the `tidymedia.hardware_encoders` example) now read over the vocabulary.
+- 2026-09-02 implement, defect-return repairs, the eight branch findings. (1) `hardware_encoder()` takes `call = rlang::caller_env()` and threads it to the (family, backend) refusal, so `standardize_video(video_codec = "libaom-av1", hardware = "videotoolbox")` is blamed on the verb again as master's `codec_family(video_codec, call = call)` was; both refusal tests now assert `conditionCall`, which is what "refused at the verb" claimed. `arg_match()` is deliberately NOT given `error_call`: that would move the census cell `has_hardware_encoder/hardware -> hardware_encoder` the review dispositioned as intentional. (4) see this file's Decisions entry. (6) the fallback test matched `backend` where the interpolated encoder name already contains it, so deleting the leading token left it green; it now matches `paste0(backend, " encoder")`. (8) `DESIGN.md`'s "Eleven arguments" is twelve, naming `has_hardware_encoder()`'s `hardware` beside its `codec`. (9) `format_for_web()`'s `@param hardware` said the backends are used "whichever is available"; it now says the named backend is used and an unavailable one aborts unless `fallback = TRUE`. (10) both helpers spell their `codec` default literally, since an Rd usage line publishes a default verbatim and `hardware_codec_families()` is not exported; a new test pins the literals against the tables they mirror. (14) `NEWS.md`'s "instead of a command that dies inside FFmpeg" contrast dropped -- at master the pair was refused, not run. (15) the vignette's "an error naming both" now names what both are. Findings 5, 7, 11, 12 and 13 stand rejected as the review dispositioned them.
+- 2026-09-02 review pass 2: every criterion passes with fresh evidence, AC1's sweep and AC6's three topics included; `cairn_validate` exit 0 (42 advisory work-log-format warnings cleared by reflowing the repair entries to one line each, token multiset unchanged). Three lenses: blame-history none, prior-review 2, diff-bug 15. Seven fixed on the branch (the exported mapper's anonymous refusal, the hint advertising `prores`, the 11 `@param fallback` blocks' missing disclosure, `DESIGN.md`'s conflated census cell, the `refresh_ffmpeg_capabilities` example comment, the sweep's contradictory comment, `test-nvenc-docs.R`'s hardcoded topic exclusion), two to a candidate row, eight rejected. No return-floor finding; M100 stands at one defect return.
+- 2026-09-02 implement T9 re-run after the repairs: `devtools::document()` produces no diff, `pkgdown::check_pkgdown()` reports no problems, `devtools::test()` is 0 failures / 11365 passing / 18 skipped (the same 18 skips and 10 pre-existing dropped-audio-track warnings the review recorded; the 94 added assertions are AC1's sweep, the literal-vocabulary pin, the two `conditionCall` assertions and the predicate-blame test), and `devtools::check()` is Status: OK -- 0 errors, 0 warnings, 0 notes, 6m 11s. Status back to review. AC1's and AC6's checkboxes are left for review to tick from its own evidence.
 
 ## Review
+
+### Pass 1 — returned 2026-09-02
 
 Reviewed 2026-09-02 against `origin/master` (level with local `master`; no merge
 needed). Draft PR #104. Evidence below is this session's own, by command.
@@ -451,3 +412,192 @@ under the return floor, not an amendment return: both are satisfiable as
 written, and the gap is work not yet done rather than a wrong promise. Nine
 further findings are actioned above. This is M100's first defect return; no
 thrash threshold fires.
+
+### Pass 2 — 2026-09-02
+
+Re-reviewed after the defect-return repairs, against `origin/master` (level with
+local `master` after `git fetch`; branch 9 commits ahead, no merge needed). Draft
+PR #104. Evidence below is this session's own, by command; no pass-1 evidence is
+reused.
+
+#### Acceptance criteria
+
+- [x] **AC1 — now passes.** The sweep the criterion names exists:
+  `test-hardware-backends.R:53` enumerates `nvenc_hardware_exports()`, asserts
+  the domain is 16, and for each member plus `resolve_hw_encoder()` asserts the
+  `hardware` default is `c("none", "nvenc", "videotoolbox")`, that `"none"` is
+  first, and that the body's single `arg_match(hardware)` is bare — one
+  argument, no `values=`. The instrument was discriminated independently this
+  session against four probes: a `values=` variant yields a length-3 call with
+  names (fails two assertions), a body with no `arg_match` yields zero calls
+  (fails the length-1 assertion), and a reordered default fails the `"none"`-first
+  assertion. The property itself was re-measured over the namespace: 16 members,
+  none with a wrong default, resolver included.
+- [x] **AC2.** Re-measured. `test-hardware-backends.R` iterates
+  `hardware_backend_families()` for all five declared cells; both refusals fire
+  with the backend and family named and neither names the other backend
+  (`videotoolbox has no "av1" encoder.`, `nvenc has no "prores" encoder.`), and
+  each is now blamed on the verb — `conditionCall` measured as
+  `standardize_video(...)`, asserted in the suite.
+- [x] **AC3.** Both routes pass in the full suite run below; memo route with the
+  option unset and `cached_encoder_names()` mocked, option route with the option
+  set and no mock, four outcomes each way, and `fallback = TRUE` falling back per
+  backend with a message naming it.
+- [x] **AC4.** The executing test ran rather than skipped (no
+  `test-hardware-backends.R` entry among the 18 skips), and the path was
+  exercised directly this session: `h264 (native) -> h264 (h264_videotoolbox)`.
+- [x] **AC5.** `has_hardware_encoder()` answers per backend under both pools.
+- [x] **AC6 — now passes.** All three topics its grep names
+  (`hardware_encoder.Rd`, `refresh_ffmpeg_capabilities.Rd`,
+  `tidymedia-package.Rd`) describe the vocabulary: pass 1's two failing passages
+  are rewritten (`refresh_ffmpeg_capabilities.Rd:17-18` now reads
+  `hardware = "nvenc"` **or** `hardware = "videotoolbox"`, whichever comes first;
+  `tidymedia-package.Rd:110` and `:202` put the probe and the override option in
+  both backends' terms). The vignette teaches naming a backend and checking under
+  the same name; `_pkgdown.yml`'s section prose reads "opt-in hardware (GPU)
+  encoding" and needs no rewrite; `NEWS.md` names videotoolbox and each backend's
+  families. One nvenc-only line inside the domain remained — the
+  `refresh_ffmpeg_capabilities` example comment — recorded as finding 5 below and
+  fixed on the branch; it is an illustrative aside inside a topic whose own
+  description now covers both backends, not a passage describing one backend,
+  which is what pass 1 failed the criterion on.
+- [x] **AC7.** `devtools::test()` 0 failures / 11,365 passing / 18 skipped (all
+  pre-existing; the 10 warnings are pre-existing dropped-audio-track warnings in
+  untouched files). `devtools::document()` no diff. `pkgdown::check_pkgdown()` no
+  problems. `devtools::check()` Status: OK — 0 errors, 0 warnings, 0 notes,
+  6m 7s. Re-run in full after this pass's seven fixes: `devtools::test()` 0
+  failures / 11,371 passing / 18 skipped, `pkgdown::check_pkgdown()` no problems,
+  `devtools::check()` Status: OK, 5m 28s, `devtools::document()` no diff.
+
+#### Consistency gate
+
+`cairn_validate.py` exit 0, all 16 checks PASS, no `release window` advisory. It
+first reported 42 advisory `work-log format` warnings — the repair entries were
+written as wrapped multi-line bullets; reflowed to one line each (token multiset
+verified identical before and after), and the run is now fully clean. No
+principle change, so `cairn_impact.py` does not apply. Toolchain slot: the four
+`consistency-gate` commands are recorded under AC7; `README.md` unaffected;
+`NEWS.md` entries present; no new top-level files.
+
+#### Findings
+
+Three fresh-context lenses, distinct evidence bases. **[S] blame-history: no
+findings** — every deviation from master traces to a recorded D-entry or
+Decisions entry; D035, D044, D050, D074 and D075's orderings survive the rename
+and the `call` threading. **[S] prior-review record: 2 findings** (`gh api
+.../pulls/comments` returned `[]`, so the PR-thread walk was skipped; the
+archived `## Review` sections were the evidence). **[O] diff-bug: 15 findings.**
+Numbered below in one ranked list; each was verified against the implementation
+before disposition.
+
+1. **The exported mapper's own refusal became anonymous** — CONFIRMED, a defect
+   introduced by pass 1's finding-1 repair. `hardware_encoder()` defaulted
+   `call = rlang::caller_env()`, so `hardware_encoder("av1", "videotoolbox")`
+   typed directly is blamed on the *caller's* frame — `NULL`, printing
+   `Error: videotoolbox has no "av1" encoder.` with no function named — while the
+   sibling `has_hardware_encoder()` correctly names itself. Every internal caller
+   threads `call` explicitly (`R/ffmpeg.R:3161`, `:3254`), so the default is
+   reached only by a direct call. → **fixed on the branch**: default is
+   `rlang::current_env()`, pinned by a new sibling test.
+2. **`codec_family()`'s hint advertises a family no backend can encode** —
+   CONFIRMED. `standardize_video(video_codec = "libvpx-vp9", hardware = "nvenc")`
+   said `The families are "h264", "hevc", "av1", and "prores"`; a caller who
+   retries with a ProRes codec gets a second error. The `"prores"` member exists
+   so the nvenc refusal can name the family (Decisions, T2/T3) — it is the
+   mapper's vocabulary, not the set that succeeds. Master's hint listed only the
+   three that work. → **fixed on the branch**: the hint is drawn from the union
+   of the table's rows, pinned by a new test.
+3. **The 16 verbs' `@param fallback` does not disclose that `fallback = TRUE`
+   still aborts for an out-of-table pair** — CONFIRMED. Measured:
+   `standardize_video(..., video_codec = "libaom-av1", hardware = "videotoolbox",
+   fallback = TRUE)` aborts. The behavior is deliberate and argued in the code
+   (a pair no backend encodes is a wrong argument, not an absent encoder) and is
+   disclosed in `man/hardware_encoder.Rd`'s `@return`, but not where the caller
+   reads it. → **fixed on the branch**: one clause added to all 11 `@param
+   fallback` blocks.
+4. **`DESIGN.md`'s Known-issues cell conflates two refusals** (prior-review
+   lens) — CONFIRMED as an ambiguity, and the bullet's own scoping sentence
+   ("M096's member x formal x wrong-form census") makes the claim accurate for
+   the cell it means. Measured: a wrong-form value is blamed on
+   `hardware_encoder(codec, hardware, call = call)`, an out-of-table pair on
+   `has_hardware_encoder("av1", "videotoolbox")`. A reader consulting the census
+   for the second case would be misled. → **fixed on the branch**: the clause now
+   says wrong-form, and names the other cell's frame parenthetically.
+5. **AC6 leftover inside AC6's own grep domain** — CONFIRMED.
+   `R/cache.R:70` / `man/refresh_ffmpeg_capabilities.Rd:47`'s example comment read
+   "After installing FFmpeg or an NVIDIA driver mid-session". → **fixed on the
+   branch** (it now reads "a GPU driver or OS update"). Dispositioned as a
+   finding rather than an AC6 return: see AC6 above.
+6. **The AC1 sweep's own comment contradicts its count assertion** — CONFIRMED.
+   The header said a seventeenth verb "joins this sweep by existing" where
+   `expect_equal(length(members), 16L)` makes it fail. The guard is right (it
+   catches a silently-emptied domain); the comment was wrong. → **fixed on the
+   branch.**
+7. **`test-nvenc-docs.R` excludes the helper topic by hardcoded filename** —
+   CONFIRMED. `topics[names(topics) != "hardware_encoder.Rd"]` stops matching
+   silently if the topic is renamed, and D014's rename window is still open.
+   `nvenc_hardware_helpers()` already exists to drive it. → **fixed on the
+   branch.**
+8. **The out-of-table refusal no longer echoes the caller's `video_codec`
+   value** — CONFIRMED, a message-quality regression. Master:
+   `Cannot use hardware = "nvenc" with video_codec = "prores_ks".` HEAD:
+   `nvenc has no "prores" encoder.` — the user's string never appears, and in a
+   `_batch` call nothing identifies the failing row. The cause is structural:
+   `codec_family()` now places `prores_ks`, so the refusal moves to
+   `hardware_encoder()`, which by RR07 R4's siting decision knows only the family.
+   Restoring the echo means either threading the raw value into an exported
+   function's signature or duplicating the refusal in `resolve_hw_encoder()` —
+   a design call, not a mechanical fix. AC2's promise (name the backend and the
+   family) is met. → **follow-up: candidate row.**
+9. **AC1's sweep is syntactic and misses a live violation class** — CONFIRMED as
+   an instrument-strength gap, not a live bug. A verb could carry the right
+   default and a bare `arg_match` and still drop the value (e.g.
+   `if (identical(hardware, "videotoolbox")) hardware <- "none"`) and pass; only
+   `standardize_video()` and `standardize_video_batch()` are exercised
+   behaviorally with the backend. The [O] lens compiled all 16 independently and
+   all 16 emit `h264_videotoolbox`, so the property holds today. AC1's own
+   wording names exactly the two clauses the sweep asserts, so this is not a
+   criterion failure. → **follow-up: candidate row.**
+10. **`has_hardware_encoder("h264")`'s missing-argument error names
+    `hardware_encoder(codec, hardware, call = call)`** — CONFIRMED, re-reported
+    by [O] against pass 1's disposition. Knowingly taken: `arg_match()` is
+    deliberately not given `error_call`, because supplying it moves the census
+    cell `has_hardware_encoder/hardware -> hardware_encoder` that `DESIGN.md`
+    now records as accepted. → **rejected**, intentional and disclosed; raised
+    to the maintainer at the gate because two independent passes flagged it.
+11. **`hardware_encoder()` publishes a `call =` formal its sibling lacks** —
+    CONFIRMED ([O] and the prior-review lens, which reads it against RR07 R2's
+    "the pair share one signature"). It is the rlang house pattern, defaulted,
+    and documented in the shared topic; RR07 R2 was about `hardware` having no
+    default, not about internal plumbing. → **rejected**, raised at the gate.
+12. **A defaulted `codec` sits before the required `hardware`** — CONFIRMED as
+    described. D079 kept `codec`'s default deliberately. → **rejected**,
+    intentional change the plan called for.
+13. **The `tidymedia.hardware_encoders` example names both an NVIDIA and an
+    Apple encoder** — CONFIRMED as unusual hardware. The example's job is to show
+    what the option's values look like across the vocabulary this milestone
+    ships, which is served by naming both. → **rejected**, style.
+14. **`"prores"` is a documented `codec` value that can never succeed** —
+    CONFIRMED as described, re-reported against pass 1's disposition. The
+    Decisions entry of 2026-09-02 (T2/T3) chose exactly this so the nvenc refusal
+    could name the family, and `man/hardware_encoder.Rd:19` discloses it. →
+    **rejected**, intentional change the plan called for.
+15. **Six-plus added lines exceed 80 columns** — → **rejected**, formatter-class,
+    as in pass 1.
+16. **A `_batch` call with `fallback = TRUE` and an out-of-table row aborts
+    inside `purrr::pmap()` after earlier rows encoded** — CONFIRMED as behavior.
+    Pre-existing at master for nvenc + prores and pinned deliberately at
+    `test-nvenc-front-door.R:236`; the diff widens which pairs reach it, not the
+    shape. → **rejected**, pre-existing; the widened exposure is noted at the
+    gate.
+17. **[S] blame-history returned no findings** — recorded so the lens's clean
+    result is on the record, not inferred from silence.
+
+#### Outcome
+
+Every acceptance criterion passes with fresh evidence, AC1 and AC6 included.
+Seven findings fixed on the branch, two routed to a candidate row, eight
+rejected with reasons. No finding demonstrates a criterion failing inside its
+named procedure's domain, so the return floor is not reached. M100 stands at one
+defect return (pass 1); no thrash threshold fires.
+

@@ -224,6 +224,43 @@ check_token <- function(x, arg = rlang::caller_arg(x), allow_null = FALSE,
   invisible(x)
 }
 
+# check_sha256() ----------------------------------------------------------
+
+# Validate that `x` is a SHA-256 digest written the way one is written down:
+# a single string of 64 hexadecimal characters, in either case. The SHAPE only
+# -- whether it is the RIGHT digest for a given file is what the comparison
+# this feeds decides, and that comparison reports a different failure.
+#
+# `allow_null` exists for the same reason it does on check_token() above: on
+# `install_on_win(archive_checksum = )` the `NULL` is the documented default
+# meaning "no digest supplied", so refusing it with check_string()'s own
+# wording would tell a caller that the default is illegal (M42/D022).
+#
+# Sited here, beside the package's other front-door checks, deliberately: like
+# them its refusal carries no `tidymedia_*` class. Those classes describe what
+# went wrong DURING an install -- a download that did not arrive, a digest that
+# did not match -- and a malformed argument means no install was attempted at
+# all (M102 AC2). Keeping the abort out of `install_on_win()`'s own body is
+# also what lets AC6's census of that body's exits stay exactly true.
+check_sha256 <- function(x, arg = rlang::caller_arg(x), allow_null = FALSE,
+                         call = rlang::caller_env()) {
+  rlang::check_string(x, arg = arg, allow_null = allow_null, call = call)
+  if (allow_null && is.null(x)) {
+    return(invisible(x))
+  }
+  if (!grepl("^[0-9a-fA-F]{64}$", x)) {
+    cli::cli_abort(
+      c(
+        "{.arg {arg}} must be a SHA-256 digest: 64 hexadecimal characters.",
+        "x" = "{.val {x}} is not."
+      ),
+      call = call
+    )
+  }
+  invisible(x)
+}
+
+
 # type_columns() ----------------------------------------------------------
 
 # Coerce every column of a character metadata tibble to its natural R type,

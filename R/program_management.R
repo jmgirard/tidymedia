@@ -305,13 +305,99 @@ tm_cli_escape <- function(x) {
 # the one the call makes.
 tm_install_registers <- c("ffmpeg", "ffprobe", "ffplay")
 
+# Of those three, the two the package itself calls. `ffplay` is reachable only
+# through find_ffplay()/set_ffplay() and nothing in tidymedia invokes it, so a
+# build that omits it is an install worth completing; a build with no `ffmpeg`
+# or no `ffprobe` is not (M102 AC4).
+tm_install_required <- c("ffmpeg", "ffprobe")
+
+# The build install_on_win() fetches when the caller names no URL. Named once
+# so the sidecar decision compares against the same string the download uses,
+# rather than against a second copy of it that could drift.
+tm_default_download_url <-
+  "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.7z"
+
+# Where a source publishes its archive's digest: the archive URL with
+# `.sha256` appended, which is what gyan.dev writes beside every build.
+tm_sidecar_url <- function(download_url) {
+  paste0(download_url, ".sha256")
+}
+
+# Pull a SHA-256 out of a published sidecar body. Three spellings are in the
+# wild and all three are accepted: a bare digest on its own, `sha256sum`'s
+# "<hex>  <file>" pair, and OpenSSL's "SHA256(<file>)= <hex>". Hex case is not
+# significant in any of them, so the digest comes back lowercased and every
+# comparison downstream can be a plain identical().
+#
+# Returns NULL where no line matches, rather than aborting. Every helper this
+# milestone adds returns instead of aborting, deliberately: install_on_win()
+# raises all of its classed refusals in its own body, which is what makes the
+# census AC6 derives from that body's exits exactly true rather than nearly so.
+tm_parse_sidecar <- function(lines) {
+  patterns <- c(
+    # A digest alone, or first of two whitespace-separated fields.
+    "^[[:space:]]*([0-9a-fA-F]{64})([[:space:]]|$)",
+    "SHA256[[:space:]]*\\([^)]*\\)[[:space:]]*=[[:space:]]*([0-9a-fA-F]{64})"
+  )
+  for (line in lines) {
+    for (pattern in patterns) {
+      found <- regmatches(line, regexec(pattern, line))[[1]]
+      if (length(found)) return(tolower(found[[2]]))
+    }
+  }
+  NULL
+}
+
+# The SHA-256 of a file on disk. `digest` reads the file in chunks rather than
+# into memory, which matters for a several-hundred-megabyte build (D081).
+tm_archive_digest <- function(path) {
+  tolower(digest::digest(path, algo = "sha256", file = TRUE))
+}
+
+# Fetch `url` to `destfile`. `utils::download.file()`'s contract allows two
+# shapes of failure -- signalling a condition of its own, and returning a
+# non-zero status -- and this covers both in one value: TRUE where the file
+# arrived, the signalled condition where there was one, and NULL where the
+# status was non-zero and nothing was signalled. The caller turns anything but
+# TRUE into its own classed refusal, retaining the condition as `parent` where
+# one exists.
+tm_fetch <- function(url, destfile) {
+  tryCatch(
+    {
+      status <- utils::download.file(url = url, destfile = destfile, mode = "wb")
+      if (identical(as.integer(status), 0L)) TRUE else NULL
+    },
+    error = function(cnd) cnd
+  )
+}
+
+# Unpack `archive` into `dir`. TRUE, or FALSE where libarchive refused.
+#
+# The condition is dropped rather than returned, which is the one place this
+# milestone deliberately loses information: libarchive's message is a C++
+# source location and an internal function name (`archive_extract.cpp:140
+# archive_read_open1(): Unrecognized archive format`), which tells the reader
+# of an R error nothing they can act on. The caller's refusal names the archive
+# and the directory instead (M102 AC3).
+tm_unpack <- function(archive, dir) {
+  tryCatch(
+    {
+      archive::archive_extract(archive, dir = dir, strip_components = 1)
+      TRUE
+    },
+    error = function(cnd) FALSE
+  )
+}
+
 tm_install_binary <- function(install_dir, program) {
   file.path(install_dir, "bin", paste0(program, ".exe"))
 }
 
-# What the install would do, one item per line: the archive to be fetched,
-# the directory it unpacks into, and each remembered-location file it
-# overwrites. Every caller-supplied value goes through a cli field, which does
+# What the install would do, one item per line: the published digest where
+# one will be fetched, the archive to be fetched, the directory it unpacks
+# into, and each remembered-location file it overwrites. `sidecar_url` is NULL
+# on the paths that fetch no digest, so the prompt names every fetch the call
+# makes and only those (M101; M102 AC1/AC2). Every caller-supplied value goes through a cli field, which does
 # not recurse into the value, so a directory containing braces is shown rather
 # than evaluated (M44); the result is stripped of styling and hyperlinks so
 # what reaches `menu()` is the plain text a test can read back.
@@ -319,9 +405,11 @@ tm_install_binary <- function(install_dir, program) {
 # Both the prompt and the non-interactive refusal are built from this, so a
 # caller who is told to pass `confirm = FALSE` has been shown the same items
 # the prompt would have named.
-tm_install_details <- function(download_url, install_dir, programs) {
+tm_install_details <- function(download_url, install_dir, programs,
+                               sidecar_url = NULL) {
   line <- function(...) cli::ansi_strip(cli::format_inline(..., .envir = parent.frame()))
   c(
+    if (!is.null(sidecar_url)) line("Download: {.url {sidecar_url}}"),
     line("Download: {.url {download_url}}"),
     line("Unpack into: {.file {install_dir}}"),
     vapply(
@@ -334,11 +422,13 @@ tm_install_details <- function(download_url, install_dir, programs) {
 }
 
 # The consent prompt: the question, then the items, one per line.
-tm_install_prompt <- function(download_url, install_dir, programs) {
+tm_install_prompt <- function(download_url, install_dir, programs,
+                              sidecar_url = NULL) {
   paste(
     c(
       "tidymedia is about to install FFmpeg. Proceed?",
-      paste0("* ", tm_install_details(download_url, install_dir, programs))
+      paste0("* ", tm_install_details(download_url, install_dir, programs,
+                                      sidecar_url))
     ),
     collapse = "\n"
   )
@@ -379,54 +469,153 @@ tm_install_prompt <- function(download_url, install_dir, programs) {
 #' @export
 install_on_win <- function(download_url = NULL,
                            install_dir = NULL,
-                           confirm = TRUE) {
+                           confirm = TRUE,
+                           archive_checksum = NULL) {
 
   rlang::check_bool(confirm)
+  check_sha256(archive_checksum, allow_null = TRUE)
 
   if (is.null(download_url)) {
-    download_url <- "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.7z"
+    download_url <- tm_default_download_url
   }
   if (is.null(install_dir)) {
     install_dir <- tm_install_dir()
   }
+  # Which digest, if any, this archive gets checked against.
+  #
+  # A digest the caller supplied wins on every source, the package's own
+  # default included: someone holding a digest already is never sent to fetch
+  # a second copy of one. Otherwise only the default source has a sidecar to
+  # fetch, and the test is against the RESOLVED url -- so a caller who types
+  # that address out in full is verified exactly like one who named nothing.
+  sidecar_url <- NULL
+  if (is.null(archive_checksum) &&
+      identical(download_url, tm_default_download_url)) {
+    sidecar_url <- tm_sidecar_url(download_url)
+  }
   # The consent sits above the first write, so a declined call creates no
   # directory, downloads nothing, and overwrites no remembered location
   # (D080). It asks about the RESOLVED values: a caller who named neither
-  # argument is told what the defaults came out to.
+  # argument is told what the defaults came out to. The sidecar is named here
+  # for the same reason the archive is -- the prompt names every fetch the
+  # call makes, and only the fetches it makes.
   if (confirm) {
-    details <- tm_install_details(download_url, install_dir, tm_install_registers)
+    details <- tm_install_details(
+      download_url, install_dir, tm_install_registers, sidecar_url
+    )
     approved <- tm_confirm(
-      tm_install_prompt(download_url, install_dir, tm_install_registers),
+      tm_install_prompt(download_url, install_dir, tm_install_registers, sidecar_url),
       "i" = "This install would have done the following:",
       rlang::set_names(tm_cli_escape(details), rep("*", length(details))),
       "i" = "Pass {.code confirm = FALSE} to install without being asked."
     )
     if (!approved) return(FALSE)
   }
+  # A caller-named source with no digest to check against is installed anyway
+  # -- refusing would leave such a caller no route at all -- but never
+  # silently: what is unverified is said once, before anything is fetched.
+  if (is.null(archive_checksum) && is.null(sidecar_url)) {
+    cli::cli_inform(c(
+      "!" = "The archive at {.url {download_url}} will not be verified.",
+      "i" = "Pass {.arg archive_checksum} to check it against a digest you have."
+    ))
+  }
   if (!dir.exists(install_dir)) {
     status <- dir.create(install_dir, recursive = TRUE)
     if (status == FALSE) return(FALSE)
   }
-  # Download the installer to a temporary file
-  tf <- tempfile()
-  status <- 
-    utils::download.file(
-      url = download_url, 
-      destfile = tf,
-      mode = "wb"
-    )
-  if (status != 0) {
-    cli::cli_warn("File download failed.")
-    return(FALSE)
+  # Both temporary files go on the exit handler rather than being unlinked at
+  # the end: every abort below happens between here and there, and a refusal
+  # that leaves a several-hundred-megabyte download behind is a bug the
+  # succeeding path would never show (M102 AC3).
+  if (!is.null(sidecar_url)) {
+    sidecar_file <- tempfile()
+    on.exit(unlink(sidecar_file), add = TRUE)
+    # The digest is fetched BEFORE the archive: a source that cannot produce
+    # one refuses in a second rather than after a long download.
+    fetched <- tm_fetch(sidecar_url, sidecar_file)
+    if (!isTRUE(fetched)) {
+      cli::cli_abort(
+        "Can't fetch the published digest at {.url {sidecar_url}}.",
+        class = "tidymedia_checksum_unavailable",
+        parent = if (rlang::is_condition(fetched)) fetched
+      )
+    }
+    archive_checksum <- tm_parse_sidecar(readLines(sidecar_file, warn = FALSE))
+    if (is.null(archive_checksum)) {
+      cli::cli_abort(
+        c(
+          "Can't read a SHA-256 digest from {.url {sidecar_url}}.",
+          "i" = "Expected 64 hexadecimal characters, on their own or in a
+                 {.code sha256sum} or {.code SHA256(file)=} line."
+        ),
+        class = "tidymedia_checksum_unavailable"
+      )
+    }
   }
-  # Extract the archive from the temporary file to the install directory
-  archive::archive_extract(tf, dir = install_dir, strip_components = 1)
-  # Delete the temporary file
-  unlink(tf)
-  # Update the user config files with the locations of the installed files
-  for (program in tm_install_registers) {
+  tf <- tempfile()
+  on.exit(unlink(tf), add = TRUE)
+  fetched <- tm_fetch(download_url, tf)
+  if (!isTRUE(fetched)) {
+    cli::cli_abort(
+      "Can't download the archive at {.url {download_url}}.",
+      class = "tidymedia_download_unavailable",
+      parent = if (rlang::is_condition(fetched)) fetched
+    )
+  }
+  if (!is.null(archive_checksum)) {
+    found <- tm_archive_digest(tf)
+    if (!identical(found, tolower(archive_checksum))) {
+      cli::cli_abort(
+        c(
+          "The downloaded archive does not match its SHA-256 digest.",
+          "i" = "Expected {.val {tolower(archive_checksum)}}.",
+          "x" = "Downloaded {.val {found}}."
+        ),
+        class = "tidymedia_checksum_mismatch"
+      )
+    }
+  }
+  if (!tm_unpack(tf, install_dir)) {
+    cli::cli_abort(
+      c(
+        "Can't unpack the downloaded archive.",
+        "i" = "Archive: {.file {tf}}.",
+        "i" = "Install directory: {.file {install_dir}}."
+      ),
+      class = "tidymedia_archive_unreadable"
+    )
+  }
+  # Register what the extraction actually produced, and nothing else: a
+  # remembered location pointing at a file the archive never contained is a
+  # worse state than no remembered location at all. The required programs are
+  # checked before the first write, so a build missing one leaves every
+  # existing remembered location as it was.
+  unpacked <- tm_install_registers[
+    file.exists(tm_install_binary(install_dir, tm_install_registers))
+  ]
+  absent_required <- setdiff(tm_install_required, unpacked)
+  if (length(absent_required)) {
+    cli::cli_abort(
+      c(
+        "The archive did not contain {.and {.file {absent_required}}}.",
+        "i" = "Looked in {.file {file.path(install_dir, \"bin\")}}.",
+        "i" = "Nothing was registered."
+      ),
+      class = "tidymedia_program_not_extracted"
+    )
+  }
+  absent_optional <- setdiff(tm_install_registers, c(unpacked, absent_required))
+  if (length(absent_optional)) {
+    cli::cli_inform(c(
+      "i" = "The archive did not contain {.and {.file {absent_optional}}};
+             no location was remembered for {cli::qty(length(absent_optional))}
+             {?it/them}."
+    ))
+  }
+  for (program in unpacked) {
     set_program(program, tm_install_binary(install_dir, program))
   }
-  
+
   TRUE
 }

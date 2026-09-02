@@ -202,11 +202,13 @@ test_that("install_on_win()'s own default install dir is R_user_dir()'s ffmpeg s
   )
   # `confirm = FALSE`: this test is about where the default install directory
   # resolves to, and M101 put a consent gate above the resolution's first
-  # write. The gate has its own tests below.
+  # write. The gate has its own tests below. The URL is not the package's own
+  # default, so M102 fetches no digest and says so before it refuses the
+  # download; the refusal is asserted by class, not by base R's wording.
   suppressWarnings(
     expect_error(
-      install_on_win(download_url = missing_archive, confirm = FALSE),
-      "cannot open URL"
+      suppressMessages(install_on_win(download_url = missing_archive, confirm = FALSE)),
+      class = "tidymedia_download_unavailable"
     )
   )
 
@@ -321,16 +323,34 @@ tm_dir_snapshot <- function(...) {
 # test asserts WHICH calls happened rather than only that the function
 # returned. `confirm` is a function of the prompt returning the answer to
 # give; `NULL` leaves the real tm_confirm() in place.
-tm_mock_install <- function(confirm = NULL, env = parent.frame()) {
+tm_mock_install <- function(confirm = NULL, unpack = tm_install_registers,
+                            sidecar = NULL, env = parent.frame()) {
   rec <- new.env(parent = emptyenv())
   rec$download <- list()
+  rec$sidecar <- list()
   rec$extract <- list()
   rec$set <- list()
   rec$prompts <- character(0)
   add <- function(slot, value) rec[[slot]] <- c(rec[[slot]], list(value))
 
+  # The stub archive's body is fixed, so its digest can be computed here and
+  # published by the sidecar mock below. A verifying run therefore passes
+  # because the two agree, not because verification was skipped; a test that
+  # wants a mismatch passes its own `sidecar` body and says so.
+  stub <- withr::local_tempfile(.local_envir = env)
+  writeLines("stub archive", stub)
+  rec$digest <- tm_archive_digest(stub)
+
   testthat::local_mocked_bindings(
     download.file = function(url, destfile, ...) {
+      # The sidecar and the archive are two calls to one function, told apart
+      # here the way install_on_win() builds them: the digest's URL is the
+      # archive's with `.sha256` appended.
+      if (grepl("\\.sha256$", url)) {
+        add("sidecar", list(url = url))
+        writeLines(sidecar %||% rec$digest, destfile)
+        return(0L)
+      }
       # The destfile is a fresh tempfile() on every call, so it is held aside
       # rather than recorded: two runs of the same install must produce equal
       # records. The extract mock below checks the linkage instead.
@@ -347,6 +367,14 @@ tm_mock_install <- function(confirm = NULL, env = parent.frame()) {
         dir = dir,
         from_download = identical(archive, rec$destfile)
       ))
+      # What the extraction PRODUCES is what install_on_win() registers, so
+      # the mock has to leave files behind: `unpack` is how a test says which
+      # programs this build contained.
+      bin <- file.path(dir, "bin")
+      dir.create(bin, recursive = TRUE, showWarnings = FALSE)
+      for (program in unpack) {
+        file.create(file.path(bin, paste0(program, ".exe")))
+      }
       invisible(NULL)
     },
     .package = "archive", .env = env

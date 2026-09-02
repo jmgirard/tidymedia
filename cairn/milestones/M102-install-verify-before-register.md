@@ -116,24 +116,24 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
 
 ## Tasks
 
-- [ ] T1: Add `digest` to `DESCRIPTION` `Imports` (D081 is already appended).
+- [x] T1: Add `digest` to `DESCRIPTION` `Imports` (D081 is already appended).
       The floor measurement moves to T8, where the package actually calls
       `digest` and the run has something to exercise.
-- [ ] T2: Add the sidecar-URL, sidecar-parse and archive-digest helpers, each
+- [x] T2: Add the sidecar-URL, sidecar-parse and archive-digest helpers, each
       returning a value rather than aborting so AC6's census holds; add the
       `archive_checksum` shape check as a `check_*()` helper in `R/utils.R`; add
       `archive_checksum = NULL` last in the signature; wire the sidecar fetch
       above the archive download and the comparison between download and
       extraction (`R/program_management.R:410-424`). (RB tripwire:
       irreversible-api)
-- [ ] T3: Extend `tm_install_details()` so the prompt names the sidecar fetch
+- [x] T3: Extend `tm_install_details()` so the prompt names the sidecar fetch
       beside the archive download, keeping M101's property that the prompt names
       every fetch and write the call makes.
-- [ ] T4: Wrap `utils::download.file()` in a classed refusal retaining the base
+- [x] T4: Wrap `utils::download.file()` in a classed refusal retaining the base
       condition as `parent`, and `archive::archive_extract()` in one that does
       not — libarchive's text is what AC3 excludes; move temp-file cleanup to
       `on.exit()`.
-- [ ] T5: Replace the unconditional `set_program()` loop
+- [x] T5: Replace the unconditional `set_program()` loop
       (`R/program_management.R:427-429`) with a per-program existence check.
 - [ ] T6: Commit the two corrupt-archive fixtures and their `data-raw/`
       generator, which carries their provenance; write the AC1–AC5 tests. Mock
@@ -162,7 +162,8 @@ Consent-gate changes beyond naming the second fetch → M101 shipped it.
 - 2026-09-02: the amended AC2/AC6 wording re-entered the full criteria audit with a second fresh-context [O] reader that authored none of it. Six findings, four fixed at the gate — AC1 and AC2 both claimed the (default URL, digest supplied) case with opposite requirements, so AC1 gained its `archive_checksum` antecedent and AC2 a precedence sentence; AC6's closed exit list rested on an unstated siting rule, now stated in AC6 and carried out by T2; AC2's `check_*()` siting sentence was an implementation constraint, moved to T2; AC2's mock-observability sentence bound an instrument rather than the deliverable, moved to T6. Declined: renaming the two checksum condition classes (a vocabulary tidy that would drag AC1 along) and a fifth rejected-value probe of a non-character type (`rlang::check_string()` owns that branch, and AC2's domain says "string").
 
 - 2026-09-02: the amendment pushed the plan-owned body over the 150-line cap, so the Acceptance criteria section was compressed in one pass, with the Scope and Tasks sections tightened alongside it when the criteria alone could not carry the cut (159 -> 148 lines). A third fresh-context [O] reader diffed the compressed sections against the pre-amendment file and returned promise-preserving; the instrument clauses the compression lifted out of AC1, AC3 and AC5 landed in T6, and five hyphenated words the re-wrap had broken were rejoined.
-- 2026-09-02: T1 checkpoint (not yet ticked, the profile's `verify` run is still in flight) — `digest (>= 0.6.29)` declared in `Imports`, and `data-raw/corrupt-archive-fixtures.R` written for T6. Minor amendment: T1's floor measurement moved to T8, since `--only digest` pins the declared version and runs the suite twice, and until T2 lands nothing in the package calls `digest` for that run to exercise.
+- 2026-09-02: T1 — `digest (>= 0.6.29)` declared in `Imports`, and `data-raw/corrupt-archive-fixtures.R` written for T6. Suite clean at 11435 passing, matching M101's baseline. Minor amendment: T1's floor measurement moved to T8, since `--only digest` pins the declared version and runs the suite twice, and until T2 lands nothing in the package calls `digest` for that run to exercise.
+- 2026-09-02: T2–T5 land together, because each one alone leaves the suite red: T2's second fetch is only legal once T3's prompt names it (M101's property), T4's classed refusals are what T2's verification path aborts through, and T5's registration gate is what the extraction mock T2 needed had to start satisfying. `check_sha256()` joins the front-door family in `R/utils.R`; `tm_sidecar_url()`, `tm_parse_sidecar()`, `tm_archive_digest()`, `tm_fetch()` and `tm_unpack()` all return values rather than aborting, which is AC6's siting rule; `install_on_win()` takes `archive_checksum = NULL` last, fetches the digest above the archive, puts both temporary files on `on.exit()`, and registers only what the extraction left on disk. `tm_mock_install()` gained an `unpack =` argument and a sidecar-aware download mock; the M098 download test now asserts the class rather than base R's "cannot open URL". Suite clean at 11443 passing.
 
 ## Decisions
 

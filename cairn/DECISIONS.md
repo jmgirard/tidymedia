@@ -3883,7 +3883,16 @@ targeted, so where that call fails the refusal names the top of the chain and
 the added files, not each intervening level. A caller told a directory
 survived is told about everything under it; a caller wanting the level-by-level
 list does not get one. The weakening is deliberate and bounded by that:
-nothing survives unnamed or outside something named.
+nothing survives unnamed or outside something named. Where that recursive call
+fails, the added files sitting under the directory it could not remove are
+left where they are rather than deleted one at a time: they are already
+covered by that directory's name, and the path may not resolve where it looks
+like it does. `list.files(recursive = TRUE)` descends THROUGH a directory
+symlink, so a symlink the extraction created reads as a created directory
+whose children belong to the link's target, outside the destination entirely
+— and deleting them there would be the harm this rule exists to prevent, done
+outside the directory the rule is about and named nowhere (M103 review
+pass 3).
 
 **A pre-existing FILE the extraction overwrote or truncated IS removed**, and
 that is not the same case. The extraction opened that path and wrote to it, so
@@ -3908,7 +3917,14 @@ what survived, and the `tidymedia_archive_unreadable` refusal names every
 targeted entry still there. Where nothing survived, the refusal says so; where
 the call created the install directory and then removed it again, the refusal
 names no directory at all, because naming one the caller cannot go and look at
-is worse than naming none.
+is worse than naming none. Two states the refusal must not describe as leaving the
+directory as it found it, both of which it did (M103 review pass 3): a file of
+the caller's the extraction wrote over, removed under the paragraph above,
+leaves no leftover at all, so it is reported separately and by name; and a
+directory this call created and could NOT remove again is not a targeted entry
+either, so it too is named rather than covered by a sentence saying nothing
+changed. Honesty about what was removed is the same promise as honesty about
+what was left.
 
 **What the rule deliberately does not cover** is the
 `tidymedia_program_not_extracted` path. That extraction SUCCEEDED — the

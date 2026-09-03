@@ -1850,6 +1850,84 @@ test_that("a refusal with more leftovers than cli will print still names every o
 })
 
 
+test_that("a refusal that removed a file of the caller's says so", {
+  # M103 review pass 3. D082 removes a pre-existing file the failed
+  # extraction wrote over -- what it holds afterwards is nothing the caller
+  # put there -- and that removal leaves no leftover, so the refusal used to
+  # take the branch saying "the directory holds what it held when this call
+  # started". Measured on this machine: a 22-byte file of the caller's at the
+  # path the fixture writes was gone and the message said nothing had
+  # changed. The message now names it.
+  #
+  # The file is placed at a path the fixture's own `archive::archive()`
+  # listing says it writes, which is what makes the extraction write over it
+  # rather than beside it; the cell above places one where it does not.
+  skip_if_not(tm_unpack_deletes_open_files())
+  tm_redirect_config()
+  tm_redirect_data()
+  fixture <- "corrupt-payload.7z"
+  entry <- tm_fixture_entry(fixture)
+  expect_false(is.null(entry))
+
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+  dir.create(file.path(d, dirname(entry)), recursive = TRUE)
+  mine <- file.path(d, entry)
+  writeLines("the caller's own bytes", mine)
+
+  rec <- tm_mock_install(
+    confirm = function(prompt) TRUE, unpack = NULL,
+    archive = testthat::test_path("fixtures", fixture)
+  )
+  cnd <- tryCatch(
+    install_on_win(install_dir = d, archive_checksum = rec$digest),
+    error = function(cnd) cnd
+  )
+  expect_s3_class(cnd, "tidymedia_archive_unreadable")
+  flat <- gsub("\\s+", " ", cli::ansi_strip(conditionMessage(cnd)))
+
+  # The file really is gone -- the state the message has to describe.
+  expect_false(file.exists(mine))
+  expect_true(grepl(paste0("'", mine, "'"), flat, fixed = TRUE))
+  expect_match(flat, "written over", fixed = TRUE)
+  # And it does NOT claim the directory is as the call found it.
+  expect_false(grepl("Nothing was left behind", flat, fixed = TRUE))
+})
+
+test_that("a refusal that could not remove the directory it created says so", {
+  # M103 review pass 3. Both refusals used `!dir.exists(install_dir)` as the
+  # proxy for "this call created it and took it back", so a created directory
+  # the removal could NOT delete fell through to the sentence claiming the
+  # directory holds what it held -- for a directory that did not exist before
+  # the call. `tm_remove_created_dirs()` now reports what it left standing
+  # and the message names it.
+  tm_redirect_config()
+  tm_redirect_data()
+  d <- file.path(withr::local_tempdir(), "made", "ffmpeg")
+  rec <- tm_mock_install(
+    confirm = function(prompt) TRUE, unpack = NULL,
+    archive = testthat::test_path("fixtures", "not-an-archive.7z")
+  )
+  # The seam that removes a created directory is made to fail, which is the
+  # one thing this cell mocks: the fixture writes nothing, so there is no
+  # leftover and the branch turns on the created directory alone.
+  testthat::local_mocked_bindings(
+    tm_unlink = function(path, recursive = FALSE) 1L
+  )
+
+  cnd <- tryCatch(
+    install_on_win(install_dir = d, archive_checksum = rec$digest),
+    error = function(cnd) cnd
+  )
+  expect_s3_class(cnd, "tidymedia_archive_unreadable")
+  flat <- gsub("\\s+", " ", cli::ansi_strip(conditionMessage(cnd)))
+
+  expect_true(dir.exists(d))
+  expect_true(grepl(paste0("'", d, "'"), flat, fixed = TRUE))
+  expect_match(flat, "could not remove", fixed = TRUE)
+  expect_false(grepl("Nothing was left behind", flat, fixed = TRUE))
+  expect_false(grepl("removed it again", flat, fixed = TRUE))
+})
+
 # An archive whose every entry is a single segment, so `strip_components = 1`
 # strips all of them: the extraction succeeds and writes nothing.
 tm_flat_archive <- function(envir = parent.frame()) {

@@ -37,7 +37,9 @@
   directory behind. What was already there is kept — including inside a
   directory the extraction wrote into — with one exception: a file of yours
   that the failed extraction wrote over is removed along with the debris,
-  because what it holds afterwards is nothing you put there. Removal is best-effort, and on
+  because what it holds afterwards is nothing you put there — and the error
+  names that file, so a refusal never reports the directory as untouched when
+  it took something of yours out of it. Removal is best-effort, and on
   Windows a partly-written file is one it cannot make: the extraction library
   is still holding that file open, and Windows will not delete a file
   something holds. So on Windows the error names the leftovers by full path

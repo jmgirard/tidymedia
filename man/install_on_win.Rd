@@ -72,13 +72,16 @@ extraction wrote are removed, a directory the call created is removed
 again, and anything already in the directory is left alone -- with one
 deliberate exception: a file of yours the failed extraction wrote over is
 removed with the rest of the debris, because what it holds after a failed
-extraction is nothing you put there.
+extraction is nothing you put there. The error names that file by full
+path, so a refusal never reports a directory as untouched when it took
+something of yours out of it.
 
 Removal is best-effort, and on Windows it does not always succeed. Where an
 extraction fails part-way, the library that was writing the file is still
 holding it open, and Windows will not delete a file something holds. Those
 entries are named in the error by full path, so a refusal on Windows can
-leave files behind -- the error tells you which.
+leave files behind -- the error tells you which. A directory this call
+created and could not remove again is named the same way.
 
 The one refusal outside the rule entirely is
 \code{tidymedia_program_not_extracted}, where the archive unpacked successfully

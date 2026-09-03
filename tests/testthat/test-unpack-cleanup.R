@@ -16,31 +16,6 @@
 # there, and nothing the caller had is touched"; the stronger "gone, and the
 # leftover list is empty" is asserted on the platforms that can keep it.
 
-tm_unpack_deletes_open_files <- function() {
-  .Platform$OS.type != "windows"
-}
-
-# Where a fixture's entry lands under the destination, relative to it.
-#
-# Derived from the fixture's own `archive::archive()` listing rather than
-# hard-coded: the generator baked its absolute temp path into the entry name,
-# so the committed name is machine-specific and `strip_components = 1` -- what
-# tm_unpack() passes -- drops only the leading slash of it. Repeated
-# separators are collapsed because that is the shape `list.files()` reports
-# the same path in, and the two have to compare.
-#
-# NULL where the fixture has no readable listing: archive::archive() errors
-# outright on not-an-archive.7z, which is the same refusal-at-open that makes
-# that fixture write nothing.
-tm_fixture_entry <- function(fixture) {
-  listed <- tryCatch(
-    archive::archive(testthat::test_path("fixtures", fixture))$path,
-    error = function(cnd) NULL
-  )
-  if (is.null(listed) || !length(listed)) return(NULL)
-  gsub("/+", "/", sub("^/+", "", listed[[1]]))
-}
-
 # The ancestor chain of a relative path, outermost first.
 tm_entry_ancestors <- function(path) {
   out <- character(0)
@@ -307,10 +282,14 @@ test_that("an added directory that will not delete is reported, not silently dro
       label = paste("named leftover is really there:", rel)
     )
   }
-  if (tm_unpack_deletes_open_files()) {
-    expect_identical(out$leftovers, topmost)
-    expect_false(file.exists(file.path(d, entry)))
-  }
+  # The entry inside that directory is left where it is rather than deleted
+  # one by one: a file under a created directory the recursive call could not
+  # remove is already covered by that directory's name, and the path may not
+  # resolve where it looks like it does (the symlink cell below). It is
+  # reported alongside the directory, so nothing survives unnamed. This is
+  # what the cell asserted the other way round before M103 review pass 3.
+  expect_true(file.exists(file.path(d, entry)))
+  expect_true(entry %in% out$leftovers)
 })
 
 
@@ -550,4 +529,132 @@ test_that("every entry the comparison shows added is reachable, and no other is"
   expect_identical(
     sort(after$path[reachable]), sort(after$path[expected_added])
   )
+})
+
+
+# The cleanup never reaches outside the destination (M103 AC1) ---------------
+
+# `list.files(recursive = TRUE)` descends THROUGH a directory symlink, so a
+# snapshot path is not guaranteed to name something under the destination: a
+# symlink the extraction creates reads as a created directory whose children
+# are the link target's. The recursive `unlink()` removes the LINK, so on a
+# platform that can delete it there is nothing left to walk -- but the
+# best-effort design means that call is allowed to fail, and the file loop
+# then walked paths resolving outside the destination entirely (M103 review
+# pass 3).
+
+test_that("a file under a created directory that would not delete is left alone", {
+  # Portable, and the general form of the symlink case below: whatever the
+  # entry is, a file under a created directory the recursive call could not
+  # remove is not removed one by one. It is already covered by that
+  # directory's name in the report, which is D082's bound.
+  d <- tm_dest()
+  before <- tm_dir_snapshot(d)
+  dir.create(file.path(d, "made", "deeper"), recursive = TRUE)
+  writeLines("the extraction's", file.path(d, "made", "deeper", "f.txt"))
+  after <- tm_dir_snapshot(d)
+
+  left <- testthat::with_mocked_bindings(
+    tm_remove_added(d, before, after),
+    tm_unlink = function(path, recursive = FALSE) {
+      if (recursive) return(1L)
+      unlink(path, expand = FALSE)
+    }
+  )
+
+  expect_true("made" %in% left)
+  expect_true(dir.exists(file.path(d, "made", "deeper")))
+  expect_true(file.exists(file.path(d, "made", "deeper", "f.txt")))
+  # Nothing survives unnamed: the file sits under a directory that is named.
+  survivors <- tm_entries(d)
+  expect_identical(survivors[!tm_named_by(survivors, left)], character(0))
+})
+
+test_that("the cleanup never deletes through a directory symlink it created", {
+  skip_on_os("windows")
+  root <- withr::local_tempdir()
+  outside <- file.path(root, "outside")
+  dir.create(outside)
+  precious <- file.path(outside, "precious.txt")
+  writeLines("the caller's own data, outside the install directory", precious)
+
+  d <- file.path(root, "dest")
+  dir.create(d)
+  before <- tm_dir_snapshot(d)
+  expect_true(file.symlink(outside, file.path(d, "link")))
+  after <- tm_dir_snapshot(d)
+  # The walk really does descend through the link -- without this the cell
+  # would pass for the wrong reason.
+  expect_true("link/precious.txt" %in% after$path)
+
+  left <- testthat::with_mocked_bindings(
+    tm_remove_added(d, before, after),
+    tm_unlink = function(path, recursive = FALSE) {
+      if (recursive) return(1L)
+      unlink(path, expand = FALSE)
+    }
+  )
+
+  # The file outside the destination is untouched. It is reported by the name
+  # it has UNDER the destination, alongside the link itself, so nothing the
+  # cleanup targeted goes unnamed.
+  expect_true(file.exists(precious))
+  expect_setequal(left, c("link", "link/precious.txt"))
+  expect_true(file.exists(file.path(d, "link")))
+})
+
+test_that("a removed directory takes its own children with it, seam working", {
+  # The control for the two cells above: with the removal working, the same
+  # created chain goes entirely and there is nothing to report. Without this,
+  # a cleanup that had stopped removing anything at all would pass them both.
+  d <- tm_dest()
+  before <- tm_dir_snapshot(d)
+  dir.create(file.path(d, "made", "deeper"), recursive = TRUE)
+  writeLines("the extraction's", file.path(d, "made", "deeper", "f.txt"))
+  after <- tm_dir_snapshot(d)
+
+  expect_identical(tm_remove_added(d, before, after), character(0))
+  expect_identical(tm_entries(d), character(0))
+})
+
+
+# What the caller had and the cleanup removed (M103 AC7) --------------------
+
+test_that("a failed unpack reports the caller's own entries it removed", {
+  # D082 removes a pre-existing file the failed extraction wrote over. That
+  # is the one deletion a refusal cannot describe as leaving the directory as
+  # it found it, so `tm_unpack()` reports it separately from the leftovers.
+  fixture <- "corrupt-payload.7z"
+  entry <- tm_fixture_entry(fixture)
+  expect_false(is.null(entry))
+
+  d <- tm_dest()
+  dir.create(file.path(d, dirname(entry)), recursive = TRUE)
+  writeLines("the caller's own bytes", file.path(d, entry))
+
+  out <- tm_run_unpack(fixture, d)
+
+  expect_null(out$files)
+  if (tm_unpack_deletes_open_files()) {
+    expect_identical(out$removed_yours, entry)
+    expect_false(file.exists(file.path(d, entry)))
+  } else {
+    # Where the platform could not delete it, it is a leftover instead --
+    # and it is never both.
+    expect_identical(out$removed_yours, character(0))
+    expect_identical(out$leftovers, entry)
+  }
+})
+
+test_that("a failed unpack that touched nothing of the caller's reports none", {
+  # The control: the same fixture against a destination whose file sits where
+  # the archive does not write. Without it, a report that always named the
+  # caller's files would pass the cell above.
+  d <- tm_dest()
+  writeLines("mine", file.path(d, "keepme.txt"))
+
+  out <- tm_run_unpack("corrupt-payload.7z", d)
+
+  expect_identical(out$removed_yours, character(0))
+  expect_true(file.exists(file.path(d, "keepme.txt")))
 })

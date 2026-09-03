@@ -1669,13 +1669,17 @@ test_that("the refusals the census cannot see create no directory at all", {
     created_by_default <- tm_ac3_run(key, dir)
 
     expect_false(dir.exists(file.path(root, "made")), label = key)
-    # And nothing under the default location either. This is the assertion
-    # that carries `check_string(install_dir)`, whose case cannot pass a
-    # directory at all: the only directory that call could ever create is the
-    # default one, so the caller-named path above says nothing about it. That
-    # this can go red is shown by the M098 default-install-dir test above,
-    # where a call allowed past the checks creates `R/tidymedia/ffmpeg`
-    # beneath exactly this root.
+    # And nothing under the default location either, which is where the two
+    # cases that refuse before `install_dir` is resolved would create one.
+    # It is NOT what carries `check_string(install_dir)`: that case passes
+    # `install_dir = 1`, which is non-NULL, so `tm_install_dir()` is never
+    # reached and this assertion could not go red for it whatever the call
+    # did. That case is carried by its own message assertion inside
+    # `tm_ac3_run()`, and the cell as a whole is falsifiable -- commenting out
+    # `rlang::check_string(install_dir, allow_null = TRUE)` turns it red
+    # (M103 review pass 2). That THIS assertion can go red is shown by the
+    # M098 default-install-dir test above, where a call allowed past the
+    # checks creates `R/tidymedia/ffmpeg` beneath exactly this root.
     expect_identical(created_by_default, character(0), label = paste(key, "default dir"))
   }
 })

@@ -3856,7 +3856,10 @@ boundary, not the registration, is where the rule stops: below a successful
 extraction the archive's files are in that directory, and the one refusal
 there says so (see the last paragraph). Drawing it at the registration instead
 let that refusal delete the directory its own message pointed at, wherever the
-extraction produced no files at all.
+extraction produced no files at all. It is the files that put that refusal
+outside the rule, so where the extraction produced none the rule reaches it
+like any other: the directory this call created comes back, and the refusal
+says so.
 
 **A pre-existing directory is never removed, whatever its timestamp shows.**
 D046 decides membership by size or modification time, which is exactly right
@@ -3864,10 +3867,23 @@ for a file and wrong for a directory: a directory's mtime moves the instant an
 entry lands inside it, so a directory the caller already had reads as
 "changed" the moment the extraction writes one file into it, and removing it
 recursively would take every untouched entry it held. Only a directory the
-comparison shows NEW is removed; a pre-existing one keeps its place and its
-added children are removed one at a time instead, which reaches the same
-debris without the collateral. The measurement behind this is in M103's work
-log and beside `tm_snapshot_added()` in `R/program_management.R`.
+comparison shows NEW is removed — new *as a directory*, which is not the same
+as new *as a path*: a path the caller held as a file and the extraction
+replaced with a directory is a directory this run made, and the path-only
+reading put it in neither bucket, so it was neither removed nor named (M103
+review pass 2). A pre-existing directory keeps its place and its added
+children are removed one at a time instead, which reaches the same debris
+without the collateral. The measurement behind this is in M103's work log and
+beside `tm_snapshot_added()` in `R/program_management.R`.
+
+**Only the topmost created directory of a chain is targeted by name.** One
+recursive `unlink()` on it clears every level below, which is why it is the
+only one the removal needs — but the report is written over what the removal
+targeted, so where that call fails the refusal names the top of the chain and
+the added files, not each intervening level. A caller told a directory
+survived is told about everything under it; a caller wanting the level-by-level
+list does not get one. The weakening is deliberate and bounded by that:
+nothing survives unnamed or outside something named.
 
 **A pre-existing FILE the extraction overwrote or truncated IS removed**, and
 that is not the same case. The extraction opened that path and wrote to it, so
@@ -3900,7 +3916,12 @@ archive unpacked, it simply did not contain a program the install requires —
 so there is no failed run for D046's rule to be about, and the shipped abort
 already tells the caller in so many words that whatever did unpack is still in
 that directory. Deleting a complete extraction on the strength of a missing
-member would destroy a build the caller may well want to look at.
+member would destroy a build the caller may well want to look at. The boundary
+is the files, not the success: where the archive unpacked successfully but
+produced no files at all — every entry of a flat archive stripped by
+`strip_components = 1` — there is no complete extraction to protect and
+nothing in the directory to point the caller at, so that refusal is inside the
+rule and gives back a directory this call created.
 
 Rejected: removing every entry the comparison marks changed, directories
 included (deletes the caller's own files out of a directory the extraction

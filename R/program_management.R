@@ -606,7 +606,11 @@ tm_unpack <- function(archive, dir) {
   # handler: it is the archive's, not the destination's, but the same rule
   # that made it worth owning -- Windows will not delete a file something
   # still holds open -- says to hold no handle the cleanup does not need. The
-  # handler stays, and finds nothing left to close.
+  # handler stays, so on this path the connection has two closers: the second
+  # one is a no-op, because `tm_close()` guards on `isOpen()` inside a
+  # `tryCatch()`. Two closers rather than one is the price of closing early
+  # without also having to prove no path below reaches the handler; M102 AC3's
+  # "leaves no connection open" is what both of them serve.
   tm_close(con)
   list(
     files = NULL,

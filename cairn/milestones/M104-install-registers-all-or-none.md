@@ -1,6 +1,6 @@
 # M104: `install_on_win()` registers every program or none
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -127,6 +127,7 @@ residual window between the check and the loop is disclosed in the D-entry.
 - 2026-09-03: T1 — `tm_mock_install()` gained `spoil =`, naming per program which of the four forms to plant, and its working stubs are now non-empty and executable on every path rather than only under `real_set = TRUE`; the eight AC1-AC4 tests were confirmed red against the unchecked installer (11 failures).
 - 2026-09-03: T2-T4 — `tm_usable_binary()` added; `install_on_win()` partitions the produced set before the loop, aborts `tidymedia_program_unusable` for a failed required program, and emits one `cli_inform()` carrying a distinct sentence for each of the two optional-program states.
 - 2026-09-03: T5 — D083 appended, annotating D082.
+- 2026-09-03: T7 — `devtools::test()` 11,886 passing / 0 failures / 10 warnings / 18 skips; `devtools::check()` 0 errors, 0 warnings, 0 notes (7m 17s). `devtools::document()` produces no diff on a second run.
 - 2026-09-03: T6 — `@return` enumerates six aborting outcomes, Details says what the check asks and that it does not run the binary, `NEWS.md` carries a Configuration bullet.
 - 2026-09-03: plan gate chose `tidymedia_program_unusable` over `tidymedia_program_not_executable` (a name for a property Windows does not have, and a lie for the absent case) and over widening `tidymedia_program_not_extracted` (collapses two events D062 keeps apart); falsified by a handler needing to tell the four AC4 forms apart, which one class cannot do.
 

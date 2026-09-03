@@ -8,7 +8,7 @@ _Last hygiene check: 2026-09-03 (M103 done, PR #107 squash-merged and archived; 
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M104 | `install_on_win()` registers every program or none | in-progress | — | normal | milestones/M104-install-registers-all-or-none.md |
+| M104 | `install_on_win()` registers every program or none | review | — | normal | milestones/M104-install-registers-all-or-none.md |
 | M100 | Hardware encoding is a backend vocabulary, and videotoolbox is the second member | done | M099 | normal | milestones/archive/M100-videotoolbox-backend.md |
 | M099 | D014's pre-0.2.0 rename window is reviewed before it closes | done | — | normal | milestones/archive/M099-d014-rename-window-review.md |
 | M101 | `install_on_win()` asks before it downloads and installs | done | — | normal | milestones/archive/M101-install-on-win-confirmation.md |

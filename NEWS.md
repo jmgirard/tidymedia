@@ -32,11 +32,11 @@
 ## Configuration
 
 * `install_on_win()` now registers every program the archive produced, or
-  none of them. A build whose `ffmpeg.exe` or `ffprobe.exe` unpacked as a
-  truncated file, as a directory, or not at all used to be registered anyway,
-  one program at a time, so a caller could be left with `ffmpeg` remembered
-  and `ffprobe` pointing nowhere — and any location remembered from an earlier
-  install was already overwritten by the time the bad one was reached. The
+  none of them. It used to register them one program at a time, so a build it
+  could not use was registered in pieces: a truncated `ffprobe.exe` was
+  remembered as a working program, and a build missing `ffprobe.exe` altogether
+  registered `ffmpeg` and then failed — overwriting, in both cases, whatever
+  location an earlier install had left. The
   install now looks at every produced program before it writes anything: where
   a required one cannot be used, the call refuses without changing a single
   remembered location and names each failed program and its full path; where

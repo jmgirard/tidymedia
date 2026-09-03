@@ -672,8 +672,16 @@ tm_close <- function(con) {
   invisible(tryCatch(if (isOpen(con)) close(con), error = function(cnd) NULL))
 }
 
+# `path.expand()` here rather than at either reader. Two callers ask about
+# this path and they do not agree about `~` on their own: `file.info()` expands
+# it and `Sys.which()` does not, so `install_on_win(install_dir = "~/ffmpeg")`
+# gave a registration check that refused a good build and blamed the archive
+# for it (M104 review F1). Expanding once, where the path is built, is what
+# keeps the check and the `set_program()` call that follows it asking about the
+# same file -- expanding inside the check alone would only move the failure
+# into the loop, which is the partial registration M104 exists to stop.
 tm_install_binary <- function(install_dir, program) {
-  file.path(install_dir, "bin", paste0(program, ".exe"))
+  path.expand(file.path(install_dir, "bin", paste0(program, ".exe")))
 }
 
 # Whether a path the extraction produced can be handed to set_program(): it

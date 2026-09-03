@@ -1639,7 +1639,7 @@ test_that("every exit above the unpack has a case, and every case has an exit", 
       "tidymedia_checksum_unavailable #1", "tidymedia_download_unavailable #1",
       "tidymedia_checksum_mismatch #1") %in% tm_exit_keys(exits)
   ))
-  # And the floor against a filter that reads too far: the two exits BELOW
+  # And the floor against a filter that reads too far: the three exits BELOW
   # the unpack are the ones the narrowing exists to drop.
   all_classes <- unlist(lapply(tm_collect_exits(install_on_win), tm_exit_classes))
   expect_true("tidymedia_archive_unreadable" %in% all_classes)
@@ -1649,6 +1649,12 @@ test_that("every exit above the unpack has a case, and every case has an exit", 
   )
   expect_false(
     "tidymedia_program_not_extracted" %in%
+      unlist(lapply(exits, tm_exit_classes))
+  )
+  # The third, added by M104 and below the unpack for the same reason.
+  expect_true("tidymedia_program_unusable" %in% all_classes)
+  expect_false(
+    "tidymedia_program_unusable" %in%
       unlist(lapply(exits, tm_exit_classes))
   )
 })
@@ -2246,10 +2252,18 @@ test_that("a directory planted at ffplay's path is informed about, not refused",
   expect_true(file.exists(tm_config_file("ffmpeg", config$new)))
 })
 
-test_that("an absent program and an unusable one are reported in one message", {
-  # T4's other half: the archive omits `ffplay` entirely in a call where
-  # nothing else fails, and produces an unusable one in another. Both are
-  # optional-program states, and a caller reads one message either way.
+test_that("an absent optional program is still reported in one message", {
+  # The archive omits `ffplay` entirely and nothing else fails. This is the
+  # pre-M104 optional-program state, asserted here so the new branch beside it
+  # cannot turn one message into two.
+  #
+  # It does NOT exercise both optional states at once, and nothing can:
+  # `tm_install_registers` minus `tm_install_required` is exactly `ffplay`
+  # (`R/program_management.R:306`, `:312`), so `absent_optional` and
+  # `unusable_optional` can never both be non-empty in one call. The combining
+  # branch in `install_on_win()` is written for a fourth registered program
+  # that does not exist yet, and is unreachable until one does (M104 review
+  # F4).
   tm_redirect_config()
   tm_redirect_data()
   withr::local_options(cli.width = 1000)
@@ -2268,3 +2282,37 @@ test_that("an absent program and an unusable one are reported in one message", {
   ))
   expect_identical(count, 1L)
 })
+
+test_that("an install directory written with a tilde is not refused as unusable", {
+  # M104 review F1. `file.info()` expands `~` and `Sys.which()` does not, so a
+  # path built with a tilde was a non-empty file to one clause of the
+  # registration check and absent to another: the check refused a build it had
+  # just unpacked correctly, and blamed the archive for it. The fix expands
+  # where the path is BUILT, so the check and the `set_program()` call after it
+  # ask about one file -- expanding inside the check alone would move the same
+  # failure into the loop, which is the partial registration M104 exists to
+  # stop, so this test asserts the whole install succeeded rather than only
+  # that the check passed.
+  skip_on_os("windows")
+  home <- withr::local_tempdir()
+  withr::local_envvar(HOME = home)
+  # The instrument, asserted rather than assumed: with no tilde redirection
+  # this test would run against the real home directory and prove nothing.
+  expect_identical(normalizePath(path.expand("~")), normalizePath(home))
+
+  config <- tm_redirect_config()
+  tm_redirect_data()
+  rec <- tm_mock_install(confirm = function(prompt) TRUE, real_set = TRUE)
+
+  expect_true(suppressMessages(
+    install_on_win(install_dir = "~/ffmpeg", archive_checksum = rec$digest)
+  ))
+  for (program in c("ffmpeg", "ffprobe", "ffplay")) {
+    file <- tm_config_file(program, config$new)
+    expect_true(file.exists(file))
+    # And what was remembered is the expanded path, so no later caller has to
+    # expand it again to find the program.
+    expect_false(grepl("~", readLines(file), fixed = TRUE))
+  }
+})
+

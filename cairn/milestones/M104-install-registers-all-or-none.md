@@ -131,6 +131,8 @@ residual window between the check and the loop is disclosed in the D-entry.
 - 2026-09-03: T6 — `@return` enumerates six aborting outcomes, Details says what the check asks and that it does not run the binary, `NEWS.md` carries a Configuration bullet.
 - 2026-09-03: plan gate chose `tidymedia_program_unusable` over `tidymedia_program_not_executable` (a name for a property Windows does not have, and a lie for the absent case) and over widening `tidymedia_program_not_extracted` (collapses two events D062 keeps apart); falsified by a handler needing to tell the four AC4 forms apart, which one class cannot do.
 - 2026-09-03: review — all six criteria evidenced against the branch head and ticked; `cairn_validate` 16/16 and the r-package consistency gate clean; three-lens fan-out returned eight findings from the [O] lens, none from the other two, all logged in the Review section awaiting gate triage.
+- 2026-09-03: review gate triaged the eight findings: F1-F5 fixed on the branch, F6-F8 to a candidate row. F1 was a real defect the branch introduced — `tm_install_binary()` now expands `~` where the path is built, with a regression test confirmed red without it.
+- 2026-09-03: re-verified after the gate fixes: `devtools::test()` FAIL 0 / WARN 10 / SKIP 18 / PASS 11896; `devtools::check()` 0 errors, 0 warnings, 0 notes (5m 25s); `devtools::document()` no diff; `cairn_validate` 16/16.
 
 ## Decisions
 
@@ -195,6 +197,10 @@ correctly silent. The green is therefore a green the tests could have failed.
 - AC6 — PASS. `Rscript -e 'devtools::test()'`:
   `[ FAIL 0 | WARN 10 | SKIP 18 | PASS 11886 ]`. `Rscript -e
   'devtools::check()'`: `Status: OK`, 0 errors / 0 warnings / 0 notes, 5m 19s.
+  Re-run after the gate's F1-F5 fixes: `[ FAIL 0 | WARN 10 | SKIP 18 | PASS
+  11896 ]` and `0 errors | 0 warnings | 0 notes` (5m 25s); the
+  `test-program-management.R` file went from 56 tests / 468 expectations to
+  57 / 478, and `document()` still produces no diff.
 
 **Consistency gate.** `cairn_validate.py` exit 0 — 16 PASS, 7 advisories OK,
 no `release window`. No `DESIGN.md` principle changed, so `cairn_impact.py`
@@ -238,7 +244,7 @@ Full three-lens fan-out: the declared tier is user-facing and the diff touches
   aborts `tidymedia_program_unusable`, blaming the archive. This is D083's own
   stated falsifier. Pre-M104 the same path failed at `set_program()`'s
   `Can't find an executable at ~/…`, which at least named the path.
-  DISPOSITION: <filled at gate>.
+  DISPOSITION: FIXED at the gate. `tm_install_binary()` now `path.expand()`s the path it builds, so the check and the `set_program()` call below it ask about one file; expanding inside the check alone would have moved the same failure into the loop. Regression test `an install directory written with a tilde is not refused as unusable` (5 expectations, `skip_on_os("windows")`) asserts the whole install succeeds and that what was remembered carries no `~`; it asserts its own instrument (`path.expand("~")` resolves to the redirected `HOME`) rather than skipping on it. Confirmed red without the fix (the abort escapes as an error). D083 now records the expansion and why it belongs where the path is built.
 - **F2 — `cairn/DECISIONS.md` D083: the motivating story cannot happen on the
   only platform the function runs on.** The opening says a zero-byte
   `ffprobe.exe` "wrote `ffmpeg`'s location first and then aborted out of
@@ -247,7 +253,7 @@ Full three-lens fan-out: the declared tier is user-facing and the diff touches
   so such a file resolves under `Sys.which()` and would be remembered as
   working. The abort described is POSIX behaviour; on Windows both programs
   register silently. The story is right for the `absent` form and wrong for
-  the zero-byte one it names. DISPOSITION: <filled at gate>.
+  the zero-byte one it names. DISPOSITION: FIXED at the gate. D083's opening paragraph now separates the two forms: the listed-and-never-created path is the one that registered `ffmpeg` and then aborted out of `set_program()`, while a zero-byte `ffprobe.exe` on Windows resolves under `Sys.which()` and registered silently. The correction is marked in the entry. D083 has not reached the default branch, so this is a fix before the record lands rather than an edit to history.
 - **F3 — `NEWS.md`: the bullet asserts old behaviour that is false for two of
   its three named forms.** "unpacked as a truncated file, as a directory, or
   not at all used to be registered anyway … so a caller could be left with
@@ -255,7 +261,7 @@ Full three-lens fan-out: the declared tier is user-facing and the diff touches
   old loop aborted at `set_program()` rather than registering; for "as a
   directory" on Windows D083 says the behaviour is unmeasured; and "`ffprobe`
   pointing nowhere" is true only of the truncated case.
-  DISPOSITION: <filled at gate>.
+  DISPOSITION: FIXED at the gate. The `NEWS.md` bullet no longer claims three unpack forms were registered anyway. It now names the two states that were real — a truncated `ffprobe.exe` remembered as working, and a missing one registered only after `ffmpeg` had been written — and drops the directory form, whose old behaviour on Windows is unmeasured.
 - **F4 — `R/program_management.R:1156-1176` and
   `tests/testthat/test-program-management.R`: the "one message where both
   kinds occur" branch is unreachable, and the test named for it exercises
@@ -265,13 +271,13 @@ Full three-lens fan-out: the declared tier is user-facing and the diff touches
   program and an unusable one are reported in one message" plants no `spoil`
   and passes unmodified against `origin/master` — it is the one M104 test that
   stayed green under the planted-defect run above. T4's second half is
-  unverified in effect. DISPOSITION: <filled at gate>.
+  unverified in effect. DISPOSITION: FIXED at the gate, as documentation. The test is renamed `an absent optional program is still reported in one message` and its comment now records that no call can reach both optional states at once, because the optional set is exactly `ffplay`; the combining branch is written for a fourth registered program that does not exist yet. The branch itself is left in place.
 - **F5 — `tests/testthat/test-program-management.R:1642-1652`: the census's
   "reads too far" floor was not extended for the new exit.** The comment still
   says "the two exits BELOW the unpack" where there are now three, and the
   floor asserts only `tidymedia_archive_unreadable` and
   `tidymedia_program_not_extracted` are absent from the narrowed set.
-  DISPOSITION: <filled at gate>.
+  DISPOSITION: FIXED at the gate. The census floor now names three exits below the unpack and asserts `tidymedia_program_unusable` is present in the whole-body set and absent from the narrowed one, the same shape the other two carry.
 - **F6 — `R/program_management.R:1140-1152`: the refusal message is false for
   AC4's `absent` form.** With a path the extraction listed and never created,
   the caller reads "The archive produced 'ffprobe', but it cannot be used" and
@@ -279,19 +285,19 @@ Full three-lens fan-out: the declared tier is user-facing and the diff touches
   at that path to look at. Arguably that form is what
   `tidymedia_program_not_extracted` names (D062's two-events rule); the tests
   assert the name and path appear, never that the sentence is true of the
-  state on disk. DISPOSITION: <filled at gate>.
+  state on disk. DISPOSITION: FOLLOW-UP. Which condition class a listed-but-never-created path should raise is a contract question that overlaps D062's rule on keeping two events apart, and answering it changes an exported function's refusal contract rather than a message. Filed as a candidate row.
 - **F7 — `tests/testthat/test-program-management.R`: the `!info$isdir` clause
   the implement gate added for Windows has no test that isolates it.** On
   POSIX `Sys.which()` already returns `""` for a directory, so the `dir` test
   still refuses with that clause deleted; nothing green-or-red in the suite
   discriminates it. There is also no direct unit test of `tm_usable_binary()`.
-  DISPOSITION: <filled at gate>.
+  DISPOSITION: FOLLOW-UP, filed with F6 and F8. A test that isolates the `!info$isdir` clause needs a platform where `Sys.which()` answers for a directory, which is the Windows behaviour this project does not measure; a direct unit test of `tm_usable_binary()` is plannable beside it.
 - **F8 — `R/program_management.R:697-699`: `tm_usable_binary()` reads as
   vectorized but is scalar-only, and one clause is dead.** A length-2 `path`
   throws at `&&` under R >= 4.3 and length 0 yields `NA`; and
   `!is.na(info$size)` can never be `FALSE` once `!is.na(info$isdir)` passed.
   Neither bites at the single `vapply()` call site.
-  DISPOSITION: <filled at gate>.
+  DISPOSITION: FOLLOW-UP, filed with F6 and F7. Neither the scalar-only contract nor the dead `!is.na(info$size)` clause bites at the single `vapply()` call site, so nothing is wrong today; the helper's shape is worth settling alongside the direct unit test F7 asks for.
 
 What the [O] lens checked and found sound: the partition runs strictly before
 the first `set_program()` write and the loop skips `unusable`; the abort is

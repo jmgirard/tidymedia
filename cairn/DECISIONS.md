@@ -3952,12 +3952,18 @@ extraction kept for inspection.
 ## D083 — Every produced program is checked before the first registration, and that refusal leaves the extraction where it is (2026-09-03, from M104; annotates D082 by adding a second refusal below its successful-extraction boundary, and leaves all of D082 and D046 standing)
 
 `install_on_win()` registered the programs the extraction produced one at a
-time, and each write went to a config file of its own. A build whose
-`ffprobe.exe` unpacked as a zero-byte file therefore wrote `ffmpeg`'s location
-first and then aborted out of `set_program()`'s own unclassed
+time, and each write went to a config file of its own, so a build the caller
+could not use was registered in pieces. Which pieces depended on the form. A
+path the extraction listed and never created wrote `ffmpeg`'s location first
+and then aborted out of `set_program()`'s own unclassed
 `Can't find an executable` — leaving `ffmpeg` pointing into a build the caller
 had just been told was a failure, and any location remembered from an earlier
-install already overwritten.
+install already overwritten. An `ffprobe.exe` unpacked as a zero-byte file did
+not even abort on Windows: with no execute bit there, `Sys.which()` answers for
+it, so both programs registered silently and the caller was left with a
+truncated `ffprobe` remembered as a working program. (Corrected at M104's
+review, which found this paragraph describing the zero-byte case with the
+POSIX behaviour the entry's own next section says Windows does not have.)
 
 **The rule now.** Every path the extraction produced is checked before the
 first `set_program()` call. A required program failing the check aborts with
@@ -3973,7 +3979,14 @@ truncated `ffmpeg.exe` as a working program. The directory test was added at
 M104's gate rather than inferred: `Sys.which()` refuses a directory on macOS
 (measured 2026-09-03) and whether it does so on Windows is not something this
 project measures, so the one platform the function runs on would otherwise
-rest on an unmeasured behaviour.
+rest on an unmeasured behaviour. The path is expanded before either question
+is asked, because the two do not agree about `~` on their own: `file.info()`
+expands it and `Sys.which()` does not, so a path built with a tilde was a
+non-empty file to one clause and absent to the other. That expansion belongs
+where the path is BUILT rather than inside the check, because expanding inside
+the check alone would leave `set_program()` aborting on the unexpanded path in
+the loop below — the partial registration this entry exists to end. Found and
+fixed at M104's review, against this entry's own falsifier.
 
 **Two limits, disclosed rather than closed.** The check never RUNS the
 program, so a build that unpacks and cannot execute — the wrong architecture,

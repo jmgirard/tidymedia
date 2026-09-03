@@ -1,6 +1,6 @@
 # M103: A refused `install_on_win()` leaves the install directory as it found it
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -62,7 +62,7 @@ The deliverable is **user-facing**: `install_on_win()` is exported and a caller 
 - [x] T18: D082 states the topmost-only weakening: a failed removal names the top of a created chain and the files, not every level.
 - [x] T19: `match()` hoisted out of `tm_snapshot_added()`'s per-row loop.
 - [x] T20: the two comment corrections -- the `check_string(install_dir)` case's assertion claim, and the two closers on the connection failure path.
-- [ ] T21: `devtools::check()`, full `devtools::test()`, push and confirm all six R-CMD-check jobs.
+- [x] T21: `devtools::check()`, full `devtools::test()`, push and confirm all six R-CMD-check jobs.
 
 ## Work log
 
@@ -105,6 +105,7 @@ The deliverable is **user-facing**: `install_on_win()` is exported and a caller 
 - 2026-09-02: T19 landed inside T16 -- `match()` is hoisted to one call over the whole column, the shape the vectorized comparison needed anyway.
 - 2026-09-02: T18 -- D082 amended on three points: the membership rule now says a directory is new AS A DIRECTORY rather than as a path, which is the distinction pass 2 returned on; a new paragraph states the topmost-only weakening, that a failed removal names the top of a created chain and the added files rather than each level, bounded by nothing surviving unnamed or outside something named; and the carve-out paragraph states that the boundary is the files, not the success, so a zero-file extraction is inside the rule.
 - 2026-09-02: T20 -- two comments corrected. The AC3 cell no longer claims the default-location assertion carries `check_string(install_dir)`: that case passes a non-NULL `install_dir`, so `tm_install_dir()` is never reached and the assertion cannot go red for it; the comment now names the message assertion that does carry it and the mutation that shows the cell falsifiable. And `tm_unpack()`'s failure path says why the connection has two closers -- `tm_close()` guards on `isOpen()` inside `tryCatch()` -- so a reader chasing M102 AC3 finds the note instead of the puzzle.
+- 2026-09-03: T21 closed on commit `59300c4`. `devtools::check()` on the branch: `Status: OK`, 0 errors / 0 warnings / 0 notes (10m 39s; `testthat.R` 9m/10m OK), so AC6's known-acceptable NOTE set is empty on this platform. `devtools::test()` separately: 0 failures, 11797 passing, 18 skips; the 10 warnings it counts are outside the two files this session touched, both of which report WARN 0. All six R-CMD-check jobs green -- `windows-latest (release)`, `macos-latest (release)`, and `ubuntu-latest` release / devel / oldrel-1 / 4.1.0 -- plus pkgdown, test-coverage and `codecov/project` (run 33717364152). `codecov/patch` fails, as it did on the previous head; no criterion binds it. Status set back to review.
 
 ## Decisions
 

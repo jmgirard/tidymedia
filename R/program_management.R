@@ -468,13 +468,33 @@ tm_remove_added <- function(dir, before, after) {
   added <- tm_snapshot_added(before, after)
   targeted <- c(added$dirs, added$files)
   if (!length(targeted)) return(character(0))
-  for (path in added$dirs) tm_unlink(file.path(dir, path), recursive = TRUE)
-  still <- tm_dir_snapshot(dir)$path
-  for (path in added$files) {
-    if (path %in% still) tm_unlink(file.path(dir, path))
+  sweep <- function() {
+    still <- tm_dir_snapshot(dir)$path
+    for (path in added$dirs) {
+      if (path %in% still) tm_unlink(file.path(dir, path), recursive = TRUE)
+    }
+    still <- tm_dir_snapshot(dir)$path
+    for (path in added$files) {
+      if (path %in% still) tm_unlink(file.path(dir, path))
+    }
+    sort(targeted[targeted %in% tm_dir_snapshot(dir)$path])
   }
-  survived <- tm_dir_snapshot(dir)$path
-  sort(targeted[targeted %in% survived])
+  survived <- sweep()
+  # A second pass, and only where the first left something. Windows will not
+  # delete a file another handle still holds, and the handle in question is
+  # the one `archive_extract()` was writing the failed entry through: it is
+  # not an R connection, so nothing here can close it by name. `gc()` is the
+  # one lever R has -- it runs the finalizers of any external pointer the
+  # extraction left unreferenced -- and the pause is for a hold that is
+  # transient rather than leaked, which a scanner or an indexer produces.
+  # Both are free on the succeeding path, which never reaches this function,
+  # and on the platforms where the first sweep already worked.
+  if (length(survived)) {
+    gc()
+    Sys.sleep(0.1)
+    survived <- sweep()
+  }
+  survived
 }
 
 # The chain of directories `dir.create(path, recursive = TRUE)` would have to

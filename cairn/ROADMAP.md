@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-09-02 (M102 done, PR #106 squash-merged and archived; three review passes, two defect returns, all seven criteria evidenced. Four M102 lessons added and four spent ones pruned (LESSONS.md 19,398 b); `ROADMAP.md` arrived 990 b OVER its 24,000 budget, so eleven of the widest candidate rows were compressed and the M097 terminal row pruned (23,694 b). Four M102 review deferrals filed as candidate rows. `cairn_validate` 16/16. No release window.)_
+_Last hygiene check: 2026-09-03 (M103 done, PR #107 squash-merged and archived; three review passes, two defect returns and one amendment return, all seven criteria evidenced on the merged head. Pass 3 found and fixed three defects in what the refusal reports, one of which could delete files outside the install directory. One M103 lesson added, leaving `LESSONS.md` at 19,993 b of its 20,000 budget — the next lesson needs a prune first. The M098 terminal row was pruned to hold the five-row retention; `ROADMAP.md` 23,788 b. `cairn_validate` 16/16, one sizing advisory. No release window.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M098 | `DESCRIPTION` declares the tools the package interfaces, and the data dir follows policy | done | — | normal | milestones/archive/M098-system-requirements-and-data-dir.md |
 | M100 | Hardware encoding is a backend vocabulary, and videotoolbox is the second member | done | M099 | normal | milestones/archive/M100-videotoolbox-backend.md |
 | M099 | D014's pre-0.2.0 rename window is reviewed before it closes | done | — | normal | milestones/archive/M099-d014-rename-window-review.md |
 | M101 | `install_on_win()` asks before it downloads and installs | done | — | normal | milestones/archive/M101-install-on-win-confirmation.md |
 | M102 | `install_on_win()` verifies the archive and the unpacked programs before it registers anything | done | — | normal | milestones/archive/M102-install-verify-before-register.md |
-| M103 | A refused `install_on_win()` leaves the install directory as it found it | review | — | normal | milestones/M103-install-leaves-dir-as-found.md |
+| M103 | A refused `install_on_win()` leaves the install directory as it found it | done | — | normal | milestones/archive/M103-install-leaves-dir-as-found.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

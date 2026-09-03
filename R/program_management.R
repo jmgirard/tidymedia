@@ -676,6 +676,29 @@ tm_install_binary <- function(install_dir, program) {
   file.path(install_dir, "bin", paste0(program, ".exe"))
 }
 
+# Whether a path the extraction produced can be handed to set_program(): it
+# resolves the way set_program() itself will ask (`Sys.which()`, at the abort
+# this check exists to make unreachable from here), it is a file rather than a
+# directory, and it holds bytes.
+#
+# The two tests beyond parity are what parity cannot promise on the one
+# platform this install runs on. Windows has no executable bit, so a truncated
+# `ffmpeg.exe` of zero length resolves there and would be remembered as a
+# working program. Whether `Sys.which()` answers for a DIRECTORY named
+# `ffmpeg.exe` is a platform behaviour measured here only on macOS (2026-09-03,
+# where it does not), so the directory is refused by a test of its own rather
+# than by inference from that measurement.
+#
+# What it deliberately does not do is RUN the program: that would be the first
+# probe in this seam to execute a downloaded binary, and it would turn a slow
+# or blocked spawn into an install failure (M104).
+tm_usable_binary <- function(path) {
+  info <- file.info(path, extra_cols = FALSE)
+  !is.na(info$isdir) && !info$isdir &&
+    !is.na(info$size) && info$size > 0 &&
+    unname(Sys.which(path)) != ""
+}
+
 # What the install would do, one item per line: the published digest where
 # one will be fetched, the archive to be fetched, the directory it unpacks
 # into, and each remembered-location file it may overwrite. `sidecar_url` is
@@ -737,6 +760,15 @@ tm_install_prompt <- function(download_url, install_dir, programs,
 #' archive, this catches a corrupted or truncated download, not a compromised
 #' source.
 #'
+#' Every program the extraction produced is checked before any location is
+#' remembered: the path has to resolve the way an executable does, and what is
+#' there has to be a file rather than a directory, and not be empty. The
+#' program itself is never run, so a build that unpacks and then cannot
+#' execute -- the wrong architecture, say -- passes this check. Where a
+#' required program fails it, nothing at all is registered and the error names
+#' each failed program and its full path; where an optional one fails it, the
+#' install completes and says which program it skipped.
+#'
 #' A refusal leaves the install directory as the call found it. Files a failed
 #' extraction wrote are removed, a directory the call created is removed
 #' again, and anything already in the directory is left alone -- with one
@@ -753,13 +785,14 @@ tm_install_prompt <- function(download_url, install_dir, programs,
 #' leave files behind -- the error tells you which. A directory this call
 #' created and could not remove again is named the same way.
 #'
-#' The one refusal outside the rule entirely is
-#' `tidymedia_program_not_extracted`, where the archive unpacked successfully
-#' but did not contain a required program: that error says so, and the
-#' unpacked files stay where they are. It is the files that put that refusal
-#' outside the rule, so where the archive unpacked no files at all the rule
-#' applies to it like any other: a directory this call created is removed
-#' again, and the error says so instead.
+#' Two refusals sit outside that rule, both of them below a successful
+#' extraction: `tidymedia_program_not_extracted`, where the archive did not
+#' contain a required program, and `tidymedia_program_unusable`, where it
+#' produced one that cannot be used. Each says so, and the unpacked files stay
+#' where they are. It is the files that put those refusals outside the rule,
+#' so where the archive unpacked no files at all the rule applies to
+#' `tidymedia_program_not_extracted` like any other: a directory this call
+#' created is removed again, and the error says so instead.
 #'
 #' @param download_url A string indicating the location of the FFmpeg
 #'   installation archive. If `NULL`, will default to the latest static
@@ -781,17 +814,19 @@ tm_install_prompt <- function(download_url, install_dir, programs,
 #'   nothing is verified and the call says so.
 #' @return A logical indicating whether the installation was successful.
 #'   `FALSE` is returned by a declined confirmation and by a failure to create
-#'   the install directory. Five other outcomes abort with a condition of their
+#'   the install directory. Six other outcomes abort with a condition of their
 #'   own rather than returning: a download that did not deliver
 #'   (`tidymedia_download_unavailable`), a published digest that could not be
 #'   fetched or read (`tidymedia_checksum_unavailable`), a digest that did not
 #'   match the downloaded archive (`tidymedia_checksum_mismatch`), an archive
-#'   that could not be unpacked (`tidymedia_archive_unreadable`), and a
+#'   that could not be unpacked (`tidymedia_archive_unreadable`), a
 #'   required program the archive did not contain
-#'   (`tidymedia_program_not_extracted`). Every one of these aims to leave the
-#'   install directory as the call found it, except the last, which leaves the
-#'   files the archive did unpack -- and which is back inside the rule where
-#'   the archive unpacked none. Removal is best-effort: on Windows a
+#'   (`tidymedia_program_not_extracted`), and a required program the archive
+#'   produced in a form that cannot be used (`tidymedia_program_unusable`).
+#'   Every one of these aims to leave the install directory as the call found
+#'   it, except the last two, which leave the files the archive did unpack --
+#'   and `tidymedia_program_not_extracted` is back inside the rule where the
+#'   archive unpacked none. Removal is best-effort: on Windows a
 #'   partly-written file cannot be deleted while the extraction library still
 #'   holds it, and the error names what it could not remove. See Details.
 #' @seealso [set_program()] to register an existing binary, and [find_ffmpeg()]
@@ -1087,15 +1122,60 @@ install_on_win <- function(download_url = NULL,
       class = "tidymedia_program_not_extracted"
     )
   }
+  # Every path the extraction produced is asked whether it can be used BEFORE
+  # the first set_program() call, so a build carrying a program the caller
+  # cannot run leaves every existing remembered location as it was rather than
+  # registering the ones that happened to come first. The whole set is
+  # partitioned once here; the two branches below dispose of the required and
+  # the optional halves (M104 AC1).
+  unusable <- unpacked[!vapply(
+    unpacked,
+    function(program) tm_usable_binary(tm_install_binary(install_dir, program)),
+    logical(1)
+  )]
+  unusable_required <- intersect(tm_install_required, unusable)
+  if (length(unusable_required)) {
+    # Nothing here touches the install directory. This sits below a successful
+    # extraction, so the archive's files are in that directory and D082's rule
+    # stops at exactly that boundary: a caller told the build cannot be used
+    # is left the build to look at.
+    cli::cli_abort(
+      c(
+        "The archive produced {.and {.file {unusable_required}}}, but
+         {cli::qty(length(unusable_required))}{?it/they} cannot be used.",
+        "i" = "Checked {.and {.file {tm_install_binary(install_dir,
+               unusable_required)}}}.",
+        "i" = "A produced program is registered only where its path resolves
+               to a file that is not empty; the file itself is never run.",
+        "i" = "Nothing was registered; whatever the archive unpacked is still
+               in {.file {install_dir}}."
+      ),
+      class = "tidymedia_program_unusable"
+    )
+  }
   absent_optional <- setdiff(tm_install_registers, unpacked)
-  if (length(absent_optional)) {
+  unusable_optional <- setdiff(unusable, tm_install_required)
+  # One message where both kinds occur in a call, and a distinct sentence for
+  # each: the archive-did-not-produce wording is false of a program the
+  # archive DID produce, and a caller sent looking for a file that is on their
+  # disk is a worse state than no message at all (M104 AC3).
+  if (length(absent_optional) || length(unusable_optional)) {
     cli::cli_inform(c(
-      "i" = "The archive did not produce {.and {.file {absent_optional}}};
-             no location was remembered for {cli::qty(length(absent_optional))}
-             {?it/them}."
+      if (length(absent_optional)) {
+        c("i" = "The archive did not produce {.and {.file {absent_optional}}};
+                 no location was remembered for
+                 {cli::qty(length(absent_optional))}{?it/them}.")
+      },
+      if (length(unusable_optional)) {
+        c("i" = "The archive produced {.and {.file {unusable_optional}}}, but
+                 what it produced could not be used, so no location was
+                 remembered for {cli::qty(length(unusable_optional))}
+                 {?it/them}: {.file {tm_install_binary(install_dir,
+                 unusable_optional)}}.")
+      }
     ))
   }
-  for (program in unpacked) {
+  for (program in setdiff(unpacked, unusable)) {
     set_program(program, tm_install_binary(install_dir, program))
   }
 

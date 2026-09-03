@@ -3948,3 +3948,64 @@ showing libarchive's writer handle closed on the failure path — the 2026-09-02
 Windows run above looked and found it open, so this falsifier now asks for a
 change in `archive` or in libarchive rather than for a first measurement; or by a report of a caller who wanted the debris of a failed
 extraction kept for inspection.
+
+## D083 — Every produced program is checked before the first registration, and that refusal leaves the extraction where it is (2026-09-03, from M104; annotates D082 by adding a second refusal below its successful-extraction boundary, and leaves all of D082 and D046 standing)
+
+`install_on_win()` registered the programs the extraction produced one at a
+time, and each write went to a config file of its own. A build whose
+`ffprobe.exe` unpacked as a zero-byte file therefore wrote `ffmpeg`'s location
+first and then aborted out of `set_program()`'s own unclassed
+`Can't find an executable` — leaving `ffmpeg` pointing into a build the caller
+had just been told was a failure, and any location remembered from an earlier
+install already overwritten.
+
+**The rule now.** Every path the extraction produced is checked before the
+first `set_program()` call. A required program failing the check aborts with
+`tidymedia_program_unusable`, naming every failed program and each one's full
+path, and registers nothing. An optional one failing it is informed about in
+its own wording and the install completes.
+
+**What the check asks.** That the path resolves as `set_program()` will ask it
+to (`Sys.which()`), that what is there is a file and not a directory, and that
+the file is not empty. `Sys.which()` parity alone was rejected: Windows has no
+execute bit, so parity there catches only an absent file and would remember a
+truncated `ffmpeg.exe` as a working program. The directory test was added at
+M104's gate rather than inferred: `Sys.which()` refuses a directory on macOS
+(measured 2026-09-03) and whether it does so on Windows is not something this
+project measures, so the one platform the function runs on would otherwise
+rest on an unmeasured behaviour.
+
+**Two limits, disclosed rather than closed.** The check never RUNS the
+program, so a build that unpacks and cannot execute — the wrong architecture,
+a build the antivirus has neutered — passes it. Executing each unpacked binary
+with `-version` would settle that, and was rejected at M104's gate on two
+grounds: it would be the first probe in this seam to execute a downloaded
+program, which needs its own D024 call, and it turns a slow or blocked spawn
+into an install failure. It is a ROADMAP candidate with that promotion
+condition. And the check is a snapshot: between it and the registration loop
+there is a window in which the file could change. Nothing in the call writes
+into that window, and closing it would mean holding each file open across the
+loop, which is the handle behaviour D082 measured as the thing that cannot be
+promised on Windows.
+
+**Why a pre-loop check rather than a rollback.** The alternative was to
+register as before and undo the written config files on the first failure.
+Rejected: a rollback has to restore contents, not merely delete files — a
+config file the install overwrote held a location the caller chose — and it
+would be a second cleanup path beside D082's, with its own failure mode, to
+avoid a state that nothing has to enter in the first place. Checking first
+means no config file is ever written on this path, so there is nothing to
+take back.
+
+**This refusal is outside D082's rule, for D082's own reason.** It sits below
+a successful extraction, so the archive's files are in the install directory
+and it touches none of them: a caller told the build cannot be used is left
+the build to look at. That is the same boundary and the same reasoning that
+puts `tidymedia_program_not_extracted` outside it; D082's paragraph naming
+"the one refusal there" is annotated by this entry rather than superseded, and
+every rule it states stands.
+
+- **Falsified by** a report of the non-empty test refusing a good build; or by
+  a report of a build passing this static check and then failing to run, which
+  is the candidate row's promotion condition rather than a defect in the rule;
+  or by a caller who wanted the partial registration this ends.

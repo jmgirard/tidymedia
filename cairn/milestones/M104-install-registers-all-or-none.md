@@ -1,12 +1,12 @@
 # M104: `install_on_win()` registers every program or none
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m104-install-registers-all-or-none`
 
 ## Goal
 
@@ -89,31 +89,31 @@ residual window between the check and the loop is disclosed in the D-entry.
 
 ## Tasks
 
-- [ ] T1: Extend `tm_mock_install()`
+- [x] T1: Extend `tm_mock_install()`
       (`tests/testthat/test-program-management.R:341`) with a `spoil =`
       argument naming, per program, which of AC4's four forms to plant — it
       currently chmods every stub `0755` under `real_set = TRUE` (`:414`),
       which is why no existing test can reach this defect. Write the AC1–AC4
       tests; confirm red.
-- [ ] T2: Add the registration check to `install_on_win()` above the loop
+- [x] T2: Add the registration check to `install_on_win()` above the loop
       (`R/program_management.R:1098`): partition `unpacked` by
       `Sys.which(tm_install_binary(install_dir, p)) != ""` and
       `file.size(...) > 0`.
-- [ ] T3: Abort for a failing required program with
+- [x] T3: Abort for a failing required program with
       `tidymedia_program_unusable`, naming every failed program and path, and
       touching nothing in the install directory (D082's boundary — this sits
       below a successful extraction, so the unpacked files stay).
-- [ ] T4: Give a failing optional program its own `cli_inform()` wording,
+- [x] T4: Give a failing optional program its own `cli_inform()` wording,
       distinct from the archive-did-not-produce one, and emit one message
       where both kinds occur in a call.
-- [ ] T5: Append a `DECISIONS.md` entry annotating D082: a second refusal now
+- [x] T5: Append a `DECISIONS.md` entry annotating D082: a second refusal now
       sits below its successful-extraction boundary; the pre-loop check was
       chosen over rolling back written config files; the check's two limits —
       it does not run the binary, and there is a window between it and the
       loop — are disclosed; falsifier.
-- [ ] T6: Roxygen `@return` and Details, `devtools::document()`, `NEWS.md`
+- [x] T6: Roxygen `@return` and Details, `devtools::document()`, `NEWS.md`
       bullet.
-- [ ] T7: `devtools::test()` and `devtools::check()` clean.
+- [x] T7: `devtools::test()` and `devtools::check()` clean.
 
 ## Work log
 
@@ -121,8 +121,20 @@ residual window between the check and the loop is disclosed in the D-entry.
 - 2026-09-03: criteria audit ran in FULL mode (declared surface tier is user-facing), fresh-context [O] reader. Returned findings on five of six criteria; six were fixed before writing (wrong line cite `:203`→`:204`; AC1 stated a code shape rather than a behavior; AC1's evidence was also true of an empty config root; AC2 promised all unpacked files but probed one, and its plural "each refused program" was probed with one; AC4 said four forms are each disposed as a refusal and then exempted the fourth; AC4/AC5 asserted zero-byte behavior as fact for a Windows-only function on a macOS measurement). Two became gate questions. AC6 passed all six questions. Re-audited after the gate changed the predicate wording; no further findings.
 - 2026-09-03: plan gate chose a static pre-loop check (`Sys.which()` parity plus a non-empty test) over `Sys.which()` parity alone, because Windows has no execute bit and parity alone would register a truncated binary there; falsified by a report of the non-empty test refusing a good build. It chose that check over executing each binary with `-version`, because spawning three downloaded programs crosses D024's probe boundary and makes a blocked spawn an install failure; falsified by a report of a build passing the static check and failing to run.
 - 2026-09-03: plan gate chose a distinct `cli_inform()` wording for a produced-but-unusable optional program over reusing the archive-did-not-produce message, because that message is false in the new branch (the M38/M40 lesson); falsified by a caller confused by two messages where one would do.
+- 2026-09-03: implement gate chose to add an is-a-file test to the check's two planned clauses, because the directory form's refusal otherwise rests on `Sys.which()` behaviour measured on macOS only (2026-09-03) and unmeasured on Windows, the one platform this function runs on. AC5's enumeration is a floor and stays as written; Details names all three.
+- 2026-09-03: implement gate chose to give the new refusal no condition data fields, matching the seven refusals this installer already raises, none of which carries any.
+- 2026-09-03: implement gate chose to leave the existing `tidymedia_program_not_extracted` check running first, so a call whose archive both omits one required program and produces an unusable one reports the omission; no existing message or test changes.
+- 2026-09-03: T1 — `tm_mock_install()` gained `spoil =`, naming per program which of the four forms to plant, and its working stubs are now non-empty and executable on every path rather than only under `real_set = TRUE`; the eight AC1-AC4 tests were confirmed red against the unchecked installer (11 failures).
+- 2026-09-03: T2-T4 — `tm_usable_binary()` added; `install_on_win()` partitions the produced set before the loop, aborts `tidymedia_program_unusable` for a failed required program, and emits one `cli_inform()` carrying a distinct sentence for each of the two optional-program states.
+- 2026-09-03: T5 — D083 appended, annotating D082.
+- 2026-09-03: T6 — `@return` enumerates six aborting outcomes, Details says what the check asks and that it does not run the binary, `NEWS.md` carries a Configuration bullet.
 - 2026-09-03: plan gate chose `tidymedia_program_unusable` over `tidymedia_program_not_executable` (a name for a property Windows does not have, and a lie for the absent case) and over widening `tidymedia_program_not_extracted` (collapses two events D062 keeps apart); falsified by a handler needing to tell the four AC4 forms apart, which one class cannot do.
 
 ## Decisions
+
+- 2026-09-03: D083 records the rule, what the check asks, the two limits it
+  discloses, and why a pre-loop check was chosen over rolling back written
+  config files. It annotates D082 rather than superseding it: the new refusal
+  sits below the same successful-extraction boundary, for the same reason.
 
 ## Review

@@ -31,6 +31,20 @@
 
 ## Configuration
 
+* `install_on_win()` now registers every program the archive produced, or
+  none of them. A build whose `ffmpeg.exe` or `ffprobe.exe` unpacked as a
+  truncated file, as a directory, or not at all used to be registered anyway,
+  one program at a time, so a caller could be left with `ffmpeg` remembered
+  and `ffprobe` pointing nowhere — and any location remembered from an earlier
+  install was already overwritten by the time the bad one was reached. The
+  install now looks at every produced program before it writes anything: where
+  a required one cannot be used, the call refuses without changing a single
+  remembered location and names each failed program and its full path; where
+  an optional one cannot be used, the install completes and tells you which
+  program it skipped and why. The check does not run the programs, so a build
+  that unpacks and then cannot execute — the wrong architecture, say — still
+  gets registered.
+
 * A refused `install_on_win()` now leaves the install directory as it found
   it. Files a failed extraction wrote are removed and a directory the call
   created is removed again, so a refusal no longer leaves debris or an empty

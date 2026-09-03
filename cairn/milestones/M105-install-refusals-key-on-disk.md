@@ -132,6 +132,7 @@ tests — M104 fixed that at `tm_install_binary()` and this milestone only probe
 - 2026-09-03: T7 checked off: `devtools::check()` Status OK (0 errors, 0 warnings, 0 notes, 6m 42s) and `devtools::test()` clean (0 failures, 12,015 passes, 18 skips). Status to review.
 - 2026-09-03: plan gate chose making `tm_usable_binary()` elementwise over keeping it scalar with a length guard; the underlying `file.info()` and `Sys.which()` are already vectorized, it makes the dead clause disappear rather than be deleted, and the caller's `vapply()` collapses to one call. Falsified by a call site needing the short-circuit `&&` gave it.
 - 2026-09-03: review. All seven criteria evidenced fresh on the branch head; `check()` Status OK, `test()` 0 failures / 12,034 passes / 18 skips; `cairn_validate` all checks passed; `pkgdown::check_pkgdown()` clean. Three fresh-context lenses: both Sonnet lenses zero findings, the [O] lens thirteen. F1, F2, F3, F5, F6 and F12 fixed on the branch (each mutation-tested red before the gate); F4, F10 and F11 deferred to one candidate row; F7, F8, F9 and F13 rejected with reason. AC5's vector clause was unmet as committed — the sixth path named nothing rather than a non-empty executable — and was fixed at review before the box was ticked. No finding met the return floor.
+- 2026-09-03: step-7 approval: PR #109 approved for merge.
 
 ## Decisions
 

@@ -713,10 +713,18 @@ tm_install_binary <- function(install_dir, program) {
 # What it deliberately does not do is RUN the program: that would be the first
 # probe in this seam to execute a downloaded binary, and it would turn a slow
 # or blocked spawn into an install failure (M104).
+#
+# It answers one logical per path. Both readers are already vectorized, so the
+# elementwise `&` is what the caller wanted anyway -- the whole produced set is
+# asked in one call rather than through a `vapply()` -- and it is what retires
+# the `!is.na(info$size)` clause the scalar `&&` needed: `size` is NA exactly
+# where `isdir` is, and `FALSE & NA` is FALSE, so the first clause already
+# decides an absent path. The answer is unnamed: `Sys.which()` names its
+# result and `file.info()` names its rows, and neither name belongs to this
+# question (M105).
 tm_usable_binary <- function(path) {
   info <- file.info(path, extra_cols = FALSE)
-  !is.na(info$isdir) && !info$isdir &&
-    !is.na(info$size) && info$size > 0 &&
+  !is.na(info$isdir) & !info$isdir & info$size > 0 &
     unname(Sys.which(path)) != ""
 }
 
@@ -1169,11 +1177,7 @@ install_on_win <- function(download_url = NULL,
   # registering the ones that happened to come first. The whole set is
   # partitioned once here; the two branches below dispose of the required and
   # the optional halves (M104 AC1).
-  unusable <- unpacked[!vapply(
-    unpacked,
-    function(program) tm_usable_binary(tm_install_binary(install_dir, program)),
-    logical(1)
-  )]
+  unusable <- unpacked[!tm_usable_binary(tm_install_binary(install_dir, unpacked))]
   unusable_required <- intersect(tm_install_required, unusable)
   if (length(unusable_required)) {
     # Nothing here touches the install directory. This sits below a successful

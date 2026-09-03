@@ -2480,3 +2480,122 @@ test_that("an install directory written with a tilde is not refused as unusable"
   }
 })
 
+
+# tm_usable_binary(), directly (M105) -----------------------------------------
+
+# The six inputs AC5 names, built once. `good` and `empty` are both
+# executable, so the size clause is the only thing between them: an empty file
+# with the bit set resolves through `Sys.which()` exactly as a real program
+# does, which is the Windows truncation the check exists to catch.
+tm_usable_fixtures <- function(env = parent.frame()) {
+  dir <- withr::local_tempdir(.local_envir = env)
+  make <- function(name, bytes, mode) {
+    path <- file.path(dir, name)
+    if (bytes) writeLines("stub program", path) else file.create(path)
+    Sys.chmod(path, mode)
+    path
+  }
+  subdir <- file.path(dir, "subdir.exe")
+  dir.create(subdir)
+  list(
+    good = make("good.exe", TRUE, "0755"),
+    absent = file.path(dir, "absent.exe"),
+    empty = make("empty.exe", FALSE, "0755"),
+    dir = subdir,
+    noexec = make("noexec.exe", TRUE, "0644")
+  )
+}
+
+test_that("tm_usable_binary() answers for a file, an absent path, an empty file and a directory", {
+  # AC5, the four forms every platform has. The TRUE case is the control: it
+  # is asserted here so a check that answered FALSE for everything could not
+  # pass the three refusals below it.
+  f <- tm_usable_fixtures()
+  expect_true(tm_usable_binary(f$good))
+  expect_false(tm_usable_binary(f$absent))
+  expect_false(tm_usable_binary(f$empty))
+  expect_false(tm_usable_binary(f$dir))
+  # The premise the empty case rests on: it is refused for its size and not
+  # for failing to resolve, which is what makes it a different case from
+  # `absent`.
+  expect_true(file.exists(f$empty))
+  expect_identical(unname(Sys.which(f$empty)), f$empty)
+})
+
+test_that("tm_usable_binary() refuses a file with no executable bit", {
+  # AC5, form 5. POSIX only: Windows has no such bit, so there is no such
+  # state to plant there -- which is the reason the check does not rest on
+  # `Sys.which()` alone.
+  skip_on_os("windows")
+  f <- tm_usable_fixtures()
+  expect_false(tm_usable_binary(f$noexec))
+  # And the premise: it is a real, non-empty file, so the bit is what decides.
+  expect_gt(file.size(f$noexec), 0)
+})
+
+test_that("tm_usable_binary() refuses a tilde-relative path naming a good program", {
+  # AC5, form 6 -- the M104 review F1 disagreement, asserted at the helper
+  # rather than only through the install: `file.info()` expands `~` and
+  # `Sys.which()` does not, so a tilde path is a non-empty file to one clause
+  # and absent to the other. `tm_install_binary()` is what keeps this out of
+  # the install by expanding where the path is built; the helper itself still
+  # answers FALSE, and this is the test that says so.
+  skip_on_os("windows")
+  home <- withr::local_tempdir()
+  withr::local_envvar(HOME = home)
+  # The instrument, asserted rather than assumed.
+  expect_identical(normalizePath(path.expand("~")), normalizePath(home))
+  exe <- file.path(home, "good.exe")
+  writeLines("stub program", exe)
+  Sys.chmod(exe, "0755")
+
+  expect_false(tm_usable_binary("~/good.exe"))
+  # The same file, expanded, is usable -- so the FALSE above is the tilde and
+  # not the file.
+  expect_true(tm_usable_binary(path.expand("~/good.exe")))
+})
+
+test_that("tm_usable_binary() refuses a directory on its own account", {
+  # AC4. `Sys.which()` refuses a directory on macOS (measured 2026-09-03), so
+  # on that platform the directory clause could be doing nothing and the tests
+  # above would not notice. Mocking `Sys.which()` to resolve the directory
+  # takes that answer away: what is left to refuse it is the `!info$isdir`
+  # clause. Deleting that clause makes this expectation fail (checked at M105
+  # T4), which is what says the clause is load-bearing on the one platform
+  # this install runs on but cannot be measured on.
+  f <- tm_usable_fixtures()
+  local_mocked_bindings(
+    Sys.which = function(names) stats::setNames(names, names), .package = "base"
+  )
+  # The mock does what the test needs it to do: the directory now resolves.
+  expect_identical(unname(Sys.which(f$dir)), f$dir)
+  expect_false(tm_usable_binary(f$dir))
+  # And the mock has not turned the check into one that refuses everything.
+  expect_true(tm_usable_binary(f$good))
+})
+
+test_that("tm_usable_binary() answers elementwise", {
+  # AC5's vector half. One call over the six paths returns exactly what the
+  # six one-path calls return, unnamed -- `Sys.which()` names its result and
+  # `file.info()` names its rows, so an unnamed answer is a promise about this
+  # function rather than about either of them.
+  skip_on_os("windows")
+  f <- tm_usable_fixtures()
+  paths <- c(f$good, f$absent, f$empty, f$dir, f$noexec, "~/nowhere.exe")
+  one_at_a_time <- vapply(paths, tm_usable_binary, logical(1), USE.NAMES = FALSE)
+
+  expect_identical(tm_usable_binary(paths), one_at_a_time)
+  expect_identical(tm_usable_binary(paths), c(TRUE, rep(FALSE, 5L)))
+  expect_null(names(tm_usable_binary(paths)))
+})
+
+test_that("tm_usable_binary() answers once per element, whatever the length", {
+  # The three shapes AC5 names beside the six-path vector: a repeat answers
+  # twice, a length-1 vector answers length 1, and a zero-length vector
+  # answers `logical(0)` rather than erroring or answering for nothing.
+  f <- tm_usable_fixtures()
+  expect_identical(tm_usable_binary(c(f$good, f$good)), c(TRUE, TRUE))
+  expect_identical(tm_usable_binary(c(f$empty, f$empty)), c(FALSE, FALSE))
+  expect_identical(tm_usable_binary(f$good), TRUE)
+  expect_identical(tm_usable_binary(character(0)), logical(0))
+})

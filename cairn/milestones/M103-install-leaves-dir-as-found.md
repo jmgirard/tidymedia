@@ -1,6 +1,6 @@
 # M103: A refused `install_on_win()` leaves the install directory as it found it
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -22,12 +22,12 @@ The deliverable is **user-facing**: `install_on_win()` is exported and a caller 
 
 ## Acceptance criteria
 
-- [x] AC1: `tm_unpack()` snapshots its destination recursively (path, size, mtime) before extracting and, where `archive::archive_extract()` fails, takes a second snapshot and removes what the comparison shows this extraction added: every file it shows created or changed, with `unlink(expand = FALSE)`, and every directory it shows **created**, with `unlink(recursive = TRUE, expand = FALSE)`. A directory that existed before the extraction is never removed, whatever its timestamp shows — removing it recursively would take entries the extraction never touched — and its created or changed children are removed individually instead. Every entry the comparison shows the extraction neither created nor changed is left untouched by the cleanup, its mtime unmoved, except a directory whose mtime moves because the cleanup removed a child from it. Removal is best-effort: a third snapshot taken after the removals names what survived, and every entry the removal targeted that it still shows is returned to the caller rather than silently dropped.
+- [ ] AC1: `tm_unpack()` snapshots its destination recursively (path, size, mtime) before extracting and, where `archive::archive_extract()` fails, takes a second snapshot and removes what the comparison shows this extraction added: every file it shows created or changed, with `unlink(expand = FALSE)`, and every directory it shows **created**, with `unlink(recursive = TRUE, expand = FALSE)`. A directory that existed before the extraction is never removed, whatever its timestamp shows — removing it recursively would take entries the extraction never touched — and its created or changed children are removed individually instead. Every entry the comparison shows the extraction neither created nor changed is left untouched by the cleanup, its mtime unmoved, except a directory whose mtime moves because the cleanup removed a child from it. Removal is best-effort: a third snapshot taken after the removals names what survived, and every entry the removal targeted that it still shows is returned to the caller rather than silently dropped.
 - [x] AC2: AC1 is verified over the two failure routes the committed fixtures reach — `not-an-archive.7z` refused at open (writing nothing) and `corrupt-payload.7z` failing mid-read after it has created entries (a directory chain and a zero-length file) — by tests driving real `archive::archive_extract()` calls, no mock, each route against an empty destination, a destination holding a file at a path that fixture's own `archive::archive()` listing shows it writes (where that listing can be read and shows any), a destination holding a file at a path it does not write, and a destination holding a nested subdirectory on a path that listing shows the fixture writes into (same guard), that subdirectory and its own entry asserted still present after the failure; plus cells mocking the removal seam to fail, once on a created file and once on a created directory removed recursively, each asserting the entry that would not delete is reported.
 - [x] AC3: Every refusal `install_on_win()` can take above its `tm_unpack()` call leaves no directory the call created, at or above `install_dir`, and leaves an already-existing `install_dir`'s entries unchanged. The domain is enumerated by the M102 AC6 census (`tests/testthat/test-program-management.R:1216-1236`) narrowed by a positional filter to the `return()` and `cli_abort()` nodes preceding the `tm_unpack()` call, with the test asserting a bijection between those nodes and its registry of triggering cases so a node with no case fails it. The four front-door refusals that walk cannot see — `rlang::check_bool(confirm)`, `rlang::check_string()` on `download_url` and on `install_dir`, `check_sha256()` on `archive_checksum` — and `tm_confirm()`'s non-interactive refusal each get their own case in that registry; each refuses above the call's first `dir.create()`, so each must create no directory at all.
 - [x] AC4: A `cairn/DECISIONS.md` entry extends D046 to the installer: it states the rule, states that removal is best-effort and that a failed removal is named in the refusal rather than swallowed, states that a pre-existing directory is never removed even where the comparison shows it changed and why, states that a pre-existing file the extraction overwrote or truncated is removed under D046's created-or-changed rule and why that is not the same case, names `tidymedia_program_not_extracted` as the path the rule deliberately does not cover and why, and states a falsifier.
 - [x] AC5: `man/install_on_win.Rd` states both the general rule — a refusal leaves the install directory as it found it, naming anything it could not remove — and the single exception, `tidymedia_program_not_extracted`, and is byte-identical to a fresh `devtools::document()` run; `NEWS.md` records the change.
-- [x] AC6: `devtools::check()` reports 0 errors and 0 warnings, with every NOTE drawn from the known-acceptable set the review evidence lists and any other NOTE failing this criterion; `devtools::test()` reports 0 failures; and all six `R-CMD-check` matrix jobs are green, `windows-latest (release)` and `ubuntu-latest (4.1.0)` included.
+- [ ] AC6: `devtools::check()` reports 0 errors and 0 warnings, with every NOTE drawn from the known-acceptable set the review evidence lists and any other NOTE failing this criterion; `devtools::test()` reports 0 failures; and all six `R-CMD-check` matrix jobs are green, `windows-latest (release)` and `ubuntu-latest (4.1.0)` included.
 - [x] AC7: The `tidymedia_archive_unreadable` refusal names every entry `tm_unpack()` reported it could not remove; where the call created `install_dir` and the cleanup left it empty, the call removes that directory and the refusal names no directory it has just removed, saying instead that the install directory is as the call found it. Verified by tests over both fixtures, over a call that created the install directory, and with the removal seam mocked to fail leaving more than one entry — on a created file and, separately, on a created directory that keeps a child — every one asserted named.
 
 ## Coverage
@@ -90,6 +90,7 @@ The deliverable is **user-facing**: `install_on_win()` is exported and a caller 
 - 2026-09-02: T14 -- the three fix-now findings. The created-directory handler is disarmed the moment the extraction succeeds rather than at registration: reproduced with a real archive of single-segment entries, every one stripped by `strip_components = 1`, which left the destination empty and had `tidymedia_program_not_extracted` delete the directory its own message pointed at. `@return` gained the Windows hedge `@details` already carried, and `@details` and the NEWS bullet no longer say a file that was already there is kept -- a file the failed extraction wrote over is removed with the debris, which is what D082 and the code do.
 - 2026-09-02: D082 corrected on the boundary the return exposed and on the measurement taken since it was written. Its rule paragraph said "every refusal above the registration", which put `tidymedia_program_not_extracted` inside a rule its own last paragraph puts outside; it now says "above a successful extraction", which is where the code draws it. Its best-effort paragraph said the writer handle could not be measured off Windows; the Windows run has since looked and found the handle leaked for the process lifetime, so the paragraph now records that measurement and the falsifier now asks for a change in `archive` or libarchive rather than for a first measurement.
 - 2026-09-02: T15 closed on commit `b840f77`. `devtools::check()`: `Status: OK`, 0 errors / 0 warnings / 0 notes (16m 11s). `devtools::test()` separately: 0 failures, 11779 passing, 18 skips. All six R-CMD-check jobs green, `windows-latest (release)` and `ubuntu-latest (4.1.0)` included, plus pkgdown and test-coverage (run 33713079105). Status set back to review.
+- 2026-09-02: review pass 2 — defect return (2 of 3). AC1 fails "removes what the comparison shows this extraction added" by a second fall-through of the same shape as pass 1's: where the caller had a FILE at a path and the failed extraction replaced it with a DIRECTORY, the path is in `before` so it is not a created directory and its `isdir` is TRUE so it is not a changed file, and `tm_snapshot_added()` puts it in neither bucket. Measured: `files = "p/q"`, `dirs = character(0)`, leftovers `character(0)`, and `p` still on disk — an extraction-created directory neither removed nor named, under a refusal that says "Nothing was left behind; the directory holds what it held when this call started". AC6 is not verified: all six R-CMD-check jobs are green on `69734e7`, but `devtools::check()` was stopped in its `testthat.R` phase rather than left armed, since the code changes now. AC2, AC3, AC4, AC5 and AC7 are verified with fresh evidence in the Review section, every pass-1 finding closed and re-measured. Thrash trigger (b) fires — AC1 twice, same shape, new mechanism — and the recorded alternative is the scratch-directory redesign now sitting as a ROADMAP candidate row. Five fix-now findings and three rejections are triaged in the Review section. Status in-progress.
 
 ## Decisions
 
@@ -222,3 +223,176 @@ Findings and disposition — the four above that fail a criterion, plus:
 - **[S] prior-review note, no action.** The "nested subdirectory" cell compares
   `tm_dir_snapshot()` before and after as a whole-state equality check rather
   than deriving an expected value from the logic under test.
+
+---
+
+Review pass 2, 2026-09-02, on `69734e7` against `origin/master`. PR #107 open,
+branch 10 ahead / 0 behind, in sync with its remote. One criterion fails, so
+this pass returns the milestone a second time; the evidence gathered before the
+return is below. The seven criterion boxes were re-ticked by the implement
+commit `b840f77`, which is not where a tick may be written — under AC fencing
+each was treated as unverified here and re-decided against fresh evidence.
+
+### Acceptance criteria
+
+- **AC1 — not verified.** The unstattable-entry clause pass 1 returned on is
+  closed and was re-measured here: handed a snapshot pair whose second entry
+  carries `isdir = NA`, the shipped `tm_snapshot_added()` returns
+  `files = "unstattable"`, where the pre-T10 line (`isdir <- after$isdir`)
+  returns `NA_character_`. `test-unpack-cleanup.R` is 69 green. But a second
+  entry falls through the same classification, by a new mechanism. Where the
+  caller had a FILE at a path and the failed extraction replaced it with a
+  DIRECTORY, the path is in `before`, so it is not a created directory, and its
+  `isdir` is `TRUE`, so it is not a changed file — it lands in neither bucket.
+  Measured on this machine: with `p` a caller's file replaced by a directory
+  `p` holding `q`, `tm_snapshot_added()` returns `files = "p/q"`,
+  `dirs = character(0)`; `tm_remove_added()` returns `character(0)`; and `p`
+  is still on disk, an extraction-created directory the cleanup neither
+  removed nor named. AC1's "removes what the comparison shows this extraction
+  added" is the clause this fails — the comparison shows that path changed.
+  The refusal then takes its third message branch and tells the caller
+  "Nothing was left behind; the directory holds what it held when this call
+  started", which is false on both halves: the caller's file is gone and the
+  extraction's directory is there. ([O]1)
+- **AC2 — verified.** The matrix over both fixtures × the four starting states
+  is present and green, entry paths derived from each fixture's own
+  `archive::archive()` listing with the guard for `not-an-archive.7z`, whose
+  listing errors. Pass 1's finding on the created-file mock cell is closed:
+  the cell now pre-creates only the ancestor chain and asserts the entry absent
+  before the run, so the seam fails on a file the extraction created rather
+  than one it truncated. The second mock cell fails the recursive directory
+  call. `test-unpack-cleanup.R` 69 pass, 0 fail.
+- **AC3 — verified.** `tm_collect_exits_before(install_on_win, "tm_unpack")`
+  narrows the M102 census positionally; the bijection asserts both directions
+  plus floors that the narrowed set keeps both `return(FALSE)` exits and drops
+  both aborts below the call. Seven exits, seven registered cases, and the five
+  uncoverable-by-walk cases each carry their own case. Falsifiability measured
+  fresh on a scratch copy of the tree: commenting out
+  `rlang::check_string(install_dir, allow_null = TRUE)`
+  (`R/program_management.R:758`) turns `test-program-management.R:1669` red.
+  The default-location instrument is shown capable of a non-empty report by the
+  M098 cell at `test-program-management.R:230`, which pins the same
+  `setdiff(list.dirs(root), root)` at `R`, `R/tidymedia`, `ffmpeg` for a call
+  allowed past the checks. `test-program-management.R` 386 pass, 0 fail.
+- **AC4 — verified.** D082 (`cairn/DECISIONS.md:3838`) states the rule and
+  where it stops (a successful extraction, not the registration); states
+  removal is best-effort and that what would not go is named rather than
+  swallowed, with the Windows measurement on record; states that a pre-existing
+  directory is never removed whatever its timestamp shows, and why (a
+  directory's mtime moves the instant an entry lands in it); states that a
+  pre-existing FILE the extraction overwrote or truncated IS removed under
+  D046's created-or-changed rule and why that is a different case; names
+  `tidymedia_program_not_extracted` as the deliberately uncovered path with its
+  reason; and states two falsifiers.
+- **AC5 — verified.** `man/install_on_win.Rd` states the general rule and the
+  single exception in `@return` (`:47-49`) and `@details` (`:69-83`), including
+  the Windows hedge pass 1 found missing from `@return`;
+  `Rscript -e 'devtools::document()'` exited 0 and left `man/`, `NAMESPACE` and
+  `DESCRIPTION` with no working-tree diff, so the page is byte-identical to a
+  fresh run. `NEWS.md`'s Configuration bullet (`:34-48`) records the change,
+  including the overwritten-file exception and the Windows behaviour.
+- **AC6 — not verified.** All six `R-CMD-check` matrix jobs are green on
+  `69734e7` — `windows-latest (release)`, `macos-latest (release)` and
+  `ubuntu-latest` release / devel / oldrel-1 / 4.1.0 — plus `pkgdown` and
+  `test-coverage` (run 33714553073). `devtools::test()` is 0 failures on the two
+  touched files (69 + 386). `devtools::check()` was still in its `testthat.R`
+  phase when the return was decided and is not recorded as a result: the code
+  changes now, so that evidence would be stale before it could tick anything.
+  Separately, `codecov/patch` reports `fail` on this head. No criterion binds
+  it and no gate check reads it, so it is recorded rather than actioned.
+- **AC7 — verified.** Pass 1's two gaps are closed and both were re-measured
+  here. The refusal interpolates `cli::cli_vec(left, list("vec-trunc" = Inf))`:
+  measured on 25 paths, the default construction names 20 of 25 and the shipped
+  one names 25 of 25. The mocked cell's two path assertions are matched with
+  their closing quote, so the directory's can no longer be satisfied by the
+  file's path carrying it as a prefix. The three message shapes are exercised
+  over both fixtures, over a call that created the install directory, and over
+  a mocked failure leaving both a created file and a created directory that
+  keeps a child.
+
+### Consistency gate
+
+`cairn_validate.py` 16/16 PASS, 6 advisories OK, exit 0, with one WARN — M103
+carries 15 tasks against a 10-task split tripwire, which is advisory and not a
+gate failure. No principle change, so `cairn_impact.py` does not apply.
+Toolchain slot: `devtools::document()` no diff; `pkgdown::check_pkgdown()` "No
+problems found"; `README.Rmd`/`README.md` untouched by the branch; `NEWS.md`
+carries the entry; no new top-level file (`NEWS.md` is the only root path the
+branch touches and it predates M103); `devtools::check()` not completed (AC6).
+
+### Independent review
+
+Three fresh-context lenses, distinct evidence bases. [O] diff-bug returned 9
+findings; [S] blame-history returned zero regressions, having checked the
+`tm_unpack()` return-contract change against M102's `40143f9`, D046, D080 and
+D082, the `tm_dir_snapshot()` test-helper consolidation, and the
+`program_not_extracted` carve-out; [S] prior-review-record returned zero
+findings, the GitHub inline-comment probe empty and every pass-1 finding
+confirmed closed rather than reintroduced.
+
+Findings and disposition:
+
+- **[O]1, returns the milestone.** AC1's second fall-through, above. Measured
+  and reproduced independently of the reviewer's account.
+- **[O]2, fix now.** `unpacked_here <- TRUE` (`R/program_management.R:948`)
+  disarms the created-directory handler the moment the extraction succeeds, so
+  an extraction that succeeds and produces no files at all — every entry of a
+  flat archive stripped by `strip_components = 1` — leaves an install directory
+  this call created, empty, under a `tidymedia_program_not_extracted` message
+  saying whatever unpacked is still in it. Nothing unpacked. The path is
+  outside the rule by Scope, AC4 and D082, but a message that is vacuously
+  false is a defect inside that intentional carve-out, not the carve-out
+  itself, and the new test pins the message rather than questioning it.
+- **[O]3, fix now (cheap, D082 only).** `tm_snapshot_added()` keeps only the
+  topmost created directory of a chain, so `targeted` never holds the
+  intervening levels and a failed removal names the top and the files, not
+  every created level. Measured: a created chain `a/b/c/f.txt` with the seam
+  failing reports `c("a", "a/b/c/f.txt")`. AC1 and AC7 are both satisfied —
+  they are written over what the removal targeted — and the test helper
+  `tm_named_by()` accepts an entry named or sitting under something named. The
+  weakening is real and unstated; it belongs in D082.
+- **[O]5, fix now (cheap).** `tm_snapshot_added()` calls
+  `match(after$path[i], known)` inside a `vapply` over every row, rebuilding
+  the hash table each time; the reviewer measured 0.50 s elapsed on 6000
+  unchanged entries. `tm_dir_snapshot()` runs three more times per sweep, six
+  on the retry. Hoisting `match(after$path, known)` out of the loop is the same
+  logic in one pass.
+- **[O]4, fix now (cheap, comment only).** The `check_string(install_dir)` case
+  passes `install_dir = 1`, which is non-NULL, so `tm_install_dir()` is never
+  reached and the `created_by_default` assertion cannot go red for that one
+  case. AC3 is carried by the case's message assertion, and the cell as a whole
+  IS falsifiable — the mutation above turns it red — but the comment claiming
+  that assertion carries this case is wrong.
+- **[O]9, fix now (cheap, comment only).** The connection is closed twice on
+  the failure path (`R/program_management.R:582` `on.exit(tm_close(con))` and
+  `:596`). `tm_close()` guards with `isOpen()` inside `tryCatch`, so this is
+  safe, but a reader chasing M102 AC3's "leaves no connection open" finds two
+  closers and no note saying why.
+- **[O]6, rejected.** `gc()` and `Sys.sleep(0.1)` in `tm_remove_added()` are
+  the recorded outcome of the pass-1 gate, which kept them for a transient hold
+  the negative Windows measurement does not rule out, with that measurement
+  written beside them. `devtools::check()` reported 0 notes on the previous
+  round, so the CRAN concern is not yet evidenced.
+- **[O]7, rejected.** The M102 assertion at `test-program-management.R:893` is
+  a biconditional over post-hoc state, which is weaker than the positive
+  assertion it replaced — but it is an unmodified contract this milestone
+  superseded deliberately, and AC7's own cells assert the created and kept
+  splits directly.
+- **[O]8, rejected.** `tm_unpack()` snapshots before every extraction because
+  whether the extraction will fail is not knowable at that point; a snapshot
+  taken only on failure is not a before-snapshot. The cost is one recursive
+  `file.info()` on a directory the call is about to write into.
+
+### Thrash
+
+Defect return 2 of 3 for M103 (pass 1, then this pass); the milestone's one
+amendment return runs on its own track and is not counted here. Trigger (b)
+fires: AC1 has now failed twice, each time by a new mechanism of the same shape
+— an entry `tm_snapshot_added()` sorts into neither bucket is neither removed
+nor named. Pass 1's was an `isdir` of `NA`; this one is an `isdir` of `TRUE` at
+a path the caller already held. Trigger (a) has not fired. The alternative the
+record holds against this approach is the scratch-directory redesign — extract
+into a fresh empty directory and move on success, where no pre-existing entry
+can be misclassified because there are none — filed as a ROADMAP candidate row
+on 2026-09-02 rather than chosen. Reconsidering it is (b)'s remedy; where it is
+declined again, `/milestone-brief` escalation is available for this instance.

@@ -45,7 +45,9 @@
   unpacked — a download that did not arrive, a digest that did not match —
   still takes back the directory it created. The one exception to the rule is
   a build that unpacked successfully but did not contain a required program,
-  where the error already tells you the unpacked files are still there.
+  where the error already tells you the unpacked files are still there; where
+  such a build unpacked no files at all, there is nothing to leave you and the
+  directory comes back like any other refusal.
 
 * `install_on_win()` now checks what it downloaded before it changes anything,
   and remembers a program's location only if the archive actually contained

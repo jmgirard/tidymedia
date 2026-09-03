@@ -46,7 +46,8 @@ that could not be unpacked (\code{tidymedia_archive_unreadable}), and a
 required program the archive did not contain
 (\code{tidymedia_program_not_extracted}). Every one of these aims to leave the
 install directory as the call found it, except the last, which leaves the
-files the archive did unpack. Removal is best-effort: on Windows a
+files the archive did unpack -- and which is back inside the rule where
+the archive unpacked none. Removal is best-effort: on Windows a
 partly-written file cannot be deleted while the extraction library still
 holds it, and the error names what it could not remove. See Details.
 }
@@ -82,7 +83,10 @@ leave files behind -- the error tells you which.
 The one refusal outside the rule entirely is
 \code{tidymedia_program_not_extracted}, where the archive unpacked successfully
 but did not contain a required program: that error says so, and the
-unpacked files stay where they are.
+unpacked files stay where they are. It is the files that put that refusal
+outside the rule, so where the archive unpacked no files at all the rule
+applies to it like any other: a directory this call created is removed
+again, and the error says so instead.
 }
 \examples{
 \dontrun{

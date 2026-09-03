@@ -714,7 +714,10 @@ tm_install_prompt <- function(download_url, install_dir, programs,
 #' The one refusal outside the rule entirely is
 #' `tidymedia_program_not_extracted`, where the archive unpacked successfully
 #' but did not contain a required program: that error says so, and the
-#' unpacked files stay where they are.
+#' unpacked files stay where they are. It is the files that put that refusal
+#' outside the rule, so where the archive unpacked no files at all the rule
+#' applies to it like any other: a directory this call created is removed
+#' again, and the error says so instead.
 #'
 #' @param download_url A string indicating the location of the FFmpeg
 #'   installation archive. If `NULL`, will default to the latest static
@@ -745,7 +748,8 @@ tm_install_prompt <- function(download_url, install_dir, programs,
 #'   required program the archive did not contain
 #'   (`tidymedia_program_not_extracted`). Every one of these aims to leave the
 #'   install directory as the call found it, except the last, which leaves the
-#'   files the archive did unpack. Removal is best-effort: on Windows a
+#'   files the archive did unpack -- and which is back inside the rule where
+#'   the archive unpacked none. Removal is best-effort: on Windows a
 #'   partly-written file cannot be deleted while the extraction library still
 #'   holds it, and the error names what it could not remove. See Details.
 #' @seealso [set_program()] to register an existing binary, and [find_ffmpeg()]
@@ -826,16 +830,19 @@ install_on_win <- function(download_url = NULL,
   # half-succeed -- `recursive = TRUE` makes the parents and then fails on the
   # leaf -- and every refusal below here has to leave the directory as the
   # call found it (M103 AC3). It is disarmed the moment the extraction
-  # SUCCEEDS, which is one step earlier than "once a program has been
-  # registered": everything below a successful extraction is outside the rule,
-  # because the archive's files are in that directory and
+  # produces FILES, which is one step earlier than "once a program has been
+  # registered": everything below an extraction that wrote something is
+  # outside the rule, because those files are in that directory and
   # `tidymedia_program_not_extracted` tells the caller so. Disarming at
   # registration instead let that abort delete the directory its own message
-  # pointed at, wherever the extraction produced nothing -- an archive of
-  # single-segment entries, every one stripped by `strip_components = 1`
-  # (M103 review pass 1). It is also a no-op wherever the directory holds
-  # anything: a directory that already existed is never in `created_dirs` at
-  # all.
+  # pointed at (M103 review pass 1); disarming on a merely SUCCESSFUL
+  # extraction let it keep an empty directory this call created, under the
+  # same message, wherever the archive produced nothing -- single-segment
+  # entries, every one stripped by `strip_components = 1` (M103 review pass
+  # 2). The carve-out is written over the files a successful extraction
+  # leaves, so where it leaves none it does not reach. It is also a no-op
+  # wherever the directory holds anything: a directory that already existed is
+  # never in `created_dirs` at all.
   created_dirs <- tm_missing_ancestors(install_dir)
   unpacked_here <- FALSE
   on.exit(if (!unpacked_here) tm_remove_created_dirs(created_dirs), add = TRUE)
@@ -962,7 +969,7 @@ install_on_win <- function(download_url = NULL,
   }
   # From here the extraction has succeeded and its files are in the install
   # directory, so nothing below may take that directory back (M103 AC4).
-  unpacked_here <- TRUE
+  unpacked_here <- length(produced$files) > 0L
   # Register what the extraction actually produced, and nothing else: a
   # remembered location pointing at a file the archive never contained is a
   # worse state than no remembered location at all. What THIS extraction
@@ -975,13 +982,30 @@ install_on_win <- function(download_url = NULL,
   unpacked <- tm_extracted_programs(produced$files, tm_install_registers)
   absent_required <- setdiff(tm_install_required, unpacked)
   if (length(absent_required)) {
+    # The directories this call made come back before the message is built,
+    # for the same reason the unreadable-archive refusal does it there: the
+    # caller reads the message once, and it has to describe the state they
+    # will find. `tm_remove_created_dirs()` stops at the first directory that
+    # is not empty, so an extraction that wrote files keeps its directory of
+    # its own accord and the guard below is what decides the wording.
+    if (!length(produced$files)) tm_remove_created_dirs(created_dirs)
     cli::cli_abort(
       c(
         "The archive did not produce {.and {.file {absent_required}}}.",
         "i" = "Looked for {.and {.file {paste0(\"bin/\", absent_required,
                \".exe\")}}} under {.file {install_dir}}.",
-        "i" = "Nothing was registered; whatever the archive did unpack is
-               still in that directory."
+        if (length(produced$files)) {
+          c("i" = "Nothing was registered; whatever the archive did unpack is
+                   still in that directory.")
+        } else if (!dir.exists(install_dir)) {
+          c("i" = "The archive produced no files at all. Nothing was
+                   registered, and this call has removed the install directory
+                   it created.")
+        } else {
+          c("i" = "The archive produced no files at all. Nothing was
+                   registered, and the install directory holds what it held
+                   when this call started.")
+        }
       ),
       class = "tidymedia_program_not_extracted"
     )

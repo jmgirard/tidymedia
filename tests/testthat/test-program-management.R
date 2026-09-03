@@ -1846,26 +1846,28 @@ test_that("a refusal with more leftovers than cli will print still names every o
 })
 
 
-test_that("a successful unpack that produced no required program keeps its directory", {
+# An archive whose every entry is a single segment, so `strip_components = 1`
+# strips all of them: the extraction succeeds and writes nothing.
+tm_flat_archive <- function(envir = parent.frame()) {
+  src <- withr::local_tempdir(.local_envir = envir)
+  writeLines("payload", file.path(src, "payload.txt"))
+  flat <- file.path(withr::local_tempdir(.local_envir = envir), "flat.7z")
+  withr::with_dir(src, archive::archive_write_files(flat, "payload.txt"))
+  flat
+}
+
+test_that("a successful unpack that produced no files takes back the directory it created", {
   # The boundary Scope, AC4 and D082 all draw: `tidymedia_program_not_extracted`
   # is the one refusal outside the leaves-it-as-found rule, because its
   # extraction SUCCEEDED and its message tells the caller the unpacked files
-  # are still there. The exit handler that takes back a created directory must
-  # therefore be disarmed by the time that abort fires -- otherwise the call
-  # deletes the directory the message is pointing at (M103 review pass 1).
-  #
-  # Reached with a real archive whose entry is a single segment:
-  # `strip_components = 1` strips it, the extraction succeeds having written
-  # nothing, and the install directory is left empty -- which is exactly the
-  # state in which the handler would fire.
+  # are still there. The carve-out is written over those files, so where the
+  # extraction produced none it does not reach: there is nothing in the
+  # directory to point the caller at, and a call that created that directory
+  # has to give it back like any other refusal (M103 review pass 2).
   tm_redirect_config()
   tm_redirect_data()
 
-  src <- withr::local_tempdir()
-  writeLines("payload", file.path(src, "payload.txt"))
-  flat <- file.path(withr::local_tempdir(), "flat.7z")
-  withr::with_dir(src, archive::archive_write_files(flat, "payload.txt"))
-
+  flat <- tm_flat_archive()
   made <- file.path(withr::local_tempdir(), "made", "ffmpeg")
   rec <- tm_mock_install(confirm = function(prompt) TRUE, unpack = NULL, archive = flat)
 
@@ -1875,13 +1877,66 @@ test_that("a successful unpack that produced no required program keeps its direc
   )
 
   expect_s3_class(cnd, "tidymedia_program_not_extracted")
-  # The premise: the extraction really did succeed and really did leave the
-  # directory empty, so this is the state the handler would have acted on.
-  expect_identical(
-    list.files(made, recursive = TRUE, all.files = TRUE, no.. = TRUE),
-    character(0)
+  expect_false(dir.exists(made))
+  expect_false(dir.exists(dirname(made)))
+  msg <- cli::ansi_strip(conditionMessage(cnd))
+  expect_match(msg, "produced no files at all", fixed = TRUE)
+  expect_match(msg, "removed the install directory it created", fixed = TRUE)
+  # And it does not tell the caller to go and look in a directory that is gone.
+  expect_false(grepl("still in that directory", msg, fixed = TRUE))
+})
+
+test_that("a successful unpack that produced no files leaves a directory it found alone", {
+  # The other half: the same refusal, but the install directory was already
+  # there. Nothing to give back, and nothing of the caller's to touch.
+  tm_redirect_config()
+  tm_redirect_data()
+
+  flat <- tm_flat_archive()
+  found <- file.path(withr::local_tempdir(), "found")
+  dir.create(found)
+  writeLines("the caller's own file", file.path(found, "keep.txt"))
+  rec <- tm_mock_install(confirm = function(prompt) TRUE, unpack = NULL, archive = flat)
+
+  cnd <- tryCatch(
+    install_on_win(install_dir = found, archive_checksum = rec$digest),
+    error = function(cnd) cnd
   )
-  # And the directory the message points at is still there.
+
+  expect_s3_class(cnd, "tidymedia_program_not_extracted")
+  expect_true(dir.exists(found))
+  expect_identical(readLines(file.path(found, "keep.txt")), "the caller's own file")
+  msg <- cli::ansi_strip(conditionMessage(cnd))
+  expect_match(msg, "produced no files at all", fixed = TRUE)
+  expect_match(msg, "holds what it held when this call started", fixed = TRUE)
+})
+
+test_that("a successful unpack that produced files but no required program keeps its directory", {
+  # The carve-out itself, unchanged: an extraction that DID write files leaves
+  # them where they are, and the message points the caller at them.
+  tm_redirect_config()
+  tm_redirect_data()
+
+  src <- withr::local_tempdir()
+  dir.create(file.path(src, "top", "bin"), recursive = TRUE)
+  writeLines("not a program", file.path(src, "top", "bin", "readme.txt"))
+  nested <- file.path(withr::local_tempdir(), "nested.7z")
+  withr::with_dir(src, archive::archive_write_dir(nested, "top"))
+
+  made <- file.path(withr::local_tempdir(), "made", "ffmpeg")
+  rec <- tm_mock_install(confirm = function(prompt) TRUE, unpack = NULL, archive = nested)
+
+  cnd <- tryCatch(
+    install_on_win(install_dir = made, archive_checksum = rec$digest),
+    error = function(cnd) cnd
+  )
+
+  expect_s3_class(cnd, "tidymedia_program_not_extracted")
+  # The premise: this extraction really did write something.
+  # `strip_components = 1` drops the leading `bin/`, so the file lands at the
+  # root of the install directory -- what matters here is only that the
+  # extraction wrote one.
+  expect_true("readme.txt" %in% list.files(made, recursive = TRUE))
   expect_true(dir.exists(made))
   expect_match(
     cli::ansi_strip(conditionMessage(cnd)), "still in that directory",

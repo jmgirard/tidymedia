@@ -108,7 +108,12 @@ fetched or read (<code>tidymedia_checksum_unavailable</code>), a digest that did
 match the downloaded archive (<code>tidymedia_checksum_mismatch</code>), an archive
 that could not be unpacked (<code>tidymedia_archive_unreadable</code>), and a
 required program the archive did not contain
-(<code>tidymedia_program_not_extracted</code>).</p>
+(<code>tidymedia_program_not_extracted</code>). Every one of these aims to leave the
+install directory as the call found it, except the last, which leaves the
+files the archive did unpack – and which is back inside the rule where
+the archive unpacked none. Removal is best-effort: on Windows a
+partly-written file cannot be deleted while the extraction library still
+holds it, and the error names what it could not remove. See Details.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -120,6 +125,27 @@ beside each build; for any other source, pass <code>archive_checksum</code>. Bec
 the digest travels from the same host over the same connection as the
 archive, this catches a corrupted or truncated download, not a compromised
 source.</p>
+<p>A refusal leaves the install directory as the call found it. Files a failed
+extraction wrote are removed, a directory the call created is removed
+again, and anything already in the directory is left alone – with one
+deliberate exception: a file of yours the failed extraction wrote over is
+removed with the rest of the debris, because what it holds after a failed
+extraction is nothing you put there. The error names that file by full
+path, so a refusal never reports a directory as untouched when it took
+something of yours out of it.</p>
+<p>Removal is best-effort, and on Windows it does not always succeed. Where an
+extraction fails part-way, the library that was writing the file is still
+holding it open, and Windows will not delete a file something holds. Those
+entries are named in the error by full path, so a refusal on Windows can
+leave files behind – the error tells you which. A directory this call
+created and could not remove again is named the same way.</p>
+<p>The one refusal outside the rule entirely is
+<code>tidymedia_program_not_extracted</code>, where the archive unpacked successfully
+but did not contain a required program: that error says so, and the
+unpacked files stay where they are. It is the files that put that refusal
+outside the rule, so where the archive unpacked no files at all the rule
+applies to it like any other: a directory this call created is removed
+again, and the error says so instead.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

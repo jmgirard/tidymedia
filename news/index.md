@@ -39,6 +39,21 @@
 
 ### Configuration
 
+- [`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
+  now registers every program the archive produced, or none of them. It
+  used to register them one program at a time, so a build it could not
+  use was registered in pieces: a truncated `ffprobe.exe` was remembered
+  as a working program, and a build missing `ffprobe.exe` altogether
+  registered `ffmpeg` and then failed — overwriting, in both cases,
+  whatever location an earlier install had left. The install now looks
+  at every produced program before it writes anything: where a required
+  one cannot be used, the call refuses without changing a single
+  remembered location and names each failed program and its full path;
+  where an optional one cannot be used, the install completes and tells
+  you which program it skipped and why. The check does not run the
+  programs, so a build that unpacks and then cannot execute — the wrong
+  architecture, say — still gets registered.
+
 - A refused
   [`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
   now leaves the install directory as it found it. Files a failed

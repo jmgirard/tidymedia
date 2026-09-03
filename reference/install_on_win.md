@@ -54,20 +54,21 @@ install_on_win(
 
 A logical indicating whether the installation was successful. `FALSE` is
 returned by a declined confirmation and by a failure to create the
-install directory. Five other outcomes abort with a condition of their
+install directory. Six other outcomes abort with a condition of their
 own rather than returning: a download that did not deliver
 (`tidymedia_download_unavailable`), a published digest that could not be
 fetched or read (`tidymedia_checksum_unavailable`), a digest that did
 not match the downloaded archive (`tidymedia_checksum_mismatch`), an
-archive that could not be unpacked (`tidymedia_archive_unreadable`), and
-a required program the archive did not contain
-(`tidymedia_program_not_extracted`). Every one of these aims to leave
-the install directory as the call found it, except the last, which
-leaves the files the archive did unpack – and which is back inside the
-rule where the archive unpacked none. Removal is best-effort: on Windows
-a partly-written file cannot be deleted while the extraction library
-still holds it, and the error names what it could not remove. See
-Details.
+archive that could not be unpacked (`tidymedia_archive_unreadable`), a
+required program the archive did not contain
+(`tidymedia_program_not_extracted`), and a required program the archive
+produced in a form that cannot be used (`tidymedia_program_unusable`).
+Every one of these aims to leave the install directory as the call found
+it, except the last two, which leave the files the archive did unpack –
+and `tidymedia_program_not_extracted` is back inside the rule where the
+archive unpacked none. Removal is best-effort: on Windows a
+partly-written file cannot be deleted while the extraction library still
+holds it, and the error names what it could not remove. See Details.
 
 ## Details
 
@@ -79,6 +80,15 @@ publishes beside each build; for any other source, pass
 `archive_checksum`. Because the digest travels from the same host over
 the same connection as the archive, this catches a corrupted or
 truncated download, not a compromised source.
+
+Every program the extraction produced is checked before any location is
+remembered: the path has to resolve the way an executable does, and what
+is there has to be a file rather than a directory, and not be empty. The
+program itself is never run, so a build that unpacks and then cannot
+execute – the wrong architecture, say – passes this check. Where a
+required program fails it, nothing at all is registered and the error
+names each failed program and its full path; where an optional one fails
+it, the install completes and says which program it skipped.
 
 A refusal leaves the install directory as the call found it. Files a
 failed extraction wrote are removed, a directory the call created is
@@ -97,13 +107,14 @@ on Windows can leave files behind – the error tells you which. A
 directory this call created and could not remove again is named the same
 way.
 
-The one refusal outside the rule entirely is
-`tidymedia_program_not_extracted`, where the archive unpacked
-successfully but did not contain a required program: that error says so,
-and the unpacked files stay where they are. It is the files that put
-that refusal outside the rule, so where the archive unpacked no files at
-all the rule applies to it like any other: a directory this call created
-is removed again, and the error says so instead.
+Two refusals sit outside that rule, both of them below a successful
+extraction: `tidymedia_program_not_extracted`, where the archive did not
+contain a required program, and `tidymedia_program_unusable`, where it
+produced one that cannot be used. Each says so, and the unpacked files
+stay where they are. It is the files that put those refusals outside the
+rule, so where the archive unpacked no files at all the rule applies to
+`tidymedia_program_not_extracted` like any other: a directory this call
+created is removed again, and the error says so instead.
 
 ## See also
 

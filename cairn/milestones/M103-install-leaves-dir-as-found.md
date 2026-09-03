@@ -1,6 +1,6 @@
 # M103: A refused `install_on_win()` leaves the install directory as it found it
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -25,8 +25,8 @@ The deliverable is **user-facing**: `install_on_win()` is exported and a caller 
 - [ ] AC1: `tm_unpack()` snapshots its destination recursively (path, size, mtime) before extracting and, where `archive::archive_extract()` fails, takes a second snapshot and removes what the comparison shows this extraction added: every file it shows created or changed, with `unlink(expand = FALSE)`, and every directory it shows **created**, with `unlink(recursive = TRUE, expand = FALSE)`. A directory that existed before the extraction is never removed, whatever its timestamp shows — removing it recursively would take entries the extraction never touched — and its created or changed children are removed individually instead. Every entry the comparison shows the extraction neither created nor changed is left untouched by the cleanup, its mtime unmoved, except a directory whose mtime moves because the cleanup removed a child from it. Removal is best-effort: a third snapshot taken after the removals names what survived, and every entry the removal targeted that it still shows is returned to the caller rather than silently dropped.
 - [ ] AC2: AC1 is verified over the two failure routes the committed fixtures reach — `not-an-archive.7z` refused at open (writing nothing) and `corrupt-payload.7z` failing mid-read after it has created entries (a directory chain and a zero-length file) — by tests driving real `archive::archive_extract()` calls, no mock, each route against an empty destination, a destination holding a file at a path that fixture's own `archive::archive()` listing shows it writes (where that listing can be read and shows any), a destination holding a file at a path it does not write, and a destination holding a nested subdirectory on a path that listing shows the fixture writes into (same guard), that subdirectory and its own entry asserted still present after the failure; plus cells mocking the removal seam to fail, once on a created file and once on a created directory removed recursively, each asserting the entry that would not delete is reported.
 - [ ] AC3: Every refusal `install_on_win()` can take above its `tm_unpack()` call leaves no directory the call created, at or above `install_dir`, and leaves an already-existing `install_dir`'s entries unchanged. The domain is enumerated by the M102 AC6 census (`tests/testthat/test-program-management.R:1216-1236`) narrowed by a positional filter to the `return()` and `cli_abort()` nodes preceding the `tm_unpack()` call, with the test asserting a bijection between those nodes and its registry of triggering cases so a node with no case fails it. The four front-door refusals that walk cannot see — `rlang::check_bool(confirm)`, `rlang::check_string()` on `download_url` and on `install_dir`, `check_sha256()` on `archive_checksum` — and `tm_confirm()`'s non-interactive refusal each get their own case in that registry; each refuses above the call's first `dir.create()`, so each must create no directory at all.
-- [ ] AC4: A `cairn/DECISIONS.md` entry extends D046 to the installer: it states the rule, states that removal is best-effort and that a failed removal is named in the refusal rather than swallowed, states that a pre-existing directory is never removed even where the comparison shows it changed and why, states that a pre-existing file the extraction overwrote or truncated is removed under D046's created-or-changed rule and why that is not the same case, names `tidymedia_program_not_extracted` as the path the rule deliberately does not cover and why, and states a falsifier.
-- [ ] AC5: `man/install_on_win.Rd` states both the general rule — a refusal leaves the install directory as it found it, naming anything it could not remove — and the single exception, `tidymedia_program_not_extracted`, and is byte-identical to a fresh `devtools::document()` run; `NEWS.md` records the change.
+- [x] AC4: A `cairn/DECISIONS.md` entry extends D046 to the installer: it states the rule, states that removal is best-effort and that a failed removal is named in the refusal rather than swallowed, states that a pre-existing directory is never removed even where the comparison shows it changed and why, states that a pre-existing file the extraction overwrote or truncated is removed under D046's created-or-changed rule and why that is not the same case, names `tidymedia_program_not_extracted` as the path the rule deliberately does not cover and why, and states a falsifier.
+- [x] AC5: `man/install_on_win.Rd` states both the general rule — a refusal leaves the install directory as it found it, naming anything it could not remove — and the single exception, `tidymedia_program_not_extracted`, and is byte-identical to a fresh `devtools::document()` run; `NEWS.md` records the change.
 - [ ] AC6: `devtools::check()` reports 0 errors and 0 warnings, with every NOTE drawn from the known-acceptable set the review evidence lists and any other NOTE failing this criterion; `devtools::test()` reports 0 failures; and all six `R-CMD-check` matrix jobs are green, `windows-latest (release)` and `ubuntu-latest (4.1.0)` included.
 - [ ] AC7: The `tidymedia_archive_unreadable` refusal names every entry `tm_unpack()` reported it could not remove; where the call created `install_dir` and the cleanup left it empty, the call removes that directory and the refusal names no directory it has just removed, saying instead that the install directory is as the call found it. Verified by tests over both fixtures, over a call that created the install directory, and with the removal seam mocked to fail leaving more than one entry — on a created file and, separately, on a created directory that keeps a child — every one asserted named.
 
@@ -74,6 +74,136 @@ The deliverable is **user-facing**: `install_on_win()` is exported and a caller 
 - 2026-09-02: gate chose attempting a fix and measuring it on the Windows job over accepting naming-instead-of-deleting, because no local machine can take that measurement and the falsifier D082 states is exactly what the job would produce. `tm_remove_added()` now sweeps twice, the second pass only where the first left something, with `gc()` and a 0.1 s pause between them: the handle belongs to `archive_extract()`'s writer and is not an R connection, so `gc()`'s finalizers are the only lever R has, and the pause covers a transient hold rather than a leaked one. The strict tests are left strict for this round -- they ARE the measurement.- 2026-09-02: the Windows measurement came back negative and is now on record: with `gc()` and a 0.1 s pause between two sweeps, `windows-latest (release)` failed identically -- 15 failures, the same leftovers, `payload.txt` and the `var` chain holding it. The handle libarchive writes the failed entry through is leaked for the process lifetime, not held transiently. The other five R-CMD-check jobs and pkgdown and test-coverage were all green on that round. This confirms rather than falsifies D082's best-effort choice; D082's own falsifier asks for the opposite result.
 - 2026-09-02: gate chose aligning the tests with AC1's own best-effort clause over redesigning around a scratch directory or returning to planning. AC1 promises removal as best-effort with an undeletable entry returned to the caller, which is exactly what Windows does, so no criterion changed wording -- the tests were over-claiming. `tm_expect_left_as_found()` now asserts the whole promise: nothing the caller had is gone or changed, every named leftover really is on disk, and nothing survives unnamed or under something unnamed. The strict "removed, and nothing to report" claim is kept on the platforms that can keep it. The scratch-directory redesign is filed as a candidate row.
 - 2026-09-02: NEWS.md's Configuration bullet rewritten to say the Windows behaviour plainly rather than hide it behind "best-effort", and to name the refusals that DO take their directory back there.- 2026-09-02: the scratch-directory redesign filed as a ROADMAP candidate row (search-first: no existing row covers it; the three neighbouring installer rows are the sidecar manifest, archive provenance, and partial registration). Adding it took `ROADMAP.md` to 24,536 b, over its 24,000 budget, so nine of the widest candidate rows were compressed to 23,969 b; no row was pruned and no claim dropped.- 2026-09-02: T9 closed on commit `6a0aedd`. `devtools::check()`: `Status: OK`, 0 errors / 0 warnings / 0 notes (20m 35s). All six R-CMD-check jobs green -- `windows-latest (release)` 14m34s, `macos-latest (release)` 10m34s, `ubuntu-latest` release 21m20s / devel 18m48s / oldrel-1 20m46s / 4.1.0 18m30s -- plus pkgdown and test-coverage (run 33708179316). Status set to review; the commit that records this is tracking-only, so the CI run it triggers reruns the same code.
+- 2026-09-02: review pass 1 — defect return. AC1 fails its "rather than silently dropped" clause: an entry `file.info()` cannot stat (measured with a broken symlink) becomes `NA` in `tm_snapshot_added()` and is neither removed nor reported. AC2 fails its created-file mock cell: the cell pre-writes the entry, so the seam fails on a file the extraction truncated (22 b to 0 b), not one it created. AC3's default-install-dir and `check_string(install_dir)` assertions cannot go red. AC7 fails "names every entry": cli truncates the leftover vector at 20 (measured on 25 paths), and the mocked cell's directory assertion is satisfied by the file's own path as a literal prefix. Also fix-now: the `!registered` exit handler can delete `install_dir` under the `tidymedia_program_not_extracted` message, and `@return`/`@details`/NEWS state two things the code does not do. Full triage in the Review section; status in-progress.
+
 ## Decisions
 
 ## Review
+
+Review pass 1, 2026-09-02, on `6d0028b` against `origin/master`. PR #107 open,
+branch 7 ahead / 0 behind. Three criteria could not be verified, so this pass
+returns the milestone; the evidence gathered before the return is below.
+
+### Acceptance criteria
+
+- **AC1 — not verified.** `tm_dir_snapshot()`/`tm_snapshot_added()`/
+  `tm_remove_added()` do what the criterion describes for every entry
+  `file.info()` can stat, and `test-unpack-cleanup.R` is 57 green. But an entry
+  it cannot stat is neither removed nor reported: measured on this machine, a
+  broken symlink under the destination gives `isdir = NA`, `tm_snapshot_added()`
+  puts `NA_character_` into `files`, `NA %in% still` is `FALSE`, so the removal
+  skips it and the survivor comparison drops it. AC1's "returned to the caller
+  rather than silently dropped" is the clause this fails. ([O]3)
+- **AC2 — not verified.** The matrix over both fixtures × the four starting
+  states is present and green, and the guard for `not-an-archive.7z`'s
+  unreadable listing is correct. The criterion also asks for two removal-seam
+  mock cells, "once on a created file and once on a created directory removed
+  recursively". The directory cell is there. The file cell pre-creates the
+  entry's whole ancestor chain and pre-writes the entry, so the file the seam
+  fails on is one the extraction TRUNCATED, not one it created — measured:
+  size 22 before, 0 after, `added$dirs` empty, `added$files` that one
+  pre-existing path. No cell mocks the seam to fail on a created file.
+- **AC3 — not verified.** `tm_collect_exits_before()` narrows the M102 census
+  positionally, seven exits precede the `tm_unpack()` call, the registry holds
+  seven cases, and the bijection asserts both directions with both floors; the
+  five uncoverable-by-walk cases are each present. Two of the directory
+  assertions cannot go red, though. `tm_ac3_run()` calls `tm_redirect_data()`,
+  which points `R_USER_DATA_DIR` at its own temp root, so the test's
+  `default_root` — computed under a different root — names a path no run could
+  create ([O]8); and the `check_string(install_dir)` case calls
+  `install_on_win(install_dir = 1)`, never passing `dir`, so both its
+  assertions are about paths the call has no name for ([O]9).
+- **AC4 — verified.** D082 (`cairn/DECISIONS.md`) states the rule, states
+  removal is best-effort with a failed removal named rather than swallowed,
+  states that a pre-existing directory is never removed however its timestamp
+  reads and why, states that a pre-existing file the extraction overwrote or
+  truncated IS removed under D046's created-or-changed rule and why that is a
+  different case, names `tidymedia_program_not_extracted` as the deliberately
+  uncovered path with its reason, and states two falsifiers.
+- **AC5 — verified.** `man/install_on_win.Rd` states the general rule and the
+  single exception in `@details` (`:67-73`) and again in `@return` (`:45-49`);
+  `devtools::document()` produced no diff, so the file is byte-identical to a
+  fresh run; `NEWS.md`'s Configuration bullet records the change. (The
+  `@return` sentence's accuracy is a separate finding, [O]4 — AC5 asks that the
+  page state the rule, which it does.)
+- **AC6 — not run to completion.** `devtools::test()` is 0 failures across the
+  two touched files (57 + 364 assertions); `devtools::check()` was in its
+  `testthat.R` phase and `macos-latest (release)` and `pkgdown` had passed with
+  the other five jobs pending when the return was decided. Both watchers were
+  stopped rather than left armed: the code changes now, so this evidence would
+  be stale before it could tick anything.
+- **AC7 — not verified.** The refusal's three shapes are implemented and the
+  tests over both fixtures, the created-directory case and the mocked-failure
+  case are green. Two gaps. The message interpolates the leftovers as
+  `{.file {left}}`, and cli truncates a vector at 20 — measured on a 25-element
+  path vector, entries 19 through 23 are replaced by an ellipsis — so a failure
+  leaving more than 20 undeletable entries names 20 of them, against AC7's
+  "names every entry" ([O]1). And the mocked cell's directory assertion,
+  `grepl(file.path(d, topmost), msg)`, is satisfied by the file's own path,
+  which contains it as a literal prefix, so the cell cannot fail on the
+  directory being dropped from the message ([O]7).
+
+### Consistency gate
+
+`cairn_validate.py` 16/16 PASS, 7 advisories OK, exit 0. No principle change,
+so `cairn_impact.py` does not apply. Toolchain slot: `devtools::document()` no
+diff; `pkgdown::check_pkgdown()` no problems; `README.Rmd`/`README.md`
+untouched by the branch; NEWS.md carries the entry; no new top-level files;
+`devtools::check()` not completed (see AC6).
+
+### Independent review
+
+Three fresh-context lenses, distinct evidence bases. [O] diff-bug returned 12
+findings; [S] blame-history returned zero regressions, confirming each of the
+two prior-milestone assertions this branch changed (M098's directory-chain pin,
+M102's "names install_dir") is genuinely superseded and logged; [S]
+prior-review-record returned zero findings, with the GitHub inline-comment
+probe empty and the archived `## Review` sections of M097/M098/M101/M102
+showing no lesson reintroduced.
+
+Findings and disposition — the four above that fail a criterion, plus:
+
+- **[O]2, fix now.** `on.exit(if (!registered) tm_remove_created_dirs(...))` is
+  armed above `dir.create()` and is still armed when the
+  `tidymedia_program_not_extracted` abort fires. Where the successful
+  extraction left `install_dir` empty, the handler deletes the directory while
+  the message says the unpacked files are still in it. Measured reachable: an
+  archive whose entries are all single-segment has every one stripped by
+  `strip_components = 1`, extraction succeeds with `files = character(0)`, and
+  the destination is left empty. This is the one path Scope, AC4 and D082 all
+  put outside the rule, so the diff reaches a boundary it declared; D082's
+  "every refusal above the registration leaves the install directory holding
+  what it held" is inconsistent with its own final paragraph on the same point.
+- **[O]4, fix now.** `@return`'s "Every one of these leaves the install
+  directory as the call found it, except the last" carries no hedge, and the
+  milestone's own Windows measurement is that `tidymedia_archive_unreadable`
+  leaves `payload.txt` and its directory chain behind. `@details` hedges;
+  `@return` does not.
+- **[O]5, fix now.** `@details` and the NEWS bullet both say "files that were
+  already there are kept". D082 and the shipped code remove a pre-existing file
+  the extraction overwrote or truncated, and a test asserts that removal. A
+  caller with their own binary where the archive writes would find it deleted
+  by a failed install.
+- **[O]10, fix now (cheap).** The four front-door AC3 cases use classless
+  `expect_error()`, so removing the check each names would still leave the cell
+  green. AC3 asks only that each have a case, so this is not why AC3 is
+  unverified.
+- **[O]6, rejected.** Size-and-mtime cannot see a same-size rewrite inside one
+  filesystem timestamp tick. That is D046's comparison rule, which this
+  milestone extends rather than introduces, and AC1 is written comparison-bound.
+- **[O]11, rejected.** AC7's two message branches are exercised only where
+  cleanup succeeds, never on Windows. That is the recorded consequence of the
+  gate that chose best-effort removal, not a new defect.
+- **[O]12, rejected.** AC7's "on a created file and, separately, on a created
+  directory that keeps a child" distinguishes the two entries the one mock
+  leaves, not two cells; the combined cell leaves and names both. What the cell
+  cannot do is discriminate, which is [O]7.
+- **[O] note, no action.** `gc()` and `Sys.sleep(0.1)` in `tm_remove_added()`
+  are kept with the negative Windows measurement recorded beside them. Worth
+  reconsidering in the next pass, not a defect.
+- **[S] blame note, no action.** A Windows caller reading the Goal's prose
+  alone could be surprised by leftovers. Disclosed in `@details` and NEWS; [O]4
+  and [O]5 are the two places that disclosure is actually wrong.
+- **[S] prior-review note, no action.** The "nested subdirectory" cell compares
+  `tm_dir_snapshot()` before and after as a whole-state equality check rather
+  than deriving an expected value from the logic under test.

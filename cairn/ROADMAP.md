@@ -13,7 +13,7 @@ _Last hygiene check: 2026-09-02 (M102 done, PR #106 squash-merged and archived; 
 | M099 | D014's pre-0.2.0 rename window is reviewed before it closes | done | — | normal | milestones/archive/M099-d014-rename-window-review.md |
 | M101 | `install_on_win()` asks before it downloads and installs | done | — | normal | milestones/archive/M101-install-on-win-confirmation.md |
 | M102 | `install_on_win()` verifies the archive and the unpacked programs before it registers anything | done | — | normal | milestones/archive/M102-install-verify-before-register.md |
-| M103 | A refused `install_on_win()` leaves the install directory as it found it | review | — | normal | milestones/M103-install-leaves-dir-as-found.md |
+| M103 | A refused `install_on_win()` leaves the install directory as it found it | in-progress | — | normal | milestones/M103-install-leaves-dir-as-found.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

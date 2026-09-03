@@ -108,7 +108,7 @@ tests — M104 fixed that at `tm_install_binary()` and this milestone only probe
 - [x] T5: Vectorize `tm_usable_binary()` (`&&` → `&`), drop the dead
       `!is.na(info$size)` clause, collapse the call site's `vapply()`
       (`R/program_management.R:1139-1143`) to one call.
-- [ ] T6: Roxygen for the two below-extraction refusals, `devtools::document()`,
+- [x] T6: Roxygen for the two below-extraction refusals, `devtools::document()`,
       `NEWS.md`.
 - [ ] T7: The DECISIONS entry; full `devtools::test()` and `devtools::check()`.
 
@@ -127,6 +127,7 @@ tests — M104 fixed that at `tm_install_binary()` and this milestone only probe
 - 2026-09-03: T2 and T3 checked off: full `devtools::test()` clean (0 failures, 11,994 passes, 18 skips).
 - 2026-09-03: T4 and T5 landed together (checkboxes pending the full-suite verify), because T4's vector-shape tests cannot pass before T5's change: written first, they errored on `'length = 6' in coercion to 'logical(1)'` at the scalar `&&`, and passed after the `&`. T4's other tests were green before T5. AC4's discrimination checked: with `!info$isdir` deleted, the mocked-`Sys.which()` directory expectation goes red on its own (1 failure, 596 passes). `test-program-management.R` 597 passes.
 - 2026-09-03: T4 and T5 checked off: full `devtools::test()` clean (0 failures, 12,015 passes, 18 skips).
+- 2026-09-03: T6: `install_on_win()`'s Details and `@return` now describe `tidymedia_program_not_extracted` by the path check rather than by what the archive contained; `devtools::document()` rewrote `man/install_on_win.Rd` and a second run produced no further diff. NEWS entry added under Configuration.
 - 2026-09-03: plan gate chose making `tm_usable_binary()` elementwise over keeping it scalar with a length guard; the underlying `file.info()` and `Sys.which()` are already vectorized, it makes the dead clause disappear rather than be deleted, and the caller's `vapply()` collapses to one call. Falsified by a call site needing the short-circuit `&&` gave it.
 
 ## Decisions

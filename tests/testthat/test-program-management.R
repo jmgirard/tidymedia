@@ -1525,17 +1525,35 @@ tm_ac3_cases <- function(env = parent.frame()) {
 # directory argument at all take the default one instead.
 tm_ac3_uncovered_cases <- function(env = parent.frame()) {
   list(
+    # The four front-door checks abort inside rlang, which gives all four the
+    # same `rlang_error` class -- so the message is the only instrument that
+    # tells them apart, and each match names its own argument and its own
+    # constraint. A classless `expect_error()` here would stay green with the
+    # check it names deleted, because the call would then fail somewhere else
+    # or not at all.
     "check_bool(confirm)" = function(dir) {
-      expect_error(install_on_win(install_dir = dir, confirm = "yes"))
+      expect_error(
+        install_on_win(install_dir = dir, confirm = "yes"),
+        "`confirm` must be `TRUE` or `FALSE`"
+      )
     },
     "check_string(download_url)" = function(dir) {
-      expect_error(install_on_win(install_dir = dir, download_url = 1))
+      expect_error(
+        install_on_win(install_dir = dir, download_url = 1),
+        "`download_url` must be a single string"
+      )
     },
     "check_string(install_dir)" = function(dir) {
-      expect_error(install_on_win(install_dir = 1))
+      expect_error(
+        install_on_win(install_dir = 1),
+        "`install_dir` must be a single string"
+      )
     },
     "check_sha256(archive_checksum)" = function(dir) {
-      expect_error(install_on_win(install_dir = dir, archive_checksum = "nope"))
+      expect_error(
+        install_on_win(install_dir = dir, archive_checksum = "nope"),
+        "`archive_checksum` must be a SHA-256 digest"
+      )
     },
     "tm_confirm() has no one to ask" = function(dir) {
       # The real tm_confirm() is left in place and the session is not
@@ -1559,12 +1577,19 @@ tm_ac3_needs_new_dir <- "return(FALSE) #2"
 # the cases take `env` from this frame.
 tm_ac3_run <- function(key, dir) {
   tm_redirect_config()
-  tm_redirect_data()
+  data_root <- tm_redirect_data()
   cases <- c(
     tm_ac3_cases(env = environment()),
     tm_ac3_uncovered_cases(env = environment())
   )
   cases[[key]](dir)
+  # What the case created under the DEFAULT install location, read here
+  # rather than by the caller: the redirected root is this frame's temp
+  # directory and is deleted the moment this function returns, so a caller
+  # computing the default path for itself would be asking about a root no run
+  # ever used. That is what made the assertion below unfalsifiable before
+  # (M103 review pass 1).
+  setdiff(list.dirs(data_root), data_root)
 }
 
 test_that("every exit above the unpack has a case, and every case has an exit", {
@@ -1640,13 +1665,18 @@ test_that("the refusals the census cannot see create no directory at all", {
   for (key in names(tm_ac3_uncovered_cases())) {
     root <- withr::local_tempdir()
     dir <- file.path(root, "made", "by-the-call", "ffmpeg")
-    default_root <- NULL
-    withr::with_envvar(c(R_USER_DATA_DIR = root), {
-      default_root <- file.path(tools::R_user_dir("tidymedia", "data"))
-    })
-    tm_ac3_run(key, dir)
+
+    created_by_default <- tm_ac3_run(key, dir)
+
     expect_false(dir.exists(file.path(root, "made")), label = key)
-    expect_false(dir.exists(default_root), label = paste(key, "default dir"))
+    # And nothing under the default location either. This is the assertion
+    # that carries `check_string(install_dir)`, whose case cannot pass a
+    # directory at all: the only directory that call could ever create is the
+    # default one, so the caller-named path above says nothing about it. That
+    # this can go red is shown by the M098 default-install-dir test above,
+    # where a call allowed past the checks creates `R/tidymedia/ffmpeg`
+    # beneath exactly this root.
+    expect_identical(created_by_default, character(0), label = paste(key, "default dir"))
   }
 })
 
@@ -1758,11 +1788,103 @@ test_that("a failed unpack names every entry it could not remove", {
   # Both leftovers, by full path -- and the directory is the one that still
   # holds the file, so the two are different kinds of target, not one target
   # named twice.
-  expect_true(grepl(file.path(d, entry), msg, fixed = TRUE))
-  expect_true(grepl(file.path(d, topmost), msg, fixed = TRUE))
+  # Each is matched with its CLOSING quote, which is what makes the two
+  # assertions independent: `{.file x}` renders as `'x'`, and the file's path
+  # has the directory's as a literal prefix, so a bare substring match on the
+  # directory would be satisfied by the file's line alone and could never fail
+  # on the directory being dropped from the message (M103 review pass 1).
+  flat <- gsub("\\s+", " ", msg)
+  expect_true(grepl(paste0("'", file.path(d, entry), "'"), flat, fixed = TRUE))
+  expect_true(grepl(paste0("'", file.path(d, topmost), "'"), flat, fixed = TRUE))
   expect_match(msg, "could not", fixed = TRUE)
   # And they really are still there. The seam is mocked to fail on every
   # call, so this cell reads the same on every platform.
   expect_true(file.exists(file.path(d, entry)))
   expect_true(dir.exists(file.path(d, topmost)))
+})
+
+
+test_that("a refusal with more leftovers than cli will print still names every one", {
+  # AC7's "names every entry", at a count that catches the formatter rather
+  # than the cleanup. cli truncates a vector in a message: measured on 25
+  # paths, entries 19 through 23 come back as an ellipsis. A refusal that
+  # named 20 of 25 undeletable entries would leave the caller hunting for the
+  # rest, so the count is the instrument here and the removal seam is not --
+  # `tm_remove_added()` is mocked to leave a fixed 25, which is the only way
+  # to reach a count no fixture produces.
+  tm_redirect_config()
+  tm_redirect_data()
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+  rec <- tm_mock_install(
+    confirm = function(prompt) TRUE, unpack = NULL,
+    archive = testthat::test_path("fixtures", "not-an-archive.7z")
+  )
+  left <- sprintf("leftover-%02d.txt", 1:25)
+  testthat::local_mocked_bindings(
+    tm_remove_added = function(dir, before, after) {
+      # The entries are put on disk as well as reported: a message naming
+      # something that is not there is the other half of AC7, and the cell
+      # should not be the one place that state is incoherent.
+      for (rel in left) file.create(file.path(dir, rel))
+      left
+    }
+  )
+
+  cnd <- tryCatch(
+    install_on_win(install_dir = d, archive_checksum = rec$digest),
+    error = function(cnd) cnd
+  )
+  expect_s3_class(cnd, "tidymedia_archive_unreadable")
+  flat <- gsub("\\s+", " ", cli::ansi_strip(conditionMessage(cnd)))
+
+  for (rel in left) {
+    expect_true(
+      grepl(paste0("'", file.path(d, rel), "'"), flat, fixed = TRUE),
+      label = paste("message names", rel)
+    )
+  }
+})
+
+
+test_that("a successful unpack that produced no required program keeps its directory", {
+  # The boundary Scope, AC4 and D082 all draw: `tidymedia_program_not_extracted`
+  # is the one refusal outside the leaves-it-as-found rule, because its
+  # extraction SUCCEEDED and its message tells the caller the unpacked files
+  # are still there. The exit handler that takes back a created directory must
+  # therefore be disarmed by the time that abort fires -- otherwise the call
+  # deletes the directory the message is pointing at (M103 review pass 1).
+  #
+  # Reached with a real archive whose entry is a single segment:
+  # `strip_components = 1` strips it, the extraction succeeds having written
+  # nothing, and the install directory is left empty -- which is exactly the
+  # state in which the handler would fire.
+  tm_redirect_config()
+  tm_redirect_data()
+
+  src <- withr::local_tempdir()
+  writeLines("payload", file.path(src, "payload.txt"))
+  flat <- file.path(withr::local_tempdir(), "flat.7z")
+  withr::with_dir(src, archive::archive_write_files(flat, "payload.txt"))
+
+  made <- file.path(withr::local_tempdir(), "made", "ffmpeg")
+  rec <- tm_mock_install(confirm = function(prompt) TRUE, unpack = NULL, archive = flat)
+
+  cnd <- tryCatch(
+    install_on_win(install_dir = made, archive_checksum = rec$digest),
+    error = function(cnd) cnd
+  )
+
+  expect_s3_class(cnd, "tidymedia_program_not_extracted")
+  # The premise: the extraction really did succeed and really did leave the
+  # directory empty, so this is the state the handler would have acted on.
+  expect_identical(
+    list.files(made, recursive = TRUE, all.files = TRUE, no.. = TRUE),
+    character(0)
+  )
+  # And the directory the message points at is still there.
+  expect_true(dir.exists(made))
+  expect_match(
+    cli::ansi_strip(conditionMessage(cnd)), "still in that directory",
+    fixed = TRUE
+  )
 })

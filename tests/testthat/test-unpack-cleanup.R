@@ -236,18 +236,27 @@ test_that("a failed unpack leaves a nested subdirectory it does not write into a
 
 
 test_that("an added file that will not delete is reported, not silently dropped", {
-  # AC2's first mock cell. The seam is made to fail on the non-recursive call
-  # only, and the starting state pre-creates the ancestor chain so the ONLY
-  # thing the cleanup targets is the overwritten file: the leftover the test
-  # reads back is that file and nothing else. The mock decides the outcome, so
-  # this cell reads the same on every platform.
+  # AC2's first mock cell: the seam failing on a file the extraction CREATED.
+  #
+  # The starting state pre-creates the entry's ancestor chain and nothing
+  # else. That is what makes the file a created one rather than a removed
+  # one's stand-in: with the chain already there the extraction adds no
+  # directory, so `added$dirs` is empty and the created file is not swept up
+  # by a recursive call on its parent -- it reaches the non-recursive branch,
+  # which is the branch this cell fails. Pre-writing the entry as well, which
+  # this cell used to do, would have made the seam fail on a file the
+  # extraction TRUNCATED; that case is the real-libarchive cell above.
+  #
+  # The mock decides the outcome, so this cell reads the same on every
+  # platform.
   fixture <- "corrupt-payload.7z"
   entry <- tm_fixture_entry(fixture)
   expect_false(is.null(entry))
 
   d <- tm_dest()
   dir.create(file.path(d, dirname(entry)), recursive = TRUE)
-  writeLines("the caller's own bytes", file.path(d, entry))
+  # The file is the extraction's, not the test's: it is not there beforehand.
+  expect_false(file.exists(file.path(d, entry)))
 
   testthat::local_mocked_bindings(
     tm_unlink = function(path, recursive = FALSE) {
@@ -324,4 +333,76 @@ test_that("a succeeding unpack removes nothing and reports no leftovers", {
   expect_identical(out$leftovers, character(0))
   expect_true(file.exists(keep))
   expect_true(any(grepl("payload[.]txt$", out$files)))
+})
+
+
+# An entry file.info() cannot stat (M103 AC1) --------------------------------
+
+# `file.info()` returns NA for every field of an entry it cannot stat -- a
+# broken symlink is the reachable case, measured 2026-09-02 -- and NA is the
+# one value a classification has to decide rather than propagate: an NA
+# `isdir` used as a subscript selects NA_character_, which is neither a path
+# to remove nor a path to report.
+
+test_that("an unstattable entry is classified as an added file, not as NA", {
+  # The frame-level cell, which runs on every platform because it needs no
+  # symlink: `tm_snapshot_added()` is a pure function of two snapshots, so the
+  # NA a broken symlink produces can be handed to it directly.
+  before <- data.frame(
+    path = "kept.txt", size = 3, mtime = 1, isdir = FALSE,
+    stringsAsFactors = FALSE
+  )
+  after <- data.frame(
+    path = c("kept.txt", "unstattable"),
+    size = c(3, NA_real_),
+    mtime = c(1, NA_real_),
+    isdir = c(FALSE, NA),
+    stringsAsFactors = FALSE
+  )
+
+  added <- tm_snapshot_added(before, after)
+  expect_identical(added$files, "unstattable")
+  expect_identical(added$dirs, character(0))
+})
+
+test_that("an added entry that cannot be statted is removed, not silently dropped", {
+  skip_on_os("windows")
+  d <- tm_dest()
+  before <- tm_dir_snapshot(d)
+  expect_true(file.symlink(file.path(d, "nowhere"), file.path(d, "broken")))
+
+  left <- tm_remove_added(d, before, tm_dir_snapshot(d))
+
+  expect_identical(left, character(0))
+  expect_identical(tm_entries(d), character(0))
+})
+
+test_that("an added entry that cannot be statted and will not delete is reported", {
+  # The other half of AC1's "removed or named": with the seam failing, the
+  # entry the cleanup could not delete has to come back to the caller.
+  skip_on_os("windows")
+  d <- tm_dest()
+  before <- tm_dir_snapshot(d)
+  expect_true(file.symlink(file.path(d, "nowhere"), file.path(d, "broken")))
+
+  testthat::local_mocked_bindings(tm_unlink = function(path, recursive = FALSE) 1L)
+  left <- tm_remove_added(d, before, tm_dir_snapshot(d))
+
+  expect_identical(left, "broken")
+  expect_identical(tm_entries(d), "broken")
+})
+
+test_that("an unstattable entry the caller already had is left alone", {
+  # The control: the same NA fields, but present in BOTH snapshots. Nothing
+  # this extraction added, so nothing to remove and nothing to report.
+  skip_on_os("windows")
+  d <- tm_dest()
+  expect_true(file.symlink(file.path(d, "nowhere"), file.path(d, "broken")))
+  before <- tm_dir_snapshot(d)
+  writeLines("added by the extraction", file.path(d, "new.txt"))
+
+  left <- tm_remove_added(d, before, tm_dir_snapshot(d))
+
+  expect_identical(left, character(0))
+  expect_identical(tm_entries(d), "broken")
 })

@@ -3850,8 +3850,13 @@ extracting and again where libarchive fails, and removes what the comparison
 shows this extraction added. `install_on_win()` records the directories
 `dir.create(recursive = TRUE)` would have to make before it calls it, and on
 any refusal below that point removes them deepest-first, stopping at the first
-that is not empty. Between them, every refusal above the registration leaves
-the install directory holding what it held when the call started.
+that is not empty. Between them, every refusal above a SUCCESSFUL EXTRACTION
+leaves the install directory holding what it held when the call started. That
+boundary, not the registration, is where the rule stops: below a successful
+extraction the archive's files are in that directory, and the one refusal
+there says so (see the last paragraph). Drawing it at the registration instead
+let that refusal delete the directory its own message pointed at, wherever the
+extraction produced no files at all.
 
 **A pre-existing directory is never removed, whatever its timestamp shows.**
 D046 decides membership by size or modification time, which is exactly right
@@ -3873,9 +3878,15 @@ asymmetry is between a container the run merely wrote into and a file the run
 wrote over.
 
 **Removal is best-effort, and what would not go is named rather than
-swallowed.** A partial write may still be held open — libarchive's writer
-handle on the failing path cannot be measured off Windows, and an open handle
-is what blocks a delete there — so the removal cannot be promised. What it
+swallowed.** A partial write may still be held open, and an open handle is
+what blocks a delete on Windows — so the removal cannot be promised. This is
+measured, not feared: on `windows-latest (release)`, 2026-09-02, a failed
+extraction left `payload.txt` and the directory chain holding it undeletable,
+and a second sweep with `gc()` and a 0.1 s pause between the two failed
+identically. The handle libarchive writes the failed entry through is leaked
+for the process lifetime, not held transiently, and it is not an R connection,
+so nothing in R can close it by name. That result confirms this hedge rather
+than falsifying it; the falsifier below asks for the opposite. What it
 can promise is honesty: a third look at the directory after the removals says
 what survived, and the `tidymedia_archive_unreadable` refusal names every
 targeted entry still there. Where nothing survived, the refusal says so; where
@@ -3896,7 +3907,7 @@ included (deletes the caller's own files out of a directory the extraction
 merely wrote into); leaving the debris and naming it instead of removing it
 (the state this milestone exists to end); folding the
 `program_not_extracted` path in (refuted above). Falsified by a measurement
-showing libarchive's writer handle closed on the failure path, which would
-make an unconditional removal promise honest and this entry's best-effort
-hedge unearned; or by a report of a caller who wanted the debris of a failed
+showing libarchive's writer handle closed on the failure path — the 2026-09-02
+Windows run above looked and found it open, so this falsifier now asks for a
+change in `archive` or in libarchive rather than for a first measurement; or by a report of a caller who wanted the debris of a failed
 extraction kept for inspection.

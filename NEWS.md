@@ -32,10 +32,12 @@
 ## Configuration
 
 * A refused `install_on_win()` now leaves the install directory as it found
-  it. Files a failed extraction wrote are removed, files that were already
-  there are kept — including inside a directory the extraction wrote into —
-  and a directory the call created is removed again, so a refusal no longer
-  leaves debris or an empty directory behind. Removal is best-effort, and on
+  it. Files a failed extraction wrote are removed and a directory the call
+  created is removed again, so a refusal no longer leaves debris or an empty
+  directory behind. What was already there is kept — including inside a
+  directory the extraction wrote into — with one exception: a file of yours
+  that the failed extraction wrote over is removed along with the debris,
+  because what it holds afterwards is nothing you put there. Removal is best-effort, and on
   Windows a partly-written file is one it cannot make: the extraction library
   is still holding that file open, and Windows will not delete a file
   something holds. So on Windows the error names the leftovers by full path

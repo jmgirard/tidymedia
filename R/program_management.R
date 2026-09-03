@@ -398,6 +398,13 @@ tm_fetch <- function(url, destfile) {
 # Size and time come from one `file.info()` stat per entry, and the frame is
 # ordered by path so a comparison never turns on the order the filesystem
 # happened to list.
+#
+# An entry `file.info()` cannot stat -- a broken symlink is the reachable
+# case, measured 2026-09-02 -- comes back NA in every field. The NAs are kept
+# rather than filled in here: this frame is a record of what was seen, and two
+# NAs compare identical, so an unstattable entry the caller already had reads
+# as unchanged, which is right. Deciding what an NA MEANS is the comparison's
+# job, and tm_snapshot_added() does it (M103).
 tm_dir_snapshot <- function(dir) {
   paths <- sort(list.files(
     dir,
@@ -430,6 +437,14 @@ tm_dir_snapshot <- function(dir) {
 # run wrote.
 tm_snapshot_added <- function(before, after) {
   known <- before$path
+  # An entry `file.info()` could not stat carries an NA `isdir`, and NA is the
+  # one value the two subscripts below cannot take: `x[NA]` selects
+  # NA_character_, which is neither a path the removal can delete nor a path
+  # the report can name, so such an entry would be silently dropped by both.
+  # It counts as a file, which is both what a broken symlink is on disk and
+  # the safe reading -- a file is removed by name, where a directory would be
+  # removed with everything under it (M103).
+  isdir <- !is.na(after$isdir) & after$isdir
   changed <- vapply(
     seq_len(nrow(after)),
     function(i) {
@@ -440,9 +455,9 @@ tm_snapshot_added <- function(before, after) {
     },
     logical(1)
   )
-  created_dirs <- after$path[!(after$path %in% known) & after$isdir]
+  created_dirs <- after$path[!(after$path %in% known) & isdir]
   list(
-    files = after$path[changed & !after$isdir],
+    files = after$path[changed & !isdir],
     dirs = created_dirs[!(dirname(created_dirs) %in% created_dirs)]
   )
 }
@@ -670,12 +685,22 @@ tm_install_prompt <- function(download_url, install_dir, programs,
 #' source.
 #'
 #' A refusal leaves the install directory as the call found it. Files a failed
-#' extraction wrote are removed, files that were already there are kept, and a
-#' directory the call created is removed again; anything that could not be
-#' removed is named in the error rather than left for the caller to discover.
-#' The one exception is `tidymedia_program_not_extracted`, where the archive
-#' unpacked successfully but did not contain a required program: that error
-#' says so, and the unpacked files stay where they are.
+#' extraction wrote are removed, a directory the call created is removed
+#' again, and anything already in the directory is left alone -- with one
+#' deliberate exception: a file of yours the failed extraction wrote over is
+#' removed with the rest of the debris, because what it holds after a failed
+#' extraction is nothing you put there.
+#'
+#' Removal is best-effort, and on Windows it does not always succeed. Where an
+#' extraction fails part-way, the library that was writing the file is still
+#' holding it open, and Windows will not delete a file something holds. Those
+#' entries are named in the error by full path, so a refusal on Windows can
+#' leave files behind -- the error tells you which.
+#'
+#' The one refusal outside the rule entirely is
+#' `tidymedia_program_not_extracted`, where the archive unpacked successfully
+#' but did not contain a required program: that error says so, and the
+#' unpacked files stay where they are.
 #'
 #' @param download_url A string indicating the location of the FFmpeg
 #'   installation archive. If `NULL`, will default to the latest static
@@ -704,9 +729,11 @@ tm_install_prompt <- function(download_url, install_dir, programs,
 #'   match the downloaded archive (`tidymedia_checksum_mismatch`), an archive
 #'   that could not be unpacked (`tidymedia_archive_unreadable`), and a
 #'   required program the archive did not contain
-#'   (`tidymedia_program_not_extracted`). Every one of these leaves the install
-#'   directory as the call found it, except the last, which leaves the files
-#'   the archive did unpack.
+#'   (`tidymedia_program_not_extracted`). Every one of these aims to leave the
+#'   install directory as the call found it, except the last, which leaves the
+#'   files the archive did unpack. Removal is best-effort: on Windows a
+#'   partly-written file cannot be deleted while the extraction library still
+#'   holds it, and the error names what it could not remove. See Details.
 #' @seealso [set_program()] to register an existing binary, and [find_ffmpeg()]
 #'   to check what is currently configured.
 #' @family program management functions
@@ -784,12 +811,20 @@ install_on_win <- function(download_url = NULL,
   # The handler is registered ABOVE the create because the create itself can
   # half-succeed -- `recursive = TRUE` makes the parents and then fails on the
   # leaf -- and every refusal below here has to leave the directory as the
-  # call found it (M103 AC3). It is disarmed only once a program has been
-  # registered, and it is a no-op wherever the directory holds anything: a
-  # directory that already existed is never in `created_dirs` at all.
+  # call found it (M103 AC3). It is disarmed the moment the extraction
+  # SUCCEEDS, which is one step earlier than "once a program has been
+  # registered": everything below a successful extraction is outside the rule,
+  # because the archive's files are in that directory and
+  # `tidymedia_program_not_extracted` tells the caller so. Disarming at
+  # registration instead let that abort delete the directory its own message
+  # pointed at, wherever the extraction produced nothing -- an archive of
+  # single-segment entries, every one stripped by `strip_components = 1`
+  # (M103 review pass 1). It is also a no-op wherever the directory holds
+  # anything: a directory that already existed is never in `created_dirs` at
+  # all.
   created_dirs <- tm_missing_ancestors(install_dir)
-  registered <- FALSE
-  on.exit(if (!registered) tm_remove_created_dirs(created_dirs), add = TRUE)
+  unpacked_here <- FALSE
+  on.exit(if (!unpacked_here) tm_remove_created_dirs(created_dirs), add = TRUE)
   if (!dir.exists(install_dir)) {
     status <- dir.create(install_dir, recursive = TRUE)
     if (status == FALSE) return(FALSE)
@@ -877,7 +912,15 @@ install_on_win <- function(download_url = NULL,
     # holds it, so the removal stops of its own accord -- the test below is
     # the belt to that braces (M103 AC7).
     if (!length(produced$leftovers)) tm_remove_created_dirs(created_dirs)
-    left <- file.path(install_dir, produced$leftovers)
+    # `cli_vec()` with the truncation off, because AC7 promises every entry by
+    # name: cli abbreviates a vector in a message at 20 by default -- measured
+    # 2026-09-02 on 25 paths, entries 19 through 23 came back as an ellipsis --
+    # and a caller told about 20 of 25 files still on their disk would have to
+    # go hunting for the rest. A long list is the lesser cost, and it is a
+    # list nothing but a failed install can produce (M103 AC7).
+    left <- cli::cli_vec(
+      file.path(install_dir, produced$leftovers), list("vec-trunc" = Inf)
+    )
     cli::cli_abort(
       c(
         "Can't unpack the downloaded archive.",
@@ -903,6 +946,9 @@ install_on_win <- function(download_url = NULL,
       class = "tidymedia_archive_unreadable"
     )
   }
+  # From here the extraction has succeeded and its files are in the install
+  # directory, so nothing below may take that directory back (M103 AC4).
+  unpacked_here <- TRUE
   # Register what the extraction actually produced, and nothing else: a
   # remembered location pointing at a file the archive never contained is a
   # worse state than no remembered location at all. What THIS extraction
@@ -934,7 +980,6 @@ install_on_win <- function(download_url = NULL,
              {?it/them}."
     ))
   }
-  registered <- TRUE
   for (program in unpacked) {
     set_program(program, tm_install_binary(install_dir, program))
   }

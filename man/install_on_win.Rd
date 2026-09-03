@@ -44,9 +44,11 @@ fetched or read (\code{tidymedia_checksum_unavailable}), a digest that did not
 match the downloaded archive (\code{tidymedia_checksum_mismatch}), an archive
 that could not be unpacked (\code{tidymedia_archive_unreadable}), and a
 required program the archive did not contain
-(\code{tidymedia_program_not_extracted}). Every one of these leaves the install
-directory as the call found it, except the last, which leaves the files
-the archive did unpack.
+(\code{tidymedia_program_not_extracted}). Every one of these aims to leave the
+install directory as the call found it, except the last, which leaves the
+files the archive did unpack. Removal is best-effort: on Windows a
+partly-written file cannot be deleted while the extraction library still
+holds it, and the error names what it could not remove. See Details.
 }
 \description{
 Downloads an FFmpeg archive, extracts it, and updates the package's user
@@ -65,12 +67,22 @@ archive, this catches a corrupted or truncated download, not a compromised
 source.
 
 A refusal leaves the install directory as the call found it. Files a failed
-extraction wrote are removed, files that were already there are kept, and a
-directory the call created is removed again; anything that could not be
-removed is named in the error rather than left for the caller to discover.
-The one exception is \code{tidymedia_program_not_extracted}, where the archive
-unpacked successfully but did not contain a required program: that error
-says so, and the unpacked files stay where they are.
+extraction wrote are removed, a directory the call created is removed
+again, and anything already in the directory is left alone -- with one
+deliberate exception: a file of yours the failed extraction wrote over is
+removed with the rest of the debris, because what it holds after a failed
+extraction is nothing you put there.
+
+Removal is best-effort, and on Windows it does not always succeed. Where an
+extraction fails part-way, the library that was writing the file is still
+holding it open, and Windows will not delete a file something holds. Those
+entries are named in the error by full path, so a refusal on Windows can
+leave files behind -- the error tells you which.
+
+The one refusal outside the rule entirely is
+\code{tidymedia_program_not_extracted}, where the archive unpacked successfully
+but did not contain a required program: that error says so, and the
+unpacked files stay where they are.
 }
 \examples{
 \dontrun{

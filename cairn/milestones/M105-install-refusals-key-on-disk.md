@@ -95,11 +95,11 @@ tests — M104 fixed that at `tm_install_binary()` and this milestone only probe
       (`R/program_management.R:1083`), the per-program partition (`:1093`), the
       empty-extraction guard (`:1103`), and the message-arm selector (`:1112`).
       Re-word the absent-program branch so it is true of the disk in each arm.
-- [ ] T2: Stop `tm_mock_install()`'s extract mock creating `bin/` when it will
+- [x] T2: Stop `tm_mock_install()`'s extract mock creating `bin/` when it will
       write nothing into it (`tests/testthat/test-program-management.R:409`) —
       without it the all-absent state leaves a non-empty directory and AC3's
       removal arm is unreachable. Add the all-absent plant.
-- [ ] T3: One test per planted form at each of `ffmpeg`, `ffprobe` and both;
+- [x] T3: One test per planted form at each of `ffmpeg`, `ffprobe` and both;
       assert the full message on the absent form; cover AC3's two directory
       cases (created by the call, and pre-existing).
 - [ ] T4: Direct tests of `tm_usable_binary()` over AC5's six inputs and its
@@ -124,6 +124,7 @@ tests — M104 fixed that at `tm_install_binary()` and this milestone only probe
 - 2026-09-03: T1 code landed: `tm_files_on_disk()` added, all four below-extraction sites re-pointed at the list-intersected-with-disk set, absent-program refusal re-worded (full path in the `Looked for` line, new quarantine line, no `still in that directory`). Existing M103/M104 wording and class assertions updated with it. Task left unchecked pending the full-suite verify; `test-program-management.R` passes 478/478.
 - 2026-09-03: T1 checked off: full `devtools::test()` clean (0 failures, 11,896 passes, 18 skips).
 - 2026-09-03: T2 and T3 landed (checkboxes pending the shared full-suite verify): the extract mock creates `bin/` only where a form will write into it, plus a named all-absent plant; the refusal helper generalized to plant at either required program or both, and the four forms added at `ffmpeg` and at both; new tests for AC1's full message and AC3's two directory cases. Discrimination checked: with the mock's `bin/` guard reverted, the AC3 removal test goes red on all three of its directory assertions. `test-program-management.R` 576 passes, up from 478.
+- 2026-09-03: T2 and T3 checked off: full `devtools::test()` clean (0 failures, 11,994 passes, 18 skips).
 - 2026-09-03: plan gate chose making `tm_usable_binary()` elementwise over keeping it scalar with a length guard; the underlying `file.info()` and `Sys.which()` are already vectorized, it makes the dead clause disappear rather than be deleted, and the caller's `vapply()` collapses to one call. Falsified by a call site needing the short-circuit `&&` gave it.
 
 ## Decisions

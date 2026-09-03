@@ -35,11 +35,15 @@
   it. Files a failed extraction wrote are removed, files that were already
   there are kept — including inside a directory the extraction wrote into —
   and a directory the call created is removed again, so a refusal no longer
-  leaves debris or an empty directory behind. Removal is best-effort: anything
-  that could not be deleted is named in the error rather than left for you to
-  find. The one exception is a build that unpacked successfully but did not
-  contain a required program, where the error already tells you the unpacked
-  files are still there.
+  leaves debris or an empty directory behind. Removal is best-effort, and on
+  Windows a partly-written file is one it cannot make: the extraction library
+  is still holding that file open, and Windows will not delete a file
+  something holds. So on Windows the error names the leftovers by full path
+  instead of removing them, and a refusal that happens before anything is
+  unpacked — a download that did not arrive, a digest that did not match —
+  still takes back the directory it created. The one exception to the rule is
+  a build that unpacked successfully but did not contain a required program,
+  where the error already tells you the unpacked files are still there.
 
 * `install_on_win()` now checks what it downloaded before it changes anything,
   and remembers a program's location only if the archive actually contained

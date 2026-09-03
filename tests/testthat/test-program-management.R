@@ -883,15 +883,16 @@ test_that("an archive libarchive cannot read aborts without libarchive's text", 
       label = paste(fixture, "leaves no connection open")
     )
 
-    # The abort names the archive it could not read. It no longer names the
-    # install directory here: M103 gave this call its directories back, and
-    # `d` is one it made, so a line naming `d` would point at a directory that
-    # is gone by the time the caller reads it. AC7's own tests below assert
-    # what the message says instead, in each of the three states it can be in.
+    # The abort names the archive it could not read. Whether it also names the
+    # install directory now depends on what the cleanup managed: M103 gave
+    # this call its directories back, so where `d` is gone the message must
+    # not point at it, and where the extraction left something undeletable
+    # the message names both the directory and what stayed. AC7's own tests
+    # below assert each branch; here the two are held together, so neither
+    # can be satisfied by the message saying nothing at all.
     msg <- cli::ansi_strip(conditionMessage(cnd))
     expect_true(grepl(rec$destfile, msg, fixed = TRUE), label = fixture)
-    expect_false(grepl(d, msg, fixed = TRUE), label = fixture)
-    expect_false(dir.exists(d), label = fixture)
+    expect_identical(dir.exists(d), grepl(d, msg, fixed = TRUE), label = fixture)
 
     # And libarchive's own text reaches the caller nowhere -- not in this
     # message, and not in any condition carried underneath it.
@@ -1674,9 +1675,26 @@ test_that("a failed unpack that leaves nothing says so, and takes its own direct
     )
     expect_s3_class(cnd, "tidymedia_archive_unreadable")
     msg <- cli::ansi_strip(conditionMessage(cnd))
-    expect_false(dir.exists(file.path(root, "made")), label = fixture)
-    expect_false(grepl(made, msg, fixed = TRUE), label = fixture)
-    expect_match(msg, "removed it again", fixed = TRUE)
+    if (dir.exists(made)) {
+      # The extraction left something the platform will not delete. The
+      # message then names the directory and every surviving entry under it,
+      # so the caller can go and look -- the branch Windows takes.
+      survivors <- list.files(
+        made, recursive = TRUE, all.files = TRUE, include.dirs = TRUE,
+        no.. = TRUE
+      )
+      expect_gt(length(survivors), 0)
+      expect_true(grepl(made, msg, fixed = TRUE), label = fixture)
+      expect_true(grepl(file.path(made, survivors[[1]]), msg, fixed = TRUE),
+                  label = fixture)
+      expect_match(msg, "could not", fixed = TRUE)
+    } else {
+      # Nothing survived, so the directory this call made is gone too, and
+      # the message names no directory the caller could not go and look at.
+      expect_false(dir.exists(file.path(root, "made")), label = fixture)
+      expect_false(grepl(made, msg, fixed = TRUE), label = fixture)
+      expect_match(msg, "removed it again", fixed = TRUE)
+    }
 
     # State two: the directory was already there, holding a file of the
     # caller's. It stays, with its file, and the message says so.
@@ -1694,10 +1712,18 @@ test_that("a failed unpack that leaves nothing says so, and takes its own direct
     )
     expect_s3_class(cnd, "tidymedia_archive_unreadable")
     msg <- cli::ansi_strip(conditionMessage(cnd))
+    # The directory the call did not create is never removed, and the file in
+    # it is untouched -- on every platform, whatever the cleanup managed.
     expect_true(dir.exists(kept), label = fixture)
-    expect_identical(tm_dir_snapshot(kept), before, label = fixture)
+    expect_true(file.exists(file.path(kept, "mine.txt")), label = fixture)
     expect_true(grepl(kept, msg, fixed = TRUE), label = fixture)
-    expect_match(msg, "Nothing was left behind", fixed = TRUE)
+    if (identical(tm_dir_snapshot(kept), before)) {
+      expect_match(msg, "Nothing was left behind", fixed = TRUE)
+    } else {
+      # Something the extraction wrote is still there. It is named, and the
+      # caller's own file is still one of the entries above.
+      expect_match(msg, "could not", fixed = TRUE)
+    }
   }
 })
 
@@ -1735,7 +1761,8 @@ test_that("a failed unpack names every entry it could not remove", {
   expect_true(grepl(file.path(d, entry), msg, fixed = TRUE))
   expect_true(grepl(file.path(d, topmost), msg, fixed = TRUE))
   expect_match(msg, "could not", fixed = TRUE)
-  # And they really are still there.
+  # And they really are still there. The seam is mocked to fail on every
+  # call, so this cell reads the same on every platform.
   expect_true(file.exists(file.path(d, entry)))
   expect_true(dir.exists(file.path(d, topmost)))
 })

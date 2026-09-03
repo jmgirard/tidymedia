@@ -3834,3 +3834,117 @@ rather than a settled one.
 of its own, which makes `tools::sha256sum()` free and leaves `digest`'s line in
 `Imports` unearned; or by `digest` acquiring a system dependency or an install
 failure mode of the kind that ruled `openssl` out.
+
+## D082 — A refused install takes back what it wrote, and never what it found (2026-09-02, from M103; extends D046 from one run's designated outputs to a whole destination directory, and leaves all of D046 standing)
+
+D046 settled what a failed FFmpeg run does about the files it designated as
+outputs: stat them before, stat them after, remove only those this run created
+or changed. `install_on_win()` had no such rule. A refused install left the
+extraction's debris in the install directory and, where the call had made that
+directory itself, left the empty directory too — so a caller who typed one
+command and was told it failed was left holding state they never asked for and
+were never told about.
+
+**The rule now.** `tm_unpack()` snapshots its destination recursively before
+extracting and again where libarchive fails, and removes what the comparison
+shows this extraction added. `install_on_win()` records the directories
+`dir.create(recursive = TRUE)` would have to make before it calls it, and on
+any refusal below that point removes them deepest-first, stopping at the first
+that is not empty. Between them, every refusal above a SUCCESSFUL EXTRACTION
+leaves the install directory holding what it held when the call started. That
+boundary, not the registration, is where the rule stops: below a successful
+extraction the archive's files are in that directory, and the one refusal
+there says so (see the last paragraph). Drawing it at the registration instead
+let that refusal delete the directory its own message pointed at, wherever the
+extraction produced no files at all. It is the files that put that refusal
+outside the rule, so where the extraction produced none the rule reaches it
+like any other: the directory this call created comes back, and the refusal
+says so.
+
+**A pre-existing directory is never removed, whatever its timestamp shows.**
+D046 decides membership by size or modification time, which is exactly right
+for a file and wrong for a directory: a directory's mtime moves the instant an
+entry lands inside it, so a directory the caller already had reads as
+"changed" the moment the extraction writes one file into it, and removing it
+recursively would take every untouched entry it held. Only a directory the
+comparison shows NEW is removed — new *as a directory*, which is not the same
+as new *as a path*: a path the caller held as a file and the extraction
+replaced with a directory is a directory this run made, and the path-only
+reading put it in neither bucket, so it was neither removed nor named (M103
+review pass 2). A pre-existing directory keeps its place and its added
+children are removed one at a time instead, which reaches the same debris
+without the collateral. The measurement behind this is in M103's work log and
+beside `tm_snapshot_added()` in `R/program_management.R`.
+
+**Only the topmost created directory of a chain is targeted by name.** One
+recursive `unlink()` on it clears every level below, which is why it is the
+only one the removal needs — but the report is written over what the removal
+targeted, so where that call fails the refusal names the top of the chain and
+the added files, not each intervening level. A caller told a directory
+survived is told about everything under it; a caller wanting the level-by-level
+list does not get one. The weakening is deliberate and bounded by that:
+nothing survives unnamed or outside something named. Where that recursive call
+fails, the added files sitting under the directory it could not remove are
+left where they are rather than deleted one at a time: they are already
+covered by that directory's name, and the path may not resolve where it looks
+like it does. `list.files(recursive = TRUE)` descends THROUGH a directory
+symlink, so a symlink the extraction created reads as a created directory
+whose children belong to the link's target, outside the destination entirely
+— and deleting them there would be the harm this rule exists to prevent, done
+outside the directory the rule is about and named nowhere (M103 review
+pass 3).
+
+**A pre-existing FILE the extraction overwrote or truncated IS removed**, and
+that is not the same case. The extraction opened that path and wrote to it, so
+its contents are this run's, not the caller's; leaving it behind hands back a
+file with the caller's name and none of their bytes. That is the zero-byte
+truncation D046 was written for, and this entry keeps it unchanged. The
+asymmetry is between a container the run merely wrote into and a file the run
+wrote over.
+
+**Removal is best-effort, and what would not go is named rather than
+swallowed.** A partial write may still be held open, and an open handle is
+what blocks a delete on Windows — so the removal cannot be promised. This is
+measured, not feared: on `windows-latest (release)`, 2026-09-02, a failed
+extraction left `payload.txt` and the directory chain holding it undeletable,
+and a second sweep with `gc()` and a 0.1 s pause between the two failed
+identically. The handle libarchive writes the failed entry through is leaked
+for the process lifetime, not held transiently, and it is not an R connection,
+so nothing in R can close it by name. That result confirms this hedge rather
+than falsifying it; the falsifier below asks for the opposite. What it
+can promise is honesty: a third look at the directory after the removals says
+what survived, and the `tidymedia_archive_unreadable` refusal names every
+targeted entry still there. Where nothing survived, the refusal says so; where
+the call created the install directory and then removed it again, the refusal
+names no directory at all, because naming one the caller cannot go and look at
+is worse than naming none. Two states the refusal must not describe as leaving the
+directory as it found it, both of which it did (M103 review pass 3): a file of
+the caller's the extraction wrote over, removed under the paragraph above,
+leaves no leftover at all, so it is reported separately and by name; and a
+directory this call created and could NOT remove again is not a targeted entry
+either, so it too is named rather than covered by a sentence saying nothing
+changed. Honesty about what was removed is the same promise as honesty about
+what was left.
+
+**What the rule deliberately does not cover** is the
+`tidymedia_program_not_extracted` path. That extraction SUCCEEDED — the
+archive unpacked, it simply did not contain a program the install requires —
+so there is no failed run for D046's rule to be about, and the shipped abort
+already tells the caller in so many words that whatever did unpack is still in
+that directory. Deleting a complete extraction on the strength of a missing
+member would destroy a build the caller may well want to look at. The boundary
+is the files, not the success: where the archive unpacked successfully but
+produced no files at all — every entry of a flat archive stripped by
+`strip_components = 1` — there is no complete extraction to protect and
+nothing in the directory to point the caller at, so that refusal is inside the
+rule and gives back a directory this call created.
+
+Rejected: removing every entry the comparison marks changed, directories
+included (deletes the caller's own files out of a directory the extraction
+merely wrote into); leaving the debris and naming it instead of removing it
+(the state this milestone exists to end); folding the
+`program_not_extracted` path in (refuted above). Falsified by a measurement
+showing libarchive's writer handle closed on the failure path — the 2026-09-02
+Windows run above looked and found it open, so this falsifier now asks for a
+change in `archive` or in libarchive rather than for a first measurement; or by a report of a caller who wanted the debris of a failed
+extraction kept for inspection.

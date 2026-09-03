@@ -388,8 +388,208 @@ tm_fetch <- function(url, destfile) {
   )
 }
 
-# Unpack `archive` into `dir`. The paths the extraction produced, relative to
-# `dir`, or NULL where libarchive refused.
+# Every entry under `dir`, recursively, as a data frame of path, size and
+# mtime -- the three fields D046's created-or-changed comparison reads. Paths
+# are relative to `dir` so two snapshots of the same directory compare
+# directly, directories are included because a failed extraction creates them
+# as readily as it creates files, and dotfiles are included because a caller's
+# hidden file is as much theirs as a visible one.
+#
+# Size and time come from one `file.info()` stat per entry, and the frame is
+# ordered by path so a comparison never turns on the order the filesystem
+# happened to list.
+#
+# An entry `file.info()` cannot stat -- a broken symlink is the reachable
+# case, measured 2026-09-02 -- comes back NA in every field. The NAs are kept
+# rather than filled in here: this frame is a record of what was seen, and two
+# NAs compare identical, so an unstattable entry the caller already had reads
+# as unchanged, which is right. Deciding what an NA MEANS is the comparison's
+# job, and tm_snapshot_added() does it (M103).
+tm_dir_snapshot <- function(dir) {
+  paths <- sort(list.files(
+    dir,
+    recursive = TRUE, all.files = TRUE, include.dirs = TRUE, no.. = TRUE
+  ))
+  info <- file.info(file.path(dir, paths), extra_cols = FALSE)
+  data.frame(
+    path = paths,
+    size = as.numeric(info$size),
+    mtime = as.numeric(info$mtime),
+    isdir = as.logical(info$isdir),
+    stringsAsFactors = FALSE
+  )
+}
+
+# What the two snapshots show this extraction added, split into the two sets
+# the removal treats differently.
+#
+# A DIRECTORY qualifies only where it is new -- where nothing was at its path
+# before, or what was there was not a directory -- and only the topmost new
+# one of a chain: a pre-existing directory's mtime moves the instant an entry
+# lands inside it -- measured 2026-09-02, 19:13:23.663 before and 19:13:24.848 after
+# one file was written into it -- so a merely-changed directory removed
+# recursively would take the caller's own untouched entries with it. Its added
+# children are removed one by one instead, which reaches the same debris
+# without the collateral (M103).
+#
+# A FILE qualifies where it is new OR where its size or mtime moved, which is
+# D046's rule unchanged: the zero-byte truncation is the case that rule exists
+# to clear, and a pre-existing file the extraction overwrote is a file this
+# run wrote.
+tm_snapshot_added <- function(before, after) {
+  # An entry `file.info()` could not stat carries an NA `isdir`, and NA is the
+  # one value the two subscripts below cannot take: `x[NA]` selects
+  # NA_character_, which is neither a path the removal can delete nor a path
+  # the report can name, so such an entry would be silently dropped by both.
+  # It counts as a file, which is both what a broken symlink is on disk and
+  # the safe reading -- a file is removed by name, where a directory would be
+  # removed with everything under it (M103).
+  isdir <- !is.na(after$isdir) & after$isdir
+  # A directory is CREATED where it did not exist AS A DIRECTORY before, not
+  # merely where its path is new. The two readings differ on one case and it
+  # is a reachable one: a path the caller held as a file and this extraction
+  # replaced with a directory is in `before`, so the path-only reading calls
+  # it pre-existing, while its `isdir` keeps it out of the file bucket -- so
+  # it lands in neither, and is neither removed nor named. The type is what
+  # the removal turns on, so the type is what the comparison asks about
+  # (M103).
+  was_dir <- !is.na(before$isdir) & before$isdir
+  prior_dir <- after$path %in% before$path[was_dir]
+  # One `match()` over the whole column rather than one per row: the per-row
+  # form rebuilt the hash table on every iteration, measured at 0.50 s on 6000
+  # unchanged entries, and this frame is walked three times per removal sweep.
+  j <- match(after$path, before$path)
+  same <- function(x, y) {
+    eq <- x == y
+    ifelse(is.na(eq), is.na(x) & is.na(y), eq)
+  }
+  # A type change counts alongside size and mtime, so a directory that became
+  # a file is a changed file even where the two happen to stat alike.
+  changed <- is.na(j) |
+    !same(after$size, before$size[j]) |
+    !same(after$mtime, before$mtime[j]) |
+    !same(after$isdir, before$isdir[j])
+  created_dirs <- after$path[isdir & !prior_dir]
+  list(
+    files = after$path[changed & !isdir],
+    dirs = created_dirs[!(dirname(created_dirs) %in% created_dirs)]
+  )
+}
+
+# A thin wrapper over `unlink()`, a seam of its own so the suite can make a
+# removal fail without making the filesystem fail. `expand = FALSE` is D046's
+# rule: a name holding `*`, `?` or `[` costs no neighbour.
+tm_unlink <- function(path, recursive = FALSE) {
+  unlink(path, recursive = recursive, expand = FALSE)
+}
+
+# Remove what the extraction added under `dir`, and name what would not go.
+#
+# Directories first and recursively, so the deep chain a stripped absolute
+# path produces costs one call rather than one per level; then the added files
+# that are still there, which is every file outside a removed directory. A
+# third snapshot decides what survived: `unlink()` reports one status for a
+# whole subtree and no names at all, so the only honest answer to "what is
+# still there" is another look at the directory. Only entries the removal
+# TARGETED can be reported -- an untouched file the caller put there is not a
+# leftover (M103).
+tm_remove_added <- function(dir, before, after) {
+  added <- tm_snapshot_added(before, after)
+  targeted <- c(added$dirs, added$files)
+  if (!length(targeted)) return(character(0))
+  sweep <- function() {
+    still <- tm_dir_snapshot(dir)$path
+    for (path in added$dirs) {
+      if (path %in% still) tm_unlink(file.path(dir, path), recursive = TRUE)
+    }
+    still <- tm_dir_snapshot(dir)$path
+    kept_dirs <- added$dirs[added$dirs %in% still]
+    for (path in added$files) {
+      if (!(path %in% still)) next
+      # A file under a created directory the recursive call could not remove
+      # is left where it is. Two reasons, and either alone would be enough:
+      # it is already covered by that directory's own name in the report, and
+      # the path may not resolve where it looks like it does. `list.files()`
+      # descends THROUGH a directory symlink, so a symlink the extraction
+      # created reads as a created directory whose children are the link
+      # target's -- outside this destination entirely. The recursive
+      # `unlink()` on the link removes the LINK, so on a platform that can
+      # delete it there is nothing left to walk; where that call fails, this
+      # loop would otherwise delete the target's files, outside the directory
+      # and unnamed (M103 review pass 3).
+      if (any(startsWith(path, paste0(kept_dirs, "/")))) next
+      tm_unlink(file.path(dir, path))
+    }
+    sort(targeted[targeted %in% tm_dir_snapshot(dir)$path])
+  }
+  survived <- sweep()
+  # A second pass, and only where the first left something. Windows will not
+  # delete a file another handle still holds, and the handle in question is
+  # the one `archive_extract()` was writing the failed entry through: it is
+  # not an R connection, so nothing here can close it by name. `gc()` is the
+  # one lever R has -- it runs the finalizers of any external pointer the
+  # extraction left unreferenced -- and the pause is for a hold that is
+  # transient rather than leaked, which a scanner or an indexer produces.
+  # Both are free on the succeeding path, which never reaches this function,
+  # and on the platforms where the first sweep already worked.
+  if (length(survived)) {
+    gc()
+    Sys.sleep(0.1)
+    survived <- sweep()
+  }
+  survived
+}
+
+# The chain of directories `dir.create(path, recursive = TRUE)` would have to
+# make for `path` to exist, outermost first, or none where it already does.
+#
+# Read BEFORE the create rather than after, because after is too late to tell
+# a directory the call made from one it found -- and a partially successful
+# recursive create, which makes the parents and then fails on the leaf, leaves
+# a state no later look can attribute.
+tm_missing_ancestors <- function(path) {
+  out <- character(0)
+  path <- normalizePath(path, winslash = "/", mustWork = FALSE)
+  while (!dir.exists(path)) {
+    out <- c(path, out)
+    parent <- dirname(path)
+    if (identical(parent, path)) break
+    path <- parent
+  }
+  out
+}
+
+# Remove the directories `tm_missing_ancestors()` named, deepest first, and
+# stop at the first that is not empty. Returns the ones still standing, so a
+# caller building a message can say what this call created and could not take
+# back rather than guess from `dir.exists()` alone (M103 review pass 3).
+#
+# Emptiness is the guard rather than a record of what was written: a directory
+# the call created but something else has since put a file in is not the
+# call's to delete, and stopping rather than skipping is what keeps the
+# removal from reaching around a kept directory to its parent.
+tm_remove_created_dirs <- function(dirs) {
+  remaining <- dirs
+  for (dir in rev(dirs)) {
+    if (dir.exists(dir)) {
+      if (length(list.files(dir, all.files = TRUE, no.. = TRUE))) break
+      if (!identical(tm_unlink(dir, recursive = TRUE), 0L)) break
+    }
+    remaining <- setdiff(remaining, dir)
+  }
+  invisible(remaining)
+}
+
+# Unpack `archive` into `dir`. A three-slot list: `files`, the paths the
+# extraction produced relative to `dir`, or NULL where libarchive refused;
+# `leftovers`, the entries a refused extraction wrote and the cleanup could
+# not remove; and `removed_yours`, the entries the caller already had that
+# the cleanup removed because the failed extraction had written over them.
+#
+# The list replaces the bare NULL M102 returned because a failed unpack now
+# has two things to say rather than one. R drops attributes on NULL, so
+# carrying the leftovers alongside a NULL return was never open; the caller
+# tests `is.null(produced$files)` instead (M103).
 #
 # The file list is returned rather than dropped because it is the only honest
 # answer to what THIS extraction produced: `archive_extract()` writes into a
@@ -412,11 +612,44 @@ tm_unpack <- function(archive, dir) {
   # will not delete a file something still holds open, so that leak is what
   # left the downloaded archive behind after a failed unpack (M102 AC3).
   con <- tryCatch(file(archive, "rb"), error = function(cnd) NULL)
-  if (is.null(con)) return(NULL)
+  if (is.null(con)) {
+    return(list(files = NULL, leftovers = character(0), removed_yours = character(0)))
+  }
   on.exit(tm_close(con), add = TRUE)
-  tryCatch(
+  before <- tm_dir_snapshot(dir)
+  produced <- tryCatch(
     as.character(archive::archive_extract(con, dir = dir, strip_components = 1)),
     error = function(cnd) NULL
+  )
+  if (!is.null(produced)) {
+    return(list(
+      files = produced, leftovers = character(0), removed_yours = character(0)
+    ))
+  }
+  # The connection is closed BEFORE the removal rather than left to the exit
+  # handler: it is the archive's, not the destination's, but the same rule
+  # that made it worth owning -- Windows will not delete a file something
+  # still holds open -- says to hold no handle the cleanup does not need. The
+  # handler stays, so on this path the connection has two closers: the second
+  # one is a no-op, because `tm_close()` guards on `isOpen()` inside a
+  # `tryCatch()`. Two closers rather than one is the price of closing early
+  # without also having to prove no path below reaches the handler; M102 AC3's
+  # "leaves no connection open" is what both of them serve.
+  tm_close(con)
+  after <- tm_dir_snapshot(dir)
+  leftovers <- tm_remove_added(dir, before, after)
+  # Which of the caller's OWN entries the cleanup removed. D082 removes a
+  # pre-existing file the failed extraction wrote over -- what it holds
+  # afterwards is nothing the caller put there -- and that is the one
+  # deletion a refusal cannot describe as leaving the directory as it found
+  # it. Read off the destination rather than predicted: an entry that was
+  # there before and is not there now is one this call took (M103 review
+  # pass 3).
+  yours <- intersect(tm_snapshot_added(before, after)$files, before$path)
+  list(
+    files = NULL,
+    leftovers = leftovers,
+    removed_yours = setdiff(yours, tm_dir_snapshot(dir)$path)
   )
 }
 
@@ -504,6 +737,30 @@ tm_install_prompt <- function(download_url, install_dir, programs,
 #' archive, this catches a corrupted or truncated download, not a compromised
 #' source.
 #'
+#' A refusal leaves the install directory as the call found it. Files a failed
+#' extraction wrote are removed, a directory the call created is removed
+#' again, and anything already in the directory is left alone -- with one
+#' deliberate exception: a file of yours the failed extraction wrote over is
+#' removed with the rest of the debris, because what it holds after a failed
+#' extraction is nothing you put there. The error names that file by full
+#' path, so a refusal never reports a directory as untouched when it took
+#' something of yours out of it.
+#'
+#' Removal is best-effort, and on Windows it does not always succeed. Where an
+#' extraction fails part-way, the library that was writing the file is still
+#' holding it open, and Windows will not delete a file something holds. Those
+#' entries are named in the error by full path, so a refusal on Windows can
+#' leave files behind -- the error tells you which. A directory this call
+#' created and could not remove again is named the same way.
+#'
+#' The one refusal outside the rule entirely is
+#' `tidymedia_program_not_extracted`, where the archive unpacked successfully
+#' but did not contain a required program: that error says so, and the
+#' unpacked files stay where they are. It is the files that put that refusal
+#' outside the rule, so where the archive unpacked no files at all the rule
+#' applies to it like any other: a directory this call created is removed
+#' again, and the error says so instead.
+#'
 #' @param download_url A string indicating the location of the FFmpeg
 #'   installation archive. If `NULL`, will default to the latest static
 #'   essentials release from gyan.dev, a `.7z` archive.
@@ -531,7 +788,12 @@ tm_install_prompt <- function(download_url, install_dir, programs,
 #'   match the downloaded archive (`tidymedia_checksum_mismatch`), an archive
 #'   that could not be unpacked (`tidymedia_archive_unreadable`), and a
 #'   required program the archive did not contain
-#'   (`tidymedia_program_not_extracted`).
+#'   (`tidymedia_program_not_extracted`). Every one of these aims to leave the
+#'   install directory as the call found it, except the last, which leaves the
+#'   files the archive did unpack -- and which is back inside the rule where
+#'   the archive unpacked none. Removal is best-effort: on Windows a
+#'   partly-written file cannot be deleted while the extraction library still
+#'   holds it, and the error names what it could not remove. See Details.
 #' @seealso [set_program()] to register an existing binary, and [find_ffmpeg()]
 #'   to check what is currently configured.
 #' @family program management functions
@@ -605,6 +867,27 @@ install_on_win <- function(download_url = NULL,
     )
     if (!approved) return(FALSE)
   }
+  # What this call is about to make, and the promise to take it back again.
+  # The handler is registered ABOVE the create because the create itself can
+  # half-succeed -- `recursive = TRUE` makes the parents and then fails on the
+  # leaf -- and every refusal below here has to leave the directory as the
+  # call found it (M103 AC3). It is disarmed the moment the extraction
+  # produces FILES, which is one step earlier than "once a program has been
+  # registered": everything below an extraction that wrote something is
+  # outside the rule, because those files are in that directory and
+  # `tidymedia_program_not_extracted` tells the caller so. Disarming at
+  # registration instead let that abort delete the directory its own message
+  # pointed at (M103 review pass 1); disarming on a merely SUCCESSFUL
+  # extraction let it keep an empty directory this call created, under the
+  # same message, wherever the archive produced nothing -- single-segment
+  # entries, every one stripped by `strip_components = 1` (M103 review pass
+  # 2). The carve-out is written over the files a successful extraction
+  # leaves, so where it leaves none it does not reach. It is also a no-op
+  # wherever the directory holds anything: a directory that already existed is
+  # never in `created_dirs` at all.
+  created_dirs <- tm_missing_ancestors(install_dir)
+  unpacked_here <- FALSE
+  on.exit(if (!unpacked_here) tm_remove_created_dirs(created_dirs), add = TRUE)
   if (!dir.exists(install_dir)) {
     status <- dir.create(install_dir, recursive = TRUE)
     if (status == FALSE) return(FALSE)
@@ -684,16 +967,77 @@ install_on_win <- function(download_url = NULL,
     }
   }
   produced <- tm_unpack(tf, install_dir)
-  if (is.null(produced)) {
+  if (is.null(produced$files)) {
+    # The directories this call made come back before the message is built,
+    # not after it: the caller reads the message once, and a line naming a
+    # directory the exit handler is about to delete would be false by the time
+    # they went to look. Where the unpack left something behind the directory
+    # holds it, so the removal stops of its own accord -- the test below is
+    # the belt to that braces (M103 AC7).
+    kept_created <- created_dirs
+    if (!length(produced$leftovers)) {
+      kept_created <- tm_remove_created_dirs(created_dirs)
+    }
+    # `cli_vec()` with the truncation off, because AC7 promises every entry by
+    # name: cli abbreviates a vector in a message at 20 by default -- measured
+    # 2026-09-02 on 25 paths, entries 19 through 23 came back as an ellipsis --
+    # and a caller told about 20 of 25 files still on their disk would have to
+    # go hunting for the rest. A long list is the lesser cost, and it is a
+    # list nothing but a failed install can produce (M103 AC7).
+    left <- cli::cli_vec(
+      file.path(install_dir, produced$leftovers), list("vec-trunc" = Inf)
+    )
+    # The caller's own entries the cleanup removed, and the directories this
+    # call created and could not take back: the two states the plain "holds
+    # what it held" sentence used to describe wrongly (M103 review pass 3).
+    yours <- cli::cli_vec(
+      file.path(install_dir, produced$removed_yours), list("vec-trunc" = Inf)
+    )
+    kept <- cli::cli_vec(kept_created, list("vec-trunc" = Inf))
     cli::cli_abort(
       c(
         "Can't unpack the downloaded archive.",
         "i" = "Archive: {.file {tf}}.",
-        "i" = "Install directory: {.file {install_dir}}."
+        if (length(left)) {
+          c(
+            "i" = "Install directory: {.file {install_dir}}.",
+            "!" = "{cli::qty(length(left))}{?This entry/These entries} could not
+                   be removed and {cli::qty(length(left))}{?is/are} still
+                   there: {.file {left}}."
+          )
+        } else if (!dir.exists(install_dir)) {
+          c("i" = "This call created the install directory and has removed it
+                   again; nothing was left behind.")
+        } else if (length(kept)) {
+          c(
+            "i" = "Install directory: {.file {install_dir}}.",
+            "!" = "Nothing the extraction wrote is still there, but this call
+                   created {cli::qty(length(kept))}{?this directory/these
+                   directories} and could not remove {cli::qty(length(kept))}
+                   {?it/them} again: {.file {kept}}."
+          )
+        } else if (length(yours)) {
+          c(
+            "i" = "Install directory: {.file {install_dir}}.",
+            "!" = "Nothing the extraction wrote is still there, but the failed
+                   extraction had written over {cli::qty(length(yours))}
+                   {?this file/these files} of yours, which {cli::qty(length(yours))}
+                   {?was/were} removed with it: {.file {yours}}."
+          )
+        } else {
+          c(
+            "i" = "Install directory: {.file {install_dir}}.",
+            "i" = "Nothing was left behind; the directory holds what it held
+                   when this call started."
+          )
+        }
       ),
       class = "tidymedia_archive_unreadable"
     )
   }
+  # From here the extraction has succeeded and its files are in the install
+  # directory, so nothing below may take that directory back (M103 AC4).
+  unpacked_here <- length(produced$files) > 0L
   # Register what the extraction actually produced, and nothing else: a
   # remembered location pointing at a file the archive never contained is a
   # worse state than no remembered location at all. What THIS extraction
@@ -703,16 +1047,42 @@ install_on_win <- function(download_url = NULL,
   # previous run's binaries as this build's. The required programs are
   # checked before the first write, so a build missing one leaves every
   # existing remembered location as it was.
-  unpacked <- tm_extracted_programs(produced, tm_install_registers)
+  unpacked <- tm_extracted_programs(produced$files, tm_install_registers)
   absent_required <- setdiff(tm_install_required, unpacked)
   if (length(absent_required)) {
+    # The directories this call made come back before the message is built,
+    # for the same reason the unreadable-archive refusal does it there: the
+    # caller reads the message once, and it has to describe the state they
+    # will find. `tm_remove_created_dirs()` stops at the first directory that
+    # is not empty, so an extraction that wrote files keeps its directory of
+    # its own accord and the guard below is what decides the wording.
+    kept_created <- created_dirs
+    if (!length(produced$files)) {
+      kept_created <- tm_remove_created_dirs(created_dirs)
+    }
+    kept <- cli::cli_vec(kept_created, list("vec-trunc" = Inf))
     cli::cli_abort(
       c(
         "The archive did not produce {.and {.file {absent_required}}}.",
         "i" = "Looked for {.and {.file {paste0(\"bin/\", absent_required,
                \".exe\")}}} under {.file {install_dir}}.",
-        "i" = "Nothing was registered; whatever the archive did unpack is
-               still in that directory."
+        if (length(produced$files)) {
+          c("i" = "Nothing was registered; whatever the archive did unpack is
+                   still in that directory.")
+        } else if (!dir.exists(install_dir)) {
+          c("i" = "The archive produced no files at all. Nothing was
+                   registered, and this call has removed the install directory
+                   it created.")
+        } else if (length(kept)) {
+          c("i" = "The archive produced no files at all. Nothing was
+                   registered, and this call created {cli::qty(length(kept))}
+                   {?this directory/these directories} and could not remove
+                   {cli::qty(length(kept))}{?it/them} again: {.file {kept}}.")
+        } else {
+          c("i" = "The archive produced no files at all. Nothing was
+                   registered, and the install directory holds what it held
+                   when this call started.")
+        }
       ),
       class = "tidymedia_program_not_extracted"
     )

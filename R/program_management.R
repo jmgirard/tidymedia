@@ -671,8 +671,11 @@ tm_extracted_programs <- function(files, programs) {
 # check is listed and gone. Everything below the extraction asks THIS set
 # rather than the list, so one meaning of "produced" holds across the whole
 # path and no refusal describes a directory it has not looked at (M105).
-# Separators are normalized the way `tm_extracted_programs()` normalizes them,
-# because the existence test is built on the same reported path.
+# Separators are normalized the way `tm_extracted_programs()` normalizes them.
+# Case is NOT: that helper folds case to match a reported path against a
+# program name, which is a comparison between two strings, while this one asks
+# the filesystem, which answers for the target's own rules -- case-insensitive
+# on Windows, the only platform this runs on (M105 review F12).
 tm_files_on_disk <- function(files, dir) {
   rel <- sub("^[.]/", "", gsub("\\\\", "/", as.character(files)))
   rel[file.exists(file.path(dir, rel))]
@@ -1119,8 +1122,11 @@ install_on_win <- function(download_url = NULL,
   # the install directory: `install_dir` defaults to one stable path across
   # installs and the extraction does not clear it, so a directory listing
   # would count a previous run's binaries as this build's. Each of those paths
-  # is then asked whether it is there, which is a question about this build
-  # alone (M105). The required programs are checked before the first write, so
+  # is then asked whether it is there. That narrows the candidates to this
+  # build's own list; it does not prove the file AT such a path was written by
+  # this extraction rather than left by an earlier one, which `file.exists()`
+  # cannot tell and nothing below asks it to (M105 review F6). The required
+  # programs are checked before the first write, so
   # a build missing one leaves every existing remembered location as it was.
   unpacked <- tm_extracted_programs(on_disk, tm_install_registers)
   absent_required <- setdiff(tm_install_required, unpacked)
@@ -1143,9 +1149,29 @@ install_on_win <- function(download_url = NULL,
       kept_created <- tm_remove_created_dirs(created_dirs)
     }
     kept <- cli::cli_vec(kept_created, list("vec-trunc" = Inf))
+    # Where every missing program is one the extraction REPORTED, "did not
+    # produce" would contradict the line below it, which says the extraction
+    # reported writing exactly those paths. The archive listed them; what it
+    # did not do is leave them behind (M105 review F2).
+    headline <- if (length(vanished) == length(absent_required)) {
+      "The archive did not leave behind {.and {.file {absent_required}}}."
+    } else {
+      "The archive did not produce {.and {.file {absent_required}}}."
+    }
+    # An extraction that reported no files at all and one that reported files
+    # and left none of them are the same disposition and not the same event,
+    # and only the second has a report to be absent from. Saying "none of the
+    # files the extraction reported are there" of an empty report implies a
+    # report that never happened, which is the wording M103 had exact before
+    # this milestone re-pointed the guard (M105 review F3).
+    nothing_there <- if (length(produced$files)) {
+      "None of the files the extraction reported are there."
+    } else {
+      "The archive produced no files at all."
+    }
     cli::cli_abort(
       c(
-        "The archive did not produce {.and {.file {absent_required}}}.",
+        headline,
         "i" = "Looked for {.and {.file {tm_install_binary(install_dir,
                absent_required)}}}.",
         if (length(vanished)) {
@@ -1158,19 +1184,16 @@ install_on_win <- function(download_url = NULL,
           c("i" = "Nothing was registered; the files the extraction did
                    produce are in {.file {install_dir}}.")
         } else if (!dir.exists(install_dir)) {
-          c("i" = "None of the files the extraction reported are there.
-                   Nothing was registered, and this call has removed the
-                   install directory it created.")
+          c("i" = "{nothing_there} Nothing was registered, and this call has
+                   removed the install directory it created.")
         } else if (length(kept)) {
-          c("i" = "None of the files the extraction reported are there.
-                   Nothing was registered, and this call created
-                   {cli::qty(length(kept))}{?this directory/these directories}
-                   and could not remove {cli::qty(length(kept))}{?it/them}
-                   again: {.file {kept}}.")
+          c("i" = "{nothing_there} Nothing was registered, and this call
+                   created {cli::qty(length(kept))}{?this directory/these
+                   directories} and could not remove {cli::qty(length(kept))}
+                   {?it/them} again: {.file {kept}}.")
         } else {
-          c("i" = "None of the files the extraction reported are there.
-                   Nothing was registered, and the install directory holds
-                   what it held when this call started.")
+          c("i" = "{nothing_there} Nothing was registered, and the install
+                   directory holds what it held when this call started.")
         }
       ),
       class = "tidymedia_program_not_extracted"

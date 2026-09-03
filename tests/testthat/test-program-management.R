@@ -1018,6 +1018,32 @@ test_that("tm_extracted_programs() reads the path shapes libarchive can report",
   )
 })
 
+test_that("tm_files_on_disk() reads the same path shapes, and answers for the disk", {
+  # The companion to the test above, and for the same reason: the separator
+  # normalization exists for Windows and no other test in this suite executes
+  # it -- with it removed, every assertion below but the last still passed
+  # (M105 review F5).
+  dir <- withr::local_tempdir()
+  dir.create(file.path(dir, "bin"))
+  file.create(file.path(dir, "bin", "ffmpeg.exe"))
+  file.create(file.path(dir, "bin", "ffprobe.exe"))
+
+  # A backslash entry and a `./`-prefixed entry both resolve; the answer is
+  # the entry as reported, normalized, and not the path it was tested at.
+  expect_identical(
+    tm_files_on_disk(c("bin\\ffmpeg.exe", "./bin/ffprobe.exe"), dir),
+    c("bin/ffmpeg.exe", "bin/ffprobe.exe")
+  )
+  # It is the disk that decides, not the list: a path the list names and the
+  # directory does not hold drops out, which is the whole point of the helper.
+  expect_identical(
+    tm_files_on_disk(c("bin/ffmpeg.exe", "bin/ffplay.exe"), dir),
+    "bin/ffmpeg.exe"
+  )
+  expect_identical(tm_files_on_disk("bin/ffplay.exe", dir), character(0))
+  expect_identical(tm_files_on_disk(character(0), dir), character(0))
+})
+
 test_that("only the programs the extraction produced are registered", {
   # AC4. Four builds, told apart by what the extraction leaves behind.
   tm_redirect_config()
@@ -2014,10 +2040,22 @@ test_that("a successful unpack that produced no files takes back the directory i
   expect_false(dir.exists(made))
   expect_false(dir.exists(dirname(made)))
   msg <- cli::ansi_strip(conditionMessage(cnd))
-  expect_match(msg, "None of the files the extraction reported are there", fixed = TRUE)
+  # The extraction reported NOTHING, so the exact sentence is the one about an
+  # empty archive; "none of the files it reported are there" would imply a
+  # report that never happened (M105 review F3).
+  expect_match(msg, "The archive produced no files at all", fixed = TRUE)
+  expect_no_match(msg, "the extraction reported are there", fixed = TRUE)
   expect_match(msg, "removed the install directory it created", fixed = TRUE)
   # And it does not tell the caller to go and look in a directory that is gone.
   expect_no_match(msg, "the files the extraction did produce are in", fixed = TRUE)
+  # Nothing was on the list, so nothing "vanished": the quarantine line and
+  # the headline that goes with it are for a path the extraction CLAIMED, and
+  # neither may be said of a program the archive never mentioned. Without the
+  # `vanished` intersect both would be said here (M105 review F1).
+  expect_no_match(msg, "reported writing", fixed = TRUE)
+  expect_no_match(msg, "Antivirus quarantine", fixed = TRUE)
+  expect_no_match(msg, "did not leave behind", fixed = TRUE)
+  expect_match(msg, "The archive did not produce", fixed = TRUE)
 })
 
 test_that("a successful unpack that produced no files leaves a directory it found alone", {
@@ -2041,8 +2079,10 @@ test_that("a successful unpack that produced no files leaves a directory it foun
   expect_true(dir.exists(found))
   expect_identical(readLines(file.path(found, "keep.txt")), "the caller's own file")
   msg <- cli::ansi_strip(conditionMessage(cnd))
-  expect_match(msg, "None of the files the extraction reported are there", fixed = TRUE)
+  expect_match(msg, "The archive produced no files at all", fixed = TRUE)
+  expect_no_match(msg, "the extraction reported are there", fixed = TRUE)
   expect_match(msg, "holds what it held when this call started", fixed = TRUE)
+  expect_no_match(msg, "reported writing", fixed = TRUE)
 })
 
 test_that("a successful unpack that produced files but no required program keeps its directory", {
@@ -2357,6 +2397,13 @@ test_that("an extraction that listed everything and created nothing gives back t
   # It does not send the caller to a directory that is gone.
   expect_no_match(msg, "the files the extraction did produce are in", fixed = TRUE)
   expect_no_match(msg, "still in that directory", fixed = TRUE)
+  # The other half of F1/F2: here the extraction DID claim every missing
+  # program, so the quarantine line is said and the headline is the one that
+  # does not contradict it. "Did not produce" would (M105 review F2).
+  expect_match(msg, "reported writing", fixed = TRUE)
+  expect_match(msg, "Antivirus quarantine", fixed = TRUE)
+  expect_match(msg, "The archive did not leave behind", fixed = TRUE)
+  expect_no_match(msg, "The archive did not produce", fixed = TRUE)
 })
 
 test_that("an extraction that listed everything and created nothing leaves a directory it found alone", {
@@ -2385,6 +2432,8 @@ test_that("an extraction that listed everything and created nothing leaves a dir
   expect_match(msg, "None of the files the extraction reported are there", fixed = TRUE)
   expect_match(msg, "holds what it held when this call started", fixed = TRUE)
   expect_no_match(msg, "the files the extraction did produce are in", fixed = TRUE)
+  expect_match(msg, "The archive did not leave behind", fixed = TRUE)
+  expect_no_match(msg, "The archive did not produce", fixed = TRUE)
 })
 
 
@@ -2580,8 +2629,21 @@ test_that("tm_usable_binary() answers elementwise", {
   # `file.info()` names its rows, so an unnamed answer is a promise about this
   # function rather than about either of them.
   skip_on_os("windows")
+  # The sixth path is AC5's sixth input and not a stand-in for it: a
+  # tilde-relative path naming a NON-EMPTY EXECUTABLE, which is the one form
+  # whose two readers disagree. A tilde path naming nothing would be refused
+  # by the same clause as `absent` and would leave that disagreement untested
+  # in the vector shape.
+  home <- withr::local_tempdir()
+  withr::local_envvar(HOME = home)
+  expect_identical(normalizePath(path.expand("~")), normalizePath(home))
+  tilde_exe <- file.path(home, "good.exe")
+  writeLines("stub program", tilde_exe)
+  Sys.chmod(tilde_exe, "0755")
+  expect_true(tm_usable_binary(path.expand("~/good.exe")))
+
   f <- tm_usable_fixtures()
-  paths <- c(f$good, f$absent, f$empty, f$dir, f$noexec, "~/nowhere.exe")
+  paths <- c(f$good, f$absent, f$empty, f$dir, f$noexec, "~/good.exe")
   one_at_a_time <- vapply(paths, tm_usable_binary, logical(1), USE.NAMES = FALSE)
 
   expect_identical(tm_usable_binary(paths), one_at_a_time)

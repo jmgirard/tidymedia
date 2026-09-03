@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M105: `install_on_win()`'s refusals say what is on disk
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -110,7 +110,7 @@ tests — M104 fixed that at `tm_install_binary()` and this milestone only probe
       (`R/program_management.R:1139-1143`) to one call.
 - [x] T6: Roxygen for the two below-extraction refusals, `devtools::document()`,
       `NEWS.md`.
-- [ ] T7: The DECISIONS entry; full `devtools::test()` and `devtools::check()`.
+- [x] T7: The DECISIONS entry; full `devtools::test()` and `devtools::check()`.
 
 ## Work log
 
@@ -129,6 +129,7 @@ tests — M104 fixed that at `tm_install_binary()` and this milestone only probe
 - 2026-09-03: T4 and T5 checked off: full `devtools::test()` clean (0 failures, 12,015 passes, 18 skips).
 - 2026-09-03: T6: `install_on_win()`'s Details and `@return` now describe `tidymedia_program_not_extracted` by the path check rather than by what the archive contained; `devtools::document()` rewrote `man/install_on_win.Rd` and a second run produced no further diff. NEWS entry added under Configuration.
 - 2026-09-03: T7: D084 appended, annotating D083 — the produced set is the reported list intersected with the disk, D082's give-back boundary now keys on the disk, the two absent cases the one class cannot separate (with the message that does), and quarantine-after-extraction as the reachable cause. `devtools::check()` running; task unchecked until it and the full suite are clean.
+- 2026-09-03: T7 checked off: `devtools::check()` Status OK (0 errors, 0 warnings, 0 notes, 6m 42s) and `devtools::test()` clean (0 failures, 12,015 passes, 18 skips). Status to review.
 - 2026-09-03: plan gate chose making `tm_usable_binary()` elementwise over keeping it scalar with a length guard; the underlying `file.info()` and `Sys.which()` are already vectorized, it makes the dead clause disappear rather than be deleted, and the caller's `vapply()` collapses to one call. Falsified by a call site needing the short-circuit `&&` gave it.
 
 ## Decisions

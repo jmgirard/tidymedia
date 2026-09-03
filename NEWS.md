@@ -31,6 +31,16 @@
 
 ## Configuration
 
+* A refused `install_on_win()` now leaves the install directory as it found
+  it. Files a failed extraction wrote are removed, files that were already
+  there are kept — including inside a directory the extraction wrote into —
+  and a directory the call created is removed again, so a refusal no longer
+  leaves debris or an empty directory behind. Removal is best-effort: anything
+  that could not be deleted is named in the error rather than left for you to
+  find. The one exception is a build that unpacked successfully but did not
+  contain a required program, where the error already tells you the unpacked
+  files are still there.
+
 * `install_on_win()` now checks what it downloaded before it changes anything,
   and remembers a program's location only if the archive actually contained
   that program. On the build tidymedia fetches by default, it downloads the

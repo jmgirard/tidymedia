@@ -205,6 +205,19 @@ test_that("install_on_win()'s own default install dir is R_user_dir()'s ffmpeg s
   # write. The gate has its own tests below. The URL is not the package's own
   # default, so M102 fetches no digest and says so before it refuses the
   # download; the refusal is asserted by class, not by base R's wording.
+  # M103 made a refused install take its own directories back again, so the
+  # chain this test reads is gone by the time the call returns. The removal is
+  # held here rather than defeated: the seam records what it was handed and
+  # leaves it in place, so the directories below are still the ones the call
+  # actually made, and the recorded set says the removal aimed at exactly them
+  # and nothing above.
+  removed <- NULL
+  testthat::local_mocked_bindings(
+    tm_remove_created_dirs = function(dirs) {
+      removed <<- dirs
+      invisible(NULL)
+    }
+  )
   suppressWarnings(
     expect_error(
       suppressMessages(install_on_win(download_url = missing_archive, confirm = FALSE)),
@@ -217,13 +230,15 @@ test_that("install_on_win()'s own default install dir is R_user_dir()'s ffmpeg s
   # created beneath the redirected root, so a write anywhere else fails here.
   # Both sides normalized: `list.dirs()` and `file.path()` disagree on the
   # separator under a Windows `tempdir()`.
+  chain <- c(file.path(root, "R"), file.path(root, "R", "tidymedia"), expected)
   expect_identical(
     normalizePath(setdiff(list.dirs(root), root)),
-    normalizePath(c(
-      file.path(root, "R"),
-      file.path(root, "R", "tidymedia"),
-      expected
-    ))
+    normalizePath(chain)
+  )
+  # And the removal was handed that same chain, outermost first (M103 AC3).
+  expect_identical(
+    normalizePath(removed, winslash = "/", mustWork = FALSE),
+    normalizePath(chain, winslash = "/", mustWork = FALSE)
   )
 
   # Nothing was registered: the three set_*() calls run only after extraction,
@@ -307,10 +322,10 @@ test_that("tm_confirm() refuses the same way when menu() itself cannot ask", {
 
 # install_on_win() asks before it writes (M101) ------------------------------
 
-# The two directories an install can touch, as AC1 states them: every file and
-# every directory beneath each redirected root. A declined or refused call must
+# The two REDIRECTED ROOTS an install can touch, as M101 AC1 states them: every
+# file and every directory beneath each. A declined or refused call must
 # leave both exactly as it found them.
-tm_dir_snapshot <- function(...) {
+tm_roots_snapshot <- function(...) {
   lapply(c(...), function(r) {
     list(
       files = list.files(r, recursive = TRUE, all.files = TRUE),
@@ -442,7 +457,7 @@ test_that("install_on_win() refuses rather than assume consent when no one can b
   withr::local_options(rlang_interactive = FALSE)
   expect_false(rlang::is_interactive())
 
-  before <- tm_dir_snapshot(data_root, config$root)
+  before <- tm_roots_snapshot(data_root, config$root)
   expect_error(install_on_win(), class = "tidymedia_confirmation_unavailable")
   # The escape hatch is named by install_on_win(), not by the seam, so the
   # message says the argument this caller actually has.
@@ -462,7 +477,7 @@ test_that("install_on_win() refuses rather than assume consent when no one can b
   for (needle in c(u, d, vapply(tm_install_registers, tm_config_file, character(1), USE.NAMES = FALSE))) {
     expect_true(grepl(needle, msg, fixed = TRUE), label = paste("refusal names", needle))
   }
-  expect_identical(tm_dir_snapshot(data_root, config$root), before)
+  expect_identical(tm_roots_snapshot(data_root, config$root), before)
 })
 
 test_that("a declined install creates, downloads, extracts and registers nothing", {
@@ -473,12 +488,12 @@ test_that("a declined install creates, downloads, extracts and registers nothing
   data_root <- tm_redirect_data()
   rec <- tm_mock_install(confirm = function(prompt) FALSE)
 
-  before <- tm_dir_snapshot(data_root, config$root)
+  before <- tm_roots_snapshot(data_root, config$root)
   expect_false(install_on_win())
   expect_identical(rec$download, list())
   expect_identical(rec$extract, list())
   expect_identical(rec$set, list())
-  expect_identical(tm_dir_snapshot(data_root, config$root), before)
+  expect_identical(tm_roots_snapshot(data_root, config$root), before)
 })
 
 test_that("an accepted install downloads, extracts and registers; confirm = FALSE does the same without asking", {
@@ -754,7 +769,7 @@ test_that("a digest that does not match aborts, names both digests, and register
   wrong <- paste(rep("a", 64), collapse = "")
 
   rec <- tm_mock_install(confirm = function(prompt) TRUE, sidecar = wrong)
-  before <- tm_dir_snapshot(config$root)
+  before <- tm_roots_snapshot(config$root)
   msg <- tryCatch(
     install_on_win(install_dir = d),
     tidymedia_checksum_mismatch = function(cnd) cli::ansi_strip(conditionMessage(cnd))
@@ -765,7 +780,7 @@ test_that("a digest that does not match aborts, names both digests, and register
   expect_true(grepl(rec$digest, msg, fixed = TRUE))
   expect_identical(rec$extract, list())
   expect_identical(rec$set, list())
-  expect_identical(tm_dir_snapshot(config$root), before)
+  expect_identical(tm_roots_snapshot(config$root), before)
 })
 
 test_that("a caller-supplied digest is checked case-insensitively and fetches nothing", {
@@ -868,10 +883,15 @@ test_that("an archive libarchive cannot read aborts without libarchive's text", 
       label = paste(fixture, "leaves no connection open")
     )
 
-    # The abort names its own two facts: the archive, and where it was going.
+    # The abort names the archive it could not read. It no longer names the
+    # install directory here: M103 gave this call its directories back, and
+    # `d` is one it made, so a line naming `d` would point at a directory that
+    # is gone by the time the caller reads it. AC7's own tests below assert
+    # what the message says instead, in each of the three states it can be in.
     msg <- cli::ansi_strip(conditionMessage(cnd))
     expect_true(grepl(rec$destfile, msg, fixed = TRUE), label = fixture)
-    expect_true(grepl(d, msg, fixed = TRUE), label = fixture)
+    expect_false(grepl(d, msg, fixed = TRUE), label = fixture)
+    expect_false(dir.exists(d), label = fixture)
 
     # And libarchive's own text reaches the caller nowhere -- not in this
     # message, and not in any condition carried underneath it.
@@ -920,11 +940,13 @@ test_that("the real archive_extract() returns the paths the mock stands in for",
   produced <- tm_unpack(arch, d)
   # Relative to the directory, after strip_components -- which is exactly the
   # string tm_extracted_programs() matches against.
-  expect_setequal(produced, file.path("bin", paste0(tm_install_registers, ".exe")))
+  expect_setequal(produced$files, file.path("bin", paste0(tm_install_registers, ".exe")))
   expect_setequal(
-    tm_extracted_programs(produced, tm_install_registers),
+    tm_extracted_programs(produced$files, tm_install_registers),
     tm_install_registers
   )
+  # A succeeding unpack removed nothing, so it has nothing to report (M103).
+  expect_identical(produced$leftovers, character(0))
 })
 
 test_that("tm_extracted_programs() reads the path shapes libarchive can report", {
@@ -1108,12 +1130,12 @@ test_that("what an install remembers is read back off disk, not off the record",
       unpack = setdiff(tm_install_registers, absent),
       real_set = TRUE
     )
-    before <- tm_dir_snapshot(config$root)
+    before <- tm_roots_snapshot(config$root)
     expect_error(
       install_on_win(install_dir = d, archive_checksum = rec$digest),
       class = "tidymedia_program_not_extracted"
     )
-    expect_identical(tm_dir_snapshot(config$root), before, label = absent)
+    expect_identical(tm_roots_snapshot(config$root), before, label = absent)
   }
 })
 
@@ -1151,17 +1173,19 @@ test_that("an archive that vanishes between the fetch and the digest refuses cla
   expect_identical(rec$set, list())
 })
 
-test_that("tm_unpack() returns NULL where the archive cannot even be opened", {
+test_that("tm_unpack() reports failure where the archive cannot even be opened", {
   # The connection is opened by tm_unpack() itself (T9), so a path that is not
   # there fails before libarchive is reached -- and has to read as the same
   # refusal, since the caller only asks whether the unpack produced anything.
   # `file()` warns on its way to the error it raises; the warning is base R's
   # and says the same thing, so it is suppressed rather than asserted.
-  expect_null(
-    suppressWarnings(
-      tm_unpack(file.path(tempdir(), "no-such-archive"), tempdir())
-    )
+  out <- suppressWarnings(
+    tm_unpack(file.path(tempdir(), "no-such-archive"), tempdir())
   )
+  expect_null(out$files)
+  # And nothing was extracted, so nothing is named as left behind -- the
+  # cleanup is never reached on this path (M103).
+  expect_identical(out$leftovers, character(0))
 })
 
 test_that("a download that does not deliver aborts, keeping the base condition underneath", {
@@ -1333,4 +1357,385 @@ test_that("the exit census can fail", {
   expect_identical(length(tm_collect_exits(unclassed)), 1L)
   expect_identical(length(tm_collect_exits(non_literal)), 1L)
   expect_identical(length(tm_collect_exits(compliant)), 2L)
+})
+
+
+# Every refusal above the unpack leaves no directory behind (M103 AC3) -------
+
+# The M102 census, narrowed to the exits that come BEFORE a named call.
+#
+# `tm_collect_exits()` walks the whole body and cannot say where in it a node
+# sat, which is the one fact AC3's domain turns on: the rule is about the
+# refusals that happen while the install directory holds nothing the call put
+# there. The narrowing is positional rather than by name or class because the
+# body's own order is what decides it -- the same abort class appears on both
+# sides of some calls, and a class-keyed filter would silently take the wrong
+# one.
+#
+# The filter runs over the body's top-level statements: `tm_unpack()` is
+# called from one of them, and everything a `{` block holds before that
+# statement is what precedes the call.
+tm_collect_exits_before <- function(fn, callee) {
+  statements <- as.list(body(fn))[-1]
+  holds_callee <- vapply(
+    statements,
+    function(st) {
+      hit <- FALSE
+      walk <- function(node) {
+        if (is.call(node)) {
+          if (identical(tm_call_name(node), callee)) hit <<- TRUE
+          for (part in as.list(node)) {
+            if (identical(part, quote(expr = ))) next
+            walk(part)
+          }
+        }
+      }
+      walk(st)
+      hit
+    },
+    logical(1)
+  )
+  stopifnot(any(holds_callee))
+  before <- statements[seq_len(which(holds_callee)[[1]] - 1L)]
+  unlist(lapply(before, function(st) {
+    tm_collect_exits(eval(call("function", NULL, st)))
+  }), recursive = FALSE)
+}
+
+# A stable name for a collected exit: the condition class it raises, or the
+# value it returns, plus its ordinal among the exits naming the same one.
+#
+# Position alone would do, but a key made of position alone renumbers every
+# case below it the moment an exit is inserted above -- so a real omission and
+# a harmless insertion would fail the same way. Keyed like this, a new exit
+# raising a new class takes a key no case claims and the bijection names IT,
+# while a new exit raising an EXISTING class pushes the count past the
+# registry's and the bijection fails on the count.
+tm_exit_keys <- function(nodes) {
+  names <- vapply(nodes, function(node) {
+    if (identical(tm_call_name(node), "return")) {
+      return(paste0("return(", deparse1(node[[2]]), ")"))
+    }
+    classes <- tm_exit_classes(node)
+    classes <- classes[startsWith(classes, "tidymedia_")]
+    if (length(classes)) classes[[1]] else deparse1(node)
+  }, character(1))
+  vapply(
+    seq_along(names),
+    function(i) paste0(names[[i]], " #", sum(names[seq_len(i)] == names[[i]])),
+    character(1)
+  )
+}
+
+# One triggering case per exit AC3's domain holds, keyed by tm_exit_keys().
+#
+# Each case is a function of the install directory that drives install_on_win()
+# to exactly that exit and returns nothing; the runner below supplies the
+# directory and does the asserting, so a case says only how to reach its exit.
+# `env` is the caller's frame, which is what the withr/testthat mocks below
+# have to be scoped to.
+#
+# The two `return(FALSE)` exits are told apart by what makes them fire, which
+# is also the only difference AC3 cares about: the first refuses above the
+# first dir.create(), the second is dir.create() itself failing after it has
+# already made the parents.
+tm_ac3_cases <- function(env = parent.frame()) {
+  list(
+    "return(FALSE) #1" = function(dir) {
+      tm_mock_install(confirm = function(prompt) FALSE, env = env)
+      expect_false(install_on_win(install_dir = dir))
+    },
+    "return(FALSE) #2" = function(dir) {
+      rec <- tm_mock_install(confirm = function(prompt) TRUE, env = env)
+      # Captured BEFORE the mock replaces the binding, so the mock can still
+      # make the parents the real recursive call would have made. Without
+      # that, this case would assert the removal of directories nothing
+      # created.
+      real_dir_create <- base::dir.create
+      testthat::local_mocked_bindings(
+        dir.create = function(path, showWarnings = TRUE, recursive = FALSE,
+                              mode = "0777") {
+          real_dir_create(dirname(path), showWarnings = FALSE, recursive = TRUE)
+          FALSE
+        },
+        .package = "base", .env = env
+      )
+      expect_false(install_on_win(install_dir = dir, archive_checksum = rec$digest))
+    },
+    "tidymedia_checksum_unavailable #1" = function(dir) {
+      tm_mock_install(
+        confirm = function(prompt) TRUE,
+        download = function(url, destfile, is_sidecar) if (is_sidecar) 1L else 0L,
+        env = env
+      )
+      expect_error(
+        install_on_win(install_dir = dir),
+        class = "tidymedia_checksum_unavailable"
+      )
+    },
+    "tidymedia_checksum_unavailable #2" = function(dir) {
+      tm_mock_install(
+        confirm = function(prompt) TRUE, sidecar = "no digest here", env = env
+      )
+      expect_error(
+        install_on_win(install_dir = dir),
+        class = "tidymedia_checksum_unavailable"
+      )
+    },
+    "tidymedia_download_unavailable #1" = function(dir) {
+      rec <- tm_mock_install(
+        confirm = function(prompt) TRUE,
+        download = function(url, destfile, is_sidecar) 1L,
+        env = env
+      )
+      expect_error(
+        install_on_win(install_dir = dir, archive_checksum = rec$digest),
+        class = "tidymedia_download_unavailable"
+      )
+    },
+    "tidymedia_download_unavailable #2" = function(dir) {
+      rec <- tm_mock_install(confirm = function(prompt) TRUE, env = env)
+      testthat::local_mocked_bindings(
+        tm_archive_digest = function(path) NULL, .env = env
+      )
+      expect_error(
+        install_on_win(install_dir = dir, archive_checksum = rec$digest),
+        class = "tidymedia_download_unavailable"
+      )
+    },
+    "tidymedia_checksum_mismatch #1" = function(dir) {
+      tm_mock_install(confirm = function(prompt) TRUE, env = env)
+      expect_error(
+        install_on_win(install_dir = dir, archive_checksum = strrep("a", 64)),
+        class = "tidymedia_checksum_mismatch"
+      )
+    }
+  )
+}
+
+# The five refusals the walk cannot see, because none of them is a `return()`
+# or a `cli_abort()` in install_on_win()'s own body: four front-door checks
+# that abort inside rlang or check_sha256(), and tm_confirm()'s refusal to
+# assume consent where there is no one to ask.
+#
+# Each refuses ABOVE the call's first dir.create(), so each must create no
+# directory at all -- which is why they take the install directory as a path
+# to check rather than a path to pass. The three that cannot accept a
+# directory argument at all take the default one instead.
+tm_ac3_uncovered_cases <- function(env = parent.frame()) {
+  list(
+    "check_bool(confirm)" = function(dir) {
+      expect_error(install_on_win(install_dir = dir, confirm = "yes"))
+    },
+    "check_string(download_url)" = function(dir) {
+      expect_error(install_on_win(install_dir = dir, download_url = 1))
+    },
+    "check_string(install_dir)" = function(dir) {
+      expect_error(install_on_win(install_dir = 1))
+    },
+    "check_sha256(archive_checksum)" = function(dir) {
+      expect_error(install_on_win(install_dir = dir, archive_checksum = "nope"))
+    },
+    "tm_confirm() has no one to ask" = function(dir) {
+      # The real tm_confirm() is left in place and the session is not
+      # interactive, which is the state D080 refuses rather than assumes
+      # consent for.
+      tm_mock_install(confirm = NULL, env = env)
+      expect_error(
+        install_on_win(install_dir = dir),
+        class = "tidymedia_confirmation_unavailable"
+      )
+    }
+  )
+}
+
+# The exits that cannot be reached with the install directory already there:
+# `dir.create()` only runs where it is not.
+tm_ac3_needs_new_dir <- "return(FALSE) #2"
+
+# Run one case in a frame of its own, so its mocks and temp files unwind
+# before the next case starts. Building the registry HERE is what scopes them:
+# the cases take `env` from this frame.
+tm_ac3_run <- function(key, dir) {
+  tm_redirect_config()
+  tm_redirect_data()
+  cases <- c(
+    tm_ac3_cases(env = environment()),
+    tm_ac3_uncovered_cases(env = environment())
+  )
+  cases[[key]](dir)
+}
+
+test_that("every exit above the unpack has a case, and every case has an exit", {
+  # AC3's bijection. The domain is derived from the body, so an exit added
+  # above the unpack with no case here fails this the day it is written; a
+  # case naming an exit that no longer exists fails it the same way.
+  exits <- tm_collect_exits_before(install_on_win, "tm_unpack")
+  expect_setequal(tm_exit_keys(exits), names(tm_ac3_cases()))
+  expect_identical(length(exits), length(tm_ac3_cases()))
+
+  # The floor against a filter that silently under-reads: the narrowed set
+  # still holds both `return(FALSE)` exits and the three abort classes that
+  # can only fire above the unpack.
+  expect_true(all(
+    c("return(FALSE) #1", "return(FALSE) #2",
+      "tidymedia_checksum_unavailable #1", "tidymedia_download_unavailable #1",
+      "tidymedia_checksum_mismatch #1") %in% tm_exit_keys(exits)
+  ))
+  # And the floor against a filter that reads too far: the two exits BELOW
+  # the unpack are the ones the narrowing exists to drop.
+  all_classes <- unlist(lapply(tm_collect_exits(install_on_win), tm_exit_classes))
+  expect_true("tidymedia_archive_unreadable" %in% all_classes)
+  expect_false(
+    "tidymedia_archive_unreadable" %in%
+      unlist(lapply(exits, tm_exit_classes))
+  )
+  expect_false(
+    "tidymedia_program_not_extracted" %in%
+      unlist(lapply(exits, tm_exit_classes))
+  )
+})
+
+test_that("a refusal above the unpack leaves no directory the call created", {
+  # AC3, first half. The install directory is named two levels below a
+  # directory that already exists, so `dir.create(recursive = TRUE)` has three
+  # levels to make and the assertion is about the outermost of them: a removal
+  # that stopped at `install_dir` would leave the other two behind and fail
+  # here.
+  for (key in names(tm_ac3_cases())) {
+    root <- withr::local_tempdir()
+    outermost <- file.path(root, "made")
+    dir <- file.path(outermost, "by-the-call", "ffmpeg")
+    tm_ac3_run(key, dir)
+    expect_false(dir.exists(dir), label = key)
+    expect_false(dir.exists(outermost), label = paste(key, "outermost"))
+  }
+})
+
+test_that("a refusal above the unpack leaves an existing install directory as it was", {
+  # AC3, second half. A directory the call did NOT create is never removed,
+  # and neither is anything in it -- the same created-or-changed line the
+  # unpack cleanup draws, drawn here.
+  for (key in setdiff(names(tm_ac3_cases()), tm_ac3_needs_new_dir)) {
+    root <- withr::local_tempdir()
+    dir <- file.path(root, "ffmpeg")
+    dir.create(file.path(dir, "keep"), recursive = TRUE)
+    writeLines("the caller's own file", file.path(dir, "keep", "mine.txt"))
+    before <- tm_dir_snapshot(dir)
+
+    tm_ac3_run(key, dir)
+
+    expect_true(dir.exists(dir), label = key)
+    expect_identical(tm_dir_snapshot(dir), before, label = key)
+  }
+})
+
+test_that("the refusals the census cannot see create no directory at all", {
+  # AC3's named exceptions. None of the five is a `return()` or a
+  # `cli_abort()` in install_on_win()'s own body, so no walk over that body
+  # can find them; each is listed by hand and each refuses above the first
+  # dir.create(). Both the directory the caller named and the default one are
+  # checked, because two of the five refuse before either has been resolved.
+  for (key in names(tm_ac3_uncovered_cases())) {
+    root <- withr::local_tempdir()
+    dir <- file.path(root, "made", "by-the-call", "ffmpeg")
+    default_root <- NULL
+    withr::with_envvar(c(R_USER_DATA_DIR = root), {
+      default_root <- file.path(tools::R_user_dir("tidymedia", "data"))
+    })
+    tm_ac3_run(key, dir)
+    expect_false(dir.exists(file.path(root, "made")), label = key)
+    expect_false(dir.exists(default_root), label = paste(key, "default dir"))
+  }
+})
+
+# The unpack refusal says what it left behind (M103 AC7) ---------------------
+
+test_that("a failed unpack that leaves nothing says so, and takes its own directory back", {
+  # AC7, the two states with no leftovers, over both libarchive failure
+  # routes. `unpack = NULL` leaves the real archive::archive_extract() in
+  # place, so what the message reports is what the cleanup actually did.
+  tm_redirect_config()
+  tm_redirect_data()
+
+  for (fixture in c("not-an-archive.7z", "corrupt-payload.7z")) {
+    # State one: the call created the install directory. It is removed again,
+    # and the message names no directory -- naming one it had just deleted is
+    # the failure this asserts against.
+    root <- withr::local_tempdir()
+    made <- file.path(root, "made", "ffmpeg")
+    rec <- tm_mock_install(
+      confirm = function(prompt) TRUE, unpack = NULL,
+      archive = testthat::test_path("fixtures", fixture)
+    )
+    cnd <- tryCatch(
+      install_on_win(install_dir = made, archive_checksum = rec$digest),
+      error = function(cnd) cnd
+    )
+    expect_s3_class(cnd, "tidymedia_archive_unreadable")
+    msg <- cli::ansi_strip(conditionMessage(cnd))
+    expect_false(dir.exists(file.path(root, "made")), label = fixture)
+    expect_false(grepl(made, msg, fixed = TRUE), label = fixture)
+    expect_match(msg, "removed it again", fixed = TRUE)
+
+    # State two: the directory was already there, holding a file of the
+    # caller's. It stays, with its file, and the message says so.
+    kept <- file.path(withr::local_tempdir(), "ffmpeg")
+    dir.create(kept, recursive = TRUE)
+    writeLines("the caller's own file", file.path(kept, "mine.txt"))
+    before <- tm_dir_snapshot(kept)
+    rec <- tm_mock_install(
+      confirm = function(prompt) TRUE, unpack = NULL,
+      archive = testthat::test_path("fixtures", fixture)
+    )
+    cnd <- tryCatch(
+      install_on_win(install_dir = kept, archive_checksum = rec$digest),
+      error = function(cnd) cnd
+    )
+    expect_s3_class(cnd, "tidymedia_archive_unreadable")
+    msg <- cli::ansi_strip(conditionMessage(cnd))
+    expect_true(dir.exists(kept), label = fixture)
+    expect_identical(tm_dir_snapshot(kept), before, label = fixture)
+    expect_true(grepl(kept, msg, fixed = TRUE), label = fixture)
+    expect_match(msg, "Nothing was left behind", fixed = TRUE)
+  }
+})
+
+test_that("a failed unpack names every entry it could not remove", {
+  # AC7's mocked-failure cell. The seam is made to fail on every call, so what
+  # survives is the whole of what the cleanup targeted: the created directory
+  # -- which still keeps its child -- and the created file inside it. Both are
+  # named, which is what "more than one entry" is here for: a message that
+  # reported only the first would pass a one-entry cell.
+  tm_redirect_config()
+  tm_redirect_data()
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+  rec <- tm_mock_install(
+    confirm = function(prompt) TRUE, unpack = NULL,
+    archive = testthat::test_path("fixtures", "corrupt-payload.7z")
+  )
+  testthat::local_mocked_bindings(tm_unlink = function(path, recursive = FALSE) 1L)
+
+  cnd <- tryCatch(
+    install_on_win(install_dir = d, archive_checksum = rec$digest),
+    error = function(cnd) cnd
+  )
+  expect_s3_class(cnd, "tidymedia_archive_unreadable")
+  msg <- cli::ansi_strip(conditionMessage(cnd))
+
+  entry <- gsub("/+", "/", sub(
+    "^/+", "",
+    archive::archive(testthat::test_path("fixtures", "corrupt-payload.7z"))$path[[1]]
+  ))
+  topmost <- strsplit(entry, "/", fixed = TRUE)[[1]][[1]]
+  expect_gt(length(strsplit(entry, "/", fixed = TRUE)[[1]]), 1)
+  # Both leftovers, by full path -- and the directory is the one that still
+  # holds the file, so the two are different kinds of target, not one target
+  # named twice.
+  expect_true(grepl(file.path(d, entry), msg, fixed = TRUE))
+  expect_true(grepl(file.path(d, topmost), msg, fixed = TRUE))
+  expect_match(msg, "could not", fixed = TRUE)
+  # And they really are still there.
+  expect_true(file.exists(file.path(d, entry)))
+  expect_true(dir.exists(file.path(d, topmost)))
 })

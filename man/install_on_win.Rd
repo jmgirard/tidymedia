@@ -44,7 +44,9 @@ fetched or read (\code{tidymedia_checksum_unavailable}), a digest that did not
 match the downloaded archive (\code{tidymedia_checksum_mismatch}), an archive
 that could not be unpacked (\code{tidymedia_archive_unreadable}), and a
 required program the archive did not contain
-(\code{tidymedia_program_not_extracted}).
+(\code{tidymedia_program_not_extracted}). Every one of these leaves the install
+directory as the call found it, except the last, which leaves the files
+the archive did unpack.
 }
 \description{
 Downloads an FFmpeg archive, extracts it, and updates the package's user
@@ -61,6 +63,14 @@ beside each build; for any other source, pass \code{archive_checksum}. Because
 the digest travels from the same host over the same connection as the
 archive, this catches a corrupted or truncated download, not a compromised
 source.
+
+A refusal leaves the install directory as the call found it. Files a failed
+extraction wrote are removed, files that were already there are kept, and a
+directory the call created is removed again; anything that could not be
+removed is named in the error rather than left for the caller to discover.
+The one exception is \code{tidymedia_program_not_extracted}, where the archive
+unpacked successfully but did not contain a required program: that error
+says so, and the unpacked files stay where they are.
 }
 \examples{
 \dontrun{

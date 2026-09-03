@@ -344,6 +344,7 @@ tm_mock_install <- function(confirm = NULL,
                             archive = NULL,
                             download = NULL,
                             real_set = FALSE,
+                            spoil = NULL,
                             env = parent.frame()) {
   rec <- new.env(parent = emptyenv())
   rec$download <- list()
@@ -409,12 +410,42 @@ tm_mock_install <- function(confirm = NULL,
         dir.create(bin, recursive = TRUE, showWarnings = FALSE)
         for (program in unpack) {
           exe <- file.path(bin, paste0(program, ".exe"))
-          file.create(exe)
-          # `real_set = TRUE` sends the run through the REAL set_program(),
-          # which asks Sys.which() whether the path is executable -- so the
-          # stub has to be, or AC4's on-disk claim could not be reached.
-          if (real_set) Sys.chmod(exe, "0755")
+          # `spoil` names, per program, which of the four unusable forms to
+          # plant instead of a working stub (M104 AC4). Every form is still
+          # LISTED in the return value below, because the list is what the
+          # extraction reported and the check exists to disagree with it.
+          form <- if (program %in% names(spoil)) spoil[[program]] else "good"
+          switch(
+            form,
+            # Listed and never created: nothing is written at all.
+            absent = NULL,
+            # Created with no bytes -- the truncation a bit test cannot see.
+            empty = file.create(exe),
+            dir = dir.create(exe),
+            # Bytes but no executable bit. POSIX only: Windows has no such
+            # bit, which is why the check does not rest on it alone.
+            noexec = {
+              writeLines("stub program", exe)
+              Sys.chmod(exe, "0644")
+            },
+            # A working stub is NON-EMPTY, because the registration check asks
+            # for bytes: the zero-length stub this helper used to write would
+            # now refuse every install it mocks.
+            good = writeLines("stub program", exe),
+            stop("unknown spoil form: ", form)
+          )
+          # The stub is made executable whatever `real_set` says. Two checks
+          # ask Sys.which() about it: the REAL set_program(), reached only
+          # under `real_set = TRUE`, and install_on_win()'s own registration
+          # check, which runs on every path (M104). Before that second check
+          # existed this bit was needed only for the first. The two forms
+          # whose whole point is that they do not resolve are the exception.
+          if (!form %in% c("absent", "dir", "noexec")) Sys.chmod(exe, "0755")
         }
+        # What the install directory held the moment the extraction finished,
+        # so a refusal below it can be held to leaving that state alone
+        # (M104 AC2).
+        rec$after_extract <- tm_dir_snapshot(dir)
         # The real archive_extract() returns the paths it wrote, relative to
         # `dir` and after strip_components -- measured 2026-09-02 against a
         # three-program control archive, which returned exactly these three
@@ -1608,7 +1639,7 @@ test_that("every exit above the unpack has a case, and every case has an exit", 
       "tidymedia_checksum_unavailable #1", "tidymedia_download_unavailable #1",
       "tidymedia_checksum_mismatch #1") %in% tm_exit_keys(exits)
   ))
-  # And the floor against a filter that reads too far: the two exits BELOW
+  # And the floor against a filter that reads too far: the three exits BELOW
   # the unpack are the ones the narrowing exists to drop.
   all_classes <- unlist(lapply(tm_collect_exits(install_on_win), tm_exit_classes))
   expect_true("tidymedia_archive_unreadable" %in% all_classes)
@@ -1618,6 +1649,12 @@ test_that("every exit above the unpack has a case, and every case has an exit", 
   )
   expect_false(
     "tidymedia_program_not_extracted" %in%
+      unlist(lapply(exits, tm_exit_classes))
+  )
+  # The third, added by M104 and below the unpack for the same reason.
+  expect_true("tidymedia_program_unusable" %in% all_classes)
+  expect_false(
+    "tidymedia_program_unusable" %in%
       unlist(lapply(exits, tm_exit_classes))
   )
 })
@@ -2025,3 +2062,257 @@ test_that("a successful unpack that produced files but no required program keeps
     fixed = TRUE
   )
 })
+
+
+# Every program registers, or none does (M104) --------------------------------
+
+# The four forms a produced path takes when the archive listed it and what is
+# on disk cannot be used, as `tm_mock_install(spoil = )` plants them. Named
+# once so the AC4 tests and the AC2/AC3 ones cannot drift apart about which
+# form is which.
+tm_unusable_forms <- c("absent", "empty", "dir", "noexec")
+
+test_that("a produced program that cannot be used stops every registration", {
+  # AC1. The config root is NOT empty when the call starts: `ffmpeg` already
+  # has a remembered location pointing somewhere else, so an identical
+  # snapshot afterwards says the install wrote nothing rather than saying the
+  # directory was empty both times. The file's CONTENTS are read back too,
+  # because the snapshot records names and not bytes -- re-registering
+  # `ffmpeg` at the install directory's path would leave the name list alone.
+  config <- tm_redirect_config()
+  tm_redirect_data()
+  kept <- tm_stub_executable("already remembered")
+  tm_write_location(config$new, "ffmpeg", kept)
+
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+  rec <- tm_mock_install(
+    confirm = function(prompt) TRUE, real_set = TRUE,
+    spoil = c(ffprobe = "empty")
+  )
+
+  before <- tm_roots_snapshot(config$root)
+  cnd <- tryCatch(
+    install_on_win(install_dir = d, archive_checksum = rec$digest),
+    error = function(cnd) cnd
+  )
+  expect_s3_class(cnd, "tidymedia_program_unusable")
+  expect_identical(tm_roots_snapshot(config$root), before)
+  expect_identical(readLines(tm_config_file("ffmpeg", config$new)), kept)
+  # The premise the criterion rests on: `ffmpeg` passed the check, so the
+  # unchanged config root is the check refusing to write rather than nothing
+  # having been registrable in the first place.
+  expect_true(file.size(tm_install_binary(d, "ffmpeg")) > 0)
+})
+
+test_that("the refusal names every failed program and leaves the install directory alone", {
+  # AC2. Both required programs fail in one call, so the plural is exercised
+  # by two entries rather than asserted of one.
+  config <- tm_redirect_config()
+  tm_redirect_data()
+  withr::local_options(cli.width = 1000)
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+  rec <- tm_mock_install(
+    confirm = function(prompt) TRUE, real_set = TRUE,
+    spoil = c(ffmpeg = "empty", ffprobe = "empty")
+  )
+
+  before <- tm_roots_snapshot(config$root)
+  cnd <- tryCatch(
+    install_on_win(install_dir = d, archive_checksum = rec$digest),
+    error = function(cnd) cnd
+  )
+  expect_s3_class(cnd, "tidymedia_program_unusable")
+  expect_identical(blamed_verb(cnd), "install_on_win")
+
+  msg <- cli::ansi_strip(conditionMessage(cnd))
+  for (program in c("ffmpeg", "ffprobe")) {
+    expect_match(msg, program, fixed = TRUE)
+    expect_match(msg, tm_install_binary(d, program), fixed = TRUE)
+  }
+  # Not set_program()'s own unclassed abort, which is the failure this check
+  # exists to reach first (M104 AC4).
+  expect_no_match(msg, "Can't find an executable", fixed = TRUE)
+
+  expect_identical(tm_roots_snapshot(config$root), before)
+  # D082's boundary: this sits BELOW a successful extraction, so the unpacked
+  # files stay exactly as the extraction left them.
+  expect_identical(tm_dir_snapshot(d), rec$after_extract)
+})
+
+test_that("a produced ffplay that cannot be used leaves the install successful", {
+  # AC3. The wording has to be the produced-but-unusable one, not the
+  # archive-did-not-produce one, which would be false here: the archive DID
+  # produce a path for `ffplay`.
+  config <- tm_redirect_config()
+  tm_redirect_data()
+  withr::local_options(cli.width = 1000)
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+  rec <- tm_mock_install(
+    confirm = function(prompt) TRUE, real_set = TRUE,
+    spoil = c(ffplay = "empty")
+  )
+
+  msg <- NULL
+  expect_true(withCallingHandlers(
+    install_on_win(install_dir = d, archive_checksum = rec$digest),
+    message = function(m) {
+      msg <<- c(msg, cli::ansi_strip(conditionMessage(m)))
+      invokeRestart("muffleMessage")
+    }
+  ))
+  msg <- paste(msg, collapse = "")
+  expect_match(msg, "ffplay", fixed = TRUE)
+  expect_match(msg, tm_install_binary(d, "ffplay"), fixed = TRUE)
+  expect_match(msg, "could not be used", fixed = TRUE)
+  expect_no_match(msg, "did not produce", fixed = TRUE)
+
+  expect_true(file.exists(tm_config_file("ffmpeg", config$new)))
+  expect_true(file.exists(tm_config_file("ffprobe", config$new)))
+  expect_false(file.exists(tm_config_file("ffplay", config$new)))
+})
+
+# AC4: each of the four planted forms is disposed the way AC2 states, at a
+# required program. One test per form, so a form that stops being refused
+# names itself rather than hiding inside a loop's first failure.
+tm_expect_required_refusal <- function(form) {
+  config <- tm_redirect_config()
+  tm_redirect_data()
+  withr::local_options(cli.width = 1000)
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+  spoil <- stats::setNames(form, "ffprobe")
+  rec <- tm_mock_install(
+    confirm = function(prompt) TRUE, real_set = TRUE, spoil = spoil
+  )
+
+  before <- tm_roots_snapshot(config$root)
+  cnd <- tryCatch(
+    install_on_win(install_dir = d, archive_checksum = rec$digest),
+    error = function(cnd) cnd
+  )
+  expect_s3_class(cnd, "tidymedia_program_unusable")
+  expect_identical(blamed_verb(cnd), "install_on_win")
+  msg <- cli::ansi_strip(conditionMessage(cnd))
+  expect_match(msg, "ffprobe", fixed = TRUE)
+  expect_match(msg, tm_install_binary(d, "ffprobe"), fixed = TRUE)
+  expect_no_match(msg, "Can't find an executable", fixed = TRUE)
+  expect_identical(tm_roots_snapshot(config$root), before)
+  expect_identical(tm_dir_snapshot(d), rec$after_extract)
+  invisible(cnd)
+}
+
+test_that("a path the extraction listed and did not create is refused", {
+  # AC4, form 1. The premise: nothing is at that path at all.
+  cnd <- tm_expect_required_refusal("absent")
+  expect_s3_class(cnd, "tidymedia_program_unusable")
+})
+
+test_that("a produced path created as an empty file is refused", {
+  # AC4, form 2 -- the one the executable bit cannot see, which is why the
+  # check asks for bytes as well as for a resolvable path.
+  tm_expect_required_refusal("empty")
+})
+
+test_that("a produced path created as a directory is refused", {
+  # AC4, form 3.
+  tm_expect_required_refusal("dir")
+})
+
+test_that("a produced path with no executable bit is refused", {
+  # AC4, form 4. POSIX only: Windows has no executable bit, so there is no
+  # such state to plant there.
+  skip_on_os("windows")
+  tm_expect_required_refusal("noexec")
+})
+
+test_that("a directory planted at ffplay's path is informed about, not refused", {
+  # AC4's second half: one of the four forms is also disposed at an optional
+  # program the way AC3 states -- the install completes and says what it
+  # skipped.
+  config <- tm_redirect_config()
+  tm_redirect_data()
+  withr::local_options(cli.width = 1000)
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+  rec <- tm_mock_install(
+    confirm = function(prompt) TRUE, real_set = TRUE, spoil = c(ffplay = "dir")
+  )
+
+  msg <- NULL
+  expect_true(withCallingHandlers(
+    install_on_win(install_dir = d, archive_checksum = rec$digest),
+    message = function(m) {
+      msg <<- c(msg, cli::ansi_strip(conditionMessage(m)))
+      invokeRestart("muffleMessage")
+    }
+  ))
+  msg <- paste(msg, collapse = "")
+  expect_match(msg, "could not be used", fixed = TRUE)
+  expect_no_match(msg, "did not produce", fixed = TRUE)
+  expect_no_match(msg, "Can't find an executable", fixed = TRUE)
+  expect_false(file.exists(tm_config_file("ffplay", config$new)))
+  expect_true(file.exists(tm_config_file("ffmpeg", config$new)))
+})
+
+test_that("an absent optional program is still reported in one message", {
+  # The archive omits `ffplay` entirely and nothing else fails. This is the
+  # pre-M104 optional-program state, asserted here so the new branch beside it
+  # cannot turn one message into two.
+  #
+  # It does NOT exercise both optional states at once, and nothing can:
+  # `tm_install_registers` minus `tm_install_required` is exactly `ffplay`
+  # (`R/program_management.R:306`, `:312`), so `absent_optional` and
+  # `unusable_optional` can never both be non-empty in one call. The combining
+  # branch in `install_on_win()` is written for a fourth registered program
+  # that does not exist yet, and is unreachable until one does (M104 review
+  # F4).
+  tm_redirect_config()
+  tm_redirect_data()
+  withr::local_options(cli.width = 1000)
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+  rec <- tm_mock_install(
+    confirm = function(prompt) TRUE, real_set = TRUE,
+    unpack = c("ffmpeg", "ffprobe")
+  )
+  count <- 0L
+  expect_true(withCallingHandlers(
+    install_on_win(install_dir = d, archive_checksum = rec$digest),
+    message = function(m) {
+      count <<- count + 1L
+      invokeRestart("muffleMessage")
+    }
+  ))
+  expect_identical(count, 1L)
+})
+
+test_that("an install directory written with a tilde is not refused as unusable", {
+  # M104 review F1. `file.info()` expands `~` and `Sys.which()` does not, so a
+  # path built with a tilde was a non-empty file to one clause of the
+  # registration check and absent to another: the check refused a build it had
+  # just unpacked correctly, and blamed the archive for it. The fix expands
+  # where the path is BUILT, so the check and the `set_program()` call after it
+  # ask about one file -- expanding inside the check alone would move the same
+  # failure into the loop, which is the partial registration M104 exists to
+  # stop, so this test asserts the whole install succeeded rather than only
+  # that the check passed.
+  skip_on_os("windows")
+  home <- withr::local_tempdir()
+  withr::local_envvar(HOME = home)
+  # The instrument, asserted rather than assumed: with no tilde redirection
+  # this test would run against the real home directory and prove nothing.
+  expect_identical(normalizePath(path.expand("~")), normalizePath(home))
+
+  config <- tm_redirect_config()
+  tm_redirect_data()
+  rec <- tm_mock_install(confirm = function(prompt) TRUE, real_set = TRUE)
+
+  expect_true(suppressMessages(
+    install_on_win(install_dir = "~/ffmpeg", archive_checksum = rec$digest)
+  ))
+  for (program in c("ffmpeg", "ffprobe", "ffplay")) {
+    file <- tm_config_file(program, config$new)
+    expect_true(file.exists(file))
+    # And what was remembered is the expanded path, so no later caller has to
+    # expand it again to find the program.
+    expect_false(grepl("~", readLines(file), fixed = TRUE))
+  }
+})
+

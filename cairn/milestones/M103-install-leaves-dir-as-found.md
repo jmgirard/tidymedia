@@ -27,7 +27,7 @@ The deliverable is **user-facing**: `install_on_win()` is exported and a caller 
 - [x] AC3: Every refusal `install_on_win()` can take above its `tm_unpack()` call leaves no directory the call created, at or above `install_dir`, and leaves an already-existing `install_dir`'s entries unchanged. The domain is enumerated by the M102 AC6 census (`tests/testthat/test-program-management.R:1216-1236`) narrowed by a positional filter to the `return()` and `cli_abort()` nodes preceding the `tm_unpack()` call, with the test asserting a bijection between those nodes and its registry of triggering cases so a node with no case fails it. The four front-door refusals that walk cannot see — `rlang::check_bool(confirm)`, `rlang::check_string()` on `download_url` and on `install_dir`, `check_sha256()` on `archive_checksum` — and `tm_confirm()`'s non-interactive refusal each get their own case in that registry; each refuses above the call's first `dir.create()`, so each must create no directory at all.
 - [x] AC4: A `cairn/DECISIONS.md` entry extends D046 to the installer: it states the rule, states that removal is best-effort and that a failed removal is named in the refusal rather than swallowed, states that a pre-existing directory is never removed even where the comparison shows it changed and why, states that a pre-existing file the extraction overwrote or truncated is removed under D046's created-or-changed rule and why that is not the same case, names `tidymedia_program_not_extracted` as the path the rule deliberately does not cover and why, and states a falsifier.
 - [x] AC5: `man/install_on_win.Rd` states both the general rule — a refusal leaves the install directory as it found it, naming anything it could not remove — and the single exception, `tidymedia_program_not_extracted`, and is byte-identical to a fresh `devtools::document()` run; `NEWS.md` records the change.
-- [ ] AC6: `devtools::check()` reports 0 errors and 0 warnings, with every NOTE drawn from the known-acceptable set the review evidence lists and any other NOTE failing this criterion; `devtools::test()` reports 0 failures; and all six `R-CMD-check` matrix jobs are green, `windows-latest (release)` and `ubuntu-latest (4.1.0)` included.
+- [x] AC6: `devtools::check()` reports 0 errors and 0 warnings, with every NOTE drawn from the known-acceptable set the review evidence lists and any other NOTE failing this criterion; `devtools::test()` reports 0 failures; and all six `R-CMD-check` matrix jobs are green, `windows-latest (release)` and `ubuntu-latest (4.1.0)` included.
 - [x] AC7: The `tidymedia_archive_unreadable` refusal names every entry `tm_unpack()` reported it could not remove; where the call created `install_dir` and the cleanup left it empty, the call removes that directory and the refusal names no directory it has just removed, saying instead that the install directory is as the call found it. Verified by tests over both fixtures, over a call that created the install directory, and with the removal seam mocked to fail leaving more than one entry — on a created file and, separately, on a created directory that keeps a child — every one asserted named.
 
 ## Coverage
@@ -109,6 +109,7 @@ The deliverable is **user-facing**: `install_on_win()` is exported and a caller 
 - 2026-09-03: `codecov/patch`, the one red check on the PR, examined rather than left as a recorded concern. Its per-line report marks 112 of the 114 measurable added lines in `R/program_management.R` uncovered while its own per-file `change_summary` for that same file says `misses: -1, hits: +1`; the two cannot both be true. Local `covr::package_coverage()` -- the tool the `test-coverage` job runs -- settles it: `tm_dir_snapshot()`'s body runs 145 times, `unlink()` inside `tm_unlink()` 43, `tm_snapshot_added()`'s T16 lines 24, `tm_remove_added()`'s two sweeps 20 and 5, T17's `unpacked_here <- length(produced$files) > 0L` 27, and T17's zero-file removal and its message branch 8 each. The per-line mapping is wrong. Separately, codecov's own upload history shows 65 misses on base `9df2b29` and 66 on EVERY branch commit from the first (`5aa2dfc`) onward, so the one net miss predates this session's work; which line it is has not been identified.
 - 2026-09-03: review pass 3 -- three fresh-context lenses; [O] diff-bug returned 6 findings, both [S] lenses zero. Three fix-now findings, all reproduced independently before being acted on: the refusal denied removing a pre-existing file the failed extraction wrote over; the cleanup could delete files outside the destination through a directory symlink where the recursive removal failed; and a created directory the removal could not delete was described as holding what it held. None demonstrates a criterion failing, so no defect return -- fixed on the branch and re-verified. Two rejections and one no-action logged in the Review section.
 - 2026-09-03: fix-now work landed. `tm_unpack()` returns a third slot `removed_yours`, read off the destination; `tm_remove_added()`'s file loop skips a path under a created directory the recursive call could not remove; `tm_remove_created_dirs()` returns what it left standing; both refusals gained a branch for each state. Five cells added across the two test files and two existing assertions rewritten to the new behaviour, every one red before the change (mutation-checked on a scratch copy of HEAD). `tm_unpack_deletes_open_files()` and `tm_fixture_entry()` moved to `tests/testthat/helper-unpack-fixtures.R`, now shared by both files. D082 amended on the two states the refusal must not describe as leaving the directory as it found it, and on why files under an undeletable created directory are left alone; `@details` and the NEWS bullet say the error names such a file.
+- 2026-09-03: T22 -- pass 3's fix-now work closed on commit `e170dfd`. `devtools::check()`: `Status: OK`, 0 errors / 0 warnings / 0 notes (7m 45s). `devtools::test()`: 0 failures, 11827 passing, 18 skips. All six R-CMD-check jobs green plus pkgdown and test-coverage (run 33780009632); the CI watch reached the harness ceiling twice and was stopped rather than left armed, the state re-read from `gh pr checks` each time. `codecov/patch` and `codecov/project` both red -- 96.79% of the diff hit against a 98.28% target, and 98.24% project against base `9df2b29`, 0.04 points down. Coverage is diagnostic-only in this repo's profile and no criterion reads it.
 
 ## Decisions
 
@@ -473,12 +474,19 @@ against this pass's own evidence.
   `DESCRIPTION` with no working-tree diff after the roxygen edit below, so the
   page is byte-identical to a fresh run. `NEWS.md`'s Configuration bullet
   records the change.
-- **AC6 — verified.** `devtools::check()` on the fixed branch: `Status: OK`,
-  0 errors / 0 warnings / 0 notes, so the known-acceptable NOTE set is empty
-  on this platform. `devtools::test()`: 0 failures, 18 skips; the warnings it
-  counts are outside the two files this milestone touches, both of which
-  report 0. All six `R-CMD-check` matrix jobs green, `windows-latest
-  (release)` and `ubuntu-latest (4.1.0)` included.
+- **AC6 — verified**, on commit `e170dfd`. `devtools::check()` on the fixed
+  branch: `Status: OK`, 0 errors / 0 warnings / 0 notes (7m 45s), so the
+  known-acceptable NOTE set is empty on this platform. `devtools::test()`
+  separately: 0 failures, 11827 passing, 18 skips; the 10 warnings it counts
+  are outside the two files this milestone touches, both of which report 0.
+  All six `R-CMD-check` matrix jobs green — `windows-latest (release)`
+  12m30s, `macos-latest (release)` 10m44s, and `ubuntu-latest` release 21m03s
+  / devel 22m06s / oldrel-1 21m31s / 4.1.0 21m18s — plus `pkgdown` and
+  `test-coverage` (run 33780009632). `codecov/patch` and `codecov/project`
+  both report `fail`: 96.79% of the diff hit against a 98.28% target, and
+  98.24% project coverage, 0.04 points below base `9df2b29`. No criterion
+  binds either and the profile's own test-doctrine slot says coverage never
+  gates the merge, so both are recorded rather than actioned.
 - **AC7 — verified.** The three message shapes were each produced and read:
   leftovers named by full path; the install directory named and said to hold
   what it held; and, where the call created and then removed that directory,

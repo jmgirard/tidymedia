@@ -137,6 +137,7 @@ residual window between the check and the loop is disclosed in the D-entry.
 - 2026-09-03: PR #108 marked ready; the CI watch hit the harness ceiling with seven of eight checks pending (pkgdown pass) and was stopped rather than left armed. Merge not attempted; the approval marker is written and stands for PR #108.
 - 2026-09-03: resume: PR #108 OPEN, all six criteria evidenced and ticked, step-7 approval on record; re-entering at step 1. Default branch has not moved (`origin/master` 55bdfd9 is an ancestor of the branch head), branch fully pushed, so no re-verification is owed; step-7 chip re-posed.
 - 2026-09-03: step-7 approval: PR #108 approved for merge (re-posed at resume; the first approval's merge never ran).
+- 2026-09-03: resumed merge attempt: the re-approval push started a fresh run set; the CI watch again hit the harness ceiling with seven of eight checks pending (pkgdown pass, 2m15s) and was stopped rather than left armed. Merge not attempted; the approval marker stands for PR #108.
 
 ## Decisions
 

@@ -423,9 +423,10 @@ tm_dir_snapshot <- function(dir) {
 # What the two snapshots show this extraction added, split into the two sets
 # the removal treats differently.
 #
-# A DIRECTORY qualifies only where it is new, and only the topmost new one of
-# a chain: a pre-existing directory's mtime moves the instant an entry lands
-# inside it -- measured 2026-09-02, 19:13:23.663 before and 19:13:24.848 after
+# A DIRECTORY qualifies only where it is new -- where nothing was at its path
+# before, or what was there was not a directory -- and only the topmost new
+# one of a chain: a pre-existing directory's mtime moves the instant an entry
+# lands inside it -- measured 2026-09-02, 19:13:23.663 before and 19:13:24.848 after
 # one file was written into it -- so a merely-changed directory removed
 # recursively would take the caller's own untouched entries with it. Its added
 # children are removed one by one instead, which reaches the same debris
@@ -436,7 +437,6 @@ tm_dir_snapshot <- function(dir) {
 # to clear, and a pre-existing file the extraction overwrote is a file this
 # run wrote.
 tm_snapshot_added <- function(before, after) {
-  known <- before$path
   # An entry `file.info()` could not stat carries an NA `isdir`, and NA is the
   # one value the two subscripts below cannot take: `x[NA]` selects
   # NA_character_, which is neither a path the removal can delete nor a path
@@ -445,17 +445,31 @@ tm_snapshot_added <- function(before, after) {
   # the safe reading -- a file is removed by name, where a directory would be
   # removed with everything under it (M103).
   isdir <- !is.na(after$isdir) & after$isdir
-  changed <- vapply(
-    seq_len(nrow(after)),
-    function(i) {
-      j <- match(after$path[i], known)
-      is.na(j) ||
-        !identical(after$size[i], before$size[j]) ||
-        !identical(after$mtime[i], before$mtime[j])
-    },
-    logical(1)
-  )
-  created_dirs <- after$path[!(after$path %in% known) & isdir]
+  # A directory is CREATED where it did not exist AS A DIRECTORY before, not
+  # merely where its path is new. The two readings differ on one case and it
+  # is a reachable one: a path the caller held as a file and this extraction
+  # replaced with a directory is in `before`, so the path-only reading calls
+  # it pre-existing, while its `isdir` keeps it out of the file bucket -- so
+  # it lands in neither, and is neither removed nor named. The type is what
+  # the removal turns on, so the type is what the comparison asks about
+  # (M103).
+  was_dir <- !is.na(before$isdir) & before$isdir
+  prior_dir <- after$path %in% before$path[was_dir]
+  # One `match()` over the whole column rather than one per row: the per-row
+  # form rebuilt the hash table on every iteration, measured at 0.50 s on 6000
+  # unchanged entries, and this frame is walked three times per removal sweep.
+  j <- match(after$path, before$path)
+  same <- function(x, y) {
+    eq <- x == y
+    ifelse(is.na(eq), is.na(x) & is.na(y), eq)
+  }
+  # A type change counts alongside size and mtime, so a directory that became
+  # a file is a changed file even where the two happen to stat alike.
+  changed <- is.na(j) |
+    !same(after$size, before$size[j]) |
+    !same(after$mtime, before$mtime[j]) |
+    !same(after$isdir, before$isdir[j])
+  created_dirs <- after$path[isdir & !prior_dir]
   list(
     files = after$path[changed & !isdir],
     dirs = created_dirs[!(dirname(created_dirs) %in% created_dirs)]

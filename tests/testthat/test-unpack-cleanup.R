@@ -406,3 +406,148 @@ test_that("an unstattable entry the caller already had is left alone", {
   expect_identical(left, character(0))
   expect_identical(tm_entries(d), "broken")
 })
+
+# An entry whose TYPE the extraction changed (M103 AC1) ----------------------
+
+# The classification has two subscripts and three possible `isdir` values on
+# each side, so the question it has to answer is not "is this path new" but
+# "does this path hold, now, something this extraction put here". A path the
+# caller held as a FILE and the failed extraction replaced with a DIRECTORY is
+# the case that separates the two readings: it is in `before`, so it is not
+# new, and its `isdir` is TRUE, so it is not a changed file. Under the first
+# reading it lands in neither bucket and is neither removed nor named
+# (measured 2026-09-02); under the second it is a directory this extraction
+# created, because it did not exist AS A DIRECTORY before.
+
+test_that("a caller's file the extraction replaced with a directory is a created directory", {
+  # Frame-level, so it runs on every platform: `tm_snapshot_added()` is a pure
+  # function of two snapshots.
+  before <- data.frame(
+    path = "p", size = 22, mtime = 1, isdir = FALSE,
+    stringsAsFactors = FALSE
+  )
+  after <- data.frame(
+    path = c("p", "p/q"),
+    size = c(4096, 7),
+    mtime = c(2, 2),
+    isdir = c(TRUE, FALSE),
+    stringsAsFactors = FALSE
+  )
+
+  added <- tm_snapshot_added(before, after)
+  expect_identical(added$dirs, "p")
+})
+
+test_that("a caller's directory the extraction replaced with a file is a changed file", {
+  # The mirror case, which the same rule has to get the other way round: the
+  # path holds a file now, so it is removed by name, never with a subtree.
+  before <- data.frame(
+    path = "p", size = 4096, mtime = 1, isdir = TRUE,
+    stringsAsFactors = FALSE
+  )
+  after <- data.frame(
+    path = "p", size = 4096, mtime = 1, isdir = FALSE,
+    stringsAsFactors = FALSE
+  )
+
+  added <- tm_snapshot_added(before, after)
+  expect_identical(added$files, "p")
+  expect_identical(added$dirs, character(0))
+})
+
+test_that("a directory replacing a caller's file is removed, not silently dropped", {
+  d <- tm_dest()
+  writeLines("the caller's own file", file.path(d, "p"))
+  before <- tm_dir_snapshot(d)
+  # What a failed extraction does to that path: the file goes, a directory of
+  # the same name takes its place, and an entry lands inside it.
+  unlink(file.path(d, "p"))
+  dir.create(file.path(d, "p"))
+  writeLines("written by the extraction", file.path(d, "p", "q"))
+
+  left <- tm_remove_added(d, before, tm_dir_snapshot(d))
+
+  expect_identical(left, character(0))
+  expect_identical(tm_entries(d), character(0))
+})
+
+test_that("a directory replacing a caller's file that will not delete is reported", {
+  # The other half of AC1's "removed or named".
+  d <- tm_dest()
+  writeLines("the caller's own file", file.path(d, "p"))
+  before <- tm_dir_snapshot(d)
+  unlink(file.path(d, "p"))
+  dir.create(file.path(d, "p"))
+  writeLines("written by the extraction", file.path(d, "p", "q"))
+
+  testthat::local_mocked_bindings(tm_unlink = function(path, recursive = FALSE) 1L)
+  left <- tm_remove_added(d, before, tm_dir_snapshot(d))
+
+  # Both, because the removal targeted both: the directory it created at that
+  # path and the file it wrote inside it.
+  expect_identical(left, c("p", "p/q"))
+})
+
+# The classification is total (M103 AC2) -------------------------------------
+
+# AC1 has now been returned twice on the same shape -- an entry the
+# classification sorted into neither bucket was neither removed nor named --
+# and each time the repair closed one case. This cell asserts the property
+# instead: over a snapshot pair holding every combination of (in `before` or
+# not) x (`isdir` FALSE, TRUE or NA on each side) x (moved or not), every
+# entry the comparison shows this extraction added is reachable by the
+# removal, and every entry it does not is not. `added` is computed here from
+# AC1's own words rather than from the function under test: new, or changed,
+# except a pre-existing directory that is still a directory, which AC1 exempts
+# by name because its mtime moves the instant a child lands in it.
+
+test_that("every entry the comparison shows added is reachable, and no other is", {
+  rows <- list(
+    # name                     before                      after
+    list("new-file",           NULL,                       c(7, 2, FALSE)),
+    list("new-dir",            NULL,                       c(4096, 2, TRUE)),
+    list("new-unstattable",    NULL,                       c(NA, NA, NA)),
+    list("kept-file",          c(3, 1, FALSE),             c(3, 1, FALSE)),
+    list("truncated-file",     c(22, 1, FALSE),            c(0, 2, FALSE)),
+    list("file-now-dir",       c(22, 1, FALSE),            c(4096, 2, TRUE)),
+    list("dir-now-file",       c(4096, 1, TRUE),           c(4096, 1, FALSE)),
+    list("kept-dir",           c(4096, 1, TRUE),           c(4096, 1, TRUE)),
+    list("touched-dir",        c(4096, 1, TRUE),           c(4096, 2, TRUE)),
+    list("kept-unstattable",   c(NA, NA, NA),              c(NA, NA, NA)),
+    list("file-now-unstat",    c(22, 1, FALSE),            c(NA, NA, NA))
+  )
+  frame <- function(which) {
+    keep <- Filter(function(r) !is.null(r[[which]]), rows)
+    data.frame(
+      path = vapply(keep, `[[`, character(1), 1L),
+      size = as.numeric(vapply(keep, function(r) r[[which]][1], numeric(1))),
+      mtime = as.numeric(vapply(keep, function(r) r[[which]][2], numeric(1))),
+      isdir = as.logical(vapply(keep, function(r) r[[which]][3], numeric(1))),
+      stringsAsFactors = FALSE
+    )
+  }
+  before <- frame(2L)
+  after <- frame(3L)
+
+  # AC1's own definition of added, written out independently of the code.
+  same <- function(x, y) if (is.na(x) && is.na(y)) TRUE else !is.na(x) &&
+    !is.na(y) && identical(x, y)
+  expected_added <- vapply(seq_len(nrow(after)), function(i) {
+    j <- match(after$path[i], before$path)
+    if (is.na(j)) return(TRUE)
+    was_dir <- isTRUE(before$isdir[j])
+    is_dir <- isTRUE(after$isdir[i])
+    if (was_dir && is_dir) return(FALSE)
+    !(same(after$size[i], before$size[j]) &&
+        same(after$mtime[i], before$mtime[j]) &&
+        same(after$isdir[i], before$isdir[j]))
+  }, logical(1))
+
+  added <- tm_snapshot_added(before, after)
+  reachable <- after$path %in% c(added$files, added$dirs) |
+    tm_named_by(after$path, added$dirs)
+
+  expect_identical(
+    sort(after$path[reachable]), sort(after$path[expected_added])
+  )
+})

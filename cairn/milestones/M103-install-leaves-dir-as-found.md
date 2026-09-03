@@ -32,13 +32,13 @@ The deliverable is **user-facing**: `install_on_win()` is exported and a caller 
 
 ## Coverage
 
-- AC1 → T1, T3, T6, T10
-- AC2 → T1, T2, T3, T6, T11
-- AC3 → T4, T5, T12
-- AC4 → T7, T14
+- AC1 → T1, T3, T6, T10, T16, T19
+- AC2 → T1, T2, T3, T6, T11, T16
+- AC3 → T4, T5, T12, T20
+- AC4 → T7, T14, T18
 - AC5 → T8, T14
-- AC6 → T9, T15
-- AC7 → T5, T6, T13
+- AC6 → T9, T15, T21
+- AC7 → T5, T6, T13, T17
 
 ## Tasks
 
@@ -57,6 +57,12 @@ The deliverable is **user-facing**: `install_on_win()` is exported and a caller 
 - [x] T13: AC7's "names every entry". `cli::cli_vec(..., list("vec-trunc" = Inf))` on the leftover list, cli abbreviating at 20 by default; and the mocked cell's two path assertions matched with their closing quote so the directory's cannot be satisfied by the file's.
 - [x] T14: the three fix-now findings — the created-directory handler disarmed on a successful extraction rather than on registration, and `@return`, `@details` and the NEWS bullet corrected on the Windows hedge and on the overwritten pre-existing file.
 - [x] T15: `devtools::check()`, full `devtools::test()`, push and confirm all six R-CMD-check jobs.
+- [x] T16: AC1's second fall-through. `tm_snapshot_added()` decides a directory by TYPE -- created where nothing was a directory at that path before -- so the classification is total over the three-valued `isdir` on both sides; a cell asserts that totality over the whole combination space rather than one more case.
+- [ ] T17: the `!registered` handler disarmed on an extraction that produced FILES, not merely one that succeeded, so a zero-file extraction takes its created directory back; and the `tidymedia_program_not_extracted` message gains the branch that case needs.
+- [ ] T18: D082 states the topmost-only weakening: a failed removal names the top of a created chain and the files, not every level.
+- [ ] T19: `match()` hoisted out of `tm_snapshot_added()`'s per-row loop.
+- [ ] T20: the two comment corrections -- the `check_string(install_dir)` case's assertion claim, and the two closers on the connection failure path.
+- [ ] T21: `devtools::check()`, full `devtools::test()`, push and confirm all six R-CMD-check jobs.
 
 ## Work log
 
@@ -91,6 +97,10 @@ The deliverable is **user-facing**: `install_on_win()` is exported and a caller 
 - 2026-09-02: D082 corrected on the boundary the return exposed and on the measurement taken since it was written. Its rule paragraph said "every refusal above the registration", which put `tidymedia_program_not_extracted` inside a rule its own last paragraph puts outside; it now says "above a successful extraction", which is where the code draws it. Its best-effort paragraph said the writer handle could not be measured off Windows; the Windows run has since looked and found the handle leaked for the process lifetime, so the paragraph now records that measurement and the falsifier now asks for a change in `archive` or libarchive rather than for a first measurement.
 - 2026-09-02: T15 closed on commit `b840f77`. `devtools::check()`: `Status: OK`, 0 errors / 0 warnings / 0 notes (16m 11s). `devtools::test()` separately: 0 failures, 11779 passing, 18 skips. All six R-CMD-check jobs green, `windows-latest (release)` and `ubuntu-latest (4.1.0)` included, plus pkgdown and test-coverage (run 33713079105). Status set back to review.
 - 2026-09-02: review pass 2 — defect return (2 of 3). AC1 fails "removes what the comparison shows this extraction added" by a second fall-through of the same shape as pass 1's: where the caller had a FILE at a path and the failed extraction replaced it with a DIRECTORY, the path is in `before` so it is not a created directory and its `isdir` is TRUE so it is not a changed file, and `tm_snapshot_added()` puts it in neither bucket. Measured: `files = "p/q"`, `dirs = character(0)`, leftovers `character(0)`, and `p` still on disk — an extraction-created directory neither removed nor named, under a refusal that says "Nothing was left behind; the directory holds what it held when this call started". AC6 is not verified: all six R-CMD-check jobs are green on `69734e7`, but `devtools::check()` was stopped in its `testthat.R` phase rather than left armed, since the code changes now. AC2, AC3, AC4, AC5 and AC7 are verified with fresh evidence in the Review section, every pass-1 finding closed and re-measured. Thrash trigger (b) fires — AC1 twice, same shape, new mechanism — and the recorded alternative is the scratch-directory redesign now sitting as a ROADMAP candidate row. Five fix-now findings and three rejections are triaged in the Review section. Status in-progress.
+- 2026-09-02: gate chose closing AC1's second fall-through inside the snapshot mechanism over the scratch-directory redesign trigger (b) names, because the repair is not a third case-patch: a directory is created where it did not exist AS A DIRECTORY before, which makes the classification total over the three-valued `isdir` on both sides, and a cell can assert that totality — the assertion neither prior repair could make. The redesign stays a ROADMAP candidate row; it replaces the mechanism AC1 and AC2 are written over, so adopting it is a re-cut through `/milestone-plan`, not an amendment. `/milestone-brief` escalation was offered and not taken.
+- 2026-09-02: gate chose disarming the created-directory handler on an extraction that produced FILES, over disarming it on a successful extraction and only correcting the message, because D082's carve-out exists for the files a successful extraction leaves and a zero-file extraction leaves none — the carve-out's own reason does not reach that case.
+- 2026-09-02: minor amendment -- T16 through T21 added for the second return, and Coverage extended (AC1 → T16, T19; AC2 → T16; AC3 → T20; AC4 → T18; AC6 → T21; AC7 → T17). No criterion changed wording: every finding in the return is the code failing a promise the criteria already made.
+- 2026-09-02: T16 -- AC1's second fall-through closed. Measured before the change: with the caller's file `p` replaced by a directory `p` holding `q`, `tm_snapshot_added()` returned `dirs = character(0)` and `p` survived. `tm_snapshot_added()` now asks whether a directory existed at that path, not whether the path existed, and counts a type change alongside size and mtime, so a caller's directory replaced by a file is a changed file even where the two stat alike. Five cells added, five red before the change: the two frame-level type-change cases, removal, reporting, and a totality cell over the eleven-row combination space of (in `before` or not) × `isdir` ∈ {FALSE, TRUE, NA} on each side × moved or not, whose expectation is computed from AC1's own words rather than from the function. `test-unpack-cleanup.R` 76 green, `test-program-management.R` 386 green.
 
 ## Decisions
 

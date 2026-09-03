@@ -2566,9 +2566,14 @@ test_that("tm_usable_binary() answers for a file, an absent path, an empty file 
   expect_false(tm_usable_binary(f$dir))
   # The premise the empty case rests on: it is refused for its size and not
   # for failing to resolve, which is what makes it a different case from
-  # `absent`.
+  # `absent`. Asserted by what resolved, not by the string: Windows answers
+  # with the 8.3 short form of the same file, so path identity is not the
+  # portable way to say "this resolved".
   expect_true(file.exists(f$empty))
-  expect_identical(unname(Sys.which(f$empty)), f$empty)
+  resolved <- unname(Sys.which(f$empty))
+  expect_false(resolved == "")
+  expect_identical(basename(resolved), basename(f$empty))
+  expect_equal(unname(file.size(resolved)), 0)
 })
 
 test_that("tm_usable_binary() refuses a file with no executable bit", {

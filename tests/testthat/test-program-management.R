@@ -1999,10 +1999,10 @@ test_that("a successful unpack that produced no files takes back the directory i
   expect_false(dir.exists(made))
   expect_false(dir.exists(dirname(made)))
   msg <- cli::ansi_strip(conditionMessage(cnd))
-  expect_match(msg, "produced no files at all", fixed = TRUE)
+  expect_match(msg, "None of the files the extraction reported are there", fixed = TRUE)
   expect_match(msg, "removed the install directory it created", fixed = TRUE)
   # And it does not tell the caller to go and look in a directory that is gone.
-  expect_false(grepl("still in that directory", msg, fixed = TRUE))
+  expect_no_match(msg, "the files the extraction did produce are in", fixed = TRUE)
 })
 
 test_that("a successful unpack that produced no files leaves a directory it found alone", {
@@ -2026,7 +2026,7 @@ test_that("a successful unpack that produced no files leaves a directory it foun
   expect_true(dir.exists(found))
   expect_identical(readLines(file.path(found, "keep.txt")), "the caller's own file")
   msg <- cli::ansi_strip(conditionMessage(cnd))
-  expect_match(msg, "produced no files at all", fixed = TRUE)
+  expect_match(msg, "None of the files the extraction reported are there", fixed = TRUE)
   expect_match(msg, "holds what it held when this call started", fixed = TRUE)
 })
 
@@ -2058,8 +2058,8 @@ test_that("a successful unpack that produced files but no required program keeps
   expect_true("readme.txt" %in% list.files(made, recursive = TRUE))
   expect_true(dir.exists(made))
   expect_match(
-    cli::ansi_strip(conditionMessage(cnd)), "still in that directory",
-    fixed = TRUE
+    cli::ansi_strip(conditionMessage(cnd)),
+    "the files the extraction did produce are in", fixed = TRUE
   )
 })
 
@@ -2067,7 +2067,9 @@ test_that("a successful unpack that produced files but no required program keeps
 # Every program registers, or none does (M104) --------------------------------
 
 # The four forms a produced path takes when the archive listed it and what is
-# on disk cannot be used, as `tm_mock_install(spoil = )` plants them. Named
+# on disk is not a program this install can register, as
+# `tm_mock_install(spoil = )` plants them. Three of them are files that cannot
+# be used; `absent` is no file at all, and M105 disposes it as such. Named
 # once so the AC4 tests and the AC2/AC3 ones cannot drift apart about which
 # form is which.
 tm_unusable_forms <- c("absent", "empty", "dir", "noexec")
@@ -2174,7 +2176,8 @@ test_that("a produced ffplay that cannot be used leaves the install successful",
 # AC4: each of the four planted forms is disposed the way AC2 states, at a
 # required program. One test per form, so a form that stops being refused
 # names itself rather than hiding inside a loop's first failure.
-tm_expect_required_refusal <- function(form) {
+tm_expect_required_refusal <- function(form,
+                                       class = "tidymedia_program_unusable") {
   config <- tm_redirect_config()
   tm_redirect_data()
   withr::local_options(cli.width = 1000)
@@ -2189,7 +2192,7 @@ tm_expect_required_refusal <- function(form) {
     install_on_win(install_dir = d, archive_checksum = rec$digest),
     error = function(cnd) cnd
   )
-  expect_s3_class(cnd, "tidymedia_program_unusable")
+  expect_s3_class(cnd, class)
   expect_identical(blamed_verb(cnd), "install_on_win")
   msg <- cli::ansi_strip(conditionMessage(cnd))
   expect_match(msg, "ffprobe", fixed = TRUE)
@@ -2201,9 +2204,13 @@ tm_expect_required_refusal <- function(form) {
 }
 
 test_that("a path the extraction listed and did not create is refused", {
-  # AC4, form 1. The premise: nothing is at that path at all.
-  cnd <- tm_expect_required_refusal("absent")
-  expect_s3_class(cnd, "tidymedia_program_unusable")
+  # AC4, form 1. The premise: nothing is at that path at all -- which is why
+  # M105 routes it to the archive-did-not-produce refusal rather than to the
+  # cannot-be-used one: there is no produced file here to call unusable.
+  cnd <- tm_expect_required_refusal("absent", "tidymedia_program_not_extracted")
+  expect_no_match(
+    cli::ansi_strip(conditionMessage(cnd)), "cannot be used", fixed = TRUE
+  )
 })
 
 test_that("a produced path created as an empty file is refused", {

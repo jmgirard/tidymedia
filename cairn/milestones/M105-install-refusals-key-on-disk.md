@@ -2,13 +2,13 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M105: `install_on_win()`'s refusals say what is on disk
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m105-install-refusals-key-on-disk`
 
 ## Goal
 
@@ -120,6 +120,8 @@ tests — M104 fixed that at `tm_install_binary()` and this milestone only probe
 - 2026-09-03: plan gate chose routing the listed-but-absent form to `tidymedia_program_not_extracted` over keeping `tidymedia_program_unusable` with corrected wording, and over a third class of its own; the existing class already names the event and its message is true of the disk, where the other two either make one class cover two events or add a class to an exported function for a case no real archive has produced. Falsified by a caller needing to tell an absent path apart from an unlisted one.
 - 2026-09-03: plan gate chose fixing the empty-extraction guard inside this milestone over disclosing it as a gap, so one meaning of "produced" holds across the whole below-extraction path. Falsified by the re-point changing the give-back for an extraction that lists and writes nothing in a way a caller wanted the old behaviour for.
 - 2026-09-03: `cairn_validate` fired the >7-criteria split tripwire at eight; the per-input and per-vector-shape promises about `tm_usable_binary()` merged into one criterion (same function, same task) rather than re-opening the split question the gate had settled at four-of-four recommended answers.
+- 2026-09-03: implement gate: chose naming the install directory and the files the extraction did leave there in the absent-program refusal (user deferred the choice), and adding a line telling the caller when a listed file is not on disk, naming antivirus quarantine as the usual cause. Verified `base::Sys.which()` can be mocked with `local_mocked_bindings()`, so AC4 needs no wrapper indirection.
+- 2026-09-03: T1 code landed: `tm_files_on_disk()` added, all four below-extraction sites re-pointed at the list-intersected-with-disk set, absent-program refusal re-worded (full path in the `Looked for` line, new quarantine line, no `still in that directory`). Existing M103/M104 wording and class assertions updated with it. Task left unchecked pending the full-suite verify; `test-program-management.R` passes 478/478.
 - 2026-09-03: plan gate chose making `tm_usable_binary()` elementwise over keeping it scalar with a length guard; the underlying `file.info()` and `Sys.which()` are already vectorized, it makes the dead clause disappear rather than be deleted, and the caller's `vapply()` collapses to one call. Falsified by a call site needing the short-circuit `&&` gave it.
 
 ## Decisions

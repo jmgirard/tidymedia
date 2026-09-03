@@ -90,7 +90,7 @@ tests — M104 fixed that at `tm_install_binary()` and this milestone only probe
 
 ## Tasks
 
-- [ ] T1: Compute the produced set once as libarchive's list intersected with
+- [x] T1: Compute the produced set once as libarchive's list intersected with
       what is on disk now, and read it at all four sites: `unpacked_here`
       (`R/program_management.R:1083`), the per-program partition (`:1093`), the
       empty-extraction guard (`:1103`), and the message-arm selector (`:1112`).
@@ -122,6 +122,7 @@ tests — M104 fixed that at `tm_install_binary()` and this milestone only probe
 - 2026-09-03: `cairn_validate` fired the >7-criteria split tripwire at eight; the per-input and per-vector-shape promises about `tm_usable_binary()` merged into one criterion (same function, same task) rather than re-opening the split question the gate had settled at four-of-four recommended answers.
 - 2026-09-03: implement gate: chose naming the install directory and the files the extraction did leave there in the absent-program refusal (user deferred the choice), and adding a line telling the caller when a listed file is not on disk, naming antivirus quarantine as the usual cause. Verified `base::Sys.which()` can be mocked with `local_mocked_bindings()`, so AC4 needs no wrapper indirection.
 - 2026-09-03: T1 code landed: `tm_files_on_disk()` added, all four below-extraction sites re-pointed at the list-intersected-with-disk set, absent-program refusal re-worded (full path in the `Looked for` line, new quarantine line, no `still in that directory`). Existing M103/M104 wording and class assertions updated with it. Task left unchecked pending the full-suite verify; `test-program-management.R` passes 478/478.
+- 2026-09-03: T1 checked off: full `devtools::test()` clean (0 failures, 11,896 passes, 18 skips).
 - 2026-09-03: plan gate chose making `tm_usable_binary()` elementwise over keeping it scalar with a length guard; the underlying `file.info()` and `Sys.which()` are already vectorized, it makes the dead clause disappear rather than be deleted, and the caller's `vapply()` collapses to one call. Falsified by a call site needing the short-circuit `&&` gave it.
 
 ## Decisions

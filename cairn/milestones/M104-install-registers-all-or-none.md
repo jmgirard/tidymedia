@@ -134,6 +134,7 @@ residual window between the check and the loop is disclosed in the D-entry.
 - 2026-09-03: review gate triaged the eight findings: F1-F5 fixed on the branch, F6-F8 to a candidate row. F1 was a real defect the branch introduced — `tm_install_binary()` now expands `~` where the path is built, with a regression test confirmed red without it.
 - 2026-09-03: re-verified after the gate fixes: `devtools::test()` FAIL 0 / WARN 10 / SKIP 18 / PASS 11896; `devtools::check()` 0 errors, 0 warnings, 0 notes (5m 25s); `devtools::document()` no diff; `cairn_validate` 16/16.
 - 2026-09-03: step-7 approval: PR #108 approved for merge.
+- 2026-09-03: PR #108 marked ready; the CI watch hit the harness ceiling with seven of eight checks pending (pkgdown pass) and was stopped rather than left armed. Merge not attempted; the approval marker is written and stands for PR #108.
 
 ## Decisions
 

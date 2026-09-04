@@ -1,0 +1,107 @@
+<!-- Section ownership + write-modes: see tracking-rules.md "Milestone-file
+     section ownership". A phase skill never rewrites another phase's section.
+     Per-section owners are tagged below. The one size check that can fail is
+     cairn_validate's <150 over the plan-owned body. -->
+# M108: `install_on_win()` refuses on a platform it cannot install for, before it spends anything
+
+- **Status:** planned
+- **Priority:** normal
+- **Depends on:** —
+- **Driving RR:** —
+- **Principles touched:** GP1
+- **Resolves:** —
+- **Surface tier:** user-facing — it changes an exported function's refusal behaviour, its message, and its documented return contract
+- **Branch/PR:** —
+
+## Goal
+
+Make D084's claim that Windows "is the only platform this function runs on"
+true at the top of `install_on_win()`, and point a caller elsewhere at the
+route their own platform has.
+
+## Scope
+
+**In:** an OS seam whose unmocked value derives from the running host; a
+platform gate in `install_on_win()` sited below its argument checks and above
+every cost, refusing anything that is not Windows with a classed condition
+that names the platform and its route; the roxygen and NEWS updates.
+
+**Out:** a downloader for macOS or Linux → candidate row (GP1: `brew` and
+`apt` are one line each and keep FFmpeg updated; each downloader would need
+its own source, digest format, and arch matrix). **Out:** naming
+`install_on_win()` from `find_program()`'s not-found warning, and a
+dispatching `install_ffmpeg()` → the same candidate row. **Out:** the gate
+sited above the argument checks → rejected at this gate, work log records it.
+
+## Acceptance criteria
+
+- [ ] AC1: With the OS seam reporting any value other than `windows`,
+      `install_on_win()` aborts with a condition of class
+      `tidymedia_wrong_platform`, and the abort is raised above all four of
+      the calls that spend something — the unverified-source
+      `cli::cli_inform()`, the `tm_confirm()` prompt, the `dir.create()` of
+      the install directory, and the first `tm_fetch()`. Verified by a test
+      run under each of `darwin`, `linux` and a third non-Windows value that
+      binds those four calls to stubs which abort if reached.
+- [ ] AC2: The message of the caught `tidymedia_wrong_platform` condition —
+      its `conditionMessage()`, not any message emitted beside it — names the
+      platform the seam reported, names `brew install ffmpeg` under `darwin`
+      and `sudo apt-get install ffmpeg` under `linux`, and names
+      `set_program()` under every value. Under `darwin` it does not name the
+      `apt` route and under `linux` it does not name the `brew` route. The
+      condition carries the seam's value in a `tm_platform` field (D062).
+- [ ] AC3: With the seam reporting `windows` the gate refuses nothing:
+      `install_on_win()` reaches `tm_confirm()` under each of three argument
+      shapes — every argument at its default, a caller-supplied `install_dir`,
+      and a non-default `download_url` with an `archive_checksum`.
+- [ ] AC4: Unmocked, on each of the three CI runners, the seam equals the
+      running host and the gate's real verdict follows it: `install_on_win()`
+      aborts `tidymedia_wrong_platform` on `macos-latest` and
+      `ubuntu-latest`, and reaches `tm_confirm()` on `windows-latest`.
+- [ ] AC5: `?install_on_win`'s `@return` lists `tidymedia_wrong_platform`
+      among the outcomes that abort and its count reads seven rather than six;
+      its `@details` states the call installs on Windows only. `NEWS.md`
+      carries a bullet for the new refusal.
+- [ ] AC6: `devtools::check()` clean (0 errors / 0 warnings) and
+      `devtools::test()` green.
+
+## Coverage
+
+- AC1 → T2, T3
+- AC2 → T2, T3
+- AC3 → T2, T3
+- AC4 → T1, T4
+- AC5 → T5
+- AC6 → T6
+
+## Tasks
+
+- [ ] T1: Add the OS seam — a `tm_os()` internal returning a lowercase
+      normalized name derived from `Sys.info()[["sysname"]]` with
+      `.Platform$OS.type` as its fallback — beside the other seams in
+      `R/program_management.R`, with unit tests pinning its vocabulary.
+- [ ] T2: Write the failing tests for AC1–AC3 in
+      `tests/testthat/test-program-management.R`, mocking `tm_os()` and
+      stubbing the four spending calls.
+- [ ] T3: Add the gate to `install_on_win()` immediately below
+      `check_sha256()` (`R/program_management.R:891`) and above the
+      `download_url` default, raising `tidymedia_wrong_platform` with the
+      `tm_platform` field.
+- [ ] T4: Add the unmocked per-runner test for AC4, skipping nothing and
+      branching on the real host rather than on a mock.
+- [ ] T5: Update the roxygen block (`@details`, `@return`, `@seealso`), run
+      `devtools::document()`, add the `NEWS.md` bullet.
+- [ ] T6: Append the D-entry recording that the installer surface stays one
+      platform and where the gate sits; run `devtools::check()` and the suite.
+
+## Work log
+
+- 2026-09-04: created by /milestone-plan.
+- 2026-09-04: criteria audit ran in FULL mode (surface tier user-facing) and returned 11 findings: F1 unbounded "any of the four calls that spend", F2 a deny-list gate satisfying the criteria while FreeBSD still downloads, F3 the seam's vocabulary unfixed, F4 the message unbound to the condition, F5 no inversion between the two platform routes, F6 AC3 at one point of the argument space, F7 the `@return` count left at six, F8 a README clause already true, F9 nothing binding the seam to the real host, F10 the gate's position against the argument checks, F11 D062's `tm_` prefix unpinned. Ten were fixed before the gate and reported in chat; F10 was posed as a gate question. No criterion was changed by the gate's answers.
+- 2026-09-04: plan gate chose no macOS or Linux downloader over adding one or both because `brew` and `apt` are a one-line install that also keeps FFmpeg updated, while each downloader carries its own source, digest format (johnvansickle publishes `.md5`, not the SHA-256 D081 bought), arch matrix, and the hardening arc M102-M105 spent four milestones on for one installer; falsified by a report from a macOS or Linux user for whom the package manager route is unavailable or insufficient.
+- 2026-09-04: plan gate chose siting the gate BELOW the argument checks over above them because D043 and D036 put a cheap value refusal above an availability check and an argument mistake is worth reporting either way, and the gate still sits above every cost; falsified by a report of a non-Windows caller confused at being asked to fix an argument for a call that cannot work on their machine.
+- 2026-09-04: plan gate chose an unmocked per-runner assertion over mocked coverage plus a seam unit test because every other criterion runs through a mock, so a seam never wired to the host would satisfy all of them and ship broken for the one platform the function serves (audit F9); falsified by the three tests proving flaky on a runner for a reason that is not the seam.
+
+## Decisions
+
+## Review

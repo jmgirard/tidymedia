@@ -178,7 +178,22 @@ tm_redirect_data <- function(env = parent.frame()) {
   root
 }
 
+# Run install_on_win() as if this were a Windows machine.
+#
+# M108 refuses a non-Windows host above every cost, so every test about what
+# the installer does BELOW that gate needs the seam held at `windows` -- on a
+# macOS or Linux developer machine, and on two of the three CI legs, it would
+# otherwise reach none of the behaviour it is about. Held at the seam and
+# nowhere else, so what the mock defeats is one function returning one word:
+# the seam is asserted against the real host in `tm_os()`'s own tests, and the
+# gate's real verdict per runner in `test-install-platform.R`, neither of which
+# mocks anything.
+tm_local_windows <- function(env = parent.frame()) {
+  testthat::local_mocked_bindings(tm_os = function(...) "windows", .env = env)
+}
+
 test_that("install_on_win()'s own default install dir is R_user_dir()'s ffmpeg subdir", {
+  tm_local_windows()
   # AC2. The function is called with no `install_dir`, so it is the function's
   # own default resolution that runs, not a helper called in its place. The
   # download is aimed at a `file://` URL that does not exist: no network is
@@ -346,6 +361,9 @@ tm_mock_install <- function(confirm = NULL,
                             real_set = FALSE,
                             spoil = NULL,
                             env = parent.frame()) {
+  # Every install this mocks runs below M108's platform gate.
+  tm_local_windows(env = env)
+
   rec <- new.env(parent = emptyenv())
   rec$download <- list()
   rec$sidecar <- list()
@@ -495,6 +513,7 @@ tm_mock_install <- function(confirm = NULL,
 }
 
 test_that("install_on_win() refuses rather than assume consent when no one can be asked", {
+  tm_local_windows()
   # AC1. Nothing is mocked below tm_confirm(): the refusal has to happen
   # before the first write, so the real download and extraction are simply
   # never reached, and the two snapshots are what says so.
@@ -1574,6 +1593,16 @@ tm_ac3_cases <- function(env = parent.frame()) {
       expect_error(
         install_on_win(install_dir = dir, archive_checksum = rec$digest),
         class = "tidymedia_download_unavailable"
+      )
+    },
+    "tidymedia_wrong_platform #1" = function(dir) {
+      # The only case here that refuses without any install machinery at all:
+      # the gate is above every mock the others need, so a seam reporting a
+      # platform this function does not install for is the whole setup.
+      testthat::local_mocked_bindings(tm_os = function(...) "darwin", .env = env)
+      expect_error(
+        install_on_win(install_dir = dir),
+        class = "tidymedia_wrong_platform"
       )
     },
     "tidymedia_checksum_mismatch #1" = function(dir) {
@@ -2733,7 +2762,7 @@ test_that("tm_os() falls back to .Platform where Sys.info() is unimplemented", {
 # the first byte off the network. A gate that fires above all four has spent
 # nothing, and the abort a stub raises is a plain error carrying its own text,
 # so a stub that IS reached fails the test by name rather than by class.
-tm_forbid_spending <- function(env = parent.frame()) {
+tm_forbid_spending <- function(writes = TRUE, env = parent.frame()) {
   boom <- function(what) function(...) stop(paste0("reached ", what))
   testthat::local_mocked_bindings(
     tm_confirm = boom("tm_confirm()"),
@@ -2745,11 +2774,19 @@ tm_forbid_spending <- function(env = parent.frame()) {
     .package = "cli",
     .env = env
   )
-  testthat::local_mocked_bindings(
-    dir.create = boom("dir.create()"),
-    .package = "base",
-    .env = env
-  )
+  # `dir.create()` is base's, so stubbing it replaces the binding the whole
+  # session sees, testthat's own included: waldo builds its diff through a
+  # temporary directory, so any `expect_identical()` under this stub dies in
+  # the reporter rather than in the code under test. `writes = FALSE` leaves it
+  # alone for a block that compares values; the four-stub claim is asserted by
+  # the test below that makes no such comparison.
+  if (writes) {
+    testthat::local_mocked_bindings(
+      dir.create = boom("dir.create()"),
+      .package = "base",
+      .env = env
+    )
+  }
 }
 
 test_that("a platform that is not Windows is refused before anything is spent", {
@@ -2774,7 +2811,7 @@ test_that("the wrong-platform refusal names the platform and its route", {
 
   for (os in c("darwin", "linux", "freebsd")) {
     testthat::local_mocked_bindings(tm_os = function(...) os)
-    tm_forbid_spending()
+    tm_forbid_spending(writes = FALSE)
     cnd <- expect_error(
       install_on_win(),
       class = "tidymedia_wrong_platform"

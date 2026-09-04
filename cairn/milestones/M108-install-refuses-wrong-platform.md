@@ -80,10 +80,10 @@ sited above the argument checks → rejected at this gate, work log records it.
       normalized name derived from `Sys.info()[["sysname"]]` with
       `.Platform$OS.type` as its fallback — beside the other seams in
       `R/program_management.R`, with unit tests pinning its vocabulary.
-- [ ] T2: Write the failing tests for AC1–AC3 in
+- [x] T2: Write the failing tests for AC1–AC3 in
       `tests/testthat/test-program-management.R`, mocking `tm_os()` and
       stubbing the four spending calls.
-- [ ] T3: Add the gate to `install_on_win()` immediately below
+- [x] T3: Add the gate to `install_on_win()` immediately below
       `check_sha256()` (`R/program_management.R:891`) and above the
       `download_url` default, raising `tidymedia_wrong_platform` with the
       `tm_platform` field.
@@ -102,6 +102,9 @@ sited above the argument checks → rejected at this gate, work log records it.
 - 2026-09-04: plan gate chose siting the gate BELOW the argument checks over above them because D043 and D036 put a cheap value refusal above an availability check and an argument mistake is worth reporting either way, and the gate still sits above every cost; falsified by a report of a non-Windows caller confused at being asked to fix an argument for a call that cannot work on their machine.
 - 2026-09-04: T1: `tm_os()` added beside the install seams, reading `Sys.info()[["sysname"]]` lowercased with `.Platform$OS.type` as the fallback; both sources are arguments so the fallback branch is reachable by a test. Six unit tests pin the vocabulary over the five uname names and bind the seam to the running host; a planted constant-returning seam turns seven of their expectations red. Suite 0 failures, 12196 passing.
 - 2026-09-04: T2: the AC1-AC3 tests written and failing for the right reason -- with the seam at `darwin`, `linux` and `freebsd` the call reaches the `tm_confirm()` stub, there being no gate above it yet. The four spending calls are stubbed by one helper (`tm_confirm`, `tm_fetch`, `cli::cli_inform` and base `dir.create`, each aborting with its own name). AC3's Windows control already passes, as a control should. Committed red; T3 turns it green.
+- 2026-09-04: T3: the gate added below `check_sha256()` and above the `download_url` default, refusing anything the seam does not report as `windows` with `tidymedia_wrong_platform` carrying `tm_platform`; the two routes live in `tm_install_routes`, looked up single-bracket so an unnamed platform gives NA and gets no package-manager line. With the gate short-circuited the four AC1-AC3 tests and M103's two directory-removal tests go red.
+- 2026-09-04: T3: the gate broke 51 existing `install_on_win()` tests, which run on a non-Windows developer host. Added `tm_local_windows()` and called it from `tm_mock_install()` plus the two tests that mock no install; the seam is held at `windows` and nothing else is defeated. M103's AC3 exit census gained a `tidymedia_wrong_platform #1` case, the new exit being a `cli_abort()` above the unpack, so the new refusal is also held to creating no directory.
+- 2026-09-04: T3: `tm_forbid_spending()` stubs base `dir.create()` only under `writes = TRUE`: a base-namespace stub is also what waldo uses to build a diff, so any `expect_identical()` under it dies in testthat's reporter. AC1's test, which compares nothing, carries the four-stub claim; AC2's runs on the other three.
 - 2026-09-04: implement gate chose naming only `set_program()` on a platform that is neither Windows, macOS nor Linux over adding a generic package-manager line, and chose repeating the Homebrew and apt routes in `?install_on_win`'s Details over a Windows-only sentence.
 - 2026-09-04: plan gate chose an unmocked per-runner assertion over mocked coverage plus a seam unit test because every other criterion runs through a mock, so a seam never wired to the host would satisfy all of them and ship broken for the one platform the function serves (audit F9); falsified by the three tests proving flaky on a runner for a reason that is not the seam.
 

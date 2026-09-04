@@ -331,6 +331,19 @@ tm_os <- function(info = Sys.info(), os_type = .Platform$OS.type) {
 # the one the call makes.
 tm_install_registers <- c("ffmpeg", "ffprobe", "ffplay")
 
+# Where a caller who is not on Windows gets FFmpeg instead. One line each,
+# because that is the whole of the answer on those two platforms, and the
+# package keeps no installer for either (GP1: each would need its own source,
+# digest format and architecture matrix). A platform not named here -- FreeBSD,
+# Solaris, or the coarse `unix` the seam falls back to -- is still refused, and
+# is told only to point tidymedia at a build it already has: the package has no
+# idea what that machine's package manager is, and advice it cannot stand
+# behind is worse than none.
+tm_install_routes <- c(
+  darwin = "brew install ffmpeg",
+  linux = "sudo apt-get install ffmpeg"
+)
+
 # Of those three, the two the package itself calls. `ffplay` is reachable only
 # through find_ffplay()/set_ffplay() and nothing in tidymedia invokes it, so a
 # build that omits it is an install worth completing; a build with no `ffmpeg`
@@ -915,6 +928,33 @@ install_on_win <- function(download_url = NULL,
   rlang::check_string(download_url, allow_null = TRUE)
   rlang::check_string(install_dir, allow_null = TRUE)
   check_sha256(archive_checksum, allow_null = TRUE)
+
+  # The one platform this function installs for. The gate is an allow-list --
+  # anything that is not `windows` is refused -- so a host the routing table
+  # has never heard of is refused rather than sent to download a Windows build
+  # it cannot run. It sits BELOW the four argument checks, because an argument
+  # mistake is worth reporting on any machine and a cheap value refusal comes
+  # first (D036, D043), and ABOVE every cost: nothing has been said to the
+  # caller, asked of them, written, or fetched by the time it fires.
+  platform <- tm_os()
+  if (!identical(platform, "windows")) {
+    # Single-bracket, so a platform the table does not name gives NA rather
+    # than a subscript error.
+    route <- unname(tm_install_routes[platform])
+    cli::cli_abort(
+      c(
+        "{.fun install_on_win} installs FFmpeg on Windows only.",
+        "x" = "This session is running on {platform}.",
+        if (!is.na(route)) {
+          c("i" = "Install FFmpeg with {.code {route}}.")
+        },
+        "i" = "Then point tidymedia at it with {.fun set_program}, or at a
+               build you already have."
+      ),
+      class = "tidymedia_wrong_platform",
+      tm_platform = platform
+    )
+  }
 
   if (is.null(download_url)) {
     download_url <- tm_default_download_url

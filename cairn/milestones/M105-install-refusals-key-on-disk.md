@@ -136,6 +136,7 @@ tests — M104 fixed that at `tm_install_binary()` and this milestone only probe
 - 2026-09-03: merge approval re-posed and given on resume (PR #109 still open, `origin/master` unmoved, all criteria evidenced). First CI run red on `windows-latest (release)`: the AC5 test's premise assertion compared `Sys.which()`'s answer to the path by string, and Windows answers with the 8.3 short form. Test-only fix on the branch; re-verified `check()` Status OK (0/0/0) and `test()` 0 failures / 12,036 passes / 18 skips.
 - 2026-09-03: CI wait on the re-run hit the harness ceiling with six of eight checks still pending (macOS release and pkgdown green). Watcher stopped; merge approval stands, marker written for PR #109.
 - 2026-09-03: step-7 approval: PR #109 approved for merge (re-posed on the second resume; PR still open, `origin/master` unmoved at 0 behind / 13 ahead, branch pushed, all seven criteria evidenced, so nothing was re-verified). CI re-running all eight checks.
+- 2026-09-03: CI wait hit the harness ceiling a second time, on the run for `e19b0c3`: macOS release and pkgdown green, the other six still pending at 570s. Watcher stopped; merge approval stands, marker on disk names PR #109. Nothing merged.
 
 ## Decisions
 

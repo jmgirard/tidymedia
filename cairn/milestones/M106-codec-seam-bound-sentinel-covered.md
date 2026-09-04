@@ -7,7 +7,7 @@
 - **Principles touched:** IP1
 - **Resolves:** —
 - **Surface tier:** user-facing — it changes package runtime code in `R/` that decides which refusal a caller sees
-- **Branch/PR:** `m106-codec-seam-bound-sentinel-covered`
+- **Branch/PR:** `m106-codec-seam-bound-sentinel-covered` / https://github.com/jmgirard/tidymedia/pull/110
 
 ## Goal
 
@@ -24,11 +24,11 @@ Make `emit_video_codec()` validate its own token before it asks the FFmpeg build
 
 ## Acceptance criteria
 
-- [ ] AC1: `emit_video_codec()` (`R/ffmpeg.R:3384`) calls `check_video_codec()` on its own `video_codec` above its `resolve_hw_encoder()` call, so the seam's two halves cannot be called apart. A test calling `emit_video_codec()` directly, with no `check_video_codec()` above it, refuses each of `tm_nvenc_wrong_forms()`'s five wrong forms under `hardware = "nvenc"` and under `hardware = "videotoolbox"`, on both mocked encoder pools, with the token refusal rather than an availability abort; a `cached_encoder_names()` mock recording its own calls records none in any of those cells.
-- [ ] AC2: Every namespace function whose own body names `resolve_hw_encoder` — the domain computed by `all.names(body(f))` over `asNamespace("tidymedia")`, the mechanism `tm_symbol_graph()` uses (`tests/testthat/helper-timeout-sweep.R:52`) — carries a stated disposition in a committed ledger: the codec it passes is a literal, or its token is checked above the call, or it is the emit half itself. A test recomputes that domain and fails on a member the ledger does not name.
-- [ ] AC3: Over every cell `nvenc_order_baseline()` enumerates — the grid now crossing `video_codec` over the caller's value and the `NULL` sentinel on every member carrying that formal — `nvenc_order_contract_diff(before, after)` returns zero rows between the merge-base and the branch head, and `nvenc_order_vacuous()` is empty at both refs. `nvenc_order_align()` completes rather than stopping, and the two refs cover the same cell count.
-- [ ] AC4: The sentinel's hardware behaviour is pinned by the suite. With `cached_encoder_names()` mocked to list no nvenc encoder, `standardize_video(video_codec = NULL, hardware = "nvenc", fallback = TRUE, run = FALSE)` compiles a command containing no `-codec:v` and emits the container-default-encoder message; the same call at `fallback = FALSE` aborts naming `h264_nvenc`; with the mock listing `h264_nvenc`, it compiles `-codec:v h264_nvenc`.
-- [ ] AC5: The profile's verify slot is clean: `devtools::test()` green and `devtools::check()` at 0 errors / 0 warnings / 0 notes.
+- [x] AC1: `emit_video_codec()` (`R/ffmpeg.R:3384`) calls `check_video_codec()` on its own `video_codec` above its `resolve_hw_encoder()` call, so the seam's two halves cannot be called apart. A test calling `emit_video_codec()` directly, with no `check_video_codec()` above it, refuses each of `tm_nvenc_wrong_forms()`'s five wrong forms under `hardware = "nvenc"` and under `hardware = "videotoolbox"`, on both mocked encoder pools, with the token refusal rather than an availability abort; a `cached_encoder_names()` mock recording its own calls records none in any of those cells.
+- [x] AC2: Every namespace function whose own body names `resolve_hw_encoder` — the domain computed by `all.names(body(f))` over `asNamespace("tidymedia")`, the mechanism `tm_symbol_graph()` uses (`tests/testthat/helper-timeout-sweep.R:52`) — carries a stated disposition in a committed ledger: the codec it passes is a literal, or its token is checked above the call, or it is the emit half itself. A test recomputes that domain and fails on a member the ledger does not name.
+- [x] AC3: Over every cell `nvenc_order_baseline()` enumerates — the grid now crossing `video_codec` over the caller's value and the `NULL` sentinel on every member carrying that formal — `nvenc_order_contract_diff(before, after)` returns zero rows between the merge-base and the branch head, and `nvenc_order_vacuous()` is empty at both refs. `nvenc_order_align()` completes rather than stopping, and the two refs cover the same cell count.
+- [x] AC4: The sentinel's hardware behaviour is pinned by the suite. With `cached_encoder_names()` mocked to list no nvenc encoder, `standardize_video(video_codec = NULL, hardware = "nvenc", fallback = TRUE, run = FALSE)` compiles a command containing no `-codec:v` and emits the container-default-encoder message; the same call at `fallback = FALSE` aborts naming `h264_nvenc`; with the mock listing `h264_nvenc`, it compiles `-codec:v h264_nvenc`.
+- [x] AC5: The profile's verify slot is clean: `devtools::test()` green and `devtools::check()` at 0 errors / 0 warnings / 0 notes.
 
 ## Coverage
 
@@ -67,3 +67,18 @@ Make `emit_video_codec()` validate its own token before it asks the FFmpeg build
 ## Decisions
 
 ## Review
+
+- 2026-09-04: draft PR #110 opened for CI. `origin/master` had not moved since the branch was cut (merge-base `9b7fbe4` is `origin/master`'s head), so no merge-and-re-verify was needed; branch in sync with its remote.
+
+**Acceptance-criteria evidence** (all runs fresh at branch head `0fd8fab`):
+
+- AC1 — `emit_video_codec()` (`R/ffmpeg.R:3401`) calls `check_video_codec(video_codec, call = call)` as the first line of its body, above its `resolve_hw_encoder()` call; read from source, not from the diff. `tests/testthat/test-codec-seam-bound.R` runs green (48 passes): the sweep calls `emit_video_codec()` alone over `tm_nvenc_wrong_forms()`'s five forms x `hardware` in {nvenc, videotoolbox} x both mocked pools = 20 cells, asserting each cell's own token-refusal text (`expect_setequal` against the recorded message table first, so a sixth wrong form cannot be skipped) and `probes == 0L` on a recording `cached_encoder_names()` mock in every cell. Its discrimination block shows the same 20-cell region does reach the mock and does get the availability abort for a valid `libx264`.
+- AC2 — `tests/testthat/test-hw-encoder-ledger.R` green (10 passes). The domain is recomputed at run time by `all.names(body(f))` over `asNamespace("tidymedia")` and compared to the ledger with `expect_setequal` in both directions, so an unnamed member fails. Domain and dispositions as recomputed: `format_for_web_pipeline` (literal), `anonymize_pipeline` (checked-above), `emit_video_codec` (emit-half). Per the implement-phase question gate the test also verifies each disposition against the site's own parsed body in source order, and a third test shows the checker returning a reason string for three wrong dispositions.
+- AC3 — widened grid re-run over both refs in one session: `before` at merge-base `9b7fbe4`, `after` at head `0fd8fab`, 49.3 s. 3,040 rows at each ref over the same six members (`anonymize_video`, `anonymize_video_batch`, `format_for_web`, `format_for_web_batch`, `standardize_video`, `standardize_video_batch`); `video_codec` splits 1,352 `caller` / 1,352 `sentinel` / 336 `absent` identically at both refs. `nvenc_order_align()` completed, 3,040 aligned rows. `nvenc_order_contract_diff(before, after)` 0 rows; `nvenc_order_vacuous()` 0 rows at both refs; `nvenc_order_diff()` 0 rows as well.
+- AC4 — `tests/testthat/test-codec-sentinel-hardware.R` green (7 passes), all against `standardize_video(video_codec = NULL, hardware = "nvenc", run = FALSE)` with `cached_encoder_names()` mocked and `tidymedia.check_tracks` off. Empty pool + `fallback = TRUE`: no `-codec:v` in the compiled command, `falling back to the output container's default video encoder` messaged, and the command asserted non-empty via `-movflags +faststart`. Empty pool + `fallback = FALSE`: aborts naming `h264_nvenc` and `is not available`. Pool listing `h264_nvenc`: compiles `-codec:v h264_nvenc`. A fourth test holds `hardware = "none"` silent on the listing pool.
+- AC5 — `devtools::test()`: 0 failures, 12,101 passes, 18 skips, 10 warnings. `devtools::check()`: Status OK, 0 errors / 0 warnings / 0 notes (6m 34s).
+
+**Consistency gate.** `cairn_validate.py` exit 0 — 16/16 PASS, 7 advisories all OK (`release window` did not fire). No `DESIGN.md` principle text changed by this diff, so `cairn_impact.py` was skipped. Toolchain slot (`r-package`): `devtools::document()` produced no diff; `pkgdown::check_pkgdown()` — no problems found; `README.Rmd` untouched, so no re-knit; no new top-level files, no new exports, and `check()` at 0 notes covers `.Rbuildignore`; no `NEWS.md` entry, because no shipped call path changes behaviour — the 0-row wide grid diff at AC3 is that claim's measurement.
+
+**Independent review** — user-facing tier, executable surface touched, so the full three-lens fan-out.
+

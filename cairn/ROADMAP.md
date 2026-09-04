@@ -8,7 +8,7 @@ _Last hygiene check: 2026-09-04 (M107 plan: the nvenc-only mocked-pool candidate
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M107 | A backend with no encoder for the codec's family is refused by the verb the caller typed, `fallback` or not | planned | — | normal | milestones/M107-out-of-table-refusal-at-the-verb.md |
+| M107 | A backend with no encoder for the codec's family is refused by the verb the caller typed, `fallback` or not | review | — | normal | milestones/M107-out-of-table-refusal-at-the-verb.md |
 | M106 | The codec seam is bound and the probe grid covers the codec sentinel | done | — | normal | milestones/archive/M106-codec-seam-bound-sentinel-covered.md |
 | M105 | `install_on_win()`'s refusals say what is on disk | done | — | normal | milestones/archive/M105-install-refusals-key-on-disk.md |
 | M104 | `install_on_win()` registers every program or none | done | — | normal | milestones/archive/M104-install-registers-all-or-none.md |

@@ -3274,8 +3274,20 @@ resolve_hw_encoder <- function(video_codec,
   # The abort lives in check_hardware_available(), never in a copy here: the nine
   # fan-out verbs call that same function at their front doors (M57/D035), and
   # two copies of the wording and the firing condition is exactly the drift the
-  # single site exists to make impossible. `fallback = TRUE` returns above, so
-  # this call can only pass (encoder available) or abort.
+  # single site exists to make impossible.
+  #
+  # This call is reached on BOTH arms, and only for a pair the table HOLDS.
+  # On `fallback = TRUE` it is reached whenever the encoder IS available, since
+  # the `&&` above is then FALSE and nothing returns (measured 2026-09-04:
+  # resolve_hw_encoder("libx264", "nvenc", TRUE) against a build listing
+  # h264_nvenc returns "h264_nvenc" through this line). A pair the table omits
+  # never gets this far on either arm, but by different routes: on
+  # `fallback = TRUE` the predicate above goes through the mapper and
+  # hardware_encoder() refuses it there, while on `fallback = FALSE` the `&&`
+  # short-circuits and the predicate never runs -- there the refusal comes from
+  # check_hardware_available()'s own table sweep, one line below (M107). The
+  # comment here used to claim `fallback = TRUE` always returned above; it
+  # returns only when the predicate answers.
   check_hardware_available(video_codec, hardware, fallback, call = call)
   hardware_encoder(family, hardware, call = call)
 }
@@ -3293,10 +3305,24 @@ resolve_hw_encoder <- function(video_codec,
 # above; the two readings must agree or the front door would refuse a call the
 # pipeline compiles.
 #
-# Returns early on `fallback = TRUE`: that call cannot abort here, and sweeping
-# a column anyway would reach codec_family(), which aborts on an unmappable
-# codec regardless of fallback and would refuse a call that falls back happily
-# today.
+# The `fallback = TRUE` early return sits BELOW the family sweep, not above it
+# (M107). Above it, the sweep's two refusals -- codec_family()'s "no family maps
+# to that codec" and hardware_encoder()'s "this backend has no encoder for that
+# family" -- were left to resolve_hw_encoder() while the pipeline was built,
+# which in a _batch verb is inside purrr::pmap(): the very frame this front-door
+# call exists to keep out of the caller's error (D035). Neither refusal is about
+# the machine, so neither is something `fallback` can offer a way around: no
+# build of FFmpeg grows a videotoolbox AV1 encoder, and no build makes
+# "notacodec" name a family. The comment here used to say a `fallback = TRUE`
+# call could not abort at this site, and that sweeping the column anyway would
+# refuse a call that falls back happily today. Both halves were false --
+# measured 2026-09-04, all 8 fan-out members refused those calls one frame down,
+# under purrr::pmap().
+#
+# What the early return still guards is the AVAILABILITY probe below it: an
+# encoder the table holds and this build does not list is exactly what
+# `fallback` is for, so that pair must reach resolve_hw_encoder()'s fallback
+# branch rather than abort here.
 #
 # `fallback` is VALIDATED before it is read, never tested with isTRUE(): under
 # isTRUE() a malformed value (NA, "yes", c(TRUE, TRUE)) read as FALSE and got
@@ -3319,9 +3345,6 @@ check_hardware_available <- function(video_codec, hardware = "none",
     return(invisible(NULL))
   }
   rlang::check_bool(fallback, call = call)
-  if (fallback) {
-    return(invisible(NULL))
-  }
   codecs <- if (is.list(video_codec)) video_codec else list(video_codec)
   families <- unique(vapply(codecs, function(vc) {
     if (is.null(vc) || (length(vc) == 1L && is.na(vc))) {
@@ -3330,6 +3353,14 @@ check_hardware_available <- function(video_codec, hardware = "none",
       codec_family(vc, call = call)
     }
   }, character(1)))
+  # The (family, backend) table lookup, on BOTH fallback arms. The return value
+  # is discarded: what is wanted is the refusal hardware_encoder() raises for a
+  # pair the table omits, sited here so it names the verb. Pure and free of the
+  # build, so nothing about the machine is consulted on the fallback arm.
+  for (family in families) hardware_encoder(family, hardware, call = call)
+  if (fallback) {
+    return(invisible(NULL))
+  }
   for (family in families) {
     if (!hardware_encoder_available(family, hardware, call = call)) {
       cli::cli_abort(

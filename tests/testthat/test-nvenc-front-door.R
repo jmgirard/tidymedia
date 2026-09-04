@@ -210,7 +210,13 @@ test_that("format_for_web_batch checks h264, the codec its recipe fixes", {
   expect_identical(nvenc_blamed(cnd), "format_for_web_batch")
 })
 
-# --- AC4: fallback = TRUE reaches no front-door guard -----------------------
+# --- AC4: fallback = TRUE reaches no AVAILABILITY guard ---------------------
+#
+# M100 wrote this section as "reaches no front-door guard" and pinned the
+# unmappable-pair case to the fan-out. M107 narrowed it: `fallback` answers a
+# question about the MACHINE -- this build does not list the encoder -- and that
+# is the guard the early return still skips. It answers nothing about a pair the
+# table never held, so that refusal moved to the front door on both arms (D085).
 
 test_that("fallback = TRUE still falls back, once per row", {
   withr::local_options(tidymedia.hardware_encoders = character(0))
@@ -233,13 +239,15 @@ test_that("fallback = TRUE still falls back, once per row", {
   expect_s3_class(out, "data.frame")
 })
 
-test_that("fallback = TRUE never lets the front door refuse an unmappable codec", {
+test_that("fallback = TRUE refuses an out-of-table pair at the verb (M107)", {
   withr::local_options(tidymedia.hardware_encoders = character(0))
   input <- make_input()
-  # A prores codec under nvenc is refused regardless of `fallback` -- the
-  # (family, backend) pair is not in the table -- so a front-door column sweep
-  # would refuse this call. The guard's early return is what keeps the failure
-  # where it was: inside the fan-out, unchanged from master.
+  # A prores codec under nvenc: the (family, backend) pair is not in the table,
+  # and no build of FFmpeg will add it, so `fallback` has nothing to offer and
+  # the front-door column sweep refuses the call on either arm. M100 pinned this
+  # to the fan-out (`purrr::pmap`), which is the frame this front-door call
+  # exists to keep out of the caller's error -- that pin is what M107 reverses.
+  # The codec rides in as a jobs COLUMN, so the sweep's list form is what runs.
   jobs <- tibble::tibble(input = input, output = "a.mp4",
                          video_codec = "prores")
   cnd <- nvenc_fanout_catch("standardize_video_batch", input,
@@ -247,7 +255,30 @@ test_that("fallback = TRUE never lets the front door refuse an unmappable codec"
   expect_s3_class(cnd, "rlang_error")
   expect_match(conditionMessage(cnd), 'nvenc has no "prores" encoder',
                fixed = TRUE)
-  expect_false(identical(nvenc_blamed(cnd), "standardize_video_batch"))
+  expect_identical(nvenc_blamed(cnd), "standardize_video_batch")
+})
+
+test_that("fallback = TRUE still leaves the availability guard to the fan-out", {
+  # The other half, and the reason the early return is still there: an encoder
+  # the table HOLDS and this build does not list is exactly what `fallback` is
+  # for, so the front door must let it through to the per-row resolution rather
+  # than abort. Same verb and the same empty build as the test above, with the
+  # only difference being a codec the table holds.
+  withr::local_options(tidymedia.hardware_encoders = character(0))
+  input <- make_input()
+  jobs <- tibble::tibble(input = input, output = "a.mp4",
+                         video_codec = "libx264")
+  msgs <- character()
+  out <- withCallingHandlers(
+    standardize_video_batch(jobs, hardware = "nvenc", fallback = TRUE,
+                            run = FALSE),
+    message = function(m) {
+      msgs <<- c(msgs, cli::ansi_strip(conditionMessage(m)))
+      invokeRestart("muffleMessage")
+    }
+  )
+  expect_s3_class(out, "data.frame")
+  expect_true(any(grepl("falling back", msgs, fixed = TRUE)))
 })
 
 # --- the preconditions each front door mirrors ------------------------------

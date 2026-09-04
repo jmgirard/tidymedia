@@ -15,15 +15,21 @@
 # test that reached it through a pipeline would be measuring the pipeline's
 # check instead.
 
-# The two mocked encoder pools are the probe grid's own
-# (`nvenc_order_pools`, data-raw/nvenc-probe-order-baseline.R): nvenc names, or
-# nothing. Neither lists a videotoolbox encoder, which is what makes the
-# videotoolbox arm the stronger half of the cross -- there the availability
-# abort is what the caller WOULD get in both pools if the token check did not
-# run first.
+# The mocked encoder pools are the shared derived ones
+# (`tm_hardware_encoder_pools()`, helper-timeout-sweep.R), which the probe grid
+# reads too (M107). Three levels rather than the two M106 wrote out by hand:
+#
+#   nvenc         the nvenc row's encoders -- against `hardware = "videotoolbox"`
+#                 this is the STRONGER half of the cross, since there the
+#                 availability abort is what the caller would get if the token
+#                 check did not run first
+#   videotoolbox  the videotoolbox row's encoders, the level M106 lacked
+#                 entirely: with only nvenc names mocked, no cell of the cross
+#                 ever asked what a videotoolbox call does against a build that
+#                 HAS its encoders
+#   absent        no encoder at all
 seam_pools <- function() {
-  list(present = c("h264_nvenc", "hevc_nvenc", "av1_nvenc"),
-       absent = character())
+  tm_hardware_encoder_pools()
 }
 
 # What each of the five wrong forms is refused WITH, recorded from a run rather
@@ -57,6 +63,14 @@ test_that("a wrong codec token is refused before the build is asked anything", {
   expect_setequal(names(forms), names(expected))
   expect_length(forms, 5L)
 
+  # And the pools are read from the shared derived helper, so a family added to
+  # either backend's row reaches this cross too. Three levels, and the cross
+  # below runs both backends against each, so the nvenc-pool-under-videotoolbox
+  # cell M106 relied on is still here.
+  expect_setequal(names(seam_pools()),
+                  c(hardware_backends(), "absent"))
+  expect_length(seam_pools(), length(hardware_backends()) + 1L)
+
   # The option seam returns above cached_encoder_names(), so leaving it set
   # would make every cell below measure the option and never the mock.
   withr::local_options(tidymedia.hardware_encoders = NULL)
@@ -87,6 +101,42 @@ test_that("a wrong codec token is refused before the build is asked anything", {
   }
 })
 
+test_that("a clean token naming no codec is refused before the build too", {
+  # The case the five forms above cannot reach. Each of them is refused by a
+  # type or shape check, so none gets as far as `codec_family()` -- and the
+  # emit half's claim is not only that a MALFORMED token outranks the build,
+  # it is that everything the caller can be told about their own token does.
+  # `"notacodec"` passes `check_token()` and is then refused for naming no
+  # family, with the build still unasked.
+  dir <- withr::local_tempdir()
+  p <- seam_pipeline(dir)
+  withr::local_options(tidymedia.hardware_encoders = NULL)
+  codec <- tm_nvenc_unmappable_codec()
+
+  for (pool in names(seam_pools())) {
+    for (hw in hardware_backends()) {
+      probes <- 0L
+      local_mocked_bindings(
+        cached_encoder_names = function() {
+          probes <<- probes + 1L
+          seam_pools()[[pool]]
+        }
+      )
+      label <- paste(pool, hw, sep = "/")
+      cnd <- tryCatch(emit_video_codec(p, codec, hw, fallback = FALSE),
+                      error = function(e) e)
+      expect_s3_class(cnd, "rlang_error")
+      # Which refusal, not merely that there was one: the sentence names the
+      # caller's own token and no encoder or build.
+      msg <- cli::ansi_strip(conditionMessage(cnd))
+      expect_match(msg, "No hardware encoder family maps to that codec",
+                   fixed = TRUE, info = label)
+      expect_false(grepl("is not available", msg, fixed = TRUE), info = label)
+      expect_identical(probes, 0L, info = label)
+    }
+  }
+})
+
 test_that("the same cells reach the build once the token is a real one", {
   # The discrimination check for the sweep above. Its zero probe counts are
   # worth nothing unless this mock can be reached at all, and its "not
@@ -96,12 +146,12 @@ test_that("the same cells reach the build once the token is a real one", {
   p <- seam_pipeline(dir)
   withr::local_options(tidymedia.hardware_encoders = NULL)
 
-  for (hw in c("nvenc", "videotoolbox")) {
+  for (hw in hardware_backends()) {
     probes <- 0L
     local_mocked_bindings(
       cached_encoder_names = function() {
         probes <<- probes + 1L
-        character()
+        seam_pools()$absent
       }
     )
     expect_error(
@@ -113,16 +163,24 @@ test_that("the same cells reach the build once the token is a real one", {
     expect_gt(probes, 0L)
   }
 
-  # And with the encoder listed, the same call compiles the hardware encoder in
-  # -- so the pool the sweep above holds is a pool this seam actually reads.
-  probes <- 0L
-  local_mocked_bindings(
-    cached_encoder_names = function() {
-      probes <<- probes + 1L
-      c("h264_nvenc", "hevc_nvenc", "av1_nvenc")
-    }
-  )
-  out <- emit_video_codec(p, "libx264", "nvenc", fallback = FALSE)
-  expect_true(any(grepl("h264_nvenc", as.character(ffm_compile(out)), fixed = TRUE)))
-  expect_gt(probes, 0L)
+  # And with each backend's OWN encoders listed, the same call compiles that
+  # backend's encoder in -- so every pool level the sweeps above hold is a pool
+  # this seam actually reads, and the control runs in every arm rather than only
+  # the nvenc one (M107).
+  for (hw in hardware_backends()) {
+    probes <- 0L
+    local_mocked_bindings(
+      cached_encoder_names = function() {
+        probes <<- probes + 1L
+        seam_pools()[[hw]]
+      }
+    )
+    out <- emit_video_codec(p, "libx264", hw, fallback = FALSE)
+    expect_true(
+      any(grepl(paste0("h264_", hw), as.character(ffm_compile(out)),
+                fixed = TRUE)),
+      info = hw
+    )
+    expect_gt(probes, 0L)
+  }
 })

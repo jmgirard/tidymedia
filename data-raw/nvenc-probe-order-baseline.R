@@ -29,9 +29,12 @@
 #
 # crossed with four dimensions the reorder could plausibly disturb:
 #
-#   hardware     "none" / "nvenc"    -- whether the probe runs at all
+#   hardware     "none" and every backend `hardware_backends()` names --
+#                                       whether the probe runs at all, and for
+#                                       which backend
 #   fallback     FALSE / TRUE        -- which branch of the resolver runs
-#   pool         present / absent    -- what the mocked build answers
+#   pool         one level per backend, plus the empty build -- what the mocked
+#                                       build answers
 #   video_codec  caller / sentinel   -- a codec the caller named, or M34/D016's
 #                                       NULL "leave the codec alone" sentinel
 #
@@ -62,7 +65,28 @@
 #
 # Usage (from the package root):
 #
+# The committed baseline
+# ----------------------
+#
+# `data-raw/nvenc-probe-order-merge-base.rds` is one such grid, saved so a later
+# milestone can diff against a ref without re-running it. Its provenance:
+#
+#   source     this repo, at the commit named in the object's own `ref`
+#              attribute -- `attr(readRDS(...), "ref")`
+#   generator  this file: `nvenc_order_baseline(attr(x, "ref"))` regenerates it
+#              from scratch
+#   seed       none; every cell is deterministic (no binary is spawned, the
+#              encoder pool is mocked, and `run = FALSE` writes nothing)
+#
+# Re-recorded 2026-09-04 at `96e973b` with the videotoolbox arm added (M107):
+# 6,840 rows, 0 vacuous, and 0 rows of difference against the working tree on
+# both the contract and the wide comparison -- M107 changes no cell this grid
+# holds, because the grid crosses only the h264 family and M107's subject is a
+# family no backend covers.
+#
 #   source("data-raw/nvenc-probe-order-baseline.R")
+#   before <- readRDS("data-raw/nvenc-probe-order-merge-base.rds")
+#   #   or, to re-derive it:
 #   before <- nvenc_order_baseline("<merge-base sha>")
 #   after  <- nvenc_order_baseline()          # the working tree
 #   nvenc_order_vacuous(before)               # empty: every `valid` cell compiled
@@ -179,8 +203,18 @@ nvenc_order_set_codec <- function(args, level) {
   args
 }
 
-nvenc_order_pools <- list(present = c("h264_nvenc", "hevc_nvenc", "av1_nvenc"),
-                          absent = character())
+# Derived from `hardware_backend_families()` through the shared helper
+# (`tm_hardware_encoder_pools()`, tests/testthat/helper-timeout-sweep.R, sourced
+# above), never spelled out here: one definition of "a build with a backend's
+# encoders" for this grid, the AC1 sweep and the seam test alike (M107).
+#
+# Three levels, one per backend plus the empty build, because the `hw` loop
+# below now reaches videotoolbox: with only the nvenc and empty levels, EVERY
+# videotoolbox cell at `fallback = FALSE` would be the availability abort, and
+# the videotoolbox arm would measure a build that never lists its encoders
+# rather than the reorder. Crossing all three keeps the harder
+# nvenc-pool-under-videotoolbox cell and adds the matching one beside it.
+nvenc_order_pools <- tm_hardware_encoder_pools()
 
 # -- running the grid --------------------------------------------------------
 
@@ -223,7 +257,12 @@ nvenc_order_baseline <- function(ref = NULL, root = ".", sample = NULL) {
       # A member with no `video_codec` formal has nothing to cross: one level,
       # recorded as `absent` so its rows are still keyed on the column.
       levels <- if (spec$has_vc) names(nvenc_order_video_codecs) else "absent"
-      for (hw in c("none", "nvenc")) {
+      # Every backend the table names, not `"nvenc"` alone (M107). videotoolbox
+      # postdates M095's reorder, so no pre-reorder ref carries it and this arm
+      # can only be a FORWARD baseline -- a record of what the backend does now,
+      # for the next milestone to diff against, never a re-measurement of the
+      # reorder contract.
+      for (hw in c("none", hardware_backends())) {
         for (fb in c(FALSE, TRUE)) {
           for (vc in levels) {
             args <- spec$args
@@ -281,13 +320,19 @@ nvenc_order_baseline <- function(ref = NULL, root = ".", sample = NULL) {
 # compiled command, so both sides are checked for emptiness before a diff is
 # believed.
 #
-# One arm is carved out and it is not a fudge: `hardware = "nvenc"` with
-# `fallback = FALSE` against a build listing no nvenc encoder is the availability
+# One arm is carved out and it is not a fudge: a backend with `fallback = FALSE`
+# against a build listing none of THAT backend's encoders is the availability
 # abort doing its job, on a call whose arguments are all valid. Every other arm
 # of the cross owes a compiled command.
+#
+# The carve-out is keyed on the pool naming the backend, not on the pool being
+# the empty one (M107): with a level per backend, `hardware = "videotoolbox"`
+# against the nvenc pool is just as much a build without the encoder as the
+# empty pool is, and a carve-out written as `pool == "absent"` would report
+# those cells as a failure of the grid rather than as the probe working.
 nvenc_order_vacuous <- function(baseline) {
-  unavailable <- baseline$hardware == "nvenc" & !baseline$fallback &
-    baseline$pool == "absent"
+  unavailable <- baseline$hardware %in% hardware_backends() &
+    !baseline$fallback & baseline$hardware != baseline$pool
   baseline[baseline$cell == "valid" & !unavailable &
              baseline$kind != "compiled", , drop = FALSE]
 }

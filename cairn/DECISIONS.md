@@ -4081,3 +4081,49 @@ to promise on Windows.
   a program apart from one whose file vanished, in code rather than in prose;
   or by a report of the existence test refusing a build whose files are
   genuinely there.
+
+## D085 — A backend with no encoder for the codec's family is refused at the verb's front door on both `fallback` arms (2026-09-04, from M107; annotates D035's front-door licence and D074 property 1's per-row fan-out class by removing one member from it; narrows the early return D076 sits above; D035, D074, D075, D076, D036 and D042 otherwise stand)
+
+**The rule.** A `(codec family, backend)` pair `hardware_backend_families()`
+does not hold, and a `video_codec` no family maps to at all, are both refused at
+the front door of the verb the caller typed, whatever `fallback` says. Only the
+availability question — this build does not list an encoder the table does hold
+— is left to the per-row resolution under `fallback = TRUE`.
+
+**Why the two are not the same question.** `fallback` offers a way around a
+machine: the encoder exists in principle and this FFmpeg was not built with it,
+so software encoding is a sensible second choice and the caller is told. Neither
+refusal above is about a machine. No build of FFmpeg grows a videotoolbox AV1
+encoder, and no build makes `"notacodec"` name a family — so there is nothing
+for `fallback` to fall back from, and `hardware_encoder()` has refused the first
+of them on both arms since it was written. What was wrong was only *where*: with
+the sweep sitting below `check_hardware_available()`'s `fallback` early return,
+the refusal was left to `resolve_hw_encoder()` while the pipeline was built,
+which in a `_batch` verb is inside `purrr::pmap()`. That is the frame D035
+licensed the second front-door call to keep out of the caller's error, and the
+front door was skipping it on exactly the arm where it was needed.
+
+**What this removes from D074 property 1.** That property measured the per-row
+fan-out class and disclosed it rather than fixing it, and D076 removed
+`segment_video()`'s `outfiles` from it. This removes one more member: the codec
+family a verb's own `video_codec` argument names. What stays disclosed is
+unchanged — a column of a jobs table the caller supplies, whose contract names
+no column.
+
+**Siting.** The family sweep moved above the `fallback` early return, and the
+return stayed where it is, below. Both refusals are computed with no reference
+to the build — `codec_family()` reads the token and `hardware_encoder()` reads
+a two-key table — so nothing about the machine is consulted on the `fallback`
+arm, and D075's rule that a build-time probe runs below every check that cannot
+depend on its answer is untouched.
+
+**Cost.** A call whose `video_codec` names no family is now refused by the verb
+under `fallback = TRUE` as well. It was already refused one frame down, so no
+call that used to succeed is refused now — only the frame and the reachable
+class change. The `@param fallback` wording at eleven blocks already said an
+out-of-table pair aborts whatever `fallback` says, and needed no change.
+
+**Falsified by** a caller who sets `fallback = TRUE` expecting a wrong
+backend/codec pair, or an unrecognized codec name, to be tolerated rather than
+refused; or by a build appearing that makes one of these pairs a question about
+the machine after all.

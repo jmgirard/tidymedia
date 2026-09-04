@@ -48,7 +48,7 @@ videotoolbox baseline for the probe grid.
       not list still falls back to software with a message rather than aborting
       under `fallback = TRUE`, for every `(backend, family)` pair that table
       holds.
-- [ ] AC3: `devtools::test()` clean, `devtools::document()` produces no diff,
+- [x] AC3: `devtools::test()` clean, `devtools::document()` produces no diff,
       and `devtools::check()` reports 0 errors, 0 warnings and no new NOTEs.
 
 ## Coverage
@@ -125,6 +125,8 @@ videotoolbox baseline for the probe grid.
 
 - 2026-09-04: /milestone-review, in progress. PR #111 opened draft; `master` unmoved since the branch was cut. AC1 and AC2 verified and ticked against fresh evidence; AC3 has `devtools::test()` and `devtools::document()` recorded and `devtools::check()` still running. `cairn_validate` 16/16, no advisories; `pkgdown::check_pkgdown()` clean; NEWS carries the entry and names no milestone. Three review lenses spawned, none reported yet.
 
+- 2026-09-04: /milestone-review checkpoint 2. AC3 verified and ticked (`devtools::check()` Status OK, 0/0/0); consistency gate passes in both halves; the blame-history and prior-review lenses reported no findings. The [O] diff-bug lens is still running and CI on PR #111 is pending.
+
 ## Decisions
 
 ## Review
@@ -155,6 +157,48 @@ the same cell asserted NOT refused, so the refusal is the token's.
 each of the 14 reachable members = **70 cells** returns without aborting and
 emits a message containing "falling back". No cell aborted.
 
-**AC3 — in progress.** `devtools::test()`: 0 failures, 10 warnings, 18 skips,
+**AC3 — verified.** `devtools::test()`: 0 failures, 10 warnings, 18 skips,
 **12,181 passes**. `devtools::document()`: no diff (`git status` clean apart
-from this milestone file). `devtools::check()`: PENDING.
+from this milestone file). `devtools::check()`: **Status OK, 0 errors / 0
+warnings / 0 notes**, 5m 37.6s -- so no new NOTE, the bound the criterion sets.
+The `spelling.Rout` comparison the first implement-side run tripped is OK here.
+
+### Consistency gate
+
+Universal cairn-file checks: `cairn_validate.py` **16/16 PASS**, all seven
+advisories OK (including `release window`, so step 10's parking clause does not
+fire). No `DESIGN.md` principle changed on this branch, so `cairn_impact.py
+--changed` is skipped -- `Principles touched: IP1` records a principle the work
+obeys, not one it edits.
+
+Toolchain checks, from the `r-package` profile's `consistency-gate` slot:
+`devtools::document()` no diff; `NAMESPACE`, `man/` and `data/*.rda` untouched
+by the branch, so nothing generated was hand-edited; `README.Rmd` unchanged, so
+no re-knit is owed; `pkgdown::check_pkgdown()` "No problems found"; `NEWS.md`
+carries a Bug fixes entry for the user-visible change and names no milestone
+number; the branch adds no top-level file, so no `.Rbuildignore` entry is owed;
+`devtools::check()` Status OK.
+
+### Independent review
+
+Three lenses, fresh-context, distinct evidence bases, all three spawned (the
+declared tier is user-facing and the diff touches R code, so the full fan-out
+rather than the docs-only single lens).
+
+- **[S] blame-history: no findings.** Traced the deleted `if (fallback)
+  return()` line through M100 to the M095 reorder (D075) and reports the move as
+  what D085 documents rather than a silent regression: only the
+  machine-independent table lookup moved above the early return, and the
+  build-dependent `hardware_encoder_available()` probe stays below it, which is
+  what D075 requires. Checked D079's "the refusal lives in the mapper, once" and
+  found no contradiction -- the branch adds a call site, not a second copy of
+  the refusal. Read the M100-era pin `test-nvenc-front-door.R` inverts and found
+  the inversion annotated in place.
+- **[S] prior-review record: no findings.** Primary surface, archived `##
+  Review` sections on the touched files (M094, M095, M096, M100, M106, M56,
+  M61), plus `LESSONS.md`: the diff resolves the M106 review's mocked-pool
+  candidate rather than regressing a prior lesson, and the M100 `call =`
+  lesson's site is untouched here. Secondary surface probe
+  `gh api repos/jmgirard/tidymedia/pulls/comments?per_page=1` returned `[]`, so
+  no per-PR thread walk was paid for.
+- **[O] diff-bug: PENDING.**

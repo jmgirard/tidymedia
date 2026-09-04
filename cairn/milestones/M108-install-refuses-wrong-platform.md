@@ -4,14 +4,14 @@
      cairn_validate's <150 over the plan-owned body. -->
 # M108: `install_on_win()` refuses on a platform it cannot install for, before it spends anything
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP1
 - **Resolves:** —
 - **Surface tier:** user-facing — it changes an exported function's refusal behaviour, its message, and its documented return contract
-- **Branch/PR:** —
+- **Branch/PR:** `m108-install-refuses-wrong-platform`
 
 ## Goal
 
@@ -76,7 +76,7 @@ sited above the argument checks → rejected at this gate, work log records it.
 
 ## Tasks
 
-- [ ] T1: Add the OS seam — a `tm_os()` internal returning a lowercase
+- [x] T1: Add the OS seam — a `tm_os()` internal returning a lowercase
       normalized name derived from `Sys.info()[["sysname"]]` with
       `.Platform$OS.type` as its fallback — beside the other seams in
       `R/program_management.R`, with unit tests pinning its vocabulary.
@@ -100,6 +100,8 @@ sited above the argument checks → rejected at this gate, work log records it.
 - 2026-09-04: criteria audit ran in FULL mode (surface tier user-facing) and returned 11 findings: F1 unbounded "any of the four calls that spend", F2 a deny-list gate satisfying the criteria while FreeBSD still downloads, F3 the seam's vocabulary unfixed, F4 the message unbound to the condition, F5 no inversion between the two platform routes, F6 AC3 at one point of the argument space, F7 the `@return` count left at six, F8 a README clause already true, F9 nothing binding the seam to the real host, F10 the gate's position against the argument checks, F11 D062's `tm_` prefix unpinned. Ten were fixed before the gate and reported in chat; F10 was posed as a gate question. No criterion was changed by the gate's answers.
 - 2026-09-04: plan gate chose no macOS or Linux downloader over adding one or both because `brew` and `apt` are a one-line install that also keeps FFmpeg updated, while each downloader carries its own source, digest format (johnvansickle publishes `.md5`, not the SHA-256 D081 bought), arch matrix, and the hardening arc M102-M105 spent four milestones on for one installer; falsified by a report from a macOS or Linux user for whom the package manager route is unavailable or insufficient.
 - 2026-09-04: plan gate chose siting the gate BELOW the argument checks over above them because D043 and D036 put a cheap value refusal above an availability check and an argument mistake is worth reporting either way, and the gate still sits above every cost; falsified by a report of a non-Windows caller confused at being asked to fix an argument for a call that cannot work on their machine.
+- 2026-09-04: T1: `tm_os()` added beside the install seams, reading `Sys.info()[["sysname"]]` lowercased with `.Platform$OS.type` as the fallback; both sources are arguments so the fallback branch is reachable by a test. Six unit tests pin the vocabulary over the five uname names and bind the seam to the running host; a planted constant-returning seam turns seven of their expectations red. Suite 0 failures, 12196 passing.
+- 2026-09-04: implement gate chose naming only `set_program()` on a platform that is neither Windows, macOS nor Linux over adding a generic package-manager line, and chose repeating the Homebrew and apt routes in `?install_on_win`'s Details over a Windows-only sentence.
 - 2026-09-04: plan gate chose an unmocked per-runner assertion over mocked coverage plus a seam unit test because every other criterion runs through a mock, so a seam never wired to the host would satisfy all of them and ship broken for the one platform the function serves (audit F9); falsified by the three tests proving flaky on a runner for a reason that is not the seam.
 
 ## Decisions

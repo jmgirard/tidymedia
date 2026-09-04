@@ -298,6 +298,32 @@ tm_cli_escape <- function(x) {
 }
 
 
+# Platform ------------------------------------------------------------------
+
+# Which operating system this session is running on, as a lowercase name.
+#
+# The seam `install_on_win()`'s platform gate reads, and the only place the
+# package asks. `Sys.info()` is the source: its `sysname` is the kernel name
+# uname reports -- `Windows`, `Darwin`, `Linux`, `FreeBSD`, `SunOS` -- which
+# is what a message naming the caller's platform wants, and lowercasing it is
+# the whole normalization. R documents `Sys.info()` as possibly unimplemented,
+# in which case it returns `NULL`, so `.Platform$OS.type` is the fallback: it
+# is always one of `windows` or `unix`, which is coarser than the gate would
+# like but still answers the one question the gate asks. A host that cannot
+# say more than `unix` is refused like any other non-Windows host and gets no
+# package-manager route, only `set_program()` (M108's gate).
+#
+# Both sources are arguments so the fallback branch can be fired by a test: on
+# every machine the suite runs on, `Sys.info()` is implemented, so a branch
+# reading it directly would be unreachable code. No caller passes either one.
+tm_os <- function(info = Sys.info(), os_type = .Platform$OS.type) {
+  if (is.null(info)) {
+    return(tolower(os_type))
+  }
+  tolower(info[["sysname"]])
+}
+
+
 # install_on_win() --------------------------------------------------------
 
 # The programs an install registers, and where the extracted build puts each

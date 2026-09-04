@@ -2666,3 +2666,59 @@ test_that("tm_usable_binary() answers once per element, whatever the length", {
   expect_identical(tm_usable_binary(f$good), TRUE)
   expect_identical(tm_usable_binary(character(0)), logical(0))
 })
+
+
+# tm_os() ------------------------------------------------------------------
+
+test_that("tm_os() reports the running host, lowercased", {
+  # The seam is bound to the machine, not to a constant: the value it returns
+  # is `Sys.info()`'s own `sysname` with nothing but the case changed. This is
+  # the assertion a seam wired to nothing would fail, and it is the one every
+  # mocked test below borrows its meaning from.
+  expect_identical(tm_os(), tolower(Sys.info()[["sysname"]]))
+})
+
+test_that("tm_os() speaks one lowercase word", {
+  os <- tm_os()
+  expect_type(os, "character")
+  expect_length(os, 1L)
+  expect_false(is.na(os))
+  expect_identical(os, tolower(os))
+  expect_gt(nchar(os), 0L)
+  # And it is unnamed: `Sys.info()[["sysname"]]` drops the name, where
+  # `["sysname"]` would keep it and put it into every message built from it.
+  expect_null(names(os))
+})
+
+test_that("tm_os() agrees with .Platform about which family this host is in", {
+  # Two independent readings of the same fact. `.Platform$OS.type` is compiled
+  # into R and says only `windows` or `unix`; the gate refuses on the `sysname`
+  # word, so a disagreement here would mean the gate is deciding on a name the
+  # rest of R does not recognize for this machine.
+  if (.Platform$OS.type == "windows") {
+    expect_identical(tm_os(), "windows")
+  } else {
+    expect_false(tm_os() == "windows")
+  }
+})
+
+test_that("tm_os() lowercases whatever sysname the host reports", {
+  # The vocabulary, pinned over the five names uname produces on the platforms
+  # this package reaches or could reach. `Sys.info()` is an argument for this
+  # reason: on every machine the suite runs on it reports one of these, so the
+  # other four are only reachable by handing them in.
+  expect_identical(tm_os(info = c(sysname = "Windows")), "windows")
+  expect_identical(tm_os(info = c(sysname = "Darwin")), "darwin")
+  expect_identical(tm_os(info = c(sysname = "Linux")), "linux")
+  expect_identical(tm_os(info = c(sysname = "FreeBSD")), "freebsd")
+  expect_identical(tm_os(info = c(sysname = "SunOS")), "sunos")
+})
+
+test_that("tm_os() falls back to .Platform where Sys.info() is unimplemented", {
+  # R documents `Sys.info()` as returning NULL where the platform does not
+  # implement it. The fallback is coarser -- `unix` is not a `sysname` and
+  # names no package manager -- but it still answers the gate's one question,
+  # and a Windows host that cannot run `Sys.info()` is still not refused.
+  expect_identical(tm_os(info = NULL, os_type = "windows"), "windows")
+  expect_identical(tm_os(info = NULL, os_type = "unix"), "unix")
+})
